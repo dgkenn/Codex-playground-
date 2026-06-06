@@ -86,9 +86,12 @@ def fetch_hour_to_parquet(con, hour_key, asset_ids, out_path):
 
 
 def merge_parquets(con, glob_path, out_path):
-    """Merge per-hour parquets into one, streaming through DuckDB (low memory)."""
-    con.execute(f"COPY (SELECT * FROM read_parquet('{glob_path}') ORDER BY timestamp) "
-                f"TO '{out_path}' (FORMAT PARQUET);")
+    """Merge per-hour parquets into one, dropping exact-duplicate top-of-book rows
+    (same ts/asset/bid/ask), streaming through DuckDB (low memory)."""
+    con.execute(
+        f"COPY (SELECT DISTINCT timestamp, asset_id, best_bid, best_ask, fee_rate_bps "
+        f"FROM read_parquet('{glob_path}') ORDER BY timestamp) "
+        f"TO '{out_path}' (FORMAT PARQUET);")
     return con.execute(f"SELECT count(*) FROM read_parquet('{out_path}')").fetchone()[0]
 
 

@@ -72,7 +72,8 @@ def load_book(path, ts_col, bid_col, ask_col, ts_unit, keep_asset=False):
 
 def _to_ms(s, unit):
     if np.issubdtype(np.asarray(s).dtype, np.datetime64) or str(s.dtype).startswith("datetime"):
-        return pd.to_datetime(s, utc=True).view("int64") // 1_000_000
+        arr = pd.to_datetime(s, utc=True).to_numpy().astype("datetime64[ms]")
+        return arr.view("int64")
     v = pd.to_numeric(s, errors="coerce").astype("float64")
     return (v * {"s": 1000.0, "ms": 1.0, "us": 1e-3, "ns": 1e-6}[unit]).astype("int64")
 
