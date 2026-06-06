@@ -1,0 +1,8 @@
+# Python virtual environment (created for pmkit/pmxt backtesting work)
+.venv/
+__pycache__/
+*.pyc
+
+# Large data artifacts — never commit market data dumps
+*.parquet
+*.npz
