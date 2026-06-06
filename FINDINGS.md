@@ -52,3 +52,24 @@ A genuine winner here would need a lever this dataset cannot score: maker **fee
 rebates** (flips maker economics), **active inventory/hedging** quoting models
 (not scoreable from historical quotes), or **sub-second execution** for
 cross-asset lead-lag (needs tick infra beyond hourly-bucketed archive).
+
+## Round 2: five literature-grounded hypotheses (ideas2.py) — none pass
+
+Tested as signals/calibration/realized-economics (not fill-at-quote), window-
+clustered, Bonferroni |t|>2.58.
+
+| # | Idea (lit) | Result | Verdict |
+|---|---|---|---|
+| I1 | favorite-longshot bias (Snowberg-Wolfers) | calibration gaps all <4%; compression slope b=1.06 (NOT <1); bet-favourite t=-0.58 | **well-calibrated, no FLB** |
+| I2 | trade-flow imbalance / OFI (Cont et al.) | net-buy-fraction coef t=-0.08 beyond price | no incremental signal |
+| I3 | intraday/session seasonality (Wen et al.) | every session: maker \|t\|<0.8, taker_net<0 | no seasonal edge |
+| I4 | fade-the-dislocation (reversal) | clustered slope t=-1.12 (naive -2.27 was the clustering illusion) | no clean reversion |
+| I5 | better vol model (BS-for-PM, VRP) | constant sigma Brier 0.156 = best; rolling/VRP worse | vol is NOT the binding constraint |
+
+**Why nothing works:** the 15-min BTC market is **well-calibrated** (mean_fair 0.525
+vs realized 0.521; Brier 0.156; price-bin gaps <4%) and price already impounds
+order flow. This matches the "informed minority (~3%) keeps prices efficient"
+literature. The only reliable structure remains takers-lose-≈-the-fee. Across
+TWO rounds (taker fair-value + H1/H2/H3 + I1-I5), no strategy survives rigorous
+validation; the harness rejected every candidate, including the ones that looked
+significant before clustering/truncation/economic tests.
