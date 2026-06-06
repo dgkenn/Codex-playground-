@@ -54,11 +54,11 @@ def main():
 
     # rank wallets in-sample
     g = IS.groupby("wallet")["own"].agg(["sum", "mean", "count"])
-    g = g[g["count"] >= MIN_IS_TRADES].sort_values("mean", ascending=False)
+    g = g[g["count"] >= MIN_IS_TRADES].sort_values("sum", ascending=False)  # SUM persists, mean doesn't
     ntop = max(5, int(len(g) * TOP_FRAC))
     top = set(g.head(ntop).index); bot = set(g.tail(ntop).index)
-    print(f"IS wallets with >={MIN_IS_TRADES} trades: {len(g)}; top/bottom {ntop} each")
-    print(f"  IS top mean own-PnL={g.head(ntop)['mean'].mean():+.4f}, "
+    print(f"IS wallets with >={MIN_IS_TRADES} trades: {len(g)}; top/bottom {ntop} each (ranked by SUM)")
+    print(f"  IS top total-PnL mean own-PnL/trade={g.head(ntop)['mean'].mean():+.4f}, "
           f"bottom={g.tail(ntop)['mean'].mean():+.4f}")
 
     # (a) persistence: OOS own-PnL of IS-top wallets

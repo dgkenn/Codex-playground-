@@ -103,3 +103,35 @@ is statistically zero (CI spans 0) and **sign-flips out-of-sample** (first half
 -2.6). Hold-to-resolution + rebate is negative. Capturing the spread for real
 needs queue-position / two-sided-fill modeling that historical trade+quote data
 cannot validate -- the lever remains genuinely unscoreable, not merely untested.
+
+## Round 4 + 5: more strategies, diagnostics-driven theses (new data: Up+Down books, alt books, wallet-attributed trades, strike ladders)
+
+No-data tests (all fail): S5 TS-momentum, S8 whale-follow (t=+0.00), S9 impact-reversion
+(large trades have PERMANENT impact, fading loses t=-5.5), D late-extreme calibration,
+E token-momentum.
+
+Acquired data + tests:
+- **S4 overround arb** (Up+Down books): Up_ask+Down_ask always >=1 (min 1.001), no
+  crossing -> no arb (book internally consistent).
+- **A strike-ladder arb** (10-strike 'above $K' ladders): MID non-monotone 43.9% of
+  snapshots (mispricing signal) but **0 crossable inversions** -> absorbed by spread.
+- **B cross-venue (Kalshi)**: archive 404, not available.
+- **S2/D3 cross-sectional reversion** (4-coin token panel): GROSS edge REAL (+0.0068/step,
+  t=+4.40; clustered slope t=-2.95) but round-trip cost ~0.10/pair (2 spreads + 4x10% fee)
+  -> NET taker -0.093 (t=-56). Killed by fees (~15x the edge).
+- **S3 / D1 market lead-lag**: alt tokens move contemporaneously with BTC token; lagged
+  coef ~0.02 (t~0.6) -> no tradeable lead-lag.
+- **Copy-the-informed-minority** (wallet-attributed trades, 628k trades / 10.8k wallets):
+  top-1% wallets capture 45.5% of positive PnL (real informed minority). Ranking by
+  per-trade ROI does NOT persist (t=0.7); ranking by TOTAL PnL **persists OOS**
+  (+0.018/trade, **t=+3.76**). BUT a realistic follower (enter +60s later, taker, 10% fee)
+  **loses -0.038/trade (t=-5.93)**: the wallets' ~1.8c/trade edge < the ~2.5c taker fee.
+
+**Unifying conclusion across all rounds:** several signals are genuinely REAL
+(cross-sectional reversion gross t=4.4; wallet-skill persistence t=3.76; ladder mid
+non-monotonicity 44%) -- but every one is smaller than the 10% taker fee + spread, so
+none is tradeable by a fee-paying taker. **The fee is the moat.** The structure is
+captured only by fee-exempt maker/price-setters (0 fee + rebate), which historical
+trade+quote data cannot score for queue position / fills. Verdict stands: no
+backtestable taker strategy survives; the only viable seat is informed market-making,
+which requires live fill data to validate.
