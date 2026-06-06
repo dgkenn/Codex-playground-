@@ -73,3 +73,33 @@ literature. The only reliable structure remains takers-lose-≈-the-fee. Across
 TWO rounds (taker fair-value + H1/H2/H3 + I1-I5), no strategy survives rigorous
 validation; the harness rejected every candidate, including the ones that looked
 significant before clustering/truncation/economic tests.
+
+## Round 3: acquired maker-rebate data + proper market-making (markout) test
+
+Acquired (Polymarket docs): makers pay 0 fees and receive a rebate ~= 20% of the
+taker fee their liquidity generates (crypto), i.e. ~0.20*0.10*p(1-p) (~0.0035/share
+here), plus a separate daily Liquidity-Rewards pool (not per-share quantifiable).
+Deribit historical option data is reachable but its daily/weekly expiries can't
+match Polymarket's 15-min strikes -> set aside.
+
+Re-tested market-making properly via MARKOUT (a real MM captures spread and
+flattens; hold-to-resolution bundles in directional risk), in-window only,
+window-clustered + size-weighted + bootstrap CI + OOS, **with rebate**:
+
+| 1s markout (+rebate) | size-wtd [95% CI] | OOS halves |
+|---|---|---|
+| MID-exit (frictionless; = mechanical half-spread) | +0.0063 [+0.0044,+0.0093] | +8.8/+4.3 |
+| CROSS-exit (pay spread to flatten; honest floor) | +0.0013 [-0.0007,+0.0043] | **-2.6/+1.3** |
+| hold-to-resolution | -0.0089 [-0.040,+0.021] | -0.0/+0.7 |
+
+Bug caught & fixed: the first markout pass omitted the in-window filter; 10,285
+pre-open + 2,610 post-close trades flipped the sign (+0.015 vs the correct
+-0.012). After fixing, hold-to-resolution reconciles with maker_sim.
+
+**Verdict: maker thesis FAILS even with rebates.** The only positive component is
+the **mechanical half-spread** (MID-exit), which is unrealizable without
+frictionless/queue-favorable fills. Under realistic flatten-by-crossing the edge
+is statistically zero (CI spans 0) and **sign-flips out-of-sample** (first half
+-2.6). Hold-to-resolution + rebate is negative. Capturing the spread for real
+needs queue-position / two-sided-fill modeling that historical trade+quote data
+cannot validate -- the lever remains genuinely unscoreable, not merely untested.
