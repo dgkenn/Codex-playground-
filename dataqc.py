@@ -318,7 +318,7 @@ def main():
     if a.selftest:
         selftest(); return
     spot_ts, spot_px = load_spot(a.spot)
-    book = load_book(a.book, a.ts_col, a.bid_col, a.ask_col, a.ts_unit)
+    book = load_book(a.book, a.ts_col, a.bid_col, a.ask_col, a.ts_unit, keep_asset=True)
     win = pd.read_parquet(a.windows) if a.windows else None
     print("=== dataqc.py ===")
     raise SystemExit(run(book, spot_ts, spot_px, win))

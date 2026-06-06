@@ -98,9 +98,15 @@ def main():
     start_dt, end_dt = _parse(args.start), _parse(args.end)
     print(f"=== fetch_pmxt.py  [{start_dt} .. {end_dt})  UTC ===")
 
-    sess = requests.Session()
-    win = discover_btc_15m_up_tokens(start_dt, end_dt, sess)
-    win.to_parquet(args.windows_out, index=False)
+    # Reuse a previous discovery if present (the Gamma step is deterministic).
+    import os
+    if os.path.exists(args.windows_out):
+        win = pd.read_parquet(args.windows_out)
+        print(f"  reusing {args.windows_out}: {len(win)} discovered windows")
+    else:
+        sess = requests.Session()
+        win = discover_btc_15m_up_tokens(start_dt, end_dt, sess)
+        win.to_parquet(args.windows_out, index=False)
 
     # Show a few slug-derived boundaries (UTC) for the manual cross-check.
     print("  sample windows (UTC start -> end):")
@@ -109,40 +115,45 @@ def main():
               f"{datetime.fromtimestamp(r.window_end,timezone.utc)}  "
               f"resolved_up={r.resolved_up}")
 
-    asset_ids = win["asset_id"].tolist()
+    asset_ids = win["asset_id"].astype(str).tolist()
     con = arch.connect()
-    parts = []
     keys = arch.hour_keys(start_dt, _parse(args.end))
-    print(f"  pulling top-of-book from {len(keys)} hourly archive files...")
+    part_dir = "data_book"
+    os.makedirs(part_dir, exist_ok=True)
+    print(f"  pulling top-of-book from {len(keys)} hourly archive files "
+          f"(streaming to disk via DuckDB COPY)...")
+    total = 0
     for k in keys:
-        df = arch.fetch_top_of_book(con, k, asset_ids)
-        if len(df):
-            parts.append(df)
-        print(f"    {k}: {len(df)} rows")
-    if not parts:
+        out = os.path.join(part_dir, f"{k}.parquet")
+        n = arch.fetch_hour_to_parquet(con, k, asset_ids, out)
+        total += max(n, 0)
+        print(f"    {k}: {n} rows", flush=True)
+    if total == 0:
         raise SystemExit("STOP: archive returned no top-of-book rows for these tokens.")
-    book = pd.concat(parts, ignore_index=True).sort_values("timestamp").reset_index(drop=True)
-    book.to_parquet(args.book_out, index=False)
 
-    # Report schema + fee, and verify the fee against the spec expectation.
-    print(f"\n  wrote {args.book_out}: {len(book)} rows")
+    n_book = arch.merge_parquets(con, os.path.join(part_dir, "*.parquet"), args.book_out)
+    print(f"\n  wrote {args.book_out}: {n_book} rows (merged {len(keys)} hours)")
+
+    # Schema from parquet metadata (no full load).
+    import pyarrow.parquet as pq
+    sc = pq.ParquetFile(args.book_out).schema_arrow
     print("  columns / dtypes:")
-    for c, t in book.dtypes.items():
-        print(f"    {c}: {t}")
-    print(f"  timestamp unit: ms (UTC)   "
-          f"range {book['timestamp'].min()} .. {book['timestamp'].max()}")
-    fee = book["fee_rate_bps"].dropna()
-    if len(fee):
-        med = float(fee.median())
-        print(f"  fee_rate_bps: median={med:.0f}  ({med/1e4:.2f})   "
-              f"distinct={sorted(fee.unique().tolist())[:6]}")
-        if abs(med - EXPECTED_FEE_BPS) > 100:
-            print(f"  *** WARNING: fee_rate_bps median {med:.0f} != expected "
-                  f"~{EXPECTED_FEE_BPS}. Real fee differs from spec; "
-                  f"run_real.py will use the ACTUAL value. ***")
+    for f in sc:
+        print(f"    {f.name}: {f.type}")
+    tmin, tmax = con.execute(
+        f"SELECT min(timestamp), max(timestamp) FROM read_parquet('{args.book_out}')").fetchone()
+    print(f"  timestamp unit: ms (UTC)   range {tmin} .. {tmax}")
+
+    # Fee lives on trade prints, not top-of-book rows: probe and VERIFY vs spec.
+    fee = arch.trade_print_fee(con, keys[len(keys) // 2], asset_ids)
+    if fee is not None:
+        print(f"  fee_rate_bps (trade prints): median={fee:.0f}  ({fee/1e4:.2f})")
+        if abs(fee - EXPECTED_FEE_BPS) > 100:
+            print(f"  *** WARNING: fee_rate_bps {fee:.0f} != spec-expected ~{EXPECTED_FEE_BPS}. "
+                  f"Market identity was verified independently (slug->conditionId->asset_id), "
+                  f"so this is the REAL fee; run_real.py uses {fee:.0f}. ***")
     else:
-        print("  fee_rate_bps: none present on top-of-book rows "
-              "(carried on trade prints; run_real.py default applies).")
+        print("  fee_rate_bps: could not probe trade prints; run_real default applies.")
 
 
 if __name__ == "__main__":

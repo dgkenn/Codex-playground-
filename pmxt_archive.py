@@ -16,10 +16,10 @@ we never download the full ~300-500 MB/hour files. CC-BY-4.0 data.
 """
 from __future__ import annotations
 
+import os
 from datetime import datetime, timedelta, timezone
 
 import duckdb
-import pandas as pd
 
 URL = "https://r2v2.pmxt.dev/polymarket_orderbook_{h}.parquet"
 TOP_OF_BOOK_EVENTS = ("price_change", "book")     # carry best_bid/best_ask
@@ -40,27 +40,67 @@ def connect():
     con = duckdb.connect()
     con.execute("INSTALL httpfs; LOAD httpfs;")
     con.execute("SET enable_progress_bar=false;")
+    # Stream to disk; never materialise the full result in memory (avoids OOM on
+    # the ~29M-row, 70-char-asset_id join).
+    con.execute("SET preserve_insertion_order=false;")
+    con.execute("SET memory_limit='10GB';")
+    con.execute("SET threads=4;")
     return con
 
 
-def fetch_top_of_book(con, hour_key, asset_ids):
-    """Return top-of-book rows for asset_ids in one hourly file (best-effort).
-
-    Missing/unreadable files return an empty frame so a gap doesn't abort a run.
-    """
-    url = URL.format(h=hour_key)
+def _id_filter(asset_ids):
     ids = ",".join("'" + a + "'" for a in asset_ids)
     evs = ",".join("'" + e + "'" for e in TOP_OF_BOOK_EVENTS)
+    return ids, evs
+
+
+def fetch_hour_to_parquet(con, hour_key, asset_ids, out_path):
+    """COPY one hour's top-of-book for asset_ids straight to a local parquet.
+
+    Returns row count, or -1 if the hourly file is missing/unreadable (so a gap
+    doesn't abort the whole run). Resumable: an existing non-empty out_path is
+    reused.
+    """
+    if os.path.exists(out_path) and os.path.getsize(out_path) > 0:
+        try:
+            return con.execute(f"SELECT count(*) FROM read_parquet('{out_path}')").fetchone()[0]
+        except Exception:
+            pass
+    url = URL.format(h=hour_key)
+    ids, evs = _id_filter(asset_ids)
     q = f"""
-        SELECT timestamp, asset_id, best_bid, best_ask, fee_rate_bps
-        FROM read_parquet('{url}')
-        WHERE asset_id IN ({ids})
-          AND event_type IN ({evs})
-          AND best_bid IS NOT NULL AND best_ask IS NOT NULL
+        COPY (
+            SELECT timestamp, asset_id, best_bid, best_ask, fee_rate_bps
+            FROM read_parquet('{url}')
+            WHERE asset_id IN ({ids})
+              AND event_type IN ({evs})
+              AND best_bid IS NOT NULL AND best_ask IS NOT NULL
+        ) TO '{out_path}' (FORMAT PARQUET);
     """
     try:
-        df = con.execute(q).df()
+        con.execute(q)
     except Exception as e:                       # noqa: BLE001 -- report and skip
         print(f"    [warn] {hour_key}: {str(e)[:120]}")
-        return pd.DataFrame(columns=["timestamp", "asset_id", "best_bid", "best_ask", "fee_rate_bps"])
-    return df
+        return -1
+    return con.execute(f"SELECT count(*) FROM read_parquet('{out_path}')").fetchone()[0]
+
+
+def merge_parquets(con, glob_path, out_path):
+    """Merge per-hour parquets into one, streaming through DuckDB (low memory)."""
+    con.execute(f"COPY (SELECT * FROM read_parquet('{glob_path}') ORDER BY timestamp) "
+                f"TO '{out_path}' (FORMAT PARQUET);")
+    return con.execute(f"SELECT count(*) FROM read_parquet('{out_path}')").fetchone()[0]
+
+
+def trade_print_fee(con, hour_key, asset_ids):
+    """Median fee_rate_bps from trade prints (fee is null on top-of-book rows)."""
+    url = URL.format(h=hour_key)
+    ids = ",".join("'" + a + "'" for a in asset_ids[:32])
+    try:
+        v = con.execute(
+            f"SELECT median(fee_rate_bps) FROM read_parquet('{url}') "
+            f"WHERE asset_id IN ({ids}) AND event_type='last_trade_price' "
+            f"AND fee_rate_bps IS NOT NULL").fetchone()[0]
+        return float(v) if v is not None else None
+    except Exception:
+        return None

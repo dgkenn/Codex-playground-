@@ -46,8 +46,17 @@ def load_spot(path):
     return ts[order], price[order]
 
 
-def load_book(path, ts_col, bid_col, ask_col, ts_unit):
-    df = pd.read_parquet(path)
+def load_book(path, ts_col, bid_col, ask_col, ts_unit, keep_asset=False):
+    """Load only the columns we need (avoids pulling 70-char asset_id strings for
+    ~29M rows into RAM unless requested)."""
+    import pyarrow.parquet as pq
+    avail = set(pq.ParquetFile(path).schema_arrow.names)
+    cols = [ts_col, bid_col, ask_col]
+    if "fee_rate_bps" in avail:
+        cols.append("fee_rate_bps")
+    if keep_asset and "asset_id" in avail:
+        cols.append("asset_id")
+    df = pd.read_parquet(path, columns=cols)
     out = pd.DataFrame({
         "ts_ms": _to_ms(df[ts_col], ts_unit),
         "bid": pd.to_numeric(df[bid_col], errors="coerce").astype(float),
@@ -55,7 +64,7 @@ def load_book(path, ts_col, bid_col, ask_col, ts_unit):
     })
     if "fee_rate_bps" in df.columns:
         out["fee_rate_bps"] = pd.to_numeric(df["fee_rate_bps"], errors="coerce")
-    if "asset_id" in df.columns:
+    if keep_asset and "asset_id" in df.columns:
         out["asset_id"] = df["asset_id"].astype(str)
     out = out.dropna(subset=["ts_ms", "bid", "ask"]).sort_values("ts_ms").reset_index(drop=True)
     return out
