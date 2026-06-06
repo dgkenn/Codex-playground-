@@ -88,8 +88,12 @@ def fetch_hour_to_parquet(con, hour_key, asset_ids, out_path):
 def merge_parquets(con, glob_path, out_path):
     """Merge per-hour parquets into one, dropping exact-duplicate top-of-book rows
     (same ts/asset/bid/ask), streaming through DuckDB (low memory)."""
+    # Cast decimal best_bid/best_ask to DOUBLE so downstream pandas reads floats,
+    # not 27M Python Decimal objects (which would blow memory).
     con.execute(
-        f"COPY (SELECT DISTINCT timestamp, asset_id, best_bid, best_ask, fee_rate_bps "
+        f"COPY (SELECT DISTINCT timestamp, asset_id, "
+        f"       CAST(best_bid AS DOUBLE) AS best_bid, CAST(best_ask AS DOUBLE) AS best_ask, "
+        f"       fee_rate_bps "
         f"FROM read_parquet('{glob_path}') ORDER BY timestamp) "
         f"TO '{out_path}' (FORMAT PARQUET);")
     return con.execute(f"SELECT count(*) FROM read_parquet('{out_path}')").fetchone()[0]

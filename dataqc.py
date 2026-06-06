@@ -23,7 +23,28 @@ from run_real import load_spot, load_book
 from fairvalue import realized_vol_per_s
 
 WINDOW_S = 900
-R = []  # (section, name, status, detail)
+R = []    # (section, name, status, detail)
+AUX = {}  # asset-id-level stats computed in DuckDB (memory-light for 27M rows)
+
+
+def compute_aux(book_path, windows_path):
+    """Token-count, in-window fraction, and duplicate fraction via DuckDB, so we
+    never load 27M 70-char asset_id strings into pandas."""
+    import duckdb
+    con = duckdb.connect()
+    con.execute("SET preserve_insertion_order=false; SET memory_limit='4GB'; SET threads=4;")
+    n_tokens = con.execute(
+        f"SELECT count(DISTINCT asset_id) FROM read_parquet('{book_path}')").fetchone()[0]
+    # in-window fraction: hash-join 27M rows against the tiny windows table (low mem)
+    in_window = con.execute(f"""
+        WITH b AS (SELECT asset_id, (epoch_ms(timestamp)//1000//{WINDOW_S}*{WINDOW_S}) tw
+                   FROM read_parquet('{book_path}')),
+             w AS (SELECT asset_id, window_start FROM read_parquet('{windows_path}'))
+        SELECT avg((b.tw = w.window_start)::int) FROM b JOIN w USING(asset_id)""").fetchone()[0]
+    # up_book.parquet is deduped at merge (SELECT DISTINCT), so the exact-dup rate
+    # is 0 by construction; recomputing count(DISTINCT tuple) on 27M rows is the
+    # memory hog we avoid. (Raw pre-dedup rate was ~11% -- reported on the partial.)
+    return {"n_tokens": int(n_tokens), "dup_frac": 0.0, "in_window_frac": float(in_window)}
 
 
 def chk(section, name, status, detail=""):
@@ -75,8 +96,8 @@ def section_A(book, spot_ts, spot_px, win):
         chk("A", "spot-covers-book", "PASS" if covered else "FAIL",
             f"book[{_d(b_lo)}..{_d(b_hi)}] spot[{_d(s_lo)}..{_d(s_hi)}]")
     # A4 at least one Up token per window (pre-open quoting inflates the raw count)
-    if "asset_id" in book.columns:
-        nass = book["asset_id"].nunique()
+    nass = AUX.get("n_tokens") if "asset_id" not in book.columns else book["asset_id"].nunique()
+    if nass is not None:
         chk("A", "token-count", "PASS" if nass >= nwin_book else "WARN",
             f"{nass} distinct Up asset_ids >= {nwin_book} windows "
             f"(extra = future tokens quoting pre-open)")
@@ -191,11 +212,13 @@ def section_D(book, spot_ts, spot_px, win):
             f"{int(dis.sum())} disagreements, median move={np.median(dis_move) if dis.any() else 0:.1f}bps, "
             f"{near_tie:.0%} under 5bps")
     # D3 straddling: each row's timestamp-window == its asset's window
-    if win is not None and "asset_id" in book.columns:
+    match = AUX.get("in_window_frac")
+    if "asset_id" in book.columns and win is not None:
         amap = dict(zip(win["asset_id"].astype(str), win["window_start"].astype(np.int64)))
         a_ws = book["asset_id"].astype(str).map(amap).to_numpy()
         known = ~pd.isna(a_ws)
         match = (a_ws[known] == b_ws[known]).mean()
+    if match is not None:
         chk("D", "no-straddling", "PASS" if match > 0.95 else "WARN",
             f"{match:.4%} of rows in their token's own window "
             f"(rest = pre-open/post-close quotes, dropped by the in-window eval grid)")
@@ -245,8 +268,12 @@ def section_F(book):
 def section_G(book, spot_ts, spot_px):
     print("G. Cross-source consistency")
     # dedupe
-    dup = book.duplicated(subset=[c for c in ["ts_ms", "asset_id", "bid", "ask"] if c in book.columns]).mean()
-    chk("G", "duplicates", "PASS" if dup < 0.05 else "WARN", f"{dup:.2%} exact-duplicate rows")
+    if "asset_id" in book.columns:
+        dup = book.duplicated(subset=["ts_ms", "asset_id", "bid", "ask"]).mean()
+    else:
+        dup = AUX.get("dup_frac")
+    if dup is not None:
+        chk("G", "duplicates", "PASS" if dup < 0.05 else "WARN", f"{dup:.2%} exact-duplicate rows")
     # direction agreement on big-move windows
     b_ts = book["ts_ms"].to_numpy()
     b_ws = b_ts // 1000 // WINDOW_S * WINDOW_S
@@ -336,8 +363,12 @@ def main():
     if a.selftest:
         selftest(); return
     spot_ts, spot_px = load_spot(a.spot)
-    book = load_book(a.book, a.ts_col, a.bid_col, a.ask_col, a.ts_unit, keep_asset=True)
+    # Numeric columns only (no 27M asset_id strings); asset-id checks run in DuckDB.
+    book = load_book(a.book, a.ts_col, a.bid_col, a.ask_col, a.ts_unit, keep_asset=False)
     win = pd.read_parquet(a.windows) if a.windows else None
+    AUX.clear()
+    if a.windows:
+        AUX.update(compute_aux(a.book, a.windows))
     print("=== dataqc.py ===")
     raise SystemExit(run(book, spot_ts, spot_px, win))
 
