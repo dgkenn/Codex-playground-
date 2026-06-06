@@ -319,3 +319,21 @@ def _median_dt_s(ts_ms):
 
 if __name__ == "__main__":
     main()
+
+
+def window_clustered_t(trades, pnl_col="pnl", win_col="win_start", weight_col=None):
+    """Honest t-stat: aggregate PnL to one value per window (trades within a
+    window share an outcome -> not independent), then t across windows."""
+    import numpy as _np
+    if len(trades) == 0:
+        return 0, float("nan"), float("nan")
+    g = trades.groupby(win_col)
+    if weight_col:
+        per = g.apply(lambda x: _np.average(x[pnl_col], weights=x[weight_col]),
+                      include_groups=False)
+    else:
+        per = g[pnl_col].mean()
+    per = per.to_numpy()
+    nw = len(per); m = per.mean(); s = per.std(ddof=1) if nw > 1 else float("nan")
+    t = m / s * _np.sqrt(nw) if s and s > 0 else float("nan")
+    return nw, m, t
