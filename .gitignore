@@ -6,3 +6,6 @@ __pycache__/
 # Large data artifacts — never commit market data dumps
 *.parquet
 *.npz
+
+# Run logs
+*.log
