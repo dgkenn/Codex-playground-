@@ -141,8 +141,11 @@ def main():
     for f in sc:
         print(f"    {f.name}: {f.type}")
     tmin, tmax = con.execute(
-        f"SELECT min(timestamp), max(timestamp) FROM read_parquet('{args.book_out}')").fetchone()
-    print(f"  timestamp unit: ms (UTC)   range {tmin} .. {tmax}")
+        f"SELECT epoch_ms(min(timestamp)), epoch_ms(max(timestamp)) "
+        f"FROM read_parquet('{args.book_out}')").fetchone()
+    print(f"  timestamp unit: ms (UTC)   range "
+          f"{datetime.fromtimestamp(tmin/1000, timezone.utc)} .. "
+          f"{datetime.fromtimestamp(tmax/1000, timezone.utc)}")
 
     # Fee lives on trade prints, not top-of-book rows: probe and VERIFY vs spec.
     fee = arch.trade_print_fee(con, keys[len(keys) // 2], asset_ids)
