@@ -111,3 +111,31 @@ def trade_print_fee(con, hour_key, asset_ids):
         return float(v) if v is not None else None
     except Exception:
         return None
+
+
+def fetch_trades_hour_to_parquet(con, hour_key, asset_ids, out_path):
+    """COPY one hour's executed trade prints (last_trade_price) for asset_ids to a
+    local parquet. Returns row count, or -1 on a missing/unreadable file.
+    Resumable: a non-empty out_path is reused.
+    """
+    if os.path.exists(out_path) and os.path.getsize(out_path) > 0:
+        try:
+            return con.execute(f"SELECT count(*) FROM read_parquet('{out_path}')").fetchone()[0]
+        except Exception:
+            pass
+    url = URL.format(h=hour_key)
+    ids = ",".join("'" + a + "'" for a in asset_ids)
+    q = f"""
+        COPY (
+            SELECT timestamp, asset_id, price, size, side, fee_rate_bps
+            FROM read_parquet('{url}')
+            WHERE asset_id IN ({ids})
+              AND event_type='last_trade_price' AND price IS NOT NULL
+        ) TO '{out_path}' (FORMAT PARQUET);
+    """
+    try:
+        con.execute(q)
+    except Exception as e:  # noqa: BLE001
+        print(f"    [warn] {hour_key}: {str(e)[:120]}")
+        return -1
+    return con.execute(f"SELECT count(*) FROM read_parquet('{out_path}')").fetchone()[0]

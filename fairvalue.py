@@ -78,15 +78,16 @@ def realized_vol_per_s(prices, dt_s):
 
 
 def fee_per_share(price, fee_bps):
-    """Polymarket-style symmetric trading fee per share.
+    """Polymarket taker fee per share (makers pay zero).
 
-    Polymarket's CLOB charges a fee proportional to the number of shares and to
-    ``min(price, 1 - price)`` -- largest near 0.50, near-zero at the extremes:
+    Per Polymarket docs the taker fee is
 
-        fee = (fee_bps / 10_000) * min(price, 1 - price)
+        fee = (fee_bps / 10_000) * price * (1 - price)
 
-    (This is an explicit modelling assumption; verify against current docs.)
+    i.e. proportional to shares and to p*(1-p) -- largest at 0.50, ~0 at the
+    extremes. Makers are not charged (and may be rebated), so maker simulations
+    pass fee_bps=0.
     """
     price = np.asarray(price, dtype=float)
-    f = (fee_bps / 10_000.0) * np.minimum(price, 1.0 - price)
+    f = (fee_bps / 10_000.0) * price * (1.0 - price)
     return float(f) if f.ndim == 0 else f
