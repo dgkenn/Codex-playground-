@@ -14,14 +14,15 @@ API = "https://data-api.polymarket.com/trades"
 def fetch_market(cid, sess):
     out, off = [], 0
     while True:
+        j = None
         for attempt in range(4):
             try:
                 j = sess.get(API, params={"market": cid, "limit": 500, "offset": off}, timeout=30).json()
                 break
             except Exception:
                 time.sleep(2 ** attempt)
-        else:
-            return out
+        if not isinstance(j, list):     # error dict / null -> stop this market
+            break
         out += j
         off += 500
         if len(j) < 500 or off > 20000:
