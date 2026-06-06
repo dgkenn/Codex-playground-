@@ -55,6 +55,8 @@ def load_book(path, ts_col, bid_col, ask_col, ts_unit):
     })
     if "fee_rate_bps" in df.columns:
         out["fee_rate_bps"] = pd.to_numeric(df["fee_rate_bps"], errors="coerce")
+    if "asset_id" in df.columns:
+        out["asset_id"] = df["asset_id"].astype(str)
     out = out.dropna(subset=["ts_ms", "bid", "ask"]).sort_values("ts_ms").reset_index(drop=True)
     return out
 
