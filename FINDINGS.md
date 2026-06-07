@@ -518,3 +518,20 @@ P&L SIGN depends on QUEUE POSITION (alpha = fraction of displayed depth ahead of
   a latency+discipline capability only the live pilot can confirm. Going-live assumption list is now
   tiny: fill rate is MEASURED (3-17% by queue position), rebate VALIDATED, tick~1c; the one open
   unknown is our achievable live queue position (alpha), which the tiny-order pilot settles.
+
+## Research loop (5 rounds, literature + tests on measured data) — no new actionable lever
+Prompted for 5 more rounds of strategy research. Literature: large-tick MM is a TIME/QUEUE-PRIORITY
+game; "1-tick spread => profit is just the rebate; 2-tick => much more" (matches our finding).
+- R1 spread-width: wide-spread windows MUCH more profitable -- corr(avg_spread,net)=+0.57 (April-14).
+- R2 time-of-day: US-active hours 12-19 UTC best (+\$8..63/win) = widest spread + thinnest queue,
+  BUT 1 day, n=4/hr -> suggestive only.
+- R3/R4 spread VALIDATED at scale: corr(spread,net)=+0.31, t=5.5 over 288 windows (wide +\$86 vs
+  narrow +\$58/win). Statistically solid window-level property.
+- R5 BUT spread-responsive SIZING (quote bigger when spread>1c) FAILS the causal paired test
+  (Δ -1.08 @2x, -2.06 @4x): the wide-spread *moments* are toxic (spread widens because informed
+  flow arrives), so sizing into them catches adverse flow. The window-level correlation does NOT
+  translate to a tradeable intra-window rule -- the SAME "looks good, doesn't translate" pattern as
+  every prior round (fill-selection, gating, mid-weighting, thin-book...).
+**Verdict: no new actionable strategy lever survives. Reconfirms the throughline -- correlations
+don't translate; selection/conditioning fails; the only lever is EXECUTION (queue priority +
+don't-churn). Alpha is exhausted; the open question is purely live queue position.**

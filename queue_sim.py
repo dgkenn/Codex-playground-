@@ -86,7 +86,7 @@ def depth_at(depth, asset, t_ms, which):
 
 
 def sim(allt, depth, alpha, Q, cap=50, skew=0.25, d_max=float("inf"), tau_lo=0.0, tau_hi=float("inf"),
-        persist=False, reprice_tol=0.0):
+        persist=False, reprice_tol=0.0, spread_boost=1.0):
     """Queue-model maker. d_max/tau = thin-book/early 'fixes'. persist=True models PERSISTENT
     resting with FIFO advancement: our queue-ahead = running-MIN displayed depth since we joined
     the level (we advance as orders ahead fill/cancel, and don't fall back when new orders queue
@@ -109,6 +109,14 @@ def sim(allt, depth, alpha, Q, cap=50, skew=0.25, d_max=float("inf"), tau_lo=0.0
                 D = 0.0
             if D > d_max:                       # too much competition ahead -> don't quote here
                 continue
+            # spread-responsive sizing (causal): quote bigger when spread > 1 tick (lit: 2-tick
+            # spread pays far more than rebate-only 1-tick). spread from measured touch prices.
+            Qeff = Q
+            if spread_boost != 1.0:
+                _, bb_p = depth_at(depth, asset, int(t_ms), "bid")
+                _, ba_p = depth_at(depth, asset, int(t_ms), "ask")
+                if bb_p is not None and ba_p is not None and (ba_p - bb_p) > 0.015:
+                    Qeff = Q * spread_boost
             if persist:                         # FIFO advancement, but a touch-price MOVE resets us
                 k = (asset, which)              # to the back (we must cancel+reprice -> lose priority)
                 moved = (tpx is not None and lastpx.get(k) is not None
@@ -122,7 +130,7 @@ def sim(allt, depth, alpha, Q, cap=50, skew=0.25, d_max=float("inf"), tau_lo=0.0
             else:
                 ahead = alpha * D
             passthrough = max(size - ahead, 0.0)
-            fill = min(passthrough, Q)
+            fill = min(passthrough, Qeff)
             if fill <= 0:
                 continue
             is_up = (tok == "U"); sells = (side == "BUY")
