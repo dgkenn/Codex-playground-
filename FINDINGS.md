@@ -488,3 +488,33 @@ tighter skew) loses more rebate than the per-share quality it buys. Selection lo
   a risk-budget choice, not new alpha. Scale cautiously, confirm live.
 - **No new tweak clears the bar; strategy stays cap50/skew0.25; cap is the only validated knob.**
   The n=32 eyeball would have shipped two significantly-worse changes -- paired n=288 caught them.
+
+## MEASURED-DEPTH QUEUE MODEL (fetch_depth.py, queue_sim.py) — the decisive fill-rate study
+Pulled TRUE touch depth from pmxt (price=best price_change events; 3.83M touch updates, April 14,
+96 windows) to replace the phi assumption with measured queue dynamics. Plus validated the rebate
+rate from the live feeSchedule: {rate:0.07, rebateRate:0.2, exponent:1, takerOnly:true} -> our
+maker_rebate(0.20*0.07*p(1-p)) is CORRECT (the 1000bps was a base-fee param, not the effective rate).
+
+P&L SIGN depends on QUEUE POSITION (alpha = fraction of displayed depth ahead of us):
+| model | fill rate | net/win | note |
+|---|---|---|---|
+| alpha=0 front (==optimistic replay) | 16-20% | +$58-72 | FANTASY: assumes always-front |
+| alpha=1 static back (never advance) | 2.9% | -$5.5 | too pessimistic: ignores FIFO advancement |
+| **realistic: FIFO advance + reprice-reset on touch moves, Q=20** | **3.7%** | **-$0.8 (~0)** | matches live paper |
+| realistic Q=50 | 5.3% | +$5.5 | bigger clip = more rebate/passthrough |
+
+- Median touch depth ~210 shares ahead; our 20-clip is tiny -> default is back-of-queue.
+- Breakeven needs alpha<=~0.12 (front ~10% of the queue). Gross is NEGATIVE at any realistic
+  position (adverse selection: behind the queue you only win the big toxic passthroughs); the
+  REBATE carries it -> consistent with "edge is rebate".
+- **Fixes TESTED:** thin-book gating (WORSE -- cuts volume), early-window (≈0, trivial volume),
+  bigger clip Q=50 (marginal +), and the dominant one: DON'T CHURN. Every reprice resets us to the
+  back; holding through small touch moves preserves FIFO priority and flips gross positive (sticky
+  reprice_tol=1-2c -> +$18..32/win IN MODEL). CAVEAT: the sticky model OVER-credits (keeps filling
+  an off-touch quote), so those are an UPPER BOUND; the realistic baseline is ~$0-5/win (rebate).
+- **The fix is EXECUTION, not strategy: queue priority + repricing discipline (layer/don't churn) +
+  quote in size.** Selection tweaks (thin-book/early/gating) all fail. Realistic expectation:
+  breakeven-to-modestly-positive, edge=rebate; true upside hinges on winning/holding queue position,
+  a latency+discipline capability only the live pilot can confirm. Going-live assumption list is now
+  tiny: fill rate is MEASURED (3-17% by queue position), rebate VALIDATED, tick~1c; the one open
+  unknown is our achievable live queue position (alpha), which the tiny-order pilot settles.
