@@ -1,12 +1,10 @@
 {
-  "start": "2026-06-07T01:44:13.989779+00:00",
+  "start": "2026-06-07T02:12:54.075589+00:00",
+  "engine": "websocket",
   "cap": 50.0,
   "post": 20.0,
   "skew_frac": 0.25,
-  "poll": 6.0,
   "fee_rate": 0.07,
-  "rebate_model": "0.20*0.07*p(1-p) per matched share",
-  "queue_model": "behind displayed size; fill on trade-through",
-  "git": "f764b7a",
+  "git": "684b500",
   "duration_s": 36000
 }
