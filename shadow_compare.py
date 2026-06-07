@@ -56,6 +56,7 @@ class Variant:
         self.post = 20.0
         self.up_inv = self.dn_inv = self.cash = self.rebate = self.delta = 0.0
         self.fills = 0
+        self.fvol = self.tvol = self.mk_buy = self.mk_sell = self.maxd = 0.0  # attribution/capacity
         self.tob = {mk["up"]: [None, 0, None, 0], mk["down"]: [None, 0, None, 0]}
         self.queue = {}
 
@@ -126,6 +127,7 @@ class Variant:
     def on_trade(self, token, side, price, size):
         if token not in self.tob:
             return
+        self.tvol += size                         # total taker volume on our tokens (fill-rate denom)
         our_side = "ASK" if side == "BUY" else "BID"
         key = (token, our_side, round(price, 3))
         ahead = self.queue.get(key)
@@ -155,10 +157,22 @@ class Variant:
         self.delta += d_per * fill
         self.rebate += fees.maker_rebate(price, rate=REBATE) * fill
         self.fills += 1
+        self.fvol += fill
+        self.mk_sell += fill if sells else 0.0; self.mk_buy += 0.0 if sells else fill
+        self.maxd = max(self.maxd, abs(self.delta))
 
     def settle(self, r):
         gross = self.cash + self.up_inv * r + self.dn_inv * (1 - r)
         return gross, gross + self.rebate
+
+    def attribution(self, r):
+        """Per-window P&L decomposition + capacity/balance fields (clustering unit = window)."""
+        gross, net = self.settle(r)
+        return {"net": round(net, 4), "gross": round(gross, 4), "rebate": round(self.rebate, 4),
+                "fills": self.fills, "fill_vol": round(self.fvol, 1), "trade_vol": round(self.tvol, 1),
+                "fill_rate": round(self.fvol / self.tvol, 4) if self.tvol else 0.0,
+                "mk_buy_vol": round(self.mk_buy, 1), "mk_sell_vol": round(self.mk_sell, 1),
+                "end_delta": round(self.delta, 1), "max_delta": round(self.maxd, 1)}
 
 
 def configs(mk, shared):
@@ -200,10 +214,10 @@ async def run(args):
             row = {"ts": now_iso(), "ws": mk2["ws"], "resolved_up": r}
             parts = []
             for v in variants2:
-                _, net = v.settle(r)
+                attr = v.attribution(r); net = attr["net"]
                 c = cum.setdefault(v.name, {"net": 0.0, "fills": 0, "windows": 0, "pos": 0})
                 c["net"] += net; c["fills"] += v.fills; c["windows"] += 1; c["pos"] += 1 if net > 0 else 0
-                row[v.name] = {"net": round(net, 4), "fills": v.fills}
+                row[v.name] = attr               # full per-window attribution (clustering unit = ws)
                 parts.append(f"{v.name}={net:+.3f}({v.fills})")
             wins_fh.write(json.dumps(row) + "\n"); wins_fh.flush()
             json.dump(cum, open(summary_path, "w"), indent=2)
