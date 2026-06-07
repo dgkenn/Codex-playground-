@@ -535,3 +535,24 @@ game; "1-tick spread => profit is just the rebate; 2-tick => much more" (matches
 **Verdict: no new actionable strategy lever survives. Reconfirms the throughline -- correlations
 don't translate; selection/conditioning fails; the only lever is EXECUTION (queue priority +
 don't-churn). Alpha is exhausted; the open question is purely live queue position.**
+
+## Alt-market research (new data: ETH/SOL/XRP trades+depth pulled from pmxt, April-14 12h)
+Tested the best remaining untested hypothesis -- "a LESS-COMPETITIVE market makes the queue-bound
+strategy viable" -- with genuinely new data (not re-mining BTC).
+- Competition IS structurally better in alts: median touch depth BTC 195 vs ETH 70 / SOL 30 / XRP 35
+  (~6x thinner), and spread>1c BTC-rare vs ETH 29% / SOL 43% / XRP 55% (XRP median 2c). Both favor
+  the maker (easier front-of-queue; wider capture).
+- BUT the realistic queue model (persist FIFO + reprice-reset, alpha=1) nets ~0 on alts too:
+  ETH +1.0 / SOL -1.6 / XRP +1.7 per win at Q=50, all |t|<1.0 (n=48/coin, 1 day). Thinner queue
+  lifts FILL RATE (8-11% vs BTC 4-5%) but lower volume => less rebate $, and gross stays negative
+  (adverse selection persists) => net washes to breakeven, same as BTC.
+**Verdict: the marginal, queue-bound, rebate-driven character is ROBUST across all 4 crypto markets.
+No market is a clear offline winner. The most promising new direction confirms the conclusion rather
+than overturning it.** Tooling: fetch_alt_depth.py, alt_fetch.py, alt_queue.py.
+
+## RESEARCH STATUS (honest, after ~14 strategy rounds + 5 loop rounds + alt batch)
+Offline strategy research is EXHAUSTED. Every lever dies or washes; the conclusion is structural and
+now confirmed across markets, timeframes, and fill models. Continuing to mine the same data risks
+multiple-testing FALSE POSITIVES (a real integrity hazard, not caution). The binding unknown is LIVE
+queue position, which no backtest resolves. The honest next step is the tiny-order live pilot, not
+more offline rounds.
