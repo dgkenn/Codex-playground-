@@ -464,3 +464,27 @@ maker rebate -> maximize rebate-qualifying VOLUME and quote MID (rebate ~ p(1-p)
 fills regardless) -> the pilot must measure queue-weighted fill rate; (4) offline $/win and the
 gross-vs-rebate split are NOT trustworthy in absolute terms -- use offline only for RELATIVE
 config comparison; the live queue numbers are the honest ones.
+
+## Tweak backtest (tweak_backtest.py) — only significant changes, on 288 historical windows
+Discipline check (after the n=32 deep-dive suggested "quote mid" / "tighten buy-side"):
+backtest each candidate tweak on the FULL 288-window tape with PAIRED per-window deltas
+(cancels shared window variance), require |t|>2.6 AND OOS-consistent to adopt.
+
+| tweak | dNet/win | paired t | verdict |
+|---|---|---|---|
+| cap100 (raise cap) | +18.76 | +9.03 | only net-raiser (>half is rebate=transfers) |
+| skew0.15 / skew0.40 | -0.42 / -0.54 | -0.72 / -1.11 | n.s. -- "tighter skew helps" was NOISE |
+| cap25 | -16.98 | -10.2 | worse |
+| mid_weighted sizing | -14.26 | -8.04 | **significantly WORSE** |
+| buy_half / buy_off | -3.48 / -13.06 | -7.1 / -13.4 | **significantly WORSE** |
+| skip_extremes | -13.43 | -5.78 | worse |
+
+**Both n=32 deep-dive ideas FAIL: "quote mid for rebate" and "tighten the toxic buy-side" are
+significantly WORSE.** Reason = throughline restated: edge is rebate, rebate ∝ VOLUME, so any
+selection that cuts volume (mid-weighting shrinks every clip; dropping buys; skipping extremes;
+tighter skew) loses more rebate than the per-share quality it buys. Selection loses; volume wins.
+- The ONLY significant net-raiser is **raising the cap** (more qualifying volume -> more rebate),
+  but that's the known CAPACITY DIAL (cap_tail: higher cap = more $, lower risk-adjusted Sharpe),
+  a risk-budget choice, not new alpha. Scale cautiously, confirm live.
+- **No new tweak clears the bar; strategy stays cap50/skew0.25; cap is the only validated knob.**
+  The n=32 eyeball would have shipped two significantly-worse changes -- paired n=288 caught them.
