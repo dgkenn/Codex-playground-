@@ -1,0 +1,72 @@
+# WATCHDOG: independent self-healing collector. Runs on its OWN schedule (offset from
+# paper-collect) and ONLY collects if data has gone stale (last gha_data commit > 45 min ago),
+# so it fills gaps when paper-collect's schedule is dropped -- without double-collecting when
+# healthy. Two independent schedules => a single dropped cron no longer stalls collection.
+# (Note: if GitHub drops ALL scheduled events, only the PAT self-chain in paper-collect.yml
+# keeps it continuous -- add the DISPATCH_PAT secret for guaranteed unattended uptime.)
+name: paper-watchdog
+
+on:
+  schedule:
+    - cron: '15,45 * * * *'      # offset 15 min from paper-collect's :00/:30
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: paper-watchdog
+  cancel-in-progress: false
+
+env:
+  BRANCH: claude/polymarket-btc-backtest-XZkKI
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: claude/polymarket-btc-backtest-XZkKI
+          fetch-depth: 5
+      - name: stale check
+        id: chk
+        run: |
+          last=$(git log -1 --format=%ct -- gha_data/ 2>/dev/null || echo 0)
+          age=$(( $(date +%s) - last ))
+          echo "last gha_data commit ${age}s ago"
+          # stale if no gha_data commit in 45 min (collector likely not running)
+          if [ "$age" -lt 2700 ]; then echo "healthy -> exit"; echo "stale=0" >> "$GITHUB_OUTPUT";
+          else echo "STALE -> self-heal"; echo "stale=1" >> "$GITHUB_OUTPUT"; fi
+      - uses: actions/setup-python@v5
+        if: steps.chk.outputs.stale == '1'
+        with:
+          python-version: '3.12'
+      - name: install deps
+        if: steps.chk.outputs.stale == '1'
+        run: pip install --quiet numpy scipy requests websockets
+      - name: self-heal collect ~35 min (only when stale)
+        if: steps.chk.outputs.stale == '1'
+        run: |
+          git config user.name  "watchdog-bot"
+          git config user.email "watchdog-bot@users.noreply.github.com"
+          mkdir -p gha_data
+          incr () {
+            git add gha_data/ 2>/dev/null || return 0
+            git diff --cached --quiet && return 0
+            git commit -q -m "gha: WATCHDOG self-heal r${{ github.run_id }} ($(date -u +%H:%MZ))" || return 0
+            git push -q origin "HEAD:$BRANCH" 2>/dev/null || true
+          }
+          ( for k in 1 2 3; do sleep 600; incr; done ) &
+          LOOP=$!
+          timeout 2100 python -u shadow_compare.py --duration 2040 \
+            --tag "wd${{ github.run_id }}" --out-dir gha_data || true
+          kill $LOOP 2>/dev/null || true
+          python aggregate_shadow.py > gha_data/SUMMARY.txt 2>/dev/null || true
+          git add gha_data/ 2>/dev/null || true
+          git diff --cached --quiet || git commit -q -m "gha: WATCHDOG self-heal r${{ github.run_id }} final"
+          for i in 1 2 3 4 5; do
+            git pull --rebase --autostash -q origin "$BRANCH" && git push -q origin "HEAD:$BRANCH" && break
+            sleep $((RANDOM % 6 + 2))
+          done
