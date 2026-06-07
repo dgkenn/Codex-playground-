@@ -1,16 +1,18 @@
 # Self-healing paper-data collector on GitHub Actions (public repo => free). Container-independent.
-# CONTINUITY layers (GitHub's `schedule` is best-effort and drops runs):
-#   1) schedule every 30 min (seed + backup)
-#   2) workflow_run CHAIN: paper-collect finishes -> paper-collect-chain (no-op) fires -> its
-#      completion re-triggers paper-collect => continuous ping-pong, scheduler-INDEPENDENT, no PAT.
-#   3) paper-watchdog.yml = independent collect-if-stale (covers a broken chain + dropped crons)
-#   4) optional PAT self-chain (DISPATCH_PAT secret) = guaranteed even in a total scheduler outage
-# OBSERVABILITY: each run writes gha_data/HEARTBEAT_*.json and (if HEARTBEAT_URL secret set) pings an
-# external dead-man's-switch that ALERTS you if collection stops -- the only check that survives a
-# full GitHub outage. Incremental commits every ~10 min (crash-safe), unique files (no conflicts).
+# CONTINUITY layers (GitHub's `schedule` is best-effort and slow to (re)activate after edits):
+#   0) push to main = immediate, reliable SEED (no activation delay) -> starts the chain
+#   1) schedule every 30 min (backup)
+#   2) workflow_run CHAIN: paper-collect -> paper-collect-chain (no-op) -> back to paper-collect
+#      => continuous ping-pong, scheduler-INDEPENDENT, no PAT
+#   3) paper-watchdog.yml = independent collect-if-stale
+#   4) optional DISPATCH_PAT secret = guaranteed self-dispatch even in a total scheduler outage
+# OBSERVABILITY: gha_data/HEARTBEAT_*.json + optional HEARTBEAT_URL external dead-man's-switch.
+# Incremental commits every ~10 min (crash-safe), unique files (no conflicts).
 name: paper-collect
 
 on:
+  push:
+    branches: [main]            # immediate seed on any main commit (reliable; no schedule delay)
   schedule:
     - cron: '*/30 * * * *'
   workflow_dispatch: {}
@@ -28,7 +30,7 @@ concurrency:
 
 env:
   BRANCH: claude/polymarket-btc-backtest-XZkKI
-  HEARTBEAT_URL: ${{ secrets.HEARTBEAT_URL }}    # optional external dead-man's-switch (healthchecks.io)
+  HEARTBEAT_URL: ${{ secrets.HEARTBEAT_URL }}
 
 jobs:
   collect:
