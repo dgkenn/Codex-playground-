@@ -69,7 +69,10 @@ def main():
     for horizon in (5, 30):
         mks = []
         for f in fills:
-            m = mid_at(f["token"], ts(f["ts"]) + horizon)
+            pfx = f.get("token") or str(f.get("asset", ""))[:12]   # WS uses 'token', polling used 'asset'
+            if not pfx:
+                continue
+            m = mid_at(pfx, ts(f["ts"]) + horizon)
             if m is None:
                 continue
             # taker BUY -> we SOLD (short): favorable if mid falls; taker SELL -> we BOUGHT (long)
