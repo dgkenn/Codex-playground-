@@ -5,7 +5,9 @@
 #      completion re-triggers paper-collect => continuous ping-pong, scheduler-INDEPENDENT, no PAT.
 #   3) paper-watchdog.yml = independent collect-if-stale (covers a broken chain + dropped crons)
 #   4) optional PAT self-chain (DISPATCH_PAT secret) = guaranteed even in a total scheduler outage
-# Each run: incremental commits every ~10 min (crash-safe) of UNIQUE files (gha_data/shadow_windows_r*).
+# OBSERVABILITY: each run writes gha_data/HEARTBEAT_*.json and (if HEARTBEAT_URL secret set) pings an
+# external dead-man's-switch that ALERTS you if collection stops -- the only check that survives a
+# full GitHub outage. Incremental commits every ~10 min (crash-safe), unique files (no conflicts).
 name: paper-collect
 
 on:
@@ -13,7 +15,7 @@ on:
     - cron: '*/30 * * * *'
   workflow_dispatch: {}
   workflow_run:
-    workflows: ["paper-collect-chain"]   # bounced back here -> continuous chain (no PAT needed)
+    workflows: ["paper-collect-chain"]
     types: [completed]
 
 permissions:
@@ -26,6 +28,7 @@ concurrency:
 
 env:
   BRANCH: claude/polymarket-btc-backtest-XZkKI
+  HEARTBEAT_URL: ${{ secrets.HEARTBEAT_URL }}    # optional external dead-man's-switch (healthchecks.io)
 
 jobs:
   collect:
@@ -69,8 +72,6 @@ jobs:
         env:
           PAT: ${{ secrets.DISPATCH_PAT }}
         run: |
-          # Built-in GITHUB_TOKEN dispatch does NOT start a run (anti-recursion); the workflow_run
-          # CHAIN handles continuity without a PAT. If a PAT is present, also direct-dispatch (belt).
           if [ -n "$PAT" ]; then
             curl -s -X POST -H "Authorization: Bearer $PAT" -H "Accept: application/vnd.github+json" \
               "https://api.github.com/repos/${{ github.repository }}/actions/workflows/paper-collect.yml/dispatches" \
