@@ -4,6 +4,17 @@
 2026-04-14 → 2026-04-17 UTC (post-Jan-2026 fee regime). Market discovery via
 Gamma (`btc-updown-{tf}-<utc_ts>`). READ-ONLY; no orders, no trading keys.
 
+## THE THROUGHLINE (read this first)
+Every lever that tried to be **clever about which fills to take, hedge, or forecast DIED**:
+taker signals (fee is the moat), fill-selection / markout-toxicity gating, alpha-skew,
+fair-value fill gating, the delta-hedge, and predictive-repricing's prediction channel. The
+levers that **survived are the boring structural ones**: quote both sides, stay flat with a
+cheap inventory skew, **size more**, **capture more markets**, win the queue. This is the
+strategy telling you what it *is* — a thin, structural, capacity-bound liquidity edge that
+rewards being bigger/broader/faster, **not smarter**. The experiments below prove that's the
+shape of the edge, not a failure of imagination. Corollary for effort allocation: spend it on
+**capacity and execution**, not on signal research.
+
 ## Data quality (dataqc.py) — PASS
 - Window boundaries are **UTC, 900-s aligned** (slug ts %900==0, endDate=start+900);
   the ET in titles is cosmetic. No UTC/ET offset.
@@ -325,12 +336,14 @@ the target).
 - **OLS R^2 = 0.0035; corr(prediction, drift) = 0.059** -- all of it the weak `fair_edge`
   signal (corr -0.059) that ALREADY failed fill-selection. **BTC 30s momentum corr = 0.0004**
   (zero -- past moves don't forecast within-window drift; market efficient). tau corr 0.005.
-- => The drift is NOT quote-time predictable. #4 CANNOT PRE-POSITION against it; the prediction
-  channel inherits exactly the weak-signal problem that retired gating. #4's ONLY remaining
-  channel is the LATENCY RACE (react to a CONTEMPORANEOUS spot move faster than the taker -- not
-  a forecast), scoreable solely by the live reprice_log, against the <=$2k ceiling and the
-  queue-position cost of every cancel. **#4 is a marginal, possibly-zero lever -- build it as a
-  measurement, not a bet.**
+- => **#4 prediction channel is CLOSED, not deferred.** The within-window adverse drift is not
+  predictable from ANY quote-time-observable feature tested (R^2~=0.003, entirely a signal that
+  already failed elsewhere; momentum forecast power 0.0004 == absent, not weak). Predictive
+  repricing has NO forecasting channel. Only the LATENCY-RACE channel survives -- react to a
+  CONTEMPORANEOUS spot move faster than the taker (not a forecast) -- scoreable solely live, and
+  bounded by a <=$2k ceiling that perfect foresight wouldn't beat, net of the queue position
+  every cancel forfeits. Three doors shut at once: prediction is dead, the ceiling is measured,
+  the one live channel is named with its bound attached.
 
 ### Raising the cap -- tail check (cap_tail.py)
 Is the cap-50->400 lift ($18.5k->$33.8k) scaled edge or a few lucky terminal settlements?
@@ -340,8 +353,15 @@ Is the cap-50->400 lift ($18.5k->$33.8k) scaled edge or a few lucky terminal set
 - **Bounded caveat:** the INCREMENTAL gain has mild terminal-move concentration -- top-10
   windows = 31% of the gain; top-decile-|move| windows contribute 20.6% (2x their 10% share);
   corr(incremental, |terminal move|) = +0.137.
-- **Verdict: raise the cap (it scales edge), but MODERATELY (toward 100-200, not 400);** the
-  incremental gain thins and concentrates into big-move settlements as the cap climbs.
+- **Cap frontier (the refinement): jackknife Sharpe peaks at cap~5 (1.95) and DECREASES
+  MONOTONICALLY** with cap (1.66@50, 1.34@100, 1.17@200, 1.01@400) -- there is NO interior
+  optimum. The cap is a pure CAPACITY DIAL: more $tot ($4.6k@5 -> $33.8k@400) for less
+  luck-adjusted Sharpe, smoothly, with NO cliff (pos% >=93% throughout). So "maximize jackknife
+  Sharpe" => run tiny; the real decision is WHERE TO SIT on a smooth Sharpe-vs-capacity frontier
+  given capital + risk budget.
+- **Verdict: the cap is a risk-budget choice, not an optimization. For the live pilot START
+  SMALL (cap~25-50: jackknife Sharpe ~1.5-1.7, validates fills/queue) and CLIMB the frontier as
+  fills/queue confidence and capital grow -- each step trades measured Sharpe for $, no cliff.**
 
 ## ROADMAP #2 — Liquidity Rewards stream (TESTED, REDIRECTED: $0 on our market)
 `rewards.py` (config reader + screener + live-book share estimator).

@@ -49,6 +49,16 @@ def main():
         se = px[np.clip(np.searchsorted(ts_ms, int(wend[w]) * 1000, "right") - 1, 0, len(px) - 1)]
         term[w] = abs(np.log(se / s0))
 
+    # --- cap frontier: jackknife Sharpe (drop best 5) vs total $; find any interior optimum ---
+    print("cap frontier (jackknife Sharpe = drop best-5 windows; the luck-discounted metric):")
+    print(f"  {'cap':>5} {'$tot':>9} {'mean$/w':>8} {'rawSharpe':>10} {'jkSharpe':>9} {'pos%':>6}")
+    for cap in [5, 10, 25, 50, 100, 150, 200, 300, 400]:
+        a = np.array(list(per_window(cols, bounds, res, ts_ms, px, cap).values()))
+        print(f"  {cap:>5} {a.sum():>9,.0f} {a.mean():>8.2f} {sh(a):>10.3f} "
+              f"{sh(np.sort(a)[:-5]):>9.3f} {(a>0).mean():>6.1%}")
+    print("  -> jackknife Sharpe is MONOTONE DECREASING from cap~5; no interior optimum. The cap is"
+          " a capacity dial: more $ for less (luck-adjusted) Sharpe, smoothly, no cliff.\n")
+
     p50 = per_window(cols, bounds, res, ts_ms, px, 50)
     p400 = per_window(cols, bounds, res, ts_ms, px, 400)
     wins = list(bounds)
