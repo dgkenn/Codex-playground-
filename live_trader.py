@@ -91,6 +91,7 @@ def main():
     notify.alert(f"[pmkit] live_trader start mode={mode} cap={a.cap} skew={a.skew} max_notional=${a.max_notional}")
 
     net_delta = 0.0; realized = 0.0; mk = None
+    seen_fills = set(); fills_markout = []   # per-fill markout (adverse-selection experiment)
     end = time.time() + a.duration
     while time.time() < end:
         try:
@@ -134,11 +135,39 @@ def main():
                             order_type=OrderType.GTC)
                     else:
                         print(f"  [DRY] {side} {a.post} {'UP' if is_up else 'DN'} @ {price}")
-            # reconcile fills -> update net_delta & realized (live only)
+            # reconcile fills -> per-fill MARKOUT + net_delta (THE experiment: is captured
+            # flow net-positive after adverse selection?). Logs live_markout.jsonl.
             if live:
-                trades = client.get_trades()  # your fills; map to delta/realized in your accounting
-                # TODO: maintain net_delta and realized from trades + settlement; cancel stale quotes
-                client.cancel_all()           # simple refresh-each-loop; replace with diff logic
+                try:
+                    trades = client.get_trades()  # your fills (SDK schema)
+                except Exception:
+                    trades = []
+                for t in (trades or []):
+                    tid = t.get("id") or t.get("transaction_hash") or str(t)
+                    if tid in seen_fills:
+                        continue
+                    seen_fills.add(tid)
+                    asset = str(t.get("asset_id") or t.get("asset") or "")
+                    fside = (t.get("side") or "").upper()           # YOUR side as maker
+                    fprice = float(t.get("price", 0)); fsize = float(t.get("size", 0))
+                    is_up_tok = (asset == mk["up"])
+                    d_sign = 1.0 if is_up_tok else -1.0
+                    # maker BUY -> +size of token (long); SELL -> -size
+                    net_delta += d_sign * (fsize if fside == "BUY" else -fsize)
+                    bb2, ba2 = top(sess, asset); mid2 = (bb2 + ba2) / 2 if bb2 and ba2 else fprice
+                    # markout: BUY favorable if mid rises; SELL favorable if mid falls
+                    mo = (mid2 - fprice) if fside == "BUY" else (fprice - mid2)
+                    fills_markout.append(mo)
+                    import json as _j
+                    open("live_markout.jsonl", "a").write(_j.dumps(
+                        {"ts": time.time(), "asset": asset[:12], "side": fside, "price": fprice,
+                         "size": fsize, "mid_after": mid2, "markout": mo, "net_delta": net_delta}) + "\n")
+                # adverse-selection kill: if recent markout is persistently negative, you're toxic
+                if len(fills_markout) >= 30 and sum(fills_markout[-30:]) / 30 < -0.01:
+                    print("KILL: rolling markout < -0.01 (toxic flow). cancel-all + exit.")
+                    notify.alert("[pmkit] KILL markout toxic (<-0.01); cancelled all + exit")
+                    client.cancel_all(); break
+                client.cancel_all()           # refresh quotes each loop (replace w/ diff logic later)
             time.sleep(a.poll)
         except KeyboardInterrupt:
             if live:
