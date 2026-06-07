@@ -1,13 +1,13 @@
-shadow comparison over 13 de-duped windows | files=5
+shadow comparison over 16 de-duped windows | files=6
 
      variant  net_total    n  net/win  Δvs base/win  paired t
-  micro_gate    +129.01   13   +9.924        +7.711     +2.92
-      skew15     +48.95   13   +3.766        +1.553     +1.23
-     fv_size     +48.87   13   +3.759        +1.546     +1.68
-     predict     +47.71   13   +3.670        +1.457     +0.58
-       cap25     +45.33   13   +3.487        +1.274     +1.18
-      cap100     +34.22   13   +2.632        +0.419     +0.31
-    baseline     +28.76   13   +2.213                        
+  micro_gate    +149.71   16   +9.357        +7.472     +3.46
+      skew15     +55.14   16   +3.446        +1.561     +1.40
+       cap25     +55.12   16   +3.445        +1.560     +1.61
+     fv_size     +50.32   16   +3.145        +1.260     +1.64
+     predict     +39.61   16   +2.476        +0.590     +0.28
+    baseline     +30.17   16   +1.885                        
+      cap100     +29.47   16   +1.842        -0.043     -0.04
 
-Read: paired t is the variant's per-window edge OVER baseline (shared windows). |t|>2 ~ notable, |t|>2.6 ~ solid; n=13 so anything below that is still noise.
+Read: paired t is the variant's per-window edge OVER baseline (shared windows). |t|>2 ~ notable, |t|>2.6 ~ solid; n=16 so anything below that is still noise.
 Totals alone mislead -- they ride the shared window outcomes; the paired column is the signal.
