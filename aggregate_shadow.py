@@ -17,8 +17,12 @@ import math
 
 
 def main():
-    files = sorted(set(glob.glob("gha_data/shadow_windows_*.jsonl") +
-                       glob.glob("shadow_windows*.jsonl")))
+    # Canonical live corpus = the run-tagged GHA files only. The bare root-level
+    # shadow_windows.jsonl is a pre-GHA local smoke test (different session/regime);
+    # pooling it with the live run would contaminate inference, so it is excluded.
+    files = sorted(glob.glob("gha_data/shadow_windows_r*.jsonl"))
+    if not files:                                   # local fallback when no GHA data yet
+        files = sorted(glob.glob("shadow_windows*.jsonl"))
     by_ws = {}                          # ws -> {variant: net}; dedupe windows across runs
     for fp in files:
         for line in open(fp):
