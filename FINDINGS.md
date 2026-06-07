@@ -211,3 +211,16 @@ config can be re-simulated offline from the prospective tape.
   config is robust. Tighter skew (0.15) marginally better than 0.25 (Sharpe-vs-$ knob).
 - Time sub-period stability (deploy cfg cap=50/skew=0.25): net positive & significant in
   all thirds (t=20.6 / 25.2 / 7.9). Edge is not a single-period blip.
+
+## Self-improvement loop — iterations 2-5
+- iter2 flow-imbalance filter: marginal (OOS t +0.4 at -16% volume); skew already absorbs
+  adverse selection -> REJECT (keep simple).
+- iter3 capture-fraction realism: per-share edge ~invariant (slightly higher at low capture);
+  $ scales ~linearly with captured volume (f=10%~$1.2k/day @645k sh/day; f=5%~$660/day).
+  Confirms: edge/share solid, absolute $ is a capacity/queue game ($100 -> tiny f -> tiny $).
+- iter4 bake-off + bootstrap CIs: ALL configs have net AND gross-only(zero-rebate) 95% CIs
+  strictly >0 -> edge is rebate-INDEPENDENT. Tight skew lets cap rise with $0 drawdown.
+- FRONTIER (skew controls risk, cap sets size): cap=20/skew=1 (net CI[.00055,.00066], DD$1);
+  cap=50/skew=0.25 (net CI[.00087,.00105], DD$7); cap=100/skew=0.15 (net CI[.00111,.00136], DD$0).
+- DEPLOY: start cap=50/skew=0.25; scale toward cap=100/skew=0.15. Price filter & flow filter
+  rejected. Edge = tight-inventory 2-sided vig (gross-positive, rebate-independent) + rebate.

@@ -68,3 +68,13 @@ stop-quoting-late both reduced the edge (the 2-sided vig scales with captured vo
 Deploy tiny → if paper shows gross ≈ 0 (or better), realized rebate ≥ ~50% of model,
 and fill rate sufficient for positive net → scale cautiously. If gross is materially
 negative or rebate << model → stop.
+
+### Config frontier (skew=risk knob, cap=size knob; all gross-only CIs >0)
+| config | net OOS t | net 95% CI | maxDD |
+|---|---|---|---|
+| cap=20 skew=1.0 | 11.5 | [.00055,.00066] | $1 |
+| **cap=50 skew=0.25 (start)** | 11.0 | [.00087,.00105] | $7 |
+| cap=100 skew=0.15 (scale) | 10.8 | [.00111,.00136] | $0 |
+Edge is gross-positive WITHOUT the rebate across all (rebate-independent). $ scales with
+captured volume (queue-dependent): ~$1.2k/day at 10% capture, tiny at $100. Flow-filter and
+near-0.5 price-filter were tested and REJECTED (hurt net).
