@@ -35,25 +35,30 @@ jobs:
           python-version: '3.12'
       - name: install deps
         run: pip install --quiet numpy scipy requests websockets
-      - name: collect ~48 min with incremental commits (crash-safe)
+      - name: collect ~47 min with incremental commits (crash-safe)
         run: |
           git config user.name  "paper-bot"
           git config user.email "paper-bot@users.noreply.github.com"
           mkdir -p gha_data
-          commit_push () {
+          # INCREMENTAL: plain add/commit/push only -- never touches the working tree while the
+          # collector is appending (no rebase/autostash mid-write => no corruption). A non-ff
+          # push just fails harmlessly; the final flush reconciles.
+          incr () {
             git add gha_data/ 2>/dev/null || return 0
             git diff --cached --quiet && return 0
             git commit -q -m "gha: paper-collect r${{ github.run_id }} ($(date -u +%H:%MZ))" || return 0
-            for i in 1 2 3 4 5; do
-              git pull --rebase --autostash -q origin "$BRANCH" && git push -q origin "HEAD:$BRANCH" && break
-              sleep $((RANDOM % 6 + 2))
-            done
+            git push -q origin "HEAD:$BRANCH" 2>/dev/null || true
           }
-          # background: commit whatever has accrued every 10 min (crash-safe checkpoints)
-          ( for k in 1 2 3 4; do sleep 600; commit_push; done ) &
+          ( for k in 1 2 3 4; do sleep 600; incr; done ) &
           LOOP=$!
-          timeout 2880 python -u shadow_compare.py --duration 2820 \
+          timeout 2820 python -u shadow_compare.py --duration 2760 \
             --tag "r${{ github.run_id }}" --out-dir gha_data || true
           kill $LOOP 2>/dev/null || true
           python aggregate_shadow.py > gha_data/SUMMARY.txt 2>/dev/null || true
-          commit_push                 # final flush
+          # FINAL flush: collector has exited, so rebase-retry is safe (reconciles any race).
+          git add gha_data/ 2>/dev/null || true
+          git diff --cached --quiet || git commit -q -m "gha: paper-collect r${{ github.run_id }} final"
+          for i in 1 2 3 4 5; do
+            git pull --rebase --autostash -q origin "$BRANCH" && git push -q origin "HEAD:$BRANCH" && break
+            sleep $((RANDOM % 6 + 2))
+          done
