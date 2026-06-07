@@ -1,7 +1,50 @@
 {
-  "utc": "2026-06-07T19:53:05.434015+00:00",
+  "utc": "2026-06-07T20:02:05.574901+00:00",
   "tag": "r27102054618",
   "status": "running",
-  "settled_windows": 0,
-  "cum": {}
+  "settled_windows": 1,
+  "cum": {
+    "baseline": {
+      "net": 1.2967,
+      "fills": 48,
+      "windows": 1,
+      "pos": 1
+    },
+    "cap25": {
+      "net": 3.0957,
+      "fills": 37,
+      "windows": 1,
+      "pos": 1
+    },
+    "cap100": {
+      "net": 2.0592,
+      "fills": 52,
+      "windows": 1,
+      "pos": 1
+    },
+    "skew15": {
+      "net": 3.0957,
+      "fills": 37,
+      "windows": 1,
+      "pos": 1
+    },
+    "fv_size": {
+      "net": 1.2967,
+      "fills": 48,
+      "windows": 1,
+      "pos": 1
+    },
+    "micro_gate": {
+      "net": 1.297,
+      "fills": 36,
+      "windows": 1,
+      "pos": 1
+    },
+    "predict": {
+      "net": 1.2967,
+      "fills": 48,
+      "windows": 1,
+      "pos": 1
+    }
+  }
 }
