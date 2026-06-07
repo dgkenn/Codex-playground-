@@ -1,0 +1,52 @@
+# Paper-trading candidate: inventory-capped 2-sided maker (rebate farming)
+
+## Strategy
+On Polymarket **BTC 15-minute Up/Down** markets, continuously **quote both the Up and
+Down tokens** at/near the touch (provide liquidity, never cross). Maintain a **net
+inventory cap** in Up-equivalent units (long Up = +1, long Down = −1, since Up+Down=1):
+when a fill would push |net delta| past the cap, **withdraw/skew the breaching side**
+(quote only the inventory-reducing side). Hold residual inventory to the 15-min
+resolution (residual is bounded by the cap).
+
+Recommended start: **cap ≈ 100 Up-equivalent shares** (risk/Sharpe knob — see table).
+
+## Why it works (and the honest source of the edge)
+- **Makers pay 0 fees and earn a ~20% rebate** of the taker fees their liquidity
+  generates (crypto). Takers pay 0.07·p·(1−p).
+- Quoting **both sides** is naturally delta-hedged on matched flow (the ~2–3c
+  overround is captured risk-free); the **inventory cap** bounds the directional risk
+  from imbalanced/informed flow.
+- **The net edge IS the rebate.** Backtest decomposition (cap=100): gross trading
+  PnL ≈ **+0.00007/share (t=0.81, breakeven)**; the rebate turns it to **+0.00098/share
+  net (t=12.2)**. It is a market-neutral *yield* strategy, not directional alpha.
+
+## Backtest evidence (Apr 14–16 2026, 288 windows; extended set confirming)
+| cap | net/share | t | IS / OOS t |
+|---|---|---|---|
+| 25 | +0.00066 | +19.2 | 23.1 / 10.6 |
+| 100 | +0.00098 | +12.2 | 12.2 / 7.4 |
+| 400 | +0.00133 | +7.7 | 5.7 / 5.4 |
+- Robust: positive & significant **out-of-sample**, and survives a **50% rebate
+  haircut** (cap=100 OOS t=4.3). Model is counterparty to *all* realized flow, i.e.
+  worst-case adverse selection — gross is conservatively estimated.
+
+## What paper trading must measure (the live unknowns the backtest CANNOT settle)
+1. **Fill rate / queue position** — backtest assumes you are the counterparty to flow;
+   live you capture only a fraction. Log fills vs quotes-posted and queue depth.
+2. **Realized rebate** — the 20% is a pool split pro-rata among makers; measure the
+   actual rebate/USDC received vs taker fees your fills generated.
+3. **Adverse-selection weighting** — do you get filled *more* on the toxic side than
+   the proportional model assumes? Track per-fill 30s markout.
+4. **Gross PnL must stay ≈ 0** — there is **no cushion**; if gross goes meaningfully
+   negative, the rebate won't cover it.
+
+## Risks / boundaries
+- Edge is **policy-dependent** (Polymarket can change the rebate) — single point of failure.
+- **Capacity** limited by captured volume (tight cap → small \$, high Sharpe).
+- Requires **low-latency quoting** to win the queue; otherwise fill rate (and rebate) collapse.
+- Not directional alpha — do not expect it to survive without the rebate.
+
+## Go/no-go for live capital
+Deploy tiny → if paper shows gross ≈ 0 (or better), realized rebate ≥ ~50% of model,
+and fill rate sufficient for positive net → scale cautiously. If gross is materially
+negative or rebate << model → stop.
