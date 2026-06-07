@@ -8,7 +8,7 @@ when a fill would push |net delta| past the cap, **withdraw/skew the breaching s
 (quote only the inventory-reducing side). Hold residual inventory to the 15-min
 resolution (residual is bounded by the cap).
 
-Recommended start: **tight cap ≈ 20 Up-equivalent shares** (refined optimum — see below).
+Recommended start: **cap ≈ 50 with inventory skew 0.25** (refined optimum — see below).
 
 ### Refinement (tested): tight inventory cap removes rebate-dependence
 A **tight** cap makes the trading edge positive *before* any rebate (pure vig capture with

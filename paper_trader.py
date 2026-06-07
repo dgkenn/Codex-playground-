@@ -77,8 +77,9 @@ def resolve(sess, ws):
 
 
 class Book2Sided:
-    def __init__(self, mk, cap, post, fills_fh):
+    def __init__(self, mk, cap, post, fills_fh, skew_frac=0.25):
         self.mk = mk; self.cap = cap; self.post = post; self.fills_fh = fills_fh
+        self.skew_frac = skew_frac
         self.up_inv = self.dn_inv = self.cash = self.rebate = self.delta = 0.0
         self.fills = 0; self.n_snaps = 0; self.n_trades = 0
         self.queue = {}; self.seen = set()
@@ -122,6 +123,9 @@ class Book2Sided:
             return 0.0
         fill = min(passthrough, self.post)
         d_per = (-1.0 if (is_up == (taker_side == "BUY")) else 1.0)
+        # inventory skew: stop quoting the leaning side once |delta| >= skew_frac*cap
+        if abs(self.delta) >= self.skew_frac * self.cap and (self.delta * d_per) > 0:
+            return 0.0
         if abs(self.delta + d_per * fill) > self.cap:
             room = max(0.0, self.cap - abs(self.delta)) if (self.delta + d_per * fill) * d_per > 0 else fill
             fill = min(fill, room)
@@ -156,13 +160,14 @@ def main():
     ap.add_argument("--duration", type=int, default=120)
     ap.add_argument("--cap", type=float, default=20)
     ap.add_argument("--post", type=float, default=20)
+    ap.add_argument("--skew", type=float, default=0.25, help="skew/flatten once |delta|>=skew*cap")
     ap.add_argument("--poll", type=float, default=6.0)
     a = ap.parse_args()
     sess = requests.Session()
     log = open("paper_trades.log", "a")
     book_fh = open("audit_book.jsonl", "a"); trades_fh = open("audit_trades.jsonl", "a")
     fills_fh = open("audit_fills.jsonl", "a"); win_fh = open("audit_windows.jsonl", "a")
-    json.dump({"start": now_iso(), "cap": a.cap, "post": a.post, "poll": a.poll,
+    json.dump({"start": now_iso(), "cap": a.cap, "post": a.post, "skew_frac": a.skew, "poll": a.poll,
                "fee_rate": REBATE_RATE, "rebate_model": "0.20*0.07*p(1-p) per matched share",
                "queue_model": "behind displayed size; fill on trade-through",
                "git": git_commit(), "duration_s": a.duration}, open("audit_meta.json", "w"), indent=2)
@@ -207,7 +212,7 @@ def main():
                 mk = active_market(sess)
                 if mk is None:
                     settle_pending(); time.sleep(a.poll); continue
-                state = Book2Sided(mk, a.cap, a.post, fills_fh)
+                state = Book2Sided(mk, a.cap, a.post, fills_fh, a.skew)
                 logline(f"WINDOW {mk['ws']} ({datetime.fromtimestamp(mk['ws'],timezone.utc):%H:%M}Z) up={mk['up'][:10]}")
             up_top = top(sess, mk["up"]); dn_top = top(sess, mk["down"])
             state.refresh_quotes(up_top, dn_top); state.n_snaps += 1

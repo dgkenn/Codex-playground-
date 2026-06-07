@@ -69,7 +69,9 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--live", action="store_true", help="actually place orders (else DRY-RUN)")
     ap.add_argument("--post", type=float, default=5)
-    ap.add_argument("--cap", type=float, default=20)
+    ap.add_argument("--cap", type=float, default=50)
+    ap.add_argument("--skew", type=float, default=0.25,
+                    help="lean to flatten: stop quoting the leaning side once |delta|>=skew*cap")
     ap.add_argument("--max-notional", type=float, default=25)
     ap.add_argument("--loss-limit", type=float, default=5)
     ap.add_argument("--poll", type=float, default=4)
@@ -107,8 +109,11 @@ def main():
                 if bb is None or ba is None:
                     continue
                 d_sign = 1.0 if is_up else -1.0
-                quote_buy = (net_delta * d_sign) < a.cap        # buying this token adds +d_sign delta
-                quote_sell = (net_delta * d_sign) > -a.cap
+                skew = a.skew * a.cap
+                # buying this token adds +d_sign to delta; selling adds -d_sign.
+                # inventory skew: don't quote the side that leans us further once |delta|>=skew.
+                quote_buy = (net_delta * d_sign) < a.cap and (net_delta * d_sign) < skew
+                quote_sell = (net_delta * d_sign) > -a.cap and (net_delta * d_sign) > -skew
                 for side, price, do in (("BUY", bb, quote_buy), ("SELL", ba, quote_sell)):
                     if not do:
                         continue

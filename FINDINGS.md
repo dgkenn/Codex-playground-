@@ -187,3 +187,21 @@ gross edge stands alone (rebate no longer a single point of failure; it ~triples
 Start cap~20, near-zero drawdown, gross-positive, rebate on top. Capacity is the tradeoff
 (tight cap = small $/market) -> scale via MULTI-MARKET diversification (BTC 5m + ETH/SOL/XRP
 15m, each an independent vig stream), the validated next step (needs up+down trade pulls).
+
+## Round 9: refine for deployment (inventory skew + capacity)
+
+Tested on historical data while the paper run collects prospective data:
+- **Price-regime filter (quote only near 0.5): REJECTED.** Restricting hurts net (band=0.5/all
+  is best); the cap already handles tail risk and extreme fills aren't as toxic as feared.
+- **Inventory skew (Avellaneda-Stoikov-lite): WIN.** Lean to flatten once |delta|>=skew*cap.
+  Monotonic improvement (skew_frac 1.0->0.25): cap=20 GROSS t 4.9->11.9, NET OOS t 12->16,
+  maxDD->$0. Skewing cuts directional variance -> sharper, gross-stronger edge.
+- **Capacity (skew unlocks bigger cap):** with skew=0.25, gross stays positive at large caps
+  where the un-skewed version went negative (un-skewed cap=400 gross t=-0.28; skewed +4.8).
+  Frontier: cap=20 gross t=11/$12k/maxDD$0; cap=50 gross t=8.6 (zero-rebate OOS t=5.0)/$18k/$7;
+  cap=100 t=7.2/$24k/$31. **Deploy config: cap~50, skew 0.25, quote all prices** -- 2-3x the
+  capacity of the original at near-zero drawdown, gross-positive without the rebate (OOS t=5.0).
+
+Overnight paper run switched to this refined config (cap=50, skew=0.25). live_trader.py +
+paper_trader.py updated with the skew. Note: the audit_*.jsonl capture raw market data, so any
+config can be re-simulated offline from the prospective tape.

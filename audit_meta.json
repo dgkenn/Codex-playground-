@@ -1,11 +1,12 @@
 {
-  "start": "2026-06-07T01:35:25.143029+00:00",
-  "cap": 20.0,
+  "start": "2026-06-07T01:44:13.989779+00:00",
+  "cap": 50.0,
   "post": 20.0,
+  "skew_frac": 0.25,
   "poll": 6.0,
   "fee_rate": 0.07,
   "rebate_model": "0.20*0.07*p(1-p) per matched share",
   "queue_model": "behind displayed size; fill on trade-through",
-  "git": "d3cb39d",
+  "git": "f764b7a",
   "duration_s": 36000
 }
