@@ -379,3 +379,20 @@ Is the cap-50->400 lift ($18.5k->$33.8k) scaled edge or a few lucky terminal set
 **Verdict: rewards do not stack onto the BTC 15m strategy (unfunded). The reader auto-detects
 if BTC turns on; the screener ranks where farming is its own (small, capital-parked) play.**
 So the "#2 = rewards" leg is retired for our market; #2 becomes **scale the cap + multi-market**.
+
+## ROADMAP #5 — multi-market scale + portfolio delta (multimarket.py)
+Crux: is "neutral-in-each" neutral overall? Spot per-window return corr across BTC/ETH/SOL/XRP
+15m = **0.81 mean** (BTC-ETH 0.91 .. XRP-BTC 0.74); resolution (Up/Down) corr 0.49-0.73. The
+underlyings ARE ~one risk factor.
+- BUT maker P&L variance has two parts: a NON-directional vig-capture part (independent across
+  books -> diversifies ~sqrt(N)) and a DIRECTIONAL residual (correlated rho). The hedge
+  experiment measured the directional FRACTION: on the skewed book the ideal delta-hedge could
+  not cut std => f~=0.01 (no-skew <=0.06). So the correlated piece is small.
+- Portfolio Sharpe multiple = sqrt(N)/sqrt(1+f*(N-1)*rho): **x1.98 at f=0.01 (deployed), x1.87 at
+  f=0.06** for N=4 (edge always x4). The naive "all-directional" assumption (f=1) would give only
+  x1.08 -- that was the wrong model. Crossover where the correlated term dominates: N~=22 books.
+- **Verdict: #5 is a CLEAN capacity win at this N -- edge x4, Sharpe ~sqrt(N).** Guardrails:
+  (1) NET DELTA AT THE PORTFOLIO LEVEL (the small correlated residual is the only non-diversifying
+  part; it grows ~N^2 and dominates only past ~20 books or if skew is loosened);
+  (2) per-market maker P&L for the alts needs their TRADE tapes -- only top-of-book is on disk, so
+  fetch ETH/SOL/XRP trades to confirm the per-book edge ports before sizing real capital there.
