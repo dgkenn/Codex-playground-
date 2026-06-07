@@ -135,3 +135,37 @@ captured only by fee-exempt maker/price-setters (0 fee + rebate), which historic
 trade+quote data cannot score for queue position / fills. Verdict stands: no
 backtestable taker strategy survives; the only viable seat is informed market-making,
 which requires live fill data to validate.
+
+## Round 6-7: hedge-fund playbooks, recombination, and the first STRONG candidate
+
+JS/fund-style tests (corrected per-category fees, window-clustered, OOS):
+- **Selective (toxicity-filtered) MM**: confirms small=benign/large=toxic structure but only
+  breakeven under honest cross-to-flatten (queue-bound).
+- **Two-Sigma ML ensemble**: market price BEATS the kitchen-sink model OOS (Brier 0.154<0.157);
+  no predictive edge over price. Combining predictive signals does NOT stack into alpha.
+- **Combination / trained toxicity-model maker**: selecting "best" fills makes it WORSE OOS
+  (chases toxic vig); signals don't recombine into a maker edge.
+- **Overround (S4) / 2-sided structure**: Up_ask+Down_ask ~1.01 always (no taker arb).
+
+**>>> STRONG CANDIDATE: inventory-capped 2-sided maker (rebate farming).**
+Quote both Up+Down, cap net delta. Earlier "maker fails" was ONE-sided only; making BOTH
+sides hedges direction. Decomposition (cap=100, corrected 0.07 fee basis):
+  GROSS trading +0.00007/sh (t=0.81, breakeven) ; + 20% maker rebate -> +0.00098/sh (t=12.2);
+  IS/OOS t = 12.2 / 7.4 ; survives 50% rebate haircut (OOS t=4.3). Edge = the rebate; gross
+  is breakeven taking ALL flow (worst-case adverse selection). cap is the risk/Sharpe knob
+  (cap=25 t=19, cap=400 t=7.7). Paper-trading spec in PAPER_TRADING.md. Live unknowns:
+  fill rate/queue, realized rebate pool share, adverse-selection-weighted fills.
+
+**Multi-category calibration / favorite-longshot battery (3,056 resolved markets):**
+- **Sports (fee 0.03): strong FLB**, bet-favourite +0.12 net (t=9.3), survives 5c half-spread
+  (+0.07, t=5.5). BUT concentrated in slight-favourites (0.5-0.6: +0.245) and VANISHES in the
+  most-liquid markets (n_pts>=300: t=-0.05); markets are illiquid UFC/MMA prop/futures whose
+  tradable liquidity can't be verified from this data. REAL bias, tradability unproven ->
+  strong lead needing LIVE liquidity validation, not a ready candidate.
+- geopolitics (fee 0): favourites slightly OVER-priced (bet-fav negative) -> reverse bias.
+- politics/tech/economy/culture/crypto: ~0 or negative net of fee.
+
+**Answer to "combine the inefficiencies":** predictive signals are already in the price
+(ensemble loses to price; combining doesn't help). The only net-positive, robust, ready edge
+is the STRUCTURAL one (maker rebate), which doesn't need to beat the price. Sports FLB is a
+real second inefficiency but lives in illiquid markets (untradeable from this data).
