@@ -14,7 +14,8 @@ fill model is queue-favorable and CANNOT capture the live-only levers (real queu
 cancel latency, market impact) -- those need real orders (see PILOT.md). This tests the
 STRATEGY LOGIC (cap/skew/sizing/gating) on live fills, not execution quality.
 
-Artifacts: shadow_windows.jsonl (per-variant per-window), shadow_summary.json (cum), shadow.log.
+Artifacts: shadow_windows.jsonl (per-variant per-window), shadow_summary.json (cum), shadow.log,
+fills.jsonl (PER-FILL markout for baseline+micro_gate -> root-cause why each trade wins/loses).
     python shadow_compare.py --duration 57600
 """
 from __future__ import annotations
@@ -39,6 +40,11 @@ SIGMA = 6.5e-5
 FV_K = 2.0           # continuous-sizing slope (offline: k=2 beat every gate)
 FV_MARGIN = 0.03    # fair-value gate threshold
 _HB = [0.0]          # last heartbeat ts (throttle)
+
+# Per-fill markout logging: which variants emit a row PER fill (root-cause why each trade
+# wins/loses). Kept to the baseline-vs-fix contrast to bound data volume; widen if needed.
+LOG_FILLS = {"baseline", "micro_gate"}
+MARKOUT_HORIZONS = (5, 30)   # seconds; resolution markout is added at settle (the decision metric)
 
 
 def heartbeat(tag, out_dir, cum, status="running"):
@@ -83,6 +89,7 @@ class Variant:
         self.fvol = self.tvol = self.mk_buy = self.mk_sell = self.maxd = 0.0  # attribution/capacity
         self.tob = {mk["up"]: [None, 0, None, 0], mk["down"]: [None, 0, None, 0]}
         self.queue = {}
+        self.fill_log = []   # per-fill records (markout filled in at settle) -- only for LOG_FILLS
 
     def is_up(self, t):
         return t == self.mk["up"]
@@ -184,6 +191,22 @@ class Variant:
         self.fvol += fill
         self.mk_sell += fill if sells else 0.0; self.mk_buy += 0.0 if sells else fill
         self.maxd = max(self.maxd, abs(self.delta))
+        if self.name in LOG_FILLS:                       # per-fill record (markout added at settle)
+            tnow = time.time()
+            bb, bsz, ba, asz = self.tob[token]
+            midf = (bb + ba) / 2 if (bb is not None and ba is not None) else None
+            micf = micro(bb, bsz, ba, asz)
+            tot = (bsz or 0) + (asz or 0)
+            imb = (bsz or 0) / tot if tot else None      # bid-share of top-of-book (0..1)
+            # toxicity at fill = signed microprice deviation against our quote (>0 == adverse)
+            tox = None if micf is None else ((micf - price) if our_side == "ASK" else (price - micf))
+            self.fill_log.append({
+                "t": tnow, "tau": round(max(self.mk["we"] - tnow, 0.0), 1),
+                "side": our_side, "up": is_up, "p": round(price, 4), "sz": round(fill, 1),
+                "mid": round(midf, 4) if midf is not None else None,
+                "micro": round(micf, 4) if micf is not None else None,
+                "imb": round(imb, 3) if imb is not None else None,
+                "tox": round(tox, 4) if tox is not None else None})
 
     def settle(self, r):
         gross = self.cash + self.up_inv * r + self.dn_inv * (1 - r)
@@ -221,17 +244,44 @@ async def run(args):
     summary_path = os.path.join(args.out_dir, f"shadow_summary{sfx}.json")
     log = open(os.path.join(args.out_dir, f"shadow{sfx}.log"), "a")
     wins_fh = open(os.path.join(args.out_dir, f"shadow_windows{sfx}.jsonl"), "a")
+    fills_fh = open(os.path.join(args.out_dir, f"fills{sfx}.jsonl"), "a")   # per-fill markout rows
     cum = {}; pending = []
 
     def L(s):
         line = f"{now_iso()} {s}"; print(line); log.write(line + "\n"); log.flush()
+
+    def emit_fills(mk2, variants2, midtl2, r):
+        """Write one row per logged fill with REAL markout (live mids) -> the per-trade
+        win/lose root cause. Markout sign: >0 == fill was favorable. tox>0 == book looked
+        adverse at fill. Only queue position is modeled; the markout itself is real."""
+        def mid_at(tok, t_target):
+            for (tt, md, _mc) in midtl2.get(tok, []):
+                if tt >= t_target:
+                    return md
+            return None
+        for v in variants2:
+            for f in v.fill_log:
+                tok = mk2["up"] if f["up"] else mk2["down"]
+                settle_tok = r if f["up"] else (1 - r)
+                p = f["p"]; sold = (f["side"] == "ASK")
+                mo_res = (p - settle_tok) if sold else (settle_tok - p)
+                mos = {}
+                for h in MARKOUT_HORIZONS:
+                    md = mid_at(tok, f["t"] + h)
+                    mos[f"mo{h}"] = round((p - md) if sold else (md - p), 4) if md is not None else None
+                rec = {"ws": mk2["ws"], "var": v.name, "tau": f["tau"], "side": f["side"],
+                       "up": int(f["up"]), "res_up": r, "p": p, "sz": f["sz"], "mid": f["mid"],
+                       "micro": f["micro"], "imb": f["imb"], "tox": f["tox"],
+                       "mo_res": round(mo_res, 4), **mos}
+                fills_fh.write(json.dumps(rec) + "\n")
+        fills_fh.flush()
 
     def try_settle():
         """Retry resolution for closed-but-unresolved windows (Polymarket posts the result
         minutes after window end). Settle + remove when resolved. (The bug in the first run
         was settling ONCE at close and skipping forever.)"""
         for item in pending[:]:
-            mk2, variants2 = item
+            mk2, variants2, midtl2 = item
             r = resolve(sess, mk2["ws"])
             if r is None:
                 continue
@@ -243,6 +293,7 @@ async def run(args):
                 c["net"] += net; c["fills"] += v.fills; c["windows"] += 1; c["pos"] += 1 if net > 0 else 0
                 row[v.name] = attr               # full per-window attribution (clustering unit = ws)
                 parts.append(f"{v.name}={net:+.3f}({v.fills})")
+            emit_fills(mk2, variants2, midtl2, r)   # per-fill markout rows (why each trade won/lost)
             wins_fh.write(json.dumps(row) + "\n"); wins_fh.flush()
             json.dump(cum, open(summary_path, "w"), indent=2)
             L("SETTLE w=%d res=%d | %s" % (mk2["ws"], r, "  ".join(parts)))
@@ -262,6 +313,7 @@ async def run(args):
             fv.set_window(sp); shared["s0"] = sp
         shared["st"] = sp
         variants = configs(mk, shared)
+        midtl = {}        # token -> [(t, mid, micro)] shared timeline for per-fill markout
         L(f"WINDOW {mk['ws']} ({datetime.fromtimestamp(mk['ws'],timezone.utc):%H:%M}Z) s0={shared['s0']}")
         last_spot = time.time()
         while time.time() < mk["we"] and time.time() < end:
@@ -286,9 +338,18 @@ async def run(args):
                                     v.on_price_change(m)
                                 elif et == "last_trade_price":
                                     v.on_trade(str(m["asset_id"]), m["side"], float(m["price"]), float(m["size"]))
+                        # sample shared mid/micro timeline (~1s/token) for per-fill markout
+                        ts_now = time.time()
+                        for tok in (mk["up"], mk["down"]):
+                            bb, bsz, ba, asz = variants[0].tob[tok]
+                            if bb is None or ba is None:
+                                continue
+                            tl = midtl.setdefault(tok, [])
+                            if not tl or ts_now - tl[-1][0] >= 1.0:
+                                tl.append((ts_now, (bb + ba) / 2, micro(bb, bsz, ba, asz)))
             except Exception as e:  # noqa: BLE001
                 L(f"  [ws reconnect] {str(e)[:70]}"); await asyncio.sleep(2)
-        pending.append((mk, variants))      # settle later, with retry (resolution lags close)
+        pending.append((mk, variants, midtl))   # settle later, with retry (resolution lags close)
         try_settle()
     # drain: retry pending settlements for a few minutes after the run ends
     for _ in range(20):
