@@ -431,3 +431,36 @@ The investigation has converged. Mapping every lever:
 **The next bit of information that changes anything costs real money and comes from the pilot.**
 The honest next move is NOT a #6 -- it is to deploy the two validated levers SMALL and measure
 the one input the whole edifice now rests on: capture rate. Build is done; go measure.
+
+## CRITICAL CORRECTION (live paper vs offline fill model) — the edge is REBATE, not vig
+Deep dive on live paper data (deepdive.py) + offline cross-check on the SAME historical tape
+exposed a large fill-model artifact. The historical DATA is sound (dataqc: 0 FAIL / 2 WARN /
+23 PASS; live-vs-historical overround +0.0127 vs ~0.01, rebate formula, price ranges all
+consistent). The problem is the offline FILL MODEL, not the data:
+
+| metric (cap50/skew0.25) | OFFLINE replay (288 win) | LIVE paper queue model (32 win) |
+|---|---|---|
+| GROSS, zero-rebate | +$29.79/win, t=+7.87, 87% pos | -$0.18/win, ~0 (38% pos) |
+| rebate share of net | 54% | 104% |
+| net/win | +$64.15 | +$4.60 |
+
+- Offline `replay`/`vig_hedged` take the opposite of EVERY taker at the trade price (assume
+  always-at-touch, always-win-the-fill) -> books ~$30/win of "structural vig" that a realistic
+  QUEUE model shows is competed away (~0). The live paper only fills on trade-through after the
+  size ahead is consumed -> gross ~= 0, edge is ~100% the MAKER REBATE.
+- => The earlier "gross-positive, rebate-INDEPENDENT edge" (round-4 frontier) was a FILL-MODEL
+  ARTIFACT. Honest picture: short-horizon we capture the half-spread (live markout +5s our-SELL
+  +0.0012) but holding to binary resolution erodes it to ~0 gross; the rebate is the actual edge.
+  Offline overstated $/win ~14x AND mis-attributed the source (vig -> really rebate).
+- Live markout: our-SELL (93% of fills) +0.0012/+0.0015 (+5s/+30s, favorable); our-BUY (7%)
+  -0.0017/-0.0037 (adverse -- the rare buys are toxic). Aggregate +0.0011 (sells dominate).
+- Resolution sample 59% up (19/32) and net|UP +7.17 vs net|DOWN +0.84 -> watch for a small
+  directional/sample inflation of the +$4.60/win (normalizes with more windows; n=32).
+
+**Implications (rebate-farming, not vig-capture):** (1) the entire economic case rests on the
+maker rebate -> maximize rebate-qualifying VOLUME and quote MID (rebate ~ p(1-p), peaks at 0.5);
+(2) never cross / minimize churn (every cancel forfeits queue = forfeits a rebate-earning fill);
+(3) queue position decides gross (whoever is front captures the spread; we get the rebate on our
+fills regardless) -> the pilot must measure queue-weighted fill rate; (4) offline $/win and the
+gross-vs-rebate split are NOT trustworthy in absolute terms -- use offline only for RELATIVE
+config comparison; the live queue numbers are the honest ones.
