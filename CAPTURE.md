@@ -12,6 +12,27 @@ the full lifecycle/queue/latency schema below is the contract the **live pilot**
 
 ---
 
+## 0. AUDIT LEDGER (REALIZED, paper-now) — `gha_data/fills_*.jsonl`  [baseline + micro_gate]
+The decision-grade answer to *"why did each trade win or lose, with certainty"*. One row per
+**decision** (a taker trade reaches a level we quote), logged for fills AND skips:
+- **what prompted it:** `tk_side, tk_sz` (the taker order), `q_ahead, q_used` (our modeled queue).
+- **all inputs considered:** `bb, ba, bsz, asz` (raw book), `mid, micro, imb` (book-imbalance),
+  `fair` (model fair), `tox` (signed micro-deviation), `delta` (inventory), `cap, skew_lim, gate`.
+- **action:** `reason` ∈ {fill, fill_clipped, gated, skew_block, cap_zero}, `sz`, `want`.
+- **outcome (real):** `mo5, mo30` (mid markout, live), `mo_res` (resolution markout = decision
+  metric), and **`pnl = sz·mo_res` = the EXACT gross contribution of that fill**.
+- pure-mechanics non-decisions (`no_quote`, `queue_absorbed`) are counted per window.
+
+**Certainty / reconciliation:** since `pnl == sz·mo_res`, **Σ pnl over a window == window gross**
+to the penny. The collector writes a per-window `audit:{gross, fill_pnl_sum, resid, reasons, skips}`
+in `shadow_windows_*.jsonl` and warns if `resid>1e-3` (verified resid=0). `analyze_fills.py`
+re-audits independently (recompute mid/micro/imb from raw book; check `pnl==sz·mo_res`; reconcile
+Σpnl vs window gross), then prints the toxicity→loss curve + reason histogram, window-clustered.
+**The one modeled input is queue position** (`q_ahead` from displayed depth); markout/pnl are real.
+So paper is 100%-auditable *given the queue model*; the live pilot replaces it with real queue rank.
+
+---
+
 ## 1. Per resting order (lifecycle)  [live] (`live_trader` -> order_log.jsonl + reprice_log.jsonl)
 - order_id, asset_id, side, outcome(Up/Down), post_only, tick_size
 - **posted: decision_ts AND exchange_ack_ts** (gap = placement latency)
