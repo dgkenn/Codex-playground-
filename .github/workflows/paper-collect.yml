@@ -1,16 +1,20 @@
 # Self-healing paper-data collector on GitHub Actions (public repo => free). Container-independent.
-# CONTINUITY has THREE layers because GitHub's `schedule` is best-effort and drops runs:
-#   1) schedule every 30 min (more firing chances)
-#   2) paper-watchdog.yml = an INDEPENDENT workflow that collects if data goes stale (no manual step)
-#   3) PAT self-chain: if you add a repo secret DISPATCH_PAT (fine-grained, Actions:read+write on this
-#      repo), each run re-dispatches the next => truly continuous, immune to the flaky scheduler.
+# CONTINUITY layers (GitHub's `schedule` is best-effort and drops runs):
+#   1) schedule every 30 min (seed + backup)
+#   2) workflow_run CHAIN: paper-collect finishes -> paper-collect-chain (no-op) fires -> its
+#      completion re-triggers paper-collect => continuous ping-pong, scheduler-INDEPENDENT, no PAT.
+#   3) paper-watchdog.yml = independent collect-if-stale (covers a broken chain + dropped crons)
+#   4) optional PAT self-chain (DISPATCH_PAT secret) = guaranteed even in a total scheduler outage
 # Each run: incremental commits every ~10 min (crash-safe) of UNIQUE files (gha_data/shadow_windows_r*).
 name: paper-collect
 
 on:
   schedule:
-    - cron: '*/30 * * * *'       # every 30 min (best-effort; the watchdog + PAT-chain cover drops)
+    - cron: '*/30 * * * *'
   workflow_dispatch: {}
+  workflow_run:
+    workflows: ["paper-collect-chain"]   # bounced back here -> continuous chain (no PAT needed)
+    types: [completed]
 
 permissions:
   contents: write
@@ -60,17 +64,15 @@ jobs:
             git pull --rebase --autostash -q origin "$BRANCH" && git push -q origin "HEAD:$BRANCH" && break
             sleep $((RANDOM % 6 + 2))
           done
-      - name: self-chain (only if DISPATCH_PAT secret is set) -> scheduler-independent continuity
+      - name: bounce the chain (re-arm continuity) + optional PAT self-chain
         if: ${{ always() }}
         env:
           PAT: ${{ secrets.DISPATCH_PAT }}
         run: |
+          # Built-in GITHUB_TOKEN dispatch does NOT start a run (anti-recursion); the workflow_run
+          # CHAIN handles continuity without a PAT. If a PAT is present, also direct-dispatch (belt).
           if [ -n "$PAT" ]; then
-            echo "DISPATCH_PAT present -> chaining next run"
-            curl -s -X POST \
-              -H "Authorization: Bearer $PAT" -H "Accept: application/vnd.github+json" \
+            curl -s -X POST -H "Authorization: Bearer $PAT" -H "Accept: application/vnd.github+json" \
               "https://api.github.com/repos/${{ github.repository }}/actions/workflows/paper-collect.yml/dispatches" \
               -d '{"ref":"main"}' || true
-          else
-            echo "no DISPATCH_PAT secret -> relying on schedule + watchdog (best-effort)"
           fi
