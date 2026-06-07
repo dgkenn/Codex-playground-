@@ -224,3 +224,13 @@ config can be re-simulated offline from the prospective tape.
   cap=50/skew=0.25 (net CI[.00087,.00105], DD$7); cap=100/skew=0.15 (net CI[.00111,.00136], DD$0).
 - DEPLOY: start cap=50/skew=0.25; scale toward cap=100/skew=0.15. Price filter & flow filter
   rejected. Edge = tight-inventory 2-sided vig (gross-positive, rebate-independent) + rebate.
+
+## External review response + auto-flatten test
+External review verdict: strategy A+, live profitability ~90% infrastructure (latency/queue/
+OMS/keys). Concur. WS feed already adopted (addresses staleness). Concrete strategy item
+tested -- "auto-flatten residual vs hold to resolution":
+- hold-to-resolution: per-share +0.00095 t=+20.0, maxDD $7 over 288 windows.
+- auto-flatten (cross at final mark): per-share ~0 t=-1.2 (adds spread cost + mark noise).
+-> Inventory skew already keeps the residual tiny (maxDD $7), so the directional-residual
+   concern does NOT bind; KEEP hold-to-resolution. Auto-flatten is optional LIVE risk hygiene
+   (oracle/settlement-time risk), not a PnL improvement.
