@@ -556,3 +556,31 @@ now confirmed across markets, timeframes, and fill models. Continuing to mine th
 multiple-testing FALSE POSITIVES (a real integrity hazard, not caution). The binding unknown is LIVE
 queue position, which no backtest resolves. The honest next step is the tiny-order live pilot, not
 more offline rounds.
+
+## Literature-grounded rounds (continued) — A-S skew, powered alts, MM-canon coverage
+Per request to PRIORITIZE market-making-literature-grounded ideas. All confirm the conclusion.
+
+- **Avellaneda-Stoikov continuous reservation-price skew** (vs our binary cap): paired Δ=+0.13/win,
+  t=0.19 -- NULL. The binary cap already does the inventory work; the smooth A-S taper adds nothing
+  (confirms ROADMAP #10 caution). Implemented as queue_sim `cont_skew`.
+- **Powered alt re-test** (192 windows/coin, April 14-15, vs the noisy 48-window first pass): realistic
+  queue model nets ETH +0.77 (t=0.9) / SOL +0.05 (t=0.1) / XRP -0.90 (t=-1.1) at Q=50 -- all BREAKEVEN.
+  The 12h XRP "+1.66" was NOISE; with 4x power it's -0.90. (Clean illustration of the multiple-testing
+  hazard -- exactly why we power-up candidates instead of shipping a noisy positive.)
+
+### MM literature coverage map (the canon, mapped to this market)
+| model | lever | status here |
+|---|---|---|
+| Avellaneda-Stoikov | reservation-price skew + optimal spread | skew: HAVE (binary==continuous, null). Spread: N/A (1-tick pinned) |
+| Glosten-Milgrom | spread compensates informed flow | can't widen at 1-tick; toxicity-pull TESTED, hurts |
+| Ho-Stoll | inventory control | HAVE (cap+skew) |
+| Moallemi-Yuan | queue-position value | the BINDING lever; validated (queue_sim) |
+| Stoikov micro-price | imbalance-adjusted fair | HAVE (live_trader) |
+| Huang-Lehalle-Rosenbaum | queue-reactive fills | IS queue_sim (measured depth) |
+| Cartea-Jaimungal | order-flow / optimal MM | OFI signal TESTED, none; latency = live-only |
+| Gueant multi-asset/factor | portfolio MM | done (corr 0.81, ~1 factor) |
+| Cont-Kukanov | cross-venue placement | N/A (Kalshi doesn't match; retired) |
+| Kyle / Bouchaud | impact / performativity | live-only (own-quote impact) |
+**Verdict: the MM canon is systematically COVERED. Every lever is either already in the strategy
+(skew, microprice, queue), N/A at a 1-tick pinned spread (A-S/GM spread optimization), or LIVE-ONLY
+(latency, impact). No literature lever improves the offline result. Confirmed across BTC + 3 alts.**

@@ -86,7 +86,7 @@ def depth_at(depth, asset, t_ms, which):
 
 
 def sim(allt, depth, alpha, Q, cap=50, skew=0.25, d_max=float("inf"), tau_lo=0.0, tau_hi=float("inf"),
-        persist=False, reprice_tol=0.0, spread_boost=1.0):
+        persist=False, reprice_tol=0.0, spread_boost=1.0, cont_skew=False):
     """Queue-model maker. d_max/tau = thin-book/early 'fixes'. persist=True models PERSISTENT
     resting with FIFO advancement: our queue-ahead = running-MIN displayed depth since we joined
     the level (we advance as orders ahead fill/cancel, and don't fall back when new orders queue
@@ -134,9 +134,15 @@ def sim(allt, depth, alpha, Q, cap=50, skew=0.25, d_max=float("inf"), tau_lo=0.0
             if fill <= 0:
                 continue
             is_up = (tok == "U"); sells = (side == "BUY")
-            d_delta = (-fill if sells else fill) if is_up else (fill if sells else -fill)
-            if abs(delta) >= skcap and delta * d_delta > 0:
+            dsign = (-1.0 if sells else 1.0) if is_up else (1.0 if sells else -1.0)
+            if cont_skew:                       # Avellaneda-Stoikov: taper leaning-side size
+                if delta * dsign > 0 and skcap > 0:   # continuously vs the hard binary cap
+                    fill *= max(0.0, 1.0 - abs(delta) / skcap)
+                if fill <= 0:
+                    continue
+            elif abs(delta) >= skcap and delta * dsign > 0:   # binary skew (baseline)
                 continue
+            d_delta = dsign * fill
             if abs(delta + d_delta) > cap:
                 room = max(0.0, cap - abs(delta)) if (delta + d_delta) * d_delta > 0 else fill
                 fill = min(fill, room)

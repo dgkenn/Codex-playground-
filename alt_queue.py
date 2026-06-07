@@ -1,7 +1,7 @@
 import glob, numpy as np, pandas as pd, queue_sim as Q
 
 def load_alt_depth():
-    df=pd.concat([pd.read_parquet(f) for f in glob.glob("alt_dp_parts/dp_*.parquet")],ignore_index=True)
+    df=pd.concat([pd.read_parquet(f) for f in [f for f in glob.glob("alt_dp_parts/dp_*.parquet") if __import__("os").path.getsize(f)>0]],ignore_index=True)
     df["ts_ms"]=pd.to_datetime(df["timestamp"],utc=True).to_numpy().astype("datetime64[ms]").view("int64")
     df["asset_id"]=df.asset_id.astype(str)
     bidu=(df.side=="BUY")&(np.isclose(df.price,df.best_bid)); asku=(df.side=="SELL")&(np.isclose(df.price,df.best_ask))
@@ -15,7 +15,7 @@ def load_alt_depth():
 
 def load_alt_trades():
     pairs=pd.read_parquet("alt_pairs.parquet"); pairs["asset_id"]=pairs.asset_id.astype(str)
-    tr=pd.concat([pd.read_parquet(f) for f in glob.glob("alt_tr_parts/tr_*.parquet")],ignore_index=True)
+    tr=pd.concat([pd.read_parquet(f) for f in [f for f in glob.glob("alt_tr_parts/tr_*.parquet") if __import__("os").path.getsize(f)>0]],ignore_index=True)
     tr["asset_id"]=tr.asset_id.astype(str)
     tr=tr.merge(pairs,on="asset_id",how="inner")
     tr["tok"]=np.where(tr.is_up,"U","D"); tr["win"]=tr.window_start; tr["res"]=tr.resolved_up; tr["wend"]=tr.window_end

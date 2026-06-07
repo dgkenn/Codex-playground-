@@ -6,7 +6,7 @@ aw=pd.read_parquet("alt_windows.parquet"); aw["asset_id"]=aw.asset_id.astype(str
 upmeta=dict(zip(aw.asset_id, zip(aw.coin, aw.window_start, aw.window_end, aw.resolved_up)))
 con=duckdb.connect(); con.execute("INSTALL httpfs; LOAD httpfs;")
 con.execute("SET enable_progress_bar=false; SET preserve_insertion_order=false; SET memory_limit='8GB'; SET threads=4;")
-s=datetime(2026,4,14,0,tzinfo=timezone.utc); e=datetime(2026,4,14,11,tzinfo=timezone.utc)
+s=datetime(2026,4,14,0,tzinfo=timezone.utc); e=datetime(2026,4,15,23,tzinfo=timezone.utc)
 h=s; pairs=[]
 while h<=e:
     hk=h.strftime("%Y-%m-%dT%H"); h0=int(h.timestamp()); url=URL.format(h=hk)
