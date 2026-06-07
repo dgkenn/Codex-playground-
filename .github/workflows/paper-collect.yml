@@ -1,20 +1,22 @@
-# Robust, self-healing paper-data collection on GitHub Actions (public repo => free/unlimited).
-# Runs the 7-variant shadow comparison each hour on GitHub's infra -- independent of the ephemeral
-# dev container, so it survives container reclamation with ZERO manual restarts. INCREMENTAL commits
-# every ~10 min => a killed runner costs <=10 min and even partial runs contribute. Each run writes
-# UNIQUE files (gha_data/shadow_windows_r<run_id>.jsonl) -> never conflicts. READ-ONLY paper sim
-# (public Polymarket WS + Coinbase spot, NO keys). Aggregate: python aggregate_shadow.py
+# Self-healing paper-data collector on GitHub Actions (public repo => free). Container-independent.
+# CONTINUITY has THREE layers because GitHub's `schedule` is best-effort and drops runs:
+#   1) schedule every 30 min (more firing chances)
+#   2) paper-watchdog.yml = an INDEPENDENT workflow that collects if data goes stale (no manual step)
+#   3) PAT self-chain: if you add a repo secret DISPATCH_PAT (fine-grained, Actions:read+write on this
+#      repo), each run re-dispatches the next => truly continuous, immune to the flaky scheduler.
+# Each run: incremental commits every ~10 min (crash-safe) of UNIQUE files (gha_data/shadow_windows_r*).
 name: paper-collect
 
 on:
   schedule:
-    - cron: '7 * * * *'          # hourly at :07 (offset dodges top-of-hour cron congestion)
+    - cron: '*/30 * * * *'       # every 30 min (best-effort; the watchdog + PAT-chain cover drops)
   workflow_dispatch: {}
 
 permissions:
   contents: write
+  actions: write
 
-concurrency:                      # never overlap; let an in-flight run finish
+concurrency:
   group: paper-collect
   cancel-in-progress: false
 
@@ -24,7 +26,7 @@ env:
 jobs:
   collect:
     runs-on: ubuntu-latest
-    timeout-minutes: 58           # < 60 so the hourly schedule never overlaps
+    timeout-minutes: 52
     steps:
       - uses: actions/checkout@v4
         with:
@@ -35,14 +37,11 @@ jobs:
           python-version: '3.12'
       - name: install deps
         run: pip install --quiet numpy scipy requests websockets
-      - name: collect ~47 min with incremental commits (crash-safe)
+      - name: collect ~45 min with incremental commits (crash-safe)
         run: |
           git config user.name  "paper-bot"
           git config user.email "paper-bot@users.noreply.github.com"
           mkdir -p gha_data
-          # INCREMENTAL: plain add/commit/push only -- never touches the working tree while the
-          # collector is appending (no rebase/autostash mid-write => no corruption). A non-ff
-          # push just fails harmlessly; the final flush reconciles.
           incr () {
             git add gha_data/ 2>/dev/null || return 0
             git diff --cached --quiet && return 0
@@ -51,14 +50,27 @@ jobs:
           }
           ( for k in 1 2 3 4; do sleep 600; incr; done ) &
           LOOP=$!
-          timeout 2820 python -u shadow_compare.py --duration 2760 \
+          timeout 2700 python -u shadow_compare.py --duration 2640 \
             --tag "r${{ github.run_id }}" --out-dir gha_data || true
           kill $LOOP 2>/dev/null || true
           python aggregate_shadow.py > gha_data/SUMMARY.txt 2>/dev/null || true
-          # FINAL flush: collector has exited, so rebase-retry is safe (reconciles any race).
           git add gha_data/ 2>/dev/null || true
           git diff --cached --quiet || git commit -q -m "gha: paper-collect r${{ github.run_id }} final"
           for i in 1 2 3 4 5; do
             git pull --rebase --autostash -q origin "$BRANCH" && git push -q origin "HEAD:$BRANCH" && break
             sleep $((RANDOM % 6 + 2))
           done
+      - name: self-chain (only if DISPATCH_PAT secret is set) -> scheduler-independent continuity
+        if: ${{ always() }}
+        env:
+          PAT: ${{ secrets.DISPATCH_PAT }}
+        run: |
+          if [ -n "$PAT" ]; then
+            echo "DISPATCH_PAT present -> chaining next run"
+            curl -s -X POST \
+              -H "Authorization: Bearer $PAT" -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/${{ github.repository }}/actions/workflows/paper-collect.yml/dispatches" \
+              -d '{"ref":"main"}' || true
+          else
+            echo "no DISPATCH_PAT secret -> relying on schedule + watchdog (best-effort)"
+          fi
