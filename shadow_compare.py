@@ -337,8 +337,10 @@ async def run(args):
             # AUDIT: per-fill ledger must reconcile to window gross to the penny (proof of completeness)
             row["audit"] = {}
             vmap = {v.name: v for v in variants2}
-            for name, s in pnl_sum.items():
-                g = attrs[name]["gross"]; resid = round(s - g, 6)
+            for name in LOG_FILLS:               # reconcile ONLY the instrumented variants (others log no fills)
+                if name not in pnl_sum:
+                    continue
+                s = pnl_sum[name]; g = attrs[name]["gross"]; resid = round(s - g, 6)
                 v = vmap[name]
                 tally = {}
                 for f in v.fill_log:              # decision-reason histogram (gated/skew/fill/...)
