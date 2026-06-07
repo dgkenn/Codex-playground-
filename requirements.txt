@@ -6,3 +6,7 @@ duckdb==1.5.3
 requests==2.34.2
 websockets==16.0
 pytz==2026.2
+
+# LIVE execution only (not needed for research/paper; install on your trading infra) -- see PILOT.md
+# py-clob-client-v2   # Polymarket CLOB order placement (EIP-712 / POLY_1271 signing)
+# web3                # on-chain mint/merge via the ConditionalTokens / neg-risk adapter
