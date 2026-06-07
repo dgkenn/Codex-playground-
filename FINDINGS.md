@@ -169,3 +169,21 @@ sides hedges direction. Decomposition (cap=100, corrected 0.07 fee basis):
 (ensemble loses to price; combining doesn't help). The only net-positive, robust, ready edge
 is the STRUCTURAL one (maker rebate), which doesn't need to beat the price. Sports FLB is a
 real second inefficiency but lives in illiquid markets (untradeable from this data).
+
+## Round 8: refine the maker before paper trading
+
+Adjacent ideas tested on the inventory-capped 2-sided maker:
+- per-quote SIZE LIMIT (post small depth): HURTS (the 2-sided vig scales with captured
+  volume; throttling reduces it). Rejected.
+- STOP quoting in the final sprint (tau<cutoff): HURTS (less volume/rebate, vig present late
+  too). Rejected.
+- **inventory CAP is the key knob — and TIGHTER is better/safer.** At cap<=25 the GROSS
+  (no-rebate) edge is positive & significant: cap=25 gross +0.00019/sh t=+5.8 (OOS 3.3),
+  cap=10 gross t=+10.6 (OOS 5.9), with near-zero drawdown ($0-11). NET (+rebate) t=20-24
+  (OOS 11-13). **Zero-rebate stress (cap=25): survives (gross OOS t=3.3).**
+
+REFINED VERDICT: the candidate is a **tight-inventory 2-sided vig-capture maker** whose
+gross edge stands alone (rebate no longer a single point of failure; it ~triples the return).
+Start cap~20, near-zero drawdown, gross-positive, rebate on top. Capacity is the tradeoff
+(tight cap = small $/market) -> scale via MULTI-MARKET diversification (BTC 5m + ETH/SOL/XRP
+15m, each an independent vig stream), the validated next step (needs up+down trade pulls).

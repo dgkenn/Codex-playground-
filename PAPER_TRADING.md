@@ -8,7 +8,25 @@ when a fill would push |net delta| past the cap, **withdraw/skew the breaching s
 (quote only the inventory-reducing side). Hold residual inventory to the 15-min
 resolution (residual is bounded by the cap).
 
-Recommended start: **cap ≈ 100 Up-equivalent shares** (risk/Sharpe knob — see table).
+Recommended start: **tight cap ≈ 20 Up-equivalent shares** (refined optimum — see below).
+
+### Refinement (tested): tight inventory cap removes rebate-dependence
+A **tight** cap makes the trading edge positive *before* any rebate (pure vig capture with
+minimal directional risk), with near-zero drawdown:
+
+| cap | gross-only t (OOS) | net+rebate t (OOS) | maxDD |
+|---|---|---|---|
+| 10 | +10.6 (5.9) | 24.0 (13.3) | \$0 |
+| 20 | +7.1 (4.1) | 21.4 (11.9) | \$1 |
+| 25 | +5.8 (3.3) | 19.9 (11.0) | \$11 |
+| 75 | +1.5 (1.5) | 13.3 (8.0) | \$82 |
+
+**Zero-rebate stress (cap=25): gross-only +0.00019/sh, t=5.8, OOS t=3.3 — survives with the
+rebate OFF.** So the rebate is no longer a single point of failure; it ~triples the return on
+top of a positive gross. Tighter cap = higher Sharpe + gross-robust + smaller \$; looser cap
+= more \$ but rebate-dependent. Start tight (cap≈20), scale the cap only after live fills
+confirm the gross holds. Adjacent ideas tested and REJECTED: per-quote size limits and
+stop-quoting-late both reduced the edge (the 2-sided vig scales with captured volume).
 
 ## Why it works (and the honest source of the edge)
 - **Makers pay 0 fees and earn a ~20% rebate** of the taker fees their liquidity
