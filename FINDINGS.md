@@ -314,3 +314,20 @@ volume on the table -- then take+hedge could beat refuse. The small recoverable 
 (+$7/win) is exactly what PREDICTIVE REPRICING (#4) targets, and #4 captures it by quoting
 ahead of the move -- no perp, no gamma-fee tax. So #1's residual is #4's job, not a hedger's.
 Funding was negligible at the 15m horizon, as expected.
+
+## ROADMAP #2 — Liquidity Rewards stream (TESTED, REDIRECTED: $0 on our market)
+`rewards.py` (config reader + screener + live-book share estimator).
+- **BTC 15m markets: `rates: null` on every window** -> liquidity rewards are UNFUNDED there.
+  The scaffold exists (min_size=50, max_spread=4.5c) but pays $0. The only active incentive on
+  our market is the maker rebate (makerRebatesFeeShareBps=10000), already in our model.
+- The `rates` field IS populated where rewards are funded (validated reader), and those markets
+  are **politics / longshots** ($100-$1000/day pools): Peruvian/Colombian/Brazilian elections,
+  Fed-rate, SpaceX-IPO, etc. -- slow, not spot-tied, different microstructure. Our fast-binary
+  vig+skew edge does NOT port to them.
+- Share estimate (live-book denominator): on the largest pool ($1000/day), a $200 two-sided
+  placement at 1c from mid earns **~$2.27/day** (share 0.23%, competing Qmin ~53k) AND bears
+  the market's election-resolution risk. So reward-farming is a SEPARATE strategy on OTHER
+  markets, not incremental revenue on our quotes.
+**Verdict: rewards do not stack onto the BTC 15m strategy (unfunded). The reader auto-detects
+if BTC turns on; the screener ranks where farming is its own (small, capital-parked) play.**
+So the "#2 = rewards" leg is retired for our market; #2 becomes **scale the cap + multi-market**.
