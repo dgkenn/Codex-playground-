@@ -176,14 +176,38 @@ async def run(args):
     sess = requests.Session()
     fv = SpotFair(sess)
     log = open("shadow.log", "a"); wins_fh = open("shadow_windows.jsonl", "a")
-    cum = {}
+    cum = {}; pending = []
 
     def L(s):
         line = f"{now_iso()} {s}"; print(line); log.write(line + "\n"); log.flush()
 
+    def try_settle():
+        """Retry resolution for closed-but-unresolved windows (Polymarket posts the result
+        minutes after window end). Settle + remove when resolved. (The bug in the first run
+        was settling ONCE at close and skipping forever.)"""
+        for item in pending[:]:
+            mk2, variants2 = item
+            r = resolve(sess, mk2["ws"])
+            if r is None:
+                continue
+            row = {"ts": now_iso(), "ws": mk2["ws"], "resolved_up": r}
+            parts = []
+            for v in variants2:
+                _, net = v.settle(r)
+                c = cum.setdefault(v.name, {"net": 0.0, "fills": 0, "windows": 0, "pos": 0})
+                c["net"] += net; c["fills"] += v.fills; c["windows"] += 1; c["pos"] += 1 if net > 0 else 0
+                row[v.name] = {"net": round(net, 4), "fills": v.fills}
+                parts.append(f"{v.name}={net:+.3f}({v.fills})")
+            wins_fh.write(json.dumps(row) + "\n"); wins_fh.flush()
+            json.dump(cum, open("shadow_summary.json", "w"), indent=2)
+            L("SETTLE w=%d res=%d | %s" % (mk2["ws"], r, "  ".join(parts)))
+            L("CUM | " + "  ".join(f"{k}={c['net']:+.2f}/{c['windows']}w" for k, c in cum.items()))
+            pending.remove(item)
+
     L(f"=== shadow_compare start variants={[c.name for c in configs({'up':'','down':'','we':0}, {})]} ===")
     end = time.time() + args.duration
     while time.time() < end:
+        try_settle()                         # retry any closed-but-unresolved windows
         mk = active_market(sess)
         if mk is None:
             await asyncio.sleep(5); continue
@@ -218,22 +242,16 @@ async def run(args):
                                     v.on_trade(str(m["asset_id"]), m["side"], float(m["price"]), float(m["size"]))
             except Exception as e:  # noqa: BLE001
                 L(f"  [ws reconnect] {str(e)[:70]}"); await asyncio.sleep(2)
-        r = resolve(sess, mk["ws"])
-        if r is None:
-            L(f"WINDOW {mk['ws']} unresolved yet; skipping settle"); continue
-        row = {"ts": now_iso(), "ws": mk["ws"], "resolved_up": r}
-        parts = []
-        for v in variants:
-            gross, net = v.settle(r)
-            c = cum.setdefault(v.name, {"net": 0.0, "fills": 0, "windows": 0, "pos": 0})
-            c["net"] += net; c["fills"] += v.fills; c["windows"] += 1; c["pos"] += 1 if net > 0 else 0
-            row[v.name] = {"net": round(net, 4), "fills": v.fills}
-            parts.append(f"{v.name}={net:+.3f}({v.fills})")
-        wins_fh.write(json.dumps(row) + "\n"); wins_fh.flush()
-        json.dump(cum, open("shadow_summary.json", "w"), indent=2)
-        L("SETTLE w=%d res=%d | %s" % (mk["ws"], r, "  ".join(parts)))
-        L("CUM | " + "  ".join(f"{k}={c['net']:+.2f}/{c['windows']}w" for k, c in cum.items()))
-    L("=== shadow_compare stop ===")
+        pending.append((mk, variants))      # settle later, with retry (resolution lags close)
+        try_settle()
+    # drain: retry pending settlements for a few minutes after the run ends
+    for _ in range(20):
+        if not pending:
+            break
+        try_settle()
+        if pending:
+            await asyncio.sleep(15)
+    L(f"=== shadow_compare stop (unsettled windows left: {len(pending)}) ===")
 
 
 def main():
