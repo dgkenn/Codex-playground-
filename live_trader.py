@@ -100,6 +100,22 @@ def resolve(sess, ws):
     return None
 
 
+def microprice(bb, ba, bsz, asz):
+    """Stoikov micro-price, first-order (imbalance-weighted) form: the expected next-tick fair
+    value of THIS token's own book given depth imbalance -- NOT a forecast of BTC (that's dead,
+    R^2~0). micro -> ask under buy pressure (bsz>>asz), -> bid under sell pressure. Repricing
+    against this instead of the stale mid gives adverse-selection aversion: you step off the
+    side the book is about to leave. Book-native, always available (degrades better than the
+    spot model). See LIVE_DESIGN.md #4 (Stoikov)."""
+    if bb is None or ba is None:
+        return None
+    tot = (bsz or 0) + (asz or 0)
+    if tot <= 0:
+        return (bb + ba) / 2.0
+    imb = (bsz or 0) / tot                       # share of size on the bid = buy pressure
+    return bb + (ba - bb) * imb
+
+
 def make_client():
     from py_clob_client_v2 import ClobClient, SignatureTypeV2
     pk = os.environ["PRIVATE_KEY"]; funder = os.environ["DEPOSIT_WALLET_ADDRESS"]
@@ -349,7 +365,11 @@ def main():
                     continue
                 base = baseline_levels(mk, token, is_up, bb, ba, net_delta, a.layers, a.cap, a.skew)
                 ft = fv.fair_token(is_up, tau) if fv is not None else None
-                desired, model_supp = model_filter(base, ft, a.fv_margin, bb, ba, band_px, rlog, token)
+                mp = microprice(bb, ba, bsz, asz)        # book-native anchor (#4), always available
+                # reprice target: blend spot fair value with the microprice; fall back to whichever
+                # is available (microprice degrades better -- no spot feed needed).
+                anchor = mp if ft is None else (0.5 * (ft + mp) if mp is not None else ft)
+                desired, model_supp = model_filter(base, anchor, a.fv_margin, bb, ba, band_px, rlog, token)
 
                 # place missing desired levels (KEEP existing -> preserve time priority)
                 for key in desired:
