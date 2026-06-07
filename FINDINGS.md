@@ -281,3 +281,36 @@ taker arrives (a latency effect, invisible to tape replay which only shows fills
 happened, not cancels you'd win); (b) marginal continuous sizing. This matches the prior
 result that book-mid markout toxicity filtering also hurts — fill SELECTION is the wrong
 lever; the edge is structural and you must take both sides.
+
+## ROADMAP #1 — delta-hedge residual inventory with a BTC perp (TESTED, REDIRECTED)
+`hedge_sim.py`. Four arms on the SKEWED (deployed skew=0.25) book + a no-skew surface,
+frictionless (upper bound) vs practical (perp fee 4bps + funding + $25 rebalance band),
+scored on window-Sharpe (n=288 FIXED). Baseline reproduces the known capped P&L
+(Sharpe 0.913/0.815/0.695 at cap 50/100/200) before any treatment is trusted.
+
+The instrument fights back, by theory not bug: a binary's gamma DIVERGES at expiry (the
+spot->prob map is a vertical wall as sigma*sqrt(tau)->0), so naive continuous hedging
+rebalances hundreds-to-thousands of times/window (first cut: $276k perp fees = the math
+working). A binary can't be dynamically replicated near resolution (incompleteness).
+
+Findings (refine BOTH the "variance is hedgeable" and "tail-concentrated" priors):
+- **The frictionless ideal hedge raises Sharpe 0.913->1.011 but leaves std UNCHANGED
+  (70.25->70.78).** So its benefit is a MEAN effect (+~$7/window): the inventory carries a
+  small adverse-selection DRIFT a perfect hedge removes. The within-window variance is
+  NON-DIRECTIONAL (ideal std == baseline std) -> a perp cannot reduce it. Hedging was never
+  a variance play here.
+- **Practical hedge is net-destructive at every cap and every tau_freeze** (Sharpe -1.7..-2.9,
+  fees $130k-$460k). Freezing the last 300s cuts median rebalances only 557->356 (~36%): the
+  gamma churn is spread THROUGHOUT the window (BTC ticks are large vs the ~13bp window-vol),
+  not tail-concentrated. So "hedge the last 90s is the problem" does NOT hold; it's costly
+  everywhere. The +$7/win benefit is ~66x smaller than the ~$460/win perp fees the gamma forces.
+- Skew already delivers Sharpe 0.91 AND the cap can be raised WITHOUT hedging (cumulative P&L
+  stays positive; $tot rises 18.5k->33.8k from cap 50->400). The brake hedging was meant to
+  release (can't raise cap) is not binding.
+
+**Verdict: skew DOMINATES the perp hedge at this scale; do not build the perp hedger.**
+Revisit only if scaled past the point where refusing the leaning side (skew) leaves real
+volume on the table -- then take+hedge could beat refuse. The small recoverable adverse-drift
+(+$7/win) is exactly what PREDICTIVE REPRICING (#4) targets, and #4 captures it by quoting
+ahead of the move -- no perp, no gamma-fee tax. So #1's residual is #4's job, not a hedger's.
+Funding was negligible at the 15m horizon, as expected.
