@@ -127,3 +127,30 @@ unproven. #4 keeps progressing in parallel because only the live pilot can score
 
 **Scope caveat carried throughout:** everything is validated on **BTC 15m, one OOS split**.
 A good result on any item is "live-plausible on this market," not "generalizes."
+
+---
+
+## Update log — post-testing status (results overlay; see FINDINGS.md)
+
+- **#1 Delta-hedge perp — TESTED → RETIRED.** On the deployed skewed book the frictionless
+  hedge raises Sharpe via a MEAN effect (+~$7/win) with std UNCHANGED → within-window variance
+  is non-directional, unhedgeable. Practical hedge net-destructive at every cap/τ_freeze (binary
+  gamma churn spread through the window, not tail-concentrated; perp fees ~66× the prize). Skew
+  already neutralizes delta for free. `hedge_sim.py`. **Do not build the hedger.**
+- **#2 Liquidity rewards — TESTED → $0 on our market.** BTC 15m `rates:null` (unfunded);
+  funded markets are politics/longshots ($100–1000/day pools, ~$2/day for a $200 LP, bearing
+  resolution risk). `rewards.py` reader+screener auto-detects if BTC turns on. **#2 redirects to:
+  SCALE THE CAP (validated) + MULTI-MARKET (#5).**
+- **Raise the cap — ENDORSED, moderately.** Scales edge (75% of windows improve; jackknife
+  Sharpe rises dropping the best 5), with a bounded terminal-move tail in the incremental gain.
+  Move toward cap=100–200, not 400. `cap_tail.py`.
+- **#3 Continuous sizing f(fair_edge,τ) — still open**, but tempered: the signal is the same
+  weak `fair_edge` (corr ~0.02–0.06); expect a marginal lever, not a major one.
+- **#4 Predictive repricing — DOWNGRADED to a measurement, not a bet.** The +$7/win drift is
+  NOT quote-time predictable (`drift_predict.py`: OLS R²=0.0035, BTC momentum corr 0.0004), so
+  #4 cannot pre-position; only the latency-race channel survives, ceiling ≤$2k total, scoreable
+  solely by the live `reprice_log`. Keep the instrumented scaffold; do not over-invest.
+
+**Net:** the two highest-ranked new-revenue ideas (#1, #2) do not apply to THIS market at THIS
+scale. The endorsed path is **scale the validated cap + go multi-market (#5)** — fill-volume,
+not new signals or hedges, is where the P&L is. Everything still scoped to BTC 15m, one OOS split.

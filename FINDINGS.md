@@ -310,10 +310,38 @@ Findings (refine BOTH the "variance is hedgeable" and "tail-concentrated" priors
 
 **Verdict: skew DOMINATES the perp hedge at this scale; do not build the perp hedger.**
 Revisit only if scaled past the point where refusing the leaning side (skew) leaves real
-volume on the table -- then take+hedge could beat refuse. The small recoverable adverse-drift
-(+$7/win) is exactly what PREDICTIVE REPRICING (#4) targets, and #4 captures it by quoting
-ahead of the move -- no perp, no gamma-fee tax. So #1's residual is #4's job, not a hedger's.
-Funding was negligible at the 15m horizon, as expected.
+volume on the table -- then take+hedge could beat refuse. Funding negligible at 15m, as expected.
+
+CORRECTION (reviewer): do NOT hand the +$7/win residual to #4 as "its job" -- that's a hopeful
+handoff. The frictionless figure is a CEILING: ~$2k total recoverable WITH PERFECT HINDSIGHT of
+the within-window path. Whether #4 can touch it is gated by a quote-time-predictability test
+(below) and a brutal ~$7/win cost bar. Recorded as an open question, not a promise.
+
+### Drift-predictability gate for #4 (drift_predict.py)
+Is the adverse drift the hedge harvested PREDICTABLE from quote-time features (a forecast #4
+could pre-position on), or only harvestable ex-post? Per-fill drift = d_delta*(resolved_up -
+p_up_at_fill); regress on EXOGENOUS quote-time features (signed_size excluded -- mechanically in
+the target).
+- **OLS R^2 = 0.0035; corr(prediction, drift) = 0.059** -- all of it the weak `fair_edge`
+  signal (corr -0.059) that ALREADY failed fill-selection. **BTC 30s momentum corr = 0.0004**
+  (zero -- past moves don't forecast within-window drift; market efficient). tau corr 0.005.
+- => The drift is NOT quote-time predictable. #4 CANNOT PRE-POSITION against it; the prediction
+  channel inherits exactly the weak-signal problem that retired gating. #4's ONLY remaining
+  channel is the LATENCY RACE (react to a CONTEMPORANEOUS spot move faster than the taker -- not
+  a forecast), scoreable solely by the live reprice_log, against the <=$2k ceiling and the
+  queue-position cost of every cancel. **#4 is a marginal, possibly-zero lever -- build it as a
+  measurement, not a bet.**
+
+### Raising the cap -- tail check (cap_tail.py)
+Is the cap-50->400 lift ($18.5k->$33.8k) scaled edge or a few lucky terminal settlements?
+- **Scaling edge:** 75.3% of windows IMPROVE when raising the cap (broad-based); 93-99% of
+  windows positive; **jackknife Sharpe RISES when the best 5 windows are dropped** (0.91->1.47
+  @cap50, 0.66->1.01 @cap400) -- the edge is in the bulk, not the tail.
+- **Bounded caveat:** the INCREMENTAL gain has mild terminal-move concentration -- top-10
+  windows = 31% of the gain; top-decile-|move| windows contribute 20.6% (2x their 10% share);
+  corr(incremental, |terminal move|) = +0.137.
+- **Verdict: raise the cap (it scales edge), but MODERATELY (toward 100-200, not 400);** the
+  incremental gain thins and concentrates into big-move settlements as the cap climbs.
 
 ## ROADMAP #2 — Liquidity Rewards stream (TESTED, REDIRECTED: $0 on our market)
 `rewards.py` (config reader + screener + live-book share estimator).
