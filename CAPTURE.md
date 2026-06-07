@@ -21,17 +21,17 @@ the full lifecycle/queue/latency schema below is the contract the **live pilot**
 - terminal: filled / partial / cancelled / expired / heartbeat-cancelled
 - if cancelled: decision_ts, cancel_sent_ts, cancel_confirmed_ts, reason(reprice/risk/inv/stale)
 - taker_hit_old_price_after_decide? (the cancel-race counterfactual)
-  *Status:* `reprice_log` already captures cancel_sent/confirmed, queue_ahead_surrendered,
-  taker_hit_old, hit_before_confirm. GAP to add for the pilot: a per-PLACE record
-  (decision_ts, ack_ts, queue_depth_ahead, mid/micro/spread/spot/tau at post).
+  *Status:* DONE -- `live_trader` emits `order_log.jsonl`: per-PLACE record (decision_ts, ack_ts,
+  placement_latency_ms, queue_depth_ahead, mid/micro/spread/best/btc_spot/tau) + terminal record
+  (state, reason, resting_s); `reprice_log` covers the cancel-race (sent/confirmed, taker_hit_old).
 
 ## 2. Per fill  [live ground-truth; paper has modeled analogues]
 - trade_id, order_id, match_time, **trader_side(MAKER/TAKER) as truth**, fee_rate_bps charged
 - fill price/size, **queue_rank at fill + time_resting_before_fill** (queue residence)
 - mid/microprice/spread/BTC spot/tau at fill
 - **minted-set vs passive-acquisition flag** — resolves the SELL-skew question (sourcing label)
-  *Status:* `live_markout.jsonl` logs price/size/markout/net_delta. GAP for pilot: trader_side
-  truth, fee charged, queue_rank, time-resting, mint/passive flag.
+  *Status:* DONE -- `live_trader` emits `fills_log.jsonl`: trader_side, fee_bps, time_resting_s,
+  queue_ahead_at_post, source(mint/passive), markout; `live_markout.jsonl` keeps price/size/net_delta.
 
 ## 3. Per fill -> markout  [calc from raw + book]
 - mid AND microprice at +1s, +5s, +30s, +60s, and **at resolution**

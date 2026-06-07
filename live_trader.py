@@ -243,6 +243,38 @@ class RepriceLog:
         return {"pulls": self.pulls, "clamp_binds": self.clamp_binds}
 
 
+class OrderLog:
+    """Per-order lifecycle + fill ground-truth capture (CAPTURE.md #1/#2). order_log.jsonl =
+    placement context+latency and terminal state; fills_log.jsonl = fills with trader-side/fee/
+    queue residence. This is the data that can't be reconstructed after the fact."""
+
+    def __init__(self, opath="order_log.jsonl", fpath="fills_log.jsonl"):
+        self.ofh = open(opath, "a"); self.ffh = open(fpath, "a"); self.n = 0
+
+    def placed(self, oid, decision_ts, ack_ts, **ctx):
+        """Full context at post: queue_depth_ahead (THE field), mid/micro/spread/spot/tau."""
+        self.n += 1
+        rec = {"type": "place", "oid": str(oid)[:24], "decision_ts": decision_ts, "ack_ts": ack_ts,
+               "placement_latency_ms": round((ack_ts - decision_ts) * 1000, 1), **ctx,
+               "log_ts": time.time()}
+        self.ofh.write(json.dumps(rec) + "\n"); self.ofh.flush()
+
+    def terminal(self, oid, state, reason, resting_s):
+        self.ofh.write(json.dumps({"type": "terminal", "oid": str(oid)[:24], "state": state,
+                       "reason": reason, "resting_s": round(resting_s, 2), "log_ts": time.time()}) + "\n")
+        self.ofh.flush()
+
+    def fill(self, oid, asset, taker_side, price, size, trader_side, fee_bps, resting_s, q_ahead,
+             markout, source):
+        self.ffh.write(json.dumps({"type": "fill", "oid": str(oid)[:24], "asset": str(asset)[:12],
+                       "taker_side": taker_side, "trader_side": trader_side, "fee_bps": fee_bps,
+                       "price": price, "size": size, "source": source,
+                       "time_resting_s": round(resting_s, 2) if resting_s is not None else None,
+                       "queue_ahead_at_post": q_ahead, "markout_5s": markout,
+                       "log_ts": time.time()}) + "\n")
+        self.ffh.flush()
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--live", action="store_true")
@@ -279,6 +311,7 @@ def main():
     client = make_client() if live else None
     fv = SpotFair(sess, symbol=a.spot_symbol) if a.reprice else None
     rlog = RepriceLog()
+    olog = OrderLog()                  # CAPTURE.md per-order lifecycle + fill ground-truth
     print(f"[{mode}] STANDING-LADDER maker post={a.post} cap={a.cap} skew={a.skew} layers={a.layers} "
           f"max_rungs={a.max_rungs} age_protect={a.age_protect}s toxic_severe={a.toxic_severe} "
           f"reprice={a.reprice} fv_margin={a.fv_margin} max_notional=${a.max_notional} loss_limit=${a.loss_limit}")
@@ -292,16 +325,19 @@ def main():
     seen_fills = set(); markouts = []
 
     def place(tk, sd, p, queue_ahead):
+        """Returns (order_id, decision_ts, ack_ts); ack-decision = placement latency (CAPTURE #1)."""
+        t_dec = time.time()
         if not live:
             print(f"  [DRY place] {sd} {a.post} {tk[:8]} @ {p} (q_ahead~{queue_ahead:.0f})")
-            return f"dry_{tk[:6]}_{sd}_{p}"
+            return f"dry_{tk[:6]}_{sd}_{p}", t_dec, time.time()
         from py_clob_client_v2 import OrderArgs, OrderType, PartialCreateOrderOptions
         from py_clob_client_v2.order_builder.constants import BUY, SELL
         r = client.create_and_post_order(
             OrderArgs(token_id=tk, price=p, size=a.post, side=(BUY if sd == "BUY" else SELL)),
             options=PartialCreateOrderOptions(tick_size=str(mk["tick"]), neg_risk=mk["negRisk"]),
             order_type=OrderType.GTC)
-        return r.get("orderID") if isinstance(r, dict) else r
+        oid = r.get("orderID") if isinstance(r, dict) else r
+        return oid, t_dec, time.time()
 
     def timed_cancel(oid):
         """Cancel and (best-effort) confirm; return (t_sent, t_confirmed|None)."""
@@ -322,17 +358,18 @@ def main():
             time.sleep(0.1)
         return t_sent, t_conf
 
-    def drop(key, model_pull):
+    def drop(key, reason):
         meta = resting.pop(key); oid = meta["oid"]; q = meta.get("q", 0.0)
         t_sent, t_conf = timed_cancel(oid)
-        if model_pull and fv is not None:
+        olog.terminal(oid, "cancelled", reason, resting_s=time.time() - meta.get("ts", time.time()))
+        if reason == "model_pull" and fv is not None:
             tau = max(mk["we"] - time.time(), 0.0)
             ft = fv.fair_token(key[0] == mk["up"], tau)
             rlog.pull(key[0], key[1], key[2], oid, t_sent, t_conf, q, ft if ft is not None else -1, mk["ws"])
 
-    def cancel_all_resting(model_pull=False):
+    def cancel_all_resting(reason="rollover"):
         for key in list(resting):
-            drop(key, model_pull)
+            drop(key, reason)
 
     end = time.time() + a.duration
     while time.time() < end:
@@ -402,7 +439,13 @@ def main():
                     if sum(1 for k in resting if k[0] == token and k[1] == sd) >= a.max_rungs:
                         continue                          # side ladder full; don't over-commit capital
                     q_ahead = (bsz if sd == "BUY" else asz) if abs(p - (bb if sd == "BUY" else ba)) < 1e-9 else 0.0
-                    resting[key] = {"oid": place(*key, q_ahead), "ts": now, "q": q_ahead}
+                    oid, t_dec, t_ack = place(*key, q_ahead)
+                    resting[key] = {"oid": oid, "ts": t_ack, "q": q_ahead}
+                    olog.placed(oid, t_dec, t_ack, ws=mk["ws"], asset=token[:12], outcome=("Up" if is_up else "Down"),
+                                side=sd, price=p, size=a.post, tick=mk["tick"], queue_depth_ahead=q_ahead,
+                                mid=round((bb + ba) / 2, 4), microprice=round(mp, 4) if mp is not None else None,
+                                best_bid=bb, best_ask=ba, spread=round(ba - bb, 4),
+                                btc_spot=(fv.last if fv is not None else None), tau=round(tau, 1))
 
                 # --- P1 front-sacred + P2 EV-cancel: decide each resting order ---
                 for key in list(resting):
@@ -417,9 +460,9 @@ def main():
                         severe = edge > a.toxic_severe * mk["tick"]         # strong/informed move (in ticks)
                     in_band = key in desired
                     if toxic and (not aged or severe):
-                        drop(key, model_pull=True)         # P2: cancel only if young, OR toxic beats queue value
+                        drop(key, "model_pull")            # P2: cancel only if young, OR toxic beats queue value
                     elif (not aged) and (not in_band):
-                        drop(key, model_pull=False)        # reshape from the back: young off-band rung
+                        drop(key, "reshape")               # reshape from the back: young off-band rung
                     # else: AGED or in-band -> HOLD (front of book is sacred)
 
                 # --- rung cap: evict the rungs FARTHEST from the touch (manage from the back) ---
@@ -428,7 +471,7 @@ def main():
                     if len(ks) > a.max_rungs:
                         ks.sort(key=lambda k: abs(k[2] - touch))           # nearest-touch first
                         for k in ks[a.max_rungs:]:                         # cancel the stranded deep extras
-                            drop(k, model_pull=False)
+                            drop(k, "rung_cap")
 
             # --- per-fill MARKOUT + net-delta + (c) taker-hit-old attribution ---
             if live:
@@ -447,6 +490,18 @@ def main():
                     net_delta += (1.0 if asset == mk["up"] else -1.0) * (fsz if sd == "BUY" else -fsz)
                     bb2, ba2, _, _ = book(sess, asset); mid2 = (bb2 + ba2) / 2 if bb2 and ba2 else fp
                     mo = (mid2 - fp) if sd == "BUY" else (fp - mid2); markouts.append(mo)
+                    # match to OUR resting order (opposite side, same price) for queue residence
+                    mkey = (asset, "SELL" if sd == "BUY" else "BUY", round(fp, 4))
+                    meta = resting.pop(mkey, None)
+                    resting_s = (time.time() - meta["ts"]) if meta else None
+                    oidf = meta["oid"] if meta else (t.get("order_id") or t.get("maker_order_id") or "?")
+                    trader_side = (t.get("maker_taker") or t.get("trader_side") or "MAKER").upper()
+                    # source: this scaffold sells passively (no on-chain mint here) -> "passive";
+                    # a minting bot flags "mint" so the SELL-skew can be attributed to sourcing.
+                    olog.fill(oidf, asset, sd, fp, fsz, trader_side, t.get("fee_rate_bps"),
+                              resting_s, (meta.get("q") if meta else None), round(mo, 5), "passive")
+                    if meta:
+                        olog.terminal(oidf, "filled", "fill", resting_s)
                     open("live_markout.jsonl", "a").write(json.dumps(
                         {"ts": time.time(), "asset": asset[:12], "side": sd, "price": fp, "size": fsz,
                          "markout": mo, "net_delta": net_delta}) + "\n")
