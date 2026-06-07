@@ -52,3 +52,22 @@ Use the official **Polymarket/py-clob-client-v2** for execution; consider **Humm
 or **NautilusTrader** (community Polymarket adapter) as the OMS shell rather than
 hand-rolling. The decisive lever remains **fill rate / queue priority** (latency), per
 all the research — that's what the tiny-live pilot must measure.
+
+## Queue mechanics (Polymarket strict price-time FIFO) — ADOPTED in live_trader.py
+The decisive execution lever. Polymarket CLOB is strict price-time priority: at a level
+you're FIFO; only earlier-time or a price-improving tick moves you up. **Every cancel/replace
+=> back of queue.** So:
+- **LAYER, DON'T CHURN**: rest several small clips across ticks; KEEP in-band orders (preserve
+  time priority); cancel ONLY the stale (off-band) level; re-quote just what moved. (Was the
+  cardinal bug in the old scaffold which cancel_all'd every loop.) DRY-RUN verified.
+- **POST-ONLY / at-or-behind touch** (BUY<=bid, SELL>=ask) -> always maker; crossing pays the
+  taker fee + forfeits rebate. Validated by construction (strictly inside (bid,ask)).
+- **Tick + min-size from market-info** (off-tick orders are rejected); round all prices.
+- **Cancel latency is first-class** (== or > placement latency): your defense against being
+  picked off when BTC ticks is whether your cancel lands before the informed taker's order.
+  Monitor time-to-cancel-confirmed alongside fill rate (live metric).
+- **Unified book**: Up bid matches Down demand when prices sum to $1 (engine mints a pair) ->
+  2-sided complementary quoting widens the match surface (we already quote both sides).
+Reframe that gates it all: maximize fill rate ON BENIGN FLOW, get out of the way of toxic flow.
+Raw fill rate is trivially maxed by never cancelling = maximizing how often you hold the loser.
+=> build fill-rate machinery + per-fill markout TOGETHER; markout says whether to push or pull.
