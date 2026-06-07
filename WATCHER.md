@@ -40,3 +40,21 @@ Layers 1–2 are best-effort (GitHub can still drop both crons during an outage)
   ~2000 min/mo would cap continuous running.
 - The collector is **paper** (READ-ONLY public WS + Coinbase spot, no keys). The live pilot
   (`live_trader.py --live`) runs on YOUR infra, not here.
+
+## Layer 5 — HEARTBEAT (observability + the only total-outage alert)
+The schedule/chain/watchdog all run *inside* GitHub Actions, so none can report their own death
+(a GitHub-wide Actions outage takes the watchers down with the collector). The heartbeat fixes that:
+- **Local liveness:** each run writes `gha_data/HEARTBEAT_<tag>.json` (utc, settled_windows, cum),
+  committed by the incremental loop. At-a-glance "is it alive / when last": read that file or
+  `git log -1 -- gha_data/`.
+- **External dead-man's-switch (the smart part):** if repo secret **`HEARTBEAT_URL`** is set, every
+  run pings it (~every 90s). Point it at a free **healthchecks.io** (or cron-job.org) check set to
+  expect a ping every ~30-60 min; if pings STOP it emails/texts you. Because it lives OUTSIDE
+  GitHub, it's the ONLY layer that catches a total Actions outage / both-cron-dropped failure.
+  Setup: create a healthchecks.io check -> copy its ping URL -> repo Settings -> Secrets ->
+  add `HEARTBEAT_URL`. No-op until then (local heartbeat still works).
+
+## Two optional secrets, ranked
+1. **`HEARTBEAT_URL`** (do this) — you get ALERTED if collection ever stops, even in a GitHub outage.
+2. **`DISPATCH_PAT`** (best continuity) — flips the chain from best-effort to guaranteed self-perpetuating.
+Together: guaranteed-continuous + alerted-on-failure = a fully round, unattended watcher.
