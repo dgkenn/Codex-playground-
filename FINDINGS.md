@@ -396,3 +396,38 @@ underlyings ARE ~one risk factor.
   part; it grows ~N^2 and dominates only past ~20 books or if skew is loosened);
   (2) per-market maker P&L for the alts needs their TRADE tapes -- only top-of-book is on disk, so
   fetch ETH/SOL/XRP trades to confirm the per-book edge ports before sizing real capital there.
+
+## ROADMAP #1 (capacity primitive) — mint/merge (mintmerge.py, collateral.py)
+Mint/merge is the CTF-native collateral primitive (split $1 USDC -> 1 Up+1 Down to source
+2-sided inventory; merge matched pairs -> reclaim $1). It makes posted collateral a function of
+NET DELTA (~$cap), not of cumulative gross turnover -- the capacity unlock, with NO model risk
+(exact $1 conservation). Required for the live build, not optional. Decision logic in
+`collateral.plan()` (tested); on-chain executor `MintMerge` (web3, live-only, guarded); wired
+into `live_trader.py` (merge at rollover). NOT a P&L lever -- it removes a capital constraint.
+
+## #5 caveat (record precisely): √N is banked diversification on UNBANKED fills
+The Sharpe x1.98 is PROVEN diversification structure on an ASSUMED input: it holds **iff alt
+fill rates match BTC**. Alts are book-only / BTC-5m is UP-trades-only on disk, so the x4 edge is
+modeled on fill PARITY across books -- the same live-only unknown that gates everything. Honest
+claim: "breadth gives ~sqrt(N) diversification of a non-directional edge with ~1% residual-corr
+drag, headroom far beyond the 4-5 markets accessible (N^2 crossover ~22 is out-of-domain, not a
+target) -- CONDITIONAL on alt fill rates matching BTC, a live-pilot measurement." Diversification
+banked; per-book fill rate unbanked.
+
+## OFFLINE RESEARCH PROGRAM — COMPLETE
+The investigation has converged. Mapping every lever:
+- **DEAD** (tested, retired): taker signals; fill-selection / markout-toxicity gating; alpha-skew;
+  fair-value fill gating; delta-hedge (variance is non-directional); predictive-repricing's
+  PREDICTION channel (drift not quote-time forecastable, R^2~0.003); liquidity rewards ($0 on BTC).
+- **VALIDATED GROWTH LEVERS (both pure capacity, both structural):**
+  1. **Raise the cap** to the risk-budget point on a smooth Sharpe-vs-capacity frontier (jackknife
+     Sharpe is monotone, peaks at small cap -> start small, climb; no cliff).
+  2. **Scale to 4-5 funded crypto books** with a PORTFOLIO-level delta cap (~sqrt(N) diversification,
+     ~1% corr drag) -- conditional on alt fill parity.
+  Plus mint/merge as the collateral primitive that makes the size feasible on fixed capital.
+- **LIVE-ONLY (unscoreable offline; the pilot's job):** real fill rate / queue position won;
+  latency-race repricing vs its <=$2k/queue-cost bar; whether the cap raise and alt edge hold
+  under live fills + competition.
+**The next bit of information that changes anything costs real money and comes from the pilot.**
+The honest next move is NOT a #6 -- it is to deploy the two validated levers SMALL and measure
+the one input the whole edifice now rests on: capture rate. Build is done; go measure.

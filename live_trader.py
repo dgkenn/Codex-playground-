@@ -55,6 +55,7 @@ from datetime import datetime, timezone
 import requests
 
 import notify  # free Telegram alerts (no-op if env unset)
+import collateral  # ROADMAP #1 mint/merge primitive (on-chain CTF; live-only)
 from fvfeed import SpotFair
 
 G = "https://gamma-api.polymarket.com"
@@ -307,6 +308,15 @@ def main():
                     if r is not None:
                         rlog.settle(mk["ws"], mk["up"], r)
                         rlog.settle(mk["ws"], mk["down"], 1 - r)
+                    # ROADMAP #1: reclaim collateral from matched Up+Down pairs. LIVE build must
+                    # read on-chain token balances here; net_delta is a coarse stand-in for the
+                    # unmatched leg. Merge frees capital to quote more size next window.
+                    mm = collateral.MintMerge(live, neg_risk=mk.get("negRisk", False))
+                    action, sets = collateral.plan(up_held=max(-net_delta, 0) + a.post,
+                                                   dn_held=max(net_delta, 0) + a.post,
+                                                   buffer_sets=a.post)
+                    if action == "merge" and sets > 0:
+                        mm.merge(mk["cid"], sets)
                 cancel_all_resting()                     # window rollover: tokens change, must reset
                 suppressed.clear()
                 mk = active_market(sess)
