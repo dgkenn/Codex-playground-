@@ -11341,3 +11341,247 @@
 {"type": "clamp_bind", "token": "624033309261", "side": "BUY", "model_price": 0.3413, "clamped_price": 0.35, "ts": 1780843210.2801147}
 {"type": "clamp_bind", "token": "101073349348", "side": "SELL", "model_price": 0.6717, "clamped_price": 0.65, "ts": 1780843213.4621358}
 {"type": "clamp_bind", "token": "624033309261", "side": "BUY", "model_price": 0.3281, "clamped_price": 0.35, "ts": 1780843213.5981026}
+{"type": "clamp_bind", "token": "101073349348", "side": "SELL", "model_price": 0.664, "clamped_price": 0.64, "ts": 1780843216.790375}
+{"type": "clamp_bind", "token": "624033309261", "side": "BUY", "model_price": 0.336, "clamped_price": 0.36, "ts": 1780843216.9171345}
+{"type": "clamp_bind", "token": "101073349348", "side": "BUY", "model_price": 0.5501, "clamped_price": 0.56, "ts": 1780843220.0958893}
+{"type": "clamp_bind", "token": "624033309261", "side": "SELL", "model_price": 0.4497, "clamped_price": 0.44, "ts": 1780843220.2272656}
+{"type": "clamp_bind", "token": "101073349348", "side": "SELL", "model_price": 0.5573, "clamped_price": 0.55, "ts": 1780843223.4161272}
+{"type": "clamp_bind", "token": "624033309261", "side": "BUY", "model_price": 0.4431, "clamped_price": 0.45, "ts": 1780843223.5442004}
+{"type": "clamp_bind", "token": "101073349348", "side": "SELL", "model_price": 0.5424, "clamped_price": 0.52, "ts": 1780843226.776546}
+{"type": "clamp_bind", "token": "624033309261", "side": "BUY", "model_price": 0.4781, "clamped_price": 0.52, "ts": 1780843226.9032824}
+{"type": "clamp_bind", "token": "101073349348", "side": "SELL", "model_price": 0.4966, "clamped_price": 0.45, "ts": 1780843230.0809133}
+{"type": "clamp_bind", "token": "624033309261", "side": "BUY", "model_price": 0.5034, "clamped_price": 0.55, "ts": 1780843230.2113352}
+{"type": "clamp_bind", "token": "101073349348", "side": "SELL", "model_price": 0.4213, "clamped_price": 0.36, "ts": 1780843233.4005709}
+{"type": "clamp_bind", "token": "624033309261", "side": "BUY", "model_price": 0.5805, "clamped_price": 0.64, "ts": 1780843233.5316029}
+{"type": "clamp_bind", "token": "101073349348", "side": "SELL", "model_price": 0.4893, "clamped_price": 0.43, "ts": 1780843236.7372398}
+{"type": "clamp_bind", "token": "624033309261", "side": "BUY", "model_price": 0.5108, "clamped_price": 0.57, "ts": 1780843236.8705907}
+{"type": "clamp_bind", "token": "101073349348", "side": "SELL", "model_price": 0.4275, "clamped_price": 0.37, "ts": 1780843240.0896564}
+{"type": "clamp_bind", "token": "624033309261", "side": "BUY", "model_price": 0.5748, "clamped_price": 0.63, "ts": 1780843240.2215834}
+{"type": "clamp_bind", "token": "101073349348", "side": "SELL", "model_price": 0.3516, "clamped_price": 0.32, "ts": 1780843243.4086523}
+{"type": "clamp_bind", "token": "624033309261", "side": "BUY", "model_price": 0.6484, "clamped_price": 0.68, "ts": 1780843243.5451968}
+{"type": "clamp_bind", "token": "101073349348", "side": "SELL", "model_price": 0.3447, "clamped_price": 0.31, "ts": 1780843246.732889}
+{"type": "clamp_bind", "token": "624033309261", "side": "BUY", "model_price": 0.6542, "clamped_price": 0.69, "ts": 1780843246.8603497}
+{"type": "clamp_bind", "token": "101073349348", "side": "SELL", "model_price": 0.3674, "clamped_price": 0.35, "ts": 1780843250.067598}
+{"type": "clamp_bind", "token": "624033309261", "side": "BUY", "model_price": 0.6331, "clamped_price": 0.65, "ts": 1780843250.196157}
+{"type": "clamp_bind", "token": "101073349348", "side": "SELL", "model_price": 0.4138, "clamped_price": 0.4, "ts": 1780843253.3755817}
+{"type": "clamp_bind", "token": "624033309261", "side": "BUY", "model_price": 0.587, "clamped_price": 0.6, "ts": 1780843253.503422}
+{"type": "clamp_bind", "token": "101073349348", "side": "SELL", "model_price": 0.4205, "clamped_price": 0.42, "ts": 1780843256.683702}
+{"type": "clamp_bind", "token": "624033309261", "side": "BUY", "model_price": 0.5794, "clamped_price": 0.58, "ts": 1780843256.8082604}
+{"type": "clamp_bind", "token": "101073349348", "side": "BUY", "model_price": 0.3274, "clamped_price": 0.33, "ts": 1780843260.0034366}
+{"type": "clamp_bind", "token": "624033309261", "side": "SELL", "model_price": 0.6726, "clamped_price": 0.67, "ts": 1780843260.1412928}
+{"type": "clamp_bind", "token": "101073349348", "side": "BUY", "model_price": 0.3523, "clamped_price": 0.39, "ts": 1780843263.3372872}
+{"type": "clamp_bind", "token": "624033309261", "side": "SELL", "model_price": 0.6475, "clamped_price": 0.61, "ts": 1780843263.4659915}
+{"type": "clamp_bind", "token": "101073349348", "side": "BUY", "model_price": 0.3377, "clamped_price": 0.37, "ts": 1780843266.6697092}
+{"type": "clamp_bind", "token": "624033309261", "side": "SELL", "model_price": 0.6648, "clamped_price": 0.64, "ts": 1780843266.8013732}
+{"type": "clamp_bind", "token": "101073349348", "side": "BUY", "model_price": 0.3327, "clamped_price": 0.36, "ts": 1780843269.9847863}
+{"type": "clamp_bind", "token": "624033309261", "side": "SELL", "model_price": 0.6719, "clamped_price": 0.65, "ts": 1780843270.1170151}
+{"type": "clamp_bind", "token": "101073349348", "side": "SELL", "model_price": 0.4169, "clamped_price": 0.4, "ts": 1780843273.309535}
+{"type": "pull", "ws": 1780842600, "token": "101073349348", "side": "SELL", "old_price": 0.4, "order_id": "dry_101073_SELL_0.4", "cancel_sent": 1780843273.3096337, "cancel_confirmed": 1780843273.3096337, "time_to_cancel_ms": 0.0, "queue_ahead_surrendered": 348.52, "fair_token": 0.4234, "taker_hit_old": null, "hit_before_confirm": null, "avoided_resolution_markout": null, "ts": 1780843273.3100734}
+{"type": "pull", "ws": 1780842600, "token": "101073349348", "side": "SELL", "old_price": 0.39, "order_id": "dry_101073_SELL_0.39", "cancel_sent": 1780843273.3101418, "cancel_confirmed": 1780843273.3101418, "time_to_cancel_ms": 0.0, "queue_ahead_surrendered": 218.3, "fair_token": 0.4234, "taker_hit_old": null, "hit_before_confirm": null, "avoided_resolution_markout": null, "ts": 1780843273.3106322}
+{"type": "clamp_bind", "token": "624033309261", "side": "BUY", "model_price": 0.5856, "clamped_price": 0.61, "ts": 1780843273.4391756}
+{"type": "pull", "ws": 1780842600, "token": "624033309261", "side": "BUY", "old_price": 0.61, "order_id": "dry_624033_BUY_0.61", "cancel_sent": 1780843273.4393, "cancel_confirmed": 1780843273.4393, "time_to_cancel_ms": 0.0, "queue_ahead_surrendered": 41.75, "fair_token": 0.5766, "taker_hit_old": null, "hit_before_confirm": null, "avoided_resolution_markout": null, "ts": 1780843273.4397898}
+{"type": "pull", "ws": 1780842600, "token": "624033309261", "side": "BUY", "old_price": 0.62, "order_id": "dry_624033_BUY_0.62", "cancel_sent": 1780843273.4398396, "cancel_confirmed": 1780843273.4398396, "time_to_cancel_ms": 0.0, "queue_ahead_surrendered": 102.75, "fair_token": 0.5766, "taker_hit_old": null, "hit_before_confirm": null, "avoided_resolution_markout": null, "ts": 1780843273.4401126}
+{"type": "clamp_bind", "token": "101073349348", "side": "SELL", "model_price": 0.4069, "clamped_price": 0.38, "ts": 1780843276.738532}
+{"type": "clamp_bind", "token": "624033309261", "side": "BUY", "model_price": 0.5932, "clamped_price": 0.62, "ts": 1780843276.9373498}
+{"type": "clamp_bind", "token": "101073349348", "side": "SELL", "model_price": 0.3832, "clamped_price": 0.36, "ts": 1780843280.1240554}
+{"type": "clamp_bind", "token": "624033309261", "side": "BUY", "model_price": 0.6136, "clamped_price": 0.64, "ts": 1780843280.2545648}
+{"type": "clamp_bind", "token": "101073349348", "side": "SELL", "model_price": 0.3726, "clamped_price": 0.34, "ts": 1780843283.4569907}
+{"type": "clamp_bind", "token": "624033309261", "side": "BUY", "model_price": 0.6269, "clamped_price": 0.66, "ts": 1780843283.5824714}
+{"type": "clamp_bind", "token": "101073349348", "side": "SELL", "model_price": 0.3393, "clamped_price": 0.29, "ts": 1780843286.7970855}
+{"type": "clamp_bind", "token": "624033309261", "side": "BUY", "model_price": 0.6604, "clamped_price": 0.71, "ts": 1780843286.934311}
+{"type": "clamp_bind", "token": "101073349348", "side": "SELL", "model_price": 0.308, "clamped_price": 0.23, "ts": 1780843290.116492}
+{"type": "clamp_bind", "token": "624033309261", "side": "BUY", "model_price": 0.6916, "clamped_price": 0.77, "ts": 1780843290.245138}
+{"type": "clamp_bind", "token": "101073349348", "side": "SELL", "model_price": 0.2916, "clamped_price": 0.2, "ts": 1780843293.433808}
+{"type": "clamp_bind", "token": "624033309261", "side": "BUY", "model_price": 0.709, "clamped_price": 0.8, "ts": 1780843293.562566}
+{"type": "clamp_bind", "token": "101073349348", "side": "SELL", "model_price": 0.2673, "clamped_price": 0.18, "ts": 1780843296.752263}
+{"type": "clamp_bind", "token": "624033309261", "side": "BUY", "model_price": 0.7335, "clamped_price": 0.82, "ts": 1780843296.889162}
+{"type": "clamp_bind", "token": "101073349348", "side": "SELL", "model_price": 0.276, "clamped_price": 0.2, "ts": 1780843300.072647}
+{"type": "clamp_bind", "token": "624033309261", "side": "BUY", "model_price": 0.7239, "clamped_price": 0.8, "ts": 1780843300.1971738}
+{"type": "clamp_bind", "token": "101073349348", "side": "SELL", "model_price": 0.196, "clamped_price": 0.16, "ts": 1780843303.4389594}
+{"type": "clamp_bind", "token": "624033309261", "side": "BUY", "model_price": 0.8097, "clamped_price": 0.86, "ts": 1780843303.5627105}
+{"type": "clamp_bind", "token": "101073349348", "side": "SELL", "model_price": 0.1745, "clamped_price": 0.12, "ts": 1780843306.7431006}
+{"type": "clamp_bind", "token": "624033309261", "side": "BUY", "model_price": 0.8255, "clamped_price": 0.88, "ts": 1780843306.869475}
+{"type": "clamp_bind", "token": "101073349348", "side": "SELL", "model_price": 0.1592, "clamped_price": 0.09, "ts": 1780843310.0575376}
+{"type": "clamp_bind", "token": "624033309261", "side": "BUY", "model_price": 0.8406, "clamped_price": 0.91, "ts": 1780843310.1920707}
+{"type": "clamp_bind", "token": "101073349348", "side": "SELL", "model_price": 0.1757, "clamped_price": 0.11, "ts": 1780843313.37947}
+{"type": "clamp_bind", "token": "624033309261", "side": "BUY", "model_price": 0.8243, "clamped_price": 0.89, "ts": 1780843313.5169008}
+{"type": "clamp_bind", "token": "101073349348", "side": "SELL", "model_price": 0.1285, "clamped_price": 0.12, "ts": 1780843316.7205114}
+{"type": "clamp_bind", "token": "624033309261", "side": "BUY", "model_price": 0.872, "clamped_price": 0.88, "ts": 1780843316.84492}
+{"type": "clamp_bind", "token": "101073349348", "side": "SELL", "model_price": 0.1177, "clamped_price": 0.1, "ts": 1780843320.0333307}
+{"type": "clamp_bind", "token": "624033309261", "side": "BUY", "model_price": 0.8838, "clamped_price": 0.9, "ts": 1780843320.1633832}
+{"type": "clamp_bind", "token": "101073349348", "side": "SELL", "model_price": 0.1477, "clamped_price": 0.12, "ts": 1780843323.3391297}
+{"type": "clamp_bind", "token": "624033309261", "side": "BUY", "model_price": 0.8523, "clamped_price": 0.88, "ts": 1780843323.4769998}
+{"type": "clamp_bind", "token": "101073349348", "side": "BUY", "model_price": 0.1125, "clamped_price": 0.13, "ts": 1780843333.458825}
+{"type": "clamp_bind", "token": "624033309261", "side": "SELL", "model_price": 0.8875, "clamped_price": 0.87, "ts": 1780843333.5870078}
+{"type": "clamp_bind", "token": "101073349348", "side": "BUY", "model_price": 0.1416, "clamped_price": 0.15, "ts": 1780843336.7774177}
+{"type": "pull", "ws": 1780842600, "token": "101073349348", "side": "SELL", "old_price": 0.18, "order_id": "dry_101073_SELL_0.18", "cancel_sent": 1780843336.7775357, "cancel_confirmed": 1780843336.7775357, "time_to_cancel_ms": 0.0, "queue_ahead_surrendered": 0.0, "fair_token": 0.1474, "taker_hit_old": null, "hit_before_confirm": null, "avoided_resolution_markout": null, "ts": 1780843336.7778466}
+{"type": "clamp_bind", "token": "624033309261", "side": "SELL", "model_price": 0.8586, "clamped_price": 0.85, "ts": 1780843336.921442}
+{"type": "pull", "ws": 1780842600, "token": "624033309261", "side": "BUY", "old_price": 0.82, "order_id": "dry_624033_BUY_0.82", "cancel_sent": 1780843336.9215505, "cancel_confirmed": 1780843336.9215505, "time_to_cancel_ms": 0.0, "queue_ahead_surrendered": 0.0, "fair_token": 0.8527, "taker_hit_old": null, "hit_before_confirm": null, "avoided_resolution_markout": null, "ts": 1780843336.921859}
+{"type": "clamp_bind", "token": "101073349348", "side": "BUY", "model_price": 0.1367, "clamped_price": 0.15, "ts": 1780843340.1534996}
+{"type": "clamp_bind", "token": "624033309261", "side": "SELL", "model_price": 0.8688, "clamped_price": 0.86, "ts": 1780843340.2845771}
+{"type": "clamp_bind", "token": "101073349348", "side": "BUY", "model_price": 0.1757, "clamped_price": 0.18, "ts": 1780843346.7791204}
+{"type": "clamp_bind", "token": "624033309261", "side": "SELL", "model_price": 0.8219, "clamped_price": 0.82, "ts": 1780843346.9094827}
+{"type": "clamp_bind", "token": "101073349348", "side": "BUY", "model_price": 0.192, "clamped_price": 0.2, "ts": 1780843350.1673017}
+{"type": "pull", "ws": 1780842600, "token": "101073349348", "side": "SELL", "old_price": 0.23, "order_id": "dry_101073_SELL_0.23", "cancel_sent": 1780843350.1674016, "cancel_confirmed": 1780843350.1674016, "time_to_cancel_ms": 0.0, "queue_ahead_surrendered": 0.0, "fair_token": 0.1992, "taker_hit_old": null, "hit_before_confirm": null, "avoided_resolution_markout": null, "ts": 1780843350.1678274}
+{"type": "clamp_bind", "token": "624033309261", "side": "SELL", "model_price": 0.8079, "clamped_price": 0.8, "ts": 1780843350.3055367}
+{"type": "pull", "ws": 1780842600, "token": "624033309261", "side": "BUY", "old_price": 0.77, "order_id": "dry_624033_BUY_0.77", "cancel_sent": 1780843350.3056304, "cancel_confirmed": 1780843350.3056304, "time_to_cancel_ms": 0.0, "queue_ahead_surrendered": 0.0, "fair_token": 0.8009, "taker_hit_old": null, "hit_before_confirm": null, "avoided_resolution_markout": null, "ts": 1780843350.30593}
+{"type": "clamp_bind", "token": "101073349348", "side": "BUY", "model_price": 0.172, "clamped_price": 0.19, "ts": 1780843353.550599}
+{"type": "clamp_bind", "token": "624033309261", "side": "SELL", "model_price": 0.8281, "clamped_price": 0.81, "ts": 1780843353.6833792}
+{"type": "clamp_bind", "token": "101073349348", "side": "BUY", "model_price": 0.1782, "clamped_price": 0.21, "ts": 1780843356.8695962}
+{"type": "clamp_bind", "token": "624033309261", "side": "SELL", "model_price": 0.8262, "clamped_price": 0.8, "ts": 1780843357.0026958}
+{"type": "clamp_bind", "token": "101073349348", "side": "SELL", "model_price": 0.2113, "clamped_price": 0.16, "ts": 1780843360.1873093}
+{"type": "clamp_bind", "token": "624033309261", "side": "BUY", "model_price": 0.7928, "clamped_price": 0.85, "ts": 1780843360.370062}
+{"type": "clamp_bind", "token": "101073349348", "side": "SELL", "model_price": 0.1673, "clamped_price": 0.15, "ts": 1780843363.5557897}
+{"type": "clamp_bind", "token": "624033309261", "side": "BUY", "model_price": 0.8327, "clamped_price": 0.85, "ts": 1780843363.6858735}
+{"type": "clamp_bind", "token": "101073349348", "side": "SELL", "model_price": 0.1802, "clamped_price": 0.09, "ts": 1780843366.8828754}
+{"type": "clamp_bind", "token": "624033309261", "side": "BUY", "model_price": 0.8204, "clamped_price": 0.91, "ts": 1780843367.0097623}
+{"type": "clamp_bind", "token": "101073349348", "side": "SELL", "model_price": 0.1666, "clamped_price": 0.08, "ts": 1780843370.2040997}
+{"type": "clamp_bind", "token": "624033309261", "side": "BUY", "model_price": 0.8326, "clamped_price": 0.92, "ts": 1780843370.3375475}
+{"type": "clamp_bind", "token": "101073349348", "side": "SELL", "model_price": 0.1707, "clamped_price": 0.09, "ts": 1780843373.5208}
+{"type": "clamp_bind", "token": "624033309261", "side": "BUY", "model_price": 0.8293, "clamped_price": 0.91, "ts": 1780843373.69072}
+{"type": "clamp_bind", "token": "101073349348", "side": "SELL", "model_price": 0.1335, "clamped_price": 0.1, "ts": 1780843376.8820264}
+{"type": "clamp_bind", "token": "624033309261", "side": "BUY", "model_price": 0.87, "clamped_price": 0.91, "ts": 1780843377.0170414}
+{"type": "clamp_bind", "token": "101073349348", "side": "SELL", "model_price": 0.0785, "clamped_price": 0.05, "ts": 1780843380.2474632}
+{"type": "clamp_bind", "token": "624033309261", "side": "BUY", "model_price": 0.9206, "clamped_price": 0.95, "ts": 1780843380.3828247}
+{"type": "clamp_bind", "token": "101073349348", "side": "SELL", "model_price": 0.0781, "clamped_price": 0.05, "ts": 1780843383.5630963}
+{"type": "clamp_bind", "token": "624033309261", "side": "BUY", "model_price": 0.9219, "clamped_price": 0.95, "ts": 1780843383.690159}
+{"type": "clamp_bind", "token": "101073349348", "side": "SELL", "model_price": 0.0818, "clamped_price": 0.05, "ts": 1780843386.886175}
+{"type": "clamp_bind", "token": "624033309261", "side": "BUY", "model_price": 0.9182, "clamped_price": 0.95, "ts": 1780843387.0163336}
+{"type": "clamp_bind", "token": "101073349348", "side": "SELL", "model_price": 0.0808, "clamped_price": 0.05, "ts": 1780843390.1977377}
+{"type": "clamp_bind", "token": "624033309261", "side": "BUY", "model_price": 0.9192, "clamped_price": 0.95, "ts": 1780843390.3371313}
+{"type": "clamp_bind", "token": "101073349348", "side": "SELL", "model_price": 0.0773, "clamped_price": 0.05, "ts": 1780843393.5224752}
+{"type": "clamp_bind", "token": "624033309261", "side": "BUY", "model_price": 0.9221, "clamped_price": 0.95, "ts": 1780843393.677859}
+{"type": "clamp_bind", "token": "101073349348", "side": "SELL", "model_price": 0.0445, "clamped_price": 0.04, "ts": 1780843396.8891206}
+{"type": "pull", "ws": 1780842600, "token": "101073349348", "side": "BUY", "old_price": 0.01, "order_id": "dry_101073_BUY_0.01", "cancel_sent": 1780843396.8892052, "cancel_confirmed": 1780843396.8892052, "time_to_cancel_ms": 0.0, "queue_ahead_surrendered": 0.0, "fair_token": 0.0301, "taker_hit_old": null, "hit_before_confirm": null, "avoided_resolution_markout": null, "ts": 1780843396.8896964}
+{"type": "clamp_bind", "token": "624033309261", "side": "BUY", "model_price": 0.9555, "clamped_price": 0.96, "ts": 1780843397.0212681}
+{"type": "pull", "ws": 1780842600, "token": "624033309261", "side": "SELL", "old_price": 0.99, "order_id": "dry_624033_SELL_0.99", "cancel_sent": 1780843397.0213792, "cancel_confirmed": 1780843397.0213792, "time_to_cancel_ms": 0.0, "queue_ahead_surrendered": 0.0, "fair_token": 0.9699, "taker_hit_old": null, "hit_before_confirm": null, "avoided_resolution_markout": null, "ts": 1780843397.0218294}
+{"type": "pull", "ws": 1780842600, "token": "101073349348", "side": "SELL", "old_price": 0.04, "order_id": "dry_101073_SELL_0.04", "cancel_sent": 1780843416.8903995, "cancel_confirmed": 1780843416.8903995, "time_to_cancel_ms": 0.0, "queue_ahead_surrendered": 0.0, "fair_token": 0.0184, "taker_hit_old": null, "hit_before_confirm": null, "avoided_resolution_markout": null, "ts": 1780843416.8907502}
+{"type": "pull", "ws": 1780842600, "token": "624033309261", "side": "BUY", "old_price": 0.96, "order_id": "dry_624033_BUY_0.96", "cancel_sent": 1780843417.018442, "cancel_confirmed": 1780843417.018442, "time_to_cancel_ms": 0.0, "queue_ahead_surrendered": 0.0, "fair_token": 0.9816, "taker_hit_old": null, "hit_before_confirm": null, "avoided_resolution_markout": null, "ts": 1780843417.018931}
+{"type": "clamp_bind", "token": "101073349348", "side": "SELL", "model_price": 0.0411, "clamped_price": 0.04, "ts": 1780843423.542757}
+{"type": "clamp_bind", "token": "624033309261", "side": "BUY", "model_price": 0.9588, "clamped_price": 0.96, "ts": 1780843423.6831021}
+{"type": "clamp_bind", "token": "101073349348", "side": "SELL", "model_price": 0.0429, "clamped_price": 0.04, "ts": 1780843430.212066}
+{"type": "pull", "ws": 1780842600, "token": "101073349348", "side": "SELL", "old_price": 0.04, "order_id": "dry_101073_SELL_0.04", "cancel_sent": 1780843430.212152, "cancel_confirmed": 1780843430.212152, "time_to_cancel_ms": 0.0, "queue_ahead_surrendered": 0.0, "fair_token": 0.0268, "taker_hit_old": null, "hit_before_confirm": null, "avoided_resolution_markout": null, "ts": 1780843430.2126064}
+{"type": "clamp_bind", "token": "624033309261", "side": "BUY", "model_price": 0.9571, "clamped_price": 0.96, "ts": 1780843430.3352885}
+{"type": "pull", "ws": 1780842600, "token": "624033309261", "side": "BUY", "old_price": 0.96, "order_id": "dry_624033_BUY_0.96", "cancel_sent": 1780843430.3353474, "cancel_confirmed": 1780843430.3353474, "time_to_cancel_ms": 0.0, "queue_ahead_surrendered": 0.0, "fair_token": 0.9733, "taker_hit_old": null, "hit_before_confirm": null, "avoided_resolution_markout": null, "ts": 1780843430.335805}
+{"type": "clamp_bind", "token": "101073349348", "side": "SELL", "model_price": 0.0462, "clamped_price": 0.04, "ts": 1780843440.1693716}
+{"type": "pull", "ws": 1780842600, "token": "101073349348", "side": "SELL", "old_price": 0.04, "order_id": "dry_101073_SELL_0.04", "cancel_sent": 1780843440.1694295, "cancel_confirmed": 1780843440.1694295, "time_to_cancel_ms": 0.0, "queue_ahead_surrendered": 0.0, "fair_token": 0.033, "taker_hit_old": null, "hit_before_confirm": null, "avoided_resolution_markout": null, "ts": 1780843440.1697452}
+{"type": "clamp_bind", "token": "624033309261", "side": "BUY", "model_price": 0.9538, "clamped_price": 0.96, "ts": 1780843440.294427}
+{"type": "pull", "ws": 1780842600, "token": "624033309261", "side": "BUY", "old_price": 0.96, "order_id": "dry_624033_BUY_0.96", "cancel_sent": 1780843440.2944841, "cancel_confirmed": 1780843440.2944841, "time_to_cancel_ms": 0.0, "queue_ahead_surrendered": 0.0, "fair_token": 0.9671, "taker_hit_old": null, "hit_before_confirm": null, "avoided_resolution_markout": null, "ts": 1780843440.2948055}
+{"type": "clamp_bind", "token": "617473454878", "side": "SELL", "model_price": 0.5338, "clamped_price": 0.53, "ts": 1780843510.025474}
+{"type": "pull", "ws": 1780843500, "token": "617473454878", "side": "SELL", "old_price": 0.53, "order_id": "dry_617473_SELL_0.53", "cancel_sent": 1780843510.0255702, "cancel_confirmed": 1780843510.0255702, "time_to_cancel_ms": 0.0, "queue_ahead_surrendered": 0.0, "fair_token": 0.5252, "taker_hit_old": null, "hit_before_confirm": null, "avoided_resolution_markout": null, "ts": 1780843510.0258913}
+{"type": "clamp_bind", "token": "837797293417", "side": "BUY", "model_price": 0.4662, "clamped_price": 0.47, "ts": 1780843510.153995}
+{"type": "pull", "ws": 1780843500, "token": "837797293417", "side": "BUY", "old_price": 0.47, "order_id": "dry_837797_BUY_0.47", "cancel_sent": 1780843510.154071, "cancel_confirmed": 1780843510.154071, "time_to_cancel_ms": 0.0, "queue_ahead_surrendered": 0.0, "fair_token": 0.4748, "taker_hit_old": null, "hit_before_confirm": null, "avoided_resolution_markout": null, "ts": 1780843510.15441}
+{"type": "clamp_bind", "token": "617473454878", "side": "SELL", "model_price": 0.5261, "clamped_price": 0.52, "ts": 1780843513.335261}
+{"type": "pull", "ws": 1780843500, "token": "617473454878", "side": "BUY", "old_price": 0.49, "order_id": "dry_617473_BUY_0.49", "cancel_sent": 1780843513.335372, "cancel_confirmed": 1780843513.335372, "time_to_cancel_ms": 0.0, "queue_ahead_surrendered": 0.0, "fair_token": 0.5132, "taker_hit_old": null, "hit_before_confirm": null, "avoided_resolution_markout": null, "ts": 1780843513.3358746}
+{"type": "clamp_bind", "token": "837797293417", "side": "BUY", "model_price": 0.4742, "clamped_price": 0.48, "ts": 1780843513.4654026}
+{"type": "pull", "ws": 1780843500, "token": "837797293417", "side": "SELL", "old_price": 0.51, "order_id": "dry_837797_SELL_0.51", "cancel_sent": 1780843513.465507, "cancel_confirmed": 1780843513.465507, "time_to_cancel_ms": 0.0, "queue_ahead_surrendered": 0.0, "fair_token": 0.4868, "taker_hit_old": null, "hit_before_confirm": null, "avoided_resolution_markout": null, "ts": 1780843513.4658504}
+{"type": "clamp_bind", "token": "617473454878", "side": "SELL", "model_price": 0.5307, "clamped_price": 0.52, "ts": 1780843516.659368}
+{"type": "clamp_bind", "token": "837797293417", "side": "BUY", "model_price": 0.4698, "clamped_price": 0.48, "ts": 1780843517.1749578}
+{"type": "clamp_bind", "token": "617473454878", "side": "SELL", "model_price": 0.5231, "clamped_price": 0.52, "ts": 1780843520.404701}
+{"type": "pull", "ws": 1780843500, "token": "617473454878", "side": "BUY", "old_price": 0.49, "order_id": "dry_617473_BUY_0.49", "cancel_sent": 1780843520.404792, "cancel_confirmed": 1780843520.404792, "time_to_cancel_ms": 0.0, "queue_ahead_surrendered": 194.11, "fair_token": 0.5133, "taker_hit_old": null, "hit_before_confirm": null, "avoided_resolution_markout": null, "ts": 1780843520.405296}
+{"type": "clamp_bind", "token": "837797293417", "side": "BUY", "model_price": 0.4769, "clamped_price": 0.48, "ts": 1780843520.5446513}
+{"type": "pull", "ws": 1780843500, "token": "837797293417", "side": "SELL", "old_price": 0.51, "order_id": "dry_837797_SELL_0.51", "cancel_sent": 1780843520.5447333, "cancel_confirmed": 1780843520.5447333, "time_to_cancel_ms": 0.0, "queue_ahead_surrendered": 194.11, "fair_token": 0.4866, "taker_hit_old": null, "hit_before_confirm": null, "avoided_resolution_markout": null, "ts": 1780843520.5452816}
+{"type": "clamp_bind", "token": "617473454878", "side": "SELL", "model_price": 0.5238, "clamped_price": 0.52, "ts": 1780843523.730016}
+{"type": "clamp_bind", "token": "837797293417", "side": "BUY", "model_price": 0.4762, "clamped_price": 0.48, "ts": 1780843523.860351}
+{"type": "clamp_bind", "token": "617473454878", "side": "SELL", "model_price": 0.5077, "clamped_price": 0.47, "ts": 1780843527.1195767}
+{"type": "clamp_bind", "token": "837797293417", "side": "BUY", "model_price": 0.4923, "clamped_price": 0.53, "ts": 1780843527.261655}
+{"type": "clamp_bind", "token": "617473454878", "side": "SELL", "model_price": 0.5185, "clamped_price": 0.51, "ts": 1780843530.4466574}
+{"type": "clamp_bind", "token": "837797293417", "side": "BUY", "model_price": 0.482, "clamped_price": 0.49, "ts": 1780843530.5725236}
+{"type": "clamp_bind", "token": "617473454878", "side": "SELL", "model_price": 0.5208, "clamped_price": 0.51, "ts": 1780843533.7830179}
+{"type": "clamp_bind", "token": "837797293417", "side": "BUY", "model_price": 0.4791, "clamped_price": 0.49, "ts": 1780843533.9122977}
+{"type": "clamp_bind", "token": "617473454878", "side": "SELL", "model_price": 0.4991, "clamped_price": 0.49, "ts": 1780843537.100255}
+{"type": "pull", "ws": 1780843500, "token": "617473454878", "side": "BUY", "old_price": 0.46, "order_id": "dry_617473_BUY_0.46", "cancel_sent": 1780843537.1003525, "cancel_confirmed": 1780843537.1003525, "time_to_cancel_ms": 0.0, "queue_ahead_surrendered": 0.0, "fair_token": 0.498, "taker_hit_old": null, "hit_before_confirm": null, "avoided_resolution_markout": null, "ts": 1780843537.1007445}
+{"type": "clamp_bind", "token": "837797293417", "side": "BUY", "model_price": 0.5009, "clamped_price": 0.51, "ts": 1780843537.2331758}
+{"type": "pull", "ws": 1780843500, "token": "837797293417", "side": "SELL", "old_price": 0.54, "order_id": "dry_837797_SELL_0.54", "cancel_sent": 1780843537.2332792, "cancel_confirmed": 1780843537.2332792, "time_to_cancel_ms": 0.0, "queue_ahead_surrendered": 0.0, "fair_token": 0.502, "taker_hit_old": null, "hit_before_confirm": null, "avoided_resolution_markout": null, "ts": 1780843537.2338521}
+{"type": "clamp_bind", "token": "617473454878", "side": "SELL", "model_price": 0.4991, "clamped_price": 0.49, "ts": 1780843540.4180157}
+{"type": "clamp_bind", "token": "837797293417", "side": "BUY", "model_price": 0.5009, "clamped_price": 0.51, "ts": 1780843540.5465329}
+{"type": "clamp_bind", "token": "617473454878", "side": "SELL", "model_price": 0.4708, "clamped_price": 0.45, "ts": 1780843543.7396016}
+{"type": "clamp_bind", "token": "837797293417", "side": "BUY", "model_price": 0.5293, "clamped_price": 0.55, "ts": 1780843543.8924184}
+{"type": "clamp_bind", "token": "617473454878", "side": "SELL", "model_price": 0.4701, "clamped_price": 0.43, "ts": 1780843547.0786872}
+{"type": "clamp_bind", "token": "837797293417", "side": "BUY", "model_price": 0.5302, "clamped_price": 0.57, "ts": 1780843547.202605}
+{"type": "clamp_bind", "token": "617473454878", "side": "SELL", "model_price": 0.4685, "clamped_price": 0.43, "ts": 1780843550.3916907}
+{"type": "clamp_bind", "token": "837797293417", "side": "BUY", "model_price": 0.5315, "clamped_price": 0.57, "ts": 1780843550.5240972}
+{"type": "clamp_bind", "token": "617473454878", "side": "SELL", "model_price": 0.4588, "clamped_price": 0.43, "ts": 1780843553.7148058}
+{"type": "clamp_bind", "token": "837797293417", "side": "BUY", "model_price": 0.5412, "clamped_price": 0.57, "ts": 1780843553.8402252}
+{"type": "clamp_bind", "token": "617473454878", "side": "SELL", "model_price": 0.4352, "clamped_price": 0.42, "ts": 1780843557.0199583}
+{"type": "clamp_bind", "token": "837797293417", "side": "BUY", "model_price": 0.5695, "clamped_price": 0.59, "ts": 1780843557.149209}
+{"type": "clamp_bind", "token": "617473454878", "side": "SELL", "model_price": 0.4122, "clamped_price": 0.38, "ts": 1780843560.343046}
+{"type": "clamp_bind", "token": "837797293417", "side": "BUY", "model_price": 0.5866, "clamped_price": 0.62, "ts": 1780843560.5157366}
+{"type": "clamp_bind", "token": "617473454878", "side": "SELL", "model_price": 0.4292, "clamped_price": 0.41, "ts": 1780843563.726702}
+{"type": "clamp_bind", "token": "837797293417", "side": "BUY", "model_price": 0.5709, "clamped_price": 0.59, "ts": 1780843563.861623}
+{"type": "clamp_bind", "token": "617473454878", "side": "SELL", "model_price": 0.424, "clamped_price": 0.42, "ts": 1780843567.0580266}
+{"type": "clamp_bind", "token": "837797293417", "side": "BUY", "model_price": 0.5766, "clamped_price": 0.58, "ts": 1780843567.1913104}
+{"type": "pull", "ws": 1780843500, "token": "617473454878", "side": "BUY", "old_price": 0.37, "order_id": "dry_617473_BUY_0.37", "cancel_sent": 1780843570.3707597, "cancel_confirmed": 1780843570.3707597, "time_to_cancel_ms": 0.0, "queue_ahead_surrendered": 0.0, "fair_token": 0.381, "taker_hit_old": null, "hit_before_confirm": null, "avoided_resolution_markout": null, "ts": 1780843570.3711019}
+{"type": "pull", "ws": 1780843500, "token": "837797293417", "side": "SELL", "old_price": 0.63, "order_id": "dry_837797_SELL_0.63", "cancel_sent": 1780843570.5389977, "cancel_confirmed": 1780843570.5389977, "time_to_cancel_ms": 0.0, "queue_ahead_surrendered": 0.0, "fair_token": 0.619, "taker_hit_old": null, "hit_before_confirm": null, "avoided_resolution_markout": null, "ts": 1780843570.5393405}
+{"type": "clamp_bind", "token": "617473454878", "side": "SELL", "model_price": 0.4125, "clamped_price": 0.4, "ts": 1780843573.7251613}
+{"type": "pull", "ws": 1780843500, "token": "617473454878", "side": "SELL", "old_price": 0.4, "order_id": "dry_617473_SELL_0.4", "cancel_sent": 1780843573.7252486, "cancel_confirmed": 1780843573.7252486, "time_to_cancel_ms": 0.0, "queue_ahead_surrendered": 0.0, "fair_token": 0.4143, "taker_hit_old": null, "hit_before_confirm": null, "avoided_resolution_markout": null, "ts": 1780843573.725561}
+{"type": "clamp_bind", "token": "837797293417", "side": "BUY", "model_price": 0.5877, "clamped_price": 0.6, "ts": 1780843573.88539}
+{"type": "pull", "ws": 1780843500, "token": "837797293417", "side": "BUY", "old_price": 0.6, "order_id": "dry_837797_BUY_0.6", "cancel_sent": 1780843573.885511, "cancel_confirmed": 1780843573.885511, "time_to_cancel_ms": 0.0, "queue_ahead_surrendered": 0.0, "fair_token": 0.5857, "taker_hit_old": null, "hit_before_confirm": null, "avoided_resolution_markout": null, "ts": 1780843573.8858695}
+{"type": "clamp_bind", "token": "617473454878", "side": "SELL", "model_price": 0.3984, "clamped_price": 0.37, "ts": 1780843577.0768116}
+{"type": "clamp_bind", "token": "837797293417", "side": "BUY", "model_price": 0.6019, "clamped_price": 0.63, "ts": 1780843577.204603}
+{"type": "clamp_bind", "token": "617473454878", "side": "SELL", "model_price": 0.3817, "clamped_price": 0.34, "ts": 1780843580.408133}
+{"type": "clamp_bind", "token": "837797293417", "side": "BUY", "model_price": 0.6154, "clamped_price": 0.66, "ts": 1780843580.5442166}
+{"type": "clamp_bind", "token": "617473454878", "side": "SELL", "model_price": 0.374, "clamped_price": 0.34, "ts": 1780843583.7302527}
+{"type": "clamp_bind", "token": "837797293417", "side": "BUY", "model_price": 0.626, "clamped_price": 0.66, "ts": 1780843583.868858}
+{"type": "clamp_bind", "token": "617473454878", "side": "SELL", "model_price": 0.3646, "clamped_price": 0.36, "ts": 1780843587.0720668}
+{"type": "clamp_bind", "token": "837797293417", "side": "BUY", "model_price": 0.6354, "clamped_price": 0.64, "ts": 1780843587.2210433}
+{"type": "clamp_bind", "token": "617473454878", "side": "SELL", "model_price": 0.3129, "clamped_price": 0.28, "ts": 1780843593.7345726}
+{"type": "clamp_bind", "token": "837797293417", "side": "BUY", "model_price": 0.687, "clamped_price": 0.72, "ts": 1780843593.8820868}
+{"type": "clamp_bind", "token": "617473454878", "side": "SELL", "model_price": 0.3127, "clamped_price": 0.28, "ts": 1780843597.0667567}
+{"type": "clamp_bind", "token": "837797293417", "side": "BUY", "model_price": 0.6873, "clamped_price": 0.72, "ts": 1780843597.1949093}
+{"type": "clamp_bind", "token": "617473454878", "side": "SELL", "model_price": 0.2873, "clamped_price": 0.25, "ts": 1780843600.3806052}
+{"type": "clamp_bind", "token": "837797293417", "side": "BUY", "model_price": 0.7128, "clamped_price": 0.75, "ts": 1780843600.5080433}
+{"type": "clamp_bind", "token": "617473454878", "side": "SELL", "model_price": 0.2612, "clamped_price": 0.24, "ts": 1780843603.7345266}
+{"type": "clamp_bind", "token": "837797293417", "side": "BUY", "model_price": 0.7388, "clamped_price": 0.76, "ts": 1780843603.8647966}
+{"type": "clamp_bind", "token": "617473454878", "side": "SELL", "model_price": 0.2614, "clamped_price": 0.24, "ts": 1780843607.043175}
+{"type": "clamp_bind", "token": "837797293417", "side": "BUY", "model_price": 0.7387, "clamped_price": 0.76, "ts": 1780843607.170812}
+{"type": "clamp_bind", "token": "617473454878", "side": "SELL", "model_price": 0.2709, "clamped_price": 0.26, "ts": 1780843610.3497472}
+{"type": "clamp_bind", "token": "837797293417", "side": "BUY", "model_price": 0.7291, "clamped_price": 0.74, "ts": 1780843610.4766245}
+{"type": "clamp_bind", "token": "617473454878", "side": "SELL", "model_price": 0.2381, "clamped_price": 0.22, "ts": 1780843613.6590254}
+{"type": "clamp_bind", "token": "837797293417", "side": "BUY", "model_price": 0.7621, "clamped_price": 0.78, "ts": 1780843613.7853277}
+{"type": "clamp_bind", "token": "617473454878", "side": "SELL", "model_price": 0.2223, "clamped_price": 0.19, "ts": 1780843616.9722066}
+{"type": "clamp_bind", "token": "837797293417", "side": "BUY", "model_price": 0.7775, "clamped_price": 0.81, "ts": 1780843617.1030931}
+{"type": "clamp_bind", "token": "617473454878", "side": "SELL", "model_price": 0.226, "clamped_price": 0.18, "ts": 1780843620.2849436}
+{"type": "clamp_bind", "token": "837797293417", "side": "BUY", "model_price": 0.7739, "clamped_price": 0.82, "ts": 1780843620.4135964}
+{"type": "clamp_bind", "token": "617473454878", "side": "SELL", "model_price": 0.2162, "clamped_price": 0.16, "ts": 1780843623.6706793}
+{"type": "clamp_bind", "token": "837797293417", "side": "BUY", "model_price": 0.7845, "clamped_price": 0.84, "ts": 1780843623.8453639}
+{"type": "clamp_bind", "token": "617473454878", "side": "SELL", "model_price": 0.1986, "clamped_price": 0.15, "ts": 1780843627.0446975}
+{"type": "clamp_bind", "token": "837797293417", "side": "BUY", "model_price": 0.8008, "clamped_price": 0.85, "ts": 1780843627.172633}
+{"type": "clamp_bind", "token": "617473454878", "side": "SELL", "model_price": 0.1863, "clamped_price": 0.18, "ts": 1780843630.3758507}
+{"type": "clamp_bind", "token": "837797293417", "side": "BUY", "model_price": 0.8137, "clamped_price": 0.82, "ts": 1780843630.4998841}
+{"type": "clamp_bind", "token": "617473454878", "side": "SELL", "model_price": 0.1757, "clamped_price": 0.15, "ts": 1780843633.686356}
+{"type": "clamp_bind", "token": "837797293417", "side": "BUY", "model_price": 0.8242, "clamped_price": 0.85, "ts": 1780843633.817053}
+{"type": "clamp_bind", "token": "617473454878", "side": "SELL", "model_price": 0.1819, "clamped_price": 0.17, "ts": 1780843637.006399}
+{"type": "clamp_bind", "token": "837797293417", "side": "BUY", "model_price": 0.8181, "clamped_price": 0.83, "ts": 1780843637.1312869}
+{"type": "clamp_bind", "token": "617473454878", "side": "SELL", "model_price": 0.1793, "clamped_price": 0.17, "ts": 1780843640.318414}
+{"type": "pull", "ws": 1780843500, "token": "617473454878", "side": "BUY", "old_price": 0.14, "order_id": "dry_617473_BUY_0.14", "cancel_sent": 1780843640.3185282, "cancel_confirmed": 1780843640.3185282, "time_to_cancel_ms": 0.0, "queue_ahead_surrendered": 48.36, "fair_token": 0.1688, "taker_hit_old": null, "hit_before_confirm": null, "avoided_resolution_markout": null, "ts": 1780843640.3190603}
+{"type": "clamp_bind", "token": "837797293417", "side": "BUY", "model_price": 0.8207, "clamped_price": 0.83, "ts": 1780843640.4481022}
+{"type": "pull", "ws": 1780843500, "token": "837797293417", "side": "SELL", "old_price": 0.86, "order_id": "dry_837797_SELL_0.86", "cancel_sent": 1780843640.4481602, "cancel_confirmed": 1780843640.4481602, "time_to_cancel_ms": 0.0, "queue_ahead_surrendered": 48.36, "fair_token": 0.8313, "taker_hit_old": null, "hit_before_confirm": null, "avoided_resolution_markout": null, "ts": 1780843640.448497}
+{"type": "clamp_bind", "token": "617473454878", "side": "SELL", "model_price": 0.1806, "clamped_price": 0.18, "ts": 1780843647.00786}
+{"type": "pull", "ws": 1780843500, "token": "617473454878", "side": "SELL", "old_price": 0.18, "order_id": "dry_617473_SELL_0.18", "cancel_sent": 1780843647.007952, "cancel_confirmed": 1780843647.007952, "time_to_cancel_ms": 0.0, "queue_ahead_surrendered": 0.0, "fair_token": 0.1621, "taker_hit_old": null, "hit_before_confirm": null, "avoided_resolution_markout": null, "ts": 1780843647.0083208}
+{"type": "clamp_bind", "token": "837797293417", "side": "BUY", "model_price": 0.8194, "clamped_price": 0.82, "ts": 1780843647.1415439}
+{"type": "pull", "ws": 1780843500, "token": "837797293417", "side": "BUY", "old_price": 0.82, "order_id": "dry_837797_BUY_0.82", "cancel_sent": 1780843647.1416366, "cancel_confirmed": 1780843647.1416366, "time_to_cancel_ms": 0.0, "queue_ahead_surrendered": 0.0, "fair_token": 0.8379, "taker_hit_old": null, "hit_before_confirm": null, "avoided_resolution_markout": null, "ts": 1780843647.1421378}
+{"type": "clamp_bind", "token": "617473454878", "side": "BUY", "model_price": 0.1581, "clamped_price": 0.16, "ts": 1780843650.3335094}
+{"type": "clamp_bind", "token": "837797293417", "side": "SELL", "model_price": 0.8423, "clamped_price": 0.84, "ts": 1780843650.4801228}
+{"type": "clamp_bind", "token": "617473454878", "side": "BUY", "model_price": 0.156, "clamped_price": 0.17, "ts": 1780843653.664118}
+{"type": "clamp_bind", "token": "837797293417", "side": "SELL", "model_price": 0.8443, "clamped_price": 0.83, "ts": 1780843653.7912753}
+{"type": "clamp_bind", "token": "617473454878", "side": "SELL", "model_price": 0.193, "clamped_price": 0.19, "ts": 1780843656.9859855}
+{"type": "clamp_bind", "token": "837797293417", "side": "BUY", "model_price": 0.8071, "clamped_price": 0.81, "ts": 1780843657.2717757}
+{"type": "clamp_bind", "token": "617473454878", "side": "SELL", "model_price": 0.2049, "clamped_price": 0.19, "ts": 1780843660.4599047}
+{"type": "clamp_bind", "token": "837797293417", "side": "BUY", "model_price": 0.7946, "clamped_price": 0.81, "ts": 1780843660.6182969}
+{"type": "clamp_bind", "token": "617473454878", "side": "SELL", "model_price": 0.2022, "clamped_price": 0.2, "ts": 1780843663.8152156}
+{"type": "clamp_bind", "token": "837797293417", "side": "BUY", "model_price": 0.7979, "clamped_price": 0.8, "ts": 1780843663.9433846}
+{"type": "clamp_bind", "token": "617473454878", "side": "SELL", "model_price": 0.2134, "clamped_price": 0.21, "ts": 1780843667.1634839}
+{"type": "clamp_bind", "token": "837797293417", "side": "BUY", "model_price": 0.7866, "clamped_price": 0.79, "ts": 1780843667.2938046}
+{"type": "clamp_bind", "token": "617473454878", "side": "SELL", "model_price": 0.2316, "clamped_price": 0.23, "ts": 1780843680.4567852}
+{"type": "pull", "ws": 1780843500, "token": "617473454878", "side": "SELL", "old_price": 0.23, "order_id": "dry_617473_SELL_0.23", "cancel_sent": 1780843680.456882, "cancel_confirmed": 1780843680.456882, "time_to_cancel_ms": 0.0, "queue_ahead_surrendered": 0.0, "fair_token": 0.2134, "taker_hit_old": null, "hit_before_confirm": null, "avoided_resolution_markout": null, "ts": 1780843680.4572053}
+{"type": "clamp_bind", "token": "837797293417", "side": "SELL", "model_price": 0.8016, "clamped_price": 0.8, "ts": 1780843680.5918577}
+{"type": "pull", "ws": 1780843500, "token": "837797293417", "side": "BUY", "old_price": 0.77, "order_id": "dry_837797_BUY_0.77", "cancel_sent": 1780843680.5919466, "cancel_confirmed": 1780843680.5919466, "time_to_cancel_ms": 0.0, "queue_ahead_surrendered": 0.0, "fair_token": 0.7867, "taker_hit_old": null, "hit_before_confirm": null, "avoided_resolution_markout": null, "ts": 1780843680.5922906}
+{"type": "clamp_bind", "token": "617473454878", "side": "SELL", "model_price": 0.2468, "clamped_price": 0.24, "ts": 1780843683.7783375}
+{"type": "clamp_bind", "token": "837797293417", "side": "BUY", "model_price": 0.7558, "clamped_price": 0.76, "ts": 1780843683.9078023}
+{"type": "pull", "ws": 1780843500, "token": "837797293417", "side": "BUY", "old_price": 0.76, "order_id": "dry_837797_BUY_0.76", "cancel_sent": 1780843683.9079309, "cancel_confirmed": 1780843683.9079309, "time_to_cancel_ms": 0.0, "queue_ahead_surrendered": 0.0, "fair_token": 0.7635, "taker_hit_old": null, "hit_before_confirm": null, "avoided_resolution_markout": null, "ts": 1780843683.908276}
+{"type": "clamp_bind", "token": "617473454878", "side": "SELL", "model_price": 0.2519, "clamped_price": 0.25, "ts": 1780843687.4539623}
+{"type": "clamp_bind", "token": "837797293417", "side": "BUY", "model_price": 0.7481, "clamped_price": 0.75, "ts": 1780843687.6089785}
+{"type": "clamp_bind", "token": "617473454878", "side": "SELL", "model_price": 0.2514, "clamped_price": 0.24, "ts": 1780843690.8239868}
+{"type": "clamp_bind", "token": "837797293417", "side": "BUY", "model_price": 0.7504, "clamped_price": 0.76, "ts": 1780843690.9501717}
+{"type": "pull", "ws": 1780843500, "token": "837797293417", "side": "SELL", "old_price": 0.79, "order_id": "dry_837797_SELL_0.79", "cancel_sent": 1780843690.950326, "cancel_confirmed": 1780843690.950326, "time_to_cancel_ms": 0.0, "queue_ahead_surrendered": 0.0, "fair_token": 0.7568, "taker_hit_old": null, "hit_before_confirm": null, "avoided_resolution_markout": null, "ts": 1780843690.9506664}

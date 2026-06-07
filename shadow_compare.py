@@ -22,6 +22,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+import os
 import time
 from datetime import datetime, timezone
 
@@ -175,7 +176,13 @@ def configs(mk, shared):
 async def run(args):
     sess = requests.Session()
     fv = SpotFair(sess)
-    log = open("shadow.log", "a"); wins_fh = open("shadow_windows.jsonl", "a")
+    # --tag/--out-dir give each GitHub-Actions run UNIQUE output files (gha_data/shadow_<tag>.*)
+    # so concurrent/sequential runs never conflict on commit. Default = legacy fixed names.
+    os.makedirs(args.out_dir, exist_ok=True)
+    sfx = f"_{args.tag}" if args.tag else ""
+    summary_path = os.path.join(args.out_dir, f"shadow_summary{sfx}.json")
+    log = open(os.path.join(args.out_dir, f"shadow{sfx}.log"), "a")
+    wins_fh = open(os.path.join(args.out_dir, f"shadow_windows{sfx}.jsonl"), "a")
     cum = {}; pending = []
 
     def L(s):
@@ -199,7 +206,7 @@ async def run(args):
                 row[v.name] = {"net": round(net, 4), "fills": v.fills}
                 parts.append(f"{v.name}={net:+.3f}({v.fills})")
             wins_fh.write(json.dumps(row) + "\n"); wins_fh.flush()
-            json.dump(cum, open("shadow_summary.json", "w"), indent=2)
+            json.dump(cum, open(summary_path, "w"), indent=2)
             L("SETTLE w=%d res=%d | %s" % (mk2["ws"], r, "  ".join(parts)))
             L("CUM | " + "  ".join(f"{k}={c['net']:+.2f}/{c['windows']}w" for k, c in cum.items()))
             pending.remove(item)
@@ -257,6 +264,8 @@ async def run(args):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--duration", type=int, default=300)
+    ap.add_argument("--tag", default="", help="suffix for output files (e.g. GH run id) -> unique, conflict-free")
+    ap.add_argument("--out-dir", default=".", help="directory for output files")
     asyncio.run(run(ap.parse_args()))
 
 
