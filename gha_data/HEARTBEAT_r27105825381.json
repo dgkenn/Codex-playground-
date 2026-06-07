@@ -1,49 +1,49 @@
 {
-  "utc": "2026-06-07T22:28:58.099035+00:00",
+  "utc": "2026-06-07T22:33:28.106330+00:00",
   "tag": "r27105825381",
   "status": "running",
-  "settled_windows": 1,
+  "settled_windows": 2,
   "cum": {
     "baseline": {
-      "net": 0.5154,
-      "fills": 160,
-      "windows": 1,
-      "pos": 1
+      "net": 9.9567,
+      "fills": 498,
+      "windows": 2,
+      "pos": 2
     },
     "cap25": {
-      "net": 1.2442,
-      "fills": 142,
-      "windows": 1,
-      "pos": 1
+      "net": 11.8593,
+      "fills": 424,
+      "windows": 2,
+      "pos": 2
     },
     "cap100": {
-      "net": -9.3536,
-      "fills": 193,
-      "windows": 1,
-      "pos": 0
+      "net": 4.0046,
+      "fills": 595,
+      "windows": 2,
+      "pos": 1
     },
     "skew15": {
-      "net": 6.1953,
-      "fills": 151,
-      "windows": 1,
-      "pos": 1
+      "net": 17.9062,
+      "fills": 449,
+      "windows": 2,
+      "pos": 2
     },
     "fv_size": {
-      "net": 0.5154,
-      "fills": 160,
-      "windows": 1,
-      "pos": 1
+      "net": 8.5655,
+      "fills": 508,
+      "windows": 2,
+      "pos": 2
     },
     "micro_gate": {
-      "net": 11.5035,
-      "fills": 140,
-      "windows": 1,
-      "pos": 1
+      "net": 26.7329,
+      "fills": 438,
+      "windows": 2,
+      "pos": 2
     },
     "predict": {
-      "net": 0.5154,
-      "fills": 160,
-      "windows": 1,
+      "net": -0.27070000000000005,
+      "fills": 265,
+      "windows": 2,
       "pos": 1
     }
   }
