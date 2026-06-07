@@ -1,0 +1,25 @@
+/home/user/Codex-playground-/fv_analysis.py:67: UserWarning: no explicit representation of timezones available for np.datetime64
+  allt["t_ms"] = pd.to_datetime(allt["timestamp"], utc=True).to_numpy().astype("datetime64[ms]").view("int64")
+pre-registered: skip if fair_edge<-0.1 AND tau<120.0s | windows=288 IS=144 OOS=144  (capped real strategy)
+cap=50
+  ALL:
+    baseline                : windows=288 mean=$+54.900/win std=81.474 Sharpe=+0.674 total=$+15,811
+    near-expiry skip        : windows=288 mean=$+53.513/win std=84.927 Sharpe=+0.630 total=$+15,412
+  IS:
+    baseline                : windows=144 mean=$+56.201/win std=59.775 Sharpe=+0.940 total=$+8,093
+    near-expiry skip        : windows=144 mean=$+52.931/win std=55.540 Sharpe=+0.953 total=$+7,622
+  OOS:
+    baseline                : windows=144 mean=$+53.600/win std=98.722 Sharpe=+0.543 total=$+7,718
+    near-expiry skip        : windows=144 mean=$+54.095/win std=106.725 Sharpe=+0.507 total=$+7,790
+  -> verdict cap=50: OOS Sharpe +0.543 -> +0.507 (no improvement)
+cap=100
+  ALL:
+    baseline                : windows=288 mean=$+65.808/win std=117.423 Sharpe=+0.560 total=$+18,953
+    near-expiry skip        : windows=288 mean=$+65.222/win std=120.109 Sharpe=+0.543 total=$+18,784
+  IS:
+    baseline                : windows=144 mean=$+65.365/win std=87.536 Sharpe=+0.747 total=$+9,412
+    near-expiry skip        : windows=144 mean=$+63.613/win std=86.678 Sharpe=+0.734 total=$+9,160
+  OOS:
+    baseline                : windows=144 mean=$+66.251/win std=141.456 Sharpe=+0.468 total=$+9,540
+    near-expiry skip        : windows=144 mean=$+66.831/win std=146.407 Sharpe=+0.456 total=$+9,624
+  -> verdict cap=100: OOS Sharpe +0.468 -> +0.456 (no improvement)

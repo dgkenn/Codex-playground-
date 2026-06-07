@@ -234,3 +234,50 @@ tested -- "auto-flatten residual vs hold to resolution":
 -> Inventory skew already keeps the residual tiny (maxDD $7), so the directional-residual
    concern does NOT bind; KEEP hold-to-resolution. Auto-flatten is optional LIVE risk hygiene
    (oracle/settlement-time risk), not a PnL improvement.
+
+## Tier 1 reviewer idea — fair-value-model quoting / adverse-selection gating (TESTED, REJECTED for gating)
+Reviewer's #1 idea: build a P(up) model from a low-latency SPOT feed and let it drive
+quoting (gate/skew away from toxic flow) instead of pegging to the book. Tested whether
+the spot fair value `fair_up = Phi(log(St/S0)/(sigma*sqrt(tau)))` (fairvalue.fair_up,
+the actual resolution driver, NOT a book echo) identifies fills that hurt the maker.
+`fv_maker.py` (capped gate sim), `fv_analysis.py` (per-fill discriminator), `fv_confirm.py`
+(pre-registered capped test).
+
+**Two methodology bugs caught and fixed first (both would have produced false results):**
+1. trade `timestamp` is `datetime64[us]`; `astype(int64)//1e6` yields SECONDS not ms, so
+   `tau` was a unix timestamp and `fair_up` collapsed to ~0.5 everywhere -> the first run's
+   "fair-value gate" was secretly just a `price-far-from-0.5` filter. Fixed via
+   `datetime64[ms].view(int64)`.
+2. the inventory cap is PATH-DEPENDENT; the confirm sim must replay fills in (window,time)
+   order. Sorting by window only (file order = all-Up-then-all-Down) flipped the capped
+   baseline from +$16k to -$1k. Fixed with `np.lexsort((t_ms, win))`.
+
+**Right metric (per reviewer): window-level Sharpe, n=288 windows FIXED regardless of how
+many fills a gate skips -> no n-reduction tax (a t-stat falls mechanically when a gate cuts
+volume, so t can't tell "cut edge" from "cut volume"). Fills scored at the RESOLUTION
+horizon we actually hold to, not the short-horizon fair flag.**
+
+Findings (uncapped per-fill discriminator unless noted):
+- `corr(fair_edge, res_pnl) = +0.023` — weakly informative in the right direction, not a
+  strong toxicity flag.
+- Regime split (this is the real result): adverse selection is concentrated in **extreme
+  edge AND near expiry** (decile 0, fair_edge<~-0.10, settles -0.027/sh). **Mid-window
+  moderate-edge fills MEAN-REVERT and settle positive** (gated mid-window fills earned
+  +0.006..+0.014 while kept ones were negative) — exactly the regime a passive maker is
+  structurally long (Chakraborty-Kearns). A flat gate therefore cuts good flow.
+- Binary gate on window-Sharpe (n fixed): **no threshold beats baseline**, IS or OOS.
+- Continuous sizing `w=clip(1+k*fair_edge,0,2)` weakly beats binary gating (k=2 Sharpe
+  +0.021 vs gates <= -0.005), matching r>0 — lean, don't chop — but the effect is tiny.
+- **Pre-registered confirmatory test (capped real strategy, E_X=0.10/TAU_X=120s, not swept):**
+  skip only extreme-edge near-expiry fills. cap=50 OOS Sharpe +0.543 -> +0.507; cap=100
+  +0.468 -> +0.456. **No OOS improvement** — even the one genuinely-adverse regime is a wash,
+  because the inventory cap + 2-sided structure already neutralizes that adverse selection.
+
+**Scoped conclusion:** short-horizon spot fair value does NOT improve the capped maker via
+fill selection (gating) on this hold-to-resolution book. RETIRE gating. Keep fair value for
+the two uses a fill-tape backtest CANNOT score and that remain live-plausible: (a) PREDICTIVE
+REPRICING / queue timing — move the resting quote when the model moves, before the informed
+taker arrives (a latency effect, invisible to tape replay which only shows fills that
+happened, not cancels you'd win); (b) marginal continuous sizing. This matches the prior
+result that book-mid markout toxicity filtering also hurts — fill SELECTION is the wrong
+lever; the edge is structural and you must take both sides.
