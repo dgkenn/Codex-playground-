@@ -6,9 +6,17 @@ FAIR-VALUE PREDICTIVE REPRICING, built for Polymarket's STRICT PRICE-TIME (FIFO)
 >>> I_UNDERSTAND_REAL_MONEY=yes.
 
 Two layers:
-  BASELINE (validated offline): layer-don't-churn passive maker. Rest several small clips
-    at/behind the touch; KEEP in-band orders to preserve time priority; cancel only stale
-    (off-band) levels. POST-ONLY by construction. Inventory skew flattens net delta.
+  STANDING LADDER (P1: the front of the book is sacred). Rest a band of small post-only clips
+    per side; once an order ages past --age-protect it has accrued queue priority and is SACRED
+    -- never reflexively repriced even if the touch drifts off it (a touch that moves back into
+    an aged rung = a front-of-queue FILL, which is the whole point). All reshaping/risk is done
+    at the YOUNGEST/outer rungs; the rung cap evicts the rungs FARTHEST from the touch (manage
+    from the back). This is the difference our queue_sim measured between -$5/win (reprice every
+    move, live at the back) and +$55/win (hold, advance via FIFO to the front).
+  EV-GATED CANCEL (P2: cancellation is an EV decision, not a reflex). An aged front rung is an
+    asset worth ~half a spread (Moallemi); we pull it only when toxicity beats that queue value
+    -- i.e. a YOUNG toxic order is pulled, but an AGED one only on a SEVERE move (edge >
+    toxic_severe*fv_margin). Knowing when NOT to cancel is the skill.
   OVERLAY (the one lever the backtest could not score -- FINDINGS.md "Tier 1"): a SPOT
     fair-value model (fvfeed.SpotFair) drives PREDICTIVE PULLS -- cancel a resting level
     the model says is about to be picked off, BEFORE the informed taker arrives. This is
@@ -242,9 +250,20 @@ def main():
     ap.add_argument("--cap", type=float, default=50)
     ap.add_argument("--skew", type=float, default=0.25)
     ap.add_argument("--layers", type=int, default=3, help="resting clips per side per token")
+    ap.add_argument("--age-protect", type=float, default=20.0,
+                    help="P1: an order older than this (s) has accrued queue priority -> SACRED, "
+                         "never cancelled by reshaping; only an EV-severe toxic move pulls it")
+    ap.add_argument("--max-rungs", type=int, default=5, help="max resting rungs per side (cap capital); "
+                    "over-cap evicts the rungs FARTHEST from the touch (manage from the back)")
+    ap.add_argument("--toxic-severe", type=float, default=2.0,
+                    help="P2: pull an AGED front rung only if fair has crossed it by > toxic_severe "
+                         "TICKS (a strong/informed move that beats the queue value); benign 1-tick "
+                         "crossings are held so the front-of-queue fill happens")
     ap.add_argument("--reprice", action=argparse.BooleanOptionalAction, default=True,
                     help="fair-value predictive repricing overlay (--no-reprice = baseline only)")
-    ap.add_argument("--fv-margin", type=float, default=0.02, help="$ edge vs model to keep a resting quote")
+    ap.add_argument("--fv-margin", type=float, default=0.0, help="toxic only when fair crosses the "
+                    "quote by this much (0 = strictly crossed; >0 adds a buffer). Anchored to the "
+                    "book microprice, which sits inside a 1c spread, so this must be ~0 or nothing quotes")
     ap.add_argument("--fv-band", type=int, default=2, help="max ticks the model quote may sit off the touch")
     ap.add_argument("--spot-symbol", default="BTCUSDT")
     ap.add_argument("--max-notional", type=float, default=25)
@@ -260,19 +279,19 @@ def main():
     client = make_client() if live else None
     fv = SpotFair(sess, symbol=a.spot_symbol) if a.reprice else None
     rlog = RepriceLog()
-    print(f"[{mode}] layered maker post={a.post} cap={a.cap} skew={a.skew} layers={a.layers} "
-          f"reprice={a.reprice} fv_margin={a.fv_margin} fv_band={a.fv_band} "
-          f"max_notional=${a.max_notional} loss_limit=${a.loss_limit}")
+    print(f"[{mode}] STANDING-LADDER maker post={a.post} cap={a.cap} skew={a.skew} layers={a.layers} "
+          f"max_rungs={a.max_rungs} age_protect={a.age_protect}s toxic_severe={a.toxic_severe} "
+          f"reprice={a.reprice} fv_margin={a.fv_margin} max_notional=${a.max_notional} loss_limit=${a.loss_limit}")
     notify.alert(f"[pmkit] live_trader start {mode} cap={a.cap} skew={a.skew} reprice={a.reprice}")
 
     net_delta = 0.0; realized = 0.0; mk = None
-    resting = {}                       # (token,side,price) -> order_id  (KEEP across loops!)
-    rest_qpos = {}                     # (token,side,price) -> size resting ahead when we joined
-    suppressed = set()                 # keys the model currently vetoes (don't re-post -> no churn)
+    # P1 STANDING LADDER: each resting order keeps {oid, ts(placed), q(queue-ahead)}. We KEEP
+    # aged orders across loops to let them age into front-of-queue priority; we never reflexively
+    # reprice them. ts -> age -> "sacred" once age>=age_protect.
+    resting = {}                       # (token,side,price) -> {"oid","ts","q"}
     seen_fills = set(); markouts = []
 
     def place(tk, sd, p, queue_ahead):
-        rest_qpos[(tk, sd, p)] = queue_ahead
         if not live:
             print(f"  [DRY place] {sd} {a.post} {tk[:8]} @ {p} (q_ahead~{queue_ahead:.0f})")
             return f"dry_{tk[:6]}_{sd}_{p}"
@@ -304,7 +323,7 @@ def main():
         return t_sent, t_conf
 
     def drop(key, model_pull):
-        oid = resting.pop(key); q = rest_qpos.pop(key, 0.0)
+        meta = resting.pop(key); oid = meta["oid"]; q = meta.get("q", 0.0)
         t_sent, t_conf = timed_cancel(oid)
         if model_pull and fv is not None:
             tau = max(mk["we"] - time.time(), 0.0)
@@ -334,7 +353,6 @@ def main():
                     if action == "merge" and sets > 0:
                         mm.merge(mk["cid"], sets)
                 cancel_all_resting()                     # window rollover: tokens change, must reset
-                suppressed.clear()
                 mk = active_market(sess)
                 if not mk:
                     time.sleep(a.poll); continue
@@ -366,26 +384,51 @@ def main():
                 base = baseline_levels(mk, token, is_up, bb, ba, net_delta, a.layers, a.cap, a.skew)
                 ft = fv.fair_token(is_up, tau) if fv is not None else None
                 mp = microprice(bb, ba, bsz, asz)        # book-native anchor (#4), always available
-                # reprice target: blend spot fair value with the microprice; fall back to whichever
-                # is available (microprice degrades better -- no spot feed needed).
-                anchor = mp if ft is None else (0.5 * (ft + mp) if mp is not None else ft)
+                # Anchor = microprice (book imbalance), NOT the spot fair_up: drift_predict showed
+                # spot is not quote-time predictive (R^2~0), and fair_up's ~0.5 window-open prior
+                # falsely suppresses a side. The microprice is the surviving book-native signal and
+                # sits inside the spread, so the toxic test fires only when it CROSSES a resting price.
+                anchor = mp if mp is not None else ft
                 desired, model_supp = model_filter(base, anchor, a.fv_margin, bb, ba, band_px, rlog, token)
+                now = time.time()
 
-                # place missing desired levels (KEEP existing -> preserve time priority)
+                # --- P1: PLACE missing ladder rungs (KEEP existing -> they age into priority) ---
                 for key in desired:
                     if key in resting:
                         continue
                     _, sd, p = key
                     if a.post * (p if sd == "BUY" else 1 - p) > a.max_notional:
                         continue
+                    if sum(1 for k in resting if k[0] == token and k[1] == sd) >= a.max_rungs:
+                        continue                          # side ladder full; don't over-commit capital
                     q_ahead = (bsz if sd == "BUY" else asz) if abs(p - (bb if sd == "BUY" else ba)) < 1e-9 else 0.0
-                    resting[key] = place(*key, q_ahead)
-                # cancels for THIS token, tagged model-pull vs stale-off-band
+                    resting[key] = {"oid": place(*key, q_ahead), "ts": now, "q": q_ahead}
+
+                # --- P1 front-sacred + P2 EV-cancel: decide each resting order ---
                 for key in list(resting):
-                    if key[0] != token or key in desired:
+                    if key[0] != token:
                         continue
-                    drop(key, model_pull=(key in model_supp))
-                suppressed = (suppressed - {k for k in suppressed if k[0] == token}) | model_supp
+                    _, sd, p = key
+                    aged = (now - resting[key]["ts"]) >= a.age_protect      # accrued queue priority
+                    toxic = key in model_supp                              # model says wrong side of fair
+                    severe = False
+                    if anchor is not None:                                 # EV pressure = how far past fair
+                        edge = (anchor - p) if sd == "SELL" else (p - anchor)
+                        severe = edge > a.toxic_severe * mk["tick"]         # strong/informed move (in ticks)
+                    in_band = key in desired
+                    if toxic and (not aged or severe):
+                        drop(key, model_pull=True)         # P2: cancel only if young, OR toxic beats queue value
+                    elif (not aged) and (not in_band):
+                        drop(key, model_pull=False)        # reshape from the back: young off-band rung
+                    # else: AGED or in-band -> HOLD (front of book is sacred)
+
+                # --- rung cap: evict the rungs FARTHEST from the touch (manage from the back) ---
+                for sd, touch in (("BUY", bb), ("SELL", ba)):
+                    ks = [k for k in resting if k[0] == token and k[1] == sd]
+                    if len(ks) > a.max_rungs:
+                        ks.sort(key=lambda k: abs(k[2] - touch))           # nearest-touch first
+                        for k in ks[a.max_rungs:]:                         # cancel the stranded deep extras
+                            drop(k, model_pull=False)
 
             # --- per-fill MARKOUT + net-delta + (c) taker-hit-old attribution ---
             if live:
