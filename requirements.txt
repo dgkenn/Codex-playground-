@@ -1,0 +1,8 @@
+numpy==2.4.6
+scipy==1.17.1
+pandas==3.0.3
+pyarrow==24.0.0
+duckdb==1.5.3
+requests==2.34.2
+websockets==16.0
+pytz==2026.2

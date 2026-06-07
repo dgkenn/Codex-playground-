@@ -30,6 +30,8 @@ from datetime import datetime, timezone
 
 import requests
 
+import notify  # free Telegram alerts (no-op if env unset)
+
 G = "https://gamma-api.polymarket.com"
 C = "https://clob.polymarket.com"
 
@@ -86,6 +88,7 @@ def main():
     client = make_client() if live else None
     print(f"[{mode}] maker post={a.post} cap={a.cap} max_notional=${a.max_notional} "
           f"loss_limit=${a.loss_limit}")
+    notify.alert(f"[pmkit] live_trader start mode={mode} cap={a.cap} skew={a.skew} max_notional=${a.max_notional}")
 
     net_delta = 0.0; realized = 0.0; mk = None
     end = time.time() + a.duration
@@ -100,6 +103,7 @@ def main():
                 print(f"WINDOW {mk['ws']} {datetime.fromtimestamp(mk['ws'],timezone.utc):%H:%M}Z")
             if realized <= -abs(a.loss_limit):
                 print(f"KILL: realized {realized:+.2f} <= -loss_limit. cancel-all + exit.")
+                notify.alert(f"[pmkit] KILL-SWITCH realized={realized:+.2f} <= -{a.loss_limit}; cancelled all + exit")
                 if live:
                     client.cancel_all()
                 break

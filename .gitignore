@@ -9,3 +9,9 @@ __pycache__/
 
 # Run logs
 *.log
+
+# Secrets & local state (NEVER commit)
+.env
+*.db
+*.sqlite
+secrets/
