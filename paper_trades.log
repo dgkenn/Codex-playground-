@@ -316,3 +316,5 @@
 2026-06-07T04:05:40.042207+00:00   [ws reconnect] no close frame received or sent
 2026-06-07T04:07:14.728129+00:00 === paper_trader_ws start cap=50.0 post=20.0 skew=0.25 git=119b1f9 ===
 2026-06-07T04:07:14.847076+00:00 WINDOW 1780804800 (04:00Z) up=8759311167
+2026-06-07T04:13:58.433536+00:00 === paper_trader_ws start cap=50.0 post=20.0 skew=0.25 git=bbacb24 ===
+2026-06-07T04:13:58.575439+00:00 WINDOW 1780804800 (04:00Z) up=8759311167
