@@ -1,9 +1,9 @@
 # WATCHDOG: independent self-healing collector. Runs on its OWN schedule (offset from
 # paper-collect) and ONLY collects if data has gone stale (last gha_data commit > 45 min ago),
-# so it fills gaps when paper-collect's schedule is dropped -- without double-collecting when
+# filling gaps when paper-collect's schedule/chain is dropped, without double-collecting when
 # healthy. Two independent schedules => a single dropped cron no longer stalls collection.
-# (Note: if GitHub drops ALL scheduled events, only the PAT self-chain in paper-collect.yml
-# keeps it continuous -- add the DISPATCH_PAT secret for guaranteed unattended uptime.)
+# Also pings HEARTBEAT_URL (if set) so the external dead-man's-switch sees liveness from the
+# watchdog too. (Total GitHub outage -> only the external switch can alert; add HEARTBEAT_URL.)
 name: paper-watchdog
 
 on:
@@ -20,6 +20,7 @@ concurrency:
 
 env:
   BRANCH: claude/polymarket-btc-backtest-XZkKI
+  HEARTBEAT_URL: ${{ secrets.HEARTBEAT_URL }}
 
 jobs:
   watch:
@@ -36,7 +37,6 @@ jobs:
           last=$(git log -1 --format=%ct -- gha_data/ 2>/dev/null || echo 0)
           age=$(( $(date +%s) - last ))
           echo "last gha_data commit ${age}s ago"
-          # stale if no gha_data commit in 45 min (collector likely not running)
           if [ "$age" -lt 2700 ]; then echo "healthy -> exit"; echo "stale=0" >> "$GITHUB_OUTPUT";
           else echo "STALE -> self-heal"; echo "stale=1" >> "$GITHUB_OUTPUT"; fi
       - uses: actions/setup-python@v5
