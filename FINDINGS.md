@@ -205,3 +205,9 @@ Tested on historical data while the paper run collects prospective data:
 Overnight paper run switched to this refined config (cap=50, skew=0.25). live_trader.py +
 paper_trader.py updated with the skew. Note: the audit_*.jsonl capture raw market data, so any
 config can be re-simulated offline from the prospective tape.
+
+## Self-improvement loop — iteration 1: robustness / not-overfit
+- cap x skew NET-OOS-t heatmap is a BROAD PLATEAU (all cells +7..+13), not a spike ->
+  config is robust. Tighter skew (0.15) marginally better than 0.25 (Sharpe-vs-$ knob).
+- Time sub-period stability (deploy cfg cap=50/skew=0.25): net positive & significant in
+  all thirds (t=20.6 / 25.2 / 7.9). Edge is not a single-period blip.
