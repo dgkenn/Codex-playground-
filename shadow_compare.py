@@ -38,6 +38,30 @@ REBATE = 0.07
 SIGMA = 6.5e-5
 FV_K = 2.0           # continuous-sizing slope (offline: k=2 beat every gate)
 FV_MARGIN = 0.03    # fair-value gate threshold
+_HB = [0.0]          # last heartbeat ts (throttle)
+
+
+def heartbeat(tag, out_dir, cum, status="running"):
+    """Liveness: write HEARTBEAT.json (at-a-glance health) + ping an EXTERNAL dead-man's-switch
+    (HEARTBEAT_URL env, e.g. healthchecks.io) which alerts the user if pings STOP -- the only
+    layer that catches a total GitHub-Actions outage (the in-GitHub schedule/chain/watchdog can't
+    report their own death). No-op if HEARTBEAT_URL unset. Throttled to ~90s."""
+    now = time.time()
+    if now - _HB[0] < 90:
+        return
+    _HB[0] = now
+    wins = cum.get("baseline", {}).get("windows", 0) if cum else 0
+    try:
+        import os
+        os.makedirs(out_dir, exist_ok=True)
+        json.dump({"utc": now_iso(), "tag": tag, "status": status, "settled_windows": wins,
+                   "cum": cum}, open(os.path.join(out_dir, f"HEARTBEAT_{tag}.json"), "w"), indent=2)
+        url = os.environ.get("HEARTBEAT_URL")
+        if url:
+            requests.get(url, timeout=8)
+    except Exception:
+        pass
+
 
 
 def micro(bb, bsz, ba, asz):
@@ -251,6 +275,7 @@ async def run(args):
                             continue
                         if time.time() - last_spot > 2:        # refresh spot for fair-value variants
                             shared["st"] = fv.update() or shared["st"]; last_spot = time.time()
+                        heartbeat(args.tag or "local", args.out_dir, cum)   # liveness + dead-man ping
                         data = json.loads(raw)
                         for m in (data if isinstance(data, list) else [data]):
                             et = m.get("event_type")
