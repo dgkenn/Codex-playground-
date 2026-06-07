@@ -1,21 +1,47 @@
-"""LIVE execution scaffold: inventory-skewed 2-sided maker (rebate + vig), built for
-Polymarket's STRICT PRICE-TIME (FIFO) matching.
+"""LIVE execution scaffold: inventory-skewed 2-sided maker (rebate + vig) with
+FAIR-VALUE PREDICTIVE REPRICING, built for Polymarket's STRICT PRICE-TIME (FIFO) match.
 
 >>> YOU run this with YOUR key. No key is stored here. DEFAULTS TO DRY-RUN (prints
 >>> intended actions, places nothing). Real orders require --live AND
 >>> I_UNDERSTAND_REAL_MONEY=yes.
 
-Queue discipline (the lever most bots get wrong):
-  * LAYER, DON'T CHURN. Rest several small clips across ticks; re-quote ONLY the stale
-    level; leave in-band orders sitting to KEEP their time priority. Every cancel/replace
-    sends you to the back of the queue, so we never cancel_all on a healthy book.
-  * POST-ONLY / at-or-behind the touch (BUY<=best_bid, SELL>=best_ask) -> always maker,
-    never cross (crossing pays the taker fee + forfeits the rebate).
-  * Round to the market TICK (orders off-tick are rejected); respect min order size.
-Toxicity defense (decides if fill rate is even good): per-fill MARKOUT + net-delta +
-adverse-selection kill-switch. Build fill-rate machinery and markout together.
+Two layers:
+  BASELINE (validated offline): layer-don't-churn passive maker. Rest several small clips
+    at/behind the touch; KEEP in-band orders to preserve time priority; cancel only stale
+    (off-band) levels. POST-ONLY by construction. Inventory skew flattens net delta.
+  OVERLAY (the one lever the backtest could not score -- FINDINGS.md "Tier 1"): a SPOT
+    fair-value model (fvfeed.SpotFair) drives PREDICTIVE PULLS -- cancel a resting level
+    the model says is about to be picked off, BEFORE the informed taker arrives. This is
+    TIMING, not fill-selection (fill-selection/gating was tested and retired). The whole
+    experiment is whether moving ahead of the taker earns more than the QUEUE PRIORITY it
+    burns (Cartea-Sanchez-Betancourt shadow-price-of-latency), so we instrument both sides:
 
-  python live_trader.py                               # DRY-RUN
+    reprice_log.jsonl, per model pull:
+      (a) the cancel intended (token, side, old price, order id)
+      (b) cancel-sent vs cancel-confirmed timestamps -> time_to_cancel_ms
+      (c) did a taker hit the OLD quote anyway, and BEFORE our cancel confirmed (too slow)
+      (d) resolution markout of the fill we avoided vs the fill at the new (clamped) quote
+      + queue position SURRENDERED (size resting ahead of us at that level when we pulled)
+      + clamp_bind events: the model wanted to quote outside the book band (kept = finding)
+
+  The model quote is CLAMPED to within --fv-band ticks of the touch: near expiry the logit
+  is vertical, a small spot tick swings p_up hard, and an unclamped reprice walks the quote
+  into no-depth/toxic territory. If the spot feed is down the overlay disables itself and
+  the bot runs the validated baseline (never quotes off a stale model).
+
+PRE-WRITTEN INTERPRETATION (decide before reading numbers, same discipline as Tier 1):
+  * If net P&L is a WASH but time_to_cancel >> the interval between (c) "taker hit old" and
+    our cancel-confirmed -> repricing is SOUND BUT TOO SLOW; the decision is whether to buy
+    the latency (faster colo/cancel path). The time_to_cancel log, not P&L, is that verdict.
+  * If clamp binds constantly -> model and book disagree structurally on this market; that
+    is a finding about calibration, not a tuning nuisance.
+  * If pulls dodge settle-negative fills (d) by more than the queue (surrendered + forgone
+    fills) they cost -> repricing earns its keep. Else retire it too and keep the baseline.
+  SCOPE: validated offline on BTC 15m, one OOS split. A good pilot result here is
+  "live-plausible on this market", NOT "generalizes".
+
+  python live_trader.py                               # DRY-RUN (baseline + overlay sim)
+  python live_trader.py --no-reprice                  # DRY-RUN baseline only
   I_UNDERSTAND_REAL_MONEY=yes python live_trader.py --live --max-notional 25
 """
 from __future__ import annotations
@@ -29,6 +55,7 @@ from datetime import datetime, timezone
 import requests
 
 import notify  # free Telegram alerts (no-op if env unset)
+from fvfeed import SpotFair
 
 G = "https://gamma-api.polymarket.com"
 C = "https://clob.polymarket.com"
@@ -48,12 +75,28 @@ def active_market(sess):
     return None
 
 
-def top(sess, token):
+def book(sess, token):
+    """Return (best_bid, best_ask, bid_size_at_touch, ask_size_at_touch)."""
     b = sess.get(C + "/book", params={"token_id": token}, timeout=10).json()
     bids, asks = b.get("bids", []), b.get("asks", [])
     bb = float(bids[-1]["price"]) if bids else None
     ba = float(asks[-1]["price"]) if asks else None
-    return bb, ba
+    bsz = float(bids[-1]["size"]) if bids else 0.0
+    asz = float(asks[-1]["size"]) if asks else 0.0
+    return bb, ba, bsz, asz
+
+
+def resolve(sess, ws):
+    try:
+        ev = sess.get(G + "/events", params={"slug": f"btc-updown-15m-{ws}"}, timeout=10).json()
+        if ev:
+            m = ev[0]["markets"][0]; op = m.get("outcomePrices")
+            if m.get("closed") and op:
+                op = json.loads(op) if isinstance(op, str) else op
+                return 1 if float(op[0]) > 0.5 else 0
+    except Exception:
+        pass
+    return None
 
 
 def make_client():
@@ -65,9 +108,9 @@ def make_client():
                       signature_type=SignatureTypeV2.POLY_1271, funder=funder)
 
 
-def desired_quotes(mk, token, is_up, bb, ba, net_delta, post, layers, cap, skew_frac):
-    """Passive, at-or-behind-touch, LAYERED quotes for one token. Skip the side that
-    leans inventory further once |delta| past skew_frac*cap (inventory skew)."""
+def baseline_levels(mk, token, is_up, bb, ba, net_delta, layers, cap, skew_frac):
+    """Validated passive, at-or-behind-touch, LAYERED quotes for one token, inventory
+    skewed. Returns set of (token, side, price). Unchanged from the validated scaffold."""
     tick = mk["tick"]; d_sign = 1.0 if is_up else -1.0
     skew = skew_frac * cap
     quote_buy = (net_delta * d_sign) < cap and (net_delta * d_sign) < skew
@@ -76,14 +119,103 @@ def desired_quotes(mk, token, is_up, bb, ba, net_delta, post, layers, cap, skew_
     if quote_buy and bb is not None:
         for k in range(layers):
             p = round(bb - k * tick, 4)
-            if 0 < p < ba:                       # strictly below ask => post-only safe
+            if 0 < p < ba:
                 out.add((token, "BUY", p))
     if quote_sell and ba is not None:
         for k in range(layers):
             p = round(ba + k * tick, 4)
-            if bb < p < 1:                       # strictly above bid => post-only safe
+            if bb < p < 1:
                 out.add((token, "SELL", p))
     return out
+
+
+def model_filter(levels, fair_tok, margin, bb, ba, band_px, rlog, token):
+    """Split baseline levels into (safe_desired, model_suppressed) using the spot fair
+    value. A resting SELL at p is toxic if p < fair_tok + margin (we'd sell below value);
+    a BUY at p is toxic if p > fair_tok - margin. Also flags clamp binds: the model wants
+    to quote outside the +/-band_px window around the touch. fair_tok None -> no overlay."""
+    if fair_tok is None:
+        return levels, set()
+    safe, suppressed = set(), set()
+    sell_floor = fair_tok + margin       # only willing to sell at/above this
+    buy_ceil = fair_tok - margin         # only willing to buy at/below this
+    if ba is not None and sell_floor > ba + band_px:
+        rlog.clamp_bind(token, "SELL", sell_floor, ba + band_px)
+    if bb is not None and buy_ceil < bb - band_px:
+        rlog.clamp_bind(token, "BUY", buy_ceil, bb - band_px)
+    for key in levels:
+        _, sd, p = key
+        toxic = (sd == "SELL" and p < sell_floor) or (sd == "BUY" and p > buy_ceil)
+        (suppressed if toxic else safe).add(key)
+    return safe, suppressed
+
+
+class RepriceLog:
+    """Counterfactual + latency + queue instrumentation for the predictive-reprice
+    experiment. Everything the pilot needs to answer shadow-price-of-latency lives here."""
+
+    def __init__(self, path="reprice_log.jsonl"):
+        self.fh = open(path, "a")
+        self.open_pulls = []     # pulls awaiting (c) taker-hit / (d) settle attribution
+        self.clamp_binds = 0; self.pulls = 0
+
+    def _w(self, o):
+        o["ts"] = time.time(); self.fh.write(json.dumps(o) + "\n"); self.fh.flush()
+
+    def clamp_bind(self, token, side, model_price, clamped_price):
+        self.clamp_binds += 1
+        self._w({"type": "clamp_bind", "token": token[:12], "side": side,
+                 "model_price": round(model_price, 4), "clamped_price": round(clamped_price, 4)})
+
+    def pull(self, token, side, price, oid, t_sent, t_confirmed, queue_ahead, fair_tok, ws):
+        """(a)+(b)+queue-surrendered. Held open for (c)/(d)."""
+        self.pulls += 1
+        ttc = None if (t_confirmed is None) else round((t_confirmed - t_sent) * 1000, 1)
+        rec = {"type": "pull", "ws": ws, "token": token[:12], "side": side,
+               "old_price": round(price, 4), "order_id": str(oid)[:24],
+               "cancel_sent": t_sent, "cancel_confirmed": t_confirmed,
+               "time_to_cancel_ms": ttc, "queue_ahead_surrendered": round(queue_ahead, 2),
+               "fair_token": round(fair_tok, 4), "taker_hit_old": None,
+               "hit_before_confirm": None, "avoided_resolution_markout": None}
+        self._w(rec)
+        self.open_pulls.append(rec)
+
+    def attribute_trade(self, token, side, price, ts):
+        """(c) did a taker hit the OLD quote we pulled, and before our cancel confirmed?
+        A pull of OUR SELL@p is hit by a taker BUY@p; OUR BUY@p by a taker SELL@p."""
+        for r in self.open_pulls:
+            if r["taker_hit_old"]:
+                continue
+            opp = "BUY" if r["side"] == "SELL" else "SELL"
+            if r["token"] == token[:12] and side == opp and abs(price - r["old_price"]) < 1e-9:
+                r["taker_hit_old"] = True
+                r["hit_before_confirm"] = (r["cancel_confirmed"] is None) or (ts < r["cancel_confirmed"])
+                self._w({"type": "pull_update", **{k: r[k] for k in
+                         ("token", "side", "old_price", "taker_hit_old", "hit_before_confirm")}})
+
+    def settle(self, ws, token, settle_value):
+        """(d) resolution markout of the fill we AVOIDED, for pulls in this window that a
+        taker actually hit (so the avoided fill was real). SELL@p avoided -> we did NOT
+        sell something worth settle_value, so avoiding it was +(p-settle); a BUY@p avoided
+        -> +(settle-p)? No: avoiding a BUY means we did NOT buy, so the avoided-fill markout
+        (what skipping earned us) = (p - settle) for a SELL... track the avoided fill's OWN
+        markout = settle - p if it was a SELL-we-avoided being short, etc. We log the fill's
+        resolution P&L had we taken it; negative => the pull correctly dodged a loser."""
+        for r in self.open_pulls[:]:
+            if r["ws"] != ws or token[:12] != r["token"]:
+                continue
+            p = r["old_price"]
+            # had we filled: SELL@p -> P&L = p - settle_value ; BUY@p -> settle_value - p
+            avoided = (p - settle_value) if r["side"] == "SELL" else (settle_value - p)
+            r["avoided_resolution_markout"] = round(avoided, 4)
+            self._w({"type": "pull_settle", "token": r["token"], "side": r["side"],
+                     "old_price": p, "taker_hit_old": bool(r["taker_hit_old"]),
+                     "avoided_fill_pnl_to_resolution": r["avoided_resolution_markout"],
+                     "note": "negative => pull dodged a settle-loser; positive => pull cost us a winner"})
+            self.open_pulls.remove(r)
+
+    def summary(self):
+        return {"pulls": self.pulls, "clamp_binds": self.clamp_binds}
 
 
 def main():
@@ -93,6 +225,11 @@ def main():
     ap.add_argument("--cap", type=float, default=50)
     ap.add_argument("--skew", type=float, default=0.25)
     ap.add_argument("--layers", type=int, default=3, help="resting clips per side per token")
+    ap.add_argument("--reprice", action=argparse.BooleanOptionalAction, default=True,
+                    help="fair-value predictive repricing overlay (--no-reprice = baseline only)")
+    ap.add_argument("--fv-margin", type=float, default=0.02, help="$ edge vs model to keep a resting quote")
+    ap.add_argument("--fv-band", type=int, default=2, help="max ticks the model quote may sit off the touch")
+    ap.add_argument("--spot-symbol", default="BTCUSDT")
     ap.add_argument("--max-notional", type=float, default=25)
     ap.add_argument("--loss-limit", type=float, default=5)
     ap.add_argument("--poll", type=float, default=3)
@@ -104,46 +241,90 @@ def main():
     mode = "LIVE" if live else "DRY-RUN"
     sess = requests.Session()
     client = make_client() if live else None
+    fv = SpotFair(sess, symbol=a.spot_symbol) if a.reprice else None
+    rlog = RepriceLog()
     print(f"[{mode}] layered maker post={a.post} cap={a.cap} skew={a.skew} layers={a.layers} "
+          f"reprice={a.reprice} fv_margin={a.fv_margin} fv_band={a.fv_band} "
           f"max_notional=${a.max_notional} loss_limit=${a.loss_limit}")
-    notify.alert(f"[pmkit] live_trader start {mode} cap={a.cap} skew={a.skew} layers={a.layers}")
+    notify.alert(f"[pmkit] live_trader start {mode} cap={a.cap} skew={a.skew} reprice={a.reprice}")
 
     net_delta = 0.0; realized = 0.0; mk = None
     resting = {}                       # (token,side,price) -> order_id  (KEEP across loops!)
+    rest_qpos = {}                     # (token,side,price) -> size resting ahead when we joined
+    suppressed = set()                 # keys the model currently vetoes (don't re-post -> no churn)
     seen_fills = set(); markouts = []
 
-    def place(tk, sd, p):
+    def place(tk, sd, p, queue_ahead):
+        rest_qpos[(tk, sd, p)] = queue_ahead
         if not live:
-            print(f"  [DRY place] {sd} {a.post} {tk[:8]} @ {p}"); return f"dry_{tk[:6]}_{sd}_{p}"
+            print(f"  [DRY place] {sd} {a.post} {tk[:8]} @ {p} (q_ahead~{queue_ahead:.0f})")
+            return f"dry_{tk[:6]}_{sd}_{p}"
         from py_clob_client_v2 import OrderArgs, OrderType, PartialCreateOrderOptions
         from py_clob_client_v2.order_builder.constants import BUY, SELL
         r = client.create_and_post_order(
             OrderArgs(token_id=tk, price=p, size=a.post, side=(BUY if sd == "BUY" else SELL)),
             options=PartialCreateOrderOptions(tick_size=str(mk["tick"]), neg_risk=mk["negRisk"]),
-            order_type=OrderType.GTC)           # GTC + at-or-behind touch == passive (post-only)
+            order_type=OrderType.GTC)
         return r.get("orderID") if isinstance(r, dict) else r
 
-    def cancel(oid):
-        if live:
+    def timed_cancel(oid):
+        """Cancel and (best-effort) confirm; return (t_sent, t_confirmed|None)."""
+        t_sent = time.time()
+        if not live:
+            return t_sent, t_sent + 0.0       # DRY: treat as instant; live measures real ttc
+        try:
+            client.cancel(order_id=oid)
+        except Exception:
+            return t_sent, None
+        t_conf = None
+        for _ in range(5):                    # poll until the order is gone (or give up)
             try:
-                client.cancel(order_id=oid)
+                if not any(str(o.get("id")) == str(oid) for o in (client.get_orders() or [])):
+                    t_conf = time.time(); break
             except Exception:
-                pass
+                break
+            time.sleep(0.1)
+        return t_sent, t_conf
 
-    def cancel_all_resting():
-        for k, oid in list(resting.items()):
-            cancel(oid)
-        resting.clear()
+    def drop(key, model_pull):
+        oid = resting.pop(key); q = rest_qpos.pop(key, 0.0)
+        t_sent, t_conf = timed_cancel(oid)
+        if model_pull and fv is not None:
+            tau = max(mk["we"] - time.time(), 0.0)
+            ft = fv.fair_token(key[0] == mk["up"], tau)
+            rlog.pull(key[0], key[1], key[2], oid, t_sent, t_conf, q, ft if ft is not None else -1, mk["ws"])
+
+    def cancel_all_resting(model_pull=False):
+        for key in list(resting):
+            drop(key, model_pull)
 
     end = time.time() + a.duration
     while time.time() < end:
         try:
             if mk is None or time.time() >= mk["we"]:
-                cancel_all_resting()             # window rollover: tokens change, must reset
+                if mk is not None:                       # settle (d) for the closing window
+                    r = resolve(sess, mk["ws"])
+                    if r is not None:
+                        rlog.settle(mk["ws"], mk["up"], r)
+                        rlog.settle(mk["ws"], mk["down"], 1 - r)
+                cancel_all_resting()                     # window rollover: tokens change, must reset
+                suppressed.clear()
                 mk = active_market(sess)
                 if not mk:
                     time.sleep(a.poll); continue
+                if fv is not None:
+                    # Only anchor (=> overlay ON) if we joined within 60s of the open; a
+                    # mid-window join has no true S0, so run baseline-only that window.
+                    if time.time() - mk["ws"] <= 60:
+                        fv.set_window(fv.update())
+                    else:
+                        fv.update(); fv.set_window(None)
+                        print("  (joined mid-window; overlay OFF until next open)")
                 print(f"WINDOW {mk['ws']} {datetime.fromtimestamp(mk['ws'],timezone.utc):%H:%M}Z tick={mk['tick']}")
+            if fv is not None:
+                fv.update()
+            band_px = a.fv_band * mk["tick"]
+            tau = max(mk["we"] - time.time(), 0.0)
             if realized <= -abs(a.loss_limit):
                 print(f"KILL: realized {realized:+.2f}. cancel-all + exit."); notify.alert("[pmkit] KILL loss-limit")
                 cancel_all_resting(); break
@@ -151,24 +332,32 @@ def main():
                 print("KILL: rolling markout toxic. cancel-all + exit."); notify.alert("[pmkit] KILL markout toxic")
                 cancel_all_resting(); break
 
-            # --- LAYER, DON'T CHURN: place missing desired levels, cancel only stale ones ---
+            # --- BASELINE geometry, then MODEL predictive filter (overlay) ---
             for token, is_up in ((mk["up"], True), (mk["down"], False)):
-                bb, ba = top(sess, token)
+                bb, ba, bsz, asz = book(sess, token)
                 if bb is None or ba is None:
                     continue
-                desired = desired_quotes(mk, token, is_up, bb, ba, net_delta, a.post, a.layers, a.cap, a.skew)
+                base = baseline_levels(mk, token, is_up, bb, ba, net_delta, a.layers, a.cap, a.skew)
+                ft = fv.fair_token(is_up, tau) if fv is not None else None
+                desired, model_supp = model_filter(base, ft, a.fv_margin, bb, ba, band_px, rlog, token)
+
+                # place missing desired levels (KEEP existing -> preserve time priority)
                 for key in desired:
-                    if key in resting:           # already resting -> KEEP (preserve time priority)
+                    if key in resting:
                         continue
                     _, sd, p = key
                     if a.post * (p if sd == "BUY" else 1 - p) > a.max_notional:
                         continue
-                    resting[key] = place(*key)
-                for key in list(resting):         # cancel ONLY this token's now-stale (off-band) levels
-                    if key[0] == token and key not in desired:
-                        cancel(resting[key]); del resting[key]
+                    q_ahead = (bsz if sd == "BUY" else asz) if abs(p - (bb if sd == "BUY" else ba)) < 1e-9 else 0.0
+                    resting[key] = place(*key, q_ahead)
+                # cancels for THIS token, tagged model-pull vs stale-off-band
+                for key in list(resting):
+                    if key[0] != token or key in desired:
+                        continue
+                    drop(key, model_pull=(key in model_supp))
+                suppressed = (suppressed - {k for k in suppressed if k[0] == token}) | model_supp
 
-            # --- per-fill MARKOUT + net-delta (the toxicity verdict) ---
+            # --- per-fill MARKOUT + net-delta + (c) taker-hit-old attribution ---
             if live:
                 try:
                     trades = client.get_trades() or []
@@ -176,13 +365,14 @@ def main():
                     trades = []
                 for t in trades:
                     tid = t.get("id") or t.get("transaction_hash") or str(t)
+                    asset = str(t.get("asset_id") or t.get("asset") or ""); sd = (t.get("side") or "").upper()
+                    fp = float(t.get("price", 0)); fsz = float(t.get("size", 0))
+                    rlog.attribute_trade(asset, sd, fp, time.time())   # (c) regardless of dedupe
                     if tid in seen_fills:
                         continue
                     seen_fills.add(tid)
-                    asset = str(t.get("asset_id") or t.get("asset") or ""); sd = (t.get("side") or "").upper()
-                    fp = float(t.get("price", 0)); fsz = float(t.get("size", 0))
                     net_delta += (1.0 if asset == mk["up"] else -1.0) * (fsz if sd == "BUY" else -fsz)
-                    bb2, ba2 = top(sess, asset); mid2 = (bb2 + ba2) / 2 if bb2 and ba2 else fp
+                    bb2, ba2, _, _ = book(sess, asset); mid2 = (bb2 + ba2) / 2 if bb2 and ba2 else fp
                     mo = (mid2 - fp) if sd == "BUY" else (fp - mid2); markouts.append(mo)
                     open("live_markout.jsonl", "a").write(json.dumps(
                         {"ts": time.time(), "asset": asset[:12], "side": sd, "price": fp, "size": fsz,
@@ -193,8 +383,10 @@ def main():
         except Exception as e:  # noqa: BLE001
             print(f"[warn] {str(e)[:100]}"); time.sleep(a.poll)
     cancel_all_resting()
-    print(f"done. realized={realized:+.2f} fills={len(seen_fills)} "
-          f"avg_markout={sum(markouts)/len(markouts):+.5f}" if markouts else "done.")
+    s = rlog.summary()
+    print(f"done. realized={realized:+.2f} fills={len(seen_fills)} pulls={s['pulls']} "
+          f"clamp_binds={s['clamp_binds']} "
+          + (f"avg_markout={sum(markouts)/len(markouts):+.5f}" if markouts else ""))
 
 
 if __name__ == "__main__":
