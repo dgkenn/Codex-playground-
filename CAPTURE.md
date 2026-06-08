@@ -17,10 +17,13 @@ The decision-grade answer to *"why did each trade win or lose, with certainty"*.
 **decision** (a taker trade reaches a level we quote), logged for fills AND skips:
 - **what prompted it:** `tk_side, tk_sz` (the taker order), `q_ahead, q_used` (our modeled queue).
 - **all inputs considered:** `bb, ba, bsz, asz` (raw book), `mid, micro, imb` (book-imbalance),
-  `fair` (model fair), `tox` (signed micro-deviation), `delta` (inventory), `cap, skew_lim, gate`.
+  `fair` (model fair), `tox` (signed micro-deviation), `delta` (inventory), `cap, skew_lim, gate`,
+  `spot` (BTC at fill), `flow5, flow30` (signed taker volume last 5s/30s = informed-flow signal).
 - **action:** `reason` ∈ {fill, fill_clipped, gated, skew_block, cap_zero}, `sz`, `want`.
-- **outcome (real):** `mo5, mo30` (mid markout, live), `mo_res` (resolution markout = decision
-  metric), and **`pnl = sz·mo_res` = the EXACT gross contribution of that fill**.
+- **outcome (real):** `mo5, mo30` (mid markout, live; `mo30_dt` = its actual elapsed s = staleness),
+  `dspot30, dspot_end` (BTC spot move after the fill — separates **fundamental move from flow
+  toxicity**), `mo_res` (resolution markout = decision metric), and **`pnl = sz·mo_res` = the EXACT
+  gross contribution of that fill**.
 - pure-mechanics non-decisions (`no_quote`, `queue_absorbed`) are counted per window.
 
 **Certainty / reconciliation:** since `pnl == sz·mo_res`, **Σ pnl over a window == window gross**
