@@ -338,6 +338,80 @@ class Variant:
                 "end_delta": round(self.delta, 1), "max_delta": round(self.maxd, 1)}
 
 
+class TakerVar:
+    """OFFENSIVE latency taker: on a fast BTC move (high-res WS feed), LIFT/HIT the stale book
+    quote the book-reactor bots haven't repriced yet, paying the 0.07 taker fee. Tests whether
+    being ahead of the laggard book beats the fee. (Complement to the spot_react/micro_react
+    defense.) PAPER UPPER BOUND -- reacts instantly; live haircut = our order latency vs the lead."""
+
+    def __init__(self, name, mk, shared, thr_bps=2.5, lag_s=1.0, size=20.0, cooldown=4.0, cap=200.0):
+        self.name = name; self.mk = mk; self.shared = shared
+        self.thr_bps = thr_bps; self.lag_s = lag_s; self.size = size; self.cooldown = cooldown; self.cap = cap
+        self.cash = self.up_inv = self.dn_inv = self.fee = 0.0
+        self.takes = 0; self.last_take = 0.0
+        self.tob = {mk["up"]: [None, 0, None, 0], mk["down"]: [None, 0, None, 0]}
+        self.fill_log = []
+
+    def on_book(self, m):
+        token = str(m["asset_id"])
+        if token not in self.tob:
+            return
+        bids = m.get("bids") or []; asks = m.get("asks") or []
+        bb = max((float(b["price"]) for b in bids), default=None)
+        ba = min((float(a["price"]) for a in asks), default=None)
+        bsz = sum(float(b["size"]) for b in bids if float(b["price"]) == bb) if bb is not None else 0
+        asz = sum(float(a["size"]) for a in asks if float(a["price"]) == ba) if ba is not None else 0
+        self.tob[token] = [bb, bsz, ba, asz]
+
+    def on_price_change(self, m):
+        for pc in m.get("price_changes", []):
+            token = str(pc["asset_id"])
+            if token not in self.tob:
+                continue
+            cur = self.tob[token]
+            bb = float(pc["best_bid"]) if pc.get("best_bid") not in (None, "") else cur[0]
+            ba = float(pc["best_ask"]) if pc.get("best_ask") not in (None, "") else cur[2]
+            self.tob[token] = [bb, cur[1], ba, cur[3]]
+
+    def step(self):
+        """On a qualifying BTC move, take the stale Up-token quote in the move's direction."""
+        now = time.time()
+        if now - self.last_take < self.cooldown:
+            return
+        hist = self.shared.get("spothist", []); st = self.shared.get("st")
+        if st is None or len(hist) < 2:
+            return
+        prev = None
+        for (tt, sp) in hist:
+            if tt <= now - self.lag_s:
+                prev = sp
+        if prev is None:
+            return
+        dspot = st - prev
+        if abs(dspot) < st * self.thr_bps / 1e4:
+            return
+        up = self.mk["up"]; bb, bsz, ba, asz = self.tob[up]
+        if dspot > 0 and ba is not None and asz > 0 and self.up_inv < self.cap:   # Up fair rising -> buy stale ask
+            sz = min(self.size, asz)
+            self.cash -= ba * sz; self.up_inv += sz; self.fee += float(fees.taker_fee(ba)) * sz
+            self.fill_log.append({"t": now, "side": "BUY", "p": round(ba, 4), "sz": round(sz, 3), "dspot": round(dspot, 1)})
+            self.takes += 1; self.last_take = now
+        elif dspot < 0 and bb is not None and bsz > 0 and self.up_inv > -self.cap:  # Up fair falling -> sell stale bid
+            sz = min(self.size, bsz)
+            self.cash += bb * sz; self.up_inv -= sz; self.fee += float(fees.taker_fee(bb)) * sz
+            self.fill_log.append({"t": now, "side": "SELL", "p": round(bb, 4), "sz": round(sz, 3), "dspot": round(dspot, 1)})
+            self.takes += 1; self.last_take = now
+
+    def settle(self, r):
+        gross = self.cash + self.up_inv * r + self.dn_inv * (1 - r)
+        return gross - self.fee, gross                      # net is AFTER the taker fee
+
+    def attribution(self, r):
+        net, gross = self.settle(r)
+        return {"net": round(net, 4), "gross": round(gross, 4), "fee": round(self.fee, 4),
+                "takes": self.takes, "end_delta": round(self.up_inv, 1)}
+
+
 def configs(mk, shared):
     return [
         Variant("baseline", mk, 50, 0.25, shared=shared),
@@ -463,7 +537,7 @@ async def run(args):
         minutes after window end). Settle + remove when resolved. (The bug in the first run
         was settling ONCE at close and skipping forever.)"""
         for item in pending[:]:
-            mk2, variants2, midtl2 = item
+            mk2, variants2, midtl2, taker2 = item
             r = resolve(sess, mk2["ws"])
             if r is None:
                 continue
@@ -476,6 +550,12 @@ async def run(args):
                 c["net"] += net; c["fills"] += v.fills; c["windows"] += 1; c["pos"] += 1 if net > 0 else 0
                 row[v.name] = attr; attrs[v.name] = attr  # full per-window attribution (cluster unit = ws)
                 parts.append(f"{v.name}={net:+.3f}({v.fills})")
+            t_attr = taker2.attribution(r)        # offensive taker (own settle; net is post-fee)
+            ct = cum.setdefault(taker2.name, {"net": 0.0, "fills": 0, "windows": 0, "pos": 0})
+            ct["net"] += t_attr["net"]; ct["fills"] += t_attr["takes"]; ct["windows"] += 1
+            ct["pos"] += 1 if t_attr["net"] > 0 else 0
+            row[taker2.name] = t_attr; attrs[taker2.name] = t_attr
+            parts.append(f"{taker2.name}={t_attr['net']:+.3f}({t_attr['takes']}t)")
             pnl_sum = emit_fills(mk2, variants2, midtl2, r)  # per-fill rows + Σpnl for reconciliation
             # persist joint (mid, spot) series ~every 2s for the BTC->token LEAD-LAG study (raw, model-free)
             up_tl = midtl2.get(mk2["up"], [])
@@ -499,6 +579,13 @@ async def run(args):
                                       "resid": resid, "reasons": tally, "skips": dict(v.skips)}
                 if abs(resid) > 1e-3:
                     L(f"  [AUDIT WARN] {name} w={mk2['ws']} per-fill Σpnl {s:.4f} != gross {g:.4f} (resid {resid:+.4f})")
+            # taker reconciliation: Σ per-take pnl - fee == net
+            tg = sum(f["sz"] * ((r - f["p"]) if f["side"] == "BUY" else (f["p"] - r)) for f in taker2.fill_log)
+            t_resid = round((tg - taker2.fee) - t_attr["net"], 6)
+            row["audit"][taker2.name] = {"net": t_attr["net"], "gross": round(tg, 6),
+                                         "fee": round(taker2.fee, 4), "takes": t_attr["takes"], "resid": t_resid}
+            if abs(t_resid) > 1e-3:
+                L(f"  [AUDIT WARN] {taker2.name} w={mk2['ws']} taker resid {t_resid:+.4f}")
             wins_fh.write(json.dumps(row) + "\n"); wins_fh.flush()
             json.dump(cum, open(summary_path, "w"), indent=2)
             L("SETTLE w=%d res=%d | %s" % (mk2["ws"], r, "  ".join(parts)))
@@ -524,6 +611,7 @@ async def run(args):
         shared["spothist"] = [(time.time(), sp)] if sp else []  # (t, BTC spot) trail for spot_react
         shared["microhist"] = {}   # token -> [(t, microprice)] trail for micro_react (book lead signal)
         variants = configs(mk, shared)
+        taker = TakerVar("lag_taker", mk, shared)   # offensive latency-arb test (own settle/audit)
         midtl = {}        # token -> [(t, mid, micro, spot)] shared timeline for per-fill markout
         L(f"WINDOW {mk['ws']} ({datetime.fromtimestamp(mk['ws'],timezone.utc):%H:%M}Z) s0={shared['s0']}")
         last_spot = time.time()
@@ -564,6 +652,10 @@ async def run(args):
                                     v.on_price_change(m)
                                 elif et == "last_trade_price":
                                     v.on_trade(str(m["asset_id"]), m["side"], float(m["price"]), float(m["size"]))
+                            if et == "book":
+                                taker.on_book(m)
+                            elif et == "price_change":
+                                taker.on_price_change(m)
                         # sample shared mid/micro/spot timeline (~1s/token) for per-fill markout
                         ts_now = time.time()
                         for tok in (mk["up"], mk["down"]):
@@ -579,9 +671,10 @@ async def run(args):
                                     mh.append((ts_now, mc))
                                     if len(mh) > 40:
                                         del mh[:len(mh) - 40]
+                        taker.step()             # offensive: take stale book quotes on fast BTC moves
             except Exception as e:  # noqa: BLE001
                 L(f"  [ws reconnect] {str(e)[:70]}"); await asyncio.sleep(2)
-        pending.append((mk, variants, midtl))   # settle later, with retry (resolution lags close)
+        pending.append((mk, variants, midtl, taker))   # settle later, with retry (resolution lags close)
         try_settle()
     # drain: retry pending settlements for a few minutes after the run ends
     for _ in range(20):
