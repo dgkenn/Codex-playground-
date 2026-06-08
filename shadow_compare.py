@@ -46,6 +46,12 @@ _HB = [0.0]          # last heartbeat ts (throttle)
 LOG_FILLS = {"baseline", "micro_gate"}
 MARKOUT_HORIZONS = (5, 30)   # seconds; resolution markout is added at settle (the decision metric)
 FLOW_TOX = 150               # signed 30s taker-volume threshold for the flow gate (data: adverse >~200)
+WINDOW_S = 900               # market window length (s); time-to-close normalizer
+# Avellaneda-Stoikov inventory control: require microprice edge >= AS_K*|inventory|*(tau/T) to ADD
+# inventory. Replaces arbitrary skew thresholds with a continuous, variance/time-scaled penalty.
+# AS_K calibrated so the penalty reaches a half-spread (~0.005) near |inv|=cap/2 mid-window
+# (0.005 / (25 * 0.5) = 4e-4); the lone free knob = risk aversion (gamma*sigma^2 lumped here).
+AS_K = 4e-4
 
 
 def heartbeat(tag, out_dir, cum, status="running"):
@@ -160,6 +166,22 @@ class Variant:
             now = time.time()
             f30 = sum(s for (tt, s) in fl if now - tt <= 30)
             return (our_side == "ASK" and f30 > FLOW_TOX) or (our_side == "BID" and f30 < -FLOW_TOX)
+        if self.gate == "as":
+            # Avellaneda-Stoikov: only ADD inventory if the microprice edge clears a penalty that
+            # grows with current inventory and time-to-close (variance-based, NOT P&L-based). Fills
+            # that REDUCE inventory are always welcome. Edge at the touch = spread*(1-imbalance), so
+            # this also pulls into toxic (imbalanced) flow -- it unifies skew + imbalance control.
+            cur = self.tob[token]; mp = micro(cur[0], cur[1], cur[2], cur[3])
+            if mp is None:
+                return False
+            is_up = self.is_up(token)
+            d_per = -1.0 if (is_up == (our_side == "ASK")) else 1.0
+            if self.delta * d_per < 0:               # reduces |inventory| -> never gate
+                return False
+            edge = (price - mp) if our_side == "ASK" else (mp - price)
+            tau = max(self.mk["we"] - time.time(), 0.0)
+            penalty = AS_K * abs(self.delta) * (tau / WINDOW_S)
+            return edge < penalty
         return False
 
     def _size(self, token, our_side, price):
@@ -289,6 +311,9 @@ def configs(mk, shared):
         Variant("sell_lean", mk, 50, 0.35, short_skew=0.10, shared=shared),
         # late-window toxicity: last-2min sells were most adverse (mo_res -0.021) -> pull near close
         Variant("late_gate", mk, 50, 0.25, shared=shared, tau_guard=120),
+        # Avellaneda-Stoikov continuous inventory control (principled replacement for arbitrary
+        # thresholds): edge >= AS_K*|inv|*(tau/T) to add inventory. skew=0.99 disables the hard leash.
+        Variant("av_stoikov", mk, 50, 0.99, gate="as", shared=shared),
     ]
 
 
