@@ -459,6 +459,7 @@ async def btc_ws_feed(live):
                     m = json.loads(raw)
                     if m.get("type") == "ticker" and m.get("price"):
                         live["px"] = float(m["price"]); live["ts"] = time.time()
+                        live["n"] = live.get("n", 0) + 1     # WS tick counter (confirms feed alive on GHA)
         except Exception:  # noqa: BLE001 -- reconnect; REST poll covers the gap
             await asyncio.sleep(2)
 
@@ -466,7 +467,7 @@ async def btc_ws_feed(live):
 async def run(args):
     sess = requests.Session()
     fv = SpotFair(sess)
-    live = {"px": None, "ts": 0.0}             # latest sub-second BTC from the WS feed
+    live = {"px": None, "ts": 0.0, "n": 0}     # latest sub-second BTC from the WS feed (n = tick count)
     asyncio.create_task(btc_ws_feed(live))     # high-res spot, runs across all windows
     # --tag/--out-dir give each GitHub-Actions run UNIQUE output files (gha_data/shadow_<tag>.*)
     # so concurrent/sequential runs never conflict on commit. Default = legacy fixed names.
@@ -566,7 +567,8 @@ async def run(args):
             ticks = [[round(t - mk2["ws"], 1), round(md, 4), round(sp, 1)]
                      for (t, md, _mc, sp) in up_tl if sp is not None]   # ~1s (high-res for lead-lag)
             if ticks:
-                ticks_fh.write(json.dumps({"ws": mk2["ws"], "res_up": r, "ticks": ticks}) + "\n")
+                ticks_fh.write(json.dumps({"ws": mk2["ws"], "res_up": r,
+                                           "feed": mk2.get("_feed", "rest"), "ticks": ticks}) + "\n")
                 ticks_fh.flush()
             # AUDIT: per-fill ledger must reconcile to window gross to the penny (proof of completeness)
             row["audit"] = {}
@@ -616,6 +618,7 @@ async def run(args):
         shared["microhist"] = {}   # token -> [(t, microprice)] trail for micro_react (book lead signal)
         variants = configs(mk, shared)
         taker = TakerVar("lag_taker", mk, shared)   # offensive latency-arb test (own settle/audit)
+        ws_n0 = live["n"]                            # WS tick count at window open (feed-source tag)
         midtl = {}        # token -> [(t, mid, micro, spot)] shared timeline for per-fill markout
         L(f"WINDOW {mk['ws']} ({datetime.fromtimestamp(mk['ws'],timezone.utc):%H:%M}Z) s0={shared['s0']}")
         last_spot = time.time()
@@ -678,6 +681,7 @@ async def run(args):
                         taker.step()             # offensive: take stale book quotes on fast BTC moves
             except Exception as e:  # noqa: BLE001
                 L(f"  [ws reconnect] {str(e)[:70]}"); await asyncio.sleep(2)
+        mk["_feed"] = "ws" if (live["n"] - ws_n0) > 50 else "rest"   # was the fast WS feed live this window?
         pending.append((mk, variants, midtl, taker))   # settle later, with retry (resolution lags close)
         try_settle()
     # drain: retry pending settlements for a few minutes after the run ends

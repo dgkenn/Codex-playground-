@@ -31,6 +31,14 @@ def load():
 
 def main():
     W = load()
+    # isolate FAST-FEED windows (feed=="ws"): old slow-REST-feed windows reproduce the stale-spot
+    # artifact and contaminate the test. feed tag added with the WS upgrade; fall back to all if none.
+    ws = [w for w in W if w.get("feed") == "ws"]
+    if ws:
+        print(f"(filtering to {len(ws)}/{len(W)} FAST-FEED windows; excluding slow-REST-feed)")
+        W = ws
+    else:
+        print(f"(no fast-feed-tagged windows yet; showing all {len(W)} -- result is slow-feed-contaminated)")
     if not W:
         print("no ticks yet -- the instrumented collector writes ticks_*.jsonl at each settle.")
         return
