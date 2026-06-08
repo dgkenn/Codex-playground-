@@ -64,6 +64,7 @@ MICRO_LAG_S = 4       # seconds of microprice lookback (book reacts fast)
 MICRO_REACT_THR = 0.004   # |microprice move| over the lookback to trigger a pull (book just repriced)
 DEPLETE_FRAC = 0.35   # deplete_gate: best-queue < this * its rolling avg => about to deplete (Fokker-Planck)
 MICRO_MARGIN = 0.002  # micro_marg: required edge above microprice to fill (separate2: Q1+Q2 edge<0.001 toxic)
+SOFT_MARGIN = 0.004   # micro_soft: only gate fills where micro is past price by > this (keep more rebate)
 TAKER_ENABLED = False  # lag_taker DISCONTINUED: offensive latency-take loses to the fee (-27.9/win)
 # MAKEREDGE.md #7 vol_gate: adverse selection clusters in BTC vol bursts (the lead-lag pickoff). Pull
 # BOTH sides when short-horizon BTC realized vol spikes; quote full size in calm regimes (Glosten-Milgrom).
@@ -236,6 +237,21 @@ class Variant:
                 return False
             # selling (ASK) toxic if microprice above our ask (book tipping up); BID toxic if below
             return (our_side == "ASK" and mp > price) or (our_side == "BID" and mp < price)
+        if g == "micro_soft":
+            # MAKER_CHANGES2 #3: gate ONLY strongly-toxic fills (micro past price by > SOFT_MARGIN) so we
+            # keep more rebate volume than micro_gate while staying gross-positive. Find the fill-count sweet spot.
+            cur = self.tob[token]; mp = micro(cur[0], cur[1], cur[2], cur[3])
+            if mp is None:
+                return False
+            return (our_side == "ASK" and mp > price + SOFT_MARGIN) or (our_side == "BID" and mp < price - SOFT_MARGIN)
+        if g == "micro_ufat":
+            # MAKER_CHANGES2 #4: gate HARDER near p~0.5 (where adverse selection + fee peak; band_p showed
+            # mid is most toxic) and LOOSER at the extremes -> margin scales with 4*p*(1-p).
+            cur = self.tob[token]; mp = micro(cur[0], cur[1], cur[2], cur[3])
+            if mp is None or cur[0] is None or cur[2] is None:
+                return False
+            mid = (cur[0] + cur[2]) / 2.0; m = MICRO_MARGIN * 4.0 * mid * (1.0 - mid)
+            return (our_side == "ASK" and mp > price - m) or (our_side == "BID" and mp < price + m)
         if g == "micro_marg":
             # refinement (separate2.py): even small-positive-edge fills (edge 0..0.001) were toxic;
             # require an edge MARGIN, not just edge>0 -> skip unless selling >MARGIN above micro
@@ -582,7 +598,9 @@ def configs(mk, shared):
         Variant("mo_size", mk, 50, 0.25, size_mode="markout", shared=shared),   # #3 markout-weighted sizing
         Variant("as_full", mk, 50, 0.99, gate="as_full", shared=shared),        # #4 vol-adaptive Avellaneda-Stoikov
         Variant("vol_gate", mk, 50, 0.25, gate="vol", shared=shared),           # #7 pull both sides in a BTC vol burst
-        Variant("hedged_big", mk, 200, 0.99, shared=shared),                    # #1 carry big inventory -> hedge_value.py evaluates
+        # MAKER_CHANGES2 (backtest round 2): hedged_big RETIRED (-47.8/win). New micro-gate refinements:
+        Variant("micro_soft", mk, 50, 0.25, gate="micro_soft", shared=shared),   # MC2 #3: gate only strongly-toxic (keep rebate)
+        Variant("micro_ufat", mk, 50, 0.25, gate="micro_ufat", shared=shared),   # MC2 #4: strict at p~0.5, loose at extremes
         # MAKERS.md data-backed (reverse-engineered from winning wallets):
         Variant("band_p", mk, 50, 0.25, gate="band", shared=shared),            # A3: quote only moderate-prob band
         Variant("graded", mk, 25, 0.15, gate="graded", shared=shared),          # A4+A3+A2: with-move-pull + band + tight clip
