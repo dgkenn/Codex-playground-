@@ -53,6 +53,8 @@ jobs:
           python-version: '3.12'
       - name: install deps
         run: pip install --quiet numpy scipy requests websockets
+      - name: preflight -- validate strategy roster (fail fast on a malformed registry)
+        run: python strategies.py
       - name: collect ~5h with incremental commits (crash-safe, minimizes trigger-dependence)
         run: |
           git config user.name  "paper-bot"
