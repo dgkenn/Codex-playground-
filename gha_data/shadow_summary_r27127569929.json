@@ -1,80 +1,80 @@
 {
   "baseline": {
-    "net": 0.0,
-    "fills": 0,
-    "windows": 1,
-    "pos": 0
+    "net": 10.1325,
+    "fills": 390,
+    "windows": 2,
+    "pos": 1
   },
   "cap25": {
-    "net": 0.0,
-    "fills": 0,
-    "windows": 1,
-    "pos": 0
+    "net": 11.416,
+    "fills": 338,
+    "windows": 2,
+    "pos": 1
   },
   "cap100": {
-    "net": 0.0,
-    "fills": 0,
-    "windows": 1,
-    "pos": 0
+    "net": 0.2815,
+    "fills": 475,
+    "windows": 2,
+    "pos": 1
   },
   "skew15": {
-    "net": 0.0,
-    "fills": 0,
-    "windows": 1,
-    "pos": 0
+    "net": 12.2274,
+    "fills": 350,
+    "windows": 2,
+    "pos": 1
   },
   "fv_size": {
-    "net": 0.0,
-    "fills": 0,
-    "windows": 1,
-    "pos": 0
+    "net": 9.6605,
+    "fills": 403,
+    "windows": 2,
+    "pos": 1
   },
   "micro_gate": {
-    "net": 0.0,
-    "fills": 0,
-    "windows": 1,
-    "pos": 0
+    "net": 8.7693,
+    "fills": 346,
+    "windows": 2,
+    "pos": 1
   },
   "predict": {
-    "net": 0.0,
-    "fills": 0,
-    "windows": 1,
-    "pos": 0
+    "net": 2.0591,
+    "fills": 151,
+    "windows": 2,
+    "pos": 1
   },
   "micro_skew15": {
-    "net": 0.0,
-    "fills": 0,
-    "windows": 1,
-    "pos": 0
+    "net": 17.6186,
+    "fills": 310,
+    "windows": 2,
+    "pos": 1
   },
   "flow_gate": {
-    "net": 0.0,
-    "fills": 0,
-    "windows": 1,
-    "pos": 0
+    "net": 7.5752,
+    "fills": 50,
+    "windows": 2,
+    "pos": 1
   },
   "sell_lean": {
-    "net": 0.0,
-    "fills": 0,
-    "windows": 1,
-    "pos": 0
+    "net": 12.6769,
+    "fills": 392,
+    "windows": 2,
+    "pos": 1
   },
   "late_gate": {
-    "net": 0.0,
-    "fills": 0,
-    "windows": 1,
-    "pos": 0
+    "net": 9.9623,
+    "fills": 341,
+    "windows": 2,
+    "pos": 1
   },
   "av_stoikov": {
-    "net": 0.0,
-    "fills": 0,
-    "windows": 1,
-    "pos": 0
+    "net": 12.1243,
+    "fills": 475,
+    "windows": 2,
+    "pos": 1
   },
   "spot_react": {
-    "net": 0.0,
-    "fills": 0,
-    "windows": 1,
-    "pos": 0
+    "net": 6.7612,
+    "fills": 358,
+    "windows": 2,
+    "pos": 1
   }
 }
