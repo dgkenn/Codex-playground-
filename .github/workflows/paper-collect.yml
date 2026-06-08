@@ -1,23 +1,25 @@
 # Self-healing paper-data collector on GitHub Actions (public repo => free). Container-independent.
-# CRASH-PROOF continuity (every GitHub trigger is best-effort & drops; we layer + oversubscribe):
-#   0) push to main = immediate, reliable SEED (no activation delay)
-#   1) DENSE schedule every 5 min + concurrency(cancel-in-progress:false): runs take ~45 min, so a
-#      successor is almost always QUEUED -> back-to-back, near-CONTINUOUS collection. Gaps only if
-#      EVERY ~9 ticks in a run window drop. Concurrency caps at 1 running + 1 pending (no runaway).
-#   2) workflow_run CHAIN: paper-collect -> paper-collect-chain (no-op) -> back (scheduler-independent)
-#   3) paper-watchdog.yml = independent collect-if-stale (tight 25-min threshold, every 15 min)
-#   4) DISPATCH_PAT secret = guaranteed self-dispatch even in a total scheduler outage
+# CRASH-PROOF continuity. HARD LESSON: GitHub drops even a */5 schedule wholesale (observed
+# multi-HOUR gaps when the chain dropped and the scheduler didn't rescue). So the real fix is to
+# MINIMIZE trigger-dependence: each run collects ~5h, so we only need a trigger every ~5h instead
+# of every ~45min (~7x fewer). Layers, in order of reliability:
+#   0) push to main = immediate reliable SEED
+#   1) LONG run (~5h) + incremental commits every 10 min -> one run covers a 5h trigger-gap
+#   2) workflow_run CHAIN (paper-collect <-> paper-collect-chain), scheduler-independent
+#   3) schedule */5 + concurrency(cancel-in-progress:false) -> fast restart after a run ends
+#   4) paper-watchdog.yml = independent collect-if-stale (25-min threshold, every 15 min)
+#   5) DISPATCH_PAT secret = GUARANTEED self-dispatch (the only zero-gap layer; add it to eliminate
+#      gaps entirely -- without it, gaps are bounded to ~one watchdog cycle per ~5h run instead of hours)
 # OBSERVABILITY: gha_data/HEARTBEAT_*.json + optional HEARTBEAT_URL external dead-man's-switch.
-# Incremental commits every ~10 min (crash-safe), unique files (no conflicts).
-# NOTE: only a full GitHub-Actions outage can still stop this; true outage-proofing needs an
-# external executor (user machine / VPS / external cron hitting the dispatch API) -- see WATCHER.md.
+# Only a full GitHub-Actions outage can still stop this; true outage-proofing needs an external
+# executor (VPS / external cron hitting the dispatch API) -- see WATCHER.md.
 name: paper-collect
 
 on:
   push:
-    branches: [main]            # immediate seed on any main commit (reliable; no schedule delay)
+    branches: [main]
   schedule:
-    - cron: '*/5 * * * *'       # DENSE: oversubscribe so a successor is always queued (concurrency dedups)
+    - cron: '*/5 * * * *'       # fast restart after a run ends (concurrency dedups while one runs)
   workflow_dispatch: {}
   workflow_run:
     workflows: ["paper-collect-chain"]
@@ -38,7 +40,7 @@ env:
 jobs:
   collect:
     runs-on: ubuntu-latest
-    timeout-minutes: 52
+    timeout-minutes: 330          # ~5.5h (< 6h job cap); covers the ~5h collection + final flush
     steps:
       - uses: actions/checkout@v4
         with:
@@ -49,7 +51,7 @@ jobs:
           python-version: '3.12'
       - name: install deps
         run: pip install --quiet numpy scipy requests websockets
-      - name: collect ~45 min with incremental commits (crash-safe)
+      - name: collect ~5h with incremental commits (crash-safe, minimizes trigger-dependence)
         run: |
           git config user.name  "paper-bot"
           git config user.email "paper-bot@users.noreply.github.com"
@@ -58,11 +60,11 @@ jobs:
             git add gha_data/ 2>/dev/null || return 0
             git diff --cached --quiet && return 0
             git commit -q -m "gha: paper-collect r${{ github.run_id }} ($(date -u +%H:%MZ))" || return 0
-            git push -q origin "HEAD:$BRANCH" 2>/dev/null || true
+            git pull --rebase --autostash -q origin "$BRANCH" 2>/dev/null && git push -q origin "HEAD:$BRANCH" 2>/dev/null || true
           }
-          ( for k in 1 2 3 4; do sleep 600; incr; done ) &
+          ( for k in $(seq 1 30); do sleep 600; incr; done ) &
           LOOP=$!
-          timeout 2700 python -u shadow_compare.py --duration 2640 \
+          timeout 18300 python -u shadow_compare.py --duration 18000 \
             --tag "r${{ github.run_id }}" --out-dir gha_data || true
           kill $LOOP 2>/dev/null || true
           python aggregate_shadow.py > gha_data/SUMMARY.txt 2>/dev/null || true
