@@ -1,4 +1,6 @@
 # Self-healing paper-data collector on GitHub Actions (public repo => free). Container-independent.
+# MULTI-ASSET: collects shadow variants across btc/eth/sol/xrp 15m in parallel (via multi_market.py) ->
+# enables breadth_net_corr.py (micro_gate's true cross-market net correlation = the real breadth Sharpe).
 # CRASH-PROOF continuity. HARD LESSON: GitHub drops even a */5 schedule wholesale (observed
 # multi-HOUR gaps when the chain dropped and the scheduler didn't rescue). So the real fix is to
 # MINIMIZE trigger-dependence: each run collects ~5h, so we only need a trigger every ~5h instead
@@ -77,8 +79,10 @@ jobs:
           }
           ( for k in $(seq 1 30); do sleep 600; push_data; done ) &
           LOOP=$!
-          timeout 18300 python -u shadow_compare.py --duration 18000 \
-            --tag "r${{ github.run_id }}" --out-dir gha_data || true
+          # MULTI-ASSET: run shadow_compare across btc/eth/sol/xrp 15m in parallel (each writes uniquely
+          # tagged window files carrying asset/tenor_min) -> lets breadth_net_corr.py measure micro_gate's
+          # true cross-market net correlation. I/O-bound (4 WS), fine on the 2-core runner over ~5h.
+          timeout 18300 python -u multi_market.py 18000 gha_data "r${{ github.run_id }}" || true
           kill $LOOP 2>/dev/null || true
           python aggregate_shadow.py > gha_data/SUMMARY.txt 2>/dev/null || true
           push_data
