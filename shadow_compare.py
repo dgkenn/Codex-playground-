@@ -328,6 +328,7 @@ async def run(args):
     log = open(os.path.join(args.out_dir, f"shadow{sfx}.log"), "a")
     wins_fh = open(os.path.join(args.out_dir, f"shadow_windows{sfx}.jsonl"), "a")
     fills_fh = open(os.path.join(args.out_dir, f"fills{sfx}.jsonl"), "a")   # per-fill markout rows
+    ticks_fh = open(os.path.join(args.out_dir, f"ticks{sfx}.jsonl"), "a")   # joint (mid,spot) series for lead-lag
     cum = {}; pending = []
 
     def L(s):
@@ -406,6 +407,13 @@ async def run(args):
                 row[v.name] = attr; attrs[v.name] = attr  # full per-window attribution (cluster unit = ws)
                 parts.append(f"{v.name}={net:+.3f}({v.fills})")
             pnl_sum = emit_fills(mk2, variants2, midtl2, r)  # per-fill rows + Σpnl for reconciliation
+            # persist joint (mid, spot) series ~every 2s for the BTC->token LEAD-LAG study (raw, model-free)
+            up_tl = midtl2.get(mk2["up"], [])
+            ticks = [[round(t - mk2["ws"], 1), round(md, 4), round(sp, 1)]
+                     for (t, md, _mc, sp) in up_tl[::2] if sp is not None]
+            if ticks:
+                ticks_fh.write(json.dumps({"ws": mk2["ws"], "res_up": r, "ticks": ticks}) + "\n")
+                ticks_fh.flush()
             # AUDIT: per-fill ledger must reconcile to window gross to the penny (proof of completeness)
             row["audit"] = {}
             vmap = {v.name: v for v in variants2}
