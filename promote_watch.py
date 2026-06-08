@@ -9,7 +9,7 @@ import glob, json, math, sys
 from collections import defaultdict
 
 THRESH = 15
-CANDS = ["micro_skew15", "av_stoikov", "micro_react", "spot_react", "lag_taker"]
+CANDS = ["micro_skew15", "av_stoikov", "spot_react", "micro_react", "micro_spot", "lag_taker"]
 
 
 def main():

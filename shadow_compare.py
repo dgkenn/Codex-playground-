@@ -155,26 +155,32 @@ class Variant:
         """Return True to SKIP the fill (pull the quote) per this variant's gate."""
         if self.tau_guard and (self.mk["we"] - time.time()) < self.tau_guard:
             return True               # late-window pull: last-2min sells were the most adverse
-        if self.gate == "micro":
+        if self.gate == "micro_spot":  # cause+symptom: pull if EITHER book-imbalance OR BTC-lag flags
+            return (self._gate_one("micro", token, our_side, price)
+                    or self._gate_one("spot", token, our_side, price))
+        return self._gate_one(self.gate, token, our_side, price)
+
+    def _gate_one(self, g, token, our_side, price):
+        if g == "micro":
             cur = self.tob[token]; mp = micro(cur[0], cur[1], cur[2], cur[3])
             if mp is None:
                 return False
             # selling (ASK) toxic if microprice above our ask (book tipping up); BID toxic if below
             return (our_side == "ASK" and mp > price) or (our_side == "BID" and mp < price)
-        if self.gate == "predict":
+        if g == "predict":
             ft = self.fair_tok(token)
             if ft is None:
                 return False
             return (our_side == "ASK" and price < ft - FV_MARGIN) or \
                    (our_side == "BID" and price > ft + FV_MARGIN)
-        if self.gate == "flow":
+        if g == "flow":
             # informed-flow gate: pull the side a recent same-side taker burst is hitting.
             # data: SELL 30s-markout turns adverse when flow30 (signed taker vol) > ~200.
             fl = self.shared.get("flow", {}).get(token, [])
             now = time.time()
             f30 = sum(s for (tt, s) in fl if now - tt <= 30)
             return (our_side == "ASK" and f30 > FLOW_TOX) or (our_side == "BID" and f30 < -FLOW_TOX)
-        if self.gate == "spot":
+        if g == "spot":
             # get on the RIGHT side of the BTC->token lag: if BTC just moved, the token fair is
             # about to follow -> pull the side we'd be picked off on, BEFORE it reprices.
             hist = self.shared.get("spothist", [])
@@ -193,7 +199,7 @@ class Variant:
             token_dir = 1.0 if self.is_up(token) else -1.0
             fair_move = token_dir * dspot         # how the token's fair just moved
             return (our_side == "ASK" and fair_move > thr) or (our_side == "BID" and fair_move < -thr)
-        if self.gate == "micro_react":
+        if g == "micro_react":
             # RIGHT side of the lag via the FAST signal: the token's own microprice (it leads our
             # slow spot feed). If micro just moved, the touch is about to reprice -> pull the side
             # we'd be picked off on, before the taker lifts our stale quote. (corrected spot_react)
@@ -211,7 +217,7 @@ class Variant:
             dmicro = mp - prev
             return (our_side == "ASK" and dmicro > MICRO_REACT_THR) or \
                    (our_side == "BID" and dmicro < -MICRO_REACT_THR)
-        if self.gate == "as":
+        if g == "as":
             # Avellaneda-Stoikov: only ADD inventory if the microprice edge clears a penalty that
             # grows with current inventory and time-to-close (variance-based, NOT P&L-based). Fills
             # that REDUCE inventory are always welcome. Edge at the touch = spread*(1-imbalance), so
@@ -413,30 +419,28 @@ class TakerVar:
 
 
 def configs(mk, shared):
+    # DISCONTINUED (confirmed losers over 53 windows, kept in history): cap100 (t=-2.68, more
+    # capacity hurts), sell_lean (-2.06/win, asymmetric leash = regime artifact), predict (t~0,
+    # BTC fair-value gate dead -- consistent with the lead-lag null on the slow feed).
     return [
         Variant("baseline", mk, 50, 0.25, shared=shared),
+        # capacity/inventory frontier (winners): tighter is better
         Variant("cap25", mk, 25, 0.25, shared=shared),
-        Variant("cap100", mk, 100, 0.25, shared=shared),
         Variant("skew15", mk, 50, 0.15, shared=shared),
         Variant("fv_size", mk, 50, 0.25, size_mode="fv", shared=shared),
+        # toxicity gating on the token's OWN book (the proven edge, t=+5.4)
         Variant("micro_gate", mk, 50, 0.25, gate="micro", shared=shared),
-        Variant("predict", mk, 50, 0.25, gate="predict", shared=shared),
-        # data-driven candidates: stack the two independent winners (micro gate + tight skew),
-        # and operationalize the new flow-toxicity finding (pull the side a taker burst is hitting)
-        Variant("micro_skew15", mk, 50, 0.15, gate="micro", shared=shared),
+        Variant("micro_skew15", mk, 50, 0.15, gate="micro", shared=shared),   # micro + tight inv (combined winner)
         Variant("flow_gate", mk, 50, 0.25, gate="flow", shared=shared),
-        # sell-skew tweak: buys earn (+0.41/fill) but sells bleed (-0.04) and flow forces us
-        # 13:1 short -> tighter leash on building short (0.10) than long (0.35)
-        Variant("sell_lean", mk, 50, 0.35, short_skew=0.10, shared=shared),
-        # late-window toxicity: last-2min sells were most adverse (mo_res -0.021) -> pull near close
         Variant("late_gate", mk, 50, 0.25, shared=shared, tau_guard=120),
-        # Avellaneda-Stoikov continuous inventory control (principled replacement for arbitrary
-        # thresholds): edge >= AS_K*|inv|*(tau/T) to add inventory. skew=0.99 disables the hard leash.
+        # principled inventory control (Avellaneda-Stoikov)
         Variant("av_stoikov", mk, 50, 0.99, gate="as", shared=shared),
-        # get on the RIGHT side of the BTC->token lag: pull the side BTC just moved against
+        # BTC-lag defense (now on the fast WS feed)
         Variant("spot_react", mk, 50, 0.25, gate="spot", shared=shared),
-        # corrected lag-reaction: react to the BOOK's microprice velocity (it LEADS our spot feed)
         Variant("micro_react", mk, 50, 0.25, gate="micro_react", shared=shared),
+        # NEW: cause + symptom -- pull if EITHER the book imbalance OR the BTC-lag flags (proven
+        # micro_gate winner stacked with the spot_react lag defense)
+        Variant("micro_spot", mk, 50, 0.25, gate="micro_spot", shared=shared),
     ]
 
 
