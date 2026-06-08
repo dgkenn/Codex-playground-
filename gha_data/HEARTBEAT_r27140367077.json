@@ -1,7 +1,92 @@
 {
-  "utc": "2026-06-08T13:38:04.249704+00:00",
+  "utc": "2026-06-08T13:47:04.387873+00:00",
   "tag": "r27140367077",
   "status": "running",
-  "settled_windows": 0,
-  "cum": {}
+  "settled_windows": 1,
+  "cum": {
+    "baseline": {
+      "net": -11.4565,
+      "fills": 195,
+      "windows": 1,
+      "pos": 0
+    },
+    "cap25": {
+      "net": -5.4386,
+      "fills": 149,
+      "windows": 1,
+      "pos": 0
+    },
+    "cap100": {
+      "net": -18.4053,
+      "fills": 246,
+      "windows": 1,
+      "pos": 0
+    },
+    "skew15": {
+      "net": -9.1531,
+      "fills": 158,
+      "windows": 1,
+      "pos": 0
+    },
+    "fv_size": {
+      "net": -11.4565,
+      "fills": 195,
+      "windows": 1,
+      "pos": 0
+    },
+    "micro_gate": {
+      "net": -4.547,
+      "fills": 173,
+      "windows": 1,
+      "pos": 0
+    },
+    "predict": {
+      "net": -11.4565,
+      "fills": 195,
+      "windows": 1,
+      "pos": 0
+    },
+    "micro_skew15": {
+      "net": 0.6625,
+      "fills": 142,
+      "windows": 1,
+      "pos": 1
+    },
+    "flow_gate": {
+      "net": 6.6547,
+      "fills": 67,
+      "windows": 1,
+      "pos": 1
+    },
+    "sell_lean": {
+      "net": -9.0577,
+      "fills": 195,
+      "windows": 1,
+      "pos": 0
+    },
+    "late_gate": {
+      "net": -11.4565,
+      "fills": 195,
+      "windows": 1,
+      "pos": 0
+    },
+    "av_stoikov": {
+      "net": -10.5209,
+      "fills": 238,
+      "windows": 1,
+      "pos": 0
+    },
+    "spot_react": {
+      "net": -10.3992,
+      "fills": 172,
+      "windows": 1,
+      "pos": 0
+    },
+    "micro_react": {
+      "net": 1.5501,
+      "fills": 87,
+      "windows": 1,
+      "pos": 1
+    }
+  }
 }
