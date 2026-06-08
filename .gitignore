@@ -24,3 +24,7 @@ box_arb_log.jsonl
 queue_jump_log.jsonl
 makers_trades.jsonl
 makers_agg.json
+wallet_track.jsonl
+wallet_trades.parquet
+makers_trades.jsonl
+makers_agg.json
