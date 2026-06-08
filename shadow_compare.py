@@ -30,6 +30,8 @@ from datetime import datetime, timezone
 import requests
 import websockets
 
+import netfast  # latency-tuned keep-alive session (NODELAY/KEEPALIVE, warm pool)
+
 import fees
 from fairvalue import fair_up
 from fvfeed import SpotFair
@@ -570,7 +572,7 @@ async def btc_ws_feed(live):
 
 
 async def run(args):
-    sess = requests.Session()
+    sess = netfast.fast_session()      # latency-tuned keep-alive session (NODELAY, warm pool)
     fv = SpotFair(sess)
     live = {"px": None, "ts": 0.0, "n": 0, "rtds_ts": 0.0, "src": None}   # latest BTC (n = tick count)
     asyncio.create_task(rtds_btc_feed(live))   # PRIMARY: in-region Chainlink+Binance settlement feed

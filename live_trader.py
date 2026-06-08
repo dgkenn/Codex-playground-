@@ -64,6 +64,7 @@ from datetime import datetime, timezone
 
 import requests
 
+import netfast  # latency-tuned keep-alive session (NODELAY/KEEPALIVE, warm pool) for the hot path
 import notify  # free Telegram alerts (no-op if env unset)
 import collateral  # ROADMAP #1 mint/merge primitive (on-chain CTF; live-only)
 from fvfeed import SpotFair
@@ -417,12 +418,15 @@ def main():
     ap.add_argument("--box-arb", action="store_true", help="run the complete-set box-arb instead of the ladder")
     ap.add_argument("--box-margin", type=float, default=0.0, help="min box premium/set to act (0 = any >touch)")
     ap.add_argument("--box-sets", type=float, default=5.0, help="sets per box opportunity")
+    ap.add_argument("--presign", action="store_true", help="pre-sign touch-band orders during idle so "
+                    "placing a new rung is a pure POST (signing OFF the fire path). Sub-10ms enabler; "
+                    "live-only, falls back to create_and_post_order on any miss. VERIFY on a burner first.")
     a = ap.parse_args()
     live = a.live and os.environ.get("I_UNDERSTAND_REAL_MONEY") == "yes"
     if a.live and not live:
         print("REFUSING --live without I_UNDERSTAND_REAL_MONEY=yes. DRY-RUN.")
     mode = "LIVE" if live else "DRY-RUN"
-    sess = requests.Session()
+    sess = netfast.fast_session()      # warm keep-alive, NODELAY -> a hot request is one origin RTT
     client = make_client() if live else None
     fv = SpotFair(sess, symbol=a.spot_symbol) if a.reprice else None
     rlog = RepriceLog()
@@ -450,18 +454,47 @@ def main():
     resting = {}                       # (token,side,price) -> {"oid","ts","q"}
     seen_fills = set(); markouts = []
 
+    presigned = {}        # (tk,sd,price3) -> signed order, pre-signed OFF the fire path (--presign)
+
+    def _order_args(tk, sd, p):
+        from py_clob_client_v2 import OrderArgs, PartialCreateOrderOptions
+        from py_clob_client_v2.order_builder.constants import BUY, SELL
+        return (OrderArgs(token_id=tk, price=p, size=a.post, side=(BUY if sd == "BUY" else SELL)),
+                PartialCreateOrderOptions(tick_size=str(mk["tick"]), neg_risk=mk["negRisk"]))
+
+    def presign_one(tk, sd, p):
+        """Sign (EIP-712) a candidate order NOW so a later place() is a pure network POST. Each signed
+        order carries its own random salt, so caching several ahead is safe. No-op unless --presign+live."""
+        if not (live and a.presign):
+            return
+        k = (tk, sd, round(p, 3))
+        if k in presigned:
+            return
+        try:
+            args, opts = _order_args(tk, sd, p)
+            presigned[k] = client.create_order(args, options=opts)
+        except Exception:
+            pass                                   # fall back to create_and_post_order at place() time
+
     def place(tk, sd, p, queue_ahead):
-        """Returns (order_id, decision_ts, ack_ts); ack-decision = placement latency (CAPTURE #1)."""
+        """Returns (order_id, decision_ts, ack_ts); ack-decision = placement latency (CAPTURE #1).
+        FAST path (--presign): if this exact order was pre-signed, fire a pure POST (no signing on the
+        hot path). Otherwise sign+post via the proven create_and_post_order. Any error -> safe fallback."""
         t_dec = time.time()
         if not live:
             print(f"  [DRY place] {sd} {a.post} {tk[:8]} @ {p} (q_ahead~{queue_ahead:.0f})")
             return f"dry_{tk[:6]}_{sd}_{p}", t_dec, time.time()
-        from py_clob_client_v2 import OrderArgs, OrderType, PartialCreateOrderOptions
-        from py_clob_client_v2.order_builder.constants import BUY, SELL
-        r = client.create_and_post_order(
-            OrderArgs(token_id=tk, price=p, size=a.post, side=(BUY if sd == "BUY" else SELL)),
-            options=PartialCreateOrderOptions(tick_size=str(mk["tick"]), neg_risk=mk["negRisk"]),
-            order_type=OrderType.GTC)
+        from py_clob_client_v2 import OrderType
+        so = presigned.pop((tk, sd, round(p, 3)), None)
+        try:
+            if so is not None:                     # pre-signed -> pure POST (the sub-10ms fire path)
+                r = client.post_order(so, OrderType.GTC)
+            else:
+                args, opts = _order_args(tk, sd, p)
+                r = client.create_and_post_order(args, options=opts, order_type=OrderType.GTC)
+        except Exception:                          # pre-signed POST failed (stale/expired) -> re-sign+post
+            args, opts = _order_args(tk, sd, p)
+            r = client.create_and_post_order(args, options=opts, order_type=OrderType.GTC)
         oid = r.get("orderID") if isinstance(r, dict) else r
         return oid, t_dec, time.time()
 
@@ -588,6 +621,8 @@ def main():
                 # sits inside the spread, so the toxic test fires only when it CROSSES a resting price.
                 anchor = mp if mp is not None else ft
                 desired, model_supp = model_filter(base, anchor, a.fv_margin, bb, ba, band_px, rlog, token)
+                for _k in desired:                 # pre-sign the targets we're about to need (no-op unless --presign)
+                    presign_one(*_k)
                 now = time.time()
 
                 # --- P1: PLACE missing ladder rungs (KEEP existing -> they age into priority) ---

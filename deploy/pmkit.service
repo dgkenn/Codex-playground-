@@ -1,0 +1,27 @@
+# pmkit.service -- run the maker persistently on the co-located box (systemd, auto-restart).
+#   sudo cp deploy/pmkit.service /etc/systemd/system/pmkit.service   # edit User/paths/args first
+#   sudo systemctl daemon-reload && sudo systemctl enable --now pmkit
+#   journalctl -u pmkit -f        # live logs (watch the [latency] colo verdict on each (re)start)
+#
+# Secrets: put PRIVATE_KEY / DEPOSIT_WALLET_ADDRESS in /home/ubuntu/pmkit/.env (chmod 600, gitignored).
+# DRY-RUN by default. Real orders require BOTH --live AND I_UNDERSTAND_REAL_MONEY=yes -- add them only
+# once the latency self-test passes and you've dry-run on this exact box.
+[Unit]
+Description=pmkit Polymarket maker
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/pmkit
+EnvironmentFile=/home/ubuntu/pmkit/.env
+# DRY-RUN (safe default). To go live, append: --live  and set Environment=I_UNDERSTAND_REAL_MONEY=yes
+ExecStart=/home/ubuntu/pmkit/.venv/bin/python3 -u live_trader.py --presign --duration 86400 --max-notional 25
+Restart=always
+RestartSec=5
+# fail-safe: hard cap memory; restart on OOM rather than wedge
+MemoryMax=1G
+
+[Install]
+WantedBy=multi-user.target
