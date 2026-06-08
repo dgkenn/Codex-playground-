@@ -64,7 +64,8 @@ MICRO_LAG_S = 4       # seconds of microprice lookback (book reacts fast)
 MICRO_REACT_THR = 0.004   # |microprice move| over the lookback to trigger a pull (book just repriced)
 DEPLETE_FRAC = 0.35   # deplete_gate: best-queue < this * its rolling avg => about to deplete (Fokker-Planck)
 MICRO_MARGIN = 0.002  # micro_marg: required edge above microprice to fill (separate2: Q1+Q2 edge<0.001 toxic)
-SOFT_MARGIN = 0.004   # micro_soft: only gate fills where micro is past price by > this (keep more rebate)
+SOFT_MARGIN = 0.002   # micro_soft: BACKTEST-OPTIMAL gate (sweep on 10k fills: net +85.9 vs micro_gate +83.1);
+#                       gate only tox>0.002 -> keep mildly-toxic fills (rebate>gross loss), cut only strongly-toxic
 TAKER_ENABLED = False  # lag_taker DISCONTINUED: offensive latency-take loses to the fee (-27.9/win)
 # MAKEREDGE.md #7 vol_gate: adverse selection clusters in BTC vol bursts (the lead-lag pickoff). Pull
 # BOTH sides when short-horizon BTC realized vol spikes; quote full size in calm regimes (Glosten-Milgrom).
