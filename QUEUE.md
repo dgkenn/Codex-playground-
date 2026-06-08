@@ -28,6 +28,21 @@
   win the queue." The whole live haircut vs paper *is* the queue battle. So there is no separate
   paper test to run — the ceiling is already measured; queue positioning is the LIVE work to realize it.
 
+## CRUCIAL STRUCTURAL FINDING (building it surfaced this)
+In a **1-tick-spread market** (this market, ~96% of the time) you **cannot pre-position at a
+not-yet-touch level without crossing the spread** — there is no empty level between bb and ba, and
+posting at the level the touch will move INTO means crossing = becoming a **taker** = paying the
+0.07 fee = the play that already failed (lag_taker -27.9/win). So "post early at the next level"
+does NOT work here. Real queue positioning in a large-tick market = **lead-aware standing-rung
+priority**: keep aged rungs on BOTH sides; when the BTC lead says the touch is heading one way,
+PROTECT the rungs on that side (they become front-of-queue when the touch arrives) and SHED the
+rungs on the side the book is leaving (about to be run over). This needs no crossing and no fee.
+
+BUILT + DRY-RUN VERIFIED: `live_trader.py --queue-jump` (Arm A). A daemon thread streams Coinbase
+WS BTC; on a move > jump-bps over jump-lag, it protects the lead-favored side's rungs and sheds the
+adverse side, logging every action to queue_jump_log.jsonl. Arm B = default (no flag). Dry-run:
+BTC fell ~$13 -> on the Down token it protected BUY rungs and shed SELL rungs (correct).
+
 ## Best way to do it (synthesized) + the LIVE experiment
 Mechanism: on the BTC-lead, post at the level the book is about to move to, a fraction-second early,
 to secure front FIFO position before the laggard bots; capture the least-toxic front-of-queue flow +

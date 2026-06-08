@@ -57,7 +57,9 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import threading
 import time
+from collections import deque
 from datetime import datetime, timezone
 
 import requests
@@ -122,6 +124,50 @@ def microprice(bb, ba, bsz, asz):
         return (bb + ba) / 2.0
     imb = (bsz or 0) / tot                       # share of size on the bid = buy pressure
     return bb + (ba - bb) * imb
+
+
+def btc_lead_feeder(live_btc):
+    """Sub-second Coinbase WS BTC ticker in a daemon thread -> the queue-positioning lead signal
+    (feed_race: BTC leads the token ~0.5s). Updates live_btc{px,ts,hist}. websockets imported lazily
+    so the OMS still runs without it (lead OFF)."""
+    import asyncio
+    try:
+        import websockets
+    except Exception:
+        print("  [queue-jump] websockets not installed -> lead feed OFF (queue-jump no-op)"); return
+    sub = json.dumps({"type": "subscribe", "product_ids": ["BTC-USD"], "channels": ["ticker"]})
+
+    async def run():
+        while True:
+            try:
+                async with websockets.connect("wss://ws-feed.exchange.coinbase.com",
+                                              ping_interval=15, ping_timeout=20) as ws:
+                    await ws.send(sub)
+                    async for raw in ws:
+                        m = json.loads(raw)
+                        if m.get("type") == "ticker" and m.get("price"):
+                            t = time.time(); px = float(m["price"])
+                            live_btc["px"] = px; live_btc["ts"] = t
+                            h = live_btc["hist"]; h.append((t, px))
+                            while h and h[0][0] < t - 60:
+                                h.popleft()
+            except Exception:
+                await asyncio.sleep(2)
+    loop = asyncio.new_event_loop(); asyncio.set_event_loop(loop); loop.run_until_complete(run())
+
+
+def btc_lead(live_btc, lag_s):
+    """Signed BTC move ($) over the last lag_s seconds; 0 if no/stale feed."""
+    h = live_btc.get("hist"); px = live_btc.get("px")
+    if not h or px is None:
+        return 0.0
+    now = time.time(); prev = None
+    for (t, p) in h:
+        if t <= now - lag_s:
+            prev = p
+    if prev is None:
+        prev = h[0][1]
+    return px - prev
 
 
 def make_client():
@@ -302,6 +348,12 @@ def main():
     ap.add_argument("--loss-limit", type=float, default=5)
     ap.add_argument("--poll", type=float, default=3)
     ap.add_argument("--duration", type=int, default=3600)
+    # QUEUE-POSITIONING A/B (live-only test; QUEUE.md). Arm A: lead-aware standing-rung priority --
+    # on a fast BTC move, HOLD aged rungs on the side the book is moving toward (front-of-queue when
+    # the touch arrives) and SHED the side it's leaving. Arm B (default) = the at-touch control.
+    ap.add_argument("--queue-jump", action="store_true", help="Arm A: BTC-lead-aware rung protection/shed")
+    ap.add_argument("--jump-bps", type=float, default=2.0, help="|BTC move| over jump-lag (bps of spot) to act")
+    ap.add_argument("--jump-lag", type=float, default=2.0, help="BTC lookback seconds (~ the measured lead)")
     a = ap.parse_args()
     live = a.live and os.environ.get("I_UNDERSTAND_REAL_MONEY") == "yes"
     if a.live and not live:
@@ -312,6 +364,10 @@ def main():
     fv = SpotFair(sess, symbol=a.spot_symbol) if a.reprice else None
     rlog = RepriceLog()
     olog = OrderLog()                  # CAPTURE.md per-order lifecycle + fill ground-truth
+    live_btc = {"px": None, "ts": 0.0, "hist": deque()}
+    if a.queue_jump:                   # Arm A: start the sub-second BTC lead feed
+        threading.Thread(target=btc_lead_feeder, args=(live_btc,), daemon=True).start()
+        jlog = open("queue_jump_log.jsonl", "a")   # A/B audit: lead-driven protect/shed actions
     print(f"[{mode}] STANDING-LADDER maker post={a.post} cap={a.cap} skew={a.skew} layers={a.layers} "
           f"max_rungs={a.max_rungs} age_protect={a.age_protect}s toxic_severe={a.toxic_severe} "
           f"reprice={a.reprice} fv_margin={a.fv_margin} max_notional=${a.max_notional} loss_limit=${a.loss_limit}")
@@ -447,6 +503,21 @@ def main():
                                 best_bid=bb, best_ask=ba, spread=round(ba - bb, 4),
                                 btc_spot=(fv.last if fv is not None else None), tau=round(tau, 1))
 
+                # QUEUE-POSITIONING (Arm A): a fast BTC move says where the touch is HEADING. In a
+                # 1-tick market you can't pre-post at the next level without crossing (=taker, fails the
+                # fee), so the edge is RUNG PRIORITY: protect aged rungs on the side the book moves
+                # TOWARD (front-of-queue when the touch arrives) and shed the side it leaves.
+                lead_fav = lead_adv = None
+                if a.queue_jump:
+                    dspot = btc_lead(live_btc, a.jump_lag)
+                    px = live_btc.get("px") or 0.0
+                    thr = px * a.jump_bps / 1e4
+                    fair_move = (1.0 if is_up else -1.0) * dspot           # how THIS token's fair just moved
+                    if abs(fair_move) >= thr and thr > 0:
+                        # fair rising -> BUY side becomes the touch (protect), SELL side toxic (shed)
+                        lead_fav = "BUY" if fair_move > 0 else "SELL"
+                        lead_adv = "SELL" if fair_move > 0 else "BUY"
+
                 # --- P1 front-sacred + P2 EV-cancel: decide each resting order ---
                 for key in list(resting):
                     if key[0] != token:
@@ -459,7 +530,18 @@ def main():
                         edge = (anchor - p) if sd == "SELL" else (p - anchor)
                         severe = edge > a.toxic_severe * mk["tick"]         # strong/informed move (in ticks)
                     in_band = key in desired
-                    if toxic and (not aged or severe):
+                    if lead_adv == sd:                     # book heading away from this side -> shed it
+                        drop(key, "lead_shed")
+                        jlog.write(json.dumps({"ts": now, "ws": mk["ws"], "token": token[:12], "side": sd,
+                                   "price": p, "action": "shed", "dspot": round(dspot, 1)}) + "\n"); jlog.flush()
+                    elif lead_fav == sd:                  # book heading toward this side -> PROTECT queue priority
+                        if toxic and severe:
+                            drop(key, "model_pull")        # only a severe informed move overrides the protect
+                        # else HOLD even if young/off-band: keep our place in the queue the touch is entering
+                        else:
+                            jlog.write(json.dumps({"ts": now, "ws": mk["ws"], "token": token[:12], "side": sd,
+                                       "price": p, "action": "protect", "aged": aged, "dspot": round(dspot, 1)}) + "\n"); jlog.flush()
+                    elif toxic and (not aged or severe):
                         drop(key, "model_pull")            # P2: cancel only if young, OR toxic beats queue value
                     elif (not aged) and (not in_band):
                         drop(key, "reshape")               # reshape from the back: young off-band rung
