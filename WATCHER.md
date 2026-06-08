@@ -2,9 +2,19 @@
 
 The dev container is reclaimed on idle and nothing inside survives it, so the collector and any
 watcher must live on **GitHub Actions** (container-independent, free on this public repo). The hard
-part is *triggering*: GitHub's `schedule` is **best-effort and drops runs** (we observed 1 run in
-4 h on a 30-min cron, because repeated workflow edits kept resetting the scheduled-workflow
-activation delay). So continuity does **not** rely on the scheduler — it self-perpetuates.
+part is *triggering*: **every GitHub trigger is best-effort and drops** — schedule, `workflow_run`
+chain, and watchdog have all been observed to drop (a 50-min stall on 2026-06-08 when the chain
+**and** the :00 and :30 schedules all dropped together). So continuity must not depend on any single
+trigger firing — it is layered and **oversubscribed**.
+
+## Layer 1 — DENSE schedule + concurrency queue (PRIMARY, crash-proof, **live 2026-06-08**)
+`paper-collect.yml` is scheduled **every 5 min** (`*/5`), but a run takes ~45 min and the workflow
+has `concurrency: {group: paper-collect, cancel-in-progress: false}`. So new ticks don't pile up —
+they sit as **one queued successor**. The instant the running collector finishes, the queued one
+starts → **back-to-back, near-continuous collection**. GitHub would have to drop **every one of the
+~9 ticks** in a 45-min window (plus the chain and PAT below) to produce a gap. Concurrency caps it
+at **1 running + 1 pending** (no runaway), and more back-to-back runs = more windows = faster power.
+This is the guarantee the flaky scheduler couldn't give: it exploits *queueing*, not *firing on time*.
 
 ## Layer 0 — the `workflow_run` ping-pong chain (PRIMARY, **VERIFIED 2026-06-07**)
 Two workflows bounce off each other's completion, so the loop drives itself with **no scheduler and
