@@ -61,3 +61,43 @@ LIVE A/B (requires real orders on user infra — keys/capital; paper cannot adju
 - Optimal Placement in a LOB (INFORMS): https://pubsonline.informs.org/doi/pdf/10.1287/educ.2013.0113
 - Strategic placement w/ adverse selection: https://arxiv.org/pdf/1610.00261
 - Large-tick queue dynamics (Fokker-Planck): https://arxiv.org/pdf/1304.6819
+
+---
+
+# 10 actionable insights & tweaks for this LARGE-TICK (1-tick-spread) market
+
+Literature base: Queue-Reactive Model (Huang-Lehalle-Rosenbaum 2015); Fokker-Planck large-tick
+queue dynamics (Gareche-Disdier-Kockelkoren-Bouchaud 2013); Moallemi-Yuan queue value (2016);
+Gueant-Lehalle-Fernandez-Tapia inventory (2013); Lehalle "Localising the Queue-Reactive Model"
+(2024); strategic placement w/ adverse selection & latency (arXiv:1610.00261).
+
+1. COMPETE ON QUEUE, NOT PRICE. Spread is stuck at 1 tick (96%), so you cannot gain priority by
+   price-improving -- the ONLY contestable edge is FIFO position. TWEAK: standing ladder, maximize
+   time-at-front, never reflexively cancel. [QRM; Moallemi-Yuan]  STATUS: built (P1).
+2. THE MID MOVES WHEN THE BEST QUEUE DEPLETES -- predict depletion, not direction. Fokker-Planck:
+   price jumps are queue births/deaths; dynamics scale-invariant in (queue / average queue). TWEAK:
+   add a depletion signal = front-queue size / its rolling average; when it collapses on a side, the
+   touch is about to move -> protect the rung that becomes the new touch, shed the depleting side.
+   STATUS: proposed (second trigger alongside the BTC lead).
+3. CANCELS ARE EXPENSIVE -- each surrenders an unrebuildable queue position (can't price-improve back
+   to front). TWEAK: cancel only on severe/confirmed toxicity (toxic_severe in ticks); log
+   queue_ahead_surrendered to price it. [large-tick placement]  STATUS: built (P2 + reprice_log).
+4. QUEUE VALUE ~ THE SPREAD ~ 4-8x THE REBATE. 1c queue value vs ~0.0025/sh rebate -> queue position
+   DOMINATES the P&L. TWEAK: spend effort on execution/queue, not signal refinement. [Moallemi-Yuan]
+5. SYMMETRIC STANDING PRESENCE. Keep aged rungs on BOTH sides so you're front at the new touch
+   whichever way it moves; the BTC lead only biases which side to protect. STATUS: built (layers + queue-jump).
+6. FRONT-OF-QUEUE IS DOUBLY GOOD: priority AND lower adverse selection (you fill on small early trades,
+   not just the sweep that runs the level over). TWEAK: protect aged-front rungs hardest. [Moallemi-Yuan static value]
+7. THE BTC LEAD IS AN EXOGENOUS-MOVE DETECTOR -> localize the Queue-Reactive Model: only reposition on
+   EXOGENOUS (BTC-driven) moves, ignore endogenous noise. TWEAK: queue-jump protect/shed gated on the
+   ~0.5s lead. [Lehalle 2024]  STATUS: built (--queue-jump).
+8. STAY SMALL -- you can't exit inventory cheaply (exit = cross/taker-fee or wait in queue). TWEAK:
+   tight cap/skew (cap25, dneutral). [Gueant-Lehalle-Fernandez-Tapia]  STATUS: built + winning in A/B.
+9. DELTA-NEUTRAL TWO-SIDED BOX HARVEST. Sell UP+DOWN ~equally (delta-neutral), front-queue on BOTH legs,
+   collecting rebate twice and the box premium when ask_up+ask_dn>1. STATUS: built (dneutral).
+10. CANCEL-ON-REVERSAL OPTIONALITY is the dynamic queue value -- exercise it only on CONFIRMED reversals
+    (BTC lead + microprice agree, severe), hold through noise. [Moallemi-Yuan dynamic component]  STATUS: built (severe gate).
+
+## More sources
+- Queue-Reactive Model: https://arxiv.org/pdf/1312.0563 ; Localising QRM (Lehalle 2024): http://www.cmap.polytechnique.fr/~charles-albert.lehalle/projects/2024QR/
+- Queue-based MM in large-tick (tutorial): https://hftbacktest.readthedocs.io/en/latest/tutorials/Queue-Based%20Market%20Making%20in%20Large%20Tick%20Size%20Assets.html
