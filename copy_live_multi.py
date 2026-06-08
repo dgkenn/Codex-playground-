@@ -52,21 +52,30 @@ def analyze_file(path="copy_multi_capture.jsonl"):
         except Exception:
             continue
         W[r["w"]].append(r)
-    print(f"{'wallet':>12}{'fills':>6}{'passive%':>9}{'taker%':>8}{'lag/far%':>9}{'ladder95?':>10}")
-    print("  passive=at our quote (copyable by resting) | taker=they CROSSED (need a taker rule) | lag/far=touch lag")
+    print(f"{'wallet':>12}{'fills':>6}{'inst@14':>8}{'inst@20':>8}{'PLACE@14':>9}{'PLACE@20':>9}{'rangeW':>7}{'taker%':>7}")
+    print("  inst=instantaneous-touch capture | PLACE=placement-aware (touch within D anytime in last 30s) | "
+          "rangeW=median touch swing over 30s (ticks); if rangeW>=D the PLACE number is inflated, not faithful")
+    okp = 0; seen = 0
     for w, rs in sorted(W.items(), key=lambda kv: -len(kv[1])):
         n = len(rs)
         if n < 10:
             continue
-        kinds = collections.Counter(r.get("kind", "passive") for r in rs)
-        passive = 100 * kinds["passive"] / n; taker = 100 * kinds["taker"] / n; far = 100 * kinds["lag/far"] / n
-        # max passive recall reachable by a ladder (passive fills within depth 20)
+        seen += 1
         ins = [r["inside_tk"] for r in rs]
-        lad20 = 100 * sum(1 for x in ins if -1 <= x <= 20) / n
-        print(f"{w:>12}{n:>6}{passive:>8.0f}%{taker:>7.0f}%{far:>8.0f}%{lad20:>9.0f}%")
-    print(f"\nKEY: a passive-ladder copy can only reach the 'passive%' (+ tighter touch sync recovers some "
-          f"'lag/far'). The 'taker%' are fills where the bot CROSSED the spread -> to reach 95% the copy "
-          f"must ALSO take when they take. Precision/false-positives remain unmeasurable (private quotes).")
+        def inst(d):
+            return 100 * sum(1 for x in ins if -1 <= x <= d) / n
+        def place(d):                                  # captured if touch was within [-1,d] at some snap in 30s
+            return 100 * sum(1 for r in rs if r.get("win_min", 99) <= d + 1e-9 and r.get("win_max", -99) >= -1 - 1e-9) / n
+        rangeW = sorted(r.get("win_max", 0) - r.get("win_min", 0) for r in rs)[n // 2]
+        taker = 100 * sum(1 for r in rs if r.get("kind") == "taker") / n
+        p14, p20 = place(14), place(20)
+        if p20 >= 95 and rangeW < 20:                  # faithful only if the touch range isn't itself huge
+            okp += 1
+        print(f"{w:>12}{n:>6}{inst(14):>7.0f}%{inst(20):>7.0f}%{p14:>8.0f}%{p20:>8.0f}%{rangeW:>7.0f}{taker:>6.0f}%")
+    print(f"\n{okp}/{seen} wallets reach >=95% PLACEMENT capture at depth<=20 with a non-inflated touch range. "
+          f"PLACE >> inst means the 'deep' misses were orders resting from when the touch was there (a "
+          f"follow-the-touch ladder catches them); if rangeW is large the market just swept that wide "
+          f"(capture real but the copy needs a wide, capital-heavy ladder). taker% should be ~0 (no edge there).")
 
 
 def main():
@@ -165,17 +174,25 @@ def main():
             ref = bb if side == "BUY" else ba
             if ref is None:
                 a["miss"]["no_book"] += 1; continue
-            dist = (ref - p) if side == "BUY" else (p - ref)   # signed; >0 = inside our quote
+            dist = (ref - p) if side == "BUY" else (p - ref)   # signed; >0 = inside our quote (instantaneous)
             a["dists"].append(abs(p - ref))
             for d in DEPTHS:
                 if -tick - 1e-9 <= dist <= d * tick + 1e-9:
                     a["cap"][d] += 1
-            # classify: passive (at OUR side touch), taker (at the OPPOSITE touch = they crossed), or far
-            opp = ba if side == "BUY" else bb               # the side a taker would hit
+            # PLACEMENT-AWARE: a follow-the-touch ladder placed in the last ~30s would cover p if the touch
+            # came within D ticks of p at ANY point in the order's lifetime (fills when price returns).
+            with lock:
+                wsnaps = [x for x in touches.get(tok, ()) if int(t["timestamp"]) - 30 <= x[0] <= int(t["timestamp"]) + 2]
+            ins_w = [((s[1] - p) / tick if side == "BUY" else (p - s[2]) / tick)
+                     for s in wsnaps if (s[1] if side == "BUY" else s[2]) is not None]
+            win_min = min(ins_w) if ins_w else dist / tick
+            win_max = max(ins_w) if ins_w else dist / tick   # touch-range width = win_max-win_min (flags over-credit)
+            opp = ba if side == "BUY" else bb
             taker_tk = (abs(p - opp) / tick) if opp is not None else 999
             kind = ("passive" if dist >= -1 - 1e-9 else ("taker" if taker_tk <= 1.5 else "lag/far"))
             fh.write(json.dumps({"w": w[:10], "side": side, "p": p, "tick": tick,
-                                 "inside_tk": round(dist / tick, 1), "kind": kind}) + "\n")
+                                 "inside_tk": round(dist / tick, 1), "kind": kind,
+                                 "win_min": round(win_min, 1), "win_max": round(win_max, 1)}) + "\n")
         fh.flush()
         # periodic per-wallet status (wallets with enough fills) + convergence count
         for w in wallets:
