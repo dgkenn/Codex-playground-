@@ -52,6 +52,10 @@ WINDOW_S = 900               # market window length (s); time-to-close normalize
 # AS_K calibrated so the penalty reaches a half-spread (~0.005) near |inv|=cap/2 mid-window
 # (0.005 / (25 * 0.5) = 4e-4); the lone free knob = risk aversion (gamma*sigma^2 lumped here).
 AS_K = 4e-4
+# spot_react gate: pull the side BTC just moved against (get ahead of the lag pickoff).
+# bps-relative threshold (robust to BTC level/vol); lookback ~ the lead lag (calibrate via lead_lag.py).
+SPOT_LAG_S = 6        # seconds of BTC lookback (start ~ measured lead; refine from lead_lag)
+SPOT_BPS = 3.0        # |BTC move| over the lookback, in bps of spot, to trigger a pull (~p85 of 6s moves)
 
 
 def heartbeat(tag, out_dir, cum, status="running"):
@@ -166,6 +170,25 @@ class Variant:
             now = time.time()
             f30 = sum(s for (tt, s) in fl if now - tt <= 30)
             return (our_side == "ASK" and f30 > FLOW_TOX) or (our_side == "BID" and f30 < -FLOW_TOX)
+        if self.gate == "spot":
+            # get on the RIGHT side of the BTC->token lag: if BTC just moved, the token fair is
+            # about to follow -> pull the side we'd be picked off on, BEFORE it reprices.
+            hist = self.shared.get("spothist", [])
+            st = self.shared.get("st")
+            if st is None or len(hist) < 2:
+                return False
+            now = time.time()
+            prev = None
+            for (tt, sp) in hist:                 # most recent spot that is >= SPOT_LAG_S old
+                if tt <= now - SPOT_LAG_S:
+                    prev = sp
+            if prev is None:
+                prev = hist[0][1]                 # history too short -> use oldest available
+            dspot = st - prev
+            thr = st * SPOT_BPS / 1e4
+            token_dir = 1.0 if self.is_up(token) else -1.0
+            fair_move = token_dir * dspot         # how the token's fair just moved
+            return (our_side == "ASK" and fair_move > thr) or (our_side == "BID" and fair_move < -thr)
         if self.gate == "as":
             # Avellaneda-Stoikov: only ADD inventory if the microprice edge clears a penalty that
             # grows with current inventory and time-to-close (variance-based, NOT P&L-based). Fills
@@ -314,6 +337,8 @@ def configs(mk, shared):
         # Avellaneda-Stoikov continuous inventory control (principled replacement for arbitrary
         # thresholds): edge >= AS_K*|inv|*(tau/T) to add inventory. skew=0.99 disables the hard leash.
         Variant("av_stoikov", mk, 50, 0.99, gate="as", shared=shared),
+        # get on the RIGHT side of the BTC->token lag: pull the side BTC just moved against
+        Variant("spot_react", mk, 50, 0.25, gate="spot", shared=shared),
     ]
 
 
@@ -450,6 +475,7 @@ async def run(args):
             fv.set_window(sp); shared["s0"] = sp
         shared["st"] = sp
         shared["flow"] = {}   # token -> [(t, signed_taker_size)] rolling trade-flow for informed-flow feature
+        shared["spothist"] = [(time.time(), sp)] if sp else []  # (t, BTC spot) trail for spot_react
         variants = configs(mk, shared)
         midtl = {}        # token -> [(t, mid, micro, spot)] shared timeline for per-fill markout
         L(f"WINDOW {mk['ws']} ({datetime.fromtimestamp(mk['ws'],timezone.utc):%H:%M}Z) s0={shared['s0']}")
@@ -465,6 +491,10 @@ async def run(args):
                             continue
                         if time.time() - last_spot > 2:        # refresh spot for fair-value variants
                             shared["st"] = fv.update() or shared["st"]; last_spot = time.time()
+                            if shared["st"] is not None:       # trail BTC spot for spot_react (prune ~30s)
+                                sh = shared["spothist"]; sh.append((time.time(), shared["st"]))
+                                if len(sh) > 40:
+                                    del sh[:len(sh) - 40]
                         heartbeat(args.tag or "local", args.out_dir, cum)   # liveness + dead-man ping
                         data = json.loads(raw)
                         for m in (data if isinstance(data, list) else [data]):
