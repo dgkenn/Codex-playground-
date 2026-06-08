@@ -81,8 +81,10 @@ def micro(bb, bsz, ba, asz):
 class Variant:
     """One strategy config; own book/queue/inventory; fed the shared live event stream."""
 
-    def __init__(self, name, mk, cap, skew, size_mode="flat", gate=None, shared=None, short_skew=None):
+    def __init__(self, name, mk, cap, skew, size_mode="flat", gate=None, shared=None,
+                 short_skew=None, tau_guard=0):
         self.name = name; self.mk = mk; self.cap = cap; self.skew = skew
+        self.tau_guard = tau_guard   # pull ALL quotes when < tau_guard seconds to close (late = informed)
         # asymmetric inventory leash: separate (usually tighter) threshold for building SHORT,
         # since buy-dominated flow forces us short and selling is the toxic side. Default = symmetric.
         self.short_skew = short_skew if short_skew is not None else skew
@@ -137,6 +139,8 @@ class Variant:
 
     def _gated(self, token, our_side, price):
         """Return True to SKIP the fill (pull the quote) per this variant's gate."""
+        if self.tau_guard and (self.mk["we"] - time.time()) < self.tau_guard:
+            return True               # late-window pull: last-2min sells were the most adverse
         if self.gate == "micro":
             cur = self.tob[token]; mp = micro(cur[0], cur[1], cur[2], cur[3])
             if mp is None:
@@ -283,6 +287,8 @@ def configs(mk, shared):
         # sell-skew tweak: buys earn (+0.41/fill) but sells bleed (-0.04) and flow forces us
         # 13:1 short -> tighter leash on building short (0.10) than long (0.35)
         Variant("sell_lean", mk, 50, 0.35, short_skew=0.10, shared=shared),
+        # late-window toxicity: last-2min sells were most adverse (mo_res -0.021) -> pull near close
+        Variant("late_gate", mk, 50, 0.25, shared=shared, tau_guard=120),
     ]
 
 
