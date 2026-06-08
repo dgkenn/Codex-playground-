@@ -61,6 +61,7 @@ SPOT_BPS = 2.0        # |BTC move| over the lookback, in bps of spot, to trigger
 MICRO_LAG_S = 4       # seconds of microprice lookback (book reacts fast)
 MICRO_REACT_THR = 0.004   # |microprice move| over the lookback to trigger a pull (book just repriced)
 MICRO_MARGIN = 0.002  # micro_marg: required edge above microprice to fill (separate2: Q1+Q2 edge<0.001 toxic)
+TAKER_ENABLED = False  # lag_taker DISCONTINUED: offensive latency-take loses to the fee (-27.9/win)
 
 
 def heartbeat(tag, out_dir, cum, status="running"):
@@ -404,6 +405,8 @@ class TakerVar:
 
     def step(self):
         """On a qualifying BTC move, take the stale Up-token quote in the move's direction."""
+        if not TAKER_ENABLED:        # DISCONTINUED: offensive taker fails the 0.07 fee (-27.9/win,
+            return                   # matches offline + literature prior). Re-enable if fee/lead changes.
         now = time.time()
         if now - self.last_take < self.cooldown:
             return
