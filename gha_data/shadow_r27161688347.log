@@ -1,0 +1,2 @@
+2026-06-08T20:16:14.942813+00:00 === shadow_compare start variants=['baseline', 'cap25', 'skew15', 'dneutral', 'fv_size', 'micro_gate', 'micro_skew15', 'micro_marg', 'tox_gate', 'deplete_gate', 'gross_max', 'flow_gate', 'late_gate', 'av_stoikov', 'spot_react', 'micro_react', 'micro_spot', 'mo_size', 'as_full', 'vol_gate', 'hedged_big', 'band_p', 'graded'] ===
+2026-06-08T20:16:15.198364+00:00 WINDOW 1780949700 (20:15Z) s0=None
