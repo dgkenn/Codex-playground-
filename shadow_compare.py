@@ -169,6 +169,10 @@ class Variant:
         imb = (bsz or 0) / tot if tot else None
         fair = self.fair_tok(token)
         tox = None if micf is None else ((micf - price) if our_side == "ASK" else (price - micf))
+        spot = self.shared.get("st")                  # BTC spot at fill (fundamental context)
+        fl = self.shared.get("flow", {}).get(token, [])
+        flow5 = sum(s for (tt, s) in fl if tnow - tt <= 5)    # signed taker vol last 5s (informed flow)
+        flow30 = sum(s for (tt, s) in fl if tnow - tt <= 30)  # signed taker vol last 30s
         self.fill_log.append({
             "t": tnow, "tau": round(max(self.mk["we"] - tnow, 0.0), 1),
             "reason": reason, "side": our_side, "up": is_up,
@@ -183,6 +187,8 @@ class Variant:
             "imb": round(imb, 3) if imb is not None else None,
             "fair": round(fair, 4) if fair is not None else None,
             "tox": round(tox, 4) if tox is not None else None,
+            "spot": round(spot, 2) if spot is not None else None,
+            "flow5": round(flow5, 2), "flow30": round(flow30, 2),
             "delta": round(self.delta, 3), "cap": self.cap,
             "skew_lim": round(self.skew * self.cap, 3), "gate": self.gate or "none"})
 
@@ -282,16 +288,22 @@ async def run(args):
         Markout sign: >0 == favorable. tox>0 == book looked adverse at fill. Only queue
         position is modeled; the markout/pnl are real. KEY IDENTITY: pnl = sz*mo_res is the
         EXACT gross contribution of that fill, so Σ pnl over a window == window gross."""
-        def mid_at(tok, t_target):
-            for (tt, md, _mc) in midtl2.get(tok, []):
+        def sample_at(tok, t_target):
+            """First timeline sample at/after t_target -> (mid, spot, actual_ts). For markout
+            staleness: actual_ts reveals if the book was quiet (sample later than t_target)."""
+            for (tt, md, _mc, sp) in midtl2.get(tok, []):
                 if tt >= t_target:
-                    return md
-            return None
+                    return md, sp, tt
+            return None, None, None
+        def terminal_spot(tok):
+            tl = midtl2.get(tok, [])
+            return tl[-1][3] if tl else None
         pnl_sum = {}
         for v in variants2:
             s = 0.0
             for f in v.fill_log:
                 sz = f["sz"]; p = f["p"]; sold = (f["side"] == "ASK")
+                extra = {}
                 if sz > 0:                        # an actual fill -> real markout + exact pnl
                     tok = mk2["up"] if f["up"] else mk2["down"]
                     settle_tok = r if f["up"] else (1 - r)
@@ -300,8 +312,17 @@ async def run(args):
                     s += pnl
                     mos = {}
                     for h in MARKOUT_HORIZONS:
-                        md = mid_at(tok, f["t"] + h)
+                        md, _sp, tt = sample_at(tok, f["t"] + h)
                         mos[f"mo{h}"] = round((p - md) if sold else (md - p), 4) if md is not None else None
+                        if h == 30 and tt is not None:        # markout staleness (auditability)
+                            extra["mo30_dt"] = round(tt - f["t"], 1)
+                    # BTC spot move after the fill -> separate fundamental move from flow toxicity
+                    sp0 = f.get("spot")
+                    if sp0:
+                        _m, sp30, _t = sample_at(tok, f["t"] + 30)
+                        spend = terminal_spot(tok)
+                        extra["dspot30"] = round(sp30 - sp0, 2) if sp30 is not None else None
+                        extra["dspot_end"] = round(spend - sp0, 2) if spend is not None else None
                 else:                             # a skip (gated/skew/cap) -> no fill, no markout
                     mo_res = None; pnl = 0.0
                     mos = {f"mo{h}": None for h in MARKOUT_HORIZONS}
@@ -309,7 +330,7 @@ async def run(args):
                 rec["t"] = round(f["t"], 3)
                 rec.update({"ws": mk2["ws"], "var": v.name, "up": int(f["up"]), "res_up": r,
                             "pnl": round(pnl, 6),
-                            "mo_res": round(mo_res, 6) if mo_res is not None else None, **mos})
+                            "mo_res": round(mo_res, 6) if mo_res is not None else None, **mos, **extra})
                 fills_fh.write(json.dumps(rec) + "\n")
             pnl_sum[v.name] = s
         fills_fh.flush()
@@ -369,8 +390,9 @@ async def run(args):
         if sp and time.time() - mk["ws"] <= 60:        # only anchor S0 on a fresh window
             fv.set_window(sp); shared["s0"] = sp
         shared["st"] = sp
+        shared["flow"] = {}   # token -> [(t, signed_taker_size)] rolling trade-flow for informed-flow feature
         variants = configs(mk, shared)
-        midtl = {}        # token -> [(t, mid, micro)] shared timeline for per-fill markout
+        midtl = {}        # token -> [(t, mid, micro, spot)] shared timeline for per-fill markout
         L(f"WINDOW {mk['ws']} ({datetime.fromtimestamp(mk['ws'],timezone.utc):%H:%M}Z) s0={shared['s0']}")
         last_spot = time.time()
         while time.time() < mk["we"] and time.time() < end:
@@ -388,6 +410,12 @@ async def run(args):
                         data = json.loads(raw)
                         for m in (data if isinstance(data, list) else [data]):
                             et = m.get("event_type")
+                            if et == "last_trade_price":      # update rolling trade-flow ONCE per trade
+                                tok = str(m["asset_id"]); sgn = 1.0 if m["side"] == "BUY" else -1.0
+                                fl = shared["flow"].setdefault(tok, [])
+                                fl.append((time.time(), sgn * float(m["size"])))
+                                if len(fl) > 4000:
+                                    del fl[:2000]             # bound memory; 30s window is well within
                             for v in variants:
                                 if et == "book":
                                     v.on_book(m)
@@ -395,7 +423,7 @@ async def run(args):
                                     v.on_price_change(m)
                                 elif et == "last_trade_price":
                                     v.on_trade(str(m["asset_id"]), m["side"], float(m["price"]), float(m["size"]))
-                        # sample shared mid/micro timeline (~1s/token) for per-fill markout
+                        # sample shared mid/micro/spot timeline (~1s/token) for per-fill markout
                         ts_now = time.time()
                         for tok in (mk["up"], mk["down"]):
                             bb, bsz, ba, asz = variants[0].tob[tok]
@@ -403,7 +431,7 @@ async def run(args):
                                 continue
                             tl = midtl.setdefault(tok, [])
                             if not tl or ts_now - tl[-1][0] >= 1.0:
-                                tl.append((ts_now, (bb + ba) / 2, micro(bb, bsz, ba, asz)))
+                                tl.append((ts_now, (bb + ba) / 2, micro(bb, bsz, ba, asz), shared.get("st")))
             except Exception as e:  # noqa: BLE001
                 L(f"  [ws reconnect] {str(e)[:70]}"); await asyncio.sleep(2)
         pending.append((mk, variants, midtl))   # settle later, with retry (resolution lags close)

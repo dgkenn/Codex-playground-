@@ -117,6 +117,21 @@ def report(rows, var):
         if b:
             print(f"      {name:16}: n={len(b):5d}  mo30={mean([r['mo30'] for r in b]):+.4f}  "
                   f"mo_res={mean([r['mo_res'] for r in b]):+.4f}  pnl/fill={mean([r['pnl'] for r in b]):+.4f}")
+    # NEW: separate flow-toxicity from fundamental BTC move on SELLs
+    if any(r.get("flow30") is not None for r in asks):
+        print("    SELL by recent buy-flow (flow30 = signed taker vol last 30s; +ve => buy burst into our ask):")
+        for lo, hi, name in [(-1e9,0,"flow<0 (sell-led)"),(0,200,"flow 0-200"),(200,1e9,"flow>200 (buy burst)")]:
+            b = [r for r in asks if r.get("flow30") is not None and lo <= r["flow30"] < hi]
+            if b:
+                print(f"      {name:18}: n={len(b):5d}  mo30={mean([r['mo30'] for r in b]):+.4f}  "
+                      f"dspot30={mean([r.get('dspot30') for r in b]):+.2f}  pnl/fill={mean([r['pnl'] for r in b]):+.4f}")
+        # fundamental check: does post-fill mid move track BTC spot move?
+        adv = [r for r in asks if r.get("mo30") is not None and r.get("dspot30") is not None and r["mo30"] < 0]
+        fav = [r for r in asks if r.get("mo30") is not None and r.get("dspot30") is not None and r["mo30"] >= 0]
+        if adv and fav:
+            print(f"    adverse sells (mo30<0): mean dspot30={mean([r['dspot30'] for r in adv]):+.2f}  "
+                  f"vs favorable: {mean([r['dspot30'] for r in fav]):+.2f}  "
+                  f"(if adverse has higher dspot30 => loss is BTC moving up, not pure flow toxicity)")
 
 
 def main():
