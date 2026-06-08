@@ -56,24 +56,32 @@ jobs:
           git config user.name  "paper-bot"
           git config user.email "paper-bot@users.noreply.github.com"
           mkdir -p gha_data
-          incr () {
-            git add gha_data/ 2>/dev/null || return 0
-            git diff --cached --quiet && return 0
-            git commit -q -m "gha: paper-collect r${{ github.run_id }} ($(date -u +%H:%MZ))" || return 0
-            git pull --rebase --autostash -q origin "$BRANCH" 2>/dev/null && git push -q origin "HEAD:$BRANCH" 2>/dev/null || true
+          # DATA -> dedicated `gha-data` branch via a worktree, so the ~10-min incremental commits NEVER
+          # touch (or clobber) the code branch. The code checkout stays on the feature branch; shadow_compare
+          # writes ./gha_data and push_data mirrors it into the gha-data worktree. (Old design pushed onto
+          # the code branch every 10 min and clobbered code commits.) Analysis: see sync_data.sh.
+          git fetch origin gha-data 2>/dev/null || true
+          git worktree add -B gha-data /tmp/dw origin/gha-data 2>/dev/null || git worktree add --orphan -b gha-data /tmp/dw
+          mkdir -p /tmp/dw/gha_data
+          push_data () {
+            cp -r gha_data/. /tmp/dw/gha_data/ 2>/dev/null || true
+            ( cd /tmp/dw
+              git add gha_data 2>/dev/null || return 0
+              git diff --cached --quiet && return 0
+              git commit -q -m "gha: paper-collect r${{ github.run_id }} ($(date -u +%H:%MZ))" || return 0
+              for i in 1 2 3; do
+                git pull --rebase --autostash -q origin gha-data 2>/dev/null || true
+                git push -q origin HEAD:gha-data 2>/dev/null && break
+                sleep 3
+              done )
           }
-          ( for k in $(seq 1 30); do sleep 600; incr; done ) &
+          ( for k in $(seq 1 30); do sleep 600; push_data; done ) &
           LOOP=$!
           timeout 18300 python -u shadow_compare.py --duration 18000 \
             --tag "r${{ github.run_id }}" --out-dir gha_data || true
           kill $LOOP 2>/dev/null || true
           python aggregate_shadow.py > gha_data/SUMMARY.txt 2>/dev/null || true
-          git add gha_data/ 2>/dev/null || true
-          git diff --cached --quiet || git commit -q -m "gha: paper-collect r${{ github.run_id }} final"
-          for i in 1 2 3 4 5; do
-            git pull --rebase --autostash -q origin "$BRANCH" && git push -q origin "HEAD:$BRANCH" && break
-            sleep $((RANDOM % 6 + 2))
-          done
+          push_data
       - name: bounce the chain (re-arm continuity) + optional PAT self-chain
         if: ${{ always() }}
         env:
