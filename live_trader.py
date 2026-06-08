@@ -127,18 +127,75 @@ def microprice(bb, ba, bsz, asz):
     return bb + (ba - bb) * imb
 
 
+def clob_selfcheck(sess, n=8):
+    """Startup latency gate: time real HTTPS round-trips to the CLOB (warm, keep-alive) and verdict
+    whether we are co-located. The CLOB matches in AWS eu-west-2 (London); sub-100ms end-to-end is
+    impossible if the order POST itself is >~80ms (you're transatlantic). Prints median round-trip so
+    the operator KNOWS their seat before trading. ICMP ping is useless here (Cloudflare edge); real."""
+    ts = []
+    for _ in range(n):
+        t0 = time.time()
+        try:
+            sess.get(C + "/time", timeout=5)        # tiny warm request on the pooled keep-alive socket
+            ts.append((time.time() - t0) * 1e3)
+        except Exception:
+            pass
+    if not ts:
+        print("  [latency] CLOB self-check FAILED (no response)"); return
+    ts.sort(); med = ts[len(ts) // 2]
+    if med < 25:
+        v = "co-located (eu-west-2/Dublin) -- sub-100ms reachable"
+    elif med < 80:
+        v = "near-region -- tighten with keep-alive/pre-sign for sub-100ms"
+    else:
+        v = "CROSS-REGION (likely transatlantic) -- sub-100ms UNREACHABLE; co-locate in eu-west-2"
+    print(f"  [latency] CLOB round-trip median {med:.0f} ms ({len(ts)}/{n} ok) -> {v}")
+
+
 def btc_lead_feeder(live_btc):
-    """Sub-second Coinbase WS BTC ticker in a daemon thread -> the queue-positioning lead signal
-    (feed_race: BTC leads the token ~0.5s). Updates live_btc{px,ts,hist}. websockets imported lazily
-    so the OMS still runs without it (lead OFF)."""
+    """BTC lead signal for queue positioning (feed_race: BTC leads the token ~0.5s). PRIMARY source is
+    Polymarket RTDS (chainlink btc/usd = settlement truth + binance btcusdt = higher-freq), served from
+    eu-west-2 co-located with the CLOB: in-region (no transatlantic hop) and zero basis risk. Coinbase
+    WS is the gap-filler when RTDS is silent >3s. Both update live_btc{px,ts,hist,src}; websockets
+    imported lazily so the OMS still runs without it (lead OFF)."""
     import asyncio
     try:
         import websockets
     except Exception:
         print("  [queue-jump] websockets not installed -> lead feed OFF (queue-jump no-op)"); return
-    sub = json.dumps({"type": "subscribe", "product_ids": ["BTC-USD"], "channels": ["ticker"]})
 
-    async def run():
+    def push(px):                              # common path: update px + 60s rolling history
+        t = time.time(); live_btc["px"] = px; live_btc["ts"] = t
+        h = live_btc["hist"]; h.append((t, px))
+        while h and h[0][0] < t - 60:
+            h.popleft()
+
+    async def rtds():                          # PRIMARY: in-region Chainlink+Binance settlement feed
+        url = "wss://ws-live-data.polymarket.com"
+        sub = json.dumps({"action": "subscribe", "subscriptions": [
+            {"topic": "crypto_prices_chainlink", "type": "*", "filters": "{\"symbol\":\"btc/usd\"}"},
+            {"topic": "crypto_prices", "type": "*", "filters": "{\"symbol\":\"btcusdt\"}"}]})
+        while True:
+            try:
+                async with websockets.connect(url, ping_interval=15, ping_timeout=20) as ws:
+                    await ws.send(sub)
+                    async for raw in ws:
+                        if not raw:                              # empty ack frame -> keep the conn alive
+                            continue
+                        try:
+                            pl = (json.loads(raw).get("payload") or {})
+                        except Exception:
+                            continue
+                        val = pl.get("value")
+                        if val is None and isinstance(pl.get("data"), list) and pl["data"]:
+                            val = pl["data"][-1].get("value")    # bulk history frame -> seed latest point
+                        if val is not None:
+                            live_btc["rtds_ts"] = time.time(); live_btc["src"] = "rtds"; push(float(val))
+            except Exception:
+                await asyncio.sleep(2)
+
+    async def coinbase():                       # FALLBACK: defers to RTDS while it is fresh
+        sub = json.dumps({"type": "subscribe", "product_ids": ["BTC-USD"], "channels": ["ticker"]})
         while True:
             try:
                 async with websockets.connect("wss://ws-feed.exchange.coinbase.com",
@@ -147,14 +204,14 @@ def btc_lead_feeder(live_btc):
                     async for raw in ws:
                         m = json.loads(raw)
                         if m.get("type") == "ticker" and m.get("price"):
-                            t = time.time(); px = float(m["price"])
-                            live_btc["px"] = px; live_btc["ts"] = t
-                            h = live_btc["hist"]; h.append((t, px))
-                            while h and h[0][0] < t - 60:
-                                h.popleft()
+                            if time.time() - live_btc.get("rtds_ts", 0.0) <= 3.0:
+                                continue           # RTDS fresh -> defer
+                            live_btc["src"] = "cb"; push(float(m["price"]))
             except Exception:
                 await asyncio.sleep(2)
-    loop = asyncio.new_event_loop(); asyncio.set_event_loop(loop); loop.run_until_complete(run())
+
+    loop = asyncio.new_event_loop(); asyncio.set_event_loop(loop)
+    loop.run_until_complete(asyncio.gather(rtds(), coinbase()))
 
 
 def btc_lead(live_btc, lag_s):
@@ -375,7 +432,8 @@ def main():
         o["ts"] = time.time(); print(f"  [BOX {o['side']}] prem/set={o['premium_per_set']:+.4f} x{o['sets']} "
                                      f"=> gross_if_filled={o['gross_if_filled']:+.3f}")
         _boxfh.write(json.dumps(o) + "\n"); _boxfh.flush()
-    live_btc = {"px": None, "ts": 0.0, "hist": deque()}
+    live_btc = {"px": None, "ts": 0.0, "hist": deque(), "rtds_ts": 0.0, "src": None}
+    clob_selfcheck(sess)               # measure real CLOB round-trip -> are we co-located in eu-west-2?
     qema = {}                          # token -> {b,a} EMA of best-queue sizes (depletion trigger)
     if a.queue_jump:                   # Arm A: start the sub-second BTC lead feed
         threading.Thread(target=btc_lead_feeder, args=(live_btc,), daemon=True).start()

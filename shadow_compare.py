@@ -510,11 +510,47 @@ def configs(mk, shared):
     ]
 
 
+async def rtds_btc_feed(live):
+    """PRIMARY BTC spot = Polymarket RTDS, served from Polymarket's own infra (eu-west-2, co-located
+    with the CLOB). Strictly better than US Coinbase: (a) no transatlantic hop when the bot runs
+    in-region, and (b) zero basis risk -- we react to the literal settlement source. Subscribes to
+    BOTH in-region topics: crypto_prices_chainlink (btc/usd = the settlement truth, ~1/s) AND
+    crypto_prices (btcusdt = higher-freq Binance, the source Chainlink aggregates) -> ~2/s combined.
+    Coinbase (btc_ws_feed) stays as a gap-filler. Records feed_lat_ms = recv - payload ts."""
+    url = "wss://ws-live-data.polymarket.com"
+    sub = json.dumps({"action": "subscribe", "subscriptions": [
+        {"topic": "crypto_prices_chainlink", "type": "*", "filters": "{\"symbol\":\"btc/usd\"}"},
+        {"topic": "crypto_prices", "type": "*", "filters": "{\"symbol\":\"btcusdt\"}"}]})
+    while True:
+        try:
+            async with websockets.connect(url, ping_interval=15, ping_timeout=20, max_size=None) as ws:
+                await ws.send(sub)
+                async for raw in ws:
+                    if not raw:                                  # empty ack frame -> keep the conn alive
+                        continue
+                    try:
+                        pl = (json.loads(raw).get("payload") or {})
+                    except Exception:
+                        continue
+                    val = pl.get("value")
+                    if val is None and isinstance(pl.get("data"), list) and pl["data"]:
+                        val = pl["data"][-1].get("value")        # bulk history frame -> seed latest point
+                    if val is not None:
+                        now = time.time()
+                        live["px"] = float(val); live["ts"] = now
+                        live["rtds_ts"] = now; live["src"] = "rtds"
+                        live["n"] = live.get("n", 0) + 1
+                        if pl.get("timestamp"):                  # feed latency telemetry (ms)
+                            live["feed_lat_ms"] = round(now * 1e3 - float(pl["timestamp"]), 1)
+        except Exception:  # noqa: BLE001 -- reconnect; Coinbase + REST cover the gap
+            await asyncio.sleep(2)
+
+
 async def btc_ws_feed(live):
-    """Sub-second BTC spot via Coinbase WS ticker (free, no key) -> the HIGH-RES primary feed.
-    The lead-lag study showed our 2s REST poll lagged even the token's book; this pushes ~8
-    ticks/s so the lead-lag test + spot_react finally see fresh BTC. Updates live{px,ts};
-    reconnects forever; the REST poll (fvfeed) stays as sigma/anchor/fallback."""
+    """FALLBACK BTC spot via Coinbase WS ticker (free, no key). Now a gap-filler behind RTDS
+    (rtds_btc_feed): only writes live{px} when RTDS has been silent >3s, so the in-region settlement
+    feed is preferred whenever it is delivering. Still high-res (~8 ticks/s) for RTDS dropouts.
+    Updates live{px,ts}; reconnects forever; the REST poll (fvfeed) stays as sigma/anchor/last resort."""
     url = "wss://ws-feed.exchange.coinbase.com"
     sub = json.dumps({"type": "subscribe", "product_ids": ["BTC-USD"], "channels": ["ticker"]})
     while True:
@@ -524,7 +560,10 @@ async def btc_ws_feed(live):
                 async for raw in ws:
                     m = json.loads(raw)
                     if m.get("type") == "ticker" and m.get("price"):
+                        if time.time() - live.get("rtds_ts", 0.0) <= 3.0:
+                            continue                              # RTDS is fresh -> defer to it
                         live["px"] = float(m["price"]); live["ts"] = time.time()
+                        live["src"] = "cb"
                         live["n"] = live.get("n", 0) + 1     # WS tick counter (confirms feed alive on GHA)
         except Exception:  # noqa: BLE001 -- reconnect; REST poll covers the gap
             await asyncio.sleep(2)
@@ -533,8 +572,9 @@ async def btc_ws_feed(live):
 async def run(args):
     sess = requests.Session()
     fv = SpotFair(sess)
-    live = {"px": None, "ts": 0.0, "n": 0}     # latest sub-second BTC from the WS feed (n = tick count)
-    asyncio.create_task(btc_ws_feed(live))     # high-res spot, runs across all windows
+    live = {"px": None, "ts": 0.0, "n": 0, "rtds_ts": 0.0, "src": None}   # latest BTC (n = tick count)
+    asyncio.create_task(rtds_btc_feed(live))   # PRIMARY: in-region Chainlink+Binance settlement feed
+    asyncio.create_task(btc_ws_feed(live))     # FALLBACK: Coinbase, gap-fills when RTDS is silent
     # --tag/--out-dir give each GitHub-Actions run UNIQUE output files (gha_data/shadow_<tag>.*)
     # so concurrent/sequential runs never conflict on commit. Default = legacy fixed names.
     os.makedirs(args.out_dir, exist_ok=True)
@@ -751,7 +791,7 @@ async def run(args):
                         taker.step()             # offensive: take stale book quotes on fast BTC moves
             except Exception as e:  # noqa: BLE001
                 L(f"  [ws reconnect] {str(e)[:70]}"); await asyncio.sleep(2)
-        mk["_feed"] = "ws" if (live["n"] - ws_n0) > 50 else "rest"   # was the fast WS feed live this window?
+        mk["_feed"] = (live.get("src") or "ws") if (live["n"] - ws_n0) > 50 else "rest"  # rtds/cb/rest source
         pending.append((mk, variants, midtl, taker))   # settle later, with retry (resolution lags close)
         try_settle()
     # drain: retry pending settlements for a few minutes after the run ends
