@@ -568,42 +568,14 @@ class TakerVar:
 
 
 def configs(mk, shared):
-    # DISCONTINUED (confirmed losers over 53 windows, kept in history): cap100 (t=-2.68, more
-    # capacity hurts), sell_lean (-2.06/win, asymmetric leash = regime artifact), predict (t~0,
-    # BTC fair-value gate dead -- consistent with the lead-lag null on the slow feed).
-    return [
-        Variant("baseline", mk, 50, 0.25, shared=shared),
-        # capacity/inventory frontier (winners): tighter is better
-        Variant("cap25", mk, 25, 0.25, shared=shared),
-        Variant("skew15", mk, 50, 0.15, shared=shared),
-        Variant("dneutral", mk, 50, 0.08, shared=shared),   # delta-neutral extreme (round2 #7): kills
-        Variant("fv_size", mk, 50, 0.25, size_mode="fv", shared=shared),   # directional inventory = real resolution cost
-        # toxicity gating on the token's OWN book (the proven edge, t=+5.4)
-        Variant("micro_gate", mk, 50, 0.25, gate="micro", shared=shared),
-        Variant("micro_skew15", mk, 50, 0.15, gate="micro", shared=shared),   # micro + tight inv (combined winner)
-        Variant("micro_marg", mk, 50, 0.25, gate="micro_marg", shared=shared),  # micro + edge MARGIN (separate2 refinement)
-        Variant("tox_gate", mk, 50, 0.25, gate="tox", shared=shared),  # composite gate: edge-margin OR bid-heavy extreme
-        Variant("deplete_gate", mk, 50, 0.25, gate="deplete", shared=shared),  # shed the side whose queue is depleting (#2)
-        Variant("gross_max", mk, 50, 0.25, gate="gross_max", shared=shared),   # union of all toxicity gates -> maximize non-rebate GROSS
-        Variant("flow_gate", mk, 50, 0.25, gate="flow", shared=shared),
-        Variant("late_gate", mk, 50, 0.25, shared=shared, tau_guard=120),
-        # principled inventory control (Avellaneda-Stoikov)
-        Variant("av_stoikov", mk, 50, 0.99, gate="as", shared=shared),
-        # BTC-lag defense (now on the fast WS feed)
-        Variant("spot_react", mk, 50, 0.25, gate="spot", shared=shared),
-        Variant("micro_react", mk, 50, 0.25, gate="micro_react", shared=shared),
-        # NEW: cause + symptom -- pull if EITHER the book imbalance OR the BTC-lag flags (proven
-        # micro_gate winner stacked with the spot_react lag defense)
-        Variant("micro_spot", mk, 50, 0.25, gate="micro_spot", shared=shared),
-        # MAKEREDGE.md expansions (paper-testable):
-        Variant("mo_size", mk, 50, 0.25, size_mode="markout", shared=shared),   # #3 markout-weighted sizing
-        # MAKER_CHANGES2 (backtest round 2): hedged_big RETIRED (-47.8/win). New micro-gate refinements:
-        Variant("micro_soft", mk, 50, 0.25, gate="micro_soft", shared=shared),   # MC2 #3: gate only strongly-toxic (keep rebate)
-        Variant("micro_ufat", mk, 50, 0.25, gate="micro_ufat", shared=shared),   # MC2 #4: strict at p~0.5, loose at extremes
-        # PRUNED (significantly unprofitable in live shadow): as_full -8.3, vol_gate -7.9, band_p -9.2,
-        # graded -2.4 (all gross-negative; the over-gating / wide-quote failure modes from WINNER_TWEAKS #3,#10).
-        # The gate logic remains available in _gate_one for offline study; just retired from the live A/B.
-    ]
+    """Build the live Variant set from the declarative registry in strategies.py (the single source of
+    truth). Add/remove/toggle strategies THERE, not here -- this just instantiates the enabled ones.
+    DISCONTINUED long ago (kept only as history): cap100 (t=-2.68), sell_lean (-2.06/win), predict (t~0).
+    Currently-pruned-but-defined variants live in strategies.REGISTRY with enabled=False."""
+    import strategies
+    return [Variant(s.name, mk, s.cap, s.skew, size_mode=s.size_mode, gate=s.gate,
+                    shared=shared, short_skew=s.short_skew, tau_guard=s.tau_guard)
+            for s in strategies.enabled()]
 
 
 async def rtds_btc_feed(live):
@@ -685,6 +657,22 @@ async def run(args):
     def L(s):
         line = f"{now_iso()} {s}"; print(line); log.write(line + "\n"); log.flush()
 
+    # PREFLIGHT + SELF-DESCRIBING DATA: validate the declarative roster before collecting (an unknown
+    # gate would silently behave like baseline), and write a snapshot so the captured data records
+    # exactly which strategy set produced it. Failing validation here is loud but non-fatal -- we still
+    # collect the well-formed variants rather than waste the run slot.
+    try:
+        import strategies
+        rerrs = strategies.validate()
+        if rerrs:
+            L("[ROSTER WARN] " + "; ".join(rerrs))
+        snap = strategies.snapshot()
+        snap["tag"] = args.tag or "local"; snap["utc"] = now_iso()
+        json.dump(snap, open(os.path.join(args.out_dir, f"registry{sfx}.json"), "w"), indent=2)
+        L(f"roster: {snap['n_enabled']} live {snap['enabled']}  (pruned: {snap['disabled']})")
+    except Exception as e:
+        L(f"[ROSTER WARN] snapshot/validate failed: {type(e).__name__}: {e}")
+
     def emit_fills(mk2, variants2, midtl2, r):
         """Write one row per logged fill with REAL markout (live mids) -> the per-trade
         win/lose root cause, and return per-variant Σ(pnl) for the audit reconciliation.
@@ -753,7 +741,13 @@ async def run(args):
             parts = []
             attrs = {}
             for v in variants2:
-                attr = v.attribution(r); net = attr["net"]
+                if getattr(v, "broken", False):
+                    continue                       # quarantined variant: omit (its state is unreliable)
+                try:
+                    attr = v.attribution(r); net = attr["net"]
+                except Exception as e:
+                    L(f"  [SETTLE SKIP] {v.name}: attribution failed: {type(e).__name__}: {e}")
+                    continue
                 c = cum.setdefault(v.name, {"net": 0.0, "fills": 0, "windows": 0, "pos": 0})
                 c["net"] += net; c["fills"] += v.fills; c["windows"] += 1; c["pos"] += 1 if net > 0 else 0
                 row[v.name] = attr; attrs[v.name] = attr  # full per-window attribution (cluster unit = ws)
@@ -857,12 +851,25 @@ async def run(args):
                                 if len(fl) > 4000:
                                     del fl[:2000]             # bound memory; 30s window is well within
                             for v in variants:
-                                if et == "book":
-                                    v.on_book(m)
-                                elif et == "price_change":
-                                    v.on_price_change(m)
-                                elif et == "last_trade_price":
-                                    v.on_trade(str(m["asset_id"]), m["side"], float(m["price"]), float(m["size"]))
+                                if getattr(v, "broken", False):
+                                    continue                  # auto-disabled after repeated errors
+                                try:
+                                    if et == "book":
+                                        v.on_book(m)
+                                    elif et == "price_change":
+                                        v.on_price_change(m)
+                                    elif et == "last_trade_price":
+                                        v.on_trade(str(m["asset_id"]), m["side"], float(m["price"]), float(m["size"]))
+                                except Exception as e:
+                                    # ERROR ISOLATION: one buggy strategy must never stop the live capture.
+                                    # Count its errors; after 5, quarantine it (broken=True) so the rest of
+                                    # the roster keeps recording. Quarantined variants are dropped at settle.
+                                    v.errors = getattr(v, "errors", 0) + 1
+                                    if v.errors <= 3 or v.errors == 5:
+                                        L(f"  [VARIANT ERROR] {v.name} #{v.errors} on {et}: {type(e).__name__}: {e}")
+                                    if v.errors >= 5:
+                                        v.broken = True
+                                        L(f"  [QUARANTINE] {v.name} disabled after {v.errors} errors; capture continues")
                             if et == "book":
                                 taker.on_book(m)
                             elif et == "price_change":

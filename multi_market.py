@@ -23,24 +23,59 @@ import time
 MARKETS = [("btc", 15), ("eth", 15), ("sol", 15), ("xrp", 15)]
 
 
+MIN_RESTART_S = 120        # don't relaunch a market with <2min left (a fresh window won't settle)
+MAX_RESTARTS = 5           # per market -> bounded; a crash-looping market won't spin forever
+POLL_S = 30                # supervisor poll cadence
+
+
+def launch(asset, tmin, dur, out_dir, base, attempt):
+    # tag stays STABLE across restarts (same base) so a market's window files accumulate into one set;
+    # shadow_compare appends, so a relaunch continues the same data stream seamlessly.
+    tag = f"{asset}{tmin}m_{base}"                     # unique per market+run -> no file collisions
+    cmd = [sys.executable, "-u", "shadow_compare.py", "--duration", str(int(dur)),
+           "--asset", asset, "--tenor-min", str(tmin), "--out-dir", out_dir, "--tag", tag]
+    p = subprocess.Popen(cmd)
+    print(f"{'relaunched' if attempt else 'launched'} {asset}-{tmin}m  tag={tag}  "
+          f"dur={int(dur)}s{f' (attempt {attempt+1})' if attempt else ''}", flush=True)
+    return p
+
+
 def main():
     dur = int(sys.argv[1]) if len(sys.argv) > 1 else 2940
     out_dir = sys.argv[2] if len(sys.argv) > 2 else "gha_data"
     base = sys.argv[3] if len(sys.argv) > 3 else str(int(time.time()))
-    procs = []
+    deadline = time.time() + dur
+    state = {}                                         # name -> {proc, asset, tmin, restarts}
     for asset, tmin in MARKETS:
-        tag = f"{asset}{tmin}m_{base}"                 # unique per market+run -> no file collisions
-        cmd = [sys.executable, "-u", "shadow_compare.py", "--duration", str(dur),
-               "--asset", asset, "--tenor-min", str(tmin), "--out-dir", out_dir, "--tag", tag]
-        procs.append((f"{asset}-{tmin}m", subprocess.Popen(cmd)))
-        print(f"launched {asset}-{tmin}m  tag={tag}", flush=True)
+        name = f"{asset}-{tmin}m"
+        state[name] = {"proc": launch(asset, tmin, dur, out_dir, base, 0),
+                       "asset": asset, "tmin": tmin, "restarts": 0}
         time.sleep(1)                                  # stagger market discovery a touch
-    print(f"{len(procs)} markets running for {dur}s ...", flush=True)
+    print(f"{len(state)} markets running for {dur}s (supervised) ...", flush=True)
+
+    # SUPERVISOR: poll for dead children; relaunch any that exit while meaningful time remains, so a
+    # single crashed market never silently drops out of the multi-hour capture. Bounded by MAX_RESTARTS.
+    while time.time() < deadline:
+        time.sleep(POLL_S)
+        remaining = deadline - time.time()
+        for name, st in state.items():
+            p = st["proc"]
+            if p.poll() is None:
+                continue                               # still running
+            if remaining < MIN_RESTART_S:
+                continue                               # too little left to bother
+            if st["restarts"] >= MAX_RESTARTS:
+                print(f"!! {name} exited rc={p.returncode}; restart cap reached, leaving down", flush=True)
+                continue
+            st["restarts"] += 1
+            print(f"!! {name} exited rc={p.returncode} with {int(remaining)}s left -> relaunching", flush=True)
+            st["proc"] = launch(st["asset"], st["tmin"], remaining, out_dir, base, st["restarts"])
+
     rc = 0
-    for name, p in procs:
-        p.wait()
-        print(f"done {name} rc={p.returncode}", flush=True)
-        rc = rc or p.returncode
+    for name, st in state.items():                     # window passed: let each finish its final settle
+        st["proc"].wait()
+        print(f"done {name} rc={st['proc'].returncode} (restarts={st['restarts']})", flush=True)
+        rc = rc or st["proc"].returncode
     sys.exit(rc)
 
 

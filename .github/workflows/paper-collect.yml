@@ -42,6 +42,8 @@ jobs:
           python-version: '3.12'
       - name: install deps
         run: pip install --quiet numpy scipy requests websockets
+      - name: preflight -- validate strategy roster (fail fast on a malformed registry)
+        run: python strategies.py
       - name: collect ~50 min of live windows (MULTI-ASSET: btc/eth/sol/xrp 15m in parallel)
         run: |
           mkdir -p gha_data
