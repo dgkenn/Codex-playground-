@@ -44,7 +44,7 @@ _HB = [0.0]          # last heartbeat ts (throttle)
 # Per-fill markout logging: which variants emit a row PER fill (root-cause why each trade
 # wins/loses). Kept to the baseline-vs-fix contrast to bound data volume; widen if needed.
 LOG_FILLS = {"baseline", "micro_gate"}
-MARKOUT_HORIZONS = (5, 30)   # seconds; resolution markout is added at settle (the decision metric)
+MARKOUT_HORIZONS = (5, 30, 120, 300)   # s; +120/300 disambiguate transient impact vs regime (round2 #6)
 FLOW_TOX = 150               # signed 30s taker-volume threshold for the flow gate (data: adverse >~200)
 WINDOW_S = 900               # market window length (s); time-to-close normalizer
 # Avellaneda-Stoikov inventory control: require microprice edge >= AS_K*|inventory|*(tau/T) to ADD
@@ -453,7 +453,8 @@ def configs(mk, shared):
         # capacity/inventory frontier (winners): tighter is better
         Variant("cap25", mk, 25, 0.25, shared=shared),
         Variant("skew15", mk, 50, 0.15, shared=shared),
-        Variant("fv_size", mk, 50, 0.25, size_mode="fv", shared=shared),
+        Variant("dneutral", mk, 50, 0.08, shared=shared),   # delta-neutral extreme (round2 #7): kills
+        Variant("fv_size", mk, 50, 0.25, size_mode="fv", shared=shared),   # directional inventory = real resolution cost
         # toxicity gating on the token's OWN book (the proven edge, t=+5.4)
         Variant("micro_gate", mk, 50, 0.25, gate="micro", shared=shared),
         Variant("micro_skew15", mk, 50, 0.15, gate="micro", shared=shared),   # micro + tight inv (combined winner)
