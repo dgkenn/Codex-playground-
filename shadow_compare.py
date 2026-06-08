@@ -161,6 +161,10 @@ class Variant:
         if self.gate == "micro_spot":  # cause+symptom: pull if EITHER book-imbalance OR BTC-lag flags
             return (self._gate_one("micro", token, our_side, price)
                     or self._gate_one("spot", token, our_side, price))
+        if self.gate == "gross_max":   # MAXIMIZE non-rebate gross: union of all toxicity signals
+            return (self._gate_one("micro", token, our_side, price)
+                    or self._gate_one("spot", token, our_side, price)
+                    or self._gate_one("deplete", token, our_side, price))
         return self._gate_one(self.gate, token, our_side, price)
 
     def _gate_one(self, g, token, our_side, price):
@@ -473,6 +477,7 @@ def configs(mk, shared):
         Variant("micro_marg", mk, 50, 0.25, gate="micro_marg", shared=shared),  # micro + edge MARGIN (separate2 refinement)
         Variant("tox_gate", mk, 50, 0.25, gate="tox", shared=shared),  # composite gate: edge-margin OR bid-heavy extreme
         Variant("deplete_gate", mk, 50, 0.25, gate="deplete", shared=shared),  # shed the side whose queue is depleting (#2)
+        Variant("gross_max", mk, 50, 0.25, gate="gross_max", shared=shared),   # union of all toxicity gates -> maximize non-rebate GROSS
         Variant("flow_gate", mk, 50, 0.25, gate="flow", shared=shared),
         Variant("late_gate", mk, 50, 0.25, shared=shared, tau_guard=120),
         # principled inventory control (Avellaneda-Stoikov)
