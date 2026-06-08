@@ -1,19 +1,19 @@
-shadow comparison over 47 de-duped windows | files=17
+shadow comparison over 50 de-duped windows | files=18
 
      variant  net_total    n  net/win  Δvs base/win  paired t
-  micro_gate    +299.98   47   +6.383        +5.190     +5.31
-      skew15    +131.55   47   +2.799        +1.606     +3.29
-       cap25    +130.01   47   +2.766        +1.573     +2.90
-     fv_size     +74.40   47   +1.583        +0.390     +0.89
-    baseline     +56.06   47   +1.193                        
-micro_skew15     +48.31   15   +3.221        +4.387     +3.67
-     predict     +43.21   47   +0.919        -0.273     -0.22
-   flow_gate     +22.13   15   +1.475        +2.642     +0.73
-  spot_react     +19.43   12   +1.619        +1.941     +0.82
-  av_stoikov     +16.82   12   +1.401        +1.723     +0.56
-   late_gate     +15.34   12   +1.278        +1.600     +0.68
-   sell_lean     -30.53   15   -2.036        -0.869     -1.03
-      cap100     -36.45   47   -0.776        -1.968     -2.45
+  micro_gate    +311.36   50   +6.227        +5.219     +5.37
+       cap25    +138.92   50   +2.778        +1.771     +3.15
+      skew15    +135.70   50   +2.714        +1.706     +3.59
+     fv_size     +85.76   50   +1.715        +0.708     +1.32
+micro_skew15     +64.83   18   +3.601        +4.889     +4.12
+    baseline     +50.38   50   +1.008                        
+     predict     +39.28   50   +0.786        -0.222     -0.19
+  av_stoikov     +29.60   15   +1.973        +2.609     +0.99
+   flow_gate     +26.82   18   +1.490        +2.777     +0.91
+   late_gate     +15.41   15   +1.027        +1.663     +0.88
+  spot_react      +9.59   15   +0.640        +1.276     +0.67
+   sell_lean     -26.75   18   -1.486        -0.199     -0.24
+      cap100     -49.72   50   -0.994        -2.002     -2.58
 
-Read: paired t is the variant's per-window edge OVER baseline (shared windows). |t|>2 ~ notable, |t|>2.6 ~ solid; n=47 so anything below that is still noise.
+Read: paired t is the variant's per-window edge OVER baseline (shared windows). |t|>2 ~ notable, |t|>2.6 ~ solid; n=50 so anything below that is still noise.
 Totals alone mislead -- they ride the shared window outcomes; the paired column is the signal.
