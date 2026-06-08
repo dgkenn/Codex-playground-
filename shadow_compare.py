@@ -301,6 +301,12 @@ class Variant:
         fl = self.shared.get("flow", {}).get(token, [])
         flow5 = sum(s for (tt, s) in fl if tnow - tt <= 5)    # signed taker vol last 5s (informed flow)
         flow30 = sum(s for (tt, s) in fl if tnow - tt <= 30)  # signed taker vol last 30s
+        # complete-set BOX premium at fill (cross-token; this variant tracks both tobs): selling BOTH
+        # legs nets ask_up+ask_dn for a $1 set => box_ask>0 = risk-free gross/set if both legs fill.
+        other = self.mk["down"] if token == self.mk["up"] else self.mk["up"]
+        obb, _obsz, oba, _oasz = self.tob[other]
+        box_ask = (ba + oba - 1.0) if (ba is not None and oba is not None) else None   # sell-both premium
+        box_bid = (1.0 - (bb + obb)) if (bb is not None and obb is not None) else None  # buy-both premium
         self.fill_log.append({
             "t": tnow, "tau": round(max(self.mk["we"] - tnow, 0.0), 1),
             "reason": reason, "side": our_side, "up": is_up,
@@ -317,6 +323,8 @@ class Variant:
             "tox": round(tox, 4) if tox is not None else None,
             "spot": round(spot, 2) if spot is not None else None,
             "flow5": round(flow5, 2), "flow30": round(flow30, 2),
+            "box_ask": round(box_ask, 4) if box_ask is not None else None,
+            "box_bid": round(box_bid, 4) if box_bid is not None else None,
             "delta": round(self.delta, 3), "cap": self.cap,
             "skew_lim": round(self.skew * self.cap, 3), "gate": self.gate or "none"})
 

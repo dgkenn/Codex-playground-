@@ -355,6 +355,11 @@ def main():
     ap.add_argument("--queue-jump", action="store_true", help="Arm A: BTC-lead-aware rung protection/shed")
     ap.add_argument("--jump-bps", type=float, default=2.0, help="|BTC move| over jump-lag (bps of spot) to act")
     ap.add_argument("--jump-lag", type=float, default=2.0, help="BTC lookback seconds (~ the measured lead)")
+    # BOX-ARB mode: direction-free/fee-free complete-set capture. Sell BOTH legs when ask_up+ask_dn>1
+    # (source via on-chain split), or buy both when bid_up+bid_dn<1 (merge after). Risk-free when both fill.
+    ap.add_argument("--box-arb", action="store_true", help="run the complete-set box-arb instead of the ladder")
+    ap.add_argument("--box-margin", type=float, default=0.0, help="min box premium/set to act (0 = any >touch)")
+    ap.add_argument("--box-sets", type=float, default=5.0, help="sets per box opportunity")
     a = ap.parse_args()
     live = a.live and os.environ.get("I_UNDERSTAND_REAL_MONEY") == "yes"
     if a.live and not live:
@@ -365,6 +370,11 @@ def main():
     fv = SpotFair(sess, symbol=a.spot_symbol) if a.reprice else None
     rlog = RepriceLog()
     olog = OrderLog()                  # CAPTURE.md per-order lifecycle + fill ground-truth
+    _boxfh = open("box_arb_log.jsonl", "a") if a.box_arb else None
+    def boxlog(o):
+        o["ts"] = time.time(); print(f"  [BOX {o['side']}] prem/set={o['premium_per_set']:+.4f} x{o['sets']} "
+                                     f"=> gross_if_filled={o['gross_if_filled']:+.3f}")
+        _boxfh.write(json.dumps(o) + "\n"); _boxfh.flush()
     live_btc = {"px": None, "ts": 0.0, "hist": deque()}
     qema = {}                          # token -> {b,a} EMA of best-queue sizes (depletion trigger)
     if a.queue_jump:                   # Arm A: start the sub-second BTC lead feed
@@ -470,6 +480,23 @@ def main():
             if len(markouts) >= 30 and sum(markouts[-30:]) / 30 < -0.01:
                 print("KILL: rolling markout toxic. cancel-all + exit."); notify.alert("[pmkit] KILL markout toxic")
                 cancel_all_resting(); break
+
+            # --- BOX-ARB mode: direction-free/fee-free complete-set capture (instead of the ladder) ---
+            if a.box_arb:
+                bbu, bau, _, _ = book(sess, mk["up"]); bbd, bad, _, _ = book(sess, mk["down"])
+                mmb = collateral.MintMerge(live, neg_risk=mk.get("negRisk", False))
+                if bau is not None and bad is not None and (bau + bad - 1.0) > a.box_margin and bau + bad < 2:
+                    prem = bau + bad - 1.0                # SELL both legs: receive asks for a $1 set
+                    mmb.split(mk["cid"], a.box_sets)      # mint N sets ($N) to source both legs (dry-safe)
+                    place(mk["up"], "SELL", bau, 0.0); place(mk["down"], "SELL", bad, 0.0)
+                    boxlog({"ws": mk["ws"], "side": "sell_box", "ask_up": bau, "ask_dn": bad,
+                            "premium_per_set": round(prem, 4), "sets": a.box_sets, "gross_if_filled": round(prem * a.box_sets, 4)})
+                if bbu is not None and bbd is not None and (1.0 - bbu - bbd) > a.box_margin and bbu + bbd > 0:
+                    prem = 1.0 - bbu - bbd                # BUY both legs: pay bids; merge -> $1/set
+                    place(mk["up"], "BUY", bbu, 0.0); place(mk["down"], "BUY", bbd, 0.0)
+                    boxlog({"ws": mk["ws"], "side": "buy_box", "bid_up": bbu, "bid_dn": bbd,
+                            "premium_per_set": round(prem, 4), "sets": a.box_sets, "gross_if_filled": round(prem * a.box_sets, 4)})
+                time.sleep(a.poll); continue
 
             # --- BASELINE geometry, then MODEL predictive filter (overlay) ---
             for token, is_up in ((mk["up"], True), (mk["down"], False)):
