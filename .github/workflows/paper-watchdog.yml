@@ -34,9 +34,12 @@ jobs:
       - name: stale check
         id: chk
         run: |
-          last=$(git log -1 --format=%ct -- gha_data/ 2>/dev/null || echo 0)
+          # data now lives on the gha-data branch -> check ITS freshness (not the code branch's gha_data/,
+          # which no longer receives commits and would make the watchdog self-heal forever).
+          git fetch origin gha-data 2>/dev/null || true
+          last=$(git log -1 --format=%ct origin/gha-data 2>/dev/null || echo 0)
           age=$(( $(date +%s) - last ))
-          echo "last gha_data commit ${age}s ago"
+          echo "last gha-data commit ${age}s ago"
           if [ "$age" -lt 1500 ]; then echo "healthy -> exit"; echo "stale=0" >> "$GITHUB_OUTPUT";
           else echo "STALE -> self-heal"; echo "stale=1" >> "$GITHUB_OUTPUT"; fi
       - uses: actions/setup-python@v5
@@ -52,21 +55,26 @@ jobs:
           git config user.name  "watchdog-bot"
           git config user.email "watchdog-bot@users.noreply.github.com"
           mkdir -p gha_data
-          incr () {
-            git add gha_data/ 2>/dev/null || return 0
-            git diff --cached --quiet && return 0
-            git commit -q -m "gha: WATCHDOG self-heal r${{ github.run_id }} ($(date -u +%H:%MZ))" || return 0
-            git push -q origin "HEAD:$BRANCH" 2>/dev/null || true
+          # DATA -> gha-data branch via a worktree (same as paper-collect); never touches the code branch.
+          git fetch origin gha-data 2>/dev/null || true
+          git worktree add -B gha-data /tmp/dw origin/gha-data 2>/dev/null || git worktree add --orphan -b gha-data /tmp/dw
+          mkdir -p /tmp/dw/gha_data
+          push_data () {
+            cp -r gha_data/. /tmp/dw/gha_data/ 2>/dev/null || true
+            ( cd /tmp/dw
+              git add gha_data 2>/dev/null || return 0
+              git diff --cached --quiet && return 0
+              git commit -q -m "gha: WATCHDOG self-heal r${{ github.run_id }} ($(date -u +%H:%MZ))" || return 0
+              for i in 1 2 3; do
+                git pull --rebase --autostash -q origin gha-data 2>/dev/null || true
+                git push -q origin HEAD:gha-data 2>/dev/null && break
+                sleep 3
+              done )
           }
-          ( for k in 1 2 3; do sleep 600; incr; done ) &
+          ( for k in 1 2 3; do sleep 600; push_data; done ) &
           LOOP=$!
           timeout 2100 python -u shadow_compare.py --duration 2040 \
             --tag "wd${{ github.run_id }}" --out-dir gha_data || true
           kill $LOOP 2>/dev/null || true
           python aggregate_shadow.py > gha_data/SUMMARY.txt 2>/dev/null || true
-          git add gha_data/ 2>/dev/null || true
-          git diff --cached --quiet || git commit -q -m "gha: WATCHDOG self-heal r${{ github.run_id }} final"
-          for i in 1 2 3 4 5; do
-            git pull --rebase --autostash -q origin "$BRANCH" && git push -q origin "HEAD:$BRANCH" && break
-            sleep $((RANDOM % 6 + 2))
-          done
+          push_data
