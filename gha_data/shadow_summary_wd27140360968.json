@@ -1,0 +1,86 @@
+{
+  "baseline": {
+    "net": -5.5976,
+    "fills": 536,
+    "windows": 2,
+    "pos": 1
+  },
+  "cap25": {
+    "net": -7.791799999999999,
+    "fills": 441,
+    "windows": 2,
+    "pos": 1
+  },
+  "cap100": {
+    "net": -9.526499999999999,
+    "fills": 681,
+    "windows": 2,
+    "pos": 1
+  },
+  "skew15": {
+    "net": -5.1353,
+    "fills": 461,
+    "windows": 2,
+    "pos": 1
+  },
+  "fv_size": {
+    "net": 1.0832000000000015,
+    "fills": 578,
+    "windows": 2,
+    "pos": 1
+  },
+  "micro_gate": {
+    "net": 17.3635,
+    "fills": 493,
+    "windows": 2,
+    "pos": 1
+  },
+  "predict": {
+    "net": -12.488,
+    "fills": 318,
+    "windows": 2,
+    "pos": 0
+  },
+  "micro_skew15": {
+    "net": 4.6929,
+    "fills": 414,
+    "windows": 2,
+    "pos": 1
+  },
+  "flow_gate": {
+    "net": 3.3354,
+    "fills": 155,
+    "windows": 2,
+    "pos": 1
+  },
+  "sell_lean": {
+    "net": -6.965,
+    "fills": 528,
+    "windows": 2,
+    "pos": 1
+  },
+  "late_gate": {
+    "net": 6.384300000000001,
+    "fills": 446,
+    "windows": 2,
+    "pos": 1
+  },
+  "av_stoikov": {
+    "net": 28.0994,
+    "fills": 711,
+    "windows": 2,
+    "pos": 1
+  },
+  "spot_react": {
+    "net": -5.4988,
+    "fills": 433,
+    "windows": 2,
+    "pos": 1
+  },
+  "micro_react": {
+    "net": 13.3992,
+    "fills": 236,
+    "windows": 2,
+    "pos": 1
+  }
+}
