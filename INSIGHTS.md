@@ -73,3 +73,48 @@ live-latency questions are decision-grade only on real orders.
 - Avellaneda, Stoikov 2008, HF trading in a LOB (inventory/reservation price).
 - Bitcoin price discovery (Hasbrouck IS): https://arxiv.org/abs/2506.08718
 - Kalshi prediction-market economics / favorite-longshot: https://www2.gwu.edu/~forcpgm/2026-001.pdf
+
+---
+
+# ROUND 2 — 5 more insights (deeper structure), literature-cross-checked
+
+## 6. Adverse selection is concentrated at 5-30s and does NOT carry to resolution
+- DATA: mo5 -0.0016 -> mo30 -0.0041 -> mo_res +0.0006. The pickoff peaks intra-window and is ~gone
+  by resolution. So a hold-to-resolution maker realizes far less than the 30s markout; markout
+  OVERSTATES the true cost, and cancel-churning would lock in transient losses.
+- HONEST CAVEAT: mo_res~0 could be transient mean-reversion OR regime cancellation -- can't separate
+  without intermediate horizons.
+- LIT: Bouchaud propagator -- impact = transient (mean-reverting) + permanent (informational).
+- TWEAK: add mo120/mo300 markout horizons to disambiguate; do NOT over-cancel/over-hedge on
+  short-horizon markout -- favor passive holding (the gate handles entry; don't churn the exit).
+
+## 7. The maker is a natural complete-set ("box") seller -> delta-neutral rebate + box premium
+- DATA: sells split UP=3439 / DOWN=3369 (~even). Structurally that's selling complete sets.
+- LIT: complete-set arbitrage on Polymarket (YES+NO=1); selling both legs when ask_up+ask_dn>1 sells
+  the $1 box above par (risk-free leg premium) atop the rebate.
+- TWEAK: actively BALANCE UP+DOWN sell inventory (stay delta-neutral -> kills the directional
+  inventory risk that is the real resolution cost), and lean into a leg when the two-sided ask sum>1.
+
+## 8. The "sell cheap / favorite-longshot" P&L pattern is REGIME-CONFOUNDED, not alpha
+- DATA: sell-cheap vs sell-expensive mo_res FLIPS by outcome (resolved-DOWN +0.096 vs resolved-UP
+  -0.021); robust in only 23/35 windows (mixed). We tested for a price-level directional edge and
+  REJECTED it.
+- LIT: favorite-longshot bias is weak in sophisticated markets (BTC 15-min).
+- TWEAK: do NOT build a price-level directional tilt -- the price-level pnl spread is risk, not edge.
+
+## 9. The strategy levers are NOT super-additive -- micro_gate captures ~all the edge
+- DATA: micro_gate +5.30/win (58w) >= micro_skew15 +4.79 (26w); stacking tight skew doesn't compound.
+- LIT: the microprice ~ Avellaneda-Stoikov reservation-price anchor -> the gate already controls
+  inventory indirectly (it declines toxic fills that build adverse inventory).
+- TWEAK: keep it simple -- micro_gate + a light cap; avoid over-engineered stacked gates
+  (diminishing returns + multiple-testing risk).
+
+## 10. The binding constraint is QUEUE POSITION & fill rate, not signal
+- DATA: fill rate ~6%; 68% of decisions skew-blocked; the profitable buy-side is scarce (can't be
+  summoned). We capture a tiny slice of flow; more alpha signals barely move net.
+- LIT: Moallemi-Yuan queue value.
+- TWEAK: the highest-leverage remaining work is LIVE FIFO queue priority, not more paper signals.
+
+## Round-2 sources
+- Bouchaud propagator / transient impact: https://arxiv.org/abs/1412.0141 ; MM + transient impact: https://arxiv.org/html/2601.13421
+- Polymarket complete-set arbitrage: https://arxiv.org/abs/2508.03474
