@@ -597,14 +597,12 @@ def configs(mk, shared):
         Variant("micro_spot", mk, 50, 0.25, gate="micro_spot", shared=shared),
         # MAKEREDGE.md expansions (paper-testable):
         Variant("mo_size", mk, 50, 0.25, size_mode="markout", shared=shared),   # #3 markout-weighted sizing
-        Variant("as_full", mk, 50, 0.99, gate="as_full", shared=shared),        # #4 vol-adaptive Avellaneda-Stoikov
-        Variant("vol_gate", mk, 50, 0.25, gate="vol", shared=shared),           # #7 pull both sides in a BTC vol burst
         # MAKER_CHANGES2 (backtest round 2): hedged_big RETIRED (-47.8/win). New micro-gate refinements:
         Variant("micro_soft", mk, 50, 0.25, gate="micro_soft", shared=shared),   # MC2 #3: gate only strongly-toxic (keep rebate)
         Variant("micro_ufat", mk, 50, 0.25, gate="micro_ufat", shared=shared),   # MC2 #4: strict at p~0.5, loose at extremes
-        # MAKERS.md data-backed (reverse-engineered from winning wallets):
-        Variant("band_p", mk, 50, 0.25, gate="band", shared=shared),            # A3: quote only moderate-prob band
-        Variant("graded", mk, 25, 0.15, gate="graded", shared=shared),          # A4+A3+A2: with-move-pull + band + tight clip
+        # PRUNED (significantly unprofitable in live shadow): as_full -8.3, vol_gate -7.9, band_p -9.2,
+        # graded -2.4 (all gross-negative; the over-gating / wide-quote failure modes from WINNER_TWEAKS #3,#10).
+        # The gate logic remains available in _gate_one for offline study; just retired from the live A/B.
     ]
 
 
@@ -750,7 +748,8 @@ async def run(args):
             r = resolve(sess, mk2["ws"], mk2.get("asset", "btc"), mk2.get("tenor_min", 15))
             if r is None:
                 continue
-            row = {"ts": now_iso(), "ws": mk2["ws"], "resolved_up": r}
+            row = {"ts": now_iso(), "ws": mk2["ws"], "resolved_up": r,
+                   "asset": mk2.get("asset", "btc"), "tenor_min": mk2.get("tenor_min", 15)}
             parts = []
             attrs = {}
             for v in variants2:

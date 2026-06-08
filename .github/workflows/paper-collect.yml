@@ -1,9 +1,11 @@
 # Robust, self-healing paper-data collection on GitHub Actions (public repo => free/unlimited).
-# Runs the 7-variant shadow comparison ~50 min each hour on GitHub's infra -- independent of the
-# ephemeral dev container, so it survives container reclamation with zero manual restarts. Each
-# run writes UNIQUE files (gha_data/shadow_windows_r<run_id>.jsonl) -> never conflicts; a crashed
-# run just means next hour starts fresh (self-healing). READ-ONLY paper sim (public Polymarket WS
-# + Coinbase spot, NO keys). Aggregate with: python aggregate_shadow.py
+# Runs the shadow variant comparison ACROSS BTC/ETH/SOL/XRP (15m) in parallel ~50 min each hour on
+# GitHub's infra -- independent of the ephemeral dev container, so it survives container reclamation with
+# zero manual restarts. Each market-process writes UNIQUE files (gha_data/shadow_windows_<asset><tenor>m_r
+# <run_id>.jsonl) with asset/tenor_min fields -> never conflicts AND lets breadth_net_corr.py measure
+# micro_gate's true cross-market net correlation. A crashed run just means next hour starts fresh
+# (self-healing). READ-ONLY paper sim (public Polymarket WS + Coinbase spot, NO keys).
+# Aggregate with: python aggregate_shadow.py ; cross-market: python breadth_net_corr.py
 #
 # NOTE: GitHub only fires `schedule`/`workflow_dispatch` from the file on the DEFAULT branch (main),
 # so this file must also live on main to activate. It checks out CODE from the feature branch but
@@ -40,11 +42,14 @@ jobs:
           python-version: '3.12'
       - name: install deps
         run: pip install --quiet numpy scipy requests websockets
-      - name: collect ~50 min of live windows
+      - name: collect ~50 min of live windows (MULTI-ASSET: btc/eth/sol/xrp 15m in parallel)
         run: |
           mkdir -p gha_data
-          timeout 3000 python -u shadow_compare.py --duration 2940 \
-            --tag "r${{ github.run_id }}" --out-dir gha_data || true
+          # multi_market.py runs shadow_compare per (asset,tenor) as separate processes, each writing
+          # uniquely-tagged window files with asset/tenor_min fields -> lets breadth_net_corr.py measure
+          # micro_gate's TRUE cross-market net correlation (the real breadth Sharpe). 4 WS connections,
+          # mostly I/O-bound, fine on the 2-core runner.
+          timeout 3000 python -u multi_market.py 2940 gha_data "r${{ github.run_id }}" || true
       - name: aggregate rolling summary
         run: python aggregate_shadow.py > gha_data/SUMMARY.txt 2>/dev/null || true
       - name: commit data to the dedicated DATA branch (never touches the code branch)

@@ -16,8 +16,11 @@ import subprocess
 import sys
 import time
 
-# (asset, tenor_min) -- all exist & open (verified). Trim/extend to taste; sol/xrp 5m available too.
-MARKETS = [("btc", 15), ("eth", 15), ("sol", 15), ("xrp", 15), ("btc", 5), ("eth", 5)]
+# (asset, tenor_min) -- all exist & open (verified). The 4x15m set is the CLEAN cross-asset comparison:
+# same tenor, shared resolution windows -> lets breadth_net_corr.py measure micro_gate's true per-window
+# net correlation across assets (the real breadth Sharpe). 5m markets (btc/eth/sol/xrp 5m) available too;
+# add them for max rebate volume once we've confirmed the 4x15m runs cleanly on the 2-core GHA runner.
+MARKETS = [("btc", 15), ("eth", 15), ("sol", 15), ("xrp", 15)]
 
 
 def main():
