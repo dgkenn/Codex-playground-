@@ -1,85 +1,85 @@
 {
-  "utc": "2026-06-08T07:08:41.511497+00:00",
+  "utc": "2026-06-08T07:19:11.674384+00:00",
   "tag": "r27118772711",
   "status": "running",
-  "settled_windows": 1,
+  "settled_windows": 2,
   "cum": {
     "baseline": {
-      "net": 3.3164,
-      "fills": 79,
-      "windows": 1,
+      "net": 0.6039999999999996,
+      "fills": 183,
+      "windows": 2,
       "pos": 1
     },
     "cap25": {
-      "net": 4.9765,
-      "fills": 70,
-      "windows": 1,
+      "net": 4.947699999999999,
+      "fills": 157,
+      "windows": 2,
       "pos": 1
     },
     "cap100": {
-      "net": 0.5309,
-      "fills": 104,
-      "windows": 1,
+      "net": -3.9886999999999997,
+      "fills": 232,
+      "windows": 2,
       "pos": 1
     },
     "skew15": {
-      "net": 3.7761,
-      "fills": 68,
-      "windows": 1,
+      "net": 2.9507,
+      "fills": 158,
+      "windows": 2,
       "pos": 1
     },
     "fv_size": {
-      "net": 3.3164,
-      "fills": 79,
-      "windows": 1,
+      "net": 0.3334999999999999,
+      "fills": 176,
+      "windows": 2,
       "pos": 1
     },
     "micro_gate": {
-      "net": 6.4661,
-      "fills": 67,
-      "windows": 1,
-      "pos": 1
+      "net": 8.1796,
+      "fills": 157,
+      "windows": 2,
+      "pos": 2
     },
     "predict": {
-      "net": 3.3164,
-      "fills": 79,
-      "windows": 1,
-      "pos": 1
+      "net": 7.9273,
+      "fills": 140,
+      "windows": 2,
+      "pos": 2
     },
     "micro_skew15": {
-      "net": 5.2691,
-      "fills": 59,
-      "windows": 1,
+      "net": 5.1427,
+      "fills": 138,
+      "windows": 2,
       "pos": 1
     },
     "flow_gate": {
-      "net": 13.2216,
-      "fills": 15,
-      "windows": 1,
+      "net": 6.238600000000001,
+      "fills": 64,
+      "windows": 2,
       "pos": 1
     },
     "sell_lean": {
-      "net": 3.5496,
-      "fills": 80,
-      "windows": 1,
+      "net": -1.8277999999999999,
+      "fills": 183,
+      "windows": 2,
       "pos": 1
     },
     "late_gate": {
-      "net": 1.0795,
-      "fills": 7,
-      "windows": 1,
+      "net": -1.2803,
+      "fills": 100,
+      "windows": 2,
       "pos": 1
     },
     "av_stoikov": {
-      "net": 8.2633,
-      "fills": 114,
-      "windows": 1,
+      "net": 3.9860999999999995,
+      "fills": 240,
+      "windows": 2,
       "pos": 1
     },
     "spot_react": {
-      "net": 3.3164,
-      "fills": 79,
-      "windows": 1,
+      "net": 1.1425999999999998,
+      "fills": 188,
+      "windows": 2,
       "pos": 1
     }
   }
