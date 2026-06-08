@@ -38,3 +38,4 @@ copy_all_results.json
 copy_multi_result.json
 copy_multi_capture.jsonl
 strategy_models.json
+strategy_fine.jsonl
