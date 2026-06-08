@@ -14,8 +14,8 @@ from __future__ import annotations
 import glob, json
 import numpy as np
 
-STEP = 2          # seconds per tick (matches collector downsample)
-MAXLAG = 5        # test spot leading mid by up to this many steps (=2s each)
+STEP = 1          # seconds per tick (matches collector ~1s downsample; high-res WS spot)
+MAXLAG = 8        # test spot leading mid by up to this many steps (=1s each)
 
 
 def load():

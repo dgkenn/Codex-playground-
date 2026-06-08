@@ -54,8 +54,8 @@ WINDOW_S = 900               # market window length (s); time-to-close normalize
 AS_K = 4e-4
 # spot_react gate: pull the side BTC just moved against (get ahead of the lag pickoff).
 # bps-relative threshold (robust to BTC level/vol); lookback ~ the lead lag (calibrate via lead_lag.py).
-SPOT_LAG_S = 6        # seconds of BTC lookback (start ~ measured lead; refine from lead_lag)
-SPOT_BPS = 3.0        # |BTC move| over the lookback, in bps of spot, to trigger a pull (~p85 of 6s moves)
+SPOT_LAG_S = 2        # seconds of BTC lookback ~ the MEASURED lead (feed_race: coinbase leads token ~0.5-1s)
+SPOT_BPS = 2.0        # |BTC move| over the lookback, in bps of spot, to trigger a pull
 # micro_react: the lead-lag study showed the token's BOOK leads our slow BTC spot feed, so react to
 # the BOOK's microprice velocity (the fast signal) -- the corrected version of spot_react.
 MICRO_LAG_S = 4       # seconds of microprice lookback (book reacts fast)
@@ -366,9 +366,30 @@ def configs(mk, shared):
     ]
 
 
+async def btc_ws_feed(live):
+    """Sub-second BTC spot via Coinbase WS ticker (free, no key) -> the HIGH-RES primary feed.
+    The lead-lag study showed our 2s REST poll lagged even the token's book; this pushes ~8
+    ticks/s so the lead-lag test + spot_react finally see fresh BTC. Updates live{px,ts};
+    reconnects forever; the REST poll (fvfeed) stays as sigma/anchor/fallback."""
+    url = "wss://ws-feed.exchange.coinbase.com"
+    sub = json.dumps({"type": "subscribe", "product_ids": ["BTC-USD"], "channels": ["ticker"]})
+    while True:
+        try:
+            async with websockets.connect(url, ping_interval=15, ping_timeout=20, max_size=None) as ws:
+                await ws.send(sub)
+                async for raw in ws:
+                    m = json.loads(raw)
+                    if m.get("type") == "ticker" and m.get("price"):
+                        live["px"] = float(m["price"]); live["ts"] = time.time()
+        except Exception:  # noqa: BLE001 -- reconnect; REST poll covers the gap
+            await asyncio.sleep(2)
+
+
 async def run(args):
     sess = requests.Session()
     fv = SpotFair(sess)
+    live = {"px": None, "ts": 0.0}             # latest sub-second BTC from the WS feed
+    asyncio.create_task(btc_ws_feed(live))     # high-res spot, runs across all windows
     # --tag/--out-dir give each GitHub-Actions run UNIQUE output files (gha_data/shadow_<tag>.*)
     # so concurrent/sequential runs never conflict on commit. Default = legacy fixed names.
     os.makedirs(args.out_dir, exist_ok=True)
@@ -459,7 +480,7 @@ async def run(args):
             # persist joint (mid, spot) series ~every 2s for the BTC->token LEAD-LAG study (raw, model-free)
             up_tl = midtl2.get(mk2["up"], [])
             ticks = [[round(t - mk2["ws"], 1), round(md, 4), round(sp, 1)]
-                     for (t, md, _mc, sp) in up_tl[::2] if sp is not None]
+                     for (t, md, _mc, sp) in up_tl if sp is not None]   # ~1s (high-res for lead-lag)
             if ticks:
                 ticks_fh.write(json.dumps({"ws": mk2["ws"], "res_up": r, "ticks": ticks}) + "\n")
                 ticks_fh.flush()
@@ -494,7 +515,8 @@ async def run(args):
         if mk is None:
             await asyncio.sleep(5); continue
         shared = {"st": None, "s0": None}
-        sp = fv.update()
+        rest = fv.update()                              # keeps the REST tape alive (sigma/fallback)
+        sp = live["px"] if live["px"] is not None else rest   # prefer the high-res WS price
         if sp and time.time() - mk["ws"] <= 60:        # only anchor S0 on a fresh window
             fv.set_window(sp); shared["s0"] = sp
         shared["st"] = sp
@@ -514,8 +536,13 @@ async def run(args):
                             raw = await asyncio.wait_for(ws.recv(), timeout=min(15, mk["we"] - time.time() + 1))
                         except asyncio.TimeoutError:
                             continue
-                        if time.time() - last_spot > 2:        # refresh spot for fair-value variants
-                            shared["st"] = fv.update() or shared["st"]; last_spot = time.time()
+                        # high-res BTC: prefer the sub-second WS feed (it leads our REST poll & the token)
+                        if live["px"] is not None and time.time() - live["ts"] < 8:
+                            shared["st"] = live["px"]
+                        if time.time() - last_spot > 2:        # REST poll: keep sigma/tape alive + fallback
+                            rest = fv.update(); last_spot = time.time()
+                            if not (live["px"] is not None and time.time() - live["ts"] < 8):
+                                shared["st"] = rest or shared["st"]
                             if shared["st"] is not None:       # trail BTC spot for spot_react (prune ~30s)
                                 sh = shared["spothist"]; sh.append((time.time(), shared["st"]))
                                 if len(sh) > 40:
