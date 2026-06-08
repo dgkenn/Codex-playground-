@@ -38,3 +38,4 @@
 2026-06-08T22:45:10.319866+00:00 AUDIT w=1780956900 | micro_gate:resid=-0.00001  baseline:resid=-0.00005  lag_taker:resid=+0.00000
 2026-06-08T22:45:10.319901+00:00 CUM | baseline=-71.38/9w  cap25=-23.80/9w  skew15=-28.38/9w  dneutral=-22.62/9w  fv_size=-68.81/9w  micro_gate=-20.36/9w  micro_skew15=-6.55/9w  micro_marg=+19.81/9w  tox_gate=+19.05/9w  deplete_gate=-11.64/9w  gross_max=+5.28/9w  flow_gate=-33.67/9w  late_gate=-70.16/9w  av_stoikov=-48.08/9w  spot_react=-69.73/9w  micro_react=+7.20/9w  micro_spot=-21.82/9w  mo_size=+5.22/9w  as_full=-74.33/9w  vol_gate=-71.38/9w  hedged_big=-404.54/9w  band_p=-82.46/9w  graded=-21.29/9w  lag_taker=+0.00/9w
 2026-06-08T22:45:10.380517+00:00 WINDOW 1780958700 (22:45Z) s0=63284.249345
+2026-06-08T22:50:00.200001+00:00   [ws reconnect] no close frame received or sent
