@@ -45,6 +45,7 @@ _HB = [0.0]          # last heartbeat ts (throttle)
 # wins/loses). Kept to the baseline-vs-fix contrast to bound data volume; widen if needed.
 LOG_FILLS = {"baseline", "micro_gate"}
 MARKOUT_HORIZONS = (5, 30)   # seconds; resolution markout is added at settle (the decision metric)
+FLOW_TOX = 150               # signed 30s taker-volume threshold for the flow gate (data: adverse >~200)
 
 
 def heartbeat(tag, out_dir, cum, status="running"):
@@ -145,6 +146,13 @@ class Variant:
                 return False
             return (our_side == "ASK" and price < ft - FV_MARGIN) or \
                    (our_side == "BID" and price > ft + FV_MARGIN)
+        if self.gate == "flow":
+            # informed-flow gate: pull the side a recent same-side taker burst is hitting.
+            # data: SELL 30s-markout turns adverse when flow30 (signed taker vol) > ~200.
+            fl = self.shared.get("flow", {}).get(token, [])
+            now = time.time()
+            f30 = sum(s for (tt, s) in fl if now - tt <= 30)
+            return (our_side == "ASK" and f30 > FLOW_TOX) or (our_side == "BID" and f30 < -FLOW_TOX)
         return False
 
     def _size(self, token, our_side, price):
@@ -263,6 +271,10 @@ def configs(mk, shared):
         Variant("fv_size", mk, 50, 0.25, size_mode="fv", shared=shared),
         Variant("micro_gate", mk, 50, 0.25, gate="micro", shared=shared),
         Variant("predict", mk, 50, 0.25, gate="predict", shared=shared),
+        # data-driven candidates: stack the two independent winners (micro gate + tight skew),
+        # and operationalize the new flow-toxicity finding (pull the side a taker burst is hitting)
+        Variant("micro_skew15", mk, 50, 0.15, gate="micro", shared=shared),
+        Variant("flow_gate", mk, 50, 0.25, gate="flow", shared=shared),
     ]
 
 
