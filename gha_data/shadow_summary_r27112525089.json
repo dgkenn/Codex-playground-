@@ -1,62 +1,62 @@
 {
   "baseline": {
-    "net": -17.218200000000003,
-    "fills": 261,
-    "windows": 2,
-    "pos": 0
+    "net": -13.632400000000004,
+    "fills": 522,
+    "windows": 3,
+    "pos": 1
   },
   "cap25": {
-    "net": -11.512599999999999,
-    "fills": 218,
-    "windows": 2,
+    "net": -11.880999999999998,
+    "fills": 419,
+    "windows": 3,
     "pos": 0
   },
   "cap100": {
-    "net": -32.2033,
-    "fills": 299,
-    "windows": 2,
-    "pos": 0
+    "net": -31.4891,
+    "fills": 609,
+    "windows": 3,
+    "pos": 1
   },
   "skew15": {
-    "net": -12.085,
-    "fills": 224,
-    "windows": 2,
-    "pos": 0
+    "net": -11.0996,
+    "fills": 449,
+    "windows": 3,
+    "pos": 1
   },
   "fv_size": {
-    "net": -15.1332,
-    "fills": 267,
-    "windows": 2,
-    "pos": 0
+    "net": -7.2197000000000005,
+    "fills": 530,
+    "windows": 3,
+    "pos": 1
   },
   "micro_gate": {
-    "net": -7.3681,
-    "fills": 233,
-    "windows": 2,
-    "pos": 0
+    "net": -2.1729000000000003,
+    "fills": 458,
+    "windows": 3,
+    "pos": 1
   },
   "predict": {
-    "net": -6.7144,
-    "fills": 186,
-    "windows": 2,
-    "pos": 1
+    "net": 6.4347,
+    "fills": 332,
+    "windows": 3,
+    "pos": 2
   },
   "micro_skew15": {
-    "net": -1.7613999999999999,
-    "fills": 212,
-    "windows": 2,
-    "pos": 1
+    "net": 5.2597,
+    "fills": 408,
+    "windows": 3,
+    "pos": 2
   },
   "flow_gate": {
-    "net": -7.8662,
-    "fills": 69,
-    "windows": 2,
-    "pos": 1
+    "net": -2.0564999999999998,
+    "fills": 140,
+    "windows": 3,
+    "pos": 2
   },
   "sell_lean": {
-    "net": -24.367600000000003,
-    "fills": 252,
-    "windows": 2,
-    "pos": 0
+    "net": -18.076400000000003,
+    "fills": 508,
+    "windows": 3,
+    "pos": 1
   }
 }
