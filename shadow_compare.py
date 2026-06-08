@@ -56,6 +56,10 @@ AS_K = 4e-4
 # bps-relative threshold (robust to BTC level/vol); lookback ~ the lead lag (calibrate via lead_lag.py).
 SPOT_LAG_S = 6        # seconds of BTC lookback (start ~ measured lead; refine from lead_lag)
 SPOT_BPS = 3.0        # |BTC move| over the lookback, in bps of spot, to trigger a pull (~p85 of 6s moves)
+# micro_react: the lead-lag study showed the token's BOOK leads our slow BTC spot feed, so react to
+# the BOOK's microprice velocity (the fast signal) -- the corrected version of spot_react.
+MICRO_LAG_S = 4       # seconds of microprice lookback (book reacts fast)
+MICRO_REACT_THR = 0.004   # |microprice move| over the lookback to trigger a pull (book just repriced)
 
 
 def heartbeat(tag, out_dir, cum, status="running"):
@@ -189,6 +193,24 @@ class Variant:
             token_dir = 1.0 if self.is_up(token) else -1.0
             fair_move = token_dir * dspot         # how the token's fair just moved
             return (our_side == "ASK" and fair_move > thr) or (our_side == "BID" and fair_move < -thr)
+        if self.gate == "micro_react":
+            # RIGHT side of the lag via the FAST signal: the token's own microprice (it leads our
+            # slow spot feed). If micro just moved, the touch is about to reprice -> pull the side
+            # we'd be picked off on, before the taker lifts our stale quote. (corrected spot_react)
+            cur = self.tob[token]; mp = micro(cur[0], cur[1], cur[2], cur[3])
+            hist = self.shared.get("microhist", {}).get(token, [])
+            if mp is None or len(hist) < 2:
+                return False
+            now = time.time()
+            prev = None
+            for (tt, mv) in hist:                 # most recent microprice >= MICRO_LAG_S old
+                if tt <= now - MICRO_LAG_S:
+                    prev = mv
+            if prev is None:
+                prev = hist[0][1]
+            dmicro = mp - prev
+            return (our_side == "ASK" and dmicro > MICRO_REACT_THR) or \
+                   (our_side == "BID" and dmicro < -MICRO_REACT_THR)
         if self.gate == "as":
             # Avellaneda-Stoikov: only ADD inventory if the microprice edge clears a penalty that
             # grows with current inventory and time-to-close (variance-based, NOT P&L-based). Fills
@@ -339,6 +361,8 @@ def configs(mk, shared):
         Variant("av_stoikov", mk, 50, 0.99, gate="as", shared=shared),
         # get on the RIGHT side of the BTC->token lag: pull the side BTC just moved against
         Variant("spot_react", mk, 50, 0.25, gate="spot", shared=shared),
+        # corrected lag-reaction: react to the BOOK's microprice velocity (it LEADS our spot feed)
+        Variant("micro_react", mk, 50, 0.25, gate="micro_react", shared=shared),
     ]
 
 
@@ -476,6 +500,7 @@ async def run(args):
         shared["st"] = sp
         shared["flow"] = {}   # token -> [(t, signed_taker_size)] rolling trade-flow for informed-flow feature
         shared["spothist"] = [(time.time(), sp)] if sp else []  # (t, BTC spot) trail for spot_react
+        shared["microhist"] = {}   # token -> [(t, microprice)] trail for micro_react (book lead signal)
         variants = configs(mk, shared)
         midtl = {}        # token -> [(t, mid, micro, spot)] shared timeline for per-fill markout
         L(f"WINDOW {mk['ws']} ({datetime.fromtimestamp(mk['ws'],timezone.utc):%H:%M}Z) s0={shared['s0']}")
@@ -520,7 +545,13 @@ async def run(args):
                                 continue
                             tl = midtl.setdefault(tok, [])
                             if not tl or ts_now - tl[-1][0] >= 1.0:
-                                tl.append((ts_now, (bb + ba) / 2, micro(bb, bsz, ba, asz), shared.get("st")))
+                                mc = micro(bb, bsz, ba, asz)
+                                tl.append((ts_now, (bb + ba) / 2, mc, shared.get("st")))
+                                mh = shared["microhist"].setdefault(tok, [])  # book-lead signal for micro_react
+                                if mc is not None:
+                                    mh.append((ts_now, mc))
+                                    if len(mh) > 40:
+                                        del mh[:len(mh) - 40]
             except Exception as e:  # noqa: BLE001
                 L(f"  [ws reconnect] {str(e)[:70]}"); await asyncio.sleep(2)
         pending.append((mk, variants, midtl))   # settle later, with retry (resolution lags close)
