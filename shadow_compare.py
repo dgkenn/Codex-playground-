@@ -81,8 +81,11 @@ def micro(bb, bsz, ba, asz):
 class Variant:
     """One strategy config; own book/queue/inventory; fed the shared live event stream."""
 
-    def __init__(self, name, mk, cap, skew, size_mode="flat", gate=None, shared=None):
+    def __init__(self, name, mk, cap, skew, size_mode="flat", gate=None, shared=None, short_skew=None):
         self.name = name; self.mk = mk; self.cap = cap; self.skew = skew
+        # asymmetric inventory leash: separate (usually tighter) threshold for building SHORT,
+        # since buy-dominated flow forces us short and selling is the toxic side. Default = symmetric.
+        self.short_skew = short_skew if short_skew is not None else skew
         self.size_mode = size_mode; self.gate = gate; self.shared = shared
         self.post = 20.0
         self.up_inv = self.dn_inv = self.cash = self.rebate = self.delta = 0.0
@@ -219,9 +222,11 @@ class Variant:
         is_up = self.is_up(token); d_per = (-1.0 if (is_up == (side == "BUY")) else 1.0)
         want = self._size(token, our_side, price)
         fill = min(passthrough, want)
+        # asymmetric leash: tighter threshold when this fill BUILDS short (d_per<0), looser when long
+        lim = (self.short_skew if d_per < 0 else self.skew) * self.cap
         if self._gated(token, our_side, price):
             reason, fill = "gated", 0.0
-        elif abs(self.delta) >= self.skew * self.cap and (self.delta * d_per) > 0:
+        elif abs(self.delta) >= lim and (self.delta * d_per) > 0:
             reason, fill = "skew_block", 0.0
         else:
             if abs(self.delta + d_per * fill) > self.cap:
@@ -275,6 +280,9 @@ def configs(mk, shared):
         # and operationalize the new flow-toxicity finding (pull the side a taker burst is hitting)
         Variant("micro_skew15", mk, 50, 0.15, gate="micro", shared=shared),
         Variant("flow_gate", mk, 50, 0.25, gate="flow", shared=shared),
+        # sell-skew tweak: buys earn (+0.41/fill) but sells bleed (-0.04) and flow forces us
+        # 13:1 short -> tighter leash on building short (0.10) than long (0.35)
+        Variant("sell_lean", mk, 50, 0.35, short_skew=0.10, shared=shared),
     ]
 
 
