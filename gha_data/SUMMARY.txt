@@ -1,22 +1,22 @@
-shadow comparison over 57 de-duped windows | files=21
+shadow comparison over 59 de-duped windows | files=22
 
-     variant  net_total    n  net/win  Δvs base/win  paired t
-  micro_gate    +329.52   57   +5.781        +5.393     +6.02
-       cap25    +129.94   57   +2.280        +1.892     +3.65
-      skew15    +117.40   57   +2.060        +1.672     +3.88
-micro_skew15     +73.02   25   +2.921        +4.979     +4.96
-     fv_size     +63.41   57   +1.112        +0.725     +1.53
-  av_stoikov     +58.43   22   +2.656        +4.375     +1.63
-    baseline     +22.10   57   +0.388                        
- micro_react     +16.00    4   +4.000        +8.196     +3.08
-     predict     +14.35   55   +0.261        -0.274     -0.25
-  micro_spot      +8.38    2   +4.190        +7.843     +1.67
-   flow_gate      +7.89   25   +0.315        +2.373     +1.02
-   late_gate      +3.28   22   +0.149        +1.868     +1.31
-  spot_react      -3.08   22   -0.140        +1.579     +1.17
-   sell_lean     -50.52   23   -2.196        -0.277     -0.40
-      cap100     -72.49   55   -1.318        -1.853     -2.48
-   lag_taker     -85.47    2  -42.733       -39.080     -2.83
+     variant  net/win  Δvs base  paired t GROSS/win  gross t
+  micro_gate   +5.828    +5.277     +6.06    +1.535    +1.72 <edge>
+       cap25   +2.393    +1.841     +3.67    -1.207    -2.09
+      skew15   +2.190    +1.638     +3.93    -1.711    -2.51
+micro_skew15   +3.175    +4.695     +4.94    +0.153    +0.16 <edge>
+  av_stoikov   +3.405    +4.547     +1.82    -1.369    -0.51
+     fv_size   +1.327    +0.776     +1.67    -2.928    -3.57
+    baseline   +0.551                        -3.812    -4.42
+  micro_spot   +6.019    +5.241     +1.89    +2.590    +0.99 <edge>
+ micro_react   +2.755    +3.816     +1.11    +0.299    +0.14 <edge>
+     predict   +0.261    -0.274     -0.25    -2.460    -1.93
+  spot_react   +0.534    +1.675     +1.34    -2.876    -2.06
+   late_gate   +0.408    +1.550     +1.17    -3.241    -2.45
+   flow_gate   -0.076    +1.444     +0.63    -0.845    -0.52
+   sell_lean   -2.196    -0.277     -0.40    -5.928    -3.51
+      cap100   -1.318    -1.853     -2.48    -6.525    -4.74
+   lag_taker  -23.803   -24.581     -2.21    -7.562    -0.83
 
-Read: paired t is the variant's per-window edge OVER baseline (shared windows). |t|>2 ~ notable, |t|>2.6 ~ solid; n=57 so anything below that is still noise.
-Totals alone mislead -- they ride the shared window outcomes; the paired column is the signal.
+Read: paired t = net edge OVER baseline (rebate-inclusive). GROSS/win = trade P&L EXCLUDING the rebate = the edge OUTSIDE rebates; gross t vs 0, |t|>2 notable. n=59.
+Only positive-GROSS variants have an edge beyond rebate harvesting (the micro-gate family).
