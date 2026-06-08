@@ -1,80 +1,80 @@
 {
   "baseline": {
-    "net": 1.7269000000000005,
-    "fills": 552,
-    "windows": 2,
+    "net": -6.5137,
+    "fills": 629,
+    "windows": 3,
     "pos": 1
   },
   "cap25": {
-    "net": 1.1342999999999996,
-    "fills": 450,
-    "windows": 2,
+    "net": -1.3579000000000003,
+    "fills": 512,
+    "windows": 3,
     "pos": 1
   },
   "cap100": {
-    "net": 2.6494,
-    "fills": 687,
-    "windows": 2,
+    "net": -8.8025,
+    "fills": 782,
+    "windows": 3,
     "pos": 1
   },
   "skew15": {
-    "net": 0.08909999999999929,
-    "fills": 482,
-    "windows": 2,
+    "net": -3.950400000000001,
+    "fills": 542,
+    "windows": 3,
     "pos": 1
   },
   "fv_size": {
-    "net": 5.3504000000000005,
-    "fills": 560,
-    "windows": 2,
+    "net": -1.3385999999999996,
+    "fills": 636,
+    "windows": 3,
     "pos": 1
   },
   "micro_gate": {
-    "net": 21.6852,
-    "fills": 481,
-    "windows": 2,
+    "net": 13.536699999999998,
+    "fills": 543,
+    "windows": 3,
     "pos": 1
   },
   "predict": {
-    "net": 8.446,
-    "fills": 366,
-    "windows": 2,
+    "net": 2.7296999999999993,
+    "fills": 415,
+    "windows": 3,
     "pos": 1
   },
   "micro_skew15": {
-    "net": 16.4733,
-    "fills": 412,
-    "windows": 2,
+    "net": 12.735199999999999,
+    "fills": 458,
+    "windows": 3,
     "pos": 1
   },
   "flow_gate": {
-    "net": 4.640199999999999,
-    "fills": 71,
-    "windows": 2,
+    "net": -0.28960000000000097,
+    "fills": 80,
+    "windows": 3,
     "pos": 1
   },
   "sell_lean": {
-    "net": 4.6503,
-    "fills": 537,
-    "windows": 2,
+    "net": -6.9039,
+    "fills": 613,
+    "windows": 3,
     "pos": 1
   },
   "late_gate": {
-    "net": -0.07069999999999954,
-    "fills": 522,
-    "windows": 2,
+    "net": -8.3113,
+    "fills": 599,
+    "windows": 3,
     "pos": 1
   },
   "av_stoikov": {
-    "net": 24.915,
-    "fills": 650,
-    "windows": 2,
+    "net": 15.755799999999999,
+    "fills": 751,
+    "windows": 3,
     "pos": 1
   },
   "spot_react": {
-    "net": 5.0459,
-    "fills": 467,
-    "windows": 2,
+    "net": -3.6898999999999997,
+    "fills": 541,
+    "windows": 3,
     "pos": 1
   }
 }
