@@ -74,14 +74,16 @@ C = "https://clob.polymarket.com"
 DEPLETE_FRAC = 0.35   # queue-jump depletion trigger: best queue < this * its EMA => about to deplete
 
 
-def active_market(sess):
-    now = int(time.time()); ws = now - (now % 900)
-    for cand in (ws, ws + 900):
-        ev = sess.get(G + "/events", params={"slug": f"btc-updown-15m-{cand}"}, timeout=15).json()
+def active_market(sess, asset="btc", tenor_min=15):
+    """Active {asset}-updown-{tenor_min}m market (breadth-ready; defaults to BTC 15m)."""
+    win = tenor_min * 60
+    now = int(time.time()); ws = now - (now % win)
+    for cand in (ws, ws + win):
+        ev = sess.get(G + "/events", params={"slug": f"{asset}-updown-{tenor_min}m-{cand}"}, timeout=15).json()
         if ev and not ev[0]["markets"][0].get("closed"):
             m = ev[0]["markets"][0]; toks = json.loads(m["clobTokenIds"])
             return {"cid": m["conditionId"], "up": str(toks[0]), "down": str(toks[1]),
-                    "ws": cand, "we": cand + 900,
+                    "ws": cand, "we": cand + win,
                     "tick": float(m.get("orderPriceMinTickSize", 0.01) or 0.01),
                     "min_size": float(m.get("orderMinSize", 5) or 5),
                     "negRisk": bool(m.get("negRisk", False))}
@@ -99,9 +101,9 @@ def book(sess, token):
     return bb, ba, bsz, asz
 
 
-def resolve(sess, ws):
+def resolve(sess, ws, asset="btc", tenor_min=15):
     try:
-        ev = sess.get(G + "/events", params={"slug": f"btc-updown-15m-{ws}"}, timeout=10).json()
+        ev = sess.get(G + "/events", params={"slug": f"{asset}-updown-{tenor_min}m-{ws}"}, timeout=10).json()
         if ev:
             m = ev[0]["markets"][0]; op = m.get("outcomePrices")
             if m.get("closed") and op:
@@ -406,6 +408,8 @@ def main():
     ap.add_argument("--max-notional", type=float, default=25)
     ap.add_argument("--loss-limit", type=float, default=5)
     ap.add_argument("--poll", type=float, default=3)
+    ap.add_argument("--asset", default="btc", help="btc/eth/sol/xrp (breadth; run one instance per market)")
+    ap.add_argument("--tenor-min", type=int, default=15, help="market tenor minutes (15 or 5)")
     ap.add_argument("--duration", type=int, default=3600)
     # QUEUE-POSITIONING A/B (live-only test; QUEUE.md). Arm A: lead-aware standing-rung priority --
     # on a fast BTC move, HOLD aged rungs on the side the book is moving toward (front-of-queue when
@@ -535,7 +539,7 @@ def main():
         try:
             if mk is None or time.time() >= mk["we"]:
                 if mk is not None:                       # settle (d) for the closing window
-                    r = resolve(sess, mk["ws"])
+                    r = resolve(sess, mk["ws"], a.asset, a.tenor_min)
                     if r is not None:
                         rlog.settle(mk["ws"], mk["up"], r)
                         rlog.settle(mk["ws"], mk["down"], 1 - r)
@@ -549,7 +553,7 @@ def main():
                     if action == "merge" and sets > 0:
                         mm.merge(mk["cid"], sets)
                 cancel_all_resting()                     # window rollover: tokens change, must reset
-                mk = active_market(sess)
+                mk = active_market(sess, a.asset, a.tenor_min)
                 if not mk:
                     time.sleep(a.poll); continue
                 if fv is not None:
