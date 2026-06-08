@@ -481,18 +481,33 @@ def main():
                 print("KILL: rolling markout toxic. cancel-all + exit."); notify.alert("[pmkit] KILL markout toxic")
                 cancel_all_resting(); break
 
-            # --- BOX-ARB mode: direction-free/fee-free complete-set capture (instead of the ladder) ---
+            # --- BOX-ARB mode: complete-set (UP+DOWN -> $1). TWO distinct edges (see box_probe.py):
+            #   MAKER box (what we POST here): rest sells on both asks (mint-sourced) / rest buys on both
+            #     bids. Earns ask_up+ask_dn-1 (~+1 tick) -- the MM spread -- and is risk-free ONLY if BOTH
+            #     legs fill; if one fills you hold a directional leg (legging risk). This is the seat we
+            #     already study, expressed as a complete set.  TAKER box (the genuinely risk-free/free line):
+            #     bid_up+bid_dn>1 (hit both) or ask_up+ask_dn<1 (lift both) -- competed away in liquid 15m
+            #     crypto. We LOG it whenever it appears so the operator sees a true free arb vs the spread. ---
             if a.box_arb:
                 bbu, bau, _, _ = book(sess, mk["up"]); bbd, bad, _, _ = book(sess, mk["down"])
                 mmb = collateral.MintMerge(live, neg_risk=mk.get("negRisk", False))
+                if None not in (bbu, bau, bbd, bad):     # surface any genuinely risk-free TAKER box first
+                    if bbu + bbd - 1.0 > 0:
+                        boxlog({"ws": mk["ws"], "side": "FREE_sell_taker", "bid_up": bbu, "bid_dn": bbd,
+                                "premium_per_set": round(bbu + bbd - 1.0, 4), "sets": a.box_sets,
+                                "gross_if_filled": round((bbu + bbd - 1.0) * a.box_sets, 4)})
+                    if 1.0 - (bau + bad) > 0:
+                        boxlog({"ws": mk["ws"], "side": "FREE_buy_taker", "ask_up": bau, "ask_dn": bad,
+                                "premium_per_set": round(1.0 - (bau + bad), 4), "sets": a.box_sets,
+                                "gross_if_filled": round((1.0 - (bau + bad)) * a.box_sets, 4)})
                 if bau is not None and bad is not None and (bau + bad - 1.0) > a.box_margin and bau + bad < 2:
-                    prem = bau + bad - 1.0                # SELL both legs: receive asks for a $1 set
+                    prem = bau + bad - 1.0                # MAKER: rest SELL both at the asks for a $1 set
                     mmb.split(mk["cid"], a.box_sets)      # mint N sets ($N) to source both legs (dry-safe)
                     place(mk["up"], "SELL", bau, 0.0); place(mk["down"], "SELL", bad, 0.0)
                     boxlog({"ws": mk["ws"], "side": "sell_box", "ask_up": bau, "ask_dn": bad,
                             "premium_per_set": round(prem, 4), "sets": a.box_sets, "gross_if_filled": round(prem * a.box_sets, 4)})
                 if bbu is not None and bbd is not None and (1.0 - bbu - bbd) > a.box_margin and bbu + bbd > 0:
-                    prem = 1.0 - bbu - bbd                # BUY both legs: pay bids; merge -> $1/set
+                    prem = 1.0 - bbu - bbd                # MAKER: rest BUY both at the bids; merge -> $1/set
                     place(mk["up"], "BUY", bbu, 0.0); place(mk["down"], "BUY", bbd, 0.0)
                     boxlog({"ws": mk["ws"], "side": "buy_box", "bid_up": bbu, "bid_dn": bbd,
                             "premium_per_set": round(prem, 4), "sets": a.box_sets, "gross_if_filled": round(prem * a.box_sets, 4)})

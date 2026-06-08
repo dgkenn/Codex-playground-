@@ -301,12 +301,21 @@ class Variant:
         fl = self.shared.get("flow", {}).get(token, [])
         flow5 = sum(s for (tt, s) in fl if tnow - tt <= 5)    # signed taker vol last 5s (informed flow)
         flow30 = sum(s for (tt, s) in fl if tnow - tt <= 30)  # signed taker vol last 30s
-        # complete-set BOX premium at fill (cross-token; this variant tracks both tobs): selling BOTH
-        # legs nets ask_up+ask_dn for a $1 set => box_ask>0 = risk-free gross/set if both legs fill.
+        # complete-set BOX premiums at fill (cross-token; this variant tracks both tobs). A complete set
+        # (UP+DOWN) settles to exactly $1, so two conventions matter and they are NOT the same edge:
+        #   MAKER box (box_ask/box_bid): the round-trip spread you earn if you REST on both legs and both
+        #     fill (ask_up+ask_dn-1 ; 1-bid_up-bid_dn). In a 1-tick market this is ~+1 tick mechanically
+        #     -- it is the MM spread we already harvest, with legging risk (only risk-free if BOTH fill).
+        #   TAKER box (box_sell_tk/box_buy_tk): the genuinely risk-free/direction-free/fee-free arb you
+        #     CROSS into -- sell both into the bids when bid_up+bid_dn>1, or buy both at the asks when
+        #     ask_up+ask_dn<1. >0 here = free money even as a taker; the literature says this is competed
+        #     away in liquid 15m crypto (sub-100ms bots, dynamic fee). Logging it settles that empirically.
         other = self.mk["down"] if token == self.mk["up"] else self.mk["up"]
         obb, _obsz, oba, _oasz = self.tob[other]
-        box_ask = (ba + oba - 1.0) if (ba is not None and oba is not None) else None   # sell-both premium
-        box_bid = (1.0 - (bb + obb)) if (bb is not None and obb is not None) else None  # buy-both premium
+        box_ask = (ba + oba - 1.0) if (ba is not None and oba is not None) else None     # MAKER sell-both spread
+        box_bid = (1.0 - (bb + obb)) if (bb is not None and obb is not None) else None   # MAKER buy-both spread
+        box_sell_tk = (bb + obb - 1.0) if (bb is not None and obb is not None) else None  # TAKER sell-both (free if >0)
+        box_buy_tk = (1.0 - (ba + oba)) if (ba is not None and oba is not None) else None  # TAKER buy-both (free if >0)
         self.fill_log.append({
             "t": tnow, "tau": round(max(self.mk["we"] - tnow, 0.0), 1),
             "reason": reason, "side": our_side, "up": is_up,
@@ -325,6 +334,8 @@ class Variant:
             "flow5": round(flow5, 2), "flow30": round(flow30, 2),
             "box_ask": round(box_ask, 4) if box_ask is not None else None,
             "box_bid": round(box_bid, 4) if box_bid is not None else None,
+            "box_sell_tk": round(box_sell_tk, 4) if box_sell_tk is not None else None,
+            "box_buy_tk": round(box_buy_tk, 4) if box_buy_tk is not None else None,
             "delta": round(self.delta, 3), "cap": self.cap,
             "skew_lim": round(self.skew * self.cap, 3), "gate": self.gate or "none"})
 
