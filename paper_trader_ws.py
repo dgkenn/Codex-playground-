@@ -39,20 +39,23 @@ def jdump(fh, obj):
     fh.write(json.dumps(obj) + "\n"); fh.flush()
 
 
-def active_market(sess):
-    now = int(time.time()); ws = now - (now % 900)
-    for cand in (ws, ws + 900):
-        ev = sess.get(G + "/events", params={"slug": f"btc-updown-15m-{cand}"}, timeout=15).json()
+def active_market(sess, asset="btc", tenor_min=15):
+    """Active {asset}-updown-{tenor_min}m market. Defaults to BTC 15m (backward-compatible). The
+    window length = tenor_min*60, so 5m and 15m (and other assets) share one parametrized path."""
+    win = tenor_min * 60
+    now = int(time.time()); ws = now - (now % win)
+    for cand in (ws, ws + win):
+        ev = sess.get(G + "/events", params={"slug": f"{asset}-updown-{tenor_min}m-{cand}"}, timeout=15).json()
         if ev and not ev[0]["markets"][0].get("closed"):
             m = ev[0]["markets"][0]; toks = json.loads(m["clobTokenIds"])
             return {"cid": m["conditionId"], "up": str(toks[0]), "down": str(toks[1]),
-                    "ws": cand, "we": cand + 900}
+                    "ws": cand, "we": cand + win, "asset": asset, "tenor_min": tenor_min}
     return None
 
 
-def resolve(sess, ws):
+def resolve(sess, ws, asset="btc", tenor_min=15):
     try:
-        ev = sess.get(G + "/events", params={"slug": f"btc-updown-15m-{ws}"}, timeout=10).json()
+        ev = sess.get(G + "/events", params={"slug": f"{asset}-updown-{tenor_min}m-{ws}"}, timeout=10).json()
         if ev:
             m = ev[0]["markets"][0]; op = m.get("outcomePrices")
             if m.get("closed") and op:

@@ -65,6 +65,14 @@ MICRO_REACT_THR = 0.004   # |microprice move| over the lookback to trigger a pul
 DEPLETE_FRAC = 0.35   # deplete_gate: best-queue < this * its rolling avg => about to deplete (Fokker-Planck)
 MICRO_MARGIN = 0.002  # micro_marg: required edge above microprice to fill (separate2: Q1+Q2 edge<0.001 toxic)
 TAKER_ENABLED = False  # lag_taker DISCONTINUED: offensive latency-take loses to the fee (-27.9/win)
+# MAKEREDGE.md #7 vol_gate: adverse selection clusters in BTC vol bursts (the lead-lag pickoff). Pull
+# BOTH sides when short-horizon BTC realized vol spikes; quote full size in calm regimes (Glosten-Milgrom).
+VOL_LAG_S = 20        # lookback for BTC realized vol (s)
+VOL_BPS = 6.0         # realized vol over the lookback, in bps of spot, above which we pull (calibrate)
+MO_K = 150.0          # mo_size: size multiplier slope on micro-favorability (MAKEREDGE.md #3)
+# MAKEREDGE.md #4 as_full: vol-adaptive A-S -> scale the calibrated `as` inventory penalty by realized
+# vol vs this reference (A-S penalty ~ sigma^2). SIGMA_REF ~ a typical 20s BTC realized-vol fraction.
+SIGMA_REF = 5e-4
 
 
 def heartbeat(tag, out_dir, cum, status="running"):
@@ -169,7 +177,41 @@ class Variant:
                     or self._gate_one("deplete", token, our_side, price))
         return self._gate_one(self.gate, token, our_side, price)
 
+    def _realized_vol(self):
+        """Short-horizon BTC realized vol over VOL_LAG_S, as a fraction of spot (std of spot in the
+        window / mean). Book-native-adjacent: uses the shared spot trail. 0 if too little history."""
+        hist = self.shared.get("spothist", [])
+        now = time.time()
+        xs = [sp for (tt, sp) in hist if sp is not None and now - tt <= VOL_LAG_S]
+        if len(xs) < 3:
+            return 0.0
+        m = sum(xs) / len(xs)
+        if m <= 0:
+            return 0.0
+        sd = (sum((x - m) ** 2 for x in xs) / (len(xs) - 1)) ** 0.5
+        return sd / m
+
     def _gate_one(self, g, token, our_side, price):
+        if g == "vol":
+            # MAKEREDGE.md #7: pull BOTH sides in a BTC volatility burst (informed-flow risk spikes).
+            return self._realized_vol() * 1e4 > VOL_BPS
+        if g == "as_full":
+            # MAKEREDGE.md #4: VOL-ADAPTIVE Avellaneda-Stoikov. Same calibrated inventory penalty as the
+            # `as` gate (AS_K reaches ~half-spread at |inv|=cap/2 mid-window) but scaled by current BTC
+            # realized vol vs a reference (A-S penalty is proportional to sigma^2): more protective in vol
+            # bursts, more permissive when calm. Bounded [0.5x,3x] so it never degenerates in a 1-tick book.
+            # (The A-S ln(1+gamma/kappa) base-spread term is the tick here, already enforced by the touch.)
+            cur = self.tob[token]; mp = micro(cur[0], cur[1], cur[2], cur[3])
+            if mp is None:
+                return False
+            d_per = -1.0 if (self.is_up(token) == (our_side == "ASK")) else 1.0
+            if self.delta * d_per < 0:
+                return False                          # reduces |inventory| -> never gate
+            edge = (price - mp) if our_side == "ASK" else (mp - price)
+            tau = max(self.mk["we"] - time.time(), 0.0)
+            vol_scale = min(3.0, max(0.5, self._realized_vol() / SIGMA_REF))
+            penalty = AS_K * vol_scale * abs(self.delta) * (tau / WINDOW_S)
+            return edge < penalty
         if g == "micro":
             cur = self.tob[token]; mp = micro(cur[0], cur[1], cur[2], cur[3])
             if mp is None:
@@ -278,6 +320,15 @@ class Variant:
         return False
 
     def _size(self, token, our_side, price):
+        if self.size_mode == "markout":
+            # MAKEREDGE.md #3: scale size by micro-favorability (continuous micro_gate). Size UP when
+            # selling above / buying below the microprice (benign), to ZERO when adverse. fill_prob is
+            # fixed (1-tick, at the touch), so we steer the controllable term E[markout|fill] via size.
+            cur = self.tob[token]; mp = micro(cur[0], cur[1], cur[2], cur[3])
+            if mp is None:
+                return self.post
+            fav = (price - mp) if our_side == "ASK" else (mp - price)   # >0 = favorable (vs microprice)
+            return self.post * min(max(1.0 + MO_K * fav, 0.0), 2.0)
         if self.size_mode != "fv":
             return self.post
         ft = self.fair_tok(token)
@@ -509,6 +560,11 @@ def configs(mk, shared):
         # NEW: cause + symptom -- pull if EITHER the book imbalance OR the BTC-lag flags (proven
         # micro_gate winner stacked with the spot_react lag defense)
         Variant("micro_spot", mk, 50, 0.25, gate="micro_spot", shared=shared),
+        # MAKEREDGE.md expansions (paper-testable):
+        Variant("mo_size", mk, 50, 0.25, size_mode="markout", shared=shared),   # #3 markout-weighted sizing
+        Variant("as_full", mk, 50, 0.99, gate="as_full", shared=shared),        # #4 vol-adaptive Avellaneda-Stoikov
+        Variant("vol_gate", mk, 50, 0.25, gate="vol", shared=shared),           # #7 pull both sides in a BTC vol burst
+        Variant("hedged_big", mk, 200, 0.99, shared=shared),                    # #1 carry big inventory -> hedge_value.py evaluates
     ]
 
 
@@ -651,7 +707,7 @@ async def run(args):
         was settling ONCE at close and skipping forever.)"""
         for item in pending[:]:
             mk2, variants2, midtl2, taker2 = item
-            r = resolve(sess, mk2["ws"])
+            r = resolve(sess, mk2["ws"], mk2.get("asset", "btc"), mk2.get("tenor_min", 15))
             if r is None:
                 continue
             row = {"ts": now_iso(), "ws": mk2["ws"], "resolved_up": r}
@@ -712,7 +768,7 @@ async def run(args):
     end = time.time() + args.duration
     while time.time() < end:
         try_settle()                         # retry any closed-but-unresolved windows
-        mk = active_market(sess)
+        mk = active_market(sess, args.asset, args.tenor_min)
         if mk is None:
             await asyncio.sleep(5); continue
         shared = {"st": None, "s0": None}
@@ -811,6 +867,8 @@ def main():
     ap.add_argument("--duration", type=int, default=300)
     ap.add_argument("--tag", default="", help="suffix for output files (e.g. GH run id) -> unique, conflict-free")
     ap.add_argument("--out-dir", default=".", help="directory for output files")
+    ap.add_argument("--asset", default="btc", help="btc/eth/sol/xrp (cross-asset breadth; MAKEREDGE.md #5)")
+    ap.add_argument("--tenor-min", type=int, default=15, help="market tenor in minutes (15 or 5)")
     asyncio.run(run(ap.parse_args()))
 
 
