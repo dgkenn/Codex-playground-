@@ -177,6 +177,19 @@ class Variant:
                 return False
             return (our_side == "ASK" and mp > price - MICRO_MARGIN) or \
                    (our_side == "BID" and mp < price + MICRO_MARGIN)
+        if g == "tox":
+            # gate the top of the composite-toxicity distribution (separate2.py): skip if the edge
+            # is below margin OR the book is at the bid-HEAVY extreme (sells) / ask-heavy (buys).
+            # Operationalizes "avoid high-tox, keep low-tox" -- keeps rebate on the mild fills.
+            cur = self.tob[token]; mp = micro(cur[0], cur[1], cur[2], cur[3])
+            if mp is None:
+                return False
+            edge_lo = (our_side == "ASK" and mp > price - MICRO_MARGIN) or \
+                      (our_side == "BID" and mp < price + MICRO_MARGIN)
+            tot = (cur[1] or 0) + (cur[3] or 0)
+            imb = (cur[1] or 0) / tot if tot else 0.5
+            imb_tox = (our_side == "ASK" and imb > 0.85) or (our_side == "BID" and imb < 0.15)
+            return edge_lo or imb_tox
         if g == "predict":
             ft = self.fair_tok(token)
             if ft is None:
@@ -442,6 +455,7 @@ def configs(mk, shared):
         Variant("micro_gate", mk, 50, 0.25, gate="micro", shared=shared),
         Variant("micro_skew15", mk, 50, 0.15, gate="micro", shared=shared),   # micro + tight inv (combined winner)
         Variant("micro_marg", mk, 50, 0.25, gate="micro_marg", shared=shared),  # micro + edge MARGIN (separate2 refinement)
+        Variant("tox_gate", mk, 50, 0.25, gate="tox", shared=shared),  # composite gate: edge-margin OR bid-heavy extreme
         Variant("flow_gate", mk, 50, 0.25, gate="flow", shared=shared),
         Variant("late_gate", mk, 50, 0.25, shared=shared, tau_guard=120),
         # principled inventory control (Avellaneda-Stoikov)
