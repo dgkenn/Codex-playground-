@@ -73,6 +73,10 @@ MO_K = 150.0          # mo_size: size multiplier slope on micro-favorability (MA
 # MAKEREDGE.md #4 as_full: vol-adaptive A-S -> scale the calibrated `as` inventory penalty by realized
 # vol vs this reference (A-S penalty ~ sigma^2). SIGMA_REF ~ a typical 20s BTC realized-vol fraction.
 SIGMA_REF = 5e-4
+# MAKERS.md (A3): per-share markout-to-resolution is positive in the moderate-probability band and
+# ~0/negative at the extremes -> band_p/graded variants skip quoting outside [BAND_LO, BAND_HI].
+BAND_LO = 0.20
+BAND_HI = 0.80
 
 
 def heartbeat(tag, out_dir, cum, status="running"):
@@ -175,6 +179,11 @@ class Variant:
             return (self._gate_one("micro", token, our_side, price)
                     or self._gate_one("spot", token, our_side, price)
                     or self._gate_one("deplete", token, our_side, price))
+        if self.gate == "graded":      # MAKERS.md data: pull the WITH-move side at >=2bp (markout -4.7c)
+            # OR the micro-adverse side, AND only quote the moderate-prob band (extremes markout ~0).
+            return (self._gate_one("band", token, our_side, price)
+                    or self._gate_one("micro", token, our_side, price)
+                    or self._gate_one("spot", token, our_side, price))
         return self._gate_one(self.gate, token, our_side, price)
 
     def _realized_vol(self):
@@ -192,6 +201,15 @@ class Variant:
         return sd / m
 
     def _gate_one(self, g, token, our_side, price):
+        if g == "band":
+            # MAKERS.md (A3): maker markout-to-resolution is best at P(Up) ~0.3-0.8 (+1.1..+2.3c/sh) and
+            # ~0/negative at the extremes (<=0.1c: -0.5c; >=0.9: ~0). Skip quoting the deep ITM/OTM tails.
+            cur = self.tob[token]
+            if cur[0] is None or cur[2] is None:
+                return False
+            mid = (cur[0] + cur[2]) / 2.0
+            p_up = mid if self.is_up(token) else 1.0 - mid
+            return p_up < BAND_LO or p_up > BAND_HI
         if g == "vol":
             # MAKEREDGE.md #7: pull BOTH sides in a BTC volatility burst (informed-flow risk spikes).
             return self._realized_vol() * 1e4 > VOL_BPS
@@ -565,6 +583,9 @@ def configs(mk, shared):
         Variant("as_full", mk, 50, 0.99, gate="as_full", shared=shared),        # #4 vol-adaptive Avellaneda-Stoikov
         Variant("vol_gate", mk, 50, 0.25, gate="vol", shared=shared),           # #7 pull both sides in a BTC vol burst
         Variant("hedged_big", mk, 200, 0.99, shared=shared),                    # #1 carry big inventory -> hedge_value.py evaluates
+        # MAKERS.md data-backed (reverse-engineered from winning wallets):
+        Variant("band_p", mk, 50, 0.25, gate="band", shared=shared),            # A3: quote only moderate-prob band
+        Variant("graded", mk, 25, 0.15, gate="graded", shared=shared),          # A4+A3+A2: with-move-pull + band + tight clip
     ]
 
 
