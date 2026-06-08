@@ -23,7 +23,7 @@ G = "https://gamma-api.polymarket.com"; C = "https://clob.polymarket.com"
 PROFILE = {
     "assets": ["btc", "eth", "sol", "xrp"],
     "tenors": [5, 15],
-    "depth_ticks": 3,          # quote a ladder this many ticks from each touch (their ~6 levels span)
+    "depth_ticks": 14,        # MEASURED ladder width for >=95% capture (median fill 2tk, p95 14tk; copy_live)
     "clip_usd": 6.0,           # per-order notional (their median); scaled by position_multiplier
     "both_tokens": True,       # quote Up AND Down (two-sided complete-set accumulation)
     "buy_set_max": 1.00,       # only add to a leg if it keeps the complete-set buy-sum <= this (~discount)

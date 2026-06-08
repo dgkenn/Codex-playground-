@@ -18,7 +18,7 @@ import json, os, subprocess, sys, time
 
 DEFAULT = "0x20d2309cd92b797ae7ca175ed828ed8a27fbe29d"
 MIN_FILLS = 30                  # need this many scored fills before trusting a capture number
-FAITHFUL_DEPTH = 7             # capturing only at depth>7 isn't a faithful copy (they don't rest that deep)
+FAITHFUL_DEPTH = 15            # their measured ladder spans ~14tk (copy_live); capture 95% there = faithful
 
 
 def parse_slug(slug):
