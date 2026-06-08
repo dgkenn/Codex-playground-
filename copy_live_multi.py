@@ -43,7 +43,33 @@ def discover(sess):
     return idx
 
 
+def analyze_file(path="copy_multi_capture.jsonl"):
+    """offline per-wallet verdict from pooled fills: capture-vs-depth + depth-for-95% (= their ladder)."""
+    W = collections.defaultdict(list)
+    for ln in open(path):
+        try:
+            r = json.loads(ln)
+        except Exception:
+            continue
+        W[r["w"]].append(r["inside_tk"])
+    mm = {r["w"][:10]: r for r in json.load(open("mm_score.json"))}
+    print(f"{'wallet':>12}{'fills':>6}{'d3':>5}{'d7':>5}{'d14':>5}{'d20':>5}{'depth95':>8}{'status':>10}")
+    ok = 0
+    for w, ins in sorted(W.items(), key=lambda kv: -len(kv[1])):
+        n = len(ins)
+        cap = {d: round(100 * sum(1 for x in ins if -1 <= x <= d) / n, 1) for d in DEPTHS}
+        d95 = next((d for d in DEPTHS if d <= SANE_DEPTH and cap[d] >= 95), None)
+        status = "OK" if (n >= 20 and d95) else ("idle/few" if n < 20 else "deep/momentum")
+        if status == "OK":
+            ok += 1
+        print(f"{w:>12}{n:>6}{cap[3]:>5.0f}{cap[7]:>5.0f}{cap[14]:>5.0f}{cap[20]:>5.0f}{(d95 or 0):>8}{status:>10}")
+    print(f"\n{ok}/{len(W)} wallets seen reach >=95% at a sane ladder depth (>=20 fills). "
+          f"Pool more (overnight) for the long tail; momentum/directional wallets won't fit a touch-ladder copy.")
+
+
 def main():
+    if "--analyze" in sys.argv:
+        analyze_file(); return
     dur = int(sys.argv[1]) if len(sys.argv) > 1 else 3600
     wallets = top_wallets()
     idx = {}; touches = collections.defaultdict(lambda: collections.deque(maxlen=700)); last_app = {}
@@ -142,7 +168,15 @@ def main():
             for d in DEPTHS:
                 if -tick - 1e-9 <= dist <= d * tick + 1e-9:
                     a["cap"][d] += 1
-        # periodic status: how many wallets at >=95% within a sane depth
+            fh.write(json.dumps({"w": w[:10], "side": side, "p": p, "tick": tick,
+                                 "inside_tk": round(dist / tick, 1)}) + "\n")   # captured@d iff -1<=inside_tk<=d
+        fh.flush()
+        # periodic per-wallet status (wallets with enough fills) + convergence count
+        for w in wallets:
+            a = W[w]
+            if a["tot"] >= 15 and a["tot"] % 5 == 0:
+                cv = {d: round(100 * a["cap"][d] / a["tot"]) for d in (3, 7, 14, 20)}
+                print(f"    {w[:10]} n={a['tot']} cap%={cv}", flush=True)
         done = sum(1 for w in wallets if conv(W[w]))
         print(f"  t+{int(time.time())-start}s fills={sum(W[w]['tot'] for w in wallets)} "
               f"wallets>=95%@sane={done}/{len(wallets)}", flush=True)
