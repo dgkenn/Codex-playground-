@@ -1,0 +1,44 @@
+{
+  "baseline": {
+    "net": -2.6479,
+    "fills": 43,
+    "windows": 1,
+    "pos": 0
+  },
+  "cap25": {
+    "net": -1.5093,
+    "fills": 38,
+    "windows": 1,
+    "pos": 0
+  },
+  "cap100": {
+    "net": -2.9449,
+    "fills": 55,
+    "windows": 1,
+    "pos": 0
+  },
+  "skew15": {
+    "net": -1.1862,
+    "fills": 39,
+    "windows": 1,
+    "pos": 0
+  },
+  "fv_size": {
+    "net": -2.6479,
+    "fills": 43,
+    "windows": 1,
+    "pos": 0
+  },
+  "micro_gate": {
+    "net": -0.8858,
+    "fills": 37,
+    "windows": 1,
+    "pos": 0
+  },
+  "predict": {
+    "net": -2.6479,
+    "fills": 43,
+    "windows": 1,
+    "pos": 0
+  }
+}
