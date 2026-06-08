@@ -60,6 +60,7 @@ SPOT_BPS = 2.0        # |BTC move| over the lookback, in bps of spot, to trigger
 # the BOOK's microprice velocity (the fast signal) -- the corrected version of spot_react.
 MICRO_LAG_S = 4       # seconds of microprice lookback (book reacts fast)
 MICRO_REACT_THR = 0.004   # |microprice move| over the lookback to trigger a pull (book just repriced)
+MICRO_MARGIN = 0.002  # micro_marg: required edge above microprice to fill (separate2: Q1+Q2 edge<0.001 toxic)
 
 
 def heartbeat(tag, out_dir, cum, status="running"):
@@ -167,6 +168,15 @@ class Variant:
                 return False
             # selling (ASK) toxic if microprice above our ask (book tipping up); BID toxic if below
             return (our_side == "ASK" and mp > price) or (our_side == "BID" and mp < price)
+        if g == "micro_marg":
+            # refinement (separate2.py): even small-positive-edge fills (edge 0..0.001) were toxic;
+            # require an edge MARGIN, not just edge>0 -> skip unless selling >MARGIN above micro
+            # (resp. buying >MARGIN below). Cuts the Q1+Q2 toxic buckets; trades rebate volume for it.
+            cur = self.tob[token]; mp = micro(cur[0], cur[1], cur[2], cur[3])
+            if mp is None:
+                return False
+            return (our_side == "ASK" and mp > price - MICRO_MARGIN) or \
+                   (our_side == "BID" and mp < price + MICRO_MARGIN)
         if g == "predict":
             ft = self.fair_tok(token)
             if ft is None:
@@ -431,6 +441,7 @@ def configs(mk, shared):
         # toxicity gating on the token's OWN book (the proven edge, t=+5.4)
         Variant("micro_gate", mk, 50, 0.25, gate="micro", shared=shared),
         Variant("micro_skew15", mk, 50, 0.15, gate="micro", shared=shared),   # micro + tight inv (combined winner)
+        Variant("micro_marg", mk, 50, 0.25, gate="micro_marg", shared=shared),  # micro + edge MARGIN (separate2 refinement)
         Variant("flow_gate", mk, 50, 0.25, gate="flow", shared=shared),
         Variant("late_gate", mk, 50, 0.25, shared=shared, tau_guard=120),
         # principled inventory control (Avellaneda-Stoikov)
