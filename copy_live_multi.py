@@ -51,20 +51,22 @@ def analyze_file(path="copy_multi_capture.jsonl"):
             r = json.loads(ln)
         except Exception:
             continue
-        W[r["w"]].append(r["inside_tk"])
-    mm = {r["w"][:10]: r for r in json.load(open("mm_score.json"))}
-    print(f"{'wallet':>12}{'fills':>6}{'d3':>5}{'d7':>5}{'d14':>5}{'d20':>5}{'depth95':>8}{'status':>10}")
-    ok = 0
-    for w, ins in sorted(W.items(), key=lambda kv: -len(kv[1])):
-        n = len(ins)
-        cap = {d: round(100 * sum(1 for x in ins if -1 <= x <= d) / n, 1) for d in DEPTHS}
-        d95 = next((d for d in DEPTHS if d <= SANE_DEPTH and cap[d] >= 95), None)
-        status = "OK" if (n >= 20 and d95) else ("idle/few" if n < 20 else "deep/momentum")
-        if status == "OK":
-            ok += 1
-        print(f"{w:>12}{n:>6}{cap[3]:>5.0f}{cap[7]:>5.0f}{cap[14]:>5.0f}{cap[20]:>5.0f}{(d95 or 0):>8}{status:>10}")
-    print(f"\n{ok}/{len(W)} wallets seen reach >=95% at a sane ladder depth (>=20 fills). "
-          f"Pool more (overnight) for the long tail; momentum/directional wallets won't fit a touch-ladder copy.")
+        W[r["w"]].append(r)
+    print(f"{'wallet':>12}{'fills':>6}{'passive%':>9}{'taker%':>8}{'lag/far%':>9}{'ladder95?':>10}")
+    print("  passive=at our quote (copyable by resting) | taker=they CROSSED (need a taker rule) | lag/far=touch lag")
+    for w, rs in sorted(W.items(), key=lambda kv: -len(kv[1])):
+        n = len(rs)
+        if n < 10:
+            continue
+        kinds = collections.Counter(r.get("kind", "passive") for r in rs)
+        passive = 100 * kinds["passive"] / n; taker = 100 * kinds["taker"] / n; far = 100 * kinds["lag/far"] / n
+        # max passive recall reachable by a ladder (passive fills within depth 20)
+        ins = [r["inside_tk"] for r in rs]
+        lad20 = 100 * sum(1 for x in ins if -1 <= x <= 20) / n
+        print(f"{w:>12}{n:>6}{passive:>8.0f}%{taker:>7.0f}%{far:>8.0f}%{lad20:>9.0f}%")
+    print(f"\nKEY: a passive-ladder copy can only reach the 'passive%' (+ tighter touch sync recovers some "
+          f"'lag/far'). The 'taker%' are fills where the bot CROSSED the spread -> to reach 95% the copy "
+          f"must ALSO take when they take. Precision/false-positives remain unmeasurable (private quotes).")
 
 
 def main():
@@ -72,7 +74,7 @@ def main():
         analyze_file(); return
     dur = int(sys.argv[1]) if len(sys.argv) > 1 else 3600
     wallets = top_wallets()
-    idx = {}; touches = collections.defaultdict(lambda: collections.deque(maxlen=700)); last_app = {}
+    idx = {}; touches = collections.defaultdict(lambda: collections.deque(maxlen=1500)); last_app = {}
     lock = threading.Lock(); stop = threading.Event(); start = int(time.time())
 
     def ws_thread():
@@ -95,7 +97,7 @@ def main():
                                 continue
                             data = json.loads(raw); now = time.time()
                             def store(tok, bb, ba):
-                                if (bb is None and ba is None) or now - last_app.get(tok, 0) < 0.5:
+                                if (bb is None and ba is None) or now - last_app.get(tok, 0) < 0.25:
                                     return
                                 last_app[tok] = now
                                 with lock:
@@ -139,7 +141,7 @@ def main():
 
     def touch_at(tok, ts):
         with lock:
-            snaps = [x for x in touches.get(tok, ()) if abs(x[0] - ts) <= 5]
+            snaps = [x for x in touches.get(tok, ()) if abs(x[0] - ts) <= 10]
         return min(snaps, key=lambda x: abs(x[0] - ts)) if snaps else None
 
     W = {w: {"tot": 0, "cap": {d: 0 for d in DEPTHS}, "dists": [], "miss": collections.Counter()} for w in wallets}
@@ -168,8 +170,12 @@ def main():
             for d in DEPTHS:
                 if -tick - 1e-9 <= dist <= d * tick + 1e-9:
                     a["cap"][d] += 1
+            # classify: passive (at OUR side touch), taker (at the OPPOSITE touch = they crossed), or far
+            opp = ba if side == "BUY" else bb               # the side a taker would hit
+            taker_tk = (abs(p - opp) / tick) if opp is not None else 999
+            kind = ("passive" if dist >= -1 - 1e-9 else ("taker" if taker_tk <= 1.5 else "lag/far"))
             fh.write(json.dumps({"w": w[:10], "side": side, "p": p, "tick": tick,
-                                 "inside_tk": round(dist / tick, 1)}) + "\n")   # captured@d iff -1<=inside_tk<=d
+                                 "inside_tk": round(dist / tick, 1), "kind": kind}) + "\n")
         fh.flush()
         # periodic per-wallet status (wallets with enough fills) + convergence count
         for w in wallets:
