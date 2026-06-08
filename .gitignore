@@ -35,3 +35,6 @@ copy_result.json
 copy_health.json
 copy_autotune.jsonl
 copy_all_results.json
+copy_multi_result.json
+copy_multi_capture.jsonl
+strategy_models.json
