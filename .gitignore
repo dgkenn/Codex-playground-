@@ -29,3 +29,4 @@ wallet_trades.parquet
 makers_trades.jsonl
 makers_agg.json
 copy_capture.jsonl
+copy_orders.jsonl
