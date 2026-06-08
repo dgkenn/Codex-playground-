@@ -60,6 +60,7 @@ SPOT_BPS = 2.0        # |BTC move| over the lookback, in bps of spot, to trigger
 # the BOOK's microprice velocity (the fast signal) -- the corrected version of spot_react.
 MICRO_LAG_S = 4       # seconds of microprice lookback (book reacts fast)
 MICRO_REACT_THR = 0.004   # |microprice move| over the lookback to trigger a pull (book just repriced)
+DEPLETE_FRAC = 0.35   # deplete_gate: best-queue < this * its rolling avg => about to deplete (Fokker-Planck)
 MICRO_MARGIN = 0.002  # micro_marg: required edge above microprice to fill (separate2: Q1+Q2 edge<0.001 toxic)
 TAKER_ENABLED = False  # lag_taker DISCONTINUED: offensive latency-take loses to the fee (-27.9/win)
 
@@ -191,6 +192,17 @@ class Variant:
             imb = (cur[1] or 0) / tot if tot else 0.5
             imb_tox = (our_side == "ASK" and imb > 0.85) or (our_side == "BID" and imb < 0.15)
             return edge_lo or imb_tox
+        if g == "deplete":
+            # Fokker-Planck: the touch moves when a best queue DEPLETES. Ask queue collapsing
+            # (asz << its rolling avg) => book about to step UP => selling toxic; bid collapsing =>
+            # step DOWN => buying toxic. Scale-invariant (q/q_avg). BOOK-OBSERVABLE (unlike queue position).
+            cur = self.tob[token]; bsz, asz = cur[1], cur[3]
+            qe = self.shared.get("qema", {}).get(token)
+            if not qe:
+                return False
+            if our_side == "ASK":
+                return qe["a"] > 0 and asz < DEPLETE_FRAC * qe["a"]
+            return qe["b"] > 0 and bsz < DEPLETE_FRAC * qe["b"]
         if g == "predict":
             ft = self.fair_tok(token)
             if ft is None:
@@ -460,6 +472,7 @@ def configs(mk, shared):
         Variant("micro_skew15", mk, 50, 0.15, gate="micro", shared=shared),   # micro + tight inv (combined winner)
         Variant("micro_marg", mk, 50, 0.25, gate="micro_marg", shared=shared),  # micro + edge MARGIN (separate2 refinement)
         Variant("tox_gate", mk, 50, 0.25, gate="tox", shared=shared),  # composite gate: edge-margin OR bid-heavy extreme
+        Variant("deplete_gate", mk, 50, 0.25, gate="deplete", shared=shared),  # shed the side whose queue is depleting (#2)
         Variant("flow_gate", mk, 50, 0.25, gate="flow", shared=shared),
         Variant("late_gate", mk, 50, 0.25, shared=shared, tau_guard=120),
         # principled inventory control (Avellaneda-Stoikov)
@@ -645,6 +658,7 @@ async def run(args):
         shared["flow"] = {}   # token -> [(t, signed_taker_size)] rolling trade-flow for informed-flow feature
         shared["spothist"] = [(time.time(), sp)] if sp else []  # (t, BTC spot) trail for spot_react
         shared["microhist"] = {}   # token -> [(t, microprice)] trail for micro_react (book lead signal)
+        shared["qema"] = {}        # token -> {b,a} EMA of best-queue sizes for deplete_gate (Fokker-Planck)
         variants = configs(mk, shared)
         taker = TakerVar("lag_taker", mk, shared)   # offensive latency-arb test (own settle/audit)
         ws_n0 = live["n"]                            # WS tick count at window open (feed-source tag)
@@ -707,6 +721,9 @@ async def run(args):
                                     mh.append((ts_now, mc))
                                     if len(mh) > 40:
                                         del mh[:len(mh) - 40]
+                                qe = shared["qema"].setdefault(tok, {"b": bsz, "a": asz})  # depletion EMA
+                                qe["b"] = 0.95 * qe["b"] + 0.05 * bsz
+                                qe["a"] = 0.95 * qe["a"] + 0.05 * asz
                         taker.step()             # offensive: take stale book quotes on fast BTC moves
             except Exception as e:  # noqa: BLE001
                 L(f"  [ws reconnect] {str(e)[:70]}"); await asyncio.sleep(2)

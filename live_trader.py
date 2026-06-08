@@ -70,6 +70,7 @@ from fvfeed import SpotFair
 
 G = "https://gamma-api.polymarket.com"
 C = "https://clob.polymarket.com"
+DEPLETE_FRAC = 0.35   # queue-jump depletion trigger: best queue < this * its EMA => about to deplete
 
 
 def active_market(sess):
@@ -365,6 +366,7 @@ def main():
     rlog = RepriceLog()
     olog = OrderLog()                  # CAPTURE.md per-order lifecycle + fill ground-truth
     live_btc = {"px": None, "ts": 0.0, "hist": deque()}
+    qema = {}                          # token -> {b,a} EMA of best-queue sizes (depletion trigger)
     if a.queue_jump:                   # Arm A: start the sub-second BTC lead feed
         threading.Thread(target=btc_lead_feeder, args=(live_btc,), daemon=True).start()
         jlog = open("queue_jump_log.jsonl", "a")   # A/B audit: lead-driven protect/shed actions
@@ -474,6 +476,9 @@ def main():
                 bb, ba, bsz, asz = book(sess, token)
                 if bb is None or ba is None:
                     continue
+                if a.queue_jump:                       # rolling avg of best-queue sizes (depletion)
+                    qe = qema.setdefault(token, {"b": bsz, "a": asz})
+                    qe["b"] = 0.9 * qe["b"] + 0.1 * bsz; qe["a"] = 0.9 * qe["a"] + 0.1 * asz
                 base = baseline_levels(mk, token, is_up, bb, ba, net_delta, a.layers, a.cap, a.skew)
                 ft = fv.fair_token(is_up, tau) if fv is not None else None
                 mp = microprice(bb, ba, bsz, asz)        # book-native anchor (#4), always available
@@ -508,15 +513,28 @@ def main():
                 # fee), so the edge is RUNG PRIORITY: protect aged rungs on the side the book moves
                 # TOWARD (front-of-queue when the touch arrives) and shed the side it leaves.
                 lead_fav = lead_adv = None
+                dspot = 0.0
                 if a.queue_jump:
+                    # COMBINE two signals for where the touch is heading: (i) the ~0.5s BTC lead, and
+                    # (ii) Fokker-Planck queue depletion (ask queue collapsing => book steps UP;
+                    # bid collapsing => DOWN). sig>0 => touch heading up => protect BUY, shed SELL.
                     dspot = btc_lead(live_btc, a.jump_lag)
                     px = live_btc.get("px") or 0.0
                     thr = px * a.jump_bps / 1e4
-                    fair_move = (1.0 if is_up else -1.0) * dspot           # how THIS token's fair just moved
-                    if abs(fair_move) >= thr and thr > 0:
-                        # fair rising -> BUY side becomes the touch (protect), SELL side toxic (shed)
-                        lead_fav = "BUY" if fair_move > 0 else "SELL"
-                        lead_adv = "SELL" if fair_move > 0 else "BUY"
+                    fair_move = (1.0 if is_up else -1.0) * dspot
+                    sig = 0
+                    if thr > 0 and abs(fair_move) >= thr:
+                        sig += 1 if fair_move > 0 else -1                  # (i) BTC lead
+                    qe = qema.get(token)
+                    if qe:                                                # (ii) queue depletion
+                        if qe["a"] > 0 and asz < DEPLETE_FRAC * qe["a"]:
+                            sig += 1
+                        if qe["b"] > 0 and bsz < DEPLETE_FRAC * qe["b"]:
+                            sig -= 1
+                    if sig > 0:
+                        lead_fav, lead_adv = "BUY", "SELL"
+                    elif sig < 0:
+                        lead_fav, lead_adv = "SELL", "BUY"
 
                 # --- P1 front-sacred + P2 EV-cancel: decide each resting order ---
                 for key in list(resting):
