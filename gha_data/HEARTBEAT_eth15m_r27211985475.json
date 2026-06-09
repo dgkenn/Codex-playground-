@@ -1,133 +1,133 @@
 {
-  "utc": "2026-06-09T20:06:14.645058+00:00",
+  "utc": "2026-06-09T20:16:44.753136+00:00",
   "tag": "eth15m_r27211985475",
   "status": "running",
-  "settled_windows": 16,
+  "settled_windows": 17,
   "cum": {
     "baseline": {
-      "net": 35.2945,
-      "fills": 1554,
-      "windows": 16,
-      "pos": 12
+      "net": 35.7616,
+      "fills": 1587,
+      "windows": 17,
+      "pos": 13
     },
     "cap25": {
-      "net": 13.172000000000004,
-      "fills": 1331,
-      "windows": 16,
+      "net": 9.020300000000004,
+      "fills": 1356,
+      "windows": 17,
       "pos": 9
     },
     "skew15": {
-      "net": 18.1053,
-      "fills": 1381,
-      "windows": 16,
+      "net": 16.930699999999998,
+      "fills": 1410,
+      "windows": 17,
       "pos": 10
     },
     "dneutral": {
-      "net": 18.777800000000006,
-      "fills": 1222,
-      "windows": 16,
+      "net": 15.833000000000006,
+      "fills": 1246,
+      "windows": 17,
       "pos": 11
     },
     "fv_size": {
-      "net": 47.5249,
-      "fills": 1476,
-      "windows": 16,
-      "pos": 12
+      "net": 47.6038,
+      "fills": 1505,
+      "windows": 17,
+      "pos": 13
     },
     "micro_gate": {
-      "net": 50.75880000000001,
-      "fills": 1195,
-      "windows": 16,
-      "pos": 10
+      "net": 54.39160000000001,
+      "fills": 1226,
+      "windows": 17,
+      "pos": 11
     },
     "micro_skew15": {
-      "net": 58.2339,
-      "fills": 1046,
-      "windows": 16,
+      "net": 56.6522,
+      "fills": 1070,
+      "windows": 17,
       "pos": 13
     },
     "micro_marg": {
-      "net": 41.4387,
-      "fills": 868,
-      "windows": 16,
-      "pos": 11
-    },
-    "tox_gate": {
-      "net": 56.875800000000005,
-      "fills": 852,
-      "windows": 16,
+      "net": 47.689899999999994,
+      "fills": 886,
+      "windows": 17,
       "pos": 12
     },
-    "deplete_gate": {
-      "net": 20.8391,
-      "fills": 1017,
-      "windows": 16,
-      "pos": 8
+    "tox_gate": {
+      "net": 65.3472,
+      "fills": 870,
+      "windows": 17,
+      "pos": 13
     },
-    "gross_max": {
-      "net": 13.8943,
-      "fills": 592,
-      "windows": 16,
+    "deplete_gate": {
+      "net": 29.9474,
+      "fills": 1040,
+      "windows": 17,
       "pos": 9
     },
+    "gross_max": {
+      "net": 23.0899,
+      "fills": 609,
+      "windows": 17,
+      "pos": 10
+    },
     "flow_gate": {
-      "net": 85.3848,
-      "fills": 777,
-      "windows": 16,
+      "net": 84.35679999999999,
+      "fills": 794,
+      "windows": 17,
       "pos": 11
     },
     "late_gate": {
-      "net": 70.1354,
-      "fills": 1215,
-      "windows": 16,
-      "pos": 12
+      "net": 70.6025,
+      "fills": 1248,
+      "windows": 17,
+      "pos": 13
     },
     "av_stoikov": {
-      "net": 55.8068,
-      "fills": 2005,
-      "windows": 16,
-      "pos": 10
+      "net": 57.1345,
+      "fills": 2038,
+      "windows": 17,
+      "pos": 11
     },
     "spot_react": {
-      "net": 18.982899999999997,
-      "fills": 1111,
-      "windows": 16,
-      "pos": 8
+      "net": 21.231999999999996,
+      "fills": 1139,
+      "windows": 17,
+      "pos": 9
     },
     "micro_react": {
-      "net": 4.1186,
-      "fills": 670,
-      "windows": 16,
+      "net": 3.1167999999999996,
+      "fills": 678,
+      "windows": 17,
       "pos": 6
     },
     "micro_spot": {
-      "net": 45.8916,
-      "fills": 865,
-      "windows": 16,
-      "pos": 11
+      "net": 52.9862,
+      "fills": 887,
+      "windows": 17,
+      "pos": 12
     },
     "mo_size": {
-      "net": 63.6965,
-      "fills": 1290,
-      "windows": 16,
+      "net": 62.781,
+      "fills": 1323,
+      "windows": 17,
       "pos": 12
     },
     "micro_soft": {
-      "net": 57.950700000000005,
-      "fills": 1238,
-      "windows": 16,
-      "pos": 11
+      "net": 61.58350000000001,
+      "fills": 1269,
+      "windows": 17,
+      "pos": 12
     },
     "micro_ufat": {
-      "net": 44.868599999999994,
-      "fills": 969,
-      "windows": 16,
-      "pos": 10
+      "net": 51.10209999999999,
+      "fills": 988,
+      "windows": 17,
+      "pos": 11
     },
     "lag_taker": {
       "net": 0.0,
       "fills": 0,
-      "windows": 16,
+      "windows": 17,
       "pos": 0
     }
   }
