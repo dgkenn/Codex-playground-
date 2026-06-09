@@ -1,128 +1,128 @@
 {
   "baseline": {
-    "net": 5.776000000000002,
-    "fills": 972,
-    "windows": 11,
+    "net": 1.6883000000000017,
+    "fills": 1103,
+    "windows": 12,
     "pos": 6
   },
   "cap25": {
-    "net": 16.921900000000004,
-    "fills": 829,
-    "windows": 11,
+    "net": 14.068100000000005,
+    "fills": 936,
+    "windows": 12,
     "pos": 6
   },
   "skew15": {
-    "net": 10.467500000000001,
-    "fills": 856,
-    "windows": 11,
-    "pos": 5
+    "net": 12.2185,
+    "fills": 970,
+    "windows": 12,
+    "pos": 6
   },
   "dneutral": {
-    "net": 17.507200000000005,
-    "fills": 768,
-    "windows": 11,
+    "net": 17.404500000000006,
+    "fills": 866,
+    "windows": 12,
     "pos": 8
   },
   "fv_size": {
-    "net": -1.0748999999999966,
-    "fills": 825,
-    "windows": 11,
-    "pos": 4
-  },
-  "micro_gate": {
-    "net": 29.552699999999998,
-    "fills": 765,
-    "windows": 11,
-    "pos": 7
-  },
-  "micro_skew15": {
-    "net": 42.2239,
-    "fills": 658,
-    "windows": 11,
-    "pos": 8
-  },
-  "micro_marg": {
-    "net": 33.7676,
-    "fills": 651,
-    "windows": 11,
-    "pos": 9
-  },
-  "tox_gate": {
-    "net": 23.5693,
-    "fills": 626,
-    "windows": 11,
-    "pos": 8
-  },
-  "deplete_gate": {
-    "net": -7.2083999999999975,
-    "fills": 714,
-    "windows": 11,
-    "pos": 6
-  },
-  "gross_max": {
-    "net": -14.550199999999997,
-    "fills": 403,
-    "windows": 11,
+    "net": 9.122500000000004,
+    "fills": 907,
+    "windows": 12,
     "pos": 5
   },
+  "micro_gate": {
+    "net": 41.5039,
+    "fills": 855,
+    "windows": 12,
+    "pos": 8
+  },
+  "micro_skew15": {
+    "net": 51.5684,
+    "fills": 740,
+    "windows": 12,
+    "pos": 9
+  },
+  "micro_marg": {
+    "net": 45.0668,
+    "fills": 727,
+    "windows": 12,
+    "pos": 10
+  },
+  "tox_gate": {
+    "net": 33.239,
+    "fills": 694,
+    "windows": 12,
+    "pos": 9
+  },
+  "deplete_gate": {
+    "net": -6.286399999999998,
+    "fills": 797,
+    "windows": 12,
+    "pos": 7
+  },
+  "gross_max": {
+    "net": -5.593999999999996,
+    "fills": 468,
+    "windows": 12,
+    "pos": 6
+  },
   "flow_gate": {
-    "net": -15.6786,
-    "fills": 618,
-    "windows": 11,
-    "pos": 3
+    "net": -8.5977,
+    "fills": 695,
+    "windows": 12,
+    "pos": 4
   },
   "late_gate": {
-    "net": -4.628300000000001,
-    "fills": 685,
-    "windows": 11,
+    "net": -9.391300000000001,
+    "fills": 773,
+    "windows": 12,
     "pos": 5
   },
   "av_stoikov": {
-    "net": 20.261400000000002,
-    "fills": 1168,
-    "windows": 11,
-    "pos": 6
-  },
-  "spot_react": {
-    "net": -20.157199999999992,
-    "fills": 670,
-    "windows": 11,
-    "pos": 6
-  },
-  "micro_react": {
-    "net": -11.192700000000002,
-    "fills": 414,
-    "windows": 11,
-    "pos": 3
-  },
-  "micro_spot": {
-    "net": -10.003200000000007,
-    "fills": 524,
-    "windows": 11,
-    "pos": 6
-  },
-  "mo_size": {
-    "net": 48.492200000000004,
-    "fills": 820,
-    "windows": 11,
-    "pos": 8
-  },
-  "micro_soft": {
-    "net": 34.113600000000005,
-    "fills": 795,
-    "windows": 11,
+    "net": 26.901300000000003,
+    "fills": 1334,
+    "windows": 12,
     "pos": 7
   },
-  "micro_ufat": {
-    "net": 26.163399999999996,
-    "fills": 689,
-    "windows": 11,
+  "spot_react": {
+    "net": -16.82419999999999,
+    "fills": 787,
+    "windows": 12,
+    "pos": 7
+  },
+  "micro_react": {
+    "net": 25.557299999999998,
+    "fills": 468,
+    "windows": 12,
+    "pos": 4
+  },
+  "micro_spot": {
+    "net": 5.273099999999994,
+    "fills": 604,
+    "windows": 12,
+    "pos": 7
+  },
+  "mo_size": {
+    "net": 56.92100000000001,
+    "fills": 916,
+    "windows": 12,
+    "pos": 9
+  },
+  "micro_soft": {
+    "net": 48.9224,
+    "fills": 890,
+    "windows": 12,
     "pos": 8
+  },
+  "micro_ufat": {
+    "net": 35.50919999999999,
+    "fills": 767,
+    "windows": 12,
+    "pos": 9
   },
   "lag_taker": {
     "net": 0.0,
     "fills": 0,
-    "windows": 11,
+    "windows": 12,
     "pos": 0
   }
 }
