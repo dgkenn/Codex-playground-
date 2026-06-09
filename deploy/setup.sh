@@ -25,6 +25,12 @@ pip install -q py-clob-client web3 coincurve
 python3 - <<'PY'
 import importlib.util as u
 print("  coincurve:", "OK (eth_account will use libsecp256k1 -> sub-ms signing)" if u.find_spec("coincurve") else "MISSING")
+# live_trader.make_client imports `py_clob_client_v2` (SignatureTypeV2.POLY_1271) -- NOT the same module
+# as the pip 'py-clob-client' (module py_clob_client). Verify the EXACT import the bot needs resolves;
+# if not, install/expose the v2 client on this box before arming. go_live.py also gates on this.
+ok = u.find_spec("py_clob_client_v2") is not None
+print("  py_clob_client_v2:", "OK" if ok else
+      "MISSING -- live_trader needs it. Ensure the v2 CLOB client is installed/on PYTHONPATH before --live.")
 PY
 
 echo
