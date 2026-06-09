@@ -1,22 +1,33 @@
-shadow comparison over 59 de-duped windows | files=22
+shadow comparison over 68 de-duped windows | files=23
 
      variant  net/win  Δvs base  paired t GROSS/win  gross t
-  micro_gate   +5.828    +5.277     +6.06    +1.535    +1.72 <edge>
-       cap25   +2.393    +1.841     +3.67    -1.207    -2.09
-      skew15   +2.190    +1.638     +3.93    -1.711    -2.51
-micro_skew15   +3.175    +4.695     +4.94    +0.153    +0.16 <edge>
-  av_stoikov   +3.405    +4.547     +1.82    -1.369    -0.51
-     fv_size   +1.327    +0.776     +1.67    -2.928    -3.57
-    baseline   +0.551                        -3.812    -4.42
-  micro_spot   +6.019    +5.241     +1.89    +2.590    +0.99 <edge>
- micro_react   +2.755    +3.816     +1.11    +0.299    +0.14 <edge>
+  micro_gate   +4.757    +5.328     +6.80    +0.418    +0.46 <edge>
+       cap25   +1.726    +2.297     +4.62    -2.012    -3.33
+      skew15   +1.483    +2.054     +4.92    -2.543    -3.63
+micro_skew15   +2.199    +5.322     +6.37    -0.991    -1.13
+  av_stoikov   +1.019    +4.013     +2.15    -4.056    -1.79
+ micro_react   +1.582    +6.765     +2.90    -0.853    -0.47
+  micro_marg   +2.201   +10.132     +4.19    -0.779    -0.37
+    tox_gate   +2.116   +10.047     +4.64    -0.820    -0.37
      predict   +0.261    -0.274     -0.25    -2.460    -1.93
-  spot_react   +0.534    +1.675     +1.34    -2.876    -2.06
-   late_gate   +0.408    +1.550     +1.17    -3.241    -2.45
-   flow_gate   -0.076    +1.444     +0.63    -0.845    -0.52
+     fv_size   +0.139    +0.711     +1.76    -4.309    -4.55
+   gross_max   +0.586    +8.517     +3.67    -1.616    -0.73
+     mo_size   +0.580    +8.510     +4.06    -4.473    -1.54
+  micro_spot   +0.174    +5.425     +2.94    -3.277    -1.47
+deplete_gate   -1.294    +6.637     +3.83    -4.613    -2.11
+      graded   -2.365    +5.565     +2.02    -4.562    -2.96
+    dneutral   -2.513    +5.417     +3.41    -6.643    -3.78
+   flow_gate   -0.992    +2.130     +1.14    -1.842    -1.46
+    baseline   -0.571                        -5.112    -5.33
    sell_lean   -2.196    -0.277     -0.40    -5.928    -3.51
+  spot_react   -1.725    +1.268     +1.32    -5.338    -3.61
+   late_gate   -1.830    +1.164     +1.20    -5.798    -3.93
+    vol_gate   -7.931    +0.000       n/a   -13.205    -3.85
       cap100   -1.318    -1.853     -2.48    -6.525    -4.74
-   lag_taker  -23.803   -24.581     -2.21    -7.562    -0.83
+     as_full   -8.259    -0.329     -0.14   -14.640    -3.54
+      band_p   -9.162    -1.232     -1.07   -13.662    -5.37
+   lag_taker   -7.324    -2.073     -0.37    -2.327    -0.86
+  hedged_big  -44.948   -37.018     -3.27   -55.320    -4.98
 
-Read: paired t = net edge OVER baseline (rebate-inclusive). GROSS/win = trade P&L EXCLUDING the rebate = the edge OUTSIDE rebates; gross t vs 0, |t|>2 notable. n=59.
+Read: paired t = net edge OVER baseline (rebate-inclusive). GROSS/win = trade P&L EXCLUDING the rebate = the edge OUTSIDE rebates; gross t vs 0, |t|>2 notable. n=68.
 Only positive-GROSS variants have an edge beyond rebate harvesting (the micro-gate family).
