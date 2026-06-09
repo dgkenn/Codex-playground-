@@ -1,133 +1,133 @@
 {
-  "utc": "2026-06-09T07:25:42.836615+00:00",
+  "utc": "2026-06-09T07:36:13.238948+00:00",
   "tag": "sol15m_r27184238148",
   "status": "running",
-  "settled_windows": 3,
+  "settled_windows": 4,
   "cum": {
     "baseline": {
-      "net": 0.7976999999999999,
-      "fills": 180,
-      "windows": 3,
+      "net": -11.3137,
+      "fills": 206,
+      "windows": 4,
       "pos": 2
     },
     "cap25": {
-      "net": -0.6271999999999998,
-      "fills": 158,
-      "windows": 3,
+      "net": -13.175,
+      "fills": 180,
+      "windows": 4,
       "pos": 2
     },
     "skew15": {
-      "net": 2.1197,
-      "fills": 165,
-      "windows": 3,
+      "net": -10.4281,
+      "fills": 187,
+      "windows": 4,
       "pos": 2
     },
     "dneutral": {
-      "net": 3.6702999999999997,
-      "fills": 152,
-      "windows": 3,
+      "net": -6.9336,
+      "fills": 172,
+      "windows": 4,
       "pos": 2
     },
     "fv_size": {
-      "net": 5.9581,
-      "fills": 179,
-      "windows": 3,
+      "net": -9.0354,
+      "fills": 203,
+      "windows": 4,
       "pos": 2
     },
     "micro_gate": {
-      "net": 4.6371,
-      "fills": 140,
-      "windows": 3,
+      "net": 1.9868000000000001,
+      "fills": 163,
+      "windows": 4,
       "pos": 3
     },
     "micro_skew15": {
-      "net": 7.0694,
-      "fills": 130,
-      "windows": 3,
+      "net": 4.2511,
+      "fills": 148,
+      "windows": 4,
       "pos": 3
     },
     "micro_marg": {
-      "net": 3.0864000000000003,
-      "fills": 105,
-      "windows": 3,
-      "pos": 2
+      "net": 6.3264000000000005,
+      "fills": 127,
+      "windows": 4,
+      "pos": 3
     },
     "tox_gate": {
-      "net": 3.4345999999999997,
-      "fills": 102,
-      "windows": 3,
-      "pos": 2
+      "net": 6.5074,
+      "fills": 120,
+      "windows": 4,
+      "pos": 3
     },
     "deplete_gate": {
-      "net": -0.7205999999999992,
-      "fills": 121,
-      "windows": 3,
+      "net": -7.338699999999999,
+      "fills": 138,
+      "windows": 4,
       "pos": 2
     },
     "gross_max": {
-      "net": -0.7507999999999999,
-      "fills": 89,
-      "windows": 3,
+      "net": -5.8784,
+      "fills": 101,
+      "windows": 4,
       "pos": 1
     },
     "flow_gate": {
-      "net": -0.40630000000000077,
-      "fills": 176,
-      "windows": 3,
+      "net": -12.1832,
+      "fills": 191,
+      "windows": 4,
       "pos": 2
     },
     "late_gate": {
-      "net": -2.0965999999999996,
-      "fills": 144,
-      "windows": 3,
-      "pos": 1
+      "net": 8.0395,
+      "fills": 155,
+      "windows": 4,
+      "pos": 2
     },
     "av_stoikov": {
-      "net": 4.9924,
-      "fills": 198,
-      "windows": 3,
+      "net": 0.9841999999999995,
+      "fills": 240,
+      "windows": 4,
       "pos": 2
     },
     "spot_react": {
-      "net": 0.5651999999999999,
-      "fills": 144,
-      "windows": 3,
+      "net": -9.0778,
+      "fills": 169,
+      "windows": 4,
       "pos": 2
     },
     "micro_react": {
-      "net": -0.6874000000000002,
-      "fills": 73,
-      "windows": 3,
-      "pos": 2
+      "net": 6.0806,
+      "fills": 88,
+      "windows": 4,
+      "pos": 3
     },
     "micro_spot": {
-      "net": 5.7971,
-      "fills": 115,
-      "windows": 3,
+      "net": 3.5472000000000006,
+      "fills": 137,
+      "windows": 4,
       "pos": 3
     },
     "mo_size": {
-      "net": 14.7236,
-      "fills": 156,
-      "windows": 3,
-      "pos": 3
+      "net": 16.2087,
+      "fills": 175,
+      "windows": 4,
+      "pos": 4
     },
     "micro_soft": {
-      "net": 11.5183,
-      "fills": 149,
-      "windows": 3,
+      "net": 10.5775,
+      "fills": 168,
+      "windows": 4,
       "pos": 3
     },
     "micro_ufat": {
-      "net": 2.0717,
-      "fills": 112,
-      "windows": 3,
+      "net": 0.6830999999999998,
+      "fills": 132,
+      "windows": 4,
       "pos": 2
     },
     "lag_taker": {
       "net": 0.0,
       "fills": 0,
-      "windows": 3,
+      "windows": 4,
       "pos": 0
     }
   }
