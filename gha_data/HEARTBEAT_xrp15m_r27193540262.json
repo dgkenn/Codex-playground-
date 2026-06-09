@@ -1,133 +1,133 @@
 {
-  "utc": "2026-06-09T14:43:06.432040+00:00",
+  "utc": "2026-06-09T14:52:06.649766+00:00",
   "tag": "xrp15m_r27193540262",
   "status": "running",
-  "settled_windows": 11,
+  "settled_windows": 12,
   "cum": {
     "baseline": {
-      "net": 2.6723000000000003,
-      "fills": 620,
-      "windows": 11,
+      "net": -3.1431,
+      "fills": 647,
+      "windows": 12,
       "pos": 5
     },
     "cap25": {
-      "net": -5.269800000000002,
-      "fills": 505,
-      "windows": 11,
+      "net": -9.2802,
+      "fills": 528,
+      "windows": 12,
       "pos": 5
     },
     "skew15": {
-      "net": -1.8786,
-      "fills": 534,
-      "windows": 11,
+      "net": -5.897600000000001,
+      "fills": 557,
+      "windows": 12,
       "pos": 6
     },
     "dneutral": {
-      "net": -0.3685999999999994,
-      "fills": 460,
-      "windows": 11,
+      "net": -3.1279999999999992,
+      "fills": 483,
+      "windows": 12,
       "pos": 6
     },
     "fv_size": {
-      "net": -5.322699999999996,
-      "fills": 596,
-      "windows": 11,
+      "net": -10.200699999999996,
+      "fills": 626,
+      "windows": 12,
       "pos": 5
     },
     "micro_gate": {
-      "net": 31.694200000000002,
-      "fills": 470,
-      "windows": 11,
+      "net": 24.5938,
+      "fills": 490,
+      "windows": 12,
       "pos": 7
     },
     "micro_skew15": {
-      "net": 16.6154,
-      "fills": 409,
-      "windows": 11,
+      "net": 11.5365,
+      "fills": 426,
+      "windows": 12,
       "pos": 8
     },
     "micro_marg": {
-      "net": 34.9535,
-      "fills": 378,
-      "windows": 11,
+      "net": 28.6482,
+      "fills": 396,
+      "windows": 12,
       "pos": 8
     },
     "tox_gate": {
-      "net": 36.905199999999994,
-      "fills": 370,
-      "windows": 11,
+      "net": 30.599899999999995,
+      "fills": 388,
+      "windows": 12,
       "pos": 8
     },
     "deplete_gate": {
-      "net": 14.7381,
-      "fills": 468,
-      "windows": 11,
+      "net": 7.2437,
+      "fills": 489,
+      "windows": 12,
       "pos": 6
     },
     "gross_max": {
-      "net": 1.0488,
-      "fills": 263,
-      "windows": 11,
+      "net": -8.0253,
+      "fills": 272,
+      "windows": 12,
       "pos": 6
     },
     "flow_gate": {
-      "net": 5.298199999999999,
-      "fills": 547,
-      "windows": 11,
+      "net": -1.1057000000000015,
+      "fills": 572,
+      "windows": 12,
       "pos": 5
     },
     "late_gate": {
-      "net": -6.079000000000002,
-      "fills": 490,
-      "windows": 11,
+      "net": -11.874700000000002,
+      "fills": 516,
+      "windows": 12,
       "pos": 5
     },
     "av_stoikov": {
-      "net": 43.782199999999996,
-      "fills": 767,
-      "windows": 11,
+      "net": 36.695499999999996,
+      "fills": 803,
+      "windows": 12,
       "pos": 6
     },
     "spot_react": {
-      "net": -0.36380000000000123,
-      "fills": 447,
-      "windows": 11,
+      "net": -7.364900000000001,
+      "fills": 460,
+      "windows": 12,
       "pos": 5
     },
     "micro_react": {
-      "net": 47.7717,
-      "fills": 242,
-      "windows": 11,
+      "net": 39.5778,
+      "fills": 260,
+      "windows": 12,
       "pos": 8
     },
     "micro_spot": {
-      "net": -3.7636000000000003,
-      "fills": 335,
-      "windows": 11,
+      "net": -12.8036,
+      "fills": 344,
+      "windows": 12,
       "pos": 5
     },
     "mo_size": {
-      "net": 22.842499999999998,
-      "fills": 550,
-      "windows": 11,
+      "net": 17.2552,
+      "fills": 573,
+      "windows": 12,
       "pos": 8
     },
     "micro_soft": {
-      "net": 24.1432,
-      "fills": 475,
-      "windows": 11,
+      "net": 17.2664,
+      "fills": 497,
+      "windows": 12,
       "pos": 7
     },
     "micro_ufat": {
-      "net": 45.1051,
-      "fills": 409,
-      "windows": 11,
+      "net": 38.0047,
+      "fills": 429,
+      "windows": 12,
       "pos": 9
     },
     "lag_taker": {
       "net": 0.0,
       "fills": 0,
-      "windows": 11,
+      "windows": 12,
       "pos": 0
     }
   }
