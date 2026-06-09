@@ -1,146 +1,146 @@
 {
   "baseline": {
-    "net": -38.96690000000001,
-    "fills": 4545,
-    "windows": 19,
-    "pos": 7
+    "net": -28.36160000000001,
+    "fills": 4740,
+    "windows": 20,
+    "pos": 8
   },
   "cap25": {
-    "net": 12.7094,
-    "fills": 3817,
-    "windows": 19,
-    "pos": 10
+    "net": 23.5421,
+    "fills": 3973,
+    "windows": 20,
+    "pos": 11
   },
   "skew15": {
-    "net": 13.681799999999999,
-    "fills": 4001,
-    "windows": 19,
-    "pos": 11
+    "net": 24.280099999999997,
+    "fills": 4162,
+    "windows": 20,
+    "pos": 12
   },
   "dneutral": {
-    "net": 39.194300000000005,
-    "fills": 3551,
-    "windows": 19,
-    "pos": 12
-  },
-  "fv_size": {
-    "net": -42.83309999999999,
-    "fills": 4527,
-    "windows": 19,
-    "pos": 6
-  },
-  "micro_gate": {
-    "net": 135.88299999999998,
-    "fills": 3696,
-    "windows": 19,
+    "net": 49.94120000000001,
+    "fills": 3702,
+    "windows": 20,
     "pos": 13
   },
+  "fv_size": {
+    "net": -32.74349999999998,
+    "fills": 4721,
+    "windows": 20,
+    "pos": 7
+  },
+  "micro_gate": {
+    "net": 149.25969999999998,
+    "fills": 3835,
+    "windows": 20,
+    "pos": 14
+  },
   "micro_skew15": {
-    "net": 132.23760000000001,
-    "fills": 3309,
-    "windows": 19,
-    "pos": 12
+    "net": 142.42290000000003,
+    "fills": 3427,
+    "windows": 20,
+    "pos": 13
   },
   "micro_marg": {
-    "net": 216.7363,
-    "fills": 2516,
-    "windows": 19,
-    "pos": 14
+    "net": 222.8409,
+    "fills": 2604,
+    "windows": 20,
+    "pos": 15
   },
   "tox_gate": {
-    "net": 217.9895,
-    "fills": 2513,
-    "windows": 19,
-    "pos": 14
+    "net": 226.5978,
+    "fills": 2600,
+    "windows": 20,
+    "pos": 15
   },
   "deplete_gate": {
-    "net": 139.78570000000002,
-    "fills": 2715,
-    "windows": 19,
-    "pos": 11
-  },
-  "gross_max": {
-    "net": 148.651,
-    "fills": 1788,
-    "windows": 19,
+    "net": 148.97080000000003,
+    "fills": 2810,
+    "windows": 20,
     "pos": 12
   },
+  "gross_max": {
+    "net": 149.5516,
+    "fills": 1838,
+    "windows": 20,
+    "pos": 13
+  },
   "flow_gate": {
-    "net": 22.885399999999997,
-    "fills": 1029,
-    "windows": 19,
+    "net": 5.3409999999999975,
+    "fills": 1077,
+    "windows": 20,
     "pos": 7
   },
   "late_gate": {
-    "net": -44.59449999999998,
-    "fills": 3964,
-    "windows": 19,
-    "pos": 6
-  },
-  "av_stoikov": {
-    "net": 174.26290000000003,
-    "fills": 5415,
-    "windows": 19,
-    "pos": 10
-  },
-  "spot_react": {
-    "net": 16.452000000000005,
-    "fills": 3359,
-    "windows": 19,
-    "pos": 6
-  },
-  "micro_react": {
-    "net": 85.14789999999999,
-    "fills": 1908,
-    "windows": 19,
-    "pos": 13
-  },
-  "micro_spot": {
-    "net": 134.1174,
-    "fills": 2799,
-    "windows": 19,
-    "pos": 13
-  },
-  "mo_size": {
-    "net": 201.5859,
-    "fills": 3863,
-    "windows": 19,
-    "pos": 14
-  },
-  "as_full": {
-    "net": 131.0457,
-    "fills": 5824,
-    "windows": 19,
-    "pos": 10
-  },
-  "vol_gate": {
-    "net": -39.36160000000001,
-    "fills": 4532,
-    "windows": 19,
+    "net": -34.19739999999998,
+    "fills": 4157,
+    "windows": 20,
     "pos": 7
   },
-  "hedged_big": {
-    "net": -343.66320000000013,
-    "fills": 8356,
-    "windows": 19,
-    "pos": 4
+  "av_stoikov": {
+    "net": 199.93950000000004,
+    "fills": 5636,
+    "windows": 20,
+    "pos": 11
   },
-  "band_p": {
-    "net": -56.020700000000005,
-    "fills": 3353,
-    "windows": 19,
+  "spot_react": {
+    "net": 19.981000000000005,
+    "fills": 3477,
+    "windows": 20,
+    "pos": 7
+  },
+  "micro_react": {
+    "net": 90.1643,
+    "fills": 1969,
+    "windows": 20,
+    "pos": 14
+  },
+  "micro_spot": {
+    "net": 143.6583,
+    "fills": 2899,
+    "windows": 20,
+    "pos": 14
+  },
+  "mo_size": {
+    "net": 207.29170000000002,
+    "fills": 3996,
+    "windows": 20,
+    "pos": 15
+  },
+  "as_full": {
+    "net": 156.7872,
+    "fills": 6069,
+    "windows": 20,
+    "pos": 11
+  },
+  "vol_gate": {
+    "net": -28.75630000000001,
+    "fills": 4727,
+    "windows": 20,
+    "pos": 8
+  },
+  "hedged_big": {
+    "net": -301.0659000000001,
+    "fills": 8771,
+    "windows": 20,
     "pos": 5
   },
+  "band_p": {
+    "net": -47.8633,
+    "fills": 3460,
+    "windows": 20,
+    "pos": 6
+  },
   "graded": {
-    "net": 68.2057,
-    "fills": 1592,
-    "windows": 19,
-    "pos": 10
+    "net": 76.71799999999999,
+    "fills": 1627,
+    "windows": 20,
+    "pos": 11
   },
   "lag_taker": {
     "net": 0.0,
     "fills": 0,
-    "windows": 19,
+    "windows": 20,
     "pos": 0
   }
 }
