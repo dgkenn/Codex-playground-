@@ -73,6 +73,7 @@ from fvfeed import SpotFair
 
 G = "https://gamma-api.polymarket.com"
 C = "https://clob.polymarket.com"
+WS_MARKET = "wss://ws-subscriptions-clob.polymarket.com/ws/market"   # public book deltas (no auth)
 DEPLETE_FRAC = 0.35   # queue-jump depletion trigger: best queue < this * its EMA => about to deplete
 
 
@@ -229,6 +230,60 @@ def btc_lead_feeder(live_btc):
 
     loop = asyncio.new_event_loop(); asyncio.set_event_loop(loop)
     loop.run_until_complete(asyncio.gather(rtds(), coinbase()))
+
+
+def book_feeder(books, mdsub):
+    """SUB-10ms BOOK PATH (LATENCY.md #1/#6): stream the token order books off the public CLOB market WS
+    instead of REST-polling /book every loop. Maintains books[token] = {bb,ba,bsz,asz,ts}; the OMS reads
+    this in-memory cache so a quote-pull reacts to a toxic move in WS time (ms), not on the REST poll (s).
+    Resubscribes when the window rolls (mdsub['epoch'] bumps with the new tokens). Mirrors the validated
+    shadow_compare book/price_change parsing. websockets imported lazily -> OMS still runs (REST fallback)
+    if it's missing."""
+    import asyncio
+    try:
+        import websockets
+    except Exception:
+        print("  [ws-book] websockets not installed -> book feed OFF (REST fallback only)"); return
+
+    async def run():
+        while True:
+            toks = list(mdsub.get("tokens") or [])
+            epoch = mdsub.get("epoch")
+            if not toks:
+                await asyncio.sleep(0.2); continue
+            try:
+                async with websockets.connect(WS_MARKET, ping_interval=10, ping_timeout=20, max_size=None) as ws:
+                    await ws.send(json.dumps({"assets_ids": toks, "type": "market"}))
+                    async for raw in ws:
+                        if mdsub.get("epoch") != epoch:
+                            break                                   # window rolled -> reconnect w/ new tokens
+                        if not raw:
+                            continue
+                        try:
+                            data = json.loads(raw)
+                        except Exception:
+                            continue
+                        for m in (data if isinstance(data, list) else [data]):
+                            et = m.get("event_type")
+                            if et == "book":
+                                tok = str(m["asset_id"]); bids = m.get("bids") or []; asks = m.get("asks") or []
+                                bb = max((float(b["price"]) for b in bids), default=None)
+                                ba = min((float(a["price"]) for a in asks), default=None)
+                                bsz = sum(float(b["size"]) for b in bids if bb is not None and float(b["price"]) == bb)
+                                asz = sum(float(a["size"]) for a in asks if ba is not None and float(a["price"]) == ba)
+                                books[tok] = {"bb": bb, "ba": ba, "bsz": bsz, "asz": asz, "ts": time.time()}
+                            elif et == "price_change":
+                                for pc in m.get("price_changes", []):
+                                    tok = str(pc["asset_id"]); cur = books.get(tok)
+                                    if cur is None:
+                                        continue
+                                    bb = float(pc["best_bid"]) if pc.get("best_bid") not in (None, "") else cur["bb"]
+                                    ba = float(pc["best_ask"]) if pc.get("best_ask") not in (None, "") else cur["ba"]
+                                    books[tok] = {"bb": bb, "ba": ba, "bsz": cur["bsz"], "asz": cur["asz"], "ts": time.time()}
+            except Exception:
+                await asyncio.sleep(1)
+
+    loop = asyncio.new_event_loop(); asyncio.set_event_loop(loop); loop.run_until_complete(run())
 
 
 def btc_lead(live_btc, lag_s):
@@ -421,7 +476,10 @@ def main():
     ap.add_argument("--spot-symbol", default="BTCUSDT")
     ap.add_argument("--max-notional", type=float, default=25)
     ap.add_argument("--loss-limit", type=float, default=5)
-    ap.add_argument("--poll", type=float, default=3)
+    ap.add_argument("--poll", type=float, default=1.0, help="HOUSEKEEPING cadence (s): fv refresh + fills "
+                    "poll + REST book fallback. The fast quote-decision loop runs at --react-poll on the WS book.")
+    ap.add_argument("--react-poll", type=float, default=0.1, help="REACTION cadence (s): how often the quote "
+                    "loop re-decides against the WS book cache. Sub-10ms reaction needs this small + a colo box.")
     ap.add_argument("--asset", default="btc", help="btc/eth/sol/xrp (breadth; run one instance per market)")
     ap.add_argument("--tenor-min", type=int, default=15, help="market tenor minutes (15 or 5)")
     ap.add_argument("--duration", type=int, default=3600)
@@ -460,6 +518,23 @@ def main():
     live_btc = {"px": None, "ts": 0.0, "hist": deque(), "rtds_ts": 0.0, "src": None}
     clob_selfcheck(sess)               # measure real CLOB round-trip -> are we co-located in eu-west-2?
     qema = {}                          # token -> {b,a} EMA of best-queue sizes (depletion trigger)
+    # SUB-10ms book path: stream token books off the market WS; the OMS reads this cache (REST = fallback).
+    books = {}                         # token -> {bb,ba,bsz,asz,ts}
+    mdsub = {"tokens": None, "epoch": 0}   # bumped on window rollover so the feeder resubscribes
+    threading.Thread(target=book_feeder, args=(books, mdsub), daemon=True).start()
+
+    def cached_book(token, max_age=2.0):
+        """WS book if fresh, else None (caller REST-falls-back). max_age guards against a silently dead feed."""
+        c = books.get(token)
+        if c and c["bb"] is not None and c["ba"] is not None and (time.time() - c["ts"]) <= max_age:
+            return c["bb"], c["ba"], c["bsz"], c["asz"]
+        return None
+
+    def get_book(token):
+        """Freshest top-of-book: WS cache (ms) -> REST (fallback)."""
+        cb = cached_book(token)
+        return cb if cb is not None else book(sess, token)
+
     if a.queue_jump:                   # Arm A: start the sub-second BTC lead feed
         threading.Thread(target=btc_lead_feeder, args=(live_btc,), daemon=True).start()
         jlog = open("queue_jump_log.jsonl", "a")   # A/B audit: lead-driven protect/shed actions
@@ -524,23 +599,19 @@ def main():
         return oid, t_dec, time.time()
 
     def timed_cancel(oid):
-        """Cancel and (best-effort) confirm; return (t_sent, t_confirmed|None)."""
+        """Send the cancel and return IMMEDIATELY (t_sent, None). The old version polled get_orders() with
+        sleep(0.1)x5 -> up to 0.5s of HOT-PATH BLOCKING per pull, serializing every other quote decision
+        (a latency self-own on the exact path we're optimizing). The cancel SEND is the latency-critical
+        action; confirmation was only a research metric (RepriceLog handles t_conf=None), so we don't block
+        the reaction loop for it."""
         t_sent = time.time()
         if not live:
-            return t_sent, t_sent + 0.0       # DRY: treat as instant; live measures real ttc
+            return t_sent, t_sent + 0.0       # DRY: treat as instant
         try:
             client.cancel(order_id=oid)
         except Exception:
-            return t_sent, None
-        t_conf = None
-        for _ in range(5):                    # poll until the order is gone (or give up)
-            try:
-                if not any(str(o.get("id")) == str(oid) for o in (client.get_orders() or [])):
-                    t_conf = time.time(); break
-            except Exception:
-                break
-            time.sleep(0.1)
-        return t_sent, t_conf
+            pass
+        return t_sent, None
 
     def drop(key, reason):
         meta = resting.pop(key); oid = meta["oid"]; q = meta.get("q", 0.0)
@@ -581,6 +652,7 @@ def main():
     last_book_ok = time.time()    # staleness watchdog: last time the order book feed answered
     deadman_tripped = False
     consec_err = 0
+    last_hk = 0.0                  # last housekeeping pass (fv refresh + fills poll), gated by --poll
     end = time.time() + a.duration
     while time.time() < end:
         try:
@@ -610,6 +682,7 @@ def main():
                 mk = active_market(sess, a.asset, a.tenor_min)
                 if not mk:
                     time.sleep(a.poll); continue
+                mdsub["tokens"] = [mk["up"], mk["down"]]; mdsub["epoch"] += 1   # point the WS feed at the new tokens
                 if fv is not None:
                     # Only anchor (=> overlay ON) if we joined within 60s of the open; a
                     # mid-window join has no true S0, so run baseline-only that window.
@@ -619,7 +692,8 @@ def main():
                         fv.update(); fv.set_window(None)
                         print("  (joined mid-window; overlay OFF until next open)")
                 print(f"WINDOW {mk['ws']} {datetime.fromtimestamp(mk['ws'],timezone.utc):%H:%M}Z tick={mk['tick']}")
-            if fv is not None:
+            hk = (time.time() - last_hk) >= a.poll       # housekeeping due? (REST-bound work runs at --poll)
+            if fv is not None and hk:
                 fv.update()
             band_px = a.fv_band * mk["tick"]
             tau = max(mk["we"] - time.time(), 0.0)
@@ -638,7 +712,7 @@ def main():
             #     bid_up+bid_dn>1 (hit both) or ask_up+ask_dn<1 (lift both) -- competed away in liquid 15m
             #     crypto. We LOG it whenever it appears so the operator sees a true free arb vs the spread. ---
             if a.box_arb:
-                bbu, bau, _, _ = book(sess, mk["up"]); bbd, bad, _, _ = book(sess, mk["down"])
+                bbu, bau, _, _ = get_book(mk["up"]); bbd, bad, _, _ = get_book(mk["down"])
                 if None not in (bbu, bau, bbd, bad):
                     last_book_ok = time.time(); deadman_tripped = False   # feed alive -> reset watchdog
                 mmb = collateral.MintMerge(live, neg_risk=mk.get("negRisk", False))
@@ -666,7 +740,7 @@ def main():
 
             # --- BASELINE geometry, then MODEL predictive filter (overlay) ---
             for token, is_up in ((mk["up"], True), (mk["down"], False)):
-                bb, ba, bsz, asz = book(sess, token)
+                bb, ba, bsz, asz = get_book(token)       # WS cache (ms) -> REST fallback
                 if bb is None or ba is None:
                     continue
                 last_book_ok = time.time(); deadman_tripped = False   # feed alive -> reset watchdog
@@ -777,8 +851,11 @@ def main():
                         for k in ks[a.max_rungs:]:                         # cancel the stranded deep extras
                             drop(k, "rung_cap")
 
-            # --- per-fill MARKOUT + net-delta + (c) taker-hit-old attribution ---
-            if live:
+            # --- per-fill MARKOUT + net-delta + (c) taker-hit-old attribution (HOUSEKEEPING cadence) ---
+            # Fills come off a REST poll, so they run at --poll (1s), not the fast --react-poll loop -- the
+            # reaction (quote pulls) is what needs sub-10ms; learning about a fill ~1s late is fine for a
+            # hold-to-resolution maker. (Next step for true sub-ms fills: the auth'd user WS.)
+            if live and hk:
                 try:
                     trades = client.get_trades() or []
                 except Exception:
@@ -792,7 +869,7 @@ def main():
                         continue
                     seen_fills.add(tid)
                     net_delta += (1.0 if asset == mk["up"] else -1.0) * (fsz if sd == "BUY" else -fsz)
-                    bb2, ba2, _, _ = book(sess, asset); mid2 = (bb2 + ba2) / 2 if bb2 and ba2 else fp
+                    bb2, ba2, _, _ = get_book(asset); mid2 = (bb2 + ba2) / 2 if bb2 and ba2 else fp
                     mo = (mid2 - fp) if sd == "BUY" else (fp - mid2); markouts.append(mo)
                     # match to OUR resting order (opposite side, same price) for queue residence
                     mkey = (asset, "SELL" if sd == "BUY" else "BUY", round(fp, 4))
@@ -809,8 +886,10 @@ def main():
                     open("live_markout.jsonl", "a").write(json.dumps(
                         {"ts": time.time(), "asset": asset[:12], "side": sd, "price": fp, "size": fsz,
                          "markout": mo, "net_delta": net_delta}) + "\n")
+            if hk:
+                last_hk = time.time()                  # mark housekeeping done (fv/fills ran this pass)
             consec_err = 0                              # clean iteration -> reset the error-storm counter
-            time.sleep(a.poll)
+            time.sleep(a.react_poll)                    # FAST reaction cadence on the WS book cache
         except KeyboardInterrupt:
             _flatten_and_exit("KeyboardInterrupt"); print("interrupted; cancelled all."); break
         except Exception as e:  # noqa: BLE001

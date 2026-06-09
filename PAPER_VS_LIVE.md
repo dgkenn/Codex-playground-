@@ -52,8 +52,10 @@ Legend: ✅ done · 🔄 measured/in-progress · ⏳ pilot confirms · 📋 plan
 
 ## B. EDGE-ERODERS (shave the thin margin)
 
-- **B1. Reaction-path latency.** ✅ predictive pulls (`micro_react`/`spot_react`) pull *before* the reprice;
-  + cancel-on-disconnect (C1), p99-not-mean optimization.
+- **B1. Reaction-path latency.** ✅ the maker loop now reads a **WS book cache** (`book_feeder`/`get_book`)
+  and re-decides every `--react-poll` (0.1s) instead of the old 3s REST poll; `timed_cancel` is non-blocking
+  (was up to 0.5s hot-path blocking per pull); predictive pulls (`micro_react`/`spot_react`) pull *before*
+  the reprice. TODO: auth'd user WS for sub-ms *fills* (1s REST poll today).
 - **B2. Tick/lot quantization.** ✅ clip floor above the venue minimum (~$1–2, not literal pennies — see the
   "can we test with pennies" analysis); model PnL on the real tick grid.
 - **B3. Dynamic/per-market fees.** 📋 read live fee per market from the CLOB API (`getClobMarketInfo`); the fee

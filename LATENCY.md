@@ -78,10 +78,16 @@ order POST already blows the budget.
    setup step, not a per-opportunity action — and another reason the on-chain box can't win the 2.7s race
    in-loop).
 
-6. **Tighten the data path.** Subscribe to the CLOB market WS (`wss://ws-subscriptions-clob.polymarket.com/ws/market`,
-   already used) for book deltas instead of REST polling, and the **user WS** for fills (don't poll order
-   status). Parse incrementally; avoid re-JSON-ing whole snapshots. Pin the event loop, disable Nagle
-   (`TCP_NODELAY`) on the order socket.
+6. **Tighten the data path.** Subscribe to the CLOB market WS (`wss://ws-subscriptions-clob.polymarket.com/ws/market`)
+   for book deltas instead of REST polling, and the **user WS** for fills (don't poll order status). Parse
+   incrementally; avoid re-JSON-ing whole snapshots. Pin the event loop, disable Nagle (`TCP_NODELAY`) on
+   the order socket.
+   - **DONE (book path):** `live_trader.book_feeder` streams the token books off the market WS into an
+     in-memory cache; the OMS reads it (`get_book` = WS→REST fallback) and re-decides every `--react-poll`
+     (0.1s) instead of on the old 3s REST poll, so a quote-pull reacts in WS time. `TCP_NODELAY` is set via
+     `netfast`. **DONE (cancel path):** `timed_cancel` is non-blocking (was `sleep(0.1)×5` = up to 0.5s of
+     hot-path blocking per pull). **TODO:** the auth'd **user WS** for fills (still a 1s REST poll —
+     acceptable for a hold-to-resolution maker, but the last piece for sub-ms fill handling).
 
 7. **Measure continuously.** `latency.py` is the acceptance test: run it on the live VPS at deploy and
    periodically; alert if CLOB TTFB regresses (CF re-routing, region change). Track the **distribution**
@@ -97,8 +103,11 @@ order POST already blows the budget.
 
 ## Honest boundary
 
-Co-location, the signer swap, and pre-signed templates are **live-infra changes that must run on the
-user's machine with the user's key** — they can't be exercised in this read-only sandbox (where CLOB
-TTFB is ~167ms because we're transatlantic from London). The deliverables here are the **measurement
-harness** (`latency.py`, runs anywhere) and this **playbook**; the dominant lever (co-location) is an ops
-decision, not a code change. Items #2–#6 are concrete code TODOs once a co-located host exists.
+Co-location and the actual eu-west-2 box are **ops decisions** that can't be exercised in this read-only
+sandbox (CLOB TTFB here is ~130–167ms because we're transatlantic from London). What IS now wired in code:
+the **in-region RTDS signal** (#2), **warm NODELAY keep-alive sockets** (#3, `netfast`), **pre-signed
+orders + `coincurve` signer** (#4), **off-chain-only hot path** (#5), and the **WS book cache + fast
+react loop + non-blocking cancel** (#6). `go_live.py` **gates** the co-location requirement (FAILs the
+preflight unless CLOB round-trip is single-digit ms). The only remaining latency TODO is the auth'd user
+WS for sub-ms fill handling (fills are a 1s REST poll today). Net: once you're on a colo box, both
+**placement and reaction** are sub-10ms-capable; the dominant lever (geography) is enforced, not assumed.
