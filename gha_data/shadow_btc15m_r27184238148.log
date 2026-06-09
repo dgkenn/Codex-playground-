@@ -1,0 +1,4 @@
+2026-06-09T06:27:01.280641+00:00 roster: 20 live ['baseline', 'cap25', 'skew15', 'dneutral', 'fv_size', 'micro_gate', 'micro_skew15', 'micro_marg', 'tox_gate', 'deplete_gate', 'gross_max', 'flow_gate', 'late_gate', 'av_stoikov', 'spot_react', 'micro_react', 'micro_spot', 'mo_size', 'micro_soft', 'micro_ufat']  (pruned: ['as_full', 'vol_gate', 'band_p', 'graded'])
+2026-06-09T06:27:01.280759+00:00 === shadow_compare start variants=['baseline', 'cap25', 'skew15', 'dneutral', 'fv_size', 'micro_gate', 'micro_skew15', 'micro_marg', 'tox_gate', 'deplete_gate', 'gross_max', 'flow_gate', 'late_gate', 'av_stoikov', 'spot_react', 'micro_react', 'micro_spot', 'mo_size', 'micro_soft', 'micro_ufat'] ===
+2026-06-09T06:27:01.726997+00:00 WINDOW 1780985700 (06:15Z) s0=None
+2026-06-09T06:30:10.145173+00:00 WINDOW 1780986600 (06:30Z) s0=63440.83
