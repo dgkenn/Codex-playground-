@@ -55,8 +55,10 @@ PRE-WRITTEN INTERPRETATION (decide before reading numbers, same discipline as Ti
 from __future__ import annotations
 
 import argparse
+import atexit
 import json
 import os
+import signal
 import threading
 import time
 from collections import deque
@@ -128,6 +130,18 @@ def microprice(bb, ba, bsz, asz):
         return (bb + ba) / 2.0
     imb = (bsz or 0) / tot                       # share of size on the bid = buy pressure
     return bb + (ba - bb) * imb
+
+
+def would_cross(side, price, bb, ba):
+    """A3 (accidental-taker guard): a resting order must NOT be marketable, or it pays the taker fee
+    (~3% peak) and instantly flips the rebate edge negative. A BUY at/above the best ask crosses; a
+    SELL at/below the best bid crosses. We quote at-or-behind the touch by construction, but a STALE
+    book snapshot (the touch moved between read and post) can produce a crosser -- this is the last-line
+    guarantee that every live order is post-only/maker, independent of any SDK post-only flag. (On the
+    live box, ALSO set the venue's post-only order option if the SDK exposes one -- belt and suspenders.)"""
+    if bb is None or ba is None:
+        return False
+    return (side == "BUY" and price >= ba) or (side == "SELL" and price <= bb)
 
 
 def clob_selfcheck(sess, n=8):
@@ -425,6 +439,9 @@ def main():
     ap.add_argument("--presign", action="store_true", help="pre-sign touch-band orders during idle so "
                     "placing a new rung is a pure POST (signing OFF the fire path). Sub-10ms enabler; "
                     "live-only, falls back to create_and_post_order on any miss. VERIFY on a burner first.")
+    ap.add_argument("--deadman-s", type=float, default=15.0, help="DEAD-MAN switch (C1): if the order "
+                    "book feed goes stale for this many seconds (venue/network down -> we'd be holding "
+                    "resting orders blind), cancel ALL resting orders. Also fires on an error storm.")
     a = ap.parse_args()
     live = a.live and os.environ.get("I_UNDERSTAND_REAL_MONEY") == "yes"
     if a.live and not live:
@@ -480,10 +497,14 @@ def main():
         except Exception:
             pass                                   # fall back to create_and_post_order at place() time
 
-    def place(tk, sd, p, queue_ahead):
-        """Returns (order_id, decision_ts, ack_ts); ack-decision = placement latency (CAPTURE #1).
+    def place(tk, sd, p, queue_ahead, bb=None, ba=None):
+        """Returns (order_id, decision_ts, ack_ts) or None if refused. ack-decision = placement latency.
         FAST path (--presign): if this exact order was pre-signed, fire a pure POST (no signing on the
-        hot path). Otherwise sign+post via the proven create_and_post_order. Any error -> safe fallback."""
+        hot path). Otherwise sign+post via the proven create_and_post_order. Any error -> safe fallback.
+        A3 GUARD: refuse to post a crossing (marketable) order -> guarantees maker/post-only."""
+        if would_cross(sd, p, bb, ba):
+            print(f"  [POST-ONLY GUARD] refused crossing {sd} {tk[:8]} @ {p} (bb={bb} ba={ba})")
+            return None
         t_dec = time.time()
         if not live:
             print(f"  [DRY place] {sd} {a.post} {tk[:8]} @ {p} (q_ahead~{queue_ahead:.0f})")
@@ -534,9 +555,42 @@ def main():
         for key in list(resting):
             drop(key, reason)
 
+    # C1 DEAD-MAN / cancel-on-exit: a disconnect or crash with resting orders + inventory = naked
+    # directional risk that dwarfs the tiny rebate edge. Guarantee orders are pulled on ANY exit path
+    # (normal end, uncaught exception, SIGTERM from systemd, Ctrl-C) -- not just the clean ones.
+    _flattened = {"done": False}
+
+    def _flatten_and_exit(reason):
+        if _flattened["done"]:
+            return
+        _flattened["done"] = True
+        try:
+            print(f"[DEAD-MAN] {reason}: cancelling all resting orders")
+            notify.alert(f"[pmkit] DEAD-MAN {reason}: cancel-all")
+            cancel_all_resting(reason="deadman")
+        except Exception as e:  # noqa: BLE001
+            print(f"[DEAD-MAN] cancel failed: {str(e)[:120]}")
+
+    atexit.register(lambda: _flatten_and_exit("process exit"))
+    for _sig in (signal.SIGTERM, signal.SIGINT):
+        try:
+            signal.signal(_sig, lambda *_: (_flatten_and_exit(f"signal {_sig}"), os._exit(0)))
+        except Exception:
+            pass                                      # not main thread / unsupported -> atexit still covers it
+
+    last_book_ok = time.time()    # staleness watchdog: last time the order book feed answered
+    deadman_tripped = False
+    consec_err = 0
     end = time.time() + a.duration
     while time.time() < end:
         try:
+            # C1 staleness watchdog: if the book feed has been dark longer than --deadman-s while we hold
+            # resting orders, we are quoting/holding BLIND -> pull everything until the feed recovers.
+            stale = time.time() - last_book_ok
+            if live and resting and stale > a.deadman_s and not deadman_tripped:
+                print(f"[DEAD-MAN] book feed stale {stale:.0f}s > {a.deadman_s}s -> cancel-all")
+                notify.alert(f"[pmkit] DEAD-MAN feed stale {stale:.0f}s: cancel-all")
+                cancel_all_resting(reason="deadman_stale"); deadman_tripped = True
             if mk is None or time.time() >= mk["we"]:
                 if mk is not None:                       # settle (d) for the closing window
                     r = resolve(sess, mk["ws"], a.asset, a.tenor_min)
@@ -585,6 +639,8 @@ def main():
             #     crypto. We LOG it whenever it appears so the operator sees a true free arb vs the spread. ---
             if a.box_arb:
                 bbu, bau, _, _ = book(sess, mk["up"]); bbd, bad, _, _ = book(sess, mk["down"])
+                if None not in (bbu, bau, bbd, bad):
+                    last_book_ok = time.time(); deadman_tripped = False   # feed alive -> reset watchdog
                 mmb = collateral.MintMerge(live, neg_risk=mk.get("negRisk", False))
                 if None not in (bbu, bau, bbd, bad):     # surface any genuinely risk-free TAKER box first
                     if bbu + bbd - 1.0 > 0:
@@ -598,12 +654,12 @@ def main():
                 if bau is not None and bad is not None and (bau + bad - 1.0) > a.box_margin and bau + bad < 2:
                     prem = bau + bad - 1.0                # MAKER: rest SELL both at the asks for a $1 set
                     mmb.split(mk["cid"], a.box_sets)      # mint N sets ($N) to source both legs (dry-safe)
-                    place(mk["up"], "SELL", bau, 0.0); place(mk["down"], "SELL", bad, 0.0)
+                    place(mk["up"], "SELL", bau, 0.0, bb=bbu, ba=bau); place(mk["down"], "SELL", bad, 0.0, bb=bbd, ba=bad)
                     boxlog({"ws": mk["ws"], "side": "sell_box", "ask_up": bau, "ask_dn": bad,
                             "premium_per_set": round(prem, 4), "sets": a.box_sets, "gross_if_filled": round(prem * a.box_sets, 4)})
                 if bbu is not None and bbd is not None and (1.0 - bbu - bbd) > a.box_margin and bbu + bbd > 0:
                     prem = 1.0 - bbu - bbd                # MAKER: rest BUY both at the bids; merge -> $1/set
-                    place(mk["up"], "BUY", bbu, 0.0); place(mk["down"], "BUY", bbd, 0.0)
+                    place(mk["up"], "BUY", bbu, 0.0, bb=bbu, ba=bau); place(mk["down"], "BUY", bbd, 0.0, bb=bbd, ba=bad)
                     boxlog({"ws": mk["ws"], "side": "buy_box", "bid_up": bbu, "bid_dn": bbd,
                             "premium_per_set": round(prem, 4), "sets": a.box_sets, "gross_if_filled": round(prem * a.box_sets, 4)})
                 time.sleep(a.poll); continue
@@ -613,12 +669,18 @@ def main():
                 bb, ba, bsz, asz = book(sess, token)
                 if bb is None or ba is None:
                     continue
+                last_book_ok = time.time(); deadman_tripped = False   # feed alive -> reset watchdog
                 if a.queue_jump:                       # rolling avg of best-queue sizes (depletion)
                     qe = qema.setdefault(token, {"b": bsz, "a": asz})
                     qe["b"] = 0.9 * qe["b"] + 0.1 * bsz; qe["a"] = 0.9 * qe["a"] + 0.1 * asz
                 base = baseline_levels(mk, token, is_up, bb, ba, net_delta, a.layers, a.cap, a.skew)
                 ft = fv.fair_token(is_up, tau) if fv is not None else None
-                mp = microprice(bb, ba, bsz, asz)        # book-native anchor (#4), always available
+                # A2 (observer effect): the venue book INCLUDES our own resting size, which would bias the
+                # microprice toward OUR side -- contaminating the very signal we gate on. Subtract our resting
+                # size at the touch so the microprice reflects OTHER traders' imbalance only.
+                own_b = sum(a.post for k in resting if k[0] == token and k[1] == "BUY" and abs(k[2] - bb) < 1e-9)
+                own_a = sum(a.post for k in resting if k[0] == token and k[1] == "SELL" and abs(k[2] - ba) < 1e-9)
+                mp = microprice(bb, ba, max((bsz or 0) - own_b, 0.0), max((asz or 0) - own_a, 0.0))  # book-native (#4), own-order-excluded
                 # Anchor = microprice (book imbalance), NOT the spot fair_up: drift_predict showed
                 # spot is not quote-time predictive (R^2~0), and fair_up's ~0.5 window-open prior
                 # falsely suppresses a side. The microprice is the surviving book-native signal and
@@ -639,7 +701,10 @@ def main():
                     if sum(1 for k in resting if k[0] == token and k[1] == sd) >= a.max_rungs:
                         continue                          # side ladder full; don't over-commit capital
                     q_ahead = (bsz if sd == "BUY" else asz) if abs(p - (bb if sd == "BUY" else ba)) < 1e-9 else 0.0
-                    oid, t_dec, t_ack = place(*key, q_ahead)
+                    res = place(*key, q_ahead, bb=bb, ba=ba)
+                    if res is None:                       # post-only guard refused (would cross) -> skip
+                        continue
+                    oid, t_dec, t_ack = res
                     resting[key] = {"oid": oid, "ts": t_ack, "q": q_ahead}
                     olog.placed(oid, t_dec, t_ack, ws=mk["ws"], asset=token[:12], outcome=("Up" if is_up else "Down"),
                                 side=sd, price=p, size=a.post, tick=mk["tick"], queue_depth_ahead=q_ahead,
@@ -744,12 +809,19 @@ def main():
                     open("live_markout.jsonl", "a").write(json.dumps(
                         {"ts": time.time(), "asset": asset[:12], "side": sd, "price": fp, "size": fsz,
                          "markout": mo, "net_delta": net_delta}) + "\n")
+            consec_err = 0                              # clean iteration -> reset the error-storm counter
             time.sleep(a.poll)
         except KeyboardInterrupt:
-            cancel_all_resting(); print("interrupted; cancelled all."); break
+            _flatten_and_exit("KeyboardInterrupt"); print("interrupted; cancelled all."); break
         except Exception as e:  # noqa: BLE001
-            print(f"[warn] {str(e)[:100]}"); time.sleep(a.poll)
-    cancel_all_resting()
+            consec_err += 1
+            print(f"[warn] {str(e)[:100]} (consec_err={consec_err})")
+            if live and resting and consec_err >= 5 and not deadman_tripped:
+                # C1 error-storm dead-man: repeated failures -> we can't trust our state; pull everything.
+                print("[DEAD-MAN] error storm -> cancel-all"); notify.alert("[pmkit] DEAD-MAN error storm: cancel-all")
+                cancel_all_resting(reason="deadman_errors"); deadman_tripped = True
+            time.sleep(a.poll)
+    _flatten_and_exit("loop end")
     s = rlog.summary()
     print(f"done. realized={realized:+.2f} fills={len(seen_fills)} pulls={s['pulls']} "
           f"clamp_binds={s['clamp_binds']} "
