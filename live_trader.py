@@ -159,15 +159,20 @@ def clob_selfcheck(sess, n=8):
         except Exception:
             pass
     if not ts:
-        print("  [latency] CLOB self-check FAILED (no response)"); return
+        print("  [latency] CLOB self-check FAILED (no response)"); return None
     ts.sort(); med = ts[len(ts) // 2]
+    p95 = ts[min(len(ts) - 1, int(len(ts) * 0.95))]
+    p99 = ts[min(len(ts) - 1, int(len(ts) * 0.99))]
     if med < 25:
         v = "co-located (eu-west-2/Dublin) -- sub-100ms reachable"
     elif med < 80:
         v = "near-region -- tighten with keep-alive/pre-sign for sub-100ms"
     else:
         v = "CROSS-REGION (likely transatlantic) -- sub-100ms UNREACHABLE; co-locate in eu-west-2"
-    print(f"  [latency] CLOB round-trip median {med:.0f} ms ({len(ts)}/{n} ok) -> {v}")
+    # p99, not mean, is what loses queue races (point 5) -- a single slow POST = back of the line.
+    print(f"  [latency] CLOB round-trip median {med:.0f} ms  p95 {p95:.0f}  p99 {p99:.0f} "
+          f"({len(ts)}/{n} ok) -> {v}")
+    return med
 
 
 def btc_lead_feeder(live_btc):
@@ -309,20 +314,36 @@ def make_client():
                       signature_type=SignatureTypeV2.POLY_1271, funder=funder)
 
 
-def baseline_levels(mk, token, is_up, bb, ba, net_delta, layers, cap, skew_frac):
-    """Validated passive, at-or-behind-touch, LAYERED quotes for one token, inventory
-    skewed. Returns set of (token, side, price). Unchanged from the validated scaffold."""
+def baseline_levels(mk, token, is_up, bb, ba, net_delta, layers, cap, skew_frac, improve=False):
+    """Validated passive, at-or-behind-touch, LAYERED quotes for one token, inventory skewed.
+    Returns set of (token, side, price).
+
+    QUEUE PRIORITY (point 1): with `improve`, when the spread is >= 2 ticks we ALSO emit a quote one tick
+    INSIDE the touch (bb+tick / ba-tick). Polymarket is price-time priority, so a better price jumps the
+    ENTIRE queue at the touch -> instant front-of-line. It's still post-only (never crosses) and is gated
+    downstream by model_filter's toxicity test, so we only actually improve on the side the microprice says
+    is benign (improving the toxic side would just win adverse races). No-op on a 1-tick book (nothing to
+    improve into)."""
     tick = mk["tick"]; d_sign = 1.0 if is_up else -1.0
     skew = skew_frac * cap
     quote_buy = (net_delta * d_sign) < cap and (net_delta * d_sign) < skew
     quote_sell = (net_delta * d_sign) > -cap and (net_delta * d_sign) > -skew
     out = set()
+    wide = (bb is not None and ba is not None and (ba - bb) >= 2 * tick - 1e-9)   # room to step inside
     if quote_buy and bb is not None:
+        if improve and wide:
+            p = round(bb + tick, 4)
+            if 0 < p < ba:
+                out.add((token, "BUY", p))                # one tick inside -> front of the bid queue
         for k in range(layers):
             p = round(bb - k * tick, 4)
             if 0 < p < ba:
                 out.add((token, "BUY", p))
     if quote_sell and ba is not None:
+        if improve and wide:
+            p = round(ba - tick, 4)
+            if bb < p < 1:
+                out.add((token, "SELL", p))               # one tick inside -> front of the ask queue
         for k in range(layers):
             p = round(ba + k * tick, 4)
             if bb < p < 1:
@@ -500,6 +521,21 @@ def main():
     ap.add_argument("--deadman-s", type=float, default=15.0, help="DEAD-MAN switch (C1): if the order "
                     "book feed goes stale for this many seconds (venue/network down -> we'd be holding "
                     "resting orders blind), cancel ALL resting orders. Also fires on an error storm.")
+    # --- QUEUE PRIORITY levers (QUEUE_PRIORITY.md) ---
+    ap.add_argument("--improve", action="store_true", help="P1: when spread>=2 ticks, post one tick INSIDE "
+                    "the touch on the BENIGN side (price-time priority -> jump the whole queue). Gated by "
+                    "the toxicity overlay so we never improve into the side the book is leaving.")
+    ap.add_argument("--min-rest-s", type=float, default=2.0, help="P2: never cancel a resting order younger "
+                    "than this for NON-toxic reasons (reshape/reprice). Stops the 0.1s react loop from "
+                    "churning away queue priority on transient book flicker; toxic-severe pulls still fire.")
+    ap.add_argument("--presign-depth", type=int, default=0, help="P3: pre-sign this many EXTRA levels each "
+                    "side beyond the quoted band (+ the inside-touch improve level) so a touch move fires "
+                    "at the new level with zero signing on the path. live+--presign only.")
+    ap.add_argument("--max-queue-ahead", type=float, default=0.0, help="P4: skip posting at a level whose "
+                    "queue-ahead exceeds this (don't bury yourself behind a huge stack; quote deeper where "
+                    "you're near front). 0 = no cap.")
+    ap.add_argument("--lat-recheck-s", type=float, default=300.0, help="P5: re-run the CLOB latency "
+                    "self-check every N seconds during the run; alert if the median round-trip regresses.")
     a = ap.parse_args()
     live = a.live and os.environ.get("I_UNDERSTAND_REAL_MONEY") == "yes"
     if a.live and not live:
@@ -516,7 +552,7 @@ def main():
                                      f"=> gross_if_filled={o['gross_if_filled']:+.3f}")
         _boxfh.write(json.dumps(o) + "\n"); _boxfh.flush()
     live_btc = {"px": None, "ts": 0.0, "hist": deque(), "rtds_ts": 0.0, "src": None}
-    clob_selfcheck(sess)               # measure real CLOB round-trip -> are we co-located in eu-west-2?
+    lat0 = clob_selfcheck(sess)        # measure real CLOB round-trip -> are we co-located in eu-west-2?
     qema = {}                          # token -> {b,a} EMA of best-queue sizes (depletion trigger)
     # SUB-10ms book path: stream token books off the market WS; the OMS reads this cache (REST = fallback).
     books = {}                         # token -> {bb,ba,bsz,asz,ts}
@@ -653,6 +689,7 @@ def main():
     deadman_tripped = False
     consec_err = 0
     last_hk = 0.0                  # last housekeeping pass (fv refresh + fills poll), gated by --poll
+    last_latcheck = time.time()   # P5: periodic latency re-check (alert on regression)
     end = time.time() + a.duration
     while time.time() < end:
         try:
@@ -695,6 +732,14 @@ def main():
             hk = (time.time() - last_hk) >= a.poll       # housekeeping due? (REST-bound work runs at --poll)
             if fv is not None and hk:
                 fv.update()
+            # P5: continuous latency monitoring -- a CF re-route / region change silently sends us to the
+            # back of every queue. Re-check periodically; alert on a >2x median regression (or cross-region).
+            if a.lat_recheck_s > 0 and (time.time() - last_latcheck) >= a.lat_recheck_s:
+                last_latcheck = time.time()
+                med = clob_selfcheck(sess)
+                if med is not None and ((lat0 and med > 2 * lat0) or med > 80):
+                    notify.alert(f"[pmkit] LATENCY REGRESSION median {med:.0f}ms (was {lat0:.0f}ms)"
+                                 if lat0 else f"[pmkit] LATENCY {med:.0f}ms (cross-region)")
             band_px = a.fv_band * mk["tick"]
             tau = max(mk["we"] - time.time(), 0.0)
             if realized <= -abs(a.loss_limit):
@@ -747,7 +792,7 @@ def main():
                 if a.queue_jump:                       # rolling avg of best-queue sizes (depletion)
                     qe = qema.setdefault(token, {"b": bsz, "a": asz})
                     qe["b"] = 0.9 * qe["b"] + 0.1 * bsz; qe["a"] = 0.9 * qe["a"] + 0.1 * asz
-                base = baseline_levels(mk, token, is_up, bb, ba, net_delta, a.layers, a.cap, a.skew)
+                base = baseline_levels(mk, token, is_up, bb, ba, net_delta, a.layers, a.cap, a.skew, improve=a.improve)
                 ft = fv.fair_token(is_up, tau) if fv is not None else None
                 # A2 (observer effect): the venue book INCLUDES our own resting size, which would bias the
                 # microprice toward OUR side -- contaminating the very signal we gate on. Subtract our resting
@@ -763,6 +808,15 @@ def main():
                 desired, model_supp = model_filter(base, anchor, a.fv_margin, bb, ba, band_px, rlog, token)
                 for _k in desired:                 # pre-sign the targets we're about to need (no-op unless --presign)
                     presign_one(*_k)
+                # P3: warm a DEEPER pre-signed band (touch +/- extra ticks + the inside-touch improve level)
+                # so a touch move fires at the new level with zero signing on the path (new-level race).
+                if a.presign_depth > 0:
+                    tick = mk["tick"]
+                    for k in range(1, a.presign_depth + 1):
+                        for sd, base_px in (("BUY", bb), ("SELL", ba)):
+                            for p in (round(base_px - k * tick, 4), round(base_px + k * tick, 4)):
+                                if 0 < p < 1:
+                                    presign_one(token, sd, p)
                 now = time.time()
 
                 # --- P1: PLACE missing ladder rungs (KEEP existing -> they age into priority) ---
@@ -775,6 +829,8 @@ def main():
                     if sum(1 for k in resting if k[0] == token and k[1] == sd) >= a.max_rungs:
                         continue                          # side ladder full; don't over-commit capital
                     q_ahead = (bsz if sd == "BUY" else asz) if abs(p - (bb if sd == "BUY" else ba)) < 1e-9 else 0.0
+                    if a.max_queue_ahead > 0 and q_ahead > a.max_queue_ahead:
+                        continue                          # P4: don't bury behind a huge stack -> quote deeper where we're near front
                     res = place(*key, q_ahead, bb=bb, ba=ba)
                     if res is None:                       # post-only guard refused (would cross) -> skip
                         continue
@@ -839,9 +895,12 @@ def main():
                                        "price": p, "action": "protect", "aged": aged, "dspot": round(dspot, 1)}) + "\n"); jlog.flush()
                     elif toxic and (not aged or severe):
                         drop(key, "model_pull")            # P2: cancel only if young, OR toxic beats queue value
-                    elif (not aged) and (not in_band):
-                        drop(key, "reshape")               # reshape from the back: young off-band rung
-                    # else: AGED or in-band -> HOLD (front of book is sacred)
+                    elif (not aged) and (not in_band) and (now - resting[key]["ts"]) >= a.min_rest_s:
+                        drop(key, "reshape")               # reshape from the back: young off-band rung...
+                        # ...but only after --min-rest-s, so the 0.1s react loop can't churn away the queue
+                        # priority a fresh order is accruing on transient book flicker (P2). Toxic pulls above
+                        # are exempt -- the adverse-selection defense is never debounced.
+                    # else: AGED, in-band, or too-fresh -> HOLD (front of book is sacred)
 
                 # --- rung cap: evict the rungs FARTHEST from the touch (manage from the back) ---
                 for sd, touch in (("BUY", bb), ("SELL", ba)):

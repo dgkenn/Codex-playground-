@@ -87,6 +87,12 @@ Defaults to DRY-RUN; to go live, add `--live` to `ExecStart` and `Environment=I_
 - A VPN for the box's general outbound security is fine; **do not** use it to access from a jurisdiction
   where you're restricted — that risks the account/funds being frozen (see `PAPER_VS_LIVE.md`).
 
+## Queue priority (get filled first, on the right side)
+`QUEUE_PRIORITY.md` documents the 5 levers and their flags: `--improve` (price-improve into a wide spread,
+toxicity-gated), `--min-rest-s` (don't churn earned priority), `--presign-depth` (win the new-level race),
+`--max-queue-ahead` (don't bury yourself), and p95/p99 latency gating + a live regression monitor. Validate
+each in DRY-RUN; the `reconcile` markout check is the referee that the extra fills are benign, not toxic.
+
 ## Scale-up rule
 Increase the bankroll only after `reconcile` is GO over several clean sessions **and the actual rebate
 credit is confirmed**. Then add breadth (more `--asset`/`--tenor-min` instances) before adding size —

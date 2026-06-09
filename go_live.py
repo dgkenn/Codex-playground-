@@ -127,11 +127,13 @@ def chk_latency():
     if not ts:
         return FAIL, "CLOB unreachable (network/geo/VPN?) -- cannot trade blind", True
     ts.sort(); med = ts[len(ts) // 2]
-    if med < 25:
-        return OK, f"CLOB round-trip median {med:.0f}ms -> co-located (eu-west-2)", True
+    p95 = ts[min(len(ts) - 1, int(len(ts) * 0.95))]; p99 = ts[min(len(ts) - 1, int(len(ts) * 0.99))]
+    tail = f"median {med:.0f}ms p95 {p95:.0f} p99 {p99:.0f}"   # p99 is what loses queue races (point 5)
+    if med < 25 and p99 < 40:
+        return OK, f"CLOB {tail} -> co-located (eu-west-2)", True
     if med < 80:
-        return WARN, f"CLOB round-trip median {med:.0f}ms -> near-region; tighten for queue priority", False
-    return FAIL, f"CLOB round-trip median {med:.0f}ms -> CROSS-REGION; co-locate in eu-west-2 before live", True
+        return WARN, f"CLOB {tail} -> near-region / tail; tighten for queue priority (p99!)", False
+    return FAIL, f"CLOB {tail} -> CROSS-REGION; co-locate in eu-west-2 before live", True
 
 
 def chk_connectivity(asset, tenor):
