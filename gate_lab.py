@@ -211,6 +211,10 @@ def ensemble(rows, lam=1.0, horizon="mo5"):
 
 def main():
     rows = load()
+    if not rows:
+        print("no fills found in gha_data/. Pull the prospective data first:\n"
+              "  git fetch origin gha-data && git checkout origin/gha-data -- gha_data/")
+        return
     print(f"loaded {len(rows)} ungated baseline fills across {len(set(r['ws'] for r in rows))} windows\n")
     base_micro = per_window(rows, g_micro)
     cands = [
