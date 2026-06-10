@@ -46,6 +46,26 @@ physical book, two views; one trade feeds both). Output is the **same fills/wind
 (venue-tagged `kalshi`, net == gross), so `gate_lab` / `leaderboard` / `strategy_opt` /
 `metrics` run on Kalshi data unchanged — set the rebate to 0 in analysis.
 
+## Queue-replay verdict (REAL trade tape, `kalshi_replay.py`, ~1,170 windows/asset)
+
+| net/win (¢), OOS | q_ahead=0 (front) | q=500 | q=2000 |
+|---|---|---|---|
+| **BTC** ungated / gated | **+2.6 / +4.7** | −16.4 / −7.8 | −32.6 / −18.5 |
+| **ETH** ungated / gated | −6.3 / −4.5 | −27.4 / −17.2 | −11.0 / −8.8 |
+
+Three geared conclusions:
+1. **Queue position is the whole game**: back-of-queue fills are the adverse ones (strongly negative
+   at any realistic joined depth). Kalshi's **0.1¢ sub-cent tick buys the front** — improving one
+   micro-tick inside the 1¢ book costs ~1.75¢/win and swings the result by +20¢/win. The deployable
+   expression is **micro-tick price-improvement + toxicity gate** (the gate adds value at every
+   depth tested, both assets).
+2. **BTC-first, not breadth** (reversing the Polymarket lever AND this doc's earlier spread-based
+   guess): ETH's thin book (820/min vs BTC's 26.5k) has no benign touch traffic to harvest — every
+   fill model shows it negative even at the front. Start BTC-only; re-test alts from the live
+   shadow A/B as their volume grows.
+3. With no rebate, Insight-10 reverses: stricter gates (`micro_strict`/`micro_asym`) are the
+   first-line candidates in the A/B (see strategies.py KALSHI GEARING note).
+
 ## The path (mirrors the Polymarket playbook)
 
 1. **Paper phase (now):** run `kalshi_collect.py` continuously (a GH-Actions workflow like
