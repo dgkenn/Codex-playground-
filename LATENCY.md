@@ -83,11 +83,20 @@ order POST already blows the budget.
    incrementally; avoid re-JSON-ing whole snapshots. Pin the event loop, disable Nagle (`TCP_NODELAY`) on
    the order socket.
    - **DONE (book path):** `live_trader.book_feeder` streams the token books off the market WS into an
-     in-memory cache; the OMS reads it (`get_book` = WS→REST fallback) and re-decides every `--react-poll`
-     (0.1s) instead of on the old 3s REST poll, so a quote-pull reacts in WS time. `TCP_NODELAY` is set via
-     `netfast`. **DONE (cancel path):** `timed_cancel` is non-blocking (was `sleep(0.1)×5` = up to 0.5s of
-     hot-path blocking per pull). **TODO:** the auth'd **user WS** for fills (still a 1s REST poll —
-     acceptable for a hold-to-resolution maker, but the last piece for sub-ms fill handling).
+     in-memory cache; the OMS reads it (`get_book` = WS→REST fallback). `TCP_NODELAY` is set via `netfast`.
+   - **DONE (event-driven reaction):** the feeder sets a `threading.Event` on every book delta and the
+     OMS **wakes on it** — reaction latency = processing time, not poll-cadence/2 (~50ms saved on the
+     average pull vs the old fixed 0.1s poll; `--react-poll` is now only the idle heartbeat ceiling).
+   - **DONE (batched cancels):** pulls queue per pass and flush as **one** `cancel_orders` POST — N
+     toxic pulls cost one venue RTT instead of N serialized RTTs (the first cancel is delayed only by
+     microseconds of local compute).
+   - **DONE (fail-fast REST):** the SDK's module-level httpx client is rebuilt at `make_client` with
+     tight per-phase timeouts (connect 1s / read 2s) — a hung order/cancel/fills call can no longer
+     stall the loop for httpx's 5s default while quotes go stale. Spot-feed failover (`fvfeed`) is
+     1.5s/source with last-good-source-first ordering (steady state = exactly one warm request); the
+     periodic latency self-check (8 serial GETs, ~1s+) runs on a **background thread**.
+   - **TODO:** the auth'd **user WS** for fills (still a 1s REST poll — acceptable for a
+     hold-to-resolution maker, but the last piece for sub-ms fill handling).
 
 7. **Measure continuously.** `latency.py` is the acceptance test: run it on the live VPS at deploy and
    periodically; alert if CLOB TTFB regresses (CF re-routing, region change). Track the **distribution**

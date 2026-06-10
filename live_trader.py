@@ -259,7 +259,7 @@ def btc_lead_feeder(live_btc):
     loop.run_until_complete(asyncio.gather(rtds(), coinbase()))
 
 
-def book_feeder(books, mdsub):
+def book_feeder(books, mdsub, evt=None):
     """SUB-10ms BOOK PATH (LATENCY.md #1/#6): stream the token order books off the public CLOB market WS
     instead of REST-polling /book every loop. Maintains books[token] = {bb,ba,bsz,asz,ts}; the OMS reads
     this in-memory cache so a quote-pull reacts to a toxic move in WS time (ms), not on the REST poll (s).
@@ -299,6 +299,8 @@ def book_feeder(books, mdsub):
                                 bsz = sum(float(b["size"]) for b in bids if bb is not None and float(b["price"]) == bb)
                                 asz = sum(float(a["size"]) for a in asks if ba is not None and float(a["price"]) == ba)
                                 books[tok] = {"bb": bb, "ba": ba, "bsz": bsz, "asz": asz, "ts": time.time()}
+                                if evt is not None:
+                                    evt.set()              # EVENT-DRIVEN reaction: wake the OMS NOW
                             elif et == "price_change":
                                 for pc in m.get("price_changes", []):
                                     tok = str(pc["asset_id"]); cur = books.get(tok)
@@ -307,6 +309,8 @@ def book_feeder(books, mdsub):
                                     bb = float(pc["best_bid"]) if pc.get("best_bid") not in (None, "") else cur["bb"]
                                     ba = float(pc["best_ask"]) if pc.get("best_ask") not in (None, "") else cur["ba"]
                                     books[tok] = {"bb": bb, "ba": ba, "bsz": cur["bsz"], "asz": cur["asz"], "ts": time.time()}
+                                    if evt is not None:
+                                        evt.set()          # touch moved -> react in WS time, not poll time
             except Exception:
                 await asyncio.sleep(1)
 
@@ -329,6 +333,17 @@ def btc_lead(live_btc, lag_s):
 
 def make_client():
     from py_clob_client_v2 import ClobClient, SignatureTypeV2
+    # LATENCY: the SDK's module-level httpx client ships with the 5s default timeout -- a hung REST
+    # call (order/cancel/fills) would stall the trading loop for up to 5s while quotes go stale.
+    # Fail fast instead: tight per-phase timeouts; the loop re-decides next pass and the housekeeping
+    # reconciliation sweeps up any ambiguity. (http2 + keep-alive preserved.)
+    try:
+        import httpx
+        from py_clob_client_v2.http_helpers import helpers as _h
+        _h._http_client = httpx.Client(http2=True, timeout=httpx.Timeout(
+            connect=1.0, read=2.0, write=1.0, pool=1.0))
+    except Exception as e:  # noqa: BLE001
+        print(f"  [warn] could not tighten SDK timeouts: {type(e).__name__} {str(e)[:60]}")
     pk = os.environ["PRIVATE_KEY"]; funder = os.environ["DEPOSIT_WALLET_ADDRESS"]
     # Signature type must match HOW the Polymarket account was created, or every order is rejected at
     # signature validation: POLY_PROXY (1) = email/Magic login proxy wallet (the GO_LIVE.md default
@@ -629,7 +644,8 @@ def main():
     # SUB-10ms book path: stream token books off the market WS; the OMS reads this cache (REST = fallback).
     books = {}                         # token -> {bb,ba,bsz,asz,ts}
     mdsub = {"tokens": None, "epoch": 0}   # bumped on window rollover so the feeder resubscribes
-    threading.Thread(target=book_feeder, args=(books, mdsub), daemon=True).start()
+    book_evt = threading.Event()       # set by the feeder on every delta -> EVENT-DRIVEN reaction
+    threading.Thread(target=book_feeder, args=(books, mdsub, book_evt), daemon=True).start()
 
     def cached_book(token, max_age=2.0):
         """WS book if fresh, else None (caller REST-falls-back). max_age guards against a silently dead feed."""
@@ -670,6 +686,7 @@ def main():
     pending_markouts = []              # [(due_ts, fill_dict)] -> true 5s markouts, scored when due
     session_t0 = int(time.time())
     last_reconcile = 0.0               # last venue open-order reconciliation sweep
+    mo_fh = open("live_markout.jsonl", "a")   # persistent handle (was open/close per fill)
 
     presigned = {}        # (tk,sd,price3) -> signed order, pre-signed OFF the fire path (--presign)
 
@@ -738,31 +755,36 @@ def main():
         placed_oids.add(str(oid))
         return oid, t_dec, time.time()
 
-    def timed_cancel(oid):
-        """Send the cancel and return IMMEDIATELY (t_sent, None). The old version polled get_orders() with
-        sleep(0.1)x5 -> up to 0.5s of HOT-PATH BLOCKING per pull, serializing every other quote decision
-        (a latency self-own on the exact path we're optimizing). The cancel SEND is the latency-critical
-        action; confirmation was only a research metric (RepriceLog handles t_conf=None), so we don't block
-        the reaction loop for it."""
-        t_sent = time.time()
-        if not live:
-            return t_sent, t_sent + 0.0       # DRY: treat as instant
-        try:
-            client.cancel_orders([oid])       # v2 SDK: cancel_orders(list) (there is NO client.cancel)
-        except Exception as e:  # noqa: BLE001
-            # A failed cancel = a quote we believe is pulled still resting at the venue. Log it --
-            # silence here turns every later "pull" into a no-op while the book moves against us.
-            print(f"  [CANCEL-FAIL] {oid[:16]}: {type(e).__name__} {str(e)[:80]}")
-        return t_sent, None
+    # BATCHED CANCELS (latency): drop() only QUEUES; flush_cancels() sends every queued cancel in ONE
+    # cancel_orders POST. N toxic pulls in a pass cost one venue round-trip instead of N serialized
+    # RTTs -- and the first cancel is delayed only by local compute (microseconds), strictly better.
+    # (The old per-order version also blocked the react loop once per pull.)
+    cancel_q = []                     # [(oid, key, reason, q)] queued this pass
 
     def drop(key, reason):
         meta = resting.pop(key); oid = meta["oid"]; q = meta.get("q", 0.0)
-        t_sent, t_conf = timed_cancel(oid)
+        cancel_q.append((oid, key, reason, q))
         olog.terminal(oid, "cancelled", reason, resting_s=time.time() - meta.get("ts", time.time()))
-        if reason == "model_pull" and fv is not None:
-            tau = max(mk["we"] - time.time(), 0.0)
-            ft = fv.fair_token(key[0] == mk["up"], tau)
-            rlog.pull(key[0], key[1], key[2], oid, t_sent, t_conf, q, ft if ft is not None else -1, mk["ws"])
+
+    def flush_cancels():
+        if not cancel_q:
+            return
+        batch = cancel_q[:]; cancel_q.clear()
+        t_sent = time.time()
+        if live:
+            try:
+                client.cancel_orders([oid for oid, *_ in batch])
+            except Exception as e:  # noqa: BLE001
+                # A failed cancel = quotes we believe pulled still resting at the venue. Log loudly --
+                # silence turns every later "pull" into a no-op while the book moves against us. The
+                # 5s venue reconciliation sweep is the structural backstop.
+                print(f"  [CANCEL-FAIL] batch x{len(batch)}: {type(e).__name__} {str(e)[:80]}")
+        for oid, key, reason, q in batch:
+            if reason == "model_pull" and fv is not None and mk is not None:
+                tau = max(mk["we"] - time.time(), 0.0)
+                ft = fv.fair_token(key[0] == mk["up"], tau)
+                rlog.pull(key[0], key[1], key[2], oid, t_sent, None, q,
+                          ft if ft is not None else -1, mk["ws"])
 
     def cancel_all_resting(reason="rollover"):
         for key in list(resting):
@@ -773,6 +795,10 @@ def main():
                 # strand every later order on the venue -- this runs inside the dead-man.
                 resting.pop(key, None)
                 print(f"  [DROP-FAIL] {key}: {type(e).__name__} {str(e)[:80]}")
+        try:
+            flush_cancels()                  # one batched cancel POST for everything queued above
+        except Exception as e:  # noqa: BLE001
+            print(f"  [FLUSH-FAIL] {type(e).__name__} {str(e)[:80]}")
         # Venue-side backstop: a scoped cancel clears EVERYTHING we have resting in THIS market,
         # including any order local bookkeeping lost track of (ack raced a crash, resting dict out of
         # sync). Scoped by condition id so live_multi's sibling processes (same API key, other assets)
@@ -878,10 +904,15 @@ def main():
             # back of every queue. Re-check periodically; alert on a >2x median regression (or cross-region).
             if a.lat_recheck_s > 0 and (time.time() - last_latcheck) >= a.lat_recheck_s:
                 last_latcheck = time.time()
-                med = clob_selfcheck(sess)
-                if med is not None and ((lat0 and med > 2 * lat0) or med > 80):
-                    notify.alert(f"[pmkit] LATENCY REGRESSION median {med:.0f}ms (was {lat0:.0f}ms)"
-                                 if lat0 else f"[pmkit] LATENCY {med:.0f}ms (cross-region)")
+
+                def _latcheck():
+                    # own session: requests.Session isn't thread-safe to share with the hot loop
+                    med = clob_selfcheck(netfast.fast_session())
+                    if med is not None and ((lat0 and med > 2 * lat0) or med > 80):
+                        notify.alert(f"[pmkit] LATENCY REGRESSION median {med:.0f}ms (was {lat0:.0f}ms)"
+                                     if lat0 else f"[pmkit] LATENCY {med:.0f}ms (cross-region)")
+                # 8 serial GETs ~1s+: run OFF the trading loop (it used to stall quoting every recheck)
+                threading.Thread(target=_latcheck, daemon=True).start()
             band_px = a.fv_band * mk["tick"]
             tau = max(mk["we"] - time.time(), 0.0)
             # The kill sees realized (settled windows) PLUS the open window marked to mid (window_mark,
@@ -969,6 +1000,7 @@ def main():
                 if a.mid_skip and 0.30 <= mid < 0.55:
                     for key in [k for k in resting if k[0] == token]:
                         drop(key, "mid_skip")
+                    flush_cancels()
                     continue
                 desired, model_supp = model_filter(base, anchor, gate_margin, bb, ba, band_px, rlog, token)
                 for _k in desired:                 # pre-sign the targets we're about to need (no-op unless --presign)
@@ -1090,6 +1122,8 @@ def main():
                         ks.sort(key=lambda k: abs(k[2] - touch))           # nearest-touch first
                         for k in ks[a.max_rungs:]:                         # cancel the stranded deep extras
                             drop(k, "rung_cap")
+                flush_cancels()        # ONE batched POST for every pull this token decided (toxic/
+                                       # shed/reshape/rung-cap) -- N pulls, one venue round-trip
 
             # --- per-fill MARKOUT + net-delta + (c) taker-hit-old attribution (HOUSEKEEPING cadence) ---
             # Fills come off a REST poll, so they run at --poll (1s), not the fast --react-poll loop -- the
@@ -1171,9 +1205,10 @@ def main():
                     markouts.append(mo); del markouts[:-500]      # kill-switch reads the last 30
                     olog.fill(f["oid"], f["asset"], f["taker_sd"], f["fp"], f["fsz"], f["tside"],
                               f["fee"], f["resting_s"], f["q"], round(mo, 5), "passive")
-                    open("live_markout.jsonl", "a").write(json.dumps(
+                    mo_fh.write(json.dumps(
                         {"ts": time.time(), "asset": f["asset"][:12], "side": f["sd"], "price": f["fp"],
                          "size": f["fsz"], "markout": mo, "net_delta": net_delta}) + "\n")
+                    mo_fh.flush()
                 # Venue ORDER RECONCILIATION (C6/C7 closer): `resting` is our intent; the venue is the
                 # truth. Any open order here that we don't recognize (stray ack from an ambiguous POST,
                 # a predecessor's leftover) is unmanaged risk -> cancel it.
@@ -1213,7 +1248,11 @@ def main():
             if hk:
                 last_hk = time.time()                  # mark housekeeping done (fv/fills ran this pass)
             consec_err = 0                              # clean iteration -> reset the error-storm counter
-            time.sleep(a.react_poll)                    # FAST reaction cadence on the WS book cache
+            flush_cancels()                             # defensive: nothing queued may outlive a pass
+            # EVENT-DRIVEN reaction: wake the instant the WS feeder applies a book delta (reaction
+            # latency ~= processing time, not poll-cadence/2). --react-poll is now only the IDLE
+            # heartbeat ceiling (housekeeping still runs when the book is quiet).
+            book_evt.wait(a.react_poll); book_evt.clear()
         except KeyboardInterrupt:
             _flatten_and_exit("KeyboardInterrupt"); print("interrupted; cancelled all."); break
         except Exception as e:  # noqa: BLE001

@@ -61,10 +61,14 @@ class SpotFair:
         self.source = None             # which venue is currently feeding us (audit)
 
     def _fetch(self):
+        """LATENCY: tight per-source timeout (a dead venue must not stall the trading loop's
+        housekeeping for 5s x N sources) + try the LAST-GOOD source first (steady state = exactly
+        one warm request; failover reorders automatically)."""
         last_err = None
-        for url, params, extract in self.sources:
+        srcs = sorted(self.sources, key=lambda s: 0 if s[0].split("/")[2] == self.source else 1)
+        for url, params, extract in srcs:
             try:
-                r = self.sess.get(url, params=params, timeout=5)
+                r = self.sess.get(url, params=params, timeout=1.5)
                 px = extract(r.json())
                 if px and px > 0:
                     self.source = url.split("/")[2]

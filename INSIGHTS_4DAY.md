@@ -107,5 +107,9 @@ IS (first 70%) / OOS (last 30%). **Winner that beats every single gate on BOTH h
 
 **Risk caveat (`METRICS.md`):** `ufat_band` wins on raw net/Profit-Factor/edge but has **5× the drawdown**
 and **lower Calmar (3.9 vs `ufat` 8.8)** — `notmid` concentrates into directional high-prob tails, so part
-of its extra edge is directional risk, not rebate. **`ufat` is the better risk-adjusted default today**;
-`ufat_band` becomes the winner once we **delta-hedge** the residual. Judge variants by Calmar/Sortino, not net.
+of its extra edge is directional risk, not rebate. **`ufat` is the better risk-adjusted default.** The two
+proposed rescues both FAILED: the delta-hedge was refuted by the path-based backtest (`hedge_backtest.py`,
+`METRICS.md`), and under real inventory mechanics the band's net advantage **disappears entirely** — its
+concentrated same-side tail fills are exactly what the skew limit blocks (`metrics_hypo.py` H2: replay
+holdout +3.18 vs `ufat` +3.67). Judge variants by Calmar/Sortino, not net; the keep/drop numbers above
+overstate the band because they ignore inventory constraints.
