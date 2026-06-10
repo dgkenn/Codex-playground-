@@ -841,9 +841,9 @@ def main():
         _flattened["done"] = True
         try:
             print(f"[DEAD-MAN] {reason}: cancelling all resting orders")
-            notify.alert(f"[pmkit] DEAD-MAN {reason}: cancel-all")
-            cancel_all_resting(reason="deadman")
-        except Exception as e:  # noqa: BLE001
+            cancel_all_resting(reason="deadman")          # cancels FIRST -- they're the safety action
+            notify.alert_sync(f"[pmkit] DEAD-MAN {reason}: cancel-all")  # sync: process is exiting,
+        except Exception as e:  # noqa: BLE001                           # an async thread would die
             print(f"[DEAD-MAN] cancel failed: {str(e)[:120]}")
 
     atexit.register(lambda: _flatten_and_exit("process exit"))
