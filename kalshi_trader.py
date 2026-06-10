@@ -755,9 +755,18 @@ def main():
                 # Toxicity gate: skip placing if microprice says this side is adverse
                 if mp is not None and gate_check(side, price, ybb, yba, net_delta, a.gate, 0.0, clean_ybq, clean_yaq):
                     continue
+                # HARD DIRECTIONAL INVENTORY CLAMP (live-test finding): the skew gate keyed on --cap
+                # (contracts) was far looser than --max-notional (dollars), so under rapid fill->
+                # re-quote the book leaned directional (~9 one-sided contracts on a $2 budget). A net
+                # position of N binary contracts risks up to $N, so bound |net_delta| by the SAME
+                # dollar budget -- this is the binding directional risk control, independent of skew.
+                inv_cap = max(1.0, a.max_notional)            # contracts; ties directional risk to $
+                proj = net_delta + (a.post if side == "yes" else -a.post)
+                if abs(proj) > inv_cap + 1e-9:
+                    continue
                 # C8 aggregate notional cap (BUY side only; both YES and NO are buys)
-                open_buy_notional = sum(price_ * a.post for (_, price_), _ in
-                                        ((k, m) for k, m in resting.items()))
+                open_buy_notional = sum(max(a.post - m.get("filled", 0.0), 0.0) * price_
+                                        for (_, price_), m in resting.items())
                 exposure = open_buy_notional + max(-cash, 0.0)
                 if exposure + price * a.post > a.max_notional:
                     continue
