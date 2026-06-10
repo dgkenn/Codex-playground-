@@ -1,0 +1,31 @@
+{
+  "features": [
+    "bias",
+    "tox",
+    "flow",
+    "dspot",
+    "spread",
+    "fat(p)",
+    "q_ahead",
+    "tk_sz",
+    "tau",
+    "is_ask"
+  ],
+  "weights": [
+    0.0012913291217846326,
+    -0.7533388579793664,
+    0.0001162888038447187,
+    -0.00034362810552261274,
+    -0.000568118269782715,
+    -0.004452999913258602,
+    0.0010657387360161839,
+    0.0005436339685304283,
+    0.0034946051949320753,
+    -0.002724578206548946
+  ],
+  "strict_margin": 0.003,
+  "asym_ask": -0.001,
+  "asym_bid": 0.002,
+  "horizon": "mo5",
+  "note": "keep fill iff dot(features,weights)+maker_rebate(p) > 0 (predicted short-markout net)"
+}

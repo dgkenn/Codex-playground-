@@ -56,6 +56,10 @@ jobs:
         run: python aggregate_shadow.py > gha_data/SUMMARY.txt 2>/dev/null || true
       - name: commit data to the dedicated DATA branch (never touches the code branch)
         run: |
+          # Data goes to its own branch `gha-data`, NOT the code branch. The old design rebased+pushed
+          # onto the feature branch every ~10min and CLOBBERED code commits. The job still RUNS from the
+          # code branch (checkout above); only artifacts land on gha-data. Pull data for analysis with:
+          #   git fetch origin gha-data && git checkout origin/gha-data -- gha_data/
           git config user.name  "paper-bot"
           git config user.email "paper-bot@users.noreply.github.com"
           test -n "$(ls -A gha_data 2>/dev/null)" || { echo "no data"; exit 0; }

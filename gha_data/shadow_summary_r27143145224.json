@@ -1,0 +1,80 @@
+{
+  "baseline": {
+    "net": -7.3063,
+    "fills": 470,
+    "windows": 2,
+    "pos": 0
+  },
+  "cap25": {
+    "net": 4.5781,
+    "fills": 376,
+    "windows": 2,
+    "pos": 1
+  },
+  "skew15": {
+    "net": -4.1129,
+    "fills": 409,
+    "windows": 2,
+    "pos": 1
+  },
+  "fv_size": {
+    "net": -5.3926,
+    "fills": 469,
+    "windows": 2,
+    "pos": 0
+  },
+  "micro_gate": {
+    "net": 9.5109,
+    "fills": 403,
+    "windows": 2,
+    "pos": 2
+  },
+  "micro_skew15": {
+    "net": 8.3205,
+    "fills": 335,
+    "windows": 2,
+    "pos": 2
+  },
+  "flow_gate": {
+    "net": -15.2567,
+    "fills": 31,
+    "windows": 2,
+    "pos": 0
+  },
+  "late_gate": {
+    "net": -1.4046000000000003,
+    "fills": 327,
+    "windows": 2,
+    "pos": 1
+  },
+  "av_stoikov": {
+    "net": 11.861600000000001,
+    "fills": 574,
+    "windows": 2,
+    "pos": 1
+  },
+  "spot_react": {
+    "net": 6.0835,
+    "fills": 319,
+    "windows": 2,
+    "pos": 2
+  },
+  "micro_react": {
+    "net": 0.0343,
+    "fills": 166,
+    "windows": 2,
+    "pos": 1
+  },
+  "micro_spot": {
+    "net": 8.3793,
+    "fills": 281,
+    "windows": 2,
+    "pos": 1
+  },
+  "lag_taker": {
+    "net": -85.467,
+    "fills": 189,
+    "windows": 2,
+    "pos": 0
+  }
+}

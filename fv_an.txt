@@ -1,0 +1,47 @@
+/home/user/Codex-playground-/fv_analysis.py:67: UserWarning: no explicit representation of timezones available for np.datetime64
+  allt["t_ms"] = pd.to_datetime(allt["timestamp"], utc=True).to_numpy().astype("datetime64[ms]").view("int64")
+fills=619,360  windows=288  sigma=6.493e-05
+per-fill resolution P&L: mean=-0.00542 (this is the maker edge; large variance is expected -- it's a 0/1 bet)
+corr(fair_edge, res_pnl) = +0.0229  (if the flag predicted toxicity, MORE-negative fair_edge -> MORE-negative res_pnl)
+
+[decile of fair_edge -> resolution-horizon P&L per fill]  (does 'toxic' (low edge) actually settle worse?)
+    decile mean_fair_edge         n  mean_resPnL      std   Sharpe
+         0        -0.1595    61,936     -0.02664   0.4185   -0.064
+         1        -0.0692    61,936      0.00126   0.4346    0.003
+         2        -0.0424    61,936      0.00866   0.4374    0.020
+         3        -0.0228    61,936      0.00000   0.4214    0.000
+         4        -0.0069    61,936     -0.00037   0.3893   -0.001
+         5         0.0068    61,936      0.00093   0.3814    0.002
+         6         0.0226    61,936     -0.01913   0.4194   -0.046
+         7         0.0422    61,936     -0.00708   0.4286   -0.017
+         8         0.0686    61,936     -0.00648   0.4224   -0.015
+         9         0.1460    61,936     -0.00533   0.3818   -0.014
+
+[binary gate -- window-level Sharpe, n=288 FIXED so no n-reduction tax]
+    baseline (keep all)       : windows=288 per-win mean=-0.00026 std=0.03642 Sharpe=-0.007 | total=$+16,711 | fills=619,360
+    global gate thr=0.02      : windows=288 per-win mean=-0.00271 std=0.12095 Sharpe=-0.022 | total=$+60,859 | fills=393,855
+    global gate thr=0.05      : windows=288 per-win mean=-0.00130 std=0.08200 Sharpe=-0.016 | total=$+67,553 | fills=486,308
+    global gate thr=0.1       : windows=288 per-win mean=-0.00025 std=0.05091 Sharpe=-0.005 | total=$+39,851 | fills=569,524
+
+[targeted band tau in 120-720s AND -0.15<=fair_edge<-thr: bite + within-band P&L]
+    thr=0.02: gates 129,497 fills (20.91%) | gated res_pnl mean=+0.00606 Sharpe=+0.015 vs kept-in-band mean=-0.00848
+      targeted thr=0.02       : windows=288 per-win mean=-0.00325 std=0.07051 Sharpe=-0.046 | total=$+13,443 | fills=489,863
+    thr=0.03: gates 107,529 fills (17.36%) | gated res_pnl mean=+0.00952 Sharpe=+0.023 vs kept-in-band mean=-0.00867
+      targeted thr=0.03       : windows=288 per-win mean=-0.00365 std=0.06463 Sharpe=-0.057 | total=$+10,787 | fills=511,831
+    thr=0.05: gates 70,426 fills (11.37%) | gated res_pnl mean=+0.01358 Sharpe=+0.032 vs kept-in-band mean=-0.00744
+      targeted thr=0.05       : windows=288 per-win mean=-0.00321 std=0.05199 Sharpe=-0.062 | total=$+13,792 | fills=548,934
+
+[OOS: split windows by median start; same gates evaluated on each half]
+  IS (early):
+    baseline                  : windows=134 per-win mean=-0.00303 std=0.03722 Sharpe=-0.082 | total=$-10,490 | fills=308,704
+    global gate thr=0.05      : windows=134 per-win mean=-0.00532 std=0.08220 Sharpe=-0.065 | total=$+22,981 | fills=238,967
+    global gate thr=0.1       : windows=134 per-win mean=-0.00601 std=0.04802 Sharpe=-0.125 | total=$-6,016 | fills=280,593
+  OOS (late):
+    baseline                  : windows=154 per-win mean=+0.00215 std=0.03565 Sharpe=+0.060 | total=$+27,201 | fills=310,656
+    global gate thr=0.05      : windows=154 per-win mean=+0.00219 std=0.08192 Sharpe=+0.027 | total=$+44,573 | fills=247,341
+    global gate thr=0.1       : windows=154 per-win mean=+0.00476 std=0.05295 Sharpe=+0.090 | total=$+45,867 | fills=288,931
+
+[continuous sizing w=clip(1+k*fair_edge,0,2): does scaling beat skipping?]
+    k= 2.0: per-win mean=+0.00104 Sharpe=+0.021 total=$+82,638
+    k= 5.0: per-win mean=+0.00090 Sharpe=+0.012 total=$+107,860
+    k=10.0: per-win mean=+0.00005 Sharpe=+0.000 total=$+116,442

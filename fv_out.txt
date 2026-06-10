@@ -1,0 +1,25 @@
+windows=288  trades=638607  sigma_per_s=6.493e-05  spot 2026-04-14..2026-04-17
+cap=50
+  baseline (no gate)    : per-share mean=+0.00083 t=+14.60 | IS t=+16.79 OOS t=+8.30 | total=$+16,888
+  gate thr=0.02         : per-share mean=+0.00083 t=+14.60 | IS t=+16.79 OOS t=+8.30 | total=$+16,888
+      -> kept 100.0% of fills, skipped 0 (mean fair-edge of skipped=+nan)
+  gate thr=0.05         : per-share mean=+0.00083 t=+14.60 | IS t=+16.79 OOS t=+8.30 | total=$+16,888
+      -> kept 100.0% of fills, skipped 0 (mean fair-edge of skipped=+nan)
+  gate thr=0.10         : per-share mean=+0.00083 t=+14.60 | IS t=+16.79 OOS t=+8.30 | total=$+16,888
+      -> kept 100.0% of fills, skipped 0 (mean fair-edge of skipped=+nan)
+cap=100
+  baseline (no gate)    : per-share mean=+0.00098 t=+12.16 | IS t=+12.18 OOS t=+7.39 | total=$+20,444
+  gate thr=0.02         : per-share mean=+0.00098 t=+12.16 | IS t=+12.18 OOS t=+7.39 | total=$+20,444
+      -> kept 100.0% of fills, skipped 0 (mean fair-edge of skipped=+nan)
+  gate thr=0.05         : per-share mean=+0.00098 t=+12.16 | IS t=+12.18 OOS t=+7.39 | total=$+20,444
+      -> kept 100.0% of fills, skipped 0 (mean fair-edge of skipped=+nan)
+  gate thr=0.10         : per-share mean=+0.00098 t=+12.16 | IS t=+12.18 OOS t=+7.39 | total=$+20,444
+      -> kept 100.0% of fills, skipped 0 (mean fair-edge of skipped=+nan)
+cap=50 TARGETED (tau 120-720s, -0.15<=edge<-thr)
+  baseline (no gate)    : per-share mean=+0.00083 t=+14.60 | IS t=+16.79 OOS t=+8.30 | total=$+16,888
+  targeted thr=0.02     : per-share mean=+0.00083 t=+14.60 | IS t=+16.79 OOS t=+8.30 | total=$+16,888
+      -> kept 100.0% of fills, skipped 0 (mean fair-edge of skipped=+nan)
+  targeted thr=0.03     : per-share mean=+0.00083 t=+14.60 | IS t=+16.79 OOS t=+8.30 | total=$+16,888
+      -> kept 100.0% of fills, skipped 0 (mean fair-edge of skipped=+nan)
+  targeted thr=0.05     : per-share mean=+0.00083 t=+14.60 | IS t=+16.79 OOS t=+8.30 | total=$+16,888
+      -> kept 100.0% of fills, skipped 0 (mean fair-edge of skipped=+nan)
