@@ -16,9 +16,11 @@ alpha** (BTC-prediction and favorite-longshot were both tested and rejected).
 - **Deployed gate** (`live_trader.py --gate`): **`ufat`** — microprice toxicity gate with a p-adaptive
   margin (strict near p≈0.5 where adverse selection peaks, loose at the benign tails). Beat plain
   `micro_gate` by ~24% on 4 days of prospective data.
-- **Best backtested combo** (`combo_lab.py`, in+out-of-sample): **`ufat_band`** = `ufat` **+ skip the toxic
-  0.30–0.55 P(up) zone** (`--mid-skip`). ~2× OOS net/win vs `ufat` alone; running in the live A/B before
-  it becomes the default.
+- **Best backtested combo by raw net** (`combo_lab.py`, in+out-of-sample): **`ufat_band`** = `ufat` **+ skip
+  the toxic 0.30–0.55 P(up) zone** (`--mid-skip`). ~2× OOS net/win vs `ufat` — but **higher drawdown**
+  (`METRICS.md`: Calmar 3.9 vs `ufat` 8.8), because it concentrates into directional high-prob tails. So
+  **`ufat` is the better risk-adjusted default today**; `ufat_band` becomes preferable once we **delta-hedge**
+  the residual (strips the tail risk). Running in the live A/B; judge by Calmar/Sortino, not net.
 - **Long-run gate**: **`micro_cal`** — a calibrated ensemble that keeps a fill iff `predicted_markout +
   rebate > 0`, so the toxicity threshold **auto-adapts to the real rebate** once it's confirmed.
 - **Breadth, not stacking**: maker P&L is ~uncorrelated across assets (net corr +0.10) → ~1.75× Sharpe
@@ -62,6 +64,7 @@ Full deploy path: **`GO_LIVE.md`**. The bot defaults to **DRY-RUN**; real orders
 | `gate_lab.py` | backtest toxicity gates on the fill tape → `gate_model.json` (the `micro_cal` model) |
 | `combo_lab.py` | heavily backtest gate **combinations** IS+OOS → the best composite (`ufat_band`) |
 | `insights.py` | regenerate the 10 data-backed insights (`INSIGHTS_4DAY.md`) |
+| `metrics.py` | full risk/profitability/consistency suite — MDD, Sortino, Calmar, Profit Factor, edge (`METRICS.md`) |
 | `breadth_net_corr.py` | cross-asset net correlation → real breadth Sharpe |
 | `stack_analysis.py` | does portfolio-stacking help? (no — too correlated) |
 | `aggregate_shadow.py` | rolling paper summary |
@@ -82,6 +85,7 @@ Full deploy path: **`GO_LIVE.md`**. The bot defaults to **DRY-RUN**; real orders
 **Current / authoritative**
 - `README.md` (this file) · `INSIGHTS_4DAY.md` (10 insights + best combo, the latest data) ·
   `GATING.md` (toxicity-gating rebuild) · `EDGE.md` (the 3-lever edge decomposition) ·
+  `METRICS.md` (full performance suite beyond Sharpe — MDD/Sortino/Calmar/...) ·
   `ADDING_STRATEGIES.md` (modular registry workflow)
 - Go-live: `GO_LIVE.md` · `PAPER_VS_LIVE.md` (the gap map) · `DEPLOY.md` (free colo) ·
   `LATENCY.md` (sub-10ms) · `QUEUE_PRIORITY.md` (fill-first levers) · `CAPTURE.md` (logging schema)

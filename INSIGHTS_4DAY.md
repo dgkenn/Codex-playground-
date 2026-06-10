@@ -104,5 +104,8 @@ IS (first 70%) / OOS (last 30%). **Winner that beats every single gate on BOTH h
 *ranking* (`ufat+notmid` tops both halves). Validate live before sizing up.
 
 **Built:** `ufat_band` variant (live A/B) + `live_trader --gate ufat --mid-skip` (the deployable combo).
-The best overall strategy = **`ufat_band` gate + breadth (BTC-weighted) + `micro_cal` once the live rebate
-is confirmed** — not a portfolio stack.
+
+**Risk caveat (`METRICS.md`):** `ufat_band` wins on raw net/Profit-Factor/edge but has **5× the drawdown**
+and **lower Calmar (3.9 vs `ufat` 8.8)** — `notmid` concentrates into directional high-prob tails, so part
+of its extra edge is directional risk, not rebate. **`ufat` is the better risk-adjusted default today**;
+`ufat_band` becomes the winner once we **delta-hedge** the residual. Judge variants by Calmar/Sortino, not net.
