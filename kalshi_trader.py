@@ -579,7 +579,21 @@ def main():
             pending_markouts.append((time.time() + 5.0, {
                 "fside": fside, "fp": fp, "count": count,
                 "resting_s": resting_s, "oid": (meta or {}).get("oid", fid)}))
-            lm.fill(fside, fp, count, resting_s, None, "taker" if f.get("is_taker") else "maker", None, 0.0)
+            # FEE GROUND TRUTH (the load-bearing Kalshi unknown): capture the venue's reported fee on
+            # every fill, raw, to a dedicated log -- the per-series maker-fee question the public docs
+            # can't fully answer is settled by what Kalshi actually charges here.
+            fee_val = f.get("fee_cost")  # CONFIRMED live: Kalshi fills report fee in "fee_cost" (=0 on KXBTC15M maker)
+            mkr = "taker" if f.get("is_taker") else "maker"
+            try:
+                with open(f"kalshi_fees_{a.asset}15m.jsonl", "a") as _ff:
+                    _ff.write(json.dumps({"ts": time.time(), "ticker": ticker, "side": fside,
+                                          "price": fp, "count": count, "role": mkr,
+                                          "fee_reported": fee_val, "raw": f}) + "\n")
+            except Exception:
+                pass
+            print(f"  [FILL] {mkr.upper()} {fside} {count}@{fp} fee={fee_val} "
+                  f"(roundtrip the raw fill in kalshi_fees_{a.asset}15m.jsonl)")
+            lm.fill(fside, fp, count, resting_s, None, mkr, fee_val, 0.0)
             sf.add(fid)
 
     def sweep_window_fills(ticker, en=None):
