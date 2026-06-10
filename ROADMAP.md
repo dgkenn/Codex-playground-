@@ -20,8 +20,15 @@ Status legend: ✅ done · 🔵 in flight · ⬜ not started.
 
 ## Tier 1 — new revenue / alpha (build next)
 
-### 1. Delta-hedge residual inventory with a BTC perp ⬜  **(highest leverage)**
-The structural unlock. Does three things at once:
+### 1. Delta-hedge residual inventory with a BTC perp ❌ **(BACKTESTED & DEMOTED — see `METRICS.md`)**
+> **Refuted (`hedge_backtest.py`, 411 windows on the real spot path):** the hedge does NOT reduce drawdown
+> for these 15-min binaries — their delta explodes near expiry (pin risk) so it must be frozen exactly when
+> the outcome is decided, leaving the decisive terminal move unhedged. Insignificant free (ufat_band Calmar
+> 5.7→6.1, p=0.76), net-negative with perp fees. Risk control = tight inventory + breadth instead. The
+> original rationale below is kept for the record but the premise (a hedge makes the book safe to scale)
+> did not survive a proper path-based test.
+
+The (hypothesized) structural unlock — does three things at once:
 - converts "hold leftover to resolution and pray" into a **hedged** book;
 - lets us **raise the inventory cap** → more captured volume → directly more P&L (edge is
   per-share, so volume *is* the P&L);

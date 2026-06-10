@@ -1,9 +1,14 @@
-"""hedger.py -- delta-hedge residual inventory with a BTC perp (ROADMAP Tier-1; the MDD unlock).
+"""hedger.py -- BTC-perp delta-hedge HEDGE-RATIO computation. Kept for reference.
 
-WHY (validated): a hold-to-resolution maker carries the residual token inventory's DIRECTIONAL swing as
-risk -- it's what drives drawdown. `metrics.py` section D shows hedging the residual collapses MDD ~77-93%
-and lifts Calmar ~3x (for ufat_band: MDD 1253->94, Calmar 3.9->13.8, paired p=0.013). The 15m token is a
-function of a tradable underlying (BTC), so unlike an election maker we CAN hedge it.
+>>> IMPORTANT: a PROPER path-based backtest (`hedge_backtest.py`) REFUTED this as a drawdown fix. The
+>>> mo30-based hint in metrics.py section D was a proxy artifact (it removes the terminal move for free).
+>>> On the real spot path, hedging these 15-min binaries does NOT cut MDD: their delta explodes near expiry
+>>> (pin risk) so the hedge must be frozen exactly when the outcome is decided -> insignificant free
+>>> (ufat_band Calmar 5.7->6.1, p=0.76), net-negative with perp fees. Use tight inventory + breadth for
+>>> risk, NOT this. This module remains only as the hedge-ratio reference / for other (non-binary) uses.
+
+A hold-to-resolution maker carries the residual token inventory's directional swing; the 15m token is a
+function of a tradable underlying (BTC), so in principle it's hedgeable -- but see the refutation above.
 
 The token's price ~ P(up) = fair_up(S). So a position of q_up UP tokens (and q_dn DOWN) has BTC price
 sensitivity dV/dS = (q_up - q_dn) * d(fair_up)/dS. We hold the OFFSETTING perp: target perp delta = -dV/dS,
@@ -73,4 +78,4 @@ if __name__ == "__main__":
           "(negative = short BTC to neutralize)")
     h = PerpHedger(rebalance_usd=25)
     print("rebalance:", h.rebalance(100, 0, st, s0, sigma, tau))
-    print("validation that hedging helps: see metrics.py section D (MDD -77..-93%, Calmar ~3x).")
+    print("NOTE: hedge_backtest.py REFUTED this as a drawdown fix for 15-min binaries (pin risk near expiry).")

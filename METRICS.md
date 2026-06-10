@@ -45,7 +45,8 @@ tail risk, not pure rebate** — exactly the trap the whole project guards again
 
 ## Improvements this implied — NOW ACTIONED (detail in "Improvements actioned" at the bottom)
 1. ✅ **Judge variants by Calmar/Sortino, not net/win** — `leaderboard.py` now ranks by Calmar with p/CI.
-2. ✅ **Delta-hedge residual inventory** (BTC perp) — `hedger.py` built; effect quantified (MDD −77–93%).
+2. ❌ **Delta-hedge residual inventory** (BTC perp) — built + **properly backtested** (`hedge_backtest.py`) and
+   **REFUTED** (the mo30 proxy was misleading). See "Delta-hedge: properly backtested" at the bottom.
 3. ✅ **Per-regime breakdown** — by asset (Insight 2) + volatility regime (`metrics.py` E: calm vs volatile).
 4. ◐ **Confirm fill rate live** — paper is the front-of-queue upper bound; `pilot_reconcile.py` does it live.
 5. ✅ **Position sizing** — `live_multi.py` BTC-weighted; tiny clips + caps already the design.
@@ -85,8 +86,10 @@ slippage; TCA "cost" = adverse-selection markout; beta-to-BTC ≈ 0 is the delta
    (≫ the 90% bar); parameter sensitivity is **flat** under ±20% margin (no curve-fit cliff); walk-forward
    is positive in every segment with data. The edge is not an artifact.
 4. **Inventory drives drawdown** — `av_stoikov` (carries the most inventory) has the worst Ulcer (21.6) and
-   Time-Underwater (52%); the tight-inventory gates have the lowest. This is the quantitative case for the
-   **delta-hedge** (`hedger.py`): cut the inventory tail → cut the drawdown (metrics.py D: MDD −77–93%).
+   Time-Underwater (52%); the tight-inventory gates have the lowest. The fix is **tight inventory** (which
+   the winning gates already do) — NOT a BTC-perp delta-hedge, which a proper path-based backtest refuted
+   (see bottom section). The mo30-based hint in `metrics.py §D` overstates the hedge benefit; ignore it in
+   favor of `hedge_backtest.py`.
 5. **Adverse-selection rate: 44% gated vs 48% baseline.** ~Half of maker fills are short-term adverse (the
    spread bounce) — *normal* for a 2-sided 1-tick maker; the rebate + the benign half net positive, and the
    gate trims the toxic 4 points. (The reviewer's <15% target is a directional-taker frame, not a maker's.)
@@ -96,11 +99,45 @@ slippage; TCA "cost" = adverse-selection markout; beta-to-BTC ≈ 0 is the delta
 ## Improvements actioned
 - **Deployed `ufat`** is confirmed best risk-adjusted (above) — keep it; `leaderboard.py` now ranks by
   **Calmar** (not net) and shows p/CI, so the A/B selects risk-adjusted winners going forward.
-- **`hedger.py`** (BTC-perp delta-hedge) built — the validated MDD unlock for the high-inventory / `ufat_band`
-  variants (the only path that makes the higher-net gate risk-adjusted-superior).
+- **`hedger.py`** (BTC-perp hedge-ratio) built and **properly backtested** (`hedge_backtest.py`) — the hedge
+  was **REFUTED** as an MDD fix (details below). Risk control = tight inventory + breadth, not a perp hedge.
 - **Per-asset sizing** in `live_multi.py` (BTC-weighted) — concentrate capital where Recovery/edge is best.
 - **Forward collection:** `shadow_compare` now records per-variant `adv_rate` (adverse-at-entry) for ALL
   strategies; net / inventory (`end_delta`,`max_delta`) / fill_rate were already collected — so the entire
   battery above regenerates for every strategy as data grows (`metrics.py`, `metrics_ext.py`).
 
 Run: `python metrics_ext.py` (after `git checkout origin/gha-data -- gha_data/`).
+
+---
+
+# Delta-hedge: properly backtested against the real spot path — REFUTED (`hedge_backtest.py`)
+
+The earlier "hedge cuts MDD ~77–93%" was a **proxy artifact**: `metrics.py §D` used short-horizon markout
+(mo30) as a stand-in for "hedged," which silently removes the terminal directional move *for free*. A real
+hedge cannot do that. So I built a proper simulation: reconstruct each gate's inventory path from the fills,
+hold a BTC-perp of notional `N = -(q_up-q_dn)·f'(S)·S` along the **actual ~1Hz spot path** (`ticks_*.jsonl`,
+411 windows), using the window's **realized vol** for `f'`, perp fees + a proportional rebalance band, and —
+critically — **freezing the hedge in the final τ_min** because a binary's delta explodes as τ→0 (pin risk).
+
+| gate | unhedged net / Calmar | hedged (2 bps) net / Calmar | hedged (FREE) net / Calmar | paired p |
+|---|---|---|---|---|
+| micro | +1.45 / 0.6 | −4.85 / −1.0 | +2.10 / 1.1 | 0.40 (free) |
+| ufat | +1.28 / 0.5 | −5.11 / −0.9 | +1.93 / 1.0 | 0.42 (free) |
+| ufat_band | +11.00 / 5.7 | +5.08 / 2.4 | +10.67 / 6.1 | **0.76 (free)** |
+
+**Verdict: the hedge does NOT make `ufat_band` risk-adjusted-superior.**
+- With realistic perp fees (2 bps) it **hurts every gate** (net down, Calmar down).
+- Even **free** (fee=0, impossible) the improvement is marginal and **statistically insignificant**
+  (`ufat_band` Calmar 5.7→6.1, paired **p=0.76**; micro/ufat p≈0.40).
+
+**Why (the honest mechanism):** a 15-min binary's delta explodes near expiry (gamma/pin risk), so you must
+freeze the hedge exactly in the final minutes — but the **resolution is decided by that terminal move**. The
+hedge therefore offsets early, *reversible* noise rather than the *decisive* terminal swing, while adding
+fees and its own path variance. The residual inventory is also small (tight cap), so there's little
+directional risk to hedge in the first place.
+
+**Implication:** `ufat` stays the deployed default (best risk-adjusted, unhedged). `ufat_band`'s higher net
+comes with a drawdown that **hedging cannot remove** — so prefer it only if you accept the drawdown, not on
+the (now-falsified) premise that a hedge fixes it. The real risk controls are **tight inventory** (already
+in the gates) and **breadth** (cross-asset net corr +0.10). `ROADMAP`'s delta-hedge Tier-1 is **demoted**.
+Re-run: `python hedge_backtest.py [fee_bps] [hyst_usd]`.

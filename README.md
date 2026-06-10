@@ -19,8 +19,10 @@ alpha** (BTC-prediction and favorite-longshot were both tested and rejected).
 - **Best backtested combo by raw net** (`combo_lab.py`, in+out-of-sample): **`ufat_band`** = `ufat` **+ skip
   the toxic 0.30–0.55 P(up) zone** (`--mid-skip`). ~2× OOS net/win vs `ufat` — but **higher drawdown**
   (`METRICS.md`: Calmar 3.9 vs `ufat` 8.8), because it concentrates into directional high-prob tails. So
-  **`ufat` is the better risk-adjusted default today**; `ufat_band` becomes preferable once we **delta-hedge**
-  the residual (strips the tail risk). Running in the live A/B; judge by Calmar/Sortino, not net.
+  **`ufat` is the better risk-adjusted default today.** (A proper path-based delta-hedge backtest
+  `hedge_backtest.py` **refuted** the idea that hedging fixes `ufat_band`'s drawdown — binary gamma explodes
+  near expiry, so the hedge can't capture the decisive terminal move; it's insignificant free and net-negative
+  with fees. See `METRICS.md`.) Running in the live A/B; judge by Calmar/Sortino, not net.
 - **Long-run gate**: **`micro_cal`** — a calibrated ensemble that keeps a fill iff `predicted_markout +
   rebate > 0`, so the toxicity threshold **auto-adapts to the real rebate** once it's confirmed.
 - **Breadth, not stacking**: maker P&L is ~uncorrelated across assets (net corr +0.10) → ~1.75× Sharpe
@@ -64,9 +66,10 @@ Full deploy path: **`GO_LIVE.md`**. The bot defaults to **DRY-RUN**; real orders
 | `gate_lab.py` | backtest toxicity gates on the fill tape → `gate_model.json` (the `micro_cal` model) |
 | `combo_lab.py` | heavily backtest gate **combinations** IS+OOS → the best composite (`ufat_band`) |
 | `insights.py` | regenerate the 10 data-backed insights (`INSIGHTS_4DAY.md`) |
-| `metrics.py` | core suite — MDD, Sortino, Calmar, PF, edge + delta-hedge proxy + regime, p/CI (`METRICS.md`) |
+| `metrics.py` | core suite — MDD, Sortino, Calmar, PF, edge + regime, p/CI (`METRICS.md`) |
 | `metrics_ext.py` | extended battery — skew/kurtosis/VaR/CVaR, Recovery/Ulcer, Info-Ratio, walk-forward, Monte-Carlo, sensitivity |
-| `hedger.py` | BTC-perp delta-hedge of residual inventory (the MDD unlock; `ROADMAP` Tier-1) |
+| `hedge_backtest.py` | PROPER path-based delta-hedge sim vs real spot path — **refuted** the hedge as an MDD fix (`METRICS.md`) |
+| `hedger.py` | BTC-perp hedge-ratio computation (kept for reference; the backtest shows it doesn't help these binaries) |
 | `breadth_net_corr.py` | cross-asset net correlation → real breadth Sharpe |
 | `stack_analysis.py` | does portfolio-stacking help? (no — too correlated) |
 | `aggregate_shadow.py` | rolling paper summary |

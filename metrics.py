@@ -212,7 +212,9 @@ def main():
         for g in ("baseline", "micro", "micro_marg", "micro_strict", "micro_asym", "ufat", "ufat_band"):
             net, fv = gseries(rows, gate(g)); print(row(g, suite(net, fv)))
 
-        print(f"\n=== D. DELTA-HEDGE (fill-tape): UNHEDGED (to-resolution) vs HEDGED-proxy (mo30); paired-t on the diff ===")
+        print(f"\n=== D. (PROXY ONLY -- MISLEADING; use hedge_backtest.py) mo30 'hedge' stand-in vs to-resolution ===")
+        print("    NOTE: this mo30 proxy OVERSTATES the hedge (it removes the terminal move for free). The proper")
+        print("    path-based sim (hedge_backtest.py) REFUTES the hedge: insignificant free, net-negative w/ fees.")
         print(f"{'gate':>14}{'net_unh':>10}{'MDD_unh':>8}{'Cal_unh':>8}{'net_hdg':>10}{'MDD_hdg':>8}{'Cal_hdg':>8}{'  MDD drop':>11}{'paired p':>10}")
         for g in ("micro", "ufat", "ufat_band"):
             nu, _ = gseries(rows, gate(g), "mo_res"); nh, _ = gseries(rows, gate(g), "mo30")
