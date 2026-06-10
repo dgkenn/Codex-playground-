@@ -1,3 +1,5 @@
+> **ARCHIVED (Polymarket phase).** The project now targets Kalshi — see `KALSHI.md`. Kept for the architecture/discipline, which carries over.
+
 # Getting to sub-100ms on Polymarket — measured plan
 
 **Why we care.** The box-arb research showed ~73% of latency-arb profit goes to **sub-100ms bots**, and

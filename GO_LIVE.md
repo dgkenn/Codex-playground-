@@ -1,3 +1,5 @@
+> **ARCHIVED (Polymarket phase).** The project now targets Kalshi — see `KALSHI.md`. Kept for the architecture/discipline, which carries over.
+
 # Go-Live Harness — everything needed to take the maker live
 
 One page, in order. Every money step is gated by a check that fails loudly. The thin rebate edge means a
@@ -117,3 +119,8 @@ breadth raises both volume and risk-adjusted return; size alone doesn't improve 
 ```bash
 python live_multi.py            # one live_trader per market (breadth), each with its own caps
 ```
+**Fleet sizing caveat:** caps and loss-limits are PER CHILD — a 6-market fleet's worst case is
+6×`--loss-limit` plus 6×`--max-notional` (briefly ~+1 window's exposure each across a rollover,
+since the prior window's collateral stays locked until resolution). Fund the wallet for that number,
+not the single-instance one; there is deliberately no fleet-level auto-kill (one market's kill must
+not flatten healthy siblings — the per-market sticky sentinels handle isolation).

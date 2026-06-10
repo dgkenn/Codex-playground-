@@ -1,3 +1,5 @@
+> **ARCHIVED (Polymarket phase).** The project now targets Kalshi — see `KALSHI.md`. Kept for the architecture/discipline, which carries over.
+
 # Paper → Live: the gap map (and what we do about each)
 
 Our edge is a thin per-fill rebate net of adverse selection, so **any single gap below can flip it

@@ -1,15 +1,16 @@
-# Robust, self-healing paper-data collection on GitHub Actions (public repo => free/unlimited).
-# Runs the shadow variant comparison across 11 (asset,tenor) markets in parallel on GitHub's infra --
-# independent of any dev container. Each market-process writes UNIQUE gzipped files
-# (gha_data/<kind>_<asset><tenor>m_r<run_id>.jsonl.gz) with asset/tenor_min fields.
+# Robust, self-healing KALSHI data collection on GitHub Actions (public repo => free/unlimited).
+# Collects KALSHI 15-min crypto markets (KX{BTC,ETH,SOL,XRP}15M) via public no-auth REST.
+# Runs kalshi_collect.py which applies the registered strategy variants against Kalshi's live book
+# (REST-polled ~1Hz, no auth required). Each run writes UNIQUE gzipped files
+# (gha_data/fills_kalshi_<asset>15m_r<run_id>.jsonl.gz etc.) with asset/tenor_min/venue fields.
 #
 # MULTI-MONTH DESIGN (audit 2026-06-10; the previous hourly design lost ~2 of 4 windows/hour and had
 # no outage detection):
 #   * TWO crons/hour + a non-cancelling concurrency group: runs QUEUE back-to-back, so collection is
 #     near-continuous and a dropped cron tick (GitHub sheds schedule events under load -- observed
 #     multi-hour gaps) costs nothing as long as one of the two fires.
-#   * `timeout --signal=TERM` + multi_market's SIGTERM forwarding: children get a graceful drain and
-#     persist TOMBSTONES for unresolved windows instead of losing them.
+#   * `timeout --signal=TERM` + kalshi_collect's SIGTERM handling: graceful drain persists TOMBSTONES
+#     for unresolved windows instead of losing them.
 #   * commit step runs `if: always()` into a WORKTREE (never in-place branch switching) with a
 #     SHALLOW fetch -- the data branch grows for months without growing the per-run transfer.
 #   * data is date-partitioned (gha_data/YYYY-MM-DD/...) so no directory ever accumulates >a few
@@ -18,7 +19,7 @@
 #     layer that catches a total Actions outage. Set the secret; harmless if unset.
 #   * watch_continuity.py is the operator-side freshness check (reads the gha-data branch).
 #
-# READ-ONLY paper sim (public Polymarket WS + per-asset RTDS/Coinbase spot, NO keys).
+# READ-ONLY paper sim (Kalshi public REST, no keys required -- CFTC-regulated/US-legal).
 # NOTE: GitHub only fires `schedule`/`workflow_dispatch` from the file on the DEFAULT branch (main),
 # so this file must also live on main to activate. It checks out CODE from $BRANCH but commits DATA
 # to the `gha-data` branch. Pull data for analysis:
@@ -27,8 +28,8 @@ name: paper-collect
 
 on:
   schedule:
-    - cron: '7 * * * *'           # offsets dodge top-of-hour cron congestion; the concurrency
-    - cron: '37 * * * *'          # group queues these back-to-back -> near-continuous coverage
+    - cron: '9 * * * *'           # offsets dodge top-of-hour cron congestion; the concurrency
+    - cron: '39 * * * *'          # group queues these back-to-back -> near-continuous coverage
   workflow_dispatch: {}
 
 permissions:
@@ -57,17 +58,17 @@ jobs:
         run: pip install --quiet numpy scipy requests websockets
       - name: preflight -- validate strategy roster (fail fast on a malformed registry)
         run: python strategies.py
-      - name: collect ~42 min of live windows (11 markets in parallel, gzipped, tombstone-safe)
+      - name: collect ~42 min of Kalshi 15-min crypto windows (KX{BTC,ETH,SOL,XRP}15M, gzipped, tombstone-safe)
         env:
           HEARTBEAT_URL: ${{ secrets.HEARTBEAT_URL }}
         run: |
           # START CLEAN: the checkout may carry legacy tracked gha_data from the code branch;
           # re-copying it onto gha-data every run is dead weight and a stale-clobber hazard.
           rm -rf gha_data && mkdir -p gha_data
-          # 2520s collect + graceful TERM at 2880s (multi_market forwards TERM -> children write
-          # tombstones for unresolved windows) + hard KILL 60s later as the backstop.
+          # 2520s collect + graceful TERM at 2880s (kalshi_collect handles SIGTERM -> tombstones
+          # for unresolved windows) + hard KILL 60s later as the backstop.
           timeout --signal=TERM --kill-after=60 2880 \
-            python -u multi_market.py 2520 gha_data "r${{ github.run_id }}" || true
+            python -u kalshi_collect.py 2520 gha_data "r${{ github.run_id }}" || true
       - name: per-run summary
         if: always()
         run: python aggregate_shadow.py > gha_data/SUMMARY.txt 2>/dev/null || true
