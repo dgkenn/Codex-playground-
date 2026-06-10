@@ -19,6 +19,7 @@ Checks (critical ones must pass to GO):
 """
 from __future__ import annotations
 import argparse, glob, json, math, os, stat, time
+from dataio import jl_glob, jl_open
 
 G = "https://gamma-api.polymarket.com"
 C = "https://clob.polymarket.com"
@@ -68,9 +69,9 @@ def chk_roster():
 
 def chk_paper_edge():
     by_ws = {}
-    for fp in glob.glob("gha_data/shadow_windows_*.jsonl"):
+    for fp in jl_glob("gha_data/shadow_windows_*.jsonl"):
         try:
-            for ln in open(fp):
+            for ln in jl_open(fp):
                 ln = ln.strip()
                 if not ln:
                     continue

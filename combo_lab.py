@@ -15,6 +15,7 @@ combos that win OOS only by directional luck.  python combo_lab.py
 """
 from __future__ import annotations
 import glob, json, re, math, itertools, collections, statistics
+from dataio import jl_glob, jl_open
 
 try:
     import fees
@@ -26,10 +27,10 @@ MICRO_MARGIN = 0.002
 
 def load():
     rows = []
-    for fp in glob.glob("gha_data/fills_*.jsonl"):
+    for fp in jl_glob("gha_data/fills_*.jsonl"):
         m = re.search(r"fills_([a-z]+)\d+m_", fp)
         asset = m.group(1) if m else "btc"
-        for ln in open(fp):
+        for ln in jl_open(fp):
             try:
                 r = json.loads(ln)
             except Exception:

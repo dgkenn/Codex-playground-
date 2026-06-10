@@ -11,13 +11,14 @@ from fill volume + microstructure, not the up/down result). This reads the multi
 """
 from __future__ import annotations
 import collections, glob, json, math, statistics, sys
+from dataio import jl_glob, jl_open
 
 
 def load(variant):
     """{asset: {ws: net}} for `variant`, deduped per (asset, ws)."""
     by = collections.defaultdict(dict)
-    for fp in sorted(glob.glob("gha_data/shadow_windows_*.jsonl")):
-        for ln in open(fp):
+    for fp in jl_glob("gha_data/shadow_windows_*.jsonl"):
+        for ln in jl_open(fp):
             ln = ln.strip()
             if not ln:
                 continue

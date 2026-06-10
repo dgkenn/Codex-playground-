@@ -5,27 +5,31 @@ Each shadow run writes window rows: {"ws":..,"resolved_up":..,"<variant>":{"net"
 Because every variant sees the SAME windows, the per-window outcome variance is shared and
 swamps the cumulative-total spread. So the powerful test is PAIRED: for each variant compute
 the per-window (variant_net - baseline_net), and t = mean/(std/sqrt(n)). That cancels the
-window effect and is far more sensitive than comparing totals. Windows are de-duped by `ws`.
+window effect and is far more sensitive than comparing totals. Windows are de-duped by `(asset, tenor, ws)`.
 
     python aggregate_shadow.py
 """
 from __future__ import annotations
 
-import glob
 import json
 import math
 
+from dataio import jl_glob, jl_open
+
 
 def main():
-    # Canonical live corpus = the run-tagged GHA files only. The bare root-level
-    # shadow_windows.jsonl is a pre-GHA local smoke test (different session/regime);
-    # pooling it with the live run would contaminate inference, so it is excluded.
-    files = sorted(glob.glob("gha_data/shadow_windows_r*.jsonl"))
+    # Canonical live corpus = the run-tagged GHA files: BOTH eras -- legacy single-asset
+    # (shadow_windows_r*.jsonl) AND multi-asset (shadow_windows_<asset><tenor>m_*.jsonl[.gz]).
+    # (The old glob missed every multi-asset file -> SUMMARY.txt was frozen at the pre-multi era.)
+    # The bare root-level shadow_windows.jsonl is a pre-GHA local smoke test; excluded.
+    files = sorted(set(jl_glob("gha_data/shadow_windows_*.jsonl")))
     if not files:                                   # local fallback when no GHA data yet
-        files = sorted(glob.glob("shadow_windows*.jsonl"))
-    by_ws = {}                          # ws -> {variant: net}; dedupe windows across runs
+        files = sorted(jl_glob("shadow_windows*.jsonl"))
+    by_ws = {}        # (asset, tenor, ws) -> {variant: net}; dedupe windows across runs.
+    # KEY FIX: dedupe by (asset, tenor, ws), NOT ws alone -- the 4 assets share identical epoch
+    # window-starts, so a ws-only key silently discarded 3 of 4 assets per window ("first wins").
     for fp in files:
-        for line in open(fp):
+        for line in jl_open(fp):
             line = line.strip()
             if not line:
                 continue
@@ -34,9 +38,9 @@ def main():
             except Exception:
                 continue
             ws = row.get("ws")
-            if ws is None:
+            if ws is None or row.get("resolved_up") is None:    # skip tombstones (unresolved)
                 continue
-            slot = by_ws.setdefault(ws, {})
+            slot = by_ws.setdefault((row.get("asset", "btc"), row.get("tenor_min", 15), ws), {})
             for k, v in row.items():
                 if isinstance(v, dict) and "net" in v:
                     slot.setdefault(k, (v["net"], v.get("gross", float("nan"))))   # (net, GROSS) ; first wins

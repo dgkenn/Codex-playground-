@@ -12,15 +12,20 @@ hedge_value.py pick them all up. Per-asset breakdown via the `asset`/`tenor_min`
 Resource note: each process holds a WS connection + 21 variants; the default 6 markets are fine on a
 1-2 OCPU box. Trim MARKETS for a smaller box, or add the rest for full breadth.
 """
+import signal
 import subprocess
 import sys
 import time
 
-# (asset, tenor_min) -- all exist & open (verified). The 4x15m set is the CLEAN cross-asset comparison:
-# same tenor, shared resolution windows -> lets breadth_net_corr.py measure micro_gate's true per-window
-# net correlation across assets (the real breadth Sharpe). 5m markets (btc/eth/sol/xrp 5m) available too;
-# add them for max rebate volume once we've confirmed the 4x15m runs cleanly on the 2-core GHA runner.
-MARKETS = [("btc", 15), ("eth", 15), ("sol", 15), ("xrp", 15)]
+# (asset, tenor_min) -- all exist & open (verified via Gamma probe 2026-06-10; doge/bnb/hype trade
+# up/down at both tenors too). The 4x15m core remains the CLEAN cross-asset comparison (same tenor,
+# shared resolution windows -> breadth_net_corr.py measures the true cross-asset net correlation).
+# 5m tenors + the 3 extra assets are the cheapest n-multiplier there is: ~3.4x more windows/day for
+# the same runner (processes are I/O-bound; gzip keeps the volume sane). WINDOW_S scales per-tenor
+# in shadow_compare, and every spot feed is per-asset, so 5m/alt data is clean by construction.
+MARKETS = [("btc", 15), ("eth", 15), ("sol", 15), ("xrp", 15),
+           ("btc", 5), ("eth", 5), ("sol", 5), ("xrp", 5),
+           ("doge", 15), ("bnb", 15), ("hype", 15)]
 
 
 MIN_RESTART_S = 120        # don't relaunch a market with <2min left (a fresh window won't settle)
@@ -46,6 +51,23 @@ def main():
     base = sys.argv[3] if len(sys.argv) > 3 else str(int(time.time()))
     deadline = time.time() + dur
     state = {}                                         # name -> {proc, asset, tmin, restarts}
+
+    # SIGNAL FORWARDING (audit #2b): the workflow's `timeout` sends SIGTERM to THIS process only;
+    # children used to be orphaned mid-drain and their unsettled windows silently lost. Forward TERM
+    # and give each child a moment to write its tombstones before we exit.
+    def _term(_sig, _frm):
+        print("SIGTERM -> forwarding to children (tombstone drain)", flush=True)
+        for st in state.values():
+            if st["proc"].poll() is None:
+                st["proc"].terminate()
+        t0 = time.time()
+        for st in state.values():
+            try:
+                st["proc"].wait(timeout=max(1, 25 - (time.time() - t0)))
+            except subprocess.TimeoutExpired:
+                st["proc"].kill()
+        sys.exit(143)
+    signal.signal(signal.SIGTERM, _term)
     for asset, tmin in MARKETS:
         name = f"{asset}-{tmin}m"
         state[name] = {"proc": launch(asset, tmin, dur, out_dir, base, 0),

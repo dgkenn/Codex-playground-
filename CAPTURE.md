@@ -12,19 +12,35 @@ the full lifecycle/queue/latency schema below is the contract the **live pilot**
 
 ---
 
-## 0. AUDIT LEDGER (REALIZED, paper-now) — `gha_data/fills_*.jsonl`  [baseline + micro_gate]
+## 0. AUDIT LEDGER (REALIZED, paper-now) — `gha_data/fills_*.jsonl(.gz)`  [baseline + micro_gate + micro_ufat]
 The decision-grade answer to *"why did each trade win or lose, with certainty"*. One row per
 **decision** (a taker trade reaches a level we quote), logged for fills AND skips:
 - **what prompted it:** `tk_side, tk_sz` (the taker order), `q_ahead, q_used` (our modeled queue).
 - **all inputs considered:** `bb, ba, bsz, asz` (raw book), `mid, micro, imb` (book-imbalance),
   `fair` (model fair), `tox` (signed micro-deviation), `delta` (inventory), `cap, skew_lim, gate`,
-  `spot` (BTC at fill), `flow5, flow30` (signed taker volume last 5s/30s = informed-flow signal).
+  `spot` (**own-asset** spot at fill; was BTC for everything pre-2026-06-10), `flow5, flow30`
+  (signed taker volume last 5s/30s = informed-flow signal).
+- **honest PAST features** (backward-looking only — safe to gate on, added after the `lead30`
+  lookahead artifact): `dspot_p5, dspot_p30` (own-asset spot move over the PAST 5s/30s), `dmicro`
+  (microprice velocity), `qema_b, qema_a` (queue-depletion EMAs), `rvol` (short realized vol),
+  `spot_btc` (BTC reference for cross-asset lead-lag on alts), plus feed provenance: `spot_src`
+  (rtds/cb/rest), `spot_age` (s), `feed_lat_ms`. Each row carries `asset, tenor_min`.
 - **action:** `reason` ∈ {fill, fill_clipped, gated, skew_block, cap_zero}, `sz`, `want`.
-- **outcome (real):** `mo5, mo30` (mid markout, live; `mo30_dt` = its actual elapsed s = staleness),
-  `dspot30, dspot_end` (BTC spot move after the fill — separates **fundamental move from flow
-  toxicity**), `mo_res` (resolution markout = decision metric), and **`pnl = sz·mo_res` = the EXACT
-  gross contribution of that fill**.
+- **outcome (real):** `mo5, mo30, mo120, mo300` (mid markouts — now computed for SKIPS too: the
+  counterfactual a gate avoided; `mo30_dt` = staleness), `dspot30, dspot_end` (spot move AFTER the
+  fill — **outcomes, never features**: gating on these is lookahead), `mo_res` (resolution markout),
+  and **`pnl = sz·mo_res` = the EXACT gross contribution of that fill** (0 on skips).
+- `res_up = null` rows are **tombstones**: the run ended before the oracle posted; book data is
+  complete and the resolution is backfillable from Gamma by `ws`.
 - pure-mechanics non-decisions (`no_quote`, `queue_absorbed`) are counted per window.
+
+**Companion streams (gzipped, both eras read via `dataio.jl_glob`/`jl_lines`):**
+- `ticks_*.jsonl.gz` — BOTH tokens, rows `{ws, asset, tenor_min, role, ticks:[[t_off, mid, spot,
+  micro, bb, bsz, ba, asz], ...]}` flushed every ~30s (old consumers' `[0..2]` indexing preserved).
+- `trades_*.jsonl.gz` — the RAW taker trade tape `{t, ws, asset, tenor_min, up, side, p, sz}` —
+  enables depth/queue-model research the reduced top-of-book view can't support.
+- `shadow_windows_*.jsonl` rows now carry `coverage:{t_first, t_last, joined_late, truncated,
+  n_events}` so partial windows (hourly-boundary joins, run-end truncation) are filterable.
 
 **Certainty / reconciliation:** since `pnl == sz·mo_res`, **Σ pnl over a window == window gross**
 to the penny. The collector writes a per-window `audit:{gross, fill_pnl_sum, resid, reasons, skips}`

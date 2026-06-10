@@ -13,6 +13,7 @@ Each candidate maps to one of the 10 improvements (see comments)."""
 from __future__ import annotations
 import glob, json, math
 import numpy as np
+from dataio import jl_glob, jl_open
 
 try:
     import fees
@@ -32,11 +33,11 @@ def load():
     The honest feature is built from PAST observations only: every decision record (fills and skips)
     carries (t, spot), giving a dense in-window spot tape."""
     rows, tape_pts = [], {}
-    for fp in sorted(glob.glob("gha_data/fills_*.jsonl")):
+    for fp in jl_glob("gha_data/fills_*.jsonl"):
         import re as _re
         m = _re.search(r"fills_([a-z]+)\d+m_", fp)
         asset = m.group(1) if m else "btc"
-        for ln in open(fp):
+        for ln in jl_open(fp):
             ln = ln.strip()
             if not ln:
                 continue

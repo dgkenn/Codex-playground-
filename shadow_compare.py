@@ -22,8 +22,10 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import gzip
 import json
 import os
+import signal
 import time
 from datetime import datetime, timezone
 
@@ -39,16 +41,23 @@ from paper_trader_ws import WS, active_market, now_iso, resolve
 
 REBATE = 0.07
 SIGMA = 6.5e-5
+STOP = [False]       # set by SIGTERM -> graceful exit through the tombstone drain (audit #2b): the
+#                      workflow timeout used to SIGKILL-orphan children mid-window, losing everything
+#                      unwritten; now the supervisor forwards TERM and we persist before exiting.
 FV_K = 2.0           # continuous-sizing slope (offline: k=2 beat every gate)
 FV_MARGIN = 0.03    # fair-value gate threshold
 _HB = [0.0]          # last heartbeat ts (throttle)
 
 # Per-fill markout logging: which variants emit a row PER fill (root-cause why each trade
-# wins/loses). Kept to the baseline-vs-fix contrast to bound data volume; widen if needed.
-LOG_FILLS = {"baseline", "micro_gate"}
+# wins/loses). baseline = the universal fill-OPPORTUNITY tape (it takes everything, so every gate is
+# replayable from it); micro_gate = the legacy contrast; micro_ufat = the DEPLOYED champion (its own
+# inventory path / skew_block pattern is what we'd take live -- capture it directly, not just by replay).
+LOG_FILLS = {"baseline", "micro_gate", "micro_ufat"}
 MARKOUT_HORIZONS = (5, 30, 120, 300)   # s; +120/300 disambiguate transient impact vs regime (round2 #6)
 FLOW_TOX = 150               # signed 30s taker-volume threshold for the flow gate (data: adverse >~200)
-WINDOW_S = 900               # market window length (s); time-to-close normalizer
+WINDOW_S = 900               # market window length (s); time-to-close normalizer. NOTE: set per-run from
+#                              --tenor-min in run() -- a 5m market with the 15m normalizer mis-scales every
+#                              tau-dependent term (A-S penalty, micro_cal's tau feature) by 3x.
 # Avellaneda-Stoikov inventory control: require microprice edge >= AS_K*|inventory|*(tau/T) to ADD
 # inventory. Replaces arbitrary skew thresholds with a continuous, variance/time-scaled penalty.
 # AS_K calibrated so the penalty reaches a half-spread (~0.005) near |inv|=cap/2 mid-window
@@ -149,6 +158,18 @@ class Variant:
         return t == self.mk["up"]
 
     def set_tob(self, token, bb, bsz, ba, asz):
+        # QUEUE STALENESS FIX (audit #12): when the touch MOVES, drop the old touch's queue entry --
+        # the old setdefault-forever let a partially-consumed `ahead` survive the level emptying and
+        # rebuilding, keeping (queue-favorable) credit for consumption that predates the rebuild.
+        # Reset-on-revisit is the conservative direction; the raw trade tape (trades_*.jsonl.gz)
+        # lets future work re-run alternative queue models over the same data.
+        prev = self.tob.get(token)
+        if prev is not None:
+            pbb, _pbsz, pba, _pasz = prev
+            if pbb is not None and bb is not None and round(pbb, 3) != round(bb, 3):
+                self.queue.pop((token, "BID", round(pbb, 3)), None)
+            if pba is not None and ba is not None and round(pba, 3) != round(ba, 3):
+                self.queue.pop((token, "ASK", round(pba, 3)), None)
         self.tob[token] = [bb, bsz, ba, asz]
         if bb is not None:
             self.queue.setdefault((token, "BID", round(bb, 3)), bsz)
@@ -438,7 +459,7 @@ class Variant:
             tau = max(self.mk["we"] - now, 0.0)
             feat = {"bias": 1.0, "tox": tox, "flow": flow_adv / 100.0, "dspot": dspot,
                     "spread": (ba - bb) * 100.0, "fat(p)": 4.0 * mid * (1.0 - mid),
-                    "q_ahead": 0.0, "tk_sz": 0.0, "tau": tau / 900.0,
+                    "q_ahead": 0.0, "tk_sz": 0.0, "tau": tau / WINDOW_S,
                     "is_ask": 1.0 if our_side == "ASK" else 0.0}
             pred = sum(GATE_W.get(k, 0.0) * v for k, v in feat.items())   # predicted per-share markout
             return (pred + fees.maker_rebate(price, rate=REBATE)) <= 0.0  # drop iff predicted NET <= 0
@@ -475,10 +496,37 @@ class Variant:
         imb = (bsz or 0) / tot if tot else None
         fair = self.fair_tok(token)
         tox = None if micf is None else ((micf - price) if our_side == "ASK" else (price - micf))
-        spot = self.shared.get("st")                  # BTC spot at fill (fundamental context)
+        spot = self.shared.get("st")                  # OWN-asset spot at fill (fundamental context)
         fl = self.shared.get("flow", {}).get(token, [])
         flow5 = sum(s for (tt, s) in fl if tnow - tt <= 5)    # signed taker vol last 5s (informed flow)
         flow30 = sum(s for (tt, s) in fl if tnow - tt <= 30)  # signed taker vol last 30s
+        # HONEST PAST features (decision-time, backward-looking ONLY). The recorded dspot30/dspot_end
+        # are FUTURE moves (markout companions) -- gating on them once produced a fake t=+6.5 'lead
+        # edge' (GATING.md #6). These fields make every gate exactly replayable offline with no
+        # reconstruction and no lookahead trap for the next researcher.
+        def _past_spot(lag_s):
+            hist = self.shared.get("spothist", [])
+            if not hist or spot is None:
+                return None
+            prev = None
+            for (ht, hp) in hist:
+                if ht <= tnow - lag_s:
+                    prev = hp
+            return round(spot - prev, 4) if prev is not None else None
+        dspot_p5, dspot_p30 = _past_spot(5), _past_spot(30)
+        mh = self.shared.get("microhist", {}).get(token, [])
+        dmicro = None
+        if micf is not None and mh:
+            prevm = None
+            for (ht, hm) in mh:
+                if ht <= tnow - MICRO_LAG_S:
+                    prevm = hm
+            dmicro = round(micf - prevm, 4) if prevm is not None else None
+        qe = self.shared.get("qema", {}).get(token) or {}
+        try:
+            rvol = round(self._realized_vol(), 8)
+        except Exception:
+            rvol = None
         # complete-set BOX premiums at fill (cross-token; this variant tracks both tobs). A complete set
         # (UP+DOWN) settles to exactly $1, so two conventions matter and they are NOT the same edge:
         #   MAKER box (box_ask/box_bid): the round-trip spread you earn if you REST on both legs and both
@@ -510,6 +558,15 @@ class Variant:
             "tox": round(tox, 4) if tox is not None else None,
             "spot": round(spot, 2) if spot is not None else None,
             "flow5": round(flow5, 2), "flow30": round(flow30, 2),
+            # past-only features + feed provenance (replayability; audit #6)
+            "dspot_p5": dspot_p5, "dspot_p30": dspot_p30, "dmicro": dmicro,
+            "qema_b": round(qe.get("b"), 2) if qe.get("b") is not None else None,
+            "qema_a": round(qe.get("a"), 2) if qe.get("a") is not None else None,
+            "rvol": rvol,
+            "spot_src": self.shared.get("spot_src"),
+            "spot_age": round(tnow - self.shared["spot_ts"], 2) if self.shared.get("spot_ts") else None,
+            "feed_lat_ms": self.shared.get("feed_lat_ms"),
+            "spot_btc": round(self.shared["st_btc"], 2) if self.shared.get("st_btc") is not None else None,
             "box_ask": round(box_ask, 4) if box_ask is not None else None,
             "box_bid": round(box_bid, 4) if box_bid is not None else None,
             "box_sell_tk": round(box_sell_tk, 4) if box_sell_tk is not None else None,
@@ -674,17 +731,20 @@ def configs(mk, shared):
             for s in strategies.enabled()]
 
 
-async def rtds_btc_feed(live):
-    """PRIMARY BTC spot = Polymarket RTDS, served from Polymarket's own infra (eu-west-2, co-located
+async def rtds_feed(live, asset="btc"):
+    """PRIMARY spot = Polymarket RTDS, served from Polymarket's own infra (eu-west-2, co-located
     with the CLOB). Strictly better than US Coinbase: (a) no transatlantic hop when the bot runs
     in-region, and (b) zero basis risk -- we react to the literal settlement source. Subscribes to
-    BOTH in-region topics: crypto_prices_chainlink (btc/usd = the settlement truth, ~1/s) AND
-    crypto_prices (btcusdt = higher-freq Binance, the source Chainlink aggregates) -> ~2/s combined.
-    Coinbase (btc_ws_feed) stays as a gap-filler. Records feed_lat_ms = recv - payload ts."""
+    BOTH in-region topics: crypto_prices_chainlink ({asset}/usd = the settlement truth, ~1/s) AND
+    crypto_prices ({asset}usdt = higher-freq Binance, the source Chainlink aggregates) -> ~2/s
+    combined. PARAMETRIZED BY ASSET -- the eth/sol/xrp processes used to record BTC spot in every
+    field, poisoning per-asset spot research (audit P0 #4). Coinbase (cb_ws_feed) stays as a
+    gap-filler. Records feed_lat_ms = recv - payload ts."""
     url = "wss://ws-live-data.polymarket.com"
+    a = asset.lower()
     sub = json.dumps({"action": "subscribe", "subscriptions": [
-        {"topic": "crypto_prices_chainlink", "type": "*", "filters": "{\"symbol\":\"btc/usd\"}"},
-        {"topic": "crypto_prices", "type": "*", "filters": "{\"symbol\":\"btcusdt\"}"}]})
+        {"topic": "crypto_prices_chainlink", "type": "*", "filters": json.dumps({"symbol": f"{a}/usd"})},
+        {"topic": "crypto_prices", "type": "*", "filters": json.dumps({"symbol": f"{a}usdt"})}]})
     while True:
         try:
             async with websockets.connect(url, ping_interval=15, ping_timeout=20, max_size=None) as ws:
@@ -710,13 +770,13 @@ async def rtds_btc_feed(live):
             await asyncio.sleep(2)
 
 
-async def btc_ws_feed(live):
-    """FALLBACK BTC spot via Coinbase WS ticker (free, no key). Now a gap-filler behind RTDS
-    (rtds_btc_feed): only writes live{px} when RTDS has been silent >3s, so the in-region settlement
-    feed is preferred whenever it is delivering. Still high-res (~8 ticks/s) for RTDS dropouts.
+async def cb_ws_feed(live, asset="btc"):
+    """FALLBACK spot via Coinbase WS ticker (free, no key). Now a gap-filler behind RTDS
+    (rtds_feed): only writes live{px} when RTDS has been silent >3s, so the in-region settlement
+    feed is preferred whenever it is delivering. Still high-res for RTDS dropouts.
     Updates live{px,ts}; reconnects forever; the REST poll (fvfeed) stays as sigma/anchor/last resort."""
     url = "wss://ws-feed.exchange.coinbase.com"
-    sub = json.dumps({"type": "subscribe", "product_ids": ["BTC-USD"], "channels": ["ticker"]})
+    sub = json.dumps({"type": "subscribe", "product_ids": [f"{asset.upper()}-USD"], "channels": ["ticker"]})
     while True:
         try:
             async with websockets.connect(url, ping_interval=15, ping_timeout=20, max_size=None) as ws:
@@ -734,11 +794,18 @@ async def btc_ws_feed(live):
 
 
 async def run(args):
+    global WINDOW_S
+    WINDOW_S = args.tenor_min * 60     # tau normalizer must match the tenor (5m != 15m; audit #10b)
     sess = netfast.fast_session()      # latency-tuned keep-alive session (NODELAY, warm pool)
-    fv = SpotFair(sess)
-    live = {"px": None, "ts": 0.0, "n": 0, "rtds_ts": 0.0, "src": None}   # latest BTC (n = tick count)
-    asyncio.create_task(rtds_btc_feed(live))   # PRIMARY: in-region Chainlink+Binance settlement feed
-    asyncio.create_task(btc_ws_feed(live))     # FALLBACK: Coinbase, gap-fills when RTDS is silent
+    fv = SpotFair(sess, symbol=f"{args.asset.upper()}USDT")   # per-asset REST tape (sigma/anchor)
+    live = {"px": None, "ts": 0.0, "n": 0, "rtds_ts": 0.0, "src": None}   # latest OWN-asset spot
+    asyncio.create_task(rtds_feed(live, args.asset))   # PRIMARY: in-region settlement feed (own asset)
+    asyncio.create_task(cb_ws_feed(live, args.asset))  # FALLBACK: Coinbase, gap-fills when RTDS silent
+    # BTC as a SEPARATE reference feed for alts (cross-asset lead-lag research: BTC leads alts). Never
+    # overloads `spot` -- it lands in its own `spot_btc` field on every decision row.
+    live_btc = live if args.asset == "btc" else {"px": None, "ts": 0.0, "n": 0, "rtds_ts": 0.0, "src": None}
+    if args.asset != "btc":
+        asyncio.create_task(rtds_feed(live_btc, "btc"))
     # --tag/--out-dir give each GitHub-Actions run UNIQUE output files (gha_data/shadow_<tag>.*)
     # so concurrent/sequential runs never conflict on commit. Default = legacy fixed names.
     os.makedirs(args.out_dir, exist_ok=True)
@@ -746,8 +813,12 @@ async def run(args):
     summary_path = os.path.join(args.out_dir, f"shadow_summary{sfx}.json")
     log = open(os.path.join(args.out_dir, f"shadow{sfx}.log"), "a")
     wins_fh = open(os.path.join(args.out_dir, f"shadow_windows{sfx}.jsonl"), "a")
-    fills_fh = open(os.path.join(args.out_dir, f"fills{sfx}.jsonl"), "a")   # per-fill markout rows
-    ticks_fh = open(os.path.join(args.out_dir, f"ticks{sfx}.jsonl"), "a")   # joint (mid,spot) series for lead-lag
+    # Bulk streams are GZIPPED (audit P0 #1): fills alone are ~17MB/run plain -> ~1.7MB gz (measured
+    # 10.5x); months of unattended collection would blow the repo budget in weeks otherwise. Loaders
+    # read both .jsonl and .jsonl.gz via dataio.py. Window rows stay plain (tiny, human-greppable).
+    fills_fh = gzip.open(os.path.join(args.out_dir, f"fills{sfx}.jsonl.gz"), "at")   # per-fill markout rows
+    ticks_fh = gzip.open(os.path.join(args.out_dir, f"ticks{sfx}.jsonl.gz"), "at")   # book/spot series (both tokens)
+    trades_fh = gzip.open(os.path.join(args.out_dir, f"trades{sfx}.jsonl.gz"), "at")  # RAW taker trade tape
     cum = {}; pending = []
 
     def L(s):
@@ -778,9 +849,9 @@ async def run(args):
         def sample_at(tok, t_target):
             """First timeline sample at/after t_target -> (mid, spot, actual_ts). For markout
             staleness: actual_ts reveals if the book was quiet (sample later than t_target)."""
-            for (tt, md, _mc, sp) in midtl2.get(tok, []):
-                if tt >= t_target:
-                    return md, sp, tt
+            for e in midtl2.get(tok, []):
+                if e[0] >= t_target:
+                    return e[1], e[3], e[0]
             return None, None, None
         def terminal_spot(tok):
             tl = midtl2.get(tok, [])
@@ -791,37 +862,69 @@ async def run(args):
             for f in v.fill_log:
                 sz = f["sz"]; p = f["p"]; sold = (f["side"] == "ASK")
                 extra = {}
-                if sz > 0:                        # an actual fill -> real markout + exact pnl
-                    tok = mk2["up"] if f["up"] else mk2["down"]
+                tok = mk2["up"] if f["up"] else mk2["down"]
+                # markouts for fills AND SKIPS (audit #5): the counterfactual markout of a skipped
+                # fill is the entire point of logging skips -- gate research needs the outcome the
+                # gate avoided, computed identically from the shared timeline. pnl stays 0 on skips.
+                mos = {}
+                for h in MARKOUT_HORIZONS:
+                    md, _sp, tt = sample_at(tok, f["t"] + h)
+                    mos[f"mo{h}"] = round((p - md) if sold else (md - p), 4) if md is not None else None
+                    if h == 30 and tt is not None:            # markout staleness (auditability)
+                        extra["mo30_dt"] = round(tt - f["t"], 1)
+                # spot move AFTER the fill -> separates fundamental move from flow toxicity.
+                # OUTCOME fields, not features: gating on these is lookahead (GATING.md #6).
+                sp0 = f.get("spot")
+                if sp0:
+                    _m, sp30, _t = sample_at(tok, f["t"] + 30)
+                    spend = terminal_spot(tok)
+                    extra["dspot30"] = round(sp30 - sp0, 4) if sp30 is not None else None
+                    extra["dspot_end"] = round(spend - sp0, 4) if spend is not None else None
+                if r is not None:
                     settle_tok = r if f["up"] else (1 - r)
                     mo_res = (p - settle_tok) if sold else (settle_tok - p)
-                    pnl = sz * mo_res             # exact gross contribution of this fill
-                    s += pnl
-                    mos = {}
-                    for h in MARKOUT_HORIZONS:
-                        md, _sp, tt = sample_at(tok, f["t"] + h)
-                        mos[f"mo{h}"] = round((p - md) if sold else (md - p), 4) if md is not None else None
-                        if h == 30 and tt is not None:        # markout staleness (auditability)
-                            extra["mo30_dt"] = round(tt - f["t"], 1)
-                    # BTC spot move after the fill -> separate fundamental move from flow toxicity
-                    sp0 = f.get("spot")
-                    if sp0:
-                        _m, sp30, _t = sample_at(tok, f["t"] + 30)
-                        spend = terminal_spot(tok)
-                        extra["dspot30"] = round(sp30 - sp0, 2) if sp30 is not None else None
-                        extra["dspot_end"] = round(spend - sp0, 2) if spend is not None else None
-                else:                             # a skip (gated/skew/cap) -> no fill, no markout
-                    mo_res = None; pnl = 0.0
-                    mos = {f"mo{h}": None for h in MARKOUT_HORIZONS}
+                else:
+                    mo_res = None                 # TOMBSTONE emission (run ended before resolution):
+                pnl = sz * mo_res if mo_res is not None else 0.0   # book data survives; res backfillable
+                s += pnl
                 rec = dict(f)                     # carry ALL decision inputs through verbatim
                 rec["t"] = round(f["t"], 3)
-                rec.update({"ws": mk2["ws"], "var": v.name, "up": int(f["up"]), "res_up": r,
+                rec.update({"ws": mk2["ws"], "asset": mk2.get("asset", "btc"),
+                            "tenor_min": mk2.get("tenor_min", 15),
+                            "var": v.name, "up": int(f["up"]), "res_up": r,
                             "pnl": round(pnl, 6),
                             "mo_res": round(mo_res, 6) if mo_res is not None else None, **mos, **extra})
                 fills_fh.write(json.dumps(rec) + "\n")
             pnl_sum[v.name] = s
         fills_fh.flush()
         return pnl_sum
+
+    def flush_ticks(mk2, midtl2):
+        """INCREMENTAL tick persistence (audit #7), BOTH tokens, full top-of-book columns:
+        [t_off, mid, spot, micro, bb, bsz, ba, asz]  -- mid@[1]/spot@[2] preserve old consumers'
+        indexing; null-spot rows are KEPT (mid history survives spot dropouts); spot rounded to 4dp
+        (the old 1dp destroyed alt precision -- XRP trades ~0.5). Written every ~30s and at settle,
+        so a killed run loses <=30s of series, not the whole window."""
+        wrote = False
+        wptr = mk2.setdefault("_tickw", {})
+        for role, tok in (("up", mk2["up"]), ("down", mk2["down"])):
+            tl = midtl2.get(tok, [])
+            w0 = wptr.get(tok, 0)
+            if len(tl) <= w0:
+                continue
+            new = tl[w0:]
+            wptr[tok] = len(tl)
+            ticks_fh.write(json.dumps({
+                "ws": mk2["ws"], "asset": mk2.get("asset", "btc"),
+                "tenor_min": mk2.get("tenor_min", 15), "role": role, "feed": mk2.get("_feed"),
+                "ticks": [[round(e[0] - mk2["ws"], 1),
+                           round(e[1], 4) if e[1] is not None else None,
+                           round(e[3], 4) if e[3] is not None else None,
+                           round(e[2], 4) if e[2] is not None else None,
+                           e[4], e[5], e[6], e[7]] for e in new]}) + "\n")
+            wrote = True
+        if wrote:
+            ticks_fh.flush()
 
     def try_settle():
         """Retry resolution for closed-but-unresolved windows (Polymarket posts the result
@@ -854,15 +957,15 @@ async def run(args):
             ct["pos"] += 1 if t_attr["net"] > 0 else 0
             row[taker2.name] = t_attr; attrs[taker2.name] = t_attr
             parts.append(f"{taker2.name}={t_attr['net']:+.3f}({t_attr['takes']}t)")
+            # COVERAGE metadata (audit #2d): partial windows (late join after the hourly boundary,
+            # truncated at run end) must be FILTERABLE, not silently pooled into paired tests.
+            row["coverage"] = {"t_first": round(mk2["_t_first"] - mk2["ws"], 1) if mk2.get("_t_first") else None,
+                               "t_last": round(mk2["_t_last"] - mk2["ws"], 1) if mk2.get("_t_last") else None,
+                               "joined_late": bool(mk2.get("_t_first", mk2["ws"]) - mk2["ws"] > 60),
+                               "truncated": bool(mk2.get("_t_last", mk2["we"]) < mk2["we"] - 30),
+                               "n_events": mk2.get("_n_events", 0)}
             pnl_sum = emit_fills(mk2, variants2, midtl2, r)  # per-fill rows + Σpnl for reconciliation
-            # persist joint (mid, spot) series ~every 2s for the BTC->token LEAD-LAG study (raw, model-free)
-            up_tl = midtl2.get(mk2["up"], [])
-            ticks = [[round(t - mk2["ws"], 1), round(md, 4), round(sp, 1)]
-                     for (t, md, _mc, sp) in up_tl if sp is not None]   # ~1s (high-res for lead-lag)
-            if ticks:
-                ticks_fh.write(json.dumps({"ws": mk2["ws"], "res_up": r,
-                                           "feed": mk2.get("_feed", "rest"), "ticks": ticks}) + "\n")
-                ticks_fh.flush()
+            flush_ticks(mk2, midtl2)                          # final tick flush for this window
             # AUDIT: per-fill ledger must reconcile to window gross to the penny (proof of completeness)
             row["audit"] = {}
             vmap = {v.name: v for v in variants2}
@@ -895,7 +998,7 @@ async def run(args):
 
     L(f"=== shadow_compare start variants={[c.name for c in configs({'up':'','down':'','we':0}, {})]} ===")
     end = time.time() + args.duration
-    while time.time() < end:
+    while time.time() < end and not STOP[0]:
         try_settle()                         # retry any closed-but-unresolved windows
         mk = active_market(sess, args.asset, args.tenor_min)
         if mk is None:
@@ -913,31 +1016,66 @@ async def run(args):
         variants = configs(mk, shared)
         taker = TakerVar("lag_taker", mk, shared)   # offensive latency-arb test (own settle/audit)
         ws_n0 = live["n"]                            # WS tick count at window open (feed-source tag)
-        midtl = {}        # token -> [(t, mid, micro, spot)] shared timeline for per-fill markout
+        midtl = {}   # token -> [(t, mid, micro, spot, bb, bssz, ba, asz)] shared timeline (markouts+ticks)
         L(f"WINDOW {mk['ws']} ({datetime.fromtimestamp(mk['ws'],timezone.utc):%H:%M}Z) s0={shared['s0']}")
         last_spot = time.time()
-        while time.time() < mk["we"] and time.time() < end:
+        last_tickflush = time.time()
+
+        def sample_timeline():
+            """~1s/token shared timeline sample (markouts + the tick tape). Called on EVERY message
+            AND on recv timeouts -- timer-based, so a quiet book no longer leaves markout gaps."""
+            ts_now = time.time()
+            for tok in (mk["up"], mk["down"]):
+                bb, bsz, ba, asz = variants[0].tob[tok]
+                if bb is None or ba is None:
+                    continue
+                tl = midtl.setdefault(tok, [])
+                if not tl or ts_now - tl[-1][0] >= 1.0:
+                    mc = micro(bb, bsz, ba, asz)
+                    tl.append((ts_now, (bb + ba) / 2, mc, shared.get("st"), bb, bsz, ba, asz))
+                    mh = shared["microhist"].setdefault(tok, [])  # book-lead signal for micro_react
+                    if mc is not None:
+                        mh.append((ts_now, mc))
+                        if len(mh) > 40:
+                            del mh[:len(mh) - 40]
+                    qe = shared["qema"].setdefault(tok, {"b": bsz, "a": asz})  # depletion EMA
+                    qe["b"] = 0.95 * qe["b"] + 0.05 * bsz
+                    qe["a"] = 0.95 * qe["a"] + 0.05 * asz
+
+        while time.time() < mk["we"] and time.time() < end and not STOP[0]:
             try:
                 async with websockets.connect(WS, ping_interval=10, ping_timeout=20, max_size=None) as ws:
                     await ws.send(json.dumps({"assets_ids": [mk["up"], mk["down"]], "type": "market"}))
-                    while time.time() < mk["we"] and time.time() < end:
+                    while time.time() < mk["we"] and time.time() < end and not STOP[0]:
                         try:
-                            raw = await asyncio.wait_for(ws.recv(), timeout=min(15, mk["we"] - time.time() + 1))
+                            raw = await asyncio.wait_for(ws.recv(), timeout=min(5, mk["we"] - time.time() + 1))
                         except asyncio.TimeoutError:
+                            # QUIET BOOK != dead collector: keep the heartbeat + timeline alive (the old
+                            # version skipped both here, freezing liveness exactly when things look wrong)
+                            heartbeat(args.tag or "local", args.out_dir, cum)
+                            sample_timeline()
                             continue
-                        # high-res BTC: prefer the sub-second WS feed (it leads our REST poll & the token)
-                        if live["px"] is not None and time.time() - live["ts"] < 8:
+                        # high-res spot: prefer the sub-second WS feed (it leads our REST poll & the token)
+                        ws_fresh = live["px"] is not None and time.time() - live["ts"] < 8
+                        if ws_fresh:
                             shared["st"] = live["px"]
                         if time.time() - last_spot > 2:        # REST poll: keep sigma/tape alive + fallback
                             rest = fv.update(); last_spot = time.time()
                             if not (live["px"] is not None and time.time() - live["ts"] < 8):
                                 shared["st"] = rest or shared["st"]
-                            if shared["st"] is not None:       # trail BTC spot for spot_react (prune ~30s)
+                            if shared["st"] is not None:       # trail own-asset spot (spot_react/past features)
                                 sh = shared["spothist"]; sh.append((time.time(), shared["st"]))
                                 if len(sh) > 40:
                                     del sh[:len(sh) - 40]
+                        # feed provenance -> decision rows (replayability/latency-honesty; audit #6)
+                        shared["spot_src"] = (live.get("src") or "ws") if ws_fresh else "rest"
+                        shared["spot_ts"] = live.get("ts") if ws_fresh else last_spot
+                        shared["feed_lat_ms"] = live.get("feed_lat_ms")
+                        shared["st_btc"] = live_btc.get("px")  # BTC reference for alts (own feed for btc)
                         heartbeat(args.tag or "local", args.out_dir, cum)   # liveness + dead-man ping
                         data = json.loads(raw)
+                        mk["_n_events"] = mk.get("_n_events", 0) + 1        # coverage metadata
+                        mk.setdefault("_t_first", time.time()); mk["_t_last"] = time.time()
                         for m in (data if isinstance(data, list) else [data]):
                             et = m.get("event_type")
                             if et == "last_trade_price":      # update rolling trade-flow ONCE per trade
@@ -946,6 +1084,14 @@ async def run(args):
                                 fl.append((time.time(), sgn * float(m["size"])))
                                 if len(fl) > 4000:
                                     del fl[:2000]             # bound memory; 30s window is well within
+                                try:                          # RAW taker trade tape (audit #8): tiny gz
+                                    trades_fh.write(json.dumps({   # rows -> depth/queue research later
+                                        "t": round(time.time(), 3), "ws": mk["ws"], "asset": args.asset,
+                                        "tenor_min": args.tenor_min,
+                                        "up": 1 if tok == mk["up"] else 0, "side": m.get("side"),
+                                        "p": float(m.get("price") or 0), "sz": float(m.get("size") or 0)}) + "\n")
+                                except Exception:
+                                    pass
                             for v in variants:
                                 if getattr(v, "broken", False):
                                     continue                  # auto-disabled after repeated errors
@@ -970,24 +1116,10 @@ async def run(args):
                                 taker.on_book(m)
                             elif et == "price_change":
                                 taker.on_price_change(m)
-                        # sample shared mid/micro/spot timeline (~1s/token) for per-fill markout
-                        ts_now = time.time()
-                        for tok in (mk["up"], mk["down"]):
-                            bb, bsz, ba, asz = variants[0].tob[tok]
-                            if bb is None or ba is None:
-                                continue
-                            tl = midtl.setdefault(tok, [])
-                            if not tl or ts_now - tl[-1][0] >= 1.0:
-                                mc = micro(bb, bsz, ba, asz)
-                                tl.append((ts_now, (bb + ba) / 2, mc, shared.get("st")))
-                                mh = shared["microhist"].setdefault(tok, [])  # book-lead signal for micro_react
-                                if mc is not None:
-                                    mh.append((ts_now, mc))
-                                    if len(mh) > 40:
-                                        del mh[:len(mh) - 40]
-                                qe = shared["qema"].setdefault(tok, {"b": bsz, "a": asz})  # depletion EMA
-                                qe["b"] = 0.95 * qe["b"] + 0.05 * bsz
-                                qe["a"] = 0.95 * qe["a"] + 0.05 * asz
+                        sample_timeline()        # shared ~1s/token timeline (markouts + tick tape)
+                        if time.time() - last_tickflush >= 30:   # incremental persistence (audit #7):
+                            last_tickflush = time.time()         # a killed run loses <=30s, not the window
+                            flush_ticks(mk, midtl)
                         taker.step()             # offensive: take stale book quotes on fast BTC moves
             except Exception as e:  # noqa: BLE001
                 L(f"  [ws reconnect] {str(e)[:70]}"); await asyncio.sleep(2)
@@ -999,12 +1131,34 @@ async def run(args):
         if not pending:
             break
         try_settle()
+        if STOP[0]:
+            break                      # SIGTERM: one settle attempt, then persist tombstones and exit
         if pending:
             await asyncio.sleep(15)
-    L(f"=== shadow_compare stop (unsettled windows left: {len(pending)}) ===")
+    # TOMBSTONES (audit #2c/#13): a window whose resolution never arrived used to be silently
+    # DISCARDED -- fills, ticks, the lot. Persist everything with res_up=None instead: the book data
+    # is complete at close; the resolution is public and backfillable offline (Gamma) at any time.
+    for item in pending:
+        mk2, variants2, midtl2, _taker2 = item
+        try:
+            emit_fills(mk2, variants2, midtl2, None)
+            flush_ticks(mk2, midtl2)
+            wins_fh.write(json.dumps({
+                "ts": now_iso(), "ws": mk2["ws"], "resolved_up": None,
+                "asset": mk2.get("asset", "btc"), "tenor_min": mk2.get("tenor_min", 15),
+                "unresolved": True,
+                "coverage": {"t_first": round(mk2["_t_first"] - mk2["ws"], 1) if mk2.get("_t_first") else None,
+                             "t_last": round(mk2["_t_last"] - mk2["ws"], 1) if mk2.get("_t_last") else None,
+                             "n_events": mk2.get("_n_events", 0)}}) + "\n")
+            L(f"TOMBSTONE w={mk2['ws']} (unresolved at run end; fills/ticks persisted, res backfillable)")
+        except Exception as e:  # noqa: BLE001
+            L(f"  [TOMBSTONE FAIL] w={mk2['ws']}: {type(e).__name__}: {e}")
+    wins_fh.flush()
+    L(f"=== shadow_compare stop (unsettled windows persisted as tombstones: {len(pending)}) ===")
 
 
 def main():
+    signal.signal(signal.SIGTERM, lambda *_: STOP.__setitem__(0, True))
     ap = argparse.ArgumentParser()
     ap.add_argument("--duration", type=int, default=300)
     ap.add_argument("--tag", default="", help="suffix for output files (e.g. GH run id) -> unique, conflict-free")

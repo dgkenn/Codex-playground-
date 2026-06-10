@@ -6,12 +6,13 @@ Uses the FULL per-(asset,ws) window sample (leaderboard.py collapses by ws only)
 """
 from __future__ import annotations
 import glob, json, collections, math, statistics
+from dataio import jl_glob, jl_open
 
 
 def load_windows():
     rows = {}
-    for fp in glob.glob("gha_data/shadow_windows_*.jsonl"):
-        for ln in open(fp):
+    for fp in jl_glob("gha_data/shadow_windows_*.jsonl"):
+        for ln in jl_open(fp):
             try:
                 r = json.loads(ln)
             except Exception:
@@ -23,8 +24,8 @@ def load_windows():
 
 def load_fills():
     out = []
-    for fp in glob.glob("gha_data/fills_*.jsonl"):
-        for ln in open(fp):
+    for fp in jl_glob("gha_data/fills_*.jsonl"):
+        for ln in jl_open(fp):
             try:
                 r = json.loads(ln)
             except Exception:

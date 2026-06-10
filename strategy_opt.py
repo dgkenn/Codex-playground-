@@ -30,6 +30,7 @@ import json
 import re
 
 import numpy as np
+from dataio import jl_glob, jl_open
 
 try:
     import fees
@@ -50,10 +51,10 @@ def load():
     wkeys = {}
     spot_tape = {}                      # asset -> [(t, spot)] from ALL decision records
     raw = []                            # (asset, record) for fills, second pass
-    for fp in sorted(glob.glob("gha_data/fills_*.jsonl")):
+    for fp in jl_glob("gha_data/fills_*.jsonl"):
         m = re.search(r"fills_([a-z]+)\d+m_", fp)
         asset = m.group(1) if m else "btc"
-        for ln in open(fp):
+        for ln in jl_open(fp):
             try:
                 r = json.loads(ln)
             except Exception:

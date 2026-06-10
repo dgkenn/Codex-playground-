@@ -6,6 +6,7 @@ For the full per-(asset,window) suite with bootstrap CIs use metrics.py. python 
 """
 from __future__ import annotations
 import glob, json, math, statistics
+from dataio import jl_glob, jl_open
 try:
     from scipy import stats as _st
 except Exception:
@@ -14,8 +15,8 @@ except Exception:
 
 def load():
     by_ws = {}
-    for fp in sorted(glob.glob("gha_data/shadow_windows_*.jsonl")):
-        for ln in open(fp):
+    for fp in jl_glob("gha_data/shadow_windows_*.jsonl"):
+        for ln in jl_open(fp):
             ln = ln.strip()
             if not ln:
                 continue

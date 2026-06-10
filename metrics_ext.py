@@ -20,6 +20,7 @@ from __future__ import annotations
 import glob, json, re, math, collections, statistics, random
 import numpy as np
 from scipy import stats
+from dataio import jl_glob, jl_open
 try:
     import fees
     REB = lambda p: float(fees.maker_rebate(p, rate=0.07))
@@ -30,8 +31,8 @@ random.seed(11); MICRO_MARGIN = 0.002
 
 def load_windows():
     W = {}
-    for fp in glob.glob("gha_data/shadow_windows_*.jsonl"):
-        for ln in open(fp):
+    for fp in jl_glob("gha_data/shadow_windows_*.jsonl"):
+        for ln in jl_open(fp):
             try: r = json.loads(ln)
             except Exception: continue
             if r.get("ws") is not None:
@@ -151,8 +152,8 @@ def main():
 
 def load_fills():
     rows = []
-    for fp in glob.glob("gha_data/fills_*.jsonl"):
-        for ln in open(fp):
+    for fp in jl_glob("gha_data/fills_*.jsonl"):
+        for ln in jl_open(fp):
             try: r = json.loads(ln)
             except Exception: continue
             if r.get("var") == "baseline" and r.get("reason") == "fill" and r.get("mo_res") is not None:

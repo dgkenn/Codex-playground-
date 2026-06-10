@@ -27,6 +27,7 @@ import re
 from collections import defaultdict
 
 import numpy as np
+from dataio import jl_glob, jl_open
 
 try:
     import fees
@@ -41,10 +42,10 @@ def load():
     realized spot vol (honest regime feature: the PREVIOUS window's vol, known at window open)."""
     fills = defaultdict(list)
     spot_obs = defaultdict(list)                 # (asset, ws) -> [spot...] for vol
-    for fp in sorted(glob.glob("gha_data/fills_*.jsonl")):
+    for fp in jl_glob("gha_data/fills_*.jsonl"):
         m = re.search(r"fills_([a-z]+)\d+m_", fp)
         asset = m.group(1) if m else "btc"
-        for ln in open(fp):
+        for ln in jl_open(fp):
             try:
                 r = json.loads(ln)
             except Exception:

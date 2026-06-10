@@ -2,11 +2,13 @@
 # microstructure (WS book) and APPEND to strategy_fine.jsonl on the gha-data branch. Across the night
 # this accumulates enough fills to reconstruct each wallet's exact placement function (offset/size/
 # set-sum/inventory rules) -- run `python strategy_fine.py --analyze` on the pooled file. Read-only.
+#
+# SCHEDULE RETIRED (audit 2026-06-10): the wallet reverse-engineering phase is CONCLUDED
+# (CAPTURE_REALITY.md); the hourly run was burning ~55 runner-min/hour for a finished study and its
+# :37 slot now belongs to paper-collect's second cron. Manual dispatch remains for one-off captures.
 name: strategy-fine
 
 on:
-  schedule:
-    - cron: '37 * * * *'
   workflow_dispatch: {}
 
 permissions:

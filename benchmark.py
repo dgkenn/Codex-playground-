@@ -9,14 +9,15 @@ from __future__ import annotations
 import glob, json, math, collections, statistics, random
 import numpy as np
 from scipy import stats
+from dataio import jl_glob, jl_open
 random.seed(5)
 KING = "micro_ufat"   # the deployed gate (ufat)
 
 
 def load():
     W = {}
-    for fp in glob.glob("gha_data/shadow_windows_*.jsonl"):
-        for ln in open(fp):
+    for fp in jl_glob("gha_data/shadow_windows_*.jsonl"):
+        for ln in jl_open(fp):
             try: r = json.loads(ln)
             except Exception: continue
             if r.get("ws") is not None:

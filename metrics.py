@@ -18,6 +18,7 @@ from __future__ import annotations
 import glob, json, re, math, collections, statistics, random
 import numpy as np
 from scipy import stats
+from dataio import jl_glob, jl_open
 
 try:
     import fees
@@ -96,8 +97,8 @@ def stars(p):
 # ---------- loaders ----------
 def load_windows():
     W = {}
-    for fp in glob.glob("gha_data/shadow_windows_*.jsonl"):
-        for ln in open(fp):
+    for fp in jl_glob("gha_data/shadow_windows_*.jsonl"):
+        for ln in jl_open(fp):
             try: r = json.loads(ln)
             except Exception: continue
             if r.get("ws") is not None:
@@ -120,9 +121,9 @@ def vseries(W, v, sub=None):
 
 def load_fills():
     rows = []
-    for fp in glob.glob("gha_data/fills_*.jsonl"):
+    for fp in jl_glob("gha_data/fills_*.jsonl"):
         m = re.search(r"fills_([a-z]+)\d+m_", fp); a = m.group(1) if m else "btc"
-        for ln in open(fp):
+        for ln in jl_open(fp):
             try: r = json.loads(ln)
             except Exception: continue
             if r.get("var") == "baseline" and r.get("reason") == "fill" and r.get("mo_res") is not None:

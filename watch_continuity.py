@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 """Continuity health-check + probe for the unattended paper-data collector.
 
-The collector runs on GitHub Actions (see WATCHER.md): paper-collect.yml does the
-~45-min shadow-comparison collection and commits data to the feature branch;
-paper-collect-chain.yml is a no-op bouncer whose completion re-triggers paper-collect
-(workflow_run ping-pong); paper-watchdog.yml is an independent scheduled self-heal.
+The collector runs on GitHub Actions: paper-collect.yml (scheduled twice hourly, queued
+back-to-back via the concurrency group) collects multi-asset shadow data and commits it to the
+dedicated `gha-data` branch -- NOT the code branch (the old chain/watchdog design is retired).
 
 This tool is GIT-BASED on purpose: it reads the committed data trail rather than the
 GitHub REST API, so it has no auth/rate-limit dependency and works from any clone
@@ -20,7 +19,7 @@ commit log is proof of an autonomous (chain/schedule/watchdog) re-trigger.
 """
 import re, subprocess, sys, time
 
-BRANCH = "claude/polymarket-btc-backtest-XZkKI"
+BRANCH = "gha-data"               # DATA lands here (the old code-branch watch was permanently stale)
 REMOTE = f"origin/{BRANCH}"
 # Runs that exist at the time continuity was first instrumented; any collect/watchdog
 # tag beyond these appearing later proves an autonomous re-trigger.
@@ -59,8 +58,9 @@ def status():
         ts, rel, subj = lc
         age_min = (time.time() - int(ts)) / 60
         emit(f"last gha_data commit: {rel} ({age_min:.0f} min ago) -- {subj}")
-        if age_min > 50:
-            emit(f"WARNING: data is {age_min:.0f} min stale (>50) -- a collect run may have been dropped")
+        if age_min > 130:
+            emit(f"WARNING: data is {age_min:.0f} min stale (>130 = two missed runs) -- check the "
+                 f"Actions tab; the HEARTBEAT_URL dead-man (healthchecks.io) should also have fired")
     else:
         emit("no gha_data commits found yet")
     emit(f"collect/watchdog run tags seen: {sorted(all_tags)}")

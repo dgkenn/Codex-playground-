@@ -17,6 +17,7 @@ from __future__ import annotations
 import glob, json, re, sys, math, statistics, random
 import numpy as np
 from scipy import stats
+from dataio import jl_glob, jl_open
 try:
     import fees
     REB = lambda p: float(fees.maker_rebate(p, rate=0.07))
@@ -44,9 +45,9 @@ def akey(fp, pat):
 
 def load_ticks():
     T = {}
-    for fp in glob.glob("gha_data/ticks_*.jsonl"):
+    for fp in jl_glob("gha_data/ticks_*.jsonl"):
         a, ten = akey(fp, r"ticks_([a-z]+)(\d+)m_")
-        for ln in open(fp):
+        for ln in jl_open(fp):
             try: r = json.loads(ln)
             except Exception: continue
             if r.get("ws") is not None and r.get("ticks"):
@@ -58,9 +59,9 @@ def load_ticks():
 
 def load_fills():
     F = {}
-    for fp in glob.glob("gha_data/fills_*.jsonl"):
+    for fp in jl_glob("gha_data/fills_*.jsonl"):
         a, ten = akey(fp, r"fills_([a-z]+)(\d+)m_")
-        for ln in open(fp):
+        for ln in jl_open(fp):
             try: r = json.loads(ln)
             except Exception: continue
             if r.get("var") == "baseline" and r.get("reason") == "fill" and r.get("ws") is not None:
