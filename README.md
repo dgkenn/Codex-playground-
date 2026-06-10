@@ -81,6 +81,7 @@ Full deploy path: **`GO_LIVE.md`**. The bot defaults to **DRY-RUN**; real orders
 | `combo_lab.py` | heavily backtest gate **combinations** IS+OOS → the best composite (`ufat_band`) |
 | `insights.py` | regenerate the 10 data-backed insights (`INSIGHTS_4DAY.md`) |
 | `metrics.py` | core suite — MDD, Sortino, Calmar, PF, edge + regime, p/CI (`METRICS.md`) |
+| `directional_scan.py` | systematic directional-edge hunt (32 feature/time tests, train→test, cost tiers) — **none clears**; `DIRECTIONAL.md` |
 | `metrics_ext.py` | extended battery — skew/kurtosis/VaR/CVaR, Recovery/Ulcer, Info-Ratio, walk-forward, Monte-Carlo, sensitivity |
 | `hedge_backtest.py` | PROPER path-based delta-hedge sim vs real spot path — **refuted** the hedge as an MDD fix (`METRICS.md`) |
 | `hedger.py` | BTC-perp hedge-ratio computation (kept for reference; the backtest shows it doesn't help these binaries) |
