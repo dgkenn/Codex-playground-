@@ -1,5 +1,7 @@
 # INSIGHTS.md — 5 data-grounded insights, literature-cross-checked (Polymarket BTC 15-min MM)
 
+> _Historical — superseded by the gating validation + 4-day multi-asset data. Kept for provenance; where this disagrees with current docs, **README.md / GATING.md / INSIGHTS_4DAY.md win**._
+
 Basis: 58 settled windows, ~48k audited per-decision records (multi-day, multi-regime, paper on
 LIVE data; audit reconciles to 0). Each insight: DATA finding → LITERATURE cross-check → TWEAK.
 

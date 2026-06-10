@@ -1,5 +1,11 @@
 # EDGE.md — deep dive: the three things that make up the edge
 
+> **Current state (updated after 4 days of multi-asset data — see `INSIGHTS_4DAY.md`).** Two claims below
+> were REVISED by the data: (1) the toxicity gate that wins is now **`ufat_band`** (`ufat` p-adaptive margin
+> + skip the toxic 0.30–0.55 zone), not plain `micro_gate`; (2) **front-of-queue is NOT lower adverse
+> selection** — the data shows the *opposite* (front fills are the toxic ones; benign fills come from deep
+> sweeps). Corrections are inline below. The 3-lever decomposition itself still holds.
+
 The whole edge decomposes as, per window:
     net = Σ_fills [ rebate(p)·sz  +  markout_to_resolution·sz ]
 - `rebate(p)·sz` ≈ 0.20·0.07·p(1-p)·sz (~+0.0025/sh at p=0.5) — the ONLY positive term in expectation.
@@ -23,8 +29,11 @@ MAGNITUDE: queue value ≈ the spread ≈ **1c/share ≈ 4-8× the rebate** (Moa
 
 CAPTURE: standing ladder (aged rungs = accrued priority; never reflexively cancel) + lead-aware
 protection (queue-jump: protect the side the BTC-lead/depletion says the touch is heading toward).
-Front-of-queue is *doubly* good — priority AND lower adverse selection (you fill on small early trades,
-not just the sweep that runs the level over).
+**CORRECTION (INSIGHTS_4DAY #6, 56k fills):** front-of-queue is NOT lower adverse selection — it's the
+opposite. Front fills mark out **−0.0018** while DEEP-queue fills (caught in big benign sweeps) mark out
+**+0.0095**. Informed flow picks off the front; uninformed liquidity-demand sweeps fill the deep rungs.
+So queue priority raises fill *rate* but worsens the *mix* — it is a fill-VOLUME lever, not a
+toxicity lever. Don't over-pay latency for front position; rest a fuller ladder to catch the sweeps.
 
 HONEST LIMIT: this is the one lever **paper cannot measure** — the sim fills us at ~front (q_ahead≈0),
 so the entire paper A/B is the *front-of-queue upper bound*; the live haircut vs paper IS the queue
@@ -44,10 +53,13 @@ on it (micro_gate) beats baseline by **+5.0/win, t=+5.99 (58w)** — the single 
 MAGNITUDE: micro_gate turns gross from ≈0/negative to clearly positive; the A/B uplift is ~+5/win, i.e.
 toxicity-avoidance roughly *doubles-to-triples* the rebate-only baseline (+0.39/win).
 
-CAPTURE: microprice gate (micro_gate); refinements under test — micro_marg (edge MARGIN, not edge>0),
-tox_gate (composite: low-edge OR bid-heavy extreme), deplete_gate (Fokker-Planck queue depletion),
-spot_react/micro_react (the ~0.5s BTC lead). The microprice IS the Avellaneda-Stoikov reservation
-anchor, so the gate also controls inventory indirectly (the levers aren't super-additive).
+CAPTURE: microprice gate. **UPDATE (4-day prospective + `gate_lab`/`combo_lab`):** plain `micro_gate` is
+beaten — the deployable winner is **`ufat`** (p-adaptive margin: strict at p≈0.5, loose at the benign
+tails) and the best combo is **`ufat_band`** (`ufat` + skip the toxic 0.30–0.55 P(up) zone), ~2× OOS
+net/win vs `ufat`. The long-run gate is **`micro_cal`** (keep iff predicted_markout + rebate > 0, so the
+threshold tracks the real rebate). The microprice IS the Avellaneda-Stoikov reservation anchor, so the
+gate also controls inventory indirectly (the levers aren't super-additive). Flow/VPIN/queue/spread gates
+were tested and do NOT help (see `GATING.md`).
 
 HONEST LIMIT: short-horizon markout OVERSTATES the cost — it's largely transient (mo5 -0.0016 -> mo30
 -0.0041 -> mo_res +0.0006), so don't over-cancel (churn locks transient losses). Per-fill SNR is tiny

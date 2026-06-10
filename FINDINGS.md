@@ -1,5 +1,7 @@
 # Polymarket 15m BTC Up/Down — backtest findings
 
+> _Historical — superseded by the gating validation + 4-day multi-asset data. Kept for provenance; where this disagrees with current docs, **README.md / GATING.md / INSIGHTS_4DAY.md win**._
+
 **Data:** Binance 1s spot + pmxt v2 archive (`r2v2.pmxt.dev`) order book/trades,
 2026-04-14 → 2026-04-17 UTC (post-Jan-2026 fee regime). Market discovery via
 Gamma (`btc-updown-{tf}-<utc_ts>`). READ-ONLY; no orders, no trading keys.

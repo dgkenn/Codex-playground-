@@ -1,5 +1,7 @@
 # Direction-free / fee-free / risk-free bets on Polymarket: the complete-set "box"
 
+> _Historical — superseded by the gating validation + 4-day multi-asset data. Kept for provenance; where this disagrees with current docs, **README.md / GATING.md / INSIGHTS_4DAY.md win**._
+
 A complete set (UP + DOWN, or YES + NO) of a Polymarket binary always redeems for **exactly $1**.
 That identity is the source of every "risk-free / direction-free / fee-free" claim. This note settles,
 with our own live data + the literature, whether such a bet actually exists in the **BTC 15-minute**

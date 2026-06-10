@@ -1,5 +1,7 @@
 # Reverse-engineering the winning 15-min crypto market-makers
 
+> _Historical — reverse-engineering phase (concluded: a ≥95% wallet-clone is not achievable, see CAPTURE_REALITY.md). Kept for provenance. Current state: **README.md**._
+
 **Method.** Pulled the wallet-attributed trade tape (Polymarket data-api, no keys) for **246 closed
 BTC-Up/Down 15-min markets (~60h)**, 6,301 wallets. Per (wallet, market): settled P&L = cashflow +
 inventory×resolution. Per wallet: total + risk-adjusted (t-stat of per-market P&L), two-sidedness

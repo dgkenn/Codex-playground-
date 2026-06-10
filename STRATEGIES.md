@@ -1,5 +1,7 @@
 # Learned algorithms of the top-10% MM bots — and what to steal
 
+> _Historical — reverse-engineering phase (concluded: a ≥95% wallet-clone is not achievable, see CAPTURE_REALITY.md). Kept for provenance. Current state: **README.md**._
+
 Goal: not a mirror bot but to **learn each top-10%-by-MM-score wallet's underlying algorithm**, validate
 we've learned it (prospective trade-prediction via `copy_live_multi.py`), then mine the best for our bot.
 Tools: `mm_score.py` (rank) → `strategy_model.py` (extract each algorithm from its tape) →

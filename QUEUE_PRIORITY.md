@@ -6,6 +6,12 @@ order wins. So "filled first" = (a) post a better price when you can, (b) arrive
 queue races indiscriminately means winning the *toxic* ones (informed flow hits the stale side first), which
 inverts the rebate edge. Every lever below is therefore gated to act **on the benign side only**.
 
+> **Data update (`INSIGHTS_4DAY.md` #6, 56k fills):** this caveat is now quantified — **front-of-queue fills
+> mark out −0.0018 (adverse), deep-queue fills +0.0095 (benign)**. Front position raises fill *rate* but
+> worsens the *mix*; the benign fills come from big sweeps reaching deeper rungs. So treat queue priority as a
+> fill-VOLUME lever, **not** a toxicity lever — don't over-pay latency for the front, and note `--max-queue-ahead`
+> is backwards (it skips the benign deep fills). The toxicity edge is the gate (`ufat_band`), not the race.
+
 Below: each of the 5 levers, the concrete things we built for it, and the flag. Defaults are conservative
 (behavior-changing levers are opt-in); recommended pilot settings at the bottom.
 

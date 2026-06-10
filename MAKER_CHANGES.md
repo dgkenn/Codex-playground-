@@ -1,5 +1,7 @@
 # 10 data-backed changes to be more profitable (from the winning makers)
 
+> _Historical — superseded by the gating validation + 4-day multi-asset data. Kept for provenance; where this disagrees with current docs, **README.md / GATING.md / INSIGHTS_4DAY.md win**._
+
 Every change below is backed by a measured number from the wallet tape (250 BTC + 185 ETH 15-min
 markets, 430 maker-like wallets) via `makers_levers.py` (per-trade markout-to-resolution + cross-maker
 P&L regressions) and `makers_scan.py`/`makers_fingerprint.py`. Markout = signed(payoff − price) per

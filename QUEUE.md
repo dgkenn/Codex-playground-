@@ -1,5 +1,7 @@
 # QUEUE.md — live queue-positioning: study (literature + data) and test design
 
+> _Historical — superseded by the gating validation + 4-day multi-asset data. Kept for provenance; where this disagrees with current docs, **README.md / GATING.md / INSIGHTS_4DAY.md win**._
+
 ## The literature verdict (Moallemi-Yuan 2016; optimal-placement work)
 - Under price-time priority, earlier orders fill first → a FIFO arms race for front-of-queue.
 - **Queue position matters MOST when the tick is economically large.** When the tick is small vs

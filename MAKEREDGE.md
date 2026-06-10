@@ -1,5 +1,7 @@
 # Expanding the maker edge — research & roadmap
 
+> _Historical — superseded by the gating validation + 4-day multi-asset data. Kept for provenance; where this disagrees with current docs, **README.md / GATING.md / INSIGHTS_4DAY.md win**._
+
 Our edge today (EDGE.md): **rebate (20% of taker fees, crypto) + spread**, bounded by **queue position**
 and **adverse selection**, kept directionally small. The proven lever is toxicity-avoidance (micro_gate,
 gross-positive). This note researches ways to make the maker seat bigger, cross-checked with the

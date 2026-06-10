@@ -1,5 +1,7 @@
 # Deep dive: 0x20d2309cd92b797ae7ca175ed828ed8a27fbe29d (the t=4.9 outlier)
 
+> _Historical — reverse-engineering phase (concluded: a ≥95% wallet-clone is not achievable, see CAPTURE_REALITY.md). Kept for provenance. Current state: **README.md**._
+
 The standout maker: **#1 risk-adjusted on BOTH BTC and ETH** (t≈4.9), **+3.5%/$ GROSS** (tape excludes
 rebate), ~BTC-neutral. Pulled everything available (data-api `/trades`, `/activity`, `/positions`,
 `/value`) and cross-referenced our **historical archive (April, months back)** and **prospective ticks

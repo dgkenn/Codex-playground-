@@ -1,5 +1,7 @@
 # WATCHER.md — keeping the paper collector running unattended
 
+> _Historical — superseded by the gating validation + 4-day multi-asset data. Kept for provenance; where this disagrees with current docs, **README.md / GATING.md / INSIGHTS_4DAY.md win**._
+
 The dev container is reclaimed on idle and nothing inside survives it, so the collector and any
 watcher must live on **GitHub Actions** (container-independent, free on this public repo). The hard
 part is *triggering*: **every GitHub trigger is best-effort and drops** — schedule, `workflow_run`

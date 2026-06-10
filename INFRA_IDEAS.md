@@ -1,5 +1,7 @@
 # Best ideas distilled from the open-source repos (reviewed, tested, adopted/rejected)
 
+> _Historical — superseded by the gating validation + 4-day multi-asset data. Kept for provenance; where this disagrees with current docs, **README.md / GATING.md / INSIGHTS_4DAY.md win**._
+
 Reviewed the recommended repos' actual approaches, extracted concrete techniques, and
 tested the strategy-level ones on our historical data. **Key conclusion: the repos'
 *strategy* ideas don't add alpha in *our* market (tight 1-tick, near-binary 15m — the

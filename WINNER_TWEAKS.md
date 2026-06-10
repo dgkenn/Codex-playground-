@@ -1,5 +1,7 @@
 # 10 more learnings from the winning bots → tweaks → backtest confirmation
 
+> _Historical — superseded by the gating validation + 4-day multi-asset data. Kept for provenance; where this disagrees with current docs, **README.md / GATING.md / INSIGHTS_4DAY.md win**._
+
 Mined from the winners' tape + 35k recorded paper fills + the shadow backtest. Each learning is tied to a
 number, and the net effect is backtest-confirmed below.
 

@@ -54,8 +54,12 @@ This **updates** the older `WINNER_TWEAKS` conclusion ("keep mildly-toxic, `tox>
 rebate-dependent — which is exactly what `micro_cal` solves.
 
 ## Honest boundary / next step
-These win on the toxicity horizon (`mo5`). Whether each beats `micro` on **deployable resolution-net**
-depends on the rebate/fill trade-off, so they run in the **live multi-asset A/B** (the GHA collector) and
-`leaderboard.py` will rank them on real prospective net (IS+OOS). **`micro_cal` is the deploy candidate**;
-promote it into `live_trader` (replacing the plain-micro `model_filter`) only once it wins live — same
-discipline as every prior edge here. Re-run: `python gate_lab.py` (updates `gate_model.json`).
+These win on the toxicity horizon (`mo5`). On **deployable resolution-net** (4-day prospective, `leaderboard`
++ `combo_lab`), the winner is **`ufat`** and the best combo is **`ufat_band`** (`ufat` + skip the 0.30–0.55
+zone) — see `INSIGHTS_4DAY.md`.
+
+**Now deployed:** `live_trader.py --gate` defaults to **`ufat`** (the p-adaptive margin), with `--mid-skip`
+available for the full `ufat_band` combo (opt-in until the live A/B confirms it). `micro_cal` remains the
+long-run gate — it auto-tunes the threshold to the **real rebate** once the pilot confirms it
+(`PAPER_VS_LIVE.md` A1). All variants run in the live multi-asset A/B; promote default changes only after
+live confirmation. Re-fit anytime: `python gate_lab.py` (updates `gate_model.json`); combos: `python combo_lab.py`.

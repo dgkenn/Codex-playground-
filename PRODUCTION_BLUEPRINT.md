@@ -1,5 +1,7 @@
 # Production build roadmap (live deploy — you run this on your infra)
 
+> _Historical — superseded by the gating validation + 4-day multi-asset data. Kept for provenance; where this disagrees with current docs, **README.md / GATING.md / INSIGHTS_4DAY.md win**._
+
 Canonical infra plan for taking the validated strategy live. Research here is READ-ONLY
 paper; everything below is the **live build you own**. Strategy = done; this is the gap.
 

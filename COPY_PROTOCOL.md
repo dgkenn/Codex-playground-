@@ -1,5 +1,7 @@
 # Copy protocol: how we replicate a target market-maker (and the honest limits)
 
+> _Historical — reverse-engineering phase (concluded: a ≥95% wallet-clone is not achievable, see CAPTURE_REALITY.md). Kept for provenance. Current state: **README.md**._
+
 This maps the requested copy-trading framework to what we've built and to what is *actually possible*
 from available data. Read the boundary first — it changes the whole approach.
 

@@ -1,5 +1,7 @@
 # LIVE_DESIGN.md — the pilot's architecture (theory → `live_trader.py` spec)
 
+> _Historical — superseded by the gating validation + 4-day multi-asset data. Kept for provenance; where this disagrees with current docs, **README.md / GATING.md / INSIGHTS_4DAY.md win**._
+
 The problem has changed shape. We're past "does the edge exist" — it's established as a **small,
 non-directional, capacity-bound, multi-book liquidity edge**; prediction and hedging are dead
 (see `FINDINGS.md`). So the relevant theory is no longer signal discovery — it's **multi-asset

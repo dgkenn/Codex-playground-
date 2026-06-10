@@ -1,5 +1,7 @@
 # 10 new data-backed tweaks (round 2) — from backtesting everything
 
+> _Historical — superseded by the gating validation + 4-day multi-asset data. Kept for provenance; where this disagrees with current docs, **README.md / GATING.md / INSIGHTS_4DAY.md win**._
+
 Grounded in the live shadow backtest (n=66 windows; columns net/win, Δvs base, paired t, GROSS/win) +
 the wallet decomposition. **Honest correction:** several round-1/wallet-derived ideas FAILED in backtest
 (below); these 10 are what the data actually supports.

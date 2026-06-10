@@ -1,5 +1,7 @@
 # Paper-trading candidate: inventory-capped 2-sided maker (rebate farming)
 
+> _Historical — superseded by the gating validation + 4-day multi-asset data. Kept for provenance; where this disagrees with current docs, **README.md / GATING.md / INSIGHTS_4DAY.md win**._
+
 ## Strategy
 On Polymarket **BTC 15-minute Up/Down** markets, continuously **quote both the Up and
 Down tokens** at/near the touch (provide liquidity, never cross). Maintain a **net

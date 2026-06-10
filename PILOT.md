@@ -1,5 +1,7 @@
 # PILOT.md — live deploy runbook (real money, your infra)
 
+> _Historical — superseded by the gating validation + 4-day multi-asset data. Kept for provenance; where this disagrees with current docs, **README.md / GATING.md / INSIGHTS_4DAY.md win**._
+
 Offline research is complete (`FINDINGS.md`). The architecture is specced (`LIVE_DESIGN.md`).
 This is the operational runbook to deploy the two validated capacity levers SMALL and measure
 the one input the whole edifice rests on: **queue-weighted capture rate**. Everything below runs

@@ -1,5 +1,7 @@
 # Reverse-engineering the top MM bots into runnable algos — the whole thing, woven together
 
+> _Historical — reverse-engineering phase (concluded: a ≥95% wallet-clone is not achievable, see CAPTURE_REALITY.md). Kept for provenance. Current state: **README.md**._
+
 **Goal (your framing):** for each top-10%-by-MM-score wallet, *generate an algorithm we can run as code
 and trade independently*, compare it to the original bot, and refine on false-negatives / false-positives
 until ≥95% correlated — then mine the best for our own bot.

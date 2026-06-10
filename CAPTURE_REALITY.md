@@ -1,5 +1,7 @@
 # Can we capture 95% of the top MM bots' trades? The honest, artifact-free answer: NO (with a tight copy)
 
+> _Historical — reverse-engineering phase (concluded: a ≥95% wallet-clone is not achievable, see CAPTURE_REALITY.md). Kept for provenance. Current state: **README.md**._
+
 After chasing this hard and **catching five measurement artifacts** that each inflated the number, the
 cleanest possible measurement says **a faithful tight follow-the-touch ladder captures ~37–86% of these
 bots' fills, not 95%.** My earlier 95–100% claims were all artifacts. This documents the correction.

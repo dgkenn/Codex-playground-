@@ -1,5 +1,11 @@
 # ROADMAP — ranked by expected P&L payoff
 
+> **⚠️ PARTLY SUPERSEDED (see `README.md` + `GATING.md` + `INSIGHTS_4DAY.md`).** This roadmap's premise —
+> "fill selection / gating doesn't help, it was retired" — was **overturned** by later data: the microprice
+> toxicity gate (`micro_gate` → `ufat` → `ufat_band`) is now the single largest *validated* edge. Treat the
+> framing below as historical. The genuinely-future items here (BTC-perp **delta-hedge** to safely raise the
+> cap, **Liquidity-Rewards** stream) are still valid roadmap, just not "instead of" gating.
+
 Honest framing that sets the ranking: the edge is **real but tiny and fill-rate-bound**,
 and we proved cleverer *fill selection* does not help (Tier 1 in `FINDINGS.md`: gating and
 markout-toxicity both retired; the cap + 2-sided structure already neutralizes the adverse
