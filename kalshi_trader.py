@@ -33,6 +33,8 @@ from live_metrics import LiveMetrics
 BASE = "https://api.elections.kalshi.com/trade-api/v2"
 MICRO_MARGIN = 0.002   # p-adaptive toxicity margin (same constant as live_trader)
 
+seeded: set = set()   # C-4: tickers whose prior-session fills have been seeded into seen_fills
+
 
 # ---------------------------------------------------------------------------
 # Auth helpers
@@ -94,7 +96,7 @@ def discover(sess, asset="btc"):
         return None
     tk, ct = best
     ws = int(ct) - 900
-    return {"cid": tk, "ws": ws, "we": int(ct), "tick": 0.0001, "asset": asset}
+    return {"cid": tk, "ws": ws, "we": int(ct), "tick": 0.01, "asset": asset}
 
 
 def get_book(sess, ticker):
@@ -115,11 +117,17 @@ def get_book(sess, ticker):
 
 
 def resolve_result(sess, ticker):
-    """Return 1 (yes wins) / 0 (no wins) / None (not yet settled)."""
+    """Return 1 (yes wins) / 0 (no wins) / 'void' (voided/cancelled) / None (not yet settled)."""
     try:
         m = sess.get(f"{BASE}/markets/{ticker}", timeout=8).json().get("market", {})
         r = m.get("result")
-        return 1 if r == "yes" else (0 if r == "no" else None)
+        if r == "yes":
+            return 1
+        if r == "no":
+            return 0
+        if r in ("void", "voided", "cancelled", "canceled"):
+            return "void"
+        return None
     except Exception:
         return None
 
@@ -178,6 +186,7 @@ def place_order(sess, private_key, ticker, side, price_dollars, count, client_oi
         "post_only": True,
         "expiration_ts": None,
     }
+    body = {k: v for k, v in body.items() if v is not None}
     sc, resp = _api(sess, private_key, "POST", "/portfolio/orders", body=body)
     if sc < 200 or sc >= 300 or resp is None:
         return None
@@ -265,14 +274,12 @@ def desired_levels(mk, yes_bid, yes_ask, net_delta, layers, cap, skew_frac, impr
     return result
 
 
-def gate_check(side, price, yes_bid, yes_ask, net_delta, gate, fv_margin):
+def gate_check(side, price, yes_bid, yes_ask, net_delta, gate, fv_margin, bq=0.0, aq=0.0):
     """True = TOXIC (skip or pull). Mirrors live_trader ufat gate: microprice anchor with
     p-adaptive margin. BUY-YES toxic if mp < price-margin; BUY-NO toxic if mp > (1-price)+margin."""
     if yes_bid is None or yes_ask is None:
         return False
-    mp = microprice(yes_bid, yes_ask,
-                    # no own-size adjustment here; caller excludes own size before calling
-                    0.0, 0.0)
+    mp = microprice(yes_bid, yes_ask, bq, aq)
     if mp is None:
         return False
     mid = (yes_bid + yes_ask) / 2.0
@@ -303,8 +310,8 @@ def main():
     ap.add_argument("--cap", type=float, default=50)
     ap.add_argument("--skew", type=float, default=0.25)
     ap.add_argument("--max-rungs", type=int, default=3, help="max resting rungs per side")
-    ap.add_argument("--improve-tick", type=float, default=0.001,
-                    help="sub-cent improvement over best bid to jump the queue")
+    ap.add_argument("--improve-tick", type=float, default=0.01,
+                    help="one tick inside the touch (1c); set 0.001 only if/where the venue accepts sub-cent")
     ap.add_argument("--gate", choices=["ufat", "micro", "marg"], default="ufat")
     ap.add_argument("--max-notional", type=float, default=25)
     ap.add_argument("--loss-limit", type=float, default=5)
@@ -391,7 +398,6 @@ def main():
     consec_err = 0
     last_hk = 0.0
     last_reconcile = 0.0
-    last_book_ts = {}        # (side,price) -> last observed yes_bid/yes_ask (for markout)
     mo_fh = open("kalshi_markout.jsonl", "a")
 
     # --- cancel / dead-man infrastructure ---
@@ -441,7 +447,7 @@ def main():
             oo = get_open_orders(sess, priv, mk["cid"])
             for o in oo:
                 oid2 = str(o.get("order_id") or "")
-                if oid2 and oid2 not in placed_oids:
+                if oid2:
                     cancel_order(sess, priv, oid2)
 
     # C1 DEAD-MAN: guarantee cancel-all on any exit (normal, exception, SIGTERM, Ctrl-C).
@@ -499,17 +505,18 @@ def main():
     _book_rest_throttle = 0.0
 
     def get_book_cached(ticker, max_age=None):
-        """Throttled REST book poll. Returns (yes_bid, ybq, yes_ask, yaq) or (None,)*4."""
+        """Throttled REST book poll. Returns (yes_bid, ybq, yes_ask, yaq, fresh).
+        fresh=True only when the REST poll inside this call succeeded."""
         max_age = max_age or a.react_poll
         c = _last_book_cache.get(ticker)
         if c and (time.time() - c[0]) < max_age:
-            return c[1], c[2], c[3], c[4]
+            return c[1], c[2], c[3], c[4], False
         ybb, ybq, yba, yaq = get_book(sess, ticker)
         if ybb is not None:
             _last_book_cache[ticker] = (time.time(), ybb, ybq, yba, yaq)
-            return ybb, ybq, yba, yaq
+            return ybb, ybq, yba, yaq, True
         # return stale if available (keeps dead-man watchdog from over-firing on single blips)
-        return (c[1], c[2], c[3], c[4]) if c else (None, None, None, None)
+        return (c[1], c[2], c[3], c[4], False) if c else (None, None, None, None, False)
 
     # --- fill booking (poll-based, scoped to current ticker) ---
     def poll_fills():
@@ -521,18 +528,41 @@ def main():
         ticker = mk["cid"]
         sf = seen_fills.setdefault(ticker, set())
         fills = get_fills(sess, priv, ticker)
+        # C-4: on first call for a ticker, seed all existing fill ids without booking them
+        if ticker not in seeded:
+            for f in fills:
+                fid = str(f.get("trade_id") or f.get("fill_id") or "")
+                if fid:
+                    sf.add(fid)
+            seeded.add(ticker)
+            return
         for f in fills:
             fid = str(f.get("trade_id") or f.get("fill_id") or "")
-            if not fid or fid in sf:
+            if not fid:
+                print(f"[FILL-NOID] fill missing trade_id/fill_id: {str(f)[:120]}")
+                continue
+            if fid in sf:
                 continue
             fside = str(f.get("side") or "").lower()    # "yes" or "no"
-            count = float(f.get("count") or 0)
-            yp_raw = f.get("yes_price") or f.get("yes_price_dollars")
+            count = float(f.get("count_fp") or f.get("count") or 0)
+            # H-3: prefer yes_price_dollars; if only yes_price and > 1.0, divide by 100
+            yp_raw = f.get("yes_price_dollars")
+            from_cents = False
+            if yp_raw is None:
+                yp_raw = f.get("yes_price")
+                from_cents = True
             if yp_raw is None or count <= 0 or fside not in ("yes", "no"):
                 sf.add(fid)
                 continue
             yp = float(yp_raw)
+            if from_cents and yp > 1.0:
+                yp /= 100
             fp = yp if fside == "yes" else round(1.0 - yp, 4)
+            # H-3 sanity guard: skip fills with price outside (0, 1)
+            if not (0.0 < fp < 1.0):
+                print(f"[FILL-AMBIGUOUS] fill {fid} has price {fp} outside (0,1); skipping")
+                sf.add(fid)
+                continue
             # inventory bookkeeping: BUY-YES adds +1 net, BUY-NO adds -1 net
             sgn = 1.0 if fside == "yes" else -1.0
             pos_key = ticker + ":" + fside.upper()
@@ -543,14 +573,16 @@ def main():
             meta = resting.get(key)
             resting_s = (time.time() - meta["ts"]) if meta else None
             if meta:
-                resting.pop(key, None)
+                meta["filled"] = meta.get("filled", 0.0) + count
+                if meta["filled"] >= a.post - 1e-9:
+                    resting.pop(key, None)
             pending_markouts.append((time.time() + 5.0, {
                 "fside": fside, "fp": fp, "count": count,
                 "resting_s": resting_s, "oid": (meta or {}).get("oid", fid)}))
-            lm.fill(fside, fp, count, resting_s, None, "maker", None, 0.0)
+            lm.fill(fside, fp, count, resting_s, None, "taker" if f.get("is_taker") else "maker", None, 0.0)
             sf.add(fid)
 
-    def sweep_window_fills(ticker, pos_yes_key, pos_no_key, en=None):
+    def sweep_window_fills(ticker, en=None):
         """C-1 boundary-fill leak: sweep fills for a CLOSING window into the ledger (en=None)
         or into a pending_settles entry, just like live_trader.sweep_closed_window."""
         if not live:
@@ -562,12 +594,23 @@ def main():
             if not fid or fid in sf:
                 continue
             fside = str(f.get("side") or "").lower()
-            count = float(f.get("count") or 0)
-            yp_raw = f.get("yes_price") or f.get("yes_price_dollars")
+            count = float(f.get("count_fp") or f.get("count") or 0)
+            # H-3: prefer yes_price_dollars; if only yes_price and > 1.0, divide by 100
+            yp_raw = f.get("yes_price_dollars")
+            from_cents = False
+            if yp_raw is None:
+                yp_raw = f.get("yes_price")
+                from_cents = True
             if yp_raw is None or count <= 0 or fside not in ("yes", "no"):
                 sf.add(fid); continue
             yp = float(yp_raw)
+            if from_cents and yp > 1.0:
+                yp /= 100
             fp = yp if fside == "yes" else round(1.0 - yp, 4)
+            # H-3 sanity guard: skip fills with price outside (0, 1)
+            if not (0.0 < fp < 1.0):
+                print(f"[FILL-AMBIGUOUS] fill {fid} has price {fp} outside (0,1); skipping")
+                sf.add(fid); continue
             sgn = 1.0 if fside == "yes" else -1.0
             if en is None:
                 pk = ticker + ":" + fside.upper()
@@ -615,7 +658,7 @@ def main():
                 if mk is not None:
                     # Settle closing window: sweep boundary fills, queue pending settle
                     if live:
-                        sweep_window_fills(mk["cid"], mk["cid"] + ":YES", mk["cid"] + ":NO")
+                        sweep_window_fills(mk["cid"])
                     r_now = resolve_result(sess, mk["cid"])
                     if pos or abs(cash) > 1e-9:
                         entry = {
@@ -650,7 +693,7 @@ def main():
                 next_mk["tried_we"] = mk["we"]
                 def _prefetch(we_next, asset_=a.asset):
                     m2 = discover(requests.Session(), asset_)
-                    if m2 is not None and m2["we"] == we_next:
+                    if m2 is not None and m2["ws"] == we_next:
                         next_mk["mk"] = m2
                 threading.Thread(target=_prefetch, args=(mk["we"],), daemon=True).start()
 
@@ -669,10 +712,12 @@ def main():
                 cancel_all_resting(reason="toxic_kill"); break
 
             # --- book poll (REST; react-poll cadence) ---
-            ybb, ybq, yba, yaq = get_book_cached(mk["cid"])
-            if ybb is not None and yba is not None:
+            ybb, ybq, yba, yaq, _fresh = get_book_cached(mk["cid"])
+            if _fresh:
                 last_book_ok = time.time()
-                deadman_tripped = False
+            if ybb is not None and yba is not None:
+                if _fresh:
+                    deadman_tripped = False
             else:
                 time.sleep(a.react_poll); continue
 
@@ -694,12 +739,13 @@ def main():
                 if key in resting:
                     continue
                 # Toxicity gate: skip placing if microprice says this side is adverse
-                if mp is not None and gate_check(side, price, ybb, yba, net_delta, a.gate, 0.0):
+                if mp is not None and gate_check(side, price, ybb, yba, net_delta, a.gate, 0.0, clean_ybq, clean_yaq):
                     continue
                 # C8 aggregate notional cap (BUY side only; both YES and NO are buys)
                 open_buy_notional = sum(price_ * a.post for (_, price_), _ in
                                         ((k, m) for k, m in resting.items()))
-                if open_buy_notional + price * a.post > a.max_notional:
+                exposure = open_buy_notional + max(-cash, 0.0)
+                if exposure + price * a.post > a.max_notional:
                     continue
                 # Side ladder rung cap
                 if sum(1 for k in resting if k[0] == side) >= a.max_rungs:
@@ -711,13 +757,13 @@ def main():
                     oid, t_dec, t_ack = res
                 else:
                     oid = res; t_ack = time.time()
-                resting[key] = {"oid": oid, "ts": t_ack}
+                resting[key] = {"oid": oid, "ts": t_ack, "filled": 0.0}
 
             # --- PULL stale / toxic / off-target rungs ---
             for key in list(resting):
                 side, price = key
                 # Toxicity gate: pull if microprice crossed this rung (same ufat logic as live_trader)
-                if mp is not None and gate_check(side, price, ybb, yba, net_delta, a.gate, 0.0):
+                if mp is not None and gate_check(side, price, ybb, yba, net_delta, a.gate, 0.0, clean_ybq, clean_yaq):
                     drop(key, "toxic")
                     continue
                 # Reshape: off-target young rungs (equiv to live_trader's young off-band cancel)
@@ -750,14 +796,14 @@ def main():
                 pending_markouts[:] = [pm for pm in pending_markouts if pm[0] > now_mo]
                 for due_t, f in due:
                     try:
-                        ybb2, _, yba2, _ = get_book_cached(mk["cid"], max_age=0.1)
+                        ybb2, _, yba2, _, _fresh2 = get_book_cached(mk["cid"], max_age=0.1)
                     except Exception:
                         pending_markouts.extend([(due_t, f)])
                         break
                     if ybb2 is None or yba2 is None or now_mo - due_t > 60:
                         continue
                     mid2 = (ybb2 + yba2) / 2.0
-                    mo = (mid2 - f["fp"]) if f["fside"] == "yes" else (f["fp"] - mid2)
+                    mo = (mid2 - f["fp"]) if f["fside"] == "yes" else ((1.0 - mid2) - f["fp"])
                     markouts.append(mo); del markouts[:-500]
                     mo_fh.write(json.dumps({
                         "ts": time.time(), "asset": a.asset, "side": f["fside"],
@@ -786,12 +832,17 @@ def main():
                 still = []
                 for en in pending_settles:
                     if live:
-                        sweep_window_fills(en["cid"], en["cid"] + ":YES", en["cid"] + ":NO", en)
+                        sweep_window_fills(en["cid"], en)
                     r2 = en.get("r")
                     if r2 is None:
                         r2 = resolve_result(sess, en["cid"])
                         en["r"] = r2
-                    if r2 is not None and time.time() - en.get("t0", 0) >= 20:
+                    if r2 == "void" and time.time() - en.get("t0", 0) >= 20:
+                        # voided/cancelled market: cash comes back, no P&L
+                        realized += 0
+                        print(f"  [VOID] ws={en['ws']} market voided; cash returned, no P&L")
+                        seen_fills.pop(en["cid"], None)
+                    elif r2 is not None and time.time() - en.get("t0", 0) >= 20:
                         # settle: YES pays $1 if r2==1, NO pays $1 if r2==0
                         pnl = (en["cash"]
                                + en["pos_yes"] * (1.0 if r2 == 1 else 0.0)
@@ -805,8 +856,8 @@ def main():
 
                 # Mark open window to mid (feeds loss-limit kill)
                 wm = cash
-                ybb_m, _, yba_m, _ = get_book_cached(mk["cid"])
-                mid_m = (ybb_m + yba_m) / 2.0 if (ybb_m and yba_m) else 0.5
+                ybb_m, _, yba_m, _, _fresh_m = get_book_cached(mk["cid"])
+                mid_m = (ybb_m + yba_m) / 2.0 if (ybb_m is not None and yba_m is not None) else 0.5
                 for pk, sh in pos.items():
                     if abs(sh) < 1e-9:
                         continue
