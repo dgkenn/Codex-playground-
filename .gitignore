@@ -39,3 +39,8 @@ copy_multi_result.json
 copy_multi_capture.jsonl
 strategy_models.json
 strategy_fine.jsonl
+
+# Paper-trading data pulled locally for analysis (git checkout origin/gha-data -- gha_data/).
+# It lives ONLY on the dedicated gha-data branch -- never commit it to the code branch.
+# (Files already tracked in history remain tracked; this only keeps fresh pulls out of status.)
+gha_data/
