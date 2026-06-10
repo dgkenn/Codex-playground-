@@ -24,8 +24,18 @@ FLOW_TOX = 200.0     # signed taker vol threshold (matches shadow_compare flow g
 
 
 def load():
-    rows = []
+    """Load baseline fills AND attach an HONEST past-30s spot move (`_dpast30`) to each.
+
+    LOOKAHEAD WARNING: the recorded `dspot30` field is the spot move 30s AFTER the fill (a markout
+    companion -- shadow_compare samples spot at t+30). It must NEVER be used as a gating feature;
+    doing so scored a fake t=+6.5 'btc-lead' edge here before the bias was caught (strategy_opt.py).
+    The honest feature is built from PAST observations only: every decision record (fills and skips)
+    carries (t, spot), giving a dense in-window spot tape."""
+    rows, tape_pts = [], {}
     for fp in sorted(glob.glob("gha_data/fills_*.jsonl")):
+        import re as _re
+        m = _re.search(r"fills_([a-z]+)\d+m_", fp)
+        asset = m.group(1) if m else "btc"
         for ln in open(fp):
             ln = ln.strip()
             if not ln:
@@ -34,8 +44,23 @@ def load():
                 r = json.loads(ln)
             except Exception:
                 continue
+            if r.get("spot") and r.get("t"):
+                tape_pts.setdefault(asset, []).append((r["t"], r["spot"]))
             if r.get("var") == "baseline" and r.get("reason") == "fill" and r.get("mo_res") is not None:
+                r["_asset"] = asset
                 rows.append(r)
+    tape = {}
+    for asset, pts in tape_pts.items():
+        pts.sort()
+        tape[asset] = (np.array([t for t, _ in pts]), np.array([s for _, s in pts]))
+    for r in rows:
+        dpast = 0.0
+        tt, ss = tape.get(r.get("_asset", "btc"), (None, None))
+        if tt is not None and r.get("t"):
+            i = int(np.searchsorted(tt, r["t"] - 30.0, side="right")) - 1
+            if i >= 0 and (r["t"] - 30.0) - tt[i] <= 60.0:
+                dpast = (r.get("spot") or ss[i]) - ss[i]
+        r["_dpast30"] = dpast
     rows.sort(key=lambda r: (r.get("ws", 0), r.get("t", 0)))
     return rows
 
@@ -81,8 +106,10 @@ def flow_adv(r):
 
 
 def dspot_adv(r):
-    """BTC move against our side over ~30s. ASK adverse if BTC just rose (token fair up)."""
-    d = r.get("dspot30") or 0.0
+    """Spot move against our side over the PAST ~30s (honest `_dpast30` from load(); the recorded
+    `dspot30` field is the FUTURE move -- using it here once produced a fake t=+6.5 lead 'edge').
+    ASK adverse if spot just rose (token fair up)."""
+    d = r.get("_dpast30") or 0.0
     up = r.get("up", 1)
     fair_move = (1.0 if up else -1.0) * d        # how the token's fair just moved
     return fair_move if r["side"] == "ASK" else -fair_move
@@ -184,11 +211,14 @@ def paired_t(a, b):                   # paired t of (a-b) per shared window
 
 
 # --- #10 calibrated ensemble: ridge-predict per-share markout, gate on predicted net>0 (OOS) ---
+# TRAIN = SERVE: shadow_compare's live micro_cal zeroes q_ahead/tk_sz (unknowable at quote-decision
+# time) and uses the PAST 30s dspot. Training on anything else fits weights the live gate then
+# misapplies -- the original model was fit on the FUTURE dspot30 + real q_ahead/tk_sz (both leaked).
 def features(r):
     p = r.get("mid") or r["p"]
     return [1.0, tox(r), flow_adv(r) / 100.0, dspot_adv(r), spread(r) * 100.0,
-            4.0 * p * (1 - p), (r.get("q_ahead") or 0.0) / 100.0,
-            (r.get("tk_sz") or 0.0) / 100.0, r.get("tau", 450.0) / 900.0,
+            4.0 * p * (1 - p), 0.0,
+            0.0, r.get("tau", 450.0) / 900.0,
             1.0 if r["side"] == "ASK" else 0.0]
 
 

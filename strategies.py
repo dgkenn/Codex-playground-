@@ -81,7 +81,10 @@ REGISTRY: list[Strat] = [
     # gate_lab.py winners -- validated on 56k fills (short-horizon mo5 = adverse selection); live A/B confirms deployable net
     Strat("micro_strict", gate="micro_strict", note="gate_lab: micro edge>=0.003 in our favor (t=+6.2 vs micro)"),
     Strat("micro_asym", gate="micro_asym", note="gate_lab: SELL side stricter than BUY (t=+7.5, highest)"),
-    Strat("lead30", gate="lead30", note="gate_lab: pull side BTC moved against over 30s (t=+6.2)"),
+    Strat("lead30", gate="lead30", enabled=False,
+          note="PRUNED (lookahead artifact): its only support was gate_lab scoring on `dspot30`, which is "
+               "the spot move AFTER the fill; the honest past-30s backtest (strategy_opt/gate_lab fixed) "
+               "is NEGATIVE on both deployable net and mo5 (t=-5.6 vs micro)"),
     Strat("micro_cal", gate="micro_cal", note="gate_lab #10: calibrated ensemble -- keep iff pred markout+rebate>0 (OOS winner)"),
     # combo_lab.py BEST overall combo (IS+OOS): ufat gate + drop toxic 0.30-0.55 mid-prob zone (~2x OOS net vs ufat)
     Strat("ufat_band", gate="ufat_band", note="combo_lab BEST: micro_ufat + notmid (skip P(up) 0.30-0.55); IS+OOS winner"),

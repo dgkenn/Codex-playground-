@@ -34,6 +34,13 @@ alpha** (BTC-prediction and favorite-longshot were both tested and rejected).
 **Honest open items:** the rebate (A1) and live adverse selection (A2) can only be confirmed live; the
 4-day backtest's OOS>IS is a favorable regime, not edge inflation; deploy changes only after live A/B.
 
+**Optimality check (`strategy_opt.py`):** an exhaustive 9,600-composition search of the validated gate
+components (margin shape × side-asymmetry × tau-scaling × honest BTC-lead × band/spread filters) on all
+58.9k fills, with select-on-A+B / confirm-on-holdout-C and paired-vs-`ufat` tests, found **no composition
+that beats deployed `ufat` with significance** — and exposed (then fixed) a lookahead artifact behind the
+old `lead30`/btc-lead result (`GATING.md` #6). `ufat` is the confirmed optimum of the searchable space;
+per-asset margin surfaces are flat (no per-asset tuning justified).
+
 ---
 
 ## Run it (`run.sh`)

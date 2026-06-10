@@ -70,8 +70,8 @@ SOFT_MARGIN = 0.002   # micro_soft: BACKTEST-OPTIMAL gate (sweep on 10k fills: n
 STRICT_MARGIN = 0.003   # micro_strict: require micro edge in OUR favor by this; beats deployed micro (t=+6.2)
 ASYM_ASK = 0.001        # micro_asym: SELL(ASK) side gated stricter (more toxic in data; t=+7.5, highest)
 ASYM_BID = 0.002        # micro_asym: BUY(BID) side looser
-LEAD_LAG_S = 30         # lead30: the 30s BTC move is a strong short-horizon toxicity flag (t=+6.2)
-LEAD_BPS = 1.5          # |BTC move| over LEAD_LAG_S in bps of spot to pull the side it moved against
+LEAD_LAG_S = 30         # lead30 (PRUNED): the original t=+6.2 was a LOOKAHEAD artifact (gate_lab scored
+LEAD_BPS = 1.5          # on dspot30 = the move AFTER the fill); honest past-30s re-test is negative (GATING.md #6)
 # micro_cal: calibrated ENSEMBLE -- ridge markout model fit by gate_lab.py -> gate_model.json. Keep a fill
 # iff predicted short-horizon markout + maker_rebate(p) > 0 (auto-adapts the toxicity cutoff to the rebate).
 try:
