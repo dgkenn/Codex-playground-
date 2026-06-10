@@ -110,6 +110,24 @@ Run: `python metrics_ext.py` (after `git checkout origin/gha-data -- gha_data/`)
 
 ---
 
+# The metrics' hypotheses, tested (`metrics_hypo.py`)
+
+The battery above generates three falsifiable hypotheses; all were tested on the full tape with a
+sequential inventory REPLAY (walk each window's fills in time order, enforce the engine's actual
+skew-block rule at tighter limits) under the select(A+B)/confirm(holdout C) protocol:
+
+| hypothesis | result |
+|---|---|
+| **H1: `ufat` + tighter inventory skew** (insight 4: "inventory drives drawdown") | ✅ **supported as a risk knob** — skew 0.15·cap: holdout **Calmar 40.6 vs 31.0**, MDD −25%, in BOTH folds, at zero measurable net cost (paired t +0.3). Wired as shadow variant **`ufat_skew15`** for prospective A/B. |
+| **H2: tight skew rescues `ufat_band`'s drawdown** | ❌ refuted — and the replay exposes something bigger: under real inventory mechanics **`ufat_band`'s 2× net advantage disappears entirely** (holdout +3.18 vs `ufat` +3.67, paired t −0.8). Its concentrated same-side tail fills hit the skew limit, collapsing its volume — the keep/drop studies (no inventory constraint) flattered it. A third independent strike against the band (after Calmar and the refuted hedge). |
+| **H3: calm-regime filter** (skip windows whose *previous* window's spot vol is top-quartile — honest, past-only) | ❌ refuted — net collapses (paired t **−5.0**), Calmar falls (10.2 vs 31.0). Volatile windows carry positive rebate net; consistent with the pruned `vol_gate`. |
+
+The replay approximates queue mechanics (a dropped fill can't alter others' queues), so H1's winner
+follows the standing discipline: shadow A/B first, deployed-default change only on prospective
+confirmation. Re-run: `python metrics_hypo.py`.
+
+---
+
 # Delta-hedge: properly backtested against the real spot path — REFUTED (`hedge_backtest.py`)
 
 The earlier "hedge cuts MDD ~77–93%" was a **proxy artifact**: `metrics.py §D` used short-horizon markout

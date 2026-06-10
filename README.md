@@ -41,6 +41,11 @@ that beats deployed `ufat` with significance** — and exposed (then fixed) a lo
 old `lead30`/btc-lead result (`GATING.md` #6). `ufat` is the confirmed optimum of the searchable space;
 per-asset margin surfaces are flat (no per-asset tuning justified).
 
+**Metrics-driven hypotheses (`metrics_hypo.py`):** inventory-replay tests of what `METRICS.md` predicts —
+tight skew on `ufat` cuts MDD ~25% at zero net cost (→ new shadow variant **`ufat_skew15`**); a calm-regime
+filter is refuted (volatile windows pay); and under real inventory mechanics **`ufat_band`'s net advantage
+vanishes** — the third independent strike against the band.
+
 ---
 
 ## Run it (`run.sh`)
