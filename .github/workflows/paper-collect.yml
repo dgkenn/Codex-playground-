@@ -27,8 +27,8 @@ name: paper-collect
 
 on:
   schedule:
-    - cron: '7 * * * *'           # offsets dodge top-of-hour cron congestion; the concurrency
-    - cron: '37 * * * *'          # group queues these back-to-back -> near-continuous coverage
+    - cron: '9 * * * *'           # offsets dodge top-of-hour cron congestion; the concurrency
+    - cron: '39 * * * *'          # group queues these back-to-back -> near-continuous coverage
   workflow_dispatch: {}
 
 permissions:
