@@ -75,6 +75,7 @@ G = "https://gamma-api.polymarket.com"
 C = "https://clob.polymarket.com"
 WS_MARKET = "wss://ws-subscriptions-clob.polymarket.com/ws/market"   # public book deltas (no auth)
 DEPLETE_FRAC = 0.35   # queue-jump depletion trigger: best queue < this * its EMA => about to deplete
+MICRO_MARGIN = 0.002  # toxicity-gate edge margin (INSIGHTS_4DAY: micro_ufat/micro_marg beat plain micro ~24%)
 
 
 def active_market(sess, asset="btc", tenor_min=15):
@@ -493,6 +494,13 @@ def main():
     ap.add_argument("--fv-margin", type=float, default=0.0, help="toxic only when fair crosses the "
                     "quote by this much (0 = strictly crossed; >0 adds a buffer). Anchored to the "
                     "book microprice, which sits inside a 1c spread, so this must be ~0 or nothing quotes")
+    ap.add_argument("--gate", choices=["micro", "ufat", "marg"], default="ufat",
+                    help="toxicity gate (INSIGHTS_4DAY 4-day backtest): 'ufat' = p-adaptive margin (strict at "
+                    "p~0.5, loose at tails) -- the validated deployable winner (+24%% vs plain micro); "
+                    "'marg' = fixed edge margin; 'micro' = legacy strict-crossing. Adds to --fv-margin.")
+    ap.add_argument("--mid-skip", action="store_true", help="combo_lab BEST overall: also stop quoting a token "
+                    "while its P(up) is in the toxic 0.30-0.55 band (INSIGHTS_4DAY #5). With --gate ufat this is "
+                    "the validated best combo (~2x OOS net vs ufat alone). Opt-in; confirm in live A/B first.")
     ap.add_argument("--fv-band", type=int, default=2, help="max ticks the model quote may sit off the touch")
     ap.add_argument("--spot-symbol", default="BTCUSDT")
     ap.add_argument("--max-notional", type=float, default=25)
@@ -576,7 +584,7 @@ def main():
         jlog = open("queue_jump_log.jsonl", "a")   # A/B audit: lead-driven protect/shed actions
     print(f"[{mode}] STANDING-LADDER maker post={a.post} cap={a.cap} skew={a.skew} layers={a.layers} "
           f"max_rungs={a.max_rungs} age_protect={a.age_protect}s toxic_severe={a.toxic_severe} "
-          f"reprice={a.reprice} fv_margin={a.fv_margin} max_notional=${a.max_notional} loss_limit=${a.loss_limit}")
+          f"gate={a.gate} reprice={a.reprice} fv_margin={a.fv_margin} max_notional=${a.max_notional} loss_limit=${a.loss_limit}")
     notify.alert(f"[pmkit] live_trader start {mode} cap={a.cap} skew={a.skew} reprice={a.reprice}")
 
     net_delta = 0.0; realized = 0.0; mk = None
@@ -805,7 +813,22 @@ def main():
                 # falsely suppresses a side. The microprice is the surviving book-native signal and
                 # sits inside the spread, so the toxic test fires only when it CROSSES a resting price.
                 anchor = mp if mp is not None else ft
-                desired, model_supp = model_filter(base, anchor, a.fv_margin, bb, ba, band_px, rlog, token)
+                # toxicity-gate margin (INSIGHTS_4DAY): ufat = p-adaptive (strict at p~0.5 where adverse
+                # selection peaks, loose at the benign tails) -- the validated deployable winner. marg = fixed.
+                mid = (bb + ba) / 2.0
+                if a.gate == "ufat":
+                    gate_margin = a.fv_margin + MICRO_MARGIN * 4.0 * mid * (1.0 - mid)
+                elif a.gate == "marg":
+                    gate_margin = a.fv_margin + MICRO_MARGIN
+                else:
+                    gate_margin = a.fv_margin
+                # combo_lab BEST overall: also skip the toxic mid-prob zone (INSIGHTS_4DAY #5: P(up) 0.30-0.55
+                # is the most adverse). Pull this token's rungs and quote nothing while it's in the band.
+                if a.mid_skip and 0.30 <= mid < 0.55:
+                    for key in [k for k in resting if k[0] == token]:
+                        drop(key, "mid_skip")
+                    continue
+                desired, model_supp = model_filter(base, anchor, gate_margin, bb, ba, band_px, rlog, token)
                 for _k in desired:                 # pre-sign the targets we're about to need (no-op unless --presign)
                     presign_one(*_k)
                 # P3: warm a DEEPER pre-signed band (touch +/- extra ticks + the inside-touch improve level)

@@ -42,6 +42,8 @@ KNOWN_GATES = {
     "deplete", "predict", "flow", "spot", "micro_react", "as",
     # gate_lab.py winners (validated on 56k fills / 141 windows; GATING.md)
     "micro_strict", "micro_asym", "lead30", "micro_cal",
+    # combo_lab.py best overall composite (INSIGHTS_4DAY)
+    "ufat_band",
     # composite (_gated)
     "micro_spot", "gross_max", "graded",
 }
@@ -81,6 +83,8 @@ REGISTRY: list[Strat] = [
     Strat("micro_asym", gate="micro_asym", note="gate_lab: SELL side stricter than BUY (t=+7.5, highest)"),
     Strat("lead30", gate="lead30", note="gate_lab: pull side BTC moved against over 30s (t=+6.2)"),
     Strat("micro_cal", gate="micro_cal", note="gate_lab #10: calibrated ensemble -- keep iff pred markout+rebate>0 (OOS winner)"),
+    # combo_lab.py BEST overall combo (IS+OOS): ufat gate + drop toxic 0.30-0.55 mid-prob zone (~2x OOS net vs ufat)
+    Strat("ufat_band", gate="ufat_band", note="combo_lab BEST: micro_ufat + notmid (skip P(up) 0.30-0.55); IS+OOS winner"),
 
     # --- PRUNED from live (significantly unprofitable; kept for record + offline study) ---
     Strat("as_full", skew=0.99, gate="as_full", enabled=False,

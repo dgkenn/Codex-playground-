@@ -266,6 +266,18 @@ class Variant:
                 return False
             mid = (cur[0] + cur[2]) / 2.0; m = MICRO_MARGIN * 4.0 * mid * (1.0 - mid)
             return (our_side == "ASK" and mp > price - m) or (our_side == "BID" and mp < price + m)
+        if g == "ufat_band":
+            # combo_lab BEST overall (IS+OOS): micro_ufat gate AND drop the toxic mid-prob zone (INSIGHTS_4DAY
+            # #5: P(up) 0.30-0.55 is the most adverse; >0.7 tail is the only benign one). notmid + ufat ~doubled
+            # OOS net/win vs ufat alone (+16.5 vs +6.9, OOS mo5 +3.3). (spread1 was tried and HURTS -> excluded.)
+            cur = self.tob[token]; mp = micro(cur[0], cur[1], cur[2], cur[3])
+            if mp is None or cur[0] is None or cur[2] is None:
+                return False
+            mid = (cur[0] + cur[2]) / 2.0
+            if 0.30 <= mid < 0.55:
+                return True                                  # notmid: skip the toxic mid-prob band
+            m = MICRO_MARGIN * 4.0 * mid * (1.0 - mid)       # ufat p-adaptive margin
+            return (our_side == "ASK" and mp > price - m) or (our_side == "BID" and mp < price + m)
         if g == "micro_marg":
             # refinement (separate2.py): even small-positive-edge fills (edge 0..0.001) were toxic;
             # require an edge MARGIN, not just edge>0 -> skip unless selling >MARGIN above micro

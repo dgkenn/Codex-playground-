@@ -78,3 +78,29 @@ rebate > 0`); it should converge to the leader as it accrues live data and the *
 
 All are A/B-testable in the running multi-asset collector; promote to `live_trader` only after live
 confirmation, per the project's standing discipline.
+
+---
+
+## Best COMBO (heavy backtest, `combo_lab.py`, IS + OOS)
+
+Enumerated core gates × the orthogonal insight-filters, scored on per-(asset,ws) deployable net, split
+IS (first 70%) / OOS (last 30%). **Winner that beats every single gate on BOTH halves:**
+
+**`ufat + notmid`** = the p-adaptive micro gate AND skip the toxic 0.30–0.55 P(up) zone.
+- IS net/win **+8.16** (vs `ufat` +3.48) · OOS **+16.46, t=+2.9** (vs `ufat` +6.91) · OOS `mo5` **+3.27**
+  (positive → real toxicity-avoidance, not directional luck) · keeps ~54% of fills.
+- `notmid` is the single most powerful add-on — it ~doubled OOS net on **every** core gate.
+
+**What did NOT help (honest):**
+- **`spread1`** (drop ≥2-tick spreads) *hurts* (`ufat+notmid` 16.5 → `+spread1` 13.9): wide-spread fills are
+  toxic per-fill, but their rebate still nets positive, so dropping them sheds too much volume. Insight 4 is a
+  *caution*, not a filter.
+- **Portfolio stacking** (running several gates as separate books) doesn't raise Sharpe — the positive gates
+  are 0.7–0.9 correlated. The real diversification is **breadth across assets** (net corr +0.10, Insight 3).
+
+**Caveat:** OOS net > IS net is a favorable recent regime, not edge inflation — the stable signal is the
+*ranking* (`ufat+notmid` tops both halves). Validate live before sizing up.
+
+**Built:** `ufat_band` variant (live A/B) + `live_trader --gate ufat --mid-skip` (the deployable combo).
+The best overall strategy = **`ufat_band` gate + breadth (BTC-weighted) + `micro_cal` once the live rebate
+is confirmed** — not a portfolio stack.
