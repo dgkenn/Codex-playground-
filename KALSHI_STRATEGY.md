@@ -16,7 +16,8 @@ strategy the data supports — and the data's honest power limit must be stated 
 
 - Every fill model agrees on the SIGNS: front-of-queue capture is positive (+2.6 to +6¢/win OOS),
   back-of-queue is ruinous (−8 to −47¢), the gate adds value at every depth, alts are negative even
-  at the front (ETH −4.5¢ gated/front; thin books have no benign traffic — **BTC-only**).
+  at the front (ETH −4.5¢, SOL −3.8 to −6¢ gated/front, XRP ~0/noisy; thin books have no benign
+  traffic — **BTC-only**, confirmed on all four assets).
 - The full METRICS battery on the tape-replay winner (FULL sample): net +2.3¢/win (t=2.1), PF 1.22,
   win% 73, MC-bootstrap 98.6% positive, Calmar 4.8 — but **OOS alone: t≈0.7–1.6, Calmar 1.3,
   PF 1.10**. Param-sensitivity is flat (theta 10/12/14 → +1.2/+1.6/+1.8¢: no cliff).
