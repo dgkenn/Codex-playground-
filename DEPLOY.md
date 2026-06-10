@@ -1,3 +1,5 @@
+> **ARCHIVED (Polymarket phase).** The project now targets Kalshi — see `KALSHI.md`. Kept for the architecture/discipline, which carries over.
+
 # Free co-location & deployment (Oracle Cloud Always-Free, ~$0) — the sub-10ms path
 
 Polymarket's CLOB matching engine runs in **AWS eu-west-2 (London)**. The whole latency game is to sit

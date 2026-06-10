@@ -1,4 +1,9 @@
-# Polymarket crypto 15-min market-maker — research → live
+# 15-min crypto market maker — research → live (KALSHI primary; Polymarket phase archived)
+
+The project has pivoted to **Kalshi** (same product KX\*15M, CFTC-regulated/US-legal, no rebate → spread-capture
+maker with sub-cent queue priority; see `KALSHI.md`). The entire Polymarket phase (validated ufat gate, live bot,
+audits) is preserved in this repo — nothing is deleted. The research factory (registry/gates/leaderboard/gate_lab)
+is venue-shared and runs unchanged against Kalshi data.
 
 A read-only-by-default research + paper-trading stack for market-making Polymarket's **BTC/ETH/SOL/XRP
 15-minute Up/Down** markets, plus a deployable live bot. **The edge is the maker rebate**, harvested by
@@ -104,20 +109,24 @@ Full deploy path: **`GO_LIVE.md`**. The bot defaults to **DRY-RUN**; real orders
 ## Documentation map
 
 **Current / authoritative**
-- `README.md` (this file) · `INSIGHTS_4DAY.md` (10 insights + best combo, the latest data) ·
+- `README.md` (this file) · `KALSHI.md` (Kalshi pivot — venue economics, no-rebate spread-capture) ·
+  `DIRECTIONAL.md` (systematic directional-edge hunt — none clears) ·
+  `INSIGHTS_4DAY.md` (10 insights + best combo, the latest data) ·
   `GATING.md` (toxicity-gating rebuild) · `EDGE.md` (the 3-lever edge decomposition) ·
   `METRICS.md` (full performance suite beyond Sharpe — MDD/Sortino/Calmar/...) ·
   `ADDING_STRATEGIES.md` (modular registry workflow)
-- Go-live: `GO_LIVE.md` · `LIVE_READINESS_AUDIT.md` (the line-by-line live-path audit + fixes) ·
-  `PAPER_VS_LIVE.md` (the gap map) · `DEPLOY.md` (free colo) ·
-  `LATENCY.md` (sub-10ms) · `QUEUE_PRIORITY.md` (fill-first levers) · `CAPTURE.md` (logging schema)
 
 **Historical / phase records** (kept for provenance; conclusions folded into the current docs above)
+- Polymarket go-live docs (Polymarket phase): `GO_LIVE.md` (Polymarket phase) ·
+  `LIVE_READINESS_AUDIT.md` (Polymarket phase) · `PAPER_VS_LIVE.md` (Polymarket phase) ·
+  `DEPLOY.md` (Polymarket phase) · `LATENCY.md` (Polymarket phase) ·
+  `QUEUE_PRIORITY.md` (Polymarket phase) · `PILOT.md` (Polymarket phase) ·
+  `LIVE_DESIGN.md` (Polymarket phase)
 - Reverse-engineering phase (concluded: 95% wallet-clone not achievable): `MAKERS.md`,
   `REVERSE_ENGINEERING.md`, `COPY_PROTOCOL.md`, `CAPTURE_REALITY.md`, `STRATEGIES.md`, `WALLET_20d2.md`
 - Earlier edge research (superseded by the gating validation): `FINDINGS.md`, `ROADMAP.md`, `INSIGHTS.md`,
   `MAKER_CHANGES.md`, `MAKER_CHANGES2.md`, `WINNER_TWEAKS.md`, `MAKEREDGE.md`, `QUEUE.md`, `INFRA_IDEAS.md`,
-  `PAPER_TRADING.md`, `LIVE_DESIGN.md`, `PILOT.md`, `PRODUCTION_BLUEPRINT.md`, `BOXARB.md`, `WATCHER.md`
+  `PAPER_TRADING.md`, `PRODUCTION_BLUEPRINT.md`, `BOXARB.md`, `WATCHER.md`
 
 Each historical doc carries a one-line note at top pointing to its current successor. When old and new
 disagree, **the current docs + the code win** (the project's discipline: data decides, OOS confirms).

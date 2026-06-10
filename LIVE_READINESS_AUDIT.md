@@ -1,3 +1,5 @@
+> **ARCHIVED (Polymarket phase).** The project now targets Kalshi — see `KALSHI.md`. Kept for the architecture/discipline, which carries over.
+
 # Live-readiness audit — the line-by-line passes before real money (2026-06-10)
 
 > **Round 2 (same day): adversarial re-audit of the round-1 refactors themselves** — fresh eyes over

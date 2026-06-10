@@ -1,3 +1,5 @@
+> **ARCHIVED (Polymarket phase).** The project now targets Kalshi — see `KALSHI.md`. Kept for the architecture/discipline, which carries over.
+
 # Go-Live Harness — everything needed to take the maker live
 
 One page, in order. Every money step is gated by a check that fails loudly. The thin rebate edge means a

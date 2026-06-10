@@ -16,6 +16,11 @@ captured data, so the roster can change freely without touching any analysis cod
 `KNOWN_GATES` must stay in sync with Variant._gate_one / _gated in shadow_compare.py (validate() enforces
 that every enabled gate is listed here, so an unknown gate -- which would silently behave like baseline --
 is caught before a run). Run `python strategies.py` to print + validate the roster (used as a CI preflight).
+
+KALSHI GEARING: no rebate -> Insight-10 reverses (without per-fill rebate subsidy, stricter gates likely win:
+micro_strict/micro_asym are first-line candidates); queue replay shows back-of-queue fills are toxic at depth
+(q>=500 -> negative) so the deployable expression is sub-cent price-improvement to the FRONT + gate; the live
+A/B on kalshi_collect data decides.
 """
 from __future__ import annotations
 from dataclasses import dataclass
