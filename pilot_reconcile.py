@@ -116,7 +116,7 @@ def main():
         rebate_of = lambda p: 0.25 * a.rate * p * (1.0 - p)   # inline fallback (share=0.25)
 
     # --- per-fill aggregation ---
-    live_mo, maker_n, taker_n, reb_pred, vol = [], 0, 0, 0.0, 0.0
+    live_mo, maker_n, taker_n, unk_n, reb_pred, vol = [], 0, 0, 0, 0.0, 0.0
     by_ws = {}
     for r in fills:
         if r.get("type") != "fill":
@@ -127,6 +127,8 @@ def main():
             maker_n += 1
         elif ts == "TAKER":
             taker_n += 1
+        else:
+            unk_n += 1      # missing/UNKNOWN trader_side must NOT be silently presumed maker
         if mo is not None:
             live_mo.append(mo)
         if px is not None:
@@ -157,10 +159,13 @@ def main():
     tot_sided = maker_n + taker_n
     mk_pct = (maker_n / tot_sided * 100) if tot_sided else float("nan")
     print(f"\n[2] MAKER INTEGRITY (A3 accidental-taker guard)")
-    print(f"    MAKER={maker_n}  TAKER={taker_n}  -> {mk_pct:.0f}% maker")
+    print(f"    MAKER={maker_n}  TAKER={taker_n}  UNKNOWN={unk_n}  -> {mk_pct:.0f}% maker (of sided)")
     if taker_n > 0:
         print(f"    !! {taker_n} TAKER fill(s) -- accidental crosses pay the fee + flip the edge. "
               "Confirm post-only guard is active (would_cross) and the SDK post-only flag is set.")
+    if unk_n > 0:
+        print(f"    !! {unk_n} fill(s) with UNKNOWN trader_side -- the integrity check is blind on "
+              "these; investigate the trades feed before treating [2] as passed.")
 
     # 3. MARKOUT (A2)
     lm, lsd, _ = mean_sd(live_mo); pm, psd, _ = mean_sd(pap_mo)

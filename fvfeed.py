@@ -21,26 +21,39 @@ from collections import deque
 
 from fairvalue import fair_up, realized_vol_per_s
 
-SIGMA_DEFAULT = 6.5e-5          # per-second log-vol, from the offline BTC calibration
+SIGMA_DEFAULT = 6.5e-5          # per-second log-vol, from the offline BTC calibration (the live
+                                # sigma() estimate takes over once ~8s of tape accrues, so non-BTC
+                                # assets converge to their own vol within seconds of startup)
 
 # Spot sources tried in order (first reachable wins) -> resilient to any one venue/region
-# block. Each entry: (url, params, extractor). All public, no key.
+# block. Each entry: (url, params, extractor). All public, no key. PARAMETRIZED BY ASSET --
+# an ETH/SOL/XRP maker pricing its toxicity overlay off BTC spot is gating on the wrong underlying.
 def _binance(j): return float(j["price"])
 def _coinbase(j): return float(j["data"]["amount"])
 def _cryptocom(j): return float(j["result"]["data"][0]["a"])      # 'a' = latest trade price
 def _kraken(j): return float(next(iter(j["result"].values()))["c"][0])
 
-SOURCES = [
-    ("https://api.binance.com/api/v3/ticker/price", {"symbol": "BTCUSDT"}, _binance),
-    ("https://api.coinbase.com/v2/prices/BTC-USD/spot", {}, _coinbase),
-    ("https://api.crypto.com/exchange/v1/public/get-tickers", {"instrument_name": "BTCUSD-PERP"}, _cryptocom),
-    ("https://api.kraken.com/0/public/Ticker", {"pair": "XBTUSD"}, _kraken),
-]
+
+def sources_for(symbol="BTCUSDT"):
+    """Per-asset source list. `symbol` is the Binance-style ticker (BTCUSDT/ETHUSDT/...)."""
+    base = symbol.upper().replace("USDT", "").replace("USD", "") or "BTC"
+    kraken_pair = {"BTC": "XBTUSD"}.get(base, f"{base}USD")       # kraken calls BTC 'XBT'
+    return [
+        ("https://api.binance.com/api/v3/ticker/price", {"symbol": f"{base}USDT"}, _binance),
+        (f"https://api.coinbase.com/v2/prices/{base}-USD/spot", {}, _coinbase),
+        ("https://api.crypto.com/exchange/v1/public/get-tickers",
+         {"instrument_name": f"{base}USD-PERP"}, _cryptocom),
+        ("https://api.kraken.com/0/public/Ticker", {"pair": kraken_pair}, _kraken),
+    ]
+
+
+SOURCES = sources_for("BTCUSDT")    # module-level default kept for backwards compatibility
 
 
 class SpotFair:
     def __init__(self, sess, symbol="BTCUSDT", sigma_default=SIGMA_DEFAULT, win_s=600):
         self.sess = sess; self.symbol = symbol; self.sigma_default = sigma_default
+        self.sources = sources_for(symbol)             # asset-correct spot endpoints
         self.tape = deque()            # (t_s, spot) over the last win_s seconds
         self.win_s = win_s
         self.s0 = None                 # spot at the current window's open
@@ -49,7 +62,7 @@ class SpotFair:
 
     def _fetch(self):
         last_err = None
-        for url, params, extract in SOURCES:
+        for url, params, extract in self.sources:
             try:
                 r = self.sess.get(url, params=params, timeout=5)
                 px = extract(r.json())

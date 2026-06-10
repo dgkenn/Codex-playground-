@@ -87,19 +87,46 @@ def chk_paper_edge():
     nm = sum(nets) / len(nets); gm = (sum(grs) / len(grs)) if grs else float("nan")
     n = len(nets); sd = (sum((x - nm) ** 2 for x in nets) / (n - 1)) ** 0.5 if n > 1 else float("nan")
     t = nm / (sd / math.sqrt(n)) if sd and sd > 0 else float("nan")
+    # RECENCY: a stale dataset proves nothing about today's regime -- months-old windows would still
+    # happily print "edge holds". 48h is ~2 collection days; refresh with the gha-data pull if older.
+    newest_ws = max((int(w) for w in by_ws if str(w).isdigit()), default=0)
+    age_h = (time.time() - newest_ws) / 3600 if newest_ws else float("inf")
+    stale = f" [STALE: newest window {age_h:.0f}h old -- pull fresh gha-data]" if age_h > 48 else ""
     if nm > 0 and (gm != gm or gm > 0):
-        return OK, f"micro_gate net/win {nm:+.2f} (t={t:+.1f}), gross/win {gm:+.2f} -> edge holds (n={n})", False
-    return FAIL, f"micro_gate net/win {nm:+.2f} gross/win {gm:+.2f} -- edge NOT confirmed positive", True
+        st = WARN if stale else OK
+        return st, f"micro_gate net/win {nm:+.2f} (t={t:+.1f}), gross/win {gm:+.2f} -> edge holds (n={n}){stale}", False
+    return FAIL, f"micro_gate net/win {nm:+.2f} gross/win {gm:+.2f} -- edge NOT confirmed positive{stale}", True
 
 
 def chk_live_sdk():
+    """Not just importable -- verify the EXACT call surface live_trader uses, so a renamed/missing
+    SDK method fails HERE, not mid-session with money at risk (a missing cancel method once made
+    every cancel a silent no-op)."""
     try:
         import py_clob_client_v2  # noqa: F401  (the exact import live_trader.make_client uses)
-        return OK, "py_clob_client_v2 importable", True
     except Exception:
-        return FAIL, ("py_clob_client_v2 NOT installed (live_trader needs it). On the box: install the v2 "
-                      "client. NOTE: deploy/setup.sh installs 'py-clob-client' (module py_clob_client) -- "
-                      "confirm which the box actually has before arming."), True
+        return FAIL, ("py_clob_client_v2 NOT installed (live_trader needs it). On the box: "
+                      "pip install py-clob-client-v2 (deploy/setup.sh does this). NOTE: the old "
+                      "'py-clob-client' (v1, module py_clob_client) does NOT satisfy this import."), True
+    try:
+        from py_clob_client_v2 import (ClobClient, SignatureTypeV2, OrderArgs,  # noqa: F401
+                                       PartialCreateOrderOptions, OrderType,    # noqa: F401
+                                       TradeParams, OpenOrderParams,            # noqa: F401
+                                       OrderMarketCancelParams)                 # noqa: F401
+        from py_clob_client_v2.order_builder.constants import BUY, SELL         # noqa: F401
+        missing = [m for m in ("create_order", "post_order", "create_and_post_order",
+                               "cancel_orders", "cancel_all", "cancel_market_orders",
+                               "get_trades", "get_open_orders", "create_or_derive_api_key")
+                   if not callable(getattr(ClobClient, m, None))]
+        if missing:
+            return FAIL, f"SDK installed but missing methods live_trader calls: {missing}", True
+        sig_name = os.environ.get("SIGNATURE_TYPE", "POLY_PROXY").strip().upper()
+        if sig_name not in SignatureTypeV2.__members__:
+            return FAIL, (f"SIGNATURE_TYPE={sig_name!r} not in "
+                          f"{list(SignatureTypeV2.__members__)} -- fix .env"), True
+        return OK, f"py_clob_client_v2 OK (full call surface; SIGNATURE_TYPE={sig_name})", True
+    except Exception as e:  # noqa: BLE001
+        return FAIL, f"SDK surface check failed: {type(e).__name__}: {str(e)[:90]}", True
 
 
 def chk_signing():
@@ -149,11 +176,36 @@ def chk_connectivity(asset, tenor):
     for c in (cand, cand - win, cand + win):
         try:
             ev = sess.get(G + "/events", params={"slug": f"{asset}-updown-{tenor}m-{c}"}, timeout=10).json()
-            if ev and ev[0].get("markets"):
+            if ev and ev[0].get("markets") and not ev[0]["markets"][0].get("closed"):
                 return OK, f"discovered active {asset}-{tenor}m market (ws={c})", True
         except Exception:
             pass
-    return FAIL, f"could not discover an active {asset}-updown-{tenor}m market", True
+    return FAIL, f"could not discover an active (non-closed) {asset}-updown-{tenor}m market", True
+
+
+def chk_clock():
+    """Window rollover, tau, and the CLOB's signed L2 auth headers all run off LOCAL time -- a box
+    with a skewed clock quotes the wrong window and can fail auth. Compare against the CLOB's clock."""
+    try:
+        import netfast
+        sess = netfast.fast_session()
+    except Exception:
+        import requests
+        sess = requests.Session()
+    try:
+        t0 = time.time()
+        r = sess.get(C + "/time", timeout=5)
+        rtt = time.time() - t0
+        srv = float(str(r.json() if r.headers.get("content-type", "").startswith("application/json")
+                        else r.text).strip())
+        if srv > 1e12:                       # ms epoch -> s
+            srv /= 1000.0
+        skew = abs((t0 + rtt / 2) - srv)
+        if skew < 2.0:
+            return OK, f"clock skew {skew:.2f}s vs CLOB (NTP healthy)", False
+        return FAIL, f"clock skew {skew:.1f}s vs CLOB -- fix NTP (timedatectl set-ntp true) before live", True
+    except Exception as e:  # noqa: BLE001
+        return WARN, f"could not read CLOB time ({type(e).__name__}) -- verify NTP manually", False
 
 
 def chk_post_only():
@@ -204,6 +256,7 @@ def main():
         ("live SDK", chk_live_sdk()),
         ("signing", chk_signing()),
         ("latency/colo", chk_latency()),
+        ("clock/NTP", chk_clock()),
         ("connectivity", chk_connectivity(a.asset, a.tenor_min)),
         ("post-only guard", chk_post_only()),
         ("risk rails", chk_risk_rails()),

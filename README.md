@@ -7,6 +7,8 @@ alpha** (BTC-prediction and favorite-longshot were both tested and rejected).
 
 > Status: paper-validated, **not yet confirmed live**. The single biggest open question is whether the
 > maker rebate actually pays at our tier (`PAPER_VS_LIVE.md` A1) — that's what the $20 pilot exists to answer.
+> The live path has had a full line-by-line audit against the real SDK (every order/cancel/fill/ledger
+> call verified + hardened — `LIVE_READINESS_AUDIT.md`); preflight/dry-run runs clean end-to-end.
 
 ---
 
@@ -93,7 +95,8 @@ Full deploy path: **`GO_LIVE.md`**. The bot defaults to **DRY-RUN**; real orders
   `GATING.md` (toxicity-gating rebuild) · `EDGE.md` (the 3-lever edge decomposition) ·
   `METRICS.md` (full performance suite beyond Sharpe — MDD/Sortino/Calmar/...) ·
   `ADDING_STRATEGIES.md` (modular registry workflow)
-- Go-live: `GO_LIVE.md` · `PAPER_VS_LIVE.md` (the gap map) · `DEPLOY.md` (free colo) ·
+- Go-live: `GO_LIVE.md` · `LIVE_READINESS_AUDIT.md` (the line-by-line live-path audit + fixes) ·
+  `PAPER_VS_LIVE.md` (the gap map) · `DEPLOY.md` (free colo) ·
   `LATENCY.md` (sub-10ms) · `QUEUE_PRIORITY.md` (fill-first levers) · `CAPTURE.md` (logging schema)
 
 **Historical / phase records** (kept for provenance; conclusions folded into the current docs above)

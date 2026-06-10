@@ -21,7 +21,9 @@ source .venv/bin/activate
 pip install -q --upgrade pip wheel
 pip install -q -r requirements.txt
 # live-only deps (commented out of requirements.txt so paper/research installs stay light)
-pip install -q py-clob-client web3 coincurve
+# NOTE: the bot imports `py_clob_client_v2` -> the pip package is `py-clob-client-v2` (official
+# Polymarket CLOBV2 client). The old `py-clob-client` (v1) does NOT satisfy the import.
+pip install -q py-clob-client-v2 web3 coincurve
 python3 - <<'PY'
 import importlib.util as u
 print("  coincurve:", "OK (eth_account will use libsecp256k1 -> sub-ms signing)" if u.find_spec("coincurve") else "MISSING")

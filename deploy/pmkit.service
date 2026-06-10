@@ -20,7 +20,11 @@ EnvironmentFile=/home/ubuntu/pmkit/.env
 ExecStart=/home/ubuntu/pmkit/.venv/bin/python3 -u live_trader.py --presign --duration 86400 --max-notional 25
 Restart=always
 RestartSec=5
-# fail-safe: hard cap memory; restart on OOM rather than wedge
+# fail-safe: hard cap memory; restart on OOM rather than wedge.
+# Restart=always is SAFE with the bot's own rails: on every live start it (a) refuses to run if a
+# kill-switch sentinel (.pmkit_killed_*) exists -- a tripped loss-limit stays tripped until the
+# operator deletes the file -- and (b) does a venue cancel_all, so a SIGKILL'd predecessor's
+# orders can't keep resting.
 MemoryMax=1G
 
 [Install]

@@ -27,9 +27,11 @@ bash deploy/setup.sh            # installs deps + prints the latency colo verdic
 ```bash
 cp .env.example .env && chmod 600 .env && nano .env
 ```
-Set `PRIVATE_KEY`, `DEPOSIT_WALLET_ADDRESS`, optional `TELEGRAM_BOT_TOKEN`/`CHAT_ID`.
+Set `PRIVATE_KEY`, `DEPOSIT_WALLET_ADDRESS`, **`SIGNATURE_TYPE`** (must match how the account was
+created: `POLY_PROXY` for email/Magic login — the default — or `POLY_GNOSIS_SAFE` for a browser-wallet
+account; wrong type = every order fails signature validation), optional `TELEGRAM_BOT_TOKEN`/`CHAT_ID`.
 Leave `I_UNDERSTAND_REAL_MONEY=no` until you've passed preflight + dry-run. `.env` is gitignored; keys
-never leave the box.
+never leave the box. Keep values on their own line (no inline comments — systemd doesn't strip them).
 
 ## 3. Preflight gate — the single GO/NO-GO
 ```bash
@@ -72,14 +74,23 @@ journalctl -u pmkit -f                               # watch the [latency] colo 
 ```
 Defaults to DRY-RUN; to go live, add `--live` to `ExecStart` and `Environment=I_UNDERSTAND_REAL_MONEY=yes`.
 
-## Safety rails (all already wired in `live_trader.py`)
-- **Post-only guard** (`would_cross`) — refuses any marketable order → can't accidentally pay the taker fee.
+## Safety rails (all wired in `live_trader.py`; audited line-by-line — `LIVE_READINESS_AUDIT.md`)
+- **Post-only, twice** — `would_cross` refuses any marketable order locally AND every POST carries the
+  venue's `post_only=True` flag (closes the stale-book race; a reject is requoted, never crossed).
 - **Own-order-excluded microprice** — we don't contaminate our own toxicity signal.
 - **Dead-man switch** — `atexit` + SIGTERM/SIGINT cancel-all on *any* exit; book-staleness watchdog
-  (`--deadman-s`) cancels-all if we'd be quoting blind; error-storm trip after 5 consecutive failures.
-- **Kill-switches** — `--loss-limit` (realized) + rolling-markout-toxic kill; both `cancel-all` then exit.
-- **Caps** — `--max-notional`, `--cap`, `--skew`, `--max-rungs` bound capital and inventory.
-- **Alerts** — `notify.alert()` → Telegram on start, every kill, and every dead-man trip.
+  (`--deadman-s`) cancels-all if we'd be quoting blind; error-storm trip after 5 consecutive failures;
+  every non-rollover cancel-all is backstopped by a venue-side scoped cancel (covers lost bookkeeping).
+- **Startup + continuous reconciliation** — live start refuses to quote until a venue `cancel_all`
+  clears any predecessor's leftovers (SIGKILL/OOM never runs handlers); every 5s, any open order the
+  venue has that we don't recognize is cancelled.
+- **Kill-switches, sticky** — `--loss-limit` reads a real ledger (per-window cash+positions settled at
+  resolution, open window marked to mid) + rolling-markout-toxic kill; both cancel-all, write a
+  `.pmkit_killed_*` sentinel, and exit — a systemd restart will NOT re-arm until the operator deletes it.
+- **Caps** — `--max-notional` bounds AGGREGATE exposure (open buy notional + token cost), `--cap`,
+  `--skew`, `--max-rungs` bound inventory; sells only rest what session inventory funds.
+- **Alerts** — `notify.alert()` → Telegram on start, every kill, every dead-man trip, any TAKER fill,
+  and any `live_multi` child restart.
 
 ## Box hardening (general security — recommended)
 - SSH **key-only** auth (disable passwords); `ufw` allow only SSH out/in you need; `fail2ban`.
