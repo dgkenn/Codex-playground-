@@ -76,8 +76,11 @@ def chk_paper_edge():
                 if not ln:
                     continue
                 r = json.loads(ln)
-                if r.get("ws") is not None:
-                    by_ws[r["ws"]] = r
+                # key on (asset, tenor, ws): the assets share epoch window-starts, so a ws-only key
+                # silently collapses 4 assets into whichever file globbed last (same bug class as the
+                # old aggregate_shadow); skip unresolved tombstones.
+                if r.get("ws") is not None and r.get("resolved_up") is not None:
+                    by_ws[(r.get("asset", "btc"), r.get("tenor_min", 15), r["ws"])] = r
         except Exception:
             pass
     rows = list(by_ws.values())
@@ -90,7 +93,7 @@ def chk_paper_edge():
     t = nm / (sd / math.sqrt(n)) if sd and sd > 0 else float("nan")
     # RECENCY: a stale dataset proves nothing about today's regime -- months-old windows would still
     # happily print "edge holds". 48h is ~2 collection days; refresh with the gha-data pull if older.
-    newest_ws = max((int(w) for w in by_ws if str(w).isdigit()), default=0)
+    newest_ws = max((int(k[2]) for k in by_ws), default=0)
     age_h = (time.time() - newest_ws) / 3600 if newest_ws else float("inf")
     stale = f" [STALE: newest window {age_h:.0f}h old -- pull fresh gha-data]" if age_h > 48 else ""
     if nm > 0 and (gm != gm or gm > 0):

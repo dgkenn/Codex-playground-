@@ -56,6 +56,12 @@ Set `I_UNDERSTAND_REAL_MONEY=yes` in `.env`, then:
 ```
 The pilot's job is **not** "make money" — it's to confirm the three things paper can't: the rebate is real,
 we actually fill, and live adverse selection isn't worse than paper (`PAPER_VS_LIVE.md` A1/A2/A4).
+`live_metrics_*.jsonl` records all of it permanently (rebate predictions + balance/earnings ground
+truth, ack latencies, fill rates, reflexivity probes, per-window summaries).
+**Burner-test checklist (first session):** (a) one full place→cancel round-trip confirmed on the
+venue UI; (b) `--presign` orders ACCEPTED minutes after signing (V2 orders embed a signing-time
+timestamp — if the venue enforces freshness, run without `--presign` until verified); (c) a fill's
+`trader_side=MAKER` in the logs; (d) the loss-limit sentinel blocks a restart when touched.
 
 ## 6. Reconcile — the real go/no-go
 ```bash
