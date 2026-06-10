@@ -74,6 +74,7 @@ Full deploy path: **`GO_LIVE.md`**. The bot defaults to **DRY-RUN**; real orders
 | `stack_analysis.py` | does portfolio-stacking help? (no — too correlated) |
 | `aggregate_shadow.py` | rolling paper summary |
 | `pilot_reconcile.py` | the live go/no-go after a pilot |
+| `benchmark.py` | score the king (`ufat`) vs the 2026 readiness benchmarks + Go/No-Go matrix |
 
 ## GitHub structure
 
