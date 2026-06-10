@@ -1,4 +1,53 @@
-# Live-readiness audit — the line-by-line pass before real money (2026-06-10)
+# Live-readiness audit — the line-by-line passes before real money (2026-06-10)
+
+> **Round 2 (same day): adversarial re-audit of the round-1 refactors themselves** — fresh eyes over
+> every changed line plus full SDK-contract verification against the installed `py-clob-client-v2`.
+> All findings fixed; the rails verified sound are listed at the bottom of this section.
+
+## Round-2 findings (all FIXED)
+
+1. **C-1 Boundary-fill leak (critical):** the fills poll is scoped to the *current* market, so fills
+   landing in the window's final seconds (or reporting late) never reached the ledger — `realized`
+   understated losses exactly where they concentrate, under-firing the loss-limit. → trade parsing
+   factored into `parse_trade_legs`; `sweep_closed_window` runs at rollover AND on every settle
+   retry; settlement now waits a ≥20s grace so late fills are certainly booked; closed-but-unsettled
+   windows are marked exactly once the resolution is known.
+2. **H-1 Event feed died at every rollover:** the WS feeder's resubscribe check only ran on message
+   arrival — an expired window's silent stream blocked forever, degrading the whole event-driven
+   design to 10Hz blocking REST from window 2 onward. → 1s recv timeout with epoch re-check.
+3. **H-2 live_multi stood itself down within ~6h:** children default `--duration 3600`, exited
+   cleanly hourly, and every clean exit burned the crash cap. → children get 7-day durations, clean
+   exits relaunch without counting, 30min healthy uptime forgives the counter, backoff is
+   non-blocking (a sleeping supervisor stalled every other child's restart).
+4. **H-3 Respawned children skipped the startup-flat guarantee:** → `PMKIT_SKIP_STARTUP_CANCEL=scoped`:
+   children do a market-scoped cancel (their asset/tenor's adjacent windows) at startup — a SIGKILL'd
+   predecessor's orders get cleared without nuking sibling markets on the shared key.
+5. **H-4 REST book fallback could block 10s on the react path** (longer than `--deadman-s` itself) →
+   2s timeout + 1/s/token throttle (a dead WS no longer triggers REST hammering → 429s → spurious
+   error-storm cancels).
+6. **M-1** Batched cancels nulled `time_to_cancel_ms`/poisoned `hit_before_confirm` — the pilot's
+   primary reprice verdict → batch POST return time recorded as confirmation.
+7. **M-2** Trades without `maker_orders` detail booked the taker's whole sweep as ours; an empty
+   `placed_oids` disabled the foreign-leg filter → never book ambiguous trades (loud log), filter
+   always on.  **M-3** markout scorer re-queues on REST blips and logs null (not a fake 0.0) when the
+   book is gone — zeros were diluting the markout kill exactly at end-of-window toxicity.
+   **M-4** SDK's hidden first-use `get_tick_size` REST call primed in the prefetch thread.
+   **M-5** rollover anchors S0 from the fresh tape instead of a blocking 4-venue poll.
+   **M-6** presign cache key precision fixed (4dp); presign freshness on a 0.0001-tick market is an
+   explicit burner-test item.  **L-1/2/5** signal-name capture, dedup-after-booking, per-market
+   dedup memory.
+8. **Verified sound by the round-2 audit** (not re-listed as risks): thread-safety of the
+   books/Event/prefetch/latcheck design, all closure captures, ledger sign conventions, presign
+   no-leak on guard refusal, reconciliation race-freedom, sticky-sentinel per-market isolation,
+   and the FULL SDK call surface (every kwarg/response shape checked against installed source,
+   including the two-stage L1/L2 client construction for proxy wallets).
+
+**Live-only telemetry (`live_metrics.py`)** records permanently what paper cannot: actual rebate
+credits (balance snapshots + the venue's own earnings/rewards statements), reflexivity probes (book
+reaction ~2s after OUR placements), placement/cancel ack latencies, fill rates, post-only rejects,
+stray cancels, WS staleness, and per-window summaries keyed by `ws` for the paper-live join.
+
+---
 
 A full audit of the live path (`live_trader.py`, `live_multi.py`, `go_live.py`, `pilot_reconcile.py`,
 `fvfeed.py`, `deploy/*`) against the REAL installed SDK (`py-clob-client-v2==1.0.1`, the official

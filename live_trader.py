@@ -69,7 +69,9 @@ import requests
 import netfast  # latency-tuned keep-alive session (NODELAY/KEEPALIVE, warm pool) for the hot path
 import notify  # free Telegram alerts (no-op if env unset)
 import collateral  # ROADMAP #1 mint/merge primitive (on-chain CTF; live-only)
+import fees  # maker-rebate model (predicted credit per fill; A1)
 from fvfeed import SpotFair
+from live_metrics import LiveMetrics  # permanent live-only telemetry (PAPER_VS_LIVE residuals)
 
 G = "https://gamma-api.polymarket.com"
 C = "https://clob.polymarket.com"
@@ -127,8 +129,9 @@ def book(sess, token):
     """Return (best_bid, best_ask, bid_size_at_touch, ask_size_at_touch). Best levels by explicit
     max/min (like the WS feeder), NOT positional [-1] -- the REST sort order is undocumented, and this
     path is exactly the fallback used when the WS is down; an ordering change would silently invert the
-    post-only guard and all quote geometry."""
-    b = sess.get(C + "/book", params={"token_id": token}, timeout=10).json()
+    post-only guard and all quote geometry. TIGHT timeout: this can run on the react path when the WS
+    cache is stale; a 10s hang here would outlast --deadman-s itself while quotes rest blind."""
+    b = sess.get(C + "/book", params={"token_id": token}, timeout=2).json()
     bids, asks = b.get("bids", []), b.get("asks", [])
     bid = max(bids, key=lambda x: float(x["price"])) if bids else None
     ask = min(asks, key=lambda x: float(x["price"])) if asks else None
@@ -296,7 +299,17 @@ def book_feeder(books, mdsub, evt=None):
             try:
                 async with websockets.connect(WS_MARKET, ping_interval=10, ping_timeout=20, max_size=None) as ws:
                     await ws.send(json.dumps({"assets_ids": toks, "type": "market"}))
-                    async for raw in ws:
+                    while True:
+                        # H-1: the epoch check must run on a TIMER, not only on message arrival --
+                        # an expired window's tokens go silent, `async for` blocks forever on the
+                        # dead subscription, and the new window never gets a WS feed (the whole
+                        # event-driven path would degrade to blocking REST every window).
+                        try:
+                            raw = await asyncio.wait_for(ws.recv(), timeout=1.0)
+                        except asyncio.TimeoutError:
+                            if mdsub.get("epoch") != epoch:
+                                break                               # window rolled -> resubscribe
+                            continue
                         if mdsub.get("epoch") != epoch:
                             break                                   # window rolled -> reconnect w/ new tokens
                         if not raw:
@@ -633,16 +646,37 @@ def main():
                          f"session tripped a kill-switch). Investigate, then delete the file to re-arm.")
     sess = netfast.fast_session()      # warm keep-alive, NODELAY -> a hot request is one origin RTT
     client = make_client() if live else None
-    if live and os.environ.get("PMKIT_SKIP_STARTUP_CANCEL") != "1":
+    # PERMANENT LIVE-ONLY TELEMETRY (live_metrics.py): records what paper structurally cannot --
+    # actual rebate credits (balance/earnings polls), reflexivity (book reaction to OUR orders),
+    # placement/cancel latencies, fill rates, post-only rejects, stray cancels, per-window summaries.
+    lm = LiveMetrics(a.asset, a.tenor_min)
+    startup_mode = os.environ.get("PMKIT_SKIP_STARTUP_CANCEL", "")
+    if live and startup_mode != "1":
         # C7 startup reconciliation: a SIGKILL'd predecessor (OOM, power, systemd kill) never ran its
         # dead-man, so its orders are STILL resting at the venue while this process boots with empty
-        # bookkeeping. Start from a provably flat book or don't start. (live_multi sets the skip env on
-        # children and does ONE cancel_all in the parent instead -- siblings share the API key.)
+        # bookkeeping. Start from a provably flat book or don't start.
+        #   default  -> venue-wide cancel_all (single-instance deployment)
+        #   "scoped" -> cancel only THIS asset/tenor's current + previous window markets (live_multi
+        #               children: siblings share the API key, so a global cancel would nuke their
+        #               books -- but a RESPAWNED child must still clear its predecessor's leftovers)
+        #   "1"      -> skip entirely (legacy; the live_multi parent did one global cancel)
         try:
-            client.cancel_all()
-            print("[startup] venue cancel_all: cleared any stale orders from a prior run")
+            if startup_mode == "scoped":
+                from py_clob_client_v2 import OrderMarketCancelParams
+                win0 = a.tenor_min * 60
+                now0 = int(time.time()); ws0 = now0 - (now0 % win0)
+                cleared = 0
+                for wcand in (ws0 - win0, ws0, ws0 + win0):
+                    mc = market_for(sess, a.asset, a.tenor_min, wcand)
+                    if mc:
+                        client.cancel_market_orders(OrderMarketCancelParams(market=mc["cid"]))
+                        cleared += 1
+                print(f"[startup] scoped cancel: cleared {cleared} {a.asset}-{a.tenor_min}m market(s)")
+            else:
+                client.cancel_all()
+                print("[startup] venue cancel_all: cleared any stale orders from a prior run")
         except Exception as e:  # noqa: BLE001
-            raise SystemExit(f"startup cancel_all FAILED ({type(e).__name__}: {str(e)[:120]}) -- "
+            raise SystemExit(f"startup cancel FAILED ({type(e).__name__}: {str(e)[:120]}) -- "
                              "refusing to quote on top of unknown resting orders")
     spot_sym = a.spot_symbol or f"{a.asset.upper()}USDT"
     fv = SpotFair(sess, symbol=spot_sym) if a.reprice else None
@@ -669,10 +703,22 @@ def main():
             return c["bb"], c["ba"], c["bsz"], c["asz"]
         return None
 
+    _rest_throttle = {}                # token -> (ts, result): cap REST fallback at ~1/s/token
+
     def get_book(token):
-        """Freshest top-of-book: WS cache (ms) -> REST (fallback)."""
+        """Freshest top-of-book: WS cache (ms) -> REST fallback, THROTTLED to 1/s/token. With a dead
+        WS feed the react loop would otherwise hammer REST at wake rate (rate-limit 429s -> exception
+        path -> spurious error-storm dead-man); between throttled polls we serve the last REST answer,
+        and the staleness watchdog still sees a genuinely dead feed via last_book_ok."""
         cb = cached_book(token)
-        return cb if cb is not None else book(sess, token)
+        if cb is not None:
+            return cb
+        t_prev, prev = _rest_throttle.get(token, (0.0, None))
+        if time.time() - t_prev < 1.0 and prev is not None:
+            return prev
+        res = book(sess, token)
+        _rest_throttle[token] = (time.time(), res)
+        return res
 
     if a.queue_jump:                   # Arm A: start the sub-second BTC lead feed
         threading.Thread(target=btc_lead_feeder, args=(live_btc,), daemon=True).start()
@@ -688,7 +734,9 @@ def main():
     # reprice them. ts -> age -> "sacred" once age>=age_protect. "filled" accrues partial fills so a
     # partially-matched order's live remainder stays managed (pulls/reshape/cancel-all) until fully done.
     resting = {}                       # (token,side,price) -> {"oid","ts","q","filled"}
-    seen_fills = set(); markouts = []
+    seen_fills = {}                    # cid -> set(trade ids): per-market so retired windows FREE
+    markouts = []                      # their dedup memory (queries are market-scoped; ids from a
+    #                                    settled market can never reappear in a scoped result)
     # C2 REAL P&L LEDGER (the loss-limit is only as real as this): per-window token positions + cash
     # flow from OUR fills; settled into `realized` at window resolution. `pending_settles` holds closed
     # windows whose oracle result isn't posted yet (retried each housekeeping pass). `window_mark` is
@@ -699,12 +747,84 @@ def main():
     window_mark = 0.0
     placed_oids = set()                # every order id THIS session placed (venue-reconciliation filter)
     pending_markouts = []              # [(due_ts, fill_dict)] -> true 5s markouts, scored when due
+    pending_reflex = []                # [(due_ts, token)] -> A2 book-reaction probes after OUR placements
     session_t0 = int(time.time())
     last_reconcile = 0.0               # last venue open-order reconciliation sweep
     mo_fh = open("live_markout.jsonl", "a")   # persistent handle (was open/close per fill)
     next_mk = {"mk": None, "tried_ws": 0}     # next-window market, PREFETCHED off-thread (see below)
 
-    presigned = {}        # (tk,sd,price3) -> signed order, pre-signed OFF the fire path (--presign)
+    def fetch_trades(cid):
+        """Scoped trades query (this market, this session). Returns [] on any failure."""
+        try:
+            from py_clob_client_v2 import TradeParams
+            return client.get_trades(TradeParams(market=cid, after=str(session_t0))) or []
+        except Exception:
+            return []
+
+    def parse_trade_legs(t):
+        """One venue trade -> (tid, trader_side, taker_side, [(asset, OUR side, price, size, oid)]).
+        `side` on a trade is the TAKER's side; when we are the MAKER our side is the opposite and our
+        matched size/price live in the maker_orders[] entries (the trade-level size is the taker's
+        whole sweep -- booking it would credit us with other makers' legs)."""
+        tid = str(t.get("id") or t.get("transaction_hash") or t)
+        taker_sd = (t.get("side") or "").upper()
+        tside = (t.get("trader_side") or "UNKNOWN").upper()
+        legs = []
+        if tside == "TAKER":
+            # A3 ALARM: with would_cross + venue post_only this must be impossible. A taker fill
+            # pays the ~3% fee wall -- if one appears, the guard stack is broken.
+            notify.alert(f"[pmkit] TAKER FILL detected ({tid[:16]}) -- post-only guard breached!")
+            print(f"  [!!] TAKER fill {tid[:16]} -- investigate before scaling")
+            legs = [(str(t.get("asset_id") or ""), taker_sd, float(t.get("price", 0) or 0),
+                     float(t.get("size", 0) or 0), str(t.get("taker_order_id") or "?"))]
+        else:
+            for mo_ in (t.get("maker_orders") or []):
+                moid = str(mo_.get("order_id") or "")
+                if moid and moid not in placed_oids:
+                    continue                 # someone else's maker leg (shared key / predecessor)
+                sd_ = (mo_.get("side") or ("SELL" if taker_sd == "BUY" else "BUY")).upper()
+                legs.append((str(mo_.get("asset_id") or t.get("asset_id") or ""), sd_,
+                             float(mo_.get("price") or t.get("price") or 0),
+                             float(mo_.get("matched_amount") or 0), moid))
+            if not legs and not t.get("maker_orders"):
+                # No maker_orders detail: booking the trade-level (taker sweep) size would overstate
+                # our fill -- record loudly, book NOTHING; the venue reconciliation + balance
+                # snapshots surface any real divergence.
+                print(f"  [FILL-AMBIGUOUS] trade {tid[:16]} has no maker_orders detail -- NOT booked")
+        return tid, tside, taker_sd, legs
+
+    def sweep_closed_window(cid, up_tok, dn_tok, en=None):
+        """C-1 (boundary-fill leak): fills land at the venue up to the final tick and report with
+        lag, but the hk poll is scoped to the CURRENT market -- so the closing window needs explicit
+        sweeps or its last fills never reach the ledger and the loss-limit under-fires exactly where
+        losses concentrate. Books into the LIVE ledger (en=None, called at rollover before the
+        snapshot) or into a pending_settles entry (called on every settle retry until resolved)."""
+        nonlocal cash, net_delta
+        sf = seen_fills.setdefault(cid, set())
+        for t in fetch_trades(cid):
+            tid, tside, taker_sd, legs = parse_trade_legs(t)
+            if tid in sf:
+                continue
+            for asset, sd, fp, fsz, _oid in legs:
+                if fsz <= 0 or asset not in (up_tok, dn_tok):
+                    continue
+                sgn = 1.0 if sd == "BUY" else -1.0
+                if en is None:
+                    pos[asset] = pos.get(asset, 0.0) + sgn * fsz
+                    cash -= sgn * fp * fsz
+                    net_delta += (1.0 if asset == up_tok else -1.0) * sgn * fsz
+                else:
+                    if asset == up_tok:
+                        en["pos_up"] += sgn * fsz
+                    else:
+                        en["pos_dn"] += sgn * fsz
+                    en["cash"] -= sgn * fp * fsz
+                print(f"  [LATE-FILL] {sd} {fsz}@{fp} booked to closing window")
+                lm.fill(sd, fp, fsz, None, None, tside, t.get("fee_rate_bps"),
+                        fees.maker_rebate(fp, rate=0.07) * fsz)
+            sf.add(tid)
+
+    presigned = {}        # (tk,sd,price4) -> signed order, pre-signed OFF the fire path (--presign)
 
     def _order_args(tk, sd, p):
         from py_clob_client_v2 import OrderArgs, PartialCreateOrderOptions
@@ -717,7 +837,7 @@ def main():
         order carries its own random salt, so caching several ahead is safe. No-op unless --presign+live."""
         if not (live and a.presign):
             return
-        k = (tk, sd, round(p, 3))
+        k = (tk, sd, round(p, 4))
         if k in presigned:
             return
         try:
@@ -739,7 +859,7 @@ def main():
             print(f"  [DRY place] {sd} {a.post} {tk[:8]} @ {p} (q_ahead~{queue_ahead:.0f})")
             return f"dry_{tk[:6]}_{sd}_{p}", t_dec, time.time()
         from py_clob_client_v2 import OrderType
-        so = presigned.pop((tk, sd, round(p, 3)), None)
+        so = presigned.pop((tk, sd, round(p, 4)), None)
         # A3 belt-and-suspenders (PAPER_VS_LIVE): the venue-side post_only flag rejects (instead of
         # matching) an order that turned marketable in the race between our book snapshot and the POST --
         # would_cross() alone can't close that window. One taker fill (~3% fee at p=0.5) erases dozens
@@ -757,6 +877,7 @@ def main():
             # every safety rail. Skip instead: the react loop re-quotes the level next pass, and the
             # housekeeping venue reconciliation cancels any stray ack within seconds.
             print(f"  [PLACE-FAIL] {sd} {tk[:8]} @ {p}: {type(e).__name__} {str(e)[:80]}")
+            lm.place_reject(sd, p, f"{type(e).__name__}: {e}")
             return None
         # Venue can return success=False (e.g. post-only would cross, insufficient balance) -- treat any
         # non-positive ack as NOT PLACED; a None/false oid stored as live corrupts resting bookkeeping.
@@ -765,11 +886,20 @@ def main():
             em = str(r.get("errorMsg") or "rejected")[:80]
             if "cross" not in em.lower():          # post-only rejects are expected churn; others matter
                 print(f"  [PLACE-REJECT] {sd} {tk[:8]} @ {p}: {em}")
+            lm.place_reject(sd, p, em)
             return None
         if not oid:
             return None
         placed_oids.add(str(oid))
-        return oid, t_dec, time.time()
+        t_ack = time.time()
+        lm.place_ack(sd, p, so is not None, (t_ack - t_dec) * 1e3)
+        cur0 = books.get(tk) or {}                 # A2 probe baseline: the book as of OUR ack
+        mp0 = (microprice(cur0.get("bb"), cur0.get("ba"), cur0.get("bsz"), cur0.get("asz"))
+               if cur0.get("bb") is not None and cur0.get("ba") is not None else None)
+        sp0 = ((cur0["ba"] - cur0["bb"])
+               if cur0.get("bb") is not None and cur0.get("ba") is not None else None)
+        pending_reflex.append((t_ack + 2.0, tk, mp0, sp0))
+        return oid, t_dec, t_ack
 
     # BATCHED CANCELS (latency): drop() only QUEUES; flush_cancels() sends every queued cancel in ONE
     # cancel_orders POST. N toxic pulls in a pass cost one venue round-trip instead of N serialized
@@ -788,6 +918,7 @@ def main():
         batch = cancel_q[:]; cancel_q.clear()
         t_sent = time.time()
         if live:
+            ok = True
             try:
                 client.cancel_orders([oid for oid, *_ in batch])
             except Exception as e:  # noqa: BLE001
@@ -795,11 +926,16 @@ def main():
                 # silence turns every later "pull" into a no-op while the book moves against us. The
                 # 5s venue reconciliation sweep is the structural backstop.
                 print(f"  [CANCEL-FAIL] batch x{len(batch)}: {type(e).__name__} {str(e)[:80]}")
+                ok = False
+            t_conf = time.time() if ok else None      # M-1: the POST returning IS the venue ack --
+            lm.cancel_batch(len(batch), (time.time() - t_sent) * 1e3, ok)   # time_to_cancel_ms and
+        else:                                          # hit_before_confirm are the pilot's primary
+            t_conf = t_sent                            # reprice verdict; never leave them null
         for oid, key, reason, q in batch:
             if reason == "model_pull" and fv is not None and mk is not None:
                 tau = max(mk["we"] - time.time(), 0.0)
                 ft = fv.fair_token(key[0] == mk["up"], tau)
-                rlog.pull(key[0], key[1], key[2], oid, t_sent, None, q,
+                rlog.pull(key[0], key[1], key[2], oid, t_sent, t_conf, q,
                           ft if ft is not None else -1, mk["ws"])
 
     def cancel_all_resting(reason="rollover"):
@@ -849,7 +985,7 @@ def main():
     atexit.register(lambda: _flatten_and_exit("process exit"))
     for _sig in (signal.SIGTERM, signal.SIGINT):
         try:
-            signal.signal(_sig, lambda *_: (_flatten_and_exit(f"signal {_sig}"), os._exit(0)))
+            signal.signal(_sig, lambda *_, s_=_sig: (_flatten_and_exit(f"signal {s_}"), os._exit(0)))
         except Exception:
             pass                                      # not main thread / unsupported -> atexit still covers it
 
@@ -867,6 +1003,7 @@ def main():
             if live and resting and stale > a.deadman_s and not deadman_tripped:
                 print(f"[DEAD-MAN] book feed stale {stale:.0f}s > {a.deadman_s}s -> cancel-all")
                 notify.alert(f"[pmkit] DEAD-MAN feed stale {stale:.0f}s: cancel-all")
+                lm.ws_stale(stale)
                 cancel_all_resting(reason="deadman_stale"); deadman_tripped = True
             if mk is None or time.time() >= mk["we"]:
                 if mk is not None:                       # settle (d) for the closing window
@@ -878,16 +1015,19 @@ def main():
                     # $0/$1 terminal value. If the oracle hasn't posted yet, queue it for the housekeeping
                     # retry. Either way the position does NOT leak into the next window (its tokens are
                     # different instruments; carrying net_delta over would skew fresh quotes off dead risk).
-                    if pos or abs(cash) > 1e-9:
-                        entry = {"ws": mk["ws"], "pos_up": pos.get(mk["up"], 0.0),
-                                 "pos_dn": pos.get(mk["down"], 0.0), "cash": cash}
-                        if r is not None:
-                            realized += (entry["cash"] + entry["pos_up"] * (1.0 if r == 1 else 0.0)
-                                         + entry["pos_dn"] * (0.0 if r == 1 else 1.0))
-                            print(f"  [SETTLE] ws={mk['ws']} r={'Up' if r == 1 else 'Down'} "
-                                  f"realized={realized:+.2f}")
-                        else:
-                            pending_settles.append(entry)
+                    if live:
+                        sweep_closed_window(mk["cid"], mk["up"], mk["down"])   # boundary fills (C-1)
+                    if pos or abs(cash) > 1e-9 or resting:
+                        # `resting` counts too: an order resting at close can fill in the final tick
+                        # and report late -- the pending entry keeps sweeping until resolution.
+                        entry = {"ws": mk["ws"], "cid": mk["cid"], "up": mk["up"], "dn": mk["down"],
+                                 "pos_up": pos.get(mk["up"], 0.0),
+                                 "pos_dn": pos.get(mk["down"], 0.0), "cash": cash,
+                                 "r": r, "t0": time.time()}
+                        # ALWAYS via the pending path (even when already resolved): late-reporting
+                        # fills keep getting swept into the entry until the >=20s settle grace passes.
+                        pending_settles.append(entry)
+                    lm.window_summary(mk["ws"], realized, window_mark, net_delta)  # D1: joins paper by ws
                     pos.clear(); cash = 0.0; net_delta = 0.0; window_mark = 0.0
                     presigned.clear()                    # pre-signed orders reference the DEAD window's tokens
                     # ROADMAP #1: reclaim collateral from matched Up+Down pairs. LIVE build must
@@ -916,7 +1056,13 @@ def main():
                     # Only anchor (=> overlay ON) if we joined within 60s of the open; a
                     # mid-window join has no true S0, so run baseline-only that window.
                     if time.time() - mk["ws"] <= 60:
-                        fv.set_window(fv.update())
+                        # M-5: anchor from the already-fresh tape when possible -- fv.update() can
+                        # block up to ~6s (4 venues x 1.5s) racing the open; the overlay degrading to
+                        # OFF for one window is strictly better than 6s of blind quoting at the open.
+                        if fv.last is not None and fv.tape and time.time() - fv.tape[-1][0] <= 5:
+                            fv.set_window(fv.last)
+                        else:
+                            fv.set_window(fv.update())
                     else:
                         fv.update(); fv.set_window(None)
                         print("  (joined mid-window; overlay OFF until next open)")
@@ -933,6 +1079,15 @@ def main():
                     m2 = market_for(netfast.fast_session(), a.asset, a.tenor_min, ws_next)
                     if m2 is not None:
                         next_mk["mk"] = m2
+                        if live:
+                            # M-4: the SDK's create_order does a hidden REST get_tick_size on FIRST
+                            # use per token -- prime its cache here (off-thread; httpx.Client is
+                            # thread-safe) so the first quote of the new window is a pure POST.
+                            for tok2 in (m2["up"], m2["down"]):
+                                try:
+                                    client.get_tick_size(tok2)
+                                except Exception:
+                                    pass
                 threading.Thread(target=_prefetch, args=(mk["we"],), daemon=True).start()
             # P5: continuous latency monitoring -- a CF re-route / region change silently sends us to the
             # back of every queue. Re-check periodically; alert on a >2x median regression (or cross-region).
@@ -942,6 +1097,8 @@ def main():
                 def _latcheck():
                     # own session: requests.Session isn't thread-safe to share with the hot loop
                     med = clob_selfcheck(netfast.fast_session())
+                    if med is not None:
+                        lm.latency(round(med, 1), None, None)
                     if med is not None and ((lat0 and med > 2 * lat0) or med > 80):
                         notify.alert(f"[pmkit] LATENCY REGRESSION median {med:.0f}ms (was {lat0:.0f}ms)"
                                      if lat0 else f"[pmkit] LATENCY {med:.0f}ms (cross-region)")
@@ -1167,43 +1324,11 @@ def main():
                 # SCOPED query: this market only, this session only. Unscoped get_trades() paginates the
                 # wallet's ENTIRE history -- and under live_multi every sibling's fills -- corrupting
                 # inventory for every instance.
-                try:
-                    from py_clob_client_v2 import TradeParams
-                    trades = client.get_trades(TradeParams(market=mk["cid"], after=str(session_t0))) or []
-                except Exception:
-                    trades = []
-                for t in trades:
-                    tid = str(t.get("id") or t.get("transaction_hash") or t)
-                    if tid in seen_fills:
+                sf_cur = seen_fills.setdefault(mk["cid"], set())
+                for t in fetch_trades(mk["cid"]):
+                    tid, tside, taker_sd, legs = parse_trade_legs(t)
+                    if tid in sf_cur:
                         continue
-                    seen_fills.add(tid)
-                    # `side` on a trade is the TAKER's side. When we are the MAKER (the only thing this
-                    # bot should ever be), OUR side is the opposite, and our matched size/price live in
-                    # the maker_orders[] entries -- the trade-level size is the taker's whole sweep.
-                    taker_sd = (t.get("side") or "").upper()
-                    tside = (t.get("trader_side") or "UNKNOWN").upper()
-                    legs = []                            # (asset, OUR side, our price, our size, oid)
-                    if tside == "TAKER":
-                        # A3 ALARM: with would_cross + venue post_only this must be impossible. A taker
-                        # fill pays the ~3% fee wall -- if one appears, the guard stack is broken.
-                        notify.alert(f"[pmkit] TAKER FILL detected ({tid[:16]}) -- post-only guard breached!")
-                        print(f"  [!!] TAKER fill {tid[:16]} -- investigate before scaling")
-                        legs = [(str(t.get("asset_id") or ""), taker_sd, float(t.get("price", 0) or 0),
-                                 float(t.get("size", 0) or 0), str(t.get("taker_order_id") or "?"))]
-                    else:
-                        mos = t.get("maker_orders") or []
-                        for mo_ in mos:
-                            moid = str(mo_.get("order_id") or "")
-                            if moid and placed_oids and moid not in placed_oids:
-                                continue                 # someone else's maker leg (shared key) -> skip
-                            sd_ = (mo_.get("side") or ("SELL" if taker_sd == "BUY" else "BUY")).upper()
-                            legs.append((str(mo_.get("asset_id") or t.get("asset_id") or ""), sd_,
-                                         float(mo_.get("price") or t.get("price") or 0),
-                                         float(mo_.get("matched_amount") or 0), moid))
-                        if not mos:                      # defensive: no maker_orders detail -> trade-level
-                            legs = [(str(t.get("asset_id") or ""), "SELL" if taker_sd == "BUY" else "BUY",
-                                     float(t.get("price", 0) or 0), float(t.get("size", 0) or 0),
-                                     str(t.get("order_id") or "?"))]
                     for asset, sd, fp, fsz, oid_ in legs:
                         if fsz <= 0 or asset not in (mk["up"], mk["down"]):
                             continue                     # other window / sibling market -> not this book
@@ -1228,13 +1353,29 @@ def main():
                             "taker_sd": taker_sd, "fp": fp, "fsz": fsz, "tside": tside,
                             "fee": t.get("fee_rate_bps"), "resting_s": resting_s,
                             "q": (meta or {}).get("q")}))
+                        lm.fill(sd, fp, fsz, resting_s, (meta or {}).get("q"), tside,
+                                t.get("fee_rate_bps"), fees.maker_rebate(fp, rate=0.07) * fsz)
+                    sf_cur.add(tid)                      # dedup AFTER successful booking (a mid-booking
+                    #                                      exception re-processes on the next poll)
                 # score due 5s markouts from OUR side (+ = the market came our way after the fill)
                 now_mo = time.time()
                 due = [pm for pm in pending_markouts if pm[0] <= now_mo]
                 pending_markouts[:] = [pm for pm in pending_markouts if pm[0] > now_mo]
-                for _, f in due:
-                    bb2, ba2, _, _ = get_book(f["asset"])
-                    mid2 = (bb2 + ba2) / 2 if bb2 and ba2 else f["fp"]
+                while due:
+                    due_t, f = due[0]
+                    try:
+                        bb2, ba2, _, _ = get_book(f["asset"])
+                    except Exception:
+                        pending_markouts.extend(due)   # M-3: REST blip -> RE-QUEUE, don't lose the
+                        break                          # pilot's A2 records or the kill's inputs
+                    due.pop(0)
+                    if bb2 is None or ba2 is None or now_mo - due_t > 60:
+                        # dead/expired book: a fabricated 0.0 markout would DILUTE the rolling-markout
+                        # kill exactly where toxicity concentrates (end of window) -- log with null.
+                        olog.fill(f["oid"], f["asset"], f["taker_sd"], f["fp"], f["fsz"], f["tside"],
+                                  f["fee"], f["resting_s"], f["q"], None, "passive")
+                        continue
+                    mid2 = (bb2 + ba2) / 2
                     mo = (mid2 - f["fp"]) if f["sd"] == "BUY" else (f["fp"] - mid2)
                     markouts.append(mo); del markouts[:-500]      # kill-switch reads the last 30
                     olog.fill(f["oid"], f["asset"], f["taker_sd"], f["fp"], f["fsz"], f["tside"],
@@ -1257,16 +1398,38 @@ def main():
                         if strays:
                             print(f"  [RECONCILE] cancelling {len(strays)} unknown venue order(s)")
                             client.cancel_orders(strays)
+                            lm.stray_cancelled(len(strays))
                     except Exception as e:  # noqa: BLE001
                         print(f"  [RECONCILE-FAIL] {type(e).__name__} {str(e)[:80]}")
-                # retry pending settles + mark the open window to mid (feeds the loss-limit kill)
+                # A2 reflexivity probes: book state ~2s after our placements (observer effect)
+                now_rx = time.time()
+                due_rx = [r_ for r_ in pending_reflex if r_[0] <= now_rx]
+                pending_reflex[:] = [r_ for r_ in pending_reflex if r_[0] > now_rx][-200:]
+                for _, tok_rx, mp0_rx, sp0_rx in due_rx[:20]:
+                    bbx, bax, bszx, aszx = get_book(tok_rx)
+                    if bbx is not None and bax is not None:
+                        mpx = microprice(bbx, bax, bszx, aszx)
+                        lm.reflex(tok_rx,
+                                  (mpx - mp0_rx) if (mpx is not None and mp0_rx is not None) else None,
+                                  ((bax - bbx) - sp0_rx) if sp0_rx is not None else None)
+                # A1 ground truth: balance snapshots (60s) + the venue's own earnings statement (1h)
+                lm.poll_balance(client)
+                lm.poll_earnings(client)
+                # retry pending settles + mark the open window to mid (feeds the loss-limit kill).
+                # Each retry SWEEPS the closed market's trades first (C-1: fills report with lag);
+                # settle only after a >=20s grace so the last fills are certainly booked.
                 still = []
                 for en in pending_settles:
-                    r2 = resolve(sess, en["ws"], a.asset, a.tenor_min)
-                    if r2 is not None:
+                    sweep_closed_window(en["cid"], en["up"], en["dn"], en)
+                    r2 = en.get("r")
+                    if r2 is None:
+                        r2 = resolve(sess, en["ws"], a.asset, a.tenor_min)
+                        en["r"] = r2
+                    if r2 is not None and time.time() - en.get("t0", 0) >= 20:
                         realized += (en["cash"] + en["pos_up"] * (1.0 if r2 == 1 else 0.0)
                                      + en["pos_dn"] * (0.0 if r2 == 1 else 1.0))
-                        print(f"  [SETTLE] ws={en['ws']} (late) realized={realized:+.2f}")
+                        print(f"  [SETTLE] ws={en['ws']} realized={realized:+.2f}")
+                        seen_fills.pop(en["cid"], None)   # retired market -> free its dedup memory
                     else:
                         still.append(en)
                 pending_settles[:] = still
@@ -1276,9 +1439,14 @@ def main():
                         continue
                     bq, aq, _, _ = get_book(tok_)
                     wm += sh_ * ((bq + aq) / 2 if (bq and aq) else 0.5)
-                # unresolved closed windows marked at 0.5/token (they settle within ~a minute)
-                window_mark = wm + sum(en["cash"] + 0.5 * (en["pos_up"] + en["pos_dn"])
-                                       for en in pending_settles)
+                # closed-but-unsettled windows: exact value when the resolution is known, 0.5/token
+                # while the oracle is pending (they settle within ~a minute)
+                window_mark = wm + sum(
+                    en["cash"] + (en["pos_up"] * (1.0 if en["r"] == 1 else 0.0)
+                                  + en["pos_dn"] * (0.0 if en["r"] == 1 else 1.0)
+                                  if en.get("r") is not None
+                                  else 0.5 * (en["pos_up"] + en["pos_dn"]))
+                    for en in pending_settles)
             if hk:
                 last_hk = time.time()                  # mark housekeeping done (fv/fills ran this pass)
             consec_err = 0                              # clean iteration -> reset the error-storm counter
@@ -1299,7 +1467,7 @@ def main():
             time.sleep(a.poll)
     _flatten_and_exit("loop end")
     s = rlog.summary()
-    print(f"done. realized={realized:+.2f} fills={len(seen_fills)} pulls={s['pulls']} "
+    print(f"done. realized={realized:+.2f} fills={sum(len(v) for v in seen_fills.values())} pulls={s['pulls']} "
           f"clamp_binds={s['clamp_binds']} "
           + (f"avg_markout={sum(markouts)/len(markouts):+.5f}" if markouts else ""))
 

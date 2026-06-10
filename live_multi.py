@@ -16,6 +16,7 @@ minimum order size (~5 shares) makes a sub-5 --post unplaceable, so per-asset we
 through --max-rungs (ladder DEPTH), not clip size -- BTC rests a full ladder, XRP a single rung.
 """
 import os
+import signal
 import subprocess
 import sys
 import time
@@ -33,13 +34,19 @@ def _spawn(asset, tmin, live, fwd, user_rungs):
     cmd = [sys.executable, "-u", "live_trader.py", "--asset", asset, "--tenor-min", str(tmin)]
     if not user_rungs:
         cmd += ["--max-rungs", str(RUNGS.get(asset, 2))]   # BTC-weighted ladder depth
+    if "--duration" not in fwd:
+        cmd += ["--duration", str(7 * 86400)]  # H-2: live_trader defaults to 3600s -- without this,
+        #                                        children exit cleanly every hour and burn the
+        #                                        restart cap within ~6h, silently standing down
     if live:
         cmd.append("--live")           # child still self-guards on I_UNDERSTAND_REAL_MONEY
     cmd += fwd
     env = dict(os.environ)
-    # Children share one API key: a per-child startup cancel_all would nuke the siblings' fresh
-    # orders. The parent does ONE venue-wide cancel_all below; children skip theirs.
-    env["PMKIT_SKIP_STARTUP_CANCEL"] = "1"
+    # Children share one API key: a per-child GLOBAL cancel_all would nuke the siblings' fresh
+    # orders. The parent does ONE venue-wide cancel_all below; children do a MARKET-SCOPED startup
+    # cancel instead (live_trader honors this env) -- so a respawned child still clears its own
+    # SIGKILL'd predecessor's orders without touching the other markets (audit H-3).
+    env["PMKIT_SKIP_STARTUP_CANCEL"] = "scoped"
     return subprocess.Popen(cmd, env=env)
 
 
@@ -69,18 +76,38 @@ def main():
     for asset, tmin in MARKETS:
         name = f"{asset}-{tmin}m"
         procs[name] = {"p": _spawn(asset, tmin, live, fwd, user_rungs),
-                       "asset": asset, "tmin": tmin, "restarts": 0}
+                       "asset": asset, "tmin": tmin, "restarts": 0,
+                       "spawned_at": time.time(), "respawn_at": None}
         print(f"launched {name} ({'LIVE' if live else 'DRY'}) "
               f"rungs={'user' if user_rungs else RUNGS.get(asset, 2)}", flush=True)
         time.sleep(1)
     print(f"{len(procs)} maker instances running (micro_gate edge, breadth). Ctrl-C to stop all.", flush=True)
+    # systemd stops with SIGTERM, not SIGINT: route it through the same clean shutdown (each child's
+    # dead-man cancels its book on TERM) -- otherwise the parent dies and ORPHANS quoting children.
+    def _term(*_):
+        raise KeyboardInterrupt
+    signal.signal(signal.SIGTERM, _term)
     # SUPERVISE: a crashed child = a market silently unquoted (and, live, possibly un-flattened --
     # its own dead-man handles clean signals; a hard crash is what the restart + alert covers).
     try:
         while True:
+            now = time.time()
             for name, st in procs.items():
+                if st.get("respawn_at"):              # non-blocking backoff (a sleep here would
+                    if now >= st["respawn_at"]:       # stall supervision of every other child)
+                        st["respawn_at"] = None
+                        st["spawned_at"] = now
+                        st["p"] = _spawn(st["asset"], st["tmin"], live, fwd, user_rungs)
+                    continue
                 rc = st["p"].poll()
                 if rc is None:
+                    if st["restarts"] and now - st.get("spawned_at", now) > 1800:
+                        st["restarts"] = 0            # 30 min healthy -> forgive (a crash cap should
+                    continue                          # catch crash LOOPS, not lifetime totals)
+                if rc == 0:                           # clean exit (duration elapsed) -> relaunch,
+                    print(f"child {name} finished cleanly; relaunching", flush=True)
+                    st["spawned_at"] = now            # never counts toward the crash cap
+                    st["p"] = _spawn(st["asset"], st["tmin"], live, fwd, user_rungs)
                     continue
                 if st["restarts"] >= MAX_RESTARTS:
                     continue                          # already alerted; leave it down
@@ -90,8 +117,7 @@ def main():
                 if st["restarts"] >= MAX_RESTARTS:
                     notify.alert(f"[pmkit] child {name} hit restart cap -- LEAVING DOWN, investigate")
                     continue
-                time.sleep(2 * st["restarts"])        # backoff before respawn
-                st["p"] = _spawn(st["asset"], st["tmin"], live, fwd, user_rungs)
+                st["respawn_at"] = now + 2 * st["restarts"]   # backoff without blocking the loop
             time.sleep(2)
     except KeyboardInterrupt:
         print("stopping all children...", flush=True)
