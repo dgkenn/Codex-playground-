@@ -9,10 +9,11 @@ Note on markout: `mo5` = short-horizon markout (adverse selection a maker contro
 
 ---
 
-### 1. The deployed `micro_gate` is NOT the best gate — three variants beat it ~24%.
+### 1. `micro_gate` was NOT the best gate — three variants beat it ~24% (now acted on).
 Full-sample net/win: **`micro_marg` +5.72 (t=10.0)**, `tox_gate` +5.63, `micro_ufat` +5.65, `mo_size` +5.67
-vs **`micro_gate` +4.62 (t=9.1)**. All gross-positive. → **Promote `micro_marg` or `micro_ufat`** to the
-deployed `live_trader` gate (currently plain `micro`). +24% net at the same risk.
+vs **`micro_gate` +4.62 (t=9.1)**. All gross-positive. → **Done:** `live_trader --gate` now defaults to
+**`ufat`** (+24% net at the same risk); `combo_lab` then found `ufat_band` beats even that (see the combo
+section below).
 
 ### 2. BTC is the money market; XRP barely pays.
 `micro_ufat` net/win by asset: **BTC +12.96 (86% win)**, SOL +4.32, ETH +3.82, **XRP +1.47 (55% win)**.
@@ -69,15 +70,16 @@ rebate > 0`); it should converge to the leader as it accrues live data and the *
 ---
 
 ## The shortlist of bot changes (ranked)
-1. **Swap the deployed gate** `micro` → **`micro_ufat`** (Insights 1, 5, 9) — biggest, safest win.
-2. **Size by asset** — BTC ≫ ETH≈SOL > XRP (Insight 2); keep breadth for Sharpe (Insight 3).
-3. **Avoid ≥2-tick spreads**; reconsider `--improve` (Insight 4).
-4. **Stop over-chasing front-of-queue**; the deep/benign-sweep fills are the edge (Insight 6).
-5. **Retire `flow_gate`/`late_gate`** (Insight 7); keep the gate micro-centric (Insight 8).
-6. **Let `micro_cal` tune to the live rebate** (Insight 10) — the long-run gate.
+1. **Swap the deployed gate** `micro` → **`ufat`** (Insights 1, 5, 9) — ✅ **DONE** (`live_trader --gate`
+   default; still DRY-RUN until the pilot). `combo_lab` then found **`ufat_band`** beats it — running in A/B.
+2. **Size by asset** — BTC ≫ ETH≈SOL > XRP (Insight 2); keep breadth for Sharpe (Insight 3). ⬜
+3. **Avoid ≥2-tick spreads**; reconsider `--improve` (Insight 4). ⬜
+4. **Stop over-chasing front-of-queue**; the deep/benign-sweep fills are the edge (Insight 6). ⬜
+5. **Retire `flow_gate`/`late_gate`** (Insight 7); keep the gate micro-centric (Insight 8). ⬜
+6. **Let `micro_cal` tune to the live rebate** (Insight 10) — the long-run gate. ⬜
 
-All are A/B-testable in the running multi-asset collector; promote to `live_trader` only after live
-confirmation, per the project's standing discipline.
+The `ufat` default was adopted on this 4-day prospective evidence; `ufat_band`/`--mid-skip` and `micro_cal`
+stay in the live A/B and become defaults only after live confirmation, per the project's standing discipline.
 
 ---
 

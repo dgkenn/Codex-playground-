@@ -32,16 +32,17 @@ from the live A/B. Re-enable later by flipping the flag back. No core-file edits
 ## What makes capture robust to constant tinkering
 
 - **Preflight validation** (`python strategies.py`) gates every run — a malformed roster fails fast
-  instead of silently behaving like baseline (an unknown gate is a no-op) or wasting a ~5h run slot.
+  instead of silently behaving like baseline (an unknown gate is a no-op) or wasting a run.
 - **Per-variant error isolation** (`shadow_compare.py`): a buggy new strategy's exception is counted and
   the variant is **quarantined after 5 errors** — the rest of the roster keeps capturing. A crash in one
   module can never take down the whole window/process.
 - **Self-describing data**: each run writes `gha_data/registry_<tag>.json` recording exactly which roster
   produced the data, so you can always tell what was live when a window was captured.
 - **Multi-asset supervisor** (`multi_market.py`): if a market process dies mid-run it is auto-relaunched
-  (bounded by `MAX_RESTARTS`, stable tag so data accumulates) — no silent market dropout over a 5h run.
-- **Continuity** (`paper-collect.yml`): ~5h runs + 10-min incremental commits to the `gha-data` branch +
-  workflow chain + watchdog, so collection survives container reclamation and scheduler gaps.
+  (bounded by `MAX_RESTARTS`, stable tag so data accumulates) — no silent market dropout during the run.
+- **Continuity** (`paper-collect.yml`): an **hourly** ~50-min multi-asset run commits to the `gha-data`
+  branch; `concurrency` prevents overlap; runs on GitHub's infra so collection survives container
+  reclamation. (Earlier 5h-chain + watchdog design was retired — it spammed cancelled runs; see README.)
 
 ## The data layout (unchanged by roster edits)
 
