@@ -33,9 +33,8 @@ per-minute candles with bid/ask OHLC + volume, and settled-market history (`fetc
 - **No directional edge on Kalshi either** (`directional_deep.py` on the same parquet: 0 of 36
   tests; favorite-longshot/momentum/serial all null) — consistent with Polymarket and the
   12k-window deep study. The maker seat is the edge here too.
-- **Asset ranking flips vs Polymarket**: ETH/SOL/XRP's wider spreads (1.3–4¢) mean ~2× capture per
-  fill at lower queue competition; BTC has the traffic. Run breadth across all four, judge by the
-  same Calmar discipline.
+- ~~Asset ranking: wider alt spreads look attractive~~ — **OVERTURNED by the trade-tape replay
+  below: BTC-first** (thin alt books have no benign traffic; see the queue-replay verdict).
 
 ## The decision instrument is BUILT and VERIFIED: `kalshi_collect.py`
 
