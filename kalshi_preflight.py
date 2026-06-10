@@ -61,10 +61,11 @@ def chk_auth():
     try:
         from kalshi_trader import _api, _load_private_key
         key = _load_private_key()
-        b = _api(requests.Session(), key, "GET", "/portfolio/balance")
-        if isinstance(b, dict) and "balance" in json.dumps(b):
-            return OK, "authenticated: /portfolio/balance OK (value not printed)", True
-        return FAIL, f"unexpected balance response shape: {str(b)[:80]}", True
+        r = _api(requests.Session(), key, "GET", "/portfolio/balance")
+        sc, body = r if isinstance(r, tuple) else (200, r)   # _api returns (status, body)
+        if sc == 200 and isinstance(body, dict) and "balance" in body:
+            return OK, "authenticated: /portfolio/balance 200 (value not printed)", True
+        return FAIL, f"auth call returned status {sc} (shape unexpected)", True
     except Exception as e:  # noqa: BLE001
         return FAIL, f"auth call failed: {type(e).__name__}: {str(e)[:90]}", True
 
