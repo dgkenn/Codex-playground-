@@ -24,6 +24,9 @@ import numpy as np
 import pandas as pd
 
 CLIP = 25.0                 # contracts per fill opportunity (pilot-scale clip)
+# Kalshi maker fee (markets that charge it): ~0.0175*p*(1-p)/contract (1/4 of the 0.07 taker rate).
+# Scan 0 (if crypto 15m is fee-exempt) vs the documented worst case. The live fill confirms which.
+MAKER_MULTS = (0.0, 0.0175)
 Q0S = (0.0, 500.0, 2000.0, 5000.0)
 
 
@@ -34,7 +37,7 @@ def tstat(x):
     return float(x.mean() / (x.std(ddof=1) / np.sqrt(len(x))))
 
 
-def replay_window(ws, res, bid, ask, tape, spot_l, q0, gate_bps):
+def replay_window(ws, res, bid, ask, tape, spot_l, q0, gate_bps, mk_fee=0.0):
     """One window -> (net_per_contract_sum, fills). tape: arrays t, p, sz, buy."""
     net = 0.0; fills = 0
     t_arr, p_arr, sz_arr, buy_arr = tape
@@ -64,13 +67,13 @@ def replay_window(ws, res, bid, ask, tape, spot_l, q0, gate_bps):
                 if qb >= sz:
                     qb -= sz
                 else:
-                    net += (res - b0) * min(CLIP, sz - qb) / CLIP
+                    net += (res - b0) * min(CLIP, sz - qb) / CLIP - mk_fee * b0 * (1 - b0)
                     fills += 1; done_b = True
             if not done_a and buy and p >= a0 - 1e-9:       # taker BUY lifting the ask side
                 if qa >= sz:
                     qa -= sz
                 else:
-                    net += (a0 - res) * min(CLIP, sz - qa) / CLIP
+                    net += (a0 - res) * min(CLIP, sz - qa) / CLIP - mk_fee * a0 * (1 - a0)
                     fills += 1; done_a = True
     return net, fills
 
@@ -83,10 +86,13 @@ def main():
     print(f"{asset}: {len(common)} windows with book+tape "
           f"({pd.to_datetime(common[0], unit='s'):%m-%d} .. {pd.to_datetime(common[-1], unit='s'):%m-%d})\n")
     cut = common[int(len(common) * 0.6)]
-    print(f"{'q_ahead':>8} {'gate':>7} {'fills/win':>9} {'net/win(c)':>11} {'t':>6} | "
-          f"{'IS net':>8} {'OOS net':>8} {'OOS t':>6}")
-    print("-" * 70)
-    for q0 in Q0S:
+    for mk_fee in MAKER_MULTS:
+      print(f"\n=== MAKER FEE = {mk_fee:.4f} * p(1-p)/contract "
+            f"({'fee-exempt' if mk_fee==0 else 'documented worst case ~0.44c@p=.5'}) ===")
+      print(f"{'q_ahead':>8} {'gate':>7} {'fills/win':>9} {'net/win(c)':>11} {'t':>6} | "
+            f"{'IS net':>8} {'OOS net':>8} {'OOS t':>6}")
+      print("-" * 70)
+      for q0 in Q0S:
         for gname, gbps in (("none", 0.0), ("spot8", 8.0), ("spot5", 5.0)):
             nets, fl = [], 0
             for w in common:
@@ -97,7 +103,7 @@ def main():
                 tape = (np.asarray(t.t, float), np.asarray(t.p, float),
                         np.asarray(t.sz, float), np.asarray(t.buy, bool))
                 n, f = replay_window(w, float(h.res_up), np.asarray(h.bid_path, float),
-                                     np.asarray(h.ask_path, float), tape, spot_l, q0, gbps)
+                                     np.asarray(h.ask_path, float), tape, spot_l, q0, gbps, mk_fee)
                 nets.append(n); fl += f
             nets = np.array(nets)
             is_m = np.array([w < cut for w in common])

@@ -50,3 +50,6 @@ gha_data/
 *.pem
 *.key
 .kalshi/
+live_metrics_kalshi_*.jsonl
+kalshi_markout.jsonl
+.kalshi_killed_*

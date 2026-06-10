@@ -36,6 +36,36 @@ per-minute candles with bid/ask OHLC + volume, and settled-market history (`fetc
 - ~~Asset ranking: wider alt spreads look attractive~~ — **OVERTURNED by the trade-tape replay
   below: BTC-first** (thin alt books have no benign traffic; see the queue-replay verdict).
 
+## ✅ RESOLVED LIVE: maker fee = $0.00 on KXBTC15M (the load-bearing unknown)
+
+Kalshi's official formula (kalshi.com/fee-schedule, help center): **taker = ceil(0.07·p·(1−p)) /
+contract; maker ≈ 0.0175·p·(1−p)** (~0.44¢ at p=0.5) **on markets that charge maker fees** — and
+"in some cases markets have maker fees." The API confirms KXBTC15M is `fee_type=quadratic,
+fee_multiplier=1` (standard rate). Whether crypto-15m is *in the maker-fee list* is the per-series
+detail in the (rate-limited) fee PDF — and is settled definitively by the fee on one real maker fill.
+
+**It is decisive (`kalshi_replay.py`, BTC, front-of-queue gated, OOS):**
+
+| scenario | net/win | OOS t |
+|---|---|---|
+| maker fee = 0 (fee-exempt) | **+4.7¢** | 1.6 |
+| maker fee = 0.0175·p(1−p) (standard) | **+1.8¢** | 0.6 |
+
+**CONFIRMED by 16 real maker fills (2026-06-10, $10 acct): `fee_cost = 0.000000` on every fill,
+including p=0.35 and p=0.94 where a standard maker fee would be clearly non-zero.** Crypto-15m is NOT
+in Kalshi's maker-fee list → the operative economics are the **fee-exempt row above (+4.7¢/win gated
+front-of-queue)**, not the degraded one. The Kalshi A1 is closed favorably; the gate still matters
+(it lifts ungated +2.6¢ → gated +4.7¢ OOS).
+
+**Live end-to-end validation (same session):** auth → startup reconciliation → live placement →
+**16/16 MAKER fills, 0 taker** (post-only + sub-cent improve held) → correct settlement (window
+booked, account returned FLAT) → dead-man cancel-all at exit. The full money path executed cleanly.
+⚠ **Pre-scale risk found:** under rapid fill→re-quote the gate can lean the book DIRECTIONAL (it
+accumulated ~9 one-sided contracts in one window; the per-placement notional cap didn't tightly bind
+the resulting inventory). At 1-contract scale this was ~$2 and it happened to win (+$5 of LUCK, NOT
+edge) — but a tighter inventory cap / balanced-quoting fix is required before sizing up. The shadow
+A/B + a hard inventory clamp address it.
+
 ## The decision instrument is BUILT and VERIFIED: `kalshi_collect.py`
 
 A live shadow collector that REUSES the existing engine — `shadow_compare.Variant` (queue model,
