@@ -1,4 +1,36 @@
-# Directional edges in the 15-min markets — the systematic scan (`directional_scan.py`)
+# Directional edges in the 15-min markets — the systematic scans
+
+## DEEP-HISTORY VERDICT (5,749 windows / 60 days — `fetch_history.py` + `directional_deep.py`)
+
+Polymarket's public APIs retain ~240 days of these markets (predictable Gamma slugs + CLOB
+`prices-history` at 1-minute fidelity + Coinbase 1m spot). At **5,749 BTC windows** (13× the
+collector's n), with sign learned on the first 60% and confirmed on the last 40%:
+
+**NO directional edge exists.** And the path to that answer is the most instructive part:
+
+- The first run showed **12 apparent edges** (spot momentum / recent-spot move / model-market gap,
+  test-t up to +8.9, "taker-viable"). All of it was a **60-second measurement artifact**: a 1m candle
+  stamped `t` closes at `t+60`, so "spot at minute k" was up to a minute *fresher* than the mid —
+  manufacturing "spot predicts the mid's error". With spot shifted one bar back (strictly stale vs
+  the mid — conservative), every correlation collapses to ~0.00–0.03, nothing significant, all
+  taker tiers negative. **The market absorbs spot information within one minute.**
+- What remains inside that minute is the sub-minute book staleness the maker stack already knows:
+  it is the *toxicity* the deployed gate dodges defensively, and the offensive version was already
+  tested live-shaped and lost to fees (`lag_taker`, discontinued).
+- **Favorite-longshot at scale:** max |z| 2.4 in one of ten bucket×time cells, sign not replicated
+  across decision times, magnitude ~2¢ < costs. Rejected at n≈5,700.
+- Serial (prev outcome/error), token momentum, |mid−0.5|, and UTC time-of-day seasonality: nothing,
+  at every decision time.
+
+This also retro-explains the collector-data near-miss below (`gap_model`, test-t≈1.9 at n=45): noise.
+The small-n scan's promotion trigger is hereby resolved — **do not promote**; re-run only if the
+market's structure visibly changes. The 15-minute markets are efficient after costs at every horizon
+≥1 minute; **the only durable edge is the maker seat** (rebate + adverse-selection avoidance), now
+established on two independent datasets and ~6,200 total windows.
+
+---
+
+# The collector-data scan (437 windows — `directional_scan.py`, superseded by the above)
 
 **Question:** is there ANY data-backed directional edge (predicting the market's pricing error), or
 is the only real edge the maker rebate + toxicity avoidance?

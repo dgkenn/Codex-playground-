@@ -67,7 +67,13 @@ def main():
     with np.errstate(all="ignore"):
         lr = np.diff(np.log(prev), axis=1)
         sigma_pre = np.nanstd(lr, axis=1) / np.sqrt(60.0)
-    s0 = spot[:, 0]
+    # ALIGNMENT (the decisive control): a 1m candle stamped t CLOSES at t+60 -- using bar k's close
+    # as "spot at minute k" makes spot up to 60s FRESHER than the mid sampled inside minute k, which
+    # manufactures a fake "spot leads mid" edge. Shift spot ONE BAR BACK: bar (k-1)'s close is fully
+    # realized before minute k begins, so the mid is now the FRESHER series and any surviving edge is
+    # real and, if anything, understated.
+    spot = np.concatenate([np.full((spot.shape[0], 1), np.nan), spot[:, :-1]], axis=1)
+    s0 = spot[:, 1]
 
     # previous-window features (by exact ws-900 match)
     idx = {int(w): i for i, w in enumerate(ws)}
@@ -111,7 +117,7 @@ def main():
         m_t = mid[:, t_min]
         ok_mid = ~np.isnan(m_t) & (m_t > 0.02) & (m_t < 0.98)
         resid = res - m_t
-        sp_t = spot[:, t_min]; sp_rec0 = spot[:, max(t_min - 3, 0)]
+        sp_t = spot[:, t_min]; sp_rec0 = spot[:, max(t_min - 3, 1)]
         tau = (15 - t_min) * 60.0
         with np.errstate(all="ignore"):
             gap = np.array([float(fair_up(sp_t[i], s0[i], sigma_pre[i], tau)) - m_t[i]
@@ -154,7 +160,7 @@ def main():
         print("decisive null: 15-min pricing is efficient after costs; the edge is the maker seat.")
         return
     print(f"{len(survivors)} edge(s) clear BOTH halves at deep-history power:")
-    months = pd.to_datetime(ws, unit="s").to_period("W")
+    months = pd.Series(pd.to_datetime(ws, unit="s")).dt.to_period("W").to_numpy()
     for t_min, k, ctr, cte, ttr, tte, mk, tk_s, tk_f, x, resid, ok_mid in survivors:
         tier = ("TAKER-VIABLE (beats fee+spread)" if tk_f > 0 else
                 "beats spread, not the fee" if tk_s > 0 else "MAKER-SKEW ONLY (fee-free tilt)")
@@ -162,7 +168,7 @@ def main():
               f"maker {mk:+.4f}/win; {tier}")
         print(f"    per-week stability (corr in each week):")
         for per in sorted(set(months)):
-            sel = ok_mid & (months == per).to_numpy() & ~np.isnan(x)
+            sel = ok_mid & (months == per) & ~np.isnan(x)
             c, t, n = corr_t(x[sel], resid[sel])
             if n >= 60:
                 print(f"      {per}: corr {c:+.3f} (t={t:+.1f}, n={n})")
