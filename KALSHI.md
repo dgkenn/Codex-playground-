@@ -36,6 +36,26 @@ per-minute candles with bid/ask OHLC + volume, and settled-market history (`fetc
 - ~~Asset ranking: wider alt spreads look attractive~~ — **OVERTURNED by the trade-tape replay
   below: BTC-first** (thin alt books have no benign traffic; see the queue-replay verdict).
 
+## ⚠ THE LOAD-BEARING UNKNOWN: the maker fee (resolved by docs + one live fill)
+
+Kalshi's official formula (kalshi.com/fee-schedule, help center): **taker = ceil(0.07·p·(1−p)) /
+contract; maker ≈ 0.0175·p·(1−p)** (~0.44¢ at p=0.5) **on markets that charge maker fees** — and
+"in some cases markets have maker fees." The API confirms KXBTC15M is `fee_type=quadratic,
+fee_multiplier=1` (standard rate). Whether crypto-15m is *in the maker-fee list* is the per-series
+detail in the (rate-limited) fee PDF — and is settled definitively by the fee on one real maker fill.
+
+**It is decisive (`kalshi_replay.py`, BTC, front-of-queue gated, OOS):**
+
+| scenario | net/win | OOS t |
+|---|---|---|
+| maker fee = 0 (fee-exempt) | **+4.7¢** | 1.6 |
+| maker fee = 0.0175·p(1−p) (standard) | **+1.8¢** | 0.6 |
+
+If crypto-15m carries the standard maker fee, the edge is marginal-to-nonexistent and ungated trading
+turns negative — **do not deploy** until a real maker fill confirms the fee. The gate matters *more*
+with fees (it sheds fills whose capture no longer covers the fee). This is the Kalshi A1: confirm
+before any scaling.
+
 ## The decision instrument is BUILT and VERIFIED: `kalshi_collect.py`
 
 A live shadow collector that REUSES the existing engine — `shadow_compare.Variant` (queue model,
