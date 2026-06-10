@@ -93,20 +93,33 @@ def _up_index(m):
     return 0
 
 
+def market_for(sess, asset, tenor_min, ws_target, timeout=8):
+    """The {asset}-updown market for one specific window start (None if not listed/closed)."""
+    win = tenor_min * 60
+    try:
+        ev = sess.get(G + "/events", params={"slug": f"{asset}-updown-{tenor_min}m-{ws_target}"},
+                      timeout=timeout).json()
+    except Exception:
+        return None
+    if ev and ev[0].get("markets") and not ev[0]["markets"][0].get("closed"):
+        m = ev[0]["markets"][0]; toks = json.loads(m["clobTokenIds"])
+        ui = _up_index(m)
+        return {"cid": m["conditionId"], "up": str(toks[ui]), "down": str(toks[1 - ui]),
+                "ws": ws_target, "we": ws_target + win,
+                "tick": float(m.get("orderPriceMinTickSize", 0.01) or 0.01),
+                "min_size": float(m.get("orderMinSize", 5) or 5),
+                "negRisk": bool(m.get("negRisk", False))}
+    return None
+
+
 def active_market(sess, asset="btc", tenor_min=15):
     """Active {asset}-updown-{tenor_min}m market (breadth-ready; defaults to BTC 15m)."""
     win = tenor_min * 60
     now = int(time.time()); ws = now - (now % win)
     for cand in (ws, ws + win):
-        ev = sess.get(G + "/events", params={"slug": f"{asset}-updown-{tenor_min}m-{cand}"}, timeout=15).json()
-        if ev and not ev[0]["markets"][0].get("closed"):
-            m = ev[0]["markets"][0]; toks = json.loads(m["clobTokenIds"])
-            ui = _up_index(m)
-            return {"cid": m["conditionId"], "up": str(toks[ui]), "down": str(toks[1 - ui]),
-                    "ws": cand, "we": cand + win,
-                    "tick": float(m.get("orderPriceMinTickSize", 0.01) or 0.01),
-                    "min_size": float(m.get("orderMinSize", 5) or 5),
-                    "negRisk": bool(m.get("negRisk", False))}
+        mk = market_for(sess, asset, tenor_min, cand)
+        if mk:
+            return mk
     return None
 
 
@@ -127,8 +140,10 @@ def book(sess, token):
 
 
 def resolve(sess, ws, asset="btc", tenor_min=15):
+    # tight timeout: this runs at window rollover, racing the new window's open (queue priority);
+    # an unresolved outcome just lands in pending_settles and is retried each housekeeping pass.
     try:
-        ev = sess.get(G + "/events", params={"slug": f"{asset}-updown-{tenor_min}m-{ws}"}, timeout=10).json()
+        ev = sess.get(G + "/events", params={"slug": f"{asset}-updown-{tenor_min}m-{ws}"}, timeout=4).json()
         if ev:
             m = ev[0]["markets"][0]; op = m.get("outcomePrices")
             if m.get("closed") and op:
@@ -687,6 +702,7 @@ def main():
     session_t0 = int(time.time())
     last_reconcile = 0.0               # last venue open-order reconciliation sweep
     mo_fh = open("live_markout.jsonl", "a")   # persistent handle (was open/close per fill)
+    next_mk = {"mk": None, "tried_ws": 0}     # next-window market, PREFETCHED off-thread (see below)
 
     presigned = {}        # (tk,sd,price3) -> signed order, pre-signed OFF the fire path (--presign)
 
@@ -884,7 +900,15 @@ def main():
                     if action == "merge" and sets > 0:
                         mm.merge(mk["cid"], sets)
                 cancel_all_resting()                     # window rollover: tokens change, must reset
-                mk = active_market(sess, a.asset, a.tenor_min)
+                # QUEUE PRIORITY AT OPEN: use the PREFETCHED next-window market if we have it -- the
+                # rollover then costs zero discovery RTTs and our first rungs hit the fresh book ahead
+                # of pollers. Fall back to live discovery only if the prefetch missed.
+                now0 = int(time.time())
+                pf = next_mk["mk"]
+                if pf is not None and pf["ws"] <= now0 < pf["we"]:
+                    mk = pf; next_mk["mk"] = None
+                else:
+                    mk = active_market(sess, a.asset, a.tenor_min)
                 if not mk:
                     time.sleep(a.poll); continue
                 mdsub["tokens"] = [mk["up"], mk["down"]]; mdsub["epoch"] += 1   # point the WS feed at the new tokens
@@ -900,6 +924,16 @@ def main():
             hk = (time.time() - last_hk) >= a.poll       # housekeeping due? (REST-bound work runs at --poll)
             if fv is not None and hk:
                 fv.update()
+            # PREFETCH the next window's market ~45s before expiry (off-thread): rollover becomes a
+            # zero-RTT pointer swap, so the first rungs of the new window race the open (queue priority).
+            if hk and mk is not None and (mk["we"] - time.time()) < 45 and next_mk["tried_ws"] != mk["we"]:
+                next_mk["tried_ws"] = mk["we"]
+
+                def _prefetch(ws_next):
+                    m2 = market_for(netfast.fast_session(), a.asset, a.tenor_min, ws_next)
+                    if m2 is not None:
+                        next_mk["mk"] = m2
+                threading.Thread(target=_prefetch, args=(mk["we"],), daemon=True).start()
             # P5: continuous latency monitoring -- a CF re-route / region change silently sends us to the
             # back of every queue. Re-check periodically; alert on a >2x median regression (or cross-region).
             if a.lat_recheck_s > 0 and (time.time() - last_latcheck) >= a.lat_recheck_s:
