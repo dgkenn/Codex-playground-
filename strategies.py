@@ -40,6 +40,8 @@ KNOWN_GATES = {
     # atomic (_gate_one)
     "band", "vol", "as_full", "micro", "micro_soft", "micro_ufat", "micro_marg", "tox",
     "deplete", "predict", "flow", "spot", "micro_react", "as",
+    # gate_lab.py winners (validated on 56k fills / 141 windows; GATING.md)
+    "micro_strict", "micro_asym", "lead30", "micro_cal",
     # composite (_gated)
     "micro_spot", "gross_max", "graded",
 }
@@ -74,6 +76,11 @@ REGISTRY: list[Strat] = [
     # MAKER_CHANGES2 micro-gate refinements
     Strat("micro_soft", gate="micro_soft", note="MC2 #3: gate only strongly-toxic (keep more rebate)"),
     Strat("micro_ufat", gate="micro_ufat", note="MC2 #4: strict at p~0.5, loose at the extremes"),
+    # gate_lab.py winners -- validated on 56k fills (short-horizon mo5 = adverse selection); live A/B confirms deployable net
+    Strat("micro_strict", gate="micro_strict", note="gate_lab: micro edge>=0.003 in our favor (t=+6.2 vs micro)"),
+    Strat("micro_asym", gate="micro_asym", note="gate_lab: SELL side stricter than BUY (t=+7.5, highest)"),
+    Strat("lead30", gate="lead30", note="gate_lab: pull side BTC moved against over 30s (t=+6.2)"),
+    Strat("micro_cal", gate="micro_cal", note="gate_lab #10: calibrated ensemble -- keep iff pred markout+rebate>0 (OOS winner)"),
 
     # --- PRUNED from live (significantly unprofitable; kept for record + offline study) ---
     Strat("as_full", skew=0.99, gate="as_full", enabled=False,

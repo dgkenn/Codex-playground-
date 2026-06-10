@@ -66,6 +66,19 @@ DEPLETE_FRAC = 0.35   # deplete_gate: best-queue < this * its rolling avg => abo
 MICRO_MARGIN = 0.002  # micro_marg: required edge above microprice to fill (separate2: Q1+Q2 edge<0.001 toxic)
 SOFT_MARGIN = 0.002   # micro_soft: BACKTEST-OPTIMAL gate (sweep on 10k fills: net +85.9 vs micro_gate +83.1);
 #                       gate only tox>0.002 -> keep mildly-toxic fills (rebate>gross loss), cut only strongly-toxic
+# --- gate_lab.py winners (validated on 56k fills / 141 windows, short-horizon mo5 markout = adverse selection)
+STRICT_MARGIN = 0.003   # micro_strict: require micro edge in OUR favor by this; beats deployed micro (t=+6.2)
+ASYM_ASK = 0.001        # micro_asym: SELL(ASK) side gated stricter (more toxic in data; t=+7.5, highest)
+ASYM_BID = 0.002        # micro_asym: BUY(BID) side looser
+LEAD_LAG_S = 30         # lead30: the 30s BTC move is a strong short-horizon toxicity flag (t=+6.2)
+LEAD_BPS = 1.5          # |BTC move| over LEAD_LAG_S in bps of spot to pull the side it moved against
+# micro_cal: calibrated ENSEMBLE -- ridge markout model fit by gate_lab.py -> gate_model.json. Keep a fill
+# iff predicted short-horizon markout + maker_rebate(p) > 0 (auto-adapts the toxicity cutoff to the rebate).
+try:
+    _gm = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "gate_model.json")))
+    GATE_W = dict(zip(_gm["features"], _gm["weights"]))
+except Exception:
+    GATE_W = {}
 TAKER_ENABLED = False  # lag_taker DISCONTINUED: offensive latency-take loses to the fee (-27.9/win)
 # MAKEREDGE.md #7 vol_gate: adverse selection clusters in BTC vol bursts (the lead-lag pickoff). Pull
 # BOTH sides when short-horizon BTC realized vol spikes; quote full size in calm regimes (Glosten-Milgrom).
@@ -352,6 +365,70 @@ class Variant:
             tau = max(self.mk["we"] - time.time(), 0.0)
             penalty = AS_K * abs(self.delta) * (tau / WINDOW_S)
             return edge < penalty
+        # --- gate_lab.py winners (validated on 56k fills; see GATING.md) ---
+        if g == "micro_strict":
+            # require the micro edge in OUR favor by STRICT_MARGIN (deployed micro@0 keeps mildly-adverse
+            # fills). Best short-horizon markout (t=+6.2); sheds rebate volume, so the deployable winner vs
+            # micro depends on the realized rebate -> live A/B decides.
+            cur = self.tob[token]; mp = micro(cur[0], cur[1], cur[2], cur[3])
+            if mp is None:
+                return False
+            tox = (mp - price) if our_side == "ASK" else (price - mp)   # >0 = adverse
+            return tox > -STRICT_MARGIN
+        if g == "micro_asym":
+            # SELL(ASK) side is more toxic -> gate it stricter than BID (t=+7.5, the most significant).
+            cur = self.tob[token]; mp = micro(cur[0], cur[1], cur[2], cur[3])
+            if mp is None:
+                return False
+            tox = (mp - price) if our_side == "ASK" else (price - mp)
+            return tox > (-ASYM_ASK if our_side == "ASK" else ASYM_BID)
+        if g == "lead30":
+            # the 30s BTC move is a strong short-horizon toxicity flag (t=+6.2): pull the side BTC just
+            # moved against, before the token reprices. (= spot gate, but a 30s lookback, which dominates.)
+            hist = self.shared.get("spothist", []); st = self.shared.get("st")
+            if st is None or len(hist) < 2:
+                return False
+            now = time.time(); prev = None
+            for (tt, sp) in hist:
+                if tt <= now - LEAD_LAG_S:
+                    prev = sp
+            if prev is None:
+                prev = hist[0][1]
+            dspot = st - prev; thr = st * LEAD_BPS / 1e4
+            fair_move = (1.0 if self.is_up(token) else -1.0) * dspot
+            return (our_side == "ASK" and fair_move > thr) or (our_side == "BID" and fair_move < -thr)
+        if g == "micro_cal":
+            # the calibrated ENSEMBLE (gate_lab #10): predict short-horizon markout from book features and
+            # keep iff predicted markout + maker_rebate(p) > 0 -- the toxicity cutoff AUTO-ADAPTS to the
+            # rebate (the deployable objective). Weights = ridge fit on 56k fills (gate_model.json, OOS-tested).
+            cur = self.tob[token]; bb, bsz, ba, asz = cur
+            mp = micro(bb, bsz, ba, asz)
+            if mp is None or bb is None or ba is None:
+                return False
+            now = time.time()
+            tox = (mp - price) if our_side == "ASK" else (price - mp)
+            mid = (bb + ba) / 2.0
+            fl = self.shared.get("flow", {}).get(token, [])
+            f30 = sum(s for (tt, s) in fl if now - tt <= 30)
+            flow_adv = f30 if our_side == "ASK" else -f30
+            dspot = 0.0
+            hist = self.shared.get("spothist", []); st = self.shared.get("st")
+            if st is not None and len(hist) >= 2:
+                prev = None
+                for (tt, sp) in hist:
+                    if tt <= now - LEAD_LAG_S:
+                        prev = sp
+                if prev is None:
+                    prev = hist[0][1]
+                d = (1.0 if self.is_up(token) else -1.0) * (st - prev)
+                dspot = d if our_side == "ASK" else -d
+            tau = max(self.mk["we"] - now, 0.0)
+            feat = {"bias": 1.0, "tox": tox, "flow": flow_adv / 100.0, "dspot": dspot,
+                    "spread": (ba - bb) * 100.0, "fat(p)": 4.0 * mid * (1.0 - mid),
+                    "q_ahead": 0.0, "tk_sz": 0.0, "tau": tau / 900.0,
+                    "is_ask": 1.0 if our_side == "ASK" else 0.0}
+            pred = sum(GATE_W.get(k, 0.0) * v for k, v in feat.items())   # predicted per-share markout
+            return (pred + fees.maker_rebate(price, rate=REBATE)) <= 0.0  # drop iff predicted NET <= 0
         return False
 
     def _size(self, token, our_side, price):
