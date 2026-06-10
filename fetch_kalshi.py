@@ -16,6 +16,7 @@ bid/ask/vol columns feed the maker-economics study.)
 from __future__ import annotations
 
 import argparse
+import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
@@ -134,5 +135,65 @@ def main():
     print(f"wrote {out_path}: {len(df)} windows", flush=True)
 
 
+def trades_for(sess, ticker):
+    """Full taker tape for one settled market: [(t_epoch, yes_price, count, buy_yes)]."""
+    out, cursor = [], None
+    while True:
+        params = {"ticker": ticker, "limit": 1000}
+        if cursor:
+            params["cursor"] = cursor
+        try:
+            d = sess.get(f"{B}/markets/trades", params=params, timeout=15).json()
+        except Exception:
+            time.sleep(2); continue
+        for t in d.get("trades") or []:
+            try:
+                ts = datetime.fromisoformat(t["created_time"].replace("Z", "+00:00")).timestamp()
+                out.append((ts, float(t["yes_price_dollars"]),
+                            float(t.get("count_fp") or t.get("count") or 0),
+                            t.get("taker_side") == "yes"))
+            except Exception:
+                continue
+        cursor = d.get("cursor")
+        if not cursor or not d.get("trades"):
+            break
+    return sorted(out)
+
+
+def fetch_trades_main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--asset", default="btc")
+    ap.add_argument("--days", type=int, default=30)
+    ap.add_argument("--out", default=None)
+    a = ap.parse_args(sys.argv[2:])
+    series = f"KX{a.asset.upper()}15M"
+    out_path = a.out or f"trades_kalshi_{a.asset}15m.parquet"
+    sess = requests.Session()
+    mkts = list_settled(sess, series, a.days)
+    print(f"{series}: trade tapes for {len(mkts)} settled windows ...", flush=True)
+    rows = []
+    def one(item):
+        w, tk, res = item
+        return w, res, trades_for(requests.Session(), tk)
+    done = 0
+    with ThreadPoolExecutor(max_workers=8) as ex:
+        for w, res, tape in ex.map(one, mkts):
+            done += 1
+            if done % 200 == 0:
+                print(f"  tapes: {done}/{len(mkts)}", flush=True)
+            if not tape:
+                continue
+            rows.append({"ws": w, "res_up": res,
+                         "t": [x[0] for x in tape], "p": [x[1] for x in tape],
+                         "sz": [x[2] for x in tape], "buy": [x[3] for x in tape]})
+    df = pd.DataFrame(rows).sort_values("ws")
+    df.to_parquet(out_path, index=False)
+    print(f"wrote {out_path}: {len(df)} windows, {sum(len(r['t']) for r in rows):,} trades", flush=True)
+
+
 if __name__ == "__main__":
-    main()
+    import sys
+    if len(sys.argv) > 1 and sys.argv[1] == "trades":
+        fetch_trades_main()
+    else:
+        main()
