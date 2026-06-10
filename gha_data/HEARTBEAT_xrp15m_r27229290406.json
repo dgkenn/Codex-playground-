@@ -1,133 +1,133 @@
 {
-  "utc": "2026-06-09T23:50:40.058798+00:00",
+  "utc": "2026-06-10T00:01:10.331617+00:00",
   "tag": "xrp15m_r27229290406",
   "status": "running",
-  "settled_windows": 10,
+  "settled_windows": 11,
   "cum": {
     "baseline": {
-      "net": -25.0011,
-      "fills": 372,
-      "windows": 10,
+      "net": -38.0021,
+      "fills": 406,
+      "windows": 11,
       "pos": 5
     },
     "cap25": {
-      "net": -7.161200000000001,
-      "fills": 318,
-      "windows": 10,
+      "net": -9.647400000000001,
+      "fills": 346,
+      "windows": 11,
       "pos": 5
     },
     "skew15": {
-      "net": 6.331000000000001,
-      "fills": 337,
-      "windows": 10,
+      "net": 2.0191000000000017,
+      "fills": 364,
+      "windows": 11,
       "pos": 5
     },
     "dneutral": {
-      "net": -1.359399999999999,
-      "fills": 294,
-      "windows": 10,
+      "net": -3.409499999999999,
+      "fills": 317,
+      "windows": 11,
       "pos": 6
     },
     "fv_size": {
-      "net": -29.412599999999998,
-      "fills": 338,
-      "windows": 10,
+      "net": -47.506699999999995,
+      "fills": 362,
+      "windows": 11,
       "pos": 5
     },
     "micro_gate": {
-      "net": 22.618000000000002,
-      "fills": 275,
-      "windows": 10,
+      "net": 18.8869,
+      "fills": 300,
+      "windows": 11,
       "pos": 7
     },
     "micro_skew15": {
-      "net": 5.573299999999996,
-      "fills": 218,
-      "windows": 10,
+      "net": 0.9477999999999964,
+      "fills": 242,
+      "windows": 11,
       "pos": 8
     },
     "micro_marg": {
-      "net": 11.560500000000001,
-      "fills": 221,
-      "windows": 10,
+      "net": 4.924100000000001,
+      "fills": 238,
+      "windows": 11,
       "pos": 7
     },
     "tox_gate": {
-      "net": 17.2092,
-      "fills": 215,
-      "windows": 10,
+      "net": 10.572799999999999,
+      "fills": 232,
+      "windows": 11,
       "pos": 7
     },
     "deplete_gate": {
-      "net": -19.726300000000002,
-      "fills": 265,
-      "windows": 10,
+      "net": -29.7271,
+      "fills": 281,
+      "windows": 11,
       "pos": 4
     },
     "gross_max": {
-      "net": 2.9354000000000013,
-      "fills": 142,
-      "windows": 10,
+      "net": -2.8214999999999986,
+      "fills": 154,
+      "windows": 11,
       "pos": 5
     },
     "flow_gate": {
-      "net": 18.275800000000004,
-      "fills": 346,
-      "windows": 10,
+      "net": 5.472100000000005,
+      "fills": 381,
+      "windows": 11,
       "pos": 5
     },
     "late_gate": {
-      "net": -13.892799999999998,
-      "fills": 268,
-      "windows": 10,
+      "net": -26.4762,
+      "fills": 295,
+      "windows": 11,
       "pos": 3
     },
     "av_stoikov": {
-      "net": 11.446299999999997,
-      "fills": 463,
-      "windows": 10,
+      "net": -6.278100000000002,
+      "fills": 498,
+      "windows": 11,
       "pos": 4
     },
     "spot_react": {
-      "net": 22.0914,
-      "fills": 290,
-      "windows": 10,
+      "net": 6.1753,
+      "fills": 319,
+      "windows": 11,
       "pos": 8
     },
     "micro_react": {
-      "net": 15.987399999999997,
-      "fills": 154,
-      "windows": 10,
+      "net": 7.115199999999998,
+      "fills": 168,
+      "windows": 11,
       "pos": 5
     },
     "micro_spot": {
-      "net": 38.5984,
-      "fills": 207,
-      "windows": 10,
+      "net": 30.7089,
+      "fills": 226,
+      "windows": 11,
       "pos": 7
     },
     "mo_size": {
-      "net": 3.120700000000001,
-      "fills": 298,
-      "windows": 10,
+      "net": 1.4273000000000011,
+      "fills": 323,
+      "windows": 11,
       "pos": 7
     },
     "micro_soft": {
-      "net": 14.015500000000001,
-      "fills": 278,
-      "windows": 10,
+      "net": 9.683600000000002,
+      "fills": 303,
+      "windows": 11,
       "pos": 6
     },
     "micro_ufat": {
-      "net": 23.750600000000006,
-      "fills": 233,
-      "windows": 10,
+      "net": 21.467800000000004,
+      "fills": 250,
+      "windows": 11,
       "pos": 6
     },
     "lag_taker": {
       "net": 0.0,
       "fills": 0,
-      "windows": 10,
+      "windows": 11,
       "pos": 0
     }
   }
