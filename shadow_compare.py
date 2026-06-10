@@ -139,6 +139,7 @@ class Variant:
         self.up_inv = self.dn_inv = self.cash = self.rebate = self.delta = 0.0
         self.fills = 0
         self.fvol = self.tvol = self.mk_buy = self.mk_sell = self.maxd = 0.0  # attribution/capacity
+        self.adv = 0   # adverse-at-entry fills (microprice against us at fill) -> per-strategy adverse-selection rate
         self.tob = {mk["up"]: [None, 0, None, 0], mk["down"]: [None, 0, None, 0]}
         self.queue = {}
         self.fill_log = []   # per-DECISION audit records (fills + skips); markout/pnl at settle
@@ -565,6 +566,11 @@ class Variant:
         self.fvol += fill
         self.mk_sell += fill if sells else 0.0; self.mk_buy += 0.0 if sells else fill
         self.maxd = max(self.maxd, abs(self.delta))
+        cur = self.tob.get(token); mp = micro(cur[0], cur[1], cur[2], cur[3]) if cur else None
+        if mp is not None:                                  # adverse-selection: micro against our resting side
+            our_tox = (mp - price) if sells else (price - mp)
+            if our_tox > 0:
+                self.adv += 1
 
     def settle(self, r):
         gross = self.cash + self.up_inv * r + self.dn_inv * (1 - r)
@@ -577,7 +583,8 @@ class Variant:
                 "fills": self.fills, "fill_vol": round(self.fvol, 1), "trade_vol": round(self.tvol, 1),
                 "fill_rate": round(self.fvol / self.tvol, 4) if self.tvol else 0.0,
                 "mk_buy_vol": round(self.mk_buy, 1), "mk_sell_vol": round(self.mk_sell, 1),
-                "end_delta": round(self.delta, 1), "max_delta": round(self.maxd, 1)}
+                "end_delta": round(self.delta, 1), "max_delta": round(self.maxd, 1),
+                "adv_rate": round(self.adv / self.fills, 4) if self.fills else 0.0}
 
 
 class TakerVar:

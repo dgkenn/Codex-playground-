@@ -60,11 +60,13 @@ Full deploy path: **`GO_LIVE.md`**. The bot defaults to **DRY-RUN**; real orders
 
 | File | Answers |
 |---|---|
-| `leaderboard.py` | rank all variants on prospective net (full + IS/OOS) |
+| `leaderboard.py` | rank all variants **by Calmar** (risk-adjusted) with p/CI, full + IS/OOS |
 | `gate_lab.py` | backtest toxicity gates on the fill tape → `gate_model.json` (the `micro_cal` model) |
 | `combo_lab.py` | heavily backtest gate **combinations** IS+OOS → the best composite (`ufat_band`) |
 | `insights.py` | regenerate the 10 data-backed insights (`INSIGHTS_4DAY.md`) |
-| `metrics.py` | full risk/profitability/consistency suite — MDD, Sortino, Calmar, Profit Factor, edge (`METRICS.md`) |
+| `metrics.py` | core suite — MDD, Sortino, Calmar, PF, edge + delta-hedge proxy + regime, p/CI (`METRICS.md`) |
+| `metrics_ext.py` | extended battery — skew/kurtosis/VaR/CVaR, Recovery/Ulcer, Info-Ratio, walk-forward, Monte-Carlo, sensitivity |
+| `hedger.py` | BTC-perp delta-hedge of residual inventory (the MDD unlock; `ROADMAP` Tier-1) |
 | `breadth_net_corr.py` | cross-asset net correlation → real breadth Sharpe |
 | `stack_analysis.py` | does portfolio-stacking help? (no — too correlated) |
 | `aggregate_shadow.py` | rolling paper summary |

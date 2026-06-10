@@ -17,18 +17,28 @@ import time
 
 MARKETS = [("btc", 15), ("eth", 15), ("sol", 15), ("xrp", 15), ("btc", 5), ("eth", 5)]
 
+# Per-asset capital WEIGHTS (INSIGHTS_4DAY #2: BTC's net/win is ~3x the others; XRP barely pays). Scales the
+# per-market clip (--post) so capital concentrates where the edge is, while keeping breadth for the Sharpe
+# lift (cross-asset net corr +0.10). Tune from leaderboard/metrics per-asset as data grows.
+WEIGHTS = {"btc": 1.0, "eth": 0.4, "sol": 0.4, "xrp": 0.2}
+BASE_POST = 5.0
+
 
 def main():
     live = "--live" in sys.argv
     fwd = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
+    user_post = "--post" in fwd                 # respect an explicit --post; otherwise weight it
     procs = []
     for asset, tmin in MARKETS:
         cmd = [sys.executable, "-u", "live_trader.py", "--asset", asset, "--tenor-min", str(tmin)]
+        if not user_post:
+            cmd += ["--post", str(round(BASE_POST * WEIGHTS.get(asset, 0.4), 2))]   # BTC-weighted sizing
         if live:
             cmd.append("--live")           # child still self-guards on I_UNDERSTAND_REAL_MONEY
         cmd += fwd
         procs.append((f"{asset}-{tmin}m", subprocess.Popen(cmd)))
-        print(f"launched {asset}-{tmin}m ({'LIVE' if live else 'DRY'})", flush=True)
+        post = "user" if user_post else round(BASE_POST * WEIGHTS.get(asset, 0.4), 2)
+        print(f"launched {asset}-{tmin}m ({'LIVE' if live else 'DRY'}) post={post}", flush=True)
         time.sleep(1)
     print(f"{len(procs)} maker instances running (micro_gate edge, breadth). Ctrl-C to stop all.", flush=True)
     try:
