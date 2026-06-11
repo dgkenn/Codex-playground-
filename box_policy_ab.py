@@ -250,12 +250,14 @@ def pol_p0(fills):
     return run_policy(fills)
 
 
-def pol_sell_unpaired(fills, cheap_below=None):
+def pol_sell_unpaired(fills, cheap_below=None, toxic_above=None):
     """Always-pair, BUT a leg still unpaired at window end is SOLD BACK (exit value) instead of held.
     Tape finding (the price-bucket split is the key): selling helps strongly for CHEAP long-shot legs
     (price<0.30: hold -4.0c vs sell -1.7c, +2.3c, t=3.5) but HURTS for expensive legs (price>0.70:
     hold +5.0c vs sell -0.8c, -5.8c, t=-2.8) because on a binary, price=probability, so an expensive
-    leg is the FAVORED side that tends to win -- hold it. cheap_below sets the sell ceiling; None =
+    leg is the FAVORED side that tends to win -- hold it. cheap_below sets the sell ceiling.
+    toxic_above sells only when the fill's signal was adverse (sig > toxic_above bps) -- the
+    literature's VPIN-conditioned exit (a stop is +EV only on the informed subset). None on both =
     sell any unpaired leg. Under prospective test, not deployed."""
     net = 0; pnl = 0.0; open_leg = None
     for f in fills:
@@ -270,7 +272,11 @@ def pol_sell_unpaired(fills, cheap_below=None):
             open_leg = f                                     # opened a new leg
         net = nn
     if open_leg is not None:                                 # leftover unpaired leg at window end
-        sell = (cheap_below is None) or (open_leg.get("p", 1.0) < cheap_below)
+        sell = True
+        if cheap_below is not None:
+            sell = open_leg.get("p", 1.0) < cheap_below
+        if toxic_above is not None:
+            sell = open_leg.get("sig", 0.0) > toxic_above     # sell only informed/adverse fills
         pnl += open_leg.get("exit", open_leg["settle"]) if sell else open_leg["settle"]
     return pnl
 
@@ -300,6 +306,8 @@ TRIALS = {
     # ---- sell off losing unpaired legs (operator's idea; cheap-only is the validated cut) ----
     "t11_sell_cheap_unpaired": lambda F: pol_sell_unpaired(F, cheap_below=0.30),
     "t12_sell_all_unpaired":   lambda F: pol_sell_unpaired(F, cheap_below=None),
+    # ---- toxicity-conditioned exit (literature: stops are +EV only for the INFORMED subset) ----
+    "t13_sell_unpaired_toxic": lambda F: pol_sell_unpaired(F, toxic_above=4.0),
 }
 
 
