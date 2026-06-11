@@ -10,13 +10,17 @@ with next-window prefetch, and pending settle retry with >=20s grace.
 
 Auth: API key id + RSA-PSS SHA-256 (cryptography library). No EIP-712.
 One physical book (YES/NO views). buy YES = bid; buy NO = ask side. Action always "buy".
-TODO: replace REST book polling with auth'd WebSocket when available.
+WS book+fill feeder: authenticated wss://api.elections.kalshi.com/trade-api/ws/v2 (orderbook_delta
++ fill channels). Mirrors live_trader.book_feeder: event-driven reaction, ms-fresh book, real-time
+fills deduped against REST backstop.
 """
 from __future__ import annotations
 
 import argparse
+import asyncio
 import atexit
 import base64
+import collections
 import json
 import os
 import signal
@@ -31,6 +35,7 @@ import notify          # Telegram alerts (no-op if env unset)
 from live_metrics import LiveMetrics
 
 BASE = "https://api.elections.kalshi.com/trade-api/v2"
+WS_URL = "wss://api.elections.kalshi.com/trade-api/ws/v2"
 MICRO_MARGIN = 0.002   # p-adaptive toxicity margin (same constant as live_trader)
 
 seeded: set = set()   # C-4: tickers whose prior-session fills have been seeded into seen_fills
@@ -69,6 +74,186 @@ def _sign(private_key, method: str, path: str) -> dict:
         "KALSHI-ACCESS-SIGNATURE": base64.b64encode(sig).decode(),
         "Content-Type": "application/json",
     }
+
+
+# ---------------------------------------------------------------------------
+# Authenticated WebSocket book+fill feeder (mirrors live_trader.book_feeder)
+# ---------------------------------------------------------------------------
+
+def ws_feeder(ws_state, ws_sub, book_evt, ws_fills, private_key):
+    """Authenticated WS feeder: orderbook_delta + fill channels on Kalshi.
+
+    Maintains ws_state[ticker] = {yes:{price:qty}, no:{price:qty}, ts, bb, bq, ba, aq}.
+    Sets book_evt on every book delta so the OMS reacts in WS time (ms), not poll cadence.
+    Appends raw fill msgs to ws_fills (deque) for immediate booking.
+    Resubscribes when ws_sub['epoch'] bumps (window rollover). recv timeout=1.0s so epoch
+    changes are detected quickly even if the feed goes quiet (mirrors live_trader H-1 fix).
+    websockets imported lazily -> if missing, prints warning and returns (REST stays active).
+    """
+    try:
+        import websockets
+    except Exception:
+        print("  [ws-book] websockets not installed -> WS feed OFF (REST fallback only)")
+        return
+
+    async def run():
+        while True:
+            ticker = ws_sub.get("ticker")
+            epoch = ws_sub.get("epoch")
+            if not ticker:
+                await asyncio.sleep(0.2)
+                continue
+            try:
+                auth_hdrs = _sign(private_key, "GET", "/trade-api/ws/v2")
+                # newer websockets uses additional_headers; fall back to extra_headers if needed
+                try:
+                    connect_ctx = websockets.connect(
+                        WS_URL,
+                        additional_headers=auth_hdrs,
+                        ping_interval=10,
+                        ping_timeout=20,
+                        max_size=None,
+                    )
+                except TypeError:
+                    connect_ctx = websockets.connect(
+                        WS_URL,
+                        extra_headers=auth_hdrs,
+                        ping_interval=10,
+                        ping_timeout=20,
+                        max_size=None,
+                    )
+                async with connect_ctx as ws:
+                    sub_msg = json.dumps({
+                        "id": 1,
+                        "cmd": "subscribe",
+                        "params": {
+                            "channels": ["orderbook_delta", "fill"],
+                            "market_tickers": [ticker],
+                        },
+                    })
+                    await ws.send(sub_msg)
+                    print(f"  [ws-book] subscribed ticker={ticker} epoch={epoch}")
+                    while True:
+                        # H-1 fix (mirrors live_trader): use a 1s timeout so epoch changes
+                        # are detected promptly even when the feed goes quiet.
+                        try:
+                            raw = await asyncio.wait_for(ws.recv(), timeout=1.0)
+                        except asyncio.TimeoutError:
+                            if ws_sub.get("epoch") != epoch:
+                                break   # window rolled -> reconnect + resubscribe
+                            continue
+                        if ws_sub.get("epoch") != epoch:
+                            break       # epoch changed mid-message -> reconnect
+                        if not raw:
+                            continue
+                        try:
+                            msg = json.loads(raw)
+                        except Exception:
+                            continue
+                        mtype = msg.get("type", "")
+                        if mtype in ("subscribed", "ok"):
+                            continue
+                        if mtype == "error":
+                            print(f"  [ws-book] error from server: {str(msg)[:120]}")
+                            continue
+                        if mtype == "orderbook_snapshot":
+                            _apply_snapshot(ws_state, msg)
+                            if book_evt is not None:
+                                book_evt.set()
+                        elif mtype == "orderbook_delta":
+                            _apply_delta(ws_state, msg)
+                            if book_evt is not None:
+                                book_evt.set()
+                        elif mtype == "fill":
+                            ws_fills.append(msg)
+            except Exception as exc:
+                print(f"  [ws-book] disconnected ({type(exc).__name__}: {str(exc)[:80]}); reconnect in 1s")
+                await asyncio.sleep(1)
+
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    loop.run_until_complete(run())
+
+
+def _apply_snapshot(ws_state, msg):
+    """Process an orderbook_snapshot message into ws_state."""
+    ticker = msg.get("market_ticker") or msg.get("market_id", "")
+    if not ticker:
+        return
+    # yes_dollars_fp: [[price_str, qty_str], ...] ascending by price; best = last
+    yes_raw = msg.get("yes_dollars_fp") or []
+    no_raw  = msg.get("no_dollars_fp")  or []
+    yes_book = {}
+    for entry in yes_raw:
+        try:
+            p, q = float(entry[0]), float(entry[1])
+            if q > 0:
+                yes_book[p] = q
+        except Exception:
+            pass
+    no_book = {}
+    for entry in no_raw:
+        try:
+            p, q = float(entry[0]), float(entry[1])
+            if q > 0:
+                no_book[p] = q
+        except Exception:
+            pass
+    ws_state[ticker] = {"yes": yes_book, "no": no_book, "ts": time.time()}
+    _recompute_bba(ws_state, ticker)
+
+
+def _apply_delta(ws_state, msg):
+    """Apply an orderbook_delta message incrementally to ws_state."""
+    ticker = msg.get("market_ticker", "")
+    if not ticker:
+        return
+    if ticker not in ws_state:
+        # No snapshot yet; ignore delta (snapshot will come first on sub)
+        return
+    side  = msg.get("side", "")         # "yes" or "no"
+    try:
+        price = float(msg.get("price_dollars", 0))
+        delta = float(msg.get("delta_fp", 0))
+    except Exception:
+        return
+    if side not in ("yes", "no"):
+        return
+    book_side = ws_state[ticker][side]
+    new_qty = book_side.get(price, 0.0) + delta
+    if new_qty <= 0:
+        book_side.pop(price, None)
+    else:
+        book_side[price] = new_qty
+    ws_state[ticker]["ts"] = time.time()
+    _recompute_bba(ws_state, ticker)
+
+
+def _recompute_bba(ws_state, ticker):
+    """Recompute best bid/ask + sizes and store into ws_state[ticker]."""
+    st = ws_state.get(ticker)
+    if st is None:
+        return
+    yes_book = st["yes"]
+    no_book  = st["no"]
+    # Best YES bid = highest yes price
+    if yes_book:
+        bb = max(yes_book)
+        bq = yes_book[bb]
+    else:
+        bb, bq = None, 0.0
+    # Best NO bid = highest no price; YES ask = 1 - best_NO_bid
+    if no_book:
+        nb = max(no_book)
+        nq = no_book[nb]
+        ba = round(1.0 - nb, 4)   # YES ask
+        aq = nq                   # ask qty = NO side depth at best
+    else:
+        ba, aq = None, 0.0
+    st["bb"] = bb
+    st["bq"] = bq
+    st["ba"] = ba
+    st["aq"] = aq
 
 
 # ---------------------------------------------------------------------------
@@ -527,14 +712,22 @@ def main():
         lm.place_ack(side, price, False, (t_ack - t_dec) * 1e3)
         return oid, t_dec, t_ack
 
-    # --- book polling (REST; no WS in v1) ---
+    # --- book: WS cache (primary) + REST cache (fallback) ---
     _last_book_cache = {}   # ticker -> (ts, yes_bid, ybq, yes_ask, yaq)
-    _book_rest_throttle = 0.0
 
     def get_book_cached(ticker, max_age=None):
-        """Throttled REST book poll. Returns (yes_bid, ybq, yes_ask, yaq, fresh).
-        fresh=True only when the REST poll inside this call succeeded."""
+        """Prefer WS book when fresh (<2s). Falls back to throttled REST poll.
+        Returns (yes_bid, ybq, yes_ask, yaq, fresh).
+        fresh=True when data is from the WS OR from a new REST fetch this call."""
         max_age = max_age or a.react_poll
+        # --- WS primary path ---
+        ws_st = ws_state.get(ticker)
+        if (ws_st is not None
+                and ws_st.get("bb") is not None
+                and ws_st.get("ba") is not None
+                and (time.time() - ws_st["ts"]) <= 2.0):
+            return ws_st["bb"], ws_st["bq"], ws_st["ba"], ws_st["aq"], True
+        # --- REST fallback ---
         c = _last_book_cache.get(ticker)
         if c and (time.time() - c[0]) < max_age:
             return c[1], c[2], c[3], c[4], False
