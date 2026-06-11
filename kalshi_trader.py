@@ -534,6 +534,16 @@ def main():
     ap.add_argument("--close-max-give", type=float, default=0.04,
                     help="max negative lock (dollars) we'll accept to complete a box at the very "
                          "close; the floor ramps from --min-lock to -this as tau->0")
+    ap.add_argument("--chase-unpaired-s", type=float, default=45.0,
+                    help="COMPLETION URGENCY: once a leg has sat unpaired this many seconds, the "
+                         "completing side's lock floor relaxes toward --chase-max-give (ramps over "
+                         "a second interval of the same length). Attacks the measured failure mode: "
+                         "the market trades both sides ~99.7%% of windows but we strand legs in "
+                         "~39%% -- mostly the min-lock floor refusing slightly-negative completions "
+                         "mid-window until the 120s close ramp. 0 disables.")
+    ap.add_argument("--chase-max-give", type=float, default=0.02,
+                    help="max negative lock (dollars) the unpaired-age chase will accept mid-window "
+                         "(the close ramp's --close-max-give still governs the final seconds)")
     ap.add_argument("--max-net", type=int, default=1,
                     help="hard cap on |net YES-NO| contracts: 1 = strict BOX PAIRING (after a YES "
                          "fill, quote only NO until paired). Tape decomposition: box pairs earn "
@@ -673,6 +683,7 @@ def main():
     # --- state ---
     mk = None
     net_delta = 0.0          # YES positions - NO positions (signed)
+    unpaired_since = None    # wall-clock when |net| left 0 (completion-urgency chase clock)
     realized = 0.0           # settled P&L across closed windows
     window_mark = 0.0        # current window mark-to-mid (open position value)
     pos = {}                 # ticker+"YES"|"NO" -> contracts held (from fills)
@@ -1159,6 +1170,12 @@ def main():
             # --- PLACE missing rungs ---
             spread_now = (yba - ybb) if (ybb is not None and yba is not None) else 0.0
             tau_left = max(mk["we"] - time.time(), 0.0)
+            # completion-urgency clock: when did the current unpaired position open?
+            if abs(net_delta) > 1e-9:
+                if unpaired_since is None:
+                    unpaired_since = time.time()
+            else:
+                unpaired_since = None
             for side, price in targets:
                 key = (side, round(price, 4))
                 if key in resting:
@@ -1211,6 +1228,17 @@ def main():
                 if is_completing and tau_left < a.close_flatten_tau:
                     frac = 1.0 - max(tau_left, 0.0) / a.close_flatten_tau   # 0 -> 1 as tau -> 0
                     eff_lock = a.min_lock - (a.min_lock + a.close_max_give) * frac
+                # COMPLETION URGENCY (chase): the close ramp generalized to UNPAIRED AGE. A leg
+                # unpaired > --chase-unpaired-s relaxes the floor toward -chase_max_give (ramp over
+                # a second interval of the same length); take the more permissive of the two ramps.
+                # Mid-window give is capped tighter (2c) than the close ramp (4c): early on there is
+                # still time for a natural completion, so we pay less for urgency.
+                if (is_completing and a.chase_unpaired_s > 0 and unpaired_since is not None):
+                    age_unp = time.time() - unpaired_since
+                    if age_unp >= a.chase_unpaired_s:
+                        u = min(1.0, age_unp / a.chase_unpaired_s - 1.0)    # 0 -> 1 over the 2nd interval
+                        eff_lock = min(eff_lock,
+                                       a.min_lock - (a.min_lock + a.chase_max_give) * u)
                 if net_delta > 1e-9 and side == "no":
                     py_ = sum(v for k_, v in pos.items() if k_.endswith(":YES"))
                     basis = win_cost["yes"] / py_ if py_ > 0 else 0.0
