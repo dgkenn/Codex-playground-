@@ -76,6 +76,22 @@ artifact, not harvestable edge — and maker fees outside CRYPTO15M are unconfir
 make those margins worse. 15-min BTC is the sweet spot on BOTH axes: the only tenor with continuous
 two-sided flow, and the only underlying whose book isn't structurally toxic.
 
+## Part C — "attack ALL crypto 15-min series, but only on near-certain pairs" (operator idea, TESTED)
+Strict pairing + a certainty gate (open only: early window k≤K, |p−0.5|≤D, balanced flow |F|, spread
+≤3¢; gate fit on first 60%, scored OOS on last 40%; best-combo per asset):
+- **q0=0:** eth −5.3, sol −12.3, xrp −13.6 ¢/day OOS (aggregate **−31.1 ¢/day**) — DESPITE 92-97%
+  pair-clean rates and positive mean locks (0.4-1.5¢/box).
+- **q0=2000 (realistic queue): eth/sol/xrp capture ZERO boxes** in gated windows (thin books — the
+  second side never fills at usable prices); eth still bleeds −21.9 ¢/day from stranded legs.
+- The arithmetic that kills it: a clean box earns ~1¢; a straggler loses ~10-16¢. At that 10-16:1
+  loss-to-lock ratio, "almost certain" must mean ≥99.4% clean to break even — the best honest gate
+  tops out at 92-97%, and live queue reality (BTC: replay 99% → live 61%) only widens the gap.
+- One genuine nugget: on BTC at q0=2000 the SAME gate scored +13.6 ¢/day OOS — the gate family has
+  merit on the one liquid book. That's already covered prospectively by t01/t03/t06/t18 in the A/B
+  tester; no new deployment implied.
+**Verdict: REJECTED for eth/sol/xrp. Selectivity can't fix a book where the completing side
+structurally doesn't fill. The certainty-gate idea survives only as BTC opening-gate trials.**
+
 ## Bottom line — FINAL
 **Stay on KXBTC15M. Per-day, nothing else comes close**: other underlyings lose even with idealized
 queue position (Part A), and other tenors/asset classes have no liquid markets to quote (Part B).
