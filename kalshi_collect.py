@@ -155,7 +155,8 @@ class KalshiMarket:
                 "open_time", "close_time", "expected_expiration_time", "expiration_time",
                 "settlement_timer_seconds", "category", "rules_primary",
                 "tick_size", "notional_value", "response_price_units",
-                "volume", "open_interest", "liquidity_dollars", "liquidity",
+                "price_level_structure", "price_ranges",   # sub-cent tick geometry (deci-cent tails)
+                "volume_fp", "open_interest_fp", "liquidity_dollars",
                 "yes_bid_dollars", "yes_ask_dollars", "last_price_dollars") if k in mfull}
             if self._book_fh is not None:
                 self._book_fh.write(json.dumps({
@@ -227,15 +228,23 @@ class KalshiMarket:
             self.last_stat_poll = nowt
             try:
                 ms = self.sess.get(f"{B}/markets/{mk['cid']}", timeout=6).json().get("market", {})
+                # Kalshi returns these as STRING "_fp" fields (e.g. open_interest_fp="165897.35");
+                # the plain open_interest/volume keys are absent -> parse the _fp strings to float so
+                # downstream OI-churn analysis sees real numbers, not nulls (collector bug 2026-06-11).
+                def _f(x):
+                    try:
+                        return float(x)
+                    except (TypeError, ValueError):
+                        return None
                 if self._book_fh is not None:
                     self._book_fh.write(json.dumps({
                         "type": "stat", "t": round(nowt, 3), "ws": mk["ws"], "asset": self.asset,
                         "tenor_min": 15, "venue": "kalshi",
-                        "volume": ms.get("volume"), "volume_fp": ms.get("volume_fp"),
-                        "open_interest": ms.get("open_interest"),
-                        "open_interest_fp": ms.get("open_interest_fp"),
-                        "liquidity": ms.get("liquidity_dollars") or ms.get("liquidity"),
-                        "last_price": ms.get("last_price_dollars") or ms.get("last_price")}) + "\n")
+                        "volume": _f(ms.get("volume_fp")),
+                        "volume_24h": _f(ms.get("volume_24h_fp")),
+                        "open_interest": _f(ms.get("open_interest_fp")),
+                        "liquidity": _f(ms.get("liquidity_dollars")),
+                        "last_price": _f(ms.get("last_price_dollars"))}) + "\n")
             except Exception:
                 pass
         for v in self.variants:
