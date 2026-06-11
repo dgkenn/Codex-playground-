@@ -156,14 +156,47 @@ def per_minute_touch(samples, ws):
     return bid, ask, spot, depth
 
 
+def _vpin_buckets(t_arr, sz_arr, buy_arr, n_buckets=20):
+    """VPIN (Easley-Lopez de Prado-O'Hara): order-flow toxicity over EQUAL-VOLUME buckets. Returns
+    (bucket_close_times, bucket_imbalances) where imbalance = |Vbuy-Vsell|/Vbucket in [0,1]."""
+    if len(t_arr) < n_buckets:
+        return np.array([]), np.array([])
+    V = float(sz_arr.sum()) / n_buckets
+    if V <= 0:
+        return np.array([]), np.array([])
+    bt, bi = [], []
+    vb = vs = 0.0
+    for i in range(len(t_arr)):
+        if buy_arr[i]:
+            vb += sz_arr[i]
+        else:
+            vs += sz_arr[i]
+        if vb + vs >= V:
+            bt.append(t_arr[i]); bi.append(abs(vb - vs) / (vb + vs)); vb = vs = 0.0
+    return np.array(bt), np.array(bi)
+
+
+def _vpin_at(bt, bi, tt, smooth=5):
+    """Mean toxicity of the last `smooth` buckets closed strictly before time tt (the fill clock)."""
+    if len(bt) == 0:
+        return np.nan
+    j = int(np.searchsorted(bt, tt))
+    if j < 1:
+        return np.nan
+    return float(np.mean(bi[max(0, j - smooth):j]))
+
+
 def window_fills(ws, res, bid, ask, spot, depth, tape, oi_slope=None, q0=0.0):
     """Reconstruct maker fills (collect_fills logic) with the FULL decision-time feature set each
     trial strategy needs. Returns time-ordered list of dicts:
       side('bid'=YES|'ask'=NO), settle($/contract to settlement), sig(spot bps, +=adverse to side),
       p(YES-equiv price), spread, k(minute 2..12), tau(frac left), flow(prior-min taker imbalance),
-      depth(min top-5 displayed size), oi(window OI slope)."""
+      depth(min top-5 displayed size), oi(window OI slope), vpin(flow toxicity at fill),
+      spot(BTC at fill), sset(BTC at settlement -- for the perp-hedge trial)."""
     spot_l = np.concatenate([[np.nan], spot[:-1]])
     t_arr, p_arr, sz_arr, buy_arr = tape
+    sset = float(spot[~np.isnan(spot)][-1]) if np.any(~np.isnan(spot)) else np.nan
+    bt, bi = _vpin_buckets(t_arr, sz_arr, buy_arr)
     recs = []
     for k in range(2, 13):
         b0, a0 = bid[k], ask[k]
@@ -198,21 +231,27 @@ def window_fills(ws, res, bid, ask, spot, depth, tape, oi_slope=None, q0=0.0):
                 else:
                     recs.append({"side": "bid", "settle": res - b0, "exit": exit_bid, "sig": mv,
                                  "p": b0, "spread": spread, "k": k, "tau": tau, "flow": flow,
-                                 "depth": dk, "oi": oi_slope}); done_b = True
+                                 "depth": dk, "oi": oi_slope, "vpin": _vpin_at(bt, bi, t_arr[i]),
+                                 "spot": float(spot[k]) if not np.isnan(spot[k]) else None,
+                                 "sset": sset}); done_b = True
             if not done_a and buy and p >= a0 - 1e-9:
                 if qa >= sz:
                     qa -= sz
                 else:
                     recs.append({"side": "ask", "settle": a0 - res, "exit": exit_ask, "sig": -mv,
                                  "p": round(1.0 - a0, 4), "spread": spread, "k": k, "tau": tau,
-                                 "flow": -flow, "depth": dk, "oi": oi_slope}); done_a = True
+                                 "flow": -flow, "depth": dk, "oi": oi_slope,
+                                 "vpin": _vpin_at(bt, bi, t_arr[i]),
+                                 "spot": float(spot[k]) if not np.isnan(spot[k]) else None,
+                                 "sset": sset}); done_a = True
     return recs
 
 
-def run_policy(fills, open_ok=None, hold_ok=None):
+def run_policy(fills, open_ok=None, hold_ok=None, weight=None):
     """Walk a window's fills (cap |net|<=1, hold to settlement). open_ok(f, state)->may we OPEN a
     new leg with this fill? hold_ok(held_leg)->when a fill would PAIR the open leg, hold instead?
-    Returns summed settle. Baseline P0 passes neither (accept everything, always pair)."""
+    weight(f)->per-fill size multiplier (e.g., gamma size-down near expiry). Returns summed settle.
+    Baseline P0 passes none (accept everything, always pair, unit size)."""
     net = 0; pnl = 0.0; held = None; st = {"yes": 0, "no": 0}
     for f in fills:
         step = 1 if f["side"] == "bid" else -1
@@ -227,7 +266,7 @@ def run_policy(fills, open_ok=None, hold_ok=None):
             continue                                           # gate: don't open this leg
         if net == 0 and nn != 0:
             held = f
-        net = nn; pnl += f["settle"]
+        net = nn; pnl += (weight(f) if weight else 1.0) * f["settle"]
         st["yes" if f["side"] == "bid" else "no"] += 1
     return pnl
 
@@ -246,11 +285,41 @@ def completion_score(f):
     return s
 
 
+def hedge_unpaired(f, h=100.0):
+    """Perp-hedge value of an unpaired leg: settle + a delta-neutral BTC hedge (short for a YES leg,
+    long for NO). h ~= cents of hedge per 1% BTC move (delta-neutral on the tape). Tape: -3.3c/leg
+    (hold) -> ~-0.05c (hedged) -- removes the directional loss. Falls back to hold if no spot."""
+    s0, ss = f.get("spot"), f.get("sset")
+    if not s0 or not ss or s0 <= 0:
+        return f["settle"]
+    r = (ss / s0 - 1.0) * 100.0                       # BTC % move over the hold
+    sgn = -1.0 if f["side"] == "bid" else 1.0          # YES leg -> short BTC; NO leg -> long BTC
+    return f["settle"] + sgn * h * r / 100.0
+
+
+def pol_hedge_unpaired(fills):
+    """Always-pair, but a leftover unpaired leg is delta-hedged with BTC instead of held naked."""
+    net = 0; pnl = 0.0; open_leg = None
+    for f in fills:
+        step = 1 if f["side"] == "bid" else -1
+        nn = net + step
+        if abs(nn) > 1:
+            continue
+        if open_leg is not None and abs(nn) < abs(net):
+            pnl += f["settle"] + open_leg["settle"]; open_leg = None
+        else:
+            open_leg = f
+        net = nn
+    if open_leg is not None:
+        pnl += hedge_unpaired(open_leg)
+    return pnl
+
+
 def pol_p0(fills):
     return run_policy(fills)
 
 
-def pol_sell_unpaired(fills, cheap_below=None, toxic_above=None):
+def pol_sell_unpaired(fills, cheap_below=None, toxic_above=None, vpin_above=None):
     """Always-pair, BUT a leg still unpaired at window end is SOLD BACK (exit value) instead of held.
     Tape finding (the price-bucket split is the key): selling helps strongly for CHEAP long-shot legs
     (price<0.30: hold -4.0c vs sell -1.7c, +2.3c, t=3.5) but HURTS for expensive legs (price>0.70:
@@ -276,7 +345,10 @@ def pol_sell_unpaired(fills, cheap_below=None, toxic_above=None):
         if cheap_below is not None:
             sell = open_leg.get("p", 1.0) < cheap_below
         if toxic_above is not None:
-            sell = open_leg.get("sig", 0.0) > toxic_above     # sell only informed/adverse fills
+            sell = open_leg.get("sig", 0.0) > toxic_above     # sell only spot-adverse fills
+        if vpin_above is not None:
+            v = open_leg.get("vpin")                          # sell only INFORMED (high-VPIN) fills
+            sell = (v is not None) and (v > vpin_above)        # the literature-correct stop
         pnl += open_leg.get("exit", open_leg["settle"]) if sell else open_leg["settle"]
     return pnl
 
@@ -307,7 +379,11 @@ TRIALS = {
     "t11_sell_cheap_unpaired": lambda F: pol_sell_unpaired(F, cheap_below=0.30),
     "t12_sell_all_unpaired":   lambda F: pol_sell_unpaired(F, cheap_below=None),
     # ---- toxicity-conditioned exit (literature: stops are +EV only for the INFORMED subset) ----
-    "t13_sell_unpaired_toxic": lambda F: pol_sell_unpaired(F, toxic_above=4.0),
+    "t13_sell_unpaired_vpin":  lambda F: pol_sell_unpaired(F, vpin_above=0.40),
+    # ---- literature backtest winners (added after the 5-angle review) ----
+    "t14_perp_hedge_unpaired": lambda F: pol_hedge_unpaired(F),                         # #1: hedge the leg
+    "t15_gamma_size_down":     lambda F: run_policy(F, weight=lambda f: (15 - f["k"]) / 13.0),
+    "t16_no_leg_preference":   lambda F: run_policy(F, open_ok=lambda f, s: f["side"] == "ask"),
 }
 
 

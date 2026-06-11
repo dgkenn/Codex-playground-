@@ -56,6 +56,20 @@ records (verified captured):
   cheap long-shot legs are the ones that lose, so those are what you cut. NB: selling needs a TAKER
   order (the live bot is post-only today), so deployment is a real execution change, not a flag.
 
+### Literature-derived trials (added after the 5-angle review + IS/OOS backtest)
+- **t13_sell_unpaired_vpin** — sell an unpaired leg only when its fill VPIN > 0.40 (the literature's
+  informed-subset stop). Rigorously tested: VPIN-conditioned exit is OOS-robust at this threshold
+  (IS t=4.6, OOS t=3.4) but fires on only ~9% of legs, so the aggregate effect is small. VPIN is now
+  a real per-fill feature (equal-volume order-flow toxicity buckets, Easley-López de Prado-O'Hara).
+- **t14_perp_hedge_unpaired** — delta-hedge the unpaired leg with BTC (short for YES, long for NO)
+  instead of holding naked. **The clean backtest winner**: −3.31¢/leg (hold) → −0.05¢ (hedged),
+  improving mean AND variance in both IS and OOS. Requires a perp execution module to deploy.
+- **t15_gamma_size_down** — weight fills by √(T_remaining) (binary gamma ∝ 1/√T). A pure
+  risk-reducer: lower mean, much lower variance (std 16→10) and drawdown.
+- **t16_no_leg_preference** — make only the NO side (structurally cleaner per the favorite-longshot
+  literature). Highest backtest return BUT 2× variance and 55% win rate — a directional bet, not
+  making. Tracked here to confirm whether the high-variance return is real or a regime artifact.
+
 ### Stop-loss thresholds on a tumbling leg — TESTED AND REJECTED (don't re-test)
 Swept stops that sell an unpaired leg once its value drops X below entry, X ∈ {5,10,15,20,25,30}¢,
 on real per-minute leg paths (580 unpaired legs). **Every threshold is WORSE than holding** (−0.05 to
