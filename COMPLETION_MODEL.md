@@ -1,6 +1,27 @@
 # ML completion model — built, tested, and the reframe it forced
 
-## Q: can ML predict whether a leg will be paired? A: yes — but the answer reframes the problem.
+## ⭐⭐ RIGOROUS VERDICT (realistic-queue q0=5000, no-leak, GBM+logistic, proper lift tests)
+We did the exhaustive 2nd feature round + GBM + DeLong + bootstrap economic-lift + multiple-testing.
+**"Will this leg pair?" is statistically predictable but economically useless to gate on — and the
+test surfaced that completion is NOT the real problem; ADVERSE SELECTION on the fills is.**
+- GBM ROC-AUC **0.874**, beats the binary's own price (0.624), DeLong **p≈0** — real signal exists.
+- BUT a SINGLE feature, **`trade_count` alone, AUC 0.903, BEATS the GBM** (p=0.72) — the ML ensemble
+  adds nothing over "is the window active?" The exhaustive features collapse to one.
+- **Economic lift from a completion gate: +0.22c/window, 95% CI [−0.96, +1.89] — spans zero.** Does
+  NOT survive Bonferroni. Because even at realistic queue, completion is **95.6%** — only 51 of 1163
+  windows fail, too rare to gate on profitably.
+- **The model's own diagnosis:** baseline PnL is −51.6c/window — "the real edge problem is not
+  completion prediction but **adverse selection on the fills**." The legs we get filled on are toxic
+  (we're filled on the side the market is about to run over), regardless of whether they pair.
+
+**Conclusion: completion prediction is a dead end** (near-certain, single-feature, no economic lift).
+The exhaustive feature engineering and rigorous testing were worth it precisely because they prove
+where the edge is NOT. **The productive target is the ADVERSE-SELECTION quality of a fill** — "will
+this leg LOSE / is this fill toxic?" — not "will it pair?" That is the VPIN/toxicity direction, where
+a real (small) edge already validated (VPIN-conditioned exit, OOS t=3.4). Next model: predict the
+fill's markout/loss (toxicity), not its pairing.
+
+## Q: can ML predict whether a leg will be paired? A: yes statistically, but it's not the edge.
 
 We fit a regularized logistic model to predict box completion ("did both a YES and a NO leg fill in
 the window?") from causal window-open features.
