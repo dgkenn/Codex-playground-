@@ -24,7 +24,7 @@ echo "shadow collector loop started (pid $!)"
       break
     fi
     I_UNDERSTAND_REAL_MONEY=yes python -u kalshi_trader.py --asset btc --live \
-      --size-mode kelly --post 1 --max-notional 5 --loss-limit 6 --max-rungs 1 \
+      --size-mode flat --post 1 --max-notional 5 --loss-limit 6 --max-rungs 1 \
       --duration 3300 >> "$OUT/trader.log" 2>&1
     sleep 3
   done

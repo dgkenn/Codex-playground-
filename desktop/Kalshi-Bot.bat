@@ -60,5 +60,5 @@ echo ==========================================
 echo.
 REM Closing the window terminates python; the bot's atexit/dead-man cancels orders on SIGTERM.
 set I_UNDERSTAND_REAL_MONEY=yes
-python -u kalshi_trader.py --asset btc --live --size-mode kelly --post 1 --max-notional 5 --loss-limit 6 --max-rungs 1 --duration 31536000
+python -u kalshi_trader.py --asset btc --live --size-mode flat --post 1 --max-notional 5 --loss-limit 6 --max-rungs 1 --duration 31536000
 pause
