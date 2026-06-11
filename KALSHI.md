@@ -139,3 +139,24 @@ capital-efficient** than flat (1.1 vs 17.5 units/win on BTC) — critical under 
 (low volume → needs many windows, the months-of-data plan); it assumes front-of-queue execution
 (the sub-cent improve) and held-to-settlement. **Deploy as the live A/B size-mode** alongside the
 gate; the shadow collector certifies it prospectively before sizing up.
+
+## Position EXITS (stop-losses): possible, explored, and REJECTED by the data
+
+Mechanically exiting is easy on Kalshi (sell the position, or buy the opposite side — they net at
+the clearinghouse). Cost: a maker exit is free but may not fill; a taker exit pays half-spread +
+0.07·p(1−p) ≈ 2.25¢ at p=0.5. Tested on **20,318 real tape fills** (exit when the mark is T¢
+underwater vs hold to settlement):
+
+| policy | net/fill | tail (p5) |
+|---|---|---|
+| HOLD to settlement | **+0.10¢** | −67¢ |
+| stop-loss 3¢ | −0.99¢ | −32¢ |
+| stop-loss 8¢ | −0.65¢ | −36¢ |
+| stop-loss 20¢ | −0.18¢ | −45¢ |
+
+Every stop level destroys the edge: a 15-min binary that is a few cents underwater still recovers
+often enough that stops systematically sell the bottom AND pay the exit tax. Stops do thin the tail
+(−67→−32¢ p5) but at ~10× the edge in expectation. **Tail risk is instead bounded by SIZE** (1-lot
+clips, notional cap, sticky session kill) — structural, free. Re-confirms the Polymarket
+`hedge_backtest` refutation from the exit side. The profitable "exit" remains the preventive one:
+the gate refusing the toxic fill, and the cooldown not re-quoting into trends.
