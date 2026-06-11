@@ -580,6 +580,17 @@ def main():
     # C7 startup reconciliation: cancel all open orders on this series so we start from a provably
     # flat book. A SIGKILL'd predecessor's orders would otherwise rest blind. Fail-closed: if we
     # can't verify flat, don't trade.
+    # --- WS feeder state (shared with daemon thread) ---
+    # ws_state: ticker -> {yes:{price:qty}, no:{price:qty}, ts, bb, bq, ba, aq}
+    ws_state = {}
+    # ws_sub: ticker + epoch; feeder resubscribes when epoch bumps (window rollover)
+    ws_sub = {"ticker": None, "epoch": 0}
+    # book_evt: set on every WS book delta -> event-driven OMS reaction (mirrors live_trader)
+    book_evt = threading.Event()
+    # ws_fills: real-time own fills from WS fill channel; drained each loop before REST poll
+    ws_fills = collections.deque()
+    side_cooldown = {"yes": 0.0, "no": 0.0}   # no re-quote on a side until this ts (anti-knife)
+
     if live:
         print("[startup] reconciling open orders on series...")
         init_mk = discover(sess, a.asset)
@@ -608,16 +619,6 @@ def main():
           f"loss_limit={a.loss_limit} improve_tick={a.improve_tick}")
     notify.alert(f"[kalshi] trader start {mode} asset={a.asset} cap={a.cap}")
 
-    # --- WS feeder state (shared with daemon thread) ---
-    # ws_state: ticker -> {yes:{price:qty}, no:{price:qty}, ts, bb, bq, ba, aq}
-    ws_state = {}
-    # ws_sub: ticker + epoch; feeder resubscribes when epoch bumps (window rollover)
-    ws_sub = {"ticker": None, "epoch": 0}
-    # book_evt: set on every WS book delta -> event-driven OMS reaction (mirrors live_trader)
-    book_evt = threading.Event()
-    # ws_fills: real-time own fills from WS fill channel; drained each loop before REST poll
-    ws_fills = collections.deque()
-    side_cooldown = {"yes": 0.0, "no": 0.0}   # no re-quote on a side until this ts (anti-knife)
 
     # --- state ---
     mk = None
