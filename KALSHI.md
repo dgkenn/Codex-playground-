@@ -171,7 +171,7 @@ schedule. The strategy is tuned PER REGIME and deployable via `kalshi_trader --f
 
 | regime | where | tuned config | OOS edge (real-tape backtest) |
 |---|---|---|---|
-| maker fee = 0 | CRYPTO15M (BTC proven) | kelly base-1 + gate + ≥2¢ spread + cooldown + τ-guard, front-of-queue | **+2.2–3.0¢/win**, Calmar 1.4–3.4 |
+| maker fee = 0 | CRYPTO15M (BTC+ETH proven) | kelly base-1 + gate + ≥2¢ spread + cooldown + τ-guard, front-of-queue | **+2.2–3.0¢/win**, Calmar 1.4–3.4 |
 | maker fee = 0.0175·p(1−p) | any maker-fee series | SAME bot, `--fee-mult 0.0175` (kelly auto-tightens selection around p=0.5, threshold T 0.004–0.010 all OOS-positive) | **+2.5–2.8¢/win**, Calmar 1.8–2.3 |
 | thin book (ETH/alt-like) | any fee regime | **do not trade** (negative even at front-of-queue, fee or no fee) | −2.5 to −6¢/win |
 
