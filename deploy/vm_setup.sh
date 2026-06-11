@@ -15,10 +15,12 @@ BRANCH="claude/polymarket-bot-live-ready-vw7ut5"
 DIR="$HOME/kalshi-bot"
 KDIR="$HOME/.kalshi"
 
-echo ">> Installing dependencies (python, git)..."
+echo ">> Installing dependencies (python, git, libs)..."
 sudo apt-get update -qq
-sudo apt-get install -y -qq python3 python3-pip git
-python3 -m pip install --quiet --user numpy scipy requests cryptography websockets
+# apt-installed python libs avoid the PEP-668 'externally-managed' pip breakage on Ubuntu 24.04;
+# python-is-python3 makes the scripts' `python` resolve (Ubuntu ships only python3 by default).
+sudo apt-get install -y -qq git python3 python-is-python3 \
+  python3-numpy python3-scipy python3-requests python3-cryptography python3-websockets
 
 echo ">> Fetching the bot..."
 if [ -d "$DIR/.git" ]; then
