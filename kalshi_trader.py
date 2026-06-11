@@ -520,6 +520,11 @@ def main():
     ap.add_argument("--cap", type=float, default=50)
     ap.add_argument("--skew", type=float, default=0.25)
     ap.add_argument("--max-rungs", type=int, default=3, help="max resting rungs per side")
+    ap.add_argument("--max-net", type=int, default=1,
+                    help="hard cap on |net YES-NO| contracts: 1 = strict BOX PAIRING (after a YES "
+                         "fill, quote only NO until paired). Tape decomposition: box pairs earn "
+                         "+18.0c/win risk-free (t=34.5) while unpaired inventory bleeds -16.3c/win "
+                         "(t=-16.9); forcing L=1 keeps +1.96c/win, t 2.1->4.3, OOS Calmar 0.5->0.9")
     ap.add_argument("--max-fills-side", type=int, default=4,
                     help="hard cap on FILLS per side per window (post-mortem on 20k tape fills: "
                          "fills 1-4 in a window average +0.08..+0.30c, the 5+ tail is where the "
@@ -600,6 +605,7 @@ def main():
     ws_fills = collections.deque()
     side_cooldown = {"yes": 0.0, "no": 0.0}   # no re-quote on a side until this ts (anti-knife)
     win_fills = {"yes": 0, "no": 0}            # fills per side THIS window (trend-exposure cap)
+    win_cost = {"yes": 0.0, "no": 0.0}         # $ spent per side THIS window (box telemetry)
 
     if live:
         print("[startup] reconciling open orders on series...")
@@ -812,6 +818,7 @@ def main():
         cash -= fp * count               # buy spends cash
         net_delta += sgn * count
         win_fills[fside] = win_fills.get(fside, 0) + 1   # per-window same-side fill count (trend cap)
+        win_cost[fside] = win_cost.get(fside, 0.0) + fp * count
         key = (fside, round(fp, 4))
         meta = resting.get(key)
         resting_s = (time.time() - meta["ts"]) if meta else None
@@ -979,8 +986,20 @@ def main():
                         }
                         pending_settles.append(entry)
                     lm.window_summary(mk["ws"], realized, window_mark, net_delta)
+                    # BOX telemetry: paired yes/no contracts pay $1 at settlement regardless of
+                    # outcome -- the locked, risk-free component of this window's book.
+                    py = sum(v for k, v in pos.items() if k.endswith(":YES"))
+                    pn = sum(v for k, v in pos.items() if k.endswith(":NO"))
+                    bx = min(py, pn)
+                    if bx > 0:
+                        ay = win_cost["yes"] / max(py, 1e-9)
+                        an = win_cost["no"] / max(pn, 1e-9)
+                        print(f"  [BOX] paired={bx:.0f} locked~${bx*(1.0-ay-an):+.2f} "
+                              f"(yes {py:.0f}@{ay:.2f} + no {pn:.0f}@{an:.2f}) "
+                              f"unpaired={abs(py-pn):.0f} directional")
                     pos.clear(); cash = 0.0; net_delta = 0.0; window_mark = 0.0
                 win_fills = {"yes": 0, "no": 0}   # fresh window, fresh trend-exposure budget
+                win_cost = {"yes": 0.0, "no": 0.0}
 
                 cancel_all_resting()   # tokens change on rollover; reset resting book
 
@@ -1066,14 +1085,13 @@ def main():
                 # Toxicity gate: skip placing if microprice says this side is adverse
                 if mp is not None and gate_check(side, price, ybb, yba, net_delta, a.gate, 0.0, clean_ybq, clean_yaq):
                     continue
-                # HARD DIRECTIONAL INVENTORY CLAMP (live-test finding): the skew gate keyed on --cap
-                # (contracts) was far looser than --max-notional (dollars), so under rapid fill->
-                # re-quote the book leaned directional (~9 one-sided contracts on a $2 budget). A net
-                # position of N binary contracts risks up to $N. Post-mortem of the loss-limit kill:
-                # the worst window stacked 8 same-side contracts, and tying this to --max-notional
-                # would silently loosen it whenever the dollar budget grows -- so it is a hard
-                # constant, the absolute worst-case directional loss per window in contracts.
-                inv_cap = 3.0                                  # hard +/-3 net contracts, NOT $-linked
+                # HARD DIRECTIONAL INVENTORY CLAMP -> BOX-PAIRING DISCIPLINE. A net position of N
+                # binary contracts risks up to $N held; but the deeper finding (box decomposition,
+                # live + 20k tape fills) is that PAIRED yes/no fills are the entire profit engine
+                # (risk-free locked spread at settlement) while unpaired inventory is a consistent
+                # loser. --max-net 1 turns the clamp into strict pairing: one side fills, only the
+                # completing side keeps quoting. Constant, never linked to the dollar budget.
+                inv_cap = float(a.max_net)
                 proj = net_delta + (a.post if side == "yes" else -a.post)
                 if abs(proj) > inv_cap + 1e-9:
                     continue

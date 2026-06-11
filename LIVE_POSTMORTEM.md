@@ -116,6 +116,33 @@ Both verified: compiles, dry-run clean, counter resets across rollover.
 - **Fees**: all 103 live fills report `fee_cost = 0` — CRYPTO15M maker fee-exemption
   is confirmed ground truth, the `--fee-mult` machinery stays for other series.
 
+## 8. Box decomposition (added 2026-06-11): the profit is the PAIRS
+
+Splitting every window's PnL into its **boxed** component (min(yes,no) contracts —
+paired YES+NO bought for < $1 total pays $1 at settlement *regardless of outcome*,
+i.e. risk-free once filled) and the **unpaired directional residual**:
+
+|  | live (11 windows) | tape (1,158 windows, 20,318 fills) |
+|---|---|---|
+| windows completing ≥1 box | 10/11 | 1,154/1,158 |
+| locked (risk-free) PnL | **+468¢** | **+18.04¢/win (t=+34.5)** |
+| directional residual | −269¢ | **−16.29¢/win (t=−16.9)** |
+| net | +199¢ | +1.75¢/win |
+
+The strategy is a **box harvester taxed ~90% by unpaired inventory**. Policy test —
+walk the tape in fill order, take a fill only if |net| stays ≤ L:
+
+| L (max net) | none | 4 | 3 | 2 | **1 (strict pairing)** |
+|---|---|---|---|---|---|
+| net/win (¢) | +1.75 | +1.75 | +1.79 | +1.81 | **+1.96** |
+| t | +2.1 | +2.1 | +2.2 | +2.3 | **+4.3** |
+| OOS Calmar | 0.5 | 0.5 | 0.5 | 0.4 | **0.9** |
+
+L=1 keeps the box income, skips most of the bleed, and is strictly LESS risky
+(max directional exposure $1/window). Deployed as `--max-net` (default 1): after a
+YES fill only the NO side quotes until paired, and vice versa. Per-window `[BOX]`
+telemetry (paired count, locked $, unpaired residual) now prints at every rollover.
+
 ## 7. Re-arm checklist (when the operator decides to resume)
 
 1. Delete `.kalshi_killed_btc15m` (deliberate manual act — that's the design).
