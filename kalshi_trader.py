@@ -565,6 +565,10 @@ def main():
                     help="one tick inside the touch (1c); set 0.001 only if/where the venue accepts sub-cent")
     ap.add_argument("--gate", choices=["ufat", "micro", "marg"], default="ufat")
     ap.add_argument("--max-notional", type=float, default=25)
+    ap.add_argument("--notify-fills", dest="notify_fills", action="store_true", default=True,
+                    help="push each fill to Telegram in real time (on by default; chatty)")
+    ap.add_argument("--no-notify-fills", dest="notify_fills", action="store_false",
+                    help="silence per-fill Telegram messages (settlement summaries still send)")
     ap.add_argument("--loss-limit", type=float, default=6,
                     help="per-session realized+mark $ loss that trips the STICKY kill. Widened from "
                          "the old 3: the box edge is near-risk-free per window (|net|<=1 caps "
@@ -898,6 +902,8 @@ def main():
         print(f"  [FILL/{src}] {mkr.upper()} {fside} {count}@{fp} fee={fee_val} "
               f"(roundtrip the raw fill in kalshi_fees_{a.asset}15m.jsonl)")
         lm.fill(fside, fp, count, resting_s, None, mkr, fee_val, 0.0)
+        if a.notify_fills:        # real-time fill -> Telegram (chatty; --no-notify-fills to silence)
+            notify.alert(f"[{a.asset}] fill {fside} {count:g}@{fp}  net={net_delta:+.0f}")
         return True
 
     def drain_ws_fills():

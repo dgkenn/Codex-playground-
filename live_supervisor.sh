@@ -11,7 +11,9 @@
 set -u
 cd "$(dirname "$0")"
 ASSET="${ASSET:-btc}"
-[ -f /root/.kalshi/env ] && . /root/.kalshi/env
+# source creds BEFORE starting children (collector + telegram bot inherit the token). Portable:
+# $HOME/.kalshi on a VM (user 'ubuntu'), /root/.kalshi in the container -- both are ~/.kalshi.
+[ -f "$HOME/.kalshi/env" ] && . "$HOME/.kalshi/env"
 mkdir -p overnight_data
 exec 9> overnight_data/.live_supervisor.lock
 flock -n 9 || { echo "live_supervisor already running"; exit 0; }
@@ -25,7 +27,7 @@ pgrep -f "telegram_control.py" >/dev/null 2>&1 || nohup python3 telegram_control
 BR="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo HEAD)"
 while true; do
   git pull -q origin "$BR" 2>/dev/null || true          # pick up strategy/config changes
-  [ -f /root/.kalshi/env ] && . /root/.kalshi/env        # re-source: picks up TELEGRAM_CHAT_ID once bound
+  [ -f "$HOME/.kalshi/env" ] && . "$HOME/.kalshi/env"        # re-source: picks up TELEGRAM_CHAT_ID once bound
   sw=$(tr -d '[:space:]' < LIVE_SWITCH 2>/dev/null || echo off)
   if [ "$sw" = "on" ] && [ ! -f ".kalshi_killed_${ASSET}15m" ]; then
     I_UNDERSTAND_REAL_MONEY=yes python -u kalshi_trader.py --asset "$ASSET" --live \
