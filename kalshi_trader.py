@@ -584,11 +584,28 @@ def main():
                 raise SystemExit(f"startup cancel FAILED ({type(e).__name__}: {str(e)[:120]}) -- "
                                  "refusing to quote on top of unknown resting orders")
         print("[startup] reconciliation done.")
+        # Start authenticated WS feeder (live only; needs priv key + KALSHI_API_KEY_ID)
+        threading.Thread(
+            target=ws_feeder,
+            args=(ws_state, ws_sub, book_evt, ws_fills, priv),
+            daemon=True,
+        ).start()
+        print("  [ws-book] feeder thread started")
 
     print(f"[{mode}] kalshi_trader asset={a.asset} post={a.post} cap={a.cap} skew={a.skew} "
           f"max_rungs={a.max_rungs} gate={a.gate} max_notional={a.max_notional} "
           f"loss_limit={a.loss_limit} improve_tick={a.improve_tick}")
     notify.alert(f"[kalshi] trader start {mode} asset={a.asset} cap={a.cap}")
+
+    # --- WS feeder state (shared with daemon thread) ---
+    # ws_state: ticker -> {yes:{price:qty}, no:{price:qty}, ts, bb, bq, ba, aq}
+    ws_state = {}
+    # ws_sub: ticker + epoch; feeder resubscribes when epoch bumps (window rollover)
+    ws_sub = {"ticker": None, "epoch": 0}
+    # book_evt: set on every WS book delta -> event-driven OMS reaction (mirrors live_trader)
+    book_evt = threading.Event()
+    # ws_fills: real-time own fills from WS fill channel; drained each loop before REST poll
+    ws_fills = collections.deque()
 
     # --- state ---
     mk = None
@@ -739,10 +756,94 @@ def main():
         return (c[1], c[2], c[3], c[4], False) if c else (None, None, None, None, False)
 
     # --- fill booking (poll-based, scoped to current ticker) ---
+    def book_fill(ticker, f, sf):
+        """Book a single fill dict into pos/cash/net_delta and pending_markouts.
+        Shared by ws_fills drain (real-time) and REST poll_fills (backstop).
+        sf is the seen_fills set for this ticker; caller must add fid to sf on return.
+        Returns True if the fill was booked, False if skipped (caller should still add to sf)."""
+        nonlocal cash, net_delta
+        fside = str(f.get("side") or "").lower()    # "yes" or "no"
+        count = float(f.get("count_fp") or f.get("count") or 0)
+        # H-3: prefer yes_price_dollars; if only yes_price and > 1.0, divide by 100
+        yp_raw = f.get("yes_price_dollars")
+        from_cents = False
+        if yp_raw is None:
+            yp_raw = f.get("yes_price")
+            from_cents = True
+        if yp_raw is None or count <= 0 or fside not in ("yes", "no"):
+            return False
+        yp = float(yp_raw)
+        if from_cents and yp > 1.0:
+            yp /= 100
+        fp = yp if fside == "yes" else round(1.0 - yp, 4)
+        # H-3 sanity guard: skip fills with price outside (0, 1)
+        if not (0.0 < fp < 1.0):
+            fid_dbg = str(f.get("trade_id") or f.get("fill_id") or "?")
+            print(f"[FILL-AMBIGUOUS] fill {fid_dbg} has price {fp} outside (0,1); skipping")
+            return False
+        # inventory bookkeeping: BUY-YES adds +1 net, BUY-NO adds -1 net
+        sgn = 1.0 if fside == "yes" else -1.0
+        pos_key = ticker + ":" + fside.upper()
+        pos[pos_key] = pos.get(pos_key, 0.0) + count
+        cash -= fp * count               # buy spends cash
+        net_delta += sgn * count
+        key = (fside, round(fp, 4))
+        meta = resting.get(key)
+        resting_s = (time.time() - meta["ts"]) if meta else None
+        if meta:
+            meta["filled"] = meta.get("filled", 0.0) + count
+            if meta["filled"] >= a.post - 1e-9:
+                resting.pop(key, None)
+        fid = str(f.get("trade_id") or f.get("fill_id") or "")
+        pending_markouts.append((time.time() + 5.0, {
+            "fside": fside, "fp": fp, "count": count,
+            "resting_s": resting_s, "oid": (meta or {}).get("oid", fid)}))
+        # FEE GROUND TRUTH (the load-bearing Kalshi unknown): capture the venue's reported fee on
+        # every fill, raw, to a dedicated log -- the per-series maker-fee question the public docs
+        # can't fully answer is settled by what Kalshi actually charges here.
+        fee_val = f.get("fee_cost")  # CONFIRMED live: Kalshi fills report fee in "fee_cost" (=0 on KXBTC15M maker)
+        mkr = "taker" if f.get("is_taker") else "maker"
+        try:
+            with open(f"kalshi_fees_{a.asset}15m.jsonl", "a") as _ff:
+                _ff.write(json.dumps({"ts": time.time(), "ticker": ticker, "side": fside,
+                                      "price": fp, "count": count, "role": mkr,
+                                      "fee_reported": fee_val, "raw": f}) + "\n")
+        except Exception:
+            pass
+        src = "WS" if f.get("_ws") else "REST"
+        print(f"  [FILL/{src}] {mkr.upper()} {fside} {count}@{fp} fee={fee_val} "
+              f"(roundtrip the raw fill in kalshi_fees_{a.asset}15m.jsonl)")
+        lm.fill(fside, fp, count, resting_s, None, mkr, fee_val, 0.0)
+        return True
+
+    def drain_ws_fills():
+        """Drain the real-time ws_fills deque and book each unseen fill immediately.
+        Dedup via seen_fills so REST poll backstop can't double-book the same fill."""
+        if mk is None:
+            return
+        ticker = mk["cid"]
+        sf = seen_fills.setdefault(ticker, set())
+        while ws_fills:
+            try:
+                f = ws_fills.popleft()
+            except IndexError:
+                break
+            # WS fill msg may use different id fields; try both
+            fid = str(f.get("trade_id") or f.get("fill_id") or "")
+            if not fid:
+                print(f"[FILL-NOID/WS] fill missing trade_id/fill_id: {str(f)[:120]}")
+                continue
+            if fid in sf:
+                continue
+            # Tag as WS-sourced for the log line
+            f["_ws"] = True
+            book_fill(ticker, f, sf)
+            sf.add(fid)
+
     def poll_fills():
         """Pull /portfolio/fills scoped to mk['cid'] and book into pos/cash/net_delta.
+        REST backstop: fills already booked via ws_fills are deduped by seen_fills.
         Mirrors live_trader's housekeeping fill poll."""
-        nonlocal cash, net_delta
         if not live or mk is None:
             return
         ticker = mk["cid"]
@@ -763,57 +864,7 @@ def main():
                 continue
             if fid in sf:
                 continue
-            fside = str(f.get("side") or "").lower()    # "yes" or "no"
-            count = float(f.get("count_fp") or f.get("count") or 0)
-            # H-3: prefer yes_price_dollars; if only yes_price and > 1.0, divide by 100
-            yp_raw = f.get("yes_price_dollars")
-            from_cents = False
-            if yp_raw is None:
-                yp_raw = f.get("yes_price")
-                from_cents = True
-            if yp_raw is None or count <= 0 or fside not in ("yes", "no"):
-                sf.add(fid)
-                continue
-            yp = float(yp_raw)
-            if from_cents and yp > 1.0:
-                yp /= 100
-            fp = yp if fside == "yes" else round(1.0 - yp, 4)
-            # H-3 sanity guard: skip fills with price outside (0, 1)
-            if not (0.0 < fp < 1.0):
-                print(f"[FILL-AMBIGUOUS] fill {fid} has price {fp} outside (0,1); skipping")
-                sf.add(fid)
-                continue
-            # inventory bookkeeping: BUY-YES adds +1 net, BUY-NO adds -1 net
-            sgn = 1.0 if fside == "yes" else -1.0
-            pos_key = ticker + ":" + fside.upper()
-            pos[pos_key] = pos.get(pos_key, 0.0) + count
-            cash -= fp * count               # buy spends cash
-            net_delta += sgn * count
-            key = (fside, round(fp, 4))
-            meta = resting.get(key)
-            resting_s = (time.time() - meta["ts"]) if meta else None
-            if meta:
-                meta["filled"] = meta.get("filled", 0.0) + count
-                if meta["filled"] >= a.post - 1e-9:
-                    resting.pop(key, None)
-            pending_markouts.append((time.time() + 5.0, {
-                "fside": fside, "fp": fp, "count": count,
-                "resting_s": resting_s, "oid": (meta or {}).get("oid", fid)}))
-            # FEE GROUND TRUTH (the load-bearing Kalshi unknown): capture the venue's reported fee on
-            # every fill, raw, to a dedicated log -- the per-series maker-fee question the public docs
-            # can't fully answer is settled by what Kalshi actually charges here.
-            fee_val = f.get("fee_cost")  # CONFIRMED live: Kalshi fills report fee in "fee_cost" (=0 on KXBTC15M maker)
-            mkr = "taker" if f.get("is_taker") else "maker"
-            try:
-                with open(f"kalshi_fees_{a.asset}15m.jsonl", "a") as _ff:
-                    _ff.write(json.dumps({"ts": time.time(), "ticker": ticker, "side": fside,
-                                          "price": fp, "count": count, "role": mkr,
-                                          "fee_reported": fee_val, "raw": f}) + "\n")
-            except Exception:
-                pass
-            print(f"  [FILL] {mkr.upper()} {fside} {count}@{fp} fee={fee_val} "
-                  f"(roundtrip the raw fill in kalshi_fees_{a.asset}15m.jsonl)")
-            lm.fill(fside, fp, count, resting_s, None, mkr, fee_val, 0.0)
+            book_fill(ticker, f, sf)
             sf.add(fid)
 
     def sweep_window_fills(ticker, en=None):
@@ -917,6 +968,9 @@ def main():
                 if not mk:
                     time.sleep(a.poll); continue
                 _last_book_cache.clear()
+                # Update WS feeder subscription: new ticker + bump epoch so feeder resubscribes
+                ws_sub["ticker"] = mk["cid"]
+                ws_sub["epoch"] += 1
                 print(f"WINDOW {mk['ws']} {datetime.fromtimestamp(mk['ws'], timezone.utc):%H:%M}Z "
                       f"ticker={mk['cid']}")
 
