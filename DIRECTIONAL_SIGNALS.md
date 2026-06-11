@@ -3,6 +3,30 @@
 GOAL: predict BTC's move over the remaining 15-min window so we know what to do with an UNPAIRED leg
 (hold if it's on the predicted-favorable side, exit/hedge if not). Edges are weak — we stack many.
 
+## ⭐ TESTED VERDICT (k=7 decision point, 1158 windows, IS/OOS): NO incremental edge
+We built and rigorously tested the stack. **Result: there is no OOS directional edge beyond what the
+Kalshi binary's own mid-window price already tells you.**
+- The spot/flow signals (mom1/3/5, MACD, z-score, CVD, aggressor, kalshi_drift) ARE statistically
+  significant predictors of `res_up` (OOS IC up to 0.50, survive Bonferroni) — but they are all
+  collinear proxies for "has BTC moved since the open / is the binary above 50c", which the binary
+  price already aggregates.
+- **Ensemble OOS AUC 0.859 vs the baseline `mid[7]` alone AUC 0.883 — the stack is WORSE than just
+  reading the current price.** Incremental lift is negative.
+- Unpaired-leg use: gating the hold/exit on the ensemble modestly cuts wrong-sided YES-leg losses
+  (−0.021→−0.010/window OOS) but also halves profitable NO-leg holds — a wash, driven by the same
+  info as the price.
+- **The correct, simple rule: read the binary's own mid. If an unpaired YES leg has mid<0.5, the
+  market itself says it's disfavored — a better exit signal than any computed feature stack.**
+
+This is the efficient-market result for THIS prediction: the Kalshi price is already efficient vs
+spot-derived signals at the 7-min mark. The RenTech method was executed correctly; the data says the
+edge isn't there. **Do NOT build a directional-signal-gated rule on this stack.**
+
+What still might work (NOT refuted here, because it needs data we don't yet have): the **cross-venue
+Polymarket lead-lag** (#21). The test used only Kalshi+spot; the open question is whether Polymarket's
+deeper 5-min book *leads* Kalshi (incorporates info FASTER), which would beat Kalshi's own price. High
+bar, but it's the one remaining directional candidate — worth the collection effort, nothing else is.
+
 ## The honest frame (read first)
 15-min BTC direction is near-efficient. The Renaissance approach earns its edge through **breadth**:
 many tiny signals (IC 0.02–0.08), high rebalancing, massive data. We have limited data, so the only
