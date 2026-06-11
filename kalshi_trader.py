@@ -902,8 +902,20 @@ def main():
         print(f"  [FILL/{src}] {mkr.upper()} {fside} {count}@{fp} fee={fee_val} "
               f"(roundtrip the raw fill in kalshi_fees_{a.asset}15m.jsonl)")
         lm.fill(fside, fp, count, resting_s, None, mkr, fee_val, 0.0)
-        if a.notify_fills:        # real-time fill -> Telegram (chatty; --no-notify-fills to silence)
-            notify.alert(f"[{a.asset}] fill {fside} {count:g}@{fp}  net={net_delta:+.0f}")
+        if a.notify_fills:        # real-time fill -> Telegram, framed as box economics not raw price
+            py = sum(v for k_, v in pos.items() if k_.endswith(":YES"))
+            pn = sum(v for k_, v in pos.items() if k_.endswith(":NO"))
+            bx = min(py, pn)
+            my, other = (py, pn) if fside == "yes" else (pn, py)
+            if bx > 0 and my <= other:        # this fill COMPLETED a box pair (raised the matched count)
+                ay = win_cost.get("yes", 0.0) / py if py else 0.0
+                an = win_cost.get("no", 0.0) / pn if pn else 0.0
+                lock_c = (1.0 - ay - an) * 100.0          # per-pair locked profit (held to settlement)
+                win_c = bx * lock_c
+                notify.alert(f"\U0001f4e6 box bought ({bx:g}x) — +{lock_c:.1f}c/pair locked, "
+                             f"risk-free to settle (window {win_c:+.0f}c)")
+            else:                              # opened an unpaired leg, waiting for the other side
+                notify.alert(f"➕ {fside} leg @ {fp:g} — waiting to pair")
         return True
 
     def drain_ws_fills():
