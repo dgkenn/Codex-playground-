@@ -14,7 +14,21 @@ test surfaced that completion is NOT the real problem; ADVERSE SELECTION on the 
   completion prediction but **adverse selection on the fills**." The legs we get filled on are toxic
   (we're filled on the side the market is about to run over), regardless of whether they pair.
 
-**Conclusion: completion prediction is a dead end** (near-certain, single-feature, no economic lift).
+### Refinement at a DEEPER queue (q0=12000, completion 69% — the realistic back-of-queue maker)
+A second rigorous run at a deeper queue (where completion is a balanced 69%, matching a maker who is
+NOT front-of-queue) found a THIN but real edge — with heavy caveats:
+- GBM AUC 0.756 beats price (0.528), p≈0, survives Bonferroni. Gating "open only if P(complete)>0.70"
+  gives **+0.26c/window, 95% CI [+0.19,+0.33]** — excludes zero.
+- BUT (1) it's **entirely `trade_count`** — `open if early-4-min trade_count > X` matches the GBM
+  (GBM vs trade_count p=0.78); the ML is a dressed-up activity threshold. (2) The OOS window was a
+  **higher-activity regime** (77.7% vs 63.7% IS completion), so the gain is partly favorable-regime,
+  not robust alpha. Untested through a low-activity reversal.
+- **The one deployable completion finding: a simple activity gate — only open/quote when early-window
+  trade count is high.** Thin, regime-sensitive, single-feature; no ML needed. (≈ `t06_balanced_flow`
+  in the A/B tester.) Worth adding as a `trade_count` trial; not worth a model.
+
+**Conclusion: completion prediction is at best a thin, single-feature (trade_count), regime-sensitive
+activity gate — no ML lift over the one obvious variable, and no help with the actual losses.**
 The exhaustive feature engineering and rigorous testing were worth it precisely because they prove
 where the edge is NOT. **The productive target is the ADVERSE-SELECTION quality of a fill** — "will
 this leg LOSE / is this fill toxic?" — not "will it pair?" That is the VPIN/toxicity direction, where
