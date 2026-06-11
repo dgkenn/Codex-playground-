@@ -11,6 +11,11 @@ LOCK="$OUT/.collect_forever.lock"
 exec 9>"$LOCK"
 flock -n 9 || { echo "another collect_forever is running (lock $LOCK)"; exit 0; }
 echo "$(date -u +%FT%TZ) collect_forever started (pid $$)" >> "$OUT/collect.log"
+# cross-venue: Polymarket 5-min BTC up/down (slug-based discovery; continuous), parallel + restarting
+( while true; do
+    python -u pmkt_collect.py 3000 "$OUT" "pm$(date +%H%M)" >> "$OUT/pmkt.log" 2>&1
+    sleep 3
+  done ) &
 while true; do
   python -u kalshi_collect.py 3000 "$OUT" "cf$(date +%H%M)" >> "$OUT/collect.log" 2>&1
   echo "$(date -u +%FT%TZ) collector exited rc=$?; restarting in 3s" >> "$OUT/collect.log"

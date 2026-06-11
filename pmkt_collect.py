@@ -33,36 +33,35 @@ def now():
     return datetime.now(timezone.utc)
 
 
-def find_live(asset="bitcoin"):
-    """Return (end_dt, title, up_token, down_token) for a currently-OPEN <asset> up/down market,
-    or None. Best-effort: searches recent up/down events and picks one open now."""
-    try:
-        d = requests.get(f"{GAMMA}/public-search",
-                         params={"q": f"{asset} up or down", "limit": 40}, timeout=12).json()
-    except Exception:
-        return None
-    n = now()
-    best = None
-    for e in d.get("events", []):
-        if "up or down" not in e.get("title", "").lower():
-            continue
-        end = e.get("endDate", "")
+def find_live(prefix="btc-updown-5m"):
+    """Return (end_epoch, slug, up_token, down_token) for the currently-OPEN 5-min window, or None.
+    DISCOVERY: the Gamma search index is stale (returns old windows); the reliable method is the
+    deterministic slug `btc-updown-5m-<window_start_unix>` on 300s boundaries. We fetch the window
+    that straddles now (and fall back to the previous one during the brief rollover gap)."""
+    nb = int(time.time()) // 300 * 300
+    for start in (nb, nb - 300, nb + 300):
+        slug = f"{prefix}-{start}"
         try:
-            et = datetime.fromisoformat(end.replace("Z", "+00:00"))
+            r = requests.get(f"{GAMMA}/markets", params={"slug": slug}, timeout=8).json()
         except Exception:
             continue
-        if not (n < et < n.replace(hour=23, minute=59)):  # ends later today, still ahead of now
+        if not r:
             continue
-        for m in e.get("markets", []):
-            if m.get("closed"):
-                continue
-            toks = m.get("clobTokenIds")
-            toks = json.loads(toks) if isinstance(toks, str) else toks
-            if not toks or len(toks) < 2:
-                continue
-            if best is None or et < best[0]:
-                best = (et, e.get("title", ""), toks[0], toks[1])
-    return best
+        m = r[0]
+        if m.get("closed"):
+            continue
+        toks = m.get("clobTokenIds")
+        toks = json.loads(toks) if isinstance(toks, str) else toks
+        if not toks or len(toks) < 2:
+            continue
+        end = m.get("endDate", "")
+        try:
+            et = datetime.fromisoformat(end.replace("Z", "+00:00")).timestamp()
+        except Exception:
+            et = start + 300
+        if et > time.time():                       # window still open
+            return (et, slug, toks[0], toks[1])
+    return None
 
 
 def book_top(token_id):
@@ -91,20 +90,20 @@ def main():
     while time.time() < end:
         t0 = time.time()
         if cur is None or time.time() > cur_end:
-            live = find_live("bitcoin")
+            live = find_live()
             if live:
-                cur_end = live[0].timestamp(); cur = live
-                print(f"{now():%H:%M}Z live: {live[1][:45]} (ends {live[0]:%H:%MZ})", flush=True)
+                cur_end = live[0]; cur = live       # live[0] = window end epoch
+                print(f"{now():%H:%M}Z live: {live[1]} (ends {datetime.utcfromtimestamp(cur_end):%H:%MZ})", flush=True)
             else:
                 cur = None
-                time.sleep(20); continue          # no open window -> wait (coverage is sporadic)
-        et, title, up_tok, down_tok = cur
+                time.sleep(10); continue            # brief rollover gap -> retry
+        et, slug, up_tok, down_tok = cur
         ub, ua, ubs, uas = book_top(up_tok)
         db, da, dbs, das = book_top(down_tok)
         if ub is not None or ua is not None:
             fh.write(json.dumps({
                 "t": round(time.time(), 2), "end": cur_end, "venue": "polymarket",
-                "asset": "btc", "title": title,
+                "asset": "btc", "slug": slug,
                 "up_bid": ub, "up_ask": ua, "up_bsz": round(ubs, 1), "up_asz": round(uas, 1),
                 "down_bid": db, "down_ask": da}) + "\n")
             fh.flush()
