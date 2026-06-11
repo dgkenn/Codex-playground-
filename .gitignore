@@ -55,3 +55,4 @@ kalshi_markout.jsonl
 .kalshi_killed_*
 overnight_data/
 kalshi_fees_*.jsonl
+.scorecard_results.json
