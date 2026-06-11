@@ -1,5 +1,53 @@
 # ML completion model — built, tested, and the reframe it forced
 
+## ⭐⭐⭐ THE PRE-FILL OPENING GATE — the one ML result with REAL lift (deployable)
+The question "**if we buy this leg, will it pair PROFITABLY?**" (pre-fill, opening decision), with the
+economically-correct label (does price move enough that the box completes at a *profit*, not just
+"does the market trade both sides"), IS meaningfully predictable — and here the ML beats the simple
+baselines, unlike every other framing:
+- GBM ROC-AUC **0.743**, beats the best single baseline (flow×ofi 0.654) by **+0.089, p<0.0001**
+  (bootstrap-confirmed). Beats tau (0.594), price (0.547), trade_count (0.574). **The model adds real
+  lift over every simple rule** — the first time that's happened.
+- **Opening gate (P(pair)>0.70): cuts the unpaired-leg rate 25.5%→16.5% (−35%) while keeping 70% of
+  volume**; completion 83.5% [82.5,84.4] vs open-all 74.5% (CI excludes the base rate).
+- Drivers (all interpretable, all match prior findings): **side** (NO pairs more — the structural
+  YES-toxic/NO-favorable result), **mid level** (entries near 0.5 pair; tails strand — deep-tail
+  toxicity), **flow×OFI agreement** (balanced flow completes — the Area-1 standout), mid_dist×tau.
+- Caveat: the label is BOOK-PATH based (assumes fillability), so it overstates the live benefit —
+  queue position + slippage will shrink the realized 35%. It's an upper bound, not a guarantee.
+
+**This is the deployable lever: a completion-aware OPENING gate.** Don't open a leg when the fitted
+P(pair-profitably) is low (wrong side + tail price + one-sided flow + late). It's the prevention side
+(cut unpaired FREQUENCY), complementing the toxicity EXIT (cut the bad legs that do open). Both are
+real; the opening gate is the stronger, ML-supported one. Wire it into the A/B tester (it generalizes
+t04/t06/t09) and, if it holds forward, into the live opening logic.
+
+### ⚠️ RECONCILIATION — the opening-gate edge is LABEL-DEPENDENT, not yet robust (read this)
+Three opening-gate runs were fit on the SAME data with DIFFERENT labels and reached OPPOSITE verdicts.
+Honesty demands recording the conflict rather than cherry-picking the encouraging one:
+- **a9717 — "spread-closing / profit" label** (does price move enough that the box completes at a
+  *profit*): GBM AUC **0.743**, beats baselines p<0.0001, gate cuts unpaired 25.5%→16.5%. ENCOURAGING.
+- **aa209d — "next-5-trades pairing" label** (does the opposite side actually trade in the next 5
+  prints): GBM AUC **0.495 — WORSE than a coin flip.** No signal at all.
+- **ad4a49 — per-leg "ever pairs" label, q0=2000** (realistic-ish queue): GBM AUC **0.922** beats
+  baseline 0.868 (+0.055, p<0.001 Bonferroni) — but the economic lift is only **+0.3–0.4c/leg with
+  overlapping CIs** (statistically real, economically marginal), and it's dominated by k + |p−0.5|.
+
+**What this means:** the apparent opening-gate "lift" is an artifact of which label you pick. The
+profit-label (a9717) bakes the favorite-longshot price structure INTO the label, so the model is
+partly re-learning "tail + wrong-side legs lose" — true, but already captured by the simple
+price/side gates (t04/t06). The pairing-label (aa209d) — the framing the user actually asked for,
+"will this leg pair?" — shows **no predictive signal beyond noise.** The per-leg run (ad4a49) splits
+the difference: statistically significant, economically marginal, single-feature-dominated.
+
+**Tempered verdict (walking the optimism back):** there is NO robust, label-invariant ML edge on the
+opening decision. The one consistent, deployable signal across all runs is the SAME cheap gate we
+already knew — *don't open wrong-side legs at tail prices late in the window with adverse flow* — which
+is a 3-variable rule (side × |p−0.5| × flow-vs-leg), not a model. This matches the directional-signal
+and per-leg findings: the market is efficient; the only edge is avoiding the structurally-toxic legs,
+and that's a rule, not an ML lift. Wire the rule into the A/B tester (generalizes t04/t06/t09); do NOT
+deploy a fitted opening model on the strength of the profit-label run alone.
+
 ## ⭐⭐ RIGOROUS VERDICT (realistic-queue q0=5000, no-leak, GBM+logistic, proper lift tests)
 We did the exhaustive 2nd feature round + GBM + DeLong + bootstrap economic-lift + multiple-testing.
 **"Will this leg pair?" is statistically predictable but economically useless to gate on — and the
