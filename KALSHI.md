@@ -109,3 +109,33 @@ Three geared conclusions:
 
 Tools: `fetch_kalshi.py` (deep history) · `kalshi_econ.py` (bounds) · `kalshi_collect.py` (live
 shadow) · `directional_deep.py hist_kalshi_*.parquet` (directional null).
+
+## SMART BET SIZING — the strategy that has an edge WITH OR WITHOUT fees (`kalshi_sizing.py`)
+
+The Kalshi fee (where charged) is `mult·p·(1−p)` — quadratic, maximal at p=0.5, ~0 at the tails — so
+the fee itself dictates that sizing must not be flat. Backtested on the **real trade tape** (~20k BTC
++ ~19k ETH fills, front-of-queue, IS/OOS, hold-to-settlement):
+
+**Per-fill rule:  `size ∝ max(0, m̂(features) − fee(p))`**, fractional-Kelly scaled, inventory/notional
+capped. `m̂` is a markout model on tape features (spread dominates, +0.38; the per-fill markout is
+barely forecastable, OOS R²≈0 — the edge is a *selection* effect: bet wide-spread benign fee-cheap
+fills, refuse the rest).
+
+| | flat | gate | level | **edge_kelly** |
+|---|---|---|---|---|
+| **BTC fee=0** net/win · Sharpe · OOS Calmar | +1.75¢ · 2.1 · 0.5 | −0.4¢ | +1.75¢ · 2.2 · 0.8 | **+1.58¢ · 2.7 · 0.9** |
+| **BTC fee=0.0175·p(1−p)** | −3.4¢ | −5.1¢ | −2.8¢ | **+0.96¢ · 2.6 · 1.5** |
+| **ETH fee=0** | −12.3¢ | −9.5¢ | −10.5¢ | **+0.42¢ · 1.7 · 4.2** |
+| **ETH fee=0.0175·p(1−p)** | −16.9¢ | −13.6¢ | −14.7¢ | **+0.29¢ · 1.4 · 2.8** |
+
+**Verdict (the goal):** `edge_kelly` (fee-aware Kelly sizing) is the **only rule positive across both
+assets AND both fee regimes**. Flat/gate/level sizing is positive *only* on BTC fee-free and loses to
+any fee or to ETH's thin/toxic book. The mechanism is exactly the fee-conditional lever: size shrinks
+where the quadratic fee bites (mid prices) and on toxic fills, and concentrates on the few benign,
+wide-spread, fee-cheap fills where net edge `m̂ − fee` is genuinely positive. It is **~14× more
+capital-efficient** than flat (1.1 vs 17.5 units/win on BTC) — critical under the inventory clamp.
+
+**Honest limits:** the edge is THIN (~1.6¢/win BTC fee-free, sub-cent under fees) and selective
+(low volume → needs many windows, the months-of-data plan); it assumes front-of-queue execution
+(the sub-cent improve) and held-to-settlement. **Deploy as the live A/B size-mode** alongside the
+gate; the shadow collector certifies it prospectively before sizing up.

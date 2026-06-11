@@ -52,7 +52,7 @@ def calmar(net_by_win):
     return (tot / mdd) if mdd > 1e-9 else (float("inf") if tot > 0 else 0.0)
 
 
-def collect_fills(hist, tap, q0=200.0):
+def collect_fills(hist, tap, q0=0.0):
     """Replay the real tape -> one record per FILL with its decision-time features + realized markout
     and settlement. Features are honest (spot move BEFORE the fill, candle-shifted one bar stale)."""
     common = sorted(set(hist.index) & set(tap.index))
@@ -70,11 +70,15 @@ def collect_fills(hist, tap, q0=200.0):
             b0, a0, m0 = bid[k], ask[k], mid[k]
             if np.isnan(b0) or np.isnan(a0) or not (0.03 <= m0 <= 0.97):
                 continue
-            # decision-time signal: spot move over the prior 3 min (honest), signed per side
             s_now, s_then = spot_l[k], spot_l[max(k - 3, 0)]
             mv = (s_now / s_then - 1) * 1e4 if (s_now > 0 and s_then > 0) else 0.0
-            # short-horizon markout proxy: mid one minute later vs our fill price (toxicity realized)
             m_next = mid[k + 1] if (k + 1 < 15 and not np.isnan(mid[k + 1])) else m0
+            spread = a0 - b0
+            tau = (15 - k) / 15.0                                  # fraction of window remaining
+            # prior-minute signed taker flow imbalance (decision-time toxicity: who's hitting?)
+            pl, ph = w + 60 * (k - 1), w + 60 * k
+            pj0, pj1 = np.searchsorted(t_arr, pl), np.searchsorted(t_arr, ph)
+            flow = float(np.sum(np.where(buy_arr[pj0:pj1], sz_arr[pj0:pj1], -sz_arr[pj0:pj1]))) / 1000.0
             lo, hi = w + 60 * (k + 1), w + 60 * (k + 2)
             i0, i1 = np.searchsorted(t_arr, lo), np.searchsorted(t_arr, hi)
             qb = qa = q0; done_b = done_a = False
@@ -82,19 +86,19 @@ def collect_fills(hist, tap, q0=200.0):
                 if done_b and done_a:
                     break
                 p, sz, buy = p_arr[i], sz_arr[i], buy_arr[i]
-                if not done_b and not buy and p <= b0 + 1e-9:        # our BID filled (we bought yes@b0)
+                if not done_b and not buy and p <= b0 + 1e-9:        # BID fill (bought yes@b0); flow>0 (buyers) adverse to a bid
                     if qb >= sz:
                         qb -= sz
                     else:
-                        recs.append((w, "bid", b0, res - b0, (m_next - b0), mv))  # settle, markout, signal
+                        recs.append((w, "bid", b0, res - b0, (m_next - b0), mv, spread, tau, flow))
                         done_b = True
-                if not done_a and buy and p >= a0 - 1e-9:            # our ASK filled (we sold yes@a0)
+                if not done_a and buy and p >= a0 - 1e-9:            # ASK fill (sold yes@a0); flow<0 adverse to an ask
                     if qa >= sz:
                         qa -= sz
                     else:
-                        recs.append((w, "ask", a0, a0 - res, (a0 - m_next), -mv))
+                        recs.append((w, "ask", a0, a0 - res, (a0 - m_next), -mv, spread, tau, -flow))
                         done_a = True
-    return pd.DataFrame(recs, columns=["ws", "side", "p", "settle", "markout", "sig_adv"])
+    return pd.DataFrame(recs, columns=["ws", "side", "p", "settle", "markout", "sig_adv", "spread", "tau", "flow_adv"])
 
 
 def size_rule(name, df, mult, mhat):
@@ -115,21 +119,28 @@ def size_rule(name, df, mult, mhat):
 
 def main():
     asset = sys.argv[1] if len(sys.argv) > 1 else "btc"
+    q0 = float(sys.argv[2]) if len(sys.argv) > 2 else 0.0
     hist = pd.read_parquet(f"hist_kalshi_{asset}15m.parquet").set_index("ws")
     tap = pd.read_parquet(f"trades_kalshi_{asset}15m.parquet").set_index("ws")
-    df = collect_fills(hist, tap)
+    df = collect_fills(hist, tap, q0)
     n = len(df)
-    print(f"{asset}: {n} real fills across {df.ws.nunique()} windows\n")
+    print(f"{asset}: {n} real fills across {df.ws.nunique()} windows | q_ahead={q0:g} (front=0)\n")
 
     # predicted markout mhat: fit on IS only (first 60% of windows) -- linear on [1, sig_adv, |p-.5|],
     # target = realized 1-min markout. Honest OOS: predict on the test half with IS coefficients.
     wins = np.sort(df.ws.unique()); cut = wins[int(len(wins) * 0.6)]
     is_m = (df.ws < cut).to_numpy(); oos_m = ~is_m
-    X = np.column_stack([np.ones(n), df.sig_adv.to_numpy(), np.abs(df.p.to_numpy() - 0.5)])
+    feat_cols = ["sig_adv", "spread", "tau", "flow_adv"]
+    X = np.column_stack([np.ones(n), df.sig_adv.to_numpy(), np.abs(df.p.to_numpy()-0.5),
+                         df.spread.to_numpy(), df.tau.to_numpy(), df.flow_adv.to_numpy()])
     y = df.markout.to_numpy()
     coef, *_ = np.linalg.lstsq(X[is_m], y[is_m], rcond=None)
     mhat = X @ coef
-    print(f"markout model (IS fit): mhat = {coef[0]:+.4f} {coef[1]:+.5f}*sig_adv {coef[2]:+.4f}*|p-.5|\n")
+    # OOS R^2 of the markout model (is the predictor real?)
+    ss_res = np.sum((y[oos_m]-mhat[oos_m])**2); ss_tot=np.sum((y[oos_m]-y[is_m].mean())**2)
+    print(f"markout model (IS fit, OOS R^2={1-ss_res/ss_tot:+.4f}):")
+    print(f"  bias{coef[0]:+.4f} sig_adv{coef[1]:+.5f} |p-.5|{coef[2]:+.4f} "
+          f"spread{coef[3]:+.4f} tau{coef[4]:+.4f} flow_adv{coef[5]:+.4f}\n")
 
     for mult in (0.0, 0.0175):
         tag = "FEE=0 (BTC confirmed live)" if mult == 0 else "FEE=0.0175*p(1-p) (other-series worst case)"
@@ -151,7 +162,7 @@ def main():
         print()
     print("Read: net/win in CENTS per window (sizing-weighted). edge_kelly should win on Calmar/OOS")
     print("ESPECIALLY when fee>0 -- it shrinks size where p*(1-p) fee bites and grows it on benign")
-    print("fee-cheap fills. With fee=0 it converges toward benign-volume sizing. q_ahead=200 (front-ish).")
+    print("fee-cheap fills. With fee=0 it converges toward benign-volume sizing. q_ahead set via argv[2] (0 = front, where sub-cent improve rests us).")
 
 
 if __name__ == "__main__":
