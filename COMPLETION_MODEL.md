@@ -35,6 +35,19 @@ this leg LOSE / is this fill toxic?" — not "will it pair?" That is the VPIN/to
 a real (small) edge already validated (VPIN-conditioned exit, OOS t=3.4). Next model: predict the
 fill's markout/loss (toxicity), not its pairing.
 
+### Per-leg pairing at DEEP/realistic queue (q0=15000, balanced 50%) — the encouraging run
+At the queue depth where legs are 50/50 to pair AND net losers (−10.3c/leg hold-all — the adverse-
+selection regime), predicting "will THIS leg pair?" per-leg DOES have economic value:
+- GBM AUC 0.817 (vs tau 0.793, price 0.688). **Economic: exit legs with P(pair)<0.5 → +3.6c/leg vs
+  hold-all, 95% CI [+1.44, +5.63] — excludes zero.** It REDUCES the loss (doesn't make it positive).
+- BUT the dominant feature is **`k` (minute of fill)** alone (AUC 0.793) — late fills (k=11-12) almost
+  never pair. GBM beats `k` only at p=0.06 (NOT Bonferroni-significant). #2 driver: **`flow_sign_vs_leg`
+  (is taker flow adverse to our leg?)** — a TOXICITY feature. Then price level, lock-if-complete.
+- So the deployable signal ≈ **"exit an unpaired leg that is LATE in the window with ADVERSE flow"** —
+  a simple gate (minute + flow-vs-leg), not an ML model. And it's the same thing as toxicity: a leg
+  that won't pair is usually a leg that was filled adversely. **This is why the toxicity model is the
+  right unification** — pairing-failure and toxicity are the same phenomenon viewed two ways.
+
 ## Q: can ML predict whether a leg will be paired? A: yes statistically, but it's not the edge.
 
 We fit a regularized logistic model to predict box completion ("did both a YES and a NO leg fill in
