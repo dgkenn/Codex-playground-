@@ -45,7 +45,7 @@ concurrency:                      # never overlap; a newly queued run waits for 
   cancel-in-progress: false
 
 env:
-  BRANCH: claude/polymarket-btc-backtest-XZkKI
+  BRANCH: claude/polymarket-bot-live-ready-vw7ut5   # the branch with the ultra-rich collector
 
 jobs:
   collect:
