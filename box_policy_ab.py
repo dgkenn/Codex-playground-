@@ -173,6 +173,15 @@ def window_fills(ws, res, bid, ask, spot, depth, tape, oi_slope=None, q0=0.0):
         mv = (s_now / s_then - 1) * 1e4 if (s_now and s_then and s_now > 0 and s_then > 0) else 0.0
         spread = round(a0 - b0, 4); tau = (15 - k) / 15.0
         dk = float(depth[k]) if not np.isnan(depth[k]) else None
+        # SELL-BACK exit value (~1 min later, crossing to the touch; CRYPTO15M fee=0). Lets a trial
+        # value an unpaired leg by flattening it instead of holding to settlement.
+        b1 = bid[k + 1] if k + 1 < 15 else b0
+        a1 = ask[k + 1] if k + 1 < 15 else a0
+        if np.isnan(b1) or np.isnan(a1):
+            b1, a1 = b0, a0
+        mid1 = (b1 + a1) / 2.0; sp1 = a1 - b1
+        exit_bid = (mid1 - sp1 / 2.0) - b0        # sell YES at the bid
+        exit_ask = a0 - (mid1 + sp1 / 2.0)        # buy YES back at the ask (flatten the NO leg)
         pl, ph = ws + 60 * (k - 1), ws + 60 * k          # prior-minute taker flow imbalance
         j0, j1 = np.searchsorted(t_arr, pl), np.searchsorted(t_arr, ph)
         flow = float(np.sum(np.where(buy_arr[j0:j1], sz_arr[j0:j1], -sz_arr[j0:j1])))
@@ -187,16 +196,16 @@ def window_fills(ws, res, bid, ask, spot, depth, tape, oi_slope=None, q0=0.0):
                 if qb >= sz:
                     qb -= sz
                 else:
-                    recs.append({"side": "bid", "settle": res - b0, "sig": mv, "p": b0,
-                                 "spread": spread, "k": k, "tau": tau, "flow": flow,
+                    recs.append({"side": "bid", "settle": res - b0, "exit": exit_bid, "sig": mv,
+                                 "p": b0, "spread": spread, "k": k, "tau": tau, "flow": flow,
                                  "depth": dk, "oi": oi_slope}); done_b = True
             if not done_a and buy and p >= a0 - 1e-9:
                 if qa >= sz:
                     qa -= sz
                 else:
-                    recs.append({"side": "ask", "settle": a0 - res, "sig": -mv, "p": round(1.0 - a0, 4),
-                                 "spread": spread, "k": k, "tau": tau, "flow": -flow,
-                                 "depth": dk, "oi": oi_slope}); done_a = True
+                    recs.append({"side": "ask", "settle": a0 - res, "exit": exit_ask, "sig": -mv,
+                                 "p": round(1.0 - a0, 4), "spread": spread, "k": k, "tau": tau,
+                                 "flow": -flow, "depth": dk, "oi": oi_slope}); done_a = True
     return recs
 
 
@@ -241,6 +250,31 @@ def pol_p0(fills):
     return run_policy(fills)
 
 
+def pol_sell_unpaired(fills, cheap_below=None):
+    """Always-pair, BUT a leg still unpaired at window end is SOLD BACK (exit value) instead of held.
+    Tape finding (the price-bucket split is the key): selling helps strongly for CHEAP long-shot legs
+    (price<0.30: hold -4.0c vs sell -1.7c, +2.3c, t=3.5) but HURTS for expensive legs (price>0.70:
+    hold +5.0c vs sell -0.8c, -5.8c, t=-2.8) because on a binary, price=probability, so an expensive
+    leg is the FAVORED side that tends to win -- hold it. cheap_below sets the sell ceiling; None =
+    sell any unpaired leg. Under prospective test, not deployed."""
+    net = 0; pnl = 0.0; open_leg = None
+    for f in fills:
+        step = 1 if f["side"] == "bid" else -1
+        nn = net + step
+        if abs(nn) > 1:
+            continue
+        if open_leg is not None and abs(nn) < abs(net):      # this fill pairs the open leg -> box
+            pnl += f["settle"] + open_leg["settle"]
+            open_leg = None
+        else:
+            open_leg = f                                     # opened a new leg
+        net = nn
+    if open_leg is not None:                                 # leftover unpaired leg at window end
+        sell = (cheap_below is None) or (open_leg.get("p", 1.0) < cheap_below)
+        pnl += open_leg.get("exit", open_leg["settle"]) if sell else open_leg["settle"]
+    return pnl
+
+
 # ------------------------------------------------------------------------------------------------
 # TRIAL-STRATEGY REGISTRY. Live default is P0 (always-pair, ungated reference). Every entry is a
 # CANDIDATE scored vs P0 on FORWARD collector data, held to the 2-sigma alert + pre-registered
@@ -263,6 +297,9 @@ TRIALS = {
                                                 hold_ok=lambda h: h["sig"] <= 0),
     # ---- the original tie-breaker (kept) ----
     "p2_signal_hold":      lambda F: run_policy(F, hold_ok=lambda h: h["sig"] <= 0),
+    # ---- sell off losing unpaired legs (operator's idea; cheap-only is the validated cut) ----
+    "t11_sell_cheap_unpaired": lambda F: pol_sell_unpaired(F, cheap_below=0.30),
+    "t12_sell_all_unpaired":   lambda F: pol_sell_unpaired(F, cheap_below=None),
 }
 
 

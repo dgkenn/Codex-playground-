@@ -44,6 +44,18 @@ records (verified captured):
   flow + flat OI + 1¢ spread). *Directly* the idea: predict which legs will get paired and take those.
   *Early read (n=16, noise):* drawdown 4¢ vs P0's 59¢, win 81% — orphan-avoidance compresses risk.
 
+### Selling off losing unpaired legs (cut the loser instead of holding to a full loss)
+- **t11_sell_cheap_unpaired** — a leg still unpaired at window end whose entry price < 0.30 is SOLD
+  BACK (flatten, crossing the spread) instead of held to settlement. **t12_sell_all_unpaired** sells
+  every leftover unpaired leg.
+  *Grounding & the surprise:* holding unpaired legs loses −3.3¢/leg; selling loses −2.2¢ (+1.1¢ net,
+  ~1.6σ after the cross-the-spread cost). But the price split is the real story — selling helps
+  **strongly for CHEAP legs** (price<0.30: hold −4.0¢ → sell −1.7¢, **+2.3¢, t=3.5**) and **hurts
+  for expensive legs** (price>0.70: hold **+5.0¢** → sell −0.8¢, −5.8¢, t=−2.8). On a binary,
+  price = probability, so an "expensive" leg is the FAVORED side that tends to *win* — hold it; the
+  cheap long-shot legs are the ones that lose, so those are what you cut. NB: selling needs a TAKER
+  order (the live bot is post-only today), so deployment is a real execution change, not a flag.
+
 ### Selective holding of favorable unpaired legs
 - **t08_hold_no** — hold an unpaired NO leg to settlement (don't pair); pair YES immediately.
   *Grounding:* H7, unpaired NO settles +1.3¢ (favorable), unpaired YES −1.3¢ (toxic).
