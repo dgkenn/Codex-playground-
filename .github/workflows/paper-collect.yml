@@ -73,8 +73,14 @@ jobs:
           rm -rf gha_data && mkdir -p gha_data
           # 2520s collect + graceful TERM at 2880s (kalshi_collect handles SIGTERM -> tombstones
           # for unresolved windows) + hard KILL 60s later as the backstop.
+          # cross-venue Polymarket 5-min BTC up/down in PARALLEL (lead-lag dataset for the one
+          # open directional candidate; pmkt_collect was previously VM-only -> zero durable data).
+          timeout --signal=TERM --kill-after=30 2700 \
+            python -u pmkt_collect.py 2520 gha_data "r${{ github.run_id }}" > gha_data/pmkt.log 2>&1 &
+          PMKT=$!
           timeout --signal=TERM --kill-after=60 2880 \
             python -u kalshi_collect.py 2520 gha_data "r${{ github.run_id }}" || true
+          wait $PMKT || true
       - name: per-run summary
         if: always()
         run: python aggregate_shadow.py > gha_data/SUMMARY.txt 2>/dev/null || true
