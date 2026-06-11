@@ -51,7 +51,43 @@ peak unpaired inventory, markout curve, effective half-spread captured, time-to-
 quote-to-trade, **calibration by entry-price bucket**, balance trajectory. Settlement results
 fetched once per ticker (cached `.scorecard_results.json`).
 
-Headline read for this strategy, in order: **locked share of PnL** (engine working?),
-**unpaired residual** (discipline leaking?), **5s/30s markout** (picked off?), **max
-drawdown / worst window** (caps holding?), **calibration above the diagonal** (entries
-better than fair?).
+## Reviewer-blueprint triage (2026-06-11): adopted vs refuted
+
+External review proposed a "world's best maker-box bot" blueprint. Critical findings:
+
+**Category error at its core**: `if yes_bid + no_bid < 0.99: place_both()` describes
+CROSS-VENUE taker arb (its sources arb Polymarket<->Kalshi). On one Kalshi book,
+`yes_bid + no_bid = 1 - spread < $1` ALWAYS — every nonzero-spread market "triggers".
+There is no detection problem in a single book; there is a COMPLETION problem
+(queue position, P(both fill), adverse selection on the unpaired leg).
+
+**Refuted by our data**:
+- "Exit when profit < 1c / rotate capital within minutes" — exits tested on 20,318
+  fills: every variant loses; 15-min windows already rotate capital at the maximum.
+- "Scan 100+ markets" — completion collapses off-BTC (0.93 vs 0.71/0.51/0.49);
+  breadth without completion manufactures unpaired toxic inventory (ETH −12.3¢/win).
+- "Risk-free once filled, so only operational risks" — the risk is the UNPAIRED
+  INTERVAL (leg 1 filled, leg 2 not): adverse selection, not ops. Our loss-limit kill
+  came exactly from there.
+- "1%+ spread threshold (0.99)" — our `--min-lock 0` is deliberately looser: a 0-lock
+  completion flattens a leg whose expected hold value is NEGATIVE (−16.3¢/win residual);
+  demanding 1¢ keeps more unpaired exposure, not less.
+
+**Adopted (now in `kalshi_scorecard.py`)**: pairing efficiency (% of contracts locked,
+the honest "dual-leg fill rate"), leg imbalance ratio, expected-vs-realized lock
+(completion slippage — the maker's version of TCA), order rejection rate. The rejection
+metric immediately paid for itself: it surfaced a 2,032-reject/hour storm in the session
+16h ago (pre-WS-feeder, the loss-limit session) vs ~5/hr now — retroactive confirmation
+the WS-book fix worked.
+
+**Latency/infra review**: already in-region (~40–55ms REST RTT measured, WS push book,
+local book mirror, event-driven loop) — equal to the review's own "free tier" target;
+its further gains (NY4 colo $145/mo, FIX) are not free-tier and not yet worth it at $11
+bankroll. The REAL infra gap is that this container is EPHEMERAL: the durable home for
+trader+collector should be an always-free VM (e.g. Oracle Cloud always-free tier,
+us-east) — standing recommendation for the months-long run. (Account-cycling to renew
+free trials, as the review suggests, is ToS evasion — not doing that.)
+
+**Candidate kept on the list**: parallel placement of the two legs at window open
+(~50ms queue gain; needs per-thread sessions — requests.Session is not thread-safe).
+

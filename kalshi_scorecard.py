@@ -72,7 +72,8 @@ def main():
     asset = sys.argv[1] if len(sys.argv) > 1 else "btc"
     fills = load_jsonl(f"kalshi_fees_{asset}15m.jsonl")
     mos = load_jsonl("kalshi_markout.jsonl")
-    lms = load_jsonl(f"live_metrics_{asset}15m.jsonl")
+    lms = (load_jsonl(f"live_metrics_kalshi_{asset}15m.jsonl")
+           or load_jsonl(f"live_metrics_{asset}15m.jsonl"))
     if not fills:
         print("no fills logged yet"); return
     res = results_for({f["ticker"] for f in fills})
@@ -117,11 +118,33 @@ def main():
             resid_tot += pnl
     pnls = [win_pnl[k] for k in sorted(win_pnl)]
     ncon = sum(f["count"] for f in fills)
+    # pairing efficiency (the dual-leg fill metric that matters for a single-book maker box:
+    # NOT "opportunities detected" -- every spread>0 book is an "opportunity"; the game is
+    # what fraction of our filled contracts end up settlement-locked pairs)
+    tot_con = tot_boxed2 = 0.0
+    win_boxed = 0
+    for tk, d in by_w.items():
+        ny, nn = sum(c for _, c in d["yes"]), sum(c for _, c in d["no"])
+        tot_con += ny + nn
+        tot_boxed2 += 2 * min(ny, nn)
+        win_boxed += min(ny, nn) > 0
     print(f"\n[PnL]   net realized (resolved windows): ${sum(pnls):+.2f}   fees: ${fees_paid:.2f}")
     print(f"        per contract: {sum(pnls)/max(ncon,1)*100:+.2f}c   per window: "
           f"{sum(pnls)/max(len(pnls),1)*100:+.2f}c")
     print(f"[BOX]   locked (risk-free): ${locked_tot:+.2f}   directional residual: ${resid_tot:+.2f}"
           f"   locked share: {locked_tot/sum(pnls)*100:.0f}%" if pnls and sum(pnls) else "")
+    ycon = sum(f["count"] for f in fills if f["side"] == "yes")
+    ncon_no = ncon - ycon
+    print(f"[PAIR]  pairing efficiency: {tot_boxed2/max(tot_con,1)*100:.0f}% of contracts locked"
+          f"   windows completing >=1 box: {win_boxed}/{len(by_w)}"
+          f"   leg imbalance yes:no = {ycon:.0f}:{ncon_no:.0f}")
+    # maker slippage: lock you could see at fill time (the spread) vs lock realized at pairing
+    sp_at_fill = [f["ctx"]["spread"] for f in fills
+                  if f.get("ctx", {}).get("spread") is not None]
+    if sp_at_fill and tot_boxed2:
+        print(f"        spread at fill (expected lock): {sum(sp_at_fill)/len(sp_at_fill)*100:+.2f}c"
+              f"   realized lock/pair: {locked_tot/(tot_boxed2/2)*100:+.2f}c"
+              f"   (gap = completion slippage; n_ctx={len(sp_at_fill)})")
     mdd, uw = dd_stats(pnls)
     print(f"[RISK]  max drawdown: ${mdd:.2f}   windows under water: {uw}/{len(pnls)}"
           f"   worst window: ${min(pnls):+.2f}   peak unpaired inventory: {peak_unpaired}" if pnls else "")
