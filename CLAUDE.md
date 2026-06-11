@@ -48,6 +48,8 @@ risk-free. The boxes ARE the profit; unpaired inventory is the only real risk.
 - Stop-loss exits LOSE (tested on 20,318 fills); risk control is SIZE/pairing, never exits.
 - `--max-net 1` (strict pairing), `--min-lock 0`, `--min-spread 0.01`, `--max-fills-side 4`
   are the deployed defaults, each tape-backed in `BOX_PLAYBOOK.md`.
-- Live trading re-arm is the OPERATOR's call: clear `.kalshi_killed_btc15m`, run
-  `kalshi_preflight.py` for GO. Never auto-rearm after a loss-limit kill.
+- Live trading is controlled by the LIGHT SWITCH (`SWITCH.md`): the `LIVE_SWITCH` file (on|off),
+  honored by `.github/workflows/live.yml` (cloud, always-on) and `live_supervisor.sh` (VM). Toggle
+  with `./live_switch.sh on|off`. Re-arm after a kill = `./live_switch.sh on` (clears the sentinel).
+  Never auto-rearm after a loss-limit/toxic kill; the operator flips the switch.
 - This container is ephemeral; the durable home is an always-free VM (Oracle us-east).
