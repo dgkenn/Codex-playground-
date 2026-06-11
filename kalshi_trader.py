@@ -530,6 +530,11 @@ def main():
     ap.add_argument("--tau-guard", type=float, default=150.0,
                     help="no new quotes when under this many seconds to expiry (late fills carry "
                          "systematically worse markouts; binary gamma explodes)")
+    ap.add_argument("--fee-mult", type=float, default=0.0,
+                    help="maker fee multiplier for this market (fee = mult*p*(1-p)/contract). "
+                         "0 = fee-exempt (CRYPTO15M confirmed live); set 0.0175 on maker-fee "
+                         "series -- kelly sizing then auto-tightens selection around p=0.5 "
+                         "(backtested OOS-positive under both regimes; kalshi_sizing.py)")
     ap.add_argument("--size-mode", choices=["flat", "kelly"], default="flat",
                     help="kelly = fee-aware edge sizing (kalshi_sizing.py): place only when "
                          "mhat-fee>0, size 1..KELLY_MAX units of --post; flat = always --post")
@@ -1076,7 +1081,7 @@ def main():
                     # data on the tight book (the ultra-selective 0-floor never fires at 1c spreads).
                     tau_frac = max(mk["we"] - time.time(), 0.0) / 900.0
                     units = max(1, kelly_size(price if side == "yes" else 1.0 - price,
-                                              yba - ybb, tau_frac))
+                                              yba - ybb, tau_frac, fee_mult=a.fee_mult))
                 res = place(side, price, ybb, yba, count=units * int(a.post))
                 if res is None:
                     continue
