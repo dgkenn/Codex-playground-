@@ -520,6 +520,10 @@ def main():
     ap.add_argument("--cap", type=float, default=50)
     ap.add_argument("--skew", type=float, default=0.25)
     ap.add_argument("--max-rungs", type=int, default=3, help="max resting rungs per side")
+    ap.add_argument("--max-fills-side", type=int, default=4,
+                    help="hard cap on FILLS per side per window (post-mortem on 20k tape fills: "
+                         "fills 1-4 in a window average +0.08..+0.30c, the 5+ tail is where the "
+                         "edge dies; cap=4 keeps 81%% of net while doubling the t-stat 2.1->4.7)")
     ap.add_argument("--fill-cooldown", type=float, default=20.0,
                     help="after a fill (or failed toxic cancel) on a side, do not re-quote that side "
                          "for this many seconds (live data: re-quoting into a trend caught the knife "
@@ -595,6 +599,7 @@ def main():
     # ws_fills: real-time own fills from WS fill channel; drained each loop before REST poll
     ws_fills = collections.deque()
     side_cooldown = {"yes": 0.0, "no": 0.0}   # no re-quote on a side until this ts (anti-knife)
+    win_fills = {"yes": 0, "no": 0}            # fills per side THIS window (trend-exposure cap)
 
     if live:
         print("[startup] reconciling open orders on series...")
@@ -806,6 +811,7 @@ def main():
         pos[pos_key] = pos.get(pos_key, 0.0) + count
         cash -= fp * count               # buy spends cash
         net_delta += sgn * count
+        win_fills[fside] = win_fills.get(fside, 0) + 1   # per-window same-side fill count (trend cap)
         key = (fside, round(fp, 4))
         meta = resting.get(key)
         resting_s = (time.time() - meta["ts"]) if meta else None
@@ -974,6 +980,7 @@ def main():
                         pending_settles.append(entry)
                     lm.window_summary(mk["ws"], realized, window_mark, net_delta)
                     pos.clear(); cash = 0.0; net_delta = 0.0; window_mark = 0.0
+                win_fills = {"yes": 0, "no": 0}   # fresh window, fresh trend-exposure budget
 
                 cancel_all_resting()   # tokens change on rollover; reset resting book
 
@@ -1049,6 +1056,9 @@ def main():
                     continue
                 if time.time() < side_cooldown[side]:
                     continue              # tweak 1: post-fill cooldown (don't re-quote into the trend)
+                if win_fills.get(side, 0) >= a.max_fills_side:
+                    continue              # tweak 4 (post-mortem): trends outlast the cooldown -- the
+                                          # 5th+ same-side fill in a window is where the edge dies
                 if spread_now < a.min_spread - 1e-9:
                     continue              # tweak 2: 1c-spread fills are ~zero-EV (markout model)
                 if tau_left < a.tau_guard:
@@ -1059,9 +1069,11 @@ def main():
                 # HARD DIRECTIONAL INVENTORY CLAMP (live-test finding): the skew gate keyed on --cap
                 # (contracts) was far looser than --max-notional (dollars), so under rapid fill->
                 # re-quote the book leaned directional (~9 one-sided contracts on a $2 budget). A net
-                # position of N binary contracts risks up to $N, so bound |net_delta| by the SAME
-                # dollar budget -- this is the binding directional risk control, independent of skew.
-                inv_cap = max(1.0, a.max_notional)            # contracts; ties directional risk to $
+                # position of N binary contracts risks up to $N. Post-mortem of the loss-limit kill:
+                # the worst window stacked 8 same-side contracts, and tying this to --max-notional
+                # would silently loosen it whenever the dollar budget grows -- so it is a hard
+                # constant, the absolute worst-case directional loss per window in contracts.
+                inv_cap = 3.0                                  # hard +/-3 net contracts, NOT $-linked
                 proj = net_delta + (a.post if side == "yes" else -a.post)
                 if abs(proj) > inv_cap + 1e-9:
                     continue
