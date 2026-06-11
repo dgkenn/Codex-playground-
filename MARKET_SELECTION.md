@@ -31,11 +31,54 @@ the absolute level.)
   realistic queue) give wider headline margins but can't be filled, and what does fill is toxic.
 - So: do NOT migrate to ETH/SOL/XRP. The per-day case for them is strongly negative.
 
-## Part B — live tenor / index breadth scan (15m vs hourly vs daily vs index)
-[PENDING — live Kalshi REST enumeration of crypto + index series across tenors, ranking by
-estimated box-¢/DAY with the liquidity/competition caveat. Results appended when the scan lands.]
+## Part B — live tenor / non-crypto breadth scan (Kalshi REST, ~600 series enumerated, 2026-06-11)
+Enumerated the full series catalogue (Crypto, Financials, Economics, Commodities, FX) and sampled
+every candidate with open markets:
 
-## Bottom line so far
-Among underlyings, BTC15M is the right venue per-day — the alternatives lose even idealized. The only
-open market-selection question is TENOR (could BTC hourly/daily offer wider margins worth fewer
-windows?) and whether any non-crypto intraday index binary is cleaner — that's Part B.
+| series | tenor | 24h vol | OI | touch box ¢ | depth@touch |
+|--------|-------|---------|-----|-------------|-------------|
+| **KXBTC15M** | 15m | **$240,182** | $147,932 | 1.0 | $914/$137 |
+| KXETH15M | 15m | $7,014 | $4,767 | 2.0 | $530/$17 |
+| KXCPIYOY | monthly | $1,295 | $461 | 1.0 | $23/$6 |
+| KXPCECORE | monthly | $0 | $1,385 | 1.0 | $3/$200 |
+| KXEURUSD | daily range | $67 | $67 | 3.0 | $0/$45 |
+| KXEURUSDW | weekly | $0 | $2 | (empty book) | — |
+
+The headline finding is what ISN'T tradeable: **every high-frequency non-crypto series — S&P
+hourly/daily (KXINXI/KXINXU/KXINXAB/KXINXZ), Nasdaq hourly/daily, FX hourlies (EUR/GBP/AUD), gold
+daily, BTC hourly (KXBTCD) and BTC daily range (KXBTC) — had NO open markets at scan time.** The
+series exist in the catalogue but are dormant/sunset or only intermittently listed. The few live
+non-crypto books (CPI monthly, EUR/USD daily) have 1-3¢ margins on effectively zero volume and
+single-digit-dollar depth — a box needs BOTH sides to trade through our prices, which simply does
+not happen there.
+
+### Part B2 — dedicated non-crypto / slow-tenor deep scan (second independent agent, same day)
+A second scan focused on non-crypto + daily/hourly confirmed and sharpened the picture:
+- **Cadence is the structural killer**: KXBTC15M fires 96 windows/day; everything else is 1/day
+  (FX, index dailies) or 1/week-month (KXINX, CPI) — a 96-672× collapse in opportunities before
+  liquidity even enters.
+- **Wide margins are illiquidity artifacts**: KXEURUSD shows 48-59¢ gross box margins ATM — with
+  depth of ONE contract per side and zero volume. Even captured, 1 box/day ≈ 51¢ < the 68¢ bench.
+- **The both-sides-fill structure breaks outside short tenors**: a daily binary pins near 0 or 1
+  for most of the session; both bids fill profitably only while price lingers at the strike —
+  briefly, once, unpredictably. The 15-min reset is what keeps both sides live; this is structural,
+  not a liquidity accident.
+- **Fees**: non-crypto series return fee_type=None from the API; if the standard maker schedule
+  applies (~0.44¢ round-trip at p=0.5) it's material against 1-3¢ index margins. Only CRYPTO15M's
+  $0 is confirmed.
+- Watch items only (no collector warranted): KXNASDAQ100's deep-OTM T29000 (~7.8k/24h real volume,
+  1-3¢ margin) and weather dailies if they reopen for hurricane season.
+
+### Verdict B — nothing beats KXBTC15M; the venue question is CLOSED
+KXBTC15M has ~34× the volume of the next-most-liquid candidate (its own ETH sibling, which Part A
+showed is a structural money-loser anyway). Wider margins elsewhere (2-3¢) are an illiquidity
+artifact, not harvestable edge — and maker fees outside CRYPTO15M are unconfirmed, which would only
+make those margins worse. 15-min BTC is the sweet spot on BOTH axes: the only tenor with continuous
+two-sided flow, and the only underlying whose book isn't structurally toxic.
+
+## Bottom line — FINAL
+**Stay on KXBTC15M. Per-day, nothing else comes close**: other underlyings lose even with idealized
+queue position (Part A), and other tenors/asset classes have no liquid markets to quote (Part B).
+The per-day profit lever is NOT venue selection — it's (1) second-leg execution (the chase), (2) the
+toxicity gates under prospective A/B test, (3) eventual size-up per SCALE_GATE.md. Do not relitigate
+market selection unless Kalshi launches a new liquid short-tenor series.
