@@ -13,6 +13,20 @@ result. Differences vs Polymarket are handled at the edges:
     running gate_lab/leaderboard on this tape, set the rebate to 0 -- the fills schema is identical
     (venue tag "kalshi" on every row).
 
+ULTRA-RICH CAPTURE (per asset, per run; everything raw, derivations belong offline):
+  ticks_*.jsonl.gz   ~1Hz top-of-book timeline (mid/spot/micro + bb/bsz/ba/asz) -- legacy schema.
+  trades_*.jsonl.gz  full taker tape with BOTH clocks: t (our poll) and ts_exch (exchange
+                     created_time -- the honest event clock) + trade_id for cross-run dedupe.
+  book_*.jsonl.gz    the new core stream, three record types:
+                       "meta"  once per window: strike geometry, lifecycle times, settlement rules.
+                       "book"  FULL DEPTH both sides (sub-cent fp levels), written on CHANGE only,
+                               with request rtt_ms + spot at capture -- the displayed-queue ground
+                               truth that q_ahead scans had to guess at.
+                       "stat"  ~30s volume / open_interest / liquidity -- OI rising vs volume
+                               churning separates fresh (informed) positioning from closeouts.
+  shadow_windows_*.jsonl  window rows now also carry strike{} and final{} (settle-time
+                     volume/OI/settlement_value) so each row is analysis-self-contained.
+
     python kalshi_collect.py [duration_s] [out_dir] [tag]      # default 3600 gha_data kal<ts>
 """
 from __future__ import annotations
@@ -87,13 +101,18 @@ class KalshiMarket:
         # per-window file handles (opened at discover)
         self._ticks_fh = None
         self._trades_fh = None
+        self._book_fh = None      # FULL-DEPTH book stream (the q_ahead ground truth)
+        self._book_hash = None    # dedupe: write a book record only when the book CHANGED
+        self.last_stat_poll = 0.0  # volume/OI/liquidity sampling (~30s)
 
     def _open_window_files(self):
-        """Open (append) per-window gzip streams for ticks and trades."""
+        """Open (append) per-window gzip streams for ticks, trades, and full-depth books."""
         tp = os.path.join(self.out_dir, f"ticks_kalshi_{self.asset}15m_{self.tag}.jsonl.gz")
         trp = os.path.join(self.out_dir, f"trades_kalshi_{self.asset}15m_{self.tag}.jsonl.gz")
+        bp = os.path.join(self.out_dir, f"book_kalshi_{self.asset}15m_{self.tag}.jsonl.gz")
         self._ticks_fh = gzip.open(tp, "at")
         self._trades_fh = gzip.open(trp, "at")
+        self._book_fh = gzip.open(bp, "at")
 
     def discover(self):
         try:
@@ -123,8 +142,28 @@ class KalshiMarket:
                          for s in strategies.enabled()]
         self.midtl = {}
         self.seen_trades = set()
+        self._book_hash = None
         if self._ticks_fh is None:
             self._open_window_files()
+        # MARKET METADATA record (strike geometry + lifecycle times + settlement plumbing): the
+        # static facts the book/trade streams can't carry but every later analysis wants joined in.
+        try:
+            mfull = self.sess.get(f"{B}/markets/{tk}", timeout=8).json().get("market", {})
+            meta = {k: mfull.get(k) for k in (
+                "ticker", "event_ticker", "market_type", "strike_type",
+                "floor_strike", "cap_strike", "custom_strike",
+                "open_time", "close_time", "expected_expiration_time", "expiration_time",
+                "settlement_timer_seconds", "category", "rules_primary",
+                "tick_size", "notional_value", "response_price_units",
+                "volume", "open_interest", "liquidity_dollars", "liquidity",
+                "yes_bid_dollars", "yes_ask_dollars", "last_price_dollars") if k in mfull}
+            if self._book_fh is not None:
+                self._book_fh.write(json.dumps({
+                    "type": "meta", "t": round(time.time(), 3), "ws": ws, "asset": self.asset,
+                    "tenor_min": 15, "venue": "kalshi", "meta": meta}) + "\n")
+            self.mk["_meta"] = meta
+        except Exception:
+            pass
         sp = self.fv.update()
         if sp and time.time() - ws <= 60:
             self.fv.set_window(sp); self.shared["s0"] = sp
@@ -150,7 +189,9 @@ class KalshiMarket:
                 if len(sh) > 40:
                     del sh[:len(sh) - 40]
         try:
+            t_req = time.time()
             ob = self.sess.get(f"{B}/markets/{mk['cid']}/orderbook", timeout=6).json()
+            rtt_ms = (time.time() - t_req) * 1e3
         except Exception:
             return
         o = ob.get("orderbook_fp") or ob.get("orderbook") or {}
@@ -160,6 +201,43 @@ class KalshiMarket:
         ybb, ybq = float(yb[-1][0]), float(yb[-1][1])      # best YES bid
         nbb, nbq = float(nb[-1][0]), float(nb[-1][1])      # best NO bid
         yba = round(1.0 - nbb, 4)                          # YES ask (mirror)
+
+        # FULL-DEPTH BOOK STREAM (sub-cent fp levels, ascending best-at-end, BOTH sides), written
+        # only when the book CHANGED since the last poll. This is the q_ahead ground truth the
+        # queue backtests had to scan as an unknown: displayed size at every level, every ~1.2s,
+        # plus the request RTT so replays can model snapshot staleness honestly.
+        if self._book_fh is not None:
+            try:
+                bh = hash((tuple(map(tuple, yb)), tuple(map(tuple, nb))))
+                if bh != self._book_hash:
+                    self._book_hash = bh
+                    self._book_fh.write(json.dumps({
+                        "type": "book", "t": round(nowt, 3), "ws": mk["ws"], "asset": self.asset,
+                        "tenor_min": 15, "venue": "kalshi", "rtt_ms": round(rtt_ms, 1),
+                        "spot": self.shared.get("st"),
+                        "yes": [[float(p), float(q)] for p, q in yb],
+                        "no": [[float(p), float(q)] for p, q in nb]}) + "\n")
+            except Exception:
+                pass
+
+        # VOLUME / OPEN INTEREST / LIQUIDITY sampler (~30s): OI rising vs volume churning is the
+        # cleanest public read on whether takers are opening fresh positions (informed flow risk)
+        # or closing out -- not derivable from book or tape alone.
+        if nowt - self.last_stat_poll > 30:
+            self.last_stat_poll = nowt
+            try:
+                ms = self.sess.get(f"{B}/markets/{mk['cid']}", timeout=6).json().get("market", {})
+                if self._book_fh is not None:
+                    self._book_fh.write(json.dumps({
+                        "type": "stat", "t": round(nowt, 3), "ws": mk["ws"], "asset": self.asset,
+                        "tenor_min": 15, "venue": "kalshi",
+                        "volume": ms.get("volume"), "volume_fp": ms.get("volume_fp"),
+                        "open_interest": ms.get("open_interest"),
+                        "open_interest_fp": ms.get("open_interest_fp"),
+                        "liquidity": ms.get("liquidity_dollars") or ms.get("liquidity"),
+                        "last_price": ms.get("last_price_dollars") or ms.get("last_price")}) + "\n")
+            except Exception:
+                pass
         for v in self.variants:
             try:
                 v.set_tob(mk["up"], ybb, ybq, yba, nbq)
@@ -186,7 +264,7 @@ class KalshiMarket:
             self.last_trades_poll = nowt
             try:
                 tr = self.sess.get(f"{B}/markets/trades",
-                                   params={"ticker": mk["cid"], "limit": 50}, timeout=6).json()
+                                   params={"ticker": mk["cid"], "limit": 100}, timeout=6).json()
             except Exception:
                 return
             for t in reversed(tr.get("trades") or []):
@@ -203,11 +281,22 @@ class KalshiMarket:
                 fl.append((nowt, ct if buy_yes else -ct))
                 if len(fl) > 4000:
                     del fl[:2000]
-                # persist raw taker trade tape
+                # persist raw taker trade tape. t = OUR poll time (smeared by the ~2.5s poll
+                # cadence); ts_exch = the EXCHANGE's created_time -- the honest event clock for
+                # ordering trades against book snapshots. trade_id kept for cross-run dedupe.
                 if self._trades_fh is not None:
                     try:
+                        ts_exch = None
+                        ct_raw = t.get("created_time")
+                        if ct_raw:
+                            try:
+                                ts_exch = round(datetime.fromisoformat(
+                                    ct_raw.replace("Z", "+00:00")).timestamp(), 3)
+                            except Exception:
+                                pass
                         self._trades_fh.write(json.dumps({
-                            "t": round(nowt, 3), "ws": mk["ws"], "asset": self.asset,
+                            "t": round(nowt, 3), "ts_exch": ts_exch, "tid": tid,
+                            "ws": mk["ws"], "asset": self.asset,
                             "tenor_min": 15, "venue": "kalshi",
                             "up": 1, "side": "BUY" if buy_yes else "SELL",
                             "p": round(yp, 6), "sz": round(ct, 6)}) + "\n")
@@ -254,16 +343,24 @@ class KalshiMarket:
             wrote = True
         if wrote:
             self._ticks_fh.flush()
-        if self._trades_fh is not None:
-            try:
-                self._trades_fh.flush()
-            except Exception:
-                pass
+        for fh in (self._trades_fh, self._book_fh):
+            if fh is not None:
+                try:
+                    fh.flush()
+                except Exception:
+                    pass
 
     def result(self):
         try:
             m = self.sess.get(f"{B}/markets/{self.mk['cid']}", timeout=8).json().get("market", {})
             r = m.get("result")
+            if r in ("yes", "no"):
+                # final lifetime stats, captured once at settle (joined into the window row)
+                self.mk["_final"] = {k: m.get(k) for k in (
+                    "volume", "volume_fp", "open_interest", "open_interest_fp",
+                    "liquidity_dollars", "liquidity", "last_price_dollars", "last_price",
+                    "result", "settlement_value", "settlement_value_dollars",
+                    "expiration_value") if k in m}
             return 1 if r == "yes" else (0 if r == "no" else None)
         except Exception:
             return None
@@ -296,6 +393,12 @@ def emit(out_dir, mkt, r, fills_fh, wins_fh):
         "t_last": round(mk["_t_last"] - mk["ws"], 1) if mk.get("_t_last") else None,
         "n_polls": mk.get("_n_polls", 0),
     }
+    # strike geometry + settle-time finals (joined here so window rows are self-contained)
+    meta = mk.get("_meta") or {}
+    row["strike"] = {k: meta.get(k) for k in
+                     ("strike_type", "floor_strike", "cap_strike", "custom_strike") if meta.get(k) is not None}
+    if mk.get("_final"):
+        row["final"] = mk["_final"]
 
     for v in mkt.variants:
         if r is None:
