@@ -55,6 +55,33 @@ active window are benign flow). The **5th-and-beyond bucket is where the edge di
 by then the repeated one-directional fills *are* the toxicity signal, and the
 fill-cooldown alone (20s) does not outlast a 15-minute trend.
 
+## 3b. The rollover burst (operator observation, answered)
+
+The bot visibly "buys a ton right when the previous market resolves, then sits on
+the position." Both halves are by design, and neither is caused by the loss limit:
+
+- **The burst**: the zero-RTT rollover prefetches the next market and quotes at
+  second 0, deliberately — being first to rest at the touch of a fresh, thin, wide
+  book is the queue-priority edge. **85 of 103 live fills (83%) arrived in the first
+  minute** of their window.
+- **The sit**: positions are held to settlement because exits were tested on 20,318
+  fills and every stop variant lost (§6). Max hold is 15 minutes by construction.
+
+Is the burst costing PnL/Sharpe? **No — it IS the PnL.** Live fills by entry time:
+
+| minutes into window | 0–1 | 1–2 | 2–4 | 4–8 |
+|---|---|---|---|---|
+| fills | 85 | 6 | 3 | 9 |
+| mean settle PnL (¢/fill) | **+3.24** | −3.33 | −3.83 | −4.97 |
+| total (¢) | **+275** | −20 | −12 | −45 |
+
+Minute-0 fills produced more than the session's entire net; the mid-window fills
+lost. The caveat cuts the other way: minute-0 is also where the −$2 blowup window
+lived (10 fills inside 70 seconds — exactly what `--max-fills-side 4` now stops),
+and the candle-based deep-tape backtests could never validate minutes 0–2, so the
+open-burst edge rests on the live sample alone (n=85, t≈0.7 — positive, not yet
+significant). Verdict: keep quoting the open, keep the caps, let live n accumulate.
+
 ## 4. The fix, backtested as a policy: cap same-side fills per window
 
 Replaying the cap over the same 20k-fill tape:

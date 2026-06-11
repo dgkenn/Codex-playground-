@@ -4,11 +4,14 @@
 # (REST-polled ~1Hz, no auth required). Each run writes UNIQUE gzipped files
 # (gha_data/fills_kalshi_<asset>15m_r<run_id>.jsonl.gz etc.) with asset/tenor_min/venue fields.
 #
-# MULTI-MONTH DESIGN (audit 2026-06-10; the previous hourly design lost ~2 of 4 windows/hour and had
-# no outage detection):
-#   * TWO crons/hour + a non-cancelling concurrency group: runs QUEUE back-to-back, so collection is
-#     near-continuous and a dropped cron tick (GitHub sheds schedule events under load -- observed
-#     multi-hour gaps) costs nothing as long as one of the two fires.
+# ALWAYS-ON DESIGN (audit 2026-06-11; the cron-only design had 2-3.7h GAPS -- GitHub sheds schedule
+# ticks under load, observed directly in the run history):
+#   * SELF-CHAIN: every run's last step dispatches the NEXT run via workflow_dispatch (an explicit
+#     exception to GITHUB_TOKEN's no-recursion rule), so continuity does NOT depend on cron at all.
+#     The chain only breaks if a runner dies before the always() dispatch step -- and then:
+#   * THREE crons/hour are the chain-RESTART backstop (any single tick firing re-arms the chain;
+#     shedding must kill every tick for hours AND the chain simultaneously to cause a gap).
+#   * non-cancelling concurrency group: chained + cron runs QUEUE back-to-back, never overlap.
 #   * `timeout --signal=TERM` + kalshi_collect's SIGTERM handling: graceful drain persists TOMBSTONES
 #     for unresolved windows instead of losing them.
 #   * commit step runs `if: always()` into a WORKTREE (never in-place branch switching) with a
@@ -18,22 +21,24 @@
 #   * HEARTBEAT_URL (healthchecks.io) is the external dead-man: it alerts when pings STOP -- the only
 #     layer that catches a total Actions outage. Set the secret; harmless if unset.
 #   * watch_continuity.py is the operator-side freshness check (reads the gha-data branch).
+#   * TO STOP the chain: disable the workflow in the Actions UI (dispatch then 403s and the chain
+#     ends). Deleting the cron lines alone is NOT enough.
 #
 # READ-ONLY paper sim (Kalshi public REST, no keys required -- CFTC-regulated/US-legal).
 # NOTE: GitHub only fires `schedule`/`workflow_dispatch` from the file on the DEFAULT branch (main),
-# so this file must also live on main to activate. It checks out CODE from $BRANCH but commits DATA
-# to the `gha-data` branch. Pull data for analysis:
+# so this file must also live on main (as collect.yml) to activate. It checks out CODE from $BRANCH
+# but commits DATA to the `gha-data` branch. Pull data for analysis:
 #   git fetch origin gha-data && git checkout origin/gha-data -- gha_data/
 name: paper-collect
 
 on:
   schedule:
-    - cron: '9 * * * *'           # offsets dodge top-of-hour cron congestion; the concurrency
-    - cron: '39 * * * *'          # group queues these back-to-back -> near-continuous coverage
+    - cron: '9,29,49 * * * *'     # chain-restart backstop only; offsets dodge top-of-hour congestion
   workflow_dispatch: {}
 
 permissions:
   contents: write
+  actions: write                  # self-chain: each run dispatches its successor
 
 concurrency:                      # never overlap; a newly queued run waits for the in-flight one
   group: paper-collect
@@ -55,7 +60,8 @@ jobs:
         with:
           python-version: '3.12'
       - name: install deps
-        run: pip install --quiet numpy scipy requests websockets
+        run: |
+          for i in 1 2 3; do pip install --quiet numpy scipy requests websockets && break; sleep 10; done
       - name: preflight -- validate strategy roster (fail fast on a malformed registry)
         run: python strategies.py
       - name: collect ~42 min of Kalshi 15-min crypto windows (KX{BTC,ETH,SOL,XRP}15M, gzipped, tombstone-safe)
@@ -99,3 +105,19 @@ jobs:
             sleep $((RANDOM % 6 + 2))
           done
           echo "push failed after retries" >&2; exit 1
+      - name: self-chain -- dispatch the successor run (continuity must NOT depend on cron)
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for i in 1 2 3 4 5; do
+            code=$(curl -s -o /tmp/disp.out -w '%{http_code}' -X POST \
+              -H "Authorization: Bearer $GH_TOKEN" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/${{ github.repository }}/actions/workflows/collect.yml/dispatches" \
+              -d '{"ref":"main"}')
+            [ "$code" = "204" ] && { echo "successor dispatched"; exit 0; }
+            echo "dispatch attempt $i -> HTTP $code"; cat /tmp/disp.out || true
+            sleep $((2**i))
+          done
+          echo "WARNING: self-dispatch failed; the cron backstop will restart the chain" >&2
