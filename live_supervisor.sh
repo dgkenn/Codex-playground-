@@ -23,6 +23,9 @@ echo "$(date -u +%FT%TZ) live_supervisor up (pid $$)" >> overnight_data/trader.l
 pgrep -f "collect_forever.sh" >/dev/null 2>&1 || nohup ./collect_forever.sh >/dev/null 2>&1 &
 # keep the Telegram on/off + alerts listener alive (texting on/off controls the switch)
 pgrep -f "telegram_control.py" >/dev/null 2>&1 || nohup python3 telegram_control.py >> overnight_data/telegram.log 2>&1 &
+# durably persist live telemetry to the live-state branch every ~10 min (survives the container)
+pgrep -f "persist_telemetry" >/dev/null 2>&1 || \
+  ( while true; do sleep 600; bash persist_telemetry.sh >> overnight_data/persist.log 2>&1; done ) &
 
 BR="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo HEAD)"
 while true; do

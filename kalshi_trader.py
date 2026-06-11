@@ -1342,6 +1342,23 @@ def main():
                                + en["pos_no"]  * (1.0 if r2 == 0 else 0.0))
                         realized += pnl
                         print(f"  [SETTLE] ws={en['ws']} r={r2} pnl={pnl:+.4f} realized={realized:+.2f}")
+                        # DURABLE PER-WINDOW AUDIT RECORD (clean failure-audit + backtest dataset).
+                        # Captures the settled RESULT (so it's never re-fetched / lost after markets
+                        # age out) + the box/unpaired decomposition. Join to kalshi_fees_*.jsonl on
+                        # ticker for the per-fill prices/features. One line per settled window, append-only.
+                        try:
+                            _py, _pn = en["pos_yes"], en["pos_no"]
+                            _bx = min(_py, _pn); _unp = abs(_py - _pn)
+                            with open(f"window_audit_{a.asset}15m.jsonl", "a") as _wa:
+                                _wa.write(json.dumps({
+                                    "ts": time.time(), "ws": en["ws"], "ticker": en["cid"],
+                                    "asset": a.asset, "result": r2, "pos_yes": _py, "pos_no": _pn,
+                                    "cash": round(en["cash"], 4), "pnl": round(pnl, 4),
+                                    "paired": _bx, "unpaired": _unp,
+                                    "unpaired_side": ("yes" if _py > _pn else "no" if _pn > _py else None),
+                                }) + "\n")
+                        except Exception:
+                            pass
                         # phone notification of net win/loss at settlement (Telegram via notify)
                         if abs(pnl) > 1e-9:
                             _wt = datetime.utcfromtimestamp(en["ws"]).strftime("%H:%MZ")
