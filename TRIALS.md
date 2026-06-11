@@ -56,6 +56,16 @@ records (verified captured):
   cheap long-shot legs are the ones that lose, so those are what you cut. NB: selling needs a TAKER
   order (the live bot is post-only today), so deployment is a real execution change, not a flag.
 
+### Stop-loss thresholds on a tumbling leg — TESTED AND REJECTED (don't re-test)
+Swept stops that sell an unpaired leg once its value drops X below entry, X ∈ {5,10,15,20,25,30}¢,
+on real per-minute leg paths (580 unpaired legs). **Every threshold is WORSE than holding** (−0.05 to
+−0.29¢/leg). Two reasons, both fundamental: (1) prices are ~efficient — a leg that tumbled to 25¢ is
+the market pricing a 25% win chance, so holding's *expected* value is 25¢ (the "full 45¢ loss" is the
+worst case, not the average), and selling just pays the spread to lock a loss already in the price;
+(2) a drop-triggered stop **sells the local bottom** right before the mean-reversion. NB this is the
+opposite of t11/t12, which sell *early/unconditionally* on a toxic ENTRY (cheap long-shot), not in
+reaction to a drop — exiting a known-bad leg early ≠ reacting to price moves.
+
 ### Selective holding of favorable unpaired legs
 - **t08_hold_no** — hold an unpaired NO leg to settlement (don't pair); pair YES immediately.
   *Grounding:* H7, unpaired NO settles +1.3¢ (favorable), unpaired YES −1.3¢ (toxic).
