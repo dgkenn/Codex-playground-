@@ -525,6 +525,15 @@ def main():
                          "window's avg cost of the unpaired leg). Tape: 45%% of natural completions "
                          "lock a NEGATIVE spread (a guaranteed-loss pair = a stop-loss in disguise, "
                          "and stops lose here); skipping them: +211c -> +5003c on sequential pairs")
+    ap.add_argument("--close-flatten-tau", type=float, default=120.0,
+                    help="in the last N seconds of a window, a COMPLETING quote (one that reduces "
+                         "|net|) bypasses the tau-guard and the min-lock floor relaxes toward a small "
+                         "bounded negative lock. Live forensics: every directional loss was an "
+                         "unpaired leg the tau-guard forbade from completing, riding to settlement "
+                         "(-66c/-31c). A small certain lock beats that tail.")
+    ap.add_argument("--close-max-give", type=float, default=0.04,
+                    help="max negative lock (dollars) we'll accept to complete a box at the very "
+                         "close; the floor ramps from --min-lock to -this as tau->0")
     ap.add_argument("--max-net", type=int, default=1,
                     help="hard cap on |net YES-NO| contracts: 1 = strict BOX PAIRING (after a YES "
                          "fill, quote only NO until paired). Tape decomposition: box pairs earn "
@@ -1110,16 +1119,23 @@ def main():
                     continue
                 if time.time() < side_cooldown[side]:
                     continue              # tweak 1: post-fill cooldown (don't re-quote into the trend)
-                if win_fills.get(side, 0) >= a.max_fills_side:
+                # is this quote COMPLETING a box (reducing |net|)? completing only ever cuts
+                # directional risk, so it is exempt from the open-only late-window guards.
+                is_completing = ((net_delta > 1e-9 and side == "no") or
+                                 (net_delta < -1e-9 and side == "yes"))
+                if win_fills.get(side, 0) >= a.max_fills_side and not is_completing:
                     continue              # tweak 4 (post-mortem): trends outlast the cooldown -- the
                                           # 5th+ same-side fill in a window is where the edge dies
+                                          # (completing legs exempt: they shed risk, never add it)
                 if spread_now < a.min_spread - 1e-9:
                     continue              # tweak 2 REVISED: 1c-spread fills are zero-EV UNPAIRED,
                                           # but under --max-net pairing a 1c book locks 1c/pair
                                           # risk-free -> default lowered 0.02 -> 0.01 (tape floor
                                           # table: all-spreads +1.74c/win t=2.1 vs >=2c-only -0.13c)
-                if tau_left < a.tau_guard:
-                    continue              # tweak 3: late-window fills are systematically adverse
+                if tau_left < a.tau_guard and not is_completing:
+                    continue              # tweak 3: late-window OPENING is adverse -- but a COMPLETING
+                                          # leg must keep quoting (the tau-guard blocking it WAS the
+                                          # directional-loss bug: unpaired legs rode to settlement)
                 # Toxicity gate: skip placing if microprice says this side is adverse
                 if mp is not None and gate_check(side, price, ybb, yba, net_delta, a.gate, 0.0, clean_ybq, clean_yaq):
                     continue
@@ -1134,18 +1150,23 @@ def main():
                 if abs(proj) > inv_cap + 1e-9:
                     continue
                 # BOX COMPLETION FLOOR: this quote pairs against existing inventory -> require the
-                # pair to LOCK >= --min-lock vs the unpaired leg's average cost. Completing below
-                # that is buying a guaranteed loss to flatten -- a stop-loss in disguise, and stops
-                # lose on this tape. Hold and wait for a completable price instead.
+                # pair to LOCK >= eff_lock vs the unpaired leg's average cost. Early in the window
+                # eff_lock = --min-lock (hold out for a positive lock; don't buy a guaranteed loss).
+                # Near close it RAMPS negative to -close_max_give: a bounded certain loss beats
+                # riding an adversely-filled unpaired leg into settlement (the live -66c/-31c tail).
+                eff_lock = a.min_lock
+                if is_completing and tau_left < a.close_flatten_tau:
+                    frac = 1.0 - max(tau_left, 0.0) / a.close_flatten_tau   # 0 -> 1 as tau -> 0
+                    eff_lock = a.min_lock - (a.min_lock + a.close_max_give) * frac
                 if net_delta > 1e-9 and side == "no":
                     py_ = sum(v for k_, v in pos.items() if k_.endswith(":YES"))
                     basis = win_cost["yes"] / py_ if py_ > 0 else 0.0
-                    if basis > 0 and price > 1.0 - basis - a.min_lock + 1e-9:
+                    if basis > 0 and price > 1.0 - basis - eff_lock + 1e-9:
                         continue
                 elif net_delta < -1e-9 and side == "yes":
                     pn_ = sum(v for k_, v in pos.items() if k_.endswith(":NO"))
                     basis = win_cost["no"] / pn_ if pn_ > 0 else 0.0
-                    if basis > 0 and price > 1.0 - basis - a.min_lock + 1e-9:
+                    if basis > 0 and price > 1.0 - basis - eff_lock + 1e-9:
                         continue
                 # C8 aggregate notional cap (BUY side only; both YES and NO are buys)
                 open_buy_notional = sum(max(a.post - m.get("filled", 0.0), 0.0) * price_
