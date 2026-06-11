@@ -910,10 +910,14 @@ def main():
             if bx > 0 and my <= other:        # this fill COMPLETED a box pair (raised the matched count)
                 ay = win_cost.get("yes", 0.0) / py if py else 0.0
                 an = win_cost.get("no", 0.0) / pn if pn else 0.0
-                lock_c = (1.0 - ay - an) * 100.0          # per-pair locked profit (held to settlement)
+                lock_c = (1.0 - ay - an) * 100.0          # per-pair lock (held to settlement)
                 win_c = bx * lock_c
-                notify.alert(f"\U0001f4e6 box bought ({bx:g}x) — +{lock_c:.1f}c/pair locked, "
-                             f"risk-free to settle (window {win_c:+.0f}c)")
+                if lock_c >= -1e-9:
+                    notify.alert(f"\U0001f4e6 box paired ({bx:g}x) +{lock_c:.1f}c/pair locked "
+                                 f"risk-free (window {win_c:+.0f}c)")
+                else:
+                    notify.alert(f"\U0001f4e6 box flattened ({bx:g}x) {lock_c:.1f}c/pair — closing "
+                                 f"unpaired legs near expiry to cap directional risk (window {win_c:+.0f}c)")
             else:                              # opened an unpaired leg, waiting for the other side
                 notify.alert(f"➕ {fside} leg @ {fp:g} — waiting to pair")
         return True
@@ -1188,7 +1192,14 @@ def main():
                 # loser. --max-net 1 turns the clamp into strict pairing: one side fills, only the
                 # completing side keeps quoting. Constant, never linked to the dollar budget.
                 inv_cap = float(a.max_net)
-                proj = net_delta + (a.post if side == "yes" else -a.post)
+                # WORST-CASE projection: count RESTING same-side orders too, not just filled net.
+                # Bug fix (live -$1.05 window): two NO rungs both resting at net=0 each passed the
+                # old filled-only clamp, then both filled ~1s apart -> net -2 (double --max-net). Bound
+                # the worst case where every resting same-side order AND this one fills.
+                sgn = 1.0 if side == "yes" else -1.0
+                rest_same = sum(max(a.post - m.get("filled", 0.0), 0.0)
+                                for (s_, _p), m in resting.items() if s_ == side)
+                proj = net_delta + sgn * (rest_same + a.post)
                 if abs(proj) > inv_cap + 1e-9:
                     continue
                 # BOX COMPLETION FLOOR: this quote pairs against existing inventory -> require the

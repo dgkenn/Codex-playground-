@@ -84,7 +84,7 @@ jobs:
           if python kalshi_preflight.py --asset "$ASSET" | tee /tmp/pf.txt && grep -q "VERDICT: GO" /tmp/pf.txt; then
             timeout --signal=TERM --kill-after=60 2820 \
               python -u kalshi_trader.py --asset "$ASSET" --live --size-mode kelly \
-                --post 1 --max-notional 5 --loss-limit 6 --max-rungs 2 --duration 2760 || true
+                --post 1 --max-notional 5 --loss-limit 6 --max-rungs 1 --duration 2760 || true
           else
             echo "preflight NO-GO -> not trading this cycle"
           fi

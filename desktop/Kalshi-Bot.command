@@ -80,7 +80,7 @@ echo "=========================================="
 echo
 # --duration is effectively unbounded; the window/process lifetime is the on/off switch.
 I_UNDERSTAND_REAL_MONEY=yes "$PY" -u kalshi_trader.py --asset btc --live \
-  --size-mode kelly --post 1 --max-notional 5 --loss-limit 6 --max-rungs 2 \
+  --size-mode kelly --post 1 --max-notional 5 --loss-limit 6 --max-rungs 1 \
   --duration 31536000 &
 BOTPID=$!
 wait "$BOTPID"
