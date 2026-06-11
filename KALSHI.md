@@ -160,3 +160,21 @@ often enough that stops systematically sell the bottom AND pay the exit tax. Sto
 clips, notional cap, sticky session kill) — structural, free. Re-confirms the Polymarket
 `hedge_backtest` refutation from the exit side. The profitable "exit" remains the preventive one:
 the gate refusing the toxic fill, and the cooldown not re-quoting into trends.
+
+## FEE-CONDITIONAL STRATEGY TABLE (the "if the markets have fees" answer, tuned + deployable)
+
+The fee landscape, resolved: all four CRYPTO15M series share identical fee config
+(`fee_type=quadratic, fee_multiplier=1`) and one contract certification; **BTC maker fee = $0.00
+proven on 50+ real fills**; ETH live fee test in flight (thin book) — family inference says $0.
+Index series (KXINX etc.) differ (`mult=0.5`) and some series DO charge maker fees per Kalshi's
+schedule. The strategy is tuned PER REGIME and deployable via `kalshi_trader --fee-mult`:
+
+| regime | where | tuned config | OOS edge (real-tape backtest) |
+|---|---|---|---|
+| maker fee = 0 | CRYPTO15M (BTC proven) | kelly base-1 + gate + ≥2¢ spread + cooldown + τ-guard, front-of-queue | **+2.2–3.0¢/win**, Calmar 1.4–3.4 |
+| maker fee = 0.0175·p(1−p) | any maker-fee series | SAME bot, `--fee-mult 0.0175` (kelly auto-tightens selection around p=0.5, threshold T 0.004–0.010 all OOS-positive) | **+2.5–2.8¢/win**, Calmar 1.8–2.3 |
+| thin book (ETH/alt-like) | any fee regime | **do not trade** (negative even at front-of-queue, fee or no fee) | −2.5 to −6¢/win |
+
+Key structural fact: the quadratic fee is ~0 at the price tails, so the fee-aware sizing rule keeps
+the SAME positive-edge fills (benign, wide-spread, often tail-priced) and drops exactly the fills
+the fee makes marginal — which is why the edge survives the fee regime nearly intact.
