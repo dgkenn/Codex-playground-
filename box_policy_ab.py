@@ -285,6 +285,33 @@ def completion_score(f):
     return s
 
 
+# Frozen logistic FILL-TOXICITY score (P(settle<0)), fit on the 20,318-fill BTC tape (q0=0,
+# 60/40 time-split OOS AUC 0.671; the GBM reaches 0.765 but isn't embeddable as a lambda -- this is
+# the distilled, deployable version; see COMPLETION_MODEL.md "fill-toxicity model"). Coefficients
+# are RAW-feature space over collect_fills units (flow_adv in 1000s of contracts, p = YES-equiv).
+# Note sig_adv fits NEGATIVE: adverse pre-fill spot mean-reverts (same mechanism as "stops lose").
+# Refit when the tape grows materially.
+_TOX_B0 = -0.158221
+_TOX_W = {"side_bin": 0.171259, "p": -0.011119, "abs_p05": 0.337983, "tau": -0.006424,
+          "sig_adv": -0.045708, "flow_adv": -0.015046, "flow_x_tau": 0.080583,
+          "sig_x_side": -0.000210, "spread": 3.290252}
+
+
+def tox_p(f):
+    """P(this fill settles at a loss) from decision-time features. window_fills stores the leg's
+    OWN price ('p'=1-a0 for asks) and flow in contracts (=1000x the fit's flow_adv) -- convert."""
+    p_yeq = f["p"] if f["side"] == "bid" else round(1.0 - f["p"], 4)
+    side_bin = 1.0 if f["side"] == "bid" else 0.0
+    flow_adv = (f["flow"] or 0.0) / 1000.0
+    sig = f.get("sig") or 0.0
+    z = (_TOX_B0 + _TOX_W["side_bin"] * side_bin + _TOX_W["p"] * p_yeq
+         + _TOX_W["abs_p05"] * abs(p_yeq - 0.5) + _TOX_W["tau"] * f["tau"]
+         + _TOX_W["sig_adv"] * sig + _TOX_W["flow_adv"] * flow_adv
+         + _TOX_W["flow_x_tau"] * flow_adv * f["tau"] + _TOX_W["sig_x_side"] * sig * side_bin
+         + _TOX_W["spread"] * f["spread"])
+    return 1.0 / (1.0 + np.exp(-z))
+
+
 def hedge_unpaired(f, h=100.0):
     """Perp-hedge value of an unpaired leg: settle + a delta-neutral BTC hedge (short for a YES leg,
     long for NO). h ~= cents of hedge per 1% BTC move (delta-neutral on the tape). Tape: -3.3c/leg
@@ -319,7 +346,8 @@ def pol_p0(fills):
     return run_policy(fills)
 
 
-def pol_sell_unpaired(fills, cheap_below=None, toxic_above=None, vpin_above=None):
+def pol_sell_unpaired(fills, cheap_below=None, toxic_above=None, vpin_above=None, tox_above=None,
+                      open_ok=None):
     """Always-pair, BUT a leg still unpaired at window end is SOLD BACK (exit value) instead of held.
     Tape finding (the price-bucket split is the key): selling helps strongly for CHEAP long-shot legs
     (price<0.30: hold -4.0c vs sell -1.7c, +2.3c, t=3.5) but HURTS for expensive legs (price>0.70:
@@ -338,6 +366,8 @@ def pol_sell_unpaired(fills, cheap_below=None, toxic_above=None, vpin_above=None
             pnl += f["settle"] + open_leg["settle"]
             open_leg = None
         else:
+            if open_ok is not None and not open_ok(f):       # gate OPENING only (pairing always ok)
+                continue
             open_leg = f                                     # opened a new leg
         net = nn
     if open_leg is not None:                                 # leftover unpaired leg at window end
@@ -349,6 +379,8 @@ def pol_sell_unpaired(fills, cheap_below=None, toxic_above=None, vpin_above=None
         if vpin_above is not None:
             v = open_leg.get("vpin")                          # sell only INFORMED (high-VPIN) fills
             sell = (v is not None) and (v > vpin_above)        # the literature-correct stop
+        if tox_above is not None:
+            sell = tox_p(open_leg) > tox_above                # fitted-toxicity stop (the ML exit)
         pnl += open_leg.get("exit", open_leg["settle"]) if sell else open_leg["settle"]
     return pnl
 
@@ -384,6 +416,14 @@ TRIALS = {
     "t14_perp_hedge_unpaired": lambda F: pol_hedge_unpaired(F),                         # #1: hedge the leg
     "t15_gamma_size_down":     lambda F: run_policy(F, weight=lambda f: (15 - f["k"]) / 13.0),
     "t16_no_leg_preference":   lambda F: run_policy(F, open_ok=lambda f, s: f["side"] == "ask"),
+    # ---- fitted fill-toxicity score (the ONE ML framing with CI-excluding-zero economic lift;
+    #      GBM +2.1c/fill settle / +2.9c markout vs hold-all -- see COMPLETION_MODEL.md). Frozen
+    #      logistic distillation; thresholds pre-registered from the fit's quantile sweep:
+    #      tox>0.55 sells the worst ~39% (mean -0.6c) keeping +0.5c fills; gate<0.65 skips ~10%.
+    "t17_tox_exit_unpaired":   lambda F: pol_sell_unpaired(F, tox_above=0.55),
+    "t18_tox_open_gate":       lambda F: run_policy(F, open_ok=lambda f, s: tox_p(f) < 0.65),
+    "t19_tox_gate_and_exit":   lambda F: pol_sell_unpaired(F, tox_above=0.55,
+                                                           open_ok=lambda f: tox_p(f) < 0.65),
 }
 
 

@@ -70,6 +70,20 @@ records (verified captured):
   literature). Highest backtest return BUT 2× variance and 55% win rate — a directional bet, not
   making. Tracked here to confirm whether the high-variance return is real or a regime artifact.
 
+### Fitted fill-toxicity score (the one ML framing with real economic lift — COMPLETION_MODEL.md)
+The 20,318-fill backtest showed a GBM toxicity model ("will this fill settle at a loss?") with the
+ONLY CI-excluding-zero economic lift of the whole ML effort (+2.1¢/fill settle, +2.9¢ markout vs
+hold-all; beats VPIN-only and sig-only gates, whose CIs span zero). Deployed into the tester as a
+frozen logistic distillation `tox_p(f)` (OOS AUC 0.671 vs GBM 0.765 — the lambda-embeddable version)
+over decision-time features (side, price level, |p−0.5|, tau, sig, flow, flow×tau, spread).
+Thresholds pre-registered from the fit's quantile sweep, NOT tuned on forward data:
+- **t17_tox_exit_unpaired** — sell an unpaired leg at window end iff `tox_p > 0.55` (sells the worst
+  ~39% of legs, which average −0.6¢ vs +0.5¢ kept on the tape). Generalizes t13 (VPIN-only).
+- **t18_tox_open_gate** — don't OPEN a leg with `tox_p ≥ 0.65` (skips the worst ~19% of fills).
+- **t19_tox_gate_and_exit** — both: gate opens at 0.65 AND tox-exit unpaired legs at 0.55.
+Caveat: the frozen coefficients fit sig_adv NEGATIVE (adverse pre-fill spot mean-reverts — the same
+mechanism that makes plain stops lose), so the score is NOT a momentum stop. Refit as tape grows.
+
 ### Stop-loss thresholds on a tumbling leg — TESTED AND REJECTED (don't re-test)
 Swept stops that sell an unpaired leg once its value drops X below entry, X ∈ {5,10,15,20,25,30}¢,
 on real per-minute leg paths (580 unpaired legs). **Every threshold is WORSE than holding** (−0.05 to
