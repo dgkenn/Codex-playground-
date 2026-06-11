@@ -56,3 +56,7 @@ kalshi_markout.jsonl
 overnight_data/
 kalshi_fees_*.jsonl
 .scorecard_results.json
+
+# A/B local state (derived, not source)
+box_policy_ledger_*.jsonl
+STRATEGY_ALERTS.txt
