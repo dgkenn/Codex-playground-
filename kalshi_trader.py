@@ -156,16 +156,17 @@ def ws_feeder(ws_state, ws_sub, book_evt, ws_fills, private_key):
                         if mtype == "error":
                             print(f"  [ws-book] error from server: {str(msg)[:120]}")
                             continue
+                        payload = msg.get("msg") or {}   # WS envelope: {"type", "sid", "seq", "msg": {...}}
                         if mtype == "orderbook_snapshot":
-                            _apply_snapshot(ws_state, msg)
+                            _apply_snapshot(ws_state, payload)
                             if book_evt is not None:
                                 book_evt.set()
                         elif mtype == "orderbook_delta":
-                            _apply_delta(ws_state, msg)
+                            _apply_delta(ws_state, payload)
                             if book_evt is not None:
                                 book_evt.set()
                         elif mtype == "fill":
-                            ws_fills.append(msg)
+                            ws_fills.append(payload)
             except Exception as exc:
                 print(f"  [ws-book] disconnected ({type(exc).__name__}: {str(exc)[:80]}); reconnect in 1s")
                 await asyncio.sleep(1)
@@ -221,8 +222,8 @@ def _apply_delta(ws_state, msg):
         return
     book_side = ws_state[ticker][side]
     new_qty = book_side.get(price, 0.0) + delta
-    if new_qty <= 0:
-        book_side.pop(price, None)
+    if new_qty <= 0.005:                 # epsilon: float residue (e.g. 8e-13) must EMPTY the level,
+        book_side.pop(price, None)       # else ghost levels lock/cross the derived book
     else:
         book_side[price] = new_qty
     ws_state[ticker]["ts"] = time.time()
@@ -519,6 +520,16 @@ def main():
     ap.add_argument("--cap", type=float, default=50)
     ap.add_argument("--skew", type=float, default=0.25)
     ap.add_argument("--max-rungs", type=int, default=3, help="max resting rungs per side")
+    ap.add_argument("--fill-cooldown", type=float, default=20.0,
+                    help="after a fill (or failed toxic cancel) on a side, do not re-quote that side "
+                         "for this many seconds (live data: re-quoting into a trend caught the knife "
+                         "4x in one window -- the single largest observed bleed)")
+    ap.add_argument("--min-spread", type=float, default=0.02,
+                    help="only place when spread >= this (markout model on ~20k fills: 1c-spread "
+                         "fills are ~zero-EV; the edge lives at >=2c)")
+    ap.add_argument("--tau-guard", type=float, default=150.0,
+                    help="no new quotes when under this many seconds to expiry (late fills carry "
+                         "systematically worse markouts; binary gamma explodes)")
     ap.add_argument("--size-mode", choices=["flat", "kelly"], default="flat",
                     help="kelly = fee-aware edge sizing (kalshi_sizing.py): place only when "
                          "mhat-fee>0, size 1..KELLY_MAX units of --post; flat = always --post")
@@ -606,6 +617,7 @@ def main():
     book_evt = threading.Event()
     # ws_fills: real-time own fills from WS fill channel; drained each loop before REST poll
     ws_fills = collections.deque()
+    side_cooldown = {"yes": 0.0, "no": 0.0}   # no re-quote on a side until this ts (anti-knife)
 
     # --- state ---
     mk = None
@@ -652,6 +664,7 @@ def main():
                 ok2 = cancel_order(sess, priv, oid)
                 if not ok2:
                     print(f"  [CANCEL-FAIL] {oid[:16]} key={key} reason={reason}")
+                    side_cooldown[key[0]] = time.time() + a.fill_cooldown   # likely filling against us
                     ok = False
             else:
                 print(f"  [DRY cancel] key={key} reason={reason}")
@@ -1022,10 +1035,18 @@ def main():
             target_set = set(targets)
 
             # --- PLACE missing rungs ---
+            spread_now = (yba - ybb) if (ybb is not None and yba is not None) else 0.0
+            tau_left = max(mk["we"] - time.time(), 0.0)
             for side, price in targets:
                 key = (side, round(price, 4))
                 if key in resting:
                     continue
+                if time.time() < side_cooldown[side]:
+                    continue              # tweak 1: post-fill cooldown (don't re-quote into the trend)
+                if spread_now < a.min_spread - 1e-9:
+                    continue              # tweak 2: 1c-spread fills are ~zero-EV (markout model)
+                if tau_left < a.tau_guard:
+                    continue              # tweak 3: late-window fills are systematically adverse
                 # Toxicity gate: skip placing if microprice says this side is adverse
                 if mp is not None and gate_check(side, price, ybb, yba, net_delta, a.gate, 0.0, clean_ybq, clean_yaq):
                     continue
@@ -1092,7 +1113,8 @@ def main():
             # ----------------------------------------------------------------
             if hk:
                 if live:
-                    poll_fills()
+                    drain_ws_fills()   # real-time WS fills first (deduped by seen_fills)
+                    poll_fills()       # REST backstop (slower cadence, catches any WS misses)
                     poll_balance_lm()
 
                 # Score due 5s markouts
@@ -1182,7 +1204,11 @@ def main():
 
             consec_err = 0
             flush_cancels()   # defensive flush at end of clean pass
-            time.sleep(a.react_poll)
+            # EVENT-DRIVEN reaction: wake instantly when the WS feeder applies a book delta
+            # (reaction latency ~= processing time, not poll-cadence/2). --react-poll is now
+            # only the idle heartbeat ceiling (mirrors live_trader event-driven pattern).
+            book_evt.wait(a.react_poll)
+            book_evt.clear()
 
         except KeyboardInterrupt:
             _flatten_and_exit("KeyboardInterrupt")
