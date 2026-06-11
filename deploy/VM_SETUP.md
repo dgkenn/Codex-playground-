@@ -16,13 +16,24 @@ same Telegram on/off, same caps. About 15 minutes, one time.
 3. Create. Note the instance's **public IP**.
 
 ## 2. Get in and copy your credentials up
+
+**macOS / Linux:**
 ```bash
 ssh -i <downloaded-key> ubuntu@<vm-ip>          # connect
-
-# from a SECOND terminal on your laptop, copy your keys up:
 ssh ubuntu@<vm-ip> 'mkdir -p ~/.kalshi && chmod 700 ~/.kalshi'
 scp ~/.kalshi/key.pem ~/.kalshi/env ubuntu@<vm-ip>:~/.kalshi/
 ```
+
+**Windows (PowerShell — ssh/scp are built in, no PuTTY needed):**
+```powershell
+# connect (use the key Oracle gave you):
+ssh -i C:\Users\<you>\Downloads\<key>.key ubuntu@<vm-ip>
+
+# from another PowerShell window, make the folder and copy your two cred files up:
+ssh -i C:\Users\<you>\Downloads\<key>.key ubuntu@<vm-ip> "mkdir -p ~/.kalshi && chmod 700 ~/.kalshi"
+scp -i C:\Users\<you>\Downloads\<key>.key C:\Users\<you>\.kalshi\key.pem C:\Users\<you>\.kalshi\env ubuntu@<vm-ip>:~/.kalshi/
+```
+(If your key.pem / env live elsewhere on the PC, point those paths at wherever they are.)
 Your `~/.kalshi/env` should contain (the same one your laptop launcher uses):
 ```
 export KALSHI_API_KEY_ID=YOUR_KEY_ID
