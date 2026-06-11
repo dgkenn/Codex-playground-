@@ -274,6 +274,30 @@ def desired_levels(mk, yes_bid, yes_ask, net_delta, layers, cap, skew_frac, impr
     return result
 
 
+# --- SMART SIZING (kalshi_sizing.py backtest verdict): size ∝ max(0, mhat - fee(p)) ---
+# mhat = markout model fit on ~20k real BTC fills (IS half); spread dominates. fee=0 confirmed live
+# on KX*15M makers, kept in the formula so a fee change auto-tightens sizing. The rule is a
+# SELECTION effect (bet benign wide-spread fee-cheap fills, refuse the rest), ~14x more capital-
+# efficient than flat -- and with fractional Kelly + a hard unit cap the per-window loss is bounded:
+# RISK OF RUIN: max size KELLY_MAX units * max_notional clamp * sticky loss-limit kill => a session
+# cannot lose more than --loss-limit, and re-arming requires manually deleting the sentinel.
+KELLY_COEF = (-0.0085, 0.0074, 0.3794, 0.0077)   # bias, |p-.5|, spread, tau  (BTC ~20k-fill tape fit)
+KELLY_T = 0.008                                  # edge threshold (kalshi_sizing.py sweep: OOS Calmar
+#                                                  robustly POSITIVE in BOTH fee regimes >= 0.008;
+#                                                  below ~0.004 OOS collapses from over-betting)
+KELLY_MAX = 2                                     # hard contract cap per fill (units of --post)
+
+def kelly_size(p, spread, tau_frac, fee_mult=0.0):
+    """Integer fee-aware Kelly: bet only when predicted net edge clears KELLY_T, size up to KELLY_MAX
+    as edge grows. Selection effect (refuse marginal/toxic fills) is what holds OUT-OF-SAMPLE."""
+    b0, b1, b2, b3 = KELLY_COEF
+    mhat = b0 + b1 * abs(p - 0.5) + b2 * spread + b3 * tau_frac
+    edge = mhat - fee_mult * p * (1.0 - p)
+    if edge <= KELLY_T:
+        return 0
+    return min(KELLY_MAX, 1 + int(edge // (2 * KELLY_T)))   # 1, then +1 per 2T of edge, capped
+
+
 def gate_check(side, price, yes_bid, yes_ask, net_delta, gate, fv_margin, bq=0.0, aq=0.0):
     """True = TOXIC (skip or pull). Mirrors live_trader ufat gate: microprice anchor with
     p-adaptive margin. BUY-YES toxic if mp < price-margin; BUY-NO toxic if mp > (1-price)+margin."""
@@ -310,6 +334,9 @@ def main():
     ap.add_argument("--cap", type=float, default=50)
     ap.add_argument("--skew", type=float, default=0.25)
     ap.add_argument("--max-rungs", type=int, default=3, help="max resting rungs per side")
+    ap.add_argument("--size-mode", choices=["flat", "kelly"], default="flat",
+                    help="kelly = fee-aware edge sizing (kalshi_sizing.py): place only when "
+                         "mhat-fee>0, size 1..KELLY_MAX units of --post; flat = always --post")
     ap.add_argument("--improve-tick", type=float, default=0.01,
                     help="one tick inside the touch (1c); set 0.001 only if/where the venue accepts sub-cent")
     ap.add_argument("--gate", choices=["ufat", "micro", "marg"], default="ufat")
@@ -472,7 +499,7 @@ def main():
             pass
 
     # --- place helper ---
-    def place(side, price, yes_bid, yes_ask):
+    def place(side, price, yes_bid, yes_ask, count=None):
         """Post one rung. Returns order_id or None. DRY-RUN: prints, returns fake id.
         side='yes'|'no'. price in dollars (up to 4 decimals).
         Post-only guard: we only ever place buy orders; Kalshi's post_only=True rejects
@@ -489,9 +516,9 @@ def main():
         t_dec = time.time()
         if not live:
             fake = f"dry_{side}_{price:.4f}_{int(t_dec*1000)%100000}"
-            print(f"  [DRY place] BUY-{side.upper()} {a.post} @ {price:.4f}")
+            print(f"  [DRY place] BUY-{side.upper()} {count or int(a.post)} @ {price:.4f}")
             return fake, t_dec, time.time()
-        oid = place_order(sess, priv, mk["cid"], side, price, a.post)
+        oid = place_order(sess, priv, mk["cid"], side, price, count or int(a.post))
         t_ack = time.time()
         if oid is None:
             lm.place_reject(side, price, "no order_id from venue")
@@ -773,7 +800,15 @@ def main():
                 # Side ladder rung cap
                 if sum(1 for k in resting if k[0] == side) >= a.max_rungs:
                     continue
-                res = place(side, price, ybb, yba)
+                units = 1
+                if a.size_mode == "kelly":
+                    # gate_check already refused toxic fills; here Kelly UP-SIZES strong-edge fills to
+                    # KELLY_MAX while keeping a 1-contract base so the live run actually gathers fill
+                    # data on the tight book (the ultra-selective 0-floor never fires at 1c spreads).
+                    tau_frac = max(mk["we"] - time.time(), 0.0) / 900.0
+                    units = max(1, kelly_size(price if side == "yes" else 1.0 - price,
+                                              yba - ybb, tau_frac))
+                res = place(side, price, ybb, yba, count=units * int(a.post))
                 if res is None:
                     continue
                 if isinstance(res, tuple):

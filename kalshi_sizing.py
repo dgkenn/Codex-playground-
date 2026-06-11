@@ -110,10 +110,13 @@ def size_rule(name, df, mult, mhat):
         return (adv <= GATE_BPS).astype(float)
     if name == "level":                                 # taper toward fee-cheap tails
         return np.clip(1.0 + 2.0 * (np.abs(p - 0.5) - 0.25), 0.0, KMAX)
-    if name == "edge_kelly":                            # the unified fee-aware rule
-        edge = mhat - fee_of(p, mult)                   # predicted net per contract
-        # fractional Kelly on a ~unit-variance per-fill bet -> size ∝ edge; clip, zero if negative
+    if name == "edge_kelly":                            # continuous (reference)
+        edge = mhat - fee_of(p, mult)
         return np.clip(KELLY_FRAC * edge / 0.02, 0.0, KMAX)
+    if name == "kelly_int":                             # the EXACT live integer rule (kalshi_trader)
+        edge = mhat - fee_of(p, mult)
+        u = np.where(edge <= 0, 0, np.where(edge > 0.008, 2, 1))
+        return u.astype(float)
     return np.ones(len(df))
 
 
@@ -147,7 +150,7 @@ def main():
         print(f"=== {tag} ===")
         print(f"{'rule':>11} {'units/win':>9} {'net/win(c)':>11} {'perfill(c)':>11} "
               f"{'Sharpe':>7} {'OOS net':>8} {'OOS Cal':>8}")
-        for rule in ("flat", "gate", "level", "edge_kelly"):
+        for rule in ("flat", "edge_kelly", "kelly_int"):
             sz = size_rule(rule, df, mult, mhat)
             # per-fill net = size * (settlement - fee), fee charged per contract
             net = sz * (df.settle.to_numpy() - fee_of(df.p.to_numpy(), mult))
