@@ -26,7 +26,7 @@ while true; do
   sw=$(tr -d '[:space:]' < LIVE_SWITCH 2>/dev/null || echo off)
   if [ "$sw" = "on" ] && [ ! -f ".kalshi_killed_${ASSET}15m" ]; then
     I_UNDERSTAND_REAL_MONEY=yes python -u kalshi_trader.py --asset "$ASSET" --live \
-      --size-mode kelly --post 1 --max-notional 5 --loss-limit 3 --max-rungs 2 \
+      --size-mode kelly --post 1 --max-notional 5 --loss-limit 6 --max-rungs 2 \
       --duration 3300 >> overnight_data/trader.log 2>&1 || true
   else
     sleep 30                                            # switch off / killed -> idle, re-check

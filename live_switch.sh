@@ -25,7 +25,7 @@ case "${1:-status}" in
     exit 0 ;;
   *) echo "usage: $0 on|off|status"; exit 2 ;;
 esac
-git add LIVE_SWITCH ".kalshi_killed_${ASSET}15m" 2>/dev/null
+git add LIVE_SWITCH                      # sentinel is gitignored; never staged (would break add)
 git commit -q -m "$msg" || { echo "nothing to commit (already $(cur))"; exit 0; }
 for i in 1 2 3 4; do
   git push -u origin "$BR" && { echo "$msg (pushed to $BR)"; exit 0; }

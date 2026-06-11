@@ -15,7 +15,7 @@
 #     3. Flip the switch on.
 #
 #   SAFE BY DEFAULT: missing secrets OR LIVE_SWITCH!=on => the job does nothing. Same caps as the
-#     attended bot ($5 max notional, $3 sticky loss-limit, post-only, reconciliation, dead-man).
+#     attended bot ($5 max notional, $6 sticky loss-limit, post-only, reconciliation, dead-man).
 #   STICKY KILL: a loss-limit trip writes the kill sentinel; this workflow then flips LIVE_SWITCH
 #     to off and stops the chain. You re-arm by running ./live_switch.sh on (clears the sentinel).
 #   SECURITY: triggers are schedule + workflow_dispatch ONLY (never pull_request), so a fork PR can
@@ -84,7 +84,7 @@ jobs:
           if python kalshi_preflight.py --asset "$ASSET" | tee /tmp/pf.txt && grep -q "VERDICT: GO" /tmp/pf.txt; then
             timeout --signal=TERM --kill-after=60 2820 \
               python -u kalshi_trader.py --asset "$ASSET" --live --size-mode kelly \
-                --post 1 --max-notional 5 --loss-limit 3 --max-rungs 2 --duration 2760 || true
+                --post 1 --max-notional 5 --loss-limit 6 --max-rungs 2 --duration 2760 || true
           else
             echo "preflight NO-GO -> not trading this cycle"
           fi

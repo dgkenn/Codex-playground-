@@ -1,0 +1,46 @@
+# 2-SIGMA STRATEGY ALERT. Hourly, aggregates every trial strategy's forward A/B ledger from the
+# gha-data branch and, when any candidate crosses the two-sigma bar (|paired t| > 2 over >= 100
+# forward windows vs the live P0 baseline), pushes a Telegram alert + a GitHub warning so we are
+# made aware and can take action. Read-only, no money. Trial strategies live in box_policy_ab.py's
+# TRIALS registry; adding one there auto-enrolls it here.
+name: strategy-alert
+
+on:
+  schedule:
+    - cron: '17 * * * *'         # hourly, offset off the top of the hour
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+env:
+  BRANCH: claude/polymarket-bot-live-ready-vw7ut5
+
+jobs:
+  alert:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.BRANCH }}
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: install deps
+        run: for i in 1 2 3; do pip install --quiet numpy requests && break; sleep 10; done
+      - name: pull forward A/B ledger fragments from gha-data
+        run: |
+          if git fetch --depth=1 origin gha-data 2>/dev/null; then
+            git checkout origin/gha-data -- gha_data 2>/dev/null || mkdir -p gha_data
+          else
+            mkdir -p gha_data
+          fi
+      - name: score every trial strategy + 2-sigma alert (Telegram via notify if configured)
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          for A in btc eth sol xrp; do
+            python box_policy_ab.py --report --alert --asset "$A" --dir gha_data || true
+          done

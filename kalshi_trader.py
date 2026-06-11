@@ -565,7 +565,21 @@ def main():
                     help="one tick inside the touch (1c); set 0.001 only if/where the venue accepts sub-cent")
     ap.add_argument("--gate", choices=["ufat", "micro", "marg"], default="ufat")
     ap.add_argument("--max-notional", type=float, default=25)
-    ap.add_argument("--loss-limit", type=float, default=5)
+    ap.add_argument("--loss-limit", type=float, default=6,
+                    help="per-session realized+mark $ loss that trips the STICKY kill. Widened from "
+                         "the old 3: the box edge is near-risk-free per window (|net|<=1 caps "
+                         "directional exposure at ~$1/window), and the tape's natural multi-window "
+                         "drawdown reaches ~$3.5 -- a $3 stop fired on NORMAL variance. $6 is ~1.7x "
+                         "that, i.e. it only trips when a session is going genuinely wrong.")
+    ap.add_argument("--markout-kill-bar", type=float, default=-0.04,
+                    help="rolling-markout kill: trip if the avg 5s markout over the last "
+                         "--markout-kill-n fills is below this. Widened from -0.01: live data shows "
+                         "NORMAL 5s markout averages -0.01 (-1c) for this maker, so -0.01 tripped on "
+                         "noise (that was the 'toxic_markout' kill). -0.04 is ~4x normal = a genuine "
+                         "'we are being systematically run over' regime, the only thing worth halting "
+                         "a hold-to-settlement box for.")
+    ap.add_argument("--markout-kill-n", type=int, default=50,
+                    help="fills in the rolling-markout-kill window (more = steadier, fewer false trips)")
     ap.add_argument("--poll", type=float, default=1.0, help="housekeeping cadence (s): fills+balance+settles")
     ap.add_argument("--react-poll", type=float, default=0.25, help="book polling cadence (s)")
     ap.add_argument("--duration", type=int, default=3600)
@@ -742,7 +756,12 @@ def main():
             print(f"[DEAD-MAN] cancel failed: {str(e)[:120]}")
 
     atexit.register(lambda: _flatten_and_exit("process exit"))
-    for _sig in (signal.SIGTERM, signal.SIGINT):
+    # SIGHUP included so closing the desktop launcher's terminal window cancels all orders cleanly
+    # (the window/process lifetime is the on/off switch). SIGHUP is absent on Windows -> guarded.
+    _sigs = [signal.SIGTERM, signal.SIGINT]
+    if hasattr(signal, "SIGHUP"):
+        _sigs.append(signal.SIGHUP)
+    for _sig in _sigs:
         try:
             signal.signal(_sig, lambda *_, s_=_sig: (_flatten_and_exit(f"signal {s_}"), os._exit(0)))
         except Exception:
@@ -1075,11 +1094,16 @@ def main():
                 _record_kill(f"loss_limit realized={realized:+.2f} mark={window_mark:+.2f}")
                 cancel_all_resting(reason="loss_limit"); break
 
-            # Rolling markout kill (same threshold as live_trader)
-            if len(markouts) >= 30 and sum(markouts[-30:]) / 30 < -0.01:
-                print("KILL: rolling markout toxic. cancel-all + exit.")
-                notify.alert("[kalshi] KILL markout toxic")
-                _record_kill("toxic_markout")
+            # Rolling markout kill -- the "strategy is going horribly wrong" detector. Calibrated to
+            # only fire on GENUINE sustained toxicity (avg 5s markout << the strategy's normal -1c),
+            # not the normal maker adverse selection that 5s mid-reversion always shows. For a box
+            # held to settlement this is a regime/venue alarm, not a per-trade stop.
+            n_mk = a.markout_kill_n
+            if len(markouts) >= n_mk and sum(markouts[-n_mk:]) / n_mk < a.markout_kill_bar:
+                avg = sum(markouts[-n_mk:]) / n_mk
+                print(f"KILL: rolling markout {avg:+.4f} < {a.markout_kill_bar} over {n_mk}. cancel-all + exit.")
+                notify.alert(f"[kalshi] KILL markout toxic (avg {avg:+.4f} over {n_mk})")
+                _record_kill(f"toxic_markout avg={avg:+.4f} n={n_mk}")
                 cancel_all_resting(reason="toxic_kill"); break
 
             # --- book poll (REST; react-poll cadence) ---

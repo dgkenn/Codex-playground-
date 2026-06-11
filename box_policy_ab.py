@@ -34,9 +34,12 @@ import os
 import numpy as np
 
 # Pre-registered decision rule (frozen in P2_PROSPECTIVE.md; do not tune to the data):
-MIN_WINDOWS = 300       # need at least this many forward windows before any decision
-T_BAR = 3.0             # paired diff (P2-P0) t-stat must exceed this (positive)
-DD_MULT = 1.25          # AND P2 max-drawdown <= DD_MULT * P0 max-drawdown (risk-of-ruin guard)
+MIN_WINDOWS = 300       # need at least this many forward windows before a DEPLOY decision
+T_BAR = 3.0             # DEPLOY bar: paired diff (trial-P0) t-stat must exceed this (positive)
+DD_MULT = 1.25          # AND trial max-drawdown <= DD_MULT * P0 max-drawdown (risk-of-ruin guard)
+# ALERT tier (the "two-sigma rule" -- be made aware so we can take action; NOT auto-deploy):
+ALERT_T = 2.0           # |paired t| past 2-sigma raises an alert (either direction)
+ALERT_N = 100           # ...once at least this many forward windows are scored (avoid tiny-n noise)
 
 
 def _f(x):
@@ -177,6 +180,20 @@ def policy_pnl(fills, signal_hold):
     return pnl
 
 
+# ------------------------------------------------------------------------------------------------
+# TRIAL-STRATEGY REGISTRY. The live default is P0 (always-pair). Every entry here is a CANDIDATE
+# scored vs P0 on FORWARD collector data and held to the two-sigma alert + pre-registered deploy bar.
+# To prospectively test a new policy idea, add  name -> fn(fills)->pnl  here; it auto-inherits the
+# accumulation, the 2-sigma alert, and the deploy gate. No live code changes until it clears the bar.
+def pol_p0(fills):
+    return policy_pnl(fills, signal_hold=False)
+
+
+TRIALS = {
+    "p2_signal_hold": lambda fills: policy_pnl(fills, signal_hold=True),
+}
+
+
 def tstat(x):
     x = np.asarray(x, float); x = x[~np.isnan(x)]
     if len(x) < 8 or x.std(ddof=1) == 0:
@@ -197,13 +214,17 @@ def main():
     ap.add_argument("--ledger", default=None,
                     help="ledger to APPEND new windows to (default box_policy_ledger_<asset>.jsonl). "
                          "On GHA use a run-scoped path under gha_data/ so each run commits a fragment.")
+    ap.add_argument("--alert", action="store_true",
+                    help="on a 2-sigma crossing, emit a GitHub warning, append STRATEGY_ALERTS.txt, "
+                         "and push a notify.alert (Telegram). Use in the periodic report job.")
     a = ap.parse_args()
     ledger = a.ledger or f"box_policy_ledger_{a.asset}.jsonl"
 
     # Aggregate ALL ledger fragments (cwd + each --dir) so run-scoped GHA fragments combine; dedup by ws.
     seen = {}
-    frag_paths = [ledger] + [p for d in a.dir if os.path.isdir(d)
-                             for p in glob.glob(os.path.join(d, f"box_policy_ledger_{a.asset}*.jsonl"))]
+    frag_paths = [ledger] + [p for d in a.dir if os.path.isdir(d)   # recursive: gha-data dates the dirs
+                             for p in glob.glob(os.path.join(d, "**", f"box_policy_ledger_{a.asset}*.jsonl"),
+                                                recursive=True)]
     for fpath in dict.fromkeys(frag_paths):
         if os.path.exists(fpath):
             for ln in open(fpath):
@@ -224,37 +245,65 @@ def main():
                 fills = window_fills(ws, res[ws], bid, ask, spot, trades[ws])
                 if not fills:
                     continue
-                p0 = policy_pnl(fills, False); p2 = policy_pnl(fills, True)
                 rec = {"ws": ws, "res": res[ws], "n_fills": len(fills),
-                       "p0": round(p0, 6), "p2": round(p2, 6), "diff": round(p2 - p0, 6)}
+                       "p0": round(pol_p0(fills), 6),
+                       "trials": {name: round(fn(fills), 6) for name, fn in TRIALS.items()}}
                 out.write(json.dumps(rec) + "\n"); seen[ws] = rec; added += 1
 
     rows = sorted(seen.values(), key=lambda r: r["ws"])
     n = len(rows)
-    print(f"P2 PROSPECTIVE A/B ({a.asset}) -- {n} forward windows scored (+{added} new this run)")
+    print(f"TRIAL-STRATEGY PROSPECTIVE A/B ({a.asset}) -- {n} forward windows (+{added} new this run)")
     if n == 0:
         print("  no scored windows yet; let the collector accumulate."); return
-    p0 = np.array([r["p0"] for r in rows]); p2 = np.array([r["p2"] for r in rows])
-    diff = p2 - p0
-    t = tstat(diff)
-    dd0, dd2 = maxdd(p0), maxdd(p2)
-    print(f"  P0 always-pair : net/win {p0.mean()*100:+.2f}c  total {p0.sum()*100:+.0f}c  maxDD {dd0*100:.0f}c")
-    print(f"  P2 signal-hold : net/win {p2.mean()*100:+.2f}c  total {p2.sum()*100:+.0f}c  maxDD {dd2*100:.0f}c")
-    print(f"  diff (P2-P0)   : {diff.mean()*100:+.3f}c/win  paired t={t:+.2f}  (n={n})")
-    ok_n = n >= MIN_WINDOWS
-    ok_t = (not np.isnan(t)) and t > T_BAR
-    ok_dd = dd2 <= DD_MULT * dd0 + 1e-9
-    print("\n  PRE-REGISTERED RULE (P2_PROSPECTIVE.md): deploy P2 iff "
-          f"n>={MIN_WINDOWS} AND paired t>{T_BAR} AND P2 maxDD<={DD_MULT}x P0 maxDD")
-    print(f"    n>={MIN_WINDOWS}: {'PASS' if ok_n else f'no ({n})'} | "
-          f"t>{T_BAR}: {'PASS' if ok_t else f'no ({t:+.2f})'} | "
-          f"DD guard: {'PASS' if ok_dd else f'no ({dd2*100:.0f}>{DD_MULT}x{dd0*100:.0f})'}")
-    if ok_n and ok_t and ok_dd:
-        print("    VERDICT: *** P2 CLEARS THE BAR -- bring to the operator to deploy ***")
-    elif ok_n:
-        print("    VERDICT: enough data, bar NOT cleared -> KEEP P0 (P2 stays a shadow hypothesis)")
+    p0 = np.array([r["p0"] for r in rows]); dd0 = maxdd(p0)
+    print(f"  P0 always-pair (LIVE baseline): net/win {p0.mean()*100:+.2f}c  maxDD {dd0*100:.0f}c  n={n}")
+
+    # union of all trial names ever seen (old ledgers stored a flat 'p2' field -> migrate)
+    names = set()
+    for r in rows:
+        names.update((r.get("trials") or {}).keys())
+        if "p2" in r:
+            names.add("p2_signal_hold")
+    alerts = []
+    for name in sorted(names):
+        pt = np.array([(r.get("trials") or {}).get(name,
+                        r.get("p2") if name == "p2_signal_hold" else np.nan) for r in rows], float)
+        m = ~np.isnan(pt)
+        if m.sum() < 8:
+            continue
+        diff = pt[m] - p0[m]
+        t = tstat(diff); ddt = maxdd(pt[m]); nn = int(m.sum())
+        print(f"  [{name}] net/win {pt[m].mean()*100:+.2f}c  maxDD {ddt*100:.0f}c | "
+              f"diff {diff.mean()*100:+.3f}c/win  paired t={t:+.2f} (n={nn})")
+        # two-sigma ALERT tier
+        if nn >= ALERT_N and not np.isnan(t) and abs(t) > ALERT_T:
+            alerts.append((name, t, nn))
+        # pre-registered DEPLOY tier
+        if nn >= MIN_WINDOWS and not np.isnan(t) and t > T_BAR and ddt <= DD_MULT * dd0 + 1e-9:
+            print(f"      *** {name} CLEARS THE DEPLOY BAR (n>={MIN_WINDOWS}, t>{T_BAR}, DD ok) "
+                  f"-> bring to operator ***")
+
+    if alerts:
+        lines = [f"{name}: paired t={t:+.2f} over n={nn} (2-sigma {'+' if t>0 else '-'})"
+                 for name, t, nn in alerts]
+        banner = (f"[STRATEGY ALERT] {a.asset}: trial strategy crossed the 2-sigma bar -- review "
+                  f"for action.\n  " + "\n  ".join(lines))
+        print("\n" + banner)
+        if a.alert:
+            for name, t, nn in alerts:               # GitHub Actions annotation (shows on the run)
+                print(f"::warning title=Strategy crossed 2-sigma::{name} t={t:+.2f} n={nn} ({a.asset})")
+            try:                                     # committed trail + phone push (Telegram via notify)
+                with open("STRATEGY_ALERTS.txt", "a") as fh:
+                    fh.write(f"{__import__('datetime').datetime.utcnow().isoformat()}Z  {banner}\n")
+            except Exception:
+                pass
+            try:
+                import notify
+                notify.alert(banner)
+            except Exception:
+                pass
     else:
-        print("    VERDICT: still accumulating -- no decision yet")
+        print("\n  no trial strategy past the 2-sigma alert bar yet -- accumulating.")
 
 
 if __name__ == "__main__":

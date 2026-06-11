@@ -17,16 +17,27 @@ today, then decide only if a frozen bar is cleared.
 - **P2 SIGNAL-HOLD** — when an unpaired leg's decision-time spot signal was favorable (`sig_adv<=0`),
   HOLD it to settlement instead of pairing; otherwise pair. The candidate "tie-breaker."
 
-## Pre-registered decision rule (FROZEN 2026-06-11 — do not tune to the data)
-Scored by `box_policy_ab.py` on forward collector windows (ws on/after the freeze date). Deploy P2
-to live **iff ALL hold**:
-1. **n ≥ 300** forward windows scored, AND
-2. paired diff (P2−P0) **t-stat > 3.0** (clearly positive, well past the 2-sigma in-sample level), AND
-3. **P2 max-drawdown ≤ 1.25 × P0 max-drawdown** (the risk-of-ruin guard — P2's whole risk is that
-   it re-introduces directional variance; if its drawdown balloons, we reject even if the mean wins).
+## This is a framework: ALL trial strategies follow the same rule
+P2 is the first entry in the `TRIALS` registry in `box_policy_ab.py`. Any future policy idea added
+there is scored vs the live P0 baseline on forward data and inherits the two tiers below
+automatically — no special-casing, same discipline for everything.
 
-If n ≥ 300 and the bar is NOT cleared → **keep P0**; P2 is retired as a shadow hypothesis.
-The decision is the operator's, brought when `box_policy_ab.py` prints `*** P2 CLEARS THE BAR ***`.
+## Pre-registered rule (FROZEN 2026-06-11 — do not tune to the data), two tiers
+Scored by `box_policy_ab.py` on forward collector windows (ws on/after the freeze date):
+
+**TIER 1 — 2-SIGMA ALERT (be made aware, take action).** When a trial's paired diff (trial−P0)
+crosses **|t| > 2.0 over ≥ 100 forward windows**, the hourly `strategy-alert` workflow pushes a
+**Telegram alert + GitHub warning** (and appends `STRATEGY_ALERTS.txt`). This is a heads-up to
+review — not an auto-deploy — because across many trials a 2-sigma hit happens by chance.
+
+**TIER 2 — DEPLOY BAR (operator decision).** Recommend bringing a trial to live **iff ALL hold**:
+1. **n ≥ 300** forward windows, AND
+2. paired diff t-stat **> 3.0** (positive; past the in-sample 2-sigma that made P2 untrustworthy), AND
+3. **trial max-drawdown ≤ 1.25 × P0 max-drawdown** (risk-of-ruin guard — these trials re-introduce
+   directional variance; if drawdown balloons we reject even when the mean wins).
+
+If n ≥ 300 and Tier 2 is NOT cleared → **keep P0**; the trial is retired. The deploy decision is the
+operator's, surfaced when `box_policy_ab.py` prints `*** … CLEARS THE DEPLOY BAR ***`.
 
 ## How it runs (prospective, automatic)
 - The collector workflow scores each freshly collected batch and commits a run-scoped ledger
