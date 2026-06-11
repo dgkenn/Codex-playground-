@@ -164,8 +164,9 @@ the gate refusing the toxic fill, and the cooldown not re-quoting into trends.
 ## FEE-CONDITIONAL STRATEGY TABLE (the "if the markets have fees" answer, tuned + deployable)
 
 The fee landscape, resolved: all four CRYPTO15M series share identical fee config
-(`fee_type=quadratic, fee_multiplier=1`) and one contract certification; **BTC maker fee = $0.00
-proven on 50+ real fills**; ETH live fee test in flight (thin book) — family inference says $0.
+(`fee_type=quadratic, fee_multiplier=1`) and one contract certification; **BTC AND ETH maker fee =
+$0.00 proven on real fills** (ETH at p=0.42/0.45/0.59 — mid prices where a charged maker fee would be
+clearly non-zero); SOL/XRP share identical config → the whole CRYPTO15M family is fee-exempt.
 Index series (KXINX etc.) differ (`mult=0.5`) and some series DO charge maker fees per Kalshi's
 schedule. The strategy is tuned PER REGIME and deployable via `kalshi_trader --fee-mult`:
 
