@@ -36,11 +36,14 @@ jobs:
           else
             mkdir -p gha_data
           fi
-      - name: score every trial strategy + 2-sigma alert (Telegram via notify if configured)
+      - name: score every trial strategy from raw forward data + 2-sigma alert (Telegram if set)
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
+          # self-contained: re-score every collected window from the raw book/trade/settlement
+          # streams (recursive over the date-partitioned gha-data), then report + 2-sigma alert.
           for A in btc eth sol xrp; do
-            python box_policy_ab.py --report --alert --asset "$A" --dir gha_data || true
+            python box_policy_ab.py --alert --asset "$A" --dir gha_data \
+              --ledger "/tmp/led_${A}.jsonl" || true
           done

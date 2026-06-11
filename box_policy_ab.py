@@ -63,12 +63,17 @@ def iter_gz(fp):
         return   # keep whatever we read before the truncation point
 
 
+def _rglob(d, pat):
+    """Recursive glob -- the gha-data branch date-partitions files into gha_data/YYYY-MM-DD/."""
+    return glob.glob(os.path.join(d, "**", pat), recursive=True) + glob.glob(os.path.join(d, pat))
+
+
 def load_window_books(paths, asset):
     """ws -> list of (t, best_yes_bid, best_no_bid, spot) from the book stream (best = last level)."""
     books = {}
     res = {}
     for d in paths:
-        for fp in glob.glob(os.path.join(d, f"book_kalshi_{asset}15m_*.jsonl.gz")):
+        for fp in set(_rglob(d, f"book_kalshi_{asset}15m_*.jsonl.gz")):
             for r in iter_gz(fp):
                 if r.get("type") != "book":
                     continue
@@ -78,7 +83,7 @@ def load_window_books(paths, asset):
                 books.setdefault(r["ws"], []).append(
                     (r["t"], float(yb[-1][0]), float(nb[-1][0]), _f(r.get("spot"))))
         # settlement from shadow_windows
-        for fp in glob.glob(os.path.join(d, f"shadow_windows_kalshi_{asset}15m_*.jsonl")):
+        for fp in set(_rglob(d, f"shadow_windows_kalshi_{asset}15m_*.jsonl")):
             for ln in open(fp):
                 try:
                     r = json.loads(ln)
@@ -94,7 +99,7 @@ def load_trades(paths, asset):
     """ws -> sorted arrays (t, p_yes, sz, buy) from the taker tape."""
     tr = {}
     for d in paths:
-        for fp in glob.glob(os.path.join(d, f"trades_kalshi_{asset}15m_*.jsonl.gz")):
+        for fp in set(_rglob(d, f"trades_kalshi_{asset}15m_*.jsonl.gz")):
             for r in iter_gz(fp):
                 if "p" not in r or "sz" not in r:
                     continue
