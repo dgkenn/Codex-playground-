@@ -520,6 +520,11 @@ def main():
     ap.add_argument("--cap", type=float, default=50)
     ap.add_argument("--skew", type=float, default=0.25)
     ap.add_argument("--max-rungs", type=int, default=3, help="max resting rungs per side")
+    ap.add_argument("--min-lock", type=float, default=0.0,
+                    help="when a quote COMPLETES a box pair, require locked spread >= this (vs the "
+                         "window's avg cost of the unpaired leg). Tape: 45%% of natural completions "
+                         "lock a NEGATIVE spread (a guaranteed-loss pair = a stop-loss in disguise, "
+                         "and stops lose here); skipping them: +211c -> +5003c on sequential pairs")
     ap.add_argument("--max-net", type=int, default=1,
                     help="hard cap on |net YES-NO| contracts: 1 = strict BOX PAIRING (after a YES "
                          "fill, quote only NO until paired). Tape decomposition: box pairs earn "
@@ -533,7 +538,7 @@ def main():
                     help="after a fill (or failed toxic cancel) on a side, do not re-quote that side "
                          "for this many seconds (live data: re-quoting into a trend caught the knife "
                          "4x in one window -- the single largest observed bleed)")
-    ap.add_argument("--min-spread", type=float, default=0.02,
+    ap.add_argument("--min-spread", type=float, default=0.01,
                     help="only place when spread >= this (markout model on ~20k fills: 1c-spread "
                          "fills are ~zero-EV; the edge lives at >=2c)")
     ap.add_argument("--tau-guard", type=float, default=150.0,
@@ -606,6 +611,8 @@ def main():
     side_cooldown = {"yes": 0.0, "no": 0.0}   # no re-quote on a side until this ts (anti-knife)
     win_fills = {"yes": 0, "no": 0}            # fills per side THIS window (trend-exposure cap)
     win_cost = {"yes": 0.0, "no": 0.0}         # $ spent per side THIS window (box telemetry)
+    loop_ctx = {}                              # decision-time book state, stamped onto each fill
+    ops = {"place": 0, "cancel": 0, "cancel_fail": 0}   # per-window execution-quality counters
 
     if live:
         print("[startup] reconciling open orders on series...")
@@ -679,7 +686,9 @@ def main():
         for oid, key, reason in batch:
             if live:
                 ok2 = cancel_order(sess, priv, oid)
+                ops["cancel"] += 1
                 if not ok2:
+                    ops["cancel_fail"] += 1
                     print(f"  [CANCEL-FAIL] {oid[:16]} key={key} reason={reason}")
                     side_cooldown[key[0]] = time.time() + a.fill_cooldown   # likely filling against us
                     ok = False
@@ -756,6 +765,7 @@ def main():
             lm.place_reject(side, price, "no order_id from venue")
             return None
         placed_oids.add(oid)
+        ops["place"] += 1
         lm.place_ack(side, price, False, (t_ack - t_dec) * 1e3)
         return oid, t_dec, t_ack
 
@@ -827,9 +837,14 @@ def main():
             if meta["filled"] >= a.post - 1e-9:
                 resting.pop(key, None)
         fid = str(f.get("trade_id") or f.get("fill_id") or "")
-        pending_markouts.append((time.time() + 5.0, {
-            "fside": fside, "fp": fp, "count": count,
-            "resting_s": resting_s, "oid": (meta or {}).get("oid", fid)}))
+        # MARKOUT CURVE (adverse-selection telemetry): score this fill against the mid at
+        # 5s/30s/60s/300s. 5s feeds the rolling markout kill; the full curve is the offline
+        # "am I getting picked off?" measurement. cid pins the window so a markout never
+        # references the NEXT market's book after rollover.
+        for _h in (5.0, 30.0, 60.0, 300.0):
+            pending_markouts.append((time.time() + _h, {
+                "fside": fside, "fp": fp, "count": count, "h": _h, "cid": ticker,
+                "resting_s": resting_s, "oid": (meta or {}).get("oid", fid)}))
         # FEE GROUND TRUTH (the load-bearing Kalshi unknown): capture the venue's reported fee on
         # every fill, raw, to a dedicated log -- the per-series maker-fee question the public docs
         # can't fully answer is settled by what Kalshi actually charges here.
@@ -839,7 +854,16 @@ def main():
             with open(f"kalshi_fees_{a.asset}15m.jsonl", "a") as _ff:
                 _ff.write(json.dumps({"ts": time.time(), "ticker": ticker, "side": fside,
                                       "price": fp, "count": count, "role": mkr,
-                                      "fee_reported": fee_val, "raw": f}) + "\n")
+                                      "fee_reported": fee_val,
+                                      # DECISION CONTEXT (effective spread, adverse selection,
+                                      # inventory, queue metrics all derive from these):
+                                      "ctx": {**loop_ctx,
+                                              "net_delta_after": net_delta,
+                                              "win_fills": dict(win_fills),
+                                              "resting_s": resting_s,
+                                              "t_in_win": round(time.time() - mk["ws"], 1)
+                                                          if mk else None},
+                                      "raw": f}) + "\n")
         except Exception:
             pass
         src = "WS" if f.get("_ws") else "REST"
@@ -997,9 +1021,14 @@ def main():
                         print(f"  [BOX] paired={bx:.0f} locked~${bx*(1.0-ay-an):+.2f} "
                               f"(yes {py:.0f}@{ay:.2f} + no {pn:.0f}@{an:.2f}) "
                               f"unpaired={abs(py-pn):.0f} directional")
+                    nf = win_fills["yes"] + win_fills["no"]
+                    print(f"  [OPS] places={ops['place']} cancels={ops['cancel']} "
+                          f"cancel_fails={ops['cancel_fail']} fills={nf} "
+                          f"quote_to_trade={ops['place']/max(nf,1):.1f}")
                     pos.clear(); cash = 0.0; net_delta = 0.0; window_mark = 0.0
                 win_fills = {"yes": 0, "no": 0}   # fresh window, fresh trend-exposure budget
                 win_cost = {"yes": 0.0, "no": 0.0}
+                ops = {"place": 0, "cancel": 0, "cancel_fail": 0}
 
                 cancel_all_resting()   # tokens change on rollover; reset resting book
 
@@ -1065,6 +1094,12 @@ def main():
 
             targets = desired_levels(mk, ybb, yba, net_delta, 1, a.cap, a.skew, a.improve_tick)
             target_set = set(targets)
+            # stamp decision-time book state for fill-context logging (metrics framework:
+            # effective spread = fill price vs this mid; depth/imbalance for queue + toxicity)
+            loop_ctx.update({"mid": round((ybb + yba) / 2, 4), "bb": ybb, "ba": yba,
+                             "bq": round(clean_ybq, 2), "aq": round(clean_yaq, 2),
+                             "micro": round(mp, 4) if mp is not None else None,
+                             "spread": round(yba - ybb, 4)})
 
             # --- PLACE missing rungs ---
             spread_now = (yba - ybb) if (ybb is not None and yba is not None) else 0.0
@@ -1079,7 +1114,10 @@ def main():
                     continue              # tweak 4 (post-mortem): trends outlast the cooldown -- the
                                           # 5th+ same-side fill in a window is where the edge dies
                 if spread_now < a.min_spread - 1e-9:
-                    continue              # tweak 2: 1c-spread fills are ~zero-EV (markout model)
+                    continue              # tweak 2 REVISED: 1c-spread fills are zero-EV UNPAIRED,
+                                          # but under --max-net pairing a 1c book locks 1c/pair
+                                          # risk-free -> default lowered 0.02 -> 0.01 (tape floor
+                                          # table: all-spreads +1.74c/win t=2.1 vs >=2c-only -0.13c)
                 if tau_left < a.tau_guard:
                     continue              # tweak 3: late-window fills are systematically adverse
                 # Toxicity gate: skip placing if microprice says this side is adverse
@@ -1095,6 +1133,20 @@ def main():
                 proj = net_delta + (a.post if side == "yes" else -a.post)
                 if abs(proj) > inv_cap + 1e-9:
                     continue
+                # BOX COMPLETION FLOOR: this quote pairs against existing inventory -> require the
+                # pair to LOCK >= --min-lock vs the unpaired leg's average cost. Completing below
+                # that is buying a guaranteed loss to flatten -- a stop-loss in disguise, and stops
+                # lose on this tape. Hold and wait for a completable price instead.
+                if net_delta > 1e-9 and side == "no":
+                    py_ = sum(v for k_, v in pos.items() if k_.endswith(":YES"))
+                    basis = win_cost["yes"] / py_ if py_ > 0 else 0.0
+                    if basis > 0 and price > 1.0 - basis - a.min_lock + 1e-9:
+                        continue
+                elif net_delta < -1e-9 and side == "yes":
+                    pn_ = sum(v for k_, v in pos.items() if k_.endswith(":NO"))
+                    basis = win_cost["no"] / pn_ if pn_ > 0 else 0.0
+                    if basis > 0 and price > 1.0 - basis - a.min_lock + 1e-9:
+                        continue
                 # C8 aggregate notional cap (BUY side only; both YES and NO are buys)
                 open_buy_notional = sum(max(a.post - m.get("filled", 0.0), 0.0) * price_
                                         for (_, price_), m in resting.items())
@@ -1153,11 +1205,13 @@ def main():
                     poll_fills()       # REST backstop (slower cadence, catches any WS misses)
                     poll_balance_lm()
 
-                # Score due 5s markouts
+                # Score due markouts (5s/30s/60s/300s curve; 5s also feeds the rolling kill)
                 now_mo = time.time()
                 due = [pm for pm in pending_markouts if pm[0] <= now_mo]
                 pending_markouts[:] = [pm for pm in pending_markouts if pm[0] > now_mo]
                 for due_t, f in due:
+                    if mk is None or f.get("cid") not in (None, mk["cid"]):
+                        continue   # window rolled; the next market's book is not a valid reference
                     try:
                         ybb2, _, yba2, _, _fresh2 = get_book_cached(mk["cid"], max_age=0.1)
                     except Exception:
@@ -1167,10 +1221,12 @@ def main():
                         continue
                     mid2 = (ybb2 + yba2) / 2.0
                     mo = (mid2 - f["fp"]) if f["fside"] == "yes" else ((1.0 - mid2) - f["fp"])
-                    markouts.append(mo); del markouts[:-500]
+                    if f.get("h", 5.0) == 5.0:
+                        markouts.append(mo); del markouts[:-500]   # rolling kill stays 5s-keyed
                     mo_fh.write(json.dumps({
                         "ts": time.time(), "asset": a.asset, "side": f["fside"],
-                        "price": f["fp"], "count": f["count"], "markout": mo,
+                        "h": f.get("h", 5.0), "price": f["fp"], "count": f["count"],
+                        "markout": mo, "resting_s": f.get("resting_s"),
                         "net_delta": net_delta}) + "\n")
                     mo_fh.flush()
 
