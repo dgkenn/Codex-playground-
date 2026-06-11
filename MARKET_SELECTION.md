@@ -78,17 +78,21 @@ two-sided flow, and the only underlying whose book isn't structurally toxic.
 
 ## Part C — "attack ALL crypto 15-min series, but only on near-certain pairs" (operator idea, TESTED)
 Strict pairing + a certainty gate (open only: early window k≤K, |p−0.5|≤D, balanced flow |F|, spread
-≤3¢; gate fit on first 60%, scored OOS on last 40%; best-combo per asset):
-- **q0=0:** eth −5.3, sol −12.3, xrp −13.6 ¢/day OOS (aggregate **−31.1 ¢/day**) — DESPITE 92-97%
-  pair-clean rates and positive mean locks (0.4-1.5¢/box).
-- **q0=2000 (realistic queue): eth/sol/xrp capture ZERO boxes** in gated windows (thin books — the
-  second side never fills at usable prices); eth still bleeds −21.9 ¢/day from stranded legs.
-- The arithmetic that kills it: a clean box earns ~1¢; a straggler loses ~10-16¢. At that 10-16:1
-  loss-to-lock ratio, "almost certain" must mean ≥99.4% clean to break even — the best honest gate
-  tops out at 92-97%, and live queue reality (BTC: replay 99% → live 61%) only widens the gap.
-- One genuine nugget: on BTC at q0=2000 the SAME gate scored +13.6 ¢/day OOS — the gate family has
-  merit on the one liquid book. That's already covered prospectively by t01/t03/t06/t18 in the A/B
-  tester; no new deployment implied.
+≤3¢; gate fit on first 60%, scored OOS on last 40%; best-combo per asset). Final validated run
+(an earlier pass with rosier pair-clean numbers was superseded by the corrected sweep):
+- **q0=0:** eth −13.2, sol −19.1, xrp −22.0 ¢/day OOS (aggregate **−54.3 ¢/day**) — best achievable
+  pair-clean is only 74% (eth) / 50-53% (sol/xrp); even btc's best gate reaches just 82.6%.
+- **q0=2000 (realistic queue): sol/xrp pass ZERO gated windows** (their median spreads, 3.5-4¢,
+  exceed any sane tightness gate) and **eth completes ZERO boxes** in 12 OOS gated windows
+  (−112 ¢/day, every leg stranded). "The gate selects low-toxicity entry slots but cannot
+  manufacture a counterpart fill where none exists."
+- The arithmetic that kills it: a clean box earns ~0.4-1.5¢; a straggler loses ~10-26¢. At that
+  ratio, "almost certain" must mean **≥99.4% clean to break even** — the best honest gate reaches
+  74-83%, an order of magnitude of failure-rate away. Live queue reality (BTC: replay 99% → live
+  61%) widens the gap further.
+- One genuine nugget: on BTC at q0=2000 the SAME gate scored +31 ¢/day OOS (6 win/day, 2.6¢ locks) —
+  the gate family has merit on the one liquid book. Already covered prospectively by
+  t01/t03/t06/t18 in the A/B tester; no new deployment implied.
 **Verdict: REJECTED for eth/sol/xrp. Selectivity can't fix a book where the completing side
 structurally doesn't fill. The certainty-gate idea survives only as BTC opening-gate trials.**
 
