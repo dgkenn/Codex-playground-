@@ -78,6 +78,16 @@ jobs:
       - name: per-run summary
         if: always()
         run: python aggregate_shadow.py > gha_data/SUMMARY.txt 2>/dev/null || true
+      - name: P2 prospective A/B -- score this batch into a run-scoped ledger fragment
+        if: always()
+        run: |
+          # forward test of the signal-selective-hold tie-breaker (P2_PROSPECTIVE.md, pre-registered).
+          # writes gha_data/box_policy_ledger_btc_r<runid>.jsonl -> committed with the data, so the
+          # A/B accumulates in the cloud. Aggregate later: box_policy_ab.py --report --dir gha_data
+          for A in btc eth sol xrp; do
+            python box_policy_ab.py --asset "$A" --dir gha_data \
+              --ledger "gha_data/box_policy_ledger_${A}_r${{ github.run_id }}.jsonl" 2>/dev/null || true
+          done
       - name: commit data to the gha-data branch (worktree, shallow, date-partitioned)
         if: always()
         run: |
