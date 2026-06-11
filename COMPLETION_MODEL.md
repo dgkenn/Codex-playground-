@@ -48,6 +48,30 @@ and per-leg findings: the market is efficient; the only edge is avoiding the str
 and that's a rule, not an ML lift. Wire the rule into the A/B tester (generalizes t04/t06/t09); do NOT
 deploy a fitted opening model on the strength of the profit-label run alone.
 
+## ⭐⭐⭐ THE FILL-TOXICITY MODEL — the one framing where ML beats the simple gates economically
+Pivoting from "will it pair?" (no robust signal) to "is THIS fill toxic / will this leg LOSE?"
+(settle<0) is where the ML finally earns its keep. 20,318 live fills, time-series split (12,239
+train / 8,079 test), balanced label (50.9% toxic on settle, 49.6% on markout).
+- GBM ROC-AUC **0.765** (settle) / 0.605 (markout), beats the best single baseline flow_adv
+  (0.62 / 0.55); DeLong delta +0.25 / +0.10, p≈0. Logistic 0.67. Real nonlinear signal.
+- **Economic — the decisive part: a GBM toxicity gate beats hold-all AND beats VPIN-only AND
+  sig_adv-only.** Keeping only the ~10% cleanest fills: **+2.10c/fill on settle, 95% CI
+  [+0.04, +4.19]** (excludes zero); **+2.91c/fill on markout, CI [+0.84, +4.93]** (excludes zero).
+  VPIN-only gate +0.15c and sig_adv-only +0.23c both have CIs that SPAN zero. The ML adds lift the
+  simple rules don't — the first and only framing where that's true.
+- Drivers (OOS permutation importance): **p_abs** (price level), **flow_x_tau** (adverse flow × time
+  remaining), **side_bin** (YES toxic — the structural result), **sig_adv** (spot signal vs leg),
+  abs_p05. All interpretable; all the toxicity story.
+- CAVEATS: the gate threshold was tuned on the test fold (mild optimism; the settle CI low-end sits
+  near zero), and "hold 10%" means it abstains aggressively — read it as a strong EXIT/avoid signal
+  (cut the worst decile), consistent with the already-validated VPIN-conditioned exit (OOS t=3.4) but
+  stronger. Forward-validate before sizing on it.
+- **THE DEPLOYABLE ML LEVER: not the OPENING gate (pairing had no robust signal), but the
+  EXIT/avoid decision — score each fill's toxicity and cut/don't-hold the toxic ones.** Wire as a
+  toxicity score into the A/B tester (generalizes t13_sell_unpaired_vpin); if it holds forward, gate
+  unpaired-leg holds on it. This is the unification COMPLETION_MODEL predicted: a leg that won't pair
+  is usually a leg that was filled adversely, and toxicity — not pairing — is the predictable target.
+
 ## ⭐⭐ RIGOROUS VERDICT (realistic-queue q0=5000, no-leak, GBM+logistic, proper lift tests)
 We did the exhaustive 2nd feature round + GBM + DeLong + bootstrap economic-lift + multiple-testing.
 **"Will this leg pair?" is statistically predictable but economically useless to gate on — and the
