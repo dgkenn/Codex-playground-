@@ -58,7 +58,12 @@ if ! "$PY" kalshi_preflight.py --asset btc | grep -q "VERDICT: GO"; then
   read -r -p "Enter to close... "; exit 1
 fi
 
-# 5) clean shutdown on window close: SIGTERM the bot -> dead-man cancels all
+# 5) start the Telegram on/off + alerts listener (text on/off/status from your phone)
+if grep -q TELEGRAM_BOT_TOKEN "$KDIR/env" 2>/dev/null; then
+  pgrep -f "telegram_control.py" >/dev/null 2>&1 || "$PY" telegram_control.py >/dev/null 2>&1 &
+fi
+
+# 6) clean shutdown on window close: SIGTERM the bot -> dead-man cancels all
 BOTPID=""
 cleanup() {
   echo; echo ">> Stopping bot (cancelling all resting orders)..."

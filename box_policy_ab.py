@@ -68,21 +68,36 @@ def _rglob(d, pat):
     return glob.glob(os.path.join(d, "**", pat), recursive=True) + glob.glob(os.path.join(d, pat))
 
 
+def _top5(levels):
+    """Summed displayed size across the 5 levels nearest the touch (ascending best-at-end)."""
+    try:
+        return float(sum(q for _, q in levels[-5:]))
+    except Exception:
+        return 0.0
+
+
 def load_window_books(paths, asset):
-    """ws -> list of (t, best_yes_bid, best_no_bid, spot) from the book stream (best = last level)."""
-    books = {}
-    res = {}
+    """Returns (books, res, oi_slope).
+      books[ws]   = list of (t, best_yes_bid, best_no_bid, spot, depth_min) -- depth_min = min of the
+                    top-5 displayed size on each side (the bilateral-thinness completion signal).
+      res[ws]     = 0/1 settlement.
+      oi_slope[ws]= fractional open-interest change across the window (informed-positioning signal)."""
+    books, res, oi = {}, {}, {}
     for d in paths:
         for fp in set(_rglob(d, f"book_kalshi_{asset}15m_*.jsonl.gz")):
             for r in iter_gz(fp):
-                if r.get("type") != "book":
-                    continue
-                yb = r.get("yes") or []; nb = r.get("no") or []
-                if not yb or not nb:
-                    continue
-                books.setdefault(r["ws"], []).append(
-                    (r["t"], float(yb[-1][0]), float(nb[-1][0]), _f(r.get("spot"))))
-        # settlement from shadow_windows
+                typ = r.get("type")
+                if typ == "book":
+                    yb = r.get("yes") or []; nb = r.get("no") or []
+                    if not yb or not nb:
+                        continue
+                    books.setdefault(r["ws"], []).append(
+                        (r["t"], float(yb[-1][0]), float(nb[-1][0]), _f(r.get("spot")),
+                         min(_top5(yb), _top5(nb))))
+                elif typ == "stat":
+                    o = _f(r.get("open_interest"))
+                    if o is not None:
+                        oi.setdefault(r["ws"], []).append((r.get("t", 0.0), o))
         for fp in set(_rglob(d, f"shadow_windows_kalshi_{asset}15m_*.jsonl")):
             for ln in open(fp):
                 try:
@@ -92,7 +107,12 @@ def load_window_books(paths, asset):
                 ru = r.get("resolved_up")
                 if ru in (0, 1):
                     res[r["ws"]] = int(ru)
-    return books, res
+    oi_slope = {}
+    for ws, pts in oi.items():
+        pts.sort()
+        if len(pts) >= 2 and pts[0][1] > 0:
+            oi_slope[ws] = (pts[-1][1] - pts[0][1]) / pts[0][1]
+    return books, res, oi_slope
 
 
 def load_trades(paths, asset):
@@ -115,8 +135,9 @@ def load_trades(paths, asset):
 
 
 def per_minute_touch(samples, ws):
-    """Resample book samples to per-minute (k=0..14) last-before-boundary bid/ask/spot arrays."""
-    bid = np.full(15, np.nan); ask = np.full(15, np.nan); spot = np.full(15, np.nan)
+    """Resample book samples to per-minute (k=0..14) last-before-boundary arrays."""
+    bid = np.full(15, np.nan); ask = np.full(15, np.nan)
+    spot = np.full(15, np.nan); depth = np.full(15, np.nan)
     samples = sorted(samples)
     for k in range(15):
         bound = ws + 60 * (k + 1)
@@ -127,16 +148,20 @@ def per_minute_touch(samples, ws):
             else:
                 break
         if last is not None:
-            ybb, nbb, sp = last[1], last[2], last[3]
-            bid[k] = ybb; ask[k] = round(1.0 - nbb, 4)
-            if sp is not None:
-                spot[k] = sp
-    return bid, ask, spot
+            bid[k] = last[1]; ask[k] = round(1.0 - last[2], 4)
+            if last[3] is not None:
+                spot[k] = last[3]
+            if len(last) > 4 and last[4] is not None:
+                depth[k] = last[4]
+    return bid, ask, spot, depth
 
 
-def window_fills(ws, res, bid, ask, spot, tape, q0=0.0):
-    """Reconstruct maker fills (kalshi_sizing.collect_fills logic). Returns list of
-    (side 'bid'|'ask', settle, sig_adv) in time order."""
+def window_fills(ws, res, bid, ask, spot, depth, tape, oi_slope=None, q0=0.0):
+    """Reconstruct maker fills (collect_fills logic) with the FULL decision-time feature set each
+    trial strategy needs. Returns time-ordered list of dicts:
+      side('bid'=YES|'ask'=NO), settle($/contract to settlement), sig(spot bps, +=adverse to side),
+      p(YES-equiv price), spread, k(minute 2..12), tau(frac left), flow(prior-min taker imbalance),
+      depth(min top-5 displayed size), oi(window OI slope)."""
     spot_l = np.concatenate([[np.nan], spot[:-1]])
     t_arr, p_arr, sz_arr, buy_arr = tape
     recs = []
@@ -146,6 +171,11 @@ def window_fills(ws, res, bid, ask, spot, tape, q0=0.0):
             continue
         s_now, s_then = spot_l[k], spot_l[max(k - 3, 0)]
         mv = (s_now / s_then - 1) * 1e4 if (s_now and s_then and s_now > 0 and s_then > 0) else 0.0
+        spread = round(a0 - b0, 4); tau = (15 - k) / 15.0
+        dk = float(depth[k]) if not np.isnan(depth[k]) else None
+        pl, ph = ws + 60 * (k - 1), ws + 60 * k          # prior-minute taker flow imbalance
+        j0, j1 = np.searchsorted(t_arr, pl), np.searchsorted(t_arr, ph)
+        flow = float(np.sum(np.where(buy_arr[j0:j1], sz_arr[j0:j1], -sz_arr[j0:j1])))
         lo, hi = ws + 60 * (k + 1), ws + 60 * (k + 2)
         i0, i1 = np.searchsorted(t_arr, lo), np.searchsorted(t_arr, hi)
         qb = qa = q0; done_b = done_a = False
@@ -157,45 +187,82 @@ def window_fills(ws, res, bid, ask, spot, tape, q0=0.0):
                 if qb >= sz:
                     qb -= sz
                 else:
-                    recs.append(("bid", res - b0, mv)); done_b = True
+                    recs.append({"side": "bid", "settle": res - b0, "sig": mv, "p": b0,
+                                 "spread": spread, "k": k, "tau": tau, "flow": flow,
+                                 "depth": dk, "oi": oi_slope}); done_b = True
             if not done_a and buy and p >= a0 - 1e-9:
                 if qa >= sz:
                     qa -= sz
                 else:
-                    recs.append(("ask", a0 - res, -mv)); done_a = True
+                    recs.append({"side": "ask", "settle": a0 - res, "sig": -mv, "p": round(1.0 - a0, 4),
+                                 "spread": spread, "k": k, "tau": tau, "flow": -flow,
+                                 "depth": dk, "oi": oi_slope}); done_a = True
     return recs
 
 
-def policy_pnl(fills, signal_hold):
-    """Walk fills, cap |net|<=1, return summed settle. signal_hold=False -> P0; True -> P2."""
-    net = 0; pnl = 0.0; held_sig = None
-    for side, settle, sig in fills:
-        step = 1 if side == "bid" else -1
+def run_policy(fills, open_ok=None, hold_ok=None):
+    """Walk a window's fills (cap |net|<=1, hold to settlement). open_ok(f, state)->may we OPEN a
+    new leg with this fill? hold_ok(held_leg)->when a fill would PAIR the open leg, hold instead?
+    Returns summed settle. Baseline P0 passes neither (accept everything, always pair)."""
+    net = 0; pnl = 0.0; held = None; st = {"yes": 0, "no": 0}
+    for f in fills:
+        step = 1 if f["side"] == "bid" else -1
         nn = net + step
         if abs(nn) > 1:
             continue
-        accept = True
-        if signal_hold and net != 0 and abs(nn) < abs(net):   # this fill would PAIR an unpaired leg
-            if held_sig is not None and held_sig <= 0:         # leg's signal favorable -> HOLD it
-                accept = False
-        if accept:
-            if net == 0 and nn != 0:
-                held_sig = sig                                 # opened a leg; remember its signal
-            net = nn; pnl += settle
+        pairing = (net != 0 and abs(nn) < abs(net))
+        if pairing:
+            if hold_ok is not None and held is not None and hold_ok(held):
+                continue                                       # hold the favorable unpaired leg
+        elif open_ok is not None and not open_ok(f, st):
+            continue                                           # gate: don't open this leg
+        if net == 0 and nn != 0:
+            held = f
+        net = nn; pnl += f["settle"]
+        st["yes" if f["side"] == "bid" else "no"] += 1
     return pnl
 
 
-# ------------------------------------------------------------------------------------------------
-# TRIAL-STRATEGY REGISTRY. The live default is P0 (always-pair). Every entry here is a CANDIDATE
-# scored vs P0 on FORWARD collector data and held to the two-sigma alert + pre-registered deploy bar.
-# To prospectively test a new policy idea, add  name -> fn(fills)->pnl  here; it auto-inherits the
-# accumulation, the 2-sigma alert, and the deploy gate. No live code changes until it clears the bar.
+def completion_score(f):
+    """0..4 -- how likely BOTH legs pair, from the forward-validated completion signals: thin book,
+    balanced taker flow, flat/falling OI, tight (1c) spread. Higher = more likely to complete."""
+    s = 0
+    if f.get("depth") is not None:
+        s += int(f["depth"] < 5500)        # bilateral thinness (rich stream: thin->~75% complete)
+    if f.get("flow") is not None:
+        s += int(abs(f["flow"]) < 250)     # balanced prior-minute flow
+    if f.get("oi") is not None:
+        s += int(f["oi"] < 0.5)            # OI not spiking (informed one-sided positioning)
+    s += int(f.get("spread", 1) <= 0.011)  # 1c book completes fast
+    return s
+
+
 def pol_p0(fills):
-    return policy_pnl(fills, signal_hold=False)
+    return run_policy(fills)
 
 
+# ------------------------------------------------------------------------------------------------
+# TRIAL-STRATEGY REGISTRY. Live default is P0 (always-pair, ungated reference). Every entry is a
+# CANDIDATE scored vs P0 on FORWARD collector data, held to the 2-sigma alert + pre-registered
+# deploy bar. Each is grounded in a documented finding (see TRIALS.md). Add name->fn(fills)->pnl
+# to prospectively test a new idea; it auto-inherits accumulation, the alert, and the deploy gate.
 TRIALS = {
-    "p2_signal_hold": lambda fills: policy_pnl(fills, signal_hold=True),
+    # ---- toxicity / price gates (skip opening adverse legs) ----
+    "t01_deep_tail_skip":  lambda F: run_policy(F, open_ok=lambda f, s: 0.15 <= f["p"] <= 0.85),
+    "t02_yes_caution":     lambda F: run_policy(F, open_ok=lambda f, s: not (f["side"] == "bid" and f["spread"] < 0.02)),
+    "t03_early_window":    lambda F: run_policy(F, open_ok=lambda f, s: f["k"] <= 8),
+    "t07_spot_gate":       lambda F: run_policy(F, open_ok=lambda f, s: f["sig"] <= 8.0),
+    # ---- completion-aware opening (target legs that will PAIR; exclude likely orphans) ----
+    "t04_thin_book":       lambda F: run_policy(F, open_ok=lambda f, s: f["depth"] is None or f["depth"] < 5500),
+    "t05_flat_oi":         lambda F: run_policy(F, open_ok=lambda f, s: f["oi"] is None or f["oi"] < 0.5),
+    "t06_balanced_flow":   lambda F: run_policy(F, open_ok=lambda f, s: f["flow"] is None or abs(f["flow"]) < 250),
+    "t09_completion_target": lambda F: run_policy(F, open_ok=lambda f, s: completion_score(f) >= 2),
+    # ---- selective holding of favorable unpaired legs ----
+    "t08_hold_no":         lambda F: run_policy(F, hold_ok=lambda h: h["side"] == "ask"),
+    "t10_target_and_hold": lambda F: run_policy(F, open_ok=lambda f, s: completion_score(f) >= 2,
+                                                hold_ok=lambda h: h["sig"] <= 0),
+    # ---- the original tie-breaker (kept) ----
+    "p2_signal_hold":      lambda F: run_policy(F, hold_ok=lambda h: h["sig"] <= 0),
 }
 
 
@@ -209,6 +276,14 @@ def tstat(x):
 def maxdd(series):
     cum = np.cumsum(series)
     return float(np.max(np.maximum.accumulate(cum) - cum)) if len(cum) else 0.0
+
+
+def calmar(series):
+    """Total return / max drawdown on a per-window PnL series (risk-adjusted; higher = better)."""
+    if len(series) == 0:
+        return float("nan")
+    tot = float(np.sum(series)); dd = maxdd(series)
+    return (tot / dd) if dd > 1e-9 else (float("inf") if tot > 0 else 0.0)
 
 
 def main():
@@ -240,14 +315,14 @@ def main():
 
     added = 0
     if not a.report:
-        books, res = load_window_books([d for d in a.dir if os.path.isdir(d)], a.asset)
+        books, res, oi_slope = load_window_books([d for d in a.dir if os.path.isdir(d)], a.asset)
         trades = load_trades([d for d in a.dir if os.path.isdir(d)], a.asset)
         with open(ledger, "a") as out:
             for ws in sorted(books):
                 if ws in seen or ws not in res or ws not in trades:
                     continue
-                bid, ask, spot = per_minute_touch(books[ws], ws)
-                fills = window_fills(ws, res[ws], bid, ask, spot, trades[ws])
+                bid, ask, spot, depth = per_minute_touch(books[ws], ws)
+                fills = window_fills(ws, res[ws], bid, ask, spot, depth, trades[ws], oi_slope.get(ws))
                 if not fills:
                     continue
                 rec = {"ws": ws, "res": res[ws], "n_fills": len(fills),
@@ -260,10 +335,15 @@ def main():
     print(f"TRIAL-STRATEGY PROSPECTIVE A/B ({a.asset}) -- {n} forward windows (+{added} new this run)")
     if n == 0:
         print("  no scored windows yet; let the collector accumulate."); return
+    wins = np.array([r["ws"] for r in rows]); cut = wins[int(n * 0.6)] if n >= 10 else wins[-1] + 1
+    oosm = wins >= cut
     p0 = np.array([r["p0"] for r in rows]); dd0 = maxdd(p0)
-    print(f"  P0 always-pair (LIVE baseline): net/win {p0.mean()*100:+.2f}c  maxDD {dd0*100:.0f}c  n={n}")
+    print(f"  {'P0 always-pair (baseline)':<24} net/win {p0.mean()*100:+6.2f}c  "
+          f"OOSnet {p0[oosm].mean()*100 if oosm.any() else float('nan'):+6.2f}c  "
+          f"Calmar {calmar(p0[oosm]) if oosm.any() else float('nan'):+5.1f}  maxDD {dd0*100:4.0f}c  "
+          f"win {(p0>0).mean()*100:3.0f}%  n={n}")
+    print(f"  {'(metrics: net/win, OOS net, OOS Calmar, maxDD, win%, per-fill, paired t vs P0)':<24}")
 
-    # union of all trial names ever seen (old ledgers stored a flat 'p2' field -> migrate)
     names = set()
     for r in rows:
         names.update((r.get("trials") or {}).keys())
@@ -278,12 +358,16 @@ def main():
             continue
         diff = pt[m] - p0[m]
         t = tstat(diff); ddt = maxdd(pt[m]); nn = int(m.sum())
-        print(f"  [{name}] net/win {pt[m].mean()*100:+.2f}c  maxDD {ddt*100:.0f}c | "
-              f"diff {diff.mean()*100:+.3f}c/win  paired t={t:+.2f} (n={nn})")
-        # two-sigma ALERT tier
+        om = oosm & m
+        oosnet = pt[om].mean() * 100 if om.any() else float("nan")
+        cal = calmar(pt[om]) if om.any() else float("nan")
+        nf = np.array([r["n_fills"] for r in rows])[m]
+        perfill = pt[m].sum() / max(nf.sum(), 1) * 100
+        print(f"  {('['+name+']'):<24} net/win {pt[m].mean()*100:+6.2f}c  OOSnet {oosnet:+6.2f}c  "
+              f"Calmar {cal:+5.1f}  maxDD {ddt*100:4.0f}c  win {(pt[m]>0).mean()*100:3.0f}%  "
+              f"perfill {perfill:+.2f}c | diff {diff.mean()*100:+.3f}c  t={t:+.2f} (n={nn})")
         if nn >= ALERT_N and not np.isnan(t) and abs(t) > ALERT_T:
             alerts.append((name, t, nn))
-        # pre-registered DEPLOY tier
         if nn >= MIN_WINDOWS and not np.isnan(t) and t > T_BAR and ddt <= DD_MULT * dd0 + 1e-9:
             print(f"      *** {name} CLEARS THE DEPLOY BAR (n>={MIN_WINDOWS}, t>{T_BAR}, DD ok) "
                   f"-> bring to operator ***")

@@ -19,10 +19,13 @@ echo "$(date -u +%FT%TZ) live_supervisor up (pid $$)" >> overnight_data/trader.l
 
 # keep the risk-free collector alive independently of the switch
 pgrep -f "collect_forever.sh" >/dev/null 2>&1 || nohup ./collect_forever.sh >/dev/null 2>&1 &
+# keep the Telegram on/off + alerts listener alive (texting on/off controls the switch)
+pgrep -f "telegram_control.py" >/dev/null 2>&1 || nohup python3 telegram_control.py >> overnight_data/telegram.log 2>&1 &
 
 BR="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo HEAD)"
 while true; do
   git pull -q origin "$BR" 2>/dev/null || true          # pick up strategy/config changes
+  [ -f /root/.kalshi/env ] && . /root/.kalshi/env        # re-source: picks up TELEGRAM_CHAT_ID once bound
   sw=$(tr -d '[:space:]' < LIVE_SWITCH 2>/dev/null || echo off)
   if [ "$sw" = "on" ] && [ ! -f ".kalshi_killed_${ASSET}15m" ]; then
     I_UNDERSTAND_REAL_MONEY=yes python -u kalshi_trader.py --asset "$ASSET" --live \

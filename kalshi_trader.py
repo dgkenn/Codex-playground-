@@ -1313,6 +1313,11 @@ def main():
                                + en["pos_no"]  * (1.0 if r2 == 0 else 0.0))
                         realized += pnl
                         print(f"  [SETTLE] ws={en['ws']} r={r2} pnl={pnl:+.4f} realized={realized:+.2f}")
+                        # phone notification of net win/loss at settlement (Telegram via notify)
+                        if abs(pnl) > 1e-9:
+                            _wt = datetime.utcfromtimestamp(en["ws"]).strftime("%H:%MZ")
+                            notify.alert(f"[kalshi {a.asset}] {_wt} settled {'WIN' if pnl>0 else 'LOSS'} "
+                                         f"{pnl:+.2f}  (session {realized:+.2f})")
                         seen_fills.pop(en["cid"], None)
                     else:
                         still.append(en)
