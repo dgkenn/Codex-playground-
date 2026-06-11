@@ -54,3 +54,4 @@ live_metrics_kalshi_*.jsonl
 kalshi_markout.jsonl
 .kalshi_killed_*
 overnight_data/
+kalshi_fees_*.jsonl
