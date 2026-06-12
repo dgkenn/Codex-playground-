@@ -75,6 +75,10 @@ jobs:
         env:
           KALSHI_API_KEY_ID: ${{ secrets.KALSHI_API_KEY_ID }}
           KALSHI_PRIVATE_KEY: ${{ secrets.KALSHI_PRIVATE_KEY }}
+          # BUGFIX: the trader's per-fill / settlement / kill alerts no-op without these -- they were
+          # absent here, so live Telegram stayed silent even when the bot filled boxes.
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           I_UNDERSTAND_REAL_MONEY: "yes"
         run: |
           umask 077
@@ -82,10 +86,13 @@ jobs:
           chmod 600 "$RUNNER_TEMP/k.pem"
           export KALSHI_PRIVATE_KEY_PATH="$RUNNER_TEMP/k.pem"
           if python kalshi_preflight.py --asset "$ASSET" | tee /tmp/pf.txt && grep -q "VERDICT: GO" /tmp/pf.txt; then
+            # startup ping: you get confirmation the session is live; fills/settlements alert after.
+            python -c "import notify; notify.alert_sync('🟢 live session armed ($ASSET) — preflight GO, \$5 cap, posting both sides. Box/settlement alerts follow on fills.')" || true
             timeout --signal=TERM --kill-after=60 2820 \
               python -u kalshi_trader.py --asset "$ASSET" --live --size-mode flat \
                 --post 1 --max-notional 5 --loss-limit 6 --max-rungs 1 --duration 2760 || true
           else
+            python -c "import notify; notify.alert_sync('🟡 live cycle skipped ($ASSET) — preflight NO-GO (market/balance gate); retries next cycle.')" || true
             echo "preflight NO-GO -> not trading this cycle"
           fi
           shred -u "$RUNNER_TEMP/k.pem" 2>/dev/null || rm -f "$RUNNER_TEMP/k.pem"
