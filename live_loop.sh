@@ -16,7 +16,7 @@ while true; do
   if python kalshi_preflight.py --asset btc | tee /tmp/pf_loop.txt | grep -q "VERDICT: GO"; then
     python -u kalshi_trader.py --asset btc --live --size-mode flat \
       --post 1 --max-notional 5 --loss-limit 6 --max-rungs 1 --duration 3300 \
-      --remote-switch-s 20
+      --remote-switch-s 20 --qtime-mp-margin 0.003
   else
     echo "$(date -u +%H:%MZ) preflight NO-GO; retry in 60s"; sleep 60
   fi
