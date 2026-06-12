@@ -128,3 +128,13 @@ vol-inverse, qkelly×tox combo (lose mean + add tail OOS). Registered forward tr
   4@touch−1¢ (Guéant two-rung condition; Moallemi-Yuan queue value). Cannot be honestly scored by
   the current touch-fill replay — needs live A/B arms at Stage-B. Pre-registered here so the
   design is frozen before the data exists.
+
+### Fingerprint deep-dive survivor (2026-06-12) + the one non-A/B item
+- **t32_vpin_open_gate** — don't OPEN a leg whose fill-time VPIN > 0.40. From the 2779-window
+  trade-tape test: high decision-time VPIN predicts a stranded leg 9.7x more often (6.8% vs 0.7%),
+  pair-rate OOS r=-0.346. We had the VPIN EXIT (t13) but not the OPENING gate — this is the
+  prevention lever the fingerprint work validated. Distinct from t18 (tox_p logistic) and t06 (flow).
+- NOT an A/B trial (execution, not a fill open/hold/sell rule): the ladder-MM is mechanical (1.2s
+  heartbeat, 74% of quotes stale 3s after a spot move). When spot moves, refreshing our quote to the
+  new fair level BEFORE the MM catches up = front-of-queue at the right price. Tracked in
+  FINGERPRINT.md for a LIVE queue-timing experiment, not the prospective tester.

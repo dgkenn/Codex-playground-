@@ -536,6 +536,14 @@ TRIALS = {
     #      distinct from t06 (flow MAGNITUDE gate) and p2/t07 (spot-signal, not flow).
     "t31_face_contrarian": lambda F: run_policy(F, open_ok=lambda f, s:
                                    f["flow"] is None or f["flow"] >= 0),
+    # ---- fingerprint deep-dive survivor (2026-06-12, 2779-window trade-tape): high decision-time
+    #      VPIN predicts a STRANDED leg 9.7x more often (6.8% vs 0.7%) and pair-rate OOS r=-0.346.
+    #      We had the VPIN EXIT (t13, sell unpaired when vpin>0.40) but NOT the VPIN OPENING gate.
+    #      t32 = don't OPEN a leg whose fill-time VPIN is toxic (>0.40, same informed-subset
+    #      threshold) -- prevention, the lever the fingerprint work validated. Distinct from t18
+    #      (tox_p logistic, flow-based) and t06 (flow magnitude).
+    "t32_vpin_open_gate":  lambda F: run_policy(F, open_ok=lambda f, s:
+                                   f.get("vpin") is None or f["vpin"] <= 0.40),
 }
 
 
