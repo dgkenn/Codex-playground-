@@ -358,8 +358,12 @@ def _api(sess, private_key, method, path_suffix, body=None, params=None, timeout
         return 0, {"_exc": str(e)[:80]}
 
 
-def place_order(sess, private_key, ticker, side, price_dollars, count, client_oid=None):
-    """POST /portfolio/orders (action=buy, post_only=True). Returns order_id or None (NOT PLACED)."""
+def place_order(sess, private_key, ticker, side, price_dollars, count, client_oid=None,
+                ttl_s=None):
+    """POST /portfolio/orders (action=buy, post_only=True). Returns order_id or None (NOT PLACED).
+    ttl_s -> expiration_ts: the VENUE-SIDE dead-man. A SIGKILLed process (container reap, 2x now)
+    leaves GTC orders working an unattended window -- the 2026-06-12 death cost ~$1.13 when its
+    orphans kept filling one side. With a TTL every orphan self-cancels at the venue within ttl_s."""
     coid = client_oid or str(uuid.uuid4())
     body = {
         "ticker": ticker,
@@ -370,7 +374,7 @@ def place_order(sess, private_key, ticker, side, price_dollars, count, client_oi
         "type": "limit",
         f"{side}_price_dollars": f"{price_dollars:.4f}",
         "post_only": True,
-        "expiration_ts": None,
+        "expiration_ts": int(time.time() + ttl_s) if ttl_s else None,
     }
     body = {k: v for k, v in body.items() if v is not None}
     sc, resp = _api(sess, private_key, "POST", "/portfolio/orders", body=body)
@@ -618,6 +622,10 @@ def main():
                     help="after a post-only reject, do not retry the SAME side+price for this many "
                          "seconds (forensics: 95%% of 2,140 rejects were the same price re-spammed "
                          "<60s apart, 88%% <0.5s -- a churn loop that left the side UNQUOTED)")
+    ap.add_argument("--order-ttl-s", type=float, default=150.0,
+                    help="venue-side expiration on every order (the dead-man that survives SIGKILL: "
+                         "a reaped container's orphan orders self-cancel at the venue within this). "
+                         "Healthy quotes refresh via reshape/stale-refresh long before. 0 = GTC")
     ap.add_argument("--requote-stale-s", type=float, default=20.0,
                     help="drop a resting rung older than this IF the mid has moved >=1 tick since "
                          "placement (markout forensics: fills on >15s-old quotes run -2.04c/fill "
@@ -858,7 +866,8 @@ def main():
             fake = f"dry_{side}_{price:.4f}_{int(t_dec*1000)%100000}"
             print(f"  [DRY place] BUY-{side.upper()} {count or int(a.post)} @ {price:.4f}")
             return fake, t_dec, time.time()
-        oid, sc_, err_ = place_order(sess, priv, mk["cid"], side, price, count or int(a.post))
+        oid, sc_, err_ = place_order(sess, priv, mk["cid"], side, price, count or int(a.post),
+                                     ttl_s=(a.order_ttl_s or None))
         t_ack = time.time()
         if oid is None:
             lm.place_reject(side, price, f"HTTP {sc_}: {err_}")
@@ -927,6 +936,9 @@ def main():
         pos[pos_key] = pos.get(pos_key, 0.0) + count
         cash -= fp * count               # buy spends cash
         net_delta += sgn * count
+        if abs(net_delta) > float(a.max_net) + 0.5:      # clamp leak tripwire (double-fill forensics)
+            notify.alert(f"\u26a0\ufe0f INVENTORY BREACH: |net|={net_delta:+.0f} exceeds max-net "
+                         f"{a.max_net} after {fside} fill @ {fp} -- clamp leak, investigate")
         win_fills[fside] = win_fills.get(fside, 0) + 1   # per-window same-side fill count (trend cap)
         win_cost[fside] = win_cost.get(fside, 0.0) + fp * count
         key = (fside, round(fp, 4))
