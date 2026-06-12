@@ -11,7 +11,7 @@ venue; the book is efficient to ~1 tick and no taker arbitrage survives fees.**
 | 1 | **Maker box** (rest YES+NO same market, both fill → $1) | ✅ DEPLOYED | our core; risk = unpaired leg |
 | 2 | Cross-asset hedge (BTC vs ETH/SOL binary) | ❌ dead | settlement variance (~0.08) swamps cross-cov (~0.03); 1-contract hedge raises variance 78-115% |
 | 3 | Multi-asset certainty-gated boxes (eth/sol/xrp) | ❌ dead | OOS −31¢/day; 0 boxes complete at realistic queue |
-| 4 | Late-window favorite (buy near-decided side) | ❌ dead taker | 96-100% win but ask prices it + cent-rounding fee; maybe maker-only, fill prob unknown |
+| 4 | Late-window favorite (buy near-decided side) | ❌ dead BOTH ways (resolved 2026-06-12) | taker: fee + priced-in. MAKER: fills abundant (98% of qualifying windows, ~75-145 ctr, NO informed-selling signal — flip rate when filled = unconditional) but EV sub-cent and the IS-best combo (k=12,T=0.95,z≥1: +$0.14/day) FLIPS NEGATIVE OOS (−$0.08/day). At 93-97c the residual exactly prices the flip risk; spot-hugging-strike (|z|<1) loses −1 to −2.9c/ctr. The favorite premium is harvestable only EARLIER in the window — that is t29. |
 | 5 | Perp / funding basis hedge | ❌ dead | min perp size ~$1000 notional ≫ our size; margin off |
 | 6 | Calendar / overlapping-tenor arb | ❌ dead | Kalshi has no simultaneously-live crypto tenors with shared settlement |
 | 7 | Maker-rebate harvest | ❌ dead | fee = $0, no rebate to capture |
