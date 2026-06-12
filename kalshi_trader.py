@@ -950,6 +950,16 @@ def main():
         src = "WS" if f.get("_ws") else "REST"
         print(f"  [FILL/{src}] {mkr.upper()} {fside} {count}@{fp} fee={fee_val} "
               f"(roundtrip the raw fill in kalshi_fees_{a.asset}15m.jsonl)")
+        # FEE TRIPWIRE (fee research 2026-06-12): the $0 maker fee is OBSERVED, not documented as an
+        # exemption -- it may be a rounding artifact that breaks at larger fills, and Kalshi's FIX
+        # API recently un-hardcoded settlement fees. A nonzero maker fee changes the box math NOW.
+        try:
+            if mkr == "maker" and fee_val is not None and float(fee_val) > 1e-9:
+                notify.alert(f"🚨 FEE ALERT: maker fill charged fee={fee_val} on {ticker} "
+                             f"({count}@{fp}). The $0-maker-fee assumption just broke — review "
+                             f"box economics before continuing to scale.")
+        except Exception:
+            pass
         lm.fill(fside, fp, count, resting_s, None, mkr, fee_val, 0.0)
         if a.notify_fills:        # real-time fill -> Telegram, framed as box economics not raw price
             py = sum(v for k_, v in pos.items() if k_.endswith(":YES"))

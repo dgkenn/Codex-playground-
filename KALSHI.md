@@ -36,6 +36,30 @@ per-minute candles with bid/ask OHLC + volume, and settled-market history (`fetc
 - ~~Asset ranking: wider alt spreads look attractive~~ — **OVERTURNED by the trade-tape replay
   below: BTC-first** (thin alt books have no benign traffic; see the queue-replay verdict).
 
+## 📋 FEE DEEP-RESEARCH (2026-06-12, official docs + CFTC filings) — what scaling rests on
+The documentation dive for the $100/$1000 stages (full citations in the research record):
+- **Rounding is PER FILL with a cross-fill rebate accumulator** (docs.kalshi.com fee_rounding):
+  raw fee -> ceil to $0.0001 -> balance floored to 1c, overpayment accumulates and rebates at >1c.
+  Multi-lot orders filling in ONE fill ~= per-order rounding (efficient); fragmentation into many
+  partial fills is the rounding-tax case to watch at size.
+- **WARNING: our $0 maker fee is OBSERVED, not documented as an exemption.** Kalshi's blog says "no
+  fees for Maker Orders" (blanket), but the fee schedule defines maker = ceil(0.0175*C*P*(1-P)) "on
+  markets that charge maker fees" -- and at 1-lot sizes that formula ROUNDS TO ZERO. The $0 we see
+  may be a rounding artifact: at post=4, P=0.5 the formula gives ~1.75c/fill if it applies. The
+  Stage-A first-2-lot fee check + the live FEE TRIPWIRE (trader alerts on any nonzero maker fee)
+  are the controls. NO published per-series maker-fee list exists.
+- **S&P/Nasdaq series have a documented 0.5x multiplier** (fees halved, Kalshi announcement) --
+  relevant if we ever quote index ladders.
+- **Incentive programs (run through Sept 2026, CFTC-filed):** Volume Incentive Program (proportional
+  daily pool, up to $0.005/contract, no minimum -- we qualify NOW) + Liquidity Incentive Program
+  (resting-order rewards, 100-20k contract tiers) + **new-listing fee waiver: ALL fees waived for a
+  contract's first 2 days** -- a direct subsidy to the thin/NEW-market maker sleeve.
+- **Settlement fees: currently $0 but the FIX API recently un-hardcoded them** (MiscFeeAmt now
+  reports actuals) -- Kalshi built the infrastructure to charge per-market settlement fees. Silent
+  risk; the per-fill fee log + tripwire is our monitor.
+- **No advance-notice requirement found for fee changes**; the watchable channels are CFTC Part-40
+  filings (~1-2wk lag), news.kalshi.com, and the fee-schedule PDF (bot-walled; can't hash-watch).
+
 ## ✅ RESOLVED LIVE: maker fee = $0.00 on KXBTC15M (the load-bearing unknown)
 
 Kalshi's official formula (kalshi.com/fee-schedule, help center): **taker = ceil(0.07·p·(1−p)) /

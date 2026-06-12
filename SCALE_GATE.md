@@ -84,6 +84,32 @@ baseline AND time-to-fill p90 <2× baseline (queue impact check). Then relax los
 **PROBATION (first week at $1000):** new strategies run at MINIMUM size while the box engine runs
 Stage-A size; only after 7 clean days do both step to Stage-B parameters together.
 
+## Stage-B diversification — HOW the sleeves are built (operator request, 2026-06-12)
+The $1000 stage deploys across SLEEVES, each an independent mini-business with its own ledger,
+prospective test, sticky loss-limit, and entry gate. Design rules:
+- **One shared master kill** (3%/day across everything flips LIVE_SWITCH off) + per-sleeve sticky
+  limits; **<=30% of bankroll deployed at any instant** across all sleeves combined.
+- **Category anti-correlation:** no two sleeves concentrated in the same event theme; the thin-market
+  sleeve itself caps $150/category and $50/market.
+- **Every sleeve passes the SAME bar the box engine faced:** prospective forward test vs a
+  do-nothing baseline, pre-registered thresholds, >=2-sigma + economic sanity before real money.
+- **Fee gates per sleeve (fee research 2026-06-12):** maker fee on each NEW series is verified with
+  one 1-lot fill before sizing (no published per-series list exists); the new-listing 2-DAY FEE
+  WAIVER makes fresh listings the cheapest entry for the thin-market sleeve; enroll in the Volume +
+  Liquidity Incentive Programs (we qualify; up to $0.005/contract back).
+- **The sleeves and their prospective tests (RUNNING AS OF TODAY):**
+  1. Thin/new-market maker -- kalshi_thin_collect.py (tracks ~40 real thin event markets: 5-7c
+     spreads, OI 300-6,700, ~zero daily volume) -> offline scorer paper-rests quotes at the recorded
+     touch, infers fills from later prints, scores vs hold-nothing. Gate: >=2 weeks data, paper PF
+     >=1.5 and positive after the per-series fee check.
+  2. Ladder-lock maker -- kalshi_ladder_collect.py (BTC/ETH/S&P/Nasdaq ladders) counting crossable
+     monotonicity violations. Gate: >=5 crossable dislocations/week observed, else the sleeve dies.
+  3. Favorite-band maker -- same thin-market data, scoring restricted to the 60-95c band (the
+     documented favorite-longshot maker side). Gate: same as (1) on the band subset.
+- **Capital plan at $1000:** core box engine $100 cap (post 4) + sleeve 1 $150 + sleeve 2 $50 +
+  sleeve 3 $100 (only after sleeve 1 validates) = max $400 deployed (40% hard ceiling, 30% target),
+  $600+ reserve. Idle cash earns nothing on Kalshi -- the reserve is THE ruin-protection, not waste.
+
 ## De-escalation (automatic, no judgment calls at 2am)
 - Any kill-switch trip → drop ONE stage's parameters for 7 days (sticky; operator re-arms).
 - Drawdown >10% of bankroll → Stage-0 sizing ($5 notional, post 1) until 7 consecutive green days.
