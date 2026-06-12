@@ -375,9 +375,16 @@ def place_order(sess, private_key, ticker, side, price_dollars, count, client_oi
     body = {k: v for k, v in body.items() if v is not None}
     sc, resp = _api(sess, private_key, "POST", "/portfolio/orders", body=body)
     if sc < 200 or sc >= 300 or resp is None:
-        return None
+        # surface the venue's actual reason (2,140 rejects were logged as the useless
+        # "no order_id from venue" because this was discarded -- reject forensics 2026-06-12)
+        err = ""
+        try:
+            err = (resp or {}).get("error", {}).get("message") or json.dumps(resp)[:120]
+        except Exception:
+            err = str(resp)[:120]
+        return None, sc, err
     oid = (resp.get("order") or {}).get("order_id")
-    return str(oid) if oid else None
+    return (str(oid), sc, "") if oid else (None, sc, "2xx but no order_id")
 
 
 def cancel_order(sess, private_key, order_id):
@@ -607,6 +614,15 @@ def main():
                          "with $GH_TOKEN -- it is NOT CDN-cached, unlike raw.githubusercontent.")
     ap.add_argument("--remote-switch-s", type=float, default=20.0,
                     help="how often to poll --remote-switch-url (seconds)")
+    ap.add_argument("--reject-cooldown-s", type=float, default=3.0,
+                    help="after a post-only reject, do not retry the SAME side+price for this many "
+                         "seconds (forensics: 95%% of 2,140 rejects were the same price re-spammed "
+                         "<60s apart, 88%% <0.5s -- a churn loop that left the side UNQUOTED)")
+    ap.add_argument("--requote-stale-s", type=float, default=20.0,
+                    help="drop a resting rung older than this IF the mid has moved >=1 tick since "
+                         "placement (markout forensics: fills on >15s-old quotes run -2.04c/fill "
+                         "vs +0.79c fresh -- stale quotes are the pick-off; queue position at a "
+                         "wrong price is anti-value). 0 disables")
     a = ap.parse_args()
 
     live = a.live and os.environ.get("I_UNDERSTAND_REAL_MONEY") == "yes"
@@ -713,6 +729,7 @@ def main():
 
     # --- cancel / dead-man infrastructure ---
     cancel_q = []   # [(oid, key, reason)] queued this pass (batched like live_trader.flush_cancels)
+    reject_cd = {}  # (side, price) -> retry-not-before ts (post-only reject churn breaker)
 
     def drop(key, reason):
         """Queue a cancel without sending yet (batched in flush_cancels)."""
@@ -735,6 +752,7 @@ def main():
                 ops["cancel"] += 1
                 if not ok2:
                     ops["cancel_fail"] += 1
+                    lm.event("cancel_fail", side=key[0], price=key[1], reason=reason)
                     print(f"  [CANCEL-FAIL] {oid[:16]} key={key} reason={reason}")
                     side_cooldown[key[0]] = time.time() + a.fill_cooldown   # likely filling against us
                     ok = False
@@ -840,10 +858,11 @@ def main():
             fake = f"dry_{side}_{price:.4f}_{int(t_dec*1000)%100000}"
             print(f"  [DRY place] BUY-{side.upper()} {count or int(a.post)} @ {price:.4f}")
             return fake, t_dec, time.time()
-        oid = place_order(sess, priv, mk["cid"], side, price, count or int(a.post))
+        oid, sc_, err_ = place_order(sess, priv, mk["cid"], side, price, count or int(a.post))
         t_ack = time.time()
         if oid is None:
-            lm.place_reject(side, price, "no order_id from venue")
+            lm.place_reject(side, price, f"HTTP {sc_}: {err_}")
+            reject_cd[(side, round(price, 4))] = time.time() + a.reject_cooldown_s
             return None
         placed_oids.add(oid)
         ops["place"] += 1
@@ -1236,6 +1255,8 @@ def main():
                 key = (side, round(price, 4))
                 if key in resting:
                     continue
+                if reject_cd.get(key, 0.0) > time.time():
+                    continue              # reject churn breaker: this exact price just bounced
                 if time.time() < side_cooldown[side]:
                     continue              # tweak 1: post-fill cooldown (don't re-quote into the trend)
                 # is this quote COMPLETING a box (reducing |net|)? completing only ever cuts
@@ -1329,7 +1350,8 @@ def main():
                     oid, t_dec, t_ack = res
                 else:
                     oid = res; t_ack = time.time()
-                resting[key] = {"oid": oid, "ts": t_ack, "filled": 0.0}
+                resting[key] = {"oid": oid, "ts": t_ack, "filled": 0.0,
+                                "mid0": loop_ctx.get("mid")}
 
             # --- PULL stale / toxic / off-target rungs ---
             for key in list(resting):
@@ -1343,6 +1365,18 @@ def main():
                     age = time.time() - resting[key]["ts"]
                     if age >= 2.0:   # min-rest-s equivalent: don't churn fresh orders (P2)
                         drop(key, "reshape")
+                        continue
+                # STALE-QUOTE REFRESH (markout forensics 2026-06-12): a quote resting >N s through a
+                # >=1-tick mid move is the one that gets picked off (-2.04c/fill vs +0.79c fresh).
+                # The queue position we give up was at a stale price -- anti-value, not value.
+                if a.requote_stale_s > 0:
+                    meta = resting[key]
+                    age = time.time() - meta["ts"]
+                    m0 = meta.get("mid0")
+                    mid_now = loop_ctx.get("mid")
+                    if (age > a.requote_stale_s and m0 is not None and mid_now is not None
+                            and abs(mid_now - m0) >= 0.01 - 1e-9):
+                        drop(key, "stale_refresh")
 
             # Rung cap: evict rungs farthest from touch if over max_rungs
             for side, touch in (("yes", ybb), ("no", round(1.0 - yba, 4))):
