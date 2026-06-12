@@ -509,6 +509,22 @@ TRIALS = {
     #      price); hold naked iff the held leg is now a DEEP favorite (>= 0.75). Everything looser
     #      than this already failed OOS (t08 hold-all-NO, p2 signal-hold, the directional ensemble).
     "t28_hold_deep_favorite": lambda F: run_policy(F, hold_ok=lambda h, f: (1.0 - f["p"]) >= 0.75),
+    # ---- asymmetry sweep survivors (2026-06-12 tape backtest, IS+OOS at q0=0 AND q0=500) ----
+    # t29 = the headline: ONLY OPEN FAVORITE-SIDE LEGS (leg's own cost >= 0.45). Survived both
+    # queue regimes (OOS +2.70c/win t=8.2 at q0=0; +9.73 t=15.2 at q0=500; maxDD ~60% of P0).
+    # It is the adaptive-side generalization of t16 (NO-only, the live A/B leader) and the tight
+    # version of t01 (which kept the toxic 20-45c mid-longshots and failed). Leg cost: bid -> p,
+    # ask -> 1-p.
+    "t29_favorite_only_opens": lambda F: run_policy(F, open_ok=lambda f, s: (
+                                   f["p"] if f["side"] == "bid" else 1.0 - f["p"]) >= 0.45),
+    # t30 = the asymmetric playbook: favorite-only opens (>=0.40) + hold legs that became deep
+    # favorites (implied >=0.75). The sweep's C6 minus its sell-at-end component (which was
+    # NEGATIVE standalone -- selling on end-of-window implied is a stop-loss in disguise, and
+    # stops lose). Survived q0=500 (+9.4c/win t=10.1), neutral at q0=0.
+    "t30_asym_playbook":   lambda F: run_policy(F,
+                                   open_ok=lambda f, s: (f["p"] if f["side"] == "bid"
+                                                         else 1.0 - f["p"]) >= 0.40,
+                                   hold_ok=lambda h, f: (1.0 - f["p"]) >= 0.75),
 }
 
 
