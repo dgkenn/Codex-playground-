@@ -31,3 +31,21 @@ box mechanically settles to 0 -- gating on that gates the box itself). Target = 
   but clean. Do NOT deploy a fitted toxicity LOGIT on the settle metric (overfit).
 - Bottom line: counterparty avoidance is a real but SMALL edge (adverse selection is ~random per fill);
   t31 captures most of it; we're already near the frontier.
+
+## Do counterparty features predict PAIRING? (2026-06-12) — yes at the WINDOW level (have it), no per-fill
+The question: can the fingerprint/counterparty signals tell us if a leg will pair? Test (57k fills,
+4 assets, pairing label = opposite side fills later, IS/OOS):
+- **Per-FILL: NO incremental prediction.** AUC(minute-k only)=0.8722 vs AUC(k + counterparty
+  features: take-size, flow-vs-leg, spot-vs-leg)=0.8705 -- counterparty features ADD NOTHING (slightly
+  hurt). MINUTE-OF-FILL stays the dominant pairing predictor (early pairs, late doesn't = t03/t29).
+- **The mechanical reason (illuminating):** at front-of-queue, LARGE informed takes almost never fill
+  us (large-take fills: n=1 of 57k!) -- we're filled by SMALL RETAIL. The informed flow doesn't hit
+  our leg directly; it MOVES THE MARKET and strands our OPPOSITE leg. So counterparty toxicity is a
+  WINDOW-level phenomenon, not a per-fill one.
+- **Window-LEVEL: YES, already established + deployed.** The fingerprint Test B (2779 windows): high
+  decision-time VPIN -> 9.7x more stranded legs (6.8% vs 0.7%), pair-rate OOS r=-0.346. THAT is
+  "counterparty predicts pairing," and it's wired as t32 (VPIN open gate) + t06 (flow).
+**Answer:** counterparty signals DO help predict stranding -- but as a WINDOW REGIME gate (toxic flow
+-> avoid quoting), which we already deploy (t32). Per-LEG, minute-of-fill is the predictor (t03/t29),
+and which specific taker crossed your leg is uninformative (it's retail). No new per-leg lever; the
+deployed window-level VPIN/flow gates are the right tools.
