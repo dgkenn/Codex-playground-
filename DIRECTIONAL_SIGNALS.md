@@ -136,3 +136,23 @@ The focused unpaired-leg signal test (5 signals x k{5,7,9,11}, IS/OOS, bootstrap
 **Unpaired-leg answer, now triple-confirmed: PREVENT (t29 don't open toxic legs) + CUT (t11/t17 sell
 the cheap toxic strands) beats any PREDICT-and-hold. Flow-conditioning (t31) is marginally real early
 but not enough to hold losers profitably. Directional prediction is closed.**
+
+## Large-taker DIRECTION as a directional signal (2026-06-12) — closest yet, still not deployable
+The sharp question: large takers (>=50ct) are informed about DIRECTION (win at settlement), so does
+their net direction predict res_up BEYOND the mid? Isolating LARGE takes from retail noise (the prior
+tests pooled all flow):
+- **AUC test (the rigorous one): dAUC ~= 0.000 at every minute (k=5,7,9,11).** Adding large-take net
+  direction to the mid does NOT improve settlement prediction -- the mid already prices it.
+- **Residual sign test IS SIGN-STABLE both halves** (the encouraging part, a first): large net-BUY-YES
+  -> YES outperforms mid (+1.9% IS / +15.6% OOS, n=118/42); large net-SELL -> YES underperforms
+  (-7.6% IS / -4.2% OOS, n=140/78). The DIRECTION of the effect is consistent -- large takers are
+  right beyond the mid.
+- BUT: magnitudes are wildly unstable (+1.9% vs +15.6%), n is tiny (large takes rare: ~120-260
+  qualifying windows), and the 'follow large takers' OOS edge is +4.45% (t=2.1, n=25) -- marginal AND
+  a TAKER play (pays ~2c fee > the edge -> fee-killed, like the stale-snipe/size-19-follow).
+**Verdict: the closest a directional signal has come (sign-consistent IS+OOS), but NOT deployable** --
+AUC-neutral (mid prices it), fee-killed as a taker, too rare/noisy to gate on. The ONE non-fee
+application is conditioning an UNPAIRED-LEG hold/cut on large-take agreement (a position we hold, no
+take needed) -- but it fires rarely and the unpaired-leg test already showed cut-beats-signal, so it's
+a WATCH item (revisit if large-take windows accumulate), not a trial. 8th directional result; the
+efficient-market wall holds, just slightly more thinly here.
