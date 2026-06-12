@@ -74,3 +74,21 @@ This is the WHY behind VPIN/flow gating working. **Already wired:** VPIN spikes 
 takes hit, so t32 (VPIN open gate) captures this signal -- no separate size-gate needed (and the
 collector vs parquet sz-unit difference makes a raw-size threshold risky). The finding strengthens the
 toxicity thesis: small=naive (profit), large=informed (avoid), and t32/t06/t18 are the deployed levers.
+
+## Size-19 taker forensic: plausibly INFORMED, but NOT copyable (the signal is invisible to us)
+Deep profile (n=807, 531 windows, 99% BTC): size-19 is the most credible informed-actor signature found.
+- **Beats the price-implied win rate in EVERY bucket** (realized vs implied: longshots 42% vs 40%, mid
+  56% vs 49%, favorites 46% vs 43%) -- it's not just longshot variance.
+- **Edge is broad-based, not fat-tailed:** top-5 trades = only 18% of total edge; median trade -0.10c.
+  On calibrated MID contracts (0.3-0.7) it earns +7.0c, wins 56% vs 49% implied (t=1.9, n=161).
+- Neighbors are NULL (size-18 -0.0c) / weak (size-20 +1.3c), so 19 is a distinct signature.
+**CAN WE COPY IT? No.** Its trades have NO observable trigger in our data: 51% buy-YES (no directional
+bias), no spot-momentum tilt (52% buy on spot-up vs 48% on spot-down), all minutes (mean k=9.4), all
+prices. It wins 56% on ~50/50 contracts via a signal WE CANNOT SEE (faster spot feed / order-flow read
+/ cross-market / news). You can't replicate an informational edge whose conditioning variable is
+invisible. FOLLOWING it (piggyback its public takes) is fee-killed: its ~3c gross edge minus the ~2c
+TAKER fee = ~1c, and we'd be late + we're a maker (can't take). 
+**The actionable response is what we ALREADY do: AVOID being its counterparty** -- being the maker it
+picks off is exactly the loss the toxicity/VPIN gate (t32) and the size-toxicity finding defend against.
+Caveat: even "it's informed" is marginal (clean-subset t=1.9). Net: a real informed taker, uncopyable,
+already defended against. Don't chase it; the edge stays counterparty-avoidance, not imitation.
