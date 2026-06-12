@@ -774,7 +774,12 @@ def main():
         try:
             print(f"[DEAD-MAN] {reason}: cancelling all resting orders")
             cancel_all_resting(reason="deadman")
-            notify.alert_sync(f"[kalshi] DEAD-MAN {reason}: cancel-all")
+            # planned completions get a calm message; "DEAD-MAN" is reserved for genuine
+            # protective trips (it read like a crash to the operator on a normal session end)
+            if "planned" in reason:
+                notify.alert_sync(f"🏁 {reason} — all orders cancelled cleanly")
+            else:
+                notify.alert_sync(f"[kalshi] DEAD-MAN {reason}: cancel-all")
         except Exception as e:
             print(f"[DEAD-MAN] cancel failed: {str(e)[:120]}")
 
@@ -1482,7 +1487,10 @@ def main():
                 deadman_tripped = True
             time.sleep(a.poll)
 
-    _flatten_and_exit("loop end")
+    # PLANNED end-of-session: same cancel-all guarantee, but alerted as a normal completion --
+    # the generic "DEAD-MAN" wording here read like a crash to the operator (it is not one).
+    _flatten_and_exit(f"live session complete (planned, duration reached) — realized "
+                      f"{realized:+.2f}; next session starts on schedule, or text 'on'")
     print(f"done. realized={realized:+.2f} net_delta={net_delta:+.1f} "
           + (f"avg_markout={sum(markouts)/len(markouts):+.5f}" if markouts else "no markouts"))
 
