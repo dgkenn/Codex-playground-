@@ -144,15 +144,26 @@ def main():
             if text in ("on", "/on", "start"):
                 switch("on")                              # flip the durable switch (source of truth)
                 started = dispatch_live()                 # ...AND start a run now (don't wait for cron)
-                send(tok, chat, f"✅ live bot ON ({ASSET})" +
-                     ("\n🟢 starting a live run now (~1-2 min to first quote)" if started
-                      else "\n(switch set; next cron/watchdog will start it)"))
+                if started:
+                    eta = ("✅ live bot ON ({a})\n"
+                           "🟢 run dispatched — ETA to first quote ~60–90s "
+                           "(GitHub spins up a runner + installs deps). I'll send a "
+                           "'🟢 live session armed' ping the moment it's actually trading; "
+                           "if preflight gates it you'll get a 🟡 instead.").format(a=ASSET)
+                else:
+                    eta = ("✅ live bot ON ({a})\n"
+                           "switch set, but I couldn't dispatch a run right now — it auto-starts "
+                           "on the next scheduler tick, ETA ≤25 min. You'll get a 🟢 ping when "
+                           "it's trading.").format(a=ASSET)
+                send(tok, chat, eta)
             elif text in ("off", "/off", "stop"):
                 switch("off")                             # flip switch off (blocks restart)
                 n = cancel_live()                         # ...AND kill the running run now (<1 min)
                 send(tok, chat, "\U0001f6d1 live bot OFF" +
-                     (f"\n🔴 cancelling {n} running cycle(s); orders flatten within seconds" if n
-                      else "\n(no active run; a running trader will also self-stop within ~20s)"))
+                     (f"\n🔴 ETA to flat: ~10–30s (cancelling {n} running cycle(s); orders flatten "
+                      f"on the runner's stop signal)" if n
+                      else "\n🔴 ETA to flat: ≤20s — no GHA run active, but any running trader "
+                           "self-stops on its next switch poll (every 20s)."))
             elif text in ("status", "/status"):
                 killed = os.path.exists(os.path.join(HERE, f".kalshi_killed_{ASSET}15m"))
                 send(tok, chat, f"switch: {cur_switch()}" + ("  (kill sentinel set)" if killed else ""))
