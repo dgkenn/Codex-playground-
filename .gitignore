@@ -55,6 +55,7 @@ kalshi_markout.jsonl
 .kalshi_killed_*
 overnight_data/
 kalshi_fees_*.jsonl
+window_audit_*.jsonl
 .scorecard_results.json
 
 # A/B local state (derived, not source)
