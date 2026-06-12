@@ -126,6 +126,31 @@ jobs:
             sleep $((RANDOM % 6 + 2))
           done
           echo "push failed after retries" >&2; exit 1
+      - name: live watchdog -- reseed the live chain if the switch is on and no live run is active
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # SELF-HEALING LIVE TRADING: live.yml self-chains, but a dead runner kills the chain and
+          # the switch alone can't restart it (observed: switch=on, no live-state branch = no runs).
+          # Each collect cycle: if LIVE_SWITCH (on $BRANCH, our checkout) is ON and no live.yml run
+          # is queued/in_progress, dispatch one. A loss-limit kill flips the switch OFF on the
+          # branch, so this NEVER re-arms after a kill (the operator re-arms deliberately).
+          cd "$GITHUB_WORKSPACE"
+          [ "$(tr -d '[:space:]' < LIVE_SWITCH 2>/dev/null || echo off)" = "on" ] || { echo "switch off -- no reseed"; exit 0; }
+          alive=0
+          for st in in_progress queued; do
+            n=$(curl -s -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/${{ github.repository }}/actions/workflows/live.yml/runs?status=$st&per_page=1" \
+              | python -c "import sys,json; print(len(json.load(sys.stdin).get('workflow_runs',[])))" 2>/dev/null || echo 1)
+            [ "$n" = "0" ] || alive=1
+          done
+          [ "$alive" = "0" ] || { echo "live chain alive"; exit 0; }
+          code=$(curl -s -o /tmp/lw.out -w '%{http_code}' -X POST \
+            -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/workflows/live.yml/dispatches" \
+            -d "{\"ref\":\"${BRANCH}\"}")
+          if [ "$code" = "204" ]; then echo "live chain RESEEDED"; else echo "reseed dispatch -> HTTP $code"; cat /tmp/lw.out || true; fi
       - name: self-chain -- dispatch the successor run (continuity must NOT depend on cron)
         if: always()
         env:
