@@ -739,11 +739,19 @@ def main():
     cancel_q = []   # [(oid, key, reason)] queued this pass (batched like live_trader.flush_cancels)
     reject_cd = {}  # (side, price) -> retry-not-before ts (post-only reject churn breaker)
 
+    pending_cancel = {}  # key -> meta: cancel SENT but not venue-confirmed. THE CLAMP LEAK FIX
+    # (live breach 2026-06-12, |net|=-2): drop() used to erase the order from `resting` instantly;
+    # on CANCEL-FAIL the order stayed LIVE at the venue but invisible to the inventory projection,
+    # so a second same-side order was placed and both filled. Orders now count against the clamp
+    # until the venue confirms the cancel OR their fill books.
+
     def drop(key, reason):
         """Queue a cancel without sending yet (batched in flush_cancels)."""
         meta = resting.pop(key, None)
         if meta is None:
             return
+        meta["cq_ts"] = time.time()
+        pending_cancel[key] = meta
         cancel_q.append((meta["oid"], key, reason))
 
     def flush_cancels():
@@ -758,14 +766,17 @@ def main():
             if live:
                 ok2 = cancel_order(sess, priv, oid)
                 ops["cancel"] += 1
-                if not ok2:
+                if ok2:
+                    pending_cancel.pop(key, None)        # venue-confirmed gone -> stop counting it
+                else:
                     ops["cancel_fail"] += 1
                     lm.event("cancel_fail", side=key[0], price=key[1], reason=reason)
                     print(f"  [CANCEL-FAIL] {oid[:16]} key={key} reason={reason}")
                     side_cooldown[key[0]] = time.time() + a.fill_cooldown   # likely filling against us
-                    ok = False
+                    ok = False                            # stays in pending_cancel -> clamp sees it
             else:
                 print(f"  [DRY cancel] key={key} reason={reason}")
+                pending_cancel.pop(key, None)
         lm.cancel_batch(len(batch), (time.time() - t_sent) * 1e3, ok)
 
     def cancel_all_resting(reason="rollover"):
@@ -942,6 +953,11 @@ def main():
         win_fills[fside] = win_fills.get(fside, 0) + 1   # per-window same-side fill count (trend cap)
         win_cost[fside] = win_cost.get(fside, 0.0) + fp * count
         key = (fside, round(fp, 4))
+        pc = pending_cancel.get(key)
+        if pc is not None:
+            pc["filled"] = pc.get("filled", 0.0) + count
+            if pc["filled"] >= a.post - 1e-9:
+                pending_cancel.pop(key, None)            # raced cancel resolved as a fill
         meta = resting.get(key)
         resting_s = (time.time() - meta["ts"]) if meta else None
         if meta:
@@ -1305,6 +1321,9 @@ def main():
                 sgn = 1.0 if side == "yes" else -1.0
                 rest_same = sum(max(a.post - m.get("filled", 0.0), 0.0)
                                 for (s_, _p), m in resting.items() if s_ == side)
+                # + cancel-sent-but-unconfirmed orders: still live at the venue until proven otherwise
+                rest_same += sum(max(a.post - m.get("filled", 0.0), 0.0)
+                                 for (s_, _p), m in pending_cancel.items() if s_ == side)
                 proj = net_delta + sgn * (rest_same + a.post)
                 if abs(proj) > inv_cap + 1e-9:
                     continue
@@ -1398,6 +1417,16 @@ def main():
                     for k in ks[a.max_rungs:]:
                         drop(k, "rung_cap")
 
+            # pending-cancel hygiene: retry stale unconfirmed cancels; purge after 60s (the
+            # order TTL guarantees venue-side death; purging un-blocks the clamp slot)
+            now_pc = time.time()
+            for k_pc, m_pc in list(pending_cancel.items()):
+                age_pc = now_pc - m_pc.get("cq_ts", now_pc)
+                if age_pc > 60.0:
+                    pending_cancel.pop(k_pc, None)
+                elif age_pc > 10.0 and not m_pc.get("retried"):
+                    m_pc["retried"] = True
+                    cancel_q.append((m_pc["oid"], k_pc, "pending_retry"))
             flush_cancels()   # ONE pass for all queued cancels this tick
 
             # ----------------------------------------------------------------
