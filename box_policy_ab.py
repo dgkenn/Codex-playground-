@@ -312,6 +312,40 @@ def tox_p(f):
     return 1.0 / (1.0 + np.exp(-z))
 
 
+# Measured pair-rate table (sizing analysis 2026-06-12, 20,318 fills, q0=0): P(this leg pairs)
+# by minute-bucket x |p-0.5| band. Drives the Kelly-style sizing trials.
+def pair_prob(f):
+    k = f.get("k", 8); d = abs((f["p"] if f["side"] == "bid" else 1.0 - f["p"]) - 0.5)
+    if k <= 4:
+        return 0.995 if d > 0.15 else 1.0
+    if k <= 7:
+        return 0.979 if d > 0.15 else 1.0
+    if k <= 10:
+        return 0.906 if d > 0.15 else 0.997
+    return 0.655 if d > 0.15 else (0.804 if d > 0.05 else 0.772)
+
+
+def pol_sized(fills, size_of):
+    """Box-pairing walk where the COMPLETING leg inherits the OPEN leg's size (a sized box must be
+    a matched box -- the per-fill weight() shortcut in run_policy mismatches the pair). size_of(f)
+    -> integer-ish multiplier for an OPENING fill. Cap |net|<=1 LEG as ever."""
+    net = 0; pnl = 0.0; open_leg = None; open_w = 1.0
+    for f in fills:
+        step = 1 if f["side"] == "bid" else -1
+        nn = net + step
+        if abs(nn) > 1:
+            continue
+        if open_leg is not None and abs(nn) < abs(net):      # completing fill: match the open size
+            pnl += open_w * (f["settle"] + open_leg["settle"])
+            open_leg = None
+        else:
+            open_leg = f; open_w = float(size_of(f))         # opening fill: size it
+        net = nn
+    if open_leg is not None:
+        pnl += open_w * open_leg["settle"]                   # leftover unpaired leg, sized
+    return pnl
+
+
 def hedge_unpaired(f, h=100.0):
     """Perp-hedge value of an unpaired leg: settle + a delta-neutral BTC hedge (short for a YES leg,
     long for NO). h ~= cents of hedge per 1% BTC move (delta-neutral on the tape). Tape: -3.3c/leg
@@ -435,6 +469,20 @@ TRIALS = {
     "t21_sweepable_queue":     lambda F: run_policy(F, open_ok=lambda f, s: f["depth"] is None
                                                     or (f["flow"] is not None
                                                         and f["depth"] < abs(f["flow"]))),
+    # ---- BET-SIZING trials (operator ask 2026-06-12): forward-test sizing SHAPES so a validated
+    #      one can scale with bankroll (multiplier x base size). pol_sized matches the completing
+    #      leg to the open leg's size (a sized box must be a matched box -- run_policy's per-fill
+    #      weight() mismatches the pair). Thresholds pre-registered, never tuned on forward data.
+    #      t23 is the bankroll-scalable one: quarter-Kelly in P(pair) from the measured pair-rate
+    #      table (SIZING.md: f* ~ P/(1-P)); the 3x cap IS the fractional-Kelly discipline.
+    "t22_size_sweetspot":  lambda F: pol_sized(F, lambda f: 1.5 if (f["k"] <= 4 and
+                                       abs((f["p"] if f["side"] == "bid" else 1 - f["p"]) - 0.5)
+                                       <= 0.10) else 1.0),
+    "t23_quarter_kelly":   lambda F: pol_sized(F, lambda f: min(3.0, max(1.0,
+                                       0.01 * min(pair_prob(f), 0.995)
+                                       / (1.0 - min(pair_prob(f), 0.995))))),
+    "t24_tox_sized":       lambda F: pol_sized(F, lambda f: 1.5 if tox_p(f) < 0.45
+                                       else (0.5 if tox_p(f) > 0.60 else 1.0)),
 }
 
 
