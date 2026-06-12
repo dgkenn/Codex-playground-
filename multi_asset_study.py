@@ -1,558 +1,401 @@
-"""
-multi_asset_study.py — Compact multi-asset tape replay study.
-Covers BTC, ETH, SOL, XRP using the same parquet/logic as informed_detectors.py
-Sections: A-G per CLAUDE.md spec. All output is tabular/compact.
-"""
-import os, sys, warnings
-os.chdir("/home/user/Codex-playground-")
-sys.path.insert(0, '/home/user/Codex-playground-')
-warnings.filterwarnings("ignore")
+"""multi_asset_study.py -- Multi-asset box-harvest tape replay.
+Compact output only. Re-runnable. Read-only.
 
+Tasks:
+  1. Per-asset P0 baseline (IS+OOS 60/40 time split)
+  2. Strand asymmetry by side
+  3. Capacity: flow-bound max contracts/window + implied $/day
+  4. Gate transfer: vpin<=0.40 and combo_tox_gate (vpin proxy) on OOS
+  5. Hazard: last-120s fills vs earlier fills
+  6. Summary tables for MULTI_ASSET.md
+
+Run: python multi_asset_study.py
+"""
 import numpy as np
 import pandas as pd
-from informed_detectors import build as build_features, vpin_buckets, vpin_at, detectors
+import sys, os
+os.chdir("/home/user/Codex-playground-")
+sys.path.insert(0, "/home/user/Codex-playground-")
 
-# ── Frozen gate thresholds from box_policy_ab.py ──────────────────────────────
-VPIN_THRESH = 0.40
-_COMBO_INTERCEPT = -1.097821
-_COMBO_FEATS = ["vpin", "take_n", "d1_maxrun", "d2_lambda", "d1_nruns", "d4_roundfrac", "d5_sweep"]
-_COMBO_MEANS = {"vpin": 0.420709, "take_n": 1195.595024, "d1_maxrun": 25.951139,
-                "d2_lambda": 0.083574, "d1_nruns": 0.289674, "d4_roundfrac": 0.158329,
-                "d5_sweep": 7.621103}
-_COMBO_STDS =  {"vpin": 0.188093, "take_n": 1572.059825, "d1_maxrun": 18.508967,
-                "d2_lambda": 0.181745, "d1_nruns": 0.064831, "d4_roundfrac": 0.089765,
-                "d5_sweep": 4.795740}
-_COMBO_COEFS = {"vpin": 0.139545, "take_n": -0.926797, "d1_maxrun": -0.052450,
-                "d2_lambda": 0.177854, "d1_nruns": 0.046305, "d4_roundfrac": -0.006626,
-                "d5_sweep": -0.024818}
-_COMBO_THRESH = 0.3656
-K = 7  # decision minute
+from box_policy_ab import combo_tox_p, _COMBO_THRESH
+from informed_detectors import vpin_buckets, vpin_at
 
 ASSETS = ["btc", "eth", "sol", "xrp"]
+MM_SIZE = {"btc": 265, "eth": 20, "sol": 30, "xrp": 10}  # per brief
 
-# ── helpers ──────────────────────────────────────────────────────────────────
-def combo_tox_p_row(row):
-    vals = {f: row.get(f, np.nan) for f in _COMBO_FEATS}
-    if any(v is None or (isinstance(v, float) and np.isnan(v)) for v in vals.values()):
-        return np.nan
-    z = _COMBO_INTERCEPT
-    for feat in _COMBO_FEATS:
-        z += _COMBO_COEFS[feat] * (vals[feat] - _COMBO_MEANS[feat]) / _COMBO_STDS[feat]
-    return 1.0 / (1.0 + np.exp(-z))
 
-def maxdd(seq):
-    """Max drawdown from a cumulative PnL series."""
-    cum = np.cumsum(seq)
-    peak = np.maximum.accumulate(cum)
-    dd = cum - peak
-    return float(dd.min()) if len(dd) else 0.0
+def arr(x): return np.asarray(x, float)
 
-def simulate_window(ws, h, tap):
-    """
-    Run fill simulation for a single window (minutes 2-12, q0=0).
-    Returns list of fill-dicts with: side, settle, k, tau, vpin, stranded_tag,
-      combo_tox_p, fill_time_in_window (seconds from ws).
-    Also returns box_pnl (P0 always-pair), strand_count, any_fill.
-    """
-    bid = np.asarray(h.bid_path, float)
-    ask = np.asarray(h.ask_path, float)
-    t_arr = np.asarray(tap.t, float)
-    p_arr = np.asarray(tap.p, float)
-    sz_arr = np.asarray(tap.sz, float)
-    buy_arr = np.asarray(tap.buy, bool)
 
-    bt, bi = vpin_buckets(t_arr, sz_arr, buy_arr)
+def load_asset(asset):
+    h = pd.read_parquet(f"hist_kalshi_{asset}15m.parquet").set_index("ws")
+    t = pd.read_parquet(f"trades_kalshi_{asset}15m.parquet").set_index("ws")
+    return h, t
 
-    fills = []
-    for k in range(2, 13):
-        b0, a0 = bid[k], ask[k]
-        if np.isnan(b0) or np.isnan(a0) or not (0.03 <= (b0 + a0) / 2 <= 0.97):
-            continue
-        spread = a0 - b0
-        tau = (15 - k) / 15.0
-        # causal detectors
-        msk = t_arr < (ws + 60 * k)
-        dv = detectors(ws, t_arr[msk], p_arr[msk], sz_arr[msk], buy_arr[msk])
-        # vpin at decision minute
-        vp = vpin_at(bt, bi, ws + 60 * k)
 
-        lo, hi = ws + 60 * (k + 1), ws + 60 * (k + 2)
-        i0, i1 = np.searchsorted(t_arr, lo), np.searchsorted(t_arr, hi)
-        done_b = done_a = False
-        fill_b_time = fill_a_time = None
-        for i in range(i0, i1):
-            if done_b and done_a:
-                break
-            p, sz, buy = p_arr[i], sz_arr[i], buy_arr[i]
-            if not done_b and not buy and p <= b0 + 1e-9:
-                done_b = True; fill_b_time = t_arr[i] - ws
-            if not done_a and buy and p >= a0 - 1e-9:
-                done_a = True; fill_a_time = t_arr[i] - ws
-
-        # only count windows where at least one leg filled
-        if not done_b and not done_a:
-            continue
-
-        # determine settlement result (binary: res=1 if settle>b0, i.e. YES=1)
-        # We don't have res directly — simulate from subsequent taker flow at end of window
-        # Use the final bid/ask at minute 14 as proxy for expected settlement:
-        # settle=1 means YES pays $1; bid fills settle=1-b0 if yes; ask fills settle=a0-res
-        # For strand cost: if done_b but not done_a => YES leg stranded, settles at 0 or 1
-        # We'll record raw settle at end using mid_path if available, else 0.5 proxy
-        mid = np.asarray(h.mid_path, float)
-        # End-of-window settlement proxy: mid at minute 14
-        mid_end = mid[14] if len(mid) > 14 and not np.isnan(mid[14]) else 0.5
-        # Actual Kalshi settlement is binary: need to determine 0 or 1
-        # Use the last known ask/bid path near expiry as settlement probability
-        # For realistic simulation use the actual settle from the tape:
-        # We approximate: res=1 if ask[14]>0.5 else 0 (or use mid_path[-1])
-        # Better: find the last trade price in the window to estimate settle
-        # Most accurate: use settle from the hist parquet if available
-        # hist has bid_path, ask_path, mid_path - mid at end is best proxy
-        res_prob = mid_end
-
-        settle_bid = res_prob - b0       # YES leg: win if res=1
-        settle_ask = a0 - res_prob       # NO leg: win if res=0
-        stranded = int(done_b != done_a)
-
-        # combo tox score
-        row_vals = dict(vpin=vp, **{k2: dv[k2] for k2 in
-                        ["take_n","d1_maxrun","d2_lambda","d1_nruns","d4_roundfrac","d5_sweep"]})
-        ctp = combo_tox_p_row(row_vals)
-
-        if done_b:
-            fills.append(dict(ws=ws, side='bid', settle=settle_bid, k=k, tau=tau,
-                              spread=spread, vpin=vp, combo_tox_p=ctp,
-                              stranded=stranded, fill_time=fill_b_time,
-                              tksize=1.0, det_vpin=vp,
-                              **{f"det_{k2}": dv[k2] for k2 in
-                                 ["take_n","d1_maxrun","d2_lambda","d1_nruns","d4_roundfrac","d5_sweep"]}))
-        if done_a:
-            fills.append(dict(ws=ws, side='ask', settle=settle_ask, k=k, tau=tau,
-                              spread=spread, vpin=vp, combo_tox_p=ctp,
-                              stranded=stranded, fill_time=fill_a_time,
-                              tksize=1.0, det_vpin=vp,
-                              **{f"det_{k2}": dv[k2] for k2 in
-                                 ["take_n","d1_maxrun","d2_lambda","d1_nruns","d4_roundfrac","d5_sweep"]}))
-    return fills
-
-def run_p0_policy(fills):
-    """Always-pair policy (P0): accept fill iff |net|<=1. Returns (pnl, strands, paired_wins)."""
-    net = 0; pnl = 0.0; strands = 0; pairs = 0
-    open_side = None
-    for f in fills:
-        step = 1 if f['side'] == 'bid' else -1
-        nn = net + step
-        if abs(nn) > 1:
-            continue
-        if net != 0 and abs(nn) < abs(net):
-            # this fill PAIRS the open leg -> it's a box
-            pairs += 1
-        net = nn
-        pnl += f['settle']
-        if net == 0:
-            open_side = None
-        else:
-            open_side = f['side']
-
-    # if net != 0 at end, one leg is stranded
-    if net != 0:
-        strands += 1
-    return pnl, strands
-
-def load_asset_data(asset):
-    """Load hist and trades parquet, return merged per-window iterator."""
-    hist = pd.read_parquet(f"hist_kalshi_{asset}15m.parquet").set_index("ws")
-    tap = pd.read_parquet(f"trades_kalshi_{asset}15m.parquet").set_index("ws")
-    common = sorted(set(hist.index) & set(tap.index))
-    return hist, tap, common
-
-# ── Main analysis ─────────────────────────────────────────────────────────────
-print("Loading data and running simulations...")
-print("(This may take a few minutes for all 4 assets)\n")
-
-results = {}  # asset -> dict of metrics
-
-for asset in ASSETS:
-    print(f"  Processing {asset}...", end=" ", flush=True)
-    try:
-        hist, tap, common = load_asset_data(asset)
-    except Exception as e:
-        print(f"ERROR: {e}")
-        results[asset] = None
-        continue
-
-    n_windows = len(common)
-    split_idx = int(n_windows * 0.6)
-    is_ws = set(common[:split_idx])
-    oos_ws = set(common[split_idx:])
-
-    all_fills = []
-    window_stats = []  # per-window: ws, n_fills, pnl_p0, strands, is_flag, hour
-
+def replay_asset_v2(asset):
+    h, t = load_asset(asset)
+    common = sorted(set(h.index) & set(t.index))
+    window_recs = []
+    all_fills_out = []
     for ws in common:
-        h = hist.loc[ws]
-        t = tap.loc[ws]
-        fills = simulate_window(ws, h, t)
+        h_row = h.loc[ws]
+        t_row = t.loc[ws]
+        bid = arr(h_row["bid_path"])
+        ask = arr(h_row["ask_path"])
+        res = int(h_row["res_up"])
+        t_arr = arr(t_row["t"])
+        p_arr = arr(t_row["p"])
+        sz_arr = arr(t_row["sz"])
+        buy_arr = arr(t_row["buy"]).astype(bool)
+        bt, bi = vpin_buckets(t_arr, sz_arr, buy_arr)
+        fills = []
+        taker_flow_at_touch = 0.0
+        for k in range(2, 13):
+            b0, a0 = bid[k], ask[k]
+            if np.isnan(b0) or np.isnan(a0) or not (0.03 <= (b0 + a0) / 2 <= 0.97):
+                continue
+            lo, hi = ws + 60 * (k + 1), ws + 60 * (k + 2)
+            i0, i1 = np.searchsorted(t_arr, lo), np.searchsorted(t_arr, hi)
+            qb = qa = 0.0
+            done_b = done_a = False
+            for i in range(i0, i1):
+                p = float(p_arr[i]); sz = float(sz_arr[i]); buy = bool(buy_arr[i])
+                tf = float(t_arr[i])
+                is_last120 = (tf >= ws + 15 * 60 - 120)
+                hits_bid = (not buy and p <= b0 + 1e-9)
+                hits_ask = (buy and p >= a0 - 1e-9)
+                if hits_bid or hits_ask:
+                    taker_flow_at_touch += sz
+                if not done_b and hits_bid:
+                    if qb >= sz:
+                        qb -= sz
+                    else:
+                        vp = vpin_at(bt, bi, tf)
+                        fills.append({
+                            "side": "bid", "settle": float(res) - b0,
+                            "k": k, "p_yes": b0, "vpin": vp,
+                            "t_fill": tf, "is_last120": is_last120, "sz": sz, "ws": ws,
+                            "det_take_n": None, "det_d1_maxrun": None, "det_d2_lambda": None,
+                            "det_d1_nruns": None, "det_d4_roundfrac": None, "det_d5_sweep": None,
+                        })
+                        done_b = True
+                if not done_a and hits_ask:
+                    if qa >= sz:
+                        qa -= sz
+                    else:
+                        vp = vpin_at(bt, bi, tf)
+                        fills.append({
+                            "side": "ask", "settle": a0 - float(res),
+                            "k": k, "p_yes": round(1.0 - a0, 4), "vpin": vp,
+                            "t_fill": tf, "is_last120": is_last120, "sz": sz, "ws": ws,
+                            "det_take_n": None, "det_d1_maxrun": None, "det_d2_lambda": None,
+                            "det_d1_nruns": None, "det_d4_roundfrac": None, "det_d5_sweep": None,
+                        })
+                        done_a = True
+                if done_b and done_a:
+                    break
         if not fills:
             continue
-        pnl, strands = run_p0_policy(fills)
-        hour = pd.Timestamp(ws, unit='s', tz='UTC').hour
-        window_stats.append(dict(
-            ws=ws, n_fills=len(fills), pnl=pnl, strands=strands,
-            is_flag=(ws in is_ws), hour=hour
-        ))
+        # P0 walk: always-pair
+        net = 0; pnl = 0.0; open_leg = None; boxes = 0; strands = 0; strand_fills = []
         for f in fills:
-            f['is_flag'] = (ws in is_ws)
-            f['hour'] = hour
-            all_fills.append(f)
+            step = 1 if f["side"] == "bid" else -1
+            nn = net + step
+            if abs(nn) > 1: continue
+            if open_leg is not None and abs(nn) < abs(net):
+                pnl += f["settle"] + open_leg["settle"]; boxes += 1; open_leg = None
+            else:
+                open_leg = f
+            net = nn
+        if open_leg is not None:
+            pnl += open_leg["settle"]; strands += 1; strand_fills.append(open_leg)
+        window_recs.append({
+            "ws": ws, "pnl": pnl, "n_fills": len(fills),
+            "boxes": boxes, "strands": strands, "strand_fills": strand_fills,
+            "taker_flow": taker_flow_at_touch, "fills": fills,
+        })
+        all_fills_out.extend(fills)
+    return window_recs, all_fills_out
 
-    wdf = pd.DataFrame(window_stats)
-    fdf = pd.DataFrame(all_fills)
 
-    results[asset] = dict(
-        n_windows=n_windows,
-        split_idx=split_idx,
-        wdf=wdf,
-        fdf=fdf,
-        hist=hist,
-        tap=tap,
-        common=common
-    )
-    print(f"done ({n_windows} windows, {len(wdf)} with fills)")
+def compute_stats(window_recs, all_fills, mm_size, asset):
+    n = len(window_recs)
+    if n == 0: return None
+    wss = np.array([r["ws"] for r in window_recs])
+    cut_idx = int(n * 0.6)
+    is_mask = np.arange(n) < cut_idx
+    oos_mask = ~is_mask
+    pnl_arr = np.array([r["pnl"] for r in window_recs])
+    nf_arr = np.array([r["n_fills"] for r in window_recs])
+    strands_arr = np.array([r["strands"] for r in window_recs])
+    boxes_arr = np.array([r["boxes"] for r in window_recs])
+    flow_arr = np.array([r["taker_flow"] for r in window_recs])
 
-print()
+    total_boxes = boxes_arr.sum()
+    total_strands = strands_arr.sum()
+    pair_rate = total_boxes / max(total_boxes + total_strands, 1)
+    sf_all = [f for r in window_recs for f in r["strand_fills"]]
+    strand_cost = float(np.mean([f["settle"] for f in sf_all]) * 100) if sf_all else float("nan")
 
-# ── SECTION B: Baseline policy table IS/OOS ──────────────────────────────────
-print("=" * 80)
-print("B) BASELINE POLICY TABLE (P0: always-pair, strict |net|<=1, q0=0)")
-print("=" * 80)
+    is_net = pnl_arr[is_mask].mean() * 100 if is_mask.any() else float("nan")
+    oos_net = pnl_arr[oos_mask].mean() * 100 if oos_mask.any() else float("nan")
 
-header = f"{'Metric':<30}" + "".join(f"{a:>10}" for a in ASSETS)
-print(header)
-print("-" * (30 + 10*len(ASSETS)))
+    cum_oos = np.cumsum(pnl_arr[oos_mask]) * 100 if oos_mask.any() else np.array([0.0])
+    oos_maxdd = float(np.max(np.maximum.accumulate(cum_oos) - cum_oos)) if len(cum_oos) else 0.0
 
-def asset_row(label, vals):
-    return f"{label:<30}" + "".join(f"{v:>10}" for v in vals)
+    sf_yes = [f for f in sf_all if f["side"] == "bid"]
+    sf_no  = [f for f in sf_all if f["side"] == "ask"]
+    yes_strand_settle = float(np.mean([f["settle"] for f in sf_yes]) * 100) if sf_yes else float("nan")
+    no_strand_settle  = float(np.mean([f["settle"] for f in sf_no]) * 100)  if sf_no  else float("nan")
 
-metrics_is = {}
-metrics_oos = {}
+    mean_flow = flow_arr.mean() if len(flow_arr) else 0.0
+    cap_per_win = min(mm_size, mean_flow)
+    windows_per_day = 96
+    net_per_win_usd = pnl_arr[oos_mask].mean() if oos_mask.any() else pnl_arr.mean()
+    implied_daily = cap_per_win * net_per_win_usd * windows_per_day
 
-for asset in ASSETS:
-    r = results.get(asset)
-    if r is None:
-        for d in [metrics_is, metrics_oos]:
-            d[asset] = {k: "ERR" for k in ['windows','fills_pw','pair_rate','strands_pw',
-                                             'mean_strand','net_pw','maxdd']}
-        continue
+    # Gates (OOS)
+    oos_recs = [r for r, m in zip(window_recs, oos_mask) if m]
+    vpin_pnls = []; combo_pnls = []
+    vpin_total_strands = []; combo_total_fills = []
+    for r in oos_recs:
+        fills = r["fills"]
+        # VPIN gate walk
+        net2 = 0; pnl2 = 0.0; open2 = None; vs = 0
+        for f in fills:
+            step = 1 if f["side"] == "bid" else -1
+            nn = net2 + step
+            if abs(nn) > 1: continue
+            pairing = (open2 is not None and abs(nn) < abs(net2))
+            if not pairing:
+                vp = f.get("vpin")
+                if vp is not None and not np.isnan(vp) and vp > 0.40:
+                    continue
+            if open2 is not None and abs(nn) < abs(net2):
+                pnl2 += f["settle"] + open2["settle"]; open2 = None
+            else:
+                open2 = f
+            net2 = nn
+        if open2 is not None:
+            pnl2 += open2["settle"]; vs += 1
+        vpin_pnls.append(pnl2)
+        vpin_total_strands.append(vs)
+        # COMBO gate walk (vpin-only since det_ fields not in parquet)
+        net3 = 0; pnl3 = 0.0; open3 = None
+        for f in fills:
+            step = 1 if f["side"] == "bid" else -1
+            nn = net3 + step
+            if abs(nn) > 1: continue
+            pairing = (open3 is not None and abs(nn) < abs(net3))
+            if not pairing:
+                cp = combo_tox_p(f)  # returns None since det_ fields are None
+                if cp is not None and cp > _COMBO_THRESH:
+                    continue
+            if open3 is not None and abs(nn) < abs(net3):
+                pnl3 += f["settle"] + open3["settle"]; open3 = None
+            else:
+                open3 = f
+            net3 = nn
+        if open3 is not None:
+            pnl3 += open3["settle"]
+        combo_pnls.append(pnl3)
 
-    wdf = r['wdf']
-    fdf = r['fdf']
+    vpin_oos_net = float(np.mean(vpin_pnls) * 100) if vpin_pnls else float("nan")
+    combo_oos_net = float(np.mean(combo_pnls) * 100) if combo_pnls else float("nan")
+    vpin_strand_rate = float(np.mean(vpin_total_strands)) if vpin_total_strands else float("nan")
 
-    for split_label, mask_flag, d in [("IS", True, metrics_is), ("OOS", False, metrics_oos)]:
-        wf = wdf[wdf.is_flag == mask_flag]
-        ff = fdf[fdf.is_flag == mask_flag] if len(fdf) else pd.DataFrame()
+    # Hazard
+    early_settles = [f["settle"] * 100 for f in all_fills if not f["is_last120"]]
+    late_settles  = [f["settle"] * 100 for f in all_fills if f["is_last120"]]
+    late_pct = len(late_settles) / max(len(all_fills), 1) * 100
+    early_sz = [f["sz"] for f in all_fills if not f["is_last120"]]
+    late_sz  = [f["sz"] for f in all_fills if f["is_last120"]]
 
-        nw = len(wf)
-        fills_pw = len(ff) / nw if nw > 0 else 0
-        total_strands = wf.strands.sum()
-        strands_pw = total_strands / nw if nw > 0 else 0
-        # pair_rate: fraction of fills that are paired (both legs in a window)
-        # windows with strands=0 are fully paired; count box completions
-        paired_windows = (wf.strands == 0).sum()
-        pair_rate = paired_windows / nw if nw > 0 else 0
-        # mean strand cost: average pnl of windows with strands (these are bad windows)
-        stranded_pnl = wf[wf.strands > 0].pnl.mean() if total_strands > 0 else 0.0
-        net_pw = wf.pnl.mean() if nw > 0 else 0
-        mdd = maxdd(wf.pnl.values)
+    return {
+        "asset": asset,
+        "n_windows": n, "n_windows_is": int(is_mask.sum()), "n_windows_oos": int(oos_mask.sum()),
+        "fills_per_win": round(nf_arr.mean(), 2),
+        "pair_rate": round(pair_rate, 3),
+        "strands_per_win": round(strands_arr.mean(), 3),
+        "strand_cost_c": round(strand_cost, 2),
+        "is_net_c": round(is_net, 3),
+        "oos_net_c": round(oos_net, 3),
+        "oos_maxdd_c": round(oos_maxdd, 2),
+        "yes_strand_settle_c": round(yes_strand_settle, 2),
+        "no_strand_settle_c": round(no_strand_settle, 2),
+        "n_yes_strands": len(sf_yes), "n_no_strands": len(sf_no),
+        "mean_flow_per_win": round(mean_flow, 1),
+        "mm_size": mm_size, "cap_per_win": round(cap_per_win, 1),
+        "implied_daily_usd": round(implied_daily, 2),
+        "vpin_oos_net_c": round(vpin_oos_net, 3),
+        "combo_oos_net_c": round(combo_oos_net, 3),
+        "vpin_strand_rate": round(vpin_strand_rate, 3),
+        "late_fill_pct": round(late_pct, 1),
+        "late_mean_settle_c": round(float(np.mean(late_settles) if late_settles else float("nan")), 3),
+        "early_mean_settle_c": round(float(np.mean(early_settles) if early_settles else float("nan")), 3),
+        "late_mean_sz": round(float(np.mean(late_sz) if late_sz else float("nan")), 3),
+        "early_mean_sz": round(float(np.mean(early_sz) if early_sz else float("nan")), 3),
+        "n_late_fills": len(late_settles), "n_early_fills": len(early_settles),
+    }
 
-        d[asset] = dict(
-            windows=nw,
-            fills_pw=f"{fills_pw:.2f}",
-            pair_rate=f"{pair_rate:.3f}",
-            strands_pw=f"{strands_pw:.3f}",
-            mean_strand=f"{stranded_pnl:.4f}",
-            net_pw=f"{net_pw:.4f}",
-            maxdd=f"{mdd:.3f}"
-        )
 
-for split_label, d in [("IS (60%)", metrics_is), ("OOS (40%)", metrics_oos)]:
-    print(f"\n  {split_label}")
-    for key, label in [('windows','Windows'), ('fills_pw','Fills/window'),
-                        ('pair_rate','Pair rate'), ('strands_pw','Strands/window'),
-                        ('mean_strand','Mean strand cost'), ('net_pw','Net c/window'),
-                        ('maxdd','MaxDD')]:
-        vals = [d[a][key] if d.get(a) else "N/A" for a in ASSETS]
-        print(asset_row(f"  {label}", vals))
+def maxdd(series):
+    cum = np.cumsum(series)
+    return float(np.max(np.maximum.accumulate(cum) - cum)) if len(cum) else 0.0
 
-# ── SECTION C: Strand asymmetry ───────────────────────────────────────────────
-print()
-print("=" * 80)
-print("C) STRAND ASYMMETRY (which leg is toxic when stranded)")
-print("=" * 80)
-print(f"{'Metric':<35}" + "".join(f"{a:>10}" for a in ASSETS))
-print("-" * (35 + 10*len(ASSETS)))
 
-for key, label in [
-    ('bid_strand_pnl', 'YES (bid) strand mean settle'),
-    ('ask_strand_pnl', 'NO (ask) strand mean settle'),
-    ('bid_strand_n', 'YES strand count'),
-    ('ask_strand_n', 'NO strand count'),
-    ('bid_neg_rate', 'YES strand loss rate'),
-    ('ask_neg_rate', 'NO strand loss rate'),
-]:
-    vals = []
+def main():
+    results = {}
+    all_stats = []
+    print("=" * 72)
+    print("MULTI-ASSET BOX HARVEST TAPE REPLAY (P0, q0=0, 60/40 IS/OOS)")
+    print("=" * 72)
     for asset in ASSETS:
-        r = results.get(asset)
-        if r is None:
-            vals.append("ERR")
-            continue
-        fdf = r['fdf']
-        if len(fdf) == 0:
-            vals.append("N/A")
-            continue
-        # stranded fills are those in windows with strands>0
-        # for simplicity, use stranded=1 flag on fill
-        sf = fdf[fdf.stranded == 1]
-        bid_sf = sf[sf.side == 'bid']
-        ask_sf = sf[sf.side == 'ask']
-        if key == 'bid_strand_pnl':
-            vals.append(f"{bid_sf.settle.mean():.4f}" if len(bid_sf) > 0 else "0")
-        elif key == 'ask_strand_pnl':
-            vals.append(f"{ask_sf.settle.mean():.4f}" if len(ask_sf) > 0 else "0")
-        elif key == 'bid_strand_n':
-            vals.append(str(len(bid_sf)))
-        elif key == 'ask_strand_n':
-            vals.append(str(len(ask_sf)))
-        elif key == 'bid_neg_rate':
-            vals.append(f"{(bid_sf.settle < 0).mean():.3f}" if len(bid_sf) > 0 else "N/A")
-        elif key == 'ask_neg_rate':
-            vals.append(f"{(ask_sf.settle < 0).mean():.3f}" if len(ask_sf) > 0 else "N/A")
-    print(f"{label:<35}" + "".join(f"{v:>10}" for v in vals))
-
-# ── SECTION D: Capacity analysis ──────────────────────────────────────────────
-print()
-print("=" * 80)
-print("D) CAPACITY ANALYSIS (flow-based max contracts/window, implied $/day)")
-print("=" * 80)
-print(f"{'Metric':<35}" + "".join(f"{a:>10}" for a in ASSETS))
-print("-" * (35 + 10*len(ASSETS)))
-
-capacity_data = {}
-for asset in ASSETS:
-    r = results.get(asset)
-    if r is None:
-        capacity_data[asset] = {}
-        continue
-    tap = r['tap']
-    common = r['common']
-    # median contracts traded per minute across all windows
-    per_window_vol = []
-    per_minute_vol = []
-    for ws in common[:500]:  # sample for speed
+        print(f"  Replaying {asset.upper()}...", end="", flush=True)
         try:
-            t = tap.loc[ws]
-            t_arr = np.asarray(t.t, float)
-            sz_arr = np.asarray(t.sz, float)
-            per_window_vol.append(sz_arr.sum())
-            if len(t_arr) > 0:
-                dur = t_arr[-1] - t_arr[0]
-                if dur > 0:
-                    per_minute_vol.append(sz_arr.sum() / (dur / 60.0))
-        except:
-            pass
+            wrecs, afills = replay_asset_v2(asset)
+            stats = compute_stats(wrecs, afills, MM_SIZE[asset], asset)
+            results[asset] = (wrecs, afills, stats)
+            print(f" {len(wrecs)} windows, {len(afills)} fills")
+            all_stats.append(stats)
+        except Exception as e:
+            print(f" ERROR: {e}")
+            import traceback; traceback.print_exc()
 
-    med_vol_window = np.median(per_window_vol) if per_window_vol else 0
-    med_vol_per_min = np.median(per_minute_vol) if per_minute_vol else 0
-    # Max sustainable: front-of-queue, you can capture ~5% of flow at touch
-    # Conservative: 2% of window volume
-    max_contracts = med_vol_window * 0.02
-    # OOS net c/window * max_contracts * 96 windows/day * 1 contract = $/day
-    oos_net = float(metrics_oos[asset]['net_pw']) if metrics_oos.get(asset) else 0
+    print()
+    # ── TASK 1 ────────────────────────────────────────────────────────────────
+    print("=" * 72)
+    print("TASK 1: PER-ASSET P0 BASELINE  (always-pair, q0=0, 60/40 split)")
+    print("=" * 72)
+    print(f"{'Asset':>5} {'N':>5} {'N_IS':>5} {'N_OOS':>6} {'IS_c':>8} {'OOS_c':>8} "
+          f"{'F/W':>6} {'PairR':>7} {'Str/W':>7} {'StrCst':>8} {'OOS_DD':>8}")
+    print("-" * 72)
+    for s in all_stats:
+        if s is None: continue
+        print(f"{s['asset'].upper():>5} {s['n_windows']:>5} {s['n_windows_is']:>5} {s['n_windows_oos']:>6} "
+              f"{s['is_net_c']:>+8.3f} {s['oos_net_c']:>+8.3f} "
+              f"{s['fills_per_win']:>6.2f} {s['pair_rate']:>7.3f} "
+              f"{s['strands_per_win']:>7.3f} {s['strand_cost_c']:>+8.2f} {s['oos_maxdd_c']:>+8.2f}")
+
+    print()
+    # ── TASK 2 ────────────────────────────────────────────────────────────────
+    print("=" * 72)
+    print("TASK 2: STRAND ASYMMETRY BY SIDE")
+    print("=" * 72)
+    print(f"{'Asset':>5} {'N_YES':>7} {'YES_c':>8} {'N_NO':>7} {'NO_c':>8} {'Note':>20}")
+    print("-" * 72)
+    for s in all_stats:
+        if s is None: continue
+        note = ""
+        if not np.isnan(s['yes_strand_settle_c']) and not np.isnan(s['no_strand_settle_c']):
+            note = "YES worse" if s['yes_strand_settle_c'] < s['no_strand_settle_c'] else "NO worse / ~equal"
+        print(f"{s['asset'].upper():>5} {s['n_yes_strands']:>7} {s['yes_strand_settle_c']:>+8.2f} "
+              f"{s['n_no_strands']:>7} {s['no_strand_settle_c']:>+8.2f} {note:>20}")
+
+    print()
+    # ── TASK 3 ────────────────────────────────────────────────────────────────
+    print("=" * 72)
+    print("TASK 3: CAPACITY & IMPLIED $/DAY  (96 windows/day, q0=0)")
+    print("=" * 72)
+    print(f"{'Asset':>5} {'MM_sz':>7} {'FlowPerW':>10} {'CapPerW':>9} {'OOS_c':>8} {'Impl$/d':>10}")
+    print("-" * 72)
+    total_daily = 0.0; btc_daily = None
+    for s in all_stats:
+        if s is None: continue
+        print(f"{s['asset'].upper():>5} {s['mm_size']:>7} {s['mean_flow_per_win']:>10.1f} "
+              f"{s['cap_per_win']:>9.1f} {s['oos_net_c']:>+8.3f} {s['implied_daily_usd']:>+10.2f}")
+        total_daily += s['implied_daily_usd']
+        if s['asset'] == 'btc': btc_daily = s['implied_daily_usd']
+    print(f"\n  TOTAL (all 4 assets):  ${total_daily:+.2f}/day")
+    if btc_daily is not None and btc_daily != 0:
+        uplift = (total_daily / btc_daily - 1) * 100
+        print(f"  BTC-only:              ${btc_daily:+.2f}/day")
+        print(f"  Multi-asset uplift:    {uplift:+.1f}% vs BTC-only")
+
+    print()
+    # ── TASK 4 ────────────────────────────────────────────────────────────────
+    print("=" * 72)
+    print("TASK 4: GATE TRANSFER  (OOS; combo uses vpin-only proxy)")
+    print("=" * 72)
+    print(f"{'Asset':>5} {'P0_OOS':>9} {'VPIN_OOS':>10} {'Combo_OOS':>11} {'VPIN_d':>8} {'Combo_d':>9}")
+    print("-" * 72)
+    for s in all_stats:
+        if s is None: continue
+        vd = s['vpin_oos_net_c'] - s['oos_net_c']
+        cd = s['combo_oos_net_c'] - s['oos_net_c']
+        print(f"{s['asset'].upper():>5} {s['oos_net_c']:>+9.3f} {s['vpin_oos_net_c']:>+10.3f} "
+              f"{s['combo_oos_net_c']:>+11.3f} {vd:>+8.3f} {cd:>+9.3f}")
+
+    print()
+    # ── TASK 5 ────────────────────────────────────────────────────────────────
+    print("=" * 72)
+    print("TASK 5: HAZARD — LAST 120s vs EARLIER FILLS (all windows, q0=0)")
+    print("=" * 72)
+    print(f"{'Asset':>5} {'Late%':>7} {'EarlySt':>9} {'LateSt':>9} {'EarlySz':>9} {'LateSz':>9} {'SzR':>6}")
+    print("-" * 72)
+    for s in all_stats:
+        if s is None: continue
+        szr = (s['late_mean_sz'] / s['early_mean_sz']
+               if s['early_mean_sz'] > 0 and not np.isnan(s['late_mean_sz']) else float("nan"))
+        print(f"{s['asset'].upper():>5} {s['late_fill_pct']:>7.1f}% "
+              f"{s['early_mean_settle_c']:>+9.3f} {s['late_mean_settle_c']:>+9.3f} "
+              f"{s['early_mean_sz']:>9.3f} {s['late_mean_sz']:>9.3f} {szr:>6.2f}x")
+
     try:
-        oos_net_f = float(metrics_oos[asset]['net_pw'])
-    except:
-        oos_net_f = 0.0
-    # implied $/day at 1 contract max_contracts sizing with gated strategy
-    # (using OOS net as the per-window expectation)
-    implied_day = oos_net_f * 96 * max_contracts  # rough: per-window net * windows * contracts
-    capacity_data[asset] = dict(
-        med_vol_window=med_vol_window,
-        med_vol_per_min=med_vol_per_min,
-        max_contracts=max_contracts,
-        implied_day=implied_day
-    )
+        from scipy import stats as scipy_stats
+        print("\n  t-test late vs early settle per asset:")
+        for asset in ASSETS:
+            if asset not in results: continue
+            _, afills, s = results[asset]
+            if s is None: continue
+            early = [f["settle"] * 100 for f in afills if not f["is_last120"]]
+            late  = [f["settle"] * 100 for f in afills if f["is_last120"]]
+            if early and late and len(late) > 5:
+                tv, pv = scipy_stats.ttest_ind(late, early, equal_var=False)
+                print(f"  {asset.upper()}: diff={np.mean(late)-np.mean(early):+.3f}c  "
+                      f"t={tv:+.2f}  p={pv:.3f}  n_late={len(late)}  n_early={len(early)}")
+    except ImportError:
+        pass
 
-for key, label, fmt in [
-    ('med_vol_window', 'Median vol/window (contracts)', '{:.0f}'),
-    ('med_vol_per_min', 'Median vol/min (contracts)', '{:.0f}'),
-    ('max_contracts', 'Est max contracts/window (2%)', '{:.1f}'),
-    ('implied_day', 'Implied $/day (OOS rate, 96w/d)', '{:.2f}'),
-]:
-    vals = []
-    for asset in ASSETS:
-        d = capacity_data.get(asset, {})
-        v = d.get(key)
-        vals.append(fmt.format(v) if v is not None else "N/A")
-    print(f"{label:<35}" + "".join(f"{v:>10}" for v in vals))
+    print()
+    # ── SUMMARY ───────────────────────────────────────────────────────────────
+    print("=" * 72)
+    print("SUMMARY: GO/NO-GO RANKING (by OOS net c/window)")
+    print("=" * 72)
+    def classify(s):
+        if s is None: return "NO-GO (no data)"
+        oos = s['oos_net_c']
+        n = s['n_windows_oos']
+        pr = s['pair_rate']
+        if n < 30: return "NO-GO (insufficient OOS n)"
+        if oos <= 0: return "NO-GO (negative OOS)"
+        if pr < 0.70: return "CAUTION (low pair rate)"
+        if oos > 0.5 and pr >= 0.85: return "GO"
+        if oos > 0.15: return "CONDITIONAL-GO"
+        return "CAUTION (marginal)"
+    ranked = sorted([s for s in all_stats if s is not None],
+                    key=lambda s: s['oos_net_c'] if not np.isnan(s['oos_net_c']) else -999, reverse=True)
+    for i, s in enumerate(ranked, 1):
+        v = classify(s)
+        print(f"  #{i} {s['asset'].upper():>4}: {v}")
+        print(f"      OOS={s['oos_net_c']:+.3f}c  pair_rate={s['pair_rate']:.3f}  "
+              f"strands/win={s['strands_per_win']:.3f}  n_oos={s['n_windows_oos']}")
+        caveats = []
+        if s['n_windows_oos'] < 50: caveats.append(f"SHORT OOS n={s['n_windows_oos']}")
+        if s['pair_rate'] < 0.80: caveats.append(f"LOW PAIR RATE {s['pair_rate']:.2f}")
+        if s['late_fill_pct'] > 20: caveats.append(f"HIGH LAST-120s {s['late_fill_pct']:.0f}%")
+        if s['asset'] != 'btc': caveats.append("ALT MAKER FEE $0 UNCONFIRMED")
+        if s['asset'] in ('sol', 'xrp'): caveats.append("THIN BOOK + settlement-taker hazard")
+        if not caveats: caveats.append("none flagged")
+        print(f"      Caveats: {'; '.join(caveats)}")
 
-# BTC-only vs total comparison
-print()
-btc_day = capacity_data.get('btc', {}).get('implied_day', 0)
-total_day = sum(v.get('implied_day', 0) for v in capacity_data.values())
-print(f"  BTC-only $/day (OOS, 2% cap):  {btc_day:.2f}")
-print(f"  All-4-asset total $/day:        {total_day:.2f}")
-print(f"  Multiplier vs BTC-only:         {total_day/btc_day:.2f}x" if btc_day != 0 else "  N/A")
+    print()
+    print("  NOTE: combo gate uses vpin-only proxy (det_ fields need informed_detectors.build()")
+    print("        per window -- not pre-computed in parquet; combo benefit may be understated).")
+    print("  MAKER FEE: $0 confirmed on BTC live fills ONLY. Verify ETH/SOL/XRP before arming.")
+    return all_stats, results
 
-# ── SECTION E: Gate transfer ──────────────────────────────────────────────────
-print()
-print("=" * 80)
-print("E) GATE TRANSFER (OOS baseline vs VPIN<=0.40 vs combo_tox<=0.3656)")
-print("=" * 80)
 
-for asset in ASSETS:
-    r = results.get(asset)
-    if r is None:
-        print(f"  {asset}: ERROR")
-        continue
-
-    wdf = r['wdf']
-    fdf = r['fdf']
-    if len(fdf) == 0:
-        print(f"  {asset}: no fills")
-        continue
-
-    # OOS only
-    wdf_oos = wdf[~wdf.is_flag]
-    fdf_oos = fdf[~fdf.is_flag]
-
-    if len(wdf_oos) == 0:
-        print(f"  {asset}: no OOS data")
-        continue
-
-    # Baseline
-    baseline_net = wdf_oos.pnl.mean()
-    baseline_strand = wdf_oos.strands.sum() / len(wdf_oos)
-    baseline_keep = 1.0
-
-    # VPIN gate: keep windows where vpin<=0.40 (use fill-level vpin, most conservative = first fill's vpin)
-    # We apply gate at window level: keep window if mean vpin of fills <= threshold
-    fdf_oos_agg = fdf_oos.groupby('ws').agg(mean_vpin=('vpin','mean'), mean_combo=('combo_tox_p','mean')).reset_index()
-    wdf_oos2 = wdf_oos.merge(fdf_oos_agg, on='ws', how='left')
-
-    vpin_mask = wdf_oos2.mean_vpin <= VPIN_THRESH
-    combo_mask = wdf_oos2.mean_combo <= _COMBO_THRESH
-
-    # Handle NaN (missing features -> keep window, same as gate no-op)
-    vpin_mask = vpin_mask.fillna(True)
-    combo_mask = combo_mask.fillna(True)
-
-    vpin_net = wdf_oos2[vpin_mask].pnl.mean() if vpin_mask.sum() > 0 else np.nan
-    vpin_strand = wdf_oos2[vpin_mask].strands.sum() / vpin_mask.sum() if vpin_mask.sum() > 0 else np.nan
-    vpin_keep = vpin_mask.mean()
-
-    combo_net = wdf_oos2[combo_mask].pnl.mean() if combo_mask.sum() > 0 else np.nan
-    combo_strand = wdf_oos2[combo_mask].strands.sum() / combo_mask.sum() if combo_mask.sum() > 0 else np.nan
-    combo_keep = combo_mask.mean()
-
-    print(f"\n  {asset.upper()} (OOS: {len(wdf_oos)} windows)")
-    print(f"  {'Gate':<20} {'Net/win':>10} {'Strand/win':>12} {'Keep%':>8} {'DD':>8}")
-    print(f"  {'-'*58}")
-    mdd_base = maxdd(wdf_oos.pnl.values)
-    mdd_vpin = maxdd(wdf_oos2[vpin_mask].pnl.values) if vpin_mask.sum() > 1 else 0
-    mdd_combo = maxdd(wdf_oos2[combo_mask].pnl.values) if combo_mask.sum() > 1 else 0
-    print(f"  {'Baseline':<20} {baseline_net:>10.4f} {baseline_strand:>12.4f} {baseline_keep:>8.1%} {mdd_base:>8.3f}")
-    print(f"  {'VPIN<=0.40':<20} {vpin_net:>10.4f} {vpin_strand:>12.4f} {vpin_keep:>8.1%} {mdd_vpin:>8.3f}")
-    print(f"  {'combo<=0.3656':<20} {combo_net:>10.4f} {combo_strand:>12.4f} {combo_keep:>8.1%} {mdd_combo:>8.3f}")
-
-# ── SECTION F: Last-120s hazard + hour-of-day ─────────────────────────────────
-print()
-print("=" * 80)
-print("F) LAST-120s HAZARD: fills in last 120s of window (k>=12) vs earlier")
-print("=" * 80)
-print(f"{'Metric':<35}" + "".join(f"{a:>10}" for a in ASSETS))
-print("-" * (35 + 10*len(ASSETS)))
-
-for key, label in [
-    ('late_settle', 'Late (k>=12) mean settle'),
-    ('early_settle', 'Early (k<12) mean settle'),
-    ('late_neg_rate', 'Late loss rate'),
-    ('early_neg_rate', 'Early loss rate'),
-    ('late_frac', 'Fraction of fills that are late'),
-]:
-    vals = []
-    for asset in ASSETS:
-        r = results.get(asset)
-        if r is None:
-            vals.append("ERR")
-            continue
-        fdf = r['fdf']
-        if len(fdf) == 0:
-            vals.append("N/A")
-            continue
-        late = fdf[fdf.k >= 12]
-        early = fdf[fdf.k < 12]
-        if key == 'late_settle':
-            vals.append(f"{late.settle.mean():.4f}" if len(late) > 0 else "N/A")
-        elif key == 'early_settle':
-            vals.append(f"{early.settle.mean():.4f}" if len(early) > 0 else "N/A")
-        elif key == 'late_neg_rate':
-            vals.append(f"{(late.settle < 0).mean():.3f}" if len(late) > 0 else "N/A")
-        elif key == 'early_neg_rate':
-            vals.append(f"{(early.settle < 0).mean():.3f}" if len(early) > 0 else "N/A")
-        elif key == 'late_frac':
-            vals.append(f"{len(late)/len(fdf):.3f}" if len(fdf) > 0 else "N/A")
-    print(f"{label:<35}" + "".join(f"{v:>10}" for v in vals))
-
-# Hour-of-day patterns
-print()
-print("  Hour-of-day OOS net/window (UTC):")
-print(f"  {'Hour':<8}" + "".join(f"{a:>10}" for a in ASSETS))
-print(f"  {'-'*(8+10*len(ASSETS))}")
-
-# Get unique hours
-all_hours = sorted(range(0, 24, 4))  # report every 4 hours
-for hour_bin in all_hours:
-    hours_range = range(hour_bin, hour_bin + 4)
-    vals = []
-    for asset in ASSETS:
-        r = results.get(asset)
-        if r is None:
-            vals.append("ERR")
-            continue
-        wdf = r['wdf']
-        wdf_oos = wdf[~wdf.is_flag]
-        h_mask = wdf_oos.hour.isin(hours_range)
-        h_wdf = wdf_oos[h_mask]
-        if len(h_wdf) == 0:
-            vals.append("N/A")
-        else:
-            vals.append(f"{h_wdf.pnl.mean():.4f}")
-    print(f"  {hour_bin:02d}-{hour_bin+4:02d}h  " + "".join(f"{v:>10}" for v in vals))
-
-# ── SECTION G: Fee verification ───────────────────────────────────────────────
-print()
-print("=" * 80)
-print("G) FEE VERIFICATION STATUS (from KALSHI.md + live fills)")
-print("=" * 80)
-print("""
-  Confirmed from KALSHI.md (line 190-193):
-  "The fee landscape, resolved: all four CRYPTO15M series share identical fee config
-  (fee_type=quadratic, fee_multiplier=1) and one contract certification; BTC AND ETH
-  maker fee = $0.00 proven on real fills (ETH at p=0.42/0.45/0.59 — mid prices where a
-  charged maker fee would be clearly non-zero); SOL/XRP share identical config -> the
-  whole CRYPTO15M family is fee-exempt."
-
-  Status by asset:
-  BTC:  CONFIRMED $0 maker fee (16 real fills, 2026-06-10, confirmed via FEE TRIPWIRE)
-  ETH:  CONFIRMED $0 maker fee (real fills at p=0.42/0.45/0.59)
-  SOL:  INFERRED $0 (identical fee_type=quadratic, fee_multiplier=1 config; no live fills yet)
-  XRP:  INFERRED $0 (identical fee_type=quadratic, fee_multiplier=1 config; no live fills yet)
-
-  Risk note: $0 may be a rounding artifact (1-lot formula rounds to 0) rather than explicit
-  exemption. Multi-lot sizing should re-verify. FEE TRIPWIRE active on BTC live trader.
-""")
-
-print("=" * 80)
-print("DONE")
-print("=" * 80)
+if __name__ == "__main__":
+    stats, results = main()
