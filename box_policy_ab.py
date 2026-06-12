@@ -622,6 +622,27 @@ TRIALS = {
     #      as t32. Gate no-ops (None) when causal trade count is too low to compute detectors.
     "t35_combo_tox_gate":  lambda F: run_policy(F, open_ok=lambda f, s:
                                    combo_tox_p(f) is None or combo_tox_p(f) <= _COMBO_THRESH),
+    # ---- guarded opener: combined A-S-skew approximation (2026-06-12, guarded_opener_backtest.py)
+    #      Live audit: 100% of realized losses = stranded YES legs (6 of 8 strands were YES-side;
+    #      structural asymmetry: YES fills at -1.3c spread vs NO +1.3c). Three validated-but-separate
+    #      defenses tested as one combined opener policy on the 1163-window BTC tape (60/40 IS/OOS
+    #      time-split). t36d_AS_SKEW = the A-S reservation-skew approximation: skip a leg if it is
+    #      the structurally-toxic YES side at a thin (<2c) spread, OR if an adverse spot move (sig>8
+    #      bps) is running into it AND the spread is thin (<2c). Interpreted as: demand >=2c edge on
+    #      any leg touched by structural or momentum toxicity (the threatened side). Approximates
+    #      Avellaneda-Stoikov reservation skew via a binary spread floor rather than continuous
+    #      price adjustment (AS skew would quote 1c lower; this cuts the fill instead -- equivalent
+    #      at the 2c spread boundary).
+    #      IS: +4.30c/win (vs P0 +2.79c), OOS: +2.07c/win (vs P0 +0.69c), tstat OOS=1.03 (n=466).
+    #      OOS strand cost: +0.18c/win (vs P0 -0.47c); YES strands cut from 0.077 to 0.002/window.
+    #      84% of improvement from YES-strand elimination; skip%=34.4 (pair-rate 96.7% vs P0 99.2%).
+    #      Target profile: cuts ~97% of YES strands, keeps ~65.5% of opens, strand cost +0.65c/win.
+    #      OOS t=1.03 is below the deploy bar (T_BAR=3.0); needs n>=300 forward windows in the A/B.
+    #      NOTE: t35_combo_tox_gate fires on <0.1% of opens on this tape at THRESH=0.3656 -- the
+    #      combo gate adds little to t02+t07 alone; t36d therefore equals t02 OR (t07 AND spread<2c).
+    "t36_guarded_opener":  lambda F: run_policy(F, open_ok=lambda f, s:
+                                   not (f["side"] == "bid" and f["spread"] < 0.02)
+                                   and not ((f.get("sig") or 0.0) > 8.0 and f["spread"] < 0.02)),
 }
 
 
