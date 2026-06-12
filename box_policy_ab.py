@@ -261,8 +261,13 @@ def run_policy(fills, open_ok=None, hold_ok=None, weight=None):
             continue
         pairing = (net != 0 and abs(nn) < abs(net))
         if pairing:
-            if hold_ok is not None and held is not None and hold_ok(held):
-                continue                                       # hold the favorable unpaired leg
+            if hold_ok is not None and held is not None:
+                try:
+                    keep = hold_ok(held, f)        # 2-arg form: pairing fill reveals CURRENT price
+                except TypeError:
+                    keep = hold_ok(held)           # legacy 1-arg holds
+                if keep:
+                    continue                                   # hold the favorable unpaired leg
         elif open_ok is not None and not open_ok(f, st):
             continue                                           # gate: don't open this leg
         if net == 0 and nn != 0:
@@ -495,6 +500,15 @@ TRIALS = {
                                        else (0.5 if time.gmtime(f.get("ws", 0)).tm_hour in (11, 21)
                                              else 1.0)),
     "t26_gamma_sized":     lambda F: pol_sized(F, lambda f: max(0.25, (15 - f["k"]) / 13.0)),
+    # ---- operator question 2026-06-12: "hold the first leg naked instead of pairing, when it has
+    #      traveled favorably?" Economics: pairing at CURRENT prices locks ~the leg's EV with zero
+    #      variance (the cap rises with the move), so naked holds only win where the market is
+    #      mispriced -- the documented favorite-longshot bias (favorites settle above their price;
+    #      live calibration: 60-80c won 86%, 80-100c won 100%). Surgical version: when the pairing
+    #      fill arrives, its price reveals the held leg's CURRENT implied value (1 - opposite's own
+    #      price); hold naked iff the held leg is now a DEEP favorite (>= 0.75). Everything looser
+    #      than this already failed OOS (t08 hold-all-NO, p2 signal-hold, the directional ensemble).
+    "t28_hold_deep_favorite": lambda F: run_policy(F, hold_ok=lambda h, f: (1.0 - f["p"]) >= 0.75),
 }
 
 
