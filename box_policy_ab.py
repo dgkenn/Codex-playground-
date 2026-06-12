@@ -424,6 +424,17 @@ TRIALS = {
     "t18_tox_open_gate":       lambda F: run_policy(F, open_ok=lambda f, s: tox_p(f) < 0.65),
     "t19_tox_gate_and_exit":   lambda F: pol_sell_unpaired(F, tox_above=0.55,
                                                            open_ok=lambda f: tox_p(f) < 0.65),
+    # ---- fill-probability literature round (queue/fill-certainty papers; see LITERATURE.md) ----
+    # Foucault 1999 (J. Fin. Markets): equilibrium fill probability falls and pick-off risk rises
+    # with volatility -- makers should stand down in high-vol regimes. |sig| = 3-min spot move in
+    # bps is our decision-time vol proxy (two-sided, unlike t07's one-sided adverse gate).
+    "t20_low_vol_open":        lambda F: run_policy(F, open_ok=lambda f, s: abs(f["sig"]) <= 5.0),
+    # Cont-Kukanov / Abergel 2024: fill is near-certain when queue-ahead is smaller than the
+    # incoming taker flow that can sweep it. depth = displayed size at our level, |flow| = prior
+    # minute's taker volume: quote only where the queue is genuinely sweepable.
+    "t21_sweepable_queue":     lambda F: run_policy(F, open_ok=lambda f, s: f["depth"] is None
+                                                    or (f["flow"] is not None
+                                                        and f["depth"] < abs(f["flow"]))),
 }
 
 
