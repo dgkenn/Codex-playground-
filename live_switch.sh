@@ -29,6 +29,8 @@ git add LIVE_SWITCH                      # sentinel is gitignored; never staged 
 git commit -q -m "$msg" || { echo "nothing to commit (already $(cur))"; exit 0; }
 for i in 1 2 3 4; do
   git push -u origin "$BR" && { echo "$msg (pushed to $BR)"; exit 0; }
+  # non-fast-forward (branch moved while we were checked out, e.g. inside a GHA run) -> rebase
+  git pull --rebase origin "$BR" 2>/dev/null || true
   sleep $((2 ** i))
 done
 echo "$msg locally, but push failed -- re-run when network recovers" >&2; exit 1
