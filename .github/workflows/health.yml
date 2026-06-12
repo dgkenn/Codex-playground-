@@ -1,0 +1,67 @@
+# INDEPENDENT durability monitor for all data collection. Separate failure domain from collect.yml:
+# if the collect self-chain AND its crons all die, THIS still runs (own cron) and (a) Telegram-alerts
+# you, (b) re-dispatches collect.yml as a THIRD restart path. Read-only on data; no money.
+#
+#   - Runs health_check.py (git-based freshness of every collected stream on the gha-data branch).
+#   - On CRITICAL (collection stalled >130 min): alert + reseed the collect chain.
+#   - Once/day (~14:14 UTC): a "collectors healthy" heartbeat so SILENCE never means "is it dead?".
+#
+# Like the others, this file must live on the DEFAULT branch (main) for its schedule to fire; it
+# checks out CODE (health_check.py, notify.py) from $BRANCH.
+name: health
+
+on:
+  schedule:
+    - cron: '14,44 * * * *'    # every 30 min, offset clear of collect(9,29,49)/live(3,28,53)/alert(17)
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  actions: write               # reseed: dispatch collect.yml if collection is dead
+
+concurrency:
+  group: health
+  cancel-in-progress: false
+
+env:
+  BRANCH: claude/polymarket-bot-live-ready-vw7ut5
+
+jobs:
+  health:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.BRANCH }}
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: install deps
+        run: for i in 1 2 3; do pip install --quiet requests && break; sleep 5; done
+      - name: check freshness + alert + (daily) heartbeat
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # need the data branch ref locally for the git-based checks
+          git fetch origin gha-data -q || true
+          FLAGS="--alert"
+          # daily passive-assurance heartbeat on the :14 run during the 14:00 UTC hour
+          if [ "$(date -u +%H)" = "14" ] && [ "$(date -u +%M)" -lt 30 ]; then FLAGS="$FLAGS --heartbeat"; fi
+          rc=0; python health_check.py $FLAGS || rc=$?
+          echo "health_check rc=$rc"
+          if [ "$rc" = "2" ]; then
+            echo "CRITICAL -> reseeding collect chain via independent dispatch"
+            for i in 1 2 3; do
+              code=$(curl -s -o /tmp/h.out -w '%{http_code}' -X POST \
+                -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
+                "https://api.github.com/repos/${{ github.repository }}/actions/workflows/collect.yml/dispatches" \
+                -d '{"ref":"main"}')
+              [ "$code" = "204" ] && { echo "collect chain reseeded"; break; }
+              echo "reseed attempt $i -> HTTP $code"; cat /tmp/h.out || true; sleep $((2**i))
+            done
+          fi
+          exit 0    # never fail the monitor itself (it already alerted)
