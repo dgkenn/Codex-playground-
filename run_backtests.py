@@ -103,11 +103,8 @@ for split_name, ws_set in [('IS', is_ws), ('OOS', oos_ws)]:
 # ============================================================
 print("\n=== TEST 2: NAIVE FLOW FADE vs FOLLOW ===")
 
-# Merge tap with hist to get resolution
-tap_merged = tap.merge(hist[['ws', 'res_up']], on='ws', how='left')
-
 for split_name, ws_set in [('IS', is_ws), ('OOS', oos_ws)]:
-    df_tap = tap_merged[tap_merged['ws'].isin(ws_set)].copy()
+    df_tap = tap[tap['ws'].isin(ws_set)].copy()
 
     # Per window: compute flow imbalance
     window_stats = []
@@ -182,9 +179,6 @@ print("\n=== TEST 3: NEW-WINDOW FIRST-N-TICKS MISPRICING ===")
 for split_name, ws_set in [('IS', is_ws), ('OOS', oos_ws)]:
     df = hist_flat[hist_flat['ws'].isin(ws_set)].copy()
 
-    # Merge resolution
-    df = df.merge(hist[['ws', 'res_up']], on='ws', how='left')
-
     # Early ticks (0-2) vs late ticks (10-14)
     early = df[df['tick'] <= 2].copy()
     late = df[df['tick'] >= 10].copy()
@@ -225,10 +219,9 @@ print("\n=== TEST 4: FLOW-TOXICITY CONDITIONED QUOTING ===")
 
 # Use trade tape: for each window, compute OFI in first half,
 # predict maker PnL in second half
-tap_merged2 = tap.merge(hist[['ws', 'res_up']], on='ws', how='left')
 
 for split_name, ws_set in [('IS', is_ws), ('OOS', oos_ws)]:
-    df_tap = tap_merged2[tap_merged2['ws'].isin(ws_set)].copy()
+    df_tap = tap[tap['ws'].isin(ws_set)].copy()
 
     high_toxic_maker_pnl = []
     low_toxic_maker_pnl = []
@@ -305,7 +298,6 @@ for split_name, ws_set in [('IS', is_ws), ('OOS', oos_ws)]:
 print("\n=== TEST 5: SPOT-LAG ALPHA (REFINED) ===")
 
 hist_flat2 = hist_flat.sort_values(['ws', 'tick']).copy()
-hist_flat2 = hist_flat2.merge(hist[['ws', 'res_up']], on='ws', how='left')
 
 # Normalize spot to [0,1] scale using logistic approximation:
 # spot_signal = how far spot has moved vs typical range

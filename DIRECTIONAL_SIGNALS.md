@@ -106,3 +106,20 @@ strict IS/OOS):
   contrarians IS t=19.5) -- registered, OOS pending; it conditions on WHO fills us, not price
   prediction, so it may survive where price-signals didn't. The other live candidate is cross-venue
   Polymarket lead-lag (data accumulating) -- the only place a real lag is documented.
+
+## Exploitative-plays backtest (2026-06-12) — no clean survivor; the "stale-snipe" is fee-killed
+A full legal-edge backtest (stale-quote snipe, new-window opening, flow-fade, flow-toxicity,
+cross-venue) returned ONE nominal survivor (stale-maker snipe, OOS +1.5c t=2.4) — but it does NOT
+hold up:
+1. **It's a TAKER play** (lift the lagging quote), so it pays the TAKER fee = ceil(0.07*p*(1-p)) ≈
+   **2c/contract at mid prices** — the agent wrongly assumed fee=0 (that's the MAKER rate). 1.5c
+   edge − 2c taker fee = NET NEGATIVE everywhere except deep tails (p≥0.9, where fee=1c). Dead.
+2. Its IS t=1.58 is NOT significant; only OOS t=2.40 — the same flips-between-halves non-robustness
+   we see everywhere, and it CONTRADICTS the direct spot-lag test (spot adds −0.002 AUC over mid).
+3. It needs taker capability + low-latency infra we don't have (we're post-only maker).
+The agent's rigor was good on the kills: the "+17c flow-fade" is a price-level ARTIFACT (imbalance
+just proxies who-overpaid), and the "+57c spot-divergence" is LOOK-AHEAD (spot_path is contemporaneous
+with settlement — top-quartile spot move => 98% YES). The flow-incremental skew (#2) is real but tiny
+(+0.3c) and vanishes (OOS t=0.11) in the uncertain-price regime where it'd matter. NET: confirms the
+efficient-market verdict; the only edges are maker positioning (t29/t31) + the untested cross-venue
+Polymarket lag (data accumulating).

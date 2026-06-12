@@ -35,83 +35,51 @@ def load_hist(path):
 def load_trades(path):
     """
     Trades parquet: each row = one window, with columns t/p/sz/buy as arrays.
-    Explode to one-row-per-trade and return a flat DataFrame.
+    Returns a compact dict: ws -> per-minute signed-dollar-flow array (len 15).
+    This avoids exploding 18M+ rows into a DataFrame.
     """
     if not os.path.exists(path):
         return None
     raw = pd.read_parquet(path)
-    records = []
+    flows = {}
     for _, row in raw.iterrows():
-        ws_val = int(row["ws"])
+        ws_val = float(row["ws"])
         t_arr  = safe_arr(row["t"])
         p_arr  = safe_arr(row["p"])
         sz_arr = safe_arr(row["sz"])
-        buy_arr= row["buy"]
-        if buy_arr is None:
-            continue
-        if isinstance(buy_arr, np.ndarray):
-            buy_arr = buy_arr.astype(float)
-        else:
-            try:
-                buy_arr = np.array(buy_arr, dtype=float)
-            except Exception:
-                continue
-        n = len(p_arr) if p_arr is not None else 0
-        if n == 0:
-            continue
-        for i in range(n):
-            records.append({
-                "ws":  ws_val,
-                "t":   float(t_arr[i]) if t_arr is not None and i < len(t_arr) else np.nan,
-                "p":   float(p_arr[i]),
-                "sz":  float(sz_arr[i]) if sz_arr is not None and i < len(sz_arr) else 1.0,
-                "buy": int(buy_arr[i]),
-            })
-    if not records:
-        return None
-    return pd.DataFrame(records)
-
-# ── build per-minute trade summaries ─────────────────────────────────────────
-
-def build_minute_flows(trades_df, hist_df):
-    """
-    For each (ws, minute_in_window 0..14) compute signed dollar flow.
-    ws is unix seconds of window start. minute m = [ws + 60m, ws + 60(m+1)).
-    Returns dict: ws -> array len 15 of net_flow (buy$ - sell$).
-    """
-    if trades_df is None or hist_df is None:
-        return {}
-
-    flows = {}
-    ws_set = hist_df["ws"].values
-    ws_arr = np.array(ws_set, dtype=float)
-
-    # assign each trade to its window start and minute offset
-    t_arr = trades_df["t"].values.astype(float)
-    p_arr = trades_df["p"].values.astype(float)
-    sz_arr = trades_df["sz"].values.astype(float)
-    buy_arr = trades_df["buy"].values.astype(int)
-    ws_t = trades_df["ws"].values.astype(float)
-
-    dollar_signed = np.where(buy_arr == 1, p_arr * sz_arr, -p_arr * sz_arr)
-
-    # for each trade, find minute offset within window
-    minute_offset = ((t_arr - ws_t) / 60).astype(int)
-    minute_offset = np.clip(minute_offset, 0, 14)
-
-    # build flows per ws
-    for ws_val in ws_arr:
-        mask = ws_t == ws_val
-        if not mask.any():
+        buy_raw= row["buy"]
+        if p_arr is None or t_arr is None:
             flows[ws_val] = np.zeros(15)
             continue
-        mof = minute_offset[mask]
-        ds  = dollar_signed[mask]
-        f   = np.zeros(15)
+        if isinstance(buy_raw, np.ndarray):
+            buy_arr = buy_raw.astype(float)
+        else:
+            try:
+                buy_arr = np.array(buy_raw, dtype=float)
+            except Exception:
+                flows[ws_val] = np.zeros(15)
+                continue
+        n = min(len(t_arr), len(p_arr), len(sz_arr), len(buy_arr))
+        if n == 0:
+            flows[ws_val] = np.zeros(15)
+            continue
+        t_  = t_arr[:n]
+        p_  = p_arr[:n]
+        sz_ = sz_arr[:n]
+        b_  = buy_arr[:n]
+        # minute offset within window
+        moff = ((t_ - ws_val) / 60).astype(int)
+        moff = np.clip(moff, 0, 14)
+        dollar_signed = np.where(b_ == 1, p_ * sz_, -p_ * sz_)
+        f = np.zeros(15)
         for m in range(15):
-            f[m] = ds[mof == m].sum()
+            mask = moff == m
+            if mask.any():
+                f[m] = dollar_signed[mask].sum()
         flows[ws_val] = f
-    return flows
+    return flows  # dict ws -> array[15]
+
+# (build_minute_flows replaced — flows now built inside load_trades)
 
 # ── feature extraction at decision point k ───────────────────────────────────
 
@@ -177,6 +145,14 @@ def extract_features(hist_df, flows, k):
 LR_KWARGS = dict(solver="lbfgs", max_iter=500, C=0.1, random_state=42)
 
 def fit_predict(X_tr, y_tr, X_te):
+    # impute NaN with column means computed on training set
+    col_means = np.nanmean(X_tr, axis=0)
+    col_means = np.where(np.isnan(col_means), 0.0, col_means)
+    nan_mask_tr = np.isnan(X_tr)
+    nan_mask_te = np.isnan(X_te)
+    X_tr = X_tr.copy(); X_tr[nan_mask_tr] = np.take(col_means, np.where(nan_mask_tr)[1])
+    X_te = X_te.copy(); X_te[nan_mask_te] = np.take(col_means, np.where(nan_mask_te)[1])
+    # also drop rows in training with all-NaN features (shouldn't occur after impute)
     clf = LogisticRegression(**LR_KWARGS)
     clf.fit(X_tr, y_tr)
     return clf.predict_proba(X_te)[:, 1]
@@ -218,11 +194,13 @@ for asset in ASSETS:
     hp = f"{BASE_DIR}/hist_kalshi_{asset}15m.parquet"
     tp = f"{BASE_DIR}/trades_kalshi_{asset}15m.parquet"
     h = load_hist(hp)
-    t = load_trades(tp)
     if h is not None:
+        print(f"  loading {asset} trades ...", end=" ", flush=True)
+        flows = load_trades(tp)  # returns dict ws->array[15] or None
         hist_all[asset]   = h
-        trades_all[asset] = t
-        print(f"  loaded {asset}: {len(h)} hist rows, {len(t) if t is not None else 0} trades")
+        trades_all[asset] = flows if flows is not None else {}
+        n_flows = len(flows) if flows is not None else 0
+        print(f"{len(h)} hist rows, {n_flows} flow windows")
     else:
         print(f"  {asset}: hist not found, skipping")
 
@@ -231,8 +209,9 @@ all_feat_by_k = {k_: [] for k_ in [5,7,9,11]}
 
 for asset, hist_df in hist_all.items():
     hist_df = hist_df.sort_values("ws").reset_index(drop=True)
-    trades_df = trades_all.get(asset)
-    flows = build_minute_flows(trades_df, hist_df)
+    flows = trades_all.get(asset, {})  # already a dict ws->array[15]
+    if flows is None:
+        flows = {}
     for k_ in [5,7,9,11]:
         df_feat = extract_features(hist_df, flows, k_)
         df_feat["asset"] = asset
@@ -361,23 +340,31 @@ def economic_test(feat_by_k, signal_name, sig_cols):
 
         # YES leg P&L: res_up*1 - (1 - mid_k) if hold, else 0
         def yes_pnl(y, mid, prob, hi=0.55, lo=0.45):
-            """hold if prob>hi, cut if prob<lo, else hold"""
-            pnl_arr = []
-            for yi, mi, pi in zip(y, mid, prob):
-                raw = float(yi) * 1.0 - (1.0 - mi)   # hold payoff
-                if pi > hi:
-                    pnl_arr.append(raw)
-                elif pi < lo:
-                    pnl_arr.append(0.0)
-                else:
-                    pnl_arr.append(raw)               # hold in grey zone
-            return np.array(pnl_arr)
+            """hold if prob>hi or in grey zone, cut (pnl=0) if prob<lo"""
+            y    = np.asarray(y,    dtype=float)
+            mid  = np.asarray(mid,  dtype=float)
+            prob = np.asarray(prob, dtype=float)
+            raw  = y - (1.0 - mid)        # hold payoff for YES leg
+            cut  = prob < lo              # cut → pnl = 0
+            return np.where(cut, 0.0, raw)
 
-        hold_pnl = np.array([float(yi)*1.0 - (1.0 - mi)
-                             for yi, mi in zip(y_os, mid_os)])
-        cut_pnl  = np.zeros(len(y_os))
-        sig_pnl  = yes_pnl(y_os, mid_os, p_sig)
-        comb_pnl = yes_pnl(y_os, mid_os, p_comb)
+        mid_os   = np.array(mid_os,  dtype=float)
+        y_os_arr = np.array(y_os,    dtype=float)
+        p_sig    = np.array(p_sig,   dtype=float)
+        p_comb   = np.array(p_comb,  dtype=float)
+
+        hold_pnl = y_os_arr - (1.0 - mid_os)
+        cut_pnl  = np.zeros(len(y_os_arr))
+        sig_pnl  = yes_pnl(y_os_arr, mid_os, p_sig)
+        comb_pnl = yes_pnl(y_os_arr, mid_os, p_comb)
+
+        # keep only rows with finite values
+        valid = (np.isfinite(hold_pnl) & np.isfinite(sig_pnl) &
+                 np.isfinite(comb_pnl))
+        hold_pnl = hold_pnl[valid]
+        cut_pnl  = cut_pnl[valid]
+        sig_pnl  = sig_pnl[valid]
+        comb_pnl = comb_pnl[valid]
 
         pnl_hold_all.extend(hold_pnl)
         pnl_cut_all.extend(cut_pnl)
@@ -385,8 +372,9 @@ def economic_test(feat_by_k, signal_name, sig_cols):
         pnl_comb_all.extend(comb_pnl)
 
     def summarise(arr):
-        arr = np.array(arr)
-        return np.mean(arr), len(arr)
+        arr = np.array(arr, dtype=float)
+        arr = arr[np.isfinite(arr)]
+        return np.mean(arr) if len(arr) > 0 else 0.0, len(arr)
 
     h_m, h_n   = summarise(pnl_hold_all)
     c_m, c_n   = summarise(pnl_cut_all)
@@ -426,8 +414,8 @@ for sig in SIGNAL_COLS:
     vals  = [results_auc[sig][k_][0] for k_ in [5,7,9,11]]
     pvals = [results_auc[sig][k_][1] for k_ in [5,7,9,11]]
     avg_v = np.nanmean(vals)
-    # pick most optimistic p-val for display (min)
-    pv    = np.nanmin([p for p in pvals if not np.isnan(p)] or [np.nan])
+    # use average p-val across k values (more conservative than min)
+    pv    = np.nanmean([p for p in pvals if not np.isnan(p)] or [np.nan])
     def fmt(v):
         return f"{v:+.4f}" if not np.isnan(v) else "  nan  "
     print(f"{sig:<22}| {fmt(vals[0]):>9} | {fmt(vals[1]):>9} | {fmt(vals[2]):>9} | {fmt(vals[3]):>10} | {fmt(avg_v):>9} | {pv:>6.3f}")
