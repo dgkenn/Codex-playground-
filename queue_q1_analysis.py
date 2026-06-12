@@ -2,13 +2,14 @@
 queue_q1_analysis.py — Q1: What is front-of-queue worth?
 
 DATA:
-  audit_book.jsonl  — top-of-book snapshots (bb, bsz, ba, asz) at ~1Hz, 35 windows
-  trades_kalshi_btc15m.parquet — settlement per window
+  audit_book.jsonl  — top-of-book snapshots (bb, bsz, ba, asz) at ~1Hz, 34 windows
+  trades_kalshi_btc15m.parquet — settlement per window (res_up)
 
 APPROACH:
-  For each snapshot series, detect takes as drops in displayed size at constant price.
-  Classify by take_size / depth_before to approximate who-in-queue got filled.
-  Compare markout (maker perspective) across take categories.
+  Detect taker hits as consecutive-snapshot size drops at constant price.
+  Classify by take_size/depth ratio to approximate queue position selection.
+  Key metric: excess markout vs the unconditional window baseline (controls for
+  per-window directional bias in the 34-window sample).
 """
 from __future__ import annotations
 import json
@@ -16,7 +17,7 @@ import pandas as pd
 import numpy as np
 from collections import defaultdict
 
-MIN_DROP = 0.5    # min drop to count as a real take (filter noise)
+MIN_DROP = 0.5    # min size drop to count as a real take
 MIN_DEPTH = 1.0   # min depth-before
 
 # ── Load data
@@ -33,17 +34,33 @@ settle = dict(zip(trades_df["ws"], trades_df["res_up"]))
 
 ws_list = sorted(snaps_by_ws.keys())
 overlap = [ws for ws in ws_list if ws in settle]
-print(f"  Windows with book+settlement: {len(overlap)}, total snaps: {sum(len(snaps_by_ws[w]) for w in overlap)}")
+total_snaps = sum(len(snaps_by_ws[w]) for w in overlap)
+print(f"  Windows: {len(overlap)}, snapshots: {total_snaps}")
+res_vals = [settle[ws] for ws in overlap]
+print(f"  Settlement: {sum(res_vals)} YES (res_up=1), {len(res_vals)-sum(res_vals)} NO (res_up=0)")
 
-# ── Detect take events from consecutive snapshot size drops
+# ── Baseline markout per window (unconditional expectation)
+baseline_by_ws = {}
+for ws in overlap:
+    snaps = snaps_by_ws[ws]
+    res = settle[ws]
+    avg_bb = np.mean([s["bb"] for s in snaps])
+    avg_ba = np.mean([s["ba"] for s in snaps])
+    baseline_by_ws[ws] = {
+        "res": res, "avg_bb": avg_bb, "avg_ba": avg_ba,
+        "base_yes_bid_mo": res - avg_bb,
+        "base_yes_ask_mo": avg_ba - res,
+    }
+
+# ── Detect take events
 take_events = []
-
 for ws in overlap:
     snaps = sorted(snaps_by_ws[ws], key=lambda d: d["ts"])
     res = settle[ws]
+    bl = baseline_by_ws[ws]
 
-    # YES BID side: bb constant, bsz drops → taker bought YES (took resting YES bid)
-    # Markout for YES maker resting at bb: res_up - bb
+    # YES BID side: bsz drops at constant bb → taker bought YES, fills YES bidders
+    # YES bidder markout: res_up - bb
     prev_bb, prev_bsz = None, None
     for snap in snaps:
         bb, bsz = snap["bb"], snap["bsz"]
@@ -53,16 +70,18 @@ for ws in overlap:
                 D, dD = prev_bsz, drop
                 ratio = dD / D
                 cat = "small" if ratio < 1/3 else ("medium" if ratio < 2/3 else "large")
+                markout = res - bb
                 take_events.append({
                     "ws": ws, "side": "YES_bid", "price": bb,
                     "depth_before": D, "take_size": dD, "ratio": ratio,
                     "cat": cat, "res_up": res,
-                    "markout": res - bb   # YES maker: profit if res=1
+                    "markout": markout,
+                    "excess": markout - bl["base_yes_bid_mo"],
                 })
         prev_bb, prev_bsz = bb, bsz
 
-    # NO BID side: ba constant (= 1 - best NO bid), asz drops → taker sold YES (took NO bid)
-    # Markout for NO maker at price (1-ba): (1-res_up) - (1-ba) = ba - res_up
+    # YES ASK (NO bid) side: asz drops at constant ba → taker sold YES, fills YES askers
+    # YES asker markout: ba - res_up  (wins when res=0 and ba>0)
     prev_ba, prev_asz = None, None
     for snap in snaps:
         ba, asz = snap["ba"], snap["asz"]
@@ -72,136 +91,157 @@ for ws in overlap:
                 D, dD = prev_asz, drop
                 ratio = dD / D
                 cat = "small" if ratio < 1/3 else ("medium" if ratio < 2/3 else "large")
+                markout = ba - res
                 take_events.append({
-                    "ws": ws, "side": "NO_bid", "price": 1 - ba,
+                    "ws": ws, "side": "YES_ask", "price": ba,
                     "depth_before": D, "take_size": dD, "ratio": ratio,
                     "cat": cat, "res_up": res,
-                    "markout": ba - res   # NO maker: profit if res=0
+                    "markout": markout,
+                    "excess": markout - bl["base_yes_ask_mo"],
                 })
         prev_ba, prev_asz = ba, asz
 
 ev = pd.DataFrame(take_events)
-
-# ── TABLE 1: Take-size category
 print()
-print("=" * 66)
-print("TABLE 1: Take-size category vs markout (YES + NO combined)")
-print("=" * 66)
-fmt = f"{'Category':<30} {'N':>7} {'AvgTake':>9} {'AvgDepth':>9} {'P(win)':>8} {'Markout(c)':>11}"
+
+# ── TABLE 1: Take-size category (both sides combined, excess markout)
+print("=" * 68)
+print("TABLE 1: Take-size category vs maker markout (YES_bid + YES_ask combined)")
+print("  Excess = actual fill markout minus window unconditional baseline")
+print("  Front-of-queue maker experiences 'small' takes only.")
+print("=" * 68)
+fmt = f"{'Category':<32} {'N':>6} {'AvgTake':>9} {'AvgDepth':>9} {'P(win)':>8} {'Markout(c)':>11} {'Excess(c)':>11}"
 print(fmt)
-print("-" * 66)
+print("-" * 68)
 
 cats_info = [
-    ("small",  "small  (dD<D/3)  front fills"),
-    ("medium", "medium (D/3-2/3) mid fills  "),
-    ("large",  "large  (dD>2D/3) sweep fills"),
+    ("small",  "small  (dD<D/3)   front-Q fills"),
+    ("medium", "medium (D/3-2D/3) mid-Q fills  "),
+    ("large",  "large  (dD>2D/3)  sweep fills  "),
 ]
 table1 = {}
 for cat, label in cats_info:
     sub = ev[ev.cat == cat]
     n = len(sub)
     if n == 0:
-        print(f"{label:<30} {0:>7}")
+        print(f"{label:<32} {0:>6}")
         continue
     avg_take = sub["take_size"].mean()
     avg_depth = sub["depth_before"].mean()
     p_win = (sub["markout"] > 0).mean()
     mo_c = sub["markout"].mean() * 100
-    table1[cat] = mo_c
-    print(f"{label:<30} {n:>7} {avg_take:>9.1f} {avg_depth:>9.1f} {p_win:>8.3f} {mo_c:>+11.2f}")
+    ex_c = sub["excess"].mean() * 100
+    table1[cat] = {"n": n, "mo": mo_c, "ex": ex_c, "p_win": p_win}
+    print(f"{label:<32} {n:>6} {avg_take:>9.1f} {avg_depth:>9.1f} {p_win:>8.3f} {mo_c:>+11.2f} {ex_c:>+11.2f}")
+
+print()
 
 # ── TABLE 2: Side x category
-print()
-print("=" * 66)
+print("=" * 68)
 print("TABLE 2: Side x take-size category")
-print("=" * 66)
-fmt2 = f"{'Side + Category':<32} {'N':>7} {'AvgTake':>9} {'P(win)':>8} {'Markout(c)':>11}"
+print("=" * 68)
+fmt2 = f"{'Side + Category':<34} {'N':>6} {'AvgTake':>9} {'P(win)':>8} {'Markout(c)':>11} {'Excess(c)':>11}"
 print(fmt2)
-print("-" * 66)
-for side in ["YES_bid", "NO_bid"]:
+print("-" * 68)
+for side in ["YES_bid", "YES_ask"]:
     for cat, label in cats_info:
         sub = ev[(ev.side == side) & (ev.cat == cat)]
         n = len(sub)
         if n == 0:
-            print(f"{side} {cat:<22} {0:>7}")
+            print(f"{side} {cat:<24} {0:>6}")
             continue
         avg_take = sub["take_size"].mean()
         p_win = (sub["markout"] > 0).mean()
         mo_c = sub["markout"].mean() * 100
-        print(f"{side} {cat:<22} {n:>7} {avg_take:>9.1f} {p_win:>8.3f} {mo_c:>+11.2f}")
+        ex_c = sub["excess"].mean() * 100
+        print(f"{side} {cat:<24} {n:>6} {avg_take:>9.1f} {p_win:>8.3f} {mo_c:>+11.2f} {ex_c:>+11.2f}")
     print()
 
 # ── TABLE 3: Queue position tier
-print("=" * 66)
-print("TABLE 3: Queue position tier (who gets filled and at what markout)")
-print("=" * 66)
-print("  Front-maker (q<=D/3): fills on ALL takes")
-print("  Mid-maker (D/3<q<=2D/3): fills on medium + large only")
-print("  Back-maker (q>2D/3): fills on large sweeps only")
-print()
-fmt3 = f"{'Queue tier':<44} {'N_fills':>8} {'P(win)':>8} {'Markout(c)':>11}"
+print("=" * 68)
+print("TABLE 3: Queue position tier (simulated fill set by resting position)")
+print("  A maker at front (q<=D/3) gets filled by ALL take sizes.")
+print("  A maker at middle (D/3<q<=2D/3) only filled by medium + large.")
+print("  A maker at back (q>2D/3) only filled by large sweeps.")
+print("=" * 68)
+fmt3 = f"{'Queue tier':<45} {'N_fills':>7} {'P(win)':>8} {'Markout(c)':>11} {'Excess(c)':>11}"
 print(fmt3)
-print("-" * 66)
+print("-" * 68)
 
 tiers = [
-    ("front (q<=D/3, all takes)",            ev),
-    ("middle (D/3<q<=2D/3, med+large)",       ev[ev.cat.isin(["medium","large"])]),
-    ("back (q>2D/3, large sweeps only)",       ev[ev.cat == "large"]),
+    ("front (q<=D/3,  filled by all takes)",      ev),
+    ("middle (D/3<q<=2D/3, medium+large only)",    ev[ev.cat.isin(["medium","large"])]),
+    ("back (q>2D/3,   large sweeps only)",          ev[ev.cat == "large"]),
 ]
-tier_mo = {}
 for tname, sub in tiers:
     n = len(sub)
     if n == 0:
-        print(f"{tname:<44} {0:>8}")
+        print(f"{tname:<45} {0:>7}")
         continue
     p_win = (sub["markout"] > 0).mean()
     mo_c = sub["markout"].mean() * 100
-    tier_mo[tname] = mo_c
-    print(f"{tname:<44} {n:>8} {p_win:>8.3f} {mo_c:>+11.2f}")
+    ex_c = sub["excess"].mean() * 100
+    print(f"{tname:<45} {n:>7} {p_win:>8.3f} {mo_c:>+11.2f} {ex_c:>+11.2f}")
 
-# ── Selection effect summary
+# ── Key finding
 print()
-print("=" * 66)
-print("KEY FINDING: Selection Effect (front vs back of queue)")
-print("=" * 66)
+print("=" * 68)
+print("KEY FINDING: Front-of-queue selection effect")
+print("=" * 68)
+small_ex = ev[ev.cat=="small"]["excess"].mean() * 100 if "small" in ev.cat.values else float("nan")
+large_ex  = ev[ev.cat=="large"]["excess"].mean()  * 100 if "large" in ev.cat.values else float("nan")
+front_mo  = ev["markout"].mean() * 100
+back_mo   = ev[ev.cat=="large"]["markout"].mean() * 100
 
-small_mo = ev[ev.cat=="small"]["markout"].mean() * 100 if len(ev[ev.cat=="small"]) else float("nan")
-large_mo = ev[ev.cat=="large"]["markout"].mean() * 100 if len(ev[ev.cat=="large"]) else float("nan")
-all_mo   = ev["markout"].mean() * 100
-
-print(f"  All-take avg markout:           {all_mo:+.2f} ¢")
-print(f"  Small-take markout (front-Q):   {small_mo:+.2f} ¢")
-print(f"  Large-sweep markout (back-Q):   {large_mo:+.2f} ¢")
-delta = small_mo - large_mo
-print(f"  Front-vs-back advantage:        {delta:+.2f} ¢")
-if not np.isnan(delta):
-    if delta > 0.5:
-        print("  => Front-of-queue is BETTER: small-take takers are less informed.")
-    elif delta < -0.5:
-        print("  => Front-of-queue is WORSE: small takes carry more adverse selection.")
+print(f"  Unconditional maker markout (time-weighted):  ~0.00¢ (baseline)")
+print(f"  Small-take (front-Q selection) excess:        {small_ex:+.2f}¢")
+print(f"  Large-sweep (back-Q selection) excess:        {large_ex:+.2f}¢")
+delta_ex = small_ex - large_ex
+print(f"  Front-vs-back excess difference:              {delta_ex:+.2f}¢")
+print()
+if not np.isnan(delta_ex):
+    if delta_ex > 0.5:
+        print("  => FRONT-OF-QUEUE IS BETTER: small takers are less informed/more noise.")
+        print("     Being early in the queue is VALUABLE; back fills carry more adverse selection.")
+    elif delta_ex < -0.5:
+        print("  => FRONT-OF-QUEUE IS WORSE: small takes carry MORE adverse selection.")
+        print("     Informed takers hit precisely (small, targeted), sweeps are noise.")
     else:
-        print("  => No significant front-vs-back difference.")
+        print("  => NO SIGNIFICANT DIFFERENCE: queue position does not materially affect markout.")
 
-# ── Data summary
+# Additional stat: how often does a large sweep predict direction?
+large_ev = ev[ev.cat=="large"]
+if len(large_ev) > 5:
+    # Large sweep = taker was aggressive. Check if taker was right.
+    # YES_bid side: taker BUY YES. Taker wins if res_up=1.
+    yes_sweep = large_ev[large_ev.side=="YES_bid"]
+    no_sweep  = large_ev[large_ev.side=="YES_ask"]
+    if len(yes_sweep) > 0:
+        print(f"\n  Large YES-taker accuracy: P(res_up=1) = {yes_sweep['res_up'].mean():.3f} (N={len(yes_sweep)})")
+    if len(no_sweep) > 0:
+        print(f"  Large NO-taker accuracy:  P(res_up=0) = {(1-no_sweep['res_up']).mean():.3f} (N={len(no_sweep)})")
+
+# ── Dataset summary
 print()
-print("=" * 66)
+print("=" * 68)
 print("DATASET SUMMARY")
-print("=" * 66)
-print(f"  Windows analyzed:         {len(overlap)}")
-n_yes = len(ev[ev.side=="YES_bid"])
-n_no  = len(ev[ev.side=="NO_bid"])
-print(f"  Total take events:        {len(ev)} (YES_bid={n_yes}, NO_bid={n_no})")
-n_small = len(ev[ev.cat=="small"]); n_med = len(ev[ev.cat=="medium"]); n_large = len(ev[ev.cat=="large"])
-print(f"  By category: small={n_small} ({100*n_small/len(ev):.0f}%), "
-      f"medium={n_med} ({100*n_med/len(ev):.0f}%), large={n_large} ({100*n_large/len(ev):.0f}%)")
-print(f"  Avg take size:            {ev['take_size'].mean():.1f} contracts")
-print(f"  Avg depth at touch:       {ev['depth_before'].mean():.1f} contracts")
+print("=" * 68)
+print(f"  Windows analyzed:          {len(overlap)}")
+print(f"  Settlement: YES={sum(res_vals)}, NO={len(res_vals)-sum(res_vals)}")
+print(f"  Total take events:         {len(ev)} (YES_bid={len(ev[ev.side=='YES_bid'])}, YES_ask={len(ev[ev.side=='YES_ask'])})")
+n_s = len(ev[ev.cat=="small"]); n_m = len(ev[ev.cat=="medium"]); n_l = len(ev[ev.cat=="large"])
+print(f"  Take breakdown: small={n_s} ({100*n_s/len(ev):.0f}%), medium={n_m} ({100*n_m/len(ev):.0f}%), large={n_l} ({100*n_l/len(ev):.0f}%)")
+print(f"  Avg take size:             {ev['take_size'].mean():.1f} contracts")
+print(f"  Avg depth at touch:        {ev['depth_before'].mean():.1f} contracts")
 
-# Spread stats
+# Spread stats from sample
 spreads = []
 for ws in overlap[:10]:
     for snap in snaps_by_ws[ws][:100]:
         if snap.get("ba") and snap.get("bb"):
             spreads.append(snap["ba"] - snap["bb"])
 if spreads:
-    print(f"  Avg bid-ask spread:       {np.mean(spreads)*100:.2f} ¢ (sample of {len(spreads)} snaps)")
+    print(f"  Avg bid-ask spread:        {np.mean(spreads)*100:.2f}¢ (sample n={len(spreads)})")
+
+print(f"\n  NOTE: 'excess' metric controls for per-window directional bias")
+print(f"  by subtracting window-avg unconditional markout from each take event.")

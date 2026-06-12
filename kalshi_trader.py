@@ -632,6 +632,12 @@ def main():
                          "waiting the 2s churn guard -- beating the mechanical ladder-MM (~1.2s "
                          "heartbeat, FINGERPRINT.md) to the new price level for front-of-queue. Run "
                          "live with this on vs off and compare markout/fill-rate (QUEUE_TIMING.md).")
+    ap.add_argument("--guard-yes-spread", type=float, default=0.0,
+                    help="t36 guarded opener: suppress YES OPEN quotes when spread < this (e.g. "
+                         "0.02). 0 = OFF. Completion quotes (net_delta<0) are never suppressed. "
+                         "ARM ONLY after the t36/t02 forward A/B clears the pre-registered bar "
+                         "(SCALE_GATE Stage-A condition 4); backtest: OOS +2.07c/win vs P0 +0.69, "
+                         "YES strands 36->1 (GUARDED_OPENER.md).")
     ap.add_argument("--requote-stale-s", type=float, default=20.0,
                     help="drop a resting rung older than this IF the mid has moved >=1 tick since "
                          "placement (markout forensics: fills on >15s-old quotes run -2.04c/fill "
@@ -1283,6 +1289,13 @@ def main():
             mp = microprice(ybb, yba, clean_ybq, clean_yaq)
 
             targets = desired_levels(mk, ybb, yba, net_delta, 1, a.cap, a.skew, a.improve_tick)
+            # t36 guarded opener (GUARDED_OPENER.md): the live loss mode is a YES leg opened into
+            # a thin spread that strands (every realized live loss to date). When armed, suppress
+            # YES quotes at spread < guard UNLESS net_delta < 0 (then a YES fill COMPLETES an
+            # unpaired NO — pairing, not opening; the chase path is untouched either way).
+            if (a.guard_yes_spread > 0 and ybb is not None and yba is not None
+                    and (yba - ybb) < a.guard_yes_spread - 1e-9 and net_delta >= 0):
+                targets = [t for t in targets if t[0] != "yes"]
             target_set = set(targets)
             # stamp decision-time book state for fill-context logging (metrics framework:
             # effective spread = fill price vs this mid; depth/imbalance for queue + toxicity)

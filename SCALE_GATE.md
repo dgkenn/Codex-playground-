@@ -139,3 +139,33 @@ prospective test, sticky loss-limit, and entry gate. Design rules:
   floor-blocked completions is larger, but live queue position will eat part of it).
 - Lock floor ≥0.5¢/box guards against "completing" our way into guaranteed-loss pairs (the chase
   give caps at 2¢ mid-window / 4¢ close, so erosion shows up fast if it's happening).
+
+---
+# STATUS + ROADMAP UPDATE (2026-06-12, operator scaling directive)
+
+## Stage-A ($10→$100): the strategy is IN PLACE; the gates need TIME, not more research.
+Dashboard: `python scale_status.py` (run daily). As of today: green-day streak 1/7; unpaired 18%
+(passing rate, needs 150 windows); no kill trips; A/B ledger 100/300.
+- **Deployment is pre-wired:** `--guard-yes-spread` is CODED in kalshi_trader.py (default OFF) —
+  the live port of t36's dominant component (backtest: OOS +2.07c/win vs P0 +0.69, YES strands
+  36→1 = the entire realized live loss mode). When t02/t36 clears the forward bar at n≥300,
+  arming = one flag in live_loop.sh. Completion quotes are never suppressed (chase intact).
+- **The binding constraint is CONTINUITY**: gates 1+4 need ~5-7 more clean days of bot + collector
+  uptime. The container is ephemeral — the GHA cloud loop (live.yml, on main) is the durable path
+  and STILL NEEDS the operator to add the GitHub secrets (KALSHI_API_KEY_ID, KALSHI_PRIVATE_KEY,
+  TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID). Without them, every container death pauses the clock.
+- Execution upgrades landed today (compound at any size): qtime margin re-fit 0.3→0.6c
+  (QUEUE_VALUE.md break-even), no rung-splitting (t27 AGAINST), never reprice <0.5c.
+
+## Stage-B ($100→$1000): confirmed MULTI-STRATEGY; the sleeve pipeline is already collecting.
+Today's research sharpened the Stage-B map:
+- BTC 15m box is FLOW-capped (~N=16, ~$600/day turnover) — more capital on this book does nothing.
+- **Alts are NOT a sleeve** (MULTI_ASSET.md: ETH/SOL/XRP structurally negative-EV; re-test at 5-10x
+  volume growth). t27 two-rung is OUT (QUEUE_VALUE.md). Polymarket wallet line: pending signature
+  study; at best a detector refinement, not a sleeve.
+- The viable sleeves remain the three ALREADY pre-registered + collecting (thin/new-market maker,
+  ladder-lock, favorite-band — kalshi_thin_collect.py + kalshi_ladder_collect.py, gates above).
+  First sleeve decision possible after ~2 weeks of collector data (~2026-06-25).
+- Sequence: Stage-A box at post=2 → sleeve 1 paper-gate verdict → sleeve 1 at $50-150 → Stage-B
+  entry per the pre-registered conditions. The box engine stays the core; sleeves absorb the
+  capital the box physically cannot.
