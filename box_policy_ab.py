@@ -30,6 +30,7 @@ import glob
 import gzip
 import json
 import os
+import time
 
 import numpy as np
 
@@ -229,7 +230,7 @@ def window_fills(ws, res, bid, ask, spot, depth, tape, oi_slope=None, q0=0.0):
                 if qb >= sz:
                     qb -= sz
                 else:
-                    recs.append({"side": "bid", "settle": res - b0, "exit": exit_bid, "sig": mv,
+                    recs.append({"ws": ws, "side": "bid", "settle": res - b0, "exit": exit_bid, "sig": mv,
                                  "p": b0, "spread": spread, "k": k, "tau": tau, "flow": flow,
                                  "depth": dk, "oi": oi_slope, "vpin": _vpin_at(bt, bi, t_arr[i]),
                                  "spot": float(spot[k]) if not np.isnan(spot[k]) else None,
@@ -238,7 +239,7 @@ def window_fills(ws, res, bid, ask, spot, depth, tape, oi_slope=None, q0=0.0):
                 if qa >= sz:
                     qa -= sz
                 else:
-                    recs.append({"side": "ask", "settle": a0 - res, "exit": exit_ask, "sig": -mv,
+                    recs.append({"ws": ws, "side": "ask", "settle": a0 - res, "exit": exit_ask, "sig": -mv,
                                  "p": round(1.0 - a0, 4), "spread": spread, "k": k, "tau": tau,
                                  "flow": -flow, "depth": dk, "oi": oi_slope,
                                  "vpin": _vpin_at(bt, bi, t_arr[i]),
@@ -483,6 +484,17 @@ TRIALS = {
                                        / (1.0 - min(pair_prob(f), 0.995))))),
     "t24_tox_sized":       lambda F: pol_sized(F, lambda f: 1.5 if tox_p(f) < 0.45
                                        else (0.5 if tox_p(f) > 0.60 else 1.0)),
+    # ---- sizing sweep round 2 (8-family tape backtest, 2026-06-12): flat won; only two shapes
+    #      earned a forward trial. REJECTED (lose mean + add tail OOS, do not re-add): vol-inverse,
+    #      qkelly x tox combo. t25 = the lone positive-delta shape (hour-of-day depth/flow table;
+    #      +0.16c/win OOS, needs forward confirmation it isn't noise). t26 = gamma-taper as pure
+    #      DRAWDOWN control via the matched-pair walker (-36% maxDD, -39% std, costs 0.34c/win mean;
+    #      t15 tests the same shape with the legacy mismatched-pair weight()).
+    "t25_hour_sized":      lambda F: pol_sized(F, lambda f: 1.5 if time.gmtime(
+                                       f.get("ws", 0)).tm_hour in (13, 14, 15, 18, 19, 20)
+                                       else (0.5 if time.gmtime(f.get("ws", 0)).tm_hour in (11, 21)
+                                             else 1.0)),
+    "t26_gamma_sized":     lambda F: pol_sized(F, lambda f: max(0.25, (15 - f["k"]) / 13.0)),
 }
 
 

@@ -30,6 +30,20 @@ basis. Keep flat ~1 contract. Quarter-Kelly is the absolute ceiling; our regime 
   new same-side fills as unpaired inventory accumulates (scale n_side down by q/q_max, pull at q_max).
   This is new-fill suppression, not exit — consistent with our strict-pairing clamp.
 
+
+## ROUND 2 — the 8-family sizing sweep at Stage-A parameters (2026-06-12, q0=0, base 2-lot)
+Backtested 8 sizing shapes under the $100-stage discipline (matched-pair sizing, $12 daily limit,
+60/40 OOS). **Flat-2 won again.** OOS deltas vs flat: hour-of-day +0.16c/win (the ONLY positive —
+economically negligible, +14% variance; forward trial t25 will confirm or kill it); gamma-taper
+−0.34c mean but **−36% maxDD / −39% std** (the one genuine RISK shape; forward trial t26);
+sweet-spot −0.25c; quarter-Kelly −0.30c; tox-sized −0.59c; vol-inverse −0.51c; qkelly×tox combo
+−1.38c (worst). REJECTED permanently: vol-inverse, combo. Daily $12-limit breach rate at Stage-A:
+0.0% across ALL shapes — the loss-limit is not the binding risk at this size.
+**The sweep's real headline: queue position dominates sizing.** At q0=500 every shape flips deeply
+negative (91.7% daily-breach) — the entire strategy lives or dies on being front-of-queue, and no
+sizing overlay moves the needle by more than ~0.2c/win. Sizing optimization is third-order;
+execution priority is first-order. (Sweep script + tables in the research record.)
+
 ## Deployed decision
 - **Sizing stays FLAT (1 contract).** Do not wire conditional size-up to live: marginal mean, worse
   tail, prior-ruin lesson, thin-edge collapse all agree.
