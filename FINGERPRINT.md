@@ -29,3 +29,33 @@ adverse-selection feature, distinct from VPIN/flow) and (b) the A/B as a regime 
 with proper sample size and get scored prospectively like everything else — no overfit. If the
 ladder-pull-as-leading-strand-signal is real, it surfaces there. Until then: feasibility proven,
 no deployable edge yet, consistent with the calibrated-market finding.
+
+## UPDATE (2026-06-12, adequate-sample deep dive + causality test)
+### The "one-sided pull predicts direction" signal is NOT tradeable — it's reactive, not leading
+One agent found pull→direction at corr -0.47 (n=109), which looked like a discovery. But that was a
+WHOLE-WINDOW pull vs WHOLE-WINDOW move correlation = COINCIDENT (the MM pulls a side BECAUSE it's
+being hit by a move already underway). The decisive causality test (early-window pull, min 0-7 ->
+LATER move, min 8-15, strict temporal separation, n=106):
+- coincident (whole-window): corr -0.087, t=-0.9 (already weak when measured cleanly)
+- **LEADING (early pull -> late move): IS corr -0.068 (p=0.60), OOS -0.084 (p=0.59) -- NULL.**
+The pull has ZERO predictive power for the subsequent move. The MM reprices reactively (74% of levels
+stale within 3s of a spot move; 1.2s mechanical heartbeat). Do NOT trade ladder-pull as a directional
+signal. (7th directional null.)
+
+### What IS robust (trade-tape Test A-C, proper 2779-window sample, IS/OOS)
+- **VPIN -> pairing: OOS r=-0.346.** High-toxicity windows pair worse. Confirmed on big sample.
+- **High-VPIN windows strand a leg 9.7x more often (6.8% vs 0.7%).** A real, EARLY (causal) prevention
+  signal -- VPIN is computed from flow-so-far, so it's tradeable, unlike the pull.
+- **Counterparty-mix clusters:** MM-dominated low-vol windows pair 96.1%; directional high-vol windows
+  (4.2% of windows) pair 77.4% and cause most strands. VPIN is the early proxy for which cluster.
+- **NET: this validates the toxicity/VPIN gate we ALREADY have (t13/t18) on a large sample -- not a
+  new edge, a confirmation of the deployed one.**
+
+### The one genuinely NEW actionable item: execution timing vs the mechanical MM
+The ladder-MM is purely MECHANICAL (1.2s heartbeat, symmetric, cancel/add~=1.0, no info skew) and
+SLOW to reprice (74% stale 3s post-move). That's a QUEUE-TIMING opportunity (not direction): when spot
+moves, WE can refresh our quote to the new fair level BEFORE the mechanical MM catches up (~1-3s
+window), landing front-of-queue at the right price. This is execution alpha, consistent with the
+"queue position is first-order" finding -- worth a live experiment (tie requote timing to spot ticks).
+Fingerprint verdict: real & mechanical, NO directional alpha, but reinforces toxicity-gating + gives a
+concrete execution-timing refinement.
