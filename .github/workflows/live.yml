@@ -67,6 +67,12 @@ jobs:
         if: steps.gate.outputs.switch == 'on' && steps.sec.outputs.have == 'yes'
         with:
           python-version: '3.12'
+      - name: cache pip wheels (cuts install ~90s -> ~15s so ON lands under a minute)
+        if: steps.gate.outputs.switch == 'on' && steps.sec.outputs.have == 'yes'
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: pip-live-v1-numpy-scipy-requests-cryptography-websockets
       - name: install deps
         if: steps.gate.outputs.switch == 'on' && steps.sec.outputs.have == 'yes'
         run: for i in 1 2 3; do pip install --quiet numpy scipy requests cryptography websockets && break; sleep 10; done
