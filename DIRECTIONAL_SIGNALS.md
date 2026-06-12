@@ -81,3 +81,28 @@ hedge (cross-strike/correlated binary). This generalizes the VPIN-conditioned ex
 
 Sources: Grinold (fundamental law); López de Prado & Bailey 2014 (deflated Sharpe, arXiv:1906.00573);
 Cont-Kukanov-Stoikov (OFI); Stoikov (microprice); plus the crypto-microstructure refs in the dive.
+
+## ⭐ DEFINITIVE CLOSE (2026-06-12): six tests deep, no exploitable directional/mispricing edge
+The operator asked: any mispricing at any price/threshold/side, and any directional edge to manage
+unpaired legs? Ran the most rigorous pass yet (4 assets pooled ~4500 windows, FDR-corrected,
+strict IS/OOS):
+- **Full-range mispricing calibration scan** (every YES-mid bucket 0.01-0.99 x minute 2-14 x both
+  sides, Wilson CIs, Benjamini-Hochberg FDR): the 3 buckets that survive FDR *pooled* all FLIP sign
+  between the IS and OOS halves -- e.g. minute-3 YES@0.60-0.65 was -0.3% (calibrated) IS but -18.9%
+  OOS, a recent-regime artifact, not a stable edge. The favorite-longshot tails show the documented
+  direction (favorites win slightly less than priced early) but it is NOT OOS-stable in magnitude.
+  **VERDICT: the market is calibrated; no mispricing persists across time halves.**
+- **Spot-lag / stale-mid directional test** (does spot momentum predict res_up BEYOND mid_k, OOS):
+  adding the 3-min spot move to the Kalshi mid changes OOS AUC by -0.0006 to -0.0022 at every minute
+  (5,7,9,11) -- it HURTS. Pooled 0.8984 -> 0.8983. Residual-by-spot-sign: a spot move UP leaves YES
+  slightly OVER-priced (-2.4%), the opposite of a lag. **The Kalshi mid FULLY reflects spot at every
+  minute-granularity we can act on.** Any "Kalshi lags spot" effect lives only at sub-second HFT
+  timescales we cannot see (1Hz book) or profitably chase (no colocation) at $5-1000 scale.
+- **This is the 6th consecutive null** (directional ensemble, p2-hold, t08, late-favorite calibration,
+  the asymmetry-sweep holds, now spot-lag). The unpaired-leg answer is settled: PREVENTION (t02/t29
+  -- don't open toxic/longshot legs) + EXECUTION (the completion chase), NOT prediction. Stop hunting
+  a directional signal; the binary's own mid is the efficient forecast and nothing beats it OOS.
+- The ONE microstructure angle with real IS signal is t31 (counterparty/flow: maker +1.09c vs
+  contrarians IS t=19.5) -- registered, OOS pending; it conditions on WHO fills us, not price
+  prediction, so it may survive where price-signals didn't. The other live candidate is cross-venue
+  Polymarket lead-lag (data accumulating) -- the only place a real lag is documented.
