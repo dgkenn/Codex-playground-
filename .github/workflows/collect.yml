@@ -67,10 +67,23 @@ jobs:
       - name: collect ~42 min of Kalshi 15-min crypto windows (KX{BTC,ETH,SOL,XRP}15M, gzipped, tombstone-safe)
         env:
           HEARTBEAT_URL: ${{ secrets.HEARTBEAT_URL }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
           # START CLEAN: the checkout may carry legacy tracked gha_data from the code branch;
           # re-copying it onto gha-data every run is dead weight and a stale-clobber hazard.
           rm -rf gha_data && mkdir -p gha_data
+          # TELEGRAM LIGHT-SWITCH POLLER (durable home): texting on/off/status to the bot flips
+          # LIVE_SWITCH on $BRANCH (live_switch.sh commit+push). It used to run only on the VM /
+          # local supervisor -- i.e. NOWHERE durable -- which is why texting the bot did nothing.
+          # Piggybacks the always-on collect chain; getUpdates re-delivers anything sent in the
+          # short gap between chained runs. Log to /tmp, NOT gha_data: exception traces can embed
+          # the bot token in API URLs and gha_data is committed.
+          git config user.name "switch-bot"
+          git config user.email "switch-bot@users.noreply.github.com"
+          timeout --signal=TERM --kill-after=30 2700 \
+            python -u telegram_control.py > /tmp/telegram.log 2>&1 &
+          TG=$!
           # 2520s collect + graceful TERM at 2880s (kalshi_collect handles SIGTERM -> tombstones
           # for unresolved windows) + hard KILL 60s later as the backstop.
           # cross-venue Polymarket 5-min BTC up/down in PARALLEL (lead-lag dataset for the one
@@ -81,6 +94,8 @@ jobs:
           timeout --signal=TERM --kill-after=60 2880 \
             python -u kalshi_collect.py 2520 gha_data "r${{ github.run_id }}" || true
           wait $PMKT || true
+          kill "$TG" 2>/dev/null || true
+          tail -3 /tmp/telegram.log || true
       - name: per-run summary
         if: always()
         run: python aggregate_shadow.py > gha_data/SUMMARY.txt 2>/dev/null || true
