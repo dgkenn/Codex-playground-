@@ -49,3 +49,23 @@ The question: can the fingerprint/counterparty signals tell us if a leg will pai
 -> avoid quoting), which we already deploy (t32). Per-LEG, minute-of-fill is the predictor (t03/t29),
 and which specific taker crossed your leg is uninformative (it's retail). No new per-leg lever; the
 deployed window-level VPIN/flow gates are the right tools.
+
+## "Get informed flow to fill us profitably?" (2026-06-12) — the adverse-selection theorem holds
+Q: large informed takes don't fill us at front-of-queue; can we get them to fill us more, profitably?
+The mechanic: we post BUY-bids (YES+NO); we're filled when someone SELLS to us. An informed seller
+dumps the losing side -> we bought the loser. There is NO resting price filled FAVORABLY by informed
+flow (it moves AWAY from where it pays the counterparty). What actually happens: the informed MOVE
+fills our now-stale OPPOSITE-side bid at a bad price = the stranding.
+- **Tested the profitable reframe ("informed-lean": refuse to open a leg strong cumulative flow is
+  against, so the move can't strand it): LOSES at every threshold.** IS diff -0.6 to -1.0c, OOS -1.9
+  to -2.1c (t up to -1.8). Refusing legs kills PAIRING more than it saves strands -- the "lagging"
+  side is also sometimes the completing side. Same lesson as the avoidance frontier.
+- **The theorem (Glosten-Milgrom):** a passive maker CANNOT profit from informed fills without
+  compensation -- either a REBATE (Kalshi maker fee=$0, none; Polymarket HAS one -> relevant there)
+  or a WIDER SPREAD (1c tick caps this). Our compensation IS the box spread captured from UNINFORMED
+  retail flow. We don't want more informed fills; we want fewer adverse stale-fills.
+**Deployed answer:** the levers are EXECUTION, not getting-filled-by-informed: (1) reprice fast so the
+informed move does NOT fill our stale wrong-side bid (qtime experiment + stale-refresh, live), (2)
+complete the box fast (chase, live), (3) the mild validated flow-tilt t31 (open WITH flow, +0.41c/fill
+-- the deployable version of "lean with informed direction", but a tilt not a hard refusal). You can't
+be paid to be informed flow's counterparty on a $0-fee 1c-tick book; you minimize being its stale victim.
