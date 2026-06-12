@@ -232,6 +232,7 @@ def window_fills(ws, res, bid, ask, spot, depth, tape, oi_slope=None, q0=0.0):
                 else:
                     recs.append({"ws": ws, "side": "bid", "settle": res - b0, "exit": exit_bid, "sig": mv,
                                  "p": b0, "spread": spread, "k": k, "tau": tau, "flow": flow,
+                                 "tksize": float(sz),
                                  "depth": dk, "oi": oi_slope, "vpin": _vpin_at(bt, bi, t_arr[i]),
                                  "spot": float(spot[k]) if not np.isnan(spot[k]) else None,
                                  "sset": sset}); done_b = True
@@ -241,7 +242,7 @@ def window_fills(ws, res, bid, ask, spot, depth, tape, oi_slope=None, q0=0.0):
                 else:
                     recs.append({"ws": ws, "side": "ask", "settle": a0 - res, "exit": exit_ask, "sig": -mv,
                                  "p": round(1.0 - a0, 4), "spread": spread, "k": k, "tau": tau,
-                                 "flow": -flow, "depth": dk, "oi": oi_slope,
+                                 "flow": -flow, "depth": dk, "oi": oi_slope, "tksize": float(sz),
                                  "vpin": _vpin_at(bt, bi, t_arr[i]),
                                  "spot": float(spot[k]) if not np.isnan(spot[k]) else None,
                                  "sset": sset}); done_a = True
@@ -544,6 +545,18 @@ TRIALS = {
     #      (tox_p logistic, flow-based) and t06 (flow magnitude).
     "t32_vpin_open_gate":  lambda F: run_policy(F, open_ok=lambda f, s:
                                    f.get("vpin") is None or f["vpin"] <= 0.40),
+    # ---- counterparty-avoidance deep dive (2026-06-12, 20k-fill markout-targeted): the optimal
+    #      gate is t31 (face-contrarian, VALIDATED OOS +0.233c/fill contrarian vs -0.182c momentum =
+    #      +0.41c spread, the best of any gate). The new take-size feature does NOT improve the fitted
+    #      model (dAUC~0) but a TAIL-TRIM of the >100-contract (informed) takes is a clean monotone
+    #      add-on (+0.05-0.10c/fill, keeps ~92% volume). tksize = the crossing take's size (contracts).
+    #      The fitted combined LOGIT gate was overfit (settle-noise) -- NOT registered.
+    "t33_take_tail_trim":  lambda F: run_policy(F, open_ok=lambda f, s:
+                                   f.get("tksize") is None or f["tksize"] <= 100),
+    # t34 = the optimal combined policy the dive found: face-contrarian + take-tail-trim
+    "t34_avoid_combined":  lambda F: run_policy(F, open_ok=lambda f, s:
+                                   (f["flow"] is None or f["flow"] >= 0)
+                                   and (f.get("tksize") is None or f["tksize"] <= 100)),
 }
 
 
