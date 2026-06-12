@@ -113,3 +113,18 @@ pairing efficiency, inventory). Together: the A/B says *which idea is better*; t
 the orphan-exclusion they encode.** The completion score is the live, forward-validated predictor of
 pairing; if it holds up to n≥300 it both raises net and — more importantly for risk — collapses
 drawdown by never opening the legs that strand. That's the most promising family in the batch.
+
+### Sizing trials (rounds 2-3, 2026-06-12 — tape-backtested first, only survivors registered)
+8 sizing families were tape-backtested at Stage-A parameters; flat won; rejected permanently:
+vol-inverse, qkelly×tox combo (lose mean + add tail OOS). Registered forward trials:
+- **t22_size_sweetspot / t23_quarter_kelly / t24_tox_sized** — registered before the sweep; the
+  sweep ranked them all BELOW flat OOS (−0.25/−0.30/−0.59 c/win). Kept running for forward
+  confirmation of the rejection; expect them to lose.
+- **t25_hour_sized** — 1.5× in deep hours (13-15,18-20 UTC), 0.5× thin (11,21). The sweep's only
+  positive delta (+0.16c/win OOS, +14% variance). Forward data decides if it's real.
+- **t26_gamma_sized** — late-window size taper via the matched-pair walker. NOT a return play:
+  −36% maxDD / −39% std for −0.34c mean. Deploy candidate iff drawdown control is wanted at scale.
+- **t27_two_rung_split (PENDING, Stage-B only)** — at post≥8 in deep hours, split into 4@touch +
+  4@touch−1¢ (Guéant two-rung condition; Moallemi-Yuan queue value). Cannot be honestly scored by
+  the current touch-fill replay — needs live A/B arms at Stage-B. Pre-registered here so the
+  design is frozen before the data exists.

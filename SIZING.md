@@ -44,6 +44,25 @@ negative (91.7% daily-breach) — the entire strategy lives or dies on being fro
 sizing overlay moves the needle by more than ~0.2c/win. Sizing optimization is third-order;
 execution priority is first-order. (Sweep script + tables in the research record.)
 
+
+## ROUND 3 — maker-sizing literature dive (2026-06-12; full citations in research record)
+The MM theory (Avellaneda-Stoikov, Guéant-Lehalle-Fernandez-Tapia, Bergault-Guéant) does NOT
+prescribe lot-size modulation at all: canonical optimal market making holds size fixed and manages
+risk via SPREAD ASYMMETRY + HARD INVENTORY CAPS — both of which we already run (strict-pairing
+clamp, max-fills-side). Size-as-signal is a practitioner extension the tape keeps rejecting.
+- **Drawdown-constrained sizing (Grossman-Zhou / Busseti-Ryu-Boyd):** the usable output is a CAP,
+  not a signal: N_max = floor(L / (1.645·σ_w·√N_w)) ≈ floor(L/$1.72). At the $12 Stage-A limit:
+  post ≤ 6 (non-binding at 2). At post=16 the loss-limit must be ≥ $28 — SCALE_GATE updated.
+- **Queue beats size (Moallemi-Yuan):** priority is worth ~the full spread on large-tick books —
+  the theory twin of our empirical q0=500 collapse. Same-price order SPLITTING is valueless under
+  FIFO; a SECOND RUNG (touch−1¢) has value only when P(fill at touch) > ~0.85 (deep hours, big
+  post). Registered as pending trial t27 (Stage-B, post≥8 only; not honestly simulable in the
+  current replay — needs live A/B arms).
+- **Bayesian scale-up:** fractional Kelly ≡ full Kelly on a shrunken edge estimate; for any NEW
+  series use multiplier t/(t+100) over its first 100 fills (the thin-market sleeves inherit this).
+- **Bottom line unchanged and now triple-confirmed (tape ×2 + theory): flat base size at every
+  stage, walk the ladder via SCALE_GATE, spend engineering effort on queue priority, not sizing.**
+
 ## Deployed decision
 - **Sizing stays FLAT (1 contract).** Do not wire conditional size-up to live: marginal mean, worse
   tail, prior-ruin lesson, thin-edge collapse all agree.

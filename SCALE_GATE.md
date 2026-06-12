@@ -70,7 +70,11 @@ baseline AND time-to-fill p90 <2× baseline (queue impact check). Then relax los
    on KXBTC15M (depth runs ~$100-900; 4-8 contracts ≈ $2-4 — fine, but VERIFY, don't assume).
 5. No kill trips in the trailing 14 days.
 **TRANSITION — this is where the strategy itself must change, not just the knobs:**
-- post 2→4; max-net 2→4 (= post); max-notional $20→$100 (10% of bankroll); loss-limit $12→$25.
+- post 2→4; max-net 2→4 (= post); max-notional $20→$100 (10% of bankroll); loss-limit $12→$28.
+  (Loss-limit derived, not arbitrary — the drawdown-cap formula from the sizing literature dive:
+  keep P(daily loss > L) < 5% ⟹ L ≥ 1.645·σ_w·√N_w·post ≈ $1.72·post. post=16 ⟹ L ≥ $27.6.
+  Equivalently N_max = floor(L/1.72): the $12 Stage-A limit supports post ≤ 6 — re-derive whenever
+  σ_w (≈17¢/lot) shifts.)
 - **MEASURED CAPACITY (empirical study 2026-06-12, 20k book ticks + 2,779 windows): KXBTC15M
   supports up to N=16 contracts/window (~$16 collateral/window, ~$608/day turnover) before the
   gates fail.** Depth is NOT the binding constraint (median touch: 764 YES / 673 NO contracts;
