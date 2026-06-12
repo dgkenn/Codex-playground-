@@ -69,6 +69,10 @@ jobs:
           HEARTBEAT_URL: ${{ secrets.HEARTBEAT_URL }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          # FAST ON/OFF: the poller dispatches a live run on "on" and cancels it on "off" via the
+          # Actions API -> on/off act in ~1 min instead of waiting for the live cron. Needs the token
+          # (job already has actions:write for the self-chain).
+          GH_TOKEN: ${{ github.token }}
         run: |
           # START CLEAN: the checkout may carry legacy tracked gha_data from the code branch;
           # re-copying it onto gha-data every run is dead weight and a stale-clobber hazard.
