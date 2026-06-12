@@ -123,3 +123,16 @@ with settlement — top-quartile spot move => 98% YES). The flow-incremental ske
 (+0.3c) and vanishes (OOS t=0.11) in the uncertain-price regime where it'd matter. NET: confirms the
 efficient-market verdict; the only edges are maker positioning (t29/t31) + the untested cross-venue
 Polymarket lag (data accumulating).
+
+## Unpaired-leg directional test (2026-06-12) — flow > spot, but still loses to always-cut
+The focused unpaired-leg signal test (5 signals x k{5,7,9,11}, IS/OOS, bootstrap, economic hold/cut):
+- **spot_lag dAUC = 0.0000 at every k** — independently confirms my spot-lag null. Spot is inert.
+- FLOW signals (cumulative imbalance, vol-regime interaction) DO add marginal early-window OOS lift
+  (dAUC +0.03-0.04 at k=5,7, fading to ~0 by k=11; combined p=0.038 AVG, not multiple-test-adjusted,
+  carried by early k). This is the t31 flow family — the one angle with any signal, consistent.
+- **THE ECONOMIC TELL: always-CUT an unpaired leg = $0; always-HOLD = -7.6c/leg; the signal filter
+  = -3.6c.** The signal HALVES the hold-loss but still LOSES to simply cutting. So even the best
+  flow signal does not beat the trivial "cut the unpaired leg" benchmark.
+**Unpaired-leg answer, now triple-confirmed: PREVENT (t29 don't open toxic legs) + CUT (t11/t17 sell
+the cheap toxic strands) beats any PREDICT-and-hold. Flow-conditioning (t31) is marginally real early
+but not enough to hold losers profitably. Directional prediction is closed.**
