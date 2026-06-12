@@ -34,6 +34,10 @@ import time
 
 import numpy as np
 
+# Informed-flow detector features (causal, pre-k-minute trades). Import only the
+# computation function; the heavy build/main logic is NOT imported to keep startup fast.
+from informed_detectors import detectors as _det_fn
+
 # Pre-registered decision rule (frozen in P2_PROSPECTIVE.md; do not tune to the data):
 MIN_WINDOWS = 300       # need at least this many forward windows before a DEPLOY decision
 T_BAR = 3.0             # DEPLOY bar: paired diff (trial-P0) t-stat must exceed this (positive)
@@ -193,7 +197,8 @@ def window_fills(ws, res, bid, ask, spot, depth, tape, oi_slope=None, q0=0.0):
       side('bid'=YES|'ask'=NO), settle($/contract to settlement), sig(spot bps, +=adverse to side),
       p(YES-equiv price), spread, k(minute 2..12), tau(frac left), flow(prior-min taker imbalance),
       depth(min top-5 displayed size), oi(window OI slope), vpin(flow toxicity at fill),
-      spot(BTC at fill), sset(BTC at settlement -- for the perp-hedge trial)."""
+      spot(BTC at fill), sset(BTC at settlement -- for the perp-hedge trial),
+      det_*(causal informed-flow detector features for t35_combo_tox_gate)."""
     spot_l = np.concatenate([[np.nan], spot[:-1]])
     t_arr, p_arr, sz_arr, buy_arr = tape
     sset = float(spot[~np.isnan(spot)][-1]) if np.any(~np.isnan(spot)) else np.nan
@@ -219,6 +224,18 @@ def window_fills(ws, res, bid, ask, spot, depth, tape, oi_slope=None, q0=0.0):
         pl, ph = ws + 60 * (k - 1), ws + 60 * k          # prior-minute taker flow imbalance
         j0, j1 = np.searchsorted(t_arr, pl), np.searchsorted(t_arr, ph)
         flow = float(np.sum(np.where(buy_arr[j0:j1], sz_arr[j0:j1], -sz_arr[j0:j1])))
+        # --- Causal informed-flow detector features (t < decision minute k) for t35 gate ---
+        # Mask to trades strictly before end of minute k (same causal horizon as VPIN at fill).
+        _dm = t_arr < (ws + 60 * k)
+        _dv = _det_fn(ws, t_arr[_dm], p_arr[_dm], sz_arr[_dm], buy_arr[_dm])
+        _det_extra = {
+            "det_take_n":     _dv["take_n"],
+            "det_d1_maxrun":  _dv["d1_maxrun"],
+            "det_d2_lambda":  _dv["d2_lambda"] if not np.isnan(_dv["d2_lambda"]) else None,
+            "det_d1_nruns":   _dv["d1_nruns"]  if not np.isnan(_dv["d1_nruns"])  else None,
+            "det_d4_roundfrac": _dv["d4_roundfrac"] if not np.isnan(_dv["d4_roundfrac"]) else None,
+            "det_d5_sweep":   _dv["d5_sweep"]  if not np.isnan(_dv["d5_sweep"])  else None,
+        }
         lo, hi = ws + 60 * (k + 1), ws + 60 * (k + 2)
         i0, i1 = np.searchsorted(t_arr, lo), np.searchsorted(t_arr, hi)
         qb = qa = q0; done_b = done_a = False
@@ -235,7 +252,7 @@ def window_fills(ws, res, bid, ask, spot, depth, tape, oi_slope=None, q0=0.0):
                                  "tksize": float(sz),
                                  "depth": dk, "oi": oi_slope, "vpin": _vpin_at(bt, bi, t_arr[i]),
                                  "spot": float(spot[k]) if not np.isnan(spot[k]) else None,
-                                 "sset": sset}); done_b = True
+                                 "sset": sset, **_det_extra}); done_b = True
             if not done_a and buy and p >= a0 - 1e-9:
                 if qa >= sz:
                     qa -= sz
@@ -245,7 +262,7 @@ def window_fills(ws, res, bid, ask, spot, depth, tape, oi_slope=None, q0=0.0):
                                  "flow": -flow, "depth": dk, "oi": oi_slope, "tksize": float(sz),
                                  "vpin": _vpin_at(bt, bi, t_arr[i]),
                                  "spot": float(spot[k]) if not np.isnan(spot[k]) else None,
-                                 "sset": sset}); done_a = True
+                                 "sset": sset, **_det_extra}); done_a = True
     return recs
 
 
@@ -304,6 +321,26 @@ _TOX_W = {"side_bin": 0.171259, "p": -0.011119, "abs_p05": 0.337983, "tau": -0.0
           "sig_x_side": -0.000210, "spread": 3.290252}
 
 
+# ---------------------------------------------------------------------------
+# Frozen combined-detector open gate (t35_combo_tox_gate). Fit on ALL 3383
+# historical windows (4 assets, informed_detectors.py --freeze equivalent).
+# Features: vpin, take_n, d1_maxrun, d2_lambda, d1_nruns, d4_roundfrac, d5_sweep.
+# THRESH chosen to match t32's OOS keep fraction (~44.7%). OOS AUC 0.700 vs
+# VPIN-alone 0.619; stranded rate 0.214 vs VPIN-only 0.268 at equal volume kept.
+_COMBO_INTERCEPT = -1.097821
+_COMBO_FEATS = ["vpin", "take_n", "d1_maxrun", "d2_lambda", "d1_nruns", "d4_roundfrac", "d5_sweep"]
+_COMBO_MEANS = {"vpin": 0.420709, "take_n": 1195.595024, "d1_maxrun": 25.951139,
+                "d2_lambda": 0.083574, "d1_nruns": 0.289674, "d4_roundfrac": 0.158329,
+                "d5_sweep": 7.621103}
+_COMBO_STDS =  {"vpin": 0.188093, "take_n": 1572.059825, "d1_maxrun": 18.508967,
+                "d2_lambda": 0.181745, "d1_nruns": 0.064831, "d4_roundfrac": 0.089765,
+                "d5_sweep": 4.795740}
+_COMBO_COEFS = {"vpin": 0.139545, "take_n": -0.926797, "d1_maxrun": -0.052450,
+                "d2_lambda": 0.177854, "d1_nruns": 0.046305, "d4_roundfrac": -0.006626,
+                "d5_sweep": -0.024818}
+_COMBO_THRESH = 0.3656   # 44.7% volume kept (= t32's keep fraction on OOS)
+
+
 def tox_p(f):
     """P(this fill settles at a loss) from decision-time features. window_fills stores the leg's
     OWN price ('p'=1-a0 for asks) and flow in contracts (=1000x the fit's flow_adv) -- convert."""
@@ -316,6 +353,26 @@ def tox_p(f):
          + _TOX_W["sig_adv"] * sig + _TOX_W["flow_adv"] * flow_adv
          + _TOX_W["flow_x_tau"] * flow_adv * f["tau"] + _TOX_W["sig_x_side"] * sig * side_bin
          + _TOX_W["spread"] * f["spread"])
+    return 1.0 / (1.0 + np.exp(-z))
+
+
+def combo_tox_p(f):
+    """P(this fill leads to a stranded leg) from the VPIN+detectors combined logistic.
+    Returns None if any required feature is missing (gate no-ops on None, matching t32 behavior).
+    Features must be pre-computed by window_fills into the fill dict (det_* keys + vpin)."""
+    vals = {}
+    vals["vpin"] = f.get("vpin")
+    vals["take_n"] = f.get("det_take_n")
+    vals["d1_maxrun"] = f.get("det_d1_maxrun")
+    vals["d2_lambda"] = f.get("det_d2_lambda")
+    vals["d1_nruns"] = f.get("det_d1_nruns")
+    vals["d4_roundfrac"] = f.get("det_d4_roundfrac")
+    vals["d5_sweep"] = f.get("det_d5_sweep")
+    if any(v is None or (isinstance(v, float) and np.isnan(v)) for v in vals.values()):
+        return None
+    z = _COMBO_INTERCEPT
+    for feat in _COMBO_FEATS:
+        z += _COMBO_COEFS[feat] * (vals[feat] - _COMBO_MEANS[feat]) / _COMBO_STDS[feat]
     return 1.0 / (1.0 + np.exp(-z))
 
 
@@ -557,6 +614,14 @@ TRIALS = {
     "t34_avoid_combined":  lambda F: run_policy(F, open_ok=lambda f, s:
                                    (f["flow"] is None or f["flow"] >= 0)
                                    and (f.get("tksize") is None or f["tksize"] <= 100)),
+    # ---- combined informed-flow detector gate (2026-06-12, informed_detectors.py finding):
+    #      VPIN+detectors logistic OOS AUC 0.700 vs VPIN-alone 0.619; strand rate 0.214 vs 0.268 at
+    #      equal ~44.7% volume kept (matching t32's keep fraction for apples-to-apples comparison).
+    #      Frozen logistic fit on ALL 3383 historical windows (4 assets); features: vpin, take_n,
+    #      d1_maxrun, d2_lambda, d1_nruns, d4_roundfrac, d5_sweep. THRESH=0.3656 keeps same volume
+    #      as t32. Gate no-ops (None) when causal trade count is too low to compute detectors.
+    "t35_combo_tox_gate":  lambda F: run_policy(F, open_ok=lambda f, s:
+                                   combo_tox_p(f) is None or combo_tox_p(f) <= _COMBO_THRESH),
 }
 
 

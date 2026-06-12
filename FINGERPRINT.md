@@ -124,11 +124,18 @@ ADDS predictive power over the VPIN incumbent for the toxic-window label (settle
   +0.052 → 0.671; `d1_nruns` +0.036 (few runs = persistent); `d4_roundfrac` +0.032 (algo size
   footprint); `d5_sweep` +0.018 (urgency sweeps). `d3_burst_cv`, `d4_topsize_rep` add ~0.
 - **BEST COMBINED: VPIN + all detectors OOS AUC = 0.700 (gain +0.081 over VPIN-alone).** At equal
-  ~50% volume kept, the combined score cuts the stranded-leg rate to **0.214 vs VPIN-alone 0.268** —
-  a materially better OPEN gate than the VPIN-only t32. → wired as **t35_combo_tox_gate** (frozen
-  logistic, coefficients distilled from this fit, NOT tuned forward). Same role as t32 (don't open
-  toxic legs) with a strictly better classifier. Aggressor-run persistence (d1) and raw take count
-  are the new signal beyond equal-volume VPIN.
+  keep fraction the combined score cuts the stranded-leg rate to **0.179 vs VPIN-alone 0.254**
+  (frozen-fit OOS, freeze_combo_tox.py over 3,383 windows) — a materially better OPEN gate than the
+  VPIN-only t32. → wired as **t35_combo_tox_gate** (frozen logistic, coefficients distilled from this
+  fit, NOT tuned forward; THRESH=0.366 matches t32's keep fraction).
+- **What actually drives the lift (honest joint-fit reading):** in the 7-feature logistic the
+  DOMINANT term is `take_n` with a NEGATIVE coefficient (−0.93 std) — i.e. LOW window trade-volume
+  (thin/illiquid windows) is what strands legs; VPIN (+0.14) and Kyle's λ `d2_lambda` (+0.18) are
+  secondary positive toxicity signals. The univariate AUC adds from the persistence detectors
+  (`d1_maxrun`/`d1_nruns`) are largely COLLINEAR with take_n and shrink to ~0 in the joint fit, so
+  do NOT read the gate as an "aggressor-persistence" detector — it is mostly a thin-window/volume
+  gate with a VPIN+λ tilt. Mechanism check: a thin window with one informed take strands the far leg;
+  a high-volume window pairs. This is consistent with the older thin-book completion work (t04).
 
 ## Toxicity PERSISTENCE (2026-06-12, box_tox_persist.py) — regime is real but weakly tradable
 - VPIN is **autocorrelated**: lag-1 r=+0.341 (t=15.4), persists to lag-5 → toxicity comes in regimes,
