@@ -92,3 +92,25 @@ TAKER fee = ~1c, and we'd be late + we're a maker (can't take).
 picks off is exactly the loss the toxicity/VPIN gate (t32) and the size-toxicity finding defend against.
 Caveat: even "it's informed" is marginal (clean-subset t=1.9). Net: a real informed taker, uncopyable,
 already defended against. Don't chase it; the edge stays counterparty-avoidance, not imitation.
+
+## Cross-asset + presence dive: the complete participant census (2026-06-12)
+~3 real systematic participants per market; the genuinely-NEW findings (all on ~34 windows -- BELOW
+the 300-window bar, so MEASURE forward, do not deploy):
+1. **Each asset has its OWN distinct MM** -- BTC 265/250, ETH 20/21, SOL 30/31, XRP 10/11. The 265/250
+   ladder is BTC-EXCLUSIVE (the same entity does NOT quote the alts). So no multi-market actor to
+   exploit. BUT cross-asset depth-DROPS are correlated (0.45-0.63, co-drop 2-2.3x vs independence) =
+   a shared RISK-OFF trigger (spot vol). Candidate regime gate: simultaneous >30% depth collapse
+   across BTC+ETH+SOL = toxic, pause quoting (live-computable, not yet wired).
+2. **HOUR 22 UTC: the BTC ladder-MM is systematically ABSENT** (median ladder depth = 0 that hour;
+   15-18k all other hours), while takers stay active. The headline new finding -- a thin-competition
+   window. Sign UNKNOWN: thin = easier queue (less competition) OR more adverse (no MM to absorb
+   toxicity). Conflicts with our competition test (MM-dominated windows paired 96%). MUST measure our
+   live markout/pairing in hour 22 vs others before acting -- can't sign a gate yet.
+3. **Settlement-minute takers (SOL/XRP)**: 25% of trades in last 120s (vs 13% uniform), +40-56% size
+   -- but it's the known size-toxicity population concentrated at expiry, not a new actor. Moot for
+   us (we trade BTC, where it's BELOW baseline at 11%).
+NOISE (not distinct actors): cadence slow-quoters (1.6%, too sparse), block quotes (structural far-OTM
+ladder rungs of the same MM), ladder geometry (density-weighted but reactive not predictive).
+**Net: the book is ONE dominant mechanical MM + retail + the occasional informed taker (size-19
+class). No new copyable/exploitable participant. The two forward-MEASURE candidates are hour-22 and
+the cross-asset risk-off gate; everything else is the toxicity thesis we already gate on (t32).**
