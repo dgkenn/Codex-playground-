@@ -1034,7 +1034,13 @@ def main():
                              f"box economics before continuing to scale.")
         except Exception:
             pass
-        lm.fill(fside, fp, count, resting_s, None, mkr, fee_val, 0.0)
+        lm.fill(fside, fp, count, resting_s, None, mkr, fee_val, 0.0,
+                # per-fill experiment/book context (telemetry upgrade 2026-06-12): makes live
+                # A/B reads direct instead of proxy-based — guard state for t36 arming, qtime
+                # margin in effect, decision-time spread/mid/microprice from loop_ctx.
+                spread=loop_ctx.get("spread"), mid=loop_ctx.get("mid"),
+                micro=loop_ctx.get("micro"),
+                guard=(a.guard_yes_spread or None), qtm=(a.qtime_mp_margin or None))
         if a.notify_fills:        # real-time fill -> Telegram, framed as box economics not raw price
             py = sum(v for k_, v in pos.items() if k_.endswith(":YES"))
             pn = sum(v for k_, v in pos.items() if k_.endswith(":NO"))

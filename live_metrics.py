@@ -72,12 +72,16 @@ class LiveMetrics:
         self.bump("cancels", n)
         self.event("cancel_batch", n=n, lat_ms=round(lat_ms, 1), ok=bool(ok))
 
-    def fill(self, side, price, size, resting_s, q_ahead, trader_side, fee_bps, rebate_pred):
+    def fill(self, side, price, size, resting_s, q_ahead, trader_side, fee_bps, rebate_pred,
+             **ctx):
+        """ctx: decision-time/experiment context (spread, mid, micro, guard, qtm, ...) so live
+        experiments are attributable per-fill instead of via proxies (QUEUE_VALUE.md lesson)."""
         self.bump("fills")
         self.event("fill", side=side, price=price, size=size,
                    resting_s=round(resting_s, 2) if resting_s is not None else None,
                    q_ahead=q_ahead, trader_side=trader_side, fee_bps=fee_bps,
-                   rebate_pred=round(rebate_pred, 6))
+                   rebate_pred=round(rebate_pred, 6),
+                   **{k: v for k, v in ctx.items() if v is not None})
 
     def reflex(self, token, dmicro_2s, dspread_2s):
         """A2: how the book moved ~2s after OUR placement (observer effect)."""
