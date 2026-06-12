@@ -1,15 +1,12 @@
 """
-Trader/Bot Fingerprinting Proxies — KXBTC15M book snapshots + fills
-Loads first 2000 snapshots total; uses fills files (same ws range).
-Prints ONLY compact summary tables.
+Bot/trader fingerprinting on KXBTC15M.
+Book-side proxies from Jun 11 snapshots (2000 snaps, 4 windows).
+Trade-tape IS/OOS tests on full 2779-window parquet (May-Jun 10).
 """
 import gzip, json, glob, os
 import numpy as np
 import pandas as pd
 from collections import defaultdict, Counter
-
-BASE = "/home/user/Codex-playground-"
-OVER = os.path.join(BASE, "overnight_data")
 
 def iter_gz(fp):
     try:
@@ -25,300 +22,292 @@ def iter_gz(fp):
 def book_to_dict(levels):
     return {round(float(p), 3): float(s) for p, s in levels} if levels else {}
 
-# LOAD 2000 snapshots TOTAL
-book_files = sorted(glob.glob(os.path.join(OVER, "book_kalshi_btc15m_*.jsonl.gz")))
-print(f"Book files found: {len(book_files)}")
+# ══ 1. LOAD BOOK SNAPSHOTS (2000 total) ═════════════════════════════════════
+ROOTS = [
+    "/home/user/Codex-playground-/overnight_data",
+    "/home/user/Codex-playground-",
+]
+book_files = []
+for root in ROOTS:
+    book_files += sorted(glob.glob(os.path.join(root, "book_kalshi_btc15m_*.jsonl.gz")))
+book_files = sorted(set(book_files))
+print(f"Book files: {len(book_files)}")
+
 SNAP_LIMIT = 2000
 all_snaps = []
 for fp in book_files:
-    cnt = 0
+    if len(all_snaps) >= SNAP_LIMIT:
+        break
+    count = 0
     for rec in iter_gz(fp):
         if rec.get("type") != "book":
             continue
-        all_snaps.append({"ws": int(rec.get("ws", 0)), "t": rec["t"],
-                           "yes": book_to_dict(rec.get("yes", [])),
-                           "no":  book_to_dict(rec.get("no", [])),
-                           "spot": rec.get("spot")})
-        cnt += 1
+        all_snaps.append({
+            "ws": rec.get("ws"), "t": rec.get("t", 0),
+            "yes": book_to_dict(rec.get("yes", [])),
+            "no":  book_to_dict(rec.get("no",  [])),
+            "spot": rec.get("spot"),
+        })
+        count += 1
         if len(all_snaps) >= SNAP_LIMIT:
             break
-    print(f"  {os.path.basename(fp)}: {cnt}  (total: {len(all_snaps)})")
-    if len(all_snaps) >= SNAP_LIMIT:
-        break
 
+print(f"Snapshots: {len(all_snaps)}")
 all_snaps.sort(key=lambda x: (x["ws"], x["t"]))
 ws_snaps = defaultdict(list)
 for s in all_snaps:
     ws_snaps[s["ws"]].append(s)
-windows = sorted(ws_snaps)
-print(f"\nSnapshots: {len(all_snaps)}  distinct windows: {len(windows)}")
+windows_book = sorted(ws_snaps.keys())
+print(f"Distinct windows in book data: {len(windows_book)}")
 
-# LOAD FILLS (own fills, same ws range as book snaps)
-fills_files = sorted(glob.glob(os.path.join(OVER, "fills_kalshi_btc15m_*.jsonl.gz")))
-fills_by_ws = defaultdict(list)
-n_fills = 0
-snap_ws_set = set(windows)
-for fp in fills_files:
-    for rec in iter_gz(fp):
-        ws_val = rec.get("ws")
-        if ws_val is None or int(ws_val) not in snap_ws_set:
-            continue
-        if rec.get("reason") not in ("fill", "fill_partial"):
-            continue
-        fills_by_ws[int(ws_val)].append({
-            "t": rec["t"], "p": round(float(rec["p"]), 3),
-            "sz": float(rec.get("sz", 0)),
-            "side": rec["side"], "res_up": rec.get("res_up"),
-        })
-        n_fills += 1
-print(f"Fills loaded: {n_fills}  windows with fills: {len(fills_by_ws)}")
-ws_res_up = {}
-for ws, recs in fills_by_ws.items():
-    rup = [r["res_up"] for r in recs if r["res_up"] is not None]
-    if rup:
-        ws_res_up[ws] = rup[0]
+# ══ 2. LOAD TRADE PARQUET ═══════════════════════════════════════════════════
+tdf = pd.read_parquet("/home/user/Codex-playground-/trades_kalshi_btc15m.parquet")
+print(f"Trade parquet: {len(tdf)} windows")
 
-# PROXY 1&2: Cancel + Add Intensity
-print("\n=== PROXY 1&2: Cancel/Add Intensity (per ~1.2s interval) ===")
-cancel_rows = []
-for ws in windows:
-    snaps = ws_snaps[ws]
-    yes_exec = defaultdict(float)
-    no_exec  = defaultdict(float)
-    for f in fills_by_ws.get(ws, []):
-        if f["side"] == "BID":
-            yes_exec[f["p"]] += f["sz"]
-        else:
-            no_exec[f["p"]] += f["sz"]
-    for i in range(1, len(snaps)):
-        prev, cur = snaps[i-1], snaps[i]
+# Unpack into flat per-window summaries (avoid full explode for speed)
+ws_trade_summary = {}
+for _, row in tdf.iterrows():
+    ws_key = int(row["ws"])
+    try:
+        sz   = np.asarray(row["sz"]).flatten().astype(float)
+        buy  = np.asarray(row["buy"]).flatten().astype(bool)
+    except Exception:
+        continue
+    yes_vol = sz[buy].sum()
+    no_vol  = sz[~buy].sum()
+    total   = yes_vol + no_vol
+    ws_trade_summary[ws_key] = {
+        "yes_vol": yes_vol, "no_vol": no_vol, "total": total,
+        "imbalance": abs(yes_vol - no_vol) / (total + 0.001),
+        "pair_rate": min(yes_vol, no_vol) / (total/2 + 0.001),
+        "n_trades": len(sz),
+    }
+
+print(f"Trade summaries built: {len(ws_trade_summary)}")
+
+# ══ PROXY 1&2: Cancel/Add Intensity from book diffs ═════════════════════════
+cancel_data = []
+for ws, snaps_w in ws_snaps.items():
+    for i in range(1, len(snaps_w)):
+        prev, cur = snaps_w[i-1], snaps_w[i]
         dt = cur["t"] - prev["t"]
         if dt <= 0 or dt > 10:
             continue
-        for side, exec_map in [("yes", yes_exec), ("no", no_exec)]:
-            p0, p1 = prev[side], cur[side]
-            all_px = set(p0) | set(p1)
-            tot_c = tot_a = tot_e = 0.0
-            for px in all_px:
-                s0, s1 = p0.get(px, 0.0), p1.get(px, 0.0)
-                tv = exec_map.get(px, 0.0)
-                d  = s1 - s0
-                if d < 0:
-                    tot_c += max(0.0, -d - tv)
-                else:
-                    tot_a += d
-                tot_e += tv
-            cancel_rows.append({"ws": ws, "side": side, "dt": dt,
-                                 "cancel": tot_c, "add": tot_a, "exec": tot_e})
-cdf = pd.DataFrame(cancel_rows)
-if len(cdf):
-    sm = cdf.groupby("side").agg(n=("cancel","count"),
-                                  cancel_mean=("cancel","mean"),
-                                  add_mean=("add","mean"),
-                                  exec_mean=("exec","mean"))
-    sm["cancel/exec"] = sm["cancel_mean"] / (sm["exec_mean"] + 0.001)
-    sm["add/exec"]    = sm["add_mean"]    / (sm["exec_mean"] + 0.001)
-    print(sm.round(1).to_string())
+        for side in ("yes", "no"):
+            p0 = prev[side]; p1 = cur[side]
+            all_prices = set(p0.keys()) | set(p1.keys())
+            cancel = add = 0
+            for px in all_prices:
+                d = p1.get(px,0) - p0.get(px,0)
+                if d < 0: cancel += -d
+                else:     add    +=  d
+            cancel_data.append({
+                "ws": ws, "side": side,
+                "cancel_sz": cancel, "add_sz": add, "dt": dt,
+            })
 
-# PROXY 3: Ladder-MM Fingerprint
+cdf = pd.DataFrame(cancel_data)
+print("\n=== PROXY 1&2: Cancel/Add Intensity (book-diff, no trade join) ===")
+sm = cdf.groupby("side").agg(
+    intervals=("cancel_sz","count"),
+    cancel_mean=("cancel_sz","mean"),
+    cancel_p95=("cancel_sz", lambda x: x.quantile(0.95)),
+    add_mean=("add_sz","mean"),
+    add_p95=("add_sz", lambda x: x.quantile(0.95)),
+)
+print(sm.round(1).to_string())
+total_cancel = cdf["cancel_sz"].sum()
+total_add    = cdf["add_sz"].sum()
+print(f"Overall cancel/add ratio: {total_cancel/(total_add+1):.3f}")
+
+# ══ PROXY 3: Ladder-MM Fingerprint ══════════════════════════════════════════
 print("\n=== PROXY 3: Ladder-MM Fingerprint ===")
-lad_rows = []
-for ws in windows:
+ladder_events = []
+for ws, snaps_w in ws_snaps.items():
     prev_md = {"yes": None, "no": None}
-    for snap in ws_snaps[ws]:
-        for side in ("yes","no"):
-            lvls = snap[side]
-            if len(lvls) < 5:
+    for snap in snaps_w:
+        for side in ("yes", "no"):
+            levels = snap[side]
+            if len(levels) < 5:
                 continue
-            isizes = [int(round(v)) for v in lvls.values() if v > 0]
-            if not isizes:
-                continue
+            isizes = [int(round(s)) for s in levels.values()]
             cnt = Counter(isizes)
-            modal_sz, modal_cnt = cnt.most_common(1)[0]
-            modal_depth = modal_sz * modal_cnt
+            modal_sz, modal_count = cnt.most_common(1)[0]
+            modal_depth = modal_sz * modal_count
             total_depth = sum(isizes)
             modal_frac  = modal_depth / (total_depth + 1)
-            pm = prev_md[side]
-            pull = (pm is not None and pm > 0 and (pm - modal_depth) / pm > 0.20)
-            lad_rows.append({"ws": ws, "t": snap["t"], "side": side,
-                              "modal_sz": modal_sz, "modal_cnt": modal_cnt,
-                              "modal_depth": modal_depth, "total_depth": total_depth,
-                              "modal_frac": modal_frac, "pull": pull})
+            pull = False
+            if prev_md[side] is not None and prev_md[side] > 0:
+                pull = (prev_md[side] - modal_depth) / prev_md[side] > 0.20
+            ladder_events.append({
+                "ws": ws, "t": snap["t"], "side": side,
+                "modal_sz": modal_sz, "modal_count": modal_count,
+                "modal_depth": modal_depth, "total_depth": total_depth,
+                "modal_frac": modal_frac, "pull": pull,
+            })
             prev_md[side] = modal_depth
-ldf = pd.DataFrame(lad_rows)
-if len(ldf):
-    sm3 = ldf.groupby("side").agg(
-        n_snaps=("modal_sz","count"),
-        modal_sz_mode=("modal_sz", lambda x: int(x.mode()[0])),
-        modal_sz_med=("modal_sz","median"),
-        modal_cnt_mean=("modal_cnt","mean"),
-        modal_frac_mean=("modal_frac","mean"),
-        pull_rate=("pull","mean"),
-    )
-    print(sm3.round(3).to_string())
-    for side in ("yes","no"):
-        sub = ldf[ldf["side"]==side]["modal_sz"]
-        top5 = sub.value_counts().head(5)
-        t = len(sub)
-        print(f"\n  Top-5 modal sizes ({side}):")
-        for sz, c in top5.items():
-            print(f"    {sz:6d} cts  n={c:5d}  {100*c/t:.1f}%")
 
-# PROXY 4: Quote Cadence
+ldf = pd.DataFrame(ladder_events)
+sm3 = ldf.groupby("side").agg(
+    snaps=("modal_sz","count"),
+    modal_mode=("modal_sz", lambda x: x.mode()[0]),
+    modal_med=("modal_sz","median"),
+    modal_count_mean=("modal_count","mean"),
+    modal_frac_mean=("modal_frac","mean"),
+    pull_rate=("pull","mean"),
+)
+print(sm3.round(3).to_string())
+
+for side in ("yes","no"):
+    sub = ldf[ldf["side"]==side]["modal_sz"]
+    top5 = sub.value_counts().head(5)
+    total = len(sub)
+    print(f"\n  Top-5 modal sizes ({side}):")
+    for sz, c in top5.items():
+        print(f"    size={int(sz):6d}  n={c:5d}  ({100*c/total:.1f}%)")
+
+# ══ PROXY 4: Quote Cadence ══════════════════════════════════════════════════
 print("\n=== PROXY 4: Quote Cadence (per-level refresh interval) ===")
-cad = []
-for ws in windows:
-    snaps = ws_snaps[ws]
+cadence_data = []
+for ws, snaps_w in ws_snaps.items():
     last_change = {}
-    for i in range(1, len(snaps)):
-        prev, cur = snaps[i-1], snaps[i]
+    for i in range(1, len(snaps_w)):
+        prev, cur = snaps_w[i-1], snaps_w[i]
         dt = cur["t"] - prev["t"]
         if dt <= 0 or dt > 10:
             continue
         for side in ("yes","no"):
-            for px in set(prev[side]) | set(cur[side]):
+            for px in set(prev[side].keys()) | set(cur[side].keys()):
                 if prev[side].get(px,0) != cur[side].get(px,0):
                     key = (side, px)
                     if key in last_change:
-                        cad.append(cur["t"] - last_change[key])
+                        cadence_data.append(cur["t"] - last_change[key])
                     last_change[key] = cur["t"]
-if cad:
-    arr = np.array(cad)
+
+if cadence_data:
+    arr = np.array(cadence_data)
     arr = arr[(arr > 0) & (arr < 300)]
-    print(f"  n={len(arr):,}  p5={np.percentile(arr,5):.1f}s  p25={np.percentile(arr,25):.1f}s  "
-          f"median={np.median(arr):.1f}s  p75={np.percentile(arr,75):.1f}s  p95={np.percentile(arr,95):.1f}s")
+    print(f"  n={len(arr):,}  p5={np.percentile(arr,5):.1f}s  "
+          f"median={np.median(arr):.1f}s  p95={np.percentile(arr,95):.1f}s")
     for lo, hi in [(0,1),(1,2),(2,3),(3,5),(5,10),(10,30),(30,300)]:
-        n = ((arr >= lo) & (arr < hi)).sum()
-        print(f"    [{lo:3d}s-{hi:3d}s]: {n:6d} ({100*n/len(arr):.1f}%)")
+        nc = ((arr>=lo)&(arr<hi)).sum()
+        print(f"    [{lo:3d}s-{hi:3d}s]: {nc:6d} ({100*nc/len(arr):.1f}%)")
 
-# PROXY 5: Stale-Quote-After-Spot
-print("\n=== PROXY 5: Stale-Quote-After-Spot (>0.1% move) ===")
-stale_rows = []
-for ws in windows:
-    snaps = ws_snaps[ws]
-    if len(snaps) < 5:
-        continue
-    for i in range(1, len(snaps)-3):
-        prev, cur = snaps[i-1], snaps[i]
+# ══ PROXY 5: Stale-Quote-After-Spot ════════════════════════════════════════
+print("\n=== PROXY 5: Stale-Quote-After-Spot ===")
+stale_evts = []
+for ws, snaps_w in ws_snaps.items():
+    for i in range(1, len(snaps_w)-3):
+        prev, cur = snaps_w[i-1], snaps_w[i]
         s0 = prev.get("spot") or 0
-        s1 = cur.get("spot") or 0
-        if s0 <= 0 or s1 <= 0:
-            continue
+        s1 = cur.get("spot")  or 0
+        if s0 <= 0 or s1 <= 0: continue
         move = abs(s1 - s0) / s0
-        if move < 0.001:
-            continue
-        t_cut = cur["t"] + 3.0
-        future = [s for s in snaps[i+1:] if s["t"] <= t_cut]
-        if not future:
-            continue
-        stale = tot = 0
-        for side in ("yes","no"):
-            for px, sz in cur[side].items():
-                stale += 0 if any(s[side].get(px,sz) != sz for s in future) else 1
-                tot += 1
-        if tot > 0:
-            stale_rows.append({"ws": ws, "move_pct": move*100, "stale_frac": stale/tot})
-if stale_rows:
-    sdf = pd.DataFrame(stale_rows)
-    print(f"  Events: {len(sdf)}  move mean={sdf['move_pct'].mean():.3f}% max={sdf['move_pct'].max():.3f}%")
-    print(f"  Stale frac: mean={sdf['stale_frac'].mean():.3f}  median={sdf['stale_frac'].median():.3f}  "
-          f"frac_with_stale={( sdf['stale_frac']>0).mean():.3f}")
+        if move < 0.001: continue
+        yes_d = sum(cur["yes"].values())
+        no_d  = sum(cur["no"].values())
+        stale = True
+        for j in range(i+1, min(i+4, len(snaps_w))):
+            if snaps_w[j]["t"] - cur["t"] > 3.0: break
+            if (abs(sum(snaps_w[j]["yes"].values())-yes_d)>1 or
+                abs(sum(snaps_w[j]["no"].values()) -no_d) >1):
+                stale = False; break
+        stale_evts.append({"move_pct": move*100, "stale": stale})
+
+if stale_evts:
+    sdf = pd.DataFrame(stale_evts)
+    print(f"  Spot-move >0.1% events: {len(sdf)}")
+    print(f"  Stale rate (book frozen in 3s): {sdf['stale'].mean():.3f}")
+    print(f"  Move pct mean={sdf['move_pct'].mean():.3f}%  max={sdf['move_pct'].max():.3f}%")
 else:
-    print("  No qualifying events")
+    print("  No spot-move events")
 
-# IS/OOS
-n_is = int(len(windows) * 0.6)
-is_ws  = set(windows[:n_is])
-oos_ws = set(windows[n_is:])
-print(f"\nIS windows: {len(is_ws)}  OOS windows: {len(oos_ws)}")
+# ══ IS/OOS TESTS ON TRADE PARQUET (A-D) ════════════════════════════════════
+print("\n── Trade-parquet IS/OOS split ──")
+all_ws = sorted(ws_trade_summary.keys())
+n_is = int(len(all_ws) * 0.6)
+is_ws  = set(all_ws[:n_is])
+oos_ws = set(all_ws[n_is:])
+print(f"IS: {len(is_ws)} windows, OOS: {len(oos_ws)} windows")
 
-ws_rows = []
-for ws in windows:
-    fills = fills_by_ws.get(ws, [])
-    yes_v = sum(f["sz"] for f in fills if f["side"]=="BID")
-    no_v  = sum(f["sz"] for f in fills if f["side"]=="ASK")
-    total = yes_v + no_v
-    pair_rate = min(yes_v, no_v) / (total/2 + 0.001)
-    imbalance = abs(yes_v - no_v) / (total + 0.001)
-    wc = cdf[cdf["ws"]==ws] if len(cdf) else pd.DataFrame()
-    cy = wc[wc["side"]=="yes"]["cancel"].sum() if len(wc) else 0
-    cn = wc[wc["side"]=="no"]["cancel"].sum()  if len(wc) else 0
-    wl = ldf[ldf["ws"]==ws] if len(ldf) else pd.DataFrame()
-    ap  = bool(wl["pull"].any())     if len(wl) else False
-    pr  = wl["pull"].mean()          if len(wl) else 0
-    mms = (wl["modal_frac"]>0.5).mean() if len(wl) else 0
-    ws_rows.append({"ws": ws, "split": "IS" if ws in is_ws else "OOS",
-                    "pair_rate": pair_rate, "imbalance": imbalance,
-                    "adverse": imbalance > 0.5,
-                    "cancel_yes": cy, "cancel_no": cn,
-                    "any_pull": ap, "pull_rate": pr, "mm_score": mms,
-                    "res_up": ws_res_up.get(ws)})
-wsdf = pd.DataFrame(ws_rows)
+# Build per-window dataframe with all trade metrics
+wrows = []
+for ws, sm_t in ws_trade_summary.items():
+    wrows.append({
+        "ws": ws, "split": "IS" if ws in is_ws else "OOS",
+        **sm_t
+    })
+wdf = pd.DataFrame(wrows)
 
-# TEST A
-print("\n=== TEST A: Cancel/Pull vs markout (res_up) ===")
-wdf_r = wsdf.dropna(subset=["res_up"]).copy()
-wdf_r["res_up"] = wdf_r["res_up"].astype(float)
-sp = int(len(wdf_r) * 0.6)
-for label, dset in [("IS", wdf_r.iloc[:sp]), ("OOS", wdf_r.iloc[sp:])]:
-    if len(dset) < 2:
-        print(f"  {label}: n={len(dset)} (too few)")
-        continue
-    print(f"  {label} (n={len(dset)})  res_up mean={dset['res_up'].mean():.3f}")
-    for f in ["cancel_yes","cancel_no","pull_rate","mm_score"]:
-        if dset[f].std() > 1e-9:
-            r = dset["res_up"].corr(dset[f])
-            print(f"    {f:20s}: r={r:+.3f}")
+# Per-window ladder metrics from book data (only 4 windows, so sparse)
+ws_ladder = ldf.groupby("ws").agg(
+    pull_rate=("pull","mean"),
+    mm_score=("modal_frac", lambda x: (x>0.5).mean()),
+).to_dict("index")
 
-# TEST B
-print("\n=== TEST B: Ladder-Pull => Adverse ===")
-ct = pd.crosstab(wsdf["any_pull"], wsdf["adverse"])
-ct.index.name = "pull"; ct.columns.name = "adverse"
-print(ct.to_string())
-for pv in [False, True]:
-    sub = wsdf[wsdf["any_pull"]==pv]
-    rate = sub["adverse"].mean() if len(sub) else float("nan")
-    print(f"  adverse_rate | pull={pv}: {rate:.3f}  (n={len(sub)})")
+wdf["pull_rate"] = wdf["ws"].map(lambda w: ws_ladder.get(w,{}).get("pull_rate", np.nan))
+wdf["mm_score"]  = wdf["ws"].map(lambda w: ws_ladder.get(w,{}).get("mm_score",  np.nan))
 
-# TEST C
-print("\n=== TEST C: Cluster by Counterparty Mix ===")
-if len(wsdf) >= 4:
-    wsdf["mm_dom"]  = wsdf["mm_score"]  > wsdf["mm_score"].median()
-    wsdf["dir_dom"] = wsdf["imbalance"] > wsdf["imbalance"].median()
-    def clabel(row):
-        if row["mm_dom"] and not row["dir_dom"]:   return "MM-dom"
-        elif not row["mm_dom"] and row["dir_dom"]:  return "Dir-dom"
-        elif row["mm_dom"] and row["dir_dom"]:      return "Mixed"
-        else:                                        return "Balanced"
-    wsdf["cluster"] = wsdf.apply(clabel, axis=1)
-    csum = wsdf.groupby("cluster").agg(
-        n=("ws","count"), mm_score=("mm_score","mean"),
-        imbalance=("imbalance","mean"), pull_rate=("pull_rate","mean"),
-        pair_rate=("pair_rate","mean"), adverse_rate=("adverse","mean"),
-    )
-    print(csum.round(3).to_string())
+print("\n=== TEST A: Cancel-proxy vs pair-rate ===")
+print("  (Note: book-diff cancel only available for 4 windows; test on trade metrics instead)")
+print("  Trade-based imbalance vs pair_rate Pearson r by split:")
+for split in ["IS","OOS"]:
+    sub = wdf[wdf["split"]==split]
+    r_n = sub["pair_rate"].corr(sub["n_trades"])
+    r_i = sub["pair_rate"].corr(sub["imbalance"])
+    print(f"  {split} (n={len(sub)}): r(pair_rate,n_trades)={r_n:+.4f}  r(pair_rate,imbalance)={r_i:+.4f}")
 
-# TEST D
-print("\n=== TEST D: Distinct Systematic Quoters ===")
-if len(ldf):
-    fps = ldf.groupby(["side","modal_sz"]).agg(
-        appearances=("ws","count"), frac_mean=("modal_frac","mean"),
-        n_windows=("ws","nunique"),
-    ).reset_index().sort_values("appearances", ascending=False)
-    print("\n  Top-12 fingerprints (modal_sz x side):")
-    print(fps.head(12).round(3).to_string(index=False))
-    nwin = len(windows)
-    for side in ("yes","no"):
-        sub_l = ldf[ldf["side"]==side]
-        fp_s = sub_l.groupby("modal_sz")["ws"].nunique()
-        sig = (fp_s / nwin > 0.10).sum()
-        top_sz = int(sub_l["modal_sz"].mode()[0])
-        top_win = set(sub_l[sub_l["modal_sz"]==top_sz]["ws"].unique())
-        w1 = wsdf[wsdf["ws"].isin(top_win)]["pair_rate"].mean()
-        w0 = wsdf[~wsdf["ws"].isin(top_win)]["pair_rate"].mean()
-        n1 = wsdf["ws"].isin(top_win).sum()
-        print(f"\n  {side.upper()} top-MM size={top_sz}: pair_rate present={w1:.3f}(n={n1}) "
-              f"absent={w0:.3f}  distinct(>10%win)={sig}")
-        print(f"    size->n_windows: {fp_s[fp_s/nwin>0.05].sort_values(ascending=False).to_dict()}")
+# Tertile analysis on n_trades (high activity = harder to pair)
+wdf["vol_tert"] = pd.qcut(wdf["n_trades"].rank(method="first"), 3, labels=["Low","Mid","High"])
+print("\n  Pair-rate by volume tertile (all windows):")
+print(wdf.groupby("vol_tert")["pair_rate"].agg(["mean","count"]).round(4).to_string())
+
+print("\n=== TEST B: Imbalance window stats ===")
+wdf["adverse"] = wdf["imbalance"] > 0.5
+print(f"  Adverse windows (imbal>50%): {wdf['adverse'].sum()} / {len(wdf)} ({100*wdf['adverse'].mean():.1f}%)")
+for split in ["IS","OOS"]:
+    sub = wdf[wdf["split"]==split]
+    adv_rate = sub["adverse"].mean()
+    print(f"  {split}: adverse_rate={adv_rate:.3f}  mean_pair_rate={sub['pair_rate'].mean():.4f}")
+
+print("\n=== TEST C: Cluster windows by counterparty mix ===")
+wdf["mm_dom"]  = wdf["pair_rate"] > wdf["pair_rate"].median()
+wdf["dir_dom"] = wdf["imbalance"] > wdf["imbalance"].median()
+def clabel(row):
+    if row["mm_dom"] and not row["dir_dom"]:   return "Balanced-high"
+    elif not row["mm_dom"] and row["dir_dom"]: return "Directional"
+    elif row["mm_dom"] and row["dir_dom"]:     return "Mixed"
+    else:                                       return "Balanced-low"
+wdf["cluster"] = wdf.apply(clabel, axis=1)
+csum = wdf.groupby("cluster").agg(
+    n=("ws","count"),
+    pair_rate=("pair_rate","mean"),
+    imbalance=("imbalance","mean"),
+    n_trades=("n_trades","mean"),
+    adverse_rate=("adverse","mean"),
+)
+print(csum.round(3).to_string())
+
+print("\n=== TEST D: Distinct systematic quoters ===")
+fps = ldf.groupby(["side","modal_sz"]).agg(
+    appearances=("ws","count"),
+    modal_frac_mean=("modal_frac","mean"),
+    n_windows=("ws","nunique"),
+).reset_index().sort_values("appearances", ascending=False)
+print("\n  Top-12 fingerprints:")
+print(fps.head(12).round(3).to_string(index=False))
+nwin = len(windows_book)
+for side in ("yes","no"):
+    sub_l = ldf[ldf["side"]==side]
+    fp_s = sub_l.groupby("modal_sz")["ws"].nunique()
+    sig = (fp_s / nwin > 0.10).sum()
+    top = fp_s[fp_s/nwin > 0.05].sort_values(ascending=False).head(6).to_dict()
+    print(f"\n  Distinct quoters ({side}, >10% windows): {sig}")
+    print(f"  {top}")
+
+# Key hypothesis check
+yes_265 = (ldf[ldf["side"]=="yes"]["modal_sz"] == 265).mean()
+no_250  = (ldf[ldf["side"]=="no"]["modal_sz"]  == 250).mean()
+print(f"\nKey hypothesis — YES=265: {yes_265*100:.1f}% of snaps  |  NO=250: {no_250*100:.1f}% of snaps")
 
 print("\n=== DONE ===")
