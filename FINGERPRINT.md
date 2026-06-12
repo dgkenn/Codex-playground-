@@ -114,3 +114,28 @@ ladder rungs of the same MM), ladder geometry (density-weighted but reactive not
 **Net: the book is ONE dominant mechanical MM + retail + the occasional informed taker (size-19
 class). No new copyable/exploitable participant. The two forward-MEASURE candidates are hour-22 and
 the cross-asset risk-off gate; everything else is the toxicity thesis we already gate on (t32).**
+
+## Informed-flow detectors that BEAT VPIN-alone (2026-06-12, informed_detectors.py)
+The "more ways to find informed flow" dive. Built 9 causal pre-k detectors and tested whether each
+ADDS predictive power over the VPIN incumbent for the toxic-window label (settle-loss), IS/OOS split.
+- **VPIN-alone OOS AUC = 0.619.** Detectors that add (OOS AUC of VPIN+detector):
+  `take_n` +0.080 → 0.699 (more pre-k takes = informed pressure); `d1_maxrun` +0.064 → 0.683
+  (longest one-directional aggressor run = persistent informed); `d2_lambda` (Kyle price-impact)
+  +0.052 → 0.671; `d1_nruns` +0.036 (few runs = persistent); `d4_roundfrac` +0.032 (algo size
+  footprint); `d5_sweep` +0.018 (urgency sweeps). `d3_burst_cv`, `d4_topsize_rep` add ~0.
+- **BEST COMBINED: VPIN + all detectors OOS AUC = 0.700 (gain +0.081 over VPIN-alone).** At equal
+  ~50% volume kept, the combined score cuts the stranded-leg rate to **0.214 vs VPIN-alone 0.268** —
+  a materially better OPEN gate than the VPIN-only t32. → wired as **t35_combo_tox_gate** (frozen
+  logistic, coefficients distilled from this fit, NOT tuned forward). Same role as t32 (don't open
+  toxic legs) with a strictly better classifier. Aggressor-run persistence (d1) and raw take count
+  are the new signal beyond equal-volume VPIN.
+
+## Toxicity PERSISTENCE (2026-06-12, box_tox_persist.py) — regime is real but weakly tradable
+- VPIN is **autocorrelated**: lag-1 r=+0.341 (t=15.4), persists to lag-5 → toxicity comes in regimes,
+  not i.i.d. P(toxic | prev window toxic) = 0.323 vs 0.247 base (1.30× lift).
+- BUT strand outcomes themselves do NOT autocorrelate (~0), and worst-hour ranking is unstable
+  (spearman +0.10 across halves) — so a static hour gate isn't justified.
+- Session gate "skip M windows after a toxic strand" (optimal M=8): OOS kept pnl/win −0.045 vs
+  skipped −0.116 (t=+2.06) but skips 56% of volume. Marginal — MEASURE forward, don't deploy.
+  The persistent-regime fact is better exploited by the live per-window combo gate (t35) than by a
+  blunt cool-down.
