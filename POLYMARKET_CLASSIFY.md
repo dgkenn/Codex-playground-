@@ -55,3 +55,24 @@ This is a **speculative, slow-payoff research line, not a near-term edge**, beca
 Recommendation: **B as a one-off labeled-data study** (fast, proves whether informed-wallet signatures
 even match our Kalshi detectors), and only graduate to **A** if that link is real and worth the slow
 same-tenor collection. `pmkt_wallets.py` is the re-runnable scoring tool for either.
+
+## Operator chose B (2026-06-12). Verified data reality + execution path.
+DIRECT verification (not an agent's claim): BTC-5m markets are LIVE and busy right now (822 trades
+across 4 windows in the rolling feed; 96 of the last 500 global trades are btc-updown-5m), but
+Polymarket serves **NO bulk resolved history** — the data-api/trades feed is only a ~30-min rolling
+window and resolved short-tenor windows drop from the Gamma index within ~10 min of close (a window
+10 min old already returned empty by conditionId). So a one-off RETROSPECTIVE is impossible; B must be
+run on a short FORWARD capture. (Three delegated agents each wrongly concluded "BTC-5m doesn't exist"
+— that is a slug-walk discovery artifact; the markets exist, the HISTORY doesn't.)
+- **`pmkt_5m_collect.py`** (NEW): forward collector. Polls the trades feed, dedupes by tx, keeps
+  btc-updown-5m trades (wallet/size/price/side/outcome/window), and records each window's RESOLUTION
+  (winner from `outcomePrices`→0/1) ~90s after close while still indexed. Smoke-tested: 508 trades /
+  323 wallets / 1 resolved in 20s (it backfills the rolling feed on start). Launched for ~3h.
+- **`pmkt_signature_study.py`** (REWRITTEN): reads the collected trades+resolution, scores each wallet's
+  realized directional accuracy, splits INFORMED (acc≥58%, meaningful sample) vs NOISE (~50%), and
+  compares their trade SIZE / LATE-fraction / CONVICTION against the Kalshi fingerprint (bigger+later+
+  one-sided = informed). Prints a 4-row match table + verdict. Runs on whatever has accumulated.
+- **The decisive test:** if informed Poly wallets replicate the Kalshi size/late/conviction signature
+  → external validation of our anonymous detectors (t35), maybe a refined feature. If they look like
+  noise on those features → the behavioral transfer is dead and we drop the line, keeping t35. Result
+  pending ~3h collection.
