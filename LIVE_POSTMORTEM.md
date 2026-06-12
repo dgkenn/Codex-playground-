@@ -149,3 +149,51 @@ telemetry (paired count, locked $, unpaired residual) now prints at every rollov
 2. `python kalshi_preflight.py` → must print GO.
 3. Run with the new defaults; `--max-fills-side 4` and the ±3 clamp are on
    automatically. Same $2–3 loss limit until the cap'd config has a clean session.
+
+---
+
+## Live performance audit — 2026-06-12 (~2 days live, 42 audited windows)
+
+**Verdict: box engine works, but the sample is too thin to claim alpha, and 100% of the
+real losses are one failure mode — a stranded YES leg.** Numbers below are the AUDIT-FILE
+realized cash (`window_audit_btc15m.jsonl`), which I trust over the scorecard's internal
+attribution.
+
+### Actual vs expected (verified, audit file n=42 windows)
+| metric | expected | actual | verdict |
+|---|---|---|---|
+| net realized | >0 | **+$1.34** (42 win) / +$2.69 (scorecard, 70 win) | positive but NOT significant: per-window +0.03$ (t≈1.0, p≈0.35) |
+| pairing rate | ~96% OOS | **97%** (Wilson [94.5,98.4]) | IN LINE |
+| per-fill markout | ~0 (maker) | −0.28c | flat, not significant |
+| fees | $0 | **$0** (714 fills) | CONFIRMED |
+| effective spread captured | +0.5–1c | −0.22c | drag from strands (boxes themselves are +) |
+| sample size | "many" | 42 windows, ~2 days, power ~15% | **THIN — need ≥180 windows (~4–5 more days) for 80% power** |
+
+### Every loss, root-caused
+- **8 of 42 windows carried an unpaired leg; 5 of those were net-negative (total ≈ −$2.0).**
+- **6 of the 8 strands were the YES side** → the entire loss center is **stranded YES legs**:
+  our YES bid fills as price falls toward it, the NO bid never pairs (NO is rising, nobody
+  sells it cheap to us), BTC closes below strike, YES settles $0. Classic unpaired-leg adverse
+  selection on the side a down-move pushes into us. Matches the structural YES-toxicity finding
+  (H7/t02/t08: unpaired YES toxic, unpaired NO mildly favorable).
+- **1 inventory breach** (06-12 14:15, net=−2, duplicate NO fills before the pairing gate);
+  outcome +5.7c by luck. A control-race failure, not a strategy failure.
+- The scorecard's **−$7.96 "directional residual" is NOT realized cash** — audit shows strand
+  windows netted −$0.9. Treat −7.96 as internal MTM/attribution; reconcile per-leg before trusting.
+
+### Three high-leverage fixes (ranked)
+1. **Graduate a directional/toxicity OPEN-guard onto the LIVE opener** (bot is ungated P0 today).
+   Every loss is a leg filled into an adverse spot trend; pull/widen the bid on the side a live
+   down-move (YES) or up-move (NO) is pushing into us. t07 (spot-gate) + t02 (YES-caution) +
+   t35 (thin-window combo) are the validated candidates — deploy the first that clears n≥300 fwd.
+   Attacks 100% of the realized loss bucket.
+2. **Asymmetric reservation-price skew (Avellaneda-Stoikov on the box).** Quote YES and NO NON-
+   symmetrically by regime+inventory: demand more edge on the structurally-toxic side so a strand
+   there is CHEAP (cheap strands lose less, t11), and HOLD favorable unpaired NO legs to settle
+   (t08) instead of chasing. Cuts cost-per-strand even when one happens.
+3. **Strand circuit-breaker + close the pairing race.** (a) Pause opening NEW boxes after K strands
+   in M minutes (the losses clustered in one afternoon regime — stop feeding it). (b) Fix the
+   duplicate-fill race behind the net=−2 breach (atomic pair-check + L3 pending_cancel). Caps the tail.
+
+**Meta-lever:** keep the bot running clean to reach n≥180 before any alpha claim; keep gates in
+A/B (not live money) until n≥300. Today we cannot statistically separate the +$1–2 from noise.
