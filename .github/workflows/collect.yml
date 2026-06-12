@@ -99,10 +99,15 @@ jobs:
           timeout --signal=TERM --kill-after=30 2700 \
             python -u kalshi_ladder_collect.py 2520 gha_data "r${{ github.run_id }}" > gha_data/ladder.log 2>&1 &
           LDR=$!
+          # THIN/NEW-MARKET shadow collector (gold-candidates #1+#4 prospective test; Stage-B sleeves)
+          timeout --signal=TERM --kill-after=30 2700 \
+            python -u kalshi_thin_collect.py 2520 gha_data "r${{ github.run_id }}" > gha_data/thin.log 2>&1 &
+          THN=$!
           timeout --signal=TERM --kill-after=60 2880 \
             python -u kalshi_collect.py 2520 gha_data "r${{ github.run_id }}" || true
           wait $PMKT || true
           wait $LDR || true
+          wait $THN || true
           kill "$TG" 2>/dev/null || true
           tail -3 /tmp/telegram.log || true
       - name: per-run summary
