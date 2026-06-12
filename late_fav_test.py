@@ -1,6 +1,6 @@
 """
-late_fav_test.py — Late-window favorite-bid maker strategy backtest
-on Kalshi 15-min BTC binaries (KXBTC15M).
+late_fav_test.py
+Late-window favorite-bid maker strategy test on Kalshi 15-min BTC binaries.
 """
 
 import numpy as np
@@ -8,344 +8,354 @@ import pandas as pd
 import warnings
 warnings.filterwarnings("ignore")
 
-# ─────────────────────────────────────────────────────────────────────────────
-# 1. LOAD DATA
-# ─────────────────────────────────────────────────────────────────────────────
+HIST_PATH   = "/home/user/Codex-playground-/hist_kalshi_btc15m.parquet"
+TRADES_PATH = "/home/user/Codex-playground-/trades_kalshi_btc15m.parquet"
 
-def load_parquet_robust(path):
-    df = pd.read_parquet(path)
-    if df.index.name == 'ws' or (df.index.name is not None and 'ws' not in df.columns):
-        df = df.reset_index()
-    return df
+# ── helpers ───────────────────────────────────────────────────────────────────
 
-hist = load_parquet_robust('/home/user/Codex-playground-/hist_kalshi_btc15m.parquet')
-trades = load_parquet_robust('/home/user/Codex-playground-/trades_kalshi_btc15m.parquet')
+def to_arr(v, dtype=np.float64):
+    if v is None:
+        return None
+    try:
+        return np.asarray(v, dtype=dtype)
+    except Exception:
+        return None
 
-# Ensure ws is int64
-hist['ws'] = hist['ws'].astype(np.int64)
-trades['ws'] = trades['ws'].astype(np.int64)
+# ── load & diagnostics ────────────────────────────────────────────────────────
 
-# Build trades lookup: ws -> (t_arr, p_arr, sz_arr, buy_arr)
-trades_dict = {}
-for _, row in trades.iterrows():
-    ws = int(row['ws'])
-    t_arr  = np.asarray(row['t'],   dtype=np.float64)
-    p_arr  = np.asarray(row['p'],   dtype=np.float64)
-    sz_arr = np.asarray(row['sz'],  dtype=np.float64)
-    buy_arr = np.asarray(row['buy'], dtype=bool)
-    trades_dict[ws] = (t_arr, p_arr, sz_arr, buy_arr)
+hist = pd.read_parquet(HIST_PATH)
+if hist.index.name == "ws":
+    hist = hist.reset_index()
 
-print(f"Hist: {hist.shape[0]} windows | Trades: {len(trades_dict)} windows with trade data")
+trades = pd.read_parquet(TRADES_PATH)
+if trades.index.name == "ws":
+    trades = trades.reset_index()
 
-# Diagnostics
-sample_bid = np.asarray(hist['bid_path'].iloc[0])
-sample_spot = np.asarray(hist['spot_path'].iloc[0])
-print(f"bid_path sample len={len(sample_bid)}, spot_path sample len={len(sample_spot)}")
-print(f"ws range: {hist['ws'].min()} – {hist['ws'].max()}")
-n_days = hist['ws'].map(lambda x: pd.Timestamp(x, unit='s').date()).nunique()
-print(f"Unique dates: {n_days}")
+hist["ws"]   = hist["ws"].astype(np.int64)
+trades["ws"] = trades["ws"].astype(np.int64)
+
+print("=" * 60)
+print("DIAGNOSTICS")
+print("=" * 60)
+print(f"hist   : {hist.shape[0]} rows  cols={list(hist.columns)}")
+print(f"trades : {trades.shape[0]} rows  cols={list(trades.columns)}")
+for col in ["bid_path", "ask_path", "spot_path"]:
+    if col in hist.columns:
+        v = to_arr(hist[col].iloc[0])
+        print(f"  hist[{col}]: len={len(v) if v is not None else 'None'}")
+for col in ["t", "p", "sz"]:
+    if col in trades.columns:
+        v = to_arr(trades[col].iloc[0])
+        print(f"  trades[{col}]: len={len(v) if v is not None else 'None'}")
+
+# ── build trades lookup: ws -> arrays ────────────────────────────────────────
+
+trades_map = {}
+for i in range(len(trades)):
+    row = trades.iloc[i]
+    ws   = int(row["ws"])
+    t_a  = to_arr(row["t"])
+    p_a  = to_arr(row["p"])
+    sz_a = to_arr(row["sz"])
+    buy_a = to_arr(row["buy"], dtype=bool)
+    if t_a is not None and len(t_a) > 0:
+        trades_map[ws] = (t_a, p_a, sz_a, buy_a)
+
+print(f"  trades windows loaded: {len(trades_map)}")
+
+# ── day count ─────────────────────────────────────────────────────────────────
+
+hist_dates = pd.to_datetime(hist["ws"], unit="s").dt.date
+n_days_total = hist_dates.nunique()
+ws_to_date = dict(zip(hist["ws"].values, hist_dates.values))
+print(f"  total days in hist: {n_days_total}")
 print()
 
-# ─────────────────────────────────────────────────────────────────────────────
-# 2. CORE LOOP — build per-(ws, k, T) records
-# ─────────────────────────────────────────────────────────────────────────────
+# ── parameter grid ────────────────────────────────────────────────────────────
 
 K_VALUES = [12, 13, 14]
 T_VALUES = [0.93, 0.95, 0.97]
 
-records = []  # list of dicts
+# spot_path: 15 samples (one per minute, 0..14)
 
-for _, row in hist.iterrows():
-    ws = int(row['ws'])
-    res_up = bool(row['res_up'])
+# ── core loop ─────────────────────────────────────────────────────────────────
 
+records = []
+
+for i in range(len(hist)):
+    row = hist.iloc[i]
     try:
-        bid_path  = np.asarray(row['bid_path'],  dtype=np.float64)
-        ask_path  = np.asarray(row['ask_path'],  dtype=np.float64)
-        spot_path = np.asarray(row['spot_path'], dtype=np.float64)
+        ws     = int(row["ws"])
+        res_up = bool(int(row["res_up"]))
+        bid_p  = to_arr(row["bid_path"])
+        ask_p  = to_arr(row["ask_path"])
+        spot_p = to_arr(row["spot_path"])
+        date   = ws_to_date[ws]
     except Exception:
         continue
 
-    if len(bid_path) < 15 or len(ask_path) < 15 or len(spot_path) < 15:
+    if bid_p is None or len(bid_p) < 15:
         continue
-    if np.any(np.isnan(bid_path)) or np.any(np.isnan(ask_path)) or np.any(np.isnan(spot_path)):
+    if ask_p is None or len(ask_p) < 15:
+        continue
+    if spot_p is None or len(spot_p) < 2:
         continue
 
-    # sigma for z-score (use pct changes of all 15 spot points * mean spot)
-    pct_ch = np.diff(spot_path) / spot_path[:-1]
-    sigma_1min = np.std(pct_ch) * np.mean(spot_path) if len(pct_ch) > 1 else 1.0
-    if sigma_1min <= 0 or np.isnan(sigma_1min):
-        sigma_1min = 1.0
+    # sigma_1min from pct-changes across all spot samples
+    pct_ch = np.diff(spot_p) / np.where(spot_p[:-1] != 0, spot_p[:-1], np.nan)
+    pct_ch = pct_ch[np.isfinite(pct_ch)]
+    sigma_1min = (np.std(pct_ch) * np.mean(spot_p)) if len(pct_ch) >= 2 else 1e-9
+    if not (np.isfinite(sigma_1min) and sigma_1min > 0):
+        sigma_1min = 1e-9
 
-    strike = spot_path[0]
-
-    # trades for this ws
-    td = trades_dict.get(ws)
+    strike = spot_p[0]
+    td = trades_map.get(ws)
 
     for k in K_VALUES:
         try:
-            mid_k  = (bid_path[k] + ask_path[k]) / 2.0
-            bid_k  = bid_path[k]
-            ask_k  = ask_path[k]
-        except Exception:
+            bid_k = float(bid_p[k])
+            ask_k = float(ask_p[k])
+        except (IndexError, ValueError):
             continue
-        if np.isnan(mid_k) or np.isnan(bid_k) or np.isnan(ask_k):
+        if not (np.isfinite(bid_k) and np.isfinite(ask_k)):
+            continue
+        if ask_k <= bid_k or ask_k <= 0 or bid_k < 0:
             continue
 
-        fav_yes = mid_k > 0.5
+        mid_k = (bid_k + ask_k) / 2.0
+        fav_yes   = mid_k > 0.5
         fav_price = mid_k if fav_yes else (1.0 - mid_k)
 
-        # z-score
-        spot_k = spot_path[k]
+        # spot at minute k (15-sample path, one per minute)
+        spot_k = spot_p[k] if k < len(spot_p) else spot_p[-1]
         minutes_left = 14 - k
         z_abs = abs(spot_k - strike) / (sigma_1min * np.sqrt(max(minutes_left, 1)))
 
         for T in T_VALUES:
             if fav_price < T:
-                continue  # not qualifying
+                continue
 
-            # Our bid price
-            if fav_yes:
-                our_bid = bid_k
-            else:
-                our_bid = 1.0 - ask_k  # NO bid price = 1 - ask (YES side)
+            our_bid = bid_k if fav_yes else (1.0 - ask_k)
 
-            # Fill-through search
+            # --- fill opportunity ---
             contracts_filled = 0.0
             has_fill = False
 
             if td is not None:
-                t_arr, p_arr, sz_arr, buy_arr = td
-                # window for remaining time: ws + 60*k  through  ws + 900
-                t_start = ws + 60 * k
-                t_end   = ws + 900
-                mask_time = (t_arr >= t_start) & (t_arr <= t_end)
+                t_a, p_a, sz_a, buy_a = td
+                t_start = ws + 60.0 * k
+                t_end   = ws + 900.0
+                mask_t = (t_a >= t_start) & (t_a <= t_end)
 
                 if fav_yes:
-                    # taker sells YES (buy=False) at price <= our bid
-                    mask_fill = mask_time & (~buy_arr) & (p_arr <= bid_k)
+                    mask_f = mask_t & (~buy_a) & (p_a <= bid_k)
                 else:
-                    # taker buys YES (buy=True) at price >= ask_k
-                    # (they lift the ask on YES side => hits our NO bid)
-                    mask_fill = mask_time & (buy_arr) & (p_arr >= ask_k)
+                    mask_f = mask_t & (buy_a) & (p_a >= ask_k)
 
-                if np.any(mask_fill):
-                    contracts_filled = np.sum(sz_arr[mask_fill]) / 100.0
+                if mask_f.any():
+                    contracts_filled = float(sz_a[mask_f].sum()) / 100.0
                     has_fill = True
 
-            # PnL
             fav_wins = res_up if fav_yes else (not res_up)
-            pnl_per_contract = (1.0 - our_bid) if fav_wins else (-our_bid)
+            pnl = (1.0 - our_bid) if fav_wins else (-our_bid)
 
             records.append({
-                'ws': ws,
-                'k': k,
-                'T': T,
-                'fav_yes': fav_yes,
-                'fav_price': fav_price,
-                'our_bid': our_bid,
-                'has_fill': has_fill,
-                'contracts': contracts_filled,
-                'fav_wins': fav_wins,
-                'pnl_per_contract': pnl_per_contract,
-                'z_abs': z_abs,
-                'date': pd.Timestamp(ws, unit='s').date(),
+                "ws":       ws,
+                "k":        k,
+                "T":        T,
+                "fav_yes":  fav_yes,
+                "our_bid":  our_bid,
+                "has_fill": has_fill,
+                "contracts": contracts_filled,
+                "fav_wins": fav_wins,
+                "pnl":      pnl,
+                "z":        z_abs,
+                "date":     date,
             })
 
 df = pd.DataFrame(records)
-print(f"Total qualifying (window, k, T) combos: {len(df)}")
+print(f"Qualifying (ws, k, T) events: {len(df)}")
+if len(df) == 0:
+    print("ERROR: no qualifying events found — check bid/ask/T thresholds")
+    raise SystemExit(1)
 print()
 
-# ─────────────────────────────────────────────────────────────────────────────
-# 3. ANALYSIS 1 — FILL OPPORTUNITY
-# ─────────────────────────────────────────────────────────────────────────────
+# ── ANALYSIS 1 — FILL OPPORTUNITY ────────────────────────────────────────────
 
-print("=" * 70)
+print("=" * 62)
 print("ANALYSIS 1 — FILL OPPORTUNITY")
-print("=" * 70)
-hdr = f"{'k':>3} {'T':>5} | {'qual/day':>9} {'fill%':>7} {'med_ctr':>8} {'mean_ctr':>9}"
-print(hdr)
-print("-" * 55)
-
-for k in K_VALUES:
-    for T in T_VALUES:
-        sub = df[(df['k'] == k) & (df['T'] == T)]
-        if len(sub) == 0:
-            continue
-        n_days_sub = sub['date'].nunique()
-        qual_per_day = len(sub) / n_days_sub if n_days_sub > 0 else 0
-        fill_pct = sub['has_fill'].mean() * 100
-        filled = sub[sub['has_fill']]
-        med_ctr  = filled['contracts'].median() if len(filled) > 0 else 0.0
-        mean_ctr = filled['contracts'].mean()   if len(filled) > 0 else 0.0
-        print(f"{k:>3} {T:>5.2f} | {qual_per_day:>9.2f} {fill_pct:>6.1f}% {med_ctr:>8.2f} {mean_ctr:>9.2f}")
-print()
-
-# ─────────────────────────────────────────────────────────────────────────────
-# 4. ANALYSIS 2 — REALIZED EV
-# ─────────────────────────────────────────────────────────────────────────────
-
-print("=" * 70)
-print("ANALYSIS 2 — REALIZED EV  (fill-through windows, weighted by min(ctr,5))")
-print("=" * 70)
-hdr2 = (f"{'k':>3} {'T':>5} | {'EV/ctr':>8} {'win%':>7} "
-        f"{'flip|fill%':>11} {'flip|qual%':>11} {'adv_sel':>8}")
-print(hdr2)
-print("-" * 65)
-
-for k in K_VALUES:
-    for T in T_VALUES:
-        sub = df[(df['k'] == k) & (df['T'] == T)]
-        if len(sub) == 0:
-            continue
-
-        filled = sub[sub['has_fill']].copy()
-        uncond_flip = (1 - sub['fav_wins'].mean()) * 100  # P(fav loses | qualifying)
-
-        if len(filled) == 0:
-            print(f"{k:>3} {T:>5.2f} | {'n/a':>8} {'n/a':>7} {'n/a':>11} {uncond_flip:>10.1f}% {'n/a':>8}")
-            continue
-
-        weights = np.minimum(filled['contracts'].values, 5.0)
-        w_sum = weights.sum()
-        if w_sum == 0:
-            weights = np.ones(len(filled))
-            w_sum = len(filled)
-
-        ev_wtd  = np.average(filled['pnl_per_contract'].values, weights=weights)
-        win_pct = np.average(filled['fav_wins'].astype(float).values, weights=weights) * 100
-        cond_flip = 100.0 - win_pct          # P(fav loses | fill-through)
-        adv_sel   = cond_flip - uncond_flip
-
-        print(f"{k:>3} {T:>5.2f} | {ev_wtd:>8.4f} {win_pct:>6.1f}% "
-              f"{cond_flip:>10.1f}% {uncond_flip:>10.1f}% {adv_sel:>+8.2f}%")
-print()
-
-# ─────────────────────────────────────────────────────────────────────────────
-# 5. ANALYSIS 3 — Z-CONDITIONING
-# ─────────────────────────────────────────────────────────────────────────────
-
-print("=" * 70)
-print("ANALYSIS 3 — Z-CONDITIONING  (fill-through events by |z| bucket)")
-print("=" * 70)
-
-Z_BUCKETS = [('<1', lambda z: z < 1),
-             ('1-2', lambda z: (z >= 1) & (z < 2)),
-             ('>2', lambda z: z >= 2)]
-
-hdr3 = f"{'k':>3} {'T':>5} {'|z|':>5} | {'EV/ctr':>8} {'fill%':>7} {'count':>7}"
-print(hdr3)
+print("=" * 62)
+print(f"{'k':>3} {'T':>5} | {'qual/day':>9} {'fill%':>7} {'med_ctr':>8} {'mean_ctr':>9}")
 print("-" * 50)
 
 for k in K_VALUES:
     for T in T_VALUES:
-        sub = df[(df['k'] == k) & (df['T'] == T)]
-        if len(sub) == 0:
+        s = df[(df["k"] == k) & (df["T"] == T)]
+        if s.empty:
             continue
-        for zlabel, zmask_fn in Z_BUCKETS:
-            z_sub = sub[zmask_fn(sub['z_abs'])]
-            if len(z_sub) == 0:
-                continue
-            fill_pct = z_sub['has_fill'].mean() * 100
-            filled_z = z_sub[z_sub['has_fill']]
-            if len(filled_z) > 0:
-                weights = np.minimum(filled_z['contracts'].values, 5.0)
-                w_sum = weights.sum()
-                if w_sum == 0:
-                    weights = np.ones(len(filled_z))
-                ev_wtd = np.average(filled_z['pnl_per_contract'].values, weights=weights)
-            else:
-                ev_wtd = float('nan')
-            print(f"{k:>3} {T:>5.2f} {zlabel:>5} | {ev_wtd:>8.4f} {fill_pct:>6.1f}% {len(z_sub):>7}")
+        nd  = s["date"].nunique() or 1
+        qpd = len(s) / nd
+        fp  = s["has_fill"].mean() * 100
+        fil = s[s["has_fill"]]["contracts"]
+        med  = fil.median() if len(fil) else 0.0
+        mean = fil.mean()   if len(fil) else 0.0
+        print(f"{k:>3} {T:>5.2f} | {qpd:>9.2f} {fp:>6.1f}% {med:>8.2f} {mean:>9.2f}")
+
 print()
 
-# ─────────────────────────────────────────────────────────────────────────────
-# 6. ANALYSIS 4 — IS vs OOS
-# ─────────────────────────────────────────────────────────────────────────────
+# ── ANALYSIS 2 — REALIZED EV ─────────────────────────────────────────────────
 
-print("=" * 70)
-print("ANALYSIS 4 — IS vs OOS  (60/40 chronological split)")
-print("=" * 70)
+print("=" * 72)
+print("ANALYSIS 2 — REALIZED EV  (weighted by min(contracts,5), fill-through only)")
+print("=" * 72)
+print(f"{'k':>3} {'T':>5} | {'EV/ctr':>8} {'win%':>7} {'flip|fill%':>11} {'flip|qual%':>11} {'adv_sel':>9}")
+print("-" * 64)
 
-# Chronological split by ws
-all_ws_sorted = np.sort(hist['ws'].unique())
-split_idx = int(len(all_ws_sorted) * 0.6)
-is_ws  = set(all_ws_sorted[:split_idx].tolist())
-oos_ws = set(all_ws_sorted[split_idx:].tolist())
+for k in K_VALUES:
+    for T in T_VALUES:
+        s   = df[(df["k"] == k) & (df["T"] == T)]
+        if s.empty:
+            continue
+        fil = s[s["has_fill"]].copy()
+        uncond_flip = (1 - s["fav_wins"].mean()) * 100
 
-df_is  = df[df['ws'].isin(is_ws)]
-df_oos = df[df['ws'].isin(oos_ws)]
+        if fil.empty:
+            print(f"{k:>3} {T:>5.2f} | {'n/a':>8} {'n/a':>7} {'n/a':>11} {uncond_flip:>10.1f}% {'n/a':>9}")
+            continue
 
-def compute_metrics(sub_df, n_days_total):
-    """Returns (qual_per_day, fill_rate, mean_ev, ev_per_day) for a subset."""
-    if len(sub_df) == 0:
-        return (0, 0, float('nan'), 0)
-    nd = sub_df['date'].nunique()
-    if nd == 0:
-        nd = 1
-    qual_per_day = len(sub_df) / nd
-    fill_rate = sub_df['has_fill'].mean()
-    filled = sub_df[sub_df['has_fill']]
-    if len(filled) == 0:
-        return (qual_per_day, fill_rate, float('nan'), 0)
-    weights = np.minimum(filled['contracts'].values, 5.0)
-    w_sum = weights.sum()
-    if w_sum == 0:
-        weights = np.ones(len(filled))
-    mean_ev = np.average(filled['pnl_per_contract'].values, weights=weights)
-    ev_per_day = qual_per_day * fill_rate * mean_ev
-    return (qual_per_day, fill_rate, mean_ev, ev_per_day)
+        w = np.minimum(fil["contracts"].values, 5.0)
+        if w.sum() == 0:
+            w = np.ones(len(fil))
+        ev  = np.average(fil["pnl"].values,                   weights=w)
+        win = np.average(fil["fav_wins"].values.astype(float), weights=w) * 100
+        cond_flip = 100.0 - win
+        adv_sel   = cond_flip - uncond_flip
+        print(f"{k:>3} {T:>5.2f} | {ev:>8.4f} {win:>6.1f}% "
+              f"{cond_flip:>10.1f}% {uncond_flip:>10.1f}% {adv_sel:>+9.2f}%")
 
-Z_GATES = [
-    ('all',  None),
-    ('z>=1', 1.0),
-    ('z>=2', 2.0),
+print()
+
+# ── ANALYSIS 3 — Z-CONDITIONING ──────────────────────────────────────────────
+
+print("=" * 62)
+print("ANALYSIS 3 — Z-CONDITIONING  (fill events by |z| bucket)")
+print("=" * 62)
+print(f"{'k':>3} {'T':>5} {'|z|':>5} | {'EV/ctr':>8} {'fill%':>7} {'N_qual':>7}")
+print("-" * 52)
+
+Z_BUCKETS = [
+    ("<1",  lambda z: z < 1.0),
+    ("1-2", lambda z: (z >= 1.0) & (z < 2.0)),
+    (">2",  lambda z: z >= 2.0),
 ]
 
-# IS sweep to find best combo
-best_ev_day = -np.inf
-best_combo  = None
-best_is_metrics  = None
-
-is_results = []
 for k in K_VALUES:
     for T in T_VALUES:
-        for zname, zgate in Z_GATES:
-            sub_is = df_is[(df_is['k'] == k) & (df_is['T'] == T)]
-            if zgate is not None:
-                sub_is = sub_is[sub_is['z_abs'] >= zgate]
-            m = compute_metrics(sub_is, None)
-            is_results.append((k, T, zname, m))
-            if m[3] > best_ev_day:
-                best_ev_day = m[3]
-                best_combo  = (k, T, zname, zgate)
-                best_is_metrics = m
+        s = df[(df["k"] == k) & (df["T"] == T)]
+        if s.empty:
+            continue
+        for zlabel, zmask_fn in Z_BUCKETS:
+            zs = s[zmask_fn(s["z"])]
+            if zs.empty:
+                continue
+            fp = zs["has_fill"].mean() * 100
+            fz = zs[zs["has_fill"]]
+            if not fz.empty:
+                w = np.minimum(fz["contracts"].values, 5.0)
+                if w.sum() == 0:
+                    w = np.ones(len(fz))
+                ev   = np.average(fz["pnl"].values, weights=w)
+                ev_s = f"{ev:>8.4f}"
+            else:
+                ev_s = "     n/a"
+            print(f"{k:>3} {T:>5.2f} {zlabel:>5} | {ev_s} {fp:>6.1f}% {len(zs):>7}")
 
-bk, bT, bzname, bzgate = best_combo
-sub_oos = df_oos[(df_oos['k'] == bk) & (df_oos['T'] == bT)]
-if bzgate is not None:
-    sub_oos = sub_oos[sub_oos['z_abs'] >= bzgate]
-oos_m = compute_metrics(sub_oos, None)
-
-print(f"Best IS combo: k={bk}, T={bT}, z_gate={bzname}")
-print()
-print(f"{'Metric':<28} {'IS':>10} {'OOS':>10}")
-print("-" * 50)
-print(f"{'qual windows/day':<28} {best_is_metrics[0]:>10.2f} {oos_m[0]:>10.2f}")
-print(f"{'fill rate':<28} {best_is_metrics[1]*100:>9.1f}% {oos_m[1]*100:>9.1f}%")
-print(f"{'mean EV/contract':<28} {best_is_metrics[2]:>10.4f} {oos_m[2]:>10.4f}")
-print(f"{'expected EV/day ($)':<28} {best_is_metrics[3]:>10.4f} {oos_m[3]:>10.4f}")
 print()
 
-# Full IS sweep table
-print("IS sweep — all combos (sorted by EV/day desc):")
-hdr4 = f"{'k':>3} {'T':>5} {'z_gate':>6} | {'q/day':>7} {'fill%':>7} {'EV/ctr':>8} {'EV/day':>9}"
-print(hdr4)
+# ── ANALYSIS 4 — IS vs OOS ────────────────────────────────────────────────────
+
+print("=" * 62)
+print("ANALYSIS 4 — IS vs OOS  (60/40 chronological split on ws)")
+print("=" * 62)
+
+all_ws = np.sort(hist["ws"].unique())
+cut    = int(len(all_ws) * 0.6)
+is_ws_set  = set(all_ws[:cut].tolist())
+oos_ws_set = set(all_ws[cut:].tolist())
+
+df_is  = df[df["ws"].isin(is_ws_set)]
+df_oos = df[df["ws"].isin(oos_ws_set)]
+
+
+def metrics(sub):
+    if sub.empty:
+        return (0.0, 0.0, float("nan"), 0.0)
+    nd  = sub["date"].nunique() or 1
+    qpd = len(sub) / nd
+    fr  = sub["has_fill"].mean()
+    fil = sub[sub["has_fill"]]
+    if fil.empty:
+        return (qpd, fr, float("nan"), 0.0)
+    w = np.minimum(fil["contracts"].values, 5.0)
+    if w.sum() == 0:
+        w = np.ones(len(fil))
+    ev = np.average(fil["pnl"].values, weights=w)
+    return (qpd, fr, ev, qpd * fr * ev)
+
+
+Z_GATES = [("all", None), ("z>=1", 1.0), ("z>=2", 2.0)]
+
+best_evd  = -np.inf
+best_key  = None
+best_is_m = None
+sweep     = []
+
+for k in K_VALUES:
+    for T in T_VALUES:
+        for zname, zg in Z_GATES:
+            si = df_is[(df_is["k"] == k) & (df_is["T"] == T)]
+            if zg is not None:
+                si = si[si["z"] >= zg]
+            m = metrics(si)
+            sweep.append((k, T, zname, zg, m))
+            if m[3] > best_evd:
+                best_evd  = m[3]
+                best_key  = (k, T, zname, zg)
+                best_is_m = m
+
+bk, bT, bzname, bzg = best_key
+so = df_oos[(df_oos["k"] == bk) & (df_oos["T"] == bT)]
+if bzg is not None:
+    so = so[so["z"] >= bzg]
+oos_m = metrics(so)
+
+print(f"\nBest IS combo: k={bk}, T={bT:.2f}, z_gate={bzname}")
+print()
+print(f"{'Metric':<26} {'IS':>10} {'OOS':>10}")
+print("-" * 48)
+rows_cmp = [
+    ("qual windows/day",
+     f"{best_is_m[0]:>10.2f}", f"{oos_m[0]:>10.2f}"),
+    ("fill rate",
+     f"{best_is_m[1]*100:>9.1f}%", f"{oos_m[1]*100:>9.1f}%"),
+    ("mean EV/contract",
+     f"{best_is_m[2]:>10.4f}" if np.isfinite(best_is_m[2]) else f"{'n/a':>10}",
+     f"{oos_m[2]:>10.4f}"    if np.isfinite(oos_m[2])    else f"{'n/a':>10}"),
+    ("expected EV/day",
+     f"{best_is_m[3]:>10.4f}", f"{oos_m[3]:>10.4f}"),
+]
+for label, isv, oosv in rows_cmp:
+    print(f"{label:<26} {isv} {oosv}")
+
+print()
+print("IS sweep — all combos (top 18 by EV/day):")
+print(f"{'k':>3} {'T':>5} {'z_gate':>6} | {'q/day':>7} {'fill%':>7} {'EV/ctr':>8} {'EV/day':>9}")
 print("-" * 55)
-is_results_sorted = sorted(is_results, key=lambda x: x[3][3], reverse=True)
-for (k, T, zname, m) in is_results_sorted[:18]:  # top 18
-    mark = " *" if (k == bk and T == bT and zname == bzname) else ""
-    ev_str = f"{m[2]:.4f}" if not np.isnan(m[2]) else "  n/a"
-    print(f"{k:>3} {T:>5.2f} {zname:>6} | {m[0]:>7.2f} {m[1]*100:>6.1f}% {ev_str:>8} {m[3]:>9.4f}{mark}")
+sweep_s = sorted(sweep, key=lambda x: x[4][3], reverse=True)
+for (k, T, zn, zg, m) in sweep_s[:18]:
+    mark = " *" if (k == bk and T == bT and zn == bzname) else ""
+    ev_s = f"{m[2]:.4f}" if np.isfinite(m[2]) else "   n/a"
+    print(f"{k:>3} {T:>5.2f} {zn:>6} | {m[0]:>7.2f} {m[1]*100:>6.1f}% {ev_s:>8} {m[3]:>9.4f}{mark}")
+
 print()
 print("Done.")

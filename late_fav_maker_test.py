@@ -45,9 +45,9 @@ for ws, row in hist.iterrows():
         continue
     if bid_path is None or ask_path is None:
         continue
-    
+
     tr = trades_by_ws.get(ws, None)
-    
+
     for k in Ks:
         try:
             bid_k = bid_path[k]
@@ -56,32 +56,32 @@ for ws, row in hist.iterrows():
             continue
         if bid_k is None or ask_k is None or np.isnan(bid_k) or np.isnan(ask_k):
             continue
-        
+
         mid_k = (bid_k + ask_k) / 2.0
         fav_yes = mid_k > 0.5
         fav_p = mid_k if fav_yes else (1.0 - mid_k)
-        
+
         for T in Ts:
             if fav_p < T:
                 continue
-            
+
             key = (k, T)
             if key not in results:
                 results[key] = []
-            
+
             # Fill opportunity
             contracts_available = 0.0
             fill_occurred = False
-            
+
             if tr is not None:
                 t_arr = tr['t']
                 p_arr = tr['p']
                 sz_arr = tr['sz']
                 buy_arr = tr['buy']
-                
+
                 cutoff_lo = ws + 60 * (k + 1)
                 cutoff_hi = ws + 900
-                
+
                 for i in range(len(t_arr)):
                     ti = t_arr[i]
                     if ti <= cutoff_lo or ti > cutoff_hi:
@@ -89,7 +89,7 @@ for ws, row in hist.iterrows():
                     pi = p_arr[i]
                     szi = sz_arr[i] / 100.0  # convert to contracts
                     bi = buy_arr[i]
-                    
+
                     if fav_yes:
                         # fill if taker sells YES (buy=False) at p <= bid_k
                         if not bi and pi <= bid_k:
@@ -100,13 +100,13 @@ for ws, row in hist.iterrows():
                         if bi and pi >= ask_k:
                             contracts_available += szi
                             fill_occurred = True
-            
+
             # res_favorable
             if fav_yes:
                 res_fav = bool(res_up)
             else:
                 res_fav = not bool(res_up)
-            
+
             results[key].append({
                 'ws': ws,
                 'fav_yes': fav_yes,
@@ -138,10 +138,10 @@ for k in Ks:
         # compute total windows from hist
         n_days = len(hist) / 96.0
         per_day_rate = n_qual / n_days if n_days > 0 else 0
-        
+
         fill_recs = [r for r in recs if r['fill_occurred']]
         fill_pct = 100.0 * len(fill_recs) / n_qual if n_qual > 0 else 0
-        
+
         if fill_recs:
             contracts_list = [r['contracts'] for r in fill_recs]
             med_c = np.median(contracts_list)
@@ -149,7 +149,7 @@ for k in Ks:
         else:
             med_c = 0.0
             mean_c = 0.0
-        
+
         print(f"{k:>3} {T:>5.2f} {n_qual:>7} {per_day_rate:>8.2f} {fill_pct:>7.1f} {med_c:>7.2f} {mean_c:>7.2f}")
 
 print()
@@ -165,13 +165,13 @@ for k in Ks:
             continue
         recs = results[key]
         fill_recs = [r for r in recs if r['fill_occurred']]
-        
+
         if not fill_recs:
             n_qual = len(recs)
             unc_win = np.mean([r['res_fav'] for r in recs]) if recs else float('nan')
             print(f"{k:>3} {T:>5.2f} {0:>7}  NO FILLS  unc_win%={100*unc_win:.1f}")
             continue
-        
+
         # weighted EV
         wt_evs = []
         for r in fill_recs:
@@ -179,17 +179,17 @@ for k in Ks:
             ev = (1.0 - fp) if r['res_fav'] else (-fp)
             w = min(r['contracts'], 5.0)
             wt_evs.append((ev, w))
-        
+
         total_w = sum(w for _, w in wt_evs)
         wt_ev = sum(ev * w for ev, w in wt_evs) / total_w if total_w > 0 else float('nan')
-        
+
         win_filled = np.mean([r['res_fav'] for r in fill_recs])
         win_uncond = np.mean([r['res_fav'] for r in recs])
-        
+
         cond_flip = 1.0 - win_filled
         uncond_flip = 1.0 - win_uncond
         adv_sel = cond_flip - uncond_flip
-        
+
         print(f"{k:>3} {T:>5.2f} {len(fill_recs):>7} {wt_ev:>9.4f} {100*win_filled:>8.1f} {100*win_uncond:>8.1f} {adv_sel:>9.4f}")
 
 # ── ANALYSIS 3 - Z-CONDITIONING ──────────────────────────────────────────────
@@ -238,31 +238,31 @@ for k in Ks:
         recs = results[key]
         is_recs = [r for r in recs if r['ws'] in is_ws]
         fill_recs = [r for r in is_recs if r['fill_occurred']]
-        
+
         if not is_recs or not fill_recs:
             continue
-        
+
         n_is_days = len(is_ws) / 96.0
         qual_per_day = len(is_recs) / n_is_days
         fill_rate = len(fill_recs) / len(is_recs)
-        
+
         wt_evs = []
         for r in fill_recs:
             fp = r['fav_p']
             ev = (1.0 - fp) if r['res_fav'] else (-fp)
             w = min(r['contracts'], 5.0)
             wt_evs.append((ev, w))
-        
+
         total_w = sum(w for _, w in wt_evs)
         mean_ev = sum(ev * w for ev, w in wt_evs) / total_w if total_w > 0 else float('nan')
-        
+
         # c/day = qual/day * fill_rate * mean_contracts_filled * mean_ev
         mean_c_filled = np.mean([r['contracts'] for r in fill_recs])
         score = qual_per_day * fill_rate * mean_c_filled * mean_ev
         is_scores[key] = score
-        
+
         print(f"{k:>3} {T:>5.2f} {qual_per_day:>10.2f} {100*fill_rate:>9.1f} {mean_ev:>9.4f} {score:>8.4f}")
-        
+
         if score > best_is_score:
             best_is_score = score
             best_combo = key
@@ -270,19 +270,19 @@ for k in Ks:
 print()
 if best_combo:
     print(f"Best IS combo: k={best_combo[0]}, T={best_combo[1]:.2f}, IS_score={best_is_score:.4f}")
-    
+
     # OOS evaluation
     oos_ws = set(ws_sorted[cutoff_idx:])
     recs = results[best_combo]
     oos_recs = [r for r in recs if r['ws'] in oos_ws]
     oos_fill = [r for r in oos_recs if r['fill_occurred']]
-    
+
     n_oos_days = len(oos_ws) / 96.0
-    
+
     if oos_recs and oos_fill:
         qual_per_day_oos = len(oos_recs) / n_oos_days
         fill_rate_oos = len(oos_fill) / len(oos_recs)
-        
+
         wt_evs = []
         for r in oos_fill:
             fp = r['fav_p']
@@ -293,20 +293,20 @@ if best_combo:
         mean_ev_oos = sum(ev * w for ev, w in wt_evs) / total_w if total_w > 0 else float('nan')
         mean_c_oos = np.mean([r['contracts'] for r in oos_fill])
         oos_score = qual_per_day_oos * fill_rate_oos * mean_c_oos * mean_ev_oos
-        
+
         print(f"OOS (no z-gate):  qual/d={qual_per_day_oos:.2f} fill%={100*fill_rate_oos:.1f} EV/c={mean_ev_oos:.4f} c/d={oos_score:.4f}")
     else:
         print(f"OOS: no qualifying data")
-    
+
     # Z-gate analysis
     print()
     print("=" * 70)
     print("ANALYSIS 3 - Z-CONDITIONING (best IS combo)")
     print(f"{'z_bucket':>12} {'N':>7} {'EV/c':>9} {'flip%':>8}")
     print("-" * 70)
-    
+
     all_fill_recs = [r for r in results[best_combo] if r['fill_occurred']]
-    
+
     z_buckets = {'<1': [], '1-2': [], '>=2': []}
     for r in all_fill_recs:
         z = compute_z(r)
@@ -322,7 +322,7 @@ if best_combo:
             z_buckets['1-2'].append(rec)
         else:
             z_buckets['>=2'].append(rec)
-    
+
     for bname, brecs in z_buckets.items():
         if not brecs:
             print(f"{bname:>12} {0:>7}  NO DATA")
@@ -330,13 +330,13 @@ if best_combo:
         mean_ev = np.mean([r['ev'] for r in brecs])
         flip_rate = np.mean([r['flip'] for r in brecs])
         print(f"{bname:>12} {len(brecs):>7} {mean_ev:>9.4f} {100*flip_rate:>8.1f}")
-    
+
     # Z-gate OOS
     print()
     print("OOS with z-gate (best combo)")
     print(f"{'z_gate':>8} {'qual/d':>8} {'fill%':>7} {'EV/c':>9} {'c/d':>8}")
     print("-" * 50)
-    
+
     for z_thresh in [1.0, 2.0]:
         oos_fill_z = []
         oos_qual_z = 0
@@ -349,14 +349,14 @@ if best_combo:
             z = compute_z(r)
             if z is not None and z >= z_thresh:
                 oos_qual_z += 1
-        
+
         if oos_qual_z == 0 or not oos_fill_z:
             print(f"{'>='+str(z_thresh):>8}  NO DATA")
             continue
-        
+
         qpd = oos_qual_z / n_oos_days
         fr = len(oos_fill_z) / oos_qual_z
-        
+
         wt_evs = []
         for r in oos_fill_z:
             fp = r['fav_p']
@@ -367,7 +367,7 @@ if best_combo:
         mean_ev_z = sum(ev * w for ev, w in wt_evs) / total_w if total_w > 0 else float('nan')
         mean_c_z = np.mean([r['contracts'] for r in oos_fill_z])
         score_z = qpd * fr * mean_c_z * mean_ev_z
-        
+
         print(f"{'>='+str(z_thresh):>8} {qpd:>8.2f} {100*fr:>7.1f} {mean_ev_z:>9.4f} {score_z:>8.4f}")
 
 print()
