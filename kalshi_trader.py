@@ -663,6 +663,19 @@ def main():
         if not os.environ.get("KALSHI_API_KEY_ID"):
             raise SystemExit("KALSHI_API_KEY_ID not set; cannot trade live.")
 
+    # CONTROL L1 (double-trader incident 2026-06-12): exclusive per-asset instance lock held for
+    # the process lifetime. Two traders on one account each obey max-net independently and breach
+    # it jointly -- this makes a second LOCAL trader physically unable to start.
+    if live:
+        import fcntl
+        _lockf = open(f".kalshi_trader_{a.asset}15m.lock", "w")
+        try:
+            fcntl.flock(_lockf, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            _lockf.write(f"{os.getpid()} {time.time()}\n"); _lockf.flush()
+        except OSError:
+            raise SystemExit(f"FATAL: another kalshi_trader holds .kalshi_trader_{a.asset}15m.lock "
+                             f"-- refusing to double-trade this account")
+
     lm = LiveMetrics(a.asset, 15, path=f"live_metrics_kalshi_{a.asset}15m.jsonl")
 
     # C7 startup reconciliation: cancel all open orders on this series so we start from a provably
@@ -738,6 +751,7 @@ def main():
     # --- cancel / dead-man infrastructure ---
     cancel_q = []   # [(oid, key, reason)] queued this pass (batched like live_trader.flush_cancels)
     reject_cd = {}  # (side, price) -> retry-not-before ts (post-only reject churn breaker)
+    _foreign_chk = [0.0]   # last foreign-order scan ts (CONTROL L2 throttle)
 
     pending_cancel = {}  # key -> meta: cancel SENT but not venue-confirmed. THE CLAMP LEAK FIX
     # (live breach 2026-06-12, |net|=-2): drop() used to erase the order from `resting` instantly;
@@ -1437,6 +1451,27 @@ def main():
                     drain_ws_fills()   # real-time WS fills first (deduped by seen_fills)
                     poll_fills()       # REST backstop (slower cadence, catches any WS misses)
                     poll_balance_lm()
+                    # CONTROL L2 (cross-host double-trader guard): an open order on OUR ticker that
+                    # WE did not place means another trader is live on this account (GHA + local,
+                    # orphan loop, anything). Fail CLOSED: alert + flatten + exit; operator re-arms
+                    # exactly one. (A lost place-ack can false-positive -- rare, and the safe side.)
+                    try:
+                        if mk is not None and time.time() - _foreign_chk[0] > 30:
+                            _foreign_chk[0] = time.time()
+                            for _o in get_open_orders(sess, priv, mk["cid"]):
+                                _oid = str(_o.get("order_id") or "")
+                                if _oid and _oid not in placed_oids:
+                                    notify.alert_sync(
+                                        f"\U0001f6a8 FOREIGN ORDER on {mk['cid']}: {_oid[:16]} not "
+                                        f"placed by this trader -- ANOTHER TRADER IS LIVE on this "
+                                        f"account. Halting this instance (fail-closed); ensure "
+                                        f"exactly one trader then re-arm.")
+                                    _flatten_and_exit("foreign order: second trader detected")
+                                    os._exit(0)
+                    except SystemExit:
+                        raise
+                    except Exception:
+                        pass
 
                 # Score due markouts (5s/30s/60s/300s curve; 5s also feeds the rolling kill)
                 now_mo = time.time()

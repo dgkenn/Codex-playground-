@@ -52,4 +52,7 @@ risk-free. The boxes ARE the profit; unpaired inventory is the only real risk.
   honored by `.github/workflows/live.yml` (cloud, always-on) and `live_supervisor.sh` (VM). Toggle
   with `./live_switch.sh on|off`. Re-arm after a kill = `./live_switch.sh on` (clears the sentinel).
   Never auto-rearm after a loss-limit/toxic kill; the operator flips the switch.
+- SINGLE-TRADER INVARIANT: exactly one trader per account, ever. Start local trading ONLY via
+  `./live_loop.sh`; kill by PID (never `pkill -f` — it matches your own shell); verify with
+  `./bot_status.sh` after any restart. Full control stack: CONTROLS.md (L0-L6).
 - This container is ephemeral; the durable home is an always-free VM (Oracle us-east).
