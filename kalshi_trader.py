@@ -599,6 +599,14 @@ def main():
     ap.add_argument("--duration", type=int, default=3600)
     ap.add_argument("--deadman-s", type=float, default=15.0,
                     help="book stale this many seconds -> cancel-all")
+    ap.add_argument("--remote-switch-url", default=os.environ.get("REMOTE_SWITCH_URL", ""),
+                    help="poll this URL for the live switch; if it returns 'off' the trader "
+                         "flattens (dead-man cancel-all) and exits WITHIN --remote-switch-s seconds. "
+                         "This is what makes OFF take <1 min instead of waiting out the cycle. Use the "
+                         "GitHub contents API (api.github.com/repos/<o>/<r>/contents/LIVE_SWITCH?ref=<b>) "
+                         "with $GH_TOKEN -- it is NOT CDN-cached, unlike raw.githubusercontent.")
+    ap.add_argument("--remote-switch-s", type=float, default=20.0,
+                    help="how often to poll --remote-switch-url (seconds)")
     a = ap.parse_args()
 
     live = a.live and os.environ.get("I_UNDERSTAND_REAL_MONEY") == "yes"
@@ -769,6 +777,31 @@ def main():
             notify.alert_sync(f"[kalshi] DEAD-MAN {reason}: cancel-all")
         except Exception as e:
             print(f"[DEAD-MAN] cancel failed: {str(e)[:120]}")
+
+    # FAST REMOTE OFF: poll the live switch out-of-band so flipping it OFF stops a RUNNING trader
+    # within --remote-switch-s (the cron/cycle only gates STARTING; this gates STOPPING). Cheap GET;
+    # any error is ignored (fail-safe: a transient fetch failure must NOT kill a healthy session).
+    _rsw = {"last": 0.0}
+    _gh_tok = os.environ.get("GH_TOKEN") or os.environ.get("GITHUB_TOKEN")
+
+    def _remote_switch_is_off():
+        url = a.remote_switch_url
+        if not url:
+            return False
+        now = time.time()
+        if now - _rsw["last"] < a.remote_switch_s:
+            return None              # not due yet
+        _rsw["last"] = now
+        try:
+            hdrs = {"Accept": "application/vnd.github.raw+json"}
+            if _gh_tok and "api.github.com" in url:
+                hdrs["Authorization"] = f"Bearer {_gh_tok}"
+            r = requests.get(url, headers=hdrs, timeout=6)
+            if r.status_code == 200:
+                return r.text.strip().lower().startswith("off")
+        except Exception:
+            pass
+        return False                 # unreachable -> treat as still-on (fail-safe)
 
     atexit.register(lambda: _flatten_and_exit("process exit"))
     # SIGHUP included so closing the desktop launcher's terminal window cancels all orders cleanly
@@ -1046,6 +1079,14 @@ def main():
     end = time.time() + a.duration
     while time.time() < end:
         try:
+            # FAST OFF: operator flipped LIVE_SWITCH off -> flatten and exit this cycle now (<1 min),
+            # don't ride out --duration. Returns None when not yet due (throttled), True/False on poll.
+            if live and _remote_switch_is_off():
+                print("[SWITCH] remote LIVE_SWITCH=off -> flatten and exit")
+                notify.alert_sync("\U0001f534 live bot OFF (remote switch) — flattening, cancelling all orders")
+                _flatten_and_exit("remote switch off")
+                break
+
             # C1 staleness watchdog: book dark > deadman-s with resting orders -> cancel-all
             stale = time.time() - last_book_ok
             if live and resting and stale > a.deadman_s and not deadman_tripped:

@@ -66,6 +66,46 @@ def switch(cmd):
         pass
 
 
+# --- GitHub Actions fast-path: dispatch a live run on "on", cancel it on "off" (the <1-min levers) ---
+GH_TOKEN = os.environ.get("GH_TOKEN") or os.environ.get("GITHUB_TOKEN")
+REPO = os.environ.get("GITHUB_REPOSITORY", "dgkenn/Codex-playground-")
+BRANCH = os.environ.get("BRANCH", "claude/polymarket-bot-live-ready-vw7ut5")
+
+
+def _gh(method, path, body=None):
+    """Minimal GitHub API call with the runner token. Returns parsed JSON or None."""
+    if not GH_TOKEN:
+        return None
+    url = f"https://api.github.com/repos/{REPO}/{path}"
+    data = json.dumps(body).encode() if body is not None else None
+    req = urllib.request.Request(url, data=data, method=method, headers={
+        "Authorization": f"Bearer {GH_TOKEN}", "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28"})
+    try:
+        with urllib.request.urlopen(req, timeout=15) as r:
+            return json.load(r) if r.status in (200, 201) else {}
+    except Exception:
+        return None
+
+
+def dispatch_live():
+    """Start a live run NOW (don't wait for the 25-min cron) -> ON within ~1-2 min (GHA cold start)."""
+    r = _gh("POST", "actions/workflows/live.yml/dispatches", {"ref": BRANCH})
+    return r is not None
+
+
+def cancel_live():
+    """Cancel any in-progress live run NOW -> SIGTERM to the runner -> trader dead-man cancels all
+    orders within seconds. Belt-and-suspenders with the trader's own remote-switch self-poll."""
+    n = 0
+    for st in ("in_progress", "queued"):
+        d = _gh("GET", f"actions/workflows/live.yml/runs?status={st}&per_page=10")
+        for run in (d or {}).get("workflow_runs", []):
+            if _gh("POST", f"actions/runs/{run['id']}/cancel") is not None:
+                n += 1
+    return n
+
+
 def cur_switch():
     try:
         return open(os.path.join(HERE, "LIVE_SWITCH")).read().strip()
@@ -102,9 +142,17 @@ def main():
             if chat != str(owner):
                 send(tok, chat, "not authorized"); continue
             if text in ("on", "/on", "start"):
-                switch("on"); send(tok, chat, f"✅ live bot ON ({ASSET})")
+                switch("on")                              # flip the durable switch (source of truth)
+                started = dispatch_live()                 # ...AND start a run now (don't wait for cron)
+                send(tok, chat, f"✅ live bot ON ({ASSET})" +
+                     ("\n🟢 starting a live run now (~1-2 min to first quote)" if started
+                      else "\n(switch set; next cron/watchdog will start it)"))
             elif text in ("off", "/off", "stop"):
-                switch("off"); send(tok, chat, "\U0001f6d1 live bot OFF")
+                switch("off")                             # flip switch off (blocks restart)
+                n = cancel_live()                         # ...AND kill the running run now (<1 min)
+                send(tok, chat, "\U0001f6d1 live bot OFF" +
+                     (f"\n🔴 cancelling {n} running cycle(s); orders flatten within seconds" if n
+                      else "\n(no active run; a running trader will also self-stop within ~20s)"))
             elif text in ("status", "/status"):
                 killed = os.path.exists(os.path.join(HERE, f".kalshi_killed_{ASSET}15m"))
                 send(tok, chat, f"switch: {cur_switch()}" + ("  (kill sentinel set)" if killed else ""))
