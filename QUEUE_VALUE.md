@@ -161,3 +161,10 @@ The only way the split would be neutral is if sweep markout at touch-1c is actua
 3. **t27 two-rung split: do not deploy** at current 4+4 specification. The deep-leg sweep rate (10%) is too low to compensate for adverse-selection cost on sweeps. If t27 advances, reduce deep-leg size to 1–2 contracts or require sweep-rate conditioning above 25%.
 
 4. **1.2-s snapshot coarseness**: confirmed manageable. Level-sweep frequencies (10% of fill events are full sweeps) and displayed-size dynamics (median depth 736 contracts, 41% of intervals see a price change at touch) are measurable at 1.2s cadence. Queue-position estimation within a level requires the fills tape, not the book snapshots.
+
+---
+## ACTION TAKEN (2026-06-12 22:55 UTC)
+`live_loop.sh` updated: `--qtime-mp-margin 0.003 → 0.005` (the fitted break-even above; applies at
+the next trader cycle). Both independent Q2 fits agree the old 0.3c margin repriced inside the
+regime where staying earns more (+0.67c stay vs +0.57c reprice at 0.3c IS). t27 (4+4 split) is
+NO-GO per Q3 — recorded against its pre-registration in TRIALS.md.
