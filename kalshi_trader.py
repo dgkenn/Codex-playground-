@@ -626,6 +626,12 @@ def main():
                     help="venue-side expiration on every order (the dead-man that survives SIGKILL: "
                          "a reaped container's orphan orders self-cancel at the venue within this). "
                          "Healthy quotes refresh via reshape/stale-refresh long before. 0 = GTC")
+    ap.add_argument("--qtime-mp-margin", type=float, default=0.0,
+                    help="QUEUE-TIMING EXPERIMENT (default 0=OFF). When microprice diverges from mid "
+                         "by >= this (e.g. 0.01), reshape an off-target rung IMMEDIATELY instead of "
+                         "waiting the 2s churn guard -- beating the mechanical ladder-MM (~1.2s "
+                         "heartbeat, FINGERPRINT.md) to the new price level for front-of-queue. Run "
+                         "live with this on vs off and compare markout/fill-rate (QUEUE_TIMING.md).")
     ap.add_argument("--requote-stale-s", type=float, default=20.0,
                     help="drop a resting rung older than this IF the mid has moved >=1 tick since "
                          "placement (markout forensics: fills on >15s-old quotes run -2.04c/fill "
@@ -751,6 +757,7 @@ def main():
     # --- cancel / dead-man infrastructure ---
     cancel_q = []   # [(oid, key, reason)] queued this pass (batched like live_trader.flush_cancels)
     reject_cd = {}  # (side, price) -> retry-not-before ts (post-only reject churn breaker)
+    qtime_ct = [0]  # queue-timing experiment: count of microprice-triggered fast reshapes
     _foreign_chk = [0.0]   # last foreign-order scan ts (CONTROL L2 throttle)
 
     pending_cancel = {}  # key -> meta: cancel SENT but not venue-confirmed. THE CLAMP LEAK FIX
@@ -1201,7 +1208,7 @@ def main():
                               f"unpaired={abs(py-pn):.0f} directional")
                     nf = win_fills["yes"] + win_fills["no"]
                     print(f"  [OPS] places={ops['place']} cancels={ops['cancel']} "
-                          f"cancel_fails={ops['cancel_fail']} fills={nf} "
+                          f"cancel_fails={ops['cancel_fail']} qtime={qtime_ct[0]} fills={nf} "
                           f"quote_to_trade={ops['place']/max(nf,1):.1f}")
                     pos.clear(); cash = 0.0; net_delta = 0.0; window_mark = 0.0
                 win_fills = {"yes": 0, "no": 0}   # fresh window, fresh trend-exposure budget
@@ -1408,8 +1415,21 @@ def main():
                 # Reshape: off-target young rungs (equiv to live_trader's young off-band cancel)
                 if key not in target_set:
                     age = time.time() - resting[key]["ts"]
-                    if age >= 2.0:   # min-rest-s equivalent: don't churn fresh orders (P2)
-                        drop(key, "reshape")
+                    # QUEUE-TIMING EXPERIMENT (--qtime-mp-margin, default OFF; FINGERPRINT.md): the
+                    # dominant ladder-MM reprices on a ~1.2s mechanical heartbeat (74% of its quotes
+                    # stale 3s after a spot move). When MICROPRICE diverges from mid the touch is
+                    # about to move -- reshaping NOW (bypassing the 2s churn guard) lands us at the
+                    # new level AHEAD of the MM's next heartbeat = front-of-queue at the right price.
+                    # Hypothesis under live A/B (flag on vs off); the 2s guard otherwise makes us
+                    # SLOWER than the MM and we forfeit the priority.
+                    fast = False
+                    if a.qtime_mp_margin > 0 and mp is not None:
+                        mid_n = loop_ctx.get("mid")
+                        if mid_n is not None and abs(mp - mid_n) >= a.qtime_mp_margin:
+                            fast = True
+                            qtime_ct[0] += 1
+                    if age >= 2.0 or fast:
+                        drop(key, "reshape_qtime" if fast else "reshape")
                         continue
                 # STALE-QUOTE REFRESH (markout forensics 2026-06-12): a quote resting >N s through a
                 # >=1-tick mid move is the one that gets picked off (-2.04c/fill vs +0.79c fresh).
