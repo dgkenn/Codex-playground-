@@ -458,6 +458,53 @@ def calmar(series):
     return (tot / dd) if dd > 1e-9 else (float("inf") if tot > 0 else 0.0)
 
 
+# --- competitive benchmark metrics (operator's box-trader benchmark sheet, 2026-06) -------------
+# Window-level adaptations: our unit of record is the WINDOW (one 15-min market), not the box.
+# Box-level "win rate ~100%" is definitionally true for PAIRED boxes (risk-free) -- the honest
+# window-level analogue is profitable-window rate + how unpaired legs drag the tail metrics.
+
+def profit_factor(x):
+    """Gross profits / gross losses. Benchmarks: >1.5 min, >2 strong, >3 arbitrage-gold."""
+    g = float(np.sum(x[x > 0])); l = float(-np.sum(x[x < 0]))
+    return (g / l) if l > 1e-12 else (float("inf") if g > 0 else float("nan"))
+
+
+def sortino(x):
+    """Mean / downside-deviation (per-window, not annualized). Benchmarks: >2.5 min, >3.5 strong."""
+    if len(x) < 8:
+        return float("nan")
+    dn = x[x < 0]
+    dd = float(np.sqrt(np.mean(dn ** 2))) if len(dn) else 0.0
+    return (float(np.mean(x)) / dd) if dd > 1e-12 else (float("inf") if np.mean(x) > 0 else 0.0)
+
+
+def recovery_factor(x):
+    """Total net / max drawdown. Benchmarks: >5 min, >8 strong, >10 gold."""
+    dd = maxdd(x)
+    tot = float(np.sum(x))
+    return (tot / dd) if dd > 1e-9 else (float("inf") if tot > 0 else float("nan"))
+
+
+def bench_line(x, fills_per_win=None):
+    """One compact competitive-scorecard line for a per-window PnL array, with tier flags.
+    Expectancy benchmark (>+1.5c min / +2.5c strong / +3.5c gold) is PER WINDOW here."""
+    if float(np.sum(np.abs(x))) * 100 < 20:        # near-zero turnover: inf PF/Sortino mislead
+        return "inactive (total |PnL| < 20c -- benchmark tiers n/a; the gate barely trades)"
+    pf = profit_factor(x); so = sortino(x); rf = recovery_factor(x)
+    exp_c = float(np.mean(x)) * 100
+    winr = float(np.mean(x > 0)) * 100
+
+    def tier(v, lo, mid, hi):
+        if np.isnan(v):
+            return "?"
+        return "G" if v >= hi else ("S" if v >= mid else ("m" if v >= lo else "✗"))
+
+    flags = (f"PF:{tier(pf,1.5,2,3)} Sor:{tier(so,2.5,3.5,4)} "
+             f"Rec:{tier(rf,5,8,10)} Exp:{tier(exp_c,1.5,2.5,3.5)}")
+    return (f"PF {pf:4.2f}  Sortino {so:+5.2f}  Recov {rf:+5.1f}  Exp {exp_c:+5.2f}c/win  "
+            f"prof-win {winr:3.0f}%  [{flags}]")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--asset", default="btc")
@@ -514,7 +561,9 @@ def main():
           f"OOSnet {p0[oosm].mean()*100 if oosm.any() else float('nan'):+6.2f}c  "
           f"Calmar {calmar(p0[oosm]) if oosm.any() else float('nan'):+5.1f}  maxDD {dd0*100:4.0f}c  "
           f"win {(p0>0).mean()*100:3.0f}%  n={n}")
-    print(f"  {'(metrics: net/win, OOS net, OOS Calmar, maxDD, win%, per-fill, paired t vs P0)':<24}")
+    print(f"  {'':<24} bench   {bench_line(p0)}")
+    print(f"  {'(metrics: net/win, OOS net, OOS Calmar, maxDD, win%, per-fill, paired t vs P0;':<24}")
+    print(f"  {' bench tiers per operator sheet: m=minimum S=strong G=gold ✗=below; window-level)':<24}")
 
     names = set()
     for r in rows:
@@ -538,6 +587,7 @@ def main():
         print(f"  {('['+name+']'):<24} net/win {pt[m].mean()*100:+6.2f}c  OOSnet {oosnet:+6.2f}c  "
               f"Calmar {cal:+5.1f}  maxDD {ddt*100:4.0f}c  win {(pt[m]>0).mean()*100:3.0f}%  "
               f"perfill {perfill:+.2f}c | diff {diff.mean()*100:+.3f}c  t={t:+.2f} (n={nn})")
+        print(f"  {'':<24} bench   {bench_line(pt[m])}")
         if nn >= ALERT_N and not np.isnan(t) and abs(t) > ALERT_T:
             alerts.append((name, t, nn))
         if nn >= MIN_WINDOWS and not np.isnan(t) and t > T_BAR and ddt <= DD_MULT * dd0 + 1e-9:
