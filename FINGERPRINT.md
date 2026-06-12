@@ -59,3 +59,18 @@ window), landing front-of-queue at the right price. This is execution alpha, con
 "queue position is first-order" finding -- worth a live experiment (tie requote timing to spot ticks).
 Fingerprint verdict: real & mechanical, NO directional alpha, but reinforces toxicity-gating + gives a
 concrete execution-timing refinement.
+
+## NEW fingerprint: taker SIZE-toxicity gradient (2026-06-12, 2.1M trades, OOS-STABLE)
+Profiling the AGGRESSOR (taker) side, not just the resting MM, the maker's settle-edge facing each
+taker-size is a clean, monotone, OOS-stable signal:
+- **small takes (1-11 ct): +0.55c IS / +0.46c OOS** (n=1.3M) -- NAIVE RETAIL, our bread-and-butter
+  spread capture (taker win rate <50%).
+- **mid (12-50): -0.84c / -0.08c** -- toxic-ish.
+- **large (50+): -1.42c / -2.21c** -- consistently INFORMED/toxic both halves.
+- specific signature: **size-19 takes = -3.14c IS / -3.35c OOS** (n=447/360) -- a persistent informed
+  algo. (Also size-14 toxic; 20/30/50 noisier.)
+**Interpretation:** taker SIZE is a toxicity proxy -- informed flow is large flow (Glosten-Milgrom).
+This is the WHY behind VPIN/flow gating working. **Already wired:** VPIN spikes exactly when large
+takes hit, so t32 (VPIN open gate) captures this signal -- no separate size-gate needed (and the
+collector vs parquet sz-unit difference makes a raw-size threshold risky). The finding strengthens the
+toxicity thesis: small=naive (profit), large=informed (avoid), and t32/t06/t18 are the deployed levers.
