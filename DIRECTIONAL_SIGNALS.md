@@ -156,3 +156,14 @@ application is conditioning an UNPAIRED-LEG hold/cut on large-take agreement (a 
 take needed) -- but it fires rarely and the unpaired-leg test already showed cut-beats-signal, so it's
 a WATCH item (revisit if large-take windows accumulate), not a trial. 8th directional result; the
 efficient-market wall holds, just slightly more thinly here.
+
+## Polymarket -> Kalshi lead-lag (2026-06-12, ~20h real overlapping data) — NO incremental lead
+The one documented cross-venue inefficiency, tested on real collected data (30,253 aligned 2s points):
+- Cross-corr peak is CONTEMPORANEOUS (lag 0, corr +0.30); the lag asymmetry actually favors KALSHI
+  leading Poly by ~2s (-2s corr 0.126 vs +2s corr 0.021), not the reverse.
+- **Spot-controlled regression (the decisive test): Poly does NOT survive.** dKalshi ~ dPoly + dSpot
+  (Newey-West): poly t=+1.95 at 5s, SIGN FLIPS to -1.42 at 10s, dies (0.02) at 20s = noise signature.
+- Implied edge even at the charitable 5s reading: ~0.06c/adjustment = 1/16 of the 1c tick. Not actionable.
+**Verdict: Polymarket's 5-min book does NOT lead Kalshi beyond spot. Do not add Poly quote-adjustments.**
+Caveat: 20h is one quiet regime; GHA keeps collecting, a high-vol session could be re-checked, but the
+prior is now low. (Harness bug fixed: pmkt_leadlag.py:228 passed spot prices as timestamps.)

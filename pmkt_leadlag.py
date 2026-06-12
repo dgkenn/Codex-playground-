@@ -225,7 +225,7 @@ def run_analysis(dirs, asset="btc", grid_s=GRID_S):
             print(f"Kalshi data: {(t_k.max()-t_k.min())/3600:.1f}h, {len(t_k)} ticks")
         return
 
-    df = align_series(t_k, mid_k, t_p, mid_p, spot_k, spot_k, grid_s=grid_s)
+    df = align_series(t_k, mid_k, t_p, mid_p, t_k, spot_k, grid_s=grid_s)
     if df.empty or df.dropna().shape[0] < 100:
         print("Insufficient overlapping data after alignment (need >=100 rows).")
         return
