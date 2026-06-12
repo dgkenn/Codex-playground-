@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # One-command health/control audit: instance counts MUST be loops<=1, traders<=1.
 cd "$(dirname "$0")"
-L=$(pgrep -fc "bash .*live_loop.sh" 2>/dev/null || echo 0)
-T=$(pgrep -fc "python -u kalshi_trader.py" 2>/dev/null || echo 0)
+L=$(pgrep -fc "^bash .*live_loop.sh" 2>/dev/null || echo 0)   # anchored: harness wrappers contain the pattern mid-line
+T=$(pgrep -fc "^python -u kalshi_trader.py" 2>/dev/null || echo 0)
 echo "loops=$L traders=$T switch=$(cat LIVE_SWITCH 2>/dev/null) sentinel=$([ -f .kalshi_killed_btc15m ] && echo TRIPPED || echo clear)"
 [ "$L" -le 1 ] && [ "$T" -le 1 ] && echo "OK: single-instance invariant holds" || echo "VIOLATION: multiple instances -- kill by PID and restart via ./live_loop.sh"
 python3 -c "
