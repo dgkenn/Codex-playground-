@@ -525,6 +525,17 @@ TRIALS = {
                                    open_ok=lambda f, s: (f["p"] if f["side"] == "bid"
                                                          else 1.0 - f["p"]) >= 0.40,
                                    hold_ok=lambda h, f: (1.0 - f["p"]) >= 0.75),
+    # ---- legitimate COUNTERPARTY modeling (operator 2026-06-12): tape diagnostic (2.1M trades)
+    #      found the maker's settle-edge is +1.09c/ct vs CONTRARIAN takers (fading the move) but
+    #      -0.48c/ct vs MOMENTUM-CHASERS (t=19.5 IS). So contrarians are the naive, exploitable
+    #      counterparty; to FACE them we open the side recent flow already supports (flow-aligned),
+    #      not the side being hit. f["flow"] is the prior-minute signed taker imbalance ALREADY
+    #      oriented to the leg (ask flow negated), so flow>=0 = flow supports this leg. HONEST
+    #      CAVEAT: this is the same momentum-continuation our directional-ensemble showed does NOT
+    #      survive as incremental OOS edge beyond the binary's own mid -- prospective test decides;
+    #      distinct from t06 (flow MAGNITUDE gate) and p2/t07 (spot-signal, not flow).
+    "t31_face_contrarian": lambda F: run_policy(F, open_ok=lambda f, s:
+                                   f["flow"] is None or f["flow"] >= 0),
 }
 
 
