@@ -36,6 +36,25 @@ naked directional risk, not a locked $1 — the scanner's partition assumption w
 VERTICAL_LOCK / DUTCH hit had size=1, vol_24h=0 (stale single-contract phantom quotes that vanish on a
 real order). A genuine 90¢-free edge does not persist through a scan in a bot-traded market.
 
+## ⭐ WIDE-BOX HUNTING (capture +5¢ boxes) — TESTED, survivorship bias, do NOT build
+A live session locked a few unusually wide boxes (+5¢, +7¢, one +17¢) early in fresh windows, raising
+the question: can we deliberately FIND and capture wide (≥5¢) boxes? Rigorous tape backtest (1,163
+windows, capture-net-of-strands, 60/40 OOS): **NO — it is survivorship bias.**
+- **Identity:** a box locked at the touch = the bid-ask SPREAD (lock = 1−b_y−b_n = 1−(1−spread) =
+  spread). So a "+5¢ box" *requires* a ≥5¢ spread.
+- **Scarcity:** spread ≥5¢ occurs in **0.5% of window-minutes** (6 of 1,163 windows); median spread is
+  1¢, p95 is 2¢. Wide spreads last exactly 1 minute, appear at random minutes (NOT the open), and do
+  NOT follow large spot moves. They cannot be targeted.
+- **Structural trap:** a wide spread means the market is strongly DIRECTIONAL (e.g. 0.60/0.66). That is
+  exactly the condition that strands a leg — the directional tape lifts the ask but never reverses to
+  the far YES bid. OOS: wide-hunter pair rate **collapsed to 0%**, every attempt stranded at ~35¢ mean
+  cost → **−14¢/day**. The +17¢ live box was the tape happening to oscillate back — luck, not edge.
+- **The near-50/50 refinement is moot:** there are ZERO near-50 wide-spread observations — wide spreads
+  ONLY exist far from 50, the exact regime that makes one leg unfillable.
+- **Baseline stands:** always-quote 1–2¢ harvesting = **+72¢/day OOS** on ~800 boxes/day (q0=0),
+  because the tight boxes pair (mid stays near 50). The real lever is QUEUE PRIORITY (front-of-queue
+  fills), not spread-conditioning. Recorded so we don't re-chase the +17¢ memory.
+
 ## Conclusion
 The market is efficient to within the minimum tick. No risk-free TAKER play exists; the only risk-free
 edge is the MAKER spread, which is precisely the box we already run. The productive levers remain what
