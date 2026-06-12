@@ -1,321 +1,207 @@
 """
-Q1: What is front-of-queue worth?
-Analyzes book snapshot data to measure fill-quality selection effects
-for front-of-queue vs back-of-queue positions.
+queue_q1_analysis.py — Q1: What is front-of-queue worth?
+
+DATA:
+  audit_book.jsonl  — top-of-book snapshots (bb, bsz, ba, asz) at ~1Hz, 35 windows
+  trades_kalshi_btc15m.parquet — settlement per window
+
+APPROACH:
+  For each snapshot series, detect takes as drops in displayed size at constant price.
+  Classify by take_size / depth_before to approximate who-in-queue got filled.
+  Compare markout (maker perspective) across take categories.
 """
-
-import gzip
+from __future__ import annotations
 import json
-import glob
-import sys
-import math
-from collections import defaultdict
-
 import pandas as pd
 import numpy as np
+from collections import defaultdict
 
-# ─── CONFIG ────────────────────────────────────────────────────────────────
-BOOK_GLOB = "/home/user/Codex-playground-/overnight_data/book_kalshi_btc15m*.jsonl.gz"
-TRADES_PARQUET = "/home/user/Codex-playground-/trades_kalshi_btc15m.parquet"
-MAX_FILES = 40
-MIN_TAKE_SIZE = 0.5   # minimum drop to count as a take (in $)
-MIN_LEVEL_DEPTH = 1.0  # minimum level depth to consider
+MIN_DROP = 0.5    # min drop to count as a real take (filter noise)
+MIN_DEPTH = 1.0   # min depth-before
 
-# ─── LOAD SETTLEMENT MAP ───────────────────────────────────────────────────
-def load_settlement_map():
-    """Return {ws: res_up} from parquet (one outcome per window)."""
-    df = pd.read_parquet(TRADES_PARQUET, columns=["ws", "res_up"])
-    df = df.drop_duplicates("ws")
-    return dict(zip(df["ws"].astype(int), df["res_up"].astype(int)))
+# ── Load data
+print("Loading data...")
+snaps_by_ws = defaultdict(list)
+with open("/home/user/Codex-playground-/audit_book.jsonl") as f:
+    for line in f:
+        d = json.loads(line)
+        if "bb" in d and d["bb"] is not None and d["ba"] is not None:
+            snaps_by_ws[d["ws"]].append(d)
 
-# ─── BOOK FILE PROCESSING ──────────────────────────────────────────────────
-def get_best_bid_ask(book_row):
-    """
-    yes array: [price, qty] pairs, ascending by price, so best bid = last element.
-    no array: [price, qty] pairs, ascending by price, so best ask (in YES equiv) = 1 - no_best_bid.
-    Actually: NO side bids: best NO bid = last element of no array.
-    YES best bid = highest yes price = yes[-1][0]
-    NO best bid  = highest no price  = no[-1][0]
-    YES equiv ask = 1 - best NO bid
-    """
-    yes = book_row.get("yes", [])
-    no = book_row.get("no", [])
+trades_df = pd.read_parquet("/home/user/Codex-playground-/trades_kalshi_btc15m.parquet")
+settle = dict(zip(trades_df["ws"], trades_df["res_up"]))
 
-    yes_bid_price = yes[-1][0] if yes else None
-    yes_bid_qty   = yes[-1][1] if yes else 0.0
+ws_list = sorted(snaps_by_ws.keys())
+overlap = [ws for ws in ws_list if ws in settle]
+print(f"  Windows with book+settlement: {len(overlap)}, total snaps: {sum(len(snaps_by_ws[w]) for w in overlap)}")
 
-    no_bid_price  = no[-1][0] if no else None
-    # YES ask equivalent = 1 - best NO bid
-    yes_ask_price = (1.0 - no_bid_price) if no_bid_price is not None else None
-    no_bid_qty    = no[-1][1] if no else 0.0
+# ── Detect take events from consecutive snapshot size drops
+take_events = []
 
-    return yes_bid_price, yes_bid_qty, yes_ask_price, no_bid_qty
+for ws in overlap:
+    snaps = sorted(snaps_by_ws[ws], key=lambda d: d["ts"])
+    res = settle[ws]
 
-
-def process_book_file(filepath, settlement_map):
-    """
-    Replay book snapshots from one file. Find take events by detecting
-    price-stable depth drops at the touch.
-
-    Returns list of take event dicts.
-    """
-    events = []
-    snapshots = []  # list of (t, ws, yes_bid_p, yes_bid_q, yes_ask_p, no_bid_q)
-
-    with gzip.open(filepath, "rt") as f:
-        for line in f:
-            try:
-                row = json.loads(line)
-            except (json.JSONDecodeError, EOFError):
-                continue
-            except Exception:
-                continue
-            if row.get("type") != "book":
-                continue
-            t   = row.get("t", 0)
-            ws  = int(row.get("ws", 0))
-            yb_p, yb_q, ya_p, na_q = get_best_bid_ask(row)
-            if yb_p is None or ya_p is None:
-                continue
-            snapshots.append((t, ws, yb_p, yb_q, ya_p, na_q))
-
-    # Replay: find consecutive pairs where price stays constant but qty drops
-    for i in range(1, len(snapshots)):
-        t0, ws0, yb_p0, yb_q0, ya_p0, na_q0 = snapshots[i - 1]
-        t1, ws1, yb_p1, yb_q1, ya_p1, na_q1 = snapshots[i]
-
-        # Skip if window changed
-        if ws0 != ws1:
-            continue
-
-        res = settlement_map.get(ws0)
-        if res is None:
-            continue  # no settlement data
-
-        # Check YES bid side: price stable, qty dropped
-        if abs(yb_p0 - yb_p1) < 1e-5 and yb_q0 > yb_q1 + MIN_TAKE_SIZE:
-            delta = yb_q0 - yb_q1
-            depth = yb_q0
-            if depth >= MIN_LEVEL_DEPTH:
-                fill_price = yb_p0  # maker was posting YES bids
-                # markout for YES maker: if YES wins (res_up=1) = 1-fill_price, else -fill_price
-                markout = (1.0 - fill_price) if res == 1 else (-fill_price)
-                frac = delta / depth
-                events.append({
-                    "ws": ws0,
-                    "t": t1,
-                    "side": "YES_bid",
-                    "fill_price": fill_price,
-                    "take_size": delta,
-                    "level_depth": depth,
-                    "take_frac": frac,
-                    "markout": markout,
-                    "res_up": res,
+    # YES BID side: bb constant, bsz drops → taker bought YES (took resting YES bid)
+    # Markout for YES maker resting at bb: res_up - bb
+    prev_bb, prev_bsz = None, None
+    for snap in snaps:
+        bb, bsz = snap["bb"], snap["bsz"]
+        if prev_bb is not None and bb == prev_bb and prev_bsz is not None:
+            drop = prev_bsz - bsz
+            if drop >= MIN_DROP and prev_bsz >= MIN_DEPTH:
+                D, dD = prev_bsz, drop
+                ratio = dD / D
+                cat = "small" if ratio < 1/3 else ("medium" if ratio < 2/3 else "large")
+                take_events.append({
+                    "ws": ws, "side": "YES_bid", "price": bb,
+                    "depth_before": D, "take_size": dD, "ratio": ratio,
+                    "cat": cat, "res_up": res,
+                    "markout": res - bb   # YES maker: profit if res=1
                 })
+        prev_bb, prev_bsz = bb, bsz
 
-        # Check NO bid side: price stable, qty dropped
-        if abs(ya_p0 - ya_p1) < 1e-5 and na_q0 > na_q1 + MIN_TAKE_SIZE:
-            delta = na_q0 - na_q1
-            depth = na_q0
-            if depth >= MIN_LEVEL_DEPTH:
-                fill_price = ya_p0  # YES-equiv ask price
-                # markout for NO maker: if YES loses (res_up=0) = 1-(1-fill_price) - ...
-                # NO maker profits when YES loses: payoff = (1-0) - no_bid = 1 - no_bid
-                # no_bid = 1 - yes_ask, so payoff = yes_ask - 0 = fill_price
-                # More cleanly: NO maker fills at NO price = 1-fill_price
-                no_fill_price = 1.0 - fill_price
-                markout = (1.0 - no_fill_price) if res == 0 else (-no_fill_price)
-                frac = delta / depth
-                events.append({
-                    "ws": ws0,
-                    "t": t1,
-                    "side": "NO_bid",
-                    "fill_price": fill_price,
-                    "take_size": delta,
-                    "level_depth": depth,
-                    "take_frac": frac,
-                    "markout": markout,
-                    "res_up": res,
+    # NO BID side: ba constant (= 1 - best NO bid), asz drops → taker sold YES (took NO bid)
+    # Markout for NO maker at price (1-ba): (1-res_up) - (1-ba) = ba - res_up
+    prev_ba, prev_asz = None, None
+    for snap in snaps:
+        ba, asz = snap["ba"], snap["asz"]
+        if prev_ba is not None and ba == prev_ba and prev_asz is not None:
+            drop = prev_asz - asz
+            if drop >= MIN_DROP and prev_asz >= MIN_DEPTH:
+                D, dD = prev_asz, drop
+                ratio = dD / D
+                cat = "small" if ratio < 1/3 else ("medium" if ratio < 2/3 else "large")
+                take_events.append({
+                    "ws": ws, "side": "NO_bid", "price": 1 - ba,
+                    "depth_before": D, "take_size": dD, "ratio": ratio,
+                    "cat": cat, "res_up": res,
+                    "markout": ba - res   # NO maker: profit if res=0
                 })
+        prev_ba, prev_asz = ba, asz
 
-    return events
+ev = pd.DataFrame(take_events)
 
+# ── TABLE 1: Take-size category
+print()
+print("=" * 66)
+print("TABLE 1: Take-size category vs markout (YES + NO combined)")
+print("=" * 66)
+fmt = f"{'Category':<30} {'N':>7} {'AvgTake':>9} {'AvgDepth':>9} {'P(win)':>8} {'Markout(c)':>11}"
+print(fmt)
+print("-" * 66)
 
-# ─── MAIN ──────────────────────────────────────────────────────────────────
-def main():
-    # Load settlement map
-    settlement_map = load_settlement_map()
-    total_windows = len(settlement_map)
+cats_info = [
+    ("small",  "small  (dD<D/3)  front fills"),
+    ("medium", "medium (D/3-2/3) mid fills  "),
+    ("large",  "large  (dD>2D/3) sweep fills"),
+]
+table1 = {}
+for cat, label in cats_info:
+    sub = ev[ev.cat == cat]
+    n = len(sub)
+    if n == 0:
+        print(f"{label:<30} {0:>7}")
+        continue
+    avg_take = sub["take_size"].mean()
+    avg_depth = sub["depth_before"].mean()
+    p_win = (sub["markout"] > 0).mean()
+    mo_c = sub["markout"].mean() * 100
+    table1[cat] = mo_c
+    print(f"{label:<30} {n:>7} {avg_take:>9.1f} {avg_depth:>9.1f} {p_win:>8.3f} {mo_c:>+11.2f}")
 
-    # Sample book files
-    all_files = sorted(glob.glob(BOOK_GLOB))
-    if len(all_files) > MAX_FILES:
-        stride = max(1, len(all_files) // MAX_FILES)
-        files = all_files[::stride][:MAX_FILES]
+# ── TABLE 2: Side x category
+print()
+print("=" * 66)
+print("TABLE 2: Side x take-size category")
+print("=" * 66)
+fmt2 = f"{'Side + Category':<32} {'N':>7} {'AvgTake':>9} {'P(win)':>8} {'Markout(c)':>11}"
+print(fmt2)
+print("-" * 66)
+for side in ["YES_bid", "NO_bid"]:
+    for cat, label in cats_info:
+        sub = ev[(ev.side == side) & (ev.cat == cat)]
+        n = len(sub)
+        if n == 0:
+            print(f"{side} {cat:<22} {0:>7}")
+            continue
+        avg_take = sub["take_size"].mean()
+        p_win = (sub["markout"] > 0).mean()
+        mo_c = sub["markout"].mean() * 100
+        print(f"{side} {cat:<22} {n:>7} {avg_take:>9.1f} {p_win:>8.3f} {mo_c:>+11.2f}")
+    print()
+
+# ── TABLE 3: Queue position tier
+print("=" * 66)
+print("TABLE 3: Queue position tier (who gets filled and at what markout)")
+print("=" * 66)
+print("  Front-maker (q<=D/3): fills on ALL takes")
+print("  Mid-maker (D/3<q<=2D/3): fills on medium + large only")
+print("  Back-maker (q>2D/3): fills on large sweeps only")
+print()
+fmt3 = f"{'Queue tier':<44} {'N_fills':>8} {'P(win)':>8} {'Markout(c)':>11}"
+print(fmt3)
+print("-" * 66)
+
+tiers = [
+    ("front (q<=D/3, all takes)",            ev),
+    ("middle (D/3<q<=2D/3, med+large)",       ev[ev.cat.isin(["medium","large"])]),
+    ("back (q>2D/3, large sweeps only)",       ev[ev.cat == "large"]),
+]
+tier_mo = {}
+for tname, sub in tiers:
+    n = len(sub)
+    if n == 0:
+        print(f"{tname:<44} {0:>8}")
+        continue
+    p_win = (sub["markout"] > 0).mean()
+    mo_c = sub["markout"].mean() * 100
+    tier_mo[tname] = mo_c
+    print(f"{tname:<44} {n:>8} {p_win:>8.3f} {mo_c:>+11.2f}")
+
+# ── Selection effect summary
+print()
+print("=" * 66)
+print("KEY FINDING: Selection Effect (front vs back of queue)")
+print("=" * 66)
+
+small_mo = ev[ev.cat=="small"]["markout"].mean() * 100 if len(ev[ev.cat=="small"]) else float("nan")
+large_mo = ev[ev.cat=="large"]["markout"].mean() * 100 if len(ev[ev.cat=="large"]) else float("nan")
+all_mo   = ev["markout"].mean() * 100
+
+print(f"  All-take avg markout:           {all_mo:+.2f} ¢")
+print(f"  Small-take markout (front-Q):   {small_mo:+.2f} ¢")
+print(f"  Large-sweep markout (back-Q):   {large_mo:+.2f} ¢")
+delta = small_mo - large_mo
+print(f"  Front-vs-back advantage:        {delta:+.2f} ¢")
+if not np.isnan(delta):
+    if delta > 0.5:
+        print("  => Front-of-queue is BETTER: small-take takers are less informed.")
+    elif delta < -0.5:
+        print("  => Front-of-queue is WORSE: small takes carry more adverse selection.")
     else:
-        files = all_files
+        print("  => No significant front-vs-back difference.")
 
-    print(f"Processing {len(files)}/{len(all_files)} book files, {total_windows} settlement windows")
+# ── Data summary
+print()
+print("=" * 66)
+print("DATASET SUMMARY")
+print("=" * 66)
+print(f"  Windows analyzed:         {len(overlap)}")
+n_yes = len(ev[ev.side=="YES_bid"])
+n_no  = len(ev[ev.side=="NO_bid"])
+print(f"  Total take events:        {len(ev)} (YES_bid={n_yes}, NO_bid={n_no})")
+n_small = len(ev[ev.cat=="small"]); n_med = len(ev[ev.cat=="medium"]); n_large = len(ev[ev.cat=="large"])
+print(f"  By category: small={n_small} ({100*n_small/len(ev):.0f}%), "
+      f"medium={n_med} ({100*n_med/len(ev):.0f}%), large={n_large} ({100*n_large/len(ev):.0f}%)")
+print(f"  Avg take size:            {ev['take_size'].mean():.1f} contracts")
+print(f"  Avg depth at touch:       {ev['depth_before'].mean():.1f} contracts")
 
-    # Process all files
-    all_events = []
-    windows_seen = set()
-    for fp in files:
-        evs = process_book_file(fp, settlement_map)
-        all_events.extend(evs)
-        for e in evs:
-            windows_seen.add(e["ws"])
-
-    if not all_events:
-        print("ERROR: No take events found. Check data paths.")
-        sys.exit(1)
-
-    df = pd.DataFrame(all_events)
-    total_events = len(df)
-    total_ws = len(windows_seen)
-
-    # ─── TABLE 1: Take size category ───────────────────────────────────────
-    # Classify by take_frac: small (< 1/3), medium (1/3–2/3), large (> 2/3)
-    def take_cat(frac):
-        if frac < 1/3:
-            return "small (<1/3 depth)"
-        elif frac < 2/3:
-            return "medium (1/3–2/3)"
-        else:
-            return "large (>2/3 depth)"
-
-    df["take_cat"] = df["take_frac"].apply(take_cat)
-
-    cat_order = ["small (<1/3 depth)", "medium (1/3–2/3)", "large (>2/3 depth)"]
-    print("\n" + "="*70)
-    print("TABLE 1: Take size category vs markout (all sides combined)")
-    print("="*70)
-    print(f"{'Category':<22} {'N':>6} {'Mean take($)':>13} {'P(YES wins)':>12} {'Mean markout(¢)':>16}")
-    print("-"*70)
-
-    for cat in cat_order:
-        sub = df[df["take_cat"] == cat]
-        if len(sub) == 0:
-            continue
-        n = len(sub)
-        mean_take = sub["take_size"].mean()
-        p_yes_wins = sub["res_up"].mean()
-        mean_mo = sub["markout"].mean() * 100  # convert to cents
-        print(f"{cat:<22} {n:>6} {mean_take:>13.1f} {p_yes_wins:>12.3f} {mean_mo:>16.2f}¢")
-
-    print("-"*70)
-    # Overall
-    print(f"{'TOTAL':<22} {total_events:>6} {df['take_size'].mean():>13.1f} {df['res_up'].mean():>12.3f} {df['markout'].mean()*100:>16.2f}¢")
-
-    # ─── TABLE 2: Queue position tier ─────────────────────────────────────
-    # Interpret: small take selects the front third of queue.
-    # medium take selects front+middle third.
-    # large take selects entire level.
-    #
-    # We simulate: for each take event, which positional tier was filled?
-    # small_take → "front" tier filled
-    # medium_take → "front" and "middle" tiers filled (but we can only attribute to the marginal)
-    # large_take → "front", "middle", and "back" tiers filled
-    #
-    # Simpler: classify each event by the LAST tier filled (the marginal tier):
-    #   small → front (marginal = front)
-    #   medium → middle (marginal = middle)
-    #   large → back (marginal = back)
-    # The "front" tier is always filled in any take; selection is about ADVERSE selection.
-    # Front-of-queue holders: their fill outcome is revealed by ALL takes.
-    # Back-of-queue holders: their fill outcome revealed only by LARGE takes.
-    #
-    # Selection effect: if small takes are more informative (better for adverse selection
-    # for maker), or if large sweeps happen on stronger signals.
-
-    print("\n" + "="*70)
-    print("TABLE 2: Queue tier markout (by marginal tier filled)")
-    print("  front = small takes (<1/3); mid = medium; back = large (>2/3)")
-    print("="*70)
-    print(f"{'Tier':<12} {'N':>6} {'Mean markout(¢)':>16} {'P(profitable)':>14} {'Mean take_frac':>15}")
-    print("-"*70)
-
-    tier_map = {
-        "small (<1/3 depth)": "FRONT tier",
-        "medium (1/3–2/3)":   "MID tier",
-        "large (>2/3 depth)": "BACK tier",
-    }
-    for cat, tier in tier_map.items():
-        sub = df[df["take_cat"] == cat]
-        if len(sub) == 0:
-            continue
-        n = len(sub)
-        mean_mo = sub["markout"].mean() * 100
-        p_prof = (sub["markout"] > 0).mean()
-        mean_frac = sub["take_frac"].mean()
-        print(f"{tier:<12} {n:>6} {mean_mo:>16.2f}¢ {p_prof:>14.3f} {mean_frac:>15.3f}")
-
-    print("-"*70)
-
-    # ─── TABLE 3: YES vs NO side breakdown ────────────────────────────────
-    print("\n" + "="*70)
-    print("TABLE 3: Side breakdown (YES_bid makers vs NO_bid makers)")
-    print("="*70)
-    print(f"{'Side':<12} {'N':>6} {'Mean markout(¢)':>16} {'P(profitable)':>14} {'small_frac':>11} {'large_frac':>11}")
-    print("-"*70)
-
-    for side in ["YES_bid", "NO_bid"]:
-        sub = df[df["side"] == side]
-        if len(sub) == 0:
-            continue
-        n = len(sub)
-        mean_mo = sub["markout"].mean() * 100
-        p_prof  = (sub["markout"] > 0).mean()
-        small_f = (sub["take_cat"] == "small (<1/3 depth)").mean()
-        large_f = (sub["take_cat"] == "large (>2/3 depth)").mean()
-        print(f"{side:<12} {n:>6} {mean_mo:>16.2f}¢ {p_prof:>14.3f} {small_f:>11.3f} {large_f:>11.3f}")
-
-    # ─── KEY SELECTION EFFECT ─────────────────────────────────────────────
-    small_mo = df[df["take_cat"] == "small (<1/3 depth)"]["markout"].mean() * 100
-    large_mo = df[df["take_cat"] == "large (>2/3 depth)"]["markout"].mean() * 100
-    diff = large_mo - small_mo
-
-    print("\n" + "="*70)
-    print("KEY FINDING: Selection effect")
-    print("="*70)
-    print(f"  Front-of-queue (small takes): {small_mo:+.2f}¢ mean markout")
-    print(f"  Back-of-queue  (large sweeps): {large_mo:+.2f}¢ mean markout")
-    print(f"  Difference (large - small):    {diff:+.2f}¢")
-    if diff < -0.5:
-        print("  => Front-of-queue LESS adversely selected than large sweeps (better for maker)")
-    elif diff > 0.5:
-        print("  => Front-of-queue MORE adversely selected than large sweeps (worse for maker)")
-    else:
-        print("  => Minimal selection effect between queue tiers")
-
-    # Adverse selection by take_frac (correlation)
-    corr = df["take_frac"].corr(df["markout"])
-    print(f"\n  Corr(take_frac, markout): {corr:.4f}")
-    print(f"    (positive => larger takes have better markout for maker;")
-    print(f"     negative => larger takes are worse for maker, i.e. adverse selection)")
-
-    # ─── SUMMARY ──────────────────────────────────────────────────────────
-    print("\n" + "="*70)
-    print("SUMMARY STATS")
-    print("="*70)
-    print(f"  Files processed:           {len(files)}")
-    print(f"  Total windows w/settlement:{total_windows}")
-    print(f"  Windows with take events:  {total_ws}")
-    print(f"  Total take events:         {total_events}")
-    print(f"  YES_bid events:            {(df['side']=='YES_bid').sum()}")
-    print(f"  NO_bid events:             {(df['side']=='NO_bid').sum()}")
-    print(f"  Mean level depth at event: {df['level_depth'].mean():.1f}$")
-    print(f"  Median take size:          {df['take_size'].median():.1f}$")
-    print(f"  Median take_frac:          {df['take_frac'].median():.3f}")
-
-    # Distribution of take categories
-    cat_counts = df["take_cat"].value_counts()
-    print("\n  Take category distribution:")
-    for cat in cat_order:
-        n = cat_counts.get(cat, 0)
-        pct = 100 * n / total_events
-        print(f"    {cat}: {n} ({pct:.1f}%)")
-
-
-if __name__ == "__main__":
-    main()
+# Spread stats
+spreads = []
+for ws in overlap[:10]:
+    for snap in snaps_by_ws[ws][:100]:
+        if snap.get("ba") and snap.get("bb"):
+            spreads.append(snap["ba"] - snap["bb"])
+if spreads:
+    print(f"  Avg bid-ask spread:       {np.mean(spreads)*100:.2f} ¢ (sample of {len(spreads)} snaps)")
