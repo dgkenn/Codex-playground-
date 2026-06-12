@@ -71,8 +71,18 @@ baseline AND time-to-fill p90 <2× baseline (queue impact check). Then relax los
 5. No kill trips in the trailing 14 days.
 **TRANSITION — this is where the strategy itself must change, not just the knobs:**
 - post 2→4; max-net 2→4 (= post); max-notional $20→$100 (10% of bankroll); loss-limit $12→$25.
-- **A single 15-min series cannot absorb $1000** (≈$4/quote deployed; >$900 idle). The remainder
-  deploys across STRATEGIES, not more size on one book — each behind its own pre-registered gate:
+- **MEASURED CAPACITY (empirical study 2026-06-12, 20k book ticks + 2,779 windows): KXBTC15M
+  supports up to N=16 contracts/window (~$16 collateral/window, ~$608/day turnover) before the
+  gates fail.** Depth is NOT the binding constraint (median touch: 764 YES / 673 NO contracts;
+  N=16 is ~2% of it) — TAKER FLOW is: median one-side flow is only 476 ct/window, N=32 is 6.7%
+  of it (FAIL) and fill rate collapses by N=64 (28% vs 95% at 1-lot). Fill rate at N=16 is still
+  ~79%. So the contract ladder can eventually run 1→2→4→8→16 on this book (each step through the
+  same gates: probation, markout, fill-p90) — 4× higher than this plan originally assumed — but
+  $100+/window is physically unpairable (needs ≥100% of the market's own two-sided flow).
+  Capital RECYCLES every 15 min, so N=16 uses only ~$16-32 concurrently; a $1000 bankroll is
+  therefore never depth-limited, it is FLOW-limited to ~$600/day of box turnover on this book.
+  The remainder deploys across STRATEGIES, not more size on one book — each behind its own
+  pre-registered gate:
   (a) thin/new-market maker pilot: $10-50 per market across 10-20 quiet event markets
       (KALSHI_GOLD_CANDIDATES #4) — cap category exposure at $150;
   (b) ladder-lock maker IF the two-week ladder collector shows ≥5 crossable dislocations/week
