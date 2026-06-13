@@ -101,7 +101,8 @@ jobs:
             python -c "import notify; notify.alert_sync('🟢 live session armed ($ASSET) — preflight GO, \$5 cap, posting both sides. Box/settlement alerts follow on fills.')" || true
             timeout --signal=TERM --kill-after=60 2820 \
               python -u kalshi_trader.py --asset "$ASSET" --live --size-mode flat \
-                --post 1 --max-notional 5 --loss-limit 6 --max-rungs 1 --duration 2760 \
+                --post 1 --max-notional 5 --loss-limit 6 --max-rungs 1 \
+                --guard-yes-spread 0.02 --duration 2760 \
                 --remote-switch-s 20 || true
           else
             python -c "import notify; notify.alert_sync('🟡 live cycle skipped ($ASSET) — preflight NO-GO (market/balance gate); retries next cycle.')" || true
