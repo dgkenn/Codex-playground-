@@ -678,6 +678,15 @@ TRIALS = {
     "tc_pairmax":          lambda F: pol_sell_unpaired(F, cheap_below=None, open_ok=lambda f:
                                    f["k"] <= 9 and f["spread"] <= 0.03
                                    and (f["flow"] is None or abs(f["flow"]) < 250)),
+    # ---- live_current: THE DEPLOYED STRATEGY (2026-06-13), scored as a trial so the DEPLOY bar can
+    #      judge every candidate vs WHAT WE ACTUALLY RUN NOW (candidate - live_current), not vs naive
+    #      P0 -- avoids double-counting an already-deployed gate (critical for stacking). The
+    #      leaderboard t-stats stay vs P0 (the fixed, comparable ruler). KEEP THIS IN SYNC WITH
+    #      .github/workflows/live.yml: currently P0 + t36 guarded-opener (--guard-yes-spread 0.02);
+    #      run_policy already enforces the deployed --max-net 1 / always-pair / --max-rungs 1.
+    "live_current":        lambda F: run_policy(F, open_ok=lambda f, s:
+                                   not (f["side"] == "bid" and f["spread"] < 0.02)
+                                   and not ((f.get("sig") or 0.0) > 8.0 and f["spread"] < 0.02)),
 }
 
 
@@ -800,6 +809,10 @@ def main():
     wins = np.array([r["ws"] for r in rows]); cut = wins[int(n * 0.6)] if n >= 10 else wins[-1] + 1
     oosm = wins >= cut
     p0 = np.array([r["p0"] for r in rows]); dd0 = maxdd(p0)
+    # CURRENT LIVE strategy per-window pnl (the live_current trial = the deployed config). The
+    # DEPLOY decision is judged vs THIS (does a candidate beat what we actually run now?), while the
+    # leaderboard t-stats stay vs P0 (a fixed, comparable ruler that doesn't reset on promotion).
+    live = np.array([(r.get("trials") or {}).get("live_current", np.nan) for r in rows])
     print(f"  {'P0 always-pair (baseline)':<24} net/win {p0.mean()*100:+6.2f}c  "
           f"OOSnet {p0[oosm].mean()*100 if oosm.any() else float('nan'):+6.2f}c  "
           f"Calmar {calmar(p0[oosm]) if oosm.any() else float('nan'):+5.1f}  maxDD {dd0*100:4.0f}c  "
@@ -833,11 +846,17 @@ def main():
               f"perfill {perfill:+.2f}c | diff {diff.mean()*100:+.3f}c  t={t:+.2f} (n={nn})")
         print(f"  {'':<24} bench   {bench_line(pt[m])}")
         if nn >= ALERT_N and not np.isnan(t) and abs(t) > ALERT_T:
-            alerts.append((name, t, nn))
-        if nn >= MIN_WINDOWS and not np.isnan(t) and t > T_BAR and ddt <= DD_MULT * dd0 + 1e-9:
-            print(f"      *** {name} CLEARS THE DEPLOY BAR (n>={MIN_WINDOWS}, t>{T_BAR}, DD ok) "
-                  f"-> bring to operator ***")
-            deploy_ready.append((name, t, nn))
+            alerts.append((name, t, nn))         # WATCH tier uses t vs P0 (the stable ruler)
+        # DEPLOY tier is judged vs the CURRENT LIVE strategy (live_current), not P0: a candidate must
+        # beat what we ACTUALLY run now. (Today live_current ~= P0 + t36, and t36 ~= P0, so the two
+        # nearly coincide -- but the moment a real gate is promoted this prevents double-counting it.)
+        lm = m & ~np.isnan(live)
+        t_live = tstat(pt[lm] - live[lm]) if lm.sum() >= 8 else float("nan")
+        if (name != "live_current" and lm.sum() >= MIN_WINDOWS and not np.isnan(t_live)
+                and t_live > T_BAR and ddt <= DD_MULT * dd0 + 1e-9):
+            print(f"      *** {name} CLEARS THE DEPLOY BAR vs LIVE (n>={int(lm.sum())}, "
+                  f"t_vs_live={t_live:+.2f}>{T_BAR}, DD ok) -> bring to operator ***")
+            deploy_ready.append((name, t_live, int(lm.sum())))
 
     # WATCH tier (2-sigma): a heads-up so we can track a candidate -- GitHub annotation + committed
     # trail ONLY. NO Telegram: with many trials, several sit past 2-sigma continuously, so phone
@@ -862,7 +881,8 @@ def main():
     # DEPLOY tier: cleared the pre-registered bar (t>T_BAR, n>=MIN_WINDOWS, DD ok). THIS is the
     # actionable "promote now" event -> phone push (Telegram) + GitHub annotation + committed trail.
     if deploy_ready:
-        dlines = [f"{name}: t={t:+.2f} n={nn} (cleared deploy bar: t>{T_BAR}, n>={MIN_WINDOWS}, DD ok)"
+        dlines = [f"{name}: t_vs_live={t:+.2f} n={nn} (beats CURRENT LIVE past deploy bar: "
+                  f"t>{T_BAR}, n>={MIN_WINDOWS}, DD ok)"
                   for name, t, nn in deploy_ready]
         dbanner = (f"\U0001f680 DEPLOY-READY [{a.asset}]: trial(s) cleared the pre-registered deploy "
                    f"bar -- promote per SCALE_GATE (ONE at a time; confirm live behavior matches the "
