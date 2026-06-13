@@ -1,0 +1,31 @@
+shadow comparison over 8 de-duped windows | files=4
+
+     variant  net/win  Δvs base  paired t GROSS/win  gross t
+   ufat_band   +2.080    +1.529     +0.72    +2.080    +0.67 <edge>
+     mo_size   +1.970    +1.418     +0.73    +1.970    +0.36 <edge>
+       cap25   +1.767    +1.216     +0.75    +1.767    +0.60 <edge>
+   flow_gate   +1.635    +1.083     +2.40    +1.635    +0.37 <edge>
+deplete_gate   +1.595    +1.043     +1.97    +1.595    +0.36 <edge>
+   micro_cal   +1.567    +1.016     +0.62    +1.567    +0.43 <edge>
+  av_stoikov   +1.382    +0.831     +0.31    +1.382    +0.22 <edge>
+ ufat_skew15   +1.214    +0.663     +0.27    +1.214    +0.52 <edge>
+    dneutral   +1.196    +0.644     +0.33    +1.196    +0.43 <edge>
+      skew15   +1.126    +0.574     +0.54    +1.126    +0.31 <edge>
+micro_skew15   +1.126    +0.574     +0.54    +1.126    +0.31 <edge>
+  micro_asym   +1.042    +0.491     +0.80    +1.042    +0.24 <edge>
+     fv_size   +0.953    +0.402     +1.20    +0.953    +0.23 <edge>
+ micro_react   +0.774    +0.223     +0.31    +0.774    +0.20 <edge>
+  micro_soft   +0.551    +0.000       n/a    +0.551    +0.13 <edge>
+  micro_gate   +0.551    +0.000       n/a    +0.551    +0.13 <edge>
+    baseline   +0.551                        +0.551    +0.13 <edge>
+   late_gate   +0.513    -0.038     -0.78    +0.513    +0.12 <edge>
+  micro_ufat   +0.498    -0.054     -0.03    +0.498    +0.16 <edge>
+micro_strict   +0.113    -0.438     -0.18    +0.113    +0.04 <edge>
+   gross_max   +0.081    -0.471     -0.62    +0.081    +0.02 <edge>
+    tox_gate   -0.077    -0.629     -0.31    -0.077    -0.03
+  spot_react   -0.186    -0.738     -1.38    -0.186    -0.05
+  micro_spot   -0.186    -0.738     -1.38    -0.186    -0.05
+  micro_marg   -0.214    -0.766     -0.37    -0.214    -0.07
+
+Read: paired t = net edge OVER baseline (rebate-inclusive). GROSS/win = trade P&L EXCLUDING the rebate = the edge OUTSIDE rebates; gross t vs 0, |t|>2 notable. n=8.
+Only positive-GROSS variants have an edge beyond rebate harvesting (the micro-gate family).

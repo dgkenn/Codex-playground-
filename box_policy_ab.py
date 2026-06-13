@@ -668,6 +668,16 @@ TRIALS = {
     # tc_mid_tailtrim: two ORTHOGONAL selection axes -- entry-time (k4-5) x counterparty take-size (<=100).
     "tc_mid_tailtrim":     lambda F: run_policy(F, open_ok=lambda f, s:
                                    (f["k"] in (4, 5)) and (f.get("tksize") is None or f["tksize"] <= 100)),
+    # ---- PAIR_RATE.md recommended PnL-optimal policy (2026-06-13): entry gate (early-ish, tight
+    #      spread, balanced prior-min flow) + COMPLETE every strand at the touch. Backtest reached
+    #      P(both fill) 0.974 OOS, +4.54c/win vs baseline. NOTE the completion is modeled here as
+    #      sell/flatten-at-touch (the framework's `exit` field, which is economically the box-
+    #      completion-by-crossing); the study's SUB-MINUTE "post at touch-1c immediately" edge is
+    #      NOT scoreable at per-minute resolution -- that piece needs live fill-telemetry validation,
+    #      not this replay. So this trial forward-tests the ENTRY-GATE + complete-all combination.
+    "tc_pairmax":          lambda F: pol_sell_unpaired(F, cheap_below=None, open_ok=lambda f:
+                                   f["k"] <= 9 and f["spread"] <= 0.03
+                                   and (f["flow"] is None or abs(f["flow"]) < 250)),
 }
 
 
@@ -803,7 +813,8 @@ def main():
         names.update((r.get("trials") or {}).keys())
         if "p2" in r:
             names.add("p2_signal_hold")
-    alerts = []
+    alerts = []          # 2-sigma WATCH tier: GitHub annotation + committed trail (NO phone push)
+    deploy_ready = []    # DEPLOY bar (t>T_BAR, n>=MIN_WINDOWS, DD ok): the actionable promote event -> Telegram
     for name in sorted(names):
         pt = np.array([(r.get("trials") or {}).get(name,
                         r.get("p2") if name == "p2_signal_hold" else np.nan) for r in rows], float)
@@ -826,28 +837,50 @@ def main():
         if nn >= MIN_WINDOWS and not np.isnan(t) and t > T_BAR and ddt <= DD_MULT * dd0 + 1e-9:
             print(f"      *** {name} CLEARS THE DEPLOY BAR (n>={MIN_WINDOWS}, t>{T_BAR}, DD ok) "
                   f"-> bring to operator ***")
+            deploy_ready.append((name, t, nn))
 
+    # WATCH tier (2-sigma): a heads-up so we can track a candidate -- GitHub annotation + committed
+    # trail ONLY. NO Telegram: with many trials, several sit past 2-sigma continuously, so phone
+    # pushes here are noise. The phone push is reserved for the DEPLOY tier below (actionable).
     if alerts:
         lines = [f"{name}: paired t={t:+.2f} over n={nn} (2-sigma {'+' if t>0 else '-'})"
                  for name, t, nn in alerts]
-        banner = (f"[STRATEGY ALERT] {a.asset}: trial strategy crossed the 2-sigma bar -- review "
-                  f"for action.\n  " + "\n  ".join(lines))
+        banner = (f"[STRATEGY WATCH] {a.asset}: trial(s) past the 2-sigma bar (tracking; not yet "
+                  f"deploy-ready).\n  " + "\n  ".join(lines))
         print("\n" + banner)
         if a.alert:
             for name, t, nn in alerts:               # GitHub Actions annotation (shows on the run)
-                print(f"::warning title=Strategy crossed 2-sigma::{name} t={t:+.2f} n={nn} ({a.asset})")
-            try:                                     # committed trail + phone push (Telegram via notify)
+                print(f"::warning title=Strategy past 2-sigma (watch)::{name} t={t:+.2f} n={nn} ({a.asset})")
+            try:                                     # committed trail (no phone push at this tier)
                 with open("STRATEGY_ALERTS.txt", "a") as fh:
                     fh.write(f"{__import__('datetime').datetime.utcnow().isoformat()}Z  {banner}\n")
             except Exception:
                 pass
-            try:
-                import notify
-                notify.alert(banner)
-            except Exception:
-                pass
     else:
         print("\n  no trial strategy past the 2-sigma alert bar yet -- accumulating.")
+
+    # DEPLOY tier: cleared the pre-registered bar (t>T_BAR, n>=MIN_WINDOWS, DD ok). THIS is the
+    # actionable "promote now" event -> phone push (Telegram) + GitHub annotation + committed trail.
+    if deploy_ready:
+        dlines = [f"{name}: t={t:+.2f} n={nn} (cleared deploy bar: t>{T_BAR}, n>={MIN_WINDOWS}, DD ok)"
+                  for name, t, nn in deploy_ready]
+        dbanner = (f"\U0001f680 DEPLOY-READY [{a.asset}]: trial(s) cleared the pre-registered deploy "
+                   f"bar -- promote per SCALE_GATE (ONE at a time; confirm live behavior matches the "
+                   f"ledger; no arming within 48h of a kill).\n  " + "\n  ".join(dlines))
+        print("\n" + dbanner)
+        if a.alert:
+            for name, t, nn in deploy_ready:
+                print(f"::warning title=DEPLOY-READY::{name} t={t:+.2f} n={nn} ({a.asset})")
+            try:
+                with open("STRATEGY_ALERTS.txt", "a") as fh:
+                    fh.write(f"{__import__('datetime').datetime.utcnow().isoformat()}Z  {dbanner}\n")
+            except Exception:
+                pass
+            try:
+                import notify
+                notify.alert(dbanner)
+            except Exception:
+                pass
 
 
 if __name__ == "__main__":
