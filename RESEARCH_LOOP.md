@@ -90,3 +90,29 @@ dominant fix is the HEDGE (venue build). Streaks cluster in time (live RCA) -> a
 - **R4-1: vol x directional INSIDE Q4** -- fit YES/NO classifiers restricted to the top-vol quartile
   (55% strand) with a VALID strand label; narrower population may yield actionable AUC.
 (R4-3 book-stream to n>=300 = infra/data-accrual; collector running, tracked separately.)
+
+### Round 4 — RESULTS (commit 29314d6; ROUND4.md)
+- HEDGE: clears screen (t=4.62,n=200) BUT BTC spot explains only 1.7% of strand-loss variance
+  (R^2=0.017) -> the perp does NOT delta-hedge the binary; it's a small MEAN-drift compensation, not
+  a tail neutralizer. +$21-30/day ONLY at 100 contracts (pennies at current 1-contract size).
+  **Revised verdict: DEFER the venue build -- pays only at scale, doesn't remove the tail.**
+- COOLING-OFF: strands ARE autocorrelated (lag-1 = 2.6x base, p=0.025 -- confirms the live streak).
+  Skip-N-after-strand cuts strand 10%->8.7%, caps streaks, but t_vs_live~=0 (RISK CONTROL not alpha).
+  Deployable tail-risk guard.
+- SIZING/GATES: flow_ratio is the strongest signal (t=4.05) but LOOK-AHEAD; causal-only fails. Q4
+  directional just rediscovers t36. Nothing new beats live as a gate.
+**Lead: can EARLY-window flow (first 60-90s) approximate the look-ahead flow_ratio causally?**
+
+## Round 5 — ideas (FINAL round; testing dispatched)
+- **R5-1 (TOP LEAD): EARLY-WINDOW FLOW as a CAUSAL signal** -- flow_ratio (full-window) gave sizing
+  t=4.05 but is look-ahead; compute flow_ratio from ONLY the first 30/60/90s of trades and test if it
+  approximates the signal: OOS R^2>0 and sizing/gate t>1.5 vs live. If yes, this is the first genuine
+  causal alpha.
+- **R5-5: STRAND-STREAK CONTINUOUS SCALE-DOWN** -- vs binary cooling-off: 1 strand->0.75x size,
+  2 consecutive->0.5x, 3+->0.25x, reset on a clean window. Backtest net/streak-risk vs live + vs N=1
+  cooling-off; deployable immediately (state machine, no model). Caps streaks, retains more volume.
+- **R5-3: NO-GUARD + early-flow conditioning** -- extend R3-2b (best +1.865c,t=-2.20,n=168) by adding
+  early YES-side taker pressure as a second trigger; can t clear 2.5 / n>200?
+- **R5-2: hedge TIMING protocol** (only if building later) -- prophylactic (hedge every open) vs
+  reactive (hedge on intrawindow adverse spot move); drag vs protection; optimal hedge size by sig.
+(R5-4 book-stream to >=150 OOS = infra; collector running.)
