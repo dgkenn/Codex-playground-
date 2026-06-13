@@ -64,3 +64,29 @@ clustered 11:00-12:47Z) -- t36 guards only YES opens, so it's blind to the curre
 - **R3-5** Volatility-regime conditioning: partition by std(spot_path) quartile; is the top-vol
   quartile the source of all strand loss? a coarse vol gate vs fill-level features.
 (R3-3 = collect >=300 book-covered windows: infra/data-accrual, tracked separately -- collector runs.)
+
+### Round 3 — RESULTS (commit 217b633; ROUND3.md)
+NOTHING clears the forward bar. R3-1 settle-regressor R^2~=0 (can't predict strands; n collapses to
+21). R3-2a directional = INVALID LABEL (measured res_up not strand). R3-2b SYMMETRIC NO-GUARD: helps
+marginally (+1.865c vs live) ONLY with the orphan carve-out (blanket NO-guard HURTS -- high-ask NO
+strands favorable), but n=168/t=-2.20 -> not deployable. R3-5 vol-regime: Q4 top-vol = strand zone
+(55% vs 37%) but skip-Q4 hurts (Q4 has good windows too).
+**R3-4 PERP-HEDGE = standout: dominates under ALL cost scenarios (+8.8..+20.5c; slippage/fees
+negligible vs -29c strand). The +2.77c edge is robust + conservative. It's an OPERATIONAL BUILD
+(BTC-perp venue), not a gate.**
+CONVERGING VERDICT: predictive GATES can't beat live (residual strands hard ex-ante); the economically
+dominant fix is the HEDGE (venue build). Streaks cluster in time (live RCA) -> a cooling-off rule may help.
+
+## Round 4 — ideas (testing dispatched)
+- **R4-2 (highest priority): HEDGE-VENUE FEASIBILITY MATRIX** -- given R3-4 (hedge dominates), produce a
+  go/no-go: candidate venues (Deribit/Binance perp), latency, BASIS RISK (Kalshi BRTI settle vs perp
+  mark over the 15-min window), min hedge_eff needed (>0.30), capital/margin, execution path. Quantify
+  the realistic net edge after basis + costs.
+- **R4-5: STRAND TEMPORAL AUTOCORRELATION + COOLING-OFF** -- test P(strand | prior-window strand) vs
+  base 29.4%; if >2x, backtest a cooling-off state machine (skip/така N windows after a strand). No
+  model, deployable. Directly targets the observed live streak (strands clustered 11:00-12:47Z).
+- **R4-4: settle-regressor -> continuous SIZING (not a gate)** -- size leg proportional to predicted
+  settle (0.5x/1x/1.5x) to avoid the n-collapse; per-unit improvement vs live?
+- **R4-1: vol x directional INSIDE Q4** -- fit YES/NO classifiers restricted to the top-vol quartile
+  (55% strand) with a VALID strand label; narrower population may yield actionable AUC.
+(R4-3 book-stream to n>=300 = infra/data-accrual; collector running, tracked separately.)
