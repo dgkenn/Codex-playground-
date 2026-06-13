@@ -828,11 +828,13 @@ def main():
     markouts = []            # rolling 5s markout list (last 500)
     pending_settles = []     # [{"cid","ws","pos_yes","pos_no","cash","r","t0"}]
     pending_markouts = []    # [(due_ts, fill_dict)]
+    _settle_cache = {}       # cid -> settled result (audit H3: score post-rollover markouts vs settlement)
     next_mk = {"mk": None, "tried_we": 0}   # prefetched next-window market
 
     last_book_ok = time.time()
     deadman_tripped = False
     consec_err = 0
+    total_err = 0            # audit M3: cumulative loop errors (intermittent errors never reach 5-consecutive)
     last_hk = 0.0
     last_reconcile = 0.0
     mo_fh = open("kalshi_markout.jsonl", "a")
@@ -1730,17 +1732,32 @@ def main():
                 due = [pm for pm in pending_markouts if pm[0] <= now_mo]
                 pending_markouts[:] = [pm for pm in pending_markouts if pm[0] > now_mo]
                 for due_t, f in due:
-                    if mk is None or f.get("cid") not in (None, mk["cid"]):
-                        continue   # window rolled; the next market's book is not a valid reference
-                    try:
-                        ybb2, _, yba2, _, _fresh2 = get_book_cached(mk["cid"], max_age=0.1)
-                    except Exception:
-                        pending_markouts.extend([(due_t, f)])
-                        break
-                    if ybb2 is None or yba2 is None or now_mo - due_t > 60:
-                        continue
-                    mid2 = (ybb2 + yba2) / 2.0
-                    mo = (mid2 - f["fp"]) if f["fside"] == "yes" else ((1.0 - mid2) - f["fp"])
+                    fcid = f.get("cid")
+                    if mk is not None and fcid in (None, mk["cid"]):
+                        # same (open) window: score against the current book
+                        try:
+                            ybb2, _, yba2, _, _fresh2 = get_book_cached(mk["cid"], max_age=0.1)
+                        except Exception:
+                            pending_markouts.extend([(due_t, f)])
+                            break
+                        if ybb2 is None or yba2 is None or now_mo - due_t > 60:
+                            continue
+                        mid2 = (ybb2 + yba2) / 2.0
+                        mo = (mid2 - f["fp"]) if f["fside"] == "yes" else ((1.0 - mid2) - f["fp"])
+                    else:
+                        # AUDIT H3: the fill's window CLOSED -- don't silently drop (that starved the 5s
+                        # rolling-kill denominator at the rollover boundary and lost all long horizons).
+                        # Score against the SETTLEMENT outcome = the leg's TRUE realized markout.
+                        rr = _settle_cache.get(fcid, "?")
+                        if rr == "?":
+                            rr = resolve_result(sess, fcid) if fcid else None
+                            if rr in ("yes", "no"):
+                                _settle_cache[fcid] = rr
+                        if rr not in ("yes", "no"):
+                            if now_mo - due_t < 120:        # settlement lags ~20s; re-queue briefly
+                                pending_markouts.append((due_t, f))
+                            continue
+                        mo = (1.0 if rr == f["fside"] else 0.0) - f["fp"]
                     if f.get("h", 5.0) == 5.0:
                         markouts.append(mo); del markouts[:-500]   # rolling kill stays 5s-keyed
                     mo_fh.write(json.dumps({
@@ -1852,14 +1869,20 @@ def main():
             print("interrupted; cancelled all.")
             break
         except Exception as e:
-            consec_err += 1
-            print(f"[warn] {str(e)[:100]} (consec_err={consec_err})")
-            if live and resting and consec_err >= 5 and not deadman_tripped:
-                # C1 error-storm dead-man: 5 consecutive errors -> can't trust state, pull everything
-                print("[DEAD-MAN] error storm -> cancel-all")
-                notify.alert("[kalshi] DEAD-MAN error storm: cancel-all")
-                cancel_all_resting(reason="deadman_errors")
+            consec_err += 1; total_err += 1
+            print(f"[warn] {str(e)[:100]} (consec_err={consec_err} total={total_err})")
+            # AUDIT M3: surface the FIRST error of a burst -- intermittent exceptions on inventory/
+            # disposal paths were silently [warn]'d and never tripped the 5-CONSECUTIVE dead-man.
+            if consec_err == 1:
+                try: notify.alert(f"[kalshi] loop error: {str(e)[:140]}")
+                except Exception: pass
+            # error storm (5 consecutive OR 40 cumulative) -> state untrustworthy -> LIQUIDATE + exit
+            # (per audit C2: was cancel-only; the chain restarts cleanly next cron).
+            if live and (consec_err >= 5 or total_err >= 40) and not deadman_tripped:
+                print("[DEAD-MAN] error storm -> liquidate + exit (state untrustworthy)")
+                notify.alert(f"[kalshi] DEAD-MAN error storm (consec={consec_err} total={total_err}): liquidate+exit")
                 deadman_tripped = True
+                _flatten_and_exit("error_storm"); break
             time.sleep(a.poll)
 
     # PLANNED end-of-session: same cancel-all guarantee, but alerted as a normal completion --
