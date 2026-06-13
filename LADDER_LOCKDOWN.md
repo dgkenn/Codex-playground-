@@ -205,3 +205,60 @@ Deployable-now first (hedge 5b is at-scale, so it is shadow-only here):
 6. **R5b HEDGE** (SHADOW / at-scale): h sweep with integer-contract lumpiness, conditional-on-price,
    prophylactic vs reactive, side-specific delta. Also: collect k-1/k/k+1 strike books to unlock the
    cross-strike hedge (modeled ~88% corr) that beats both ETH and perp if it materializes.
+
+## >>> PHASE C RESULTS — per-rung optimization (4 parallel agents) <<<
+Commits: R3 ffe7ab4 (COMPLETE_RUNG.md), R4 e5f7268 (MANAGE_RUNG.md), R0/R1 c5bf1aa (PREVENT_RUNG.md),
+R5 735daea (HEDGE_RUNG.md). All full-A/B-metric, IS(549)/OOS(367), backtest SCREEN only.
+
+- **R3 COMPLETE — NO CHANGE (already optimal).** sell-cheap<0.30 / give=0.02 / T*=immediate sit inside
+  a flat optimal plateau. Threshold 0.30 is the exact optimum (0.20-0.25 and 0.35-0.40 both degrade;
+  sell-all worst -0.74c). Give 0/1/2c dead-flat. T*=immediate confirmed (age requirement hurts
+  monotonically). Tox-conditioning HURT (-0.31c). Nothing clears a clean OOS t-bar.
+- **R4 MANAGE — DROP THE RUNG (no sizer beats removing it).** Dropping rung 4 tops the OOS net ranking
+  (+4.11c/win); the best of 6 sizer families (Kelly λ=1.0) only ties at t=+0.03 (noise). MECHANISM: a
+  paired box is locked/risk-free; the only loss is the ~0.65% that strand -> any size cut shaves the
+  locked edge on 99% of boxes to soften a tiny tail, so net can't improve. The live streak-guard is
+  reconfirmed net-negative (-0.61c). ONLY risk-budget play: Kelly λ=0.25 = ~40% MaxDD cut (457->279c,
+  CVaR 65->46c) for ~0.7c/win -- strictly better risk-adjusted than the streak-guard if drawdown is
+  ever prioritized over net, but still loses on net.
+- **R0/R1 PREVENT+BUFFER — ADD a 1c buffer; t36 & buffer are SUBSTITUTES on YES.** Buffer spread>=0.01
+  cuts OOS strand 12.5%->4.9% at only -0.13c net, halves CVaR (57->36c), MaxDD 539->183c -- best single
+  gate. Best config = DYNAMIC-VOL buffer (1c floor; 2c when window |sig|>=p75~9bps): strand 4.4%, CVaR
+  34.7c, MaxDD 107c. t36(2c-YES) DOMINATES the 1c buffer on YES, so stacking both is redundant (joint
+  CVaR worse). Do NOT extend t36 to NO at 2c (over-blocks, -2.84c); a 1c NO floor is the only viable
+  NO-side touch. Alt gates (queue/balanced-flow) only "win" by refusing to trade (degenerate).
+- **R5 HEDGE — DEMOTED: the ablation OVERSTATED it; real hedging is weak tail-insurance, not edge.**
+  HONEST CORRECTION: the ablation's -0.98c/+4.2c-CVaR hedge lever came from h=150 = a ~$150 OVER-hedge
+  (a directional BTC bet that caught in-sample drift), NOT a hedge. A clean delta-neutral INTEGER perp
+  barely reduces strand variance even at scale (~0.3-0.7% std-red), consistent with perp's 1.7% R^2
+  basis -- a 15-min strand is near-pure Bernoulli noise. Perp becomes a CLEAN (not strong) hedge only
+  at box_ct>=4 (~$20/win), where round($1*box_ct/$6)>=1 lands in a 0.6-1.6x band. ETH 5a did NOT
+  reproduce its ~10% std-reduction on this 136-strand pool (added variance; coverage ~59%) -> forward-
+  test candidate, NOT a confirmed reducer. Cross-strike (~88% modeled corr) stays the best-basis option
+  but is data-blocked (k-1/k/k+1 daily-ladder book collection spec written in HEDGE_RUNG.md).
+
+## >>> FINAL LADDER (Phase-C-revised, honest) <<<
+| # | Rung | Verdict | Deployable now? |
+|---|---|---|---|
+| **0** | BUFFER (dynamic-vol: 1c floor, 2c high-vol) | **ADD** — best single risk gate, ~free | YES (forward-validate) |
+| **1** | PREVENT (t36 2c-YES) | KEEP; substitute-not-complement with buffer; don't extend NO@2c | DEPLOYED |
+| **2** | PREDICT (GBM AUC 0.883) | KEEP as telemetry/signal only — too thin to gate; sizing on it doesn't pay | shadow |
+| **3** | COMPLETE (sell-cheap<0.30, give 0.02, T*=now) | KEEP UNCHANGED — at optimum | DEPLOYED |
+| **4** | MANAGE / COOL-OFF | **REMOVE the streak-guard** (net-negative; no sizer beats dropping). Optional Kelly-λ0.25 ONLY if drawdown is prioritized over net | live config change |
+| **5** | HEDGE | Weak/tail-only. Perp clean only at >=$20/win; ETH unconfirmed; cross-strike data-blocked. NOT a live priority | at-scale + data-collect |
+
+**LOAD-BEARING rungs (where the money actually is): R0 BUFFER + R1 PREVENT + R3 COMPLETE.** R2 is a
+signal, R4 should be removed, R5 is weak insurance for later. The strand fix is PREVENTION + prompt
+COMPLETION, not management or hedging -- the data is now unambiguous on this.
+
+**Deployable changes pending operator + forward-validation:**
+1. REMOVE `--strand-scaledown` (revert rung 4 to none) — reverts a backtest-based addition; two
+   independent analyses + a clean mechanism agree it's net-negative.
+2. ADD an `--open-spread-floor` buffer (static 1c, or dynamic 1c/2c@vol) — new strand-halving gate;
+   may let t36 be subsumed on the YES side.
+Both should go through the live A/B forward bar (n>=300, t>3) before changing live.yml — except the
+streak removal, which only reverts my own recent backtest-driven change to the prior known-good config.
+
+## DATA-COLLECTION backlog (unlocks the best-basis hedge)
+Add k-1/k/k+1 (adjacent-strike) book capture to kalshi_ladder_collect.py per HEDGE_RUNG.md's spec, to
+make the ~88%-corr cross-strike hedge testable. Until then HEDGE stays demoted.
