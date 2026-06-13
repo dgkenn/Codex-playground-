@@ -605,6 +605,12 @@ def main():
                          "--chase-unpaired-s (which governs the MAKER follow-the-touch lock-relaxation) "
                          "so the maker completion gets first crack at pairing cheaply before we pay the "
                          "spread to cross. Near close (<--close-flatten-tau) the cross fires regardless.")
+    ap.add_argument("--close-force-s", type=float, default=30.0,
+                    help="FINAL seconds before settlement: FORCE-flatten any unpaired leg by crossing at "
+                         "ANY price, IGNORING the give budget. Fixes the escaped-strand tail (run 2: 3 "
+                         "legs the give-cap refused to cross rode to settlement at -39.8c each). A certain "
+                         "bounded completion now always beats the binary settlement variance. Requires "
+                         "--dispose-cross. 0 = off (NOT recommended live).")
     ap.add_argument("--max-net", type=int, default=1,
                     help="hard cap on |net YES-NO| contracts: 1 = strict BOX PAIRING (after a YES "
                          "fill, quote only NO until paired). Tape decomposition: box pairs earn "
@@ -1549,7 +1555,8 @@ def main():
                 age_unp = time.time() - unpaired_since
                 near_close = tau_left < a.close_flatten_tau
                 aged = a.dispose_cross_s > 0 and age_unp >= a.dispose_cross_s
-                if aged or near_close:
+                force = tau_left < a.close_force_s   # FINAL seconds: flatten at ANY cost (escaped-strand fix)
+                if aged or near_close or force:
                     give = a.close_max_give if near_close else a.chase_max_give
                     if net_delta > 1e-9:            # hold YES -> COMPLETE by BUY-NO, take the no-offer
                         cside = "no"; cross_px = round(1.0 - ybb, 4)
@@ -1562,11 +1569,16 @@ def main():
                     lock = 1.0 - basis - cross_px    # $ locked completing the box at the cross price
                     need = int(round(abs(net_delta)))
                     ckey = (cside, "_xcross")
-                    if (0.0 < cross_px < 1.0 and need >= 1 and lock >= -give - 1e-9
+                    # FORCE near close ignores the give budget: a certain -Xc completion now ALWAYS beats
+                    # riding the naked leg to binary settlement (the -39.8c escaped-strand tail, run 2).
+                    if (0.0 < cross_px < 1.0 and need >= 1 and (force or lock >= -give - 1e-9)
                             and reject_cd.get(ckey, 0.0) <= time.time()):
                         if place(cside, cross_px, ybb, yba, count=need, cross=True) is not None:
                             ops["dispose_cross"] = ops.get("dispose_cross", 0) + 1
                             winrec["dispose_cross"] += 1
+                            if force:
+                                print(f"  [FORCE-FLATTEN] {need}x {cside.upper()} @ {cross_px:.4f} "
+                                      f"lock={lock:+.3f} tau={tau_left:.0f}s (no-give-cap; beats settlement)")
                             print(f"  [DISPOSE-CROSS] complete {need}x {cside.upper()} @ {cross_px:.4f} "
                                   f"lock={lock:+.3f} (age={age_unp:.0f}s tau={tau_left:.0f}s)")
                         reject_cd[ckey] = time.time() + 3.0   # don't spam; one cross attempt / 3s

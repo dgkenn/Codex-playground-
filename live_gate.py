@@ -57,31 +57,41 @@ def main():
         maker = sum(w.get("n_maker", 0) for w in winrecs)
         xcross = sum(w.get("n_dispose_cross", 0) for w in winrecs)
         boxes = sum(w.get("n_boxes", 0) for w in winrecs)
-        # per-window net P&L proxy from costs + settlement: payout(winning contracts) - cost
+        # per-window net P&L: payout(winning contracts) - cost. winrec.settle is usually null
+        # (settlement lags rollover), so fetch the FINAL result from the Kalshi API per window.
+        import requests
+        _B = "https://api.elections.kalshi.com/trade-api/v2"; _ses = requests.Session(); _sc = {}
+        def _settle(w):
+            s = w.get("settle")
+            if s in ("yes", "no"): return s
+            cid = w.get("cid")
+            if not cid: return None
+            if cid in _sc: return _sc[cid]
+            r = None
+            for _ in range(3):
+                try:
+                    r = _ses.get(f"{_B}/markets/{cid}", timeout=8).json().get("market", {}).get("result"); break
+                except Exception: pass
+            _sc[cid] = r if r in ("yes", "no") else None
+            return _sc[cid]
+        def _wpnl(w):
+            s = _settle(w)
+            if s not in ("yes", "no"): return None
+            ny = w.get("n_yes", 0); nn = w.get("n_no", 0)
+            return (ny if s == "yes" else nn) - (w.get("cost_yes", 0.0) + w.get("cost_no", 0.0))
         pnl = 0.0; have_settle = 0
         for w in winrecs:
-            s = w.get("settle")
-            if s not in ("yes", "no"):
-                continue
-            have_settle += 1
-            # winning $ = (#yes contracts if settle yes else #no), cost = cost_yes+cost_no
-            ny = w.get("n_yes", 0); nn = w.get("n_no", 0)
-            win = ny if s == "yes" else nn
-            pnl += win - (w.get("cost_yes", 0.0) + w.get("cost_no", 0.0))
+            p = _wpnl(w)
+            if p is None: continue
+            have_settle += 1; pnl += p
         med_leg = legs[len(legs)//2] if legs else float("nan")
         p90_leg = legs[int(.9*len(legs))] if legs else float("nan")
         print(f"windows={n}  boxes={boxes}  STRAND RATE={sr:.0f}%  (gate (a): target <=15%)")
         print(f"legging gap: median {med_leg:.1f}s  p90 {p90_leg:.1f}s")
         print(f"fills: maker={maker} TAKER={taker}  dispose-cross fired={xcross}x  (gate (b): >0 if any strands)")
-        print(f"settled windows={have_settle}  DAY P&L=${pnl:+.2f}  (gate (d): >= ~0)")
+        print(f"settled windows={have_settle}  DAY P&L=${pnl:+.2f}  ({100*pnl/max(have_settle,1):+.1f}c/win)  (gate (d): >= ~0)")
         # per-strand realized cost (gate (c): target ~ -5..-10c, NOT -21.76c hold)
-        scost = []
-        for w in strand:
-            s = w.get("settle")
-            if s not in ("yes", "no"): continue
-            ny = w.get("n_yes", 0); nn = w.get("n_no", 0)
-            win = ny if s == "yes" else nn
-            scost.append((win - (w.get("cost_yes",0)+w.get("cost_no",0))))
+        scost = [_wpnl(w) for w in strand if _wpnl(w) is not None]
         if scost:
             print(f"per-stranded-window P&L: mean {100*sum(scost)/len(scost):+.1f}c  (gate (c): hold was -21.76c)")
         print()
