@@ -257,10 +257,10 @@ def live_hour22():
                     "unpaired": d.get("unpaired", 0),
                 })
     except Exception as e:
-        return f"window_audit read error: {e}", []
+        return f"window_audit read error: {e}"
     df = pd.DataFrame(rows)
     if len(df) == 0:
-        return "No live windows", []
+        return "No live windows"
     h22 = df[df["hour"] == 22]
     rest = df[df["hour"] != 22]
     def live_stats(sub, lbl):
