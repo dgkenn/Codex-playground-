@@ -422,10 +422,11 @@ def hedge_unpaired(f, h=100.0):
     return f["settle"] + sgn * h * r / 100.0
 
 
-def pol_hedge_unpaired(fills, open_ok=None):
+def pol_hedge_unpaired(fills, open_ok=None, h=100.0):
     """Always-pair, but a leftover unpaired leg is delta-hedged with BTC instead of held naked.
     open_ok(f)->may we OPEN a new leg with this fill? (enables orthogonal entry-gate x hedge combos;
-    completing fills are never gated). None = open everything (the standalone t14 behavior)."""
+    completing fills are never gated). None = open everything (the standalone t14 behavior).
+    h = cents of hedge per 1% BTC move; STRAND_HANDLING.md found h=150 (over-hedge) monotonically best."""
     net = 0; pnl = 0.0; open_leg = None
     for f in fills:
         step = 1 if f["side"] == "bid" else -1
@@ -440,7 +441,7 @@ def pol_hedge_unpaired(fills, open_ok=None):
                 continue                                    # entry gate: skip this open
             open_leg = f; net = nn
     if open_leg is not None:
-        pnl += hedge_unpaired(open_leg)
+        pnl += hedge_unpaired(open_leg, h=h)
     return pnl
 
 
@@ -733,6 +734,21 @@ TRIALS = {
                                    f["k"] == 8 and 0.30 <= abs(f["p"] - 0.5) < 0.40),
     "t_k78_mid":           lambda F: run_policy(F, open_ok=lambda f, s:
                                    f["k"] in (7, 8) and 0.20 <= abs(f["p"] - 0.5) < 0.30),
+    # ---- research-agent winners (2026-06-13). STRAND_HANDLING.md + LOW_RISK_SLEEVES.md.
+    # f5_fav_lowsig_complete (LOW_RISK_SLEEVES Sleeve A): favorite leg (cost>=0.50) + quiet spot
+    #   (|sig|<=5bps) + complete-all. OOS Sharpe +0.95, skew +0.36 (positive), CVaR95 2.2c (22x safer
+    #   tail than live). The barbell low-risk sleeve. (Deployable live once the sig feed lands -- now wired.)
+    "f5_fav_lowsig_complete": lambda F: pol_sell_unpaired(F, cheap_below=None, open_ok=lambda f:
+                                   (f["p"] if f["side"] == "bid" else 1.0 - f["p"]) >= 0.50
+                                   and abs(f.get("sig") or 0.0) <= 5.0),
+    # tc_mid_sellall (STRAND_HANDLING): mid-entry + complete/flatten ALL strands (Kalshi-side; deployable).
+    "tc_mid_sellall":      lambda F: pol_sell_unpaired(F, cheap_below=None,
+                                   open_ok=lambda f: f["k"] in (4, 5)),
+    # tc_mid_hedge_h150 (STRAND_HANDLING #1 hedge): mid-entry + h=150 over-hedge. SHADOW only -- the
+    #   perp-hedge is NOT live-executable (trader has no BTC venue); this forward-tests whether the
+    #   hedge edge justifies building that venue.
+    "tc_mid_hedge_h150":   lambda F: pol_hedge_unpaired(F, h=150.0,
+                                   open_ok=lambda f: f["k"] in (4, 5)),
 }
 
 
