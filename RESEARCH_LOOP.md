@@ -42,3 +42,25 @@ linear → try a tree). Forward bar correctly held (no registration).
 - **R2-D** depth×VPIN combined gate vs t32 alone (book stream; flag IS-coverage limit).
 - **R2-E** re-test microprice-divergence + queue-thinness on the windows WITH book coverage (recent),
   OOS-only, to salvage the data-gap ideas.
+
+### Round 2 — RESULTS (commit 90d03fa; ROUND2.md)
+live_current OOS baseline -5.99c/win, strand 6.63%. **First real signal: R2-A GBM strand classifier
+OOS AUC 0.720** (vs R1 linear 0.563) -> gate cuts strand 6.6%->3.5%, net -5.99->+2.26c (diff +8.25c
+vs live, skew flips +). PRELIMINARY: selection effect (skips 51/200 windows, t-stat negative), n=149
+< 300 deploy bar -> NOT registered. R2-B (conjunctive) + R2-C (time-of-day) = selection mirages (t<2)
+but R2-C found real structure (Asia high-|sig| strand-prone; EU mean-reverting). R2-D/E blocked by
+book-coverage (n<50). **Takeaway: non-linear strand prediction WORKS (AUC 0.72); needs forward n>=300.**
+Also LIVE 24h RCA (this session): loss mode SHIFTED to NO-strands (4 NO / 1 YES of 5 strand windows,
+clustered 11:00-12:47Z) -- t36 guards only YES opens, so it's blind to the current streak.
+
+## Round 3 — ideas (testing dispatched)
+- **R3-1** Settlement-MAGNITUDE GBM regressor (target settle cents, not binary strand); gate on
+  E[settle]<0 high-confidence -> profitable cut with less volume loss than the binary gate?
+- **R3-2** DIRECTIONAL YES-leg vs NO-leg classifiers (signed sig) + the SYMMETRIC NO-GUARD (mirror of
+  t36: suppress thin-spread NO opens when an UP-move is adverse) -- directly targets the live NO-strand
+  streak. Does a directional/NO-side gate beat live on the NO-strand windows?
+- **R3-4** Perp-hedge net PnL on OOS residual strands WITH realistic slippage/fees -> min edge that
+  survives execution; is a hedge venue worth building?
+- **R3-5** Volatility-regime conditioning: partition by std(spot_path) quartile; is the top-vol
+  quartile the source of all strand loss? a coarse vol gate vs fill-level features.
+(R3-3 = collect >=300 book-covered windows: infra/data-accrual, tracked separately -- collector runs.)
