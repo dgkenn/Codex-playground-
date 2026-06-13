@@ -539,22 +539,114 @@ def _win_regime_vol(fills):
 
 
 def pol_buffer(fills, lo=0.01, hi=0.02, vcut=8.0, with_live=True, hedge=False, h=150.0,
-               size_floor=None):
+               size_floor=None, eth=False):
     """RUNG 0 structural buffer: only OPEN when spread >= floor (dynamic: hi-floor in high-|sig|
     windows where window mean|sig| >= vcut, else lo-floor), stacked on the live gate (R1 t36). The
     backtest (LADDER_STACK_VS_LIVE.md) showed this ~halves MaxDD/Ulcer and cuts strand-rate ~3x at a
-    flat-to-positive net. Optional perp-hedge PROXY (hedge=True) for the residual strand (R5), and an
-    optional pair_prob size-down PROXY (size_floor set) for the manage rung (R4)."""
+    flat-to-positive net. Optional residual-strand hedge: eth=True = the RUNG-5a cross-asset ETH
+    hedge (forward-faithful, uses the concurrent ETH window the collector captures); hedge=True =
+    the perp PROXY. Optional pair_prob size-down (size_floor set) PROXY for the manage rung (R4)."""
     floor = hi if _win_regime_vol(fills) >= vcut else lo
-    if hedge:
-        return pol_hedge_unpaired(fills, h=h, open_ok=lambda f: f["spread"] >= floor and
-                                  (_live_open_ok(f, {}) if with_live else True))
+    gate1 = lambda f: f["spread"] >= floor and (_live_open_ok(f, {}) if with_live else True)
+    if hedge:                                   # perp proxy: always-pair, leftover delta-hedged
+        return pol_hedge_unpaired(fills, h=h, open_ok=gate1)
+    if eth:                                     # RUNG 5a: leftover leg hedged with concurrent ETH window
+        net = 0; pnl = 0.0; open_leg = None
+        for f in fills:
+            step = 1 if f["side"] == "bid" else -1
+            nn = net + step
+            if abs(nn) > 1:
+                continue
+            if open_leg is not None and abs(nn) < abs(net):
+                pnl += f["settle"] + open_leg["settle"]; open_leg = None
+            else:
+                if not gate1(f):
+                    continue
+                open_leg = f
+            net = nn
+        if open_leg is not None:
+            pnl += _eth_hedge_value(open_leg)
+        return pnl
     def og(f, s):
         if f["spread"] < floor:
             return False
         return (not with_live) or _live_open_ok(f, s)
     w = (lambda f: max(size_floor, min(1.0, pair_prob(f)))) if size_floor is not None else None
     return run_policy(fills, open_ok=og, weight=w)
+
+
+# Cross-asset ETH hedge (RUNG 5a) -- forward-FAITHFUL: uses the CONCURRENT ETH 15-min window the
+# collector already captures (ASSETS includes eth), linked by window-start ws. Populated by
+# build_eth_forward() at scoring time; empty (no ETH data) => the hedge falls back to the naked leg.
+_ETH_LU = {}; _ETH_KEYS = []
+_ETH_DELTA_CORR = 0.43            # |corr| ETH-binary vs BTC-strand direction (R^2 18.6%); delta-match
+
+
+def _nearest_eth(ws, tol=450):
+    import bisect
+    if not _ETH_KEYS:
+        return None
+    i = bisect.bisect_left(_ETH_KEYS, ws - tol); best = None; bestd = tol + 1
+    j = i
+    while j < len(_ETH_KEYS) and _ETH_KEYS[j] <= ws + tol:
+        d = abs(_ETH_KEYS[j] - ws)
+        if d < bestd:
+            bestd = d; best = _ETH_KEYS[j]
+        j += 1
+    return best
+
+
+def _eth_hedge_value(leg, n_ct=1, maker=True, k_cut=10):
+    """Value of a stranded BTC leg hedged with the concurrent ETH 15-min binary. Rule: BTC YES-strand
+    (bid)->buy ETH-NO; BTC NO-strand (ask)->buy ETH-YES. Delta-matched by _ETH_DELTA_CORR so it hedges
+    only the co-moving component (not a 2nd directional bet). Naked settle if no concurrent ETH window
+    (coverage gap) or ETH window too late (k>k_cut). Mirrors ladder_hedge_optimize.eth_hedge_value."""
+    settle = leg["settle"]; ws = leg.get("ws")
+    if ws is None:
+        return settle
+    ek = _nearest_eth(ws)
+    if ek is None or ek not in _ETH_LU:
+        return settle
+    eth_up, eth_yes_px, espread, ek_slot = _ETH_LU[ek]
+    if ek_slot > k_cut:
+        return settle
+    if leg["side"] == "bid":                  # BTC YES-strand -> buy ETH-NO
+        eth_entry = round(1.0 - eth_yes_px, 4); eth_win = (eth_up == 0)
+    else:                                      # BTC NO-strand -> buy ETH-YES
+        eth_entry = eth_yes_px; eth_win = (eth_up == 1)
+    cost = eth_entry + (0.0 if maker else espread / 2.0)
+    contrib = _ETH_DELTA_CORR * n_ct * ((1.0 if eth_win else 0.0) - cost)
+    return settle + contrib
+
+
+def build_eth_forward(dirs):
+    """Build the ws->(eth_up, eth_yes_px, spread, k) lookup from the concurrent ETH 15-min data the
+    collector captures, so the cross-asset hedge trial is forward-faithful. Sets module globals."""
+    global _ETH_LU, _ETH_KEYS
+    try:
+        dd = [d for d in dirs if os.path.isdir(d)]
+        books, res, oi = load_window_books(dd, "eth")
+        trades = load_trades(dd, "eth")
+    except Exception:
+        _ETH_LU, _ETH_KEYS = {}, []
+        return 0
+    lu = {}
+    for ws in books:
+        if ws not in res or ws not in trades:
+            continue
+        bid, ask, spot, depth = per_minute_touch(books[ws], ws)
+        fills = window_fills(ws, res[ws], bid, ask, spot, depth, trades[ws], oi.get(ws))
+        if not fills:
+            continue
+        f0 = fills[0]; s0 = f0.get("spot"); ss = f0.get("sset")
+        if not s0 or not ss:
+            continue
+        eth_up = 1 if ss >= s0 else 0
+        best = min(fills, key=lambda g: abs((g["p"] if g["side"] == "bid" else 1 - g["p"]) - 0.5))
+        eth_yes = best["p"] if best["side"] == "bid" else round(1.0 - best["p"], 4)
+        lu[ws] = (eth_up, eth_yes, best.get("spread", 0.02), best.get("k", 7))
+    _ETH_LU = lu; _ETH_KEYS = sorted(lu.keys())
+    return len(lu)
 
 
 # ------------------------------------------------------------------------------------------------
@@ -790,6 +882,9 @@ TRIALS = {
     "t_buf_1c":            lambda F: pol_buffer(F, lo=0.01, hi=0.01, vcut=8.0),
     "t_buf_dyn_hedge":     lambda F: pol_buffer(F, lo=0.01, hi=0.02, vcut=8.0, hedge=True, h=150.0),
     "t_buf_dyn_manage":    lambda F: pol_buffer(F, lo=0.01, hi=0.02, vcut=8.0, size_floor=0.25),
+    # t_buf_dyn_eth = the BEST-NET backtest stack (buffer + concurrent-ETH cross-asset hedge), now
+    #   forward-FAITHFUL: links the ETH 15-min window the collector already captures. (btc-only.)
+    "t_buf_dyn_eth":       lambda F: pol_buffer(F, lo=0.01, hi=0.02, vcut=8.0, eth=True),
 }
 
 
@@ -1090,6 +1185,11 @@ def main():
     if not a.report:
         books, res, oi_slope = load_window_books([d for d in a.dir if os.path.isdir(d)], a.asset)
         trades = load_trades([d for d in a.dir if os.path.isdir(d)], a.asset)
+        # RUNG-5a cross-asset hedge: link the concurrent ETH 15-min windows (collector captures them)
+        # so t_buf_dyn_eth is forward-faithful. Only meaningful when scoring BTC strands.
+        if a.asset == "btc":
+            n_eth = build_eth_forward(a.dir)
+            print(f"  ETH cross-asset hedge: {n_eth} concurrent ETH windows linked")
         with open(ledger, "a") as out:
             for ws in sorted(books):
                 if ws in seen or ws not in res or ws not in trades:
