@@ -57,3 +57,16 @@ Organized by where in the leg's lifecycle it acts. (* = not yet a ladder rung ->
   Lock the sequence by marginal contribution + interaction.
 - **Phase C (OPTIMIZE EACH RUNG):** parallel deep-dives, one per locked rung, for the best strategy.
 Novel ideas + prior research + literature welcome throughout. Parallelize + delegate.
+
+## CONSTRAINT (operator, 2026-06-13): HEDGE rung is SCALE-GATED
+The BTC-perp minimum contract is ~$6 notional. Our current box size is ~$5/window (1 contract,
+legs ~$0.40-0.60). So you CANNOT hedge a small stranded leg cleanly: a $6 perp min on a ~$0.50
+strand = ~12x OVER-hedge = a directional BTC BET, not a hedge. Implications:
+- Rung 5 (HEDGE) is NOT deployable at current size; the h=150 backtest benefit is OPTIMISTIC (it
+  models a proportional hedge that the min-contract granularity forbids at unit size).
+- The CURRENT deployable ladder is RUNGS 1-4 only. Rung 5 activates only once strand notional is
+  comparable to / exceeds the ~$6 perp min -- i.e. after meaningful SCALE-UP (SCALE_GATE Stage A+).
+- Phase C must NOT spend effort optimizing a live hedge now; treat hedge as an AT-SCALE rung and
+  model it with the min-contract lumpiness (integer perp contracts), not a smooth h.
+- This makes COMPLETE (rung 3) + MANAGE/COOL-OFF (rung 4) the binding residual-strand handlers at
+  current size -- prioritize their optimization.
