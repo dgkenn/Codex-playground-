@@ -763,6 +763,11 @@ def main():
     side_cooldown = {"yes": 0.0, "no": 0.0}   # no re-quote on a side until this ts (anti-knife)
     win_fills = {"yes": 0, "no": 0}            # fills per side THIS window (trend-exposure cap)
     win_cost = {"yes": 0.0, "no": 0.0}         # $ spent per side THIS window (box telemetry)
+    # COMPREHENSIVE per-window microstructure (live RCA 2026-06-13): the re-validation gate (strand
+    # rate, legging gap, maker/taker mix, dispose-cross firing) plus the offline strand analysis read
+    # this. Written per window to kalshi_winrec_<asset>15m.jsonl, reset at rollover.
+    winrec = {"taker": 0, "maker": 0, "maxnet": 0.0, "first_ts": {}, "dispose_cross": 0}
+    winrec_fh = open(f"kalshi_winrec_{a.asset}15m.jsonl", "a")
     loop_ctx = {}                              # decision-time book state, stamped onto each fill
     threading.Thread(target=_spot_poller, daemon=True).start()   # sig telemetry (isolated; non-blocking)
     ops = {"place": 0, "cancel": 0, "cancel_fail": 0}   # per-window execution-quality counters
@@ -1042,6 +1047,10 @@ def main():
                          f"{a.max_net} after {fside} fill @ {fp} -- clamp leak, investigate")
         win_fills[fside] = win_fills.get(fside, 0) + 1   # per-window same-side fill count (trend cap)
         win_cost[fside] = win_cost.get(fside, 0.0) + fp * count
+        # per-window microstructure trackers (legging gap, maker/taker mix, max imbalance)
+        winrec["taker" if f.get("is_taker") else "maker"] += 1
+        winrec["first_ts"].setdefault(fside, time.time())
+        winrec["maxnet"] = max(winrec["maxnet"], abs(net_delta))
         key = (fside, round(fp, 4))
         pc = pending_cancel.get(key)
         if pc is not None:
@@ -1295,6 +1304,29 @@ def main():
                     # window's opens (--strand-scaledown). Clean window resets the streak.
                     if _strand_sched:
                         _consec_strands = _consec_strands + 1 if abs(py - pn) > 0.5 else 0
+                    # COMPREHENSIVE per-window microstructure record (re-validation gate + analysis):
+                    # strand state, box edge, legging gap, maker/taker mix, dispose-cross firing.
+                    _ft = winrec["first_ts"]
+                    _legging = (abs(_ft["yes"] - _ft["no"]) if ("yes" in _ft and "no" in _ft) else None)
+                    try:
+                        winrec_fh.write(json.dumps({
+                            "ts": time.time(), "asset": a.asset, "ws": mk["ws"], "cid": mk["cid"],
+                            "settle": r_now, "net_final": net_delta,
+                            "n_yes": win_fills["yes"], "n_no": win_fills["no"],
+                            "n_boxes": int(min(py, pn)), "stranded": bool(abs(py - pn) > 0.5),
+                            "abs_strand": float(abs(py - pn)), "maxnet": winrec["maxnet"],
+                            "legging_gap_s": _legging, "n_taker": winrec["taker"],
+                            "n_maker": winrec["maker"], "n_dispose_cross": winrec["dispose_cross"],
+                            "cost_yes": round(win_cost["yes"], 4), "cost_no": round(win_cost["no"], 4),
+                            "consec_strands": _consec_strands, "realized": round(realized, 4),
+                            "window_mark": round(window_mark, 4),
+                            "guard_yes": (a.guard_yes_spread or None),
+                            "max_fills_side": a.max_fills_side, "dispose_cross_on": bool(a.dispose_cross),
+                        }) + "\n")
+                        winrec_fh.flush()
+                    except Exception:
+                        pass
+                    winrec = {"taker": 0, "maker": 0, "maxnet": 0.0, "first_ts": {}, "dispose_cross": 0}
                     pos.clear(); cash = 0.0; net_delta = 0.0; window_mark = 0.0
                 win_fills = {"yes": 0, "no": 0}   # fresh window, fresh trend-exposure budget
                 win_cost = {"yes": 0.0, "no": 0.0}
@@ -1534,6 +1566,7 @@ def main():
                             and reject_cd.get(ckey, 0.0) <= time.time()):
                         if place(cside, cross_px, ybb, yba, count=need, cross=True) is not None:
                             ops["dispose_cross"] = ops.get("dispose_cross", 0) + 1
+                            winrec["dispose_cross"] += 1
                             print(f"  [DISPOSE-CROSS] complete {need}x {cside.upper()} @ {cross_px:.4f} "
                                   f"lock={lock:+.3f} (age={age_unp:.0f}s tau={tau_left:.0f}s)")
                         reject_cd[ckey] = time.time() + 3.0   # don't spam; one cross attempt / 3s
