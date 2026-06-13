@@ -102,7 +102,7 @@ jobs:
             timeout --signal=TERM --kill-after=60 2820 \
               python -u kalshi_trader.py --asset "$ASSET" --live --size-mode flat \
                 --post 1 --max-notional 5 --loss-limit 6 --max-rungs 1 \
-                --guard-yes-spread 0.02 --duration 2760 \
+                --guard-yes-spread 0.02 --strand-scaledown "0.75,0.5,0.25" --max-fills-side 3 --dispose-cross --duration 2760 \
                 --remote-switch-s 20 || true
           else
             python -c "import notify; notify.alert_sync('🟡 live cycle skipped ($ASSET) — preflight NO-GO (market/balance gate); retries next cycle.')" || true
