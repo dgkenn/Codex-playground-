@@ -53,3 +53,35 @@ Every lever, re-asked "what is the ETH-optimal setting?" (signs/thresholds may i
 - Per-rung agents RUNNING (ETH_NATIVE.md, ETH_DISPOSAL.md). When both land -> launch the Phase A+B
   ablation/sequence-lockdown agent (combined ETH baseline + leave-one-out + reorder + add/subtract),
   then synthesize the LOCKED ETH SEQUENCE here. All vs ETH-naked baseline; forward bar t>3/n>=300.
+
+## >>> PER-RUNG RESULTS IN (both agents) -> ETH VERDICT <<<
+**ENTRY: PREVENT+PREDICT (commit 4066a0d; ETH_NATIVE.md):** toxicity is INTRINSIC to completion, NOT
+avoidable at entry -- classifier OOS-AUC=0.60; gating 73% of volume still nets -0.07c. WIDE boxes are
+MORE adversely selected (27.5% neg vs 20.3%) -- the boxes the thesis targeted are the problem, not the
+prize. Pure box-completion stays negative on every clean slice (best k>=11&fav>=0.85 = -0.38c, t=-1.6,
+0.54 box/win). Only a perp OVERLAY turns positive, but it's a directional leverage knob (net & CVaR rise
+monotonically with h), not box edge.
+**DISPOSAL: COMPLETE+SELL+HEDGE (commit 40470f2; ETH_DISPOSAL.md):** strand = -3.61c/win (~32% of ETH's
+-11.37c P0 loss), 41% strand rate, mean -8.87c (95% negative), late-slot-heavy. The ONLY robust disposal
+rung = FLATTEN-ALL (sell every stranded leg at touch, NO price gate, don't chase give=0): +0.91c/win OOS,
+t=+3.87, IS->OOS stable. ETH's cut is inverted vs BTC (favorites included -> sell). HEADLINE: the ETH
+strand is NOT hedgeable -- BTC-hedges-ETH basis R^2=4.1%/|corr|=0.20 (a quarter of the symmetric
+18.6%/0.43), std-red 2.1%, coverage 22%; ETH-perp <0.4%. FLATTEN, don't hedge. Disposal alone recovers
+only ~25% of strand cost; box stays deeply negative (-13.15c -> -12.24c).
+
+## ETH LOCKDOWN VERDICT (Phases A-D resolved by the per-rung evidence)
+ETH boxes are -EV AT COMPLETION (adverse selection is intrinsic, not gateable) and the strand is NOT
+hedgeable. Neither entry-prevention, nor disposal, nor hedging rescues the box -- the wide boxes ARE the
+toxic ones. A formal Phase-A/B ablation would only confirm "all rungs negative / no positive sequence to
+lock," because no per-rung strategy is net-positive to stack. So:
+- **ETH box market: CLOSED.** Do not trade ETH (or SOL/XRP by extension) as a box market.
+- **ETH strand is NOT hedgeable** (R^2 4.1%) -- so if ETH were ever traded, FLATTEN-ALL is the only
+  backstop, not a hedge.
+- **ETH's one durable use = the cross-asset HEDGE LEG (RUNG-5a) for BTC strands** (that direction works:
+  ETH-hedges-BTC R^2=18.6%). The reverse (BTC-hedges-ETH) does not.
+- Add/subtract/reorder is MOOT for a market with no positive rung. The BTC ladder stands as the product;
+  ETH stays a hedge instrument, not a venue.
+LADDER STEP CHANGES for ETH vs BTC (had it been viable): sell-cheap -> SELL-ALL (no price gate); chase
+give -> 0 (don't chase); hedge rung -> DROP (not hedgeable); entry edge inverted (late-slot/deep-fav).
+But these are academic given the -EV completion. Forward note: FLATTEN-ALL is the only ETH finding worth
+a forward trial IF ETH is ever revisited.
