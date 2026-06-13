@@ -35,3 +35,41 @@ fills in replay) -- read the DELTAS, not the levels. (2) +0.96c net is t=1.00, N
 buffer must clear the live A/B forward bar (n>=300, t>3) before going to live.yml. (3) The deferred
 HEDGE (R5) is NOT in this stack -- Phase C showed a clean delta-neutral hedge barely helps (the
 ablation's -0.98c was an over-hedge artifact), so it would add little here even if deployable.
+
+## FULL COMBINATORIAL STACK (best-of-every-rung, with interactions) -- 2026-06-13
+The per-rung agents each optimized in ISOLATION (held other rungs at baseline), so they never saw the
+COMBINED optimum. Operator asked: stack the best buffer + best prevent + best complete + best hedge,
++/- best manage, and compare vs live. Done below (367 OOS windows; ETH hedge delta-corr-scaled 0.43;
+Kelly = fractional-Kelly lam0.25; all vs the now-live t36+complete). KEY: rungs that LOST in isolation
+HELP in the stack.
+
+| Stack | net c/win | dNet (t) | Sharpe | CVaR95 | MaxDD | Ulcer | Recov | TUW% | Win% | strand% |
+|---|---|---|---|---|---|---|---|---|---|---|
+| LIVE (t36+complete) | 2.38 | -- | 0.07 | 73 | 1038 | 490 | 0.84 | 88 | 57.5 | 48.8 |
+| core (+buffer R0) | 3.34 | +0.96 (1.00) | 0.12 | 64 | 575 | 237 | 2.13 | 82 | 55.6 | 17.4 |
+| +ETH hedge (R5a) | **3.63** | **+1.25 (1.27)** | 0.13 | 62 | 499 | 203 | 2.67 | 81 | 56.1 | 17.4 |
+| +Kelly0.25 (R4) | 2.63 | +0.25 (0.21) | 0.14 | 43 | 350 | 141 | 2.76 | 78 | 53.7 | 17.4 |
+| +ETH +Kelly0.25 | 2.84 | +0.46 (0.38) | **0.15** | **42** | **299** | **119** | **3.49** | 75 | 54.0 | 17.4 |
+| buffer-subsumes-t36 | 2.52 | +0.14 (0.09) | 0.19* | 40 | 125* | 37* | 7.40* | 64 | 67.0 | 4.1 |
+
+FINDINGS:
+- **The ETH hedge HELPS in the stack** (+0.29c over core, best NET +1.25c, MaxDD 575->499, Ulcer
+  237->203) -- opposite to its isolated test, where the small standalone strand pool made it look like
+  it added variance. In the full stack it trims the residual strand tail. Best NET stack = buffer + t36
+  + complete + ETH hedge (no manage).
+- **The MANAGE rung (Kelly lam0.25) ALSO helps -- on RISK, not net** (operator's hypothesis confirmed):
+  +ETH+Kelly gives the best Sharpe (0.15, 2x live), CVaR 42 (-43%), MaxDD 299 (-71%), Recovery 3.49,
+  at a smaller net gain (+0.46c). It trades ~0.8c net for a big drawdown cut -- a risk-budget choice.
+- **buffer-subsumes-t36** posts the headline Sharpe 0.19 / MaxDD 125 / strand 4.1% BUT skew -1.79,
+  AvgW/L 0.53, far fewer boxes -> the low drawdown is thin-sample (few large losses simply didn't
+  cluster in 367 windows). FRAGILE; NOT recommended over keeping t36.
+- NONE clears t>2 on net (best +1.25c at t=1.27) -> all are RISK-QUALITY upgrades with an unproven (but
+  positive-leaning) net edge. Forward A/B required before any live change.
+
+RECOMMENDED FULL OPTIMAL STACK (objective-dependent):
+- MAX NET:           R0 buffer + R1 t36 + R3 complete + R5a ETH hedge      (+1.25c, MaxDD -52%)
+- MAX RISK-ADJUSTED: + R4 Kelly lam0.25                                    (Sharpe 2x, MaxDD -71%, +0.46c)
+Either way the buffer + ETH hedge are the additive pieces; Kelly is the optional drawdown lever.
+Deploy order: buffer first (biggest, simplest), then ETH hedge, then Kelly if drawdown matters -- each
+through the forward A/B bar. (The streak guard stays removed; Kelly is its proper replacement IF we
+want a manage rung at all.)
