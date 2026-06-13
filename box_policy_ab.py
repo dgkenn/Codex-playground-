@@ -45,6 +45,15 @@ DD_MULT = 1.25          # AND trial max-drawdown <= DD_MULT * P0 max-drawdown (r
 # ALERT tier (the "two-sigma rule" -- be made aware so we can take action; NOT auto-deploy):
 ALERT_T = 2.0           # |paired t| past 2-sigma raises an alert (either direction)
 ALERT_N = 100           # ...once at least this many forward windows are scored (avoid tiny-n noise)
+# RISK-IMPROVEMENT deploy track (operator 2026-06-13): many of our wins are net-NEUTRAL but cut tail
+# risk (the buffer, edge-select, streak-removal). A net-edge t>3 test is the WRONG SHAPE for them --
+# they don't claim a net edge, so they can never clear it. This parallel track deploys a change that
+# (a) PROVABLY does not hurt net -- the lower 95% CI bound of per-window (trial - live) net is above
+# -NONINF_EPS -- AND (b) MATERIALLY cuts tail risk vs live (MaxDD <= RISK_DD_FRAC*live AND CVaR95 <
+# live's). Same data-sufficiency (n>=MIN_WINDOWS). t>3 stays the bar for NET-EDGE claims; this is the
+# orthogonal "safe upgrade" gate. (Frozen alongside the net bar; do not tune to the data.)
+NONINF_EPS = 0.002      # net non-inferiority margin, $/win (0.2c): "does not hurt net by more than this"
+RISK_DD_FRAC = 0.80     # MaxDD must be <= 80% of live's (>= 20% drawdown reduction) to qualify
 
 
 def _f(x):
@@ -1263,6 +1272,7 @@ def main():
             names.add("p2_signal_hold")
     alerts = []          # 2-sigma WATCH tier: GitHub annotation + committed trail (NO phone push)
     deploy_ready = []    # DEPLOY bar (t>T_BAR, n>=MIN_WINDOWS, DD ok): the actionable promote event -> Telegram
+    risk_ready = []      # RISK-IMPROVEMENT track: net non-inferior + materially lower tail risk vs live
     for name in sorted(names):
         pt = np.array([(r.get("trials") or {}).get(name,
                         r.get("p2") if name == "p2_signal_hold" else np.nan) for r in rows], float)
@@ -1292,6 +1302,21 @@ def main():
             print(f"      *** {name} CLEARS THE DEPLOY BAR vs LIVE (n>={int(lm.sum())}, "
                   f"t_vs_live={t_live:+.2f}>{T_BAR}, DD ok) -> bring to operator ***")
             deploy_ready.append((name, t_live, int(lm.sum())))
+        # RISK-IMPROVEMENT track (orthogonal to the net-edge bar): a net-NEUTRAL change that provably
+        # does not hurt net AND materially cuts tail risk vs live. For safe upgrades (buffer/edge-select).
+        if (name != "live_current" and lm.sum() >= MIN_WINDOWS and not np.isnan(t_live)):
+            dl = pt[lm] - live[lm]
+            se = dl.std(ddof=1) / np.sqrt(len(dl)) if len(dl) > 1 and dl.std(ddof=1) > 0 else float("inf")
+            net_lcb = dl.mean() - 1.96 * se                     # lower 95% CI bound of net delta vs live
+            dd_live = maxdd(live[lm]); cv_t = metric_cvar95(pt[lm]); cv_l = metric_cvar95(live[lm])
+            already = any(name == r[0] for r in deploy_ready)
+            if (not already and net_lcb > -NONINF_EPS and ddt <= RISK_DD_FRAC * dd_live + 1e-9
+                    and not np.isnan(cv_t) and not np.isnan(cv_l) and cv_t < cv_l):
+                print(f"      +++ {name} CLEARS THE RISK-IMPROVEMENT TRACK (net non-inferior: "
+                      f"lcb={net_lcb*100:+.2f}c > -{NONINF_EPS*100:.1f}c; MaxDD {ddt*100:.0f}c <= "
+                      f"{RISK_DD_FRAC:.0%} live {dd_live*100:.0f}c; CVaR {cv_t*100:.1f}c < {cv_l*100:.1f}c) "
+                      f"-> safe risk upgrade, bring to operator +++")
+                risk_ready.append((name, net_lcb, ddt, dd_live, cv_t, cv_l, int(lm.sum())))
 
     # WATCH tier (2-sigma): a heads-up so we can track a candidate -- GitHub annotation + committed
     # trail ONLY. NO Telegram: with many trials, several sit past 2-sigma continuously, so phone
@@ -1334,6 +1359,30 @@ def main():
             try:
                 import notify
                 notify.alert(dbanner)
+            except Exception:
+                pass
+
+    # RISK-IMPROVEMENT tier: net non-inferior + materially lower tail risk than live. A safe-upgrade
+    # promote event (e.g. the buffer/edge-select risk trims) -> phone push, same as the net-edge tier.
+    if risk_ready:
+        rlines = [f"{name}: net-LCB {lcb*100:+.2f}c (>= -{NONINF_EPS*100:.1f}c), MaxDD {dd*100:.0f}c vs "
+                  f"live {ddl*100:.0f}c, CVaR {cvt*100:.1f}c vs {cvl*100:.1f}c, n={nn}"
+                  for name, lcb, dd, ddl, cvt, cvl, nn in risk_ready]
+        rbanner = (f"\U0001f6e1️ RISK-UPGRADE-READY [{a.asset}]: trial(s) cleared the risk-improvement "
+                   f"track -- net non-inferior to live AND materially lower tail risk (MaxDD/CVaR). Safe "
+                   f"to promote per SCALE_GATE (ONE at a time).\n  " + "\n  ".join(rlines))
+        print("\n" + rbanner)
+        if a.alert:
+            for name, lcb, dd, ddl, cvt, cvl, nn in risk_ready:
+                print(f"::warning title=RISK-UPGRADE-READY::{name} MaxDD{dd*100:.0f}c<live{ddl*100:.0f}c n={nn} ({a.asset})")
+            try:
+                with open("STRATEGY_ALERTS.txt", "a") as fh:
+                    fh.write(f"{__import__('datetime').datetime.utcnow().isoformat()}Z  {rbanner}\n")
+            except Exception:
+                pass
+            try:
+                import notify
+                notify.alert(rbanner)
             except Exception:
                 pass
 
