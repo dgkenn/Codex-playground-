@@ -103,3 +103,26 @@ side is well-optimized; what's left here are RISK-quality trims + selection, not
 the fat mid-window mid-vol boxes, skip fast markets & late slots), which conveniently also reduces
 strands -- and it's already half-validating via t03 on the live watchlist. ETH/SOL/XRP box expansion
 is closed (-EV). Real future PnL remains on execution (queue-ahead, live-only) + the locked strand ladder.
+
+## >>> PHASE-1 FOLLOW-UPS (combo stacking + ETH-with-ladder) <<<
+**COMBO STACKING (commit 19b2309; BOXYIELD_COMBO.md):** stacking the levers does NOT help -- they
+CANNIBALIZE (sub-additive, no positive interactions). Full 5-lever stack collapses volume 6.11->1.04
+box/win, net +1.29c (worse than live +3.12c AND worse than every single lever). Leave-one-out:
+edge_select's k in [5,9] strictly SUBSUMES k<=10 (marginal +0.000c); buffer/balanced-band partially
+substitute (same adverse-selection tail). Best = a SINGLE lever (k_le_10: Sharpe +0.141 vs live 0.100,
+net ~= live, strand 38%->13%; or edge_sizing by net). No combo beats live on net at |t|>=2. -> deploy
+the LEAN single gate (already covered by t03/t_edge_* trials), never the stacked version.
+
+**ETH + STRAND LADDER (commit 8265f84; ETH_LADDER.md): the ladder does NOT rescue ETH.**
+- Naked ETH confirmed -EV: lock margin -1.11c/box (24.6% negative, p5 -19c), -13c/window at P0, 40% strand.
+- Full ladder on ETH: OOS net -1.22c/win, t=-4.1 (IS -2.18c, t=-7.4) -- NEVER crosses zero. It only
+  cuts the bleed by removing ~92% of opens (7026->570) and driving strands ~0; it creates NO edge.
+- SMOKING GUN: the BTC-tuned gates select ETH's WORST boxes -- the ladder-pass region is -2.56c/box
+  (t=-5.5) vs naked -1.11c. ETH's edge structure is INVERTED vs BTC: its only non-toxic slices are
+  late-slot (k>9, +0.44c) and deep-favorites (>0.70), which are EXACTLY what edge-select + favorite-
+  avoidance discard. No rung, single gate, or BTC-momentum gate makes ETH positive. Same ladder keeps
+  BTC positive (+2.77c P0).
+- VERDICT: ETH is NOT deployable as a box market -- gating only concentrates the loss; not enough good
+  volume remains. KEEP ETH solely as the cross-asset HEDGE leg (RUNG-5a). (A theoretical ETH-NATIVE
+  inverted ladder -- trade only late-slot k>9 -- shows just +0.44c on a thin slice; not worth pursuing.)
+  The "add assets for breadth" idea is CLOSED (assume SOL/XRP share ETH's toxicity until shown otherwise).
