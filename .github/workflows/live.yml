@@ -126,7 +126,7 @@ jobs:
           fi
           # TELEMETRY -> live-state branch (never pollute the code branch)
           mkdir -p /tmp/ls
-          cp -f "kalshi_fees_${ASSET}15m.jsonl" kalshi_markout.jsonl \
+          cp -f "kalshi_fees_${ASSET}15m.jsonl" kalshi_markout.jsonl "kalshi_winrec_${ASSET}15m.jsonl" \
                 "live_metrics_kalshi_${ASSET}15m.jsonl" /tmp/ls/ 2>/dev/null || true
           if [ -n "$(ls -A /tmp/ls 2>/dev/null)" ]; then
             day=$(date -u +%Y-%m-%d)
