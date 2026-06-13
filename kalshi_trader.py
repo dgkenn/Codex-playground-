@@ -45,11 +45,15 @@ MICRO_MARGIN = 0.002   # p-adaptive toxicity margin (same constant as live_trade
 _SPOT = {"px": None, "hist": collections.deque(maxlen=400)}   # (ts, px) history, ~3s cadence
 
 
-def _spot_poller():
+# AUDIT M6: sig telemetry must track the TRADED asset's spot, not always BTC.
+_COINBASE_PRODUCT = {"btc": "BTC-USD", "eth": "ETH-USD", "sol": "SOL-USD", "xrp": "XRP-USD"}
+
+
+def _spot_poller(product="BTC-USD"):
     sess = requests.Session()
     while True:
         try:
-            r = sess.get("https://api.exchange.coinbase.com/products/BTC-USD/ticker", timeout=2)
+            r = sess.get(f"https://api.exchange.coinbase.com/products/{product}/ticker", timeout=2)
             px = float(r.json().get("price"))
             _SPOT["px"] = px
             _SPOT["hist"].append((time.time(), px))
@@ -775,7 +779,8 @@ def main():
     winrec = {"taker": 0, "maker": 0, "maxnet": 0.0, "first_ts": {}, "dispose_cross": 0}
     winrec_fh = open(f"kalshi_winrec_{a.asset}15m.jsonl", "a")
     loop_ctx = {}                              # decision-time book state, stamped onto each fill
-    threading.Thread(target=_spot_poller, daemon=True).start()   # sig telemetry (isolated; non-blocking)
+    threading.Thread(target=_spot_poller, args=(_COINBASE_PRODUCT.get(a.asset, "BTC-USD"),),
+                     daemon=True).start()   # sig telemetry (isolated; non-blocking; per-asset spot)
     ops = {"place": 0, "cancel": 0, "cancel_fail": 0}   # per-window execution-quality counters
 
     if live:
@@ -1085,7 +1090,7 @@ def main():
         resting_s = (time.time() - meta["ts"]) if meta else None
         if meta:
             meta["filled"] = meta.get("filled", 0.0) + count
-            if meta["filled"] >= a.post - 1e-9:
+            if meta["filled"] >= meta.get("want", a.post) - 1e-9:   # AUDIT M5: per-order size, not global post
                 resting.pop(key, None)
         fid = str(f.get("trade_id") or f.get("fill_id") or "")
         # MARKOUT CURVE (adverse-selection telemetry): score this fill against the mid at
@@ -1385,12 +1390,24 @@ def main():
                         next_mk["mk"] = m2
                 threading.Thread(target=_prefetch, args=(mk["we"],), daemon=True).start()
 
-            # C2 LOSS-LIMIT: realized + open window mark (same double-component check as live_trader)
-            if realized + window_mark <= -abs(a.loss_limit):
-                print(f"KILL: realized {realized:+.2f} + mark {window_mark:+.2f}. cancel-all + exit.")
-                notify.alert(f"[kalshi] KILL loss-limit (real {realized:+.2f} mark {window_mark:+.2f})")
-                _record_kill(f"loss_limit realized={realized:+.2f} mark={window_mark:+.2f}")
-                cancel_all_resting(reason="loss_limit"); break
+            # C2 LOSS-LIMIT: realized + open window mark. AUDIT H6: window_mark marks the open leg at MID,
+            # but a held binary leg settles 0/1 -- mid HALVES the true tail risk so the limit trips late /
+            # can be breached. Use the WORST-CASE open loss (the unpaired leg's full cost basis: a long
+            # YES loses its cost if it settles NO, etc.) so the kill is conservative on directional risk.
+            worst_open = 0.0
+            if abs(net_delta) > 1e-9:
+                if net_delta > 0:
+                    py_ = sum(v for k_, v in pos.items() if k_.endswith(":YES"))
+                    worst_open = -(win_cost["yes"] / py_ * abs(net_delta)) if py_ > 0 else 0.0
+                else:
+                    pn_ = sum(v for k_, v in pos.items() if k_.endswith(":NO"))
+                    worst_open = -(win_cost["no"] / pn_ * abs(net_delta)) if pn_ > 0 else 0.0
+            kill_mark = min(window_mark, worst_open)
+            if realized + kill_mark <= -abs(a.loss_limit):
+                print(f"KILL: realized {realized:+.2f} + worst-open {kill_mark:+.2f}. liquidate + exit.")
+                notify.alert(f"[kalshi] KILL loss-limit (real {realized:+.2f} worst-open {kill_mark:+.2f})")
+                _record_kill(f"loss_limit realized={realized:+.2f} worst_open={kill_mark:+.2f}")
+                _flatten_and_exit("loss_limit"); break
 
             # Rolling markout kill -- the "strategy is going horribly wrong" detector. Calibrated to
             # only fire on GENUINE sustained toxicity (avg 5s markout << the strategy's normal -1c),
@@ -1559,14 +1576,20 @@ def main():
                     tau_frac = max(mk["we"] - time.time(), 0.0) / 900.0
                     units = max(1, kelly_size(price if side == "yes" else 1.0 - price,
                                               yba - ybb, tau_frac, fee_mult=a.fee_mult))
-                res = place(side, price, ybb, yba, count=units * int(a.post))
+                # AUDIT M1: the inventory clamp above reserved only `post`; cap units so units*post can
+                # NOT breach --max-net in a single fill (else size-mode kelly silently overshoots |net|).
+                _sgn = 1.0 if side == "yes" else -1.0
+                while units > 1 and abs(net_delta + _sgn * units * int(a.post)) > float(a.max_net) + 1e-9:
+                    units -= 1
+                want = units * int(a.post)
+                res = place(side, price, ybb, yba, count=want)
                 if res is None:
                     continue
                 if isinstance(res, tuple):
                     oid, t_dec, t_ack = res
                 else:
                     oid = res; t_ack = time.time()
-                resting[key] = {"oid": oid, "ts": t_ack, "filled": 0.0,
+                resting[key] = {"oid": oid, "ts": t_ack, "filled": 0.0, "want": want,
                                 "mid0": loop_ctx.get("mid")}
 
             # --- STRAND DISPOSAL: cross to COMPLETE an unpaired leg the passive chase can't pair ---
@@ -1592,20 +1615,27 @@ def main():
                         basis = win_cost["no"] / pn_ if pn_ > 0 else 0.0
                     lock = 1.0 - basis - cross_px    # $ locked completing the box at the cross price
                     need = int(round(abs(net_delta)))
+                    # AUDIT C3: size the cross to AVAILABLE offer depth (BUY-NO takes the YES-bid qty;
+                    # BUY-YES takes the YES-ask qty). A multi-lot strand on a thin offer would otherwise
+                    # partial-fill and strand the residual. Re-cross the remainder next loop (short
+                    # throttle when forcing) until net is flat.
+                    avail = (ybq if cside == "no" else yaq) or need
+                    take = max(1, min(need, int(avail)))
                     ckey = (cside, "_xcross")
                     # FORCE near close ignores the give budget: a certain -Xc completion now ALWAYS beats
                     # riding the naked leg to binary settlement (the -39.8c escaped-strand tail, run 2).
                     if (0.0 < cross_px < 1.0 and need >= 1 and (force or lock >= -give - 1e-9)
                             and reject_cd.get(ckey, 0.0) <= time.time()):
-                        if place(cside, cross_px, ybb, yba, count=need, cross=True) is not None:
+                        if place(cside, cross_px, ybb, yba, count=take, cross=True) is not None:
                             ops["dispose_cross"] = ops.get("dispose_cross", 0) + 1
                             winrec["dispose_cross"] += 1
                             if force:
-                                print(f"  [FORCE-FLATTEN] {need}x {cside.upper()} @ {cross_px:.4f} "
+                                print(f"  [FORCE-FLATTEN] {take}/{need}x {cside.upper()} @ {cross_px:.4f} "
                                       f"lock={lock:+.3f} tau={tau_left:.0f}s (no-give-cap; beats settlement)")
-                            print(f"  [DISPOSE-CROSS] complete {need}x {cside.upper()} @ {cross_px:.4f} "
+                            print(f"  [DISPOSE-CROSS] complete {take}/{need}x {cside.upper()} @ {cross_px:.4f} "
                                   f"lock={lock:+.3f} (age={age_unp:.0f}s tau={tau_left:.0f}s)")
-                        reject_cd[ckey] = time.time() + 3.0   # don't spam; one cross attempt / 3s
+                        # short throttle while forcing/partial so the residual re-crosses promptly
+                        reject_cd[ckey] = time.time() + (0.8 if (force or take < need) else 3.0)
 
             # --- PULL stale / toxic / off-target rungs ---
             for key in list(resting):
