@@ -90,18 +90,3 @@ Novel: directional completion urgency; settlement-hazard triage by tau; session 
 Bayesian autocorr-weighted size; pre-warmed resting completer.
 Ranked tests to run: 1 atomic-entry, 2 cross-strike-hedge, 3 skew, 4 continuous-resize, 5 bayesian-size,
 6 T*-force-complete, 7 widen(VPIN), 8 session-circuit-breaker.
-
-## HEDGE-RUNG PIVOT (operator, 2026-06-13): find the optimal NON-PERP hedge
-Perp is DEMOTED to "a noted possibility" (scale-gated, $6 min). Rung 5 should be a NON-PERP hedge
-deployable at current ~$5 size. STRUCTURAL REALITY: KXBTC15M is a SINGLE-STRIKE up/down binary, so
-there is NO same-event adjacent strike -> the literature's cross-strike vertical spread doesn't apply
-directly. The non-perp hedge must use a CORRELATED Kalshi instrument; candidates (rank by basis):
-  - CROSS-ASSET 15-min: hedge a BTC strand with an ETH/SOL 15-min position (have BTC+ETH data).
-  - CROSS-TENOR BTC: hourly/daily BTC up-down or the daily KXBTC multi-strike LADDER (has strikes) at
-    a comparable level -- basis = different settlement window/reference.
-  - DAILY-LADDER vertical spread: a true vertical on the daily ladder to offset the directional delta.
-  - Other intra-Kalshi offsets.
-TASK: find the optimal non-perp hedge (lowest basis vs the 15-min strand's directional P&L, cost,
-min-size feasibility at ~$5) and TEST its loss-reduction -- OR conclude honestly that no non-perp
-hedge has acceptable basis for a 15-min strand (reinforcing prevent/complete/cool-off as the real fix).
-Perp stays the AT-SCALE option (5b).
