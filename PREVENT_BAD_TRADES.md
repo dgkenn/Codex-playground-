@@ -38,3 +38,42 @@ venue worth building for the residual?** Everything below (RESEARCH_LOOP.md) ite
 - Judge candidates vs the durable `live_current`, not P0 (avoid double-counting deployed gates).
 - Forward bar governs deploy (t>3, n≥300); backtests SCREEN only (the t02 mirage stands as warning).
 - Watch the full risk metric set (skew/CVaR/Ulcer), not just t-stat (high-t can hide tail risk).
+
+---
+# 5-ROUND RESEARCH PROGRAM — CONCLUSION (2026-06-13, RESEARCH_LOOP.md, ~25 experiments)
+
+**The hard-won answer to "how do we prevent the bad trades": you largely CAN'T prevent the residual
+strands with a predictive gate — and we now have strong evidence for that, not a hunch.**
+
+1. **No causal fill-level signal beats live (t36) at adequate n.** Tested across 5 rounds: linear
+   logit (AUC 0.56), GBM/RF ensemble (AUC 0.72 but a SELECTION effect, n<300), sig×spread conjunctive,
+   time-of-day, directional YES/NO, microprice-divergence, queue-thinness, vol-regime, settle-magnitude
+   regressor, early-window causal flow. Every apparent winner was a **look-ahead** (full-window
+   flow_ratio t=4.05 — aggregates the late momentum that determines settlement), an **oracle**
+   (reactive hedge needs to know the strand before settlement), or a **selection/risk-control**
+   artifact (gate skips bad windows; t_paired≈0). The residual strands AFTER t36 are genuinely
+   unpredictable from decision-time data.
+2. **t36 is the validated frontier.** It already cut OOS strand 13.6%→3.36% (+5.30c/win OOS); the
+   research confirmed its mechanism (YES-strand prevention) and that nothing layers on top causally.
+3. **The one deployable near-term remedy is RISK CONTROL, not prevention.** Strands are
+   AUTOCORRELATED (lag-1 = 2.6× base, p=0.025), so a **streak scale-down / cooling-off state machine**
+   (after a strand: 0.75×→0.5×→0.25×, reset on a clean window) caps the consecutive-loss STREAKS (the
+   failure mode that turns a normal day negative). It is RISK CONTROL (t≈1.7), not alpha — it bounds
+   drawdown, it doesn't add edge. Trivially deployable (stateful, no model).
+4. **The perp-hedge is real but small, scale-gated, and does NOT neutralize the tail** (BTC explains
+   only 1.7% of strand-loss variance). +$21-30/day ONLY at ~100 contracts (pennies at current size).
+   DEFER the venue build until scaled; revisit as a per-fill YES-leg hedge then.
+5. **Live candidates still forward-validating (not yet deploy-cleared):** the GBM strand gate
+   (AUC 0.72, needs n≥300 forward), `f5_fav_lowsig_complete` (low-CVaR sleeve), t02. Judged vs the
+   durable `live_current`; the forward bar (t>3, n≥300) governs.
+
+## Next directions (where to take this)
+per-fill YES-leg BTC hedge (sized, close next minute); accumulate ≥150 OOS book-covered windows to
+unlock the microprice/depth/VPIN studies; prospective A/B of the f5 sleeve to n≥300; a rolling online
+causal classifier (retrain on last 150 settled windows); and a strand-causation mechanism study
+(structural vs temporal vs calendar).
+
+## Deployable NOW (recommended)
+**Streak scale-down state machine in the trader** — the only thing the program found that directly
+counters the negative-day streaks, deployable without a model. Caps consecutive-strand drawdown; not
+alpha. Everything else needs more forward data or scale.

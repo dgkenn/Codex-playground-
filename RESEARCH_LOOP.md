@@ -116,3 +116,15 @@ dominant fix is the HEDGE (venue build). Streaks cluster in time (live RCA) -> a
 - **R5-2: hedge TIMING protocol** (only if building later) -- prophylactic (hedge every open) vs
   reactive (hedge on intrawindow adverse spot move); drag vs protection; optimal hedge size by sig.
 (R5-4 book-stream to >=150 OOS = infra; collector running.)
+
+### Round 5 — RESULTS (commit 06fb263; ROUND5.md) — FINAL
+- R5-1 EARLY-FLOW (make-or-break): **FAIL.** First-60s flow correlates with full-window flow_ratio
+  (r=0.49) but has ZERO predictive power for PnL (r=-0.015, t=-0.32). The full-window flow_ratio
+  (t=4.05) was a LOOK-AHEAD MIRAGE (it aggregates late-window momentum that DETERMINES settlement).
+  No causal alpha.
+- R5-5 streak SCALE-DOWN: risk control (t=1.72). Retains volume, cuts maxConsecLoss 12%; binary
+  cooling-off N=1 cuts it 50% but loses 20 windows. Both below bar -- RISK CONTROL, not alpha.
+- R5-3 NO-guard+early-flow: fires 2/200; early-flow adds noise. Dead.
+- **ACROSS ALL 5 ROUNDS: NOTHING beat live at adequate n.** Every apparent winner was look-ahead
+  (flow_ratio), oracle (reactive hedge needs to know the strand pre-settlement), or selection/risk-
+  control. t36 (deployed) remains the only validated signal.
