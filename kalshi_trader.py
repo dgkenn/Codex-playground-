@@ -640,6 +640,14 @@ def main():
                          "a hold-to-settlement box for.")
     ap.add_argument("--markout-kill-n", type=int, default=50,
                     help="fills in the rolling-markout-kill window (more = steadier, fewer false trips)")
+    ap.add_argument("--strand-scaledown", type=str, default="",
+                    help="STREAK GUARD (RESEARCH_LOOP R5-5; strands are autocorrelated 2.6x). Comma "
+                         "size-multipliers applied to OPENING quotes for each CONSECUTIVE stranded "
+                         "window (completion quotes never suppressed). e.g. '0.75,0.5,0.25' scales "
+                         "after 1/2/3+ strands; at post=1 a multiplier that rounds to 0 SKIPS opens "
+                         "that window (so '0' = skip the window after any strand = the N=1 cooling-off "
+                         "that cut maxConsecLoss 50%% in backtest). Empty = OFF. Resets on a clean "
+                         "(non-stranded) window. RISK CONTROL, not alpha (t~1.7).")
     ap.add_argument("--poll", type=float, default=1.0, help="housekeeping cadence (s): fills+balance+settles")
     ap.add_argument("--react-poll", type=float, default=0.25, help="book polling cadence (s)")
     ap.add_argument("--duration", type=int, default=3600)
@@ -778,6 +786,8 @@ def main():
     net_delta = 0.0          # YES positions - NO positions (signed)
     unpaired_since = None    # wall-clock when |net| left 0 (completion-urgency chase clock)
     realized = 0.0           # settled P&L across closed windows
+    _strand_sched = [float(x) for x in a.strand_scaledown.split(",") if x.strip()]  # streak guard
+    _consec_strands = 0      # consecutive stranded windows (drives --strand-scaledown)
     window_mark = 0.0        # current window mark-to-mid (open position value)
     pos = {}                 # ticker+"YES"|"NO" -> contracts held (from fills)
     cash = 0.0               # net cash flow this window (positive = received)
@@ -1263,6 +1273,11 @@ def main():
                     print(f"  [OPS] places={ops['place']} cancels={ops['cancel']} "
                           f"cancel_fails={ops['cancel_fail']} qtime={qtime_ct[0]} fills={nf} "
                           f"quote_to_trade={ops['place']/max(nf,1):.1f}")
+                    # STREAK GUARD: a window with an unpaired residual (|py-pn|>0) stranded; strands
+                    # are autocorrelated (2.6x), so count consecutive strands to scale down the next
+                    # window's opens (--strand-scaledown). Clean window resets the streak.
+                    if _strand_sched:
+                        _consec_strands = _consec_strands + 1 if abs(py - pn) > 0.5 else 0
                     pos.clear(); cash = 0.0; net_delta = 0.0; window_mark = 0.0
                 win_fills = {"yes": 0, "no": 0}   # fresh window, fresh trend-exposure budget
                 win_cost = {"yes": 0.0, "no": 0.0}
@@ -1343,6 +1358,14 @@ def main():
             if (a.guard_yes_spread > 0 and ybb is not None and yba is not None
                     and (yba - ybb) < a.guard_yes_spread - 1e-9 and net_delta >= 0):
                 targets = [t for t in targets if t[0] != "yes"]
+            # STREAK GUARD (--strand-scaledown): after consecutive strands, scale down opens. At post=1
+            # a multiplier that rounds to 0 SUPPRESSES new OPENING quotes this window (completion of an
+            # unpaired leg is never suppressed -- that reduces |net|). Resets on a clean window.
+            if _strand_sched and _consec_strands > 0:
+                _m = _strand_sched[min(_consec_strands - 1, len(_strand_sched) - 1)]
+                if round(a.post * _m) < 1:
+                    targets = [t for t in targets
+                               if (net_delta > 0.5 and t[0] == "no") or (net_delta < -0.5 and t[0] == "yes")]
             target_set = set(targets)
             # stamp decision-time book state for fill-context logging (metrics framework:
             # effective spread = fill price vs this mid; depth/imbalance for queue + toxicity)
