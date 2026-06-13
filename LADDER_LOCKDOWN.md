@@ -70,3 +70,23 @@ strand = ~12x OVER-hedge = a directional BTC BET, not a hedge. Implications:
   model it with the min-contract lumpiness (integer perp contracts), not a smooth h.
 - This makes COMPLETE (rung 3) + MANAGE/COOL-OFF (rung 4) the binding residual-strand handlers at
   current size -- prioritize their optimization.
+
+## LITERATURE REVISION (commit 3dd4293; LADDER_LITERATURE.md) -> candidate revised sequence
+Theory confirms prevent->complete->risk-control->hedge (cost up / root-cause-efficacy down the ladder;
+regime shifts thresholds not order). Mandated revisions to TEST on data:
+  0. ATOMIC-ENTRY (new, top): simultaneous IOC both legs + unwind -> eliminate the legging window
+     (dominates AUC-0.72 prediction which leaks 28%). [Almgren-Chriss]
+  1. PREVENT (merge PREDICT in -- same lifecycle point; gates + GBM model together).
+  2. SKEW (new): inventory!=0 -> skew new opens toward natural-hedge side / accept worse lock to
+     attract offsetting flow. [Avellaneda-Stoikov, Ho-Stoll]
+  3. COMPLETE with calibrated T* force-complete-age. [Almgren-Chriss urgency]
+  4. RISK-CONTROL (merge cool-off + continuous RESIZE: size ~ 1/q^2; one big strand -> immediate cut).
+     [Gueant-Lehalle-Tapia]; + WIDEN (proportional lock-margin under sub-gate toxicity). [VPIN]
+  5a. CROSS-STRIKE HEDGE (NEW, DEPLOY-NOW): hedge the strand with the adjacent-strike binary
+     (sell YES@k+1 / buy NO@k) -- near-zero basis vs BTC perp's 1.7%; no perp min, current size OK.
+     [Stoikov-Saglam incomplete-market]
+  5b. BTC PERP -- deferred to scale (per the $6-min constraint).
+Novel: directional completion urgency; settlement-hazard triage by tau; session circuit breaker;
+Bayesian autocorr-weighted size; pre-warmed resting completer.
+Ranked tests to run: 1 atomic-entry, 2 cross-strike-hedge, 3 skew, 4 continuous-resize, 5 bayesian-size,
+6 T*-force-complete, 7 widen(VPIN), 8 session-circuit-breaker.
