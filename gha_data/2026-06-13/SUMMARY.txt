@@ -1,0 +1,31 @@
+shadow comparison over 12 de-duped windows | files=4
+
+     variant  net/win  Δvs base  paired t GROSS/win  gross t
+     mo_size   +4.990    +0.480     +0.52    +4.990    +1.14 <edge>
+  av_stoikov   +4.968    +0.459     +0.20    +4.968    +0.85 <edge>
+  micro_soft   +4.509    +0.000       n/a    +4.509    +1.20 <edge>
+  micro_gate   +4.509    +0.000       n/a    +4.509    +1.20 <edge>
+    baseline   +4.509                        +4.509    +1.20 <edge>
+ micro_react   +3.921    -0.588     -1.55    +3.921    +1.09 <edge>
+  spot_react   +3.593    -0.917     -1.44    +3.593    +1.09 <edge>
+  micro_spot   +3.593    -0.917     -1.44    +3.593    +1.09 <edge>
+     fv_size   +3.517    -0.992     -1.43    +3.517    +0.91 <edge>
+   flow_gate   +3.455    -1.054     -0.85    +3.455    +1.21 <edge>
+deplete_gate   +3.329    -1.180     -2.34    +3.329    +0.89 <edge>
+   late_gate   +3.300    -1.209     -1.18    +3.300    +1.11 <edge>
+  micro_asym   +3.204    -1.305     -1.57    +3.204    +1.00 <edge>
+   gross_max   +2.848    -1.661     -2.56    +2.848    +0.81 <edge>
+    dneutral   +2.784    -1.725     -0.76    +2.784    +1.46 <edge>
+       cap25   +1.925    -2.585     -2.13    +1.925    +0.72 <edge>
+ ufat_skew15   +1.467    -3.043     -1.55    +1.467    +0.63 <edge>
+   ufat_band   +1.464    -3.046     -1.70    +1.464    +0.55 <edge>
+      skew15   +1.446    -3.063     -1.99    +1.446    +0.53 <edge>
+micro_skew15   +1.446    -3.063     -1.99    +1.446    +0.53 <edge>
+    tox_gate   +1.150    -3.360     -1.83    +1.150    +0.46 <edge>
+  micro_marg   +0.902    -3.607     -1.78    +0.902    +0.39 <edge>
+  micro_ufat   +0.871    -3.639     -1.72    +0.871    +0.37 <edge>
+micro_strict   +0.327    -4.183     -1.89    +0.327    +0.15 <edge>
+   micro_cal   -0.859    -5.369     -1.63    -0.859    -0.55
+
+Read: paired t = net edge OVER baseline (rebate-inclusive). GROSS/win = trade P&L EXCLUDING the rebate = the edge OUTSIDE rebates; gross t vs 0, |t|>2 notable. n=12.
+Only positive-GROSS variants have an edge beyond rebate harvesting (the micro-gate family).
