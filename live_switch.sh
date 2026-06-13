@@ -8,7 +8,15 @@
 # and also clears the kill sentinel so you get a clean start.
 set -u
 cd "$(dirname "$0")"
-BR="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo claude/polymarket-bot-live-ready-vw7ut5)"
+# Resolve the target branch ROBUSTLY. Inside a GitHub Actions checkout HEAD is DETACHED, so
+# `git rev-parse --abbrev-ref HEAD` returns the literal string "HEAD" (exit 0, so the old `|| echo`
+# fallback NEVER fired) -> `git push origin HEAD` failed and the switch never flipped from CI.
+# That silently broke the Telegram "off" command (it could cancel the run but not flip the switch,
+# so the cron/watchdog just restarted it). Honor $BRANCH (set by the workflows) first; only fall
+# back to the working-branch name; never push to "HEAD".
+BR="${BRANCH:-}"
+[ -z "$BR" ] && BR="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || true)"
+case "$BR" in ""|HEAD) BR="claude/polymarket-bot-live-ready-vw7ut5" ;; esac
 ASSET="${ASSET:-btc}"
 cur() { tr -d '[:space:]' < LIVE_SWITCH 2>/dev/null || echo off; }
 case "${1:-status}" in
