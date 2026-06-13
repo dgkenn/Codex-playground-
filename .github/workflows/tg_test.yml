@@ -1,24 +1,25 @@
-# One-shot Telegram wiring test. Runs on push to this throwaway branch, sends one message using the
-# repo secrets (the workflow can read them even though a human/agent cannot), then we delete the branch.
 name: tg-test
 on: push
 permissions:
   contents: read
 jobs:
-  ping:
+  diag:
     runs-on: ubuntu-latest
     steps:
-      - name: send telegram test
+      - name: telegram diagnostic (read-only) + fresh marker
         env:
           TG:  ${{ secrets.TELEGRAM_BOT_TOKEN }}
           CID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
-          if [ -z "$TG" ];  then echo "::error::TELEGRAM_BOT_TOKEN secret is EMPTY/unset"; exit 1; fi
-          if [ -z "$CID" ]; then echo "::error::TELEGRAM_CHAT_ID secret is EMPTY/unset";  exit 1; fi
+          [ -n "$TG" ]  || { echo "::error::TELEGRAM_BOT_TOKEN empty"; exit 1; }
+          [ -n "$CID" ] || { echo "::error::TELEGRAM_CHAT_ID empty"; exit 1; }
+          echo "=== getMe (bot identity) ==="
+          curl -s "https://api.telegram.org/bot${TG}/getMe"; echo
+          echo "=== getWebhookInfo (a non-empty url here = poller getUpdates is BLOCKED) ==="
+          curl -s "https://api.telegram.org/bot${TG}/getWebhookInfo"; echo
+          echo "=== send fresh marker ==="
           code=$(curl -s -o /tmp/r -w '%{http_code}' "https://api.telegram.org/bot${TG}/sendMessage" \
             --data-urlencode chat_id="$CID" \
-            --data-urlencode text="✅ Telegram test from Claude Code — your bot secrets are wired correctly. Reply 'status' to test the on/off switch (works once the next collect cycle's poller is live).")
-          echo "telegram sendMessage -> HTTP $code"
-          cat /tmp/r; echo
-          [ "$code" = "200" ] || { echo "::error::telegram API returned $code (token/chat_id likely wrong)"; exit 1; }
-          echo "TELEGRAM TEST OK"
+            --data-urlencode text="🔎 Diagnostic ping. If you see THIS, Telegram delivery is fine — the silent trader is the pre-secret 04:16 cycle. The auto armed-ping + fill alerts begin on the next live cycle (~05:02). Reply 'status' now to test the switch.")
+          echo "marker sendMessage -> HTTP $code"; cat /tmp/r; echo
+          [ "$code" = "200" ] || exit 1
