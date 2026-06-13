@@ -38,6 +38,41 @@ BASE = "https://api.elections.kalshi.com/trade-api/v2"
 WS_URL = "wss://api.elections.kalshi.com/trade-api/ws/v2"
 MICRO_MARGIN = 0.002   # p-adaptive toxicity margin (same constant as live_trader)
 
+# --- DECISION-TIME SPOT FEED (Prevention #0: wire `sig` into each fill record) -------------------
+# A daemon thread polls BTC spot so every fill can be stamped with the decision-time spot-move (the
+# leading adverse-selection signal the A/B tester's `sig` uses). TELEMETRY-ONLY and fully isolated:
+# it never blocks or feeds the trading loop, and any failure just leaves sig=None (trader unaffected).
+_SPOT = {"px": None, "hist": collections.deque(maxlen=400)}   # (ts, px) history, ~3s cadence
+
+
+def _spot_poller():
+    sess = requests.Session()
+    while True:
+        try:
+            r = sess.get("https://api.exchange.coinbase.com/products/BTC-USD/ticker", timeout=2)
+            px = float(r.json().get("price"))
+            _SPOT["px"] = px
+            _SPOT["hist"].append((time.time(), px))
+        except Exception:
+            pass
+        time.sleep(3.0)
+
+
+def _spot_sig():
+    """(spot, move_bps) where move_bps = BTC % move x1e4 over ~3 min -- the same signal as the A/B
+    `sig`. Returns (None, None) if no spot data yet. Never raises."""
+    try:
+        px = _SPOT["px"]; h = _SPOT["hist"]
+        if px is None or not h:
+            return None, None
+        now = time.time()
+        old = next((p for t, p in h if now - t >= 180), h[0][1])
+        if not old or old <= 0:
+            return px, None
+        return px, round((px / old - 1.0) * 1e4, 2)
+    except Exception:
+        return None, None
+
 seeded: set = set()   # C-4: tickers whose prior-session fills have been seeded into seen_fills
 
 
@@ -706,6 +741,7 @@ def main():
     win_fills = {"yes": 0, "no": 0}            # fills per side THIS window (trend-exposure cap)
     win_cost = {"yes": 0.0, "no": 0.0}         # $ spent per side THIS window (box telemetry)
     loop_ctx = {}                              # decision-time book state, stamped onto each fill
+    threading.Thread(target=_spot_poller, daemon=True).start()   # sig telemetry (isolated; non-blocking)
     ops = {"place": 0, "cancel": 0, "cancel_fail": 0}   # per-window execution-quality counters
 
     if live:
@@ -996,10 +1032,15 @@ def main():
         # 5s/30s/60s/300s. 5s feeds the rolling markout kill; the full curve is the offline
         # "am I getting picked off?" measurement. cid pins the window so a markout never
         # references the NEXT market's book after rollover.
+        # stamp the DECISION-TIME context (Prevention #0) so each markout record is self-contained:
+        # sig (spot move), microprice, spread/mid, and the active guard threshold.
+        _ctx = {"sig": loop_ctx.get("sig"), "spot": loop_ctx.get("spot"),
+                "micro": loop_ctx.get("micro"), "spread": loop_ctx.get("spread"),
+                "mid": loop_ctx.get("mid"), "guard": (a.guard_yes_spread or None)}
         for _h in (5.0, 30.0, 60.0, 300.0):
             pending_markouts.append((time.time() + _h, {
                 "fside": fside, "fp": fp, "count": count, "h": _h, "cid": ticker,
-                "resting_s": resting_s, "oid": (meta or {}).get("oid", fid)}))
+                "resting_s": resting_s, "oid": (meta or {}).get("oid", fid), **_ctx}))
         # FEE GROUND TRUTH (the load-bearing Kalshi unknown): capture the venue's reported fee on
         # every fill, raw, to a dedicated log -- the per-series maker-fee question the public docs
         # can't fully answer is settled by what Kalshi actually charges here.
@@ -1305,10 +1346,12 @@ def main():
             target_set = set(targets)
             # stamp decision-time book state for fill-context logging (metrics framework:
             # effective spread = fill price vs this mid; depth/imbalance for queue + toxicity)
+            _spot_px, _spot_sig_bps = _spot_sig()    # decision-time spot + 3-min move (bps) for sig telemetry
             loop_ctx.update({"mid": round((ybb + yba) / 2, 4), "bb": ybb, "ba": yba,
                              "bq": round(clean_ybq, 2), "aq": round(clean_yaq, 2),
                              "micro": round(mp, 4) if mp is not None else None,
-                             "spread": round(yba - ybb, 4)})
+                             "spread": round(yba - ybb, 4),
+                             "spot": _spot_px, "sig": _spot_sig_bps})
 
             # --- PLACE missing rungs ---
             spread_now = (yba - ybb) if (ybb is not None and yba is not None) else 0.0
@@ -1534,7 +1577,10 @@ def main():
                         "ts": time.time(), "asset": a.asset, "side": f["fside"],
                         "h": f.get("h", 5.0), "price": f["fp"], "count": f["count"],
                         "markout": mo, "resting_s": f.get("resting_s"),
-                        "net_delta": net_delta}) + "\n")
+                        "net_delta": net_delta,
+                        # decision-time context (Prevention #0): sig/microprice/guard + spread/mid
+                        "sig": f.get("sig"), "spot": f.get("spot"), "micro": f.get("micro"),
+                        "spread": f.get("spread"), "mid": f.get("mid"), "guard": f.get("guard")}) + "\n")
                     mo_fh.flush()
 
                 # Venue ORDER RECONCILIATION (C6): cancel unknown open orders every 5s
