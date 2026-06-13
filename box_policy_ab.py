@@ -757,11 +757,207 @@ def bench_line(x, fills_per_win=None):
             f"prof-win {winr:3.0f}%  [{flags}]")
 
 
+# ---------------------------------------------------------------------------
+# CURATED RISK / PERFORMANCE METRICS (added 2026-06-13)
+# ---------------------------------------------------------------------------
+# Designed for a $0-fee MAKER box bot on binary 15-min Kalshi markets.
+# Unit of record = one 15-min window; PnL is in dollars-per-contract (same as
+# the existing leaderboard).  All helpers accept a 1-D numpy array x of
+# per-window PnL values (may contain NaN; cleaned internally).
+#
+# EXPLICITLY SKIPPED (with rationale):
+#   slippage / VWAP / implementation-shortfall: maker posts at the touch with
+#     fee=0, so realized price = quoted price by construction; ~0 always.
+#   quote-latency / fill-to-quote / uptime / error-rate / margin: require live
+#     telemetry; not present in the tape-replay ledger.
+#   external-BTC alpha/beta/tracking-error/R^2: the natural benchmark is P0 /
+#     live_current, already captured by Information Ratio + paired-t in this
+#     script.  BTC co-movement is a distraction for a binary settlement product.
+#   inventory-imbalance: structurally capped at +-1 leg by --max-net 1; the
+#     honest proxy is strand-rate (already in the leaderboard as win% complement).
+#   Monte-Carlo / WFA / regime detection: noted as future work; not cheap enough
+#     to add reliably at n~160 windows without inflating false-positive risk.
+#   Quarterly-consistency proxy: with ~160 windows the quarter boundaries fall
+#     in noisy small-n territory; we note it as future when n>=300.
+
+def _clean(x):
+    x = np.asarray(x, float)
+    return x[~np.isnan(x)]
+
+
+def metric_skewness(x):
+    """Fisher skewness of the per-window PnL distribution.
+    Negative skew = rare-but-large losses (strand-tail signature of the box strategy)."""
+    x = _clean(x)
+    if len(x) < 8:
+        return float("nan")
+    n = len(x); mu = x.mean(); sig = x.std(ddof=1)
+    if sig < 1e-12:
+        return 0.0
+    return float(n / ((n - 1) * (n - 2)) * np.sum(((x - mu) / sig) ** 3))
+
+
+def metric_kurtosis(x):
+    """Excess kurtosis (Fisher, 0 for normal).
+    Positive = fat tails (more extreme outcomes than normal; a strand-tail warning)."""
+    x = _clean(x)
+    if len(x) < 8:
+        return float("nan")
+    n = len(x); mu = x.mean(); sig = x.std(ddof=1)
+    if sig < 1e-12:
+        return 0.0
+    # excess kurtosis via Fisher's formula (unbiased correction)
+    k4 = n * (n + 1) / ((n - 1) * (n - 2) * (n - 3)) * np.sum(((x - mu) / sig) ** 4)
+    return float(k4 - 3.0 * (n - 1) ** 2 / ((n - 2) * (n - 3)))
+
+
+def metric_ulcer(x):
+    """Ulcer Index: RMS of drawdown-from-peak on the cumulative PnL curve.
+    Penalises both depth AND duration of being underwater (unlike maxDD alone)."""
+    x = _clean(x)
+    if len(x) < 2:
+        return float("nan")
+    cum = np.cumsum(x)
+    peak = np.maximum.accumulate(cum)
+    dd_sq = (peak - cum) ** 2
+    return float(np.sqrt(np.mean(dd_sq)))
+
+
+def metric_var95(x):
+    """VaR at 95% confidence: the 5th-percentile per-window PnL (negative = loss).
+    Reported as a positive number (magnitude of the loss)."""
+    x = _clean(x)
+    if len(x) < 8:
+        return float("nan")
+    return float(-np.percentile(x, 5))
+
+
+def metric_cvar95(x):
+    """CVaR (Expected Shortfall) at 95%: mean of the worst 5% of per-window PnL.
+    More sensitive than VaR to the shape of the loss tail (the strand-tail strand)."""
+    x = _clean(x)
+    if len(x) < 8:
+        return float("nan")
+    cut = np.percentile(x, 5)
+    tail = x[x <= cut]
+    if len(tail) == 0:
+        return float(-cut)
+    return float(-np.mean(tail))
+
+
+def metric_ir(x, baseline):
+    """Information Ratio: mean(x - baseline) / std(x - baseline).
+    Note: t-stat = IR * sqrt(n), so this is the per-window Sharpe vs a chosen benchmark."""
+    x = _clean(x); b = _clean(baseline)
+    n = min(len(x), len(b))
+    if n < 8:
+        return float("nan")
+    diff = x[:n] - b[:n]
+    s = diff.std(ddof=1)
+    if s < 1e-12:
+        return float("inf") if diff.mean() > 0 else 0.0
+    return float(diff.mean() / s)
+
+
+def metric_avg_win_loss(x):
+    """Avg-Win / Avg-Loss ratio (both positive numbers).
+    >1 means winning windows are larger than losing windows on average."""
+    x = _clean(x)
+    wins = x[x > 0]; losses = x[x < 0]
+    if len(wins) == 0 or len(losses) == 0:
+        return float("nan")
+    return float(wins.mean() / (-losses.mean()))
+
+
+def metric_expectancy(x):
+    """Expectancy per window = P(win)*AvgWin - P(loss)*AvgLoss (in same units as x).
+    Equivalent to mean(x) when no zeros; split form makes the win/loss asymmetry explicit."""
+    x = _clean(x)
+    if len(x) == 0:
+        return float("nan")
+    return float(np.mean(x))
+
+
+def metric_time_underwater(x):
+    """Fraction of windows where cumulative equity is BELOW the running peak (time-underwater %)."""
+    x = _clean(x)
+    if len(x) < 2:
+        return float("nan")
+    cum = np.cumsum(x)
+    peak = np.maximum.accumulate(cum)
+    return float(np.mean(cum < peak))
+
+
+def metrics_report(name, pt, p0_arr, live_arr):
+    """Print the curated metrics block for one trial.
+    pt, p0_arr, live_arr are per-window PnL arrays (same length, may contain NaN)."""
+    x = pt[~np.isnan(pt)]
+    if len(x) < 8:
+        print(f"    [metrics] {name}: n={len(x)} < 8, skip")
+        return
+
+    # Sharpe (mean/std, unit-free per-window)
+    std = x.std(ddof=1)
+    sharpe = float(x.mean() / std) if std > 1e-12 else float("nan")
+
+    sor   = sortino(x)
+    skew  = metric_skewness(x)
+    kurt  = metric_kurtosis(x)
+    recov = recovery_factor(x)
+    ulc   = metric_ulcer(x)
+    var95 = metric_var95(x)
+    cvar  = metric_cvar95(x)
+    awl   = metric_avg_win_loss(x)
+    exp_c = metric_expectancy(x) * 100      # in cents
+    tuw   = metric_time_underwater(x) * 100  # as %
+
+    # IR vs P0 and vs live_current (aligned on non-NaN mask)
+    m0  = ~np.isnan(pt) & ~np.isnan(p0_arr)
+    ml  = ~np.isnan(pt) & ~np.isnan(live_arr)
+    ir_p0   = metric_ir(pt[m0], p0_arr[m0])   if m0.sum() >= 8 else float("nan")
+    ir_live = metric_ir(pt[ml], live_arr[ml])  if ml.sum() >= 8 else float("nan")
+
+    print(f"    Sharpe {sharpe:+5.3f}  Sortino {sor:+5.3f}  "
+          f"Skew {skew:+5.2f}  Kurt {kurt:+5.2f}")
+    print(f"    Recovery {recov:+6.2f}  Ulcer {ulc*100:.3f}c  "
+          f"VaR95 {var95*100:.3f}c  CVaR95 {cvar*100:.3f}c")
+    print(f"    IR_vs_P0 {ir_p0:+5.3f}  IR_vs_live {ir_live:+5.3f}  "
+          f"AvgW/L {awl:.3f}  Expect {exp_c:+.3f}c/win  TimeUW {tuw:.1f}%")
+
+
+def run_policy_adv(fills, policy_fn):
+    """Return (pnl, adv_fills, total_fills) where adv_fills = count of accepted fills with sig>0
+    (adverse spot signal at decision time = the pick-off / adverse-selection metric)."""
+    # We need to replicate accept/reject logic to count adverse fills per trial.
+    # Simplest: tag each fill the policy would accept by running it with a counter wrapper.
+    accepted = []
+    # Reconstruct which fills the policy accepted by comparing a run with and without each fill.
+    # More efficient: use a dedicated walker that mirrors run_policy but also records accepted fills.
+    net = 0; pnl = 0.0; adv = 0; total = 0
+    # We can't easily introspect policy_fn (it's a lambda), so instead we use a fast approximation:
+    # run the policy once to get PnL, then identify accepted fills by checking net-balance changes.
+    # The cleanest approach: P0 accepts all fills with |net|<=1; the policy gate changes which opens.
+    # For adverse-selection we compute for P0 (gate-independent fill set) since the signal is on the
+    # fill itself, not the policy decision.  Per-trial adverse-sel is approximated by the ratio of
+    # accepted fills (policy_pnl covers this via fill volume) -- see note in metrics_report.
+    for f in fills:
+        step = 1 if f["side"] == "bid" else -1
+        nn = net + step
+        if abs(nn) > 1:
+            continue
+        net = nn; total += 1
+        if (f.get("sig") or 0.0) > 0:
+            adv += 1
+    return adv, total
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--asset", default="btc")
     ap.add_argument("--dir", nargs="+", default=["overnight_data", "gha_data"])
     ap.add_argument("--report", action="store_true", help="just report from the ledger(s), scan nothing")
+    ap.add_argument("--metrics", action="store_true",
+                    help="print curated risk/performance metrics block after the main leaderboard")
     ap.add_argument("--ledger", default=None,
                     help="ledger to APPEND new windows to (default box_policy_ledger_<asset>.jsonl). "
                          "On GHA use a run-scoped path under gha_data/ so each run commits a fragment.")
@@ -796,8 +992,13 @@ def main():
                 fills = window_fills(ws, res[ws], bid, ask, spot, depth, trades[ws], oi_slope.get(ws))
                 if not fills:
                     continue
+                # Adverse-selection stats: fraction of fills with sig>0 (adverse spot signal).
+                # Computed on P0 (all accepted fills under |net|<=1); each trial gates some of
+                # these out, but the per-fill signal is independent of the policy decision.
+                adv_count, fill_total = run_policy_adv(fills, None)
                 rec = {"ws": ws, "res": res[ws], "n_fills": len(fills),
                        "p0": round(pol_p0(fills), 6),
+                       "adv_fills": adv_count, "fill_total": fill_total,
                        "trials": {name: round(fn(fills), 6) for name, fn in TRIALS.items()}}
                 out.write(json.dumps(rec) + "\n"); seen[ws] = rec; added += 1
 
@@ -901,6 +1102,112 @@ def main():
                 notify.alert(dbanner)
             except Exception:
                 pass
+
+    # -----------------------------------------------------------------------
+    # CURATED RISK/PERFORMANCE METRICS BLOCK  (--metrics flag)
+    # -----------------------------------------------------------------------
+    if not getattr(a, "metrics", False):
+        return
+
+    # Aggregate adverseSel% from the ledger (populated in new records; fall back to NaN for old).
+    total_adv = sum(r.get("adv_fills", 0) for r in rows)
+    total_ft  = sum(r.get("fill_total", 0) for r in rows)
+    global_adv_pct = (total_adv / total_ft * 100) if total_ft > 0 else float("nan")
+
+    print("\n" + "=" * 90)
+    print(f"CURATED METRICS BACKTEST  ({a.asset})  n={n} windows  "
+          f"(note: tail metrics unreliable at n<50; n~160 = moderate confidence)")
+    print(f"  Global adverse-fill rate (sig>0 on P0 fills): "
+          f"{global_adv_pct:.1f}%  ({total_adv}/{total_ft} fills across all windows)")
+    print(f"  Skipped metrics: slippage/VWAP/IS (maker fee=0, posts at touch); "
+          f"quote-latency/uptime/margin (live-only); BTC alpha/beta/TE/R2 (IR+t-stat covers this);"
+          f" inventory-imbalance (structurally capped at +-1 -> strand-rate is the proxy).")
+    print(f"  Future/deferred: Monte-Carlo/WFA/regime; quarterly-consistency (needs n>=300).")
+    print("=" * 90)
+
+    # Print compact header
+    hdr = (f"  {'trial':<26} {'Sharpe':>7} {'Sortino':>8} {'Skew':>7} {'Kurt':>7} "
+           f"{'Recovery':>9} {'Ulcer_c':>8} {'CVaR95_c':>9} {'IR_live':>8} {'AdvSel%':>8}")
+    print(hdr)
+    print("  " + "-" * 88)
+
+    # P0 baseline row
+    p0x = _clean(p0)
+    p0_std = p0x.std(ddof=1) if len(p0x) > 1 else float("nan")
+    p0_sharpe = float(p0x.mean() / p0_std) if p0_std > 1e-12 else float("nan")
+    p0_sor    = sortino(p0x)
+    p0_skew   = metric_skewness(p0x)
+    p0_kurt   = metric_kurtosis(p0x)
+    p0_recov  = recovery_factor(p0x)
+    p0_ulc    = metric_ulcer(p0x) * 100
+    p0_cvar   = metric_cvar95(p0x) * 100
+    p0_irlive = metric_ir(p0, live) if (~np.isnan(live)).sum() >= 8 else float("nan")
+    print(f"  {'[P0_baseline]':<26} {p0_sharpe:>+7.3f} {p0_sor:>+8.3f} {p0_skew:>+7.2f} "
+          f"{p0_kurt:>+7.2f} {p0_recov:>+9.2f} {p0_ulc:>8.3f} {p0_cvar:>9.3f} "
+          f"{p0_irlive:>+8.3f} {global_adv_pct:>7.1f}%")
+
+    # Per-trial rows
+    trial_metrics = {}
+    for name in sorted(names):
+        pt = np.array([(r.get("trials") or {}).get(name,
+                        r.get("p2") if name == "p2_signal_hold" else np.nan) for r in rows], float)
+        m = ~np.isnan(pt)
+        if m.sum() < 8:
+            continue
+        x = pt[m]
+        std  = x.std(ddof=1)
+        sharpe = float(x.mean() / std) if std > 1e-12 else float("nan")
+        sor   = sortino(x)
+        skew  = metric_skewness(x)
+        kurt  = metric_kurtosis(x)
+        recov = recovery_factor(x)
+        ulc   = metric_ulcer(x) * 100
+        cvar  = metric_cvar95(x) * 100
+        ml    = m & ~np.isnan(live)
+        ir_live = metric_ir(pt[ml], live[ml]) if ml.sum() >= 8 else float("nan")
+        trial_metrics[name] = dict(sharpe=sharpe, sortino=sor, skew=skew, kurt=kurt,
+                                   recov=recov, ulc=ulc, cvar=cvar, ir_live=ir_live,
+                                   n=int(m.sum()), mean_c=float(x.mean() * 100))
+        print(f"  {('['+name+']'):<26} {sharpe:>+7.3f} {sor:>+8.3f} {skew:>+7.2f} "
+              f"{kurt:>+7.2f} {recov:>+9.2f} {ulc:>8.3f} {cvar:>9.3f} "
+              f"{ir_live:>+8.3f} {global_adv_pct:>7.1f}%")
+
+    # ---- Insights summary ----
+    print("\n" + "=" * 90)
+    print("AUTOMATED INSIGHTS (from metrics table above)")
+    print("=" * 90)
+    # Identify risky-but-high-t (good t-stat vs P0, bad tail/skew/DD)
+    risky = []
+    stable = []
+    for name in sorted(trial_metrics):
+        m_d = trial_metrics[name]
+        # risky: mean > 0 but skew < -1 OR CVaR > 5c OR Ulcer > 3c
+        if m_d["mean_c"] > 0 and (m_d["skew"] < -1.0 or m_d["cvar"] > 5.0 or m_d["ulc"] > 3.0):
+            risky.append((name, m_d))
+        # stable: mean > 0, sharpe > 0.05, skew > -0.5, CVaR < 3c, recovery > 5
+        if (m_d["mean_c"] > 0 and m_d["sharpe"] > 0.05
+                and m_d["skew"] > -0.5 and m_d["cvar"] < 3.0
+                and m_d["recov"] > 5.0):
+            stable.append((name, m_d))
+    print(f"\nRISKY (positive mean but tail/skew/DD concerns) -- n={len(risky)}:")
+    for name, m_d in sorted(risky, key=lambda x: x[1]["cvar"], reverse=True)[:8]:
+        print(f"  {name:<28} mean {m_d['mean_c']:+.2f}c  skew {m_d['skew']:+.2f}  "
+              f"CVaR {m_d['cvar']:.2f}c  Ulcer {m_d['ulc']:.2f}c  "
+              f"sharpe {m_d['sharpe']:+.3f}")
+    print(f"\nSTABLE SLEEVE (modest mean, good risk-adjusted profile) -- n={len(stable)}:")
+    for name, m_d in sorted(stable, key=lambda x: x[1]["sharpe"], reverse=True)[:8]:
+        print(f"  {name:<28} mean {m_d['mean_c']:+.2f}c  sharpe {m_d['sharpe']:+.3f}  "
+              f"sortino {m_d['sortino']:+.3f}  recovery {m_d['recov']:+.1f}  "
+              f"CVaR {m_d['cvar']:.2f}c  skew {m_d['skew']:+.2f}")
+    print(f"\nADVERSE-SELECTION NOTE: Global adverse-fill rate = {global_adv_pct:.1f}% "
+          f"(sig>0 = spot moved adversely at fill time).  All trials share the same fill pool "
+          f"(P0 accepts all |net|<=1 fills); entry-gate trials reduce total fills but cannot "
+          f"selectively remove the adverseSel fraction without the per-fill sig filter "
+          f"(t07_spot_gate and t36_guarded_opener are the dedicated adverse-signal defenses).")
+    print(f"\nSMALL-N CAVEAT: n={n} windows (~160 in gha_data). Skewness/kurtosis/CVaR estimates "
+          f"have high variance at this sample size; treat tail metrics as directional indicators "
+          f"only.  IR and Sharpe are more reliable; t-stat is the primary decision criterion "
+          f"(needs n>=300 for the pre-registered deploy bar).")
 
 
 if __name__ == "__main__":
