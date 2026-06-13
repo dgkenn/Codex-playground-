@@ -5,25 +5,26 @@ same-minute clean-box policy on the BTC 15m tape; IS = first 60%, OOS = last 40%
 session blocks only (per-hour fitting is known-unstable on this sample); quarterly stability check;
 redundancy test against the t36 spread gate.
 
-**Data:** `hist_kalshi_btc15m.parquet` ∩ `trades_kalshi_btc15m.parquet` = **182 BTC windows**
-(small; the candlestick endpoint only retains a recent slice). ~5–22 traded windows per quarter.
+**Data:** `hist_kalshi_btc15m.parquet` ∩ `trades_kalshi_btc15m.parquet` = **825 BTC windows**
+(full month, 2026-05-14 → 06-13; ~206 windows/quarter — re-run on the deepened candlestick history,
+4.5× the original 182-window sample).
 
-## Result
-| schedule (UTC hours) | %traded | IS c/win | OOS c/win | IS uplift | OOS uplift | IS+OOS ok? |
+## Result (825 windows)
+| schedule (UTC hours) | %traded | IS c/win | OOS c/win | IS uplift | OOS uplift | net-positive both halves? |
 |---|---|---|---|---|---|---|
-| 16–24 only | 33% | +1.43 | +1.68 | +4.19 | **−1.82** | no |
-| 00–04 + 16–24 | 56% | +0.60 | +2.26 | +3.36 | **−1.24** | no |
-| 20–04 (best IS) | 39% | +0.12 | +3.27 | +2.88 | **−0.23** | no |
-| **always-on** | 100% | −2.76 | **+3.50** | 0 | 0 | baseline |
+| 16–24 only | 35% | +1.22 | **−0.83** | +1.36 | +2.16 | no (OOS negative) |
+| 20–04 | 33% | +0.46 | **−0.19** | +0.59 | +2.79 | no (OOS negative) |
+| 12–24 | 52% | +1.09 | **−1.34** | +1.23 | +1.64 | no (OOS negative) |
+| **always-on** | 100% | −0.14 | **−2.98** | 0 | 0 | baseline |
 
-Every candidate schedule that looks good IS **loses to always-on out-of-sample** (negative OOS
-uplift). The single best IS schedule (20:00–04:00) also fails the **quarterly stability check**
-(Q0 negative), and t36 already blocks **100%** of windows in all the candidate schedule hours, so a
-schedule adds nothing on top of the gate we already run.
+No schedule is net-positive in **both** halves: every candidate is IS-positive but **OOS-negative**.
+Schedules do cut the OOS loss vs always-on (positive OOS *uplift*), but they never turn it positive,
+and the carve fails the **quarterly stability check** — Q3 (the most recent ~week) is **−4.72c/win**
+and only Q2 is (barely) positive. A gate that flips sign quarter-to-quarter is overfit, not a clock.
 
-The whole signal is dominated by a handful of large strand events in a 182-window sample — the
-per-hour means swing from −74c to +20c on n≤6. Not enough power to carve the clock, and the OOS +
-quarterly tests confirm any carve is overfit.
+Note this baseline is the *ungated* same-minute clean-box replay (no t02/t36/vpin gates, no $0-fee /
+queue-position credit) — it is a relative yardstick for the schedule question, **not** the deployed
+system's expectancy. The takeaway is narrow and robust: hour-of-day is not a usable lever.
 
 ## Verdict
 **ALWAYS-ON.** Keep collecting every window; do not gate the box engine by hour of day. Hour-22's
