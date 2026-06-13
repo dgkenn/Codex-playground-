@@ -128,3 +128,25 @@ dominant fix is the HEDGE (venue build). Streaks cluster in time (live RCA) -> a
 - **ACROSS ALL 5 ROUNDS: NOTHING beat live at adequate n.** Every apparent winner was look-ahead
   (flow_ratio), oracle (reactive hedge needs to know the strand pre-settlement), or selection/risk-
   control. t36 (deployed) remains the only validated signal.
+
+====================================================================================
+# PROGRAM 2 (5 rounds) — broaden from strand-prevention to BOT IMPROVEMENT (2026-06-13)
+Program 1 converged: residual strands unpredictable; t36 is the frontier; risk-control (streak
+scale-down, now DEPLOYED) is the remedy. Program 2 pivots to PROFITABILITY / THROUGHPUT / SCALING.
+Same criteria: judge vs live_current; forward bar t>3/n>=300; backtests SCREEN; watch tail metrics;
+delegate; beware look-ahead/selection mirages.
+
+## Round 6 — ideas (testing dispatched)
+- **R6-1 CAPACITY/SIZING frontier:** the binding constraint is capacity (~$5-20/window). Model
+  fill-rate vs queue position vs size; at what size do markouts degrade / queue-position erode? Map
+  the SCALE_GATE step ($5->$20) against the data -- expected $/day vs size, and the size where edge/ct decays.
+- **R6-2 COMPLETION-SIDE queue improve (BOX_PLAYBOOK #6):** spend the improve_tick AGGRESSIVELY on the
+  COMPLETING leg only (queue-front for leg 2), passive when flat. Does faster pairing cut strands +
+  lift net vs live? (a direct strand-reducer that ISN'T entry-gating.)
+- **R6-3 MULTI-ASSET re-test WITH the gate stack:** ETH/SOL boxes were NO-GO ungated; re-test ETH
+  under t36 + the deployed gates -- does completion-prob/edge clear vs live now? (capacity expansion.)
+- **R6-4 OPTIMAL improve_tick / queue-priority:** sweep improve_tick; fill-rate gain vs improve cost;
+  is the current sub-cent improve optimal, or does more/less aggression beat live?
+- **R6-5 GBM strand gate FORWARD-READINESS (t38):** distill the R2-A GBM (AUC 0.72) to a frozen,
+  embeddable form; register t38_strand_gate so it accrues forward data toward the n>=300/t>3 bar
+  (the #1 deferred action). Verify the frozen form reproduces the AUC on held-out data.
