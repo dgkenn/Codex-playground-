@@ -687,6 +687,16 @@ TRIALS = {
     "live_current":        lambda F: run_policy(F, open_ok=lambda f, s:
                                    not (f["side"] == "bid" and f["spread"] < 0.02)
                                    and not ((f.get("sig") or 0.0) > 8.0 and f["spread"] < 0.02)),
+    # ---- K_WINDOW_ALTERNATIVES.md (2026-06-13): k4,5 does NOT replicate forward (45d fresh: OOS
+    #      Sharpe -0.09, negative mean) -- the backtest's "k4,5 eliminates strands" was sample-
+    #      specific. The robust entry-timing edge is LATER: k=8 (window minute 9) is the only positive
+    #      standalone slot (OOS Sh +0.015, +0.16c/win, 31x maxDD cut vs always-on). Forward-test the
+    #      k=8 family. (Skipped t_mid_tilt_plus: IS-inverted = overfit signature.)
+    "t_k8_window":         lambda F: run_policy(F, open_ok=lambda f, s: f["k"] == 8),
+    "t_k8_tilt":           lambda F: run_policy(F, open_ok=lambda f, s:
+                                   f["k"] == 8 and 0.30 <= abs(f["p"] - 0.5) < 0.40),
+    "t_k78_mid":           lambda F: run_policy(F, open_ok=lambda f, s:
+                                   f["k"] in (7, 8) and 0.20 <= abs(f["p"] - 0.5) < 0.30),
 }
 
 
