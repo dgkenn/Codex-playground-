@@ -422,19 +422,23 @@ def hedge_unpaired(f, h=100.0):
     return f["settle"] + sgn * h * r / 100.0
 
 
-def pol_hedge_unpaired(fills):
-    """Always-pair, but a leftover unpaired leg is delta-hedged with BTC instead of held naked."""
+def pol_hedge_unpaired(fills, open_ok=None):
+    """Always-pair, but a leftover unpaired leg is delta-hedged with BTC instead of held naked.
+    open_ok(f)->may we OPEN a new leg with this fill? (enables orthogonal entry-gate x hedge combos;
+    completing fills are never gated). None = open everything (the standalone t14 behavior)."""
     net = 0; pnl = 0.0; open_leg = None
     for f in fills:
         step = 1 if f["side"] == "bid" else -1
         nn = net + step
         if abs(nn) > 1:
             continue
-        if open_leg is not None and abs(nn) < abs(net):
+        if open_leg is not None and abs(nn) < abs(net):     # pairing -> always complete
             pnl += f["settle"] + open_leg["settle"]; open_leg = None
-        else:
-            open_leg = f
-        net = nn
+            net = nn
+        else:                                               # opening a fresh leg
+            if open_ok is not None and not open_ok(f):
+                continue                                    # entry gate: skip this open
+            open_leg = f; net = nn
     if open_leg is not None:
         pnl += hedge_unpaired(open_leg)
     return pnl
@@ -643,6 +647,27 @@ TRIALS = {
     "t36_guarded_opener":  lambda F: run_policy(F, open_ok=lambda f, s:
                                    not (f["side"] == "bid" and f["spread"] < 0.02)
                                    and not ((f.get("sig") or 0.0) > 8.0 and f["spread"] < 0.02)),
+    # ---- SELECTION_DECONSTRUCTION.md headline (2026-06-13): both folklore priors REFUTED. The tilt
+    #      zone confuses lock with fill-prob; "early k0-2" is weak OOS. The real signal is entry at
+    #      k in {4,5} (window minutes 5-7 = post-discovery consolidation, symmetric two-sided flow).
+    #      OOS P(both fill) 0.973 vs 0.897 baseline; OOS Sharpe +0.247 vs -0.19 always-on; +2.3c/win.
+    #      PRICE-AGNOSTIC. Sharper than t03 (k<=8). Mechanism = strand-rate minimization, not lock.
+    "t_mid_window":        lambda F: run_policy(F, open_ok=lambda f, s: f["k"] in (4, 5)),
+    # ---- ORTHOGONAL COMBOS (operator ask 2026-06-13): one ENTRY/selection gate x one UNPAIRED
+    #      handler -- different decision layers, never two same-layer competitors. Registered as
+    #      their OWN trials because single-trial edges are NOT additive (t34 cleared neither single's
+    #      bar). Each must independently clear the deploy bar (t>3, n>=300) AND beat its best single.
+    # tc_mid_hedge: best entry-timing (t_mid k4-5) x best unpaired-handler (t14 perp-hedge, t=3.14).
+    "tc_mid_hedge":        lambda F: pol_hedge_unpaired(F, open_ok=lambda f: f["k"] in (4, 5)),
+    # tc_mid_sellcheap: entry-timing (t_mid) x sell-cheap-orphan (t11; orphan study + 2-sigma crosser).
+    "tc_mid_sellcheap":    lambda F: pol_sell_unpaired(F, cheap_below=0.30,
+                                                       open_ok=lambda f: f["k"] in (4, 5)),
+    # tc_tailtrim_hedge: take-size selection (t33 tail-trim, crosser) x perp-hedge (t14, crosser).
+    "tc_tailtrim_hedge":   lambda F: pol_hedge_unpaired(F, open_ok=lambda f:
+                                                        f.get("tksize") is None or f["tksize"] <= 100),
+    # tc_mid_tailtrim: two ORTHOGONAL selection axes -- entry-time (k4-5) x counterparty take-size (<=100).
+    "tc_mid_tailtrim":     lambda F: run_policy(F, open_ok=lambda f, s:
+                                   (f["k"] in (4, 5)) and (f.get("tksize") is None or f["tksize"] <= 100)),
 }
 
 
