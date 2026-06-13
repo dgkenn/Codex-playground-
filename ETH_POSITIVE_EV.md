@@ -48,3 +48,45 @@ efficient enough that none clear, say so. Parallelize; delegate.
 ## Status
 Launching execution agents: (A) favorite-longshot + one-sided favorite maker; (B) BTC->ETH lead-lag
 directional; (C) spot-GBM fair-value stat-arb. Synthesize into a go/no-go for a positive-EV ETH strategy.
+
+## >>> VERDICT (7 angles, all in) — ETH 15-min has NO edge accessible to us <<<
+The /goal was pursued exhaustively across the whole strategy space, grounded in the literature.
+Every angle is NEGATIVE, each for a structural (not tuning) reason. Commits: lead-lag c0f6cc8,
+fav-longshot 4b5afe8, fair-value 532d665, reversion e9adb67, tox-maker 88e6873, A-S fa01ad4, flow b1a5e07.
+
+| Angle (lit-grounded) | Result | Structural reason |
+|---|---|---|
+| Two-sided box (maker) | -EV | adverse selection: box completes when price ran |
+| Favorite-longshot taker | -EV | bias has WRONG sign on ETH; favorites realize below price |
+| BTC->ETH lead-lag (taker) | -EV | no minute-scale lead (sub-second only); ETH mid AUC 0.96 |
+| Spot-GBM fair-value stat-arb | -EV | the Kalshi MID beats our model (Brier .135<.162); efficient |
+| Intra-window reversion (maker) | -EV | binary mid is a martingale (autocorr -.001); moves are info |
+| Toxicity-gated 1-sided maker | -EV | adverse selection > spread capture at EVERY gate (both sides) |
+| A-S inventory maker | -EV | 0/1 payoff has no continuous inventory to glide down; skew only cuts volume |
+| Counterparty flow profiling | -EV | takers lose < spread they pay; sweeps lose WORST; all $ = spread captured by makers |
+
+### Why your dichotomy resolves to a THIRD answer
+- NOT "smart players we can follow": the informed-looking flow (sweeps, high-intensity) LOSES HARDEST
+  (-1.8 to -3.3c OOS) -- they are urgency/impact payers; the mid reverts against them. Following = -3.2c after fee.
+- NOT "naive bettors we can pick off": retail/round-lot flow is the LEAST-bad (~breakeven). There is no
+  fat naive loss to harvest as a taker (you pay the same spread+fee), and harvesting it as a MAKER is the
+  adverse-selection trap (you get filled exactly when wrong: honest fill model -9.5c/fill, t=-49).
+- The TRUTH: takers (naive AND informed) lose ~0.5c/contract, but that is SWAMPED by the ~1.8c spread +
+  ~2.7c crypto taker fee they cross. Nearly all the transfer is the SPREAD, captured by RESTING MAKERS
+  via QUEUE PRIORITY + sub-second quote management + scale -- the colocation/HFT structure. A seconds-
+  latency GitHub-Actions bot is structurally the ADVERSELY-SELECTED counterparty, not the maker who wins.
+- The ETH 15-min mid is informationally EFFICIENT (a near-martingale tracking spot ~1:1); the spread is
+  FAIR compensation for adverse selection. With no info edge, no speed, no rebate/scale, there is nothing
+  left for us to capture. This is the THIRD case (winners win on inaccessible speed/structure).
+
+### Constructive conclusion
+- ETH 15-min as a standalone book: CLOSED. Do not deploy capital to trade it (any side).
+- ETH's proven, +value use = the cross-asset HEDGE LEG for BTC strands (ETH-hedges-BTC R^2=18.6%).
+- Deploy effort where we DEMONSTRABLY have edge: the BTC maker box (our live, profitable strategy) and
+  its strand ladder. (NB: re-cost the BTC completion/flatten rungs for the TAKER fee, per FEES.md.)
+- Genuinely-different untested directions (need NEW data/venues, not reruns of this efficient-market wall):
+  (a) LONGER ETH tenor (hourly/daily) -- more time for legs to pair => less per-edge adverse selection;
+  (b) CROSS-VENUE arb (ETH on Kalshi vs Polymarket/Robinhood) -- needs a 2nd venue feed;
+  (c) maker-REBATE/scale tier -- changes the economics only at size we don't have.
+  Recommendation: pursue these ONLY with the required data; do NOT keep iterating taker/maker variants on
+  the 15-min book -- the wall is structural, not a tuning gap.
