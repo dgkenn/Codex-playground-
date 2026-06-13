@@ -394,8 +394,11 @@ def _api(sess, private_key, method, path_suffix, body=None, params=None, timeout
 
 
 def place_order(sess, private_key, ticker, side, price_dollars, count, client_oid=None,
-                ttl_s=None):
-    """POST /portfolio/orders (action=buy, post_only=True). Returns order_id or None (NOT PLACED).
+                ttl_s=None, post_only=True):
+    """POST /portfolio/orders (action=buy). post_only=True (default) = maker-only (venue rejects if
+    marketable). post_only=False = allow CROSSING (taker) -- used ONLY by the strand-disposal path to
+    COMPLETE a stranded box by taking the offer (live RCA 2026-06-13: post-only-only could never
+    complete -> strands rode naked to settlement at -21.76c). Returns order_id or None (NOT PLACED).
     ttl_s -> expiration_ts: the VENUE-SIDE dead-man. A SIGKILLed process (container reap, 2x now)
     leaves GTC orders working an unattended window -- the 2026-06-12 death cost ~$1.13 when its
     orphans kept filling one side. With a TTL every orphan self-cancels at the venue within ttl_s."""
@@ -408,7 +411,7 @@ def place_order(sess, private_key, ticker, side, price_dollars, count, client_oi
         "count": int(count),
         "type": "limit",
         f"{side}_price_dollars": f"{price_dollars:.4f}",
-        "post_only": True,
+        "post_only": post_only,
         "expiration_ts": int(time.time() + ttl_s) if ttl_s else None,
     }
     body = {k: v for k, v in body.items() if v is not None}
@@ -590,6 +593,13 @@ def main():
     ap.add_argument("--chase-max-give", type=float, default=0.02,
                     help="max negative lock (dollars) the unpaired-age chase will accept mid-window "
                          "(the close ramp's --close-max-give still governs the final seconds)")
+    ap.add_argument("--dispose-cross", action="store_true", default=False,
+                    help="STRAND DISPOSAL (live RCA 2026-06-13): when a leg stays unpaired past "
+                         "--chase-unpaired-s OR within --close-flatten-tau of close, COMPLETE the box "
+                         "by CROSSING to take the offer (post_only=False, a taker fill) instead of "
+                         "riding the naked leg to settlement. Bounded by --chase-max-give (mid-window) "
+                         "/ --close-max-give (close). OFF by default (post-only-only); the live trader "
+                         "structurally could not complete without this, so strands settled at -21.76c.")
     ap.add_argument("--max-net", type=int, default=1,
                     help="hard cap on |net YES-NO| contracts: 1 = strict BOX PAIRING (after a YES "
                          "fill, quote only NO until paired). Tape decomposition: box pairs earn "
@@ -931,27 +941,29 @@ def main():
             pass
 
     # --- place helper ---
-    def place(side, price, yes_bid, yes_ask, count=None):
+    def place(side, price, yes_bid, yes_ask, count=None, cross=False):
         """Post one rung. Returns order_id or None. DRY-RUN: prints, returns fake id.
         side='yes'|'no'. price in dollars (up to 4 decimals).
-        Post-only guard: we only ever place buy orders; Kalshi's post_only=True rejects
-        if marketable. Belt-and-suspenders: also check that a BUY-YES at price < yes_ask
-        and BUY-NO at price < (1-yes_bid) before sending."""
-        if side == "yes" and yes_ask is not None and price >= yes_ask:
-            print(f"  [POST-ONLY GUARD] BUY-YES {price} >= yes_ask {yes_ask}; skipped")
-            return None
-        if side == "no":
-            no_ask = round(1.0 - (yes_bid or 0.0), 4)
-            if price >= no_ask:
-                print(f"  [POST-ONLY GUARD] BUY-NO {price} >= no_ask {no_ask}; skipped")
+        Post-only guard (cross=False, default): we only place maker BUYs; Kalshi's post_only=True
+        rejects if marketable, and belt-and-suspenders we also refuse a BUY-YES >= yes_ask / BUY-NO
+        >= (1-yes_bid) before sending. cross=True (DISPOSAL ONLY): deliberately TAKE the offer to
+        COMPLETE a stranded box (post_only=False) -- skip the guard; the caller bounds the give."""
+        if not cross:
+            if side == "yes" and yes_ask is not None and price >= yes_ask:
+                print(f"  [POST-ONLY GUARD] BUY-YES {price} >= yes_ask {yes_ask}; skipped")
                 return None
+            if side == "no":
+                no_ask = round(1.0 - (yes_bid or 0.0), 4)
+                if price >= no_ask:
+                    print(f"  [POST-ONLY GUARD] BUY-NO {price} >= no_ask {no_ask}; skipped")
+                    return None
         t_dec = time.time()
         if not live:
             fake = f"dry_{side}_{price:.4f}_{int(t_dec*1000)%100000}"
-            print(f"  [DRY place] BUY-{side.upper()} {count or int(a.post)} @ {price:.4f}")
+            print(f"  [DRY {'CROSS-COMPLETE' if cross else 'place'}] BUY-{side.upper()} {count or int(a.post)} @ {price:.4f}")
             return fake, t_dec, time.time()
         oid, sc_, err_ = place_order(sess, priv, mk["cid"], side, price, count or int(a.post),
-                                     ttl_s=(a.order_ttl_s or None))
+                                     ttl_s=(a.order_ttl_s or None), post_only=not cross)
         t_ack = time.time()
         if oid is None:
             lm.place_reject(side, price, f"HTTP {sc_}: {err_}")
@@ -1489,6 +1501,37 @@ def main():
                     oid = res; t_ack = time.time()
                 resting[key] = {"oid": oid, "ts": t_ack, "filled": 0.0,
                                 "mid0": loop_ctx.get("mid")}
+
+            # --- STRAND DISPOSAL: cross to COMPLETE an unpaired leg the passive chase can't pair ---
+            # The passive completion quote rests at the bid (post_only) and never reaches the offer,
+            # so in a moving market the leg rides naked to settlement (-21.76c live, RCA 2026-06-13).
+            # When --dispose-cross is armed and the leg is aged (>--chase-unpaired-s) OR near close
+            # (<--close-flatten-tau), TAKE the offer to lock the box, bounded by the give budget.
+            if (a.dispose_cross and abs(net_delta) > 1e-9 and unpaired_since is not None
+                    and ybb is not None and yba is not None):
+                age_unp = time.time() - unpaired_since
+                near_close = tau_left < a.close_flatten_tau
+                aged = a.chase_unpaired_s > 0 and age_unp >= a.chase_unpaired_s
+                if aged or near_close:
+                    give = a.close_max_give if near_close else a.chase_max_give
+                    if net_delta > 1e-9:            # hold YES -> COMPLETE by BUY-NO, take the no-offer
+                        cside = "no"; cross_px = round(1.0 - ybb, 4)
+                        py_ = sum(v for k_, v in pos.items() if k_.endswith(":YES"))
+                        basis = win_cost["yes"] / py_ if py_ > 0 else 0.0
+                    else:                            # hold NO -> COMPLETE by BUY-YES, take the yes-offer
+                        cside = "yes"; cross_px = round(yba, 4)
+                        pn_ = sum(v for k_, v in pos.items() if k_.endswith(":NO"))
+                        basis = win_cost["no"] / pn_ if pn_ > 0 else 0.0
+                    lock = 1.0 - basis - cross_px    # $ locked completing the box at the cross price
+                    need = int(round(abs(net_delta)))
+                    ckey = (cside, "_xcross")
+                    if (0.0 < cross_px < 1.0 and need >= 1 and lock >= -give - 1e-9
+                            and reject_cd.get(ckey, 0.0) <= time.time()):
+                        if place(cside, cross_px, ybb, yba, count=need, cross=True) is not None:
+                            ops["dispose_cross"] = ops.get("dispose_cross", 0) + 1
+                            print(f"  [DISPOSE-CROSS] complete {need}x {cside.upper()} @ {cross_px:.4f} "
+                                  f"lock={lock:+.3f} (age={age_unp:.0f}s tau={tau_left:.0f}s)")
+                        reject_cd[ckey] = time.time() + 3.0   # don't spam; one cross attempt / 3s
 
             # --- PULL stale / toxic / off-target rungs ---
             for key in list(resting):
