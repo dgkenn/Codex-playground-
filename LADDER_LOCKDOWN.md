@@ -105,3 +105,29 @@ TASK: find the optimal non-perp hedge (lowest basis vs the 15-min strand's direc
 min-size feasibility at ~$5) and TEST its loss-reduction -- OR conclude honestly that no non-perp
 hedge has acceptable basis for a 15-min strand (reinforcing prevent/complete/cool-off as the real fix).
 Perp stays the AT-SCALE option (5b).
+
+## PHASE-B2 RESULTS (commit ed5f2c2; LADDER_NEWRUNGS.md)
+- ATOMIC-ENTRY: REFUTED on Kalshi (no native combo -> take = pay spread -0.97c/box; maker-legging
+  beats by ~1c; breakeven P(box)=86% vs actual 93%). DROP from ladder.
+- CROSS-STRIKE/LADDER HEDGE: earns a place (5a) -- ~88% modeled settlement corr (vs perp 13%) ->
+  ~88% loss reduction, BUT data-blocked (need adjacent-strike/ladder prices; ladder files are
+  arb-flags only). ACTION: add k-1/k/k+1 strike book collection to kalshi_ladder_collect.py. The
+  non-perp-hedge agent is testing the rigorous cross-asset/cross-tenor version.
+- CONTINUOUS RESIZE (lambda=3): EARNS A PLACE -- UPGRADES the deployed streak-guard (maxDD 242->186c,
+  CVaR 31->27c; Sortino +0.004 marginal; -0.37c/win cost). Merge into RISK-CONTROL; responds to one
+  big strand immediately. (Phase-C: validate forward before swapping the live streak-guard.)
+- T*-FORCE-COMPLETE = IMMEDIATE (chase beats hold from the strand minute; +4.63c/strand, +2.55c/win).
+  Confirms deployed prompt-completion optimal; adds the formal --force-complete-age param.
+SEQUENCE so far: DROP atomic-entry; COMPLETE(T*=now) and RISK-CONTROL(continuous-resize) confirmed;
+HEDGE(5a non-perp) pending the non-perp agent + data. Awaiting a731473a (current-ladder ablation).
+
+## NON-PERP HEDGE RESULT (commit 1044a3c; NONPERP_HEDGE.md) -> HEDGE rung resolved
+OPTIMAL non-perp hedge = ETH 15-min CROSS-ASSET BINARY. R^2=18.6% vs strand loss (11x the perp's
+1.7%); std-reduction 9.8% (2x perp); IS/OOS stable. DEPLOYABLE NOW at $5 (same Kalshi API, ETH 15-min
+ticker -- no perp min). Rule: BTC YES-strand -> buy ETH-NO; NO-strand -> buy ETH-YES (1-2 ct, maker
+if possible, hold to settle; needs concurrent active ETH window = 62% of BTC strands; k<=10).
+CROSS-TENOR DEAD: daily BTC R^2 0.66% (worse than perp), ladder <0.1% -- a 15-min strand is a single
+Bernoulli trial; longer instruments average it out.
+SIZING: beats perp on basis+deployability BUT MODEST -- 9.8% var reduction, +0.5c/strand taker /
++3.2c maker, 62% coverage. => HEDGE rung 5a = ETH cross-asset binary (MINOR rung; deployable);
+5b = BTC perp (at-scale). Prevent/Complete/Risk-control remain the load-bearing rungs.
