@@ -619,6 +619,21 @@ def _eth_hedge_value(leg, n_ct=1, maker=True, k_cut=10):
     return settle + contrib
 
 
+def pol_edge_select(fills, k_lo=5, k_hi=9, vlo=3.0, vhi=8.0, with_live=True, vol_gate=True,
+                    k_gate=True):
+    """BOX-YIELD edge selection (BOX_YIELD.md synthesis): open only in the FAT-BOX region the three
+    Phase-1 agents converged on -- mid-window slots k in [k_lo,k_hi] AND mid-vol windows (window
+    mean|sig| in [vlo,vhi]). High-|sig| windows are a NET LOSS (captured spread collapses in fast
+    markets); late slots (k>=11) are strand-prone. vol_gate/k_gate isolate each component."""
+    if vol_gate and not (vlo <= _win_regime_vol(fills) <= vhi):
+        return 0.0                                       # skip the whole window (out-of-regime)
+    def og(f, s):
+        if k_gate and not (k_lo <= f["k"] <= k_hi):
+            return False
+        return (not with_live) or _live_open_ok(f, s)
+    return run_policy(fills, open_ok=og)
+
+
 def build_eth_forward(dirs):
     """Build the ws->(eth_up, eth_yes_px, spread, k) lookup from the concurrent ETH 15-min data the
     collector captures, so the cross-asset hedge trial is forward-faithful. Sets module globals."""
@@ -885,6 +900,13 @@ TRIALS = {
     # t_buf_dyn_eth = the BEST-NET backtest stack (buffer + concurrent-ETH cross-asset hedge), now
     #   forward-FAITHFUL: links the ETH 15-min window the collector already captures. (btc-only.)
     "t_buf_dyn_eth":       lambda F: pol_buffer(F, lo=0.01, hi=0.02, vcut=8.0, eth=True),
+    # ---- BOX-YIELD (BOX_YIELD.md 2026-06-13): the GAIN-side Phase-1 convergent finding. All 3 agents
+    #      independently located the FAT boxes at mid-window k=5-9 + mid-vol (3-8bps); high-|sig| is a
+    #      NET LOSS (spread collapses), late slots strand. Aligns with t03_early_window (k<=8, already
+    #      on WATCH t=+2.38). t_edge_select = the combined gate; the two _* isolate k vs vol component.
+    "t_edge_select":       lambda F: pol_edge_select(F, k_lo=5, k_hi=9, vlo=3.0, vhi=8.0),
+    "t_edge_midvol":       lambda F: pol_edge_select(F, vlo=3.0, vhi=8.0, k_gate=False),
+    "t_edge_k59":          lambda F: pol_edge_select(F, k_lo=5, k_hi=9, vol_gate=False),
 }
 
 

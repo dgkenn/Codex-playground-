@@ -56,3 +56,50 @@ total locked-edge PnL per unit risk, NET of the strand cost we already model.
   register forward A/B trials. Lock the gain-side playbook.
 Literature: Avellaneda-Stoikov (optimal two-sided quoting / spread), Ho-Stoll (inventory), Glosten-
 Milgrom (adverse selection in the spread), queue-position value (Moallemi-Yuan), Kelly sizing.
+
+## >>> PHASE-1 SYNTHESIS (all 3 agents in) <<<
+Commits: FRONTIER 16e55f9 (BOXYIELD_FRONTIER.md), FILL fde6fee (BOXYIELD_FILL.md), EDGE 3bca1ba
+(BOXYIELD_EDGE.md). BTC parquet, IS/OOS 60/40, full A/B metric set. Backtests SCREEN.
+
+**HEADLINE (convergent, high-confidence): the live BTC box policy is ALREADY at the yield frontier
+on NET.** No (region x lock-floor) cell beats live net at |t|>=2 (FRONTIER best cell ties live,
+t=-0.03). The big remaining PnL upside was on the LOSS/strand side -- which we already did. The gain
+side is well-optimized; what's left here are RISK-quality trims + selection, not a net step-change.
+
+**Convergent findings:**
+1. **Profit is THIN-but-FREQUENT, not fat-but-rare.** Positive locked edge lives in the BALANCED band
+   (~0.50-0.60, +1.31c/box). DEEP-FAVORITE boxes (favorite leg >0.70) LOSE -1.72c/box -- textbook
+   adverse selection: both legs fill *because price was running*, one leg pre-pays the move.
+2. **Fat boxes are localized: mid-window k=5-9 (k6-7 fattest +1.2-1.3c, t>3) + MID-VOL (3-8bps,
+   +0.69c NET, t=3.4, IS==OOS).** HIGH-|sig| is a NET LOSS -- the "volatile = wider spread" intuition
+   is WRONG here; captured spread collapses to ~0 in fast markets. Late slots (k>=11) strand.
+   -> This is the one robust, deployable, NEW lever. Registered as t_edge_select (k5-9 + mid-vol),
+   with t_edge_midvol / t_edge_k59 to isolate the components. Aligns with t03_early_window (k<=8),
+   already on the live WATCH list at t=+2.38.
+3. **Edge is real & stable: +0.55c/box, IS +0.556 -> OOS +0.551 (essentially identical).** ~6 boxes/win.
+4. **Improve-tick / queue-ahead can't be won on this book OR proven on tape.** Mean spread is ~1c, so
+   improving both sides locks the book; single-sided improve adds ~0.04 boxes/win while surrendering
+   1c/leg (dnet -0.1 to -0.4c). It only flips positive under real queue depth (q0>=500) the tape can't
+   observe -> a LIVE experiment, not a backtest decision.
+5. **Lock-floor frontier is flat then collapses** (fee=0, ~1c spread): raising the implied floor above
+   1-2c starves fills (#box/win 7.8 -> 0.9 from X=1c -> 2c). Net peaks at X=0, Sharpe at X=1c.
+6. **Gentle edge-proportional sizing (f=0.25 fractional-Kelly on lock margin) is risk-adjusted
+   dominant** (Sharpe +0.089 vs +0.080, MaxDD -31c) but modest and not t-significant. Phase-2 / forward.
+7. **STRONG NEGATIVE: do NOT trade ETH (or SOL/XRP by extension).** ETH box is structurally -EV at
+   every cell: median margin looks wider (+2.0c) but the MEAN is -1.5c (29.6% negative-margin boxes,
+   5th-pctile -21c) from adverse selection on the pairing leg. 50/50 BTC+ETH vs BTC-alone = -8.03c/win
+   (t=-6.79). Low cross-corr (+0.23) is moot when a sleeve has negative mean. The live trader is
+   already --asset btc only, so NO live change -- but this CLOSES the "add assets for breadth" idea
+   until a per-asset positive-mean-margin filter exists. (NB: the ETH cross-asset HEDGE is different
+   and still valid -- there we BUY ETH directionally to offset a BTC strand, not run an ETH box.)
+
+**Deployable-now levers (each via the forward A/B bar, t>3/n>=300):**
+- t_edge_select (mid-window k5-9 + mid-vol 3-8bps) -- the convergent fat-box selection. NEW, registered.
+- f=0.25 edge-proportional sizing -- risk trim, Phase-2 (needs a sizing path in the trader).
+- (skewed-band+1c-floor Sharpe trim from FRONTIER is NOT registered: definition conflicts with the
+  balanced-band edge finding and is not net-significant, t=-0.31.)
+
+**Verdict:** the gain engine is near-optimal; the only clean new win is REGIME/SLOT SELECTION (trade
+the fat mid-window mid-vol boxes, skip fast markets & late slots), which conveniently also reduces
+strands -- and it's already half-validating via t03 on the live watchlist. ETH/SOL/XRP box expansion
+is closed (-EV). Real future PnL remains on execution (queue-ahead, live-only) + the locked strand ladder.
