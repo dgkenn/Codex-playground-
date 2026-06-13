@@ -55,3 +55,22 @@ operator's, surfaced when `box_policy_ab.py` prints `*** … CLEARS THE DEPLOY B
 `kalshi_trader.py` would gain a `--signal-hold` mode: when holding an unpaired leg whose entry
 signal was favorable, defer pairing (within the `--max-net 1` cap and the `--close-flatten-tau`
 force-flatten) instead of completing immediately. Until then the flag does not exist and P0 stands.
+
+## ADDENDUM (2026-06-13): RISK-IMPROVEMENT deploy track (operator-approved)
+The original bar (t>3 vs live AND n>=300, DD guard) is the NET-EDGE gate. It is correctly strict --
+t>3 is ~the one-sided Bonferroni threshold for our ~56 trials, so it controls the family-wise
+false-deploy rate near 5% on real money. We keep it unchanged for "this beats live on PnL" claims.
+BUT most of our research produces net-NEUTRAL, RISK-reducing changes (the R0 spread buffer, edge-
+select k5-9/mid-vol, the streak-guard removal). Demanding a positive net t>3 from a change that does
+not claim a net edge is a category error -- it can never clear. So we add an ORTHOGONAL track:
+  RISK-IMPROVEMENT DEPLOY (all required, frozen; do not tune to data):
+    (1) data sufficiency: n >= MIN_WINDOWS (300), same as the net bar;
+    (2) net NON-INFERIORITY: lower 95% CI bound of per-window (trial - live_current) net > -0.2c/win
+        (NONINF_EPS) -- we are confident it does not hurt net by more than 0.2c;
+    (3) MATERIAL tail-risk reduction vs live: MaxDD <= 0.80 * live MaxDD (RISK_DD_FRAC) AND
+        CVaR95(trial) < CVaR95(live).
+A trial clearing this (but not the net bar) raises a RISK-UPGRADE-READY event (Telegram + annotation
++ STRATEGY_ALERTS trail), promoted ONE at a time per SCALE_GATE like any deploy. t>3 stays the bar
+for net-edge claims; this is the safe-upgrade lane. (Implemented in box_policy_ab.py: NONINF_EPS,
+RISK_DD_FRAC, risk_ready.) Considered but NOT adopted: effective-n (count acting windows) and lowering
+n to 200 -- left for later if the calendar-window count proves too blunt.
