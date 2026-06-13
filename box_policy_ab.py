@@ -488,6 +488,44 @@ def pol_sell_unpaired(fills, cheap_below=None, toxic_above=None, vpin_above=None
 
 
 # ------------------------------------------------------------------------------------------------
+# DURABLE live_current: parse the DEPLOYED trader flags straight from .github/workflows/live.yml so
+# the vs-live deploy comparison ALWAYS tracks what the bot actually runs -- even when we tweak the
+# live strategy. No second config file, no manual sync, and read-only (zero money-path risk). On any
+# parse failure it falls back to the last-known config (t36 @ 0.02) and warns at runtime.
+def _parse_live_gates(path=None):
+    import re
+    if path is None:
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                            ".github", "workflows", "live.yml")
+    gates = {"guard_yes_spread": 0.0, "_parsed": True, "_src": path}
+    try:
+        txt = open(path).read()
+        m = re.search(r"--guard-yes-spread\s+([0-9.]+)", txt)   # t36 guarded-opener threshold
+        if m:
+            gates["guard_yes_spread"] = float(m.group(1))
+        # (extend here as new live OPEN gates are armed, e.g. --gate / --vpin-open ...)
+    except Exception as e:
+        gates = {"guard_yes_spread": 0.02, "_parsed": False, "_err": str(e), "_src": path}
+    return gates
+
+
+_LIVE_GATES = _parse_live_gates()
+
+
+def _live_open_ok(f, s):
+    """The CURRENT LIVE strategy's OPEN gate, built from _LIVE_GATES (auto-tracks live.yml). Today
+    that is the t36 guarded-opener: suppress thin-spread YES opens (and any thin-spread leg an
+    adverse spot move is running into). guard_yes_spread==0 => no gate (= P0)."""
+    g = _LIVE_GATES.get("guard_yes_spread", 0.0)
+    if g > 0:
+        if f["side"] == "bid" and f["spread"] < g:
+            return False
+        if (f.get("sig") or 0.0) > 8.0 and f["spread"] < g:
+            return False
+    return True
+
+
+# ------------------------------------------------------------------------------------------------
 # TRIAL-STRATEGY REGISTRY. Live default is P0 (always-pair, ungated reference). Every entry is a
 # CANDIDATE scored vs P0 on FORWARD collector data, held to the 2-sigma alert + pre-registered
 # deploy bar. Each is grounded in a documented finding (see TRIALS.md). Add name->fn(fills)->pnl
@@ -678,15 +716,13 @@ TRIALS = {
     "tc_pairmax":          lambda F: pol_sell_unpaired(F, cheap_below=None, open_ok=lambda f:
                                    f["k"] <= 9 and f["spread"] <= 0.03
                                    and (f["flow"] is None or abs(f["flow"]) < 250)),
-    # ---- live_current: THE DEPLOYED STRATEGY (2026-06-13), scored as a trial so the DEPLOY bar can
-    #      judge every candidate vs WHAT WE ACTUALLY RUN NOW (candidate - live_current), not vs naive
-    #      P0 -- avoids double-counting an already-deployed gate (critical for stacking). The
-    #      leaderboard t-stats stay vs P0 (the fixed, comparable ruler). KEEP THIS IN SYNC WITH
-    #      .github/workflows/live.yml: currently P0 + t36 guarded-opener (--guard-yes-spread 0.02);
-    #      run_policy already enforces the deployed --max-net 1 / always-pair / --max-rungs 1.
-    "live_current":        lambda F: run_policy(F, open_ok=lambda f, s:
-                                   not (f["side"] == "bid" and f["spread"] < 0.02)
-                                   and not ((f.get("sig") or 0.0) > 8.0 and f["spread"] < 0.02)),
+    # ---- live_current: THE DEPLOYED STRATEGY, scored as a trial so the DEPLOY bar judges every
+    #      candidate vs WHAT WE ACTUALLY RUN (candidate - live_current), not vs naive P0 -- avoids
+    #      double-counting an already-deployed gate (critical for stacking). Leaderboard t-stats stay
+    #      vs P0 (the fixed ruler). DURABLE: its open gate (_live_open_ok) is parsed from live.yml's
+    #      trader flags at load, so it AUTO-TRACKS the live strategy when we tweak it -- no manual
+    #      sync. (run_policy already enforces the deployed --max-net 1 / always-pair / --max-rungs 1.)
+    "live_current":        lambda F: run_policy(F, open_ok=_live_open_ok),
     # ---- K_WINDOW_ALTERNATIVES.md (2026-06-13): k4,5 does NOT replicate forward (45d fresh: OOS
     #      Sharpe -0.09, negative mean) -- the backtest's "k4,5 eliminates strands" was sample-
     #      specific. The robust entry-timing edge is LATER: k=8 (window minute 9) is the only positive
@@ -1027,6 +1063,12 @@ def main():
     # DEPLOY decision is judged vs THIS (does a candidate beat what we actually run now?), while the
     # leaderboard t-stats stay vs P0 (a fixed, comparable ruler that doesn't reset on promotion).
     live = np.array([(r.get("trials") or {}).get("live_current", np.nan) for r in rows])
+    if _LIVE_GATES.get("_parsed", False):
+        print(f"  live_current auto-tracks live.yml: guard_yes_spread="
+              f"{_LIVE_GATES.get('guard_yes_spread', 0.0)} (deploy bar judges candidate - live_current)")
+    else:
+        print(f"  ::warning:: live_current could NOT parse live.yml ({_LIVE_GATES.get('_err','?')}) "
+              f"-- using fallback guard_yes_spread={_LIVE_GATES.get('guard_yes_spread')}; vs-live may be stale")
     print(f"  {'P0 always-pair (baseline)':<24} net/win {p0.mean()*100:+6.2f}c  "
           f"OOSnet {p0[oosm].mean()*100 if oosm.any() else float('nan'):+6.2f}c  "
           f"Calmar {calmar(p0[oosm]) if oosm.any() else float('nan'):+5.1f}  maxDD {dd0*100:4.0f}c  "
