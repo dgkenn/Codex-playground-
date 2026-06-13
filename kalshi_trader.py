@@ -910,6 +910,24 @@ def main():
         try:
             print(f"[DEAD-MAN] {reason}: cancelling all resting orders")
             cancel_all_resting(reason="deadman")
+            # LIQUIDATE open inventory (audit C2): cancel-only left naked legs riding to settlement,
+            # so the loss-limit/dead-man/remote-off rails could NOT actually cap the loss. Cross to
+            # flatten any net position before exiting. (Skip on 'rollover' -- that path settles normally.)
+            if live and reason != "rollover" and mk is not None:
+                try:
+                    nd = net_delta
+                    if abs(nd) > 1e-9:
+                        bb_, _bq, ba_, _aq, _f = get_book_cached(mk["cid"], max_age=3.0)
+                        if bb_ is not None and ba_ is not None:
+                            need_ = int(round(abs(nd)))
+                            if nd > 0:    # hold YES -> BUY NO at the no-offer to flatten
+                                place("no", round(1.0 - bb_, 4), bb_, ba_, count=need_, cross=True)
+                            else:         # hold NO -> BUY YES at the yes-offer to flatten
+                                place("yes", round(ba_, 4), bb_, ba_, count=need_, cross=True)
+                            print(f"[DEAD-MAN] LIQUIDATE net={nd:+.0f} via cross (rail must cap the loss)")
+                            notify.alert_sync(f"[kalshi] LIQUIDATED net={nd:+.0f} on {reason}")
+                except Exception as e:
+                    print(f"[DEAD-MAN] liquidate failed: {str(e)[:120]}")
             # planned completions get a calm message; "DEAD-MAN" is reserved for genuine
             # protective trips (it read like a crash to the operator on a normal session end)
             if "planned" in reason:
@@ -1395,6 +1413,12 @@ def main():
                     deadman_tripped = False
             else:
                 time.sleep(a.react_poll); continue
+
+            # CLAMP-LEAK FIX (audit H1): book EVERY known WS fill into net_delta BEFORE any placement
+            # decision this loop. Previously fills were drained only on the ~1s housekeeping tick (after
+            # placement), so two same-side orders could both fill against a stale net_delta -> |net|>=2
+            # (12/56 windows pre-fix). Draining here makes the inventory clamp act on current inventory.
+            drain_ws_fills()
 
             # --- compute desired levels (both YES and NO views) ---
             # Own-size exclusion (A2): subtract our resting size at the touch from the depth
