@@ -105,18 +105,3 @@ TASK: find the optimal non-perp hedge (lowest basis vs the 15-min strand's direc
 min-size feasibility at ~$5) and TEST its loss-reduction -- OR conclude honestly that no non-perp
 hedge has acceptable basis for a 15-min strand (reinforcing prevent/complete/cool-off as the real fix).
 Perp stays the AT-SCALE option (5b).
-
-## PHASE-B2 RESULTS (commit ed5f2c2; LADDER_NEWRUNGS.md)
-- ATOMIC-ENTRY: REFUTED on Kalshi (no native combo -> take = pay spread -0.97c/box; maker-legging
-  beats by ~1c; breakeven P(box)=86% vs actual 93%). DROP from ladder.
-- CROSS-STRIKE/LADDER HEDGE: earns a place (5a) -- ~88% modeled settlement corr (vs perp 13%) ->
-  ~88% loss reduction, BUT data-blocked (need adjacent-strike/ladder prices; ladder files are
-  arb-flags only). ACTION: add k-1/k/k+1 strike book collection to kalshi_ladder_collect.py. The
-  non-perp-hedge agent is testing the rigorous cross-asset/cross-tenor version.
-- CONTINUOUS RESIZE (lambda=3): EARNS A PLACE -- UPGRADES the deployed streak-guard (maxDD 242->186c,
-  CVaR 31->27c; Sortino +0.004 marginal; -0.37c/win cost). Merge into RISK-CONTROL; responds to one
-  big strand immediately. (Phase-C: validate forward before swapping the live streak-guard.)
-- T*-FORCE-COMPLETE = IMMEDIATE (chase beats hold from the strand minute; +4.63c/strand, +2.55c/win).
-  Confirms deployed prompt-completion optimal; adds the formal --force-complete-age param.
-SEQUENCE so far: DROP atomic-entry; COMPLETE(T*=now) and RISK-CONTROL(continuous-resize) confirmed;
-HEDGE(5a non-perp) pending the non-perp agent + data. Awaiting a731473a (current-ladder ablation).
