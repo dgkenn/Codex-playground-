@@ -527,6 +527,37 @@ def _live_open_ok(f, s):
 
 
 # ------------------------------------------------------------------------------------------------
+# STACK-LOCKDOWN forward trials (LADDER_STACK_VS_LIVE.md). The locked ladder's additive pieces, wired
+# so the forward A/B starts PROVING them vs live_current. The RUNG-0 buffer is fully forward-testable
+# here. The RUNG-5 ETH cross-asset hedge needs the collector to capture concurrent ETH windows (a
+# follow-up) -> we forward-test the perp-hedge PROXY meanwhile. The RUNG-4 GBM-Kelly manage needs the
+# GBM model -> we proxy it with a pair_prob (P(both fill)) size-down, which is the same risk-budget idea.
+def _win_regime_vol(fills):
+    """Window adverse-flow regime = mean |sig| (bps) over the window's fills (for the dynamic buffer)."""
+    s = [abs(f.get("sig") or 0.0) for f in fills]
+    return (sum(s) / len(s)) if s else 0.0
+
+
+def pol_buffer(fills, lo=0.01, hi=0.02, vcut=8.0, with_live=True, hedge=False, h=150.0,
+               size_floor=None):
+    """RUNG 0 structural buffer: only OPEN when spread >= floor (dynamic: hi-floor in high-|sig|
+    windows where window mean|sig| >= vcut, else lo-floor), stacked on the live gate (R1 t36). The
+    backtest (LADDER_STACK_VS_LIVE.md) showed this ~halves MaxDD/Ulcer and cuts strand-rate ~3x at a
+    flat-to-positive net. Optional perp-hedge PROXY (hedge=True) for the residual strand (R5), and an
+    optional pair_prob size-down PROXY (size_floor set) for the manage rung (R4)."""
+    floor = hi if _win_regime_vol(fills) >= vcut else lo
+    if hedge:
+        return pol_hedge_unpaired(fills, h=h, open_ok=lambda f: f["spread"] >= floor and
+                                  (_live_open_ok(f, {}) if with_live else True))
+    def og(f, s):
+        if f["spread"] < floor:
+            return False
+        return (not with_live) or _live_open_ok(f, s)
+    w = (lambda f: max(size_floor, min(1.0, pair_prob(f)))) if size_floor is not None else None
+    return run_policy(fills, open_ok=og, weight=w)
+
+
+# ------------------------------------------------------------------------------------------------
 # TRIAL-STRATEGY REGISTRY. Live default is P0 (always-pair, ungated reference). Every entry is a
 # CANDIDATE scored vs P0 on FORWARD collector data, held to the 2-sigma alert + pre-registered
 # deploy bar. Each is grounded in a documented finding (see TRIALS.md). Add name->fn(fills)->pnl
@@ -749,6 +780,16 @@ TRIALS = {
     #   hedge edge justifies building that venue.
     "tc_mid_hedge_h150":   lambda F: pol_hedge_unpaired(F, h=150.0,
                                    open_ok=lambda f: f["k"] in (4, 5)),
+    # ---- STACK-LOCKDOWN (LADDER_STACK_VS_LIVE.md 2026-06-13): the locked ladder's additive pieces,
+    #      forward-validated vs live_current. Backtest deltas vs live: +buffer ~halves MaxDD & strand
+    #      at flat-to-+net; +hedge best NET (+1.25c, t=1.3); +manage(Kelly) best RISK-adj (Sharpe ~2x,
+    #      MaxDD -71%). None clears t>2 on net yet -> these PROVE it forward. t_buf_* is the EXACT R0
+    #      buffer; *_hedge uses the perp PROXY (ETH cross-asset needs concurrent ETH-window capture in
+    #      the collector -- follow-up); *_manage uses a pair_prob size-down PROXY for the GBM-Kelly rung.
+    "t_buf_dyn":           lambda F: pol_buffer(F, lo=0.01, hi=0.02, vcut=8.0),
+    "t_buf_1c":            lambda F: pol_buffer(F, lo=0.01, hi=0.01, vcut=8.0),
+    "t_buf_dyn_hedge":     lambda F: pol_buffer(F, lo=0.01, hi=0.02, vcut=8.0, hedge=True, h=150.0),
+    "t_buf_dyn_manage":    lambda F: pol_buffer(F, lo=0.01, hi=0.02, vcut=8.0, size_floor=0.25),
 }
 
 
