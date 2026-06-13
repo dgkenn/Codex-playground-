@@ -957,7 +957,10 @@ def main():
     ap.add_argument("--dir", nargs="+", default=["overnight_data", "gha_data"])
     ap.add_argument("--report", action="store_true", help="just report from the ledger(s), scan nothing")
     ap.add_argument("--metrics", action="store_true",
-                    help="print curated risk/performance metrics block after the main leaderboard")
+                    help="(legacy/no-op) the curated metrics block now prints BY DEFAULT for every "
+                         "trial on every run, including the hourly strategy-alert forward job")
+    ap.add_argument("--terse", action="store_true",
+                    help="suppress the curated risk/performance metrics block (default: metrics ON)")
     ap.add_argument("--ledger", default=None,
                     help="ledger to APPEND new windows to (default box_policy_ledger_<asset>.jsonl). "
                          "On GHA use a run-scoped path under gha_data/ so each run commits a fragment.")
@@ -1104,9 +1107,11 @@ def main():
                 pass
 
     # -----------------------------------------------------------------------
-    # CURATED RISK/PERFORMANCE METRICS BLOCK  (--metrics flag)
+    # CURATED RISK/PERFORMANCE METRICS BLOCK -- ON BY DEFAULT for every trial on every run, incl. the
+    # hourly strategy-alert forward job (which invokes box_policy_ab.py with NO flags). --terse skips.
+    # Runs AFTER the leaderboard/WATCH/DEPLOY logic, so it never affects the alert or deploy decision.
     # -----------------------------------------------------------------------
-    if not getattr(a, "metrics", False):
+    if getattr(a, "terse", False):
         return
 
     # Aggregate adverseSel% from the ledger (populated in new records; fall back to NaN for old).
