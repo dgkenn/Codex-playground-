@@ -595,11 +595,16 @@ def main():
                          "(the close ramp's --close-max-give still governs the final seconds)")
     ap.add_argument("--dispose-cross", action="store_true", default=False,
                     help="STRAND DISPOSAL (live RCA 2026-06-13): when a leg stays unpaired past "
-                         "--chase-unpaired-s OR within --close-flatten-tau of close, COMPLETE the box "
+                         "--dispose-cross-s OR within --close-flatten-tau of close, COMPLETE the box "
                          "by CROSSING to take the offer (post_only=False, a taker fill) instead of "
                          "riding the naked leg to settlement. Bounded by --chase-max-give (mid-window) "
                          "/ --close-max-give (close). OFF by default (post-only-only); the live trader "
                          "structurally could not complete without this, so strands settled at -21.76c.")
+    ap.add_argument("--dispose-cross-s", type=float, default=90.0,
+                    help="unpaired AGE (s) at which --dispose-cross TAKES the offer. DECOUPLED from "
+                         "--chase-unpaired-s (which governs the MAKER follow-the-touch lock-relaxation) "
+                         "so the maker completion gets first crack at pairing cheaply before we pay the "
+                         "spread to cross. Near close (<--close-flatten-tau) the cross fires regardless.")
     ap.add_argument("--max-net", type=int, default=1,
                     help="hard cap on |net YES-NO| contracts: 1 = strict BOX PAIRING (after a YES "
                          "fill, quote only NO until paired). Tape decomposition: box pairs earn "
@@ -1511,7 +1516,7 @@ def main():
                     and ybb is not None and yba is not None):
                 age_unp = time.time() - unpaired_since
                 near_close = tau_left < a.close_flatten_tau
-                aged = a.chase_unpaired_s > 0 and age_unp >= a.chase_unpaired_s
+                aged = a.dispose_cross_s > 0 and age_unp >= a.dispose_cross_s
                 if aged or near_close:
                     give = a.close_max_give if near_close else a.chase_max_give
                     if net_delta > 1e-9:            # hold YES -> COMPLETE by BUY-NO, take the no-offer
