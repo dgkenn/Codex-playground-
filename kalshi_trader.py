@@ -748,11 +748,16 @@ def main():
     ap.add_argument("--pair-min-depth", type=float, default=33000.0,
                     help="min of (top-5 YES-bid total, top-5 YES-ask total) to allow a fresh OPEN under "
                          "--pair-gate. Study-calibrated 33000 (the tape median); deeper = lower strand rate.")
-    ap.add_argument("--dispose-max-give", type=float, default=0.15,
+    ap.add_argument("--dispose-max-give", type=float, default=0.05,
                     help="give-CAP for the strand cross: complete by crossing ONLY if the lock loss <= "
                          "this ($); if completing would cost MORE (book ran far away), HOLD the bounded "
                          "leg instead of locking a catastrophic loss. Audit: force-flatten-at-any-price "
-                         "created -83c crossed boxes; a -22c hold beats a -83c cross. Caps the cross cost.")
+                         "created -83c crossed boxes; a -22c hold beats a -83c cross. Caps the cross cost. "
+                         "LIVE AUDIT 2026-06-14: at 0.15 the force path locked -27c/-23c/-11c BALANCED "
+                         "boxes (cost $1.11-1.27/box) -- the ENTIRE day's -$1.93 loss, while clean maker "
+                         "boxes earned +1c median (20/29 positive). A box's edge is ~1c, so a 15c force "
+                         "give wipes out ~15 clean boxes per fire. Cut to 0.05 (~close_max_give): a forced "
+                         "completion now loses <=5c, so the rare strand can't swamp the maker edge.")
     ap.add_argument("--requote-stale-s", type=float, default=20.0,
                     help="drop a resting rung older than this IF the mid has moved >=1 tick since "
                          "placement (markout forensics: fills on >15s-old quotes run -2.04c/fill "
