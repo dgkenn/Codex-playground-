@@ -654,9 +654,15 @@ def main():
                          "0 = fee-exempt (CRYPTO15M confirmed live); set 0.0175 on maker-fee "
                          "series -- kelly sizing then auto-tightens selection around p=0.5 "
                          "(backtested OOS-positive under both regimes; kalshi_sizing.py)")
-    ap.add_argument("--size-mode", choices=["flat", "kelly"], default="flat",
-                    help="kelly = fee-aware edge sizing (kalshi_sizing.py): place only when "
-                         "mhat-fee>0, size 1..KELLY_MAX units of --post; flat = always --post")
+    ap.add_argument("--size-mode", choices=["flat", "kelly", "depth"], default="flat",
+                    help="kelly = fee-aware edge sizing; depth = DEPTH-PROPORTIONAL (size ~ both-side "
+                         "top-5 depth, captures the ~$27/day capacity ceiling on the pair-gated box, "
+                         "IS/OOS-stable); flat = always --post")
+    ap.add_argument("--depth-size-frac", type=float, default=0.005,
+                    help="--size-mode depth: target contracts = frac * min(top-5 both-side depth) "
+                         "(capacity study: ~0.005 * depth ~ 165ct at 33k depth was the gross optimum).")
+    ap.add_argument("--depth-size-cap", type=float, default=10.0,
+                    help="--size-mode depth: hard cap on contracts/leg (also bounded by --max-notional).")
     ap.add_argument("--improve-tick", type=float, default=0.01,
                     help="one tick inside the touch (1c); set 0.001 only if/where the venue accepts sub-cent")
     ap.add_argument("--gate", choices=["ufat", "micro", "marg"], default="ufat")
@@ -1642,6 +1648,15 @@ def main():
                     tau_frac = max(mk["we"] - time.time(), 0.0) / 900.0
                     units = max(1, kelly_size(price if side == "yes" else 1.0 - price,
                                               yba - ybb, tau_frac, fee_mult=a.fee_mult))
+                elif a.size_mode == "depth":
+                    # DEPTH-PROPORTIONAL sizing (capacity+optimize studies 2026-06-14): on the pair-gated
+                    # clean-box regime, size ~ available both-side depth captures the ~$27/day ceiling
+                    # vs the unit-size floor (net/win up to +2.3c, IS/OOS-stable). Bounded by --depth-size-cap
+                    # contracts AND the existing --max-notional / --max-net caps below. Only meaningful once
+                    # --max-notional is raised (at the live $5 cap the notional cap binds first).
+                    d5 = top5_both_depth(ws_state, mk["cid"])
+                    if d5:
+                        units = max(1, min(int(a.depth_size_cap), int(round(a.depth_size_frac * d5))))
                 # AUDIT M1: the inventory clamp above reserved only `post`; cap units so units*post can
                 # NOT breach --max-net in a single fill (else size-mode kelly silently overshoots |net|).
                 _sgn = 1.0 if side == "yes" else -1.0
