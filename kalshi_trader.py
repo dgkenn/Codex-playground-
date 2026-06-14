@@ -361,6 +361,21 @@ def resolve_result(sess, ticker):
 # microprice (identical to live_trader)
 # ---------------------------------------------------------------------------
 
+def top5_both_depth(ws_state, ticker, n=5):
+    """min(top-5 YES-bid total, top-5 YES-ask total) from the WS book -- the 'both-sides depth' the
+    pair-gate study found is the dominant strand predictor (deep balanced book => both legs pair).
+    YES-ask side = the NO bids. Returns None if the WS book isn't populated (=> pair-gate blocks)."""
+    st = ws_state.get(ticker)
+    if not st:
+        return None
+    yb = st.get("yes") or {}; nb = st.get("no") or {}
+    if not yb or not nb:
+        return None
+    syes = sum(q for _, q in sorted(yb.items(), reverse=True)[:n])
+    sno = sum(q for _, q in sorted(nb.items(), reverse=True)[:n])
+    return min(syes, sno)
+
+
 def microprice(bb, ba, bsz, asz):
     """Stoikov imbalance-weighted micro-price (identical to live_trader)."""
     if bb is None or ba is None:
@@ -721,13 +736,12 @@ def main():
     # PAIR-OR-DONT-PLAY (audit 2026-06-14): edge is intact on PAIRED boxes; the loss is strands. Only
     # open when BOTH legs are likely to pair -- balanced book + depth on both sides.
     ap.add_argument("--pair-gate", action="store_true", default=False,
-                    help="only OPEN a box when the book is BALANCED (|microprice-mid|<=--pair-max-imbalance) "
-                         "AND DEPTH on both bid+ask >= --pair-min-depth. Cuts the strand rate at the source "
-                         "(imbalanced/thin books are where one leg fills and the other strands). Completions exempt.")
-    ap.add_argument("--pair-max-imbalance", type=float, default=0.02,
-                    help="max |microprice - mid| ($) to allow a fresh OPEN under --pair-gate (book balance).")
-    ap.add_argument("--pair-min-depth", type=float, default=200.0,
-                    help="min top-of-book size on BOTH sides to allow a fresh OPEN under --pair-gate.")
+                    help="only OPEN a box when min(top-5 both-side depth) >= --pair-min-depth. The pair-gate "
+                         "study: depth is the DOMINANT strand predictor -- deep balanced books pair both legs; "
+                         "thin books strand one. Cuts strand 14.8%%->1.9%% keeping 86%% volume. Completions exempt.")
+    ap.add_argument("--pair-min-depth", type=float, default=33000.0,
+                    help="min of (top-5 YES-bid total, top-5 YES-ask total) to allow a fresh OPEN under "
+                         "--pair-gate. Study-calibrated 33000 (the tape median); deeper = lower strand rate.")
     ap.add_argument("--dispose-max-give", type=float, default=0.15,
                     help="give-CAP for the strand cross: complete by crossing ONLY if the lock loss <= "
                          "this ($); if completing would cost MORE (book ran far away), HOLD the bounded "
@@ -1508,11 +1522,12 @@ def main():
             # and ask we'd join. Imbalanced/thin books are where one leg fills and the other strands.
             # Suppress OPENS when the book is imbalanced or thin; COMPLETIONS are always exempt.
             if a.pair_gate and net_delta == 0:    # only gates fresh opens (net!=0 -> only completes anyway)
-                _mid = (ybb + yba) / 2.0
-                imbalanced = (mp is not None) and (abs(mp - _mid) > a.pair_max_imbalance)
-                thin = min(clean_ybq, clean_yaq) < a.pair_min_depth
-                if imbalanced or thin:
-                    targets = []      # don't open either side; wait for a balanced, deep, fillable book
+                # DEPTH is the dominant strand predictor (pair_gate study): min(top-5 both-side depth)
+                # >= --pair-min-depth. Deep balanced books pair both legs; thin books strand one. The
+                # study found microprice-DIVERGENCE gates KILL the edge, so we gate on DEPTH only.
+                d5 = top5_both_depth(ws_state, mk["cid"])
+                if d5 is None or d5 < a.pair_min_depth:
+                    targets = []      # no depth (or thin) -> don't open; wait for a deep, fillable book
             target_set = set(targets)
             # stamp decision-time book state for fill-context logging (metrics framework:
             # effective spread = fill price vs this mid; depth/imbalance for queue + toxicity)
