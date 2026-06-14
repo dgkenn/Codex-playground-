@@ -50,17 +50,39 @@ dollar-neutral, weekly, partial-0.7, BTC-trend-gated. Forward Sharpe ~1.0 (maxDD
   legal wall as Polymarket. => The deployable question is a LONG-ONLY, US-spot-accessible version
   (under research: MOM_LONGONLY.md).
 
+## SPORTS BETTING — same wall (access / efficiency), no money-printer
+`SPORTS_BETTING.md` (`56fb362`): US soft sportsbooks have a real +EV signal (few % ROI vs Pinnacle fair)
+but BAN/limit winners in weeks; Pinnacle/Betfair don't ban but are US-illegal -> ACCESS is the wall.
+Kalshi sports ESCAPES the queue-death (slow taker buy-and-hold, exchange can't ban a winner) BUT its
+liquid games are EFFICIENT (Susquehanna-priced, ~0% overround, 1-3c spreads -> no edge after the hurdle);
+only the illiquid slice (futures/props/minor leagues) is soft, and it's THIN (5-10c spreads, tiny
+capacity) -- marginal, unproven. Needs a Pinnacle feed + 300-500 games of net-of-fee CLV to settle.
+
+## THE META-PATTERN (the real finding)
+Every MICROSTRUCTURE / MISPRICING edge here dies to the SAME wall -- ACCESS or EFFICIENCY, never signal:
+box (last-in-queue latency), fair-value (efficient), L/S momentum (perps US-inaccessible), sports (books
+ban / sharp venues illegal / Kalshi-liquid efficient / Kalshi-illiquid thin). Wherever a market is deep &
+accessible it is efficient; wherever it is soft it is access-gated or too thin. The ONE survivor --
+long-only momentum -- survives precisely because it is NOT a pick-off edge: it is a BEHAVIORAL RISK-
+PREMIUM (trend) that needs no speed and no gated venue. LESSON: for a US retail small bankroll, the
+deployable edges are SYSTEMATIC RISK-PREMIA, not speed/mispricing plays.
+
 ## CLOSED PATHS (do not relitigate)
 Funding carry (~1%/yr net, too small), mean-reversion/stat-arb (sub-our-latency, fee-eaten), ETH/SOL/XRP
 boxes (-EV), multi-factor blends (momentum-alone wins), Polymarket TRADING (US-illegal; kept only as a
-read-only signal that matures passively in the collector).
+read-only signal that matures passively in the collector), sports value-betting on soft books (banned).
 
 ## BOTTOM LINE
 - **The Kalshi maker-box — the project's core — is structurally negative at our cloud infra/bankroll.**
   No software lever overcomes being last-in-queue behind a co-located mechanical MM. Recommend running
   it only minimally (live A/B of today's fixes) then OFF unless the A/B surprises positive.
-- **The only genuinely +EV, scalable, latency-insensitive edge is cross-sectional momentum** — but its
-  full form needs perps US persons can't access. The live question is whether a LONG-ONLY, US-spot
-  (Coinbase/Kraken) version retains enough edge. THAT is the path worth pursuing for a US small bankroll.
-- Honest truth: there may be no high-$/day small-bankroll edge here; the realistic prize is a modest
-  (~10-18%/yr) long-only momentum sleeve that GROWS with capital, not a cash-printing box.
+- **The ONE deployable edge is LONG-ONLY US-spot momentum** (`MOM_LONGONLY.md`, `78d934e`): top-5 of
+  top-15 deep USD-spot coins, risk-adjusted 10d momentum, weekly, partial-0.7, BTC>=100d-MA gate to
+  cash. ~25-30%/yr up-regime, forward Sharpe ~0.4-0.6, no latency/queue problem, scales, US-legal.
+  Its ONE weakness is a -40-60% full-cycle drawdown (no short hedge) -- under hardening (MOM_LO_RISK.md:
+  vol-target / absolute-momentum / faster de-risk to push maxDD <30%).
+- Honest truth: there is no high-$/day small-bankroll EDGE here; the realistic prize is a volatile but
+  genuinely +EV ~Sharpe-0.5 long-only momentum sleeve that GROWS with capital. Next step once the
+  risk-overlay locks the config: a paper-trading harness to start the go-live track (rolling Sharpe
+  >=0.5 over 3-6mo) before real money. NOTE (not tax advice): weekly rebalancing in a US taxable
+  account realizes SHORT-TERM gains -- a real net-of-tax drag to weigh before deploying.
