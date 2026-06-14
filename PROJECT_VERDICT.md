@@ -171,10 +171,20 @@ upside), NOT leverage:
   check) via IBIT/ETHA in an IRA -- Sharpe 0.97->1.1-1.3, recent maxDD -77%->-26/-36% with higher CAGR;
   do NOT buy-and-hold (its -80% crashes). Redundant with the book's crypto-proxy members -- pick one,
   size small. Standalone crypto momentum loses to BTC-hold 62% of paths (don't bother).
-- **Kalshi WEATHER** (`KALSHI_WEATHER.md`, `304643b`): the one open prediction-market LEAD -- recreational
-  warm-tail under-pricing, harvestable as maker, BUT thin capacity + not snapshot-backtestable; needs
-  ~30-45 days of forward CLV collection to confirm (could be the model wrong, not the price). Optional
-  passive data-collection track.
+- **Kalshi WEATHER -- RESOLVED, NO CONFIRMED EDGE** (`KALSHI_WEATHER.md` `304643b` -> `WEATHER_STRATEGY.md`
+  `8593554` -> `WEATHER_MODEL.md` `4c46444`): the warm-tail "underpricing" thesis was MODEL ERROR, not market
+  mispricing. Independent calibration (bias-corrected Normal, sigma~1.1-1.75F/city, validated on 2025
+  ASOS hold-out, Brier 0.066) is reliable ONLY for the CENTER (20-60% brackets) -- but the center is
+  Kalshi-EFFICIENT (1-3c). The TAIL (where Kalshi deviates) is ~1% events the model OVER-predicts (1F error
+  -> 3.3x tail-prob swing) = not callable. Pincer: model-reliable where Kalshi-efficient; Kalshi-deviates
+  where model-unreliable. The Sharpe~3 strategy sim was CONDITIONAL on calibrating the traded (tail)
+  brackets, which fails -> its own no-edge case (loses money) is the real one. Same shape as the crypto
+  fair-value null. kalshi-weather.yml keeps collecting as a cheap passive final check (could surface
+  center mispricing), but the prior is now strongly NEGATIVE. Do not deploy.
+- **REBALANCE-CADENCE WIN** (`GLOBAL_ALLWEATHER.md` `d6980e1`): for the all-weather base, REBALANCE ANNUALLY
+  (not monthly): turnover -75%, Sharpe 0.94->1.17, maxDD -9.6%->-7.8% (rebalancing less lets the trend run;
+  quarterly is a trap), optional 10-20% no-trade band for taxable accounts. Global diversification REJECTED
+  (US PP + trend overlay wins; simpler is better). Net: the base is higher-Sharpe AND lower-effort/tax.
 - **RESEARCH ENDPOINT (honest):** the edge space is exhaustively mapped. The brutal conclusion is that for
   a US small bankroll, the best risk-adjusted, zero-effort answer is a SIMPLE STATIC PORTFOLIO; the active
   momentum+trend book buys only a modest drawdown reduction for real ongoing effort. Further backtesting
