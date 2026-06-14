@@ -1,0 +1,84 @@
+# ============================================================================
+# etf-paper.yml.sample  —  INERT SAMPLE. NOT ENABLED.
+# ----------------------------------------------------------------------------
+# Monthly cron that runs etf_momentum_live.py --paper-track and commits the
+# resulting JSONL to a dedicated `data` branch, so the operator can ACCUMULATE
+# a real forward PAPER track automatically (no real money, no secrets, no
+# brokerage API).
+#
+# This file ends in `.sample` so GitHub Actions will NOT pick it up. To opt in:
+#   1. Review it. Understand it commits a paper JSONL to a `data` branch.
+#   2. Copy to .github/workflows/etf-paper.yml
+#   3. Create an orphan `data` branch once:
+#        git checkout --orphan data && git rm -rf . && git commit --allow-empty \
+#          -m "init data branch" && git push origin data && git checkout -
+#   4. Ensure Settings -> Actions -> "Workflow permissions" = Read and write.
+#
+# It runs on the 1st of each month ~14:30 UTC (after US ETFs have a fresh prior
+# close). It is PAPER ONLY: it computes the locked-config target + appends a
+# dated record. It never places an order.
+# ============================================================================
+name: etf-momentum-paper-track
+
+on:
+  schedule:
+    # 14:30 UTC on the 1st of every month. Adjust to your preferred cadence/day.
+    - cron: "30 14 1 * *"
+  workflow_dispatch: {}      # allow manual runs from the Actions tab
+
+permissions:
+  contents: write            # needed to commit the JSONL back to the data branch
+
+concurrency:
+  group: etf-paper
+  cancel-in-progress: false
+
+jobs:
+  paper-track:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code (default branch)
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install deps
+        run: pip install --quiet yfinance numpy pandas scipy
+
+      - name: Fetch the existing paper track from the data branch
+        run: |
+          set -e
+          git fetch origin data || true
+          if git cat-file -e origin/data:etf_paper_track.jsonl 2>/dev/null; then
+            git show origin/data:etf_paper_track.jsonl > etf_paper_track.jsonl
+          fi
+          if git cat-file -e origin/data:etf_paper_track_crypto.jsonl 2>/dev/null; then
+            git show origin/data:etf_paper_track_crypto.jsonl > etf_paper_track_crypto.jsonl
+          fi
+
+      - name: Run the locked-config live harness (PAPER, base + crypto-proxy)
+        run: |
+          python etf_momentum_live.py --paper-track \
+            --track-file etf_paper_track.jsonl --capital 1000
+          python etf_momentum_live.py --crypto-proxy --paper-track \
+            --track-file etf_paper_track_crypto.jsonl --capital 1000
+
+      - name: Commit the updated JSONL to the data branch
+        run: |
+          set -e
+          git config user.name  "etf-paper-bot"
+          git config user.email "etf-paper-bot@users.noreply.github.com"
+          git fetch origin data || true
+          git checkout -B data origin/data 2>/dev/null || git checkout --orphan data
+          # keep only the track files on the data branch
+          cp etf_paper_track.jsonl /tmp/_t1 2>/dev/null || true
+          cp etf_paper_track_crypto.jsonl /tmp/_t2 2>/dev/null || true
+          git reset --hard
+          cp /tmp/_t1 etf_paper_track.jsonl 2>/dev/null || true
+          cp /tmp/_t2 etf_paper_track_crypto.jsonl 2>/dev/null || true
+          git add etf_paper_track.jsonl etf_paper_track_crypto.jsonl
+          git commit -m "paper-track: $(date -u +%Y-%m-%d) auto-append" || echo "no changes"
+          git push origin data
