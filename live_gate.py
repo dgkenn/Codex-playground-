@@ -74,16 +74,29 @@ def main():
                 except Exception: pass
             _sc[cid] = r if r in ("yes", "no") else None
             return _sc[cid]
-        def _wpnl(w):
-            s = _settle(w)
-            if s not in ("yes", "no"): return None
-            ny = w.get("n_yes", 0); nn = w.get("n_no", 0)
-            return (ny if s == "yes" else nn) - (w.get("cost_yes", 0.0) + w.get("cost_no", 0.0))
+        # P&L from RAW FILLS, not winrec n/cost (audit 2026-06-14: winrec cost fields UNDERCOUNT the
+        # crossed-completion taker fills -> winrec P&L read +$1.05 while the true fills-based P&L was
+        # -$1.93). Reconstruct every fill across live-state history, settle via API, sum payout-cost.
+        _flraw = {}
+        for r in _walk(f"{base}/kalshi_fees_{a.asset}15m.jsonl"):
+            tid = (r.get("raw") or {}).get("trade_id")
+            if tid: _flraw[tid] = r
+        _byc = {}
+        for r in _flraw.values():
+            _byc.setdefault(r["ticker"], []).append(r)
         pnl = 0.0; have_settle = 0
-        for w in winrecs:
-            p = _wpnl(w)
-            if p is None: continue
-            have_settle += 1; pnl += p
+        for tk, fl in _byc.items():
+            s = _sc.get(tk, "?")
+            if s == "?":
+                s = None
+                for _ in range(3):
+                    try:
+                        s = _ses.get(f"{_B}/markets/{tk}", timeout=8).json().get("market", {}).get("result"); break
+                    except Exception: pass
+                _sc[tk] = s if s in ("yes", "no") else None; s = _sc[tk]
+            if s not in ("yes", "no"): continue
+            have_settle += 1
+            pnl += sum(r["count"] for r in fl if r["side"] == s) - sum(r["price"] * r["count"] for r in fl)
         med_leg = legs[len(legs)//2] if legs else float("nan")
         p90_leg = legs[int(.9*len(legs))] if legs else float("nan")
         print(f"windows={n}  boxes={boxes}  STRAND RATE={sr:.0f}%  (gate (a): target <=15%)")
@@ -91,9 +104,14 @@ def main():
         print(f"fills: maker={maker} TAKER={taker}  dispose-cross fired={xcross}x  (gate (b): >0 if any strands)")
         print(f"settled windows={have_settle}  DAY P&L=${pnl:+.2f}  ({100*pnl/max(have_settle,1):+.1f}c/win)  (gate (d): >= ~0)")
         # per-strand realized cost (gate (c): target ~ -5..-10c, NOT -21.76c hold)
+        def _wpnl(w):
+            s = _settle(w)
+            if s not in ("yes", "no"): return None
+            ny = w.get("n_yes", 0); nn = w.get("n_no", 0)
+            return (ny if s == "yes" else nn) - (w.get("cost_yes", 0.0) + w.get("cost_no", 0.0))
         scost = [_wpnl(w) for w in strand if _wpnl(w) is not None]
         if scost:
-            print(f"per-stranded-window P&L: mean {100*sum(scost)/len(scost):+.1f}c  (gate (c): hold was -21.76c)")
+            print(f"per-stranded-window P&L (winrec, approx): mean {100*sum(scost)/len(scost):+.1f}c")
         print()
         ok_a = sr <= 15.0; ok_b = (xcross > 0 or len(strand) == 0); ok_d = pnl >= -0.01
         print(f"GATE: (a)strand<=15%%:{'PASS' if ok_a else 'FAIL'}  (b)cross-fires:{'PASS' if ok_b else 'FAIL'}  (d)net>=0:{'PASS' if ok_d else 'FAIL'}")
