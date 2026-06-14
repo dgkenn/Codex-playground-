@@ -65,6 +65,10 @@ def find_live(prefix="btc-updown-5m"):
 
 
 def book_top(token_id):
+    """Returns (best_bid, best_ask, bsz_SUM, asz_SUM, touch_bid_size, touch_ask_size).
+    XVENUE AUDIT 2026-06-14: bsz/asz were the SUM over ALL levels (Polymarket's 45+ reward-farming
+    levels far from touch -> the misleading ~40k 'depth'). The EXECUTABLE depth is the size AT the
+    best level (touch). Log both so we can measure real fill capacity vs the reward-farm sum."""
     try:
         b = requests.get(f"{CLOB}/book", params={"token_id": token_id}, timeout=8).json()
         bids = b.get("bids") or []; asks = b.get("asks") or []
@@ -72,9 +76,11 @@ def book_top(token_id):
         ba = min((float(x["price"]) for x in asks), default=None)
         bsz = sum(float(x["size"]) for x in bids)
         asz = sum(float(x["size"]) for x in asks)
-        return bb, ba, bsz, asz
+        tbs = sum(float(x["size"]) for x in bids if abs(float(x["price"]) - bb) < 1e-9) if bb is not None else 0.0
+        tas = sum(float(x["size"]) for x in asks if abs(float(x["price"]) - ba) < 1e-9) if ba is not None else 0.0
+        return bb, ba, bsz, asz, tbs, tas
     except Exception:
-        return None, None, 0.0, 0.0
+        return None, None, 0.0, 0.0, 0.0, 0.0
 
 
 def main():
@@ -98,14 +104,17 @@ def main():
                 cur = None
                 time.sleep(10); continue            # brief rollover gap -> retry
         et, slug, up_tok, down_tok = cur
-        ub, ua, ubs, uas = book_top(up_tok)
-        db, da, dbs, das = book_top(down_tok)
+        ub, ua, ubs, uas, uts_b, uts_a = book_top(up_tok)
+        db, da, dbs, das, dts_b, dts_a = book_top(down_tok)
         if ub is not None or ua is not None:
             fh.write(json.dumps({
                 "t": round(time.time(), 2), "end": cur_end, "venue": "polymarket",
                 "asset": "btc", "slug": slug,
                 "up_bid": ub, "up_ask": ua, "up_bsz": round(ubs, 1), "up_asz": round(uas, 1),
-                "down_bid": db, "down_ask": da}) + "\n")
+                "down_bid": db, "down_ask": da,
+                # EXECUTABLE touch depth (vs the reward-farm sum above) -- the decisive capacity signal
+                "up_tbsz": round(uts_b, 1), "up_tasz": round(uts_a, 1),
+                "down_tbsz": round(dts_b, 1), "down_tasz": round(dts_a, 1)}) + "\n")
             fh.flush()
         time.sleep(max(0.0, POLL - (time.time() - t0)))
     fh.close()
