@@ -72,17 +72,28 @@ Funding carry (~1%/yr net, too small), mean-reversion/stat-arb (sub-our-latency,
 boxes (-EV), multi-factor blends (momentum-alone wins), Polymarket TRADING (US-illegal; kept only as a
 read-only signal that matures passively in the collector), sports value-betting on soft books (banned).
 
-## BOTTOM LINE
-- **The Kalshi maker-box — the project's core — is structurally negative at our cloud infra/bankroll.**
-  No software lever overcomes being last-in-queue behind a co-located mechanical MM. Recommend running
-  it only minimally (live A/B of today's fixes) then OFF unless the A/B surprises positive.
-- **The ONE deployable edge is LONG-ONLY US-spot momentum** (`MOM_LONGONLY.md`, `78d934e`): top-5 of
-  top-15 deep USD-spot coins, risk-adjusted 10d momentum, weekly, partial-0.7, BTC>=100d-MA gate to
-  cash. ~25-30%/yr up-regime, forward Sharpe ~0.4-0.6, no latency/queue problem, scales, US-legal.
-  Its ONE weakness is a -40-60% full-cycle drawdown (no short hedge) -- under hardening (MOM_LO_RISK.md:
-  vol-target / absolute-momentum / faster de-risk to push maxDD <30%).
-- Honest truth: there is no high-$/day small-bankroll EDGE here; the realistic prize is a volatile but
-  genuinely +EV ~Sharpe-0.5 long-only momentum sleeve that GROWS with capital. Next step once the
-  risk-overlay locks the config: a paper-trading harness to start the go-live track (rolling Sharpe
-  >=0.5 over 3-6mo) before real money. NOTE (not tax advice): weekly rebalancing in a US taxable
-  account realizes SHORT-TERM gains -- a real net-of-tax drag to weigh before deploying.
+## BOTTOM LINE  (the deployable recommendation)
+- **WINNER: cross-asset ETF MOMENTUM** (`ETF_MOMENTUM.md`, `e3e2d57`) — the best deployable edge for a
+  US small bankroll, decisively better than every crypto path. Config: ~30-ETF cross-asset universe
+  (US sectors + size/style + intl/country + bonds/gold/commodities/REITs), 6-month RISK-ADJUSTED
+  (return/vol) cross-sectional momentum, top K=5 equal-weight, dual/absolute (>cash) filter + SPY>200d-MA
+  regime gate, MONTHLY partial-rebalance (~1/3 toward target). Net **CAGR ~8-9%, Sharpe ~0.80-0.83,
+  maxDD ~-17%**; robust on the never-tuned 2016-2026 holdout (0.81) and through 2008 (-8.6% vs SPY -55%)
+  & 2022 (~flat). Fully US-legal in any commission-free brokerage, IRA-able (NO short-term-gains drag),
+  $1k-deployable, no access/latency wall, survives 10bps costs (Sharpe 0.65).
+  - **Optional crypto sleeve, the RIGHT way:** add crypto-proxy ETFs (IBIT/MSTR/COIN/GBTC) as high-beta
+    members -> CAGR 8.9%->14.5%, Sharpe 0.81->0.98 for ~2pp more DD (the gates only hold them while
+    risk-on). This is how crypto belongs in the book — not as a standalone box or a perp L/S we can't access.
+  - **Honest caveat:** it does NOT out-RETURN a raw equity bull (2016-26 SPY/60-40 beat it on CAGR); its
+    value is crash-robust, risk-managed, TAX-EFFICIENT equity-like return — the right profile for a small
+    bankroll that can't survive a -55% hold.
+- **Crypto-native long-only momentum** (`MOM_LONGONLY.md`/`MOM_LO_RISK.md`) is +EV (~Sharpe 0.5-0.7) but
+  its full-cycle drawdown is IRREDUCIBLE (~-45%; no overlay fixes it OOS, only sizing) and it carries a
+  US short-term-gains tax drag (weekly turnover). Dominated by the ETF form; keep only as the crypto-proxy
+  members inside the ETF framework.
+- **The Kalshi maker-box — the original project core — is structurally negative** at our cloud infra
+  (last-in-queue behind a co-located mechanical MM; no lever cuts strand <5%). Run only minimally for the
+  live A/B of today's fixes, then OFF unless it surprises positive.
+- **Path to deployment:** lock the ETF spec, build a monthly paper-trading harness to accumulate a real
+  forward track (target rolling Sharpe >=0.6 over 3-6mo), then size SMALL with real money. The outcome
+  distribution + concrete %-of-bankroll sizing is under study (MOM_OUTCOME_DIST.md / ETF deploy spec).
