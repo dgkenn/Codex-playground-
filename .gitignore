@@ -63,3 +63,6 @@ box_policy_ledger_*.jsonl
 STRATEGY_ALERTS.txt
 .kalshi_trader_*.lock
 live_loop.out
+
+# weather model cache (do not commit)
+wx_cache/
