@@ -72,7 +72,36 @@ Funding carry (~1%/yr net, too small), mean-reversion/stat-arb (sub-our-latency,
 boxes (-EV), multi-factor blends (momentum-alone wins), Polymarket TRADING (US-illegal; kept only as a
 read-only signal that matures passively in the collector), sports value-betting on soft books (banned).
 
-## BOTTOM LINE  (the deployable recommendation)
+## ===== FINAL ANSWER (the goal: "$500/month trading from a small bankroll") =====
+**$500/MONTH IS A BANKROLL-SIZE PROBLEM, NOT A STRATEGY PROBLEM** (`INCOME_500_REALITY.md`, `945f828`):
+- At safe ~8.5% returns, $500/mo ($6k/yr) needs **~$70k** (mean) / **~$165k** (to survive a bad-luck year).
+- Forcing it from $5k = **120%/yr** -> only leveraged crypto-trend can target it: 2x/3x/4x median CAGR
+  ~8%/-25%/-61%, worst-5% DD near -100%. **Ruin is the base case.** With $500/mo WITHDRAWALS, P(survive 3yr)
+  = ~1% @ $5k, 24% @ $10k, 89% @ $25k, ~100% only @ ~$60k.
+- **No shortcut edge exists** -- every high-return-on-small-capital play here is dead/walled/capacity-capped
+  (Kalshi box=queue-dead, sports=banned, fair-value=efficient, weather=thin/unproven). Small-capacity edges
+  pay small dollars; scalable edges are low-% and need a big base. That is THE finding of this whole project.
+- **THE REAL PATH:** treat a small account as a GROWTH engine (don't withdraw), CONTRIBUTE monthly, compound
+  the ~10-15% edge to the ~$70k base, THEN draw $500/mo at a safe ~10%. From $10k + $1k/mo @ ~10% -> ~$70k in
+  ~4yr (+$2k/mo -> ~2yr). The trading edge is the ~10% finisher; CONTRIBUTIONS + TIME are the real lever.
+
+## THE BEST DEPLOYABLE PORTFOLIO (regime-robust, refined)
+**A TREND-OVERLAID ALL-WEATHER PORTFOLIO** (`REGIME_ROBUSTNESS.md` `959984e` + `FINAL_PORTFOLIO.md` `eea3225`):
+a Permanent-Portfolio-style base (stocks / long-Treasuries / gold / cash) with a 6-12m TIME-SERIES TREND
+filter that parks each FALLING sleeve in cash. Long-history (1972-2023) Sharpe **1.4-1.5 vs pure PP 1.25**,
+drawdown HALVED, 2022 loss -13%->-4%, robust across the 1970s bond bear + stagflation + 2008 + 2022.
+- WHY over pure PP: PP's edge is partly a 2007-24 negative-correlation + one-time-gold artifact; 2022
+  (stocks+bonds down together) is its kryptonite. The trend overlay is the regime INSURANCE that fixes it.
+- Over 2007-2026 specifically, the equivalent winner is 70% PP-core + 30% active momentum+trend satellite
+  (Sharpe 1.14 / maxDD -11.9%, beats pure PP 1.07 and pure active 0.92 on BOTH axes). Same idea: all-weather
+  base + trend/momentum discipline. US-legal, IRA-able (tax-efficient), fractional-share-deployable from ~$500.
+- Crypto, if wanted: <=5% trend-timed BTC/ETH via IBIT/ETHA (>=200d SMA) in an IRA -- never buy-and-hold.
+- Lazy near-equivalent: pure Permanent Portfolio, quarterly (Sharpe ~1.07, zero effort) -- fine if you won't
+  run the trend overlay, but accept the 2022-type vulnerability.
+- Stocks do NOT predict bitcoin (`STOCKS_PREDICT_BTC.md` `0a7459e`): all 17 candidates null on the
+  overnight-gap test; BTC leads its proxies. No equity->BTC timing edge.
+
+## BOTTOM LINE  (how we got here -- the full map)
 - **THE HUMBLING HEADLINE (`STATIC_ALLOCATION.md`, `1085652`): a DEAD-SIMPLE STATIC PORTFOLIO BEATS the
   active book on risk-adjusted return.** Permanent Portfolio (25% each SPY/TLT/GLD/cash) Sharpe **0.93**
   and inverse-vol risk-parity **0.84** vs the active momentum+TF book **0.81** (full sample); OOS 2016-26:
