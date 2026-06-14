@@ -94,6 +94,16 @@ read-only signal that matures passively in the collector), sports value-betting 
 - **The Kalshi maker-box — the original project core — is structurally negative** at our cloud infra
   (last-in-queue behind a co-located mechanical MM; no lever cuts strand <5%). Run only minimally for the
   live A/B of today's fixes, then OFF unless it surprises positive.
-- **Path to deployment:** lock the ETF spec, build a monthly paper-trading harness to accumulate a real
-  forward track (target rolling Sharpe >=0.6 over 3-6mo), then size SMALL with real money. The outcome
-  distribution + concrete %-of-bankroll sizing is under study (MOM_OUTCOME_DIST.md / ETF deploy spec).
+- **DEPLOYABLE NOW** (`ETF_DEPLOY.md` + `etf_momentum_live.py`, `1cf9cef`): the harness RUNS on live
+  yfinance data and outputs this month's target portfolio (2026-06-12, regime ON: 20% each DBC/USO/XLE/
+  MTUM/XLB). Outcome dist $1k/2yr: median $1,123, p5 $931, p95 $1,375 (much tighter than crypto's
+  $519/$5,384 -- lower return, far lower risk). Sizing off the ~18% historical maxDD: ~28% of NW at a 5%
+  loss tolerance; start $500-1k until the paper track clears the go-live bar (rolling Sharpe >=0.6, 3-6mo).
+  Runbook + inert monthly `etf-paper.yml.sample` shipped.
+- **Crypto outcome dist** (`MOM_OUTCOME_DIST.md`, `1e7f0e4`): the crypto sleeve underperforms simply
+  HOLDING BTC on ~62% of 2yr paths and has P(>30% DD)~74% -> crypto belongs only as gated proxy-ETF
+  members inside the ETF book, not a standalone sleeve.
+- **Remaining gap before real $1k:** whole-share/cash-drag at small size (a 20% slot ~$200 < 1 share of
+  MTUM ~$220) -> needs fractional shares or a small-bankroll execution adjustment (final study).
+- **RESEARCH ENDPOINT:** the edge space is fully mapped and the deployable answer is built. The productive
+  path is now OPERATIONAL -- paper-trade the ETF sleeve 3-6mo, then size small -- not more backtesting.
