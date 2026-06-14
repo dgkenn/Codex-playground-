@@ -718,6 +718,21 @@ def main():
     ap.add_argument("--open-sig-hi", type=float, default=0.0,
                     help="EDGE-SELECT: only OPEN when |sig| <= this (0=off). t_edge_select=8 (mid-vol; "
                          "high-vol is a NET LOSS -- captured spread collapses in fast markets).")
+    # PAIR-OR-DONT-PLAY (audit 2026-06-14): edge is intact on PAIRED boxes; the loss is strands. Only
+    # open when BOTH legs are likely to pair -- balanced book + depth on both sides.
+    ap.add_argument("--pair-gate", action="store_true", default=False,
+                    help="only OPEN a box when the book is BALANCED (|microprice-mid|<=--pair-max-imbalance) "
+                         "AND DEPTH on both bid+ask >= --pair-min-depth. Cuts the strand rate at the source "
+                         "(imbalanced/thin books are where one leg fills and the other strands). Completions exempt.")
+    ap.add_argument("--pair-max-imbalance", type=float, default=0.02,
+                    help="max |microprice - mid| ($) to allow a fresh OPEN under --pair-gate (book balance).")
+    ap.add_argument("--pair-min-depth", type=float, default=200.0,
+                    help="min top-of-book size on BOTH sides to allow a fresh OPEN under --pair-gate.")
+    ap.add_argument("--dispose-max-give", type=float, default=0.15,
+                    help="give-CAP for the strand cross: complete by crossing ONLY if the lock loss <= "
+                         "this ($); if completing would cost MORE (book ran far away), HOLD the bounded "
+                         "leg instead of locking a catastrophic loss. Audit: force-flatten-at-any-price "
+                         "created -83c crossed boxes; a -22c hold beats a -83c cross. Caps the cross cost.")
     ap.add_argument("--requote-stale-s", type=float, default=20.0,
                     help="drop a resting rung older than this IF the mid has moved >=1 tick since "
                          "placement (markout forensics: fills on >15s-old quotes run -2.04c/fill "
@@ -1487,6 +1502,17 @@ def main():
                 if not (in_k and in_vol):
                     targets = [t for t in targets
                                if (net_delta > 0.5 and t[0] == "no") or (net_delta < -0.5 and t[0] == "yes")]
+            # PAIR-OR-DONT-PLAY gate (audit 2026-06-14): the edge is intact on PAIRED boxes (+0.69c);
+            # the entire loss is STRANDS. So only OPEN a box when BOTH legs are likely to pair: a
+            # BALANCED book (microprice near mid -- not being swept one way) AND DEPTH on both the bid
+            # and ask we'd join. Imbalanced/thin books are where one leg fills and the other strands.
+            # Suppress OPENS when the book is imbalanced or thin; COMPLETIONS are always exempt.
+            if a.pair_gate and net_delta == 0:    # only gates fresh opens (net!=0 -> only completes anyway)
+                _mid = (ybb + yba) / 2.0
+                imbalanced = (mp is not None) and (abs(mp - _mid) > a.pair_max_imbalance)
+                thin = min(clean_ybq, clean_yaq) < a.pair_min_depth
+                if imbalanced or thin:
+                    targets = []      # don't open either side; wait for a balanced, deep, fillable book
             target_set = set(targets)
             # stamp decision-time book state for fill-context logging (metrics framework:
             # effective spread = fill price vs this mid; depth/imbalance for queue + toxicity)
@@ -1647,20 +1673,27 @@ def main():
                     avail = (ybq if cside == "no" else yaq) or need
                     take = max(1, min(need, int(avail)))
                     ckey = (cside, "_xcross")
-                    # FORCE near close ignores the give budget: a certain -Xc completion now ALWAYS beats
-                    # riding the naked leg to binary settlement (the -39.8c escaped-strand tail, run 2).
-                    if (0.0 < cross_px < 1.0 and need >= 1 and (force or lock >= -give - 1e-9)
+                    # GIVE-CAPPED disposal (audit 2026-06-14): cross when CHEAP (lock>=-give, the
+                    # opportunistic/early path) OR when forcing near close BUT only up to --dispose-max-give.
+                    # If even the forced completion would lock worse than the cap (book ran far away), HOLD
+                    # the bounded leg instead -- a -22c expected hold beats a -83c catastrophic cross
+                    # (the force-at-ANY-price fix overpaid: it created the -16.4c/box crossed-completion leak).
+                    cross_ok = (lock >= -give - 1e-9) or (force and lock >= -a.dispose_max_give - 1e-9)
+                    if (0.0 < cross_px < 1.0 and need >= 1 and cross_ok
                             and reject_cd.get(ckey, 0.0) <= time.time()):
                         if place(cside, cross_px, ybb, yba, count=take, cross=True) is not None:
                             ops["dispose_cross"] = ops.get("dispose_cross", 0) + 1
                             winrec["dispose_cross"] += 1
-                            if force:
-                                print(f"  [FORCE-FLATTEN] {take}/{need}x {cside.upper()} @ {cross_px:.4f} "
-                                      f"lock={lock:+.3f} tau={tau_left:.0f}s (no-give-cap; beats settlement)")
-                            print(f"  [DISPOSE-CROSS] complete {take}/{need}x {cside.upper()} @ {cross_px:.4f} "
-                                  f"lock={lock:+.3f} (age={age_unp:.0f}s tau={tau_left:.0f}s)")
-                        # short throttle while forcing/partial so the residual re-crosses promptly
+                            print(f"  [DISPOSE-CROSS{'/FORCE' if force else ''}] {take}/{need}x "
+                                  f"{cside.upper()} @ {cross_px:.4f} lock={lock:+.3f} "
+                                  f"(age={age_unp:.0f}s tau={tau_left:.0f}s)")
                         reject_cd[ckey] = time.time() + (0.8 if (force or take < need) else 3.0)
+                    elif force and lock < -a.dispose_max_give:
+                        # bounded HOLD: crossing would cost more than the cap; ride the (capped) leg
+                        if reject_cd.get(ckey, 0.0) <= time.time():
+                            print(f"  [HOLD-CAPPED] {cside.upper()} cross lock={lock:+.3f} < -{a.dispose_max_give:.2f} "
+                                  f"cap; holding bounded leg vs catastrophic cross (tau={tau_left:.0f}s)")
+                            reject_cd[ckey] = time.time() + 5.0
 
             # --- PULL stale / toxic / off-target rungs ---
             for key in list(resting):
