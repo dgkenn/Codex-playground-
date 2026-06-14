@@ -37,3 +37,34 @@ zero-cost path is: keep the shadow test running, keep the bot off, and only comm
 SELECTIVE config clears the pre-registered bar. The research has been exhaustive; the edge, if it
 exists, is thin and selective -- trade it small and only when proven, or accept it's not worth it at
 this scale. No re-arm without the operator's call.
+
+## >>> CAPACITY + OPTIMIZE + EXPANSION RESULTS (2026-06-14) -- CONVERGED <<<
+- **CAPACITY (commit 231b51b):** the BTC 15-min book is FILL-RATE-limited, not depth-limited. The
+  crossing-taker print that fills our resting leg is median ~10 contracts, so matched-contracts/box
+  plateaus ~26 regardless of size. Best = depth-proportional size (~165 ct at 33k depth) -> ~$27/day
+  GROSS ceiling (~$10-20/day after realistic haircut), SATURATING at a ~$100 bankroll. Extra capital
+  buys nothing. "Scale by adding markets, not size."
+- **OPTIMIZE (commit 1f07e84):** 33k depth confirmed optimal; best honest net/box ~+0.49-0.50c
+  (small bump from +0.467). The robust real gain = DEPTH-PROPORTIONAL SIZING on clean boxes
+  (net/win up to +2.3c, IS/OOS-stable) -- this is how you actually capture the ~$27/day ceiling.
+  Edge is BTC-ONLY (alts -1.3 to -2.4c/box).
+- **EXPANSION (probed): the 'add markets' scale path does NOT exist for the 15-min box.**
+  - ETH/SOL/XRP 15-min: -EV (thin/toxic), confirmed repeatedly. The capacity agent's "add alts"
+    suggestion is contradicted by the alt edge being negative.
+  - INDEX (S&P KXINXU / Nasdaq KXNASDAQ100U): DAILY tenor, MULTI-STRIKE ladder, EQUITY-HOURS-ONLY
+    (not 24/7), and KXNASDAQ100U ~0 volume. Not the 24/7 continuous deep-book 15-min single-strike
+    structure BTC has. Daily+ladder = the degenerate-strike + longer-tenor-adverse-selection problems
+    we already showed don't work. (Weekend depth=0 not dispositive, but the STRUCTURE disqualifies it.)
+
+## HONEST CONVERGENCE
+The strategy is a VALIDATED but SMALL, CAPACITY-CAPPED, BTC-ONLY edge: ~+0.49c/box, ~$10-27/day gross
+ceiling, saturating at a ~$100 bankroll, with no market-expansion path (alts -EV; index wrong structure).
+The maker box WORKS -- it is a real nickel sleeve -- but it will not become "real money" at any bankroll
+because the BTC 15-min book's fill rate caps it at ~$10-27/day. Research has largely converged here.
+
+## Remaining high-value work (not more edge-hunting)
+1. LIVE-CONFIRM the validated config (running) -- does strand 1.9% / +0.49c/box hold live?
+2. DEPLOY DEPTH-PROPORTIONAL SIZING (the robust gain) once live confirms the base -- captures the
+   ~$27/day ceiling instead of the ~$0.40/day unit-size floor.
+3. Accept the ceiling: this is a ~$10-27/day BTC-only sleeve. Meaningful money would need a DIFFERENT
+   strategy/venue entirely (the exhaustive search found none accessible at our latency). 
