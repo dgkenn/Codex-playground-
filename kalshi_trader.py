@@ -706,6 +706,18 @@ def main():
                          "ARM ONLY after the t36/t02 forward A/B clears the pre-registered bar "
                          "(SCALE_GATE Stage-A condition 4); backtest: OOS +2.07c/win vs P0 +0.69, "
                          "YES strands 36->1 (GUARDED_OPENER.md).")
+    # EDGE-SELECT gate (BOX_YIELD t_edge_select): the only POSITIVE-net signal across the whole search
+    # is SELECTIVITY -- open ONLY in the fat-box regime. The always-on box is net-negative (shadow + 2
+    # live runs); high-vol & late-slot windows are where strands cluster and the edge dies.
+    ap.add_argument("--open-k-min", type=int, default=0,
+                    help="EDGE-SELECT: only OPEN when the window-minute k >= this (0=off). t_edge_select=5.")
+    ap.add_argument("--open-k-max", type=int, default=12,
+                    help="EDGE-SELECT: only OPEN when window-minute k <= this. t_edge_select=9.")
+    ap.add_argument("--open-sig-lo", type=float, default=0.0,
+                    help="EDGE-SELECT: only OPEN when |sig| (spot move bps) >= this. t_edge_select=3.")
+    ap.add_argument("--open-sig-hi", type=float, default=0.0,
+                    help="EDGE-SELECT: only OPEN when |sig| <= this (0=off). t_edge_select=8 (mid-vol; "
+                         "high-vol is a NET LOSS -- captured spread collapses in fast markets).")
     ap.add_argument("--requote-stale-s", type=float, default=20.0,
                     help="drop a resting rung older than this IF the mid has moved >=1 tick since "
                          "placement (markout forensics: fills on >15s-old quotes run -2.04c/fill "
@@ -1462,6 +1474,17 @@ def main():
             if _strand_sched and _consec_strands > 0:
                 _m = _strand_sched[min(_consec_strands - 1, len(_strand_sched) - 1)]
                 if round(a.post * _m) < 1:
+                    targets = [t for t in targets
+                               if (net_delta > 0.5 and t[0] == "no") or (net_delta < -0.5 and t[0] == "yes")]
+            # EDGE-SELECT gate (the one positive-net signal: SELECTIVITY). Open ONLY in the fat-box
+            # regime -- mid-window k-slots AND mid-vol; suppress OPENS (both sides) outside it, exempt
+            # COMPLETIONS. High-vol/late-slot windows are where strands cluster and the box edge dies.
+            if a.open_k_min > 0 or a.open_sig_hi > 0:
+                cur_k = int((time.time() - mk["ws"]) / 60.0)
+                _, _sig_now = _spot_sig(); _asig = abs(_sig_now or 0.0)
+                in_k = (a.open_k_min <= cur_k <= a.open_k_max) if a.open_k_min > 0 else True
+                in_vol = (a.open_sig_lo <= _asig <= a.open_sig_hi) if a.open_sig_hi > 0 else True
+                if not (in_k and in_vol):
                     targets = [t for t in targets
                                if (net_delta > 0.5 and t[0] == "no") or (net_delta < -0.5 and t[0] == "yes")]
             target_set = set(targets)
