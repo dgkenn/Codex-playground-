@@ -47,9 +47,15 @@ jobs:
           mkdir -p out
           # pull the existing track so portfolio_live.py APPENDS to it (idempotent accumulation)
           git fetch --depth=1 origin gha-data 2>/dev/null || true
-          git show origin/gha-data:gha_data/paper/portfolio_paper_track.jsonl > out/portfolio_paper_track.jsonl 2>/dev/null || true
+          git show origin/gha-data:gha_data/paper/portfolio_paper_track.jsonl       > out/portfolio_paper_track.jsonl 2>/dev/null || true
+          git show origin/gha-data:gha_data/paper/allweather_paper_track.jsonl      > out/allweather_paper_track.jsonl 2>/dev/null || true
+          git show origin/gha-data:gha_data/paper/allweather_growth_paper_track.jsonl > out/allweather_growth_paper_track.jsonl 2>/dev/null || true
+          # the OLD 70/30 PP+active blend (kept for comparison) ...
           python portfolio_live.py --paper-track --capital 1000 --track-file out/portfolio_paper_track.jsonl || true
-          test -s out/portfolio_paper_track.jsonl || { echo "no track row written (cache-only / fetch failed)"; exit 0; }
+          # ... and the RECOMMENDED trend-overlaid all-weather, conservative + growth modes
+          python allweather_live.py            --paper-track --capital 1000 --track-file out/allweather_paper_track.jsonl || true
+          python allweather_live.py --growth   --paper-track --capital 1000 --track-file out/allweather_growth_paper_track.jsonl || true
+          ls -s out/*.jsonl 2>/dev/null | grep -q . || { echo "no track rows written (cache-only / fetch failed)"; exit 0; }
           git config user.name  "paper-bot"
           git config user.email "paper-bot@users.noreply.github.com"
           if git fetch --depth=1 origin gha-data 2>/dev/null; then
@@ -61,7 +67,9 @@ jobs:
             find /tmp/dw -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
           fi
           mkdir -p /tmp/dw/gha_data/paper
-          cp "$GITHUB_WORKSPACE/out/portfolio_paper_track.jsonl" /tmp/dw/gha_data/paper/
+          for f in portfolio_paper_track allweather_paper_track allweather_growth_paper_track; do
+            test -s "$GITHUB_WORKSPACE/out/$f.jsonl" && cp "$GITHUB_WORKSPACE/out/$f.jsonl" /tmp/dw/gha_data/paper/ || true
+          done
           cd /tmp/dw && git add gha_data/paper
           git commit -m "etf paper-track $(date -u +%F)" || { echo "nothing to commit"; exit 0; }
           for i in 1 2 3 4 5; do
