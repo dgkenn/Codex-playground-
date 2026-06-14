@@ -1,113 +1,149 @@
-{"raw": {"balance": 930, "balance_breakdown": [{"balance": "9.3003", "exchange_index": 0}], "balance_dollars": "9.3003", "portfolio_value": 0, "updated_ts": 1781434473}, "ts": 1781434473.547, "kind": "balance", "asset": "btc", "tenor_min": 15}
-{"raw": {"balance": 930, "balance_breakdown": [{"balance": "9.3003", "exchange_index": 0}], "balance_dollars": "9.3003", "portfolio_value": 0, "updated_ts": 1781434534}, "ts": 1781434534.173, "kind": "balance", "asset": "btc", "tenor_min": 15}
-{"raw": {"balance": 930, "balance_breakdown": [{"balance": "9.3003", "exchange_index": 0}], "balance_dollars": "9.3003", "portfolio_value": 0, "updated_ts": 1781434595}, "ts": 1781434595.054, "kind": "balance", "asset": "btc", "tenor_min": 15}
-{"raw": {"balance": 930, "balance_breakdown": [{"balance": "9.3003", "exchange_index": 0}], "balance_dollars": "9.3003", "portfolio_value": 0, "updated_ts": 1781434655}, "ts": 1781434655.352, "kind": "balance", "asset": "btc", "tenor_min": 15}
-{"raw": {"balance": 930, "balance_breakdown": [{"balance": "9.3003", "exchange_index": 0}], "balance_dollars": "9.3003", "portfolio_value": 0, "updated_ts": 1781434715}, "ts": 1781434715.906, "kind": "balance", "asset": "btc", "tenor_min": 15}
-{"raw": {"balance": 930, "balance_breakdown": [{"balance": "9.3003", "exchange_index": 0}], "balance_dollars": "9.3003", "portfolio_value": 0, "updated_ts": 1781434776}, "ts": 1781434776.406, "kind": "balance", "asset": "btc", "tenor_min": 15}
-{"ws": 1781433900, "realized": 0.0, "mark": 0.0, "net_delta": 0.0, "placements": 0, "fills": 0, "rejects": 0, "cancels": 0, "strays": 0, "fill_rate": null, "ts": 1781434800.087, "kind": "window", "asset": "btc", "tenor_min": 15}
-{"raw": {"balance": 930, "balance_breakdown": [{"balance": "9.3003", "exchange_index": 0}], "balance_dollars": "9.3003", "portfolio_value": 0, "updated_ts": 1781434837}, "ts": 1781434837.4, "kind": "balance", "asset": "btc", "tenor_min": 15}
-{"raw": {"balance": 930, "balance_breakdown": [{"balance": "9.3003", "exchange_index": 0}], "balance_dollars": "9.3003", "portfolio_value": 0, "updated_ts": 1781434897}, "ts": 1781434897.541, "kind": "balance", "asset": "btc", "tenor_min": 15}
-{"raw": {"balance": 930, "balance_breakdown": [{"balance": "9.3003", "exchange_index": 0}], "balance_dollars": "9.3003", "portfolio_value": 0, "updated_ts": 1781434958}, "ts": 1781434958.052, "kind": "balance", "asset": "btc", "tenor_min": 15}
-{"raw": {"balance": 930, "balance_breakdown": [{"balance": "9.3003", "exchange_index": 0}], "balance_dollars": "9.3003", "portfolio_value": 0, "updated_ts": 1781435019}, "ts": 1781435019.054, "kind": "balance", "asset": "btc", "tenor_min": 15}
-{"raw": {"balance": 930, "balance_breakdown": [{"balance": "9.3003", "exchange_index": 0}], "balance_dollars": "9.3003", "portfolio_value": 0, "updated_ts": 1781435079}, "ts": 1781435079.42, "kind": "balance", "asset": "btc", "tenor_min": 15}
-{"raw": {"balance": 930, "balance_breakdown": [{"balance": "9.3003", "exchange_index": 0}], "balance_dollars": "9.3003", "portfolio_value": 0, "updated_ts": 1781435139}, "ts": 1781435139.956, "kind": "balance", "asset": "btc", "tenor_min": 15}
-{"raw": {"balance": 930, "balance_breakdown": [{"balance": "9.3003", "exchange_index": 0}], "balance_dollars": "9.3003", "portfolio_value": 0, "updated_ts": 1781435201}, "ts": 1781435201.071, "kind": "balance", "asset": "btc", "tenor_min": 15}
-{"raw": {"balance": 930, "balance_breakdown": [{"balance": "9.3003", "exchange_index": 0}], "balance_dollars": "9.3003", "portfolio_value": 0, "updated_ts": 1781435261}, "ts": 1781435261.338, "kind": "balance", "asset": "btc", "tenor_min": 15}
-{"side": "yes", "price": 0.39, "presigned": false, "lat_ms": 29.7, "ts": 1781435316.075, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
-{"side": "no", "price": 0.6, "presigned": false, "lat_ms": 27.1, "ts": 1781435316.102, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
-{"side": "no", "price": 0.6, "size": 1.0, "resting_s": 0.67, "q_ahead": null, "trader_side": "maker", "fee_bps": "0.000000", "rebate_pred": 0.0, "spread": 0.01, "mid": 0.395, "micro": 0.3998, "ts": 1781435316.77, "kind": "fill", "asset": "btc", "tenor_min": 15}
-{"side": "yes", "price": 0.39, "reason": "toxic", "ts": 1781435316.996, "kind": "cancel_fail", "asset": "btc", "tenor_min": 15}
-{"n": 1, "lat_ms": 27.6, "ok": false, "ts": 1781435316.996, "kind": "cancel_batch", "asset": "btc", "tenor_min": 15}
-{"side": "yes", "price": 0.39, "size": 1.0, "resting_s": null, "q_ahead": null, "trader_side": "maker", "fee_bps": "0.000000", "rebate_pred": 0.0, "spread": 0.02, "mid": 0.39, "micro": 0.3804, "ts": 1781435316.996, "kind": "fill", "asset": "btc", "tenor_min": 15}
-{"side": "no", "price": 0.62, "presigned": false, "lat_ms": 29.3, "ts": 1781435317.026, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
-{"n": 1, "lat_ms": 27.0, "ok": true, "ts": 1781435319.108, "kind": "cancel_batch", "asset": "btc", "tenor_min": 15}
-{"side": "no", "price": 0.65, "presigned": false, "lat_ms": 30.2, "ts": 1781435319.14, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
-{"n": 1, "lat_ms": 28.6, "ok": true, "ts": 1781435321.172, "kind": "cancel_batch", "asset": "btc", "tenor_min": 15}
-{"side": "no", "price": 0.67, "presigned": false, "lat_ms": 28.6, "ts": 1781435321.201, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
-{"raw": {"balance": 931, "balance_breakdown": [{"balance": "9.3103", "exchange_index": 0}], "balance_dollars": "9.3103", "portfolio_value": 0, "updated_ts": 1781435321}, "ts": 1781435321.676, "kind": "balance", "asset": "btc", "tenor_min": 15}
-{"n": 1, "lat_ms": 27.9, "ok": true, "ts": 1781435323.248, "kind": "cancel_batch", "asset": "btc", "tenor_min": 15}
-{"side": "no", "price": 0.68, "presigned": false, "lat_ms": 29.4, "ts": 1781435323.281, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
-{"side": "no", "price": 0.68, "size": 1.0, "resting_s": 1.4, "q_ahead": null, "trader_side": "maker", "fee_bps": "0.000000", "rebate_pred": 0.0, "spread": 0.01, "mid": 0.315, "micro": 0.3194, "ts": 1781435324.677, "kind": "fill", "asset": "btc", "tenor_min": 15}
-{"side": "yes", "price": 0.34, "presigned": false, "lat_ms": 29.5, "ts": 1781435337.026, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
-{"n": 1, "lat_ms": 46.0, "ok": true, "ts": 1781435339.151, "kind": "cancel_batch", "asset": "btc", "tenor_min": 15}
-{"side": "yes", "price": 0.35, "presigned": false, "lat_ms": 29.7, "ts": 1781435339.181, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
-{"n": 1, "lat_ms": 29.6, "ok": true, "ts": 1781435342.238, "kind": "cancel_batch", "asset": "btc", "tenor_min": 15}
-{"side": "yes", "price": 0.36, "presigned": false, "lat_ms": 29.6, "ts": 1781435342.268, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
-{"side": "yes", "price": 0.36, "size": 1.0, "resting_s": 3.88, "q_ahead": null, "trader_side": "maker", "fee_bps": "0.000000", "rebate_pred": 0.0, "spread": 0.01, "mid": 0.365, "micro": 0.3612, "ts": 1781435346.152, "kind": "fill", "asset": "btc", "tenor_min": 15}
-{"side": "yes", "price": 0.36, "presigned": false, "lat_ms": 29.6, "ts": 1781435346.183, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
-{"side": "no", "price": 0.63, "presigned": false, "lat_ms": 27.8, "ts": 1781435346.211, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
-{"side": "yes", "price": 0.36, "size": 1.0, "resting_s": 3.2, "q_ahead": null, "trader_side": "maker", "fee_bps": "0.000000", "rebate_pred": 0.0, "spread": 0.01, "mid": 0.365, "micro": 0.3634, "ts": 1781435349.383, "kind": "fill", "asset": "btc", "tenor_min": 15}
-{"side": "no", "price": 0.63, "size": 1.0, "resting_s": 4.09, "q_ahead": null, "trader_side": "maker", "fee_bps": "0.000000", "rebate_pred": 0.0, "spread": 0.01, "mid": 0.365, "micro": 0.3656, "ts": 1781435350.302, "kind": "fill", "asset": "btc", "tenor_min": 15}
-{"raw": {"balance": 928, "balance_breakdown": [{"balance": "9.2803", "exchange_index": 0}], "balance_dollars": "9.2803", "portfolio_value": 0, "updated_ts": 1781435382}, "ts": 1781435382.319, "kind": "balance", "asset": "btc", "tenor_min": 15}
-{"raw": {"balance": 928, "balance_breakdown": [{"balance": "9.2803", "exchange_index": 0}], "balance_dollars": "9.2803", "portfolio_value": 0, "updated_ts": 1781435443}, "ts": 1781435443.296, "kind": "balance", "asset": "btc", "tenor_min": 15}
-{"raw": {"balance": 928, "balance_breakdown": [{"balance": "9.2803", "exchange_index": 0}], "balance_dollars": "9.2803", "portfolio_value": 0, "updated_ts": 1781435504}, "ts": 1781435504.313, "kind": "balance", "asset": "btc", "tenor_min": 15}
-{"raw": {"balance": 928, "balance_breakdown": [{"balance": "9.2803", "exchange_index": 0}], "balance_dollars": "9.2803", "portfolio_value": 0, "updated_ts": 1781435565}, "ts": 1781435565.085, "kind": "balance", "asset": "btc", "tenor_min": 15}
-{"raw": {"balance": 928, "balance_breakdown": [{"balance": "9.2803", "exchange_index": 0}], "balance_dollars": "9.2803", "portfolio_value": 0, "updated_ts": 1781435625}, "ts": 1781435625.41, "kind": "balance", "asset": "btc", "tenor_min": 15}
-{"raw": {"balance": 928, "balance_breakdown": [{"balance": "9.2803", "exchange_index": 0}], "balance_dollars": "9.2803", "portfolio_value": 0, "updated_ts": 1781435685}, "ts": 1781435685.515, "kind": "balance", "asset": "btc", "tenor_min": 15}
-{"ws": 1781434800, "realized": 0.0, "mark": -0.02, "net_delta": 0.0, "placements": 11, "fills": 6, "rejects": 0, "cancels": 6, "strays": 0, "fill_rate": 0.545, "ts": 1781435700.106, "kind": "window", "asset": "btc", "tenor_min": 15}
-{"raw": {"balance": 928, "balance_breakdown": [{"balance": "9.2803", "exchange_index": 0}], "balance_dollars": "9.2803", "portfolio_value": 0, "updated_ts": 1781435746}, "ts": 1781435746.207, "kind": "balance", "asset": "btc", "tenor_min": 15}
-{"raw": {"balance": 928, "balance_breakdown": [{"balance": "9.2803", "exchange_index": 0}], "balance_dollars": "9.2803", "portfolio_value": 0, "updated_ts": 1781435806}, "ts": 1781435806.573, "kind": "balance", "asset": "btc", "tenor_min": 15}
-{"raw": {"balance": 928, "balance_breakdown": [{"balance": "9.2803", "exchange_index": 0}], "balance_dollars": "9.2803", "portfolio_value": 0, "updated_ts": 1781435866}, "ts": 1781435866.763, "kind": "balance", "asset": "btc", "tenor_min": 15}
-{"raw": {"balance": 928, "balance_breakdown": [{"balance": "9.2803", "exchange_index": 0}], "balance_dollars": "9.2803", "portfolio_value": 0, "updated_ts": 1781435926}, "ts": 1781435926.775, "kind": "balance", "asset": "btc", "tenor_min": 15}
-{"raw": {"balance": 928, "balance_breakdown": [{"balance": "9.2803", "exchange_index": 0}], "balance_dollars": "9.2803", "portfolio_value": 0, "updated_ts": 1781435987}, "ts": 1781435987.377, "kind": "balance", "asset": "btc", "tenor_min": 15}
-{"side": "yes", "price": 0.18, "presigned": false, "lat_ms": 27.7, "ts": 1781436046.787, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
-{"side": "no", "price": 0.81, "presigned": false, "lat_ms": 28.3, "ts": 1781436046.815, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
-{"raw": {"balance": 928, "balance_breakdown": [{"balance": "9.2803", "exchange_index": 0}], "balance_dollars": "9.2803", "portfolio_value": 0, "updated_ts": 1781436047}, "ts": 1781436047.82, "kind": "balance", "asset": "btc", "tenor_min": 15}
-{"side": "no", "price": 0.81, "size": 1.0, "resting_s": 2.65, "q_ahead": null, "trader_side": "maker", "fee_bps": "0.000000", "rebate_pred": 0.0, "spread": 0.01, "mid": 0.185, "micro": 0.1868, "ts": 1781436049.462, "kind": "fill", "asset": "btc", "tenor_min": 15}
-{"n": 1, "lat_ms": 29.0, "ok": true, "ts": 1781436052.018, "kind": "cancel_batch", "asset": "btc", "tenor_min": 15}
-{"side": "yes", "price": 0.19, "presigned": false, "lat_ms": 28.8, "ts": 1781436052.084, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
-{"side": "yes", "price": 0.19, "size": 1.0, "resting_s": 0.38, "q_ahead": null, "trader_side": "maker", "fee_bps": "0.000000", "rebate_pred": 0.0, "spread": 0.01, "mid": 0.195, "micro": 0.19, "ts": 1781436052.459, "kind": "fill", "asset": "btc", "tenor_min": 15}
-{"side": "yes", "price": 0.18, "presigned": false, "lat_ms": 31.5, "ts": 1781436052.492, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
-{"side": "no", "price": 0.81, "presigned": false, "lat_ms": 28.2, "ts": 1781436052.521, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
-{"side": "no", "price": 0.81, "size": 0.9, "resting_s": 1.17, "q_ahead": null, "trader_side": "maker", "fee_bps": "0.000000", "rebate_pred": 0.0, "spread": 0.01, "mid": 0.185, "micro": 0.19, "ts": 1781436053.696, "kind": "fill", "asset": "btc", "tenor_min": 15}
-{"side": "yes", "price": 0.18, "reason": "toxic", "ts": 1781436053.79, "kind": "cancel_fail", "asset": "btc", "tenor_min": 15}
-{"n": 1, "lat_ms": 28.1, "ok": false, "ts": 1781436053.79, "kind": "cancel_batch", "asset": "btc", "tenor_min": 15}
-{"side": "yes", "price": 0.18, "size": 1.0, "resting_s": null, "q_ahead": null, "trader_side": "maker", "fee_bps": "0.000000", "rebate_pred": 0.0, "spread": 0.02, "mid": 0.18, "micro": 0.1744, "ts": 1781436053.791, "kind": "fill", "asset": "btc", "tenor_min": 15}
-{"n": 1, "lat_ms": 28.1, "ok": true, "ts": 1781436054.555, "kind": "cancel_batch", "asset": "btc", "tenor_min": 15}
-{"raw": {"balance": 927, "balance_breakdown": [{"balance": "9.2713", "exchange_index": 0}], "balance_dollars": "9.2713", "portfolio_value": 0, "updated_ts": 1781436108}, "ts": 1781436108.166, "kind": "balance", "asset": "btc", "tenor_min": 15}
-{"side": "no", "price": 0.8, "presigned": false, "lat_ms": 28.2, "ts": 1781436134.366, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
-{"side": "no", "price": 0.8, "size": 1.0, "resting_s": 1.61, "q_ahead": null, "trader_side": "maker", "fee_bps": "0.000000", "rebate_pred": 0.0, "spread": 0.01, "mid": 0.195, "micro": 0.1974, "ts": 1781436135.973, "kind": "fill", "asset": "btc", "tenor_min": 15}
-{"side": "yes", "price": 0.19, "presigned": false, "lat_ms": 29.0, "ts": 1781436136.004, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
-{"side": "yes", "price": 0.2, "presigned": false, "lat_ms": 28.8, "ts": 1781436136.032, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
-{"side": "yes", "price": 0.2, "size": 0.49, "resting_s": null, "q_ahead": null, "trader_side": "taker", "fee_bps": "0.005500", "rebate_pred": 0.0, "spread": 0.01, "mid": 0.195, "micro": 0.1978, "ts": 1781436136.036, "kind": "fill", "asset": "btc", "tenor_min": 15}
-{"side": "yes", "price": 0.2, "size": 0.51, "resting_s": null, "q_ahead": null, "trader_side": "taker", "fee_bps": "0.005800", "rebate_pred": 0.0, "spread": 0.01, "mid": 0.195, "micro": 0.1978, "ts": 1781436136.038, "kind": "fill", "asset": "btc", "tenor_min": 15}
-{"side": "no", "price": 0.8, "presigned": false, "lat_ms": 32.4, "ts": 1781436136.071, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
-{"side": "yes", "price": 0.19, "size": 1.0, "resting_s": 2.55, "q_ahead": null, "trader_side": "maker", "fee_bps": "0.000000", "rebate_pred": 0.0, "spread": 0.01, "mid": 0.195, "micro": 0.19, "ts": 1781436138.558, "kind": "fill", "asset": "btc", "tenor_min": 15}
-{"side": "no", "price": 0.82, "presigned": false, "lat_ms": 29.9, "ts": 1781436138.589, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
-{"n": 1, "lat_ms": 26.8, "ok": true, "ts": 1781436138.616, "kind": "cancel_batch", "asset": "btc", "tenor_min": 15}
-{"side": "no", "price": 0.83, "presigned": false, "lat_ms": 30.3, "ts": 1781436138.647, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
-{"n": 1, "ts": 1781436143.47, "kind": "stray_cancelled", "asset": "btc", "tenor_min": 15}
-{"n": 1, "lat_ms": 28.8, "ok": true, "ts": 1781436144.093, "kind": "cancel_batch", "asset": "btc", "tenor_min": 15}
-{"side": "no", "price": 0.83, "presigned": false, "lat_ms": 47.4, "ts": 1781436144.768, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
-{"n": 1, "lat_ms": 26.9, "ok": true, "ts": 1781436146.868, "kind": "cancel_batch", "asset": "btc", "tenor_min": 15}
-{"side": "no", "price": 0.83, "presigned": false, "lat_ms": 28.7, "ts": 1781436146.913, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
-{"n": 1, "lat_ms": 48.2, "ok": true, "ts": 1781436148.97, "kind": "cancel_batch", "asset": "btc", "tenor_min": 15}
-{"raw": {"balance": 907, "balance_breakdown": [{"balance": "9.0700", "exchange_index": 0}], "balance_dollars": "9.0700", "portfolio_value": 16, "updated_ts": 1781436168}, "ts": 1781436168.657, "kind": "balance", "asset": "btc", "tenor_min": 15}
-{"side": "no", "price": 0.83, "presigned": false, "lat_ms": 29.2, "ts": 1781436184.325, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
-{"side": "no", "price": 0.83, "size": 1.0, "resting_s": 0.25, "q_ahead": null, "trader_side": "maker", "fee_bps": "0.000000", "rebate_pred": 0.0, "spread": 0.01, "mid": 0.165, "micro": 0.17, "ts": 1781436184.577, "kind": "fill", "asset": "btc", "tenor_min": 15}
-{"side": "no", "price": 0.82, "presigned": false, "lat_ms": 27.4, "ts": 1781436184.605, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
-{"side": "no", "price": 0.82, "size": 1.0, "resting_s": 0.06, "q_ahead": null, "trader_side": "maker", "fee_bps": "0.000000", "rebate_pred": 0.0, "spread": 0.01, "mid": 0.175, "micro": 0.18, "ts": 1781436184.67, "kind": "fill", "asset": "btc", "tenor_min": 15}
-{"side": "yes", "price": 0.18, "presigned": false, "lat_ms": 29.9, "ts": 1781436184.702, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
-{"side": "yes", "price": 0.19, "presigned": false, "lat_ms": 48.1, "ts": 1781436184.75, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
-{"side": "yes", "price": 0.19, "size": 1.0, "resting_s": null, "q_ahead": null, "trader_side": "taker", "fee_bps": "0.010800", "rebate_pred": 0.0, "spread": 0.01, "mid": 0.185, "micro": 0.1875, "ts": 1781436184.756, "kind": "fill", "asset": "btc", "tenor_min": 15}
-{"side": "yes", "price": 0.18, "size": 1.0, "resting_s": 2.25, "q_ahead": null, "trader_side": "maker", "fee_bps": "0.000000", "rebate_pred": 0.0, "spread": 0.01, "mid": 0.185, "micro": 0.18, "ts": 1781436186.956, "kind": "fill", "asset": "btc", "tenor_min": 15}
-{"side": "no", "price": 0.83, "presigned": false, "lat_ms": 29.0, "ts": 1781436186.986, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
-{"side": "no", "price": 0.83, "size": 1.0, "resting_s": null, "q_ahead": null, "trader_side": "taker", "fee_bps": "0.009900", "rebate_pred": 0.0, "spread": 0.01, "mid": 0.175, "micro": 0.1771, "ts": 1781436187.006, "kind": "fill", "asset": "btc", "tenor_min": 15}
-{"raw": {"balance": 919, "balance_breakdown": [{"balance": "9.1993", "exchange_index": 0}], "balance_dollars": "9.1993", "portfolio_value": 2, "updated_ts": 1781436229}, "ts": 1781436229.443, "kind": "balance", "asset": "btc", "tenor_min": 15}
-{"raw": {"balance": 919, "balance_breakdown": [{"balance": "9.1993", "exchange_index": 0}], "balance_dollars": "9.1993", "portfolio_value": 3, "updated_ts": 1781436289}, "ts": 1781436289.477, "kind": "balance", "asset": "btc", "tenor_min": 15}
-{"raw": {"balance": 919, "balance_breakdown": [{"balance": "9.1993", "exchange_index": 0}], "balance_dollars": "9.1993", "portfolio_value": 3, "updated_ts": 1781436349}, "ts": 1781436349.838, "kind": "balance", "asset": "btc", "tenor_min": 15}
-{"raw": {"balance": 919, "balance_breakdown": [{"balance": "9.1993", "exchange_index": 0}], "balance_dollars": "9.1993", "portfolio_value": 1, "updated_ts": 1781436410}, "ts": 1781436410.375, "kind": "balance", "asset": "btc", "tenor_min": 15}
-{"raw": {"balance": 919, "balance_breakdown": [{"balance": "9.1993", "exchange_index": 0}], "balance_dollars": "9.1993", "portfolio_value": 5, "updated_ts": 1781436470}, "ts": 1781436470.361, "kind": "balance", "asset": "btc", "tenor_min": 15}
-{"raw": {"balance": 919, "balance_breakdown": [{"balance": "9.1993", "exchange_index": 0}], "balance_dollars": "9.1993", "portfolio_value": 8, "updated_ts": 1781436530}, "ts": 1781436530.392, "kind": "balance", "asset": "btc", "tenor_min": 15}
-{"raw": {"balance": 919, "balance_breakdown": [{"balance": "9.1993", "exchange_index": 0}], "balance_dollars": "9.1993", "portfolio_value": 9, "updated_ts": 1781436591}, "ts": 1781436591.171, "kind": "balance", "asset": "btc", "tenor_min": 15}
-{"ws": 1781435700, "realized": -0.02, "mark": 0.0509, "net_delta": 0.1, "placements": 18, "fills": 13, "rejects": 0, "cancels": 7, "strays": 1, "fill_rate": 0.722, "ts": 1781436600.092, "kind": "window", "asset": "btc", "tenor_min": 15}
-{"raw": {"balance": 929, "balance_breakdown": [{"balance": "9.2993", "exchange_index": 0}], "balance_dollars": "9.2993", "portfolio_value": 0, "updated_ts": 1781436651}, "ts": 1781436651.863, "kind": "balance", "asset": "btc", "tenor_min": 15}
-{"raw": {"balance": 929, "balance_breakdown": [{"balance": "9.2993", "exchange_index": 0}], "balance_dollars": "9.2993", "portfolio_value": 0, "updated_ts": 1781436712}, "ts": 1781436712.48, "kind": "balance", "asset": "btc", "tenor_min": 15}
-{"raw": {"balance": 929, "balance_breakdown": [{"balance": "9.2993", "exchange_index": 0}], "balance_dollars": "9.2993", "portfolio_value": 0, "updated_ts": 1781436772}, "ts": 1781436772.915, "kind": "balance", "asset": "btc", "tenor_min": 15}
-{"raw": {"balance": 929, "balance_breakdown": [{"balance": "9.2993", "exchange_index": 0}], "balance_dollars": "9.2993", "portfolio_value": 0, "updated_ts": 1781436833}, "ts": 1781436833.665, "kind": "balance", "asset": "btc", "tenor_min": 15}
-{"raw": {"balance": 929, "balance_breakdown": [{"balance": "9.2993", "exchange_index": 0}], "balance_dollars": "9.2993", "portfolio_value": 0, "updated_ts": 1781436893}, "ts": 1781436893.824, "kind": "balance", "asset": "btc", "tenor_min": 15}
-{"raw": {"balance": 929, "balance_breakdown": [{"balance": "9.2993", "exchange_index": 0}], "balance_dollars": "9.2993", "portfolio_value": 0, "updated_ts": 1781436954}, "ts": 1781436954.218, "kind": "balance", "asset": "btc", "tenor_min": 15}
-{"raw": {"balance": 929, "balance_breakdown": [{"balance": "9.2993", "exchange_index": 0}], "balance_dollars": "9.2993", "portfolio_value": 0, "updated_ts": 1781437014}, "ts": 1781437014.561, "kind": "balance", "asset": "btc", "tenor_min": 15}
-{"raw": {"balance": 929, "balance_breakdown": [{"balance": "9.2993", "exchange_index": 0}], "balance_dollars": "9.2993", "portfolio_value": 0, "updated_ts": 1781437075}, "ts": 1781437075.244, "kind": "balance", "asset": "btc", "tenor_min": 15}
-{"raw": {"balance": 929, "balance_breakdown": [{"balance": "9.2993", "exchange_index": 0}], "balance_dollars": "9.2993", "portfolio_value": 0, "updated_ts": 1781437135}, "ts": 1781437135.522, "kind": "balance", "asset": "btc", "tenor_min": 15}
-{"raw": {"balance": 929, "balance_breakdown": [{"balance": "9.2993", "exchange_index": 0}], "balance_dollars": "9.2993", "portfolio_value": 0, "updated_ts": 1781437195}, "ts": 1781437195.909, "kind": "balance", "asset": "btc", "tenor_min": 15}
+{"raw": {"balance": 929, "balance_breakdown": [{"balance": "9.2993", "exchange_index": 0}], "balance_dollars": "9.2993", "portfolio_value": 0, "updated_ts": 1781437264}, "ts": 1781437264.913, "kind": "balance", "asset": "btc", "tenor_min": 15}
+{"raw": {"balance": 929, "balance_breakdown": [{"balance": "9.2993", "exchange_index": 0}], "balance_dollars": "9.2993", "portfolio_value": 0, "updated_ts": 1781437324}, "ts": 1781437325.013, "kind": "balance", "asset": "btc", "tenor_min": 15}
+{"raw": {"balance": 929, "balance_breakdown": [{"balance": "9.2993", "exchange_index": 0}], "balance_dollars": "9.2993", "portfolio_value": 0, "updated_ts": 1781437385}, "ts": 1781437385.272, "kind": "balance", "asset": "btc", "tenor_min": 15}
+{"raw": {"balance": 929, "balance_breakdown": [{"balance": "9.2993", "exchange_index": 0}], "balance_dollars": "9.2993", "portfolio_value": 0, "updated_ts": 1781437445}, "ts": 1781437445.367, "kind": "balance", "asset": "btc", "tenor_min": 15}
+{"ws": 1781436600, "realized": 0.0, "mark": 0.0, "net_delta": 0.0, "placements": 0, "fills": 0, "rejects": 0, "cancels": 0, "strays": 0, "fill_rate": null, "ts": 1781437500.156, "kind": "window", "asset": "btc", "tenor_min": 15}
+{"raw": {"balance": 929, "balance_breakdown": [{"balance": "9.2993", "exchange_index": 0}], "balance_dollars": "9.2993", "portfolio_value": 0, "updated_ts": 1781437514}, "ts": 1781437514.852, "kind": "balance", "asset": "btc", "tenor_min": 15}
+{"raw": {"balance": 929, "balance_breakdown": [{"balance": "9.2993", "exchange_index": 0}], "balance_dollars": "9.2993", "portfolio_value": 0, "updated_ts": 1781437575}, "ts": 1781437575.803, "kind": "balance", "asset": "btc", "tenor_min": 15}
+{"raw": {"balance": 929, "balance_breakdown": [{"balance": "9.2993", "exchange_index": 0}], "balance_dollars": "9.2993", "portfolio_value": 0, "updated_ts": 1781437636}, "ts": 1781437636.707, "kind": "balance", "asset": "btc", "tenor_min": 15}
+{"raw": {"balance": 929, "balance_breakdown": [{"balance": "9.2993", "exchange_index": 0}], "balance_dollars": "9.2993", "portfolio_value": 0, "updated_ts": 1781437697}, "ts": 1781437697.578, "kind": "balance", "asset": "btc", "tenor_min": 15}
+{"raw": {"balance": 929, "balance_breakdown": [{"balance": "9.2993", "exchange_index": 0}], "balance_dollars": "9.2993", "portfolio_value": 0, "updated_ts": 1781437758}, "ts": 1781437758.087, "kind": "balance", "asset": "btc", "tenor_min": 15}
+{"raw": {"balance": 929, "balance_breakdown": [{"balance": "9.2993", "exchange_index": 0}], "balance_dollars": "9.2993", "portfolio_value": 0, "updated_ts": 1781437818}, "ts": 1781437818.577, "kind": "balance", "asset": "btc", "tenor_min": 15}
+{"raw": {"balance": 929, "balance_breakdown": [{"balance": "9.2993", "exchange_index": 0}], "balance_dollars": "9.2993", "portfolio_value": 0, "updated_ts": 1781437878}, "ts": 1781437878.844, "kind": "balance", "asset": "btc", "tenor_min": 15}
+{"raw": {"balance": 929, "balance_breakdown": [{"balance": "9.2993", "exchange_index": 0}], "balance_dollars": "9.2993", "portfolio_value": 0, "updated_ts": 1781437939}, "ts": 1781437939.592, "kind": "balance", "asset": "btc", "tenor_min": 15}
+{"raw": {"balance": 929, "balance_breakdown": [{"balance": "9.2993", "exchange_index": 0}], "balance_dollars": "9.2993", "portfolio_value": 0, "updated_ts": 1781438000}, "ts": 1781438000.192, "kind": "balance", "asset": "btc", "tenor_min": 15}
+{"raw": {"balance": 929, "balance_breakdown": [{"balance": "9.2993", "exchange_index": 0}], "balance_dollars": "9.2993", "portfolio_value": 0, "updated_ts": 1781438060}, "ts": 1781438060.229, "kind": "balance", "asset": "btc", "tenor_min": 15}
+{"side": "yes", "price": 0.84, "presigned": false, "lat_ms": 48.7, "ts": 1781438067.421, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
+{"side": "no", "price": 0.15, "presigned": false, "lat_ms": 48.1, "ts": 1781438067.469, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
+{"side": "yes", "price": 0.84, "size": 1.0, "resting_s": 0.89, "q_ahead": null, "trader_side": "maker", "fee_bps": "0.000000", "rebate_pred": 0.0, "spread": 0.01, "mid": 0.845, "micro": 0.84, "ts": 1781438068.313, "kind": "fill", "asset": "btc", "tenor_min": 15}
+{"n": 1, "lat_ms": 47.9, "ok": true, "ts": 1781438069.518, "kind": "cancel_batch", "asset": "btc", "tenor_min": 15}
+{"side": "no", "price": 0.16, "presigned": false, "lat_ms": 47.0, "ts": 1781438069.566, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
+{"side": "no", "price": 0.16, "size": 1.0, "resting_s": 0.61, "q_ahead": null, "trader_side": "maker", "fee_bps": "0.000000", "rebate_pred": 0.0, "spread": 0.01, "mid": 0.835, "micro": 0.8397, "ts": 1781438070.173, "kind": "fill", "asset": "btc", "tenor_min": 15}
+{"side": "yes", "price": 0.83, "presigned": false, "lat_ms": 50.4, "ts": 1781438070.225, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
+{"side": "no", "price": 0.16, "presigned": false, "lat_ms": 47.4, "ts": 1781438070.272, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
+{"side": "no", "price": 0.16, "size": 1.0, "resting_s": 0.82, "q_ahead": null, "trader_side": "maker", "fee_bps": "0.000000", "rebate_pred": 0.0, "spread": 0.01, "mid": 0.835, "micro": 0.8396, "ts": 1781438071.092, "kind": "fill", "asset": "btc", "tenor_min": 15}
+{"side": "yes", "price": 0.83, "size": 1.0, "resting_s": 1.51, "q_ahead": null, "trader_side": "maker", "fee_bps": "0.000000", "rebate_pred": 0.0, "spread": 0.02, "mid": 0.84, "micro": 0.8305, "ts": 1781438071.732, "kind": "fill", "asset": "btc", "tenor_min": 15}
+{"side": "yes", "price": 0.83, "presigned": false, "lat_ms": 48.5, "ts": 1781438071.782, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
+{"side": "no", "price": 0.16, "presigned": false, "lat_ms": 67.1, "ts": 1781438071.849, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
+{"side": "yes", "price": 0.83, "size": 1.0, "resting_s": 0.21, "q_ahead": null, "trader_side": "maker", "fee_bps": "0.000000", "rebate_pred": 0.0, "spread": 0.01, "mid": 0.835, "micro": 0.8341, "ts": 1781438071.995, "kind": "fill", "asset": "btc", "tenor_min": 15}
+{"n": 1, "lat_ms": 48.1, "ok": true, "ts": 1781438073.9, "kind": "cancel_batch", "asset": "btc", "tenor_min": 15}
+{"raw": {"balance": 847, "balance_breakdown": [{"balance": "8.4793", "exchange_index": 0}], "balance_dollars": "8.4793", "portfolio_value": 19, "updated_ts": 1781438120}, "ts": 1781438120.253, "kind": "balance", "asset": "btc", "tenor_min": 15}
+{"raw": {"balance": 847, "balance_breakdown": [{"balance": "8.4793", "exchange_index": 0}], "balance_dollars": "8.4793", "portfolio_value": 17, "updated_ts": 1781438180}, "ts": 1781438180.473, "kind": "balance", "asset": "btc", "tenor_min": 15}
+{"raw": {"balance": 847, "balance_breakdown": [{"balance": "8.4793", "exchange_index": 0}], "balance_dollars": "8.4793", "portfolio_value": 4, "updated_ts": 1781438240}, "ts": 1781438240.837, "kind": "balance", "asset": "btc", "tenor_min": 15}
+{"raw": {"balance": 847, "balance_breakdown": [{"balance": "8.4793", "exchange_index": 0}], "balance_dollars": "8.4793", "portfolio_value": 0, "updated_ts": 1781438301}, "ts": 1781438301.687, "kind": "balance", "asset": "btc", "tenor_min": 15}
+{"side": "no", "price": 0.998, "presigned": false, "lat_ms": 47.3, "ts": 1781438355.055, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
+{"side": "no", "price": 0.998, "size": 1.0, "resting_s": null, "q_ahead": null, "trader_side": "taker", "fee_bps": "0.000200", "rebate_pred": 0.0, "spread": 0.001, "mid": 0.0025, "micro": 0.0022, "ts": 1781438355.063, "kind": "fill", "asset": "btc", "tenor_min": 15}
+{"raw": {"balance": 848, "balance_breakdown": [{"balance": "8.4811", "exchange_index": 0}], "balance_dollars": "8.4811", "portfolio_value": 0, "updated_ts": 1781438361}, "ts": 1781438361.996, "kind": "balance", "asset": "btc", "tenor_min": 15}
+{"ws": 1781437500, "realized": 0.0, "mark": -0.818, "net_delta": 0.0, "placements": 8, "fills": 6, "rejects": 0, "cancels": 2, "strays": 0, "fill_rate": 0.75, "ts": 1781438400.146, "kind": "window", "asset": "btc", "tenor_min": 15}
+{"raw": {"balance": 848, "balance_breakdown": [{"balance": "8.4811", "exchange_index": 0}], "balance_dollars": "8.4811", "portfolio_value": 0, "updated_ts": 1781438422}, "ts": 1781438422.171, "kind": "balance", "asset": "btc", "tenor_min": 15}
+{"raw": {"balance": 848, "balance_breakdown": [{"balance": "8.4811", "exchange_index": 0}], "balance_dollars": "8.4811", "portfolio_value": 0, "updated_ts": 1781438482}, "ts": 1781438482.521, "kind": "balance", "asset": "btc", "tenor_min": 15}
+{"raw": {"balance": 848, "balance_breakdown": [{"balance": "8.4811", "exchange_index": 0}], "balance_dollars": "8.4811", "portfolio_value": 0, "updated_ts": 1781438543}, "ts": 1781438543.377, "kind": "balance", "asset": "btc", "tenor_min": 15}
+{"raw": {"balance": 848, "balance_breakdown": [{"balance": "8.4811", "exchange_index": 0}], "balance_dollars": "8.4811", "portfolio_value": 0, "updated_ts": 1781438603}, "ts": 1781438603.717, "kind": "balance", "asset": "btc", "tenor_min": 15}
+{"raw": {"balance": 848, "balance_breakdown": [{"balance": "8.4811", "exchange_index": 0}], "balance_dollars": "8.4811", "portfolio_value": 0, "updated_ts": 1781438664}, "ts": 1781438664.676, "kind": "balance", "asset": "btc", "tenor_min": 15}
+{"raw": {"balance": 848, "balance_breakdown": [{"balance": "8.4811", "exchange_index": 0}], "balance_dollars": "8.4811", "portfolio_value": 0, "updated_ts": 1781438725}, "ts": 1781438725.45, "kind": "balance", "asset": "btc", "tenor_min": 15}
+{"side": "yes", "price": 0.51, "presigned": false, "lat_ms": 48.9, "ts": 1781438752.009, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
+{"side": "no", "price": 0.48, "presigned": false, "lat_ms": 49.0, "ts": 1781438752.059, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
+{"side": "yes", "price": 0.51, "reason": "toxic", "ts": 1781438754.2, "kind": "cancel_fail", "asset": "btc", "tenor_min": 15}
+{"n": 1, "lat_ms": 48.8, "ok": false, "ts": 1781438754.2, "kind": "cancel_batch", "asset": "btc", "tenor_min": 15}
+{"side": "yes", "price": 0.51, "size": 1.0, "resting_s": null, "q_ahead": null, "trader_side": "maker", "fee_bps": "0.000000", "rebate_pred": 0.0, "spread": 0.03, "mid": 0.505, "micro": 0.4937, "ts": 1781438754.2, "kind": "fill", "asset": "btc", "tenor_min": 15}
+{"n": 1, "lat_ms": 48.7, "ok": true, "ts": 1781438754.25, "kind": "cancel_batch", "asset": "btc", "tenor_min": 15}
+{"raw": {"balance": 797, "balance_breakdown": [{"balance": "7.9711", "exchange_index": 0}], "balance_dollars": "7.9711", "portfolio_value": 36, "updated_ts": 1781438785}, "ts": 1781438785.754, "kind": "balance", "asset": "btc", "tenor_min": 15}
+{"raw": {"balance": 797, "balance_breakdown": [{"balance": "7.9711", "exchange_index": 0}], "balance_dollars": "7.9711", "portfolio_value": 22, "updated_ts": 1781438845}, "ts": 1781438845.96, "kind": "balance", "asset": "btc", "tenor_min": 15}
+{"raw": {"balance": 797, "balance_breakdown": [{"balance": "7.9711", "exchange_index": 0}], "balance_dollars": "7.9711", "portfolio_value": 13, "updated_ts": 1781438906}, "ts": 1781438906.505, "kind": "balance", "asset": "btc", "tenor_min": 15}
+{"raw": {"balance": 797, "balance_breakdown": [{"balance": "7.9711", "exchange_index": 0}], "balance_dollars": "7.9711", "portfolio_value": 4, "updated_ts": 1781438966}, "ts": 1781438966.52, "kind": "balance", "asset": "btc", "tenor_min": 15}
+{"raw": {"balance": 797, "balance_breakdown": [{"balance": "7.9711", "exchange_index": 0}], "balance_dollars": "7.9711", "portfolio_value": 2, "updated_ts": 1781439026}, "ts": 1781439026.857, "kind": "balance", "asset": "btc", "tenor_min": 15}
+{"raw": {"balance": 797, "balance_breakdown": [{"balance": "7.9711", "exchange_index": 0}], "balance_dollars": "7.9711", "portfolio_value": 1, "updated_ts": 1781439086}, "ts": 1781439086.972, "kind": "balance", "asset": "btc", "tenor_min": 15}
+{"raw": {"balance": 797, "balance_breakdown": [{"balance": "7.9711", "exchange_index": 0}], "balance_dollars": "7.9711", "portfolio_value": 1, "updated_ts": 1781439147}, "ts": 1781439147.452, "kind": "balance", "asset": "btc", "tenor_min": 15}
+{"raw": {"balance": 797, "balance_breakdown": [{"balance": "7.9711", "exchange_index": 0}], "balance_dollars": "7.9711", "portfolio_value": 1, "updated_ts": 1781439207}, "ts": 1781439207.731, "kind": "balance", "asset": "btc", "tenor_min": 15}
+{"side": "no", "price": 0.48, "presigned": false, "lat_ms": 47.1, "ts": 1781439242.001, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
+{"side": "no", "price": 0.49, "presigned": false, "lat_ms": 49.9, "ts": 1781439242.051, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
+{"n": 1, "ts": 1781439242.536, "kind": "stray_cancelled", "asset": "btc", "tenor_min": 15}
+{"n": 1, "lat_ms": 49.4, "ok": true, "ts": 1781439244.077, "kind": "cancel_batch", "asset": "btc", "tenor_min": 15}
+{"side": "no", "price": 0.48, "presigned": false, "lat_ms": 49.1, "ts": 1781439244.253, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
+{"n": 1, "lat_ms": 48.7, "ok": true, "ts": 1781439246.403, "kind": "cancel_batch", "asset": "btc", "tenor_min": 15}
+{"side": "no", "price": 0.999, "presigned": false, "lat_ms": 47.5, "ts": 1781439255.129, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
+{"side": "no", "price": 0.999, "presigned": false, "lat_ms": 49.5, "ts": 1781439255.998, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
+{"side": "no", "price": 0.999, "presigned": false, "lat_ms": 48.6, "ts": 1781439256.943, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
+{"side": "no", "price": 0.999, "presigned": false, "lat_ms": 49.3, "ts": 1781439258.029, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
+{"side": "no", "price": 0.999, "presigned": false, "lat_ms": 49.3, "ts": 1781439258.961, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
+{"n": 5, "ts": 1781439259.788, "kind": "stray_cancelled", "asset": "btc", "tenor_min": 15}
+{"side": "no", "price": 0.999, "presigned": false, "lat_ms": 47.6, "ts": 1781439259.932, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
+{"side": "no", "price": 0.999, "presigned": false, "lat_ms": 93.8, "ts": 1781439261.06, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
+{"side": "no", "price": 0.999, "presigned": false, "lat_ms": 93.4, "ts": 1781439262.172, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
+{"side": "no", "price": 0.999, "presigned": false, "lat_ms": 55.9, "ts": 1781439263.108, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
+{"side": "no", "price": 0.999, "presigned": false, "lat_ms": 96.3, "ts": 1781439264.046, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
+{"n": 5, "ts": 1781439265.035, "kind": "stray_cancelled", "asset": "btc", "tenor_min": 15}
+{"side": "no", "price": 0.999, "presigned": false, "lat_ms": 49.4, "ts": 1781439265.18, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
+{"side": "no", "price": 0.999, "presigned": false, "lat_ms": 46.0, "ts": 1781439266.124, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
+{"side": "no", "price": 0.999, "presigned": false, "lat_ms": 48.4, "ts": 1781439267.136, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
+{"raw": {"balance": 797, "balance_breakdown": [{"balance": "7.9711", "exchange_index": 0}], "balance_dollars": "7.9711", "portfolio_value": 0, "updated_ts": 1781439267}, "ts": 1781439267.716, "kind": "balance", "asset": "btc", "tenor_min": 15}
+{"side": "no", "price": 0.999, "presigned": false, "lat_ms": 49.2, "ts": 1781439268.091, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
+{"side": "no", "price": 0.999, "presigned": false, "lat_ms": 48.7, "ts": 1781439269.01, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
+{"side": "no", "price": 0.999, "presigned": false, "lat_ms": 92.6, "ts": 1781439269.949, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
+{"n": 6, "ts": 1781439270.88, "kind": "stray_cancelled", "asset": "btc", "tenor_min": 15}
+{"side": "no", "price": 0.999, "presigned": false, "lat_ms": 48.4, "ts": 1781439271.026, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
+{"side": "no", "price": 0.999, "presigned": false, "lat_ms": 47.1, "ts": 1781439271.993, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
+{"side": "no", "price": 0.999, "presigned": false, "lat_ms": 96.3, "ts": 1781439272.916, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
+{"side": "no", "price": 0.999, "presigned": false, "lat_ms": 49.3, "ts": 1781439273.773, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
+{"side": "no", "price": 0.999, "presigned": false, "lat_ms": 48.1, "ts": 1781439274.624, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
+{"side": "no", "price": 0.999, "presigned": false, "lat_ms": 49.6, "ts": 1781439275.646, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
+{"n": 6, "ts": 1781439276.186, "kind": "stray_cancelled", "asset": "btc", "tenor_min": 15}
+{"side": "no", "price": 0.999, "presigned": false, "lat_ms": 50.6, "ts": 1781439276.617, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
+{"side": "no", "price": 0.999, "presigned": false, "lat_ms": 49.7, "ts": 1781439277.557, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
+{"side": "no", "price": 0.999, "presigned": false, "lat_ms": 50.7, "ts": 1781439278.424, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
+{"side": "no", "price": 0.999, "presigned": false, "lat_ms": 48.6, "ts": 1781439279.279, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
+{"side": "no", "price": 0.999, "presigned": false, "lat_ms": 95.3, "ts": 1781439280.369, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
+{"side": "no", "price": 0.999, "presigned": false, "lat_ms": 48.6, "ts": 1781439281.423, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
+{"n": 6, "ts": 1781439281.904, "kind": "stray_cancelled", "asset": "btc", "tenor_min": 15}
+{"side": "no", "price": 0.999, "presigned": false, "lat_ms": 47.8, "ts": 1781439282.427, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
+{"side": "no", "price": 0.999, "presigned": false, "lat_ms": 54.4, "ts": 1781439283.398, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
+{"side": "no", "price": 0.999, "presigned": false, "lat_ms": 93.7, "ts": 1781439284.443, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
+{"side": "no", "price": 0.999, "presigned": false, "lat_ms": 49.6, "ts": 1781439285.426, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
+{"side": "no", "price": 0.999, "presigned": false, "lat_ms": 95.0, "ts": 1781439286.329, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
+{"n": 5, "ts": 1781439287.466, "kind": "stray_cancelled", "asset": "btc", "tenor_min": 15}
+{"side": "no", "price": 0.999, "presigned": false, "lat_ms": 47.3, "ts": 1781439287.607, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
+{"side": "no", "price": 0.999, "presigned": false, "lat_ms": 94.2, "ts": 1781439288.766, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
+{"side": "no", "price": 0.999, "presigned": false, "lat_ms": 50.8, "ts": 1781439289.644, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
+{"side": "no", "price": 0.999, "presigned": false, "lat_ms": 93.9, "ts": 1781439290.549, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
+{"side": "no", "price": 0.999, "presigned": false, "lat_ms": 51.7, "ts": 1781439291.468, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
+{"side": "no", "price": 0.999, "presigned": false, "lat_ms": 93.6, "ts": 1781439292.394, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
+{"n": 6, "ts": 1781439292.881, "kind": "stray_cancelled", "asset": "btc", "tenor_min": 15}
+{"side": "no", "price": 0.999, "presigned": false, "lat_ms": 48.2, "ts": 1781439293.314, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
+{"side": "no", "price": 0.999, "presigned": false, "lat_ms": 49.0, "ts": 1781439294.259, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
+{"side": "no", "price": 0.999, "presigned": false, "lat_ms": 47.0, "ts": 1781439295.125, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
+{"side": "no", "price": 0.999, "presigned": false, "lat_ms": 94.4, "ts": 1781439296.114, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
+{"side": "no", "price": 0.999, "presigned": false, "lat_ms": 94.5, "ts": 1781439297.175, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
+{"n": 5, "ts": 1781439298.059, "kind": "stray_cancelled", "asset": "btc", "tenor_min": 15}
+{"side": "no", "price": 0.999, "presigned": false, "lat_ms": 48.7, "ts": 1781439298.219, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
+{"side": "no", "price": 0.999, "presigned": false, "lat_ms": 50.7, "ts": 1781439299.118, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
+{"side": "no", "price": 0.999, "err": "HTTP 409: market closed", "ts": 1781439300.06, "kind": "place_reject", "asset": "btc", "tenor_min": 15}
+{"ws": 1781438400, "realized": -0.818, "mark": -0.5085, "net_delta": 1.0, "placements": 51, "fills": 1, "rejects": 1, "cancels": 4, "strays": 45, "fill_rate": 0.02, "ts": 1781439300.161, "kind": "window", "asset": "btc", "tenor_min": 15}
+{"raw": {"balance": 797, "balance_breakdown": [{"balance": "7.9711", "exchange_index": 0}], "balance_dollars": "7.9711", "portfolio_value": 0, "updated_ts": 1781439329}, "ts": 1781439329.207, "kind": "balance", "asset": "btc", "tenor_min": 15}
+{"raw": {"balance": 797, "balance_breakdown": [{"balance": "7.9711", "exchange_index": 0}], "balance_dollars": "7.9711", "portfolio_value": 0, "updated_ts": 1781439389}, "ts": 1781439389.386, "kind": "balance", "asset": "btc", "tenor_min": 15}
+{"raw": {"balance": 797, "balance_breakdown": [{"balance": "7.9711", "exchange_index": 0}], "balance_dollars": "7.9711", "portfolio_value": 0, "updated_ts": 1781439450}, "ts": 1781439450.391, "kind": "balance", "asset": "btc", "tenor_min": 15}
+{"raw": {"balance": 797, "balance_breakdown": [{"balance": "7.9711", "exchange_index": 0}], "balance_dollars": "7.9711", "portfolio_value": 0, "updated_ts": 1781439511}, "ts": 1781439511.267, "kind": "balance", "asset": "btc", "tenor_min": 15}
+{"raw": {"balance": 797, "balance_breakdown": [{"balance": "7.9711", "exchange_index": 0}], "balance_dollars": "7.9711", "portfolio_value": 0, "updated_ts": 1781439572}, "ts": 1781439572.047, "kind": "balance", "asset": "btc", "tenor_min": 15}
+{"raw": {"balance": 797, "balance_breakdown": [{"balance": "7.9711", "exchange_index": 0}], "balance_dollars": "7.9711", "portfolio_value": 0, "updated_ts": 1781439632}, "ts": 1781439632.674, "kind": "balance", "asset": "btc", "tenor_min": 15}
+{"raw": {"balance": 797, "balance_breakdown": [{"balance": "7.9711", "exchange_index": 0}], "balance_dollars": "7.9711", "portfolio_value": 0, "updated_ts": 1781439692}, "ts": 1781439692.998, "kind": "balance", "asset": "btc", "tenor_min": 15}
+{"side": "yes", "price": 0.51, "presigned": false, "lat_ms": 49.0, "ts": 1781439706.161, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
+{"side": "no", "price": 0.48, "err": "HTTP 400: invalid order", "ts": 1781439706.209, "kind": "place_reject", "asset": "btc", "tenor_min": 15}
+{"side": "no", "price": 0.47, "presigned": false, "lat_ms": 48.1, "ts": 1781439706.257, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
+{"n": 1, "lat_ms": 48.9, "ok": true, "ts": 1781439708.255, "kind": "cancel_batch", "asset": "btc", "tenor_min": 15}
+{"side": "yes", "price": 0.52, "presigned": false, "lat_ms": 48.9, "ts": 1781439708.304, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
+{"side": "no", "price": 0.47, "size": 1.0, "resting_s": 2.35, "q_ahead": null, "trader_side": "maker", "fee_bps": "0.000000", "rebate_pred": 0.0, "spread": 0.01, "mid": 0.525, "micro": 0.5248, "ts": 1781439708.604, "kind": "fill", "asset": "btc", "tenor_min": 15}
+{"side": "yes", "price": 0.52, "size": 1.0, "resting_s": 2.83, "q_ahead": null, "trader_side": "maker", "fee_bps": "0.000000", "rebate_pred": 0.0, "spread": 0.01, "mid": 0.525, "micro": 0.5283, "ts": 1781439711.135, "kind": "fill", "asset": "btc", "tenor_min": 15}
+{"side": "yes", "price": 0.52, "presigned": false, "lat_ms": 48.9, "ts": 1781439711.186, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
+{"side": "no", "price": 0.47, "presigned": false, "lat_ms": 48.7, "ts": 1781439711.234, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
+{"side": "no", "price": 0.47, "size": 1.0, "resting_s": 1.74, "q_ahead": null, "trader_side": "maker", "fee_bps": "0.000000", "rebate_pred": 0.0, "spread": 0.01, "mid": 0.525, "micro": 0.5292, "ts": 1781439712.977, "kind": "fill", "asset": "btc", "tenor_min": 15}
+{"n": 1, "lat_ms": 48.2, "ok": true, "ts": 1781439714.257, "kind": "cancel_batch", "asset": "btc", "tenor_min": 15}
+{"side": "yes", "price": 0.53, "presigned": false, "lat_ms": 48.2, "ts": 1781439714.306, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
+{"side": "yes", "price": 0.53, "size": 1.0, "resting_s": 2.99, "q_ahead": null, "trader_side": "maker", "fee_bps": "0.000000", "rebate_pred": 0.0, "spread": 0.01, "mid": 0.535, "micro": 0.5313, "ts": 1781439717.293, "kind": "fill", "asset": "btc", "tenor_min": 15}
+{"side": "yes", "price": 0.52, "presigned": false, "lat_ms": 48.9, "ts": 1781439717.343, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
+{"side": "no", "price": 0.47, "presigned": false, "lat_ms": 47.5, "ts": 1781439717.391, "kind": "place_ack", "asset": "btc", "tenor_min": 15}
+{"side": "no", "price": 0.47, "size": 1.0, "resting_s": 0.42, "q_ahead": null, "trader_side": "maker", "fee_bps": "0.000000", "rebate_pred": 0.0, "spread": 0.01, "mid": 0.525, "micro": 0.5291, "ts": 1781439717.806, "kind": "fill", "asset": "btc", "tenor_min": 15}
+{"side": "yes", "price": 0.52, "size": 1.0, "resting_s": 1.05, "q_ahead": null, "trader_side": "maker", "fee_bps": "0.000000", "rebate_pred": 0.0, "spread": 0.02, "mid": 0.53, "micro": 0.5239, "ts": 1781439718.396, "kind": "fill", "asset": "btc", "tenor_min": 15}
+{"raw": {"balance": 799, "balance_breakdown": [{"balance": "7.9911", "exchange_index": 0}], "balance_dollars": "7.9911", "portfolio_value": 0, "updated_ts": 1781439753}, "ts": 1781439753.553, "kind": "balance", "asset": "btc", "tenor_min": 15}
+{"raw": {"balance": 799, "balance_breakdown": [{"balance": "7.9911", "exchange_index": 0}], "balance_dollars": "7.9911", "portfolio_value": 0, "updated_ts": 1781439813}, "ts": 1781439813.686, "kind": "balance", "asset": "btc", "tenor_min": 15}
+{"raw": {"balance": 799, "balance_breakdown": [{"balance": "7.9911", "exchange_index": 0}], "balance_dollars": "7.9911", "portfolio_value": 0, "updated_ts": 1781439874}, "ts": 1781439874.719, "kind": "balance", "asset": "btc", "tenor_min": 15}
+{"raw": {"balance": 799, "balance_breakdown": [{"balance": "7.9911", "exchange_index": 0}], "balance_dollars": "7.9911", "portfolio_value": 0, "updated_ts": 1781439935}, "ts": 1781439935.488, "kind": "balance", "asset": "btc", "tenor_min": 15}
+{"raw": {"balance": 799, "balance_breakdown": [{"balance": "7.9911", "exchange_index": 0}], "balance_dollars": "7.9911", "portfolio_value": 0, "updated_ts": 1781439996}, "ts": 1781439996.27, "kind": "balance", "asset": "btc", "tenor_min": 15}
