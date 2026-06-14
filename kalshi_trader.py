@@ -748,19 +748,24 @@ def main():
     ap.add_argument("--pair-min-depth", type=float, default=33000.0,
                     help="min of (top-5 YES-bid total, top-5 YES-ask total) to allow a fresh OPEN under "
                          "--pair-gate. Study-calibrated 33000 (the tape median); deeper = lower strand rate.")
-    ap.add_argument("--dispose-max-give", type=float, default=0.10,
+    ap.add_argument("--dispose-max-give", type=float, default=0.25,
                     help="give-CAP for the strand cross: complete by crossing ONLY if the lock loss <= "
-                         "this ($); if completing would cost MORE, HOLD the bounded leg. "
-                         "DISPOSAL EV AUDIT 2026-06-14 (BOX_DISPOSAL_EV.md): stranded legs settle WORTHLESS "
-                         "~100% (18/18 hist, 4/4 live) -- they are adversely selected, so HOLDING a strand "
-                         "~= riding a near-certain $0. COMPLETING by crossing at any price <$1 recovers "
-                         "(basis-give) and beats holding. EV is MONOTONE in the cap (recovery=basis-give); "
-                         "0.10 captures 12/18 completions (vs 4/18 at 0.05) and 0.10->inf adds nothing, so "
-                         "0.10 is the EV knee + a sane catastrophe bound against the repeated-recross thrash "
-                         "(the live n_dispose_cross=47/-82c window). NOTE: cap impact is ~a wash "
-                         "(~+0.016c/win); the first-order strand cost is the sunk BASIS -- a PREVENTION "
-                         "problem (pair-gate depth/opening gate, already ~2% strand), not a disposal knob. "
-                         "(Supersedes the earlier 0.05 cut, which used the wrong hold counterfactual.)")
+                         "this ($); if completing would cost MORE, HOLD the bounded leg. Stranded legs "
+                         "settle WORTHLESS ~100% (adversely selected), so completing at any price <$1 "
+                         "beats holding; EV is MONOTONE in the cap (recovery=basis-give). "
+                         "COMPLETION-EXEC AUDIT 2026-06-14 (BOX_COMPLETION_EXEC.md): the live loss is "
+                         "DEEP over-fill-residual strands that ride NAKED to ~-50c because the old 0.10 cap "
+                         "REFUSED to cross them (give>10c -> held). Raised to 0.25 so a deep residual is "
+                         "crossed at a bounded ~-25c instead of held to -50c (~+2.8c/box). 0.25 still bounds "
+                         "the repeated-recross thrash. (Supersedes the 0.10 cap, whose 'wash' sample "
+                         "under-represented the deep residuals; root-cause prevention is --post-complete-freeze.)")
+    ap.add_argument("--post-complete-freeze", type=float, default=0.0,
+                    help="OVER-FILL RESIDUAL GUARD (BOX_COMPLETION_EXEC.md). When a completion returns "
+                         "inventory to FLAT, cancel all resting OPENING rungs and hold off NEW opens for "
+                         "this many seconds. Kills the dominant live loss: 14/16 toxic strands were "
+                         "over-fill residuals -- a clean box forms, then a stale same-side ladder rung fills "
+                         "1-3s later UNPARTNERED and rides naked to ~-50c. Completing quotes (net!=0) are "
+                         "NEVER frozen. 0 = OFF (default); live A/B enables ~1.5s.")
     ap.add_argument("--requote-stale-s", type=float, default=20.0,
                     help="drop a resting rung older than this IF the mid has moved >=1 tick since "
                          "placement (markout forensics: fills on >15s-old quotes run -2.04c/fill "
@@ -871,6 +876,8 @@ def main():
     mk = None
     net_delta = 0.0          # YES positions - NO positions (signed)
     unpaired_since = None    # wall-clock when |net| left 0 (completion-urgency chase clock)
+    last_complete_ts = 0.0   # wall-clock of the last |net|->0 completion (over-fill freeze clock)
+    prev_net_freeze = 0.0    # net_delta at the previous loop top (to detect a completion transition)
     realized = 0.0           # settled P&L across closed windows
     _strand_sched = [float(x) for x in a.strand_scaledown.split(",") if x.strip()]  # streak guard
     _consec_strands = 0      # consecutive stranded windows (drives --strand-scaledown)
@@ -1494,6 +1501,17 @@ def main():
             # (12/56 windows pre-fix). Draining here makes the inventory clamp act on current inventory.
             drain_ws_fills()
 
+            # OVER-FILL RESIDUAL GUARD (BOX_COMPLETION_EXEC.md): a completion just returned inventory to
+            # FLAT -> cancel resting OPENING rungs so a stale same-side ladder rung can't fill unpartnered
+            # 1-3s later and ride naked to ~-50c (14/16 live toxic strands were these). The freeze on NEW
+            # opens is applied below (targets). Completing quotes only exist at net!=0 and are untouched.
+            if (a.post_complete_freeze > 0 and abs(prev_net_freeze) > 1e-9
+                    and abs(net_delta) <= 1e-9):
+                last_complete_ts = time.time()
+                for _k in list(resting):
+                    drop(_k, "post_complete_freeze")
+            prev_net_freeze = net_delta
+
             # --- compute desired levels (both YES and NO views) ---
             # Own-size exclusion (A2): subtract our resting size at the touch from the depth
             # so the microprice reflects other traders' imbalance only (mirrors live_trader's own_b/own_a).
@@ -1504,6 +1522,11 @@ def main():
             mp = microprice(ybb, yba, clean_ybq, clean_yaq)
 
             targets = desired_levels(mk, ybb, yba, net_delta, 1, a.cap, a.skew, a.improve_tick)
+            # post-completion freeze: hold off NEW opens for a beat after a box completes (net==0 means
+            # every target is an opening rung; completing quotes live at net!=0 and are never frozen).
+            if (a.post_complete_freeze > 0 and abs(net_delta) <= 1e-9
+                    and (time.time() - last_complete_ts) < a.post_complete_freeze):
+                targets = []
             # t36 guarded opener (GUARDED_OPENER.md): the live loss mode is a YES leg opened into
             # a thin spread that strands (every realized live loss to date). When armed, suppress
             # YES quotes at spread < guard UNLESS net_delta < 0 (then a YES fill COMPLETES an
