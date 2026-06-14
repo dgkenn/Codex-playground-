@@ -73,7 +73,19 @@ boxes (-EV), multi-factor blends (momentum-alone wins), Polymarket TRADING (US-i
 read-only signal that matures passively in the collector), sports value-betting on soft books (banned).
 
 ## BOTTOM LINE  (the deployable recommendation)
-- **WINNER: cross-asset ETF MOMENTUM** (`ETF_MOMENTUM.md`, `e3e2d57`) — the best deployable edge for a
+- **THE HUMBLING HEADLINE (`STATIC_ALLOCATION.md`, `1085652`): a DEAD-SIMPLE STATIC PORTFOLIO BEATS the
+  active book on risk-adjusted return.** Permanent Portfolio (25% each SPY/TLT/GLD/cash) Sharpe **0.93**
+  and inverse-vol risk-parity **0.84** vs the active momentum+TF book **0.81** (full sample); OOS 2016-26:
+  **PP 1.06 / RP 1.05 / 60-40 0.91** vs active **0.91**. The active book's Sharpe margin is NEGATIVE in- and
+  out-of-sample; PP even beat it in the GFC (-3.8% vs -10.7%) and COVID (-6.4% vs -13.3%). The active
+  book's ONLY genuine edge is ~4-5pp shallower maxDD (-13.6% vs PP -18%) + 2022-robustness. **For a US
+  small bankroll, the complexity is NOT worth it for most people: hold an unlevered Permanent Portfolio
+  or risk-parity (Sharpe ~0.9-1.0, ZERO effort, IRA-able).** Run the active book ONLY if you specifically
+  want the shallower drawdown AND will tolerate monthly effort + trailing every bull market. (Caveat both
+  ways: statics rode a 17-yr bond+gold tailwind that may not repeat; 2022 is where the momentum book's
+  rotation-out-of-falling-assets shines -- its strongest forward argument. Levering a static to match the
+  active book's return is WORSE risk-adjusted, so that's not the answer either.)
+- **WINNER (active edge, if you want one): cross-asset ETF MOMENTUM** (`ETF_MOMENTUM.md`, `e3e2d57`) — the best deployable ACTIVE edge for a
   US small bankroll, decisively better than every crypto path. Config: ~30-ETF cross-asset universe
   (US sectors + size/style + intl/country + bonds/gold/commodities/REITs), 6-month RISK-ADJUSTED
   (return/vol) cross-sectional momentum, top K=5 equal-weight, dual/absolute (>cash) filter + SPY>200d-MA
@@ -105,5 +117,17 @@ read-only signal that matures passively in the collector), sports value-betting 
   members inside the ETF book, not a standalone sleeve.
 - **Remaining gap before real $1k:** whole-share/cash-drag at small size (a 20% slot ~$200 < 1 share of
   MTUM ~$220) -> needs fractional shares or a small-bankroll execution adjustment (final study).
-- **RESEARCH ENDPOINT:** the edge space is fully mapped and the deployable answer is built. The productive
-  path is now OPERATIONAL -- paper-trade the ETF sleeve 3-6mo, then size small -- not more backtesting.
+- **Crypto, if you want it** (`BTC_TREND_TIMING.md`, `7342b13`): TREND-TIME BTC/ETH (>=200d SMA, weekly
+  check) via IBIT/ETHA in an IRA -- Sharpe 0.97->1.1-1.3, recent maxDD -77%->-26/-36% with higher CAGR;
+  do NOT buy-and-hold (its -80% crashes). Redundant with the book's crypto-proxy members -- pick one,
+  size small. Standalone crypto momentum loses to BTC-hold 62% of paths (don't bother).
+- **Kalshi WEATHER** (`KALSHI_WEATHER.md`, `304643b`): the one open prediction-market LEAD -- recreational
+  warm-tail under-pricing, harvestable as maker, BUT thin capacity + not snapshot-backtestable; needs
+  ~30-45 days of forward CLV collection to confirm (could be the model wrong, not the price). Optional
+  passive data-collection track.
+- **RESEARCH ENDPOINT (honest):** the edge space is exhaustively mapped. The brutal conclusion is that for
+  a US small bankroll, the best risk-adjusted, zero-effort answer is a SIMPLE STATIC PORTFOLIO; the active
+  momentum+trend book buys only a modest drawdown reduction for real ongoing effort. Further backtesting
+  adds nothing. The genuinely-useful remaining moves are OPERATIONAL: (a) just deploy a Permanent
+  Portfolio / risk-parity (the default), (b) optionally paper-track the active book 3-6mo if you want the
+  DD edge, (c) optionally start the Kalshi-weather CLV collection. Not more edge-hunting.
