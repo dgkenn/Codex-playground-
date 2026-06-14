@@ -101,6 +101,27 @@ drawdown HALVED, 2022 loss -13%->-4%, robust across the 1970s bond bear + stagfl
 - Stocks do NOT predict bitcoin (`STOCKS_PREDICT_BTC.md` `0a7459e`): all 17 candidates null on the
   overnight-gap test; BTC leads its proxies. No equity->BTC timing edge.
 
+## HIGH-RISK, DATA-INFORMED (only for DISPROPORTIONATE +EV upside)
+For a high-risk-tolerant investor, the smart structure is CONVEXITY (bounded downside, asymmetric +EV
+upside), NOT leverage:
+- **CONVEX BARBELL (`CONVEX_ASYMMETRY.md` `a7e44f6`): 20-30% trend-timed CRYPTO BASKET (BTC+ETH+SOL, each
+  held only >200d SMA else cash, via IBIT/ETHA spot ETFs in an IRA) + 80-70% trend-overlaid all-weather
+  base.** The basket is the rare positive-SKEW (1.45) AND +EV object -- tail ratio 2.83, Omega 3.20, the
+  trend exit MANUFACTURES the convexity (buy-hold DD -83%->-58%, skew 0.62->1.45). At 20%: blend CAGR
+  12.6%, maxDD -21%, Sharpe at its 1.15 peak. Pure-slice 5yr from $5k: P(2x)=46%, P(5x)=23%, p95~$112k vs
+  p5~$671 (lose the slice ~1-in-5) -- but at the 20% barbell with contributions, **P(total ruin)~=0** (base
+  + contributions floor it). Honest: short ~1-cycle crypto sample, right tail haircut (OOS tail 2.8->1.66).
+- **LEVERAGE (`LEVERAGE_GROWTH.md` `129b082`): modest only, and barely worth it if contributing.** The
+  trend-overlaid book's halved -10% DD gives headroom; DD-budget (not Kelly) caps ~2.2-2.45x (CAGR ~15%,
+  maxDD -35%, no ruin -- trend de-risks to cash). BUT with $5k+$500/mo, 2.2x cuts median years-to-$70k only
+  8.5->7.2y (~1.3y) for a 1-in-11 >50% DD -- contributions dominate. Recommend **1.25-1.5x or 1x if
+  contributing** (margin taxable, or 1.5x-LETF SSO/UBT/UGL in an IRA). Leverage matters only for a
+  no-contribution lump sum.
+- **KEY: do NOT lever crypto.** The trend gate amplifies leverage's right tail but CANNOT cap its left tail
+  (weekly lag vs fast crypto crashes): 2x/3x trend-gated crypto = -93%/-99% DD. Diversifying ENTRIES
+  (the basket) is how you take crypto risk; LEVERING is how you blow up. Naive 3x-LETF, OTM-call-buying,
+  alt buy-hold all REJECTED as negative-EV / uncapped-left-tail.
+
 ## BOTTOM LINE  (how we got here -- the full map)
 - **THE HUMBLING HEADLINE (`STATIC_ALLOCATION.md`, `1085652`): a DEAD-SIMPLE STATIC PORTFOLIO BEATS the
   active book on risk-adjusted return.** Permanent Portfolio (25% each SPY/TLT/GLD/cash) Sharpe **0.93**
