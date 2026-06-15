@@ -50,13 +50,27 @@ dollar-neutral, weekly, partial-0.7, BTC-trend-gated. Forward Sharpe ~1.0 (maxDD
   legal wall as Polymarket. => The deployable question is a LONG-ONLY, US-spot-accessible version
   (under research: MOM_LONGONLY.md).
 
-## SPORTS BETTING — same wall (access / efficiency), no money-printer
-`SPORTS_BETTING.md` (`56fb362`): US soft sportsbooks have a real +EV signal (few % ROI vs Pinnacle fair)
-but BAN/limit winners in weeks; Pinnacle/Betfair don't ban but are US-illegal -> ACCESS is the wall.
-Kalshi sports ESCAPES the queue-death (slow taker buy-and-hold, exchange can't ban a winner) BUT its
-liquid games are EFFICIENT (Susquehanna-priced, ~0% overround, 1-3c spreads -> no edge after the hurdle);
-only the illiquid slice (futures/props/minor leagues) is soft, and it's THIN (5-10c spreads, tiny
-capacity) -- marginal, unproven. Needs a Pinnacle feed + 300-500 games of net-of-fee CLV to settle.
+## SPORTS BETTING — exhaustively mapped (8 studies); promo extraction is the only deployable win
+Consolidated verdict: **`SPORTS_VERDICT.md`**. The full sweep — game lines (`SPORTS_BETTING.md`),
+exchanges (`SPORTS_EXCHANGE.md`), props (`SPORTS_PROPS.md`), live/steam (`SPORTS_LIVE_STEAM.md`),
+niche-sport modeling (`SPORTS_NICHE_MODEL.md`), cross-book + Kalshi arbitrage (`SPORTS_ARB.md`),
+Kalshi calibration (`SHARP_VS_KALSHI.md`), and promo EV (`SPORTS_PROMO_EV.md`):
+
+- **Game lines:** soft books carry a real few-% +EV signal vs Pinnacle fair but BAN/limit winners in
+  weeks; Pinnacle/Betfair don't ban but are US-illegal. Kalshi escapes the ban (can't-ban exchange) but
+  its liquid games are SIG-priced/efficient (~0% overround, calibrated +-0.3c over 706 games) -> no edge.
+- **Props / niche sports (table tennis, esports, darts, MMA, KBO/NPB, WNBA):** softness is REAL and data
+  is free, but the SAME three facts that make them soft kill deployment -- vig 2-3x higher (8-15%), limits
+  $50-500, and prop/niche winners get limited FASTEST. Documented niche ROI ~10-13% is tipster-self-
+  reported; in illiquid markets CLV itself stops predicting profit (Unabated; ATP counter-case +8.9% ROI
+  at -0.2% CLV). Real edge, un-deployable shape: tiny capacity + a real modeling grind.
+- **Arbitrage:** cross-book sure-betting is real but self-terminating (>98% of arbs <1.2%, ~13s windows,
+  arbers limited in days). Kalshi-vs-book never locks (liquid Kalshi==sharp + 4.5-10% book vig => sum>1
+  unless the book line is stale, which is exactly what gets you limited). Grading-mismatch breaks "locks."
+- **THE ONE DEPLOYABLE PLAY: promo / bonus extraction** (`SPORTS_PROMO_EV.md`) -- ~$1-5k one-time, decaying;
+  hedge the bannable-book leg on Kalshi (can't-ban rail). Not recurring income, but real and accessible.
+- **One armed forward experiment:** Kalshi maker timing-lag (`kalshi_clv_lag.py` / `sports_clv_collect.py`),
+  no-ops until a free `ODDS_API_KEY` GitHub secret is added.
 
 ## THE META-PATTERN (the real finding)
 Every MICROSTRUCTURE / MISPRICING edge here dies to the SAME wall -- ACCESS or EFFICIENCY, never signal:
