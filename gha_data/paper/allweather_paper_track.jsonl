@@ -1,0 +1,1 @@
+{"date": "2026-06-15", "run_ts": "2026-06-15T18:51:23Z", "mode": "conservative", "lookback_m": 12, "weights": {"SPY": 0.25, "TLT": 0.25, "GLD": 0.25, "BIL": 0.25}, "prices": {"SPY": 755.21, "TLT": 85.71, "GLD": 397.041, "BIL": 91.515}, "sleeve_gates": {"SPY": true, "TLT": true, "GLD": true}, "crypto_on": null, "mom_picks": null, "period_return": 0.0, "paper_equity": 1000.0}
