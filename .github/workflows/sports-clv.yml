@@ -1,0 +1,83 @@
+# Sports CLV / timing-lag FORWARD data collector -- mirrors the proven collect.yml/etf-paper.yml pattern.
+# Polls Pinnacle h2h (the sharp line) via the-odds-api + snapshots the matching Kalshi YES mid at the
+# same timestamp, so over weeks it accrues the aligned series the Kalshi-vs-sharp LAG test needs
+# (cross-correlate d(Pinnacle_fair) vs d(Kalshi_mid) at lags 0..15 min; see kalshi_clv_lag.py part B).
+#
+# SAFE TO MERGE WITH NO KEY: without the ODDS_API_KEY secret, sports_clv_collect.py prints its design
+# and exits 0, writes nothing, and the commit step finds nothing to commit (exit 0, no spurious commit).
+# It arms itself the MOMENT the operator adds the ODDS_API_KEY repo secret -- no code change needed.
+#
+# GitHub fires schedule only from the DEFAULT branch (main), so this file lives on main; it checks out
+# CODE from $BRANCH (vw7ut5, where sports_clv_collect.py lives) and commits DATA to the gha-data branch.
+# Pull the data:  git fetch origin gha-data && git checkout origin/gha-data -- gha_data/sports_clv/
+#
+# QUOTA: the-odds-api free tier = 500 req/mo. 4 leagues x 3 runs/day x 30 = 360 req/mo (under budget).
+# Kalshi requests are public/no-auth and do NOT count against the odds quota. See SPORTS_CLV_SETUP.md.
+name: sports-clv
+
+on:
+  schedule:
+    - cron: '0 18 * * *'      # US afternoon/early-evening slate
+    - cron: '0 23 * * *'      # US primetime
+    - cron: '0 2 * * *'       # west-coast late games
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sports-clv
+  cancel-in-progress: false
+
+env:
+  BRANCH: claude/polymarket-bot-live-ready-vw7ut5
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.BRANCH }}
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: install deps
+        run: for i in 1 2 3; do pip install --quiet requests numpy pandas && break; sleep 10; done
+      - name: poll Pinnacle + Kalshi and append to the CSV
+        env:
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+        run: |
+          mkdir -p out/sports_clv
+          # Pull the existing CSV so the collector APPENDS to the full history (idempotent accrual).
+          git fetch --depth=1 origin gha-data 2>/dev/null || true
+          git show origin/gha-data:gha_data/sports_clv/sports_clv.csv > out/sports_clv/sports_clv.csv 2>/dev/null || true
+          # No ODDS_API_KEY -> prints design + exits 0, writes nothing. Robust to API errors.
+          python sports_clv_collect.py out/sports_clv/sports_clv.csv || true
+      - name: commit data to the gha-data branch (worktree, shallow, append-only)
+        if: always()
+        run: |
+          # Nothing written (no key / off-season / API hiccup) -> no-op, exit 0, no spurious commit.
+          test -s out/sports_clv/sports_clv.csv || { echo "no CSV to commit (no key / nothing collected)"; exit 0; }
+          git config user.name  "paper-bot"
+          git config user.email "paper-bot@users.noreply.github.com"
+          if git fetch --depth=1 origin gha-data 2>/dev/null; then
+            git worktree add --detach /tmp/dw origin/gha-data
+            cd /tmp/dw && git checkout -B gha-data
+          else
+            git worktree add --detach /tmp/dw HEAD
+            cd /tmp/dw && git checkout --orphan gha-data && git rm -rf --cached . >/dev/null 2>&1 || true
+            find /tmp/dw -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          fi
+          mkdir -p /tmp/dw/gha_data/sports_clv
+          cp "$GITHUB_WORKSPACE/out/sports_clv/sports_clv.csv" /tmp/dw/gha_data/sports_clv/sports_clv.csv
+          cd /tmp/dw && git add gha_data/sports_clv/sports_clv.csv
+          git commit -m "sports-clv collect $(date -u +%F\ %H:%MZ)" || { echo "nothing to commit"; exit 0; }
+          for i in 1 2 3 4 5; do
+            git push origin HEAD:gha-data && exit 0
+            git fetch --depth=1 origin gha-data && git rebase origin/gha-data || true
+            sleep $((RANDOM % 6 + 2))
+          done
+          echo "push failed after retries" >&2; exit 1
