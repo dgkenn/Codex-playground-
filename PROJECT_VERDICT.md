@@ -3,21 +3,28 @@
 Brutally honest synthesis after the full research program (20+ agent studies, live trading, deep
 backtests). Goal throughout: a profitable, scalable strategy at a SMALL bankroll. This is the map.
 
-> ## 🔒 "TRADABLE KALSHI STACK" — RESOLVED NEGATIVE (2026-06-18, user-accepted)
+> ## 🔄 "TRADABLE KALSHI STACK" — UPDATED 2026-06-19: a real but TINY-CAPACITY edge found (supersedes the negative below)
+> The "RESOLVED NEGATIVE" call below tested only the **taker** side. Correct pushback (*a low-volume market
+> can't be fully efficient*) prompted a 4-stream **maker**-side test (`KALSHI_MAKER_VERDICT.md`). Result: a real,
+> +EV, queue-independent, **maker-fee-free** edge DOES exist — **sell overpriced longshots (maker NO, p<0.20) on
+> soft zero-maker-fee categories**: +0.97¢/contract at ~17σ net of adverse selection AND fee (263k real fills),
+> no fast-pickoff toxicity, bias generalizes across categories (Politics/Science/Climate/Entertainment).
+> **BUT it is capacity-capped at ~$30–150/month** (`KALSHI_MAKER_CAPACITY.md`): soft books turn over only
+> ~$300–800 notional/market in 3–4-contract nibbles, flow-capped (more bankroll doesn't help), negative skew.
+> **So: a tradable Kalshi stack EXISTS, but it's a small automated income stream (~$30–150/mo), not a path to
+> $500/mo and it does not scale.** The favorite-longshot tension is fundamental — the bias is biggest exactly
+> where the books are thinnest. Deploy only if ~$30–150/mo of uncorrelated +EV income justifies the build.
+
+> ## 🔒 "TRADABLE KALSHI STACK" — earlier NEGATIVE (taker-only; superseded above)
 > A dedicated push to build a tradable Kalshi stack tested every positive-prior candidate to ground:
 > maker box (queue-dead, −$3/day live), 15m directional taker (efficient <1min; 5,749 windows),
 > signal ensemble (worse than the mid), **Polymarket→Kalshi lead-lag** (real vs spot at HAC t+27 but
 > only **0.064¢ vs Kalshi's mid**, ~40× below the 2–3¢ taker cost — `PMKT_LEADLAG.md` §5), macro
 > (efficient — `KALSHI_MACRO.md`), sports (±0.3¢ calibrated), weather (calibrated), and the
 > **favorite-longshot value edge** on soft markets via candlestick mid-life prices (`KALSHI_FAVLONG_SCAN.md`:
-> null — non-monotone, no band \|z\|≥2; only a +4.5¢ overall YES-skew z=2.57 = a period artifact;
-> spread 2–9¢ ≥ any bias; the GWU prior is taker-negative / maker-only).
-> **Conclusion (user-accepted): there is NO tradable Kalshi stack for a small-bankroll, cloud-latency,
-> taker-or-uncontested-maker account.** Every edge is maker/queue-bound (unwinnable without co-location)
-> or value-but-sub-spread. Unlock preconditions (co-located maker infra; a maker rebate that pays for
-> strands; or a value bias > spread+fee that persists OOS — none found) are in `KALSHI_FAVLONG_SCAN.md`.
-> The deployable answer for the actual objective remains the PORTFOLIO route (final-answer section below),
-> not a Kalshi trading stack.
+> taker-side null). **This negative held for the TAKER side; the MAKER side (above) found the real pocket.**
+> The deployable answer for the $500/mo objective still remains the PORTFOLIO route (final-answer section below);
+> the maker longshot harvest is a small additive income stream, not a replacement.
 
 ## THE MAKER-BOX (Kalshi BTC 15-min + hourly KXBTCD) — STRUCTURALLY DEAD at our infra/bankroll
 The core product. The edge is REAL but un-capturable from where we sit.
