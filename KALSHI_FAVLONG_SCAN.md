@@ -49,3 +49,44 @@ taker-negative) — hits the same wall. The honest open question is no longer "w
 *any* Kalshi market class clears spread+fee for a slow, small, taker-or-uncontested-maker account. Candlestick-based
 favorite calibration on liquid single-outcome markets is the one remaining test that could flip it; nothing else
 in the mapped space has a positive prior.
+
+---
+
+## UPDATE 2 (2026-06-18) — DEFINITIVE candlestick test: also NULL. Candidate closed.
+
+Ran the candlestick version (`kalshi_favlong_candle.py`): for each liquid, single-outcome settled binary, the
+real **mid-life** two-sided quote (50% between open/close, spread ≤10¢) as a buy-and-hold entry; realized WR vs
+mid; taker EV at the ask, net of the quadratic fee.
+
+**Pooled (405 mid-life quotes; median spread 2.0¢, p90 8¢):** the script's naive auto-verdict flagged three
+"+EV" bands (0.05–0.10, 0.10–0.15, 0.95–1.00) — but they are **small-n (25–48), non-monotone** (0.00–0.05 is
+*negative* while 0.05–0.10 is positive; 0.90–0.95 negative while 0.95–1.00 positive) and each only **~1–1.4 SE**.
+A genuine favorite-longshot curve is monotone; this is multiple-testing noise (~10 bands × 2 sides).
+
+**Economics deep-dive (350 markets, per-band binomial z):** the only category with substance, and it fails the
+honest test:
+- **No band reaches |z|≥2** (strongest 0.5–0.6: +18.6pp but n=15, z=+1.44 = noise).
+- **Non-monotone**, with the bias concentrated **mid-range (0.5–0.7)** and ~0 at the extremes — the *opposite*
+  of a favorite-longshot shape.
+- A marginal **overall** tilt exists — mean(win−mid) = **+4.5¢, z=+2.57** — but its flat, mid-concentrated shape
+  is the signature of a **directional YES-skew / sampling-period artifact** (a settled-market window where data
+  leaned YES), not a persistent, localizable edge. It is strongest exactly where the 2¢ spread + 1.75¢ fee bite
+  hardest, can't be pinned to a tradable band, and won't survive OOS.
+
+### FINAL VERDICT — favorite-longshot / value taker edge on Kalshi: CLOSED
+No monotone, significant, cost-clearing favorite-longshot bias exists on Kalshi soft markets for a taker. The
+maker version is queue-bound (the box's grave). This was the last positive-prior candidate. **Combined with the
+15m closures (`PMKT_LEADLAG.md` §5) and the macro closure (`KALSHI_MACRO.md`), there is no tradable Kalshi stack
+for a small-bankroll, cloud-latency, taker-or-uncontested-maker account.**
+
+### What WOULD unlock a Kalshi stack (the honest preconditions)
+1. **Win the maker queue** — co-location / sub-100ms infra to hold queue priority on liquid markets (the +7.7¢
+   shadow box edge is real *if filled*). Not available on cloud/GHA; capital- and ops-heavy.
+2. **A maker rebate large enough to pay for strands** — Kalshi's fee structure doesn't provide one on these books.
+3. **A value bias > spread+fee that persists OOS** — none found across crypto (efficient), macro (efficient),
+   sports (±0.3¢ calibrated), weather (calibrated), or the soft-market favorite-longshot curve (this doc).
+4. **A genuinely new, soft, *un-arbitraged* market class** with recreational mispricing AND a tight enough book to
+   take through — the soft markets that are mispriced are exactly the ones with 3–9¢ spreads (mutually exclusive).
+
+Absent (1)–(4), the deployable answer for the user's actual objective remains the portfolio route
+(`PROJECT_VERDICT.md` final answer), not a Kalshi trading stack.
