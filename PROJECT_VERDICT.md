@@ -3,6 +3,22 @@
 Brutally honest synthesis after the full research program (20+ agent studies, live trading, deep
 backtests). Goal throughout: a profitable, scalable strategy at a SMALL bankroll. This is the map.
 
+> ## 🔒 "TRADABLE KALSHI STACK" — RESOLVED NEGATIVE (2026-06-18, user-accepted)
+> A dedicated push to build a tradable Kalshi stack tested every positive-prior candidate to ground:
+> maker box (queue-dead, −$3/day live), 15m directional taker (efficient <1min; 5,749 windows),
+> signal ensemble (worse than the mid), **Polymarket→Kalshi lead-lag** (real vs spot at HAC t+27 but
+> only **0.064¢ vs Kalshi's mid**, ~40× below the 2–3¢ taker cost — `PMKT_LEADLAG.md` §5), macro
+> (efficient — `KALSHI_MACRO.md`), sports (±0.3¢ calibrated), weather (calibrated), and the
+> **favorite-longshot value edge** on soft markets via candlestick mid-life prices (`KALSHI_FAVLONG_SCAN.md`:
+> null — non-monotone, no band \|z\|≥2; only a +4.5¢ overall YES-skew z=2.57 = a period artifact;
+> spread 2–9¢ ≥ any bias; the GWU prior is taker-negative / maker-only).
+> **Conclusion (user-accepted): there is NO tradable Kalshi stack for a small-bankroll, cloud-latency,
+> taker-or-uncontested-maker account.** Every edge is maker/queue-bound (unwinnable without co-location)
+> or value-but-sub-spread. Unlock preconditions (co-located maker infra; a maker rebate that pays for
+> strands; or a value bias > spread+fee that persists OOS — none found) are in `KALSHI_FAVLONG_SCAN.md`.
+> The deployable answer for the actual objective remains the PORTFOLIO route (final-answer section below),
+> not a Kalshi trading stack.
+
 ## THE MAKER-BOX (Kalshi BTC 15-min + hourly KXBTCD) — STRUCTURALLY DEAD at our infra/bankroll
 The core product. The edge is REAL but un-capturable from where we sit.
 - **Clean box is +EV (+0.69c/box)**: rest buy-YES + buy-NO at ATM, both fill -> lock the spread.
