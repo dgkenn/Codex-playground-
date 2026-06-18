@@ -1,8 +1,18 @@
 # Polymarket vs Kalshi BTC Cross-Venue Lead-Lag — PRELIMINARY SCREEN
 
-**Date:** 2026-06-14 · **Verdict:** TOO EARLY — suggestive in-sample lead, NOT confirmed; need ~3–5 more weeks of multi-session touch data. **Touch depth is deeper than the earlier audit feared** (~$80 median executable, p95 ~$600), so capacity is NOT the blocker — DATA is.
+> ## ⛔ RESOLVED 2026-06-18 (5-day update, see §5): NOT TRADABLE — signal real, ~40× too small.
+> The data blocker is cleared (1,098 windows / ~110h / 5 days / multiple regimes). The lead **replicates
+> strongly vs SPOT** (Poly leads ~10–15s; incremental HAC t ≈ +27 over spot momentum) but **collapses
+> vs KALSHI's own mid**: the Poly→Kalshi cross-corr peaks at **lag 0** (contemporaneous, +0.25), and the
+> genuinely *leading* residual is statistically significant (NW t = **+4.16**) but worth only **≈0.064¢
+> per quote-adjustment** — versus a Kalshi taker cost of `0.07·p(1−p)` ≈ **1.75¢ + ~1.1¢ spread ≈ 2–3¢**.
+> Kalshi already aggregates the same info nearly contemporaneously, so the tradeable part is ~40× below
+> cost. This is the SAME wall as every other 15m candidate (real signal, sub-cost magnitude). The last
+> open directional candidate is now closed. Do NOT build a taker stack on this.
 
-This screens. All numbers below are IN-SAMPLE on a single ~2.1h session. Do not trade on this yet.
+**Date:** 2026-06-14 · **Original verdict:** TOO EARLY — suggestive in-sample lead, NOT confirmed; need ~3–5 more weeks of multi-session touch data. **Touch depth is deeper than the earlier audit feared** (~$80 median executable, p95 ~$600), so capacity is NOT the blocker — DATA is.
+
+This screens. All numbers below §1–4 are IN-SAMPLE on a single ~2.1h session. **Superseded by §5.**
 
 ---
 
@@ -83,3 +93,56 @@ In this session, Polymarket's implied prob (deviation from 0.5, and its recent c
 - `pmkt_touch_leadlag.py` (added) — touch-depth capacity distribution + touch-window-only lead-lag vs spot + HAC incremental test. Run: `python pmkt_touch_leadlag.py <pmkt_dir> <kalshi_ticks_dir>`. Spot is read from `ticks_kalshi_btc15m` field[2] (no external API).
 
 **State for the record:** window = 2026-06-14 16:52–18:59Z; N = 26 windows / 4,713 touch snapshots / 1,522 aligned 5s rows; in-sample only; significance HAC-adjusted but N-limited. SCREEN ONLY.
+
+---
+
+## 5. FIVE-DAY UPDATE (2026-06-18) — data blocker cleared; signal real vs spot, DEAD vs Kalshi-mid net of cost
+
+The touch collector kept running. We now have the sample the screen asked for, and ran BOTH harnesses
+on it (`pmkt_touch_leadlag.py` vs spot, `pmkt_leadlag.py` vs Kalshi mid), 2026-06-14 → 06-18.
+
+### Sample (capacity blocker resolved)
+- **1,098 windows / 195,027 touch snapshots / 92.9h** across **5 distinct days** (multiple regimes) for the
+  touch harness; **109.9h / 197,888 grid pts @2s** aligned for the Kalshi-mid harness.
+- Executable touch depth confirmed **deeper, not thinner**: median **$106**, p95 **$848** to lift the ask
+  (level-SUM `up_bsz` ~136× inflated by reward-farm levels, as before). Capacity is NOT the blocker.
+
+### Result A — vs SPOT (replicates the encouraging screen, strongly)
+`xcorr(poly_dprob[t], spot_ret[t+k])`, k>0 ⇒ Poly leads spot:
+
+| lag | −10s | −5s | 0s | +5s | **+10s** | **+15s** | +20s |
+|---|---|---|---|---|---|---|---|
+| corr | −0.008 | −0.000 | +0.017 | +0.028 | **+0.136** | **+0.149** | +0.041 |
+
+Incremental HAC (next spot move ~ spot_mom + poly_dev + poly_dmom): **poly_dev NW t = +27.7 / +26.3 / +15.2**
+at 5/10/30s, spot_mom weak/negative. So Polymarket genuinely leads **spot** by ~10–15s, robustly, OOS-of-the-screen.
+
+### Result B — vs KALSHI MID (the decisive, tradability-relevant test) — FAILS on magnitude
+`ΔKalshi_fwd ~ const + b_poly·ΔPoly_past + b_spot·ΔSpot_past`, W=5s, HAC NW-lags=5, n=160,592:
+
+| term | β | NW t | sig |
+|---|---|---|---|
+| Δpoly | +0.01064 | **+4.16** | *** |
+| Δspot | −0.00000 | −0.00 | — |
+
+- **Cross-corr Poly→Kalshi peaks at lag = 0s (+0.252)** — the two venues move *contemporaneously*; the
+  leading residual is small.
+- **Implied edge ≈ 0.064¢ per quote-adjustment.** β=0.011 means a 1¢ Poly move predicts a 0.011¢ Kalshi
+  move over the next 5s; even a 10¢ Poly move ⇒ ~0.1¢ predicted Kalshi move.
+- **Kalshi taker cost** `0.07·p(1−p)` ≈ **1.75¢** + **~1.1¢** spread ≈ **2–3¢ round trip.**
+- ⇒ tradeable lead is **~30–45× below cost.** Statistically real (t=4.16), economically negligible.
+
+### Why spot-lead ≠ Kalshi-lead (the resolution)
+`DIRECTIONAL.md` already established Kalshi's 15m binary is efficient vs spot within ~1 minute. Polymarket
+leads *spot* by ~10s, but Kalshi prices spot nearly instantly, so by the time Poly has moved, Kalshi's mid
+has too. The cross-corr peak at lag 0 is exactly that. The ~0.064¢ residual is the only part Kalshi hasn't
+already absorbed — far too little to cross the spread + fee as a taker, and impossible to capture as a
+maker (queue position, the box's grave).
+
+### Verdict
+**The last open directional candidate is closed.** Every 15m-crypto Kalshi angle is now exhausted:
+maker box (queue/strand-dead), directional taker (efficient <1min), signal ensemble (worse than the mid),
+and cross-venue Poly lead-lag (real but ~40× sub-cost). There is no tradable 15m-crypto Kalshi stack for a
+small-bankroll cloud trader. A tradable Kalshi stack, if one exists, must come from a DIFFERENT market
+class where the edge is value / risk-premium (not sub-minute speed) — longer tenors or non-crypto markets
+where being slow and small is not disqualifying. That is the only remaining direction worth pursuing.
