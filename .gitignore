@@ -1,2 +1,8 @@
 # local Claude Code harness state (settings, worktree admin) -- not project content
 .claude/
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/

@@ -1,0 +1,24 @@
+# Integrity core (hashing, guards, config, run-once locks, audits) needs only
+# the Python standard library + PyYAML. The heavy scientific / ML stack is
+# required only for the analysis stages and Pass-1 embedding, and is imported
+# lazily so the firewall machinery can be tested without it.
+
+# --- config ---
+pyyaml>=6.0
+
+# --- analysis stages (analysis/, pooling, audits) ---
+numpy>=1.24
+scipy>=1.10
+scikit-learn>=1.3
+pandas>=2.0
+statsmodels>=0.14          # phase2 adjusted association (logistic regression)
+
+# --- compact, memory-mapped storage (Sec 0) ---
+pyarrow>=14.0              # Parquet tables
+zarr>=2.16                 # epoch-level subset arrays
+numcodecs>=0.12            # blosc/zstd codecs
+
+# --- Pass-1 signal IO + embedding (adapter-boundary; install when wiring) ---
+mne>=1.6                   # on-the-fly harmonization
+# torch>=2.1               # frozen foundation-model forward pass (uncomment to wire)
+# specparam>=2.0           # aperiodic exponent/offset (a.k.a. fooof)

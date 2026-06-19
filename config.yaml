@@ -1,0 +1,189 @@
+# =============================================================================
+# config.yaml -- single versioned source of truth for the HEEDB EEG phenotype-
+# discovery pipeline (Pre-Registration + Execution Spec v2).
+#
+# BINDING: every parameter that governs Phase-1 discovery or the Phase-2
+# confirmation lives here. Nothing that can change a result may live in code.
+# Values marked  TO-CONFIRM  correspond to the spec's "[fill]" slots and MUST be
+# pinned (and the config re-hashed) before the relevant stage runs.
+#
+# The integrity firewall (Sec 0, 3) is enforced from `phase` + `sites.held_out`
+# below: while phase == 1 the held-out hospital cannot be loaded and no outcome
+# variable may enter the workspace.
+# =============================================================================
+
+config_version: "2.0.0"
+
+# ----------------------------------------------------------------------------
+# FIREWALL / PHASE CONTROL  (Sec 0, 3)
+# ----------------------------------------------------------------------------
+# phase == 1 : discovery only. Held-out site is hard-blocked; no outcome labels.
+# phase == 2 : confirmation. Requires a verified, hash-stamped unlock token
+#              produced by freezing the four objects (Sec 3).
+phase: 1
+
+# Refuse to run if these four frozen-object hashes are not present at Phase 2.
+# Populated by `phase2/freeze.py` at Phase-1 close; verified before any unlock.
+frozen_manifest: "artifacts/frozen/manifest.json"
+
+# ----------------------------------------------------------------------------
+# DETERMINISM  (Sec 0)
+# ----------------------------------------------------------------------------
+seed: 20250619
+deterministic: true
+
+# ----------------------------------------------------------------------------
+# COHORT & ELIGIBILITY  (Sec 5)
+# ----------------------------------------------------------------------------
+cohort:
+  primary_min_age_years: 18
+  pediatric_sensitivity_cohort: true     # BCH handled separately, never pooled
+  one_recording_per_patient: "earliest_qualifying"   # leakage prevention
+  split_unit: "patient"                   # all partitions patient-level
+  qc:
+    min_recording_seconds: 300            # TO-CONFIRM
+    max_bad_channel_fraction: 0.30        # TO-CONFIRM
+    max_flatline_fraction: 0.20           # TO-CONFIRM
+
+# ----------------------------------------------------------------------------
+# HOSPITAL-SPLIT ARCHITECTURE  (Sec 6)
+# ----------------------------------------------------------------------------
+sites:
+  discovery: ["MGH", "BWH", "BIDMC"]      # TO-CONFIRM (pre-specify)
+  held_out: "BCH_ADULT"                   # TO-CONFIRM -- untouched in Phase 1
+  # Cross-site reproducibility gate on the held-out hospital (Sec 6, 9):
+  reproducibility_ari_threshold: 0.50     # TO-CONFIRM (ARI >=)
+
+# ----------------------------------------------------------------------------
+# DATA SOURCE / ACCESS  (Sec 4)  -- disk-sparing: stream or batch-and-delete
+# ----------------------------------------------------------------------------
+data:
+  dataset: "HEEDB"
+  version: "4.x"                          # TO-CONFIRM exact minor
+  source: "BDSP"
+  access_mode: "stream"                   # "stream" | "batch_and_delete"
+  scratch_dir: "/tmp/heedb_scratch"       # at most ONE shard of raw lives here
+  never_persist_raw: true                 # hard rule (Sec 0)
+
+# ----------------------------------------------------------------------------
+# REPRESENTATION -- adapted foundation model  (Sec 7)
+# ----------------------------------------------------------------------------
+model:
+  name: "CBraMod"                         # frozen open checkpoint (Sec 7.1)
+  source: "huggingface"
+  repo_id: "weighting/CBraMod"            # TO-CONFIRM exact repo/revision
+  revision: "TO-CONFIRM"                  # pin a commit/tag
+  checkpoint_sha256: "TO-CONFIRM"         # recorded + verified before Pass 1
+  frozen: true                            # no gradients / no activation storage
+  expected_sfreq_hz: 200                  # TO-CONFIRM (model spec)
+  channels_10_20:                         # standard clinical 19-ch 10-20
+    ["Fp1","Fp2","F3","F4","C3","C4","P3","P4","O1","O2",
+     "F7","F8","T3","T4","T5","T6","Fz","Cz","Pz"]
+  window_seconds: 30                      # TO-CONFIRM (model patch/window spec)
+  window_stride_seconds: 30
+
+harmonization:                            # on-the-fly, in-memory only (Sec 7.2)
+  reference: "average"                    # TO-CONFIRM common reference
+  notch_hz: [50, 60]                      # both line frequencies
+  bandpass_hz: [0.5, 45]                  # TO-CONFIRM
+  resample_to_model_rate: true
+  artifact_rejection: "amplitude_zscore"  # pre-specified automated method
+  artifact_reject_z: 6.0                  # TO-CONFIRM
+
+embedding:                                # Sec 7.3
+  pooling: ["mean", "std"]                # per-recording pool over windows
+  persist_epoch_subset_fraction: 0.02     # epoch-level kept only for stability
+  dtype: "float32"
+
+features:                                 # interpretable, same Pass 1 (Sec 7.4)
+  bands:
+    delta: [0.5, 4]
+    theta: [4, 8]
+    alpha: [8, 13]
+    beta:  [13, 30]
+    gamma: [30, 45]
+  specparam: { freq_range: [1, 45] }      # aperiodic exponent + offset
+  spectral_edge_pct: 95
+  connectivity: "wpli"                    # weighted phase-lag index
+  entropy: ["sample_entropy", "permutation_entropy"]
+  microstates: { n_states: 4 }
+
+# ----------------------------------------------------------------------------
+# SITE-INVARIANCE  (Sec 8)  -- Route A operates on the compact embedding table
+# ----------------------------------------------------------------------------
+site_invariance:
+  primary_route: "A"                      # "A" embedding-space | "B" adversarial
+  route_a_method: "combat"                # "combat" | "coral" | "residualize"
+  combat:
+    batch_key: "hospital"
+    covariates_keep: ["age", "sex"]       # biology to PRESERVE (no outcome)
+  # The GATE (Sec 8): site-identity must be unpredictable after correction.
+  site_probe:
+    targets: ["hospital", "device", "sampling_rate"]
+    classifier: "logreg"
+    chance_tolerance_auc: 0.58            # TO-CONFIRM: pass if AUC <= this
+    cv_folds: 5
+
+route_b:                                  # optional, opt-in, heavier (Sec 7.5)
+  enabled: false
+  method: "lora_grl"                      # adapters + gradient-reversal site head
+  stream_subset_fraction: 0.10
+
+# ----------------------------------------------------------------------------
+# PHENOTYPE DISCOVERY  (Sec 9)
+# ----------------------------------------------------------------------------
+clustering:
+  algorithm: "gmm"                        # "gmm" | "leiden"
+  k_candidates: [2, 3, 4, 5, 6, 7, 8, 9, 10]
+  k_selection: "consensus_pac"            # stability-based, never interpretability
+  consensus:
+    n_resamples: 100
+    subsample_fraction: 0.80
+    pac_low: 0.10                         # proportion-of-ambiguous-clustering band
+    pac_high: 0.90
+  stability_min: 0.80                     # TO-CONFIRM: resampling stability bar
+  corroborate: ["gap_statistic", "silhouette"]
+
+# ----------------------------------------------------------------------------
+# AUDITS  (Sec 11, 13)  -- all on compact tables
+# ----------------------------------------------------------------------------
+audits:
+  leave_one_site_out: true
+  acquisition_covariates: ["sampling_rate", "montage", "recording_length"]
+  negative_controls:
+    shuffle_outcome: true                 # association must collapse to chance
+    phase_randomized_surrogate: true      # structure must collapse
+    surrogate_n: 50
+
+# ----------------------------------------------------------------------------
+# PHASE 2 -- single pre-registered outcome  (Sec 2, 12, 14)
+# ----------------------------------------------------------------------------
+phase2:
+  outcome: "electrographic_seizure_or_status"   # TO-CONFIRM (one, mechanistic)
+  mechanistic_prior: >
+    An 'irritable-cortex' phenotype (epileptiform/periodic-leaning spectral and
+    connectivity signature) precedes electrographic seizures in ICU/AMS records.
+  temporal_precedence_required: true
+  covariates: ["age", "sex", "care_setting"]
+  effect_measure: "adjusted_odds_ratio"
+  association_criterion:                   # FIXED before unlock (Sec 2)
+    ci_excludes: 1.0
+    min_effect_size_or: 1.5               # TO-CONFIRM minimum OR
+    direction: "greater"
+  primary_phenotype: "TO-CONFIRM"          # named before unlock if >1 stable
+  multiplicity: "holm"                     # across secondary phenotypes
+  min_evaluable_heldout_n: 200             # TO-CONFIRM
+  run_once: true                           # single test; lock enforced in code
+
+# ----------------------------------------------------------------------------
+# EXECUTION / DISK-SPARING  (Sec 0)
+# ----------------------------------------------------------------------------
+execution:
+  shard_size_recordings: 500
+  checkpoint_every_shards: 1
+  resume: true
+  array_codec: "zstd"
+  compression_level: 5
+
+artifacts_dir: "artifacts"
+log_dir: "artifacts/logs"

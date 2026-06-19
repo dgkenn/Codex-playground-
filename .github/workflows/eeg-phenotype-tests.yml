@@ -1,0 +1,61 @@
+# CI for the HEEDB EEG phenotype-discovery pipeline.
+#
+# Two jobs, mirroring the dependency split:
+#   - integrity:  stdlib-only firewall/hashing/guard/run-once tests. This is the
+#                 load-bearing job -- it must pass on every change to keep the
+#                 discovery/confirmation firewall enforceable.
+#   - analysis:   installs the scientific stack and runs the disk-light analysis
+#                 tests (site-correction gate, consensus PAC, negative controls).
+name: eeg-phenotype-tests
+
+on:
+  push:
+    paths:
+      - 'common/**'
+      - 'guards/**'
+      - 'pipeline/**'
+      - 'analysis/**'
+      - 'phase2/**'
+      - 'tests/**'
+      - 'config.yaml'
+      - 'requirements.txt'
+      - '.github/workflows/eeg-phenotype-tests.yml'
+  pull_request:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  integrity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Integrity core (stdlib only)
+        run: python -m unittest tests.test_integrity -v
+
+  analysis:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install scientific stack
+        run: |
+          python -m pip install --upgrade pip
+          pip install numpy scipy scikit-learn pandas statsmodels pyyaml
+      - name: Analysis stages
+        run: python -m unittest tests.test_analysis -v
+      - name: Config loads + validates
+        run: |
+          python -c "
+          from common.config import load_yaml, validate
+          cfg = validate(load_yaml('config.yaml'))
+          print('config ok; phase =', cfg['phase'], '; hash inputs present')
+          "
