@@ -110,6 +110,14 @@ def run_phase2(
             "Phase-2 tables contain non-held-out sites; expected only "
             f"{held!r}"
         )
+    # One recording per patient (Sec 5): duplicates would inflate the effective
+    # n and pseudo-replicate the single test (audit MEDIUM #7).
+    pids = [r.get("patient_id") for r in qc]
+    if len(set(pids)) != len(pids):
+        raise FirewallBreach(
+            "Held-out tables contain multiple recordings per patient; the "
+            "one-recording-per-patient rule must be applied before the test."
+        )
     X = np.asarray(heldout_tables["embedding"], dtype="float64")
     Xc = correction.transform(X, sites)            # new-batch alignment (EEG only)
     frozen_labels = assigner.assign(Xc)

@@ -68,7 +68,8 @@ class TestDemoLifecycle(unittest.TestCase):
         self.assertGreater(s["odds_ratio"], 1.0)
         # The freeze/unlock boundary produced a real manifest on disk.
         self.assertTrue(os.path.exists(os.path.join(work, "frozen", "manifest.json")))
-        self.assertTrue(os.path.exists(os.path.join(work, "phase2", "RUN_ONCE.lock")))
+        # Run-once lock now lives next to the frozen manifest (audit fix #4).
+        self.assertTrue(os.path.exists(os.path.join(work, "frozen", "RUN_ONCE.lock")))
 
 
 @unittest.skipUnless(HAVE_STACK, "scientific stack not installed")

@@ -100,8 +100,14 @@ class TestConfigInvariants(unittest.TestCase):
             validate(c)
 
     def test_no_outcome_fields_in_phase1_loader(self):
-        assert_no_outcome_in_loader_fields(["age", "sex", "hospital", "sampling_rate"])
-        for bad in (["icd10"], ["medication"], ["report_text"], ["outcome"], ["mortality"]):
+        assert_no_outcome_in_loader_fields(
+            ["age", "sex", "hospital", "sampling_rate", "device",
+             "recording_length", "patient_id", "care_setting"])
+        # Audit CRITICAL #2 / #8: substring matching catches EHR-proxy variants.
+        for bad in (["icd10"], ["medication"], ["report_text"], ["outcome"],
+                    ["mortality"], ["seizure_label_v2"], ["primary_diagnosis"],
+                    ["icd9_code"], ["outcome_30d"], ["discharge_disposition"],
+                    ["cpc_score"], ["functional_recovery"]):
             with self.assertRaises(ConfigError):
                 assert_no_outcome_in_loader_fields(bad)
 
@@ -143,6 +149,27 @@ class TestFirewall(unittest.TestCase):
         m["assignment_fn_hash"] = "TO-CONFIRM"
         with self.assertRaises(FirewallBreach):
             g.unlock_held_out(m)
+
+    def test_phase_string_does_not_bypass_block(self):
+        # Audit CRITICAL #1: phase "1" (YAML string) must still block held-out.
+        c = base_cfg(phase=1)
+        c["phase"] = "1"
+        g = HeldoutGuard(c)
+        self.assertEqual(g.phase, 1)
+        with self.assertRaises(FirewallBreach):
+            g.check_site_access("BCH_ADULT")
+
+    def test_bad_phase_rejected(self):
+        c = base_cfg()
+        c["phase"] = "later"
+        with self.assertRaises(FirewallBreach):
+            HeldoutGuard(c)
+
+    def test_null_or_blank_site_refused(self):
+        g = HeldoutGuard(base_cfg(phase=1))
+        for bad in (None, "", "   "):
+            with self.assertRaises(FirewallBreach):
+                g.check_site_access(bad)
 
     def test_unlock_succeeds_and_stamps_hash(self):
         c = base_cfg(phase=2)

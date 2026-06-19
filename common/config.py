@@ -35,12 +35,23 @@ def load_yaml(path: str | os.PathLike) -> dict[str, Any]:
     return data
 
 
-# Keys whose presence would let an outcome leak into the Phase-1 workspace.
-# Phase-1 data loaders must never expose these (Sec 0, 13).
-_OUTCOME_KEYS = frozenset(
-    {"outcome", "label", "y", "target", "icd", "icd10", "medication",
-     "medications", "report_text", "mortality", "seizure_label"}
+# Substrings whose presence in a field name would let an outcome (or an EHR
+# proxy for one) leak into the Phase-1 workspace. Matched as case-insensitive
+# SUBSTRINGS so variants like "seizure_label_v2", "primary_diagnosis",
+# "icd9_code", "outcome_30d", "discharge_disposition" are all caught (Sec 0, 13).
+_OUTCOME_SUBSTRINGS = (
+    "outcome", "label", "target", "icd", "medication", "med_", "report_text",
+    "mortality", "death", "deceased", "seizure", "status_epilepticus",
+    "diagnos", "dx", "prognos", "recovery", "cpc", "discharge", "disposition",
+    "event", "epilepsy", "rx", "drug",
 )
+# Bare field names that are outcomes/targets on their own.
+_OUTCOME_EXACT = frozenset({"y", "outcome", "label", "target", "class"})
+
+
+def _is_outcome_field(name: str) -> bool:
+    n = name.lower()
+    return n in _OUTCOME_EXACT or any(tok in n for tok in _OUTCOME_SUBSTRINGS)
 
 
 def validate(cfg: dict[str, Any]) -> dict[str, Any]:
@@ -69,12 +80,13 @@ def validate(cfg: dict[str, Any]) -> dict[str, Any]:
 
 
 def assert_no_outcome_in_loader_fields(fields: list[str]) -> None:
-    """Guard Phase-1 loaders: refuse any column that could carry an outcome."""
-    lowered = {f.lower() for f in fields}
-    leaked = sorted(lowered & _OUTCOME_KEYS)
+    """Guard Phase-1 loaders: refuse any column that could carry an outcome
+    (or an EHR proxy for one). Call this on the ACTUAL columns present in the
+    loaded Phase-1 tables, not just at config time (Sec 0, 13)."""
+    leaked = sorted({f for f in fields if _is_outcome_field(f)})
     if leaked:
         raise ConfigError(
-            f"Phase-1 loader exposes outcome-bearing fields {leaked}; "
+            f"Phase-1 loader exposes outcome-bearing field(s) {leaked}; "
             "only EEG + acquisition metadata are permitted (Sec 0)."
         )
 

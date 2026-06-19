@@ -25,8 +25,13 @@ from phase2.freeze import load_manifest
 
 
 def _lock_path(cfg: dict[str, Any]) -> str:
-    return os.path.join(cfg.get("artifacts_dir", "artifacts"),
-                        "phase2", "RUN_ONCE.lock")
+    """Lock lives NEXT TO the frozen manifest (the study's identity), not under
+    artifacts_dir -- so changing artifacts_dir can't be used to dodge the lock
+    (audit HIGH #4). Falls back to artifacts_dir only if no manifest is set."""
+    manifest = cfg.get("frozen_manifest")
+    base = os.path.dirname(manifest) if manifest else os.path.join(
+        cfg.get("artifacts_dir", "artifacts"), "phase2")
+    return os.path.join(base, "RUN_ONCE.lock")
 
 
 class RunOnceViolation(RuntimeError):
@@ -45,7 +50,12 @@ def _acquire_run_once(cfg: dict[str, Any], frozen_pipeline_hash: str) -> None:
         )
     os.makedirs(os.path.dirname(path), exist_ok=True)
     # Exclusive create: fails if another process raced us to the lock.
-    fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+    try:
+        fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+    except FileExistsError as exc:                       # lost a race (audit #12)
+        raise RunOnceViolation(
+            f"Phase-2 test already executed (lock at {path})."
+        ) from exc
     with os.fdopen(fd, "w") as fh:
         fh.write(json.dumps({"frozen_pipeline_hash": frozen_pipeline_hash}))
 
@@ -90,7 +100,13 @@ def run(cfg: dict[str, Any], heldout_data_loader, *,
     """Execute the single confirmatory test. `heldout_data_loader` returns
     (corrected_embeddings, outcome, covariates) for the held-out hospital after
     applying the frozen harmonization+correction; it must itself route the site
-    through the guard's unlock."""
+    through the guard's unlock.
+
+    NOTE: `phase2.run_phase2.run_phase2` is the preferred composer -- it applies
+    the frozen correction + assignment itself and re-verifies BOTH objects. This
+    loader-based entry point is retained for custom held-out loaders; it still
+    re-verifies both frozen objects on disk via `load_frozen_objects` so a leaky
+    re-fit cannot pass (audit HIGH #3)."""
     if cfg.get("phase") != 2:
         raise FirewallBreach("Phase-2 test requires phase==2")
 
@@ -101,13 +117,16 @@ def run(cfg: dict[str, Any], heldout_data_loader, *,
             f"!= expected {expected_pipeline_hash}. Aborting unlock."
         )
 
+    # Re-verify BOTH frozen objects on disk before anything is unlocked.
+    from phase2.freeze import load_frozen_objects
+    _correction, assigner = load_frozen_objects(cfg, manifest)
+
     guard = HeldoutGuard(cfg)
     unlock_record = guard.unlock_held_out(manifest)
 
     _acquire_run_once(cfg, frozen_pipeline_hash)  # single-use enforcement
 
     X, outcome, covariates = heldout_data_loader(manifest)
-    assigner = _load_frozen_assigner(cfg, manifest)
     membership = (assigner.assign(X) == _primary_phenotype_id(cfg)).astype(int)
     result = adjusted_association(membership, outcome, covariates, cfg)
 

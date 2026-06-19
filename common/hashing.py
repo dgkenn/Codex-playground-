@@ -37,7 +37,8 @@ def canonical_json(obj: Any) -> bytes:
     hashes match regardless of key order or formatting.
     """
     return json.dumps(
-        obj, sort_keys=True, separators=(",", ":"), ensure_ascii=False, default=str
+        obj, sort_keys=True, separators=(",", ":"), ensure_ascii=False,
+        allow_nan=False, default=str
     ).encode("utf-8")
 
 

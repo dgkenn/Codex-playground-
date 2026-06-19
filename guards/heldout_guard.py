@@ -26,7 +26,16 @@ class HeldoutGuard:
 
     def __init__(self, cfg: dict[str, Any], log_path: str | None = None):
         self.cfg = cfg
-        self.phase = cfg.get("phase")
+        # Coerce phase to a strict int so `phase: "1"` (YAML string), 1.0, etc.
+        # cannot silently slip past the `phase == 1` block (audit CRITICAL #1).
+        try:
+            self.phase = int(cfg.get("phase"))
+        except (TypeError, ValueError) as exc:
+            raise FirewallBreach(
+                f"config.phase must be an integer 1 or 2, got {cfg.get('phase')!r}"
+            ) from exc
+        if self.phase not in (1, 2):
+            raise FirewallBreach(f"config.phase must be 1 or 2, got {self.phase}")
         self.discovery = set(cfg.get("sites", {}).get("discovery") or [])
         self.held_out = cfg.get("sites", {}).get("held_out")
         self.log_path = log_path or os.path.join(
@@ -49,6 +58,15 @@ class HeldoutGuard:
         In Phase 1 the held-out hospital is hard-blocked. The attempt is logged
         either way so a breach attempt is never silent.
         """
+        # A missing/blank site label must never pass silently: a held-out row
+        # with a nulled hospital field would otherwise slip through (audit #10).
+        if site is None or str(site).strip() == "":
+            audit_log(self.log_path, "firewall_block_null_site",
+                      phase=self.phase, context=context)
+            raise FirewallBreach(
+                f"refusing a recording with missing/blank hospital label "
+                f"(context={context!r}); cannot prove it is not the held-out site."
+            )
         if self.phase == 1 and self.is_held_out(site):
             audit_log(
                 self.log_path,

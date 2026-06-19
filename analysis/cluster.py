@@ -120,6 +120,10 @@ class PhenotypeAssigner:
             "k": self.k,
             "means": np.asarray(self.model.means_).round(6).tolist(),
             "weights": np.asarray(self.model.weights_).round(6).tolist(),
+            # covariances drive predict() (Mahalanobis distance); without them
+            # two assigners with equal means/weights but different boundaries
+            # would share a hash (audit HIGH #5).
+            "covariances": np.asarray(self.model.covariances_).round(6).tolist(),
             "covariance_type": self.model.covariance_type,
         }
         return hash_object(params)

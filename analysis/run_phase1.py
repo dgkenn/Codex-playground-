@@ -33,7 +33,7 @@ from analysis.cluster import PhenotypeAssigner, consensus_pac, select_k, stabili
 from analysis.correct_sites import SiteCorrection
 from analysis.phenotype_bar import apply_phenotype_bar, per_cluster_site_alignment
 from analysis.site_probe import probe_site
-from common.config import config_hash
+from common.config import assert_no_outcome_in_loader_fields, config_hash
 from common.logging_utils import audit_log
 from guards.heldout_guard import HeldoutGuard
 from pipeline.features import feature_schema
@@ -59,6 +59,14 @@ def run_phase1(cfg: dict[str, Any], tables: dict[str, Any]) -> dict[str, Any]:
 
     guard = HeldoutGuard(cfg)
     qc = tables["qc"]
+
+    # No-outcome firewall: refuse if any actual QC column or configured
+    # acquisition covariate is outcome-bearing (Sec 0, 13). Enforced on the
+    # real columns present, not just at config time.
+    present_cols = {k for r in qc for k in r.keys()}
+    present_cols |= set(cfg.get("audits", {}).get("acquisition_covariates", []))
+    assert_no_outcome_in_loader_fields(sorted(present_cols))
+
     sites = [r.get("hospital") for r in qc]
     for s in set(sites):                       # firewall: refuse held-out rows
         guard.check_site_access(s, context="run_phase1")
