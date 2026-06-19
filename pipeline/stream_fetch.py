@@ -120,8 +120,8 @@ def open_recording(cfg: dict[str, Any], ref: RecordingRef, client: _BDSPClient):
         if raw is not None and hasattr(raw, "close"):
             with contextlib.suppress(Exception):
                 raw.close()
-        # Per-recording temp file downloaded by an S3 client (stream mode).
-        tmp = getattr(raw, "_bdsp_tmp", None)
+        # Per-recording temp file downloaded by a transport (stream mode).
+        tmp = getattr(raw, "_fetch_tmp", None)
         if tmp and os.path.exists(tmp):
             with contextlib.suppress(Exception):
                 os.remove(tmp)
@@ -224,7 +224,7 @@ class BDSPS3Client(_BDSPClient):
         raw = mne.io.read_raw_edf(local, preload=False, verbose=False)
         # Tag the temp path so open_recording deletes it on context exit.
         try:
-            raw._bdsp_tmp = local
+            raw._fetch_tmp = local
         except Exception:
             pass
         return raw

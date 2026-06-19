@@ -53,8 +53,10 @@ docs/RUNBOOK.md             # how to run on real HEEDB data in YOUR credentialed
 
 `pipeline/stream_fetch.py::BDSPS3Client` implements the real BDSP credentialed
 S3 access-point transport (boto3; catalog → recordings → EDF stream/delete).
-Authentication is your own AWS keys + DUA + CITI cert (never in this repo); see
-`docs/RUNBOOK.md`.
+`pipeline/tuh_fetch.py::TUHRsyncClient` implements the TUH EEG Corpus transport
+(rsync-over-SSH) for **external replication** (Sec 15); `python cli.py tuh-test`
+runs NEDC's connectivity probe. Authentication is your own AWS keys / SSH key +
+DUA + CITI cert (never in this repo); see `docs/RUNBOOK.md`.
 
 ## Phase-1 analysis chain (runs on the compact tables)
 

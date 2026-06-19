@@ -98,6 +98,31 @@ data:
     edf_prefix: "HEEDB/"                     # fallback prefix if no catalog present
 
 # ----------------------------------------------------------------------------
+# EXTERNAL REPLICATION -- TUH EEG Corpus  (Sec 15; NOT part of the HEEDB split)
+# ----------------------------------------------------------------------------
+# Applied only AFTER the frozen pipeline is published, as the gold-standard
+# external validation. Access is rsync-over-SSH with the credentialed user's OWN
+# key (registered with NEDC) -- never stored in this repo.
+external_replication:
+  enabled: false                            # turn on only for the replication step
+  tuh:
+    host: "www.isip.piconepress.com"
+    user: "nedc-tuh-eeg"
+    ssh_key: "~/.ssh/id_ed25519"            # the user's NEDC-registered key
+    remote_root: "data/tuh_eeg"
+    test_path: "data/tuh_eeg/TEST"          # NEDC connectivity probe
+    scratch_dir: "/tmp/tuh_scratch"         # one EDF at a time; deleted after use
+    manifest: ""                            # local TSV of EDF paths + acq metadata
+    manifest_format: "tsv"
+    manifest_columns:
+      recording_id: "recording_id"
+      patient_id: "patient_id"
+      object_key: "edf_path"                # remote path under remote_root
+      sampling_rate: "sfreq"
+      age: "age"
+      sex: "sex"
+
+# ----------------------------------------------------------------------------
 # REPRESENTATION -- adapted foundation model  (Sec 7)
 # ----------------------------------------------------------------------------
 model:

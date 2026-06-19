@@ -102,6 +102,20 @@ def cmd_phase2(args) -> int:
     return 0
 
 
+def cmd_tuh_test(args) -> int:
+    """Run the NEDC TEST-file rsync probe to verify TUH access (external
+    replication, Sec 15). Requires the user's NEDC-registered ssh key + reach."""
+    from pipeline.tuh_fetch import TUHRsyncClient
+    cfg = validate(load_yaml(args.config))
+    client = TUHRsyncClient(cfg)
+    res = client.test_connection()
+    print(f"cmd: {res['cmd']}")
+    print(f"TUH connectivity: {'OK' if res['ok'] else 'FAILED'} (rc={res['returncode']})")
+    if not res["ok"]:
+        print((res["stderr"] or res["stdout"]).strip()[:500])
+    return 0 if res["ok"] else 1
+
+
 def cmd_demo(args) -> int:
     """Full synthetic lifecycle in a scratch dir -- the one-command proof."""
     from demo.synthetic import run_demo
@@ -129,6 +143,8 @@ def build_parser() -> argparse.ArgumentParser:
     s2.add_argument("--tables", required=True, help="held-out compact tables dir")
     s2.add_argument("--outcome", required=True, help="JSON: {outcome, covariates, temporal_precedence_verified}")
     s2.set_defaults(func=cmd_phase2)
+
+    sub.add_parser("tuh-test").set_defaults(func=cmd_tuh_test)
 
     sd = sub.add_parser("demo")
     sd.add_argument("--workdir", help="scratch dir (default: temp)")

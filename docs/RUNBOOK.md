@@ -78,6 +78,30 @@ Archive `artifacts/frozen/manifest.json`, the compact tables, and the logs under
 `artifacts/logs/`. Log every deviation. External replication (TUH) is the next
 step and is out of scope here (Sec 15).
 
+## 7. External replication — TUH EEG Corpus (Sec 15, optional, after publication)
+TUH is a **different health system** and is **not** part of the HEEDB
+discovery/held-out split. It is the gold-standard external check: a HEEDB finding
+is a hypothesis until it replicates on TUH. Run this only after the frozen
+pipeline and Phase-2 result are registered.
+
+```bash
+# One-time (per NEDC email): generate a key, email the .pub to help@nedcdata.org
+ssh-keygen -t ed25519 -C "you@institution.edu"      # defaults; key at ~/.ssh/id_ed25519
+sudo apt-get install -y rsync openssh-client         # if absent
+
+# Verify access with NEDC's TEST probe (wraps the exact documented rsync):
+python cli.py tuh-test
+#   -> runs: rsync -auvxL -e "ssh -i ~/.ssh/id_ed25519 ..." \
+#            nedc-tuh-eeg@www.isip.piconepress.com:data/tuh_eeg/TEST <scratch>
+```
+Then in `config.yaml` set `external_replication.enabled: true`, point
+`external_replication.tuh.manifest` at a local TSV of EDF paths (+ acquisition
+metadata) built from the corpus listing
+(isip.piconepress.com/projects/nedc/html/tuh_eeg/), and run the frozen
+harmonize→embed→assign pipeline over TUH as its own corpus — comparing the
+phenotype structure and the outcome association to the HEEDB result. Per NEDC,
+**delete the data when done** (the transport already deletes each EDF after use).
+
 ---
 ### What is wired vs. what you must confirm
 - **Wired & tested:** S3 catalog → `RecordingRef` mapping, firewall filtering,
