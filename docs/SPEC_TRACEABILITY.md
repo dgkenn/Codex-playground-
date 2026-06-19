@@ -98,23 +98,16 @@ The following three symbols raise `NotImplementedError` and are the **only**
 site- or model-specific I/O seams in the pipeline. Everything else is pure
 logic that runs without credentials or a GPU.
 
-| Symbol | File | What to wire |
+| Symbol | File | Status |
 |---|---|---|
-| `_BDSPClient.list_recordings(hospital)` | `pipeline/stream_fetch.py` | Return an iterable of `RecordingRef` objects from the credentialed BDSP catalog for the given hospital. Must include acquisition metadata only (no outcome fields). |
-| `_BDSPClient.open_stream(ref)` | `pipeline/stream_fetch.py` | Return a lazy raw reader (e.g. `mne.io.Raw` with `preload=False`) for the recording described by `ref`. |
-| `_BDSPClient.download_shard(refs, dest)` | `pipeline/stream_fetch.py` | Download a batch of recordings to `dest` and return the shard directory path (used only in `batch_and_delete` mode). |
-| `FrozenEmbedder.load` / `embed_windows` | `pipeline/embed.py` | **Implemented** against the published braindecode/CBraMod interface (lazy torch/braindecode/huggingface_hub, sha256 verify, freeze, patch-reshape forward) but **NOT validated on real weights** — validate on hardware with the actual checkpoint before a real Pass 1. |
+| `BDSPS3Client` (`list_recordings` / `open_stream` / `download_shard`) | `pipeline/stream_fetch.py` | **Implemented** against the documented BDSP credentialed S3 access-point model (boto3, catalog→`RecordingRef`, EDF via mne, per-recording fetch+delete). Catalog mapping + firewall filtering are unit-tested with an injected fake S3 (`tests/test_bdsp_s3.py`). Needs **your AWS credentials + DUA + CITI** to fetch real data; confirm the catalog key/columns vs the real bucket (see `docs/RUNBOOK.md`). |
+| `FrozenEmbedder.load` / `embed_windows` | `pipeline/embed.py` | **Implemented** against the published braindecode/CBraMod interface (lazy torch/braindecode/huggingface_hub, sha256 verify, freeze, patch-reshape forward) but **NOT validated on real weights** — validate on hardware before a real Pass 1. |
+| `_load_frozen_assigner` + frozen-object persistence | `phase2/`, `analysis/` | **Implemented and tested** — `SiteCorrection.save/load`, `PhenotypeAssigner.save/load`, `phase2/freeze.load_frozen_objects` deserialise each frozen object and re-verify its content hash against the manifest before use. |
 
-`_load_frozen_assigner` (`phase2/unlock_and_test.py`) and the frozen-object
-persistence (`SiteCorrection.save/load`, `PhenotypeAssigner.save/load`,
-`phase2/freeze.load_frozen_objects`) are now **implemented and tested** — they
-deserialise each frozen object and re-verify its content hash against the
-manifest before use.
-
-The remaining un-wired seam is therefore the **BDSP transport** (`_BDSPClient`,
-3 methods); the CBraMod forward pass is wired but needs on-hardware validation.
-All other pipeline logic is wired and unit-tested, and the full lifecycle runs
-end-to-end on synthetic data via `python cli.py demo`.
+No `NotImplementedError` seams remain. Authentication (AWS keys) and the real
+CBraMod weights are environment inputs the credentialed user supplies — never
+stored in the repo. The full lifecycle runs end-to-end on synthetic data via
+`python cli.py demo`; `docs/RUNBOOK.md` covers the real-data run.
 
 ---
 

@@ -18,7 +18,10 @@ pyarrow>=14.0              # Parquet tables
 zarr>=2.16                 # epoch-level subset arrays
 numcodecs>=0.12            # blosc/zstd codecs
 
-# --- Pass-1 signal IO + embedding (adapter-boundary; install when wiring) ---
-mne>=1.6                   # on-the-fly harmonization
-# torch>=2.1               # frozen foundation-model forward pass (uncomment to wire)
+# --- Pass-1 signal IO + BDSP transport ---
+mne>=1.6                   # on-the-fly harmonization + EDF reading
+boto3>=1.34                # BDSP credentialed S3 access point (real data fetch)
+# torch>=2.1               # frozen CBraMod forward pass (install to run Pass 1)
+# braindecode>=0.8         # CBraMod architecture
+# huggingface_hub>=0.20    # checkpoint download
 # specparam>=2.0           # aperiodic exponent/offset (a.k.a. fooof)

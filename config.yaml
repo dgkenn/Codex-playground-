@@ -72,6 +72,30 @@ data:
   access_mode: "stream"                   # "stream" | "batch_and_delete"
   scratch_dir: "/tmp/heedb_scratch"       # at most ONE shard of raw lives here
   never_persist_raw: true                 # hard rule (Sec 0)
+  # BDSP S3 credentialed access point (bdsp.io/about/howto_accessdata).
+  # Auth is the CREDENTIALED USER's own AWS keys (`aws configure`) + signed DUA +
+  # CITI cert -- NEVER baked into code or this repo. Each approved user gets their
+  # OWN access-point alias from the BDSP Cloud Credentials dashboard; the ARN
+  # below is the shared endpoint and works with the user's keys.
+  s3:
+    access_point: "arn:aws:s3:us-east-1:184438910517:accesspoint/bdsp-credentialed-access-point"
+    region: "us-east-1"
+    # One-row-per-recording catalog with ACQUISITION METADATA ONLY (no outcome,
+    # no ICD, no meds). Confirm key/format/columns against the real bucket layout.
+    catalog_key: "HEEDB/index.tsv"          # TO-CONFIRM vs real bucket layout
+    catalog_format: "tsv"                   # tsv | csv | parquet
+    catalog_columns:                        # map catalog headers -> RecordingRef
+      recording_id: "recording_id"
+      patient_id: "patient_id"
+      hospital: "site"
+      object_key: "edf_path"                # S3 key of the EDF/BDF under the AP
+      sampling_rate: "sfreq"
+      age: "age"
+      sex: "sex"
+      care_setting: "care_setting"
+      device: "device"
+      duration_s: "duration_s"
+    edf_prefix: "HEEDB/"                     # fallback prefix if no catalog present
 
 # ----------------------------------------------------------------------------
 # REPRESENTATION -- adapted foundation model  (Sec 7)

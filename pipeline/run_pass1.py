@@ -24,6 +24,7 @@ from pipeline.stream_fetch import (
     RecordingRef,
     _BDSPClient,
     iter_qualifying_recordings,
+    make_client,
     open_recording,
 )
 
@@ -105,7 +106,7 @@ def run(cfg: dict[str, Any], writer, embedder: FrozenEmbedder | None = None,
     if cfg.get("phase") != 1:
         raise RuntimeError("run_pass1 is a Phase-1 operation; set phase: 1")
 
-    client = client or _BDSPClient(cfg)
+    client = client or make_client(cfg)
     embedder = embedder or FrozenEmbedder(cfg)
     log_path = os.path.join(cfg.get("log_dir", "artifacts/logs"), "pass1.log")
     audit_log(log_path, "pass1_start", config_hash=config_hash(cfg))

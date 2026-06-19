@@ -35,8 +35,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Integrity core (stdlib only)
-        run: python -m unittest tests.test_integrity -v
+      - name: Integrity core + BDSP catalog (stdlib only)
+        run: python -m unittest tests.test_integrity tests.test_bdsp_s3 -v
 
   analysis:
     runs-on: ubuntu-latest

@@ -48,7 +48,13 @@ phase2/                     # freeze (4 objects) -> run_phase2 (unlock -> cross-
 artifacts/                  # PERSISTED compact tables only (~1-3 GB); raw is never written
 tests/                      # test_integrity (stdlib) + analysis/e2e/DSP (skipped w/o sci stack)
 docs/SPEC_TRACEABILITY.md   # spec section -> enforcing code -> test
+docs/RUNBOOK.md             # how to run on real HEEDB data in YOUR credentialed env
 ```
+
+`pipeline/stream_fetch.py::BDSPS3Client` implements the real BDSP credentialed
+S3 access-point transport (boto3; catalog → recordings → EDF stream/delete).
+Authentication is your own AWS keys + DUA + CITI cert (never in this repo); see
+`docs/RUNBOOK.md`.
 
 ## Phase-1 analysis chain (runs on the compact tables)
 

@@ -120,5 +120,148 @@ def open_recording(cfg: dict[str, Any], ref: RecordingRef, client: _BDSPClient):
         if raw is not None and hasattr(raw, "close"):
             with contextlib.suppress(Exception):
                 raw.close()
+        # Per-recording temp file downloaded by an S3 client (stream mode).
+        tmp = getattr(raw, "_bdsp_tmp", None)
+        if tmp and os.path.exists(tmp):
+            with contextlib.suppress(Exception):
+                os.remove(tmp)
         if shard_dir and os.path.isdir(shard_dir):
             shutil.rmtree(shard_dir, ignore_errors=True)  # delete before next
+
+
+def make_client(cfg: dict[str, Any]) -> "_BDSPClient":
+    """Factory: a real BDSP S3 client when `data.source == 'BDSP'` and an S3
+    access point is configured; otherwise the abstract base (which raises until
+    wired). Keeps run_pass1 transport-agnostic."""
+    if cfg.get("data", {}).get("source") == "BDSP" and cfg.get("data", {}).get("s3"):
+        return BDSPS3Client(cfg)
+    return _BDSPClient(cfg)
+
+
+class BDSPS3Client(_BDSPClient):
+    """Concrete BDSP transport over the credentialed S3 access point.
+
+    Implements the documented BDSP access model (bdsp.io/about/howto_accessdata):
+    data lives in S3 behind a credentialed *access point*; the caller is
+    authenticated by the approved user's OWN AWS credentials (resolved by boto3's
+    standard chain -- env vars, ~/.aws/credentials, or an instance role). No keys
+    are read from, or stored in, this repo.
+
+    Disk-sparing: each EDF is fetched to scratch only for as long as the
+    `open_recording` context is open, then deleted. boto3 + mne are imported
+    lazily; an injected `s3` client (any object exposing `get_object` /
+    `list_objects_v2`) makes the catalog logic unit-testable without AWS.
+    """
+
+    def __init__(self, cfg: dict[str, Any], s3=None):
+        super().__init__(cfg)
+        self.s3cfg = cfg["data"]["s3"]
+        self._s3 = s3
+        self._catalog: list[RecordingRef] | None = None
+
+    # -- boto3 client (lazy) ------------------------------------------------
+    def s3(self):
+        if self._s3 is None:
+            try:
+                import boto3
+            except ImportError as exc:  # pragma: no cover - env dependent
+                raise ImportError(
+                    "boto3 is required for BDSP S3 access "
+                    "(`pip install boto3`)."
+                ) from exc
+            self._s3 = boto3.client("s3", region_name=self.s3cfg.get("region"))
+        return self._s3
+
+    # -- catalog ------------------------------------------------------------
+    def _load_catalog(self) -> list[RecordingRef]:
+        """Read the one-row-per-recording catalog from the access point and map
+        it to RecordingRefs (acquisition metadata only)."""
+        if self._catalog is not None:
+            return self._catalog
+        ap = self.s3cfg["access_point"]
+        key = self.s3cfg.get("catalog_key")
+        cols = self.s3cfg.get("catalog_columns", {})
+        body = self.s3().get_object(Bucket=ap, Key=key)["Body"].read()
+        rows = _parse_catalog(body, self.s3cfg.get("catalog_format", "tsv"))
+        refs: list[RecordingRef] = []
+        for r in rows:
+            refs.append(RecordingRef(
+                recording_id=str(r.get(cols.get("recording_id", "recording_id"), "")),
+                patient_id=str(r.get(cols.get("patient_id", "patient_id"), "")),
+                hospital=str(r.get(cols.get("hospital", "site"), "")),
+                device=_opt(r, cols.get("device", "device")),
+                sampling_rate=_optf(r, cols.get("sampling_rate", "sfreq")),
+                care_setting=_opt(r, cols.get("care_setting", "care_setting")),
+                age=_optf(r, cols.get("age", "age")),
+                sex=_opt(r, cols.get("sex", "sex")),
+                duration_s=_optf(r, cols.get("duration_s", "duration_s")),
+                uri=_opt(r, cols.get("object_key", "edf_path")),
+            ))
+        self._catalog = refs
+        return refs
+
+    def list_recordings(self, hospital: str) -> Iterable[RecordingRef]:
+        """Yield catalog rows for one hospital (acquisition metadata only)."""
+        for ref in self._load_catalog():
+            if ref.hospital == hospital:
+                yield ref
+
+    # -- fetch --------------------------------------------------------------
+    def _download(self, ref: RecordingRef, dest_dir: str) -> str:
+        ap = self.s3cfg["access_point"]
+        if not ref.uri:
+            raise ValueError(f"recording {ref.recording_id} has no object_key/uri")
+        os.makedirs(dest_dir, exist_ok=True)
+        local = os.path.join(dest_dir, os.path.basename(ref.uri))
+        self.s3().download_file(ap, ref.uri, local)
+        return local
+
+    def open_stream(self, ref: RecordingRef):  # pragma: no cover - needs mne + S3
+        import mne
+
+        scratch = self.cfg.get("data", {}).get("scratch_dir", "/tmp/heedb_scratch")
+        local = self._download(ref, scratch)
+        raw = mne.io.read_raw_edf(local, preload=False, verbose=False)
+        # Tag the temp path so open_recording deletes it on context exit.
+        try:
+            raw._bdsp_tmp = local
+        except Exception:
+            pass
+        return raw
+
+    def download_shard(self, refs: list[RecordingRef], dest: str) -> str:  # pragma: no cover - needs S3
+        shard_dir = os.path.join(dest, "shard")
+        for ref in refs:
+            self._download(ref, shard_dir)
+        return shard_dir
+
+
+# ---- catalog helpers ------------------------------------------------------
+def _parse_catalog(body: bytes, fmt: str) -> list[dict]:
+    fmt = (fmt or "tsv").lower()
+    if fmt in ("tsv", "csv"):
+        import csv
+        import io
+        delim = "\t" if fmt == "tsv" else ","
+        text = body.decode("utf-8")
+        return list(csv.DictReader(io.StringIO(text), delimiter=delim))
+    if fmt == "parquet":
+        import io
+        import pyarrow.parquet as pq
+        return pq.read_table(io.BytesIO(body)).to_pylist()
+    raise ValueError(f"unknown catalog_format {fmt!r}")
+
+
+def _opt(row: dict, key: str):
+    v = row.get(key)
+    return None if v in ("", None) else v
+
+
+def _optf(row: dict, key: str):
+    v = row.get(key)
+    if v in ("", None):
+        return None
+    try:
+        return float(v)
+    except (TypeError, ValueError):
+        return None
