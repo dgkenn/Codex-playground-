@@ -251,6 +251,10 @@ execution:
   resume: true
   array_codec: "zstd"
   compression_level: 5
+  # Pilot cap: stop Pass 1 after this many NEW recordings (null = no cap = full
+  # run). This ephemeral environment is for a pilot subset; the full 284k run
+  # belongs on durable compute (docs/RUNBOOK.md). CLI `--limit` overrides this.
+  max_recordings: 500
 
 artifacts_dir: "artifacts"
 log_dir: "artifacts/logs"

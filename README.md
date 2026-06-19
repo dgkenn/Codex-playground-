@@ -91,6 +91,7 @@ python cli.py demo            # discovery -> freeze -> held-out confirm, end to 
 
 # Other stages (operate on real artifacts):
 python cli.py validate                       # check config invariants
+python cli.py pass1 --limit 500              # stream->harmonize->embed->features (pilot cap)
 python cli.py phase1 --tables artifacts      # discovery analysis on compact tables
 python cli.py freeze                          # hash the four objects -> manifest
 python cli.py phase2 --tables heldout/ --outcome outcome.json

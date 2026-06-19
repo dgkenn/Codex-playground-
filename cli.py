@@ -37,6 +37,34 @@ def cmd_validate(args) -> int:
     return 0
 
 
+def cmd_pass1(args) -> int:
+    """Stream -> harmonize -> frozen-embed -> features -> compact tables.
+
+    Loads + hash-verifies + freezes the CBraMod checkpoint, then runs Pass 1 with
+    a pilot `--limit` (default from config.execution.max_recordings). Needs the
+    data transport credentials + torch/braindecode installed (see docs/RUNBOOK).
+    """
+    from pipeline.embed import FrozenEmbedder
+    from pipeline.run_pass1 import run
+    from pipeline.stream_fetch import make_client
+    from pipeline.writer import CompactTableWriter
+
+    cfg = validate(load_yaml(args.config))
+    if cfg.get("phase") != 1:
+        print("refusing: cmd_pass1 is a Phase-1 op; set phase: 1 in config")
+        return 1
+    embedder = FrozenEmbedder(cfg)
+    embedder.load()                      # download + sha256-verify + freeze
+    client = make_client(cfg)
+    out = args.tables or cfg["artifacts_dir"]
+    limit = None if args.limit is not None and args.limit <= 0 else args.limit
+    with CompactTableWriter(cfg, out_dir=out) as writer:
+        summary = run(cfg, writer, embedder=embedder, client=client, limit=limit)
+    print(f"pass1: wrote={summary['n_written']}  consumed={summary['n_consumed']}  "
+          f"hit_limit={summary['hit_limit']}  -> {out}")
+    return 0
+
+
 def cmd_phase1(args) -> int:
     from analysis.run_phase1 import run_phase1, write_report
     from phase2.freeze import frozen_paths
@@ -132,6 +160,12 @@ def build_parser() -> argparse.ArgumentParser:
     sub = p.add_subparsers(dest="command", required=True)
 
     sub.add_parser("validate").set_defaults(func=cmd_validate)
+
+    sp = sub.add_parser("pass1")
+    sp.add_argument("--tables", help="output dir for compact tables (default artifacts_dir)")
+    sp.add_argument("--limit", type=int, default=500,
+                    help="pilot cap: max NEW recordings this run (<=0 = no cap). Default 500.")
+    sp.set_defaults(func=cmd_pass1)
 
     s1 = sub.add_parser("phase1")
     s1.add_argument("--tables", help="dir with compact tables (default artifacts_dir)")

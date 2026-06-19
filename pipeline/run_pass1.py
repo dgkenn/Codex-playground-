@@ -96,30 +96,46 @@ def process_recording(cfg: dict[str, Any], ref: RecordingRef,
 
 
 def run(cfg: dict[str, Any], writer, embedder: FrozenEmbedder | None = None,
-        client: _BDSPClient | None = None) -> dict[str, Any]:  # pragma: no cover - needs full stack
-    """Run Pass 1 to completion (resumable).
+        client: _BDSPClient | None = None,
+        limit: int | None = None) -> dict[str, Any]:  # pragma: no cover - needs full stack
+    """Run Pass 1 (resumable).
 
     `writer` is any object with `.write_row(dict)` and `.flush()`; in production
-    this is the Parquet/Zarr-backed compact-table writer. Returns a summary.
+    this is the Parquet/Zarr-backed compact-table writer.
+
+    `limit` caps the number of NEW recordings consumed this run (a pilot cap, to
+    bound time/egress in an ephemeral environment). Falls back to
+    `cfg.execution.max_recordings`; None/0 means no cap (full run). Resume-safe:
+    already-completed recordings don't count toward the limit.
     """
     guard = HeldoutGuard(cfg)
     if cfg.get("phase") != 1:
         raise RuntimeError("run_pass1 is a Phase-1 operation; set phase: 1")
 
+    if limit is None:
+        limit = cfg.get("execution", {}).get("max_recordings")
+    limit = None if not limit else int(limit)
+
     client = client or make_client(cfg)
     embedder = embedder or FrozenEmbedder(cfg)
     log_path = os.path.join(cfg.get("log_dir", "artifacts/logs"), "pass1.log")
-    audit_log(log_path, "pass1_start", config_hash=config_hash(cfg))
+    audit_log(log_path, "pass1_start", config_hash=config_hash(cfg), limit=limit)
 
     done = load_completed(cfg)
     shard_size = cfg["execution"]["shard_size_recordings"]
     n_written = 0
+    n_consumed = 0  # new recordings processed this run (counts toward `limit`)
 
     recordings = iter_qualifying_recordings(cfg, guard, client)
+    reached_limit = False
     for shard in shard_iter(recordings, shard_size):
         for ref in shard:
             if ref.recording_id in done:  # resume: skip already-written
                 continue
+            if limit is not None and n_consumed >= limit:
+                reached_limit = True
+                break
+            n_consumed += 1
             row = process_recording(cfg, ref, embedder, client)
             if row is None:
                 mark_completed(cfg, ref.recording_id)
@@ -128,6 +144,11 @@ def run(cfg: dict[str, Any], writer, embedder: FrozenEmbedder | None = None,
             mark_completed(cfg, ref.recording_id)
             n_written += 1
         writer.flush()  # checkpoint the compact table per shard
+        if reached_limit:
+            break
 
-    audit_log(log_path, "pass1_done", n_written=n_written)
-    return {"n_written": n_written, "config_hash": config_hash(cfg)}
+    audit_log(log_path, "pass1_done", n_written=n_written,
+              n_consumed=n_consumed, hit_limit=reached_limit)
+    return {"n_written": n_written, "n_consumed": n_consumed,
+            "hit_limit": reached_limit, "limit": limit,
+            "config_hash": config_hash(cfg)}

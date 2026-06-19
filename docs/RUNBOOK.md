@@ -38,10 +38,15 @@ Credentials live only in your AWS config / environment — **never** in this rep
 ## 3. Phase 1 — discovery (no outcome, no held-out site)
 ```bash
 python cli.py validate                   # config invariants
-python -m pipeline.run_pass1             # stream -> harmonize -> embed -> features
-                                         #   (writes compact tables; resumable)
+python cli.py pass1 --limit 500          # stream -> harmonize -> embed -> features
+                                         #   PILOT cap of 500 recordings (resumable);
+                                         #   --limit 0 = full run (durable compute only)
 python cli.py phase1 --tables artifacts  # correct -> gate -> cluster -> bar -> report
 ```
+Start with the 500-recording pilot to validate the real path end to end (this
+environment is ephemeral); scale up `--limit` (or set `execution.max_recordings:
+null`) only on durable compute. Pass 1 is resumable — re-running continues where
+it left off and already-done recordings don't count against the limit.
 Inspect `artifacts/phase1_report.json`: the site-probe gate must pass, the
 phenotype bar lists **provisional** phenotypes, and the negative-control says the
 structure is real. The held-out hospital (`sites.held_out`) is hard-blocked
