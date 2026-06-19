@@ -311,6 +311,44 @@ class FrozenEmbedder:
         return feats.detach().cpu().numpy()
 
 
+class PlaceholderEmbedder:
+    """In-repo, numpy-only stand-in for the frozen foundation model.
+
+    **This is plumbing, NOT the scientific embedding.** It is a fixed,
+    deterministic random projection of the harmonized windows — it lets the
+    real-data pipeline (stream -> harmonize -> embed -> features -> tables ->
+    Phase-1) run end to end when the real MORGOTH/CBraMod weights cannot be
+    loaded in this environment, because:
+      (a) the harness blocks `torch.load` of external pickle checkpoints
+          (arbitrary-code-execution risk), and
+      (b) a CPU forward pass over full clinical EEG is impractical here.
+    Phenotypes produced with this embedder are meaningless as science; the real
+    foundation-model embedding must run on the user's desktop/GPU (docs/HANDOFF).
+    It satisfies the same `load()` / `embed_windows()` contract as FrozenEmbedder.
+    """
+
+    def __init__(self, cfg: dict[str, Any], d: int = 64, seed: int = 0):
+        self.cfg = cfg
+        self.d = int(cfg.get("model", {}).get("placeholder_dim", d))
+        self.seed = int(cfg.get("seed", seed))
+        self._proj = None
+
+    def load(self, *args, **kwargs):
+        return self
+
+    def embed_windows(self, windows):
+        import numpy as np
+        w = np.asarray(windows, dtype="float64")
+        if w.ndim != 3 or w.shape[0] == 0:
+            raise ValueError("windows must be (n_windows>0, n_channels, n_samples)")
+        flat = w.reshape(w.shape[0], -1)
+        z = (flat - flat.mean(0, keepdims=True)) / (flat.std(0, keepdims=True) + 1e-9)
+        if self._proj is None or self._proj.shape[0] != z.shape[1]:
+            rng = np.random.default_rng(self.seed)
+            self._proj = rng.standard_normal((z.shape[1], self.d)) / np.sqrt(z.shape[1])
+        return (z @ self._proj).astype("float32")
+
+
 def pool_embeddings(window_embeddings, pooling: list[str]):
     """Pool (n_windows, d) -> compact per-recording vector.
 

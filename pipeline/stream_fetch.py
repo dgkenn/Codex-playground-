@@ -132,12 +132,15 @@ def open_recording(cfg: dict[str, Any], ref: RecordingRef, client: _BDSPClient):
 def make_client(cfg: dict[str, Any]) -> "_BDSPClient":
     """Factory: a real BDSP S3 client when `data.source == 'BDSP'` and an S3
     access point is configured; a LocalEDFClient when `data.source == 'local_edf'`;
+    a HEEDBBDSPClient when `data.source == 'HEEDB_BDSP'`;
     otherwise the abstract base (which raises until wired). Keeps run_pass1
     transport-agnostic."""
     if cfg.get("data", {}).get("source") == "BDSP" and cfg.get("data", {}).get("s3"):
         return BDSPS3Client(cfg)
     if cfg.get("data", {}).get("source") == "local_edf":
         return LocalEDFClient(cfg)
+    if cfg.get("data", {}).get("source") == "HEEDB_BDSP":
+        return HEEDBBDSPClient(cfg)
     return _BDSPClient(cfg)
 
 
@@ -340,6 +343,179 @@ class BDSPS3Client(_BDSPClient):
         for ref in refs:
             self._download(ref, shard_dir)
         return shard_dir
+
+
+class HEEDBBDSPClient(_BDSPClient):
+    """Concrete BDSP transport for the HEEDB (Harvard EEG Database) layout.
+
+    Reads per-site catalog CSVs from
+    ``EEG/eeg-metadata/{SiteID}_eeg_metadata_*.csv`` and resolves individual
+    EDF files from the BIDS directory tree
+    ``EEG/bids/{SiteID}/{BidsFolder}/ses-{SessionID}/eeg/``.
+
+    Phase-1 safe: ``DateOfDeath`` (an outcome column) is explicitly excluded
+    from every ``RecordingRef`` this client produces. Only acquisition
+    metadata (BidsFolder, SessionID, DurationInSeconds, AgeAtVisit, SexDSC)
+    is mapped.
+
+    Configuration (under ``cfg["data"]["heedb"]``)
+    -----------------------------------------------
+    access_point : str  — S3 access-point ARN or alias
+    region       : str  — AWS region (default "us-east-1")
+    profile      : str  — boto3 named profile (default None = default chain)
+    metadata_prefix : str  — prefix for per-site CSVs (default "EEG/eeg-metadata/")
+    bids_prefix     : str  — prefix for BIDS tree (default "EEG/bids/")
+    max_duration_s  : int  — pilot filter: skip recordings longer than this (default 2400)
+    tasks           : list — EEG task names to accept (default ["EEG"])
+
+    Disk-sparing
+    ------------
+    open_stream downloads one EDF to scratch, preloads it with mne, and tags
+    ``raw._fetch_tmp`` so ``open_recording`` deletes the temp file on exit.
+    boto3 and mne are imported lazily.
+    """
+
+    def __init__(self, cfg: dict[str, Any], s3=None):
+        super().__init__(cfg)
+        heedb = cfg.get("data", {}).get("heedb", {})
+        self._access_point: str = heedb.get("access_point", "")
+        self._region: str = heedb.get("region", "us-east-1")
+        self._profile: str | None = heedb.get("profile", None)
+        self._metadata_prefix: str = heedb.get("metadata_prefix", "EEG/eeg-metadata/")
+        self._bids_prefix: str = heedb.get("bids_prefix", "EEG/bids/")
+        self._max_duration_s: float = float(heedb.get("max_duration_s", 2400))
+        self._tasks: list[str] = list(heedb.get("tasks", ["Routine"]))
+        self._s3 = s3
+
+    # -- boto3 client (lazy) ------------------------------------------------
+
+    def s3(self):
+        """Return (and lazily create) a boto3 S3 client."""
+        if self._s3 is None:
+            try:
+                import boto3
+            except ImportError as exc:  # pragma: no cover
+                raise ImportError(
+                    "boto3 is required for HEEDBBDSPClient (`pip install boto3`)."
+                ) from exc
+            session = boto3.Session(profile_name=self._profile) if self._profile else boto3.Session()
+            self._s3 = session.client("s3", region_name=self._region)
+        return self._s3
+
+    # -- catalog ------------------------------------------------------------
+
+    def _find_site_csv_key(self, site_id: str) -> str | None:
+        """List objects under metadata_prefix to find ``{site_id}_*.csv``."""
+        prefix = self._metadata_prefix + site_id + "_"
+        resp = self.s3().list_objects_v2(Bucket=self._access_point, Prefix=prefix)
+        keys = [obj["Key"] for obj in resp.get("Contents", []) if obj["Key"].endswith(".csv")]
+        return keys[0] if keys else None
+
+    def _stream_csv(self, key: str) -> list[dict]:
+        """Range-get the catalog CSV and parse into a list of row dicts."""
+        import csv
+        import io
+
+        body = self.s3().get_object(Bucket=self._access_point, Key=key)["Body"].read()
+        text = body.decode("utf-8-sig")  # handle BOM if present
+        return list(csv.DictReader(io.StringIO(text)))
+
+    def _resolve_edf_key(self, site_id: str, bids_folder: str, session_id: str) -> str | None:
+        """List the BIDS eeg/ folder and return the key ending ``_eeg.edf``, or None."""
+        eeg_prefix = (
+            f"{self._bids_prefix}{site_id}/{bids_folder}/ses-{session_id}/eeg/"
+        )
+        try:
+            resp = self.s3().list_objects_v2(Bucket=self._access_point, Prefix=eeg_prefix)
+        except Exception:
+            return None
+        for obj in resp.get("Contents", []):
+            key = obj["Key"]
+            if key.endswith("_eeg.edf"):
+                return key
+        return None
+
+    def list_recordings(self, siteID: str) -> Iterable[RecordingRef]:  # noqa: N803
+        """Yield RecordingRefs for one HEEDB site (acquisition metadata only).
+
+        DateOfDeath is an outcome column and is explicitly NEVER mapped to
+        any field of the returned RecordingRef objects.
+        """
+        csv_key = self._find_site_csv_key(siteID)
+        if csv_key is None:
+            return  # no catalog for this site -- yield nothing
+
+        rows = self._stream_csv(csv_key)
+        for row in rows:
+            # Duration filter (pilot cap)
+            try:
+                dur = float(row.get("DurationInSeconds") or "nan")
+            except (ValueError, TypeError):
+                continue
+            if not (dur == dur):  # NaN
+                continue
+            if dur > self._max_duration_s:
+                continue
+
+            # Task filter
+            service = row.get("ServiceName") or ""
+            if self._tasks and service not in self._tasks:
+                # Also accept if any configured task appears in the service name
+                if not any(t in service for t in self._tasks):
+                    continue
+
+            bids_folder = row.get("BidsFolder") or ""
+            session_id = row.get("SessionID") or ""
+            if not bids_folder or not session_id:
+                continue
+
+            # patient_id: strip "sub-" prefix
+            patient_id = bids_folder[4:] if bids_folder.startswith("sub-") else bids_folder
+
+            # Resolve EDF key (listing the remote eeg/ folder)
+            edf_key = self._resolve_edf_key(siteID, bids_folder, session_id)
+            if edf_key is None:
+                continue  # can't resolve; skip
+
+            # Acquisition metadata only -- DateOfDeath intentionally excluded
+            age_raw = row.get("AgeAtVisit") or ""
+            sex_raw = row.get("SexDSC") or ""
+
+            yield RecordingRef(
+                recording_id=f"{bids_folder}_ses-{session_id}",
+                patient_id=patient_id,
+                hospital=siteID,
+                duration_s=dur,
+                age=float(age_raw) if age_raw.strip() else None,
+                sex=sex_raw.strip() if sex_raw.strip() else None,
+                sampling_rate=None,  # resolved at read time from the EDF header
+                uri=edf_key,
+            )
+
+    # -- fetch --------------------------------------------------------------
+
+    def open_stream(self, ref: RecordingRef):  # pragma: no cover - needs mne + S3
+        """Download the EDF to scratch, open with mne (preload=True)."""
+        try:
+            import mne
+        except ImportError as exc:  # pragma: no cover
+            raise ImportError("mne is required for HEEDBBDSPClient.") from exc
+
+        if not ref.uri:
+            raise ValueError(f"recording {ref.recording_id!r} has no EDF uri")
+
+        scratch = self.cfg.get("data", {}).get("scratch_dir", "/tmp/heedb_scratch")
+        os.makedirs(scratch, exist_ok=True)
+        local = os.path.join(scratch, os.path.basename(ref.uri))
+
+        self.s3().download_file(self._access_point, ref.uri, local)
+        raw = mne.io.read_raw_edf(local, preload=True, verbose=False)
+        # Tag temp path so open_recording deletes it on context exit.
+        try:
+            raw._fetch_tmp = local
+        except Exception:
+            pass
+        return raw
 
 
 # ---- catalog helpers ------------------------------------------------------
