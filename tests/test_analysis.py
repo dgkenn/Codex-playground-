@@ -118,3 +118,18 @@ class TestPooling(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
+
+
+@unittest.skipUnless(HAVE_STACK, "numpy/sklearn not installed")
+class TestLeaveOneSiteOutDegenerate(unittest.TestCase):
+    def test_single_site_does_not_crash(self):
+        import numpy as np
+        from analysis.audits import leave_one_site_out
+        from analysis.cluster import PhenotypeAssigner
+        rng = np.random.default_rng(0)
+        X = rng.normal(size=(20, 6))
+        sites = np.array(["S0001"] * 20)            # only one site
+        cfg = base_cfg()
+        r = leave_one_site_out(X, sites, lambda: PhenotypeAssigner(cfg, k=2), cfg)
+        self.assertEqual(r["per_site_ari"], {})
+        self.assertNotEqual(r["min_ari"], r["min_ari"])  # NaN, not a crash

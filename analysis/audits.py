@@ -87,15 +87,22 @@ def leave_one_site_out(embeddings, sites, assigner_factory, cfg: dict[str, Any])
 
     X = np.asarray(embeddings, dtype="float64")
     sites = np.asarray(sites)
+    unique = sorted(set(sites.tolist()))
+    # LOSO is only meaningful with >=2 discovery sites; with one site there is
+    # nothing to leave out (e.g. a single-site pilot) -- report NA, don't crash.
+    if len(unique) < 2:
+        return {"per_site_ari": {}, "min_ari": float("nan"),
+                "note": "leave-one-site-out skipped: <2 discovery sites present"}
     full = assigner_factory().fit(X)
     full_lab = full.assign(X)
     results = {}
-    for s in sorted(set(sites.tolist())):
+    for s in unique:
         keep = sites != s
-        loso = assigner_factory().fit(X[keep])
         held = sites == s
-        if held.sum() < 5:
+        # Need enough rows to refit on the remainder AND to score the held site.
+        if int(keep.sum()) < 5 or int(held.sum()) < 5:
             continue
+        loso = assigner_factory().fit(X[keep])
         ari = adjusted_rand_score(full_lab[held], loso.assign(X[held]))
         results[str(s)] = float(ari)
     return {"per_site_ari": results,
