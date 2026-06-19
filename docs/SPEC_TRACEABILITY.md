@@ -103,12 +103,18 @@ logic that runs without credentials or a GPU.
 | `_BDSPClient.list_recordings(hospital)` | `pipeline/stream_fetch.py` | Return an iterable of `RecordingRef` objects from the credentialed BDSP catalog for the given hospital. Must include acquisition metadata only (no outcome fields). |
 | `_BDSPClient.open_stream(ref)` | `pipeline/stream_fetch.py` | Return a lazy raw reader (e.g. `mne.io.Raw` with `preload=False`) for the recording described by `ref`. |
 | `_BDSPClient.download_shard(refs, dest)` | `pipeline/stream_fetch.py` | Download a batch of recordings to `dest` and return the shard directory path (used only in `batch_and_delete` mode). |
-| `FrozenEmbedder.load(checkpoint_path)` | `pipeline/embed.py` | After hash verification passes, construct the architecture named in `cfg.model.name`, call `load_state_dict` from the verified checkpoint, set `model.eval()`, and freeze all parameters (`requires_grad=False`). |
-| `FrozenEmbedder.embed_windows(windows)` | `pipeline/embed.py` | Run the frozen forward pass on a `(n_windows, n_channels, n_samples)` array and return `(n_windows, d)`. The `@torch_inference` decorator wraps the call in `torch.no_grad`. The body currently defers to `self.model(x)` after the `NotImplementedError` in `load` is resolved. |
-| `_load_frozen_assigner(cfg, manifest)` | `phase2/unlock_and_test.py` | Deserialize the frozen `PhenotypeAssigner`, call `assigner.content_hash()`, and verify it equals `manifest["assignment_fn_hash"]` before returning. |
+| `FrozenEmbedder.load` / `embed_windows` | `pipeline/embed.py` | **Implemented** against the published braindecode/CBraMod interface (lazy torch/braindecode/huggingface_hub, sha256 verify, freeze, patch-reshape forward) but **NOT validated on real weights** — validate on hardware with the actual checkpoint before a real Pass 1. |
 
-These six methods are the **only** site/model-specific I/O seams. All other
-pipeline logic is wired and unit-tested.
+`_load_frozen_assigner` (`phase2/unlock_and_test.py`) and the frozen-object
+persistence (`SiteCorrection.save/load`, `PhenotypeAssigner.save/load`,
+`phase2/freeze.load_frozen_objects`) are now **implemented and tested** — they
+deserialise each frozen object and re-verify its content hash against the
+manifest before use.
+
+The remaining un-wired seam is therefore the **BDSP transport** (`_BDSPClient`,
+3 methods); the CBraMod forward pass is wired but needs on-hardware validation.
+All other pipeline logic is wired and unit-tested, and the full lifecycle runs
+end-to-end on synthetic data via `python cli.py demo`.
 
 ---
 

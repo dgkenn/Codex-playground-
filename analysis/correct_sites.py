@@ -105,3 +105,34 @@ class SiteCorrection:
         if self.params_ is None:
             raise RuntimeError("nothing fitted to hash")
         return hash_object(self.params_)
+
+    # -- persistence (cross-process freeze/unlock) --------------------------
+    def save(self, path: str) -> str:
+        """Serialise the fitted params to JSON (they are already JSON-native).
+
+        Returns the content hash, so the caller can record it in the frozen
+        manifest and re-verify on load (Sec 3).
+        """
+        import json
+        import os
+
+        if self.params_ is None:
+            raise RuntimeError("nothing fitted to save")
+        os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
+        with open(path, "w", encoding="utf-8") as fh:
+            json.dump({"method": self.method, "params": self.params_}, fh,
+                      sort_keys=True)
+        return self.content_hash()
+
+    @classmethod
+    def load(cls, path: str, cfg: dict) -> "SiteCorrection":
+        """Reconstruct a frozen SiteCorrection from disk. Its `content_hash`
+        must equal the value pinned in the manifest before it is applied."""
+        import json
+
+        with open(path, "r", encoding="utf-8") as fh:
+            blob = json.load(fh)
+        obj = cls(cfg)
+        obj.method = blob.get("method", obj.method)
+        obj.params_ = blob["params"]
+        return obj

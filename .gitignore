@@ -6,3 +6,9 @@ __pycache__/
 *.pyc
 .pytest_cache/
 *.egg-info/
+
+# Pipeline runtime outputs (keep only the .gitkeep placeholders)
+artifacts/**
+!artifacts/.gitkeep
+!artifacts/frozen/
+!artifacts/frozen/.gitkeep

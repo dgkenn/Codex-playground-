@@ -50,13 +50,17 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install numpy scipy scikit-learn pandas statsmodels pyyaml
-      - name: Analysis + DSP + Phase-1 + Phase-2 end-to-end
+      - name: Analysis + DSP + Phase-1 + Phase-2 + lifecycle end-to-end
         run: |
           python -m unittest \
             tests.test_analysis \
             tests.test_features_dsp \
+            tests.test_embed \
             tests.test_pipeline_e2e \
-            tests.test_phase2_e2e -v
+            tests.test_phase2_e2e \
+            tests.test_cli_demo -v
+      - name: Lifecycle smoke (cli demo)
+        run: python cli.py demo
       - name: Config loads + validates
         run: |
           python -c "

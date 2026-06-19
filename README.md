@@ -75,15 +75,30 @@ embedding + interpretable features + QC), then discarded. `open_recording` is a
 context manager that deletes the shard on exit; never more than one shard of raw
 exists on disk. All downstream analysis runs on the compact Parquet/Zarr tables.
 
+## Running it
+
+```bash
+# Whole lifecycle on synthetic data (no BDSP, no model) — one command:
+python cli.py demo            # discovery -> freeze -> held-out confirm, end to end
+
+# Other stages (operate on real artifacts):
+python cli.py validate                       # check config invariants
+python cli.py phase1 --tables artifacts      # discovery analysis on compact tables
+python cli.py freeze                          # hash the four objects -> manifest
+python cli.py phase2 --tables heldout/ --outcome outcome.json
+```
+
+`make demo`, `make validate`, `make test`, `make test-integrity` wrap these.
+
 ## Running the tests
 
 ```bash
 # Integrity core — standard library only, always runs:
 python -m unittest tests.test_integrity -v
 
-# Analysis stages — auto-skip unless numpy/scikit-learn/scipy are installed:
+# Everything — auto-skips unless numpy/scikit-learn/scipy/statsmodels installed:
 pip install -r requirements.txt
-python -m unittest tests.test_analysis -v
+python -m unittest discover -s tests -p 'test_*.py' -v
 ```
 
 ## The two phases
@@ -115,8 +130,8 @@ language; no generalization claims absent external (TUH) replication.
 
 ## Status
 
-Scaffold + integrity core + analysis logic + Phase-1 & Phase-2 orchestrators,
-all tests green (57 tests). The
+Scaffold + integrity core + analysis logic + Phase-1 & Phase-2 orchestrators +
+one-command lifecycle CLI/demo, all tests green (82 tests). The
 spec's `[fill]` slots are now **pinned** in `config.yaml` as documented design
 decisions, with two deliberate exceptions that cannot be resolved yet:
 

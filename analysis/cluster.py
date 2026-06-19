@@ -124,6 +124,34 @@ class PhenotypeAssigner:
         }
         return hash_object(params)
 
+    # -- persistence (cross-process freeze/unlock) --------------------------
+    def save(self, path: str) -> str:
+        """Pickle the fitted assigner. The hash is content-based (means/weights/
+        k), so it is stable across save/load and re-verifiable from the manifest
+        (Sec 3). Returns the content hash."""
+        import os
+        import pickle
+
+        if self.model is None:
+            raise RuntimeError("nothing fitted to save")
+        os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
+        with open(path, "wb") as fh:
+            pickle.dump({"k": self.k, "model": self.model,
+                         "seed": self.cfg.get("seed", 0)}, fh)
+        return self.content_hash()
+
+    @classmethod
+    def load(cls, path: str, cfg: dict[str, Any]) -> "PhenotypeAssigner":
+        """Reconstruct a frozen assigner from disk. Verify `content_hash`
+        against the manifest before assigning."""
+        import pickle
+
+        with open(path, "rb") as fh:
+            blob = pickle.load(fh)
+        obj = cls(cfg, k=blob["k"])
+        obj.model = blob["model"]
+        return obj
+
 
 def cross_site_reproducibility(assigner: PhenotypeAssigner, X_site, X_redrived_labels,
                               cfg: dict[str, Any]) -> dict[str, Any]:

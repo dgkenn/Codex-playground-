@@ -57,3 +57,45 @@ def load_manifest(cfg: dict[str, Any]) -> tuple[dict[str, Any], str]:
     with open(path, "r", encoding="utf-8") as fh:
         payload = json.load(fh)
     return payload["manifest"], payload["frozen_pipeline_hash"]
+
+
+# ---- frozen-object persistence (cross-process freeze -> unlock) ------------
+def frozen_paths(cfg: dict[str, Any]) -> dict[str, str]:
+    """Canonical on-disk locations for the serialised frozen objects."""
+    base = os.path.join(cfg.get("artifacts_dir", "artifacts"), "frozen")
+    return {"correction": os.path.join(base, "correction.json"),
+            "assigner": os.path.join(base, "assigner.pkl")}
+
+
+def freeze_pipeline(cfg: dict[str, Any], *, correction, assigner,
+                    checkpoint_sha256: str) -> tuple[dict[str, Any], str]:
+    """Persist the correction + assigner, build & write the manifest, and stamp
+    the combined frozen-pipeline hash. The one call that closes Phase 1 (Sec 3).
+    """
+    paths = frozen_paths(cfg)
+    corr_hash = correction.save(paths["correction"])
+    asg_hash = assigner.save(paths["assigner"])
+    manifest = build_manifest(
+        cfg, checkpoint_sha256=checkpoint_sha256,
+        correction_transform_hash=corr_hash, assignment_fn_hash=asg_hash)
+    pipeline_hash = write_manifest(cfg, manifest)
+    return manifest, pipeline_hash
+
+
+def load_frozen_objects(cfg: dict[str, Any], manifest: dict[str, Any]):
+    """Reload the frozen correction + assigner and RE-VERIFY each by content
+    hash against the manifest before returning. Raises FirewallBreach on any
+    mismatch -- the guarantee that the held-out site sees the exact discovery
+    objects, not a re-fit (Sec 3)."""
+    from analysis.cluster import PhenotypeAssigner
+    from analysis.correct_sites import SiteCorrection
+    from guards.heldout_guard import FirewallBreach
+
+    paths = frozen_paths(cfg)
+    correction = SiteCorrection.load(paths["correction"], cfg)
+    assigner = PhenotypeAssigner.load(paths["assigner"], cfg)
+    if correction.content_hash() != manifest.get("correction_transform_hash"):
+        raise FirewallBreach("loaded correction transform fails manifest hash")
+    if assigner.content_hash() != manifest.get("assignment_fn_hash"):
+        raise FirewallBreach("loaded assignment fn fails manifest hash")
+    return correction, assigner

@@ -118,11 +118,12 @@ def run(cfg: dict[str, Any], heldout_data_loader, *,
     return result
 
 
-def _load_frozen_assigner(cfg, manifest):  # pragma: no cover - I/O seam
-    raise NotImplementedError(
-        "Load the frozen PhenotypeAssigner and verify its content_hash equals "
-        "manifest['assignment_fn_hash'] before assigning."
-    )
+def _load_frozen_assigner(cfg, manifest):
+    """Load the frozen PhenotypeAssigner and verify its content hash against the
+    manifest before it is used (Sec 3)."""
+    from phase2.freeze import load_frozen_objects
+    _correction, assigner = load_frozen_objects(cfg, manifest)
+    return assigner
 
 
 def _primary_phenotype_id(cfg) -> int:  # pragma: no cover - config dependent
