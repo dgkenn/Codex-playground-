@@ -3,9 +3,16 @@
 ## What this project is
 Implementation of a **pre-registered, two-phase, unsupervised EEG phenotype
 discovery study** on HEEDB (Harvard EEG Database) using an adapted frozen
-foundation model (CBraMod), with hospital-split confirmation and external
-replication on TUH. The full spec lives in the PR/issue description; the
-section→code→test map is `docs/SPEC_TRACEABILITY.md`.
+foundation model (**MORGOTH 1.0**, the HEEDB-pretrained clinical-EEG model;
+CBraMod/LaBraM/EEGPT/BIOT are secondary alternatives), with hospital-split
+confirmation and external replication on TUH. The canonical protocol is
+`HEEDB_rawSSL_phenotype_discovery_preregistration_v3.md`; the section→code→test
+map is `docs/SPEC_TRACEABILITY.md`.
+
+NOTE: the protocol is at **v3** (MORGOTH backbone + redundancy/novelty control +
+non-circular Phase-2 outcome). The CODE still reflects v2 (CBraMod, seizure
+outcome) — see that file's changelog; the backbone/outcome code ripple is a
+pending follow-up, not yet applied.
 
 **Binding integrity principle (do not weaken):** Phase 1 (discovery) uses **no
 outcome label**. Phase 2 tests **one** pre-registered outcome on a **held-out

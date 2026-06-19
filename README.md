@@ -11,6 +11,7 @@ on HEEDB via an Adapted Foundation Model, with Hospital-Split Confirmation**
 ### Documentation
 | Doc | Purpose |
 |---|---|
+| [`HEEDB_rawSSL_phenotype_discovery_preregistration_v3.md`](HEEDB_rawSSL_phenotype_discovery_preregistration_v3.md) | The canonical pre-registration + execution spec (v3: MORGOTH backbone) |
 | [`CLAUDE.md`](CLAUDE.md) | Repo guide for a fresh Claude Code session (map, conventions, commands) |
 | [`docs/HANDOFF.md`](docs/HANDOFF.md) | Continue the project in a new desktop session; live-run steps |
 | [`docs/RUNBOOK.md`](docs/RUNBOOK.md) | Full real-data procedure (BDSP + TUH) and governance |

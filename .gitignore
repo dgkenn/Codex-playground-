@@ -12,3 +12,21 @@ artifacts/**
 !artifacts/.gitkeep
 !artifacts/frozen/
 !artifacts/frozen/.gitkeep
+
+# Credentials / secrets -- NEVER commit. Real creds live outside the repo (the
+# user's ~/.aws, ~/.ssh, ~/.netrc) and are supplied at runtime only.
+.aws/
+.ssh/
+*.pem
+*.key
+id_ed25519*
+id_rsa*
+.netrc
+credentials
+*credentials*.csv
+.env
+*.env
+!docs/go-live.env.template
+aws_credentials*
+**/secrets*
+
