@@ -131,11 +131,117 @@ def open_recording(cfg: dict[str, Any], ref: RecordingRef, client: _BDSPClient):
 
 def make_client(cfg: dict[str, Any]) -> "_BDSPClient":
     """Factory: a real BDSP S3 client when `data.source == 'BDSP'` and an S3
-    access point is configured; otherwise the abstract base (which raises until
-    wired). Keeps run_pass1 transport-agnostic."""
+    access point is configured; a LocalEDFClient when `data.source == 'local_edf'`;
+    otherwise the abstract base (which raises until wired). Keeps run_pass1
+    transport-agnostic."""
     if cfg.get("data", {}).get("source") == "BDSP" and cfg.get("data", {}).get("s3"):
         return BDSPS3Client(cfg)
+    if cfg.get("data", {}).get("source") == "local_edf":
+        return LocalEDFClient(cfg)
     return _BDSPClient(cfg)
+
+
+class LocalEDFClient(_BDSPClient):
+    """Concrete transport for a LOCAL directory of EDF files (no network I/O).
+
+    Designed for integration tests and offline development: the user supplies
+    their own EDF files; this client reads acquisition metadata from a small
+    manifest in the config and serves the files via `mne.io.read_raw_edf`.
+
+    Configuration
+    -------------
+    Set ``cfg["data"]["source"] = "local_edf"`` and supply a manifest under
+    ``cfg["data"]["local_edf"]``::
+
+        data:
+          source: local_edf
+          local_edf:
+            dir: /path/to/edf_files          # optional base dir (ignored when
+                                              # each entry has an absolute path)
+            recordings:
+              - recording_id: rec001
+                patient_id:   pt001
+                hospital:     MGH
+                age:          45.0
+                sex:          M
+                sampling_rate: 200.0
+                file:         rec001.edf     # relative to `dir`, OR absolute
+
+    Disk-sparing contract
+    ---------------------
+    These are the *user's own files* (not temporary S3 fetches), so
+    ``open_recording`` must NOT delete them on context exit.  We signal this by
+    leaving ``raw._fetch_tmp = None`` on every opened Raw object -- the cleanup
+    branch in ``open_recording`` then skips the delete step, exactly as it does
+    for the BDSP stream-mode client when the raw hasn't been written to scratch.
+    """
+
+    def __init__(self, cfg: dict[str, Any]):
+        super().__init__(cfg)
+        local_cfg = cfg.get("data", {}).get("local_edf", {})
+        self._base_dir: str = str(local_cfg.get("dir", ""))
+        self._recordings: list[dict] = list(local_cfg.get("recordings", []))
+
+    # -- catalog ------------------------------------------------------------
+    def list_recordings(self, hospital: str) -> Iterable[RecordingRef]:
+        """Yield RecordingRefs for every manifest entry whose hospital matches."""
+        for entry in self._recordings:
+            if entry.get("hospital") != hospital:
+                continue
+            file_path = str(entry.get("file", ""))
+            if not os.path.isabs(file_path) and self._base_dir:
+                file_path = os.path.join(self._base_dir, file_path)
+            yield RecordingRef(
+                recording_id=str(entry.get("recording_id", "")),
+                patient_id=str(entry.get("patient_id", "")),
+                hospital=str(entry.get("hospital", "")),
+                device=entry.get("device"),
+                sampling_rate=float(entry["sampling_rate"]) if entry.get("sampling_rate") is not None else None,
+                montage=entry.get("montage"),
+                n_channels=int(entry["n_channels"]) if entry.get("n_channels") is not None else None,
+                duration_s=float(entry["duration_s"]) if entry.get("duration_s") is not None else None,
+                care_setting=entry.get("care_setting"),
+                age=float(entry["age"]) if entry.get("age") is not None else None,
+                sex=entry.get("sex"),
+                uri=file_path,
+            )
+
+    # -- fetch --------------------------------------------------------------
+    def open_stream(self, ref: RecordingRef):
+        """Return an mne Raw reader for the local EDF file at ``ref.uri``.
+
+        Data is loaded into memory (``preload=True``) so that in-place mne
+        operations required by ``apply_harmonization`` -- in particular
+        ``set_eeg_reference``, ``notch_filter``, and ``filter`` -- work
+        without further load calls.  For local files this is acceptable
+        because the source is a user's own download (not an S3 temp shard)
+        and the ``open_recording`` context manager releases the Raw object
+        (and therefore its memory) as soon as the harmonization is done.
+
+        The raw object's ``_fetch_tmp`` attribute is set to ``None`` so that
+        ``open_recording``'s cleanup branch does NOT delete the source file --
+        local EDF files belong to the user and must not be auto-deleted.
+        """
+        try:
+            import mne
+        except ImportError as exc:
+            raise ImportError(
+                "mne is required for LocalEDFClient. "
+                "Install with: pip install mne"
+            ) from exc
+
+        if not ref.uri:
+            raise ValueError(
+                f"recording {ref.recording_id!r} has no file path (uri is empty)"
+            )
+        # preload=True: required for set_eeg_reference / notch_filter / filter
+        raw = mne.io.read_raw_edf(ref.uri, preload=True, verbose=False)
+        # Signal to open_recording's cleanup: this is a user-owned file, do NOT delete.
+        try:
+            raw._fetch_tmp = None
+        except Exception:
+            pass
+        return raw
 
 
 class BDSPS3Client(_BDSPClient):
