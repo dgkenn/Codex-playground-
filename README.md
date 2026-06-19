@@ -1,8 +1,21 @@
 # HEEDB EEG Phenotype Discovery (Pre-Registration v2)
 
-Implementation scaffold for **Unsupervised Raw-Waveform EEG Phenotype Discovery
+Implementation of **Unsupervised Raw-Waveform EEG Phenotype Discovery
 on HEEDB via an Adapted Foundation Model, with Hospital-Split Confirmation**
 (Pre-Registration + Execution Spec v2).
+
+> **Taking over in a new session?** Start with [`CLAUDE.md`](CLAUDE.md) (repo
+> guide) and [`docs/HANDOFF.md`](docs/HANDOFF.md) (how to continue, including the
+> live run on Claude Code desktop).
+
+### Documentation
+| Doc | Purpose |
+|---|---|
+| [`CLAUDE.md`](CLAUDE.md) | Repo guide for a fresh Claude Code session (map, conventions, commands) |
+| [`docs/HANDOFF.md`](docs/HANDOFF.md) | Continue the project in a new desktop session; live-run steps |
+| [`docs/RUNBOOK.md`](docs/RUNBOOK.md) | Full real-data procedure (BDSP + TUH) and governance |
+| [`docs/GO_LIVE.md`](docs/GO_LIVE.md) | Configuring the **cloud web** environment for a live pilot |
+| [`docs/SPEC_TRACEABILITY.md`](docs/SPEC_TRACEABILITY.md) | Every binding rule → enforcing code → test |
 
 > **Integrity principle (binding).** Phase 1 (discovery) uses **no outcome label
 > of any kind**. Phase 2 tests **one** pre-specified outcome on a **held-out
@@ -139,8 +152,9 @@ language; no generalization claims absent external (TUH) replication.
 
 ## Status
 
-Scaffold + integrity core + analysis logic + Phase-1 & Phase-2 orchestrators +
-one-command lifecycle CLI/demo, all tests green (82 tests). The
+Integrity core + analysis + Phase-1 & Phase-2 orchestrators + one-command
+lifecycle CLI/demo + three real data transports (BDSP S3, TUH rsync, local EDF),
+all tests green (106 tests). The
 spec's `[fill]` slots are now **pinned** in `config.yaml` as documented design
 decisions, with two deliberate exceptions that cannot be resolved yet:
 
