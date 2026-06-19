@@ -37,6 +37,7 @@ Credentials live only in your AWS config / environment — **never** in this rep
 
 ## 3. Phase 1 — discovery (no outcome, no held-out site)
 ```bash
+python cli.py preflight                  # deps + AWS identity + S3 reach + catalog
 python cli.py validate                   # config invariants
 python cli.py pass1 --limit 500          # stream -> harmonize -> embed -> features
                                          #   PILOT cap of 500 recordings (resumable);

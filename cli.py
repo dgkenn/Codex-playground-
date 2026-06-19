@@ -37,6 +37,72 @@ def cmd_validate(args) -> int:
     return 0
 
 
+def cmd_preflight(args) -> int:
+    """Verify everything needed for a live BDSP run BEFORE any data moves:
+    Python deps, AWS credentials, S3 access-point reachability, and that the
+    configured catalog object exists. Read-only; prints a green/red checklist."""
+    cfg = validate(load_yaml(args.config))
+    checks: list[tuple[str, bool, str]] = []
+
+    def chk(name, fn):
+        try:
+            ok, msg = fn()
+        except Exception as e:  # never crash preflight
+            ok, msg = False, f"{type(e).__name__}: {str(e)[:140]}"
+        checks.append((name, ok, msg))
+
+    def deps():
+        import importlib.util
+        missing = [m for m in ("boto3", "mne", "numpy", "scipy", "sklearn",
+                               "statsmodels") if importlib.util.find_spec(m) is None]
+        opt = [m for m in ("torch", "braindecode", "huggingface_hub")
+               if importlib.util.find_spec(m) is None]
+        ok = not missing
+        return ok, ("all core deps present" if ok else f"MISSING: {missing}") + (
+            f"  (optional missing: {opt})" if opt else "")
+
+    def aws_identity():
+        import boto3
+        ident = boto3.client("sts", region_name=cfg["data"]["s3"]["region"]
+                             ).get_caller_identity()
+        return True, f"account={ident['Account']} arn={ident['Arn']}"
+
+    def s3_access():
+        from pipeline.stream_fetch import BDSPS3Client
+        cl = BDSPS3Client(cfg)
+        r = cl.s3().list_objects_v2(Bucket=cfg["data"]["s3"]["access_point"],
+                                    MaxKeys=1)
+        return True, f"access point reachable (KeyCount={r.get('KeyCount', 0)})"
+
+    def catalog():
+        import boto3
+        s3 = boto3.client("s3", region_name=cfg["data"]["s3"]["region"])
+        key = cfg["data"]["s3"]["catalog_key"]
+        s3.head_object(Bucket=cfg["data"]["s3"]["access_point"], Key=key)
+        return True, f"catalog object present: {key}"
+
+    def checkpoint_pin():
+        v = str(cfg["model"].get("checkpoint_sha256", ""))
+        ok = bool(v) and not v.upper().startswith("TO-CONFIRM")
+        return ok, "pinned" if ok else "checkpoint_sha256 still TO-CONFIRM (pin before pass1)"
+
+    chk("python deps", deps)
+    chk("aws credentials", aws_identity)
+    chk("s3 access point", s3_access)
+    chk("bdsp catalog object", catalog)
+    chk("checkpoint sha256", checkpoint_pin)
+
+    print("\nPreflight for live BDSP run:")
+    for name, ok, msg in checks:
+        print(f"  [{'OK ' if ok else 'XX '}] {name:22s} {msg}")
+    critical = [c for c in checks if c[0] in
+                ("python deps", "aws credentials", "s3 access point")]
+    all_critical_ok = all(ok for _, ok, _ in critical)
+    print(f"\n{'READY' if all_critical_ok else 'NOT READY'}: "
+          f"{'critical checks passed — safe to run `pass1`' if all_critical_ok else 'fix the XX rows above'}\n")
+    return 0 if all_critical_ok else 1
+
+
 def cmd_pass1(args) -> int:
     """Stream -> harmonize -> frozen-embed -> features -> compact tables.
 
@@ -160,6 +226,7 @@ def build_parser() -> argparse.ArgumentParser:
     sub = p.add_subparsers(dest="command", required=True)
 
     sub.add_parser("validate").set_defaults(func=cmd_validate)
+    sub.add_parser("preflight").set_defaults(func=cmd_preflight)
 
     sp = sub.add_parser("pass1")
     sp.add_argument("--tables", help="output dir for compact tables (default artifacts_dir)")
