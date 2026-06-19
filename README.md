@@ -40,12 +40,31 @@ config.yaml                 # single source of truth: PHASE flag, seeds, sites, 
 common/                     # hashing, config validation, append-only audit log (stdlib only)
 guards/heldout_guard.py     # refuses held-out loads while phase==1; logs hash-stamped unlock
 pipeline/                   # Pass 1: stream_fetch -> harmonize -> embed -> features -> run_pass1
-analysis/                   # correct_sites, site_probe (the gate), cluster, characterize, audits
+                            #   + writer.py (compact-table sink: 3 aligned tables, sharded)
+analysis/                   # correct_sites, site_probe (gate), cluster, characterize, audits,
+                            #   phenotype_bar (the "real phenotype" gate), run_phase1 (orchestrator)
 phase2/                     # freeze (4 objects) -> unlock_and_test (single run-once test)
 artifacts/                  # PERSISTED compact tables only (~1-3 GB); raw is never written
-tests/                      # test_integrity (stdlib) + test_analysis (skipped w/o sci stack)
+tests/                      # test_integrity (stdlib) + analysis/e2e/DSP (skipped w/o sci stack)
 docs/SPEC_TRACEABILITY.md   # spec section -> enforcing code -> test
 ```
+
+## Phase-1 analysis chain (runs on the compact tables)
+
+`analysis/run_phase1.py` composes the disk-light stages end-to-end:
+
+```
+load compacts -> guard sites -> Route-A correction -> site-probe GATE
+ -> consensus-PAC k selection -> stability -> fit assigner
+ -> per-cluster site-alignment + leave-one-site-out -> phenotype bar
+ -> interpretable characterization -> acquisition-covariate audit -> report
+```
+
+It touches no outcome and no held-out site. Because the held-out hospital is
+locked in Phase 1, the phenotype bar tops out at **provisional**; the held-out
+cross-site ARI check (EEG only, no outcome) runs post-unlock and promotes
+provisional → **confirmed** before the single Phase-2 test. `tests/test_pipeline_e2e.py`
+exercises this whole chain on synthetic data with a planted site confound.
 
 ## Disk-sparing model (Sec 0)
 
@@ -89,7 +108,8 @@ language; no generalization claims absent external (TUH) replication.
 
 ## Status
 
-Scaffold + integrity core + analysis logic, all tests green (30 tests). The
+Scaffold + integrity core + analysis logic + Phase-1 orchestrator, all tests
+green (50 tests). The
 spec's `[fill]` slots are now **pinned** in `config.yaml` as documented design
 decisions, with two deliberate exceptions that cannot be resolved yet:
 

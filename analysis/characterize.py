@@ -8,7 +8,17 @@ Phase-2 outcome (which is pre-specified before unlock).
 """
 from __future__ import annotations
 
+import contextlib
+import warnings
 from typing import Any
+
+
+@contextlib.contextmanager
+def _suppress_nan_warnings(np):
+    """Silence numpy's 'Mean of empty slice' / dof<=0 RuntimeWarnings."""
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=RuntimeWarning)
+        yield
 
 
 def phenotype_feature_profile(features, labels, feature_names: list[str]) -> dict[str, Any]:
@@ -20,12 +30,16 @@ def phenotype_feature_profile(features, labels, feature_names: list[str]) -> dic
     F = np.asarray(features, dtype="float64")
     labels = np.asarray(labels)
     out: dict[str, Any] = {"feature_names": feature_names, "phenotypes": {}}
+    # All-NaN feature columns are expected (a family may be absent for a cohort);
+    # nan-aggregates over them warn harmlessly, so silence empty-slice warnings.
     for c in sorted(set(labels.tolist())):
         in_c = labels == c
-        mu_in = np.nanmean(F[in_c], axis=0)
-        mu_out = np.nanmean(F[~in_c], axis=0)
-        sd = np.nanstd(F, axis=0) + 1e-9
-        cohens_d = (mu_in - mu_out) / sd
+        with np.errstate(invalid="ignore", divide="ignore"), \
+                _suppress_nan_warnings(np):
+            mu_in = np.nanmean(F[in_c], axis=0)
+            mu_out = np.nanmean(F[~in_c], axis=0)
+            sd = np.nanstd(F, axis=0) + 1e-9
+        cohens_d = np.nan_to_num((mu_in - mu_out) / sd, nan=0.0)
         order = np.argsort(-np.abs(cohens_d))
         top = [(feature_names[i], float(cohens_d[i])) for i in order[:15]]
         out["phenotypes"][int(c)] = {

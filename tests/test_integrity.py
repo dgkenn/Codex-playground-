@@ -46,6 +46,10 @@ def base_cfg(phase=1):
                      "specparam": {"freq_range": [1, 45]}, "spectral_edge_pct": 95,
                      "connectivity": "wpli", "entropy": ["sample_entropy"],
                      "microstates": {"n_states": 4}},
+        "clustering": {"algorithm": "gmm", "k_candidates": [2, 3],
+                       "stability_min": 0.80,
+                       "consensus": {"n_resamples": 10, "subsample_fraction": 0.8,
+                                     "pac_low": 0.1, "pac_high": 0.9}},
         "execution": {"shard_size_recordings": 2},
         "phase2": {"run_once": True, "primary_phenotype": 0,
                    "association_criterion": {"min_effect_size_or": 1.5}},
@@ -211,6 +215,46 @@ class TestFeatureSchema(unittest.TestCase):
     def test_schema_includes_aperiodic(self):
         cols = feature_schema(base_cfg())
         self.assertTrue(any(col.startswith("aperiodic_exponent_") for col in cols))
+
+
+class TestPhenotypeBar(unittest.TestCase):
+    """Pure-Python admission logic (Sec 9) -- no numpy needed."""
+
+    def setUp(self):
+        from analysis.phenotype_bar import apply_phenotype_bar
+        self.fn = apply_phenotype_bar
+        self.cfg = base_cfg()
+        self.cfg.setdefault("audits", {})["site_purity_reject"] = 0.80
+        self.clean = {0: {"dominant_site_fraction": 0.55,
+                          "dominant_site_base_rate": 0.5, "enrichment": 0.05}}
+        self.dirty = {1: {"dominant_site_fraction": 0.95,
+                          "dominant_site_base_rate": 0.5, "enrichment": 0.45}}
+
+    def test_provisional_when_phase1_and_clean(self):
+        r = self.fn(stability=0.9, site_alignment=self.clean, cfg=self.cfg,
+                    cross_site=None, loso_min_ari=0.6)
+        self.assertEqual(r["decisions"][0]["status"], "provisional")
+        self.assertEqual(r["admitted"], [0])
+
+    def test_site_aligned_cluster_rejected(self):
+        r = self.fn(stability=0.9, site_alignment=self.dirty, cfg=self.cfg,
+                    cross_site=None, loso_min_ari=0.6)
+        self.assertEqual(r["decisions"][1]["status"], "rejected")
+        self.assertIn("site_aligned", r["decisions"][1]["reasons"])
+
+    def test_unstable_solution_rejected(self):
+        r = self.fn(stability=0.5, site_alignment=self.clean, cfg=self.cfg,
+                    cross_site=None, loso_min_ari=0.6)
+        self.assertEqual(r["decisions"][0]["status"], "rejected")
+        self.assertIn("unstable", r["decisions"][0]["reasons"])
+
+    def test_confirmed_only_with_cross_site_pass(self):
+        ok = self.fn(stability=0.9, site_alignment=self.clean, cfg=self.cfg,
+                     cross_site={0: {"ari": 0.7, "pass": True}}, loso_min_ari=0.6)
+        self.assertEqual(ok["decisions"][0]["status"], "confirmed")
+        bad = self.fn(stability=0.9, site_alignment=self.clean, cfg=self.cfg,
+                      cross_site={0: {"ari": 0.2, "pass": False}}, loso_min_ari=0.6)
+        self.assertEqual(bad["decisions"][0]["status"], "rejected")
 
 
 class TestFreezeManifest(unittest.TestCase):
