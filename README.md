@@ -90,6 +90,20 @@ language; no generalization claims absent external (TUH) replication.
 ## Status
 
 Scaffold + integrity core + analysis logic, all tests green (30 tests). The
-BDSP/model adapter boundaries and the `TO-CONFIRM` config slots (the spec's
-`[fill]` values) must be wired/pinned before a real run; guards refuse to unlock
-on `TO-CONFIRM` placeholders.
+spec's `[fill]` slots are now **pinned** in `config.yaml` as documented design
+decisions, with two deliberate exceptions that cannot be resolved yet:
+
+- `model.checkpoint_sha256` — **pin at download**: the SHA-256 cannot be computed
+  until the CBraMod file is fetched; it is hashed and verified before Pass 1.
+- `phase2.primary_phenotype` — **set at freeze**: phenotypes do not exist until
+  Phase-1 discovery runs; the phenotype matching the mechanistic prior is named
+  at Phase-1 close, *before* the held-out unlock.
+
+Guards refuse to unlock while either remains `TO-CONFIRM`. The only other
+unwired pieces are the BDSP/model adapter boundaries listed above.
+
+Key pinned choices: discovery = MGH + BWH, **held-out = BIDMC** (BCH is pediatric
+and stays in the separate sensitivity cohort, never the adult confirmation site);
+base model = CBraMod (`weighting666/CBraMod`, 200 Hz, 1 s patches); Phase-2
+outcome = electrographic seizure / status (ICU "irritable-cortex" prior), minimum
+adjusted OR 1.5 with a 95% CI excluding 1.
