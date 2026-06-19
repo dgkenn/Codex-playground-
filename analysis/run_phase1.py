@@ -21,7 +21,13 @@ import json
 import os
 from typing import Any
 
-from analysis.audits import acquisition_covariate_association, leave_one_site_out
+from analysis.audits import (
+    acquisition_covariate_association,
+    clustering_structure_score,
+    leave_one_site_out,
+    phase_randomized_surrogate,
+    surrogate_structure_collapse,
+)
 from analysis.characterize import phenotype_feature_profile
 from analysis.cluster import PhenotypeAssigner, consensus_pac, select_k, stability_score
 from analysis.correct_sites import SiteCorrection
@@ -93,6 +99,20 @@ def run_phase1(cfg: dict[str, Any], tables: dict[str, Any]) -> dict[str, Any]:
         cross_site=None, loso_min_ari=loso.get("min_ari"),
     )
 
+    # 6b) Negative control (refutation): the cluster structure must beat
+    #     phase-randomized surrogates that destroy joint embedding structure
+    #     (Sec 13, 17). Re-cluster each surrogate with the same k and compare
+    #     silhouette to the real solution.
+    rng = np.random.default_rng(cfg.get("seed", 0))
+    n_sur = cfg.get("audits", {}).get("negative_controls", {}).get("surrogate_n", 50)
+    real_struct = clustering_structure_score(Xc, labels)
+    sur_scores = []
+    for _ in range(n_sur):
+        Xs = phase_randomized_surrogate(Xc, rng)
+        lab_s = PhenotypeAssigner(cfg, k=k).fit(Xs).assign(Xs)
+        sur_scores.append(clustering_structure_score(Xs, lab_s))
+    negative_control = surrogate_structure_collapse(real_struct, sur_scores)
+
     # 7) Interpretable characterization (descriptive only).
     profile = phenotype_feature_profile(F, labels, feature_names)
 
@@ -110,6 +130,7 @@ def run_phase1(cfg: dict[str, Any], tables: dict[str, Any]) -> dict[str, Any]:
         "pac_by_k": pac,
         "stability": stability,
         "leave_one_site_out": loso,
+        "negative_control_surrogate": negative_control,
         "phenotype_bar": bar,
         "characterization": {str(c): v["top_distinguishing_features"]
                              for c, v in profile["phenotypes"].items()},

@@ -19,7 +19,7 @@ except ImportError:
     HAVE_STACK = False
 
 from tests.test_integrity import base_cfg
-from pipeline.features import compute_features, feature_schema
+from pipeline.features import compute_features, feature_schema, _aperiodic_fit
 
 
 def _make_windows(cfg, sfreq=200, n_windows=4, n_samples=400, seed=42):
@@ -189,6 +189,85 @@ class TestSchemaAlignmentEnd2End(unittest.TestCase):
             for suffix in ("coverage", "meandur"):
                 key = f"microstate{s}_{suffix}"
                 self.assertFalse(result[key] != result[key], msg=f"{key} is NaN")
+
+
+@unittest.skipUnless(HAVE_STACK, "numpy/scipy not available")
+class TestAperiodicFitRobustness(unittest.TestCase):
+    """Validate that _aperiodic_fit recovers the true 1/f exponent under
+    a strong oscillatory peak, and that the naive polyfit slope is biased."""
+
+    def _make_synthetic_psd(self, exp_true=1.5, offset_true=1.0,
+                             peak_center=10.0, peak_amp=5.0, peak_width=1.5):
+        """Return (freqs, psd) with a power-law floor plus a Gaussian alpha peak."""
+        freqs = np.linspace(1, 45, 200)
+        # Pure 1/f component: P(f) = 10**offset_true * f**(-exp_true)
+        psd_floor = (10 ** offset_true) * freqs ** (-exp_true)
+        # Gaussian peak in linear power (strong enough to bias naive slope)
+        peak = peak_amp * np.exp(-0.5 * ((freqs - peak_center) / peak_width) ** 2)
+        psd = psd_floor + peak
+        return freqs, psd
+
+    def test_robust_fit_closer_than_naive(self):
+        """Robust fit should be closer to exp_true than the plain polyfit slope."""
+        exp_true = 1.5
+        freqs, psd = self._make_synthetic_psd(exp_true=exp_true)
+        freq_range = [1.0, 45.0]
+
+        # Naive polyfit slope (biased by the peak).
+        logf = np.log10(freqs)
+        logp = np.log10(psd + 1e-24)
+        naive_slope, _ = np.polyfit(logf, logp, 1)
+        naive_exp = -naive_slope
+
+        # Robust fit.
+        robust_exp, robust_off = _aperiodic_fit(freqs, psd, freq_range, np)
+
+        naive_err = abs(naive_exp - exp_true)
+        robust_err = abs(robust_exp - exp_true)
+
+        # The naive estimate must be meaningfully biased by the peak.
+        self.assertGreater(naive_err, robust_err,
+                           msg=f"Naive error {naive_err:.3f} should exceed robust "
+                               f"error {robust_err:.3f} (naive_exp={naive_exp:.3f}, "
+                               f"robust_exp={robust_exp:.3f}, true={exp_true})")
+
+    def test_robust_fit_within_tolerance(self):
+        """Robust fit should recover exp_true within ±0.3 despite the alpha peak."""
+        exp_true = 1.5
+        freqs, psd = self._make_synthetic_psd(exp_true=exp_true)
+        freq_range = [1.0, 45.0]
+
+        robust_exp, robust_off = _aperiodic_fit(freqs, psd, freq_range, np)
+        err = abs(robust_exp - exp_true)
+        self.assertLessEqual(err, 0.3,
+                             msg=f"Robust exponent {robust_exp:.3f} too far from "
+                                 f"true {exp_true} (err={err:.3f})")
+
+    def test_offset_is_finite(self):
+        """Offset returned by _aperiodic_fit must be a finite number."""
+        freqs, psd = self._make_synthetic_psd()
+        robust_exp, robust_off = _aperiodic_fit(freqs, psd, [1.0, 45.0], np)
+        self.assertTrue(np.isfinite(robust_off),
+                        msg=f"Offset is not finite: {robust_off}")
+        self.assertTrue(np.isfinite(robust_exp),
+                        msg=f"Exponent is not finite: {robust_exp}")
+
+    def test_flat_psd_no_crash(self):
+        """_aperiodic_fit must return finite values on a flat (constant) PSD."""
+        freqs = np.linspace(1, 45, 200)
+        psd = np.ones_like(freqs)
+        exp_, off_ = _aperiodic_fit(freqs, psd, [1.0, 45.0], np)
+        self.assertTrue(np.isfinite(exp_), msg=f"Exponent not finite on flat PSD: {exp_}")
+        self.assertTrue(np.isfinite(off_), msg=f"Offset not finite on flat PSD: {off_}")
+
+    def test_zero_psd_no_crash(self):
+        """_aperiodic_fit must not crash on an all-zero PSD (degenerate case)."""
+        freqs = np.linspace(1, 45, 200)
+        psd = np.zeros_like(freqs)
+        exp_, off_ = _aperiodic_fit(freqs, psd, [1.0, 45.0], np)
+        # Just assert no exception was raised; values may be 0.0 or a fallback.
+        self.assertIsInstance(exp_, float)
+        self.assertIsInstance(off_, float)
 
 
 if __name__ == "__main__":

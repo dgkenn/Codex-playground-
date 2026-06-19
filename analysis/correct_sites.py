@@ -56,21 +56,48 @@ class SiteCorrection:
 
     # -- transform ----------------------------------------------------------
     def transform(self, X, batch):
-        """Apply the frozen correction. Unknown batches pass through unchanged
-        (and are flagged by the caller's site probe)."""
+        """Apply the frozen correction, aligning every batch to the frozen grand
+        mean / pooled scale.
+
+        Known (discovery) batches use their frozen location/scale parameters. An
+        UNKNOWN batch -- e.g. the held-out hospital, which the frozen transform
+        never saw -- is aligned to the same frozen grand mean using location/
+        scale estimated from that batch's own embeddings at apply time. This is
+        the standard ComBat new-batch harmonization; it uses EEG embeddings only
+        (no outcome), so it does not breach the firewall, and it is what makes a
+        frozen site-correction applicable to a brand-new confirmation site.
+        """
         import numpy as np
 
         if self.params_ is None:
             raise RuntimeError("call fit() before transform()")
         X = np.asarray(X, dtype="float64")
         gm = np.asarray(self.params_["grand_mean"])
+        pooled_std = np.asarray(self.params_["pooled_std"])
         gamma = self.params_["gamma"]
         delta = self.params_["delta"]
+        batch = list(batch)
+
+        # On-the-fly params for any batch absent from the frozen fit.
+        unknown = {b for b in set(batch) if b not in gamma}
+        est_gamma, est_delta = {}, {}
+        for b in unknown:
+            idx = [i for i, bb in enumerate(batch) if bb == b]
+            Xb = X[idx]
+            est_gamma[b] = Xb.mean(axis=0) - gm
+            est_delta[b] = np.sqrt((Xb.var(axis=0) + 1e-12) / (pooled_std ** 2 + 1e-12))
+
         out = X.copy()
         for i, b in enumerate(batch):
-            if b in gamma:
-                out[i] = (X[i] - gm - np.asarray(gamma[b])) / np.asarray(delta[b]) + gm
+            g = np.asarray(gamma[b]) if b in gamma else est_gamma[b]
+            d = np.asarray(delta[b]) if b in delta else est_delta[b]
+            out[i] = (X[i] - gm - g) / d + gm
         return out
+
+    def transform_new_site(self, X):
+        """Convenience: align a single new site's embeddings (all one batch) to
+        the frozen reference. Equivalent to transform(X, ['__new__']*len(X))."""
+        return self.transform(X, ["__new__"] * len(X))
 
     # -- freeze -------------------------------------------------------------
     def content_hash(self) -> str:

@@ -43,7 +43,8 @@ pipeline/                   # Pass 1: stream_fetch -> harmonize -> embed -> feat
                             #   + writer.py (compact-table sink: 3 aligned tables, sharded)
 analysis/                   # correct_sites, site_probe (gate), cluster, characterize, audits,
                             #   phenotype_bar (the "real phenotype" gate), run_phase1 (orchestrator)
-phase2/                     # freeze (4 objects) -> unlock_and_test (single run-once test)
+phase2/                     # freeze (4 objects) -> run_phase2 (unlock -> cross-site
+                            #   reproducibility -> single run-once outcome test)
 artifacts/                  # PERSISTED compact tables only (~1-3 GB); raw is never written
 tests/                      # test_integrity (stdlib) + analysis/e2e/DSP (skipped w/o sci stack)
 docs/SPEC_TRACEABILITY.md   # spec section -> enforcing code -> test
@@ -94,10 +95,16 @@ python -m unittest tests.test_analysis -v
    the refutation-battery results.
 2. **Freeze (`phase2/freeze.py`).** Hash the four objects into
    `artifacts/frozen/manifest.json` and stamp the combined pipeline hash.
-3. **Phase 2 (`phase: 2`).** `unlock_and_test.py` verifies the frozen hash,
-   unlocks the held-out hospital (logged), applies the frozen pipeline, and runs
-   the **single** pre-registered phenotype↔outcome contrast **once** (enforced by
-   a persistent run-once lock). No iteration back to Phase 1.
+3. **Phase 2 (`phase: 2`, `phase2/run_phase2.py`).** Verifies the frozen-pipeline
+   hash **and** re-verifies each frozen object (correction transform, assignment
+   fn) by content hash against the manifest — so the *same* objects from
+   discovery are applied, not a re-fit that could have peeked. Unlocks the
+   held-out hospital (logged), acquires the single-use run-once lock, applies the
+   frozen correction + assignment, runs the **cross-site reproducibility** check
+   (EEG only → promotes the primary phenotype provisional → confirmed), and only
+   if confirmed runs the **single** pre-registered phenotype↔outcome contrast
+   **once**, followed by a shuffled-outcome leakage control. No iteration back to
+   Phase 1.
 
 ## Claim discipline (Sec 16)
 
@@ -108,8 +115,8 @@ language; no generalization claims absent external (TUH) replication.
 
 ## Status
 
-Scaffold + integrity core + analysis logic + Phase-1 orchestrator, all tests
-green (50 tests). The
+Scaffold + integrity core + analysis logic + Phase-1 & Phase-2 orchestrators,
+all tests green (57 tests). The
 spec's `[fill]` slots are now **pinned** in `config.yaml` as documented design
 decisions, with two deliberate exceptions that cannot be resolved yet:
 

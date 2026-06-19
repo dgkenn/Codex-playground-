@@ -36,6 +36,35 @@ def negative_control_shuffled_outcome(labels, outcome, cfg: dict[str, Any],
             "n_perm": n_perm}
 
 
+def clustering_structure_score(X, labels) -> float:
+    """A single scalar for "how much cluster structure is present" -- the mean
+    silhouette of the labeling. Returns 0.0 when <2 clusters or degenerate."""
+    import numpy as np
+    from sklearn.metrics import silhouette_score
+
+    X = np.asarray(X, dtype="float64")
+    labels = np.asarray(labels)
+    if len(set(labels.tolist())) < 2 or X.shape[0] <= len(set(labels.tolist())):
+        return 0.0
+    try:
+        return float(silhouette_score(X, labels))
+    except ValueError:
+        return 0.0
+
+
+def phase_randomized_surrogate(X, rng):
+    """Embedding-table analog of phase-randomized surrogate EEG: independently
+    permute each embedding dimension across recordings. This destroys the joint
+    (cross-dimension) structure that clusters live in while preserving every
+    marginal distribution -- so genuine phenotype structure must beat it."""
+    import numpy as np
+    X = np.asarray(X, dtype="float64")
+    out = np.empty_like(X)
+    for j in range(X.shape[1]):
+        out[:, j] = X[rng.permutation(X.shape[0]), j]
+    return out
+
+
 def surrogate_structure_collapse(structure_score_real: float,
                                 surrogate_scores: list[float]) -> dict[str, Any]:
     """Phase-randomized surrogate EEG (computed transiently on streamed raw)

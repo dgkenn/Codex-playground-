@@ -77,15 +77,11 @@ def compute_features(windows, sfreq: float, cfg: dict[str, Any]) -> dict[str, fl
             out[f"bp_{band}_{ch}"] = float(bp[i])
             out[f"bprel_{band}_{ch}"] = float(bp[i] / total[i])
 
-    # Aperiodic fit (specparam) -- delegated; placeholder loglog slope here.
-    lo, hi = f["specparam"]["freq_range"]
-    fm = (freqs >= lo) & (freqs <= hi)
-    logf = np.log10(freqs[fm] + 1e-12)
+    # Aperiodic fit (specparam-style) with iterative peak removal.
     for i, ch in enumerate(chans):
-        logp = np.log10(psd[i, fm] + 1e-24)
-        slope, offset = np.polyfit(logf, logp, 1)
-        out[f"aperiodic_exponent_{ch}"] = float(-slope)
-        out[f"aperiodic_offset_{ch}"] = float(offset)
+        exp_, off_ = _aperiodic_fit(freqs, psd[i], f["specparam"]["freq_range"], np)
+        out[f"aperiodic_exponent_{ch}"] = float(exp_)
+        out[f"aperiodic_offset_{ch}"] = float(off_)
         # Spectral edge: frequency below which `pct` of power lies.
         cdf = np.cumsum(psd[i]) / (np.sum(psd[i]) + 1e-12)
         edge_idx = int(np.searchsorted(cdf, f["spectral_edge_pct"] / 100.0))
@@ -139,6 +135,93 @@ def compute_features(windows, sfreq: float, cfg: dict[str, Any]) -> dict[str, fl
 # Private helpers — separated so compute_features stays readable.
 # All helpers receive pre-imported np and operate in-place on `out`.
 # ---------------------------------------------------------------------------
+
+
+def _aperiodic_fit(freqs, psd_1d, freq_range, np):
+    """Robust aperiodic 1/f fit with iterative peak exclusion (FOOOF 'fixed' mode).
+
+    Algorithm
+    ---------
+    1. Restrict to freq_range (inclusive). Convert to log10–log10 space.
+    2. Initial least-squares line fit: log10(psd) ~ b - chi * log10(freq).
+    3. Iterate up to N_ITER times: mark points whose residual exceeds
+       THRESH * std(residuals) as peaks; refit using only the non-peak
+       (lower-envelope) points.  This pulls the line onto the aperiodic
+       floor and away from oscillatory bumps.
+    4. Return (exponent, offset) where exponent = -slope (positive for
+       typical 1/f spectra) and offset = intercept in log10 units.
+
+    Falls back to a plain polyfit if specparam/fooof is unavailable or if
+    degenerate conditions are detected (too few points, constant PSD).
+    Optionally delegates to the `specparam` package when importable.
+    """
+    _TINY = 1e-24
+    _N_ITER = 3
+    _THRESH = 2.0  # residuals > THRESH * std(r) are treated as peaks
+
+    lo, hi = freq_range
+    mask = (freqs >= lo) & (freqs <= hi)
+    f_sel = freqs[mask]
+    p_sel = psd_1d[mask]
+
+    # Degenerate: too few points or zero / negative power everywhere.
+    if mask.sum() < 3 or float(np.max(p_sel)) <= 0.0:
+        return (0.0, 0.0)
+
+    x = np.log10(f_sel + 1e-12)
+    y = np.log10(p_sel + _TINY)
+
+    # --- Optional: try specparam / fooof first ---
+    try:
+        # lazy import; neither is a hard dependency
+        try:
+            from specparam import SpectralModel as _SM
+            _use_specparam = True
+        except ImportError:
+            from fooof import FOOOF as _SM  # type: ignore[no-reattr]
+            _use_specparam = False
+
+        fm_model = _SM(aperiodic_mode="fixed", max_n_peaks=6, verbose=False)
+        fm_model.fit(freqs, psd_1d, freq_range)
+        ap = fm_model.aperiodic_params_  # [offset, exponent]
+        return (float(ap[1]), float(ap[0]))
+    except Exception:
+        pass  # fall through to numpy implementation
+
+    # --- Numpy iterative peak-removal ---
+    # Initial fit across all points.
+    try:
+        coeffs = np.polyfit(x, y, 1)
+    except Exception:
+        return (0.0, 0.0)
+
+    keep = np.ones(len(x), dtype=bool)
+
+    for _ in range(_N_ITER):
+        y_fit = np.polyval(coeffs, x)
+        residuals = y - y_fit
+        r_std = float(np.std(residuals))
+        if r_std < 1e-12:
+            break
+        # Keep only points that are NOT above-threshold positive peaks.
+        keep = residuals <= _THRESH * r_std
+        if keep.sum() < 2:
+            # Guard: if almost all points removed, stop and use previous fit.
+            keep = np.ones(len(x), dtype=bool)
+            break
+        try:
+            coeffs = np.polyfit(x[keep], y[keep], 1)
+        except Exception:
+            break
+
+    slope = float(coeffs[0])
+    intercept = float(coeffs[1])
+
+    # Guard non-finite results.
+    if not (slope == slope) or not (intercept == intercept):  # NaN check
+        return (0.0, 0.0)
+
+    return (float(-slope), float(intercept))
 
 def _compute_wpli(data, freqs, sfreq, nwin, nch, nsamp, chans, f, out, np):  # pragma: no cover
     """Fill wpli_{band}_globalmean entries in `out`."""
