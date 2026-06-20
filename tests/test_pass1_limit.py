@@ -115,3 +115,26 @@ class TestWindowCap(unittest.TestCase):
         self.assertTrue(0 == idx[0] and idx[-1] <= 999)    # spans the recording
         self.assertEqual(len(set(idx)), 40)                # distinct
         self.assertEqual(idx, select_window_indices(1000, 40))  # deterministic
+
+
+class TestShardPartition(unittest.TestCase):
+    def test_disjoint_and_exhaustive(self):
+        from pipeline.run_pass1 import shard_match
+        ids = [f"rec{i}" for i in range(2000)]
+        N = 16
+        assigned = {}
+        for rid in ids:
+            ks = [k for k in range(N) if shard_match(rid, k, N)]
+            self.assertEqual(len(ks), 1)        # each recording in exactly one shard
+            assigned[rid] = ks[0]
+        # every shard gets a roughly balanced, non-empty share
+        from collections import Counter
+        counts = Counter(assigned.values())
+        self.assertEqual(len(counts), N)        # all shards used
+        self.assertTrue(min(counts.values()) > 2000 / N * 0.5)
+        # deterministic across calls (cross-process safe)
+        self.assertEqual(assigned["rec7"], [k for k in range(N) if shard_match("rec7", k, N)][0])
+
+    def test_num_shards_one_takes_all(self):
+        from pipeline.run_pass1 import shard_match
+        self.assertTrue(all(shard_match(f"r{i}", 0, 1) for i in range(50)))

@@ -35,24 +35,39 @@ from pipeline.stream_fetch import (
 
 
 # ---- resume bookkeeping --------------------------------------------------
-def _checkpoint_path(cfg: dict[str, Any]) -> str:
+def _checkpoint_path(cfg: dict[str, Any], done_path: str | None = None) -> str:
+    if done_path:
+        return done_path
     return os.path.join(cfg.get("artifacts_dir", "artifacts"), "pass1_done.txt")
 
 
-def load_completed(cfg: dict[str, Any]) -> set[str]:
-    """Recording ids already written -- the resume set (Sec 0)."""
-    path = _checkpoint_path(cfg)
+def load_completed(cfg: dict[str, Any], done_path: str | None = None) -> set[str]:
+    """Recording ids already written -- the resume set (Sec 0). With a per-shard
+    `done_path`, each parallel worker tracks its own completions independently."""
+    path = _checkpoint_path(cfg, done_path)
     if not os.path.exists(path):
         return set()
     with open(path, "r", encoding="utf-8") as fh:
         return {ln.strip() for ln in fh if ln.strip()}
 
 
-def mark_completed(cfg: dict[str, Any], recording_id: str) -> None:
-    path = _checkpoint_path(cfg)
-    os.makedirs(os.path.dirname(path), exist_ok=True)
+def mark_completed(cfg: dict[str, Any], recording_id: str,
+                   done_path: str | None = None) -> None:
+    path = _checkpoint_path(cfg, done_path)
+    os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
     with open(path, "a", encoding="utf-8") as fh:
         fh.write(recording_id + "\n")
+
+
+def shard_match(recording_id: str, shard: int, num_shards: int) -> bool:
+    """Deterministic, cross-process partition: True iff this recording belongs to
+    worker `shard` of `num_shards`. Uses sha256 (NOT Python hash(), which is
+    per-process salted) so disjoint workers cover every recording exactly once."""
+    import hashlib
+    if num_shards <= 1:
+        return True
+    h = int.from_bytes(hashlib.sha256(recording_id.encode("utf-8")).digest()[:8], "big")
+    return (h % num_shards) == shard
 
 
 def shard_iter(items: Iterable[RecordingRef], size: int):
@@ -114,16 +129,20 @@ def process_recording(cfg: dict[str, Any], ref: RecordingRef,
 
 def run(cfg: dict[str, Any], writer, embedder: FrozenEmbedder | None = None,
         client: _BDSPClient | None = None,
-        limit: int | None = None) -> dict[str, Any]:  # pragma: no cover - needs full stack
-    """Run Pass 1 (resumable).
+        limit: int | None = None,
+        shard: tuple[int, int] | None = None,
+        done_path: str | None = None) -> dict[str, Any]:  # pragma: no cover - needs full stack
+    """Run Pass 1 (resumable, optionally one shard of a parallel run).
 
-    `writer` is any object with `.write_row(dict)` and `.flush()`; in production
-    this is the Parquet/Zarr-backed compact-table writer.
+    `writer` is any object with `.write_row(dict)` and `.flush()`.
 
-    `limit` caps the number of NEW recordings consumed this run (a pilot cap, to
-    bound time/egress in an ephemeral environment). Falls back to
-    `cfg.execution.max_recordings`; None/0 means no cap (full run). Resume-safe:
-    already-completed recordings don't count toward the limit.
+    `limit` caps the number of NEW recordings consumed this run; falls back to
+    `cfg.execution.max_recordings`; None/0 means no cap. Resume-safe.
+
+    `shard=(k, n)` makes this worker process ONLY recordings whose stable hash
+    selects shard k of n (disjoint, exhaustive across workers). `done_path` gives
+    this worker its own resume file so N workers writing the same out_dir don't
+    clobber each other's checkpoint.
     """
     guard = HeldoutGuard(cfg)
     if cfg.get("phase") != 1:
@@ -132,22 +151,26 @@ def run(cfg: dict[str, Any], writer, embedder: FrozenEmbedder | None = None,
     if limit is None:
         limit = cfg.get("execution", {}).get("max_recordings")
     limit = None if not limit else int(limit)
+    k, n_shards = shard if shard else (0, 1)
 
     client = client or make_client(cfg)
     embedder = embedder or FrozenEmbedder(cfg)
     log_path = os.path.join(cfg.get("log_dir", "artifacts/logs"), "pass1.log")
-    audit_log(log_path, "pass1_start", config_hash=config_hash(cfg), limit=limit)
+    audit_log(log_path, "pass1_start", config_hash=config_hash(cfg),
+              limit=limit, shard=k, num_shards=n_shards)
 
-    done = load_completed(cfg)
+    done = load_completed(cfg, done_path)
     shard_size = cfg["execution"]["shard_size_recordings"]
     n_written = 0
     n_consumed = 0  # new recordings processed this run (counts toward `limit`)
 
     recordings = iter_qualifying_recordings(cfg, guard, client)
     reached_limit = False
-    for shard in shard_iter(recordings, shard_size):
-        for ref in shard:
-            if ref.recording_id in done:  # resume: skip already-written
+    for batch in shard_iter(recordings, shard_size):
+        for ref in batch:
+            if not shard_match(ref.recording_id, k, n_shards):
+                continue                       # belongs to another worker
+            if ref.recording_id in done:       # resume: skip already-written
                 continue
             if limit is not None and n_consumed >= limit:
                 reached_limit = True
@@ -155,17 +178,17 @@ def run(cfg: dict[str, Any], writer, embedder: FrozenEmbedder | None = None,
             n_consumed += 1
             row = process_recording(cfg, ref, embedder, client)
             if row is None:
-                mark_completed(cfg, ref.recording_id)
+                mark_completed(cfg, ref.recording_id, done_path)
                 continue
             writer.write_row(row)
-            mark_completed(cfg, ref.recording_id)
+            mark_completed(cfg, ref.recording_id, done_path)
             n_written += 1
-        writer.flush()  # checkpoint the compact table per shard
+        writer.flush()  # checkpoint the compact table per batch
         if reached_limit:
             break
 
     audit_log(log_path, "pass1_done", n_written=n_written,
-              n_consumed=n_consumed, hit_limit=reached_limit)
+              n_consumed=n_consumed, hit_limit=reached_limit, shard=k)
     return {"n_written": n_written, "n_consumed": n_consumed,
-            "hit_limit": reached_limit, "limit": limit,
-            "config_hash": config_hash(cfg)}
+            "hit_limit": reached_limit, "limit": limit, "shard": k,
+            "num_shards": n_shards, "config_hash": config_hash(cfg)}

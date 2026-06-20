@@ -29,10 +29,13 @@ class CompactTableWriter:
     """Buffered, shard-fragmented writer for the three compact tables."""
 
     def __init__(self, cfg: dict[str, Any], out_dir: str | None = None,
-                 backend: str | None = None):
+                 backend: str | None = None, fragment_prefix: str = ""):
         self.cfg = cfg
         self.out_dir = out_dir or cfg.get("artifacts_dir", "artifacts")
         self.backend = backend or ("parquet" if _have_pyarrow() else "jsonl")
+        # Per-writer fragment prefix so parallel shard workers writing to the
+        # SAME out_dir never collide on fragment filenames (e.g. "w03-").
+        self.fragment_prefix = fragment_prefix
         self._buf_emb: list[dict] = []
         self._buf_mo: list[dict] = []
         self._buf_feat: list[dict] = []
@@ -63,7 +66,7 @@ class CompactTableWriter:
         """Persist the buffered shard as one fragment per table, then clear."""
         if not self._buf_emb:
             return
-        tag = f"part-{self._frag:06d}"
+        tag = f"part-{self.fragment_prefix}{self._frag:06d}"
         writer = self._write_parquet if self.backend == "parquet" else self._write_jsonl
         writer("embeddings", tag, self._buf_emb)
         writer("features", tag, self._buf_feat)
@@ -104,11 +107,13 @@ class CompactTableWriter:
                 fh.write(json.dumps(r, default=str) + "\n")
 
     def _next_fragment_index(self) -> int:
-        """Resume-safe: continue numbering after any existing fragments."""
+        """Resume-safe: continue numbering after THIS writer's existing
+        fragments (matched by prefix, so workers count independently)."""
         emb_dir = os.path.join(self.out_dir, "embeddings")
         if not os.path.isdir(emb_dir):
             return 0
-        existing = [f for f in os.listdir(emb_dir) if f.startswith("part-")]
+        pre = f"part-{self.fragment_prefix}"
+        existing = [f for f in os.listdir(emb_dir) if f.startswith(pre)]
         return len(existing)
 
 
