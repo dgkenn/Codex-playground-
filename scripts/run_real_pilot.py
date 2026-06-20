@@ -76,38 +76,53 @@ def main() -> int:
     client = HEEDBBDSPClient(cfg)
     guard = HeldoutGuard(cfg)
     done = load_completed(cfg)
+    min_age = cfg.get("cohort", {}).get("primary_min_age_years", 18)
+    max_scan = per_site * 6           # cap catalog scan to find `per_site` adults
     t0 = time.time()
     n = 0
-    print(f">>> PASS 1: real HEEDB EDFs, up to {per_site}/site, max_duration={max_dur}s", flush=True)
+    skips = {"pediatric": 0, "not_mappable_or_short": 0}
+    print(f">>> PASS 1: real HEEDB EDFs, up to {per_site} ADULTS/site "
+          f"(>= {min_age}y), max_duration={max_dur}s", flush=True)
     with CompactTableWriter(cfg, out_dir=work, backend="jsonl") as w:
         for site in cfg["sites"]["discovery"]:
             guard.check_site_access(site, context="real_pilot")
-            seen = 0
+            kept = scanned = 0
             for ref in client.list_recordings(site):
-                if seen >= per_site:
+                if kept >= per_site or scanned >= max_scan:
                     break
+                scanned += 1
                 guard.check_site_access(ref.hospital, context="real_pilot:ref")
+                # Adults-only eligibility (now that age is joined from patients.csv).
+                if ref.age is not None and ref.age < min_age:
+                    skips["pediatric"] += 1
+                    continue
                 if ref.recording_id in done:
                     continue
-                seen += 1
+                kept += 1
                 try:
                     row = process_recording(cfg, ref, emb, client)
                 except Exception as e:
                     print(f"    skip {ref.recording_id}: {type(e).__name__}: {str(e)[:80]}", flush=True)
+                    skips["not_mappable_or_short"] += 1
                     continue
-                if row is None:
+                if row is None:                       # not mappable / no clean windows
+                    skips["not_mappable_or_short"] += 1
                     continue
                 w.write_row(row)
                 n += 1
                 if n % 10 == 0:
                     print(f"    ... {n} rows ({time.time()-t0:.0f}s)", flush=True)
             w.flush()
-            print(f"    {site}: total {n} rows so far ({time.time()-t0:.0f}s)", flush=True)
+            print(f"    {site}: wrote {n} | scanned {scanned} | "
+                  f"pediatric_skipped {skips['pediatric']} | "
+                  f"not_mappable/short {skips['not_mappable_or_short']} "
+                  f"({time.time()-t0:.0f}s)", flush=True)
 
     tables = load_compact_tables(cfg, out_dir=work)
     by_site = {s: sum(1 for r in tables["qc"] if r["hospital"] == s)
                for s in sorted({r["hospital"] for r in tables["qc"]})}
-    print(f">>> Pass 1 wrote {n} rows in {time.time()-t0:.0f}s; by site: {by_site}", flush=True)
+    print(f">>> Pass 1 wrote {n} rows in {time.time()-t0:.0f}s; by site: {by_site}; "
+          f"skips: {skips}", flush=True)
 
     if n < 4:
         print(">>> too few rows for Phase-1; stopping.", flush=True)
@@ -124,6 +139,7 @@ def main() -> int:
         "leave_one_site_out": rep["leave_one_site_out"],
         "negative_control": rep["negative_control_surrogate"],
         "n_admitted": rep["phenotype_bar"]["n_admitted"],
+        "skips": skips,
         "elapsed_s": round(time.time() - t0, 0),
     }
     with open(work + "/pilot_summary.json", "w") as fh:
