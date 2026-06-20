@@ -10,9 +10,12 @@ confirmation and external replication on TUH. The canonical protocol is
 map is `docs/SPEC_TRACEABILITY.md`.
 
 NOTE: the protocol is at **v3** (MORGOTH backbone + redundancy/novelty control +
-non-circular Phase-2 outcome). The CODE still reflects v2 (CBraMod, seizure
-outcome) — see that file's changelog; the backbone/outcome code ripple is a
-pending follow-up, not yet applied.
+non-circular Phase-2 outcome). **CBraMod is the validated OPERATIONAL backbone**
+today (real weights, sha256-pinned, runs end-to-end on real HEEDB data); MORGOTH
+is the v3 target and a clean future swap — its code+weights are not yet public
+(repo 404s; paper in press). The redundancy/novelty control and the
+`model_outputs` task-output persistence are already built and tested (no-op for
+CBraMod); see `docs/MORGOTH_INTEGRATION.md` for the wire-up checklist.
 
 **Binding integrity principle (do not weaken):** Phase 1 (discovery) uses **no
 outcome label**. Phase 2 tests **one** pre-registered outcome on a **held-out

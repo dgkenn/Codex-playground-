@@ -89,6 +89,28 @@ class TestWriterRoundTrip(unittest.TestCase):
             self.assertEqual(qc["recording_id"], rid)
             self.assertEqual(len(emb), 4)
             self.assertNotIn("embedding", qc)   # raw split out of qc table
+        # No model_outputs table when the backbone emits none (CBraMod path).
+        self.assertNotIn("model_outputs", t)
+
+    def test_model_outputs_table_roundtrips_when_present(self):
+        # MORGOTH path: rows carry task outputs -> own aligned table.
+        from pipeline.writer import CompactTableWriter, load_compact_tables
+        cfg = base_cfg()
+        cfg["artifacts_dir"] = tempfile.mkdtemp()
+        rows = _synthetic_tables(n_per_cluster=4, d=4)
+        for j, r in enumerate(rows):
+            r["model_outputs"] = [float(j), 0.5, 1.0]      # 3 task-output probs
+        with CompactTableWriter(cfg, backend="jsonl") as w:
+            for r in rows:
+                w.write_row(r)
+            w.flush()
+        t = load_compact_tables(cfg)
+        self.assertIn("model_outputs", t)
+        self.assertEqual(len(t["model_outputs"]), len(rows))
+        # Aligned to recording_id order, 3-dim, and kept out of qc.
+        for mo in t["model_outputs"]:
+            self.assertEqual(len(mo), 3)
+        self.assertNotIn("model_outputs", t["qc"][0])
 
 
 @unittest.skipUnless(HAVE_STACK, "numpy/sklearn not installed")

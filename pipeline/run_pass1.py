@@ -81,11 +81,17 @@ def process_recording(cfg: dict[str, Any], ref: RecordingRef,
         win_emb = embedder.embed_windows(windows)
         pooled = pool_embeddings(win_emb, cfg["embedding"]["pooling"])
         feats = compute_features(windows, plan.target_sfreq_hz, cfg)
+        # MORGOTH-style task outputs, when the backbone exposes them (the
+        # redundancy/novelty reference, v3 Sec 13.3). No-op for CBraMod.
+        task_out = None
+        if hasattr(embedder, "task_outputs"):
+            task_out = [float(x) for x in embedder.task_outputs(windows)]
 
     row = {
         **asdict(ref),
         "embedding": pooled.tolist(),
         "features": feats,
+        "model_outputs": task_out,
         "n_windows": int(windows.shape[0]),
         "harmonization_hash": plan.content_hash(),
         "keep_epoch_subset": should_keep_epoch_subset(

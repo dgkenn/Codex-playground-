@@ -34,6 +34,7 @@ class CompactTableWriter:
         self.out_dir = out_dir or cfg.get("artifacts_dir", "artifacts")
         self.backend = backend or ("parquet" if _have_pyarrow() else "jsonl")
         self._buf_emb: list[dict] = []
+        self._buf_mo: list[dict] = []
         self._buf_feat: list[dict] = []
         self._buf_qc: list[dict] = []
         self._frag = self._next_fragment_index()
@@ -42,14 +43,20 @@ class CompactTableWriter:
 
     # -- public API ---------------------------------------------------------
     def write_row(self, row: dict[str, Any]) -> None:
-        """Split one Pass-1 row into its three aligned table records."""
+        """Split one Pass-1 row into its aligned table records."""
         rid = row["recording_id"]
         self._buf_emb.append({"recording_id": rid, "embedding": list(row["embedding"])})
         feat = {"recording_id": rid}
         feat.update(row["features"])  # already a flat name->float mapping
         self._buf_feat.append(feat)
+        # Optional MORGOTH-style task outputs (the redundancy/novelty reference,
+        # v3 Sec 13.3). Present only when the backbone emits task heads; absent
+        # for CBraMod. Persisted to its own aligned table.
+        if "model_outputs" in row and row["model_outputs"] is not None:
+            self._buf_mo.append({"recording_id": rid,
+                                 "model_outputs": list(row["model_outputs"])})
         meta = {k: v for k, v in row.items()
-                if k not in ("embedding", "features")}
+                if k not in ("embedding", "features", "model_outputs")}
         self._buf_qc.append(meta)
 
     def flush(self) -> None:
@@ -57,17 +64,17 @@ class CompactTableWriter:
         if not self._buf_emb:
             return
         tag = f"part-{self._frag:06d}"
-        if self.backend == "parquet":
-            self._write_parquet("embeddings", tag, self._buf_emb)
-            self._write_parquet("features", tag, self._buf_feat)
-            self._write_parquet("qc", tag, self._buf_qc)
-        else:
-            self._write_jsonl("embeddings", tag, self._buf_emb)
-            self._write_jsonl("features", tag, self._buf_feat)
-            self._write_jsonl("qc", tag, self._buf_qc)
+        writer = self._write_parquet if self.backend == "parquet" else self._write_jsonl
+        writer("embeddings", tag, self._buf_emb)
+        writer("features", tag, self._buf_feat)
+        writer("qc", tag, self._buf_qc)
+        if self._buf_mo:                       # only when task outputs exist
+            os.makedirs(os.path.join(self.out_dir, "model_outputs"), exist_ok=True)
+            writer("model_outputs", tag, self._buf_mo)
         self._buf_emb.clear()
         self._buf_feat.clear()
         self._buf_qc.clear()
+        self._buf_mo.clear()
         self._frag += 1
 
     def close(self) -> None:
@@ -121,12 +128,19 @@ def load_compact_tables(cfg: dict[str, Any], out_dir: str | None = None) -> dict
 
     by_id = {r["recording_id"]: r for r in emb}
     order = list(by_id)
-    return {
+    tables = {
         "recording_id": order,
         "embedding": [by_id[i]["embedding"] for i in order],
         "features": _align(feat, order),
         "qc": _align(qc, order),
     }
+    # Optional MORGOTH task-output table (row-aligned), present only when the
+    # backbone emits task heads -> drives the redundancy/novelty control.
+    mo = _read_table(os.path.join(out_dir, "model_outputs"), backend)
+    if mo:
+        by_mo = {r["recording_id"]: r["model_outputs"] for r in mo}
+        tables["model_outputs"] = [by_mo[i] for i in order]
+    return tables
 
 
 def _align(rows: list[dict], order: list[str]) -> list[dict]:
