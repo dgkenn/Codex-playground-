@@ -385,7 +385,11 @@ class HEEDBBDSPClient(_BDSPClient):
         self._bids_prefix: str = heedb.get("bids_prefix", "EEG/bids/")
         self._max_duration_s: float = float(heedb.get("max_duration_s", 2400))
         self._tasks: list[str] = list(heedb.get("tasks", ["Routine"]))
+        self._patients_key: str = heedb.get(
+            "patients_key", "EEG/HEEDB_Metadata/HEEDB_patients.csv"
+        )
         self._s3 = s3
+        self._patients: dict[tuple[str, str], dict] | None = None
 
     # -- boto3 client (lazy) ------------------------------------------------
 
@@ -419,6 +423,46 @@ class HEEDBBDSPClient(_BDSPClient):
         body = self.s3().get_object(Bucket=self._access_point, Key=key)["Body"].read()
         text = body.decode("utf-8-sig")  # handle BOM if present
         return list(csv.DictReader(io.StringIO(text)))
+
+    def _load_patients(self) -> dict[tuple[str, str], dict]:
+        """Fetch HEEDB_patients.csv once and return a lookup keyed by (SiteID, BDSPPatientID).
+
+        Values are dicts with keys ``age`` (float or None) and ``sex`` (str or None).
+        The config key ``cfg["data"]["heedb"]["patients_key"]`` controls the S3 object
+        path (default ``"EEG/HEEDB_Metadata/HEEDB_patients.csv"``).
+
+        Only acquisition/eligibility columns (SiteID, BDSPPatientID, Sex,
+        AgeAtVisitAvg) are read; all other columns are ignored.  ICD10Count,
+        MedicationCount, and any death/outcome columns in the file are never
+        stored.
+        """
+        if self._patients is not None:
+            return self._patients
+
+        import csv
+        import io
+
+        body = self.s3().get_object(
+            Bucket=self._access_point, Key=self._patients_key
+        )["Body"].read()
+        text = body.decode("utf-8-sig")
+        reader = csv.DictReader(io.StringIO(text))
+        lookup: dict[tuple[str, str], dict] = {}
+        for row in reader:
+            site = (row.get("SiteID") or "").strip()
+            bdsp_id = (row.get("BDSPPatientID") or "").strip()
+            if not site or not bdsp_id:
+                continue
+            age_raw = (row.get("AgeAtVisitAvg") or "").strip()
+            try:
+                age = float(age_raw) if age_raw else None
+            except (ValueError, TypeError):
+                age = None
+            sex_raw = (row.get("Sex") or "").strip()
+            sex = sex_raw if sex_raw else None
+            lookup[(site, bdsp_id)] = {"age": age, "sex": sex}
+        self._patients = lookup
+        return lookup
 
     def _resolve_edf_key(self, site_id: str, bids_folder: str, session_id: str) -> str | None:
         """List the BIDS eeg/ folder and return the key ending ``_eeg.edf``, or None."""
@@ -481,13 +525,30 @@ class HEEDBBDSPClient(_BDSPClient):
             age_raw = row.get("AgeAtVisit") or ""
             sex_raw = row.get("SexDSC") or ""
 
+            # Catalog fallback values (often empty in HEEDB)
+            cat_age: float | None = float(age_raw) if age_raw.strip() else None
+            cat_sex: str | None = sex_raw.strip() if sex_raw.strip() else None
+
+            # Join against HEEDB_patients.csv for richer demographics.
+            # numeric_patient_id = patient_id with the SiteID prefix removed.
+            # e.g. patient_id "S0001111189001", siteID "S0001" -> "111189001"
+            numeric_patient_id = patient_id[len(siteID):] if patient_id.startswith(siteID) else patient_id
+            patients = self._load_patients()
+            demo = patients.get((siteID, numeric_patient_id))
+            if demo is not None:
+                final_age = demo["age"]
+                final_sex = demo["sex"]
+            else:
+                final_age = cat_age
+                final_sex = cat_sex
+
             yield RecordingRef(
                 recording_id=f"{bids_folder}_ses-{session_id}",
                 patient_id=patient_id,
                 hospital=siteID,
                 duration_s=dur,
-                age=float(age_raw) if age_raw.strip() else None,
-                sex=sex_raw.strip() if sex_raw.strip() else None,
+                age=final_age,
+                sex=final_sex,
                 sampling_rate=None,  # resolved at read time from the EDF header
                 uri=edf_key,
             )

@@ -30,7 +30,7 @@ _CATALOG_CSV = (
     "SiteID,BDSPPatientID,BidsFolder,SessionID,CreationTime,StartTime,EndTime,"
     "DurationInSeconds,EEGFolder,ServiceName,HasXLTEKAnnotations,HasPersystAnnotations,"
     "AgeAtVisit,DateOfDeath,SexDSC,BidsFlag\n"
-    # row 1: Routine EEG, 600 s, has age+sex
+    # row 1: Routine EEG, 600 s, has age+sex (catalog values intentionally left; patients CSV wins)
     "S0001,PID001,sub-S0001111189001,SES001,2020-01-01,,,"
     "600.0,eeg_folder,Routine,0,0,55.0,,M,1\n"
     # row 2: Routine EEG, 900 s, missing age+sex
@@ -45,6 +45,15 @@ _CATALOG_CSV = (
     # row 5: EDF key unresolvable (fake S3 returns no keys for this session)
     "S0001,PID005,sub-S0001111189005,SES005,2020-01-05,,,"
     "400.0,eeg_folder,Routine,0,0,60.0,,M,1\n"
+)
+
+# Patients CSV -- supplies the same age/sex as the catalog for row 1 so
+# existing tests continue to pass; row 2 gains demographics from here.
+# BDSPPatientID is the numeric suffix (patient_id with SiteID prefix stripped).
+_PATIENTS_CSV = (
+    "SiteID,BDSPPatientID,Sex,AgeAtVisitAvg,RaceAndEthnicity\n"
+    "S0001,111189001,M,55.0,Unknown\n"
+    "S0001,111189002,F,32.0,Unknown\n"
 )
 
 # EDF keys that will be "found" when listing sessions SES001 and SES002
@@ -69,11 +78,15 @@ class _FakeBody:
         return self._b.read()
 
 
+_PATIENTS_KEY = "EEG/HEEDB_Metadata/HEEDB_patients.csv"
+
+
 class _FakeS3:
     """Minimal stand-in for a boto3 S3 client."""
 
-    def __init__(self, catalog_csv: str, edf_keys: dict):
+    def __init__(self, catalog_csv: str, edf_keys: dict, patients_csv: str = ""):
         self._catalog = catalog_csv.encode("utf-8")
+        self._patients = patients_csv.encode("utf-8") if patients_csv else b"SiteID,BDSPPatientID,Sex,AgeAtVisitAvg\n"
         self._edf_keys = edf_keys
 
     def list_objects_v2(self, Bucket, Prefix, **_):  # noqa: N803
@@ -91,6 +104,8 @@ class _FakeS3:
         return {"Contents": contents}
 
     def get_object(self, Bucket, Key, **_):  # noqa: N803
+        if Key == _PATIENTS_KEY:
+            return {"Body": _FakeBody(self._patients)}
         return {"Body": _FakeBody(self._catalog)}
 
 
@@ -120,7 +135,7 @@ def _cfg(max_duration_s=1200, tasks=None):
 
 def _client(max_duration_s=1200, tasks=None):
     cfg = _cfg(max_duration_s=max_duration_s, tasks=tasks)
-    fake_s3 = _FakeS3(_CATALOG_CSV, _EDF_KEYS)
+    fake_s3 = _FakeS3(_CATALOG_CSV, _EDF_KEYS, patients_csv=_PATIENTS_CSV)
     return HEEDBBDSPClient(cfg, s3=fake_s3)
 
 
@@ -164,9 +179,11 @@ class TestCatalogParsing(unittest.TestCase):
         r1 = next(r for r in self.refs if "189001" in r.recording_id)
         self.assertAlmostEqual(r1.age, 55.0)
 
-    def test_age_none_when_missing(self):
+    def test_age_from_patients_join_when_catalog_missing(self):
+        # Row 2 has no AgeAtVisit in the catalog CSV, but HEEDB_patients.csv
+        # supplies age=32.0 for this patient; the join should populate it.
         r2 = next(r for r in self.refs if "189002" in r.recording_id)
-        self.assertIsNone(r2.age)
+        self.assertAlmostEqual(r2.age, 32.0)
 
     def test_sex_parsed_when_present(self):
         r1 = next(r for r in self.refs if "189001" in r.recording_id)

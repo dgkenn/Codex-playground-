@@ -78,6 +78,7 @@ data:
     region: "us-east-1"
     profile: "physionet"                  # ~/.aws profile with BDSP access
     metadata_prefix: "EEG/eeg-metadata/"  # per-site catalog CSVs
+    patients_key: "EEG/HEEDB_Metadata/HEEDB_patients.csv"  # age/sex join (eligibility)
     bids_prefix: "EEG/bids/"              # BIDS EDF tree
     max_duration_s: 480                   # pilot filter (null/large for full run)
     tasks: ["Routine"]                    # ServiceName filter; full: [Routine,LTM,EMU]
