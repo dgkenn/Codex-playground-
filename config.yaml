@@ -50,14 +50,15 @@ cohort:
 # HOSPITAL-SPLIT ARCHITECTURE  (Sec 6)
 # ----------------------------------------------------------------------------
 sites:
-  # PINNED: the adult primary analysis splits across the three adult-bearing
-  # hospitals. BCH (pediatric) is excluded from this split entirely and handled
-  # only in the pediatric sensitivity cohort above -- so it can never serve as
-  # the adult confirmation site. BIDMC is held out: a distinct device/montage
-  # fingerprint and a strong ICU cEEG program, making it a demanding test of
-  # both cross-site reproducibility and the Phase-2 ICU-seizure outcome.
-  discovery: ["MGH", "BWH"]               # PINNED
-  held_out: "BIDMC"                       # PINNED -- untouched in Phase 1
+  # The real BDSP bucket uses DE-IDENTIFIED site codes, not hospital names:
+  #   available SiteIDs = I0002, I0003, I0009, S0001, S0002
+  # TO-CONFIRM: map these to MGH/BWH/BIDMC/BCH and set discovery/held_out per the
+  # protocol (adults-only; BCH/pediatric excluded; one held-out adult site). The
+  # values below are the PILOT assignment used to validate the pipeline end-to-end
+  # on real data -- reconcile against the BDSP de-identification key before a real
+  # discovery run. The firewall operates on whatever SiteID labels appear here.
+  discovery: ["S0001", "S0002"]           # TO-CONFIRM mapping (pilot values)
+  held_out: "I0002"                       # TO-CONFIRM -- untouched in Phase 1
   # Cross-site reproducibility gate on the held-out hospital (Sec 6, 9):
   reproducibility_ari_threshold: 0.50     # PINNED: moderate-agreement bar (ARI >=)
 
@@ -68,8 +69,18 @@ data:
   dataset: "HEEDB"
   version: "4.0"                          # PINNED major; verify exact minor vs the
                                           #   DUA'd BDSP release at first fetch
-  source: "BDSP"
+  source: "HEEDB_BDSP"                    # real HEEDB transport (HEEDBBDSPClient)
   access_mode: "stream"                   # "stream" | "batch_and_delete"
+  # Real BDSP HEEDB layout (discovered on the credentialed access point).
+  # Auth = the user's OWN AWS profile via ~/.aws (never in this repo).
+  heedb:
+    access_point: "arn:aws:s3:us-east-1:184438910517:accesspoint/bdsp-credentialed-access-point"
+    region: "us-east-1"
+    profile: "physionet"                  # ~/.aws profile with BDSP access
+    metadata_prefix: "EEG/eeg-metadata/"  # per-site catalog CSVs
+    bids_prefix: "EEG/bids/"              # BIDS EDF tree
+    max_duration_s: 480                   # pilot filter (null/large for full run)
+    tasks: ["Routine"]                    # ServiceName filter; full: [Routine,LTM,EMU]
   scratch_dir: "/tmp/heedb_scratch"       # at most ONE shard of raw lives here
   never_persist_raw: true                 # hard rule (Sec 0)
   # BDSP S3 credentialed access point (bdsp.io/about/howto_accessdata).
@@ -133,9 +144,11 @@ model:
   checkpoint_file: "pretrained_weights.pth"
   revision: "main"                        # PIN-AT-DOWNLOAD: replace with the exact
                                           #   commit SHA pulled, for reproducibility
-  checkpoint_sha256: "TO-CONFIRM"         # PIN-AT-DOWNLOAD: cannot be computed until
-                                          #   the file is fetched; hashed + verified
-                                          #   before Pass 1 (embed.FrozenEmbedder.load)
+  checkpoint_sha256: "0792cb808c14e6b7a2bb2ce1dff379bc47bc54c49a779825bdfeb33bf8157178"
+                                          # PINNED: sha256 of weighting666/CBraMod
+                                          #   pretrained_weights.pth (verified on
+                                          #   download; loaded weights_only=True =
+                                          #   no pickle code execution)
   frozen: true                            # no gradients / no activation storage
   # PINNED to CBraMod's pretraining spec: 200 Hz, 1-second (200-sample) patches.
   expected_sfreq_hz: 200

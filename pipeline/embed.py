@@ -162,51 +162,49 @@ class FrozenEmbedder:
 
         n_chans = len(model_cfg["channels_10_20"])
         sfreq = float(model_cfg["expected_sfreq_hz"])
+        patch_seconds = float(model_cfg.get("patch_seconds", 1.0))
+        self._patch_size = round(patch_seconds * sfreq)            # 200 @ 200 Hz
+        self._n_times = round(float(model_cfg["window_seconds"]) * sfreq)  # 6000
 
-        # braindecode's CBraMod signature (as of braindecode >= 0.8):
-        #   CBraMod(n_chans, sfreq, ...)
-        # Additional kwargs (n_times, n_classes, etc.) are omitted here so
-        # braindecode uses its defaults, which match the pre-training regime.
-        # If the installed version requires different arguments, adjust below
-        # and document the version constraint.
-        self.model = CBraMod(n_chans=n_chans, sfreq=sfreq)
+        # braindecode's CBraMod (>=1.0): the published checkpoint is the SSL
+        # BACKBONE (patch_embedding + encoder + proj_out), with no classifier
+        # head -- so n_outputs is a dummy and `final_layer.*` will be the only
+        # missing keys after load. Verified against weighting666/CBraMod:
+        # exactly 2 missing (the head), 0 unexpected. The encoder emits
+        # (batch, n_chans, n_patches, emb_dim); we pool it (see embed_windows).
+        self.model = CBraMod(
+            n_chans=n_chans, sfreq=sfreq, n_times=self._n_times,
+            patch_size=self._patch_size, n_outputs=2,
+        )
 
         # ------------------------------------------------------------------
-        # 5. Load state dict -- handle common checkpoint layouts.
+        # 5. Load state dict. weights_only=True => NO pickle code execution
+        #    (the checkpoint is a pure tensor state_dict). strict=False so the
+        #    absent classifier head doesn't error.
         # ------------------------------------------------------------------
-        raw = torch.load(checkpoint_path, map_location="cpu")
-
-        if isinstance(raw, dict):
-            # Some checkpoints wrap weights under a key.
-            if "model" in raw:
-                state_dict = raw["model"]
-            elif "state_dict" in raw:
-                state_dict = raw["state_dict"]
-            else:
-                # Assume the dict itself is the state dict.
-                state_dict = raw
-        else:
-            # Older-style torch.save of the model object (rare but possible).
-            state_dict = raw.state_dict()
-
-        # strict=False lets us load when the checkpoint has extra keys
-        # (e.g. pre-training decoder weights not needed for inference).
-        missing, unexpected = self.model.load_state_dict(state_dict, strict=False)
-        if missing:
+        raw = torch.load(checkpoint_path, map_location="cpu", weights_only=True)
+        state_dict = raw.get("state_dict", raw.get("model", raw)) if isinstance(raw, dict) else raw
+        ret = self.model.load_state_dict(state_dict, strict=False)
+        # Only the classifier head (final_layer.*) may be missing; flag anything else.
+        backbone_missing = [k for k in ret.missing_keys if not k.startswith("final_layer")]
+        if backbone_missing or ret.unexpected_keys:
             import warnings
             warnings.warn(
-                f"CBraMod load_state_dict: {len(missing)} missing keys "
-                f"(first few: {missing[:5]}). Forward pass may be incorrect.",
-                UserWarning,
-                stacklevel=2,
+                f"CBraMod load: {len(backbone_missing)} unexpected-missing backbone "
+                f"keys, {len(ret.unexpected_keys)} unexpected. Check architecture args.",
+                UserWarning, stacklevel=2,
             )
 
         # ------------------------------------------------------------------
-        # 6. Freeze: eval mode + no gradients anywhere.
+        # 6. Freeze + tap the encoder output for embedding extraction.
         # ------------------------------------------------------------------
         self.model.eval()
         for param in self.model.parameters():
             param.requires_grad = False
+        self._enc_out = {}
+        self.model.encoder.register_forward_hook(
+            lambda mod, inp, out: self._enc_out.__setitem__("e", out)
+        )
 
     @torch_inference
     def embed_windows(self, windows):
@@ -265,49 +263,28 @@ class FrozenEmbedder:
         import torch
         import numpy as np
 
-        model_cfg = self.cfg["model"]
-        sfreq = float(model_cfg["expected_sfreq_hz"])
-        patch_seconds = float(model_cfg.get("patch_seconds", 1.0))
-        patch_size = round(patch_seconds * sfreq)  # 200 samples @ 200 Hz
-
-        # Convert input to float32 tensor on CPU.
         x = torch.from_numpy(np.asarray(windows, dtype="float32"))
-        # x: (n_windows, n_channels, n_samples)
+        if x.dim() != 3:
+            raise ValueError("windows must be (n_windows, n_channels, n_samples)")
         n_win, n_ch, n_samples = x.shape
 
-        # Trim to a multiple of patch_size and reshape into patch layout.
-        n_patches = n_samples // patch_size
-        if n_patches == 0:
-            raise ValueError(
-                f"window length {n_samples} samples is shorter than one patch "
-                f"({patch_size} samples). Increase window_seconds or reduce "
-                "patch_seconds in the config."
-            )
-        x = x[:, :, : n_patches * patch_size]           # trim remainder
-        x = x.reshape(n_win, n_ch, n_patches, patch_size)
-        # x: (n_windows, n_channels, n_patches, patch_size) -- CBraMod input
+        # CBraMod takes (batch, n_chans, n_times) and patches internally. Fit the
+        # sample axis to the configured n_times (trim long / zero-pad short).
+        T = self._n_times
+        if n_samples > T:
+            x = x[:, :, :T]
+        elif n_samples < T:
+            x = torch.nn.functional.pad(x, (0, T - n_samples))
 
-        # Forward pass (torch.no_grad is already active via @torch_inference).
-        output = self.model(x)
-
-        # Unwrap tuple outputs (some braindecode models return (embeddings, ...)).
-        if isinstance(output, (tuple, list)):
-            output = output[0]
-
-        # output is expected to be (batch, n_tokens, d).
-        # Be defensive about rank so callers always get (n_windows, d).
-        if output.dim() == 2:
-            # Already (batch, d) -- nothing to pool.
-            feats = output
-        elif output.dim() == 3:
-            # (batch, n_tokens, d) -- mean-pool over token dimension.
-            feats = output.mean(dim=1)
-        else:
-            # Unexpected rank: flatten everything beyond the batch dim, then
-            # mean-pool so we still return (n_windows, d).
-            batch = output.shape[0]
-            feats = output.reshape(batch, -1).mean(dim=1, keepdim=True)
-
+        # Forward (torch.no_grad active via @torch_inference). The encoder
+        # forward-hook captures the backbone features (batch, n_chans, n_patches,
+        # emb_dim); pool over channels + patches -> one (batch, emb_dim) vector.
+        self._enc_out.clear()
+        self.model(x)
+        e = self._enc_out.get("e")
+        if e is None:
+            raise RuntimeError("encoder hook did not capture features")
+        feats = e.reshape(e.shape[0], -1, e.shape[-1]).mean(dim=1)  # (batch, emb_dim)
         return feats.detach().cpu().numpy()
 
 
