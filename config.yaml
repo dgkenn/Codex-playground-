@@ -171,6 +171,9 @@ harmonization:                            # on-the-fly, in-memory only (Sec 7.2)
 embedding:                                # Sec 7.3
   pooling: ["mean", "std"]                # per-recording pool over windows
   persist_epoch_subset_fraction: 0.02     # epoch-level kept only for stability
+  max_windows_per_recording: 40           # SPEED: evenly-spaced cap (null = all);
+                                          #   long LTM/cEEG get sampled, pooling
+                                          #   ~unchanged -> the biggest CPU saving
   dtype: "float32"
 
 features:                                 # interpretable, same Pass 1 (Sec 7.4)

@@ -102,3 +102,16 @@ class TestPilotCap(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
+
+
+class TestWindowCap(unittest.TestCase):
+    def test_select_window_indices(self):
+        from pipeline.embed import select_window_indices
+        self.assertEqual(select_window_indices(10, None), list(range(10)))
+        self.assertEqual(select_window_indices(5, 40), [0, 1, 2, 3, 4])  # n<=cap -> all
+        idx = select_window_indices(1000, 40)
+        self.assertEqual(len(idx), 40)
+        self.assertEqual(idx, sorted(idx))                 # increasing
+        self.assertTrue(0 == idx[0] and idx[-1] <= 999)    # spans the recording
+        self.assertEqual(len(set(idx)), 40)                # distinct
+        self.assertEqual(idx, select_window_indices(1000, 40))  # deterministic

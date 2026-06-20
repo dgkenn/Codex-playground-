@@ -348,6 +348,24 @@ def pool_embeddings(window_embeddings, pooling: list[str]):
     return np.concatenate(parts).astype("float32")
 
 
+def select_window_indices(n_windows: int, cap):
+    """Evenly-spaced indices to cap the windows embedded per recording.
+
+    Embedding every window of a multi-hour recording is wasteful: the per-
+    recording embedding only POOLS over windows (Sec 7.3), so an evenly-spaced
+    sample spanning the whole recording gives essentially the same pooled vector
+    at a fraction of the compute -- the single biggest CPU speedup for long
+    LTM/cEEG. Deterministic (no RNG), so it is resume-safe and reproducible.
+    Returns all indices when `cap` is falsy or n_windows <= cap.
+    """
+    if not cap or n_windows <= int(cap):
+        return list(range(n_windows))
+    cap = int(cap)
+    # Evenly spaced across [0, n_windows): covers start-to-end of the recording.
+    step = n_windows / cap
+    return [min(n_windows - 1, int(i * step)) for i in range(cap)]
+
+
 def should_keep_epoch_subset(recording_id: str, fraction: float) -> bool:
     """Deterministic per-recording subsampling for epoch-level storage.
 

@@ -17,7 +17,12 @@ from typing import Any, Iterable
 from common.config import config_hash
 from common.logging_utils import audit_log
 from guards.heldout_guard import HeldoutGuard
-from pipeline.embed import FrozenEmbedder, pool_embeddings, should_keep_epoch_subset
+from pipeline.embed import (
+    FrozenEmbedder,
+    pool_embeddings,
+    select_window_indices,
+    should_keep_epoch_subset,
+)
 from pipeline.features import compute_features
 from pipeline.harmonize import apply_harmonization, plan_harmonization
 from pipeline.stream_fetch import (
@@ -78,6 +83,12 @@ def process_recording(cfg: dict[str, Any], ref: RecordingRef,
         windows = apply_harmonization(raw, plan)
         if windows.shape[0] == 0:
             return None
+        # Cap windows per recording for speed (evenly-spaced; pooling is
+        # unaffected in expectation). cfg.embedding.max_windows_per_recording.
+        cap = cfg.get("embedding", {}).get("max_windows_per_recording")
+        if cap and windows.shape[0] > int(cap):
+            idx = select_window_indices(windows.shape[0], cap)
+            windows = windows[idx]
         win_emb = embedder.embed_windows(windows)
         pooled = pool_embeddings(win_emb, cfg["embedding"]["pooling"])
         feats = compute_features(windows, plan.target_sfreq_hz, cfg)
