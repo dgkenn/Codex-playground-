@@ -228,6 +228,12 @@ clustering:
 audits:
   leave_one_site_out: true
   acquisition_covariates: ["sampling_rate", "montage", "recording_length"]
+  # MORGOTH-finding redundancy / novelty control (v3 Sec 9(4), 13.3). A phenotype
+  # whose membership is predictable from the backbone's task outputs at AUC >=
+  # this threshold is REDUCIBLE (re-expression of a known finding) and rejected.
+  # Only applied when the backbone emits task outputs (MORGOTH); skipped for CBraMod.
+  morgoth_redundancy:
+    max_predictable_auc: 0.80             # TO-CONFIRM novelty threshold
   negative_controls:
     shuffle_outcome: true                 # association must collapse to chance
     phase_randomized_surrogate: true      # structure must collapse

@@ -107,6 +107,15 @@ def run_phase1(cfg: dict[str, Any], tables: dict[str, Any]) -> dict[str, Any]:
         cross_site=None, loso_min_ari=loso.get("min_ari"),
     )
 
+    # 6a) MORGOTH-finding redundancy / novelty control (v3 Sec 9(4), 13.3): a
+    #     phenotype reducible to the backbone's task outputs is rejected. Runs
+    #     only when the compact tables carry a `model_outputs` matrix (MORGOTH);
+    #     a no-op for CBraMod, which has no task heads.
+    from analysis.morgoth_redundancy import annotate_phenotype_bar, redundancy_check
+    model_outputs = tables.get("model_outputs")
+    redundancy = redundancy_check(labels, model_outputs, cfg)
+    bar = annotate_phenotype_bar(bar, redundancy)
+
     # 6b) Negative control (refutation): the cluster structure must beat
     #     phase-randomized surrogates that destroy joint embedding structure
     #     (Sec 13, 17). Re-cluster each surrogate with the same k and compare
