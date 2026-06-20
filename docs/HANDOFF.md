@@ -7,16 +7,39 @@ unrestricted network, so even TUH works).
 
 ## Current state
 - Branch: **`claude/heedb-eeg-phenotype-discovery-2mnwzx`** (all work pushed).
-- **106 tests green.** The stdlib-only integrity core runs with no dependencies;
+- **126 tests green.** The stdlib-only integrity core runs with no dependencies;
   the rest skip unless the scientific stack is installed.
 - The full lifecycle runs end-to-end on synthetic data: `python cli.py demo`.
-- The real signal path is validated on actual EDF bytes (mne harmonize → real
-  band-power/aperiodic/wPLI/entropy/microstate features) via `LocalEDFClient`.
-- Three data transports are wired and tested (catalog/command construction):
-  - `BDSPS3Client` — HEEDB over the BDSP credentialed S3 access point (boto3).
+- Four data transports are wired and tested:
+  - `HEEDBBDSPClient` — real HEEDB over the BDSP access point (catalog + BIDS EDFs).
+  - `BDSPS3Client` — generic BDSP S3 access point (boto3).
   - `TUHRsyncClient` — TUH external replication over rsync/SSH.
   - `LocalEDFClient` — a local directory of EDF files (no credentials).
 - Firewall + run-once + hashing hardened after an adversarial audit.
+
+### Real-data status (VALIDATED on live BDSP)
+The pipeline ran **end to end on real HEEDB data** from the credentialed BDSP S3
+access point:
+- `HEEDBBDSPClient` reads the real `EEG/eeg-metadata/{site}_*.csv` catalogs and
+  streams real BIDS EDFs (validated: real 256 Hz, 50-channel routine EEGs).
+- The **frozen CBraMod** model runs for real: `weighting666/CBraMod`
+  `pretrained_weights.pth` loads with `weights_only=True` (no pickle exec), matches
+  the architecture exactly, yields 400-d pooled embeddings; sha256 pinned + verified.
+- A real pilot completed: real EDFs → mne harmonize → real CBraMod embed → real
+  features → tables → Phase-1, no errors. Reproduce/scale with
+  `AWS_PROFILE=physionet python scripts/run_real_pilot.py`
+  (env `PILOT_PER_SITE`, `PILOT_MAX_DURATION`).
+
+**Known gaps for the registered run (not pilot blockers):**
+1. **SiteID ↔ hospital mapping** — bucket uses de-identified `S0001/S0002/I0002/
+   I0003/I0009`; `config.yaml::sites` holds pilot values flagged TO-CONFIRM. Map
+   to MGH/BWH/BIDMC/BCH and set discovery/held-out per protocol.
+2. **Adults-only eligibility** — the catalog's `AgeAtVisit` is largely empty, so
+   the ≥18 filter can't be applied from it. The real run must join
+   `EEG/HEEDB_Metadata/HEEDB_patients.csv` (`AgeAtVisitAvg`, `Sex`) on patient id;
+   wire this into `HEEDBBDSPClient`.
+3. **Scale + compute** — CBraMod CPU inference is slow; a full discovery run wants
+   a GPU. This ephemeral container is for pilots only.
 
 ## Take over in Claude Code desktop
 1. Clone and check out the branch:
