@@ -221,7 +221,9 @@ def flow_toxic(sess, ticker, max_take, max_imb):
 def main():
     live = os.environ.get("LONGSHOT_LIVE", "0") == "1"
     clip = int(os.environ.get("LONGSHOT_CLIP", "1"))
-    max_theme = int(os.environ.get("LONGSHOT_MAX_THEME", "5"))
+    max_theme = int(os.environ.get("LONGSHOT_MAX_THEME", "3"))  # SIZING: tight per-theme cap = more
+    # independent themes = higher Sharpe (KALSHI_LONGSHOT_SIZING.md: Sharpe ~ sqrt(uncorrelated themes);
+    # clustering bets into few themes halves it). Breadth across themes is THE Sharpe lever, not clip size.
     max_notional = float(os.environ.get("LONGSHOT_MAX_NOTIONAL", "200"))
     max_pos = int(os.environ.get("LONGSHOT_MAX_POS", "120"))
     ttl = int(os.environ.get("LONGSHOT_TTL", "82800"))

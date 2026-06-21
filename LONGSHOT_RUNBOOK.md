@@ -41,8 +41,9 @@ If fills are ~0, the edge is real but unreachable and you stop here (capacity wa
    export KALSHI_PRIVATE_KEY_PATH=/path/to/kalshi_key.pem
    export LONGSHOT_LIVE=1                  # 0 = dry-run (default); 1 = place real orders
    export LONGSHOT_CLIP=1                  # contracts/leg — START AT 1 (negative skew)
-   export LONGSHOT_MAX_THEME=5             # cap exposure per event-theme (correlation guard)
-   export LONGSHOT_MAX_NOTIONAL=200        # cap total collateral $ (start small)
+   export LONGSHOT_MAX_THEME=3             # SIZING: tight per-theme cap = more independent themes = higher Sharpe
+   export LONGSHOT_MAX_NOTIONAL=200        # SIZING: set to ~25-50% of bankroll (fractional-Kelly; keep
+   #                                          reserve for the correlated tail -- KALSHI_LONGSHOT_SIZING.md)
    export LONGSHOT_MAX_POS=120             # cap # simultaneous positions
    # --- OPTIMIZED defaults (KALSHI_LONGSHOT_OPTIMAL.md); already baked in, shown for tuning ---
    export LONGSHOT_BAND_LO=0.05           # optimal band [0.05,0.15): ~+5.45c/ctr vs +0.97c naive
