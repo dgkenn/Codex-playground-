@@ -45,3 +45,28 @@ across 470-820 distinct windows per band (not a few outlier days).
   to the spot-vs-mid 60s artifact (it should be — outcome has no timing).
 **Do NOT trade real money until executability passes.** But this is the strongest, highest-capacity 15m lead
 the project has produced.
+
+---
+
+## RESOLVED 2026-06-21 (same day): the lead was a TIME-IN-BAND ARTIFACT. 15m stays EFFICIENT.
+
+The pooled-ticks calibration above is BIASED by time-in-band selection: a window that ends DOWN *lingers*
+at low UP prices (many ticks), while a window that ends UP passes *through* the low band quickly on its way
+up. So at any low price, pooled ticks over-represent down-resolving windows -> a fake "UP-longshot overpriced"
+and a fake favorable markout (price keeps falling because you're conditionally in a lingering-down window).
+
+**Decisive control — ONE observation per window at a FIXED decision time (no time-in-band selection),
+t=450/600/750s, ~900 windows:**
+- The clean -3.7pp / z~-2.4-every-band pattern **DISAPPEARS**. Unbiased biases are **mixed-sign and mostly
+  insignificant**: e.g. t=450s 0.22-0.30 +0.6pp (z+0.1), 0.40-0.50 **+5.6pp wrong sign**, 0.50-0.60 -9.2pp,
+  0.60-0.70 -5.7pp -- no consistent favorite-longshot S-curve, ~all |z|<2 across 30 band x time cells (the
+  one or two |z|~2 are multiple-testing noise with random signs).
+- Executability stats (1c spread, 859-contract median bid, favorable markout) were REAL but are ALSO explained
+  by the same selection -- they do not rescue a signal that the unbiased estimator says isn't there.
+
+**VERDICT: NO tradable favorite-longshot edge in 15m BTC. The pooled "lead" was a selection artifact; the
+efficient-corner finding (`DIRECTIONAL.md`, `ETH_FAVLONG`) STANDS** -- and is why this contradicted prior work.
+Reconciliation complete: prior work was right. The richer data did not change the 15m conclusion. The one real
+Kalshi edge remains the soft-market longshot-MAKER harvest (~$30-150/mo); 15m crypto is efficient at every
+horizon >=1min. Lesson logged: calibrate intra-path binaries with ONE obs/window at a fixed decision time,
+never pooled ticks.
