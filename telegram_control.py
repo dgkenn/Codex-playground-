@@ -64,6 +64,11 @@ def switch(cmd):
         subprocess.run(["bash", os.path.join(HERE, "live_switch.sh"), cmd], cwd=HERE, timeout=60)
     except Exception:
         pass
+    # also drive the LONGSHOT bot's kill-switch (kalshi_longshot_bot.py honors LONGSHOT_SWITCH=off)
+    try:
+        open(os.path.join(HERE, "LONGSHOT_SWITCH"), "w").write("off" if cmd == "off" else "on")
+    except Exception:
+        pass
 
 
 # --- GitHub Actions fast-path: dispatch a live run on "on", cancel it on "off" (the <1-min levers) ---

@@ -26,6 +26,30 @@ Config (env, all optional):
 """
 import os, sys, time, json, uuid, base64, urllib.parse, datetime as dt
 import requests
+try:
+    import notify                      # Telegram alerts (no-op if TELEGRAM_* env unset) -- shared infra
+except Exception:
+    notify = None
+
+
+def _tg(msg):
+    """Send a Telegram alert via the shared notify.py (no-op without TELEGRAM_BOT_TOKEN/CHAT_ID)."""
+    if notify is not None:
+        try:
+            notify.alert_sync("[longshot] " + msg)
+        except Exception:
+            pass
+
+
+def _switch_off():
+    """Remote kill-switch honored by the bot: if LONGSHOT_SWITCH (default ./LONGSHOT_SWITCH) reads
+    'off', force DRY-RUN regardless of LONGSHOT_LIVE. telegram_control.py can flip this file for
+    on/off from Telegram (point it at LONGSHOT_SWITCH), giving the same remote pause the box had."""
+    p = os.environ.get("LONGSHOT_SWITCH", os.path.join(os.path.dirname(os.path.abspath(__file__)), "LONGSHOT_SWITCH"))
+    try:
+        return open(p).read().strip().lower() == "off"
+    except Exception:
+        return False
 
 BASE = "https://api.elections.kalshi.com/trade-api/v2"
 CATS = ["Entertainment", "Science and Technology", "Climate and Weather", "Politics"]  # OPT: pref order
@@ -220,6 +244,9 @@ def flow_toxic(sess, ticker, max_take, max_imb):
 
 def main():
     live = os.environ.get("LONGSHOT_LIVE", "0") == "1"
+    if live and _switch_off():           # remote Telegram kill-switch overrides -> dry-run
+        print("[switch] LONGSHOT_SWITCH=off -> forcing DRY-RUN"); _tg("kill-switch ON -> paused (dry-run)")
+        live = False
     clip = int(os.environ.get("LONGSHOT_CLIP", "1"))
     max_theme = int(os.environ.get("LONGSHOT_MAX_THEME", "3"))  # SIZING: tight per-theme cap = more
     # independent themes = higher Sharpe (KALSHI_LONGSHOT_SIZING.md: Sharpe ~ sqrt(uncorrelated themes);
@@ -250,6 +277,7 @@ def main():
             have_ticker.add(o.get("ticker"))
         bal = _api(sess, pk, "GET", "/portfolio/balance")[1]
         print(f"[balance] {bal}")
+        _tg(f"LIVE run start | balance {bal} | held/quoted {len(have_ticker)}")
 
     run_ts = dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")
     audit = []                                   # one record PER candidate decision (the decision log)
@@ -315,8 +343,13 @@ def main():
     except Exception as e:
         print(f"[audit] WARN could not write {audit_path}: {e}")
 
-    print(f"[done] {'LIVE' if live else 'DRY-RUN'} | quoted {placed} longshots | skipped {skipped} "
-          f"(dup/theme/notional/toxic) | committed ${notional:.2f}/{max_notional:.0f} collateral")
+    tox = sum(1 for r in audit if r.get("reason") == "flow_toxic")
+    rej = sum(1 for r in audit if r.get("decision") == "reject")
+    summary = (f"{'LIVE' if live else 'DRY'} | quoted {placed} | skipped {skipped} (toxic {tox}) | "
+               f"rejects {rej} | collateral ${notional:.2f}/{max_notional:.0f}")
+    print(f"[done] {summary}")
+    if live:                                # only ping Telegram on real runs (avoid dry-run spam)
+        _tg(summary)
     if not live:
         print("       set LONGSHOT_LIVE=1 (with keys) to place real maker NO-buys. Start tiny: CLIP=1.")
 

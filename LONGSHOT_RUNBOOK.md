@@ -90,6 +90,17 @@ per-run `scan_summary` (why each market was pre-filtered: out_of_band / wide_spr
 - **Kill:** set `LONGSHOT_LIVE=0` (stops new orders); existing orders self-expire via TTL within 23h, or
   cancel manually. There is no leverage and no naked directional exposure beyond the held NO positions.
 
+## Telegram (alerts + remote control)
+The bot is wired into the shared Telegram infra (`notify.py` / `telegram_control.py`). Set once:
+```
+export TELEGRAM_BOT_TOKEN=...   export TELEGRAM_CHAT_ID=...   # alerts no-op if unset
+```
+- **Alerts:** on every LIVE run the bot pings `[longshot] LIVE | quoted N | skipped M (toxic K) | rejects R |
+  collateral $X` plus a start-of-run balance line. Dry-runs stay silent (no spam).
+- **Remote kill-switch:** run `telegram_control.py` and send **`off`** (or `on` / `status`) from Telegram — it
+  now flips `LONGSHOT_SWITCH` too, so the bot forces DRY-RUN within one run and alerts "paused". Or flip it
+  directly: `echo off > LONGSHOT_SWITCH`. `LONGSHOT_SWITCH=off` overrides `LONGSHOT_LIVE=1`.
+
 ## Honest expectations
 This is a **real, low-risk, automatable ~$30–150/mo side income**, capacity-capped and non-scaling. It is
 the genuine answer to "is there a way to make money on Kalshi" — yes, a small one. The $500/mo objective
