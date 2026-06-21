@@ -24,7 +24,7 @@ Config (env, all optional):
 
     python kalshi_longshot_bot.py            # one pass (cron-friendly)
 """
-import os, sys, time, json, uuid, base64, urllib.parse
+import os, sys, time, json, uuid, base64, urllib.parse, datetime as dt
 import requests
 
 BASE = "https://api.elections.kalshi.com/trade-api/v2"
@@ -32,6 +32,21 @@ CATS = ["Politics", "Climate and Weather", "Entertainment", "Science and Technol
 LONG_LO, LONG_HI = 0.02, 0.20
 MAXSPREAD = 0.10
 MIN_VOL = 200.0
+MAX_LIFE_FRAC = float(os.environ.get("LONGSHOT_MAX_LIFE_FRAC", "0.67"))  # KALSHI_LONGSHOT_EXEC.md: the
+# final third of a market's life is where the edge goes NEGATIVE (-1.6 to -3.1c); quoting only the
+# early+mid two-thirds is the single highest-ROI change (+0.84c/ctr). Skip markets past this fraction.
+
+
+def _life_frac(m):
+    """Fraction of [open_time, close_time] elapsed (0=fresh, 1=at close). None if unknown."""
+    try:
+        o = dt.datetime.fromisoformat((m.get("open_time") or "").replace("Z", "+00:00"))
+        c = dt.datetime.fromisoformat((m.get("close_time") or "").replace("Z", "+00:00"))
+        now = dt.datetime.now(dt.timezone.utc)
+        span = (c - o).total_seconds()
+        return (now - o).total_seconds() / span if span > 0 else None
+    except Exception:
+        return None
 
 
 # ---- auth + order primitives (faithful copy of kalshi_trader.py) ----
@@ -146,6 +161,9 @@ def scan_longshots(sess, want):
                     if not (LONG_LO <= mid <= LONG_HI) or (ya - yb) > MAXSPREAD:
                         continue
                     if (fnum(m.get("volume_fp")) or 0) < MIN_VOL:
+                        continue
+                    lf = _life_frac(m)             # EXEC: skip the final third (edge goes negative there)
+                    if lf is not None and lf > MAX_LIFE_FRAC:
                         continue
                     out.append({"ticker": m["ticker"], "series": st, "category": cat,
                                 "no_bid": nb, "yes_ask": ya, "mid": mid,
