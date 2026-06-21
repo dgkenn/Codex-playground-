@@ -156,6 +156,34 @@ def scan_longshots(sess, want):
     return out
 
 
+def flow_toxic(sess, ticker, max_take, max_imb):
+    """Counterparty-avoidance guard ported from the box A/B (KALSHI_LONGSHOT_ABXFER.md):
+    skip a longshot if recent flow looks INFORMED -- (a) a large crossing take (box t33
+    take-tail-trim, OOS +0.05-0.10c) or (b) heavily one-sided YES-buying into the longshot
+    (a VPIN-style toxicity proxy / box t31-t32). Returns (toxic, reason)."""
+    d = pub(sess, f"/markets/{ticker}/trades", "limit=50")
+    trades = d.get("trades") or []
+    if not trades:
+        return False, ""
+    buy_yes = buy_no = 0.0
+    biggest = 0.0
+    for t in trades:
+        c = fnum(t.get("count")) or 0.0
+        biggest = max(biggest, c)
+        if (t.get("taker_side") or "").lower() == "yes":
+            buy_yes += c
+        else:
+            buy_no += c
+    if biggest > max_take:
+        return True, f"large take {biggest:.0f}>{max_take}"
+    tot = buy_yes + buy_no
+    if tot >= 20:                              # need enough flow to judge
+        imb = (buy_yes - buy_no) / tot         # +1 = all aggressive YES-buying (toxic for our NO)
+        if imb > max_imb:
+            return True, f"one-sided YES-buy imb {imb:+.2f}>{max_imb}"
+    return False, ""
+
+
 def main():
     live = os.environ.get("LONGSHOT_LIVE", "0") == "1"
     clip = int(os.environ.get("LONGSHOT_CLIP", "1"))
@@ -163,6 +191,9 @@ def main():
     max_notional = float(os.environ.get("LONGSHOT_MAX_NOTIONAL", "200"))
     max_pos = int(os.environ.get("LONGSHOT_MAX_POS", "120"))
     ttl = int(os.environ.get("LONGSHOT_TTL", "82800"))
+    flow_guard = os.environ.get("LONGSHOT_FLOW_GUARD", "1") == "1"   # box-A/B counterparty-avoidance transfer
+    max_take = float(os.environ.get("LONGSHOT_MAX_TAKE", "100"))     # box t33 take-tail-trim threshold
+    max_imb = float(os.environ.get("LONGSHOT_MAX_FLOWIMB", "0.70"))  # one-sided YES-buy toxicity cap
     sess = requests.Session()
 
     pk = None
@@ -199,6 +230,11 @@ def main():
         cost = c["no_bid"] * clip            # collateral committed if filled
         if notional + cost > max_notional:
             skipped += 1; continue
+        if flow_guard:                       # box-A/B counterparty-avoidance: dodge informed flow
+            toxic, why = flow_toxic(sess, tk, max_take, max_imb)
+            if toxic:
+                print(f"  SKIP(toxic) {tk} [{why}] | {c['title']}")
+                skipped += 1; continue
         # harvest: rest a maker NO-buy at the NO touch (no_bid); fills when a NO seller hits us
         price = c["no_bid"]
         if live:
