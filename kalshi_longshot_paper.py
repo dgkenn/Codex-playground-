@@ -22,10 +22,24 @@ import sys, os, json, time, csv, urllib.request, urllib.parse, datetime as dt
 BASE = "https://api.elections.kalshi.com/trade-api/v2"
 # soft, mostly zero-maker-fee categories (KALSHI_MAKER_RANK.md). Flagship maker-fee SERIES
 # are excluded per-market via the fee_type guard below.
-CATS = ["Politics", "Climate and Weather", "Entertainment", "Science and Technology"]
-LONG_LO, LONG_HI = 0.02, 0.20     # longshot YES-mid band (skip <0.02: already efficient deep tail)
+CATS = ["Entertainment", "Science and Technology", "Climate and Weather", "Politics"]
+# OPTIMIZED band/timing (KALSHI_LONGSHOT_OPTIMAL.md) so the forward paper-track validates the SAME
+# strategy the bot deploys, not the old wide blend. Band [0.05,0.15); quote only the first half of life.
+LONG_LO, LONG_HI = 0.05, 0.15     # optimal band -- net +5.45c vs the old [0.02,0.20] blend
 MAXSPREAD = 0.10
 MIN_VOL = 200.0                   # require some real volume to be plausibly fillable
+MAX_LIFE_FRAC = 0.50              # quote only the first half of a market's life (late third is -EV)
+
+
+def _life_frac(m):
+    try:
+        o = dt.datetime.fromisoformat((m.get("open_time") or "").replace("Z", "+00:00"))
+        c = dt.datetime.fromisoformat((m.get("close_time") or "").replace("Z", "+00:00"))
+        now = dt.datetime.now(dt.timezone.utc)
+        span = (c - o).total_seconds()
+        return (now - o).total_seconds() / span if span > 0 else None
+    except Exception:
+        return None
 NEW_PER_RUN = 60                  # cap new snapshots/run
 
 
@@ -152,6 +166,9 @@ def main():
                 if (ya - yb) > MAXSPREAD:
                     continue
                 if (fnum(m.get("volume_fp")) or 0) < MIN_VOL:
+                    continue
+                lf = _life_frac(m)                  # OPT+EXEC: quote only the first half of life
+                if lf is not None and lf > MAX_LIFE_FRAC:
                     continue
                 still_pending.append({
                     "ts": nowiso, "ticker": tk, "series": st, "category": cat,
