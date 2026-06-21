@@ -44,7 +44,16 @@ If fills are ~0, the edge is real but unreachable and you stop here (capacity wa
    export LONGSHOT_MAX_THEME=5             # cap exposure per event-theme (correlation guard)
    export LONGSHOT_MAX_NOTIONAL=200        # cap total collateral $ (start small)
    export LONGSHOT_MAX_POS=120             # cap # simultaneous positions
+   # --- OPTIMIZED defaults (KALSHI_LONGSHOT_OPTIMAL.md); already baked in, shown for tuning ---
+   export LONGSHOT_BAND_LO=0.05           # optimal band [0.05,0.15): ~+5.45c/ctr vs +0.97c naive
+   export LONGSHOT_BAND_HI=0.15           #   (<0.05 thin; >=0.15 no edge). Widen only for capacity.
+   export LONGSHOT_MAX_LIFE_FRAC=0.50     # quote only the FIRST HALF of a market's life (late third is -EV)
+   export LONGSHOT_FLOW_GUARD=1           # A/B-transfer: dodge informed flow (take-tail-trim + 1-sided gate)
+   export LONGSHOT_MAX_TAKE=100           #   skip if a >100-contract (informed) take hit recently
+   export LONGSHOT_MAX_FLOWIMB=0.70       #   skip if flow is >70% one-sided aggressive YES-buying
    ```
+   Manual rules the bot can't enforce: **take profit if YES halves vs your fill; NEVER stop-loss** (a doubling
+   longshot is the lottery hitting — stops realize −22 to −27c). Re-quote ~every 5 min. See KALSHI_LONGSHOT_OPTIMAL.md.
 3. **Always dry-run first** (`LONGSHOT_LIVE=0`) and read what it WOULD place:
    ```
    python kalshi_longshot_bot.py

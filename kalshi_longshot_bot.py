@@ -28,13 +28,18 @@ import os, sys, time, json, uuid, base64, urllib.parse, datetime as dt
 import requests
 
 BASE = "https://api.elections.kalshi.com/trade-api/v2"
-CATS = ["Politics", "Climate and Weather", "Entertainment", "Science and Technology"]
-LONG_LO, LONG_HI = 0.02, 0.20
+CATS = ["Entertainment", "Science and Technology", "Climate and Weather", "Politics"]  # OPT: pref order
+# OPTIMIZED band (KALSHI_LONGSHOT_OPT.md): p in [0.05,0.15) is the sweet spot -- net +5.45c/ctr
+# (event-clustered 95% CI [+3.2,+7.7]), ~3-5x the old [0.02,0.20] blend. Deep tail <0.05 is +1.4c but
+# thin; p>=0.15 has no edge. Widen via env only to trade edge-quality for marginal capacity.
+LONG_LO = float(os.environ.get("LONGSHOT_BAND_LO", "0.05"))
+LONG_HI = float(os.environ.get("LONGSHOT_BAND_HI", "0.15"))
 MAXSPREAD = 0.10
 MIN_VOL = 200.0
-MAX_LIFE_FRAC = float(os.environ.get("LONGSHOT_MAX_LIFE_FRAC", "0.67"))  # KALSHI_LONGSHOT_EXEC.md: the
-# final third of a market's life is where the edge goes NEGATIVE (-1.6 to -3.1c); quoting only the
-# early+mid two-thirds is the single highest-ROI change (+0.84c/ctr). Skip markets past this fraction.
+MAX_LIFE_FRAC = float(os.environ.get("LONGSHOT_MAX_LIFE_FRAC", "0.50"))  # OPT+EXEC: fill EARLY. Both
+# studies agree -- segmentation finds >=50% life-left adds +1.3c (z3.1) & cuts skew; execution finds the
+# final third's edge is NEGATIVE (-1.6 to -3.1c). Quoting only the first HALF captures both. (0.67 for
+# more capacity at lower per-contract edge.)
 
 
 def _life_frac(m):
