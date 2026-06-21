@@ -72,8 +72,20 @@ If fills are ~0, the edge is real but unreachable and you stop here (capacity wa
 - **Scale clips ONLY** after live fills confirm the edge; do not chase size — capacity is ~$30–150/mo and
   pushing harder just deepens the tail without adding edge.
 
+## Decision audit (every bot decision is logged)
+The bot writes a JSONL **decision log** to `LONGSHOT_AUDIT` (default `longshot_audit.jsonl`; on GHA point it at
+`gha_data/longshot/longshot_audit.jsonl` so it commits next to the collector). For EVERY candidate it records
+the full book it saw (`mid/no_bid/yes_ask/spread/volume/life_frac`) + the `decision` (place/skip/reject) + the
+exact `reason` (already_held / theme_cap / notional_cap / flow_toxic / venue_reject / placed / dry_run), plus a
+per-run `scan_summary` (why each market was pre-filtered: out_of_band / wide_spread / low_vol / late_life / …).
+- **Audit & diagnose:** `python kalshi_longshot_audit.py longshot_audit.jsonl` — reconciles every decided ticker
+  against its settlement and scores it: PLACED win% (should be ~85–95%, longshots resolve NO), and for each SKIP
+  reason the **"missed-winner" count** (high on `flow_toxic` => the toxicity gate is too aggressive => loosen
+  `LONGSHOT_MAX_TAKE` / `LONGSHOT_MAX_FLOWIMB`). **Compare to the collector:** join the audit's `no_bid/mid` for a
+  ticker against the paper-track snapshot for the same ticker+time to catch book-read bugs or stale quotes.
+
 ## Monitoring & kill-switch
-- Daily: `python kalshi_longshot_report.py <state_dir>` (or check fills/positions via the API).
+- Daily: `python kalshi_longshot_report.py <state_dir>` (realized edge/fills) + `kalshi_longshot_audit.py` (decisions).
 - **Kill:** set `LONGSHOT_LIVE=0` (stops new orders); existing orders self-expire via TTL within 23h, or
   cancel manually. There is no leverage and no naked directional exposure beyond the held NO positions.
 

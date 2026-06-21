@@ -136,7 +136,12 @@ def fnum(x):
 
 
 def scan_longshots(sess, want):
+    """Returns (candidates, scan_stats). scan_stats counts WHY each market was rejected at the
+    pre-filter stage -- the first half of the decision audit (the per-candidate decisions in main()
+    are the second half)."""
     out = []
+    stats = {"scanned": 0, "not_binary": 0, "maker_fee": 0, "no_quote": 0, "out_of_band": 0,
+             "wide_spread": 0, "low_vol": 0, "late_life": 0, "kept": 0}
     for cat in CATS:
         cur = ""
         seriess = []
@@ -148,35 +153,41 @@ def scan_longshots(sess, want):
                 break
         for st in seriess:
             if len(out) >= want:
-                return out
+                return out, stats
             cur = ""
             while True:
                 d = pub(sess, "/markets", f"series_ticker={st}&status=open&limit=100" + (f"&cursor={cur}" if cur else ""))
                 ms = d.get("markets", [])
                 for m in ms:
+                    stats["scanned"] += 1
                     if m.get("mve_collection_ticker") or (m.get("market_type") and m.get("market_type") != "binary"):
-                        continue
+                        stats["not_binary"] += 1; continue
                     if "maker_fee" in (m.get("fee_type") or "").lower():
-                        continue
+                        stats["maker_fee"] += 1; continue
                     yb = fnum(m.get("yes_bid_dollars")); ya = fnum(m.get("yes_ask_dollars"))
                     nb = fnum(m.get("no_bid_dollars"))
                     if yb is None or ya is None or nb is None or not (0 < yb < ya < 1):
-                        continue
+                        stats["no_quote"] += 1; continue
                     mid = (yb + ya) / 2
-                    if not (LONG_LO <= mid <= LONG_HI) or (ya - yb) > MAXSPREAD:
-                        continue
-                    if (fnum(m.get("volume_fp")) or 0) < MIN_VOL:
-                        continue
+                    if not (LONG_LO <= mid <= LONG_HI):
+                        stats["out_of_band"] += 1; continue
+                    if (ya - yb) > MAXSPREAD:
+                        stats["wide_spread"] += 1; continue
+                    vol = fnum(m.get("volume_fp")) or 0.0
+                    if vol < MIN_VOL:
+                        stats["low_vol"] += 1; continue
                     lf = _life_frac(m)             # EXEC: skip the final third (edge goes negative there)
                     if lf is not None and lf > MAX_LIFE_FRAC:
-                        continue
+                        stats["late_life"] += 1; continue
+                    stats["kept"] += 1
                     out.append({"ticker": m["ticker"], "series": st, "category": cat,
-                                "no_bid": nb, "yes_ask": ya, "mid": mid,
+                                "no_bid": nb, "yes_ask": ya, "mid": mid, "spread": round(ya - yb, 4),
+                                "volume": vol, "life_frac": (round(lf, 4) if lf is not None else None),
                                 "title": (m.get("title") or "")[:70]})
                 cur = d.get("cursor") or ""
                 if not cur or not ms:
                     break
-    return out
+    return out, stats
 
 
 def flow_toxic(sess, ticker, max_take, max_imb):
@@ -238,26 +249,37 @@ def main():
         bal = _api(sess, pk, "GET", "/portfolio/balance")[1]
         print(f"[balance] {bal}")
 
-    cands = scan_longshots(sess, want=400)
-    print(f"[scan] {len(cands)} soft zero-maker-fee longshots (mid {LONG_LO}-{LONG_HI})")
+    run_ts = dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")
+    audit = []                                   # one record PER candidate decision (the decision log)
+
+    def log(c, decision, reason, **extra):
+        rec = {"run_ts": run_ts, "live": live, "ticker": c["ticker"], "category": c["category"],
+               "series": c["series"], "mid": c["mid"], "no_bid": c["no_bid"], "yes_ask": c["yes_ask"],
+               "spread": c.get("spread"), "volume": c.get("volume"), "life_frac": c.get("life_frac"),
+               "decision": decision, "reason": reason}
+        rec.update(extra)
+        audit.append(rec)
+
+    cands, scan_stats = scan_longshots(sess, want=400)
+    print(f"[scan] kept {len(cands)} of {scan_stats['scanned']} scanned (mid {LONG_LO}-{LONG_HI}) | rejects: "
+          + ", ".join(f"{k}={v}" for k, v in scan_stats.items() if k not in ("scanned", "kept") and v))
     placed = skipped = 0
     for c in cands:
+        tk = c["ticker"]; th = c["series"]
         if placed >= max_pos:
-            break
-        tk = c["ticker"]
+            log(c, "skip", "max_pos_reached"); skipped += 1; continue
         if tk in have_ticker:
-            skipped += 1; continue
-        th = c["series"]
+            log(c, "skip", "already_held_or_quoted"); skipped += 1; continue
         if theme_ct.get(th, 0) + clip > max_theme:
-            skipped += 1; continue
+            log(c, "skip", "theme_cap"); skipped += 1; continue
         cost = c["no_bid"] * clip            # collateral committed if filled
         if notional + cost > max_notional:
-            skipped += 1; continue
+            log(c, "skip", "notional_cap"); skipped += 1; continue
         if flow_guard:                       # box-A/B counterparty-avoidance: dodge informed flow
             toxic, why = flow_toxic(sess, tk, max_take, max_imb)
             if toxic:
                 print(f"  SKIP(toxic) {tk} [{why}] | {c['title']}")
-                skipped += 1; continue
+                log(c, "skip", "flow_toxic", detail=why); skipped += 1; continue
         # harvest: rest a maker NO-buy at the NO touch (no_bid); fills when a NO seller hits us
         price = c["no_bid"]
         if live:
@@ -266,13 +288,33 @@ def main():
             print(f"  {'PLACED' if ok else 'REJECT'} NO-buy {tk} @{price:.3f} x{clip} "
                   f"(yes_mid {c['mid']:.2f}) {'' if ok else f'[{sc} {err}]'} | {c['title']}")
             if not ok:
+                log(c, "reject", "venue_reject", price=price, clip=clip, http=sc, err=str(err)[:120])
                 continue
+            log(c, "place", "placed", price=price, clip=clip, order_id=oid, collateral=round(cost, 4))
         else:
             print(f"  DRY  NO-buy {tk} @{price:.3f} x{clip} (yes_mid {c['mid']:.2f}) | {c['category']} | {c['title']}")
+            log(c, "place", "dry_run", price=price, clip=clip, collateral=round(cost, 4))
         placed += 1; theme_ct[th] = theme_ct.get(th, 0) + clip; notional += cost; have_ticker.add(tk)
 
+    # ---- write the decision audit (JSONL) so it can be joined to the collector by ticker+time ----
+    audit_path = os.environ.get("LONGSHOT_AUDIT", "longshot_audit.jsonl")
+    try:
+        os.makedirs(os.path.dirname(audit_path), exist_ok=True) if os.path.dirname(audit_path) else None
+        with open(audit_path, "a") as f:
+            f.write(json.dumps({"run_ts": run_ts, "live": live, "type": "scan_summary",
+                                "scan_stats": scan_stats, "placed": placed, "skipped": skipped,
+                                "notional": round(notional, 4), "config": {
+                                    "band": [LONG_LO, LONG_HI], "max_life_frac": MAX_LIFE_FRAC,
+                                    "clip": clip, "flow_guard": flow_guard, "max_take": max_take,
+                                    "max_imb": max_imb}}) + "\n")
+            for rec in audit:
+                f.write(json.dumps(rec) + "\n")
+        print(f"[audit] {len(audit)} decisions + 1 summary -> {audit_path}")
+    except Exception as e:
+        print(f"[audit] WARN could not write {audit_path}: {e}")
+
     print(f"[done] {'LIVE' if live else 'DRY-RUN'} | quoted {placed} longshots | skipped {skipped} "
-          f"(dup/theme/notional caps) | committed ${notional:.2f}/{max_notional:.0f} collateral")
+          f"(dup/theme/notional/toxic) | committed ${notional:.2f}/{max_notional:.0f} collateral")
     if not live:
         print("       set LONGSHOT_LIVE=1 (with keys) to place real maker NO-buys. Start tiny: CLIP=1.")
 
