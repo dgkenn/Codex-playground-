@@ -15,12 +15,16 @@ The single source of truth. Goal: a multi-strategy bot harvesting SEVERAL small 
 | Source | Realistic recurring | Notes |
 |---|---|---|
 | Pond 1: Kalshi soft-longshot | $30-150/mo | built/optimized/audited; flow-capped |
-| Pond 2: Polymarket-US QCEX | $30-150/mo IF it ports + is retail-accessible | under test (`QCEX_PORTABILITY.md`) |
+| Pond 2: Polymarket-US QCEX | **$0 -- NOT viable** | DEAD: gated maker API + MA-excluded (operator's state) AND edge null/wrong-signed on the soft tail (`QCEX_PORTABILITY.md`) |
 | Promo extraction | lumpy $1-5k one-time + re-ups | `SPORTS_PROMO_EV.md` |
 | Portfolio (backbone) | scales with bankroll | the path to the bulk of $500 as capital compounds |
-- **Honest:** known ponds sum to ~$60-300/mo recurring; $500 purely from ponds is ambitious and needs
-  more ponds + upper-capacity. Realistic structure: ~$200-400/mo from ponds, topped to $500 by portfolio
-  risk-premium income as the bankroll grows. The two together are far more robust than any single bet.
+- **HONEST RECKONING (2026-06-21, after exhaustive pond search):** there is exactly ONE deployable
+  uncontested pond -- Kalshi soft-longshot (~$30-150/mo). Every other candidate is pro-contested (options
+  via PFOF / sports exchanges / all 2026 CFTC venues), too fast (15m), or inaccessible to a MA-based US
+  retail trader (QCEX = gated API + MA-excluded + edge doesn't port). **The 'several ponds summing to $500'
+  vision is sound in theory but the ponds don't exist accessibly.** So: the longshot pond is a real
+  high-Sharpe SUPPLEMENT (~$30-150/mo), and **the $500/mo engine is the PORTFOLIO** (risk premia +
+  contributions + compounding toward ~$70k), NOT pond-aggregation. Don't keep hunting ponds -- confirmed empty.
 
 ## Architecture: one core engine + thin per-venue adapters
 Core (venue-agnostic, built in `kalshi_longshot_bot.py`): scan overpriced longshots -> flow-toxicity gates
@@ -46,9 +50,11 @@ event-clustered (`KALSHI_LONGSHOT_OPTIMAL.md`). Optimized config baked into `kal
 6. **Monitor:** Telegram alerts on every live run + remote on/off kill-switch (`LONGSHOT_SWITCH`,
    `telegram_control.py`); `kalshi_longshot_report.py` for realized edge/fills.
 
-## ===== POND 2: POLYMARKET-US QCEX (pending test) =====
-Status: testing portability of the IDENTICAL edge (`QCEX_PORTABILITY.md`). If it ports AND US-retail can
-transact, build a ~100-line QCEX adapter onto the core engine = pond #2. Run the same go-live gate.
+## ===== POND 2: POLYMARKET-US QCEX -- TESTED, NOT VIABLE =====
+DEAD (`QCEX_PORTABILITY.md`): (1) maker API gated (no public API) + **not available in Massachusetts** (the
+operator's state); (2) the edge does NOT port -- soft-tail sell-YES is null/wrong-signed (Polymarket users
+are sharper; only sports replicates). Re-test ONLY if a public QCEX maker API opens AND MA is permitted AND
+a fresh measurement on QCEX's own settled soft books shows the bias. Not a pond today.
 
 ## ===== BACKBONE: THE PORTFOLIO (deploy in parallel) =====
 Trend-overlaid all-weather (SPY/TLT/GLD/BIL 25% each, 12m trend overlay, annual rebalance; ~6.8%/yr, -10% DD)
