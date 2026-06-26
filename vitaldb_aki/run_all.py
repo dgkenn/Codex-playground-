@@ -6,6 +6,7 @@ regenerates RESULTS.md.
 
 Steps (in order)
 ----------------
+0. inspire_autofetch  -- auto_fetch() INSPIRE from PhysioNet (non-fatal; logs status)
 1. cohort_composite   -- build_composite_cohort() -> cohort_composite.csv
 2. matrix             -- build_matrix()            -> feature_matrix.csv
 3. harness            -- run() for each model x target combination
@@ -119,7 +120,7 @@ def _release_lock(cache_dir: str) -> None:
 # Status tracking
 # ---------------------------------------------------------------------------
 
-STEPS = ["cohort_composite", "matrix", "harness", "multitask", "hypotension", "consolidate"]
+STEPS = ["inspire_autofetch", "cohort_composite", "matrix", "harness", "multitask", "hypotension", "consolidate"]
 
 
 def _load_status(cache_dir: str) -> dict[str, str]:
@@ -137,6 +138,42 @@ def _save_status(cache_dir: str, status: dict[str, str]) -> None:
     path = os.path.join(cache_dir, "run_all_status.json")
     with open(path, "w") as fh:
         json.dump(status, fh, indent=2)
+
+
+# ---------------------------------------------------------------------------
+# Step 0: INSPIRE auto-fetch (non-fatal)
+# ---------------------------------------------------------------------------
+
+def step_inspire_autofetch(cfg: dict, cache_dir: str, logger: logging.Logger) -> bool:
+    """Poll PhysioNet for INSPIRE data and download when access is granted.
+
+    This step is non-fatal: if gated/unavailable, it logs and continues.
+    The result status is added to run_all_status.json for visibility.
+
+    Returns True always (never blocks the pipeline).
+    """
+    logger.info("Step inspire_autofetch: RUNNING ...")
+    try:
+        from vitaldb_aki.inspire.auto_fetch import auto_fetch
+        result = auto_fetch(cfg=cfg, dest=None)  # dest defaults to cache/inspire_raw/
+        status = result.get("status", "unknown")
+        if status == "already_downloaded":
+            logger.info("Step inspire_autofetch: DONE (already downloaded)")
+        elif status == "gated":
+            http = result.get("http")
+            logger.info("Step inspire_autofetch: GATED (HTTP %s) -- PhysioNet access not yet approved", http)
+        elif status == "downloaded":
+            path = result.get("path", "?")
+            logger.info("Step inspire_autofetch: DONE (downloaded to %s)", path)
+        elif status == "error":
+            msg = result.get("msg", "unknown error")
+            logger.warning("Step inspire_autofetch: ERROR (non-fatal) -- %s", msg)
+        else:
+            logger.info("Step inspire_autofetch: DONE (status=%s)", status)
+        return True  # always succeed (non-fatal step)
+    except Exception:
+        logger.warning("Step inspire_autofetch: EXCEPTION (non-fatal)\n%s", traceback.format_exc())
+        return True  # always succeed (non-fatal step)
 
 
 # ---------------------------------------------------------------------------
@@ -586,6 +623,11 @@ def main(argv: list[str] | None = None) -> int:
         return force_step is not None and (force_step == "all" or force_step == step)
 
     try:
+        # Step 0: INSPIRE auto-fetch (non-fatal)
+        ok = step_inspire_autofetch(cfg, cache_dir, logger)
+        status["inspire_autofetch"] = "done" if ok else "error"
+        _save_status(cache_dir, status)
+
         # Step 1: cohort
         ok = step_cohort(cfg, cache_dir, logger, force=_should_force("cohort_composite"))
         status["cohort_composite"] = "done" if ok else "failed"
