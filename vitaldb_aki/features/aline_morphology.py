@@ -629,11 +629,13 @@ def load_art_waveform(cfg: dict[str, Any], caseid: str,
             vcell = rowi[1].strip() if len(rowi) >= 2 else ""
             # Record a timestamp anchor at this row position.
             if tcell != "":
-                try:
+                try:                           # validate BEFORE appending so the two
+                    tv = float(tcell)          # anchor lists never diverge in length
+                except ValueError:             # (a non-numeric Time cell would break
+                    tv = None                  # np.interp otherwise).
+                if tv is not None:
                     anchor_idx.append(i)
-                    anchor_t.append(float(tcell))
-                except ValueError:
-                    pass
+                    anchor_t.append(tv)
             # Value (may be blank during sensor warmup).
             if vcell != "":
                 try:
