@@ -107,6 +107,7 @@ feature_sets:
 
 # ---- modeling & evaluation (Sec 9-12) --------------------------------------
 evaluation:
+  target: "composite"                 # primary outcome; secondaries: organ_renal, organ_*
   split_unit: "subjectid"             # patient-level splits (Sec 11.6)
   outer_folds: 5
   inner_folds: 5

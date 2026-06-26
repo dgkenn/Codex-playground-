@@ -50,13 +50,13 @@ def _param_grid(name: str):
     return {"clf__max_leaf_nodes": [7, 15, 31]}
 
 
-def oof_predictions(df, fset, modules, model_name, cfg, seed=0):
+def oof_predictions(df, fset, modules, model_name, cfg, seed=0, target="composite"):
     """Nested-CV out-of-fold probabilities for one (feature set, model)."""
     from sklearn.base import clone
     from sklearn.model_selection import GridSearchCV, StratifiedGroupKFold
     from sklearn.pipeline import Pipeline
 
-    X, y, groups, num_cols, cat_cols = build_xy(df, fset, modules)
+    X, y, groups, num_cols, cat_cols = build_xy(df, fset, modules, target)
     pre = make_preprocessor(num_cols, cat_cols)
     pipe = Pipeline([("pre", pre), ("clf", _model(model_name, seed))])
 
@@ -81,23 +81,24 @@ def _disc(y, p):
 
 
 def run(cfg: dict[str, Any], modules=None, model_name="logreg", seed=0,
-        sets=None) -> dict[str, Any]:
+        sets=None, target=None) -> dict[str, Any]:
     if modules is None:
         from vitaldb_aki.features import build_matrix
         modules = build_matrix.MODULES
+    target = target or cfg["evaluation"].get("target", "composite")
     df = load_matrix(cfg)
     sets = sets or [s for s in FEATURE_SETS
-                    if events_per_variable(df, s, modules)["n_raw_features"] > 0]
+                    if events_per_variable(df, s, modules, target)["n_raw_features"] > 0]
 
-    result: dict[str, Any] = {"model": model_name, "n": int(len(df)),
-                              "n_events": int(df["aki"].sum()), "sets": {}}
+    result: dict[str, Any] = {"model": model_name, "target": target, "sets": {}}
     oof: dict[str, np.ndarray] = {}
     y_ref = None; g_ref = None
     for s in sets:
-        p, y, g = oof_predictions(df, s, modules, model_name, cfg, seed)
+        p, y, g = oof_predictions(df, s, modules, model_name, cfg, seed, target)
         oof[s] = p; y_ref = y; g_ref = g
         result["sets"][s] = {**_disc(y, p),
-                             "epv": events_per_variable(df, s, modules)}
+                             "epv": events_per_variable(df, s, modules, target)}
+    result["n"] = int(len(y_ref)); result["n_events"] = int(y_ref.sum())
 
     # incremental-value contrasts (Sec 12): each adjacent nested pair present
     contrasts = []
@@ -115,15 +116,19 @@ def run(cfg: dict[str, Any], modules=None, model_name="logreg", seed=0,
                               "primary": (new == "pk" and old == "comprehensive")})
     result["incremental_value"] = contrasts
 
-    # negative control (Sec 11.5): shuffle labels -> AUROC ~ 0.5
+    # negative control (Sec 11.5): permute the target over its labelable subset
+    # -> AUROC ~ 0.5 (firewall check).
     rng = np.random.default_rng(seed)
     biggest = sets[-1]
-    y_shuf = rng.permutation(y_ref)
-    df_shuf = df.copy(); df_shuf["aki"] = y_shuf
-    p_shuf, _, _ = oof_predictions(df_shuf, biggest, modules, model_name, cfg, seed)
-    result["negative_control"] = {"set": biggest, "auroc_shuffled": _disc(y_shuf, p_shuf)["auroc"]}
+    col = target if target in df.columns else "aki"
+    df_shuf = df.copy()
+    mask = df_shuf[col].apply(lambda v: str(v).strip() not in ("", "nan", "None"))
+    vals = df_shuf.loc[mask, col].astype(float).astype(int).to_numpy()
+    df_shuf.loc[mask, col] = rng.permutation(vals)
+    p_shuf, y_sh, _ = oof_predictions(df_shuf, biggest, modules, model_name, cfg, seed, target)
+    result["negative_control"] = {"set": biggest, "auroc_shuffled": _disc(y_sh, p_shuf)["auroc"]}
 
-    out = os.path.join(cfg["data"]["cache_dir"], f"incremental_value_{model_name}.json")
+    out = os.path.join(cfg["data"]["cache_dir"], f"incremental_value_{target}_{model_name}.json")
     with open(out, "w", encoding="utf-8") as fh:
         json.dump(result, fh, indent=2)
     return result

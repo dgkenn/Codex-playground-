@@ -40,14 +40,24 @@ def feature_columns(fset: str, modules) -> list[str]:
     return names_for_set(_all_specs(modules), fset)
 
 
-def build_xy(df: pd.DataFrame, fset: str, modules):
-    """Return (X: DataFrame, y: int array, groups: array, num_cols, cat_cols)."""
-    cols = [c for c in feature_columns(fset, modules) if c in df.columns]
+def build_xy(df: pd.DataFrame, fset: str, modules, target: str = "composite"):
+    """Return (X: DataFrame, y: int array, groups: array, num_cols, cat_cols).
+
+    `target` selects the outcome column: "composite" (primary), "organ_renal"
+    (== the renal/AKI secondary), or any other per-organ secondary label. Rows
+    where the target is missing/blank (unlabelable for that outcome) are dropped,
+    so each outcome is evaluated only on its own labelable subset.
+    """
+    if target not in df.columns and target == "composite" and "aki" in df.columns:
+        target = "aki"   # renal-only fallback matrix
+    mask = df[target].apply(lambda v: str(v).strip() not in ("", "nan", "None"))
+    d = df[mask]
+    cols = [c for c in feature_columns(fset, modules) if c in d.columns]
     cat_cols = [c for c in cols if c in CATEGORICAL]
     num_cols = [c for c in cols if c not in CATEGORICAL]
-    X = df[cols].copy()
-    y = df["aki"].astype(int).to_numpy()
-    groups = df["subjectid"].to_numpy()
+    X = d[cols].copy()
+    y = d[target].astype(float).astype(int).to_numpy()
+    groups = d["subjectid"].to_numpy()
     return X, y, groups, num_cols, cat_cols
 
 
@@ -76,10 +86,11 @@ def make_preprocessor(num_cols, cat_cols, max_cat=6):
     return ColumnTransformer(transformers, remainder="drop")
 
 
-def events_per_variable(df: pd.DataFrame, fset: str, modules) -> dict[str, Any]:
+def events_per_variable(df: pd.DataFrame, fset: str, modules,
+                        target: str = "composite") -> dict[str, Any]:
     """EPV accounting (Sec 10): events / number of model inputs (post-encoding is
     larger, but this raw count flags the danger)."""
-    X, y, _, num_cols, cat_cols = build_xy(df, fset, modules)
+    X, y, _, num_cols, cat_cols = build_xy(df, fset, modules, target)
     n_events = int(y.sum())
     n_vars = len(num_cols) + len(cat_cols)
     return {"set": fset, "n_events": n_events, "n_raw_features": n_vars,
