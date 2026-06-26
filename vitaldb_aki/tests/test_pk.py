@@ -42,6 +42,11 @@ class TestContract(unittest.TestCase):
         names = names_for_set(pk.SPECS, "pk")
         self.assertIn("ppf_ce_peak", names)
         self.assertIn("pk_available", names)
+        # new bolus/infusion decomposition features (Sec 7E/8)
+        for nm in ("ppf_infused_mg", "ppf_bolus_mg", "ppf_bolus_frac",
+                   "ppf_admin_mode", "phe_infused_ug", "phe_bolus_ug",
+                   "phe_bolus_frac", "eph_bolus_mg"):
+            self.assertIn(nm, names)
 
 
 class TestEleveldParams(unittest.TestCase):
@@ -106,6 +111,99 @@ class TestEleveldCe(unittest.TestCase):
         peak = max(ce)
         # clinical induction effect-site peak is roughly 2-8 ug/mL.
         self.assertTrue(1.5 < peak < 12.0, f"induction Ce peak {peak:.2f} ug/mL out of range")
+
+
+class TestBolusDecomposition(unittest.TestCase):
+    def test_bolus_equals_total_minus_infused(self):
+        # total 200 mg, infused 120 mg -> bolus 80 mg, frac 0.4, mode 3 (both).
+        d = pk.decompose_dose(total=200.0, infused=120.0)
+        self.assertAlmostEqual(d["bolus"], 80.0, places=4)
+        self.assertAlmostEqual(d["bolus_frac"], 0.4, places=4)
+        self.assertEqual(d["admin_mode"], 3)
+
+    def test_clamp_at_zero_when_infused_exceeds_total(self):
+        # rounding: pump VOL x conc slightly exceeds charted total -> clamp to 0.
+        d = pk.decompose_dose(total=100.0, infused=100.5)
+        self.assertEqual(d["bolus"], 0.0)
+        self.assertEqual(d["bolus_frac"], 0.0)
+        self.assertEqual(d["admin_mode"], 2)  # infusion-only
+
+    def test_bolus_only_mode(self):
+        # ephedrine-like: total present, no infusion track (infused None).
+        d = pk.decompose_dose(total=10.0, infused=None)
+        self.assertAlmostEqual(d["bolus"], 10.0, places=4)
+        self.assertAlmostEqual(d["bolus_frac"], 1.0, places=4)
+        self.assertEqual(d["admin_mode"], 1)  # bolus-only
+
+    def test_infusion_only_mode(self):
+        # total fully explained by infusion -> bolus 0, mode 2.
+        d = pk.decompose_dose(total=120.0, infused=120.0)
+        self.assertEqual(d["bolus"], 0.0)
+        self.assertEqual(d["admin_mode"], 2)
+
+    def test_none_total_and_zero_dose(self):
+        # missing total -> bolus/frac/mode None
+        d = pk.decompose_dose(total=None, infused=50.0)
+        self.assertIsNone(d["bolus"])
+        self.assertIsNone(d["admin_mode"])
+        # zero total, zero infused -> mode 0 (none)
+        d0 = pk.decompose_dose(total=0.0, infused=0.0)
+        self.assertEqual(d0["admin_mode"], 0)
+        self.assertEqual(d0["bolus"], 0.0)
+
+    def test_infused_amount_from_vol_window_bounded(self):
+        # cumulative VOL 0 -> 5 mL, conc 20 mg/mL -> 100 mg infused; samples past
+        # t1 must NOT contribute (Sec 11 leakage).
+        vol = [(0.0, 0.0), (300.0, 2.5), (600.0, 5.0), (900.0, 9.0)]
+        amt_in = pk.infused_amount(vol, conc_per_ml=20.0, t0=0.0, t1=600.0)
+        self.assertAlmostEqual(amt_in, 100.0, places=3)
+        amt_all = pk.infused_amount(vol, conc_per_ml=20.0, t0=0.0, t1=900.0)
+        self.assertAlmostEqual(amt_all, 180.0, places=3)
+        self.assertLess(amt_in, amt_all)
+
+    def test_infused_amount_absent_vol_is_none(self):
+        # no VOL track -> cannot attribute infusion -> None (not 0).
+        self.assertIsNone(pk.infused_amount([], conc_per_ml=20.0, t0=0.0, t1=600.0))
+        # single sample -> 0.0 (present but no delta)
+        self.assertEqual(pk.infused_amount([(0.0, 3.0)], 20.0, 0.0, 600.0), 0.0)
+
+
+class TestEleveldBolus(unittest.TestCase):
+    def test_bolus_raises_early_peak_vs_no_bolus(self):
+        # same infusion, with vs without an induction bolus: the bolus must raise
+        # the effect-site peak (it injects drug the infusion-only path misses).
+        mg_s, times = _const_infusion(20.0, 20 * 60)  # gentle 20 mg/min infusion
+        ce_no = pk.eleveld_ce(mg_s, times, **REF)
+        ce_bo = pk.eleveld_ce(mg_s, times, bolus_mg=140.0, bolus_index=0, **REF)
+        self.assertGreater(max(ce_bo), max(ce_no))
+        # and the early Ce (first 2 min) is clearly higher with the bolus.
+        self.assertGreater(ce_bo[120], ce_no[120] + 0.5)
+
+    def test_bolus_peaks_higher_than_same_dose_slow_infusion(self):
+        # 100 mg as an instantaneous bolus vs the SAME 100 mg given as a slow
+        # 10-min infusion -> bolus reaches a higher Ce peak (concentrated input).
+        secs = 30 * 60
+        # bolus: 100 mg at induction, nothing else
+        ce_bolus = pk.eleveld_ce([0.0] * secs, [float(i) for i in range(secs + 1)],
+                                 bolus_mg=100.0, bolus_index=0, **REF)
+        # slow infusion: 100 mg spread over 10 min == 10 mg/min, then observe
+        slow = [10.0 / 60.0] * (10 * 60) + [0.0] * (20 * 60)
+        ce_slow = pk.eleveld_ce(slow, [float(i) for i in range(len(slow) + 1)], **REF)
+        self.assertGreater(max(ce_bolus), max(ce_slow))
+
+    def test_zero_bolus_is_noop(self):
+        # bolus_mg=0 must reproduce the legacy infusion-only result exactly.
+        mg_s, times = _const_infusion(120.0, 10 * 60)
+        ce_legacy = pk.eleveld_ce(mg_s, times, **REF)
+        ce_zero = pk.eleveld_ce(mg_s, times, bolus_mg=0.0, **REF)
+        self.assertEqual(ce_legacy, ce_zero)
+
+    def test_bolus_index_clamped(self):
+        # an out-of-range bolus_index must not crash and still inject the dose.
+        mg_s = [0.0] * 60
+        times = [float(i) for i in range(61)]
+        ce = pk.eleveld_ce(mg_s, times, bolus_mg=100.0, bolus_index=10_000, **REF)
+        self.assertGreater(max(ce), 0.0)
 
 
 class TestExposureIntegrals(unittest.TestCase):
