@@ -24,11 +24,12 @@ if _ROOT not in sys.path:
 from common.hashing import hash_object as content_hash
 from vitaldb_aki.data.client import fetch_cases
 from vitaldb_aki.features.base import FeatureSpec, audit_specs
-from vitaldb_aki.features import tabular
+from vitaldb_aki.features import hemodynamics, tabular
 
 
-# Registered feature modules (each: SPECS + extract). Append hemodynamics / pk here.
-MODULES = [tabular]
+# Registered feature modules (each: SPECS + extract). PK (Sec 8) registers here
+# once its Eleveld-vs-pump Ce validation is confirmed.
+MODULES = [tabular, hemodynamics]
 
 
 def _load_cohort(cfg: dict[str, Any]) -> list[dict]:
