@@ -112,7 +112,7 @@ evaluation:
   outer_folds: 5
   inner_folds: 5
   primary_incremental_contrast: "pk_vs_comprehensive"   # H2 primary (Sec 9/12)
-  bootstrap_iters: 2000
+  bootstrap_iters: 800
   metrics: ["auroc", "auprc", "calibration", "decision_curve"]
   class_imbalance: "class_weight"     # + report AUPRC (Sec 10)
 
