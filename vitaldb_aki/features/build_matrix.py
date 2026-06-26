@@ -33,7 +33,7 @@ from common.hashing import hash_object as content_hash
 from vitaldb_aki.data.client import fetch_cases
 from vitaldb_aki.features.base import FeatureSpec, audit_specs
 from vitaldb_aki.features import (
-    aline_morphology, cross_waveform, hemodynamics, pfds, pk, risk_factors, tabular, temporal,
+    aline_morphology, cross_waveform, hemodynamics, pfds, pk, pkpd_sensitivity, risk_factors, tabular, temporal,
 )
 
 
@@ -41,7 +41,7 @@ from vitaldb_aki.features import (
 # tabular (§7A/B/D/E), hemodynamics (§7C), pk (§8, Spearman 0.96 + bolus split),
 # temporal (§7C/9), risk_factors (§7A/B labs+flags), aline_morphology (§7F),
 # cross_waveform (§7F novel coupling biomarkers).
-MODULES = [tabular, hemodynamics, pk, temporal, risk_factors, aline_morphology, cross_waveform, pfds]
+MODULES = [tabular, hemodynamics, pk, temporal, risk_factors, aline_morphology, cross_waveform, pfds, pkpd_sensitivity]
 
 
 # ---------------------------------------------------------------------------
