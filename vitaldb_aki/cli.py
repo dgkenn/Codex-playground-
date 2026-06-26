@@ -23,20 +23,37 @@ if _ROOT not in sys.path:
 from common.config import load_yaml
 from vitaldb_aki.cohort.build import build_cohort
 
+_DEFAULT_CFG = os.path.join(os.path.dirname(__file__), "config.yaml")
+
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
-    c = sub.add_parser("cohort", help="build the labelable KDIGO cohort")
-    c.add_argument("--config", default=os.path.join(os.path.dirname(__file__), "config.yaml"))
-    c.add_argument("--refresh", action="store_true", help="re-pull tables from the API")
-    args = ap.parse_args()
 
+    c = sub.add_parser("cohort", help="build the labelable KDIGO cohort (§5/§6)")
+    c.add_argument("--config", default=_DEFAULT_CFG)
+    c.add_argument("--refresh", action="store_true", help="re-pull tables from the API")
+
+    m = sub.add_parser("matrix", help="build the modeling feature matrix (§7-9)")
+    m.add_argument("--config", default=_DEFAULT_CFG)
+
+    mo = sub.add_parser("model", help="run the incremental-value harness (§9-12)")
+    mo.add_argument("--config", default=_DEFAULT_CFG)
+    mo.add_argument("--clf", default="logreg", choices=["logreg", "gbm"])
+    mo.add_argument("--seed", type=int, default=0)
+
+    args = ap.parse_args()
     cfg = load_yaml(args.config)
+
     if args.cmd == "cohort":
-        summary = build_cohort(cfg, refresh=args.refresh)
-        print(json.dumps(summary, indent=2))
+        print(json.dumps(build_cohort(cfg, refresh=args.refresh), indent=2))
+    elif args.cmd == "matrix":
+        from vitaldb_aki.features.build_matrix import build_matrix
+        print(json.dumps(build_matrix(cfg), indent=2))
+    elif args.cmd == "model":
+        from vitaldb_aki.models.run import run
+        print(json.dumps(run(cfg, model_name=args.clf, seed=args.seed), indent=2))
     return 0
 
 
