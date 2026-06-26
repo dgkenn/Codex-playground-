@@ -316,10 +316,12 @@ def load_packed_waveform(cfg: dict[str, Any], caseid: str, candidates: list[str]
             vcell = rowi[1].strip() if len(rowi) >= 2 else ""
             if tcell != "":
                 try:
+                    tv = float(tcell)          # validate BEFORE appending so the
+                except ValueError:             # two anchor lists never diverge in
+                    tv = None                  # length (would break np.interp).
+                if tv is not None:
                     anchor_idx.append(i)
-                    anchor_t.append(float(tcell))
-                except ValueError:
-                    pass
+                    anchor_t.append(tv)
             if vcell != "":
                 try:
                     vals.append(float(vcell))
