@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import csv
 import gzip
+import http.client
 import io
 import os
 import time
@@ -49,22 +50,41 @@ def available_tracks(cfg: dict[str, Any], caseid: str) -> list[str]:
     return [tn for (cid, tn) in _INDEX if cid == str(caseid)]
 
 
-def _fetch(url: str, retries: int = 4, timeout: int = 180) -> str:
+def _fetch(url: str, retries: int = 6, timeout: int = 240) -> str:
+    """Fetch a track, robust to the IncompleteRead truncation that hits the large
+    500 Hz waveform tracks. Reads to EOF in a loop, and after two gzip failures
+    falls back to identity (uncompressed) encoding -- gzip streams from the proxy
+    are the usual truncation culprit on multi-MB responses."""
     last: Exception | None = None
     for attempt in range(retries):
+        use_gzip = attempt < 2          # first two tries gzip; then uncompressed
         try:
-            req = urllib.request.Request(
-                url, headers={"User-Agent": "vitaldb-aki/1.0", "Accept-Encoding": "gzip"}
-            )
-            raw = urllib.request.urlopen(req, timeout=timeout).read()
+            headers = {"User-Agent": "vitaldb-aki/1.0"}
+            if use_gzip:
+                headers["Accept-Encoding"] = "gzip"
+            req = urllib.request.Request(url, headers=headers)
+            resp = urllib.request.urlopen(req, timeout=timeout)
+            chunks = []                 # drain to EOF tolerating a final short read
             try:
-                return gzip.decompress(raw).decode("utf-8", "replace")
-            except OSError:
-                return raw.decode("utf-8", "replace")
+                while True:
+                    b = resp.read(1 << 20)
+                    if not b:
+                        break
+                    chunks.append(b)
+            except http.client.IncompleteRead as ir:
+                chunks.append(ir.partial)
+                raise                    # partial data is unreliable -> retry
+            raw = b"".join(chunks)
+            if use_gzip:
+                try:
+                    return gzip.decompress(raw).decode("utf-8", "replace")
+                except OSError:
+                    return raw.decode("utf-8", "replace")
+            return raw.decode("utf-8", "replace")
         except Exception as exc:
             last = exc
             if attempt < retries - 1:
-                time.sleep(2 ** attempt)
+                time.sleep(min(2 ** attempt, 16))
     raise RuntimeError(f"failed to fetch track {url}: {last}")
 
 
