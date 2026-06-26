@@ -1,0 +1,74 @@
+# config.yaml -- single source of truth for the VitalDB postoperative-AKI study.
+# Protocol: VitalDB_AKI_PK_incremental_prediction_protocol.md (v1.0).
+# Everything that can change a result lives here, not in code. Pre-register before
+# any outcome-coupled modeling (Sec 14).
+
+study: "vitaldb_aki_pk_incremental"
+seed: 20260626
+
+# ---- data source (Sec 4): VitalDB open API, no credentials -----------------
+data:
+  source: "VITALDB_OPEN"
+  api_base: "https://api.vitaldb.net"
+  cache_dir: "vitaldb_aki/cache"      # local parquet/csv cache (git-ignored)
+  # endpoints
+  cases_url: "https://api.vitaldb.net/cases"
+  labs_url: "https://api.vitaldb.net/labs"
+  trks_url: "https://api.vitaldb.net/trks"
+  time_unit: "seconds_from_casestart"  # casestart == 0 for every case
+
+# ---- cohort & eligibility (Sec 5) ------------------------------------------
+cohort:
+  min_age_years: 18
+  exclude_cardiac: true               # non-cardiac only (Sec 4/5)
+  # ESRD / chronic dialysis / transplant / obstetric / AV-fistula exclusions (Sec 5).
+  # VitalDB has no diagnosis codes for several of these; rules are best-effort and
+  # documented per-flag in cohort/eligibility.py.
+  exclude_preexisting_esrd: true
+  esrd_baseline_cr_mgdl: 4.0          # baseline cr >= this -> treat as advanced CKD/ESRD flag
+  exclude_obstetric: true
+  exclude_transplant: true
+  exclude_av_fistula: true
+  # labelable subset requires a baseline AND >=1 qualifying postop creatinine.
+  require_postop_creatinine: true
+
+# ---- outcome: KDIGO creatinine criteria (Sec 6) ----------------------------
+kdigo:
+  # absolute rise >= abs_rise_mgdl within abs_window_h hours
+  abs_rise_mgdl: 0.3
+  abs_window_h: 48
+  # OR relative >= rel_ratio x baseline within rel_window_h hours
+  rel_ratio: 1.5
+  rel_window_h: 168                   # 7 days
+  # window reference point: end of surgery (opend). Postop creatinine = dt > ref.
+  window_anchor: "opend"
+  baseline: "preop_cr"                # most recent preop creatinine (Sec 6)
+  # if preop_cr missing, optionally fall back to most-recent preop lab cr (dt<anchor)
+  baseline_fallback_to_labs: true
+  baseline_preop_window_h: 720        # accept preop lab cr within 30 d before anchor
+
+# ---- feature sets (Sec 9: three nested sets) -------------------------------
+feature_sets:
+  standard: "clinical + basic intraop hemodynamics (prior-work baseline)"
+  comprehensive: "full Sec 7 taxonomy"
+  pk: "Sec 8 pharmacokinetic / drug-exposure features"
+
+# ---- modeling & evaluation (Sec 9-12) --------------------------------------
+evaluation:
+  split_unit: "subjectid"             # patient-level splits (Sec 11.6)
+  outer_folds: 5
+  inner_folds: 5
+  primary_incremental_contrast: "pk_vs_comprehensive"   # H2 primary (Sec 9/12)
+  bootstrap_iters: 2000
+  metrics: ["auroc", "auprc", "calibration", "decision_curve"]
+  class_imbalance: "class_weight"     # + report AUPRC (Sec 10)
+
+# ---- leakage battery (Sec 11) ----------------------------------------------
+leakage:
+  prediction_cutoff: "opend"          # end of surgery; no later data as features
+  forbid_postop_features: true
+  negative_controls: ["shuffled_labels", "phase_randomized_signals"]
+
+audit:
+  # any feature whose source timestamp is after prediction_cutoff is a hard error.
+  enforce_no_postop_features: true
