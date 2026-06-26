@@ -47,6 +47,58 @@ kdigo:
   baseline_fallback_to_labs: true
   baseline_preop_window_h: 720        # accept preop lab cr within 30 d before anchor
 
+# ---- composite end-organ-damage outcome (PRIMARY) --------------------------
+# Per protocol amendment: the PRIMARY outcome is a composite of objectively-
+# labelable postoperative end-organ injury; the individual organ components are
+# pre-specified SECONDARY outcomes. Each component is defined by an objective
+# postoperative lab/outcome threshold relative to a preoperative baseline, in the
+# same spirit as KDIGO (clean, adjudication-free). Myocardial injury is NOT
+# included: VitalDB's open lab set has no troponin/CK (documented limitation).
+# Every component label may use postoperative data BY DEFINITION; no postoperative
+# value may ever become a FEATURE (Sec 11 firewall, enforced separately).
+organ_outcomes:
+  postop_window_h: 168                  # 7 days, shared default
+  ULN:                                  # upper limits of normal (SNUH lab refs)
+    ast: 40.0
+    alt: 40.0
+    tbil: 1.2
+  components:
+    renal:                              # KDIGO creatinine (see kdigo block)
+      enabled: true
+      source: "kdigo"
+    hepatocellular:                     # DILI-style transaminitis
+      enabled: true
+      analytes: ["ast", "alt"]
+      rule: "peak_ge_mult_uln"
+      mult_uln: 3.0                     # AST or ALT >= 3x ULN
+      exclude_optypes: ["Hepatic", "Biliary/Pancreas", "Transplantation"]  # injury is the surgical target
+    cholestatic:
+      enabled: true
+      analytes: ["tbil"]
+      rule: "peak_ge_mult_uln"
+      mult_uln: 2.0                     # bilirubin >= 2x ULN
+      exclude_optypes: ["Hepatic", "Biliary/Pancreas", "Transplantation"]
+    coagulation_plt:                    # thrombocytopenia
+      enabled: true
+      analytes: ["plt"]
+      rule: "nadir_below_or_drop"
+      nadir_below: 100.0                # postop nadir < 100 (x10^3/uL)
+      drop_frac_from_baseline: 0.5      # OR >=50% fall from preop
+    coagulation_inr:                    # coagulopathy (confounded by anticoagulation)
+      enabled: true
+      analytes: ["ptinr"]
+      rule: "peak_ge"
+      threshold: 1.5
+    hypoperfusion:                      # global ischemia (confounded: sicker cases get postop lactate)
+      enabled: true
+      analytes: ["lac"]
+      rule: "peak_ge"
+      threshold: 4.0
+    mortality:
+      enabled: true
+      source: "death_inhosp"
+  primary: "composite_any"             # primary label = any enabled component positive
+
 # ---- feature sets (Sec 9: three nested sets) -------------------------------
 feature_sets:
   standard: "clinical + basic intraop hemodynamics (prior-work baseline)"
