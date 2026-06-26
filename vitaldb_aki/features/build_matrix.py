@@ -24,12 +24,12 @@ if _ROOT not in sys.path:
 from common.hashing import hash_object as content_hash
 from vitaldb_aki.data.client import fetch_cases
 from vitaldb_aki.features.base import FeatureSpec, audit_specs
-from vitaldb_aki.features import hemodynamics, tabular
+from vitaldb_aki.features import hemodynamics, pk, tabular
 
 
-# Registered feature modules (each: SPECS + extract). PK (Sec 8) registers here
-# once its Eleveld-vs-pump Ce validation is confirmed.
-MODULES = [tabular, hemodynamics]
+# Registered feature modules (each: SPECS + extract). PK (Sec 8) is active:
+# Eleveld-vs-pump Ce validation confirmed (Spearman 0.96).
+MODULES = [tabular, hemodynamics, pk]
 
 
 def _load_cohort(cfg: dict[str, Any]) -> list[dict]:
@@ -40,7 +40,22 @@ def _load_cohort(cfg: dict[str, Any]) -> list[dict]:
         return list(csv.DictReader(fh))
 
 
-def build_matrix(cfg: dict[str, Any], modules: list[Any] | None = None) -> dict[str, Any]:
+def _extract_parallel(m, cfg, cases_by_id, caseids, workers):
+    """Run one module's extract across cases in a thread pool. Track downloads are
+    I/O-bound, so threads give a big wall-clock win; the per-case extract calls are
+    independent and the /trks index is pre-warmed before fan-out to avoid a race."""
+    from concurrent.futures import ThreadPoolExecutor
+    merged: dict[str, dict] = {}
+    def one(cid):
+        return m.extract(cfg, cases_by_id, [cid])
+    with ThreadPoolExecutor(max_workers=workers) as ex:
+        for d in ex.map(one, caseids):
+            merged.update(d)
+    return merged
+
+
+def build_matrix(cfg: dict[str, Any], modules: list[Any] | None = None,
+                 workers: int = 12) -> dict[str, Any]:
     modules = modules or MODULES
     cohort = _load_cohort(cfg)
     caseids = [r["caseid"] for r in cohort]
@@ -52,8 +67,19 @@ def build_matrix(cfg: dict[str, Any], modules: list[Any] | None = None) -> dict[
         all_specs.extend(m.SPECS)
     audit_specs(all_specs)  # Sec 11 firewall over the FULL union
 
-    # extract + merge per case
-    per_module = [m.extract(cfg, cases_by_id, caseids) for m in modules]
+    # Pre-warm the (caseid,tname)->tid index once so threaded workers don't race
+    # building it (modules that don't use tracks simply ignore it).
+    from vitaldb_aki.data import tracks as _tracks
+    _tracks.tid_for(cfg, caseids[0], "Solar8000/ART_MBP")
+
+    # extract + merge per module; parallelize the download-heavy modules per case.
+    per_module = []
+    for m in modules:
+        uses_tracks = getattr(m, "USES_TRACKS", m.__name__.split(".")[-1] in ("hemodynamics", "pk"))
+        if uses_tracks and workers > 1:
+            per_module.append(_extract_parallel(m, cfg, cases_by_id, caseids, workers))
+        else:
+            per_module.append(m.extract(cfg, cases_by_id, caseids))
     feat_names = [s.name for s in all_specs]
 
     rows: list[dict] = []
