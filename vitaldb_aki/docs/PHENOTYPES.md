@@ -41,10 +41,18 @@ Features are standardised (z-score relative to population mean).
 (50/50 patient-level split; highest-risk cluster vs rest)
 
 ### composite
-- Not available
+- Holdout n_valid=120, events=13
+- p-value (fisher_exact): 0.001131
+- Highest-risk cluster: 1
+- Rate ratio (highest vs rest): 6.4228
+- Replication in discovery half: YES
 
 ### organ_renal
-- Not available
+- Holdout n_valid=120, events=16
+- p-value (fisher_exact): 4.9e-05
+- Highest-risk cluster: 1
+- Rate ratio (highest vs rest): 8.3496
+- Replication in discovery half: YES
 
 ## Feature List (intraoperative physiology only)
 

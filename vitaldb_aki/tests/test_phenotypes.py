@@ -206,6 +206,50 @@ class TestDiscoveryFirewall(unittest.TestCase):
                 msg=f"Static preop column '{excluded}' leaked into feature matrix"
             )
 
+    def test_load_physiology_matrix_drops_all_missing_columns_keeps_alignment(self):
+        """An all-NaN physiology column must be dropped so feature_names stays
+        aligned with X. Regression: SimpleImputer(median) silently drops all-NaN
+        columns from its output, which desynced names (N) from X (N-1) and crashed
+        characterize/_infer_subtype_hint with IndexError."""
+        import numpy as np
+        from vitaldb_aki.analysis.phenotypes import load_physiology_matrix, characterize
+
+        df, _ = _make_synthetic_matrix(n_per_cluster=60, seed=3)
+        df["map_all_missing_probe"] = np.nan  # physiology-prefixed, entirely empty
+
+        with tempfile.TemporaryDirectory() as td:
+            df.to_csv(os.path.join(td, "feature_matrix.csv"), index=False)
+            X, feature_names, _ = load_physiology_matrix(_make_cfg(td))
+
+        self.assertNotIn("map_all_missing_probe", feature_names)   # dropped
+        self.assertEqual(X.shape[1], len(feature_names))           # names aligned to X
+        # characterize (the original crash site) must run cleanly.
+        labels = np.array([i % 2 for i in range(X.shape[0])])
+        char = characterize(X, labels, feature_names)
+        self.assertEqual(char["feature_names"], feature_names)
+
+    def test_load_physiology_matrix_no_outcome_merge_collision(self):
+        """When the matrix already carries composite/organ_renal, loading must NOT
+        re-merge them into _x/_y suffixes. Regression: the suffix collision left
+        the post-hoc outcome association unable to find a plain 'composite' and it
+        reported 'no events or no valid rows'."""
+        from vitaldb_aki.analysis.phenotypes import load_physiology_matrix
+
+        df, _ = _make_synthetic_matrix(n_per_cluster=60, seed=4)
+
+        with tempfile.TemporaryDirectory() as td:
+            df.to_csv(os.path.join(td, "feature_matrix.csv"), index=False)
+            # cohort_composite.csv carrying the SAME outcome columns + caseids.
+            df[["caseid", "composite", "organ_renal"]].to_csv(
+                os.path.join(td, "cohort_composite.csv"), index=False)
+            _, _, df_full = load_physiology_matrix(_make_cfg(td))
+
+        self.assertIn("composite", df_full.columns)        # plain name survives
+        self.assertIn("organ_renal", df_full.columns)
+        self.assertNotIn("composite_x", df_full.columns)   # no suffix collision
+        self.assertNotIn("composite_y", df_full.columns)
+        self.assertEqual(int(df_full["composite"].notna().sum()), len(df_full))
+
 
 class TestDiscoverPhenotypes(unittest.TestCase):
     """Test that discover_phenotypes recovers stable clusters from synthetic data."""

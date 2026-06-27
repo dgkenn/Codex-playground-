@@ -169,10 +169,18 @@ def load_physiology_matrix(cfg: dict[str, Any]):
     # Optionally merge composite/organ labels (for later outcome testing).
     if os.path.exists(composite_path):
         comp_df = pd.read_csv(composite_path)
-        # Keep only caseid + label columns from composite file.
-        label_cols = [c for c in comp_df.columns if c == "caseid"
-                      or any(re.search(p, c, re.IGNORECASE) for p in OUTCOME_PATTERNS)]
-        df = df.merge(comp_df[label_cols], on="caseid", how="left")
+        # Merge ONLY outcome columns not already present. build_matrix already
+        # joins composite/organ_* into feature_matrix.csv; re-merging them here
+        # would trigger pandas _x/_y suffixing, leaving the post-hoc outcome
+        # association unable to find a plain "composite"/"organ_renal" (it then
+        # reports "no valid rows"). Whatever's already in the matrix is the
+        # current de-confounded label, so prefer it and only fill genuine gaps.
+        label_cols = [c for c in comp_df.columns
+                      if c != "caseid"
+                      and c not in df.columns
+                      and any(re.search(p, c, re.IGNORECASE) for p in OUTCOME_PATTERNS)]
+        if label_cols:
+            df = df.merge(comp_df[["caseid"] + label_cols], on="caseid", how="left")
 
     df_full = df.copy()
 
@@ -208,6 +216,23 @@ def load_physiology_matrix(cfg: dict[str, Any]):
     # Extract numeric matrix.
     X_df = df[physiology_cols].apply(pd.to_numeric, errors="coerce")
 
+    # Drop entirely-missing columns BEFORE imputation. SimpleImputer(median)
+    # silently drops all-NaN columns from its OUTPUT, which would desync
+    # feature_names (still 81) from the returned matrix (80) -- the source of the
+    # IndexError in characterize/_infer_subtype_hint. An all-missing physiology
+    # feature (a waveform metric no case carries, or one gated off this run, e.g.
+    # pfds_wf_* when the PLETH waveform download is disabled) is information-free,
+    # so dropping it up-front is both correct and keeps names aligned with X.
+    non_empty = [c for c in physiology_cols if bool(X_df[c].notna().any())]
+    dropped = [c for c in physiology_cols if c not in non_empty]
+    if dropped:
+        print(f"[phenotypes] dropping {len(dropped)} all-missing physiology "
+              f"column(s): {dropped}")
+    physiology_cols = non_empty
+    if not physiology_cols:
+        raise RuntimeError("All candidate physiology columns are entirely missing.")
+    X_df = X_df[physiology_cols]
+
     # Median imputation for missing values.
     imputer = SimpleImputer(strategy="median")
     X_imputed = imputer.fit_transform(X_df)
@@ -216,6 +241,11 @@ def load_physiology_matrix(cfg: dict[str, Any]):
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X_imputed)
 
+    # Invariant: names must match matrix columns 1:1 (guards future desync).
+    assert X_scaled.shape[1] == len(physiology_cols), (
+        f"feature/name desync: X has {X_scaled.shape[1]} cols vs "
+        f"{len(physiology_cols)} names"
+    )
     return X_scaled.astype(np.float64), physiology_cols, df_full
 
 
@@ -471,7 +501,7 @@ def _infer_subtype_hint(delta, feature_names: list[str]) -> str:
     """
     import numpy as np
 
-    d = {feature_names[i]: delta[i] for i in range(len(feature_names))}
+    d = dict(zip(feature_names, delta))   # zip truncates to shorter -> never IndexError
 
     def _score(prefix: str) -> float:
         vals = [v for k, v in d.items() if k.startswith(prefix)]
