@@ -15,16 +15,20 @@ stdlib only.
 """
 from __future__ import annotations
 
+import contextlib
 import csv
 import gzip
 import http.client
 import io
+import logging
 import os
 import time
 import urllib.request
 from typing import Any
 
 from vitaldb_aki.data.client import fetch_table
+
+_log = logging.getLogger(__name__)
 
 
 def _tid_index(cfg: dict[str, Any]) -> dict[tuple[str, str], str]:
@@ -129,3 +133,59 @@ def first_available(cfg: dict[str, Any], caseid: str, tnames: list[str],
         if series:
             return tn, series
     return None, []
+
+
+# ---------------------------------------------------------------------------
+# Streaming helpers (disk-bounded; opt-in for modules that process and then
+# immediately discard large raw waveform files to avoid filling the disk).
+#
+# Backward-compatible: existing callers (aline_morphology, hemodynamics,
+# pfds, pkpd) that rely on permanent caching are UNAFFECTED -- they never
+# call purge_track or streamed_track.
+# ---------------------------------------------------------------------------
+
+def purge_track(cfg: dict[str, Any], caseid: str, tname: str) -> None:
+    """Delete the cached CSV for (caseid, tname) if it exists.
+
+    Non-fatal: if the file is absent or cannot be deleted (e.g. a permission
+    error or a concurrent reader), a warning is logged and the call returns
+    normally.  Scoped to a single (caseid, tname) pair so callers can purge
+    only the large SNUADC waveform files they just finished processing,
+    leaving all other cached tracks untouched.
+
+    Only cross_waveform opts into this; no other module calls it.
+    """
+    tid = tid_for(cfg, caseid, tname)
+    if not tid:
+        return  # track not in index -- nothing to delete
+    tdir = os.path.join(cfg["data"]["cache_dir"], "tracks")
+    path = os.path.join(tdir, f"{tid}.csv")
+    try:
+        os.remove(path)
+    except FileNotFoundError:
+        pass  # already absent; fine
+    except OSError as exc:
+        _log.warning("purge_track: could not delete %s: %s", path, exc)
+
+
+@contextlib.contextmanager
+def streamed_track(cfg: dict[str, Any], caseid: str, tname: str,
+                   refresh: bool = False):
+    """Context manager: yield the parsed series, then delete the cached file.
+
+    Guarantees deletion via try/finally whether or not an exception occurs.
+    Deletion failures are non-fatal (logged at WARNING level).
+
+    Usage::
+
+        with streamed_track(cfg, caseid, "SNUADC/ECG_II") as series:
+            process(series)
+        # cached CSV is now deleted
+
+    Yields [] when the track is absent (same as download_track).
+    """
+    series = download_track(cfg, caseid, tname, refresh=refresh)
+    try:
+        yield series
+    finally:
+        purge_track(cfg, caseid, tname)

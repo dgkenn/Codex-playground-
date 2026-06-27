@@ -54,6 +54,18 @@ use the same reconstruction approach as load_art_waveform() in
 aline_morphology.py (generalized to any SNUADC channel).
 
 -----------------------------------------------------------------------
+DISK-BOUNDED STREAMING (§ disk-budget)
+-----------------------------------------------------------------------
+The three big SNUADC tracks (ECG_II, PLETH, ART) are ~57 MB each per case;
+caching all 3,000 cases would require ~170 GB.  To keep peak disk usage to
+O(workers × per-case size), extract() purges each case's raw SNUADC CSV
+files immediately after features are computed, using a try/finally guard so
+deletion happens even when the case raises an exception.
+
+Only the three large SNUADC tracks are purged; Primus/CO2 (small) and all
+numeric tracks used by other modules are left intact (backward-compatible).
+
+-----------------------------------------------------------------------
 LEAKAGE (§11)
 -----------------------------------------------------------------------
 All features are "intraop"; never t > opend. audit_specs() enforces this
@@ -64,6 +76,7 @@ Protocol: §7C (hemodynamic axis), §7F (raw waveform coupling).
 from __future__ import annotations
 
 import csv as _csv
+import logging as _logging
 import os as _os
 from typing import Any
 
@@ -72,6 +85,8 @@ from vitaldb_aki.features.base import FeatureSpec, audit_specs
 # The matrix builder parallelizes track-heavy modules per case.
 USES_TRACKS = True
 
+_log = _logging.getLogger(__name__)
+
 # ---------------------------------------------------------------------------
 # Track names (all SNUADC/* are packed; Primus/CO2 is a normal slow track).
 # ---------------------------------------------------------------------------
@@ -79,6 +94,10 @@ ECG_TRACK: str = "SNUADC/ECG_II"
 PPG_TRACK: str = "SNUADC/PLETH"
 ART_TRACK: str = "SNUADC/ART"
 CO2_TRACK: str = "Primus/CO2"
+
+# The large SNUADC waveform tracks that must be purged after each case to
+# keep peak disk usage bounded.  CO2 is small and left intact.
+_BIG_SNUADC_TRACKS: tuple[str, ...] = (ECG_TRACK, PPG_TRACK, ART_TRACK)
 
 # Nominal sampling rates.
 FS_HZ_SNUADC: float = 500.0
@@ -945,10 +964,20 @@ def extract(cfg: dict[str, Any], cases_by_id: dict[str, dict],
     """Emit {caseid: {feature_name: value|None}} for cross-waveform features.
 
     Downloads SNUADC/ECG_II, SNUADC/PLETH, SNUADC/ART, Primus/CO2 per case
-    (each cached under cache/tracks/). At least 2 channels must be present for
-    any feature to be non-None. Honest missingness: when channels are absent
+    (each cached under cache/tracks/).  At least 2 channels must be present for
+    any feature to be non-None.  Honest missingness: when channels are absent
     all features are None and cross_waveform_available=0.
+
+    DISK-BOUNDED STREAMING: after features are extracted for each case, the
+    three large SNUADC raw files (ECG_II, PLETH, ART) are deleted from the
+    track cache via a try/finally guard.  This keeps peak disk usage to
+    O(workers × per-case waveform size) rather than O(cohort × per-case size).
+    Deletion failures are non-fatal (logged at WARNING; the case result is
+    returned normally).  CO2 (Primus/CO2) is small and left cached.
+    Only SNUADC tracks are purged; numeric / other tracks are unaffected.
     """
+    from vitaldb_aki.data import tracks as _tracks
+
     none_row: dict[str, Any] = {s.name: None for s in SPECS}
     none_row["cross_waveform_available"] = 0
 
@@ -962,28 +991,37 @@ def extract(cfg: dict[str, Any], cases_by_id: dict[str, dict],
 
         t_start, t_end = _intraop_window(case)
 
-        # Load each channel (returns (None,None) if absent).
-        ecg_data = load_snuadc_waveform(cfg, cid_str, ECG_TRACK)
-        ppg_data = load_snuadc_waveform(cfg, cid_str, PPG_TRACK)
-        art_data = load_snuadc_waveform(cfg, cid_str, ART_TRACK)
+        try:
+            # Load each channel (returns (None,None) if absent).
+            ecg_data = load_snuadc_waveform(cfg, cid_str, ECG_TRACK)
+            ppg_data = load_snuadc_waveform(cfg, cid_str, PPG_TRACK)
+            art_data = load_snuadc_waveform(cfg, cid_str, ART_TRACK)
 
-        # CO2 (Primus/CO2) is ALSO a packed waveform (sparse timestamp format)
-        # so we use load_snuadc_waveform rather than download_track.
-        # Filter out zero-valued samples (sensor warm-up / off-patient artefact).
-        import numpy as np
-        co2_t_raw, co2_v_raw = load_snuadc_waveform(cfg, cid_str, CO2_TRACK)
-        if co2_t_raw is not None and co2_t_raw.size >= 4:
-            # Keep only physiologic non-zero CO2 (etCO2 > 0.5 % or > 5 mmHg fraction)
-            co2_good = co2_v_raw > 0.5
-            if co2_good.sum() >= 4:
-                co2_data: "tuple | None" = (co2_t_raw[co2_good], co2_v_raw[co2_good])
+            # CO2 (Primus/CO2) is ALSO a packed waveform (sparse timestamp format)
+            # so we use load_snuadc_waveform rather than download_track.
+            # Filter out zero-valued samples (sensor warm-up / off-patient artefact).
+            import numpy as np
+            co2_t_raw, co2_v_raw = load_snuadc_waveform(cfg, cid_str, CO2_TRACK)
+            if co2_t_raw is not None and co2_t_raw.size >= 4:
+                # Keep only physiologic non-zero CO2 (etCO2 > 0.5 % or > 5 mmHg fraction)
+                co2_good = co2_v_raw > 0.5
+                if co2_good.sum() >= 4:
+                    co2_data: "tuple | None" = (co2_t_raw[co2_good], co2_v_raw[co2_good])
+                else:
+                    co2_data = None
             else:
                 co2_data = None
-        else:
-            co2_data = None
 
-        out[cid_str] = compute_cross_features(
-            ecg_data, ppg_data, art_data, co2_data, t_start, t_end
-        )
+            out[cid_str] = compute_cross_features(
+                ecg_data, ppg_data, art_data, co2_data, t_start, t_end
+            )
+        finally:
+            # Purge the three large SNUADC raw track files for this case.
+            # This is the disk-bounded streaming mechanism: each case's raw
+            # waveform data is deleted immediately after feature extraction so
+            # peak disk usage stays bounded regardless of cohort size.
+            # Non-fatal: purge_track logs warnings on failure and returns normally.
+            for _tname in _BIG_SNUADC_TRACKS:
+                _tracks.purge_track(cfg, cid_str, _tname)
 
     return out
