@@ -115,6 +115,33 @@ ART_SAMPLE_MIN: float = 0.0
 ART_SAMPLE_MAX: float = 300.0
 
 # ---------------------------------------------------------------------------
+# Vascular-tone (per-beat) feature parameters (binding; pre-registered).
+#
+# art_tau_decay_mean : diastolic decay time constant tau = R*C of the arterial
+#   tree.  Per beat we fit P(t) = P0*exp(-t/tau) + Pinf over the DIASTOLIC
+#   segment (from just after the systolic peak / dicrotic region down to
+#   end-diastole) by LOG-LINEAR least squares on (P - Pinf).  tau is a strong
+#   arterial-tone / SVR marker (higher tau => higher compliance*resistance).
+#
+# art_aug_index_mean : augmentation index AIx = (P_infl - P_dia)/(P_sys - P_dia),
+#   where P_infl is the inflection (shoulder from the reflected wave) detected on
+#   the upstroke-to-peak segment via the 2nd-derivative zero-crossing.  AIx from
+#   raw ART is APPROXIMATE; art_aug_index_quality reports the fraction of beats
+#   with a usable inflection so downstream can weight it.
+# ---------------------------------------------------------------------------
+TAU_MIN_S: float = 0.1          # physiologic floor for the decay constant (s)
+TAU_MAX_S: float = 3.0          # physiologic ceiling for the decay constant (s)
+TAU_MIN_R2: float = 0.80        # min log-linear fit R^2 to accept a beat's tau
+TAU_DIASTOLE_FRAC: float = 0.25 # start the diastolic fit this fraction of the
+                                #   beat AFTER the systolic peak (skip the dicrotic
+                                #   notch / incisura transient)
+TAU_MIN_FIT_SAMPLES: int = 5    # need >=5 samples on the diastolic segment to fit
+
+AIX_MIN_QUALITY_BEATS: int = 3  # need >=3 beats with an inflection to report AIx
+AIX_SECOND_DERIV_FRAC: float = 0.04  # smoothing window for the 2nd derivative
+                                     #   (fraction of the upstroke length)
+
+# ---------------------------------------------------------------------------
 # Feature specs (§9 nested design; all "intraop" -- leakage firewall §11).
 # All beat-morphology features are "comprehensive" (a raw-waveform refinement on
 # top of the Standard MAP summaries).
@@ -153,6 +180,20 @@ SPECS: list[FeatureSpec] = [
     # ---- systolic ejection shape -------------------------------------------
     FeatureSpec("art_systolic_auc_mean", "comprehensive", "intraop",
                 "mean normalized systolic area under the pressure curve per beat (§7F)"),
+    # ---- vascular tone: diastolic decay constant tau (= R*C) ----------------
+    FeatureSpec("art_tau_decay_mean", "pk", "intraop",
+                "mean diastolic decay time constant tau (s) = R*C of the arterial tree, "
+                "from a per-beat log-linear fit of P(t)=P0*exp(-t/tau)+Pinf over the "
+                "diastolic runoff; arterial-tone / SVR marker (§7C/§7F)"),
+    # ---- vascular tone: augmentation index (best-effort, reflected wave) ----
+    FeatureSpec("art_aug_index_mean", "pk", "intraop",
+                "mean augmentation index AIx=(P_inflection-P_diastole)/"
+                "(P_systolic-P_diastole) per beat, inflection from the upstroke "
+                "2nd-derivative zero-crossing; APPROXIMATE from raw ART -- weight by "
+                "art_aug_index_quality; None if no reliable inflection (§7C/§7F)"),
+    FeatureSpec("art_aug_index_quality", "pk", "intraop",
+                "fraction of analyzed beats with a usable reflected-wave inflection "
+                "point (quality weight for art_aug_index_mean) (§7F)"),
 ]
 
 audit_specs(SPECS)   # hard error at import if any feature has postop timing
@@ -341,6 +382,302 @@ def ppv_for_block(pulse_pressures: "Any") -> float | None:
     if pp_mean <= 0:
         return None
     return 100.0 * (float(np.max(pp)) - float(np.min(pp))) / pp_mean
+
+
+def tau_decay_for_beat(beat: "Any", fs: float) -> float | None:
+    """Diastolic decay time constant tau (seconds) for ONE beat. Pure.
+
+    `beat` is the raw pressure samples for a single cardiac cycle (foot ->
+    next foot), at uniform rate `fs`. We locate the systolic peak, start the
+    diastolic segment TAU_DIASTOLE_FRAC of the beat AFTER the peak (skipping the
+    dicrotic-notch transient), and fit
+
+        P(t) = P0 * exp(-t / tau) + Pinf
+
+    by LOG-LINEAR least squares: with Pinf taken as the end-diastolic pressure
+    (the segment minimum), ln(P - Pinf) is linear in t with slope -1/tau.
+
+    Returns tau in seconds, or None if:
+      * the diastolic segment is too short (< TAU_MIN_FIT_SAMPLES),
+      * the log-linear fit R^2 < TAU_MIN_R2,
+      * tau falls outside [TAU_MIN_S, TAU_MAX_S].
+    """
+    import numpy as np
+
+    b = np.asarray(beat, dtype=float)
+    if b.size < TAU_MIN_FIT_SAMPLES + 2 or fs <= 0:
+        return None
+
+    pk = int(np.argmax(b))
+    n = b.size
+    # Start the diastolic fit a fraction of the beat after the systolic peak so
+    # the dicrotic notch / incisura transient is excluded.
+    start = pk + int(round(TAU_DIASTOLE_FRAC * n))
+    if start >= n - TAU_MIN_FIT_SAMPLES:
+        # Peak too late in the beat to leave a usable runoff; fall back to just
+        # after the peak if that still leaves enough samples.
+        start = min(pk + 1, n - TAU_MIN_FIT_SAMPLES - 1)
+    if start < 0 or start >= n - TAU_MIN_FIT_SAMPLES:
+        return None
+
+    seg = b[start:]
+    if seg.size < TAU_MIN_FIT_SAMPLES:
+        return None
+    # The diastolic runoff must be MONOTONE-ish decreasing; require the segment
+    # to actually fall (first > last) so we are not fitting noise on a flat line.
+    if seg[0] <= seg[-1]:
+        return None
+
+    t = np.arange(seg.size, dtype=float) / fs
+    seg_min = float(np.min(seg))
+    seg_range = float(seg[0] - seg_min)
+    if seg_range <= 0:
+        return None
+
+    # The asymptote Pinf is unknown (the true end-diastolic pressure sits BELOW
+    # the observed segment minimum). Using min(seg) forces ln(P-Pinf)->-inf at
+    # the tail and corrupts the fit, so we grid-search Pinf below the minimum and
+    # keep the value that maximises the log-linear R^2 (a standard windkessel
+    # decay-fit strategy). ln(P - Pinf) = c - t/tau is linear -> slope = -1/tau.
+    A = np.vstack([t, np.ones_like(t)]).T
+    best: tuple[float, float] | None = None   # (r2, tau)
+    for frac in (0.0, 0.25, 0.5, 0.75, 1.0, 1.5, 2.0):
+        pinf = seg_min - frac * seg_range - 1e-6
+        y = seg - pinf
+        if np.any(y <= 0):
+            continue
+        ly = np.log(y)
+        coef, *_ = np.linalg.lstsq(A, ly, rcond=None)
+        slope = float(coef[0])
+        if slope >= 0:
+            continue
+        tau = -1.0 / slope
+        pred = A @ coef
+        ss_res = float(np.sum((ly - pred) ** 2))
+        ss_tot = float(np.sum((ly - np.mean(ly)) ** 2))
+        r2 = 1.0 - ss_res / ss_tot if ss_tot > 0 else 0.0
+        if best is None or r2 > best[0]:
+            best = (r2, tau)
+
+    if best is None:
+        return None
+    r2, tau = best
+    if r2 < TAU_MIN_R2:
+        return None
+    if not (TAU_MIN_S <= tau <= TAU_MAX_S):
+        return None
+    return float(tau)
+
+
+def aug_index_for_beat(beat: "Any", fs: float) -> float | None:
+    """Augmentation index AIx for ONE beat (best-effort). Pure.
+
+    AIx = (P_inflection - P_diastole) / (P_systolic_peak - P_diastole)
+
+    The inflection point (the shoulder where the reflected pressure wave joins
+    the forward wave) is detected on the upstroke-to-peak segment as the first
+    ZERO-CROSSING of the smoothed 2nd derivative (curvature sign change) before
+    the systolic peak. AIx from raw ART is approximate; returns None when no
+    reliable inflection is found so the caller can track usable-beat fraction.
+
+    Returns AIx (typically in roughly [-0.5, 1.0]) or None.
+    """
+    import numpy as np
+
+    b = np.asarray(beat, dtype=float)
+    n = b.size
+    if n < 7 or fs <= 0:
+        return None
+
+    pk = int(np.argmax(b))
+    foot = int(np.argmin(b[: pk + 1])) if pk > 0 else 0
+    p_sys = float(b[pk])
+    p_dia = float(b[foot])
+    pp = p_sys - p_dia
+    if pp <= 0:
+        return None
+
+    # Upstroke segment foot -> peak; need enough points to take a 2nd derivative.
+    up = b[foot: pk + 1]
+    if up.size < 5:
+        return None
+
+    # Smooth (valid-mode, so no convolution edge artifacts manufacture a
+    # spurious curvature flip) then take the discrete 2nd derivative.
+    win = max(3, int(round(AIX_SECOND_DERIV_FRAC * up.size)))
+    if win % 2 == 0:
+        win += 1
+    if win < up.size:
+        kernel = np.ones(win, dtype=float) / win
+        ups = np.convolve(up, kernel, mode="valid")  # length up.size-win+1
+        smooth_offset = win // 2  # 'valid' trims (win-1)/2 from each end
+    else:
+        ups = up
+        smooth_offset = 0
+    if ups.size < 5:
+        return None
+    d2 = np.diff(ups, n=2)
+    if d2.size < 3:
+        return None
+
+    # A real reflected-wave shoulder produces curvature far above floating-point
+    # noise; a pure single-rise upstroke has d2 ~ 0 (only rounding noise). Require
+    # the curvature on at least one side of the candidate to clear a noise floor
+    # scaled to the pulse pressure so a straight ramp does not register.
+    curv_floor = 1e-3 * pp
+    # Inflection = first INTERIOR sign change of the curvature on the upstroke
+    # (the systolic shoulder). Skip the first/last sample of d2 so residual edge
+    # curvature does not register.
+    infl_rel: int | None = None
+    for i in range(2, d2.size - 1):
+        if d2[i - 1] == 0:
+            continue
+        if (d2[i - 1] > 0) != (d2[i] > 0):
+            if max(abs(d2[i - 1]), abs(d2[i])) < curv_floor:
+                continue  # curvature flip is just numerical noise, not a shoulder
+            # map d2 index -> index into `up`: +1 for diff(n=2) center, +offset
+            # for the 'valid' smoothing trim.
+            infl_rel = i + 1 + smooth_offset
+            break
+    if infl_rel is None:
+        return None
+
+    infl_idx = foot + infl_rel + 1
+    if infl_idx <= foot or infl_idx >= pk:
+        return None  # inflection must sit strictly between foot and peak
+    p_infl = float(b[infl_idx])
+
+    aix = (p_infl - p_dia) / pp
+    # Sanity bound: a valid inflection pressure sits between diastole and systole.
+    if not (-1.0 <= aix <= 1.5):
+        return None
+    return float(aix)
+
+
+def vascular_tone_for_window(times: "Any", values: "Any", fs: float
+                             ) -> tuple[list[float], int, int]:
+    """Per-window tau / AIx extraction. Pure / network-free.
+
+    Re-detects beat boundaries (systolic peaks + preceding feet) on the window
+    samples and, for each physiologic beat, slices the raw cycle (foot -> next
+    foot) so tau_decay_for_beat / aug_index_for_beat can fit the actual samples
+    (the per-beat scalar array does not retain raw samples). Gating mirrors
+    detect_beats (SBP/DBP/PP physiologic windows + HR).
+
+    Returns (tau_list, n_aix_beats, n_aix_usable):
+      tau_list      : accepted per-beat tau values (s),
+      n_aix_beats   : beats where AIx was attempted (denominator for quality),
+      n_aix_usable  : beats with a usable inflection (numerator).
+    AIx values themselves are accumulated via the returned numerator-style count;
+    callers compute the mean over usable beats -- see vascular_tone_features().
+    """
+    import numpy as np
+    from scipy.signal import find_peaks
+
+    t = np.asarray(times, dtype=float)
+    v = np.asarray(values, dtype=float)
+    if t.size < int(fs) or fs <= 0:
+        return [], 0, 0
+
+    min_cycle_samp = max(1, int(round(fs * 60.0 / HR_MAX_BPM)))
+    max_cycle_samp = max(min_cycle_samp + 1, int(round(fs * 60.0 / HR_MIN_BPM)))
+    rng = float(np.nanpercentile(v, 95) - np.nanpercentile(v, 5)) if v.size else 0.0
+    prominence = max(PP_MIN, 0.2 * rng)
+    peaks, _ = find_peaks(v, distance=min_cycle_samp, prominence=prominence)
+    if peaks.size < 2:
+        return [], 0, 0
+
+    tau_list: list[float] = []
+    aix_attempt = 0
+    aix_usable = 0
+    aix_vals: list[float] = []
+
+    for i in range(len(peaks) - 1):
+        pk = int(peaks[i])
+        nxt = int(peaks[i + 1])
+        lo = max(0, pk - max_cycle_samp)
+        seg_pre = v[lo:pk + 1]
+        if seg_pre.size < 2:
+            continue
+        foot_rel = int(np.argmin(seg_pre))
+        foot = lo + foot_rel
+        # Next foot = min between this peak and the next peak (cycle end).
+        seg_post = v[pk:nxt + 1]
+        if seg_post.size < 2:
+            continue
+        next_foot = pk + int(np.argmin(seg_post))
+        if next_foot <= foot:
+            continue
+
+        sbp = float(v[pk])
+        dbp = float(v[foot])
+        pp = sbp - dbp
+        interval = float((nxt - pk) / fs)
+        hr = 60.0 / interval if interval > 0 else float("nan")
+        # Physiologic gate (mirror _gate_beats).
+        if not (SBP_MIN <= sbp <= SBP_MAX and DBP_MIN <= dbp <= DBP_MAX
+                and PP_MIN <= pp <= PP_MAX and sbp > dbp):
+            continue
+        if not (np.isnan(hr) or (HR_MIN_BPM <= hr <= HR_MAX_BPM)):
+            continue
+
+        cycle = v[foot:next_foot + 1]
+        tau = tau_decay_for_beat(cycle, fs)
+        if tau is not None:
+            tau_list.append(tau)
+
+        aix_attempt += 1
+        aix = aug_index_for_beat(cycle, fs)
+        if aix is not None:
+            aix_usable += 1
+            aix_vals.append(aix)
+
+    # Stash AIx values on the function call via a parallel return: we pack the
+    # mean into tau_list-independent accumulators by returning the values list
+    # through n_aix_usable's companion. To keep a simple tuple signature, the
+    # caller recomputes the AIx mean from the per-window value lists collected
+    # in vascular_tone_features(); so we expose aix_vals via an attribute-free
+    # contract: return them appended. (See vascular_tone_features.)
+    vascular_tone_for_window._last_aix_vals = aix_vals  # type: ignore[attr-defined]
+    return tau_list, aix_attempt, aix_usable
+
+
+def vascular_tone_features(per_window: "list") -> dict[str, Any]:
+    """Aggregate per-window vascular-tone results into the feature subset. Pure.
+
+    `per_window` is a list of (tau_list, aix_attempt, aix_usable, aix_vals)
+    tuples (one per analysis window). Returns the three feature values:
+      art_tau_decay_mean, art_aug_index_mean, art_aug_index_quality.
+
+    Quality gate for AIx: report a mean only when >= AIX_MIN_QUALITY_BEATS beats
+    had a usable inflection; otherwise art_aug_index_mean is None (NOT 0).
+    art_aug_index_quality is the usable/attempted fraction (None if no attempts).
+    """
+    all_tau: list[float] = []
+    all_aix: list[float] = []
+    n_attempt = 0
+    n_usable = 0
+    for tau_list, aix_attempt, aix_usable, aix_vals in per_window:
+        all_tau.extend(tau_list)
+        all_aix.extend(aix_vals)
+        n_attempt += int(aix_attempt)
+        n_usable += int(aix_usable)
+
+    tau_mean = (sum(all_tau) / len(all_tau)) if all_tau else None
+    quality = (n_usable / n_attempt) if n_attempt > 0 else None
+    if len(all_aix) >= AIX_MIN_QUALITY_BEATS:
+        aix_mean = sum(all_aix) / len(all_aix)
+    else:
+        aix_mean = None
+
+    def _r(v: float | None, nd: int = 4) -> float | None:
+        return round(v, nd) if v is not None else None
+
+    return {
+        "art_tau_decay_mean": _r(tau_mean),
+        "art_aug_index_mean": _r(aix_mean),
+        "art_aug_index_quality": _r(quality),
+    }
 
 
 def _window_starts(t_start: float, t_end: float) -> list[float]:
@@ -538,6 +875,7 @@ def _extract_from_array(arr: "Any",
 
     beats_by_window: list[Any] = []
     ppv_values: list[float] = []
+    vtone_by_window: list[tuple[list[float], int, int, list[float]]] = []
     for ws in starts:
         we = ws + ANALYSIS_WINDOW_S
         # Slice this window's samples (and drop them after processing).
@@ -550,6 +888,11 @@ def _extract_from_array(arr: "Any",
         if len(beats) > 0:
             beats_by_window.append(beats)
             ppv_values.extend(ppvs)
+            # Vascular-tone (tau / AIx) needs the raw cycle samples, so it
+            # re-walks the same window's waveform before wt/wv are discarded.
+            tau_list, aix_attempt, aix_usable = vascular_tone_for_window(wt, wv, fs)
+            aix_vals = getattr(vascular_tone_for_window, "_last_aix_vals", [])
+            vtone_by_window.append((tau_list, aix_attempt, aix_usable, list(aix_vals)))
         del wt, wv  # memory discipline
 
     feats = beat_features(beats_by_window, ppv_values)
@@ -557,6 +900,7 @@ def _extract_from_array(arr: "Any",
 
     row = dict(none_row)
     row.update(feats)
+    row.update(vascular_tone_features(vtone_by_window))
     row["aline_available"] = aline_available
     if aline_available == 0:
         # No physiologic beats anywhere: honest None for all morphology features,

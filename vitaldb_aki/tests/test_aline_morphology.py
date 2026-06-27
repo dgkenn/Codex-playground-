@@ -30,11 +30,15 @@ from vitaldb_aki.features.aline_morphology import (
     HR_MIN_BPM, HR_MAX_BPM, SBP_MIN, SBP_MAX, DBP_MIN, DBP_MAX,
     ANALYSIS_WINDOW_S, RESP_BLOCK_S, MAX_ANALYSIS_WINDOWS,
     ART_FS_HZ_NOMINAL,
+    TAU_MIN_S, TAU_MAX_S,
     detect_beats,
     beat_features,
     ppv_for_block,
     estimate_fs,
     extract_case_from_track,
+    tau_decay_for_beat,
+    aug_index_for_beat,
+    vascular_tone_features,
     _intraop_window,
 )
 from vitaldb_aki.features.base import audit_specs
@@ -111,12 +115,23 @@ class TestSpecs(unittest.TestCase):
             "art_dpdt_max_mean", "art_dpdt_max_min",
             "art_ppv_mean", "art_hr_mean", "art_hr_sd",
             "art_systolic_auc_mean",
+            # vascular-tone additions
+            "art_tau_decay_mean", "art_aug_index_mean", "art_aug_index_quality",
         ):
             self.assertIn(required, names)
 
-    def test_all_comprehensive(self):
+    def test_fset_membership(self):
+        # All beat-summary features are comprehensive; the two vascular-tone
+        # markers (tau, AIx) are the pk refinement -- allow both, forbid anything
+        # else (e.g. an accidental "standard"/"postop").
         for s in SPECS:
-            self.assertEqual(s.fset, "comprehensive", msg=f"{s.name} fset={s.fset!r}")
+            self.assertIn(s.fset, ("comprehensive", "pk"),
+                          msg=f"{s.name} fset={s.fset!r}")
+        pk_names = {s.name for s in SPECS if s.fset == "pk"}
+        self.assertEqual(
+            pk_names,
+            {"art_tau_decay_mean", "art_aug_index_mean", "art_aug_index_quality"},
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -365,6 +380,141 @@ class TestAggregation(unittest.TestCase):
         self.assertAlmostEqual(feats["art_map_mean"], expected_map, delta=1.5)
         self.assertLessEqual(feats["art_dpdt_max_min"], feats["art_dpdt_max_mean"] + 1e-6)
         self.assertAlmostEqual(feats["art_ppv_mean"], 13.0, delta=0.01)
+
+
+# ---------------------------------------------------------------------------
+# 9. Vascular tone: tau (diastolic decay) core recovers a known exponential.
+# ---------------------------------------------------------------------------
+
+@unittest.skipUnless(_HAVE_NUMPY, "numpy required")
+class TestTauDecay(unittest.TestCase):
+    def _exp_beat(self, fs, tau_true, p0=50.0, pinf=70.0, upstroke_s=0.10,
+                  diastole_s=0.70):
+        """One synthetic beat: fast linear upstroke to a peak, then a clean
+        P(t)=p0*exp(-t/tau)+pinf diastolic decay. Peak = pinf+p0."""
+        up_n = int(round(fs * upstroke_s))
+        peak = pinf + p0
+        up = np.linspace(pinf, peak, up_n, endpoint=False)
+        td = np.arange(int(round(fs * diastole_s))) / fs
+        down = p0 * np.exp(-td / tau_true) + pinf
+        return np.concatenate([up, down])
+
+    def test_recovers_known_tau(self):
+        fs = 500.0
+        for tau_true in (0.3, 0.6, 1.2):
+            beat = self._exp_beat(fs, tau_true)
+            tau = tau_decay_for_beat(beat, fs)
+            self.assertIsNotNone(tau, msg=f"tau None for true={tau_true}")
+            self.assertAlmostEqual(tau, tau_true, delta=0.08,
+                                   msg=f"true {tau_true} -> {tau}")
+            self.assertGreaterEqual(tau, TAU_MIN_S)
+            self.assertLessEqual(tau, TAU_MAX_S)
+
+    def test_flat_segment_returns_none(self):
+        fs = 500.0
+        beat = np.concatenate([np.linspace(70, 120, 50), np.full(300, 120.0)])
+        self.assertIsNone(tau_decay_for_beat(beat, fs))
+
+    def test_out_of_range_tau_rejected(self):
+        # A decay far too slow to be physiologic (tau >> 3 s over the window):
+        fs = 500.0
+        beat = self._exp_beat(fs, tau_true=10.0, diastole_s=0.7)
+        # tau may be estimated > TAU_MAX_S and must then be rejected (None).
+        tau = tau_decay_for_beat(beat, fs)
+        self.assertTrue(tau is None or TAU_MIN_S <= tau <= TAU_MAX_S)
+
+    def test_aggregate_tau_mean(self):
+        out = vascular_tone_features([
+            ([0.5, 0.7], 0, 0, []),
+            ([0.6], 0, 0, []),
+        ])
+        self.assertAlmostEqual(out["art_tau_decay_mean"], 0.6, delta=1e-6)
+
+
+# ---------------------------------------------------------------------------
+# 10. Vascular tone: augmentation-index core + quality gate.
+# ---------------------------------------------------------------------------
+
+@unittest.skipUnless(_HAVE_NUMPY, "numpy required")
+class TestAugIndex(unittest.TestCase):
+    def _shoulder_beat(self, fs, p_dia=70.0, p_sys=120.0, p_infl=100.0):
+        """Beat whose upstroke has a clear inflection (shoulder) at p_infl: a
+        steep rise to the shoulder, a brief plateau (curvature sign change),
+        then a second rise to the systolic peak, then a decay."""
+        seg1 = np.linspace(p_dia, p_infl, int(fs * 0.05))           # forward wave
+        seg2 = np.linspace(p_infl, p_infl + 2.0, int(fs * 0.03))    # shoulder/plateau
+        seg3 = np.linspace(p_infl + 2.0, p_sys, int(fs * 0.05))     # reflected wave
+        down = np.linspace(p_sys, p_dia, int(fs * 0.6))
+        return np.concatenate([seg1, seg2, seg3, down])
+
+    def test_inflection_recovered_in_range(self):
+        fs = 500.0
+        beat = self._shoulder_beat(fs, p_dia=70.0, p_sys=120.0, p_infl=100.0)
+        aix = aug_index_for_beat(beat, fs)
+        self.assertIsNotNone(aix)
+        # Expected AIx ~ (100-70)/(120-70) = 0.6; allow tolerance for smoothing.
+        self.assertAlmostEqual(aix, 0.6, delta=0.2)
+        self.assertGreaterEqual(aix, -1.0)
+        self.assertLessEqual(aix, 1.5)
+
+    def test_smooth_triangle_no_false_inflection(self):
+        # A pure single-rise triangle has no curvature sign change on the
+        # upstroke -> no usable inflection -> None.
+        fs = 500.0
+        up = np.linspace(70.0, 120.0, int(fs * 0.12))
+        down = np.linspace(120.0, 70.0, int(fs * 0.6))
+        beat = np.concatenate([up, down])
+        self.assertIsNone(aug_index_for_beat(beat, fs))
+
+    def test_quality_gate_none_when_too_few(self):
+        # Only 2 usable AIx beats (< AIX_MIN_QUALITY_BEATS) -> mean None, but
+        # quality fraction is still reported.
+        out = vascular_tone_features([([], 4, 2, [0.5, 0.6])])
+        self.assertIsNone(out["art_aug_index_mean"])
+        self.assertAlmostEqual(out["art_aug_index_quality"], 0.5, delta=1e-6)
+
+    def test_quality_and_mean_reported_when_enough(self):
+        out = vascular_tone_features([([], 5, 4, [0.4, 0.5, 0.6, 0.5])])
+        self.assertAlmostEqual(out["art_aug_index_mean"], 0.5, delta=1e-6)
+        self.assertAlmostEqual(out["art_aug_index_quality"], 0.8, delta=1e-6)
+
+    def test_no_attempts_quality_none(self):
+        out = vascular_tone_features([([0.5], 0, 0, [])])
+        self.assertIsNone(out["art_aug_index_quality"])
+        self.assertIsNone(out["art_aug_index_mean"])
+
+
+# ---------------------------------------------------------------------------
+# 11. End-to-end: vascular-tone keys present and gated on a synthetic case.
+# ---------------------------------------------------------------------------
+
+@unittest.skipUnless(_HAVE_NUMPY, "numpy required")
+class TestVascularToneEndToEnd(unittest.TestCase):
+    def test_keys_present_and_typed(self):
+        fs = 500.0
+        t, v = synth_art(fs=fs, duration_s=ANALYSIS_WINDOW_S, hr_bpm=75.0,
+                         sbp=120.0, dbp=70.0)
+        row = extract_case_from_track(list(zip(t.tolist(), v.tolist())),
+                                      t_start=None, t_end=None)
+        self.assertEqual(row["aline_available"], 1)
+        for k in ("art_tau_decay_mean", "art_aug_index_mean",
+                  "art_aug_index_quality"):
+            self.assertIn(k, row)
+        # tau should be in physiologic range when present (the synth beat decays).
+        if row["art_tau_decay_mean"] is not None:
+            self.assertGreaterEqual(row["art_tau_decay_mean"], TAU_MIN_S)
+            self.assertLessEqual(row["art_tau_decay_mean"], TAU_MAX_S)
+        # AIx is None or a float; quality is None or a fraction in [0,1].
+        q = row["art_aug_index_quality"]
+        if q is not None:
+            self.assertGreaterEqual(q, 0.0)
+            self.assertLessEqual(q, 1.0)
+
+    def test_empty_case_vtone_none(self):
+        row = extract_case_from_track([], t_start=0.0, t_end=100.0)
+        self.assertIsNone(row["art_tau_decay_mean"])
+        self.assertIsNone(row["art_aug_index_mean"])
+        self.assertIsNone(row["art_aug_index_quality"])
 
 
 if __name__ == "__main__":
