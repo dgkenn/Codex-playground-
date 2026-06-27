@@ -54,7 +54,7 @@ def available_tracks(cfg: dict[str, Any], caseid: str) -> list[str]:
     return [tn for (cid, tn) in _INDEX if cid == str(caseid)]
 
 
-def _fetch(url: str, retries: int = 6, timeout: int = 240) -> str:
+def _fetch(url: str, retries: int = 6, timeout: int = 240, max_wall: float = 150.0) -> str:
     """Fetch a track, robust to the IncompleteRead truncation that hits the large
     500 Hz waveform tracks. Reads to EOF in a loop, and after two gzip failures
     falls back to identity (uncompressed) encoding -- gzip streams from the proxy
@@ -69,8 +69,11 @@ def _fetch(url: str, retries: int = 6, timeout: int = 240) -> str:
             req = urllib.request.Request(url, headers=headers)
             resp = urllib.request.urlopen(req, timeout=timeout)
             chunks = []                 # drain to EOF tolerating a final short read
-            try:
+            _deadline = time.time() + max_wall   # HARD wall-clock cap: a stalled
+            try:                                 # socket aborts instead of hanging.
                 while True:
+                    if time.time() > _deadline:
+                        raise TimeoutError(f"download exceeded {max_wall}s wall clock")
                     b = resp.read(1 << 20)
                     if not b:
                         break
@@ -107,7 +110,11 @@ def download_track(cfg: dict[str, Any], caseid: str, tname: str,
     os.makedirs(tdir, exist_ok=True)
     path = os.path.join(tdir, f"{tid}.csv")
     if refresh or not os.path.exists(path):
-        text = _fetch(cfg["data"]["api_base"].rstrip("/") + "/" + tid)
+        try:
+            text = _fetch(cfg["data"]["api_base"].rstrip("/") + "/" + tid)
+        except Exception as exc:               # bounded + non-fatal: a dead/stalled
+            _log.warning("download_track giving up on %s/%s: %s", caseid, tname, exc)
+            return []                          # track -> empty -> module sees missing
         with open(path, "w", encoding="utf-8", newline="") as fh:
             fh.write(text)
     out: list[tuple[float, float]] = []
