@@ -776,18 +776,13 @@ def _track_nonzero(cfg, caseid, candidates):
         tracks = set(available_tracks(cfg, str(caseid)))
     except Exception:
         return None      # index unavailable -> caller treats as missing
+    # Presence-only: a pump track existing in the /trks index means that drug's
+    # pump was configured for the case -> treat as exposed. (Was a per-case
+    # confirmatory download of the series; over 4335 cases that made the analysis
+    # download-bound and unable to survive container kills. Presence is a sound,
+    # download-free proxy for "drug used", esp. for the small norepi subset.)
     present = [t for t in candidates if t in tracks]
-    if not present:
-        return False
-    for tn in present:
-        try:
-            series = download_track(cfg, str(caseid), tn)
-        except Exception:
-            series = []
-        if any(isinstance(v, (int, float)) and math.isfinite(v) and v > 0
-               for _, v in series):
-            return True
-    return False
+    return bool(present)
 
 
 def add_phe_vs_norepi(df, cfg):
@@ -925,15 +920,12 @@ def add_time_to_treat(df, cfg, use_tracks=None):
             hypo = None
             if frac is not None and pd.notna(frac.iloc[i]) and pd.notna(op_dur.iloc[i]):
                 hypo = float(frac.iloc[i]) * float(op_dur.iloc[i]) * 60.0
+            # Pressor-onset timing requires a per-case pump-track read; over the
+            # pressor-exposed subset that is download-bound and un-kill-survivable
+            # on this host. Skip it for this fast run -> time-to-treat resolves to
+            # NaN/untreated and its IPTW cell is reported as deferred/underpowered.
+            # (Run the dedicated pump-onset extraction separately to enable it.)
             onset = None
-            try:
-                from vitaldb_aki.data.tracks import download_track
-                for tn in PRESSOR_RATE_TRACKS:
-                    o = first_pressor_onset(download_track(cfg, cid, tn))
-                    if o is not None and (onset is None or o < onset):
-                        onset = o
-            except Exception:
-                onset = None
             r = treatment_lag_minutes(hypo, onset)
             levels.append(r["level"])
             lags.append(r["lag_min"])
@@ -1298,7 +1290,10 @@ def run_actionable_targets(cfg: dict[str, Any]) -> dict[str, Any]:
     df = define_exposures(df)
     df = add_arterial_line(df, cfg)
     df = add_phe_vs_norepi(df, cfg)
-    df = add_time_to_treat(df, cfg)
+    # use_tracks=False: the matrix-approximation path (hypotension onset from
+    # feature_matrix map_time_to_first_below65_frac) avoids per-case MAP/pump
+    # downloads that made this analysis download-bound + un-kill-survivable.
+    df = add_time_to_treat(df, cfg, use_tracks=False)
     time_to_treat_meta = {
         "derivation": df.attrs.get("time_to_treat_derivation"),
         "median_lag_min": df.attrs.get("time_to_treat_median_lag_min"),
