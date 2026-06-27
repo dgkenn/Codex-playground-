@@ -35,6 +35,13 @@ from vitaldb_aki.features.base import FeatureSpec, audit_specs
 from vitaldb_aki.features import (
     aline_morphology, hemodynamics, pfds, pk, pkpd_sensitivity, risk_factors, tabular, temporal,
 )
+# Discovery biomarker modules (novel-axis candidates; numeric-first, waveform tiers
+# gated off by default). Kept OUT of the headline MODULES so the confirmatory build
+# is unchanged; folded in only for the dedicated discovery build (DISCOVERY_MODULES).
+from vitaldb_aki.features import (
+    autonomic, bp_variability, capnogram, fluid_responsiveness, ischemia,
+    neuro_eeg, thermoregulation, vasoactive_pd, venous_congestion, ventilation,
+)
 
 
 # Registered feature modules (each: SPECS + extract). All validated and active:
@@ -47,6 +54,26 @@ from vitaldb_aki.features import (
 # excluded from the headline matrix so the numeric/clinical/PK build completes
 # fast. (aline_morphology stays imported above for that pass + tests.)
 MODULES = [tabular, hemodynamics, pk, temporal, risk_factors, pfds, pkpd_sensitivity]
+
+# DISCOVERY_MODULES: 10 novel-axis biomarker families to be screened for incremental
+# value (redundancy/novelty control) before any promotion to the confirmatory set.
+# Each is numeric-first (fast) with heavy 500 Hz tiers gated off by default
+# (neuro_eeg embedding, autonomic raw-ECG HRV/BRS, capnogram phase-III). Run a
+# discovery build via build_matrix(cfg, modules=MODULES + DISCOVERY_MODULES).
+#   neuro_eeg          -- burst suppression / EEG depth (+foundation-model hook)
+#   ventilation        -- driving pressure / mechanical power (VILI)
+#   bp_variability     -- BP variability + sample-entropy complexity loss
+#   autonomic          -- HRV (coarse) + deferred baroreflex
+#   vasoactive_pd      -- vasoplegia signature / pressor responsiveness
+#   ischemia           -- ST-segment ischemia burden (feature; no troponin label)
+#   venous_congestion  -- CVP / renal venous congestion (cardiorenal)
+#   capnogram          -- EtCO2 dynamics (pulmonary perfusion / dead space)
+#   thermoregulation   -- intraop hypothermia burden / rewarming
+#   fluid_responsiveness -- SVV / SVR / CO (occult hypovolemia, vasoplegia)
+DISCOVERY_MODULES = [
+    neuro_eeg, ventilation, bp_variability, autonomic, vasoactive_pd,
+    ischemia, venous_congestion, capnogram, thermoregulation, fluid_responsiveness,
+]
 
 
 # ---------------------------------------------------------------------------
