@@ -42,6 +42,12 @@ from vitaldb_aki.features import (
     autonomic, bp_variability, capnogram, fluid_responsiveness, ischemia,
     neuro_eeg, thermoregulation, vasoactive_pd, venous_congestion, ventilation,
 )
+# Higher-order (3+ signal) COUPLING discovery modules: organ injury as multi-system
+# decoupling. Each aligns several signals on a common grid per case; numeric-first.
+from vitaldb_aki.features import (
+    cardioresp_coupling, cerebral_autoreg, drug_brain_circ, multivariate_complexity,
+    perfusion_cascade, physio_network,
+)
 
 
 # Registered feature modules (each: SPECS + extract). All validated and active:
@@ -70,10 +76,21 @@ MODULES = [tabular, hemodynamics, pk, temporal, risk_factors, pfds, pkpd_sensiti
 #   capnogram          -- EtCO2 dynamics (pulmonary perfusion / dead space)
 #   thermoregulation   -- intraop hypothermia burden / rewarming
 #   fluid_responsiveness -- SVV / SVR / CO (occult hypovolemia, vasoplegia)
+# Higher-order coupling families (3+ signals; mostly pk-tier on instrumented subsets):
+#   perfusion_cascade       -- MAP x EtCO2 x SpO2 tri-witness occult hypoperfusion
+#   cerebral_autoreg        -- EEG x MAP | Ce conditional autoregulation failure
+#   cardioresp_coupling     -- HR x RR x MAP cardio-respiratory-autonomic triad
+#   drug_brain_circ         -- Ce x BIS x MAP PK/PD/hemodynamic fragility surface
+#   multivariate_complexity -- N-way joint sample entropy + coupling dispersion
+#   physio_network          -- coupling-network topology + transfer-entropy info flow
+COUPLING_MODULES = [
+    perfusion_cascade, cerebral_autoreg, cardioresp_coupling, drug_brain_circ,
+    multivariate_complexity, physio_network,
+]
 DISCOVERY_MODULES = [
     neuro_eeg, ventilation, bp_variability, autonomic, vasoactive_pd,
     ischemia, venous_congestion, capnogram, thermoregulation, fluid_responsiveness,
-]
+] + COUPLING_MODULES
 
 
 # ---------------------------------------------------------------------------
