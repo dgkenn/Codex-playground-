@@ -40,13 +40,20 @@ while ! phase1_done; do
     say "launched run_all (was not running)"
     sleep 45
   else
-    # hang detector: if the process burns no CPU over 3 min, it's stuck on a
-    # dead socket the deadline didn't catch -> kill so the next loop relaunches.
+    # progress-aware hang detector: only kill if the process burns no CPU AND
+    # writes nothing over the window. Network-bound extraction blocks on socket
+    # I/O (cputime barely advances) while still flushing each finished case to a
+    # _featcache/*.partial -- so the line-count of run_all.log + the .partial
+    # files is the real liveness signal. cputime-only (the old check) false-killed
+    # healthy slow downloads; the 150s/track download deadline already bounds true
+    # dead sockets, so a hang now means BOTH no CPU and no new rows.
+    prog1=$(cat vitaldb_aki/cache/run_all.log vitaldb_aki/cache/_featcache/*.partial 2>/dev/null | wc -l)
     t1=$(ps -o cputime= -p "$pid" 2>/dev/null | tr -d ' ')
-    sleep 180
+    sleep 240
+    prog2=$(cat vitaldb_aki/cache/run_all.log vitaldb_aki/cache/_featcache/*.partial 2>/dev/null | wc -l)
     t2=$(ps -o cputime= -p "$pid" 2>/dev/null | tr -d ' ')
-    if [ -n "$t1" ] && [ "$t1" = "$t2" ]; then
-      say "run_all HUNG (cputime $t1 frozen 180s) -> kill+restart"
+    if [ -n "$t1" ] && [ "$t1" = "$t2" ] && [ "$prog1" = "$prog2" ]; then
+      say "run_all HUNG (no cpu + no log/partial progress 240s) -> kill+restart"
       kill -9 "$pid" 2>/dev/null
       rm -f vitaldb_aki/cache/run_all.lock
     fi
