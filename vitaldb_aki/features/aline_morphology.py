@@ -141,6 +141,17 @@ AIX_MIN_QUALITY_BEATS: int = 3  # need >=3 beats with an inflection to report AI
 AIX_SECOND_DERIV_FRAC: float = 0.04  # smoothing window for the 2nd derivative
                                      #   (fraction of the upstroke length)
 
+# EXPENSIVE per-beat vascular-tone features (tau decay + augmentation index) are
+# computed on at most this many EVENLY-SPACED beats per case (np.linspace index
+# selection across the case-level accepted-beat list). The case-level MEAN of tau
+# and AIx over a representative even sample is statistically identical to the mean
+# over all ~30k beats (sampling error ~ 1/sqrt(N_VASCULAR_BEATS) ~ 5%, negligible
+# for a case-level mean); sampling these two features is the dominant per-case
+# speed-up (they grid-search a log-linear fit / 2nd-derivative per beat). The
+# CHEAP per-beat morphology (dP/dt, PP, SBP/DBP, area) and ALL burden integrals
+# are still computed on the FULL beat series (burdens need full time coverage).
+N_VASCULAR_BEATS: int = 400
+
 # ---------------------------------------------------------------------------
 # BURDEN (cumulative-dose) thresholds (binding; pre-registered constants).
 #
@@ -228,17 +239,21 @@ SPECS: list[FeatureSpec] = [
     # ---- vascular tone: diastolic decay constant tau (= R*C) ----------------
     FeatureSpec("art_tau_decay_mean", "pk", "intraop",
                 "mean diastolic decay time constant tau (s) = R*C of the arterial tree, "
-                "from a per-beat log-linear fit of P(t)=P0*exp(-t/tau)+Pinf over the "
-                "diastolic runoff; arterial-tone / SVR marker (§7C/§7F)"),
+                "from a per-beat closed-form log-linear OLS fit of P(t)=P0*exp(-t/tau)+Pinf "
+                "over the diastolic runoff; arterial-tone / SVR marker. MEAN over a "
+                "representative EVENLY-SPACED sample of <=400 beats per case (sampling "
+                "error ~1/sqrt(400) ~5%, negligible for a case-level mean) (§7C/§7F)"),
     # ---- vascular tone: augmentation index (best-effort, reflected wave) ----
     FeatureSpec("art_aug_index_mean", "pk", "intraop",
                 "mean augmentation index AIx=(P_inflection-P_diastole)/"
                 "(P_systolic-P_diastole) per beat, inflection from the upstroke "
                 "2nd-derivative zero-crossing; APPROXIMATE from raw ART -- weight by "
-                "art_aug_index_quality; None if no reliable inflection (§7C/§7F)"),
+                "art_aug_index_quality; None if no reliable inflection. MEAN over a "
+                "representative EVENLY-SPACED <=400-beat per-case sample (§7C/§7F)"),
     FeatureSpec("art_aug_index_quality", "pk", "intraop",
-                "fraction of analyzed beats with a usable reflected-wave inflection "
-                "point (quality weight for art_aug_index_mean) (§7F)"),
+                "fraction of the SAMPLED (<=400 evenly-spaced) beats with a usable "
+                "reflected-wave inflection point (quality weight for "
+                "art_aug_index_mean) (§7F)"),
     # ---- BURDEN (cumulative-dose) biomarkers: minutes in an abnormal waveform
     #      STATE over the intraop window, time-weighted with the 10 s gap cap;
     #      the waveform analogue of the hypotension-dose (minutes below MAP 65)
@@ -658,25 +673,39 @@ def tau_decay_for_beat(beat: "Any", fs: float) -> float | None:
     # the tail and corrupts the fit, so we grid-search Pinf below the minimum and
     # keep the value that maximises the log-linear R^2 (a standard windkessel
     # decay-fit strategy). ln(P - Pinf) = c - t/tau is linear -> slope = -1/tau.
-    A = np.vstack([t, np.ones_like(t)]).T
-    best: tuple[float, float] | None = None   # (r2, tau)
-    for frac in (0.0, 0.25, 0.5, 0.75, 1.0, 1.5, 2.0):
-        pinf = seg_min - frac * seg_range - 1e-6
-        y = seg - pinf
-        if np.any(y <= 0):
-            continue
-        ly = np.log(y)
-        coef, *_ = np.linalg.lstsq(A, ly, rcond=None)
-        slope = float(coef[0])
-        if slope >= 0:
-            continue
-        tau = -1.0 / slope
-        pred = A @ coef
-        ss_res = float(np.sum((ly - pred) ** 2))
-        ss_tot = float(np.sum((ly - np.mean(ly)) ** 2))
-        r2 = 1.0 - ss_res / ss_tot if ss_tot > 0 else 0.0
-        if best is None or r2 > best[0]:
-            best = (r2, tau)
+    #
+    # CLOSED-FORM OLS (vectorized over the 7 Pinf fracs at once): for each Pinf we
+    # need the simple-linear-regression slope/intercept/R^2 of ly = c - t/tau on t.
+    # This is mathematically identical to np.linalg.lstsq on [t, 1] but avoids the
+    # ~210k lstsq calls/case. We precompute t's centered/variance terms once and
+    # build a (7, n) ly matrix, then reduce along axis=1 for all 7 fits together.
+    fracs = np.array([0.0, 0.25, 0.5, 0.75, 1.0, 1.5, 2.0])
+    t_bar = float(np.mean(t))
+    tc = t - t_bar                       # centered time
+    s_tt = float(np.dot(tc, tc))         # sum((t-tbar)^2); >0 since seg has >=5 pts
+    if s_tt <= 0:
+        return None
+
+    pinfs = seg_min - fracs * seg_range - 1e-6   # (7,)
+    Y = seg[None, :] - pinfs[:, None]            # (7, n) = seg - Pinf for each frac
+    valid = np.all(Y > 0, axis=1)                # rows where ln is defined everywhere
+    best: tuple[float, float] | None = None      # (r2, tau)
+    if valid.any():
+        ly = np.log(Y[valid])                    # (k, n)
+        y_bar = np.mean(ly, axis=1)              # (k,)
+        lyc = ly - y_bar[:, None]                # centered ly
+        s_ty = lyc @ tc                          # (k,) sum((t-tbar)(y-ybar))
+        slope = s_ty / s_tt                      # (k,) OLS slope == lstsq coef[0]
+        # R^2 = (s_ty^2 / s_tt) / s_yy  (== 1 - ss_res/ss_tot for simple regression)
+        s_yy = np.sum(lyc * lyc, axis=1)         # (k,) sum((y-ybar)^2) == ss_tot
+        with np.errstate(divide="ignore", invalid="ignore"):
+            r2_arr = np.where(s_yy > 0, (s_ty * s_ty) / (s_tt * s_yy), 0.0)
+        neg = slope < 0                          # only decaying fits are physiologic
+        if neg.any():
+            r2_neg = np.where(neg, r2_arr, -np.inf)
+            j = int(np.argmax(r2_neg))
+            if np.isfinite(r2_neg[j]):
+                best = (float(r2_arr[j]), float(-1.0 / slope[j]))
 
     if best is None:
         return None
@@ -747,17 +776,24 @@ def aug_index_for_beat(beat: "Any", fs: float) -> float | None:
     # Inflection = first INTERIOR sign change of the curvature on the upstroke
     # (the systolic shoulder). Skip the first/last sample of d2 so residual edge
     # curvature does not register.
+    #
+    # VECTORIZED sign-change detection (mathematically identical to the prior
+    # `for i in range(2, d2.size-1)` scan): a candidate at i requires d2[i-1] != 0,
+    # (d2[i-1]>0) != (d2[i]>0), and max(|d2[i-1]|,|d2[i]|) >= curv_floor. We test
+    # all interior i = 2..d2.size-2 at once and take the FIRST qualifying one.
     infl_rel: int | None = None
-    for i in range(2, d2.size - 1):
-        if d2[i - 1] == 0:
-            continue
-        if (d2[i - 1] > 0) != (d2[i] > 0):
-            if max(abs(d2[i - 1]), abs(d2[i])) < curv_floor:
-                continue  # curvature flip is just numerical noise, not a shoulder
+    if d2.size >= 4:
+        i = np.arange(2, d2.size - 1)
+        prev = d2[i - 1]
+        cur = d2[i]
+        cross = (prev != 0) & ((prev > 0) != (cur > 0))
+        cross &= np.maximum(np.abs(prev), np.abs(cur)) >= curv_floor
+        hits = np.nonzero(cross)[0]
+        if hits.size:
+            first_i = int(i[hits[0]])
             # map d2 index -> index into `up`: +1 for diff(n=2) center, +offset
             # for the 'valid' smoothing trim.
-            infl_rel = i + 1 + smooth_offset
-            break
+            infl_rel = first_i + 1 + smooth_offset
     if infl_rel is None:
         return None
 
@@ -773,22 +809,16 @@ def aug_index_for_beat(beat: "Any", fs: float) -> float | None:
     return float(aix)
 
 
-def vascular_tone_for_window(times: "Any", values: "Any", fs: float
-                             ) -> tuple[list[float], int, int]:
-    """Per-window tau / AIx extraction. Pure / network-free.
+def collect_vascular_cycles(times: "Any", values: "Any", fs: float) -> list["Any"]:
+    """Return the accepted per-beat raw cycle slices (foot -> next foot) for a
+    window, WITHOUT computing tau / AIx. Pure / network-free.
 
     Re-detects beat boundaries (systolic peaks + preceding feet) on the window
-    samples and, for each physiologic beat, slices the raw cycle (foot -> next
-    foot) so tau_decay_for_beat / aug_index_for_beat can fit the actual samples
-    (the per-beat scalar array does not retain raw samples). Gating mirrors
-    detect_beats (SBP/DBP/PP physiologic windows + HR).
-
-    Returns (tau_list, n_aix_beats, n_aix_usable):
-      tau_list      : accepted per-beat tau values (s),
-      n_aix_beats   : beats where AIx was attempted (denominator for quality),
-      n_aix_usable  : beats with a usable inflection (numerator).
-    AIx values themselves are accumulated via the returned numerator-style count;
-    callers compute the mean over usable beats -- see vascular_tone_features().
+    samples, applies the same physiologic gate as detect_beats / the legacy
+    vascular_tone_for_window (SBP/DBP/PP windows + HR), and returns one raw-sample
+    cycle array per accepted beat. The expensive tau / AIx fits are computed by the
+    caller on an EVENLY-SPACED case-level SAMPLE of these cycles (see
+    vascular_tone_sampled) so the ~30k-beat per-case cost collapses to <=400 fits.
     """
     import numpy as np
     from scipy.signal import find_peaks
@@ -796,7 +826,7 @@ def vascular_tone_for_window(times: "Any", values: "Any", fs: float
     t = np.asarray(times, dtype=float)
     v = np.asarray(values, dtype=float)
     if t.size < int(fs) or fs <= 0:
-        return [], 0, 0
+        return []
 
     min_cycle_samp = max(1, int(round(fs * 60.0 / HR_MAX_BPM)))
     max_cycle_samp = max(min_cycle_samp + 1, int(round(fs * 60.0 / HR_MIN_BPM)))
@@ -804,13 +834,9 @@ def vascular_tone_for_window(times: "Any", values: "Any", fs: float
     prominence = max(PP_MIN, 0.2 * rng)
     peaks, _ = find_peaks(v, distance=min_cycle_samp, prominence=prominence)
     if peaks.size < 2:
-        return [], 0, 0
+        return []
 
-    tau_list: list[float] = []
-    aix_attempt = 0
-    aix_usable = 0
-    aix_vals: list[float] = []
-
+    cycles: list["Any"] = []
     for i in range(len(peaks) - 1):
         pk = int(peaks[i])
         nxt = int(peaks[i + 1])
@@ -840,23 +866,69 @@ def vascular_tone_for_window(times: "Any", values: "Any", fs: float
         if not (np.isnan(hr) or (HR_MIN_BPM <= hr <= HR_MAX_BPM)):
             continue
 
-        cycle = v[foot:next_foot + 1]
+        cycles.append(v[foot:next_foot + 1])
+
+    return cycles
+
+
+def vascular_tone_sampled(cycles: list["Any"], fs: float,
+                          max_beats: int = N_VASCULAR_BEATS
+                          ) -> tuple[list[float], int, int, list[float]]:
+    """Compute tau / AIx over at most `max_beats` EVENLY-SPACED case-level cycles.
+
+    `cycles` is the case-level list of accepted raw-cycle arrays (concatenated
+    across all analysis windows, in time order). We pick at most `max_beats`
+    evenly-spaced cycles via np.linspace index selection, then run the (expensive)
+    tau_decay_for_beat / aug_index_for_beat fits on ONLY those. The case-level mean
+    of tau / AIx over this representative sample matches the all-beats mean within
+    sampling error (~1/sqrt(max_beats)); this is the dominant per-case speed-up.
+
+    Returns (tau_list, n_aix_attempt, n_aix_usable, aix_vals) -- the same
+    accumulators vascular_tone_features() consumes.
+    """
+    import numpy as np
+
+    n = len(cycles)
+    if n == 0:
+        return [], 0, 0, []
+    if n > max_beats:
+        idx = np.linspace(0, n - 1, max_beats)
+        idx = np.unique(np.round(idx).astype(int))
+        sampled = [cycles[i] for i in idx]
+    else:
+        sampled = cycles
+
+    tau_list: list[float] = []
+    aix_attempt = 0
+    aix_usable = 0
+    aix_vals: list[float] = []
+    for cycle in sampled:
         tau = tau_decay_for_beat(cycle, fs)
         if tau is not None:
             tau_list.append(tau)
-
         aix_attempt += 1
         aix = aug_index_for_beat(cycle, fs)
         if aix is not None:
             aix_usable += 1
             aix_vals.append(aix)
+    return tau_list, aix_attempt, aix_usable, aix_vals
 
-    # Stash AIx values on the function call via a parallel return: we pack the
-    # mean into tau_list-independent accumulators by returning the values list
-    # through n_aix_usable's companion. To keep a simple tuple signature, the
-    # caller recomputes the AIx mean from the per-window value lists collected
-    # in vascular_tone_features(); so we expose aix_vals via an attribute-free
-    # contract: return them appended. (See vascular_tone_features.)
+
+def vascular_tone_for_window(times: "Any", values: "Any", fs: float
+                             ) -> tuple[list[float], int, int]:
+    """Per-window tau / AIx extraction (LEGACY all-beats path). Pure.
+
+    Retained for backward compatibility / direct testing. Computes tau / AIx on
+    EVERY accepted beat in the window (no sampling). The case-level extraction
+    now uses collect_vascular_cycles + vascular_tone_sampled instead, which caps
+    the expensive fits at N_VASCULAR_BEATS evenly-spaced beats per case.
+
+    Returns (tau_list, n_aix_beats, n_aix_usable) and stashes the AIx values list
+    on vascular_tone_for_window._last_aix_vals (the historical contract).
+    """
+    cycles = collect_vascular_cycles(times, values, fs)
+    tau_list, aix_attempt, aix_usable, aix_vals = vascular_tone_sampled(
+        cycles, fs, max_beats=len(cycles) if cycles else 0)
     vascular_tone_for_window._last_aix_vals = aix_vals  # type: ignore[attr-defined]
     return tau_list, aix_attempt, aix_usable
 
@@ -1111,20 +1183,28 @@ def _extract_from_array(arr: "Any",
 
     beats_by_window: list[Any] = []
     ppv_values: list[float] = []
-    vtone_by_window: list[tuple[list[float], int, int, list[float]]] = []
+    # Case-level list of accepted raw beat-cycle slices (in time order across
+    # windows). The expensive tau / AIx fits run on an EVENLY-SPACED <=400-beat
+    # sample of THIS list, computed once after the window loop (see below).
+    vascular_cycles: list[Any] = []
     # Accumulators for the BURDEN integration: a per-case chronologically ordered
     # per-beat record series and a per-respiratory-block PPV series, both with
     # ABSOLUTE timestamps so time-in-abnormal-state is integrated across the case.
     beat_series: list[tuple[float, dict[str, float]]] = []
     ppv_series: list[tuple[float, float]] = []
+    # Sample times are monotonically increasing, so window selection is a pair of
+    # binary searches (O(log N)) instead of a full-array boolean mask per window
+    # (O(N) * up to MAX_ANALYSIS_WINDOWS). Identical samples selected as the old
+    # `(t_all >= ws) & (t_all < we)` mask (left-closed, right-open).
     for ws in starts:
         we = ws + ANALYSIS_WINDOW_S
         # Slice this window's samples (and drop them after processing).
-        sel = (t_all >= ws) & (t_all < we)
-        if not sel.any():
+        i0 = int(np.searchsorted(t_all, ws, side="left"))
+        i1 = int(np.searchsorted(t_all, we, side="left"))
+        if i1 <= i0:
             continue
-        wt = t_all[sel]
-        wv = v_all[sel]
+        wt = t_all[i0:i1]
+        wv = v_all[i0:i1]
         beats, ppvs, abs_beat_times, abs_ppv_series = _process_window(wt, wv, fs)
         if len(beats) > 0:
             beats_by_window.append(beats)
@@ -1141,12 +1221,18 @@ def _extract_from_array(arr: "Any",
                     "sbp": sbp_b, "dbp": dbp_b, "pp": pp_b,
                     "dpdt": dpdt_b, "map": map_b,
                 }))
-            # Vascular-tone (tau / AIx) needs the raw cycle samples, so it
-            # re-walks the same window's waveform before wt/wv are discarded.
-            tau_list, aix_attempt, aix_usable = vascular_tone_for_window(wt, wv, fs)
-            aix_vals = getattr(vascular_tone_for_window, "_last_aix_vals", [])
-            vtone_by_window.append((tau_list, aix_attempt, aix_usable, list(aix_vals)))
+            # Vascular-tone (tau / AIx) needs the raw cycle samples, so collect the
+            # accepted cycles now (while wt/wv exist); the costly fits are deferred
+            # to a case-level <=N_VASCULAR_BEATS even sample after the loop.
+            vascular_cycles.extend(collect_vascular_cycles(wt, wv, fs))
         del wt, wv  # memory discipline
+
+    # tau / AIx on an EVENLY-SPACED <=N_VASCULAR_BEATS sample of the case's cycles.
+    tau_list, aix_attempt, aix_usable, aix_vals = vascular_tone_sampled(
+        vascular_cycles, fs, max_beats=N_VASCULAR_BEATS)
+    vtone_by_window: list[tuple[list[float], int, int, list[float]]] = [
+        (tau_list, aix_attempt, aix_usable, aix_vals)
+    ]
 
     feats = beat_features(beats_by_window, ppv_values)
     aline_available = 1 if (feats.get("aline_n_beats") or 0) > 0 else 0

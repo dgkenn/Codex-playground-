@@ -632,10 +632,17 @@ def _window_starts(t0: float, t_end: float) -> list[float]:
 
 def _slice_window(t: "Any", v: "Any",
                   ws: float, we: float) -> tuple["Any", "Any"]:
-    """Return samples in [ws, we)."""
+    """Return samples in [ws, we).
+
+    Sample times are monotonically increasing, so the window is a contiguous
+    slice found by two binary searches (O(log N)) rather than a full-array
+    boolean mask (O(N)) rebuilt for every channel and window. Identical samples
+    selected as the old `(t >= ws) & (t < we)` (left-closed, right-open).
+    """
     import numpy as np
-    sel = (t >= ws) & (t < we)
-    return t[sel], v[sel]
+    i0 = int(np.searchsorted(t, ws, side="left"))
+    i1 = int(np.searchsorted(t, we, side="left"))
+    return t[i0:i1], v[i0:i1]
 
 
 def _intraop_window(case: dict[str, Any]) -> tuple[float | None, float | None]:
