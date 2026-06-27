@@ -41,7 +41,12 @@ from vitaldb_aki.features import (
 # tabular (§7A/B/D/E), hemodynamics (§7C), pk (§8, Spearman 0.96 + bolus split),
 # temporal (§7C/9), risk_factors (§7A/B labs+flags), aline_morphology (§7F),
 # cross_waveform (§7F novel coupling biomarkers).
-MODULES = [tabular, hemodynamics, pk, temporal, risk_factors, pfds, pkpd_sensitivity, aline_morphology]
+# aline_morphology + cross_waveform are 500 Hz waveform-MORPHOLOGY modules
+# (SNUADC/ART ~50 MB/case, ~200 GB cohort-wide): inherently bandwidth-bound, not
+# optimizable. They run as a SEPARATE supervised waveform-enrichment pass and are
+# excluded from the headline matrix so the numeric/clinical/PK build completes
+# fast. (aline_morphology stays imported above for that pass + tests.)
+MODULES = [tabular, hemodynamics, pk, temporal, risk_factors, pfds, pkpd_sensitivity]
 
 
 # ---------------------------------------------------------------------------

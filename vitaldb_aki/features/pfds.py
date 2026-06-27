@@ -1131,7 +1131,16 @@ def extract(
                 break
 
         # ---- PLETH amplitude series (waveform variant) -----------------------
-        raw_pleth = download_track(cfg, cid_str, PLETH_TRACK)
+        # OPT-IN: SNUADC/PLETH is the raw 500 Hz waveform (~50 MB/case) and its
+        # download dominates extraction wall-time by ~1000x over the numeric
+        # tracks; it feeds only the marginal pfds_wf_pfd_burden. Off by default
+        # so the headline build stays fast; enable for the waveform-enrichment
+        # pass via features.pfds_download_pleth_waveform: true.
+        raw_pleth = (
+            download_track(cfg, cid_str, PLETH_TRACK)
+            if cfg.get("features", {}).get("pfds_download_pleth_waveform", False)
+            else []
+        )
         pleth_amp_samples: list[tuple[float, float]] = []
         if raw_pleth:
             pleth_clipped = _clip_to_window(raw_pleth, t_start, t_end)
