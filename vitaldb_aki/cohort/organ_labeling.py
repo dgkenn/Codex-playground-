@@ -47,6 +47,32 @@ def _nadir(series: list[float]) -> float | None:
     return min(series) if series else None
 
 
+def _to_f(v: Any) -> float | None:
+    """Tolerant float parse (stdlib; keeps this module offline-testable)."""
+    if v is None or str(v).strip() in ("", "nan", "NA", "None"):
+        return None
+    try:
+        return float(v)
+    except (TypeError, ValueError):
+        return None
+
+
+def _massive_transfusion(case: dict | None, spec: dict) -> bool:
+    """True if intraop hemorrhage/transfusion is large enough that a postop
+    platelet fall is plausibly DILUTIONAL rather than consumptive organ injury.
+    Uses VitalDB /cases intraop_ebl (mL) and intraop_rbc (mL) -- either crossing
+    its pre-registered threshold marks the case confounded."""
+    if not case:
+        return False
+    ebl = _to_f(case.get("intraop_ebl"))
+    rbc = _to_f(case.get("intraop_rbc"))
+    if ebl is not None and ebl >= float(spec.get("massive_ebl_ml", float("inf"))):
+        return True
+    if rbc is not None and rbc >= float(spec.get("massive_rbc_ml", float("inf"))):
+        return True
+    return False
+
+
 def label_organs(
     caseid: str,
     optype: str | None,
@@ -55,6 +81,7 @@ def label_organs(
     death_inhosp: bool,
     renal_inputs: dict[str, Any],                # for the KDIGO call
     cfg: dict[str, Any],
+    case: dict | None = None,                    # /cases row for confound control
 ) -> OrganLabel:
     """Apply every enabled component, then OR into the composite."""
     oc = cfg["organ_outcomes"]
@@ -65,7 +92,7 @@ def label_organs(
         if not spec.get("enabled", True):
             continue
         comps[name] = _label_component(name, spec, optype, baselines, postop,
-                                       death_inhosp, renal_inputs, uln, cfg)
+                                       death_inhosp, renal_inputs, uln, cfg, case)
 
     # Labelability (mirrors the renal cohort's "require a postop creatinine"):
     # death is always an observed end-organ outcome, but a LIVING patient is only
@@ -91,7 +118,7 @@ def _excluded(spec: dict, optype: str | None) -> bool:
 
 
 def _label_component(name, spec, optype, baselines, postop, death_inhosp,
-                     renal_inputs, uln, cfg) -> int | None:
+                     renal_inputs, uln, cfg, case=None) -> int | None:
     src = spec.get("source")
     if src == "kdigo":
         res = label_case(renal_inputs["caseid"], renal_inputs["baseline"],
@@ -118,9 +145,27 @@ def _label_component(name, spec, optype, baselines, postop, death_inhosp,
         if not vals:
             return None
         return 1 if _peak(vals) >= float(spec["threshold"]) else 0
+    if rule == "rise_from_normal_baseline":
+        # Confound control (anticoagulation): a postop value >= threshold counts
+        # as organ injury ONLY when it rose from a documented NORMAL preop
+        # baseline. A patient anticoagulated preop (warfarin/DOAC) walks in with
+        # an already-elevated baseline (or one is undocumented) -> we cannot
+        # attribute the postop value to surgical injury -> NOT labelable (None),
+        # never a 0/1. Used for coagulation_inr (preop INR confounded by anticoag).
+        if not vals:
+            return None
+        base = baselines.get(analytes[0])
+        if base is None or base >= float(spec["baseline_normal_max"]):
+            return None
+        return 1 if _peak(vals) >= float(spec["threshold"]) else 0
     if rule == "nadir_below_or_drop":
         post = postop.get(analytes[0], [])
         if not post:
+            return None
+        # Confound control (dilution): a postop platelet fall under massive
+        # hemorrhage/transfusion is plausibly dilutional, not consumptive organ
+        # injury -> NOT labelable, so it can't masquerade as a coagulopathy event.
+        if spec.get("exclude_if_massive_transfusion") and _massive_transfusion(case, spec):
             return None
         nad = _nadir(post)
         if nad < float(spec["nadir_below"]):

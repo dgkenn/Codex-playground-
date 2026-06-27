@@ -78,17 +78,26 @@ organ_outcomes:
       rule: "peak_ge_mult_uln"
       mult_uln: 2.0                     # bilirubin >= 2x ULN
       exclude_optypes: ["Hepatic", "Biliary/Pancreas", "Transplantation"]
-    coagulation_plt:                    # thrombocytopenia
+    coagulation_plt:                    # thrombocytopenia (consumptive, not dilutional)
       enabled: true
       analytes: ["plt"]
       rule: "nadir_below_or_drop"
       nadir_below: 100.0                # postop nadir < 100 (x10^3/uL)
       drop_frac_from_baseline: 0.5      # OR >=50% fall from preop
-    coagulation_inr:                    # coagulopathy (confounded by anticoagulation)
+      # confound control: a platelet fall under massive hemorrhage/transfusion is
+      # plausibly DILUTIONAL, not organ injury -> not labelable when present.
+      exclude_if_massive_transfusion: true
+      massive_ebl_ml: 2000.0            # intraop estimated blood loss >= 2 L, or
+      massive_rbc_ml: 1000.0            # intraop RBC transfused >= ~1 L (~3-4 units)
+    coagulation_inr:                    # hepatic/synthetic coagulopathy (de-confounded)
       enabled: true
       analytes: ["ptinr"]
-      rule: "peak_ge"
-      threshold: 1.5
+      # was peak_ge (absolute postop INR>=1.5) -- confounded by preop warfarin/DOAC.
+      # Now require a postop rise from a documented NORMAL preop INR; anticoagulated
+      # or undocumented-baseline cases are not labelable for this component.
+      rule: "rise_from_normal_baseline"
+      threshold: 1.5                    # postop INR >= 1.5 ...
+      baseline_normal_max: 1.3          # ... AND documented preop INR < 1.3
     hypoperfusion:                      # global ischemia (confounded: sicker cases get postop lactate)
       enabled: true
       analytes: ["lac"]

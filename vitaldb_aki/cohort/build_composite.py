@@ -90,7 +90,7 @@ def build_composite_cohort(cfg: dict[str, Any], refresh: bool = False) -> dict[s
 
         death = str(case.get("death_inhosp", "")).strip() in ("1", "Y", "Yes", "True")
         ol = label_organs(cid, case.get("optype"), baselines, postop, death,
-                          renal_inputs, cfg)
+                          renal_inputs, cfg, case=case)
         if ol.composite is None:
             drops["no labelable organ component"] = drops.get("no labelable organ component", 0) + 1
             continue
