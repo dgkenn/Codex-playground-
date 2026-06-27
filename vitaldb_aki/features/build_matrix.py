@@ -119,6 +119,20 @@ def _load_cohort(cfg: dict[str, Any]) -> list[dict]:
     raise FileNotFoundError(f"no cohort in {cdir} -- run `cli.py cohort-composite` first")
 
 
+
+def _purge_track_cache(cfg):
+    """Delete cached per-track CSVs to bound disk on this small (~38G) filesystem.
+    Each module's features are already saved to _featcache, so raw tracks are
+    disposable; the next track-module re-downloads only what it needs (peak disk
+    ~= one module's track footprint instead of all modules' accumulated)."""
+    import glob
+    tdir = os.path.join(cfg["data"]["cache_dir"], "tracks")
+    for f in glob.glob(os.path.join(tdir, "*.csv")):
+        try:
+            os.remove(f)
+        except OSError:
+            pass
+
 def _extract_parallel(m, cfg, cases_by_id, caseids, workers, partial_path=None):
     """Run one module's extract across cases in a thread pool, RESUMABLY: each
     completed case is appended to `partial_path` (jsonl) as it finishes, so a
@@ -197,6 +211,8 @@ def build_matrix(cfg: dict[str, Any], modules: list[Any] | None = None,
             pass
         print(f"[build_matrix] {mod_name}: cached to {cache_file}")
         per_module.append(feats)
+        if uses_tracks:
+            _purge_track_cache(cfg)   # bounded disk on ~38G fs
     feat_names = [s.name for s in all_specs]
 
     label_cols = _label_cols(cohort)
