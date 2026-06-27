@@ -16,39 +16,9 @@
 
 ## Incremental Value — Composite Outcome
 
-### LOGREG
+### LOGREG  _(not yet computed)_
 
-| Feature set | AUROC | AUPRC | Prevalence |
-|-------------|-------|-------|------------|
-| standard | 0.7500 | 0.1636 | 0.0364 |
-| comprehensive | 0.7631 | 0.2284 | 0.0364 |
-| pk | 0.7433 | 0.1858 | 0.0364 |
-
-**Incremental value contrasts:**
-
-| Contrast | ΔAUROC | DeLong p | 95% CI |
-|----------|--------|----------|--------|
-| comprehensive_vs_standard | +0.0131 | 0.4476 | [-0.0240, +0.0464] |
-| pk_vs_comprehensive (**primary**) | -0.0198 | 0.0967 | [-0.0441, +0.0013] |
-
-_Negative control (shuffled labels): AUROC = 0.4637_
-
-### GBM
-
-| Feature set | AUROC | AUPRC | Prevalence |
-|-------------|-------|-------|------------|
-| standard | 0.7356 | 0.1212 | 0.0364 |
-| comprehensive | 0.7614 | 0.1491 | 0.0364 |
-| pk | 0.7618 | 0.1561 | 0.0364 |
-
-**Incremental value contrasts:**
-
-| Contrast | ΔAUROC | DeLong p | 95% CI |
-|----------|--------|----------|--------|
-| comprehensive_vs_standard | +0.0258 | 0.1610 | [-0.0117, +0.0615] |
-| pk_vs_comprehensive (**primary**) | +0.0004 | 0.9539 | [-0.0129, +0.0127] |
-
-_Negative control (shuffled labels): AUROC = 0.5119_
+### GBM  _(not yet computed)_
 
 ## Incremental Value — Per-Organ Targets
 
@@ -96,10 +66,11 @@ done
 
 | Step | Status |
 |------|--------|
+| inspire_autofetch | done |
 | cohort_composite | done |
-| matrix | pending |
-| harness | pending |
-| multitask | pending |
-| hypotension | pending |
+| matrix | failed |
+| harness | partial |
+| multitask | failed |
+| hypotension | failed |
 | consolidate | pending |
 
