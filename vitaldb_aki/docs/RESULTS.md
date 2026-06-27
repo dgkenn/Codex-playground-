@@ -117,5 +117,5 @@ done
 | harness | done |
 | multitask | done |
 | hypotension | done |
-| consolidate | pending |
+| consolidate | done |
 
