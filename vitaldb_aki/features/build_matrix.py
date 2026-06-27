@@ -61,6 +61,30 @@ from vitaldb_aki.features import (
 # fast. (aline_morphology stays imported above for that pass + tests.)
 MODULES = [tabular, hemodynamics, pk, temporal, risk_factors, pfds, pkpd_sensitivity]
 
+# ---------------------------------------------------------------------------
+# EXPLORATORY discovery feature families (novel-axis + higher-order coupling).
+# These are NOT part of the frozen confirmatory matrix -- they are extracted
+# into a SEPARATE enriched matrix for the per-family x per-outcome incremental-
+# value screen + enriched phenotype discovery, so confirmatory integrity holds.
+# All numeric-first; raw-waveform tiers (EEG embedding, beat-to-beat HRV/BRS,
+# capnogram morphology) stay cfg-gated OFF by default.
+# ---------------------------------------------------------------------------
+from vitaldb_aki.features import (                       # noqa: E402
+    ventilation, bp_variability, autonomic, neuro_eeg, ischemia,
+    venous_congestion, fluid_responsiveness, vasoactive_pd, capnogram,
+    thermoregulation, perfusion_cascade, cerebral_autoreg,
+    cardioresp_coupling, drug_brain_circ, multivariate_complexity,
+    physio_network,
+)
+
+DISCOVERY_MODULES = [
+    ventilation, bp_variability, autonomic, neuro_eeg, ischemia,
+    venous_congestion, fluid_responsiveness, vasoactive_pd, capnogram,
+    thermoregulation, perfusion_cascade, cerebral_autoreg,
+    cardioresp_coupling, drug_brain_circ, multivariate_complexity,
+    physio_network,
+]
+
 # DISCOVERY_MODULES: 10 novel-axis biomarker families to be screened for incremental
 # value (redundancy/novelty control) before any promotion to the confirmatory set.
 # Each is numeric-first (fast) with heavy 500 Hz tiers gated off by default
@@ -215,7 +239,7 @@ def _extract_parallel(m, cfg, cases_by_id, caseids, workers, partial_path=None):
 
 
 def build_matrix(cfg: dict[str, Any], modules: list[Any] | None = None,
-                 workers: int = 12) -> dict[str, Any]:
+                 workers: int = 12, out_name: str = "feature_matrix.csv") -> dict[str, Any]:
     modules = modules or MODULES
     cohort = _load_cohort(cfg)
     caseids = [r["caseid"] for r in cohort]
@@ -277,7 +301,7 @@ def build_matrix(cfg: dict[str, Any], modules: list[Any] | None = None,
 
     cdir = cfg["data"]["cache_dir"]
     cols = ["caseid", "subjectid"] + label_cols + feat_names
-    out_csv = os.path.join(cdir, "feature_matrix.csv")
+    out_csv = os.path.join(cdir, out_name)
     with open(out_csv, "w", encoding="utf-8", newline="") as fh:
         w = csv.DictWriter(fh, fieldnames=cols, extrasaction="ignore")
         w.writeheader()
@@ -300,6 +324,7 @@ def build_matrix(cfg: dict[str, Any], modules: list[Any] | None = None,
         "matrix_hash": content_hash([{k: r.get(k) for k in cols} for r in rows]),
         "specs_hash": content_hash([(s.name, s.fset, s.timing) for s in all_specs]),
     }
-    with open(os.path.join(cdir, "feature_matrix_summary.json"), "w", encoding="utf-8") as fh:
+    summary_name = out_name.replace(".csv", "_summary.json")
+    with open(os.path.join(cdir, summary_name), "w", encoding="utf-8") as fh:
         json.dump(summary, fh, indent=2)
     return summary
