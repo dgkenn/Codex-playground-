@@ -4,21 +4,51 @@
 
 ## Cohort
 
-- Labelable N = 4337, composite events = 688 (15.9%)
+- Labelable N = 4335, composite events = 660 (15.2%)
 - Component event counts:
   - renal: 143 / 3924 (3.6%)
   - hepatocellular: 143 / 3195 (4.5%)
   - cholestatic: 149 / 3195 (4.7%)
-  - coagulation_plt: 291 / 4176 (7.0%)
-  - coagulation_inr: 146 / 2451 (6.0%)
+  - coagulation_plt: 259 / 4132 (6.3%)
+  - coagulation_inr: 76 / 1856 (4.1%)
   - hypoperfusion: 72 / 769 (9.4%)
-  - mortality: 49 / 4337 (1.1%)
+  - mortality: 49 / 4335 (1.1%)
 
 ## Incremental Value — Composite Outcome
 
-### LOGREG  _(not yet computed)_
+### LOGREG
 
-### GBM  _(not yet computed)_
+| Feature set | AUROC | AUPRC | Prevalence |
+|-------------|-------|-------|------------|
+| standard | 0.7263 | 0.3865 | 0.1522 |
+| comprehensive | 0.7879 | 0.5022 | 0.1522 |
+| pk | 0.7788 | 0.4875 | 0.1522 |
+
+**Incremental value contrasts:**
+
+| Contrast | ΔAUROC | DeLong p | 95% CI |
+|----------|--------|----------|--------|
+| comprehensive_vs_standard | +0.0615 | 0.0000 | [+0.0448, +0.0780] |
+| pk_vs_comprehensive (**primary**) | -0.0091 | 0.0008 | [-0.0145, -0.0042] |
+
+_Negative control (shuffled labels): AUROC = 0.4926_
+
+### GBM
+
+| Feature set | AUROC | AUPRC | Prevalence |
+|-------------|-------|-------|------------|
+| standard | 0.7191 | 0.3787 | 0.1522 |
+| comprehensive | 0.8116 | 0.5447 | 0.1522 |
+| pk | 0.8080 | 0.5442 | 0.1522 |
+
+**Incremental value contrasts:**
+
+| Contrast | ΔAUROC | DeLong p | 95% CI |
+|----------|--------|----------|--------|
+| comprehensive_vs_standard | +0.0925 | 0.0000 | [+0.0733, +0.1128] |
+| pk_vs_comprehensive (**primary**) | -0.0036 | 0.1510 | [-0.0089, +0.0009] |
+
+_Negative control (shuffled labels): AUROC = 0.4951_
 
 ## Incremental Value — Per-Organ Targets
 
@@ -26,33 +56,48 @@
 
 | Target | Standard AUROC | Comprehensive AUROC | PK AUROC | ΔAUROC (PK vs Comp) |
 |--------|---------------|---------------------|----------|---------------------|
-| organ_renal | N/A | N/A | N/A | N/A |
-| organ_hepatocellular | N/A | N/A | N/A | N/A |
-| organ_cholestatic | N/A | N/A | N/A | N/A |
-| organ_coagulation_plt | N/A | N/A | N/A | N/A |
-| organ_coagulation_inr | N/A | N/A | N/A | N/A |
-| organ_hypoperfusion | N/A | N/A | N/A | N/A |
-| organ_mortality | N/A | N/A | N/A | N/A |
+| organ_renal | 0.7500 | 0.7589 | 0.7425 | -0.0164 |
+| organ_hepatocellular | 0.7120 | 0.7468 | 0.7285 | -0.0182 |
+| organ_cholestatic | 0.7018 | 0.7690 | 0.7511 | -0.0179 |
+| organ_coagulation_plt | 0.7359 | 0.8916 | 0.8767 | -0.0149 |
+| organ_coagulation_inr | 0.7207 | 0.8151 | 0.8290 | +0.0140 |
+| organ_hypoperfusion | 0.7677 | 0.8505 | 0.8263 | -0.0243 |
+| organ_mortality | 0.6656 | 0.6669 | 0.6323 | -0.0346 |
 
 ### GBM
 
 | Target | Standard AUROC | Comprehensive AUROC | PK AUROC | ΔAUROC (PK vs Comp) |
 |--------|---------------|---------------------|----------|---------------------|
-| organ_renal | N/A | N/A | N/A | N/A |
-| organ_hepatocellular | N/A | N/A | N/A | N/A |
-| organ_cholestatic | N/A | N/A | N/A | N/A |
-| organ_coagulation_plt | N/A | N/A | N/A | N/A |
-| organ_coagulation_inr | N/A | N/A | N/A | N/A |
-| organ_hypoperfusion | N/A | N/A | N/A | N/A |
-| organ_mortality | N/A | N/A | N/A | N/A |
+| organ_renal | 0.7356 | 0.7489 | 0.7209 | -0.0281 |
+| organ_hepatocellular | 0.6842 | 0.7542 | 0.7331 | -0.0211 |
+| organ_cholestatic | 0.6679 | 0.7712 | 0.7469 | -0.0243 |
+| organ_coagulation_plt | 0.7343 | 0.9371 | 0.9379 | +0.0007 |
+| organ_coagulation_inr | 0.6382 | 0.8687 | 0.8691 | +0.0005 |
+| organ_hypoperfusion | 0.7449 | 0.8063 | 0.7958 | -0.0105 |
+| organ_mortality | 0.6683 | 0.6588 | 0.6647 | +0.0059 |
 
-## Multi-task vs Single-task
+## Multi-task vs Single-task (§9 Tier-2)
 
-_(not yet computed)_
+Feature set: comprehensive  |  CV folds: 5  |  Seed: 42
 
-## Hypotension Treatment Analysis
+| Organ | N events | Single-task AUROC | Multi-task AUROC | Δ |
+|-------|----------|-------------------|-----------------|---|
+| organ_renal | 143 | 0.7505 | 0.7333 | -0.0172 |
+| organ_hepatocellular | 143 | 0.7272 | 0.7332 | +0.0060 |
+| organ_cholestatic | 149 | 0.7592 | 0.7510 | -0.0082 |
+| organ_coagulation_plt | 259 | 0.8798 | 0.8951 | +0.0153 |
+| organ_coagulation_inr | 76 | 0.8161 | 0.8593 | +0.0432 |
+| organ_hypoperfusion | 72 | 0.7485 | 0.7642 | +0.0157 |
+| organ_mortality | 49 | 0.6158 | 0.6615 | +0.0456 |
 
-_(not yet computed)_
+## Hypotension Treatment Modifiable-Risk Analysis
+
+N = 4335  |  Treated = 2499  |  Events = 660
+
+IPTW-adjusted OR = **1.1743** (95% CI [0.9671, 1.5098])
+Max SMD before weighting: 0.7937  |  after: 0.152
+
+_Confounding-by-indication direction: sicker/more unstable patients are more likely to receive vasopressors AND more likely to sustain organ injury, biasing the crude estimate TOWARD harm for the treated group.  A propensity-adjusted OR < 1.0 for vasopressor treatment would be consistent with a beneficial effect at matched burden; OR >= 1.0 after weighting may still reflect residual unmeasured confounding.  This analysis is hypothesis-generating only._
 
 ## AKI Trajectory (supplementary)
 
@@ -68,9 +113,9 @@ done
 |------|--------|
 | inspire_autofetch | done |
 | cohort_composite | done |
-| matrix | failed |
-| harness | partial |
-| multitask | failed |
-| hypotension | failed |
+| matrix | done |
+| harness | done |
+| multitask | done |
+| hypotension | done |
 | consolidate | pending |
 
