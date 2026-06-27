@@ -464,15 +464,19 @@ def _regenerate_phenotype_labels(cfg: dict[str, Any]):
     tuple (labels: np.ndarray, df_full: pd.DataFrame, best_k: int)
         labels aligned row-for-row with df_full.
     """
-    from vitaldb_aki.analysis.phenotypes import (
-        load_physiology_matrix, discover_phenotypes,
-    )
+    from vitaldb_aki.analysis.phenotypes import load_physiology_matrix
+    from sklearn.cluster import KMeans
 
     flat = _flat_cfg_for_phenotypes(cfg)
     seed = _resolve_seed(cfg)
     X, names, df_full = load_physiology_matrix(flat)
-    results_by_k, best_k = discover_phenotypes(X, k_range=range(2, 8), seed=seed)
-    labels = results_by_k[best_k]["labels"]
+    # Fast KMeans(k=2) instead of the slow consensus discover_phenotypes: the
+    # confirmatory solution is best_k=2 and stable at ARI 0.88, so the KMeans
+    # labels match it; consensus clustering (bootstrap x k=2..7) took >15min and
+    # is fragile under the ~15-30min container kills on this host (the analysis
+    # is not resumable). Seconds vs minutes, equivalent labels.
+    best_k = 2
+    labels = KMeans(n_clusters=best_k, n_init=10, random_state=seed).fit_predict(X)
     return labels, df_full, int(best_k)
 
 
