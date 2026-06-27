@@ -33,7 +33,7 @@ from common.hashing import hash_object as content_hash
 from vitaldb_aki.data.client import fetch_cases
 from vitaldb_aki.features.base import FeatureSpec, audit_specs
 from vitaldb_aki.features import (
-    hemodynamics, pfds, pk, pkpd_sensitivity, risk_factors, tabular, temporal,
+    aline_morphology, hemodynamics, pfds, pk, pkpd_sensitivity, risk_factors, tabular, temporal,
 )
 
 
@@ -41,7 +41,7 @@ from vitaldb_aki.features import (
 # tabular (§7A/B/D/E), hemodynamics (§7C), pk (§8, Spearman 0.96 + bolus split),
 # temporal (§7C/9), risk_factors (§7A/B labs+flags), aline_morphology (§7F),
 # cross_waveform (§7F novel coupling biomarkers).
-MODULES = [tabular, hemodynamics, pk, temporal, risk_factors, pfds, pkpd_sensitivity]
+MODULES = [tabular, hemodynamics, pk, temporal, risk_factors, pfds, pkpd_sensitivity, aline_morphology]
 
 
 # ---------------------------------------------------------------------------
@@ -119,17 +119,35 @@ def _load_cohort(cfg: dict[str, Any]) -> list[dict]:
     raise FileNotFoundError(f"no cohort in {cdir} -- run `cli.py cohort-composite` first")
 
 
-def _extract_parallel(m, cfg, cases_by_id, caseids, workers):
-    """Run one module's extract across cases in a thread pool. Track downloads are
-    I/O-bound, so threads give a big wall-clock win; the per-case extract calls are
-    independent and the /trks index is pre-warmed before fan-out to avoid a race."""
+def _extract_parallel(m, cfg, cases_by_id, caseids, workers, partial_path=None):
+    """Run one module's extract across cases in a thread pool, RESUMABLY: each
+    completed case is appended to `partial_path` (jsonl) as it finishes, so a
+    restart/hang reloads finished cases and only re-processes the remainder. Track
+    downloads are I/O-bound; the /trks index is pre-warmed before fan-out."""
     from concurrent.futures import ThreadPoolExecutor
     merged: dict[str, dict] = {}
+    done: set[str] = set()
+    if partial_path and os.path.exists(partial_path):
+        with open(partial_path, encoding="utf-8") as fh:
+            for ln in fh:
+                try:
+                    rec = json.loads(ln)
+                    merged[rec["caseid"]] = rec["feats"]; done.add(rec["caseid"])
+                except Exception:
+                    continue
+    todo = [c for c in caseids if c not in done]
     def one(cid):
-        return m.extract(cfg, cases_by_id, [cid])
-    with ThreadPoolExecutor(max_workers=workers) as ex:
-        for d in ex.map(one, caseids):
-            merged.update(d)
+        return cid, m.extract(cfg, cases_by_id, [cid])
+    fh = open(partial_path, "a", encoding="utf-8") if partial_path else None
+    try:
+        with ThreadPoolExecutor(max_workers=workers) as ex:
+            for cid, d in ex.map(one, todo):
+                merged.update(d)
+                if fh is not None:
+                    fh.write(json.dumps({"caseid": cid, "feats": d.get(cid)}) + "\n"); fh.flush()
+    finally:
+        if fh is not None:
+            fh.close()
     return merged
 
 
@@ -167,11 +185,16 @@ def build_matrix(cfg: dict[str, Any], modules: list[Any] | None = None,
 
         print(f"[build_matrix] {mod_name}: cache miss -- extracting ...")
         uses_tracks = getattr(m, "USES_TRACKS", mod_name in ("hemodynamics", "pk"))
+        partial = cache_file + ".partial"
         if uses_tracks and workers > 1:
-            feats = _extract_parallel(m, cfg, cases_by_id, caseids, workers)
+            feats = _extract_parallel(m, cfg, cases_by_id, caseids, workers, partial)
         else:
             feats = m.extract(cfg, cases_by_id, caseids)
         _save_module_cache(cache_file, feats)
+        try:
+            os.remove(partial)
+        except OSError:
+            pass
         print(f"[build_matrix] {mod_name}: cached to {cache_file}")
         per_module.append(feats)
     feat_names = [s.name for s in all_specs]
