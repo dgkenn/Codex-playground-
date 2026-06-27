@@ -1,2 +1,2 @@
-ladder_collect: 2520s, 4 series -> gha_data/ladders_r28282232893.jsonl.gz
-done: 56 polls, 0 crossable violations seen
+ladder_collect: 2520s, 4 series -> gha_data/ladders_r28283213825.jsonl.gz
+done: 56 polls, 6 crossable violations seen
