@@ -134,6 +134,23 @@ RESP_BAND_LO: float = 0.05
 RESP_BAND_HI: float = 0.40
 
 # ---------------------------------------------------------------------------
+# BURDEN (cumulative-dose) threshold (binding; pre-registered).
+#
+# xwave_decoupling_burden_min mirrors the hypotension-dose paradigm for the
+# central-peripheral DECOUPLING state: minutes of intraop time in which the
+# per-window decoupling (1 - |corr(ART pulse amplitude, PPG pulse amplitude)|)
+# exceeds DECOUPLING_HIGH_THR, time-weighted with the same 10 s gap cap used by
+# pfds.py / aline_morphology. Decoupling near 0 = central and peripheral pulse
+# amplitudes track tightly (coupled); a sustained high value flags
+# microcirculatory failure (peripheral perfusion falling while central pressure
+# is maintained). 0.50 corresponds to |corr| < 0.50 -- a substantial loss of
+# central-peripheral coupling (more than half the shared variance gone).
+# ---------------------------------------------------------------------------
+DECOUPLING_HIGH_THR: float = 0.50   # 1-|corr| above this = decoupled state
+# Gap cap shared with pfds.py / aline_morphology.
+BURDEN_MAX_INTER_SAMPLE_DT_S: float = 10.0
+
+# ---------------------------------------------------------------------------
 # Feature specs (all "comprehensive", all "intraop").
 # ---------------------------------------------------------------------------
 SPECS: list[FeatureSpec] = [
@@ -178,6 +195,15 @@ SPECS: list[FeatureSpec] = [
     FeatureSpec("resp_sbp_coupling", "comprehensive", "intraop",
                 "mean squared coherence between CO2 respiratory envelope and "
                 "beat-to-beat SBP in the respiratory band (§7F)"),
+
+    # -- BURDEN (cumulative-dose): minutes in a central-peripheral DECOUPLED
+    #    state (the hypotension-dose paradigm applied to the decoupling
+    #    biomarker). None (never 0) when ART+PPG are unavailable. --
+    FeatureSpec("xwave_decoupling_burden_min", "pk", "intraop",
+                "minutes of intraop time with per-window central-peripheral "
+                "decoupling (1-|corr(ART pulse amplitude, PPG pulse amplitude)|) "
+                "> 0.50, time-weighted, 10 s gap-capped; cumulative-dose analogue "
+                "of hypotension-dose for microcirculatory failure (§7F)"),
 ]
 
 audit_specs(SPECS)   # hard error at import if any feature has postop timing
@@ -447,6 +473,47 @@ def spectral_coherence(x: "Any", y: "Any", fs: float,
     if not in_band.any():
         return None
     return float(np.mean(coh[in_band]))
+
+
+# ===========================================================================
+# BURDEN core (pure / stdlib-only; threshold-integrate the decoupled-state
+# series into MINUTES, time-weighted with the 10 s gap cap). Unit-tested
+# without numpy.
+# ===========================================================================
+
+def decoupling_burden_minutes(
+    decoupling_series: list[tuple[float, float]],
+    high_thr: float = DECOUPLING_HIGH_THR,
+    max_dt_s: float = BURDEN_MAX_INTER_SAMPLE_DT_S,
+) -> float | None:
+    """Minutes in the central-peripheral DECOUPLED state.
+
+    `decoupling_series` is a chronologically ordered list of
+    (t_window_start_seconds, decoupling_value) per-analysis-window points, where
+    decoupling_value = 1 - |corr(ART pulse amplitude, PPG pulse amplitude)| in
+    [0, 1]. Each window owns the forward interval to the next window, capped at
+    `max_dt_s` (a >10 s gap is a recording break, not continuous decoupled-state
+    time -- mirrors pfds.py); a window whose decoupling exceeds `high_thr`
+    contributes that capped interval to the burden.
+
+    Returns minutes (>= 0.0). None when fewer than 2 windows have a defined
+    decoupling value (cannot integrate any interval -> truly missing, not 0.0).
+    0.0 when >= 2 windows exist but decoupling never exceeds the threshold.
+    """
+    pts = [(float(t), float(v)) for t, v in decoupling_series if v is not None]
+    pts.sort(key=lambda r: r[0])
+    if len(pts) < 2:
+        return None
+    total_s = 0.0
+    for i in range(len(pts) - 1):
+        dt = pts[i + 1][0] - pts[i][0]
+        if dt <= 0:
+            continue
+        if dt > max_dt_s:
+            dt = max_dt_s
+        if pts[i][1] > high_thr:
+            total_s += dt
+    return round(total_s / 60.0, 4)
 
 
 # ===========================================================================
@@ -830,6 +897,9 @@ def compute_cross_features(
     all_resp_sbp: list[float] = []
     # For PAT slope: (window_midpoint_min, mean_pat_ms) pairs
     pat_trend_pts: list[tuple[float, float]] = []
+    # For the decoupling BURDEN: per-window (window_start_s, decoupling) points
+    # where decoupling = 1 - |corr(ART pp, PPG amp)| computed WITHIN the window.
+    decoupling_series: list[tuple[float, float]] = []
 
     for ws in window_starts:
         we = ws + ANALYSIS_WINDOW_S
@@ -864,6 +934,19 @@ def compute_cross_features(
             if r2["ppg_amp_arr"].size > 0 and len(all_ppg_amps) == 0:
                 # fallback if ECG was not available
                 all_ppg_amps.extend(r2["ppg_amp_arr"].tolist())
+            # Per-window decoupling for the BURDEN integration: correlate the
+            # window's ART pulse pressures vs PPG amplitudes (paired by index up
+            # to the shorter length). Requires >=3 paired beats with variance.
+            w_art_pp = r2["art_pp_arr"]
+            w_ppg_amp = r2["ppg_amp_arr"]
+            n_pair = min(w_art_pp.size, w_ppg_amp.size)
+            if n_pair >= 3:
+                ap = w_art_pp[:n_pair]
+                pa = w_ppg_amp[:n_pair]
+                if np.std(ap) > 0 and np.std(pa) > 0:
+                    corr_w = float(np.corrcoef(ap, pa)[0, 1])
+                    if corr_w == corr_w:  # not NaN
+                        decoupling_series.append((float(ws), 1.0 - abs(corr_w)))
 
         # --- BRS: ART + ECG ---
         if w_art_t is not None and w_ecg_t is not None:
@@ -950,6 +1033,14 @@ def compute_cross_features(
     if all_resp_sbp:
         any_feature = True
         row["resp_sbp_coupling"] = round(float(np.mean(all_resp_sbp)), 4)
+
+    # Decoupling BURDEN: minutes in the decoupled state across the case. None
+    # (never 0) when <2 windows yield a defined decoupling value (ART+PPG absent
+    # or too few paired beats). When >=2 windows exist but never decouple -> 0.0.
+    db = decoupling_burden_minutes(decoupling_series)
+    if db is not None:
+        any_feature = True
+        row["xwave_decoupling_burden_min"] = db
 
     row["cross_waveform_available"] = 1 if any_feature else 0
     return row

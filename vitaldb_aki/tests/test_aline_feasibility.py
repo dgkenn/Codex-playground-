@@ -27,6 +27,11 @@ from vitaldb_aki.analysis.aline_feasibility import (
     incremental_band,
     rank_auroc,
     benjamini_hochberg,
+    quantile_breaks,
+    assign_quantiles,
+    dose_response_table,
+    cochran_armitage_trend,
+    _spearman_rho,
     SAMPLE_N,
 )
 
@@ -170,6 +175,132 @@ class TestBenjaminiHochberg(unittest.TestCase):
 
     def test_empty(self):
         self.assertEqual(benjamini_hochberg([]), [])
+
+
+# ---------------------------------------------------------------------------
+# 3. Dose-response / monotonicity cores (stdlib-only).
+# ---------------------------------------------------------------------------
+
+class TestQuantileAssign(unittest.TestCase):
+    def test_quartile_breaks_uniform(self):
+        vals = [float(i) for i in range(101)]   # 0..100
+        breaks = quantile_breaks(vals, 4)
+        self.assertEqual(len(breaks), 3)
+        self.assertAlmostEqual(breaks[0], 25.0, delta=0.5)
+        self.assertAlmostEqual(breaks[1], 50.0, delta=0.5)
+        self.assertAlmostEqual(breaks[2], 75.0, delta=0.5)
+
+    def test_assign_balanced(self):
+        vals = [float(i) for i in range(100)]
+        bins = assign_quantiles(vals, 4)
+        # Roughly equal-sized quartiles.
+        counts = [bins.count(k) for k in range(4)]
+        for c in counts:
+            self.assertGreaterEqual(c, 20)
+
+    def test_assign_heavy_ties_to_lower_bin(self):
+        # 80 zeros + 20 ones: zeros cluster in the lowest bin; ties don't create
+        # phantom bins (assign uses <= break so zeros go to bin 0).
+        vals = [0.0] * 80 + [1.0] * 20
+        bins = assign_quantiles(vals, 4)
+        # All zeros land in bin 0 (lowest).
+        for i in range(80):
+            self.assertEqual(bins[i], 0)
+
+
+class TestCochranArmitage(unittest.TestCase):
+    def test_monotone_increasing_trend_significant(self):
+        # Event rate rises 0%,10%,40%,80% across 4 groups of 50 -> strong trend.
+        counts = [50, 50, 50, 50]
+        events = [0, 5, 20, 40]
+        z, p = cochran_armitage_trend(counts, events)
+        self.assertIsNotNone(z)
+        self.assertGreater(z, 0)            # positive trend
+        self.assertLess(p, 0.001)
+
+    def test_flat_no_trend(self):
+        counts = [50, 50, 50, 50]
+        events = [10, 10, 10, 10]           # identical rates -> z ~ 0
+        z, p = cochran_armitage_trend(counts, events)
+        self.assertIsNotNone(z)
+        self.assertAlmostEqual(z, 0.0, delta=1e-6)
+        self.assertGreater(p, 0.5)
+
+    def test_degenerate_returns_none(self):
+        self.assertEqual(cochran_armitage_trend([10], [1]), (None, None))
+        self.assertEqual(cochran_armitage_trend([10, 10], [0, 0]), (None, None))
+        self.assertEqual(cochran_armitage_trend([10, 10], [10, 10]), (None, None))
+
+    def test_decreasing_trend_negative_z(self):
+        counts = [50, 50, 50, 50]
+        events = [40, 20, 5, 0]
+        z, p = cochran_armitage_trend(counts, events)
+        self.assertLess(z, 0)
+        self.assertLess(p, 0.001)
+
+
+class TestSpearman(unittest.TestCase):
+    def test_perfect_monotone(self):
+        x = [0.0, 1.0, 2.0, 3.0, 4.0]
+        y = [0.0, 1.0, 2.0, 3.0, 4.0]
+        self.assertAlmostEqual(_spearman_rho(x, y), 1.0, delta=1e-6)
+
+    def test_perfect_inverse(self):
+        x = [0.0, 1.0, 2.0, 3.0, 4.0]
+        y = [4.0, 3.0, 2.0, 1.0, 0.0]
+        self.assertAlmostEqual(_spearman_rho(x, y), -1.0, delta=1e-6)
+
+    def test_degenerate_none(self):
+        self.assertIsNone(_spearman_rho([1.0, 2.0], [1.0, 2.0]))           # n<3
+        self.assertIsNone(_spearman_rho([1.0, 1.0, 1.0], [1.0, 2.0, 3.0]))  # const
+
+
+class TestDoseResponseTable(unittest.TestCase):
+    def test_monotonic_table(self):
+        # Build 100 cases, burden = index; events monotone in quartile.
+        vals = [float(i) for i in range(100)]
+        events = []
+        for i in range(100):
+            q = i // 25
+            # rate 0, 0.2, 0.4, 0.8 by quartile (deterministic pattern)
+            rate_map = {0: 0, 1: 5, 2: 10, 3: 20}
+            events.append(1 if (i % 25) < rate_map[q] else 0)
+        dr = dose_response_table(vals, events, 4)
+        self.assertEqual(dr["n_quantiles_used"], 4)
+        self.assertTrue(dr["is_monotonic"])
+        self.assertIsNotNone(dr["cochran_armitage_p"])
+        self.assertLess(dr["cochran_armitage_p"], 0.05)
+        # rates ascending
+        rates = [q["rate"] for q in dr["quantiles"]]
+        self.assertEqual(rates, sorted(rates))
+
+    def test_non_monotonic_flagged(self):
+        vals = [float(i) for i in range(100)]
+        events = []
+        for i in range(100):
+            q = i // 25
+            # U-shape: high, low, low, high -> NOT monotonic
+            rate_map = {0: 20, 1: 2, 2: 2, 3: 20}
+            events.append(1 if (i % 25) < rate_map[q] else 0)
+        dr = dose_response_table(vals, events, 4)
+        self.assertFalse(dr["is_monotonic"])
+
+    def test_underpowered_returns_empty(self):
+        # n < DOSE_RESPONSE_MIN_N -> no table.
+        dr = dose_response_table([1.0, 2.0, 3.0], [0, 1, 0], 4)
+        self.assertEqual(dr["n_quantiles_used"], 0)
+        self.assertIsNone(dr["is_monotonic"])
+
+    def test_heavy_ties_collapse_quantiles(self):
+        # 60 zeros (no events) + 40 positive burdens (events) -> the zero bin
+        # collapses; realised quantiles < requested but still well-formed.
+        vals = [0.0] * 60 + [float(i) for i in range(1, 41)]
+        events = [0] * 60 + [1 if i % 2 == 0 else 0 for i in range(40)]
+        dr = dose_response_table(vals, events, 4)
+        self.assertGreaterEqual(dr["n_quantiles_used"], 2)
+        # Every realised quantile has >=1 case.
+        for q in dr["quantiles"]:
+            self.assertGreaterEqual(q["n"], 1)
 
 
 if __name__ == "__main__":

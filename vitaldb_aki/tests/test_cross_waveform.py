@@ -32,6 +32,8 @@ from vitaldb_aki.features.cross_waveform import (
     brs_sequence,
     spectral_coherence,
     compute_cross_features,
+    decoupling_burden_minutes,
+    DECOUPLING_HIGH_THR,
 )
 from vitaldb_aki.features.base import audit_specs
 
@@ -48,9 +50,15 @@ class TestSpecs(unittest.TestCase):
         for s in SPECS:
             self.assertEqual(s.timing, "intraop", msg=f"{s.name} timing={s.timing!r}")
 
-    def test_all_comprehensive(self):
+    def test_fset_membership(self):
+        # All coupling features are comprehensive; the cumulative-dose burden is
+        # the pk refinement (mirrors the aline_morphology burdens). Allow both,
+        # forbid anything else.
         for s in SPECS:
-            self.assertEqual(s.fset, "comprehensive", msg=f"{s.name} fset={s.fset!r}")
+            self.assertIn(s.fset, ("comprehensive", "pk"),
+                          msg=f"{s.name} fset={s.fset!r}")
+        pk_names = {s.name for s in SPECS if s.fset == "pk"}
+        self.assertEqual(pk_names, {"xwave_decoupling_burden_min"})
 
     def test_no_duplicate_names(self):
         names = [s.name for s in SPECS]
@@ -64,8 +72,44 @@ class TestSpecs(unittest.TestCase):
             "art_ppg_amp_corr", "central_peripheral_decoupling",
             "brs_mean", "brs_n_sequences",
             "cardiopulm_coherence", "resp_sbp_coupling",
+            "xwave_decoupling_burden_min",
         ):
             self.assertIn(req, names)
+
+
+# ===========================================================================
+# 1b. Decoupling BURDEN core (stdlib-only -- no numpy needed).
+# ===========================================================================
+
+class TestDecouplingBurden(unittest.TestCase):
+    def test_known_minutes_gap_capped(self):
+        # 5 windows 300 s apart, all decoupled (0.9 > 0.50). Each of the first 4
+        # windows owns min(300, 10) = 10 s -> 40 s = 0.667 min.
+        series = [(float(i * 300), 0.9) for i in range(5)]
+        self.assertAlmostEqual(decoupling_burden_minutes(series),
+                               40.0 / 60.0, delta=1e-3)
+
+    def test_contiguous_windows(self):
+        # 7 windows 5 s apart, all decoupled -> first 6 own 5 s each = 30 s.
+        series = [(float(i * 5), 0.8) for i in range(7)]
+        self.assertAlmostEqual(decoupling_burden_minutes(series),
+                               30.0 / 60.0, delta=1e-3)
+
+    def test_never_decoupled_zero(self):
+        series = [(float(i * 5), 0.1) for i in range(5)]
+        self.assertEqual(decoupling_burden_minutes(series), 0.0)
+
+    def test_one_window_none(self):
+        # < 2 windows -> cannot integrate -> None (truly missing, not 0.0).
+        self.assertIsNone(decoupling_burden_minutes([(0.0, 0.9)]))
+
+    def test_empty_none(self):
+        self.assertIsNone(decoupling_burden_minutes([]))
+
+    def test_threshold_boundary(self):
+        # Exactly at threshold (0.50) is NOT abnormal (strict >).
+        series = [(0.0, DECOUPLING_HIGH_THR), (5.0, DECOUPLING_HIGH_THR)]
+        self.assertEqual(decoupling_burden_minutes(series), 0.0)
 
 
 # ===========================================================================

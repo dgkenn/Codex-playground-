@@ -85,6 +85,28 @@ FEATURE_MATRIX_FILE = "feature_matrix.csv"
 OUTCOMES = ("organ_renal", "composite")
 HYPOTENSION_BASELINE_COL = "map_auc_below_65"
 
+# BURDEN (cumulative-dose) biomarkers screened for a MONOTONIC dose-response with
+# postoperative AKI. These mirror the accepted hypotension-dose paradigm
+# (minutes/AUC below MAP 65) but are derived from the arterial WAVEFORM. The
+# headline is art_perfusion_failure_burden_min (occult failure at adequate
+# pressure); map_auc_below_65 is reused as the POSITIVE-CONTROL comparator (a
+# burden already known to be monotonically dose-responsive for AKI).
+BURDEN_BIOMARKERS = (
+    "art_perfusion_failure_burden_min",   # HEADLINE
+    "art_perfusion_failure_burden_auc",
+    "art_ppv_burden_min",
+    "art_narrow_pp_burden_min",
+    "art_low_dpdt_burden_min",
+    "art_low_dbp_burden_min",
+    "xwave_decoupling_burden_min",
+)
+POSITIVE_CONTROL_BURDEN = HYPOTENSION_BASELINE_COL   # map_auc_below_65
+# Quartiles when enough events, else tertiles when sparse.
+DOSE_RESPONSE_MAX_QUANTILES = 4
+DOSE_RESPONSE_MIN_QUANTILES = 3
+# Minimum cases-with-signal to even attempt a quantile dose-response.
+DOSE_RESPONSE_MIN_N = 20
+
 # Power thresholds / honesty flags.
 MIN_EVENTS_FEASIBLE = 10      # below this a cell is "feasibility-only, underpowered"
 FDR_ALPHA = 0.05
@@ -229,6 +251,225 @@ def _to_float(v: Any) -> float | None:
         return float(s)
     except (TypeError, ValueError):
         return None
+
+
+# ===========================================================================
+# DOSE-RESPONSE / MONOTONICITY cores (pure, stdlib-only -- unit-tested without
+# the science stack). These implement the "does the burden monotonically track
+# AKI risk" check that mirrors the accepted hypotension-dose dose-response.
+# ===========================================================================
+
+def quantile_breaks(values: list[float], n_quantiles: int) -> list[float]:
+    """Interior quantile cut-points (n_quantiles-1 of them) for `values`.
+
+    Pure / stdlib-only. Uses the (k/n_quantiles) sample percentiles via linear
+    interpolation between order statistics (numpy-free). Returns the interior
+    breakpoints (e.g. for quartiles: the 25th/50th/75th percentile). Duplicate
+    breakpoints (heavy ties, common for burdens that are 0.0 for many cases) are
+    NOT removed here; assign_quantiles handles ties so empty bins don't appear.
+    """
+    xs = sorted(float(v) for v in values)
+    n = len(xs)
+    if n == 0 or n_quantiles < 2:
+        return []
+    breaks: list[float] = []
+    for k in range(1, n_quantiles):
+        q = k / n_quantiles
+        pos = q * (n - 1)
+        lo = int(math.floor(pos))
+        hi = int(math.ceil(pos))
+        if lo == hi:
+            breaks.append(xs[lo])
+        else:
+            frac = pos - lo
+            breaks.append(xs[lo] * (1.0 - frac) + xs[hi] * frac)
+    return breaks
+
+
+def assign_quantiles(values: list[float], n_quantiles: int) -> list[int]:
+    """Assign each value to a 0-based quantile bin index.
+
+    Pure / stdlib-only. A value is placed in the lowest bin whose upper break it
+    does NOT exceed (<= break), so ties cluster in the lower bin (the natural,
+    reproducible choice when a burden has many identical 0.0 values). The result
+    has the same length/order as `values`; bins range 0..(n_quantiles-1) but some
+    bins may be empty under heavy ties (the dose-response table then reports the
+    non-empty bins only).
+    """
+    breaks = quantile_breaks(values, n_quantiles)
+    out: list[int] = []
+    for v in values:
+        fv = float(v)
+        b = 0
+        for thr in breaks:
+            if fv <= thr:
+                break
+            b += 1
+        out.append(b)
+    return out
+
+
+def dose_response_table(values: list[float], events: list[int],
+                        n_quantiles: int) -> dict[str, Any]:
+    """Per-quantile event RATE table + a monotonic-trend assessment.
+
+    Pure / stdlib-only.
+
+    Parameters
+    ----------
+    values : burden value per case (same length as events).
+    events : 0/1 outcome per case.
+    n_quantiles : requested number of quantiles (collapsed to the number of
+        NON-EMPTY bins actually realised, so heavy-tie burdens don't show
+        phantom empty quantiles).
+
+    Returns dict with:
+      n, events, n_quantiles_used,
+      quantiles : list of {q, n, events, rate, lo, hi} (ascending burden),
+      is_monotonic : True iff the realised per-quantile rates are
+                     non-decreasing across ascending burden,
+      spearman_rho : Spearman rho of (quantile rank vs binary event) -- a
+                     stdlib rank-correlation as a coarse monotone-trend signal,
+      cochran_armitage_z, cochran_armitage_p : CA linear-trend test across the
+                     ordered quantiles (normal approximation, two-sided).
+    """
+    n = len(values)
+    res: dict[str, Any] = {
+        "n": n, "events": int(sum(events)),
+        "n_quantiles_used": 0, "quantiles": [],
+        "is_monotonic": None, "spearman_rho": None,
+        "cochran_armitage_z": None, "cochran_armitage_p": None,
+    }
+    if n < DOSE_RESPONSE_MIN_N or n != len(events):
+        return res
+    if len(set(events)) < 2:
+        return res
+
+    bins = assign_quantiles(values, n_quantiles)
+    # Group by realised (non-empty) bin, re-ranked to a dense 0..K-1 ascending.
+    used = sorted(set(bins))
+    remap = {b: i for i, b in enumerate(used)}
+    K = len(used)
+    res["n_quantiles_used"] = K
+    if K < 2:
+        return res
+
+    counts = [0] * K
+    ev = [0] * K
+    for b, e in zip(bins, events):
+        idx = remap[b]
+        counts[idx] += 1
+        ev[idx] += int(e)
+
+    quantiles = []
+    rates = []
+    for i in range(K):
+        rate = (ev[i] / counts[i]) if counts[i] > 0 else None
+        rates.append(rate)
+        # value range of this realised bin
+        bin_vals = [values[j] for j in range(n) if remap[bins[j]] == i]
+        quantiles.append({
+            "q": i, "n": counts[i], "events": ev[i],
+            "rate": round(rate, 4) if rate is not None else None,
+            "lo": round(min(bin_vals), 4) if bin_vals else None,
+            "hi": round(max(bin_vals), 4) if bin_vals else None,
+        })
+    res["quantiles"] = quantiles
+
+    # Monotonic = rates non-decreasing across ascending burden quantiles.
+    defined = [r for r in rates if r is not None]
+    if len(defined) >= 2:
+        res["is_monotonic"] = all(
+            rates[i] is not None and rates[i + 1] is not None
+            and rates[i + 1] >= rates[i] - 1e-12
+            for i in range(K - 1)
+        )
+
+    # Spearman rho of (quantile rank, event) -- coarse monotone-trend signal.
+    ranks = [float(remap[b]) for b in bins]
+    res["spearman_rho"] = _spearman_rho(ranks, [float(e) for e in events])
+
+    # Cochran-Armitage trend test across ordered quantiles (scores = bin index).
+    z, p = cochran_armitage_trend(counts, ev)
+    res["cochran_armitage_z"] = round(z, 4) if z is not None else None
+    res["cochran_armitage_p"] = round(p, 6) if p is not None else None
+    return res
+
+
+def _spearman_rho(x: list[float], y: list[float]) -> float | None:
+    """Spearman rank correlation (stdlib; average ranks for ties). None if
+    degenerate (n<3 or a constant series)."""
+    n = len(x)
+    if n < 3 or n != len(y):
+        return None
+
+    def _rank(a: list[float]) -> list[float]:
+        order = sorted(range(len(a)), key=lambda i: a[i])
+        ranks = [0.0] * len(a)
+        i = 0
+        while i < len(a):
+            j = i
+            while j < len(a) and a[order[j]] == a[order[i]]:
+                j += 1
+            avg = (i + j - 1) / 2.0 + 1.0  # 1-based average rank
+            for k in range(i, j):
+                ranks[order[k]] = avg
+            i = j
+        return ranks
+
+    rx = _rank(x)
+    ry = _rank(y)
+    mx = sum(rx) / n
+    my = sum(ry) / n
+    sxy = sum((rx[i] - mx) * (ry[i] - my) for i in range(n))
+    sxx = sum((rx[i] - mx) ** 2 for i in range(n))
+    syy = sum((ry[i] - my) ** 2 for i in range(n))
+    if sxx <= 0 or syy <= 0:
+        return None
+    return round(sxy / math.sqrt(sxx * syy), 4)
+
+
+def cochran_armitage_trend(counts: list[int], events: list[int]
+                           ) -> tuple[float | None, float | None]:
+    """Cochran-Armitage trend test across ordered groups (scores = 0..K-1).
+
+    Pure / stdlib-only. Tests for a LINEAR trend in the event proportion across
+    the ordered quantile groups. `counts[i]` = cases in group i, `events[i]` =
+    events in group i. Uses the standard CA statistic with a normal
+    approximation (two-sided p via the error function). Returns (z, p), or
+    (None, None) if degenerate (one group, no events, or all-or-nothing events).
+
+    CA statistic
+    ------------
+        T  = sum_i s_i * (a_i - n_i * pbar)      (s_i = group score = i)
+        with pbar = total_events / total_n, and
+        Var(T) = pbar*(1-pbar) * [ sum_i n_i s_i^2 - (sum_i n_i s_i)^2 / N ]
+        z = T / sqrt(Var(T))
+    """
+    K = len(counts)
+    if K < 2 or K != len(events):
+        return None, None
+    N = sum(counts)
+    A = sum(events)
+    if N <= 0 or A <= 0 or A >= N:
+        return None, None
+    pbar = A / N
+    scores = list(range(K))
+    T = sum(scores[i] * (events[i] - counts[i] * pbar) for i in range(K))
+    sum_ns = sum(counts[i] * scores[i] for i in range(K))
+    sum_ns2 = sum(counts[i] * scores[i] ** 2 for i in range(K))
+    var = pbar * (1.0 - pbar) * (sum_ns2 - (sum_ns ** 2) / N)
+    if var <= 0:
+        return None, None
+    z = T / math.sqrt(var)
+    # Two-sided p via the normal CDF (erf).
+    p = 2.0 * (1.0 - _norm_cdf(abs(z)))
+    return z, max(0.0, min(1.0, p))
+
+
+def _norm_cdf(z: float) -> float:
+    """Standard-normal CDF via math.erf (stdlib)."""
+    return 0.5 * (1.0 + math.erf(z / math.sqrt(2.0)))
 
 
 # ===========================================================================
@@ -603,6 +844,180 @@ def _screen_feature(rows, feat, outcome, baseline_by_cid, outcomes_by_cid,
     return res
 
 
+# --- Dose-response / monotonicity screen -----------------------------------
+
+def _logistic_linear_trend_p(quantile_ranks: list[int], y: list[int]) -> float | None:
+    """LR p-value for a linear logistic trend of `y` on the quantile rank.
+
+    Fits y ~ 1 vs y ~ 1 + quantile_rank and returns the chi-square(1) LR p from
+    the deviance difference. numpy/sklearn/scipy lazy. None if degenerate.
+    """
+    try:
+        import numpy as np
+        from sklearn.linear_model import LogisticRegression
+        from scipy import stats as _stats
+    except Exception:
+        return None
+
+    yy = np.asarray(y, dtype=int)
+    x = np.asarray(quantile_ranks, dtype=float)
+    if yy.size < DOSE_RESPONSE_MIN_N or len(set(yy.tolist())) < 2:
+        return None
+    if x.std() <= 0:
+        return None
+
+    def _dev(X):
+        lr = LogisticRegression(max_iter=1000, solver="lbfgs", C=1e6)
+        lr.fit(X, yy)
+        p = lr.predict_proba(X)[:, 1]
+        eps = 1e-12
+        ll = float(np.sum(yy * np.log(p + eps) + (1 - yy) * np.log(1 - p + eps)))
+        return -2.0 * ll
+
+    try:
+        # Intercept-only baseline: a single constant column (LogisticRegression
+        # always fits an intercept, so the "null" is a degenerate-variance col).
+        x0 = np.zeros((yy.size, 1))
+        xc = ((x - x.mean()) / x.std()).reshape(-1, 1)
+        dev0 = _dev(x0)
+        dev1 = _dev(xc)
+    except Exception:
+        return None
+    stat = max(0.0, dev0 - dev1)
+    return float(1.0 - _stats.chi2.cdf(stat, df=1))
+
+
+def _dose_response_for_burden(rows, burden, outcome, outcomes_by_cid,
+                              baseline_by_cid, subj_by_cid, seed,
+                              require_aline=True):
+    """Dose-response + monotonicity + incremental-over-hypotension for ONE burden.
+
+    Builds the available-signal subset (cases with a non-None burden value and a
+    non-None outcome; for waveform burdens also gated on aline_available), then:
+      * quantiles the burden (quartiles, or tertiles when sparse) and reports the
+        per-quantile event RATE table,
+      * tests monotonic trend (Cochran-Armitage + Spearman rho + logistic-trend p),
+      * incremental AUROC of the CONTINUOUS burden over map_auc_below_65
+        (reusing _incremental_logit -- logistic base vs base+burden, DeLong-style
+        in-sample ΔAUROC + patient-clustered bootstrap CI + LR p).
+
+    The positive-control burden (map_auc_below_65) is screened with the SAME path
+    (its incremental-over-itself is ~0 by construction; the dose-response table is
+    the meaningful comparator). Returns a result dict. numpy/sklearn lazy (only in
+    _incremental_logit / _logistic_linear_trend_p).
+    """
+    vals: list[float] = []
+    evs: list[int] = []
+    xb: list[float] = []   # hypotension baseline for the incremental test
+    grp: list[str] = []
+    n_avail = 0
+    is_positive_control = (burden == POSITIVE_CONTROL_BURDEN)
+
+    for r in rows:
+        cid = str(r.get("caseid", "")).strip()
+        if require_aline and not is_positive_control:
+            if str(r.get("aline_available", "")).strip() not in ("1", "1.0"):
+                continue
+        oc = outcomes_by_cid.get(cid, {}).get(outcome)
+        # The positive control lives in the feature matrix (baseline), not the
+        # sample CSV; everything else is a sample-CSV column.
+        if is_positive_control:
+            bv = baseline_by_cid.get(cid)
+        else:
+            bv = _to_float(r.get(burden))
+        base = baseline_by_cid.get(cid)
+        if oc is None or bv is None:
+            continue
+        n_avail += 1
+        vals.append(bv)
+        evs.append(int(round(oc)))
+        xb.append(base if base is not None else 0.0)
+        grp.append(subj_by_cid.get(cid, cid))
+
+    n = len(vals)
+    events = sum(evs)
+    res: dict[str, Any] = {
+        "burden": burden, "outcome": outcome,
+        "is_positive_control": is_positive_control,
+        "n": n, "events": events, "n_signal_available": n_avail,
+        "underpowered": bool(events < MIN_EVENTS_FEASIBLE or n < DOSE_RESPONSE_MIN_N),
+        "power_flag": "feasibility-only, underpowered",
+        "dose_response": None, "incremental": None, "logistic_trend_p": None,
+    }
+    if n < DOSE_RESPONSE_MIN_N or events < 3 or len(set(evs)) < 2:
+        return res
+
+    # Quartiles when enough events, else tertiles when sparse.
+    nq = (DOSE_RESPONSE_MAX_QUANTILES if events >= 2 * DOSE_RESPONSE_MAX_QUANTILES
+          else DOSE_RESPONSE_MIN_QUANTILES)
+    dr = dose_response_table(vals, evs, nq)
+    res["dose_response"] = dr
+
+    # Logistic linear-trend p on the quantile rank.
+    bins = assign_quantiles(vals, dr.get("n_quantiles_used") or nq)
+    res["logistic_trend_p"] = _logistic_linear_trend_p(bins, evs)
+
+    # Incremental AUROC of the CONTINUOUS burden over the hypotension baseline.
+    # (For the positive control this is ~0 by construction -- base == feature.)
+    res["incremental"] = _incremental_logit(evs, xb, vals, grp, seed=seed)
+    res["incremental_band"] = incremental_band(
+        res["incremental"].get("auroc_base"),
+        res["incremental"].get("auroc_plus"))
+    return res
+
+
+def run_dose_response(cfg, rows, outcomes_by_cid, baseline_by_cid,
+                      subj_by_cid, seed):
+    """Dose-response / monotonicity screen across all BURDEN biomarkers + the
+    map_auc_below_65 positive control, for organ_renal + composite. BH-FDR is
+    applied across the burden biomarkers' Cochran-Armitage trend p-values (the
+    positive control is excluded from the FDR set -- it is a reference, not a
+    discovery). Returns a dict consumed by run_screen + the report writer.
+    """
+    burdens = [POSITIVE_CONTROL_BURDEN] + [
+        b for b in BURDEN_BIOMARKERS if b != POSITIVE_CONTROL_BURDEN]
+    # Only screen burdens that actually appear as a column (or the positive
+    # control, which comes from the feature matrix).
+    present_cols: set[str] = set()
+    for r in rows:
+        present_cols.update(r.keys())
+    screened = [b for b in burdens
+                if b == POSITIVE_CONTROL_BURDEN or b in present_cols]
+
+    grid: list[dict[str, Any]] = []
+    for b in screened:
+        for oc in OUTCOMES:
+            grid.append(_dose_response_for_burden(
+                rows, b, oc, outcomes_by_cid, baseline_by_cid,
+                subj_by_cid, seed))
+
+    # BH-FDR across the CA trend p-values of the BURDEN cells (exclude the
+    # positive control + underpowered/undefined cells).
+    ca_pvals: list[float | None] = []
+    for c in grid:
+        if c.get("is_positive_control"):
+            ca_pvals.append(None)
+            continue
+        dr = c.get("dose_response") or {}
+        ca_pvals.append(dr.get("cochran_armitage_p"))
+    qvals = benjamini_hochberg(ca_pvals, alpha=FDR_ALPHA)
+    for c, q in zip(grid, qvals):
+        c["ca_trend_q"] = round(q, 6) if q is not None else None
+
+    return {
+        "headline_burden": "art_perfusion_failure_burden_min",
+        "positive_control": POSITIVE_CONTROL_BURDEN,
+        "burdens_screened": screened,
+        "grid": grid,
+        "power_caveat": (
+            "Dose-response is computed on the ~600-case feasibility sample "
+            "(~20 renal events); EVERY quantile cell is underpowered. This is a "
+            "GO/NO-GO + does-it-look-monotonic check, NOT a definitive "
+            "dose-response. ~20 events split across 3-4 quantiles leaves "
+            "single-digit events per bin."),
+    }
+
+
 # --- Predictive-enrichment / treatment-interaction look --------------------
 
 def _build_exposure_frame(cfg, sample_cids):
@@ -845,6 +1260,11 @@ def run_screen(cfg: dict[str, Any]) -> dict[str, Any]:
     for c, q in zip(grid, qvals):
         c["incremental_q"] = round(q, 6) if q is not None else None
 
+    # Dose-response / monotonicity screen across the BURDEN biomarkers (+ the
+    # map_auc_below_65 positive control).
+    dose_response = run_dose_response(cfg, rows, outcomes_by_cid,
+                                      baseline_by_cid, subj_by_cid, seed)
+
     # Predictive-enrichment / treatment-interaction look.
     enrichment = run_predictive_enrichment(cfg, rows, outcomes_by_cid,
                                            subj_by_cid, seed)
@@ -870,6 +1290,7 @@ def run_screen(cfg: dict[str, Any]) -> dict[str, Any]:
                          "definitive estimate."),
         "grid": grid,
         "renal_ranked": [c["feature"] for c in renal_ranked],
+        "dose_response": dose_response,
         "predictive_enrichment": enrichment,
     }
 
@@ -969,6 +1390,9 @@ def _write_feasibility_md(results: dict, cfg: dict) -> str:
             f"{_f(c.get('incremental_q'), '{:.3f}')} | "
             f"{inc.get('n', c.get('n'))} | {inc.get('events', c.get('events'))} |")
 
+    # Burden dose-response / monotonicity.
+    lines += _burden_dose_response_lines(results)
+
     # (2) Predictive enrichment.
     enr = results.get("predictive_enrichment", {})
     lines += ["", "## (2) Does the waveform point to a LEVER? "
@@ -1027,6 +1451,114 @@ def _write_feasibility_md(results: dict, cfg: dict) -> str:
         fh.write("\n".join(lines))
     print(f"[aline_feasibility] ALINE_FEASIBILITY.md -> {md_path}")
     return md_path
+
+
+def _burden_dose_response_lines(results: dict) -> list[str]:
+    """Markdown for the "Burden dose-response" section: per-quartile AKI rate,
+    monotonic?, trend p, incremental ΔAUROC -- led by the headline burden vs the
+    map_auc_below_65 positive control, with an honest power caveat."""
+    dr = results.get("dose_response") or {}
+    grid = dr.get("grid") or []
+    if not grid:
+        return ["", "## (1b) Burden dose-response", "",
+                "_Dose-response not computed (no burden columns / too few events)._",
+                ""]
+    cell = {(c["burden"], c["outcome"]): c for c in grid}
+    headline = dr.get("headline_burden", "art_perfusion_failure_burden_min")
+    pos = dr.get("positive_control", HYPOTENSION_BASELINE_COL)
+
+    def _f(v, spec="{:.3f}"):
+        return spec.format(v) if isinstance(v, (int, float)) else "—"
+
+    lines = ["", "## (1b) Burden dose-response (monotonic dose-response with AKI risk)",
+             "",
+             "Each cumulative-dose burden (minutes / AUC in an abnormal waveform "
+             "state, time-weighted with a 10 s gap cap) is quartiled (tertiled when "
+             "sparse) across cases WITH the signal; we report the per-quantile "
+             "**organ_renal** rate, whether rates are non-decreasing (monotonic), "
+             "the Cochran-Armitage linear-trend p (BH-FDR across burdens), and the "
+             "incremental ΔAUROC of the continuous burden OVER the hypotension "
+             f"baseline `{HYPOTENSION_BASELINE_COL}`.",
+             "",
+             f"**Lead comparison:** the headline `{headline}` (occult perfusion "
+             f"failure at adequate pressure) vs the `{pos}` POSITIVE CONTROL (the "
+             "accepted hypotension-dose, known to be monotonically dose-responsive "
+             "for AKI). If the positive control looks monotonic here and the "
+             "headline tracks it, the waveform burden is plausibly real.",
+             "",
+             f"> {dr.get('power_caveat', '')}",
+             "",
+             "### Per-quartile organ_renal rate + monotonic trend",
+             "",
+             "| Burden | role | quantile rates (low->high) | monotonic? | CA z | "
+             "CA p | q (FDR) | logit-trend p | ΔAUROC vs hypotension | n | events |",
+             "|---|---|---|---|---|---|---|---|---|---|---|"]
+
+    # Order: positive control first, then headline, then the rest.
+    order = [pos, headline] + [
+        b for b in dr.get("burdens_screened", [])
+        if b not in (pos, headline)]
+    seen = set()
+    for b in order:
+        if b in seen:
+            continue
+        seen.add(b)
+        c = cell.get((b, "organ_renal"))
+        if c is None:
+            continue
+        role = ("positive control" if c.get("is_positive_control")
+                else ("HEADLINE" if b == headline else "burden"))
+        drr = c.get("dose_response") or {}
+        qs = drr.get("quantiles") or []
+        rate_str = " / ".join(
+            (f"{q['rate']:.3f}" if q.get("rate") is not None else "—") for q in qs
+        ) if qs else "—"
+        mono = drr.get("is_monotonic")
+        mono_s = "yes" if mono is True else ("no" if mono is False else "—")
+        inc = c.get("incremental") or {}
+        lines.append(
+            f"| `{b}` | {role} | {rate_str} | {mono_s} | "
+            f"{_f(drr.get('cochran_armitage_z'))} | "
+            f"{_f(drr.get('cochran_armitage_p'))} | "
+            f"{_f(c.get('ca_trend_q'))} | {_f(c.get('logistic_trend_p'))} | "
+            f"{_f(inc.get('delta_auroc'), '{:+.3f}')} | "
+            f"{c.get('n')} | {c.get('events')} |")
+
+    # Headline spotlight.
+    hc = cell.get((headline, "organ_renal"))
+    if hc is not None:
+        hdr = hc.get("dose_response") or {}
+        lines += ["", f"### Headline spotlight: `{headline}`", ""]
+        qs = hdr.get("quantiles") or []
+        if qs:
+            lines += ["| quantile | burden range (min) | n | events | organ_renal rate |",
+                      "|---|---|---|---|---|"]
+            for q in qs:
+                lines.append(
+                    f"| Q{q['q'] + 1} | [{_f(q.get('lo'))}, {_f(q.get('hi'))}] | "
+                    f"{q.get('n')} | {q.get('events')} | "
+                    f"{_f(q.get('rate'))} |")
+        mono = hdr.get("is_monotonic")
+        lines += ["",
+                  f"- Monotonic (rates non-decreasing across quartiles): "
+                  f"**{'yes' if mono is True else ('no' if mono is False else 'undetermined')}**.",
+                  f"- Cochran-Armitage trend p = {_f(hdr.get('cochran_armitage_p'))}; "
+                  f"Spearman rho = {_f(hdr.get('spearman_rho'))}; "
+                  f"logistic-trend p = {_f(hc.get('logistic_trend_p'))}.",
+                  f"- Incremental ΔAUROC over `{HYPOTENSION_BASELINE_COL}` = "
+                  f"{_f((hc.get('incremental') or {}).get('delta_auroc'), '{:+.3f}')}.",
+                  ""]
+
+    lines += [
+        "**Honest caveat.** With ~20 renal events split across 3-4 quantiles, "
+        "each bin holds single-digit events: a non-monotonic blip or a "
+        "spuriously monotonic ramp is entirely plausible by chance. A monotonic "
+        "look here (especially if the `" + pos + "` positive control is ALSO "
+        "monotonic on the same sample) is a GO signal for the full extraction "
+        "where the dose-response can be properly powered; it is NOT a "
+        "dose-response estimate.",
+        ""]
+    return lines
 
 
 def _recommendation_lines(results: dict) -> list[str]:

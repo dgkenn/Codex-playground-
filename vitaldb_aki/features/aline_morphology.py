@@ -142,6 +142,51 @@ AIX_SECOND_DERIV_FRAC: float = 0.04  # smoothing window for the 2nd derivative
                                      #   (fraction of the upstroke length)
 
 # ---------------------------------------------------------------------------
+# BURDEN (cumulative-dose) thresholds (binding; pre-registered constants).
+#
+# These mirror the accepted "hypotension dose" (minutes / AUC below MAP 65)
+# paradigm but for the WAVEFORM-derived abnormal STATE. Each burden is the
+# time-integral (in MINUTES) of an abnormal per-beat / per-respiratory-epoch
+# waveform state over the intraop window, time-weighted with the same 10 s gap
+# cap pfds.py uses (a gap >10 s is a recording break, not abnormal-state time).
+#
+#   PPV_HIGH_THR  -- windowed PPV above this flags dynamic preload dependence /
+#       hypovolemia (fluid-responsiveness). 13% is the canonical Michard / PPV
+#       fluid-responsiveness cutpoint (PPV>13% predicts a positive fluid
+#       challenge under controlled ventilation). Above it = abnormal "occult
+#       hypovolemia" state.
+#   PP_LOW_THR    -- pulse pressure below this flags a low stroke-volume state.
+#       30 mmHg is a long-standing bedside low-stroke-volume / low-output
+#       threshold (a narrow pulse pressure is the classic sign of reduced SV).
+#   DPDT_LOW_THR  -- per-beat max upstroke dP/dt below this flags depressed LV
+#       contractility. Healthy resting arterial dP/dt_max is ~ 800-1200 mmHg/s;
+#       values < ~400 mmHg/s indicate markedly depressed contractility / low
+#       cardiac output (a documented low-contractility cut; this is a peripheral
+#       arterial dP/dt surrogate, NOT the LV-catheter +dP/dt, so the cut is set
+#       conservatively low so only clearly depressed beats are counted).
+#   DBP_LOW_THR   -- diastolic BP below this flags inadequate diastolic
+#       perfusion pressure. The kidneys (and coronaries) perfuse largely in
+#       diastole; DBP < 50 mmHg is a documented low-diastolic-perfusion state.
+#
+# PERFUSION-FAILURE (headline) gating: minutes where art MAP is ADEQUATE
+#   (>= MAP_ADEQUATE_THR = 65, the conventional "safe" pressure) yet >=1
+#   waveform-abnormal flag is true (PPV>13% OR PP<30 OR dP/dt low). This is the
+#   waveform analogue of hypotension-dose for OCCULT failure at adequate
+#   pressure -- "pressure is not perfusion." The AUC variant severity-weights
+#   each abnormal minute by how many flags are tripped (1..3) so a beat failing
+#   all three contributes 3x the minutes of a beat failing one.
+# ---------------------------------------------------------------------------
+PPV_HIGH_THR: float = 13.0        # % -- PPV above this = fluid-responsive/hypovolemic
+PP_LOW_THR: float = 30.0          # mmHg -- pulse pressure below this = low stroke volume
+DPDT_LOW_THR: float = 400.0       # mmHg/s -- dP/dt_max below this = depressed contractility
+DBP_LOW_THR: float = 50.0         # mmHg -- diastolic BP below this = poor diastolic perfusion
+MAP_ADEQUATE_THR: float = 65.0    # mmHg -- conventional "adequate" MAP (matches pfds.py)
+
+# Gap cap shared with pfds.py: a between-sample/between-beat interval longer than
+# this is a recording break, NOT continuous abnormal-state time, so it is capped.
+BURDEN_MAX_INTER_SAMPLE_DT_S: float = 10.0
+
+# ---------------------------------------------------------------------------
 # Feature specs (§9 nested design; all "intraop" -- leakage firewall §11).
 # All beat-morphology features are "comprehensive" (a raw-waveform refinement on
 # top of the Standard MAP summaries).
@@ -194,6 +239,33 @@ SPECS: list[FeatureSpec] = [
     FeatureSpec("art_aug_index_quality", "pk", "intraop",
                 "fraction of analyzed beats with a usable reflected-wave inflection "
                 "point (quality weight for art_aug_index_mean) (§7F)"),
+    # ---- BURDEN (cumulative-dose) biomarkers: minutes in an abnormal waveform
+    #      STATE over the intraop window, time-weighted with the 10 s gap cap;
+    #      the waveform analogue of the hypotension-dose (minutes below MAP 65)
+    #      paradigm. None (never 0) when no usable beats / signal. ----
+    FeatureSpec("art_ppv_burden_min", "pk", "intraop",
+                "minutes of intraop time with windowed PPV > 13% "
+                "(fluid-responsive / hypovolemia state), time-weighted, 10 s "
+                "gap-capped; cumulative-dose analogue of hypotension-dose (§7C/§7F)"),
+    FeatureSpec("art_narrow_pp_burden_min", "pk", "intraop",
+                "minutes with per-beat pulse pressure < 30 mmHg (low stroke-volume "
+                "state), time-weighted, 10 s gap-capped (§7C/§7F)"),
+    FeatureSpec("art_low_dpdt_burden_min", "pk", "intraop",
+                "minutes with per-beat dP/dt_max < 400 mmHg/s (depressed "
+                "contractility state), time-weighted, 10 s gap-capped (§7F)"),
+    FeatureSpec("art_low_dbp_burden_min", "pk", "intraop",
+                "minutes with per-beat diastolic BP < 50 mmHg (poor diastolic "
+                "perfusion -- kidneys perfuse in diastole), time-weighted, 10 s "
+                "gap-capped (§7C/§7F)"),
+    FeatureSpec("art_perfusion_failure_burden_min", "pk", "intraop",
+                "HEADLINE: minutes where art MAP >= 65 (adequate pressure) AND "
+                ">=1 waveform-abnormal flag is true (PPV>13% OR PP<30 OR dP/dt<400); "
+                "waveform analogue of hypotension-dose for OCCULT perfusion failure "
+                "at adequate pressure -- pressure is not perfusion (§7C/§7F)"),
+    FeatureSpec("art_perfusion_failure_burden_auc", "pk", "intraop",
+                "severity-weighted perfusion-failure burden: each adequate-pressure "
+                "minute weighted by the number of waveform-abnormal flags tripped "
+                "(1..3); AUC-style severity*minutes (§7C/§7F)"),
 ]
 
 audit_specs(SPECS)   # hard error at import if any feature has postop timing
@@ -382,6 +454,153 @@ def ppv_for_block(pulse_pressures: "Any") -> float | None:
     if pp_mean <= 0:
         return None
     return 100.0 * (float(np.max(pp)) - float(np.min(pp))) / pp_mean
+
+
+# ===========================================================================
+# BURDEN cores (pure / stdlib-only; threshold-integrate an abnormal-state series
+# into MINUTES, time-weighted with the 10 s gap cap -- mirrors pfds.py's
+# minutes/AUC-below-threshold pattern). Unit-tested without numpy.
+# ===========================================================================
+
+def _state_burden_minutes(
+    series: list[tuple[float, bool]],
+    max_dt_s: float = BURDEN_MAX_INTER_SAMPLE_DT_S,
+    severity: list[float] | None = None,
+) -> float:
+    """Time-in-abnormal-state, in MINUTES, from a per-epoch boolean state series.
+
+    `series` is a chronologically ordered list of (t_seconds, is_abnormal) epoch
+    markers (one per beat or per respiratory block). Each epoch i "owns" the
+    forward interval dt = min(t[i+1] - t[i], max_dt_s); if epoch i is abnormal
+    that dt is added to the burden. The 10 s gap cap (mirrors pfds.py) means a
+    recording break between two epochs contributes at most max_dt_s, so a gap is
+    never counted as continuous abnormal-state time. The last epoch has no
+    forward interval and contributes nothing (matches pfds's forward-dt scheme).
+
+    `severity` (optional, same length as series) weights each abnormal interval
+    by a per-epoch severity (e.g. number of abnormal flags tripped) -> AUC-style
+    severity*minutes. When None, every abnormal epoch has weight 1.0.
+
+    Returns minutes (float). 0.0 when no epoch is ever abnormal. Callers decide
+    None-vs-0.0 missingness (no usable beats -> None upstream).
+    """
+    n = len(series)
+    if n < 2:
+        return 0.0
+    total_s = 0.0
+    for i in range(n - 1):
+        t_i, abnormal = series[i]
+        dt = series[i + 1][0] - t_i
+        if dt <= 0:
+            continue
+        if dt > max_dt_s:
+            dt = max_dt_s
+        if abnormal:
+            w = severity[i] if (severity is not None and i < len(severity)) else 1.0
+            total_s += dt * w
+    return total_s / 60.0
+
+
+def burden_from_beat_series(
+    beat_series: list[tuple[float, dict[str, float]]],
+    ppv_series: list[tuple[float, float]],
+    ppv_high_thr: float = PPV_HIGH_THR,
+    pp_low_thr: float = PP_LOW_THR,
+    dpdt_low_thr: float = DPDT_LOW_THR,
+    dbp_low_thr: float = DBP_LOW_THR,
+    map_adequate_thr: float = MAP_ADEQUATE_THR,
+    max_dt_s: float = BURDEN_MAX_INTER_SAMPLE_DT_S,
+) -> dict[str, float | None]:
+    """Compute every per-case waveform BURDEN (minutes / AUC) from beat series.
+
+    Pure / stdlib-only.
+
+    Parameters
+    ----------
+    beat_series : list of (t_seconds, beat_dict)
+        Chronologically ordered per-beat records. Each beat_dict carries the
+        scalars needed for the per-beat burdens:
+            "pp"   -- pulse pressure (mmHg)
+            "dbp"  -- diastolic BP (mmHg)
+            "map"  -- mean arterial pressure (mmHg) = dbp + pp/3
+            "dpdt" -- per-beat max upstroke dP/dt (mmHg/s)
+        Missing keys make that beat non-abnormal for the corresponding flag.
+    ppv_series : list of (t_seconds, ppv_pct)
+        Chronologically ordered per-respiratory-BLOCK PPV values (the PPV state
+        lives on a coarser, respiratory-block grid than per-beat, so it gets its
+        own burden integration).
+
+    Returns
+    -------
+    dict with keys:
+        art_ppv_burden_min, art_narrow_pp_burden_min, art_low_dpdt_burden_min,
+        art_low_dbp_burden_min, art_perfusion_failure_burden_min,
+        art_perfusion_failure_burden_auc
+    Each is minutes (>= 0.0) when a usable series exists, else None.
+
+    Missingness contract: a burden is None (NOT 0.0) when its underlying series
+    has < 2 epochs (cannot integrate any interval) -- "truly missing". A burden
+    is 0.0 when the series exists but the abnormal state never occurs.
+    """
+    out: dict[str, float | None] = {
+        "art_ppv_burden_min": None,
+        "art_narrow_pp_burden_min": None,
+        "art_low_dpdt_burden_min": None,
+        "art_low_dbp_burden_min": None,
+        "art_perfusion_failure_burden_min": None,
+        "art_perfusion_failure_burden_auc": None,
+    }
+
+    # ---- PPV burden (respiratory-block grid) ----
+    if len(ppv_series) >= 2:
+        ppv_state = [(t, (v > ppv_high_thr)) for t, v in ppv_series]
+        out["art_ppv_burden_min"] = round(
+            _state_burden_minutes(ppv_state, max_dt_s), 4)
+
+    # ---- Per-beat burdens ----
+    if len(beat_series) >= 2:
+        narrow_pp = []
+        low_dpdt = []
+        low_dbp = []
+        pf_state = []
+        pf_severity: list[float] = []
+        for t, bd in beat_series:
+            pp = bd.get("pp")
+            dbp = bd.get("dbp")
+            dpdt = bd.get("dpdt")
+            mp = bd.get("map")
+
+            narrow_pp.append((t, pp is not None and pp < pp_low_thr))
+            low_dpdt.append((t, dpdt is not None and dpdt < dpdt_low_thr))
+            low_dbp.append((t, dbp is not None and dbp < dbp_low_thr))
+
+            # Perfusion-failure: adequate MAP AND >=1 waveform-abnormal flag.
+            # PPV is a respiratory-block metric, so for the per-beat headline we
+            # use the beat-local flags (PP<30 OR dP/dt<400); the windowed-PPV
+            # contribution is captured by art_ppv_burden_min. (A beat-aligned PPV
+            # is not defined; using PP and dP/dt keeps this strictly per-beat.)
+            n_flags = 0
+            if pp is not None and pp < pp_low_thr:
+                n_flags += 1
+            if dpdt is not None and dpdt < dpdt_low_thr:
+                n_flags += 1
+            adequate = (mp is not None and mp >= map_adequate_thr)
+            is_pf = adequate and n_flags >= 1
+            pf_state.append((t, is_pf))
+            pf_severity.append(float(n_flags) if is_pf else 0.0)
+
+        out["art_narrow_pp_burden_min"] = round(
+            _state_burden_minutes(narrow_pp, max_dt_s), 4)
+        out["art_low_dpdt_burden_min"] = round(
+            _state_burden_minutes(low_dpdt, max_dt_s), 4)
+        out["art_low_dbp_burden_min"] = round(
+            _state_burden_minutes(low_dbp, max_dt_s), 4)
+        out["art_perfusion_failure_burden_min"] = round(
+            _state_burden_minutes(pf_state, max_dt_s), 4)
+        out["art_perfusion_failure_burden_auc"] = round(
+            _state_burden_minutes(pf_state, max_dt_s, severity=pf_severity), 4)
+
+    return out
 
 
 def tau_decay_for_beat(beat: "Any", fs: float) -> float | None:
@@ -767,32 +986,42 @@ def beat_features(beats_by_window: "list", ppv_values: "list") -> dict[str, Any]
     }
 
 
-def _process_window(times: "Any", values: "Any", fs: float) -> tuple["Any", list[float]]:
+def _process_window(times: "Any", values: "Any", fs: float
+                    ) -> tuple["Any", list[float], "Any", list[tuple[float, float]]]:
     """Detect beats in one analysis window and compute its per-block PPVs.
 
     times/values are the raw samples within [w_start, w_start+ANALYSIS_WINDOW_S].
-    Returns (beat_array, list_of_block_ppvs). The raw samples are not retained by
-    the caller after this returns (memory discipline for the 500 Hz trace).
+    Returns (beat_array, list_of_block_ppvs, abs_beat_times, abs_ppv_series):
+      beat_array      -- (n,6) per-beat scalars (as before),
+      list_of_block_ppvs -- the per-block PPV floats (as before; for the mean),
+      abs_beat_times  -- (n,) ABSOLUTE timestamps (s) for each beat row, for the
+                         per-beat BURDEN integration (reconstructed from the
+                         window's first sample time + cumulative beat intervals),
+      abs_ppv_series  -- list of (abs_t_block_start, ppv_pct) for the windowed-PPV
+                         BURDEN integration.
+    The raw samples are not retained by the caller after this returns (memory
+    discipline for the 500 Hz trace).
     """
     import numpy as np
 
     t = np.asarray(times, dtype=float)
     v = np.asarray(values, dtype=float)
+    empty_beats = np.empty((0, 6), dtype=float)
     if t.size < 2:
-        return np.empty((0, 6), dtype=float), []
+        return empty_beats, [], np.empty(0, dtype=float), []
 
     # Sample-level artefact gate (flush / zeroing): drop out-of-range, then require
     # the segment to remain mostly contiguous (split on big gaps handled upstream).
     good = (v >= ART_SAMPLE_MIN) & (v <= ART_SAMPLE_MAX) & np.isfinite(v)
     if not good.any():
-        return np.empty((0, 6), dtype=float), []
+        return empty_beats, [], np.empty(0, dtype=float), []
     t, v = t[good], v[good]
     if t.size < int(fs):
-        return np.empty((0, 6), dtype=float), []
+        return empty_beats, [], np.empty(0, dtype=float), []
 
     beats = detect_beats(v, fs)
     if len(beats) == 0:
-        return beats, []
+        return beats, [], np.empty(0, dtype=float), []
 
     # Per-respiratory-block PPV: split the window into RESP_BLOCK_S blocks by the
     # systolic-peak times. We approximate beat times by cumulative beat intervals
@@ -805,7 +1034,13 @@ def _process_window(times: "Any", values: "Any", fs: float) -> tuple["Any", list
     beat_times = np.concatenate([[0.0], np.cumsum(safe_int)[:-1]])
     pps = beats[:, 2]
 
+    # Absolute beat timestamps for the per-beat burden integration: anchor the
+    # within-window cumulative beat times to the window's first sample time.
+    w0 = float(t[0]) if t.size else 0.0
+    abs_beat_times = beat_times + w0
+
     ppvs: list[float] = []
+    abs_ppv_series: list[tuple[float, float]] = []
     win_len = float(t[-1] - t[0]) if t.size else ANALYSIS_WINDOW_S
     n_blocks = max(1, int(np.ceil(win_len / RESP_BLOCK_S)))
     for bi in range(n_blocks):
@@ -816,7 +1051,8 @@ def _process_window(times: "Any", values: "Any", fs: float) -> tuple["Any", list
         ppv = ppv_for_block(block_pp)
         if ppv is not None:
             ppvs.append(ppv)
-    return beats, ppvs
+            abs_ppv_series.append((w0 + lo, ppv))
+    return beats, ppvs, abs_beat_times, abs_ppv_series
 
 
 def extract_case_from_track(raw: list[tuple[float, float]],
@@ -876,6 +1112,11 @@ def _extract_from_array(arr: "Any",
     beats_by_window: list[Any] = []
     ppv_values: list[float] = []
     vtone_by_window: list[tuple[list[float], int, int, list[float]]] = []
+    # Accumulators for the BURDEN integration: a per-case chronologically ordered
+    # per-beat record series and a per-respiratory-block PPV series, both with
+    # ABSOLUTE timestamps so time-in-abnormal-state is integrated across the case.
+    beat_series: list[tuple[float, dict[str, float]]] = []
+    ppv_series: list[tuple[float, float]] = []
     for ws in starts:
         we = ws + ANALYSIS_WINDOW_S
         # Slice this window's samples (and drop them after processing).
@@ -884,10 +1125,22 @@ def _extract_from_array(arr: "Any",
             continue
         wt = t_all[sel]
         wv = v_all[sel]
-        beats, ppvs = _process_window(wt, wv, fs)
+        beats, ppvs, abs_beat_times, abs_ppv_series = _process_window(wt, wv, fs)
         if len(beats) > 0:
             beats_by_window.append(beats)
             ppv_values.extend(ppvs)
+            ppv_series.extend(abs_ppv_series)
+            # Per-beat burden records (absolute t + the scalars each burden needs).
+            for bi in range(len(beats)):
+                sbp_b = float(beats[bi, 0])
+                dbp_b = float(beats[bi, 1])
+                pp_b = float(beats[bi, 2])
+                dpdt_b = float(beats[bi, 3])
+                map_b = dbp_b + pp_b / 3.0
+                beat_series.append((float(abs_beat_times[bi]), {
+                    "sbp": sbp_b, "dbp": dbp_b, "pp": pp_b,
+                    "dpdt": dpdt_b, "map": map_b,
+                }))
             # Vascular-tone (tau / AIx) needs the raw cycle samples, so it
             # re-walks the same window's waveform before wt/wv are discarded.
             tau_list, aix_attempt, aix_usable = vascular_tone_for_window(wt, wv, fs)
@@ -898,9 +1151,17 @@ def _extract_from_array(arr: "Any",
     feats = beat_features(beats_by_window, ppv_values)
     aline_available = 1 if (feats.get("aline_n_beats") or 0) > 0 else 0
 
+    # BURDEN integration: keep the per-case series chronologically ordered (windows
+    # are already in time order, but sort defensively) and integrate minutes-in-
+    # abnormal-state with the 10 s gap cap.
+    beat_series.sort(key=lambda r: r[0])
+    ppv_series.sort(key=lambda r: r[0])
+    burden = burden_from_beat_series(beat_series, ppv_series)
+
     row = dict(none_row)
     row.update(feats)
     row.update(vascular_tone_features(vtone_by_window))
+    row.update(burden)
     row["aline_available"] = aline_available
     if aline_available == 0:
         # No physiologic beats anywhere: honest None for all morphology features,

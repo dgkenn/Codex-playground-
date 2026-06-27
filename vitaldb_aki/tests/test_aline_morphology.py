@@ -31,6 +31,8 @@ from vitaldb_aki.features.aline_morphology import (
     ANALYSIS_WINDOW_S, RESP_BLOCK_S, MAX_ANALYSIS_WINDOWS,
     ART_FS_HZ_NOMINAL,
     TAU_MIN_S, TAU_MAX_S,
+    PPV_HIGH_THR, PP_LOW_THR, DPDT_LOW_THR, DBP_LOW_THR, MAP_ADEQUATE_THR,
+    BURDEN_MAX_INTER_SAMPLE_DT_S,
     detect_beats,
     beat_features,
     ppv_for_block,
@@ -39,6 +41,8 @@ from vitaldb_aki.features.aline_morphology import (
     tau_decay_for_beat,
     aug_index_for_beat,
     vascular_tone_features,
+    _state_burden_minutes,
+    burden_from_beat_series,
     _intraop_window,
 )
 from vitaldb_aki.features.base import audit_specs
@@ -117,21 +121,42 @@ class TestSpecs(unittest.TestCase):
             "art_systolic_auc_mean",
             # vascular-tone additions
             "art_tau_decay_mean", "art_aug_index_mean", "art_aug_index_quality",
+            # burden (cumulative-dose) additions
+            "art_ppv_burden_min", "art_narrow_pp_burden_min",
+            "art_low_dpdt_burden_min", "art_low_dbp_burden_min",
+            "art_perfusion_failure_burden_min",
+            "art_perfusion_failure_burden_auc",
         ):
             self.assertIn(required, names)
 
     def test_fset_membership(self):
-        # All beat-summary features are comprehensive; the two vascular-tone
-        # markers (tau, AIx) are the pk refinement -- allow both, forbid anything
-        # else (e.g. an accidental "standard"/"postop").
+        # All beat-summary features are comprehensive; the vascular-tone markers
+        # (tau, AIx) and the burden biomarkers are the pk refinement -- allow both,
+        # forbid anything else (e.g. an accidental "standard"/"postop").
         for s in SPECS:
             self.assertIn(s.fset, ("comprehensive", "pk"),
                           msg=f"{s.name} fset={s.fset!r}")
         pk_names = {s.name for s in SPECS if s.fset == "pk"}
         self.assertEqual(
             pk_names,
-            {"art_tau_decay_mean", "art_aug_index_mean", "art_aug_index_quality"},
+            {"art_tau_decay_mean", "art_aug_index_mean", "art_aug_index_quality",
+             "art_ppv_burden_min", "art_narrow_pp_burden_min",
+             "art_low_dpdt_burden_min", "art_low_dbp_burden_min",
+             "art_perfusion_failure_burden_min",
+             "art_perfusion_failure_burden_auc"},
         )
+
+    def test_burden_specs_all_intraop(self):
+        burden_names = {
+            "art_ppv_burden_min", "art_narrow_pp_burden_min",
+            "art_low_dpdt_burden_min", "art_low_dbp_burden_min",
+            "art_perfusion_failure_burden_min",
+            "art_perfusion_failure_burden_auc",
+        }
+        for s in SPECS:
+            if s.name in burden_names:
+                self.assertEqual(s.timing, "intraop")
+                self.assertEqual(s.fset, "pk")
 
 
 # ---------------------------------------------------------------------------
@@ -515,6 +540,167 @@ class TestVascularToneEndToEnd(unittest.TestCase):
         self.assertIsNone(row["art_tau_decay_mean"])
         self.assertIsNone(row["art_aug_index_mean"])
         self.assertIsNone(row["art_aug_index_quality"])
+
+
+# ---------------------------------------------------------------------------
+# 12. BURDEN cores (stdlib-only -- no numpy needed).
+# ---------------------------------------------------------------------------
+
+class TestStateBurdenMinutes(unittest.TestCase):
+    """_state_burden_minutes: time-in-abnormal-state, gap-capped, in minutes."""
+
+    def test_known_duration_recovered(self):
+        # 1 Hz epochs (every 1 s). 30 consecutive abnormal epochs -> each owns the
+        # 1 s forward interval -> ~30 s = 0.5 min in the abnormal state.
+        series = [(float(i), True) for i in range(30)] + [(30.0, False), (31.0, False)]
+        burden = _state_burden_minutes(series)
+        self.assertAlmostEqual(burden, 30.0 / 60.0, delta=1e-6)
+
+    def test_never_abnormal_is_zero(self):
+        series = [(float(i), False) for i in range(10)]
+        self.assertEqual(_state_burden_minutes(series), 0.0)
+
+    def test_single_epoch_zero(self):
+        # One epoch has no forward interval -> 0 burden.
+        self.assertEqual(_state_burden_minutes([(0.0, True)]), 0.0)
+
+    def test_empty_zero(self):
+        self.assertEqual(_state_burden_minutes([]), 0.0)
+
+    def test_gap_cap_respected(self):
+        # Two abnormal epochs separated by a 1000 s recording break: the first
+        # epoch's interval is capped at 10 s, NOT 1000 s.
+        series = [(0.0, True), (1000.0, True), (1001.0, False)]
+        burden = _state_burden_minutes(series)
+        # epoch0: min(1000,10)=10 s abnormal; epoch1: min(1,10)=1 s abnormal.
+        self.assertAlmostEqual(burden, (10.0 + 1.0) / 60.0, delta=1e-6)
+
+    def test_severity_weighting(self):
+        # Each abnormal 1 s epoch weighted by severity -> AUC-style minutes.
+        series = [(0.0, True), (1.0, True), (2.0, False)]
+        sev = [2.0, 3.0, 0.0]
+        burden = _state_burden_minutes(series, severity=sev)
+        # epoch0: 1 s * 2 = 2; epoch1: 1 s * 3 = 3 -> 5 s.
+        self.assertAlmostEqual(burden, 5.0 / 60.0, delta=1e-6)
+
+
+class TestBurdenFromBeatSeries(unittest.TestCase):
+    """burden_from_beat_series: per-case waveform burdens with missingness."""
+
+    def _normal_beat(self, t):
+        # PP=50 (>30), dP/dt=900 (>400), DBP=70 (>50), MAP=70+50/3~86.7 (>=65).
+        return (t, {"sbp": 120.0, "dbp": 70.0, "pp": 50.0, "dpdt": 900.0,
+                    "map": 70.0 + 50.0 / 3.0})
+
+    def _narrow_pp_beat(self, t):
+        # PP=20 (<30); MAP still adequate (DBP 60 + 20/3 ~66.7 >= 65).
+        return (t, {"sbp": 80.0, "dbp": 60.0, "pp": 20.0, "dpdt": 900.0,
+                    "map": 60.0 + 20.0 / 3.0})
+
+    def test_no_beats_returns_none(self):
+        out = burden_from_beat_series([], [])
+        for k in ("art_ppv_burden_min", "art_narrow_pp_burden_min",
+                  "art_low_dpdt_burden_min", "art_low_dbp_burden_min",
+                  "art_perfusion_failure_burden_min",
+                  "art_perfusion_failure_burden_auc"):
+            self.assertIsNone(out[k], msg=f"{k} should be None with no beats")
+
+    def test_single_beat_none(self):
+        out = burden_from_beat_series([self._normal_beat(0.0)], [])
+        self.assertIsNone(out["art_narrow_pp_burden_min"])
+
+    def test_all_normal_zero_not_none(self):
+        # >=2 beats but never abnormal -> 0.0 (signal present), NOT None.
+        beats = [self._normal_beat(float(i)) for i in range(20)]
+        out = burden_from_beat_series(beats, [])
+        self.assertEqual(out["art_narrow_pp_burden_min"], 0.0)
+        self.assertEqual(out["art_low_dpdt_burden_min"], 0.0)
+        self.assertEqual(out["art_low_dbp_burden_min"], 0.0)
+        self.assertEqual(out["art_perfusion_failure_burden_min"], 0.0)
+        self.assertEqual(out["art_perfusion_failure_burden_auc"], 0.0)
+
+    def test_narrow_pp_known_minutes(self):
+        # 60 consecutive narrow-PP beats at 1 Hz -> ~60 s = 1.0 min narrow PP.
+        beats = [self._narrow_pp_beat(float(i)) for i in range(60)]
+        beats.append(self._normal_beat(60.0))  # closing normal beat
+        out = burden_from_beat_series(beats, [])
+        self.assertAlmostEqual(out["art_narrow_pp_burden_min"], 60.0 / 60.0,
+                               delta=0.05)
+
+    def test_perfusion_failure_adequate_map_abnormal_flag(self):
+        # Narrow-PP beats at ADEQUATE MAP -> perfusion-failure burden accrues
+        # (the headline: occult failure despite adequate pressure).
+        beats = [self._narrow_pp_beat(float(i)) for i in range(30)]
+        beats.append(self._normal_beat(30.0))
+        out = burden_from_beat_series(beats, [])
+        self.assertGreater(out["art_perfusion_failure_burden_min"], 0.0)
+        # AUC (severity-weighted) >= the plain minutes when >=1 flag tripped.
+        self.assertGreaterEqual(out["art_perfusion_failure_burden_auc"],
+                                out["art_perfusion_failure_burden_min"] - 1e-9)
+
+    def test_perfusion_failure_zero_when_map_inadequate(self):
+        # Narrow PP but INADEQUATE MAP (<65) -> NOT perfusion failure (that is
+        # plain hypotension, captured by the hypotension dose, not occult failure).
+        low_map_beats = [
+            (float(i), {"sbp": 60.0, "dbp": 40.0, "pp": 20.0, "dpdt": 900.0,
+                        "map": 40.0 + 20.0 / 3.0})  # MAP ~46.7 < 65
+            for i in range(20)
+        ]
+        low_map_beats.append((20.0, {"sbp": 60.0, "dbp": 40.0, "pp": 20.0,
+                                     "dpdt": 900.0, "map": 46.7}))
+        out = burden_from_beat_series(low_map_beats, [])
+        self.assertEqual(out["art_perfusion_failure_burden_min"], 0.0)
+
+    def test_ppv_burden_from_ppv_series(self):
+        # PPV series: high PPV (>13%) for 40 s at 1 Hz -> ~40 s = 0.667 min.
+        ppv_series = [(float(i), 20.0) for i in range(40)] + [(40.0, 5.0)]
+        out = burden_from_beat_series([], ppv_series)
+        self.assertAlmostEqual(out["art_ppv_burden_min"], 40.0 / 60.0, delta=0.05)
+
+    def test_ppv_burden_none_when_no_series(self):
+        out = burden_from_beat_series([], [])
+        self.assertIsNone(out["art_ppv_burden_min"])
+
+    def test_ppv_burden_zero_when_all_low(self):
+        ppv_series = [(float(i), 5.0) for i in range(10)]
+        out = burden_from_beat_series([], ppv_series)
+        self.assertEqual(out["art_ppv_burden_min"], 0.0)
+
+
+@unittest.skipUnless(_HAVE_NUMPY, "numpy required")
+class TestBurdenEndToEnd(unittest.TestCase):
+    def test_keys_present_and_none_when_empty(self):
+        row = extract_case_from_track([], t_start=0.0, t_end=100.0)
+        for k in ("art_ppv_burden_min", "art_narrow_pp_burden_min",
+                  "art_low_dpdt_burden_min", "art_low_dbp_burden_min",
+                  "art_perfusion_failure_burden_min",
+                  "art_perfusion_failure_burden_auc"):
+            self.assertIn(k, row)
+            self.assertIsNone(row[k])
+
+    def test_normal_case_burdens_zero_or_none(self):
+        # A clean normal-BP case: narrow-PP / low-DBP / low-dPdt burdens should be
+        # ~0 (signal present, never abnormal), NOT None.
+        fs = 500.0
+        t, v = synth_art(fs=fs, duration_s=ANALYSIS_WINDOW_S, hr_bpm=75.0,
+                         sbp=120.0, dbp=70.0)
+        row = extract_case_from_track(list(zip(t.tolist(), v.tolist())),
+                                      t_start=None, t_end=None)
+        self.assertEqual(row["aline_available"], 1)
+        # DBP 70 > 50, PP 50 > 30 -> these burdens are 0.0 (defined, not None).
+        self.assertEqual(row["art_narrow_pp_burden_min"], 0.0)
+        self.assertEqual(row["art_low_dbp_burden_min"], 0.0)
+
+    def test_low_bp_case_accrues_burden(self):
+        # A low-DBP case (DBP 40 < 50) should accrue a positive low-DBP burden.
+        fs = 500.0
+        t, v = synth_art(fs=fs, duration_s=ANALYSIS_WINDOW_S, hr_bpm=75.0,
+                         sbp=90.0, dbp=40.0)
+        row = extract_case_from_track(list(zip(t.tolist(), v.tolist())),
+                                      t_start=None, t_end=None)
+        self.assertEqual(row["aline_available"], 1)
+        self.assertIsNotNone(row["art_low_dbp_burden_min"])
+        self.assertGreater(row["art_low_dbp_burden_min"], 0.0)
 
 
 if __name__ == "__main__":
