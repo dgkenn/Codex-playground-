@@ -540,27 +540,28 @@ def _multivariate_sampen(
     def _match_fraction(mm: int) -> tuple[int, int]:
         """(matched_pairs, total_pairs) for composite length-mm templates (i<j).
 
-        Counted ROW BY ROW (memory O(p*last), not O(p*last^2*mm)): for template i
-        we form the composite Chebyshev distance to every later template at once
-        -- max over BOTH channels and the mm lags -- and add the within-r count.
-        The composite max-over-channels is the multivariate construction.
+        The composite Chebyshev match is built as a single (last x last) boolean
+        matrix accumulated one (channel, lag) plane at a time: a pair (i, j)
+        matches iff |x_c[i+k] - x_c[j+k]| <= r for EVERY channel c and lag
+        k in [0, mm). For each (c, k) we form that one (last x last) tolerance
+        mask and AND it into the running `within`. Peak memory is O(last^2)
+        (a handful of boolean/float matrices), NOT O(p * last^2 * mm), and we
+        never pay per-row Python overhead. Bit-identical pair counts to the
+        original triple loop.
         """
         last = n - mm + 1   # number of templates of per-channel length mm
         if last < 2:
             return 0, 0
-        # windows[c] = (last, mm) sliding windows for channel c -> (p, last, mm).
-        windows = np.stack(
-            [np.lib.stride_tricks.sliding_window_view(mat[c], mm)[:last]
-             for c in range(p)],
-            axis=0,
-        )
-        matched = 0
-        for i in range(last - 1):
-            rest = windows[:, i + 1:, :]            # (p, last-1-i, mm)
-            ti = windows[:, i, :][:, None, :]       # (p, 1, mm)
-            # Composite Chebyshev: max over channels (axis 0) AND lags (axis 2).
-            dist = np.abs(rest - ti).max(axis=(0, 2))   # (last-1-i,)
-            matched += int(np.count_nonzero(dist <= r))
+        within = np.ones((last, last), dtype=bool)
+        for c in range(p):
+            xc = mat[c]
+            for k in range(mm):
+                col = xc[k:k + last]                       # (last,)
+                d = np.abs(col[:, None] - col[None, :])    # (last, last)
+                within &= (d <= r)
+                if not within.any():
+                    return 0, last * (last - 1) // 2
+        matched = int(np.triu(within, k=1).sum())
         total = last * (last - 1) // 2
         return matched, total
 

@@ -389,23 +389,25 @@ def _sample_entropy(
     def _matched_pairs(mm: int) -> tuple[int, int]:
         """(matched_pairs, total_pairs) for length-mm templates (i<j), vectorized.
 
-        Counted ROW BY ROW to keep memory O(last) rather than O(last^2 * mm):
-        for template i we compare it against all templates j > i at once
-        (broadcast over the mm lags) and add the within-r count. This avoids
-        materialising the full last x last x mm distance cube (which is both
-        memory-heavy and, at n~2000, slower than the loop).
+        The Chebyshev match is built as a single (last x last) boolean matrix
+        accumulated one lag at a time: a pair (i, j) matches iff
+        |x[i+k] - x[j+k]| <= r for EVERY lag k in [0, mm). For each lag we form
+        that one (last x last) tolerance mask and AND it into the running
+        `within`. Peak memory is O(last^2) (a couple of matrices), not
+        O(last^2 * mm), and there is no per-row Python overhead. Pair counts are
+        bit-identical to the original double loop.
         """
         last = n - mm + 1   # number of length-mm templates
         if last < 2:
             return 0, 0
-        # templates[i] = x[i:i+mm]; shape (last, mm) via a sliding window.
-        templates = np.lib.stride_tricks.sliding_window_view(x, mm)[:last]
-        matched = 0
-        for i in range(last - 1):
-            rest = templates[i + 1:]                       # (last-1-i, mm)
-            # Chebyshev distance of template i to every later template.
-            dist = np.abs(rest - templates[i]).max(axis=1)  # (last-1-i,)
-            matched += int(np.count_nonzero(dist <= r))
+        within = np.ones((last, last), dtype=bool)
+        for k in range(mm):
+            col = x[k:k + last]                        # (last,)
+            d = np.abs(col[:, None] - col[None, :])    # (last, last)
+            within &= (d <= r)
+            if not within.any():
+                return 0, last * (last - 1) // 2
+        matched = int(np.triu(within, k=1).sum())
         total = last * (last - 1) // 2
         return matched, total
 

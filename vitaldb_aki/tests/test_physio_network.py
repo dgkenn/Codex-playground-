@@ -424,6 +424,69 @@ class TestTransferEntropy(unittest.TestCase):
     def test_none_when_too_few(self):
         self.assertIsNone(_transfer_entropy([1.0, 2.0], [3.0, 4.0]))
 
+    def test_vectorized_matches_pure_python(self):
+        """The numpy joint-histogram TE is bit-equivalent to a reference pure-
+        Python dict-counting TE on the same binned series (no cap triggered)."""
+        x = 0.37
+        a: list[float] = []
+        for _ in range(600):
+            x = 3.95 * x * (1.0 - x)
+            a.append(x)
+        b = [a[0]] + a[:-1]
+
+        def _ref(xx, yy, nbins=3):
+            n = min(len(xx), len(yy))
+            bx = _tercile_bins(xx[:n], nbins)
+            by = _tercile_bins(yy[:n], nbins)
+            c_yyx: dict = {}
+            c_yx: dict = {}
+            c_yy: dict = {}
+            c_y: dict = {}
+            total = 0
+            for t in range(n - 1):
+                y1, y0, x0 = by[t + 1], by[t], bx[t]
+                c_yyx[(y1, y0, x0)] = c_yyx.get((y1, y0, x0), 0) + 1
+                c_yx[(y0, x0)] = c_yx.get((y0, x0), 0) + 1
+                c_yy[(y1, y0)] = c_yy.get((y1, y0), 0) + 1
+                c_y[y0] = c_y.get(y0, 0) + 1
+                total += 1
+            te = 0.0
+            for (y1, y0, x0), nn in c_yyx.items():
+                p = nn / total
+                pa = nn / c_yx[(y0, x0)]
+                pb = c_yy[(y1, y0)] / c_y[y0]
+                if pa > 0 and pb > 0:
+                    te += p * math.log2(pa / pb)
+            return max(te, 0.0)
+
+        ref = _ref(a, b, 3)
+        got = _transfer_entropy(a, b, 3)
+        self.assertIsNotNone(got)
+        self.assertAlmostEqual(got, ref, places=12,
+                               msg="Vectorized TE must equal pure-Python reference")
+
+    def test_constant_series_te_zero_fast(self):
+        """A constant signal bins to one tercile => every conditional ratio is 1
+        => TE 0.0, returned fast (degenerate guard, no hang)."""
+        import time
+        x = [70.0] * 2500   # exceeds TE_MAX_POINTS; striding caps it
+        y = [80.0] * 2500
+        t0 = time.perf_counter()
+        te = _transfer_entropy(x, y, nbins=3)
+        dt = time.perf_counter() - t0
+        self.assertEqual(te, 0.0)
+        self.assertLess(dt, 0.1, "Constant TE must be near-instant")
+
+    def test_long_series_capped(self):
+        """A pathologically long aligned series is capped to TE_MAX_POINTS by
+        uniform stride before the single pass; TE stays finite and >= 0."""
+        n = 100000
+        a = [math.sin(i / 13.0) for i in range(n)]
+        b = [math.sin(i / 13.0 + 0.5) for i in range(n)]
+        te = _transfer_entropy(a, b, nbins=3)
+        self.assertIsNotNone(te)
+        self.assertGreaterEqual(te, 0.0)
+
 
 class TestMeanTE(unittest.TestCase):
     def test_asymmetry_positive_for_driver_follower(self):

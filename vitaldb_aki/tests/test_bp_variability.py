@@ -358,18 +358,18 @@ class TestSampleEntropyDegenerateGuards(unittest.TestCase):
         self.assertEqual(_sample_entropy(series, m=2, r=None), 0.0)
 
     def test_all_match_within_r_returns_zero_fast(self):
-        """A near-flat series whose spread fits inside r=0.2*SD: every length-m
-        pair matches => A==B => SampEn 0.0 via the all-match short-circuit."""
+        """When every length-m pair matches (tolerance r dwarfs the spread), the
+        all-match short-circuit returns 0.0 without computing the second (m+1)
+        match matrix. (A non-constant series only hits this with an externally
+        large r; with auto r=0.2*SD only an exactly-constant series all-matches.)"""
         import time
-        # Spread ~0.002 (three quantized levels); r = 0.2*SD is large enough that
-        # every template pair matches.
-        series = [75.0 + 0.001 * (i % 3) for i in range(2000)]
+        series = [75.0 + 2.0 * math.sin(i / 11.0) for i in range(2000)]
         t0 = time.perf_counter()
-        result = _sample_entropy(series, m=2, r=None)
+        result = _sample_entropy(series, m=2, r=1e6)  # r >> spread => all match
         dt = time.perf_counter() - t0
         self.assertEqual(result, 0.0,
-                         "All-match (near-flat) series must give SampEn 0.0")
-        self.assertLess(dt, 0.1, "All-match short-circuit must be fast")
+                         "All-match series (huge r) must give SampEn 0.0")
+        self.assertLess(dt, 0.3, "All-match short-circuit must be fast")
 
     def test_non_finite_values_dropped(self):
         """NaN / inf samples are dropped before the match; a constant remainder

@@ -387,6 +387,76 @@ class TestMultivariateSampEn(unittest.TestCase):
     def test_unequal_length_returns_none(self):
         self.assertIsNone(_multivariate_sampen([[0.0, 1.0, 2.0, 3.0], [0.0, 1.0]]))
 
+    def test_vectorized_matches_pure_python(self):
+        """The numpy-vectorized MVSampEn is bit-equivalent to a reference triple-
+        loop pure-Python implementation (exact, no cap)."""
+        n = 200
+        ch = [self._z(_loosely_coupled(s, n)) for s in (11, 222, 3333)]
+
+        def _ref(channels, m=2, r=0.2):
+            p = len(channels)
+            nn = len(channels[0])
+
+            def mf(mm):
+                last = nn - mm + 1
+                cnt = 0
+                for i in range(last):
+                    for j in range(i + 1, last):
+                        ok = True
+                        for c in channels:
+                            for k in range(mm):
+                                if abs(c[i + k] - c[j + k]) > r:
+                                    ok = False
+                                    break
+                            if not ok:
+                                break
+                        if ok:
+                            cnt += 1
+                return cnt, last * (last - 1) // 2
+
+            bc, bt = mf(m)
+            ac, at = mf(m + 1)
+            if bt == 0 or at == 0 or bc == 0 or ac == 0:
+                return None
+            return -math.log((ac / at) / (bc / bt))
+
+        ref = _ref(ch)
+        got = _multivariate_sampen(ch)
+        self.assertIsNotNone(ref)
+        self.assertIsNotNone(got)
+        self.assertAlmostEqual(got, ref, places=12,
+                               msg="Vectorized MVSampEn must equal pure-Python reference")
+
+
+# ===========================================================================
+# 6b. POISON-PILL regression: a degenerate / rigid ensemble must return fast
+#     with a sensible value (0.0 or None) and never hang.
+# ===========================================================================
+
+class TestMVSampEnDegenerateGuards(unittest.TestCase):
+    def test_constant_channels_all_match_returns_zero(self):
+        """Channels with ~0 joint spread (every composite pair within r) => the
+        all-match short-circuit returns 0.0 (maximal rigidity), fast."""
+        import time
+        # Three near-flat channels (spread << r) -> every base-length pair matches.
+        chans = [[float(c) + 0.0001 * (i % 2) for i in range(1500)]
+                 for c in (0, 0, 0)]
+        t0 = time.perf_counter()
+        result = _multivariate_sampen(chans, m=2, r=0.2)
+        dt = time.perf_counter() - t0
+        self.assertEqual(result, 0.0,
+                         "Rigid/constant ensemble => MVSampEn 0.0")
+        self.assertLess(dt, 0.5, "All-match short-circuit must avoid the second matrix")
+
+    def test_non_finite_returns_none(self):
+        chans = [[1.0, 2.0, float("nan"), 4.0, 5.0],
+                 [1.0, 2.0, 3.0, 4.0, 5.0]]
+        self.assertIsNone(_multivariate_sampen(chans, m=2, r=0.2))
+
+    def test_short_returns_none(self):
+        self.assertIsNone(_multivariate_sampen([[0.0, 1.0, 0.0], [0.0, 1.0, 0.0]],
+                                               m=2))
+
 
 # ===========================================================================
 # 7. _uniform_cap_channels
