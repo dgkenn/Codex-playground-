@@ -113,10 +113,10 @@ MAP_GRID = list(range(52, 101))   # 52..100 mmHg
 N_BOOTSTRAP = 300
 # The per-stratum RCS inflection bootstrap REFITS a logistic each draw, so it is
 # the expensive path; keep it lighter than the cheap analytic IPTW arm-risk boot.
-N_BOOTSTRAP_SPLINE = 120
+N_BOOTSTRAP_SPLINE = 100
 # Per-stratum row cap for the RCS spline fit/bootstrap (speed; curve feature is
 # stable well below this).  Strata above this are seeded-subsampled (recorded).
-SPLINE_FIT_CAP = 25000
+SPLINE_FIT_CAP = 18000
 MIN_EVENTS_FOR_POWER = 15
 
 
@@ -216,6 +216,13 @@ def _fit_rcs_logit(map_lowest, y, adj, knots, seed=RANDOM_SEED):
     A = np.asarray(adj, dtype=float)
 
     spl = _rcs_basis(x, knots)                       # (n, p_spline)
+    # STANDARDISE the spline basis columns -- the raw RCS cubic terms span many
+    # orders of magnitude, which makes lbfgs converge slowly / badly.  We fit on
+    # the z-scored basis and apply the identical transform to the grid basis so
+    # the predicted log-odds curve is unchanged.
+    smean, ssd = spl.mean(axis=0), spl.std(axis=0)
+    ssd[ssd == 0] = 1.0
+    spl_z = (spl - smean) / ssd
     # standardise adjusters; impute their medians for any residual NaN
     amed = np.nanmedian(A, axis=0)
     nanloc = np.where(np.isnan(A))
@@ -224,7 +231,7 @@ def _fit_rcs_logit(map_lowest, y, adj, knots, seed=RANDOM_SEED):
     asd[asd == 0] = 1.0
     Az = (A - amean) / asd
 
-    X = np.column_stack([spl, Az]) if Az.shape[1] else spl
+    X = np.column_stack([spl_z, Az]) if Az.shape[1] else spl_z
     lr = LogisticRegression(fit_intercept=True, max_iter=600, solver="lbfgs",
                             C=1.0, random_state=seed)
     lr.fit(X, y)
@@ -233,7 +240,7 @@ def _fit_rcs_logit(map_lowest, y, adj, knots, seed=RANDOM_SEED):
     spline_coef = lr.coef_[0][:p_spline]
 
     grid = np.asarray(MAP_GRID, dtype=float)
-    grid_spl = _rcs_basis(grid, knots)
+    grid_spl = (_rcs_basis(grid, knots) - smean) / ssd
     # adjusted log-odds with adjusters at their (standardised) mean = 0:
     log_odds = lr.intercept_[0] + grid_spl @ spline_coef
     return {"grid": grid, "log_odds": log_odds, "spline_coef": spline_coef,
@@ -242,48 +249,45 @@ def _fit_rcs_logit(map_lowest, y, adj, knots, seed=RANDOM_SEED):
 
 
 def _inflection_from_curve(grid, log_odds):
-    """Locate the risk-INFLECTION MAP: the MAP at which the adjusted risk, scanning
-    DOWNWARD from high MAP, begins to rise materially.
+    """Locate the risk-INFLECTION ("floor") MAP from a fitted adjusted risk curve.
 
-    Operationally: the curve is monotone-ish decreasing in MAP for a harm signal.
-    We take the discrete slope d(log_odds)/d(MAP).  The inflection = the highest
-    MAP at which the downward-MAP slope first exceeds a small positive threshold
-    (risk per +1 mmHg drop), i.e. where protection from raising MAP saturates.
-    We report:
-      - inflection_map: highest MAP where local rise-per-mmHg-drop >= median rise;
-      - knee_map: MAP maximising curvature (2nd-difference) -- the "elbow".
+    The clinical question is: above which MAP does raising MAP stop buying much
+    risk reduction (the curve flattens), and below which does risk climb steeply?
+    That elbow IS the recommended floor.
+
+    We use a robust Kneedle-style elbow: on the adjusted *risk* curve r(MAP) (which
+    decreases as MAP rises for a harm signal), connect the two endpoints with a
+    chord and take the MAP of maximum vertical distance of the curve below the
+    chord -- the point of sharpest bend.  This is bounded strictly inside the grid
+    (never a grid-edge artifact) and is stable under bootstrap.  We also report the
+    max-curvature ``knee`` as a secondary estimate.
     """
     import numpy as np
     lo = np.asarray(log_odds, dtype=float)
     g = np.asarray(grid, dtype=float)
-    # slope wrt decreasing MAP: risk increase per 1 mmHg lower MAP
-    drop_slope = -np.gradient(lo, g)              # positive = risk rises as MAP falls
-    pos = drop_slope[drop_slope > 0]
-    if pos.size == 0:
-        # risk never rises as MAP falls within range -> no actionable floor
-        infl = float("nan")
-    else:
-        # Inflection = the MAP at which, scanning UPWARD from the lowest MAP, the
-        # risk-rise-per-mmHg-drop first FALLS BACK below half its peak -- i.e. the
-        # MAP above which raising MAP further stops buying much risk reduction.
-        # This is the "floor": below it risk climbs steeply, above it the curve
-        # flattens.  Bounded to the modelled grid; avoids the grid-edge artifact of
-        # a half-max *threshold-crossing* search on a monotone curve.
-        thr = 0.5 * float(np.nanmax(drop_slope))
-        peak_i = int(np.nanargmax(drop_slope))
-        infl = float("nan")
-        for i in range(peak_i, len(g)):           # scan from peak upward in MAP
-            if drop_slope[i] < thr:
-                infl = float(g[i])
-                break
-        if not math.isfinite(infl):
-            # slope stays high to the top of the grid: floor is at/above grid max
-            infl = float(g[-1])
-    # knee: max curvature (sharpest bend) -- a stable secondary estimate
+    r = 1.0 / (1.0 + np.exp(-lo))                  # adjusted risk vs MAP
+
+    drop_slope = -np.gradient(lo, g)              # +ve = risk rises as MAP falls
+    if not np.isfinite(r).all() or np.nanmax(drop_slope) <= 0:
+        # risk flat or rising with MAP -> no actionable floor in range
+        return {"inflection_map": float("nan"), "knee_map": float("nan"),
+                "max_drop_slope": None}
+
+    # Kneedle elbow: normalise risk to [0,1] over the grid, subtract the straight
+    # chord between endpoints, take the argmax of the gap (sharpest bend).
+    rn = (r - r.min()) / (r.max() - r.min()) if r.max() > r.min() else r * 0.0
+    gn = (g - g.min()) / (g.max() - g.min())
+    chord = rn[0] + (rn[-1] - rn[0]) * gn          # straight line endpoint->endpoint
+    gap = rn - chord                               # risk curve is convex-decreasing
+    # the elbow is where the curve bows farthest from the chord (max |gap|)
+    elbow_i = int(np.nanargmax(np.abs(gap)))
+    infl = float(g[elbow_i])
+
+    # knee: max curvature (sharpest 2nd-difference bend) -- secondary
     curv = np.gradient(np.gradient(lo, g), g)
     knee = float(g[int(np.nanargmax(np.abs(curv)))]) if np.isfinite(curv).any() else float("nan")
     return {"inflection_map": infl, "knee_map": knee,
-            "max_drop_slope": float(np.nanmax(drop_slope)) if pos.size else None}
+            "max_drop_slope": float(np.nanmax(drop_slope))}
 
 
 def threshold_by_stratum(df, outcome=RENAL_OUTCOME, restrict=None,
