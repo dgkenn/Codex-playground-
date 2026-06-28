@@ -56,6 +56,16 @@ confound could even operate*.
 
 ## Results (N = 38 usable cases, 3-min windows; seed 20260626)
 
+> **Note on N (29 vs 38).** The confound aggregates in
+> `cache/dynamic_tone_confounds_results.json` are written from the **primary
+> pass** (N = 29 usable; some cases hit transient empty-ART downloads under the
+> shared bandwidth on that pass and were honestly skipped). The window-sweep
+> re-extraction recovered most of them, so the **3-min sweep entry reports N =
+> 38** and the tables below use that fuller set. The two are consistent (e.g.
+> dia/MAP|MAP,HR +0.59 at N=29 vs +0.57 at N=38; tone|MAP,HR −0.30 vs −0.29). A
+> clean idle-bandwidth re-run (resumable — the per-case window cache is kept)
+> recovers the full set in one pass.
+
 ### Anchor — reproduce the tracking finding within this run
 
 | within-case r | median | IQR | cases same-dir | Wilcoxon p (≠0) |
@@ -141,16 +151,15 @@ Core within-case tracking re-run at 1 / 3 / 5-min windows:
 |---|---|---|---|---|
 | **60 s** | 26 | +0.48 | **+0.54** | −0.25 |
 | **180 s** | 38 | +0.54 | **+0.57** | −0.29 |
-| **300 s** | *(finishing — ART-bandwidth bound; resumable)* | | | |
+| **300 s** | 25 | +0.42 | **+0.56** | −0.39 |
 
-**Robust across window length.** Shortening to 1-min or keeping 3-min gives the
-same effect (dia/MAP|MAP,HR +0.54 → +0.57; tone|MAP,HR −0.25 → −0.29); the
-result is not an artefact of the arbitrary 3-min choice. The 300-s row is
-computing on a slower shared ART pipe and will be appended to
-`cache/dynamic_tone_confounds_results.json` (`window_sweep["300s"]`) on
-completion; the 60/180-s agreement already establishes robustness, and 5-min
-windows (fewer, longer windows per case) are expected to move in the same
-direction with somewhat fewer usable cases.
+**Robust across window length.** All three window lengths agree: the partial
+dia/MAP|MAP,HR is +0.54 / +0.57 / +0.56 at 1 / 3 / 5 min, and the composite
+tone|MAP,HR is −0.25 / −0.29 / −0.39. The result is **not** an artefact of the
+arbitrary 3-min choice — if anything the composite tone signal strengthens at
+longer windows (more beats and more SVR samples per window reduce per-window
+noise), at the cost of fewer usable cases (25–26 at the extremes vs 38 at 3 min,
+because a case needs ≥5 windows and short cases drop out at 5-min windows).
 
 ---
 
