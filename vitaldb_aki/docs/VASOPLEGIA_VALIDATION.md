@@ -17,38 +17,38 @@ This is the construct-validity check the vasoplegia biomarker (`docs/VASOPLEGIA_
 
 ## Cohort / availability (N)
 
-- Rows extracted: **100**.
-- With a waveform vasoplegia index: **89**.
-- With a measured SVRI: **100** (100 via a DIRECT EV1000 SVR/SVRI track).
-- **JOINT (index AND measured SVRI): 89** <- the headline N.
+- Rows extracted: **120**.
+- With a waveform vasoplegia index: **108**.
+- With a measured SVRI: **120** (120 via a DIRECT EV1000 SVR/SVRI track).
+- **JOINT (index AND measured SVRI): 108** <- the headline N.
 
 ## THE HEADLINE -- waveform tone index vs measured SVRI
 
 | subset | comparison | Spearman r | p | N | hypothesised | supports? |
 |---|---|---|---|---|---|---|
-| all joint | waveform index vs SVRI | **-0.3438** | 0.0009713 | 89 | negative | True |
-| all joint | tau vs SVRI | 0.1642 | 0.1241 | 89 | positive | True |
-| direct-SVR only | waveform index vs SVRI | **-0.3438** | 0.0009713 | 89 | negative | True |
-| direct-SVR only | tau vs SVRI | 0.1642 | 0.1241 | 89 | positive | True |
+| all joint | waveform index vs SVRI | **-0.2706** | 0.004619 | 108 | negative | True |
+| all joint | tau vs SVRI | 0.1637 | 0.09048 | 108 | positive | True |
+| direct-SVR only | waveform index vs SVRI | **-0.2706** | 0.004619 | 108 | negative | True |
+| direct-SVR only | tau vs SVRI | 0.1637 | 0.09048 | 108 | positive | True |
 
 > A Spearman r in the hypothesised direction (waveform index NEGATIVELY correlated with measured SVRI; tau POSITIVELY correlated) is the construct-validity evidence that LICENSES calling the waveform index an SVR-free vasoplegia marker. The DIRECT-SVR-only subset is the cleanest (measured EV1000 SVR/SVRI, not CO-derived).
 
-Scatter (all joint): waveform index in [-1.026, 1.189], measured SVRI in [188.7, 3975.0] (median 1736.0 dyn*s*cm^-5*m^2). A downward cloud (high index, low SVRI) is the hypothesised pattern.
+Scatter (all joint): waveform index in [-0.998, 1.29], measured SVRI in [188.7, 3975.0] (median 1901.7 dyn*s*cm^-5*m^2). A downward cloud (high index, low SVRI) is the hypothesised pattern.
 
 ## Secondary -- does MEASURED SVRI predict organ injury (incremental over MAP burden + body size + age + sex)?
 
 | outcome | N | events | dAUROC | LR p | FDR reject | E-value(pt) |
 |---|---|---|---|---|---|---|
-| organ_renal | 54 | 3 | 0.0131 | 0.2284 | False | n/a |
-| composite | 54 | 19 | 0.006 | 0.6765 | False | n/a |
-| organ_hepatocellular (neg. control) | 15 | n/a | n/a | n/a | n/a | n/a |
+| organ_renal | 66 | 5 | 0.0328 | 0.1707 | False | n/a |
+| composite | 67 | 25 | -0.001 | 0.8352 | False | n/a |
+| organ_hepatocellular (neg. control) | 19 | n/a | n/a | n/a | n/a | n/a |
 
 Baseline adjustment set: `['map_auc_below_65', 'weight_kg', 'bsa_m2', 'age', 'sex_male']`. Cells with < 10 events are underpowered.
 
 ## Secondary -- waveform index vs SVV preload state (discriminant)
 
-- N = 89; Spearman r = **-0.3056**.
-- 2x2 median split: {'both_high': 16, 'vaso_high_svv_low': 28, 'vaso_low_svv_high': 28, 'both_low': 17}.
+- N = 108; Spearman r = **-0.2863**.
+- 2x2 median split: {'both_high': 18, 'vaso_high_svv_low': 35, 'vaso_low_svv_high': 35, 'both_low': 20}.
 - Vasoplegia (tone) and SVV (preload) are distinct axes; a low/zero correlation is EXPECTED and supports that the waveform index measures TONE, not preload (discriminant validity).
 
 ## What this licenses
