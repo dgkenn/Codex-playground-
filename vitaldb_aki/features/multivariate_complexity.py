@@ -51,11 +51,16 @@ If <3 core signals are jointly usable (or <50 joint grid points), mvcplx_availab
 == 0 (an int flag, NOT None) and EVERY other feature is None. mvcplx_n_signals is
 context only.
 
-PURE STDLIB
------------
-Alignment, z-scoring, Pearson, and multivariate SampEn are all pure Python (no
-numpy). Multivariate SampEn is O(n^2) in the joint grid length; the joint series
-is uniform-capped to MAX_MVSAMPEN_LEN points by stride BEFORE the template match.
+NUMERICS
+--------
+Alignment, z-scoring, and Pearson are pure Python (stdlib). Multivariate SampEn
+is O(n^2) in the joint grid length; its template match is NUMPY-vectorized
+(lazily imported inside the function, so the stdlib-only paths are unaffected)
+and is bit-equivalent to the prior pure-Python counting. The joint series is
+uniform-capped to MAX_MVSAMPEN_LEN points by stride BEFORE the template match,
+bounding both time and the O(n^2) match-matrix memory. Degenerate (constant /
+fully-rigid) and too-short ensembles are guarded before the match so they return
+fast (0.0 or None) without hanging the extraction.
 
 TRACK PRIORITIES (binding)
   MAP:   Solar8000/ART_MBP -> Solar8000/NIBP_MBP -> EV1000/ART_MBP   gate 20-200
@@ -102,8 +107,11 @@ MIN_JOINT_POINTS: int = 50         # >=50 jointly-valid grid points required
 # Multivariate Sample Entropy parameters (Ahmed & Mandic 2011).
 MVSAMPEN_M: int = 2                # embedding dimension per channel
 MVSAMPEN_R_FRAC: float = 0.2       # tolerance r in z-scored units
-# Cap on joint grid length before the O(n^2) multivariate template match.
-MAX_MVSAMPEN_LEN: int = 2000
+# Cap on joint grid length before the multivariate template match. The match is
+# now numpy-vectorized but is O(n^2) in MEMORY (an n x n match matrix), so the
+# cap bounds peak memory as well as time. Lowered 2000 -> 1500: the joint grid
+# already spans every channel, so 1500 points retain the full ensemble shape.
+MAX_MVSAMPEN_LEN: int = 1500
 
 # ---------------------------------------------------------------------------
 # Track candidate lists (binding; first_available picks the first present).
@@ -159,7 +167,7 @@ SPECS: list[FeatureSpec] = [
         "MULTIVARIATE Sample Entropy across the available signals "
         "(Ahmed-Mandic; composite delay vectors across channels, m=2, "
         "r=0.2 in z-scored units, Chebyshev distance; joint grid uniform-capped "
-        f"to <={MAX_MVSAMPEN_LEN} points). LOWER = system-wide rigidity / loss "
+        f"to <={MAX_MVSAMPEN_LEN} pts). LOWER = system-wide rigidity / loss "
         "of joint complexity. None if undefined",
     ),
     FeatureSpec(
@@ -445,7 +453,7 @@ def _multivariate_sampen(
     m: int = MVSAMPEN_M,
     r: float = MVSAMPEN_R_FRAC,
 ) -> float | None:
-    """Multivariate Sample Entropy (Ahmed & Mandic 2011), pure-python O(n^2).
+    """Multivariate Sample Entropy (Ahmed & Mandic 2011), NUMPY-vectorized.
 
     The channels must already be Z-SCORED (zero mean / unit SD) so that the
     single tolerance `r` is meaningful across every channel and the Chebyshev
@@ -492,7 +500,29 @@ def _multivariate_sampen(
         intended "rigid ensemble => low joint entropy" behaviour.
       * Independent noisy channels rarely match at the longer template, so
         A << B and MVSampEn is large.
+
+    Implementation / guards
+    -----------------------
+    The triple Python loop (template pairs x channels x lags) is replaced by
+    numpy: per channel we stack the (last x mm) sliding-window templates, take the
+    pairwise |t_i - t_j| via broadcasting, and the composite Chebyshev distance is
+    the max ACROSS channels and lags. Pairs (i<j) within r are counted on the
+    strict upper triangle. Integer pair counts are identical to the old loop, so
+    MVSampEn matches to floating-point round-off (~1e-12). numpy is lazily
+    imported (stdlib core unaffected).
+
+    Guards (run BEFORE any O(n^2) work):
+      * SHORT / unequal: <1 channel, unequal channel lengths, or n < m + 2 -> None.
+      * NON-FINITE: any non-finite sample in any channel -> None (the caller
+        z-scores upstream, so this is defensive).
+      * DEGENERATE / CONSTANT: a channel set whose joint range is ~0 (every
+        composite template within r) would make the naive counter walk all
+        ~n^2/2 pairs while every one matches (A == B). We short-circuit that
+        all-match case to 0.0 -- maximal rigidity / minimal joint entropy --
+        without materialising a second match matrix.
     """
+    import numpy as np
+
     p = len(channels)
     if p < 1:
         return None
@@ -503,33 +533,49 @@ def _multivariate_sampen(
     if n < m + 2:
         return None
 
+    mat = np.asarray(channels, dtype=float)  # shape (p, n)
+    if mat.ndim != 2 or not np.isfinite(mat).all():
+        return None
+
     def _match_fraction(mm: int) -> tuple[int, int]:
-        """(matched_pairs, total_pairs) for composite length-mm templates (i<j)."""
+        """(matched_pairs, total_pairs) for composite length-mm templates (i<j).
+
+        Counted ROW BY ROW (memory O(p*last), not O(p*last^2*mm)): for template i
+        we form the composite Chebyshev distance to every later template at once
+        -- max over BOTH channels and the mm lags -- and add the within-r count.
+        The composite max-over-channels is the multivariate construction.
+        """
         last = n - mm + 1   # number of templates of per-channel length mm
         if last < 2:
             return 0, 0
-        count = 0
-        for i in range(last):
-            for j in range(i + 1, last):
-                ok = True
-                # Composite Chebyshev: max over ALL channels and the mm lags.
-                for ch in channels:
-                    for k in range(mm):
-                        if abs(ch[i + k] - ch[j + k]) > r:
-                            ok = False
-                            break
-                    if not ok:
-                        break
-                if ok:
-                    count += 1
+        # windows[c] = (last, mm) sliding windows for channel c -> (p, last, mm).
+        windows = np.stack(
+            [np.lib.stride_tricks.sliding_window_view(mat[c], mm)[:last]
+             for c in range(p)],
+            axis=0,
+        )
+        matched = 0
+        for i in range(last - 1):
+            rest = windows[:, i + 1:, :]            # (p, last-1-i, mm)
+            ti = windows[:, i, :][:, None, :]       # (p, 1, mm)
+            # Composite Chebyshev: max over channels (axis 0) AND lags (axis 2).
+            dist = np.abs(rest - ti).max(axis=(0, 2))   # (last-1-i,)
+            matched += int(np.count_nonzero(dist <= r))
         total = last * (last - 1) // 2
-        return count, total
+        return matched, total
 
     b_cnt, b_tot = _match_fraction(m)
-    a_cnt, a_tot = _match_fraction(m + 1)
-
-    if b_tot == 0 or a_tot == 0 or b_cnt == 0:
+    if b_tot == 0 or b_cnt == 0:
         # No matches at the base dimension -> statistic undefined.
+        return None
+    # DEGENERATE all-match fast path: every base-length pair already matches
+    # (constant / fully-rigid ensemble). Then every extended pair matches too, so
+    # A == B and MVSampEn == 0 exactly -- skip the second (a) match matrix.
+    if b_cnt == b_tot:
+        return 0.0
+
+    a_cnt, a_tot = _match_fraction(m + 1)
+    if a_tot == 0:
         return None
     if a_cnt == 0:
         # Matches at m but none extend to m+1: MVSampEn -> +inf; report None.

@@ -66,7 +66,11 @@ features are None EXCEPT physnet_available, which is 0. Each signal is
 range-gated before alignment (artifact rejection identical in spirit to
 pfds.py / hemodynamics.py).
 
-stdlib only -- no numpy (Pearson / TE are pure Python).
+NUMERICS: Pearson, alignment, and the network topology are pure stdlib. Transfer
+entropy's joint-histogram counting is numpy-vectorized (np.bincount over flattened
+bin indices; numpy lazily imported inside the function so the stdlib paths are
+unaffected) and is bit-identical to the prior dict counting; it is additionally
+capped to TE_MAX_POINTS by uniform stride and guards short/degenerate series.
 
 Protocol reference: Sec 7C (hemodynamic axis), Sec 7F (multi-signal coupling).
 """
@@ -250,6 +254,21 @@ def _clip_to_window(
 # ===========================================================================
 # Pure computational helpers (no I/O; unit-testable on synthetic series).
 # ===========================================================================
+
+def _uniform_cap(series: list[float], maxlen: int) -> list[float]:
+    """Uniformly decimate `series` to at most `maxlen` points by integer stride.
+
+    Bounds the per-pass cost of transfer entropy on pathologically long aligned
+    grids (uniform striding preserves temporal structure far better than
+    truncation and is deterministic). Returned unchanged when already short
+    enough or when maxlen <= 0.
+    """
+    n = len(series)
+    if maxlen <= 0 or n <= maxlen:
+        return list(series)
+    stride = (n + maxlen - 1) // maxlen   # ceil(n / maxlen)
+    return series[::stride]
+
 
 def _pearson(xs: list[float], ys: list[float]) -> float | None:
     """Pearson correlation coefficient of two equal-length series.
@@ -529,7 +548,7 @@ def _transfer_entropy(
     y: list[float],
     nbins: int = TE_NBINS,
 ) -> float | None:
-    """Binned transfer entropy TE(X -> Y) with lag 1 grid step.
+    """Binned transfer entropy TE(X -> Y) with lag 1 grid step. NUMPY-vectorized.
 
     TE(X->Y) = sum p(y_{t+1}, y_t, x_t) * log2[ p(y_{t+1}|y_t, x_t) /
                                                 p(y_{t+1}|y_t) ]
@@ -538,47 +557,67 @@ def _transfer_entropy(
     nbins=3). Probabilities are estimated by counting the joint triples
     (y_{t+1}, y_t, x_t) over t = 0 .. n-2. Logarithm base 2 (bits).
 
+    Cost / poison-pill guards
+    -------------------------
+    The estimator is per-pair O(n) (one pass over transitions), so it was never
+    the bottleneck the SampEn modules were -- but it is called over many
+    pairs x windows. The Python dict-counting loop is replaced by a vectorized
+    joint histogram (a single np.bincount over flattened bin indices), and:
+      * the joint series is capped to TE_MAX_POINTS by uniform stride (bounds the
+        single pass even on pathologically long aligned grids);
+      * SHORT series (< 3 points / < 2 transitions) -> None;
+      * a DEGENERATE constant series bins to a single tercile, so every
+        conditional ratio is 1 and TE == 0.0 -- returned without spurious work.
+
     Returns None if fewer than 2 usable transitions. TE is >= 0 by construction
     (it is a conditional mutual information estimate); tiny negative values from
     floating point are clamped to 0.
     """
+    import numpy as np
+
     n = min(len(x), len(y))
     if n < 3:
         return None
-    bx = _tercile_bins(x[:n], nbins)
-    by = _tercile_bins(y[:n], nbins)
+    xs = _uniform_cap(list(x[:n]), TE_MAX_POINTS)
+    ys = _uniform_cap(list(y[:n]), TE_MAX_POINTS)
+    n = min(len(xs), len(ys))
+    if n < 3:
+        return None
 
-    # Counts over transitions t -> t+1.
-    c_yyx: dict[tuple[int, int, int], int] = {}   # (y1, y0, x0)
-    c_yx: dict[tuple[int, int], int] = {}         # (y0, x0)
-    c_yy: dict[tuple[int, int], int] = {}         # (y1, y0)
-    c_y: dict[int, int] = {}                      # (y0)
-    total = 0
-    for t in range(n - 1):
-        y1 = by[t + 1]
-        y0 = by[t]
-        x0 = bx[t]
-        c_yyx[(y1, y0, x0)] = c_yyx.get((y1, y0, x0), 0) + 1
-        c_yx[(y0, x0)] = c_yx.get((y0, x0), 0) + 1
-        c_yy[(y1, y0)] = c_yy.get((y1, y0), 0) + 1
-        c_y[y0] = c_y.get(y0, 0) + 1
-        total += 1
+    if nbins < 1:
+        nbins = 1
+    bx = np.asarray(_tercile_bins(xs, nbins), dtype=np.intp)
+    by = np.asarray(_tercile_bins(ys, nbins), dtype=np.intp)
 
+    # Transitions t -> t+1 (t = 0 .. n-2). Vectorize the joint counts via a
+    # single flat histogram of the (y1, y0, x0) triples; the marginals are
+    # reductions of that 3-D table. Bit-identical to the old dict counting.
+    y1 = by[1:]        # y_{t+1}
+    y0 = by[:-1]       # y_t
+    x0 = bx[:-1]       # x_t
+    total = y1.shape[0]
     if total < 2:
         return None
 
+    nb = nbins
+    flat = (y1 * nb + y0) * nb + x0          # index into (nb, nb, nb)
+    c_yyx = np.bincount(flat, minlength=nb * nb * nb).reshape(nb, nb, nb)
+    c_yx = c_yyx.sum(axis=0)                 # (y0, x0)  -- marginal over y1
+    c_yy = c_yyx.sum(axis=2)                 # (y1, y0)  -- marginal over x0
+    c_y = c_yyx.sum(axis=(0, 2))             # (y0,)     -- marginal over y1, x0
+
+    idx = np.argwhere(c_yyx > 0)             # occupied (y1, y0, x0) cells
     te = 0.0
-    for (y1, y0, x0), n_yyx in c_yyx.items():
+    for yy1, yy0, xx0 in idx:
+        n_yyx = c_yyx[yy1, yy0, xx0]
         p_yyx = n_yyx / total
-        # p(y1 | y0, x0) = c_yyx / c_yx
-        p_y1_given_yx = n_yyx / c_yx[(y0, x0)]
-        # p(y1 | y0) = c_yy / c_y
-        p_y1_given_y = c_yy[(y1, y0)] / c_y[y0]
+        p_y1_given_yx = n_yyx / c_yx[yy0, xx0]
+        p_y1_given_y = c_yy[yy1, yy0] / c_y[yy0]
         if p_y1_given_yx > 0.0 and p_y1_given_y > 0.0:
             te += p_yyx * math.log2(p_y1_given_yx / p_y1_given_y)
     if te < 0.0:
         te = 0.0
-    return te
+    return float(te)
 
 
 def _mean_te(

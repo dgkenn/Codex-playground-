@@ -226,7 +226,9 @@ class TestUniformCap(unittest.TestCase):
         self.assertEqual(_uniform_cap(s, maxlen=5), [0.0, 2.0, 4.0, 6.0, 8.0])
 
     def test_cap_at_default_maxlen(self):
-        self.assertEqual(MAX_SAMPEN_LEN, 3000)
+        # Lowered 3000 -> 2000 alongside the numpy vectorization: the match
+        # matrix is O(n^2) in memory, so the cap bounds peak memory too.
+        self.assertEqual(MAX_SAMPEN_LEN, 2000)
 
 
 # ===========================================================================
@@ -300,6 +302,91 @@ class TestSampleEntropy(unittest.TestCase):
         self.assertIsNotNone(result)
         self.assertAlmostEqual(result, 0.0, places=6,
                                msg="With enormous r every template matches => SampEn ~ 0")
+
+    def test_vectorized_matches_pure_python(self):
+        """The numpy-vectorized SampEn is bit-equivalent to a reference pure-Python
+        Richman-Moorman counter on a non-trivial series (exact, no cap)."""
+        series = [50.0 + 8.0 * math.sin(i / 9.0) + ((i * 1103515245 + 12345)
+                  % 1000) / 250.0 for i in range(500)]
+
+        def _ref(s, m=2):
+            n = len(s)
+            mu = sum(s) / n
+            r = 0.2 * math.sqrt(sum((v - mu) ** 2 for v in s) / n)
+
+            def mf(mm):
+                last = n - mm + 1
+                cnt = 0
+                for i in range(last):
+                    ti = s[i:i + mm]
+                    for j in range(i + 1, last):
+                        if all(abs(ti[k] - s[j + k]) <= r for k in range(mm)):
+                            cnt += 1
+                return cnt, last * (last - 1) // 2
+
+            bc, bt = mf(m)
+            ac, at = mf(m + 1)
+            return -math.log((ac / at) / (bc / bt))
+
+        ref = _ref(series)
+        got = _sample_entropy(series, m=2, r=None)
+        self.assertIsNotNone(got)
+        self.assertAlmostEqual(got, ref, places=12,
+                               msg="Vectorized SampEn must equal pure-Python reference")
+
+
+# ===========================================================================
+# 6b. POISON-PILL regression: a degenerate / flat series must return fast with a
+#     sensible value (0.0 or None) and never hang. (Reproduces the case ~#962
+#     where _sample_entropy on a flat MAP/HR series never returned.)
+# ===========================================================================
+
+class TestSampleEntropyDegenerateGuards(unittest.TestCase):
+    def test_constant_series_returns_zero_fast(self):
+        """A perfectly constant (SD==0) series short-circuits to 0.0 WITHOUT the
+        O(n^2) match -- the poison-pill fix."""
+        import time
+        series = [70.0] * 3000  # the pathological flat MAP/HR record
+        t0 = time.perf_counter()
+        result = _sample_entropy(series, m=2, r=None)
+        dt = time.perf_counter() - t0
+        self.assertEqual(result, 0.0, "Constant series must give SampEn 0.0")
+        self.assertLess(dt, 0.1, "Constant-series guard must be near-instant (no hang)")
+
+    def test_all_identical_values_returns_zero(self):
+        series = [42.0] * 2500
+        self.assertEqual(_sample_entropy(series, m=2, r=None), 0.0)
+
+    def test_all_match_within_r_returns_zero_fast(self):
+        """A near-flat series whose spread fits inside r=0.2*SD: every length-m
+        pair matches => A==B => SampEn 0.0 via the all-match short-circuit."""
+        import time
+        # Spread ~0.002 (three quantized levels); r = 0.2*SD is large enough that
+        # every template pair matches.
+        series = [75.0 + 0.001 * (i % 3) for i in range(2000)]
+        t0 = time.perf_counter()
+        result = _sample_entropy(series, m=2, r=None)
+        dt = time.perf_counter() - t0
+        self.assertEqual(result, 0.0,
+                         "All-match (near-flat) series must give SampEn 0.0")
+        self.assertLess(dt, 0.1, "All-match short-circuit must be fast")
+
+    def test_non_finite_values_dropped(self):
+        """NaN / inf samples are dropped before the match; a constant remainder
+        still yields a sensible value (0.0), not a crash or hang."""
+        series = [70.0] * 100 + [float("nan"), float("inf")] + [70.0] * 100
+        result = _sample_entropy(series, m=2, r=None)
+        self.assertEqual(result, 0.0)
+
+    def test_too_short_after_finite_filter_none(self):
+        series = [float("nan"), 1.0, float("inf")]
+        self.assertIsNone(_sample_entropy(series, m=2, r=None))
+
+    def test_cap_lowered_to_2000(self):
+        """A very long series is decimated to <= MAX_SAMPEN_LEN (=2000) points."""
+        self.assertEqual(MAX_SAMPEN_LEN, 2000)
+        capped = _uniform_cap([float(i) for i in range(50000)], MAX_SAMPEN_LEN)
+        self.assertLessEqual(len(capped), 2000)
 
 
 # ===========================================================================

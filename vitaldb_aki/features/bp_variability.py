@@ -45,13 +45,17 @@ are computed only when the HR track is present and has >= MIN_SAMPLES samples;
 when HR is absent the HR features are None even if MAP is fine. This mirrors the
 pfds missing-track convention exactly.
 
-PURE STDLIB
------------
-Sample Entropy and (the optionally-exposed) DFA are implemented in pure Python
-(no numpy). SampEn is the classic O(n^2) template-matching estimator; for
-tractability the input series is first capped to MAX_SAMPEN_LEN points by a
-uniform stride (decimation) -- documented at _uniform_cap. After the cap the
-O(n^2) cost is bounded.
+NUMERICS
+--------
+Sample Entropy is the classic Richman-Moorman template-matching estimator. The
+O(n^2) template match is NUMPY-vectorized (lazily imported inside the function so
+the stdlib-only integrity core is unaffected); the result is bit-equivalent to
+the prior pure-Python pair counting. For tractability the input series is first
+capped to MAX_SAMPEN_LEN points by a uniform stride (decimation) -- documented at
+_uniform_cap -- which bounds both the time and the O(n^2) memory of the match
+matrix. Degenerate (constant / SD ~ 0) and too-short series are guarded BEFORE
+the match so a flat MAP/HR record can never hang the extraction (see
+_sample_entropy guards).
 
 TRACK PRIORITIES (binding)
   MAP: Solar8000/ART_MBP -> Solar8000/NIBP_MBP -> EV1000/ART_MBP
@@ -84,8 +88,12 @@ MIN_SAMPLES: int = 30
 SAMPEN_M: int = 2          # embedding dimension
 SAMPEN_R_FRAC: float = 0.2  # tolerance r = SAMPEN_R_FRAC * SD(series)
 
-# Cap on series length before the O(n^2) SampEn template match (uniform stride).
-MAX_SAMPEN_LEN: int = 3000
+# Cap on series length before the SampEn template match (uniform stride).
+# Lowered from 3000 -> 2000: the template match is now numpy-vectorized but is
+# still O(n^2) in MEMORY (it materialises an n x n match matrix), so the cap
+# bounds peak memory as well as time. 2000 points still capture the full
+# temporal shape of an intraop record after uniform decimation.
+MAX_SAMPEN_LEN: int = 2000
 
 MAX_INTER_SAMPLE_DT_S: float = 10.0  # s -- (unused by stats but kept for parity)
 
@@ -134,7 +142,7 @@ SPECS: list[FeatureSpec] = [
     ),
     FeatureSpec(
         "bpv_map_sampen", "comprehensive", "intraop",
-        "Sample Entropy of MAP (m=2, r=0.2*SD; uniform-decimated to <=3000 pts). "
+        "Sample Entropy of MAP (m=2, r=0.2*SD; uniform-decimated to <=2000 pts). "
         "LOWER = more regular / less complex (loss of physiologic complexity)",
     ),
     # ---- HR variability ----------------------------------------------------
@@ -149,7 +157,7 @@ SPECS: list[FeatureSpec] = [
     ),
     FeatureSpec(
         "bpv_hr_sampen", "comprehensive", "intraop",
-        "Sample Entropy of HR (m=2, r=0.2*SD; uniform-decimated to <=3000 pts). "
+        "Sample Entropy of HR (m=2, r=0.2*SD; uniform-decimated to <=2000 pts). "
         "LOWER = more regular. None if HR track absent",
     ),
 ]
@@ -292,7 +300,7 @@ def _sample_entropy(
     m: int = SAMPEN_M,
     r: float | None = None,
 ) -> float | None:
-    """Sample Entropy (Richman & Moorman 2000), pure-python O(n^2).
+    """Sample Entropy (Richman & Moorman 2000), NUMPY-vectorized.
 
     SampEn = -ln( A / B ) where
       B = average fraction of length-m template pairs within Chebyshev distance r
@@ -303,6 +311,16 @@ def _sample_entropy(
     purely because there is one fewer template at the longer length, which would
     leave a constant series at a small non-zero value -- the normalisation is the
     standard Richman & Moorman correction.
+
+    Implementation
+    --------------
+    The double Python loop over template pairs is replaced by numpy. For each
+    embedding length mm we build the (last x mm) matrix of templates and form the
+    per-pair Chebyshev distance via broadcasting; pairs (i<j) within r are counted
+    with a boolean upper-triangular mask. The result is bit-equivalent to the old
+    pure-Python counting (integer pair counts; same normalisation), so SampEn
+    matches to floating-point round-off (~1e-12). numpy is lazily imported here so
+    the stdlib-only integrity core is unaffected.
 
     Parameters
     ----------
@@ -321,46 +339,91 @@ def _sample_entropy(
         Returns None when the series is too short (< m + 2 after capping) or
         when the statistic is undefined (no matched templates).
 
-    Notes on edge cases:
-      * A perfectly CONSTANT series has every pair matching at any r >= 0, so
-        A == B and SampEn == -ln(1) == 0.0 (the minimum: maximally regular).
+    Guards (poison-pill protection; evaluated BEFORE the O(n^2) match)
+    -----------------------------------------------------------------
+      * SHORT: if the capped series has < m + 2 valid finite points the
+        statistic is undefined -> return None. (m + 2 is the Richman-Moorman
+        minimum: at least 2 templates at length m+1.)
+      * NON-FINITE: NaN / inf samples are dropped before the cap; if too few
+        finite points remain -> None.
+      * DEGENERATE / (near-)CONSTANT: a flat MAP/HR series (SD ~ 0, or every
+        pair within r) is the pathological case that made the old naive counter
+        pathological (every one of the ~n^2/2 pairs matches). When SD <= 0 the
+        series is perfectly constant: every length-(m) and length-(m+1) pair
+        matches, so A == B and SampEn == 0.0 -- we return 0.0 immediately
+        WITHOUT building any match matrix. This is the poison-pill fix.
+
+    Other edge cases:
       * A highly irregular / noisy series produces few length-(m+1) matches, so
         A << B and SampEn is large.
     """
-    capped = _uniform_cap(series, MAX_SAMPEN_LEN)
+    import numpy as np
+
+    # ---- finite filter + cap (guards run before any O(n^2) work) ------------
+    arr = np.asarray(series, dtype=float)
+    if arr.ndim != 1:
+        arr = arr.ravel()
+    arr = arr[np.isfinite(arr)]
+    capped = _uniform_cap(arr.tolist(), MAX_SAMPEN_LEN)
     n = len(capped)
     if n < m + 2:
+        # SHORT guard: too few valid points for a defined statistic.
         return None
+
+    x = np.asarray(capped, dtype=float)
 
     if r is None:
         sd = _sd(capped)
         r = (SAMPEN_R_FRAC * sd) if sd is not None else 0.0
+    else:
+        sd = _sd(capped)
 
-    def _match_fraction(mm: int) -> tuple[int, int]:
-        """Return (matched_pairs, total_pairs) for length-mm templates (i<j)."""
-        count = 0
+    # ---- DEGENERATE / (near-)constant fast path -----------------------------
+    # A perfectly constant series (SD == 0) has every template pair matching at
+    # any r >= 0, so A == B and SampEn == 0 exactly. The old pure-Python counter
+    # would still walk all ~n^2/2 pairs here (the poison case on a flat MAP/HR
+    # series); we short-circuit to 0.0 without touching the match matrix.
+    if sd is not None and sd <= 0.0:
+        return 0.0
+
+    def _matched_pairs(mm: int) -> tuple[int, int]:
+        """(matched_pairs, total_pairs) for length-mm templates (i<j), vectorized.
+
+        Counted ROW BY ROW to keep memory O(last) rather than O(last^2 * mm):
+        for template i we compare it against all templates j > i at once
+        (broadcast over the mm lags) and add the within-r count. This avoids
+        materialising the full last x last x mm distance cube (which is both
+        memory-heavy and, at n~2000, slower than the loop).
+        """
         last = n - mm + 1   # number of length-mm templates
         if last < 2:
             return 0, 0
-        for i in range(last):
-            ti = capped[i:i + mm]
-            for j in range(i + 1, last):
-                # Chebyshev (max-norm) distance <= r ?
-                ok = True
-                for k in range(mm):
-                    if abs(ti[k] - capped[j + k]) > r:
-                        ok = False
-                        break
-                if ok:
-                    count += 1
+        # templates[i] = x[i:i+mm]; shape (last, mm) via a sliding window.
+        templates = np.lib.stride_tricks.sliding_window_view(x, mm)[:last]
+        matched = 0
+        for i in range(last - 1):
+            rest = templates[i + 1:]                       # (last-1-i, mm)
+            # Chebyshev distance of template i to every later template.
+            dist = np.abs(rest - templates[i]).max(axis=1)  # (last-1-i,)
+            matched += int(np.count_nonzero(dist <= r))
         total = last * (last - 1) // 2
-        return count, total
+        return matched, total
 
-    b_cnt, b_tot = _match_fraction(m)
-    a_cnt, a_tot = _match_fraction(m + 1)
-
-    if b_tot == 0 or a_tot == 0 or b_cnt == 0:
+    b_cnt, b_tot = _matched_pairs(m)
+    if b_tot == 0 or b_cnt == 0:
         # No length-m template matches (or no templates) -> statistic undefined.
+        return None
+    # DEGENERATE all-match fast path: when EVERY length-m pair already matches
+    # (a flat/near-flat series whose spread fits inside r = 0.2*SD), every
+    # length-(m+1) pair matches too, so A == B and SampEn == 0 exactly. Skip the
+    # second (a) match matrix. This is the other face of the poison case: the old
+    # naive counter walked all ~n^2/2 pairs with the inner loop never breaking.
+    if b_cnt == b_tot:
+        return 0.0
+
+    a_cnt, a_tot = _matched_pairs(m + 1)
+
+    if a_tot == 0:
         return None
     if a_cnt == 0:
         # Matches at length m but none extend to m+1: maximal irregularity.
