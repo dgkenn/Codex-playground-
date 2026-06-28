@@ -19,3 +19,23 @@ Tests a reviewer of a MEASUREMENT paper demands, on the extracted cohorts. The E
 - **Pre-specified primary** = diastolic/MAP form factor (the carrier identified by the red-team R4 + dynamic decomposition) -- declared primary to avoid multiplicity fishing; other features are secondary/exploratory.
 - **External validity:** single-centre (SNUH/VitalDB); no public external arterial-waveform + CO cohort -> external replication is stated future work, not done here.
 - Still PENDING separately: the vasopressor-administration confound + lead/lag + window-length sensitivity (dynamic within-case claim) -- see docs/PIVOT2_DYNAMIC_CONFOUNDS.md.
+
+---
+
+## CVP sensitivity + case-mix (added)
+
+**CVP sensitivity (the SVR formula defaulted CVP=5 when unmeasured):** on the independent
+cohort, tone-index vs SVR_indep = −0.31 (all, n=46) vs **−0.25 (measured-CVP only, n=39)**;
+only 7 cases were CVP-defaulted. -> the result is NOT an artifact of the CVP assumption. PASS.
+
+**Case-mix (critical for generalizability):** the circularity-clean independent-CO cohort is
+**~72% LIVER TRANSPLANTATION** (38/53; + Biliary/Pancreas 7, Hepatic 4; essentially zero
+cardiac). Vigilance/PAC + CardioQ monitoring clusters in transplant. Implications:
+- The circularity-clean validation is demonstrated PREDOMINANTLY in liver-transplant patients
+  -- a population with LARGE, frequent vasoplegic swings (anhepatic / reperfusion), which is
+  favorable for detecting tone tracking but LIMITS generalizability to general surgery.
+- The larger EV1000 cohort (n~221) is more general-surgery but is the pulse-contour (circular) one.
+- HONEST SCOPE: the finding is best stated as "proof-of-concept that the arterial waveform
+  tracks relative vascular-tone changes, validated against independent CO PRIMARILY in liver
+  transplantation" -- niche, extreme-physiology; multi-population external validation is required
+  before any broader claim.
