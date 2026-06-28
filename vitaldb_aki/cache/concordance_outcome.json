@@ -1,0 +1,54 @@
+{
+  "seed": 20260628,
+  "n_total": 462,
+  "n_clear": 70,
+  "n_concordant": 36,
+  "n_discordant": 34,
+  "reco_counts": {
+    "fluid": 120,
+    "pressor": 95,
+    "mixed": 247
+  },
+  "adjusted": {
+    "composite": {
+      "n": 70,
+      "n_concordant": 36,
+      "n_discordant": 34,
+      "crude_rd": -0.0131,
+      "adj_rd": -0.091,
+      "ci": [
+        -0.249,
+        0.0916
+      ],
+      "base_rate": 0.2286
+    },
+    "organ_renal": {
+      "n": 65,
+      "n_concordant": 31,
+      "n_discordant": 34,
+      "crude_rd": 0.0057,
+      "adj_rd": -0.0209,
+      "ci": [
+        -0.077,
+        0.0241
+      ],
+      "base_rate": 0.0615
+    },
+    "organ_hypoperfusion": {
+      "n": 18,
+      "rd": null
+    }
+  },
+  "within_reco_primary": {
+    "fluid": {
+      "n": 37,
+      "rd": null
+    },
+    "pressor": {
+      "n": 33,
+      "rd": null
+    }
+  },
+  "evalue_primary": 2.71,
+  "verdict": "NOT YET POWERED/NULL: composite adjusted RD -0.091 (CI [-0.249, 0.0916], n=70); negative control clean. The concordance->outcome benefit is directional at best -- decision-benefit not established; caps impact to risk-stratification unless larger N / a trial moves it."
+}
