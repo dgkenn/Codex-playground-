@@ -1,0 +1,55 @@
+{
+  "seed": 20260628,
+  "n_ops": 130960,
+  "n_norepi_ops": 3261,
+  "trait_across_operations": {
+    "raw_dose": {
+      "n": 220,
+      "spearman": 0.184,
+      "ci": [
+        0.05,
+        0.309
+      ]
+    },
+    "duration_normalised_rate": {
+      "n": 218,
+      "spearman": 0.317,
+      "ci": [
+        0.188,
+        0.438
+      ]
+    },
+    "interpretation": "positive within-subject correlation across operations = the vasopressor requirement is a reproducible patient trait in an INDEPENDENT cohort + design. Caveat: operations differ in surgery type/duration -> the duration-normalised rate is the cleaner."
+  },
+  "incremental_over_MAP": {
+    "composite": {
+      "n": 130960,
+      "events": 13884,
+      "auc_clinical_plus_MAP": 0.8275,
+      "auc_plus_requirement": 0.8297,
+      "delta_auc": 0.0022,
+      "auc_MAP_alone": 0.69,
+      "auc_requirement_alone": 0.5742
+    },
+    "organ_renal": {
+      "n": 90246,
+      "events": 4497,
+      "auc_clinical_plus_MAP": 0.7566,
+      "auc_plus_requirement": 0.7581,
+      "delta_auc": 0.0015,
+      "auc_MAP_alone": 0.6658,
+      "auc_requirement_alone": 0.5771
+    },
+    "death_inhosp": {
+      "n": 130960,
+      "events": 1555,
+      "auc_clinical_plus_MAP": 0.8137,
+      "auc_plus_requirement": 0.8177,
+      "delta_auc": 0.004,
+      "auc_MAP_alone": 0.7022,
+      "auc_requirement_alone": 0.6067
+    },
+    "interpretation": "delta_auc > 0 => the vasopressor requirement adds predictive value BEYOND MAP-AUC + demographics in an independent cohort (external support for the control-theory corollary that the dose carries the hemodynamic insult). Compare requirement-alone vs MAP-alone AUC for which signal is better-identified."
+  },
+  "verdict": "EXTERNAL (INSPIRE, n_norepi=3261): TRAIT REPLICATES across operations (duration-normalised within-subject Spearman 0.317 [0.188, 0.438], n=218); requirement does NOT clearly add over MAP+demographics (death dAUC 0.004, composite dAUC 0.0022). NOTE: validates the CONCEPT (trait + incremental); the waveform/early-ID specifics need an external WAVEFORM cohort (MIMIC-IV/eICU), not testable in INSPIRE."
+}
