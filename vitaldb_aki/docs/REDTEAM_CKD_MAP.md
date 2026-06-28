@@ -42,3 +42,58 @@ Adversarial stress-tests. Each round mounts the strongest attack a skeptical rev
 ```
 **Verdict:** SURVIVES on the additive scale (CKD adj-RD > non-CKD adj-RD AND CKD adj-RD CI excludes 0) -- the excess is real, not just RR non-collapsibility
 
+## round2: confounding by indication/severity/procedure -- negative-control outcomes + procedure adjustment + E-value
+
+```json
+{
+ "attack": "confounding by indication/severity/procedure -- negative-control outcomes + procedure adjustment + E-value",
+ "negative_control_outcome_panel": {
+  "organ_renal": {
+   "additive_interaction": 0.0457,
+   "RD_ckd": 0.0608,
+   "RD_nonckd": 0.0151,
+   "events": 4497
+  },
+  "organ_hypoperfusion": {
+   "additive_interaction": 0.0297,
+   "RD_ckd": 0.1185,
+   "RD_nonckd": 0.0888,
+   "events": 1769
+  },
+  "organ_hepatocellular": {
+   "additive_interaction": 0.054,
+   "RD_ckd": 0.0663,
+   "RD_nonckd": 0.0122,
+   "events": 6051
+  },
+  "organ_cholestatic": {
+   "additive_interaction": 0.0437,
+   "RD_ckd": 0.0697,
+   "RD_nonckd": 0.026,
+   "events": 4868
+  },
+  "organ_coagulation": {
+   "additive_interaction": 0.0415,
+   "RD_ckd": 0.0909,
+   "RD_nonckd": 0.0494,
+   "events": 3112
+  }
+ },
+ "renal_additive_interaction": 0.0457,
+ "max_nonrenal_control_interaction": 0.054,
+ "procedure_adjusted": {
+  "additive_interaction": 0.0407,
+  "RD_ckd": 0.0542,
+  "RD_nonckd": 0.0135,
+  "added_cov": [
+   "optype_code",
+   "surgery_duration"
+  ]
+ },
+ "ckd_adjusted_RR": 1.585,
+ "e_value_ckd_RR": 2.549,
+ "verdict": "WEAKENED -- specificity fails (renal 0.0457 vs max control 0.054); procedure-adjusted 0.0407 holds."
+}
+```
+**Verdict:** WEAKENED -- specificity fails (renal 0.0457 vs max control 0.054); procedure-adjusted 0.0407 holds.
+

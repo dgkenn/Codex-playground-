@@ -43,7 +43,7 @@ def _risk(df, expo="HYPO", out="organ_renal"):
     return r1, r0, int((e == 1).sum()), int((e == 0).sum()), int(y.sum())
 
 
-def _gcomp_rd(df, expo="HYPO", out="organ_renal"):
+def _gcomp_rd(df, expo="HYPO", out="organ_renal", cov=None):
     """Covariate-adjusted marginal risk difference + risk ratio via g-computation
     (logistic outcome model, standardise over the stratum's own covariate dist)."""
     import numpy as np
@@ -51,7 +51,7 @@ def _gcomp_rd(df, expo="HYPO", out="organ_renal"):
     from sklearn.pipeline import Pipeline
     from sklearn.impute import SimpleImputer
     from sklearn.preprocessing import StandardScaler
-    cov = [c for c in COV if c in df.columns]
+    cov = [c for c in (cov or COV) if c in df.columns]
     X = df[cov + [expo]].copy()
     y = df[out].to_numpy(float)
     pipe = Pipeline([("imp", SimpleImputer(strategy="median")),
@@ -111,6 +111,68 @@ def round1(df):
     return out
 
 
+def _additive_interaction(df, out, cov=None):
+    """RD_ckd - RD_nonckd (g-computation adjusted) for a given outcome."""
+    rd_c = _gcomp_rd(df[df["ckd"] == 1], out=out, cov=cov)[0]
+    rd_n = _gcomp_rd(df[df["ckd"] == 0], out=out, cov=cov)[0]
+    return round(rd_c - rd_n, 4), round(rd_c, 4), round(rd_n, 4)
+
+
+def round2(df):
+    """ATTACK: confounding by indication / severity / procedure. (1) NEGATIVE-CONTROL
+    OUTCOMES -- if CKD patients who get hypotension are simply sicker, the CKD x
+    hypotension ADDITIVE excess should appear on NON-renal organ outcomes too, not just
+    renal. A renal-SPECIFIC excess argues against generic confounding. (2) PROCEDURE
+    confounding -- cardiac/vascular surgery has more hypotension AND more AKI AND more
+    CKD; does the renal CKD excess survive adding optype_code + surgery_duration? (3)
+    E-value -- how strong an unmeasured confounder would have to be."""
+    import math
+    out = {"attack": "confounding by indication/severity/procedure -- negative-control "
+                      "outcomes + procedure adjustment + E-value"}
+    # (1) negative-control outcome panel (renal is the target; others should be ~0 if specific)
+    panel = {}
+    for o in ["organ_renal", "organ_hypoperfusion", "organ_hepatocellular",
+              "organ_cholestatic", "organ_coagulation"]:
+        if o in df.columns:
+            import pandas as pd
+            df[o] = pd.to_numeric(df[o], errors="coerce")
+            sub = df[df[o].notna()]
+            if sub[o].sum() >= 30:
+                ai, rdc, rdn = _additive_interaction(sub, o)
+                panel[o] = {"additive_interaction": ai, "RD_ckd": rdc, "RD_nonckd": rdn,
+                            "events": int(sub[o].sum())}
+    out["negative_control_outcome_panel"] = panel
+    renal_ai = panel.get("organ_renal", {}).get("additive_interaction", 0.0)
+    # specificity: renal interaction should exceed the non-renal/non-hypoperfusion controls
+    ctrls = [panel[o]["additive_interaction"] for o in
+             ("organ_hepatocellular", "organ_cholestatic", "organ_coagulation") if o in panel]
+    max_ctrl = max([abs(c) for c in ctrls], default=0.0)
+    out["renal_additive_interaction"] = renal_ai
+    out["max_nonrenal_control_interaction"] = round(max_ctrl, 4)
+    # (2) procedure-adjusted renal CKD excess
+    proc_cov = COV + [c for c in ("optype_code", "surgery_duration") if c in df.columns]
+    ai_proc, rdc_proc, rdn_proc = _additive_interaction(df[df["organ_renal"].notna()],
+                                                         "organ_renal", cov=proc_cov)
+    out["procedure_adjusted"] = {"additive_interaction": ai_proc, "RD_ckd": rdc_proc,
+                                 "RD_nonckd": rdn_proc, "added_cov": proc_cov[len(COV):]}
+    # (3) E-value for the CKD-stratum adjusted RR
+    rr = _gcomp_rd(df[df["ckd"] == 1])[1]
+    evalue = round(rr + math.sqrt(rr * (rr - 1)), 3) if rr and rr > 1 else None
+    out["ckd_adjusted_RR"] = round(rr, 3) if rr else None
+    out["e_value_ckd_RR"] = evalue
+    specific = (renal_ai > 0.02) and (renal_ai > 2 * max_ctrl)
+    survives_proc = ai_proc > 0.02
+    out["verdict"] = (
+        f"SURVIVES -- renal CKD excess ({renal_ai}) is {'renal-SPECIFIC' if specific else 'NOT clearly specific'} "
+        f"(max non-renal control interaction {max_ctrl}); procedure-adjusted excess "
+        f"{ai_proc} {'holds' if survives_proc else 'collapses'}; E-value {evalue}."
+        if (specific and survives_proc) else
+        f"WEAKENED -- specificity {'fails' if not specific else 'ok'} (renal {renal_ai} vs "
+        f"max control {max_ctrl}); procedure-adjusted {ai_proc} "
+        f"{'collapses' if not survives_proc else 'holds'}.")
+    return out
+
+
 def _write(round_no, payload):
     path = os.path.join(_CACHE, "redteam_ckd_map_results.json")
     allr = {}
@@ -142,7 +204,7 @@ def main():
     df = _load()
     print(f"[redteam] round {rnd}; INSPIRE N={len(df)} (renal-labelable); "
           f"CKD={int((df['ckd']==1).sum())}", flush=True)
-    fn = {1: round1}.get(rnd)
+    fn = {1: round1, 2: round2}.get(rnd)
     if fn is None:
         print(f"[redteam] round {rnd} not implemented in this module yet.", flush=True)
         return
