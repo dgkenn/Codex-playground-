@@ -1,0 +1,101 @@
+{
+  "seed": 20260628,
+  "phenotype": {
+    "definition": "median dose_per_kg over NEPI norepi-only epochs with map_mean in [55.0,80.0], >= 2 epochs (mirrors pressor_requirement.py)",
+    "n_cases_with_phenotype": 41
+  },
+  "morphology_source": {
+    "files": [
+      "vasoplegia_validation.csv",
+      "independent_svr_validation.csv",
+      "aline_sample.csv"
+    ],
+    "n_cases_with_morphology": 535,
+    "primary_feature": "diastolic_over_map",
+    "feature_set": [
+      "art_dbp_mean",
+      "art_map_mean",
+      "art_sbp_mean",
+      "art_pulse_pressure_mean",
+      "art_tau_decay_mean",
+      "art_aug_index_mean",
+      "art_systolic_auc_mean",
+      "art_hr_mean",
+      "art_hr_sd",
+      "brs_mean",
+      "diastolic_over_map"
+    ]
+  },
+  "merged_n": 11,
+  "target_summary": {
+    "dose_median": 0.160267,
+    "dose_iqr": [
+      0.11794,
+      0.262694
+    ],
+    "high_requirement_top_tertile_threshold": 0.230504,
+    "n_high": 4,
+    "n_low": 7,
+    "epochs_per_case_median": 6
+  },
+  "oof_morphology_regression": {
+    "spearman": 0.3473,
+    "r2": -0.1987,
+    "n": 11,
+    "n_features": 11
+  },
+  "oof_high_requirement_auc": {
+    "auc": 0.4429,
+    "n": 11,
+    "n_pos": 4,
+    "n_features": 11
+  },
+  "primary_feature_univariate": {
+    "feature": "diastolic_over_map",
+    "spearman_vs_requirement": 0.1455,
+    "bootstrap_ci_95": [
+      -0.5676,
+      0.6873
+    ],
+    "n_used": 11,
+    "hypothesised_sign": "NEGATIVE (low diastolic/MAP = low tone = vasoplegia = HIGH norepi requirement)",
+    "in_hypothesised_direction": false
+  },
+  "secondary_carriers_univariate": {
+    "art_tau_decay_mean": {
+      "spearman": 0.0818,
+      "ci": [
+        -0.662,
+        0.8224
+      ],
+      "n": 11
+    },
+    "art_aug_index_mean": {
+      "spearman": -0.5364,
+      "ci": [
+        -0.9025,
+        0.1206
+      ],
+      "n": 11
+    }
+  },
+  "incremental_over_body_size": {
+    "size_only_oof_r2": -0.7253,
+    "size_plus_morphology_oof_r2": -0.6943,
+    "morphology_incremental_oof_r2": 0.031,
+    "note": "nested OOF R2 gain of A-line morphology over weight/age/BMI/ASA. Positive gain = waveform carries requirement info beyond body size."
+  },
+  "placebo_negative_control": {
+    "oof_morphology_vs_surgery_duration_spearman": 0.3545,
+    "oof_morphology_vs_surgery_duration_r2": -0.3776,
+    "primary_feature_vs_surgery_duration_spearman": -0.2636,
+    "primary_feature_vs_surgery_duration_ci": [
+      -0.6902,
+      0.365
+    ],
+    "n_used": 11,
+    "interpretation": "calibration negative control: A-line morphology should NOT predict an unrelated label (surgery duration) as strongly as the requirement phenotype."
+  },
+  "go": false,
+  "verdict": "FEASIBILITY-ONLY (merged N = 11 < 25). The requirement phenotype (needs >= 2 stable norepi-only target-band epochs) and the A-line morphology caches overlap on too few cases for a trustworthy out-of-fold estimate. Directional read (NOT a result): OOF morphology->requirement Spearman 0.3473, high-requirement OOF AUC 0.4429, primary feature diastolic_over_map univariate Spearman 0.1455 (CI [-0.5676, 0.6873], WRONG/null sign), morphology incremental-over-body-size OOF R2 0.031. Any Spearman/AUC on this N is dominated by sampling noise and a wide CI; GROW the phenotype cohort (more cases with >= 2 stable epochs that ALSO have an A-line morphology extraction) before claiming predictive value. The placebo correlation is reported for calibration, not inference."
+}
