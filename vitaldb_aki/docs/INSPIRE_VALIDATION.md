@@ -127,3 +127,23 @@ Pre-specified bar = same direction + CI overlap + magnitude within 2x (log scale
 - **Pressor choice (phe vs norepi) formally replicates** but is most likely a shared confound (indication), not causal — interpret with the same caution flagged internally.
 - Note: `any_vasopressor` exposure prevalence is 99% in the labelable INSPIRE subset (near-constant -> useless as a contrast); the phe-vs-norepi contrast is the usable pressor analysis.
 - Waveform-morphology findings (the a-line vasoplegia index, the keystone) are NOT externally validatable on INSPIRE (no waveforms) — INSPIRE confirms the SCALAR findings only.
+
+---
+
+## CORRECTION (see docs/INSPIRE_CKD_MAP.md, analysis/inspire_ckd_map_deepdive.py)
+
+**Target 1's "reversal" was a HARNESS MISLABEL, not a real non-replication.** The
+external_validation harness target #1 calls `hypotension_treatment.run_analysis`,
+whose exposure is `vasopressor_treated` (early-pressor), with burden only a covariate
+-- so OR 0.72 was an early-pressor->composite estimate, NOT burden->AKI. Estimating
+**burden->AKI directly** (burden IS the exposure) in INSPIRE 131k: IPTW OR **1.62
+[1.53,1.73]**, robust to n_map (monitoring-density) adjustment (1.61), dense-monitoring
+restriction (1.50), nadir<65 (1.51), map_min_below_65 (1.64) -- SAME direction as
+internal VitalDB (OR 1.17). **Hypotension-burden->AKI REPLICATES in INSPIRE.** The
+population "reversal" was the mislabel + monitoring-density confounding (sicker/AKI
+patients are monitored more densely -> more recorded burden). Mortality: burden->
+in-hospital death OR **2.63 [2.36,2.93]** (sampling-robust hard endpoint). The CKD
+personalized-MAP-target HOLDS in 131k (within-CKD renal RR ~1.73 with 1,020 events;
+CKD excess over non-CKD widens as MAP rises -> implied CKD floor ~75 mmHg; FDR-sig;
+mirrored on mortality). TODO: fix the harness target-1 estimator to use burden as the
+exposure.
