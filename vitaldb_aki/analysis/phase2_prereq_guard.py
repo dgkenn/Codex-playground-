@@ -39,6 +39,17 @@ GATES = {
         "leakage_battery": "pass",
         "locked_test": True,
     }),
+    # Phase 2c (HEEDB topographic EEG): the outcome predictor must read EEG ONLY -- NOT
+    # the report text / ICD codes / meds / indication (HEEDB outcomes are leakage-
+    # saturated) -- the EEG must temporally precede the outcome, the outcome must be
+    # non-circular (NOT a MORGOTH-detected finding), all on locked test.
+    "heedb_eeg": ("heedb_eeg_predictor_validated.json", {
+        "leakage_battery": "pass",
+        "eeg_only_no_ehr": True,
+        "temporal_precedence": True,
+        "non_circular_outcome": True,
+        "locked_test": True,
+    }),
 }
 
 # Back-compat default (the original a-line gate).
