@@ -1,54 +1,88 @@
 {
   "seed": 20260628,
-  "n_total": 462,
-  "n_clear": 70,
-  "n_concordant": 36,
-  "n_discordant": 34,
+  "n_total": 558,
+  "n_clear": 92,
+  "n_concordant": 48,
+  "n_discordant": 44,
   "reco_counts": {
-    "fluid": 120,
-    "pressor": 95,
-    "mixed": 247
+    "fluid": 153,
+    "pressor": 119,
+    "mixed": 286
   },
   "adjusted": {
     "composite": {
-      "n": 70,
-      "n_concordant": 36,
-      "n_discordant": 34,
-      "crude_rd": -0.0131,
-      "adj_rd": -0.091,
+      "n": 92,
+      "n_concordant": 48,
+      "n_discordant": 44,
+      "crude_rd": 0.089,
+      "adj_rd": 0.0522,
       "ci": [
-        -0.249,
-        0.0916
+        -0.118,
+        0.2109
       ],
-      "base_rate": 0.2286
+      "base_rate": 0.2283
     },
     "organ_renal": {
-      "n": 65,
-      "n_concordant": 31,
-      "n_discordant": 34,
-      "crude_rd": 0.0057,
-      "adj_rd": -0.0209,
+      "n": 86,
+      "n_concordant": 42,
+      "n_discordant": 44,
+      "crude_rd": 0.0022,
+      "adj_rd": -0.0223,
       "ci": [
-        -0.077,
-        0.0241
+        -0.0818,
+        0.0154
       ],
-      "base_rate": 0.0615
+      "base_rate": 0.0465
     },
     "organ_hypoperfusion": {
-      "n": 18,
+      "n": 23,
       "rd": null
     }
   },
   "within_reco_primary": {
     "fluid": {
-      "n": 37,
-      "rd": null
+      "n": 52,
+      "n_concordant": 27,
+      "n_discordant": 25,
+      "crude_rd": 0.1393,
+      "adj_rd": 0.0271,
+      "ci": [
+        -0.0913,
+        0.1359
+      ],
+      "base_rate": 0.1923
     },
     "pressor": {
-      "n": 33,
-      "rd": null
+      "n": 40,
+      "n_concordant": 21,
+      "n_discordant": 19,
+      "crude_rd": 0.0226,
+      "adj_rd": -0.0283,
+      "ci": [
+        -0.2541,
+        0.2633
+      ],
+      "base_rate": 0.275
     }
   },
-  "evalue_primary": 2.71,
-  "verdict": "NOT YET POWERED/NULL: composite adjusted RD -0.091 (CI [-0.249, 0.0916], n=70); negative control clean. The concordance->outcome benefit is directional at best -- decision-benefit not established; caps impact to risk-stratification unless larger N / a trial moves it."
+  "interaction_all_cases": {
+    "n": 549,
+    "pressor_lean:tone": {
+      "coef": -0.025,
+      "ci": [
+        -0.315,
+        0.257
+      ]
+    },
+    "fluid_lean:ppv": {
+      "coef": 0.239,
+      "ci": [
+        -0.035,
+        0.776
+      ]
+    },
+    "interpretation": "pressor_lean:tone CI excluding 0 = the benefit/harm of pressor-heavy management DEPENDS on vascular tone (personalization signal, uses all cases). Sign per the code note. fluid_lean:ppv likewise for preload."
+  },
+  "evalue_primary": 1.76,
+  "verdict": "NULL decision-benefit. Concordant adjusted composite RD 0.0522 (CI [-0.118, 0.2109], n=92) -- and it ATTENUATED toward 0 as N grew (was -0.09 at n=70). The higher-power INTERACTION test on ALL 549 cases is also NULL (pressor_lean:tone -0.025 [-0.315, 0.257]; fluid_lean:ppv 0.239 [-0.035, 0.776]). Conclusion: NO demonstrable decision-benefit from following the A-line lever in this observational data -> impact ceiling is RISK-STRATIFICATION + the mechanistic/concept contribution, NOT outcome improvement (would need an RCT). Consistent with either no benefit or clinicians already reading the A-line."
 }
