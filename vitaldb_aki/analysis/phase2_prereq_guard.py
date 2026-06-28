@@ -50,6 +50,19 @@ GATES = {
         "non_circular_outcome": True,
         "locked_test": True,
     }),
+    # A-line fluid-vs-pressor DECISION model (deep learning on the arterial waveform
+    # to recommend a fluid bolus vs a vasopressor): may only be built AFTER the
+    # Phase-0 feasibility (analysis/aline_fluid_vs_pressor.py) shows a concordance
+    # signal -- an A-line phenotype whose indicated treatment tracks better outcomes --
+    # that is leakage-clean (waveform only; NOT reading the management it is meant to
+    # recommend) and holds on locked test. A policy/uplift model amplifies whatever the
+    # feasibility signal encodes, so the signal must be real and confound-free first.
+    "aline_fluid_pressor": ("aline_fluid_pressor_feasibility_passed.json", {
+        "feasibility_go": True,
+        "waveform_only_no_management_leak": True,
+        "leakage_battery": "pass",
+        "locked_test": True,
+    }),
 }
 
 # Back-compat default (the original a-line gate).
