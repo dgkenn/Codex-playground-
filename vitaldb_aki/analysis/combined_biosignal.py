@@ -84,6 +84,19 @@ def _existing(path):
     return done
 
 
+def _feature_files():
+    import glob
+    return sorted(glob.glob(OUT_CSV.replace(".csv", "*.csv")))
+
+
+def _all_done_caseids():
+    """Caseids already extracted in ANY shard/legacy CSV -> shards never redo work."""
+    done = set()
+    for f in _feature_files():
+        done |= _existing(f)
+    return done
+
+
 def _append(path, rows, fieldnames):
     new = not os.path.exists(path)
     with open(path, "a", newline="") as fh:
@@ -94,7 +107,7 @@ def _append(path, rows, fieldnames):
             w.writerow(r)
 
 
-def extract(limit):
+def extract(limit, shard=0, nshards=1):
     from common.config import load_yaml
     from vitaldb_aki.data import tracks as _T
     from vitaldb_aki.data.client import fetch_cases
@@ -102,11 +115,22 @@ def extract(limit):
     from vitaldb_aki.features import cross_waveform as _cross
     cfg = load_yaml(os.path.join(_ROOT, "vitaldb_aki", "config.yaml"))
     cohort = _cohort(os.path.join(_CACHE, "trks.csv"))
-    done = _existing(OUT_CSV)
+    # PRIORITISE phenotype-bearing cases: only these contribute to the merged ablation,
+    # so extract them first -> a usable result after ~52 cases, not all 215.
+    pheno = set(_requirement_phenotype().keys())
+    cohort.sort(key=lambda c: (c not in pheno, int(c)))
+    # SHARD across processes (true parallelism without the thread race): each process
+    # takes a disjoint stride of the prioritised cohort and writes its own CSV.
+    if nshards > 1:
+        cohort = [c for i, c in enumerate(cohort) if i % nshards == shard]
+    out_csv = OUT_CSV if nshards == 1 else OUT_CSV.replace(".csv", f"_s{shard}.csv")
+    done = _existing(out_csv) | (_all_done_caseids() if nshards > 1 else set())
     todo = [c for c in cohort if c not in done]
     if limit:
         todo = todo[:limit]
-    print(f"[cbs] cohort {len(cohort)} pressor+ART+ECG cases; {len(done)} done; processing {len(todo)}",
+    n_pheno_todo = sum(1 for c in todo if c in pheno)
+    print(f"[cbs] shard {shard}/{nshards}: {len(cohort)} cohort cases ({len(pheno&set(cohort))} "
+          f"phenotype); {len(done)} done; processing {len(todo)} ({n_pheno_todo} phenotype-bearing)",
           flush=True)
     all_cases = fetch_cases(cfg)
     cases_by_id = {str(c["caseid"]): c for c in all_cases}
@@ -148,7 +172,7 @@ def extract(limit):
             rows = [r for r in ex.map(_one, chunk) if r is not None]
             n_new += len(rows)
             if rows:
-                _append(OUT_CSV, rows, fieldnames)
+                _append(out_csv, rows, fieldnames)
             print(f"[cbs]   progress {min(s + workers, len(todo))}/{len(todo)} (+{n_new})", flush=True)
     return len(cohort)
 
@@ -201,10 +225,12 @@ def _oof_spearman(X, y, n_splits=5):
 def model():
     import numpy as np, pandas as pd
     from scipy import stats
-    if not os.path.exists(OUT_CSV):
+    files = _feature_files()
+    if not files:
         return {"available": False}
-    feats = pd.read_csv(OUT_CSV, low_memory=False)
+    feats = pd.concat([pd.read_csv(f, low_memory=False) for f in files], ignore_index=True)
     feats["caseid"] = feats["caseid"].astype(str)
+    feats = feats.drop_duplicates(subset="caseid", keep="last").reset_index(drop=True)
     pheno = _requirement_phenotype()
     res = {"seed": SEED, "n_feature_cases": int(len(feats)),
            "n_phenotype_cases": len(pheno)}
@@ -291,9 +317,11 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--limit", type=int, default=int(os.environ.get("CBS_LIMIT", "230")))
     ap.add_argument("--model-only", action="store_true")
+    ap.add_argument("--shard", type=int, default=0)
+    ap.add_argument("--nshards", type=int, default=1)
     a = ap.parse_args()
     if not a.model_only:
-        extract(a.limit)
+        extract(a.limit, shard=a.shard, nshards=a.nshards)
     res = model()
     json.dump(res, open(os.path.join(_CACHE, "combined_biosignal.json"), "w"), indent=2, default=float)
     _doc(res)
