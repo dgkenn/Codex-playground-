@@ -2,18 +2,18 @@
 
 Pairs the arterial line with ECG_II (500 Hz, 3644 cases) to build cross-channel signals neither carries alone -- PAT (R-peak->pulse-foot = contractility + stiffness/tone) and BRS (RR<->SBP coupling = autonomic reserve) -- and tests whether the COMBINED biosignal predicts the vasopressor dose-requirement (vasoplegia) phenotype better than arterial morphology or ECG-coupling alone.
 
-- Feature cases extracted: **53** (23 arterial, 9 ECG-coupling features).
-- Requirement-phenotype cases: **52**; merged: **37**.
+- Feature cases extracted: **123** (23 arterial, 9 ECG-coupling features).
+- Requirement-phenotype cases: **52**; merged: **52**.
 
 ## Ablation -- is the combination worth it? (OOF Spearman vs requirement)
-- ARTERIAL-only: {'oof_spearman': -0.22, 'oof_r2': -0.3, 'n': 37}
-- ECG-coupling-only: {'oof_spearman': -0.355, 'oof_r2': -0.295, 'n': 37}
-- **COMBINED**: {'oof_spearman': -0.305, 'oof_r2': -0.347, 'n': 37}
+- ARTERIAL-only: {'oof_spearman': 0.295, 'oof_r2': 0.027, 'n': 52}
+- ECG-coupling-only: {'oof_spearman': -0.026, 'oof_r2': -0.095, 'n': 52}
+- **COMBINED**: {'oof_spearman': 0.267, 'oof_r2': 0.039, 'n': 52}
 
-- Univariate vs requirement: {'pat_mean_ms': 0.3, 'brs_mean': 0.01, 'diastolic_over_map': -0.129, 'pat_slope': 0.164}
+- Univariate vs requirement: {'art_sbp_mean': -0.398, 'art_map_mean': -0.394, 'art_ppv_burden_min': 0.385, 'art_low_dbp_burden_min': 0.35, 'art_dbp_mean': -0.33, 'brs_n_sequences': 0.319, 'map_dia_form_factor': -0.304, 'art_ppg_amp_corr': 0.281}
 
 ## Verdict
-Combination NOT clearly additive at this N -- combined -0.305 vs arterial -0.22 / ECG -0.355.
+Combination NOT clearly additive at this N -- combined 0.267 vs arterial 0.295 / ECG -0.026.
 
 ## Caveats
 - OOF only; merged N is the binding constraint (the requirement phenotype needs >=2 stable norepi-only target-band epochs, which is rare). Treat as feasibility until N>=25.
