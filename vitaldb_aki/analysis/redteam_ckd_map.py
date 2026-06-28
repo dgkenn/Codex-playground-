@@ -222,6 +222,83 @@ def round3(df):
     return out
 
 
+def round4(df_unused):
+    """ATTACK: is the A-line vasoplegia index vs measured-SVRI correlation (r~-0.34)
+    FRAGILE -- driven by a few influential cases, one cherry-picked component, or the
+    SVRI computation? TEST on cache/vasoplegia_validation.csv: jackknife (drop-one r
+    range), bootstrap CI, component-wise directional consistency, and physiologic-SVRI
+    sensitivity."""
+    import numpy as np, pandas as pd
+    from scipy import stats
+    out = {"attack": "vasoplegia index vs measured-SVRI -- fragility (leverage / single "
+                      "component / SVRI computation)"}
+    p = os.path.join(_CACHE, "vasoplegia_validation.csv")
+    if not os.path.exists(p):
+        out["verdict"] = "SKIP -- vasoplegia_validation.csv absent"
+        return out
+    v = pd.read_csv(p)
+    if "has_direct_svr" in v:
+        v = v[v["has_direct_svr"].astype(str) == "1"]
+    svri = pd.to_numeric(v.get("svri_measured"), errors="coerce")
+    keep = svri.between(300, 5000)
+    v, svri = v[keep].reset_index(drop=True), svri[keep].reset_index(drop=True).to_numpy()
+    n = len(svri)
+    # reconstruct an oriented vasoplegia index: high index = low tone = vasoplegic.
+    def z(s):
+        s = np.asarray(s, dtype=float)
+        sd = np.nanstd(s)
+        return (s - np.nanmean(s)) / sd if sd > 0 else np.zeros_like(s)
+    tau = pd.to_numeric(v.get("art_tau_decay_mean"), errors="coerce").to_numpy(float)
+    dia_map = (pd.to_numeric(v.get("art_dbp_mean"), errors="coerce") /
+               pd.to_numeric(v.get("art_map_mean"), errors="coerce")).to_numpy(float)
+    aix = pd.to_numeric(v.get("art_aug_index_mean"), errors="coerce").to_numpy(float)
+    # component-wise Spearman vs SVRI (hypothesised POSITIVE: more tone -> higher SVRI)
+    comps = {"tau_decay": tau, "diastolic_over_map": dia_map, "aug_index": aix}
+    comp_r = {}
+    for k, x in comps.items():
+        m = np.isfinite(x) & np.isfinite(svri)
+        if m.sum() > 10:
+            comp_r[k] = round(float(stats.spearmanr(x[m], svri[m])[0]), 4)
+    out["component_spearman_vs_svri"] = comp_r
+    out["components_directionally_consistent"] = bool(
+        sum(1 for r in comp_r.values() if r > 0) >= 2)  # >=2 of 3 positive (more tone->higher SVRI)
+    # oriented composite: high = vasoplegic -> NEGATIVE vs SVRI
+    idx = -(z(tau) + z(dia_map) + z(aix))
+    m = np.isfinite(idx) & np.isfinite(svri)
+    idx, sv = idx[m], svri[m]
+    nfit = len(sv)
+    r_full = float(stats.spearmanr(idx, sv)[0])
+    out["index_spearman_full"] = round(r_full, 4)
+    out["n"] = int(nfit)
+    # jackknife drop-one
+    jr = []
+    for i in range(nfit):
+        mask = np.ones(nfit, bool); mask[i] = False
+        jr.append(float(stats.spearmanr(idx[mask], sv[mask])[0]))
+    out["jackknife_r_range"] = [round(min(jr), 4), round(max(jr), 4)]
+    # drop top-5 most influential (largest jackknife deviation from full)
+    infl = np.argsort(np.abs(np.array(jr) - r_full))[-5:]
+    mask = np.ones(nfit, bool); mask[infl] = False
+    out["r_drop_top5_influential"] = round(float(stats.spearmanr(idx[mask], sv[mask])[0]), 4)
+    # bootstrap CI
+    rng = np.random.default_rng(SEED)
+    bs = [float(stats.spearmanr(idx[ii], sv[ii])[0])
+          for ii in (rng.integers(0, nfit, nfit) for _ in range(1000))]
+    out["bootstrap_ci"] = [round(float(np.percentile(bs, 2.5)), 4),
+                           round(float(np.percentile(bs, 97.5)), 4)]
+    robust = (out["bootstrap_ci"][1] < 0 and out["r_drop_top5_influential"] < -0.15
+              and out["components_directionally_consistent"])
+    out["verdict"] = (
+        f"ROBUST -- index r={out['index_spearman_full']} (n={nfit}); bootstrap CI "
+        f"{out['bootstrap_ci']} excludes 0; survives dropping top-5 influential "
+        f"(r={out['r_drop_top5_influential']}); components directionally consistent "
+        f"{out['components_directionally_consistent']}. MODERATE strength, not fragile."
+        if robust else
+        f"FRAGILE -- index r={out['index_spearman_full']}; bootstrap CI {out['bootstrap_ci']}; "
+        f"drop-top5 r={out['r_drop_top5_influential']}; consistent={out['components_directionally_consistent']}.")
+    return out
+
+
 def _write(round_no, payload):
     path = os.path.join(_CACHE, "redteam_ckd_map_results.json")
     allr = {}
@@ -253,7 +330,7 @@ def main():
     df = _load()
     print(f"[redteam] round {rnd}; INSPIRE N={len(df)} (renal-labelable); "
           f"CKD={int((df['ckd']==1).sum())}", flush=True)
-    fn = {1: round1, 2: round2, 3: round3}.get(rnd)
+    fn = {1: round1, 2: round2, 3: round3, 4: round4}.get(rnd)
     if fn is None:
         print(f"[redteam] round {rnd} not implemented in this module yet.", flush=True)
         return
