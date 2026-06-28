@@ -412,9 +412,12 @@ def main(limit: int | None = None):
     fieldnames = (["caseid"] + aline_cols + cross_cols + fluid_cols + derived_cols)
 
     svr_first_set = set(svr_first)
-    buffer: list[dict[str, Any]] = []
-    n_new = 0
-    for i, cid in enumerate(todo, 1):
+
+    def _extract_one(cid: str):
+        """Download + compute ONE case's row, then purge its big tracks. Thread-safe:
+        each case downloads its own per-tid track files (no cross-case collision),
+        reads cfg/cases_by_id/size_demo read-only, and returns a row dict (or None on
+        failure). The only shared write (the output CSV) happens in the main thread."""
         row: dict[str, Any] = {"caseid": cid}
         try:
             aline_out = _aline.extract(cfg, cases_by_id, [cid]).get(cid, {})
@@ -440,31 +443,37 @@ def main(limit: int | None = None):
             row["age"] = sd.get("age")
             row["sex_male"] = sd.get("sex_male")
             row["bsa_m2"] = bsa
-            buffer.append(row)
-            n_new += 1
+            return row
         except Exception as exc:  # never let one bad case abort a long run
             print(f"[vaso_val]   case {cid} FAILED: {type(exc).__name__}: {exc}",
                   flush=True)
+            return None
         finally:
             # STREAM/PURGE: drop the big SNUADC waveforms + monitor tracks so disk
-            # stays bounded (discovery + aline jobs share the volume).
+            # stays bounded (only WORKERS cases' tracks are ever on disk at once).
             for tn in (_BIG_SNUADC_TRACKS + _MONITOR_TRACKS):
                 try:
                     _T.purge_track(cfg, cid, tn)
                 except Exception:
                     pass
 
-        if len(buffer) >= FLUSH_EVERY:
-            _append_rows(out_path, buffer, fieldnames)
-            buffer = []
-            print(f"[vaso_val]   progress {i}/{len(todo)} "
-                  f"(+{n_new} new; {len(done) + n_new}/{len(cohort)} total)",
-                  flush=True)
-
-    if buffer:
-        _append_rows(out_path, buffer, fieldnames)
-        print(f"[vaso_val]   final flush ({len(done) + n_new}/{len(cohort)} total)",
-              flush=True)
+    # PARALLEL: the per-case bottleneck is the ~50-100 MB SNUADC/ART download through
+    # a flaky proxy (network-bound). Run WORKERS cases concurrently. Process in ORDERED
+    # chunks (todo is SVR-first ordered) so the direct-SVR construct-validity cases are
+    # still completed first, and so at most WORKERS cases' waveforms sit on disk.
+    import concurrent.futures
+    workers = max(1, int(os.environ.get("VASOVAL_WORKERS", "6")))
+    n_new = 0
+    with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as ex:
+        for chunk_start in range(0, len(todo), workers):
+            chunk = todo[chunk_start:chunk_start + workers]
+            rows = [r for r in ex.map(_extract_one, chunk) if r is not None]
+            n_new += len(rows)
+            if rows:
+                _append_rows(out_path, rows, fieldnames)
+            print(f"[vaso_val]   progress {min(chunk_start + workers, len(todo))}/"
+                  f"{len(todo)} (+{n_new} new; {len(done) + n_new}/{len(cohort)} "
+                  f"total) [parallel x{workers}]", flush=True)
 
     total = _existing_caseids(out_path)
     if len(set(cohort) - total) == 0:
