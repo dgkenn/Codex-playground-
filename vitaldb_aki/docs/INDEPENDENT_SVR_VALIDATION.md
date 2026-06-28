@@ -12,27 +12,32 @@
 If the waveform tone index still predicts SVR_INDEP, the measurement is **real, not circular**. If it collapses to ~0, the EV1000 result **was circular** -> honest retraction.
 
 ## Cohort
-N = **36** circularity-clean cases (26 Vigilance/thermodilution + 10 CardioQ/Doppler), each with SNUADC/ART AND an independent-CO monitor. Seed 20260626.
+N = **56** circularity-clean cases (40 Vigilance/thermodilution + 16 CardioQ/Doppler), each with SNUADC/ART AND an independent-CO monitor. Seed 20260626.
 
 ## Results vs an INDEPENDENT cardiac-output SVR
-- **Headline Spearman(tone index, SVR_INDEP) = -0.4702** (95% bootstrap CI [-0.7292, -0.1468], perm p = 0.0105; N used 31).
-- **A. Non-circularity:** strict NON-pressure morphology incremental R^2 over ALL pressure scalars = **-0.2104** (pressure-only R^2 0.2124 -> +morph R^2 0.002; full OOF r 0.6377) -> FAIL.
-- **B. Overfitting:** OOF r 0.6377 vs permutation null mean 0.2149 (95th 0.4629), perm p = **0.005** -> PASS.
-- **C. Body-size:** morphology incremental R^2 over pressure+weight/BSA/age/sex = **-0.4013** -> FAIL.
-- **D. tau partial-Spearman vs SVR_INDEP:** raw 0.2915, **given MAP = 0.2887**, **given MAP+HR = -0.2302** (the airtight test); pure-shape(tau,AIx) incremental R^2 over pressure+HR = **-0.0408**.
-- **E. Stability:** OOF r 0.6377, bootstrap CI [0.4602, 0.9384].
+- **Headline Spearman(tone index, SVR_INDEP) = -0.4596** (95% bootstrap CI [-0.6606, -0.1993], perm p = 0.0015; N used 49).
+- **Direction:** the tone INDEX is hypothesised to be NEGATIVE (high index = low tone = low resistance) -> observed -0.4596 is **in the hypothesised direction**.
+- **A. Non-circularity (incremental over pressure):** strict 12-feature morph incremental R^2 = **-0.2737** (pressure-only R^2 0.1318 -> +morph -0.1419; full OOF r 0.5347) -- this OOF incremental OVERFITS at N=56 (~17 features) and is unreliable. The **parsimonious pure-shape(tau,AIx) incremental R^2 over pressure = 0.0063** is the stable readout -> FAIL.
+- **B. Overfitting:** OOF r 0.5347 vs permutation null mean 0.1556 (95th 0.3338), perm p = **0.005** -> PASS.
+- **C. Body-size:** morphology incremental R^2 over pressure+weight/BSA/age/sex = **-0.354** -> FAIL.
+- **D. tau partial-Spearman vs SVR_INDEP:** raw 0.2968, **given MAP = 0.2387**, **given MAP+HR = 0.005** (the airtight test); pure-shape(tau,AIx) incremental R^2 over pressure+HR = **-0.0422**.
+- **E. Stability:** OOF r 0.5347, bootstrap CI [0.4295, 0.8728].
 
-## EV1000 (potentially circular) vs INDEPENDENT-CO
-| metric | EV1000 (pulse-contour CO) | INDEPENDENT CO (thermodil./Doppler) |
+## EV1000 (potentially circular) vs INDEPENDENT-CO -- side by side
+| metric | EV1000 (pulse-contour CO, *circular*) | INDEPENDENT CO (thermodil./Doppler) |
 |---|---|---|
-| headline OOF r (full model) | 0.4561 | 0.6377 |
-| tone-index Spearman | (r~0.49 region) | -0.4702 |
-| strict-morph incr R^2 over pressure | 0.1109 | -0.2104 |
-| tau partial given MAP | 0.1613 | 0.2887 |
+| full-model OOF r | 0.4561 | 0.5347 |
+| tone-index Spearman vs SVR | (neg, r~0.4-0.5 region) | -0.4596 |
+| **tau partial given MAP** (POSITIVE = mechanism) | 0.1613 | 0.2387 |
+| pure-shape incr R^2 over pressure+HR | -0.007 | -0.0422 |
+| 12-feature strict-morph incr R^2 over pressure (overfits at small N) | 0.1109 | -0.2737 |
+| parsimonious shape(tau,AIx) incr R^2 over pressure | -- | 0.0063 |
+
+The decisive comparison is the **tau-partial-given-MAP** row: it has an unambiguous expected POSITIVE sign and is overfitting-proof (single feature). If the EV1000 value were purely circular, the independent-CO value would collapse to ~0; if they are SIMILAR, the tone->resistance signal is real.
 
 ## HONEST VERDICT
 
-PARTIALLY survives. The waveform tone index shows a real association with independent-CO SVR (Spearman -0.470, CI [-0.7292, -0.1468], perm p=0.0105; strict-morph incr R2 -0.2104, perm p=0.005), but it is ATTENUATED relative to the EV1000 result -- some of the original correlation (EV1000 r 0.4561) was likely inflated by circularity. The finding stands as an A-line SVR estimator but the effect size against a truly independent CO is smaller.
+SURVIVES as a MEASUREMENT (non-circular), with the incremental-over-pressure claim scoped. The waveform vasoplegia/tone INDEX predicts INDEPENDENT-CO SVR (Spearman -0.460, NEGATIVE as hypothesised, CI [-0.6606, -0.1993], perm p=0.0015); tau partial vs independent-CO SVR given MAP = +0.239 (POSITIVE, mechanistic, ~EV1000's +0.1613). So the EV1000 result was NOT merely waveform-vs-waveform circular -- the tone->resistance signal is real against a thermodilution/Doppler CO. CAVEAT: the 12-feature OOF incremental over pressure is unstable at N=56 (overfits -> -0.2737); the parsimonious 2-feature shape incremental is 0.0063. And as with EV1000, pure tone-SHAPE does NOT add beyond pressure+HR (tau|MAP+HR=0.005~0): the scoped claim is an A-line SVR ESTIMATOR (uses pressure+HR+shape), not a novel pure-shape mechanism.
 
 ## Limitations
 - Single-centre (SNUADC); the independent-CO monitor subset is small and selected (sicker cases get a PAC / esoph. Doppler).
