@@ -554,9 +554,24 @@ def validate():
     n_vig = int((v.get("co_source") == "Vigilance/CO").sum()) if "co_source" in v else 0
     n_cq = int((v.get("co_source") == "CardioQ/CO").sum()) if "co_source" in v else 0
 
+    # Case-mix (optype) of the surviving cohort -- the independent-CO monitors are
+    # concentrated in liver-transplant anaesthesia, a scope caveat worth recording.
+    case_mix: dict[str, int] = {}
+    cases_csv = os.path.join(cache, CASES_FILE)
+    if os.path.exists(cases_csv) and "caseid" in v:
+        cohort_ids = set(str(c).strip() for c in v["caseid"].tolist())
+        import collections as _col
+        cnt = _col.Counter()
+        with open(cases_csv, "r", newline="", encoding="utf-8") as fh:
+            for r in _csv.DictReader(fh):
+                cid = str(r.get("caseid", "") or r.get("﻿caseid", "")).strip()
+                if cid in cohort_ids:
+                    cnt[str(r.get("optype", "?"))] += 1
+        case_mix = dict(cnt.most_common())
+
     res: dict[str, Any] = {"seed": SEED, "target": "SVR_INDEP (independent-CO)",
                            "n": n, "n_vigilance_thermodilution": n_vig,
-                           "n_cardioq_doppler": n_cq,
+                           "n_cardioq_doppler": n_cq, "case_mix_optype": case_mix,
                            "ev1000_baseline": EV1000_BASELINE, "attacks": {}}
     print(f"[indep_svr] N(independent-CO, physiologic SVR)={n} "
           f"({n_vig} Vigilance, {n_cq} CardioQ)", flush=True)
@@ -890,6 +905,12 @@ def _write_results(res, cache, docs):
         res["verdict"],
         "",
         "## Limitations",
+        "- **Case-mix / scope:** the independent-CO cohort is ~72% liver "
+        "TRANSPLANTATION (+ hepatic/biliary) -- PA-catheter thermodilution and "
+        "esophageal Doppler are concentrated in transplant anesthesia. Liver "
+        "transplant is the canonical low-SVR vasoplegic population, so this is a "
+        "favourable but NARROW validation setting; generalisation to other surgery "
+        "is untested here. The claim is scoped to (and strongest in) this population.",
         "- Single-centre (SNUADC); the independent-CO monitor subset is small and "
         "selected (sicker cases get a PAC / esoph. Doppler).",
         "- CVP defaults to 5 mmHg when no Solar8000/CVP track is present (a "
