@@ -114,7 +114,7 @@ def _quartile_doseresponse(df, feature, outcome):
 def main():
     import numpy as np
     from vitaldb_aki.analysis.reperfusion_dynamics import (
-        incremental_auroc, adjusted_logistic_iptw, STATIC_BASELINE,
+        incremental_auroc, adjusted_logistic_iptw, STATIC_BURDEN_COLS as STATIC_BASELINE,
     )
     from vitaldb_aki.analysis.actionable_targets import benjamini_hochberg
 
@@ -212,9 +212,9 @@ def _write_doc(results):
     A(f"Static-burden baseline: `{', '.join(results.get('static_baseline', []))}`.\n")
     for o, r in results.get("incremental_auroc", {}).items():
         if "delta_auroc" in r:
-            A(f"- **{o}:** base AUROC {r.get('base_auroc')} -> +recovery "
-              f"{r.get('full_auroc')}; **ΔAUROC = {r['delta_auroc']:+.4f}** "
-              f"(95% CI {r.get('delta_ci')}), DeLong p = {r.get('delong_p')}.")
+            A(f"- **{o}:** base AUROC {r.get('auroc_static_burden')} -> +recovery "
+              f"{r.get('auroc_static_plus_recovery')}; **ΔAUROC = {r['delta_auroc']:+.4f}** "
+              f"(95% CI {r.get('delta_auroc_ci95')}), DeLong p = {r.get('delong_p')}.")
         elif "error" in r:
             A(f"- {o}: (not computed: {r['error']})")
     A("")
@@ -228,10 +228,10 @@ def _write_doc(results):
             continue
         A(f"### {o}")
         for feat, r in block.items():
-            if isinstance(r, dict) and "or_per_sd" in r:
-                A(f"- `{feat}`: OR/SD = {r.get('or_per_sd')} "
-                  f"(95% CI {r.get('ci')}), p = {r.get('p_value')}, "
-                  f"E-value = {r.get('e_value')}.")
+            if isinstance(r, dict) and "or_good_recovery" in r:
+                A(f"- `{feat}`: OR (good-recovery vs not) = {r.get('or_good_recovery')}, "
+                  f"p = {r.get('p_value')}, E-value(point) = {r.get('e_value_point')}, "
+                  f"E-value(CI) = {r.get('e_value_ci')}.")
         A("")
     A("## Dose-response (primary: rv_depthwt_slope quartiles)\n")
     for o, dr in results.get("dose_response", {}).items():
