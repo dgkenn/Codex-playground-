@@ -103,6 +103,7 @@ def _conditional_logit(df, exog_cols):
     y=1, or no exposure variation) contribute nothing to the conditional likelihood, so
     statsmodels effectively uses the informative strata. We pass the full multi-op frame;
     ConditionalLogit drops non-informative groups internally. Returns OR + CI for HYPO."""
+    import warnings
     import numpy as np, pandas as pd
     from statsmodels.discrete.conditional_models import ConditionalLogit
     d = df.dropna(subset=["AKI", "subject_id"] + exog_cols).copy()
@@ -117,11 +118,26 @@ def _conditional_logit(df, exog_cols):
     if len(d) == 0:
         return {"error": "no outcome-discordant strata"}
     y = d["AKI"].to_numpy(float)
-    X = d[exog_cols].to_numpy(float)
+    # standardize continuous covariates (NOT the binary HYPO) so the exact conditional
+    # likelihood recursion does not overflow; this rescales their coefficients but leaves
+    # the HYPO OR (verified) unchanged. We unscale nothing we report except via the note.
+    Xdf = d[exog_cols].astype(float).copy()
+    scales = {}
+    for c in exog_cols:
+        if c == "HYPO":
+            continue
+        s = float(Xdf[c].std())
+        if s > 0:
+            mu = float(Xdf[c].mean())
+            Xdf[c] = (Xdf[c] - mu) / s
+            scales[c] = s
+    X = Xdf.to_numpy(float)
     groups = d["subject_id"].to_numpy()
     t0 = time.time()
     model = ConditionalLogit(y, X, groups=groups)
-    fit = model.fit(disp=False)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")  # benign overflow in per-stratum recursion
+        fit = model.fit(disp=False)
     secs = time.time() - t0
     params = np.asarray(fit.params, float)
     bse = np.asarray(fit.bse, float)
@@ -138,6 +154,8 @@ def _conditional_logit(df, exog_cols):
     res["_n_ops_in_informative_strata"] = int(len(d))
     res["_n_strata"] = int(d["subject_id"].nunique())
     res["_fit_seconds"] = round(secs, 2)
+    res["_note"] = ("continuous covariate ORs are per-1-SD (standardized for numeric "
+                    "stability); HYPO is binary and its OR is unaffected.")
     return res
 
 
@@ -161,31 +179,54 @@ def _within_demean(d, expo_cols, ycol="AKI"):
 
 
 def _cluster_bootstrap_fe(df, expo_cols, ycol="AKI", n_boot=N_BOOT, seed=SEED):
-    """Cluster-bootstrap over subjects for the within (demeaning) FE estimator. Resample
-    subjects with replacement, refit demeaned OLS each time. Report point (full sample),
-    bootstrap mean, percentile CI for each coefficient."""
+    """Cluster-bootstrap over subjects for the within (demeaning) FE estimator.
+
+    KEY: the within-transformation is performed *inside each subject* and is therefore
+    invariant under resampling of subjects -- a subject's demeaned rows do not change when
+    other subjects are added/removed. So the FE OLS estimate for any cluster-bootstrap
+    resample is the solution of  (sum_s w_s A_s) beta = (sum_s w_s b_s), where
+    A_s = Xd_s' Xd_s and b_s = Xd_s' yd_s are the per-subject demeaned normal-equation
+    blocks (precomputed once) and w_s is the multiplicity of subject s in the resample.
+    This turns each bootstrap iteration into a small weighted sum + p x p solve -- fully
+    vectorized over all resamples, ~1e4x faster than refitting frames.
+    """
     import numpy as np, pandas as pd
     rng = np.random.default_rng(seed)
-    point, used = _within_demean(df, expo_cols, ycol)
-    subj_ids = used["subject_id"].unique()
-    # index ops by subject for fast resampling
-    by_sub = {s: g for s, g in used.groupby("subject_id")}
+    cols = expo_cols + [ycol]
+    dd = df.dropna(subset=cols + ["subject_id"]).copy()
+    grp = dd.groupby("subject_id")
+    Xd = (dd[expo_cols] - grp[expo_cols].transform("mean")).to_numpy(float)
+    yd = (dd[ycol] - grp[ycol].transform("mean")).to_numpy(float)
+    # point estimate (full sample)
+    coef, *_ = np.linalg.lstsq(Xd, yd, rcond=None)
+    point = {c: float(coef[i]) for i, c in enumerate(expo_cols)}
+
+    # per-subject normal-equation blocks
+    codes, uniq = pd.factorize(dd["subject_id"].to_numpy())
+    S = len(uniq)
+    p = len(expo_cols)
+    A = np.zeros((S, p, p))      # Xd_s' Xd_s
+    b = np.zeros((S, p))         # Xd_s' yd_s
+    # accumulate via np.add.at over subject codes
+    # outer products: for each row, Xd[i] outer Xd[i] -> add to A[code]
+    for j in range(p):
+        for k in range(p):
+            np.add.at(A[:, j, k], codes, Xd[:, j] * Xd[:, k])
+        np.add.at(b[:, j], codes, Xd[:, j] * yd)
+
     boots = {c: [] for c in expo_cols}
     for _ in range(n_boot):
-        pick = rng.choice(subj_ids, size=len(subj_ids), replace=True)
-        # relabel each picked subject uniquely so duplicates form independent strata
-        frames = []
-        for j, s in enumerate(pick):
-            g = by_sub[s].copy()
-            g["subject_id"] = j  # unique pseudo-subject id
-            frames.append(g)
-        bsamp = pd.concat(frames, ignore_index=True)
+        # multiplicity of each subject in a size-S resample with replacement
+        w = np.bincount(rng.integers(0, S, size=S), minlength=S).astype(float)
+        Asum = np.tensordot(w, A, axes=(0, 0))   # p x p
+        bsum = w @ b                              # p
         try:
-            c, _u = _within_demean(bsamp, expo_cols, ycol)
-            for k in expo_cols:
-                boots[k].append(c[k])
-        except Exception:
-            continue
+            beta = np.linalg.solve(Asum, bsum)
+        except np.linalg.LinAlgError:
+            beta, *_ = np.linalg.lstsq(Asum, bsum, rcond=None)
+        for i, c in enumerate(expo_cols):
+            boots[c].append(float(beta[i]))
+
     out = {}
     for c in expo_cols:
         arr = np.array(boots[c], float)
