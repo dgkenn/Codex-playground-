@@ -63,6 +63,19 @@ GATES = {
         "leakage_battery": "pass",
         "locked_test": True,
     }),
+    # Phase 2e (SVRI-morphology): generative-counterfactual interpretation of a DL
+    # waveform->measured-SVRI predictor. The CPU feasibility (analysis/
+    # svri_morphology_feasibility.py) is GO (morphology adds R^2 over mean pressure;
+    # full morphology beats the scalar index), but the DL predictor itself must be shown
+    # NON-CIRCULAR (incremental over MAP/pulse-pressure -- SVRI = 80*(MAP-CVP)/CO, so a
+    # predictor re-reading MAP is cheating), incremental over the hand-built vasoplegia
+    # index, and validated on a locked test, before its generative interpretation runs.
+    "svri_morphology": ("svri_predictor_validated.json", {
+        "waveform_only_incremental_over_pressure": True,
+        "incremental_over_scalar_index": True,
+        "leakage_battery": "pass",
+        "locked_test": True,
+    }),
 }
 
 # Back-compat default (the original a-line gate).
