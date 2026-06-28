@@ -1,0 +1,82 @@
+{
+  "seed": 20260628,
+  "min_epochs_per_case": 4,
+  "n_norepi_only_cases": 75,
+  "n_cases_ge4_epochs": 52,
+  "attack1_specificity_incremental_over_hemodynamics": {
+    "n": 52,
+    "raw_early_late_spearman": 0.537,
+    "raw_p": 0.0,
+    "partial_spearman_controlling_earlyMAP_earlyHR": 0.466,
+    "n_partial": 52,
+    "oof_hemodynamics_only": 0.217,
+    "oof_hemodynamics_plus_dose": 0.17,
+    "oof_dose_increment": -0.047,
+    "verdict": "weakened",
+    "interpretation": "TWO legs. PARTIAL leg: dose must keep a rank association with the late requirement after removing early MAP & HR -- this is the specificity test (if it collapses the 'requirement' is just early BP/HR in a costume). OOF-INCREMENT leg: dose should also lift a cross-validated hemodynamics-only model. 'weakened' = partial survives but OOF does not add (the late requirement is partly forecastable from early MAP alone, and at N~52 the OOF leg is noisy); 'fails' = partial itself collapses."
+  },
+  "attack2_placebo_predictors": {
+    "early_dose_vs_late_spearman": 0.537,
+    "early_dose_p": 0.0,
+    "placebo_early_MAP_vs_late_spearman": -0.404,
+    "placebo_early_MAP_p": 0.003,
+    "placebo_early_HR_vs_late_spearman": -0.009,
+    "placebo_early_HR_p": 0.9473,
+    "abs_margin_dose_over_MAP": 0.133,
+    "abs_margin_dose_over_HR": 0.528,
+    "verdict": "survives",
+    "interpretation": "early MAP & HR are placebo predictors of the late requirement. The dose-requirement should out-predict both by a clear |r| margin; if a placebo matches it, the early->late link is non-specific hemodynamic persistence, not a vasopressor-requirement trait."
+  },
+  "attack3_casemix_robustness": {
+    "full_spearman": 0.537,
+    "full_n": 52,
+    "n_livertx_in_set": 12,
+    "n_cardiac_proxy_in_set": 2,
+    "excl_livertx_spearman": 0.544,
+    "excl_livertx_n": 40,
+    "excl_cardiac_proxy_spearman": 0.547,
+    "excl_cardiac_proxy_n": 50,
+    "excl_both_spearman": 0.557,
+    "excl_both_n": 38,
+    "verdict": "survives",
+    "interpretation": "the early->late link must hold OFF the highest-vasoplegia surgeries (liver transplant; aortic/aneurysm vascular as a CPB proxy -- VitalDB has NO true cardiac/CPB surgery). If it only exists because a few transplant/aortic cases anchor both ends, it is case-mix, not a trait."
+  },
+  "attack4_selection_bias": {
+    "n_pressor_cases_with_any_epoch": 75,
+    "n_included_ge4_epochs": 52,
+    "n_excluded": 23,
+    "included": {
+      "median_age": 61.5,
+      "median_asa": 3.0,
+      "median_weight": 56.1,
+      "composite_outcome_rate": 0.706,
+      "n_with_outcome": 34
+    },
+    "excluded": {
+      "median_age": 72.0,
+      "median_asa": 3.0,
+      "median_weight": 63.9,
+      "composite_outcome_rate": 0.5,
+      "n_with_outcome": 16
+    },
+    "composite_rate_ratio_incl_over_excl": 1.41,
+    "mannwhitney_p_age": 0.1207,
+    "mannwhitney_p_asa": 0.7693,
+    "verdict": "selected-sicker-subset (generalizes to monitored pressor patients only)",
+    "interpretation": "the analyzable subset requires >= 4 stable norepi-only epochs, i.e. sustained pressor support -> structurally enriched for sicker, longer-pressor patients. Reported honestly: the finding generalizes to ALREADY-on-pressor monitored patients, not to all-comers."
+  },
+  "attack5_influence_jackknife": {
+    "n": 52,
+    "full_spearman": 0.537,
+    "jackknife_min_r": 0.512,
+    "jackknife_max_r": 0.571,
+    "jackknife_r_range": 0.059,
+    "most_influential_caseid": "5282",
+    "r_without_most_influential": 0.571,
+    "case_dropping_r_lowest": "280",
+    "case_dropping_r_highest": "5282",
+    "verdict": "survives",
+    "interpretation": "leave-one-case-out: if dropping any single case collapses the early->late Spearman, the finding rides on a few high-leverage patients. The min jackknife r is the worst-case; it should stay clearly positive."
+  },
+  "n_core_attacks_survived": "3/4 (attack4 bounds generalizability, not pass/fail)"
+}
