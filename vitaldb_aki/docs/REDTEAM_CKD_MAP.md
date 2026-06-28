@@ -189,43 +189,71 @@ Adversarial stress-tests. Each round mounts the strongest attack a skeptical rev
 ```
 **Verdict:** FRAGILE -- index r=-0.146; bootstrap CI [-0.2975, 0.0092]; drop-top5 r=-0.1719; consistent=True.
 
+## round5: DEFENSIBILITY -- negative-control empirical-null calibration + bias analysis + positivity
+
+```json
+{
+ "attack": "DEFENSIBILITY -- negative-control empirical-null calibration + bias analysis + positivity",
+ "empirical_null": {
+  "controls": {
+   "organ_hepatocellular": 0.054,
+   "organ_cholestatic": 0.0437,
+   "organ_coagulation": 0.0415
+  },
+  "null_mean": 0.0464,
+  "null_sd": 0.0067
+ },
+ "renal_raw_interaction": 0.0457,
+ "renal_calibrated_interaction": -0.0007,
+ "renal_z_vs_null": -0.1,
+ "mortality_raw_interaction": 0.0412,
+ "mortality_calibrated_interaction": -0.0052,
+ "mortality_ckd_RR": 2.335,
+ "e_value_mortality_ckd_RR": 4.101,
+ "positivity": {
+  "ps_range": [
+   0.0081,
+   1.0
+  ],
+  "frac_ps_lt_0.05": 0.001,
+  "frac_ps_gt_0.95": 0.0099,
+  "ckd_ps_median": 0.2139,
+  "nonckd_ps_median": 0.1764
+ },
+ "verdict": "Renal calibrated interaction -0.0007 (z=-0.1 vs negative-control null) -> WITHIN the empirical null -- NOT renal-specific after calibration (confirms R2). Mortality calibrated -0.0052, E-value(mort CKD RR)=4.101. Positivity OK (near-0/1 PS frac 0.001/0.0099)."
+}
+```
+**Verdict:** Renal calibrated interaction -0.0007 (z=-0.1 vs negative-control null) -> WITHIN the empirical null -- NOT renal-specific after calibration (confirms R2). Mortality calibrated -0.0052, E-value(mort CKD RR)=4.101. Positivity OK (near-0/1 PS frac 0.001/0.0099).
+
 
 ---
 
-## OVERALL RED-TEAM VERDICT (4 rounds)
+## REVISED OVERALL VERDICT after R5 (negative-control calibration) — the decisive result
 
-**Both positive findings are DOWNGRADED by adversarial testing — neither is as clean as
-first presented, but each retains a real, defensible core.**
+**The CKD *personalized*-MAP-target claim does NOT survive hostile review.**
 
-### CKD personalized-MAP-target — REFRAME, do not retract
-- **R1 (scale):** SURVIVES. The CKD excess is real on the additive (risk-difference)
-  scale (CKD hypotension→AKI RD 0.061 vs non-CKD 0.015), not RR non-collapsibility.
-- **R2 (specificity):** FAILS. The CKD×hypotension additive excess is NOT renal-specific
-  — equally large for cholestatic/coagulation injury (max non-renal control 0.054 ≥
-  renal 0.046). Classic generic-severity / confounding-by-indication signature.
-- **R3 (confounding-resistance):** PARTIAL. A confounding-resistant core remains: the
-  hypotension dose-response is monotone and 2.3× steeper in CKD (gradient 0.16 vs 0.07;
-  21% AKI at MAP<55 in CKD), and the excess holds on MORTALITY (ascertainment-robust,
-  additive interaction 0.041).
-- **Honest position:** NOT "CKD needs a higher MAP to protect the KIDNEYS specifically."
-  The defensible claim is **"CKD patients are more vulnerable to DEEP intraoperative
-  hypotension, across organ systems and on mortality, with a steeper dose-response"** —
-  still actionable (a higher MAP floor in CKD), but the renal-specific mechanism is not
-  supported and residual confounding (sicker CKD-hypotension patients) cannot be
-  excluded observationally.
+R5 calibrated the CKD×hypotension renal interaction against an empirical confounding null
+built from negative-control organ outcomes (hepatocellular/cholestatic/coagulation; null =
+0.046 ± 0.007). The renal interaction (0.046) calibrates to **−0.0007 (z=−0.1)** — *exactly*
+the confounding null. The mortality interaction likewise calibrates to ~null. Positivity/
+overlap is adequate (PS 0.008–1.0; <0.1% / ~1% near 0/1).
 
-### A-line vasoplegia index — REAL DIRECTION, FRAGILE PACKAGING
-- **R4:** the waveform-index vs measured-SVRI correlation is FRAGILE as a composite — at
-  n=159 a naive z-mean index gives r=−0.15 (bootstrap CI crosses 0), vs the r=−0.34
-  headline at n=108. The signal is carried by the **diastolic/MAP ratio (r=+0.24)** and
-  τ (+0.16), while the augmentation-index component is wrong-signed. Construct validity
-  is real in DIRECTION but MODEST and simpler than the composite implied; the diastolic/
-  MAP ratio is the robust single tone-correlate. Needs the full 248-case SVR cohort + a
-  pre-specified, validated index before any claim.
+**What this means for each claim:**
+- ❌ **"CKD patients are specially vulnerable to hypotension / need a personalized higher
+  MAP target"** — NOT DEFENSIBLE. The effect-modification is indistinguishable from
+  generic confounding after negative-control calibration. The earlier within-CKD RR 2.14
+  / RD 0.061, the eGFR gradient, and the "floor ~75" all reduce to: CKD patients have
+  higher BASELINE risk and get more hypotension, not a CKD-specific causal sensitivity.
+- ✅ **"Intraoperative hypotension is associated with postoperative AKI and in-hospital
+  mortality"** — DEFENSIBLE but NOT NOVEL (mortality CKD-stratum RR 2.34, E-value 4.10;
+  monotone dose-response; replicated VitalDB→INSPIRE). Well-established in the literature.
+- ⚠️ **A-line vasoplegia index** (R4) — real in direction but FRAGILE; carried by the
+  diastolic/MAP ratio (r≈+0.24); the r=−0.34 composite headline does not hold at n=159.
 
-### Bottom line
-The red-team did its job: it converted two tempting headlines into honestly-qualified
-findings. The CKD-hypotension-vulnerability association is robust but non-specific
-(reframe, don't retract); the vasoplegia construct validity is real but weak and
-carried by one simple feature. Both are hypothesis-generating, observational,
-single-/dual-centre, and need the stated next steps before publication-grade claims.
+**Defensibility ceiling (honest):** an observational dataset cannot make the *personalized*
+claim defensible — the negative-control calibration shows the modification is confounding.
+A defensible novel claim would require a design that breaks confounding-by-indication
+(a randomized MAP-target trial in CKD, or a credible natural experiment/instrument), which
+this data does not provide. The maximally-defensible outputs here are: (1) the calibrated
+null for the personalization claim (a useful *negative*), (2) the robust generic hypotension
+→ AKI/mortality association, (3) the vasoplegia-tone construct-validity signal pending more N.

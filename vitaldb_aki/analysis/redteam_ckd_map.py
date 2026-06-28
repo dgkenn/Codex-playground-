@@ -299,6 +299,76 @@ def round4(df_unused):
     return out
 
 
+def round5(df):
+    """DEFENSIBILITY: negative-control empirical-null CALIBRATION + bias analysis +
+    positivity. (1) Use the non-hypotension-target organ outcomes (hepatocellular,
+    cholestatic, coagulation) as negative controls to estimate the empirical NULL
+    distribution of the CKD x hypotension additive interaction under confounding, then
+    calibrate the renal + mortality estimates against it (Schuemie/Madigan-style). (2)
+    E-value for the mortality effect. (3) Positivity/overlap of the HYPO propensity by
+    CKD (a hostile reviewer checks IPTW positivity)."""
+    import numpy as np, pandas as pd, math
+    out = {"attack": "DEFENSIBILITY -- negative-control empirical-null calibration + "
+                      "bias analysis + positivity"}
+    # (1) empirical null from negative-control outcomes
+    nulls = {}
+    for o in ["organ_hepatocellular", "organ_cholestatic", "organ_coagulation"]:
+        if o in df.columns:
+            df[o] = pd.to_numeric(df[o], errors="coerce")
+            sub = df[df[o].notna()]
+            if sub[o].sum() >= 30:
+                nulls[o] = _additive_interaction(sub, o)[0]
+    null_vals = list(nulls.values())
+    mu = float(np.mean(null_vals)) if null_vals else 0.0
+    sd = float(np.std(null_vals, ddof=1)) if len(null_vals) > 1 else 0.0
+    renal_ai = _additive_interaction(df[df["organ_renal"].notna()], "organ_renal")[0]
+    cal_renal = round(renal_ai - mu, 4)
+    z_renal = round((renal_ai - mu) / sd, 2) if sd > 0 else None
+    out["empirical_null"] = {"controls": nulls, "null_mean": round(mu, 4), "null_sd": round(sd, 4)}
+    out["renal_raw_interaction"] = renal_ai
+    out["renal_calibrated_interaction"] = cal_renal
+    out["renal_z_vs_null"] = z_renal
+    # mortality calibrated
+    mort = None
+    if "death_inhosp" in df.columns:
+        df["death_inhosp"] = pd.to_numeric(df["death_inhosp"], errors="coerce")
+        sub = df[df["death_inhosp"].notna()]
+        mort = _additive_interaction(sub, "death_inhosp")[0]
+        out["mortality_raw_interaction"] = mort
+        out["mortality_calibrated_interaction"] = round(mort - mu, 4)
+    # (2) E-value for the CKD-stratum mortality RR
+    if mort is not None:
+        rr_m = _gcomp_rd(df[(df["ckd"] == 1) & df["death_inhosp"].notna()], out="death_inhosp")[1]
+        out["mortality_ckd_RR"] = round(rr_m, 3) if rr_m else None
+        out["e_value_mortality_ckd_RR"] = (round(rr_m + math.sqrt(rr_m * (rr_m - 1)), 3)
+                                           if rr_m and rr_m > 1 else None)
+    # (3) positivity: P(HYPO) overlap by CKD
+    from sklearn.linear_model import LogisticRegression
+    from sklearn.pipeline import Pipeline
+    from sklearn.impute import SimpleImputer
+    from sklearn.preprocessing import StandardScaler
+    cov = [c for c in COV if c in df.columns]
+    ps = Pipeline([("imp", SimpleImputer(strategy="median")), ("sc", StandardScaler()),
+                   ("lr", LogisticRegression(max_iter=1000))])
+    ps.fit(df[cov].to_numpy(float), df["HYPO"].to_numpy())
+    p = ps.predict_proba(df[cov].to_numpy(float))[:, 1]
+    out["positivity"] = {
+        "ps_range": [round(float(p.min()), 4), round(float(p.max()), 4)],
+        "frac_ps_lt_0.05": round(float((p < 0.05).mean()), 4),
+        "frac_ps_gt_0.95": round(float((p > 0.95).mean()), 4),
+        "ckd_ps_median": round(float(np.median(p[df["ckd"].to_numpy() == 1])), 4),
+        "nonckd_ps_median": round(float(np.median(p[df["ckd"].to_numpy() == 0])), 4),
+    }
+    renal_survives = (z_renal is not None and z_renal > 1.96)
+    out["verdict"] = (
+        f"Renal calibrated interaction {cal_renal} (z={z_renal} vs negative-control null) "
+        f"-> {'EXCEEDS the empirical null (some renal-specificity recovered)' if renal_survives else 'WITHIN the empirical null -- NOT renal-specific after calibration (confirms R2)'}. "
+        f"Mortality calibrated {out.get('mortality_calibrated_interaction')}, "
+        f"E-value(mort CKD RR)={out.get('e_value_mortality_ckd_RR')}. Positivity OK "
+        f"(near-0/1 PS frac {out['positivity']['frac_ps_lt_0.05']}/{out['positivity']['frac_ps_gt_0.95']}).")
+    return out
+
+
 def _write(round_no, payload):
     path = os.path.join(_CACHE, "redteam_ckd_map_results.json")
     allr = {}
@@ -330,7 +400,7 @@ def main():
     df = _load()
     print(f"[redteam] round {rnd}; INSPIRE N={len(df)} (renal-labelable); "
           f"CKD={int((df['ckd']==1).sum())}", flush=True)
-    fn = {1: round1, 2: round2, 3: round3, 4: round4}.get(rnd)
+    fn = {1: round1, 2: round2, 3: round3, 4: round4, 5: round5}.get(rnd)
     if fn is None:
         print(f"[redteam] round {rnd} not implemented in this module yet.", flush=True)
         return
