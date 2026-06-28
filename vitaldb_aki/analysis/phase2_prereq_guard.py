@@ -72,9 +72,9 @@ def phase2_prereq_status(cfg: dict[str, Any], gate: str = "aline_outcome") -> di
         return {
             "satisfied": False,
             "reasons": [
-                f"gate marker {path!r} does not exist -- the Paper-1 a-line increment "
-                "has not been validated leakage-clean + HPI-incremental on the locked "
-                "test partition. Phase 2 is correctly blocked."
+                f"gate marker {path!r} does not exist -- the {gate!r} predictor has not "
+                "been validated leakage-clean on the locked test partition "
+                f"(required: {required}). Phase 2 is correctly blocked."
             ],
             "marker": None,
         }
