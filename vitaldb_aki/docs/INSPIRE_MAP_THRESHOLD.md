@@ -1,9 +1,15 @@
-> **SUPERSEDED / CAUTION (see docs/REDTEAM_CKD_MAP.md).** This NNT/threshold analysis quantifies the CKD personalized-MAP-target, which a subsequent adversarial red-team RETRACTED: negative-control calibration showed the CKD x hypotension effect-modification is indistinguishable from generic confounding (calibrated interaction ~0). The CKD-SPECIFIC thresholds/NNTs below do NOT survive hostile review. The defensible replacement is the within-patient causal hypotension->AKI effect (docs/INSPIRE_WITHIN_PATIENT.md). Retained for the record only.
+> **SUPERSEDED / CAUTION (see docs/REDTEAM_CKD_MAP.md).** This NNT/threshold analysis quantifies the CKD personalized-MAP-target, which a subsequent adversarial red-team RETRACTED: negative-control empirical-null calibration showed the CKD x hypotension renal interaction (raw 0.046) calibrates to **-0.0007 (z=-0.1)** -- *exactly* the confounding null built from non-renal organ outcomes (hepatocellular/cholestatic/coagulation, null 0.046 +- 0.007). The *same* CKD 'excess' appears on those negative-control outcomes, so the effect-modification is indistinguishable from generic confounding (CKD patients have higher BASELINE risk and get more hypotension), NOT a renal-specific causal sensitivity. The CKD-SPECIFIC thresholds/NNTs below do NOT survive hostile review and must NOT be read as a personalized target. What survives is the GENERIC (non-novel) hypotension->AKI/mortality association. The defensible replacement is the within-patient causal hypotension->AKI effect (docs/INSPIRE_WITHIN_PATIENT.md). Retained for the record only.
 
 # INSPIRE: actionable CKD MAP-target -- per-eGFR inflection, absolute risk, NNT
 
 ## READ FIRST -- limitations (binding)
 
+- **THE CKD-SPECIFIC CLAIM IS RETRACTED (see banner + docs/REDTEAM_CKD_MAP.md).**
+  Every CKD-vs-non-CKD contrast below is presented for the record / as a
+  quantification exercise; after negative-control calibration the CKD-specific
+  effect-modification is within the confounding null. Read the absolute risks as
+  GENERIC hypotension-AKI associations that are larger where baseline risk is
+  larger, not as evidence CKD kidneys are causally more MAP-sensitive.
 - **Observational, single-centre** (SNUH / INSPIRE). Confounding by
   indication (sicker patients sustain deeper MAP nadirs AND injure more) is
   NOT removed by IPTW; the absolute risk differences are associational.
@@ -138,11 +144,13 @@ CKD absolute mortality risk + NNT:
 
 ## HONEST VERDICT
 
-1. **Risk-inflection MAP rises as eGFR falls: True.** Adjusted RCS inflection MAP by eGFR (>=90 -> 60-90 -> 45-60 -> <45): [70.0, 70.0, 70.0, 72.0] mmHg. The CKD strata inflect at a HIGHER MAP than the eGFR>=90 stratum -- consistent with a personalized, higher floor for impaired kidneys (the curve and CIs are wide given coarse, floored map_lowest, so read these as directional).
+**(Read with the SUPERSEDED banner: the CKD-SPECIFIC claim was retracted by negative-control calibration. The quantities below are the size of the association, not evidence of a CKD-specific causal floor.)**
 
-2. **Absolute benefit is concentrated in CKD: True.** Within CKD (eGFR<60), keeping MAP nadir >=75 vs <65 is associated with an absolute **6.82%** lower AKI risk (NNT ~**14.7**) and an absolute **3.57%** lower in-hospital mortality (NNT ~**28**). In non-CKD the same contrast yields a much smaller AKI risk difference (1.18%) -- the benefit is concentrated where renal reserve is low.
+1. **As a descriptive quantification, the risk-inflection MAP sits at ~70 mmHg and ticks up as eGFR falls (rises=True; seq [70.0, 70.0, 70.0, 72.0] mmHg).** But this elbow shifts only slightly and the CKD strata's apparent extra sensitivity is, per the red-team's R5 calibration, within the non-renal confounding null -- so the 'higher floor for CKD' reading is NOT defensible. The elbow itself (~70 across strata) is just the generic hypotension-AKI inflection.
 
-3. **Bottom line (actionable):** *In CKD patients (eGFR<60), keeping intraoperative MAP nadir >=75 mmHg vs allowing it below 65 is associated with ~6.82% lower absolute AKI risk (NNT ~14.7) and ~3.57% lower absolute mortality (NNT ~28); the benefit is concentrated in CKD and is mirrored on the hard mortality endpoint.* This is observational and hypothesis-generating: confounding by indication (sicker patients reach deeper nadirs and injure more) is not removed by IPTW, vitals are coarse, and map_lowest is floored at ~52 mmHg. It motivates a CKD-stratified MAP-target trial, not a change of practice on its own.
+2. **The absolute risk differences ARE larger in CKD (concentrated=True), but that is expected from higher BASELINE risk, not CKD-specific MAP sensitivity.** Within CKD, MAP nadir <65 vs >=75 carries an adjusted **6.82%** higher AKI risk (so 'keeping >=75' maps to NNT ~**14.7**) and **3.57%** higher mortality (NNT ~**28**), vs **1.18%** AKI RD in non-CKD. The same multiplicative pattern appears on hepatocellular/cholestatic/coagulation negative-control outcomes (REDTEAM R2/R5), which is why the renal-specific interaction calibrates to ~0.
+
+3. **Bottom line (honest):** *The generic association -- intraoperative hypotension (MAP nadir <65 vs >=75) is associated with substantially higher AKI and in-hospital mortality (CKD: ~6.82% AKI RD / NNT ~14.7; ~3.57% mortality RD / NNT ~28) -- is real, dose-responsive and mirrored on the hard mortality endpoint, but is WELL-ESTABLISHED and NOT NOVEL.* The CKD-PERSONALIZED-floor framing does NOT survive negative-control calibration (calibrated renal interaction -0.0007, z=-0.1) and is retracted. These NNTs therefore quantify a known hazard, not a CKD-specific target; a defensible personalized claim would need a design that breaks confounding-by-indication (a randomized CKD MAP-target trial or a credible instrument). See docs/INSPIRE_WITHIN_PATIENT.md for the defensible within-patient estimand.
 
 ---
 *Generated by vitaldb_aki/analysis/inspire_map_threshold.py (seed 20260626). Hypothesis-generating; observational; coarse vitals; confounding-by-indication unremoved.*
