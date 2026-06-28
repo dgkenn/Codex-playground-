@@ -50,13 +50,18 @@ def _parse_ts(s):
         return None
 
 
-def filter_norepi():
-    """Stream icu/inputevents.csv.gz -> cache/mimic_norepi.csv (norepi rate segments)."""
+def filter_norepi(delete_raw=True):
+    """Stream icu/inputevents.csv.gz -> cache/mimic_norepi.csv (norepi rate segments).
+
+    DISK-SAFE: gzip.open streams (never decompresses the full file to disk); only the small
+    norepi-segment CSV is written. After a successful filter, the ~370 MB raw .gz is deleted
+    (set MIMIC_KEEP_RAW=1 to keep it) -- the filtered CSV is the durable artifact."""
     src = os.path.join(MIMIC_RAW, "inputevents.csv.gz")
     if not os.path.exists(src):
         raise FileNotFoundError(f"inputevents not found at {src}")
+    tmp = NOREPI_CSV + ".tmp"
     n_in = n_out = 0
-    with gzip.open(src, "rt") as fh, open(NOREPI_CSV, "w", newline="") as out:
+    with gzip.open(src, "rt") as fh, open(tmp, "w", newline="") as out:
         r = _csv.DictReader(fh)
         w = _csv.writer(out)
         w.writerow(["subject_id", "stay_id", "starttime", "endtime", "rate", "rateuom"])
@@ -71,7 +76,14 @@ def filter_norepi():
             w.writerow([row.get("subject_id"), row.get("stay_id"), row.get("starttime"),
                         row.get("endtime"), rate, uom])
             n_out += 1
+    os.replace(tmp, NOREPI_CSV)   # atomic: a reap mid-filter never leaves a half NOREPI_CSV
     print(f"[mimic] filtered inputevents: {n_in} rows -> {n_out} norepi(kg) segments", flush=True)
+    if delete_raw and not os.environ.get("MIMIC_KEEP_RAW"):
+        try:
+            os.remove(src)
+            print(f"[mimic] disk-safe: removed raw {src} (~{370}MB) after filtering", flush=True)
+        except OSError:
+            pass
     return n_out
 
 
@@ -266,6 +278,15 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--refilter", action="store_true", help="re-stream inputevents")
     a = ap.parse_args()
+    # disk guard: refuse to start heavy work if free space is low
+    try:
+        st = os.statvfs(_CACHE)
+        free_gb = st.f_bavail * st.f_frsize / 1e9
+        if free_gb < 1.0:
+            print(f"[mimic] ABORT (disk-safe): only {free_gb:.1f} GB free", flush=True)
+            return
+    except OSError:
+        pass
     if a.refilter or not os.path.exists(NOREPI_CSV):
         filter_norepi()
     res = model()
