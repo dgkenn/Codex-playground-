@@ -499,6 +499,18 @@ def _resolve_seed(cfg: dict[str, Any]) -> int:
     return int(cfg.get("seed", RANDOM_SEED))
 
 
+def _empty_required_cols(df, required_cols) -> list[str]:
+    """Return the subset of *required_cols* that are present but ENTIRELY empty
+    (all-NaN) in *df*. Used to detect the PENDING-upstream-data state (e.g. MAP
+    columns before vitals is built) so the harness reports PENDING, not a crash."""
+    import pandas as pd  # lazy
+    out = []
+    for c in required_cols:
+        if c in df.columns and pd.to_numeric(df[c], errors="coerce").notna().sum() == 0:
+            out.append(c)
+    return out
+
+
 def _load_internal_result(cache_dir: str, fname: str) -> dict:
     path = os.path.join(cache_dir, fname)
     if not os.path.exists(path):
@@ -835,6 +847,24 @@ def run_external_validation(cfg: dict[str, Any], matrix_path: str | None = None,
             }
             continue
 
+        # PENDING check: required columns PRESENT but entirely empty (all-NaN).
+        # This is the explicit "data not yet available" state -- e.g. the MAP /
+        # burden / recovery columns before vitals.csv.gz has finished downloading.
+        # It avoids a misleading estimator crash / "no contrast" message and marks
+        # the target as PENDING rather than DISCORDANT.
+        empty = _empty_required_cols(df, spec["required_cols"])
+        if empty:
+            target_reports[name] = {
+                "label": spec["label"], "kind": spec["kind"],
+                "ran": False,
+                "pending": True,
+                "reason": f"PENDING upstream data: required columns present but EMPTY "
+                          f"(all-NaN): {empty}. For MAP/burden/recovery columns this "
+                          "means vitals.csv.gz is not yet built into the matrix. "
+                          "Rebuild the matrix once vitals is downloaded, then re-run.",
+            }
+            continue
+
         # Internal VitalDB estimate.
         ifile = spec["internal_result_file"]
         if ifile not in internal_results_cache:
@@ -881,6 +911,10 @@ def run_external_validation(cfg: dict[str, Any], matrix_path: str | None = None,
             "n_concordant": sum(1 for r in target_reports.values()
                                 if isinstance(r, dict) and r.get("ran")
                                 and r.get("concordance", {}).get("concordant")),
+            "n_pending": sum(1 for r in target_reports.values()
+                             if isinstance(r, dict) and r.get("pending")),
+            "pending_targets": [n for n, r in target_reports.items()
+                                if isinstance(r, dict) and r.get("pending")],
         },
     }
     if write_status:
