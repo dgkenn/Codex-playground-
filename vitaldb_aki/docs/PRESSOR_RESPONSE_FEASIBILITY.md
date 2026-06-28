@@ -9,16 +9,16 @@ Make-or-break check: are there enough *discrete treatment-change events* with a 
 - Fluid-rate time-series (FMS/FLOW_RATE): **15 cases** (crystalloid/colloid otherwise = end-of-case totals, no timing).
 
 ## Sampled event extraction
-- Cases processed: **3**; clean isolated up-titration events: **14** (total detected 14; 4.67/case).
-- Short-term MAP response: median dMAP **4.32 mmHg** (IQR [0.31, 5.24]); **92%** of events had a measurable |dMAP| >= 3.0 mmHg.
-- Pressor responsiveness (dMAP per unit dose step): median **0.97**; between-patient IQR of per-case median responsiveness = **None** (this between-patient spread is exactly what a responder model would predict).
-- Events also carrying a CO response: **14**.
-- Extrapolated clean events over the full cohort: **~1027**.
+- Cases processed: **219**; clean isolated up-titration events: **1401** (total detected 1509; 6.89/case).
+- Short-term MAP response: median dMAP **0.24 mmHg** (IQR [-4.83, 5.39]); **67%** of events had a measurable |dMAP| >= 3.0 mmHg.
+- Pressor responsiveness (dMAP per unit dose step): median **0.012**; between-patient IQR of per-case median responsiveness = **[-0.411, 0.507]** (this between-patient spread is exactly what a responder model would predict).
+- Events also carrying a CO response: **400**.
+- Extrapolated clean events over the full cohort: **~1516**.
 
 ## Verdict
-PRESSOR-RESPONSE arm (MAP): borderline/NO-GO -- 14 clean isolated events over 3 sampled cases (4.67/case), 92% with a measurable >=3.0 mmHg response; extrapolates to ~1027 clean events over the full 220-case pressor+ART_MBP cohort.
+PRESSOR-RESPONSE arm (MAP): **GO** -- 1401 clean isolated events over 219 sampled cases (6.89/case), 67% with a measurable >=3.0 mmHg response; extrapolates to ~1516 clean events over the full 220-case pressor+ART_MBP cohort.
 
-CO-RESPONSE sub-arm: thin -- 14 events also carry an EV1000/Vigileo CO response (62 cohort cases have CO).
+CO-RESPONSE sub-arm: **GO** -- 400 events also carry an EV1000/Vigileo CO response (62 cohort cases have CO).
 
 FLUID-BOLUS arm: **NO-GO at scale** -- the only fluid-rate time-series is FMS/FLOW_RATE (15 cases); crystalloid/colloid are end-of-case totals (no timing), so fluid boluses cannot be event-labelled across the DB. A fluid-responder arm needs the FMS-15 cases (too few) or an external waveform+fluid dataset.
 
