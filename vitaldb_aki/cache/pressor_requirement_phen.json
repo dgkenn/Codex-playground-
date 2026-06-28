@@ -1,25 +1,25 @@
 {
   "seed": 20260628,
   "primary_drug": "PHEN",
-  "n_epochs_total": 724,
-  "n_cases_any_epoch": 112,
+  "n_epochs_total": 745,
+  "n_cases_any_epoch": 115,
   "target_band": [
     55.0,
     80.0
   ],
-  "n_qualifying_epochs": 371,
-  "n_cases_with_phenotype": 81,
+  "n_qualifying_epochs": 374,
+  "n_cases_with_phenotype": 82,
   "requirement_phenotype_rate_per_kg_units": {
-    "median": 0.19129,
+    "median": 0.1918,
     "iqr": [
-      0.14235,
-      0.27955
+      0.14289,
+      0.284
     ],
     "p10_p90": [
-      0.08471,
-      0.35363
+      0.08564,
+      0.3526
     ],
-    "fold_range_p90_p10": 4.2
+    "fold_range_p90_p10": 4.1
   },
   "reliability": {
     "n_cases_ge4_epochs": 39,
@@ -30,10 +30,10 @@
     "early_late_spearman": 0.278
   },
   "construct_validity": {
-    "vs_cumulative_exposure_spearman": 0.388,
-    "vs_achieved_MAP_spearman": 0.025,
+    "vs_cumulative_exposure_spearman": 0.392,
+    "vs_achieved_MAP_spearman": 0.029,
     "note": "expect: vs cumulative exposure POSITIVE (vasoplegic need more), vs achieved MAP <=0, vs EV1000 SVR NEGATIVE (low tone = high requirement)"
   },
   "replicates": true,
-  "verdict": "REPLICATES -- in PHENYLEPHRINE (independent alpha-1 agent), a stable-epoch dose-REQUIREMENT phenotype exists in 81 patients, varies ~4.2-fold between patients (p10-p90), split-half reliability 0.806, and early-half->late-half Spearman 0.278. The norepinephrine finding is NOT norepi-specific: the requirement is a reproducible patient-level vasoconstrictor trait."
+  "verdict": "REPLICATES -- in PHENYLEPHRINE (independent alpha-1 agent), a stable-epoch dose-REQUIREMENT phenotype exists in 82 patients, varies ~4.1-fold between patients (p10-p90), split-half reliability 0.806, and early-half->late-half Spearman 0.278. The norepinephrine finding is NOT norepi-specific: the requirement is a reproducible patient-level vasoconstrictor trait."
 }
