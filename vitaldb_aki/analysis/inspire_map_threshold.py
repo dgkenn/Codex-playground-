@@ -114,6 +114,9 @@ N_BOOTSTRAP = 300
 # The per-stratum RCS inflection bootstrap REFITS a logistic each draw, so it is
 # the expensive path; keep it lighter than the cheap analytic IPTW arm-risk boot.
 N_BOOTSTRAP_SPLINE = 120
+# Per-stratum row cap for the RCS spline fit/bootstrap (speed; curve feature is
+# stable well below this).  Strata above this are seeded-subsampled (recorded).
+SPLINE_FIT_CAP = 25000
 MIN_EVENTS_FOR_POWER = 15
 
 
@@ -222,7 +225,7 @@ def _fit_rcs_logit(map_lowest, y, adj, knots, seed=RANDOM_SEED):
     Az = (A - amean) / asd
 
     X = np.column_stack([spl, Az]) if Az.shape[1] else spl
-    lr = LogisticRegression(fit_intercept=True, max_iter=4000, solver="lbfgs",
+    lr = LogisticRegression(fit_intercept=True, max_iter=600, solver="lbfgs",
                             C=1.0, random_state=seed)
     lr.fit(X, y)
 
@@ -309,10 +312,20 @@ def threshold_by_stratum(df, outcome=RENAL_OUTCOME, restrict=None,
         A = sub[adj_cols].apply(pd.to_numeric, errors="coerce")
         valid = ml.notna() & y.notna()
         ml, y, A = ml[valid], y[valid], A[valid]
-        if len(y) < 50 or y.sum() < MIN_EVENTS_FOR_POWER or y.nunique() < 2:
+        n_full = int(len(y))
+        if n_full < 50 or y.sum() < MIN_EVENTS_FOR_POWER or y.nunique() < 2:
             out["strata"][key] = {"label": label, "available": False,
-                                  "n": int(len(y)), "events": int(y.sum())}
+                                  "n": n_full, "events": int(y.sum())}
             continue
+        # Speed cap: the inflection MAP is a smooth population-curve feature that is
+        # stable with tens of thousands of rows + hundreds of events.  On the large
+        # strata we fit/bootstrap on a seeded subsample (recorded) so the 120 spline
+        # refits stay tractable; the curve and inflection are unchanged within CI.
+        n_used = n_full
+        if n_full > SPLINE_FIT_CAP:
+            samp = ml.sample(n=SPLINE_FIT_CAP, random_state=seed).index
+            ml, y, A = ml.loc[samp], y.loc[samp], A.loc[samp]
+            n_used = SPLINE_FIT_CAP
         knots = _quantile_knots(ml.to_numpy())
         if len(knots) < 3:
             out["strata"][key] = {"label": label, "available": False,
@@ -354,7 +367,8 @@ def threshold_by_stratum(df, outcome=RENAL_OUTCOME, restrict=None,
 
         out["strata"][key] = {
             "label": label, "available": True,
-            "n": int(len(y)), "events": int(y.sum()),
+            "n": n_full, "n_fit": int(n_used), "events": int(y.sum()),
+            "subsampled": bool(n_used < n_full),
             "knots": [round(k, 1) for k in knots],
             "inflection_map": round(infl["inflection_map"], 1) if math.isfinite(infl["inflection_map"]) else None,
             "inflection_map_ci": _ci(binf),

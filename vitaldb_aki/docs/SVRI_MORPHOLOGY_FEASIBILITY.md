@@ -4,21 +4,21 @@
 - Tests whether a model predicting MEASURED SVRI from the arterial waveform carries signal worth a DL + generative (Phase-2) investment, BEFORE committing a GPU.
 - Phase 2 is worth it iff the waveform morphology (A) adds SVRI-prediction OVER mean pressure (non-circular -- SVRI is mechanically tied to MAP), and (B) the FULL morphology beats the single hand-built vasoplegia index (room for a generative model to discover residual tone-encoding shape).
 - Predictors EXCLUDE the SVRI ingredients (fluid_svr_*/co/ci, svri_*) -- circular.
-- **N = 131** direct-EV1000-SVR cases (extraction still running, parallelised; re-run as N grows toward 248). Small-N -> regularised Ridge, repeated-KFold out-of-fold. HYPOTHESIS-GENERATING.
+- **N = 191** direct-EV1000-SVR cases (extraction still running, parallelised; re-run as N grows toward 248). Small-N -> regularised Ridge, repeated-KFold out-of-fold. HYPOTHESIS-GENERATING.
 
 ## Cross-validated waveform->SVRI prediction (out-of-fold Spearman r / R^2)
 
 | model | features | OOF Spearman r | OOF R^2 |
 |---|---|---|---|
-| pressure_only | 4 | 0.339 (sd 0.0228) | 0.106 |
-| handbuilt_index | 4 | 0.3586 (sd 0.0284) | 0.1354 |
-| full_morphology | 21 | 0.4584 (sd 0.0272) | 0.1842 |
-| pressure_plus_morph | 25 | 0.4916 (sd 0.0363) | 0.238 |
+| pressure_only | 4 | 0.3019 (sd 0.0234) | 0.1281 |
+| handbuilt_index | 4 | 0.3676 (sd 0.0145) | 0.1676 |
+| full_morphology | 21 | 0.4078 (sd 0.0232) | 0.1577 |
+| pressure_plus_morph | 25 | 0.4619 (sd 0.0157) | 0.2387 |
 
 ## The two candidacy tests
 
-- **(A) Non-circular** -- morphology incremental R^2 OVER mean pressure = **0.132** -> PASS (need > 0.02). If positive, there is tone-encoding waveform shape beyond pressure -- exactly what Phase 2 would synthesise/interpret.
-- **(B) DL-upside** -- full-morphology r = 0.4584 vs hand-built index r = 0.3586 -> full set beats the index (room to discover).
+- **(A) Non-circular** -- morphology incremental R^2 OVER mean pressure = **0.1106** -> PASS (need > 0.02). If positive, there is tone-encoding waveform shape beyond pressure -- exactly what Phase 2 would synthesise/interpret.
+- **(B) DL-upside** -- full-morphology r = 0.4078 vs hand-built index r = 0.3676 -> full set beats the index (room to discover).
 
 ## VERDICT: **GO -- good Phase-2 candidate**
 
