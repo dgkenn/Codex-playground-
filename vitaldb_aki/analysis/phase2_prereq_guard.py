@@ -20,24 +20,43 @@ import json
 import os
 from typing import Any
 
-GATE_MARKER = "aline_hpi_guard_passed.json"
-
-# The marker, written by Paper-1 validation, must assert ALL of these.
-REQUIRED = {
-    "hpi_incremental": True,   # a-line increment beats hypotension scalars (HPI guard)
-    "leakage_battery": "pass", # §12 leakage/confound battery passed
-    "locked_test": True,       # evaluated on the locked test partition, not in-sample
+# Each Phase-2 variant gates on its own validation marker, written only after the
+# relevant predictor is shown leakage-clean on the locked test partition. A
+# generative-counterfactual engine AMPLIFIES the predictor's confounds, so it may
+# only ever interpret a validated, confound-free predictor.
+GATES = {
+    # Phase 2 (a-line outcome axis): the a-line organ-injury increment must beat the
+    # hypotension scalars (HPI guard) + pass the leakage battery, on locked test.
+    "aline_outcome": ("aline_hpi_guard_passed.json", {
+        "hpi_incremental": True,
+        "leakage_battery": "pass",
+        "locked_test": True,
+    }),
+    # Phase 2b (Ce drug-exposure axis): the Ce predictor must read the EEG ONLY (not
+    # the infusion pump / drug totals -- "reading the syringe"), pass leakage, locked.
+    "ce_axis": ("ce_predictor_validated.json", {
+        "ce_from_eeg_only": True,
+        "leakage_battery": "pass",
+        "locked_test": True,
+    }),
 }
+
+# Back-compat default (the original a-line gate).
+GATE_MARKER, REQUIRED = GATES["aline_outcome"]
 
 
 class Phase2PrerequisiteError(RuntimeError):
     """Raised when Phase 2 is attempted before the a-line increment is validated."""
 
 
-def phase2_prereq_status(cfg: dict[str, Any]) -> dict[str, Any]:
-    """Return {satisfied: bool, reasons: [...], marker: <contents or None>}."""
+def phase2_prereq_status(cfg: dict[str, Any], gate: str = "aline_outcome") -> dict[str, Any]:
+    """Return {satisfied, reasons, marker} for the named Phase-2 gate
+    (``aline_outcome`` or ``ce_axis``)."""
+    if gate not in GATES:
+        raise ValueError(f"unknown Phase-2 gate {gate!r}; choose from {list(GATES)}")
+    marker_name, required = GATES[gate]
     cache_dir = (cfg.get("data", {}) or {}).get("cache_dir") or cfg.get("cache_dir", "vitaldb_aki/cache")
-    path = os.path.join(cache_dir, GATE_MARKER)
+    path = os.path.join(cache_dir, marker_name)
     if not os.path.exists(path):
         return {
             "satisfied": False,
@@ -55,17 +74,17 @@ def phase2_prereq_status(cfg: dict[str, Any]) -> dict[str, Any]:
         return {"satisfied": False, "reasons": [f"gate marker unreadable: {exc}"], "marker": None}
 
     reasons = []
-    for k, want in REQUIRED.items():
+    for k, want in required.items():
         got = marker.get(k)
         if got != want:
             reasons.append(f"requirement {k!r}: need {want!r}, marker has {got!r}")
     return {"satisfied": not reasons, "reasons": reasons, "marker": marker}
 
 
-def assert_phase2_prerequisite(cfg: dict[str, Any]) -> None:
-    """Hard gate: raise Phase2PrerequisiteError unless the a-line increment is
-    validated. Call this FIRST in every Phase-2 entry point."""
-    status = phase2_prereq_status(cfg)
+def assert_phase2_prerequisite(cfg: dict[str, Any], gate: str = "aline_outcome") -> None:
+    """Hard gate: raise Phase2PrerequisiteError unless the named predictor is
+    validated leakage-clean. Call this FIRST in every Phase-2 entry point."""
+    status = phase2_prereq_status(cfg, gate=gate)
     if not status["satisfied"]:
         raise Phase2PrerequisiteError(
             "Phase 2 generative-counterfactual interpretability is BLOCKED.\n"
@@ -79,7 +98,8 @@ if __name__ == "__main__":
     import sys
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
     cfg = {"cache_dir": os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "cache")}
-    st = phase2_prereq_status(cfg)
-    print(f"Phase 2 prerequisite satisfied: {st['satisfied']}")
-    for r in st["reasons"]:
-        print(f"  - {r}")
+    for gate in GATES:
+        st = phase2_prereq_status(cfg, gate=gate)
+        print(f"[{gate}] Phase-2 prerequisite satisfied: {st['satisfied']}")
+        for r in st["reasons"]:
+            print(f"    - {r}")
