@@ -23,23 +23,23 @@
   validation (INSPIRE) pending. E-values quantify required unmeasured
   confounding; `organ_hepatocellular` is the negative control.
 
-> **PRELIMINARY: False** (analysis N = 165; verdict threshold = 80 cases).
+> **PRELIMINARY: False** (analysis N = 211; verdict threshold = 80 cases).
 
 ## Axis availability and N at each step
 
-- **Preload / PPV axis:** AVAILABLE -- source `aline_sample.csv`, column `art_ppv_mean`, N = 213.
-- **Preload / SVV gold-standard axis:** UNAVAILABLE (SVV column absent/empty in matrix).
-- **Vasoplegia / vaso_responsiveness axis:** UNAVAILABLE (vaso_responsiveness column absent/empty in matrix).
+- **Preload / PPV axis:** AVAILABLE -- source `aline_sample.csv`, column `art_ppv_mean`, N = 276.
+- **Preload / SVV gold-standard axis:** AVAILABLE (fluid_svv_mean).
+- **Vasoplegia / vaso_responsiveness axis:** AVAILABLE (feature_matrix_enriched.csv).
 - **Management (download-free):** from /cases (`intraop_phe, intraop_eph, intraop_epi, intraop_crystalloid, intraop_colloid, age, sex, asa, preop_htn, preop_dm, preop_cr, intraop_ebl, optype, opstart, opend, anestart, aneend, weight, height, bmi`).
 - **Outcomes:** organ_renal, composite, organ_hepatocellular.
-- **Recommendation rule used:** `ppv_only_fallback`.
+- **Recommendation rule used:** `ppv_plus_vaso_responsiveness` (SVV-augmented).
 
 ### Merge trace (N at each step)
 
-- `ppv_from_aline_sample`: n=213, ppv_col=art_ppv_mean, ppv_burden_col=art_ppv_burden_min
-- `vaso_fluid_axes`: matrix_used=feature_matrix.csv, vaso_available=False, svv_available=False
-- `cases_exposures_confounders`: n=213, columns=['intraop_phe', 'intraop_eph', 'intraop_epi', 'intraop_crystalloid', 'intraop_colloid', 'age', 'sex', 'asa', 'preop_htn', 'preop_dm', 'preop_cr', 'intraop_ebl', 'optype', 'opstart', 'opend', 'anestart', 'aneend', 'weight', 'height', 'bmi']
-- `outcomes_merged`: n=165, outcomes=['organ_renal', 'composite', 'organ_hepatocellular']
+- `ppv_from_aline_sample`: n=276, ppv_col=art_ppv_mean, ppv_burden_col=art_ppv_burden_min
+- `vaso_fluid_axes`: matrix_used=feature_matrix_enriched.csv, vaso_available=True, svv_available=True
+- `cases_exposures_confounders`: n=276, columns=['intraop_phe', 'intraop_eph', 'intraop_epi', 'intraop_crystalloid', 'intraop_colloid', 'age', 'sex', 'asa', 'preop_htn', 'preop_dm', 'preop_cr', 'intraop_ebl', 'optype', 'opstart', 'opend', 'anestart', 'aneend', 'weight', 'height', 'bmi']
+- `outcomes_merged`: n=211, outcomes=['organ_renal', 'composite', 'organ_hepatocellular']
 
 ## Axis definitions
 
@@ -63,50 +63,58 @@ and recompute the tertiles on the weight-normalised values. BSA (Mosteller)
 = sqrt(height_cm*weight_kg/3600) is also derived. **weight_kg + age + sex**
 are added to the IPTW propensity/adjustment covariate set. PPV/SVV (the
 preload axis) are intrinsically size-independent and are left as-is.
-  - body size available: True (N weight = 165, N BSA = 165); dose size-normalised: True.
+  - body size available: True (N weight = 211, N BSA = 211); dose size-normalised: True.
 
 ## 1. Axis validation
 
 ### (a) PPV / preload axis
-- N = 165; preload-responsive (PPV>13) = 130 (0.788).
-- PPV distribution: min 7.22, median 17.1, p75 24.03, max 87.58.
-- corr(PPV, PPV-burden) = 0.453 (sanity: should be strongly positive).
+- N = 211; preload-responsive (PPV>13) = 138 (0.654).
+- PPV distribution: min 4.77, median 17.07, p75 23.88, max 102.
+- corr(PPV, PPV-burden) = 0.469 (sanity: should be strongly positive).
 
 ### (b) Vasoplegia axis
-- **UNAVAILABLE.** vaso_responsiveness not in any available matrix (feature_matrix_enriched.csv absent and feature_matrix.csv lacks/empties the column). Vasoplegia axis pending the broader vasoactive-PD extraction; the A-line recommendation falls back to a PPV-only rule.
+- N non-null vaso_responsiveness = 13; vasoplegic (blunted) = 8.
+  - corr_vaso_responsiveness_vs_vaso_n_agents = 0.048
+  - vaso_n_agents_blunted_mean = 2.25
+  - vaso_n_agents_responsive_mean = 1.268
+  - corr_vaso_responsiveness_vs_vaso_pressor_duration_frac = -0.346
+  - vaso_pressor_duration_frac_blunted_mean = 0.998
+  - vaso_pressor_duration_frac_responsive_mean = 0.999
+  - corr_vaso_responsiveness_vs_vaso_max_infusion_norm = 0.117
+  - vaso_max_infusion_norm_blunted_mean = 1.125
+  - vaso_max_infusion_norm_responsive_mean = 1.2
 
 ## 2. Concordance HTE (headline)
 
-- Decidable recommendations: 165 (FLUID=130, PRESSOR=35, undecidable=0).
-- Concordant (management matched A-line) = 67 (0.406); discordant = 98.
+- Decidable recommendations: 140 (FLUID=138, PRESSOR=2, undecidable=71).
+- Concordant (management matched A-line) = 44 (0.314); discordant = 96.
 
 ### organ_renal **[UNDERPOWERED, hypothesis-only]**
-- **Pooled concordant vs discordant:** RD = -0.0184 (95% CI -0.0613 to 0.0241); RR = 0.4225 (95% CI 0 to 2.871). n=165, events=5, concordant=67. (Negative RD = concordant had LESS injury.)
-  - E-value point = 4.166, E-value CI = 1.
-  - Concordance main OR = 0.0005 (p = 0.0521); reco-interaction OR = 1921 (p = 0.2565).
-  - _fluid_recommended:_ RD = 0.0001 (CI -0.0505 to 0.0555); n=130, events=4 [underpowered]
-  - _pressor_recommended:_ RD = -0.0718 (CI -0.2537 to 0); n=35, events=1 [underpowered]
+- **Pooled concordant vs discordant:** RD = -0.0126 (95% CI -0.0708 to 0.0531); RR = 0.7235 (95% CI 0 to 3.185). n=140, events=8, concordant=44. (Negative RD = concordant had LESS injury.)
+  - E-value point = 2.109, E-value CI = 1.
+  - Concordance main OR = 1.931 (p = 0.828); reco-interaction OR = 0.2309 (p = 0.46).
+  - _fluid_recommended:_ RD = -0.0246 (CI -0.0718 to 0.03); n=138, events=7 [underpowered]
+  - _pressor_recommended:_ RD = n/a (CI n/a to n/a); n=2, events=1 [underpowered]
 
 ### composite
-- **Pooled concordant vs discordant:** RD = 0.0467 (95% CI -0.0754 to 0.1845); RR = 1.289 (95% CI 0.6044 to 2.629). n=165, events=30, concordant=67. (Negative RD = concordant had LESS injury.)
-  - E-value point = 1.899, E-value CI = 1.
-  - Concordance main OR = 0.4719 (p = 0.604); reco-interaction OR = 5.959 (p = 0.504).
-  - _fluid_recommended:_ RD = 0.1981 (CI 0.0119 to 0.3776); n=130, events=28
-  - _pressor_recommended:_ RD = -0.0351 (CI -0.239 to 0.1213); n=35, events=2 [underpowered]
+- **Pooled concordant vs discordant:** RD = 0.1865 (95% CI -0.051 to 0.4164); RR = 1.979 (95% CI 0.7687 to 4.087). n=140, events=33, concordant=44. (Negative RD = concordant had LESS injury.)
+  - E-value point = 3.371, E-value CI = 1.
+  - Concordance main OR = 2.027 (p = 0.496); reco-interaction OR = 1.248 (p = 0.796).
+  - _fluid_recommended:_ RD = 0.1825 (CI -0.0518 to 0.4139); n=138, events=32
+  - _pressor_recommended:_ RD = n/a (CI n/a to n/a); n=2, events=1 [underpowered]
 
 ### Negative control (organ_hepatocellular)
-- RD = 0.0292 -> **NON-NULL (possible residual confounding)**.
+- RD = 0.0403 -> **NON-NULL (possible residual confounding)**.
 
 ### BH-FDR (concordance main effect, primary outcomes)
-- organ_renal: p = 0.0521, FDR-reject = False
-- composite: p = 0.604, FDR-reject = False
+- organ_renal: p = 0.828, FDR-reject = False
+- composite: p = 0.496, FDR-reject = False
 
 ## GO / NO-GO for the deep-learning version
 
-### Verdict: **INPUTS-PENDING**
+### Verdict: **WEAK-GO (signal in the right direction, CI crosses null)**
 
-- Vasoplegia axis (vaso_responsiveness) UNAVAILABLE in current caches; recommendation used a PPV-only fallback rule.
-- Verdict deferred: too few PPV cases and/or the vasoplegia axis is not yet extracted. Re-run after the broader ART-waveform + vasoactive-PD extraction completes.
+- Concordant management trended toward LOWER injury (RD=-0.0126) but the CI crosses 0 at current N.
 
 ### Explicit criteria
 - **GO** if: concordant management shows a powered, protective renal RD (CI excludes 0) with the negative control null -- i.e. a recoverable gap a model could exploit.

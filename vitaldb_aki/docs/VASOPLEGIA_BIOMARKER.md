@@ -17,22 +17,17 @@ decision.
 
 ## THE HEADLINE -- waveform tone surrogate vs MEASURED SVR
 
-> **NOT AVAILABLE -- no measured-SVR (EV1000/Vigileo) cases overlap the A-line waveform subset in the present caches. This is the KEY validation and CANNOT be run until the EV1000 SVR subset is extracted onto the same cases as the ART-waveform pilot. The SVR-free vasoplegia-index claim is therefore UNVALIDATED so far.**
-
-The measured-SVR reference standard (EV1000/Vigileo `fluid_svr_*`) is
-**not present** on the same cases as the A-line waveform pilot in the
-current caches, so the surrogate-vs-SVR correlation **could not be**
-**computed**. This is the single validation that would license calling
-the waveform index an *SVR-free vasoplegia* marker. Until the EV1000
-SVR subset is extracted onto the ART-waveform cases, the claim is
-**UNVALIDATED**.
+- Reference standard: BSA-indexed SVRI (SVR * BSA); falls back to raw SVR only where BSA is missing.
+- Joint subset N = **8**. **PRELIMINARY -- joint subset is very small (N<30); treat r as hypothesis-generating only.**
+- Waveform vasoplegia index vs measured SVRI: Spearman r = **-0.4286** (N=8); hypothesised negative (high index = low tone = low SVRI).
+- Diastolic decay tau vs measured SVRI: Spearman r = **0.2143** (N=8); hypothesised positive (tau = R*C tracks SVRI).
 
 ## Axis availability (N)
 
 - **A. Pump+MAP requirement/gain** (full cohort, download-free): N = 4335 (with outcomes 3924).
-- **B. Measured SVR / SVRI** (EV1000/Vigileo reference standard): N = 0  **<- NOT extracted; validation deferred**.
-- **C. Waveform-only tone surrogate** (A-line pilot cache/aline_sample.csv): N = 175.
-- Feature-matrix source: `feature_matrix.csv`.
+- **B. Measured SVR / SVRI** (EV1000/Vigileo reference standard): N = 138.
+- **C. Waveform-only tone surrogate** (A-line pilot cache/aline_sample.csv): N = 225.
+- Feature-matrix source: `feature_matrix_enriched.csv`.
 
 ## Body-size & dose normalization (READ -- key methodological control)
 
@@ -81,16 +76,16 @@ size instead of vasoplegia:
 
 ## Convergent validity (requirement A vs waveform C)
 
-- N (joint A-line subset) = 175; Spearman r = **0.0166**; Cohen kappa (median split) = -0.0515.
-- 2x2 (median split): {'both_high': 41, 'req_high_wave_low': 46, 'req_low_wave_high': 46, 'both_low': 42}.
+- N (joint A-line subset) = 225; Spearman r = **0.0664**; Cohen kappa (median split) = 0.0222.
+- 2x2 (median split): {'both_high': 57, 'req_high_wave_low': 55, 'req_low_wave_high': 55, 'both_low': 58}.
 - Both indices oriented HIGH = vasoplegia; positive r / agreement = convergent. Small N on the A-line pilot -> hypothesis-generating.
 
 ## Criterion 3a -- predicts high pressor REQUIREMENT
 
 - High-requirement label N = 4335, events = 629.
 - _Caveat:_ high_requirement is derived from NEE/kg, which is a COMPONENT of requirement_vasoplegia_index -> that index's AUROC here is partly TAUTOLOGICAL and is shown only as a sanity check. The INFORMATIVE rows are the WAVEFORM markers (C), which are independent of the dose label.
-  - `waveform_vasoplegia_index` (waveform tone surrogate (C)): AUROC vs high-requirement = **0.542** (N=175, events=36).
-  - `art_tau_decay_mean` (diastolic decay tau (C)): AUROC vs high-requirement = **0.4211** (N=175, events=36).
+  - `waveform_vasoplegia_index` (waveform tone surrogate (C)): AUROC vs high-requirement = **0.562** (N=225, events=49).
+  - `art_tau_decay_mean` (diastolic decay tau (C)): AUROC vs high-requirement = **0.3927** (N=225, events=49).
   - `requirement_vasoplegia_index` (requirement index (A)): AUROC vs high-requirement = **0.9731** (N=4335, events=629).
 
 ## Criterion 3b -- organ injury INCREMENTAL over MAP burden
@@ -98,14 +93,14 @@ size instead of vasoplegia:
 Baseline = `['map_auc_below_65', 'weight_kg', 'bsa_m2', 'age', 'sex_male']`; incremental AUROC (delta), LR p, patient-clustered bootstrap CI. BH-FDR across primary outcomes.
 
 ### `waveform_vasoplegia_index` -- waveform vasoplegia index (C)
-- organ_renal: dAUROC = **-0.0012** (base 0.845 -> 0.8438; 95% CI -0.0069 to 0); LR p = 0.9879; n=165, events=5. *[underpowered]* FDR-reject=False
-- composite: dAUROC = **0.041** (base 0.6703 -> 0.7112; 95% CI -0.0218 to 0.1003); LR p = 0.016; n=175, events=31. FDR-reject=True
-- organ_hepatocellular **[negative control]**: dAUROC = **0.0106** (base 0.9894 -> 1; 95% CI 0 to 0.0317); LR p = 0.00181; n=129, events=3. *[underpowered]*
+- organ_renal: dAUROC = **-0.0005** (base 0.7104 -> 0.71; 95% CI -0.0371 to 0.0345); LR p = 0.6922; n=211, events=10. FDR-reject=False
+- composite: dAUROC = **0.0418** (base 0.6657 -> 0.7074; 95% CI -0.0188 to 0.1024); LR p = 0.006429; n=225, events=40. FDR-reject=True
+- organ_hepatocellular **[negative control]**: dAUROC = **0.0552** (base 0.8635 -> 0.9187; 95% CI -0.0072 to 0.1692); LR p = 0.04427; n=167, events=4. *[underpowered]*
 
 ### `art_tau_decay_mean` -- diastolic decay tau (C)
-- organ_renal: dAUROC = **0.0138** (base 0.845 -> 0.8588; 95% CI -0.0307 to 0.0771); LR p = 0.5708; n=165, events=5. *[underpowered]* FDR-reject=False
-- composite: dAUROC = **0.0004** (base 0.6703 -> 0.6707; 95% CI -0.0331 to 0.0379); LR p = 0.383; n=175, events=31. FDR-reject=False
-- organ_hepatocellular **[negative control]**: dAUROC = **0** (base 0.9894 -> 0.9894; 95% CI 0 to 0); LR p = 0.5938; n=129, events=3. *[underpowered]*
+- organ_renal: dAUROC = **-0.0025** (base 0.7104 -> 0.708; 95% CI -0.0096 to 0.0043); LR p = 0.9598; n=211, events=10. FDR-reject=False
+- composite: dAUROC = **-0.0045** (base 0.6657 -> 0.6612; 95% CI -0.0338 to 0.0241); LR p = 0.4267; n=225, events=40. FDR-reject=False
+- organ_hepatocellular **[negative control]**: dAUROC = **0.0092** (base 0.8635 -> 0.8727; 95% CI 0 to 0.0338); LR p = 0.6816; n=167, events=4. *[underpowered]*
 
 ### `requirement_vasoplegia_index` -- requirement vasoplegia index (A)
 - organ_renal: dAUROC = **0.0042** (base 0.6813 -> 0.6855; 95% CI -0.005 to 0.0142); LR p = 0.04188; n=3850, events=142. FDR-reject=False
@@ -137,8 +132,8 @@ Baseline = `['map_auc_below_65', 'weight_kg', 'bsa_m2', 'age', 'sex_male']`; inc
 - composite: rates by quantile = [0.1181, 0.1239, 0.1181, 0.253] (n/q [1821, 347, 1084, 1083], ev/q [215, 43, 128, 274]); Cochran-Armitage z = 8.238, p = 0; monotone-increasing = False.
 
 ### waveform index (C; A-line pilot) (`waveform_vasoplegia_index`)
-- organ_renal: rates by quantile = [0.0182, 0.0545, 0.0182] (n/q [55, 55, 55], ev/q [1, 3, 1]); Cochran-Armitage z = -0, p = 1; monotone-increasing = False.
-- composite: rates by quantile = [0.25, 0.1136, 0.2093, 0.1364] (n/q [44, 44, 43, 44], ev/q [11, 5, 9, 6]); Cochran-Armitage z = -0.9561, p = 0.339; monotone-increasing = False.
+- organ_renal: rates by quantile = [0.0563, 0.0286, 0.0571] (n/q [71, 70, 70], ev/q [4, 2, 4]); Cochran-Armitage z = 0.0188, p = 0.985; monotone-increasing = False.
+- composite: rates by quantile = [0.2807, 0.0893, 0.2321, 0.1071] (n/q [57, 56, 56, 56], ev/q [16, 5, 13, 6]); Cochran-Armitage z = -1.671, p = 0.0947; monotone-increasing = False.
 
 ## Bottom line
 
