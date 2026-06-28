@@ -207,7 +207,7 @@ def _eval_cfg(cfg: dict[str, Any]) -> dict[str, Any]:
     ev = dict(cfg.get("evaluation", {}))
     ev.setdefault("outer_folds", 5)
     ev.setdefault("inner_folds", 5)
-    ev.setdefault("bootstrap_iters", 800)
+    ev.setdefault("bootstrap_iters", 150)
     return ev
 
 
