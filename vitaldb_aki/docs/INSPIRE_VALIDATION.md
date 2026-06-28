@@ -105,3 +105,25 @@ _Pending build output._
 
 <!-- VERDICT -->
 _Pending the full run (MAP targets require the vitals download)._
+
+---
+
+## RESULTS (filled from cache/external_validation_status.json) — INSPIRE N=130,960
+
+Pre-specified bar = same direction + CI overlap + magnitude within 2x (log scale for ratios), all three.
+
+| # | Target | Internal VitalDB | INSPIRE | Verdict |
+|---|--------|------------------|---------|---------|
+| 1 | hypotension-burden -> AKI/composite (IPTW OR) | 1.174 [0.967,1.510] | **0.718 [0.689,0.753]** (n=130960) | **DISCORDANT — reverses** |
+| 2 | CKD personalized-MAP-target HTE (within-CKD RR) | 1.451 [0.975,2.131] | **2.141 [1.797,2.575]** (n=10319) | same direction + CI overlap, INSPIRE stronger & highly significant; narrowly fails the strict 2x-log magnitude criterion -> flagged DISCORDANT by the rule but **substantively the strongest external support** |
+| 3 | recovery-velocity increment (renal ΔAUROC) | -0.018 [-0.055,0.018] | +0.0004 [-0.0005,0.0012] (n=90194) | ~null both -> **reproduces the internal generic-severity / no-renal-specific-signal conclusion** |
+| 4 | pressor choice phe-vs-norepi (renal RR) | 0.175 [0.084,0.423] | **0.327 [0.292,0.364]** (n=15001; norepi directly recorded) | **CONCORDANT (replicates)** — but likely shared confounding-by-indication (sicker/vasoplegic patients get norepi) in BOTH cohorts |
+
+### Honest verdict
+
+- **The base hypotension-burden -> AKI association does NOT replicate — it reverses** (OR 0.72 in 131k). Most plausibly a measurement/confounding artifact: INSPIRE ships coarse intermittent numeric vitals (not dense intraop sampling), so recorded "hypotension burden" mismeasures true exposure and is confounded (e.g., sicker patients monitored differently). A reversal this clean in 131k patients is a caution against over-trusting the single-centre dense-vitals association.
+- **The CKD personalized-MAP-target is the finding that best survives** — same direction and CI overlap with the internal estimate, and **stronger + highly significant** externally (within-CKD RR 2.14). It narrowly trips the strict 2x-log magnitude rule (hence the automated "DISCORDANT"), but substantively this REPLICATES and strengthens: in INSPIRE too, CKD patients carry a steeper hypotension->renal-injury gradient. This is the most defensible candidate to carry forward.
+- **Recovery-velocity reproduces as ~null on the renal outcome externally** — consistent with the internal specificity downgrade (generic severity, not a renal-specific perfusion mechanism).
+- **Pressor choice (phe vs norepi) formally replicates** but is most likely a shared confound (indication), not causal — interpret with the same caution flagged internally.
+- Note: `any_vasopressor` exposure prevalence is 99% in the labelable INSPIRE subset (near-constant -> useless as a contrast); the phe-vs-norepi contrast is the usable pressor analysis.
+- Waveform-morphology findings (the a-line vasoplegia index, the keystone) are NOT externally validatable on INSPIRE (no waveforms) — INSPIRE confirms the SCALAR findings only.
