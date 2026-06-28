@@ -97,3 +97,68 @@ Adversarial stress-tests. Each round mounts the strongest attack a skeptical rev
 ```
 **Verdict:** WEAKENED -- specificity fails (renal 0.0457 vs max control 0.054); procedure-adjusted 0.0407 holds.
 
+## round3: ascertainment (mortality endpoint) + dose-response confounding-resistance
+
+```json
+{
+ "attack": "ascertainment (mortality endpoint) + dose-response confounding-resistance",
+ "mortality_additive_interaction": {
+  "interaction": 0.0412,
+  "RD_ckd": 0.0487,
+  "RD_nonckd": 0.0074,
+  "events": 1474
+ },
+ "dose_response_aki_by_map_lowest": {
+  "ckd": [
+   {
+    "band": ">=75",
+    "n": 1628,
+    "aki_rate": 0.0479
+   },
+   {
+    "band": "65-75",
+    "n": 1232,
+    "aki_rate": 0.0787
+   },
+   {
+    "band": "55-65",
+    "n": 2398,
+    "aki_rate": 0.1126
+   },
+   {
+    "band": "<55",
+    "n": 2745,
+    "aki_rate": 0.2095
+   }
+  ],
+  "non_ckd": [
+   {
+    "band": ">=75",
+    "n": 12777,
+    "aki_rate": 0.0172
+   },
+   {
+    "band": "65-75",
+    "n": 18222,
+    "aki_rate": 0.0299
+   },
+   {
+    "band": "55-65",
+    "n": 30992,
+    "aki_rate": 0.0297
+   },
+   {
+    "band": "<55",
+    "n": 20200,
+    "aki_rate": 0.0884
+   }
+  ]
+ },
+ "dose_gradient_ckd": 0.1616,
+ "dose_gradient_nonckd": 0.0712,
+ "gradient_steeper_in_ckd": true,
+ "verdict": "PARTIAL -- mortality CKD x hypotension additive excess = 0.0412 (ascertainment-robust, but mortality is itself non-specific); hypotension dose-response gradient steeper in CKD (0.1616 vs 0.0712)=True. A steeper CKD dose-response is the one confounding-resistant signal, but R2's pan-organ non-specificity still caps the renal-specific claim."
+}
+```
+**Verdict:** PARTIAL -- mortality CKD x hypotension additive excess = 0.0412 (ascertainment-robust, but mortality is itself non-specific); hypotension dose-response gradient steeper in CKD (0.1616 vs 0.0712)=True. A steeper CKD dose-response is the one confounding-resistant signal, but R2's pan-organ non-specificity still caps the renal-specific claim.
+

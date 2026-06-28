@@ -173,6 +173,55 @@ def round2(df):
     return out
 
 
+def round3(df):
+    """ATTACK: measurement/ascertainment + is the dose-response confounding-resistant?
+    (1) AKI-ASCERTAINMENT bias -- CKD patients get more creatinine draws -> AKI more
+    likely DETECTED; the hard endpoint death_inhosp is ascertainment-robust. Does the
+    CKD x hypotension ADDITIVE excess hold for MORTALITY, and is it (like the organ panel)
+    non-specific? (2) DOSE-RESPONSE -- a steeper hypotension-DOSE->AKI gradient in CKD is
+    harder for pure confounding to fake than a binary flag. AKI rate by map_lowest band x
+    CKD: is the gradient monotone AND steeper in CKD?"""
+    import numpy as np, pandas as pd
+    out = {"attack": "ascertainment (mortality endpoint) + dose-response confounding-resistance"}
+    # (1) mortality
+    if "death_inhosp" in df.columns:
+        df["death_inhosp"] = pd.to_numeric(df["death_inhosp"], errors="coerce")
+        sub = df[df["death_inhosp"].notna()]
+        ai, rdc, rdn = _additive_interaction(sub, "death_inhosp")
+        out["mortality_additive_interaction"] = {"interaction": ai, "RD_ckd": rdc,
+                                                 "RD_nonckd": rdn, "events": int(sub["death_inhosp"].sum())}
+    # (2) dose-response: AKI rate by map_lowest band x CKD
+    ml = pd.to_numeric(df.get("map_lowest"), errors="coerce")
+    bands = [(">=75", ml >= 75), ("65-75", (ml >= 65) & (ml < 75)),
+             ("55-65", (ml >= 55) & (ml < 65)), ("<55", ml < 55)]
+    dr = {}
+    for ck, lab in ((1, "ckd"), (0, "non_ckd")):
+        rates = []
+        for bl, mask in bands:
+            m = mask & (df["ckd"] == ck) & df["organ_renal"].notna()
+            y = pd.to_numeric(df.loc[m, "organ_renal"], errors="coerce")
+            rates.append({"band": bl, "n": int(m.sum()), "aki_rate": round(float(y.mean()), 4) if m.sum() else None})
+        dr[lab] = rates
+    out["dose_response_aki_by_map_lowest"] = dr
+    # gradient = rate(<55) - rate(>=75), per stratum
+    def _grad(rates):
+        lo = next((r["aki_rate"] for r in rates if r["band"] == ">=75"), None)
+        hi = next((r["aki_rate"] for r in rates if r["band"] == "<55"), None)
+        return round(hi - lo, 4) if (lo is not None and hi is not None) else None
+    g_ckd = _grad(dr["ckd"]); g_non = _grad(dr["non_ckd"])
+    out["dose_gradient_ckd"] = g_ckd
+    out["dose_gradient_nonckd"] = g_non
+    out["gradient_steeper_in_ckd"] = bool(g_ckd is not None and g_non is not None and g_ckd > g_non)
+    mort_ai = out.get("mortality_additive_interaction", {}).get("interaction")
+    out["verdict"] = (
+        f"PARTIAL -- mortality CKD x hypotension additive excess = {mort_ai} (ascertainment-"
+        f"robust, but mortality is itself non-specific); hypotension dose-response gradient "
+        f"steeper in CKD ({g_ckd} vs {g_non})={out['gradient_steeper_in_ckd']}. A steeper CKD "
+        "dose-response is the one confounding-resistant signal, but R2's pan-organ "
+        "non-specificity still caps the renal-specific claim.")
+    return out
+
+
 def _write(round_no, payload):
     path = os.path.join(_CACHE, "redteam_ckd_map_results.json")
     allr = {}
@@ -204,7 +253,7 @@ def main():
     df = _load()
     print(f"[redteam] round {rnd}; INSPIRE N={len(df)} (renal-labelable); "
           f"CKD={int((df['ckd']==1).sum())}", flush=True)
-    fn = {1: round1, 2: round2}.get(rnd)
+    fn = {1: round1, 2: round2, 3: round3}.get(rnd)
     if fn is None:
         print(f"[redteam] round {rnd} not implemented in this module yet.", flush=True)
         return
