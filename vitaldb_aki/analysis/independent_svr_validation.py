@@ -590,8 +590,13 @@ def validate():
         "tone_index_vs_svr_indep_spearman": round(rho, 4),
         "n_used": int(msk0.sum()), "bootstrap_ci_95": ci,
         "perm_p": rho_perm_p,
-        "note": "waveform TONE INDEX (neg z of tau/diastolic/form-factor/AIx) vs "
-                "SVR from an INDEPENDENT CO source (thermodilution / esoph. Doppler)"}
+        "hypothesised_sign": "NEGATIVE (high vasoplegia index = low tone = low SVR)",
+        "in_hypothesised_direction": bool(rho < 0),
+        "note": "waveform TONE/VASOPLEGIA INDEX (mean of NEGATED z of "
+                "tau/diastolic/form-factor/AIx) vs SVR from an INDEPENDENT CO source "
+                "(thermodilution / esoph. Doppler). By construction a HIGH index = "
+                "LOW tone, so it should correlate NEGATIVELY with resistance; tau "
+                "(below) is the same signal with the natural POSITIVE sign."}
 
     # ---- A. CIRCULARITY: strict non-pressure morph incremental over pressure --
     p = _oof(v, PRESSURE, y); ps = _oof(v, PRESSURE + MORPH_STRICT, y)
@@ -680,10 +685,18 @@ def validate():
         "independent_tone_index_spearman": round(rho, 4)}
 
     # ---- VERDICT -------------------------------------------------------------
+    # Sign-aware: the vasoplegia INDEX must correlate NEGATIVELY with SVR (high
+    # index = low tone = low resistance); tau must be POSITIVE. CI excludes 0 iff
+    # ci[0]*ci[1] > 0. The headline "survives" only if it is significant AND in the
+    # hypothesised (negative) direction.
     A = res["attacks"]
-    headline_survives = bool(abs(rho) > 0.2 and rho_perm_p < 0.05 and
-                             (ci[0] is None or ci[0] * ci[1] > 0))  # CI excludes 0
-    incr_survives = bool(A["A_circularity"]["pass"] and A["B_overfitting"]["pass"])
+    ci_excludes_0 = bool(ci[0] is not None and ci[0] * ci[1] > 0)
+    headline_survives = bool(rho < -0.2 and rho_perm_p < 0.05 and ci_excludes_0)
+    # The incremental/OOF Ridge models report |r|; pair them with the sign-correct
+    # single-feature tau partial (must be POSITIVE) so a sign-flip can't masquerade
+    # as a pass.
+    incr_survives = bool(A["A_circularity"]["pass"] and A["B_overfitting"]["pass"]
+                         and (tau_pMAP is not None and tau_pMAP > 0))
     res["headline_survives"] = headline_survives
     res["incremental_survives"] = incr_survives
 
