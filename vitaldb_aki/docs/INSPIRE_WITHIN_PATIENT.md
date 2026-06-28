@@ -1,3 +1,5 @@
+> **SPECIFICITY CAVEAT (see docs/WITHIN_PATIENT_SPECIFICITY.md).** The within-patient hypotension->organ-injury effect FAILS the negative-control specificity test: the renal within-RD (0.055) is indistinguishable from the non-perfusion negative-control organs (hepatocellular 0.051 / cholestatic 0.062 / coagulation 0.060; within-null ~0.058), so the renal effect calibrates to ~0. The within-patient design removes time-INVARIANT confounding but the pan-organ pattern means TIME-VARYING confounding (a sicker operation day) is NOT excluded -- OR equivalently a global shock-mediated multi-organ injury (the controls are imperfect: severe hypotension can cause hepatic/coagulation injury too). EITHER way the effect is NOT renal-specific and NOT a clean causal AKI claim. The OR 1.53 stands as a non-specific association; treat the causal-leaning framing with this caveat.
+
 # INSPIRE within-patient (patient fixed-effects) hypotension -> AKI
 
 **Generated:** 2026-06-28 16:41:20  ·  seed 20260626  ·  `analysis/inspire_within_patient.py`
