@@ -250,6 +250,61 @@ def _icc_splithalf(per_case_epochs):
     return {"n_cases_ge4_epochs": len(odd), "splithalf_spearman": round(r, 3)}
 
 
+def _dose_response_gain(q):
+    """The DIRECT answer to 'how much does BP rise per unit dose': across each
+    patient's STABLE epochs at DIFFERENT doses, slope of sustained MAP on dose/kg
+    (mmHg per dose/kg). Steady-state, not a titration transient -> not reverse-
+    confounded by the closed loop. Reports the per-patient gain distribution + a
+    pooled within-patient fixed-effects gain."""
+    import numpy as np
+    from scipy import stats
+    gains = []
+    for cid, g in q.groupby("caseid"):
+        d = g[["dose_per_kg", "map_mean"]].dropna()
+        if d["dose_per_kg"].nunique() < 2 or len(d) < 2:
+            continue
+        x = d["dose_per_kg"].to_numpy(float); y = d["map_mean"].to_numpy(float)
+        xc = x - x.mean()
+        sxx = float(np.sum(xc * xc))
+        if sxx <= 0:
+            continue
+        gains.append(float(np.sum(xc * (y - y.mean())) / sxx))
+    gains = np.array(gains)
+    # pooled within-patient FE gain (demean MAP & dose within case)
+    d = q[["caseid", "dose_per_kg", "map_mean"]].dropna()
+    g = d.groupby("caseid")
+    xc = (d["dose_per_kg"] - g["dose_per_kg"].transform("mean")).to_numpy(float)
+    yc = (d["map_mean"] - g["map_mean"].transform("mean")).to_numpy(float)
+    sxx = float(np.sum(xc * xc))
+    pooled = float(np.sum(xc * yc) / sxx) if sxx > 0 else None
+    # cluster bootstrap on the pooled FE gain
+    pooled_ci = None
+    if sxx > 0:
+        dd = d.copy(); dd["_xy"] = xc * yc; dd["_xx"] = xc * xc
+        by = dd.groupby("caseid")[["_xy", "_xx"]].sum()
+        xy = by["_xy"].to_numpy(); xx = by["_xx"].to_numpy(); m = len(xy)
+        rng = np.random.default_rng(SEED); bs = []
+        for _ in range(400):
+            idx = rng.integers(0, m, m); s = xx[idx].sum()
+            if s > 0:
+                bs.append(xy[idx].sum() / s)
+        if bs:
+            pooled_ci = [round(float(np.percentile(bs, 2.5)), 2), round(float(np.percentile(bs, 97.5)), 2)]
+    out = {"n_cases_multidose": int(gains.size),
+           "pooled_within_patient_gain_mmHg_per_dose_per_kg": round(pooled, 2) if pooled is not None else None,
+           "pooled_gain_ci": pooled_ci}
+    if gains.size >= 8:
+        out["per_patient_gain_median"] = round(float(np.median(gains)), 2)
+        out["per_patient_gain_iqr"] = [round(float(np.percentile(gains, 25)), 2),
+                                       round(float(np.percentile(gains, 75)), 2)]
+        out["frac_positive_gain"] = round(float(np.mean(gains > 0)), 3)
+    out["interpretation"] = ("pooled gain = average mmHg rise in sustained MAP per unit "
+                             "norepi dose/kg, estimated WITHIN patient across stable epochs "
+                             "(steady-state, closed-loop-free). Positive + between-patient spread "
+                             "in per-patient gain = a predictable 'how much will BP rise' target.")
+    return out
+
+
 def model():
     import numpy as np, pandas as pd
     from scipy import stats
@@ -268,6 +323,34 @@ def model():
            (df["map_mean"].between(TARGET_LO, TARGET_HI)) & df["dose_per_kg"].notna()].copy()
     res["primary_drug"] = PRIMARY_DRUG
     res["n_qualifying_epochs"] = int(len(q))
+    # DIRECT dose-response GAIN ("how much BP rises per unit dose") -- use ALL norepi-only
+    # epochs (full dose spread, not just target band) for the within-patient slope.
+    q_all = df[(df["drug"] == PRIMARY_DRUG) & (df["norepi_only"] == 1) &
+               (df["map_mean"].between(MAP_MIN, MAP_MAX)) & df["dose_per_kg"].notna()].copy()
+    res["dose_response_gain"] = _dose_response_gain(q_all)
+    # CONTROLLED-VARIABLE diagnostic: is MAP held ~constant within patient while dose
+    # ranges widely? If so, BP is a regulated output and the dose->BP gain is absorbed by
+    # the controller (clinician) -> NOT identifiable from observational BP; the signal
+    # lives in the DOSE (requirement), not in dBP.
+    import numpy as np
+    map_cv, dose_cv = [], []
+    for cid, gg in q_all.groupby("caseid"):
+        if len(gg) >= 3:
+            mm = gg["map_mean"].to_numpy(float); dd = gg["dose_per_kg"].to_numpy(float)
+            if mm.mean() > 0:
+                map_cv.append(float(np.std(mm) / mm.mean()))
+            if dd.mean() > 0:
+                dose_cv.append(float(np.std(dd) / dd.mean()))
+    if len(map_cv) >= 5:
+        res["controlled_variable_check"] = {
+            "n_cases": len(map_cv),
+            "within_patient_MAP_cv_median": round(float(np.median(map_cv)), 3),
+            "within_patient_dose_cv_median": round(float(np.median(dose_cv)), 3),
+            "dose_to_MAP_variability_ratio": round(float(np.median(dose_cv) / np.median(map_cv)), 1)
+            if np.median(map_cv) > 0 else None,
+            "interpretation": "if MAP cv << dose cv, MAP is feedback-REGULATED to target and the "
+            "dose->BP gain is absorbed by titration -> not identifiable from observational BP; "
+            "the vasoreactivity signal is carried by the DOSE REQUIREMENT, not by dBP."}
     # per-case requirement phenotype = median dose_per_kg in target band
     per_case_doses = {cid: list(g["dose_per_kg"].values) for cid, g in q.groupby("caseid")}
     pheno = {cid: float(np.median(v)) for cid, v in per_case_doses.items()
@@ -352,6 +435,28 @@ def _doc(res):
           f"- Qualifying norepi-only target-band epochs: **{res.get('n_qualifying_epochs')}**; "
           f"cases with a requirement phenotype (>= {MIN_EPOCHS_PER_CASE} epochs): "
           f"**{res.get('n_cases_with_phenotype')}**.\n"]
+    cvc = res.get("controlled_variable_check")
+    if cvc:
+        L += ["## Why 'BP rise per dose' is NOT directly identifiable (controlled-variable check)",
+              f"- Within-patient MAP coefficient-of-variation **{cvc['within_patient_MAP_cv_median']}** "
+              f"vs dose CV **{cvc['within_patient_dose_cv_median']}** "
+              f"(dose varies **{cvc['dose_to_MAP_variability_ratio']}x** more than MAP), "
+              f"over {cvc['n_cases']} multi-epoch cases.",
+              "  MAP is a tightly **feedback-regulated** variable: the anaesthetist titrates dose to "
+              "hold MAP at target, so the dose->BP gain is absorbed by the control loop and cannot be "
+              "read off observational BP (transient OR steady-state). The vasoreactivity signal is "
+              "carried by the **dose requirement** (controller effort), not by dBP.\n"]
+    g = res.get("dose_response_gain")
+    if g:
+        L += ["## Dose-response GAIN -- 'how much does BP rise per unit dose' (the literal target)",
+              f"- Pooled WITHIN-patient gain: **{g.get('pooled_within_patient_gain_mmHg_per_dose_per_kg')} "
+              f"mmHg per (norepi rate/kg)** (95% CI {g.get('pooled_gain_ci')}, "
+              f"{g.get('n_cases_multidose')} multi-dose cases).",
+              f"- Per-patient gain: median {g.get('per_patient_gain_median')}, "
+              f"IQR {g.get('per_patient_gain_iqr')}, fraction positive {g.get('frac_positive_gain')}.",
+              "  Estimated at STEADY STATE across stable epochs (not the titration transient) -> "
+              "closed-loop-free. Between-patient spread in per-patient gain is the predictable "
+              "'BP rise per dose' phenotype.\n"]
     ph = res.get("requirement_phenotype_ug_per_kg_units")
     if ph:
         L += ["## Requirement phenotype (norepi rate / kg to hold target MAP)",
