@@ -33,6 +33,11 @@ fished p-value.
   estimator and the requirement are plausibly **one vasoplegia signal seen two ways**.
 - **Waveform predicts requirement** (Pivot 1) — arterial morphology predicts the requirement
   OOF Spearman +0.30 (n=52). Modest; redundant with the early dose (below).
+- **Second-drug internal replication (phenylephrine)** — in PHEN (independent pure α1 agent,
+  n=40) the dose-requirement is a reproducible trait: split-half reliability **0.87** (≥ norepi),
+  spread 3.3×, early→late **+0.44**, construct vs exposure +0.36. → the phenotype is **drug-
+  agnostic vasoconstrictor requirement**, not a norepinephrine artefact. This is the strongest
+  corroboration: it replicates in a mechanistically distinct drug.
 
 ## HONEST WEAKENINGS found by internal red-team (do not hide these)
 - **Specificity is partial, not airtight.** The early dose is specific by partial correlation
