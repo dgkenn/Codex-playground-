@@ -111,6 +111,9 @@ RCS_KNOT_QUANTILES = [0.05, 0.35, 0.65, 0.95]
 MAP_GRID = list(range(52, 101))   # 52..100 mmHg
 
 N_BOOTSTRAP = 300
+# The per-stratum RCS inflection bootstrap REFITS a logistic each draw, so it is
+# the expensive path; keep it lighter than the cheap analytic IPTW arm-risk boot.
+N_BOOTSTRAP_SPLINE = 120
 MIN_EVENTS_FOR_POWER = 15
 
 
@@ -252,15 +255,28 @@ def _inflection_from_curve(grid, log_odds):
     g = np.asarray(grid, dtype=float)
     # slope wrt decreasing MAP: risk increase per 1 mmHg lower MAP
     drop_slope = -np.gradient(lo, g)              # positive = risk rises as MAP falls
-    # inflection: highest MAP whose drop_slope reaches >= half its in-range max
     pos = drop_slope[drop_slope > 0]
     if pos.size == 0:
+        # risk never rises as MAP falls within range -> no actionable floor
         infl = float("nan")
     else:
+        # Inflection = the MAP at which, scanning UPWARD from the lowest MAP, the
+        # risk-rise-per-mmHg-drop first FALLS BACK below half its peak -- i.e. the
+        # MAP above which raising MAP further stops buying much risk reduction.
+        # This is the "floor": below it risk climbs steeply, above it the curve
+        # flattens.  Bounded to the modelled grid; avoids the grid-edge artifact of
+        # a half-max *threshold-crossing* search on a monotone curve.
         thr = 0.5 * float(np.nanmax(drop_slope))
-        reached = g[drop_slope >= thr]
-        infl = float(np.nanmax(reached)) if reached.size else float("nan")
-    # knee: max curvature (most negative 2nd difference of risk vs MAP = sharpest bend)
+        peak_i = int(np.nanargmax(drop_slope))
+        infl = float("nan")
+        for i in range(peak_i, len(g)):           # scan from peak upward in MAP
+            if drop_slope[i] < thr:
+                infl = float(g[i])
+                break
+        if not math.isfinite(infl):
+            # slope stays high to the top of the grid: floor is at/above grid max
+            infl = float(g[-1])
+    # knee: max curvature (sharpest bend) -- a stable secondary estimate
     curv = np.gradient(np.gradient(lo, g), g)
     knee = float(g[int(np.nanargmax(np.abs(curv)))]) if np.isfinite(curv).any() else float("nan")
     return {"inflection_map": infl, "knee_map": knee,
@@ -268,7 +284,7 @@ def _inflection_from_curve(grid, log_odds):
 
 
 def threshold_by_stratum(df, outcome=RENAL_OUTCOME, restrict=None,
-                         seed=RANDOM_SEED, n_bootstrap=N_BOOTSTRAP):
+                         seed=RANDOM_SEED, n_bootstrap=N_BOOTSTRAP_SPLINE):
     """Per eGFR stratum, fit the adjusted RCS logistic on map_lowest and locate
     the risk-inflection MAP with a bootstrap CI.  Returns a dict per stratum.
     """
