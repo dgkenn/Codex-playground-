@@ -1,0 +1,192 @@
+{
+  "seed": 20260628,
+  "mimic": {
+    "n_stays_with_norepi": 15949,
+    "baseline_reliability_splithalf": {
+      "r": 0.947,
+      "n": 13585
+    },
+    "baseline_early_predicts_late_adjacent": {
+      "r": 0.617,
+      "n": 13585
+    },
+    "n_stays_ge4_segments": 13585,
+    "icc_log_rate": {
+      "icc1": 0.392,
+      "var_between": 0.32279,
+      "var_within": 0.50007,
+      "between_sd": 0.5681,
+      "within_sd": 0.7072,
+      "n_groups": 15137,
+      "k0": 30.3,
+      "msb": 10.28211,
+      "msw": 0.50007
+    },
+    "between_patient_spread_median_req": {
+      "p10": 0.03,
+      "median": 0.08,
+      "p90": 0.2797,
+      "fold_range_p90_p10": 9.31,
+      "between_patient_sd": 0.1391,
+      "between_patient_sd_log": 0.7949,
+      "n": 15949
+    },
+    "within_stay_cv": {
+      "median": 0.51,
+      "p25": 0.396,
+      "p75": 0.66,
+      "frac_cv_gt_0p2": 0.973,
+      "frac_cv_gt_0p5": 0.52,
+      "n": 13585,
+      "note": "within-stay coefficient of variation of the norepi rate; CV~0 => trivially constant (mechanical); CV large => rate genuinely moves within the stay."
+    },
+    "time_gapped_early_predicts_late": {
+      "gap_ge_0h": {
+        "r": 0.594,
+        "n": 13585
+      },
+      "gap_ge_1h": {
+        "r": 0.588,
+        "n": 13337
+      },
+      "gap_ge_3h": {
+        "r": 0.562,
+        "n": 12566
+      },
+      "gap_ge_6h": {
+        "r": 0.508,
+        "n": 11241
+      },
+      "gap_ge_12h": {
+        "r": 0.422,
+        "n": 8910
+      },
+      "gap_ge_24h": {
+        "r": 0.296,
+        "n": 5921
+      }
+    },
+    "null_reliability_shuffled": {
+      "r": -0.012,
+      "n": 13585
+    },
+    "null_early_late_shuffled": {
+      "r": 0.015,
+      "n": 13585
+    },
+    "mechanical_yardstick_band_membership": {
+      "spearman_early_tercile_vs_late_tercile": {
+        "r": 0.519,
+        "n": 13585
+      },
+      "frac_same_tercile": 0.551,
+      "note": "coarse 3-level 'band membership' rank agreement -- a purely mechanical persistence yardstick to compare the continuous reliability against."
+    },
+    "early_late_high_cv_subset": {
+      "cv_threshold_median": 0.51,
+      "high_cv": {
+        "r": 0.347,
+        "n": 6793
+      },
+      "low_cv": {
+        "r": 0.853,
+        "n": 6792
+      },
+      "note": "early->late split by within-stay CV. Survival in the HIGH-CV subset (rate moves a lot) is evidence the signal is a trait, not flatness."
+    }
+  },
+  "vitaldb": {
+    "n_cases": 219,
+    "n_cases_norepi_only_ge2": 206,
+    "n_cases_ge4_epochs": 148,
+    "baseline_reliability_splithalf": {
+      "r": 0.79,
+      "n": 148
+    },
+    "baseline_early_predicts_late_adjacent": {
+      "r": 0.528,
+      "n": 148
+    },
+    "icc_log_dose": {
+      "icc1": 0.211,
+      "var_between": 0.55393,
+      "var_within": 2.06754,
+      "between_sd": 0.7443,
+      "within_sd": 1.4379,
+      "n_groups": 206,
+      "k0": 6.6,
+      "msb": 5.72457,
+      "msw": 2.06754
+    },
+    "between_patient_spread_median_req": {
+      "p10": 0.0593,
+      "median": 0.1787,
+      "p90": 0.3706,
+      "fold_range_p90_p10": 6.25,
+      "between_patient_sd": 0.3459,
+      "between_patient_sd_log": 0.8692,
+      "n": 206
+    },
+    "within_case_cv": {
+      "median": 0.524,
+      "p25": 0.36,
+      "p75": 0.685,
+      "frac_cv_gt_0p2": 0.973,
+      "n": 148
+    },
+    "time_gapped_early_predicts_late": {
+      "gap_ge_0min": {
+        "r": 0.51,
+        "n": 148
+      },
+      "gap_ge_10min": {
+        "r": 0.499,
+        "n": 148
+      },
+      "gap_ge_20min": {
+        "r": 0.435,
+        "n": 141
+      },
+      "gap_ge_30min": {
+        "r": 0.375,
+        "n": 133
+      },
+      "gap_ge_45min": {
+        "r": 0.287,
+        "n": 117
+      }
+    },
+    "null_reliability_shuffled": {
+      "r": -0.04,
+      "n": 148
+    },
+    "null_early_late_shuffled": {
+      "r": 0.08,
+      "n": 148
+    },
+    "early_late_high_cv_subset": {
+      "cv_threshold_median": 0.524,
+      "high_cv": {
+        "r": 0.417,
+        "n": 74
+      },
+      "low_cv": {
+        "r": 0.693,
+        "n": 74
+      }
+    }
+  },
+  "judgement": {
+    "checks": {
+      "icc_substantial(>=0.3)": true,
+      "between_patient_fold_range(>=2)": true,
+      "gap6h_survives(>=0.3)": true,
+      "null_collapses(|r|<=0.1)": true,
+      "within_stay_cv_nontrivial(>=0.15)": true,
+      "early_late_survives_high_cv(>=0.3)": true
+    },
+    "n_checks_passed": 6,
+    "verdict": "GENUINE BETWEEN-PATIENT TRAIT (attack REJECTED). The reliability/early->late is NOT merely mechanical persistence. ICC(1) of log-requirement = 0.392 (15137 stays): substantial between-patient variance. Between-patient fold-range (p90/p10) of the requirement = 9.31x. Early->late Spearman: 0.594 at gap=0h vs 0.508 at gap>=6h, 0.422 at >=12h -- SURVIVES a multi-hour gap (not adjacent stickiness). Shuffle-null: reliability -0.012, early->late 0.015 (both ~0 => metric not spuriously inflated). Within-stay rate CV median = 0.51 (rate genuinely MOVES within a stay -- not trivially constant). Early->late in the HIGH-within-stay-CV subset (weakest persistence) = 0.347. VitalDB mirror (N small): ICC(1) log-dose = 0.211, fold-range = 6.25x, time-gapped early->late 0.375 at gap_ge_30min.",
+    "headline": "GENUINE BETWEEN-PATIENT TRAIT (attack REJECTED). The reliability/early->late is NOT merely mechanical persistence"
+  }
+}
