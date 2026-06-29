@@ -32,7 +32,15 @@ SEED = 20260628
 MIMIC_RAW = os.environ.get("MIMIC_RAW",
     "/tmp/claude-0/-home-user-Codex-playground-/1d26478f-63e5-5b21-a0bb-af4206dc3baa/scratchpad")
 LABS_CSV = os.path.join(_CACHE, "mimic_labs24h.csv")
-LAB_ITEMS = {"50813": "lactate", "50885": "bilirubin", "50912": "creatinine", "51265": "platelets"}
+# itemid -> (name, worst-direction). Broad APACHE/SAPS/SOFA-lab panel captured in ONE labevents
+# stream (model() below uses the 4 SOFA labs; the rest feed mimic_severity_scores.py).
+LAB_SPEC = {
+    "50813": ("lactate", "max"), "50885": ("bilirubin", "max"), "50912": ("creatinine", "max"),
+    "51265": ("platelets", "min"), "51006": ("bun", "max"), "51301": ("wbc", "max"),
+    "50882": ("bicarbonate", "min"), "51237": ("inr", "max"), "50862": ("albumin", "min"),
+    "51222": ("hemoglobin", "min"), "50868": ("anion_gap", "max"), "50983": ("sodium", "max")}
+LAB_ITEMS = {k: v[0] for k, v in LAB_SPEC.items()}   # back-compat (name lookup)
+LAB_DIR = {v[0]: v[1] for v in LAB_SPEC.values()}
 
 
 def _ts(s):
@@ -82,8 +90,7 @@ def build_labs(delete_raw=True):
             if v != v or v <= 0:
                 continue
             d = agg.setdefault(h, {})
-            # worst = max for lactate/creatinine/bilirubin, min for platelets
-            if lab == "platelets":
+            if LAB_DIR.get(lab) == "min":
                 d[lab] = min(d.get(lab, v), v)
             else:
                 d[lab] = max(d.get(lab, v), v)
