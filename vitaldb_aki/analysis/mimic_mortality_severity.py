@@ -159,7 +159,8 @@ def model():
     reqs = (reqv - reqv.mean()) / reqv.std()
     # crude (age only), full severity-adjusted
     lr_c, Zc = fit([age, reqv]); or_c = float(np.exp(lr_c.coef_[0][1]))
-    lr_f, Zf = fit([age, nv, com, los, reqv]); or_f = float(np.exp(lr_f.coef_[0][-1]))
+    # ICU-LOS dropped (collider/mediator: death truncates LOS). Severity = age + #vaso + comorbidity.
+    lr_f, Zf = fit([age, nv, com, reqv]); or_f = float(np.exp(lr_f.coef_[0][-1]))
     # bootstrap CI on adjusted OR
     rng = np.random.default_rng(SEED); bs = []
     Zf_full = Zf
@@ -171,7 +172,7 @@ def model():
             pass
     lo, hi = (float(np.percentile(bs, 2.5)), float(np.percentile(bs, 97.5))) if bs else (None, None)
     # AUC: severity-only vs +requirement
-    lr_sev, Zsev = fit([age, nv, com, los])
+    lr_sev, Zsev = fit([age, nv, com])
     auc_sev = float(roc_auc_score(death, lr_sev.predict_proba(Zsev)[:, 1]))
     auc_full = float(roc_auc_score(death, lr_f.predict_proba(Zf)[:, 1]))
     res.update({
@@ -182,7 +183,7 @@ def model():
         "attenuation_pct": round(100 * (or_c - or_f) / (or_c - 1), 1) if or_c > 1 else None,
         "auc_severity_only": round(auc_sev, 3), "auc_severity_plus_requirement": round(auc_full, 3),
         "delta_auc_over_severity": round(auc_full - auc_sev, 4),
-        "severity_covariates": ["age", "n_vasopressors", "comorbidity_count", "icu_los"]})
+        "severity_covariates": ["age", "n_vasopressors", "comorbidity_count"]})
     surv = bool(or_f > 1.2 and res["or_fully_adjusted_ci"] and res["or_fully_adjusted_ci"][0] > 1.0)
     res["verdict"] = (
         f"Requirement->mortality OR {or_c} (age-adj) -> {or_f} (FULLY adjusted for n-vasopressors + "

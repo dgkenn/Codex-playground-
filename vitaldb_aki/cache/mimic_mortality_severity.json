@@ -4,20 +4,19 @@
   "deaths": 5249,
   "mortality_rate": 0.329,
   "or_age_adjusted_per_sd": 3.796,
-  "or_fully_adjusted_per_sd": 3.008,
+  "or_fully_adjusted_per_sd": 3.118,
   "or_fully_adjusted_ci": [
-    2.722,
-    3.366
+    2.83,
+    3.462
   ],
-  "attenuation_pct": 28.2,
-  "auc_severity_only": 0.715,
-  "auc_severity_plus_requirement": 0.778,
-  "delta_auc_over_severity": 0.0628,
+  "attenuation_pct": 24.3,
+  "auc_severity_only": 0.709,
+  "auc_severity_plus_requirement": 0.78,
+  "delta_auc_over_severity": 0.0706,
   "severity_covariates": [
     "age",
     "n_vasopressors",
-    "comorbidity_count",
-    "icu_los"
+    "comorbidity_count"
   ],
-  "verdict": "Requirement->mortality OR 3.796428813966017 (age-adj) -> 3.0075376913835865 (FULLY adjusted for n-vasopressors + comorbidity + ICU-LOS + age), CI [2.722, 3.366]; attenuation 28.2%. SURVIVES severity adjustment -- the requirement carries mortality information BEYOND crude severity (adds AUC +0.0628 over the severity model). The dose is not merely a severity proxy. NOTE: no lactate/SOFA (would attenuate further); observational."
+  "verdict": "Requirement->mortality OR 3.796428813966017 (age-adj) -> 3.1178302508286153 (FULLY adjusted for n-vasopressors + comorbidity + ICU-LOS + age), CI [2.83, 3.462]; attenuation 24.3%. SURVIVES severity adjustment -- the requirement carries mortality information BEYOND crude severity (adds AUC +0.0706 over the severity model). The dose is not merely a severity proxy. NOTE: no lactate/SOFA (would attenuate further); observational."
 }

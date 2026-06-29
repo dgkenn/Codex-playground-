@@ -189,8 +189,11 @@ def model():
         lr = LogisticRegression(max_iter=4000).fit(Zs, dth)
         return float(np.exp(lr.coef_[0][0])), lr, Zs   # requirement is col 0
     or_age, _, _ = or_req([reqv, ageA])
-    or_crude, _, _ = or_req([reqv, ageA, nv, com, los])
-    or_full, lr_f, Zf = or_req([reqv, ageA, nv, com, los, lac, cr, bil, plt])
+    # ICU-LOS dropped as a covariate: it is a COLLIDER/mediator (downstream of requirement and
+    # of death -- death truncates LOS), so adjusting for it biases the estimate. Severity = age +
+    # #vasopressors + comorbidity + lactate + SOFA labs.
+    or_crude, _, _ = or_req([reqv, ageA, nv, com])
+    or_full, lr_f, Zf = or_req([reqv, ageA, nv, com, lac, cr, bil, plt])
     rng = np.random.default_rng(SEED); bs = []
     for _ in range(400):
         idx = rng.integers(0, len(dth), len(dth))
@@ -204,8 +207,8 @@ def model():
         Z = np.column_stack(cols); Zs = (Z - Z.mean(0)) / np.where(Z.std(0) == 0, 1, Z.std(0))
         lr = LogisticRegression(max_iter=4000).fit(Zs, dth)
         return float(roc_auc_score(dth, lr.predict_proba(Zs)[:, 1]))
-    auc_sev = auc_of([ageA, nv, com, los, lac, cr, bil, plt])
-    auc_full = auc_of([reqv, ageA, nv, com, los, lac, cr, bil, plt])
+    auc_sev = auc_of([ageA, nv, com, lac, cr, bil, plt])
+    auc_full = auc_of([reqv, ageA, nv, com, lac, cr, bil, plt])
     res.update({
         "mortality_rate": round(float(dth.mean()), 3),
         "or_req_age_adjusted": round(or_age, 3),
