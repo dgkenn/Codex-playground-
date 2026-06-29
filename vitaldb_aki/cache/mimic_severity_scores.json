@@ -1,0 +1,159 @@
+{
+  "seed": 20260628,
+  "labs_present": false,
+  "n": 15949,
+  "deaths": 5258,
+  "lab_components": [],
+  "charlson_distribution": {
+    "n": 478267,
+    "mean": 2.247,
+    "sd": 2.299,
+    "median": 2.0,
+    "p25": 0.0,
+    "p75": 3.0,
+    "min": 0.0,
+    "max": 18.0,
+    "pct_zero": 0.273
+  },
+  "vanwalraven_distribution": {
+    "n": 478267,
+    "mean": 7.414,
+    "sd": 9.119,
+    "median": 5.0,
+    "p25": 0.0,
+    "p75": 13.0,
+    "min": -17.0,
+    "max": 63.0,
+    "pct_zero": 0.154
+  },
+  "elix_count_distribution": {
+    "n": 478267,
+    "mean": 3.398,
+    "sd": 2.123,
+    "median": 3.0,
+    "p25": 2.0,
+    "p75": 5.0,
+    "min": 0.0,
+    "max": 18.0,
+    "pct_zero": 0.007
+  },
+  "charlson_prevalence": {
+    "myocardial_infarction": 44702,
+    "congestive_heart_failure": 84715,
+    "peripheral_vascular_disease": 38121,
+    "cerebrovascular_disease": 37281,
+    "dementia": 16413,
+    "chronic_pulmonary_disease": 100402,
+    "rheumatic_disease": 15858,
+    "peptic_ulcer_disease": 7165,
+    "mild_liver_disease": 30359,
+    "diabetes_without_complication": 84632,
+    "diabetes_with_complication": 48245,
+    "hemiplegia_paraplegia": 9591,
+    "renal_disease": 86101,
+    "malignancy": 47461,
+    "moderate_severe_liver_disease": 14071,
+    "metastatic_solid_tumor": 27943,
+    "aids_hiv": 3734
+  },
+  "elixhauser_prevalence": {
+    "chf": 84715,
+    "arrhythmia": 118118,
+    "valvular_disease": 43590,
+    "pulm_circ": 25439,
+    "pvd": 38121,
+    "htn": 277795,
+    "paralysis": 9591,
+    "neuro_other": 50189,
+    "chronic_pulm": 100402,
+    "diabetes_uncomp": 74924,
+    "diabetes_comp": 57953,
+    "hypothyroid": 62437,
+    "renal_failure": 85993,
+    "liver_disease": 45754,
+    "pud": 4503,
+    "aids_hiv": 3734,
+    "lymphoma": 14229,
+    "metastatic_cancer": 27943,
+    "solid_tumor": 27113,
+    "rheumatoid": 17373,
+    "coagulopathy": 42400,
+    "obesity": 52299,
+    "weight_loss": 27963,
+    "fluid_electrolyte": 107319,
+    "blood_loss_anemia": 4231,
+    "deficiency_anemia": 23408,
+    "alcohol_abuse": 49927,
+    "drug_abuse": 29803,
+    "psychoses": 16329,
+    "depression": 101713
+  },
+  "specifications": [
+    {
+      "label": "a) age only",
+      "or_per_sd": 3.798,
+      "ci": [
+        3.442,
+        4.156
+      ],
+      "auc_severity_only": 0.559,
+      "auc_plus_requirement": 0.764,
+      "delta_auc": 0.2051
+    },
+    {
+      "label": "b) +Charlson",
+      "or_per_sd": 3.814,
+      "ci": [
+        3.455,
+        4.173
+      ],
+      "auc_severity_only": 0.592,
+      "auc_plus_requirement": 0.772,
+      "delta_auc": 0.18
+    },
+    {
+      "label": "c) +van Walraven (Elixhauser)",
+      "or_per_sd": 3.72,
+      "ci": [
+        3.368,
+        4.082
+      ],
+      "auc_severity_only": 0.63,
+      "auc_plus_requirement": 0.785,
+      "delta_auc": 0.1542
+    },
+    {
+      "label": "d) +#vasopressors",
+      "or_per_sd": 3.027,
+      "ci": [
+        2.721,
+        3.302
+      ],
+      "auc_severity_only": 0.705,
+      "auc_plus_requirement": 0.772,
+      "delta_auc": 0.0667
+    },
+    {
+      "label": "f) FULL (age+Charlson+vanWalraven+#vaso) [labs PENDING]",
+      "or_per_sd": 3.047,
+      "ci": [
+        2.732,
+        3.343
+      ],
+      "auc_severity_only": 0.726,
+      "auc_plus_requirement": 0.79,
+      "delta_auc": 0.0641
+    }
+  ],
+  "stability": {
+    "or_age_only": 3.798,
+    "or_full": 3.047,
+    "or_range_across_specs": [
+      3.027,
+      3.814
+    ],
+    "attenuation_age_to_full_pct": 26.8,
+    "all_ci_lower_bounds_above_1": true
+  },
+  "verdict": "Requirement->mortality OR per SD ranges 3.03-3.81 across 5 severity specifications (age-only 3.798 -> FULL 3.047; total attenuation 26.8%). STABLE and >1 across ALL specifications (labs PENDING the labevents download), every 95% CI lower bound above 1 -- the requirement carries mortality information BEYOND standard comorbidity/severity scoring; not merely 'sicker patients got more drug'. Lab + FULL+labs specifications are PENDING (labevents download in progress at build time). CAVEAT: SOFA approximated by lab components + #vasopressors; no GCS / PaO2-FiO2 (chartevents). Observational."
+}
