@@ -1,0 +1,235 @@
+{
+  "seed": 20260628,
+  "n_stays_with_norepi": 15949,
+  "landmark_hours": 6.0,
+  "early_hours": 6.0,
+  "n_stays_with_outcome": 15949,
+  "n_deaths": 5258,
+  "overall_mortality": 0.33,
+  "test1_quantify_selection": {
+    "n_total": 15949,
+    "min_seg": 4,
+    "min_span_h": 6.0,
+    "trajectory_gate (>=4 seg over >=6 h)": {
+      "n_eligible": 12540,
+      "n_excluded": 3409,
+      "frac_excluded": 0.214,
+      "mortality_eligible": 0.344,
+      "mortality_excluded": 0.279,
+      "deaths_eligible": {
+        "n_deaths_timed": 4303,
+        "median_death_h_from_first_norepi": 103.0,
+        "frac_deaths_within_6h": 0.01,
+        "frac_deaths_within_24h": 0.183
+      },
+      "deaths_excluded": {
+        "n_deaths_timed": 950,
+        "median_death_h_from_first_norepi": 6.4,
+        "frac_deaths_within_6h": 0.469,
+        "frac_deaths_within_24h": 0.676
+      }
+    },
+    "segment_gate (>=4 seg, used by reliability/early->late)": {
+      "n_eligible": 13585,
+      "n_excluded": 2364,
+      "frac_excluded": 0.148,
+      "mortality_eligible": 0.336,
+      "mortality_excluded": 0.295
+    },
+    "span_h_median_eligible": 40.92,
+    "span_h_median_excluded": 2.87,
+    "n_seg_median_excluded": 3.0
+  },
+  "test2_landmark": {
+    "landmark_hours": 6.0,
+    "naive": {
+      "n": 15949,
+      "deaths": 5258,
+      "early_peak": {
+        "n": 15949,
+        "deaths": 5258,
+        "mortality_rate": 0.33,
+        "adj_or_per_sd": 1.726,
+        "ci": [
+          1.588,
+          1.895
+        ],
+        "auc_x_alone": 0.668,
+        "auc_age_alone": 0.559,
+        "auc_age_plus_x": 0.673,
+        "delta_auc_over_age": 0.1148
+      },
+      "early_median": {
+        "n": 15949,
+        "deaths": 5258,
+        "mortality_rate": 0.33,
+        "adj_or_per_sd": 2.032,
+        "ci": [
+          1.893,
+          2.154
+        ],
+        "auc_x_alone": 0.673,
+        "auc_age_alone": 0.559,
+        "auc_age_plus_x": 0.682,
+        "delta_auc_over_age": 0.1232
+      }
+    },
+    "n_removed_early_deaths_le_landmark": 487,
+    "landmark": {
+      "n_at_risk": 15462,
+      "post_landmark_deaths": 4771,
+      "mortality": 0.309,
+      "early_peak": {
+        "n": 15462,
+        "deaths": 4771,
+        "mortality_rate": 0.309,
+        "adj_or_per_sd": 1.544,
+        "ci": [
+          1.43,
+          1.684
+        ],
+        "auc_x_alone": 0.652,
+        "auc_age_alone": 0.556,
+        "auc_age_plus_x": 0.656,
+        "delta_auc_over_age": 0.0992
+      },
+      "early_median": {
+        "n": 15462,
+        "deaths": 4771,
+        "mortality_rate": 0.309,
+        "adj_or_per_sd": 1.763,
+        "ci": [
+          1.659,
+          1.862
+        ],
+        "auc_x_alone": 0.656,
+        "auc_age_alone": 0.556,
+        "auc_age_plus_x": 0.664,
+        "delta_auc_over_age": 0.1073
+      }
+    },
+    "or_change_peak": -0.182,
+    "auc_change_peak": -0.016
+  },
+  "test3_competing_risk": {
+    "early_death_set (death within 6h)": {
+      "n": 487,
+      "early_peak": {
+        "median": 0.43,
+        "p75": 0.501,
+        "n": 487
+      },
+      "early_median": {
+        "median": 0.301,
+        "p75": 0.501,
+        "n": 487
+      }
+    },
+    "survived_to_landmark_set": {
+      "n": 15462,
+      "early_peak": {
+        "median": 0.14,
+        "p75": 0.281,
+        "n": 15462
+      },
+      "early_median": {
+        "median": 0.09,
+        "p75": 0.172,
+        "n": 15462
+      }
+    },
+    "trajectory_excluded_set": {
+      "n": 3409,
+      "n_deaths": 950,
+      "early_peak_deaths": {
+        "median": 0.3,
+        "p75": 0.5,
+        "n": 950
+      },
+      "early_peak_survivors": {
+        "median": 0.06,
+        "p75": 0.1,
+        "n": 2459
+      },
+      "whole_peak_deaths": {
+        "median": 0.3,
+        "p75": 0.501,
+        "n": 950
+      },
+      "whole_peak_survivors": {
+        "median": 0.06,
+        "p75": 0.1,
+        "n": 2459
+      }
+    },
+    "early_deaths_have_higher_requirement": true
+  },
+  "test4_reliability_survivorship": {
+    "all_ge4_segments": {
+      "n": 13585,
+      "reliability_splithalf": {
+        "r": 0.947,
+        "ci": [
+          0.943,
+          0.95
+        ],
+        "n": 13585
+      },
+      "early_predicts_late": {
+        "r": 0.617,
+        "ci": [
+          0.605,
+          0.628
+        ],
+        "n": 13585
+      }
+    },
+    "long_survivors": {
+      "n": 5587,
+      "reliability_splithalf": {
+        "r": 0.971,
+        "ci": [
+          0.967,
+          0.973
+        ],
+        "n": 5587
+      },
+      "early_predicts_late": {
+        "r": 0.49,
+        "ci": [
+          0.469,
+          0.511
+        ],
+        "n": 5587
+      }
+    },
+    "short_stays": {
+      "n": 7977,
+      "reliability_splithalf": {
+        "r": 0.929,
+        "ci": [
+          0.924,
+          0.934
+        ],
+        "n": 7977
+      },
+      "early_predicts_late": {
+        "r": 0.681,
+        "ci": [
+          0.668,
+          0.695
+        ],
+        "n": 7977
+      }
+    }
+  },
+  "conclusion_changed": [],
+  "verdict": "IMMORTAL-TIME / SURVIVORSHIP AUDIT (MIMIC-IV norepi, 15949 stays, 5258 deaths). The trajectory gate (>=4 seg over >=6 h) EXCLUDES 21% of norepi stays (3409/15949); excluded mortality 0.279 vs eligible 0.344, and 0.469 of excluded deaths occur within 6 h of first norepi (immortal-time selection is real). LANDMARK (alive at hour 6, predict POST-6h death) removes 487 early deaths; early-peak age-adj OR 1.726 (naive) -> 1.544 (landmarked), AUC 0.668 -> 0.652. The early signal SURVIVES the landmark (still OR>1, delta-AUC>0). Early deaths have HIGHER early requirement than survivors-to-landmark -> the gate drops the SICKEST early; the naive analysis is INFLATED at the bottom (those deaths are 'free' immortal-time hits) but the trajectory cohort UNDER-counts the worst cases (conservative for trajectory). Reliability is 0.947 (all >=4-seg) vs 0.971 (long survivors) -- survivorship moves it by +0.024 (negligible -> reliability is NOT a survivor artefact). NO headline conclusion is overturned: the early-warning signal survives a proper landmark and reliability is not survivorship-driven; the bias EXISTS and the naive early-warning OR is modestly optimistic (immortal-time inflation from sub-6h deaths), but the corrected (landmarked) estimate remains positive.",
+  "corrected_early_warning": {
+    "naive_early_peak_or": 1.726,
+    "landmarked_early_peak_or": 1.544,
+    "naive_early_peak_auc": 0.668,
+    "landmarked_early_peak_auc": 0.652,
+    "interpretation": "landmarked OR/AUC is the immortal-time-corrected early-warning estimate"
+  }
+}
