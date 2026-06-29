@@ -20,3 +20,5 @@ EXTERNAL (MIMIC-IV ICU, 15949 norepi stays): REPLICATES -- reliability 0.947 [0.
 - Requirement = median of segment rates (mcg/kg/min); MIMIC rate is already per-kg.
 - Mortality association is observational + confounded by illness severity (only age adjusted here); it shows the requirement marks risk, not a treatment effect.
 - Does NOT validate the arterial-waveform tone estimator (needs MIMIC-IV-Waveform).
+
+> **Two-level replication (honest scope).** VitalDB requirement = MAP-conditioned stable-epoch controller-effort dose; MIMIC requirement = plain whole-stay median rate -- NOT the same estimand. What replicates across cohorts is that **dose ORDERING is a reliable, early, mortality-graded patient trait**; the specific MAP-conditioned phenotype and the control-theory MECHANISM (MAP CV << dose CV) are shown in VitalDB only (MIMIC pulls no MAP). Do not read this as replication of the specific phenotype/mechanism.

@@ -44,6 +44,27 @@ Disclosables (not fatal): selection (arterial-line/on-pressor denominator), no p
 (sequential search -> ledger), MIMIC multiplicity not in the original ~30-test Bonferroni,
 "ACTIONABLE" early-warning title overclaims (no decision-benefit), in-sample threshold rules.
 
+### Round 3 (final completeness audit) -- CONVERGED, three disclosures named
+- **Confounding by indication (the conceded steelman).** The dose = physiology x local titration
+  practice; this cannot be removed observationally. We do NOT rebut it -- it is the reason the
+  claim is scoped to risk-stratification/characterization, not a treatment effect or
+  practice-changer. Stated, not defended.
+- **Window overlap -- characterization vs prospective.** The whole-stay requirement->mortality
+  OR (~3.0-3.8) is CONTEMPORANEOUS characterization (measured over the same stay as the outcome).
+  The genuinely PROSPECTIVE number is the landmarked first-6h early-warning OR **1.54** (attack
+  #11). Do not conflate the two; the prospective signal is real but smaller.
+- **Two-level replication.** VitalDB and MIMIC are different estimands; what replicates is
+  dose-ORDERING-as-trait, not the specific MAP-conditioned phenotype/mechanism (now stated in
+  MIMIC_EXTERNAL_VALIDATION.md, not only CONSTRUCT_AND_COMPLETENESS.md).
+- Lactate test refinements: complete-case selection moves base rate not effect (OR 3.80 in
+  lab-complete = full cohort); #vaso is a mediator -> without it OR is **2.97** (2.44 is
+  over-adjusted/conservative). Primary stats multiplicity-immune (Fisher-z 84 / 210).
+
+**Round-3 verdict: CONVERGED -- no CRITICAL unaddressed hole; only disclosable limitations remain.
+Pending only the mechanical full-data lactate confirmation (preliminary OR 2.44/2.97 on a 38-46%
+subject-sorted subsample; collapse-to-null implausible given CI lower bound 1.90 + selection
+invariance).**
+
 ## What got cut by this pass (honesty record)
 - **"Vasoplegia" label** -> "vasopressor requirement" (attack 6).
 - **Lever discrimination "independent axes / A-line picks the lever"** -> retracted (attack 9); the lever line is now: axes are modestly correlated; ~57% of patients fall in a single-lever quadrant but no orthogonality and no outcome benefit.

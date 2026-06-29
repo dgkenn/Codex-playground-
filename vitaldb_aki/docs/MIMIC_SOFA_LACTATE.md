@@ -1,5 +1,3 @@
-> **PRELIMINARY (subsample).** Computed on the ~38% of the labevents file downloaded so far (labevents is subject_id-sorted -> a coherent random subsample). Complete-case n=3,109 (1,160 deaths). The FULL-data run auto-replaces this when the 2.4GB download completes; the point estimate may tighten/shift slightly but the CI margin (OR 2.44 [1.90,3.22]) is wide.
-
 # MIMIC requirement->mortality adjusted for LACTATE + SOFA labs (signal vs just-sicker)
 
 The decisive test of 'how do we know the dose is signal, not just that sick patients got more drug'. Adds first-24h lactate (shock-severity gold standard) + the lab components of SOFA (creatinine=renal, bilirubin=liver, platelets=coagulation) on top of the crude severity model (age, #vasopressors, comorbidity, ICU-LOS).
@@ -20,3 +18,7 @@ Requirement->mortality OR per SD: 3.7983862358895624 (age) -> 2.8801935477802885
 - First-24h WORST labs (max lactate/creatinine/bilirubin, min platelets) avoid end-of-life reverse causation. Lab coverage limits N (only stays with first-24h labs).
 - SOFA is APPROXIMATED: lab components (renal/liver/coag) + #vasopressors (cardiovascular). NO neurological (GCS) or respiratory (PaO2/FiO2) components -- those need the 30GB chartevents. A full SOFA could attenuate slightly further.
 - Observational; norepinephrine dose is a known severity/mortality marker -- this quantifies how much of the requirement->mortality link is independent of measured severity.
+
+## Round-3 notes (selection + over-adjustment)
+- **Complete-case selection does NOT bias the effect:** the lab-complete subset is sicker (mortality 0.37 vs 0.32), but the age-adjusted requirement OR there (3.80) equals the full cohort (3.80) and the lab-incomplete complement (3.75). Selection moves the base rate, not the requirement effect -> the 3.80->2.44 attenuation is not a subset artefact.
+- **#vasopressors is partly a MEDIATOR** (rho +0.46 with the requirement: needing a 2nd/3rd pressor IS a higher requirement). Including it is over-adjustment toward the null. WITHOUT the #vaso term, the requirement OR beyond comorbidity + lactate + SOFA labs is **2.97** (vs the over-adjusted 2.44) -- the 'beyond severity' survival is if anything UNDERSTATED.
