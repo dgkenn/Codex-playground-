@@ -1,0 +1,175 @@
+{
+  "seed": 20260628,
+  "n": 15949,
+  "deaths": 5258,
+  "charlson_distribution": {
+    "n": 478267,
+    "mean": 2.247,
+    "sd": 2.299,
+    "median": 2.0
+  },
+  "vanwalraven_distribution": {
+    "n": 478267,
+    "mean": 7.414,
+    "sd": 9.119,
+    "median": 5.0
+  },
+  "event_rate": 0.3297,
+  "n_per_quartile": [
+    3988,
+    3987,
+    3987,
+    3987
+  ],
+  "dose_range_per_quartile": [
+    [
+      0.01,
+      0.05
+    ],
+    [
+      0.05,
+      0.08
+    ],
+    [
+      0.08,
+      0.15
+    ],
+    [
+      0.15,
+      4.0519
+    ]
+  ],
+  "crude_mortality_per_quartile": [
+    0.1399,
+    0.2032,
+    0.3248,
+    0.6509
+  ],
+  "crude_q4_over_q1_riskratio": 4.653,
+  "gradient_full_adjustment": {
+    "label": "age + Charlson + vanWalraven + n_vasopressors",
+    "covariates": [
+      "age",
+      "Charlson",
+      "vanWalraven",
+      "n_vasopressors"
+    ],
+    "crude_mortality_per_quartile": [
+      0.1399,
+      0.2032,
+      0.3248,
+      0.6509
+    ],
+    "adjusted_mortality_per_quartile": [
+      0.1757,
+      0.2252,
+      0.3198,
+      0.5744
+    ],
+    "adj_q1": 0.1757,
+    "adj_q4": 0.5744,
+    "adj_q4_over_q1_riskratio": 3.268,
+    "adj_q4_over_q1_rr_ci": [
+      0.935,
+      1.07
+    ],
+    "adj_q4_minus_q1_riskdiff": 0.3986,
+    "adj_q4_minus_q1_rd_ci": [
+      -0.0224,
+      0.0225
+    ],
+    "adjusted_monotonic_nondecreasing": true,
+    "adjusted_strictly_increasing": true,
+    "adj_linear_trend_or_per_quartile_sd": 2.164,
+    "adj_linear_trend_p": 2.4564566073473597e-277
+  },
+  "gradient_comorbidity_no_nvaso": {
+    "label": "age + Charlson + vanWalraven (NO n_vasopressors)",
+    "covariates": [
+      "age",
+      "Charlson",
+      "vanWalraven"
+    ],
+    "crude_mortality_per_quartile": [
+      0.1399,
+      0.2032,
+      0.3248,
+      0.6509
+    ],
+    "adjusted_mortality_per_quartile": [
+      0.1493,
+      0.205,
+      0.32,
+      0.6376
+    ],
+    "adj_q1": 0.1493,
+    "adj_q4": 0.6376,
+    "adj_q4_over_q1_riskratio": 4.272,
+    "adj_q4_over_q1_rr_ci": [
+      0.939,
+      1.065
+    ],
+    "adj_q4_minus_q1_riskdiff": 0.4883,
+    "adj_q4_minus_q1_rd_ci": [
+      -0.0208,
+      0.021
+    ],
+    "adjusted_monotonic_nondecreasing": true,
+    "adjusted_strictly_increasing": true,
+    "adj_linear_trend_or_per_quartile_sd": 2.553,
+    "adj_linear_trend_p": 0.0
+  },
+  "gradient_age_only": {
+    "label": "age only",
+    "covariates": [
+      "age",
+      "Charlson",
+      "vanWalraven"
+    ],
+    "crude_mortality_per_quartile": [
+      0.1399,
+      0.2032,
+      0.3248,
+      0.6509
+    ],
+    "adjusted_mortality_per_quartile": [
+      0.141,
+      0.2023,
+      0.3255,
+      0.6504
+    ],
+    "adj_q1": 0.141,
+    "adj_q4": 0.6504,
+    "adj_q4_over_q1_riskratio": 4.611,
+    "adj_q4_over_q1_rr_ci": [
+      0.939,
+      1.064
+    ],
+    "adj_q4_minus_q1_riskdiff": 0.5093,
+    "adj_q4_minus_q1_rd_ci": [
+      -0.0211,
+      0.0205
+    ],
+    "adjusted_monotonic_nondecreasing": true,
+    "adjusted_strictly_increasing": true,
+    "adj_linear_trend_or_per_quartile_sd": 2.593,
+    "adj_linear_trend_p": 0.0
+  },
+  "per_sd_or_full": {
+    "label": "requirement OR/SD | full (age+Charlson+vanWalraven+#vaso)",
+    "or_per_sd": 3.047,
+    "ci": [
+      2.732,
+      3.343
+    ]
+  },
+  "per_sd_or_age_only": {
+    "label": "requirement OR/SD | age only",
+    "or_per_sd": 3.798,
+    "ci": [
+      3.442,
+      4.156
+    ]
+  },
+  "verdict": "SEVERITY ATTACK ON THE DOSE-RESPONSE GRADIENT (MIMIC-IV, n=15949 norepi stays, 5258 in-hospital deaths). CRUDE (age-era headline) quartile mortality [0.1399, 0.2032, 0.3248, 0.6509] (Q4/Q1 risk ratio 4.653x). After FULL severity adjustment (age + Charlson + van Walraven/Elixhauser + #vasopressors) by g-computation, the STANDARDIZED quartile mortality is [0.1757, 0.2252, 0.3198, 0.5744] (adjusted Q4/Q1 RR 3.268x [[0.935, 1.07]], adjusted risk difference 0.3986 [[-0.0224, 0.0225]]). Adjusted gradient monotonic non-decreasing: True; strictly increasing: True; adjusted ordinal linear-trend p=2.4564566073473597e-277. The excess Q4-vs-Q1 risk ratio above 1 retains 62% of its crude magnitude after full adjustment. LOCALISING THE ATTENUATION: adjusting for comorbidity WITHOUT #vasopressors leaves adjusted Q4/Q1 RR 4.272x ([0.1493, 0.205, 0.32, 0.6376]); ADDING #vasopressors brings it to 3.268x -- so most of the flattening is driven by #vasopressors (multi-pressor refractory shock), not by chronic comorbidity burden. PER-SD OR (gradient framing): full-severity 3.047 [2.732, 3.343] (age-only 3.798). VERDICT: SURVIVES \u2014 DOSE-RESPONSE BEYOND SEVERITY. The monotone dose-response is NOT merely severity confounding -- it persists, graded, after standard comorbidity + cardiovascular-severity adjustment. The headline gradient holds in attenuated but real form. CAVEAT: observational; severity captured by Charlson + van Walraven + #vasopressors (a cardiovascular-SOFA proxy) -- no GCS/PaO2-FiO2/lactate here, so residual confounding by acute physiology remains; the requirement marks risk, not a treatment effect."
+}
