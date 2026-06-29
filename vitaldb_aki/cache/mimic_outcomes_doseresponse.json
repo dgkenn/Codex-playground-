@@ -1,0 +1,314 @@
+{
+  "seed": 20260628,
+  "n_stays_with_norepi": 15949,
+  "longterm_mortality": {
+    "n_stays": 15949,
+    "28d": {
+      "n": 15949,
+      "events": 5140,
+      "event_rate": 0.322,
+      "adj_or_per_sd": 2.014,
+      "ci": [
+        1.873,
+        2.158
+      ],
+      "auc_age_alone": 0.574,
+      "auc_age_plus_dose": 0.708,
+      "delta_auc": 0.1341
+    },
+    "90d": {
+      "n": 15949,
+      "events": 6351,
+      "event_rate": 0.398,
+      "adj_or_per_sd": 1.776,
+      "ci": [
+        1.669,
+        1.897
+      ],
+      "auc_age_alone": 0.58,
+      "auc_age_plus_dose": 0.679,
+      "delta_auc": 0.099
+    },
+    "1y": {
+      "n": 15949,
+      "events": 7685,
+      "event_rate": 0.482,
+      "adj_or_per_sd": 1.522,
+      "ci": [
+        1.44,
+        1.62
+      ],
+      "auc_age_alone": 0.59,
+      "auc_age_plus_dose": 0.651,
+      "delta_auc": 0.0606
+    },
+    "n_with_dod": 9723
+  },
+  "dose_response": {
+    "n": 15949,
+    "deaths": 5258,
+    "overall_mortality": 0.33,
+    "quartiles": {
+      "k": 4,
+      "n_per_bin": [
+        3988,
+        3987,
+        3987,
+        3987
+      ],
+      "dose_range_per_bin": [
+        [
+          0.01,
+          0.05
+        ],
+        [
+          0.05,
+          0.08
+        ],
+        [
+          0.08,
+          0.15
+        ],
+        [
+          0.15,
+          4.0519
+        ]
+      ],
+      "mortality_per_bin": [
+        0.1399,
+        0.2032,
+        0.3248,
+        0.6509
+      ],
+      "monotonic_nondecreasing": true,
+      "cochran_armitage_z": 49.693,
+      "cochran_armitage_p": 0.0
+    },
+    "deciles": {
+      "k": 10,
+      "n_per_bin": [
+        1595,
+        1595,
+        1595,
+        1595,
+        1595,
+        1595,
+        1595,
+        1595,
+        1595,
+        1594
+      ],
+      "dose_range_per_bin": [
+        [
+          0.01,
+          0.03
+        ],
+        [
+          0.03,
+          0.045
+        ],
+        [
+          0.045,
+          0.0501
+        ],
+        [
+          0.0501,
+          0.065
+        ],
+        [
+          0.065,
+          0.08
+        ],
+        [
+          0.08,
+          0.1
+        ],
+        [
+          0.1,
+          0.1221
+        ],
+        [
+          0.1221,
+          0.1798
+        ],
+        [
+          0.1798,
+          0.2797
+        ],
+        [
+          0.2798,
+          4.0519
+        ]
+      ],
+      "mortality_per_bin": [
+        0.1197,
+        0.148,
+        0.1693,
+        0.1893,
+        0.2313,
+        0.269,
+        0.3386,
+        0.4251,
+        0.5655,
+        0.8413
+      ],
+      "monotonic_nondecreasing": true,
+      "cochran_armitage_z": 52.28,
+      "cochran_armitage_p": 0.0
+    },
+    "q1_mortality": 0.1399,
+    "q4_mortality": 0.6509,
+    "q4_over_q1_riskratio": 4.65,
+    "q4_minus_q1_abs": 0.511,
+    "logistic_linear_trend_or_per_sd": 3.746,
+    "logistic_linear_trend_p": 0.0
+  },
+  "dose_formulation": {
+    "n": 15949,
+    "deaths": 5258,
+    "per_formulation": {
+      "median": {
+        "n": 15949,
+        "events": 5258,
+        "event_rate": 0.33,
+        "adj_or_per_sd": 3.798,
+        "ci": [
+          3.451,
+          4.15
+        ],
+        "auc_age_alone": 0.559,
+        "auc_age_plus_dose": 0.764,
+        "delta_auc": 0.2051,
+        "label": "median rate"
+      },
+      "peak": {
+        "n": 15949,
+        "events": 5258,
+        "event_rate": 0.33,
+        "adj_or_per_sd": 1.862,
+        "ci": [
+          1.698,
+          2.044
+        ],
+        "auc_age_alone": 0.559,
+        "auc_age_plus_dose": 0.729,
+        "delta_auc": 0.1703,
+        "label": "peak/max rate"
+      },
+      "twa": {
+        "n": 15949,
+        "events": 5258,
+        "event_rate": 0.33,
+        "adj_or_per_sd": 3.994,
+        "ci": [
+          3.566,
+          4.375
+        ],
+        "auc_age_alone": 0.559,
+        "auc_age_plus_dose": 0.773,
+        "delta_auc": 0.2149,
+        "label": "time-weighted-mean rate"
+      },
+      "total_exposure": {
+        "n": 15947,
+        "events": 5256,
+        "event_rate": 0.33,
+        "adj_or_per_sd": 1.953,
+        "ci": [
+          1.82,
+          2.106
+        ],
+        "auc_age_alone": 0.558,
+        "auc_age_plus_dose": 0.684,
+        "delta_auc": 0.1258,
+        "label": "total exposure (rate*min)"
+      },
+      "duration_h": {
+        "n": 15947,
+        "events": 5256,
+        "event_rate": 0.33,
+        "adj_or_per_sd": 1.378,
+        "ci": [
+          1.325,
+          1.432
+        ],
+        "auc_age_alone": 0.558,
+        "auc_age_plus_dose": 0.609,
+        "delta_auc": 0.0508,
+        "label": "duration on norepi (h)"
+      }
+    },
+    "ranked_by_delta_auc": [
+      [
+        "twa",
+        "time-weighted-mean rate",
+        0.2149,
+        3.994
+      ],
+      [
+        "median",
+        "median rate",
+        0.2051,
+        3.798
+      ],
+      [
+        "peak",
+        "peak/max rate",
+        0.1703,
+        1.862
+      ],
+      [
+        "total_exposure",
+        "total exposure (rate*min)",
+        0.1258,
+        1.953
+      ],
+      [
+        "duration_h",
+        "duration on norepi (h)",
+        0.0508,
+        1.378
+      ]
+    ],
+    "best": "twa"
+  },
+  "los": {
+    "icu_los_all": {
+      "n": 15940,
+      "tag": "all",
+      "median_los_days": 4.12,
+      "age_adj_beta_log1p_per_sd": -0.1639,
+      "approx_pct_change_per_sd": -15.1,
+      "spearman_req_vs_los": -0.055
+    },
+    "icu_los_survivors": {
+      "n": 10688,
+      "tag": "survivors",
+      "median_los_days": 4.21,
+      "age_adj_beta_log1p_per_sd": 0.0737,
+      "approx_pct_change_per_sd": 7.6,
+      "spearman_req_vs_los": 0.191
+    },
+    "hosp_los_all": {
+      "n": 15906,
+      "tag": "all",
+      "median_los_days": 11.24,
+      "age_adj_beta_log1p_per_sd": -0.274,
+      "approx_pct_change_per_sd": -24.0,
+      "spearman_req_vs_los": -0.151
+    },
+    "hosp_los_survivors": {
+      "n": 10691,
+      "tag": "survivors",
+      "median_los_days": 12.87,
+      "age_adj_beta_log1p_per_sd": 0.0392,
+      "approx_pct_change_per_sd": 4.0,
+      "spearman_req_vs_los": 0.129
+    }
+  },
+  "verdict_longterm": "PREDICTS LONG-TERM DEATH -- 28d: OR 2.014/SD [1.873, 2.158] (AUC +0.1341 over age, 0.322 died); 90d: OR 1.776/SD [1.669, 1.897] (AUC +0.099 over age, 0.398 died); 1y: OR 1.522/SD [1.44, 1.62] (AUC +0.0606 over age, 0.482 died). The requirement marks risk well beyond hospital discharge (de-identified-but-internally-consistent dod; follow-up beyond file horizon is censored).",
+  "verdict_dose_response": "DOSE-RESPONSE: Q1 mortality 0.1399 -> Q4 0.6509 (risk ratio 4.65x, abs +0.511); quartiles monotonic non-decreasing: True; Cochran-Armitage p=0.0; logistic linear-trend p=0.0. A clean monotone dose-response gradient -- more compelling than a single per-SD OR.",
+  "verdict_dose_formulation": "BEST DOSE SUMMARY for in-hospital death: 'time-weighted-mean rate' (\u0394AUC over age +0.2149, OR 3.994/SD). Full ranking by \u0394AUC: time-weighted-mean rate (+0.2149), median rate (+0.2051), peak/max rate (+0.1703), total exposure (rate*min) (+0.1258), duration on norepi (h) (+0.0508).",
+  "verdict_los": "LOS: ICU LOS +-15.1%/SD (rho -0.055) all, +7.6%/SD (rho 0.191) survivors; hospital LOS +-24.0%/SD (rho -0.151) all, +4.0%/SD (rho 0.129) survivors (age-adjusted, per +1 SD requirement). Death truncates LOS, so the survivor-only estimate is the honest read of 'longer stay'.",
+  "verdict": "IMPACT TESTS (MIMIC-IV ICU, 15949 norepi stays; age-adjusted only -- severity adjustment handled in mimic_mortality_severity.py). PREDICTS LONG-TERM DEATH -- 28d: OR 2.014/SD [1.873, 2.158] (AUC +0.1341 over age, 0.322 died); 90d: OR 1.776/SD [1.669, 1.897] (AUC +0.099 over age, 0.398 died); 1y: OR 1.522/SD [1.44, 1.62] (AUC +0.0606 over age, 0.482 died). The requirement marks risk well beyond hospital discharge (de-identified-but-internally-consistent dod; follow-up beyond file horizon is censored). DOSE-RESPONSE: Q1 mortality 0.1399 -> Q4 0.6509 (risk ratio 4.65x, abs +0.511); quartiles monotonic non-decreasing: True; Cochran-Armitage p=0.0; logistic linear-trend p=0.0. A clean monotone dose-response gradient -- more compelling than a single per-SD OR. BEST DOSE SUMMARY for in-hospital death: 'time-weighted-mean rate' (\u0394AUC over age +0.2149, OR 3.994/SD). Full ranking by \u0394AUC: time-weighted-mean rate (+0.2149), median rate (+0.2051), peak/max rate (+0.1703), total exposure (rate*min) (+0.1258), duration on norepi (h) (+0.0508). LOS: ICU LOS +-15.1%/SD (rho -0.055) all, +7.6%/SD (rho 0.191) survivors; hospital LOS +-24.0%/SD (rho -0.151) all, +4.0%/SD (rho 0.129) survivors (age-adjusted, per +1 SD requirement). Death truncates LOS, so the survivor-only estimate is the honest read of 'longer stay'. HONEST: observational; the requirement marks risk/illness burden, not a treatment effect."
+}
