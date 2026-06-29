@@ -399,3 +399,6 @@
 {"ts": 1782749703, "wallet": "0x20d2309cd9", "value": 424.6333, "types": {"TRADE": 492, "REDEEM": 8}}
 {"ts": 1782749703, "wallet": "0x674887d1ac", "value": 10429.2612, "types": {"SPLIT": 14, "REDEEM": 13, "TRADE": 473}, "trades_per_hr": 1812.7, "assets": {"bnb": 16, "eth": 133, "btc": 351}, "clip": 4.5, "twosided": 0.29, "box_buy_prem": 0.0689}
 {"ts": 1782749703, "wallet": "0xdf7930e89a", "value": 21064.4984, "types": {"SPLIT": 28, "TRADE": 452, "REDEEM": 20}, "trades_per_hr": 200.1, "assets": {"btc": 485, "sol": 6, "eth": 9}, "clip": 10.0, "twosided": 0.38, "box_buy_prem": -0.1091}
+{"ts": 1782764363, "wallet": "0x20d2309cd9", "value": 206.9551, "types": {"TRADE": 476, "REDEEM": 24}, "trades_per_hr": 1467.0, "assets": {"btc": 287, "eth": 106, "xrp": 51, "sol": 56}, "clip": 6.1, "twosided": 0.43, "box_buy_prem": 0.0071}
+{"ts": 1782764363, "wallet": "0x674887d1ac", "value": 3283.2966, "types": {"SPLIT": 17, "TRADE": 465, "REDEEM": 18}, "trades_per_hr": 1545.1, "assets": {"xrp": 74, "btc": 275, "eth": 138, "bnb": 13}, "clip": 8.2, "twosided": 0.33, "box_buy_prem": 0.1046}
+{"ts": 1782764363, "wallet": "0xdf7930e89a", "value": 15012.3997, "types": {"SPLIT": 20, "TRADE": 457, "REDEEM": 23}, "trades_per_hr": 352.2, "assets": {"btc": 488, "sol": 7, "eth": 5}, "clip": 20.0, "twosided": 0.48, "box_buy_prem": -0.1076}
