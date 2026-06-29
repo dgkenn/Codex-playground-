@@ -31,3 +31,10 @@ ARGUMENTS AGAINST CONFOUNDING-BY-INDICATION: (a) E-value ~6 (CI ~5.5) on the sev
 - Within-stratum conditioning controls MEASURED severity (lactate, #vaso, age); residual unmeasured confounding is bounded by the E-value, not removed.
 - The strongest remaining checks are quasi-experimental: a negative-control EXPOSURE (propofol/sedation dose) and a prescribing-preference INSTRUMENT (separate module, needs an inputevents re-stream).
 - Observational; the claim stays risk-stratification, not a treatment effect.
+
+## 5. Quasi-experiments (the strongest observational checks)
+- **Negative-control exposure (propofol):** propofol (sedation, titrated-to-sickness/ventilation, NOT a vasopressor) -> mortality OR **0.88** [0.83,0.93] vs norepinephrine **3.01** [2.74,3.30] in a head-to-head model (n=9,203). If the signal were generic 'sicker patients get more of everything', propofol would also predict death -- it does NOT. The vasopressor requirement is VASOPRESSOR-SPECIFIC.
+- **Prescribing-preference instrumental variable:** instrumenting the dose by the patient's ICU-unit (and caregiver) leave-one-out mean dose tendency -- strong instruments (first-stage F **156** unit / **77** caregiver) -- gives IV dose->mortality OR **3.78** [3.08,4.69] (unit) / **3.85** [2.88,5.21] (caregiver), CI excludes 1 (even larger than naive ~2.6-2.9). Dose variation driven by PROVIDER PREFERENCE, not the individual patient's severity, STILL predicts death. (Honest: IV exclusion restriction untestable -- units that dose aggressively may differ in other care; LATE interpretation.)
+
+## Overall verdict (updated)
+Confounding by indication is **argued against on five independent fronts** -- E-value ~6, 8/8 within-severity strata, homogeneous/sepsis restriction, a NULL negative-control exposure (propofol), and a prescribing-preference IV that stays strongly positive. It is **not eliminated** (observational, no randomisation) but is made an **implausible SOLE explanation**. The claim remains risk-stratification, but the 'it's just confounding by indication' rebuttal is now substantively answered, not conceded.

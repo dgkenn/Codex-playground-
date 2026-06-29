@@ -45,10 +45,15 @@ Disclosables (not fatal): selection (arterial-line/on-pressor denominator), no p
 "ACTIONABLE" early-warning title overclaims (no decision-benefit), in-sample threshold rules.
 
 ### Round 3 (final completeness audit) -- CONVERGED, three disclosures named
-- **Confounding by indication (the conceded steelman).** The dose = physiology x local titration
-  practice; this cannot be removed observationally. We do NOT rebut it -- it is the reason the
-  claim is scoped to risk-stratification/characterization, not a treatment effect or
-  practice-changer. Stated, not defended.
+- **Confounding by indication -- now ARGUED AGAINST (not merely conceded).** Cannot be eliminated
+  observationally, but made an implausible SOLE explanation on five fronts (CONFOUNDING_BY_INDICATION.md,
+  CONFOUNDING_QUASI_EXPERIMENT.md): (i) **E-value ~6** (CI 5.5) on the severity-adjusted dose-response;
+  (ii) dose-response persists in **8/8 within-severity strata** (lactate quintiles + #vaso); (iii) holds
+  in a homogeneous single-pressor/lactate-2-4 band and within sepsis; (iv) **negative-control exposure** --
+  propofol (titrated-to-sickness, non-vasopressor) OR 0.88 vs norepi 3.01 -> signal is vasopressor-specific,
+  not generic intensity; (v) **prescribing-preference IV** (unit/caregiver, F 156/77) IV-OR ~3.8 stays
+  positive -> provider-preference dose variation still predicts death. Still observational (claim stays
+  risk-stratification), but the steelman is substantively answered, not just conceded.
 - **Window overlap -- characterization vs prospective.** The whole-stay requirement->mortality
   OR (~3.0-3.8) is CONTEMPORANEOUS characterization (measured over the same stay as the outcome).
   The genuinely PROSPECTIVE number is the landmarked first-6h early-warning OR **1.54** (attack
