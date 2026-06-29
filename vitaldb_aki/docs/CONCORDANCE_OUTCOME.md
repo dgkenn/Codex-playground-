@@ -2,18 +2,18 @@
 
 The make-or-break-for-impact test. Adjusted (g-computation) risk difference of CONCORDANT vs DISCORDANT management (actual fluid/pressor lean matching the A-line-indicated lever), case bootstrap CI, negative control, within-recommendation strata.
 
-- Cases with both axes + management + outcome: **558**; clear recommendation+management: **92** (concordant 48, discordant 44). Recommendation counts: {'fluid': 153, 'pressor': 119, 'mixed': 286}.
+- Cases with both axes + management + outcome: **558**; clear recommendation+management: **122** (concordant 68, discordant 54). Recommendation counts: {'fluid': 158, 'pressor': 159, 'mixed': 241}.
 
 ## Adjusted RD (concordant - discordant), negative = concordant has LESS injury
-- composite (PRIMARY): adj RD **0.0522** (95% CI [-0.118, 0.2109], crude 0.089, n=92, base 0.2283).
-- organ_renal (secondary): adj RD **-0.0223** (95% CI [-0.0818, 0.0154], crude 0.0022, n=86, base 0.0465).
-- organ_hypoperfusion (secondary): adj RD **None** (95% CI None, crude None, n=23, base None).
+- composite (PRIMARY): adj RD **0.0811** (95% CI [-0.0564, 0.1978], crude 0.091, n=122, base 0.1803).
+- organ_renal (secondary): adj RD **-0.0333** (95% CI [-0.094, 0.0053], crude -0.0407, n=116, base 0.0345).
+- organ_hypoperfusion (secondary): adj RD **None** (95% CI None, crude None, n=22, base None).
 
-- E-value (primary): 1.76.
-- Within-recommendation strata (primary): {'fluid': {'n': 52, 'n_concordant': 27, 'n_discordant': 25, 'crude_rd': 0.1393, 'adj_rd': 0.0271, 'ci': [-0.0913, 0.1359], 'base_rate': 0.1923}, 'pressor': {'n': 40, 'n_concordant': 21, 'n_discordant': 19, 'crude_rd': 0.0226, 'adj_rd': -0.0283, 'ci': [-0.2541, 0.2633], 'base_rate': 0.275}}.
+- E-value (primary): 2.26.
+- Within-recommendation strata (primary): {'fluid': {'n': 60, 'n_concordant': 36, 'n_discordant': 24, 'crude_rd': 0.1111, 'adj_rd': 0.0724, 'ci': [-0.0916, 0.2029], 'base_rate': 0.15}, 'pressor': {'n': 62, 'n_concordant': 32, 'n_discordant': 30, 'crude_rd': 0.0833, 'adj_rd': 0.0633, 'ci': [-0.1681, 0.2725], 'base_rate': 0.2097}}.
 
 ## Verdict
-NULL decision-benefit. Concordant adjusted composite RD 0.0522 (CI [-0.118, 0.2109], n=92) -- and it ATTENUATED toward 0 as N grew (was -0.09 at n=70). The higher-power INTERACTION test on ALL 549 cases is also NULL (pressor_lean:tone -0.025 [-0.315, 0.257]; fluid_lean:ppv 0.239 [-0.035, 0.776]). Conclusion: NO demonstrable decision-benefit from following the A-line lever in this observational data -> impact ceiling is RISK-STRATIFICATION + the mechanistic/concept contribution, NOT outcome improvement (would need an RCT). Consistent with either no benefit or clinicians already reading the A-line.
+NULL decision-benefit. Concordant adjusted composite RD 0.0811 (CI [-0.0564, 0.1978], n=122) -- and it ATTENUATED toward 0 as N grew (was -0.09 at n=70). The higher-power INTERACTION test on ALL 549 cases is also NULL (pressor_lean:tone -0.039 [-0.267, 0.219]; fluid_lean:ppv 0.233 [-0.04, 0.77]). Conclusion: NO demonstrable decision-benefit from following the A-line lever in this observational data -> impact ceiling is RISK-STRATIFICATION + the mechanistic/concept contribution, NOT outcome improvement (would need an RCT). Consistent with either no benefit or clinicians already reading the A-line.
 
 ## Caveats
 - Actual fluid/pressor lean = end-of-case crystalloid/colloid (mL/kg) + bolus pressor TOTALS, no timing -> coarse exposure. Axes are whole-case morphology. Observational.

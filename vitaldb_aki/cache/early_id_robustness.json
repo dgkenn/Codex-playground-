@@ -1,0 +1,65 @@
+{
+  "seed": 20260628,
+  "incremental_over_clinical": {
+    "n": 52,
+    "clinical_only_oof_spearman": -0.013,
+    "clinical_plus_early_dose_oof_spearman": 0.186,
+    "clinical_plus_early_and_tone_oof_spearman": 0.186,
+    "interpretation": "if clinical+A-line > clinical-only, the waveform/early-requirement ADDS information beyond age/ASA/weight/baseline-MAP -> worth measuring."
+  },
+  "lead_time_minutes": {
+    "n_cases": 52,
+    "high_req_threshold_dose_per_kg": 0.2164,
+    "early_signal_window_min_median": 46.6,
+    "case_runway_min_median": 99.5,
+    "n_high_req": 18,
+    "time_to_cross_high_min_median": 8.0,
+    "time_to_cross_high_min_iqr": [
+      0.0,
+      27.9
+    ],
+    "interpretation": "time_to_cross_high = minutes from first stable epoch until the patient actually reaches high requirement -- the window in which an early flag would let you act."
+  },
+  "operating_point": {
+    "n": 52,
+    "auc_early_dose_predicts_high_req": 0.771,
+    "operating_point_threshold": 0.1346,
+    "sensitivity_IN_SAMPLE": 0.72,
+    "specificity_IN_SAMPLE": 0.62,
+    "note": "AUC is rank-based (honest); the sens/spec pair uses a threshold chosen on the FULL cohort and scored on it -> IN-SAMPLE/optimistic, illustrative only"
+  },
+  "definition_robustness": {
+    "band(50, 75)_minep2": {
+      "n": 29,
+      "split_half_reliability": 0.733,
+      "fold_range_p90_p10": 3.3
+    },
+    "band(50, 75)_minep3": {
+      "n": 29,
+      "split_half_reliability": 0.733,
+      "fold_range_p90_p10": 3.3
+    },
+    "band(55, 80)_minep2": {
+      "n": 30,
+      "split_half_reliability": 0.817,
+      "fold_range_p90_p10": 3.8
+    },
+    "band(55, 80)_minep3": {
+      "n": 30,
+      "split_half_reliability": 0.817,
+      "fold_range_p90_p10": 3.8
+    },
+    "band(60, 85)_minep2": {
+      "n": 36,
+      "split_half_reliability": 0.847,
+      "fold_range_p90_p10": 4.0
+    },
+    "band(60, 85)_minep3": {
+      "n": 36,
+      "split_half_reliability": 0.847,
+      "fold_range_p90_p10": 4.0
+    },
+    "interpretation": "reliability + spread should hold across band/min-epoch choices -> the "
+  },
+  "verdict": "Incremental over clinical: clinical-only OOF -0.013 vs clinical+early-A-line 0.186 (A-line ADDS predictive value beyond clinical baseline). Lead-time to high requirement: 8.0 min (early-signal window 46.6 min). Operating point AUC 0.771 (sens None, spec None)."
+}

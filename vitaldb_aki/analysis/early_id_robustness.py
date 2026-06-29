@@ -180,8 +180,10 @@ def test_operating_point(q):
     spec = tn / (tn + fp) if (tn + fp) else None
     return {"n": len(pc), "auc_early_dose_predicts_high_req": round(auc, 3),
             "operating_point_threshold": round(thr, 4),
-            "sensitivity": round(sens, 2) if sens is not None else None,
-            "specificity": round(spec, 2) if spec is not None else None}
+            "sensitivity_IN_SAMPLE": round(sens, 2) if sens is not None else None,
+            "specificity_IN_SAMPLE": round(spec, 2) if spec is not None else None,
+            "note": "AUC is rank-based (honest); the sens/spec pair uses a threshold chosen on the "
+            "FULL cohort and scored on it -> IN-SAMPLE/optimistic, illustrative only"}
 
 
 def test_definition_robustness(q):
@@ -260,7 +262,7 @@ def _doc(res):
          "## 3. Operating point (ROC)",
          f"- **AUC (first-half dose -> eventual high requirement): {op.get('auc_early_dose_predicts_high_req')}** "
          f"(n={op.get('n')}); at threshold {op.get('operating_point_threshold')}: sensitivity "
-         f"{op.get('sensitivity')}, specificity {op.get('specificity')}.\n",
+         f"{op.get('sensitivity_IN_SAMPLE')}, specificity {op.get('specificity_IN_SAMPLE')}.\n",
          "## 4. Definition robustness (anti-cherry-pick)"]
     for k, v in dr.items():
         if isinstance(v, dict):

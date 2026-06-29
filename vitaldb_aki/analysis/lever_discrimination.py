@@ -182,7 +182,9 @@ def model():
         f[c] = pd.to_numeric(f[c], errors="coerce")
     res = {"seed": SEED, "n_axes_cases": int(len(f))}
     ppv = f["art_ppv_burden_min"].where(f["art_ppv_burden_min"].notna(), f["art_ppv_mean"])
-    tone = f["map_dia_form_factor"].where(f["map_dia_form_factor"].notna(), f["diastolic_over_map"])
+    # NOTE: map_dia_form_factor is DEGENERATE (= 1/3 constant when art_map_mean is the formula
+    # DBP+PP/3); use diastolic_over_map (DBP/MAP), the real varying tone carrier. Low = vasoplegic.
+    tone = f["diastolic_over_map"]
     d = pd.DataFrame({"caseid": f["caseid"], "ppv": ppv, "tone": tone}).dropna()
     res["n_both_axes"] = int(len(d))
     if len(d) >= 20:
@@ -224,9 +226,12 @@ def model():
         except Exception as exc:
             res["concordance_error"] = str(exc)
     o = res.get("orthogonality_ppv_vs_tone", {})
+    # honest: CI excluding 0 => the axes are CORRELATED (not independent), regardless of |r| size
+    ci = o.get("ci") or [0, 0]
+    independent = bool(o.get("r") is not None and ci[0] <= 0 <= ci[1])
     res["verdict"] = (
-        f"Lever axes {'INDEPENDENT' if (o.get('r') is not None and abs(o['r']) < 0.3) else 'CORRELATED'} "
-        f"(PPV vs tone r={o.get('r')} {o.get('ci')}, n={o.get('n')}); "
+        f"Lever axes {'INDEPENDENT' if independent else 'CORRELATED (NOT independent -- CI excludes 0)'} "
+        f"(PPV vs real-tone[diastolic/MAP] r={o.get('r')} {o.get('ci')}, n={o.get('n')}); "
         f"{res.get('frac_decision_relevant')} of patients have a clear single A-line lever. "
         + (f"Concordance->outcome: composite RD {res.get('concordant_vs_discordant_composite_RD')} "
            f"(n={res.get('_n_composite')})." if 'concordant_vs_discordant_composite_RD' in res else

@@ -22,7 +22,7 @@ Confounders controlled: per-kg dosing (body size); MAP-band conditioning (dose t
 - **Construct validity:** {'vs_cumulative_exposure_spearman': 0.69, 'vs_achieved_MAP_spearman': -0.428, 'vs_EV1000_SVR_spearman': 0.182, 'n_svr_overlap': 15, 'note': 'expect: vs cumulative exposure POSITIVE (vasoplegic need more), vs achieved MAP <=0, vs EV1000 SVR NEGATIVE (low tone = high requirement)'}.
 
 ## Verdict
-GO -- a stable-epoch norepinephrine dose-REQUIREMENT phenotype exists in 52 patients, varies ~5.6-fold between patients (p10-p90), split-half reliability 0.817, and tracks vasoplegia markers (vs cumulative exposure 0.69, vs EV1000 SVR 0.182). This is a confound-robust, closed-loop-free target a pre-epoch waveform model can predict.
+GO -- a stable-epoch norepinephrine dose-REQUIREMENT phenotype exists in 52 patients, varies ~5.6-fold between patients (p10-p90), split-half reliability 0.817 (the GO rests on reliability + spread). [construct caveats: vs cumulative exposure 0.69 is CIRCULAR; vs EV1000 SVR 0.182 is wrong-signed n=15 -- neither is independent vasoplegia evidence; see construct_validity.py.] Closed-loop-free target a pre-epoch waveform model can predict.
 
 ## Caveats
 - **Dose units:** Orchestra RATE is device units (mL/h); absolute ug/kg/min needs the per-case drug concentration VitalDB does not expose. Between-patient comparison assumes comparable norepi concentration (standard institutional mix) -- stated assumption; the split-half reliability is concentration-invariant within a case.

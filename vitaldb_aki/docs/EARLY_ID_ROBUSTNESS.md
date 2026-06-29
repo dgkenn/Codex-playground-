@@ -26,7 +26,7 @@ Defends 'the A-line identifies the vasoplegia-prone patient early' against the f
 - band(60, 85)_minep3: reliability 0.847, fold-range 4.0 (n=36).
 
 ## Verdict
-Incremental over clinical: clinical-only OOF -0.013 vs clinical+early-A-line 0.186 (A-line ADDS predictive value beyond clinical baseline). Lead-time to high requirement: 8.0 min (early-signal window 46.6 min). Operating point AUC 0.771 (sens 0.72, spec 0.62).
+Incremental over clinical: clinical-only OOF -0.013 vs clinical+early-A-line 0.186 (A-line ADDS predictive value beyond clinical baseline). Lead-time to high requirement: 8.0 min (early-signal window 46.6 min). Operating point AUC 0.771 (sens None, spec None).
 
 ## Caveats
 - N ~ 40-52 (the requirement phenotype is small); OOF only. Lead-time is intra-operative (within-case epoch timing), single-centre. The incremental-over-clinical test is the one that matters most -- if it is null, the A-line is redundant with bedside clinical data.

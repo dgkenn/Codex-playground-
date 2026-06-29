@@ -396,16 +396,21 @@ def model():
         spread_ok = (res["requirement_phenotype_ug_per_kg_units"].get("fold_range_p90_p10") or 0) >= 3
         reliable_ok = (res["reliability"].get("splithalf_spearman") or 0) >= 0.4
         abundant_ok = len(pheno) >= 25
-        construct_ok = (cv.get("vs_cumulative_exposure_spearman") or 0) > 0.2
-        res["go"] = bool(spread_ok and abundant_ok and (reliable_ok or construct_ok))
+        # NOTE: vs_cumulative_exposure is CIRCULAR (exposure = sum(dose*dur) over the SAME epochs
+        # whose median IS the phenotype; ~+0.02 on disjoint epochs) -> NOT independent construct
+        # evidence; GO rests on reliability + spread only. Real (partial) construct evidence is in
+        # construct_validity.py. vs_EV1000_SVR is wrong-signed & n=15 (a FAILED check, not support).
+        construct_ok = False
+        res["go"] = bool(spread_ok and abundant_ok and reliable_ok)
         res["verdict"] = (
             (f"GO -- a stable-epoch norepinephrine dose-REQUIREMENT phenotype exists in "
              f"{len(pheno)} patients, varies ~{res['requirement_phenotype_ug_per_kg_units'].get('fold_range_p90_p10')}-fold "
-             f"between patients (p10-p90), "
-             f"split-half reliability {res['reliability'].get('splithalf_spearman')}, and tracks "
-             f"vasoplegia markers (vs cumulative exposure {cv.get('vs_cumulative_exposure_spearman')}, "
-             f"vs EV1000 SVR {cv.get('vs_EV1000_SVR_spearman')}). This is a confound-robust, "
-             f"closed-loop-free target a pre-epoch waveform model can predict.")
+             f"between patients (p10-p90), split-half reliability "
+             f"{res['reliability'].get('splithalf_spearman')} (the GO rests on reliability + spread). "
+             f"[construct caveats: vs cumulative exposure {cv.get('vs_cumulative_exposure_spearman')} "
+             f"is CIRCULAR; vs EV1000 SVR {cv.get('vs_EV1000_SVR_spearman')} is wrong-signed n=15 -- "
+             f"neither is independent vasoplegia evidence; see construct_validity.py.] Closed-loop-free "
+             f"target a pre-epoch waveform model can predict.")
             if res["go"] else
             (f"NOT YET -- {len(pheno)} phenotype cases; spread fold-range "
              f"{res['requirement_phenotype_ug_per_kg_units'].get('fold_range_p90_p10')}, reliability "

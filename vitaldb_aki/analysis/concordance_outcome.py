@@ -50,7 +50,8 @@ def _build():
         if c in f.columns:
             f[c] = pd.to_numeric(f[c], errors="coerce")
     f["ppv"] = f["art_ppv_burden_min"].where(f["art_ppv_burden_min"].notna(), f["art_ppv_mean"])
-    f["tone"] = f["map_dia_form_factor"].where(f["map_dia_form_factor"].notna(), f["diastolic_over_map"])
+    # map_dia_form_factor is degenerate (1/3 constant); use diastolic_over_map (real tone).
+    f["tone"] = f["diastolic_over_map"]
     f["base_map"] = f["art_map_mean"]
     f = f[["caseid", "ppv", "tone", "base_map"]].dropna(subset=["ppv", "tone"])
     # management + demographics
