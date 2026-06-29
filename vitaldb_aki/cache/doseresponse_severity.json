@@ -70,13 +70,13 @@
     "adj_q4": 0.5744,
     "adj_q4_over_q1_riskratio": 3.268,
     "adj_q4_over_q1_rr_ci": [
-      0.935,
-      1.07
+      3.024,
+      3.535
     ],
     "adj_q4_minus_q1_riskdiff": 0.3986,
     "adj_q4_minus_q1_rd_ci": [
-      -0.0224,
-      0.0225
+      0.3761,
+      0.4204
     ],
     "adjusted_monotonic_nondecreasing": true,
     "adjusted_strictly_increasing": true,
@@ -106,13 +106,13 @@
     "adj_q4": 0.6376,
     "adj_q4_over_q1_riskratio": 4.272,
     "adj_q4_over_q1_rr_ci": [
-      0.939,
-      1.065
+      3.975,
+      4.631
     ],
     "adj_q4_minus_q1_riskdiff": 0.4883,
     "adj_q4_minus_q1_rd_ci": [
-      -0.0208,
-      0.021
+      0.4694,
+      0.5064
     ],
     "adjusted_monotonic_nondecreasing": true,
     "adjusted_strictly_increasing": true,
@@ -122,9 +122,7 @@
   "gradient_age_only": {
     "label": "age only",
     "covariates": [
-      "age",
-      "Charlson",
-      "vanWalraven"
+      "age"
     ],
     "crude_mortality_per_quartile": [
       0.1399,
@@ -142,13 +140,13 @@
     "adj_q4": 0.6504,
     "adj_q4_over_q1_riskratio": 4.611,
     "adj_q4_over_q1_rr_ci": [
-      0.939,
-      1.064
+      4.277,
+      5.014
     ],
     "adj_q4_minus_q1_riskdiff": 0.5093,
     "adj_q4_minus_q1_rd_ci": [
-      -0.0211,
-      0.0205
+      0.4907,
+      0.528
     ],
     "adjusted_monotonic_nondecreasing": true,
     "adjusted_strictly_increasing": true,
@@ -171,5 +169,5 @@
       4.156
     ]
   },
-  "verdict": "SEVERITY ATTACK ON THE DOSE-RESPONSE GRADIENT (MIMIC-IV, n=15949 norepi stays, 5258 in-hospital deaths). CRUDE (age-era headline) quartile mortality [0.1399, 0.2032, 0.3248, 0.6509] (Q4/Q1 risk ratio 4.653x). After FULL severity adjustment (age + Charlson + van Walraven/Elixhauser + #vasopressors) by g-computation, the STANDARDIZED quartile mortality is [0.1757, 0.2252, 0.3198, 0.5744] (adjusted Q4/Q1 RR 3.268x [[0.935, 1.07]], adjusted risk difference 0.3986 [[-0.0224, 0.0225]]). Adjusted gradient monotonic non-decreasing: True; strictly increasing: True; adjusted ordinal linear-trend p=2.4564566073473597e-277. The excess Q4-vs-Q1 risk ratio above 1 retains 62% of its crude magnitude after full adjustment. LOCALISING THE ATTENUATION: adjusting for comorbidity WITHOUT #vasopressors leaves adjusted Q4/Q1 RR 4.272x ([0.1493, 0.205, 0.32, 0.6376]); ADDING #vasopressors brings it to 3.268x -- so most of the flattening is driven by #vasopressors (multi-pressor refractory shock), not by chronic comorbidity burden. PER-SD OR (gradient framing): full-severity 3.047 [2.732, 3.343] (age-only 3.798). VERDICT: SURVIVES \u2014 DOSE-RESPONSE BEYOND SEVERITY. The monotone dose-response is NOT merely severity confounding -- it persists, graded, after standard comorbidity + cardiovascular-severity adjustment. The headline gradient holds in attenuated but real form. CAVEAT: observational; severity captured by Charlson + van Walraven + #vasopressors (a cardiovascular-SOFA proxy) -- no GCS/PaO2-FiO2/lactate here, so residual confounding by acute physiology remains; the requirement marks risk, not a treatment effect."
+  "verdict": "SEVERITY ATTACK ON THE DOSE-RESPONSE GRADIENT (MIMIC-IV, n=15949 norepi stays, 5258 in-hospital deaths). CRUDE (age-era headline) quartile mortality [0.1399, 0.2032, 0.3248, 0.6509] (Q4/Q1 risk ratio 4.653x). After FULL severity adjustment (age + Charlson + van Walraven/Elixhauser + #vasopressors) by g-computation, the STANDARDIZED quartile mortality is [0.1757, 0.2252, 0.3198, 0.5744] (adjusted Q4/Q1 RR 3.268x [[3.024, 3.535]], adjusted risk difference 0.3986 [[0.3761, 0.4204]]). Adjusted gradient monotonic non-decreasing: True; strictly increasing: True; adjusted ordinal linear-trend p=2.4564566073473597e-277. The excess Q4-vs-Q1 risk ratio above 1 retains 62% of its crude magnitude after full adjustment. LOCALISING THE ATTENUATION: adjusting for comorbidity WITHOUT #vasopressors leaves adjusted Q4/Q1 RR 4.272x ([0.1493, 0.205, 0.32, 0.6376]); ADDING #vasopressors brings it to 3.268x -- so most of the flattening is driven by #vasopressors (multi-pressor refractory shock), not by chronic comorbidity burden. PER-SD OR (gradient framing): full-severity 3.047 [2.732, 3.343] (age-only 3.798). VERDICT: SURVIVES \u2014 DOSE-RESPONSE BEYOND SEVERITY. The monotone dose-response is NOT merely severity confounding -- it persists, graded, after standard comorbidity + cardiovascular-severity adjustment. The headline gradient holds in attenuated but real form. CAVEAT: observational; severity captured by Charlson + van Walraven + #vasopressors (a cardiovascular-SOFA proxy) -- no GCS/PaO2-FiO2/lactate here, so residual confounding by acute physiology remains; the requirement marks risk, not a treatment effect."
 }
