@@ -63,38 +63,45 @@ def _admittime():
 
 
 def build_labs(delete_raw=True):
-    """Stream labevents -> per-hadm first-24h worst values for the 4 itemids."""
-    src = os.path.join(MIMIC_RAW, "labevents.csv.gz")
+    """Stream labevents -> per-hadm first-24h worst values. Honors $LABEVENTS_FILE (e.g. a
+    partial-download snapshot) and TOLERATES a truncated gzip (catches the EOF/CRC at the
+    truncation and uses everything decoded so far -> a coherent subsample, since labevents is
+    sorted by subject_id). Set $MIMIC_KEEP_RAW=1 to skip deleting the raw."""
+    src = os.environ.get("LABEVENTS_FILE", os.path.join(MIMIC_RAW, "labevents.csv.gz"))
     if not os.path.exists(src):
         raise FileNotFoundError(f"labevents not found at {src}")
     admit = _admittime()
     agg = {}   # hadm -> {lab: worst}
     n = nkept = 0
-    with gzip.open(src, "rt") as fh:
-        r = _csv.DictReader(fh)
-        for row in r:
-            n += 1
-            lab = LAB_ITEMS.get(row.get("itemid"))
-            if not lab:
-                continue
-            h = row.get("hadm_id")
-            if not h or h not in admit:
-                continue
-            t = _ts(row.get("charttime"))
-            if t is None or t < admit[h] or t > admit[h] + 86400:   # first 24h
-                continue
-            try:
-                v = float(row.get("valuenum") or "nan")
-            except ValueError:
-                continue
-            if v != v or v <= 0:
-                continue
-            d = agg.setdefault(h, {})
-            if LAB_DIR.get(lab) == "min":
-                d[lab] = min(d.get(lab, v), v)
-            else:
-                d[lab] = max(d.get(lab, v), v)
-            nkept += 1
+    try:
+        with gzip.open(src, "rt") as fh:
+            r = _csv.DictReader(fh)
+            for row in r:
+                n += 1
+                lab = LAB_ITEMS.get(row.get("itemid"))
+                if not lab:
+                    continue
+                h = row.get("hadm_id")
+                if not h or h not in admit:
+                    continue
+                t = _ts(row.get("charttime"))
+                if t is None or t < admit[h] or t > admit[h] + 86400:   # first 24h
+                    continue
+                try:
+                    v = float(row.get("valuenum") or "nan")
+                except ValueError:
+                    continue
+                if v != v or v <= 0:
+                    continue
+                d = agg.setdefault(h, {})
+                if LAB_DIR.get(lab) == "min":
+                    d[lab] = min(d.get(lab, v), v)
+                else:
+                    d[lab] = max(d.get(lab, v), v)
+                nkept += 1
+    except (EOFError, OSError, gzip.BadGzipFile) as exc:
+        print(f"[lac] labevents stream ended (truncated/partial subsample OK): "
+              f"{type(exc).__name__}", flush=True)
     tmp = LABS_CSV + ".tmp"
     with open(tmp, "w", newline="") as out:
         w = _csv.writer(out); w.writerow(["hadm_id"] + list(LAB_ITEMS.values()))

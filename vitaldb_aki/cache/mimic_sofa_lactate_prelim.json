@@ -1,0 +1,32 @@
+{
+  "seed": 20260628,
+  "n": 3109,
+  "deaths": 1160,
+  "lab_components": [
+    "lactate",
+    "bilirubin",
+    "creatinine",
+    "platelets",
+    "bun",
+    "wbc",
+    "bicarbonate",
+    "inr",
+    "albumin",
+    "hemoglobin",
+    "anion_gap",
+    "sodium"
+  ],
+  "mortality_rate": 0.373,
+  "or_req_age_adjusted": 3.798,
+  "or_req_crude_severity": 2.88,
+  "or_req_FULL_with_lactate_sofalabs": 2.438,
+  "or_full_ci": [
+    1.903,
+    3.222
+  ],
+  "attenuation_age_to_full_pct": 48.6,
+  "auc_full_severity_only": 0.755,
+  "auc_severity_plus_requirement": 0.784,
+  "delta_auc_over_full_severity": 0.0286,
+  "verdict": "Requirement->mortality OR per SD: 3.7983862358895624 (age) -> 2.8801935477802885 (crude severity) -> **2.4380682605575767** (FULL: + first-24h lactate + SOFA labs [creatinine/bilirubin/platelets]), CI [1.903, 3.222]; total attenuation 48.6%. SIGNAL BEYOND SEVERITY: the requirement OR survives adjustment for lactate + the SOFA lab components, still adding AUC +0.0286 over the full severity model. So it is not MERELY 'sicker patients got more drug'. CAVEAT: SOFA approximated by lab components + #vasopressors; no GCS / PaO2-FiO2 (chartevents)."
+}
