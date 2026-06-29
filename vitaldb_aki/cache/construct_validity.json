@@ -1,0 +1,153 @@
+{
+  "seed": 20260628,
+  "phenotype": {
+    "definition": "median NEPI norepi-only dose_per_kg in MAP[55,80], >=2 epochs",
+    "n_cases": 52
+  },
+  "attack": "a high vasopressor requirement can reflect ANY reason for pressor use (hypovolemia, cardiogenic shock, bradycardia, deep anaesthesia, bleeding); the vasoplegia construct is unproven.",
+  "test1_convergent_tone": {
+    "primary": {
+      "r": -0.0287,
+      "p": 0.85143,
+      "ci95": [
+        -0.3401,
+        0.278
+      ],
+      "n": 45,
+      "carrier": "diastolic_over_map",
+      "expectation": "NEGATIVE (vasoplegic = LOW diastolic tone = low diastolic_over_map -> high requirement)"
+    },
+    "form_factor_degenerate_check": {
+      "r": -0.2628,
+      "p": 0.08115,
+      "ci95": [
+        -0.5156,
+        0.0348
+      ],
+      "n": 45,
+      "carrier": "map_dia_form_factor",
+      "degenerate": false,
+      "note": "informative"
+    },
+    "carrier_spread": {
+      "diastolic_over_map": {
+        "n": 640,
+        "sd": 0.043897,
+        "min": 0.5827,
+        "max": 0.8774
+      },
+      "map_dia_form_factor": {
+        "n": 640,
+        "sd": 1e-06,
+        "min": 0.3333,
+        "max": 0.3333
+      }
+    }
+  },
+  "test2_discriminant_preload": {
+    "primary": {
+      "r": 0.3791,
+      "p": 0.01023,
+      "ci95": [
+        0.0688,
+        0.6392
+      ],
+      "n": 45,
+      "carrier": "art_ppv_burden_min",
+      "expectation": "if vasoplegia-specific (NOT hypovolemia), requirement should be LESS related to PPV than to low tone"
+    },
+    "alt_carrier": {
+      "r": 0.2041,
+      "p": 0.17872,
+      "ci95": [
+        -0.1108,
+        0.485
+      ],
+      "n": 45,
+      "carrier": "art_ppv_mean"
+    },
+    "head_to_head_common_subset": {
+      "n_common": 45,
+      "tone_carrier": "diastolic_over_map",
+      "r_vs_tone": -0.0287,
+      "r_vs_ppv": 0.3791,
+      "tone_partial_given_ppv": -0.2094,
+      "ppv_partial_given_tone": 0.4336,
+      "tone_dominates": false
+    }
+  },
+  "test3_svr_anchor": {
+    "r": 0.1429,
+    "p": 0.61152,
+    "ci95": [
+      -0.4214,
+      0.6458
+    ],
+    "n": 15,
+    "carrier": "EV1000 svr_mean (epoch-mean)",
+    "expectation": "NEGATIVE (low SVR = vasoplegic = high requirement)",
+    "honest_note": "n=15; sign is POSITIVE (WRONG direction) and underpowered. This is the soft spot of the construct. CI crosses 0."
+  },
+  "test4_etiology_surgery": {
+    "by_optype": {
+      "Transplantation": {
+        "n": 14,
+        "median_requirement": 0.2375
+      },
+      "Others": {
+        "n": 27,
+        "median_requirement": 0.1961
+      },
+      "Colorectal": {
+        "n": 4,
+        "median_requirement": 0.18201
+      },
+      "Vascular": {
+        "n": 4,
+        "median_requirement": 0.15464
+      },
+      "Hepatic": {
+        "n": 1,
+        "median_requirement": 0.08795
+      },
+      "Stomach": {
+        "n": 1,
+        "median_requirement": 0.07053
+      },
+      "Biliary/Pancreas": {
+        "n": 1,
+        "median_requirement": 0.00132
+      }
+    },
+    "n_transplant": 14,
+    "n_liver_transplant": 11,
+    "transplant_vs_rest": {
+      "median_transplant": 0.19888,
+      "median_rest": 0.161,
+      "fold_higher": 1.24,
+      "mannwhitney_p_one_sided_higher": 0.2383,
+      "direction_consistent_with_vasoplegia": true
+    },
+    "liver_tx_vs_rest": {
+      "median_liver_tx": 0.24,
+      "median_rest": 0.15464,
+      "fold_higher": 1.55
+    }
+  },
+  "verdict": {
+    "grade": "PARTIALLY SUPPORTED",
+    "support_score_of_3": 1,
+    "bullets": [
+      "CONVERGENT vs REAL tone carrier (diastolic_over_map): Spearman -0.0287 (95% CI [-0.3401, 0.278], n=45). Right sign but the magnitude is NEAR-NULL -- weak convergent evidence. (The originally-named carrier map_dia_form_factor is a constant/degenerate column; its earlier -0.26 was tie-broken noise -- discarded.)",
+      "DISCRIMINANT vs PPV/preload: requirement vs PPV-burden Spearman 0.3791 (n=45); head-to-head (n=45): r_tone=-0.0287 vs r_ppv=0.3791. Partials: tone|PPV=-0.2094, PPV|tone=0.4336. BOTH mechanisms carry INDEPENDENT signal (each survives partialling out the other), and PPV (hypovolemia) is at least as strong as tone -> the requirement is a MIXED preload+tone signal, NOT cleanly vasoplegia-specific.",
+      "SVR anchor (gold standard): Spearman 0.1429 at n=15 -- POSITIVE, the WRONG sign, underpowered. The direct vasoplegia anchor FAILS.",
+      "ETIOLOGY: transplant (liver-tx-dominated, vasoplegia-prone) median requirement 0.19888 vs rest 0.161 (1.24x, MW p=0.2383). Direction consistent with vasoplegia but NOT significant."
+    ],
+    "summary": "PARTIALLY SUPPORTED. After correcting a data-quality defect (the named tone carrier map_dia_form_factor is a degenerate constant, so the earlier -0.26 convergent value was noise), the requirement's correlation with the REAL diastolic-tone carrier is -0.0287 (n=45, CI [-0.3401, 0.278]) -- right-signed but near-null. On discriminant validity the requirement tracks PPV/preload (r=0.3791) as strongly as -- or more strongly than -- tone, and both survive mutual partialling: it is a MIXED preload+tone vasopressor-need signal, not a pure vasoplegia index. It does run higher in vasoplegia-prone surgery (1.24x) but not significantly. The DIRECT SVR anchor (n=15) still points the WRONG way (+0.1429). BOTTOM LINE for the reviewer's attack: the attack LANDS in part -- the construct is NOT shown to be specifically vascular-tone. The evidence supports a weaker, honest claim: the requirement is a generic 'vasopressor-need / hemodynamic fragility' phenotype with a tone component, not a validated vasoplegia-specific marker. The vasoplegia label is aspirational until a powered independent SVR cohort confirms it.",
+    "convergent_r": -0.0287,
+    "convergent_carrier": "diastolic_over_map",
+    "discriminant_ppv_r": 0.3791,
+    "svr_anchor_n": 15,
+    "svr_anchor_r": 0.1429
+  }
+}
