@@ -38,7 +38,7 @@ LIMITATION = the attack lands; we disclose and scope. DID NOT SURVIVE = claim re
 | 13 | **Control-theory premise unproven in ICU** | MIMIC never pulls MAP; premise (MAP CV<<dose CV) shown in VitalDB only | **HONEST LIMITATION** (mechanism asserted-not-shown in ICU; needs MAP from chartevents) |
 | 14 | **ICU-LOS collider in severity adjustment** | LOS is downstream of requirement & death (death truncates LOS) -> dropped. OR 3.01 -> **3.12** [2.83,3.46] without it | **FIXED** (correction slightly strengthens) |
 | 15 | **Dose-response gradient is just severity** | crude quartile mortality [0.14,0.20,0.32,0.65]; FULL-adjusted (age+Charlson+vanWalraven+#vaso) [0.18,0.22,0.32,0.57] still strictly MONOTONE (Q4/Q1 RR ~3.3, per-SD OR 3.05). Comorbidity barely attenuates; only #vaso does | **SURVIVES** |
-| 16 | **"Beyond severity" unproven (lactate/SOFA unrun)** -- the one CRITICAL hole | run mimic_sofa_lactate on real labevents | **PENDING** (2.4GB download ~33%, self-healing) |
+| 16 | **"Beyond severity" unproven (lactate/SOFA unrun)** -- the one CRITICAL hole | requirement->mortality OR/SD 3.80 (age) -> 2.88 (comorbidity) -> **2.44 [1.90,3.22]** (+ lactate + SOFA labs), 48.6% attenuation, +AUC 0.029 over full severity. n=3109 (~38% subsample, subject-sorted) | **SURVIVES (preliminary)** -- signal beyond severity even vs lactate; full-data run to confirm (CI margin wide) |
 
 Disclosables (not fatal): selection (arterial-line/on-pressor denominator), no pre-registration
 (sequential search -> ledger), MIMIC multiplicity not in the original ~30-test Bonferroni,
