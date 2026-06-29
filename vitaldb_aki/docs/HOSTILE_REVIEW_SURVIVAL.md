@@ -29,6 +29,21 @@ LIMITATION = the attack lands; we disclose and scope. DID NOT SURVIVE = claim re
 | 9 | **The A-line gives orthogonal fluid-vs-pressor info** | Original "PPV _|_ tone r=-0.09" used a DEGENERATE tone column (map_dia_form_factor = 1/3 constant). Real tone -> r=+0.23 [0.15,0.30] | **DID NOT SURVIVE** -> retracted; axes are CORRELATED, not independent |
 | 10 | **Hidden statistical bugs / leakage** | Adversarial code audit of 5 headline modules: no conclusion-flipping bug; found degenerate-tone (fixed, #9), circular +0.69 construct (relabeled), wrong-sign SVR (relabeled), in-sample operating point (relabeled) | **SURVIVES** (headlines reproduce; oversold supports cut) |
 
+## Round 2 (attacks on the new MIMIC results)
+
+| # | Attack | Test / evidence | Verdict |
+|---|---|---|---|
+| 11 | **Immortal-time / survivorship** (early-warning & reliability need >=4 seg / 6h survival) | Gate excludes 21% (47% of excluded deaths die <6h). Landmark fix (alive at h6 -> post-6h death): early-peak OR 1.73->1.54 [1.43,1.68], AUC 0.668->0.652. Reliability 0.947->0.971 in long survivors | **SURVIVES-WITH-CAVEAT** (report landmarked OR 1.54; trajectory cohort is conservative) |
+| 12 | **VitalDB & MIMIC aren't the same thing** | VitalDB = MAP-conditioned stable-epoch controller-effort dose; MIMIC = plain whole-stay median rate -> NOT the same estimand | **HONEST LIMITATION -> TWO-LEVEL CLAIM**: what replicates across cohorts is *dose-ordering is a reliable, early, mortality-graded patient trait*; the specific MAP-conditioned phenotype + control-theory mechanism are VitalDB-only |
+| 13 | **Control-theory premise unproven in ICU** | MIMIC never pulls MAP; premise (MAP CV<<dose CV) shown in VitalDB only | **HONEST LIMITATION** (mechanism asserted-not-shown in ICU; needs MAP from chartevents) |
+| 14 | **ICU-LOS collider in severity adjustment** | LOS is downstream of requirement & death (death truncates LOS) -> dropped. OR 3.01 -> **3.12** [2.83,3.46] without it | **FIXED** (correction slightly strengthens) |
+| 15 | **Dose-response gradient is just severity** | adjust Q1->Q4 gradient for Charlson+Elixhauser+#vaso | **PENDING** (Round-2 agent) |
+| 16 | **"Beyond severity" unproven (lactate/SOFA unrun)** -- the one CRITICAL hole | run mimic_sofa_lactate on real labevents | **PENDING** (2.4GB download ~33%, self-healing) |
+
+Disclosables (not fatal): selection (arterial-line/on-pressor denominator), no pre-registration
+(sequential search -> ledger), MIMIC multiplicity not in the original ~30-test Bonferroni,
+"ACTIONABLE" early-warning title overclaims (no decision-benefit), in-sample threshold rules.
+
 ## What got cut by this pass (honesty record)
 - **"Vasoplegia" label** -> "vasopressor requirement" (attack 6).
 - **Lever discrimination "independent axes / A-line picks the lever"** -> retracted (attack 9); the lever line is now: axes are modestly correlated; ~57% of patients fall in a single-lever quadrant but no orthogonality and no outcome benefit.
