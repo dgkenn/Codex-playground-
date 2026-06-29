@@ -37,7 +37,7 @@ LIMITATION = the attack lands; we disclose and scope. DID NOT SURVIVE = claim re
 | 12 | **VitalDB & MIMIC aren't the same thing** | VitalDB = MAP-conditioned stable-epoch controller-effort dose; MIMIC = plain whole-stay median rate -> NOT the same estimand | **HONEST LIMITATION -> TWO-LEVEL CLAIM**: what replicates across cohorts is *dose-ordering is a reliable, early, mortality-graded patient trait*; the specific MAP-conditioned phenotype + control-theory mechanism are VitalDB-only |
 | 13 | **Control-theory premise unproven in ICU** | MIMIC never pulls MAP; premise (MAP CV<<dose CV) shown in VitalDB only | **HONEST LIMITATION** (mechanism asserted-not-shown in ICU; needs MAP from chartevents) |
 | 14 | **ICU-LOS collider in severity adjustment** | LOS is downstream of requirement & death (death truncates LOS) -> dropped. OR 3.01 -> **3.12** [2.83,3.46] without it | **FIXED** (correction slightly strengthens) |
-| 15 | **Dose-response gradient is just severity** | adjust Q1->Q4 gradient for Charlson+Elixhauser+#vaso | **PENDING** (Round-2 agent) |
+| 15 | **Dose-response gradient is just severity** | crude quartile mortality [0.14,0.20,0.32,0.65]; FULL-adjusted (age+Charlson+vanWalraven+#vaso) [0.18,0.22,0.32,0.57] still strictly MONOTONE (Q4/Q1 RR ~3.3, per-SD OR 3.05). Comorbidity barely attenuates; only #vaso does | **SURVIVES** |
 | 16 | **"Beyond severity" unproven (lactate/SOFA unrun)** -- the one CRITICAL hole | run mimic_sofa_lactate on real labevents | **PENDING** (2.4GB download ~33%, self-healing) |
 
 Disclosables (not fatal): selection (arterial-line/on-pressor denominator), no pre-registration
