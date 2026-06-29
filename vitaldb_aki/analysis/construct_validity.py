@@ -264,7 +264,7 @@ def run():
     px2, fx2, _ = _aligned(pheno, feats, TONE_FORM)
     conv_ff = _spearman_ci(px2, fx2)
     conv_ff["carrier"] = TONE_FORM
-    conv_ff["degenerate"] = (spread_ff["sd"] is not None and spread_ff["sd"] < 1e-6)
+    conv_ff["degenerate"] = (spread_ff["sd"] is not None and spread_ff["sd"] < 1e-4)
     conv_ff["note"] = ("DEGENERATE constant column (SD~0); correlation is tie-broken "
                        "NOISE and must not be relied on."
                        if conv_ff["degenerate"] else "informative")

@@ -10,7 +10,7 @@ Vasoplegia = low diastolic tone -> the requirement should correlate **negatively
 **Data-quality flag (verified, load-bearing).** The originally-named tone carrier `map_dia_form_factor` is a **DEGENERATE constant** (value 0.3333, SD=1e-06 across n=640 cases) -- it carries NO variance, so any correlation against it is tie-broken noise. The real diastolic-tone variation lives in `diastolic_over_map` (SD=0.043897, range [0.5827, 0.8774]). We therefore use `diastolic_over_map` as the primary carrier.
 
 - Requirement vs `diastolic_over_map` (REAL tone carrier): **Spearman -0.0287** (95% CI [-0.3401, 0.278], p=0.85143, n=45).
-- For the record, vs degenerate `map_dia_form_factor`: Spearman -0.2628 -- informative
+- For the record, vs degenerate `map_dia_form_factor`: Spearman -0.2628 -- DEGENERATE constant column (SD~0); correlation is tie-broken NOISE and must not be relied on.
 - Expected direction: NEGATIVE (vasoplegic = LOW diastolic tone = low diastolic_over_map -> high requirement).
 
 ## 2. DISCRIMINANT validity vs PRELOAD / hypovolemia (PPV)
@@ -20,6 +20,8 @@ High pulse-pressure variation (`art_ppv_burden_min`) marks hypovolemia / preload
 - Head-to-head on the common subset (n=45): r_vs_tone=-0.0287, r_vs_ppv=0.3791.
 - Partial Spearman: tone | PPV = -0.2094; PPV | tone = 0.4336.
 - Tone effect larger in magnitude than PPV effect: False.
+
+**Reading.** The preload (PPV) relationship is at least as strong as the tone relationship, and BOTH survive partialling out the other -- the requirement is a **mixed preload + tone** vasopressor-need signal, not a clean vasoplegia index. Note that PPV acts as a *suppressor*: removing it strengthens the tone signal from -0.0287 (raw) to -0.2094 (partial), which is the only place a material vasoplegia-direction tone effect appears.
 
 ## 3. SVR anchor (the direct gold standard) -- honest re-report
 - Requirement vs `EV1000 svr_mean (epoch-mean)`: **Spearman 0.1429** (95% CI [-0.4214, 0.6458], p=0.61152, **n=15**).
@@ -49,7 +51,8 @@ High pulse-pressure variation (`art_ppv_burden_min`) marks hypovolemia / preload
 PARTIALLY SUPPORTED. After correcting a data-quality defect (the named tone carrier map_dia_form_factor is a degenerate constant, so the earlier -0.26 convergent value was noise), the requirement's correlation with the REAL diastolic-tone carrier is -0.0287 (n=45, CI [-0.3401, 0.278]) -- right-signed but near-null. On discriminant validity the requirement tracks PPV/preload (r=0.3791) as strongly as -- or more strongly than -- tone, and both survive mutual partialling: it is a MIXED preload+tone vasopressor-need signal, not a pure vasoplegia index. It does run higher in vasoplegia-prone surgery (1.24x) but not significantly. The DIRECT SVR anchor (n=15) still points the WRONG way (+0.1429). BOTTOM LINE for the reviewer's attack: the attack LANDS in part -- the construct is NOT shown to be specifically vascular-tone. The evidence supports a weaker, honest claim: the requirement is a generic 'vasopressor-need / hemodynamic fragility' phenotype with a tone component, not a validated vasoplegia-specific marker. The vasoplegia label is aspirational until a powered independent SVR cohort confirms it.
 
 ### What a reviewer should STILL doubt
-1. **Estimator-vs-estimator convergence.** The tone carrier (`map_dia_form_factor`) is itself an arterial-waveform *estimator* of tone, not a gold-standard SVR. Convergent validity here is two A-line-derived quantities agreeing -- suggestive, not dispositive.
+0. **The raw convergent correlation is near-null** (diastolic_over_map r=-0.0287). The vasoplegia-direction tone signal only emerges as a *partial* (tone | PPV = -0.2094) once preload is removed -- i.e. PPV acts as a suppressor. This is real but indirect, and depends on the partialling model.
+1. **Estimator-vs-estimator convergence.** The tone carrier (`diastolic_over_map`) is itself an arterial-waveform *estimator* of tone, not a gold-standard SVR. Convergent validity here is two A-line-derived quantities agreeing -- suggestive, not dispositive.
 2. **The gold-standard SVR points the wrong way (n=15, +sign).** Until a properly powered independent-CO SVR cohort tests the requirement directly, the vasoplegia label rests on convergent + etiologic evidence, not the anchor.
 3. **Discriminant power is N-limited.** PPV separation is estimated on a small common subset (n=45); confounding by mixed hypovolemia+vasoplegia (common in liver tx) is not fully excluded.
 4. **Requirement = management x physiology.** MAP-band + norepi-only conditioning blunts the 'deep anaesthesia / bradycardia / drug-identity' confounds the attack names, but observational management is not removed.
