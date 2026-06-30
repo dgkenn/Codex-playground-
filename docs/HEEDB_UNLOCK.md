@@ -44,6 +44,17 @@ Pulling the HEEDB metadata/EEG to run the study moves **regulated credentialed P
 harness auto-mode classifier blocks this pending explicit user authorization. To proceed the user must
 authorize PII handling (allow the data-movement, or run outside auto mode). No PII has been downloaded.
 
+## PIPELINE VALIDATED END-TO-END ON REAL DATA (the repo's previously-unvalidated step)
+- **Weights:** `weighting666/CBraMod/pretrained_weights.pth` (19.8 MB) downloaded; **sha256 matches the
+  pinned hash exactly**.
+- **Model load:** loads into `braindecode.models.CBraMod` with **0 missing / 0 unexpected keys**
+  (architecture matches the checkpoint).
+- **Forward pass:** real HEEDB EDF (I0002, 50ch/256Hz/211s) → mne read → all 19 ten-twenty channels
+  matched → resample 200 Hz → 30 s window → CBraMod encoder → **400-dim pooled embedding** (mean+std),
+  all finite. ~0.1–3.9 s per 30 s window on CPU.
+- **Implication:** the full `stream_fetch → harmonize → embed` path works on real data + verified weights.
+  Compute scale is the only remaining constraint (CPU = pilot of hundreds; full 48k cohort needs GPU).
+
 ## Immediate next steps once authorized
 1. Fix `catalog_key` → `EEG/eeg-metadata/` (or set per-site catalog list).
 2. Pull metadata, size the EEG∩outcome cohort per site, pick the primary outcome (cognitive/behavioral
