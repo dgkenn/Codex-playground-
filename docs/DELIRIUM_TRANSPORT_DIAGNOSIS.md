@@ -28,6 +28,33 @@ the clinical signal that generalizes**. Removing EEG should drop external perfor
 floor (~0.80 here), not to chance (0.58) — so the model is also mis-calibrated / overfit on the
 derivation distribution, beyond just the missing-EEG branch.
 
+## Cross-hospital external validation (executed): MIMIC → eICU
+Trained the transportable clinical model on MIMIC (n=50,148; F05 delirium 3.1%) and tested on **eICU**
+(n=116,660; delirium from the diagnosis table, 1.1%) — an independent ~200-hospital system. Common 11
+features, **no EEG**, standardized on MIMIC statistics:
+
+| Model | MIMIC in-sample AUC | **eICU external AUC** |
+|---|---|---|
+| Full (incl. comorbidity-burden count) | 0.776 | **0.819** |
+| **Clean physiology only** (age, sex, LOS, vent, 6 labs — drop comorbidity count) | 0.680 | **0.617** |
+
+**Honest reading (the robustness check is load-bearing):** the 0.82 is **substantially inflated by the
+comorbidity-burden count**, which (i) is defined differently in each database (MIMIC distinct-ICD count vs
+eICU diagnosis-row count) and (ii) is confounded by **documentation intensity** — patients with more codes
+are more likely to have delirium *coded*, an ascertainment artifact, not pure risk. The genuinely
+transportable **physiological** signal (labs + age + ventilation) externally validates at **AUC ~0.62** —
+real and reproducible across hospitals, but **modest**, and only a little above the EEG-dependent model's
+0.58.
+
+### Refined verdict
+- The 0.90→0.58 collapse is **partly** transport failure (a transportable model does better) **and partly
+  genuine difficulty**: clean physiological delirium prediction tops out ~0.62 externally.
+- Comorbidity/documentation burden adds a lot of *apparent* AUC (→0.82) but is ascertainment-confounded —
+  not a clean predictor to build a deployable model on.
+- **Therefore the real high-impact question stands: does intraoperative EEG add genuine incremental value
+  over the ~0.62 transportable physiological base?** That is exactly what cannot be tested on reachable
+  data (no intraop-EEG + delirium cohort) — and is the contribution if an EEG-bearing cohort is unlocked.
+
 ## The fix = the publishable contribution
 A delirium model that **externally validates** — where DELPHI-EEG (single-center, no external validation)
 and `production_xgb_735` (0.90→0.58) do not — is itself the high-impact result, and it is reachable now:
