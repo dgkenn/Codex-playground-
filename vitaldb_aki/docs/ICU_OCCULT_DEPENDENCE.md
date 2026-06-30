@@ -52,6 +52,12 @@ At-target = median first-24h MAP in [65, 85] AND <10% of readings below 65 (n=7,
 - **Multiple-imputation pooled** (MICE m=10, Rubin's rules, full at-target cohort n=7,836) =
   **2.04 [1.85, 2.24]** — HIGHER than the complete-case 1.84 (complete cases were sicker, so 1.84 was
   conservative); the informative-missingness threat is resolved and the finding generalizes.
+  **E-value of the MICE primary** (p0=0.124): **3.01 (point) / 2.74 (CI-LB)** — stronger than the
+  earlier-cited 2.5 (which belonged to the complete-case sensitivity). MICE caveat: labs imputed on raw
+  (not log) scale — minor precision loss, does not change the OR.
+- **Within-severity persistence INSIDE at-target** (Round-4, resolves a confounding gap): requirement
+  OR/SD by first-24h lactate tertile = **2.30 [1.83,3.01] / 3.27 [2.41,4.68] / 2.72 [2.21,3.56]** —
+  3/3 strata exclude 1, so the dose-response is not explained by within-stratum severity.
 - **Invasive (art-line) MAP only** (n=6,301): age-adj OR **3.10 [2.82, 3.45]**, gradient 10.5× — the
   signal is STRONGER where the pressure is genuinely regulated, exactly as the mechanism predicts.
 
@@ -69,10 +75,16 @@ Out-of-fold AUC for post-24h mortality:
 Within the at-target band the requirement carries strong mortality information (AUC 0.74) while MAP
 carries essentially none (AUC 0.47).
 
-**The information GAP is the novel quantity (Round-3 reframe).** Comparing the requirement-vs-MAP AUC
-gap ACROSS strata: **0.156** in the not-at-target stratum vs **0.268** at target — the gap nearly
-doubles once MAP is regulated to goal. This is the defensible, non-artifactual headline (the MAP AUC
-0.47 is partly restriction-of-range; the requirement AUC 0.74 and the across-stratum gap are not).
+**The information gap (Round-4 correction — "doubling" RETIRED).** The requirement-vs-MAP AUC gap is
+0.156 not-at-target vs 0.268 at-target, but a code-level decomposition shows this widening is **72% a
+MAP restriction-of-range artifact** (MAP AUC drop −0.080, mechanical: MAP SD falls from 9.1 to 4.0 in
+the band) and only **28% genuine requirement signal** (requirement AUC rise +0.031 [0.012, 0.051]).
+So "the gap doubles" is mostly an artifact and is RETIRED as a headline. The load-bearing, non-
+artifactual quantity is the **requirement AUC within the at-target stratum: 0.743** (vs 0.712 not-at-
+target) — real, stable across age tertiles (0.743/0.756/0.743), survives MICE, not explained by severity
+(lactate is identical across strata, 3.16 vs 3.17). The honest claim: *among normal-MAP ICU patients the
+dose discriminates mortality (AUC 0.74) while the pressure carries essentially none (AUC ≈0.50, partly by
+construction)* — a monitoring-relevant fact, modest and incremental relative to VIS/VDI/BPRI.
 
 **Collider test (the deepest Round-3 attack — PASSED).** "At-target MAP" is a post-treatment node, so
 conditioning on it could in principle induce a spurious dose–severity association (collider). Decisive
