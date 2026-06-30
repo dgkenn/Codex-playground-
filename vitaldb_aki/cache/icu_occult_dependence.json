@@ -56,5 +56,15 @@
     },
     "auc_requirement_within_band": 0.7428366963880786,
     "auc_MAP_within_band": 0.47498482776139234
+  },
+  "at_target_full_adjust_MICE": {
+    "m": 10,
+    "n": 7836,
+    "or_per_sd": 2.036,
+    "ci": [
+      1.852,
+      2.238
+    ],
+    "note": "MICE (chained linear imputation of SOFA labs) + Rubin's-rules pooled fully-adjusted requirement OR within the at-target stratum"
   }
 }
