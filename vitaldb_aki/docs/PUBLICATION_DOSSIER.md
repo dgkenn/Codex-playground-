@@ -12,6 +12,19 @@ limitations. Detailed methods live in the per-finding docs (cross-referenced).
 > (docstring/code baseline contradiction fixed). Finding 3 DEMOTED from co-primary to exploratory
 > (not separable from Finding 4 load; thin adjustment; co-exposed collider; null VitalDB test).
 
+> **Round-1 hostile-review reframe (RED_TEAM_ROUND1_SYNTHESIS.md) — the paper's spine changed:**
+> Prior-art (PubMed) shows "vasopressor load → mortality" IS the VIS literature (2024 meta-analysis,
+> 58 studies; Roberts 2020; Saugel BJA 2025) → that framing is a DESK-REJECT. **The novel, load-bearing
+> contribution is RELIABILITY: the vasopressor requirement is a stable, reproducible patient TRAIT
+> (split-half 0.82/0.87, ICC 0.95) — unaddressed by prior art.** Lead with the trait + control-theory
+> *why*; dose→mortality is the *consequence*; confront VIS in the intro. Corrections: (a) fully-adjusted
+> prospective landmark OR **1.74 [1.57, 1.91]**, E-value **~2.1–2.3** (the headline ~6 does NOT transport
+> to the landmark); (b) control-theory mechanism is scoped to VitalDB (MAP-conditioned), NOT the MIMIC
+> MAP-unconditional quantity that carries the prospective result; (c) propofol negative-control DEMOTED
+> to exploratory (collider — restricted to norepi∩propofol) — confounding now rests on E-value +
+> within-severity (8/8) + homogeneous restriction. Reliability robustness (subject-clustering) and full
+> independent reproduction both PASS. Target tier: Anesthesiology (conditional on reframe) / BJA / A&A.
+
 ## Unifying concept (control theory)
 Intraoperative arterial pressure is a feedback-REGULATED variable: clinicians titrate vasopressor
 to hold MAP at target, so the hemodynamic insult is encoded in the DOSE (controller effort), not

@@ -158,6 +158,56 @@ def _load_lactate():
     return lac
 
 
+def _load_sofa_labs():
+    """hadm_id -> {creatinine, bilirubin, platelets} (the SOFA renal/hepatic/coag lab
+    components, from cache/mimic_labs24h.csv). Missing component -> None."""
+    out = {}
+    if not os.path.exists(LABS_CSV):
+        return out
+    with open(LABS_CSV, newline="") as fh:
+        for row in _csv.DictReader(fh):
+            d = {}
+            for k in ("creatinine", "bilirubin", "platelets"):
+                v = row.get(k)
+                try:
+                    d[k] = float(v) if v not in (None, "", "nan") else None
+                except ValueError:
+                    d[k] = None
+            out[row["hadm_id"]] = d
+    return out
+
+
+def _load_comorbidity():
+    """hadm_id -> count of distinct ICD diagnosis codes (a raw comorbidity-burden proxy,
+    streamed from diagnoses_icd.csv.gz under MIMIC_RAW)."""
+    path = os.path.join(MIMIC_RAW, "diagnoses_icd.csv.gz")
+    counts = {}
+    if not os.path.exists(path):
+        return counts
+    seen = {}
+    with gzip.open(path, "rt") as fh:
+        for row in _csv.DictReader(fh):
+            h = row.get("hadm_id")
+            code = row.get("icd_code")
+            if not h or not code:
+                continue
+            s = seen.setdefault(h, set())
+            s.add(code)
+    for h, s in seen.items():
+        counts[h] = len(s)
+    return counts
+
+
+def _evalue_or(or_, p0):
+    """VanderWeele E-value via the OR->RR approximation for a common outcome
+    (RR = OR / (1 - p0 + p0*OR)); E = RR + sqrt(RR*(RR-1)) (or the reciprocal side
+    for OR<1). Returns (approx_rr, evalue)."""
+    rr = or_ / (1 - p0 + p0 * or_)
+    r = rr if rr >= 1 else 1.0 / rr
+    ev = r + (r * (r - 1)) ** 0.5
+    return round(rr, 3), round(ev, 2)
+
+
 def _adj_or_per_sd(x, y, covars):
     """Age(+covars)-adjusted logistic OR per SD of x, with 95% CI by bootstrap.
     x is log1p(NEE); covars is a list of equal-length arrays (or empty)."""
@@ -225,13 +275,16 @@ def _quartile_gradient(nee, y):
                                          for i in range(3)))}
 
 
-def model(dopamine_weight=0.01):
+def model(dopamine_weight=0.01, full_adjust=False):
     import numpy as np
     stay_link, hadm_death, subj_age = _load_links_with_death()
     lac = _load_lactate()
+    sofa = _load_sofa_labs() if full_adjust else {}
+    comorb = _load_comorbidity() if full_adjust else {}
     summ = _nee_first_window(stay_link, dopamine_weight=dopamine_weight)
 
     nee_load, nee_peak, age, lact, y = [], [], [], [], []
+    creat, bili, plt, ncomorb = [], [], [], []
     n_pressor = 0
     excl_dead_pre = 0
     excl_no_age = 0
@@ -259,6 +312,11 @@ def model(dopamine_weight=0.01):
         age.append(a)
         lact.append(lac.get(link["hadm"]))
         y.append(died)
+        sl = sofa.get(link["hadm"], {})
+        creat.append(sl.get("creatinine"))
+        bili.append(sl.get("bilirubin"))
+        plt.append(sl.get("platelets"))
+        ncomorb.append(comorb.get(link["hadm"]))
 
     n = len(y)
     logload = [float(np.log1p(v)) for v in nee_load]
@@ -268,6 +326,7 @@ def model(dopamine_weight=0.01):
     # lactate-adjusted subset
     mask = [i for i in range(n) if lact[i] is not None]
     lac_res = None
+    age_only_on_lac_subset = None  # S2: is the 2.57->2.27 move lactate or selection?
     if len(mask) > 50:
         ll = [logload[i] for i in mask]
         yy = [y[i] for i in mask]
@@ -275,9 +334,11 @@ def model(dopamine_weight=0.01):
         lv = [lact[i] for i in mask]
         lac_res = _adj_or_per_sd(ll, yy, [aa, lv])
         lac_res["subset_n"] = len(mask)
+        age_only_on_lac_subset = _adj_or_per_sd(ll, yy, [aa])  # same n, age only
+        if age_only_on_lac_subset:
+            age_only_on_lac_subset["subset_n"] = len(mask)
 
-    overall_mort = float(np.mean(y)) if n else None
-    return {
+    out = {
         "design": "LANDMARK: NEE accumulated over first-24h ICU window; cohort restricted "
                   "to patients ALIVE at the 24h landmark; outcome = subsequent in-hospital death",
         "dopamine_weight": dopamine_weight,
@@ -285,15 +346,42 @@ def model(dopamine_weight=0.01):
         "n_excluded_dead_before_landmark": excl_dead_pre,
         "n_excluded_no_age": excl_no_age,
         "n_analyzed": n,
-        "overall_post_landmark_mortality": round(overall_mort, 4) if overall_mort is not None else None,
+        "overall_post_landmark_mortality": round(float(np.mean(y)), 4) if n else None,
         "age_adj_or_per_sd_logNEEload": res_age,
         "age_lactate_adj_or_per_sd": lac_res,
+        "age_only_or_on_lactate_subset_S2": age_only_on_lac_subset,
         "quartile_gradient": grad,
     }
 
+    # ---- FULL severity adjustment (S2/causal-Issue-3): age + lactate + SOFA labs + comorbidity ----
+    if full_adjust:
+        fmask = [i for i in range(n) if all(v is not None for v in
+                 (lact[i], creat[i], bili[i], plt[i], ncomorb[i]))]
+        if len(fmask) > 50:
+            ll = [logload[i] for i in fmask]
+            yy = [y[i] for i in fmask]
+            covs = [[age[i] for i in fmask], [lact[i] for i in fmask],
+                    [creat[i] for i in fmask], [bili[i] for i in fmask],
+                    [plt[i] for i in fmask], [ncomorb[i] for i in fmask]]
+            full_res = _adj_or_per_sd(ll, yy, covs)
+            full_res["subset_n"] = len(fmask)
+            # age-only on the SAME full-complete subset -> isolates adjustment vs selection
+            age_only_full_subset = _adj_or_per_sd(ll, yy, [[age[i] for i in fmask]])
+            p0 = float(np.mean(yy))
+            ev = _evalue_or(full_res["or_per_sd"], p0)
+            full_res["evalue_point"] = {"approx_rr": ev[0], "evalue": ev[1], "p0": round(p0, 4)}
+            if full_res.get("ci"):
+                ev_lb = _evalue_or(full_res["ci"][0], p0)
+                full_res["evalue_ci_lb"] = {"approx_rr": ev_lb[0], "evalue": ev_lb[1]}
+            out["full_severity_adj_or_per_sd"] = full_res
+            out["age_only_or_on_full_subset"] = age_only_full_subset
+            out["full_adjust_covariates"] = ["age", "lactate", "creatinine", "bilirubin",
+                                             "platelets", "comorbidity_count"]
+    return out
+
 
 def run():
-    primary = model(dopamine_weight=0.01)
+    primary = model(dopamine_weight=0.01, full_adjust=True)
     dopa_sens = model(dopamine_weight=0.05)
     out = {
         "primary_dopa0.01": primary,

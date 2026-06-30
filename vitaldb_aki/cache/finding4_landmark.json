@@ -24,6 +24,15 @@
       "n": 7452,
       "subset_n": 7452
     },
+    "age_only_or_on_lactate_subset_S2": {
+      "or_per_sd": 2.649,
+      "ci": [
+        2.435,
+        2.913
+      ],
+      "n": 7452,
+      "subset_n": 7452
+    },
     "quartile_gradient": {
       "q_mortality": [
         0.06,
@@ -40,7 +49,41 @@
       "q1": 0.06,
       "q4": 0.3344,
       "monotone_nondecr": true
-    }
+    },
+    "full_severity_adj_or_per_sd": {
+      "or_per_sd": 1.743,
+      "ci": [
+        1.573,
+        1.906
+      ],
+      "n": 4260,
+      "subset_n": 4260,
+      "evalue_point": {
+        "approx_rr": 1.476,
+        "evalue": 2.31,
+        "p0": 0.2434
+      },
+      "evalue_ci_lb": {
+        "approx_rr": 1.38,
+        "evalue": 2.11
+      }
+    },
+    "age_only_or_on_full_subset": {
+      "or_per_sd": 2.176,
+      "ci": [
+        1.967,
+        2.4
+      ],
+      "n": 4260
+    },
+    "full_adjust_covariates": [
+      "age",
+      "lactate",
+      "creatinine",
+      "bilirubin",
+      "platelets",
+      "comorbidity_count"
+    ]
   },
   "sensitivity_dopa0.05": {
     "n_analyzed": 23925,
