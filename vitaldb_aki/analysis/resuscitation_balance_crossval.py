@@ -390,7 +390,7 @@ def _mimic_balance(summ, stay_link, hadm_death, subj_age, lactate):
     mortality, age-adjusted and lactate-adjusted (subset with lactate). Also tertile gradient."""
     import numpy as np
     EPS = 1e-3
-    bal, age, death, lac, fluid_mlkg, nee = [], [], [], [], [], []
+    bal, age, death, lac, fluid_mlkg, nee, has_p = [], [], [], [], [], [], []
     n_no_weight = 0
     for sid, s in summ.items():
         link = stay_link.get(sid)
@@ -411,27 +411,49 @@ def _mimic_balance(summ, stay_link, hadm_death, subj_age, lactate):
         f_mlkg = s["fluid_ml"] / wt
         balance = math.log((s["nee_load"] + EPS) / (f_mlkg + EPS))
         bal.append(balance); age.append(a); death.append(dd)
-        fluid_mlkg.append(f_mlkg); nee.append(s["nee_load"])
+        fluid_mlkg.append(f_mlkg); nee.append(s["nee_load"]); has_p.append(s["has_pressor"])
         lac.append(lactate.get(link["hadm"]))
     bal = np.asarray(bal, float); age = np.asarray(age, float); death = np.asarray(death, int)
+    fluid_mlkg = np.asarray(fluid_mlkg, float); nee = np.asarray(nee, float)
+    has_p = np.asarray(has_p, bool)
     out = {"n": int(len(bal)), "deaths": int(death.sum()),
            "n_dropped_no_weight": n_no_weight,
-           "median_fluid_mlkg": round(float(np.median(fluid_mlkg)), 1) if fluid_mlkg else None,
-           "median_nee_load": round(float(np.median(nee)), 2) if nee else None}
+           "median_fluid_mlkg": round(float(np.median(fluid_mlkg)), 1) if len(fluid_mlkg) else None,
+           "median_nee_load": round(float(np.median(nee)), 2) if len(nee) else None}
     if len(bal) < 200:
         out["note"] = "too few"
         return out
-    # age-adjusted
+    # age-adjusted (full cohort: low-balance tertile is dominated by NO-pressor stays, so the
+    # raw balance partly encodes 'received a pressor at all' -- documented; see co-exposed below)
     out["balance_vs_mortality_age_adj"] = _adj_logit([age, bal], death, ["age", "balance"])
-    # tertile gradient (fluid-predominant -> pressor-predominant)
     out["tertiles"] = _tertile_rates(bal, death)
-    # lactate-adjusted (subset)
+    out["frac_no_pressor_in_lowest_tertile"] = None
+    order = np.argsort(bal, kind="mergesort"); ranks = np.empty(len(bal), int)
+    ranks[order] = np.arange(len(bal)); t = (ranks * 3 // len(bal)).clip(0, 2)
+    out["frac_no_pressor_in_lowest_tertile"] = round(float(np.mean(~has_p[t == 0])), 3)
+    # CO-EXPOSED honest version: stays that got BOTH a pressor AND fluid -> balance is a true
+    # ratio of two non-zero exposures (no 'received-a-pressor' confound).
+    co = has_p & (fluid_mlkg > 0)
+    out["n_coexposed"] = int(co.sum())
+    if co.sum() >= 200:
+        out["balance_coexposed_age_adj"] = _adj_logit(
+            [age[co], bal[co]], death[co], ["age", "balance"])
+        out["tertiles_coexposed"] = _tertile_rates(bal[co], death[co])
+    else:
+        out["balance_coexposed_age_adj"] = {"note": "too few co-exposed"}
+    # lactate-adjusted (subset) -- on the full cohort
     lac_arr = np.array([x if x is not None else np.nan for x in lac], float)
     m = np.isfinite(lac_arr)
     if m.sum() >= 200:
         out["n_with_lactate"] = int(m.sum())
         out["balance_vs_mortality_age_lactate_adj"] = _adj_logit(
             [age[m], np.log1p(lac_arr[m]), bal[m]], death[m], ["age", "log_lactate", "balance"])
+        # co-exposed AND lactate -- the strictest cell
+        ml = m & co
+        if ml.sum() >= 200:
+            out["balance_coexposed_age_lactate_adj"] = _adj_logit(
+                [age[ml], np.log1p(lac_arr[ml]), bal[ml]], death[ml],
+                ["age", "log_lactate", "balance"])
     else:
         out["n_with_lactate"] = int(m.sum())
         out["balance_vs_mortality_age_lactate_adj"] = {"note": "too few with lactate"}
@@ -591,7 +613,10 @@ def _inspire_nee():
 def _v_balance_mimic(b):
     aa = b.get("balance_vs_mortality_age_adj", {})
     la = b.get("balance_vs_mortality_age_lactate_adj", {})
+    co = b.get("balance_coexposed_age_adj", {})
+    col = b.get("balance_coexposed_age_lactate_adj", {})
     t = b.get("tertiles", {})
+    tc = b.get("tertiles_coexposed", {})
     if not aa.get("adj_or_per_sd"):
         return "INSUFFICIENT MIMIC balance data."
     s = (f"FLUID-vs-PRESSOR BALANCE -> in-hospital mortality (MIMIC, n={b['n']}, "
@@ -599,10 +624,21 @@ def _v_balance_mimic(b):
          f"(higher = more pressor-predominant; AUC +{aa['delta_auc']} over age). "
          f"Tertile mortality {t.get('mortality_per_tertile')} "
          f"(fluid->pressor predominant; monotone {t.get('monotonic_nondecreasing')}, "
-         f"CA p={t.get('cochran_armitage_p')}).")
+         f"CA p={t.get('cochran_armitage_p')}) -- NB the lowest tertile is "
+         f"{b.get('frac_no_pressor_in_lowest_tertile')} no-pressor stays, so raw balance partly "
+         f"encodes 'got a pressor at all'.")
+    if co.get("adj_or_per_sd"):
+        s += (f" CO-EXPOSED (both pressor+fluid, n={b.get('n_coexposed')}): age-adj OR "
+              f"{co['adj_or_per_sd']}/SD {co.get('ci')}, tertile mortality "
+              f"{tc.get('mortality_per_tertile') if tc else None} (monotone "
+              f"{tc.get('monotonic_nondecreasing') if tc else None}) -- the clean within-resuscitated "
+              f"gradient: pressor-predominant is worse.")
     if la.get("adj_or_per_sd"):
-        s += (f" Lactate-adjusted (n={b.get('n_with_lactate')}): OR {la['adj_or_per_sd']}/SD "
-              f"{la.get('ci')} -- {'survives' if la['adj_or_per_sd'] > 1.1 else 'attenuates to ~null under'} "
+        s += (f" Lactate-adjusted full (n={b.get('n_with_lactate')}): OR {la['adj_or_per_sd']}/SD "
+              f"{la.get('ci')}")
+        if col.get("adj_or_per_sd"):
+            s += f"; co-exposed+lactate OR {col['adj_or_per_sd']}/SD {col.get('ci')}"
+        s += (f" -- {'survives' if la['adj_or_per_sd'] > 1.1 else 'attenuates under'} "
               f"severity (lactate) adjustment.")
     else:
         s += " Lactate-adjusted: insufficient lactate coverage."
@@ -706,10 +742,16 @@ def _doc(res):
          "Balance = log((NEE-load + eps) / (fluid mL/kg + eps)); higher = more pressor-predominant.",
          f"- n={b.get('n')}, deaths={b.get('deaths')}, dropped (no weight)={b.get('n_dropped_no_weight')}; "
          f"median fluid {b.get('median_fluid_mlkg')} mL/kg, median NEE-load {b.get('median_nee_load')}.",
-         f"- Age-adjusted: {b.get('balance_vs_mortality_age_adj')}",
-         f"- Tertiles (fluid->pressor predominant): {b.get('tertiles')}",
-         f"- Lactate-adjusted (n with lactate={b.get('n_with_lactate')}): "
+         f"- Age-adjusted (full): {b.get('balance_vs_mortality_age_adj')}",
+         f"- Tertiles full (fluid->pressor predominant): {b.get('tertiles')}",
+         f"  (lowest tertile is {b.get('frac_no_pressor_in_lowest_tertile')} NO-pressor stays -> "
+         f"raw balance partly encodes 'got a pressor at all'; see co-exposed below for the clean read).",
+         f"- CO-EXPOSED (pressor+fluid both, n={b.get('n_coexposed')}) age-adjusted: "
+         f"{b.get('balance_coexposed_age_adj')}",
+         f"- CO-EXPOSED tertiles: {b.get('tertiles_coexposed')}",
+         f"- Lactate-adjusted full (n with lactate={b.get('n_with_lactate')}): "
          f"{b.get('balance_vs_mortality_age_lactate_adj')}",
+         f"- Lactate-adjusted CO-EXPOSED: {b.get('balance_coexposed_age_lactate_adj')}",
          "", "**Verdict A (MIMIC):** " + res["verdict_A_balance_mimic"], "",
          "### A. Intra-op validation (VitalDB -> post-op AKI organ_renal)",
          "Intraop fluid = crystalloid + colloid (mL); pressor index = phe + eph + epi (mg, "
