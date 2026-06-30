@@ -278,8 +278,127 @@ def model(dopamine_weight=0.01, band=(65.0, 85.0), max_frac_below=0.10):
     }
 
 
+def _mice_or(rows, lab_keys, m=10, cycles=12, seed=20260630):
+    """Multiple imputation by chained equations for the missing SOFA labs in the at-target
+    stratum, pooling the fully-adjusted requirement OR via Rubin's rules. Addresses the
+    informative-missingness CRITICAL (complete-case full-adjust was a sicker subset).
+
+    Imputation model per lab: linear regression on the other variables (age, log-NEE,
+    map_median, comorbidity, the other labs, and the outcome) + residual draw. Outcome model:
+    died ~ z(lognee) + z(age) + z(lab...) + z(comorbidity). Returns pooled OR/SD + 95% CI."""
+    import numpy as np
+    rng = np.random.RandomState(seed)
+    # base complete predictors (require age, lognee, map, comorbidity, died present)
+    base = [r for r in rows if r.get("comorb") is not None]
+    if len(base) < 200:
+        return None
+    n = len(base)
+    age = np.array([r["age"] for r in base], float)
+    lognee = np.array([r["lognee"] for r in base], float)
+    mapm = np.array([r["map_med"] for r in base], float)
+    com = np.array([r["comorb"] for r in base], float)
+    died = np.array([r["died"] for r in base], float)
+    labs = {k: np.array([np.nan if r[k] is None else r[k] for r in base], float) for k in lab_keys}
+    miss = {k: np.isnan(labs[k]) for k in lab_keys}
+    # init missing with observed mean
+    for k in lab_keys:
+        labs[k][miss[k]] = np.nanmean(labs[k])
+
+    def design(exclude):
+        cols = [np.ones(n), age, lognee, mapm, com, died]
+        for k in lab_keys:
+            if k != exclude:
+                cols.append(labs[k])
+        return np.column_stack(cols)
+
+    log_ors, vars_ = [], []
+    for _imp in range(m):
+        for _c in range(cycles):
+            for k in lab_keys:
+                if not miss[k].any():
+                    continue
+                X = design(k)
+                obs = ~miss[k]
+                try:
+                    beta, *_ = np.linalg.lstsq(X[obs], labs[k][obs], rcond=None)
+                    resid = labs[k][obs] - X[obs] @ beta
+                    sd = resid.std() or 1.0
+                    pred = X[miss[k]] @ beta + rng.normal(0, sd, miss[k].sum())
+                    labs[k][miss[k]] = pred
+                except np.linalg.LinAlgError:
+                    pass
+        # fit outcome logistic on this completed dataset
+        feats = [lognee, age, com] + [labs[k] for k in lab_keys]
+        Z = np.column_stack([( (f - f.mean()) / (f.std() or 1.0) ) for f in feats])
+        X = np.column_stack([np.ones(n), Z])
+        b = np.zeros(X.shape[1])
+        for _ in range(80):
+            eta = np.clip(X @ b, -30, 30)
+            p = 1 / (1 + np.exp(-eta))
+            W = np.clip(p * (1 - p), 1e-6, None)
+            z = eta + (died - p) / W
+            try:
+                b = np.linalg.solve((X.T * W) @ X, (X.T * W) @ z)
+            except np.linalg.LinAlgError:
+                break
+        # var of the lognee coef (index 1) from the final IRLS Fisher info
+        try:
+            cov = np.linalg.inv((X.T * W) @ X)
+            se2 = cov[1, 1]
+        except np.linalg.LinAlgError:
+            se2 = np.nan
+        log_ors.append(b[1]); vars_.append(se2)
+    log_ors = np.array(log_ors); vars_ = np.array(vars_)
+    qbar = log_ors.mean()
+    ubar = np.nanmean(vars_)
+    bvar = log_ors.var(ddof=1) if m > 1 else 0.0
+    total = ubar + (1 + 1.0 / m) * bvar
+    se = total ** 0.5
+    return {"m": m, "n": n, "or_per_sd": round(float(np.exp(qbar)), 3),
+            "ci": [round(float(np.exp(qbar - 1.96 * se)), 3),
+                   round(float(np.exp(qbar + 1.96 * se)), 3)],
+            "note": "MICE (chained linear imputation of SOFA labs) + Rubin's-rules pooled "
+                    "fully-adjusted requirement OR within the at-target stratum"}
+
+
 def run():
     out = model()
+    # multiple-imputation pooled fully-adjusted OR for the at-target stratum (informative missingness fix)
+    try:
+        import numpy as np  # noqa
+        stay_link, hadm_death, subj_age = _load_links_with_death()
+        from finding4_landmark import _load_sofa_labs, _load_comorbidity
+        lac = _load_lactate(); sofa = _load_sofa_labs(); comorb = _load_comorbidity()
+        nee = _nee_first_window(stay_link)
+        mapsum = _map_first24(stay_link, MAP_RAW)
+        rows = []
+        for sid, s in nee.items():
+            if not s["has_pressor"] or sid not in mapsum:
+                continue
+            link = stay_link.get(sid)
+            if link is None:
+                continue
+            import numpy as _np
+            flag, dtime = hadm_death.get(link["hadm"], ("0", None))
+            landmark = link["intime"] + _dt.timedelta(hours=LANDMARK_H)
+            if dtime is not None and dtime <= landmark:
+                continue
+            a = subj_age.get(link["subject"])
+            if a is None or not _np.isfinite(a):
+                continue
+            ms = mapsum[sid]
+            if not (65.0 <= ms["map_median"] <= 85.0 and ms["frac_below_65"] <= 0.10):
+                continue
+            sl = sofa.get(link["hadm"], {})
+            rows.append({"lognee": float(_np.log1p(s["nee_load"])), "age": a,
+                         "map_med": ms["map_median"], "died": 1.0 if str(flag) == "1" else 0.0,
+                         "lactate": lac.get(link["hadm"]), "creatinine": sl.get("creatinine"),
+                         "bilirubin": sl.get("bilirubin"), "platelets": sl.get("platelets"),
+                         "comorb": comorb.get(link["hadm"])})
+        out["at_target_full_adjust_MICE"] = _mice_or(
+            rows, ["lactate", "creatinine", "bilirubin", "platelets"])
+    except Exception as e:  # keep the primary result even if MI fails
+        out["at_target_full_adjust_MICE"] = {"error": str(e)}
     with open(OUT_JSON, "w") as fh:
         json.dump(out, fh, indent=2)
     return out
