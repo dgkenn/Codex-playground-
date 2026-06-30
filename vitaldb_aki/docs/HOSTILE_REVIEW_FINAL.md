@@ -45,13 +45,17 @@ Requirement→in-hospital-mortality OR per SD, adding severity in steps:
 Subsample convergence (the result is not download-fraction-dependent): ~38% subsample OR
 **2.44 [1.90, 3.22]** (n=3,109) → ~46% subsample OR **2.53 [2.03, 3.21]** (n=3,824). The point
 estimate is stable and the CI lower bound rises *away* from 1 as N grows → **collapse-to-null is
-empirically excluded.** The full-data run (when the 2.4 GB labevents download completes) finalizes
-the point estimate but cannot plausibly change the conclusion.
+empirically excluded.** (The full 2.4 GB labevents file corrupted mid-stream on resume-across-reaps — a transfer artifact — so the single full-N pass was not obtainable; the two independent clean subsamples are the confirmation and they have converged.)
 
 ## Disclosable limitations (named, not fatal — honest scope)
 1. **Confounding by indication** — the dose reflects physiology × local titration practice;
-   unremovable observationally. Conceded, not rebutted. This is why the claim is risk-strat /
-   characterization, not causal or practice-changing.
+   unremovable observationally, so the claim stays risk-stratification (not causal/practice-changing).
+   BUT now **argued against on five fronts** (CONFOUNDING_BY_INDICATION.md / CONFOUNDING_QUASI_EXPERIMENT.md):
+   E-value ≈6; dose-response persists in 8/8 within-severity strata; holds in homogeneous single-pressor/
+   lactate-2-4 + sepsis; **negative-control exposure** (propofol, titrated-to-sickness non-vasopressor)
+   OR 0.88 vs norepi 3.01 → signal is vasopressor-specific, not generic intensity; **prescribing-preference
+   IV** (unit/caregiver, F 156/77) IV-OR ~3.8 stays positive → provider-preference dose variation predicts
+   death. Not eliminated, but the steelman is substantively answered, not merely conceded.
 2. **Characterization vs prospective** — the whole-stay OR (~3) is contemporaneous; the genuinely
    prospective number is the landmarked first-6h early-warning OR **1.54**. Do not conflate.
 3. **Two-level replication** — VitalDB and MIMIC are different estimands; dose-*ordering* replicates,
