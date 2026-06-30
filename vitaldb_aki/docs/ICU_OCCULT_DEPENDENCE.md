@@ -56,8 +56,17 @@ At-target = median first-24h MAP in [65, 85] AND <10% of readings below 65 (n=7,
   earlier-cited 2.5 (which belonged to the complete-case sensitivity). MICE caveat: labs imputed on raw
   (not log) scale — minor precision loss, does not change the OR.
 - **Within-severity persistence INSIDE at-target** (Round-4, resolves a confounding gap): requirement
-  OR/SD by first-24h lactate tertile = **2.30 [1.83,3.01] / 3.27 [2.41,4.68] / 2.72 [2.21,3.56]** —
-  3/3 strata exclude 1, so the dose-response is not explained by within-stratum severity.
+  OR/SD by first-24h lactate tertile = **2.30 [1.83,3.01] / 3.27 [2.41,4.68] / 2.72 [2.21,3.56]** (age-adj)
+  — 3/3 strata exclude 1, so the dose-response is not explained by within-stratum severity.
+- **Single-pressor (norepi-only) WITHIN at-target** (Round-4, resolves CRITICAL-R4-2): age+lactate OR
+  **1.64 [1.25, 2.17]** (n=652) — holds in a homogeneous-indication subset.
+- **Formal CI on the AUC gap:** at-target 0.268 [0.241,0.295], not-at-target 0.157 [0.141,0.173],
+  difference 0.111 [0.080,0.142], p<0.0001 — statistically real, but per the Round-4 crux it is 72%
+  restriction-of-range, so this is NOT a novelty headline.
+- **MICE caveats (Round-4):** CI uses z not t (≈7% too narrow); m=10 is modest for 67% missingness; labs
+  imputed on raw not log scale — none inflate the OR 2.04.
+- **Named primary limitations:** shock etiology and PaO2/FiO2 (ARDS) are each plausibly strong enough to
+  breach the E-value 2.74 on their own — confounding-by-indication is BOUNDED, not eliminated.
 - **Invasive (art-line) MAP only** (n=6,301): age-adj OR **3.10 [2.82, 3.45]**, gradient 10.5× — the
   signal is STRONGER where the pressure is genuinely regulated, exactly as the mechanism predicts.
 
