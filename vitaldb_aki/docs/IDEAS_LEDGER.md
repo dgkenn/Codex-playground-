@@ -94,3 +94,25 @@ Selected finding to drive to 100%: **the control-theory vasopressor-requirement 
 Now entering iterative hostile-review rounds (RED_TEAM_ROUND_*.md) until a full round surfaces no new
 conclusion-changing hole. Target framing for the paper is in REDTEAM_PUBLICATION_VERDICT.md (Finding 1
 + landmarked Finding 4).
+
+---
+
+## OUTCOME after 4 hostile-review rounds (final, see VASOPRESSOR_PROJECT_FINAL.md)
+| Round | What it killed / found |
+|---|---|
+| R1 | "trait" is not the novelty (dose→mortality IS the VIS literature); reframed to reliability-first |
+| R2 | reliability-as-trait KILLED: cross-encounter ICC **0.07** (the 0.95 was infusion autocorrelation) |
+| hunt | pivoted to a genuinely new angle: **occult dependence at normal pressure** (ICU) |
+| pull | streamed 30 GB MIMIC chartevents → per-stay MAP (7.58M rows, 76,500 stays) — clean |
+| R3 | occult-dependence SURVIVES: collider test passed, MICE OR **2.04 [1.85,2.24]**, invasive-only 3.10, reproduces exactly |
+| R4 | but INCREMENTAL: "information gap doubles" is **72% restriction-of-range artifact**; novel at-target move buys only **+0.031 AUC** over VIS/VDI/BPRI |
+
+| # | Idea | Final status |
+|---|---|---|
+| H1 | **Occult vasopressor dependence at normal pressure (ICU)** | **REAL but INCREMENTAL** — CCM/ICM supporting analysis, not standalone top-tier. Hardened (MICE OR 2.04, E-value 3.0/2.7, within-severity 3/3, single-pressor 1.64, collider passed). ICU_OCCULT_DEPENDENCE.md, REDTEAM_R3/R4_*.md |
+
+**Final verdict:** the vasopressor space yields a defensible CCM/ICM paper but NOT an Anesthesiology-tier-
+or-above *novel* standalone finding. Data ceiling reached. **User decision: PIVOT to new data/topic
+(option 3).** Reusable assets for any pivot: the disk-safe MIMIC stream-filter pattern, the landmark +
+MICE + collider-test machinery (finding4_landmark.py / icu_occult_dependence.py), and the per-stay MIMIC
+MAP extract. Do NOT re-mine the vasopressor→outcome vein — it is exhausted for top-tier novelty.
