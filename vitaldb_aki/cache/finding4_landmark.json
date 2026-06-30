@@ -1,0 +1,73 @@
+{
+  "primary_dopa0.01": {
+    "design": "LANDMARK: NEE accumulated over first-24h ICU window; cohort restricted to patients ALIVE at the 24h landmark; outcome = subsequent in-hospital death",
+    "dopamine_weight": 0.01,
+    "n_pressor_stays_first24h": 25119,
+    "n_excluded_dead_before_landmark": 1194,
+    "n_excluded_no_age": 0,
+    "n_analyzed": 23925,
+    "overall_post_landmark_mortality": 0.1602,
+    "age_adj_or_per_sd_logNEEload": {
+      "or_per_sd": 2.568,
+      "ci": [
+        2.452,
+        2.681
+      ],
+      "n": 23925
+    },
+    "age_lactate_adj_or_per_sd": {
+      "or_per_sd": 2.272,
+      "ci": [
+        2.104,
+        2.479
+      ],
+      "n": 7452,
+      "subset_n": 7452
+    },
+    "quartile_gradient": {
+      "q_mortality": [
+        0.06,
+        0.0973,
+        0.1491,
+        0.3344
+      ],
+      "q_n": [
+        5982,
+        5981,
+        5981,
+        5981
+      ],
+      "q1": 0.06,
+      "q4": 0.3344,
+      "monotone_nondecr": true
+    }
+  },
+  "sensitivity_dopa0.05": {
+    "n_analyzed": 23925,
+    "age_adj_or_per_sd_logNEEload": {
+      "or_per_sd": 2.604,
+      "ci": [
+        2.485,
+        2.718
+      ],
+      "n": 23925
+    },
+    "quartile_gradient": {
+      "q_mortality": [
+        0.0582,
+        0.0966,
+        0.1528,
+        0.3332
+      ],
+      "q_n": [
+        5982,
+        5981,
+        5981,
+        5981
+      ],
+      "q1": 0.0582,
+      "q4": 0.3332,
+      "monotone_nondecr": true
+    }
+  }
+}

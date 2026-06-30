@@ -4,6 +4,14 @@ Single reference for the four findings, written as the target for a publication-
 Each finding states the SCOPED claim, the key numbers, the cross-cohort evidence, and the honest
 limitations. Detailed methods live in the per-finding docs (cross-referenced).
 
+> **Post-red-team status (8-agent panel — see REDTEAM_PUBLICATION_VERDICT.md):** Finding 1 publishable
+> w/ major revisions (IV demoted to supportive — invalid-instrument signature). Finding 4 UPGRADED: the
+> landmark first-24h→subsequent-death test (FINDING4_LANDMARK.md) defeats the reverse-causation attack
+> (age+lactate OR 2.27 [2.10,2.48]); cross-cohort framing corrected to "directional concordance, different
+> estimands" (NOT a quantitative replication). Finding 2 publishable only in scoped predictive form
+> (docstring/code baseline contradiction fixed). Finding 3 DEMOTED from co-primary to exploratory
+> (not separable from Finding 4 load; thin adjustment; co-exposed collider; null VitalDB test).
+
 ## Unifying concept (control theory)
 Intraoperative arterial pressure is a feedback-REGULATED variable: clinicians titrate vasopressor
 to hold MAP at target, so the hemodynamic insult is encoded in the DOSE (controller effort), not
@@ -21,9 +29,11 @@ effect or practice-changer.
 - Mortality (MIMIC): age-adj OR 3.8/SD -> survives Charlson/Elixhauser (3.7-3.8) -> #vaso (3.0-3.1)
   -> lactate+SOFA labs (**2.4-2.5**, ~3.0 dropping the #vaso mediator). Dose-response Q1 14%->Q4 65%
   monotone, severity-adjusted Q4/Q1 RR 3.27. Confirmed by subsample convergence (38%/46%).
-- Confounding by indication ARGUED AGAINST on five fronts: E-value ~6; 8/8 within-severity strata;
-  homogeneous/sepsis restriction; propofol negative-control exposure (OR 0.88 vs norepi 3.01);
-  prescribing-preference IV (OR ~3.8). Not eliminated (observational).
+- Confounding by indication ARGUED AGAINST on four robust fronts: E-value ~6; 8/8 within-severity
+  strata; homogeneous/sepsis restriction; propofol negative-control exposure (OR 0.88 vs norepi 3.01).
+  Not eliminated (observational). NOTE (post-red-team): the prescribing-preference IV is DEMOTED to a
+  supportive/hypothesis-generating analysis — IV-OR ~3.8 > naive 2.57 is an invalid-instrument signature
+  (exclusion restriction violated by unit case-mix), so it does not carry the argument.
 - Hostile-review: 3 adversarial rounds converged (HOSTILE_REVIEW_FINAL.md).
 - **Limits:** observational; selection (arterial-line/on-pressor); two-level replication (dose-ORDERING
   replicates, not the MAP-conditioned phenotype/mechanism); prospective signal is the landmarked
@@ -41,20 +51,31 @@ claim does not hold.
 - VitalDB underpowered (n=219, 17 events).
 - **Verdict:** predictive YES, causal/organ-specific NO (reported as-is). Ref: REQUIREMENT_AKI_CROSSVAL.md.
 
-## FINDING 3 — fluid-vs-pressor resuscitation balance -> mortality
-**Claim:** a pressor-predominant (vs fluid) resuscitation balance grades mortality.
+## FINDING 3 — fluid-vs-pressor resuscitation balance -> mortality  [DEMOTED: exploratory, post-red-team]
+**Claim (re-scoped):** in MIMIC, a pressor-predominant balance tracks mortality — but this is an
+EXPLORATORY observation, NOT an independent co-primary finding.
 - MIMIC co-exposed (pressor+fluid, n=28k): tertile mortality 0.065->0.153->0.429; age-adj OR 3.5/SD;
   survives lactate (3.4).
-- VitalDB intraop balance -> organ_renal OR 1.18 [0.996,1.394] (concordant, borderline); INSPIRE
-  lacks fluid columns (not testable).
-- **Verdict:** holds in MIMIC; partial cross-validation. Ref: RESUSCITATION_BALANCE_CROSSVAL.md.
+- VitalDB intraop balance -> organ_renal OR 1.18 [0.996,1.394] — CI INCLUDES 1.0 (a NULL external test,
+  not "concordant support"); INSPIRE lacks fluid columns (not testable).
+- **Why demoted (panel):** (i) the balance numerator IS Finding 4's NEE load — no two-predictor model
+  shows the fluid denominator adds independent information; (ii) adjustment is age + single lactate
+  (lactate barely moves it 3.505->3.398); (iii) co-exposed n=28k selection induces collider bias (OR
+  doubles vs full cohort 2.1->3.5); (iv) null VitalDB CI. **Verdict:** exploratory only; a two-predictor
+  decomposition + full severity set is future work. Ref: RESUSCITATION_BALANCE_CROSSVAL.md, REDTEAM_PUB_FINDING3.md.
 
-## FINDING 4 — norepinephrine-equivalent total load -> mortality (replicates both ways)
-**Claim:** total vasopressor load (all agents, norepi-equivalents) grades mortality, dose-response,
-across settings.
-- MIMIC: quartile mortality 0.06->0.474 (RR 7.9x), monotone CA p~0, OR 3.18/SD.
+## FINDING 4 — norepinephrine-equivalent total load -> mortality (landmark-confirmed prospective signal)
+**Claim:** total vasopressor load (all agents, norepi-equivalents) grades mortality, dose-response;
+PROSPECTIVELY (first-24h load predicts SUBSEQUENT death), directionally concordant across settings.
+- MIMIC whole-stay: quartile mortality 0.06->0.474 (RR 7.9x), monotone CA p~0, OR 3.18/SD.
+- **LANDMARK (post-red-team, the make-or-break test):** first-24h NEE, restricted to patients ALIVE at
+  24h, -> SUBSEQUENT in-hospital death: age-adj OR **2.57 [2.45,2.68]** (n=23,925), age+lactate OR
+  **2.27 [2.10,2.48]**, monotone Q1->Q4 0.060->0.334. Effect attenuates (3.18->2.57) but does NOT collapse
+  -> reverse-causation/tautology REJECTED. Dopamine weight 0.05 sensitivity: 2.60 (no change). (FINDING4_LANDMARK.md)
 - INSPIRE intraop NEE (norepi+epi) -> death_inhosp OR 1.11/SD; tertile 0.057->0.088->0.192 (CA p=2.8e-25).
-- **Verdict:** cleanest reverse-validation (MIMIC ICU <-> INSPIRE intraop). Ref: RESUSCITATION_BALANCE_CROSSVAL.md.
+- **Verdict:** prospective dose-response confirmed by landmark. Cross-cohort is DIRECTIONAL CONCORDANCE
+  across different estimands (MIMIC 2.57 vs INSPIRE 1.11, CIs do not overlap) — NOT a quantitative
+  replication. Ref: RESUSCITATION_BALANCE_CROSSVAL.md, FINDING4_LANDMARK.md, REDTEAM_PUB_FINDING4.md.
 
 ---
 

@@ -8,7 +8,9 @@ Three cohorts, three independent verdicts:
 
   (1) MIMIC DISCOVERY (icu, n~15k norepi stays).  KDIGO AKI is derived per ICU stay from
       serum creatinine (itemid 50912) streamed out of a ~46% labevents snapshot:
-        - per-hadm baseline  = min creatinine over the admission (a robust pre-injury floor),
+        - per-hadm baseline  = FIRST (admission) creatinine -- the standard KDIGO admission
+          baseline (see derive_aki: baseline_mode="first" is primary; `min` over the whole
+          admission is a more-liberal sensitivity that over-calls present-on-admission AKI),
         - peak               = max creatinine over the admission,
         - AKI  if  peak/baseline >= 1.5  OR  peak - baseline >= 0.3 mg/dL  (KDIGO Scr criteria),
         - stage 1/2/3 by the standard ratio thresholds (1.5-1.9 / 2.0-2.9 / >=3.0 or >=4.0 mg/dL).
