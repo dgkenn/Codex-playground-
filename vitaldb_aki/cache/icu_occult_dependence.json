@@ -1,0 +1,60 @@
+{
+  "n_landmark_with_MAP": 23920,
+  "control_theory_premise_ICU": {
+    "n": 21154,
+    "map_cv_median": 0.1248,
+    "nee_rate_cv_median": 0.4401,
+    "ratio_dose_over_map": 3.53
+  },
+  "information_content": {
+    "auc_MAP_alone": 0.558421052795674,
+    "auc_requirement_alone": 0.7230847631590106,
+    "auc_MAP_plus_requirement": 0.7229583881027861,
+    "delta_auc_req_over_map": 0.1645
+  },
+  "occult_dependence_at_target": {
+    "band": [
+      65.0,
+      85.0
+    ],
+    "max_frac_below_65": 0.1,
+    "n_at_target": 7841,
+    "mortality_at_target": 0.124,
+    "requirement_quartile_gradient": {
+      "q_mortality": [
+        0.0306,
+        0.074,
+        0.1138,
+        0.2776
+      ],
+      "q_n": [
+        1961,
+        1960,
+        1960,
+        1960
+      ],
+      "q1": 0.0306,
+      "q4": 0.2776,
+      "monotone_nondecr": true
+    },
+    "requirement_OR_per_sd_age_adj": {
+      "or_per_sd": 2.822,
+      "ci": [
+        2.58,
+        3.088
+      ],
+      "n": 7841
+    },
+    "requirement_OR_per_sd_age_lactate_adj": {
+      "or_per_sd": 2.59,
+      "ci": [
+        2.225,
+        3.116
+      ],
+      "n": 2590,
+      "subset_n": 2590
+    },
+    "auc_requirement_within_band": 0.7428366963880786,
+    "auc_MAP_within_band": 0.47498482776139234
+  }
+}
