@@ -9,7 +9,7 @@ standing claim), **EXPLORATORY** (promising, not hardened), **NULL** (tested, no
 ## A. The spine — vasopressor requirement as a trait
 | # | Idea | Status | Evidence / why |
 |---|---|---|---|
-| A1 | **Vasopressor dose-REQUIREMENT is a reliable, early, mortality-graded patient trait** (control-theory: MAP is regulated, the insult is in the dose) | **STANDS** | reliability 0.82/0.87/0.95; mortality OR 2.4–2.5 beyond lactate+SOFA; 3 hostile rounds + 8-agent panel. PRESSOR_REQUIREMENT.md, HOSTILE_REVIEW_FINAL.md |
+| A1 | **Vasopressor dose-REQUIREMENT is a reliable, early, mortality-graded patient trait** (control-theory: MAP is regulated, the insult is in the dose) | **TRAIT RETRACTED (R2)** → encounter-level severity signal | Cross-encounter reliability ICC **0.074** (R2 settling test) kills "stable patient trait"; the 0.95 was within-drip autocorrelation. SURVIVES: within-encounter early→late 0.62; control-theory (VitalDB); fully-adj landmark OR 1.74, delta-AUC 0.024 (but = known VIS lit). RED_TEAM_ROUND2_SYNTHESIS.md |
 | A2 | Phenylephrine replication of the requirement trait (pure α1, independent drug) | **STANDS** | split-half reliability 0.87 ≥ norepi. PRESSOR_REQUIREMENT_PHEN.md |
 | A3 | Requirement onset shape / trajectory (does early shape predict late) | SUPPORTING | early→late 0.5–0.6. REQUIREMENT_ONSET_SHAPE.md, PRESSOR_REQUIREMENT_TRAJECTORY.md |
 | A4 | Requirement parsimony (simplest sufficient metric) | SUPPORTING | median stable-epoch dose/kg is sufficient. REQUIREMENT_PARSIMONY.md |

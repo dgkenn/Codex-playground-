@@ -12,7 +12,18 @@ limitations. Detailed methods live in the per-finding docs (cross-referenced).
 > (docstring/code baseline contradiction fixed). Finding 3 DEMOTED from co-primary to exploratory
 > (not separable from Finding 4 load; thin adjustment; co-exposed collider; null VitalDB test).
 
-> **Round-1 hostile-review reframe (RED_TEAM_ROUND1_SYNTHESIS.md) — the paper's spine changed:**
+> **Round-2 hostile-review RETRACTION (RED_TEAM_ROUND2_SYNTHESIS.md) — the trait reframe DID NOT survive:**
+> The Round-1 "stable patient trait" reframe is itself retracted. The settling test (1,712 multi-stay
+> MIMIC subjects) shows CROSS-ENCOUNTER reliability ICC **0.074** (r 0.087; gap≥30d 0.049) — the
+> requirement does NOT reproduce across separate admissions; the headline 0.95 is within-drip
+> autocorrelation. The requirement is an ACUTE ENCOUNTER-LEVEL SEVERITY SIGNAL, not a patient phenotype.
+> What survives: within-encounter early→late predictability (0.62, early-warning), the control-theory
+> framing (VitalDB intraop only), and the fully-adjusted landmark dose→mortality (OR 1.74, delta-AUC
+> 0.024 — but this is the KNOWN VIS literature, not a top-tier novelty). NET: no clean Anesthesiology-tier
+> POSITIVE finding survives as framed; honest tiers are BJA/A&A (rigorous dose→outcome + control theory)
+> or a methods/cautionary "requirement is not a trait" paper. See RED_TEAM_ROUND2_SYNTHESIS.md "reckoning."
+
+> **Round-1 hostile-review reframe (RED_TEAM_ROUND1_SYNTHESIS.md) — superseded by Round 2 above:**
 > Prior-art (PubMed) shows "vasopressor load → mortality" IS the VIS literature (2024 meta-analysis,
 > 58 studies; Roberts 2020; Saugel BJA 2025) → that framing is a DESK-REJECT. **The novel, load-bearing
 > contribution is RELIABILITY: the vasopressor requirement is a stable, reproducible patient TRAIT
