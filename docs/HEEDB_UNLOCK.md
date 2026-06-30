@@ -81,3 +81,24 @@ Seizure-Disorder ICD; train one site / test the other. Sites I0002 (n=68) and S0
 
 **Status:** infrastructure + pipeline fully validated; first finding attempt is an honest null due to outcome
 choice. Next: re-target to EEG-reflected outcomes (abnormal-EEG / encephalopathy / mortality) at GPU scale.
+
+## Second pilot (abnormal-EEG) — also NULL, but INCONCLUSIVE (method-limited, not a verdict)
+Same frozen-embedding+linear-probe pilot, outcome = EEG report normal/abnormal (the natural
+foundation-model target). I0002 n=66 / S0001 n=80, balanced. Cross-site AUC 0.37 & 0.53; **within-site
+S0001 5-fold AUC 0.40**.
+
+**Key diagnostic — the failure is WITHIN-site (0.40), not just cross-site.** So this is NOT domain shift;
+it means the **quick pilot's configuration is inadequate**, most likely:
+1. **Preprocessing shortcut:** I used a crude per-channel z-norm and bypassed the repo's `harmonize.py`
+   (proper bandpass/notch/units/scaling that CBraMod's training expects). Mis-scaled input → uninformative
+   embeddings is the leading explanation.
+2. Frozen embedding + linear probe over only **90 s (3 windows)** of routine EEG — too little, no fine-tuning.
+3. n≈70–80 with 400 features → high variance (AUC CI ≈ ±0.12); 0.40 is consistent with "no signal + noise".
+
+**Honest conclusion:** the two fast CPU pilots are **inconclusive** — they neither establish nor refute the
+finding. A real test requires the repo's validated `harmonize → embed` path (correct preprocessing),
+whole-recording pooling (not 3 windows), and ideally light fine-tuning — at GPU scale. The infrastructure
+to do this is now fully unlocked and validated; the quick probe just isn't the right instrument.
+
+**Net for the goal:** data + pipeline UNLOCKED and VALIDATED (major); the actual high-impact finding is set
+up to run but needs the proper preprocessing + GPU — not completable as a 90-second-window CPU probe.
