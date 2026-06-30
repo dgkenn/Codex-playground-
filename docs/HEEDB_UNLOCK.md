@@ -61,3 +61,23 @@ authorize PII handling (allow the data-movement, or run outside auto mode). No P
    syndrome) + a hard secondary (mortality), pre-specify the hospital split.
 3. Run `pass1` (stream EDF → harmonize → CBraMod embed) on a pilot site, then phenotype → outcome with
    cross-site validation. Red-team to publication.
+
+## First cross-site pilot (executed, CPU) — NULL, with a clear diagnosis
+**Setup:** frozen CBraMod embedding (3×30 s windows, 400-dim) of routine EEGs, linear probe, outcome =
+Seizure-Disorder ICD; train one site / test the other. Sites I0002 (n=68) and S0001 (n=70), balanced 35/35.
+**Result:** cross-site AUC 0.47 (I0002→S0001) and 0.41 (S0001→I0002) — **at/below chance; no transportable signal.**
+
+**Diagnosis (why, and the fix):**
+1. **Label–signal mismatch (most likely):** a *seizure-disorder diagnosis* ≠ ictal EEG. Most epilepsy
+   patients have a **normal interictal EEG**; 3 short windows of a routine recording rarely show seizure
+   activity. The outcome is a poor target for short-window embeddings.
+2. **Better-matched outcomes** (reflected in *background* EEG that a foundation model captures): the EEG
+   **report normal/abnormal** label, **encephalopathy / cognitive-behavioral syndrome** (diffuse slowing),
+   and **mortality** (background severity). These should be tried before concluding.
+3. **Cross-site domain shift** (montage/hardware) may need harmonization/adaptation — test by checking the
+   normal/abnormal-EEG label cross-site (if that transports, the pipeline is sound and seizure was the wrong label).
+4. **Method:** frozen embedding + linear probe + 90 s of EEG is the weakest possible version; the real study
+   uses whole-recording pooling, more windows, fine-tuning, and GPU scale (48k cohort).
+
+**Status:** infrastructure + pipeline fully validated; first finding attempt is an honest null due to outcome
+choice. Next: re-target to EEG-reflected outcomes (abnormal-EEG / encephalopathy / mortality) at GPU scale.
