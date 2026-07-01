@@ -37,10 +37,17 @@ def load_adm():
         for row in r:
             prov = row[ix['admit_provider_id']] if 'admit_provider_id' in ix else ''
             adm = ep(row[ix['admittime']]); dis = ep(row[ix['dischtime']])
+            at = row[ix['admission_type']] if 'admission_type' in ix else ''
             d[row[ix['hadm_id']]] = {'prov': prov, 'admit': adm,
                 'expire': int(row[ix['hospital_expire_flag']]) if row[ix['hospital_expire_flag']] else 0,
-                'los': (dis-adm)/24.0 if (adm and dis) else None, 'subject': row[ix['subject_id']]}
+                'los': (dis-adm)/24.0 if (adm and dis) else None, 'subject': row[ix['subject_id']],
+                'admtype': at}
     return d
+
+# low-acuity strata where patient<->provider assignment is most plausibly as-if-random (our prior finding:
+# provider-IV is clean only here; confounded in emergent admissions where acuity triages patients to teams)
+LOW_ACUITY = {'ELECTIVE', 'SURGICAL SAME DAY ADMISSION', 'OBSERVATION ADMIT',
+              'DIRECT OBSERVATION', 'AMBULATORY OBSERVATION'}
 
 def load_age():
     d = {}
@@ -101,59 +108,65 @@ def main():
     nc, nckeys = load_nc()
     print(f'hadm with any tracked rx: {len(rx)} | admissions: {len(adm)} | services: {len(svc)} | '
           f'NC panel: {len(nc)} hadm x {len(nckeys)} controls')
-    for cls in CLASSES:
-        rows = []
-        for hadm, a in adm.items():
-            if not a['prov'] or a['admit'] is None: continue
-            ag = age.get(a['subject'], np.nan)
-            if math.isnan(ag): continue
-            # exposure: drug class within 48h of admit
-            times = rx.get(hadm, {}).get(cls, [])
-            d = 1.0 if any(a['admit'] <= t <= a['admit']+48 for t in times) else 0.0
-            rows.append({'hadm':hadm, 'prov':a['prov'], 'd':d, 'y':float(a['expire']),
-                         'age':ag, 'svc':svc.get(hadm,'')})
-        if len(rows) < 2000:
-            print(f'  {cls:14s}: n={len(rows)} (too small)'); continue
-        # provider LOO rate (>=20 admissions)
-        from collections import defaultdict
+    from collections import defaultdict
+    def run_stratum(cls, rows, label):
+        if len(rows) < 1500:
+            print(f'    {label:8s}: n={len(rows)} (too small)'); return
+        # provider LOO rate computed WITHIN this stratum (comparable case-mix)
         psum = defaultdict(float); pcnt = defaultdict(int)
         for r in rows:
             psum[r['prov']] += r['d']; pcnt[r['prov']] += 1
         sub = [r for r in rows if pcnt[r['prov']] >= 20]
-        if len(sub) < 2000:
-            print(f'  {cls:14s}: n_provider>=20 too few ({len(sub)})'); continue
+        if len(sub) < 1500:
+            print(f'    {label:8s}: providers>=20 too few ({len(sub)})'); return
         z = np.array([(psum[r['prov']]-r['d'])/(pcnt[r['prov']]-1) for r in sub])
         d = np.array([r['d'] for r in sub]); y = np.array([r['y'] for r in sub])
-        agev = np.array([r['age'] for r in sub])
+        agev = np.array([r['age'] for r in sub]); agec = (agev-60)/10.0
         D = service_dummies([r['svc'] for r in sub])
-        X = np.column_stack([z, np.ones(len(z)), agev, D])   # controls: age + service FE
+        # controls: age spline (age, age^2) + service FE
+        X = np.column_stack([z, np.ones(len(z)), agec, agec*agec, D])
         bfs, sfs = ols(d, X); brf, srf = ols(y, X)
         fs, rf = bfs[0], brf[0]
-        # balance: age ~ z | service (drop age from controls)
+        rng = np.percentile(z, [10,90]); zspan = rng[1]-rng[0]
+        # STANDARDIZED balance: predicted age difference across the instrument's p10-p90 range (years)
         Xb = np.column_stack([z, np.ones(len(z)), D])
-        ba, sab = ols(agev, Xb)
-        expo = d.mean(); rng = np.percentile(z, [10,90])
+        ba, _ = ols(agev, Xb); bal_yrs = ba[0]*zspan
         late = rf/fs if abs(fs) > 1e-3 else float('nan')
-        naive, _ = ols(y, np.column_stack([d, np.ones_like(d)]))  # confounded D->mortality ('naive')
-        # NEGATIVE-CONTROL empirical-null calibration (mandatory per sim): regress each NC outcome ~ Z|controls
+        naive, _ = ols(y, np.column_stack([d, np.ones_like(d)]))
+        # negative-control empirical-null calibration
         nctxt = ''
         if nc and nckeys:
             ncc, ncs = [], []
             for j in range(len(nckeys)):
                 yv = np.array([nc.get(r['hadm'], [0]*len(nckeys))[j] for r in sub], float)
                 if yv.sum() < 20: continue
-                bb, sb = ols(yv, X)
-                ncc.append(bb[0]); ncs.append(sb[0])
+                bb, sb = ols(yv, X); ncc.append(bb[0]); ncs.append(sb[0])
             if len(ncc) >= 5:
                 mu, sd = empirical_null(ncc, ncs)
                 from scipy import stats as _st
                 p_cal = 2*_st.norm.sf(abs(rf-mu)/np.sqrt(sd**2+srf[0]**2))
-                p_naive = 2*_st.norm.sf(abs(rf)/srf[0]) if srf[0] > 0 else 1
-                nctxt = f' | NCnull(mu={mu:+.4f},sd={sd:.4f}) p_naive={p_naive:.3f}->p_CAL={p_cal:.3f}'
-        print(f'  {cls:14s} n={len(sub):6d} exp={expo:.3f} provSpread[p10-90]={rng[0]:.2f}-{rng[1]:.2f} | '
-              f'NAIVE={naive[0]:+.4f} | FS={fs:+.3f}({sfs[0]:.3f}) | RF={rf:+.5f}({srf[0]:.5f}) | LATE={late:+.3f} | '
-              f'balAge={ba[0]:+.2f}({sab[0]:.2f}){nctxt}')
-    print('\nDONE. Strong FS + balAge~0 => valid provider IV. balAge!=0 => exclusion suspect (habit~case-mix).')
+                nctxt = f' NCcal_p={p_cal:.3f}'
+        valid = '✓VALID' if abs(bal_yrs) < 1.0 and 5 < (fs/sfs[0])**2 else '✗INVALID(balance)'
+        print(f'    {label:8s} n={len(sub):6d} exp={d.mean():.3f} | NAIVE={naive[0]:+.4f} | '
+              f'FS={fs:+.3f} | RF(ITT)={rf:+.5f}({srf[0]:.5f}) LATE={late:+.3f} | '
+              f'bal={bal_yrs:+.1f}yr {valid}{nctxt}')
+
+    for cls in CLASSES:
+        rows_low, rows_high = [], []
+        for hadm, a in adm.items():
+            if not a['prov'] or a['admit'] is None: continue
+            ag = age.get(a['subject'], np.nan)
+            if math.isnan(ag): continue
+            times = rx.get(hadm, {}).get(cls, [])
+            d = 1.0 if any(a['admit'] <= t <= a['admit']+48 for t in times) else 0.0
+            row = {'hadm':hadm, 'prov':a['prov'], 'd':d, 'y':float(a['expire']),
+                   'age':ag, 'svc':svc.get(hadm,'')}
+            (rows_low if a['admtype'] in LOW_ACUITY else rows_high).append(row)
+        print(f'  {cls}:')
+        run_stratum(cls, rows_low, 'ELECTIVE')   # headline: as-if-random assignment most plausible
+        run_stratum(cls, rows_high, 'EMERGENT')   # contrast: expect confounded (acuity triage)
+    print('\nDONE. ELECTIVE stratum with bal<1yr + F>5 = valid provider IV; EMERGENT balance failure = the')
+    print('confounding-by-indication the balance gate is designed to catch. RF(ITT) is the headline; LATE fragile.')
 
 if __name__ == '__main__':
     main()
