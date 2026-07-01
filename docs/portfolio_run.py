@@ -115,7 +115,7 @@ def run_trial(name, key, items, flag, direction, hw, adm, age):
         pre = [(t,v) for (t,v) in seq if t < first]
         if len(pre) < 2: continue
         (t1,m1),(t2,m2) = pre[0], pre[1]
-        rows.append({'mid':(m1+m2)/2, 'z':1.0 if cross(m2) else 0.0,
+        rows.append({'mid':(m1+m2)/2, 'm2':m2, 'z':1.0 if cross(m2) else 0.0,
                      'd':1.0 if any(t2 <= r <= t2+24 for r in rt) else 0.0,
                      'y':float(adm[hadm]['expire']), 'age':age.get(adm[hadm]['subject'], np.nan)})
     sub = [r for r in rows if abs(r['mid']-flag) <= hw and not math.isnan(r['age'])]
@@ -132,9 +132,16 @@ def run_trial(name, key, items, flag, direction, hw, adm, age):
           if abs((lambda bb,sb: bb[0]/sb[0] if sb[0]>0 else 9)(*ols(y-b0*d, X))) < 1.96]
     arlo, arhi = (min(ar), max(ar)) if ar else (float('nan'), float('nan'))
     late = rf/fs if abs(fs) > 1e-3 else float('nan')
-    # heaping at flag (fraction of M2 exactly at rounded flag)
+    # McCrary-style density test: mass just-below vs just-above the flag on M2 (manipulation/heaping check)
+    m2 = np.array([r['m2'] for r in sub])
+    delta = max(hw/3, sig if not math.isnan(sig) else hw/3)
+    below = np.sum((m2 >= flag-delta) & (m2 < flag)); above = np.sum((m2 >= flag) & (m2 < flag+delta))
+    dens = below/above if above > 0 else float('nan')
+    F_flag = '⚠' if F < 10 else ' '
+    bal_flag = '⚠' if abs(ba[0]) > 3 else ' '
     print(f'  {name:22s} n={len(sub):6d} tx={d.mean():.3f} sig={sig:.3g}({100*sig/max(abs(flag),1e-9):.1f}%) | '
-          f'FS={fs:+.3f}(F{F:4.0f}) | ITT={rf:+.5f}({srf[0]:.5f}) | LATE={late:+.3f} AR[{arlo:+.2f},{arhi:+.2f}] | balAge={ba[0]:+.2f}')
+          f'FS={fs:+.3f}(F{F:4.0f}){F_flag}| ITT={rf:+.5f}({srf[0]:.5f}) | LATE={late:+.3f} AR[{arlo:+.2f},{arhi:+.2f}] | '
+          f'balAge={ba[0]:+.2f}{bal_flag}| densB/A={dens:.2f}')
 
 def main():
     print('=== PORTFOLIO: assay-noise IV / flag-ITT across 10 de-implementation trials ===')
