@@ -66,6 +66,14 @@ Exposure = de-escalation (broad→narrow or stop) within Δh of the culture stor
 turnaround (storetime−charttime); outcomes = in-hospital mortality (cached admissions) + antibiotic-days.
 Then eICU `microLab`+`medication` replication. Keep only the compact joined table on disk, never raw.
 
+### Instrument cohort BUILT (streamed full `microbiologyevents`, 3.99M rows, disk-sparing)
+**201,009 admissions with an index culture** (of 201,096 with any culture) — per-admission summary
+(index charttime, storetime, turnaround_h, organism-grew, any-Resistant, specimen) kept in scratchpad only
+(MIMIC-derived row-level → never committed). This is the natural-experiment substrate: the culture-turnaround
+instrument is available for ~201k admissions. `prescriptions` (~17M rows) streaming to add the antibiotic
+exposure side; then in-memory join on hadm_id → first de-escalation-vs-turnaround signal + in-hospital
+mortality (cached `admissions`). Proxy bandwidth ~300k rows/min → prescriptions is the slow step (~50 min).
+
 ## BANKED LESSON (bank in LESSONS.md)
 The agent's sharpest catch: our two prior properly-adjusted treatment-decision studies (vasopressor
 dose→mortality; 3-way liberation-order) converged on the **identical OR ≈ 1.35 / E-value ≈ 1.83**. That
