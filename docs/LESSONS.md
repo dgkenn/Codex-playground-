@@ -78,6 +78,22 @@ review. Attacks and the fixes now baked into the design:
 - The embedding cache is outcome-AGNOSTIC (per-window EEG reps keyed by site_pid) → reuse it, just re-join
   to the ICD/mortality labels. No re-embedding needed when the outcome changes.
 
+## Cycle 1 — EXECUTION lessons (harness validated; not a finding yet; fixes for cycle 2)
+- **Attention-MIL harness works** (torch attention-MIL over per-window embeddings trains on CPU; site-probe
+  confound check implemented). Per-window frozen embedding cache builds ~3 s/patient, checkpointed/resumable.
+- **BUG: cache samples all-positives THEN all-negatives** → any PARTIAL cache is class-degenerate (at 177
+  cached, abnormal was 177/177 positive). FIX: interleave pos/neg (and sites) so a partial cache is always
+  balanced and cross-site-ready early.
+- **Power: cognitive-syndrome is only ~9% of the abnormal-balanced sample** (16/177) → underpowered for the
+  cognitive-PRIMARY flagship. FIX: sample the cache balanced ON THE OUTCOME (cognitive+/- and, separately,
+  died/survived), not on abnormal/normal. Embeddings already cached are still reusable as the negative pool.
+- **Cross-site needs BOTH sites cached**; the cache does S0001 fully before I0002. FIX: interleave sites or
+  run a parallel I0002 cache so the gated cross-site eval can run.
+- CPU MIL training (5-fold × 50 epochs × ~150 bags) is minutes-slow but fine overnight; keep the head tiny.
+- **Cycle-1 net:** design hostile-reviewed + corrected (cognitive primary + site gate), novelty confirmed
+  (white space), substrate + harness built and validated. NO finding claimed (correctly). Cycle 2 =
+  outcome-balanced cache of BOTH sites → gated cross-site cognitive/mortality MIL eval → full result gate.
+
 ## Open opportunity (the current best shot)
 - **No EEG foundation model has been applied to clinical/neuro outcome prediction with external validation
   anywhere (as of 2026)** — DELPHI-EEG is single-center. HEEDB (multi-site EEG + ICD10/OMOP outcomes +
