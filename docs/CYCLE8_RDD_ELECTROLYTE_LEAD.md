@@ -63,6 +63,22 @@ Two complementary analyses (MIMIC, cached):
   actually lower below the cutoff — opposite to a repletion benefit). Suggestive of no AF benefit, but needs
   a TIME-RESOLVED AF endpoint (chartevents rhythm / new-onset after the Mg) to be clean.
 
+## Validity checks (RDD assumptions) — PASS
+- **Density/manipulation:** Mg first-values are digit-heaped at 0.1 but the density rises smoothly to ~2.0
+  then falls — NO excess mass just below the cutoff → no manipulation (as expected; lab values aren't nudgeable).
+- **Covariate continuity:** age at cutoff — Mg RD −0.47 yr (trivial though z=2.6 at n=128k), K +0.12 yr (null)
+  → covariates essentially continuous. Main caveat = digit heaping → use discrete/local-randomization RDD.
+
+## Scale + cardiac-surgery boundary (impact-relevant)
+- **Scale:** 129,263 Mg repletion administrations to 32,929 admissions at ONE hospital (~10 yr) → tens of
+  millions/yr nationally. A massive, protocol-driven, evidence-free reflex = a prime de-implementation target.
+- **Boundary holds:** the general NON-cardiac population is cleanly null (mortality RD −0.001 z−0.11; AF
+  RD +0.006 z+0.34). CVICU/cardiac is underpowered here (n=3,889, no signal) — and our RDD tests
+  ADMISSION-THRESHOLD repletion, NOT intra-op Mg prophylaxis (the exposure the post-cardiac-surgery AF RCTs
+  studied), so that proven indication is preserved as a separate, honestly-bounded case.
+- **Impact-maximization plan:** see `docs/ELECTROLYTE_RDD_IMPACT_STRATEGY.md` (triangulated identification,
+  multi-DB validation, harm-from-over-repletion, threshold optimization, positive control, de-implementation RCT).
+
 ## COMPREHENSIVE outcome-wide RDD scan (every known consequence of hypo-Mg / hypo-K)
 Tested ~17 ICD-coded complications each electrolyte is known/hypothesized to cause + mortality + LOS =
 **38 RDD tests**, BH-FDR corrected. Outcomes (diagnoses_icd, cached): atrial fibrillation, ventricular
