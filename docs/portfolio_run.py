@@ -132,6 +132,12 @@ def run_trial(name, key, items, flag, direction, hw, adm, age):
           if abs((lambda bb,sb: bb[0]/sb[0] if sb[0]>0 else 9)(*ols(y-b0*d, X))) < 1.96]
     arlo, arhi = (min(ar), max(ar)) if ar else (float('nan'), float('nan'))
     late = rf/fs if abs(fs) > 1e-3 else float('nan')
+    # NAIVE association ('if run simply from this data'): crude + severity-adjusted D->mortality on full cohort.
+    # Confounding-by-indication typically makes this show FALSE HARM; contrast with the method's flag-ITT.
+    Dall = np.array([r['d'] for r in rows]); Yall = np.array([r['y'] for r in rows])
+    Call = design_controls([r['mid'] for r in rows])
+    naive_crude, _ = ols(Yall, np.column_stack([Dall, np.ones_like(Dall)]))
+    naive_adj, _ = ols(Yall, np.column_stack([Dall, Call]))
     # McCrary-style density test: mass just-below vs just-above the flag on M2 (manipulation/heaping check)
     m2 = np.array([r['m2'] for r in sub])
     delta = max(hw/3, sig if not math.isnan(sig) else hw/3)
@@ -140,6 +146,7 @@ def run_trial(name, key, items, flag, direction, hw, adm, age):
     F_flag = '⚠' if F < 10 else ' '
     bal_flag = '⚠' if abs(ba[0]) > 3 else ' '
     print(f'  {name:22s} n={len(sub):6d} tx={d.mean():.3f} sig={sig:.3g}({100*sig/max(abs(flag),1e-9):.1f}%) | '
+          f'NAIVE crude={naive_crude[0]:+.4f} adj={naive_adj[0]:+.4f} | '
           f'FS={fs:+.3f}(F{F:4.0f}){F_flag}| ITT={rf:+.5f}({srf[0]:.5f}) | LATE={late:+.3f} AR[{arlo:+.2f},{arhi:+.2f}] | '
           f'balAge={ba[0]:+.2f}{bal_flag}| densB/A={dens:.2f}')
 

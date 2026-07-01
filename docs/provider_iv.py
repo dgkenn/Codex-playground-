@@ -134,6 +134,7 @@ def main():
         ba, sab = ols(agev, Xb)
         expo = d.mean(); rng = np.percentile(z, [10,90])
         late = rf/fs if abs(fs) > 1e-3 else float('nan')
+        naive, _ = ols(y, np.column_stack([d, np.ones_like(d)]))  # confounded D->mortality ('naive')
         # NEGATIVE-CONTROL empirical-null calibration (mandatory per sim): regress each NC outcome ~ Z|controls
         nctxt = ''
         if nc and nckeys:
@@ -150,7 +151,7 @@ def main():
                 p_naive = 2*_st.norm.sf(abs(rf)/srf[0]) if srf[0] > 0 else 1
                 nctxt = f' | NCnull(mu={mu:+.4f},sd={sd:.4f}) p_naive={p_naive:.3f}->p_CAL={p_cal:.3f}'
         print(f'  {cls:14s} n={len(sub):6d} exp={expo:.3f} provSpread[p10-90]={rng[0]:.2f}-{rng[1]:.2f} | '
-              f'FS={fs:+.3f}({sfs[0]:.3f}) | RF={rf:+.5f}({srf[0]:.5f}) | LATE={late:+.3f} | '
+              f'NAIVE={naive[0]:+.4f} | FS={fs:+.3f}({sfs[0]:.3f}) | RF={rf:+.5f}({srf[0]:.5f}) | LATE={late:+.3f} | '
               f'balAge={ba[0]:+.2f}({sab[0]:.2f}){nctxt}')
     print('\nDONE. Strong FS + balAge~0 => valid provider IV. balAge!=0 => exclusion suspect (habit~case-mix).')
 
