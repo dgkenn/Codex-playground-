@@ -15,20 +15,46 @@ gate lab (platelet, INR) is itself a severity signal (exclusion concern). **Verd
 same intrinsic weakness as the core assay-noise IV. Keep as a supplementary proof that the noise-IV exogeneity
 holds at gates; do NOT report a treatment-effect LATE from it.
 
-## Instrument C — attending-rotation time-RDD: FAILED on real data → RETIRED (in MIMIC)
+## Instrument C — attending-rotation time-RDD: RETIRED after a full salvage analysis
 | drug | n | FS | RF(mort) | LATE |
 |---|---|---|---|---|
 | ppi | 11,010 | +0.83 | +0.218 | +0.264 |
 | opioid | 16,748 | +0.99 | −0.625 | −0.630 |
 | benzo | 7,234 | +0.85 | +0.087 | +0.103 |
 
-**Nonsensical LATEs** (−0.63, +0.26 on a mortality scale). Root cause: the design instrumented on the receiving
-service's continuation propensity at a **transfer**, but transfers in MIMIC are **clinically triggered** (move to
-ICU on deterioration, to the floor on improvement) → the "handoff" is NOT exogenous to the patient's trajectory;
-the transfer *is* the confounder. It also lacked a balance gate. **This cannot be salvaged in MIMIC** — a valid
-attending-rotation RDD needs explicit *scheduled* attending-rotation timestamps (same unit, new attending, on a
-roster) that MIMIC does not track. **Retired**; flagged as a design that would need a dataset with attending
-schedules (some health-system EHRs have this).
+Nonsensical LATEs (−0.63, +0.26). Level-1 cause: the design instrumented on the receiving service's propensity
+at a **transfer**, but MIMIC transfers are **clinically triggered** (deteriorate → ICU; improve → floor), so the
+"handoff" is endogenous — the transfer *is* the confounder.
+
+### Salvage analysis (thought through like the nurse-PRN v1→v2 fix)
+The nurse-PRN salvage worked by REFRAMING the estimand to something observable and clean (dose intensity). Can
+the same be done here? I worked the candidate reframes:
+1. **Isolate exogenous *same-unit* attending rotations** (calendar-driven, same care level → exogenous timing).
+   Blocked in MIMIC: there is **no within-stay attending timeline**. `order_provider_id` is per-order (rotating
+   residents/hours, changes constantly) — too noisy to identify a clean attending rotation. `admit_provider_id`
+   is a single value per admission. So the exogenous-rotation subset is not constructible here.
+2. **Restrict to lateral (same-acuity) ward→ward transfers** (bed-management/capacity driven → exogenous). Weak:
+   lateral moves are often specialty-motivated too, and the drug-habit signal across same-acuity wards is small.
+3. **Calendar shock (weekend/holiday deprescribing inertia).** Timing is exogenous, but the **exclusion
+   restriction fails** — the "weekend effect" changes mortality through many paths (staffing, procedures,
+   monitoring), not just the target drug's continuation.
+
+### The deeper, structural reason it can't be salvaged (unlike nurse-PRN)
+Even with a perfectly exogenous handoff, a **provider/team change is a BUNDLE intervention** — the new team alters
+the *entire* care approach (monitoring, mobilization, consults, every drug), not just the one drug's continuation.
+So the reduced form structurally cannot be attributed to the target treatment: the **exclusion restriction is
+violated by construction**. This is the opposite of nurse-PRN, where the reframed treatment (dose count) cleanly
+IS the exposure. It is the same reason the assay-noise IV is superior: a **lab flag triggers ~one treatment**,
+whereas a **team change triggers everything**.
+
+### And it's DOMINATED — so nothing is lost by retiring it
+The attending-rotation and the provider-preference IV exploit the *same* identifying variation (provider
+prescribing habit). The cross-sectional **provider-IV already works in the elective stratum** (balance passes,
+recovers the MIND-USA antipsychotic null) — without needing to identify exogenous rotations and without the
+extra within-patient bundle problem. The rotation version adds identification difficulty and inherits the same
+provider-quality exclusion concern, with no compensating advantage. **Retire it; provider-IV covers the same
+ground better.** (It could work only in a dataset with explicit attending rosters AND a passing co-intervention
+exclusion test showing the rotation moves *only* the target drug — neither available in MIMIC.)
 
 ## Updated instrument scorecard (real data)
 | instrument | status |

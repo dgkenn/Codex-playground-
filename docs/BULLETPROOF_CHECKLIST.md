@@ -44,13 +44,21 @@ directly-measured analyte or model the correlation.
 | Reverse causation (benzo/opioid) | **landmark/lag** (exclude baseline delirium; exposure before outcome window) | conclusions stable |
 | Estimand well-defined | **fix the indication** (opioid→post-op within procedure; steroid→COPD exacerbation) | pre-specified cohort |
 
-## Instrument C — Attending-rotation time-RDD (continued PPI/benzo/steroid)
+## Instrument C — Attending-rotation time-RDD — ❌ RETIRED (structural exclusion failure; dominated by provider-IV)
+Failed on real data (nonsensical LATEs): MIMIC transfers are clinically triggered, not exogenous. Salvage
+analysis (like nurse-PRN v2) found it UNsalvageable, for a deeper reason than nurse-PRN: a provider/team change
+is a **bundle intervention** (alters all care, not one drug) → exclusion restriction violated *by construction*;
+no reframe fixes that (unlike dose-intensity, which cleanly IS the exposure). Also no within-stay attending
+timeline exists in MIMIC. And it is **dominated by the provider-preference IV** (same identifying variation;
+provider-IV already works in the elective stratum without needing exogenous rotations). Retired; nothing lost.
+See `REAL_RESULTS_GATE_AND_RDD.md`. (Original design table retained below for record.)
+
+### [RETIRED] original design — Attending-rotation time-RDD
 | Assumption | Test | PASS gate |
 |---|---|---|
 | Handoff timing exogenous to trajectory | severity/vitals continuous through handoff (no jump) | no discontinuity in covariates at handoff |
 | Relevance | continuation ~ receiving-service LOO propensity; F | F ≥ 10 |
 | Exclusion (handoff changes only prescribing) | balance; NC outcomes; sending-service FE | NC null at 0 |
-| Not confounded by scheduled care changes at handoff | check nothing else protocolized changes at transfer | — |
 
 ## Instrument B — Nurse-PRN IV — ✅ SALVAGED as dose-INTENSITY IV (v1 retired, v2 valid)
 v1 (give/hold per dose) failed on real emar (denominator unobserved, balance ±30 yr). v2 reframe = PRN dose
