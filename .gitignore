@@ -30,3 +30,6 @@ credentials
 aws_credentials*
 **/secrets*
 
+
+# Raw data working area — PHI (HEEDB/MIMIC/eICU under DUA); NEVER commit
+scratchpad/
