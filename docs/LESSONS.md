@@ -322,6 +322,29 @@ run an injected-signal power calibration. n=327 (S0001 239 / I0002 88).
   benefit-biased design (treatment withheld from the sickest / healthy-user elective strata) to BRACKET the
   truth, with the corrected assay-noise reduced form as the ~unbiased anchor → Manski-style reviewer-proof bounds.
 
+## Deconfounding methods — prior-art & power (gap-analysis cycle)
+- **PRIOR ART IN OUR OWN DATABASE (novelty-check that could have sunk us):** Bosch et al. *Ann Am Thorac Soc*
+  2022;19(7):1177-1184 already ran a fuzzy RDD at Hb 7.0 g/dL **in MIMIC-IV** (co-author Bor), justified by
+  "measurement noise pseudorandomizes" — transfusion mostly NULL on organ dysfunction. So "assay noise at a
+  clinical threshold" is NOT novel. Our defensible novelty narrows to: formal estimable noise model (instrument
+  built FROM assay CV / serial-pair variance, vs their prose justification) + renewal/repeated-decision
+  extension + application to Mg/K where NO RCT exists. LESSON: always run a database-specific novelty scan before
+  claiming a design is new; the same clever idea is often already in the same dataset.
+- **RCT-ANCHOR for method validation = Hb transfusion (graded truth):** restrictive non-inferior in general ICU
+  (TRICC/TRISS/FOCUS/Cochrane RR 0.99/AABB) but CONTESTED in cardiac-surgery (TITRe2 mortality HR 1.64 P=0.045)
+  and acute-MI (MINT P=0.07 favoring liberal). Dual-stratum recovery (clean null + contested signal) is a
+  STRONGER validation than recovering one null. Glucose is a POOR anchor (Leuven→NICE-SUGAR reversal = no stable
+  truth) despite better noise magnitude → reserve as a novel-white-space 2nd paper.
+- **ASSAY-NOISE VIABILITY by treatment (noise SD as % of threshold gap):** Mg ~6.7% (good); glucose 10-35% via
+  POC-vs-central discordance (best); Hb only 1-2% (weak noise-IV — but Bosch showed the RDD-proximity first stage
+  at Hb 7 is >20pp, i.e. plenty of near-threshold variation; the noise-specific slice is the weak part).
+- **POWER TRUTH (closes 'is it decisive?'):** per-patient LATE for mortality is NOT identifiable in practice
+  (MDE 5-12pp at 3-6pp first stage). The flag-ITT (reduced form) IS well-powered (sub-pp MDE) and is the
+  de-implementation policy contrast. BUT a bare null ITT is a Type-II TRAP with a weak first stage (consistent
+  with 'inert' OR 'diluted-and-unseen') → ALWAYS report ITT + implied-LATE interval (ITT/FS, Anderson-Rubin CI).
+  The ITT does NOT escape the exclusion restriction — it inherits it (correct the earlier over-claim).
+  Power code: `docs/power_mde_assay_noise_iv.py`. Full ledger: `docs/DECONFOUNDING_GAP_ANALYSIS.md`.
+
 ## Open opportunity (the current best shot)
 - **No EEG foundation model has been applied to clinical/neuro outcome prediction with external validation
   anywhere (as of 2026)** — DELPHI-EEG is single-center. HEEDB (multi-site EEG + ICD10/OMOP outcomes +

@@ -152,7 +152,12 @@ the headline power statistic. (The clustering correction keeps this honest — c
    cadence. Any discontinuity ⇒ exclusion fails ⇒ reduced form is an *intent-to-flag* effect, not a repletion
    effect. **Disclose that ward draws (chartevents ICU-only in MIMIC) cannot test bundle balance on the floor.**
 4. **Weak-IV-robust inference:** Olea–Pflueger effective F; Anderson–Rubin / Fieller confidence set replacing
-   the delta-method CI. **Lead with the reduced-form ITT**; treat LATE as fragile/exploratory.
+   the delta-method CI. **Lead with the reduced-form flag-ITT** (well-powered, sub-pp MDE; the de-implementation
+   policy contrast) — but ALWAYS report it *with the implied-LATE interval* (ITT ÷ first stage, AR CI). Rationale
+   (power analysis): a null ITT with a ~3 pp first stage is consistent with BOTH "threshold inert" AND "real
+   effect too diluted to see" — so a bare null is a Type-II trap. The ITT does **not** escape the exclusion
+   restriction (it inherits it); state explicitly whether the claim is about the *threshold as a bundled policy
+   lever* (clean) or the *specific treatment* (re-inherits exclusion). See `docs/DECONFOUNDING_GAP_ANALYSIS.md` §G2.
 5. **Selection-into-second-draw / eligibility:** characterize excluded single-draw-then-treat patients
    (severity, mortality); test whether provider / time-of-day predicts having another pre-treatment draw; test
    `Z ⟂ n_i^E`. Bound external-validity claims to "decisions preceded by a confirmatory draw."
@@ -174,6 +179,14 @@ the headline power statistic. (The clustering correction keeps this honest — c
 - **Core (single-decision) noise-induced randomization is PRIOR ART:** Eckles, Ignatiadis, Wager, Wu
   (*Biometrika* 2025); Pei–Shen (RDD-with-measurement-error, 2017); Barreca et al. (birthweight-heaping at
   1500 g — the closest clinical cousin, and the literature that had to solve this exact leaky-control problem).
+- **DIRECT CLINICAL PRECEDENT IN OUR DATABASE — must cite and distinguish:** **Bosch et al., *Ann Am Thorac Soc*
+  2022;19(7):1177–1184** ran a fuzzy RDD at Hb 7.0 g/dL **in MIMIC-IV** justified verbatim by "measurement noise
+  pseudorandomizes" (co-author Bor; editorial "Knowledge from the Noise"), finding transfusion mostly null on
+  organ dysfunction. So noise-at-a-clinical-threshold is **not novel**. Our contribution is the *formal, estimable
+  noise model* (assay CV / serial-pair variance) that builds the instrument **from the noise**, vs. their
+  noise-as-prose justification for RDD smoothness — plus the renewal extension and the trial-infeasible (Mg/K)
+  application. Hb-transfusion is therefore our **VALIDATION anchor** (recover the TRICC/TRISS/TITRe2/MINT graded
+  truth, extending Bosch), not a novelty claim; see `docs/DECONFOUNDING_GAP_ANALYSIS.md`.
 - **Genuinely new + publishable:** (1) the **repeated / renewal** structure — a *sequence* of noise-randomized
   decisions per unit with an **absorbing** treatment (predictably censored to avoid collider conditioning) and
   a **terminal** shared outcome; (2) the **within-subject leave-one-out** control for a *serially-correlated
