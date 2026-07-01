@@ -35,6 +35,21 @@ re-rank principle (external-validation-by-construction + decision/mechanism, not
   classification work) + `labevents`; eICU `microLab` + `medication`. Cheapest to gate (confirm the 1
   potential prior-art collision), lowest impact ceiling. Infection endpoint ~150–400 events (check MDE).
 
+## SELECTED: Candidate 3 — make-or-break gate PASSED (streamed, disk-sparing)
+User: "keep moving the cycle, stream disk-sparing." Picked Candidate 3 (natural-experiment class beats the
+OR≈1.35 treatment-decision ceiling; novelty survived — the one potential collision PMID 30808257 is a
+narrative review, not this design). Streamed MIMIC-IV v3.1 `microbiologyevents` (400k-row sample) via
+`wget --netrc | python` (no raw data to disk):
+- **charttime + storetime present on 91.5% of rows** → the order→result timer is well-populated.
+- **Culture turnaround varies 8×**: p10 18 h / p50 60 h / p90 143 h — the exogenous variation the
+  quasi-instrument needs (driven by organism growth kinetics + lab logistics, not patient severity).
+- **Susceptibility at scale**: S/R/I interpretations (113k S / 24k R / 3.8k I) + org_name on ~41% of rows;
+  blood cultures 80k, urine 135k. 20,041 distinct admissions in the first 400k rows alone.
+- **VERDICT: feasible.** Next streamed sub-gates: (1) antibiotic exposure + de-escalation from
+  `prescriptions`/`emar` (broad-spectrum empiric → narrowing after storetime); (2) outcomes (mortality =
+  cached `admissions.hospital_expire_flag`; C.diff/MDRO from later cultures/`diagnoses_icd`); (3) confirm
+  eICU `microLab` has the analog order/result timestamps for external validation.
+
 ## BANKED LESSON (bank in LESSONS.md)
 The agent's sharpest catch: our two prior properly-adjusted treatment-decision studies (vasopressor
 dose→mortality; 3-way liberation-order) converged on the **identical OR ≈ 1.35 / E-value ≈ 1.83**. That
