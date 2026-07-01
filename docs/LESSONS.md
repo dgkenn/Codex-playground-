@@ -200,6 +200,23 @@ run an injected-signal power calibration. n=327 (S0001 239 / I0002 88).
   otherwise-best Cycle-6 candidate ("vitals-first vs labs-first" mechanism) at the make-or-break gate before
   any compute. The gate did its job. Candidate slate + options: `docs/NEXT_CANDIDATES_MIMIC_EICU.md`.
 
+## Cycle 6 (Candidate 3 build) — a clever natural experiment can still die on a WEAK FIRST STAGE
+- Built the culture-turnaround natural experiment in MIMIC-IV (all streamed, disk-sparing): index-culture
+  instrument for 201k admissions × broad-spectrum antibiotic courses × mortality. Pipeline validated
+  end-to-end (n=13,704 empiric cohort; 961 deaths).
+- **KEY LESSON — always test the FIRST STAGE (instrument relevance) before believing the design.** The
+  exogenous timer (culture turnaround, storetime−charttime) only WEAKLY drives the exposure
+  (corr with broad-spectrum duration = **+0.093**). Clinicians de-escalate on clinical grounds, not gated on
+  the exact result-availability time → a weak instrument that caps the whole design's causal power. The
+  reduced form (turnaround → mortality) is EXACTLY null (AUC 0.500). A quasi-natural-experiment is only as
+  strong as its first stage; a clever exogenous-timer idea can still be weakly-instrumented in practice.
+  This is the natural-experiment analog of the "power the null" lesson — power/validate the INSTRUMENT first.
+- **Process win:** disk-sparing throughout (streamed 3.99M microbiology + millions of prescription rows via
+  `wget --netrc | python`, never storing raw tables; a checkpointing reducer survived a flaky proxy). And
+  re-confirmed the **heredoc bug** (a `cat <<EOF` script silently didn't update — always use the Write tool).
+- Verdict leaning: interesting design, weak instrument → re-rank (mortality null as expected; ecological
+  outcomes C.diff/MDRO remain the only shot but would be a fragile IV at +0.09 relevance).
+
 ## Open opportunity (the current best shot)
 - **No EEG foundation model has been applied to clinical/neuro outcome prediction with external validation
   anywhere (as of 2026)** — DELPHI-EEG is single-center. HEEDB (multi-site EEG + ICD10/OMOP outcomes +

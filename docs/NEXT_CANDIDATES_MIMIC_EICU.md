@@ -83,6 +83,21 @@ death). Preliminary signals (will grow ~10× with full rx):
 - Disk-sparing throughout; the flaky proxy required a **checkpointing** stream reducer (writes a complete
   per-hadm snapshot every 1M rows) so a stall still yields usable data. rx continues to a larger cohort.
 
+### INTERIM VERDICT (methods-corrected, n=13,704; 961 deaths) — WEAK INSTRUMENT + null mortality reduced form
+Refined exposure clock (broad-spectrum DURATION from abx-start; no coupling to the instrument):
+- **First stage / RELEVANCE: corr(culture turnaround, broad-spectrum duration) = +0.093** — correct sign,
+  but WEAK. Culture turnaround only weakly lengthens broad-spectrum therapy → **the natural-experiment
+  instrument is weak**: clinicians de-escalate (or not) largely on clinical grounds, not gated on the exact
+  result-availability time. A weak first stage caps the credible causal power of the whole design.
+- **REDUCED FORM: AUC(turnaround → mortality) = 0.500** (exact chance) — the exogenous timer has zero
+  mortality effect. **NAIVE:** AUC(broad-duration → mortality) = 0.552 = the weak confounded artifact.
+- These are STABLE at n=13k (won't change with more rows) → a design limitation, not underpowering.
+- **Honest read:** for MORTALITY the natural experiment is weakly-instrumented and null (expected —
+  de-escalation is an ecological, not mortality, lever). The remaining shot is the ECOLOGICAL outcomes
+  (C.diff toxin+ / MDRO acquisition, antibiotic-days), but the +0.09 first stage means even those would be
+  a fragile/underpowered IV. **Verdict leaning: interesting design, but weak instrument caps it → likely
+  re-rank after a quick ecological-outcome check, rather than a flagship.**
+
 ### Instrument cohort BUILT (streamed full `microbiologyevents`, 3.99M rows, disk-sparing)
 **201,009 admissions with an index culture** (of 201,096 with any culture) — per-admission summary
 (index charttime, storetime, turnaround_h, organism-grew, any-Resistant, specimen) kept in scratchpad only
