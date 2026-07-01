@@ -15,14 +15,14 @@ FINDINGS_LEDGER.md with their verdict + the attack map.
 0a. **[DONE] Positive-control outcome (age/sex).** Sex 0.50, age 0.55 (all) / 0.61 (S0001). Harness works
     (injected-signal 0.6σ→0.84) but the frozen **mean+std** representation barely encodes even age → the
     REPRESENTATION is the bottleneck. This promotes 0a-prime to the single most important experiment:
-0a-prime. **[PILOT DONE — inconclusive-leaning-negative] Full-token (channel-resolved) attention-MIL.**
-    Re-embedded 80 S0001 EDFs keeping per-channel tokens (pool time patches only → 24... NWIN=12 × 19 = 228
-    tokens/bag, d=200); age>median OOF AUC = **0.443** [0.356,0.507] vs mean+std 0.610. The richer
-    representation did NOT rescue age → no support for "pooling was an easy CPU win." CAVEATS (why it's not
-    yet a clean verdict): different patient subset than the 0.610 run, NWIN=12 (half), and per-token
-    z-standardization across 228 heterogeneous channel tokens likely injects noise. **To nail the fork,
-    a MATCHED comparison is needed** (same patients, same NWIN, better token normalization / full attention).
-    Weight of evidence now leans toward "frozen ENCODER is the limit → GPU fine-tuning," not pooling.
+0a-prime. **[DONE — VERDICT: frozen ENCODER is the ceiling, not pooling].** Ran the clean MATCHED decider
+    (same patients, same windows NWIN=24, same folds; one embed pass emits BOTH mean+std 24×400 and
+    channel-resolved full-token 456×200). Age>median OOF AUC at n=98: **mean+std 0.401 [0.391,0.414] vs
+    full-token 0.476 [0.417,0.519]** — both ≈chance, full-token gives no meaningful rescue. The frozen
+    CBraMod representation does NOT reliably encode even age (a signal EEG carries strongly) under any pooling
+    tested. (The earlier mean+std 0.61 at n=239 was a weaker/subset-dependent read; on a clean random subset
+    it's ~chance → the frozen age signal is fragile.) **CONCLUSION: richer CPU pooling is NOT the lever;
+    encoder fine-tuning (GPU) is.** The CPU/frozen path is exhausted for a positive clinical finding.
 0b. **[if we pursue the methods note] Harden Claim A to a publishable safeguard:** refit ComBat/CORAL
     PER-FOLD (kill the global-fit leakage objection), add bootstrap CIs on all four site-AUCs, add a
     permutation null for the site probes, and — the big one — **add ≥1–2 more HEEDB sites** so the

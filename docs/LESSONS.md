@@ -154,13 +154,15 @@ run an injected-signal power calibration. n=327 (S0001 239 / I0002 88).
 - **NET:** the frozen **mean+std** + CPU path cannot deliver a positive cross-site clinical finding at this
   n; the site confound is nonlinear (survives linear harmonization) and the representation barely encodes
   even age. Full writeup: `docs/CYCLE3_SITE_INVARIANCE.md`.
-- **Cycle-4 pilot (full-token, channel-resolved): did NOT rescue the representation.** Re-embedded 80
-  S0001 EDFs keeping per-channel tokens (pool time only, 228 tokens/bag); age>median OOF AUC = **0.443** vs
-  mean+std 0.610 — no improvement. CAVEATS: different subset, NWIN=12, and per-token standardization across
-  228 heterogeneous channel tokens likely adds noise → treat as suggestive, not a clean verdict. **Lesson:
-  richer frozen pooling is not a free CPU win**; the weight of evidence now points at the frozen ENCODER
-  itself (→ GPU fine-tuning) rather than my pooling choice. Clean decider = a MATCHED full-token comparison
-  (same patients/NWIN, better token norm) — but the ceiling looks like fine-tuning, not pooling.
+- **Cycle-4 DECIDER (matched full-token vs mean+std): the frozen ENCODER is the ceiling, not the pooling.**
+  Clean apples-to-apples test — SAME patients, SAME windows (NWIN=24), SAME folds; one embed pass emits BOTH
+  mean+std (24×400) and channel-resolved full-token (456×200). Age>median OOF AUC at n=98: **mean+std 0.401
+  vs full-token 0.476 — both ≈chance.** Richer pooling gives NO meaningful rescue. The frozen CBraMod
+  representation does not reliably encode even age (an easy, strong EEG target) under any pooling tested.
+  (An earlier mean+std 0.61 at n=239 was subset-dependent; on a clean random subset it collapses to ~chance
+  → the frozen age signal is fragile.) **DEFINITIVE LESSON: the CPU/frozen path is exhausted for a positive
+  clinical finding — encoder FINE-TUNING (GPU) is the required lever, not a better CPU pooling.** Stop
+  spending CPU on frozen-representation tricks; the next real move needs a GPU.
 
 ## Open opportunity (the current best shot)
 - **No EEG foundation model has been applied to clinical/neuro outcome prediction with external validation

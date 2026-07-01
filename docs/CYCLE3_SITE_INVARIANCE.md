@@ -88,9 +88,10 @@ attention-MIL** (attend over all tokens, no mean+std collapse) and re-run the ag
 ## Honest bottom line
 1. The **frozen mean+std** representation is site-dominated (nonlinearly) AND outcome-poor — it barely
    encodes even age. No positive cross-site clinical finding is reachable from it at this n.
-2. **But the CPU path is not exhausted:** the positive control implicates my *mean+std pooling*, which is
-   fixable on CPU. The top next experiment is a **full-token attention-MIL** (Result 3 fork) — it decides
-   whether a positive finding is reachable on CPU (richer frozen pooling) or truly needs GPU fine-tuning.
+2. **CPU path now exhausted (Cycle-4 decider settled the fork).** A clean matched comparison (same
+   patients/windows/folds; mean+std vs channel-resolved full-token) gave age OOF AUC 0.401 vs 0.476 at
+   n=98 — both ≈chance. Richer pooling is NOT the lever; the frozen CBraMod *encoder* is the ceiling.
+   A positive cross-site clinical finding requires **encoder fine-tuning (GPU)**.
 3. The one genuine methods contribution is the **nonlinear-gate safeguard** — best placed as the
    *site-invariance gate* section of the main pre-registered study (with per-fold CIs + more sites), not a
    headline. Novelty INCREMENTAL.
