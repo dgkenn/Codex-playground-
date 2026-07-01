@@ -57,3 +57,24 @@ cannot distinguish "no signal" from "underpowered" (the Cycle-3 lesson). **A pro
 promising, and even TWA-MAP is ~chance here (consistent with the null higher-MAP-target RCTs in noncardiac
 surgery). If the powered read confirms τ adds nothing over baseline risk, this is an honest null → log and
 re-rank, do not force it.
+
+## POWERED RESULT (n=1,255; 149 AKI events) — clean NULL for the recovery-τ marker
+Nested 5-fold OOF logistic (mean of 5 seeds):
+| Model | OOF AUC |
+|---|---|
+| M0 baseline (age, sex, ASA, preop creatinine) | 0.770 |
+| M1 = M0 + standard intraop hemodynamics (TWA-MAP, AUC<65, MAP-variability, induction nadir, drop) | 0.806 |
+| **M2 = M1 + recovery-τ** | **0.801 (Δ over M1 = −0.005)** |
+| M0 + τ only | 0.764 (Δ over M0 = −0.006) |
+
+τ adjusted standardized logit coef **+0.043, 95% CI [−0.156, +0.187]** (spans 0). **The induction
+MAP-recovery-τ marker has ZERO incremental value** for postop AKI over baseline risk and standard
+hemodynamics — a clean, powered null (not a marginal miss). No τ-definition fishing (would be
+garden-of-forking-paths); one pre-specified marker, powered, null.
+- Secondary (non-novel): baseline clinical risk alone predicts AKI at 0.770; standard intraop
+  hemodynamics add a modest +0.036 — consistent with the literature, not a finding.
+- **Reusable asset built:** a VitalDB AKI cohort (2,579 cases with arterial line + KDIGO creatinine, ~305
+  events) with cheap 2 s numeric hemodynamics — reuse for other markers/outcomes without re-fetching.
+- **Verdict: GATED-NULL. Re-rank the queue** (next candidates: Idea 4 ventilator-waveform dynamics → PPCs;
+  Idea 3 individual cerebral-suppression threshold → delirium; or a cleanly externally-validated MIMIC↔eICU
+  tabular question). The recovery-kinetics reserve hypothesis is not supported in noncardiac surgery.

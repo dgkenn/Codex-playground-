@@ -164,6 +164,27 @@ run an injected-signal power calibration. n=327 (S0001 239 / I0002 88).
   clinical finding — encoder FINE-TUNING (GPU) is the required lever, not a better CPU pooling.** Stop
   spending CPU on frozen-representation tricks; the next real move needs a GPU.
 
+## Cycle 5 — CPU pivot to VitalDB (anesthesia), induction MAP-recovery-τ → postop AKI: clean NULL
+- **Novelty pre-screen EARNS its keep — it reframed the idea before compute.** Original "arterial
+  wave-reflection recovery kinetics → AKI" was killed by the haiku+PubMed screen for TWO reasons a reviewer
+  would hit on sight: (1) named-index proximity (augmentation index, O'Rourke); (2) **pressure-only wave
+  separation is discredited** (Mynard 2012, *J Hypertens* — reservoir-wave paradigm "introduces error"),
+  and VitalDB has no aortic flow. LESSON: for any waveform-morphology marker, check whether the physiologic
+  decomposition needs a signal you don't have — pressure-only ≠ wave separation. But the screen also
+  CONFIRMED live white space beneath it (higher-MAP-target RCTs are null → field wants a dynamic
+  reserve/endotype dimension beyond TWA-MAP), so the fix was to keep the target and swap the marker to a
+  pressure-only, non-named one (MAP recovery-τ after induction).
+- **Powered NULL (n=1,255, 149 AKI events):** baseline risk (age/sex/ASA/preop-Cr) OOF AUC 0.770; +standard
+  intraop hemodynamics 0.806; **+recovery-τ → 0.801 (Δ −0.005)**; τ adjusted coef +0.043 CI [−0.156,+0.187]
+  (spans 0). The "slow hemodynamic recovery = vasoregulatory reserve → AKI" hypothesis is NOT supported in
+  noncardiac surgery. Did NOT fish for a τ definition that works (garden-of-forking-paths) — one
+  pre-specified marker, powered, null. Even TWA-MAP itself is weak here (consistent with the null RCTs).
+- **PROCESS WIN (repeat of the Cycle-3 lesson):** the n=162/17-event pilot looked null (τ AUC 0.375) but
+  was underpowered; scaling to 149 events (cheap, threaded track fetch) was needed to make the null
+  trustworthy. Always power a null before believing it. **Reusable asset:** VitalDB AKI cohort (2,579 cases,
+  ~305 events) + cheap 2 s numeric-hemodynamics pipeline (threaded VitalDB `/labs`+track fetch), for future
+  markers/outcomes with no re-fetch. Detail: `docs/VITALDB_PIVOT_IDEA2.md`.
+
 ## Open opportunity (the current best shot)
 - **No EEG foundation model has been applied to clinical/neuro outcome prediction with external validation
   anywhere (as of 2026)** — DELPHI-EEG is single-center. HEEDB (multi-site EEG + ICD10/OMOP outcomes +
