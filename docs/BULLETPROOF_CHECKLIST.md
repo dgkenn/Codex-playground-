@@ -52,13 +52,16 @@ directly-measured analyte or model the correlation.
 | Exclusion (handoff changes only prescribing) | balance; NC outcomes; sending-service FE | NC null at 0 |
 | Not confounded by scheduled care changes at handoff | check nothing else protocolized changes at transfer | — |
 
-## Instrument B — Nurse-PRN administration IV — ❌ RETIRED (real-data negative result)
-Tested on real emar and FAILED: non-administrations are uncharted (2.93M "Administered" vs 75k "Not Given" →
-adminRate 0.97, no instrument variation), holds are non-discretionary, and patient-level aggregation is
-LOS-confounded (balance ±30 yr). Not identifiable in MIMIC. See `REAL_RESULTS_NURSE_PRN_RETIRED.md`. Gestalt
-drugs now route to provider-IV (elective) + contraindication-gate. (Original design retained below for record.)
+## Instrument B — Nurse-PRN IV — ✅ SALVAGED as dose-INTENSITY IV (v1 retired, v2 valid)
+v1 (give/hold per dose) failed on real emar (denominator unobserved, balance ±30 yr). v2 reframe = PRN dose
+INTENSITY (count of given doses) in a FIXED 48h window, instrument = nurse leave-one-out liberality, within
+service/acuity → **balance recovered to <1 yr, F 51–1536, NC-calibrated.** Real results: opioid clean NULL
+(p=0.95); benzo/antipsy harm signals survive gates (p<0.001) but flagged pending a sedation-culture
+exclusion test (per-dose LATE implausibly large). Code `nurse_prn_iv_v2.py`; detail `REAL_RESULTS_NURSE_PRN_RETIRED.md`.
+Added gate: for a dose-INTENSITY IV, test the exclusion via co-intervention balance (does nurse liberality
+predict restraints/immobility/monitoring independent of dose?).
 
-### [RETIRED] original design — Nurse-PRN administration IV (benzo/opioid/antipsychotic)
+### [v1 RETIRED] original design — Nurse-PRN administration IV (benzo/opioid/antipsychotic)
 `emar` is stream-filtered to due-dose decisions (medication class × event_txt Administered/Not-Given ×
 enter_provider_id = administering nurse); instrument = nurse leave-one-out administration rate. Gates: relevance
 F≥10; balance (age/severity ~ nurse tendency) ~0; nurse↔patient assignment as-if-random **within unit×shift**

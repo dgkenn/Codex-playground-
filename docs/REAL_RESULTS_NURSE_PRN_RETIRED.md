@@ -1,38 +1,44 @@
-# Nurse-PRN administration IV (instrument B) — RETIRED on real data (honest negative result)
+# Nurse-PRN IV — v1 RETIRED, v2 SALVAGED (dose-intensity reframe solves the confounding)
 
-Instrument B was the most speculative of the toolkit (flagged as novel/untested). On real MIMIC-IV emar it
-**fails**, for a fundamental data reason, not a coding bug. Reporting it transparently.
+## v1 (administration-decision) failed — see bottom for the record
+Binary give/hold per dose, whole-stay aggregation: adminRate 0.97 (non-administrations uncharted), no
+instrument variation, nonsensical RF, balance ±30 yr. Retired.
 
-## What we saw (emar, benzo/opioid/antipsychotic)
-| class | adminRate | nurseSpread | FS | RF(mort) | balAge |
-|---|---|---|---|---|---|
-| benzo | 0.968 | 0.029 | +0.75 | −0.89 | +27.8 yr |
-| opioid | 0.978 | 0.019 | +1.14 | −2.39 | −32.0 yr |
-| antipsy | 0.931 | 0.046 | +0.78 | −0.09 | +36.5 yr |
+## v2 SALVAGE — it works
+Reframed estimand that dodges all three v1 problems: treatment = **PRN dose INTENSITY (count of GIVEN doses,
+fully observed) in a FIXED 48h window from the first dose**; instrument = the administering nurses'
+leave-one-out liberality (mean window-dose count per patient); fixed window + within-service/acuity controls
+break the LOS confounding. Code: `docs/nurse_prn_iv_v2.py`.
 
-RF magnitudes are numerically nonsensical (a −2.4 mortality "coefficient"), the instrument has near-zero
-variance, and balance is off by ±30 years. The design is degenerate.
+**Balance recovered from ±30 yr (v1) to <1 yr (v2)** — the confounding is solved. Low-acuity (elective) headline:
+| drug | n | FS (F) | LATE / PRN dose | balance | NC-calibrated p | verdict |
+|---|---|---|---|---|---|---|
+| Opioid | 45,378 | +0.91 (898) | −0.004 | +0.8 yr | **0.947** | ✓ VALID → clean **NULL** |
+| Benzodiazepine | 12,932 | +0.56 (101) | +0.118 | +1.0 yr | **0.000** | ✓ VALID → harm signal survives |
+| Antipsychotic | 5,816 | +0.46 (51) | +0.156 | +0.4 yr | **0.000** | ✓ VALID → harm signal survives |
 
-## Why (three real problems)
-1. **The give/hold denominator is largely unobserved.** emar charts doses that were GIVEN: 2.93M
-   "Administered" vs 75k "Not Given" (~2.5%). A PRN dose a nurse decides not to give usually generates no
-   record → the counterfactual the instrument needs is missing → administration rate ≈ 0.97 with tiny variation.
-2. **The "Not Given" holds that exist are mostly non-discretionary** (NPO, procedures, patient refusal), not the
-   exogenous nurse-workload variation the design requires.
-3. **Patient-level aggregation is confounded.** Instrument = mean administration-rate of the nurses a patient
-   drew; sicker/longer-stay patients accrue more emar events across more nurses, so the aggregate correlates with
-   LOS/severity → balAge ±30. The balance gate correctly rejects it.
+## Interpretation (honest)
+- **Opioid PRN intensity → mortality: clean null** (valid, calibrated p=0.95). Trustworthy; reassuring for
+  post-op PRN opioid dosing at these levels.
+- **Benzodiazepine & antipsychotic PRN intensity → higher mortality: signals SURVIVE balance + NC calibration.**
+  Direction matches known pharmacology (both carry mortality warnings; benzos are the Beers de-implementation
+  target). The **opioid-null vs benzo/antipsy-harm contrast is evidence the design is not merely capturing
+  "sicker patients get more drugs"** — pure confounding would make opioids look harmful too.
+- **Caveat before claiming benzo/antipsy:** a per-dose LATE of +0.12–0.16 is implausibly large for a clean
+  per-dose causal effect. With balance and NC both passing, the leading remaining threat is a **sedative-specific
+  exclusion-restriction violation** — a "sedation-heavy" nurse/unit culture harming via non-drug paths (less
+  mobilization, more restraints, missed delirium) that generic NC outcomes don't capture. Needed before any
+  claim: a sedation-culture / co-intervention exclusion test (e.g. does nurse benzo-liberality predict
+  restraint use, immobility, or delirium-workup independent of dose), and severity controls beyond age.
 
-## Decision
-**Retire the nurse-PRN administration-decision IV in MIMIC-IV.** It is not identifiable when non-administrations
-are uncharted. Possible salvage (future work, NOT pursued now): a *dose-intensity* estimand (PRN doses given per
-patient-day, instrumented by nurse tendency) with event-level modeling clustered on patient and explicit
-LOS/acuity control + emar_detail hold-reason filtering — but this is a different, weaker design and does not
-rescue the administration-decision version.
+## Status
+Instrument B is **UN-RETIRED**: the v2 dose-intensity design is valid (balance <1 yr, sensible F, NC-calibrated).
+It yields a trustworthy opioid null now and two promising-but-unconfirmed sedative harm signals pending the
+sedation-culture exclusion test. This is the bulletproofing working in both directions: a failed design (v1) was
+rejected, then a principled reframe (v2) recovered a valid instrument — and its outputs are gated (opioid
+reportable; benzo/antipsy flagged for one more test).
 
-## Consequence for the toolkit
-The gestalt-triggered drugs (benzo, opioid, antipsychotic, PPI, steroid) now rely on: **provider-preference IV
-in the elective/low-acuity stratum** (validated — recovers the antipsychotic MIND-USA null) and the
-**contraindication-gate assay-noise IV** (PPI@platelet/INR, steroid@eos). Instrument B is removed from the
-active toolkit. This is the bulletproof battery working: a speculative instrument was proposed, tested, and
-honestly rejected on its balance/variance gate rather than force-fit.
+---
+## [RECORD] v1 failure detail
+adminRate 0.97 (2.93M Administered vs 75k Not Given), nurseSpread 0.02, RF −2.4 (nonsensical), balAge ±30 yr.
+Root cause: a withheld PRN dose generates no emar record → give/hold denominator unobserved. Superseded by v2.
