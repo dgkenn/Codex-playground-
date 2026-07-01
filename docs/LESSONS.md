@@ -153,8 +153,14 @@ run an injected-signal power calibration. n=327 (S0001 239 / I0002 88).
   encoder limit" — do it before spending on GPU.
 - **NET:** the frozen **mean+std** + CPU path cannot deliver a positive cross-site clinical finding at this
   n; the site confound is nonlinear (survives linear harmonization) and the representation barely encodes
-  even age. The CPU path is NOT yet exhausted — full-token pooling is the untested lever. Full writeup:
-  `docs/CYCLE3_SITE_INVARIANCE.md`.
+  even age. Full writeup: `docs/CYCLE3_SITE_INVARIANCE.md`.
+- **Cycle-4 pilot (full-token, channel-resolved): did NOT rescue the representation.** Re-embedded 80
+  S0001 EDFs keeping per-channel tokens (pool time only, 228 tokens/bag); age>median OOF AUC = **0.443** vs
+  mean+std 0.610 — no improvement. CAVEATS: different subset, NWIN=12, and per-token standardization across
+  228 heterogeneous channel tokens likely adds noise → treat as suggestive, not a clean verdict. **Lesson:
+  richer frozen pooling is not a free CPU win**; the weight of evidence now points at the frozen ENCODER
+  itself (→ GPU fine-tuning) rather than my pooling choice. Clean decider = a MATCHED full-token comparison
+  (same patients/NWIN, better token norm) — but the ceiling looks like fine-tuning, not pooling.
 
 ## Open opportunity (the current best shot)
 - **No EEG foundation model has been applied to clinical/neuro outcome prediction with external validation

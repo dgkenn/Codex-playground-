@@ -15,13 +15,14 @@ FINDINGS_LEDGER.md with their verdict + the attack map.
 0a. **[DONE] Positive-control outcome (age/sex).** Sex 0.50, age 0.55 (all) / 0.61 (S0001). Harness works
     (injected-signal 0.6σ→0.84) but the frozen **mean+std** representation barely encodes even age → the
     REPRESENTATION is the bottleneck. This promotes 0a-prime to the single most important experiment:
-0a-prime. **[TOP PRIORITY, CPU, overnight] Full-token attention-MIL — no mean+std collapse.** Re-embed
-    (or re-cache) so each window keeps its full 19×30 token grid; attention-MIL over ALL tokens. Re-run the
-    AGE positive control first as the decider: age ≳0.75 ⇒ mean+std pooling was the bottleneck and a
-    positive clinical finding may be reachable ON CPU (then redo cognitive/mortality with full tokens);
-    age still ≈0.6 ⇒ frozen encoder insufficient ⇒ GPU fine-tuning. Cleanly separates "my pooling choice"
-    from "frozen-encoder limit" before any GPU spend. Re-embedding is the slow part (~10 s/patient,
-    credentialed) — checkpoint every 25 patients; a 40-patient time-boxed pilot is enough to decide the fork.
+0a-prime. **[PILOT DONE — inconclusive-leaning-negative] Full-token (channel-resolved) attention-MIL.**
+    Re-embedded 80 S0001 EDFs keeping per-channel tokens (pool time patches only → 24... NWIN=12 × 19 = 228
+    tokens/bag, d=200); age>median OOF AUC = **0.443** [0.356,0.507] vs mean+std 0.610. The richer
+    representation did NOT rescue age → no support for "pooling was an easy CPU win." CAVEATS (why it's not
+    yet a clean verdict): different patient subset than the 0.610 run, NWIN=12 (half), and per-token
+    z-standardization across 228 heterogeneous channel tokens likely injects noise. **To nail the fork,
+    a MATCHED comparison is needed** (same patients, same NWIN, better token normalization / full attention).
+    Weight of evidence now leans toward "frozen ENCODER is the limit → GPU fine-tuning," not pooling.
 0b. **[if we pursue the methods note] Harden Claim A to a publishable safeguard:** refit ComBat/CORAL
     PER-FOLD (kill the global-fit leakage objection), add bootstrap CIs on all four site-AUCs, add a
     permutation null for the site probes, and — the big one — **add ≥1–2 more HEEDB sites** so the
