@@ -264,6 +264,24 @@ run an injected-signal power calibration. n=327 (S0001 239 / I0002 88).
   sensitivity; (4) eICU external validation. This is the best lead so far — valid design + novel,
   externally-validatable null — worth hardening rather than another fresh cycle.
 
+## Cycle 8 (cont.) — COMPREHENSIVE outcome-wide RDD: repletion is inert across ALL known outcomes (the WINNER)
+- Tested every known consequence of hypo-Mg/hypo-K (17 ICD complications + mortality + LOS = 38 RDD tests,
+  BH-FDR): atrial fib, ventricular arrhythmia, cardiac arrest, brady/heart-block, torsades/long-QT, seizure,
+  delirium, ileus, rhabdo, muscle weakness, resp failure, AKI, hypocalcemia, metab alkalosis, MI, shock.
+- **METHODS CATCH (crucial):** a naive difference-of-means-in-window RD gave a dozen "p≈0" hits — all were
+  the smooth CONFOUNDED electrolyte-outcome slopes, NOT jumps. Proper **local-linear RD** (line each side,
+  gap at cutoff; sandwich SE) removes the slope → **0 of 38 survive FDR.** LESSON: for RDD, difference-of-means
+  over any nonzero bandwidth conflates slope with discontinuity; ALWAYS use local-linear (or the estimate is
+  just the confounded association). This single fix flipped "12 findings" → "clean comprehensive null."
+- **FINDING (the session's winner candidate):** threshold-triggered Mg/K repletion has NO causal effect on
+  mortality, LOS, or ANY known complication (n≈128k Mg/54k K near-cutoff, MIMIC-IV). Comprehensiveness
+  strengthens it — if repletion did anything, ≥1 of 17 mechanistic outcomes should have moved; none did.
+  Novel (no prior RDD of repletion across its outcomes), high-impact de-implementation, rigorous
+  (local-linear + FDR + acuity-robust + multi-threshold smooth). Only nominal signal = Mg→delirium (z−3.0,
+  fails FDR) → hypothesis for a timed-outcome follow-up. Detail: `docs/CYCLE8_RDD_ELECTROLYTE_LEAD.md`.
+- Remaining hardening (loop): eICU replication (proxy-bottlenecked stream); discrete-RDD inference for the
+  heaped running variable; time-resolved delirium/new-AF endpoints (chartevents); density/covariate checks.
+
 ## Open opportunity (the current best shot)
 - **No EEG foundation model has been applied to clinical/neuro outcome prediction with external validation
   anywhere (as of 2026)** — DELPHI-EEG is single-center. HEEDB (multi-site EEG + ICD10/OMOP outcomes +

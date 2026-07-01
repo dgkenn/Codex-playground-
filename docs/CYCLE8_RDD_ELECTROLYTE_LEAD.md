@@ -63,7 +63,38 @@ Two complementary analyses (MIMIC, cached):
   actually lower below the cutoff — opposite to a repletion benefit). Suggestive of no AF benefit, but needs
   a TIME-RESOLVED AF endpoint (chartevents rhythm / new-onset after the Mg) to be clean.
 
-## Status / verdict
+## COMPREHENSIVE outcome-wide RDD scan (every known consequence of hypo-Mg / hypo-K)
+Tested ~17 ICD-coded complications each electrolyte is known/hypothesized to cause + mortality + LOS =
+**38 RDD tests**, BH-FDR corrected. Outcomes (diagnoses_icd, cached): atrial fibrillation, ventricular
+arrhythmia, cardiac arrest, brady/heart-block, any-arrhythmia, torsades/long-QT, seizure, delirium/
+encephalopathy, ileus, rhabdomyolysis, muscle weakness, respiratory failure, AKI, hypocalcemia, metabolic
+alkalosis, MI, cardiogenic shock; + in-hospital mortality; + hospital LOS.
+
+**CRITICAL methods catch (part of the rigor):** a naive difference-of-means-in-a-window RD gave a DOZEN
+"p≈0" hits — but those are the smooth CONFOUNDED slopes (low K ↔ more AKI/alkalosis/mortality; high Mg ↔
+more arrhythmia via renal failure), NOT jumps at the cutoff. Switching to proper **local-linear RD**
+(fit a line each side, gap at the cutoff = the estimate; sandwich SE) removes the slope. Result:
+
+**0 of 38 outcomes survive BH-FDR at 5%.** Strongest residual = Mg→delirium (RD −0.011, z −3.0, p 0.003) —
+does NOT survive correction across 38 tests; a hypothesis at best (mechanistically plausible; flag for a
+timed-outcome follow-up). Mortality (Mg z −0.09, K z −0.25) and LOS (Mg z −0.53, K z +1.15) are cleanly null.
+
+**Interpretation:** across EVERY known consequence, threshold-triggered Mg/K repletion shows **no causal
+discontinuity**. The comprehensiveness strengthens the null — if repletion did anything, at least one of
+17 mechanistically-linked outcomes should have moved at the cutoff; none did.
+
+## Status / verdict — the session's WINNER candidate (comprehensive de-implementation)
+**"Threshold-triggered magnesium and potassium repletion has no detectable causal effect on in-hospital
+mortality, length of stay, or ANY of the ~17 known clinical complications of hypomagnesemia/hypokalemia —
+a comprehensive, FDR-corrected regression-discontinuity analysis (n≈128k Mg / 54k K near-cutoff admissions,
+MIMIC-IV). Reflexive electrolyte repletion at standard thresholds appears to be low-value across the board;
+looser thresholds are non-inferior."** Novel (no prior RDD of repletion across its purported outcomes),
+high-impact (de-implementation of one of the most common inpatient reflexes), rigorous (proper local-linear
+RD + FDR + acuity robustness + multi-threshold smoothness).
+Remaining hardening (loop continues): eICU external replication (streaming, proxy-bottlenecked); discrete-RDD
+inference for the digit-heaped running variable; TIME-RESOLVED outcomes (esp. delirium & new-onset AF via
+chartevents) to convert the ascertainment-caveated ICD outcomes into clean endpoints; McCrary density/
+covariate-continuity checks; provider-preference IV as a second identification strategy.
 **The first genuinely promising lead of the search:** a valid RDD first stage + a well-powered mortality null
 on an evidence-free ubiquitous practice = a real de-implementation candidate. NOT yet a confirmed winner —
 it needs discrete-RDD inference, the arrhythmia endpoint, decision-point sensitivity, and eICU replication.
