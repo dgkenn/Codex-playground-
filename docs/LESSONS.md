@@ -282,6 +282,41 @@ run an injected-signal power calibration. n=327 (S0001 239 / I0002 88).
 - Remaining hardening (loop): eICU replication (proxy-bottlenecked stream); discrete-RDD inference for the
   heaped running variable; time-resolved delirium/new-AF endpoints (chartevents); density/covariate checks.
 
+## Deconfounding methods — the assay-noise instrument (the /goal deep-dive)
+- **The universal obstacle, restated:** reflexive lab-triggered treatment (electrolyte/PPI/transfusion/insulin)
+  is a near-deterministic function of a time-varying severity signal that also drives the outcome. Proven that
+  RDD (no discontinuity), provider-IV (exclusion fails), within-patient FE (sicker episode), IPTW (RR 4.17)
+  all break on it → motivates a design that uses EXOGENOUS variation unrelated to the individual's prognosis.
+- **The idea — assay-noise IV ("lab lottery"):** measured lab = true + analytic/biologic noise; conditional on
+  the TRUE value, which side of a flag the noisy value lands on is as-good-as-random → an exogenous instrument.
+  Grounded in CLIA analytic imprecision (auditable, severity-independent). Applies to every lab-flag treatment.
+- **CORE IDEA IS PRIOR ART** (do not claim as novel): noise-induced randomization at a threshold — Eckles,
+  Ignatiadis, Wager, Wu (*Biometrika* 2025); Pei–Shen RDD-with-measurement-error (2017); Barreca et al.
+  birthweight-heaping-at-1500g is the closest clinical cousin (and solved the same leaky-control trap).
+- **FATAL FAILURE MODE (hostile-referee catch, mechanism):** if the severity CONTROL shares noise with the
+  INSTRUMENT — e.g. control `T̂=(M1+M2)/2` while `Z=1(M2<flag)` — then holding `T̂` fixed forces a
+  compensating move in the other draw, so within a `T̂` stratum `Z=1` patients are truly SICKER →
+  confounding-by-indication re-enters the estimating equation, **biased toward false HARM**, and any balance
+  test run on the contaminated control is invalid. FIX: **leave-one-out** severity control `T̂_{-t}` built from
+  draws OTHER than the one supplying the instrument (jackknife/split-sample logic) → control ⟂ instrument noise.
+  This voided the first Mg result (first stage +0.032 / RF +0.0015 / LATE +0.045 are contaminated, not to be cited).
+- **Naive repeated-measurement pooling gives a DEGENERATE ≈0 first stage** because (a) post-treatment draws
+  aren't fresh decisions (must be absorbing-censored) and (b) eligibility defined on the NOISY value conditions
+  on the instrument. FIX = the **renewal design**: eligible node = not-yet-treated ∧ near-flag on the
+  NOISE-FREE proxy `T̂_{-t}`; stack across nodes; cluster SE on patient. This recovers ~√(mean draws/patient)
+  power the single-draw design throws away and is the genuinely NOVEL piece (serially-correlated-noise-
+  randomized repeated decisions with an absorbing treatment + terminal outcome; leave-one-out control for a
+  latent serially-correlated state). Full write-up: `docs/ASSAY_NOISE_IV_METHODOLOGY.md`.
+- **σ from far-apart draw-pairs OVER-estimates pure assay noise** (conflates analytic error with true biologic
+  drift) → re-estimate by inter-draw interval (drift signature if σ grows with Δt) and severity stratum.
+- **Bulletproof = falsification battery, not a number:** McCrary/CJM density test at the round threshold
+  (heaping → donut hole) FIRST; bundle-balance (flag may trigger telemetry/co-repletion/monitoring, not just
+  the treatment → exclusion fails); weak-IV-robust inference (Anderson–Rubin, lead with reduced-form ITT, not
+  delta-method LATE); competing-risks (in-hospital mortality is LOS-dependent → 30/90-day, Fine–Gray).
+- **Packaging = convergent partial identification:** combine a harm-biased design (IPTW/provider-IV) + a
+  benefit-biased design (treatment withheld from the sickest / healthy-user elective strata) to BRACKET the
+  truth, with the corrected assay-noise reduced form as the ~unbiased anchor → Manski-style reviewer-proof bounds.
+
 ## Open opportunity (the current best shot)
 - **No EEG foundation model has been applied to clinical/neuro outcome prediction with external validation
   anywhere (as of 2026)** — DELPHI-EEG is single-center. HEEDB (multi-site EEG + ICD10/OMOP outcomes +

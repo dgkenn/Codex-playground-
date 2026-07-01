@@ -1,3 +1,11 @@
+> **⚠️ SUPERSEDED — the numbers below are CONTAMINATED, do not cite.** A hostile-referee red-team found the
+> design is not identified: the severity control `T̂=(M1+M2)/2` shares noise with the instrument `Z=1(M2<2.0)`,
+> which re-introduces confounding-by-indication (biased toward false harm) *inside* the estimating equation, and
+> the "balance passes" check was itself run on the contaminated control. The corrected design (leave-one-out
+> severity control), the formal identification + renewal extension, and the prioritized falsification battery
+> are in **`docs/ASSAY_NOISE_IV_METHODOLOGY.md`**. This file is kept only as the record of the first cut and its
+> refutation. The Result-2 balance/first-stage/reduced-form/LATE figures must be re-derived before any use.
+
 # Assay-noise instrument for reflexive lab-triggered treatments — results + path to bulletproof
 
 **Goal:** a bulletproof, broadly-applicable method to defeat confounding-by-indication for reflexive,
