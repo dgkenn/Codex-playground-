@@ -53,6 +53,35 @@ re-analysis (lowest-Mg labevents pass running). Honest status: the de-implementa
 redo — if min-Mg shows a real first stage AND a null reduced form across outcomes, it holds validly; otherwise
 it changes. Documented transparently rather than shipped on the invalid running variable.
 
+## ⚠⚠ DECISIVE: RDD is NOT a valid design here — repletion is a smooth dose-response, not a threshold rule
+Raw first stage, P(Mg repletion ≤6h) by first near-cutoff Mg value: 1.6→0.080, 1.7→0.061, 1.8→0.037,
+1.9→0.024, **2.0→0.0065**, 2.1→0.0028, 2.2→0.0028. This is a **smooth steep DECLINE that flattens at 2.0**,
+NOT a discontinuous jump. Clinicians replete more the lower the value (continuous dose-response); the
+discontinuous component at exactly 2.0 is small (~0.5–1.7 pp). **⇒ The RDD first stage is too weak to
+identify the causal effect (fuzzy LATE CI is enormous regardless of n). RDD/measurement-level RDD are both
+invalid/underpowered for this question.** The reduced-form outcome nulls are real but do NOT causally isolate
+repletion (near-flat first stage). **The "comprehensive de-implementation RDD finding" is RETRACTED as an
+RDD claim** — honest outcome of red-teaming, caught before submission.
+
+### What CAN answer it (valid paths — none is RDD):
+1. **Target-trial emulation** of "replete vs watchful-waiting for mild hypo-Mg/K" with heavy confounding
+   control — BUT the trigger value (Mg level) is itself the main confounder (sicker/lower get repleted),
+   so this needs rich severity adjustment + negative-control calibration + E-values; hard, and the
+   confounding-by-indication ceiling (~OR 1.35 lesson) looms.
+2. **Provider/hospital-preference IV** — needs a STRONG, exclusion-valid instrument (unit-IV already failed
+   on case-mix; provider-preference within unit is the remaining candidate, feasibility uncertain).
+3. **Regression KINK design (RKD)** — the treatment has a kink (declining below 2.0, flat above); RKD is the
+   technically-correct tool for a kinked continuous treatment, but demanding (needs power to detect an
+   outcome kink; likely underpowered given the weak treatment kink).
+4. **The definitive answer = a pragmatic cluster-randomized DE-IMPLEMENTATION RCT** (aggressive vs
+   conservative repletion order-set). This is the real practice-changing / guideline-setting study.
+
+### Honest status of the "winner"
+Not a validated finding. The genuinely-true, defensible facts that survive: (a) the evidence base for
+repleting mild asymptomatic hypo-Mg/K is essentially empty (no RCTs; closest is n=724 PSM, null); (b) the
+practice is enormous (129k Mg administrations/1 hospital); (c) outcomes vary SMOOTHLY through the putative
+thresholds with no jump. These motivate — but do not themselves constitute — a causal de-implementation claim.
+
 ## Harm-from-over-repletion (run) — NO harm signal
 Downstream hyper-Mg (>2.5/>3.0) and hyper-K (>5.0/>5.5) do NOT jump below the repletion cutoff (Mg RD
 −0.008/−0.005 in the non-harm direction; K null). Repletion is inert, not dangerous — story stays "no benefit."
