@@ -56,6 +56,28 @@ Format: each lesson = what we learned + the mechanism + the implication. Negativ
   the mean-pool ceiling (attend over windows) AND the GPU need. Only end-to-end encoder fine-tuning
   remains GPU-only. Checkpoint every N patients (reaps).
 
+## Cycle 1 — flagship DESIGN pre-mortem (attack → fix map; hostile-review gate applied BEFORE running)
+The naive flagship (frozen embed → MIL head → abnormal-vs-normal EEG, train S0001/test I0002) would FAIL
+review. Attacks and the fixes now baked into the design:
+- **ATTACK: site = hospital confound / shortcut learning.** Embeddings are amplitude/gross-signal
+  dominated (PC1=67% var); a single train-site/test-site split invites "you learned the amplifier."
+  **FIX:** run `analysis/site_probe.py` on per-window tokens; fit `analysis/correct_sites.py` Route-A
+  site-correction on the TRAIN site only; publish a gate = post-correction site-AUC ≤ chance; test
+  bidirectionally AND confirm on a THIRD never-touched site (not S0001↔I0002 ping-pong).
+- **ATTACK: abnormal-vs-normal EEG is a SOLVED benchmark (TUAB ~0.90 fine-tuned).** Doing it cross-site
+  frozen reads as "reproduced a known task worse on less data." **FIX:** demote abnormal/normal to a
+  calibration/sanity check; primary outcome = something with NO existing FM literature.
+- **ATTACK: "abnormal" label = one neurologist's gestalt** (reader/site-culture dependent, no inter-rater,
+  circular vs the report). **FIX:** use an ICD-coded diagnosis or death — NOT a report-derived bit.
+- **REDESIGN (adopted): primary = cognitive/behavioral-syndrome (encephalopathy/delirium-spectrum)
+  ICD-10** (`HEEDB_ICD10_for_Neurology.csv`); **secondary = mortality** (DateOfDeath); train-S0001 /
+  tune-I0002 / confirm-third-site; site-invariance correction+audit BEFORE the outcome head is trained;
+  pre-register via the repo freeze/hash machinery; pre-register an honest sub-SOTA (frozen≠fine-tuned) framing.
+- **ATTACK: the mean-pool-ceiling diagnostic was only on POOLED embeddings.** **FIX:** re-run the
+  in-sample-vs-OOF / PCA / rank diagnostic at the TOKEN/MIL level before trusting the MIL head escapes it.
+- The embedding cache is outcome-AGNOSTIC (per-window EEG reps keyed by site_pid) → reuse it, just re-join
+  to the ICD/mortality labels. No re-embedding needed when the outcome changes.
+
 ## Open opportunity (the current best shot)
 - **No EEG foundation model has been applied to clinical/neuro outcome prediction with external validation
   anywhere (as of 2026)** — DELPHI-EEG is single-center. HEEDB (multi-site EEG + ICD10/OMOP outcomes +
