@@ -293,13 +293,18 @@ run an injected-signal power calibration. n=327 (S0001 239 / I0002 88).
 - **CORE IDEA IS PRIOR ART** (do not claim as novel): noise-induced randomization at a threshold — Eckles,
   Ignatiadis, Wager, Wu (*Biometrika* 2025); Pei–Shen RDD-with-measurement-error (2017); Barreca et al.
   birthweight-heaping-at-1500g is the closest clinical cousin (and solved the same leaky-control trap).
-- **FATAL FAILURE MODE (hostile-referee catch, mechanism):** if the severity CONTROL shares noise with the
-  INSTRUMENT — e.g. control `T̂=(M1+M2)/2` while `Z=1(M2<flag)` — then holding `T̂` fixed forces a
-  compensating move in the other draw, so within a `T̂` stratum `Z=1` patients are truly SICKER →
-  confounding-by-indication re-enters the estimating equation, **biased toward false HARM**, and any balance
-  test run on the contaminated control is invalid. FIX: **leave-one-out** severity control `T̂_{-t}` built from
-  draws OTHER than the one supplying the instrument (jackknife/split-sample logic) → control ⟂ instrument noise.
-  This voided the first Mg result (first stage +0.032 / RF +0.0015 / LATE +0.045 are contaminated, not to be cited).
+- **RED-TEAM CLAIM OVERTURNED BY SIMULATION (the important one — validate fixes, not just findings):** the
+  referee argued control `T̂=(M1+M2)/2` shares noise with `Z=1(M2<flag)` → biased toward false HARM, and
+  prescribed dropping M2 (control on M1 only). A known-truth Monte Carlo (`docs/ASSAY_NOISE_IV_SIMULATION.md`,
+  `docs/sim_assay_noise_iv.py`) **refuted it**: for EQUAL-variance noise, conditional on the midpoint the instrument
+  driver `∝(ε2−ε1)` is ORTHOGONAL to the severity driver `∝(ε1+ε2)` (Cov = Var(ε2)−Var(ε1) = 0), so the
+  midpoint control is EXACTLY unbiased (sim balance on true severity = 0.0000, LATE recovers truth; robust to
+  drift) and the original age-balance (+0.27yr≈0) was VALID. The prescribed "M1-only" fix is the BIASED one
+  (sim balance −0.12). **Mechanism of the real vulnerability:** midpoint bias `∝ Var(ε2)−Var(ε1)` → breaks only
+  under ASYMMETRIC noise (draws at different times/analyzers); robust general control = LOCAL many-draw
+  leave-one-out proxy (bias→0 as draws accumulate). LESSON: an over-claimed refutation is as damaging as an
+  over-claimed finding — simulate the FIX against a known truth before adopting it. The first Mg numbers are
+  NOT void on shared-noise grounds; they still must pass the OTHER threats below.
 - **Naive repeated-measurement pooling gives a DEGENERATE ≈0 first stage** because (a) post-treatment draws
   aren't fresh decisions (must be absorbing-censored) and (b) eligibility defined on the NOISY value conditions
   on the instrument. FIX = the **renewal design**: eligible node = not-yet-treated ∧ near-flag on the

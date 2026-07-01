@@ -1,10 +1,12 @@
-> **⚠️ SUPERSEDED — the numbers below are CONTAMINATED, do not cite.** A hostile-referee red-team found the
-> design is not identified: the severity control `T̂=(M1+M2)/2` shares noise with the instrument `Z=1(M2<2.0)`,
-> which re-introduces confounding-by-indication (biased toward false harm) *inside* the estimating equation, and
-> the "balance passes" check was itself run on the contaminated control. The corrected design (leave-one-out
-> severity control), the formal identification + renewal extension, and the prioritized falsification battery
-> are in **`docs/ASSAY_NOISE_IV_METHODOLOGY.md`**. This file is kept only as the record of the first cut and its
-> refutation. The Result-2 balance/first-stage/reduced-form/LATE figures must be re-derived before any use.
+> **⚠️ UNDER RE-EXAMINATION (not void).** A hostile red-team argued the control `T̂=(M1+M2)/2` shares noise with
+> `Z=1(M2<2.0)` and prescribed dropping M2. A known-truth Monte Carlo (`docs/ASSAY_NOISE_IV_SIMULATION.md`)
+> **refuted that specific claim**: under *equal-variance* noise the midpoint control is *exactly* unbiased
+> (Cov(ε2−ε1, ε1+ε2)=0), so the original age-balance (+0.27 yr ≈ 0) was valid evidence — while the prescribed
+> "M1-only" fix is the biased one. The midpoint is defensible when the two draws have equal analytic variance
+> (likely in MIMIC; must be tested). **The genuine surviving threats are the OTHER red-team points** (weak first
+> stage → use Anderson–Rubin not delta-method; care-bundle/exclusion; competing-risks mortality; heaping;
+> selection; σ-symmetry/drift) — those must pass the falsification battery before the Result-2 figures are used.
+> Method + battery: `docs/ASSAY_NOISE_IV_METHODOLOGY.md`; simulation: `docs/ASSAY_NOISE_IV_SIMULATION.md`.
 
 # Assay-noise instrument for reflexive lab-triggered treatments — results + path to bulletproof
 

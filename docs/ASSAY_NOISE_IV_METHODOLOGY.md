@@ -4,8 +4,10 @@
 confounding-by-indication for reflexive, lab-triggered inpatient treatments (electrolyte repletion, PPI,
 transfusion, insulin, …), where treatment is a near-deterministic function of a time-varying severity signal
 that also drives the outcome. This is the corrected methodology after a hostile-referee red-team destroyed the
-first implementation and a formal identification derivation fixed it. It supersedes the *design* described in
-`ASSAY_NOISE_IV_RESULTS.md` (whose empirical numbers are now known to be contaminated — see §2).
+first implementation, a formal identification derivation extended it, and a known-truth simulation corrected an
+over-claimed refutation (see §2). It supersedes the *design framing* in `ASSAY_NOISE_IV_RESULTS.md`; those
+empirical numbers are **not void** (the shared-noise objection failed in simulation) but must still pass the
+falsification battery (§5) before use.
 
 ---
 
@@ -27,23 +29,30 @@ target-trial (RR 4.17, negative control fails). Solving it once, broadly, is the
 
 ---
 
-## 2. What the first implementation got WRONG (the referee's fatal catch)
+## 2. The referee's headline catch — and why a simulation OVERTURNED it
 
 The first design used two pre-treatment draws `M1, M2`, severity control **T̂ = (M1+M2)/2**, and instrument
-**Z = 1(M2 < 2.0)**. This is **not identified**, for a reason baked into the estimating equation:
+**Z = 1(M2 < 2.0)**. A hostile referee argued this is "not identified" because `T̂` shares noise (`ε₂`) with `Z`,
+supposedly re-introducing confounding, and prescribed dropping `M2` (control on `M1` alone).
 
-> **The control shares noise with the instrument.** `T̂` contains `M2`, and `Z` is a function of `M2`. Holding
-> `T̂` fixed, a lower `ε₂` (what pushed `M2` under the flag, raising `Z`) must be offset by a higher `M1` to keep
-> the average fixed — so within a `T̂` stratum, `Z = 1` patients have systematically higher *true* severity.
-> Conditioning on `T̂` therefore does **not** hold true severity constant across `Z`; it re-introduces
-> confounding by indication, **biased toward false harm** (a within-stratum regression-to-the-mean / Berkson
-> leak). The reported "balance passes" test was itself run on the contaminated control, so it does not license
-> the exogeneity claim.
+**A known-truth Monte Carlo refuted the specific claim** (`docs/ASSAY_NOISE_IV_SIMULATION.md`,
+`docs/sim_assay_noise_iv.py`). For symmetric (equal-variance) Gaussian noise, conditional on the midpoint `T̂` the
+instrument driver `∝(ε₂−ε₁)` is **orthogonal** to the true-severity driver `∝(ε₁+ε₂)` since
+`Cov(ε₂−ε₁, ε₁+ε₂)=Var(ε₂)−Var(ε₁)=0`. So the midpoint control **exactly balances** `Z ⟂ T` (simulated balance
+on true severity = 0.0000; LATE recovers the known truth), and the original age-balance test (+0.27 yr ≈ 0) was
+**valid evidence**, not an artifact. The referee's heuristic ("low M2 ⟹ high M1 ⟹ sicker") ignored the
+cancellation. Worse, the prescribed "M1-only" fix is the **biased** one (simulated balance −0.12, LATE +0.062):
+conditioning on `M1` alone leaves `ε₁` driving both `Z` and the residual `T`.
 
-Consequently the previously reported first stage (+0.032), reduced form (+0.0015), and LATE (+0.045) are
-**uninterpretable** and must not be cited or acted on. The fix is mechanical and cheap (§3–4).
+**Correct reading:** the midpoint control is defensible **iff the two draws have equal analytic variance**
+(bias `∝ Var(ε₂)−Var(ε₁)`); with asymmetric noise (draws at different times/analyzers) it breaks (simulated
+balance +0.11). This is likely satisfied in MIMIC (same platform) but must be **tested**, not assumed. The
+robust, general control is the **local leave-one-out proxy over many pre-treatment draws** (§3–4), whose bias
+→ 0 as draws accumulate and which simultaneously buys precision. So the first-cut numbers (FS +0.032,
+RF +0.0015, LATE +0.045) are **not void on the shared-noise grounds** — but they still must survive the
+*other*, genuine threats before use:
 
-Secondary but independently serious problems in the first cut: (i) delta-method CI on a ratio with a weak
+Independently serious problems in the first cut that DO stand: (i) delta-method CI on a ratio with a weak
 (3.2 pp) first stage is anti-conservative → must use Anderson–Rubin / Fieller and lead with the **reduced-form
 ITT**; (ii) `σ = 0.134` from 1–12 h draw-pairs conflates assay noise with true biologic drift → it is an
 *upper bound* on pure analytic noise and must be re-estimated by inter-draw interval and severity stratum;
@@ -54,10 +63,18 @@ donut hole.
 
 ---
 
-## 3. The corrected design: leave-one-out severity control
+## 3. The robust design: local leave-one-out (many-draw) severity control
 
-Replace the leaky control with a **leave-one-out** severity proxy built from draws *other than* the one whose
-noise supplies the instrument, so the control is independent of the instrument's noise.
+Two controls are defensible; the choice is settled empirically by the covariate-balance test (§5.2):
+- **Midpoint / balanced pre-decision average** — unbiased under *equal-variance* draws (simulation-verified);
+  the simplest valid control when the two draws share an analytic platform. Verify equal draw variance first.
+- **Local leave-one-out proxy** `T̂_{i,-t}` from many other draws — the robust general control (bias `→0` as
+  draws accumulate; must be *local*/nearest-neighbor under drift). This is the renewal-design control and also
+  delivers the power gain. Prefer it whenever ≥3 pre-treatment draws exist.
+
+The failure mode to AVOID is a control that shares noise with `Z` **asymmetrically** (e.g. `M1`-only, or a
+midpoint of unequal-variance draws) — those re-introduce confounding. Build the proxy from draws *other than*
+the instrument draw and confirm balance.
 
 For a hospitalization with ordered pre-treatment draws `W_{i1},…`, at a candidate decision draw `t`:
 
@@ -65,8 +82,8 @@ For a hospitalization with ordered pre-treatment draws `W_{i1},…`, at a candid
 - Leave-one-out severity control: **T̂_{i,-t} = g(all draws except t)** — e.g. a local-linear / nearest-
   neighbor smoother of the patient's *own* trajectory evaluated at time τ_{it}, using only other draws. Under
   independent noise, `T̂_{i,-t} ⟂ ε_{it}` while still informative about `T_{it}` through the serial correlation
-  of the true trajectory. (Single-draw practical fallback when only `M1` precedes: control on `M1` alone — no
-  shared noise with `Z=1(M2<c)` — at the cost of a noisier severity proxy; report both.)
+  of the true trajectory. (Two-draw case: use the **midpoint** `(M1+M2)/2`, valid under equal-variance noise —
+  NOT `M1`-only, which the simulation shows is biased. Always report the covariate-balance test as the arbiter.)
 - Treatment: `D_{it}` = repletion within the decision window of draw `t`.
 - Outcome: `Y_i` terminal (prefer 30-day mortality; report in-hospital with LOS balanced).
 
