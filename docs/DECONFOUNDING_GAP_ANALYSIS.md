@@ -41,7 +41,7 @@ narrower and sharper than "we invented this."
 | G4 | Broadly applicable (>1 treatment) | 🟡 partial | method is treatment-agnostic; needs empirical Hb + K/Phos stacking |
 | G5 | Exclusion restriction (flag → care BUNDLE) | 🟡 open+test | NOT solved by the ITT reframing (it inherits exclusion); bundle-balance test in battery; ward-level untestable in MIMIC (chartevents ICU-only) |
 | G6 | Serial-correlated noise (renewal's weak point) | 🟡 test built | lag-1 autocorr of detrended residuals + σ-by-interval in the run |
-| G7 | Positioning vs proximal-CI / supply-shock; triangulation bounds | 🔴 open | framed, not built |
+| G7 | Positioning vs proximal-CI / supply-shock; triangulation bounds | 🟢 **built** | convergent-bounds estimator + doc (`docs/DECONFOUNDING_TRIANGULATION.md`, `docs/triangulate.py`); honest — decisiveness comes from the anchor, bracket is the check/packaging |
 | G8 | Assay-noise magnitude vs threshold (viability per treatment) | 🟢 mapped | Mg 6.7% of flag (good); glucose 10–35% (best, but no stable RCT truth); Hb 1–2% (weak noise-IV, but RDD-proximity first stage >20pp per Bosch) |
 
 ## G2 closure — the decisive estimand, stated honestly
@@ -74,14 +74,22 @@ Power/MDE analysis (`docs/power_mde_assay_noise_iv.py`, `scratchpad/power_mde_re
   reserve it as a *second, novel-white-space* paper (zero prior RDD/IV art on glucose thresholds).
 
 ## Remaining open gaps (what would most change the game)
-1. **G1 empirical** — the make-or-break; produces first real first-stage, balance, heaping, bundle, autocorr,
-   flag-ITT + implied-LATE. Auto-running.
-2. **G3 validation run** — the keystone that converts "valid design" → "certified method." Data pull spec'd
-   (Hb 50811/51222; RBC transfusion events; POC vs central).
-3. **G7 triangulation bounds** — combine harm-biased (IPTW/provider-IV) + benefit-biased + assay-noise anchor
-   into Manski-style convergent bounds; the reviewer-proof packaging.
-4. **Pre-registration discipline** — threshold/window/estimand pre-specified (mirror the Mg protocol) to kill the
-   threshold-shopping vector; check noise-compliers aren't confounded with assay batch / time-of-day / equipment.
+1. **G1 empirical (Mg)** — the make-or-break; produces first real first-stage, balance, heaping, bundle,
+   autocorr, flag-ITT + implied-LATE. Auto-running (`corrected_iv.py`).
+2. **G3 validation run (Hb)** — the keystone that converts "valid design" → "certified method." Pipeline built
+   and wired (`hb_validation.py`): Hb 51222/50811 + RBC tx 225168 + services (cardiac stratum) added to the
+   filter/orchestrator; dual-stratum (general vs cardiac) flag-ITT + implied-LATE, benchmarked to Bosch 2022.
+   Runs right after the Mg battery.
+3. **G7 triangulation bounds** — BUILT (`docs/DECONFOUNDING_TRIANGULATION.md`, `docs/triangulate.py`). Real
+   bracket pending the anchor + a demonstrated benefit-biased contraindication stratum.
+4. **Pre-registration** — DONE (`docs/DECONFOUNDING_PREREGISTRATION.md`): thresholds/bandwidths/control/estimand/
+   outcomes/strata locked for Mg and Hb before viewing outcomes; falsification battery runs regardless.
+
+## What is now BUILT vs PENDING DATA
+- **Built (this cycle):** corrected identification + renewal; sim validation; power/MDE; RCT-anchor plan;
+  Hb validation pipeline; triangulation estimator; pre-registration; prior-art position (Bosch). All committed.
+- **Pending the download only:** the actual numbers (Mg battery + Hb dual-stratum validation). Everything to
+  turn those into a certified result is in place and auto-runs.
 
 ## Bottom line
 The conceptual problem is largely solved *and correctly bounded*: we know exactly what the method can decide
