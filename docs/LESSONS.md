@@ -345,6 +345,30 @@ run an injected-signal power calibration. n=327 (S0001 239 / I0002 88).
   The ITT does NOT escape the exclusion restriction — it inherits it (correct the earlier over-claim).
   Power code: `docs/power_mde_assay_noise_iv.py`. Full ledger: `docs/DECONFOUNDING_GAP_ANALYSIS.md`.
 
+## The 10-trial portfolio & the "universal solvent" structure (key strategic insight)
+- **Confounding-by-indication has DIFFERENT trigger structures → needs DIFFERENT instruments; no single solvent.**
+  The 10 de-implementation trials split: LAB-FLAG-triggered (Mg/K, RBC, bicarb, partly albumin) → assay-noise IV;
+  SYMPTOM/GESTALT-triggered (benzo, opioid, antipsychotic, steroid, PPI-vent-arm) → provider-preference IV;
+  RISK-SCORE-triggered (VTE-ppx) → score-RDD. Match the instrument to how the treatment is actually decided.
+- **THE creative unlock — three NEW broadly-applicable instruments (push coverage 40%→near-universal):**
+  (A) **Contraindication-GATE assay-noise IV:** most gestalt treatments have a MEASURED gate that WITHHOLDS them
+  (antipsychotic⊣QTc>500; SUP/anticoag⊣platelet<50k/INR>1.5; steroid via eosinophils; benzo via CIWA) — apply the
+  noise-IV to the gate, not the indication. Even cleaner exclusion (crossing QTc 500 only withholds the drug).
+  (B) **Nurse-PRN-administration preference IV:** for PRN drugs the ORDER is confounded but the nurse's
+  administration-given-order is far more exogenous (nurse practice/workload) → nurse-preference IV on emar events.
+  (C) **Attending-rotation time-RDD:** scheduled handoff changes prescribing for the SAME patient at an
+  as-if-random time → exogenous within-patient shock that fixes naive within-patient FE's sicker-episode flaw.
+- **Near-universal solvent = matched toolkit {indication-flag noise-IV ∪ gate noise-IV(A) ∪ nurse-PRN-IV(B) ∪
+  attending-rotation-RDD(C) ∪ prescriber-preference-IV-within-fixed-indication} + negative-control calibration +
+  triangulation bounds + RCT-anchored validation.** The RCT-anchoring answers the deepest attack ("CBI is
+  observationally unsolvable → that's why we RCT"): calibrate on the settled cases (transfusion/glucose/
+  antipsychotic/COPD-steroid), only then extrapolate to the vacuums. Docs: PORTFOLIO_10_TRIALS.md, BESPOKE_METHODS_6_TRIALS.md.
+- **Reviewer-attack through-lines (all trials):** ascertainment bias in outcomes (sicker→more testing: C.diff,
+  pneumonia, VTE, bleed) → negative-control calibration; reverse causation (delirium→benzo) → landmark/lag;
+  indication heterogeneity (steroids) → FIX one indication; provider-IV exclusion (habit~intensity) → within-service
+  + near-far matching. MIMIC structural limits: PPI/benzo/opioid/steroid are in `prescriptions`/`emar` (not ICU
+  inputevents); QTc in chartevents (ICU-only); calendar obfuscated (shortage/guideline DiD infeasible).
+
 ## Open opportunity (the current best shot)
 - **No EEG foundation model has been applied to clinical/neuro outcome prediction with external validation
   anywhere (as of 2026)** — DELPHI-EEG is single-center. HEEDB (multi-site EEG + ICD10/OMOP outcomes +
