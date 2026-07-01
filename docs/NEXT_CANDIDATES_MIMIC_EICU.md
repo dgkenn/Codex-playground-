@@ -66,6 +66,23 @@ Exposure = de-escalation (broad→narrow or stop) within Δh of the culture stor
 turnaround (storetime−charttime); outcomes = in-hospital mortality (cached admissions) + antibiotic-days.
 Then eICU `microLab`+`medication` replication. Keep only the compact joined table on disk, never raw.
 
+### PIPELINE VALIDATED end-to-end (join micro × rx × cached-admissions mortality) — preliminary
+On just the first rx checkpoint (1M of ~17M prescription rows → 7,933 broad-abx admissions), the join gives
+an **empiric cohort n=4,582** (index culture + peri-culture broad-spectrum abx + mortality; 7.1% in-hosp
+death). Preliminary signals (will grow ~10× with full rx):
+- **Reduced form AUC(culture-turnaround → mortality) = 0.495 ≈ chance** — the exogenous instrument does NOT
+  move mortality. This is the *expected, defensible* direction: de-escalation timing plausibly affects
+  resistance/C.diff/cost, not mortality (mortality is the secondary endpoint).
+- **Naive AUC(de-escalation delay → mortality) = 0.584** — the confounded "sicker patients kept on broad
+  longer" artifact, exactly the bias the natural experiment is designed to bypass.
+- **METHODS CATCH (fix before the real run):** clocking de-escalation delay from the result time `st`
+  mechanically couples it to the instrument (turnaround also contains `st`) → the relevance test (−0.196)
+  is invalid as built. Refine: clock de-escalation from **abx-start**; define exposure = de-escalation
+  status at a fixed horizon (e.g., 72 h post-abx-start); use turnaround as the instrument. Then test the
+  **ecological outcomes** (C.diff toxin+ / MDRO on a later culture, antibiotic-days) — the primary endpoints.
+- Disk-sparing throughout; the flaky proxy required a **checkpointing** stream reducer (writes a complete
+  per-hadm snapshot every 1M rows) so a stall still yields usable data. rx continues to a larger cohort.
+
 ### Instrument cohort BUILT (streamed full `microbiologyevents`, 3.99M rows, disk-sparing)
 **201,009 admissions with an index culture** (of 201,096 with any culture) — per-admission summary
 (index charttime, storetime, turnaround_h, organism-grew, any-Resistant, specimen) kept in scratchpad only
