@@ -99,6 +99,13 @@ timed-outcome follow-up). Mortality (Mg z −0.09, K z −0.25) and LOS (Mg z �
 discontinuity**. The comprehensiveness strengthens the null — if repletion did anything, at least one of
 17 mechanistically-linked outcomes should have moved at the cutoff; none did.
 
+## Threshold sweep — NO cutoff yields benefit (the guideline implication)
+RDD reduced form at many candidate cutoffs (mortality + AF): **Mg 1.2/1.4/1.6/1.8/2.0/2.2 and K
+2.8/3.0/3.2/3.5/3.8/4.0 — not one shows a benefit** (all |z|<2, nothing survives correction; largest is
+K@3.8 mort z−1.79). → there is no Mg or K threshold in the clinically relevant range at which repletion
+produces a detectable benefit. Guideline implication: even aggressive low-threshold repletion is inert;
+supports a much looser threshold (or symptomatic-only) as non-inferior.
+
 ## Power calibration — it is a TRUE null, not underpowered (the key robustness for a null)
 - Mg→mortality RD −0.0002, SE 0.0022 → **MDE (80% power) = 0.62 pp**: the null rules out any threshold
   mortality change > ~0.6 percentage points.
