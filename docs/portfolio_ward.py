@@ -155,6 +155,10 @@ def build_cohort(seqs, tx, adm, age, transfers, flag, direction):
         if len(pre) < 2:
             continue
         (t1, m1), (t2, m2) = pre[0], pre[1]
+        # TIGHT inter-draw window: the two control draws must be <=24h apart so the midpoint reflects
+        # CONTEMPORANEOUS true severity (sigma -> analytic noise, not days-apart biological drift).
+        if (t2 - t1) > 24.0:
+            continue
         icu_flag = is_icu(transfers, hadm, t2)
         stratum = 'ICU' if icu_flag is True else ('WARD' if icu_flag is False else 'UNKNOWN')
         rows.append({
@@ -188,13 +192,19 @@ def analyze_stratum(label, rows, flag, hw):
         return
     z = np.array([r['z'] for r in sub]); d = np.array([r['d'] for r in sub])
     y = np.array([r['y'] for r in sub]); C = cb([r['mid'] for r in sub], flag)
-    X = np.column_stack([z, C])
-    bfs, sfs = ols(d, X); brf, srf = ols(y, X)
+    agec = (np.array([r['age'] for r in sub]) - 60) / 10.0
+    Xbase = np.column_stack([z, C])                       # midpoint-only: for the honest balance diagnostic
+    Xadj = np.column_stack([z, C, agec, agec * agec])     # + age spline: age-adjusted robustness estimate
+    # PRIMARY (pure noise-IV, unadjusted) first stage + reduced form
+    bfs, sfs = ols(d, Xbase); brf, srf = ols(y, Xbase)
     fs, rf = bfs[0], brf[0]
     F = (fs / sfs[0]) ** 2 if sfs[0] > 0 else 0
-    ba, sa = ols(np.array([r['age'] for r in sub]), X)
+    # balance diagnostic: age ~ z | midpoint (NOT controlling for age) — the real exogeneity test
+    ba, sa = ols(np.array([r['age'] for r in sub]), Xbase)
+    # age-ADJUSTED reduced form (robustness: does the near-null survive purging the age channel?)
+    brf_adj, _ = ols(y, Xadj); rf_adj = brf_adj[0]
     ar = [b0 for b0 in np.arange(-1, 1.0001, 0.02)
-          if abs((lambda bb, sb: bb[0] / sb[0] if sb[0] > 0 else 9)(*ols(y - b0 * d, X))) < 1.96]
+          if abs((lambda bb, sb: bb[0] / sb[0] if sb[0] > 0 else 9)(*ols(y - b0 * d, Xbase))) < 1.96]
     arlo, arhi = (min(ar), max(ar)) if ar else (float('nan'), float('nan'))
     late = rf / fs if abs(fs) > 1e-3 else float('nan')
 
@@ -219,7 +229,7 @@ def analyze_stratum(label, rows, flag, hw):
     bal_flag = '⚠' if abs(ba[0]) > 3 else ' '
     print(f'    [{label:7s}] n={len(sub):6d} tx={d.mean():.3f} | '
           f'NAIVE crude={naive_crude[0]:+.4f} adj={naive_adj[0]:+.4f} | '
-          f'FS={fs:+.3f}(F{F:4.0f}){F_flag}| ITT={rf:+.5f}({srf[0]:.5f}) | LATE={late:+.3f} AR[{arlo:+.2f},{arhi:+.2f}] | '
+          f'FS={fs:+.3f}(F{F:4.0f}){F_flag}| ITT={rf:+.5f}({srf[0]:.5f}) ITTadj={rf_adj:+.5f} | LATE={late:+.3f} AR[{arlo:+.2f},{arhi:+.2f}] | '
           f'balAge={ba[0]:+.2f}{bal_flag}| densB/A={dens:.2f} | LOSmed={los_med:.1f}d (n_los={len(los_vals)})')
 
 
