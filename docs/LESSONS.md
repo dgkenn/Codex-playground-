@@ -369,6 +369,16 @@ run an injected-signal power calibration. n=327 (S0001 239 / I0002 88).
   + near-far matching. MIMIC structural limits: PPI/benzo/opioid/steroid are in `prescriptions`/`emar` (not ICU
   inputevents); QTc in chartevents (ICU-only); calendar obfuscated (shortage/guideline DiD infeasible).
 
+## Simulation result: NEGATIVE CONTROLS ARE MANDATORY for preference instruments (balance is not enough)
+- Known-truth sim (`docs/sim_instruments.py`, `docs/SIM_INSTRUMENTS_RESULTS.md`): for provider-preference IV,
+  when provider PREFERENCE (the instrument) correlates with provider CARE-QUALITY (which affects outcomes = an
+  exclusion violation), the LATE is badly biased (+0.11 vs truth 0) BUT patient **covariate balance stays clean**
+  (quality is provider-level, orthogonal to patient severity). The **negative-control-OUTCOME coefficient tracks
+  the bias almost exactly** (+0.111) → empirical-null calibration (`negcontrol.py`) removes it. LESSON: for any
+  preference-type instrument (provider-IV, attending-RDD, nurse-PRN), covariate balance is necessary but NOT
+  sufficient; NC-outcome calibration is a REQUIRED gate. A preference-IV paper reporting only balance is not
+  bulletproof. (Also validated: nurse-PRN estimator recovers truth −0.027 vs −0.030; aggregation is sound.)
+
 ## Open opportunity (the current best shot)
 - **No EEG foundation model has been applied to clinical/neuro outcome prediction with external validation
   anywhere (as of 2026)** — DELPHI-EEG is single-center. HEEDB (multi-site EEG + ICD10/OMOP outcomes +
