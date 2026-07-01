@@ -35,6 +35,25 @@ A de-implementation / low-value-care signal on a reflexive, evidence-free practi
 5. **No external validation yet** — eICU (207 hospitals) has Mg/K labs + repletion (medication/infusion) for
    replication; the eICU `lab` table streaming is the bottleneck (flaky proxy, 40M rows).
 
+## Looser vs more-aggressive repletion — is aggressive beneficial or is looser non-inferior? (user question)
+Two complementary analyses (MIMIC, cached):
+- **Multi-threshold RDD:** the reduced-form mortality curve is a smooth U-shape across Mg 1.5→2.3
+  (0.029 → 0.021 [min ~2.0] → 0.032) with **NO discontinuity at any candidate threshold**. The higher
+  mortality at low Mg is confounding (low Mg = sicker), and it is *smooth* — no jump where repletion kicks in.
+  → no evidence of a mortality benefit at any threshold, i.e., more-aggressive (lower-threshold) repletion
+  shows no discontinuous benefit.
+- **Practice-variation quasi-IV by CARE UNIT — CONFOUNDED (a methods lesson, not a clean answer).** Units
+  vary widely in aggressiveness (Neuro Intermediate 12% → CVICU 55%). But the estimate FLIPS: crude,
+  aggressive units have LOWER mortality (7.4% vs 10.3%); age+Mg-adjusted, HIGHER (+0.156). Cause: the
+  aggressive units are low-risk **surgical/cardiac** units (CVICU 3.6% mortality, TSICU) while loose/high-risk
+  units differ on everything. **Care-unit assignment violates the exclusion restriction (unit = case-mix),
+  so it is NOT a valid instrument here.** A cleaner test needs WITHIN-unit provider-preference variation
+  (order_provider_id / caregiver_id) or the RDD (which is the clean, null evidence).
+- **Honest answer:** on the clean (RDD) evidence, **looser repletion appears NON-INFERIOR on mortality** — no
+  detectable benefit of repletion at the margin or at any threshold. The unit-level practice-variation design
+  is too case-mix-confounded to confirm it. Mortality is not the mechanistic endpoint (arrhythmia is), so the
+  strongest version still needs the arrhythmia outcome + a provider-preference IV + eICU replication.
+
 ## Status / verdict
 **The first genuinely promising lead of the search:** a valid RDD first stage + a well-powered mortality null
 on an evidence-free ubiquitous practice = a real de-implementation candidate. NOT yet a confirmed winner —
