@@ -99,6 +99,14 @@ timed-outcome follow-up). Mortality (Mg z −0.09, K z −0.25) and LOS (Mg z �
 discontinuity**. The comprehensiveness strengthens the null — if repletion did anything, at least one of
 17 mechanistically-linked outcomes should have moved at the cutoff; none did.
 
+## Power calibration — it is a TRUE null, not underpowered (the key robustness for a null)
+- Mg→mortality RD −0.0002, SE 0.0022 → **MDE (80% power) = 0.62 pp**: the null rules out any threshold
+  mortality change > ~0.6 percentage points.
+- **Injection-recovery test:** plant a known discontinuity δ into a synthetic outcome using the real
+  running-variable distribution — the RDD recovers −δ UNBIASEDLY (δ=0.01 → −0.0100) with power 0.59 at 0.5pp,
+  0.99 at 1pp, 1.00 at 2pp. The estimator DETECTS real jumps → the observed ≈0 is a genuine null.
+- This is the definitive rebuttal to "your null is just a broken/underpowered pipeline."
+
 ## Status / verdict — the session's WINNER candidate (comprehensive de-implementation)
 **"Threshold-triggered magnesium and potassium repletion has no detectable causal effect on in-hospital
 mortality, length of stay, or ANY of the ~17 known clinical complications of hypomagnesemia/hypokalemia —
