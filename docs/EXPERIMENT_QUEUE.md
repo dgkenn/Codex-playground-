@@ -12,10 +12,16 @@ FINDINGS_LEDGER.md with their verdict + the attack map.
   observation. **The published site gate is now the NONLINEAR probe, not ≤0.6 logistic.**
 
 ## NEXT (cycle 4) — re-ranked from Cycle-3 evidence
-0a. **[cheap, do first] Positive-control outcome (age &/or sex) through the identical MIL+OOF pipeline.**
-    EEG embeddings reliably predict age; recovering it validates the harness end-to-end and, with the
-    injected-signal calibration already done, fully closes the "is the pipeline broken?" attack on every
-    null. ~10 min CPU on the existing cache.
+0a. **[DONE] Positive-control outcome (age/sex).** Sex 0.50, age 0.55 (all) / 0.61 (S0001). Harness works
+    (injected-signal 0.6σ→0.84) but the frozen **mean+std** representation barely encodes even age → the
+    REPRESENTATION is the bottleneck. This promotes 0a-prime to the single most important experiment:
+0a-prime. **[TOP PRIORITY, CPU, overnight] Full-token attention-MIL — no mean+std collapse.** Re-embed
+    (or re-cache) so each window keeps its full 19×30 token grid; attention-MIL over ALL tokens. Re-run the
+    AGE positive control first as the decider: age ≳0.75 ⇒ mean+std pooling was the bottleneck and a
+    positive clinical finding may be reachable ON CPU (then redo cognitive/mortality with full tokens);
+    age still ≈0.6 ⇒ frozen encoder insufficient ⇒ GPU fine-tuning. Cleanly separates "my pooling choice"
+    from "frozen-encoder limit" before any GPU spend. Re-embedding is the slow part (~10 s/patient,
+    credentialed) — checkpoint every 25 patients; a 40-patient time-boxed pilot is enough to decide the fork.
 0b. **[if we pursue the methods note] Harden Claim A to a publishable safeguard:** refit ComBat/CORAL
     PER-FOLD (kill the global-fit leakage objection), add bootstrap CIs on all four site-AUCs, add a
     permutation null for the site probes, and — the big one — **add ≥1–2 more HEEDB sites** so the

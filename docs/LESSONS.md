@@ -138,10 +138,23 @@ run an injected-signal power calibration. n=327 (S0001 239 / I0002 88).
   NOT by itself prove "no signal" — it is also consistent with underpower/label-noise/probe-misspecification.
   Always run an injected-signal (or positive-control-outcome) power check before writing any "no signal" or
   "motivates fine-tuning" language. Abnormal-EEG at 90% prevalence (295/327) is uninformative → drop it.
-- **NET:** the frozen + CPU path CANNOT deliver a positive cross-site clinical-outcome finding at this n.
-  The site confound is nonlinear (survives linear harmonization) and the usable outcome signal is at most
-  weak/undetectable with 25 positives. Real levers (now evidence-backed): (a) far larger labeled multi-site
-  n; (b) encoder fine-tuning (GPU). Full writeup: `docs/CYCLE3_SITE_INVARIANCE.md`.
+- **LESSON — the frozen mean+std representation is impoverished (positive-control outcome check).** Ran
+  age/sex (which EEG is KNOWN to encode: sex ≈0.70–0.85, age strong) through the identical MIL+OOF pipeline:
+  sex OOF **0.50** (chance), age OOF **0.55 all / 0.61 S0001-only**. Age is balanced at n=327 → NOT a power
+  problem. With the injected-signal calibration proving the harness recovers signal that IS in the
+  embeddings (0.6σ→0.84), the conclusion is the **representation** (frozen mean+std pooling of tokens) is
+  the bottleneck, not the harness or the label count. **This is the cleanest evidence yet that frozen
+  mean-pooling is the wrong representation** (corroborates the mean-pool-ceiling lesson at MIL level).
+- **KEY FORK (top of cycle-4 queue, CPU-runnable):** the culprit may be the **mean+std pooling** (collapsing
+  the 19×30 per-window tokens to 400-d) rather than the frozen ENCODER. Test with a **full-token
+  attention-MIL** (no mean+std collapse) + re-run the age positive control. age≳0.75 → pooling was the
+  bug, a positive finding may be reachable ON CPU (redo outcomes with full tokens). age still ≈0.6 → the
+  frozen encoder is insufficient → GPU fine-tuning. This cleanly separates "my pooling choice" from "frozen
+  encoder limit" — do it before spending on GPU.
+- **NET:** the frozen **mean+std** + CPU path cannot deliver a positive cross-site clinical finding at this
+  n; the site confound is nonlinear (survives linear harmonization) and the representation barely encodes
+  even age. The CPU path is NOT yet exhausted — full-token pooling is the untested lever. Full writeup:
+  `docs/CYCLE3_SITE_INVARIANCE.md`.
 
 ## Open opportunity (the current best shot)
 - **No EEG foundation model has been applied to clinical/neuro outcome prediction with external validation

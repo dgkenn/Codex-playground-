@@ -62,14 +62,40 @@ Distinguishing "weak signal present" from "no signal" requires more labeled posi
   CIs + ≥3–5 sites before it is a publishable methods note (2 sites confound site with every between-site
   variable). B is underpowered as shown; the calibration above is the fix and bounds what it can claim.
 
+## Result 3 — Positive-control outcomes reveal the REPRESENTATION is the bottleneck (added post-red-team)
+Sanity check demanded by the red-team: run outcomes EEG is *known* to encode (age, sex) through the
+identical MIL+OOF pipeline. If the harness recovers them, the clinical nulls are about signal/power, not a
+broken pipeline.
+
+| Target | ALL sites (n=327) | S0001-only (no site confound, n=239) |
+|---|---|---|
+| Sex | 0.499 | 0.501 |
+| Age > median | 0.555 | 0.610 |
+
+EEG decodes sex at ≈0.70–0.85 and age strongly in the literature — but the frozen **mean+std per-window**
+embeddings recover sex at **chance** and age at only **0.55–0.61**. Age is balanced at n=327, so this is
+**not** a power problem. Paired with the injected-signal calibration (the harness recovers a 0.6σ additive
+signal at 0.84, so the harness is *not* broken), the conclusion is that the **frozen mean+std representation
+is impoverished** — it discards most of the usable EEG structure.
+
+**Key fork this opens (CPU-runnable):** the culprit may be my **mean+std pooling** (collapsing the 19×30
+per-window tokens to 400-d), *not* the frozen CBraMod encoder itself. Next experiment = a **full-token
+attention-MIL** (attend over all tokens, no mean+std collapse) and re-run the age positive control:
+- age recovers well (≳0.75) → the pooling was the bottleneck, fixable **on CPU**; redo the outcome tests
+  with full tokens before concluding anything about the frozen encoder.
+- age still ≈0.6 → the frozen encoder itself is insufficient → **encoder fine-tuning (GPU)** is required.
+
 ## Honest bottom line
-1. The **frozen + CPU** path **cannot** deliver a positive cross-site clinical-outcome finding at this n:
-   the usable site-invariant outcome signal is at most weak and undetectable with 25 positives.
-2. The one genuine contribution is the **nonlinear-gate safeguard** — best placed as the *site-invariance
-   gate* methods section of the main pre-registered study (with per-fold CIs + more sites), not a headline.
-3. The real levers for a positive finding are unchanged and now **evidence-backed**: (a) far more labeled
-   positives (larger multi-site cohort), and (b) **encoder fine-tuning (GPU)** — the frozen representation
-   is demonstrably site-dominated and outcome-poor.
+1. The **frozen mean+std** representation is site-dominated (nonlinearly) AND outcome-poor — it barely
+   encodes even age. No positive cross-site clinical finding is reachable from it at this n.
+2. **But the CPU path is not exhausted:** the positive control implicates my *mean+std pooling*, which is
+   fixable on CPU. The top next experiment is a **full-token attention-MIL** (Result 3 fork) — it decides
+   whether a positive finding is reachable on CPU (richer frozen pooling) or truly needs GPU fine-tuning.
+3. The one genuine methods contribution is the **nonlinear-gate safeguard** — best placed as the
+   *site-invariance gate* section of the main pre-registered study (with per-fold CIs + more sites), not a
+   headline. Novelty INCREMENTAL.
+4. Evidence-backed lever ordering for a positive finding: (a) full-token frozen MIL [CPU]; (b) larger
+   multi-site labeled cohort, mortality as the better-powered endpoint [CPU]; (c) encoder fine-tuning [GPU].
 
 The machine's gate did its job: it refused to claim a finding that isn't there, and it converted the
 failure into a calibrated, reusable lesson.
