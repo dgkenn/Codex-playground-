@@ -4,6 +4,14 @@ Priority = (impact × novelty × feasibility) / cost. **CPU-only right now; over
 item must clear the hostile-review gate (RESEARCH_MACHINE.md) before it counts. Move done items to
 FINDINGS_LEDGER.md with their verdict + the attack map.
 
+## NEXT (cycle 3) — from the Cycle-2 GATED-NULL (site confound AUC 0.96)
+0. **Site-invariance correction MUST come before any outcome claim.** Fit `analysis/correct_sites.py`
+   Route-A on the TRAIN site only; re-run the site-probe; publish post-correction site-AUC ≤ ~0.6 as the
+   gate. Only then train the outcome MIL. Also: cache many more NORMAL EEGs (fix the abnormal-heavy
+   imbalance) and boost cognitive positives (outcome-balanced sampling). If corrected site-invariant
+   frozen embeddings still give weak outcome AUC → publishable methods result (frozen insufficient → GPU
+   fine-tuning needed).
+
 ## FLAGSHIP — runnable now on CPU (overnight), dodges the GPU block
 1. **[BUILD, overnight] Frozen CBraMod per-window embedding cache at scale.** Stream HEEDB EEGs (µV
    scaling!), embed 30 s windows across the recording, cache **per-window** embeddings (NOT mean-pooled)

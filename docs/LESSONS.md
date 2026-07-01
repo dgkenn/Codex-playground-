@@ -94,6 +94,28 @@ review. Attacks and the fixes now baked into the design:
   (white space), substrate + harness built and validated. NO finding claimed (correctly). Cycle 2 =
   outcome-balanced cache of BOTH sites → gated cross-site cognitive/mortality MIL eval → full result gate.
 
+## Cycle 2 — RESULT + hostile-review gate (first complete gated cross-site experiment)
+**Experiment:** frozen CBraMod per-window embeddings → attention-MIL, cross-site S0001↔I0002 (abnormal +
+cognitive), with the mandated site-probe. n=327 (S0001 239, I0002 88).
+**RESULT (fails the site-invariance gate):**
+- **SITE-PROBE: pooled embedding → hospital AUC = 0.961** (5-fold). The frozen embeddings encode HOSPITAL
+  almost perfectly → severe site/hardware confound. Any cross-site outcome AUC is confounded until corrected.
+- Cross-site abnormal MIL: 0.50 / 0.53 (in-sample 0.52 = chance) — degenerate from class imbalance
+  (S0001 has 17 normals vs 222 abnormal; can't learn the minority class).
+- Cross-site cognitive MIL: 0.62 / 0.58 (in-sample 0.59) — weak + underpowered (I0002 has only 5 cog+).
+**Hostile-review gate → VERDICT: no finding; the naive frozen approach FAILS the site gate.** Attack→outcome:
+- *Stats/overfit:* even in-sample AUC is ~chance (abnormal) / weak (cognitive) → the frozen-MIL over
+  amplitude-dominated embeddings has little usable outcome signal here; imbalance makes abnormal degenerate.
+- *Causal/confound:* site-probe 0.96 IS the confound, quantified — the model can shortcut on hospital.
+  Confirms the mean-pool-ceiling + amplitude-domination lessons carry to per-window MIL too.
+- *External validity:* cross-site AUCs are both confounded AND near chance → nothing to validate yet.
+**Fixes (queued for cycle 3):** (1) fit `analysis/correct_sites.py` Route-A site-correction on the TRAIN
+site only; re-run site-probe — REQUIRE post-correction site-AUC ≤ ~0.6 as the published gate before any
+outcome model. (2) Fix class balance (cache many more NORMAL EEGs — they're rarer/large-file) and boost
+cognitive positives (outcome-balanced sampling). (3) If corrected site-invariant embeddings still give
+weak outcome AUC, that is evidence the FROZEN path is insufficient and fine-tuning (GPU) is required — an
+honest, publishable methods result either way.
+
 ## Open opportunity (the current best shot)
 - **No EEG foundation model has been applied to clinical/neuro outcome prediction with external validation
   anywhere (as of 2026)** — DELPHI-EEG is single-center. HEEDB (multi-site EEG + ICD10/OMOP outcomes +
