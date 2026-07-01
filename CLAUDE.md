@@ -71,5 +71,19 @@ python cli.py preflight  # check creds/network/deps before a live run
 See `docs/RUNBOOK.md` (full procedure) and `docs/HANDOFF.md` (continuing in a new
 desktop session). Real HEEDB/TUH access is credentialed (the user's own AWS keys
 / NEDC SSH key) and is supplied at runtime — never committed. The CBraMod
-forward pass is implemented against the published braindecode interface but is
-**not yet validated on real weights**; validate on first real Pass 1.
+forward pass **is now validated on real weights + real HEEDB EEG** (see
+`docs/HEEDB_UNLOCK.md`): weights sha256-match the pin, load with 0 missing keys,
+and embed a real EDF end-to-end. Preprocessing lesson: mne reads EDF in **volts**;
+CBraMod expects **µV** (×1e6) — never z-norm the amplitude away.
+
+## Autonomous research machine (READ THIS FIRST every session)
+This repo runs as a 24/7, self-learning, publication-focused research loop. Before doing any work:
+1. Read **`docs/RESEARCH_MACHINE.md`** — the operating protocol (mission, self-learning loop, impact bar,
+   guardrails, and the model-delegation policy).
+2. Read **`docs/LESSONS.md`** — accumulated memory (what we know / what's ruled out). Never repeat a dead
+   end. **Append a new lesson (with mechanism) after every experiment — negative results included.**
+3. Read **`docs/EXPERIMENT_QUEUE.md`** — the prioritized backlog. Pull the top item that fits compute.
+Then run → red-team (sonnet) → log lessons → update queue/ledger → commit+push. **Delegate:** haiku for
+mechanical/checkable tasks, sonnet for judgment/red-team, opus (main) only for orchestration+synthesis.
+Mission bar: **ultra-high-impact, externally-validated** findings; current white space =
+first cross-site-validated EEG-foundation-model → clinical-outcome study (GPU-gated).
