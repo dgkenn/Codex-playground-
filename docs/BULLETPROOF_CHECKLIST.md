@@ -52,9 +52,12 @@ directly-measured analyte or model the correlation.
 | Exclusion (handoff changes only prescribing) | balance; NC outcomes; sending-service FE | NC null at 0 |
 | Not confounded by scheduled care changes at handoff | check nothing else protocolized changes at transfer | — |
 
-## Instrument B — Nurse-PRN administration IV (benzo/opioid/antipsychotic) — DATA-BLOCKED (emar)
-Design + gates specified in `scratchpad/nurse_prn_iv.py`. Gate additions: nurse↔patient assignment as-if-random
-**within unit×shift** (test acuity ~ nurse tendency); workload confounder controlled (unit census/acuity).
+## Instrument B — Nurse-PRN administration IV (benzo/opioid/antipsychotic) — NOW RUNNABLE (streamed emar)
+`emar` is stream-filtered to due-dose decisions (medication class × event_txt Administered/Not-Given ×
+enter_provider_id = administering nurse); instrument = nurse leave-one-out administration rate. Gates: relevance
+F≥10; balance (age/severity ~ nurse tendency) ~0; nurse↔patient assignment as-if-random **within unit×shift**
+(test acuity ~ nurse tendency); workload confounder controlled (unit census/acuity); NC-outcome calibration.
+Refinement: restrict to PRN orders (join poe/prescriptions). Runner: `nurse_prn_iv.py` (auto-runs on emar).
 
 ## The certification logic (why any result is then publishable)
 1. **RCT-anchored calibration:** run the toolkit on the SETTLED cases (RBC=TRICC/TRISS, glucose=NICE-SUGAR,
