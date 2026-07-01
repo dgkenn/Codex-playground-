@@ -248,6 +248,22 @@ run an injected-signal power calibration. n=327 (S0001 239 / I0002 88).
   thresholds has ~no outcome evidence → the most NOVEL RDD target.** Transfusion@Hb7 is the sharpest but
   answer-known (methods-validation only). Detail: `docs/CYCLE8_RDD.md`.
 
+## Cycle 8 (cont.) — RDD of electrolyte repletion: the FIRST GENUINE LEAD (valid design + novel null)
+- Pivoted the RDD to a densely-captured, evidence-free practice: Mg repletion at ~2.0, K at ~3.5 (MIMIC-IV;
+  running variable + mortality fully CACHED, treatment from a streamed compact inputevents repletion extract).
+- **First stage VALID:** P(repletion≤6h) jumps at the threshold (Mg sharp ~4× at 2.0; K graded below 3.5).
+  This is the first valid RDD first stage of the whole search — the key was a DENSELY-captured treatment.
+- **Reduced form (cached, treatment-independent) = well-powered mortality NULL:** Mg RD −0.0006 (n=176k),
+  K RD −0.0005 (n=191k); binned mortality smooth through both cutoffs. → reflexive electrolyte repletion has
+  no detectable causal mortality effect = a de-implementation / low-value-care signal on a ubiquitous practice.
+- **LESSON — the reduced form of an RDD needs only running-variable + outcome (both cached here), NOT the
+  treatment.** So the outcome discontinuity is testable independent of (and faster than) the first-stage stream.
+- **Caveats to resolve before it's a WINNER (logged in CYCLE8_RDD_ELECTROLYTE_LEAD.md):** (1) digit heaping →
+  discrete-RDD inference (Kolesár–Rothe) + manipulation test; (2) mortality is the SECONDARY endpoint —
+  arrhythmia is the mechanistic one (needs chartevents, not cached); (3) decision-point/running-variable
+  sensitivity; (4) eICU external validation. This is the best lead so far — valid design + novel,
+  externally-validatable null — worth hardening rather than another fresh cycle.
+
 ## Open opportunity (the current best shot)
 - **No EEG foundation model has been applied to clinical/neuro outcome prediction with external validation
   anywhere (as of 2026)** — DELPHI-EEG is single-center. HEEDB (multi-site EEG + ICD10/OMOP outcomes +
