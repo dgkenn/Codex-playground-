@@ -37,6 +37,22 @@ FINDINGS_LEDGER.md with their verdict + the attack map.
     representation is site-dominated (nonlinearly) and outcome-poor. This is the path to a positive finding
     if 0c's larger-n frozen test still underperforms.
 
+## META-LESSON (after 2 nulls: EEG-FM capped, VitalDB-τ null) — RE-RANK PRINCIPLE
+Novel-single-marker hunts on ONE dataset keep producing nulls, AND the mission bar demands EXTERNAL
+validation. So the next picks are re-prioritized by two filters the last two cycles lacked:
+1. **External validation by construction** — discovery + replication datasets BOTH already in hand
+   (MIMIC-IV ↔ eICU, both cached/open), so a positive can be externally validated immediately, and a
+   transport-failure is itself publishable (cf. delirium 0.90→0.58).
+2. **A decision/mechanism, not a marginal marker** — avoid the "another way to detect sick patients"
+   incremental trap that capped vasopressor + τ. Prefer questions where the answer changes an action or
+   reveals a mechanism, with a pre-registered adjustment for the confounder that would otherwise sink it.
+Waveform-marker ideas (VitalDB Ideas 3/4) are DEMOTED: they share the fragile single-open-dataset EV path.
+
+## NEXT (cycle 6) — pull the screened MIMIC↔eICU candidate
+Run a novelty+feasibility triage (delegated) over 2–3 externally-validatable candidates; pull the top one.
+Discipline: novelty pre-screen (PubMed) + tabular baseline (the bar to beat) + pre-registered confounder
+handling BEFORE modeling; power any null (Cycle-3/5 lesson) before believing it.
+
 ## FLAGSHIP — runnable now on CPU (overnight), dodges the GPU block
 1. **[BUILD, overnight] Frozen CBraMod per-window embedding cache at scale.** Stream HEEDB EEGs (µV
    scaling!), embed 30 s windows across the recording, cache **per-window** embeddings (NOT mean-pooled)
