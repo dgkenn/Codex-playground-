@@ -116,6 +116,33 @@ cognitive positives (outcome-balanced sampling). (3) If corrected site-invariant
 weak outcome AUC, that is evidence the FROZEN path is insufficient and fine-tuning (GPU) is required — an
 honest, publishable methods result either way.
 
+## Cycle 3 — site-correction + re-test + power calibration (attack → outcome; the most important cycle yet)
+**Experiment:** fit Route-A ComBat/CORAL on the S0001 reference windows, align I0002 as a new site (no
+outcome), re-run the site-probe with BOTH a linear and a nonlinear probe, re-test the outcome MIL, and
+run an injected-signal power calibration. n=327 (S0001 239 / I0002 88).
+- **KEY LESSON — a linear site-invariance gate gives FALSE assurance.** ComBat and CORAL both drop the
+  *linear* logistic site-probe 0.961 → **0.585** (would "pass" a ≤0.6 gate), but a *nonlinear* attention-MIL
+  still recovers hospital at **0.964 (ComBat) / 0.991 (CORAL)** from the SAME corrected embeddings. CORAL
+  (covariance-matching) makes residual site *more* nonlinearly separable. Mechanism: ComBat/CORAL only
+  remove 1st/2nd moments; higher-order/nonlinear site structure survives and a flexible model exploits it.
+  **IMPLICATION: the site-invariance gate MUST be nonlinear (attention-MIL / NN probe), not logistic.**
+  The measured residual is a LOWER bound (single fit; the only leakage makes sites more similar → deflates
+  site-AUC). Novelty: INCREMENTAL — unpublished in EEG-FM (closest: Murchan 2024 pathology, pre 0.96→post
+  0.51, never ran a nonlinear probe), but ComBat-only-removes-location/scale is textbook. Red-team verdict:
+  reframe as "empirical demonstration + gate recommendation," needs per-fold CIs + ≥3–5 sites to publish
+  even as a methods note. Best home = the site-gate methods section of the main study, NOT a headline.
+- **LESSON — power-calibrate every null before believing it.** Cognitive-outcome MIL on corrected
+  embeddings = 0.466 (25 pos, inside permutation null [0.35,0.59]); in-sample ≈chance too. Injected-signal
+  calibration at the real n=25 regime: pipeline recovers 0.30σ→AUC 0.586, 0.60σ→0.842, but 0.15σ→chance.
+  So the null **excludes a STRONG frozen cognitive signal but NOT a weak one.** "In-sample ≈ chance" does
+  NOT by itself prove "no signal" — it is also consistent with underpower/label-noise/probe-misspecification.
+  Always run an injected-signal (or positive-control-outcome) power check before writing any "no signal" or
+  "motivates fine-tuning" language. Abnormal-EEG at 90% prevalence (295/327) is uninformative → drop it.
+- **NET:** the frozen + CPU path CANNOT deliver a positive cross-site clinical-outcome finding at this n.
+  The site confound is nonlinear (survives linear harmonization) and the usable outcome signal is at most
+  weak/undetectable with 25 positives. Real levers (now evidence-backed): (a) far larger labeled multi-site
+  n; (b) encoder fine-tuning (GPU). Full writeup: `docs/CYCLE3_SITE_INVARIANCE.md`.
+
 ## Open opportunity (the current best shot)
 - **No EEG foundation model has been applied to clinical/neuro outcome prediction with external validation
   anywhere (as of 2026)** — DELPHI-EEG is single-center. HEEDB (multi-site EEG + ICD10/OMOP outcomes +

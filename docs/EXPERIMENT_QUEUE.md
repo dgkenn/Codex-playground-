@@ -4,13 +4,31 @@ Priority = (impact × novelty × feasibility) / cost. **CPU-only right now; over
 item must clear the hostile-review gate (RESEARCH_MACHINE.md) before it counts. Move done items to
 FINDINGS_LEDGER.md with their verdict + the attack map.
 
-## NEXT (cycle 3) — from the Cycle-2 GATED-NULL (site confound AUC 0.96)
-0. **Site-invariance correction MUST come before any outcome claim.** Fit `analysis/correct_sites.py`
-   Route-A on the TRAIN site only; re-run the site-probe; publish post-correction site-AUC ≤ ~0.6 as the
-   gate. Only then train the outcome MIL. Also: cache many more NORMAL EEGs (fix the abnormal-heavy
-   imbalance) and boost cognitive positives (outcome-balanced sampling). If corrected site-invariant
-   frozen embeddings still give weak outcome AUC → publishable methods result (frozen insufficient → GPU
-   fine-tuning needed).
+## DONE (cycle 3) — see docs/CYCLE3_SITE_INVARIANCE.md + FINDINGS_LEDGER #4
+- Fitted ComBat/CORAL site-correction, re-ran the probe with a LINEAR **and** NONLINEAR head, re-tested the
+  outcome, and power-calibrated the null. Result: linear harmonization gives FALSE site-invariance
+  assurance (linear probe 0.585 but nonlinear 0.96–0.99); no *strong* frozen cross-site outcome signal
+  (calibration: detects ≥0.3σ at n=25, found none). GATED-NULL on outcome + an INCREMENTAL methods
+  observation. **The published site gate is now the NONLINEAR probe, not ≤0.6 logistic.**
+
+## NEXT (cycle 4) — re-ranked from Cycle-3 evidence
+0a. **[cheap, do first] Positive-control outcome (age &/or sex) through the identical MIL+OOF pipeline.**
+    EEG embeddings reliably predict age; recovering it validates the harness end-to-end and, with the
+    injected-signal calibration already done, fully closes the "is the pipeline broken?" attack on every
+    null. ~10 min CPU on the existing cache.
+0b. **[if we pursue the methods note] Harden Claim A to a publishable safeguard:** refit ComBat/CORAL
+    PER-FOLD (kill the global-fit leakage objection), add bootstrap CIs on all four site-AUCs, add a
+    permutation null for the site probes, and — the big one — **add ≥1–2 more HEEDB sites** so the
+    linear-passes/nonlinear-fails gap is shown across multiple site pairs (2 sites confound site with every
+    between-site variable). Then it can be the site-gate methods section of the main study.
+0c. **[real lever for a POSITIVE finding] Larger labeled multi-site cohort for the cognitive/mortality
+    outcome.** The n=25-positive null only excludes a *strong* frozen signal; a weak one needs hundreds of
+    positives to resolve. Cache outcome-balanced across all 4 sites (mortality/DateOfDeath has far more
+    events than cognitive-ICD → better-powered secondary endpoint). Only after this is a frozen-path
+    outcome claim (positive or a real null) defensible.
+0d. **[deferred, GPU] Encoder fine-tuning** — now evidence-backed as the main lever: the frozen
+    representation is site-dominated (nonlinearly) and outcome-poor. This is the path to a positive finding
+    if 0c's larger-n frozen test still underperforms.
 
 ## FLAGSHIP — runnable now on CPU (overnight), dodges the GPU block
 1. **[BUILD, overnight] Frozen CBraMod per-window embedding cache at scale.** Stream HEEDB EEGs (µV
