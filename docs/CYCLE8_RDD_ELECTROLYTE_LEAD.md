@@ -54,6 +54,15 @@ Two complementary analyses (MIMIC, cached):
   is too case-mix-confounded to confirm it. Mortality is not the mechanistic endpoint (arrhythmia is), so the
   strongest version still needs the arrhythmia outcome + a provider-preference IV + eICU replication.
 
+## Hardening (robustness of the null)
+- **Higher-acuity ICU subgroup (n=37,077, 10.3% mortality):** mortality flat across Mg 1.5–2.1; RD at 2.0 =
+  **−0.0016** ≈ 0. The mortality null holds where repletion could plausibly matter most → robust, not a
+  low-acuity power artifact.
+- **Atrial fibrillation (mechanistic endpoint; crude, dx-code, ascertainment-caveated):** AF rate rises
+  *smoothly* with Mg (confounded by renal function), with **no discontinuity at 2.0** (RD −0.033; AF is
+  actually lower below the cutoff — opposite to a repletion benefit). Suggestive of no AF benefit, but needs
+  a TIME-RESOLVED AF endpoint (chartevents rhythm / new-onset after the Mg) to be clean.
+
 ## Status / verdict
 **The first genuinely promising lead of the search:** a valid RDD first stage + a well-powered mortality null
 on an evidence-free ubiquitous practice = a real de-implementation candidate. NOT yet a confirmed winner —
