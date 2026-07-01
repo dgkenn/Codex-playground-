@@ -217,6 +217,19 @@ run an injected-signal power calibration. n=327 (S0001 239 / I0002 88).
 - Verdict leaning: interesting design, weak instrument → re-rank (mortality null as expected; ecological
   outcomes C.diff/MDRO remain the only shot but would be a fragile IV at +0.09 relevance).
 
+## Cycle 7 — fast eICU cross-hospital screens (169k stays, 207 hospitals): 3 more nulls + a META-pattern
+- Tested on cached eICU apacheApsVar×patient (by-hospital OOF, baseline physiology+age AUC 0.790): H1
+  relative bradycardia (HR~temp residual) Δ+0.0000; H2 derangement dispersion Δ+0.0052 (0.83-collinear with
+  total severity → trivial); H3 race-miscalibration NULL (O/E 0.93–1.05 all groups, +ethnicity Δ−0.0003).
+  Incidental: the physiology→mortality model is robust across 207 hospitals AND well-calibrated across race.
+- **META-LESSON (dominant after 7 cycles):** on well-powered, well-measured ICU/anesthesia tabular data,
+  (a) novel single markers vs strong baselines → incremental nulls; (b) treatment-decision designs → OR≈1.35
+  confounding ceiling; (c) natural experiments → weak first stage; (d) equity-miscalibration → well-calibrated
+  null. The honest gate keeps (correctly) refusing a winner. **Stop firing marker-vs-baseline tests** — a
+  genuine ultra-high-impact winner needs a different lever: the GPU-gated EEG-FM flagship (evidence-backed as
+  the real lever), a prospective/interventional element, or a fundamentally new data asset. Detail:
+  `docs/CYCLE7_EICU_SCREENS.md`.
+
 ## Open opportunity (the current best shot)
 - **No EEG foundation model has been applied to clinical/neuro outcome prediction with external validation
   anywhere (as of 2026)** — DELPHI-EEG is single-center. HEEDB (multi-site EEG + ICD10/OMOP outcomes +
