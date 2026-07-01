@@ -185,6 +185,21 @@ run an injected-signal power calibration. n=327 (S0001 239 / I0002 88).
   ~305 events) + cheap 2 s numeric-hemodynamics pipeline (threaded VitalDB `/labs`+track fetch), for future
   markers/outcomes with no re-fetch. Detail: `docs/VITALDB_PIVOT_IDEA2.md`.
 
+## Cycle 6 (candidate vetting) — a structural lesson + a feasibility gate that correctly killed the top pick
+- **STRUCTURAL CEILING for observational ICU treatment-decision designs (~OR 1.35).** Our two prior
+  properly-adjusted treatment-decision studies — vasopressor dose→mortality and 3-way liberation-order —
+  converged on the **IDENTICAL OR ≈ 1.35 / E-value ≈ 1.83** after honest severity adjustment. That is
+  almost certainly not coincidence: once severity-at-decision is adjusted, residual confounding-by-indication
+  in EHR data leaves a stereotyped small effect. IMPLICATION: any new treatment-decision question (e.g.,
+  de-resuscitation, de-escalation) should be expected to top out near there — prefer **MECHANISM** questions
+  (exposure not chosen by a clinician reacting to severity) or **quasi-natural-experiments** (an exogenous
+  timer like lab turnaround) over treatment-decision designs.
+- **MIMIC-IV has NO routine ward vitals** (a feasibility fact worth remembering): `chartevents` is
+  ICU-module only; pre-ICU vitals exist only in the separate MIMIC-IV-**ED** module. Any "ward deterioration
+  / early-warning / pre-ICU vitals" question is not constructable in MIMIC-IV proper — this killed the
+  otherwise-best Cycle-6 candidate ("vitals-first vs labs-first" mechanism) at the make-or-break gate before
+  any compute. The gate did its job. Candidate slate + options: `docs/NEXT_CANDIDATES_MIMIC_EICU.md`.
+
 ## Open opportunity (the current best shot)
 - **No EEG foundation model has been applied to clinical/neuro outcome prediction with external validation
   anywhere (as of 2026)** — DELPHI-EEG is single-center. HEEDB (multi-site EEG + ICD10/OMOP outcomes +
