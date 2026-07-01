@@ -44,8 +44,21 @@ Format: each lesson = what we learned + the mechanism + the implication. Negativ
   but INCREMENTAL — the novel "at-target" conditioning added only +0.03 AUC; "gap doubles" was 72% a
   MAP restriction-of-range artifact. Real, not top-tier.
 
+## Process lessons (how the machine must operate)
+- **Hostile-review is a mandatory GATE, not a step.** Nothing is a finding until it survives an aggressive
+  multi-lens panel (stats/overfit, causal/confounding, novelty/prior-art, external validity, independent
+  reproduction, and a "collapse-to-known+artifact" skeptic) + external validation. **Log every attack and
+  its outcome into this file** — the attack→result map is the most valuable memory (it stops repeat
+  mistakes and makes us harder to fool). Scale rounds to ambition (top-tier claim → 3–5 rounds).
+- **CPU-overnight is enough for a real EEG result via the frozen path** (updates the "GPU-gated" view):
+  overnight, precompute frozen CBraMod PER-WINDOW embeddings for thousands of patients (~1 patient/10 s
+  incl. download), then train a SMALL attention/MIL head over the cached embeddings on CPU. This avoids
+  the mean-pool ceiling (attend over windows) AND the GPU need. Only end-to-end encoder fine-tuning
+  remains GPU-only. Checkpoint every N patients (reaps).
+
 ## Open opportunity (the current best shot)
 - **No EEG foundation model has been applied to clinical/neuro outcome prediction with external validation
   anywhere (as of 2026)** — DELPHI-EEG is single-center. HEEDB (multi-site EEG + ICD10/OMOP outcomes +
-  DateOfDeath) enables the first cross-site-validated EEG-foundation-model outcome study. This is the
-  genuine white space; it is GPU-gated, pipeline-validated, preprocessing-solved (µV).
+  DateOfDeath) enables the first cross-site-validated EEG-foundation-model outcome study. Pipeline
+  validated, preprocessing solved (µV). Now approachable on CPU overnight via the frozen-embedding + MIL-
+  head path (see process lesson above); encoder fine-tuning deferred to a future GPU env.
