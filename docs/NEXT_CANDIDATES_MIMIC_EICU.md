@@ -50,6 +50,22 @@ narrative review, not this design). Streamed MIMIC-IV v3.1 `microbiologyevents` 
   cached `admissions.hospital_expire_flag`; C.diff/MDRO from later cultures/`diagnoses_icd`); (3) confirm
   eICU `microLab` has the analog order/result timestamps for external validation.
 
+### Antibiotic sub-gate — PASSED (streamed `prescriptions` 500k-row sample, disk-sparing)
+- 23,140 antibiotic courses in the sample (15,840 broad-spectrum, 7,300 narrow); **99.8% have both
+  `starttime` and `stoptime`** → course timing fully available for de-escalation detection.
+- Broad-spectrum empiric agents well-represented: vancomycin 6,325; ciprofloxacin 1,899; ceftriaxone 1,860;
+  cefepime 1,851; piperacillin(-tazo) 1,374; meropenem 647; ceftazidime, daptomycin, linezolid. 5,832
+  distinct admissions with antibiotics in the first 500k rows alone → large abx cohort in the full table.
+- **BOTH halves of the natural experiment confirmed in MIMIC-IV.** Design is fully constructable.
+
+### NEXT STEP (in progress) — build the linked per-admission cohort (disk-sparing, two streamed passes)
+Stream `microbiologyevents` once → keep only compact per-hadm culture summary (first blood/urine culture
+order time, its storetime=result-available, organism, any Resistant flag). Stream `prescriptions` once →
+compact per-hadm antibiotic course list (drug, broad/narrow, start, stop). Join in memory on hadm_id.
+Exposure = de-escalation (broad→narrow or stop) within Δh of the culture storetime; instrument = culture
+turnaround (storetime−charttime); outcomes = in-hospital mortality (cached admissions) + antibiotic-days.
+Then eICU `microLab`+`medication` replication. Keep only the compact joined table on disk, never raw.
+
 ## BANKED LESSON (bank in LESSONS.md)
 The agent's sharpest catch: our two prior properly-adjusted treatment-decision studies (vasopressor
 dose→mortality; 3-way liberation-order) converged on the **identical OR ≈ 1.35 / E-value ≈ 1.83**. That
