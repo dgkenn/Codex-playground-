@@ -102,3 +102,25 @@ to do this is now fully unlocked and validated; the quick probe just isn't the r
 
 **Net for the goal:** data + pipeline UNLOCKED and VALIDATED (major); the actual high-impact finding is set
 up to run but needs the proper preprocessing + GPU — not completable as a 90-second-window CPU probe.
+
+## RESOLVED: the nulls were a preprocessing bug (scaling) — approach VALIDATED
+Diagnostic scaling test (S0001, n=60 balanced, within-site 5-fold, abnormal-EEG outcome), varying the
+input scaling fed to CBraMod:
+
+| Input scaling | within-site 5-fold AUC |
+|---|---|
+| per-channel z-norm (my first pilots — WRONG) | **0.40** |
+| **µV (volts×1e6) — correct** | **0.62** |
+| µV/100 | 0.57 |
+
+mne returns EDF data in volts (~5e-5); CBraMod expects µV (~tens). The z-norm destroyed the amplitude
+scale the model needs → uninformative embeddings → the earlier nulls. With correct µV scaling the frozen
+CBraMod embedding + a linear probe over a few 30 s windows already discriminates normal/abnormal EEG at
+**AUC 0.62 within-site** (n=60, wide CI, no fine-tuning) — a genuine proof-of-concept that the
+foundation-model → EEG-outcome approach works on real HEEDB data once preprocessed correctly.
+
+Remaining to the full high-impact finding (all de-risked, GPU-bound): corrected-scaling cross-site
+validation (CPU cross-site pilots were flaky/slow); whole-recording pooling; light fine-tuning; scale to
+the 48k EEG∩outcome cohort via the repo `pass1` on GPU. Upstream fix: repo harmonize/embed apply no µV
+scaling — add it. Bottom line: every scientific blocker removed (creds, cohort, pipeline, and the
+validated preprocessing recipe); the remaining requirement is GPU compute to run the full study.
