@@ -126,6 +126,42 @@ def load_age():
     return d
 
 
+def load_gender():
+    d = {}
+    try:
+        f = open(SD + 'patients.csv')
+    except FileNotFoundError:
+        return d
+    r = csv.reader(f); hdr = next(r); idx = {n: i for i, n in enumerate(hdr)}
+    gi = idx.get('gender', -1)
+    for row in r:
+        if gi >= 0:
+            d[row[idx['subject_id']]] = row[gi]
+    f.close()
+    return d
+
+def recent_before(series, t, maxage=168.0):
+    """most recent (t_i, v_i) with t_i <= t within maxage hours; series sorted by time."""
+    best = None
+    for (ti, vi) in series:
+        if ti <= t and (t - ti) <= maxage:
+            best = vi
+        elif ti > t:
+            break
+    return best
+
+def egfr_ckdepi(scr, age, female):
+    """CKD-EPI 2021 race-free eGFR from serum creatinine (mg/dL), age, sex."""
+    if scr is None or scr <= 0 or age is None:
+        return None
+    k = 0.7 if female else 0.9
+    a = -0.241 if female else -0.302
+    e = 142 * (min(scr / k, 1) ** a) * (max(scr / k, 1) ** -1.200) * (0.9938 ** age)
+    if female:
+        e *= 1.012
+    return e
+
+
 def ols(y, X):
     X = np.asarray(X, float); y = np.asarray(y, float)
     Bi = np.linalg.pinv(X.T @ X); b = Bi @ (X.T @ y); res = y - X @ b
@@ -143,8 +179,9 @@ def design_controls(mids):
     return np.column_stack([np.ones_like(c), c])
 
 
-def build_cohort(seqs, tx, adm, age, transfers, flag, direction):
-    """One row per hadm with >=2 pre-treatment draws; annotate stratum via is_icu at M2's time."""
+def build_cohort(seqs, tx, adm, age, transfers, flag, direction, creat=None, bun=None, gender=None):
+    """One row per hadm with >=2 pre-treatment draws; annotate stratum + pre-decision RENAL function."""
+    creat = creat or {}; bun = bun or {}; gender = gender or {}
     cross = (lambda v: v < flag) if direction == '<' else (lambda v: v > flag)
     rows = []
     for hadm, seq in seqs.items():
@@ -155,20 +192,22 @@ def build_cohort(seqs, tx, adm, age, transfers, flag, direction):
         if len(pre) < 2:
             continue
         (t1, m1), (t2, m2) = pre[0], pre[1]
-        # TIGHT inter-draw window: the two control draws must be <=24h apart so the midpoint reflects
-        # CONTEMPORANEOUS true severity (sigma -> analytic noise, not days-apart biological drift).
-        if (t2 - t1) > 24.0:
+        if (t2 - t1) > 24.0:   # tight inter-draw window (contemporaneous severity)
             continue
         icu_flag = is_icu(transfers, hadm, t2)
         stratum = 'ICU' if icu_flag is True else ('WARD' if icu_flag is False else 'UNKNOWN')
+        subj = adm[hadm]['subject']; ag = age.get(subj, np.nan)
+        cr = recent_before(creat.get(hadm, []), t2) if creat else None      # renal fn at decision time
+        bn = recent_before(bun.get(hadm, []), t2) if bun else None
+        female = (gender.get(subj, '') == 'F')
+        egfr = egfr_ckdepi(cr, ag if not math.isnan(ag) else None, female)
         rows.append({
             'hadm': hadm, 'mid': (m1 + m2) / 2, 'm2': m2,
             'z': 1.0 if cross(m2) else 0.0,
             'd': 1.0 if any(t2 <= r <= t2 + 24 for r in rt) else 0.0,
             'y': float(adm[hadm]['expire']),
-            'los': adm[hadm]['los'],
-            'age': age.get(adm[hadm]['subject'], np.nan),
-            'stratum': stratum,
+            'los': adm[hadm]['los'], 'age': ag, 'stratum': stratum,
+            'cr': cr, 'bun': bn, 'egfr': egfr,
         })
     return rows
 
@@ -203,6 +242,19 @@ def analyze_stratum(label, rows, flag, hw):
     ba, sa = ols(np.array([r['age'] for r in sub]), Xbase)
     # age-ADJUSTED reduced form (robustness: does the near-null survive purging the age channel?)
     brf_adj, _ = ols(y, Xadj); rf_adj = brf_adj[0]
+    # RENAL-ADJUSTED: add pre-decision eGFR + creatinine + BUN (renal fn drives Mg/K variability AND mortality)
+    def col(keyname):
+        v = np.array([r[keyname] if r[keyname] is not None else np.nan for r in sub], float)
+        cov = float(np.mean([r[keyname] is not None for r in sub]))
+        m = np.nanmedian(v) if np.any(~np.isnan(v)) else 0.0
+        v[np.isnan(v)] = m
+        return v, cov
+    egfr_v, cov_egfr = col('egfr'); cr_v, _ = col('cr'); bun_v, cov_bun = col('bun')
+    egfr_c = (egfr_v - 60) / 30.0; cr_c = (cr_v - 1.0); bun_c = (bun_v - 20) / 20.0
+    Xren = np.column_stack([z, C, agec, agec * agec, egfr_c, cr_c, bun_c])
+    brf_ren, _ = ols(y, Xren); rf_ren = brf_ren[0]
+    # balance on RENAL function: creatinine ~ z | midpoint (does the noise-flag track renal severity?)
+    bcr, _ = ols(cr_v, Xbase)
     ar = [b0 for b0 in np.arange(-1, 1.0001, 0.02)
           if abs((lambda bb, sb: bb[0] / sb[0] if sb[0] > 0 else 9)(*ols(y - b0 * d, Xbase))) < 1.96]
     arlo, arhi = (min(ar), max(ar)) if ar else (float('nan'), float('nan'))
@@ -229,14 +281,14 @@ def analyze_stratum(label, rows, flag, hw):
     bal_flag = '⚠' if abs(ba[0]) > 3 else ' '
     print(f'    [{label:7s}] n={len(sub):6d} tx={d.mean():.3f} | '
           f'NAIVE crude={naive_crude[0]:+.4f} adj={naive_adj[0]:+.4f} | '
-          f'FS={fs:+.3f}(F{F:4.0f}){F_flag}| ITT={rf:+.5f}({srf[0]:.5f}) ITTadj={rf_adj:+.5f} | LATE={late:+.3f} AR[{arlo:+.2f},{arhi:+.2f}] | '
-          f'balAge={ba[0]:+.2f}{bal_flag}| densB/A={dens:.2f} | LOSmed={los_med:.1f}d (n_los={len(los_vals)})')
+          f'FS={fs:+.3f}(F{F:4.0f}){F_flag}| ITT={rf:+.5f}({srf[0]:.5f}) ITTadj={rf_adj:+.5f} ITTrenal={rf_ren:+.5f} | LATE={late:+.3f} | '
+          f'balAge={ba[0]:+.2f}{bal_flag}balCr={bcr[0]:+.3f}(egfr_cov={cov_egfr:.2f}) | densB/A={dens:.2f} | LOSmed={los_med:.1f}d')
 
 
 noise_sigma_cache = {}
 
 
-def run_trial(name, key, classes, flag, direction, hw, adm, age, transfers):
+def run_trial(name, key, classes, flag, direction, hw, adm, age, transfers, creat=None, bun=None, gender=None):
     seqs = load_labseq(key)
     if not seqs:
         print(f'  {name:28s}: lab_{key}.csv empty/missing — SKIP'); return
@@ -252,7 +304,7 @@ def run_trial(name, key, classes, flag, direction, hw, adm, age, transfers):
     noise_sigma_cache['sig'] = sig
     print(f'  {name}  (noise sigma={sig:.3g})')
 
-    rows = build_cohort(seqs, tx, adm, age, transfers, flag, direction)
+    rows = build_cohort(seqs, tx, adm, age, transfers, flag, direction, creat, bun, gender)
     n_unk = sum(1 for r in rows if r['stratum'] == 'UNKNOWN')
     if n_unk:
         print(f'    note: {n_unk}/{len(rows)} decisions have no transfers coverage at M2 time (UNKNOWN, excluded from strata)')
@@ -279,8 +331,11 @@ def main():
         print('admissions.csv missing — ABORT (need admissions for mortality/LOS/subject linkage)'); return
     if not transfers:
         print('transfers.csv missing — ABORT (need transfers for ward/ICU classification)'); return
+    creat = load_labseq('creat'); bun = load_labseq('bun'); gender = load_gender()
+    print(f'renal controls: creatinine {len(creat)} hadm, BUN {len(bun)} hadm, gender {len(gender)} subj '
+          f'(ITTrenal adjusts for eGFR[CKD-EPI]+Cr+BUN; balCr = creatinine~Z exogeneity check)\n')
     for (name, key, classes, flag, direction, hw) in CONFIG:
-        run_trial(name, key, classes, flag, direction, hw, adm, age, transfers)
+        run_trial(name, key, classes, flag, direction, hw, adm, age, transfers, creat, bun, gender)
     print('DONE. Interpret per stratum: strong FS + balAge~0 + precise ITT => usable; WARD stratum is the')
     print('headline de-implementation estimate (highest-scale floor reflexive-repletion target); ICU stratum')
     print('replicates the original inputevents-sourced design as a cross-check on the same rx-sourced treatment.')
