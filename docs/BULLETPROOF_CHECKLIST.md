@@ -52,7 +52,13 @@ directly-measured analyte or model the correlation.
 | Exclusion (handoff changes only prescribing) | balance; NC outcomes; sending-service FE | NC null at 0 |
 | Not confounded by scheduled care changes at handoff | check nothing else protocolized changes at transfer | — |
 
-## Instrument B — Nurse-PRN administration IV (benzo/opioid/antipsychotic) — NOW RUNNABLE (streamed emar)
+## Instrument B — Nurse-PRN administration IV — ❌ RETIRED (real-data negative result)
+Tested on real emar and FAILED: non-administrations are uncharted (2.93M "Administered" vs 75k "Not Given" →
+adminRate 0.97, no instrument variation), holds are non-discretionary, and patient-level aggregation is
+LOS-confounded (balance ±30 yr). Not identifiable in MIMIC. See `REAL_RESULTS_NURSE_PRN_RETIRED.md`. Gestalt
+drugs now route to provider-IV (elective) + contraindication-gate. (Original design retained below for record.)
+
+### [RETIRED] original design — Nurse-PRN administration IV (benzo/opioid/antipsychotic)
 `emar` is stream-filtered to due-dose decisions (medication class × event_txt Administered/Not-Given ×
 enter_provider_id = administering nurse); instrument = nurse leave-one-out administration rate. Gates: relevance
 F≥10; balance (age/severity ~ nurse tendency) ~0; nurse↔patient assignment as-if-random **within unit×shift**
