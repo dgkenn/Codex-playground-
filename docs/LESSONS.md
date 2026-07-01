@@ -230,6 +230,24 @@ run an injected-signal power calibration. n=327 (S0001 239 / I0002 88).
   the real lever), a prospective/interventional element, or a fundamentally new data asset. Detail:
   `docs/CYCLE7_EICU_SCREENS.md`.
 
+## Cycle 8 — RDD (user-chosen): design sound, first target blocked on TREATMENT CAPTURE (validate first stage!)
+- Chose regression-discontinuity (sharp clinical threshold = quasi-randomization) as the structurally-strong
+  causal lever. First target: glucose → insulin-INFUSION (eICU). Built a disk-sparing single-pass streaming
+  first-stage (bin-aggregated P(insulin within 3h) by glucose, 563k decision-points).
+- **RESULT: P(insulin infusion) ≈ 0 across ALL glucose bins → first stage FAILED, but from CAPTURE not
+  absence.** eICU insulin *infusions* are in only 7% of stays (`infusionDrug` incomplete; most ICU
+  hyperglycemia is subcutaneous insulin, not in this table) and drip starts are often early (DKA) so few
+  glucose values precede them. **LESSON: for an RDD, the make-or-break is the FIRST STAGE (does treatment
+  actually jump at the threshold) AND the treatment must be DENSELY/RELIABLY captured — check capture before
+  building.** A structurally-sound design still dies if the treatment variable is sparse/mistimed in the data.
+- **Infra lesson:** eICU `lab` (~40M rows / ~2 GB) through the agent proxy is slow + drops; repeated full
+  streams are impractical. For any full-`lab` analysis, do a ONE-TIME compact filtered extract (only the
+  needed labnames) instead of re-streaming. Checkpointing reducers are mandatory for flaky-proxy streams.
+- **Path forward (RDD still live):** use a densely-captured threshold-treatment — MIMIC-IV `inputevents`
+  charts insulin + electrolyte repletion (K/Mg/phosphate) with times; **electrolyte repletion at protocol
+  thresholds has ~no outcome evidence → the most NOVEL RDD target.** Transfusion@Hb7 is the sharpest but
+  answer-known (methods-validation only). Detail: `docs/CYCLE8_RDD.md`.
+
 ## Open opportunity (the current best shot)
 - **No EEG foundation model has been applied to clinical/neuro outcome prediction with external validation
   anywhere (as of 2026)** — DELPHI-EEG is single-center. HEEDB (multi-site EEG + ICD10/OMOP outcomes +
