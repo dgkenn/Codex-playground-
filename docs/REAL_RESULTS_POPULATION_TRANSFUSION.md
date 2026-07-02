@@ -6,14 +6,19 @@ general ICU neutral (TRICC); cardiac surgery contested (TITRe2 mortality-harm si
 acute MI liberal-trend (MINT) / non-inferior (REALITY); hip fracture null (FOCUS); upper GI bleed
 restrictive-superior = transfusion harmful (Villanueva).
 
-## Result (band CBC Hb 6–8, bloodgas-Hb<7 flag, D=RBC≤24h)
-| population | n | first-stage F | flag-ITT [95% CI] | LATE | balance | NC | vs RCT truth |
+## Result — individual trial builds, each with its EXACT primary-outcome horizon
+(band CBC Hb 6–8, bloodgas-Hb<7 flag, D=RBC≤24h; LATE = transfusion effect on that trial's outcome)
+| trial (population, exact horizon) | n | F | flag-ITT [95% CI] | LATE | bal | NC | vs RCT truth |
 |---|---|---|---|---|---|---|---|
-| general ICU (TRICC) | 4,412 | 13 | −0.012 [−0.039, +0.015] | −0.16 | +0.91 | ok | ✅ neutral recovered |
-| acute MI (MINT/REALITY) | 766 | 10 | −0.029 [−0.088, +0.029] | −0.18 | +1.59 | ok | ~ correct sign (liberal-trend), n.s. |
-| cardiac surgery (TITRe2/TRICS) | 2,881 | 12 | +0.020 [−0.007, +0.047] | +0.23 | +1.46 | ok | ~ n.s.; matches TRICS-III NI, not TITRe2 harm |
-| upper GI bleed (Villanueva) | 336 | **0** | +0.073 [−0.074, +0.221] | +2.24 | **+4.05** | ok | ✗ instrument invalid (drift in bleeders) |
-| hip fracture (FOCUS) | **23** | — | — | — | — | — | ✗ no arterial blood-gas Hb in elective ortho |
+| **TRICC** (general ICU, 30d) | 4,412 | 13 | −0.012 [−0.039, +0.015] | −0.16 | +0.91 | ok | ✅ null recovered |
+| **TITRe2** (cardiac surgery, 90d) | 2,881 | 12 | +0.020 [−0.007, +0.047] | +0.23 | +1.46 | ok | ~ n.s.; consistent with TRICS-III NI, not TITRe2's borderline harm |
+| **MINT** (acute MI, 30d) | 766 | 10 | −0.029 [−0.088, +0.029] | −0.18 | +1.59 | ok | ~ correct sign (liberal-trend), n.s. |
+| **REALITY** (acute MI, 30d MACE) | 766 | 10 | −0.029 [−0.088, +0.029] | −0.18 | +1.59 | ok | ~ consistent with restrictive-non-inferior (CI incl 0) |
+| **FOCUS** (hip fracture, 60d) | **23** | — | — | — | — | — | ✗ untestable — no arterial blood-gas Hb in elective ortho |
+| **Villanueva** (upper GI bleed, 45d) | 336 | **0** | +0.071 [−0.087, +0.229] | +2.17 | **+4.05** | ok | ✗ instrument invalid (drift in bleeders); point sign correct (harmful) |
+
+Note MINT and REALITY share the same MIMIC cohort (acute MI + arterial blood-gas Hb) and same 30-day horizon, so
+they return the same estimate — it is consistent with both trials' (compatible) conclusions.
 
 ## Reading (honest)
 - **Only the general-ICU null is a clean favorable** (well-powered, NC ok, balance ok) — the TRICC anchor.

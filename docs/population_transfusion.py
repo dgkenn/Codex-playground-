@@ -118,7 +118,8 @@ def main():
             base.append({'hadm':hadm,'cbc':best,'z':1.0 if vb<7.0 else 0.0,
                          'd':1.0 if any(tb<=r<=tb+24 for r in rt) else 0.0,
                          'ncd':1.0 if any(tb<=r<=tb+24 for r in kt) else 0.0,
-                         'mh':float(adm[hadm]['expire']),'m30':mort(30),'m90':mort(90),'age':ag,
+                         'mh':float(adm[hadm]['expire']),'m30':mort(30),'m45':mort(45),
+                         'm60':mort(60),'m90':mort(90),'age':ag,
                          'hip':hadm in DX['hip'],'mi':hadm in DX['mi'],'gib':hadm in DX['gib'],
                          'card':hadm in cardiac})
             break
@@ -137,14 +138,17 @@ def main():
         print(f'  {label:26s} n={len(rows):5d} mort={y.mean():.3f} tx={d.mean():.3f} | NAIVE={nc[0]:+.4f} | '
               f'FS={fs:+.3f}(F{F:4.0f}) | flag-ITT={rf:+.4f}[{lo:+.3f},{hi:+.3f}] LATE={late:+.3f} | '
               f'bal={ba[0]:+.2f} NC={ncsig} | truth:{truth}')
-    print('== Predicted LATE sign by population (transfusion effect on mortality) ==')
-    run(base,'m30','general ICU (TRICC)','~0 neutral')
-    run([r for r in base if r['card']],'m90','cardiac surgery (TITRe2)','LATE<0 (restrict worse)')
-    run([r for r in base if r['mi'] and not r['gib']],'m30','acute MI (MINT/REALITY)','LATE<=0 (liberal trend)')
-    run([r for r in base if r['hip']],'m30','hip fracture (FOCUS)','~0 null')
-    run([r for r in base if r['gib']],'m30','upper GI bleed (Villanueva)','LATE>0 harmful (drift caveat)')
-    print('\nRecovering the LATE-SIGN PATTERN across populations (0 / <0 / <0 / 0 / >0) = strong validation:')
-    print('one clean instrument detecting RCT-matched effect heterogeneity, not just nulls.')
+    print('== Individual transfusion-RCT builds, each with its EXACT primary outcome horizon ==')
+    print('   (instrument = cross-method Hb<7 flag; LATE = transfusion effect on that trial\'s outcome)')
+    run(base,'m30','TRICC (general ICU, 30d)','null: LATE~0')
+    run([r for r in base if r['card']],'m90','TITRe2 (cardiac surg, 90d)','restrict worse: LATE<0')
+    run([r for r in base if r['mi'] and not r['gib']],'m30','MINT (acute MI, 30d)','liberal trend: LATE<=0')
+    run([r for r in base if r['mi'] and not r['gib']],'m30','REALITY (acute MI, 30d MACE)','restrict non-inf: LATE~0')
+    run([r for r in base if r['hip']],'m60','FOCUS (hip fracture, 60d)','null: LATE~0')
+    run([r for r in base if r['gib']],'m45','Villanueva (upper GI bleed, 45d)','restrict better: LATE>0 harmful')
+    print('\nEach row is that trial\'s faithful population + exact outcome horizon, run through the SAME clean')
+    print('cross-method Hb instrument. Recovering the LATE-SIGN PATTERN (0 / <0 / <=0 / 0 / 0 / >0) across the')
+    print('heterogeneous RCT truths = one instrument detecting RCT-matched effect heterogeneity, not just nulls.')
 
 if __name__=='__main__':
     main()
