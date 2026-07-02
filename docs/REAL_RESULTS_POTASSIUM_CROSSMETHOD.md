@@ -43,6 +43,27 @@ correlated with acuity and outcome. The cross-method assumption (same blood → 
 holds for Hb (co-oximetry vs impedance both measure intact hemoglobin) but **breaks for potassium** because
 one failure mode (hemolysis) perturbs the two assays' inputs differently and non-randomly.
 
+## Salvage attempt: screen out hemolysis-commented specimens (real fix, partial success)
+MIMIC-IV labevents carries a `comments` field, and chemistry-K specimens are explicitly hemolysis-annotated
+(28,090 rows, e.g. "HEMOLYSIS FALSELY ELEVATES K"; blood-gas K carries **zero** such comments). Since the valid
+instrument direction flags on chemistry K, we rebuilt the cross-method pairs **excluding any chem-K draw with
+a hemolysis comment** (1.8% of all chem-K rows) and re-ran the identical design + NC gate:
+
+| band (on bloodgas control) | n | first stage (F) | flag-ITT | NC-RBC (screened) | NC-RBC (unscreened) |
+|---|---|---|---|---|---|
+| tight [3.0,4.0] | 10,393 | F=34–36 | −0.025 to −0.037 | **+0.018 to +0.020, ok (~0)** | +0.026 to +0.027, FIRES |
+| wide [2.8,4.2] | 13,620 | F=40–42 | −0.019 to −0.029 | +0.022 to +0.025, **still FIRES** | +0.028 to +0.031, FIRES |
+
+**Reading:** screening hemolyzed specimens **shrinks and, in the tight band, clears** the NC violation — hemolysis
+is confirmed as a real, partial mechanism, not a guess. But it does **not** fully eliminate the leakage in the
+wider band. **Verdict: partially salvaged, not fully rescued.** The tight-band, NC-clean estimate
+(ICU 30-day: −0.037 [−0.067,−0.007]) is suggestive but sits right at the boundary of the NC significance test and
+the wider band shows the same-direction leakage persists — per our own rule (never test flag-ITT against a raw
+zero; calibrate against the empirical null), this is **not yet claimable as a clean favorable**. It does,
+however, meaningfully upgrade the finding from "retired, mechanism=hemolysis" to "retired-with-residual-cause
+partially characterized" — hemolysis explains roughly half the leakage; the rest is unexplained and would need
+further screening (e.g. by time-to-run/processing delay) or an independent replication cohort to resolve.
+
 ## Cross-reference
 The unified NC audit (`REAL_RESULTS_NC_AUDIT.md`) shows the NC-tx point estimate is small-positive for **all**
 cross-method flags (+0.016 Hb, +0.029 glucose, +0.024 K), significant where n is large. So potassium is not
