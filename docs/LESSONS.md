@@ -385,3 +385,40 @@ run an injected-signal power calibration. n=327 (S0001 239 / I0002 88).
   DateOfDeath) enables the first cross-site-validated EEG-foundation-model outcome study. Pipeline
   validated, preprocessing solved (µV). Now approachable on CPU overnight via the frozen-embedding + MIL-
   head path (see process lesson above); encoder fine-tuning deferred to a future GPU env.
+
+## Assay-noise IV, ALL benchmark trials emulated (2026-07): the toolkit is self-diagnosing (each failure has a distinct, gate-caught mechanism)
+Emulated every lab/gate-triggered benchmark trial as faithfully as possible (exact protocols, all factors; see
+`docs/TRIAL_EMULATION_MASTER.md` + per-trial `REAL_RESULTS_*`). Result — the cross-method assay-noise IV is
+validly IDENTIFIED for exactly ONE analyte, and the gates correctly reject it everywhere else, each for a
+different diagnosable reason:
+- **Hb (TRICC/TRISS)** ✅ RECOVERED THE RCT NULL. Cross-method CBC-Hb vs blood-gas-Hb = pure analytic discordance
+  (shared measurand co-ox/impedance, both measure intact Hb). Faithful all-factors emulation (ICU, Hb≤9 w/in 72h,
+  exclude bleeding/chronic-anemia/cardiac/pregnancy, 30-/90-day) → flag-ITT≈0 in every powered stratum. The
+  earlier "+0.032 harm" was temporal drift (bleeding) + wrong endpoint + included bleeders, not method failure.
+- **Glucose (NICE-SUGAR)**: two NEW lessons. (1) **Build the instrument on the measurement the clinician ACTS ON**
+  — chem-glucose flag → correctly-signed strong first stage (F 15–26); blood-gas-glucose flag → strong-but-
+  WRONG-signed (insulin dosed off chem/POC, not ABG). First-stage SIGN is a required gate the F-stat misses.
+  (2) **Estimand boundary**: a single flag ≠ NICE-SUGAR's target-range contrast → flag-ITT≈0 is the shared
+  correctional-insulin decision, not the trial; needs a dose-intensity IV.
+- **Potassium**: acted-upon rule replicates (chem-flag F 59–64), but **NC FIRES** (K-flag predicts RBC transfusion,
+  which K can't trigger) — mechanism = **hemolysis** reads falsely-high K and perturbs the two assays non-randomly.
+  Age balance PASSED while NC failed → the canonical "balance-passes-while-exclusion-violated" case. Retired.
+- **NC audit across Hb/glucose/K** (`REAL_RESULTS_NC_AUDIT.md`): ALL flags carry a small residual-acuity leakage
+  (+0.016..+0.029), significant where n is large → **never test flag-ITT against 0; NC empirical-null calibration
+  is mandatory**. Hb cleanest but its NC is underpowered (don't over-claim it's provably clean).
+- **Platelet (TOPPS)**: no second same-time method exists in MIMIC (only impedance 51265). Temporal fallback fails:
+  short-interval (<2h) sigma near the <10 flag is LARGER than long-interval (transfusions between draws + marrow
+  kinetics) → drift-contaminated. Retired. = the "single-method" failure class.
+- **Albumin (ALBIOS) + Bicarbonate (BICAR-ICU)**: single-method temporal IV — drift diagnostic fails (short-gap
+  sigma NOT << long-gap; short is selected for instability) AND NC fires. Bicarbonate AKI subgroup also NC-fails.
+  Retired. Albumin additionally weak first stage.
+- **MIND-USA (antipsychotic)**: nurse-preference instrument STRUCTURALLY fails (F<1) — emar provider field is
+  charted conditional-on-administration (assignable⇒98.9% exposed) → LOO first stage mechanically dead. Honest
+  data-limitation, not a coding bug.
+MECHANISM/META-LESSON: cross-method assay-noise discordance is clean ONLY when the two assays share the same
+physical measurand AND failure modes (Hb). It fails via: single-method (platelet, albumin, bicarb temporal),
+non-analytic artifact correlated with acuity (potassium=hemolysis), wrong flagged side (glucose/K=fixable),
+estimand mismatch (glucose target-range), or charting-conditional exposure (MIND-USA). The publication-grade
+claim is NOT "assay-noise IV works" — it's "a SELF-DIAGNOSING assay-noise toolkit whose gates (first-stage sign,
+drift diagnostic, NC empirical-null) recover TRICC/TRISS on Hb and correctly REJECT the instrument on 5 other
+decisions, each for a distinct mechanistic reason." Honesty about scope IS the contribution.
