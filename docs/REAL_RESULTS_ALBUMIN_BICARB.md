@@ -30,6 +30,19 @@ not causal** — reflexive bicarbonate/albumin is given to the sickest patients,
 not break that. The AKI-subgroup bicarbonate estimate also fails NC, so it does not recover the BICAR-ICU AKIN
 benefit either.
 
+## Fidelity follow-up: BICAR-ICU's REAL 3-way gate (pH≤7.20 AND PaCO2≤45 AND HCO3≤20)
+The original run used HCO3<15 alone as an eligibility proxy. Per the user's push to replicate trial
+methodology exactly, we now have pH (itemid 50820) and PaCO2 (50818), freshly streamed from labevents, plus
+blood-gas HCO3 (50811bg-family, `lab_hco3bg.csv`). Building the REAL joint criterion (all three from the same
+blood-gas draw, matched within 30 min) gives a cohort of **n=182** — an order of magnitude smaller than the
+single-lab proxy. This is **fidelity, not a bug**: BICAR-ICU's inclusion is deliberately narrow (severe,
+compensated respiratory-normal acidemia), and the honest joint gate reflects that. The cohort is too small for
+a reliable instrument-based estimate (design-only for causal inference), but it is the methodologically correct
+eligibility definition, and is used for any future attempt (e.g. if HiRID/SICdb access adds cases). The
+underlying instrument problem is unchanged: no cross-method pH/PaCO2/HCO3 triple exists (single measurement
+method each), so the temporal-noise IV already failed drift+NC gates in the wider proxy cohort — a valid
+instrument for BICAR-ICU's real gate is still not available in MIMIC-IV alone.
+
 ## Verdict — RETIRED (both)
 No valid assay-noise instrument exists on this data for albumin or bicarbonate: single-method → no cross-method
 discordance; temporal noise is drift-contaminated (and selection-contaminated at short gaps); NC confirms
