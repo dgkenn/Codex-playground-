@@ -16,9 +16,9 @@ eligibility, no single lab flag).
 | 6 | Electrolyte repletion (K) | Reflexive K replacement | K flag → assay-noise | (de-impl; ~null expected) | chem K vs bloodgas K | ✅ RETIRED by NC (hemolysis) |
 | 7 | BICAR-ICU (Jaber 2018) | NaHCO₃ for metabolic acidosis | HCO₃/pH flag → assay-noise | null overall; AKI-subgroup benefit | single-method (temporal) | ✅ RETIRED (drift + NC) |
 | 8 | SAFE (Finfer 2004) / ALBIOS (Caironi 2014) | IV albumin | albumin flag → assay-noise (temporal only) | null | none (single method) | ✅ RETIRED (drift + NC + weak FS) |
-| 9 | SUP-ICU (Krag 2018) / PEPTIC (2020) | PPI stress-ulcer prophylaxis | risk-gate → gate/preference | ~null (no mortality benefit) | n/a | ▫ planned |
-| 10 | PREVENT (Arabi 2019) | Adjunctive pneumatic VTE prophylaxis | gate → gate | null | n/a | ▫ planned |
-| 11 | ADRENAL (Venkatesh 2018) | Hydrocortisone in septic shock | severity-gate → provider-pref | null (mortality) | n/a | ▫ planned |
+| 9 | SUP-ICU (Krag 2018) / PEPTIC (2020) | PPI stress-ulcer prophylaxis | risk-gate → preference | ~null (no mortality benefit) | n/a | ✅ confounded/design-only (no favorable) |
+| 10 | PREVENT (Arabi 2019) | Adjunctive pneumatic VTE prophylaxis | gate → gate | null | n/a | ✅ design-only (no IPC data) |
+| 11 | ADRENAL (Venkatesh 2018) | Hydrocortisone in septic shock | severity-gate → provider-pref | null (mortality) | n/a | ✅ design-only (no vasopressor data) |
 | 12 | Benzodiazepines (PAD/ICU liberation) | Sedation de-implementation | symptom → nurse-PRN dose-intensity | (de-impl; harm signal) | n/a | ✅ engine exists (nurse_prn_v2) |
 | 13 | Opioid intensity | Analgesia de-implementation | symptom → nurse-PRN dose-intensity | (de-impl; ~null) | n/a | ✅ engine exists (nurse_prn_v2) |
 
