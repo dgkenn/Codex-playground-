@@ -14,8 +14,8 @@ eligibility, no single lab flag).
 | 4 | TOPPS (Stanworth 2013) | Prophylactic platelets | platelet flag → assay-noise | protective (proph better) | none (no bloodgas plt) | ✅ RETIRED (single-method) |
 | 5 | MIND-USA (Girard 2018) | Antipsychotics for delirium | delirium → provider-pref | null | n/a | ✅ instrument infeasible (emar charting) |
 | 6 | Electrolyte repletion (K) | Reflexive K replacement | K flag → assay-noise | (de-impl; ~null expected) | chem K vs bloodgas K | ✅ RETIRED by NC (hemolysis) |
-| 7 | BICAR-ICU (Jaber 2018) | NaHCO₃ for metabolic acidosis | HCO₃/pH flag → assay-noise | null overall; AKI-subgroup benefit | chem HCO₃ vs bloodgas (thin, 11k) | ▫ planned |
-| 8 | SAFE (Finfer 2004) / ALBIOS (Caironi 2014) | IV albumin | albumin flag → assay-noise (temporal only) | null | none (single method) | ▫ planned |
+| 7 | BICAR-ICU (Jaber 2018) | NaHCO₃ for metabolic acidosis | HCO₃/pH flag → assay-noise | null overall; AKI-subgroup benefit | single-method (temporal) | ✅ RETIRED (drift + NC) |
+| 8 | SAFE (Finfer 2004) / ALBIOS (Caironi 2014) | IV albumin | albumin flag → assay-noise (temporal only) | null | none (single method) | ✅ RETIRED (drift + NC + weak FS) |
 | 9 | SUP-ICU (Krag 2018) / PEPTIC (2020) | PPI stress-ulcer prophylaxis | risk-gate → gate/preference | ~null (no mortality benefit) | n/a | ▫ planned |
 | 10 | PREVENT (Arabi 2019) | Adjunctive pneumatic VTE prophylaxis | gate → gate | null | n/a | ▫ planned |
 | 11 | ADRENAL (Venkatesh 2018) | Hydrocortisone in septic shock | severity-gate → provider-pref | null (mortality) | n/a | ▫ planned |
