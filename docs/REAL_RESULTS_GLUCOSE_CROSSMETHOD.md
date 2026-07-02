@@ -41,6 +41,29 @@ contrast a single high-flag cannot represent. So the ≈0 here is exactly right 
 GRADED / target-range decision: testing it requires a **dose-intensity IV** (instrument insulin *intensity*),
 not a single-threshold flag. The one marginal signal (non-diabetic, +0.058) fails the age-balance gate (+2.0 yr).
 
+## Follow-up: the REAL NICE-SUGAR estimand (continuous-infusion dose-intensity IV) — honest negative
+The single-flag result above is not NICE-SUGAR's estimand (a target-range set by continuous IV insulin
+infusion). Per the user's push for 1:1 methodology, we rebuilt it as a **dose-intensity** design on the actual
+trial mechanism. Key data fix: the old `repletions.csv` extract kept only `hadm_id,itemid,starttime` — rate was
+dropped, so it could *only* ever support a bolus flag. Re-extracted from `inputevents.csv.gz` keeping
+rate/caregiver/start/end for itemid 223258 ("Insulin - Regular"), restricted to `ordercategoryname=='01-Drips'`
+(verified 223258 is the *sole* continuous-IV insulin; the other 7 insulin itemids are 100% bolus/subcutaneous —
+matching NICE-SUGAR's infusion mechanism). Cohort: n=4,304 ICU stays (LOS≥3d, insulin-gtt in first 72h).
+Instrument = caregiver leave-one-out infusion-intensity liberality.
+
+**Result: GATES FAIL on first-stage strength (F=1.7 < 10).** Balance (+0.33 yr) and negative controls
+(RBC/KCl, |z|<1) both pass, but the instrument is genuinely weak. Diagnostics: the raw Z→D correlation looks
+strong (F=34.7) but is almost entirely *between-ICU-unit* variation (70% of the cohort is CVICU with little
+within-unit spread); excluding CVICU, F stays ≤2.75. Not a coding artifact — a real weak instrument.
+Reduced-form points (mortality ITT +0.035; hypoglycemia<70 ITT +0.067 [+0.012,+0.121]) are logged but **not
+causally interpretable** at F=1.7.
+
+**Mechanistic lesson (new, useful):** dose-intensity IVs work when the exposure carries genuine bedside
+discretion (PRN sedation give/hold — `nurse_prn_iv_v2.py` had real signal) but **fail for protocol-titrated
+exposures** like insulin infusion, where an algorithmic glucose-driven sliding scale sets the rate once severity
+and unit are fixed, leaving almost no exploitable caregiver discretion. This is a scope boundary of the
+dose-intensity instrument family, not evidence about NICE-SUGAR itself.
+
 ## Bottom line
 The cross-method assay-noise instrument **transports** to glucose — but only when built on the acted-upon
 measurement (a newly-exposed, required first-stage-sign validity check), and only for the single-flag decision
