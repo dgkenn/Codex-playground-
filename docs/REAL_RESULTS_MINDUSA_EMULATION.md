@@ -39,3 +39,18 @@ instrument-infeasibility, distinct from our earlier *elective-stratum* provider-
 recovered the MIND-USA null via admission-acuity stratification rather than the delirium-cohort nurse-LOO. A
 usable delirium-cohort test would need attending-level prescribing data or an emar extract that charts the
 ordering provider on non-administered/withheld doses.
+
+## Follow-up (rechecked with a second, independent table — verdict confirmed, mechanism sharpened)
+Per the user's push to verify rather than accept an apparent data-gap at face value, we retried with
+`prescriptions.csv` (order-level, NOT administration-conditional — the exact fix that worked for SUP-ICU/PEPTIC
+above) instead of emar. Result: **still degenerate, but for a different, more fundamental reason.**
+`order_provider_id` only exists on rows where an antipsychotic was ordered — so "provider-assignable" and
+"D=1 (antipsychotic exposed)" are **the same event by construction**, not a compliance/charting artifact.
+Exposed rate among assignable = 1.0000 exactly (vs 0.0003 non-assignable) — a stricter collapse than the emar
+version. We also tried the natural alternative, `admit_provider_id` (filled independent of the antipsychotic
+decision, 99.999% coverage): first stage is strong on the full ICU population (F=195) but **fails F≥10 at
+every delirium-restricted stage (F=2.5–7.1)** — the delirium/critical-illness cohort is essentially all
+emergent/non-elective, so the acuity-confounded provider-assignment problem `provider_iv.py` already documented
+in its EMERGENT stratum applies here too. **This closes the loop: two independent tables, two independent
+provider-identity fields, both fail for well-understood, distinct, non-fixable reasons.** MIND-USA in the
+delirium-ICU population is retired with high confidence, not merely an unexplored data gap.
