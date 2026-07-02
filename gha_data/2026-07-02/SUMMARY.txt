@@ -1,1 +1,31 @@
-no shadow windows yet.
+shadow comparison over 4 de-duped windows | files=4
+
+     variant  net/win  Δvs base  paired t GROSS/win  gross t
+   late_gate  +12.762    +8.238     +2.63   +12.762    +2.60 <edge>
+     mo_size   +9.880    +5.355     +1.18    +9.880    +0.93 <edge>
+    tox_gate   +7.014    +2.489     +0.66    +7.014    +1.20 <edge>
+  micro_marg   +7.014    +2.489     +0.66    +7.014    +1.20 <edge>
+   flow_gate   +6.412    +1.888     +1.00    +6.412    +1.01 <edge>
+  micro_asym   +6.254    +1.729     +1.75    +6.254    +1.06 <edge>
+   micro_cal   +6.172    +1.648     +0.43    +6.172    +0.98 <edge>
+   gross_max   +5.784    +1.260     +0.82    +5.784    +1.12 <edge>
+ micro_react   +5.482    +0.958     +0.43    +5.482    +1.09 <edge>
+ ufat_skew15   +5.358    +0.833     +0.15    +5.358    +2.39 <edge>
+  micro_ufat   +5.038    +0.514     +0.12    +5.038    +0.72 <edge>
+deplete_gate   +4.808    +0.284     +0.20    +4.808    +0.90 <edge>
+  micro_soft   +4.525    +0.000       n/a    +4.525    +0.68 <edge>
+  micro_gate   +4.525    +0.000       n/a    +4.525    +0.68 <edge>
+    baseline   +4.525                        +4.525    +0.68 <edge>
+micro_strict   +4.438    -0.087     -0.02    +4.438    +0.59 <edge>
+  spot_react   +4.332    -0.193     -0.92    +4.332    +0.63 <edge>
+  micro_spot   +4.332    -0.193     -0.92    +4.332    +0.63 <edge>
+   ufat_band   +3.869    -0.656     -0.14    +3.869    +0.59 <edge>
+    dneutral   +3.680    -0.844     -0.17    +3.680    +1.05 <edge>
+  av_stoikov   +3.224    -1.300     -0.16    +3.224    +0.26 <edge>
+     fv_size   +3.203    -1.322     -0.65    +3.203    +0.47 <edge>
+      skew15   +1.996    -2.528     -0.73    +1.996    +0.59 <edge>
+micro_skew15   +1.996    -2.528     -0.73    +1.996    +0.59 <edge>
+       cap25   +1.991    -2.534     -0.75    +1.991    +0.59 <edge>
+
+Read: paired t = net edge OVER baseline (rebate-inclusive). GROSS/win = trade P&L EXCLUDING the rebate = the edge OUTSIDE rebates; gross t vs 0, |t|>2 notable. n=4.
+Only positive-GROSS variants have an edge beyond rebate harvesting (the micro-gate family).
