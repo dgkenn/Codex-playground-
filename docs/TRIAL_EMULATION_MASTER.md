@@ -11,7 +11,7 @@ eligibility, no single lab flag).
 | 1 | TRICC (Hébert 1999) | RBC transfusion, restrictive | Hb flag → assay-noise | null (restrictive non-inf) | CBC Hb 51222 vs bloodgas 50811 | ✅ recovered |
 | 2 | TRISS (Holst 2014) | RBC transfusion, septic shock | Hb flag → assay-noise | null | same | ✅ weak-instr flagged |
 | 3 | NICE-SUGAR (Finfer 2009) | Tight glucose control | glucose flag → assay-noise | harm (tight) | chem 50931 vs bloodgas 50809 | ✅ estimand boundary |
-| 4 | TOPPS (Stanworth 2013) | Prophylactic platelets | platelet flag → assay-noise | protective (proph better) | none (no bloodgas plt) | ⏳ feasibility |
+| 4 | TOPPS (Stanworth 2013) | Prophylactic platelets | platelet flag → assay-noise | protective (proph better) | none (no bloodgas plt) | ✅ RETIRED (single-method) |
 | 5 | MIND-USA (Girard 2018) | Antipsychotics for delirium | delirium → provider-pref | null | n/a | ✅ instrument infeasible (emar charting) |
 | 6 | Electrolyte repletion (K) | Reflexive K replacement | K flag → assay-noise | (de-impl; ~null expected) | chem K vs bloodgas K | ✅ RETIRED by NC (hemolysis) |
 | 7 | BICAR-ICU (Jaber 2018) | NaHCO₃ for metabolic acidosis | HCO₃/pH flag → assay-noise | null overall; AKI-subgroup benefit | chem HCO₃ vs bloodgas (thin, 11k) | ▫ planned |
