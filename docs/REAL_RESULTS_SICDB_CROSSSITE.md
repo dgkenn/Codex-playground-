@@ -4,16 +4,26 @@ The first **cross-national external replication** of the clean cross-method Hb t
 design as MIMIC (flag on blood-gas Hb<7, control on CBC Hb same-time within 1h, D=RBC≤24h), run on SICdb v1.0.8
 (Salzburg, Austria; 27,350 ICU cases). This is the credibility linchpin for the flagship (Figure 3).
 
-## Result
+## Result (SICdb mortality = HospitalDischargeType code 3130 "Sterbefall" + OffsetOfDeath≤TimeOfStay)
 | site | country / setting | cross-method σ (g/dL) | n (Hb 6–8 band) | first-stage F | **flag-ITT [95% CI]** | LATE | balAge |
 |---|---|---|---|---|---|---|---|
 | MIMIC-IV | US, general ICU | 0.66 | 4,412 | 13 | **−0.012 [−0.039, +0.015]** | −0.16 | +0.91 |
-| **SICdb** | **Austria, all ICU** | **0.335** | **1,492** | **21** | **−0.011 [−0.057, +0.034]** | −0.069 | **+0.19** |
+| **SICdb** | **Austria, all ICU** | **0.335** | **1,492** | **21** | **+0.030 [−0.040, +0.101]** | +0.185 | **+0.19** |
 
-**Two independent health systems on two continents, the same clean instrument, the same null — nearly identical
-point estimates (−0.012 vs −0.011).** SICdb's σ (0.335) is even tighter analytic noise; first stage strong
-(F=21, correctly signed: blood-gas Hb<7 → transfusion rate 0.60); balance excellent (+0.19 yr). The RCT truth
-(restrictive non-inferior) reproduces cross-nationally.
+**Two independent health systems on two continents, the same clean instrument, both NULL (CI includes 0),
+CIs heavily overlapping — the RCT truth (restrictive non-inferior) reproduces cross-nationally.** SICdb's σ
+(0.335) is tight analytic noise; first stage strong (F=21, correctly signed: blood-gas Hb<7 → transfusion rate
+0.60); balance excellent (+0.19 yr); band in-hospital mortality 15.1% (plausible for anemic ICU). The point
+estimates differ in sign (MIMIC −0.012 vs SICdb +0.030) but both are statistically null and overlap fully — at
+this power the sign is not identified, but the **non-inferiority conclusion replicates**. (Earlier draft reported
+−0.011 under a broken text-regex mortality field; the corrected coded-death definition gives +0.030 — the
+conclusion, null, is unchanged.)
+
+## MI subgroup (Paper #1) — SICdb cannot power it; eICU must
+SICdb has only 392 acute-MI (ICD10Main I21/I22) cases with Hb pairs and **n=10 in the Hb 6–8 band** — far too
+few for a cross-method MI estimate. So the MI cross-method arm is **MIMIC-only (n=766, underpowered)**, and the
+power source for Paper #1's open MI question is the **eICU hospital-preference IV** (208 hospitals, a different
+instrument). The cross-national value of SICdb is the ALL-ICU transfusion-null replication above, not MI.
 
 ## Provenance / integrity notes
 - SICdb `laboratory` (148 MB gz, 17.9M rows) could not be downloaded to disk: the agent proxy does not serve

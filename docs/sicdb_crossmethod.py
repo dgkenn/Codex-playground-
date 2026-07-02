@@ -120,21 +120,23 @@ def load_cases():
     dis=_col(ix,'HospitalDischargeType','DischargeType','HospOutcome')
     dod=_col(ix,'OffsetOfDeath','DeathOffset')
     tos=_col(ix,'TimeOfStay','HospitalLengthOfStay','LengthOfStay')
+    icd=_col(ix,'ICD10Main','ICD10','MainDiagnosis')
+    MI=re.compile(r'^I2[12]')
     d={}
     for row in r:
         if cid is None or len(row)<=cid: continue
         try: a=float(row[age]) if age is not None and row[age] else np.nan
         except: a=np.nan
-        # mortality: HospitalDischargeType coded 'deceased/verstorben/exitus' OR death offset within hospital stay
+        # in-hospital mortality: HospitalDischargeType CODE 3130 = "Sterbefall" (death), OR death offset within stay
         mort=0.0
-        if dis is not None and dis<len(row):
-            if re.search(r'deceas|verstorb|exitus|dead|death', row[dis] or '', re.I): mort=1.0
+        if dis is not None and dis<len(row) and str(row[dis]).strip('"')=='3130': mort=1.0
         if dod is not None and dod<len(row) and row[dod]:
             try:
                 do=float(row[dod]); ts=float(row[tos]) if (tos is not None and tos<len(row) and row[tos]) else 1e12
                 if 0<=do<=ts: mort=1.0
             except: pass
-        d[row[cid]]={'age':a,'mort':mort}
+        mi = bool(icd is not None and icd<len(row) and MI.match(str(row[icd]).strip('"')))
+        d[row[cid]]={'age':a,'mort':mort,'mi':mi}
     fh.close()
     return d
 
@@ -179,26 +181,28 @@ def main():
             disc.append(vb-best)
             rows.append({'a':vb,'b':best,'z':1.0 if vb<HB_FLAG else 0.0,
                          'd':1.0 if any(tb<=r<=tb+24*3600 for r in rt) else 0.0,
-                         'y':cases[cid]['mort'],'age':a})
+                         'y':cases[cid]['mort'],'age':a,'mi':cases[cid].get('mi',False)})
             break
     if len(rows)<200:
         print(f'only {len(rows)} cross-method pairs -- too few (check ID resolution + co-measurement).'); return
     sig=np.std(disc)/math.sqrt(2)
     print(f'\ncross-method Hb sigma = {sig:.3f} g/dL (n_pairs={len(rows)})')
-    sub=[r for r in rows if 6.0<=r['b']<=8.0 and not math.isnan(r['age'])]
-    if len(sub)<200: sub=[r for r in rows if 6.0<=r['b']<=8.0]
-    z=np.array([r['z'] for r in sub]);d=np.array([r['d'] for r in sub]);y=np.array([r['y'] for r in sub])
-    C=cb([r['b'] for r in sub],HB_FLAG);X=np.column_stack([z,C])
-    bfs,sfs=ols(d,X);brf,srf=ols(y,X);fs,rf=bfs[0],brf[0]
-    F=(fs/sfs[0])**2 if sfs[0]>0 else 0
-    ages=np.array([r['age'] for r in sub]); ba=ols(ages,X)[0] if not np.isnan(ages).all() else [float('nan')]
-    nc,_=ols(y,np.column_stack([d,np.ones_like(d)]))
-    late=rf/fs if abs(fs)>1e-3 else float('nan'); lo,hi=rf-1.96*srf[0],rf+1.96*srf[0]
-    print(f'band control-Hb 6-8: n={len(sub)} mort={y.mean():.3f} tx={d.mean():.3f}')
-    print(f'  NAIVE D->mort={nc[0]:+.4f} | FS={fs:+.3f}(F{F:4.0f}) | flag-ITT={rf:+.4f}[{lo:+.3f},{hi:+.3f}] '
-          f'LATE={late:+.3f} | balAge={ba[0]:+.2f}')
-    print('\nRCT truth = NULL. Clean cross-site replication = flag-ITT CI includes 0, correctly-signed strong FS,')
-    print('balance ok -> the TRICC/TRISS recovery reproduces in a second country/health-system (credibility upgrade).')
+    def analyze(rowset,label):
+        sub=[r for r in rowset if 6.0<=r['b']<=8.0]
+        if len(sub)<120: print(f'  {label:28s} n={len(sub)} too small'); return
+        z=np.array([r['z'] for r in sub]);d=np.array([r['d'] for r in sub]);y=np.array([r['y'] for r in sub])
+        C=cb([r['b'] for r in sub],HB_FLAG);X=np.column_stack([z,C])
+        bfs,sfs=ols(d,X);brf,srf=ols(y,X);fs,rf=bfs[0],brf[0]
+        F=(fs/sfs[0])**2 if sfs[0]>0 else 0
+        ages=np.array([r['age'] for r in sub]); ba=ols(ages,X)[0] if not np.isnan(ages).all() else [float('nan')]
+        nc,_=ols(y,np.column_stack([d,np.ones_like(d)]))
+        late=rf/fs if abs(fs)>1e-3 else float('nan'); lo,hi=rf-1.96*srf[0],rf+1.96*srf[0]
+        print(f'  {label:28s} n={len(sub):5d} mort={y.mean():.3f} tx={d.mean():.3f} | NAIVE={nc[0]:+.4f} | '
+              f'FS={fs:+.3f}(F{F:4.0f}) | flag-ITT={rf:+.4f}[{lo:+.3f},{hi:+.3f}] LATE={late:+.3f} | balAge={ba[0]:+.2f}')
+    print(f'in-hospital mortality (all pairs) = {np.mean([r["y"] for r in rows]):.3f}  |  MI cases in pairs = {sum(r["mi"] for r in rows)}')
+    analyze(rows,'ALL ICU (TRICC/TRISS)')
+    analyze([r for r in rows if r['mi']],'acute MI (I21/I22) [Paper#1]')
+    print('\nRCT truth: ALL=NULL (restrictive non-inferior). MI: MINT liberal-trend (open). Cross-site MI pool = Paper #1.')
 
 if __name__=='__main__':
     main()
