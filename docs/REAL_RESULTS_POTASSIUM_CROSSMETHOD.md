@@ -43,6 +43,13 @@ correlated with acuity and outcome. The cross-method assumption (same blood → 
 holds for Hb (co-oximetry vs impedance both measure intact hemoglobin) but **breaks for potassium** because
 one failure mode (hemolysis) perturbs the two assays' inputs differently and non-randomly.
 
+## Cross-reference
+The unified NC audit (`REAL_RESULTS_NC_AUDIT.md`) shows the NC-tx point estimate is small-positive for **all**
+cross-method flags (+0.016 Hb, +0.029 glucose, +0.024 K), significant where n is large. So potassium is not
+*uniquely* contaminated — a small residual-acuity leakage is general — but K's NC is significant and hemolysis
+is a genuine **K-specific** additional mechanism on top of that baseline. The operational conclusion is the same:
+this flag-ITT is not claimable without empirical-null calibration.
+
 ## Verdict
 The cross-method assay-noise IV does **not** universally apply. For potassium it is **retired by the negative
 control** (hemolysis-contaminated discordance), even though the first-stage sign and age balance both looked
