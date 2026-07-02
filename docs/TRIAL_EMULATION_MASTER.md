@@ -18,7 +18,7 @@ eligibility, no single lab flag).
 | 8 | SAFE (Finfer 2004) / ALBIOS (Caironi 2014) | IV albumin | albumin flag → assay-noise (temporal only) | null | none (single method) | ✅ RETIRED (drift + NC + weak FS) |
 | 9 | SUP-ICU (Krag 2018) | PPI stress-ulcer prophylaxis | risk-gate → preference | ~null (no mortality benefit) | n/a | ✅ run (6/6 gate fixed); confounded, no favorable |
 | 9b | PEPTIC (2020) | PPI vs H2RB | mech-vent gate → unit-preference | null | n/a | ✅ run (vent eligibility verified); weak instr (F=4) |
-| 10 | PREVENT (Arabi 2019) | Adjunctive pneumatic VTE prophylaxis | gate → device | null | n/a | ⏳ compression-device data streaming (chained) |
+| 10 | PREVENT (Arabi 2019) | Adjunctive pneumatic VTE prophylaxis | gate → provider-pref | null | n/a | ✅ run (IPC data streamed, 6194 pts); balance-borderline, no favorable |
 | 11 | ADRENAL (Venkatesh 2018) | Hydrocortisone in septic shock | severity-gate → provider-pref | null (mortality) | n/a | ✅ run (vasopressor timing fixed); balance-invalid, no favorable |
 | 12 | Benzodiazepines (PAD/ICU liberation) | Sedation de-implementation | symptom → nurse-PRN dose-intensity | (de-impl; harm signal) | n/a | ✅ engine exists (nurse_prn_v2) |
 | 13 | Opioid intensity | Analgesia de-implementation | symptom → nurse-PRN dose-intensity | (de-impl; ~null) | n/a | ✅ engine exists (nurse_prn_v2) |
@@ -32,8 +32,14 @@ Each trial gets a `REAL_RESULTS_*` doc with: exact protocol (cited), factor-by-f
 with 95% CI, first-stage F, balance, negative-control calibration where applicable, and an honest verdict
 (recovered / weak-instrument / estimand-boundary / retired-with-mechanism). This table is the index.
 
-**Coverage: 16 of 17 trial rows run and logged.** Only PREVENT (#10) remains, gated on the compression-device
-(IPC) chartevents stream now running; its script slot is ready (same gate-trials harness) and will run the
-moment the data lands. Every other benchmark and de-implementation trial has been emulated with deep
-methodology research, run on real MIMIC-IV data, and logged with an honest verdict — favorable or (mostly) a
+**Coverage: 17 of 17 trial rows run and logged.** PREVENT completed once the full chartevents stream landed
+(6,194 IPC-device patients) — emulatable-and-run, but balance-borderline/confounded, no favorable. Every
+benchmark and de-implementation trial has now been emulated with deep methodology research, run on real
+MIMIC-IV data, and logged with an honest verdict — favorable (TRICC/TRISS + MI-direction) or, mostly, a
 mechanistically-characterized refusal.
+
+**Plus the decisive open-question test:** Sodium cross-method (`REAL_RESULTS_SODIUM_CROSSMETHOD.md`) was run to
+test whether the clean instrument could point at an UNSETTLED question (dysnatremia). It FAILED the NC gate in
+every configuration (pseudohyponatremia + acuity), confirming the clean instrument domain is Hb-only on MIMIC —
+which sets the realistic output at a rigorous methods paper + external Hb validation, not a landmark via this
+instrument family (see `STRATEGY_PIVOT_2026-07.md`).

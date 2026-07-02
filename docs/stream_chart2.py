@@ -11,12 +11,12 @@ for k in WANT:
     wr[k].writerow(['hadm_id', 'stay_id', 'charttime', 'value'])
 
 r = csv.reader(sys.stdin)
-header = next(r)
-idx = {name: i for i, name in enumerate(header)}
-i_item = idx['itemid']; i_hadm = idx['hadm_id']; i_stay = idx['stay_id']
-i_ct = idx['charttime']; i_val = idx['value']
+# NOTE: input is grep-prefiltered (header stripped), so use the known MIMIC-IV icu/chartevents column order:
+# subject_id,hadm_id,stay_id,caregiver_id,charttime,storetime,itemid,value,valuenum,valueuom,warning
+i_hadm = 1; i_stay = 2; i_ct = 4; i_item = 6; i_val = 7
 n = 0; kept = 0
 for row in r:
+    if len(row) < 8: continue
     n += 1
     it = row[i_item]
     if it in WANT:
