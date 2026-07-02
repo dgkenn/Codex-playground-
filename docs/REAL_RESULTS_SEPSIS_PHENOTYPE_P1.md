@@ -47,3 +47,21 @@ Phase 2: freeze the residualized k=3 centroids + severity-residualization params
 **eICU (208 US hospitals)** and **SICdb (Austria)**; assign patients to phenotypes; test whether (a) the
 phenotype profiles reproduce and (b) mortality/organ-pattern separation holds cross-nationally. Reproduction
 across three countries is the headline. Phase 3: instrument-anchored transfusion HTE across phenotypes.
+
+## Phase 3 (MIMIC) — instrument-anchored transfusion HTE is UNDERPOWERED (honest)
+Tested differential CAUSAL transfusion response across Hb-INDEPENDENT phenotypes (derived excluding Hb/Hct to
+avoid circularity). Restricting the clean cross-method Hb transfusion cohort to sepsis-phenotype patients leaves
+**n=489 total (~150/phenotype)** and the **first stage collapses (F=0–2)** — the instrument does not survive
+subgroup restriction. Per-phenotype flag-ITTs (+0.03/+0.03/+0.18) are all imprecise; pairwise interactions n.s.
+(|z|<0.9). So the *unique* "causal, non-confounded HTE" angle is **not deliverable with this data's power** —
+same structural wall as the MI-transfusion question (clean instrument is powerful only in large general
+populations; any interesting subgroup is underpowered).
+
+### What the subphenotype study can still deliver (honest ceiling)
+- **Novel severity-orthogonal phenotypes** (Phase 1) ✅ — real and defensible.
+- **Cross-national reproduction** (Phase 2, MIMIC→eICU→SICdb) — feasible, heavy extraction; the true
+  differentiator, and the strongest remaining claim.
+- **Differential treatment response** — only as an **observational (confounded) interaction** on the full cohort
+  (powered but not causal — the field standard), NOT the instrument-anchored causal version (power-starved).
+- Net: a solid **"cross-nationally-validated novel sepsis phenotypes"** paper (Lancet-Respiratory / ICM / CCM
+  tier if reproduction is strong), but the JAMA/NEJM-making *causal HTE* is not powered on available data.
