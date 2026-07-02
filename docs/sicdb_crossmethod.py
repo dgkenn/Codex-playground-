@@ -24,6 +24,11 @@ import numpy as np
 SD='/home/user/Codex-playground-/scratchpad/sicdb_raw/'
 MATCH_S=3600           # same-time window in SECONDS (SICdb offsets are integer seconds from admission)
 HB_FLAG=7.0
+# CONFIRMED from d_references (SICdb v1.0.8): the CBC-vs-blood-gas Hb cross-method pair, both g/dl.
+HB_CBC='289'   # "Hämoglobin (ZL)"  central lab, LOINC 718-7 Hgb Bld-mCnc   (= MIMIC CBC 51222)
+HB_BGA='658'   # "Hämoglobin (BGA)" blood-gas analyzer, LOINC 30313-1        (= MIMIC blood-gas 50811)
+HB_ARTLAB='288'  # "Hämoglobin (BG) (ZL)" central-lab arterial Hb g/dl (alternate control; LOINC 30313-1)
+RBC_ID='2046'  # "Erythrozytenkonzentrat" packed red cells (type Fluid)
 def _open(name):
     for ext in ('.csv.gz','.csv'):
         p=SD+name+ext
@@ -60,7 +65,12 @@ def resolve_ids():
     return hb_ids, rbc_ids, name
 
 def load_lab(hb_ids):
-    fh=_open('laboratory')
+    import os
+    pref=SD+'sicdb_lab_hb.csv'   # pre-filtered Hb rows (stream_lab) if present -> avoids reading full laboratory
+    if os.path.exists(pref):
+        fh=open(pref,newline='')
+    else:
+        fh=_open('laboratory')
     if fh is None: return {}
     r,ix,h=_reader(fh)
     cid=_col(ix,'CaseID','PatientID','caseid','id_case','ICUStayID')
@@ -73,7 +83,7 @@ def load_lab(hb_ids):
     for row in r:
         if len(row)<=max(cid,lid,off,v): continue
         if row[lid] not in hb_ids: continue
-        try: t=float(row[off]); val=float(row[v])
+        try: t=float(row[off]); val=float(str(row[v]).replace(',','.'))  # German comma-decimal safe
         except: continue
         if not (3<=val<=20): continue
         d.setdefault(row[cid],[]).append((t,val,row[lid]))
@@ -149,27 +159,26 @@ def main():
     if not rbc_ids:
         print('WARNING: no RBC transfusion DrugID resolved by name -- inspect d_references names for the '
               'German term actually used (Erythrozytenkonzentrat/EK).')
-    lab=load_lab(hb_ids); rbc=load_rbc(rbc_ids); cases=load_cases()
+    # use the CONFIRMED CBC(289)-vs-BGA(658) pair, mirroring MIMIC (flag on blood-gas, control on CBC).
+    lab=load_lab({HB_CBC:1,HB_BGA:1,HB_ARTLAB:1}); rbc=load_rbc({RBC_ID:1}); cases=load_cases()
     print(f'cases:{len(cases)} cases-with-Hb:{len(lab)} cases-with-RBC:{len(rbc)}')
     disc=[]; rows=[]
     for cid,seq in lab.items():
         if cid not in cases: continue
         a=cases[cid]['age']
         rt=rbc.get(cid,[]); first=rt[0] if rt else float('inf')
-        # find first same-time pair of two DISTINCT Hb methods, pre-transfusion
-        for i in range(len(seq)):
-            ti,vi,idi=seq[i]
-            if ti>=first: break
-            partner=None
-            for j in range(len(seq)):
-                if j==i: continue
-                tj,vj,idj=seq[j]
-                if idj!=idi and abs(tj-ti)<=MATCH_S:
-                    partner=(vj); break
-            if partner is None: continue
-            disc.append(vi-partner)
-            rows.append({'a':vi,'b':partner,'z':1.0 if vi<HB_FLAG else 0.0,
-                         'd':1.0 if any(ti<=r<=ti+24*3600 for r in rt) else 0.0,
+        cbc=[(t,v) for (t,v,i) in seq if i==HB_CBC]
+        bga=[(t,v) for (t,v,i) in seq if i==HB_BGA]
+        # flag on the BGA (point-of-care) reading; control = nearest CBC within MATCH_S; first pre-tx pair
+        for (tb,vb) in bga:
+            if tb>=first: break
+            best=None;bd=MATCH_S+1
+            for (tc,vc) in cbc:
+                if abs(tc-tb)<=MATCH_S and abs(tc-tb)<bd: best=vc;bd=abs(tc-tb)
+            if best is None: continue
+            disc.append(vb-best)
+            rows.append({'a':vb,'b':best,'z':1.0 if vb<HB_FLAG else 0.0,
+                         'd':1.0 if any(tb<=r<=tb+24*3600 for r in rt) else 0.0,
                          'y':cases[cid]['mort'],'age':a})
             break
     if len(rows)<200:
