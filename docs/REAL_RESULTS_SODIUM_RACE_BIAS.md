@@ -1027,3 +1027,25 @@ differentially by race** in the binary sense (40.9% White vs 38.8% Black among "
 miscalibration is in the **continuous** value (corrected Ca reads +0.15 mg/dL higher at matched ionized, z=+7.3
 — it omits globulin), not a differential binary miss-rate. State it as continuous bias, not "the formula misses
 more hypocalcemia in Black patients."
+
+## RED-TEAM of the QT-outcome chain (independent reviewer re-ran the code) — the harm chain is TEMPERED
+Honest verdict (`qt_redteam.py`):
+- **Robust:** prolonged QTc → ventricular arrhythmia/arrest OR ≈2.6, survives strict temporality (ECG-after, OR
+  2.64), K/Mg adjustment (2.55), early/late split, arrest-only vs VT/VF-only. *But this is established cardiology,
+  not novel.*
+- **Modest / power-dependent:** occult hypocalcemia → QTc is a **small continuous shift (+7.5 ms, z=+3.1**, survives
+  K/Mg/ICU/age adjustment); the binary occult→QTc>460 is non-significant on the 184k-ECG subset (z=1.2) though it
+  reaches z=+5.7 on the full 800k set — so it is real but small, and ICU status alone drives a comparable +10 ms.
+- **NOT well-supported (the headline harm):** "masked hypocalcemia → unrecognized *lethal* QT → arrhythmia,
+  disproportionately in Black patients." The 14.9% vs 2.6% arrhythmia split rests on **26 vs 3 events** (fragile,
+  single-event-sensitive); the cohort (ionized Ca + linked ECG) is **7–8× baseline arrhythmia risk, 90% ICU** (not
+  the "unremarkable masked patient" the claim implies); arrhythmia temporality is **structurally unverifiable**
+  (timestamp-free ICD); and QT-prolonging drugs / ischemia / structural disease are unaddressed.
+
+**Corrected honest standing of the calcium OUTCOME harm:** the measurement bias and the modest QTc association are
+real; the **hard arrhythmia/mortality outcome is NOT robustly established** — MIMIC arrhythmia (OR 1.29) has
+ICD-timing/selection concerns, the eICU mortality does not replicate, and the QT-arrhythmia subgroups are fragile.
+The outcome harm should be presented as **hypothesis-generating**, not demonstrated. The durable claims are: (1) the
+coordinated immunoglobulin-driven **measurement bias** (multi-site, mechanism-nailed); (2) **misclassification**
+(masked hypocalcemia, false hyperkalemia); (3) a **modest, ECG-corroborated QTc association**. The lethal-outcome
+chain needs prospective/time-anchored data.
