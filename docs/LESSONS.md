@@ -532,3 +532,30 @@ cross-nationally-validated part.
 - **Net cycle-10 addition to the program:** chloride joins Na/Ca as a coordinated, independently-measured 4th
   analyte in the indirect-ISE electrolyte-exclusion family (docs 01/03) — with mechanism still to be confirmed
   on a cohort where total protein is co-drawn with blood gas (MIMIC pairs it in only ~2% of chloride pairs).
+
+## Chloride use-case round — the "where does a measurement bias PROPAGATE" analysis pattern
+- **A coordinated multi-analyte bias can CANCEL in derived quantities.** Because indirect-ISE biases Na and
+  Cl proportionally (−1.10, −1.20), the anion gap and strong-ion difference (both ≈ Na−Cl) are SELF-PROTECTED
+  (B−W AG bias +0.10, z=0.65) while absolute Cl is not. When you find a measurement bias, always map WHERE it
+  propagates: derived quantities that subtract co-biased inputs may be immune — a clinically actionable and
+  novel result either way. (Temper: the cancellation null was underpowered, CI −0.21..+0.42; needs external rep.)
+- **Threshold-crossing "residuals" are often case-mix, not bias.** The AG>16 apparent false-HAGMA push (z=3.09)
+  was an artifact of Black patients' higher TRUE anion gap putting more mass near a fixed cutoff — NOT a
+  differential bias mechanism. Always stratify by the true value before attributing a pooled threshold gap to bias.
+- **Separate the measurement disparity from the clinical-harm claim.** The false-hypochloremia finding is a solid
+  measurement-classification disparity (Fisher p=0.0001) but the mortality-marker "over-flags high-risk" framing
+  collapsed under partial severity adjustment (OR 2.77→1.28) and there's no CDS tool in use — so it's a
+  documented misclassification, not proven point-of-care harm. Claim the measurement layer; don't overreach to harm.
+
+## Fluid-responsiveness scoping (pre-run) — the label problem dictates the substrate
+- **MIMIC/eICU LACK the stroke-volume ground truth.** No continuous SV/CO for the general cohort; arterial MAP is
+  ~1/hour with NO waveform, so PPV is absent and SVV is charted only in a tiny PiCCO subset. Any MIMIC
+  fluid-responsiveness study rests on a MAP-response PROXY (confounded by tone/pressors + saturated with RTM).
+  Realistic labeled-AUC ceiling (~0.82-0.85, lit) only exists in cohorts WITH a real SV label. Confounding-by-
+  indication caps the causal decision question at ~OR 1.35 (our structural ceiling).
+- **VitalDB is the label-valid substrate** (has device SVV + arterial waveform + ECG + pleth in the same intraop
+  cases) → a non-invasive-surrogate (ECG/pleth→SVV) is a clean SUPERVISED problem, not a confounded causal one.
+  ECG→SVV is likely white space (pleth→SVV = PVI, known). This is the user-proposed and methodologically strongest thread.
+- **Best MIMIC design if pursued = within-patient repeated-bolus "trait vs state"** (self-controlled, dodges the
+  OR≈1.35 ceiling + named-index desk-reject; null-is-a-finding). Drop preference-IV (exclusion restriction fails,
+  per our instrument sim). Target-trial emulation just reproduces CLOVERS/CLASSIC nulls.

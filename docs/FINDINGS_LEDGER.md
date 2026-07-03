@@ -68,3 +68,10 @@ Running log of experiments + hostile-review verdicts. Status: PROVISIONAL (not g
 | 9h | 10 | Co-oximetry vs CBC Hb → transfusion (26,764) | discordance −0.28 g/dL (known); sex gap is base-rate, vanishes conditioning on Hb (z=−0.76) | base-rate artifact | **NULL/confounded** |
 | 9i | 10 | eGFR equation → renal drug-dosing (415k) | race arm arithmetically forced; sex CG-vs-CKDEPI 5.9pp (z=12) | tautological / already-known | **mechanism-only** |
 | 9j | 10 | Bilirubin–Jaffe creatinine interference (750k) | −0.017 mg/dL per SD bilirubin (z=−2.3), trivial, inseparable from sarcopenia | already-known | **NULL** |
+
+## Chloride use-case round (post cycle-10) — 2 wins survive red-team (tempered)
+| # | Experiment | Result | Gate verdict | Status |
+|---|---|---|---|---|
+| 10a | **Chloride acid-base propagation/cancellation** (8,018 paired) | absolute Cl/Na bias −1.2/−1.1 (z≈−8.5) but AG/SID/Na−Cl bias +0.10 (z=0.65) — self-protected | Red-team SURVIVES: RTM correctly handled; AG>16 "residual" is case-mix not bias; null underpowered (CI −0.21..+0.42); needs external rep | **WIN (tempered) — the "where bias matters vs cancels" map** |
+| 10b | **Chloride prognostic misclassification** (4,010 paired) | false-hypochloremia Black 11.7% vs White 4.8% (Fisher p=0.0001); apparent hypochloremia gap vanishes at truth | Red-team SURVIVES at measurement level; harm framing overclaimed (mortality OR 2.77→1.28 adj; no CDS tool) | **WIN (measurement-classification disparity, not harm)** |
+| 10c | **Masked hyperchloremia & AKI** (fluid-type infeasible) | masked hyperchloremia Black 14.7% vs White 10.9% (z=3.34); no AKI harm at matched true Cl (adjOR 1.03) | acuity-confounded outcome; clean measurement signal | **partial / mechanism-only** |
