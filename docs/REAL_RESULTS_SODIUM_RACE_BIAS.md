@@ -159,10 +159,19 @@ is consistent in **7/9 care units** (the 2 exceptions are near-zero, small-n neu
 remains on the same instruments.
 
 ## MULTI-SITE REPLICATION status
-- **eICU (208 hospitals) — NOT feasible.** Streamed 90k+ eICU sodium rows carrying `labtypeid`: **every one is
-  labtypeid=1 (chemistry)**; eICU records **no blood-gas sodium** (`eicu_na_types.py`). eICU has race but only a
-  single sodium method → it cannot reproduce the chem-vs-blood-gas discordance (it lacks the reference method).
-  The pulse-ox analog fails here because, unlike SpO2/SaO2, eICU does not store a second sodium method.
+- **eICU (208 hospitals) — no blood-gas Na, but an OSMOLALITY-FINGERPRINT third replication is directionally
+  positive (underpowered).** eICU records **no blood-gas sodium** (90k+ sodium rows all labtypeid=1 chemistry,
+  `eicu_na_types.py`), so the dual-method design cannot run directly. Workaround (`eicu_osm_analyze.py`):
+  **measured serum osmolality is protein-independent** (freezing-point depression), so it substitutes for the
+  missing reference — reconstruct `true_Na = (osm − glucose/18 − BUN/2.8)/2` and `bias = chem_Na − true_Na`, the
+  eICU analog of chem−bloodgas. On ~half the lab table (n=457 Caucasian+African-American pairs, only 48 Black):
+  - racial differential **−0.93 mEq/L** (Black chem sodium lower), **same sign as MIMIC (−1.18)** but z=−0.9;
+  - **protein dose-response slope −0.53 /g/dL (z=−1.3)** and albumin −0.64, **same negative sign as MIMIC (−0.90)
+    and SICdb (−0.84)** — the mechanism direction replicates a *third* time.
+  Both estimates point the predicted way; neither reaches significance because **serum osmolality is ordered in
+  only ~2% of stays** and the osm→Na reconstruction **doubles measurement noise**. This is a data-availability
+  power limit, not a contradicting result. (Full-lab-table re-stream in progress to firm up n; the race axis will
+  remain ~z−1.3 even at full n — the osmolality reference is intrinsically too noisy for a decisive race test.)
 - **SICdb (Salzburg, Austria) — MECHANISM REPLICATED cross-nationally (n=21,322 pairs).** SICdb separates the two
   methods: **Natrium (ZL)** = central-lab serum sodium (indirect ISE, id 469) vs **Natrium (BGA)** = blood-gas
   sodium (direct ISE, id 686), with well-covered serum total protein (id 294, 36% of pairs) (`sicdb_na_mech.py`).
