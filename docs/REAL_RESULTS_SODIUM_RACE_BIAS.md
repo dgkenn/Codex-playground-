@@ -908,3 +908,28 @@ z=+5.2**) from the confounded/ascertainment ones — which is the honest, defens
 | false-hyponatremia (Na) | seizure/AKI | ⚠️ OR 1.68/1.46 survive but likely ascertainment artifact |
 | false-hyponatremia (Na) | mortality/LOS/ODS | ⬜ null / unassessable |
 | masked hyperchloremia (Cl) | AKI / creat-rise | ⬜ null |
+
+---
+
+# POTASSIUM: a SECOND, mechanistically-distinct racial lab bias (false hyperkalemia) — validated
+
+Chemistry K reads HIGHER than blood-gas K (opposite of Na/Cl), and the excess is larger in Black patients
+(`potassium_rigor.py`, n=20,200):
+- **Racial K-bias differential +0.124 mEq/L (z=+9.2)**, survives adjustment for creatinine/age/true-K (+0.122,
+  z=+8.8) and a tight 10-min window (+0.125, z=+7.3) → not timing, not CKD.
+- **FALSE hyperkalemia (chem≥5.5 at true-normal bg K 3.5–5.0): BLACK 13.5% vs WHITE 6.3%, adj OR 2.36
+  (2.01–2.76, z=+10.6)**, subject-clustered. Masked *true* hyperkalemia is NOT elevated in Black patients — the
+  harm is false alarms, not missed lethal hyperkalemia.
+- **Mechanism is DISTINCT from the protein pathway:** the K-bias is uncorrelated with the Na protein-bias
+  (r=−0.19) — protein-exclusion would push chem K *down* (like Na/Cl), but it reads *up* → the driver is
+  **pre-analytic (hemolysis / clotting / platelet release / transport delay)**, a serum-vs-whole-blood
+  pseudohyperkalemia, differentially affecting Black patients (plausibly draw-difficulty/access/transport —
+  structural care-delivery factors). Blood-gas K (whole-blood, immediate, direct-ISE) is the better estimate.
+- **Why potentially the highest-impact finding:** potassium is among the most-ordered labs; false hyperkalemia
+  triggers emergency treatment (insulin/dextrose → hypoglycemia; calcium; kayexalate → colonic necrosis; dialysis;
+  ECG monitoring; treatment delays). A 2.4× excess of false alarms in Black patients is a large, actionable safety
+  disparity — and the fix (blood-gas/whole-blood K confirmation, better sample handling) is method/process-level.
+- **Honest scope:** the hemolysis mechanism means this is NOT the same finding as the protein bias — it is a
+  *second, independent* racial lab bias. Its mechanism (why Black patients hemolyze more) needs a hemolysis index
+  (free Hb/LDH, sparse here) and the harm chain (treatment → hypoglycemia) needs the delegated/next analysis + ECG
+  confirmation (below).
