@@ -135,9 +135,13 @@ differs by race (179 vs 145) yet shows **zero** racial bias differential (z=+0.8
 in glucose too. It does not. (Bicarbonate also null.) The effect is specific to the analytes where the
 indirect-ISE protein artifact operates (Na strong, K modest).
 
-## MECHANISM DOSE-RESPONSE (complete-case, no imputation) — the mechanism is now nailed
-The earlier total-protein adjustment was imputation-limited. The clean test is a **dose-response** among the
-pairs where total protein / albumin were actually measured near the draw (`sodium_mech_robust.py`):
+## MECHANISM DOSE-RESPONSE — strong graded relationship (within-sample mediation is underpowered; stated honestly)
+**Scope note (post-review):** the protein→bias **dose-response** is strong and cross-nationally replicated; the
+within-sample **mediation** of the *racial* differential is measured in only ~2–3% of pairs (n=268, z=−1.6) and is
+therefore *suggestive, not decisive* — do not read "mechanism nailed." What is solid: (i) the dose-response slope,
+(ii) its cross-national and cross-reference replication, (iii) that total protein/globulin are higher in Black
+patients. The clean test is a **dose-response** among pairs where total protein/albumin were measured near the
+draw (`sodium_mech_robust.py`):
 
 | test | slope | z | interpretation |
 |---|---|---|---|
@@ -146,21 +150,22 @@ pairs where total protein / albumin were actually measured near the draw (`sodiu
 
 And the mediating quantities are **higher in Black patients**, exactly as the mechanism requires:
 mean total protein **6.42 (BLACK) vs 5.83 (WHITE) g/dL**; mean globulin gap **3.04 vs 2.60 g/dL**.
-Complete-case (n=268), adding total protein shrinks BLACK −1.24 → −0.74 (55% attenuation; underpowered at
-n=268, z=−1.6, but the direction and the dose-response slope are decisive). **This is the indirect-ISE
-mechanism, demonstrated as a graded protein→bias relationship, not just an association.**
+Complete-case (n=268), adding total protein shrinks BLACK −1.24 → −0.74 (55% attenuation; **underpowered at
+n=268, z=−1.6** — direction right, significance not reached, so this within-sample mediation is *suggestive*).
+The load-bearing evidence is the **dose-response slope itself** (graded, monotone, cross-nationally and
+cross-reference replicated), not the n=268 mediation coefficient.
 
-## WITHIN-CARE-UNIT ROBUSTNESS — not a per-unit analyzer artifact
-Could "race" really be a calibration difference between ICUs where Black patients cluster (different chemistry
-analyzers per unit)? Adding **first-care-unit fixed effects** (`sodium_mech_robust.py`): BLACK survives at
-**−0.62 (z=−6.9)** — the bias is **within-unit** (same analyzers), not a between-unit machine effect. Direction
-is consistent in **7/9 care units** (the 2 exceptions are near-zero, small-n neuro/surgical units). The raw
-−1.18 does have a between-unit component (case-mix across units), but a strong within-unit racial differential
-remains on the same instruments.
+## WITHIN-CARE-UNIT ROBUSTNESS — rules out case-mix-across-units, NOT a hospital-wide analyzer
+Adding **first-care-unit fixed effects** (`sodium_mech_robust.py`): BLACK survives at **−0.62 (z=−6.9)**,
+consistent in 7/9 units. **Correct interpretation (post-review):** MIMIC is a single hospital whose ICUs almost
+certainly share the same central chemistry analyzer(s), so this test controls for **case-mix differences across
+units**, and does *not* rule out a hospital-wide analyzer/reagent effect. The analyzer-independent check that
+*does* address that is the **osmolality arbiter** below (the bias reproduces against measured osmolality, a
+different instrument entirely).
 
 ## MULTI-SITE REPLICATION status
-- **eICU (208 hospitals) — no blood-gas Na, but an OSMOLALITY-FINGERPRINT third replication is directionally
-  positive (underpowered).** eICU records **no blood-gas sodium** (90k+ sodium rows all labtypeid=1 chemistry,
+- **eICU (208 hospitals) — NOT a replication; a directional, non-significant osmolality-fingerprint probe (CIs
+  cross zero).** Do not count eICU toward the replication tally. eICU records **no blood-gas sodium** (90k+ sodium rows all labtypeid=1 chemistry,
   `eicu_na_types.py`), so the dual-method design cannot run directly. Workaround (`eicu_osm_analyze.py`):
   **measured serum osmolality is protein-independent** (freezing-point depression), so it substitutes for the
   missing reference — reconstruct `true_Na = (osm − glucose/18 − BUN/2.8)/2` and `bias = chem_Na − true_Na`, the
@@ -228,3 +233,102 @@ Net: a strong, robust, apparently-novel patient-safety/equity finding — the ra
 its causal mechanism confirmed with a near-identical slope in an independent Austrian cohort, and its
 misclassification consequence demonstrated with adjustment. The external-validity ceiling on the *race axis* is
 set by the fact that race + dual-method sodium co-occur only in MIMIC among public ICU datasets.
+
+---
+
+# ADVERSARIAL REVIEW — ROUND 1 (three hostile reviewers: biostatistician, clinical chemist, equity/epi editor)
+
+Three independent hostile reviewers (delegated) attacked the finding. Responses below. Tests run:
+`sodium_disease_confound.py`, `sodium_cluster_se.py`, `sodium_matrix_hct.py`, `sodium_level_cutoff.py`,
+`mimic_osm_arbiter.py` (+ reviewers' own scripts, which independently reproduced the disease and insurance tests).
+
+## Attacks ADDRESSED with new data
+
+**A1. "You asserted blood-gas = truth; no independent gold standard" (chemist, flagged FATAL).**
+Resolved with an **independent third reference**: MIMIC's own **measured serum osmolality** (freezing-point, protein-
+independent), `osmNa=(osm−glu/18−BUN/2.8)/2` (`mimic_osm_arbiter.py`). The racial bias in **chemistry** sodium
+reproduces against osmolality: **chem−osmNa BLACK−WHITE = −1.01 (z=−9.3, n=10,236)** — essentially identical to the
+−1.18 vs blood-gas. Protein dose-response also reproduces vs osmolality (−0.64/g/dL, z=−4.2). The finding does **not**
+depend on trusting the blood-gas analyzer; it holds against two independent references. (Blood-gas−osm arm n=396,
+underpowered, not needed.)
+
+**A2. "The SICdb replication inverts the reference SICdb itself trusts (BGA sensor flagged unreliable)" (chemist, FATAL).**
+The **monotone protein dose-response can only arise from the protein-sensitive (indirect-ISE) method**; random
+BGA-sensor unreliability is *uncorrelated* with total protein and can only add noise (regression dilution → weaker
+slope), not manufacture a monotone gap∼protein relationship across quartiles. So the SICdb slope isolates the
+indirect-ISE artifact regardless of which channel SICdb "trusts." Independently, A1's osmolality arbiter removes any
+reliance on a single reference.
+
+**A3. "Hemoglobin ALSO shows a race differential — specificity argument cherry-picked" (chemist, FATAL). Fair catch.**
+Reported honestly now: Hgb(CBC−bloodgas) BLACK−WHITE = **−0.081 g/dL (z=−3.1)** — real but ~15× smaller than Na's
+1.2 mEq/L, different mechanism (co-oximetry vs CBC), and **cannot produce a monotone protein dose-response**.
+Decisively: adding the concurrent Hgb-discordance (a proxy for the generic whole-blood/sampling artifact) to the Na
+model leaves BLACK at **−1.27 (z=−7.1)** — the Na bias is not that generic artifact (`sodium_matrix_hct.py`).
+
+**A4. "Whole-blood vs serum matrix / hematocrit confound" (chemist, MAJOR).** Mean hematocrit is nearly identical by
+race (WHITE 31.5, BLACK 32.0); adding Hct leaves BLACK at −1.15 (z=−12.5) and the **protein slope survives Hct
+adjustment** (−0.84, z=−5.6). Not a matrix/Hct artifact.
+
+**A5. "Race is a proxy for a globulin-raising disease (myeloma/cirrhosis/HIV/CKD/inflammation)" (equity, borderline
+FATAL).** These diseases *are* more common in Black patients here (HIV 2.7% vs 0.8%, sarcoid 1.8% vs 0.4%, myeloma
+1.7% vs 0.9%, CKD/dialysis 50% vs 30%). But the differential **survives their exclusion (−1.29, z=−12.6) and
+adjustment (−1.18, z=−12.5), and is if anything larger in the disease-free subgroup** (`sodium_disease_confound.py`;
+the equity reviewer independently reproduced this). So *diagnosed* globulin-raising disease is empirically ruled out;
+the protein difference is population-broad, not a few disease patients. (Residual: *subclinical* globulin elevation
+without an ICD code — genuinely unmeasurable, acknowledged.)
+
+**A6. "SES/insurance confounding" (equity).** Adjusting for insurance shrinks BLACK only −1.18 → −1.09 (reviewer-run).
+Ruled out.
+
+**A7. "SEs ignore within-patient correlation" (biostat).** Only 1.08 admissions/subject. Subject-cluster-robust SE:
+z=−12.1; collapsed to one obs/subject: −1.12 (z=−11.5) (`sodium_cluster_se.py`). Consequence models re-run with
+subject-clustered SEs (below). Unchanged.
+
+**A8. "Level-dependent bias controlled only linearly" (biostat).** Survives a **quadratic** true-Na term
+(−0.98, z=−10.4); there is a mild BLACK×true-Na interaction (−0.26, z=−2.1) — the differential is somewhat larger at
+lower true Na, noted honestly, but the main effect is robust (`sodium_level_cutoff.py`).
+
+**A9. "False-hyponatremia OR is a knife-edge artifact of the 135 cutoff / multiplicity" (biostat).** The racial
+misclassification OR is **stable across every cutoff 133–138 (OR 2.22–2.87, all z>4, subject-clustered)**; at chem<138
+it is OR 2.22 (z=8.9, 1,129 events) — well-powered, not knife-edge. Main differential z=−12.6 survives Bonferroni for
+10 tests by >4 orders of magnitude; SICdb (z=−28.6) is independent of MIMIC multiplicity.
+
+## Attacks CONCEDED → claims softened / reframed (no rescue attempted)
+
+**C1. Single-center race axis (biostat + equity, FATAL-for-NEJM).** Conceded as the architectural ceiling. The
+*racial differential* exists in one hospital only; the *mechanism* is cross-national (SICdb) and cross-reference
+(osmolality). Correct tier: a **methods/equity research letter (Clinical Chemistry, JAMA Internal Medicine) or a
+replication-demanding report**, not an NEJM front-section "we-show-X." NEJM tier needs a second US multi-hospital ICU
+dataset with paired dual-method sodium + race (not public).
+
+**C2. Mechanism "nailed" overclaim (biostat + equity).** Softened throughout: strong **dose-response**, but the
+within-sample racial **mediation** is n=268/z=−1.6 (suggestive). Fixed in the mechanism section above.
+
+**C3. Hypertonic-saline "overtreatment" (EPV≈3, CI crosses 1) (biostat + equity).** **Demoted to hypothesis-
+generating**; not counted as evidence of harm. The demonstrable consequence is **differential misclassification**
+(false-hyponatremia label, robust across cutoffs), not a treatment/outcome harm — stated as such.
+
+**C4. eICU framed as supportive (chemist).** Reframed above: **not a replication**, a directional non-significant
+probe (CIs cross zero), not in the tally.
+
+**C5. Within-unit FE overstated (chemist).** Reframed above: controls case-mix across units, not a hospital-wide
+analyzer; the osmolality arbiter is the analyzer-independent check.
+
+**C6. Novelty is "combine two known facts," predictable (equity).** Conceded on tier: back-of-envelope (globulin gap
+0.6 g/dL × slope 0.9/g/dL ≈ 0.5 mEq/L) predicts roughly half the observed −1.2, so this is *confirmatory of priors*,
+not a surprise à la pulse-ox. Drop any "changes-FDA-policy/NEJM" framing.
+
+**C7. Policy-framing / reverse-harm risk (equity).** Actionable recommendation reframed as **method-level**: flag/verify
+sodium via a **total-protein-adjusted or direct-ISE (blood-gas) measurement when total protein is elevated** — a
+protein-based correction, **not** a race-based clinical algorithm (avoids the eGFR-race-coefficient backlash).
+
+## Still-open (honest)
+- Differential **entry** into the arterial-line cohort (RR 0.65): the draw-intensity check addresses monitoring
+  intensity, not entry itself. A severity-adjusted entry model / IPW is the right next test (severity proxies needed).
+- *Subclinical* globulin elevation (no ICD code) cannot be measured.
+- The race axis remains single-center.
+
+**Net after Round 1:** the three FATAL-flagged attacks (asserted-reference, SICdb inversion, Hgb-specificity) are
+answered with data; the disease/SES/matrix/clustering/level/cutoff attacks are answered; the surviving limitations are
+single-center-race and a demoted treatment-harm claim — both now stated plainly. The finding's honest tier is a
+**mechanism-solid, cross-nationally + cross-reference validated, single-center-race measurement-bias result**.
