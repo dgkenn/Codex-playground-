@@ -422,3 +422,29 @@ estimand mismatch (glucose target-range), or charting-conditional exposure (MIND
 claim is NOT "assay-noise IV works" — it's "a SELF-DIAGNOSING assay-noise toolkit whose gates (first-stage sign,
 drift diagnostic, NC empirical-null) recover TRICC/TRISS on Hb and correctly REJECT the instrument on 5 other
 decisions, each for a distinct mechanistic reason." Honesty about scope IS the contribution.
+
+## Sodium method-discordance = the ONE positive Sjoding-template win (measurement bias, not causal IV)
+The same paired-draw machinery that FAILED as a causal instrument (power wall) SUCCEEDS as a measurement-bias
+discovery: chemistry Na (indirect ISE, protein-sensitive, the acted-on value) vs blood-gas Na (direct ISE,
+reference). The chem−bloodgas gap is **racially differential** in MIMIC (BLACK−WHITE −1.18 mEq/L, z=−12.6;
+robust to ≤10-min pairing −1.30). This dodges every wall that capped the causal analyses because it needs NO
+first stage — it is a measurement-agreement + association design (the Sjoding pulse-ox NEJM-2020 template).
+- **Mechanism NAILED by graded dose-response, cross-nationally.** gap ~ total protein slope −0.90 (MIMIC, z=−6.4)
+  and **−0.843 (SICdb/Austria, z=−28.6, monotone across protein quartiles +2.02→−0.06)**. Two continents, two
+  analyzer fleets, near-identical slope → indirect-ISE pseudohyponatremia is physics, not a MIMIC artifact. Total
+  protein & globulin gap are higher in Black patients (6.42 vs 5.83; 3.04 vs 2.60) → the mediated racial path.
+- **Confounder-robust:** survives full adjustment (age/true-Na/renal/glucose/lipids/albumin) at −0.80 (z=−8.1);
+  total protein is the MEDIATOR (adjusting for it attenuates, as a mechanism should — not a confounder).
+- **Not a per-unit analyzer artifact:** within-care-unit FE keeps BLACK at −0.62 (z=−6.9), consistent 7/9 units.
+- **A–V confound excluded by SPECIFICITY:** glucose has a larger A–V gradient, differs by race, yet ZERO racial
+  bias (z=+0.8); bicarb null. Effect is specific to analytes where the indirect-ISE protein artifact operates.
+- **Consequence:** at matched true-normal Na, adjusted false-hyponatremia-label OR 1.68 (z=+3.0); hypertonic-saline
+  overtreatment 2.9× crude but underpowered (21 events) → report misclassification as the demonstrable harm.
+- **External-validity ceiling on the RACE axis:** race + dual-method sodium co-occur only in MIMIC among public
+  ICU datasets. eICU has race but records **only chemistry Na** (90k rows all labtypeid=1, no blood-gas Na) →
+  cannot replicate. SICdb has both methods + abundant total protein but **no race** (single-center Austria) →
+  replicates the MECHANISM only. Sex axis did NOT replicate (opposite direction MIMIC vs SICdb) — not claimed.
+META: the paired-measurement toolkit's publication-grade output is not a causal effect but a MEASUREMENT-BIAS
+finding — racial pseudohyponatremia from routine indirect-ISE sodium, mechanism cross-nationally confirmed. The
+causal-IV program's negative results (power wall) and this positive measurement-bias result are the same data
+viewed two ways; the measurement-bias framing is what clears the impact bar.
