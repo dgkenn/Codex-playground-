@@ -803,3 +803,43 @@ Calcium clears the bars sodium could not: (1) **multi-site racial replication** 
 for a full NEJM package: a hard clinical outcome cleanly *attributable* to the measurement (the repletion gap is
 largely a general disparity), and the threshold/selection caveats stated. The **corrected-calcium-fails-by-race**
 framing + the **coordinated panel** + the **artifactual-disparity** reframe is the highest-yield direction.
+
+---
+
+# FOUR HIGH-YIELD DIRECTIONS (all run)
+
+## Dir 1 — Known racial disparities are partly measurement artifact ✅ (see the Q3 section above)
+Hyponatremia disparity *reverses* with the true measure; ~90% of the apparent hypocalcemia "protection" in Black
+patients is artifact. A body of electrolyte-disparity epidemiology may be partly measurement-driven.
+
+## Dir 2 — Coordinated panel-wide bias ✅
+One mechanism (excess plasma protein/globulin), whole panel: Na↓ (−12.6), Cl↓ (−3.5), Ca↑ (+11.6), ESR↑ (+4.2 at
+matched CRP), T4↑ (+1.3, ns). Directions match the chemistry (dilution lowers Na/Cl; binding raises Ca/T4;
+aggregation raises ESR) — coherence = proof of a genuine protein-interference artifact.
+
+## Dir 3 — A globulin-inclusive correction (`correction_tool.py`) — the honest deployable answer
+- The **standard albumin-corrected calcium fails** (residual racial bias z=+7.3 in the full n=10,005 albumin cohort)
+  because it omits globulin. The fitted protein coefficients match the mechanism (Ca +0.31 mg/dL per g/dL protein;
+  Na −0.90 mEq/L per g/dL).
+- **But** a protein-inclusive correction requires total protein, measured in only ~2–3% of draws (and that subset is
+  MNAR/unrepresentative — the concurrent-protein cohort is too small to cleanly show residual→0). So the pragmatic,
+  deployable fix is **method-level: measure the physiologically active quantity directly** — ionized calcium and
+  direct-ISE sodium — rather than inferring it from a protein-confounded total. (A globulin-inclusive formula is a
+  fallback where only totals + total protein exist.) This is the constructive equity message: fix the instrument
+  choice, not the patient's race.
+
+## Dir 4 — Immunoglobulin biology → myeloma screening (`myeloma`) 
+The higher polyclonal Ig baseline complicates Ig-based myeloma screening: at IgG>1500 mg/dL, **27.5% of Black vs
+12.6% of White patients are "flag-positive without myeloma"** (2.2× the false-positive pool), while the PPV is
+similar/lower (15.4% vs 15.2% at >1500; 22.2% vs 27.8% at >2000). A **race-blind IgG threshold over-refers Black
+patients**; screening must use the baseline distribution, not a single cutoff. The same immunoglobulin elevation
+that drives the panel-wide measurement bias is upstream of the 2–3× myeloma/MGUS excess AND complicates its
+detection — a unifying biological thread linking measurement, disparity, and disease.
+
+## Synthesis: the flagship
+The strongest publishable package: **"Routine chemistry carries a coordinated, immunoglobulin-driven racial
+measurement bias — the albumin-corrected calcium formula is racially miscalibrated, and reported racial disparities
+in dysnatremia/dyscalcemia are partly measurement artifact."** Calcium anchors it (multi-site racial replication in
+eICU, cross-national mechanism in SICdb, red-team-survived, a trusted formula that fails). The fix is method-level
+(direct/ionized measurement). Remaining gap for full NEJM: a measurement-*attributable* hard outcome (the repletion
+gap is largely a general disparity) + prospective/multi-DUA confirmation.
