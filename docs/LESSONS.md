@@ -559,3 +559,29 @@ cross-nationally-validated part.
 - **Best MIMIC design if pursued = within-patient repeated-bolus "trait vs state"** (self-controlled, dodges the
   OR≈1.35 ceiling + named-index desk-reject; null-is-a-finding). Drop preference-IV (exclusion restriction fails,
   per our instrument sim). Target-trial emulation just reproduces CLOVERS/CLASSIC nulls.
+
+## Fluid-responsiveness program — de-hyping + method lessons (COMPLETE)
+- **COMPUTE THE LABEL'S OWN NOISE FLOOR before interpreting an ICC or proxy-AUROC.** Matched no-bolus
+  windows (identical geometry/gating, no intervention) are the test. MIMIC continuous-CO (CCO 224842)
+  no-bolus windows swing SD 14.2% and cross ±10% 21.4% of the time — indistinguishable from the 24.5%
+  post-bolus "responder rate" (p=0.49); implied Δ-reliability ~0%. This converted "fluid response is a
+  STATE" (ICC≈0) into "UNDETERMINED" (an ICC≈0 from a 0%-reliability label proves nothing) and softened
+  "ΔMAP is near-useless" to a practical-only claim (mechanistic disattenuation is unidentifiable when
+  both exposure and label are noisy). A "objective" label is not automatically a reliable one.
+- **"No increment" ≠ "no signal."** The VitalDB ECG arm's increment-over-pleth null was AMBIGUOUS
+  (redundant-equivalent vs empty). Fitting the STANDALONE model (ECG-alone) resolved it: ECG-alone ≈
+  clinical baseline (0.632 vs M0 0.618), pleth-alone 0.733, equivalence REJECTED (−0.10 [−0.14,−0.06],
+  outside ±0.03). Always test substitution, not just increment — they answer different questions.
+- **ECG carries no standalone fluid-responsiveness (SVV) signal under general anesthesia** — GA
+  suppresses respiratory sinus arrhythmia, so the ECG respiratory modulation pleth exploits isn't there;
+  ECG and pleth features are uncorrelated (|r|≤0.17) and ECG doesn't rescue the low-perfusion zone.
+- **The fluid-responsiveness label problem is structural and unsolved on accessible data:** VitalDB has
+  SV truth (2s FloTrac) but no timestamped routine boluses (given by pressure bag/gravity; only 15
+  rapid-infuser cases); MIMIC has ~100k timestamped boluses but a ~0%-reliability intermittent CO label.
+  No accessible dataset has BOTH scalable boluses AND a reliable SV-response label. Prospective
+  PLR/mini-bolus + continuous-CO capture would be required.
+- **Preop labs add little** (+0.017 AUROC) to intraop-instability prediction over structural case
+  variables (anesthesia type/ASA/age/department) — the preop-labs biomarker angle is weak.
+- **Meta: for this domain, the honest deliverable is the rigorous NEGATIVE.** Confounding-by-indication
+  (~OR 1.35 ceiling) + the label problem cap any positive; the program's contributions are clean,
+  pre-registered, noise-floored nulls that rule out cheap surrogates and flag an unreliable common label.

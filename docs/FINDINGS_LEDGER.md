@@ -84,3 +84,11 @@ Running log of experiments + hostile-review verdicts. Status: PROVISIONAL (not g
 | 11c | VitalDB non-invasive SVV model (ECG-increment-over-PVI) | interrupted by session limit | — | **queued/resume** |
 | 11d | INSPIRE preop-labs → intraop instability | interrupted (labs downloaded) | — | **queued/resume** |
 | 11e | MIMIC objective SV-bolus label probe (PiCCO subset) | interrupted (extracting) | — | **queued/resume** |
+
+## Fluid-responsiveness program — COMPLETE (post-red-team verdicts)
+| # | Experiment | Result | Gate verdict | Status |
+|---|---|---|---|---|
+| 11f | **VitalDB ECG→SVV (increment + equivalence)** | M0 0.618 / ECG-alone 0.632 / pleth-PVI 0.733; ECG-alone−pleth −0.100 [−0.138,−0.061]; ECG-alone−M0 +0.014 (≈0) | pre-registered; equivalence REJECTED not underpowered; uncorrelated w/ pleth; no rescue in low-perfusion | **SOLID NULL — ECG not a non-invasive FR signal under GA** |
+| 11g | **MIMIC real-SV proxy + trait-state** | ΔMAP AUROC 0.56 for true ΔCO≥10%; within-episode CCO ICC −0.06 | Red-team: CCO no-bolus noise floor SD 14.2%/21.4%≥10% ≈ post-bolus 24.5% (p=0.49) → CCO reliability ~0% | **A (ΔMAP poor proxy) survives PRACTICAL/softened; B (state-not-phenotype) NOT ESTABLISHED** |
+| 11h | **MIMIC continuous-CO as FR ground truth** | test-retest reliability ~0% (no-bolus var ≥ post-bolus var) | red-team noise-floor | **cautionary methods result — MIMIC CO too noisy to ground-truth FR** |
+| 11i | **INSPIRE preop-labs → intraop instability** | severe AUROC 0.808 / routine 0.734; labs add only +0.017 over structural | associational/confounded | **MODEST/NULL — preop labs add little** |

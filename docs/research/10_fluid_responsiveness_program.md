@@ -1,124 +1,125 @@
-# Fluid-Responsiveness Research Program (scoping + first results)
+# Fluid-Responsiveness Research Program
 
-Predicting who will respond to a fluid bolus vs who needs vasopressors — intentionally
-designed around the two things that doom naive ICU-EHR approaches: **no stroke-volume ground
-truth** and **confounding by indication**. This document captures the scoping (multi-dataset
-feasibility + rigorous designs), the results completed so far, and the resumable plan.
+Can we tell, without an invasive arterial line, who will respond to a fluid bolus vs who needs
+vasopressors? A multi-dataset program (VitalDB, INSPIRE, MIMIC-IV) designed around the two threats
+that doom naive ICU-EHR approaches — **no stroke-volume ground truth** and **confounding by
+indication** — with every claim pre-registered, negative-controlled, and hostile-red-teamed.
 
-**Status (2026-07-03):** scoping complete; MIMIC "trait vs state" complete (a rigorous null);
-VitalDB objective-label gate complete; three heavier builds (VitalDB non-invasive model,
-INSPIRE preop model, MIMIC objective-SV-label probe) were **interrupted by a session limit**
-and are queued for resumption — partial progress noted below.
-
----
-
-## 1. The problem structure (why intentionality matters)
-
-- **No ground-truth label in general EHR.** MIMIC/eICU/INSPIRE lack continuous SV/CO for the
-  general cohort; any responsiveness label is a MAP/lactate proxy (confounded; saturated with
-  regression-to-the-mean). The validated AUC ceiling (~0.82–0.85) exists *only* in cohorts with a
-  real SV label (echo/pulse-contour). (Lit scout, 14 PubMed-verified refs incl. Marik CVP
-  PMID 18628220; PLR meta PMID 26825952; FENICE PMID 26162676; CLASSIC 35709019; CLOVERS 36688507.)
-- **PPV/SVV applicability collapses** — valid only under controlled MV, sinus rhythm, TV≥8, closed
-  chest (a minority of real ICU patients).
-- **Confounding by indication** caps the causal fluid-vs-pressor decision at ~OR 1.35 (our
-  structural ceiling); preference-IV fails its exclusion restriction (our instrument sim).
-- **Novelty white space:** pleth→SVV is solved (that's PVI, AUC 0.82–0.88); **ECG→SVV is unmined**;
-  and a **cross-encounter reproducibility (trait vs state) test** of fluid response is unpublished.
-
-## 2. Dataset roles (feasibility-audited)
-
-| Dataset | Has SV/SVV truth? | Role |
-|---------|:---:|------|
-| **VitalDB** | ✅ FloTrac SVV/SV (940 cases, 2 s cadence) + 500 Hz ECG/pleth | **Only substrate to build/validate a non-invasive surrogate** |
-| **INSPIRE** | ❌ (5-min vitals, no waveforms/ECG/SVV) | Large-N (130k) **preop-labs → intraop instability** + fluid→AKI |
-| **MIMIC-IV** | ❌ general (hourly MAP, no waveform); ⚠️ tiny PiCCO subset has SV/CO | "trait vs state" (MAP proxy); possible objective-label subset (probe pending) |
-| **eICU** | ❌ | Other-population external clinical arm |
-
-VitalDB access is free/open (urllib+gzip or `vitaldb` pkg); INSPIRE via `wget --netrc` (plain CSV);
-MIMIC boluses in local `inputevents.csv.gz` (NaCl 225158, LR 225828, `ordercategorydescription=='Bolus'`).
+**Bottom line:** this is a rigorous, honest **de-hyping** of the fluid-responsiveness biomarker on
+retrospective data. No cheap non-invasive signal (ECG, MAP, preop labs) reliably predicts fluid
+response; the widely-used "objective" MIMIC continuous-CO label is itself too noisy to be ground
+truth. Several results are clean, defensible negatives; the trait-vs-state question is genuinely
+undetermined. The value is in what these negatives rule out and the methodological cautions they raise.
 
 ---
 
-## 3. RESULT — MIMIC "trait vs state": fluid-responsiveness is a transient STATE, not a phenotype
+## Results (post-red-team)
 
-**Design.** Within-patient repeated-bolus, RTM-corrected against matched no-bolus counterfactuals;
-cross-encounter test is the trait discriminator (per our vasopressor-trait-collapse lesson).
-Script: `scratchpad/mimic_fr_trait_state.py`.
+### 1. VitalDB — ECG carries no standalone non-invasive fluid-responsiveness signal (under GA) — **SOLID NULL**
 
-**Cohort funnel.** 157,101 crystalloid boluses → 115,918 with arterial MAP → 80,133 ≥250 mL →
-45,300 with usable windows → 12,542 during hypotension → **5,612 after co-intervention censoring**
-(3,740 subjects, 3,815 episodes).
+The only label-valid substrate: FloTrac device SVV (940 cases, 2 s cadence) + 500 Hz ECG/pleth
+waveforms. Cohort 160 cases / 7,369 ventilation-gated windows (arrhythmia/open-chest/spontaneous
+excluded). Predict SVV (regression) and SVV≥13% (binary) from **non-invasive features only** (never
+arterial-derived — that would be circular).
 
-**Headline — RTM dominates.** Raw ΔMAP after bolus **+8.26 mmHg**; matched no-bolus control windows
-drift **+6.02** on their own → **corrected response +1.46 mmHg** (median −0.28). **≈73% of the
-bedside "fluid response" is regression to the mean, not fluid.**
+| Model | AUROC | CCC |
+|-------|-------|-----|
+| M0 clinical/preop | 0.618 | 0.132 |
+| ECG-alone | 0.632 | 0.205 |
+| Pleth-PVI-alone | **0.733** | 0.338 |
+| ECG + pleth | 0.738 | 0.353 |
 
-**Trait vs state.**
+Two pre-registered tests, both decisive:
+- **Increment (ECG on top of pleth): null** — ΔAUROC +0.005 [−0.007, +0.019].
+- **Equivalence/substitution (ECG-alone vs pleth-alone): REJECTED** — Δ = **−0.100 [−0.138, −0.061]**,
+  well outside a ±0.03 margin (not underpowered). And ECG-alone − M0 = +0.014 [−0.011, +0.043]
+  (≈ clinical baseline). ECG and pleth are **uncorrelated at the feature level** (|r|≤0.17), and ECG
+  shows **no rescue in the pleth-failure zone** (low perfusion: both collapse to chance together).
 
-| Test | Value | 95% CI | Reading |
-|------|-------|--------|---------|
-| Within-episode ICC (1,114 episodes ≥2 boluses) | **0.126** | [0.076, 0.176] | modest, real |
-| **Cross-encounter ICC** (74 subjects, separate admissions) | **−0.046** | [−0.225, 0.139] | **≈0 — does not reproduce** |
+**Claim:** *Under general anesthesia, ECG-derived respiratory features provide neither an increment to
+nor a substitute for a pleth-derived PVI in predicting SVV — ECG-alone performs at clinical baseline.*
+Mechanistically coherent (GA suppresses respiratory sinus arrhythmia → the ECG respiratory modulation
+pleth relies on isn't there). **Bounded caveat:** null is specific to GA; in awake/spontaneous
+breathing RSA is intact — but SVV/PVI aren't valid there anyway. A pleth-PVI-only surrogate works
+modestly (0.73) but merely re-derives PVI and targets device SVV (an unvalidated surrogate; see §4).
 
-**Physiologic falsification (Frank–Starling): FAILS.** Corrected response vs bolus order flat
-(+0.093, z=0.69); vs cumulative volume **rises** (+0.76 mmHg/L, z=3.03) — anti-Starling, the
-pre-specified red flag that the corrected label still carries artifact (consistent with state/noise).
+### 2. ΔMAP is a poor bedside proxy for measured CO response — **SURVIVES (practical form, softened)**
 
-**Negative controls (both PASS).** Shuffle bolus→patient pairing collapses ICC **0.126 → 0.0008**
-(genuine within-episode signal); placebo-timing on held-out no-bolus windows = **+0.028 mmHg**
-(z=1.01, RTM correction is unbiased — doesn't manufacture a response).
+MIMIC-IV advanced-monitoring subset, 383 vasopressor-clean bolus events with a continuous-CO (CCO,
+itemid 224842, ≥2 readings/window) ΔCO label.
+- ΔMAP↔ΔCO Pearson **0.095**; **AUROC of ΔMAP for the true ΔCO≥10% responder = 0.56**; when MAP rises
+  ≥10%, only 30% actually raised CO (PPV 30%); MAP misses ~20% of true responders. No static predictor
+  (MAP/PP/HR/shock index) beats AUROC 0.5.
 
-**Verdict: STATE, not phenotype.** Modest within-admission reproducibility (ICC 0.13) that vanishes
-across a patient's separate ICU admissions (ICC ≈ 0). Novel framing (0 prior cross-encounter work),
-rigorous (both NCs pass), and a clean de-hyping message: *at routine EHR MAP resolution, ICU
-fluid-responsiveness does not behave as a reproducible patient trait — most of the apparent bedside
-response is regression to the mean.*
+**Red-team correction:** ΔMAP's own reliability is only ~13%, and ΔCO's is ~0% (see §4), so the
+*disattenuated* correlation is unidentifiable (plausibly anywhere from ~0 to ~0.7). Therefore the
+**mechanistic** claim ("MAP physiologically doesn't track CO") is undecidable here. What survives is
+the **practical** claim: *against the same noisy CO monitor clinicians actually rely on, bedside ΔMAP
+cannot identify fluid responders (AUROC 0.56) — do not trust ΔMAP-based responder labeling* — bounded
+to this high-acuity, continuous-CO-monitored ~4% subgroup.
 
-**Honest limits.** MAP-response ≠ SV-response; hourly MAP is coarse; arterial-line cohort is
-sicker/selected; cross-encounter cell underpowered (n=74). This is why the MIMIC objective-SV-label
-probe matters — a real SV label could confirm or overturn the null. **Pending red-team** (queued).
+### 3. Is fluid-responsiveness a stable phenotype or a transient state? — **UNDETERMINED** (was reported as "state"; red-team downgraded)
+
+- MAP-based (5,612 boluses, RTM-corrected, negative controls pass): within-episode ICC 0.126
+  (shuffle-validated as real, →0.0008 on permutation); **cross-encounter ICC −0.046 at n=74
+  (underpowered)**; 73% of the raw bedside "response" is regression to the mean (corrected ΔMAP only
+  +1.46 mmHg).
+- CCO-based (true ΔCO): within-episode ICC **−0.06** — but the red-team's matched no-bolus noise floor
+  shows CCO swings **SD 14.2%, ≥10%-crossing 21.4%** with *no bolus at all*, statistically
+  indistinguishable from the 24.5% post-bolus responder rate (p≈0.49). An ICC≈0 from a label with ~0%
+  test-retest reliability cannot distinguish trait, state, or no-signal. Cross-encounter cell = **n=0**.
+
+**Honest claim:** *Whether fluid-responsiveness is trait-like or state-like is undetermined from this
+data — measurement noise fully accounts for the observed within-episode variability, and no
+between-encounter data exists to test trait stability.* (Not "state"; "not established.")
+
+### 4. The MIMIC "objective" continuous-CO label is too noisy to be ground truth — **cautionary methods result**
+
+The keystone red-team finding: matched no-bolus CCO windows (same geometry, same stays) have
+variance ≥ the post-bolus windows (F=1.14 favoring the noise floor) → implied CCO Δ-measurement
+reliability ≈ **0%**. Intermittent nurse/thermodilution/trending-lag charting makes MIMIC's CO
+label unusable as a fluid-response ground truth at this resolution. VitalDB's objective label was
+valid (2 s FloTrac; pre-bolus SVV→ΔSV AUROC 0.814) but **not scalable** — routine boluses aren't
+electronically timestamped (only 15 rapid-infuser cases; n≈4 with ECG+pleth). *No accessible dataset
+supplies both scalable timestamped boluses and a reliable SV-response label.*
+
+### 5. INSPIRE — preop labs add little to intraop-instability prediction — **MODEST/NULL**
+
+121,163 non-cardiac cases. Severe instability (continuous pressor / MAP<55, 6.4%) AUROC **0.808**;
+routine (any pressor / MAP<65, 48.3%) 0.734; both well-calibrated. But **preop labs add only +0.017
+AUROC** over structural variables (anesthesia type, ASA, age, department). Associational (confounding
+by indication; dose-less pressor events). *Routinely-available preop labs carry only a weak
+independent instability signal.*
 
 ---
 
-## 4. RESULT — VitalDB objective-label gate: valid but not scalable → hybrid design
+## What the program establishes
 
-**Finding.** The objective label (measured **ΔSV ≥10–15% after a real bolus**, FloTrac SV at 2 s
-cadence) is **scientifically valid** — positive control: pre-bolus device SVV predicts the ΔSV≥10%
-label at **AUROC 0.814**, exactly as physiology requires. Script: `scratchpad/vitaldb_fr_label.py`.
+- **ECG is not a non-invasive fluid-responsiveness signal under GA** (solid, pre-registered null;
+  equivalence rejected). Closes a genuine white space.
+- **No cheap bedside proxy works:** ΔMAP (0.56, practical), static vitals (≈0.5), preop labs (+0.017).
+- **The MIMIC continuous-CO label is unreliable as FR ground truth** (~0% test-retest) — a caution for
+  the many studies that use it.
+- **Trait-vs-state is genuinely undetermined** on available data.
+- **Data gap:** no accessible cohort has scalable timestamped boluses + a reliable SV-response label —
+  the field's core obstacle, made concrete.
 
-**But routine boluses are not electronically timestamped in VitalDB** (given by pressure-bag/gravity;
-only whole-case crystalloid/colloid *totals* exist). Timestamped delivered volume exists for **15
-cases** via the `FMS/TOTAL_VOL` rapid-infuser track — all massive-transfusion cases (atypical), giving
-**n≈4** usable cases with ECG+pleth. Too few to train.
+## Methodological lessons (also in `../LESSONS.md`)
 
-**Hybrid design (adopted):** train the non-invasive surrogate on the **device-SVV target** (871 cases
-with FloTrac SVV + ECG_II + PLETH), predicting SVV/FR-state from **non-invasive ECG+pleth only**
-(non-circular — never feed arterial-derived features); use the ~15–19 objective ΔSV boluses as a
-held-out **gold-standard anchor**. Headline = the pre-registered **ECG-increment-over-pleth-PVI test**
-(M2 vs M1). Honest prior: the ECG increment is likely small under general anesthesia (RSA suppressed);
-a null is publishable ("PVI suffices; ECG adds nothing under GA").
+1. **Compute the label's OWN noise floor before interpreting an ICC or a proxy-AUROC.** A matched
+   no-bolus window set with identical geometry is the test. Here it converted "fluid response is a
+   state" and "ΔMAP is near-useless (mechanistically)" into "undetermined" and "practical-only." An
+   ICC≈0 from a ~0%-reliability label is not evidence of anything.
+2. **"No increment" ≠ "no signal."** Always test the standalone/equivalence model (ECG-alone), not just
+   the increment — they answer different questions. (Here it sharpened an ambiguous null into a
+   definitive World-A null.)
+3. **Separate mechanistic from practical claims** when both the exposure and the label are noisy —
+   disattenuation is often unidentifiable, but the practical "clinicians can't use X against the
+   label they have" claim can still stand.
+4. **Match the substrate to the label problem:** VitalDB has SV truth but no bolus timing; MIMIC has
+   boluses but a noisy CO label; neither alone closes it.
 
----
-
-## 5. Queued / interrupted (resume after session-limit reset)
-
-| Task | State at interrupt | Resumable |
-|------|--------------------|-----------|
-| **VitalDB Phase-2 non-invasive model** (`scratchpad/vitaldb_fr_model.py`) | benchmarking waveform-load cost; no results | yes — windowed 30–60 s ECG/pleth features at SVV timestamps, ~150–200 cases first, M0→M3 nested, ΔAUROC(M2/M1) headline, validity-gated |
-| **INSPIRE preop-labs instability model** (`scratchpad/inspire_preop_instability.py`) | labs downloaded (18M rows); vitals streaming | yes — preop labs+demographics → intraop vasopressor/hypotension; case-split CV; associational framing |
-| **MIMIC objective-SV-label probe** (`scratchpad/mimic_objective_fr_label.py`) | chartevents extraction running | yes — count PiCCO/PA-catheter subset with SV/CO + bolus overlap; pilot ΔSV-after-bolus label; if scalable, RE-RUN trait-vs-state with a real SV label |
-
-**Next actions on resume:** (1) finish the MIMIC objective-label probe — it settles whether the
-trait-vs-state null holds under a real SV label; (2) finish the VitalDB non-invasive model (the
-ECG-increment headline); (3) finish INSPIRE; (4) red-team the MIMIC trait-vs-state null and any
-VitalDB/INSPIRE winner; (5) fold into this doc + ledger.
-
-## 6. Honest program-level read
-
-The rigorous, defensible contributions here are **not** a high fluid-responsiveness AUC (the label
-isn't there at scale). They are: (a) the **trait-vs-state de-hyping result** (done, MIMIC); (b) the
-**ECG-beyond-PVI question** on the only label-valid substrate (VitalDB, pending); and (c) an honest
-**preop-labs-at-scale** associational model (INSPIRE, pending). Each is designed so a null is itself
-a publishable, mechanism-backed finding — the disciplined stance for a domain where our track record
-and the label problem both argue against an easy positive.
+## Artifacts (scratchpad, gitignored)
+`vitaldb_fr_label.py`, `vitaldb_fr_model.py`, `vitaldb_ecg_equivalence.py`, `fr_features.csv`,
+`mimic_objective_fr_label.py`, `mimic_realSV_analysis.py`, `mimic_fr_trait_state.py`,
+`redteam_noisefloor.py`, `inspire_preop_instability.py`.
