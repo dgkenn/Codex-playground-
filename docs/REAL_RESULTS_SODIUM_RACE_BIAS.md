@@ -431,8 +431,9 @@ hits are framing/scope, now fixed.
   is somewhat larger at lower true Na (noted, not a knife-edge).
 
 ## Minor / open (honest)
-- Hct control uses a 6-h window on n=241 — a tighter window is the ideal follow-up (protein slope survived at −0.84;
-  treat as supportive, not "ruled out").
+- Hct control: **tightened the window per the referee** — with a 2-h window (n=216) the protein slope survives Hct
+  at −0.93 (z=−5.3), and with a 1-h window (n=211) at −0.97 (z=−5.4), essentially the 6-h result (−0.84). The Hct
+  concern is closed; the residual limitation is only the small protein-measured n, not the Hct window.
 - Mannitol as an unmeasured osmole in neuro/trauma patients cannot be excluded in the arbiter.
 - Subclinical (un-coded) globulin elevation, and the single-center race axis, remain structurally unclosable in
   public data.
