@@ -883,3 +883,28 @@ The calcium **arrhythmia** outcome is the strongest measurement-attributable har
 disease-exclusion-robust, physiologically specific, well-powered (n=13,610). It is the closest available-data
 answer to the NEJM gap — with the honest caveat that ICD-timing and residual confounding mean a **time-anchored
 QTc / prospective** confirmation is still needed to call it causal.
+
+## Answer to "can you just control for severity?": YES — and it discriminates the real signal from the confounded ones
+Calcium→arrhythmia (non-myeloma/cirrhosis cohort, n=13,610) under progressive severity adjustment:
+| adjustment set | arrhythmia OR (masked) | z |
+|---|---|---|
+| + ionized, albumin | 1.31 | +6.0 |
+| + creatinine | 1.29 | +5.6 |
+| **+ lactate, BUN, glucose, age (rich severity)** | **1.29 (1.17–1.41)** | **+5.2** |
+The arrhythmia signal is **invariant to rich severity adjustment** — the hallmark of a real effect. By contrast the
+signals that were severity-confounded behave the opposite way and drop out: calcium→**mortality** attenuates to ns
+when globulin-disease is excluded; chloride→**mortality** (OR 1.51 crude) is White-driven and its renal endpoints
+are null; sodium→**mortality/LOS** go null on adjustment (seizure/AKI survive but are plausibly ascertainment/
+coding artifacts of the "hyponatremia" flag, per the delegated analysis). So severity control is exactly what
+separates the one clean measurement-attributable hard outcome (**masked hypocalcemia → arrhythmia, OR 1.29,
+z=+5.2**) from the confounded/ascertainment ones — which is the honest, defensible NEJM-gap result.
+
+### Full measurement-attributable-outcome scorecard
+| exposure (measurement artifact) | outcome | verdict |
+|---|---|---|
+| **masked hypocalcemia** (Ca) | **arrhythmia** | ✅ **OR 1.29 (z=+5.2), survives rich severity + disease exclusion** |
+| masked hypocalcemia (Ca) | cardiac arrest | ✅ OR 1.27 (z=+2.5) corroborating |
+| masked hypocalcemia (Ca) | mortality | ⬜ attenuates to ns on disease exclusion (confounded) |
+| false-hyponatremia (Na) | seizure/AKI | ⚠️ OR 1.68/1.46 survive but likely ascertainment artifact |
+| false-hyponatremia (Na) | mortality/LOS/ODS | ⬜ null / unassessable |
+| masked hyperchloremia (Cl) | AKI / creat-rise | ⬜ null |
