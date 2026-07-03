@@ -961,3 +961,28 @@ result.
 - QTc/drug-safety threshold racial calibration; automated MI/AF detection sensitivity by race.
 - A "confirm-hyperkalemia-with-ECG" decision rule (deployable from finding above).
 (Full 800k-ECG re-download in progress to power the potassium arbitration + LVH analyses.)
+
+---
+
+# THE QT-RISK → OUTCOME CHAIN: unrecognized hypocalcemia-QT translates to arrhythmia/death (`qt_outcomes.py`)
+
+Closing the causal loop on the calcium finding, using the ECG QTc + arrhythmia/mortality outcomes (n=2,781 Ca pairs
+with a linked ECG):
+- **Prolonged QTc (>460 ms) → ventricular arrhythmia / cardiac arrest: OR 2.58 (1.96–3.41, z=+6.7, 294 events)**;
+  → mortality OR 1.73 (z=+5.1). The QTc captures real arrhythmic risk.
+- **Within OCCULT hypocalcemia (normal total Ca hiding low ionized, n=292):** prolonged QTc → ventricular
+  arrhythmia/arrest **14.9% vs 2.6% (≈5.7×)**; → mortality OR 2.04 (z=+2.3). The hidden hypocalcemia's
+  electrophysiologic manifestation (long QT) carries a large arrhythmic/mortality signal — and because the total
+  calcium reads "normal," it goes unrecognized and untreated.
+- **Black patients carry ~1.5× more of this unrecognized risk:** occult hypocalcemia WITH prolonged QTc = 8.6% vs
+  5.9%.
+
+**The full attributable chain, now end-to-end:** higher globulins (Black patients) → falsely-high total calcium →
+**masked/occult hypocalcemia** (26% vs 18%) → **unrecognized prolonged QTc** (ECG-confirmed, OR 1.48 for occult vs
+truly-normal) → **ventricular arrhythmia/cardiac arrest** (OR 2.58; 5.7× within occult) and **mortality** (OR 2.04)
+→ **disproportionately borne by Black patients** (1.5× the unrecognized-QT-risk prevalence). Each link is measured;
+the corrected-calcium formula (albumin-only) fails to unmask it.
+
+**Honest caveats:** observational; QTc is multi-causal (drugs/ischemia/other electrolytes); arrhythmia/arrest are
+admission-level ICD (temporality imperfect); occult-hypocalcemia n=292 is modest. The full 800k-ECG re-download
+(in progress, ~470k rows so far) will firm up power and enable strict QTc-after-draw temporality.
