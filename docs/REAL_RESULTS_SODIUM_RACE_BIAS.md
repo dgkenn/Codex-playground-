@@ -647,3 +647,48 @@ This closes the mechanism: **elevated immunoglobulins (higher in non-white popul
 indirect-ISE under-reports sodium — a graded, analyte-specific, magnitude-correct, lipid-corroborated artifact.**
 The one predicted subgroup with the largest bias is **paraproteinemia/myeloma** (extreme globulins; myeloma is
 2–3× more common in Black patients) — the dose-response implies these patients suffer the most severe artifact.
+
+---
+
+# THE BIGGER FINDING: a coordinated, immunoglobulin-driven, panel-wide racial measurement bias
+
+The elevated immunoglobulins in non-white patients don't bias sodium alone — they bias **multiple routine chemistry
+analytes in a coordinated way**, each in the direction its protein-chemistry predicts, and **standard correction
+formulas fail to remove it**. This is the NEJM-shaped reframe (bigger than one analyte).
+
+| analyte | method / truth | racial bias | z | clinical harm |
+|---|---|---|---|---|
+| **Sodium** | indirect ISE vs blood-gas | falsely **LOW** −1.18 | −12.6 | pseudohyponatremia, missed hyperNa (OR 2.58), APACHE inflation |
+| **Chloride** | indirect ISE vs blood-gas | falsely **LOW** −0.79 | −3.5 | **missed hyperchloremia adj OR 2.40 (z=+6.5)** — saline-acidosis under-detected |
+| **Calcium (total)** | vs ionized (true) | falsely **HIGH** +0.15 mg/dL | **+11.6** | pseudohypercalcemia; **masked true hypocalcemia** 20.9% vs 16.5% |
+
+**The calcium finding is the standout (`sodium_harms2.py` + calcium test, n=25,163, 3,442 Black):** at matched
+*ionized* (physiologically true) calcium, total calcium reads +0.15 mg/dL higher in Black patients (z=+11.6) — and
+it **survives albumin correction (+0.15, z=+7.3)** because the corrected-calcium formula adjusts for albumin, not
+the globulin-bound calcium. So even the "corrected" value clinicians trust is racially miscalibrated. Masked
+hypocalcemia (true ionized <1.12 but total ≥8.5) is more frequent in Black patients (20.9% vs 16.5%).
+
+**Coherence:** Na/Cl are diluted low (indirect-ISE plasma-water displacement); Ca is bound high (excess globulin
+binds calcium). Opposite directions, one mechanism (excess plasma protein), each matching known chemistry — strong
+evidence this is a genuine protein-interference bias, not confounding.
+
+## Two nulls this round (honest)
+- **MELD-Na (transplant allocation):** no racial differential in MELD-Na inflation from the Na bias (+0.08 pts,
+  z=+0.8) — the score's sodium bounds/interaction attenuate it in the ICU cirrhosis cohort. No allocation harm shown.
+- **Hypernatremia undertreatment:** despite under-flagging (H3), Black true-hyperNa patients were **not** under-
+  treated with free water (OR 1.17, ns) — the labeling miss did not propagate to less treatment.
+
+## Literature status (WebSearch, July 2026)
+- **The mechanism is KNOWN.** Globulin/protein-driven indirect-ISE pseudohyponatremia (electrolyte-exclusion effect)
+  is textbook; IVIG-associated pseudohyponatremia is documented ([NEJM 1998](https://www.nejm.org/doi/full/10.1056/NEJM199808273390914);
+  [StatPearls](https://www.ncbi.nlm.nih.gov/books/NBK553207/); [Clin Chem review](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC10299669/)).
+- **The premise is KNOWN for 50+ years.** Higher serum globulin/IgG in Black populations is well documented
+  ([gamma-globulin 1974](https://pubmed.ncbi.nlm.nih.gov/4158577/); [immunoglobulins 1995](https://pubmed.ncbi.nlm.nih.gov/7722770/):
+  IgG 1,587 vs 1,209 mg/dL — matching this study's 1,350 vs 961). Cause: **both genetic** (IGHG2/IGHG3 diversity,
+  Duffy-null allele → immune-marker levels) **and environmental** (chronic immune activation / infectious-disease
+  burden) ([Genes & Immunity](https://www.nature.com/articles/s41435-021-00156-2)).
+- **NOVEL: the synthesis.** Existing work reports racial differences in hyponatremia *prevalence* as if real disease
+  ([e.g. HF hyponatremia by race](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6583993/)); **none** frame routine
+  electrolyte/calcium measurement as *systematically racially biased at the population level* by immunoglobulins,
+  nor that reported racial dysnatremia disparities may be **partly a measurement artifact**, nor the coordinated
+  panel-wide bias. That synthesis + the calcium/chloride extensions appear unpublished.
