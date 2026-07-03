@@ -843,3 +843,43 @@ in dysnatremia/dyscalcemia are partly measurement artifact."** Calcium anchors i
 eICU, cross-national mechanism in SICdb, red-team-survived, a trusted formula that fails). The fix is method-level
 (direct/ionized measurement). Remaining gap for full NEJM: a measurement-*attributable* hard outcome (the repletion
 gap is largely a general disparity) + prospective/multi-DUA confirmation.
+
+---
+
+# MEASUREMENT-ATTRIBUTABLE HARD OUTCOMES (the NEJM-gap hunt) — calcium delivers one
+
+Design that isolates the measurement: among patients with the SAME true value, contrast those whose REPORTED value
+masked the abnormality vs didn't. Adjust for the protein/disease that causes masking; test physiological specificity.
+
+## Calcium: masked hypocalcemia → ARRHYTHMIA (the clean attributable outcome) ✅
+Among **true-hypocalcemic patients (ionized <1.12, n=15,618)**, being MASKED (total Ca ≥8.5, reads normal),
+adjusted for true ionized + albumin + creatinine, subject-clustered (`calcium_outcomes.py`):
+
+| outcome | adj OR (masked) | z | after excluding myeloma/cirrhosis/MGUS |
+|---|---|---|---|
+| **arrhythmia** | 1.25 (1.15–1.36) | +5.3 | **1.29 (1.18–1.42), z=+5.6** ✅ survives |
+| **cardiac arrest** | 1.33 (1.11–1.59) | +3.1 | **1.27 (1.05–1.55), z=+2.5** ✅ survives |
+| mortality | 1.30 (1.17–1.45) | +4.9 | **1.11 (0.98–1.25), z=+1.7** ⬜ attenuates (was confounded by globulin-disease) |
+| seizure | 0.90 | −1.3 | — (null) |
+
+**The attributable signal is arrhythmia** (untreated hypocalcemia → QT prolongation/arrhythmia — the classic
+cardiac harm): OR 1.29 (z=+5.6), **robust to excluding the globulin-driven confounding diseases** and to adjustment
+for albumin/ionized/severity, physiologically specific (cardiac yes, seizure no). Cardiac arrest corroborates
+(OR 1.27). **Mortality honestly attenuates** to ns when myeloma/cirrhosis are excluded → it was largely confounded,
+not clean. Black patients are masked more (23.6% vs 18.5%), so they carry this attributable harm disproportionately.
+
+**Honest limitations:** (1) arrhythmia/arrest are admission-level ICD dx — **temporality not established** (the
+event may precede the masked draw); a time-anchored ECG-QTc analysis would be the confirmatory step. (2) residual
+confounding by unmeasured globulin/severity can't be fully excluded, though disease-exclusion + albumin adjustment
+leave the specific cardiac signal intact. (3) the mortality-repletion mediation was weak.
+
+## Chloride: masked hyperchloremia → renal outcome — NULL (delegated analysis)
+Among true-hyperchloremic patients (bg Cl≥110, n=2,134), masked chem Cl → **AKI OR 1.25 (p=0.076, ns)**, creatinine
+rise β≈0 (null); mortality OR 1.51 (p=0.005) but White-driven and likely severity-confounded. **Honest read: the
+renal-specific endpoints are null; not a clean attributable harm.**
+
+## Net
+The calcium **arrhythmia** outcome is the strongest measurement-attributable hard endpoint found: adjusted,
+disease-exclusion-robust, physiologically specific, well-powered (n=13,610). It is the closest available-data
+answer to the NEJM gap — with the honest caveat that ICD-timing and residual confounding mean a **time-anchored
+QTc / prospective** confirmation is still needed to call it causal.
