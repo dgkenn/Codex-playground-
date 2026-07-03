@@ -14,7 +14,7 @@ preserved from the analysis logs.
 | 1 | Occult hypoxemia (SpO₂>SaO₂) by race → harm | **PARTIAL** | Racial direction replicates (occult OR 1.47); magnitude/harm **blocked** by arterial/venous SaO₂ contamination |
 | 2 | Cuff-vs-arterial MAP discordance → under-titration | **DEMOTED by red-team** | Headline +14 mmHg / −0.645 was largely a regression-to-the-mean binning artifact (Bland-Altman-correct ≈ +1.5 mmHg); harm reverses to null on sustained hypotension; what survives (range compression, high-MAP under-read) is *known* device behavior |
 | 3 | Personalized MAP floor for chronic HTN | **NULL / opposite** | Sub-65 harm interaction is significant in the *wrong* direction; "count<T" metric is a monotone artifact |
-| 4 | **Creatinine-masked AKI by muscle mass (sex)** | **WINNER** | KDIGO 0.3 absolute rule misses ~1/10 injured women vs ~1/40 men (OR 0.471, z=−10.4); male "AKI excess" is a definitional artifact (1.295→0.999) |
+| 4 | **Creatinine-masked AKI by muscle mass (sex)** | **SURVIVES, reframed & demoted** | Effect robust (isolated-absolute-criterion sensitivity F 90.5% vs M 97.4%, OR 0.47–0.63 across baseline defs; artifact 1.295→0.999) — but **not novel** (already published), applies only to the *isolated absolute* criterion (full KDIGO misses no one here), and the whole effect sits in baseline <0.6 mg/dL where a 1.5× rise may be noise |
 | 5 | Blood-gas vs lab glucose discordance in shock | **WEAK / mostly NULL** | Discordance real (SD 16) but widens at *high* glucose; no mortality signal; central lab is the bigger misser (opposite of hypothesis) |
 
 ---
@@ -94,11 +94,39 @@ outcomes).
   is expected to replicate; the value is confirming the artifactual-disparity magnitude
   generalizes.
 
-**Why NEJM/JASN-tier.** A criterion in every ICU, guideline, and AKI trial
-(KDIGO absolute increase) systematically under-diagnoses the highest-volume ICU
-syndrome in women, and a headline epidemiologic pattern (male AKI excess) is shown to be
-substantially definitional. Actionable fix: baseline-indexed / proportional or
-sex-specific creatinine criteria (cf. sex-specific troponin, the eGFR debate).
+> **Red-team verdict (independent re-run, 6 attacks): SURVIVES but must be REFRAMED and
+> DEMOTED — not a discovery.** The *effect* is robust; the *framing* and *novelty* are not.
+> - **FATAL to the literal claim** "KDIGO misses AKI in women": full KDIGO 2012 is *absolute
+>   OR relative*, and every "masked" patient here is relative-positive by construction — so
+>   full-guideline KDIGO misses **no one** in this cohort. The claim is only defensible about
+>   the **isolated absolute criterion as commonly automated in EHR AKI alerts** (many real-time
+>   CDS trigger on the 48h absolute rise alone because a reliable pre-admission baseline for the
+>   ratio arm isn't available at the point of care).
+> - **Not novel:** the mechanism (absolute-creatinine thresholds disadvantage low-muscle
+>   women/elderly) is already published — *Nat Rev Nephrol* on sex/age bias in organ-failure
+>   creatinine thresholds, and a Swiss *BMJ Public Health* POA-AKI cohort stating it explicitly.
+>   Frame as **confirmatory large-N (US, n=320,677) replication + clean matched-band mechanistic
+>   decomposition**, not discovery.
+> - **Unresolved (cannot be fixed with this data):** the entire disparity is mathematically
+>   confined to baseline creatinine **<0.6 mg/dL** (isolated <0.6 stratum: OR 0.491, women 65.6%
+>   of it) — exactly the zone where a 1.5× rise (e.g. 0.4→0.6) is most plausibly assay/physiologic
+>   noise rather than true GFR-reducing injury, and MIMIC has **no cystatin C / muscle-independent
+>   GFR reference** to adjudicate. Present this transparently (the "restrict to baseline ≥0.6"
+>   check is a tautology — sensitivity is forced to 1.0 there — so it is NOT a valid robustness test).
+> - **Robustness that HELD (attacks that didn't land):** baseline definition (OR 0.467/0.467/0.633/0.471
+>   across first / 24h / median / rolling-min); RTM/noise (baseline CV M 0.960 vs F 1.011 — no
+>   sex noise excess); selection by number of draws (OR <1 across strata). The artifact ratio
+>   (1.295 abs vs 0.999 proportional) holds across all four baseline definitions.
+>
+> **Net tightest defensible claim:** *In MIMIC-IV, among patients meeting KDIGO's proportional
+> (≥1.5×) criterion, the isolated absolute (≥0.3 mg/dL/48h) criterion has significantly lower
+> sensitivity in women (90.5% vs 97.4%; OR ~0.47–0.63), because lower baseline creatinine
+> compresses the absolute delta for equivalent proportional injury — fully accounting for the raw
+> ~30% male excess in absolute-defined AKI. Applies to isolated-absolute EHR alerting, replicates a
+> known mechanism, and carries an unresolved caveat that the low-baseline stratum driving it cannot
+> be confirmed as true injury without a GFR-independent marker.* Publishable as a **methods/quality
+> letter**, not an NEJM flagship. External replication (eICU, streaming) + the corrected-calcium and
+> two-method-discordance leads (docs 01–05, and lit-mining doc 07) remain the stronger program.
 
 ---
 

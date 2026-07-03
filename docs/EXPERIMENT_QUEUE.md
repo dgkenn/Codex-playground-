@@ -89,3 +89,28 @@ handling BEFORE modeling; power any null (Cycle-3/5 lesson) before believing it.
 - Before any overnight run: novelty pre-screen (#6) + tabular baseline (#8) so the run has a clear target.
 - Log every result (positive or null) + its full attack map to LESSONS.md with the mechanism.
 - Re-rank after each cycle based on what was learned.
+
+## NEXT (cycle 10) — from the 4-venue literature mine (docs/research/07); PubMed novelty pre-screen FIRST
+Ranked by cross-venue support × template-fit × feasibility. Each REQUIRES a 2-min PubMed novelty
+pre-screen before running (cycle-9 lesson: the creatinine mechanism was already published).
+1. **[TOP] Bazett vs Fridericia QTc over-correction → false "prolonged QT" flags by sex/HR.** Support 3/4;
+   data in hand (800k machine QT/RR in ecg_features_full.csv) + meds for QT-drug exposure. "Trusted formula
+   fails by subgroup" — cleanest new fit. Novelty risk: moderate (QTc-formula lit is large) — pre-screen hard.
+2. **eGFR equation (race-based vs race-free; Cockcroft-Gault vs CKD-EPI) → differential ICU renal drug-dosing.**
+   Support 2/4; MIMIC-IV+eICU have race+creatinine+meds. Unclaimed *dosing-action* endpoint on the well-cited
+   race-free-eGFR line (vancomycin/DOAC/contrast threshold crossings).
+3. **Complete the two-method discordance panel: lactate (Sepsis-3 >2) + hemoglobin (transfusion <7).**
+   Support 4/4; extends the sodium/K⁺ work we've already built; MIMIC pairs both methods.
+4. **Occult hypoxemia → downstream DECISION endpoint** (SOFA-resp, SF-ratio/ARDS, O₂ target, trial eligibility).
+   ONLY after re-extracting clean arterial SaO₂ (chartevents itemid 220227). Frame on the care-decision endpoint —
+   the raw discordance is saturated (Sjoding/Fawzy/Wong). Nature-family venue white-space if done cleanly.
+5. **[low-cost confirmatory only] Sex-specific hs-troponin threshold → MI under-detection in women.** Support 3/4
+   but JAMA (Rubini Giménez) suggests likely NULL — run as a cheap arm, not a bet.
+
+## FOLLOW-UPS on cycle-9 (open)
+- **eICU external replication of the creatinine-AKI sex artifact** — eICU lab.csv.gz (516MB) streaming via the
+  flaky proxy; patient.csv (gender/age) already landed (200,860). Finish the download, confirm the 1.295→0.999
+  artifact + female-sensitivity OR generalize. (Mechanism is arithmetic → expected to replicate; value is the
+  artifactual-disparity magnitude across a 208-hospital cohort.)
+- **Corrected-calcium by-subgroup extension** (albumin-corrected vs ionized differential misclassification by
+  sex/albumin stratum) — flagged 4/4 in the mine; extends doc-01 flagship; SICdb sex/protein replication.

@@ -44,3 +44,13 @@ Running log of experiments + hostile-review verdicts. Status: PROVISIONAL (not g
   site-invariant frozen embeddings still underperform, that is itself a publishable methods result
   (frozen EEG-FM insufficient for cross-site clinical outcome → fine-tuning required).
 - No over-claim anywhere. Every step committed + logged.
+
+## Cycle 9 — critical-care/anesthesia measurement-bias batch (5 ideas) + 4-venue literature mine
+| # | Cycle | Experiment | Result | Gate verdict | Status |
+|---|---|---|---|---|---|
+| 7a | 9 | **Occult hypoxemia (SpO₂ vs SaO₂) by race → harm** (MIMIC-IV) | Racial direction replicates (occult OR 1.47, z=+3.5); magnitude/harm blocked — labevents 50817 SaO₂ mixes arterial+venous (p25=70) | Not gated — data-quality block; needs chartevents 220227; occult-vs-overt harm acuity-confounded | **PARTIAL / blocked** |
+| 7b | 9 | **Cuff vs arterial MAP discordance → vasopressor under-titration** (MIMIC-IV, 232,656 pairs) | Naive +14.4 mmHg@MAP<55, occult-hypotension 43%, under-titration OR 0.82 | Red-team: **+14→+1.5 mmHg (RTM binning artifact, Bland-Altman); harm reverses to null on sustained; known device behavior** | **KILLED** |
+| 7c | 9 | **Personalized MAP floor for chronic HTN** (MIMIC-IV, 33,861 stays) | Sub-65 harm interaction significant in WRONG direction (z=−2.97); "count<T" metric monotone-artifact | Not supported / opposite | **GATED-NULL** |
+| 7d | 9 | **Creatinine-masked AKI by sex/muscle mass** (MIMIC-IV, n=320,677) | Isolated-absolute-criterion sensitivity F 90.5% vs M 97.4% (OR 0.47–0.63, robust to baseline def/RTM/draws); male AKI excess 1.295→0.999 artifact | Red-team: effect ROBUST but **not novel** (Nat Rev Nephrol + BMJ Public Health), applies to **isolated-absolute EHR alerts only** (full KDIGO misses no one), whole effect in baseline<0.6 (noise zone, no cystatin C) | **SURVIVES, reframed → methods/quality letter (not flagship)** |
+| 7e | 9 | **Blood-gas vs lab glucose discordance in shock** (MIMIC-IV, 47,894 pairs) | Discordance real (SD 16) but widens at HIGH glucose; missed-hypo no mortality signal (OR 0.86 ns); central lab is bigger misser (opposite of hypothesis) | Mostly null | **GATED-NULL** |
+| 8 | 9 | **4-venue literature mine (NEJM/JAMA/Nature, PubMed-verified)** → doc 07 | ~50 verified studies; sweeps independently re-derived our corrected-Ca/K⁺-discordance/KDIGO-creatinine/cuff-MAP bets; new leads: Bazett/Fridericia QTc, eGFR→ICU drug-dosing | — | **catalogue built; leads queued** |

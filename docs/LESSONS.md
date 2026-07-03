@@ -486,3 +486,27 @@ cross-nationally-validated part.
   masked-measurement→treatment link.
 - **VERDICT: idea 2 (cuff-MAP) demoted to "known device behavior, no novel/causal claim."** Logged;
   do not resurrect without a full-power sustained-hypotension design and a cuff-only (ward) cohort.
+
+## Cycle 9 (red-team) — the creatinine-AKI winner SURVIVES but is REFRAMED + DEMOTED
+- **CHECK PRIOR ART *BEFORE* RUNNING, not after.** The creatinine-masked-AKI-by-sex mechanism is
+  ALREADY PUBLISHED (Nat Rev Nephrol: absolute-creatinine organ-failure thresholds disadvantage
+  low-muscle women/elderly; a Swiss BMJ Public Health POA-AKI cohort states it explicitly). We
+  spent a full analysis before discovering it isn't novel. NEW RULE: a 2-minute PubMed novelty
+  pre-screen is mandatory before any "discovery" run (the lit-mining doc 07 now front-loads this).
+- **"Isolated criterion" ≠ "the guideline."** Full KDIGO 2012 = absolute OR relative; every "masked"
+  patient is relative-positive by construction, so full-guideline KDIGO misses NO ONE. Showing the
+  *absolute arm alone* fails is only meaningful for **isolated-absolute EHR auto-alerts** (real, since
+  point-of-care baseline for the ratio arm is often unavailable). Don't claim a guideline fails when
+  only one OR-arm does.
+- **Beware TAUTOLOGICAL robustness checks.** "Restrict to baseline ≥0.6 mg/dL" forces sensitivity to
+  1.0 for a (ratio≥1.5, abs≥0.3) pair regardless of sex (0.3/0.5=0.6) — so "the effect vanishes on
+  restriction" is arithmetic, not evidence. Always ask whether a robustness check is mathematically
+  forced before interpreting it.
+- **The effect can be real AND confined to a noise zone.** The entire sex disparity lives at baseline
+  <0.6 mg/dL, where a 1.5× rise (0.4→0.6) may be assay/physiologic noise; MIMIC has no cystatin C to
+  adjudicate true injury. Robust to baseline-def / RTM / draw-count, but this open limitation caps it
+  at a methods/quality LETTER, not a flagship.
+- **META: our idea-generation is well-calibrated to the literature.** The 4-venue NEJM/JAMA/Nature
+  sweep independently surfaced our OWN corrected-Ca flagship, the K+ two-method discordance, the KDIGO
+  creatinine idea, AND the cuff-MAP idea the red-team killed — evidence the template is on-target, and
+  that the wins/kills track what top journals consider important.
