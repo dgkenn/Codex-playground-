@@ -75,3 +75,12 @@ Running log of experiments + hostile-review verdicts. Status: PROVISIONAL (not g
 | 10a | **Chloride acid-base propagation/cancellation** (8,018 paired) | absolute Cl/Na bias −1.2/−1.1 (z≈−8.5) but AG/SID/Na−Cl bias +0.10 (z=0.65) — self-protected | Red-team SURVIVES: RTM correctly handled; AG>16 "residual" is case-mix not bias; null underpowered (CI −0.21..+0.42); needs external rep | **WIN (tempered) — the "where bias matters vs cancels" map** |
 | 10b | **Chloride prognostic misclassification** (4,010 paired) | false-hypochloremia Black 11.7% vs White 4.8% (Fisher p=0.0001); apparent hypochloremia gap vanishes at truth | Red-team SURVIVES at measurement level; harm framing overclaimed (mortality OR 2.77→1.28 adj; no CDS tool) | **WIN (measurement-classification disparity, not harm)** |
 | 10c | **Masked hyperchloremia & AKI** (fluid-type infeasible) | masked hyperchloremia Black 14.7% vs White 10.9% (z=3.34); no AKI harm at matched true Cl (adjOR 1.03) | acuity-confounded outcome; clean measurement signal | **partial / mechanism-only** |
+
+## Fluid-responsiveness program (scoping + first results)
+| # | Experiment | Result | Gate verdict | Status |
+|---|---|---|---|---|
+| 11a | **MIMIC fluid-response trait-vs-state** (5,612 boluses, 3,740 subj) | corrected response +1.46 mmHg (73% RTM); within-episode ICC 0.126, CROSS-ENCOUNTER ICC −0.046 (≈0); Frank-Starling fails; both NCs pass | rigorous null; novel framing (0 prior cross-encounter work) | **STATE-not-phenotype (de-hyping win); red-team pending** |
+| 11b | **VitalDB objective ΔSV-after-bolus label gate** | label VALID (pre-bolus SVV AUROC 0.814) but routine boluses not timestamped → only 15 FMS cases (n≈4 w/ ECG+pleth) | hybrid design adopted (train device-SVV 871, anchor on objective boluses) | **gate done; full model queued** |
+| 11c | VitalDB non-invasive SVV model (ECG-increment-over-PVI) | interrupted by session limit | — | **queued/resume** |
+| 11d | INSPIRE preop-labs → intraop instability | interrupted (labs downloaded) | — | **queued/resume** |
+| 11e | MIMIC objective SV-bolus label probe (PiCCO subset) | interrupted (extracting) | — | **queued/resume** |
