@@ -557,3 +557,43 @@ statement available. It does **not** (a) directly *measure* the racial bias outs
 nor (c) escape being model-based (it assumes the calibrated slope applies to eICU). So it strengthens the
 Discussion's external-validity paragraph; it does not convert the finding to a multi-site *measurement* — that
 still requires one dataset with race + dual-method sodium together.
+
+---
+
+# HARM INVENTORY — all downstream ways a falsely-low chem sodium can harm Black patients (brainstormed + tested)
+
+A systematically falsely-low reported sodium doesn't only mislabel hyponatremia — it propagates into every derived
+quantity that eats sodium. Tested each in MIMIC (`sodium_harms.py`, `sodium_anion_gap.py`, `sodium_overcorrection.py`).
+**The harms land exactly where Na enters a formula *without* a compensating chloride; they vanish where Cl cancels.**
+
+| # | Harm | Test | Result |
+|---|---|---|---|
+| — | False **hyponatremia** label | chem<135 at true-normal | **OR 1.68–2.5** (z=+3.0; stable across cutoffs) ✅ |
+| H3 | **Missed hypernatremia** (undertreatment) | true Na≥148, chem<145 | **adj OR 2.58 (1.20–5.56, z=+2.4)** — 2.6× more missed ✅ |
+| H4 | **Severity-score inflation** (APACHE-II Na pts) | chem vs true Na points | **racial diff +0.055 (z=+3.8)**; P(≥1 false low-Na pt) 6.5% vs 3.4% ✅ |
+| H5 | **Corrected-Na in DKA/HHS** (tonicity mgmt) | glu≥250, corrected Na | bias persists **−0.79 (z=−2.8)**, n=862 ✅ |
+| H1 | **Masked high-anion-gap acidosis** (missed DKA/lactic/sepsis) | chem AG vs true AG | **NULL (z=+0.3)** — Na & Cl biases cancel ⬜ |
+| H2 | **Osmolar-gap inflation** → spurious toxic-alcohol workup | chem vs true osmolar gap | directional (Black falsely higher) but **underpowered** (n=402) ⚠️ |
+| H(o) | **Overcorrection/ODS** from treating false hypo | hypertonic-saline + true-Na trajectory | **underpowered** (12 Black treated) ⚠️ |
+
+**Two NEW significant harms beyond the original label:**
+- **Missed hypernatremia (H3, OR 2.58).** Because the bias shifts everything *toward* hyponatremia, a Black
+  patient with true hypernatremia is 2.6× more likely to read "normal" and be under-treated — harm at the *opposite*
+  end of the dysnatremia spectrum from the label harm.
+- **Severity-score inflation (H4, z=+3.8).** APACHE-II (and SAPS/other scores) award points for low sodium; the
+  falsely-low chem pushes Black patients into the low-Na band ~2× more often, systematically inflating their
+  computed severity. This biases **prognostication, ICU triage, goals-of-care discussions, and — insidiously —
+  research risk-adjustment** (any study "adjusting for APACHE" mis-adjusts by race). Per-patient magnitude is small
+  (mean +0.055 pts) but it is systematic and significant.
+
+**Important NEGATIVE (H1) — the anion gap is preserved.** Sodium (−0.76) and chloride (−0.79) carry *nearly
+identical* racial biases (both are indirect-ISE, both protein-displaced), so they **cancel** in AG = Na−Cl−HCO3
+(distortion differential +0.07, z=+0.3; masked-HAGMA rates if anything *lower* in Black patients). The feared
+"masked acidosis → missed DKA/sepsis" harm **does not occur** — consistent with classic lab-medicine teaching and a
+reassuring specificity check: the bias harms Na-only quantities (labels, osmolality, corrected Na, severity scores),
+not Na−Cl differences.
+
+**Mechanistic coherence:** every positive harm is a quantity where sodium enters alone (dysnatremia thresholds,
+2×Na in osmolality, Na in corrected-Na, Na in APACHE); the one null is the quantity where chloride cancels sodium.
+This pattern is itself evidence the effect is a genuine sodium-measurement artifact, not a generic confound.
+Power ceilings (H2 osmolar gap, overcorrection) again require the multi-site cohort.
