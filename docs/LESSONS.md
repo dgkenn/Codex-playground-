@@ -469,3 +469,20 @@ cross-nationally-validated part.
 ## Cycle 9 — critical-care/anesthesia measurement-bias batch (5 ideas, MIMIC-IV in hand)
 - **DATA-QUALITY LESSON (SaO2/occult-hypoxemia):** MIMIC-IV labevents itemid **50817 "Oxygen Saturation" (Blood Gas) mixes ARTERIAL and VENOUS specimens** — the cached `lab_sao2.csv` has p25=70, p10=57 (a clear SvO2 ~60-75% cluster), so 36% "SaO2<88" is spurious venous contamination. Do NOT compute occult-hypoxemia magnitude from 50817. Clean arterial O2-sat is **chartevents itemid 220227 (Arterial O2 Saturation)** — re-extract before quantifying. The RACIAL DIRECTION still replicates through the noise (occult hypoxemia among SpO2 92-96: Black 51.3% vs White 41.8%, adj OR 1.47, z=+3.5 — consistent with Sjoding NEJM 2020), but magnitude + harm need the clean source.
 - **DESIGN LESSON (acuity confounding of "occult vs overt"):** contrasting occult (monitor reassuring, truth bad) vs overt (both bad) on mortality is fatally acuity-confounded — overt = actively decompensating, so occult looks spuriously PROTECTIVE (occult-hypoxemia mortality OR 0.30 vs overt, z=-11.0, reversed). The harm must be tested holding the TRUE value fixed (treatment-escalation/recognition at matched truth), not occult-vs-overt outcomes. This warning was propagated to all 4 sibling analyses (cuff/art MAP, MAP threshold, creatinine-AKI, glucose-shock).
+
+## Cycle 9 (red-team) — a METHOD lesson that killed the cuff-MAP finding
+- **Never bin/regress a difference (A−B) against one of its own components (B).** The cuff-MAP
+  "finding" binned discordance (cuff−art) by arterial MAP and reported +14.42 mmHg over-read at
+  MAP<55 with corr −0.645. Both are largely **regression-to-the-mean artifacts**: art appears with
+  a minus sign in the outcome, so low-art bins mechanically show positive discordance. Redone on the
+  **Bland-Altman x-axis mean(A,B)**: corr −0.645→−0.295, low-band bias +14.42→**+1.49 mmHg** (~10×
+  collapse). ALWAYS plot/bias-assess two-method discordance against the mean, not against one method.
+  (Protective note for the sodium/calcium work: those regress the *racial differential* in bias — a
+  difference-of-differences at matched true value — so RTM cancels across race arms; the race
+  coefficient is safe. Only per-true-value slopes would be affected.)
+- **Harm signals from "occult vs overt" reverse under a sustained/persistence filter.** Cuff under-
+  titration OR 0.822 (z=−4.19) → 1.14 (ns) once the low reading had to persist ≥1 prior reading —
+  transient/artifactual extremes drive the naive signal. Add a persistence filter before believing a
+  masked-measurement→treatment link.
+- **VERDICT: idea 2 (cuff-MAP) demoted to "known device behavior, no novel/causal claim."** Logged;
+  do not resurrect without a full-power sustained-hypotension design and a cuff-only (ward) cohort.

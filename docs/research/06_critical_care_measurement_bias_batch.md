@@ -12,7 +12,7 @@ preserved from the analysis logs.
 | # | Idea | Verdict | One-line result |
 |---|------|---------|-----------------|
 | 1 | Occult hypoxemia (SpO₂>SaO₂) by race → harm | **PARTIAL** | Racial direction replicates (occult OR 1.47); magnitude/harm **blocked** by arterial/venous SaO₂ contamination |
-| 2 | Cuff-vs-arterial MAP discordance → under-titration | **MECHANISM STRONG, harm modest** | Cuff over-reads +14 mmHg at MAP<55; occult hypotension 43% (male-skewed); clean under-titration OR 0.82 (z=−4.2) |
+| 2 | Cuff-vs-arterial MAP discordance → under-titration | **DEMOTED by red-team** | Headline +14 mmHg / −0.645 was largely a regression-to-the-mean binning artifact (Bland-Altman-correct ≈ +1.5 mmHg); harm reverses to null on sustained hypotension; what survives (range compression, high-MAP under-read) is *known* device behavior |
 | 3 | Personalized MAP floor for chronic HTN | **NULL / opposite** | Sub-65 harm interaction is significant in the *wrong* direction; "count<T" metric is a monotone artifact |
 | 4 | **Creatinine-masked AKI by muscle mass (sex)** | **WINNER** | KDIGO 0.3 absolute rule misses ~1/10 injured women vs ~1/40 men (OR 0.471, z=−10.4); male "AKI excess" is a definitional artifact (1.295→0.999) |
 | 5 | Blood-gas vs lab glucose discordance in shock | **WEAK / mostly NULL** | Discordance real (SD 16) but widens at *high* glucose; no mortality signal; central lab is the bigger misser (opposite of hypothesis) |
@@ -102,9 +102,30 @@ sex-specific creatinine criteria (cf. sex-specific troponin, the eGFR debate).
 
 ---
 
-## Idea 2 (SOLID MECHANISM) — Oscillometric cuff MAP over-reads at low pressure → vasopressor under-titration
+## Idea 2 (DEMOTED by hostile red-team) — Oscillometric cuff MAP discordance
 
-**Cohort.** BLACK/WHITE MIMIC-IV admissions; arterial MAP (truth) paired to nearest cuff
+> **Red-team verdict (independent re-run, `verify_attacks.py`): the novel claims do NOT
+> survive.** Two attacks land:
+> 1. **Regression-to-the-mean binning artifact (SERIOUS).** The headline table below bins the
+>    difference `disc = cuff − art` by `art` — one of its own components — which mechanically
+>    inflates the low-band mean. Redone on the Bland-Altman-correct x-axis `mean(art,cuff)`:
+>    correlation **−0.645 → −0.295**, and the low-band bias **+14.42 → +1.49 mmHg** (a ~10×
+>    collapse). Only the high-MAP under-read is comparatively robust (−16.43 → −12.14).
+> 2. **Harm reverses (SERIOUS).** Restricting the under-titration test to *sustained*
+>    hypotension (prior arterial reading also <65 within 10 min) flips **OR 0.822 (z=−4.19) →
+>    1.14 (z=+0.84, ns)** — consistent with clinicians correctly ignoring transient/artifactual
+>    low readings (underpowered subsample, 10% of pairs, so not dispositive but shifts the burden).
+> 3. **Untestable population (SERIOUS).** Only 5.7% of admissions ever have an arterial line —
+>    the sickest, and precisely the group where the true MAP *is* visible, so the "cuff masks
+>    hypotension on the ward" story cannot be observed here, only inferred by analogy.
+> 4. **Not novel.** What survives — cuff compresses dynamic range (Var(cuff)≈0.6×Var(art)) and
+>    under-reads at high true MAP — is decades-old validated-device behavior.
+>
+> **Net: idea 2 is not a defensible novel finding.** Retained below for the record with the
+> caveats inline. The genuine methodological lesson (bin differences by the Bland-Altman mean,
+> never by a component) is logged in `../LESSONS.md`.
+
+**Cohort.** BLACK/WHITE MIMIC-IV admissions; arterial MAP paired to nearest cuff
 MAP within ±5 min → **232,656 pairs**.
 
 **Mechanism (unambiguous).** cuff − arterial discordance by true arterial band:
@@ -117,17 +138,18 @@ MAP within ±5 min → **232,656 pairs**.
 | 75–90 | 70,571 | −5.06 |
 | >90 | 52,716 | −16.43 |
 
-corr(arterial, discordance) = **−0.645** — classic oscillometric regression-to-the-mean:
-cuff over-reads at low pressure (the falsely-reassuring direction), under-reads at high.
+corr(arterial, discordance) = **−0.645** — **but see red-team box: binning `disc` by `art`
+inflates this; the Bland-Altman-correct correlation is −0.295 and the low-band bias ≈ +1.5 mmHg,
+not +14.** Only the high-MAP under-read is robust.
 
 **Occult hypotension** (arterial <65 but cuff ≥65): **20,139/46,829 = 43.0%** masked;
 **male-skewed** (M 47.6% vs F 35.6%; race BLACK 45.0% vs WHITE 42.7%, underpowered).
 *(BMI/obesity subgroup unavailable — no height field in MIMIC to compute BMI.)*
 
-**Clean harm signal (holds true MAP fixed).** Among arterial-<65 pairs, adjusted
-`treated ~ occult + arterialMAP` (cluster-robust): **occult OR 0.822, z=−4.19** — at matched
-true arterial MAP, falsely-reassuring-cuff patients are ~18% less likely to be on/started
-a pressor within 60 min.
+**Harm signal (does NOT survive).** Among arterial-<65 pairs, adjusted
+`treated ~ occult + arterialMAP` (cluster-robust): occult OR 0.822, z=−4.19 in the naive test —
+**but this reverses to OR 1.14 (z=+0.84, ns) when restricted to sustained hypotension** (red-team
+attack 2), consistent with clinicians ignoring transient/artifactual low arterial readings.
 
 **Honest limits.** AKI/mortality vs occult exposure run *protective* (OR 0.79/0.70) —
 acuity-confounded (overt = both-low = crashing), not adjustable here; not a harm claim.
