@@ -692,3 +692,52 @@ evidence this is a genuine protein-interference bias, not confounding.
   electrolyte/calcium measurement as *systematically racially biased at the population level* by immunoglobulins,
   nor that reported racial dysnatremia disparities may be **partly a measurement artifact**, nor the coordinated
   panel-wide bias. That synthesis + the calcium/chloride extensions appear unpublished.
+
+---
+
+# LITERATURE MAP + GENUINELY NOVEL DIRECTIONS (panel-wide protein-interference)
+
+## What is already described (so we don't over-claim)
+- **Panel-wide electrolyte exclusion (Na, K, Cl) on indirect ISE:** KNOWN. ~0.8 mmol/L Na per g/dL total protein
+  is published (matches our slope); studied in **hyperproteinemia/myeloma extremes**, and Cl/K deemed "rarely
+  clinically significant" ([J Lab Physicians](https://jlabphy.org/discrepancies-in-electrolyte-measurements-by-direct-and-indirect-ion-selective-electrodes-due-to-interferences-by-proteins-and-lipids/);
+  [paraproteins & electrolyte assays 2023](https://pubmed.ncbi.nlm.nih.gov/37114525/)).
+- **Pseudohypercalcemia from globulin; albumin-correction fails:** KNOWN — but **only in paraproteinemia/monoclonal
+  gammopathy** ([Frontiers 2024](https://www.frontiersin.org/journals/oncology/articles/10.3389/fonc.2024.1441851/full);
+  [paraprotein cohort 2025](https://pmc.ncbi.nlm.nih.gov/articles/PMC12608535/)). The literature states plainly: *"the
+  effect of globulin on calcium has not received enough attention... because of the few diseases that can cause large
+  fluctuations in globulin."*
+- **Racial globulin/Ig differences & race-specific reference intervals:** KNOWN — but the reference-interval work
+  treats the values as *true* (the normal range differs), NOT as **causing measurement error in other analytes**
+  ([racial/ethnic reference intervals](https://pubmed.ncbi.nlm.nih.gov/26468426/)).
+
+## The genuine white space (what is NOT described)
+The entire globulin-interference literature is confined to **rare extreme disease** and treats it as a curiosity.
+**Nobody has shown that NORMAL, population-level, race-associated globulin variation (~0.5 g/dL) produces a
+systematic, ubiquitous, racially-structured measurement bias across the routine panel in the GENERAL population** —
+nor connected it to the race-based reference-range debate, nor shown the correction formulas are racially
+miscalibrated. Calcium mechanism confirmed here: total-Ca excess over ionized tracks total protein +0.30 mg/dL per
+g/dL (z=+9.5). The reframe from "rare myeloma artifact" → "population-scale racial measurement bias" is the novelty.
+
+## Genuinely novel directions (ranked)
+1. **Corrected-calcium is racially miscalibrated (the strongest standalone, eGFR-analog INVERTED).** The universal
+   albumin-corrected-calcium formula (in every EHR) omits globulin, so it systematically over-reads calcium in
+   higher-globulin (non-white) patients → **masked hypocalcemia** (shown: 20.9% vs 16.5%, survives albumin
+   correction z=+7.3). Unlike eGFR (remove a race term), here the formula is blind to a race-associated variable.
+   Fix = ionized calcium or a globulin-inclusive correction. Actionable, equity-framed, well-powered.
+2. **Population-scale reframe of a "rare-disease" artifact.** Recontextualize globulin interference from a
+   paraproteinemia footnote into a population health-equity phenomenon spanning the most-ordered labs.
+3. **Coordinated, directionally-coherent panel bias** (Na↓, Cl↓, Ca↑) from one mechanism — the coherence is the
+   proof it is real, not confounding.
+4. **Existing racial-disparity epidemiology may be partly artifactual.** Reports of higher hyponatremia/hypocalcemia
+   burden in Black patients (treated as real disease) could be partly *measurement* artifact — a provocative
+   correction to a body of literature.
+5. **Upstream biology / screening.** Baseline polyclonal Ig links to the 2–3× **myeloma/MGUS** excess in Black
+   patients; whether baseline Ig improves risk-stratified screening is an NEJM-scale question.
+6. **Method-forward de-implementation.** The constructive equity message: measure the *physiologically active*
+   quantity directly (direct-ISE Na/Cl, ionized Ca, free drug levels) rather than inferring it through a
+   protein-confounded total — a fix at the instrument, not the patient's race.
+
+**Cause of the upstream disparity (for framing):** the higher immunoglobulins are **genetic** (IGHG2/IGHG3 gene
+diversity; the Duffy-null allele as a determinant of systemic immune-marker levels) **and environmental** (chronic
+immune activation / infectious-disease burden) — established across 50+ years.
