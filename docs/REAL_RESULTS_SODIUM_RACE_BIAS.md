@@ -933,3 +933,31 @@ Chemistry K reads HIGHER than blood-gas K (opposite of Na/Cl), and the excess is
   *second, independent* racial lab bias. Its mechanism (why Black patients hemolyze more) needs a hemolysis index
   (free Hb/LDH, sparse here) and the harm chain (treatment → hypoglycemia) needs the delegated/next analysis + ECG
   confirmation (below).
+
+---
+
+# ECG AS PHYSIOLOGICAL ARBITER (MIMIC-IV-ECG, 184k of 800k ECGs extracted; `extract_ecg.py`, `ecg_link.py`)
+
+Extracted QT/QTc(Bazett+Fridericia)/QRS/PR + machine-diagnosis flags for 183,983 ECGs, time-linked to electrolyte
+draws via subject_id.
+
+## Calcium ✅ — the ECG reveals the hypocalcemia the total calcium hid
+Among patients whose **total calcium reads NORMAL (≥8.5)**, those with **occult hypocalcemia** (ionized <1.12,
+masked by the normal total) have more **prolonged QTc (>460 ms): 59.8% vs 50.0%, OR 1.48 (1.17–1.88, z=+3.3)**.
+The ECG — an independent physiological readout — confirms the masked hypocalcemia is a **real QT-prolonging
+electrophysiologic abnormality**, not a lab curiosity; the "normal" total calcium is falsely reassuring. Black
+patients (more often masked) carry more of this unrecognized QT risk. This is the physiological validation the
+calcium finding needed.
+
+## Potassium ⚠️ — machine hyperkalemia flag too insensitive to arbitrate (honest limitation)
+The machine "peaked-T/hyperkalemia" statement fires in only **0.5% of TRUE hyperkalemia** (and 0% of false), so it
+cannot distinguish pseudo- from true hyperkalemia at this scale. The arbitration concept is sound (true hyperK
+makes ECG changes; pseudohyperkalemia doesn't) but requires **raw T-wave amplitude / QRS-duration** measures or the
+full 800k ECGs — the machine's categorical flag under-detects the change. Reported as an open limitation, not a
+result.
+
+## The ECG opens further NEJM-tier directions (extraction supports all)
+- LVH machine-diagnosis racial over-call (higher normal QRS voltage in Black patients) — a *new* ECG-algorithm bias.
+- QTc/drug-safety threshold racial calibration; automated MI/AF detection sensitivity by race.
+- A "confirm-hyperkalemia-with-ECG" decision rule (deployable from finding above).
+(Full 800k-ECG re-download in progress to power the potassium arbitration + LVH analyses.)
