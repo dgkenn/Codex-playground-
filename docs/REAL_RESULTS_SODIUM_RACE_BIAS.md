@@ -509,3 +509,51 @@ the SAME multi-site data as the racial replication**, plus a *clean overcorrecti
 actually **treated** for the (false) hyponatremia and track the **blood-gas (true) sodium trajectory** to a hard
 >8–10 mEq/L/24h threshold — which needs many-hospital power the single center cannot provide. The honest standing is
 unchanged: **misclassification is demonstrated; downstream care/outcome harm is not** (and is not salvageable here).
+
+---
+
+# FOLLOW-UP: clean overcorrection design + a transportability workaround for eICU/SICdb
+
+## (A) Clean overcorrection design (treated patients, true-Na trajectory) — correct method, fatally underpowered
+Per the design that would break the RTM confound (`sodium_overcorrection.py`): cohort = patients actually given
+**hypertonic saline** (hyper3/hyper234 = treated-for-hyponatremia); trajectory = **blood-gas (true) sodium**;
+endpoint = true-Na rise >8/>10 mEq/L per 24h; matched on true baseline tonicity.
+- **n = 159 treated with a blood-gas trajectory — only 12 Black** (8 with true baseline <135). The Black arm has
+  **1 overcorrection event.** No estimate is possible (adj OR 0.20, CI 0.03–1.19 — meaningless at n=12).
+- One interpretable *descriptive*, consistent with the mechanism: at treatment, Black patients' chem sat **−0.88**
+  vs true baseline while White patients' sat **+1.72** — i.e., Black patients were treated off a relatively lower
+  reported sodium. But the overcorrection endpoint itself is uncomputable here.
+- **Conclusion:** the design is right; single-center MIMIC cannot execute it (hypertonic saline is rare × blood-gas
+  trajectory coverage × Black minority → n=12). This is a hard power wall — it requires the multi-site cohort.
+
+## (B) Transportability workaround for eICU/SICdb (the "clever way around") — genuine, but bounded
+A direct racial replication is structurally impossible (eICU has race but no 2nd sodium method; SICdb has both
+methods but no race). The honest workaround is to confirm the finding's two *necessary ingredients* independently
+outside MIMIC, then transport:
+
+**1. The physics (protein→bias slope) — replicated in 3 datasets / 3 systems (meta-analysis).**
+| dataset | method | slope (mEq/L per g/dL) | z |
+|---|---|---|---|
+| MIMIC (US) | true dual-method | −0.90 | −6.4 |
+| SICdb (Austria) | true dual-method | −0.843 | −28.6 |
+| eICU (US) | osm-reconstruction (noisier) | −0.391 | −4.1 |
+| **fixed-effect pooled** | | **−0.807** | **−29.2** |
+MIMIC and SICdb (both *true* dual-method) agree closely (−0.90, −0.84); eICU is attenuated exactly as expected for
+its noisier osm reference (regression dilution; heterogeneity Q=21). The indirect-ISE protein artifact is universal.
+
+**2. The premise (Black patients → higher globulins) — independently confirmed in eICU's 208 US hospitals.**
+Total protein: WHITE 5.97 vs BLACK **6.33**, BLACK−WHITE **+0.36 (z=+66)**, n=372k; **albumin identical** (−0.009)
+→ the difference is **globulin-specific**, exactly what the indirect-ISE mechanism requires — and it is *not* a
+MIMIC idiosyncrasy (matches MIMIC's +0.59).
+
+**3. Transport:** eICU protein gap (+0.36 g/dL) × calibrated slope (−0.85) ⇒ a predicted **protein-mediated racial
+bias of ≈ −0.31 mEq/L** in eICU chemistry sodium — i.e., the disparity's *mechanistic component necessarily
+operates* in a second US multi-hospital population, even though eICU cannot measure it directly.
+
+**What this buys and what it does NOT.** It elevates external validity from "one hospital" to "**universal physics
+(3 datasets) + the race-protein premise confirmed in a second US 208-hospital cohort**" — the strongest honest
+statement available. It does **not** (a) directly *measure* the racial bias outside MIMIC (impossible without a
+2nd method + race together), nor (b) transport the ~half of the MIMIC differential that protein does *not* explain,
+nor (c) escape being model-based (it assumes the calibrated slope applies to eICU). So it strengthens the
+Discussion's external-validity paragraph; it does not convert the finding to a multi-site *measurement* — that
+still requires one dataset with race + dual-method sodium together.
