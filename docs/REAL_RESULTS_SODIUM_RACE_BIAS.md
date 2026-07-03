@@ -1,12 +1,12 @@
 # Racial bias in routine (indirect-ISE) sodium measurement — a mechanism-validated, single-center measurement-bias finding
 
-**Tier (post-two-rounds-of-hostile-review): a methods/equity research letter (JAMA Internal Medicine / Clinical
+**Tier (after four rounds of hostile review): a methods/equity research letter (JAMA Internal Medicine / Clinical
 Chemistry), NOT an NEJM/JAMA original article.** The *mechanism* (protein-driven indirect-ISE pseudohyponatremia)
 is cross-nationally and cross-reference validated; the *racial differential itself is single-center (MIMIC)* and
 cannot be externally replicated in public data; the demonstrated *consequence is differential misclassification,
 not treatment/outcome harm*; and the finding is *confirmatory of known physics*, not a surprise. The ~1 mEq/L
 magnitude is specific to one hospital's analyzer and does not generalize quantitatively across vendor algorithms —
-only the direction/mechanism does. These boundaries are load-bearing; see the two review-response sections below.
+only the direction/mechanism does. These boundaries are load-bearing; see the four review-response sections below.
 
 ## The finding
 Chemistry sodium (**indirect ISE** — the routinely-reported, clinically-acted-on value) reads differently from
@@ -59,7 +59,7 @@ Based on articles retrieved from PubMed, the racial-differential framing is **un
   reporting the analyzer reliable for Na/K with no racial analysis. The equity/patient-safety framing on sodium
   appears genuinely novel.
 
-## What was bulletproofed (final status after two review rounds; details in the review-response sections)
+## What was bulletproofed (final status after four review rounds; details in the review-response sections)
 1. **Mechanism** — protein→bias dose-response **solid & cross-nationally + cross-reference replicated** (MIMIC
    −0.90; SICdb −0.843 z=−28.6 monotone; vs independent osmolality −0.64). *But* measured protein explains only
    **~half** the racial differential and the within-sample mediation is underpowered (n=268, z=−1.6). Direction
@@ -75,7 +75,7 @@ Based on articles retrieved from PubMed, the racial-differential framing is **un
 
 ## Status
 Discovery + robustness + mechanism (cross-national, cross-reference) + adjusted misclassification consequence:
-done and stress-tested through **three rounds of hostile review** (see the review-response sections below).
+done and stress-tested through **four rounds of hostile review** (see the review-response sections below).
 Honest standing: a **mechanism-solid, single-center-race** measurement-bias finding. The racial bias is shown in
 MIMIC directly and against an independent osmolality reference; the mechanism replicates in SICdb; the
 misclassification consequence is adjusted and cutoff-robust. It is **not** an NEJM/JAMA original-article "winner"
@@ -184,19 +184,23 @@ units**, and does *not* rule out a hospital-wide analyzer/reagent effect. The an
 different instrument entirely).
 
 ## MULTI-SITE REPLICATION status
-- **eICU (208 hospitals) — NOT a replication; a directional, non-significant osmolality-fingerprint probe (CIs
-  cross zero).** Do not count eICU toward the replication tally. eICU records **no blood-gas sodium** (90k+ sodium rows all labtypeid=1 chemistry,
-  `eicu_na_types.py`), so the dual-method design cannot run directly. Workaround (`eicu_osm_analyze.py`):
-  **measured serum osmolality is protein-independent** (freezing-point depression), so it substitutes for the
-  missing reference — reconstruct `true_Na = (osm − glucose/18 − BUN/2.8)/2` and `bias = chem_Na − true_Na`, the
-  eICU analog of chem−bloodgas. On ~half the lab table (n=457 Caucasian+African-American pairs, only 48 Black):
-  - racial differential **−0.93 mEq/L** (Black chem sodium lower), **same sign as MIMIC (−1.18)** but z=−0.9;
-  - **protein dose-response slope −0.53 /g/dL (z=−1.3)** and albumin −0.64, **same negative sign as MIMIC (−0.90)
-    and SICdb (−0.84)** — the mechanism direction replicates a *third* time.
-  Both estimates point the predicted way; neither reaches significance because **serum osmolality is ordered in
-  only ~2% of stays** and the osm→Na reconstruction **doubles measurement noise**. This is a data-availability
-  power limit, not a contradicting result. (Full-lab-table re-stream in progress to firm up n; the race axis will
-  remain ~z−1.3 even at full n — the osmolality reference is intrinsically too noisy for a decisive race test.)
+- **eICU (208 hospitals) — the RACIAL differential does NOT replicate (sign-unstable); the protein MECHANISM does
+  (directionally).** eICU records **no blood-gas sodium** (all sodium labtypeid=1 chemistry, `eicu_na_types.py`), so
+  the dual-method design can't run; workaround uses measured osmolality as the reference (`eicu_osm_analyze.py`,
+  full lab table, **n=5,440** Caucasian+African-American pairs, 706 Black). **Corrected (Round-4 review — earlier
+  doc used a stale n=457 partial and a now-falsified prediction):**
+  - **Racial differential is specification-unstable and does NOT support the MIMIC result:** raw +0.26 (z=+1.1,
+    wrong sign); covariate-adjusted **+0.93 (z=+4.4, significant WRONG direction)**; only with **hospital fixed
+    effects** (35 sites ≥40 pairs) does it flip to the expected sign but go weak/ns: **−0.22 (z=−1.0)**. The raw
+    positive is a **between-hospital confound** — 208 sites with different chemistry analyzers whose calibration
+    offsets correlate with each site's racial composition; only within-analyzer (hospital-FE) comparison is
+    interpretable, and there the estimate is null. **eICU does not replicate the racial differential.** (This is
+    exactly why the clean test needs a *single-analyzer* setting — which MIMIC is, and which a 208-analyzer osm
+    reconstruction cannot be.)
+  - **Protein mechanism DOES replicate directionally:** bias∼total-protein slope **−0.39/g/dL (z=−4.1)**, same sign
+    as MIMIC (−0.90) and SICdb (−0.84), though weaker (osm-reconstruction noise). Albumin slope null (−0.07).
+  Net: eICU is **evidence against a clean eICU racial replication** (honest negative) and **weak support for the
+  mechanism**. It is not counted toward the racial-replication tally.
 - **SICdb (Salzburg, Austria) — MECHANISM REPLICATED cross-nationally (n=21,322 pairs).** SICdb separates the two
   methods: **Natrium (ZL)** = central-lab serum sodium (indirect ISE, id 469) vs **Natrium (BGA)** = blood-gas
   sodium (direct ISE, id 686), with well-covered serum total protein (id 294, 36% of pairs) (`sicdb_na_mech.py`).
@@ -328,8 +332,10 @@ within-sample racial **mediation** is n=268/z=−1.6 (suggestive). Fixed in the 
 generating**; not counted as evidence of harm. The demonstrable consequence is **differential misclassification**
 (false-hyponatremia label, robust across cutoffs), not a treatment/outcome harm — stated as such.
 
-**C4. eICU framed as supportive (chemist).** Reframed above: **not a replication**, a directional non-significant
-probe (CIs cross zero), not in the tally.
+**C4. eICU framed as supportive (chemist).** Reframed, then **corrected in Round 4** using the completed full-lab
+restream (see the MULTI-SITE section): eICU's racial differential is **specification-unstable and does not replicate**
+(wrong sign without hospital FE, null with it) — an honest negative, not "directional support"; only the protein
+mechanism weakly replicates (−0.39/g/dL, z=−4.1). Not in the racial-replication tally.
 
 **C5. Within-unit FE overstated (chemist).** Reframed above: controls case-mix across units, not a hospital-wide
 analyzer; the osmolality arbiter is the analyzer-independent check.
@@ -445,3 +451,32 @@ The surviving items are **scope/tier**, now honestly stated: mechanism solid & c
 robust but **single-center**; consequence = **misclassification, not outcome harm**; magnitude **analyzer-specific**.
 The finding **survives on the merits as a methods/equity research letter** — and does *not* survive as an NEJM/JAMA
 original article, which is the correct, defensible conclusion.
+
+---
+
+# ADVERSARIAL REVIEW — ROUND 4 (final acceptance gate — reviewer re-ran the code)
+
+The gate reviewer independently re-executed seven of the eight cited scripts against the real data and **every core
+MIMIC/SICdb number reproduced digit-for-digit** (osm arbiter −1.008/z=−9.3; disease-exclusion −1.287; SICdb
+−0.843/z=−28.6; IPW −1.137/z=−8.6; Hct/Hgb/cluster/cutoff all matched). No fabrication or code/claim mismatch on the
+load-bearing chain.
+
+**Verdict: SURVIVES at the methods/equity research-letter tier** — no additional flaw found in the core MIMIC+SICdb
+evidence. One **actionable correctness bug** flagged and now **fixed**:
+
+- **eICU section was stale and made a falsified prediction.** The doc said the restream was "in progress" (n=457) and
+  predicted "~z−1.3 even at full n." In fact the restream had **completed** (`eicu_osm_rows.csv`, 9.8M rows) and the
+  full-file analysis (n=5,440) shows the racial differential is **sign-unstable and does not replicate** (raw +0.26;
+  adjusted +0.93 *wrong direction*; hospital-FE −0.22 ns) — a between-hospital-analyzer confound. The prediction was
+  wrong; the honest result is a **negative** for eICU racial replication (with weak protein-mechanism support,
+  −0.39/g/dL z=−4.1). **Fixed** in the MULTI-SITE section and C4 above. This *strengthens* the paper's honesty: the
+  clean racial test requires a single-analyzer setting (MIMIC), which a 208-analyzer osmolality reconstruction is not.
+- Structural ceilings re-confirmed by direct inspection: SICdb `cases.csv.gz` has **no race field** (verified header);
+  mannitol/subclinical-globulin unfixable. Single-center race axis is genuinely structural.
+
+**Net across four rounds:** the core finding — single-center MIMIC racial differential in indirect-ISE sodium, robust
+to every confounder/selection/clustering/cutoff/matrix test, mechanistically replicated in SICdb and against an
+independent osmolality reference, with an adjusted misclassification consequence — **survived four rounds of hostile
+review including two independent code re-executions**. The eICU racial result was corrected to an honest negative. The
+finding stands at **research-letter tier**; it is **not** an NEJM/JAMA original (single-center race, misclassification-
+not-outcome harm, analyzer-specific magnitude) — the correct, defensible conclusion.

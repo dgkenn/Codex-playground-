@@ -448,3 +448,20 @@ META: the paired-measurement toolkit's publication-grade output is not a causal 
 finding — racial pseudohyponatremia from routine indirect-ISE sodium, mechanism cross-nationally confirmed. The
 causal-IV program's negative results (power wall) and this positive measurement-bias result are the same data
 viewed two ways; the measurement-bias framing is what clears the impact bar.
+
+## Sodium finding survived 4 rounds of hostile review — and a review CAUGHT a stale eICU overclaim
+The racial indirect-ISE sodium bias was stress-tested through 4 adversarial rounds (2 with independent code
+re-execution by hostile referees). Every core MIMIC/SICdb number reproduced digit-for-digit; all FATAL-flagged
+attacks (asserted-reference, SICdb-inversion, Hgb-specificity, disease-confounding, glucose/BUN-arbiter, selection)
+were answered with data. KEY CORRECTION a referee caught: the eICU osmolality-fingerprint restream had COMPLETED
+(9.8M rows) while I worked elsewhere; I'd left the section as "in progress (n=457)" with a prediction "~z-1.3 even
+at full n". The full file (n=5,440) FALSIFIED it: the eICU racial differential is sign-unstable (raw +0.26; adjusted
++0.93 WRONG direction; hospital-FE -0.22 ns) -> a between-hospital-analyzer confound, NOT a replication. Only the
+protein MECHANISM replicates in eICU (dose-response -0.39/g/dL, z=-4.1). LESSON: (1) always re-run analyses on
+completed background streams before writing conclusions - a stale partial + a confident prediction is exactly what a
+reviewer with public-data access reproduces in minutes; (2) a racial measurement-bias test needs a SINGLE-analyzer
+setting - a 208-hospital osm reconstruction is confounded by site calibration x racial composition, which is WHY the
+clean signal lives in single-center MIMIC and cannot be externally replicated in public data (structural ceiling).
+Honest tier after review: methods/equity research letter, NOT NEJM/JAMA original (single-center race, misclassification-
+not-outcome harm, analyzer-specific magnitude). The mechanism (protein-driven pseudohyponatremia) is the durable,
+cross-nationally-validated part.
