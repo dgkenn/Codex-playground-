@@ -1003,3 +1003,27 @@ events *lack* the electrophysiologic changes of true hyperkalemia → the ECG su
 (pseudohyperkalemia). Separation is modest, as the literature predicts (ECG is intrinsically insensitive to
 hyperkalemia, especially chronic/CKD — [LITFL](https://litfl.com/hyperkalaemia-ecg-library/)); full-800k re-run and
 raw T-wave amplitude would sharpen it. Honest: partial physiological corroboration, not a decisive arbiter.
+
+## eICU EXTERNAL VALIDATION of the calcium bias (129 hospitals) — core finding replicates
+Delegated analysis (`eicu_calcium_replication.py`, n=62,388 pairs, 21,275 patients, 129 hospitals; a unit-scale
+inconsistency in eICU ionized Ca was resolved and shown not to fabricate the effect):
+- **Measurement bias REPLICATES:** total Ca ~ BLACK + ionized → naive +0.236 (z=8.1); **hospital-fixed-effects
+  +0.092 (z=3.30, p<0.001)** — same sign as MIMIC, ~40–60% of the magnitude after removing between-hospital
+  confounding, robust across pairing windows. Multi-site racial replication confirmed.
+- **Masked hypocalcemia REPLICATES:** Black 22.7% vs White 13.2% (hospital-FE-adjusted +3.0 pp, z=2.1).
+- **Mortality outcome does NOT replicate** (masked → mortality OR 0.87, p=0.13, wrong direction) — honest negative,
+  consistent with MIMIC where mortality attenuated on disease-exclusion; the *clean* MIMIC outcome was arrhythmia
+  (via ECG-QTc), which eICU cannot test (no ECG). So the measurement bias is multi-site; the outcome harm remains
+  MIMIC-only and not externally confirmed.
+
+## Citrate/CRRT sensitivity (calcium) — not the driver
+Excluding dialysis/CRRT/ESRD patients (citrate-anticoagulation proxy), the total-Ca racial bias holds at +0.129
+(z=+9.3, n=23,622) — citrate chelation is not driving it (and the total-protein dose-response, z=+9.5, is
+citrate-independent).
+
+## Corrected-calcium formula — precise claim
+The albumin-corrected-calcium formula misses true (ionized) hypocalcemia in ~40% of ICU patients — but **not
+differentially by race** in the binary sense (40.9% White vs 38.8% Black among "corrected-normal"). The racial
+miscalibration is in the **continuous** value (corrected Ca reads +0.15 mg/dL higher at matched ionized, z=+7.3
+— it omits globulin), not a differential binary miss-rate. State it as continuous bias, not "the formula misses
+more hypocalcemia in Black patients."
