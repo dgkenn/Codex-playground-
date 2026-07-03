@@ -27,10 +27,21 @@ glucose/bicarbonate show no racial differential (specificity — argues against 
   (protein + lipid); higher plasma protein → larger pseudo-dysnatremia artifact. Black populations have
   documented higher total protein/globulins → predicted smaller positive chem−bloodgas gap. Matches the data.
 
-## Novelty (PubMed)
-Blood-gas-vs-lab-ISE sodium method-comparison studies exist (e.g. a 2026 critical-care agreement study finding
-the ABG analyzer reliable for Na/K, DOI 10.1155/bmri/9203768), but **none report a racial differential** in that
-bias. The equity/patient-safety framing appears unpublished. (Per articles retrieved from PubMed.)
+## Novelty (PubMed — targeted re-verification)
+Based on articles retrieved from PubMed, the racial-differential framing is **unpublished**:
+- `pseudohyponatremia AND (race OR racial OR Black OR ethnic OR disparity)` → **1 hit**, an unrelated forensic
+  case report ([DOI](https://doi.org/10.1097/PAF.0000000000000829)). No race×pseudohyponatremia study exists.
+- `(indirect/direct ISE OR ion-selective electrode) AND sodium AND (racial/ethnic/disparity/Black)` → 9 hits, all
+  sensor-fabrication or analyzer method-comparison papers; **none examine race**. The two topically closest:
+  a Chinese Han indirect-vs-direct-ISE method comparison (establishes the two methods differ, single ethnicity,
+  no cross-race analysis; [DOI](https://doi.org/10.1002/jcla.21755)) and a paper using the *indirect−direct ISE
+  sodium disparity* as a flag for citrate contamination in hypernatremia (recognizes the disparity as a signal,
+  but for contamination, not race; [DOI](https://doi.org/10.1515/cclm-2024-1389)).
+- The broad "racial bias in a clinical measurement" literature (pulse oximetry, eGFR race coefficient, PFTs) is
+  large (~889 hits) but **does not include sodium / ISE** — this finding would extend that patient-safety canon
+  to the most-ordered electrolyte. Earlier scan also noted a 2026 ABG-agreement study (DOI 10.1155/bmri/9203768)
+  reporting the analyzer reliable for Na/K with no racial analysis. The equity/patient-safety framing on sodium
+  appears genuinely novel.
 
 ## What must be bulletproofed (the paper stands or falls on these)
 1. **Mechanism** — ✅ **DONE.** Graded protein→bias dose-response (MIMIC −0.90 z=−6.4; SICdb −0.843 z=−28.6,
