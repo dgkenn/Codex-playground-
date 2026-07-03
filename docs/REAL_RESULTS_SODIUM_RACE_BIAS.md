@@ -986,3 +986,20 @@ the corrected-calcium formula (albumin-only) fails to unmask it.
 **Honest caveats:** observational; QTc is multi-causal (drugs/ischemia/other electrolytes); arrhythmia/arrest are
 admission-level ICD (temporality imperfect); occult-hypocalcemia n=292 is modest. The full 800k-ECG re-download
 (in progress, ~470k rows so far) will firm up power and enable strict QTc-after-draw temporality.
+
+## Full-power + STRICT TEMPORALITY (800k ECGs, ECG measured AFTER the Ca draw) — chain strengthens
+Re-run on the complete 800,036-ECG MIMIC-IV-ECG set, requiring the ECG to be *after* the calcium draw (0–48h):
+- **Occult hypocalcemia (normal total, low ionized) → SUBSEQUENT prolonged QTc>460: OR 1.62 (1.37–1.91, z=+5.7)**,
+  n=7,913 — the masked draw provably *precedes* the QT prolongation (temporality established), and it is **unchanged
+  by potassium adjustment** (OR 1.62), so not a hypokalemia confound. (60.8% vs 48.9% subsequent prolonged QTc.)
+- **Prolonged QTc → ventricular arrhythmia/cardiac arrest: OR 2.27 (1.97–2.62, z=+11.3, 978 events)**; → mortality
+  OR 1.34 (z=+4.9). Well-powered.
+The temporality caveat is now addressed: masked calcium precedes unrecognized QT prolongation precedes arrhythmia.
+
+## Potassium quantitative ECG signature (`potassium_ecg.py`-style, 184k ECGs) — directional arbitration
+True hyperkalemia shows more of the measurable hyperK ECG signature than false hyperkalemia: wide-QRS>110 27.4% vs
+17.6%, long-PR>200 13.5% vs 7.7%, **P-wave loss 24.5% vs 8.8%**, shorter QTc (446 vs 452). So false-hyperkalemia
+events *lack* the electrophysiologic changes of true hyperkalemia → the ECG supports they are spurious
+(pseudohyperkalemia). Separation is modest, as the literature predicts (ECG is intrinsically insensitive to
+hyperkalemia, especially chronic/CKD — [LITFL](https://litfl.com/hyperkalaemia-ecg-library/)); full-800k re-run and
+raw T-wave amplitude would sharpen it. Honest: partial physiological corroboration, not a decisive arbiter.
