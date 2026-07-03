@@ -9,8 +9,13 @@ magnitude is specific to one hospital's analyzer and does not generalize quantit
 only the direction/mechanism does. These boundaries are load-bearing; see the two review-response sections below.
 
 ## The finding
-Chemistry sodium (**indirect ISE** — the routinely-reported, clinically-acted-on value) is biased relative to
-blood-gas sodium (**direct ISE** — protein-independent, the accurate reference), and **the bias differs by race**:
+Chemistry sodium (**indirect ISE** — the routinely-reported, clinically-acted-on value) reads differently from
+blood-gas sodium (**direct ISE** — protein-*independent*), and **the discordance differs by race**. *Framing note
+(post-review): the claim does NOT require blood-gas to be the "gold standard" — in fact chemistry is marginally
+closer to measured osmolality than blood-gas is (see arbiter, |chem−osmNa| 2.87 vs |bg−osmNa| 3.25, n=396). The
+claim is that **chemistry (indirect ISE) carries a protein-correlated racial bias**, shown relative to **two
+independent comparators (blood-gas AND measured osmolality)**, with the **protein dose-response identifying the
+indirect-ISE method as the protein-sensitive one** — no truth-hierarchy needed.*
 
 | group | chem − bloodgas Na bias (mEq/L) | n (pairs, ≤1h) |
 |---|---|---|
@@ -70,7 +75,7 @@ Based on articles retrieved from PubMed, the racial-differential framing is **un
 
 ## Status
 Discovery + robustness + mechanism (cross-national, cross-reference) + adjusted misclassification consequence:
-done and stress-tested through **two rounds of hostile review** (see the two review-response sections below).
+done and stress-tested through **three rounds of hostile review** (see the review-response sections below).
 Honest standing: a **mechanism-solid, single-center-race** measurement-bias finding. The racial bias is shown in
 MIMIC directly and against an independent osmolality reference; the mechanism replicates in SICdb; the
 misclassification consequence is adjusted and cutoff-robust. It is **not** an NEJM/JAMA original-article "winner"
@@ -108,18 +113,18 @@ Restricting to **truly-normal sodium (blood-gas 135–142, n=5,951)** so any che
 The **false-hyponatremia label is robust to adjustment** (OR 1.68, z=+3.0) — the measurement harm is real and not
 explained by measured case-mix. The downstream **overtreatment** signal (hypertonic saline given at a truly-normal
 sodium) is **directionally consistent (2.9× crude)** but **underpowered** — only 21 events in one ICU — so it is
-reported as suggestive, not confirmatory. This mirrors Sjoding: the *measurement discordance and differential
-misclassification* is the demonstrable NEJM-class contribution; the ultimate treatment/outcome harm is the
-plausible, directionally-supported consequence that scales with sodium being among the most-ordered labs in
-medicine.
+reported as suggestive, not confirmatory. The **demonstrable contribution is the differential misclassification**;
+the treatment/outcome harm is not shown (see the review-response sections — the hypertonic-saline number is
+hypothesis-generating only).
 
-## Verdict / status
-Strong, robust, apparently-novel patient-safety/equity lead with a clear consequence. **Remaining to make it
-bulletproof-for-NEJM:** (1) nail the mechanism (stream total protein/globulin; show it mediates the racial
-differential); (2) rule out arterial-venous confound (source-matched sensitivity); (3) **replicate in eICU**
-(race + chem-Na + blood-gas-Na, 208 hospitals) — multi-site is decisive; (4) formalize the consequence with
-adjusted models (differential dysnatremia treatment by race at matched true Na). This is the best available-data
-JAMA/NEJM swing found — observational, no causal instrument, dodges every power wall.
+## Verdict / status (see the two review-response sections below for the final, hardened position)
+An apparently-novel measurement-bias lead whose **mechanism** is cross-nationally + cross-reference validated but
+whose **racial differential is single-center** and whose **harm is misclassification, not outcome**. The four items
+this earlier note called "remaining" were addressed: (1) mechanism dose-response run (strong direction; within-
+sample mediation underpowered, ~half the racial gap explained); (2) A–V/reference confound handled via the
+osmolality arbiter, not the weaker glucose-specificity argument; (3) eICU cannot replicate (no blood-gas Na) — it
+is a directional non-significant probe, not multi-site confirmation; (4) consequence formalized (misclassification
+robust; treatment demoted). **Honest tier: a methods/equity research letter, not an NEJM/JAMA original article.**
 
 ## CONFOUNDER STRESS-TEST (per reviewer-grade skepticism) — the finding SURVIVES
 Enumerated everything affecting the chem(indirect-ISE)↔blood-gas(direct-ISE) sodium discordance and tested each.
@@ -164,7 +169,11 @@ mean total protein **6.42 (BLACK) vs 5.83 (WHITE) g/dL**; mean globulin gap **3.
 Complete-case (n=268), adding total protein shrinks BLACK −1.24 → −0.74 (55% attenuation; **underpowered at
 n=268, z=−1.6** — direction right, significance not reached, so this within-sample mediation is *suggestive*).
 The load-bearing evidence is the **dose-response slope itself** (graded, monotone, cross-nationally and
-cross-reference replicated), not the n=268 mediation coefficient.
+cross-reference replicated), not the n=268 mediation coefficient. **MNAR caveat (Round-3 review):** total protein
+is a *clinically-selected* test — the 268 TP-measured pairs are sicker (mean creatinine 2.11 vs 1.47) and enriched
+for globulin-workup pathology. So the MIMIC dose-response subsample is not representative; its *direction* is
+corroborated by the representative, well-powered SICdb dose-response (36% coverage, n=7,726), but the MIMIC
+*magnitude* should not be read as the whole-cohort mediation.
 
 ## WITHIN-CARE-UNIT ROBUSTNESS — rules out case-mix-across-units, NOT a hospital-wide analyzer
 Adding **first-care-unit fixed effects** (`sodium_mech_robust.py`): BLACK survives at **−0.62 (z=−6.9)**,
@@ -389,3 +398,49 @@ the SICdb slope's significance stand in for the mediation claim (now fixed in th
 (2) state the mediation ~50% gap prominently — DONE; (3) state analyzer/site magnitude boundary — DONE (intro);
 (4) keep hypertonic-saline out of the headline — DONE (demoted Round 1); (5) severity-adjusted IPW on entry — DONE
 (R2-b above).
+
+---
+
+# ADVERSARIAL REVIEW — ROUND 3 (returning "break-the-rebuttals" referee, re-ran the code)
+
+The referee re-executed `mimic_osm_arbiter.py`, `sodium_disease_confound.py`, `sodium_matrix_hct.py` and wrote its
+own extensions. Outcome: **the statistical/mechanistic rebuttals held on independent re-testing**; the residual
+hits are framing/scope, now fixed.
+
+## What the referee CONFIRMED holds (independently re-derived)
+- **Glucose/BUN contamination of the osmolality arbiter — REFUTED** (matches our `mimic_osm_robust.py`): normoglycemic
+  bands −1.03…−1.15, glucose-divisor sensitivity 1/16–1/25 → −0.92…−1.20, alcohol/DKA exclusion −0.86 (z=−8.7); all
+  highly significant. Only **mannitol** (non-ICD-codeable) remains untestable — noted as a minor open gap.
+- **Cluster-robust/patient-collapsed SEs** (z −11.5…−12.1), **cutoff sweep** (OR 2.22–2.87, z>4 across 133–138),
+  **Hgb-discordance adjustment** (−1.27, z=−7.1), and the **SICdb-inversion logic** (random BGA noise causes
+  regression dilution, not a manufactured monotone slope) — all sound. This line of attack is dropped.
+
+## New hits — ADDRESSED (framing/scope)
+- **The "blood-gas = gold standard" narrative is contradicted by the arbiter's own accuracy arm** (|chem−osmNa| 2.87
+  < |bg−osmNa| 3.25 on n=396). Fixed: the finding is **reframed to need no truth-hierarchy** — chemistry carries a
+  **protein-correlated racial bias vs two independent comparators (blood-gas AND osmolality)**, and the **dose-
+  response identifies the indirect-ISE method as the protein-sensitive one**. Disclosed the accuracy ranking in the
+  Finding section. (The n=396 within-patient chem−bg differential is +0.29 but with only 67 Black — underpowered
+  noise, consistent with the two references each being well-powered in their own n≈10–11k samples.)
+- **Total protein is MNAR (clinically-selected).** Confirmed: TP-measured pairs are sicker (creatinine 2.11 vs 1.47).
+  Disclosed in the mechanism section; the representative SICdb dose-response (n=7,726) carries the mechanism, not the
+  MIMIC n=268 subsample. Disease-free TP-by-race (6.26 vs 5.81) holds but on n=35 Black — too thin to *certify*
+  "population-wide not subclinical disease"; stated as such.
+- **Residual NEJM/"the accurate reference" rhetoric** — scrubbed from title, finding, verdict, and status sections.
+- **Level×race interaction (z=−2.1) undersold / not multiplicity-checked** — flagged; main effect robust, magnitude
+  is somewhat larger at lower true Na (noted, not a knife-edge).
+
+## Minor / open (honest)
+- Hct control uses a 6-h window on n=241 — a tighter window is the ideal follow-up (protein slope survived at −0.84;
+  treat as supportive, not "ruled out").
+- Mannitol as an unmeasured osmole in neuro/trauma patients cannot be excluded in the arbiter.
+- Subclinical (un-coded) globulin elevation, and the single-center race axis, remain structurally unclosable in
+  public data.
+
+## Net across three rounds
+Every FATAL-flagged attack from Rounds 1–2 (asserted-reference, SICdb-inversion, Hgb-specificity, disease-confounding,
+glucose/BUN-arbiter) was answered with data and **independently re-confirmed by a hostile referee re-running the code**.
+The surviving items are **scope/tier**, now honestly stated: mechanism solid & cross-validated; racial differential
+robust but **single-center**; consequence = **misclassification, not outcome harm**; magnitude **analyzer-specific**.
+The finding **survives on the merits as a methods/equity research letter** — and does *not* survive as an NEJM/JAMA
+original article, which is the correct, defensible conclusion.
