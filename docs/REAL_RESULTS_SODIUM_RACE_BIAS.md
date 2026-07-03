@@ -79,3 +79,36 @@ differential); (2) rule out arterial-venous confound (source-matched sensitivity
 (race + chem-Na + blood-gas-Na, 208 hospitals) — multi-site is decisive; (4) formalize the consequence with
 adjusted models (differential dysnatremia treatment by race at matched true Na). This is the best available-data
 JAMA/NEJM swing found — observational, no causal instrument, dodges every power wall.
+
+## CONFOUNDER STRESS-TEST (per reviewer-grade skepticism) — the finding SURVIVES
+Enumerated everything affecting the chem(indirect-ISE)↔blood-gas(direct-ISE) sodium discordance and tested each.
+Confounders that differ by race (BLACK vs WHITE): glucose 179 vs 145, creatinine 2.23 vs 1.36 (more CKD),
+true Na 137.7 vs 135.4, age 59 vs 65, IV-fluid 0.32 vs 0.50. Multivariable adjustment:
+| model | BLACK coef (mEq/L) | z |
+|---|---|---|
+| unadjusted | −1.18 | −12.6 |
+| + age, true-Na | −0.95 | −10.0 |
+| + renal (BUN, creat) | −0.89 | −9.1 |
+| + glucose | −0.81 | −8.1 |
+| + albumin | −0.79 | −8.1 |
+| + triglycerides | −0.80 | −8.1 |
+| + total protein (imputed, ~3% coverage) | −0.44 | −4.7 |
+
+**Robust to genuine confounders** — survives at −0.80 (z=−8.1) after diabetes/renal/age/true-Na/lipids/albumin;
+only ~⅓ attenuated. **Total protein is the MECHANISM (mediator), not a confounder** — it produces the largest
+attenuation, exactly as predicted if higher plasma protein causes the indirect-ISE bias; adjusting for a
+mediator *should* attenuate, confirming mechanism (but total protein is measured in only ~3% of pairs → this
+number is imputation-limited; nailing it needs more total-protein/globulin data).
+
+**Arterial–venous confound ruled out by SPECIFICITY:** glucose has a *larger* A–V gradient than sodium and
+differs by race (179 vs 145) yet shows **zero** racial bias differential (z=+0.8). An A–V artifact would appear
+in glucose too. It does not. (Bicarbonate also null.) The effect is specific to the analytes where the
+indirect-ISE protein artifact operates (Na strong, K modest).
+
+## Honest standing
+The finding is **robust to measured confounding** (survives z=−8 after adjustment) and mechanistically coherent
+(protein-mediated, A–V-excluded, analyte-specific). It is the strongest available-data JAMA/NEJM candidate.
+Not-yet-nailed: (1) mechanism power (total protein/globulin sparsely measured — need more, or a myeloma/
+paraprotein-enriched sensitivity, since myeloma is 2–3× more common in Black patients and causes
+pseudohyponatremia); (2) single-center (MIMIC) — multi-site replication (eICU, if it separates chem vs
+blood-gas Na) is decisive; (3) selection (paired-draw population is ICU/arterial-line — generalizability).
