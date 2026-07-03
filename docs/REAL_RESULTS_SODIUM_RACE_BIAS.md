@@ -741,3 +741,65 @@ g/dL (z=+9.5). The reframe from "rare myeloma artifact" → "population-scale ra
 **Cause of the upstream disparity (for framing):** the higher immunoglobulins are **genetic** (IGHG2/IGHG3 gene
 diversity; the Duffy-null allele as a determinant of systemic immune-marker levels) **and environmental** (chronic
 immune activation / infectious-disease burden) — established across 50+ years.
+
+---
+
+# CALCIUM: the finding that BREAKS THE SINGLE-CENTER WALL (the NEJM-tier candidate)
+
+Because ionized calcium is on every blood-gas panel (unlike blood-gas sodium), the calcium bias can be validated
+with RACE across hospitals — achieving what sodium structurally could not.
+
+## Three-dataset support
+| dataset | finding | z |
+|---|---|---|
+| **MIMIC** (Boston) | total Ca falsely high at matched ionized: **+0.15 mg/dL**, survives pH+albumin+tight-window | +11.6 |
+| **eICU** (multi-hospital US, WITH RACE) | **+0.12–0.15 mg/dL** — racial replication | +2.5–3.3 |
+| **SICdb** (Austria) | mechanism: total-Ca excess ~ total protein **+0.053 mmol/L per g/dL** | +39.6 |
+
+## Red-team verdict (independent reviewer re-ran the code): SURVIVES
+Reproduced every number; **pH ruled out** (adjustment *strengthens* it, +0.157→+0.167); tight 10-min window holds
+(+0.156); subject-clustered z=10.3 (first-pair design). Two honest **non-fatal** caveats:
+- **Threshold-dependent:** masked hypocalcemia is Black-predominant at MILD true hypocalcemia (ionized 1.00–1.12:
+  26.2% vs 18.1%) but **reverses at SEVERE** (ionized<1.00: 7.3% vs 9.2%) — report as mild-range, not universal.
+- **Berkson selection:** paired-test cohort is race-skewed (Black 6% vs White 10% of admissions get ionized Ca) —
+  caps generalization of prevalence figures (internal comparison holds).
+- The corrected-calcium **formula fails**: albumin-corrected calcium still biased (+0.15, z=+7.3) — it omits globulin.
+
+## Calcium harms tested
+| harm | result |
+|---|---|
+| Masked (mild) hypocalcemia | Black 26.2% vs White 18.1% at ionized 1.00–1.12 |
+| Masking → less Ca repletion | OR 0.74 (z=−7.4) — the measurement drives undertreatment |
+| Differential Ca repletion at matched true hypoCa | OR 0.72 (z=−6.9) — **largely a general care disparity, NOT mediated by the measurement** (0.72→0.73 adj) — honest |
+| Spurious **hyper**calcemia flag (false high) | adj OR 1.50 (z=+2.9) → unnecessary hypercalcemia/malignancy workup |
+
+## KNOWN RACIAL DISPARITIES THAT ARE PARTLY MEASUREMENT ARTIFACT (the provocative reframe)
+Same patients, biased vs true measure:
+- **Hyponatremia:** by chemistry, Black patients appear to have *more* (1.07×); by blood-gas (true), they have
+  **less** (0.87×) — the measurement *reverses* the apparent direction.
+- **Hypocalcemia:** reported Black−White gap by total Ca = **−0.099**; by ionized (true) = **−0.011** — ~90% of the
+  apparent "Black patients have less hypocalcemia" is a **measurement artifact** (masked by falsely-high total Ca).
+→ A body of epidemiology reporting racial differences in electrolyte-abnormality prevalence may be partly artifactual.
+
+## The coordinated panel (one mechanism, whole panel)
+| test | direction | z | mechanism |
+|---|---|---|---|
+| Sodium | falsely low | −12.6 | indirect-ISE water displacement |
+| Chloride | falsely low | −3.5 | indirect-ISE water displacement |
+| **Calcium (total)** | falsely **high** | **+11.6** | globulin **binding** |
+| ESR | falsely high (at matched CRP) | +4.2 | globulin **rouleaux/aggregation** |
+| T4 (total) | falsely high (at matched free T4) | +1.3 (ns, underpowered) | TBG **binding** |
+
+## Upstream biology (the immunoglobulin disparity itself)
+MIMIC: myeloma 0.95% vs 0.70%, MGUS 0.66% vs 0.40% (Black vs White). Black patients *without* myeloma already have
+IgG ~1,370 — approaching White *myeloma* patients (~1,430). Higher Ig is **genetic** (IGHG2/3 diversity, Duffy-null)
++ **environmental** (chronic immune activation / infection burden), documented 50+ years — and is upstream of both
+the panel-wide measurement bias AND the 2–3× myeloma/MGUS excess.
+
+## NEJM-tier assessment
+Calcium clears the bars sodium could not: (1) **multi-site racial replication** (eICU); (2) cross-national mechanism
+(SICdb); (3) a **trusted correction formula that fails by race** (corrected calcium — the eGFR-analog, actionable);
+(4) survives an independent-code red-team; (5) a coordinated panel-wide story with a molecular mechanism. Remaining
+for a full NEJM package: a hard clinical outcome cleanly *attributable* to the measurement (the repletion gap is
+largely a general disparity), and the threshold/selection caveats stated. The **corrected-calcium-fails-by-race**
+framing + the **coordinated panel** + the **artifactual-disparity** reframe is the highest-yield direction.
