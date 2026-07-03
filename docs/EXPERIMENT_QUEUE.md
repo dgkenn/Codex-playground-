@@ -114,3 +114,19 @@ pre-screen before running (cycle-9 lesson: the creatinine mechanism was already 
   artifactual-disparity magnitude across a 208-hospital cohort.)
 - **Corrected-calcium by-subgroup extension** (albumin-corrected vs ionized differential misclassification by
   sex/albumin stratum) — flagged 4/4 in the mine; extends doc-01 flagship; SICdb sex/protein replication.
+
+## CYCLE-10 OUTCOME + follow-ups (2 winners red-teamed; chloride survives)
+- **DONE cycle 10:** 10-idea batch → 1 WIN (chloride 4th analyte, tempered), 1 demoted (Na-glucose), 8
+  nulls/confirmatory. See docs/research/08 + FINDINGS_LEDGER #9a–9j.
+- **[chloride follow-up] Confirm the electrolyte-exclusion MECHANISM for chloride** — the racial discordance
+  is solid but protein-mediation is n=134 (unpowered). Need a cohort where TOTAL PROTEIN is co-drawn with a
+  blood-gas chloride: (a) mine SICdb (has protein + dual-method, no race → mechanism/sex axis), (b) or widen
+  the MIMIC window / add albumin as a proxy. Until then chloride's mechanism stays a hypothesis.
+- **[flagship integration] Add chloride as the 4th analyte to the coordinated-panel doc (01/03)** once the
+  mechanism cohort lands — panel becomes Na↓, Cl↓, Ca↑ (all indirect-ISE electrolyte-exclusion) + K↑ (distinct
+  pre-analytic).
+- **[demoted, low priority] Na-glucose label quality:** only worth revisiting if linked to a differential
+  TREATMENT endpoint (hypertonic saline / fluid restriction orders) — otherwise it's a known-disparity restatement.
+- **Still-open from cycle 9:** eICU creatinine external validation is PROXY-BLOCKED (516MB lab.csv.gz won't
+  stream through the flaky proxy; patient.csv landed). SICdb (sex, smaller lab file) is the viable alternative
+  for both the creatinine-AKI and the chloride-mechanism external checks.

@@ -510,3 +510,25 @@ cross-nationally-validated part.
   sweep independently surfaced our OWN corrected-Ca flagship, the K+ two-method discordance, the KDIGO
   creatinine idea, AND the cuff-MAP idea the red-team killed — evidence the template is on-target, and
   that the wins/kills track what top journals consider important.
+
+## Cycle 10 — ten-idea batch: what a top-tier-journal mine actually yields (1 win / 10)
+- **Most single-analyte measurement biases are ALREADY PUBLISHED.** The mandatory novelty pre-screen flagged
+  6/10 (QTc formula, HbA1c-race, albumin-AG, Hb-method, eGFR-race, bilirubin-Jaffe) as known BEFORE any
+  overclaim. Wins require a genuinely uncharted subgroup angle (chloride-by-race = 0 PubMed hits) or a
+  specificity dissociation (corrected-Ca race-specific-not-sex).
+- **"Differential misclassification by subgroup" usually decomposes into KNOWN-DISPARITY + tiny residual.**
+  Run an Oaxaca / within-stratum decomposition BEFORE calling it a measurement finding. Idea 7 (Na-glucose):
+  84% was the known Black hyperglycemia disparity, only 16% (~1pp) a race-specific residual → demoted.
+- **Cohort substrate can REVERSE an effect.** Benign ethnic neutropenia over-labels Black patients in the
+  OUTPATIENT setting, but in MIMIC ICU it reverses (acute chemo/sepsis neutropenia dominates the threshold
+  and is more prevalent in White admissions). Match the cohort to where the phenomenon lives.
+- **Two-method discordance red-team checklist (validated on chloride WIN):** (1) arterial-venous / specimen-
+  compartment confound — split by arterial-line presence; (2) independence from the sibling analyte (adjust
+  for concurrent Na-discordance — chloride kept ~69%); (3) is the mechanism (protein) actually powered here
+  (chloride: n=134, NOT powered → label mechanism a hypothesis); (4) selection to the paired-labs (ICU/ED)
+  cohort limits generalizability. Chloride SURVIVED all four → real 4th analyte, tempered claim −0.8 to −1.3.
+- **A rigorous NULL is a deliverable:** corrected-Ca-by-sex null is the flagship's best negative control
+  (dissociates the race effect from a generic subgroup artifact). Log nulls; they harden the wins.
+- **Net cycle-10 addition to the program:** chloride joins Na/Ca as a coordinated, independently-measured 4th
+  analyte in the indirect-ISE electrolyte-exclusion family (docs 01/03) — with mechanism still to be confirmed
+  on a cohort where total protein is co-drawn with blood gas (MIMIC pairs it in only ~2% of chloride pairs).
