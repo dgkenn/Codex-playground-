@@ -480,3 +480,32 @@ independent osmolality reference, with an adjusted misclassification consequence
 review including two independent code re-executions**. The eICU racial result was corrected to an honest negative. The
 finding stands at **research-letter tier**; it is **not** an NEJM/JAMA original (single-center race, misclassification-
 not-outcome harm, analyzer-specific magnitude) — the correct, defensible conclusion.
+
+---
+
+# CLINICAL-OUTCOME ANALYSIS (the attempted NEJM-upgrade) — HONEST NEGATIVE in single-center MIMIC
+
+Goal: convert the misclassification consequence into a real *care/outcome* harm (Sjoding-style). Cohort: truly-
+normonatremic patients (blood-gas Na 135–142, n=6,489; 782 Black) so any care difference reflects the *biased
+reported value*, not real physiology. Outcomes with subject-clustered SEs (`sodium_outcomes.py`). **Result: the
+downstream harm does NOT hold up in single-center MIMIC.**
+
+- **Repeat-sodium cascade runs the *opposite* way.** P(recheck ≤6h) *rises* with the reported value (0.46 at
+  chem<133 → 0.68 at chem>145) — falsely-*high* readings drive workup, not falsely-low. Because the bias makes
+  Black patients read *lower*, they get **fewer** rechecks (adj OR 0.79, z=−2.9), not more. The hypothesized
+  "false-low label → workup cascade" is refuted; if anything this is an under-monitoring pattern (confounded).
+- **Na-directed treatment: underpowered/null.** Hypertonic saline 0.90% (7 events) vs 0.53% (30), adj OR 1.30
+  (0.51–3.32), ns; free water OR 1.00. Directionally consistent with over-treatment but not powered in one center.
+- **Overcorrection endpoint is regression-to-the-mean, not harm.** Among labeled-hypo (chem<135) true-normal
+  patients the reported Na rises +4.13 mEq/L on follow-up **regardless of treatment** (a spuriously low reading is
+  followed by a higher one) — so the Black-vs-White "rise>6" gap (28.8% vs 20.5%, n=59) is RTM-contaminated, not
+  interpretable as treatment-driven overcorrection.
+- **No hard-endpoint harm at matched true Na:** in-hospital mortality adj OR 0.77 (ns); LOS 13.8 vs 12.0 d (crude).
+
+**Correction to earlier optimism:** I had told the user a real clinical outcome was "very achievable." Running it,
+it is **not** achievable in single-center MIMIC — the treatment events are too rare, the overcorrection metric is
+RTM-confounded, and the testing cascade is driven by the high side. **The clinical-outcome upgrade therefore needs
+the SAME multi-site data as the racial replication**, plus a *clean overcorrection design*: restrict to patients
+actually **treated** for the (false) hyponatremia and track the **blood-gas (true) sodium trajectory** to a hard
+>8–10 mEq/L/24h threshold — which needs many-hospital power the single center cannot provide. The honest standing is
+unchanged: **misclassification is demonstrated; downstream care/outcome harm is not** (and is not salvageable here).
