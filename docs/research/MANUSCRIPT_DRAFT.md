@@ -164,6 +164,7 @@ extraction has been substituted into another. The five named cohorts:
 | **eICU-full** | full download, pairs ≤60 min | **62,388** (21,275 patients) | **129** | raw-bias + masked-hypocalcemia replication (§3a, §3b) |
 | **eICU-subset** | independent truncated re-download | **14,164** (1,736 / 12,428) | **93** | false hypercalcemia + CKD-robustness + reproduction (§3b) |
 | **SICdb-protein** | Salzburg, Austria; total protein; **no race** | tens of thousands | 1 | protein-binding mechanism, cross-national (§3a) |
+| **INSPIRE-protein** | Seoul, Korea; non-cardiac surgery; total protein; ancestrally homogeneous (**no racial contrast**) | 90,248 | 1 | protein-binding mechanism, 4th cohort / East-Asian surgical (§3a) |
 
 Notes: (i) the two eICU extractions are a **division of labor**, not competing estimates — the
 129-hospital full extraction carries the general measurement-bias + masked-hypocalcemia replication;
@@ -194,7 +195,17 @@ calcium tracked total protein at +0.30 mg/dL per g/dL protein in MIMIC (z=+9.5),
 matching independently-fitted coefficient (+0.31 mg/dL per g/dL). This mechanism reproduced
 cross-nationally in SICdb (Salzburg, Austria — a cohort with no race variable, testing the chemistry
 alone): +0.053 mmol/L per g/dL total protein, z=+39.6 — a large, precisely estimated, monotone
-dose-response on an independent continent with different instrumentation.
+dose-response on an independent continent with different instrumentation. The mechanism reproduced a
+**third** time in INSPIRE (Seoul, Korea — a non-cardiac-surgery cohort, also without a race variable):
+across 90,248 total/ionized calcium pairs, total calcium tracked total protein at +0.279 mg/dL per g/dL
+(z=+127), and a globulin-specific decomposition gave +0.115 mg/dL per g/dL (z=+38.5) — nearly identical
+in precision to SICdb. Corrected calcium still carried the globulin bias (+0.092 mg/dL per g/dL,
+z=+28.9), confirming in an East-Asian surgical population that the albumin-only correction fails to
+remove it. The dose-response mechanism is therefore consistent across **four cohorts, three continents,
+and two care settings** (US ICU, Austrian ICU, Korean surgical), while the *racial* differential
+itself — which requires a race variable and a diverse population — is established in the two US cohorts
+(MIMIC-IV and eICU); the non-US cohorts are ancestrally homogeneous or record no ethnicity and so test
+the chemistry mechanism, not the racial endpoint.
 
 The raw racial differential in total calcium also replicated in the original 129-hospital eICU
 extraction: a naive estimate of +0.236 mg/dL (z=8.1, n=62,388 pairs, 21,275 patients) attenuated to
