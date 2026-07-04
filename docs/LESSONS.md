@@ -724,6 +724,18 @@ cross-nationally-validated part.
   treatment consequence — infusionDrug caught only 316/73,547 stays). Before launching an external-validation
   run, verify the specific ground-truth reference AND the consequence variable exist in that cohort's tables,
   not just the analyte. The consequence test moves to MIMIC (inputevents/repletions.csv present).
+- **"DYNAMIC/TRAJECTORY" EHR FEATURES OFTEN JUST RE-ENCODE LEVELS — and charting resolution caps true dynamics
+  (EX-2 NO-GO).** Testing whether SBT vital-sign DYNAMICS add value beyond static predictors for reintubation:
+  static+dynamic beat static (Δ+0.012, p<1e-6) but the gain was entirely LEVEL re-encoding (RR_mean/HR_mean top;
+  RR-variability near-bottom). **Diagnostic test: strip all `*_mean`/`*_end` LEVEL features and check if pure
+  slope/variability retains signal — here it fell to ~chance (0.596), and the marginal gain collapsed at a wider
+  window (p=0.88) and on excluding the sickest (acuity confound, not physiology).** Second hard limit: routine
+  EHR charting is q1–2h (~2 points/channel in a 2h window) — **too coarse for breath-by-breath / high-frequency
+  variability** (the WAVE RR-variability signal). True SBT-timescale dynamics need WAVEFORM data (MIMIC-IV-
+  Waveform), not charted vitals. Tempers the "trajectory beats snapshot" enthusiasm (from the sepsis design):
+  trajectory helps only when charting is DENSE relative to the physiologic timescale; for fast dynamics on sparse
+  charting, "dynamic" features are just a fresher level measurement. Always run the strip-the-levels test before
+  claiming a trajectory finding.
 - **INTERNAL ROBUSTNESS ≠ EXTERNAL REPLICATION — and a mechanistic-magnitude sanity check would have flagged it
   (C12-1 tempered).** The occult-hypoxemia→SF/ARDS/SOFA propagation passed every INTERNAL gate (cluster-robust,
   one-pair-per-subject, FiO₂/nonlinearity/PEEP robustness, novelty) — then FAILED eICU external validation: the
