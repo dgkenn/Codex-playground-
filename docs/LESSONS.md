@@ -724,6 +724,25 @@ cross-nationally-validated part.
   treatment consequence — infusionDrug caught only 316/73,547 stays). Before launching an external-validation
   run, verify the specific ground-truth reference AND the consequence variable exist in that cohort's tables,
   not just the analyte. The consequence test moves to MIMIC (inputevents/repletions.csv present).
+- **TEMPLATE-LEVEL LESSON (load-bearing) — the paired-reference cohort PROVES the measurement bias but
+  structurally CANNOT prove its downstream harm.** Two independent consequence chains now failed the SAME way:
+  calcium false-flag → unnecessary workup (ledger 18/18b) and potassium false-hyperK → insulin/D50 →
+  iatrogenic hypoglycemia (C12-3). Both showed a STRONG measurement-mediated ACTION link (the biased value
+  drives the clinical action holding the true value fixed — calcium workup OR 1.17–1.42; potassium treatment
+  **chem-K OR 2.34 per mEq/L, p=1.7e-61, with true bg-K held fixed and NS**) AND a cleanly REPLICATED racial
+  EXPOSURE disparity (~2×), but an EMPTY / underpowered TERMINAL-HARM cell (workup: 4–8 Black events;
+  hypoglycemia: 0/4 false-flag-treated). The common cause is SELECTION, not chance: the cohort that HAS the
+  ground truth drawn (ionized Ca, blood-gas K) is exactly the high-acuity ICU setting where clinicians SEE the
+  true value and are protected from acting on the artifact. The realized harm happens where ONLY the biased
+  value exists — floor/ED/outpatient with no paired gas/ionized — which the paired design cannot observe by
+  construction. **Strategic implications:** (1) From a paired design, the defensible consequence endpoint is the
+  ACTION-level measurement-mediated link + the exposure disparity — report those as the finding; do NOT expect
+  the terminal hard-harm cell to close, and do NOT keep spending compute chasing it. (2) To show realized harm,
+  you need a SINGLE-METHOD cohort (only the biased value present) with an external/instrumental design, or a
+  dataset that captures floor/ED action on a lone chemistry value. (3) Frame realized harm as
+  mechanistically-implied (action link × exposure disparity), explicitly bounded — like the calcium manuscript
+  does. This is why the calcium paper lands as an eGFR-style *reclassification/action* equity finding, not a
+  mortality finding. Stop running paired-design terminal-harm chains expecting closure.
 - **FEASIBILITY REFINEMENT — an itemid existing ≠ the paired reference being co-ordered at scale.** C12-2
   (pre-analytic lactate) died an infeasibility null: chem lactate (53154) and blood-gas lactate (50813) both
   exist, but chem lactate is a rare floor order (104 rows) and bg lactate a high-volume POC order — they are
