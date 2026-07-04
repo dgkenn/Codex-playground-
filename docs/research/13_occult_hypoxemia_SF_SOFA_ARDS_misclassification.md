@@ -95,6 +95,34 @@ institutionalized into the diagnostic criteria themselves.
    respiratory-subscore/threshold effect coexists with the renal-driven whole-score effect.
 3. Frame around the 2024 Global ARDS Definition's SpO₂/FiO₂ adoption (policy urgency).
 
+## eICU EXTERNAL VALIDATION — the propagation does NOT replicate (major tempering)
+
+Full eICU replication (vitalPeriodic SpO₂ + lab PaO₂/FiO₂/SaO₂ + patient ethnicity): 70,044 SF/PF pairs
+(22,301 pts, 154 hospitals) + 157,079 occult-hypoxemia pairs (38,871 pts, 152 hospitals).
+
+| Test | MIMIC | eICU | Verdict |
+|---|---|---|---|
+| **Positive control — occult hypoxemia** (SpO₂≥92 & SaO₂<88) | OR 2.09 | **OR 2.03 (z=8.29)**; differential bias +1.15 SpO₂ units (z=6.31) | **REPLICATES cleanly, universal** |
+| Test 1 — SF over-read at matched PF | +6.87 (z=7.44) | **−3.42, model-dependent, ~0 in matched bands** | **FAILS (wrong sign)** |
+| Test 2 — ARDS under-class | OR 1.43 / 2.00 | **OR 1.06 (null) / 1.29** | **attenuated/partial** |
+| Test 3 — SOFA-resp under-score | OR 1.66 | **OR 1.03 (null)** | **FAILS** |
+
+**Clean dissociation.** The occult-hypoxemia BIOMARKER bias is confirmed and universal (OR ~2, both cohorts) —
+but that is essentially Sjoding's established finding. Our NOVEL contribution — the racial misclassification of
+ARDS-Berlin / SOFA-resp via the SF surrogate — does **not** replicate at MIMIC magnitude. The mechanistic
+sanity check exposes why: the differential bias (+1.15 SpO₂ ÷ FiO₂ ≈ **+2 SF units**) is where eICU lands, while
+MIMIC's +6.87 is ~3× the mechanistic prediction → **MIMIC over-estimated the propagation.** Contributing:
+eICU's very sick, left-shifted ABG cohort (median PF 160) leaves little classification headroom for SF to
+under-call, and eICU FiO₂ is lab-sourced (vs MIMIC ventilator-charted).
+
+**REVISED STANDING (honest downgrade):** C12-1 is NOT a clean externally-validated flagship. The biomarker bias
+is universal (but known); the SF→ARDS/SOFA racial-misclassification propagation is **small, MIMIC-specific /
+acuity-bounded, and externally unconfirmed.** Honest options: (a) publish as a *dissociation* — "occult hypoxemia
+is universal, but its propagation into SF-based severity scores is acuity/cohort-dependent and does not
+replicate in a sicker multi-hospital cohort" (a legitimate boundary-condition/negative contribution); (b) drop
+the strong misclassification claim. Do NOT position the SF/ARDS/SOFA propagation as robust. The integrity gate
+(external validation) caught an over-claim that internal cluster-robustness had passed.
+
 ## Artifacts (scratchpad, gitignored)
 `oh_extract.py`, `oh_race.py`, `oh_analyze.py`, `oh_tests.py`, `oh_cluster_inference.py`,
 `occult_hypoxemia_SOFA_ARDS_REPORT.md`, `occult_hypoxemia_hardening_REPORT.md`,

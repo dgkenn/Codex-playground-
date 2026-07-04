@@ -724,12 +724,31 @@ cross-nationally-validated part.
   treatment consequence — infusionDrug caught only 316/73,547 stays). Before launching an external-validation
   run, verify the specific ground-truth reference AND the consequence variable exist in that cohort's tables,
   not just the analyte. The consequence test moves to MIMIC (inputevents/repletions.csv present).
-- **HIGHEST-HIT TEMPLATE — "propagation-map into a decision-score" (C12-1 WIN).** The best-performing idea
-  shape this session: take a bias ALREADY externally established (occult hypoxemia; indirect-ISE displacement;
-  globulin binding), find a consequential FORMULA/SCORE that consumes the biased input (SpO₂/FiO₂ → ARDS-Berlin
-  class + SOFA-resp; albumin-corrected Ca; osmolar gap), and quantify the racial MISCLASSIFICATION of the score
-  at matched TRUTH. C12-1 (occult hypoxemia → SF → ARDS/SOFA under-classification, Black OR 1.43–2.00, survives
-  clustering, NARROW-BUT-NOVEL filling Erlebach 2025's un-assessed race gap) is the exemplar. Why it beats
+- **INTERNAL ROBUSTNESS ≠ EXTERNAL REPLICATION — and a mechanistic-magnitude sanity check would have flagged it
+  (C12-1 tempered).** The occult-hypoxemia→SF/ARDS/SOFA propagation passed every INTERNAL gate (cluster-robust,
+  one-pair-per-subject, FiO₂/nonlinearity/PEEP robustness, novelty) — then FAILED eICU external validation: the
+  biomarker bias (occult hypoxemia) replicated cleanly and universally (OR 2.03 vs 2.09, 152 hospitals), but the
+  score-level propagation did not (Tests 1–3 null/wrong-sign). **The tell was available internally and I missed
+  it:** the differential pulse-ox bias (~+1.15 SpO₂ ÷ FiO₂ ≈ **+2 SF units**) MECHANISTICALLY predicts a small SF
+  effect, but MIMIC's Test 1 gave **+6.87 — ~3× the mechanism's prediction.** When an observed effect is several
+  times larger than the mechanism can produce, that gap is a red flag for cohort-specific inflation (FiO₂
+  charting/sourcing, PF-adjustment specification, residual confounding), NOT a strong finding. **New pre-external
+  check: compute the effect the mechanism PREDICTS from first principles and compare to the observed magnitude; a
+  large over-shoot means it probably won't replicate.** Also: a propagation-map's biomarker-bias core replicating
+  does NOT mean its score-propagation replicates — they are separate claims; the score effect needs classification
+  HEADROOM (moderate-severity patients), which a uniformly-sick external cohort (eICU median PF 160) can erase.
+  Net: external validation is load-bearing and caught an over-claim internal robustness passed. C12-1 downgraded
+  from flagship to a dissociation/bounded finding.
+- **HIGHEST-HIT TEMPLATE — "propagation-map into a decision-score" (with a REPLICATION caveat).** The
+  best-hit-rate idea shape this session: take a bias ALREADY externally established (occult hypoxemia;
+  indirect-ISE displacement; globulin binding), find a consequential FORMULA/SCORE that consumes the biased input
+  (SpO₂/FiO₂ → ARDS-Berlin class + SOFA-resp; albumin-corrected Ca; osmolar gap), and quantify the racial
+  MISCLASSIFICATION of the score at matched TRUTH. **CAVEAT (post-external-validation): the propagation MAGNITUDE
+  is cohort-specific — the CALCIUM propagation externally replicated (eICU, doc 12) but the OCCULT-HYPOXEMIA
+  propagation did NOT (C12-1b: score-level Tests null in eICU though the biomarker bias replicated).** So the
+  template reliably surfaces a real signal, but whether the SCORE-level harm generalizes depends on classification
+  headroom + the mechanistic magnitude (see the internal-robustness≠external-replication lesson above). Always
+  externally validate the SCORE claim, not just the biomarker bias. Why it beats
   harm-chains: the endpoint IS the misclassification of a score that drives the decision (trial enrollment,
   ECMO, crisis triage), so you never need the elusive terminal-harm cell and you dodge the paired-reference
   selection wall (next lesson). Two execution notes that made it clean: (1) reframe a racial score-effect as a
