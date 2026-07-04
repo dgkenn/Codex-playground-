@@ -83,7 +83,14 @@ This repo runs as a 24/7, self-learning, publication-focused research loop. Befo
 2. Read **`docs/LESSONS.md`** — accumulated memory (what we know / what's ruled out). Never repeat a dead
    end. **Append a new lesson (with mechanism) after every experiment — negative results included.**
 3. Read **`docs/EXPERIMENT_QUEUE.md`** — the prioritized backlog. Pull the top item that fits compute.
-Then run → red-team (sonnet) → log lessons → update queue/ledger → commit+push. **Delegate:** haiku for
+4. Read **`docs/IDEA_GATE.md`** — the empirical idea-generation pre-screen (from ~40 run ideas).
+   **MANDATORY: score every candidate idea against the gate BEFORE spending compute.** Two hard gates —
+   a ground-truth reference in the data (no ground truth ⇒ do NOT run it) and a named direction-predicting
+   mechanism. Prefer a sharp falsifiable quantitative prediction; for a masking bias's "threshold
+   complement," check the baseline analyzer-offset direction too. Judge the gate by losers-not-run (the
+   cheap kill list), not just hit rate on the few you pick. Depth on a mined seam nears exhaustion — hunt
+   for new (mechanism + ground-truth reference + subgroup driver) triples.
+Then GATE → run → red-team (sonnet) → log lessons → update queue/ledger → commit+push. **Delegate:** haiku for
 mechanical/checkable tasks, sonnet for judgment/red-team, opus (main) only for orchestration+synthesis.
 Mission bar: **ultra-high-impact, externally-validated** findings; current white space =
 first cross-site-validated EEG-foundation-model → clinical-outcome study (GPU-gated).

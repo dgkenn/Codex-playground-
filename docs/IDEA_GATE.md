@@ -60,15 +60,26 @@ RTM / binning-a-difference-by-its-component (use Bland-Altman mean); composition
 pairing window (pin each input to its tight window); acuity confounding (never occult-vs-overt on
 mortality — hold the true value fixed, test recognition); label-noise floor (compute the label's own
 no-intervention test-retest before believing an ICC/AUROC); known-disparity decomposition; statistical
-rescaling (compute the parent regression alongside); already-published.
+rescaling (compute the parent regression alongside); already-published; **baseline-offset direction**
+(a threshold complement needs the raw analyzer offset — not just the subgroup differential — pointing the
+masking way); **population≠patient-level** (a "sharper within-patient version" of a confirmed population
+effect attenuates from individual-level noise — the fingerprint slope can be half the population slope).
 
 ## Exploitation moves on a CONFIRMED seam (high hit rate, incremental)
 
 Once a bias is confirmed, these reliably win: **threshold complements** (a masking bias over-flags at
-the other threshold — masked hypocalcemia ↔ false hypercalcemia); **derived-quantity propagation maps**
+the other threshold — masked hypocalcemia ↔ false hypercalcemia; *but first check the baseline offset
+direction — masked-hypernatremia nulled because chem Na over-reads*); **derived-quantity propagation maps**
 (which formulas inherit vs cancel the bias — anion gap cancels, osmolar gap propagates); **specificity
-controls** (a well-powered negative control that localizes the mechanism — bicarbonate); **cross-cohort
-mechanism replication** (SICdb protein dose-response); **cross-analyte coordination** (the panel).
+controls** (a well-powered negative control that localizes the mechanism — bicarbonate, and the potassium
+concentration-scaled near-zero); **cross-cohort mechanism replication** (SICdb protein dose-response);
+**cross-analyte coordination** (the panel).
+
+**Diminishing returns warning (from first gate use, 1 win / 3 depth ideas):** depth moves on a
+*heavily-mined* seam increasingly CONFIRM the core mechanism but fail to EXTEND it, and the remaining wins
+are negative controls (valuable, incremental). Judge the gate by **losers-not-run** (its cheap kill list —
+~15 gate-failures avoided), not by hit rate on the few you pick. When depth stalls, **pivot compute to a
+new (mechanism + ground-truth reference + subgroup driver) triple** — that is where fresh flagships live.
 
 ## Strategy: depth > breadth
 

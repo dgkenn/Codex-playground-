@@ -13,6 +13,12 @@ VitalDB / INSPIRE. **A finding does not exist until it has survived the hostile-
 ## The self-learning loop (one cycle)
 1. **Orient** — read `docs/LESSONS.md` and `docs/EXPERIMENT_QUEUE.md`. Never repeat a ruled-out dead end.
 2. **Pick** the top-ranked open experiment that fits current compute (CPU, overnight OK — see below).
+2b. **GATE (mandatory pre-run — see `docs/IDEA_GATE.md`).** Score the candidate against the empirical gate
+   BEFORE spending compute. Hard-fail if there is no ground-truth reference in the data or no named
+   direction-predicting mechanism. Prefer a sharp falsifiable quantitative prediction (these produce the
+   cleanest wins AND the cleanest nulls). Cheaply KILL gate-failures without running them — the kill list is
+   where the gate pays for itself. Depth on a confirmed seam nears exhaustion; periodically hunt for new
+   (mechanism + ground-truth reference + subgroup driver) triples.
 3. **Run** it (delegate per the model policy). Log raw results to `cache/` + a dated note.
 4. **HOSTILE-REVIEW GATE (mandatory — see next section).** Attack the result until it breaks or survives.
    A result that hasn't passed the gate is provisional and must NOT be reported as a finding.
