@@ -75,6 +75,12 @@ inference concern is fully resolved.
   confirms eICU HAS the SpO₂ substrate — the external-validation path.)
 - **Wong/Charpignon 2021, JAMA Netw Open (PMID 34730820)** — occult hypoxemia → organ dysfunction, association
   framing, not score misclassification.
+- **Gadrey 2023, Crit Care Explor (PMID 36699241)** — builds a bias-corrected respiratory measure and shows
+  occult-hypoxemia-driven SOFA-**resp** under-scoring in Black patients — the CLOSEST respiratory-specific
+  precedent; **must cite**. It partially pre-empts our SOFA-resp piece, but is respiratory-only and does not do
+  the **ARDS-Berlin severity-class** misclassification nor the matched-true-PF test suite; our ARDS-Berlin +
+  Erlebach-gap framing remains the distinct contribution. (This narrows but does not eliminate C12-1's novelty —
+  scope the SOFA-resp claim as confirming/extending Gadrey with the Berlin-class propagation as the novel core.)
 
 Irreducible contribution: **the first race-stratified quantification of SF-surrogate misclassification of the
 formal ARDS-Berlin class and SOFA-resp subscore against arterial ground truth at matched true severity** —

@@ -159,7 +159,7 @@ checks were run FIRST (a 2-min grep) → two cheap kills before any compute (the
 | C12-2 | **Pre-analytic false hyperlactatemia (blood-gas vs central-lab lactate) → Sepsis-3 mis-triage** (CC) | ⚠️ both itemids exist BUT chem lactate 53154 = only 104 rows/93 pts; **1 paired patient** at ±60min | tube glycolysis + transport delay inflates central lactate → false lactate>2 → spurious sepsis-bundle/ICU triage; driver = delay (structural/site, confirm race variance) | **MED-HIGH** | **NULL — infeasible (reference not co-ordered at scale)** |
 | C12-3 | **False hyperkalemia (chem vs bg K) → differential emergency hyperK TREATMENT → iatrogenic hypoglycemia** (consequence of doc 02; CC) | ✅ blood-gas K 50822 (n=26,143 pairs) | pseudohyperK triggers insulin/dextrose → hypoglycemia, disproportionately in Black patients (2.4× false-hyperK, doc 05); the "so what" for potassium | **MED-HIGH** | **PARTIAL — action-link strong (chem K OR 2.34 holding true K fixed, p=1.7e-61) + 2× exposure disparity replicates; terminal harm cell EMPTY (0/4), same selection wall as calcium workup** |
 | C12-4 | **Perioperative KDIGO-creatinine muscle-mass AKI misclassification** (INSPIRE surgical cohort; anesthesia) | ✅ creatinine + surgical AKI; external-validate the MIMIC survived finding (ledger 7d) | absolute-criterion AKI alerts under-detect in low-muscle/female → perioperative AKI under-recognition | **MED** | _queued_ |
-| C12-5 | **SOFA/APACHE measurement-artifact decomposition → crisis-triage equity** (CC) | ◐ per-component unbiased refs | multiple SOFA inputs carry our documented biases → composite miscalibrated; novel = artifact-decomposition | **MED** (named-index + partly published, Ashana 2021 — verify novel angle) | _queued_ |
+| C12-5 | **SOFA/APACHE measurement-artifact decomposition → crisis-triage equity** (CC) | ◐→❌ resp=PF (clean); **renal=NO ref (cystatin C absent from MIMIC, mGFR absent)** | oppositely-signed subscores (resp under-scores, renal over-scores) self-cancel → total-recalibration insufficient | **MED** | **NOVEL-BUT-INFEASIBLE — NARROW-BUT-NOVEL framing confirmed, but renal arm has no in-data ground truth → downgrade to a reconciliation folded into C12-1's discussion (SOFA-renal ablation + eGFR literature), not a standalone ground-truthed paper** |
 
 **Killed cheaply (discriminator, no in-data ground-truth reference):** ionized-vs-total magnesium (only total
 Mg 50960); free/bioavailable vitamin D by race (only total 25-OH 50853). **Deprioritized:** Friedewald
@@ -181,6 +181,17 @@ score at matched TRUTH.** Prefer this over "does the artifact cause a downstream
 this cycle: **tier honesty** — a clean, novel propagation finding is JAMA-IM/AJRCCM/Lancet-Resp tier, not
 automatically NEJM/Nature; the discriminator should predict *tier*, not just win/loss (C12-1 = WIN but
 specialty-top, not NEJM-first).
+
+**C12-5 actual → NOVEL-BUT-INFEASIBLE. CALIBRATION REFINEMENT (novelty ≠ feasibility; check the reference for
+EVERY arm):** the SOFA oppositely-signed-decomposition passed the novelty screen (NARROW-BUT-NOVEL — Ashana/
+Miller are total-score only; the self-cancellation framing is unpublished) but died on the FEASIBILITY of its
+RENAL arm: cystatin C is entirely absent from MIMIC and measured GFR does not exist, so "creatinine over-scores
+renal organ failure at matched true GFR" has no in-cohort ground-truth reference. A multi-arm idea needs signal
+#1 satisfied on EACH arm, not just the headline one — the respiratory arm's clean PF reference masked that the
+renal arm had none. Add to the pre-run checklist: for a decomposition/multi-component idea, verify a ground-truth
+reference for every component before scoring the whole. (Prior-art note: Gadrey 2023 PMID 36699241 already showed
+occult-hypoxemia SOFA-resp under-scoring in Black patients — cite it in C12-1; C12-1's ARDS-Berlin + Erlebach-gap
+framing remains distinct.)
 
 **C12-2 actual → NULL (infeasible). CALIBRATION REFINEMENT to signal #1 (ground-truth reference):** an itemid
 EXISTING is not the same as the two methods being CO-ORDERED in the same patients at scale. Chem lactate (53154)
