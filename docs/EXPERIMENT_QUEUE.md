@@ -207,3 +207,15 @@ Pre-filtered for win probability (both hard gates + >=5/7). Run in order; power-
 Kill list (gate-failed, do not re-propose): Mg/phosphate total-vs-ionized (no reference), chem lactate (empty),
 cystatin-C/fructosamine/transcutaneous/biotin/BCG-BCP (not in MIMIC), eICU sodium replication (no BG Na), and all
 cycle 10-11 done/known items.
+
+## PhysioNet catalogue scan (verified from data dictionaries) — MC-MED is the key target
+- **MC-MED (Stanford ED, physionet mc-med/1.0.1, netrc-downloadable, released 3/2025, ~UNMINED):** 70,545 pts /
+  118,385 ED visits; HAS Race + Hispanic ethnicity, DIVERSE (Asian 16% / Hispanic 27% / Black 6.5% / Other 34%);
+  institutionally INDEPENDENT of BIDMC/eICU. **The only PhysioNet-downloadable, racially-diverse, unmined cohort
+  that can give the calcium flagship an INDEPENDENT racial validation** (ICU→ED, Boston→Stanford). Gate: verify
+  ionized calcium is in labs.csv on download.
+- Structural finding: NO non-US racially-diverse cohort exists on PhysioNet (EU = no ethnicity by design;
+  East-Asian = homogeneous). Amsterdam/HiRID/SICdb/PIC = mechanism-only (like INSPIRE). MIMIC-IV-Waveform = only
+  200 records (unusable). MIMIC-III = BIDMC (not independent). AmsterdamUMCdb/MOVER need separate non-netrc DUAs.
+- Action: pull MC-MED → verify Ca-ionized/Ca-total/albumin/race → run the racial false-hyperCa/masked-hypoCa +
+  mechanism validation. Full scan: scratchpad/physionet_catalogue_scan.md.
