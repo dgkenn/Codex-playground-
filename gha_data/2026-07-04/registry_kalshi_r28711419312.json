@@ -1,0 +1,312 @@
+{
+  "n_enabled": 25,
+  "enabled": [
+    "baseline",
+    "cap25",
+    "skew15",
+    "dneutral",
+    "fv_size",
+    "micro_gate",
+    "micro_skew15",
+    "micro_marg",
+    "tox_gate",
+    "deplete_gate",
+    "gross_max",
+    "flow_gate",
+    "late_gate",
+    "av_stoikov",
+    "spot_react",
+    "micro_react",
+    "micro_spot",
+    "mo_size",
+    "micro_soft",
+    "micro_ufat",
+    "ufat_skew15",
+    "micro_strict",
+    "micro_asym",
+    "micro_cal",
+    "ufat_band"
+  ],
+  "disabled": [
+    "lead30",
+    "as_full",
+    "vol_gate",
+    "band_p",
+    "graded"
+  ],
+  "roster": [
+    {
+      "name": "baseline",
+      "cap": 50.0,
+      "skew": 0.25,
+      "size_mode": "flat",
+      "gate": null,
+      "tau_guard": 0,
+      "enabled": true
+    },
+    {
+      "name": "cap25",
+      "cap": 25,
+      "skew": 0.25,
+      "size_mode": "flat",
+      "gate": null,
+      "tau_guard": 0,
+      "enabled": true
+    },
+    {
+      "name": "skew15",
+      "cap": 50.0,
+      "skew": 0.15,
+      "size_mode": "flat",
+      "gate": null,
+      "tau_guard": 0,
+      "enabled": true
+    },
+    {
+      "name": "dneutral",
+      "cap": 50.0,
+      "skew": 0.08,
+      "size_mode": "flat",
+      "gate": null,
+      "tau_guard": 0,
+      "enabled": true
+    },
+    {
+      "name": "fv_size",
+      "cap": 50.0,
+      "skew": 0.25,
+      "size_mode": "fv",
+      "gate": null,
+      "tau_guard": 0,
+      "enabled": true
+    },
+    {
+      "name": "micro_gate",
+      "cap": 50.0,
+      "skew": 0.25,
+      "size_mode": "flat",
+      "gate": "micro",
+      "tau_guard": 0,
+      "enabled": true
+    },
+    {
+      "name": "micro_skew15",
+      "cap": 50.0,
+      "skew": 0.15,
+      "size_mode": "flat",
+      "gate": "micro",
+      "tau_guard": 0,
+      "enabled": true
+    },
+    {
+      "name": "micro_marg",
+      "cap": 50.0,
+      "skew": 0.25,
+      "size_mode": "flat",
+      "gate": "micro_marg",
+      "tau_guard": 0,
+      "enabled": true
+    },
+    {
+      "name": "tox_gate",
+      "cap": 50.0,
+      "skew": 0.25,
+      "size_mode": "flat",
+      "gate": "tox",
+      "tau_guard": 0,
+      "enabled": true
+    },
+    {
+      "name": "deplete_gate",
+      "cap": 50.0,
+      "skew": 0.25,
+      "size_mode": "flat",
+      "gate": "deplete",
+      "tau_guard": 0,
+      "enabled": true
+    },
+    {
+      "name": "gross_max",
+      "cap": 50.0,
+      "skew": 0.25,
+      "size_mode": "flat",
+      "gate": "gross_max",
+      "tau_guard": 0,
+      "enabled": true
+    },
+    {
+      "name": "flow_gate",
+      "cap": 50.0,
+      "skew": 0.25,
+      "size_mode": "flat",
+      "gate": "flow",
+      "tau_guard": 0,
+      "enabled": true
+    },
+    {
+      "name": "late_gate",
+      "cap": 50.0,
+      "skew": 0.25,
+      "size_mode": "flat",
+      "gate": null,
+      "tau_guard": 120,
+      "enabled": true
+    },
+    {
+      "name": "av_stoikov",
+      "cap": 50.0,
+      "skew": 0.99,
+      "size_mode": "flat",
+      "gate": "as",
+      "tau_guard": 0,
+      "enabled": true
+    },
+    {
+      "name": "spot_react",
+      "cap": 50.0,
+      "skew": 0.25,
+      "size_mode": "flat",
+      "gate": "spot",
+      "tau_guard": 0,
+      "enabled": true
+    },
+    {
+      "name": "micro_react",
+      "cap": 50.0,
+      "skew": 0.25,
+      "size_mode": "flat",
+      "gate": "micro_react",
+      "tau_guard": 0,
+      "enabled": true
+    },
+    {
+      "name": "micro_spot",
+      "cap": 50.0,
+      "skew": 0.25,
+      "size_mode": "flat",
+      "gate": "micro_spot",
+      "tau_guard": 0,
+      "enabled": true
+    },
+    {
+      "name": "mo_size",
+      "cap": 50.0,
+      "skew": 0.25,
+      "size_mode": "markout",
+      "gate": null,
+      "tau_guard": 0,
+      "enabled": true
+    },
+    {
+      "name": "micro_soft",
+      "cap": 50.0,
+      "skew": 0.25,
+      "size_mode": "flat",
+      "gate": "micro_soft",
+      "tau_guard": 0,
+      "enabled": true
+    },
+    {
+      "name": "micro_ufat",
+      "cap": 50.0,
+      "skew": 0.25,
+      "size_mode": "flat",
+      "gate": "micro_ufat",
+      "tau_guard": 0,
+      "enabled": true
+    },
+    {
+      "name": "ufat_skew15",
+      "cap": 50.0,
+      "skew": 0.15,
+      "size_mode": "flat",
+      "gate": "micro_ufat",
+      "tau_guard": 0,
+      "enabled": true
+    },
+    {
+      "name": "micro_strict",
+      "cap": 50.0,
+      "skew": 0.25,
+      "size_mode": "flat",
+      "gate": "micro_strict",
+      "tau_guard": 0,
+      "enabled": true
+    },
+    {
+      "name": "micro_asym",
+      "cap": 50.0,
+      "skew": 0.25,
+      "size_mode": "flat",
+      "gate": "micro_asym",
+      "tau_guard": 0,
+      "enabled": true
+    },
+    {
+      "name": "lead30",
+      "cap": 50.0,
+      "skew": 0.25,
+      "size_mode": "flat",
+      "gate": "lead30",
+      "tau_guard": 0,
+      "enabled": false
+    },
+    {
+      "name": "micro_cal",
+      "cap": 50.0,
+      "skew": 0.25,
+      "size_mode": "flat",
+      "gate": "micro_cal",
+      "tau_guard": 0,
+      "enabled": true
+    },
+    {
+      "name": "ufat_band",
+      "cap": 50.0,
+      "skew": 0.25,
+      "size_mode": "flat",
+      "gate": "ufat_band",
+      "tau_guard": 0,
+      "enabled": true
+    },
+    {
+      "name": "as_full",
+      "cap": 50.0,
+      "skew": 0.99,
+      "size_mode": "flat",
+      "gate": "as_full",
+      "tau_guard": 0,
+      "enabled": false
+    },
+    {
+      "name": "vol_gate",
+      "cap": 50.0,
+      "skew": 0.25,
+      "size_mode": "flat",
+      "gate": "vol",
+      "tau_guard": 0,
+      "enabled": false
+    },
+    {
+      "name": "band_p",
+      "cap": 50.0,
+      "skew": 0.25,
+      "size_mode": "flat",
+      "gate": "band",
+      "tau_guard": 0,
+      "enabled": false
+    },
+    {
+      "name": "graded",
+      "cap": 25,
+      "skew": 0.15,
+      "size_mode": "flat",
+      "gate": "graded",
+      "tau_guard": 0,
+      "enabled": false
+    }
+  ],
+  "tag": "r28711419312",
+  "utc": "2026-07-04T15:49:42.396585+00:00",
+  "venue": "kalshi"
+}
