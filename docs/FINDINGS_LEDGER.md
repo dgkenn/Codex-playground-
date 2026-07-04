@@ -118,3 +118,8 @@ Running log of experiments + hostile-review verdicts. Status: PROVISIONAL (not g
 | 14a | **Potassium concentration-scaled specificity control** (46,968 pairs) | de-hemolyzed racial displacement +0.009 [−0.003,+0.020] (well-powered null); concentration law Na −1.08 / Cl −1.29 / K +0.009 (~100× smaller as predicted) | quantitative negative control confirmed; cleanly separated from the hemolysis false-hyperK mechanism | **WIN — completes the concentration-scaled displacement law** |
 | 14b | Sodium masked-hypernatremia (upper-tail complement) | racial differential replicates (−0.84, z=−7.7) but chem OVER-reads Na → over-flags not masks; artifactual-disparity reframe NULL (DiD +0.12pp — hypernatremia gap is genuine) | threshold-complement premise fails on baseline offset direction | **NULL** |
 | 14c | Within-patient Na+Cl fingerprint (slope=0.71) | correlation r≈0.25 (known, PMID 16548813); slope 0.25–0.34 across all estimators incl albumin-IV → 0.71 FALSIFIED; Cl only partially protein-mediated | sharp prediction cleanly falsified | **NULL (clean falsification)** |
+
+## New-seam pilot (from the discriminator's new-triple search)
+| # | Experiment | Predicted | Result | Status |
+|---|---|---|---|---|
+| 15 | **POC glucose-meter hematocrit interference** (137,984 POC↔lab pairs) | high (all-3-ingredients) | Hct dose-response −0.449 mg/dL/%Hct (z=−11.9), monotone +5.7→−10; negative control clean (plasma-cal POC slope 0.00); ~1.8× false-hyperglycemia in anemia. BUT racial framing FAILS specificity (Black=White Hct in ICU 29.8 vs 29.7; race offset +4 unchanged by Hct adj → not a Hct effect) | **PARTIAL: anemia→false-hyperglycemia mechanism-confirmed WIN; racial flagship NOT supported (confounded)** |

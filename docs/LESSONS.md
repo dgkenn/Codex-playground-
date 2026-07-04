@@ -651,3 +651,22 @@ cross-nationally-validated part.
   confirmed the core mechanism but 2 failed to EXTEND it. The remaining depth wins are negative controls
   (K, bicarbonate) — valuable but incremental. Fresh flagship potential is in NEW SEAMS (glucose-meter Hct
   interference, now data-live: fingerstick 225664 populated 255k+ rows). Pivot compute to the new seam.
+
+## Discriminator calibration — the "subgroup driver must vary IN THE COHORT" lesson (glucose-meter seam)
+- **A subgroup driver that differs in the GENERAL POPULATION can be INVARIANT in the analysis cohort — silently
+  killing the disparity angle.** POC glucose-meter Hct interference: the Hct dose-response is clean and
+  negative-controlled (−0.449 mg/dL/%Hct, z=−11.9; plasma-cal POC slope 0.00), and anemia→false-hyperglycemia
+  is a real mechanism-confirmed WIN. But the RACIAL framing failed its pre-registered specificity control
+  because Black and White ICU patients have IDENTICAL hematocrit (29.8 vs 29.7) — anemia is near-universal in
+  the ICU, so it cannot sort by race here; the real +4 mg/dL Black offset is NOT Hct-mediated.
+- **DISCRIMINATOR REFINEMENT (add to the "subgroup driver" signal):** don't just verify the driver differs by
+  subgroup in the literature — verify it has VARIANCE BY SUBGROUP IN THE SPECIFIC COHORT (a 2-min check:
+  mean driver by subgroup in the actual data). If the cohort flattens the driver (ICU anemia, ICU acuity),
+  the disparity angle is dead even if the mechanism is real. The mechanism finding can still stand on the
+  driver's continuous axis (here: anemia→false-hyperglycemia), just not as a subgroup-disparity flagship.
+- **CALIBRATION ENTRY (predicted→actual):** glucose-meter seam predicted HIGH → actual PARTIAL (mechanism won,
+  racial flagship confounded). The make-or-break falsifiable prediction (Hct slope) + the mandatory specificity
+  control both did their jobs — the control killed the overreach, exactly as designed. Running tally of the
+  discriminator's first use: potassium-control HIGH→WIN, masked-hypernatremia HIGH→NULL, Na+Cl-fingerprint
+  MED→NULL, glucose-meter HIGH→PARTIAL. Strongest predictor of a clean result remains a sharp falsifiable
+  prediction + a real negative control; "documented subgroup driver" needs the in-cohort-variance check.
