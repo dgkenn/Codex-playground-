@@ -29,6 +29,17 @@ confirmatory path = re-analyze ADRENAL/APROCCHSS. Running: MIMIC cohort+discover
   falsification tests (non-monotonicity/orthogonality-to-SOFA/severity-blind-recluster), E-values. Let the
   running MIMIC discovery finish only for the reusable cohort + subphenotype STRUCTURE; do not build on its
   naive mortality-HTE.
+- **DELIVERABLE PIVOT (user, stronger): a bedside steroid-decision SCORE/mnemonic** (SOFA/qSOFA/CURB-65 form
+  factor) — "should I give steroids to this septic-shock patient?" This is the translation layer on the
+  mechanism-anchored phenotype and differentiates from Rajendran (interpretable point-score, not black-box ML).
+  Working concept: 4–5 routine bedside items encoding TWO mechanism axes — **catecholamine-refractoriness**
+  (norepi-equivalent dose / ≥2 vasopressors — the real steroid trigger + where relative adrenal insufficiency
+  is likeliest) and **hyperinflammation** (NLR / temperature — SRS/Calfee axis) — hypothesis: high-vasopressor
+  + high-inflammation phenotype gets the biggest **shock-reversal** benefit (reliable steroid physiology; less
+  confounded than mortality). Honest ceiling: it is a TREATMENT-EFFECT-MODIFIER score (rests on real HTE) →
+  observational build = trial-ready tool; **gold-standard validation = apply to ADRENAL/APROCCHSS/VANISH IPD.**
+  Methodology to use: parsimonious effect-modifier classifier (Sinha ARDS), Kent PATH-statement risk-based HTE,
+  decision-curve analysis. Cross-cohort reproducibility (MIMIC→eICU→SICdb) is the internal-validation bar.
 
 Priority = (impact × novelty × feasibility) / cost. **CPU-only right now; overnight runs are fine.** Every
 item must clear the hostile-review gate (RESEARCH_MACHINE.md) before it counts. Move done items to
