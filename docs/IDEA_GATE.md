@@ -146,3 +146,25 @@ are fully explained by signal #3 — the driver's in-cohort distribution. That c
 strong signal. The two features that keep predicting clean results remain: **ground-truth reference** +
 **sharp falsifiable prediction**. Biggest recurring calibration error: over-scoring a driver documented in
 the general population without checking its distribution in the actual cohort.
+
+### Calibration log — cycle-12 NEJM/Nature-tier slate (CC/anesthesia-weighted; predictions recorded BEFORE running)
+
+Goal: 5 NEJM/Nature-tier ideas we have data for, bonus for anesthesiology/critical care. Not restricted to
+the measurement-bias template, but the 3 strong signals still rank them. The in-data-reference + driver
+checks were run FIRST (a 2-min grep) → two cheap kills before any compute (the discriminator working).
+
+| # | Idea (CC/anesth) | Ground-truth ref (in data?) | Mechanism→direction + consequence | Predicted | Actual |
+|---|------|------------------------------|-----------------------------------|-----------|--------|
+| C12-1 | **Occult hypoxemia → SpO₂/FiO₂ → ARDS-Berlin & SOFA-resp racial misclassification** (propagation-map; CC) | ✅ PaO₂/FiO₂ (ABG) vs SF surrogate | pulse-ox over-reads in dark skin → SF over-reads → under-classifies ARDS severity / under-scores SOFA-resp → trial/ECMO/triage inequity | **HIGH** | _running_ |
+| C12-2 | **Pre-analytic false hyperlactatemia (blood-gas vs central-lab lactate) → Sepsis-3 mis-triage** (CC) | ✅ 50813 bg vs 53154 central lactate | tube glycolysis + transport delay inflates central lactate → false lactate>2 → spurious sepsis-bundle/ICU triage; driver = delay (structural/site, confirm race variance) | **MED-HIGH** | _running_ |
+| C12-3 | **False hyperkalemia (chem vs bg K) → differential emergency hyperK TREATMENT → iatrogenic hypoglycemia** (consequence of doc 02; CC) | ✅ blood-gas K (already extracted) | pseudohyperK triggers insulin/dextrose → hypoglycemia, disproportionately in Black patients (2.4× false-hyperK, doc 05); the "so what" for potassium | **MED-HIGH** | _queued_ |
+| C12-4 | **Perioperative KDIGO-creatinine muscle-mass AKI misclassification** (INSPIRE surgical cohort; anesthesia) | ✅ creatinine + surgical AKI; external-validate the MIMIC survived finding (ledger 7d) | absolute-criterion AKI alerts under-detect in low-muscle/female → perioperative AKI under-recognition | **MED** | _queued_ |
+| C12-5 | **SOFA/APACHE measurement-artifact decomposition → crisis-triage equity** (CC) | ◐ per-component unbiased refs | multiple SOFA inputs carry our documented biases → composite miscalibrated; novel = artifact-decomposition | **MED** (named-index + partly published, Ashana 2021 — verify novel angle) | _queued_ |
+
+**Killed cheaply (discriminator, no in-data ground-truth reference):** ionized-vs-total magnesium (only total
+Mg 50960); free/bioavailable vitamin D by race (only total 25-OH 50853). **Deprioritized:** Friedewald
+calc-vs-measured LDL (refs exist 50905/50906 but ICU lipids are sparse/non-decisional — wrong context).
+
+**Running C12-1 (HIGH) + C12-2 (MED-HIGH) now; C12-3/4/5 queued (C12-5 pending a novelty check vs Ashana).**
+Predictions locked; actuals + "what it taught" appended after each gate — the self-learning step that sharpens
+the propagation-map and pre-analytic sub-templates.
