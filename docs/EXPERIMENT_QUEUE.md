@@ -130,3 +130,39 @@ pre-screen before running (cycle-9 lesson: the creatinine mechanism was already 
 - **Still-open from cycle 9:** eICU creatinine external validation is PROXY-BLOCKED (516MB lab.csv.gz won't
   stream through the flaky proxy; patient.csv landed). SICdb (sex, smaller lab file) is the viable alternative
   for both the creatinine-AKI and the chloride-mechanism external checks.
+
+## GATE-SCREENED BATCH (produced by the IDEA_GATE pre-screen — see docs/IDEA_GATE.md)
+Pre-filtered for win probability (both hard gates + >=5/7). Run in order; power-check before believing any null.
+
+### Depth moves on the confirmed electrolyte-exclusion seam (data in hand)
+1. **[7/7] Sodium masked-HYPERnatremia** — the untested upper-tail threshold complement. BG Na>145 (true) reads
+   "normal" on chem Na → under-recognized hypernatremia (the dangerous direction). Ref: lab_nabg vs lab_na.
+   Prediction: masking shift ~= the −1.18 mEq/L displacement (no new parameter). Risk: power in the hypernatremia tail.
+2. **[5-6/7] "It's globulin, not race": multi-group protein-gradient dose-response** of the Na/Cl bias — pool all
+   race groups onto one continuous measured-globulin→bias line (race-blind, actionable fix). Risk: protein-paired
+   subsample small (MNAR); frame as mediated-fraction, not race→0.
+3. **[5-6/7] Within-patient coordinated Na+Cl fingerprint** — within-patient Na-bias & Cl-bias correlated, slope =
+   ion concentration ratio (~0.71). Hard to fake (gate-6 gold). Ref: simultaneous BG Na+Cl vs chem.
+4. **[5-6/7] Total-T4 / TBG protein-binding** — free T4 as truth for total T4; total-T4-excess ~ protein (opposite
+   sign to Na/Cl, same as Ca) → a mechanistically-independent 6th panel analyte. Risk: power (lead with dose-response).
+5. **[5/7] Potassium concentration-scaled specificity control** — BG K (244k, best-powered pair); predicted racial
+   displacement ~= −0.03 (near-zero). A quantitative negative control completing the concentration law. Risk: hemolysis
+   (screen/adjust).
+6. **[5/7] Osmolar-gap protein floor via MEASURED osmolality** (distinct from the demoted 13c) — anchor to measured
+   osm (protein-independent) in a no-toxic-exposure subgroup. MANDATORY red-team: compute the parent Na regression
+   alongside; kill if z matches (the 13c rescaling trap).
+7. **[5/7] Occult hypoxemia → S:F ratio / SOFA-resp under-scoring by race** — SpO2 bias → falsely reassuring S:F →
+   under-scored organ dysfunction. Run PubMed novelty screen FIRST (S/F-by-race is active); corollary risk.
+
+### NEW SEAM (from the new-triple search — a distinct mechanism, its own potential flagship)
+8. **POC handheld glucose-meter HEMATOCRIT interference by anemia (race/sex/CKD).** Whole-blood fingerstick meters
+   over-read glucose at low Hct (RBC-volume displacement) → differential false-hyperglycemia + insulin-dose error in
+   anemic (Black/female/CKD) patients. Ref: lab plasma glucose 50931 (truth) vs fingerstick meter chartevents 225664;
+   Hct 51221 as modifier (all confirmed present; 225664 needs extraction). Distinct physical mechanism; Lyon-2020 did
+   it by simulation, the real paired-EHR racial differential is unmined. Falsifiable: negative Hct dose-response slope;
+   specificity control = a Hct-insensitive POC analyte shows no effect. Pre-registered risk: modern Hct-corrected
+   meters (StatStrip) may attenuate to null (MIMIC 2008-2019, device-dependent).
+
+Kill list (gate-failed, do not re-propose): Mg/phosphate total-vs-ionized (no reference), chem lactate (empty),
+cystatin-C/fructosamine/transcutaneous/biotin/BCG-BCP (not in MIMIC), eICU sodium replication (no BG Na), and all
+cycle 10-11 done/known items.
