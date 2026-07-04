@@ -94,6 +94,36 @@ NEJM-genre measurement-equity finding. The one thing separating it from a comple
 a **measurement-mediated downstream consequence** — the next experiment tests whether a false-high corrected
 calcium triggers differential, unnecessary hypercalcemia workup (PTH/SPEP) in MIMIC, where order data exists.
 
+## Addendum — the measurement-mediated workup consequence (MIMIC)
+
+The remaining NEJM ingredient — does the false flag cause real, unnecessary clinical action? — was tested in
+MIMIC (25,170 total+ionized pairs, 3,442 Black; PTH itemid 50965, vitamin D 50853, SPEP/immunofix/FLC panel,
+repeat-ionized). Feasibility passed at population scale (PTH 20,401 pts, VitD 41,062, SPEP 24,438). Two links:
+
+1. **Measurement-mediated causal link (POWERED, robust) — the biased value drives workup independent of the
+   truth.** Logistic P(specific hypercalcemia workup PTH|VitD|SPEP within +72h) ~ corrected_Ca + ionized (truth)
+   fixed: **corrected_Ca OR 1.17 (z=3.37)**; the total_Ca variant (all pairs) **OR 1.42 (z=8.7)**; survives
+   malignancy exclusion (**OR 1.21, z=3.53**) and temporality (workup after the pair). Clinicians act on the
+   total/corrected value they see; ionized is a send-out — so the artifact propagates to workup.
+2. **Exposure disparity (POWERED).** Among ionized-normal patients, false-flag prevalence **Black 4.7% vs White
+   2.5% (z=4.43, ~1.9×)** — Black patients are ~2× as exposed to the artifact that drives workup.
+
+**Honest ceiling on the final product.** The population-level *differential unnecessary workup* (false-flag AND
+specific workup, by race) is **underpowered for the clean endocrine/myeloma endpoint** (only 4 Black
+false-flag+specific-workup events in the +72h window); it is significant only for a broad "any workup" proxy
+(+1.28 pp, z=3.08) that leans on repeat-ionized (contaminated by hypocalcemia repletion monitoring). *Within*
+flagged patients the workup rate does not differ by race — **the racial signal is in EXPOSURE, not response.**
+So the two load-bearing links are clean and powered (bias→workup independent of truth; Black 2× exposed), and
+their product is the arithmetic consequence, but MIMIC alone lacks the specific-endpoint events to prove the
+population differential directly — it needs a larger/multi-site lab corpus. (A methods note: the workup agent
+caught and fixed a labevents schema bug — an undocumented `order_provider_id` column — that had produced a
+false all-zero null on the first pass.)
+
+**Net:** the calcium finding now has mechanism + multi-site measurement-bias validation + a
+**measurement-mediated workup consequence with a clean causal link and a 2× exposure disparity** — materially
+beyond a pure label-miscalibration claim. The single remaining item for "fully validated" is powering the
+population differential-workup endpoint (more events).
+
 ## Artifacts (scratchpad, gitignored)
 `eicu_calcium_analysis.py`, `eicu_calcium_REPRO.py`, `eicu_calcium_confound_check.py`,
-`eicu_calcium_followup.py`, and the `*_REPORT.md` outputs.
+`eicu_calcium_followup.py`, `workup_analysis.py`, `extract_workup.py`, and the `*_REPORT.md` outputs.
