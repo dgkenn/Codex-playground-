@@ -724,6 +724,14 @@ cross-nationally-validated part.
   treatment consequence — infusionDrug caught only 316/73,547 stays). Before launching an external-validation
   run, verify the specific ground-truth reference AND the consequence variable exist in that cohort's tables,
   not just the analyte. The consequence test moves to MIMIC (inputevents/repletions.csv present).
+- **FEASIBILITY REFINEMENT — an itemid existing ≠ the paired reference being co-ordered at scale.** C12-2
+  (pre-analytic lactate) died an infeasibility null: chem lactate (53154) and blood-gas lactate (50813) both
+  exist, but chem lactate is a rare floor order (104 rows) and bg lactate a high-volume POC order — they are
+  essentially never co-drawn (1 paired patient at ±60 min). A two-method ground-truth design needs the two
+  methods CO-ORDERED in the same patients within the pairing window, not merely both present in the dictionary.
+  The 2-minute feasibility grep must count paired co-occurrence, not itemid existence (same failure class as the
+  eICU `medication` table — conceptually present, not populated for the design). Add to the pre-run checklist:
+  "paired-reference co-occurrence ≥ target N within the window?" — a cheap kill before compute.
 - **The NEJM bar for this program = the eGFR race-coefficient analogue (Vyas 2020), not a hard outcome.** The
   measurement bias + misclassification + fixable-formula story IS a complete measurement-equity paper if
   externally validated and mechanism-nailed; the hard arrhythmia/mortality chain stays a lead (doc 05: eICU
