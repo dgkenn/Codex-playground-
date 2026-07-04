@@ -670,3 +670,27 @@ cross-nationally-validated part.
   discriminator's first use: potassium-control HIGH→WIN, masked-hypernatremia HIGH→NULL, Na+Cl-fingerprint
   MED→NULL, glucose-meter HIGH→PARTIAL. Strongest predictor of a clean result remains a sharp falsifiable
   prediction + a real negative control; "documented subgroup driver" needs the in-cohort-variance check.
+
+## Discriminator calibration — the driver needs RANGE (not just variance) in the cohort (new-triple search)
+- **COHb → pulse-ox nulled the same way glucose-meter did — the driver was documented in the general population
+  but FLAT in the cohort.** Carboxyhemoglobin biases SpO₂ upward, but in the ICU COHb is uniformly low (mean
+  1.1%, max ~7%; severe CO poisoning is triaged to the ED/hyperbaric, never reaches the routine ABG cohort) →
+  no dynamic range → no dose-response detectable, regardless of mechanism validity. This is the DOSE-RANGE
+  failure, distinct from the VARIANCE-BY-SUBGROUP failure (glucose-meter): a dose-response needs the biasing
+  agent to SPAN a range in the cohort; a disparity needs it to DIFFER by subgroup in the cohort. Both are
+  in-cohort distribution checks; check both before scoring a driver.
+- **Clean consolation sub-result:** COHb is racially invariant in the ICU (Black≈White) → it cannot be the
+  confounder behind the Sjoding occult-hypoxemia racial gap. A "null with range" still ruled a rival mechanism
+  OUT — negative-result value.
+- **The WIN that proves the rule — thrombocytosis → pseudohyperkalemia.** Predicted MED-HIGH → WIN. Everything
+  the two misses lacked, this had: a clean serum-vs-plasma ground-truth reference AND a driver (platelet count)
+  with ABUNDANT in-cohort range (into the millions). Platelet slope **+0.052 mEq/L per 100k (z=22.9)**, strictly
+  monotone to +0.79 at platelets >1000k; false-hyperK 1.6%→28% across platelet bands; the **WBC arm is null**
+  (localizes the mechanism to platelets, not generic cellularity). NB the RACIAL false-hyperK gap replicates
+  (Black 6.6% vs White 3.3%) but is NOT platelet-mediated (survives platelet adjustment) — a separate pre-analytic
+  disparity (hemolysis/draw), so the win is the platelet dose-response, not a racial flagship.
+- **DISCRIMINATOR PROMOTION:** "does the driver have the needed distribution IN THE ACTUAL COHORT?" is now the
+  THIRD strong signal in `IDEA_GATE.md` (was a supporting one). Two components: (a) dynamic RANGE for a
+  dose-response; (b) VARIANCE BY SUBGROUP for a disparity. After 7 scored ideas, the two HIGH misses (glucose,
+  COHb) and the MED-HIGH win (thrombocytosis) are ALL explained by this one signal — it is the biggest recurring
+  calibration error (over-scoring a driver on general-population evidence without the 2-min in-cohort describe).

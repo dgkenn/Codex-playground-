@@ -26,7 +26,7 @@ proportional criterion as reference.
 
 ## The discriminating features (score each; higher total = more likely a winner)
 
-**THE TWO STRONGEST SIGNALS — an idea missing either is *probably* bad; demand a clever workaround
+**THE THREE STRONGEST SIGNALS — an idea missing any is *probably* bad; demand a clever workaround
 before running it (down-weight heavily, don't reflexively kill):**
 1. **Ground-truth reference in the same patients?** A second measurement method or gold standard
    (blood-gas vs chem; ionized vs total; adjudicated label). *This is the #1 discriminator — nearly
@@ -34,6 +34,13 @@ before running it (down-weight heavily, don't reflexively kill):**
    credible proxy/instrument (and even then, expect a hard road).
 2. **Named mechanism predicting the DIRECTION?** A specific analytical/physiological reason the
    subgroup differs (not "maybe analyte X is biased"). Mechanism-first beats phenotype-first fishing.
+3. **Does the DRIVER have the needed distribution IN THE ACTUAL COHORT?** *(added from calibration — this
+   check would have correctly down-ranked BOTH of the discriminator's HIGH misses.)* A 2-minute check
+   before scoring: `describe the driver in the real data`. It needs (a) **dynamic range** for a
+   dose-response — COHb→pulse-ox nulled because ICU COHb is uniformly low (max 7%, severe CO triaged
+   elsewhere); and (b) **variance BY SUBGROUP** for a disparity claim — glucose-meter's racial angle died
+   because ICU anemia is race-invariant (Black=White Hct). A driver documented in the *general population*
+   is NOT enough; the *cohort* can flatten it. (The thrombocytosis WIN had a driver with abundant range.)
 
 **SUPPORTING SIGNALS — more of these = higher win-likelihood:**
 3. **Documented subgroup difference in the upstream driver** (globulins, muscle mass, RBC lifespan,
@@ -120,6 +127,22 @@ reweight:
 - Confirmed weak/overrated so far: a high feature-count alone (masked-hypernatremia 7/7 → null; the score
   is not the outcome). "Threshold-complement" and "sharper-within-patient" moves over-scored — they need the
   extra baseline-offset / population-vs-patient checks now folded into the pre-mortem.
-- The record is small (n≈4 gate-scored so far). Treat the weights as provisional; the point is that they
-  **improve every cycle** as predicted-vs-actual accumulates. That accumulation IS the developed ability —
-  not this static list.
+- The record is small; treat weights as provisional; they **improve every cycle** as predicted-vs-actual
+  accumulates. That accumulation IS the developed ability — not this static list.
+
+### Calibration log (predicted → actual; append every cycle)
+| Idea | Predicted | Actual | What it taught |
+|------|-----------|--------|----------------|
+| Potassium concentration-control | HIGH | WIN | sharp near-zero prediction + clean reference → cleanest wins |
+| Masked-hypernatremia | HIGH | NULL | feature-count ≠ outcome; check baseline analyzer-offset direction |
+| Na+Cl within-patient fingerprint | MED | NULL | population dose-response ≠ patient-level (individual noise attenuates) |
+| Glucose-meter Hct | HIGH | PARTIAL | driver must VARY BY SUBGROUP in the cohort (ICU anemia race-invariant) |
+| COHb → pulse-ox | HIGH | NULL | driver must have RANGE in the cohort (ICU COHb uniformly low) |
+| MetHb → pulse-ox | MED-HIGH | mech-only | extreme-tail power (MetHb≥5% n=28) |
+| Thrombocytosis → pseudohyperK | MED-HIGH | WIN | driver with abundant range + clean reference → hit |
+
+**Pattern after 7 scored:** the two HIGH *misses* (glucose, COHb) and the MED-HIGH *win* (thrombocytosis)
+are fully explained by signal #3 — the driver's in-cohort distribution. That check is now promoted to a
+strong signal. The two features that keep predicting clean results remain: **ground-truth reference** +
+**sharp falsifiable prediction**. Biggest recurring calibration error: over-scoring a driver documented in
+the general population without checking its distribution in the actual cohort.
