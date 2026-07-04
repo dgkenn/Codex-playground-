@@ -736,6 +736,15 @@ cross-nationally-validated part.
   trajectory helps only when charting is DENSE relative to the physiologic timescale; for fast dynamics on sparse
   charting, "dynamic" features are just a fresher level measurement. Always run the strip-the-levels test before
   claiming a trajectory finding.
+- **THE GROUND-TRUTH REFERENCE MUST BE CLEAN FOR THE SPECIFIC MECHANISM, not just nominally present (HbA1c
+  NO-GO).** HbA1c-RBC-lifespan → diabetes misdiagnosis needs a reference for *chronic* glycemia. Glucose exists
+  at scale in MIMIC, but in-hospital glucose is STRESS-confounded (dextrose/critical-illness hyperglycemia ≠
+  chronic glycemia), and the mechanism-clean reference (fructosamine/glycated albumin) has 0 rows. So the
+  "matched-glucose" conditioning is not matched on the thing the mechanism concerns. **Diagnostic fingerprint of
+  a confounded reference: the linear-adjustment estimate UNDER-shoots the mechanism while the stratified/matched
+  estimate OVER-shoots it** (HbA1c: linear +0.2pp vs stratified 1–2pp) — the two disagree because the
+  conditioning variable carries residual confounding. Before scoring a reference as "present," ask: is it clean
+  for THIS mechanism, or confounded by the acute-illness state? (Adds to the co-occurrence check.)
 - **PROPAGATION-MAP ENDPOINT MUST BE A *FREE* (UNCONTROLLED) VARIABLE — not one in a titration feedback loop
   (vancomycin NO-GO).** A bias→decision→outcome propagation only produces a measurable downstream disparity if
   the ENDPOINT is not actively titrated back to target by the care system. Vancomycin: creatinine underestimates

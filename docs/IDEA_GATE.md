@@ -189,7 +189,7 @@ co-occurrence feasibility + magnitude-plausible + novelty + external-validatable
 | # | Idea | Free endpoint | Predicted | Actual |
 |---|------|---------------|-----------|--------|
 | T1 | Temperature-SITE bias (core vs peripheral) → missed fever/SIRS/sepsis flag | fever/SIRS classification | **MED-HIGH** | _gating_ |
-| H1 | HbA1c RBC-lifespan (CKD/anemia/transfusion) → diabetes MISDIAGNOSIS | ≥6.5% diagnostic label | **MED-HIGH** | _gating_ |
+| H1 | HbA1c RBC-lifespan (CKD/anemia/transfusion) → diabetes MISDIAGNOSIS | ≥6.5% diagnostic label | **MED-HIGH** | **NO-GO** — novelty CROWDED (textbook + a case report of the exact misclassification, Foley 2026); the CLEAN reference (fructosamine/GA) = 0 rows in MIMIC → reference collapses to stress-confounded in-hospital glucose; magnitude split (linear undershoot +0.2pp / stratified overshoot 1–2pp) = confounded-reference fingerprint |
 | T3 | Occult hypoxemia → NEWS/MEWS escalation under-trigger (lower-acuity = headroom, fixes C12-1's ICU-no-headroom failure) | ward escalation trigger | MED (ward-data feasibility risk) | _queued_ |
 | T4 | Sedation-suppressed GCS → falsely-poor neuro-prognosis/WLST | prognostication | MED (high-impact, confounded) | _queued_ |
 | T5 | Albumin-hidden high-AG acidosis → missed DKA/acidosis flag | acidosis/DKA classification | MED (adjacent to null AG-by-race) | _queued_ |
