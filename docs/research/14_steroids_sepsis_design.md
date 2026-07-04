@@ -115,6 +115,26 @@ honestly at "hypothesis-generating for a stratified trial." **Next:** external-v
 interaction in eICU + SICdb; reduce to the parsimonious bedside score (mnemonic); pursue ADRENAL/APROCCHSS/VANISH
 IPD for causal confirmation.
 
+## v3 — external validation (SICdb primary; eICU infeasible)
+
+SICdb N=11,591 NE-treated (cardiac-surgery excluded); hydrocortisone 1,271; HLVR 960. **Compromised test: SICdb
+lactate was NOT locally available, so HLVR was defined by vasopressor-refractoriness ONLY** → it collapses onto
+NE-dose severity, NOT the true hyperlactatemic-refractory phenotype.
+- **Mortality interaction directionally REPLICATES:** broad OR 0.77 (NS); **true-septic-shock subset (N=742) OR
+  0.14 (0.065–0.29), survives severity-orthogonality** — steroids relatively less harmful/more beneficial on
+  mortality in the refractory phenotype, as in MIMIC.
+- **Shock-reversal interaction FAILS** (opposite direction, HR 0.68–0.77) — but confounded by the phenotype
+  mis-definition (no lactate) + single-center power.
+- **eICU infeasible locally** (13 hydrocortisone rows; the `medication` table holding IV/bolus steroids isn't
+  downloaded).
+
+**Standing:** hypothesis-SUPPORTING for the mortality arm (strong in true-sepsis), non-confirmatory for reversal.
+**The clean re-test (v3b, launched):** extract SICdb arterial lactate (ref IDs 454/657/465 via the existing
+`sicdb_stream_lab.py` streaming approach), define the PROPER hyperlactatemic + vasopressor-refractory phenotype,
+and re-run — this resolves whether the reversal failure is a phenotype-mis-definition artifact or real. Overall
+steroids ceiling remains trial-ready/hypothesis-generating (MIMIC negative control partially fired; observational
+HTE); RCT-IPD (ADRENAL/APROCCHSS/VANISH) is the causal gold standard.
+
 ## Source reviews (scratchpad)
 `lit_sepsis_phenotyping_landscape.md`, `lit_steroid_response_sepsis.md`,
 `lit_steroid_decision_tool_methods.md`, `steroids_sepsis_design_premortem.md`.
