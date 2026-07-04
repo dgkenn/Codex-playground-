@@ -1,8 +1,17 @@
-# IDEA GATE — a pre-run screen to raise the win rate
+# IDEA DISCRIMINATOR — calibrated judgment for likely-winners vs obviously-bad ideas
 
-Derived empirically from ~40 ideas run this session (~12 wins, ~25 nulls/demotions). Winners and
-losers had distinct, learnable structure. **Score every candidate idea against this gate BEFORE
-spending compute. Run only ideas that clear ~5/7 AND both hard gates.** Read alongside
+**This is NOT a rigid pass/fail gate.** It is a discriminative aid: **rank candidate ideas by
+win-likelihood, and reliably spot the *obviously bad* ones, before spending compute.** Use it as
+judgment, not bureaucracy — a strong idea missing one feature can still be worth running if it has a
+clever workaround. (Proof it's not a hard filter: masked-hypernatremia scored 7/7 and still nulled;
+potassium-control scored 5/7 and won.)
+
+**The point is to DEVELOP the ability, not apply a fixed rule.** It sharpens through calibration: for
+every idea, jot a quick predicted win-likelihood (high/med/low), then compare to the actual outcome in
+`FINDINGS_LEDGER.md`. Over cycles, that predicted-vs-actual record is what turns the features below into
+real intuition (and reweights them — see the calibration note at the bottom).
+
+Derived empirically from ~40 ideas run this session (~12 wins, ~25 nulls/demotions). Read alongside
 `FINDINGS_LEDGER.md` (what's already done — do not repeat) and `LESSONS.md`.
 
 ## The winning template (what every durable win instantiated)
@@ -15,17 +24,18 @@ Examples that won: indirect-ISE electrolyte-exclusion (Na/Cl↓, Ca↑) with blo
 reference and higher globulins in Black patients as the driver; muscle-mass → creatinine with the
 proportional criterion as reference.
 
-## The gate (score 0/1 each)
+## The discriminating features (score each; higher total = more likely a winner)
 
-**HARD GATES — kill the idea if either is 0:**
+**THE TWO STRONGEST SIGNALS — an idea missing either is *probably* bad; demand a clever workaround
+before running it (down-weight heavily, don't reflexively kill):**
 1. **Ground-truth reference in the same patients?** A second measurement method or gold standard
    (blood-gas vs chem; ionized vs total; adjudicated label). *This is the #1 discriminator — nearly
-   every null this session died here.* If there is no clean "truth" to measure the bias against, do
-   not run it.
+   every null this session died from its absence.* No clean "truth" ⇒ obviously-bad UNLESS there's a
+   credible proxy/instrument (and even then, expect a hard road).
 2. **Named mechanism predicting the DIRECTION?** A specific analytical/physiological reason the
-   subgroup differs (not "maybe analyte X is biased"). Mechanism-first, never phenotype-first fishing.
+   subgroup differs (not "maybe analyte X is biased"). Mechanism-first beats phenotype-first fishing.
 
-**SOFT GATES — need ~3 of these 5:**
+**SUPPORTING SIGNALS — more of these = higher win-likelihood:**
 3. **Documented subgroup difference in the upstream driver** (globulins, muscle mass, RBC lifespan,
    skin optics, body habitus…) — so the bias has a real cause.
 4. **Novel** — not already published AND not a *statistical rescaling* of a finding we already have
@@ -88,8 +98,28 @@ seam has a high hit rate; breadth across new analytes (cycles 9–11) yielded ~2
 hardening the existing flagship. To find a *new* flagship, don't grind analytes — deliberately hunt for
 new **(mechanism + ground-truth reference + subgroup driver)** triples with the winning structure.
 
-## How to use
+## How to use (rank, don't filter)
 
-1. Draft candidates. 2. Score each on the gate; drop anything failing a hard gate or <5/7.
-3. Run the pre-mortem on survivors. 4. Verify the ground-truth reference actually exists in the data.
-5. Run only the survivors. 6. After results, append the win/loss + why to the ledger to keep tuning the gate.
+1. Draft many candidates — cast wide.
+2. **Score & RANK** each on the features above → a win-likelihood (high/med/low). Don't auto-drop; sort.
+3. **Flag the obviously-bad** (missing a strong signal with no workaround; hits a pre-mortem failure mode;
+   already-published; a statistical rescaling) — these are the cheap, confident kills.
+4. Run the pre-mortem on the top-ranked survivors; verify the ground-truth reference actually exists.
+5. Run the top few by likelihood (a med-likelihood idea with a cheap run + big upside can still be worth it —
+   judgment, not a threshold).
+6. **Record the PREDICTION** (your high/med/low) next to the outcome in `FINDINGS_LEDGER.md`.
+
+## Calibration loop — how the ABILITY develops (the actual goal)
+
+The discriminator is only as good as its calibration. Each cycle: log **predicted win-likelihood → actual
+outcome**. Periodically review the record and ask which features actually separated wins from nulls, and
+reweight:
+- Confirmed strong so far: **ground-truth reference** (its absence predicted nearly every null);
+  **sharp falsifiable quantitative prediction** (produced the cleanest wins *and* the cleanest, most
+  informative nulls).
+- Confirmed weak/overrated so far: a high feature-count alone (masked-hypernatremia 7/7 → null; the score
+  is not the outcome). "Threshold-complement" and "sharper-within-patient" moves over-scored — they need the
+  extra baseline-offset / population-vs-patient checks now folded into the pre-mortem.
+- The record is small (n≈4 gate-scored so far). Treat the weights as provisional; the point is that they
+  **improve every cycle** as predicted-vs-actual accumulates. That accumulation IS the developed ability —
+  not this static list.

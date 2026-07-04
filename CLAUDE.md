@@ -83,14 +83,13 @@ This repo runs as a 24/7, self-learning, publication-focused research loop. Befo
 2. Read **`docs/LESSONS.md`** — accumulated memory (what we know / what's ruled out). Never repeat a dead
    end. **Append a new lesson (with mechanism) after every experiment — negative results included.**
 3. Read **`docs/EXPERIMENT_QUEUE.md`** — the prioritized backlog. Pull the top item that fits compute.
-4. Read **`docs/IDEA_GATE.md`** — the empirical idea-generation pre-screen (from ~40 run ideas).
-   **MANDATORY: score every candidate idea against the gate BEFORE spending compute.** Two hard gates —
-   a ground-truth reference in the data (no ground truth ⇒ do NOT run it) and a named direction-predicting
-   mechanism. Prefer a sharp falsifiable quantitative prediction; for a masking bias's "threshold
-   complement," check the baseline analyzer-offset direction too. Judge the gate by losers-not-run (the
-   cheap kill list), not just hit rate on the few you pick. Depth on a mined seam nears exhaustion — hunt
-   for new (mechanism + ground-truth reference + subgroup driver) triples.
-Then GATE → run → red-team (sonnet) → log lessons → update queue/ledger → commit+push. **Delegate:** haiku for
-mechanical/checkable tasks, sonnet for judgment/red-team, opus (main) only for orchestration+synthesis.
+4. Read **`docs/IDEA_GATE.md`** — the idea DISCRIMINATOR (from ~40 run ideas). Not a hard filter: **score &
+   RANK candidates by win-likelihood and flag the obviously-bad before spending compute; then use judgment.**
+   Strongest signals = a ground-truth reference in the data + a named direction-predicting mechanism + a
+   sharp falsifiable quantitative prediction. **Calibrate:** record your predicted win-likelihood next to
+   the actual outcome in the ledger — that accumulating predicted-vs-actual record is how the ability
+   develops. When depth on a mined seam stalls, hunt for new (mechanism + reference + driver) triples.
+Then discriminate/rank → run → red-team (sonnet) → log lessons + prediction → update queue/ledger → commit+push.
+**Delegate:** haiku for mechanical/checkable tasks, sonnet for judgment/red-team, opus (main) only for orchestration+synthesis.
 Mission bar: **ultra-high-impact, externally-validated** findings; current white space =
 first cross-site-validated EEG-foundation-model → clinical-outcome study (GPU-gated).
