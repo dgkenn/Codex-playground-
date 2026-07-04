@@ -736,6 +736,23 @@ cross-nationally-validated part.
   trajectory helps only when charting is DENSE relative to the physiologic timescale; for fast dynamics on sparse
   charting, "dynamic" features are just a fresher level measurement. Always run the strip-the-levels test before
   claiming a trajectory finding.
+- **PROPAGATION-MAP ENDPOINT MUST BE A *FREE* (UNCONTROLLED) VARIABLE — not one in a titration feedback loop
+  (vancomycin NO-GO).** A bias→decision→outcome propagation only produces a measurable downstream disparity if
+  the ENDPOINT is not actively titrated back to target by the care system. Vancomycin: creatinine underestimates
+  renal impairment in low-muscle women → CG overestimates CrCl ~29% → mechanism predicts an 18–35% higher trough;
+  OBSERVED only 3.5–10% (a 5× UNDER-shoot). Reason: the vanco trough is TDM-controlled — clinicians measure it
+  and re-titrate both sexes to target, so the feedback loop CORRECTS the upstream bias and severs the
+  decision→outcome link. **New pre-run check for any propagation-map: is the endpoint actively titrated to a
+  target (drug trough, glucose-on-insulin, INR-on-warfarin, MAP-on-pressors, ventilator SpO₂-target)? If yes, a
+  real upstream bias will read strongly ATTENUATED — pick a FREE endpoint instead (a one-shot classification/order
+  that is not re-titrated — e.g., the calcium WORKUP order, which worked precisely because workup isn't titrated
+  to a target).** This is WHY the calcium propagation succeeded (workup = free) and vancomycin fails (trough =
+  controlled).
+- **The mechanistic-magnitude check catches BOTH failure directions.** OVER-shoot (observed ≫ predicted → C12-1,
+  cohort-specific inflation/confounding, won't externally replicate) AND UNDER-shoot (observed ≪ predicted →
+  vancomycin, feedback-controlled/attenuated endpoint, no clean disparity to report). Compute the effect the
+  mechanism predicts from first principles and compare BEFORE claiming; a mismatch in either direction is a red
+  flag. Only observed ≈ predicted is a mechanistically-credible propagation worth building.
 - **INTERNAL ROBUSTNESS ≠ EXTERNAL REPLICATION — and a mechanistic-magnitude sanity check would have flagged it
   (C12-1 tempered).** The occult-hypoxemia→SF/ARDS/SOFA propagation passed every INTERNAL gate (cluster-robust,
   one-pair-per-subject, FiO₂/nonlinearity/PEEP robustness, novelty) — then FAILED eICU external validation: the
