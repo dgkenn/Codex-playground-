@@ -150,17 +150,29 @@ malignancy code and after enforcing temporal order (workup strictly after the pa
 ### 2.5 Honest note on cohort heterogeneity across analyses
 
 Different analyses in this program draw on different extractions of the same underlying databases,
-performed at different points in the research program, and the cohort sizes are **not identical**
-across sections of this manuscript:
-- MIMIC-IV: the primary raw-bias analysis (§3a) used n=25,163 paired draws (3,442 Black); the false
-  hypercalcemia analysis (§3b) used a larger, separately constructed extraction of n=103,655 pairs
-  (14,933 Black).
-- eICU-CRD: the original calcium replication (raw bias + masked hypocalcemia, cited in §3a) used
-  n=62,388 pairs across 129 hospitals; the false hypercalcemia external-validation analysis (§3b, d)
-  used an independent, smaller re-extraction of n=14,164 pairs across 93 hospitals (a truncated
-  download relative to the 129-hospital extraction, disclosed here rather than silently reconciled).
-  Both extractions of eICU are analyzed and reported on their own terms; no number from one has been
-  substituted into the other.
+performed at different points in the research program; cohort sizes are **not identical across
+sections** because each test requires a different substrate (e.g., the rare false-hypercalcemia
+threshold event needs a larger extraction to accrue events; the raw-bias/mechanism contrast needs
+tight ionized pairs). Each analysis is reported on its own cohort's terms; no number from one
+extraction has been substituted into another. The five named cohorts:
+
+| Cohort | Definition | N pairs (Black / White) | Sites | Used for |
+|---|---|---|---|---|
+| **MIMIC ionized-pair** | total↔ionized pairs ≤1 h, 1/admission | **25,163** (3,442 / 21,721) | 1 | primary raw bias (§3a); corrected-Ca miscalibration (§3c); workup consequence (§3d) |
+| &nbsp;&nbsp;— *albumin sub-cohort* | ionized-pair rows with same-window albumin | 10,005 | 1 | corrected-Ca shift (+0.15, z=7.3) |
+| **MIMIC albumin-triplet** | larger separate extraction, ionized+total(±albumin) | **103,655** (14,933 / 88,722) | 1 | false hypercalcemia + matched-band (§3b) |
+| **eICU-full** | full download, pairs ≤60 min | **62,388** (21,275 patients) | **129** | raw-bias + masked-hypocalcemia replication (§3a, §3b) |
+| **eICU-subset** | independent truncated re-download | **14,164** (1,736 / 12,428) | **93** | false hypercalcemia + CKD-robustness + reproduction (§3b) |
+| **SICdb-protein** | Salzburg, Austria; total protein; **no race** | tens of thousands | 1 | protein-binding mechanism, cross-national (§3a) |
+
+Notes: (i) the two eICU extractions are a **division of labor**, not competing estimates — the
+129-hospital full extraction carries the general measurement-bias + masked-hypocalcemia replication;
+the 93-hospital re-extraction carries the false-hypercalcemia threshold + CKD-robustness + independent
+reproduction. (ii) The MIMIC workup analysis (§3d) uses the ionized-pair cohort; an earlier run
+reported n=25,170 for the same object (a 7-pair filtering difference that changes no estimate) —
+n=25,163 is canonical throughout. (iii) Where doc-level exploratory numbers were later superseded by
+the cluster-robust headline estimates (e.g., an earlier adjusted false-hypercalcemia OR 1.50 vs the
+reported OR 1.77), only the headline estimate is used in Results; the earlier figure is not cited.
 
 ---
 
