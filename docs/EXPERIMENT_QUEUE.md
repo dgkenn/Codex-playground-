@@ -15,6 +15,20 @@ confirmatory path = re-analyze ADRENAL/APROCCHSS. Running: MIMIC cohort+discover
   to exclude cardiac surgery). Have medication.csv.gz + cases.csv.gz locally; extract baseline subphenotype
   FEATURES only AFTER MIMIC discovery names them (and only if discovery shows a real signal).
 - **eICU external validation:** diagnosis + infusionDrug + apacheApsVar present locally.
+- **PRE-MORTEM VERDICT (do NOT run the naive version):** Rajendran et al. Nat Commun 2025 (PMID 40360520)
+  ALREADY did MIMIC+eICU ML-subphenotyping + target-trial-emulation of corticosteroids on MORTALITY and got
+  direction-INCONSISTENT cross-cohort effects (HR 1.05 vs 1.40; 1.24 vs 1.34 — non-replication). Li et al.
+  2023 (PMID 38039761): PSM on hydrocortisone in MIMIC-IV still yields an RCT-discordant harmful estimate →
+  confounding-by-indication is NOT fixable by propensity here. So the naive cluster-then-test-on-mortality is
+  already-done + confounding-limited. **We only proceed with a DIFFERENTIATED wedge.** Candidate wedges (being
+  novelty-checked): (1) an EHR PROXY for the transcriptomic SRS2 endotype (VANISH: SRS2 HARMED by
+  hydrocortisone) — a deployable "don't-give-steroids" classifier, no EHR-proxy exists; (2) SHOCK-REVERSAL /
+  vasopressor-free-days outcome (reliable steroid physiology, less confounded) instead of mortality; (3)
+  catecholamine-resistance / vasopressor-dose-trajectory phenotype (the real bedside trigger). Also required if
+  we run: full clone-censor-weight (not just landmark), pre-registered power thresholds, severity-vs-endotype
+  falsification tests (non-monotonicity/orthogonality-to-SOFA/severity-blind-recluster), E-values. Let the
+  running MIMIC discovery finish only for the reusable cohort + subphenotype STRUCTURE; do not build on its
+  naive mortality-HTE.
 
 Priority = (impact × novelty × feasibility) / cost. **CPU-only right now; overnight runs are fine.** Every
 item must clear the hostile-review gate (RESEARCH_MACHINE.md) before it counts. Move done items to
