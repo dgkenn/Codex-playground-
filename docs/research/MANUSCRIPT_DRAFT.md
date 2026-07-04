@@ -20,8 +20,10 @@ misclassification propagates into clinical action — has not been quantified.
 U.S. multicenter intensive care unit (ICU) databases — MIMIC-IV (single academic center, Boston) and
 eICU-CRD (multiple U.S. hospitals) — to test, at matched *true* (ionized) calcium, whether the
 reported (total or albumin-corrected) value differs by race. We replicated the underlying
-protein-binding mechanism in an Austrian cohort (SICdb) that lacks a race variable but provides a
-large, cross-national dose-response test. Four pre-registered tests assessed the raw measurement
+protein-binding mechanism in two additional cohorts that lack a race variable but provide large,
+independent cross-national dose-response tests — an Austrian ICU cohort (SICdb) and a Korean
+non-cardiac-surgery cohort (INSPIRE) — establishing the analytical mechanism across four cohorts,
+three continents, and two care settings. Four pre-registered tests assessed the raw measurement
 bias, false hypercalcemia, matched-band threshold crossing, and masked hypocalcemia; analyses used
 cluster-robust linear and logistic regression, chronic kidney disease (CKD) stratification,
 malignancy exclusion, and independent code reproduction. A separate MIMIC analysis tested whether the
