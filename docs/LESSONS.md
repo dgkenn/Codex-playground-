@@ -585,3 +585,18 @@ cross-nationally-validated part.
 - **Meta: for this domain, the honest deliverable is the rigorous NEGATIVE.** Confounding-by-indication
   (~OR 1.35 ceiling) + the label problem cap any positive; the program's contributions are clean,
   pre-registered, noise-floored nulls that rule out cheap surrogates and flag an unreliable common label.
+
+## Chloride pseudohypochloremia mechanism REPLICATES cross-nationally (SICdb)
+- SICdb (Austria, 8,912 paired patients) confirms the chloride electrolyte-exclusion mechanism: chem−BGA
+  discordance ∼ total-protein slope −0.552 mmol/L per g/dL (z=−18.6), STRICTLY MONOTONE across protein
+  quartiles, robust to a 10-min window (−0.495, z=−14.1), globulin-gap consistent (−0.642).
+- **Quantitative mechanistic prediction confirmed** (a strong, hard-to-fake signature): Na:Cl protein-slope
+  ratio 0.552/0.843 = 0.65 ≈ ion concentration ratio 100/140 = 0.71. Proportional plasma-water displacement
+  predicts this; an analyzer/calibration artifact cannot manufacture a slope ratio matching the concentration
+  ratio. Use this "does the effect scale with the analyte's concentration as the mechanism predicts" check as
+  a discriminator between real electrolyte-exclusion and spurious offset.
+- Chloride BGA reference (683) has NO sensor-reliability flag (sodium's 686 does) → chloride is cleaner than
+  sodium on the reference-trust axis. Sex axis weak/non-robust (z=−1.8), not claimed (same as sodium).
+- Chloride is now a VALIDATED coordinated 4th analyte alongside Na (Cl↓) and Ca (Ca↑) in the panel-wide
+  indirect-ISE plasma-water-displacement bias — mechanism confirmed on two continents / two analyzer fleets.
+  (SICdb has no race → confirms the protein MECHANISM; the racial endpoint remains MIMIC-specific.)

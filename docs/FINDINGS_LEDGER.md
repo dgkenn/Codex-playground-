@@ -92,3 +92,8 @@ Running log of experiments + hostile-review verdicts. Status: PROVISIONAL (not g
 | 11g | **MIMIC real-SV proxy + trait-state** | ΔMAP AUROC 0.56 for true ΔCO≥10%; within-episode CCO ICC −0.06 | Red-team: CCO no-bolus noise floor SD 14.2%/21.4%≥10% ≈ post-bolus 24.5% (p=0.49) → CCO reliability ~0% | **A (ΔMAP poor proxy) survives PRACTICAL/softened; B (state-not-phenotype) NOT ESTABLISHED** |
 | 11h | **MIMIC continuous-CO as FR ground truth** | test-retest reliability ~0% (no-bolus var ≥ post-bolus var) | red-team noise-floor | **cautionary methods result — MIMIC CO too noisy to ground-truth FR** |
 | 11i | **INSPIRE preop-labs → intraop instability** | severe AUROC 0.808 / routine 0.734; labs add only +0.017 over structural | associational/confounded | **MODEST/NULL — preop labs add little** |
+
+## Chloride mechanism — cross-national confirmation (SICdb)
+| # | Experiment | Result | Gate verdict | Status |
+|---|---|---|---|---|
+| 12 | **SICdb chloride electrolyte-exclusion mechanism** (8,912 paired patients) | discordance∼total-protein slope −0.552 mmol/L/g/dL (z=−18.6), strictly monotone quartiles; 10-min robust (−0.495); Na:Cl slope ratio 0.65 ≈ conc ratio 0.71 | replicates the 4-rounds-survived sodium method; cleaner reference (no sensor flag); self-checked (window/monotonicity/globulin/slope-ratio) | **CONFIRMED — chloride is a validated coordinated 4th analyte (Na↓,Cl↓,Ca↑)** |
