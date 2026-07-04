@@ -631,3 +631,23 @@ cross-nationally-validated part.
 - **Meta (reconfirms cycle 10):** single-analyte mining yields mostly known/null (7/10 here); wins need novel
   angles; and even novel-angle "wins" can be corollaries (osmolar gap) — the red-team's rescaling/timing/
   composition checks are what separate a real increment from a restatement.
+
+## IDEA_GATE — first demonstration (1 win / 3 depth ideas) + gate refinements
+- **The gate raised win QUALITY, not obviously the raw rate on n=3** (1/3 ≈ blind rate). All three gave CLEAN,
+  decisive answers (a confirmed magnitude prediction + two cleanly-falsified sharp predictions) — none of the
+  messy RTM/confounded/demoted outcomes of blind batches. Falsifiable predictions produce GOOD nulls.
+- **The gate's biggest value is UPSTREAM and invisible in the run count:** the kill list cheaply eliminated ~15
+  gate-failures (no ground truth / already-published) BEFORE compute. Efficiency gain = losers not run, not
+  wins found. Measure the gate by compute-saved-on-losers, not just hit rate on the chosen few.
+- **GATE REFINEMENT — threshold-complement moves depend on the BASELINE ANALYZER OFFSET direction, not just the
+  racial differential.** Masked-hypernatremia nulled because MIMIC chem Na OVER-reads (positive offset) → it
+  over-flags, not masks, the upper tail. Before assuming a masking bias has a symmetric upper-tail twin, check
+  the sign of the raw (not race-differential) offset. Add to the gate's pre-mortem.
+- **GATE REFINEMENT — a "sharper within-patient version" of an already-confirmed population effect often fails**
+  because individual-level measurement noise attenuates the shared-driver slope (Na+Cl fingerprint: population
+  Cl:Na protein-slope ratio 0.65 in SICdb, but within-patient bias-vs-bias slope only 0.25 — Cl discordance is
+  noisier / less protein-mediated at the patient level). Population dose-response ≠ patient-level fingerprint.
+- **STRATEGIC SIGNAL: the electrolyte-exclusion seam is NEAR-EXHAUSTED for novel DEPTH wins.** All 3 depth ideas
+  confirmed the core mechanism but 2 failed to EXTEND it. The remaining depth wins are negative controls
+  (K, bicarbonate) — valuable but incremental. Fresh flagship potential is in NEW SEAMS (glucose-meter Hct
+  interference, now data-live: fingerstick 225664 populated 255k+ rows). Pivot compute to the new seam.

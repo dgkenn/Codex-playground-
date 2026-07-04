@@ -111,3 +111,10 @@ Running log of experiments + hostile-review verdicts. Status: PROVISIONAL (not g
 | 13h | Ferritin × inflammation | acute-phase inflation z=36.8 (known); race gap NS; no iron gold standard | feasibility-limited | **NULL subgroup** |
 | 13i | TSH age/race reference | uniform>4.5 flag 7.6%→16.6% age; White 15.1% vs Black 8.0% | Surks already published age+race | **confirmatory** |
 | 13j | ETCO2–PaCO2 gradient | masked hypercapnia 16.4%, lung-dz OR 3.5; no race/sex signal | dead-space physiology, known | **confirmatory** |
+
+## Gate-demonstration batch (IDEA_GATE pre-screened; depth on the electrolyte seam)
+| # | Experiment | Result | Gate verdict | Status |
+|---|---|---|---|---|
+| 14a | **Potassium concentration-scaled specificity control** (46,968 pairs) | de-hemolyzed racial displacement +0.009 [−0.003,+0.020] (well-powered null); concentration law Na −1.08 / Cl −1.29 / K +0.009 (~100× smaller as predicted) | quantitative negative control confirmed; cleanly separated from the hemolysis false-hyperK mechanism | **WIN — completes the concentration-scaled displacement law** |
+| 14b | Sodium masked-hypernatremia (upper-tail complement) | racial differential replicates (−0.84, z=−7.7) but chem OVER-reads Na → over-flags not masks; artifactual-disparity reframe NULL (DiD +0.12pp — hypernatremia gap is genuine) | threshold-complement premise fails on baseline offset direction | **NULL** |
+| 14c | Within-patient Na+Cl fingerprint (slope=0.71) | correlation r≈0.25 (known, PMID 16548813); slope 0.25–0.34 across all estimators incl albumin-IV → 0.71 FALSIFIED; Cl only partially protein-mediated | sharp prediction cleanly falsified | **NULL (clean falsification)** |
