@@ -182,6 +182,22 @@ this cycle: **tier honesty** — a clean, novel propagation finding is JAMA-IM/A
 automatically NEJM/Nature; the discriminator should predict *tier*, not just win/loss (C12-1 = WIN but
 specialty-top, not NEJM-first).
 
+### Fresh propagation-map batch (free-endpoint focus; predictions BEFORE gate)
+After the decision-tool cycle (all walled) + vancomycin (titrated-endpoint NO-GO), pivoted back to the winning
+template with the FULL checklist applied upfront (ground-truth ref + FREE untitrated endpoint + fresh mechanism +
+co-occurrence feasibility + magnitude-plausible + novelty + external-validatable):
+| # | Idea | Free endpoint | Predicted | Actual |
+|---|------|---------------|-----------|--------|
+| T1 | Temperature-SITE bias (core vs peripheral) → missed fever/SIRS/sepsis flag | fever/SIRS classification | **MED-HIGH** | _gating_ |
+| H1 | HbA1c RBC-lifespan (CKD/anemia/transfusion) → diabetes MISDIAGNOSIS | ≥6.5% diagnostic label | **MED-HIGH** | _gating_ |
+| T3 | Occult hypoxemia → NEWS/MEWS escalation under-trigger (lower-acuity = headroom, fixes C12-1's ICU-no-headroom failure) | ward escalation trigger | MED (ward-data feasibility risk) | _queued_ |
+| T4 | Sedation-suppressed GCS → falsely-poor neuro-prognosis/WLST | prognostication | MED (high-impact, confounded) | _queued_ |
+| T5 | Albumin-hidden high-AG acidosis → missed DKA/acidosis flag | acidosis/DKA classification | MED (adjacent to null AG-by-race) | _queued_ |
+
+Note: T3 is the sharpest strategic idea — it re-tests the C12-1 propagation in the setting where it SHOULD work
+(floor/ward patients have classification headroom; the ICU didn't), with a FREE endpoint (escalation, not a
+titrated score). Gate it after T1/H1.
+
 **C12-5 actual → NOVEL-BUT-INFEASIBLE. CALIBRATION REFINEMENT (novelty ≠ feasibility; check the reference for
 EVERY arm):** the SOFA oppositely-signed-decomposition passed the novelty screen (NARROW-BUT-NOVEL — Ashana/
 Miller are total-score only; the self-cancellation framing is unpublished) but died on the FEASIBILITY of its
