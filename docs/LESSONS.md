@@ -694,3 +694,39 @@ cross-nationally-validated part.
   dose-response; (b) VARIANCE BY SUBGROUP for a disparity. After 7 scored ideas, the two HIGH misses (glucose,
   COHb) and the MED-HIGH win (thrombocytosis) are ALL explained by this one signal — it is the biggest recurring
   calibration error (over-scoring a driver on general-population evidence without the 2-min in-cohort describe).
+
+## External-validation cycle — the calcium flagship in eICU (doc 12); what hardened, what to watch
+- **Pick the CKD-ROBUST direction as the headline when two thresholds exist.** The corrected-Ca bias has two
+  endpoints: masked hypocalcemia (lower) and false hypercalcemia (upper). In eICU, restricting to creatinine<1.3
+  the FALSE-HYPERCALCEMIA OR held (2.57→2.56, p<0.001) but MASKED-HYPOCALCEMIA collapsed (1.66→1.24, ns) — the
+  lower-threshold direction was largely renal/phosphate-mediated. When a case-mix confound (here CKD, far more
+  prevalent in Black ICU patients: creat 1.40 vs 1.03, dialysis 13.4% vs 3.3%) differentially loads one
+  threshold, lead with the direction that survives adjustment. Build the confound into the PRIMARY estimate, not
+  a footnote (the red-team's demand).
+- **"Adjusting for the mediator erases the effect" is CONFIRMATION, not refutation — pre-empt the reviewer.**
+  Total protein is +0.47 g/dL higher in Black patients and adjusting for it collapses the race coefficient to
+  ns. A hostile reviewer will call this "debunked." It is the mechanism (globulin→protein-bound Ca) operating
+  as predicted; total protein is a MEDIATOR on the causal path, not a confounder. State this explicitly and
+  frame the mediator-adjustment as a positive-control mechanism check. (Myeloma exclusion unchanged → it's
+  broad population-level, not a rare-paraprotein artifact.)
+- **Filter-sensitivity is a required reproduction step for any EHR result with data-entry junk.** Re-run under
+  ≥3 filter regimes (hard physiologic / strict / loose); a real effect is stable or STRENGTHENS under stricter
+  bounds (ours: OR 2.65/2.79/1.71). If it only appears under one specific filter → red flag. Also report the
+  raw event 2×2 (ours 49–71 events >>30) to kill the small-cell attack.
+- **Cluster-robust pooled ≠ per-site validated.** A significant hospital-clustered pooled estimate (+2.67pp,
+  z=5.46) can coexist with a non-significant inverse-variance meta across sites (+0.57pp, p=0.28) when a few
+  high-volume null hospitals dominate the precision weights. Do NOT write "validated across N hospitals" off a
+  pooled SE; show a forest plot and say the per-site check is underpowered by design. Honesty here is cheap and
+  a reviewer WILL check it.
+- **Match the external cohort to the ENDPOINT, not just the analyte.** eICU has race + total + ionized calcium
+  (validates the calcium measurement bias) but NO blood-gas sodium/chloride (cannot validate the Na/Cl
+  discordance) and its IV-calcium repletion lives in an un-downloaded `medication` table (cannot test the
+  treatment consequence — infusionDrug caught only 316/73,547 stays). Before launching an external-validation
+  run, verify the specific ground-truth reference AND the consequence variable exist in that cohort's tables,
+  not just the analyte. The consequence test moves to MIMIC (inputevents/repletions.csv present).
+- **The NEJM bar for this program = the eGFR race-coefficient analogue (Vyas 2020), not a hard outcome.** The
+  measurement bias + misclassification + fixable-formula story IS a complete measurement-equity paper if
+  externally validated and mechanism-nailed; the hard arrhythmia/mortality chain stays a lead (doc 05: eICU
+  mortality does not replicate, event counts fragile). The remaining NEJM-completing lever is a
+  MEASUREMENT-MEDIATED consequence — repletion is not mediated (doc 05), so the open test is whether a false-high
+  corrected Ca triggers differential UNNECESSARY workup (PTH/SPEP) by race, conditioned on normal ionized.
