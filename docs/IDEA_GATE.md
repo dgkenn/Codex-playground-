@@ -188,7 +188,7 @@ template with the FULL checklist applied upfront (ground-truth ref + FREE untitr
 co-occurrence feasibility + magnitude-plausible + novelty + external-validatable):
 | # | Idea | Free endpoint | Predicted | Actual |
 |---|------|---------------|-----------|--------|
-| T1 | Temperature-SITE bias (core vs peripheral) → missed fever/SIRS/sepsis flag | fever/SIRS classification | **MED-HIGH** | _gating_ |
+| T1 | Temperature-SITE bias (core vs peripheral) → missed fever/SIRS/sepsis flag | fever/SIRS classification | **MED-HIGH** | **NO-GO** — already published in MIMIC+eICU (Matos/Bhavani/Celi/Wong 2025 PMID 40236438: hidden fever → delayed SEP-1, race driver); feasibility strong (9,199 pairs) + magnitude credible at febrile tail (+0.40°C), but the novel perfusion-driver angle is NULL (cool-skin missed-fever 37.6% vs warm 39.5%) |
 | H1 | HbA1c RBC-lifespan (CKD/anemia/transfusion) → diabetes MISDIAGNOSIS | ≥6.5% diagnostic label | **MED-HIGH** | **NO-GO** — novelty CROWDED (textbook + a case report of the exact misclassification, Foley 2026); the CLEAN reference (fructosamine/GA) = 0 rows in MIMIC → reference collapses to stress-confounded in-hospital glucose; magnitude split (linear undershoot +0.2pp / stratified overshoot 1–2pp) = confounded-reference fingerprint |
 | T3 | Occult hypoxemia → NEWS/MEWS escalation under-trigger (lower-acuity = headroom, fixes C12-1's ICU-no-headroom failure) | ward escalation trigger | MED (ward-data feasibility risk) | _queued_ |
 | T4 | Sedation-suppressed GCS → falsely-poor neuro-prognosis/WLST | prognostication | MED (high-impact, confounded) | _queued_ |

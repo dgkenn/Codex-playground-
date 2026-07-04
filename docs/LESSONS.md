@@ -736,6 +736,18 @@ cross-nationally-validated part.
   trajectory helps only when charting is DENSE relative to the physiologic timescale; for fast dynamics on sparse
   charting, "dynamic" features are just a fresher level measurement. Always run the strip-the-levels test before
   claiming a trajectory finding.
+- **STRATEGIC — the measurement-bias-propagation seam in PUBLIC ICU DATA (MIMIC/eICU) is ACTIVELY MINED; NOVELTY
+  is now the binding constraint, not feasibility.** Two consecutive fresh propagation-maps (T1 temperature-site,
+  H1 HbA1c) died because the exact idea was already published IN THESE EXACT DATASETS by well-resourced groups
+  (Celi/MIT-LCP, Bhavani, Wong, Sjoding, Seymour — e.g. Matos 2025 PMID 40236438 hidden-fever→SEP-1 in
+  MIMIC+eICU). Calcium won because the corrected-Ca-by-race angle was a rare unmined gap. **Implication: run the
+  novelty pre-screen FIRST and hard — if the mechanism is textbook AND the dataset is MIMIC/eICU, assume one of
+  these groups may have done it; search their recent output specifically.** Higher-white-space directions when
+  MIMIC/eICU novelty is scarce: (a) finalize/extend the calcium win (a real novel externally-validated finding);
+  (b) LESS-MINED data — SICdb-primary findings, VitalDB waveforms, INSPIRE (Korean surgical) — angles these
+  groups don't work; (c) the GPU-gated EEG-foundation-model mission (genuine white space, compute-blocked); (d)
+  accept a confirmatory/replication contribution. Do NOT keep grinding textbook-mechanism MIMIC propagation-maps
+  expecting novelty.
 - **THE GROUND-TRUTH REFERENCE MUST BE CLEAN FOR THE SPECIFIC MECHANISM, not just nominally present (HbA1c
   NO-GO).** HbA1c-RBC-lifespan → diabetes misdiagnosis needs a reference for *chronic* glycemia. Glucose exists
   at scale in MIMIC, but in-hospital glucose is STRESS-confounded (dextrose/critical-illness hyperglycemia ≠
