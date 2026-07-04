@@ -97,3 +97,17 @@ Running log of experiments + hostile-review verdicts. Status: PROVISIONAL (not g
 | # | Experiment | Result | Gate verdict | Status |
 |---|---|---|---|---|
 | 12 | **SICdb chloride electrolyte-exclusion mechanism** (8,912 paired patients) | discordance∼total-protein slope −0.552 mmol/L/g/dL (z=−18.6), strictly monotone quartiles; 10-min robust (−0.495); Na:Cl slope ratio 0.65 ≈ conc ratio 0.71 | replicates the 4-rounds-survived sodium method; cleaner reference (no sensor flag); self-checked (window/monotonicity/globulin/slope-ratio) | **CONFIRMED — chloride is a validated coordinated 4th analyte (Na↓,Cl↓,Ca↑)** |
+
+## Cycle 11 — second measurement-bias batch (10 novel-angle ideas) + red-team on 2 wins
+| # | Experiment | Result | Gate verdict | Status |
+|---|---|---|---|---|
+| 13a | **False hypercalcemia (corrected-Ca) by race** (103,655 pairs) | corrected>10.5 at ionized<1.30: Black 13.3% vs White 8.0%, OR 1.77 (z=4.66); matched-band 32.9% vs 20.0% | Red-team SURVIVES: robust to threshold; not RTM; not albumin-composition (formula amplifies a genuine +0.22 mg/dL raw-total gap); scope=hypoalbuminemic 84%; classification not harm | **WIN — upper-threshold complement to the calcium flagship** |
+| 13b | **Bicarbonate specificity control** (3,129 pairs) | HCO3 racial differential β=−0.16 (z=−1.32 NS); 95% CI excludes Na/Cl effects; no protein-tracking (z=0.28) | well-powered negative control | **WIN — bias specific to indirect-ISE Na/Cl, not generic** |
+| 13c | **Osmolar-gap propagation** | propagates ×−2 (algebra exact); Black−White +1.9 mOsm/kg at ±6h | Red-team DEMOTED: z=2.77 is exact −2× rescaling of the sodium regression (0 incremental evidence); flag disparity null under tight timing | **DEMOTED — propagates-vs-cancels PRINCIPLE valid; clinical flag underpowered** |
+| 13d | Occult hypoxemia (clean SaO2 220227) | occult Black 5.36% vs White 2.28%, OR 2.45; bias +1pp (not the contaminated +13-17) | replicates Sjoding; decision endpoint non-testable (53% already vented) | **confirmatory + validated clean source** |
+| 13e | Paraprotein pseudohyponatremia | protein dose-response −0.96 mEq/L/g/dL (z=−8.3); false-hypo ~2× Black | known mechanism; extreme underpowered | **confirmatory** |
+| 13f | Low-AG self-flag | AG doesn't track globulin (z=−0.3); low AG less common in Black | chain broken | **NULL** |
+| 13g | Sex-specific troponin | raw female MI gap vanishes adj for troponin+age (OR 0.98 NS); cTnT can't resolve hs window | known/dataset-limited | **NULL** |
+| 13h | Ferritin × inflammation | acute-phase inflation z=36.8 (known); race gap NS; no iron gold standard | feasibility-limited | **NULL subgroup** |
+| 13i | TSH age/race reference | uniform>4.5 flag 7.6%→16.6% age; White 15.1% vs Black 8.0% | Surks already published age+race | **confirmatory** |
+| 13j | ETCO2–PaCO2 gradient | masked hypercapnia 16.4%, lung-dz OR 3.5; no race/sex signal | dead-space physiology, known | **confirmatory** |

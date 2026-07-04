@@ -600,3 +600,34 @@ cross-nationally-validated part.
 - Chloride is now a VALIDATED coordinated 4th analyte alongside Na (Cl↓) and Ca (Ca↑) in the panel-wide
   indirect-ISE plasma-water-displacement bias — mechanism confirmed on two continents / two analyzer fleets.
   (SICdb has no race → confirms the protein MECHANISM; the racial endpoint remains MIMIC-specific.)
+
+## Cycle 11 — second measurement-bias batch: novel-angle mining + two red-team catches
+- **An EXACT ALGEBRAIC RESCALING of an existing finding carries ZERO incremental statistical evidence.** The
+  osmolar-gap "propagation win" regressed the propagated bias on race and got z=2.77 — but that z is
+  identical to SIX DECIMALS to the underlying sodium-bias regression (propagated = −2×Na-bias, same sample).
+  Red-team reflex: compute the underlying regression alongside the "new" one; matching z ⇒ corollary, not
+  confirmation. New empirical content can ONLY live where the DISTRIBUTION SHAPE matters (threshold
+  crossings), not in a linear transform of the mean. (The propagates-vs-cancels PRINCIPLE is still valid and
+  teachable — it pairs with the anion-gap cancellation — but it is a mathematical corollary of the Na finding.)
+- **Widening a pairing window changes the COHORT, not just timing.** Even when a formula term cancels
+  algebraically row-by-row (glu/BUN in the osmolar gap), loosening its window shifts which patients enter →
+  composition effect can manufacture significance. The osmolar-gap flag disparity was significant only at a
+  ±24h Na window; null at pre-registered ±1h and metabolically-tight ±6h. Re-test with each input pinned tight.
+- **Threshold biases come in SYMMETRIC PAIRS.** A subgroup-miscalibrated formula over-flags at one threshold
+  and masks at the other: corrected-Ca gives FALSE HYPERCALCEMIA (Black 13.3% vs White 8.0%, OR 1.77, survives
+  red-team) AND masked hypocalcemia (doc 01). Same formula, same globulin mechanism, opposite clinical error.
+  When you find a masking bias, test the over-flagging complement (and vice versa).
+- **The false-hypercalcemia amplification is the FORMULA amplifying a real gap, not the formula discriminating.**
+  Albumin distributions are near-identical by race and the correction magnitude is race-neutral within every
+  albumin stratum; the amplification comes from a genuine +0.22 mg/dL higher raw total Ca at matched ionized,
+  which a uniform additive correction pushes proportionally more Black patients over the cutoff. Scope: proven
+  in the hypoalbuminemic 84%; a classification disparity, not demonstrated harm (no workup-order data).
+- **Bicarbonate is a well-powered NEGATIVE CONTROL** (racial discordance CI excludes the Na/Cl effect sizes;
+  no protein-tracking) → the electrolyte-exclusion bias is SPECIFIC to indirect-ISE plasma-water-displaced
+  analytes (Na, Cl), not a generic "all electrolytes read low in Black patients" effect. Localizes the mechanism.
+- **Occult hypoxemia clean-source note:** chartevents itemid 220227 is truly arterial (p25=94); labevents
+  50817 mixes arterial+venous (p25=70) and must NOT be used for SaO2. Occult hypoxemia replicates Sjoding on
+  the clean source (OR 2.45); the escalation-decision endpoint is non-testable in ABG cohorts (~53% already vented).
+- **Meta (reconfirms cycle 10):** single-analyte mining yields mostly known/null (7/10 here); wins need novel
+  angles; and even novel-angle "wins" can be corollaries (osmolar gap) — the red-team's rescaling/timing/
+  composition checks are what separate a real increment from a restatement.
