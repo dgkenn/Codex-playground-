@@ -724,6 +724,20 @@ cross-nationally-validated part.
   treatment consequence — infusionDrug caught only 316/73,547 stays). Before launching an external-validation
   run, verify the specific ground-truth reference AND the consequence variable exist in that cohort's tables,
   not just the analyte. The consequence test moves to MIMIC (inputevents/repletions.csv present).
+- **HIGHEST-HIT TEMPLATE — "propagation-map into a decision-score" (C12-1 WIN).** The best-performing idea
+  shape this session: take a bias ALREADY externally established (occult hypoxemia; indirect-ISE displacement;
+  globulin binding), find a consequential FORMULA/SCORE that consumes the biased input (SpO₂/FiO₂ → ARDS-Berlin
+  class + SOFA-resp; albumin-corrected Ca; osmolar gap), and quantify the racial MISCLASSIFICATION of the score
+  at matched TRUTH. C12-1 (occult hypoxemia → SF → ARDS/SOFA under-classification, Black OR 1.43–2.00, survives
+  clustering, NARROW-BUT-NOVEL filling Erlebach 2025's un-assessed race gap) is the exemplar. Why it beats
+  harm-chains: the endpoint IS the misclassification of a score that drives the decision (trial enrollment,
+  ECMO, crisis triage), so you never need the elusive terminal-harm cell and you dodge the paired-reference
+  selection wall (next lesson). Two execution notes that made it clean: (1) reframe a racial score-effect as a
+  **tail/threshold-crossing** effect, not a population-mean shift — SF is globally conservative (curvilinear
+  ceiling), the racial harm is only in the under-scoring tail, and this is the ONLY framing compatible with
+  opposite-direction whole-score findings (Ashana/Miller: whole-SOFA over-predicts for Black patients); (2)
+  **predict TIER, not just win/loss** — a clean novel propagation finding is JAMA-IM/AJRCCM/Lancet-Resp tier,
+  not automatically NEJM/Nature; over-claiming tier is its own calibration error.
 - **TEMPLATE-LEVEL LESSON (load-bearing) — the paired-reference cohort PROVES the measurement bias but
   structurally CANNOT prove its downstream harm.** Two independent consequence chains now failed the SAME way:
   calcium false-flag → unnecessary workup (ledger 18/18b) and potassium false-hyperK → insulin/D50 →
