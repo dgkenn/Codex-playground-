@@ -1,5 +1,21 @@
 # EXPERIMENT QUEUE — prioritized backlog (re-rank every cycle; pull the top item that fits compute)
 
+## ACTIVE — Steroids-in-septic-shock responsive subphenotype (user idea; running)
+Design (defended against the naive outcome-clustering trap): **MIMIC discover → eICU + SICdb validate.**
+Cluster on BASELINE physiology at shock onset (pre-steroid, outcome/treatment excluded) → k subphenotypes;
+then test hydrocortisone(±fludrocortisone) heterogeneity of effect on shock-reversal + mortality with
+IPTW/propensity + landmark anchoring. Honest ceiling: hypothesis-generating HTE (confounding by indication);
+confirmatory path = re-analyze ADRENAL/APROCCHSS. Running: MIMIC cohort+discovery agent + design pre-mortem.
+- **MIMIC feasibility CONFIRMED:** hydrocortisone n≈32k / fludrocortisone n≈4.9k (prescriptions); vasopressors
+  in inputevents; sepsis-3 shock definable; mortality + shock-reversal outcomes present.
+- **SICdb external-validation IDs CONFIRMED (d_references):** Hydrocortison=1525, Fludrocortison=1751,
+  Norepinephrin drug=1562 / dose-per-hour=772,773, Vasopressin=1550, Lactat(BG)=454/657,465; other steroids to
+  flag PredniSOLON=1397 MethylPREDNIsolon=1506 DEXAmethason=1524; outcomes in cases.csv.gz
+  (OffsetOfDeath, DischargeState, EstimatedSurvivalObservationTime, Sex, AgeOnAdmission, HeartSurgeryBeginOffset
+  to exclude cardiac surgery). Have medication.csv.gz + cases.csv.gz locally; extract baseline subphenotype
+  FEATURES only AFTER MIMIC discovery names them (and only if discovery shows a real signal).
+- **eICU external validation:** diagnosis + infusionDrug + apacheApsVar present locally.
+
 Priority = (impact × novelty × feasibility) / cost. **CPU-only right now; overnight runs are fine.** Every
 item must clear the hostile-review gate (RESEARCH_MACHINE.md) before it counts. Move done items to
 FINDINGS_LEDGER.md with their verdict + the attack map.
