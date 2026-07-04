@@ -135,6 +135,30 @@ and re-run — this resolves whether the reversal failure is a phenotype-mis-def
 steroids ceiling remains trial-ready/hypothesis-generating (MIMIC negative control partially fired; observational
 HTE); RCT-IPD (ADRENAL/APROCCHSS/VANISH) is the causal gold standard.
 
+## v3b — clean SICdb re-test with PROPER (lactate-defined) HLVR — thread SETTLED
+
+Lactate extracted from the full remote SICdb laboratory table (711,824 arterial/blood lactate rows; 97.8% of the
+cohort has a t0 lactate). Proper HLVR = hyperlactatemic AND vasopressor-refractory = 692 (268 refractory-but-not-
+hyperlactatemic correctly removed); HLVR&steroid = 465.
+- **Reversal arm: does NOT replicate** — moved opposite→null (septic-subset clean point 1.09, first time above 1,
+  but bootstrap/orthogonalized ≤1); the positive reversal signal is carried by steroid×SEVERITY, not
+  steroid×phenotype.
+- **Mortality arm: directionally replicates** (septic subset OR 0.32 / HR 0.31, MIMIC-consistent protective) —
+  but **FAILS severity-orthogonality** (the HLVR mortality term flips >1 once steroid×severity is added: HLVR is
+  collinear with NE-dose severity even after lactate is included) and the untreated-HLVR-septic reference cell is
+  n=23 (fragile).
+
+**SETTLED honest verdict.** The decisive external signal: MIMIC v2 PASSED severity-orthogonality but SICdb FAILS
+it → externally the HLVR "phenotype" is largely a SEVERITY axis, so the apparent effect modification is
+severity-confounded. Net across v1→v3b: the HLVR×hydrocortisone signal is **hypothesis-generating with weak,
+severity-confounded external support** — the mortality DIRECTION is consistent (MIMIC + SICdb protective in
+refractory shock, echoing APROCCHSS biology) but does not survive orthogonality externally, and the reversal arm
+does not replicate. This is **NOT a validated finding and not a deployable bedside tool**; it is an honest,
+rigorously de-risked lead whose only clean test is RCT individual-patient-data (ADRENAL/APROCCHSS/VANISH). The
+value delivered: a mechanism-anchored hypothesis + a demonstration that observational steroid-HTE in septic shock
+is severity-confounded even under g-methods + trajectory phenotyping (a cautionary methods result echoing
+Rajendran 2025 and Li 2023).
+
 ## Source reviews (scratchpad)
 `lit_sepsis_phenotyping_landscape.md`, `lit_steroid_response_sepsis.md`,
 `lit_steroid_decision_tool_methods.md`, `steroids_sepsis_design_premortem.md`.
