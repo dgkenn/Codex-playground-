@@ -6,6 +6,31 @@ measurement-bias-drives-ACTION studies (MC-MED — breaks the ICU paired-design 
 (mechanism+reference+driver) triples in less-mined data, (c) treatment-effect heterogeneity decision rules,
 externally validated. Each candidate: feasibility-gate → run → red-team → log honest verdict.
 
+## ☀️ MORNING BRIEF (read this first)
+**Bottom line: no NEW top-tier candidate emerged tonight — but the night was productive and honest.** I rigorously
+tested 5 candidates; all are documented negatives, and two of them *bounded prior findings* (a real contribution).
+- **C1 BEN (0.45):** exposure disparity real (Black flagged low-ANC 1.85×) but the over-workup harm is FALSIFIED —
+  Black patients get LESS workup at matched ANC (appropriate BEN recognition); action confounded by presentation.
+- **C2 glucose-Hct (0.40):** MIMIC #15 mechanism does NOT replicate in a modern ED (Hct-corrected glucometers) →
+  **bounds #15 as older-device-specific.**
+- **C3 occult hypoxemia (0.30):** feasibility kill — no arterial SaO2 reference in the ED (venous gases only).
+- **C4 triage-ESI (0.25):** Black under-triaged at matched vitals, but it doesn't validate against bounce-back
+  admission (falsified) + it's actively scooped.
+- **C5 Friedewald LDL (new, 0.30):** clean large reclassification (21% of statin-eligible falsely 'at-goal') but
+  guideline-established (Martin/Sathiyakumar) and the racial angle is weak/reversed. Confirmatory.
+
+**What I learned (raises future success rate):** the ED "recorded-action" wall-breaker thesis largely failed —
+attaching a HARM/ACTION endpoint to a disparity keeps getting confounded, reversed, or unvalidated. The calcium
+flagship won because it stopped at a clean **reclassification** endpoint. C5 confirmed that reclassification
+endpoints ARE clean (no confounding) — so the revised rule is: **hunt non-tautological reclassification findings
+with a novel angle**, not action-harm chains. Tonight's reclassification (LDL) was clean but already-published.
+
+**Your calcium flagship remains the one solid top-tier candidate** (and it's stronger after this session's
+consolidation). **Recommended next moves (need your call):** (a) accept calcium as the deliverable and move to
+submission prep; (b) point me at a genuinely new data source (a dataset not yet mined) for a fresh reclassification
+hunt; or (c) the GPU-gated ECG/EEG deep-learning direction (the one avenue with clear un-mined upside). I've held
+the loop at low cadence rather than grind the remaining pre-flagged-fatal candidates (C6/C7).
+
 ## Standing deliverable (context)
 - **Calcium flagship** — validated, submission-adjacent (5-cohort mechanism; MIMIC+eICU racial reclassification;
   reconciled cohort N=23,449 OR 1.65; 63% of high-Ca ICU flags false; globulin-fix honestly bounded). This is the
@@ -30,7 +55,9 @@ externally validated. Each candidate: feasibility-gate → run → red-team → 
 | C3 | Occult hypoxemia → ED O2 action timing | **FEASIBILITY KILL** | MC-MED has only VENOUS O2 saturation ("POCT Venous Blood Gases," values 59–79%), NOT arterial SaO2 (co-oximetry) — occult hypoxemia's required ground-truth reference is absent (EDs draw venous, not arterial, gases; pre-registered risk realized). Untestable | **DONE — killed at gate (no arterial reference); cheap** |
 | C4 | Triage-acuity (ESI) miscalibration vs bounce-back-admit (MC-MED, N=107,722) | strong (visits.csv only) | **STRIKE-OUT — harm chain falsified.** Black patients ARE under-triaged at matched vitals (residual +0.19 vs White +0.095 — real assignment disparity), BUT under-triage does NOT predict the bounce-back-admit outcome (under-triaged bounce back LESS: 1.44% vs over-triaged 2.03%; Black bounce-admit 1.58% [1.25,2.00] vs White 2.06% [1.89,2.25]). Vitals-residual is a poor proxy for harmful under-triage; hard outcome doesn't validate it; raw disparity is crowded/scooped (2025 arXiv) | **DONE — NOT a candidate (disparity real but harm unvalidated + scooped)** |
 
-## STRATEGIC SYNTHESIS — the MC-MED ED "wall-breaker" thesis largely FAILED (4 strikes)
+| C5 | Friedewald calculated LDL vs measured direct LDL → statin-threshold reclassification (MIMIC, N=10,455 paired) | strong (9,465+ both) | **CLEAN but CONFIRMATORY (novelty-capped).** Mechanism strong: Friedewald error −11 mg/dL, monotone in TG (−8 at TG<150 → −26 at TG300-600). Large reclassification: 21.6% of true-LDL≥100 falsely 'at-goal' (30% at ≥130). BUT (1) racial angle weak/REVERSED (Black lowest 16.7%, Hispanic highest — TG-driven, no clean equity gradient); (2) mechanism + fix are GUIDELINE-ESTABLISHED (Martin-Hopkins 2013; Sathiyakumar 2018 Circulation already showed this reclassification). Not top-tier | **DONE — confirmatory; VALIDATES the revised rule (first clean non-confounded endpoint of the night) but already published** |
+
+## STRATEGIC SYNTHESIS — the MC-MED ED "wall-breaker" thesis largely FAILED (4 strikes); revised rule validated
 The overnight thesis was: measurement-bias HARM is observable in the ED (recorded actions) where it's unobservable
 in ICU paired data. Result across C1–C4: it does NOT deliver top-tier candidates, for consistent reasons:
 - **C1 (BEN):** exposure disparity real (1.85×) but the ACTION reversed (Black low-ANC → LESS workup, appropriate
