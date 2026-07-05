@@ -23,7 +23,7 @@ reported (total or albumin-corrected) value differs by race. We replicated the u
 protein-binding mechanism in two additional cohorts that lack a race variable but provide large,
 independent cross-national dose-response tests — an Austrian ICU cohort (SICdb) and a Korean
 non-cardiac-surgery cohort (INSPIRE) — establishing the analytical mechanism across four cohorts,
-three continents, and two care settings. Four pre-registered tests assessed the raw measurement
+three continents, and two care settings. Four pre-specified tests assessed the raw measurement
 bias, false hypercalcemia, matched-band threshold crossing, and masked hypocalcemia; analyses used
 cluster-robust linear and logistic regression, chronic kidney disease (CKD) stratification,
 malignancy exclusion, and independent code reproduction. A separate MIMIC analysis tested whether the
@@ -87,7 +87,7 @@ the magnitude of racial miscalibration in the corrected-calcium formula, (ii) wh
 across independent, geographically distinct U.S. hospital systems, (iii) whether the underlying
 globulin-binding mechanism is reproducible outside the United States, and (iv) whether the resulting
 false-positive flag measurably changes clinical behavior. We address all four using two independent
-U.S. multicenter ICU databases and one European ICU database, with a pre-registered analytic protocol,
+U.S. multicenter ICU databases and one European ICU database, with a pre-specified analytic protocol,
 cluster-robust inference, and independent reproduction of the key result.
 
 ---
@@ -118,7 +118,7 @@ minutes) to exclude temporal/physiologic drift. Race was restricted to Black-ver
 **Corrected-calcium formula:** corrected Ca = total Ca + 0.8 × (4.0 − albumin), the standard
 albumin-only correction in clinical use.
 
-**Definitions used across the four pre-registered tests:**
+**Definitions used across the four pre-specified tests:**
 1. *Raw measurement bias* — total-calcium excess over ionized calcium, by race, at a matched ionized
    calcium value.
 2. *False hypercalcemia* — corrected calcium >10.5 mg/dL while true ionized calcium is <1.30 mmol/L
@@ -234,7 +234,7 @@ the hypoalbuminemic 84% of the cohort (OR 1.82, z=4.59) but underpowered in the 
 minority (OR 1.43, z=1.39, n=424 Black).
 
 **External validation (eICU-CRD).** In an independent eICU extraction (n=14,164 pairs, 1,736 Black,
-12,428 White, 93 hospitals), all four pre-registered tests replicated the MIMIC direction: (1) the
+12,428 White, 93 hospitals), all four pre-specified tests replicated the MIMIC direction: (1) the
 raw mechanism gap was +0.195 mg/dL (z=3.54; matched-band estimate +0.188, equal SDs); (2) false
 hypercalcemia occurred in 4.68% of Black versus 1.87% of White patients (cluster-robust OR 2.57, 95%
 CI 1.94–3.41) — a stronger effect size than MIMIC's OR 1.77; (3) matched-band crossing in the
