@@ -263,3 +263,28 @@ age-dependent calcium-correction WIN (ledger 12d) could be developed into a stan
 not discovery). Strategic: the measurement-bias/paired-reference template has now hit its ceiling twice (C12-1,
 NEW-A) on the same wall — the decision/harm endpoint is unobservable in paired data. To break through, the next
 idea needs the harm endpoint to be DIRECTLY OBSERVABLE, not inferred across the missing-ground-truth cell.
+
+## STRATEGIC PIVOT — MIMIC measurement-bias seam empirically EXHAUSTED (3 fresh strikes this cycle)
+This loop cycle ran three NEW measurement-bias triples past the sharpened gate; all landed at confirmatory/null
+on the WIN axis:
+- K-T4 (Free Thyroxine Index): KILLED at novelty gate (textbook + obsolete formula).
+- NEW-A (anion-gap masking of lactic acidosis): real gradient but DEMOTED-TO-CONFIRMATORY (tautological
+  direction; decision endpoint unobservable in paired data).
+- NEW-C (BG vs CBC Hgb → transfusion threshold): real discordance but UNIFORM (no sex/race driver; sex-null
+  kills the dilution mechanism) → confirmatory device-agreement result.
+Combined with C12-1 and the mined-by-named-groups status of MIMIC/eICU, this is decisive: **the reachable
+MIMIC measurement-bias/paired-reference seam is at its confirmatory floor for NEW disparity wins.** The calcium
+flagship (5-cohort mechanism + MIMIC/eICU racial reclassification) remains the validated deliverable.
+
+**PIVOT — next-cycle candidates (off the exhausted seam):**
+1. **[best un-mined result we OWN] Develop the PIC pediatric age-dependent calcium-correction finding (ledger
+   12d) into a standalone companion contribution:** derive an age-corrected pediatric correction factor (vs the
+   adult Payne 0.8 that under-corrects in infants/toddlers) and quantify RECLASSIFICATION improvement in children.
+   Novel, less-mined (pediatric), non-confirmatory. Needs PIC re-download (netrc + DUA in place; not local).
+2. **[consolidation toward the stated NEJM goal] Finalize the calcium manuscript for submission** — the racial
+   endpoint is now bounded (MC-MED), mechanism is 5 cohorts; audit remaining gaps (fixable-formula translational
+   arm, decision-curve/reclassification tables) rather than mine another analyte.
+3. **[differentiated wedge, hypothesis-generating] Steroids-in-septic-shock SHOCK-REVERSAL HTE** (queue ACTIVE) —
+   only the non-mortality, less-confounded endpoint survives the Rajendran/Li pre-mortem.
+Default next pull: (1) PIC pediatric development — it is the only path that is BOTH novel and already
+partially-in-hand, and it extends the flagship into a fresh population rather than re-mining the floor.
