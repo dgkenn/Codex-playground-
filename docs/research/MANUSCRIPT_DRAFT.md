@@ -329,6 +329,16 @@ the original code, recovered the same mechanism coefficient sign and magnitude (
 mg/dL) and a compatible odds ratio. Hospital-level heterogeneity was assessed and is reported in
 §5 (Limitations) rather than folded into the headline pooled estimate.
 
+As a further independent check, a from-scratch re-extraction of the full MIMIC-IV laboratory table
+(31,878 ionized/total/albumin-paired draws) reproduced the racial false-hypercalcemia gap at matched
+ionized calcium (Black 13.7% versus White 8.7%; ratio 1.58), consistent with the primary MIMIC estimate
+(13.3% versus 8.0%). This same extraction quantifies the clinical-impact magnitude of the underlying
+reliability problem: of all corrected-calcium hypercalcemia flags (corrected calcium >10.5 mg/dL),
+63% (2,954 of 4,690) were false positives against a paired ionized calcium in the normal-or-low range
+(≤1.30 mmol/L) — i.e., the majority of "high corrected calcium" alerts in this ICU population did not
+correspond to true (ionized) hypercalcemia, and the residual burden of that false-positive flag falls
+disproportionately on Black patients.
+
 ---
 
 ## 4. Discussion
