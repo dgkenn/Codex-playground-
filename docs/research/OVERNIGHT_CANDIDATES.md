@@ -27,7 +27,25 @@ externally validated. Each candidate: feasibility-gate → run → red-team → 
 |---|---|---|---|---|
 | C1 | BEN → ED ANC actions (MC-MED, 97,058 ANC / 92,908 visits) | strong (real data) | **STRIKE-OUT on top-tier harm.** BEN signature CONFIRMED (Black ANC left-shifted, median 4540 vs White 5330, concentrated in MILD range; %<1500 3.2% vs 2.1% but %<1000 LOWER 0.9% vs 1.2%). Exposure disparity REAL (Black low-ANC flag 3.1% vs 1.7%, **ratio 1.85**, non-overlapping CIs). **BUT the over-workup harm hypothesis is FALSIFIED in the predicted direction:** at matched low ANC, Black patients get LESS reactive workup (repeat-CBC-after-ANC 9.8% vs 21.5%, isolation 41% vs 50%, culture 50% vs 63%) and lower admission (11.8% vs 19.1%) — most parsimoniously appropriate BEN recognition; action layer also confounded by septic presentation. Predicted 0.45 → actual: confirmatory exposure disparity, no top-tier harm | **DONE — NOT a candidate (exposure disparity real but textbook; harm falsified/reversed)** |
 | C2 | POC glucose Hct → ED insulin action (MC-MED, N=1,345 paired POC-meter/lab glucose+Hct) | mechanism substrate present | **STRIKE-OUT — mechanism does NOT replicate.** Hct slope +0.19 mg/dL/%Hct (z=0.9 NS, WRONG sign) vs MIMIC #15 −0.449; POC-lab diff SD 76 mg/dL (noisy). Cause: MC-MED 2020-2022 → modern Hct-corrected glucometers (StatStrip-class) engineer out the interference (pre-registered risk realized) + noisy 30-min pairing. **Bounds MIMIC #15 as device/era-specific.** No mechanism → no action | **DONE — NOT a candidate; tempers #15 (older-device artifact)** |
-| C3 | Occult hypoxemia → ED O2 action timing | gating (arterial SaO2 availability) | — | NEXT |
+| C3 | Occult hypoxemia → ED O2 action timing | **FEASIBILITY KILL** | MC-MED has only VENOUS O2 saturation ("POCT Venous Blood Gases," values 59–79%), NOT arterial SaO2 (co-oximetry) — occult hypoxemia's required ground-truth reference is absent (EDs draw venous, not arterial, gases; pre-registered risk realized). Untestable | **DONE — killed at gate (no arterial reference); cheap** |
+| C4 | Triage-acuity (ESI) miscalibration vs bounce-back-admit (MC-MED, N=107,722) | strong (visits.csv only) | **STRIKE-OUT — harm chain falsified.** Black patients ARE under-triaged at matched vitals (residual +0.19 vs White +0.095 — real assignment disparity), BUT under-triage does NOT predict the bounce-back-admit outcome (under-triaged bounce back LESS: 1.44% vs over-triaged 2.03%; Black bounce-admit 1.58% [1.25,2.00] vs White 2.06% [1.89,2.25]). Vitals-residual is a poor proxy for harmful under-triage; hard outcome doesn't validate it; raw disparity is crowded/scooped (2025 arXiv) | **DONE — NOT a candidate (disparity real but harm unvalidated + scooped)** |
+
+## STRATEGIC SYNTHESIS — the MC-MED ED "wall-breaker" thesis largely FAILED (4 strikes)
+The overnight thesis was: measurement-bias HARM is observable in the ED (recorded actions) where it's unobservable
+in ICU paired data. Result across C1–C4: it does NOT deliver top-tier candidates, for consistent reasons:
+- **C1 (BEN):** exposure disparity real (1.85×) but the ACTION reversed (Black low-ANC → LESS workup, appropriate
+  BEN recognition); action layer confounded by septic presentation.
+- **C2 (glucose-Hct):** mechanism doesn't replicate — modern (2020-22) Hct-corrected glucometers engineer it out.
+- **C3 (hypoxemia):** no arterial SaO2 reference in the ED (venous only) → untestable.
+- **C4 (triage):** the disparity is real but the residual proxy fails to validate against the hard outcome, and
+  it's actively scooped.
+**Root cause:** attaching a HARM/ACTION endpoint to a disparity keeps failing — the ED action layer is
+presentation-confounded, reverses, or doesn't validate. The calcium flagship WON precisely because it stopped at
+the OBSERVABLE RECLASSIFICATION endpoint and never needed to prove downstream harm. **Revised search rule for new
+candidates: hunt clean RECLASSIFICATION findings (observable, non-tautological direction, subgroup driver) — NOT
+action-harm chains.** Remaining backlog C5 (tautological), C6 (confounded), C7 (no anchor) are pre-flagged fatal
+→ not worth grinding. Calcium flagship remains the one solid top-tier candidate; new ones need a non-tautological
+reclassification in fresh data, or the GPU-gated ECG/EEG deep-learning direction.
 
 ## Log
 - Idea engine returned 7-candidate ranked backlog. Top = BEN in MC-MED (0.45), directly executing ledger #9f

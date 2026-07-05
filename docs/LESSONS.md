@@ -919,3 +919,16 @@ cross-nationally-validated part.
   really "sick → action" — the order-after-result timing handle helps but does not remove presentation
   confounding. A clean action-harm claim needs the flag to be the ONLY plausible driver of the action, which the
   ED rarely provides. (BEN exposure disparity itself is real but textbook — not top-tier.)
+- **OVERNIGHT META (4-strike MC-MED ED hunt) — the ED "action layer" does NOT reliably break the measurement-bias
+  harm-observability wall.** The thesis (harm is observable in ED recorded actions where ICU paired data can't see
+  it) failed across 4 candidates for consistent reasons: BEN (exposure disparity real but action REVERSED —
+  appropriate recognition; presentation-confounded), glucose-Hct (modern Hct-corrected devices null the
+  mechanism), occult hypoxemia (no arterial SaO2 reference in ED — venous only), triage-ESI (disparity real but
+  fails to validate against the hard bounce-back outcome + scooped). Root cause: attaching a HARM/ACTION endpoint
+  to a disparity keeps failing because ED actions are presentation-confounded, reverse, or don't validate. **The
+  calcium flagship won precisely because it STOPPED at the observable RECLASSIFICATION endpoint and never needed
+  downstream harm.** Revised search rule: hunt clean non-tautological RECLASSIFICATION findings (subgroup driver +
+  ground-truth reference + observable threshold-crossing) — do NOT chase action-harm chains, in the ED or the ICU.
+  Corollary: modern (2020s) cohorts attenuate device/assay-interference mechanisms found in older data (bound such
+  findings by era); and always verify the GROUND-TRUTH REFERENCE exists in the target setting (arterial vs venous)
+  before running — reference-mismatch is a cheap pre-run kill.
