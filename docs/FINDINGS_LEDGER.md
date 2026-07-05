@@ -122,6 +122,11 @@ Running log of experiments + hostile-review verdicts. Status: PROVISIONAL (not g
 | 14b | Sodium masked-hypernatremia (upper-tail complement) | racial differential replicates (−0.84, z=−7.7) but chem OVER-reads Na → over-flags not masks; artifactual-disparity reframe NULL (DiD +0.12pp — hypernatremia gap is genuine) | threshold-complement premise fails on baseline offset direction | **NULL** |
 | 14c | Within-patient Na+Cl fingerprint (slope=0.71) | correlation r≈0.25 (known, PMID 16548813); slope 0.25–0.34 across all estimators incl albumin-IV → 0.71 FALSIFIED; Cl only partially protein-mediated | sharp prediction cleanly falsified | **NULL (clean falsification)** |
 
+## Discriminator kills (feasible but gate-failed on novelty/decision — logged, not run)
+| # | Idea | Feasibility | Why killed | Status |
+|---|---|---|---|---|
+| K-T4 | **Free Thyroxine Index (total T4 × uptake) vs measured free T4 — protein-binding displacement 6th analyte** (TBG driver) | PASSES: 6,801 total-T4↔free-T4 co-drawn specimens; 3,482 T4-index↔free-T4; total/free ratio median 6.09 (real binding variation); itemids 50994/50995/50896/51005/50895 all present | **NOVELTY-DEAD + OBSOLETE ENDPOINT.** The TBG→FTI bias is the textbook reason direct free-T4 assays *replaced* the index (same trap as the already-published creatinine mechanism). Decision premise also fails in-era: free T4 (63,095) outnumbers total T4 (12,010) **~5:1** → clinicians already act on the direct measurement, so "biased formula drives decisions" has no live endpoint. Would only be a confirmatory panel footnote the calcium flagship doesn't need | **KILLED at gate (novelty + decision), not run — cheap honest negative** |
+
 ## New-seam pilot (from the discriminator's new-triple search)
 | # | Experiment | Predicted | Result | Status |
 |---|---|---|---|---|

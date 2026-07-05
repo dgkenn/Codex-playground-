@@ -219,3 +219,19 @@ cycle 10-11 done/known items.
   200 records (unusable). MIMIC-III = BIDMC (not independent). AmsterdamUMCdb/MOVER need separate non-netrc DUAs.
 - Action: pull MC-MED → verify Ca-ionized/Ca-total/albumin/race → run the racial false-hyperCa/masked-hypoCa +
   mechanism validation. Full scan: scratchpad/physionet_catalogue_scan.md.
+
+## NEXT (loop cycle — post-MC-MED) — new-triple search, MIMIC/eICU protein-binding seam depth stalling
+Context: calcium flagship is complete & externally validated (5 cohorts); MC-MED racial endpoint bounded
+(ICU-hypoalbuminemia-specific, does not replicate in normal-albumin ED). Tangential protein-binding analytes
+now hit diminishing novelty (K-T4 killed at gate). Generated fresh triples (docs/IDEA_GATE.md):
+1. **[TOP, pull if novelty-screen survives] NEW-A: Albumin-corrected anion gap masks lactic acidosis in
+   hypoalbuminemia.** Reference = measured lactate (clean/free); driver = hypoalbuminemia; decision endpoint =
+   missed/delayed acidosis recognition. Novelty pre-screen RUNNING (sonnet). If NOVEL/NARROW-BUT-NOVEL → run the
+   masking analysis: at matched lactate ≥4, P(AG>12) vs albumin (monotone predicted); corrected-AG recovery;
+   delayed-recognition endpoint; normal-albumin specificity control. Data in MIMIC labevents (local copy is
+   truncated — fine for signal; re-stream full file if it becomes the paper).
+2. NEW-B (temp-uncorrected ABG) — only if NEW-A dies AND paired corrected/uncorrected gas co-occurrence passes.
+3. NEW-C (Sheiner-Tozer phenytoin) — low priority, likely gate-kill (titrated endpoint + textbook).
+If all three strike out → hunt new (mechanism + reference + driver) triples in less-mined data (PIC/SICdb/INSPIRE
+substrates already downloaded); or develop the PIC pediatric age-dependent calcium-correction WIN (ledger 12d)
+into a standalone companion note.

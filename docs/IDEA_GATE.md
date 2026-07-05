@@ -217,3 +217,45 @@ vs high-volume arterial POC) → only 1 paired patient. The 2-minute feasibility
 Same failure class as the eICU medication table (variable conceptually present, not populated for the design).
 Add to the pre-mortem: *"paired-reference co-occurrence count ≥ target N?"* — a cheap kill that would have caught
 this before compute. C12-3 substituted (its potassium pairing is already validated at n≈20k, doc 02).
+
+## New-triple search (loop iteration; seam-depth stalling on MIMIC/eICU protein-binding → generate fresh triples)
+Three new (mechanism + in-cohort reference + subgroup/decision driver) candidates, scored & ranked. Predicted
+win-likelihoods recorded here for calibration (fill actual after running/screening).
+
+**KILL logged first — K-T4 (Free Thyroxine Index vs measured free T4):** feasibility PASSED (6,801 co-drawn
+pairs) but killed at the NOVELTY+DECISION gate — TBG→FTI bias is the textbook reason direct free-T4 assays
+replaced the index (creatinine-mechanism trap), and free T4 outnumbers total T4 5:1 so no live decision endpoint.
+See FINDINGS_LEDGER K-T4. **Calibration lesson: a passing feasibility gate does not rescue a dead novelty gate —
+score novelty+decision-relevance BEFORE spending the feasibility grep on binding-correction ideas, because the
+classic ones (FTI, corrected-Ca-adult, Sheiner-Tozer) are all textbook mechanisms.**
+
+**NEW-A [TOP, predicted 0.40] — Albumin-corrected anion gap masks high-AG (lactic) acidosis in hypoalbuminemia.**
+- Mechanism: albumin is the dominant unmeasured anion; each 1 g/dL fall lowers measured AG ~2.5 mEq/L (Figge) →
+  hypoalbuminemia produces a falsely-normal AG that HIDES organic acidosis. (KNOWN mechanism — novelty must live
+  in the decision/disparity layer.)
+- Ground-truth reference (in cohort): **measured lactate** (free, untitrated) as truth for organic/lactic
+  acidosis; measured HCO3/pH for acidemia. Clean and abundant in MIMIC.
+- Driver: hypoalbuminemia (sepsis/cirrhosis/critical illness; candidate race/SES gradient).
+- Sharp falsifiable prediction: at matched lactate ≥4 mmol/L, P(measured AG>12) falls monotonically with lower
+  albumin; albumin-corrected AG restores detection; masked patients show delayed repeat-lactate / bicarbonate /
+  resuscitation. Specificity control: a normal-albumin stratum shows no masking.
+- Novelty risk: MODERATE — corrected-AG-improves-detection IS published; the wedge is the measured-lactate
+  ground-truth + missed/delayed-RECOGNITION decision endpoint (+optional disparity) at EHR scale. **MANDATORY
+  PubMed pre-screen BEFORE running (running now, sonnet).**
+- Fits highest-hit propagation template (bias + reference + free endpoint + subgroup driver). Data fully in MIMIC.
+
+**NEW-B [predicted 0.25] — Temperature-uncorrected ABG misclassifies oxygenation/acid-base in hypo/hyperthermia.**
+- Mechanism: ABG measured at 37°C; hypothermia raises reported PaO2/PaCO2 above true in-vivo tension
+  (alpha-stat vs pH-stat) → uncorrected values misrepresent the hypothermic patient (post-arrest TTM, cardiac
+  surgery). Driver: body temperature.
+- Reference: temperature-corrected gas values IF stored alongside uncorrected — **FEASIBILITY RISK** (MIMIC may
+  store only one). Kill fast if paired corrected/uncorrected co-occurrence < target N.
+- Novelty: old alpha-stat/pH-stat debate; EHR-scale decision quantification maybe fresh, but reference risk high.
+
+**NEW-C [predicted 0.20] — Sheiner-Tozer albumin-corrected phenytoin misestimates free phenytoin.**
+- Mechanism: another albumin-binding correction; low albumin/uremia → total phenytoin underestimates free →
+  toxicity. Reference: measured free phenytoin. Driver: hypoalbuminemia/uremia.
+- Weakness: phenytoin is TITRATED to level (our free-endpoint lesson → attenuates) + niche. Textbook mechanism.
+  Low priority; likely another discriminator kill.
+
+RANK: NEW-A ≫ NEW-B > NEW-C. Pull NEW-A if the novelty pre-screen returns NOVEL-WEDGE / NARROW-BUT-NOVEL.
