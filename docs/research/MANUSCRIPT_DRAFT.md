@@ -49,8 +49,11 @@ lower threshold) was also present but attenuated after CKD adjustment in eICU.
 miscalibrated because it omits globulin, over-flagging hypercalcemia in Black patients across two
 independent U.S. ICU databases, with a confirmed cross-national biochemical mechanism and a
 measurable downstream workup consequence. This is a fixable, formula-level diagnostic-equity problem
-analogous to the removal of race from the eGFR equation. Reporting or acting on ionized calcium — or
-a globulin-inclusive correction — in patients with elevated globulin should be considered.
+analogous to the removal of race from the eGFR equation. Reporting or acting on **ionized calcium
+directly** in patients with elevated globulin is the immediately deployable remedy; a
+globulin-inclusive correction is mechanistically motivated but could not be validated as a
+reclassification fix in the available paired data (protein and ionized calcium are rarely
+co-measured) and would require prospective co-measurement to derive.
 
 ---
 
@@ -350,8 +353,22 @@ share a common lesson for clinical-formula design: a formula that is silent on r
 automatically race-neutral if it is also silent on a biological quantity that varies systematically by
 race. The deployable fix here is narrower and more tractable than the eGFR debate: measure and act on
 ionized calcium directly in patients at risk of globulin-driven miscalibration (e.g., those with
-elevated total protein or a clinical indication for globulin assessment), or adopt a
-globulin-inclusive correction formula, rather than retrofitting the existing albumin-only equation.
+elevated total protein or a clinical indication for globulin assessment).
+
+We deliberately tested the obvious alternative — retrofitting a *globulin-inclusive* correction term
+onto the existing formula — and report, in the interest of not over-promising a fix, that we could not
+validate it as a reclassification remedy in these data. Because a globulin-inclusive correction
+requires total protein, albumin, total calcium, **and** ionized calcium co-measured in the same
+window, the quadruple-paired sample collapses to only a few hundred patients even in the full MIMIC-IV
+extraction (protein is a chemistry-panel order rarely co-timed with a blood-gas ionized calcium). In
+that subsample the globulin term added no significant improvement to ionized-calcium prediction over
+the albumin-only formula, and the derived correction was too small to move patients across the
+decision threshold, leaving the racial false-hypercalcemia gap unchanged. This is a
+power/co-measurement limitation rather than a refutation of the mechanism (which is separately
+confirmed at large N), but its practical implication is clear: the supported, immediately deployable
+remedy is **direct ionized-calcium measurement** in high-globulin patients, not a retrofitted
+globulin-inclusive correction — which would require prospective, protocolized co-measurement to
+derive and validate.
 
 The strength of this evidence rests on several features rarely combined in a single measurement-bias
 finding: a ground-truth reference (ionized calcium) rather than a second surrogate measurement; two

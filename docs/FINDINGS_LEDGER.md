@@ -127,6 +127,11 @@ Running log of experiments + hostile-review verdicts. Status: PROVISIONAL (not g
 |---|---|---|---|---|
 | K-T4 | **Free Thyroxine Index (total T4 × uptake) vs measured free T4 — protein-binding displacement 6th analyte** (TBG driver) | PASSES: 6,801 total-T4↔free-T4 co-drawn specimens; 3,482 T4-index↔free-T4; total/free ratio median 6.09 (real binding variation); itemids 50994/50995/50896/51005/50895 all present | **NOVELTY-DEAD + OBSOLETE ENDPOINT.** The TBG→FTI bias is the textbook reason direct free-T4 assays *replaced* the index (same trap as the already-published creatinine mechanism). Decision premise also fails in-era: free T4 (63,095) outnumbers total T4 (12,010) **~5:1** → clinicians already act on the direct measurement, so "biased formula drives decisions" has no live endpoint. Would only be a confirmatory panel footnote the calcium flagship doesn't need | **KILLED at gate (novelty + decision), not run — cheap honest negative** |
 
+## Flagship consolidation — testing the manuscript's proposed globulin-inclusive fix
+| # | Experiment | Result | Status |
+|---|---|---|---|
+| FIX-1 | **Globulin-inclusive corrected-Ca fix vs Payne-0.8, validated against ionized** (MIMIC full labevents; doc 17) | Quadruple-pairing (ionized+total+albumin+**protein** co-drawn ≤2h) collapses to **N=693 even in full labevents** (protein=chem order rarely co-timed with blood-gas ionized). At that N the globulin term is NON-significant for ionized prediction (z=−1.53, was −2.63 in an N=327 pilot), improves tracking 0.2%, derived term only 0.073 mg/dL/g/dL → racial false-hyperCa gap UNCHANGED (Black/White 1.62→1.62). Pilot signal was small-sample noise | **HONEST NEGATIVE (power/co-measurement limited, not a mechanism refutation).** Applied to manuscript: tempered Discussion §4 + Abstract to make DIRECT IONIZED MEASUREMENT the supported fix; globulin-inclusive correction = mechanistically-motivated but unvalidated, needs prospective co-measurement. Integrity win (self-tested our own proposed fix) |
+
 ## PIC pediatric calcium — does refining the age-dependent correction help clinically? (loop pivot)
 | # | Experiment | Result | Status |
 |---|---|---|---|
