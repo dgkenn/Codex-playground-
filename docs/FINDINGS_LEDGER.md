@@ -127,6 +127,11 @@ Running log of experiments + hostile-review verdicts. Status: PROVISIONAL (not g
 |---|---|---|---|---|
 | K-T4 | **Free Thyroxine Index (total T4 × uptake) vs measured free T4 — protein-binding displacement 6th analyte** (TBG driver) | PASSES: 6,801 total-T4↔free-T4 co-drawn specimens; 3,482 T4-index↔free-T4; total/free ratio median 6.09 (real binding variation); itemids 50994/50995/50896/51005/50895 all present | **NOVELTY-DEAD + OBSOLETE ENDPOINT.** The TBG→FTI bias is the textbook reason direct free-T4 assays *replaced* the index (same trap as the already-published creatinine mechanism). Decision premise also fails in-era: free T4 (63,095) outnumbers total T4 (12,010) **~5:1** → clinicians already act on the direct measurement, so "biased formula drives decisions" has no live endpoint. Would only be a confirmatory panel footnote the calcium flagship doesn't need | **KILLED at gate (novelty + decision), not run — cheap honest negative** |
 
+## New-triple pilot (loop, post-MC-MED) — anion-gap masking of lactic acidosis
+| # | Experiment | Predicted | Result | Status |
+|---|---|---|---|---|
+| 17 | **Albumin-corrected anion gap masks lactic acidosis in hypoalbuminemia** (MIMIC, 57,761 paired AG+albumin↔lactate; doc 15) | 0.40 → novelty-screen 0.30 (NARROW-BUT-NOVEL; Dinh 2006 owns the pooled null) | **Severity-stratified masking gradient REAL & LARGE:** among true lactic acidosis (lactate≥4), % with falsely-normal AG (≤12) rises 1.0%→8.7% as albumin falls ≥3.5→<2.0; **RR severe-vs-normo = 8.95 (95% CI 5.29–15.12)**, robust (lactate≥6 ~13×, AG≤10 ~20×); mean AG flat ~21 while mean corrected-AG rises 22.5→27.3 (Figge at scale). **BUT the naive fix fails:** corrected-AG>12 in hypoalb trades +5.8pt sensitivity for **−36.8pt specificity** (45%→8%) → reproduces Dinh 2006 / EMCrit — corrected-AG is NOT a viable decision rule. Actionable message reframed: not "correct the AG" but "measure lactate directly when albumin is low." | **WIN (bounded) — real severity-stratified blind spot, novel vs Dinh's pooled null; the corrected-AG fix is a confirmed negative. Decision endpoint (delayed lactate) = Phase-2 make-or-break, needs full labevents + acuity-confound handling** |
+
 ## New-seam pilot (from the discriminator's new-triple search)
 | # | Experiment | Predicted | Result | Status |
 |---|---|---|---|---|

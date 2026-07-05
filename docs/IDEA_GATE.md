@@ -259,3 +259,14 @@ classic ones (FTI, corrected-Ca-adult, Sheiner-Tozer) are all textbook mechanism
   Low priority; likely another discriminator kill.
 
 RANK: NEW-A ≫ NEW-B > NEW-C. Pull NEW-A if the novelty pre-screen returns NOVEL-WEDGE / NARROW-BUT-NOVEL.
+
+**NEW-A actual → NARROW-BUT-NOVEL WIN (bounded). CALIBRATION: predicted 0.40 → screen 0.30 → actual ≈ screen.**
+The severity-stratified reframing DID revive Dinh 2006's pooled null into a real, large gradient (missed-acidosis
+RR 8.95 [5.29–15.12] severe-vs-normo albumin) — confirming the calibration insight that *stratifying by the
+driver rescues a pooled null*. BUT the naive corrected-AG fix reproduced Dinh's negative on specificity
+(45%→8% in hypoalbuminemia). Net: a genuine but NARROW finding, ceiling exactly where the 0.30 screen put it.
+**Two calibration lessons banked** (see LESSONS): (1) evaluate a proposed *correction/fix* on BOTH sensitivity
+AND specificity — a fix that recovers the missed cases can destroy specificity and reduce to a known null; the
+defensible message then shifts to "measure the ground truth in the high-driver stratum," not "apply the formula."
+(2) When a novelty screen flags a published pooled NULL (Dinh), the surviving wedge is almost always
+driver-stratification + a decision endpoint — score those explicitly, and do NOT re-run the pooled comparison.

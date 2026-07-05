@@ -854,3 +854,22 @@ cross-nationally-validated part.
   hypoalbuminemic setting) and keep the mechanism claim (5 cohorts) intact — exactly as done for C12-1. Also:
   n=69 in the smallest race arm cannot power an OR~1.8 effect, so even a directionally-consistent null there is
   uninformative — pre-check minimum-arm power before counting a site as a replication test.
+- **CORRECTION/FIX EVALUATION — a proposed correction that recovers missed cases can be a NET null if it destroys
+  specificity; evaluate the fix on BOTH axes and reframe the actionable message around the ground truth.** The
+  albumin-corrected anion gap recovers hypoalbuminemia-masked lactic acidosis (sensitivity 93.9%→99.7% in
+  hypoalb) but craters specificity (44.9%→8.1%) — reproducing the published Dinh-2006 "no advantage" null and the
+  EMCrit/Carvounis circularity critique (corrected-AG r≈0.11 with true unmeasured anions). The real, novel result
+  survives as a **severity-stratified blind-spot gradient** (missed-acidosis RR 8.95 severe-vs-normo albumin, a
+  gradient Dinh's POOLED AUC washed out) whose actionable message is NOT "apply the correction" but "in the
+  high-driver stratum (low albumin), the reassuring-normal score is unreliable — measure the ground truth
+  (lactate) directly." Two reusable rules: (1) whenever you propose a corrected formula as the fix, compute its
+  specificity cost in the high-driver stratum before claiming it — a sensitivity-only win is not a fix. (2) When a
+  novelty screen surfaces a published POOLED null on your comparison, the only surviving wedge is
+  driver-stratification + a decision endpoint; re-scoring the pooled comparison just re-derives the null.
+- **NOVELTY GATE OUTRANKS FEASIBILITY GATE for binding-correction ideas — score novelty FIRST.** K-T4 (Free
+  Thyroxine Index vs measured free T4) passed feasibility handsomely (6,801 co-drawn pairs) but was dead on
+  arrival: the TBG→FTI bias is the textbook reason direct free-T4 assays replaced the index, and free T4
+  outnumbers total T4 5:1 so there is no live "biased formula drives decisions" endpoint. The classic
+  total-vs-free binding corrections (FTI, adult corrected-calcium, Sheiner-Tozer phenytoin) are ALL textbook
+  mechanisms — for this idea class, run the 2-minute novelty+decision-relevance check before spending the
+  feasibility grep, not after.

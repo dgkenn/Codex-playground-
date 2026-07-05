@@ -235,3 +235,17 @@ now hit diminishing novelty (K-T4 killed at gate). Generated fresh triples (docs
 If all three strike out → hunt new (mechanism + reference + driver) triples in less-mined data (PIC/SICdb/INSPIRE
 substrates already downloaded); or develop the PIC pediatric age-dependent calcium-correction WIN (ledger 12d)
 into a standalone companion note.
+
+## NEXT (loop) — NEW-A landed as bounded WIN (doc 15); Phase-2 decision endpoint is make-or-break
+Phase 1 done: severity-stratified anion-gap masking gradient REAL (missed-acidosis RR 8.95 [5.29–15.12]), but the
+naive corrected-AG fix reproduces Dinh 2006 (specificity 45%→8%). The finding is NARROW-BUT-NOVEL; it becomes
+publishable only if the DECISION endpoint holds:
+- **Phase 2: does a masked-normal AG delay lactate measurement / resuscitation?** Population = chem panel
+  (AG+albumin) with NO concurrent lactate; exposure = hypoalb-masked normal AG (uncorr≤12 & corr>12) vs
+  truly-normal (both ≤12) vs flagged (uncorr>12); outcome = time-to-first-lactate, later-revealed acidosis,
+  mortality. **Blockers to clear FIRST:** (a) full labevents re-download (local copy truncated → "no lactate"
+  can be an artifact); (b) acuity-confounding (why lactate wasn't drawn ~ how sick they looked) → adjust +
+  falsification (masked vs truly-normal AG should diverge only if the AG drove behavior). If Phase 2 confounds
+  fatally (likely, per the paired-design/indication trap) → log as bounded win + methods caution, do NOT overclaim.
+- If Phase 2 is deemed not worth the full-labevents re-download: NEW-A stands as a bounded short-report-tier
+  result; pivot to NEW-B (temp-uncorrected ABG, feasibility-gate first) or hunt fresh triples in less-mined data.
