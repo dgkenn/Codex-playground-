@@ -25,7 +25,8 @@ externally validated. Each candidate: feasibility-gate → run → red-team → 
 ## Candidate ledger (this run — verdicts as they complete)
 | # | Candidate | Feasibility | Verdict | Status |
 |---|---|---|---|---|
-| C1 | BEN → ED ANC actions | (downloading MC-MED visits + neutrophil labs) | — | RUNNING |
+| C1 | BEN → ED ANC actions (MC-MED, 97,058 ANC / 92,908 visits) | strong (real data) | **STRIKE-OUT on top-tier harm.** BEN signature CONFIRMED (Black ANC left-shifted, median 4540 vs White 5330, concentrated in MILD range; %<1500 3.2% vs 2.1% but %<1000 LOWER 0.9% vs 1.2%). Exposure disparity REAL (Black low-ANC flag 3.1% vs 1.7%, **ratio 1.85**, non-overlapping CIs). **BUT the over-workup harm hypothesis is FALSIFIED in the predicted direction:** at matched low ANC, Black patients get LESS reactive workup (repeat-CBC-after-ANC 9.8% vs 21.5%, isolation 41% vs 50%, culture 50% vs 63%) and lower admission (11.8% vs 19.1%) — most parsimoniously appropriate BEN recognition; action layer also confounded by septic presentation. Predicted 0.45 → actual: confirmatory exposure disparity, no top-tier harm | **DONE — NOT a candidate (exposure disparity real but textbook; harm falsified/reversed)** |
+| C2 | POC glucose Hct → ED insulin/dextrose action | pending | — | NEXT |
 
 ## Log
 - Idea engine returned 7-candidate ranked backlog. Top = BEN in MC-MED (0.45), directly executing ledger #9f

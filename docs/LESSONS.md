@@ -908,3 +908,14 @@ cross-nationally-validated part.
   measurement-bias/formula-refinement angle returns confirmatory/null — the seam's actionable output is
   consistently "measure the ground truth," not a new correction. Treat further correction-refinement ideas as
   negative-EV unless they clear this correlation pre-check.
+- **EXPOSURE DISPARITY ≠ ACTION HARM — a subgroup being flagged more often by a benign threshold does NOT imply
+  they are over-acted-upon; check the action direction, it can reverse.** MC-MED BEN: Black ED patients are
+  flagged low-ANC 1.85× more (real exposure disparity from a benign Duffy-null left-shift), but at MATCHED low
+  ANC they received LESS reactive workup (repeat-CBC 9.8% vs 21.5%, isolation 41% vs 50%, culture 50% vs 63%) and
+  lower admission — the opposite of the hypothesized over-workup harm, most parsimoniously appropriate BEN
+  recognition. Two lessons: (1) an exposure/misclassification disparity is only half a story; the downstream
+  ACTION must be measured directly and can run the other way. (2) ED action layers (culture/isolation/admit) are
+  massively confounded by presenting illness (low-ANC ED patients are septic), so "flag → action" association is
+  really "sick → action" — the order-after-result timing handle helps but does not remove presentation
+  confounding. A clean action-harm claim needs the flag to be the ONLY plausible driver of the action, which the
+  ED rarely provides. (BEN exposure disparity itself is real but textbook — not top-tier.)
