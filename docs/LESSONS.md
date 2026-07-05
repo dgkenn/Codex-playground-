@@ -873,3 +873,25 @@ cross-nationally-validated part.
   total-vs-free binding corrections (FTI, adult corrected-calcium, Sheiner-Tozer phenytoin) are ALL textbook
   mechanisms — for this idea class, run the 2-minute novelty+decision-relevance check before spending the
   feasibility grep, not after.
+- **CONDITIONING-ON-MEASURED-TRUTH trap (sharpened paired-design lesson) — an analysis conditioned on the
+  ground-truth having been measured CANNOT speak to the decision that OMITTING the ground-truth would drive.**
+  The anion-gap masking cohort (n=57,761) is defined by chem-panel↔lactate PAIRS → every patient already had a
+  lactate ordered. So it can quantify how often a normal AG co-occurs with true acidosis, but it structurally
+  cannot show that a reassuring-normal AG ever *stopped* a clinician from ordering lactate — that population (AG
+  normal, lactate NEVER drawn, truly acidotic) is excluded by the sampling frame, and its outcome is undefined
+  (no lactate = no ground truth to label "missed"). The decision/harm endpoint lives exactly in the cell the
+  paired design deletes. This is the same wall as C12-1 (occult hypoxemia: the harm happens where only the biased
+  value exists) — now stated as a general rule: **if the exposure is "a biased test looked normal" and the harm
+  is "the confirmatory test was skipped," the confirmatory-test-skipped patients are unobservable in any
+  paired-reference cohort; you need a single-method cohort + an instrument/natural experiment (order-set change,
+  provider practice variation), not more paired data.** A full re-download of a paired-reference table does not
+  fix an identification problem — it buys more of the same unidentifiable data.
+- **TAUTOLOGICAL DIRECTION vs EMPIRICAL MAGNITUDE — when a finding's direction is guaranteed by the formula you
+  used to define the counterfactual, the ONLY empirical content is the magnitude-at-a-threshold in a messy real
+  cohort; grade novelty accordingly.** The AG-masking gradient's sign is pure algebra (albumin is an unmeasured
+  anion; lower albumin mechanically lowers AG — the corrected-AG formula IS that identity), so "hypoalbuminemia
+  masks AG" is not a discovery. What is empirical: the threshold-crossing RATE (1%→8.7%), which depends on the
+  joint distribution of lactate/albumin/other unmeasured anions and is not derivable from the formula. Rule for
+  the discriminator: if you're using a correction formula as the counterfactual/ground-truth, the mechanism claim
+  is tautological — the finding must earn novelty from a magnitude, a decision endpoint, or a disparity, never
+  from the direction. If it can't, it's confirmatory.

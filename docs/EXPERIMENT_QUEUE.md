@@ -249,3 +249,17 @@ publishable only if the DECISION endpoint holds:
   fatally (likely, per the paired-design/indication trap) → log as bounded win + methods caution, do NOT overclaim.
 - If Phase 2 is deemed not worth the full-labevents re-download: NEW-A stands as a bounded short-report-tier
   result; pivot to NEW-B (temp-uncorrected ABG, feasibility-gate first) or hunt fresh triples in less-mined data.
+
+## UPDATE — NEW-A red-teamed → DEMOTE-TO-CONFIRMATORY, Phase-2 NO-GO
+Red-team killed Phase 2: the delayed-lactate decision endpoint is confounding-by-indication in its worst form
+(the reason lactate wasn't drawn shares a cause with the exposure), and the paired cohort excludes the only
+population where masking can cause harm. A full-labevents re-download does NOT buy identification. NEW-A stands as
+a confirmatory quantitative extension of Figge/Dinh (doc 15, ledger #17). GO-condition to ever revive: a cheap
+severity-adjusted pilot (needs vitals/SOFA, not in the lab-only extraction) — deferred as low-value.
+**Next = hunt a fresh (mechanism + reference + driver) triple where the harm is OBSERVABLE (single-method cohort
+or a titration/order natural-experiment), OR pivot off the mined MIMIC/eICU measurement-bias seam entirely.**
+Candidates still open: NEW-B (temp-uncorrected ABG — feasibility-gate first) is low-priority; the PIC pediatric
+age-dependent calcium-correction WIN (ledger 12d) could be developed into a standalone companion note (writing,
+not discovery). Strategic: the measurement-bias/paired-reference template has now hit its ceiling twice (C12-1,
+NEW-A) on the same wall — the decision/harm endpoint is unobservable in paired data. To break through, the next
+idea needs the harm endpoint to be DIRECTLY OBSERVABLE, not inferred across the missing-ground-truth cell.

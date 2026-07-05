@@ -1,9 +1,27 @@
 # Severity-stratified anion-gap masking of lactic acidosis in hypoalbuminemia (MIMIC-IV)
 
-**Status:** NARROW-BUT-NOVEL win, honestly bounded. Mechanism/blind-spot gradient is real and large; the
-naive corrected-AG "fix" fails on specificity (reproduces Dinh 2006). Decision endpoint (Phase 2) is the
-make-or-break next step. Predicted win-likelihood 0.40 (IDEA_GATE) → novelty screen 0.30 (NARROW-BUT-NOVEL) →
-actual: matches the narrow prediction.
+**Status:** DEMOTED-TO-CONFIRMATORY by adversarial red-team. The severity-stratified gradient is real, large, and
+robust, but its *direction* is Figge algebra (near-tautological); only the magnitude-at-scale is empirical, the
+naive corrected-AG fix reproduces Dinh 2006's null, and the paired cohort is conditioned on patients who already
+had lactate drawn → it cannot establish the decision-behavior claim. Predicted 0.40 → novelty screen 0.30 →
+red-team DEMOTE. Log as a confirmatory quantitative extension, not a flagship. **Phase 2: NO-GO** (structural
+confounding-by-indication a re-download cannot fix).
+
+**Minimal defensible claim (survives all attacks):** "In MIMIC-IV ICU patients with confirmed lactate ≥4 mmol/L,
+the uncorrected anion gap reads normal (≤12) in ~9% of severely hypoalbuminemic (albumin <2.0) vs ~1% of
+normoalbuminemic patients (RR≈9, robust to stricter thresholds) — a large-cohort quantification of the known
+albumin/AG-masking mechanism — but a simple corrected-AG cutoff does not fix it (specificity collapses to ~8%),
+and, being conditioned on patients who already had lactate drawn, this cannot show whether the masking ever
+changes real ordering behavior."
+
+**Red-team threat map (sonnet):** circularity SERIOUS (direction is algebra; magnitude is the only empirical
+content) · threshold/RTM SURVIVABLE (RR strengthens under stricter cutoffs, RTM works against the effect) ·
+clinical-bite LETHAL for the actionable framing (cohort excludes the lactate-never-drawn population by
+construction) · specificity/Dinh SERIOUS (corrected-cutoff is dead; "measure lactate" reframe is a thin but real
+escape) · Phase-2 LETHAL as specified (missingness and exposure share a cause; unidentifiable without an
+instrument/natural experiment). **GO-condition to ever revive Phase 2:** a cheap pilot (no re-download) showing
+AG-masked category still predicts time-to-lactate-order net of a proper severity adjustment (contemporaneous
+vitals/SOFA) — my current extraction is lab-only, so even this pilot's severity proxy is weak → not run.
 
 ## Idea (propagation template)
 - **Bias (KNOWN, Figge 1998):** albumin is the dominant unmeasured anion; each ~1 g/dL fall lowers the measured
