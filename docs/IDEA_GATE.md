@@ -270,3 +270,23 @@ AND specificity — a fix that recovers the missed cases can destroy specificity
 defensible message then shifts to "measure the ground truth in the high-driver stratum," not "apply the formula."
 (2) When a novelty screen flags a published pooled NULL (Dinh), the surviving wedge is almost always
 driver-stratification + a decision endpoint — score those explicitly, and do NOT re-run the pooled comparison.
+
+## STRATEGIC CEILING (after C12-1 + NEW-A hit the SAME wall) — sharpened discriminator for measurement-bias ideas
+Two measurement-bias ideas with clean ground-truth references (occult hypoxemia/SaO2, anion-gap/lactate) both
+died the same way: the moment they reached PAST reclassification toward a DOWNSTREAM decision/harm (skipped
+confirmatory test, delayed action), the harm-bearing population became unobservable (it lives in the
+missing-ground-truth cell the paired design deletes) and confounding-by-indication became structural. Meanwhile
+the calcium flagship SUCCEEDED because it stopped at the OBSERVABLE reclassification endpoint (false-flag at a
+threshold) and its direction was NON-tautological (globulin over-correction is not obvious from the formula).
+**Refined gate for any new measurement-bias idea — require ALL:**
+1. Ground-truth reference co-drawn at scale (unchanged).
+2. **Observable endpoint = the reclassification ITSELF** (a threshold crossing computable in-cohort), NOT a
+   downstream skipped-confirmation or behavior change (those are unobservable in paired data → need a
+   single-method cohort + instrument/natural-experiment instead).
+3. **Non-tautological direction:** if a correction FORMULA defines the counterfactual, the bias direction is
+   algebra → confirmatory at best; the idea must earn novelty from magnitude/disparity, not direction.
+4. Subgroup/mechanism driver (unchanged).
+Corollary: the MIMIC/eICU protein-binding/two-method seam is now mined to its confirmatory floor for THIS
+template. New wins require either (a) a driver whose bias direction is non-obvious at a real decision threshold
+with a subgroup gradient (calcium-type), or (b) a domain where the harm/action is DIRECTLY recorded (order,
+transfusion, dose) so the endpoint isn't inferred across a missing cell, or (c) less-mined data.
