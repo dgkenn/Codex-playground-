@@ -39,5 +39,10 @@ race ∈ {Black, White} from admissions; bounds ionized 0.5–2.0 mmol/L, total 
 - Provenance-tracked primary numbers (25,163 / 103,655) retained; the reconciled cohort is added as the
   rigor/consolidation check, not a replacement.
 
+## Robustness — one-per-patient (cluster-safe)
+Collapsing to one paired draw per patient (9,324 patients: 1,353 Black / 7,971 White), the false-hypercalcemia
+disparity is unchanged: **OR 1.65 [1.26, 2.15]** (Black 6.0% vs White 3.7%), matching the draw-level OR 1.65 —
+the reconciled-cohort headline is not an artifact of within-patient repeat draws.
+
 ## Files
 - Analysis inline (reproducible from `scratchpad/ca_glob_full.csv` + `admissions.csv.gz`).
