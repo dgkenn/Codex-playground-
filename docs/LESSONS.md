@@ -840,3 +840,17 @@ cross-nationally-validated part.
   mortality does not replicate, event counts fragile). The remaining NEJM-completing lever is a
   MEASUREMENT-MEDIATED consequence — repletion is not mediated (doc 05), so the open test is whether a false-high
   corrected Ca triggers differential UNNECESSARY workup (PTH/SPEP) by race, conditioned on normal ionized.
+- **BOUNDARY-CONDITION LESSON — a mechanism-driven ENDPOINT can fail to replicate in a setting where the
+  mechanism's precondition is absent, without contradicting the mechanism.** The calcium racial
+  false-hypercalcemia endpoint replicated across two US ICU cohorts (MIMIC, eICU) but did NOT replicate in the
+  Stanford MC-MED emergency-department cohort (paired N≈931; Black β=−0.05, z=−0.47; false-hyperCa 8/922 = 0.9%,
+  zero events in the Black arm). Root cause is not a contradiction: the corrected-Ca formula's over-correction
+  only bites when a LARGE albumin add-back is applied, i.e. in hypoalbuminemia (~84% of the ICU extraction). The
+  ED cohort's mean albumin is near-normal (~3.86 g/dL), so the formula barely moves the value and there is no
+  racial gap to amplify. **Discriminator upgrade:** when the endpoint depends on a formula/correction, add the
+  formula's OPERATING PRECONDITION (here: hypoalbuminemia) to the external-validation site-selection checklist —
+  don't validate a hypoalbuminemia-driven endpoint in a normal-albumin population and read a null as a failure.
+  The correct move on a precondition-absent null is to SCOPE the endpoint honestly (racial endpoint = inpatient
+  hypoalbuminemic setting) and keep the mechanism claim (5 cohorts) intact — exactly as done for C12-1. Also:
+  n=69 in the smallest race arm cannot power an OR~1.8 effect, so even a directionally-consistent null there is
+  uninformative — pre-check minimum-arm power before counting a site as a replication test.

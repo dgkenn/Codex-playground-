@@ -369,9 +369,27 @@ filtering regimes, making it the most defensible single endpoint for external va
 Several limitations bound the strength and generalizability of these findings, and are stated here
 without softening, consistent with the standing established across the source analyses.
 
-- **ICU-only populations.** Both MIMIC-IV and eICU-CRD are intensive-care cohorts. Whether the same
-  miscalibration and workup consequence occur in ambulatory or general-ward settings — where the large
-  majority of corrected-calcium-based clinical decisions are actually made — is untested.
+- **The racial false-hypercalcemia endpoint is ICU-hypoalbuminemia-specific and did not replicate in a
+  normal-albumin emergency-department cohort.** The two racial-endpoint analyses (raw-total gap and
+  false-hypercalcemia at matched ionized) are both drawn from ICU cohorts (MIMIC-IV, eICU-CRD), both
+  US. We tested the endpoint in an independent, ambulatory-adjacent setting — the Stanford MC-MED
+  emergency-department cohort (paired total/ionized N≈931; race White 397, Hispanic 189, Asian 163,
+  Black 69) — and it did **not** replicate: race coefficients on corrected calcium were null to
+  slightly negative (Black β=−0.05, z=−0.47), and false-hypercalcemia was rare overall (8/922, 0.9%)
+  with zero events in the Black arm. This is a genuine boundary condition rather than a contradiction of
+  the mechanism: the ED cohort's mean albumin (~3.86 g/dL) is near-normal, whereas the corrected-calcium
+  formula's over-correction bites specifically in the hypoalbuminemic ICU population (~84% hypoalbuminemic
+  in the MIMIC extraction) where a large albumin add-back is applied. The Black arm (n=69) is also
+  underpowered to detect the effect size seen in the ICU. The correct scope for the **racial endpoint**
+  is therefore the hypoalbuminemic inpatient/ICU setting, not the general ED or ambulatory population;
+  the underlying **measurement mechanism** (globulin-driven over-correction) is separately validated
+  across five cohorts on four continents (§3a) and is unaffected by this null.
+
+- **ICU-only populations for the workup consequence.** Both MIMIC-IV and eICU-CRD are intensive-care
+  cohorts. Whether the miscalibration's downstream workup consequence occurs in ambulatory or
+  general-ward settings — where the large majority of corrected-calcium-based clinical decisions are
+  actually made — is untested; the MC-MED ED analysis above bears on the racial endpoint's setting
+  dependence, not on the workup chain.
 
 - **Hospital heterogeneity is real and site-concentrated; this is not validation "at 93 hospitals."**
   The eICU false-hypercalcemia gap is significant at the pooled, cluster-robust patient level, but a
