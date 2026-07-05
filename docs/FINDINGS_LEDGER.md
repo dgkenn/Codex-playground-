@@ -127,6 +127,11 @@ Running log of experiments + hostile-review verdicts. Status: PROVISIONAL (not g
 |---|---|---|---|---|
 | K-T4 | **Free Thyroxine Index (total T4 × uptake) vs measured free T4 — protein-binding displacement 6th analyte** (TBG driver) | PASSES: 6,801 total-T4↔free-T4 co-drawn specimens; 3,482 T4-index↔free-T4; total/free ratio median 6.09 (real binding variation); itemids 50994/50995/50896/51005/50895 all present | **NOVELTY-DEAD + OBSOLETE ENDPOINT.** The TBG→FTI bias is the textbook reason direct free-T4 assays *replaced* the index (same trap as the already-published creatinine mechanism). Decision premise also fails in-era: free T4 (63,095) outnumbers total T4 (12,010) **~5:1** → clinicians already act on the direct measurement, so "biased formula drives decisions" has no live endpoint. Would only be a confirmatory panel footnote the calcium flagship doesn't need | **KILLED at gate (novelty + decision), not run — cheap honest negative** |
 
+## PIC pediatric calcium — does refining the age-dependent correction help clinically? (loop pivot)
+| # | Experiment | Result | Status |
+|---|---|---|---|
+| 12d-ext | **PIC age-corrected calcium formula → reclassification vs ionized truth** (N=23,980 triple-paired, 9,227 children; doc 16) | Age-dependence CONFIRMED (albumin coef 0.80 infants → **0.93 toddlers 1–3yr [0.90,0.96]** → 0.85 school-age → 0.72 adolescents; correction to prior claim — under-correction is TODDLER, not infant). **But the age-corrected formula does NOT beat adult Payne-0.8** (net worse: overall fixes 74/breaks 141; 1–3yr fixes 23/breaks 70). Root cause: albumin-corrected Ca poorly tracks ionized in children (**r≈0.47–0.49**, barely above raw total 0.467) → refining the slope can't help a weak surrogate | **STRIKE-OUT on the clinical headline (honest negative).** Age-slope is a minor confirmatory measurement note; the clinically-useful "age-corrected formula → better classification" extension WASHES OUT. Message = "measure ionized directly," not "better correction." Not a standalone win; flagship's adult globulin story unaffected |
+
 ## New-triple pilot (loop, post-MC-MED) — anion-gap masking of lactic acidosis
 | # | Experiment | Predicted | Result | Status |
 |---|---|---|---|---|

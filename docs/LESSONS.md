@@ -895,3 +895,16 @@ cross-nationally-validated part.
   the discriminator: if you're using a correction formula as the counterfactual/ground-truth, the mechanism claim
   is tautological — the finding must earn novelty from a magnitude, a decision endpoint, or a disparity, never
   from the direction. If it can't, it's confirmatory.
+- **CORRECTION-FACTOR REFINEMENT is futile when the corrected quantity poorly tracks the ground truth — check
+  corrected-vs-truth CORRELATION before investing in a "better formula."** PIC pediatric: the albumin/Ca binding
+  slope is genuinely age-dependent (0.80 infants → 0.93 toddlers → 0.72 adolescents), but an age-corrected
+  calcium formula did NOT beat adult Payne-0.8 on reclassification against ionized (net worse: fixes 74/breaks
+  141) — because albumin-corrected Ca correlates with ionized only at r≈0.47 in children, barely above raw total
+  (0.467). When the corrected value tracks the ground truth that weakly, changing the correction slope just
+  reshuffles misclassifications; no slope can rescue a surrogate near its calibration ceiling. Pre-run check for
+  any "refine the biased formula" idea: compute r(corrected, truth) vs r(raw, truth) FIRST — if the correction
+  barely improves correlation, formula-refinement is dead on arrival and the only real message is "measure the
+  ground truth directly." This is the fourth consecutive result (T4, anion-gap, Hgb, PIC) where the reachable
+  measurement-bias/formula-refinement angle returns confirmatory/null — the seam's actionable output is
+  consistently "measure the ground truth," not a new correction. Treat further correction-refinement ideas as
+  negative-EV unless they clear this correlation pre-check.
