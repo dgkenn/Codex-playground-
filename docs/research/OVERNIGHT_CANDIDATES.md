@@ -26,7 +26,8 @@ externally validated. Each candidate: feasibility-gate → run → red-team → 
 | # | Candidate | Feasibility | Verdict | Status |
 |---|---|---|---|---|
 | C1 | BEN → ED ANC actions (MC-MED, 97,058 ANC / 92,908 visits) | strong (real data) | **STRIKE-OUT on top-tier harm.** BEN signature CONFIRMED (Black ANC left-shifted, median 4540 vs White 5330, concentrated in MILD range; %<1500 3.2% vs 2.1% but %<1000 LOWER 0.9% vs 1.2%). Exposure disparity REAL (Black low-ANC flag 3.1% vs 1.7%, **ratio 1.85**, non-overlapping CIs). **BUT the over-workup harm hypothesis is FALSIFIED in the predicted direction:** at matched low ANC, Black patients get LESS reactive workup (repeat-CBC-after-ANC 9.8% vs 21.5%, isolation 41% vs 50%, culture 50% vs 63%) and lower admission (11.8% vs 19.1%) — most parsimoniously appropriate BEN recognition; action layer also confounded by septic presentation. Predicted 0.45 → actual: confirmatory exposure disparity, no top-tier harm | **DONE — NOT a candidate (exposure disparity real but textbook; harm falsified/reversed)** |
-| C2 | POC glucose Hct → ED insulin/dextrose action | pending | — | NEXT |
+| C2 | POC glucose Hct → ED insulin action (MC-MED, N=1,345 paired POC-meter/lab glucose+Hct) | mechanism substrate present | **STRIKE-OUT — mechanism does NOT replicate.** Hct slope +0.19 mg/dL/%Hct (z=0.9 NS, WRONG sign) vs MIMIC #15 −0.449; POC-lab diff SD 76 mg/dL (noisy). Cause: MC-MED 2020-2022 → modern Hct-corrected glucometers (StatStrip-class) engineer out the interference (pre-registered risk realized) + noisy 30-min pairing. **Bounds MIMIC #15 as device/era-specific.** No mechanism → no action | **DONE — NOT a candidate; tempers #15 (older-device artifact)** |
+| C3 | Occult hypoxemia → ED O2 action timing | gating (arterial SaO2 availability) | — | NEXT |
 
 ## Log
 - Idea engine returned 7-candidate ranked backlog. Top = BEN in MC-MED (0.45), directly executing ledger #9f
