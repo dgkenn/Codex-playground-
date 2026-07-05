@@ -127,6 +127,11 @@ Running log of experiments + hostile-review verdicts. Status: PROVISIONAL (not g
 |---|---|---|---|---|
 | K-T4 | **Free Thyroxine Index (total T4 × uptake) vs measured free T4 — protein-binding displacement 6th analyte** (TBG driver) | PASSES: 6,801 total-T4↔free-T4 co-drawn specimens; 3,482 T4-index↔free-T4; total/free ratio median 6.09 (real binding variation); itemids 50994/50995/50896/51005/50895 all present | **NOVELTY-DEAD + OBSOLETE ENDPOINT.** The TBG→FTI bias is the textbook reason direct free-T4 assays *replaced* the index (same trap as the already-published creatinine mechanism). Decision premise also fails in-era: free T4 (63,095) outnumbers total T4 (12,010) **~5:1** → clinicians already act on the direct measurement, so "biased formula drives decisions" has no live endpoint. Would only be a confirmatory panel footnote the calcium flagship doesn't need | **KILLED at gate (novelty + decision), not run — cheap honest negative** |
 
+## Flagship consolidation — single reconciled MIMIC cohort (resolves §2.5 heterogeneity)
+| # | Experiment | Result | Status |
+|---|---|---|---|
+| RECON-1 | **All racial endpoints on ONE uniform MIMIC extraction** (full labevents; N=23,449 paired, 3,553 Black/19,896 White, 9,324 pts; doc 18) | Reproduces the headline on one cohort: E1 raw bias Black +0.182 mg/dL at matched ionized (z=11.1); E1b corrected bias PERSISTS +0.185 (z=11.7); E2 false-hyperCa 13.5% vs 8.6% **OR 1.65 [1.47,1.85]**. E3 masked-hypoCa (broad, ionized<1.15) 79.6% vs 78.0% **OR 1.10 [0.98,1.23] NS** — pooled null (consistent with §3b's range-dependent mild-signal-reverses-at-severe). Aggregate masking severe & race-neutral (~78% of true hypoCa unflagged both races) | **RIGOR WIN — §2.5 heterogeneity is provenance not result-instability; all racial endpoints hold on one extraction. Applied: §2.5 reconciliation paragraph + Abstract/§3b masked-hypoCa tempered to range-dependent; false hyperCa = confirmatory racial endpoint. Primary provenance-tracked numbers retained** |
+
 ## Flagship consolidation — testing the manuscript's proposed globulin-inclusive fix
 | # | Experiment | Result | Status |
 |---|---|---|---|

@@ -43,7 +43,11 @@ per g/dL in SICdb (z=+39.6). The biased corrected-calcium value, not the true io
 independently associated with subsequent hypercalcemia-specific workup (OR 1.17, z=3.37; total
 calcium OR 1.42, z=8.7), and Black patients were nearly twice as likely to carry the false-positive
 flag that drives that workup (4.7% versus 2.5%). The mirror-image error (masked hypocalcemia at the
-lower threshold) was also present but attenuated after CKD adjustment in eICU.
+lower threshold) was directionally consistent but did not reach significance as a racial disparity in a
+single reconciled MIMIC cohort (OR 1.10, 95% CI 0.98–1.23) and was attenuated after CKD adjustment in
+eICU; false hypercalcemia is therefore the confirmatory racial endpoint, while masked hypocalcemia is
+range-dependent (a mild-range racial signal that reverses at severe hypocalcemia, §3b) and a severe
+overall reliability problem in aggregate.
 
 **Conclusions.** The albumin-corrected calcium formula in near-universal clinical use is racially
 miscalibrated because it omits globulin, over-flagging hypercalcemia in Black patients across two
@@ -179,6 +183,20 @@ reported n=25,170 for the same object (a 7-pair filtering difference that change
 n=25,163 is canonical throughout. (iii) Where doc-level exploratory numbers were later superseded by
 the cluster-robust headline estimates (e.g., an earlier adjusted false-hypercalcemia OR 1.50 vs the
 reported OR 1.77), only the headline estimate is used in Results; the earlier figure is not cited.
+
+**Reconciliation check (single-cohort re-run).** To confirm that the cross-extraction heterogeneity above
+is a matter of provenance rather than result stability, we re-ran all ionized-based racial endpoints on a
+single, uniformly-defined extraction of the full MIMIC-IV laboratory table (ionized + total + albumin
+paired ≤2 h, race ∈ {Black, White}, uniform physiologic bounds; **N=23,449 paired draws, 3,553 Black /
+19,896 White, 9,324 patients**). On this one cohort the raw bias (Black total-calcium offset at matched
+ionized +0.182 mg/dL, z=+11.1), the persistence of that bias after albumin correction (+0.185 mg/dL,
+z=+11.7), and the false-hypercalcemia disparity (13.5% vs 8.6%, OR 1.65, 95% CI 1.47–1.85) all reproduce
+the separately-extracted primary estimates within noise. The lower-threshold masked-hypocalcemia endpoint
+was directionally consistent but **not statistically significant** on this cohort (79.6% vs 78.0%, OR 1.10,
+95% CI 0.98–1.23); accordingly we treat false hypercalcemia as the confirmatory racial endpoint and masked
+hypocalcemia as a real aggregate reliability problem (≈78% of truly-hypocalcemic patients of both races are
+not flagged) that is not a demonstrated racial disparity. The provenance-tracked primary numbers are
+retained above; this reconciled cohort is an added rigor check, not a substitution.
 
 ---
 
