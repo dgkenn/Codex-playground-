@@ -288,3 +288,24 @@ flagship (5-cohort mechanism + MIMIC/eICU racial reclassification) remains the v
    only the non-mortality, less-confounded endpoint survives the Rajendran/Li pre-mortem.
 Default next pull: (1) PIC pediatric development — it is the only path that is BOTH novel and already
 partially-in-hand, and it extends the flagship into a fresh population rather than re-mining the floor.
+
+## CONSOLIDATION CYCLE (flagship → submission-readiness) — in progress
+Discovery seam confirmed tapped (T4/AG/Hgb/PIC all confirmatory-null); pivoted to making the calcium manuscript
+submission-ready. Done this cycle:
+- **Self-tested the proposed globulin-inclusive fix** (full MIMIC labevents) → does NOT validate at achievable N
+  (quadruple ionized+total+albumin+protein co-draw collapses to N=693; globulin term z=−1.53 NS; racial gap
+  1.62→1.62 unchanged). Tempered Discussion §4 + Abstract → direct ionized measurement is the supported remedy.
+  (doc 17, ledger FIX-1) — integrity win, removes an over-promise.
+- **Downgraded "pre-registered" → "pre-specified"** (4×) — no timestamped calcium pre-registration exists;
+  honest term for exploratory-then-confirmed program. If a real OSF prereg exists, restore + cite.
+
+**Remaining submission-readiness gaps (prioritized):**
+1. **Clinical-impact quantification** (data-fillable now, full labevents in hand): national-scale / NNH framing —
+   how many patients carry the false flag, decision-curve or absolute-numbers "so what". Strengthens impact.
+2. **Single reconciled cohort table** — §2.5 honestly discloses cross-extraction heterogeneity, but reviewers may
+   want one uniformly-extracted MIMIC + one eICU cohort for all endpoints. Highest-effort, highest-credibility.
+3. **Administrative sections** — data-availability, ethics/IRB (PhysioNet credentialing), author contributions,
+   COI, funding; target-journal selection (honest tier = strong JAMA-family diagnostic-equity, not NEJM without
+   prospective/interventional data) + cover-letter framing.
+4. **Figures** — forest plot of the racial false-hyperCa gap across cohorts; mechanism dose-response panel.
+Default next pull: (1) clinical-impact quantification (data in hand, directly lifts the "so what").
