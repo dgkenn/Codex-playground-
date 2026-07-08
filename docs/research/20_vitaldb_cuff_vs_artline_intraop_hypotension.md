@@ -112,6 +112,28 @@ the attenuation is driven by the cuff's MEASUREMENT bias (over-reads at low MAP,
 patients as normotensive at the moment of measurement), NOT merely by continuous sampling frequency. This
 defeats the main remaining red-team and makes the finding robust.
 
+### Threshold-correction table (VitalDB clean, N=2,177) — the guideline-miscalibration deliverable
+| cuff MBP band | median TRUE (art) MBP | % actually <65 (true hypotension) | % <55 |
+|---|---|---|---|
+| 55–60 | 64 | 52% | 21% |
+| 60–65 | 66 | 43% | 10% |
+| 65–70 | 69 | 31% | 6% |
+| 70–75 | 73 | 13% | 3% |
+| 75–80 | 77 | 7% | 2% |
+
+A cuff reading of **65 = true art MAP ~68** (37% actually <65). Guideline **cuff<65 detects only 57%** of true
+art<65; **cuff<70 → 75%**, cuff<72 → 79% (modest false-trigger cost 8–11%). **Actionable correction: when
+monitoring by cuff, treat at MAP<70 (not <65) to compensate for cuff over-reading at low BP.**
+
+### Composite + ICU endpoints (INSPIRE, 28,349 ops) — attenuation consistent everywhere
+| outcome | ART OR | CUFF OR |
+|---|---|---|
+| ICU admission | **2.63 [2.49, 2.78]** | **1.74 [1.64, 1.84]** (non-overlapping) |
+| Composite (death ∪ AKI) | 1.86 [1.70, 2.04] | 1.47 [1.34, 1.62] |
+
+Attenuation now demonstrated across mortality, hyperlactatemia, AKI, composite, and ICU admission — a highly
+consistent body of evidence that cuff-based hypotension measurement underestimates every downstream harm.
+
 ### Correction-loop status: COMPLETE & robust
 Discovered (VitalDB, clean 41% miss) → replicated at scale (INSPIRE, 47,533 ops) → attenuation shown across
 mortality/lactate/AKI → survives covariate adjustment → mechanistically anchored (lactate, the direct
