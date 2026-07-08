@@ -18,6 +18,15 @@ tested 5 candidates; all are documented negatives, and two of them *bounded prio
   admission (falsified) + it's actively scooped.
 - **C5 Friedewald LDL (new, 0.30):** clean large reclassification (21% of statin-eligible falsely 'at-goal') but
   guideline-established (Martin/Sathiyakumar) and the racial angle is weak/reversed. Confirmatory.
+- **C6 testosterone/SHBG in NHANES (new, 0.30):** PubMed-screened (framing was open); over-diagnosis of
+  hypogonadism in obesity is clean & dose-dependent BUT guideline-known (Bhasin 2018), threshold-fragile, weak
+  equity angle. Confirmatory. **Silver lining: opened NHANES (public, no-DUA, nationally representative) as a
+  validated new substrate** — pipeline works (XPT download + Vermeulen free-T).
+
+**Pattern after 6 candidates (2 sessions):** clean *reclassification* findings all land CONFIRMATORY — the famous
+subgroup-miscalibration wins (calcium-globulin, eGFR-race, Friedewald, vitamin-D-VDBP, testosterone-SHBG) are the
+archetypes that *inspired* this direction and are all published/guideline-addressed. Genuinely NOVEL top-tier
+CPU findings in accessible tabular data are scarce — this is now well-evidenced, not a hunch.
 
 **What I learned (raises future success rate):** the ED "recorded-action" wall-breaker thesis largely failed —
 attaching a HARM/ACTION endpoint to a disparity keeps getting confounded, reversed, or unvalidated. The calcium
@@ -56,6 +65,8 @@ the loop at low cadence rather than grind the remaining pre-flagged-fatal candid
 | C4 | Triage-acuity (ESI) miscalibration vs bounce-back-admit (MC-MED, N=107,722) | strong (visits.csv only) | **STRIKE-OUT — harm chain falsified.** Black patients ARE under-triaged at matched vitals (residual +0.19 vs White +0.095 — real assignment disparity), BUT under-triage does NOT predict the bounce-back-admit outcome (under-triaged bounce back LESS: 1.44% vs over-triaged 2.03%; Black bounce-admit 1.58% [1.25,2.00] vs White 2.06% [1.89,2.25]). Vitals-residual is a poor proxy for harmful under-triage; hard outcome doesn't validate it; raw disparity is crowded/scooped (2025 arXiv) | **DONE — NOT a candidate (disparity real but harm unvalidated + scooped)** |
 
 | C5 | Friedewald calculated LDL vs measured direct LDL → statin-threshold reclassification (MIMIC, N=10,455 paired) | strong (9,465+ both) | **CLEAN but CONFIRMATORY (novelty-capped).** Mechanism strong: Friedewald error −11 mg/dL, monotone in TG (−8 at TG<150 → −26 at TG300-600). Large reclassification: 21.6% of true-LDL≥100 falsely 'at-goal' (30% at ≥130). BUT (1) racial angle weak/REVERSED (Black lowest 16.7%, Hispanic highest — TG-driven, no clean equity gradient); (2) mechanism + fix are GUIDELINE-ESTABLISHED (Martin-Hopkins 2013; Sathiyakumar 2018 Circulation already showed this reclassification). Not top-tier | **DONE — confirmatory; VALIDATES the revised rule (first clean non-confounded endpoint of the night) but already published** |
+
+| C6 | Total-T vs Vermeulen free-T reclassification of hypogonadism by SHBG/obesity (**NHANES** G+H+I, N=4,592 men) | strong (new public substrate opened) | **CLEAN DIRECTION but CONFIRMATORY + threshold-fragile.** Over-diagnosis (low total-T, normal free-T) rises monotonically with BMI (0.8%→4.9%) as SHBG falls (47→32) — real, dose-dependent. BUT (1) mechanism is GUIDELINE-established (Bhasin/Endocrine Soc 2018: measure free T in obesity); (2) reclassification MAGNITUDE is implementation/cutoff-fragile (Vermeulen free-T ~15-20% low → over-dx swung 2.8%→0.2% on cutoff change; free-T<70 flags implausible 54%); (3) racial angle WEAK (no clean differential; White highest 'missed'). PubMed: the 1 NHANES-testosterone paper (Tienforti 2025) is a different question → framing was open, but lands confirmatory | **DONE — confirmatory + fragile, not top-tier. WIN: NHANES opened as a validated public (no-DUA) substrate for future reclassification hunts** |
 
 ## STRATEGIC SYNTHESIS — the MC-MED ED "wall-breaker" thesis largely FAILED (4 strikes); revised rule validated
 The overnight thesis was: measurement-bias HARM is observable in the ED (recorded actions) where it's unobservable
