@@ -150,29 +150,38 @@ Escalation is preoperative, since an early cuff signal is a weak trigger (early 
 PPV 40%). **Three-part package: detect** (cycle ≤2–3 min + treat at MAP<70), and where yield is high, **measure
 directly** (arterial line, per Box 1).
 
-> **Box 1 — Arterial-line decision tool (three layers, data-anchored; INSPIRE)**
+> **Box 1 — Arterial-line clinical aid (three layers). The actionable, evidence-backed step in the gray zone is
+> the detection correction, NOT a prediction score.**
 >
-> **Layer 1 — auto-place (revealed practice; the decision is already made).** Categories where observed A-line
-> placement is near-universal, identified from the data (≥85% placement) rather than declared: **cardiothoracic
-> 97.0%, neurosurgery 94.9%, interventional-radiology/hybrid 91.3%**, and **any ASA ≥ 4** (placement 89–94%
-> regardless of specialty). Place an arterial line; the tool does not deliberate.
+> **Layer 1 — auto-place (established guideline indication).** Cardiac / major-vascular / neuro / interventional
+> cases and **ASA ≥ 4**. Already near-universal in practice (revealed placement 97/95/91% and 89–94%), so this
+> layer *codifies* rather than predicts.
 >
-> **Layer 2 — place for a specific established indication (any one):** beat-to-beat control (aortic cross-clamp,
-> cerebral/carotid perfusion, pheochromocytoma) · frequent ABG/serial labs (respiratory failure, one-lung
-> ventilation, massive transfusion) · NIBP unreliable (morbid obesity, arrhythmia, severe PAD, positioning) ·
-> active vasoactive titration · dynamic goal-directed monitoring.
+> **Layer 2 — place for a specific established benefit (any one):** beat-to-beat control · frequent ABG/serial
+> labs · NIBP unreliable · active vasoactive titration · dynamic goal-directed monitoring.
 >
-> **Layer 3 — gray zone (no Layer-1/2 trigger): risk score.** Consider an arterial line if **≥ 2** of:
-> **ASA ≥ III · Age ≥ 65 · Long case > 4 h · Serious surgery (urologic / major-abdominal / cardiothoracic /
-> major-vascular / transplant) · Emergency.** Score AUC 0.75 for harm-associated cuff-missed hypotension;
-> at ≥2 it flags 44% of gray-zone cases and captures 84% of that harm (NNM 25). Judged against the **composite**
-> of realized A-line benefits (hypotension detection, vasoactive titration, serial ABG/labs, unreliable NIBP),
-> ≥2 carries an NNM of **1.4** — most lines placed at threshold serve ≥1 concrete benefit, and composite benefit
-> rises monotonically with score (39→53→65→81→95→98% across score 0→5). Below threshold: cuff cycled ≤2–3 min,
-> treat at MAP < 70. *(The tool self-calibrates — re-estimating placement rates locally re-derives Layer 1. A
-> memorable mnemonic for the Layer-3 factors is being finalized.)*
+> **Layer 3 — gray zone (no Layer-1/2 trigger).** The evidence-backed action is the **detection correction**:
+> cuff cycled ≤ 2–3 min and treated at **MAP < 70** (recovers sensitivity for true hypotension from 57%→75%; no
+> prediction model required). Higher-acuity features (older age, ASA ≥ III, major abdominal/urologic surgery,
+> longer anticipated case) may *raise suspicion* for direct arterial monitoring, but a pre-operative risk *score*
+> is only **exploratory/hypothesis-generating** here: on rigorous, leakage-free, held-out analysis its
+> discrimination is ≈0.57 and it failed external validation (see §3h/Limitations). Whether *placing a line* in
+> gray-zone patients improves outcomes is confounded observationally and is the subject of a prospective trial.
 
-## 3h. External validation — the discrepancy is not local (eICU, 154 US hospitals)
+## 3h. External validation and the limits of a pre-operative score
+**Mechanism replicates externally (eICU, 154 US hospitals).** — the measurement finding the aid rests on is
+device physics, not local artifact (detail below).
+
+**A pre-operative risk score does not.** Applied to VitalDB (independent cohort), a frozen four-factor gray-zone
+score gave AUC 0.546 [0.511–0.579] with non-monotone calibration — a failed external validation. Internally, its
+held-out discrimination falls to ≈0.57 once realized operative duration (a look-ahead: long cases run long partly
+*because* of intraoperative events) is removed, and its apparent association with harm reflects general illness
+severity rather than the cuff-blindness pathway specifically (it predicts harm as well or better in patients
+*without* cuff-missed hypotension). The score is therefore reported as hypothesis-generating only; the
+actionable, model-free translation of the finding is the detection correction (Box 1, Layer 3), and a
+benefit-validated decision rule requires the randomized trial.
+
+### 3h(i). The measurement discrepancy replicates (eICU, 154 US hospitals)
 In 24,691 ICU stays co-recording arterial and cuff mean pressures across 154 US hospitals, the cuff detected only
 **53%** of arterial-defined hypotension at MAP<65 (missed 47%) and **32%** at <55 (missed 68%) — closely matching
 VitalDB (missed 44%/73%) — and over-read at low pressure (bias +13.1 mmHg at arterial 20–55, +5.2 at 55–65,
@@ -203,6 +212,14 @@ bedside, a corrected cuff threshold (MAP<70) recovers much of the missed hypoten
 - Observational; arterial lines are placed non-randomly. The within-operation and matched-cadence designs
   control this for the relative (art-vs-cuff) comparison but not the absolute hypotension–harm association.
 - The corrected cuff threshold trades sensitivity against false triggers and requires prospective validation.
+- The exploratory pre-operative gray-zone risk score has three structural weaknesses we report rather than
+  minimize: (i) its held-out discrimination is modest (≈0.57 once realized operative duration, a look-ahead
+  variable, is excluded) and it **failed external validation** in VitalDB (AUC 0.546); (ii) it is derived only in
+  patients who received an arterial line, so the deployment population (un-lined gray-zone patients) is
+  structurally unrepresented (verification/selection bias); (iii) its association with adverse outcomes reflects
+  general illness severity, not the cuff-blindness pathway specifically. It is therefore presented as
+  hypothesis-generating, not as a validated instrument; the actionable translation is the model-free detection
+  correction, and a benefit-validated decision rule requires the randomized trial.
 
 ## References (to complete)
 Walsh 2013; Salmasi 2017; VISION/Devereaux; Wax 2011; Kaufmann 2020; Bijker 2007 (hypotension definitions).

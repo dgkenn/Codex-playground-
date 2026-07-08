@@ -1,5 +1,14 @@
 # The "A-LINES" tool — a bedside decision aid for arterial-line placement to prevent cuff-missed intra-op hypotension
 
+> **⚠️ SUPERSEDED IN PART (2026-07-08).** The AUC figures in §(a)/§(f) below (0.752, 0.687) were **in-sample**
+> and used a rarer target definition. A pre-specified, TRIPOD-grade re-analysis with a **subject-level held-out
+> split** (SAP: doc 22; results: doc 23) supersedes them: honest held-out discrimination is **0.61** for
+> cuff-missed hypotension and **~0.70** for harm-associated cuff-missed hypotension — modest, at the ceiling that
+> pre-operative intraoperative-hypotension prediction is known to hit. The tool's defensible value is **excellent
+> calibration + positive decision-curve net benefit + a steep hard-outcome gradient**, not high AUC. Read doc 23
+> for the corrected, review-ready version. The structural content below (three-layer design, revealed-practice
+> Tier-1, composite benefit) stands.
+
 **Status:** Proposed clinical decision tool derived from C8 (doc 20) + literature. Fills a documented gap: there is
 "considerable variation in practice and no clear consensus" on arterial-line placement in non-cardiac surgery,
 especially ASA-2 major and ASA-3 moderate-major cases, and **no standardized decision tool exists**. Needs

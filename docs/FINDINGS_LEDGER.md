@@ -224,8 +224,23 @@ give an arterial line*. Full detail in `docs/research/21_aline_decision_tool.md`
 | AL-eICU | **US external validation** (eICU, 154 hospitals, 24,691 co-recording ICU stays) | Discordance replicates: cuff misses **47%** of art-hypotension at <65, **68%** at <55 (≈VitalDB 44%/73%); over-reads at low pressure (+13.1 mmHg at 20–55, +5.2 at 55–65). Attenuation replicates directionally: mortality art **OR 5.40** vs cuff **4.86** (higher absolute ORs = ICU baseline risk). Different country/setting/monitor → device-physics, not local artifact | **DONE — softens single-institution limitation** |
 
 **Three-layer final structure:** (1) auto-Tier-1 by category (cardiac/neuro/interventional or ASA≥4) → place;
-(2) Tier-1 by specific indication (beat-to-beat/ABG/NIBP-unreliable/vasoactive/GDT) → place; (3) Tier-2 gray-zone
-score (≥2 of ASA≥III, Age≥65, Long>4h, Serious-surgery-refined, Emergency) → consider, else cuff q≤2–3min + treat
-MAP<70. **Mnemonic name deferred** (per user) until all data finalized — the optimized factors no longer spell
-A-LINES cleanly (BMI/"N" removed). **Flagship status:** promoted to candidate 3rd flagship (after calcium, C7)
-pending manuscript finalization + prospective-validation framing.
+(2) Tier-1 by specific indication (beat-to-beat/ABG/NIBP-unreliable/vasoactive/GDT) → place; (3) gray zone →
+**detection correction (cuff q≤2–3min + treat MAP<70)**; higher-acuity features raise suspicion but the pre-op
+score is EXPLORATORY only.
+
+### RIGOROUS RE-ANALYSIS + adversarial review (goal: tool that survives review) — SAP doc 22, results doc 23
+| # | Experiment | Result | Status |
+|---|---|---|---|
+| AL-tripod | **Pre-specified subject-split held-out modeling** (INSPIRE n=27,528, 25,080 subjects) | Held-out 4-factor count AUC **0.601** (Y_missed), **0.68** (Y_harm); calibration slope 1.00; DCA net-benefit positive; hard-outcome gradient 12.5→68.8%. **Corrects doc-21's in-sample 0.75** | DONE |
+| AL-redteam | **Hostile reviewer (anesthesiologist+biostatistician)** | 7 attacks; 3 rated FATAL. Verdict: standalone tool NOT publishable; fold into C8 as hypothesis-generating | DONE |
+| AL-kill1 | **Duration-leakage test** (drop realized duration) | Y_missed 0.609→**0.574**, **Y_harm 0.682→0.572** — nearly all Y_harm "signal" was realized-duration look-ahead | DONE |
+| AL-kill2 | **External validation = FAILED** (VitalDB n=1,071) | AUC **0.546 [0.511–0.579]**, non-monotone calibration (24/31/36/35/25%). Not "attenuation" — a failed validation | DONE |
+| AL-kill3 | **Severity-confound test** (score→harm by Y_missed status) | harm\|missed=0 AUC **0.708** > harm\|missed=1 **0.646** → score predicts general severity, NOT the cuff-blindness pathway | DONE |
+| AL-kill4 | **Verification/selection bias** (lined vs un-lined population) | lined ASA≥3 13% vs 9%, dept-mix shifted (NS 23%); target outcome observable only in already-lined patients → deployment population structurally unrepresented (unfixable in data) | DONE |
+
+**REVISED VERDICT (supersedes flagship claim):** the standalone pre-op A-line *prediction tool* **does not survive
+adversarial review** (leakage-free AUC ≈0.57, failed external validation, severity-confounded, selection-biased).
+**What survives + is high-impact:** C8 measurement finding (externally validated) + a **model-free detection
+correction** (cuff q≤2–3min + MAP<70, 57%→75% sensitivity) + guideline-anchored structure, with the score as
+exploratory. Benefit-validated decision rule → **prospective RCT (doc 24)**. Honest downgrade from "3rd flagship
+tool" to "C8 clinical-implications section + trial protocol."

@@ -932,3 +932,30 @@ cross-nationally-validated part.
   Corollary: modern (2020s) cohorts attenuate device/assay-interference mechanisms found in older data (bound such
   findings by era); and always verify the GROUND-TRUTH REFERENCE exists in the target setting (arterial vs venous)
   before running — reference-mismatch is a cheap pre-run kill.
+
+- **Observational bedside decision-TOOLS die to four predictable knives — pre-run for all four (A-line tool, 2026-07-08).**
+  We tried to turn the C8 measurement finding into a validated pre-operative arterial-line decision *score*. A full
+  TRIPOD-grade re-analysis + hostile-reviewer red-team killed the standalone tool. The four knives, each of which
+  should be a CHEAP PRE-RUN CHECK for any future decision-tool idea:
+  1. **Realized-feature leakage.** "Long case >4h" used *realized* operative duration — a look-ahead (long cases
+     run long partly *because* of the intraop events that cause the outcome). Removing it dropped held-out AUC
+     0.68→0.57 (it was doing nearly all the work). RULE: every predictor must be knowable at the moment of the
+     decision; realized intra-op durations/counts are leakage.
+  2. **Failed external validation masquerading as "attenuation."** Frozen score AUC 0.546 in VitalDB with
+     non-monotone calibration. Do NOT explain a near-null external AUC away with a case-mix story unless you can
+     demonstrate the mechanism; TRIPOD-AI calls 0.55[0.51,0.58] a FAILED validation, full stop.
+  3. **Composite-outcome severity laundering.** A "harm-associated" composite (AKI/death/MINS/lactate) gave a
+     flattering AUC (0.68) that was just "sick patient, big surgery" — proven by: the score predicted harm BETTER
+     in patients WITHOUT the mechanism (missed-hypotension=0, AUC 0.708) than with it (0.646). RULE: test whether
+     the score predicts the outcome THROUGH the claimed mechanism, not around it (stratify by the mechanism flag).
+  4. **Verification/selection bias (the unfixable one).** The target (cuff-missed hypotension) is observable ONLY
+     in patients who already got an arterial line, so the derivation cohort categorically excludes the deployment
+     population (un-lined gray-zone patients). No re-analysis of the same data fixes this — only a prospective
+     trial in the un-lined population does. RULE: if the outcome requires the very intervention you're deciding
+     about, the observational tool is structurally un-validatable; go straight to the trial design.
+  **What survived and why:** the C8 *measurement* finding (device physics, externally validated in eICU) + a
+  **model-free** action (cuff cycling ≤2-3min + treat MAP<70 — no prediction needed, 57%→75% sensitivity). GENERAL
+  LESSON: when a measurement/reclassification finding is solid but the "who-to-treat" prediction layer fails,
+  the durable deliverable is the MODEL-FREE correction + a trial protocol — not an overfit score. Modest-AUC +
+  good-calibration + positive-DCA is NOT enough to call something a validated tool if it leaks, fails external, is
+  severity-confounded, or is selection-biased. Honest demotion beats a tool that dies in peer review.
