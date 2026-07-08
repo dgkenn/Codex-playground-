@@ -258,5 +258,20 @@ tool" to "C8 clinical-implications section + trial protocol."
 eICU-replicated); (ii) harm-attenuation reframed as C8's quantified consequence (cuff adds nothing beyond true
 burden, OR 1.05 null); (iii) MAP<70 detection correction with eICU-replicated operating characteristics + bounded
 overtreatment, framed as a **trial hypothesis**; (iv) two-stage RCT (doc 24, cuff-threshold arm promoted to
-co-primary lead-in). No surviving claim rests on an in-sample or un-replicated number. Pre-specified-for-revision:
-vasopressor-stratified discordance (INSPIRE), positioning confounder (needs new data).
+co-primary lead-in).
+
+### ROUND 3 (convergence check) — VERDICT: CONVERGED
+| # | Experiment | Result | Status |
+|---|---|---|---|
+| AL-r3 | **3rd reviewer convergence check** | Severity trajectory FATAL(r1)→MAJOR(r2)→**"completeness gap, not validity gap; close to publishable, should clear a top journal"(r3)**. One remaining item: vasopressor mechanism analysis, ideally within-patient crossover | DONE |
+| AL-vaso-within | **Within-patient MAP-matched vasopressor crossover** (INSPIRE) | At matched true MAP within the same op, cuff-art bias on-vs-off infusion = **−0.1 [−2.8,+2.6] (art20-55), +0.3 [−1.7,+2.2] (55-65) — NULL** → device physics, NOT vasoconstriction (the design r3 said reviewers credit) | DONE — closes r3's blocking item |
+| AL-magnitude | **Honest magnitude reconciliation** | over-read +30.6 (VitalDB, 2s waveforms) vs +13.1 (eICU, minute-level ICU, sicker) ≈2.3× → reported as replication of DIRECTION + order-of-magnitude, not identical magnitude | DONE |
+
+**CONVERGENCE ACHIEVED across 3 adversarial rounds** (fatal→major→completeness→resolved). Final durable package =
+C8 measurement finding (RTM-safe; Bland-Altman-by-stratum; window-stable; vasopressor confounder ruled out both
+between- and within-patient; eICU direction-replicated) + harm-attenuation as C8's quantified consequence (cuff
+OR→1.05 null) + MAP<70 detection correction (eICU-replicated operating chars, bounded overtreatment, framed as
+trial hypothesis) + two-stage RCT (doc 24). Predictive score = exploratory only. No surviving claim rests on an
+in-sample/un-replicated number. **The "best possible tool that survives review" = an honest measurement paper +
+model-free correction + definitive trial — NOT an overfit prediction score.** Residual (disclosed, not blocking):
+single-institution primary cohort; positioning confounder needs prospective data.

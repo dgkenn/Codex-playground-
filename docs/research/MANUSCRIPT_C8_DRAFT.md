@@ -106,7 +106,12 @@ In 1,079 co-recording cases (5,903 paired readings, artifact-hardened, Bland-Alt
 sensitivity for arterial-defined hypotension was **56.2%** [52.9–59.4] at MAP<65 (missed 44%), **41.7%** at <60,
 and **26.9%** [22.5–31.8] at <55 (missed 73%). The cuff over-read by **+30.6 mmHg** at arterial MAP 20–55 and
 was near-unbiased in the normal range (see threshold table). At the case level, 60% of cases with any
-arterial-defined hypotension had ≥1 episode missed by the cuff.
+arterial-defined hypotension had ≥1 episode missed by the cuff. The over-read is a **systematic, monotone
+function of true pressure** (Bland-Altman by arterial stratum), stable across reference-window width and anchor
+(±30/60/90 s: sensitivity 55.0/56.1/55.9%; bias +30.7/+30.8/+30.5), and **not a vasopressor artifact**: in a
+within-operation, MAP-matched crossover the cuff–arterial bias difference on- versus off-vasoactive-infusion was
+null at low pressure (−0.1 mmHg [−2.8,+2.6] at art 20–55; +0.3 [−1.7,+2.2] at 55–65) — the error is intrinsic
+oscillometric behavior at low pressure, not vasoconstriction from treatment.
 
 ### 3b. Replication at scale (INSPIRE)
 47,533 operations; cuff missed 71% of arterial-defined hypotension (MAP<65). (INSPIRE's larger magnitude vs
@@ -201,8 +206,13 @@ VitalDB (missed 44%/73%) — and over-read at low pressure (bias +13.1 mmHg at a
 near-zero mid-range). The harm-attenuation replicated directionally: arterial-defined hypotension carried a
 stronger association with hospital mortality than cuff-defined (OR **5.40** [4.80–6.07] vs **4.86** [4.29–5.50];
 higher absolute ORs than intraoperative INSPIRE because the ICU baseline mortality is far higher). A different
-country, care setting, and monitor family reproduce both the measurement discrepancy and its direction of
-harm-attenuation — evidence the phenomenon is device physics, not institutional artifact.
+country, care setting, and monitor family reproduce both the measurement discrepancy and the direction of
+harm-attenuation. We describe this as replication of **direction and order-of-magnitude, not identical
+magnitude**: the low-pressure over-read is +13.1 mmHg in eICU versus +30.6 in VitalDB (~2.3×), as expected from
+the differing granularity (minute-level ICU data vs 2-second waveforms) and a sicker, more edematous ICU
+population with additional oscillometric-error sources (limb edema, arrhythmia). The consistent *direction*
+across country, setting, and device family indicates the phenomenon is intrinsic oscillometric behavior, while
+the magnitude is context-dependent.
 
 ## 4. Discussion
 Cuff monitoring systematically misses intraoperative hypotension because it over-reads at low pressure, and this

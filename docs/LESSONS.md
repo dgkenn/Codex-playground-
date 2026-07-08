@@ -959,3 +959,18 @@ cross-nationally-validated part.
   the durable deliverable is the MODEL-FREE correction + a trial protocol — not an overfit score. Modest-AUC +
   good-calibration + positive-DCA is NOT enough to call something a validated tool if it leaks, fails external, is
   severity-confounded, or is selection-biased. Honest demotion beats a tool that dies in peer review.
+
+- **"Survives adversarial review" is a CONVERGENCE test, not a one-shot (A-line tool, 2026-07-08).** Ran 3
+  independent hostile-reviewer rounds (sonnet) on the same package. The signal that a finding is real is the
+  SEVERITY TRAJECTORY: round 1 FATAL (leaking score, causal overclaim) → round 2 MAJOR (fixable) → round 3
+  "completeness gap, not validity gap." If each round surfaces smaller issues, it's converging (publishable); if
+  each round finds new fatal flaws, it's not. Two operational rules that emerged: (1) When a reviewer calls a
+  result "tautological," the fix is often a REFRAME + a confirmatory test, not a rebuttal — e.g. the cuff-vs-art
+  harm attenuation looked like a second finding; conditioning outcome on CONTINUOUS true arterial burden collapsed
+  the cuff OR to 1.05 (null), which *confirms* it's the quantified consequence of the measurement error and is
+  STRONGER than the original framing. (2) For a mechanism-confounder attack (here: is the low-pressure cuff
+  over-read device-physics or vasopressor-vasoconstriction?), the between-group stratified analysis is
+  confounded-by-indication; the design reviewers actually credit is the WITHIN-PATIENT crossover at matched
+  true-value (on-vs-off bias diff was null at matched MAP → device physics). Always reach for the within-subject
+  design when the confounder is a patient-level phenotype. Also: report magnitude honestly (VitalDB +30.6 vs eICU
+  +13.1 mmHg = "direction + order-of-magnitude," not "identical") — reviewers do the arithmetic.
