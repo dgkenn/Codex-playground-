@@ -244,3 +244,19 @@ adversarial review** (leakage-free AUC ≈0.57, failed external validation, seve
 correction** (cuff q≤2–3min + MAP<70, 57%→75% sensitivity) + guideline-anchored structure, with the score as
 exploratory. Benefit-validated decision rule → **prospective RCT (doc 24)**. Honest downgrade from "3rd flagship
 tool" to "C8 clinical-implications section + trial protocol."
+
+### ROUND 2 review (fresh reviewer) + hardening — verdict MAJOR REVISIONS (up from reject); C8 publishable
+| # | Experiment | Result | Status |
+|---|---|---|---|
+| AL-r2 | **2nd hostile reviewer** (anesthesiologist + trials methodologist) | RTM-safe design + score demotion = genuine upgrade; C8 publishable. Remaining: MAP<70 in-sample, attenuation-tautology, mechanism-confounders, RCT-tension | DONE |
+| AL-taut | **Tautology test** (INSPIRE n=27,528: outcome on cuff_hypo + continuous true arterial burden/depth) | **cuff_hypo OR → 1.05 [0.98–1.12] NULL**; art_burden OR 1.73 carries all signal → attenuation is the QUANTIFIED CONSEQUENCE of cuff undercounting (not a separate effect). Turns the tautology attack into a clean confirmation | DONE — reframes §3c |
+| AL-thr-eicu | **External replication of MAP<70 threshold numbers** (eICU 1.14M pairs, 154 hospitals) | sens <65→<70 = 53.0%→70.7% (VitalDB 56→72%); FPR 11.8%→23.6% (VitalDB 10→19%) — near-identical → threshold trade NOT in-sample artifact | DONE |
+| AL-thr-safe | **Overtreatment audit** (VitalDB 5,906 pairs) | <65: sens 56%/FPR 10%/PPV 50%; <70: sens 72%/FPR 19%/PPV 41%. Newly-flagged (cuff 65-70) median art **70** (25% truly <65) → intensifies in mild-low-normal, not toward hypertension. Bounded, honestly reported; net-benefit → RCT arm | DONE |
+| AL-window | **Window/anchor sensitivity** (VitalDB ±30/60/90s) | sensitivity 55.0/56.1/55.9% at <65; bias +30.7/+30.8/+30.5 — rock-stable → discordance is systematic device over-read, NOT a cuff-cycle timing artifact | DONE |
+
+**AFTER TWO ROUNDS — durable package:** (i) C8 measurement (RTM-safe, Bland-Altman-by-stratum, window-stable,
+eICU-replicated); (ii) harm-attenuation reframed as C8's quantified consequence (cuff adds nothing beyond true
+burden, OR 1.05 null); (iii) MAP<70 detection correction with eICU-replicated operating characteristics + bounded
+overtreatment, framed as a **trial hypothesis**; (iv) two-stage RCT (doc 24, cuff-threshold arm promoted to
+co-primary lead-in). No surviving claim rests on an in-sample or un-replicated number. Pre-specified-for-revision:
+vasopressor-stratified discordance (INSPIRE), positioning confounder (needs new data).

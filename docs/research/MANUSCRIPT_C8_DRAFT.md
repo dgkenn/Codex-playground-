@@ -112,11 +112,17 @@ arterial-defined hypotension had ≥1 episode missed by the cuff.
 47,533 operations; cuff missed 71% of arterial-defined hypotension (MAP<65). (INSPIRE's larger magnitude vs
 VitalDB reflects greater artifact in minute-level arterial data; VitalDB provides the clean estimate.)
 
-### 3c. Cuff monitoring underestimates the harm of hypotension (INSPIRE, within-operation)
+### 3c. The measured harm of hypotension is attenuated under cuff — a direct consequence of undercounting
 [TABLE — adjusted OR art vs cuff: mortality 2.09 vs 1.48; hyperlactatemia 1.91 vs 1.46; AKI 1.34 vs 1.26;
 composite 1.86 vs 1.47; ICU 2.63 vs 1.74; MINS 1.48 vs 1.50 (no attenuation).]
 Mechanism: cuff-defined non-hypotensive group has higher event rate than arterial non-hypotensive (AKI 6.5% vs
-5.6%), reflecting misclassified hypotensive patients.
+5.6%), reflecting misclassified hypotensive patients. **This attenuation is not an independent effect of
+measurement on outcome; it is the quantified consequence of §3a–b.** When continuous true arterial hypotension
+burden and depth are entered alongside the binary cuff-hypotension flag (composite adverse outcome, n=27,528),
+the **cuff flag's association collapses to the null (adjusted OR 1.05 [0.98–1.12])** while arterial burden retains
+a strong graded association (OR 1.73 per 10 min <65) — i.e. cuff-defined hypotension carries essentially no
+information about harm beyond being a noisy, undercounting proxy for true arterial exposure. The attenuated cuff
+effect sizes throughout the literature are therefore expected, and quantified here.
 
 ### 3d. It is measurement bias, not sampling frequency (matched-cadence)
 At identical cuff-measurement times, arterial-defined hypotension still predicted harm more strongly (mortality
@@ -130,10 +136,17 @@ also lagged: among arterial-hypotension episodes, the cuff never registered <65 
 eventually detected the median delay was 9.1 min (VitalDB). Thus the measurement error propagates to a treatment
 omission at the same true severity — the mechanism linking mismeasurement to the attenuated harm associations.
 
-### 3f. Threshold miscalibration and a practical correction
-A cuff MAP of 65 corresponded to a true arterial MAP of ~68 (37% actually <65). Guideline cuff<65 detected 57%
-of true hypotension; cuff<70 detected 75% (false-trigger 8%). Where arterial monitoring is unavailable, a cuff
-treatment threshold of MAP<70 better approximates the true <65 target.
+### 3f. Threshold miscalibration and a candidate correction (a trial hypothesis, not yet a guideline change)
+A cuff MAP of 65 corresponded to a true arterial MAP of ~68 (37% actually <65). Against the arterial reference,
+cuff<65 had sensitivity 56.1% (specificity 89.8%, false-positive rate 10.2%, PPV 49.8%); **cuff<70 raised
+sensitivity to 71.9%** (specificity 81.2%, false-positive rate 18.8%, PPV 40.7%). These operating characteristics
+**replicate externally in eICU** (1,140,999 paired readings, 154 US hospitals: 53.0%→70.7% sensitivity,
+false-positive rate 11.8%→23.6%), so the trade is not an in-sample artifact. **The overtreatment concern is
+bounded:** readings newly flagged by the <70 rule have a median true arterial MAP of 70 (only 25% are truly <65),
+so the correction intensifies attention in mildly-low-normal patients rather than driving treatment toward
+hypertension. Still, PPV falls to 41%, so a definitive net-benefit verdict (detection gain vs incremental
+vasopressor exposure — cf. the treatment-response OR 1.34) requires the randomized third arm (§Trial). We
+therefore present MAP<70 as a **testable candidate correction**, not an adopted threshold.
 
 ### 3g. Preventing the harm — tested interventions
 (1) **Corrected trigger:** guideline cuff<65 flags only 52% of patients with true hypotension and harm; cuff<70

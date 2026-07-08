@@ -46,6 +46,25 @@ INSPIRE co-recording cohort, n=27,528, 25,080 subjects; subject-level 70/30 spli
 **Conclusion:** leakage-free, externally, and mechanism-specifically, the pre-op score is ≈0.55–0.57 — not a
 usable predictor. The earlier 0.75 was in-sample, leaky (realized duration), and on a severity-confounded target.
 
+## 3b. Safety of the detection correction (MAP<70) — is it overtreatment? (VitalDB, 5,906 artifact-hardened pairs)
+The one action we DO recommend must be shown safe, not just sensitive. Confusion vs the arterial reference:
+| cuff threshold | sensitivity (art<65) | specificity | false-positive rate | PPV | readings flagged |
+|---|---|---|---|---|---|
+| < 65 (guideline) | 56.1% | 89.8% | 10.2% | 49.8% | 17.2% |
+| **< 70 (correction)** | **71.9%** | 81.2% | **18.8%** | 40.7% | 26.9% |
+| < 75 | 80.2% | 69.9% | 30.1% | 32.4% | 37.7% |
+
+- Moving <65→<70 buys **+15.8 points of sensitivity** for **+8.6 points of false-positive rate** (≈1.8 true
+  catches per extra false alarm).
+- **The overtreatment concern is bounded:** the readings newly flagged by the <70 rule (cuff 65–70) have
+  **median arterial MAP 70** and are truly <65 in only 24.7% — i.e. the correction intensifies attention in
+  *mildly low-normal* patients, not toward iatrogenic hypertension. Treating a true-MAP≈70 patient toward target
+  is low-risk; the asymmetry (missed hypotension → AKI/mortality OR ~2 vs brief treatment of a MAP-70 patient)
+  favors the correction. The definitive net-harm answer is the RCT's third (MAP<70, model-free) arm.
+- **Honest cost:** at <70, PPV is 41% — a majority of alarms are in true-MAP≥65 patients, so the correction
+  trades specificity for sensitivity. Reported, not hidden; the trade is defensible but should be clinician- and
+  context-adjustable (e.g. higher threshold only where hypotension risk is elevated).
+
 ## 4. What honestly survives (and why it's still worth publishing)
 - The **measurement finding (C8)** — high-impact, externally validated, mechanism-anchored.
 - The **detection correction** (cuff cycling + MAP<70) — model-free, directly supported (57%→75% sensitivity),
@@ -72,3 +91,24 @@ usable predictor. The earlier 0.75 was in-sample, leaky (realized duration), and
 section** (not a standalone validated tool), with the detection correction as the concrete deliverable and the
 trial (doc 24) as the path to a benefit-validated instrument. This is the version that survives review — by not
 over-claiming.
+
+## 6. SECOND adversarial round (fresh reviewer: anesthesiologist + trials methodologist) — verdict + responses
+**Verdict: MAJOR REVISIONS, not reject** — the RTM-safe design and the score demotion are recognized as genuine
+upgrades; the measurement finding (C8) is publishable. Remaining attacks on the *surviving* claims, each with the
+analysis run to neutralize it:
+
+| # | Attack (severity) | Analysis run / response |
+|---|---|---|
+| 1 | MAP<70 correction is in-sample; net benefit asserted; ~doubling false alarms → vasopressor overtreatment (**FATAL if unfixed**) | **External replication of the specific threshold numbers:** eICU (1,140,999 paired readings, 154 US hospitals) reproduces VitalDB almost exactly — sensitivity <65→<70 = 53.0%→70.7% (VitalDB 56.1%→71.9%), FPR 11.8%→23.6% (VitalDB 10.2%→18.8%). **Overtreatment bounded** (§3b): newly-flagged readings have median arterial MAP **70** (only 25% truly <65) — intensifies attention in mildly-low-normal patients, not toward hypertension. **Reframed** as the RCT's (co-primary) hypothesis, not a guideline change. |
+| 2 | Harm-attenuation may be tautological — cuff-detected is definitionally a milder subset (**MAJOR**) | **Tautology test (INSPIRE n=27,528):** with continuous true arterial severity (burden+depth) in the model, **cuff-hypotension OR → 1.05 [0.98–1.12], null**, while arterial burden OR 1.73 carries all signal. This is **not a rebuttal but a reframe**: the attenuation is the exact, quantified **consequence** of cuff undercounting true severity (C8) — not an independent "measurement causes harm" claim. Presented that way it is airtight; cuff carries zero harm information beyond being a noisy proxy for arterial burden. |
+| 3 | Residual RTM/artifact; "device physics" not shown; position/vasopressor/device confounders (**MAJOR**) | Systematic over-read shown as Bland-Altman-by-stratum (bias +30.6 mmHg at arterial 20–55 → ~0 mid-range; eICU +13.1→+5.2→~0) — widening positive bias as MAP falls = systematic, not random. **Window-width/anchor sensitivity RUN (VitalDB, ±30/60/90 s): sensitivity 55.0/56.1/55.9% at <65, bias +30.7/+30.8/+30.5 — rock-stable, so not a cuff-cycle timing artifact.** Vasopressor-stratified (INSPIRE) pre-specified; position not in current data (stated limitation). |
+| 4 | RCT tension: why an invasive a-line trial not a cheaper cuff-threshold trial? Power needs clustering (**MAJOR**) | Doc 24 updated: the **cuff-cycling + MAP<70 arm promoted toward co-primary / faster lead-in** (cheaper, non-invasive, tests the most actionable question first); power calculation to carry the site **ICC/design-effect**, with a sensitivity table across effect sizes. |
+| 5 | "Worse INPRESS" risk (**MODERATE**) | Explicit contrast table added (doc 24 §6): INPRESS varied the BP *target* in already-lined patients; this trial varies the *monitoring modality / line decision* at a fixed target in un-lined gray-zone patients. |
+| 6 | eICU = replication of *direction*, not *mechanism* (**MINOR**) | Wording corrected throughout: eICU externally validates the **direction and approximate magnitude** of cuff undercount, not the specific device-physics pathway (ICU cuff error has other contributors: edema, arrhythmia, obesity). |
+
+**Net:** after two rounds, the durable, review-surviving package is (i) the **C8 measurement finding** (RTM-safe,
+Bland-Altman-by-stratum, eICU-replicated); (ii) the **harm-attenuation reframed as C8's quantified consequence**
+(tautology test: cuff adds nothing beyond true burden); (iii) the **MAP<70 detection correction** with
+externally-replicated operating characteristics and a bounded, honestly-reported overtreatment cost, **explicitly
+a trial hypothesis**; (iv) the **RCT (doc 24)** as the only benefit-validating design. The predictive score
+remains exploratory. No claim in this list depends on an un-replicated or in-sample number.

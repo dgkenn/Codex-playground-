@@ -31,11 +31,25 @@ adjudication is blinded** and all endpoints are arm-symmetric (measured identica
 - **Mechanistic (art arm only, descriptive):** quantify cuff-missed hypotension actually surfaced (links back to
   C8), vasopressor-timing improvement (tests the treatment-gap mechanism prospectively).
 
-## 4. Sample size (illustrative)
-Gray-zone major-surgery AKI baseline ≈ 12%. To detect an absolute reduction to 8.5% (≈30% relative; the
-INPRESS-scale effect of tight arterial-guided BP management on organ dysfunction), α 0.05 two-sided, power 90%:
-≈ **1,500–1,900 per arm** (inflate ~10% for dropout/crossover → ~2,100/arm). A 3-arm design scales accordingly;
-an adaptive interim for futility/crossover is pre-specified.
+## 3a. Two-stage design (revised after review — test the cheap, non-invasive question first)
+A reviewer rightly noted the tension: if the **model-free MAP<70 + fast-cycling correction** captures much of the
+benefit non-invasively, it is unethical and inefficient to gate the science behind a large invasive arterial-line
+trial. Revised plan:
+- **Stage 1 (lead-in, cluster-randomized, cheap/fast):** sites/lists randomized to **cuff cycled ≤2–3 min +
+  treat MAP<70** vs usual care (cuff per-standard + MAP<65). Tests the most actionable, lowest-risk question
+  first. This is now a **co-primary** aim, not an "optional third arm."
+- **Stage 2 (individual RCT, invasive):** arterial line + MAP<65 vs usual cuff + MAP<65, in the gray-zone
+  population, for the incremental value of direct monitoring beyond the Stage-1 correction.
+
+## 4. Sample size (with clustering)
+Gray-zone major-surgery AKI baseline ≈ 12%. To detect an absolute reduction to 8.5% (≈30% relative; INPRESS-scale
+organ-dysfunction effect), α 0.05 two-sided, power 90%: ≈ **1,500–1,900 per arm** *before clustering*. The
+pragmatic multi-site design induces clustering: with intraclass correlation ρ≈0.02 and ~50 patients/site the
+design effect ≈ 1+(50−1)·0.02 ≈ 2.0, so the **cluster-randomized Stage-1** needs ≈ **3,000–3,800 per arm**
+(individually-randomized Stage-2 is less inflated). Full power table across ρ ∈ {0.01,0.02,0.05} and true effect
+∈ {2,3,4 absolute points} is pre-specified; an adaptive futility interim is included. The point-estimate effect
+is *not* imported from the observational attenuation ORs (which are subject to their own caveats) — it is set to
+the minimum clinically important difference.
 
 ## 5. Analysis
 Intention-to-treat primary; per-protocol + CACE (complier-average) sensitivity for crossover (some control
@@ -43,12 +57,18 @@ patients will get rescue lines — a strength, mirroring practice). Pre-register
 severity factors is **exploratory** (the observational score's only legitimate role — generating the subgroup
 hypotheses this trial tests). E-value not needed (randomized).
 
-## 6. Relationship to prior trials (positioning, not novelty-erasing)
-- **INPRESS (Futier, JAMA 2017)** showed arterial-line-guided *individualized BP targets* reduced postoperative
-  organ dysfunction — but in patients **already receiving arterial lines**; it tested the BP *target strategy*,
-  not the **decision to place a line** in gray-zone patients who would not otherwise get one. This trial tests
-  that distinct decision, and it directly operationalizes C8 (the cuff misses the hypotension INPRESS-style
-  management depends on detecting).
+## 6. Relationship to prior trials — explicit contrast (so it is not misread as "another INPRESS")
+| dimension | INPRESS (Futier 2017) | GUARDIAN / POISE-3 BP | **This trial** |
+|---|---|---|---|
+| Population | already arterial-lined, high-risk | mixed, BP-target focus | **un-lined gray-zone (no established indication)** |
+| What varies | BP *target* (individualized vs standard) | BP target / med management | **monitoring modality / the line decision** |
+| Comparator | standard target, same monitor | usual BP mgmt | usual cuff, **same** MAP target |
+| Outcome | organ dysfunction (SIRS composite) | AKI/MI/mortality | **KDIGO AKI (arm-symmetric)** |
+| Question | *how low to treat* | *how to manage BP* | ***whether to see the BP the cuff hides*** |
+
+INPRESS varied the *target* in patients who already had the arterial signal; this trial asks whether providing
+that signal at all — in patients who currently would not get it — changes outcomes. It directly operationalizes
+C8: the cuff misses the very hypotension INPRESS-style management depends on detecting.
 - **GUARDIAN / POISE-3 BP substudies** inform the treatment target, not the monitoring-modality decision.
 
 ## 7. Feasibility / equipoise
