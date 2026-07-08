@@ -53,6 +53,32 @@ Case-level: of 136 cases with ≥1 true (art-line) hypotensive reading, the cuff
 2. **INSPIRE validation:** (a) replicate the cuff-vs-art discordance at scale if INSPIRE has both; (b) the key
    test — cuff-based vs art-based intra-op hypotension → AKI association (attenuation = clinical significance).
 
+## INSPIRE VALIDATION + THE ELEVATOR RESULT (attenuation) — RUN, survives red-team
+**Replication (47,533 ops co-record both cuff + art):** cuff misses **71% of art-defined hypotension (MAP<65)**,
+85% at <60. Direction confirmed at scale. (Magnitude is larger than VitalDB's clean 41% — INSPIRE minute-level
+art has more artifacts: mean offset +4.6 vs VitalDB −0.2, cuff 0% at art<55. Use VitalDB for the clean magnitude;
+INSPIRE for scale + outcomes.)
+
+**ELEVATOR — intra-op hypotension → harm is UNDERESTIMATED by cuff (28,349 ops, within-patient art-vs-cuff):**
+| outcome | ART-line OR | CUFF OR | attenuation |
+|---|---|---|---|
+| **In-hospital mortality** | **2.85 [2.34, 3.46]** | **1.79 [1.49, 2.15]** | ~37% relative (nearly halved) |
+| **AKI (KDIGO)** | 1.75 [1.59, 1.93] | 1.43 [1.29, 1.57] | ~18% relative |
+
+**Mechanism visible in-data:** cuff misclassifies truly-hypotensive patients as normotensive → cuff-"unexposed"
+event rate EXCEEDS art-unexposed (AKI 6.5% vs 5.6%), diluting the exposure. This is the reclassification mechanism,
+now with a hard outcome.
+**Red-team (survives):** (1) within-same-ops design → surgery-severity/art-line-selection confounding controlled
+for the art-vs-cuff comparison; (2) art artifacts bias TOWARD null (artifactual hypotension doesn't cause death →
+weakens art OR) → true attenuation likely larger; (3) "missing harms" test: cuff-missed hypotension is milder
+(AKI 8.4% vs 10.5% detected) — consistent with cuff catching only severe episodes; (4) obesity subgroup weakly
+supports cuff-misses-more (detected 46.7%→40.6% across BMI). **Remaining checks:** adjust for op-duration/ASA/age/
+baseline-cr (currently unadjusted ORs); ascertainment-asymmetry (art has more readings) — model burden-per-reading.
+
+**Implication (the impact):** the intra-op-hypotension evidence base, built overwhelmingly on CUFF BP, has
+SYSTEMATICALLY UNDERESTIMATED the harm of hypotension. Effect sizes and "safe" MAP thresholds derived from cuff
+data need upward revision. This is the field-reframing claim that lifts C8 from "cuffs are inaccurate" to top-tier.
+
 ## DOWNSTREAM NEGATIVE-SEQUELAE TEST BATTERY (run after discrepancy is confirmed + replicated)
 The impact of "cuff misses hypotension" scales with the harms it lets go untreated. All testable in INSPIRE
 (labs: creatinine, troponin_i/t, ckmb, lactate, ast/alt/bilirubin, ph; vitals: full vasopressor panel
