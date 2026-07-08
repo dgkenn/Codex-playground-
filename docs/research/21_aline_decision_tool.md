@@ -47,3 +47,23 @@ should be made preoperatively from the A-LINES factors, not by waiting for the c
 Include as a boxed clinical tool / figure in the C8 manuscript's clinical-implications section, paired with the
 threshold-correction (MAP<70) and cuff-cycling (≤2–3 min) recommendations — the three-part actionable package:
 detect (cycle + threshold), and when yield is high, measure directly (A-LINES → arterial line).
+
+## VALIDATION 1 — INSPIRE (28,349 co-recording ops): the tool discriminates and beats single factors
+A-LINES score (A=ASA≥III, L=>4h, I=emergency, N=BMI≥35, S=high-yield surgery [UR/GS/VS/CTS/NS/OS]) vs
+harm-associated cuff-missed hypotension:
+| score | harmful-missed | any harm |
+|---|---|---|
+| 0 | 0.2% | 0.8% |
+| 1 | 1.2% | 5.4% |
+| 2 | 3.7% | 10.5% |
+| 3 | 5.9% | 19.9% |
+| 4 | 11.2% | 37.9% |
+
+- **AUC 0.70** (harm-assoc missed hypotension), 0.67 (any harm) — vs best single factor 0.60 (duration), 0.59
+  (ASA). The composite adds discrimination over any one criterion.
+- **Threshold ≥2:** flags 37% of ops, **captures 71%** of all harm-associated missed hypotension, **NNM 24**.
+  vs ASA≥3-alone (flags 13%, captures 31%, NNM 19 — misses 69%) and serious-surgery-alone (flags 81%, captures
+  94%, NNM 39 — impractical). A-LINES≥2 is the balanced operating point.
+- **Tangible benefit:** placing arterial lines per A-LINES≥2 would surface 71% of the harm-associated hypotension
+  the cuff currently misses, in 37% of patients — enabling the detection→treatment step (treatment-gap OR 1.34)
+  that the attenuation shows is otherwise skipped.
