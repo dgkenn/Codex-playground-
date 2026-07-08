@@ -178,17 +178,33 @@ flags 68%** (recovers 34% of the missed), cuff<75 flags 79%. False-alarm cost in
 low-risk) favors the higher threshold. **Deployable recommendation: trigger treatment at cuff MAP<70.** Addresses
 the measurement bias.
 
-**(2) Cycle the cuff more frequently.** Decomposition (VitalDB, 37,151 hypotension-minutes): of MISSED
-hypotension, **66% is sampling gaps** (cuff not cycling) and **34% is measurement over-read**. More frequent
-cycling (e.g., every 1–2 min in at-risk periods) closes the sampling majority — but is capped by the measurement
-third, so it must be combined with (1)/(3).
+**(2) Cycle the cuff at least every 2–3 min (not the 5-min default) — SPECIFIC.** Clinically-meaningful
+(minute-level) hypotension episodes last a **median 2 min (p75 5, p90 9)**, and episodes ≥2 min hold 93% of all
+hypotension-minutes. Cycling capture (pure sampling): every 5 min samples only **77%** of ≥2-min episodes; every
+3 min **92%**; every ≤2 min **100%**. Decomposition of the total miss: **66% sampling gaps + 34% measurement
+over-read** — so tighter cycling closes the sampling majority but is capped by the measurement third (hence pair
+with (1)/(3)). **Recommendation: cuff cycle ≤2–3 min in maintenance, ≤1–2 min in at-risk periods, read vs the
+<70 threshold.**
 
-**(3) Low threshold for arterial-line placement.** Targeting analysis: the cuff-miss is PERVASIVE among
-true-hypotensive ops (55% overall; >50% across nearly every stratum — ASA, age, duration, sex), highest in
-urology 68% / 2–4h surgery 61% / men 60% / older, lowest only where art-lines are already standard (cardiothoracic
-45%, >8h 35%). Because it is not confined to a cheaply-targetable niche, a UNIVERSAL response is required, and a
-low bar for arterial monitoring in any prolonged/moderate-risk case is warranted — the measurement-biased fraction
-(34% of the miss) is unfixable by cuff frequency or threshold alone.
+**(3) Preemptive arterial lines in high-yield groups — SPECIFIC (number-needed-to-monitor).** The cuff-miss is
+pervasive (55% of true-hypotensive ops), so target by HARM yield, not miss-rate. NNM = arterial lines per one
+harm-associated missed hypotension surfaced:
+| group | harmful-missed rate | NNM |
+|---|---|---|
+| Urology | 5.4% | **18** |
+| ASA ≥3 | 4.7% | **21** |
+| General surgery / surgery >4h | 3.3% | **30** |
+| ASA 2 / cardiothoracic | 2.2% | 45 |
+| ASA 1 | 1.2% | 83 |
+| Neurosurgery | 0.9% | 115 |
+| Obstetrics/gyn | 0.5% | 198 |
+
+**Prioritize arterial monitoring preoperatively in ASA≥3, urologic/general surgery, and cases expected >4 h**
+(NNM 18–30). In low-yield groups (OB/gyn, ASA 1, short cases; NNM 80–200), a frequently-cycled cuff at the <70
+threshold suffices. Escalation should be **preemptive/risk-based**, because an early cuff signal is a weak
+predictor (early cuff<75 → later hypotension PPV 40%, sensitivity for harm 39% — the cuff misses hypotension
+early too). The measurement-biased 34% of the miss is unfixable by cuff frequency/threshold → only direct
+arterial measurement catches it, reinforcing liberal art-line use in the high-yield groups.
 
 **Layered clinical bottom line:** (a) treat at cuff MAP<70; (b) cycle the cuff frequently in at-risk periods;
 (c) place an arterial line liberally in prolonged/moderate-risk cases. No single measure suffices; together they
