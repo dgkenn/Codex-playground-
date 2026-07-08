@@ -67,3 +67,52 @@ harm-associated cuff-missed hypotension:
 - **Tangible benefit:** placing arterial lines per A-LINES≥2 would surface 71% of the harm-associated hypotension
   the cuff currently misses, in 37% of patients — enabling the detection→treatment step (treatment-gap OR 1.34)
   that the attenuation shows is otherwise skipped.
+
+## REVISION 2 — optimized score + COMPOSITE A-line benefit (two-tier tool)
+
+### (a) Mnemonic optimization (INSPIRE, n=27,140; target = harm-associated cuff-missed hypotension, 2.1%)
+Rigorous per-factor test (univariate AUC, multivariable independence, cutoff scan, drop-one):
+- **DROP "N" (BMI/obesity):** AUC 0.485 (below chance); multivariable p=0.86. Does not earn its place. (Low
+  BMI<20 also non-discriminating.) Clinically obesity degrades cuff accuracy but does NOT translate to more
+  harm-associated missed hypotension here.
+- **ADD "Age ≥65":** independent (OR 1.57, z=8.7); drop-one AUC loss 0.075. Was missing.
+- **ASA ≥3, Long >4h, Serious surgery** — all independent, each earns its place (drop-one loss 0.06–0.11).
+  Optimal cutoffs: ASA≥3 (OR 3.16), duration >4h (>5h slightly better), age≥65 (OR 2.63).
+- **Refine "Serious surgery":** high-yield = urology (cmh 4.5%), general/major-abdominal (3.2%), cardiothoracic
+  (2.6%), + major vascular/transplant. **Remove neurosurgery (0.7%) and OB/gyn (0.2%)** from the risk list.
+- **Emergency:** independent but marginal (drop-one 0.752→0.741). Optional.
+- **Male sex:** strongest univariate (AUC 0.74) BUT redundant — adding it to the score *lowers* AUC (0.752→0.743),
+  collinear with age/ASA/surgery. Do not include.
+- **Result:** optimized score (ASA≥3, Age≥65, Long>4h, Serious-surgery-refined, ±Emergency) **AUC 0.752 vs
+  original 0.687**; at ≥2, flags 44%, **captures 84%** of harm-associated missed hypotension, NNM 25.
+
+### (b) The A-line does far more than catch hypotension — COMPOSITE benefit
+Brainstormed full A-line uses (each a benefit the tool should weigh against the <1% complication risk):
+1. **Beat-to-beat BP control** for high-stakes perfusion — cardiac, major vascular (aortic cross-clamp),
+   intracranial/neuro (cerebral perfusion), carotid, pheochromocytoma, deliberate hypo/hypertension.
+2. **Frequent ABG / serial labs** — respiratory failure, one-lung ventilation, major hemorrhage/massive
+   transfusion (serial Hb/coags), severe acid–base/glucose/electrolyte lability.
+3. **NIBP unreliable/impossible** — morbid obesity (poor fit), arrhythmia/AF, severe PAD, burns, lymphedema,
+   both arms inaccessible/positioning.
+4. **Precise vasoactive titration** — ongoing/anticipated vasopressor or inotrope infusion.
+5. **Dynamic hemodynamics** — PPV/SVV/pulse-contour cardiac output for goal-directed therapy.
+6. **(our finding) Detection of cuff-missed hypotension** → prevention of AKI/MINS/mortality/hyperlactatemia.
+Current practice reflects this: NS 95% / CTS 97% get A-lines for uses 1–2 (NOT hypotension — NS cmh 0.7%), while
+the ASA2–3 major-abdominal/urologic gray zone (30–45%) is variable — where use #6 (our data) guides.
+
+### (c) The two-tier tool (composite benefit-guided)
+**TIER 1 — place an arterial line for a specific established benefit (any one; independent of hypotension risk):**
+beat-to-beat control case (cardiac/major-vascular/neuro/carotid/pheo) · frequent ABG needs (resp failure/one-lung/
+massive transfusion) · NIBP unreliable (morbid obesity/arrhythmia/PAD/positioning) · active vasoactive titration ·
+dynamic-monitoring/GDT.
+**TIER 2 — no Tier-1 indication (the gray zone): risk-based score for the hypotension-harm benefit.** Consider an
+A-line if ≥2 of: **ASA≥III · Age≥65 · Long case >4 h · Serious surgery (urologic/major-abdominal/cardiothoracic/
+major-vascular/transplant) · Emergency.** (AUC 0.75; ≥2 → NNM 25, captures 84%.) Below threshold: cuff cycled
+≤2–3 min, treat at MAP<70.
+
+### (d) Existing tools / what the data says
+Literature: NO validated scoring tool exists for A-line placement; guidelines list qualitative indications
+(major surgery, comorbidity, difficult NIBP, frequent ABG, titrated vasoactives) with "no clear consensus" in the
+ASA2-major / ASA3-moderate gray zone. Current practice (38% overall; ASA-graded; near-universal cardiac/neuro)
+matches the Tier-1 uses well but is variable in the Tier-2 gray zone — the specific void this tool fills with a
+data-backed risk score. The tool complements (does not replace) the established Tier-1 indications.
