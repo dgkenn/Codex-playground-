@@ -87,8 +87,11 @@ times to isolate measurement bias from sampling frequency.
 
 ## 3. Results
 ### 3a. The cuff misses most intraoperative hypotension (VitalDB)
-[TABLE — sensitivity 59%/47%/34% at MAP<65/<60/<55; over-read +22 mmHg at <55; Bland-Altman −0.2.]
-Full-cohort magnitude (all co-recording cases): [TO FILL from VitalDB scale-up].
+In 1,079 co-recording cases (5,903 paired readings, artifact-hardened, Bland-Altman bias −0.2 mmHg), cuff
+sensitivity for arterial-defined hypotension was **56.2%** [52.9–59.4] at MAP<65 (missed 44%), **41.7%** at <60,
+and **26.9%** [22.5–31.8] at <55 (missed 73%). The cuff over-read by **+30.6 mmHg** at arterial MAP 20–55 and
+was near-unbiased in the normal range (see threshold table). At the case level, 60% of cases with any
+arterial-defined hypotension had ≥1 episode missed by the cuff.
 
 ### 3b. Replication at scale (INSPIRE)
 47,533 operations; cuff missed 71% of arterial-defined hypotension (MAP<65). (INSPIRE's larger magnitude vs
