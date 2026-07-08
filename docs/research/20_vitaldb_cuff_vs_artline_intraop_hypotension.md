@@ -154,6 +154,20 @@ VitalDB has too few hard outcomes (5 in-hospital deaths / 1,079 cases) to power 
 ≥1 day is directionally consistent (art OR 1.34 vs cuff 1.18) but modest. **Division of labor: VitalDB = clean
 discordance magnitude + detection delay; INSPIRE = powered outcome attenuation.** Stated as such, not overclaimed.
 
+### Treatment gap (INSPIRE, 20,009 art-hypotensive ops) — the causal mechanism, confirmed
+At MATCHED true (arterial) severity, vasopressor administration by cuff detection status:
+| min art MAP | pressor% cuff-DETECTED | pressor% cuff-MISSED |
+|---|---|---|
+| 55–65 | 71.3% (n=2,048) | 63.5% (n=6,317) |
+| 50–55 | 72.1% (n=4,019) | 68.2% (n=7,625) |
+
+**Adjusted (min-art severity, hypotension burden, age, ASA): cuff-DETECTED → vasopressor OR 1.34 [1.25, 1.44].**
+At the same true severity, cuff-missed hypotension is treated less often — because the clinician never saw it.
+This completes the causal chain: cuff over-reads → misses hypotension → less/later vasopressor (OR 1.34;
+9-min median detection delay; 64% never detected) → harm accrues in the misclassified "normotensive" patients
+(the attenuation). Red-team: matched on true severity + adjusted for burden → residual is the measurement, not
+severity; temporally the pressor follows the (unseen) hypotension, not vice-versa.
+
 ### Correction-loop status: COMPLETE & robust
 Discovered (VitalDB, clean 41% miss) → replicated at scale (INSPIRE, 47,533 ops) → attenuation shown across
 mortality/lactate/AKI → survives covariate adjustment → mechanistically anchored (lactate, the direct

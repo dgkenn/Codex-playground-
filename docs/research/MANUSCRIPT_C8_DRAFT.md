@@ -108,7 +108,12 @@ At identical cuff-measurement times, arterial-defined hypotension still predicte
 2.27 vs 1.90; hyperlactatemia 2.41 vs 1.88, non-overlapping), and detected hypotension in ~22% more operations.
 
 ### 3e. The vasopressor treatment gap (mechanism of harm)
-[TO FILL — does cuff-missed hypotension receive less/later vasopressor?]
+Among 20,009 operations with arterial-defined hypotension, at matched true (arterial) severity, hypotension the
+cuff detected was more likely to be treated with a vasopressor than hypotension it missed (min-art 55–65: 71.3%
+vs 63.5%; adjusted for severity/burden/age/ASA, cuff-detected → vasopressor **OR 1.34 [1.25–1.44]**). The cuff
+also lagged: among arterial-hypotension episodes, the cuff never registered <65 in 64%, and among those it
+eventually detected the median delay was 9.1 min (VitalDB). Thus the measurement error propagates to a treatment
+omission at the same true severity — the mechanism linking mismeasurement to the attenuated harm associations.
 
 ### 3f. Threshold miscalibration and a practical correction
 A cuff MAP of 65 corresponded to a true arterial MAP of ~68 (37% actually <65). Guideline cuff<65 detected 57%
