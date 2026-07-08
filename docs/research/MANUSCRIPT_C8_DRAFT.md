@@ -120,6 +120,15 @@ A cuff MAP of 65 corresponded to a true arterial MAP of ~68 (37% actually <65). 
 of true hypotension; cuff<70 detected 75% (false-trigger 8%). Where arterial monitoring is unavailable, a cuff
 treatment threshold of MAP<70 better approximates the true <65 target.
 
+### 3g. Preventing the harm — tested interventions
+(1) **Corrected trigger:** guideline cuff<65 flags only 52% of patients with true hypotension and harm; cuff<70
+flags 68% (recovering 34% of the missed) at a false-alarm rise from 17% to 30% in true-normotensives. (2)
+**Decomposition:** 66% of missed hypotension is sampling gaps (cuff not cycling) and 34% is measurement over-read
+— so more frequent cycling addresses the majority but not the measurement fraction. (3) **Targeting:** the miss is
+pervasive (>50% across ASA/age/duration/sex strata), so a universal response — a low arterial-line threshold in
+prolonged/moderate-risk cases — is warranted rather than niche targeting. Layered recommendation: treat at cuff
+MAP<70, cycle frequently, and place arterial lines liberally in at-risk cases.
+
 ## 4. Discussion
 Cuff monitoring systematically misses intraoperative hypotension because it over-reads at low pressure, and this
 misclassification attenuates the measured hypotension–harm association across mortality, hyperlactatemia, AKI, a

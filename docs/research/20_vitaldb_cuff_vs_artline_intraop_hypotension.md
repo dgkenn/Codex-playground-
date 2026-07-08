@@ -168,6 +168,34 @@ This completes the causal chain: cuff over-reads → misses hypotension → less
 (the attenuation). Red-team: matched on true severity + adjusted for burden → residual is the measurement, not
 severity; temporally the pressor follows the (unseen) hypotension, not vice-versa.
 
+## HOW TO PREVENT THE HARM — actionable interventions, tested
+The finding only matters if it changes practice. Three tested interventions:
+
+**(1) Corrected cuff trigger — treat at MAP<70, not <65.** Among 1,290 patients with true hypotension AND harm
+(death/AKI), the guideline cuff<65 flags only **52%** (misses 48% of harm-associated hypotension); **cuff<70
+flags 68%** (recovers 34% of the missed), cuff<75 flags 79%. False-alarm cost in true-normotensives rises 17%→30%
+(<70)→45% (<75). The asymmetry (missed hypotension → organ injury; mild over-treatment of a borderline MAP →
+low-risk) favors the higher threshold. **Deployable recommendation: trigger treatment at cuff MAP<70.** Addresses
+the measurement bias.
+
+**(2) Cycle the cuff more frequently.** Decomposition (VitalDB, 37,151 hypotension-minutes): of MISSED
+hypotension, **66% is sampling gaps** (cuff not cycling) and **34% is measurement over-read**. More frequent
+cycling (e.g., every 1–2 min in at-risk periods) closes the sampling majority — but is capped by the measurement
+third, so it must be combined with (1)/(3).
+
+**(3) Low threshold for arterial-line placement.** Targeting analysis: the cuff-miss is PERVASIVE among
+true-hypotensive ops (55% overall; >50% across nearly every stratum — ASA, age, duration, sex), highest in
+urology 68% / 2–4h surgery 61% / men 60% / older, lowest only where art-lines are already standard (cardiothoracic
+45%, >8h 35%). Because it is not confined to a cheaply-targetable niche, a UNIVERSAL response is required, and a
+low bar for arterial monitoring in any prolonged/moderate-risk case is warranted — the measurement-biased fraction
+(34% of the miss) is unfixable by cuff frequency or threshold alone.
+
+**Layered clinical bottom line:** (a) treat at cuff MAP<70; (b) cycle the cuff frequently in at-risk periods;
+(c) place an arterial line liberally in prolonged/moderate-risk cases. No single measure suffices; together they
+address both the sampling gap and the measurement bias that currently leave ~half of harm-associated intra-op
+hypotension untreated. (Honest caveat: these are observational what-if analyses; the thresholds/interventions
+require prospective validation, but the expected benefit and trade-offs are quantified.)
+
 ### Correction-loop status: COMPLETE & robust
 Discovered (VitalDB, clean 41% miss) → replicated at scale (INSPIRE, 47,533 ops) → attenuation shown across
 mortality/lactate/AKI → survives covariate adjustment → mechanistically anchored (lactate, the direct
