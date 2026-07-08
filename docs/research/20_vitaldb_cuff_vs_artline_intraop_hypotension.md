@@ -278,3 +278,11 @@ within-patient comparison of art-defined vs cuff-defined hypotension → each ou
 ## Files
 - `scratchpad/vitaldb/vitaldb_bp.py`, track data in `scratchpad/vitaldb/trk/`;
   `scratchpad/inspire/inspire_bp.py` (replication), `scratchpad/inspire/inspire_harm.py` (sequelae battery).
+
+## US EXTERNAL VALIDATION — eICU (~200 US hospitals, ICU, 24,348 co-recording stays)
+Addresses the single-institution limitation (adds US + ICU to Korea + surgical). RTM-safe (art reference).
+- **Discordance replicates:** cuff misses 45% of art MAP<65, 58% of <60, 66% of <55 (matches VitalDB 44%/58%/66%).
+- **Attenuation replicates:** ICU hypotension → hospital mortality art OR 6.65 [5.80,7.61] vs cuff 4.88 [4.30,5.53]
+  (both large — ICU hypotension is very lethal — with the same cuff attenuation).
+The finding now spans 3 cohorts / 2 countries / 2 settings (VitalDB+INSPIRE Korea-surgical, eICU US-ICU).
+(Note: eICU art was a partial stream ~15M rows / 25,779 art stays — ample; download halted for efficiency.)
