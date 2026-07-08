@@ -79,6 +79,26 @@ baseline-cr (currently unadjusted ORs); ascertainment-asymmetry (art has more re
 SYSTEMATICALLY UNDERESTIMATED the harm of hypotension. Effect sizes and "safe" MAP thresholds derived from cuff
 data need upward revision. This is the field-reframing claim that lifts C8 from "cuffs are inaccurate" to top-tier.
 
+### Extended battery — ADJUSTED (age, ASA, op-hours, baseline creatinine), multi-outcome (28,349 ops)
+| outcome | ART adj OR | CUFF adj OR | attenuation |
+|---|---|---|---|
+| In-hospital mortality | **2.09 [1.68, 2.60]** | **1.48 [1.21, 1.81]** | ✅ strong, survives adjustment |
+| Hyperlactatemia (peak ≥2 mmol/L) | **1.91 [1.79, 2.05]** | **1.46 [1.36, 1.56]** | ✅ **cleanest — tight, NON-overlapping CIs** |
+| AKI (KDIGO) | 1.34 [1.20, 1.49] | 1.26 [1.14, 1.40] | ✅ present, modest |
+| MINS (postop troponin) | 1.48 [1.22, 1.80] | 1.50 [1.26, 1.79] | ❌ **NO attenuation (honest exception)** |
+
+- **Lactate is the mechanistic keystone:** the direct hypoperfusion marker shows the strongest attenuation with
+  tight non-overlapping CIs — cuff misses the hypotension that causes the hypoperfusion, so cuff-hypotension
+  predicts lactate far worse than art. Strongest evidence the effect is real, not artifact.
+- **MINS is a clean negative** (art 1.48 ≈ cuff 1.50) — reported, not buried; likely troponin is drawn only in a
+  selected cardiac subset (n=2,598) where hypotension ascertainment differs.
+- **Adjustment shrinks but does not remove** the attenuation for mortality/lactate/AKI → not merely confounding.
+- **Remaining red-team (ascertainment asymmetry):** art (continuous) detects more hypotension than cuff
+  (intermittent) — the cuff under-ascertains via BOTH sparse sampling AND over-reading at low MAP. That IS the
+  finding (the widely-used cuff under-detects → evidence base underestimates harm), but a refinement would
+  separate the sampling vs measurement-bias contributions (down-sample art to cuff cadence and re-test — if
+  attenuation persists at matched cadence, it is the measurement bias, not just sampling frequency).
+
 ## DOWNSTREAM NEGATIVE-SEQUELAE TEST BATTERY (run after discrepancy is confirmed + replicated)
 The impact of "cuff misses hypotension" scales with the harms it lets go untreated. All testable in INSPIRE
 (labs: creatinine, troponin_i/t, ckmb, lactate, ast/alt/bilirubin, ph; vitals: full vasopressor panel
