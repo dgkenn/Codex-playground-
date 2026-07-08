@@ -50,6 +50,18 @@ calcium.
   decision framing are the empirical, actionable content. Tier: a strong critical-care/patient-safety /
   anesthesia-journal companion to the flagship, not a standalone NEJM mechanism paper.
 
+## External validation — INSPIRE (Korean surgical/anesthesia cohort, N=72,648 triple-paired)
+Replicates and strengthens (independent institution, surgical/peri-operative population — directly anesthesia-relevant):
+| true ionized band | n | % masked by CORRECTED | % masked by TOTAL | MIMIC corrected (for ref) |
+|---|---|---|---|---|
+| critical <0.90 | 1,162 | **77.8%** | 22.7% | 40.6% |
+| severe 0.90–1.00 | 4,567 | **68.3%** | 19.2% | 57.2% |
+| moderate 1.00–1.12 | 21,619 | 71.2% | 18.9% | 81.1% |
+
+Danger cell (ionized <1.00, n=5,729): corrected reads "normal" (≥8.5) in **70%** (MIMIC 52%). The
+corrected-worse-than-total pattern is robust and now cross-national (US-ICU + Korea-surgical), spanning both
+**critical care and anesthesia** populations. This makes C7 a validated two-cohort patient-safety finding.
+
 ## Next (optional, if developed)
 - Identify the citrate/CRRT and massive-transfusion subgroups explicitly (needs inputevents/procedureevents) and
   show the masking is worst there (the highest-stakes cell).
