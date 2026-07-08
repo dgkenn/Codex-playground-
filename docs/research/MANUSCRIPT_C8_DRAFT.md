@@ -124,10 +124,16 @@ treatment threshold of MAP<70 better approximates the true <65 target.
 (1) **Corrected trigger:** guideline cuff<65 flags only 52% of patients with true hypotension and harm; cuff<70
 flags 68% (recovering 34% of the missed) at a false-alarm rise from 17% to 30% in true-normotensives. (2)
 **Decomposition:** 66% of missed hypotension is sampling gaps (cuff not cycling) and 34% is measurement over-read
-— so more frequent cycling addresses the majority but not the measurement fraction. (3) **Targeting:** the miss is
-pervasive (>50% across ASA/age/duration/sex strata), so a universal response — a low arterial-line threshold in
-prolonged/moderate-risk cases — is warranted rather than niche targeting. Layered recommendation: treat at cuff
-MAP<70, cycle frequently, and place arterial lines liberally in at-risk cases.
+— so more frequent cycling addresses the majority but not the measurement fraction (episodes last a median 2 min;
+5-min cycling samples only 77% of ≥2-min episodes, ≤2-min cycling 100%). (3) **Targeting by harm yield:** the miss
+is pervasive (>50% across ASA/age/duration/sex), so we target by number-needed-to-monitor (art-lines per
+harm-associated missed hypotension surfaced): 18 (urology), 21 (ASA≥3), 30 (general surgery / >4 h) vs 83–198
+(ASA 1, OB/gyn). We propose the bedside **"A-LINES" tool** (Box 1) — consider an arterial line if ≥2 of: **A**SA≥III,
+**L**ong case (>3–4 h), **I**nstability anticipated, **N**IBP unreliable (obesity/arrhythmia/PAD/positioning),
+**E**xtraction of frequent ABGs, **S**erious surgery (major abdominal/urologic/vascular/cardiac/neuro) — or any
+single major trigger; otherwise use a cuff cycled ≤2–3 min read against MAP<70. Escalation is preoperative, since
+an early cuff signal is a weak trigger (early cuff<75 → later hypotension PPV 40%). **Three-part package: detect**
+(cycle ≤2–3 min + treat at MAP<70), and where yield is high, **measure directly** (A-LINES → arterial line).
 
 ## 4. Discussion
 Cuff monitoring systematically misses intraoperative hypotension because it over-reads at low pressure, and this
