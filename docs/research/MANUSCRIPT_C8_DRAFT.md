@@ -26,7 +26,10 @@ times) isolated measurement bias from sampling frequency.
 
 **Results.** In VitalDB (2,109 paired readings, artifact-hardened), the cuff detected only **59%** of
 arterial-defined hypotension at MAP<65, **47%** at <60, and **34%** at <55, over-reading by ~+22 mmHg at severe
-hypotension (overall Bland-Altman bias −0.2 mmHg). In INSPIRE (47,533 operations co-recording both), the cuff
+hypotension (overall Bland-Altman bias −0.2 mmHg). The discrepancy and its harm-attenuation replicated in an
+external US multi-center ICU cohort (eICU, 154 hospitals, 24,691 co-recording stays: cuff missed 47% of
+arterial-defined hypotension at MAP<65 and 68% at <55, over-reading at low pressure; mortality association art
+OR 5.40 vs cuff 4.86). In INSPIRE (47,533 operations co-recording both), the cuff
 missed **71%** of arterial-defined hypotension at MAP<65. Within the same operations (n=28,349), the association
 of intraoperative hypotension with in-hospital mortality was substantially stronger when measured by arterial
 line than by cuff (adjusted OR **2.09** [1.68–2.60] vs **1.48** [1.21–1.81]); the same attenuation was seen for
@@ -67,6 +70,11 @@ observed hypotension–harm association against hard clinical outcomes.
   numeric trends; 3,106 co-record Solar8000 arterial-line MAP and cuff (NIBP) MAP.
 - **INSPIRE** (validation) — ≈130,000 operations with minute-level intraoperative vitals, labs, medications,
   ICU/mortality timestamps, and ICD-10 diagnoses; 47,533 co-record arterial and cuff MAP.
+- **eICU Collaborative Research Database** (external validation) — ICU stays from ~200 US hospitals. We used the
+  24,691 stays (154 hospitals) co-recording invasive arterial mean (`systemicmean`) and oscillometric mean
+  (`noninvasivemean`) pressures, with hospital-discharge mortality as the outcome. A different country, a
+  different care setting (ICU vs intraoperative), and different monitors — a stringent external test of whether
+  the cuff–arterial discrepancy and its harm-attenuation are device-physics phenomena rather than local artifact.
 
 ### 2.2 Measurement-discrepancy analysis (VitalDB)
 Cuff measurements were taken as NIBP value-change points (the monitor holds the last cuff value between cycles).
@@ -84,6 +92,13 @@ attenuation is confounder-controlled by construction. Outcomes: in-hospital mort
 death-or-AKI composite; ICU admission. Odds ratios were computed crude and adjusted for age, ASA, operative
 duration, and baseline creatinine. A **matched-cadence** analysis evaluated arterial MAP only at cuff-measurement
 times to isolate measurement bias from sampling frequency.
+
+### 2.4 External validation (eICU)
+In the eICU cohort we repeated, within the same ICU stays, (i) the discordance analysis — cuff sensitivity for
+arterial-defined hypotension (MAP<65/60/55), the arterial reference being the median arterial MAP within ±5 min
+of each cuff reading, conditioning only on the arterial value (RTM-safe) — and (ii) the harm-attenuation analysis
+— arterial-defined (≥3 readings <65) versus cuff-defined (≥1 reading <65) hypotension against hospital-discharge
+mortality. Both signals were joined per stay by a memory-safe streaming merge on offset-sorted vitals.
 
 ## 3. Results
 ### 3a. The cuff misses most intraoperative hypotension (VitalDB)
@@ -128,12 +143,44 @@ flags 68% (recovering 34% of the missed) at a false-alarm rise from 17% to 30% i
 5-min cycling samples only 77% of ≥2-min episodes, ≤2-min cycling 100%). (3) **Targeting by harm yield:** the miss
 is pervasive (>50% across ASA/age/duration/sex), so we target by number-needed-to-monitor (art-lines per
 harm-associated missed hypotension surfaced): 18 (urology), 21 (ASA≥3), 30 (general surgery / >4 h) vs 83–198
-(ASA 1, OB/gyn). We propose the bedside **"A-LINES" tool** (Box 1) — consider an arterial line if ≥2 of: **A**SA≥III,
-**L**ong case (>3–4 h), **I**nstability anticipated, **N**IBP unreliable (obesity/arrhythmia/PAD/positioning),
-**E**xtraction of frequent ABGs, **S**erious surgery (major abdominal/urologic/vascular/cardiac/neuro) — or any
-single major trigger; otherwise use a cuff cycled ≤2–3 min read against MAP<70. Escalation is preoperative, since
-an early cuff signal is a weak trigger (early cuff<75 → later hypotension PPV 40%). **Three-part package: detect**
-(cycle ≤2–3 min + treat at MAP<70), and where yield is high, **measure directly** (A-LINES → arterial line).
+(ASA 1, OB/gyn). We formalize this as a bedside arterial-line decision tool (**Box 1**): rather than fix
+categories by fiat, the tool reads observed placement rates to auto-route already-standard cases and applies a
+data-derived risk score only in the contested gray zone, judged against the full composite of A-line benefits.
+Escalation is preoperative, since an early cuff signal is a weak trigger (early cuff<75 → later hypotension
+PPV 40%). **Three-part package: detect** (cycle ≤2–3 min + treat at MAP<70), and where yield is high, **measure
+directly** (arterial line, per Box 1).
+
+> **Box 1 — Arterial-line decision tool (three layers, data-anchored; INSPIRE)**
+>
+> **Layer 1 — auto-place (revealed practice; the decision is already made).** Categories where observed A-line
+> placement is near-universal, identified from the data (≥85% placement) rather than declared: **cardiothoracic
+> 97.0%, neurosurgery 94.9%, interventional-radiology/hybrid 91.3%**, and **any ASA ≥ 4** (placement 89–94%
+> regardless of specialty). Place an arterial line; the tool does not deliberate.
+>
+> **Layer 2 — place for a specific established indication (any one):** beat-to-beat control (aortic cross-clamp,
+> cerebral/carotid perfusion, pheochromocytoma) · frequent ABG/serial labs (respiratory failure, one-lung
+> ventilation, massive transfusion) · NIBP unreliable (morbid obesity, arrhythmia, severe PAD, positioning) ·
+> active vasoactive titration · dynamic goal-directed monitoring.
+>
+> **Layer 3 — gray zone (no Layer-1/2 trigger): risk score.** Consider an arterial line if **≥ 2** of:
+> **ASA ≥ III · Age ≥ 65 · Long case > 4 h · Serious surgery (urologic / major-abdominal / cardiothoracic /
+> major-vascular / transplant) · Emergency.** Score AUC 0.75 for harm-associated cuff-missed hypotension;
+> at ≥2 it flags 44% of gray-zone cases and captures 84% of that harm (NNM 25). Judged against the **composite**
+> of realized A-line benefits (hypotension detection, vasoactive titration, serial ABG/labs, unreliable NIBP),
+> ≥2 carries an NNM of **1.4** — most lines placed at threshold serve ≥1 concrete benefit, and composite benefit
+> rises monotonically with score (39→53→65→81→95→98% across score 0→5). Below threshold: cuff cycled ≤2–3 min,
+> treat at MAP < 70. *(The tool self-calibrates — re-estimating placement rates locally re-derives Layer 1. A
+> memorable mnemonic for the Layer-3 factors is being finalized.)*
+
+## 3h. External validation — the discrepancy is not local (eICU, 154 US hospitals)
+In 24,691 ICU stays co-recording arterial and cuff mean pressures across 154 US hospitals, the cuff detected only
+**53%** of arterial-defined hypotension at MAP<65 (missed 47%) and **32%** at <55 (missed 68%) — closely matching
+VitalDB (missed 44%/73%) — and over-read at low pressure (bias +13.1 mmHg at arterial 20–55, +5.2 at 55–65,
+near-zero mid-range). The harm-attenuation replicated directionally: arterial-defined hypotension carried a
+stronger association with hospital mortality than cuff-defined (OR **5.40** [4.80–6.07] vs **4.86** [4.29–5.50];
+higher absolute ORs than intraoperative INSPIRE because the ICU baseline mortality is far higher). A different
+country, care setting, and monitor family reproduce both the measurement discrepancy and its direction of
+harm-attenuation — evidence the phenomenon is device physics, not institutional artifact.
 
 ## 4. Discussion
 Cuff monitoring systematically misses intraoperative hypotension because it over-reads at low pressure, and this
@@ -145,8 +192,10 @@ hypotension evidence base has likely underestimated true effect sizes and mis-se
 bedside, a corrected cuff threshold (MAP<70) recovers much of the missed hypotension.
 
 ## 5. Limitations
-- Both cohorts are single-institution (Seoul National University Hospital); external generalizability to other
-  monitors/populations is untested.
+- The two primary cohorts are single-institution (Seoul National University Hospital). External generalizability
+  is supported by eICU (154 US hospitals), which reproduces the measurement discrepancy and the direction of
+  harm-attenuation; however, eICU validates the ICU setting, not the intraoperative effect magnitude, and its
+  higher absolute ORs reflect ICU baseline risk rather than a larger measurement effect.
 - INSPIRE's minute-level arterial data carries more artifact than VitalDB's waveforms, inflating the INSPIRE
   discrepancy magnitude; VitalDB provides the clean estimate.
 - MINS showed no attenuation, likely because troponin is measured in a selected cardiac-risk subset; this is

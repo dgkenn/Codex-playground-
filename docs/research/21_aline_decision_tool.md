@@ -163,3 +163,29 @@ near-universal cases to look good; it earns its keep precisely where the decisio
    titration / GDT (§c): place for that benefit.
 3. **Tier-2 gray-zone score** — everyone else: ≥2 of {ASA≥III, Age≥65, Long>4h, Serious-surgery-refined,
    Emergency} → consider A-line; else cuff cycled ≤2–3 min + treat MAP<70.
+
+### (f) COMPOSITE benefit — quantified (INSPIRE gray zone, n=19,405 co-recording ops)
+The user's key insight operationalized: **the decision should weigh the full composite benefit, not hypotension
+alone.** Judged on hypotension-detection NNM alone the A-line looks marginal — but that ignores the other reasons
+the line is useful. We measured the *realized* benefits per gray-zone case (Tier-1 depts + ASA≥4 removed):
+| benefit an A-line would have served | proxy | prevalence |
+|---|---|---|
+| **B1** hypotension detection | cuff-missed arterial hypotension (art<65 ×≥3 & cuff never <65) | 25.0% |
+| **B2** vasoactive titration | continuous vasoactive INFUSION used (norepi/phenyleph-inf/dobut/dopa/vaso/milri/epi-inf) | 21.1% |
+| **B3** serial labs / ABG | ≥3 intra-op lactate or troponin draws | 42.4% |
+| **B4** NIBP unreliable | BMI ≥ 35 | 1.0% |
+| **ANY composite benefit** | B1 ∪ B2 ∪ B3 ∪ B4 | **59.6%** |
+
+- **59.6%** of gray-zone A-line cases realized ≥1 benefit (≥2 benefits in ~25%) — the line earns its keep on
+  multiple axes far more often than on hypotension alone (25%).
+- **The Tier-2 pre-op score predicts the COMPOSITE endpoint better than hypotension alone** (AUC **0.653 vs
+  0.593**). At ≥2: captures 58% of composite benefit, **NNM 1.4** (vs 3.3 for hypotension-detection alone) —
+  i.e. ~3 of every 4 lines placed at score≥2 serve a concrete benefit.
+- **Monotone dose–response:** composite-benefit prevalence rises **39% → 53% → 65% → 81% → 95% → 98%** across
+  score bands 0→5 (hypotension-detection component 15→22→28→35→36→36%). The same factors that predict
+  cuff-missed hypotension also predict the broader need for invasive monitoring — so the mnemonic is a defensible
+  composite-benefit index, not a single-purpose hypotension flag.
+
+**Implication for the mnemonic:** the composite endpoint is the honest denominator for the risk–benefit call
+(any-one realized benefit vs the <1% line-complication rate). It reframes the tool from "catch hypotension" to
+"identify the gray-zone patient in whom an arterial line will most likely earn its keep on ≥1 axis."
