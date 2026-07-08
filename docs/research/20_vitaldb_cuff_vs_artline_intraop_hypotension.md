@@ -134,6 +134,26 @@ monitoring by cuff, treat at MAP<70 (not <65) to compensate for cuff over-readin
 Attenuation now demonstrated across mortality, hyperlactatemia, AKI, composite, and ICU admission — a highly
 consistent body of evidence that cuff-based hypotension measurement underestimates every downstream harm.
 
+### Dose-response (INSPIRE, 28,349 ops) — cuff compresses & flattens the harm gradient
+| hypotension dose | ART: mortality / AKI | CUFF: mortality / AKI |
+|---|---|---|
+| none | 0.9% / 5.7% | 1.4% / 6.5% |
+| low | 1.2% / 5.9% (1–5 min) | 2.4% / 8.2% (1 reading) |
+| high | **6.1% / 30.7%** (>40 min<65) | 3.2% / 12.8% (≥4 readings) |
+
+The arterial dose→harm gradient is monotone and steep (AKI 5.7%→30.7%, mortality 0.9%→6.1%); the cuff gradient is
+compressed and tops out at <half the harm (AKI 12.8%, mortality 3.2%) because the cuff never records the high true
+dose it misses. Again, cuff-zero-dose event rate > art-zero (AKI 6.5% vs 5.7%) = the misclassification.
+
+### Detection delay (VitalDB, 1,073 hypotension-onset cases) — untreated-hypotension time
+The cuff **NEVER detected 64%** of arterial-hypotension episodes; among those eventually detected, median delay
+**9.1 min** (p75 60 min) — i.e., minutes of untreated hypotension even when the cuff eventually catches it.
+
+### VitalDB outcome-attenuation (honest — underpowered)
+VitalDB has too few hard outcomes (5 in-hospital deaths / 1,079 cases) to power a mortality replication; ICU-stay
+≥1 day is directionally consistent (art OR 1.34 vs cuff 1.18) but modest. **Division of labor: VitalDB = clean
+discordance magnitude + detection delay; INSPIRE = powered outcome attenuation.** Stated as such, not overclaimed.
+
 ### Correction-loop status: COMPLETE & robust
 Discovered (VitalDB, clean 41% miss) → replicated at scale (INSPIRE, 47,533 ops) → attenuation shown across
 mortality/lactate/AKI → survives covariate adjustment → mechanistically anchored (lactate, the direct
