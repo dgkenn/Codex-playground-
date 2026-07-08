@@ -53,5 +53,62 @@ Case-level: of 136 cases with ≥1 true (art-line) hypotensive reading, the cuff
 2. **INSPIRE validation:** (a) replicate the cuff-vs-art discordance at scale if INSPIRE has both; (b) the key
    test — cuff-based vs art-based intra-op hypotension → AKI association (attenuation = clinical significance).
 
+## DOWNSTREAM NEGATIVE-SEQUELAE TEST BATTERY (run after discrepancy is confirmed + replicated)
+The impact of "cuff misses hypotension" scales with the harms it lets go untreated. All testable in INSPIRE
+(labs: creatinine, troponin_i/t, ckmb, lactate, ast/alt/bilirubin, ph; vitals: full vasopressor panel
+eph/phe/epi/vaso + nepi/pepi/epii/dopai infusions; operations: ICU times, mortality; diagnosis: ICD-10).
+**Master design that defeats the core confounder (art-lines go in sicker patients):** WITHIN-operation /
+within-patient comparison of art-defined vs cuff-defined hypotension → each outcome. Same patients, same surgery
+→ the art-vs-cuff *relative* attenuation is confound-controlled even if absolute associations are not.
+
+### A. Organ-injury outcomes (classic intra-op hypotension harms)
+1. **AKI** (creatinine, KDIGO) — planned. `inspire_harm.py`.
+2. **Myocardial injury / MINS** — postop troponin-I/T rise (or CK-MB). High-impact (VISION/POISE link
+   hypotension→MINS→mortality). Same within-op attenuation design.
+3. **Hyperlactatemia (direct hypoperfusion marker)** — postop/intra-op lactate rise. **Cleanest mechanistic
+   link** (lactate = the tissue hypoperfusion the missed hypotension causes; least confounded by chronic disease).
+4. **In-hospital / all-cause mortality** — operations death times. Planned.
+5. **Hepatic hypoperfusion injury** — AST/ALT/total_bilirubin rise (ischemic hepatitis).
+6. **Stroke / cerebral** — ICD-10 I60–I64 in diagnosis (postop-dated).
+7. **Composite MACE / any-major-organ-injury** — AKI ∪ MINS ∪ death ∪ stroke (power + headline endpoint).
+
+### B. Process / resource harms
+8. **Unplanned ICU admission** — operations icuin_time (objective, strong).
+9. **Prolonged ICU LOS / hospital LOS** — icuin→icuout, admission→discharge.
+10. **Reoperation / readmission** — multiple ops per subject_id.
+
+### C. Causal mechanism — the treatment gap (why the miss harms)
+11. **Vasopressor treatment gap (the load-bearing causal test):** when the cuff MISSES hypotension
+    (art<65 but cuff≥65), is a vasopressor (eph/phe/nepi/pepi) given LESS / LATER than when cuff detects it?
+    Time-resolved, within-patient (compare a patient's cuff-detected vs cuff-missed hypotensive minutes) →
+    controls patient factors. Shows the measurement error → treatment omission → the mechanism of harm.
+12. **Cumulative UNTREATED hypotension duration** — art-hypotension the cuff missed persists longer (less
+    treatment) → longer time-under-MAP-65 → the actual toxic exposure. VitalDB (continuous) + INSPIRE.
+13. **Fluid mis-resuscitation** — missed hypotension → under-resuscitation OR misattributed → crystalloid excess
+    (ns/hs/hes volumes). Direction is an empirical question.
+
+### D. Research / guideline distortion (the field-reframing elevator)
+14. **Attenuation of hypotension→harm associations** — cuff-based OR/dose-response weaker than art-based for
+    AKI/MINS/mortality (planned, all outcomes). Quantifies how much cuff monitoring distorts the evidence base.
+15. **Threshold miscalibration** — because cuff over-reads at low MAP, a cuff "MAP<65" maps to a *lower* true
+    (art) MAP; the "safe" thresholds and dose-response curves derived from cuff data are systematically shifted.
+    Deliverable: a cuff→art threshold correction table.
+16. **Dose-response flattening** — the hypotension-dose→harm slope is flatter/right-shifted when measured by cuff.
+
+### Priority (impact × testability × confound-tractability)
+1. **Lactate rise** (cleanest mechanistic link) + **MINS/troponin** (highest clinical stakes) — run first alongside AKI.
+2. **Attenuation across AKI/MINS/mortality** (the elevator) + **threshold miscalibration** (reframes guidelines).
+3. **Vasopressor treatment gap** (causal mechanism, within-patient).
+4. **Unplanned ICU / composite MACE** (objective, powered).
+
+### Red-team checklist for each (the correction loop)
+- Confounding by surgery severity / art-line selection → WITHIN-op art-vs-cuff comparison (primary defense).
+- Reverse causation (injury→hypotension) → require the hypotension to PRECEDE the outcome marker temporally.
+- AKI/MINS definition robustness → multiple thresholds; baseline/peak windows.
+- Immortal-time / treatment-by-indication for the vasopressor gap → landmark / within-patient episode design.
+- Attenuation must not be an artifact of cuff having fewer readings (less exposure ascertainment) → match
+  ascertainment or model burden per-reading.
+
 ## Files
-- `scratchpad/vitaldb/vitaldb_bp.py`, track data in `scratchpad/vitaldb/trk/`.
+- `scratchpad/vitaldb/vitaldb_bp.py`, track data in `scratchpad/vitaldb/trk/`;
+  `scratchpad/inspire/inspire_bp.py` (replication), `scratchpad/inspire/inspire_harm.py` (sequelae battery).
