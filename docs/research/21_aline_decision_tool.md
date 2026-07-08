@@ -116,3 +116,50 @@ Literature: NO validated scoring tool exists for A-line placement; guidelines li
 ASA2-major / ASA3-moderate gray zone. Current practice (38% overall; ASA-graded; near-universal cardiac/neuro)
 matches the Tier-1 uses well but is variable in the Tier-2 gray zone — the specific void this tool fills with a
 data-backed risk score. The tool complements (does not replace) the established Tier-1 indications.
+
+### (e) DATA-DRIVEN Tier-1 (revealed practice) — where the decision is already made
+The whole point of a decision tool is to change decisions. Where clinicians already place an A-line ~always, a
+score adds nothing and, worse, evaluating a score there inflates its apparent value. So we let the **observed
+placement rate identify Tier-1 categories from the data itself** (revealed preference), and restrict the Tier-2
+score to the *contested* gray zone. Signal = presence of an intra-op arterial waveform (`art_mbp`) per case.
+
+**A-line placement rate by specialty (INSPIRE, n=131,045 monitored ops):**
+| specialty | n | A-line % | classification |
+|---|---|---|---|
+| Cardiothoracic | 8,751 | **97.0%** | **TIER-1 (near-universal)** — already standard |
+| Neurosurgery | 10,170 | **94.9%** | **TIER-1 (near-universal)** — already standard |
+| Interventional radiology / hybrid | 379 | **91.3%** | **TIER-1 (near-universal)** |
+| OB/Gyn | 12,941 | 45.0% | GRAY ZONE (variable → tool applies) |
+| Urology | 12,222 | 36.3% | GRAY ZONE |
+| General | 34,712 | 35.7% | GRAY ZONE |
+| Orthopedic | 17,428 | 29.7% | GRAY ZONE |
+| Plastic | 5,152 | 21.5% | GRAY ZONE |
+| Otolaryngology | 11,695 | 12.1% | GRAY ZONE (low) |
+| Thoracic/Other (minor) | 17,233 | 1.8% | rare-use (tool N/A) |
+
+**By ASA (all specialties):** ASA 1 = 26%, ASA 2 = 39%, ASA 3 = 69%, **ASA 4 = 89%, ASA 5 = 94%, ASA 6 = 88%.**
+→ **ASA ≥ 4 is de-facto Tier-1 regardless of specialty** and is auto-routed (not scored). The gradient (26→39→69%)
+shows practice is *most contested* at ASA 2 and the ASA-2/3 boundary — exactly where the score should operate.
+
+**Practice-variation cells (dept × ASA, 20–80% placement = genuinely undecided):** General ASA1-3 (22/37/72%),
+Urology ASA1-3 (27/39/54%), Orthopedic ASA2-3 (33/67%), OB/Gyn ASA1-3 (42/49/66%), Plastic ASA2-3 (22/50%),
+ENT ASA3 (50%). These cells are the tool's target population.
+
+**Method (clever bit):** Tier-1 is *not declared by fiat* — it is defined operationally as any category whose
+revealed placement rate ≥ 85% (a threshold the data makes obvious: 97/95/91% vs the next tier at 45%). This makes
+the tool self-calibrating to local practice: re-estimate placement rates in any hospital and the Tier-1 set
+re-derives automatically. It also makes the tool honest — it declines to "recommend" what is already routine.
+
+**Robustness of Tier-2 when Tier-1 is removed** (target = harm-associated cuff-missed hypotension, broad any-harm
+definition, 7.9%; different/broader target than §(a)'s 2.1% so AUC is not directly comparable — same direction):
+restricting the score to the gray zone (drop CTS/NS/RAD + ASA≥4) leaves discrimination intact — **AUC 0.654 → 0.661**,
+and at ≥2 the operating point holds (flags 43→49%, captures 65→71%, NNM 8→9). The score does not depend on the
+near-universal cases to look good; it earns its keep precisely where the decision is contested.
+
+**Final structure (three layers, data-anchored):**
+1. **Auto-Tier-1 by category** — cardiac, neuro, interventional/hybrid, or **ASA ≥ 4**: place an A-line (already
+   standard; tool does not deliberate).
+2. **Tier-1 by specific indication** — beat-to-beat control / frequent ABG / NIBP-unreliable / vasoactive
+   titration / GDT (§c): place for that benefit.
+3. **Tier-2 gray-zone score** — everyone else: ≥2 of {ASA≥III, Age≥65, Long>4h, Serious-surgery-refined,
+   Emergency} → consider A-line; else cuff cycled ≤2–3 min + treat MAP<70.
