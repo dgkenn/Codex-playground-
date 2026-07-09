@@ -186,6 +186,39 @@ a severity score (APACHE) + the IIC-burden design to be definitive; the causal "
 trial. **The descriptive pattern→mortality gradient itself is coherent but known (Westover/Hirsch); the novel bit
 is the within-category EEG signal, which is real-but-modest.**
 
+## SEIZURE PROGNOSTICATION (severity-orthogonal outcome) — single-site, PROMISING (first FM advantage)
+Outcome `sz_next` = a SEIZURE-labeled segment ≥1 day AFTER the index IIC segment for the same patient (concurrent
+seizures excluded → prognostic, not ictal-detection). **CROSS-SITE INFEASIBLE:** S0002 seizure labels too sparse
+(sz_ever 5.2% vs S0001 19.3%; zero sz_next positives) → **single-site S0001, patient-split 5-fold CV** (internal
+validity only). Cohort n=1,184, sz_next 27.3%. Descriptive gradient coherent (pre-embed, prognostic cohort):
+LPD 10% / LRDA 10% > GPD 6% / GRDA 4% > GENSLOWING 2% — the epileptogenicity ranking, correct direction.
+
+| model | OOF AUC (subsequent seizure) |
+|---|---|
+| age-only | 0.578 |
+| age + pattern-category (bar) | 0.591 |
+| age + category + classical EEG | 0.619 (ΔAUC +0.031 [−0.012,+0.074], n.s.) |
+| **age + category + CBraMod EEG** | **0.654 (ΔAUC +0.067 [+0.023,+0.110], SIGNIFICANT)** |
+| within-GPD: age→CBraMod | 0.586 → **0.696** |
+| within-LRDA / LPD: classical | 0.628 / 0.589 (age 0.434 / 0.570) |
+| within-GENSLOWING: CBraMod | 0.614 |
+| 2HELPS2B-proxy (category+periodicity+sharpness+SEF) | 0.591 |
+
+**Verdict: PROMISING (single-site) — the first time the foundation model adds real value.** CBraMod significantly
+improves seizure-progression prediction beyond age+category (+0.067, CI excludes 0) and **beats classical features**
+(0.654 vs 0.619) — a reversal of the two prior tasks where CBraMod ≤ classical. Within GPD it predicts who seizes
+at 0.70 (age 0.59). Seizure progression is the *right* outcome (severity-orthogonal, not WLST-confounded like
+mortality), and it's clinically actionable (which patterns warrant anti-seizure Rx).
+**Honest caveats (dominant):** (1) **single-site only** — no cross-site/external validation possible here (S0002
+outcome too sparse); given this program's site-leakage history, external validity is genuinely unknown and is the
+make-or-break; (2) modest AUC (~0.65); (3) the signal is **not pattern-specific** — CBraMod predicts seizures within
+benign GENSLOWING too (0.614), so it is detecting **generic epileptogenic features** (spikes/sharps/fast activity)
+across patterns, i.e. a *learned 2HELPS2B-like predictor* rather than gray-zone-category resolution (2HELPS2B is
+crowded prior art; Struck 2017); (4) the 2HELPS2B-proxy comparison is crude (lacks true BIPD/+F features).
+**Next (make-or-break): external validation on a MULTI-SITE seizure-labeled cohort** (TUH TUSZ, or the HMS/SPaRCNet
+public set) — the single-site result cannot be published without it. If CBraMod's +0.067 holds cross-site, it's a
+real "foundation model improves ICU seizure prognostication" finding.
+
 ## Decisive next experiments (ranked)
 1. **Amplitude-matched hard contrast** (GPD/LPD vs GENSLOWING at matched median-µV) — does CBraMod beat amplitude
    when amplitude can't separate? (CPU, ~1 run; decides whether frozen embeddings suffice.)
