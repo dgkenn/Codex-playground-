@@ -297,3 +297,12 @@ hard-outcome relabel. Predicted win-likelihood: frozen-embedding me-too ~0.2; ou
 
 **Verdict:** not runnable in INSPIRE (clipped capnography). Re-file only for VitalDB `Primus/ETCO2` waveform or
 MIMIC-IV-Waveform. New LESSON logged: range-check every channel before a discordance study.
+
+## SpO₂ occult hypoxemia during hypotension (anesthesiology idea #2) — KILLED in INSPIRE (bad reference)
+| # | Experiment | Result | Status |
+|---|---|---|---|
+| SPO2-ref | Range-check the SaO₂ reference BEFORE running (lesson applied) | INSPIRE `sao2` is coarsely binned/likely CALCULATED from PaO₂: values only at 87,93,95-100 with a **complete gap at 88-92** (the occult-hypoxemia zone), floor at 74. Not measured co-oximetry → invalid ground truth | **KILLED pre-analysis (cheap)** |
+
+**Verdict:** occult-hypoxemia needs MEASURED co-oximetry SaO₂ (as in Sjoding NEJM 2020). INSPIRE's SaO₂ is
+unusable (gapped/calculated). Re-file for **MIMIC-IV or eICU** (co-oximetry SaO₂ + SpO₂). The range-check lesson
+paid off twice in one session (etCO₂ clipped, SaO₂ gapped) — both caught before/at analysis, cheaply.
