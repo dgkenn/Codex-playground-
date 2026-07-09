@@ -280,6 +280,7 @@ single-institution primary cohort; positioning confounder needs prospective data
 | # | Experiment | Result | Status |
 |---|---|---|---|
 | EEG-data | **Dataset sufficiency (live check)** | BDSP `morgoth1/data/internal_dataset` reachable via credentialed AP: expert-labeled .mat (200Hz,19ch,10min) — SEIZURE 2,161 / IIIC 47,328 / LPD/GPD/LRDA/GRDA ~8k vs GENSLOWING/FOCALSLOWING/BS/NORMAL; 2 well-covered sites (S0001,S0002). CBraMod weights cached+pinned. DATA SUFFICIENT | DONE |
+| EEG-hard | **Matched-amplitude gray-zone contrast** (GPD/LPD vs GEN/FOCAL-slowing, N=480, overlapping µV) | **CBraMod cross-site 0.732/0.785 vs amplitude-only 0.625/0.631; amplitude-MATCHED band CBraMod 0.723/0.787 vs amp 0.624/0.628** → frozen CBraMod beats amplitude by +0.10..+0.16 on the clinically-decisive IIC gray-zone contrast (vs only +0.03 on the easy binary). Site-probe 0.78 | DONE — POSITIVE, approach viable |
 | EEG-probe | **End-to-end feasibility (N=50/class/site, 593 segs, SITE-SPLIT)** | Frozen CBraMod cross-site AUC **0.771/0.775** for ICTAL{SZ,LPD,GPD} vs ENCEPH{slowing,BS}; amplitude-only baseline 0.73/0.75; **amplitude-residualized 0.770/0.751 (signal is NOT just amplitude)**; within-site 0.77. **Caveat: site-probe leakage 0.78** | DONE — positive but MODEST |
 
 **EEG verdict:** DATA + pipeline fully feasible (verified live, runs end-to-end). Frozen CBraMod carries genuine

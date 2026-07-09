@@ -78,6 +78,26 @@ embedding → site-split logistic head. Binary ICTAL {SEIZURE,LPD,GPD} vs ENCEPH
   the **outcome-anchored** resolution (which patterns truly progress/harm). Frozen embeddings likely hit a
   ceiling there; **fine-tuning CBraMod (GPU-gated)** is the expected next lever.
 
+## HARD-CONTRAST result (matched-amplitude IIC gray zone) — the decisive test, POSITIVE
+Contrast: **GPD+LPD (periodic epileptiform, the IIC gray zone) vs GENSLOWING+FOCALSLOWING (encephalopathy)** —
+the actual NCSE-vs-encephalopathy question, with *overlapping* amplitudes (GPD 13.3, LPD 10.3, GENSLOWING 9.6,
+FOCALSLOWING 7.9 µV). N=480 (240/240), site-split.
+| Test | AUC |
+|---|---|
+| **CBraMod cross-site** (S0001↔S0002) | **0.732 / 0.785** |
+| Amplitude-only baseline | 0.625 / 0.631 |
+| **CBraMod, amplitude-MATCHED band [3.2,15.6] µV** (n=350) | **0.723 / 0.787** |
+| Amplitude-only, matched | 0.624 / 0.628 |
+| Site-probe leakage | 0.777 |
+
+**Verdict: CBraMod adds real value on the clinically-decisive contrast — +0.10 to +0.16 AUC over amplitude, and
+the advantage HOLDS in the amplitude-matched band.** Contrast with the first crude binary (SZ/LPD/GPD vs
+slowing/BS) where CBraMod beat amplitude by only +0.03 (that easy binary was mostly amplitude). On the *hard*
+gray-zone distinction the foundation model is genuinely discriminative, not an amplitude proxy. This is the
+result that says the approach is worth pursuing. Remaining caveats unchanged: site-leakage 0.78 (needs multi-site
++ domain adaptation), and amplitude-matching wasn't perfect (amplitude-only stayed ~0.62, not 0.5) — but the
+CBraMod-vs-amplitude GAP is the evidence and it is clear.
+
 ## Decisive next experiments (ranked)
 1. **Amplitude-matched hard contrast** (GPD/LPD vs GENSLOWING at matched median-µV) — does CBraMod beat amplitude
    when amplitude can't separate? (CPU, ~1 run; decides whether frozen embeddings suffice.)
