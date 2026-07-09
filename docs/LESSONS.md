@@ -999,3 +999,19 @@ cross-nationally-validated part.
   age-null" felt convincing but was NOT sufficient — a generic severity signal is also cross-site consistent.
   Same family as the etCO₂/SpO₂ channel-range kills: build the disconfirming test into the design, don't wait for
   the red-team.
+
+- **For any "labeled event happened LATER" outcome, SURVEILLANCE/ASCERTAINMENT intensity is the dominant confound —
+  adjust for monitoring before believing any predictor (EEG seizure-prognosis kill, 2026-07-09).** Built a
+  single-site seizure-progression model; frozen CBraMod added a significant, seed-stable +0.067 AUC over
+  age+category (0.591→0.654) — the program's first foundation-model win, nearly written up as "promising." The #1
+  red-team test killed it: the outcome `sz_next` = "a SEIZURE epoch was labeled ≥1 day later," which is dominated by
+  **how long/continuously the patient was monitored** — monitoring intensity alone predicts it at 0.829, CBraMod's
+  embedding encodes monitoring type (→any-cEEG 0.773), and the +0.067 collapses to +0.001 (null) once monitoring is
+  a covariate. RULE: whenever the outcome is "event was detected/labeled during followup," the probability of
+  DETECTION scales with surveillance (cEEG hours, #labs, #imaging) — always build a surveillance-intensity covariate
+  and check the predictor survives it. Same family as the ascertainment caveat the occult-hypoxemia/AF work hit.
+  Second meta-lesson (now three times): **stability ≠ validity** — the +0.067 was stable across 20 seeds; the
+  mortality signal was cross-site consistent both directions; both were confounded. A stable/consistent effect still
+  needs a confound/negative control before it's real. EEG program net after 3 outcomes: classifier me-too, mortality
+  generic/WLST-confounded, seizure-prognosis ascertainment-confounded — the frozen foundation model never cleanly
+  earned its keep on a clinical outcome in this data.

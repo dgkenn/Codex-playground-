@@ -204,7 +204,17 @@ LPD 10% / LRDA 10% > GPD 6% / GRDA 4% > GENSLOWING 2% — the epileptogenicity r
 | within-GENSLOWING: CBraMod | 0.614 |
 | 2HELPS2B-proxy (category+periodicity+sharpness+SEF) | 0.591 |
 
-**Verdict: PROMISING (single-site) — the first time the foundation model adds real value.** CBraMod significantly
+**⚠️ RED-TEAM KILLS IT — the +0.067 was ASCERTAINMENT bias, not prognosis.** `sz_next` ("a seizure epoch labeled
+≥1 day later") is mechanically driven by **monitoring intensity**: total EEG hours + cEEG/LTM + #sessions predict
+`sz_next` at **AUC 0.829 alone**. CBraMod's embedding encodes monitoring type (predicts any-cEEG/LTM at **0.773**),
+so it rides that confound. When monitoring intensity is added as a covariate, **CBraMod's incremental value
+collapses from +0.067 [+0.024,+0.111] to +0.001 [−0.018,+0.019] — null.** (The +0.067 was rock-stable across 20
+seeds — min 0.053, 20/20 >0 — a reminder that **stability ≠ validity**: a real but confounded signal is also
+stable.) The "first FM advantage" was the model detecting who gets long continuous monitoring, and monitored
+patients accumulate labeled seizures — surveillance bias, not seizure prognostication. **KILLED.** The red-team
+(the user's own recommendation) caught it before any external-validation investment.
+
+**(superseded) Verdict: PROMISING (single-site) — the first time the foundation model adds real value.** CBraMod significantly
 improves seizure-progression prediction beyond age+category (+0.067, CI excludes 0) and **beats classical features**
 (0.654 vs 0.619) — a reversal of the two prior tasks where CBraMod ≤ classical. Within GPD it predicts who seizes
 at 0.70 (age 0.59). Seizure progression is the *right* outcome (severity-orthogonal, not WLST-confounded like
