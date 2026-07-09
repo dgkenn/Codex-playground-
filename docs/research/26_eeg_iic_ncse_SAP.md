@@ -123,6 +123,29 @@ Top classical features are clinically sensible: **periodicity** (periodic discha
   *true* gray zone needs larger multi-site data + domain adaptation, or the outcome-anchored relabel — not GPU
   fine-tuning per se.
 
+## OUTCOME-ANCHORED (mortality) — feasibility + first look
+**Linkage verified live:** segment `sub-<SITE><patient>_ses-N_<ts>` → HEEDB `eeg-metadata.BidsFolder` →
+`DateOfDeath` + `AgeAtVisit`. Cohort (one seg/patient, 12,699): **30-day mortality 12.5%**, powered both sites
+(S0001 916 / S0002 676 deaths). **Pattern→mortality gradient is textbook-coherent + reproducible across sites:**
+GPD 30%/30% ≫ BS 48%/26% > LPD 23%/15% > SEIZURE/GRDA 6–17% > LRDA/slowing 4–9%. This validates the linkage and
+is itself a real prognostic gradient (though the IIC→outcome gradient is known — Westover/Hirsch).
+
+**First incremental-value look (636 already-embedded GPD/LPD/GEN/FOCAL segments, 19% mortality, site-split):**
+| model | cross-site AUC (30-d mortality) |
+|---|---|
+| age-only (the bar) | 0.624 |
+| age + pattern-category | **0.668** (category adds real signal over age) |
+| age + category + classical EEG | 0.647 (no gain) |
+| age + category + CBraMod EEG | 0.682 (+0.014, CIs overlap) |
+| within-GPD: classical EEG / CBraMod | 0.59 / 0.51 (n=159, 47 deaths — underpowered) |
+
+**Interim verdict: the NOVEL claim is NOT yet supported.** The pattern *category* captures most of the prognostic
+signal; the EEG *morphology* adds little beyond age+category on this sample. The only live hope for the
+gray-zone-resolution claim is the **within-category** test (among GPDs, does the EEG separate survivors?) — a faint
+classical hint (0.59) that is underpowered here. Decisive next step: a **powered within-GPD/LPD embedding run**
+(natural mortality, ~200/class/site). If within-category EEG stays ≈0.5 at power → honest negative (IIC→mortality
+is category/severity-driven, EEG adds nothing beyond the label); if classical firms to a tight >0.55 → real signal.
+
 ## Decisive next experiments (ranked)
 1. **Amplitude-matched hard contrast** (GPD/LPD vs GENSLOWING at matched median-µV) — does CBraMod beat amplitude
    when amplitude can't separate? (CPU, ~1 run; decides whether frozen embeddings suffice.)
