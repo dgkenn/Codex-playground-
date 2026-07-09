@@ -76,7 +76,21 @@ its own components. The artifact-free mechanistic evidence is the **age + thorac
 Any Bland-Altman-by-PaCO₂-stratum plot must be interpreted with this coupling in mind; the honest magnitude of the
 occult-hypercapnia effect is smaller than the raw stratum gaps suggest.
 
-## Verdict (interim): PROMISING but MEDIUM — not yet flagship-grade
+## FINAL VERDICT: KILLED — the finding is a data artifact (INSPIRE etCO₂ channel is clipped)
+The consequence test exposed it: among 17,000 confirmed-hypercapnic ABGs (PaCO₂ up to 150), **etCO₂ never once
+exceeded 45** (0 "detected"), and the outcome/tautology comparison was degenerate (no etCO₂-hypercapnia group).
+Diagnosis on the raw channel: **INSPIRE `etco2` is hard-clipped to [23, 41]** — across 3,497,643 readings,
+min 23, median 32, p99 41, **max 41, and 0.00% > 45**. Real intra-op capnography spans ~15–70 and must exceed 45
+in hypercapnia; a hard ceiling at 41 is a data-quality/units/binning artifact, not physiology. Therefore the
+entire etCO₂−PaCO₂ "discordance / occult hypercapnia" is **explained by the clipped channel** (etCO₂ cannot rise
+with PaCO₂ because it is capped), which also produced the flat-etCO₂ pattern and the Oldham-amplified magnitude.
+The age/thoracic modulation within the capped range is real but cannot rescue a clipped reference.
+- **Consequence (A2):** PaCO₂-hypercapnia → death-or-ICU OR 2.08 [1.93–2.23] — but this is just severity
+  confounding; there is no valid etCO₂ comparator, so no attenuation claim is possible.
+- **Cannot be run in INSPIRE.** A clean test needs validated high-resolution capnography (VitalDB `Primus/ETCO2`
+  waveform, or MIMIC-IV-Waveform) with a physiological etCO₂ range. Filed as a candidate for those datasets only.
+
+## (superseded) Verdict (interim): PROMISING but MEDIUM — not yet flagship-grade
 Real, window-robust, validity-robust discordance with a partially-confirmed dead-space mechanism (age, one-lung),
 but (i) BMI-null and abdominal-reversal temper the universality, and (ii) the headline magnitude is inflated by
 Oldham's fallacy. Next before any claim: (a) **consequence** — do etCO₂-missed hypercapnic patients get a

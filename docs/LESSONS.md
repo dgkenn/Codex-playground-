@@ -974,3 +974,15 @@ cross-nationally-validated part.
   true-value (on-vs-off bias diff was null at matched MAP → device physics). Always reach for the within-subject
   design when the confounder is a patient-level phenotype. Also: report magnitude honestly (VitalDB +30.6 vs eICU
   +13.1 mmHg = "direction + order-of-magnitude," not "identical") — reviewers do the arithmetic.
+
+- **CHECK A MEASUREMENT CHANNEL'S PHYSIOLOGICAL RANGE BEFORE building a discordance/reclassification study on it
+  (etCO₂ kill, 2026-07-09).** Spent a full discordance + dead-space-mechanism analysis on INSPIRE etCO₂-vs-PaCO₂
+  "occult hypercapnia" before discovering the `etco2` channel is **hard-clipped to [23,41]** (3.5M readings, max
+  41, 0.00% >45) — a data/units/binning artifact, not physiology. The whole "etCO₂ under-reads, gap widens with
+  hypercapnia" pattern was the ceiling. A 30-second `np.percentile(channel,[0,1,50,99,100])` at the START would
+  have killed it instantly. RULE: for every new signal used as either the test or the reference, first print
+  min/p1/median/p99/max and confirm it spans the physiological range AND isn't clipped/binned. The C8/calcium
+  wins all used channels whose ranges I'd implicitly trusted (BP, Ca) — etCO₂ was the first clipped one. Corollary
+  now applied downstream: SpO₂ idea (#2) uses the SAME INSPIRE vitals source → range-check spo2 AND sao2 before
+  trusting them. Also: a too-clean result (0 detected / 100% missed / a perfectly flat curve) is itself a
+  clipping/artifact tell — investigate the raw distribution before believing an extreme effect.

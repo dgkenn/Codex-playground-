@@ -287,3 +287,13 @@ class signal beyond amplitude (~0.77 cross-site, survives amplitude-residualizat
 the crude binary is the easy version. Practice-changing study = amplitude-matched IIC gray zone + OUTCOME-anchored
 resolution + fine-tuning (GPU). Next: (1) matched-amplitude GPD/LPD-vs-slowing contrast; (2) fine-tune; (3)
 hard-outcome relabel. Predicted win-likelihood: frozen-embedding me-too ~0.2; outcome-anchored+fine-tuned ~0.4 (Nature-tier ceiling).
+
+## etCO₂→PaCO₂ occult hypercapnia (anesthesiology idea #1) — KILLED (data artifact)
+| # | Experiment | Result | Status |
+|---|---|---|---|
+| ETCO2-disc | INSPIRE etCO₂ vs PaCO₂ discordance (93,178 pairs) | etCO₂ under-reads (mean −7.5), gap widens with PaCO₂; looked striking | superseded |
+| ETCO2-mech | Dead-space mechanism | PARTIAL: age (p=1e-207) + one-lung/CTS (p=1.8e-73) widen gap; BMI null; abdominal reverses (lap CO₂). Oldham's-fallacy caveat on magnitude self-caught | superseded |
+| ETCO2-kill | Consequence test → channel diagnosis | etCO₂ NEVER >45 in 17k hypercapnic ABGs; raw `etco2` **hard-clipped to [23,41]** (max 41, 0.00% >45) → the whole discordance is a CLIPPED-CHANNEL artifact | **KILLED (cheap)** |
+
+**Verdict:** not runnable in INSPIRE (clipped capnography). Re-file only for VitalDB `Primus/ETCO2` waveform or
+MIMIC-IV-Waveform. New LESSON logged: range-check every channel before a discordance study.
