@@ -986,3 +986,16 @@ cross-nationally-validated part.
   now applied downstream: SpO₂ idea (#2) uses the SAME INSPIRE vitals source → range-check spo2 AND sao2 before
   trusting them. Also: a too-clean result (0 detected / 100% missed / a perfectly flat curve) is itself a
   clipping/artifact tell — investigate the raw distribution before believing an extreme effect.
+
+- **A within-category outcome signal needs a NEGATIVE-CONTROL category before you claim it's category-specific
+  (EEG IIC-mortality, 2026-07-09).** Built the outcome-anchored EEG study (does the pattern's morphology predict
+  mortality WITHIN one expert IIC label, resolving the gray zone by outcome?). Got a modest cross-site-consistent
+  within-GPD/LPD signal (~0.59, age=0.50) and nearly wrote it up as "promising/non-me-too." The negative control
+  killed it: classical EEG predicts mortality WITHIN the LOW-RISK slowing pattern at **0.73 — higher** than within
+  GPD/LPD. So the signal is GENERIC encephalopathy-severity (predicts death in any pattern), NOT pattern-specific
+  harm. RULE: whenever the claim is "feature X carries information SPECIFIC to condition A," run X on a control
+  condition B where it should NOT — if it works there too (or better), the signal is generic/confounded, not
+  specific. Cheap, decisive, and it inverts the interpretation. Also: "cross-site consistent, both directions,
+  age-null" felt convincing but was NOT sufficient — a generic severity signal is also cross-site consistent.
+  Same family as the etCO₂/SpO₂ channel-range kills: build the disconfirming test into the design, don't wait for
+  the red-team.

@@ -160,11 +160,23 @@ is category/severity-driven, EEG adds nothing beyond the label); if classical fi
 | **within GPD** (n=436, 140 deaths) | **0.500** | **0.595** (0.610/0.580) | 0.595 (0.585/0.606) | 0.586 |
 | **within LPD** (n=440, 81 deaths) | 0.499 | 0.594 (0.590/0.599) | 0.541 | **0.617** |
 
-**Verdict: PROMISING but MODEST — a real, non-me-too signal.** Within the gray-zone patterns (GPD, LPD), the EEG
-*morphology* separates 30-day survivors from non-survivors at **AUC ~0.59–0.62 cross-site**, *consistent in both
-site directions and both patterns*, where **age alone is exactly chance (0.50)**. This operationalizes "which
-periodic discharges are harmful" by **outcome**, beyond age and beyond the categorical label — the practice-
-relevant question SPaRCNet/HMS (expert-label replication) do not answer.
+**⚠️ NEGATIVE CONTROL OVERTURNS THE NOVEL CLAIM.** A within-category signal only supports "the EEG resolves which
+*periodic discharges* are harmful" if it is **pattern-specific**. It is not: within the LOW-RISK slowing pattern
+(GENSLOWING, 33 deaths), classical EEG predicts 30-d mortality at **0.730** — *higher* than within-GPD (0.591) or
+within-LPD (0.601). So the within-category EEG→mortality signal is a **GENERIC encephalopathy-severity signal**
+that predicts death in *any* pattern (even better in benign slowing), NOT a GPD/LPD-specific "harmful-discharge"
+signal. **The novel gray-zone-resolution claim is therefore NOT supported.**
+
+**Corrected verdict: the novel claim FAILS the negative control; what remains is known.**
+- What's real but KNOWN: (a) the pattern→mortality *category* gradient (GPD 32% > LPD 18% > slowing 8%;
+  Westover/Hirsch); (b) the EEG carries *generic* prognostic/severity information beyond age (a crowded area —
+  EEG severity scores, post-anoxic prognostication).
+- What FAILED: EEG resolving the IIC gray zone by outcome beyond the label — the within-category signal is not
+  pattern-specific (negative control 0.73 in benign slowing).
+- Earlier "PROMISING/MODEST" framing (below) is superseded by this negative control.
+
+_(superseded)_ Within the gray-zone patterns (GPD, LPD), the EEG *morphology* separates 30-day survivors from
+non-survivors at AUC ~0.59–0.62 cross-site, consistent both directions, where age alone is chance (0.50).
 **Honest caveats (do not over-claim):** (1) effect is modest (AUC ~0.6) and the incremental-over-category CI just
 touches 0; (2) **classical features ≈ or > CBraMod** (foundation model adds nothing prognostic here — top feature
 is line-length, but importances are diffuse/weak, no clean physiological driver); (3) **unmeasured ICU-severity
