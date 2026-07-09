@@ -146,6 +146,34 @@ classical hint (0.59) that is underpowered here. Decisive next step: a **powered
 (natural mortality, ~200/class/site). If within-category EEG stays ≈0.5 at power → honest negative (IIC→mortality
 is category/severity-driven, EEG adds nothing beyond the label); if classical firms to a tight >0.55 → real signal.
 
+## POWERED outcome-anchored result (n=1,316 GPD/LPD/GENSLOWING, 19.3% 30-d mortality, site-split)
+| model | cross-site AUC (30-d mortality) |
+|---|---|
+| age-only | 0.573 |
+| age + pattern-category | 0.667 |
+| **age + category + classical EEG** | **0.708** (ΔAUC **+0.039 [−0.001,+0.078]**, borderline) |
+| age + category + CBraMod EEG | 0.673 (ΔAUC +0.005, null) |
+
+**Decisive WITHIN-category test (does EEG separate survivors *inside* one expert label?):**
+| | age-only | classical EEG | CBraMod EEG | age+classical |
+|---|---|---|---|---|
+| **within GPD** (n=436, 140 deaths) | **0.500** | **0.595** (0.610/0.580) | 0.595 (0.585/0.606) | 0.586 |
+| **within LPD** (n=440, 81 deaths) | 0.499 | 0.594 (0.590/0.599) | 0.541 | **0.617** |
+
+**Verdict: PROMISING but MODEST — a real, non-me-too signal.** Within the gray-zone patterns (GPD, LPD), the EEG
+*morphology* separates 30-day survivors from non-survivors at **AUC ~0.59–0.62 cross-site**, *consistent in both
+site directions and both patterns*, where **age alone is exactly chance (0.50)**. This operationalizes "which
+periodic discharges are harmful" by **outcome**, beyond age and beyond the categorical label — the practice-
+relevant question SPaRCNet/HMS (expert-label replication) do not answer.
+**Honest caveats (do not over-claim):** (1) effect is modest (AUC ~0.6) and the incremental-over-category CI just
+touches 0; (2) **classical features ≈ or > CBraMod** (foundation model adds nothing prognostic here — top feature
+is line-length, but importances are diffuse/weak, no clean physiological driver); (3) **unmeasured ICU-severity
+confounding** is the primary threat — age is controlled (and null) but is not a severity score; a dying patient's
+worse morphology could be severity, not the pattern's harm; (4) 2 sites, site-probe 0.66. Needs ≥1 more site +
+a severity score (APACHE) + the IIC-burden design to be definitive; the causal "treat-the-pattern-helps" step is a
+trial. **The descriptive pattern→mortality gradient itself is coherent but known (Westover/Hirsch); the novel bit
+is the within-category EEG signal, which is real-but-modest.**
+
 ## Decisive next experiments (ranked)
 1. **Amplitude-matched hard contrast** (GPD/LPD vs GENSLOWING at matched median-µV) — does CBraMod beat amplitude
    when amplitude can't separate? (CPU, ~1 run; decides whether frozen embeddings suffice.)
