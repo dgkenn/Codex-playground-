@@ -98,6 +98,31 @@ result that says the approach is worth pursuing. Remaining caveats unchanged: si
 + domain adaptation), and amplitude-matching wasn't perfect (amplitude-only stayed ~0.62, not 0.5) — but the
 CBraMod-vs-amplitude GAP is the evidence and it is clear.
 
+## CPU-ONLY models (no GPU) — user question answered: YES
+Hard IIC gray-zone contrast (GPD/LPD vs GEN/FOCAL-slowing), N=637, site-split cross-site mean AUC + site-probe:
+| Model (all CPU) | cross-site AUC | site-probe |
+|---|---|---|
+| amplitude-only (reference) | 0.65 | — |
+| CBraMod + logistic (prior result) | **0.776** | 0.775 |
+| CBraMod + HistGradientBoosting | 0.758 | 0.775 |
+| **Classical features + HGB (NO deep model)** | **0.753** | **0.708** |
+| Fusion (classical ⊕ CBraMod) + HGB | 0.763 | 0.799 |
+
+**Verdict: no GPU — and arguably no foundation model — is needed for this classifier at current scale.** Purely
+classical EEG features (per-channel band powers δ/θ/α/β/γ, band ratios, SEF95, spectral entropy, Hjorth,
+line-length, kurtosis/skew, **autocorrelation periodicity**, laterality) + gradient boosting reach **0.753**,
+statistically indistinguishable from frozen CBraMod (0.776; CIs overlap) and with **lower site-leakage**
+(0.708 vs 0.775 → more physiology, less device). Fusion adds nothing (the two representations are redundant).
+Top classical features are clinically sensible: **periodicity** (periodic discharges), spatial α/δ variability,
+**skewness/sharpness** (epileptiform), SEF, line-length, γ.
+- **Implication:** the CPU classical path is cheaper, interpretable, and equal — pursue it for the classifier;
+  the foundation model is not the bottleneck here.
+- **Honest caveats:** 2-site cohort, model differences within CI (the honest claim is "classical ≈ CBraMod,
+  both ≈0.75"); site-leakage still non-trivial. The per-site-standardization leakage mitigation **backfired**
+  (near-zero-variance features blew up → site-probe →1.0); dropped. Breaking the ~0.75 ceiling / resolving the
+  *true* gray zone needs larger multi-site data + domain adaptation, or the outcome-anchored relabel — not GPU
+  fine-tuning per se.
+
 ## Decisive next experiments (ranked)
 1. **Amplitude-matched hard contrast** (GPD/LPD vs GENSLOWING at matched median-µV) — does CBraMod beat amplitude
    when amplitude can't separate? (CPU, ~1 run; decides whether frozen embeddings suffice.)
