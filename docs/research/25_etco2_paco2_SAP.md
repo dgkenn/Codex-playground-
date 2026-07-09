@@ -55,3 +55,31 @@ propagates to a ventilation-response gap and worse outcomes.
 PASS if (a) etCO₂ misses a clinically meaningful fraction of ABG-defined hypercapnia, (b) in the dead-space
 direction, (c) with a ventilation-response gap and/or hard-outcome signal, (d) surviving RTM + tautology + external
 replication. Otherwise negative-result lesson.
+
+## RESULTS (INSPIRE, 93,178 stable etCO₂↔PaCO₂ pairs; window-robust ±2/3/5 min)
+**Discordance (robust to a capnography-validity filter — plausibility range 15–70 excludes disconnection, gives
+the identical 93,178 pairs, so NOT a non-ventilation artifact):**
+- Mean etCO₂−PaCO₂ = **−7.5 mmHg** (etCO₂ under-reads). Gap by PaCO₂ stratum: −2.6 (10–35) → −6.8 (35–45) →
+  −12.7 (45–50) → −19.6 (50–60) → **−25.7 (60–150)**. etCO₂ stays nearly flat (median 30→39) as PaCO₂ climbs.
+- **Reclassification: 4.1%** of intra-op ABGs are "reassuring etCO₂ ≤45 but hypercapnic PaCO₂ ≥50."
+
+**Mechanism (dead-space markers, adjusted OLS) — PARTIAL support:**
+- **Age** widens the gap: −6.0→−9.3 across age bands; adj β=−0.023/yr (p=1e-207). ✓
+- **Cardiothoracic/one-lung (CTS)** widens it most: gap −10.1; adj β=−0.53 (p=1.8e-73). ✓ (one-lung → dead space)
+- **Duration** weak-but-significant (adj β=−0.08/hr). ✓
+- **BMI null** (β≈0, p=0.40) — obesity does NOT widen it (against naive prediction).
+- **Abdominal (GS) narrows** the gap (β=+0.40) — laparoscopic CO₂ absorption raises both etCO₂ and PaCO₂.
+
+**⚠️ STATISTICAL CAVEAT (self-caught, Oldham's fallacy):** the dominant PaCO₂ coefficient (β=−0.726) and the
+"flat-etCO₂ / −25 gap at high PaCO₂" are **partly a mathematical artifact** of regressing a difference on one of
+its own components. The artifact-free mechanistic evidence is the **age + thoracic** signals (adjusted for PaCO₂).
+Any Bland-Altman-by-PaCO₂-stratum plot must be interpreted with this coupling in mind; the honest magnitude of the
+occult-hypercapnia effect is smaller than the raw stratum gaps suggest.
+
+## Verdict (interim): PROMISING but MEDIUM — not yet flagship-grade
+Real, window-robust, validity-robust discordance with a partially-confirmed dead-space mechanism (age, one-lung),
+but (i) BMI-null and abdominal-reversal temper the universality, and (ii) the headline magnitude is inflated by
+Oldham's fallacy. Next before any claim: (a) **consequence** — do etCO₂-missed hypercapnic patients get a
+ventilation-response gap / worse outcomes (with the tautology guard)? (b) reframe the magnitude artifact-free;
+(c) external replication (VitalDB capnography + ABG). If consequence is null or the artifact-free effect is small,
+log as a solid negative/'measurement-nuance' result rather than a flagship.
