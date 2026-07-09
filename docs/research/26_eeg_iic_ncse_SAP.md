@@ -193,3 +193,24 @@ is the within-category EEG signal, which is real-but-modest.**
 3. **Outcome-anchoring** — re-label the IIC gray zone by hard reference (seizure progression / neuronal-injury
    biomarker / mortality) and test whether the model resolves expert disagreement by true consequence. This is
    the practice-changing study; the classifier above is the enabling step.
+
+## Independent red-team (neurophysiologist + biostatistician) — confirms the kill, sharpens it
+- P(a real cross-site association exists) ≈70%, but **P(it reflects pattern-specific harmful morphology) ≈15–20%**
+  — same verdict as the negative control (generic severity, not IIC-specific). Diffuse feature importance +
+  CBraMod≤classical are the fingerprint of a low-dimensional nuisance/severity axis, not a distinctive morphology.
+- **The outcome is the deepest flaw:** 30-day ICU mortality is dominated by withdrawal-of-life-sustaining-treatment
+  and comorbidity, with a **self-fulfilling-prophecy** bias (the EEG appearance partly drives the WLST decision) →
+  a mortality signal cannot support "this pattern is biologically harmful."
+- **Smallest honest claim the data support:** among GPD/LPD, EEG features have a small (~0.09 AUC over age),
+  cross-site-replicable association with 30-d mortality; **CBraMod provides no advantage over 48 hand features**;
+  pattern more consistent with non-specific severity/artifact than distinctive morphology. A negative-leaning
+  cautionary result — NOT gray-zone resolution.
+- **What a top journal would require:** validated severity score (SOFA/APACHE/GCS) not age; WLST-aware/competing-
+  risks design; and a **neurological** outcome (mRS/GOS-E among survivors, **seizure progression**, or new DWI
+  injury) — not all-cause mortality; plus a 3rd/external site (TUH).
+- Cheapest confirmatory kill (not needed for the verdict, but definitive): stratify deaths by time-to-death;
+  exclude deaths <72h — if within-category AUC collapses to ~0.5, it was peri-mortem state, not prognosis.
+
+**FINAL: the outcome-anchored EEG claim is not supported.** Forward path if revisited: a **non-mortality,
+severity-orthogonal neurological outcome (seizure progression)** is the only angle that could be pattern-specific;
+mortality is the wrong endpoint here.
