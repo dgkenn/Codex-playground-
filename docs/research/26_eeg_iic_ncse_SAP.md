@@ -54,6 +54,34 @@ consensus**. Matching expert labels ≠ practice-changing. The differentiators:
 - Site leakage is real here (repo site-probe once hit 0.96): **split by site**, report the site-probe, and
   require the class signal to survive on a held-out site/device.
 
-## Results (feasibility probe)
-_Pending the scaled (N=50/class/site) run; tiny pilot (N=6) already gave cross-site AUC 0.74–0.79 with post-filter
-amplitudes physiological — to be confirmed/hardened below._
+## Results (feasibility probe — DONE, N=50/class/site, 593 usable segments, 2 sites)
+End-to-end pipeline validated: BDSP labeled `.mat` → bandpass/clip → frozen CBraMod → mean-pooled 200-d
+embedding → site-split logistic head. Binary ICTAL {SEIZURE,LPD,GPD} vs ENCEPH {GENSLOWING,FOCALSLOWING,BS}.
+
+| Test | AUC | Read |
+|---|---|---|
+| **CBraMod cross-site** (train S0001→test S0002 / reverse) | **0.771 / 0.775** | real, stable cross-site signal |
+| Amplitude-only baseline (1 feature = median \|µV\|) | 0.733 / 0.752 | classes genuinely differ in amplitude (BS 3 µV vs epileptiform 14 µV) |
+| **CBraMod, amplitude-RESIDUALIZED** | **0.770 / 0.751** | **signal survives removing amplitude → CBraMod adds real spectral/morphologic structure, not just amplitude** |
+| within-site 5-fold (raw / amp-resid) | 0.773 / 0.748 | class signal holds within site too |
+| **SITE-PROBE leakage** (predict site from embedding) | **0.781** | substantial site/device structure — the main caveat |
+
+**Verdict: POSITIVE but MODEST, with a real caveat.**
+- **Data + pipeline: fully feasible** (verified live on the credentialed bucket; runs end-to-end on CPU).
+- **Frozen CBraMod carries genuine class signal** (~0.77 cross-site, +~0.04 over amplitude, and — critically —
+  **survives amplitude-residualization**, so it is not an amplitude artifact). Class was balanced across sites,
+  so the cross-site number is a clean generalization estimate, not aliased with site.
+- **Caveat — site leakage (probe 0.78):** embeddings encode device/site heavily; the full study must train
+  multi-site and use domain adaptation, and hold out an untouched site (as the repo's firewall already enforces).
+- **This crude binary is the easy version.** The clinically decisive, Nature-tier question is the
+  **amplitude-matched IIC gray zone** (GPD/LPD vs generalized-slowing/triphasic — patterns that look alike) and
+  the **outcome-anchored** resolution (which patterns truly progress/harm). Frozen embeddings likely hit a
+  ceiling there; **fine-tuning CBraMod (GPU-gated)** is the expected next lever.
+
+## Decisive next experiments (ranked)
+1. **Amplitude-matched hard contrast** (GPD/LPD vs GENSLOWING at matched median-µV) — does CBraMod beat amplitude
+   when amplitude can't separate? (CPU, ~1 run; decides whether frozen embeddings suffice.)
+2. **Fine-tune CBraMod** on the labeled IIC classes with site-held-out eval (GPU) — the expected performance lever.
+3. **Outcome-anchoring** — re-label the IIC gray zone by hard reference (seizure progression / neuronal-injury
+   biomarker / mortality) and test whether the model resolves expert disagreement by true consequence. This is
+   the practice-changing study; the classifier above is the enabling step.

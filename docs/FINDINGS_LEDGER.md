@@ -275,3 +275,15 @@ trial hypothesis) + two-stage RCT (doc 24). Predictive score = exploratory only.
 in-sample/un-replicated number. **The "best possible tool that survives review" = an honest measurement paper +
 model-free correction + definitive trial — NOT an overfit prediction score.** Residual (disclosed, not blocking):
 single-institution primary cohort; positioning confounder needs prospective data.
+
+## EEG idea #1 — foundation-model NCSE/IIC-vs-encephalopathy differentiation (the repo mission) — SAP doc 26
+| # | Experiment | Result | Status |
+|---|---|---|---|
+| EEG-data | **Dataset sufficiency (live check)** | BDSP `morgoth1/data/internal_dataset` reachable via credentialed AP: expert-labeled .mat (200Hz,19ch,10min) — SEIZURE 2,161 / IIIC 47,328 / LPD/GPD/LRDA/GRDA ~8k vs GENSLOWING/FOCALSLOWING/BS/NORMAL; 2 well-covered sites (S0001,S0002). CBraMod weights cached+pinned. DATA SUFFICIENT | DONE |
+| EEG-probe | **End-to-end feasibility (N=50/class/site, 593 segs, SITE-SPLIT)** | Frozen CBraMod cross-site AUC **0.771/0.775** for ICTAL{SZ,LPD,GPD} vs ENCEPH{slowing,BS}; amplitude-only baseline 0.73/0.75; **amplitude-residualized 0.770/0.751 (signal is NOT just amplitude)**; within-site 0.77. **Caveat: site-probe leakage 0.78** | DONE — positive but MODEST |
+
+**EEG verdict:** DATA + pipeline fully feasible (verified live, runs end-to-end). Frozen CBraMod carries genuine
+class signal beyond amplitude (~0.77 cross-site, survives amplitude-residualization) but site-leakage is high and
+the crude binary is the easy version. Practice-changing study = amplitude-matched IIC gray zone + OUTCOME-anchored
+resolution + fine-tuning (GPU). Next: (1) matched-amplitude GPD/LPD-vs-slowing contrast; (2) fine-tune; (3)
+hard-outcome relabel. Predicted win-likelihood: frozen-embedding me-too ~0.2; outcome-anchored+fine-tuned ~0.4 (Nature-tier ceiling).
