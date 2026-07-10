@@ -116,6 +116,56 @@ L.append("   - **Every** rotation (including every 2-week BMC intern) gets **at 
 L.append("2. **Thanksgiving Saturday (11/28) must be a Shattuck intern.** Both outside rotators that weekend are night-float-adjacent (one just finished the week's NF, the other starts the next week's), so neither can legally take the 24h. Kennedy volunteered for it so Wise is spared.")
 L.append("3. **June 21–23, 2027:** the roster has **no BMC-South intern** after 6/20 (Shirin Saeed's block ends), so those last 3 wind-down days run with a 3-intern pool (2 LSH + 1 Lahey) instead of 4. Everything else is unaffected.")
 L.append("")
+L.append("## ACGME duty-hour audit")
+L.append("")
+from datetime import datetime, time
+def _iv(dt,k):
+    wd=dt.weekday(); D=datetime.combine(dt,time())
+    if k=="24H": return (D+timedelta(hours=7), D+timedelta(days=1,hours=7))
+    if k=="LC":  return (D+timedelta(hours=7), D+timedelta(hours=19.5 if wd==4 else 18))
+    if k=="SC":  return (D+timedelta(hours=7), D+timedelta(hours=16))
+    if k=="NF":  return (D+timedelta(hours=19.5 if wd==4 else 18), D+timedelta(days=1,hours=9.5 if wd==4 else 8))
+    return None
+_pres=defaultdict(list); _sh=defaultdict(list); _wk=defaultdict(set)
+for dt in days:
+    for l in gen.roster(dt):
+        _pres[l].append(dt); k=st(dt,l)
+        if k in("LC","SC","NF","24H"): _sh[l].append(_iv(dt,k)); _wk[l].add(dt)
+def _cont(iv):
+    if not iv: return 0
+    iv=sorted(iv); best=0; cs,ce=iv[0]
+    for s,e in iv[1:]:
+        if s<=ce: ce=max(ce,e)
+        else: best=max(best,(ce-cs).total_seconds()/3600); cs,ce=s,e
+    return max(best,(ce-cs).total_seconds()/3600)
+def _hin(iv,a,b):
+    return sum((min(e,b)-max(s,a)).total_seconds()/3600 for s,e in iv if min(e,b)>max(s,a))
+maxavg=maxcont=maxrun=0
+for l in _pres:
+    iv=_sh[l]; d0,d1=_pres[l][0],_pres[l][-1]; best=0; d=d0
+    while d<=d1:
+        if sum(1 for x in _pres[l] if d<=x<d+timedelta(28))>=14:
+            w0=datetime.combine(d,time()); best=max(best,_hin(iv,w0,w0+timedelta(28))/4)
+        d+=timedelta(1)
+    if (d1-d0).days+1<28:
+        tot=sum((e-s).total_seconds()/3600 for s,e in iv); best=max(best,tot/(((d1-d0).days+1)/7))
+    maxavg=max(maxavg,best); maxcont=max(maxcont,_cont(iv))
+    run=0; prev=None
+    for x in _pres[l]:
+        run=run+1 if (x in _wk[l] and prev==x-timedelta(1)) else (1 if x in _wk[l] else 0)
+        maxrun=max(maxrun,run); prev=x
+L.append("| ACGME limit | Status | Measured |")
+L.append("|---|---|---|")
+L.append(f"| ≤ 80 clinical hours/week, averaged over 4 weeks | {ok(maxavg<=80+1e-6)} | busiest intern **{maxavg:.1f} h/wk** |")
+L.append(f"| No single duty period > 28h | {ok(maxcont<=28+1e-6)} | longest continuous duty **{maxcont:.0f} h** (the Sat 24h shift) |")
+L.append(f"| ≥ 1 day (24h) free of duty per week | {ok(maxrun<=6)} | longest work streak **{maxrun} days** (nobody reaches 7) |")
+L.append("")
+L.append("Hours use the sheet's own shift times (LC 11h / Fri 12.5h, SC 9h, NF 14h, Sat 24h). To keep "
+         "every intern under a 7-day streak, a few night-float/24h weeks hand that week's Thursday "
+         "day-off to the affected rotator (an LSH covers the Thursday short call); one Monday runs with "
+         "a single short-call intern. These are the only deviations from the usual two-short-call "
+         "weekday pattern.")
+L.append("")
 L.append("## Per-intern workload (whole schedule)")
 L.append("")
 L.append("| Intern | Role | NF nights | 24h Sat | Long Call | Short Call | Days off |")

@@ -43,36 +43,46 @@ Every rule below was checked programmatically against all 266 days. **No hard ru
 2. **Thanksgiving Saturday (11/28) must be a Shattuck intern.** Both outside rotators that weekend are night-float-adjacent (one just finished the week's NF, the other starts the next week's), so neither can legally take the 24h. Kennedy volunteered for it so Wise is spared.
 3. **June 21–23, 2027:** the roster has **no BMC-South intern** after 6/20 (Shirin Saeed's block ends), so those last 3 wind-down days run with a 3-intern pool (2 LSH + 1 Lahey) instead of 4. Everything else is unaffected.
 
+## ACGME duty-hour audit
+
+| ACGME limit | Status | Measured |
+|---|---|---|
+| ≤ 80 clinical hours/week, averaged over 4 weeks | ✅ PASS | busiest intern **72.8 h/wk** |
+| No single duty period > 28h | ✅ PASS | longest continuous duty **24 h** (the Sat 24h shift) |
+| ≥ 1 day (24h) free of duty per week | ✅ PASS | longest work streak **6 days** (nobody reaches 7) |
+
+Hours use the sheet's own shift times (LC 11h / Fri 12.5h, SC 9h, NF 14h, Sat 24h). To keep every intern under a 7-day streak, a few night-float/24h weeks hand that week's Thursday day-off to the affected rotator (an LSH covers the Thursday short call); one Monday runs with a single short-call intern. These are the only deviations from the usual two-short-call weekday pattern.
+
 ## Per-intern workload (whole schedule)
 
 | Intern | Role | NF nights | 24h Sat | Long Call | Short Call | Days off |
 |---|---|--:|--:|--:|--:|--:|
-| Hyojin Ahn | BMC | 6 | 2 | 6 | 10 | 4 |
+| Hyojin Ahn | BMC | 6 | 2 | 6 | 9 | 5 |
 | Aqsa Butt | BMC | 6 | 1 | 7 | 7 | 4 |
 | Fnu Farzeela | BMC | 6 | 1 | 7 | 10 | 4 |
 | Bassel Gaballah | BMC | 0 | 1 | 5 | 6 | 2 |
 | Nicole Metri | BMC | 6 | 0 | 3 | 3 | 2 |
-| Haley Mullins | BMC | 6 | 2 | 6 | 10 | 4 |
+| Haley Mullins | BMC | 6 | 2 | 6 | 9 | 5 |
 | Angel Maisonet Rivera | BMC | 6 | 1 | 7 | 10 | 4 |
 | Usman Saeed | BMC | 0 | 1 | 4 | 6 | 3 |
 | Shirin Saeed | BMC | 6 | 0 | 8 | 9 | 5 |
 | Kalasha Shetty | BMC | 6 | 1 | 6 | 11 | 4 |
 | Ricardo Villanueva Gaona | BMC | 6 | 1 | 8 | 9 | 4 |
-| Srishti Ahluwalia | LAHEY | 2 | 1 | 5 | 7 | 3 |
-| Saumya Ahluwalia | LAHEY | 6 | 2 | 5 | 11 | 4 |
-| Mohamed Almadhoob | LAHEY | 6 | 1 | 7 | 10 | 4 |
+| Srishti Ahluwalia | LAHEY | 2 | 1 | 5 | 6 | 4 |
+| Saumya Ahluwalia | LAHEY | 6 | 2 | 5 | 10 | 5 |
+| Mohamed Almadhoob | LAHEY | 6 | 1 | 7 | 9 | 5 |
 | Megan Chiasson | LAHEY | 12 | 0 | 6 | 6 | 4 |
 | Shruti Juyal | LAHEY | 12 | 0 | 6 | 6 | 4 |
 | Fabio Kopp Vanuzzi | LAHEY | 6 | 1 | 8 | 9 | 4 |
 | Tirth Pareshbhai Patel | LAHEY | 4 | 1 | 7 | 9 | 3 |
-| Muhammed Salam | LAHEY | 6 | 1 | 6 | 11 | 4 |
-| Daniel Sanchez-Almanzar | LAHEY | 6 | 1 | 6 | 11 | 4 |
-| Suja Vivekanandan | LAHEY | 6 | 1 | 6 | 11 | 4 |
-| Isaac Bronson | LSH | 18 | 3 | 20 | 26 | 26 |
+| Muhammed Salam | LAHEY | 6 | 1 | 6 | 10 | 5 |
+| Daniel Sanchez-Almanzar | LAHEY | 6 | 1 | 6 | 10 | 5 |
+| Suja Vivekanandan | LAHEY | 6 | 1 | 6 | 10 | 5 |
+| Isaac Bronson | LSH | 18 | 3 | 20 | 29 | 23 |
 | Dean Kennedy (you) | LSH | 12 | 2 | 11 | 21 | 15 |
 | Anna Li | LSH | 12 | 2 | 10 | 15 | 20 |
-| Stephen MacNeille | LSH | 12 | 2 | 10 | 20 | 18 |
-| Kazune Matsuoka | LSH | 12 | 2 | 11 | 14 | 15 |
-| Oghenewoma Oghenesume | LSH | 18 | 3 | 15 | 24 | 24 |
+| Stephen MacNeille | LSH | 12 | 2 | 10 | 21 | 17 |
+| Kazune Matsuoka | LSH | 12 | 2 | 11 | 15 | 14 |
+| Oghenewoma Oghenesume | LSH | 18 | 3 | 15 | 25 | 23 |
 | Julien Wise | LSH | 6 | 1 | 6 | 9 | 8 |
-| Humza Zaidi | LSH | 18 | 3 | 16 | 28 | 24 |
+| Humza Zaidi | LSH | 18 | 3 | 16 | 29 | 23 |

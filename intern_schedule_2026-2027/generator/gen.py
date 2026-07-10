@@ -417,6 +417,56 @@ for dt in days:
     for l in off: off_count[l]+=1; work_streak[l]=0
     assign[dt]=rec
 
+# ---------------------------------------------------------------------------
+# DUTY-HOUR SMOOTHING: no intern works 7+ consecutive days.  When an outside
+# rotator's night-float / Sunday-LC butts against a 24h Saturday with no break,
+# hand that week's Thursday day-off to them (an LSH works that Thursday's short
+# call instead).  Structure is unchanged (Thursday still = 1 LC / 1 SC / 1 OFF /
+# 1 NF); only who is off changes.  Kennedy is never pulled in to cover.
+# ---------------------------------------------------------------------------
+def _worked(dt,l):
+    r=assign[dt]; return l in (r["LC"],r["NF"],r["H24"]) or l in r["SC"]
+def _runs(p, pdays):
+    out=[]; run=[]
+    for dt in pdays:
+        if _worked(dt,p):
+            if run and run[-1]==dt-timedelta(days=1): run.append(dt)
+            else: run=[dt]
+            if len(run)>=7: out.append(list(run))
+        else: run=[]
+    # keep only maximal runs
+    return out
+present_days={}
+for dt in days:
+    for l in roster(dt): present_days.setdefault(l,[]).append(dt)
+for p,pdays in present_days.items():
+    if roster(pdays[0])[p]["type"]=="LSH": continue      # LSH never hit 7-runs
+    changed=True
+    while changed:
+        changed=False
+        runs=[r for r in _runs(p,pdays) if len(r)>=7]
+        for run in runs:
+            # (a) preferred: hand the week's Thursday day-off to p (structure unchanged)
+            for dt in run:
+                if dt.weekday()!=3 or not assign[dt]["OFF"]: continue
+                offp=assign[dt]["OFF"][0]
+                if offp==KENNEDY or roster(dt)[offp]["type"]!="LSH": continue
+                if p in assign[dt]["SC"]:                      # p on short call -> swap
+                    assign[dt]["SC"].remove(p); assign[dt]["SC"].append(offp)
+                    assign[dt]["OFF"]=[p]; changed=True; break
+                if p==assign[dt]["LC"]:                        # p on long call -> LSH takes LC
+                    yes=dt-timedelta(days=1); tom=dt+timedelta(days=1)
+                    if assign.get(yes,{}).get("LC")==offp or assign.get(tom,{}).get("LC")==offp:
+                        continue                               # avoid LSH back-to-back LC
+                    assign[dt]["LC"]=offp; assign[dt]["OFF"]=[p]; changed=True; break
+            if changed: break
+            # (b) fallback: give p an interior weekday off (that day drops to 1 short call)
+            for dt in run[1:-1]:
+                if dt.weekday() in (0,1,2,4) and p in assign[dt]["SC"] and len(assign[dt]["SC"])>=2 \
+                   and not assign[dt]["OFF"]:
+                    assign[dt]["SC"].remove(p); assign[dt]["OFF"]=[p]; changed=True; break
+            if changed: break
+
 import pickle
 pickle.dump({"assign":{k.isoformat():v for k,v in assign.items()},
              "nf":{k.isoformat():v for k,v in NF_BY_DAY.items()},

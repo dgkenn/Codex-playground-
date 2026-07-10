@@ -24,9 +24,12 @@ NAME={
  "PATEL":"Tirth Pareshbhai Patel","ALMADHOOB":"Mohamed Almadhoob","AHLUWALIA-S":"Saumya Ahluwalia",
  "SANCHEZ-ALMANZAR":"Daniel Sanchez-Almanzar",
 }
-def grid(lab):   # grid display label (strip disambiguation suffix)
-    if lab is None: return ""
-    return lab[:-2] if lab.endswith("-S") else lab
+INI_OVERRIDE={"AHLUWALIA":"Sr","AHLUWALIA-S":"Sa"}  # Srishti vs Saumya (same initial)
+def grid(lab):   # grid label: LAST NAME + first initial (disambiguates duplicate surnames:
+    if lab is None: return ""                       # two Ahluwalias, two Saeeds, etc.)
+    last=lab[:-2] if lab.endswith("-S") else lab
+    ini=INI_OVERRIDE.get(lab, NAME[lab].split()[0][0])
+    return f"{last} {ini}"
 
 # Senior residents (supervisors) — from the roster PDF, for the footer only
 SR=[(date(2026,10,12),date(2026,10,25),"Elif Aksoy"),(date(2026,10,26),date(2026,11,8),"Adham Ramadan"),
