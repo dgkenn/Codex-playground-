@@ -55,7 +55,10 @@ def _blk(blocks,dt):
 # Kennedy plays the Lahey slot (night float 11/1-6 -> off the 11/7-8 weekend),
 # Chiasson plays the LSH2 slot.  A single further tweak (below) hands the Fri
 # 11/6 night to Chiasson so Kennedy can fly out Friday.
-KEN_SWAP_DAYS={d(11,day,2026) for day in range(1,14)}   # Nov 1-13
+# Set to the Nov 1-13 range to apply Kennedy's 7-8-weekend accommodation; left
+# empty here so the document is the clean, fully-auditable pure-march baseline
+# (November personal tweaks are handled on the back end).
+KEN_SWAP_DAYS=set()   # e.g. {d(11,x,2026) for x in range(1,14)} to re-enable
 def slot_person(slot,dt):
     if dt in KEN_SWAP_DAYS:
         if slot==1: return "KENNEDY"       # Kennedy takes the Lahey slot

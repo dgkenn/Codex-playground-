@@ -9,7 +9,7 @@ Coverage **Oct 1 2026 – Jun 23 2027**, continuing the finalized September. Bui
 | One Long Call per day | ✅ PASS |
 | Different long-call intern than previous day | ⚠️ SEE NOTE |
 | Q4 — every intern on call only every 4th day | ⚠️ SEE NOTE |
-| Friday long-call intern = next week's night float | ⚠️ SEE NOTE |
+| Friday long-call intern = next week's night float | ✅ PASS |
 | Night float: same person the whole Sun–Fri block | ✅ PASS |
 | Night-float intern present | ✅ PASS |
 | No night float on Saturday | ✅ PASS |
