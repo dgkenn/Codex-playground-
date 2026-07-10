@@ -310,3 +310,19 @@ MIMIC-IV-Waveform. New LESSON logged: range-check every channel before a discord
 **Verdict:** occult-hypoxemia needs MEASURED co-oximetry SaO₂ (as in Sjoding NEJM 2020). INSPIRE's SaO₂ is
 unusable (gapped/calculated). Re-file for **MIMIC-IV or eICU** (co-oximetry SaO₂ + SpO₂). The range-check lesson
 paid off twice in one session (etCO₂ clipped, SaO₂ gapped) — both caught before/at analysis, cheaply.
+
+## Bottleneck-remover #2: ComBat/CORAL harmonization for EEG site-leakage — FAILED (redirects strategy)
+| # | Experiment | Result | Status |
+|---|---|---|---|
+| CB-1 | Parametric-EB ComBat on IIC features (S0001 vs S0002), protecting class covariate | site-probe **0.708 → 0.999** (WORSE), class cross-site AUC **0.741 → 0.610** (harmed) | FAILED |
+| CB-2 | Diagnostic: linear vs tree probe | ComBat killed the *linear* site probe (0.674→0.273) but a *tree* recovers site at 0.999 → leakage is nonlinear/higher-moment | mechanism |
+| CB-3 | CORAL (covariance alignment) | site-tree still 0.999, class 0.661 → not a covariance effect either | FAILED |
+| CB-4 | Degenerate-feature check | 0 near-constant/var-ratio>1e3 features; site is DISTRIBUTED over real slow-wave feats (delta/alpha ratio, slow_ratio + stds; 50% in 3, 90% in 11 of 48) | fundamental |
+
+**Verdict:** marginal and covariance harmonization are the WRONG tools for EEG-DSP site leakage — ComBat *sharpens*
+site recoverability while *attenuating* biology (it strips the shared physiology it's designed to equalize, exposing
+the pure site-interaction fingerprint). Methods-cautionary corollary (publishable): cross-site EEG performance
+reported "after ComBat" can be fully site-confounded to a nonlinear model. **Strategic redirect (confirmed):** don't
+subtract site — use WITHIN-subject / WITHIN-device measurement-reclassification designs (deployed measure vs a
+ground-truth reference from the SAME monitor). This is exactly the BIS-occult-suppression class of design now in
+progress. Predicted win-likelihood of harmonization-unlocks-cross-site: was ~0.3, actual 0 → logged.

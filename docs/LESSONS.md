@@ -1015,3 +1015,24 @@ cross-nationally-validated part.
   needs a confound/negative control before it's real. EEG program net after 3 outcomes: classifier me-too, mortality
   generic/WLST-confounded, seizure-prognosis ascertainment-confounded — the frozen foundation model never cleanly
   earned its keep on a clinical outcome in this data.
+
+- **ComBat/CORAL harmonization does NOT remove EEG site/device leakage on spectral DSP features — and ComBat
+  actively HARMS (bottleneck-remover #2 FAILED, 2026-07-10).** Tested the neuroimaging batch-effect removers on the
+  IIC features (S0001 vs S0002, GPD/LPD vs slowing) hoping to kill the 0.71 site-probe while keeping cross-site class
+  AUC. Result inverted the goal: a correct parametric-EB ComBat drove the site-probe from **0.708 → 0.999** (a tree
+  recovers site PERFECTLY afterward) while degrading the biological class AUC **0.741 → 0.610**; CORAL (covariance
+  alignment) also left site-tree at 0.999 (class 0.661). Diagnostic decomposition: (a) ComBat DID kill the *linear*
+  site probe (0.674 → 0.273), so marginal mean/scale was removed; (b) but a *tree* still nails site — and it is NOT a
+  degenerate-feature artifact (0 near-constant/var-ratio>1e3 features; variance ratios all ~0.5–2.3); (c) the site
+  fingerprint is DISTRIBUTED over real slow-wave features (delta/alpha ratio, slow_ratio + their within-window std;
+  50% of site-importance in 3 features, 90% in 11 of 48). MECHANISM: the two hospitals differ in the higher-order
+  JOINT/interaction structure of slow-wave spectral features, which survives location, scale, AND covariance
+  alignment; ComBat makes it WORSE because stripping the shared marginal physiology (what it's designed to equalize)
+  removes the biological variation that was diluting the pure site-interaction fingerprint, sharpening it for a
+  nonlinear probe. RULE 1: harmonization is the WRONG tool for EEG-DSP site leakage — never report cross-site EEG
+  performance "after ComBat"; it can look clean marginally while a nonlinear model is fully site-confounded AND the
+  biology has been attenuated. RULE 2 (methods-cautionary, publishable): any EEG-foundation-model paper claiming
+  cross-site generalization after ComBat is suspect. RULE 3 (strategic): the fix for EEG confounding is NOT subtracting
+  site — it is WITHIN-subject / WITHIN-device measurement-reclassification designs (deployed measure vs a ground-truth
+  reference from the SAME monitor), which are confound-immune by construction. This test therefore CONFIRMS the pivot
+  away from cross-site prediction toward the BIS-occult-suppression class of design.
