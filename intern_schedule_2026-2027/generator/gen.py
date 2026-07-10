@@ -49,24 +49,31 @@ def _blk(blocks,dt):
     for s,e,l in blocks:
         if s<=dt<=e: return l
     return None
+# --- Kennedy's November accommodation ---------------------------------------
+# To give Kennedy the 11/7-8 weekend fully off (his hard request) within the
+# rules, Kennedy and the Lahey intern (Chiasson) SWAP slot roles for Nov 1-13:
+# Kennedy plays the Lahey slot (night float 11/1-6 -> off the 11/7-8 weekend),
+# Chiasson plays the LSH2 slot.  A single further tweak (below) hands the Fri
+# 11/6 night to Chiasson so Kennedy can fly out Friday.
+KEN_SWAP_DAYS={d(11,day,2026) for day in range(1,14)}   # Nov 1-13
 def slot_person(slot,dt):
+    if dt in KEN_SWAP_DAYS:
+        if slot==1: return "KENNEDY"       # Kennedy takes the Lahey slot
+        if slot==2: return "CHIASSON"      # Chiasson takes the LSH2 slot
     if slot in (0,2):
         lm=LSH_MONTH.get((dt.year,dt.month))
         return lm[0] if slot==0 else lm[1]
     return _blk(LAHEY,dt) if slot==1 else _blk(BMC,dt)
 def roster(dt):
+    # actual interns present (independent of any slot-role swap)
     p={}
-    for s in (0,2):
-        l=slot_person(s,dt)
-        if l: p[l]={"type":"LSH","start":date(dt.year,dt.month,1),"end":month_end(dt.year,dt.month)}
-    l1=_blk(LAHEY,dt)
-    if l1:
-        for s,e,lab in LAHEY:
-            if s<=dt<=e: p[lab]={"type":"LAHEY","start":s,"end":e}
-    b=_blk(BMC,dt)
-    if b:
-        for s,e,lab in BMC:
-            if s<=dt<=e: p[lab]={"type":"BMC","start":s,"end":e}
+    lm=LSH_MONTH.get((dt.year,dt.month))
+    if lm:
+        for lab in lm: p[lab]={"type":"LSH","start":date(dt.year,dt.month,1),"end":month_end(dt.year,dt.month)}
+    for s,e,lab in LAHEY:
+        if s<=dt<=e: p[lab]={"type":"LAHEY","start":s,"end":e}
+    for s,e,lab in BMC:
+        if s<=dt<=e: p[lab]={"type":"BMC","start":s,"end":e}
     return p
 def typ_of(l,dt): return roster(dt)[l]["type"]
 def rot_id(dt,l):

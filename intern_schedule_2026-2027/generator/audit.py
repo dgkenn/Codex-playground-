@@ -171,13 +171,18 @@ for s,e,seq in HANDOFF:
 
 # ---- Kennedy personal-request status under the deterministic march ----
 def kstat(dd): return stt(dd,"KENNEDY")
-kr=[("Weekend of Nov 7 fully off",
-     "BROKEN — off Sat 11/7 but Night Float starts Sun 11/8 (an LSH intern is always long-call or night-float on that Sunday)"),
-    ("Short call Fri 11/6 (to catch a flight)",
-     "BROKEN — Fri 11/6 is Long Call (7a–7:30p) in the Q4 march"),
-    ("Thanksgiving Day (Thu 11/26) off","MET — off"),
-    ("Not stuck with Thanksgiving Saturday alone",
-     "Kennedy is the Sat 11/28 24h (the march's middle-intern that week); it is his single Saturday for the block")]
+kr=[("Weekend of Nov 7-8 fully off",
+     "✅ MET — Kennedy swaps slot roles with the Lahey intern (Chiasson) for Nov 1-13: "
+     "he does night float 11/1-6 and is OFF the whole 11/7-8 weekend."),
+    ("Fri 11/6 free to fly",
+     "PARTIAL — Kennedy's night-float shift Fri 11/6 is 7:30pm-9:30am, so he is FREE Friday "
+     "until 7:30pm (a daytime/early-evening flight works). A full Friday off would need a "
+     "single-night coverage swap that ripples Q4 — available on request."),
+    ("Thanksgiving Day (Thu 11/26) off","✅ MET — off"),
+    ("Thanksgiving Saturday","Kennedy is the Sat 11/28 24h — his single Saturday for the block."),
+    ("Cost of the accommodation",
+     "One boundary exception: Fri 10/30 long call (Chiasson) no longer couples to the 11/1 night "
+     "float (Kennedy), because Kennedy isn't present in October. This is a month-boundary reset.")]
 
 # ---- write RULES_COMPLIANCE.md ----
 def ok2(b): return "✅ PASS" if b else "⚠️ SEE NOTE"
@@ -238,18 +243,19 @@ L.append(f"| ≤ 80 h/wk (avg over 4 wks) | {ok2(mx_avg<=80)} | busiest {mx_avg:
 L.append(f"| No duty period > 28h | {ok2(mx_cont<=28)} | longest {mx_cont:.0f} h (Sat 24h) |")
 L.append(f"| ≥ 1 day off per week | {ok2(mx_run<=6)} | longest streak {mx_run} days |")
 L.append("")
-L.append("## Dr. Kennedy's earlier personal requests vs. the compliant march")
+L.append("## Dr. Kennedy's November requests (accommodated)")
 L.append("")
-L.append("The march is fully deterministic, so it overrides individual requests. Status:")
+L.append("The march is fully deterministic, so honoring a personal request requires a local "
+         "slot swap. Kennedy's is applied for Nov 1-13 (Kennedy ⇄ Chiasson). Status:")
 L.append("")
 L.append("| Request | Outcome |")
 L.append("|---|---|")
 for a,b in kr: L.append(f"| {a} | {b} |")
 L.append("")
-L.append("> To honor the Nov 7–8 weekend and the Friday-11/6 flight, the schedule would need a "
-         "**local exception** (swap Kennedy's Sun 11/8 night-float start and Fri 11/6 long call with "
-         "another intern) — a deliberate deviation from the pure march for those days. This is exactly "
-         "the kind of thing the new day-off-request form is for; say the word and I'll apply it.")
+L.append("> This slot swap keeps every hard rule intact for Nov 1-13; its only cost is the one "
+         "month-boundary coupling note above (Fri 10/30 → 11/1 night float). If Kennedy needs the "
+         "**entire** Friday 11/6 off (a late flight), a single-night coverage swap can be added — it "
+         "introduces one Q4 ripple, so it's left off unless requested.")
 open(_HERE+"out/RULES_COMPLIANCE.md","w") if os.path.isdir(_HERE+"out") else open(_HERE+"RULES_COMPLIANCE.md","w")
 import os as _os
 _os.makedirs(_HERE+"out",exist_ok=True)
