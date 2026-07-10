@@ -1,31 +1,31 @@
 shadow comparison over 12 de-duped windows | files=4
 
      variant  net/win  Δvs base  paired t GROSS/win  gross t
-     mo_size  +11.657    +1.335     +1.77   +11.657    +2.20 <edge>
-     fv_size  +10.617    +0.295     +0.63   +10.617    +2.03 <edge>
-  micro_soft  +10.322    +0.000       n/a   +10.322    +1.94 <edge>
-  micro_gate  +10.322    +0.000       n/a   +10.322    +1.94 <edge>
-    baseline  +10.322                       +10.322    +1.94 <edge>
-  micro_asym   +9.841    -0.481     -0.74    +9.841    +1.97 <edge>
-  spot_react   +9.837    -0.485     -0.60    +9.837    +1.92 <edge>
-  micro_spot   +9.837    -0.485     -0.60    +9.837    +1.92 <edge>
-   late_gate   +9.419    -0.903     -0.89    +9.419    +1.97 <edge>
-      skew15   +8.503    -1.819     -1.48    +8.503    +1.97 <edge>
-micro_skew15   +8.503    -1.819     -1.48    +8.503    +1.97 <edge>
-  av_stoikov   +8.317    -2.005     -0.87    +8.317    +1.26 <edge>
- micro_react   +8.262    -2.060     -1.39    +8.262    +1.72 <edge>
-  micro_ufat   +7.977    -2.345     -1.20    +7.977    +1.78 <edge>
-       cap25   +7.725    -2.597     -1.65    +7.725    +1.94 <edge>
-deplete_gate   +7.466    -2.856     -1.77    +7.466    +1.61 <edge>
-  micro_marg   +7.148    -3.174     -1.94    +7.148    +1.52 <edge>
-    tox_gate   +6.849    -3.473     -1.90    +6.849    +1.52 <edge>
-   gross_max   +6.637    -3.685     -1.98    +6.637    +1.55 <edge>
-   ufat_band   +6.382    -3.940     -1.33    +6.382    +1.90 <edge>
-micro_strict   +6.129    -4.193     -2.04    +6.129    +1.52 <edge>
-   flow_gate   +5.982    -4.340     -1.77    +5.982    +1.45 <edge>
-    dneutral   +5.978    -4.344     -1.77    +5.978    +1.99 <edge>
- ufat_skew15   +5.900    -4.422     -1.68    +5.900    +1.71 <edge>
-   micro_cal   +4.006    -6.316     -1.62    +4.006    +0.94 <edge>
+  av_stoikov  +16.548    +4.810     +3.60   +16.548    +3.31 <edge>
+     mo_size  +14.908    +3.170     +2.35   +14.908    +2.92 <edge>
+  micro_soft  +11.737    +0.000       n/a   +11.737    +2.75 <edge>
+  micro_gate  +11.737    +0.000       n/a   +11.737    +2.75 <edge>
+    baseline  +11.737                       +11.737    +2.75 <edge>
+  spot_react  +11.030    -0.707     -1.33   +11.030    +2.88 <edge>
+  micro_spot  +11.030    -0.707     -1.33   +11.030    +2.88 <edge>
+  micro_asym  +10.891    -0.847     -0.78   +10.891    +2.82 <edge>
+deplete_gate  +10.561    -1.177     -1.11   +10.561    +2.80 <edge>
+ micro_react  +10.446    -1.291     -1.45   +10.446    +2.72 <edge>
+     fv_size  +10.156    -1.582     -1.72   +10.156    +2.49 <edge>
+   gross_max   +9.959    -1.778     -1.46    +9.959    +2.92 <edge>
+   flow_gate   +9.888    -1.850     -2.11    +9.888    +2.62 <edge>
+   late_gate   +9.481    -2.256     -1.63    +9.481    +1.99 <edge>
+      skew15   +9.183    -2.555     -2.00    +9.183    +2.59 <edge>
+micro_skew15   +9.183    -2.555     -2.00    +9.183    +2.59 <edge>
+  micro_ufat   +8.977    -2.760     -0.97    +8.977    +3.92 <edge>
+       cap25   +8.671    -3.066     -1.80    +8.671    +3.00 <edge>
+  micro_marg   +8.365    -3.373     -1.09    +8.365    +3.95 <edge>
+    dneutral   +7.082    -4.655     -2.62    +7.082    +2.69 <edge>
+    tox_gate   +6.936    -4.802     -1.66    +6.936    +3.06 <edge>
+ ufat_skew15   +6.894    -4.844     -1.70    +6.894    +3.60 <edge>
+   micro_cal   +6.640    -5.098     -2.29    +6.640    +2.33 <edge>
+micro_strict   +6.457    -5.280     -1.53    +6.457    +4.10 <edge>
+   ufat_band   +6.087    -5.651     -1.97    +6.087    +3.05 <edge>
 
 Read: paired t = net edge OVER baseline (rebate-inclusive). GROSS/win = trade P&L EXCLUDING the rebate = the edge OUTSIDE rebates; gross t vs 0, |t|>2 notable. n=12.
 Only positive-GROSS variants have an edge beyond rebate harvesting (the micro-gate family).
