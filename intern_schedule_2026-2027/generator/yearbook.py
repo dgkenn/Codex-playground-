@@ -39,25 +39,25 @@ def maxrun(l):
     return best
 
 H=[]
-H.append('<h1>LSH Intern Call Schedule — Full Year (Oct 2026 → Jun 2027)</h1>')
-H.append('<p class="lg">Pure integrated-Q4 "march" model (Friday long-call → next-week night float; '
-         'night float → Monday long call; Saturday 24h = the week\'s middle intern). Reproduces the '
-         'finalized September exactly and continues it. This is the clean, rule-compliant baseline '
-         'for audit — personal November tweaks are handled separately.</p>')
+H.append('<h1>LSH Intern Call Schedule - Full Year (Oct 2026 to Jun 2027)</h1>')
+H.append('<p class="lg">Pure integrated-Q4 "march" model (Friday long-call becomes the next week\'s '
+         'night float; night float returns to Monday long call; Saturday 24h = the week\'s middle '
+         'intern). Reproduces the finalized September exactly and continues it. This is the clean, '
+         'rule-compliant baseline for audit - personal November tweaks are handled separately.</p>')
 H.append('<div class="legend"><b>Legend:</b> <span class="k lc">LC</span> long call '
          '<span class="k sc">SC</span> short call <span class="k nf">NF</span> night float '
-         '<span class="k h">24H</span> Saturday 24h · orange row = Saturday · yellow row = Sunday · '
+         '<span class="k h">24H</span> Saturday 24h | orange row = Saturday | yellow row = Sunday | '
          'duplicate surnames carry a first initial.</div>')
 
 # compliance snapshot
 H.append('<h2>Compliance snapshot</h2><ul class="snap">')
-H.append('<li>✅ One long call per day; every intern on call only every 4th day (Q4); different long-call intern than the previous day.</li>')
-H.append('<li>✅ Friday long-call intern = next week\'s night float; night float consecutive Sun–Fri, same person.</li>')
-H.append('<li>✅ Saturday 24h only (no SC/NF); off the next day; not night-float-adjacent.</li>')
-H.append('<li>✅ Only one intern off at a time; weekday day-off is Thursday; Sunday has no short call.</li>')
-H.append('<li>✅ Every intern ≥1 day off/week. ACGME: ≤80h/wk avg, ≤24h continuous.</li>')
-H.append('<li>⚠️ Documented exceptions: Bronson (Oct) &amp; Li (May) each take 2 Saturdays in a 5-Saturday month; '
-         'June 21–23 runs 3-deep (roster has no BMC intern after 6/20).</li></ul>')
+H.append('<li><b class="ok">OK</b> One long call per day; every intern on call only every 4th day (Q4); different long-call intern than the previous day.</li>')
+H.append('<li><b class="ok">OK</b> Friday long-call intern = next week\'s night float; night float consecutive Sun-Fri, same person.</li>')
+H.append('<li><b class="ok">OK</b> Saturday 24h only (no SC/NF); off the next day; not night-float-adjacent.</li>')
+H.append('<li><b class="ok">OK</b> Only one intern off at a time; weekday day-off is Thursday; Sunday has no short call.</li>')
+H.append('<li><b class="ok">OK</b> Every intern gets at least 1 day off/week. ACGME: at most 80h/wk avg, at most 24h continuous.</li>')
+H.append('<li><b class="note">NOTE</b> Documented exceptions: Bronson (Oct) &amp; Li (May) each take 2 Saturdays in a 5-Saturday month; '
+         'June 21-23 runs 3-deep (roster has no BMC intern after 6/20).</li></ul>')
 
 for yy,mm in MONTHS:
     ms=date(yy,mm,1); me=min(gen.month_end(yy,mm),gen.SPAN_END)
@@ -82,9 +82,9 @@ for l in sorted(load,key=lambda l:(prof(l),FULL.get(l,l))):
     H.append(f'<tr><td>{FULL.get(l,l)}</td><td>{prof(l)}</td><td>{c["NF"]}</td><td>{c["24H"]}</td>'
              f'<td>{c["LC"]}</td><td>{c["SC"]}</td><td>{c["OFF"]}</td><td>{maxrun(l)}</td></tr>')
 H.append('</table>')
-H.append('<p class="lg">NF nights = night-float shifts (÷6 ≈ weeks). Each LSH/4-week rotator gets one NF '
+H.append('<p class="lg">NF nights = night-float shifts (divide by 6 for weeks). Each LSH/4-week rotator gets one NF '
          'week + one Saturday per block; 2-week rotators get whichever falls in their window. Max consecutive '
-         'days ≤ 6 for everyone (nobody works 7 straight).</p>')
+         'days is at most 6 for everyone (nobody works 7 straight).</p>')
 
 css="""<style>
 body{font-family:-apple-system,Segoe UI,Roboto,Helvetica,sans-serif;margin:26px;color:#17181a;background:#fafafa;line-height:1.4}
@@ -93,6 +93,7 @@ h1{font-size:23px;margin-bottom:2px} h2{margin-top:30px;border-bottom:2px solid 
 .snap{max-width:860px} .snap li{margin:2px 0}
 .k{display:inline-block;padding:0 5px;border-radius:4px;font-weight:700;font-size:11px}
 .k.lc{background:#dbe5ff}.k.sc{background:#eee}.k.nf{background:#e6d8f5}.k.h{background:#ffd9c2}
+b.ok{color:#0a7d32}b.note{color:#b06a00}
 table{border-collapse:collapse;margin:6px 0 12px;font-size:13px}
 table.cal{width:100%;max-width:780px} table.sum{width:100%;max-width:860px}
 th,td{border:1px solid #cbd2da;padding:4px 8px;text-align:left} th{background:#4472c4;color:#fff}
@@ -102,6 +103,13 @@ table.sum tr:nth-child(even) td{background:#f4f6f9}
 td{border-color:#3a3f45}tr.sat td{background:#5a3a2a}tr.sun td{background:#4a431f}table.sum tr:nth-child(even) td{background:#232527}
 .k.lc{background:#2a3a63}.k.sc{background:#333}.k.nf{background:#3d2d52}.k.h{background:#5a3a2a}}
 </style>"""
+doc=('<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">'
+     '<meta name="viewport" content="width=device-width, initial-scale=1">'
+     '<title>LSH Intern Schedule - Full Year</title>'+css+'</head><body>'
+     +"\n".join(H)+'</body></html>')
+# guarantee pure ASCII output (no stray unicode can survive)
+doc=doc.encode("ascii","replace").decode("ascii")
 out=_HERE+"../Intern_Schedule_FullYear.html"
-open(out,"w").write(css+"\n".join(H))
-print("wrote",out,"(",len("\n".join(H)),"bytes )")
+open(out,"w",encoding="ascii").write(doc)
+nonascii=sum(1 for ch in doc if ord(ch)>127)
+print("wrote",out,"| non-ASCII chars:",nonascii,"| bytes:",len(doc))
