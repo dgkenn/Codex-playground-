@@ -347,3 +347,18 @@ severity; seizure-prognosis=ascertainment; BIS occult-suppression=circular/known
 **Reachable EEG win = Anesthesiology/A&A-tier measurement note. Genuine top-tier white space (cross-site foundation-
 model→outcome) is GPU+credential-gated** — exactly as CLAUDE.md's mission line states. Machine action: surface the
 gate; bank the Anesthesiology-tier findings (C8 is submission-ready); do not force a capped finding past the bar.
+
+## "Confound as finding" methods paper (site dominates EEG clinical prediction) — REFUTED
+| # | Decomposition | CBraMod | Classical |
+|---|---|---|---|
+| D1 site-probe AUC | 0.775 | 0.708 |
+| D2 within-site vs cross-site class AUC | 0.719 / 0.751 | 0.741 / 0.741 |
+| D2 generalization gap (within−cross) | −0.03 | 0.00 |
+| D3 drop top-20 site feats → cross-site class | 0.749 | 0.721 |
+| D4 corr(site-imp, class-imp) | 0.05 | −0.19 |
+
+**Verdict:** with class balanced within site (site⊥class), the IIC signal generalizes cross-site and is NOT
+site-confounded — site leakage lives in different feature directions than the class signal. Refutes the "models
+predict site not physiology" paper; vindicates balanced cross-site EEG classification (but it's a me-too task,
+CBraMod≈classical). Salvageable nugget = "ComBat counterproductive + unnecessary under balanced designs" (technical
+note). Predicted win-likelihood ~0.35; actual = refuted/technical-note → logged.

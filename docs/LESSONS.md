@@ -1082,3 +1082,20 @@ cross-nationally-validated part.
   Anesthesiology/A&A-tier measurement notes. The genuine top-tier white space (first cross-site-validated EEG-
   foundation-model → clinical-outcome study) remains exactly where CLAUDE.md said it is: GPU-gated + credential-gated.
   Correct machine behavior = surface the gate to the user, not force a capped finding past the bar.
+
+- **"EEG foundation models predict site not physiology" is REFUTED under class-balanced cross-site designs — site
+  leakage is real but SEPARABLE from the clinical signal (confound-as-finding paper KILLED, 2026-07-10).** Tried to
+  turn the session's site-leakage failures into a methods paper ("cross-site EEG clinical prediction is dominated by
+  hospital identity"). Ran the definitive decomposition on the balanced IIC set (GPD/LPD vs slowing, class 50/50
+  WITHIN each site, so site⊥class by construction): site-probe 0.71–0.78 BUT within-site class AUC ≈ cross-site
+  (gap ≈ 0: CBraMod 0.719 vs 0.751; classical 0.741 vs 0.741); dropping the top-20 site-predictive features leaves
+  class AUC essentially unchanged (0.750→0.749); corr(feature site-importance, feature class-importance) ≈ 0.05
+  (CBraMod) / −0.19 (classical). MECHANISM: the site fingerprint and the IIC-class signal live in DIFFERENT feature
+  directions, so once class prevalence is balanced across sites the class prediction is NOT confounded by site — it
+  generalizes. The site confound only bites when the clinical LABEL correlates with site (unbalanced prevalence, e.g.
+  the real seizure data: S0001 19% vs S0002 5%). RULE: site-separability (a high site-probe) does NOT by itself imply
+  the clinical prediction is site-confounded — you must show the predictive features ARE the site-leaky ones (D3/D4
+  ablation) AND that label⊥site is violated. This both KILLS the dramatic methods paper and VINDICATES cross-site EEG
+  classification under balanced/matched designs (a positive, but a me-too task: CBraMod 0.75 ≈ classical 0.74).
+  Net: the salvageable methods nugget shrinks to "ComBat is counterproductive AND unnecessary when class is balanced
+  across sites" — a modest technical note, not Nature-tier.
