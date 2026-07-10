@@ -16,6 +16,22 @@ intern**, covering Long Call, Short Call, Night Float and the Saturday 24h.
 | `generator/gen.py` | Builds the schedule (the integrated Q4 march). |
 | `generator/audit.py` | Independent compliance + ACGME duty-hour audit; writes the report. |
 | `generator/export.py` | Writes the Excel workbooks. |
+| `generator/apply_swaps.py` + `swaps.txt` | Apply resident swaps / days-off and check every rule still holds. |
+
+## Swaps and days off (after the schedule is finalized)
+
+Residents' swaps go through a one-command checker so nothing breaks the rules.
+
+1. Edit `generator/swaps.txt` — one change per line:
+   - `swap 2026-11-14 KENNEDY WISE` — trade whatever each is doing that day.
+   - `swap 2026-11-08:2026-11-13 KENNEDY CHIASSON` — trade a whole block (swap the
+     **full** week for night float).
+   - `off 2027-03-12 MATSUOKA` — give a day off; whoever is already off covers.
+2. Run `python3 apply_swaps.py`.
+3. It prints **PASS**, or the exact rules the swap would break (and which block to
+   swap instead), and writes `Intern_Schedule_with_swaps.html` so you can see the
+   result. Approve human-side (both residents + chief), keep the lines in
+   `swaps.txt` as the change log, and you always have a clean, checkable record.
 
 ## The model — integrated Q4 "march"
 

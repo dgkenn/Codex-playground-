@@ -1,0 +1,21 @@
+# ============================================================
+#  SWAPS / DAYS OFF   —   one change per line, then run:
+#      python3 apply_swaps.py
+#  Lines starting with #  are ignored.  Delete the examples below
+#  and add your own.  Dates are YYYY-MM-DD (a range uses start:end).
+# ============================================================
+#
+#  swap 2026-11-14 KENNEDY WISE
+#       -> Kennedy and Wise trade whatever each is doing on 11/14.
+#
+#  swap 2026-11-08:2026-11-13 KENNEDY CHIASSON
+#       -> trade a whole block (e.g. a night-float week). Always swap
+#          the FULL week for night float or the tool will flag it.
+#
+#  off 2027-03-12 MATSUOKA
+#       -> give Matsuoka the day off; whoever is already off covers.
+#          (Only Thursdays have a free person to cover; on other
+#           weekdays use an explicit swap instead.)
+#
+#  After running, read the report (PASS or the exact rules it breaks)
+#  and open  Intern_Schedule_with_swaps.html  to see the result.
