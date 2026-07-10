@@ -17,8 +17,7 @@ academic year. Each day's team is **2 LSH interns + 1 BMC-South/Brighton intern
 
 Each monthly sheet keeps the original columns — **DAY · DATE · Long Call · Short
 Call · Night Float / Sat 24h** — plus a footer listing that month's LSH, BMC-S,
-Lahey and senior-resident rotators. Saturdays are shaded orange, Sundays yellow,
-and **Dean Kennedy's cells are shaded green** for quick scanning.
+Lahey and senior-resident rotators. Saturdays are shaded orange and Sundays yellow.
 
 ## How it was built
 

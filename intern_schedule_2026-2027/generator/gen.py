@@ -75,9 +75,13 @@ THXGIVING=d(11,26,2026)
 # for it so Wise is not stuck with holiday duty.  Kennedy still gets
 # Thanksgiving Day (Thu) off and short-call Friday, then his 24h Sat 11/28.
 KENNEDY_FORCE_OFF={d(11,8,2026), d(11,26,2026)}     # Nov-7 wknd Sunday + Thanksgiving Thu
-KENNEDY_FORCE_SC ={d(11,27,2026)}                   # Fri after Thanksgiving -> short call
+KENNEDY_FORCE_SC ={d(11,6,2026), d(11,27,2026)}     # Fri 11/6 (fly out) + Fri after Thanksgiving
 KENNEDY_FORCE_SAT=d(11,28,2026)                     # Kennedy takes the Thanksgiving Sat 24h
 KENNEDY_NO_SAT   ={d(11,7,2026)}                    # keep the Nov 7-8 weekend fully free
+# Kennedy's Nov Night-Float week is MOVED off the 11/1-6 week (Friday night float
+# rounds into Saturday morning) so Fri 11/6 is a short call and he flies out for
+# the 11/7-8 weekend; his NF is placed mid-month instead.
+KENNEDY_NF_TARGET=d(11,15,2026)                     # Sunday that starts his NF week
 
 def month_end(y,m):
     if m==12: return date(y,12,31)
@@ -168,10 +172,11 @@ def solve_month(yy,mm):
 
     # candidate NF weeks for each LSH intern (present all week & fully in-month)
     lsh_weeks={l:[g for g in full if l in cand[id(g)]] for l in lsh}
-    # Kennedy fixed to his earliest full coverable week
+    # Kennedy fixed to a designated week if set (Nov), else his earliest coverable week
     kfix=None
     if KENNEDY in lsh and lsh_weeks[KENNEDY]:
-        kfix=min(lsh_weeks[KENNEDY],key=lambda g:g[0])
+        tgt=[g for g in lsh_weeks[KENNEDY] if g[0]==KENNEDY_NF_TARGET]
+        kfix=tgt[0] if tgt else min(lsh_weeks[KENNEDY],key=lambda g:g[0])
 
     def nf_at(dt): return NF_LOCAL.get(dt, NF_GLOBAL.get(dt))
     def nf_prev(s): return nf_at(s-timedelta(days=1))

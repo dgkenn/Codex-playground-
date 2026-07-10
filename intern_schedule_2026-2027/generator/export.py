@@ -76,8 +76,6 @@ def build_sheet(ws, yy, mm):
         for c in range(1,6):
             cell=ws.cell(r,c); cell.border=border; cell.alignment=ctr
             if fill: cell.fill=fill
-            # highlight Kennedy cells in green
-            if cell.value and "KENNEDY" in str(cell.value).upper(): cell.fill=kfill
         r+=1; dt+=timedelta(days=1)
     # ---- footer roster ----
     r+=1

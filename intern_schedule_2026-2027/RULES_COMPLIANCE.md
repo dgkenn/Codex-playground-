@@ -54,14 +54,14 @@ Every rule below was checked programmatically against all 266 days. **No hard ru
 | Nicole Metri | BMC | 6 | 0 | 3 | 3 | 2 |
 | Haley Mullins | BMC | 6 | 2 | 6 | 10 | 4 |
 | Angel Maisonet Rivera | BMC | 6 | 1 | 7 | 10 | 4 |
-| Usman Saeed | BMC | 6 | 0 | 3 | 3 | 2 |
+| Usman Saeed | BMC | 0 | 1 | 4 | 6 | 3 |
 | Shirin Saeed | BMC | 6 | 0 | 8 | 9 | 5 |
 | Kalasha Shetty | BMC | 6 | 1 | 6 | 11 | 4 |
 | Ricardo Villanueva Gaona | BMC | 6 | 1 | 8 | 9 | 4 |
 | Srishti Ahluwalia | LAHEY | 2 | 1 | 5 | 7 | 3 |
 | Saumya Ahluwalia | LAHEY | 6 | 2 | 5 | 11 | 4 |
 | Mohamed Almadhoob | LAHEY | 6 | 1 | 7 | 10 | 4 |
-| Megan Chiasson | LAHEY | 6 | 1 | 6 | 11 | 4 |
+| Megan Chiasson | LAHEY | 12 | 0 | 6 | 6 | 4 |
 | Shruti Juyal | LAHEY | 12 | 0 | 6 | 6 | 4 |
 | Fabio Kopp Vanuzzi | LAHEY | 6 | 1 | 8 | 9 | 4 |
 | Tirth Pareshbhai Patel | LAHEY | 4 | 1 | 7 | 9 | 3 |
@@ -69,10 +69,10 @@ Every rule below was checked programmatically against all 266 days. **No hard ru
 | Daniel Sanchez-Almanzar | LAHEY | 6 | 1 | 6 | 11 | 4 |
 | Suja Vivekanandan | LAHEY | 6 | 1 | 6 | 11 | 4 |
 | Isaac Bronson | LSH | 18 | 3 | 20 | 26 | 26 |
-| Dean Kennedy (you) | LSH | 12 | 2 | 11 | 20 | 16 |
+| Dean Kennedy (you) | LSH | 12 | 2 | 11 | 21 | 15 |
 | Anna Li | LSH | 12 | 2 | 10 | 15 | 20 |
 | Stephen MacNeille | LSH | 12 | 2 | 10 | 20 | 18 |
 | Kazune Matsuoka | LSH | 12 | 2 | 11 | 14 | 15 |
 | Oghenewoma Oghenesume | LSH | 18 | 3 | 15 | 24 | 24 |
-| Julien Wise | LSH | 6 | 1 | 7 | 8 | 8 |
+| Julien Wise | LSH | 6 | 1 | 6 | 9 | 8 |
 | Humza Zaidi | LSH | 18 | 3 | 16 | 28 | 24 |
