@@ -1,8 +1,14 @@
-# Oscillometric Cuff Monitoring Systematically Underestimates Intraoperative Hypotension and Its Harms: A Two-Cohort Study
+# Oscillometric Cuff Monitoring Systematically Underestimates Intraoperative Hypotension and Its Harms: A Two-Cohort Study with US Multi-Center External Validation
 
-*Draft manuscript — Anesthesiology/JAMA-family structure. All quantitative claims are drawn from the source
-analyses (`docs/research/20`); no number is invented. Discovery cohort: VitalDB. Validation cohort: INSPIRE.
-Both Seoul National University Hospital — same institution, different granularity/scale.*
+**Target journal:** *Anesthesiology* (primary) or *British Journal of Anaesthesia* (Original Investigation).
+**Article type:** Original clinical/measurement investigation. **Word count:** to finalize (~3,500 main text).
+**Running title:** Cuff monitoring underestimates intraoperative hypotension.
+**Authors / affiliations / corresponding author:** to be completed.
+
+*Discovery cohort: VitalDB (Seoul National University Hospital). Replication + outcome cohort: INSPIRE (Seoul
+National University Hospital). External validation: eICU Collaborative Research Database (154 US hospitals).
+Every quantitative claim traces to a specific analysis (see reproducibility appendix, doc 29); no number is
+invented. This manuscript incorporates three rounds of adversarial internal review (see docs 21–23).*
 
 ---
 
@@ -24,9 +30,9 @@ cuff differs in its association with in-hospital mortality, AKI, hyperlactatemia
 a composite, and ICU admission. A matched-cadence analysis (arterial values sampled only at cuff-measurement
 times) isolated measurement bias from sampling frequency.
 
-**Results.** In VitalDB (2,109 paired readings, artifact-hardened), the cuff detected only **59%** of
-arterial-defined hypotension at MAP<65, **47%** at <60, and **34%** at <55, over-reading by ~+22 mmHg at severe
-hypotension (overall Bland-Altman bias −0.2 mmHg). The discrepancy and its harm-attenuation replicated in an
+**Results.** In VitalDB (1,079 co-recording cases, 5,903 artifact-hardened paired readings), the cuff detected
+only **56%** of arterial-defined hypotension at MAP<65 (missed 44%), **42%** at <60, and **27%** at <55 (missed
+73%), over-reading by **+30.6 mmHg** at arterial MAP 20–55 (overall Bland-Altman bias −0.2 mmHg). The discrepancy and its harm-attenuation replicated in an
 external US multi-center ICU cohort (eICU, 154 hospitals, 24,691 co-recording stays: cuff missed 47% of
 arterial-defined hypotension at MAP<65 and 68% at <55, over-reading at low pressure; mortality association art
 OR 5.40 vs cuff 4.86). In INSPIRE (47,533 operations co-recording both), the cuff
@@ -118,8 +124,21 @@ oscillometric behavior at low pressure, not vasoconstriction from treatment.
 VitalDB reflects greater artifact in minute-level arterial data; VitalDB provides the clean estimate.)
 
 ### 3c. The measured harm of hypotension is attenuated under cuff — a direct consequence of undercounting
-[TABLE — adjusted OR art vs cuff: mortality 2.09 vs 1.48; hyperlactatemia 1.91 vs 1.46; AKI 1.34 vs 1.26;
-composite 1.86 vs 1.47; ICU 2.63 vs 1.74; MINS 1.48 vs 1.50 (no attenuation).]
+
+**Table 1. Within-operation association of intraoperative hypotension with adverse outcomes, by measurement
+modality (INSPIRE, n = 28,349 operations co-recording arterial and cuff MAP).** Adjusted for age, ASA physical
+status, operative duration, and baseline creatinine. Hypotension defined by arterial line (≥3 readings < 65 mmHg)
+versus cuff (≥1 reading < 65 mmHg) in the *same* operations.
+
+| Outcome | Arterial-defined, adj. OR [95% CI] | Cuff-defined, adj. OR [95% CI] | Attenuation |
+|---|---|---|---|
+| In-hospital mortality | **2.09 [1.68–2.60]** | 1.48 [1.21–1.81] | yes |
+| Hyperlactatemia (peak ≥2 mmol/L) | **1.91 [1.79–2.05]** | 1.46 [1.36–1.56] | yes (non-overlapping CIs) |
+| KDIGO acute kidney injury | 1.34 [—] | 1.26 [—] | modest |
+| Death-or-AKI composite | **1.86 [—]** | 1.47 [—] | yes |
+| ICU admission | **2.63 [—]** | 1.74 [—] | yes |
+| Myocardial injury (MINS) | 1.48 [—] | 1.50 [—] | none (selected troponin cohort) |
+
 Mechanism: cuff-defined non-hypotensive group has higher event rate than arterial non-hypotensive (AKI 6.5% vs
 5.6%), reflecting misclassified hypotensive patients. **This attenuation is not an independent effect of
 measurement on outcome; it is the quantified consequence of §3a–b.** When continuous true arterial hypotension
@@ -244,5 +263,88 @@ bedside, a corrected cuff threshold (MAP<70) recovers much of the missed hypoten
   hypothesis-generating, not as a validated instrument; the actionable translation is the model-free detection
   correction, and a benefit-validated decision rule requires the randomized trial.
 
-## References (to complete)
-Walsh 2013; Salmasi 2017; VISION/Devereaux; Wax 2011; Kaufmann 2020; Bijker 2007 (hypotension definitions).
+## Figures (specifications for production)
+- **Figure 1 — Bland-Altman of cuff − arterial MAP, stratified by true arterial MAP (VitalDB).** Mean bias per
+  arterial stratum with 95% limits of agreement; annotate the monotone widening of positive bias as MAP falls
+  (+30.6 mmHg at 20–55 → ~0 mid-range). Inset: bias stability across ±30/60/90 s reference windows.
+- **Figure 2 — Forest plot of the hypotension–harm association by measurement modality (INSPIRE; Table 1).**
+  Paired arterial vs cuff adjusted ORs for each outcome; visualizes the systematic attenuation.
+- **Figure 3 — Cuff sensitivity / operating characteristics vs treatment threshold** (VitalDB, replicated in
+  eICU): sensitivity, specificity, false-positive rate, PPV at cuff MAP < 65/70/75; mark the <70 candidate
+  correction and the median true arterial MAP (70) of newly-flagged readings.
+- **Figure 4 — Study schematic / Box 1** (three-layer arterial-line aid + the detect-then-measure package).
+- **Supplementary Figure S1 — Vasopressor-stratified within-operation crossover** (device-physics vs
+  vasoconstriction): on- vs off-infusion cuff–arterial bias by arterial stratum (null at low pressure).
+
+## Data availability
+All three datasets are public/credentialed and independently accessible; no data were generated by the authors.
+VitalDB (https://vitaldb.net), INSPIRE (PhysioNet), and the eICU Collaborative Research Database (PhysioNet)
+require the respective data-use agreements. Analysis code will be released on publication (repository link to be
+added); a result-to-code reproducibility appendix accompanies this manuscript.
+
+## Ethics
+This is a secondary analysis of fully de-identified, publicly released research databases obtained under their
+data-use agreements; per each provider's terms and applicable regulations it is exempt from additional
+institutional review board approval. (Confirm and insert local IRB determination number before submission.)
+
+## Reporting
+Observational analyses are reported per **STROBE**; the exploratory prediction model is reported per **TRIPOD**
+(and is explicitly labelled hypothesis-generating). The proposed trial (companion protocol) is designed to
+**SPIRIT/CONSORT** standards.
+
+## Funding / Conflicts of interest / Author contributions
+Funding: none declared (confirm). Conflicts: none declared (confirm). Author contributions: to be completed
+(conception/design; acquisition; analysis/interpretation; drafting; critical revision; all authors approve the
+final version and agree to be accountable).
+
+## Companion documents
+Prospective trial protocol: `docs/research/24_aline_prospective_protocol.md`. Statistical analysis plan (prediction
+model): `docs/research/22_aline_decision_tool_SAP.md`. Result-to-code reproducibility appendix:
+`docs/research/29_C8_reproducibility_appendix.md`.
+
+## References
+*(Canonical citations; final bibliographic details — volume/pages/DOI — to be verified against source before
+submission. No citation below is invented; each is a well-established paper or database.)*
+
+**Intraoperative hypotension and outcomes**
+1. Walsh M, Devereaux PJ, Garg AX, et al. Relationship between intraoperative mean arterial pressure and clinical
+   outcomes after noncardiac surgery: toward an empirical definition of hypotension. *Anesthesiology* 2013.
+2. Salmasi V, Maheshwari K, Yang D, et al. Relationship between intraoperative hypotension, defined by either
+   reduction from baseline or absolute thresholds, and acute kidney and myocardial injury after noncardiac
+   surgery. *Anesthesiology* 2017.
+3. Sun LY, Wijeysundera DN, Tait GA, Beattie WS. Association of intraoperative hypotension with acute kidney
+   injury after elective noncardiac surgery. *Anesthesiology* 2015.
+4. Mascha EJ, Yang D, Weiss S, Sessler DI. Intraoperative mean arterial pressure variability and 30-day
+   mortality in patients having noncardiac surgery. *Anesthesiology* 2015.
+5. Wesselink EM, Kappen TH, Torn HM, Slooter AJC, van Klei WA. Intraoperative hypotension and the risk of
+   postoperative adverse outcomes: a systematic review. *Br J Anaesth* 2018.
+6. Sessler DI, Bloomstone JA, Aronson S, et al. Perioperative Quality Initiative consensus statement on
+   intraoperative blood pressure, risk and outcomes for elective surgery. *Br J Anaesth* 2019.
+7. Devereaux PJ, Sessler DI. Cardiac complications in patients undergoing major noncardiac surgery (VISION).
+   *N Engl J Med* 2015.
+
+**Blood-pressure measurement accuracy**
+8. Wax DB, Lin HM, Leibowitz AB. Invasive and concomitant noninvasive intraoperative blood pressure monitoring:
+   observed differences in measurements and associated therapeutic interventions. *Anesthesiology* 2011.
+9. Kaufmann T, Cox EGM, Wiersema R, et al. Non-invasive oscillometric versus invasive arterial blood pressure
+   measurements in critically ill patients. *J Clin Monit Comput* 2020.
+10. Bijker JB, van Klei WA, Kappen TH, et al. Incidence of intraoperative hypotension as a function of the chosen
+    definition. *Anesthesiology* 2007.
+
+**Intervention / trial context**
+11. Futier E, Lefrant JY, Guinot PG, et al. Effect of individualized vs standard blood pressure management
+    strategies on postoperative organ dysfunction (INPRESS). *JAMA* 2017.
+12. Maheshwari K, Nathanson BH, Munson SH, et al. The relationship between ICU hypotension and in-hospital
+    mortality and morbidity in septic patients. *Intensive Care Med* 2018.
+13. Vickers AJ, Elkin EB. Decision curve analysis: a novel method for evaluating prediction models. *Med Decis
+    Making* 2006.
+14. KDIGO Acute Kidney Injury Work Group. KDIGO clinical practice guideline for acute kidney injury. *Kidney Int
+    Suppl* 2012.
+
+**Data resources**
+15. Lee HC, Park Y, Yoon SB, et al. VitalDB, a high-fidelity multi-parameter vital signs database in surgical
+    patients. *Sci Data* 2022.
+16. INSPIRE: a publicly available research dataset for perioperative medicine (Seoul National University
+    Hospital). *PhysioNet* 2024.
+17. Pollard TJ, Johnson AEW, Raffa JD, et al. The eICU Collaborative Research Database, a freely available
+    multi-center database for critical care research. *Sci Data* 2018.
