@@ -1,88 +1,53 @@
-# LSH Transitional-Year Intern Call Schedule — Rules Compliance Report
+# LSH Intern Schedule — Compliance Report (comprehensive-rules / march model)
 
-**Coverage:** Oct 1, 2026 – Jun 23, 2027  (continues the provided Jul–Sep 2026 schedule through the end of the academic year).
+Coverage **Oct 1 2026 – Jun 23 2027**, continuing the finalized September. Built on the integrated Q4 march (Friday long-call → next-week night float; night float → Monday long call; Saturday 24h = the week's middle intern). The generator reproduces the finalized September **exactly**. Checked against every rule in `PRINCIPLES.md`.
 
-Every rule below was checked programmatically against all 266 days. **No hard rule is violated.** A few *soft* targets can't be met literally because of the BMC-South two-week rotation blocks — those are explained under **Necessary compromises**.
+## Hard rules
 
-## Hard rules — all satisfied
-
-| Rule (source) | Status | Evidence |
-|---|---|---|
-| Pool = 2 LSH + 1 BMC-S/Brighton + 1 Lahey each day | ✅ PASS | Built directly from the rotation roster (2 LSH all-month, BMC & Lahey per their blocks). |
-| Exactly one Long Call each day | ✅ PASS | 1 LC every day (Sat = the 24h intern). |
-| Long Call spacing ~Q4 (never on call two days running) | ✅ PASS | 0 back-to-back call days. Also: **no Long Call the day before a 24h shift.** |
-| Short Call = 2 interns weekdays, 1 on Thursday, 0 on weekends (7:00a–4:00p) | ✅ PASS | Enforced every weekday (Thu = 1). Note: SC ends **4:00 pm** — does *not* leave at noon (per your correction & the sheet footer). |
-| Night Float one intern Sun→Fri, consecutive, none on Saturday | ✅ PASS | One NF per night, Sun–Fri only; Saturday covered by the 24h shift. |
-| No 24h intern also does NF the Fri before or Sun after (post/pre-NF rest) | ✅ PASS | 0 violations. |
-| 24h Saturday intern is off the next day (returns Monday) | ✅ PASS | Every 24h intern is off the following Sunday. |
-| No double assignment (day + night same day) | ✅ PASS | NF person never also on LC/SC. |
-| ≥1 day off per week (averaged over 4 weeks) | ✅ PASS | Stronger than required: **every** intern is off ≥1 day in **every** week (0 weeks with 0). |
-| Only one intern off at a time on weekdays (Thursday preferred) | ✅ PASS | 0 weekdays with >1 off. Thursday is the day off. |
-| New BMC-S/Lahey intern never starts on Long Call or Night Float | ✅ PASS | All 24 new-rotation start days begin on Short Call. |
-
-## Your (Kennedy) requests
-
-| Request | Status |
+| Rule | Status |
 |---|---|
-| **Weekend of Nov 7 off** (hard) | ✅ PASS — Sat 11/7 OFF, Sun 11/8 OFF |
-| Thanksgiving Day (Thu 11/26) off | ✅ PASS — off Thu, short-call Fri |
-| Thanksgiving Saturday (you volunteered so Wise isn't stuck) | 24h on Sat 11/28 → Wise gets the whole holiday weekend off |
-| Exactly 1 NF week + 1 Saturday each month you're on (no doubling) | ✅ PASS — Nov & Mar |
+| One Long Call per day | ✅ PASS |
+| Different long-call intern than previous day | ⚠️ SEE NOTE |
+| Q4 — every intern on call only every 4th day | ⚠️ SEE NOTE |
+| Friday long-call intern = next week's night float | ✅ PASS |
+| Night float: same person the whole Sun–Fri block | ✅ PASS |
+| Night-float intern present | ✅ PASS |
+| No night float on Saturday | ✅ PASS |
+| No daytime + night float same day | ✅ PASS |
+| Sunday has no short call | ✅ PASS |
+| Saturday: 24h only (no SC/NF) | ✅ PASS |
+| Only one intern off at a time; weekday off = Thursday | ✅ PASS |
+| Saturday 24h intern off the next day | ✅ PASS |
+| Saturday 24h intern not night float the next day | ✅ PASS |
+| Saturday 24h intern didn't do night float the night before | ✅ PASS |
+| Every intern ≥1 day off per week | ✅ PASS |
+| All present accounted for each day | ✅ PASS |
+| One 24h Saturday per intern per month | ⚠️ SEE NOTE |
 
-## Priority handling: Shattuck interns favored over outside rotators
+## Necessary exceptions (unavoidable; all surfaced)
 
-- **Every Shattuck (LSH) intern gets exactly 1 NF week + 1 Saturday per month — never 2 of either.** Off-target months: none.
-- **All overflow (2nd NF weeks, 2nd Saturdays) is absorbed by outside BMC/Lahey rotators**, never Shattuck interns. Outside rotators with a 2nd Saturday in a month (the "rarely 2" clause): AHN (Jan), AHLUWALIA-S (May).
-- Days off (Thursdays, golden weekends) are given to Shattuck interns before outside rotators, and balanced between the two Shattuck interns each month.
+1. **Two Saturday 24h doubles — Bronson (Oct), Li (May).** A 5-Saturday calendar month whose repeating middle-intern slot lands on a (stable) LSH intern puts that intern on the 1st and 5th Saturday. Reassigning the 5th would force a different intern into long-call-then-24h or back-to-back long call, breaking the strict Q4 march. The prior rules explicitly allowed "in very rare occasions 2." These are the only two all year.
+2. **June 21–23, 2027 wind-down.** The roster has **no BMC-South intern after 6/20** (Shirin Saeed's block ends), so those last 3 days run with 3 interns instead of 4; with only two daytime interns, long call can't hold a strict 4-day gap on 6/22–6/23. Everything through 6/20 is clean.
+3. **New intern on long call / night float at a rotation start (9 times).** The Q4 march (and Monday night-float starts, per the rules) sometimes place an arriving BMC/Lahey intern on long call or night float on their first Monday. The comprehensive rules permit this; the earlier email preferred avoiding it "when possible." Days: Mon 11/23 SHETTY (BMC); Mon 12/21 FARZEELA (BMC); Mon 2/15 VILLANUEVA (BMC); Mon 3/15 BUTT (BMC); Mon 3/22 ALMADHOOB (LAHEY); Mon 4/19 AHLUWALIA-S (LAHEY); Mon 5/10 METRI (BMC); Mon 5/17 SANCHEZ-ALMANZAR (LAHEY); Mon 6/14 PATEL (LAHEY).
+4. **Night-float transition handoffs (7).** At month/rotation boundaries a departing intern finishes a few nights and the arriving intern continues the block — exactly as the rules describe ("a new intern starts night float when the month ends").
 
-## Necessary compromises (soft targets that are mathematically impossible to meet literally)
+## ACGME duty hours
 
-1. **"Each intern gets one NF week *and* one 24h Saturday per month."** This was written for the old model of 4 interns who each stay a full month. With **BMC-South now sending interns for only two weeks at a time**, a month contains 6–7 different interns but only ~4–5 NF weeks and ~4–5 Saturdays — so it is impossible for all of them to get both. What the schedule guarantees instead:
-   - Every LSH (Shattuck) intern and every 4-week rotator gets **both** an NF week and a Saturday.
-   - **Every** rotation (including every 2-week BMC intern) gets **at least one** of the two — nobody is left with neither. (Verified: 0 rotations with neither.)
-2. **Thanksgiving Saturday (11/28) must be a Shattuck intern.** Both outside rotators that weekend are night-float-adjacent (one just finished the week's NF, the other starts the next week's), so neither can legally take the 24h. Kennedy volunteered for it so Wise is spared.
-3. **June 21–23, 2027:** the roster has **no BMC-South intern** after 6/20 (Shirin Saeed's block ends), so those last 3 wind-down days run with a 3-intern pool (2 LSH + 1 Lahey) instead of 4. Everything else is unaffected.
-
-## ACGME duty-hour audit
-
-| ACGME limit | Status | Measured |
+| Limit | Status | Measured |
 |---|---|---|
-| ≤ 80 clinical hours/week, averaged over 4 weeks | ✅ PASS | busiest intern **72.8 h/wk** |
-| No single duty period > 28h | ✅ PASS | longest continuous duty **24 h** (the Sat 24h shift) |
-| ≥ 1 day (24h) free of duty per week | ✅ PASS | longest work streak **6 days** (nobody reaches 7) |
+| ≤ 80 h/wk (avg over 4 wks) | ✅ PASS | busiest 66.5 h/wk |
+| No duty period > 28h | ✅ PASS | longest 24 h (Sat 24h) |
+| ≥ 1 day off per week | ✅ PASS | longest streak 6 days |
 
-Hours use the sheet's own shift times (LC 11h / Fri 12.5h, SC 9h, NF 14h, Sat 24h). To keep every intern under a 7-day streak, a few night-float/24h weeks hand that week's Thursday day-off to the affected rotator (an LSH covers the Thursday short call); one Monday runs with a single short-call intern. These are the only deviations from the usual two-short-call weekday pattern.
+## Dr. Kennedy's earlier personal requests vs. the compliant march
 
-## Per-intern workload (whole schedule)
+The march is fully deterministic, so it overrides individual requests. Status:
 
-| Intern | Role | NF nights | 24h Sat | Long Call | Short Call | Days off |
-|---|---|--:|--:|--:|--:|--:|
-| Hyojin Ahn | BMC | 6 | 2 | 6 | 9 | 5 |
-| Aqsa Butt | BMC | 6 | 1 | 7 | 7 | 4 |
-| Fnu Farzeela | BMC | 6 | 1 | 7 | 10 | 4 |
-| Bassel Gaballah | BMC | 0 | 1 | 5 | 6 | 2 |
-| Nicole Metri | BMC | 6 | 0 | 3 | 3 | 2 |
-| Haley Mullins | BMC | 6 | 2 | 6 | 9 | 5 |
-| Angel Maisonet Rivera | BMC | 6 | 1 | 7 | 10 | 4 |
-| Usman Saeed | BMC | 0 | 1 | 4 | 6 | 3 |
-| Shirin Saeed | BMC | 6 | 0 | 8 | 9 | 5 |
-| Kalasha Shetty | BMC | 6 | 1 | 6 | 11 | 4 |
-| Ricardo Villanueva Gaona | BMC | 6 | 1 | 8 | 9 | 4 |
-| Srishti Ahluwalia | LAHEY | 2 | 1 | 5 | 6 | 4 |
-| Saumya Ahluwalia | LAHEY | 6 | 2 | 5 | 10 | 5 |
-| Mohamed Almadhoob | LAHEY | 6 | 1 | 7 | 9 | 5 |
-| Megan Chiasson | LAHEY | 12 | 0 | 6 | 6 | 4 |
-| Shruti Juyal | LAHEY | 12 | 0 | 6 | 6 | 4 |
-| Fabio Kopp Vanuzzi | LAHEY | 6 | 1 | 8 | 9 | 4 |
-| Tirth Pareshbhai Patel | LAHEY | 4 | 1 | 7 | 9 | 3 |
-| Muhammed Salam | LAHEY | 6 | 1 | 6 | 10 | 5 |
-| Daniel Sanchez-Almanzar | LAHEY | 6 | 1 | 6 | 10 | 5 |
-| Suja Vivekanandan | LAHEY | 6 | 1 | 6 | 10 | 5 |
-| Isaac Bronson | LSH | 18 | 3 | 20 | 29 | 23 |
-| Dean Kennedy (you) | LSH | 12 | 2 | 11 | 21 | 15 |
-| Anna Li | LSH | 12 | 2 | 10 | 15 | 20 |
-| Stephen MacNeille | LSH | 12 | 2 | 10 | 21 | 17 |
-| Kazune Matsuoka | LSH | 12 | 2 | 11 | 15 | 14 |
-| Oghenewoma Oghenesume | LSH | 18 | 3 | 15 | 25 | 23 |
-| Julien Wise | LSH | 6 | 1 | 6 | 9 | 8 |
-| Humza Zaidi | LSH | 18 | 3 | 16 | 29 | 23 |
+| Request | Outcome |
+|---|---|
+| Weekend of Nov 7 fully off | BROKEN — off Sat 11/7 but Night Float starts Sun 11/8 (an LSH intern is always long-call or night-float on that Sunday) |
+| Short call Fri 11/6 (to catch a flight) | BROKEN — Fri 11/6 is Long Call (7a–7:30p) in the Q4 march |
+| Thanksgiving Day (Thu 11/26) off | MET — off |
+| Not stuck with Thanksgiving Saturday alone | Kennedy is the Sat 11/28 24h (the march's middle-intern that week); it is his single Saturday for the block |
+
+> To honor the Nov 7–8 weekend and the Friday-11/6 flight, the schedule would need a **local exception** (swap Kennedy's Sun 11/8 night-float start and Fri 11/6 long call with another intern) — a deliberate deviation from the pure march for those days. This is exactly the kind of thing the new day-off-request form is for; say the word and I'll apply it.

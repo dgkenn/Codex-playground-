@@ -24,12 +24,13 @@ NAME={
  "PATEL":"Tirth Pareshbhai Patel","ALMADHOOB":"Mohamed Almadhoob","AHLUWALIA-S":"Saumya Ahluwalia",
  "SANCHEZ-ALMANZAR":"Daniel Sanchez-Almanzar",
 }
-INI_OVERRIDE={"AHLUWALIA":"Sr","AHLUWALIA-S":"Sa"}  # Srishti vs Saumya (same initial)
-def grid(lab):   # grid label: LAST NAME + first initial (disambiguates duplicate surnames:
-    if lab is None: return ""                       # two Ahluwalias, two Saeeds, etc.)
-    last=lab[:-2] if lab.endswith("-S") else lab
-    ini=INI_OVERRIDE.get(lab, NAME[lab].split()[0][0])
-    return f"{last} {ini}"
+# Bare last name (matches finalized September), with a first initial added ONLY
+# for the two surnames shared by different interns across the year.
+DISAMB={"AHLUWALIA":"AHLUWALIA Sr","AHLUWALIA-S":"AHLUWALIA Sa",
+        "SAEED":"SAEED U","SAEED-S":"SAEED Sh"}
+def grid(lab):
+    if lab is None: return ""
+    return DISAMB.get(lab, lab)
 
 # Senior residents (supervisors) — from the roster PDF, for the footer only
 SR=[(date(2026,10,12),date(2026,10,25),"Elif Aksoy"),(date(2026,10,26),date(2026,11,8),"Adham Ramadan"),
@@ -76,9 +77,12 @@ def build_sheet(ws, yy, mm):
             ws.cell(r,4,", ".join(grid(x) for x in rec["SC"]))
             ws.cell(r,5,grid(rec["NF"]))
         fill=satfill if wd==5 else (sunfill if wd==6 else None)
+        weekend = wd in (5,6)
         for c in range(1,6):
             cell=ws.cell(r,c); cell.border=border; cell.alignment=ctr
             if fill: cell.fill=fill
+            # all assignments bold; weekend (Sat/Sun) rows fully bold (per rules)
+            cell.font = bold if (weekend or c>=3) else Font()
         r+=1; dt+=timedelta(days=1)
     # ---- footer roster ----
     r+=1
