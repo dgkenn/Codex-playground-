@@ -1,2 +1,6 @@
 # local Claude Code harness state (settings, worktree admin) -- not project content
 .claude/
+
+intern_schedule_2026-2027/generator/out/
+intern_schedule_2026-2027/generator/assign.pkl
+__pycache__/
