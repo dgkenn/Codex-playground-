@@ -326,3 +326,24 @@ reported "after ComBat" can be fully site-confounded to a nonlinear model. **Str
 subtract site — use WITHIN-subject / WITHIN-device measurement-reclassification designs (deployed measure vs a
 ground-truth reference from the SAME monitor). This is exactly the BIS-occult-suppression class of design now in
 progress. Predicted win-likelihood of harmonization-unlocks-cross-site: was ~0.3, actual 0 → logged.
+
+## BIS occult burst-suppression (EEG depth-monitor idea) — KILLED for top tier (circular reference)
+| # | Experiment | Result | Status |
+|---|---|---|---|
+| BIS-1 | Gating: P(SR>0 | BIS 40-60, SQI≥50), N=15 pilot | 3.9% overall; age gradient 0.4/3.2/5.2/15.9% (18-50/50-65/65-75/75+) | signal real but... |
+| BIS-2 | Independent raw-EEG confirmation (EEG1_WAV 128Hz, pp<8µV detector) | FAILED validation: per-case corr vs monitor SR = **−0.386** (wrong sign); detector conflates low-amplitude w/ isoelectric | no orthogonal check |
+| BIS-3 | Sonnet adversarial red-team | KILL: BIS blends BSR into its own output + epoch-smoothing lag (self-referential, not discordance); age gradient = known age-EEG susceptibility (Purdon/Fritz); ENGAGES minimized suppression directly w/ no delirium benefit → undermines mechanism; no delirium outcome in VitalDB | **KILLED (top tier)** |
+
+**Verdict:** monitor-self-referential co-occurrence, not a discordance between INDEPENDENT instruments (the exact
+difference from C8, where the arterial line is independent of the cuff). Tier ceiling = technical note
+(A&A/BJA/JCMC), not NEJM/JAMA. Predicted win-likelihood was ~0.5 (measurement-reclassification template); actual =
+capped at technical-note → logged. The reusable discriminator: a same-device sub-parameter is not a gold standard.
+
+## EEG top-tier loop — HONEST META-VERDICT (2026-07-10)
+Ran every reachable EEG angle; all capped at two root gates — **(1) no GPU** (frozen CBraMod never beat classical DSP
+on any clinical outcome) and **(2) no external EEG+outcome+2nd-site dataset** (no NEDC/TUH key; VitalDB lacks
+delirium; HEEDB site-confounded & unharmonizable). Angle ceilings: IIC classifier=me-too; IIC→mortality=generic
+severity; seizure-prognosis=ascertainment; BIS occult-suppression=circular/known-physiology; ComBat remover=fails.
+**Reachable EEG win = Anesthesiology/A&A-tier measurement note. Genuine top-tier white space (cross-site foundation-
+model→outcome) is GPU+credential-gated** — exactly as CLAUDE.md's mission line states. Machine action: surface the
+gate; bank the Anesthesiology-tier findings (C8 is submission-ready); do not force a capped finding past the bar.

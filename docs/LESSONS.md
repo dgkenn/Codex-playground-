@@ -1036,3 +1036,49 @@ cross-nationally-validated part.
   site — it is WITHIN-subject / WITHIN-device measurement-reclassification designs (deployed measure vs a ground-truth
   reference from the SAME monitor), which are confound-immune by construction. This test therefore CONFIRMS the pivot
   away from cross-site prediction toward the BIS-occult-suppression class of design.
+
+- **A naive peak-to-peak amplitude threshold is NOT a burst-suppression detector — it conflates low-voltage EEG with
+  isoelectric suppression (raw-EEG confirmation FAILED, 2026-07-10).** To independently confirm BIS occult
+  suppression, tried to detect suppression directly from VitalDB's raw BIS-sensor waveform (EEG1_WAV, 128Hz, µV) via
+  "peak-to-peak <5–15µV over 0.5s = suppressed." Built the validation gate FIRST (detector must reproduce the
+  monitor's own SR): it FAILED — per-case corr(mean monitor SR, raw-detector supp) = **−0.386** (wrong sign); cases
+  with monitor SR≈0% showed raw-detector "suppression" of 15–21%. MECHANISM: a fixed µV peak-to-peak threshold flags
+  any quiet/low-gain stretch (small-amplitude fast activity, high electrode impedance, low montage gain) as
+  suppression; true burst-suppression is near-ISOELECTRIC and the validated SR algorithm is gain/noise-floor
+  normalized. Also range-check fired (raw waveform spanned ±1500µV = artifact-laden). RULE: never claim a home-built
+  physiologic-event detector without validating it against the device's own validated output on easy cases FIRST; if
+  it doesn't reproduce the reference, its downstream numbers are meaningless regardless of how clean they look. For
+  suppression specifically, rest on the monitor's FDA-cleared SR — do not re-derive it from raw voltage with a naive
+  threshold. Consequence for the BIS-occult-suppression finding: it must stand on the monitor's own SR (an internal
+  BIS/SR inconsistency), NOT on a raw-EEG re-derivation — which weakens the "BIS misses real suppression" claim and
+  caps its tier.
+
+- **A measurement-reclassification finding needs an INDEPENDENT gold-standard reference — a reference from the SAME
+  device is fatally circular (BIS occult-suppression KILLED for top tier, 2026-07-10).** Why C8 (cuff-misses-
+  hypotension) WORKED and BIS-occult-suppression did NOT, despite identical template: C8's reference (arterial line)
+  is a truly INDEPENDENT instrument from the deployed measure (cuff). BIS's "reference" (the monitor's SR) comes from
+  the SAME monitor and is algorithmically COUPLED to BIS (BIS blends the burst-suppression ratio into its own output;
+  Rampil 1998), and the two use staggered smoothing epochs (BIS ~15–30s vs SR ~63s). So "BIS 40-60 while SR>0" is
+  expected engineering lag, not clinician-invisible pathology — a monitor-self-referential co-occurrence, not a
+  discordance between independent instruments. Compounding kills (independent sonnet red-team): (a) the age gradient
+  merely re-derives KNOWN age-dependent suppression susceptibility (Purdon, Fritz) — rediscovery, not discovery; (b)
+  SR>0 is a near-zero threshold catching trivial isoelectric blips; (c) my independent raw-EEG confirmation FAILED
+  (r=−0.386, wrong sign) so there is NO orthogonal check; (d) no delirium outcome in VitalDB; (e) ENGAGES (JAMA 2019)
+  minimized suppression DIRECTLY and still found no delirium benefit — which UNDERMINES the proposed mechanism rather
+  than supporting it. Tier ceiling = technical note (A&A/BJA/JCMC: "display SR alongside BIS"), NOT NEJM/JAMA. RULE:
+  before running a measurement-reclassification study, confirm the reference is a physically/algorithmically
+  INDEPENDENT instrument from the deployed measure; a same-device sub-parameter is not a gold standard. This is the
+  single cleanest discriminator between C8 (won) and the EEG depth-monitor ideas (capped).
+
+- **META-CONCLUSION of the EEG top-tier loop (2026-07-10): a NEJM/JAMA/Nature-tier EEG finding is NOT reachable with
+  current compute + data access; the ceiling is gated, and the honest output is to name the gate.** The loop ran
+  every reachable EEG angle and each capped at the same two root gates: (1) NO GPU → frozen foundation models
+  (CBraMod) never cleanly beat 48 classical DSP features on any clinical outcome, so the model can't earn a top-tier
+  claim; (2) NO external dataset with EEG + hard-outcome + a 2nd site → no NEDC key for TUH/TUSZ, VitalDB lacks
+  delirium, HEEDB is site-confounded and harmonization CANNOT remove it (ComBat makes it worse). Angles tried & their
+  ceilings: IIC binary classifier = me-too; IIC→mortality = generic encephalopathy severity (neg-control kill);
+  seizure-prognosis = ascertainment/monitoring-intensity confound; BIS occult-suppression = circular/known-physiology
+  technical-note; ComBat harmonization = fails (site leakage is higher-moment). The reachable EEG win is
+  Anesthesiology/A&A-tier measurement notes. The genuine top-tier white space (first cross-site-validated EEG-
+  foundation-model → clinical-outcome study) remains exactly where CLAUDE.md said it is: GPU-gated + credential-gated.
+  Correct machine behavior = surface the gate to the user, not force a capped finding past the bar.
