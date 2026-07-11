@@ -377,3 +377,9 @@ amplification differentiator is REFUTED (low perfusion does not amplify the over
 the effect, if any, is in SpO2 dropout/quality, unmeasured here). Downgraded per pre-registered gate. Predicted
 win-likelihood ~0.5; actual = replication/no-novel → logged. Reusable: validated eICU co-oximetry reference +
 streaming pairing pipeline for the next SaO2-anchored question.
+
+## Dyshemoglobin decomposition of occult hypoxemia (cached-data scout) — NEGATIVE/underpowered
+Tested whether measured COHb/MetHb drive the pulse-ox over-read and explain the racial gap (join to paired draws,
+no new stream). COHb coef on bias non-monotonic/wrong-sign; COHb dynamic range too low (median 0.8%, p95 2.2% — few
+CO-poisoning cases in general ICU); racial gap in the COHb-measured subset not significant (z=−1.8) so the
+"33% explained" is noise. No clean novel finding. Confirms occult-hypoxemia line is exhausted for a breakthrough.
