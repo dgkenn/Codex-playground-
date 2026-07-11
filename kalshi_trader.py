@@ -37,6 +37,14 @@ from live_metrics import LiveMetrics
 BASE = "https://api.elections.kalshi.com/trade-api/v2"
 WS_URL = "wss://api.elections.kalshi.com/trade-api/ws/v2"
 MICRO_MARGIN = 0.002   # p-adaptive toxicity margin (same constant as live_trader)
+# --- 32-day forward shadow A/B winners (opt-in via --gate as / --size-mode markout; defaults
+# unchanged). Constants copied verbatim from shadow_compare.py so the live path matches exactly
+# what was validated. AS_WINDOW_S: this module only trades KX{asset}15M (900s windows; see
+# discover()'s `ws = int(ct) - 900`), so it is a constant here (shadow_compare derives it from
+# --tenor-min for multi-tenor runs).
+AS_K = 4e-4             # gate=="as": penalty = AS_K * |net_delta| * (tau/AS_WINDOW_S) (GATING.md)
+AS_WINDOW_S = 900.0     # KX*15M window length (s); tau-to-close normalizer for the "as" gate
+MO_K = 150.0            # size-mode=="markout": size *= clamp(1 + MO_K*fav, 0, 2) (MAKEREDGE.md #3)
 
 # --- DECISION-TIME SPOT FEED (Prevention #0: wire `sig` into each fill record) -------------------
 # A daemon thread polls BTC spot so every fill can be stamped with the decision-time spot-move (the
@@ -552,14 +560,31 @@ def kelly_size(p, spread, tau_frac, fee_mult=0.0):
     return min(KELLY_MAX, 1 + int(edge // (2 * KELLY_T)))   # 1, then +1 per 2T of edge, capped
 
 
-def gate_check(side, price, yes_bid, yes_ask, net_delta, gate, fv_margin, bq=0.0, aq=0.0):
+def gate_check(side, price, yes_bid, yes_ask, net_delta, gate, fv_margin, bq=0.0, aq=0.0,
+               tau_left=0.0):
     """True = TOXIC (skip or pull). Mirrors live_trader ufat gate: microprice anchor with
-    p-adaptive margin. BUY-YES toxic if mp < price-margin; BUY-NO toxic if mp > (1-price)+margin."""
+    p-adaptive margin. BUY-YES toxic if mp < price-margin; BUY-NO toxic if mp > (1-price)+margin.
+
+    gate=="as": Avellaneda-Stoikov inventory control (32-day shadow A/B winner, +4.67c/win
+    t=+7.68; ported from shadow_compare.py _gate_one's 'as' branch). ADD-inventory fills (side
+    that grows |net_delta|) must clear a variance penalty that scales with |net_delta| and
+    time-to-close; fills that REDUCE |net_delta| are NEVER gated. tau_left is seconds-to-close
+    (mk['we'] - now); callers that don't pass it (gate != 'as') are unaffected."""
     if yes_bid is None or yes_ask is None:
         return False
     mp = microprice(yes_bid, yes_ask, bq, aq)
     if mp is None:
         return False
+    if gate == "as":
+        d_per = 1.0 if side == "yes" else -1.0   # buy-yes grows net_delta; buy-no shrinks it
+        if net_delta * d_per < 0:
+            return False                          # reduces |net_delta| -> never gate
+        # side=="yes" ~ shadow's BID-on-up (edge = mp - price); side=="no" ~ shadow's ASK-on-up at
+        # the implied yes-equivalent price (edge = yes_equiv - mp), matching gate_check's own
+        # yes/no <-> BID/ASK mapping used by the ufat/marg branches below.
+        edge = (mp - price) if side == "yes" else (round(1.0 - price, 4) - mp)
+        penalty = AS_K * abs(net_delta) * (max(tau_left, 0.0) / AS_WINDOW_S)
+        return edge < penalty
     mid = (yes_bid + yes_ask) / 2.0
     if gate == "ufat":
         margin = fv_margin + MICRO_MARGIN * 4.0 * mid * (1.0 - mid)
@@ -654,10 +679,12 @@ def main():
                          "0 = fee-exempt (CRYPTO15M confirmed live); set 0.0175 on maker-fee "
                          "series -- kelly sizing then auto-tightens selection around p=0.5 "
                          "(backtested OOS-positive under both regimes; kalshi_sizing.py)")
-    ap.add_argument("--size-mode", choices=["flat", "kelly", "depth"], default="flat",
+    ap.add_argument("--size-mode", choices=["flat", "kelly", "depth", "markout"], default="flat",
                     help="kelly = fee-aware edge sizing; depth = DEPTH-PROPORTIONAL (size ~ both-side "
                          "top-5 depth, captures the ~$27/day capacity ceiling on the pair-gated box, "
-                         "IS/OOS-stable); flat = always --post")
+                         "IS/OOS-stable); markout = continuous micro-favorability sizing, 32-day shadow "
+                         "A/B winner (+1.88c/win, t=+5.76; MAKEREDGE.md #3, shadow_compare.py _size "
+                         "'markout' branch, ported verbatim incl. MO_K); flat = always --post")
     ap.add_argument("--depth-size-frac", type=float, default=0.005,
                     help="--size-mode depth: target contracts = frac * min(top-5 both-side depth) "
                          "(capacity study: ~0.005 * depth ~ 165ct at 33k depth was the gross optimum).")
@@ -665,7 +692,12 @@ def main():
                     help="--size-mode depth: hard cap on contracts/leg (also bounded by --max-notional).")
     ap.add_argument("--improve-tick", type=float, default=0.01,
                     help="one tick inside the touch (1c); set 0.001 only if/where the venue accepts sub-cent")
-    ap.add_argument("--gate", choices=["ufat", "micro", "marg"], default="ufat")
+    ap.add_argument("--gate", choices=["ufat", "micro", "marg", "as"], default="ufat",
+                    help="as = Avellaneda-Stoikov inventory control, 32-day shadow A/B winner "
+                         "(+4.67c/win, t=+7.68; GATING.md, shadow_compare.py _gate_one 'as' branch, "
+                         "ported verbatim incl. AS_K): only ADD net inventory when the microprice edge "
+                         "clears a variance penalty scaling with |net_delta| and time-to-close; fills "
+                         "that REDUCE |net_delta| are never gated")
     ap.add_argument("--max-notional", type=float, default=25)
     ap.add_argument("--notify-fills", dest="notify_fills", action="store_true", default=True,
                     help="push each fill to Telegram in real time (on by default; chatty)")
@@ -751,7 +783,7 @@ def main():
     ap.add_argument("--dispose-max-give", type=float, default=0.25,
                     help="give-CAP for the strand cross: complete by crossing ONLY if the lock loss <= "
                          "this ($); if completing would cost MORE, HOLD the bounded leg. Stranded legs "
-                         "settle WORTHLESS ~100% (adversely selected), so completing at any price <$1 "
+                         "settle WORTHLESS ~100%% (adversely selected), so completing at any price <$1 "
                          "beats holding; EV is MONOTONE in the cap (recovery=basis-give). "
                          "COMPLETION-EXEC AUDIT 2026-06-14 (BOX_COMPLETION_EXEC.md): the live loss is "
                          "DEEP over-fill-residual strands that ride NAKED to ~-50c because the old 0.10 cap "
@@ -838,6 +870,29 @@ def main():
     # this. Written per window to kalshi_winrec_<asset>15m.jsonl, reset at rollover.
     winrec = {"taker": 0, "maker": 0, "maxnet": 0.0, "first_ts": {}, "dispose_cross": 0}
     winrec_fh = open(f"kalshi_winrec_{a.asset}15m.jsonl", "a")
+    # LIVE-VS-SHADOW RECONCILIATION (BACKTEST_VS_LIVE.md-style): one row per settled window, named
+    # to match shadow_windows_<asset><tenor>m_r<RUNID>.jsonl so each live window pairs against the
+    # shadow row for the same (asset, tenor, ws) -- realized vs predicted edge and fill-rate. Runs
+    # into gha_data/ so collect.yml's existing commit step sweeps it up like the other data streams.
+    _RUNID = os.environ.get("GITHUB_RUN_ID", "local")
+    _RECON_TENOR = 15   # this module only trades KX{asset}15M (see discover(): ws = we - 900)
+    _RECON_PATH = os.path.join("gha_data", f"live_recon_{a.asset}{_RECON_TENOR}m_r{_RUNID}.jsonl")
+    _STRATEGY_TAG = f"{a.gate}+{a.size_mode}"
+
+    def _recon_write(ws_epoch, requested, fills, net, gross, inv_max):
+        """Append one reconciliation row. Best-effort/non-blocking: any failure here must never
+        affect trading (mirrors the try/except pattern around winrec_fh.write above)."""
+        try:
+            os.makedirs("gha_data", exist_ok=True)
+            with open(_RECON_PATH, "a") as _rf:
+                _rf.write(json.dumps({
+                    "ws": ws_epoch, "asset": a.asset, "tenor": _RECON_TENOR,
+                    "strategy": _STRATEGY_TAG, "fills": int(fills), "requested": int(requested),
+                    "fill_rate": round(fills / requested, 4) if requested else 0.0,
+                    "net": round(net, 4), "gross": round(gross, 4), "inv_max": round(inv_max, 2),
+                }) + "\n")
+        except Exception:
+            pass
     loop_ctx = {}                              # decision-time book state, stamped onto each fill
     threading.Thread(target=_spot_poller, args=(_COINBASE_PRODUCT.get(a.asset, "BTC-USD"),),
                      daemon=True).start()   # sig telemetry (isolated; non-blocking; per-asset spot)
@@ -1368,14 +1423,26 @@ def main():
                     if live:
                         sweep_window_fills(mk["cid"])
                     r_now = resolve_result(sess, mk["cid"])
+                    # snapshot this window's recon telemetry BEFORE it resets below (ops/win_fills/
+                    # winrec all reset a few lines down at rollover)
+                    _recon_requested = ops["place"]
+                    _recon_fills = win_fills["yes"] + win_fills["no"]
+                    _recon_invmax = winrec["maxnet"]
                     if pos or abs(cash) > 1e-9:
                         entry = {
                             "cid": mk["cid"], "ws": mk["ws"],
                             "pos_yes": sum(v for k, v in pos.items() if k.endswith(":YES")),
                             "pos_no":  sum(v for k, v in pos.items() if k.endswith(":NO")),
                             "cash": cash, "r": r_now, "t0": time.time(),
+                            # carried through to the settle block below for _recon_write (fills>0 here)
+                            "recon_requested": _recon_requested, "recon_fills": _recon_fills,
+                            "recon_invmax": _recon_invmax,
                         }
                         pending_settles.append(entry)
+                    else:
+                        # no activity this window (no fills => no cash spent, no position held) ->
+                        # net/gross are trivially $0; write the recon row now (no settlement to await).
+                        _recon_write(mk["ws"], _recon_requested, _recon_fills, 0.0, 0.0, _recon_invmax)
                     lm.window_summary(mk["ws"], realized, window_mark, net_delta)
                     # BOX telemetry: paired yes/no contracts pay $1 at settlement regardless of
                     # outcome -- the locked, risk-free component of this window's book.
@@ -1610,7 +1677,7 @@ def main():
                                           # leg must keep quoting (the tau-guard blocking it WAS the
                                           # directional-loss bug: unpaired legs rode to settlement)
                 # Toxicity gate: skip placing if microprice says this side is adverse
-                if mp is not None and gate_check(side, price, ybb, yba, net_delta, a.gate, 0.0, clean_ybq, clean_yaq):
+                if mp is not None and gate_check(side, price, ybb, yba, net_delta, a.gate, 0.0, clean_ybq, clean_yaq, tau_left=tau_left):
                     continue
                 # HARD DIRECTIONAL INVENTORY CLAMP -> BOX-PAIRING DISCIPLINE. A net position of N
                 # binary contracts risks up to $N held; but the deeper finding (box decomposition,
@@ -1691,9 +1758,29 @@ def main():
                 # AUDIT M1: the inventory clamp above reserved only `post`; cap units so units*post can
                 # NOT breach --max-net in a single fill (else size-mode kelly silently overshoots |net|).
                 _sgn = 1.0 if side == "yes" else -1.0
-                while units > 1 and abs(net_delta + _sgn * units * int(a.post)) > float(a.max_net) + 1e-9:
-                    units -= 1
-                want = units * int(a.post)
+                if a.size_mode == "markout":
+                    # 32-day shadow A/B winner (+1.88c/win, t=+5.76; MAKEREDGE.md #3, ported verbatim
+                    # from shadow_compare.py's _size 'markout' branch, incl. MO_K): scale size
+                    # continuously by micro-favorability -- UP quoting away from the microprice
+                    # (benign), toward 0 when adverse. Same edge sign convention as gate=="as" above.
+                    fav = 0.0 if mp is None else (
+                        (mp - price) if side == "yes" else (round(1.0 - price, 4) - mp))
+                    mo_mult = min(max(1.0 + MO_K * fav, 0.0), 2.0)   # clamp [0, 2x] (shadow-validated)
+                    want = int(round(a.post * mo_mult))
+                    # never bypass the --max-net clamp: shed contracts one at a time (same rule as
+                    # the AUDIT M1 units clamp above, just applied to a continuous want).
+                    while want > 0 and abs(net_delta + _sgn * want) > float(a.max_net) + 1e-9:
+                        want -= 1
+                    # never bypass --max-notional: the C8 check above only reserved a.post; markout can
+                    # size up to 2x --post, so re-check against the ACTUAL want before placing.
+                    if want > 0 and exposure + price * want > a.max_notional:
+                        want = 0
+                    if want <= 0:
+                        continue
+                else:
+                    while units > 1 and abs(net_delta + _sgn * units * int(a.post)) > float(a.max_net) + 1e-9:
+                        units -= 1
+                    want = units * int(a.post)
                 res = place(side, price, ybb, yba, count=want)
                 if res is None:
                     continue
@@ -1760,7 +1847,7 @@ def main():
             for key in list(resting):
                 side, price = key
                 # Toxicity gate: pull if microprice crossed this rung (same ufat logic as live_trader)
-                if mp is not None and gate_check(side, price, ybb, yba, net_delta, a.gate, 0.0, clean_ybq, clean_yaq):
+                if mp is not None and gate_check(side, price, ybb, yba, net_delta, a.gate, 0.0, clean_ybq, clean_yaq, tau_left=tau_left):
                     drop(key, "toxic")
                     continue
                 # Reshape: off-target young rungs (equiv to live_trader's young off-band cancel)
@@ -1917,6 +2004,8 @@ def main():
                         # voided/cancelled market: cash comes back, no P&L
                         realized += 0
                         print(f"  [VOID] ws={en['ws']} market voided; cash returned, no P&L")
+                        _recon_write(en["ws"], en.get("recon_requested", 0), en.get("recon_fills", 0),
+                                    0.0, 0.0, en.get("recon_invmax", 0.0))
                         seen_fills.pop(en["cid"], None)
                     elif r2 is not None and time.time() - en.get("t0", 0) >= 20:
                         # settle: YES pays $1 if r2==1, NO pays $1 if r2==0
@@ -1925,6 +2014,11 @@ def main():
                                + en["pos_no"]  * (1.0 if r2 == 0 else 0.0))
                         realized += pnl
                         print(f"  [SETTLE] ws={en['ws']} r={r2} pnl={pnl:+.4f} realized={realized:+.2f}")
+                        # LIVE-VS-SHADOW reconciliation row (CRYPTO15M maker fee is $0, confirmed on
+                        # every live fill -- gross == net here; kept as separate fields to match the
+                        # shadow schema in case that assumption ever breaks, see the FEE TRIPWIRE above).
+                        _recon_write(en["ws"], en.get("recon_requested", 0), en.get("recon_fills", 0),
+                                    pnl, pnl, en.get("recon_invmax", 0.0))
                         # DURABLE PER-WINDOW AUDIT RECORD (clean failure-audit + backtest dataset).
                         # Captures the settled RESULT (so it's never re-fetched / lost after markets
                         # age out) + the box/unpaired decomposition. Join to kalshi_fees_*.jsonl on
