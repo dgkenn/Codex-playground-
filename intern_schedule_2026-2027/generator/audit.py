@@ -235,6 +235,24 @@ L.append(f"4. **Night-float transition handoffs ({len(HANDOFF)}).** At month/rot
          "departing intern finishes a few nights and the arriving intern continues the block — exactly "
          "as the rules describe (\"a new intern starts night float when the month ends\").")
 L.append("")
+L.append("## Month-end night-float protection (Jan–Mar 2027)")
+L.append("")
+L.append("The march places the final week's night float of January, February, and March on LSH "
+         "slot 2.  Left to a naive roster order, that would have put **Oghenesume (1/31), Li (2/28) "
+         "and Matsuoka (3/28–31)** on night float on the last day(s) of their LSH block — directly "
+         "before each starts at **Lahey** the next morning.  Because slot occupancy is a roster "
+         "decision (not an algorithm rule), the pairs for those three months are ordered so the "
+         "departing-to-Lahey intern holds slot 0 instead:")
+L.append("")
+L.append("| Month-end | Night float (protected schedule) | Why it's safe |")
+L.append("|---|---|---|")
+L.append("| Jan 31 | Zaidi | Continues at LSH in February (also removes the 1/31–2/5 mid-week NF handoff — one intern covers the full week) |")
+L.append("| Feb 28 | Zaidi | Ends his LSH block on NF; next-day rotation must be OPD/elective/vacation (confirm) |")
+L.append("| Mar 28–31 | Kennedy | Covers the month-end block; next-day rotation must be OPD/elective/vacation (confirm) |")
+L.append("")
+L.append("Every hard rule is preserved — the audit above is identical to the unprotected baseline. "
+         "No LSH intern transitions from a night-float shift into a Lahey day one.")
+L.append("")
 L.append("## ACGME duty hours")
 L.append("")
 L.append("| Limit | Status | Measured |")

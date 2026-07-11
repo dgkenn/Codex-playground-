@@ -16,11 +16,17 @@ def d(m,day,y): return date(y,m,day)
 
 # ---------------------------------------------------------------- ROSTER ----
 # LSH: (slot0 person, slot2 person) per calendar month.  Two LSH interns/month.
+# The ORDER of each pair is a real scheduling decision: the march assigns night
+# float by SLOT, and in Jan/Feb/Mar 2027 the final week's night float lands on
+# slot2.  Each of those months, the intern leaving for Lahey on the 1st is
+# placed in slot0 so the month-end night float falls on the intern whose next
+# rotation can absorb it (Zaidi stays at LSH through Feb; Kennedy covers the
+# Mar 28-31 block).  Nobody transitions LSH-night-float -> Lahey-day-one.
 LSH_MONTH = {
  (2026,9):["WISE","LI"],
  (2026,10):["MACNEILLE","BRONSON"], (2026,11):["WISE","KENNEDY"],
- (2026,12):["MACNEILLE","BRONSON"], (2027,1):["ZAIDI","OGHENESUME"],
- (2027,2):["ZAIDI","LI"],           (2027,3):["KENNEDY","MATSUOKA"],
+ (2026,12):["MACNEILLE","BRONSON"], (2027,1):["OGHENESUME","ZAIDI"],
+ (2027,2):["LI","ZAIDI"],           (2027,3):["MATSUOKA","KENNEDY"],
  (2027,4):["ZAIDI","OGHENESUME"],   (2027,5):["LI","BRONSON"],
  (2027,6):["OGHENESUME","MATSUOKA"],
 }

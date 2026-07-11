@@ -29,7 +29,19 @@ Coverage **Oct 1 2026 – Jun 23 2027**, continuing the finalized September. Bui
 1. **Two Saturday 24h doubles — Bronson (Oct), Li (May).** A 5-Saturday calendar month whose repeating middle-intern slot lands on a (stable) LSH intern puts that intern on the 1st and 5th Saturday. Reassigning the 5th would force a different intern into long-call-then-24h or back-to-back long call, breaking the strict Q4 march. The prior rules explicitly allowed "in very rare occasions 2." These are the only two all year.
 2. **June 21–23, 2027 wind-down.** The roster has **no BMC-South intern after 6/20** (Shirin Saeed's block ends), so those last 3 days run with 3 interns instead of 4; with only two daytime interns, long call can't hold a strict 4-day gap on 6/22–6/23. Everything through 6/20 is clean.
 3. **New intern on long call / night float at a rotation start (9 times).** The Q4 march (and Monday night-float starts, per the rules) sometimes place an arriving BMC/Lahey intern on long call or night float on their first Monday. The comprehensive rules permit this; the earlier email preferred avoiding it "when possible." Days: Mon 11/23 SHETTY (BMC); Mon 12/21 FARZEELA (BMC); Mon 2/15 VILLANUEVA (BMC); Mon 3/15 BUTT (BMC); Mon 3/22 ALMADHOOB (LAHEY); Mon 4/19 AHLUWALIA-S (LAHEY); Mon 5/10 METRI (BMC); Mon 5/17 SANCHEZ-ALMANZAR (LAHEY); Mon 6/14 PATEL (LAHEY).
-4. **Night-float transition handoffs (7).** At month/rotation boundaries a departing intern finishes a few nights and the arriving intern continues the block — exactly as the rules describe ("a new intern starts night float when the month ends").
+4. **Night-float transition handoffs (6).** At month/rotation boundaries a departing intern finishes a few nights and the arriving intern continues the block — exactly as the rules describe ("a new intern starts night float when the month ends").
+
+## Month-end night-float protection (Jan–Mar 2027)
+
+The march places the final week's night float of January, February, and March on LSH slot 2.  Left to a naive roster order, that would have put **Oghenesume (1/31), Li (2/28) and Matsuoka (3/28–31)** on night float on the last day(s) of their LSH block — directly before each starts at **Lahey** the next morning.  Because slot occupancy is a roster decision (not an algorithm rule), the pairs for those three months are ordered so the departing-to-Lahey intern holds slot 0 instead:
+
+| Month-end | Night float (protected schedule) | Why it's safe |
+|---|---|---|
+| Jan 31 | Zaidi | Continues at LSH in February (also removes the 1/31–2/5 mid-week NF handoff — one intern covers the full week) |
+| Feb 28 | Zaidi | Ends his LSH block on NF; next-day rotation must be OPD/elective/vacation (confirm) |
+| Mar 28–31 | Kennedy | Covers the month-end block; next-day rotation must be OPD/elective/vacation (confirm) |
+
+Every hard rule is preserved — the audit above is identical to the unprotected baseline. No LSH intern transitions from a night-float shift into a Lahey day one.
 
 ## ACGME duty hours
 
