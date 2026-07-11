@@ -1,0 +1,65 @@
+# Kalshi VENUE-WIDE MM-opportunity scan -- daily sweep of every open Kalshi market (not just
+# BTC/ETH 15m) looking for other niches with the maker_box engine's opportunity shape: wide
+# spread x real volume x thin depth (see market_scanner.py's docstring + VENUE_SCAN.md for the
+# first scan's findings). READ-ONLY public Kalshi REST, no auth, NO money -- pure research scan.
+# State (per-day venue_scan_<date>.jsonl.gz) persists on the gha-data branch.  GitHub fires
+# schedule only from the DEFAULT branch (main); this file lives on main, checks out CODE from
+# $BRANCH (vw7ut5), commits DATA to gha-data.
+# Pull results:  git fetch origin gha-data && git checkout origin/gha-data -- gha_data/venue_scan_
+name: venue-scan
+
+on:
+  schedule:
+    - cron: '23 11 * * *'      # 11:23 UTC daily -- one whole-venue sweep a day is plenty
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: venue-scan
+  cancel-in-progress: false
+
+env:
+  BRANCH: claude/polymarket-bot-live-ready-vw7ut5
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.BRANCH }}
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: install deps
+        run: pip install --disable-pip-version-check -q requests
+      - name: run venue scan + commit to gha-data
+        if: always()
+        run: |
+          set -e
+          git config user.name  "venue-scan-bot"
+          git config user.email "venue-scan-bot@users.noreply.github.com"
+          if git fetch --depth=1 origin gha-data 2>/dev/null; then
+            git worktree add --detach /tmp/dw origin/gha-data
+            cd /tmp/dw && git checkout -B gha-data
+          else
+            git worktree add --detach /tmp/dw HEAD
+            cd /tmp/dw && git checkout --orphan gha-data && git rm -rf --cached . >/dev/null 2>&1 || true
+            find /tmp/dw -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          fi
+          mkdir -p /tmp/dw/gha_data
+          cd "$GITHUB_WORKSPACE"
+          python market_scanner.py /tmp/dw/gha_data || true
+          cd /tmp/dw
+          git add gha_data/venue_scan_*.jsonl.gz
+          git commit -m "venue-scan $(date -u +%FT%HZ)" || { echo "nothing to commit"; exit 0; }
+          for i in 1 2 3 4 5; do
+            git push origin HEAD:gha-data && exit 0
+            git fetch --depth=1 origin gha-data && git rebase origin/gha-data || true
+            sleep $((RANDOM % 6 + 2))
+          done
+          echo "push failed after retries" >&2; exit 1
