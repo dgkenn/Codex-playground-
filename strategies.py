@@ -81,16 +81,20 @@ REGISTRY: list[Strat] = [
           note="ablation: markout size + loose leash, NO gate (is the AS gate additive?)"),
     Strat("skew99", skew=0.99,
           note="ablation: loose leash alone (how much of av_stoikov is just skew 0.99?)"),
+    Strat("as_cap100", cap=100, skew=0.99, gate="as",
+          note="capacity probe: winner config at 2x inventory cap -- does the edge survive the "
+               "inventory needed to scale size? (cap was only ever tested DOWN; cap25 lost -7.86t)"),
 
-    # -- WATCH (not decisive either way) --
-    Strat("fv_size", size_mode="fv",
-          note="fair-value-weighted size | 32d: -0.36/win t=-1.61 11/32 days+ (not decisive; on watch)"),
+    # -- WATCH (operational purpose) --
     Strat("micro_gate", gate="micro",
           note="microprice toxicity gate -- WAS 'THE deployed edge (+4.8/win)' | 32d: Delta=+0.000 on "
                "EVERY day -- the gate never fires on this venue = the deployed strategy is a NO-OP. "
                "Kept enabled as the deployed-twin decay watch; deployment should move to the winner"),
 
     # -- PRUNED by the 32d forward verdict (month t <= -3, n=32 = decisive; defs kept for record) --
+    Strat("fv_size", size_mode="fv", enabled=False,
+          note="fair-value-weighted size | PRUNED 32d: -0.36/win t=-1.61 11/32 days+ -- not decisive "
+               "but negative after a full month and dominated by markout sizing; slot -> as_cap100"),
     Strat("cap25", cap=25, enabled=False,
           note="tighter inventory cap | PRUNED 32d: -2.87/win t=-7.86 2/32 days+"),
     Strat("skew15", skew=0.15, enabled=False,

@@ -91,3 +91,17 @@ next iteration tunes the right parameter (AS_K, MO_K) instead of breeding more g
 3. **Next 2 weeks:** regime tagging (#5) while `as_markout` accumulates its ≥14 days.
 4. **On promotion:** fill-realism reconciliation (#6), then move the deployment off
    `micro_gate` to the winner.
+
+---
+## Status (2026-07-11)
+
+- **DONE — roster deployed**: updated `strategies.py` pushed to the live collector branch
+  (`claude/polymarket-bot-live-ready-vw7ut5`, the branch `collect.yml` actually checks out).
+  Live arms (8): baseline, av_stoikov, mo_size, as_markout, mo_skew99, skew99, as_cap100,
+  micro_gate (decay watch). New forward windows accumulate from the next collect cycle.
+- **Brainstorm verdicts**: ADDED `as_cap100` (capacity probe — cap was only ever tested down;
+  scaling real money needs the up direction). PRUNED `fv_size` (negative after a full month,
+  dominated by markout sizing). NOT adding more gates (0-for-19), tighter inventory (all
+  decisively negative), or BTC-lag arms (all negative).
+- **IN PROGRESS (delegated)**: day-clustered stats + micro_gate decay alert in
+  `aggregate_shadow.py`; empty-payload content checks in `health_check.py` — same branch.
