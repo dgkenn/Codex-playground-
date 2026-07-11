@@ -64,8 +64,11 @@ KNOWN_GATES = {
     "ufat_band",
     # composite (_gated)
     "micro_spot", "gross_max", "graded",
+    # TIER-1/2 mechanism-prior arms (build on the two live winners: full A-S reservation pricing,
+    # A-S optimal spread, queue depth, cross-asset netting -- see shadow_compare.py Variant._gate_one)
+    "as_resv", "as_spread", "queue_gate", "xnet",
 }
-KNOWN_SIZE_MODES = {"flat", "fv", "markout"}
+KNOWN_SIZE_MODES = {"flat", "fv", "markout", "late_boost", "vol_size"}
 
 
 # The roster. Order here = order in the leaderboard's variant set (cosmetic only).
@@ -113,6 +116,38 @@ REGISTRY: list[Strat] = [
           note="MO_K sweep: half the markout-size favorability slope (mo_size config, flatter sizing curve)"),
     Strat("mo_k_2x", size_mode="markout", mo_k=_MO_K_BASE * 2.0,
           note="MO_K sweep: double the markout-size favorability slope (mo_size config, steeper sizing curve)"),
+
+    # -- TIER-1/2 candidates (mechanism-prior arms building on the two winners: full A-S reservation
+    #    pricing, A-S optimal spread, queue depth, late-window sizing, vol-inverse sizing, cross-asset
+    #    netting -- see shadow_compare.py Variant._gate_one / ._size for each mechanism).
+    #    PRE-REGISTERED promotion bar (declared BEFORE any data): >=14 forward days, day-clustered
+    #    t>=3, gross-positive >=80% of days, mean edge >= max(av_stoikov, mo_size) same-days.
+    Strat("as_resv", skew=0.99, gate="as_resv",
+          note="FULL A-S reservation price: SIGNED/continuous inventory penalty (de-risking fills get "
+               "a BONUS, not just a bypass like `as`) -- the pricing half of the model whose gating "
+               "half already won (av_stoikov); highest prior of the six new arms"),
+    Strat("as_spread", skew=0.99, gate="as_spread",
+          note="A-S optimal half-spread gate: quote only if edge >= 0.5*gamma*sigma^2*tau using the "
+               "regime accumulator's LIVE running mid_vol (fallback: pass-through pre-vol-data) -- a "
+               "vol-adaptive mechanism distinct from `as`'s inventory-based penalty"),
+    Strat("queue_gate", skew=0.99, gate="queue_gate",
+          note="skip INVENTORY-ADDING fills when resting size ahead of us >= Q_MAX=500 (documented: "
+               "back-of-queue fills at depth>=500 are toxic); de-risking fills always welcome"),
+    Strat("late_boost", size_mode="late_boost",
+          note="1.5x flat size when tau<120s else 1.0x -- inverse of the falsified late_gate (late "
+               "flow proved NOT informed here, so size UP into it instead of pulling); standalone "
+               "flat sizing, not composed with markout, to isolate the tau effect"),
+    Strat("vol_size", size_mode="vol_size",
+          note="size *= clamp(TARGET_VOL/mid_vol, 0.5, 2.0) using the regime accumulator's LIVE "
+               "running mid_vol (fallback 1.0x pre-vol-data) -- calmer-than-normal regime sizes up, "
+               "vol-burst regime sizes down"),
+    Strat("xnet", skew=0.99, gate="xnet",
+          note="cross-asset portfolio netting: gates on the SUM of this asset's + sibling live "
+               "assets'/tenors' delta (published via small per-market files in the shared --out-dir), "
+               "same AS penalty formula as `as`. LIMITATION: each asset x tenor runs as a SEPARATE OS "
+               "process (multi_market.py subprocess-per-market) with no shared Python memory -- this "
+               "is a polling-based filesystem approximation (staleness <=XNET_STALE_S=30s), degrading "
+               "to exactly the `as` gate if the shared dir/files are unavailable"),
 
     # -- WATCH (operational purpose) --
     Strat("micro_gate", gate="micro",

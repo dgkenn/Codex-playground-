@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import glob
 import gzip
 import json
 import os
@@ -103,6 +104,32 @@ SIGMA_REF = 5e-4
 # ~0/negative at the extremes -> band_p/graded variants skip quoting outside [BAND_LO, BAND_HI].
 BAND_LO = 0.20
 BAND_HI = 0.80
+
+# --- TIER-1/2 mechanism-prior arms (six new arms; see strategies.py "TIER-1/2 candidates" block) ---
+# as_spread / vol_size: A-S textbook risk-aversion coefficient. No calibration data exists yet for the
+# just-added regime accumulator (mid_vol etc.) -- textbook baseline gamma=1 is the starting point; the
+# live A/B will show if it needs recalibration, same as every other module constant here started
+# uncalibrated (AS_K itself was a first-cut before being validated).
+AS_GAMMA = 1.0
+# vol_size: reference mid-vol level, in the SAME units _regime_snapshot's mid_vol reports (stdev of
+# ~1s mid-price increments). Derivation: anchor to the one already-calibrated unit in this module --
+# TICK_SIZE (nominal min quote increment, 0.001) -- and define "normal" vol as ~2 ticks/sec of mid
+# stdev. current_vol < TARGET_VOL => calmer than normal (size UP, safe to take more rebate volume);
+# current_vol > TARGET_VOL => size DOWN (protect capital in the burst).
+TARGET_VOL = 2 * TICK_SIZE
+# queue_gate: resting size ahead of us at our own price, above which a fill is "back-of-queue" and
+# toxic. From the documented finding (strategies.py KALSHI GEARING note): "queue replay shows
+# back-of-queue fills are toxic at depth (q>=500 -> negative)".
+Q_MAX = 500.0
+# late_boost: mirrors the (falsified) late_gate's threshold, but flips the lever from a PULL to a
+# SIZE-UP -- late_gate proved late flow is NOT informed on this venue (32d: -1.27/win, pruned), so the
+# adverse-selection story that justified pulling quotes late is refuted; if late flow isn't toxic,
+# sizing up into it (more rebate volume, same fill probability) may be pure upside.
+LATE_BOOST_TAU_S = 120.0
+LATE_BOOST_MULT = 1.5
+# xnet: staleness bound (s) for a sibling asset/tenor process's published delta -- see
+# Variant._xnet_portfolio_delta for the cross-process architecture note.
+XNET_STALE_S = 30.0
 
 
 def heartbeat(tag, out_dir, cum, status="running"):
@@ -264,8 +291,10 @@ class Variant:
         p = fair_up(s["st"], s["s0"], SIGMA, tau)
         return p if self.is_up(token) else (1.0 - p)
 
-    def _gated(self, token, our_side, price):
-        """Return True to SKIP the fill (pull the quote) per this variant's gate."""
+    def _gated(self, token, our_side, price, ahead=None):
+        """Return True to SKIP the fill (pull the quote) per this variant's gate. `ahead` (resting
+        size ahead of us at our own price, pre-consumption) is optional context used only by
+        queue_gate; every other gate ignores it, so passing/not-passing it is byte-identical for them."""
         if self.tau_guard and (self.mk["we"] - time.time()) < self.tau_guard:
             return True               # late-window pull: last-2min sells were the most adverse
         if self.gate == "micro_spot":  # cause+symptom: pull if EITHER book-imbalance OR BTC-lag flags
@@ -280,7 +309,7 @@ class Variant:
             return (self._gate_one("band", token, our_side, price)
                     or self._gate_one("micro", token, our_side, price)
                     or self._gate_one("spot", token, our_side, price))
-        return self._gate_one(self.gate, token, our_side, price)
+        return self._gate_one(self.gate, token, our_side, price, ahead)
 
     def _realized_vol(self):
         """Short-horizon BTC realized vol over VOL_LAG_S, as a fraction of spot (std of spot in the
@@ -296,7 +325,7 @@ class Variant:
         sd = (sum((x - m) ** 2 for x in xs) / (len(xs) - 1)) ** 0.5
         return sd / m
 
-    def _gate_one(self, g, token, our_side, price):
+    def _gate_one(self, g, token, our_side, price, ahead=None):
         if g == "band":
             # MAKERS.md (A3): maker markout-to-resolution is best at P(Up) ~0.3-0.8 (+1.1..+2.3c/sh) and
             # ~0/negative at the extremes (<=0.1c: -0.5c; >=0.9: ~0). Skip quoting the deep ITM/OTM tails.
@@ -459,6 +488,73 @@ class Variant:
             as_k = self.as_k if self.as_k is not None else AS_K   # sweep override (None = module const)
             penalty = as_k * abs(self.delta) * (tau / WINDOW_S)
             return edge < penalty
+        if g == "as_resv":
+            # FULL Avellaneda-Stoikov reservation-price gate -- the PRICING half of the model whose
+            # GATING half already won live as `as`/av_stoikov (highest prior of the six new arms). `as`
+            # is a one-sided approximation: it completely BYPASSES the penalty (edge>=0 always ok)
+            # whenever a fill reduces |inventory|. The true A-S reservation price r = mid -
+            # q*gamma*sigma^2*(T-t) shifts CONTINUOUSLY and SIGNED with inventory q: de-risking fills
+            # don't just skip the penalty, they get a BONUS (the required edge can go negative, so we
+            # still fill even at a small adverse edge, because closing inventory is itself valuable).
+            cur = self.tob[token]; mp = micro(cur[0], cur[1], cur[2], cur[3])
+            if mp is None:
+                return False
+            is_up = self.is_up(token)
+            d_per = -1.0 if (is_up == (our_side == "ASK")) else 1.0
+            edge = (price - mp) if our_side == "ASK" else (mp - price)
+            tau = max(self.mk["we"] - time.time(), 0.0)
+            as_k = self.as_k if self.as_k is not None else AS_K
+            signed_req = as_k * (self.delta * d_per) * (tau / WINDOW_S)   # >0 adds inv (penalty); <0 reduces (bonus)
+            return edge < signed_req
+        if g == "as_spread":
+            # A-S OPTIMAL SPREAD gate -- distinct mechanism from `as`/`as_resv` (inventory-based): only
+            # quote when the edge available at the touch clears the textbook A-S half-spread delta* ~
+            # 0.5*gamma*sigma^2*tau (inventory/impact terms dropped per spec -- this is the VOL-ADAPTIVE
+            # half). sigma = the regime accumulator's LIVE running mid_vol (stdev of ~1s mid
+            # increments); Brownian-scaled to tau via var(tau) ~= mid_vol^2 * tau (unit step ~1s).
+            # FALLBACK: pass-through (never gate) when vol data is absent -- a newly-opened window has
+            # <2 samples and no history to demand a spread against, so early-window behavior degrades
+            # to baseline instead of quoting nothing.
+            reg = self.mk.get("_regime")
+            mid_vol = (reg["mid_ssq"] / reg["mid_n"]) ** 0.5 if reg and reg.get("mid_n", 0) > 0 else None
+            if mid_vol is None:
+                return False
+            cur = self.tob[token]; mp = micro(cur[0], cur[1], cur[2], cur[3])
+            if mp is None:
+                return False
+            edge = (price - mp) if our_side == "ASK" else (mp - price)
+            tau = max(self.mk["we"] - time.time(), 0.0)
+            half_spread = 0.5 * AS_GAMMA * (mid_vol ** 2) * tau
+            return edge < half_spread
+        if g == "queue_gate":
+            # skip INVENTORY-ADDING fills when the resting size ahead of us at our own price is at/above
+            # Q_MAX (documented: back-of-queue fills at depth>=500 are toxic). De-risking fills always
+            # welcome (same carve-out as `as`). `ahead` is threaded from on_trade's queue lookup -- if
+            # unavailable (defensive default) pass through rather than silently gate everything.
+            if ahead is None:
+                return False
+            is_up = self.is_up(token)
+            d_per = -1.0 if (is_up == (our_side == "ASK")) else 1.0
+            if self.delta * d_per < 0:            # reduces |inventory| -> never gate
+                return False
+            return ahead >= Q_MAX
+        if g == "xnet":
+            # CROSS-ASSET portfolio netting: same AS penalty formula as `as`, but on the PORTFOLIO net
+            # delta (this asset's + sibling assets'/tenors' delta) instead of just this market's delta.
+            # See Variant._xnet_portfolio_delta for the investigated architecture and its limitation.
+            cur = self.tob[token]; mp = micro(cur[0], cur[1], cur[2], cur[3])
+            if mp is None:
+                return False
+            is_up = self.is_up(token)
+            d_per = -1.0 if (is_up == (our_side == "ASK")) else 1.0
+            port_delta = self._xnet_portfolio_delta()
+            if port_delta * d_per < 0:             # reduces PORTFOLIO |inventory| -> never gate
+                return False
+            edge = (price - mp) if our_side == "ASK" else (mp - price)
+            tau = max(self.mk["we"] - time.time(), 0.0)
+            as_k = self.as_k if self.as_k is not None else AS_K
+            penalty = as_k * abs(port_delta) * (tau / WINDOW_S)
+            return edge < penalty
         # --- gate_lab.py winners (validated on 56k fills; see GATING.md) ---
         if g == "micro_strict":
             # require the micro edge in OUR favor by STRICT_MARGIN (deployed micro@0 keeps mildly-adverse
@@ -525,6 +621,58 @@ class Variant:
             return (pred + fees.maker_rebate(price, rate=REBATE)) <= 0.0  # drop iff predicted NET <= 0
         return False
 
+    def _xnet_publish(self):
+        """Write THIS process's current delta to a small per-market file in the shared --out-dir, so
+        sibling asset/tenor processes (separate OS processes -- see _xnet_portfolio_delta) can read it.
+        Cheap (only called from the xnet gate's fill-decision path) and best-effort: a write failure
+        just means this tick's publish is skipped, never fatal to the run."""
+        d = self.shared.get("xnet_glob_dir"); key = self.shared.get("xnet_key")
+        if not d or not key:
+            return
+        try:
+            path = os.path.join(d, f"_xnet_{key}.json")
+            tmp = path + f".tmp{os.getpid()}"
+            with open(tmp, "w") as fh:
+                json.dump({"delta": self.delta, "ts": time.time()}, fh)
+            os.replace(tmp, path)             # atomic on POSIX -- readers never see a half-written file
+        except Exception:
+            pass
+
+    def _xnet_portfolio_delta(self):
+        """Cross-asset portfolio delta for the `xnet` gate.
+
+        INVESTIGATED: multi_market.py launches one `subprocess.Popen` PER (asset, tenor) market --
+        each shadow_compare.py process owns its own Python heap, its own per-window `shared` dict, and
+        its own Variant instances. There is no shared-memory Variant set across assets to sum a true
+        portfolio delta from in-process.
+
+        ARCHITECTURE LIMITATION / best per-process approximation: publish our own delta to a small file
+        in the shared --out-dir (see _xnet_publish, keyed by f"{asset}{tenor_min}") and sum the
+        freshest (<=XNET_STALE_S old) delta from every sibling market's file. This is a polling-based,
+        eventually-consistent approximation -- NOT a true synchronous portfolio delta -- but it is
+        correct to within XNET_STALE_S staleness, and requires no new IPC beyond the shared out_dir
+        multi_market.py already gives every market. Degrades to EXACTLY this asset's own delta (i.e.
+        byte-identical to the `as` gate's input) if the shared dir is unset, unreadable, or no sibling
+        files exist yet -- e.g. a lone-asset/offline run."""
+        d = self.shared.get("xnet_glob_dir")
+        if not d:
+            return self.delta
+        self._xnet_publish()
+        now = time.time()
+        total = 0.0; found = False
+        try:
+            for fp in glob.glob(os.path.join(d, "_xnet_*.json")):
+                try:
+                    with open(fp) as fh:
+                        rec = json.load(fh)
+                    if now - rec.get("ts", 0) <= XNET_STALE_S:
+                        total += float(rec.get("delta", 0.0)); found = True
+                except Exception:
+                    continue
+        except Exception:
+            return self.delta
+        return total if found else self.delta
+
     def _size(self, token, our_side, price):
         if self.size_mode == "markout":
             # MAKEREDGE.md #3: scale size by micro-favorability (continuous micro_gate). Size UP when
@@ -536,6 +684,23 @@ class Variant:
             fav = (price - mp) if our_side == "ASK" else (mp - price)   # >0 = favorable (vs microprice)
             mo_k = self.mo_k if self.mo_k is not None else MO_K   # sweep override (None = module const)
             return self.post * min(max(1.0 + mo_k * fav, 0.0), 2.0)
+        if self.size_mode == "late_boost":
+            # mirrors the (falsified) late_gate's threshold, but flips PULL -> SIZE-UP: late_gate
+            # proved late flow is NOT informed on this venue (32d: pruned), so size up into it for
+            # extra rebate volume instead of pulling. Deliberately FLAT-based (not composed with the
+            # markout continuous formula) to isolate the tau effect in the live A/B.
+            tau = max(self.mk["we"] - time.time(), 0.0)
+            return self.post * (LATE_BOOST_MULT if tau < LATE_BOOST_TAU_S else 1.0)
+        if self.size_mode == "vol_size":
+            # size inversely proportional to current realized vol (steer size, not the gate, by the
+            # regime accumulator's LIVE running mid_vol): calmer-than-TARGET_VOL -> size up (safe to
+            # take more rebate volume); hotter -> size down. Fallback 1.0x (flat) pre-vol-data.
+            reg = self.mk.get("_regime")
+            mid_vol = (reg["mid_ssq"] / reg["mid_n"]) ** 0.5 if reg and reg.get("mid_n", 0) > 0 else None
+            if not mid_vol:
+                return self.post
+            mult = min(max(TARGET_VOL / mid_vol, 0.5), 2.0)
+            return self.post * mult
         if self.size_mode != "fv":
             return self.post
         ft = self.fair_tok(token)
@@ -656,7 +821,7 @@ class Variant:
         fill = min(passthrough, want)
         # asymmetric leash: tighter threshold when this fill BUILDS short (d_per<0), looser when long
         lim = (self.short_skew if d_per < 0 else self.skew) * self.cap
-        if self._gated(token, our_side, price):
+        if self._gated(token, our_side, price, ahead):
             reason, fill = "gated", 0.0
         elif abs(self.delta) >= lim and (self.delta * d_per) > 0:
             reason, fill = "skew_block", 0.0
@@ -1070,6 +1235,11 @@ async def run(args):
             await asyncio.sleep(5); continue
         mk["_regime"] = _new_regime_acc()   # REGIME FIELDS: one accumulator, lives for this window's mk object
         shared = {"st": None, "s0": None}
+        # xnet gate: shared --out-dir (same dir multi_market.py points every sibling asset/tenor
+        # process at) + a key unique per market -> the cross-process delta-publish approximation
+        # (see Variant._xnet_portfolio_delta). Harmless/no-op for every other gate.
+        shared["xnet_glob_dir"] = args.out_dir
+        shared["xnet_key"] = f"{args.asset}{args.tenor_min}"
         rest = fv.update()                              # keeps the REST tape alive (sigma/fallback)
         sp = live["px"] if live["px"] is not None else rest   # prefer the high-res WS price
         if sp and time.time() - mk["ws"] <= 60:        # only anchor S0 on a fresh window
