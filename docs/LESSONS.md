@@ -1099,3 +1099,20 @@ cross-nationally-validated part.
   classification under balanced/matched designs (a positive, but a me-too task: CBraMod 0.75 ≈ classical 0.74).
   Net: the salvageable methods nugget shrinks to "ComBat is counterproductive AND unnecessary when class is balanced
   across sites" — a modest technical note, not Nature-tier.
+
+- **eICU has a VALID measured co-oximetry SaO2 gold standard (VitalDB & INSPIRE do NOT) — occult-hypoxemia is
+  reachable, and the reference-validity gate is a 5-min pH-correction test (2026-07-11).** Before building any
+  pulse-ox occult-hypoxemia (SpO2 over-reads SaO2) study, GATE the SaO2 reference: is it MEASURED co-oximetry or
+  CALCULATED from paO2? Decisive test = residual of SaO2 vs a pH/Bohr-corrected Severinghaus curve; if pH-correction
+  collapses the SD toward ~0, SaO2 is a deterministic formula of (paO2,pH) = CALCULATED = INVALID reference.
+  Results: **VitalDB `sao2` SD 1.68→0.31 after pH-correction = CALCULATED (INVALID, same failure as INSPIRE's
+  gapped/calculated sao2).** **eICU `O2 Sat (%)` SD 2.50→2.03 = stays large = MEASURED co-oximetry (VALID).** Two
+  corroborating tells for eICU: (a) measured Carboxyhemoglobin (n≈90k, med 1.0%) + Methemoglobin (n≈90k, med 0.4%)
+  are present — these require a co-oximeter, so O2Sat is co-oximetry; (b) 735 distinct O2Sat values at 0.1 resolution
+  + the occult-hypoxemia zone (SaO2 80–92%) fully populated (~31k readings) with NO gap (INSPIRE had a fatal 88–92
+  gap). IMPLICATION: the occult-hypoxemia breakthrough (pulse-ox over-reads true SaO2 in low-perfusion states & by
+  race; a unified noninvasive-monitoring failure with the C8 cuff-BP finding) is REACHABLE in eICU (measured SaO2 +
+  race/ethnicity + vasopressors + mortality, all cached) and should be validated in MIMIC-IV as the 2nd site. RULE:
+  apply this pH-correction gate to EVERY new SaO2 source before use — it has now decided 3 cohorts (INSPIRE ✗,
+  VitalDB ✗, eICU ✓) cheaply. Note: local eICU lab.csv.gz is a partial download (gzip EOF) but still yields ~253k
+  paired blood-gas draws — re-pull full file before the definitive run.
