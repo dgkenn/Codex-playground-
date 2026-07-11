@@ -879,6 +879,44 @@ def main():
     _RECON_PATH = os.path.join("gha_data", f"live_recon_{a.asset}{_RECON_TENOR}m_r{_RUNID}.jsonl")
     _STRATEGY_TAG = f"{a.gate}+{a.size_mode}"
 
+    # ORDER-LIFECYCLE LOG (queue/fill-model calibration -- the last unverified assumption
+    # between shadow edge and real money). One row per place/fill/partial/cancel/reject/expire
+    # event, keyed by order_id, with queue_ahead_est = the size resting at that price level
+    # (on the side we're joining) at the moment we placed -- the actual queue-position proxy
+    # the fill model needs. Named like live_recon_*/shadow_windows_* so collect.yml's existing
+    # gha_data commit step sweeps it up automatically. Best-effort/non-blocking throughout
+    # (same try/except pattern as _recon_write): logging must never affect trading.
+    _LIFECYCLE_PATH = os.path.join("gha_data", f"order_lifecycle_{a.asset}15m_r{_RUNID}.jsonl")
+
+    def _lifecycle_write(event, order_id, side, price, size, queue_ahead_est):
+        try:
+            os.makedirs("gha_data", exist_ok=True)
+            with open(_LIFECYCLE_PATH, "a") as _lf:
+                _lf.write(json.dumps({
+                    "ts": time.time(), "event": event, "order_id": order_id, "side": side,
+                    "price": round(price, 4) if price is not None else None,
+                    "size": size, "queue_ahead_est": queue_ahead_est,
+                }) + "\n")
+        except Exception:
+            pass
+
+    def _queue_ahead_est(side, price):
+        """Size resting at `price` on `side` (yes/no book) at the instant we're about to join it,
+        i.e. the WS book level BEFORE our own order lands there -- the queue-position proxy this
+        log exists to calibrate. Falls back to None if the WS book isn't populated for this
+        ticker/price (e.g. DRY-RUN with no live feed, or a level with no resting size)."""
+        try:
+            if mk is None:
+                return None
+            st = ws_state.get(mk["cid"])
+            if not st:
+                return None
+            book_side = st.get(side) or {}
+            v = book_side.get(round(price, 4))
+            return round(v, 4) if v is not None else 0.0
+        except Exception:
+            return None
+
     def _recon_write(ws_epoch, requested, fills, net, gross, inv_max):
         """Append one reconciliation row. Best-effort/non-blocking: any failure here must never
         affect trading (mirrors the try/except pattern around winrec_fh.write above)."""
@@ -986,11 +1024,14 @@ def main():
         t_sent = time.time()
         ok = True
         for oid, key, reason in batch:
+            _meta = pending_cancel.get(key) or {}
+            _rem = max(_meta.get("want", a.post) - _meta.get("filled", 0.0), 0.0)
             if live:
                 ok2 = cancel_order(sess, priv, oid)
                 ops["cancel"] += 1
                 if ok2:
                     pending_cancel.pop(key, None)        # venue-confirmed gone -> stop counting it
+                    _lifecycle_write("cancel", oid, key[0], key[1], _rem, _meta.get("qahead"))
                 else:
                     ops["cancel_fail"] += 1
                     lm.event("cancel_fail", side=key[0], price=key[1], reason=reason)
@@ -1000,6 +1041,7 @@ def main():
             else:
                 print(f"  [DRY cancel] key={key} reason={reason}")
                 pending_cancel.pop(key, None)
+                _lifecycle_write("cancel", oid, key[0], key[1], _rem, _meta.get("qahead"))
         lm.cancel_batch(len(batch), (time.time() - t_sent) * 1e3, ok)
 
     def cancel_all_resting(reason="rollover"):
@@ -1116,9 +1158,12 @@ def main():
                     print(f"  [POST-ONLY GUARD] BUY-NO {price} >= no_ask {no_ask}; skipped")
                     return None
         t_dec = time.time()
+        _sz = count or int(a.post)
+        _qahead = _queue_ahead_est(side, price)   # snapshot BEFORE the order lands (queue-ahead proxy)
         if not live:
             fake = f"dry_{side}_{price:.4f}_{int(t_dec*1000)%100000}"
             print(f"  [DRY {'CROSS-COMPLETE' if cross else 'place'}] BUY-{side.upper()} {count or int(a.post)} @ {price:.4f}")
+            _lifecycle_write("place", fake, side, price, _sz, _qahead)
             return fake, t_dec, time.time()
         oid, sc_, err_ = place_order(sess, priv, mk["cid"], side, price, count or int(a.post),
                                      ttl_s=(a.order_ttl_s or None), post_only=not cross)
@@ -1126,10 +1171,12 @@ def main():
         if oid is None:
             lm.place_reject(side, price, f"HTTP {sc_}: {err_}")
             reject_cd[(side, round(price, 4))] = time.time() + a.reject_cooldown_s
+            _lifecycle_write("reject", None, side, price, _sz, _qahead)
             return None
         placed_oids.add(oid)
         ops["place"] += 1
         lm.place_ack(side, price, False, (t_ack - t_dec) * 1e3)
+        _lifecycle_write("place", oid, side, price, _sz, _qahead)
         return oid, t_dec, t_ack
 
     # --- book: WS cache (primary) + REST cache (fallback) ---
@@ -1207,11 +1254,20 @@ def main():
                 pending_cancel.pop(key, None)            # raced cancel resolved as a fill
         meta = resting.get(key)
         resting_s = (time.time() - meta["ts"]) if meta else None
+        fid = str(f.get("trade_id") or f.get("fill_id") or "")
+        _lifecycle_oid = (meta or {}).get("oid", fid)
+        _lifecycle_qahead = (meta or {}).get("qahead")
         if meta:
             meta["filled"] = meta.get("filled", 0.0) + count
-            if meta["filled"] >= meta.get("want", a.post) - 1e-9:   # AUDIT M5: per-order size, not global post
+            _full = meta["filled"] >= meta.get("want", a.post) - 1e-9   # AUDIT M5: per-order size, not global post
+            if _full:
                 resting.pop(key, None)
-        fid = str(f.get("trade_id") or f.get("fill_id") or "")
+            _lifecycle_write("fill" if _full else "partial", _lifecycle_oid, fside, fp, count,
+                             _lifecycle_qahead)
+        else:
+            # no resting-meta match (e.g. a taker/cross completion fill, or a race where the local
+            # order already dropped): still a genuine fill, log it without queue-ahead context.
+            _lifecycle_write("fill", _lifecycle_oid, fside, fp, count, None)
         # MARKOUT CURVE (adverse-selection telemetry): score this fill against the mid at
         # 5s/30s/60s/300s. 5s feeds the rolling markout kill; the full curve is the offline
         # "am I getting picked off?" measurement. cid pins the window so a markout never
@@ -1789,7 +1845,7 @@ def main():
                 else:
                     oid = res; t_ack = time.time()
                 resting[key] = {"oid": oid, "ts": t_ack, "filled": 0.0, "want": want,
-                                "mid0": loop_ctx.get("mid")}
+                                "mid0": loop_ctx.get("mid"), "qahead": _queue_ahead_est(side, price)}
 
             # --- STRAND DISPOSAL: cross to COMPLETE an unpaired leg the passive chase can't pair ---
             # The passive completion quote rests at the bid (post_only) and never reaches the offer,
@@ -1880,6 +1936,21 @@ def main():
                     if (age > a.requote_stale_s and m0 is not None and mid_now is not None
                             and abs(mid_now - m0) >= 0.01 - 1e-9):
                         drop(key, "stale_refresh")
+
+            # ORDER-LIFECYCLE: TTL EXPIRE detection (observational only -- does NOT touch `resting`/
+            # trading state; every other path here already reshapes on-target rungs well inside
+            # --order-ttl-s under normal operation, so this fires only in the edge case an on-target
+            # rung sits untouched long enough for the venue-side TTL dead-man to self-cancel it,
+            # which local bookkeeping would otherwise never learn about until the next fill/cancel).
+            if a.order_ttl_s and a.order_ttl_s > 0:
+                for key, meta in resting.items():
+                    if meta.get("_lifecycle_expired"):
+                        continue
+                    if (time.time() - meta["ts"]) >= a.order_ttl_s:
+                        meta["_lifecycle_expired"] = True
+                        _rem = max(meta.get("want", a.post) - meta.get("filled", 0.0), 0.0)
+                        _lifecycle_write("expire", meta.get("oid"), key[0], key[1], _rem,
+                                        meta.get("qahead"))
 
             # Rung cap: evict rungs farthest from touch if over max_rungs
             for side, touch in (("yes", ybb), ("no", round(1.0 - yba, 4))):
