@@ -57,47 +57,93 @@ KNOWN_SIZE_MODES = {"flat", "fv", "markout"}
 
 # The roster. Order here = order in the leaderboard's variant set (cosmetic only).
 REGISTRY: list[Strat] = [
-    Strat("baseline", note="no gate -- the LOSING control (-0.6/win); the bar every gate must beat"),
-    # capacity / inventory frontier (winners run tiny inventory): tighter is better
-    Strat("cap25", cap=25, note="tighter inventory cap"),
-    Strat("skew15", skew=0.15, note="tighter inventory skew"),
-    Strat("dneutral", skew=0.08, note="delta-neutral extreme (round2 #7): kills edge"),
-    Strat("fv_size", size_mode="fv", note="fair-value-weighted size -> directional inventory = resolution cost"),
-    # toxicity gating on the token's OWN book (the PROVEN edge, t=+5.4)
-    Strat("micro_gate", gate="micro", note="microprice toxicity gate -- THE deployed edge (+4.8/win)"),
-    Strat("micro_skew15", skew=0.15, gate="micro", note="micro + tight inventory (combined winner)"),
-    Strat("micro_marg", gate="micro_marg", note="micro + edge MARGIN (separate2 refinement)"),
-    Strat("tox_gate", gate="tox", note="composite: edge-margin OR bid-heavy extreme"),
-    Strat("deplete_gate", gate="deplete", note="shed the side whose best queue is depleting (#2)"),
-    Strat("gross_max", gate="gross_max", note="union of all toxicity gates -> maximize non-rebate GROSS"),
-    Strat("flow_gate", gate="flow", note="pull the side a recent same-side taker burst is hitting"),
-    Strat("late_gate", tau_guard=120, note="pull all quotes in the last 2min (late flow = informed)"),
-    # principled inventory control (Avellaneda-Stoikov)
-    Strat("av_stoikov", skew=0.99, gate="as", note="A-S: add inventory only if edge clears variance penalty"),
-    # BTC-lag defense (on the fast WS feed)
-    Strat("spot_react", gate="spot", note="pull the side BTC just moved against (lead-lag), pre-reprice"),
-    Strat("micro_react", gate="micro_react", note="same via the FAST signal (own microprice leads spot)"),
-    Strat("micro_spot", gate="micro_spot", note="cause+symptom: pull if book-imbalance OR BTC-lag flags"),
-    # MAKEREDGE.md expansions
-    Strat("mo_size", size_mode="markout", note="#3 markout-weighted sizing (continuous micro_gate)"),
-    # MAKER_CHANGES2 micro-gate refinements
-    Strat("micro_soft", gate="micro_soft", note="MC2 #3: gate only strongly-toxic (keep more rebate)"),
-    Strat("micro_ufat", gate="micro_ufat", note="MC2 #4: strict at p~0.5, loose at the extremes"),
-    Strat("ufat_skew15", gate="micro_ufat", skew=0.15,
-          note="metrics_hypo H1 (METRICS insight 4: inventory drives drawdown): deployed ufat gate + "
-               "tight skew -- replay holdout Calmar 40.6 vs 31.0, MDD -25%, net cost ~0 (t=+0.3)"),
-    # gate_lab.py winners -- validated on 56k fills (short-horizon mo5 = adverse selection); live A/B confirms deployable net
-    Strat("micro_strict", gate="micro_strict", note="gate_lab: micro edge>=0.003 in our favor (t=+6.2 vs micro)"),
-    Strat("micro_asym", gate="micro_asym", note="gate_lab: SELL side stricter than BUY (t=+7.5, highest)"),
+    Strat("baseline", note="no gate -- the control; the bar every variant must beat"),
+
+    # === 32-DAY FORWARD VERDICT (live A/B 2026-06-10..07-11, n=32 daily rollups; WINNING_STRATEGY.md) ===
+    # Only TWO variants were month-positive; every gate-family variant lost or was inert. All notes
+    # below carry their forward verdict: "32d: <meanDelta>/win t=<day-clustered t> <days positive>".
+
+    # -- WINNERS (kept live) --
+    Strat("av_stoikov", skew=0.99, gate="as",
+          note="A-S: add inventory only if edge clears variance penalty | 32d: +4.67/win t=+7.68 "
+               "29/32 days+, gross+ 32/32, top variant 25/32 days -- THE month winner"),
+    Strat("mo_size", size_mode="markout",
+          note="markout-weighted sizing (continuous micro_gate) | 32d: +1.88/win t=+5.76 29/32 days+, "
+               "gross+ 32/32 -- winner #2; corr +0.38 w/ av_stoikov, positive on all 3 of its down-days"),
+
+    # -- ENSEMBLE + ABLATION arms (added off the month verdict; av_stoikov differs from baseline in
+    #    BOTH skew 0.25->0.99 AND the AS gate, so the 2x2 below separates the knobs).
+    #    PRE-REGISTERED promotion bar (declared BEFORE any data): >=14 forward days, day-clustered
+    #    t>=3, gross-positive >=80% of days, mean edge >= max(av_stoikov, mo_size) same-days.
+    Strat("as_markout", skew=0.99, gate="as", size_mode="markout",
+          note="THE candidate: A-S inventory gate + markout-weighted size (both month winners combined)"),
+    Strat("mo_skew99", skew=0.99, size_mode="markout",
+          note="ablation: markout size + loose leash, NO gate (is the AS gate additive?)"),
+    Strat("skew99", skew=0.99,
+          note="ablation: loose leash alone (how much of av_stoikov is just skew 0.99?)"),
+    Strat("as_cap100", cap=100, skew=0.99, gate="as",
+          note="capacity probe: winner config at 2x inventory cap -- does the edge survive the "
+               "inventory needed to scale size? (cap was only ever tested DOWN; cap25 lost -7.86t)"),
+
+    # -- WATCH (operational purpose) --
+    Strat("micro_gate", gate="micro",
+          note="microprice toxicity gate -- WAS 'THE deployed edge (+4.8/win)' | 32d: Delta=+0.000 on "
+               "EVERY day -- the gate never fires on this venue = the deployed strategy is a NO-OP. "
+               "Kept enabled as the deployed-twin decay watch; deployment should move to the winner"),
+
+    # -- PRUNED by the 32d forward verdict (month t <= -3, n=32 = decisive; defs kept for record) --
+    Strat("fv_size", size_mode="fv", enabled=False,
+          note="fair-value-weighted size | PRUNED 32d: -0.36/win t=-1.61 11/32 days+ -- not decisive "
+               "but negative after a full month and dominated by markout sizing; slot -> as_cap100"),
+    Strat("cap25", cap=25, enabled=False,
+          note="tighter inventory cap | PRUNED 32d: -2.87/win t=-7.86 2/32 days+"),
+    Strat("skew15", skew=0.15, enabled=False,
+          note="tighter inventory skew | PRUNED 32d: -2.02/win t=-7.44 4/32 days+ (loose leash wins this regime)"),
+    Strat("dneutral", skew=0.08, enabled=False,
+          note="delta-neutral extreme (round2 #7) | PRUNED 32d: -3.91/win t=-9.33 1/32 days+ -- worst-in-class"),
+    Strat("micro_skew15", skew=0.15, gate="micro", enabled=False,
+          note="micro + tight inventory | PRUNED 32d: -2.02/win t=-7.44 4/32 (identical to skew15: micro inert)"),
+    Strat("micro_marg", gate="micro_marg", enabled=False,
+          note="micro + edge MARGIN | PRUNED 32d: -3.21/win t=-6.02 2/32 days+"),
+    Strat("tox_gate", gate="tox", enabled=False,
+          note="edge-margin OR bid-heavy extreme | PRUNED 32d: -3.35/win t=-6.54 1/32 days+"),
+    Strat("deplete_gate", gate="deplete", enabled=False,
+          note="shed the depleting-queue side | PRUNED 32d: -1.25/win t=-5.72 5/32 days+"),
+    Strat("gross_max", gate="gross_max", enabled=False,
+          note="union of all toxicity gates | PRUNED 32d: -1.67/win t=-7.71 2/32 days+"),
+    Strat("flow_gate", gate="flow", enabled=False,
+          note="pull the taker-burst side | PRUNED 32d: -1.50/win t=-6.98 3/32 days+"),
+    Strat("late_gate", tau_guard=120, enabled=False,
+          note="pull all quotes last 2min | PRUNED 32d: -1.27/win t=-3.77 6/32 days+"),
+    Strat("spot_react", gate="spot", enabled=False,
+          note="pull the side BTC moved against | PRUNED 32d: -0.68/win t=-3.80 8/32 days+"),
+    Strat("micro_react", gate="micro_react", enabled=False,
+          note="BTC-lag via fast microprice | PRUNED 32d: -1.04/win t=-5.18 7/32 days+"),
+    Strat("micro_spot", gate="micro_spot", enabled=False,
+          note="book-imbalance OR BTC-lag | PRUNED 32d: -0.68/win t=-3.80 8/32 (== spot_react: micro leg inert)"),
+    Strat("micro_soft", gate="micro_soft", enabled=False,
+          note="MC2 #3 gate only strongly-toxic | PRUNED 32d: Delta=+0.000 all 32 days -- INERT (never fires)"),
+    Strat("micro_ufat", gate="micro_ufat", enabled=False,
+          note="MC2 #4 strict at p~0.5 | PRUNED 32d: -2.16/win t=-4.35 6/32 days+"),
+    Strat("ufat_skew15", gate="micro_ufat", skew=0.15, enabled=False,
+          note="metrics_hypo H1: ufat gate + tight skew (replay holdout Calmar 40.6 vs 31.0) | "
+               "PRUNED 32d: -3.81/win t=-7.07 2/32 days+ -- replay result did NOT reproduce forward"),
+    Strat("micro_strict", gate="micro_strict", enabled=False,
+          note="gate_lab: micro edge>=0.003 (lab t=+6.2) | PRUNED 32d: -4.47/win t=-8.36 0/32 days+ -- "
+               "dead last; REFUTES the 'stricter gates win' hypothesis, over-gating sheds too much flow"),
+    Strat("micro_asym", gate="micro_asym", enabled=False,
+          note="gate_lab: SELL stricter than BUY (lab t=+7.5) | PRUNED 32d: -0.52/win t=-3.09 9/32 days+"),
     Strat("lead30", gate="lead30", enabled=False,
           note="PRUNED (lookahead artifact): its only support was gate_lab scoring on `dspot30`, which is "
                "the spot move AFTER the fill; the honest past-30s backtest (strategy_opt/gate_lab fixed) "
                "is NEGATIVE on both deployable net and mo5 (t=-5.6 vs micro)"),
-    Strat("micro_cal", gate="micro_cal", note="gate_lab #10: calibrated ensemble -- keep iff pred markout+rebate>0 (OOS winner)"),
-    # combo_lab.py BEST overall combo (IS+OOS): ufat gate + drop toxic 0.30-0.55 mid-prob zone (~2x OOS net vs ufat)
-    Strat("ufat_band", gate="ufat_band", note="combo_lab BEST: micro_ufat + notmid (skip P(up) 0.30-0.55); IS+OOS winner"),
+    Strat("micro_cal", gate="micro_cal", enabled=False,
+          note="gate_lab #10 calibrated ensemble (lab OOS winner) | PRUNED 32d: -4.07/win t=-7.70 2/32 days+"),
+    Strat("ufat_band", gate="ufat_band", enabled=False,
+          note="combo_lab BEST IS+OOS (ufat + skip P(up) 0.30-0.55) | PRUNED 32d: -3.47/win t=-6.10 "
+               "6/32 days+ -- another lab winner that did not survive forward"),
 
-    # --- PRUNED from live (significantly unprofitable; kept for record + offline study) ---
+    # --- PRUNED earlier (significantly unprofitable; kept for record + offline study) ---
     Strat("as_full", skew=0.99, gate="as_full", enabled=False,
           note="PRUNED -8.3/win (gross -14.6): vol-adaptive A-S over-gates (WINNER_TWEAKS #3)"),
     Strat("vol_gate", gate="vol", enabled=False,
