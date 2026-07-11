@@ -94,6 +94,8 @@ TAKER_ENABLED = False  # lag_taker DISCONTINUED: offensive latency-take loses to
 VOL_LAG_S = 20        # lookback for BTC realized vol (s)
 VOL_BPS = 6.0         # realized vol over the lookback, in bps of spot, above which we pull (calibrate)
 MO_K = 150.0          # mo_size: size multiplier slope on micro-favorability (MAKEREDGE.md #3)
+TICK_SIZE = 0.001     # nominal min price tick (Polymarket/Kalshi crypto binaries quote in tenths of a
+#                       cent -- KALSHI.md "0.1c sub-cent tick"); used only for regime reporting below.
 # MAKEREDGE.md #4 as_full: vol-adaptive A-S -> scale the calibrated `as` inventory penalty by realized
 # vol vs this reference (A-S penalty ~ sigma^2). SIGMA_REF ~ a typical 20s BTC realized-vol fraction.
 SIGMA_REF = 5e-4
@@ -133,17 +135,74 @@ def micro(bb, bsz, ba, asz):
     return (bb + ba) / 2 if tot <= 0 else bb + (ba - bb) * (bsz or 0) / tot
 
 
+def _new_regime_acc():
+    """Cheap incremental accumulator for the per-window `regime` fields (REGIME FIELDS task):
+    realized vol via sum-of-squared-increments over ~1s samples (no per-tick lists kept), mean
+    spread running sum, taker trade count/signed volume. One instance lives on `mk["_regime"]`
+    for the life of a window (mk is a single object, created once per window in run())."""
+    return {"mid_n": 0, "mid_last": None, "mid_ssq": 0.0,
+            "micro_n": 0, "micro_last": None, "micro_ssq": 0.0,
+            "spread_sum": 0.0, "spread_n": 0,
+            "n_trades": 0, "signed_vol": 0.0}
+
+
+def _regime_update_book(reg, bb, ba, mc):
+    """Called at the ~1s/token cadence (same cadence as sample_timeline's tick tape) with the
+    current touch + microprice; updates realized-vol + spread accumulators in place."""
+    mid = (bb + ba) / 2.0
+    if reg["mid_last"] is not None:
+        reg["mid_ssq"] += (mid - reg["mid_last"]) ** 2
+        reg["mid_n"] += 1
+    reg["mid_last"] = mid
+    if mc is not None:
+        if reg["micro_last"] is not None:
+            reg["micro_ssq"] += (mc - reg["micro_last"]) ** 2
+            reg["micro_n"] += 1
+        reg["micro_last"] = mc
+    reg["spread_sum"] += (ba - bb) / TICK_SIZE
+    reg["spread_n"] += 1
+
+
+def _regime_update_trade(reg, sgn, size):
+    """Called once per taker trade (same hook that appends to shared['flow'])."""
+    reg["n_trades"] += 1
+    reg["signed_vol"] += sgn * size
+
+
+def _regime_snapshot(mk2):
+    """Finalize the accumulator on mk2["_regime"] into the "regime" sub-dict written into the
+    window row. None-safe: a window with no accumulator (e.g. data captured before this field
+    existed) or too few samples yields nulls for the vol/spread fields rather than crashing --
+    old rows and readers must keep working either way."""
+    reg = mk2.get("_regime")
+    hour_utc = datetime.fromtimestamp(mk2["ws"], timezone.utc).hour if mk2.get("ws") is not None else None
+    if not reg:
+        return {"mid_vol": None, "micro_vol": None, "mean_spread_ticks": None,
+                "n_trades": 0, "signed_vol": 0.0, "hour_utc": hour_utc}
+    mid_vol = (reg["mid_ssq"] / reg["mid_n"]) ** 0.5 if reg["mid_n"] > 0 else None
+    micro_vol = (reg["micro_ssq"] / reg["micro_n"]) ** 0.5 if reg["micro_n"] > 0 else None
+    mean_spread = reg["spread_sum"] / reg["spread_n"] if reg["spread_n"] > 0 else None
+    return {"mid_vol": round(mid_vol, 6) if mid_vol is not None else None,
+            "micro_vol": round(micro_vol, 6) if micro_vol is not None else None,
+            "mean_spread_ticks": round(mean_spread, 3) if mean_spread is not None else None,
+            "n_trades": reg["n_trades"], "signed_vol": round(reg["signed_vol"], 3),
+            "hour_utc": hour_utc}
+
+
 class Variant:
     """One strategy config; own book/queue/inventory; fed the shared live event stream."""
 
     def __init__(self, name, mk, cap, skew, size_mode="flat", gate=None, shared=None,
-                 short_skew=None, tau_guard=0):
+                 short_skew=None, tau_guard=0, as_k=None, mo_k=None):
         self.name = name; self.mk = mk; self.cap = cap; self.skew = skew
         self.tau_guard = tau_guard   # pull ALL quotes when < tau_guard seconds to close (late = informed)
         # asymmetric inventory leash: separate (usually tighter) threshold for building SHORT,
         # since buy-dominated flow forces us short and selling is the toxic side. Default = symmetric.
         self.short_skew = short_skew if short_skew is not None else skew
         self.size_mode = size_mode; self.gate = gate; self.shared = shared
+        # PARAMETER SWEEP ARMS: per-strat override of the module-level AS_K/MO_K constants.
+        # None (default) = use the module constant -- byte-identical to pre-sweep behavior.
+        self.as_k = as_k; self.mo_k = mo_k
         self.post = 20.0
         self.up_inv = self.dn_inv = self.cash = self.rebate = self.delta = 0.0
         self.fills = 0
@@ -397,7 +456,8 @@ class Variant:
                 return False
             edge = (price - mp) if our_side == "ASK" else (mp - price)
             tau = max(self.mk["we"] - time.time(), 0.0)
-            penalty = AS_K * abs(self.delta) * (tau / WINDOW_S)
+            as_k = self.as_k if self.as_k is not None else AS_K   # sweep override (None = module const)
+            penalty = as_k * abs(self.delta) * (tau / WINDOW_S)
             return edge < penalty
         # --- gate_lab.py winners (validated on 56k fills; see GATING.md) ---
         if g == "micro_strict":
@@ -474,7 +534,8 @@ class Variant:
             if mp is None:
                 return self.post
             fav = (price - mp) if our_side == "ASK" else (mp - price)   # >0 = favorable (vs microprice)
-            return self.post * min(max(1.0 + MO_K * fav, 0.0), 2.0)
+            mo_k = self.mo_k if self.mo_k is not None else MO_K   # sweep override (None = module const)
+            return self.post * min(max(1.0 + mo_k * fav, 0.0), 2.0)
         if self.size_mode != "fv":
             return self.post
         ft = self.fair_tok(token)
@@ -727,7 +788,8 @@ def configs(mk, shared):
     Currently-pruned-but-defined variants live in strategies.REGISTRY with enabled=False."""
     import strategies
     return [Variant(s.name, mk, s.cap, s.skew, size_mode=s.size_mode, gate=s.gate,
-                    shared=shared, short_skew=s.short_skew, tau_guard=s.tau_guard)
+                    shared=shared, short_skew=s.short_skew, tau_guard=s.tau_guard,
+                    as_k=s.as_k, mo_k=s.mo_k)
             for s in strategies.enabled()]
 
 
@@ -964,6 +1026,9 @@ async def run(args):
                                "joined_late": bool(mk2.get("_t_first", mk2["ws"]) - mk2["ws"] > 60),
                                "truncated": bool(mk2.get("_t_last", mk2["we"]) < mk2["we"] - 30),
                                "n_events": mk2.get("_n_events", 0)}
+            # REGIME FIELDS (additive; old rows without this key must keep parsing everywhere downstream):
+            # realized mid/microprice vol, mean spread (ticks), taker trade count + signed volume, hour-of-day.
+            row["regime"] = _regime_snapshot(mk2)
             pnl_sum = emit_fills(mk2, variants2, midtl2, r)  # per-fill rows + Σpnl for reconciliation
             flush_ticks(mk2, midtl2)                          # final tick flush for this window
             # AUDIT: per-fill ledger must reconcile to window gross to the penny (proof of completeness)
@@ -1003,6 +1068,7 @@ async def run(args):
         mk = active_market(sess, args.asset, args.tenor_min)
         if mk is None:
             await asyncio.sleep(5); continue
+        mk["_regime"] = _new_regime_acc()   # REGIME FIELDS: one accumulator, lives for this window's mk object
         shared = {"st": None, "s0": None}
         rest = fv.update()                              # keeps the REST tape alive (sigma/fallback)
         sp = live["px"] if live["px"] is not None else rest   # prefer the high-res WS price
@@ -1041,6 +1107,7 @@ async def run(args):
                     qe = shared["qema"].setdefault(tok, {"b": bsz, "a": asz})  # depletion EMA
                     qe["b"] = 0.95 * qe["b"] + 0.05 * bsz
                     qe["a"] = 0.95 * qe["a"] + 0.05 * asz
+                    _regime_update_book(mk["_regime"], bb, ba, mc)   # realized vol + mean spread (both tokens)
 
         while time.time() < mk["we"] and time.time() < end and not STOP[0]:
             try:
@@ -1084,6 +1151,7 @@ async def run(args):
                                 fl.append((time.time(), sgn * float(m["size"])))
                                 if len(fl) > 4000:
                                     del fl[:2000]             # bound memory; 30s window is well within
+                                _regime_update_trade(mk["_regime"], sgn, float(m["size"]))  # taker count/signed vol
                                 try:                          # RAW taker trade tape (audit #8): tiny gz
                                     trades_fh.write(json.dumps({   # rows -> depth/queue research later
                                         "t": round(time.time(), 3), "ws": mk["ws"], "asset": args.asset,
@@ -1149,7 +1217,8 @@ async def run(args):
                 "unresolved": True,
                 "coverage": {"t_first": round(mk2["_t_first"] - mk2["ws"], 1) if mk2.get("_t_first") else None,
                              "t_last": round(mk2["_t_last"] - mk2["ws"], 1) if mk2.get("_t_last") else None,
-                             "n_events": mk2.get("_n_events", 0)}}) + "\n")
+                             "n_events": mk2.get("_n_events", 0)},
+                "regime": _regime_snapshot(mk2)}) + "\n")
             L(f"TOMBSTONE w={mk2['ws']} (unresolved at run end; fills/ticks persisted, res backfillable)")
         except Exception as e:  # noqa: BLE001
             L(f"  [TOMBSTONE FAIL] w={mk2['ws']}: {type(e).__name__}: {e}")

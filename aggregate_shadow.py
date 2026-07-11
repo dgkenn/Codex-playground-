@@ -51,14 +51,20 @@ def main():
             ws = row.get("ws")
             if ws is None or row.get("resolved_up") is None:    # skip tombstones (unresolved)
                 continue
-            slot = by_ws.setdefault((row.get("asset", "btc"), row.get("tenor_min", 15), ws), {})
+            asset = row.get("asset", "btc")
+            slot = by_ws.setdefault((asset, row.get("tenor_min", 15), ws), {})
+            slot.setdefault("_asset", asset)          # per-asset breakdown table (below)
+            if row.get("regime") is not None and "_regime" not in slot:
+                slot["_regime"] = row["regime"]        # regime split table (below); missing on legacy rows
             for k, v in row.items():
                 if isinstance(v, dict) and "net" in v:
                     slot.setdefault(k, (v["net"], v.get("gross", float("nan"))))   # (net, GROSS) ; first wins
     n = len(by_ws)
     if n == 0:
         print("no shadow windows yet."); return
-    variants = sorted({k for s in by_ws.values() for k in s})
+    # "_asset"/"_regime" are per-window metadata keys stashed in the same dict as the variant
+    # (net, gross) tuples above -- exclude them from the discovered variant-name set.
+    variants = sorted({k for s in by_ws.values() for k in s if not k.startswith("_")})
     base = "baseline"
     print(f"shadow comparison over {n} de-duped windows | files={len(files)}\n")
     rows = []
@@ -173,13 +179,57 @@ def main():
             print(f"\ndeploy-watch: {DEPLOYED} OK -- mean|Δ|={mean_abs:.4f} (n={len(dep_deltas_14)} "
                   f"windows), day-clustered t={t_d:+.2f} (days+={pos}/{n_days}) over last {n_days} UTC days.")
 
-    # ---- regime split (av_stoikov / mo_size), 2-bucket above/below median --------------------
-    # SKIPPED: inspected shadow_compare.py's window-record emit (try_settle()'s `row = {...}`) --
-    # the only keys beyond "ts"/"ws"/"resolved_up"/"asset"/"tenor_min"/variant-attribution dicts are
-    # "coverage" and "audit" (both metadata, not regime signal). "av_stoikov" and "mo_size" are
-    # STRATEGY/variant NAMES in strategies.py, not numeric per-window fields -- there is nothing to
-    # bucket by median on. Per-fill records (fills_*.jsonl) do carry richer fields, but those are a
-    # different, unaggregated file this script does not read. No regime split added.
+    # ---- per-asset breakdown (enabled arms only) ----------------------------------------------
+    # Same paired-delta-vs-baseline logic as the top table, sliced by asset -- a variant's edge may
+    # be concentrated in one asset (thinner alt books = more/less toxic flow) and that's invisible
+    # in the pooled cross-asset numbers above.
+    try:
+        import strategies
+        enabled_names = [s.name for s in strategies.enabled() if s.name != base]
+    except Exception:
+        enabled_names = [v for v in variants if v != base]   # fallback: everything discovered
+    assets = sorted({s["_asset"] for s in by_ws.values() if "_asset" in s})
+    if assets and enabled_names:
+        print("\nper-asset (enabled arms only): mean paired-Δ vs baseline, n windows")
+        header = f"{'variant':>12}" + "".join(f" {a:>14}" for a in assets)
+        print(header)
+        for v in enabled_names:
+            cells = []
+            for a in assets:
+                pairs = [s[v][0] - s[base][0] for s in by_ws.values()
+                         if s.get("_asset") == a and v in s and base in s]
+                if pairs:
+                    m = sum(pairs) / len(pairs)
+                    cells.append(f"{m:+.3f}/n={len(pairs)}")
+                else:
+                    cells.append("n/a")
+            print(f"{v:>12}" + "".join(f" {c:>14}" for c in cells))
+
+    # ---- regime split (av_stoikov / mo_size), 2-bucket above/below median ---------------------
+    # Precursor to a regime-router strategy: does the edge concentrate in calm or volatile windows?
+    # Median-split on realized mid-price vol (regime.mid_vol, REGIME FIELDS task); rows without a
+    # "regime" key (pre-existing data captured before this field existed) are simply excluded --
+    # this is additive, not a replacement for the tables above.
+    reg_rows = [(s["_regime"].get("mid_vol"), s) for s in by_ws.values()
+                if "_regime" in s and s["_regime"].get("mid_vol") is not None]
+    if len(reg_rows) >= 4:
+        vols = sorted(v for v, _s in reg_rows)
+        mid_i = len(vols) // 2
+        median_vol = vols[mid_i] if len(vols) % 2 else (vols[mid_i - 1] + vols[mid_i]) / 2.0
+        lo = [s for v, s in reg_rows if v <= median_vol]
+        hi = [s for v, s in reg_rows if v > median_vol]
+        print(f"\nregime split (median mid_vol={median_vol:.6g}, n_lo={len(lo)} n_hi={len(hi)})")
+        print(f"{'variant':>12} {'lo-vol Δ':>10} {'n':>5} {'hi-vol Δ':>10} {'n':>5}")
+        for v in ("av_stoikov", "mo_size"):
+            if v not in variants:
+                continue
+            lo_pairs = [s[v][0] - s[base][0] for s in lo if v in s and base in s]
+            hi_pairs = [s[v][0] - s[base][0] for s in hi if v in s and base in s]
+            lo_m = f"{sum(lo_pairs) / len(lo_pairs):+.3f}" if lo_pairs else "n/a"
+            hi_m = f"{sum(hi_pairs) / len(hi_pairs):+.3f}" if hi_pairs else "n/a"
+            print(f"{v:>12} {lo_m:>10} {len(lo_pairs):>5} {hi_m:>10} {len(hi_pairs):>5}")
+    else:
+        print(f"\nregime split: insufficient rows with a 'regime' field yet (n={len(reg_rows)}, need >=4).")
 
 
 if __name__ == "__main__":

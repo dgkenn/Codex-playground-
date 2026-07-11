@@ -35,8 +35,21 @@ class Strat:
     gate: str | None = None           # None = no toxicity gate (baseline mechanics)
     tau_guard: int = 0                # pull ALL quotes when < tau_guard s to close (late = informed)
     short_skew: float | None = None   # asymmetric inventory leash (None = symmetric = skew)
+    as_k: float | None = None         # PARAMETER SWEEP: per-strat override of shadow_compare.AS_K
+    #                                   (the "as" gate's inventory-penalty slope). None = use the module
+    #                                   constant -- current behavior for every pre-existing strat.
+    mo_k: float | None = None         # PARAMETER SWEEP: per-strat override of shadow_compare.MO_K
+    #                                   (the "markout" size_mode's favorability slope). None = module const.
     enabled: bool = True
     note: str = ""
+
+
+# Mirror of shadow_compare.AS_K / MO_K, duplicated (not imported) to avoid a strategies.py <->
+# shadow_compare.py import cycle (shadow_compare already imports strategies for configs()). The sweep
+# arms below are defined RELATIVE to these -- keep in sync with the module constants by hand if the
+# calibrated values ever move.
+_AS_K_BASE = 4e-4     # == shadow_compare.AS_K
+_MO_K_BASE = 150.0    # == shadow_compare.MO_K
 
 
 # Atomic gates implemented in Variant._gate_one, plus the composites in Variant._gated.
@@ -84,6 +97,22 @@ REGISTRY: list[Strat] = [
     Strat("as_cap100", cap=100, skew=0.99, gate="as",
           note="capacity probe: winner config at 2x inventory cap -- does the edge survive the "
                "inventory needed to scale size? (cap was only ever tested DOWN; cap25 lost -7.86t)"),
+
+    # -- PARAMETER SWEEP arms (is the calibrated AS_K/MO_K slope itself load-bearing, or does the
+    #    gate/size direction alone capture the edge?): half/double the winning constant, same
+    #    gate/size_mode + skew as the month winner it's swept from.
+    #    PRE-REGISTERED promotion bar (declared BEFORE any data): >=14 forward days, day-clustered
+    #    t>=3, gross-positive >=80% of days, mean edge >= max(av_stoikov, mo_size) same-days.
+    Strat("as_k_half", skew=0.99, gate="as", as_k=_AS_K_BASE * 0.5,
+          note="AS_K sweep: half the calibrated inventory-penalty slope (av_stoikov config, looser "
+               "gate -- does more edge clear at half the penalty, or was AS_K well-calibrated?)"),
+    Strat("as_k_2x", skew=0.99, gate="as", as_k=_AS_K_BASE * 2.0,
+          note="AS_K sweep: double the calibrated inventory-penalty slope (av_stoikov config, "
+               "stricter gate -- tests whether over-gating costs more than it protects)"),
+    Strat("mo_k_half", size_mode="markout", mo_k=_MO_K_BASE * 0.5,
+          note="MO_K sweep: half the markout-size favorability slope (mo_size config, flatter sizing curve)"),
+    Strat("mo_k_2x", size_mode="markout", mo_k=_MO_K_BASE * 2.0,
+          note="MO_K sweep: double the markout-size favorability slope (mo_size config, steeper sizing curve)"),
 
     # -- WATCH (operational purpose) --
     Strat("micro_gate", gate="micro",
@@ -183,6 +212,10 @@ def validate(strats: list[Strat] | None = None) -> list[str]:
             errs.append(f"{s.name}: skew out of range: {s.skew}")
         if s.tau_guard < 0:
             errs.append(f"{s.name}: negative tau_guard: {s.tau_guard}")
+        if s.as_k is not None and s.as_k <= 0:
+            errs.append(f"{s.name}: as_k must be > 0 (or None for module default): {s.as_k}")
+        if s.mo_k is not None and s.mo_k <= 0:
+            errs.append(f"{s.name}: mo_k must be > 0 (or None for module default): {s.mo_k}")
     return errs
 
 
@@ -192,7 +225,8 @@ def snapshot() -> dict:
             "enabled": [s.name for s in enabled()],
             "disabled": [s.name for s in REGISTRY if not s.enabled],
             "roster": [{"name": s.name, "cap": s.cap, "skew": s.skew, "size_mode": s.size_mode,
-                        "gate": s.gate, "tau_guard": s.tau_guard, "enabled": s.enabled} for s in REGISTRY]}
+                        "gate": s.gate, "tau_guard": s.tau_guard, "as_k": s.as_k, "mo_k": s.mo_k,
+                        "enabled": s.enabled} for s in REGISTRY]}
 
 
 def main():
@@ -202,7 +236,12 @@ def main():
     for s in REGISTRY:
         flag = " " if s.enabled else "x"
         g = s.gate or "-"
-        print(f" [{flag}] {s.name:<14} cap={s.cap:<5g} skew={s.skew:<5g} size={s.size_mode:<7} gate={g:<11} {s.note}")
+        ov = ""
+        if s.as_k is not None:
+            ov += f" as_k={s.as_k:g}"
+        if s.mo_k is not None:
+            ov += f" mo_k={s.mo_k:g}"
+        print(f" [{flag}] {s.name:<14} cap={s.cap:<5g} skew={s.skew:<5g} size={s.size_mode:<7} gate={g:<11}{ov} {s.note}")
     if errs:
         print("\nVALIDATION FAILED:")
         for e in errs:
