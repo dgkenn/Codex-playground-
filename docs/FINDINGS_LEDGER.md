@@ -362,3 +362,18 @@ site-confounded — site leakage lives in different feature directions than the 
 predict site not physiology" paper; vindicates balanced cross-site EEG classification (but it's a me-too task,
 CBraMod≈classical). Salvageable nugget = "ComBat counterproductive + unnecessary under balanced designs" (technical
 note). Predicted win-likelihood ~0.35; actual = refuted/technical-note → logged.
+
+## Hemodynamic occult hypoxemia (eICU) — novel angle REFUTED; strong Sjoding replication
+| # | Test | Result | Status |
+|---|---|---|---|
+| OH-pair | Stream 146.7M vitalPeriodic rows, pair SpO2+MAP to measured-SaO2 ABG | 176,440 paired readings (gold standard validated) | built |
+| OH-bias | SpO2−SaO2 by true-SaO2 stratum | +0.2 (normal) → +13.8 (SaO2 70–80), monotonic | ✅ textbook |
+| OH-race | Occult rate P(SaO2<88 | SpO2 92–96) by race | Black 12.6% vs White 5.3% (~2.4×); Asian 9.4% | ✅ replicates Sjoding |
+| OH-hemo | bias ~ SaO2+MAP+pressor (hypoxemic n=10,221) | **MAP coef +0.05 (z+9) WRONG SIGN**; pressor null | ❌ REFUTED |
+| OH-conseq | RTM-safe: occult vs normal mortality at matched SpO2≥92 | age-adj OR **2.84 [2.61–3.09]** (28.9% vs 13.0%) | ✅ but not novel (Wong/Fawzy) |
+
+**Verdict:** rigorous REPLICATION (Sjoding racial bias + occult-hypoxemia mortality), but the novel hemodynamic-
+amplification differentiator is REFUTED (low perfusion does not amplify the over-read of present SpO2 readings;
+the effect, if any, is in SpO2 dropout/quality, unmeasured here). Downgraded per pre-registered gate. Predicted
+win-likelihood ~0.5; actual = replication/no-novel → logged. Reusable: validated eICU co-oximetry reference +
+streaming pairing pipeline for the next SaO2-anchored question.

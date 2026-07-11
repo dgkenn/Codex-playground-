@@ -1116,3 +1116,21 @@ cross-nationally-validated part.
   apply this pH-correction gate to EVERY new SaO2 source before use — it has now decided 3 cohorts (INSPIRE ✗,
   VitalDB ✗, eICU ✓) cheaply. Note: local eICU lab.csv.gz is a partial download (gzip EOF) but still yields ~253k
   paired blood-gas draws — re-pull full file before the definitive run.
+
+- **Hemodynamic occult-hypoxemia (novel bet) REFUTED; the pulse-ox study reduces to a rigorous Sjoding replication
+  (2026-07-11).** Built the full eICU occult-hypoxemia pipeline on a VALID measured-co-oximetry reference (176,440
+  ABG↔SpO2↔MAP paired readings, streamed from 146.7M vitalPeriodic rows without storing 35GB). VALIDATED: pulse-ox
+  over-read bias is textbook-monotonic (SpO2−SaO2 = +0.2 at normal sat → +13.8 at SaO2 70–80); racial disparity
+  replicates Sjoding NEJM 2020 (occult rate Black 12.6% vs White 5.3%, ~2.4×; RTM-safe miss rate Black 66% vs White
+  50%); RTM-safe mortality consequence is real (at matched reassuring SpO2≥92, occult true-hypoxemia age-adj
+  mortality OR 2.84 [2.61–3.09], patient-deduped). BUT the NOVEL angle that would make it top-tier — that LOW
+  PERFUSION amplifies the over-read (unifying with the C8 cuff-in-low-flow finding) — is REFUTED: regressing bias ~
+  SaO2level + MAP + pressor in the hypoxemic subset (n=10,221), the MAP coef is **+0.05 (z=+9), the WRONG SIGN**
+  (bias slightly LOWER at low MAP), pressor null (z=1.6); bias-by-MAP-tertile within matched SaO2 bands confirms no
+  amplification. MECHANISM for the null: true low-flow likely makes the pulse ox DROP OUT (no plethysmographic
+  signal → no SpO2 value → excluded from pairing) rather than over-read — so the amplification, if it exists, is in
+  SpO2 UNAVAILABILITY/quality (which eICU vitalPeriodic doesn't flag), not in the over-read of present readings.
+  RULE: a physiologically-plausible mechanism (pulse ox needs pulsatile flow) is not evidence — test it directly at
+  matched reference before betting a study on it; here the clean test killed it. Net: occult hypoxemia is well-trodden
+  (Sjoding, Wong 2021, Fawzy 2022) and my differentiator failed, so this is a replication, not the breakthrough.
+  The pipeline + validated eICU co-oximetry reference are now reusable assets for the next SaO2-anchored question.
