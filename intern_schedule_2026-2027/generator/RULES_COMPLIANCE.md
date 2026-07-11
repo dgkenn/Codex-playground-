@@ -9,6 +9,7 @@ Coverage **Oct 1 2026 – Jun 23 2027**, continuing the finalized September. Bui
 | One Long Call per day | ✅ PASS |
 | Different long-call intern than previous day | ⚠️ SEE NOTE |
 | Q4 — every intern on call only every 4th day | ⚠️ SEE NOTE |
+| No one leaving the service ends on night float | ✅ PASS |
 | Friday long-call intern = next week's night float | ✅ PASS |
 | Night float: same person the whole Sun–Fri block | ✅ PASS |
 | Night-float intern present | ✅ PASS |
@@ -28,26 +29,26 @@ Coverage **Oct 1 2026 – Jun 23 2027**, continuing the finalized September. Bui
 
 1. **Two Saturday 24h doubles — Bronson (Oct), Li (May).** A 5-Saturday calendar month whose repeating middle-intern slot lands on a (stable) LSH intern puts that intern on the 1st and 5th Saturday. Reassigning the 5th would force a different intern into long-call-then-24h or back-to-back long call, breaking the strict Q4 march. The prior rules explicitly allowed "in very rare occasions 2." These are the only two all year.
 2. **June 21–23, 2027 wind-down.** The roster has **no BMC-South intern after 6/20** (Shirin Saeed's block ends), so those last 3 days run with 3 interns instead of 4; with only two daytime interns, long call can't hold a strict 4-day gap on 6/22–6/23. Everything through 6/20 is clean.
-3. **New intern on long call / night float at a rotation start (9 times).** The Q4 march (and Monday night-float starts, per the rules) sometimes place an arriving BMC/Lahey intern on long call or night float on their first Monday. The comprehensive rules permit this; the earlier email preferred avoiding it "when possible." Days: Mon 11/23 SHETTY (BMC); Mon 12/21 FARZEELA (BMC); Mon 2/15 VILLANUEVA (BMC); Mon 3/15 BUTT (BMC); Mon 3/22 ALMADHOOB (LAHEY); Mon 4/19 AHLUWALIA-S (LAHEY); Mon 5/10 METRI (BMC); Mon 5/17 SANCHEZ-ALMANZAR (LAHEY); Mon 6/14 PATEL (LAHEY).
-4. **Night-float transition handoffs (6).** At month/rotation boundaries a departing intern finishes a few nights and the arriving intern continues the block — exactly as the rules describe ("a new intern starts night float when the month ends").
+3. **New intern on long call / night float at a rotation start (10 times).** The Q4 march (and Monday night-float starts, per the rules) sometimes place an arriving BMC/Lahey intern on long call or night float on their first Monday. The comprehensive rules permit this; the earlier email preferred avoiding it "when possible." Days: Mon 11/23 SHETTY (BMC); Mon 12/21 FARZEELA (BMC); Mon 2/8 KOPP VANUZZI (LAHEY); Mon 2/15 VILLANUEVA (BMC); Mon 3/8 PATEL (LAHEY); Mon 3/15 BUTT (BMC); Mon 4/19 AHLUWALIA-S (LAHEY); Mon 5/10 METRI (BMC); Mon 5/17 SANCHEZ-ALMANZAR (LAHEY); Mon 6/14 PATEL (LAHEY).
+4. **Night-float transition handoffs (3).** At month/rotation boundaries a departing intern finishes a few nights and the arriving intern continues the block — exactly as the rules describe ("a new intern starts night float when the month ends").
 
-## Month-end night-float protection (Jan–Mar 2027)
+## Leaving-the-service night-float protection (hard rule)
 
-The march places the final week's night float of January, February, and March on LSH slot 2.  Left to a naive roster order, that would have put **Oghenesume (1/31), Li (2/28) and Matsuoka (3/28–31)** on night float on the last day(s) of their LSH block — directly before each starts at **Lahey** the next morning.  Because slot occupancy is a roster decision (not an algorithm rule), the pairs for those three months are ordered so the departing-to-Lahey intern holds slot 0 instead:
+**No intern whose block is ending holds the night float.** The march places the final NF week of January, February and March 2027 on LSH slot 2 — under a naive roster that is **Oghenesume (1/31), Li (2/28) and Matsuoka (3/28–31)**, each walking into **Lahey** the next morning straight off a night shift.  Fixed structurally, with the audit now enforcing it as a hard rule (`end-on-nf`):
 
-| Month-end | Night float (protected schedule) | Why it's safe |
+| Month-end NF week | Covered by | Why they're safe |
 |---|---|---|
-| Jan 31 | Zaidi | Continues at LSH in February (also removes the 1/31–2/5 mid-week NF handoff — one intern covers the full week) |
-| Feb 28 | Zaidi | Ends his LSH block on NF; next-day rotation must be OPD/elective/vacation (confirm) |
-| Mar 28–31 | Kennedy | Covers the month-end block; next-day rotation must be OPD/elective/vacation (confirm) |
+| Jan 31 – Feb 5 | Zaidi | Slot choice: Zaidi continues at LSH in February — he isn't leaving.  Bonus: one person now covers the whole week (removes the old 1/31 mid-week handoff). |
+| Feb 28 – Mar 5 | Kopp Vanuzzi | Role-swap window 2/8–3/5: the LSH2 and Lahey slots trade roles, so the Fri-LC→Sun-NF chain hands the boundary week to the Lahey rotator, whose block runs to 3/7. |
+| Mar 28 – Apr 2 | Almadhoob | Role-swap window 3/7–4/2, same mechanism; Almadhoob's block runs to 4/18.  Side benefit: he no longer starts his rotation on night float (3/22), and Patel no longer does a single night float on his final day (3/21). |
 
-Every hard rule is preserved — the audit above is identical to the unprotected baseline. No LSH intern transitions from a night-float shift into a Lahey day one.
+Cost accounting (who absorbs the displaced weeks): Zaidi takes the NF weeks of 1/31–2/5 and 2/21–26 (his nights end 2 days before his block does); Kennedy takes 3/21–26 (nights end 5 days before his block does).  Both are exempt from the transition problem only if their next month is outpatient/elective/vacation — as are the two exemptions the audit carries for **MacNeille (NF 10/25–30, block ends 10/31)** and **Oghenesume (NF 4/25–30, block ends 4/30)**.  Confirm all four against the year rotation grid; revoking an exemption makes the audit fail loudly rather than silently shipping a bad transition.
 
 ## ACGME duty hours
 
 | Limit | Status | Measured |
 |---|---|---|
-| ≤ 80 h/wk (avg over 4 wks) | ✅ PASS | busiest 66.5 h/wk |
+| ≤ 80 h/wk (avg over 4 wks) | ✅ PASS | busiest 69.4 h/wk |
 | No duty period > 28h | ✅ PASS | longest 24 h (Sat 24h) |
 | ≥ 1 day off per week | ✅ PASS | longest streak 6 days |
 

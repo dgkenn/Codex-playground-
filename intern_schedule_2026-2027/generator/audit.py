@@ -48,6 +48,23 @@ for l,dl in calldays.items():
     for a,b in zip(dl,dl[1:]):
         if (b-a).days<3: rec("Q4",f"{l}: LC/24h {a} then {b} ({(b-a).days}d apart, <4th-day)")
 
+# Leaving-the-service protection: no LSH intern may be on night float on the
+# last day (or day before last) of their block — they'd start their next
+# rotation straight off a night shift.  Exemptions require the NEXT month to
+# be outpatient/vacation/elective (per the year rotation grid) and are listed
+# explicitly so they can be revoked the moment the grid says otherwise.
+NEXT_IS_OUTPATIENT={("MACNEILLE",2026,10),   # Nov 2026 — confirm outpatient/elective
+                    ("OGHENESUME",2027,4)}   # May 2027 — confirm outpatient/elective
+for dt in days:
+    nfp=A[dt]["NF"]
+    if not nfp: continue
+    info=gen.roster(dt).get(nfp)
+    if not info or info["type"]!="LSH": continue
+    if (info["end"]-dt).days>1: continue
+    if nfp in gen.roster(info["end"]+timedelta(1)): continue   # continues at LSH
+    if (nfp,dt.year,dt.month) in NEXT_IS_OUTPATIENT: continue
+    rec("end-on-nf",f"{dt} {nfp} on NF with block ending {info['end']} (leaves the service)")
+
 # Friday LC -> next Sunday NF
 for dt in days:
     if dt.weekday()==4 and A[dt]["LC"]:
@@ -112,7 +129,7 @@ for l,pd in present_days.items():
         if run>=7: rec("dayoff",f"{l} works 7+ consecutive days ending {dt}")
         prev=dt
 
-order=["accounting","one-LC","LC-diff-prev","Q4","fri-lc-nf","nf-consec","nf-present","nf-sat",
+order=["accounting","one-LC","LC-diff-prev","Q4","end-on-nf","fri-lc-nf","nf-consec","nf-present","nf-sat",
        "double","sun-no-sc","sat-clean","weekday-off-thu","one-off","sat-off-sun","sat-not-nf-next",
        "sat-not-nf-prev","sat-max1","dayoff"]
 print("="*70); print("COMPLIANCE AUDIT — comprehensive rules"); print("="*70)
@@ -200,6 +217,7 @@ L.append("| Rule | Status |")
 L.append("|---|---|")
 rows=[("One Long Call per day","one-LC"),("Different long-call intern than previous day","LC-diff-prev"),
       ("Q4 — every intern on call only every 4th day","Q4"),
+      ("No one leaving the service ends on night float","end-on-nf"),
       ("Friday long-call intern = next week's night float","fri-lc-nf"),
       ("Night float: same person the whole Sun–Fri block","nf-consec"),
       ("Night-float intern present","nf-present"),("No night float on Saturday","nf-sat"),
@@ -235,23 +253,27 @@ L.append(f"4. **Night-float transition handoffs ({len(HANDOFF)}).** At month/rot
          "departing intern finishes a few nights and the arriving intern continues the block — exactly "
          "as the rules describe (\"a new intern starts night float when the month ends\").")
 L.append("")
-L.append("## Month-end night-float protection (Jan–Mar 2027)")
+L.append("## Leaving-the-service night-float protection (hard rule)")
 L.append("")
-L.append("The march places the final week's night float of January, February, and March on LSH "
-         "slot 2.  Left to a naive roster order, that would have put **Oghenesume (1/31), Li (2/28) "
-         "and Matsuoka (3/28–31)** on night float on the last day(s) of their LSH block — directly "
-         "before each starts at **Lahey** the next morning.  Because slot occupancy is a roster "
-         "decision (not an algorithm rule), the pairs for those three months are ordered so the "
-         "departing-to-Lahey intern holds slot 0 instead:")
+L.append("**No intern whose block is ending holds the night float.** The march places the final "
+         "NF week of January, February and March 2027 on LSH slot 2 — under a naive roster that is "
+         "**Oghenesume (1/31), Li (2/28) and Matsuoka (3/28–31)**, each walking into **Lahey** the "
+         "next morning straight off a night shift.  Fixed structurally, with the audit now enforcing "
+         "it as a hard rule (`end-on-nf`):")
 L.append("")
-L.append("| Month-end | Night float (protected schedule) | Why it's safe |")
+L.append("| Month-end NF week | Covered by | Why they're safe |")
 L.append("|---|---|---|")
-L.append("| Jan 31 | Zaidi | Continues at LSH in February (also removes the 1/31–2/5 mid-week NF handoff — one intern covers the full week) |")
-L.append("| Feb 28 | Zaidi | Ends his LSH block on NF; next-day rotation must be OPD/elective/vacation (confirm) |")
-L.append("| Mar 28–31 | Kennedy | Covers the month-end block; next-day rotation must be OPD/elective/vacation (confirm) |")
+L.append("| Jan 31 – Feb 5 | Zaidi | Slot choice: Zaidi continues at LSH in February — he isn't leaving.  Bonus: one person now covers the whole week (removes the old 1/31 mid-week handoff). |")
+L.append("| Feb 28 – Mar 5 | Kopp Vanuzzi | Role-swap window 2/8–3/5: the LSH2 and Lahey slots trade roles, so the Fri-LC→Sun-NF chain hands the boundary week to the Lahey rotator, whose block runs to 3/7. |")
+L.append("| Mar 28 – Apr 2 | Almadhoob | Role-swap window 3/7–4/2, same mechanism; Almadhoob's block runs to 4/18.  Side benefit: he no longer starts his rotation on night float (3/22), and Patel no longer does a single night float on his final day (3/21). |")
 L.append("")
-L.append("Every hard rule is preserved — the audit above is identical to the unprotected baseline. "
-         "No LSH intern transitions from a night-float shift into a Lahey day one.")
+L.append("Cost accounting (who absorbs the displaced weeks): Zaidi takes the NF weeks of 1/31–2/5 "
+         "and 2/21–26 (his nights end 2 days before his block does); Kennedy takes 3/21–26 (nights "
+         "end 5 days before his block does).  Both are exempt from the transition problem only if "
+         "their next month is outpatient/elective/vacation — as are the two exemptions the audit "
+         "carries for **MacNeille (NF 10/25–30, block ends 10/31)** and **Oghenesume (NF 4/25–30, "
+         "block ends 4/30)**.  Confirm all four against the year rotation grid; revoking an "
+         "exemption makes the audit fail loudly rather than silently shipping a bad transition.")
 L.append("")
 L.append("## ACGME duty hours")
 L.append("")

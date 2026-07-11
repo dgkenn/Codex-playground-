@@ -18,10 +18,12 @@ def d(m,day,y): return date(y,m,day)
 # LSH: (slot0 person, slot2 person) per calendar month.  Two LSH interns/month.
 # The ORDER of each pair is a real scheduling decision: the march assigns night
 # float by SLOT, and in Jan/Feb/Mar 2027 the final week's night float lands on
-# slot2.  Each of those months, the intern leaving for Lahey on the 1st is
-# placed in slot0 so the month-end night float falls on the intern whose next
-# rotation can absorb it (Zaidi stays at LSH through Feb; Kennedy covers the
-# Mar 28-31 block).  Nobody transitions LSH-night-float -> Lahey-day-one.
+# slot2.  January: Zaidi (who continues at LSH in Feb) holds slot2, so the
+# 1/31-2/5 NF week belongs to someone who isn't leaving.  Feb/Mar: no LSH
+# intern continues across those boundaries, so the month-end NF week is handed
+# to the boundary-spanning Lahey rotator via SWAP12_DAYS (below); the slot2
+# intern instead takes the previous NF week, ending their nights 2+ days
+# before transition.  Nobody leaving the service ends on night float.
 LSH_MONTH = {
  (2026,9):["WISE","LI"],
  (2026,10):["MACNEILLE","BRONSON"], (2026,11):["WISE","KENNEDY"],
@@ -65,10 +67,28 @@ def _blk(blocks,dt):
 # empty here so the document is the clean, fully-auditable pure-march baseline
 # (November personal tweaks are handled on the back end).
 KEN_SWAP_DAYS=set()   # e.g. {d(11,x,2026) for x in range(1,14)} to re-enable
+# --- Month-end night-float protection (Feb & Mar 2027) -----------------------
+# NOBODY whose block ends with the month may hold the month-end night float.
+# The march puts the final NF week of Feb and Mar on an LSH slot, i.e. on an
+# intern leaving the service the next morning.  The only person present whose
+# rotation SPANS each boundary is the Lahey rotator (Kopp Vanuzzi to 3/7,
+# Almadhoob to 4/18), so for a window ending at each boundary the LSH2 slot
+# and the Lahey slot trade ROLES (same mechanism as the Kennedy/Chiasson
+# November accommodation).  Each window opens at the start of a march week,
+# three weeks out, so the Fri-LC -> Sun-NF chain stays intact, Q4 spacing
+# holds, and no one collects a second Saturday 24h in the month.  (Feb's
+# window opens Mon 2/8 rather than Sun 2/7 so Juyal keeps his final-Sunday
+# day call and Zaidi is not called the day after his 2/1-5 night-float week.)
+def _span(a,b):
+    s=set(); t=a
+    while t<=b: s.add(t); t+=timedelta(days=1)
+    return s
+SWAP12_DAYS=_span(d(2,8,2027),d(3,5,2027))|_span(d(3,7,2027),d(4,2,2027))
 def slot_person(slot,dt):
     if dt in KEN_SWAP_DAYS:
         if slot==1: return "KENNEDY"       # Kennedy takes the Lahey slot
         if slot==2: return "CHIASSON"      # Chiasson takes the LSH2 slot
+    if dt in SWAP12_DAYS and slot in (1,2): slot=3-slot   # LSH2 <-> Lahey roles
     if slot in (0,2):
         lm=LSH_MONTH.get((dt.year,dt.month))
         return lm[0] if slot==0 else lm[1]
