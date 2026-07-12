@@ -383,3 +383,16 @@ Tested whether measured COHb/MetHb drive the pulse-ox over-read and explain the 
 no new stream). COHb coef on bias non-monotonic/wrong-sign; COHb dynamic range too low (median 0.8%, p95 2.2% — few
 CO-poisoning cases in general ICU); racial gap in the COHb-measured subset not significant (z=−1.8) so the
 "33% explained" is noise. No clean novel finding. Confirms occult-hypoxemia line is exhausted for a breakthrough.
+
+## ED triage under-triage disparity (MC-MED, fresh dataset) — LIVE LEAD (passed robustness gate)
+| # | Test | Result | Status |
+|---|---|---|---|
+| ED-A | P(high-acuity ESI 1-2 | objective MEWS>=2) by race | White 73% vs Hispanic 69%, matched MEWS | signal |
+| ED-B2 | logistic ESI(1-2) ~ MEWS+age+sex+race+payor+EMS | **Hispanic OR 0.86 [0.80-0.93]; Black OR 0.89 [0.79-0.99]** (under-triaged) | ✅ robust |
+| ED-C | 72h-return | discharged ~ race+age+MEWS+payor+sex | **Black OR 1.60 [1.42-1.80]**; Hispanic null after adj (0.95) | ✅ robust (Black) |
+
+**Verdict:** first post-C8 lead to SURVIVE its robustness gate (insurance/access-adjusted). Coherent Black-patient
+signal: under-triaged vs objective severity + 60% higher 72h bounce-back. Single-center (Stanford) — external
+replication (MIMIC-IV-ED) is the #1 gate; soft outcome (return) + MEWS-anchor imperfection are the honest caveats.
+Tier: solid health-equity (JAMA Netw Open/JAMA IM/Annals EM); ceiling raised by external replication + harder
+outcome. Predicted win-likelihood ~0.45 (real publishable finding; top-tier needs replication). Doc: docs/research/32.
