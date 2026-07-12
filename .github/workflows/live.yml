@@ -132,6 +132,9 @@ jobs:
           mkdir -p /tmp/ls
           cp -f "kalshi_fees_${ASSET}15m.jsonl" kalshi_markout.jsonl "kalshi_winrec_${ASSET}15m.jsonl" \
                 "live_metrics_kalshi_${ASSET}15m.jsonl" /tmp/ls/ 2>/dev/null || true
+          # live-recon + order-lifecycle rows (the shadow-vs-live diagnosis data) were written to the
+          # runner-local gha_data/ and DIED with the runner -- persist them with the telemetry.
+          cp -f gha_data/live_recon_*.jsonl gha_data/order_lifecycle_*.jsonl /tmp/ls/ 2>/dev/null || true
           if [ -n "$(ls -A /tmp/ls 2>/dev/null)" ]; then
             day=$(date -u +%Y-%m-%d)
             if git fetch --depth=1 origin live-state 2>/dev/null; then
