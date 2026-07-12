@@ -138,7 +138,11 @@ class KalshiMarket:
                    "_t_first": None, "_t_last": None, "_n_polls": 0, "_tickw": {}}
         self.shared = {"st": None, "s0": None, "flow": {}, "spothist": [], "microhist": {}, "qema": {}}
         self.variants = [Variant(s.name, self.mk, s.cap, s.skew, size_mode=s.size_mode, gate=s.gate,
-                                 shared=self.shared, short_skew=s.short_skew, tau_guard=s.tau_guard)
+                                 shared=self.shared, short_skew=s.short_skew, tau_guard=s.tau_guard,
+                                 # thread per-strat AS_K/MO_K overrides (without these the sweep
+                                 # arms silently duplicate their parents -- the no-op failure
+                                 # strategies.validate() exists to prevent)
+                                 as_k=getattr(s, "as_k", None), mo_k=getattr(s, "mo_k", None))
                          for s in strategies.enabled()]
         self.midtl = {}
         self.seen_trades = set()
