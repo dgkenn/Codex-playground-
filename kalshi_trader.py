@@ -1831,6 +1831,7 @@ def main():
     # _gh_tok is hoisted above _record_kill now (durable sticky-kill needs it first); reused here.
     _rsw = {"last": 0.0}
     _loop_diag = {"t": 0.0}
+    _skip_ct = {}
 
     def _remote_switch_is_off():
         url = a.remote_switch_url
@@ -2706,7 +2707,9 @@ def main():
                 print(f"[LOOP] rest_bb={ybb} rest_ba={yba} fresh={_fresh} "
                       f"ws_bb={_ws_e.get('bb')} ws_ba={_ws_e.get('ba')} "
                       f"branch={'BOOK' if (ybb is not None and yba is not None) else 'SEED'} "
-                      f"resting={len(resting)} places={ops.get('place',0)}", flush=True)
+                      f"resting={len(resting)} places={ops.get('place',0)} "
+                      f"skips={dict(_skip_ct)}", flush=True)
+                _skip_ct.clear()
             if ybb is not None and yba is not None:
                 if _fresh:
                     deadman_tripped = False
@@ -2815,31 +2818,31 @@ def main():
             for side, price in targets:
                 key = (side, round(price, 4))
                 if key in resting:
-                    continue
+                    _skip_ct["resting"] = _skip_ct.get("resting",0)+1; continue
                 if reject_cd.get(key, 0.0) > time.time():
-                    continue              # reject churn breaker: this exact price just bounced
+                    _skip_ct["reject_cd"] = _skip_ct.get("reject_cd",0)+1; continue              # reject churn breaker: this exact price just bounced
                 if time.time() < side_cooldown[side]:
-                    continue              # tweak 1: post-fill cooldown (don't re-quote into the trend)
+                    _skip_ct["side_cd"] = _skip_ct.get("side_cd",0)+1; continue              # tweak 1: post-fill cooldown (don't re-quote into the trend)
                 # is this quote COMPLETING a box (reducing |net|)? completing only ever cuts
                 # directional risk, so it is exempt from the open-only late-window guards.
                 is_completing = ((net_delta > 1e-9 and side == "no") or
                                  (net_delta < -1e-9 and side == "yes"))
                 if win_fills.get(side, 0) >= a.max_fills_side and not is_completing:
-                    continue              # tweak 4 (post-mortem): trends outlast the cooldown -- the
+                    _skip_ct["max_fills"] = _skip_ct.get("max_fills",0)+1; continue              # tweak 4 (post-mortem): trends outlast the cooldown -- the
                                           # 5th+ same-side fill in a window is where the edge dies
                                           # (completing legs exempt: they shed risk, never add it)
                 if spread_now < a.min_spread - 1e-9:
-                    continue              # tweak 2 REVISED: 1c-spread fills are zero-EV UNPAIRED,
+                    _skip_ct["min_spread"] = _skip_ct.get("min_spread",0)+1; continue              # tweak 2 REVISED: 1c-spread fills are zero-EV UNPAIRED,
                                           # but under --max-net pairing a 1c book locks 1c/pair
                                           # risk-free -> default lowered 0.02 -> 0.01 (tape floor
                                           # table: all-spreads +1.74c/win t=2.1 vs >=2c-only -0.13c)
                 if tau_left < a.tau_guard and not is_completing:
-                    continue              # tweak 3: late-window OPENING is adverse -- but a COMPLETING
+                    _skip_ct["tau_guard"] = _skip_ct.get("tau_guard",0)+1; continue              # tweak 3: late-window OPENING is adverse -- but a COMPLETING
                                           # leg must keep quoting (the tau-guard blocking it WAS the
                                           # directional-loss bug: unpaired legs rode to settlement)
                 # Toxicity gate: skip placing if microprice says this side is adverse
                 if mp is not None and gate_check(side, price, ybb, yba, net_delta, a.gate, 0.0, clean_ybq, clean_yaq, tau_left=tau_left):
-                    continue
+                    _skip_ct["gate"] = _skip_ct.get("gate",0)+1; continue
                 # HARD DIRECTIONAL INVENTORY CLAMP -> BOX-PAIRING DISCIPLINE. A net position of N
                 # binary contracts risks up to $N held; but the deeper finding (box decomposition,
                 # live + 20k tape fills) is that PAIRED yes/no fills are the entire profit engine
@@ -2859,7 +2862,7 @@ def main():
                                  for (s_, _p), m in pending_cancel.items() if s_ == side)
                 proj = net_delta + sgn * (rest_same + a.post)
                 if abs(proj) > inv_cap + 1e-9:
-                    continue
+                    _skip_ct["inv_clamp"] = _skip_ct.get("inv_clamp",0)+1; continue
                 # BOX COMPLETION FLOOR: this quote pairs against existing inventory -> require the
                 # pair to LOCK >= eff_lock vs the unpaired leg's average cost. Early in the window
                 # eff_lock = --min-lock (hold out for a positive lock; don't buy a guaranteed loss).
@@ -2895,7 +2898,7 @@ def main():
                                         for (_, price_), m in resting.items())
                 exposure = open_buy_notional + max(-cash, 0.0)
                 if exposure + price * a.post > a.max_notional:
-                    continue
+                    _skip_ct["notional"] = _skip_ct.get("notional",0)+1; continue
                 # Side ladder rung cap
                 if sum(1 for k in resting if k[0] == side) >= a.max_rungs:
                     continue
