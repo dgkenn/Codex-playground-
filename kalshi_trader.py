@@ -1334,9 +1334,12 @@ def main():
                     help="STRAND DISPOSAL (live RCA 2026-06-13): when a leg stays unpaired past "
                          "--dispose-cross-s OR within --close-flatten-tau of close, COMPLETE the box "
                          "by CROSSING to take the offer (post_only=False, a taker fill) instead of "
-                         "riding the naked leg to settlement. Bounded by --chase-max-give (mid-window) "
-                         "/ --close-max-give (close). OFF by default (post-only-only); the live trader "
-                         "structurally could not complete without this, so strands settled at -21.76c.")
+                         "riding the naked leg to settlement. Bounded by --dispose-max-give once the "
+                         "aged path decides to cross (optimal-stopping study: gating the aged cross by "
+                         "the tighter --chase-max-give just blocked it and let the leg age into "
+                         "close-force, the worst outcome) / --close-max-give near close. OFF by "
+                         "default (post-only-only); the live trader structurally could not complete "
+                         "without this, so strands settled at -21.76c.")
     ap.add_argument("--dispose-cross-s", type=float, default=90.0,
                     help="unpaired AGE (s) at which --dispose-cross TAKES the offer. DECOUPLED from "
                          "--chase-unpaired-s (which governs the MAKER follow-the-touch lock-relaxation) "
@@ -3594,7 +3597,24 @@ def main():
                         # If even the forced completion would lock worse than the cap (book ran far away), HOLD
                         # the bounded leg instead -- a -22c expected hold beats a -83c catastrophic cross
                         # (the force-at-ANY-price fix overpaid: it created the -16.4c/box crossed-completion leak).
-                        cross_ok = (lock >= -give - 1e-9) or (force and lock >= -a.dispose_max_give - 1e-9)
+                        #
+                        # AGED-CROSS WIDENED BOUND (optimal-stopping study, 10,969 simulated first-fill
+                        # events): the aged (non-force, non-near-close) path used to be gated by the SAME
+                        # tight cap (--chase-max-give, ~2c) that governs the early passive-quote repricing
+                        # ramp (eff_lock above). When the market had moved more than that by the time the
+                        # leg aged out, the cross was blocked, the leg kept aging, and it eventually hit
+                        # close-force -- which pays whatever the market demands (the worst outcomes in the
+                        # study). Once the policy has DECIDED to cross via the aged path, bound it by the
+                        # FORCE-stage give (--dispose-max-give) instead: the two uses of the give budget are
+                        # split -- chase_max_give still governs the early ramp (unchanged), dispose_max_give
+                        # governs the decision to cross once aged. near-close and tier-2 one-shot are
+                        # unaffected (aged_wide requires `aged` specifically, not just any trigger reason).
+                        aged_wide = aged and not near_close and not force
+                        chase_cross_ok = lock >= -give - 1e-9
+                        wide_cross_ok = aged_wide and lock >= -a.dispose_max_give - 1e-9
+                        cross_ok = (chase_cross_ok or (force and lock >= -a.dispose_max_give - 1e-9)
+                                    or wide_cross_ok)
+                        used_wide_bound = wide_cross_ok and not chase_cross_ok
                         if (0.0 < cross_px < 1.0 and need >= 1 and take >= 1 and cross_ok
                                 and reject_cd.get(ckey, 0.0) <= time.time()):
                             if place(cside, cross_px, ybb, yba, count=take, cross=True) is not None:
@@ -3610,6 +3630,10 @@ def main():
                                       f"(age={age_unp:.0f}s tau={tau_left:.0f}s "
                                       f"attempt={winrec['dispose_cross']}/{a.dispose_max_attempts or 'inf'} "
                                       f"give=${winrec['dispose_give']:.3f}/{a.dispose_budget or 'inf'})")
+                                if used_wide_bound and reject_cd.get(("_aged_cross_wide_log", cside), 0.0) <= time.time():
+                                    print(f"  [AGED-CROSS] committing at give={-lock:.3f} "
+                                          f"(was capped {a.chase_max_give:.2f})")
+                                    reject_cd[("_aged_cross_wide_log", cside)] = time.time() + 5.0
                             reject_cd[ckey] = time.time() + (0.8 if (force or take < need) else 3.0)
                         elif force and lock < -a.dispose_max_give:
                             # bounded HOLD: crossing would cost more than the cap; ride the (capped) leg

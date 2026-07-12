@@ -3748,6 +3748,229 @@ def test_px_band_shadow_arms():
 
 
 # ===========================================================================
+# TEST 37 — AGED-CROSS widened give bound (optimal-stopping study, 10,969
+#   simulated first-fill events)
+# ===========================================================================
+
+def _dispose_cross_ok_decision(lock, aged, near_close, force,
+                                chase_max_give, close_max_give, dispose_max_give):
+    """Replicates the (post-fix) cross_ok decision from kalshi_trader.py's dispose-cross block
+    (search '[AGED-CROSS]' in kalshi_trader.py -- the STRAND DISPOSAL comment block):
+
+        give = a.close_max_give if near_close else a.chase_max_give
+        aged_wide = aged and not near_close and not force
+        chase_cross_ok = lock >= -give - 1e-9
+        wide_cross_ok = aged_wide and lock >= -a.dispose_max_give - 1e-9
+        cross_ok = chase_cross_ok or (force and lock >= -a.dispose_max_give - 1e-9) or wide_cross_ok
+        used_wide_bound = wide_cross_ok and not chase_cross_ok
+
+    Returns (cross_ok, used_wide_bound).
+    """
+    give = close_max_give if near_close else chase_max_give
+    aged_wide = aged and not near_close and not force
+    chase_cross_ok = lock >= -give - 1e-9
+    wide_cross_ok = aged_wide and lock >= -dispose_max_give - 1e-9
+    cross_ok = chase_cross_ok or (force and lock >= -dispose_max_give - 1e-9) or wide_cross_ok
+    used_wide_bound = wide_cross_ok and not chase_cross_ok
+    return cross_ok, used_wide_bound
+
+
+def _dispose_cross_ok_decision_PRE_FIX(lock, near_close, force,
+                                        chase_max_give, close_max_give, dispose_max_give):
+    """The PRE-FIX decision (main@da648b3af, before this change): the aged path shared
+    --chase-max-give with the early maker-repricing ramp; only FORCE got --dispose-max-give."""
+    give = close_max_give if near_close else chase_max_give
+    return (lock >= -give - 1e-9) or (force and lock >= -dispose_max_give - 1e-9)
+
+
+def test_aged_cross_wide_bound():
+    """
+    FINDING (optimal-stopping completion-policy study, 10,969 simulated first-fill events): the
+    aged (non-force) dispose-cross was gated by the SAME tight give cap (--chase-max-give, ~2c)
+    that governs the early maker-repricing ramp (eff_lock). When the market had moved more than
+    that by the time a leg aged out, the aged cross was blocked, the leg kept aging, and it
+    eventually hit close-force -- which pays whatever the market demands (the worst outcomes in
+    the study). The validated fix: once the policy DECIDES to cross via the aged path, bound it
+    by the FORCE-stage give (--dispose-max-give) instead, splitting the give budget's two uses.
+
+    Checks:
+      1. PREMISE CONFIRMED against the pre-fix source (git show da648b3af:kalshi_trader.py):
+         the aged branch computed cross_ok from `give` alone (chase_max_give mid-window /
+         close_max_give near close) with no dispose_max_give fallback outside FORCE.
+      2. Old code (pre-fix decision fn) BLOCKS an aged cross whose give sits strictly between
+         chase_max_give and dispose_max_give; new code (post-fix decision fn) CROSSES it, and
+         reports used_wide_bound=True.
+      3. (a) early maker-repricing ramp (eff_lock ramp formula using chase_max_give) is
+         byte-identical in the deployed source.
+      4. (b) the dispose-cross attempt/budget circuit breaker (T28's cap_hit/blocked gate) is
+         structurally UNCHANGED and still gates before the widened cross_ok computation --
+         verified both via _dispose_cap_decision (T28) composed with the new give bound, and via
+         source ordering.
+      5. (c) near-close and (further) FORCE-path decisions are byte-equivalent pre/post-fix
+         across a grid of locks -- widening only ever fires for the plain aged branch.
+      6. (d) tier-2 dead-man one-shot (a cross triggered by tier2_shot alone, NOT aged) still
+         uses the tight chase_max_give bound, unchanged -- aged_wide requires `aged` specifically.
+      7. STRUCTURAL: the deployed source contains the widened-bound decision and a rate-limited
+         "[AGED-CROSS]" log line gated on used_wide_bound.
+    """
+    name = "T37: AGED-CROSS widened give bound (optimal-stopping study, 10,969 events)"
+    try:
+        import inspect
+        import re
+        import subprocess
+        observations = []
+
+        chase_max_give = 0.02      # deployed default
+        close_max_give = 0.04      # deployed default
+        dispose_max_give = 0.25    # deployed default
+
+        # --- 1. PREMISE CHECK against the pre-fix commit this branch started from ---
+        try:
+            pre_fix_src = subprocess.run(
+                ["git", "show", "da648b3af:kalshi_trader.py"],
+                cwd=os.path.dirname(os.path.abspath(__file__)) or ".",
+                capture_output=True, text=True, timeout=15).stdout
+        except Exception:
+            pre_fix_src = ""
+        if pre_fix_src:
+            idx_dc = pre_fix_src.index("# --- STRAND DISPOSAL: cross to COMPLETE")
+            idx_dc_end = pre_fix_src.index("# --- PULL stale / toxic / off-target rungs ---", idx_dc)
+            pre_fix_block = pre_fix_src[idx_dc:idx_dc_end]
+            assert "cross_ok = (lock >= -give - 1e-9) or (force and lock >= -a.dispose_max_give - 1e-9)" \
+                in pre_fix_block, \
+                "premise check: pre-fix aged branch must have used ONLY `give` (chase_max_give) " \
+                "outside of the force fallback -- if this no longer matches, the premise may be stale"
+            assert "aged_wide" not in pre_fix_block, "premise check: pre-fix must not already split the give budget"
+            observations.append("premise_confirmed_pre_fix_aged_path_shared_chase_max_give=True")
+        else:
+            observations.append("premise_check_skipped_git_show_unavailable")
+
+        # --- 2. old code blocks an aged cross needing give strictly between the two caps;
+        # new code crosses it and reports used_wide_bound ---
+        lock = -0.10   # give=0.10: > chase_max_give(0.02), < dispose_max_give(0.25)
+        old_ok = _dispose_cross_ok_decision_PRE_FIX(lock, near_close=False, force=False,
+                                                     chase_max_give=chase_max_give,
+                                                     close_max_give=close_max_give,
+                                                     dispose_max_give=dispose_max_give)
+        assert old_ok is False, "premise: old aged decision must BLOCK a give of 0.10 (> chase cap 0.02)"
+        new_ok, used_wide = _dispose_cross_ok_decision(lock, aged=True, near_close=False, force=False,
+                                                        chase_max_give=chase_max_give,
+                                                        close_max_give=close_max_give,
+                                                        dispose_max_give=dispose_max_give)
+        assert new_ok is True and used_wide is True, \
+            "fix: new aged decision must CROSS a give of 0.10 using the widened (dispose_max_give) bound"
+        observations.append(f"aged_give_0.10_between_caps_old_blocks_new_crosses_used_wide={used_wide}=True")
+
+        # a give beyond EVEN dispose_max_give must still be blocked (0.25 is a hard cap, not
+        # "ignore the cap") -- study explicitly bounds by dispose_max_give, not unbounded
+        new_ok2, used_wide2 = _dispose_cross_ok_decision(-0.30, aged=True, near_close=False, force=False,
+                                                          chase_max_give=chase_max_give,
+                                                          close_max_give=close_max_give,
+                                                          dispose_max_give=dispose_max_give)
+        assert new_ok2 is False, "aged path must still HOLD when give exceeds dispose_max_give (0.30 > 0.25)"
+        observations.append("aged_give_beyond_dispose_max_give_still_blocked=True")
+
+        # a give within the ORIGINAL chase cap crosses under both old and new (no regression)
+        old_ok3 = _dispose_cross_ok_decision_PRE_FIX(-0.01, near_close=False, force=False,
+                                                      chase_max_give=chase_max_give,
+                                                      close_max_give=close_max_give,
+                                                      dispose_max_give=dispose_max_give)
+        new_ok3, used_wide3 = _dispose_cross_ok_decision(-0.01, aged=True, near_close=False, force=False,
+                                                          chase_max_give=chase_max_give,
+                                                          close_max_give=close_max_give,
+                                                          dispose_max_give=dispose_max_give)
+        assert old_ok3 is True and new_ok3 is True and used_wide3 is False, \
+            "a cheap aged cross (give < chase_max_give) must cross the SAME way pre/post-fix " \
+            "(no widened-bound log, since the tight cap already allowed it)"
+        observations.append("cheap_aged_cross_unaffected_no_wide_bound_flag=True")
+
+        # --- 3(a). early maker-repricing ramp (eff_lock) untouched: exact formula still present ---
+        src = inspect.getsource(kt)
+        assert "a.min_lock - (a.min_lock + a.chase_max_give) * u" in src, \
+            "the unpaired-age eff_lock ramp must still relax toward chase_max_give, unchanged"
+        assert "a.min_lock - (a.min_lock + a.close_max_give) * frac" in src, \
+            "the close-tau eff_lock ramp must still relax toward close_max_give, unchanged"
+        observations.append("early_repricing_ramp_formulas_byte_identical=True")
+
+        # --- 4(b). dispose-cross circuit breaker still gates BEFORE the (now-widened) cross_ok,
+        # composed with T28's own decision function ---
+        cap_hit, force_bonus, blocked, _, _ = _dispose_cap_decision(
+            dispose_cross_n=3, dispose_give=0.0, dispose_max_attempts=3, dispose_budget=0.10,
+            force=False, dispose_force_used=False)
+        assert cap_hit and blocked, "attempts==max must still block BEFORE any cross_ok/give check runs"
+        # even though this lock (give=0.10) would now be crossable under the widened aged bound,
+        # the attempt cap must still veto it entirely (the breaker is evaluated first / independently)
+        new_ok4, _ = _dispose_cross_ok_decision(lock, aged=True, near_close=False, force=False,
+                                                 chase_max_give=chase_max_give, close_max_give=close_max_give,
+                                                 dispose_max_give=dispose_max_give)
+        assert new_ok4 is True and blocked is True, \
+            "cross_ok alone doesn't gate a real attempt -- the circuit breaker's `blocked` must " \
+            "independently veto it regardless of the (now more permissive) give bound"
+        idx_dc = src.index("# --- STRAND DISPOSAL: cross to COMPLETE")
+        idx_dc_end = src.index("# --- PULL stale / toxic / off-target rungs ---", idx_dc)
+        dc_block = src[idx_dc:idx_dc_end]
+        idx_cap = dc_block.index("attempts_capped = (a.dispose_max_attempts")
+        idx_wide = dc_block.index("aged_wide = aged and not near_close and not force")
+        assert idx_cap < idx_wide, \
+            "the attempt/budget circuit breaker must still gate BEFORE the widened cross_ok computation"
+        observations.append("circuit_breaker_still_gates_before_widened_cross_ok=True")
+
+        # --- 5(c). near-close and force decisions byte-equivalent old vs new across a lock grid ---
+        for lk in (-0.001, -0.02, -0.03, -0.04, -0.05, -0.10, -0.25, -0.26, -0.30):
+            for nc in (True, False):
+                old = _dispose_cross_ok_decision_PRE_FIX(lk, near_close=nc, force=True,
+                                                          chase_max_give=chase_max_give,
+                                                          close_max_give=close_max_give,
+                                                          dispose_max_give=dispose_max_give)
+                new, wide = _dispose_cross_ok_decision(lk, aged=True, near_close=nc, force=True,
+                                                        chase_max_give=chase_max_give,
+                                                        close_max_give=close_max_give,
+                                                        dispose_max_give=dispose_max_give)
+                assert old == new and wide is False, \
+                    f"FORCE path must be byte-equivalent pre/post-fix (lock={lk} near_close={nc}): old={old} new={new} wide={wide}"
+            # near_close (non-force) must also be untouched
+            old_nc = _dispose_cross_ok_decision_PRE_FIX(lk, near_close=True, force=False,
+                                                         chase_max_give=chase_max_give,
+                                                         close_max_give=close_max_give,
+                                                         dispose_max_give=dispose_max_give)
+            new_nc, wide_nc = _dispose_cross_ok_decision(lk, aged=True, near_close=True, force=False,
+                                                          chase_max_give=chase_max_give,
+                                                          close_max_give=close_max_give,
+                                                          dispose_max_give=dispose_max_give)
+            assert old_nc == new_nc and wide_nc is False, \
+                f"near-close (non-force) path must be byte-equivalent pre/post-fix (lock={lk}): old={old_nc} new={new_nc}"
+        observations.append("force_and_near_close_paths_byte_equivalent_across_lock_grid=True")
+
+        # --- 6(d). tier-2 one-shot alone (aged=False) must NOT get the widened bound ---
+        new_ok5, used_wide5 = _dispose_cross_ok_decision(lock, aged=False, near_close=False, force=False,
+                                                          chase_max_give=chase_max_give,
+                                                          close_max_give=close_max_give,
+                                                          dispose_max_give=dispose_max_give)
+        assert new_ok5 is False and used_wide5 is False, \
+            "a tier-2-only trigger (not aged) must stay on the tight chase_max_give bound, unchanged"
+        observations.append("tier2_only_trigger_stays_on_tight_chase_bound=True")
+
+        # --- 7. structural: widened decision + rate-limited [AGED-CROSS] log present in source ---
+        assert "aged_wide = aged and not near_close and not force" in dc_block
+        assert "wide_cross_ok = aged_wide and lock >= -a.dispose_max_give - 1e-9" in dc_block
+        assert "used_wide_bound = wide_cross_ok and not chase_cross_ok" in dc_block
+        assert "[AGED-CROSS]" in dc_block, "must log when the widened bound is actually used"
+        idx_log = dc_block.index("[AGED-CROSS]")
+        # confirm the log call is gated on used_wide_bound and rate-limited (reject_cd cooldown)
+        log_ctx = dc_block[max(0, idx_log - 300):idx_log + 200]
+        assert "used_wide_bound" in log_ctx, "[AGED-CROSS] log must be gated on used_wide_bound"
+        assert "_aged_cross_wide_log" in log_ctx and "reject_cd" in log_ctx, \
+            "[AGED-CROSS] log must be rate-limited via the same reject_cd cooldown pattern as other dispose logs"
+        # force sub-expression is preserved verbatim (byte-equivalent force gating)
+        assert "force and lock >= -a.dispose_max_give - 1e-9" in dc_block
+        observations.append("structural_widened_decision_and_rate_limited_log_present=True")
+
+        record(name, True, "; ".join(observations))
+    except Exception as e:
+        record(name, False, f"{type(e).__name__}: {e}\n{traceback.format_exc()}")
+
+
+# ===========================================================================
 # Main runner
 # ===========================================================================
 
@@ -3794,6 +4017,7 @@ def main():
     test_lifecycle_every_place_gets_terminal_row()
     test_recon_carries_dispose_fields()
     test_px_band_shadow_arms()
+    test_aged_cross_wide_bound()
 
     # Summary table
     print()
