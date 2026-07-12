@@ -68,3 +68,14 @@ if __name__=='__main__':
     rows = snapshot_row(n)
     append(rows)
     print(f'logged {len(rows)} bracket-rows to {OUT} (days_ahead={n})')
+
+    # Second pass (was spec'd in this docstring, never wired up before): settle any historical
+    # rows whose markets have since closed/finalized, in place on OUT, so the SAME file/commit
+    # step the workflow already ships (kalshi-weather.yml) carries scoreable rows -- no workflow
+    # change needed. Best-effort: never fails the collector run (a Kalshi API hiccup here should
+    # not block logging today's snapshot, which already happened above).
+    try:
+        from weather_settle import settle_log
+        settle_log(OUT)
+    except Exception as e:
+        print(f'weather_settle pass skipped/failed (non-fatal): {e}')

@@ -127,9 +127,18 @@ def load_longshot(path: str):
 
 
 def load_weather_clv(path: str):
-    """Only rows with a non-blank `settled`/`actual_high` are scoreable. Applies the rule
-    documented in weather_clv_harness.py: BUY the bracket when nbm_p - yes_ask clears the
-    per-contract taker fee (0.07*p*(1-p)); pnl = outcome - entry - fee (skip if no signal)."""
+    """Only rows with a non-blank `settled`/`actual_high` are scoreable (filled by
+    weather_settle.py's settlement join -- see that script for how `actual_high`/`settled` get
+    populated from the Kalshi public settlement result). Applies the rule documented in
+    weather_clv_harness.py: BUY the bracket when nbm_p - yes_ask clears the per-contract taker
+    fee (0.07*p*(1-p)); pnl = outcome - entry - fee (skip if no signal).
+
+    UNIT FIX (2026-07-12): `k_yes_ask` is logged in CENTS (0-100, e.g. "47") while `nbm_p` is a
+    probability (0-1). The original version of this loader compared/subtracted them directly
+    (`nbm_p - ask`), which is a unit mismatch that made `ask` dominate and the buy-signal
+    condition effectively never fire on real data (ask ~ 1-100 vs nbm_p ~ 0-1). Now `ask` is
+    normalized to a 0-1 probability (`ask/100`) before use, matching `nbm_p` and the `FEE`
+    fee model (which is defined for p in [0,1], per weather_clv_harness.py's own docstring)."""
     rows = []
     if not os.path.exists(path):
         return rows, 0
@@ -153,8 +162,10 @@ def load_weather_clv(path: str):
             d = to_date(r[idx["ts"]])
             try:
                 nbm_p = float(r[idx["nbm_p"]])
-                ask = float(r[idx["k_yes_ask"]])
+                ask = float(r[idx["k_yes_ask"]]) / 100.0  # cents -> probability, see UNIT FIX above
             except (ValueError, IndexError):
+                continue
+            if not (0.0 <= ask <= 1.0):
                 continue
             outcome = 1.0 if settled.lower() in ("1", "true", "yes", "y") else 0.0
             if nbm_p - ask <= FEE(ask):
