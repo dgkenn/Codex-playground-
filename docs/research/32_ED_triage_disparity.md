@@ -50,3 +50,17 @@ disparity work. A convincing **external replication** + harder outcome would rai
 2. Harder outcomes (return-with-admission, post-discharge mortality); adjust for chief-complaint category.
 3. Adversarial red-team (sonnet): is the objective anchor fair? is under-triage the right causal frame vs case-mix?
 4. Quantify the door-to-room *time* disparity (a more direct mechanism than acuity label) if timestamps support it.
+
+## EXTERNAL REPLICATION — MIMIC-IV-ED (BIDMC Boston, 398,622 stays) [added this session]
+Independent health system, same design. **Under-triage REPLICATES and strengthens** (MEWS anchor OR 3.79):
+- Black **OR 0.78 [0.75–0.81]**, Hispanic **OR 0.72 [0.68–0.76]**, Asian **OR 0.83 [0.77–0.89]** — all significant,
+  all stronger than MC-MED.
+**72h-return consequence replicates:** Black **OR 1.19 [1.14–1.24]** (MC-MED 1.60); Hispanic null (0.99) and Asian
+lower (0.83) — both identical in direction to MC-MED. The Hispanic-return null replicating in BOTH centers indicates
+a disciplined signal (under-triage is real for Hispanic; the return-consequence is specifically a Black-patient
+signal in both systems).
+
+**Two-center status:** ~500k ED visits, Stanford (CA) + BIDMC (MA). Core under-triage disparity is now externally
+replicated with an objective severity anchor — the #1 gate is cleared. Remaining: chief-complaint case-mix
+adjustment, door-to-room *time* mechanism, harder outcome (30-day post-discharge mortality via dod did not populate
+sufficiently among discharged — needs better mortality linkage), adversarial red-team. Tier raised toward JAMA/JAMA IM.

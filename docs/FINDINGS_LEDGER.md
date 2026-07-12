@@ -396,3 +396,9 @@ signal: under-triaged vs objective severity + 60% higher 72h bounce-back. Single
 replication (MIMIC-IV-ED) is the #1 gate; soft outcome (return) + MEWS-anchor imperfection are the honest caveats.
 Tier: solid health-equity (JAMA Netw Open/JAMA IM/Annals EM); ceiling raised by external replication + harder
 outcome. Predicted win-likelihood ~0.45 (real publishable finding; top-tier needs replication). Doc: docs/research/32.
+
+### ED under-triage — EXTERNAL REPLICATION (MIMIC-IV-ED, BIDMC Boston, n=398,622)
+Under-triage at matched MEWS+age+sex REPLICATES & strengthens: Black OR 0.78 [0.75-0.81], Hispanic 0.72 [0.68-0.76],
+Asian 0.83 [0.77-0.89] (all sig). 72h-return: Black OR 1.19 [1.14-1.24] (replicates MC-MED 1.60); Hispanic null,
+Asian lower (both match MC-MED). **Two US health systems, ~500k visits — #1 gate (external replication) CLEARED.**
+Predicted win-likelihood revised 0.45 -> 0.6 (two-center objective-anchored disparity + consequence). Tier -> JAMA/JAMA IM.
