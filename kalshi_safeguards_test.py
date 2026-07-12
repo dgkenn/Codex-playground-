@@ -1947,10 +1947,184 @@ def test_seed_v2_flag_off_byte_identical():
         guard_idx = src.index(guard, tick_idx)
         cooldown_check_idx = src.index('seed_burst_cooldown_active(seed_cooldown["tripped_at"]',
                                        tick_idx)
-        fair_band_idx = src.index("seed_fair_band_state(ws_state.get(mk[\"cid\"])", tick_idx)
+        # SEEDING v3 single-sources this call on `book_entry` (the WS ws_entry, or the
+        # REST-fallback ws_entry-shaped dict when WS stayed 'unknown' -- see T25) instead of
+        # hardcoding ws_state.get(mk["cid"]) -- same call, same function, just fed a variable that
+        # can come from either feed.
+        fair_band_idx = src.index("seed_fair_band_state(book_entry, fair_cents", tick_idx)
         assert cooldown_check_idx > guard_idx, "cooldown check must be below the seed_empty guard"
         assert fair_band_idx > guard_idx, "fair-band check must be below the seed_empty guard"
         observations.append("v2_logic_below_seed_empty_guard_in_seed_tick=True")
+
+        record(name, True, "; ".join(observations))
+    except Exception as e:
+        record(name, False, f"{type(e).__name__}: {e}")
+
+
+# ===========================================================================
+# TEST 25 — Seeding v3: REST fallback for a PERSISTENT WS 'unknown' + heartbeat
+# ===========================================================================
+
+def test_seed_v3_rest_fallback_and_heartbeat():
+    """
+    DIAGNOSIS (real 46-min live leg, run r29179923486, 2026-07-12 04:35-05:21Z): --seed-empty
+    produced ZERO [SEED] lines and zero placements across 4 windows on a market whose book was
+    verified totally empty via the public REST API, because Kalshi's WS sends NO
+    orderbook_snapshot message for an empty book -- seed_book_state(ws_state.get(ticker)) returns
+    'unknown' forever, and pre-v3 _seed_tick treated 'unknown' as a silent no-op (correct for a
+    transient post-rollover gap, structurally wrong for a book that will NEVER get a WS snapshot).
+    This exercises the actual v3 building blocks (seed_unknown_persisted, parse_book_entry,
+    get_book_raw) end-to-end against the exact observed condition, mirrors _seed_classify_book's
+    control flow (same pattern T7 uses for logic that lives inside main()'s closures) to pin the
+    REST-call-count assertions, and source-inspects the wiring into _seed_tick.
+    """
+    name = "T25: seeding v3 REST fallback (persistent WS-unknown) + [SEED] heartbeat"
+    try:
+        observations = []
+
+        class _FakeResp:
+            def __init__(self, payload):
+                self._payload = payload
+
+            def json(self):
+                return self._payload
+
+        class _FakeSess:
+            """Counts .get() calls so REST-call-rate assertions are exact, not inferred."""
+            def __init__(self, payload):
+                self._payload = payload
+                self.calls = 0
+
+            def get(self, url, timeout=4):
+                self.calls += 1
+                return _FakeResp(self._payload)
+
+        class _FailSess:
+            def get(self, url, timeout=4):
+                raise ConnectionError("simulated transient REST failure")
+
+        # --- persistence threshold: seed_unknown_persisted is the pure gating function ---
+        now = time.time()
+        thr = kt.SEED_UNKNOWN_REST_AFTER_S
+        assert kt.seed_unknown_persisted(None, now) is False, "never-seen -> not persisted"
+        assert kt.seed_unknown_persisted(now, now) is False, "just started -> not persisted"
+        assert kt.seed_unknown_persisted(now - (thr - 0.001), now) is False, \
+            "just under threshold -> not persisted (no REST call should fire yet)"
+        assert kt.seed_unknown_persisted(now - thr, now) is True, "exactly at threshold -> persisted"
+        assert kt.seed_unknown_persisted(now - (thr + 5.0), now) is True, "past threshold -> persisted"
+        observations.append(f"unknown_persisted_threshold_boundary_correct(thr={thr:.0f}s)=True")
+
+        # --- (a) unknown persisting > threshold + REST returns the OBSERVED empty book -> seeds ---
+        # Exact 2026-07-12 04:35Z observation: REST summary showed yes_bid/yes_ask null (both
+        # sides absent). Verify the SAME parse_book_entry/get_book_raw/seed_book_state pipeline
+        # _seed_classify_book's REST-fallback branch runs classifies this as 'empty', which
+        # _seed_tick's `if raw_state in ("has_book", "unknown"): return` guard does NOT catch --
+        # i.e. it falls through to the placement path (already proven safe/correct by T17-T20).
+        empty_payload = {"orderbook_fp": {"yes_dollars": None, "no_dollars": None}}
+        sess_empty = _FakeSess(empty_payload)
+        entry = kt.get_book_raw(sess_empty, "KXBTC15M-TEST")
+        assert entry is not None and sess_empty.calls == 1
+        assert kt.seed_book_state(entry) == "empty", \
+            "REST-fallback entry for the observed empty book must classify as 'empty' -> seeds"
+        observations.append("rest_fallback_empty_book_classifies_empty_and_seeds=True")
+
+        # --- (c) unknown + REST returns a genuinely two-sided book -> no seed, no churn ---
+        two_sided_payload = {"orderbook_fp": {
+            "yes_dollars": [["0.45", "10"]], "no_dollars": [["0.40", "8"]],
+        }}
+        entry2 = kt.get_book_raw(_FakeSess(two_sided_payload), "KXBTC15M-TEST")
+        assert kt.seed_book_state(entry2) == "has_book", \
+            "REST-fallback finding a real two-sided book must NOT trigger seeding"
+        observations.append("rest_fallback_two_sided_book_no_seed_no_churn=True")
+
+        # transient REST failure -> None, never a false 'empty' -- caller must keep treating the
+        # tick as 'unknown' (no churn on a network blip)
+        assert kt.get_book_raw(_FailSess(), "KXBTC15M-TEST") is None, \
+            "a transient REST failure must return None, not a false 'empty' classification"
+        observations.append("rest_fallback_transient_failure_returns_none_not_empty=True")
+
+        # --- (b) unknown < threshold -> ZERO REST calls, no seed. Mirrors _seed_classify_book's
+        # own control flow using the REAL pure functions (get_book_raw/seed_unknown_persisted/
+        # seed_book_state), so the call-count assertion is driven by the same gating predicate the
+        # closure uses (T7's established pattern for logic that lives inside main()'s closures).
+        def _mirror_classify(ws_raw, first_seen_ts, now_tick, sess):
+            if ws_raw != "unknown":
+                return ws_raw, None
+            if not kt.seed_unknown_persisted(first_seen_ts, now_tick):
+                return "unknown", None          # <-- no REST call: the assertion under test
+            rest_entry = kt.get_book_raw(sess, "KXBTC15M-TEST")
+            if rest_entry is None:
+                return "unknown", "unavailable"
+            return kt.seed_book_state(rest_entry), None
+
+        sess_should_not_be_called = _FakeSess(empty_payload)
+        state_b, _ = _mirror_classify("unknown", now - 5.0, now, sess_should_not_be_called)
+        assert state_b == "unknown"
+        assert sess_should_not_be_called.calls == 0, \
+            "unknown persisting < threshold must NOT call the REST fallback at all"
+        observations.append("unknown_under_threshold_zero_rest_calls=True")
+
+        # ... and past threshold, it DOES resolve via exactly one REST call (sanity: the mirror is
+        # wired the same way the real classify function is)
+        sess_should_be_called = _FakeSess(empty_payload)
+        state_a, _ = _mirror_classify("unknown", now - (thr + 1.0), now, sess_should_be_called)
+        assert state_a == "empty" and sess_should_be_called.calls == 1
+        observations.append("unknown_over_threshold_resolves_via_single_rest_call=True")
+
+        # --- (d) heartbeat rate-limiting: independent keyed cadence, mirrors _seed_log_rl's
+        # key -> last-emitted-ts dict (now multi-key; "heartbeat"=60s, "stale"=30s) ---
+        log_ts: dict = {}
+        emitted = []
+
+        def _mirror_log_rl(msg, key, interval, at):
+            if at - log_ts.get(key, 0.0) >= interval:
+                log_ts[key] = at
+                emitted.append((at, key, msg))
+
+        t0 = 1_000_000.0
+        _mirror_log_rl("state=empty tau=500s resting_seeds=2", "heartbeat", 60.0, t0)
+        _mirror_log_rl("state=empty tau=490s resting_seeds=2", "heartbeat", 60.0, t0 + 10.0)
+        _mirror_log_rl("state=empty tau=480s resting_seeds=2", "heartbeat", 60.0, t0 + 59.9)
+        _mirror_log_rl("state=empty tau=440s resting_seeds=2", "heartbeat", 60.0, t0 + 60.0)
+        heartbeat_emits = [e for e in emitted if e[1] == "heartbeat"]
+        assert len(heartbeat_emits) == 2, \
+            f"heartbeat must emit at most once per 60s, got {len(heartbeat_emits)}"
+        assert heartbeat_emits[0][0] == t0 and heartbeat_emits[1][0] == t0 + 60.0
+        observations.append("heartbeat_rate_limited_to_60s=True")
+        _mirror_log_rl("spot feed stale", "stale", 30.0, t0 + 10.0)
+        stale_emits = [e for e in emitted if e[1] == "stale"]
+        assert len(stale_emits) == 1
+        observations.append("independent_key_cadence_stale_vs_heartbeat=True")
+
+        # --- structural: confirm the ACTUAL source wires this the way the mirror above assumes --
+        # _seed_log_rl now takes an explicit key/interval (was single-key), the heartbeat call site
+        # uses key="heartbeat" interval=60.0, and it is emitted BEFORE the cooldown/tau-guard/
+        # has_book/unknown early-returns (i.e. unconditionally, every tick regardless of branch) ---
+        import inspect
+        src = inspect.getsource(kt)
+        assert 'def _seed_log_rl(msg, key="stale", interval=30.0):' in src
+        tick_idx = src.index("def _seed_tick(tau_left):")
+        guard = "if not a.seed_empty or mk is None:\n            return"
+        guard_idx = src.index(guard, tick_idx)
+        heartbeat_call_idx = src.index('key="heartbeat", interval=60.0', tick_idx)
+        cooldown_idx = src.index('if seed_burst_cooldown_active(seed_cooldown["tripped_at"]',
+                                  tick_idx)
+        assert guard_idx < heartbeat_call_idx < cooldown_idx, \
+            "heartbeat must be emitted after the seed_empty guard but BEFORE the " \
+            "cooldown/tau-guard/state early-returns, so it fires regardless of branch taken"
+        observations.append("heartbeat_emitted_before_all_branch_returns=True")
+
+        # --- (f) flag-off byte-identical re-verified: the top-of-function guard is still the
+        # FIRST statement in _seed_tick (right after the docstring), so _seed_classify_book /
+        # the heartbeat / the REST fallback are all unreachable when --seed-empty is off, exactly
+        # like every branch below it (T21/T24 already re-run and pass above; this pins that v3
+        # didn't move anything above the guard) ---
+        doc_open = src.index('"""', tick_idx)
+        doc_close = src.index('"""', doc_open + 3) + 3
+        first_stmt = src[doc_close:guard_idx].strip()
+        assert first_stmt == "", \
+            f"seed_empty guard must be the first statement after the docstring, found: {first_stmt!r}"
+        observations.append("seed_empty_guard_still_first_statement=True")
 
         record(name, True, "; ".join(observations))
     except Exception as e:
@@ -2045,6 +2219,7 @@ def main():
     test_seed_fair_band_trigger()
     test_seed_burst_cooldown()
     test_seed_v2_flag_off_byte_identical()
+    test_seed_v3_rest_fallback_and_heartbeat()
 
     # Summary table
     print()

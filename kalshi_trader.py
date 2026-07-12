@@ -364,6 +364,51 @@ def get_book(sess, ticker):
     return ybb, ybq, yba, nbq
 
 
+def parse_book_entry(ob_json):
+    """Parse a raw Kalshi GET /markets/{ticker}/orderbook JSON response (the same endpoint/shape
+    get_book() reads) into a ws_entry-shaped dict {"yes": {price: qty}, "no": {price: qty}} --
+    i.e. the SAME shape _apply_snapshot builds from a WS orderbook_snapshot -- so a REST orderbook
+    can be classified by seed_book_state()/seed_fair_band_state() identically to a WS one
+    (single-sourced classification; see --seed-empty's REST-fallback path in _seed_tick, triggered
+    when the WS book never materializes for a genuinely empty book -- Kalshi's WS sends NO
+    orderbook_snapshot at all for an empty book, confirmed live 2026-07-12 run r29179923486).
+    Unlike get_book() (which only extracts the best level and collapses a ONE-SIDED book to the
+    same all-None result as a fully empty one -- fine for "stand down" but not for --seed-empty's
+    finer classification), this keeps every level, which is exactly the detail seed_book_state
+    needs. Returns None if the response carries no orderbook payload at all (distinct from a
+    genuinely EMPTY orderbook, which parses fine and just yields two empty dicts)."""
+    o = ob_json.get("orderbook_fp") or ob_json.get("orderbook") or {}
+    if not o:
+        return None
+
+    def _side(levels):
+        book = {}
+        for entry in (levels or []):
+            try:
+                p, q = float(entry[0]), float(entry[1])
+                if q > 0:
+                    book[p] = q
+            except Exception:
+                pass
+        return book
+
+    return {"yes": _side(o.get("yes_dollars")), "no": _side(o.get("no_dollars"))}
+
+
+def get_book_raw(sess, ticker):
+    """Full-depth REST orderbook fetch for the --seed-empty WS-unknown REST fallback -- hits the
+    SAME endpoint via the SAME session as get_book() (no new HTTP client), just doesn't collapse
+    one-sided/empty books to best-level-only like get_book() does. Returns a ws_entry-shaped dict
+    (see parse_book_entry) or None on any HTTP/parse failure -- callers must treat None as 'no
+    information', never as evidence of emptiness (a transient REST failure must not churn seeded
+    quotes)."""
+    try:
+        ob = sess.get(f"{BASE}/markets/{ticker}/orderbook", timeout=4).json()
+    except Exception:
+        return None
+    return parse_book_entry(ob)
+
+
 def resolve_result(sess, ticker):
     """Return 1 (yes wins) / 0 (no wins) / 'void' (voided/cancelled) / None (not yet settled)."""
     try:
@@ -815,6 +860,13 @@ def gate_check(side, price, yes_bid, yes_ask, net_delta, gate, fv_margin, bq=0.0
 # see kalshi_trader.py's main() for that wiring and the full design rationale.
 SEED_WINDOW_S = 900.0    # KX*15M window length (s) -- the width-floor sqrt(tau_s/900) normalizer
 SEED_FLOOR_Z = 1.0       # width-floor "Z" (one sigma of the remaining-window expected move)
+SEED_UNKNOWN_REST_AFTER_S = 30.0   # SEEDING v3: a WS 'unknown' classification (no snapshot yet)
+# that PERSISTS this long triggers the REST-fallback classification below -- see the SEEDING v3
+# comment block after seed_burst_should_trip for why 'unknown' is structurally permanent (not
+# transient) for a genuinely empty book: Kalshi's WS sends no orderbook_snapshot at all for one.
+SEED_REST_POLL_MIN_S = 5.0         # SEEDING v3: rate limit for the REST-fallback orderbook fetch
+# itself (independent of --react-poll) -- keeps the fallback from hammering the public REST
+# endpoint every tick once a window has crossed the unknown-persistence threshold above.
 
 
 def seed_book_state(ws_entry):
@@ -969,6 +1021,33 @@ def seed_burst_resume_width_mult(reseeds_since_cooldown):
     happened here, don't immediately re-offer the same tight quote. The next placement
     (reseeds_since_cooldown >= 1) decays back to normal (1x) width."""
     return 2.0 if reseeds_since_cooldown == 0 else 1.0
+
+
+# --- SEEDING v3: REST FALLBACK FOR A PERSISTENT WS 'unknown' -------------------------------
+# LIVE EVIDENCE (real 46-min live leg, run r29179923486, 2026-07-12 04:35-05:21Z): --seed-empty
+# produced ZERO [SEED] log lines and zero placements across 4 windows on a market whose book was
+# verified totally empty via the public REST API. Root cause: seed_book_state(ws_state.get(...))
+# returns 'unknown' because Kalshi's WS sends NO orderbook_snapshot message at all for an empty
+# book -- the ws_state entry for that ticker never materializes. 'unknown' is the correct verdict
+# for a brief WS gap right after window rollover (transient), but it is structurally PERMANENT
+# for an empty book (no snapshot is ever coming), so silently standing down on it forever is a
+# real-money-relevant blind spot: the market's whole most-favorable-maker-condition window (the
+# entire time nobody else is quoting) passes with the bot never seeding it. This section fixes
+# that by falling back to the REST orderbook (parse_book_entry/get_book_raw above) once 'unknown'
+# has PERSISTED past SEED_UNKNOWN_REST_AFTER_S, and classifying the REST snapshot through the
+# SAME seed_book_state/seed_fair_band_state functions the WS path uses, so classification stays
+# single-sourced regardless of which feed produced the book snapshot.
+def seed_unknown_persisted(first_seen_ts, now, threshold_s=SEED_UNKNOWN_REST_AFTER_S):
+    """True once a WS 'unknown' classification has been continuously observed for >= threshold_s,
+    given the epoch timestamp it was FIRST seen (first_seen_ts, None if never seen / already
+    resolved). Pure/stateless -- caller owns the actual 'first seen' bookkeeping (mirrors
+    seed_burst_fill_count's pattern: the caller's timestamp log is handed in, no bookkeeping
+    happens inside this function). This is the gate for attempting the REST fallback at all: below
+    threshold, 'unknown' is treated as an ordinary transient WS gap (no REST call, no churn) --
+    only a PERSISTENT unknown is treated as REST-fallback-worthy."""
+    if first_seen_ts is None:
+        return False
+    return (now - first_seen_ts) >= threshold_s
 
 
 # ---------------------------------------------------------------------------
@@ -1341,7 +1420,18 @@ def main():
     # value seeded quotes anchor to is the SAME validated model, not a reimplementation.
     seed_fv = SpotFair(requests.Session(), symbol=f"{a.asset.upper()}USDT") if a.seed_empty else None
     _seed_poll_ts = {"t": 0.0}    # rate-limits SpotFair.update() to >=1/s (independent of --react-poll)
-    _seed_log_ts = {"t": 0.0}     # rate-limits the "spot unavailable/stale" no-op log line
+    _seed_log_ts = {}             # rate-limit KEY -> last-emitted epoch ts (see _seed_log_rl);
+    # keys in use: "stale" (30s, spot-feed-unavailable notice), "heartbeat" (60s, SEEDING v3
+    # [SEED] state=... observability line, emitted every tick regardless of branch taken).
+    _seed_unknown_since = {"ticker": None, "ts": None}   # SEEDING v3: epoch ts the CURRENT
+    # ticker's WS book classification was first observed as 'unknown' (None if not currently
+    # unknown, or no ticker seen yet). Reset whenever the ticker changes (new window -> fresh WS
+    # snapshot wait) or the WS classification resolves to anything else. Feeds
+    # seed_unknown_persisted() to gate the REST fallback below.
+    _seed_rest_cache = {"ticker": None, "ts": 0.0, "entry": None}   # SEEDING v3: last successful
+    # REST-fallback orderbook fetch (ws_entry-shaped, via get_book_raw), rate-limited to
+    # >=SEED_REST_POLL_MIN_S and reused across ticks within that window / on a transient REST
+    # failure. Reset whenever the ticker changes.
     seed_win = {"n_fills": 0, "cash": 0.0, "pos_yes": 0.0, "pos_no": 0.0}   # THIS window's seeded-fill
     # accumulator (audit: recon rows compute n_seeded_fills/seeded_net from this, reset at rollover).
     # AGGRESSOR-BURST COOLDOWN (--seed-burst-n/--seed-burst-cooldown-s):
@@ -1886,15 +1976,75 @@ def main():
             return None, None
         return fair, seed_fv.sigma()
 
-    def _seed_log_rl(msg):
+    def _seed_log_rl(msg, key="stale", interval=30.0):
+        """Rate-limited [SEED] log line, keyed independently so unrelated messages (the
+        spot-stale notice, the SEEDING v3 heartbeat) don't reset each other's cadence."""
         now = time.time()
-        if now - _seed_log_ts["t"] >= 30.0:
-            _seed_log_ts["t"] = now
+        if now - _seed_log_ts.get(key, 0.0) >= interval:
+            _seed_log_ts[key] = now
             print(f"  [SEED] {msg}")
 
     def _seed_drop_all(reason):
         for key in [k for k, m in resting.items() if m.get("seeded")]:
             drop(key, reason)
+
+    def _seed_rest_book(ticker, now_tick):
+        """SEEDING v3: rate-limited (>=SEED_REST_POLL_MIN_S) REST orderbook fetch for the
+        WS-unknown fallback. Reuses get_book_raw() (same public endpoint/session as get_book(),
+        no new HTTP client). Caches the last successful fetch per ticker so calls inside the
+        rate-limit window -- or a transient REST failure -- reuse it rather than treating a
+        momentary blip as still 'no information'. Resets on ticker change (new window)."""
+        if _seed_rest_cache["ticker"] != ticker:
+            _seed_rest_cache["ticker"] = ticker
+            _seed_rest_cache["ts"] = 0.0
+            _seed_rest_cache["entry"] = None
+        if now_tick - _seed_rest_cache["ts"] >= SEED_REST_POLL_MIN_S:
+            _seed_rest_cache["ts"] = now_tick
+            fetched = get_book_raw(sess, ticker)
+            if fetched is not None:
+                _seed_rest_cache["entry"] = fetched
+        return _seed_rest_cache["entry"]
+
+    def _seed_classify_book(now_tick):
+        """SEEDING v3: WS-primary / REST-fallback book classification for THIS window's ticker.
+        Returns (book_state, book_entry, rest_label):
+          book_state  -- 'empty'/'one_sided'/'has_book'/'unknown' (seed_book_state's vocabulary;
+                         'crumbs_only' is NOT resolved here -- that's the existing one_sided
+                         fair-band refinement further down in _seed_tick, applied uniformly to
+                         `book_entry` regardless of whether it came from WS or this fallback, so
+                         classification stays single-sourced through seed_fair_band_state either
+                         way).
+          book_entry  -- the ws_entry-shaped dict to feed into seed_fair_band_state for that
+                         refinement (the WS ws_state entry, or the REST-built one).
+          rest_label  -- None when no REST fallback was attempted (WS answered definitively, or
+                         'unknown' hasn't persisted past SEED_UNKNOWN_REST_AFTER_S yet); else the
+                         REST fallback's own seed_book_state verdict, or 'unavailable' on a
+                         transient REST failure (caller keeps treating the tick as 'unknown' --
+                         no churn).
+        WHY 'unknown' needs this at all: Kalshi's WS sends NO orderbook_snapshot message for a
+        genuinely empty book, so ws_state[ticker] never materializes -- 'unknown' is structurally
+        PERMANENT for that case, not a transient post-rollover gap (confirmed live 2026-07-12, run
+        r29179923486: zero [SEED] lines across 4 windows on a REST-verified-empty book). The
+        get_book_cached() call at _seed_tick's call site already found no two-sided book via REST
+        before ever reaching here, so REST evidence of emptiness exists at every call -- this just
+        fetches the FULL-depth book (get_book_cached collapses one-sided/empty to the same
+        all-None result) so seed_book_state can tell them apart."""
+        ticker = mk["cid"]
+        ws_raw = seed_book_state(ws_state.get(ticker))
+        if ws_raw != "unknown":
+            _seed_unknown_since["ticker"] = None
+            _seed_unknown_since["ts"] = None
+            return ws_raw, ws_state.get(ticker), None
+        if _seed_unknown_since["ticker"] != ticker:
+            _seed_unknown_since["ticker"] = ticker
+            _seed_unknown_since["ts"] = now_tick
+        if not seed_unknown_persisted(_seed_unknown_since["ts"], now_tick):
+            return "unknown", None, None
+        rest_entry = _seed_rest_book(ticker, now_tick)
+        if rest_entry is None:
+            return "unknown", None, "unavailable"
+        rest_state = seed_book_state(rest_entry)
+        return rest_state, rest_entry, rest_state
 
     def _seed_tick(tau_left):
         """Empty-book seeding entry point. Called ONLY from the main loop's book-poll branch where
@@ -1905,10 +2055,21 @@ def main():
         module-level seed_book_state/seed_effective_width/seed_should_reprice/seed_target_cents
         helpers above for the empty-book-specific math. loss-limit and the rolling-markout kill are
         already enforced upstream of this call every tick (top of the main while-loop), so nothing
-        extra is needed for those here."""
+        extra is needed for those here.
+
+        SEEDING v3 (REST fallback + heartbeat): book classification (_seed_classify_book) and the
+        [SEED] heartbeat log both happen FIRST, unconditionally, before any of the cooldown/
+        boundary/state early-returns below -- so the heartbeat fires every tick regardless of which
+        branch this function ultimately takes, closing the silent-standdown gap that let a
+        persistently-'unknown' empty book seed nothing for 46 minutes with zero log evidence."""
         if not a.seed_empty or mk is None:
             return
         now_tick = time.time()
+        raw_state, book_entry, rest_label = _seed_classify_book(now_tick)
+        resting_seeds = sum(1 for m in resting.values() if m.get("seeded"))
+        disp_state = f"unknown(REST-fallback={rest_label})" if rest_label is not None else raw_state
+        _seed_log_rl(f"state={disp_state} tau={tau_left:.0f}s resting_seeds={resting_seeds}",
+                     key="heartbeat", interval=60.0)
         # AGGRESSOR-BURST COOLDOWN: seeding stays suppressed for --seed-burst-cooldown-s after a
         # --seed-burst-n trip (the trip itself -- detecting the burst + the immediate cancel-all --
         # happens fill-side, in book_fill(), since it must react the instant the Nth fill lands,
@@ -1924,13 +2085,14 @@ def main():
         if tau_left < a.seed_tau_min_s:
             _seed_drop_all("seed_tau_guard")
             return
-        raw_state = seed_book_state(ws_state.get(mk["cid"]))
         if raw_state in ("has_book", "unknown"):
             # has_book: real two-sided market -- normal book-anchored PLACE loop handles it, and
             # any resting seed quotes are pulled the instant this is detected at the book-poll call
-            # site (see 'seed_book_no_longer_empty' above _seed_tick's call). unknown: no WS
-            # snapshot yet -- NOT evidence the book stopped being empty (e.g. a brief WS gap right
-            # after rollover), so left alone rather than churned.
+            # site (see 'seed_book_no_longer_empty' above _seed_tick's call). unknown: either a
+            # brief WS gap right after rollover that hasn't yet crossed SEED_UNKNOWN_REST_AFTER_S,
+            # or a persistent one where the REST fallback itself came back unavailable/still
+            # two-sided -- neither is evidence the book is empty, so left alone rather than
+            # churned (spec: REST 'has_book' or a transient REST failure behave as before).
             return
         # FAIR-BAND TRIGGER (--seed-fair-band): needs `fair` even for a merely 'one_sided' book now
         # (not just 'empty'), since seed_fair_band_state's crumbs-vs-real distinction is fair-
@@ -1938,13 +2100,18 @@ def main():
         # extra cost on the 'one_sided' path.
         fair, sigma = _seed_spot_fair(tau_left)
         if fair is None:
-            _seed_log_rl(f"spot feed unavailable/stale (>{a.seed_max_age_s:.0f}s) -- not seeding")
+            _seed_log_rl(f"spot feed unavailable/stale (>{a.seed_max_age_s:.0f}s) -- not seeding",
+                         key="stale", interval=30.0)
             _seed_drop_all("seed_spot_stale")
             return
         fair_cents = fair * 100.0
         state = raw_state
         if raw_state == "one_sided":
-            state = seed_fair_band_state(ws_state.get(mk["cid"]), fair_cents, a.seed_fair_band)
+            # `book_entry` is single-sourced by _seed_classify_book above: the WS ws_entry in the
+            # normal case, or the REST-fallback ws_entry-shaped dict when WS stayed 'unknown' past
+            # the threshold -- either way this is the SAME seed_fair_band_state call classifying
+            # crumbs-vs-real quotes identically regardless of which feed produced the snapshot.
+            state = seed_fair_band_state(book_entry, fair_cents, a.seed_fair_band)
             if state == "one_sided":
                 # A REAL quote sits inside the fair band -- someone is actually making a market
                 # here. Do NOT spot-seed: the normal book-anchored PLACE loop already knows how to
