@@ -99,8 +99,12 @@ jobs:
           if python kalshi_preflight.py --asset "$ASSET" | tee /tmp/pf.txt && grep -q "VERDICT: GO" /tmp/pf.txt; then
             # startup ping: you get confirmation the session is live; fills/settlements alert after.
             python -c "import notify; notify.alert_sync('🟢 live session armed ($ASSET) — preflight GO, \$5 cap, posting both sides. Box/settlement alerts follow on fills.')" || true
+            # WINNER CONFIG (32-day shadow A/B, WINNING_STRATEGY.md): Avellaneda-Stoikov inventory
+            # gate + markout-weighted sizing -- the only month-positive mechanisms (t=+7.68/+5.76).
+            # Replaces the default ufat gate (falsified: inert/negative forward). All risk rails,
+            # caps, and disposal/strand machinery unchanged.
             timeout --signal=TERM --kill-after=60 2820 \
-              python -u kalshi_trader.py --asset "$ASSET" --live --size-mode flat \
+              python -u kalshi_trader.py --asset "$ASSET" --live --gate as --size-mode markout --skew 0.99 \
                 --post 1 --max-notional 5 --loss-limit 6 --max-rungs 1 \
                 --guard-yes-spread 0 --strand-scaledown "0.75,0.5,0.25" --max-fills-side 3 --pair-gate --pair-min-depth 33000 --open-k-min 2 --open-k-max 10 --open-sig-lo 0 --open-sig-hi 10 --dispose-cross --dispose-cross-s 15 --close-force-s 45 --chase-unpaired-s 15 --dispose-max-give 0.25 --post-complete-freeze 1.5 --duration 2760 \
                 --remote-switch-s 20 || true
@@ -128,6 +132,9 @@ jobs:
           mkdir -p /tmp/ls
           cp -f "kalshi_fees_${ASSET}15m.jsonl" kalshi_markout.jsonl "kalshi_winrec_${ASSET}15m.jsonl" \
                 "live_metrics_kalshi_${ASSET}15m.jsonl" /tmp/ls/ 2>/dev/null || true
+          # live-recon + order-lifecycle rows (the shadow-vs-live diagnosis data) were written to the
+          # runner-local gha_data/ and DIED with the runner -- persist them with the telemetry.
+          cp -f gha_data/live_recon_*.jsonl gha_data/order_lifecycle_*.jsonl /tmp/ls/ 2>/dev/null || true
           if [ -n "$(ls -A /tmp/ls 2>/dev/null)" ]; then
             day=$(date -u +%Y-%m-%d)
             if git fetch --depth=1 origin live-state 2>/dev/null; then
