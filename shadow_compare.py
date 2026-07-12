@@ -220,7 +220,8 @@ class Variant:
     """One strategy config; own book/queue/inventory; fed the shared live event stream."""
 
     def __init__(self, name, mk, cap, skew, size_mode="flat", gate=None, shared=None,
-                 short_skew=None, tau_guard=0, as_k=None, mo_k=None, px_band=None):
+                 short_skew=None, tau_guard=0, as_k=None, mo_k=None, px_band=None,
+                 max_open_spread=None):
         self.name = name; self.mk = mk; self.cap = cap; self.skew = skew
         self.tau_guard = tau_guard   # pull ALL quotes when < tau_guard seconds to close (late = informed)
         # asymmetric inventory leash: separate (usually tighter) threshold for building SHORT,
@@ -234,6 +235,11 @@ class Variant:
         # Strat.px_band (strategies.py) for the full spec; None (default) is byte-identical to
         # pre-px_band behavior -- _px_band_blocked() below short-circuits on it immediately.
         self.px_band = px_band
+        # SPREAD_GATE ARM (pairing-probability study, 2026-07-12): float threshold (price units,
+        # e.g. 0.02 = 2c) or None. See Strat.max_open_spread (strategies.py) for the full
+        # pre-registration; None (default) is byte-identical to pre-spread_gate behavior --
+        # _spread_gate_blocked() below short-circuits on it immediately.
+        self.max_open_spread = max_open_spread
         self.post = 20.0
         self.up_inv = self.dn_inv = self.cash = self.rebate = self.delta = 0.0
         self.fills = 0
@@ -312,6 +318,30 @@ class Variant:
             return False
         lo, hi = self.px_band
         return not (lo <= price <= hi)
+
+    def _spread_gate_blocked(self, token, d_per):
+        """PRE-REGISTERED SHADOW ARM (spread_gate, pairing-probability study, 2026-07-12): True to
+        SKIP an OPENING fill (fills that build/hold inventory in its current direction -- same
+        completion carve-out `px_band`/`as`/`as_full` already use: `self.delta * d_per < 0` ->
+        reduces |inventory| -> completion, never blocked here) whose window's touch spread
+        (best-ask - best-bid, in price units, at evaluation time -- i.e. `self.tob[token]` right
+        now, not a rolling/window-average spread) exceeds `self.max_open_spread`. Default-inert:
+        returns False immediately when max_open_spread is None, the default for every existing
+        strat, so this is byte-identical to pre-spread_gate behavior for all of them.
+
+        Walk-forward: +0.235c/window, day-clustered t=3.04, 12/13 test days positive, sheds only
+        5.3% of windows -- see strategies.py's `spread_gate` Strat entry for the full
+        pre-registration (honest 0/19 prior, promotion bar, "may just be avoiding wide touches"
+        caveat). This arm is pre-registered for FORWARD validation, not deployment."""
+        if self.max_open_spread is None:
+            return False
+        if self.delta * d_per < 0:            # reduces |inventory| -> completion, never blocked
+            return False
+        cur = self.tob[token]
+        bb, ba = cur[0], cur[2]
+        if bb is None or ba is None:
+            return False
+        return (ba - bb) > self.max_open_spread
 
     def _gated(self, token, our_side, price, ahead=None):
         """Return True to SKIP the fill (pull the quote) per this variant's gate. `ahead` (resting
@@ -855,6 +885,8 @@ class Variant:
             reason, fill = "gated", 0.0
         elif self._px_band_blocked(price, d_per):
             reason, fill = "px_band", 0.0
+        elif self._spread_gate_blocked(token, d_per):
+            reason, fill = "spread_gate", 0.0
         elif abs(self.delta) >= lim and (self.delta * d_per) > 0:
             reason, fill = "skew_block", 0.0
         else:
@@ -986,7 +1018,8 @@ def configs(mk, shared):
     import strategies
     return [Variant(s.name, mk, s.cap, s.skew, size_mode=s.size_mode, gate=s.gate,
                     shared=shared, short_skew=s.short_skew, tau_guard=s.tau_guard,
-                    as_k=s.as_k, mo_k=s.mo_k, px_band=s.px_band)
+                    as_k=s.as_k, mo_k=s.mo_k, px_band=s.px_band,
+                    max_open_spread=s.max_open_spread)
             for s in strategies.enabled()]
 
 

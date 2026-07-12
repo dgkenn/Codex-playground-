@@ -66,6 +66,14 @@ class Strat:
     #   whose price falls outside [lo, hi]. Completions are NEVER affected. None (default) = unchanged
     #   -- byte-identical to pre-px_band behavior. Orthogonal to `gate`/`size_mode` (own code path in
     #   Variant.on_trade); see shadow_compare.py's Variant._px_band_blocked.
+    max_open_spread: float | None = None   # SPREAD_GATE ARM (pairing-probability study, 2026-07-12):
+    #   skip OPENING fills (same completion carve-out as px_band/`as` above -- a fill that reduces
+    #   |inventory| is NEVER blocked) whose touch spread (best-ask - best-bid, in price units, so
+    #   0.02 = 2c) at evaluation time exceeds this threshold. Completions are NEVER affected. None
+    #   (default) = unchanged -- byte-identical to pre-spread_gate behavior. Orthogonal to `gate`/
+    #   `px_band`/`size_mode` (own code path in Variant.on_trade); see shadow_compare.py's
+    #   Variant._spread_gate_blocked. See the `spread_gate` roster entry below for the full
+    #   pre-registration (walk-forward numbers, honest prior, promotion bar).
     enabled: bool = True
     note: str = ""
 
@@ -165,6 +173,38 @@ REGISTRY: list[Strat] = [
                "where av_stoikov's edge actually lives; a loss here is a POSITIVE result (it "
                "confirms the edge is concentrated <0.30, not spread evenly) and is not grounds to "
                "abandon px_band on its own."),
+
+    # -- SPREAD_GATE arm (pairing-probability study, 2026-07-12): walk-forward, +0.235c/window,
+    #    day-clustered t=3.04, 12/13 test days positive, sheds only 5.3% of windows (skip OPENING
+    #    fills in any window whose touch spread exceeded 2c at evaluation time; completions always
+    #    allowed, same carve-out as the as/px_band gates above). Base config: av_stoikov (skew=0.99,
+    #    gate="as") + max_open_spread=0.02, the same "build on the winner" pattern as as_trim70.
+    #
+    #    HONEST PRIOR AGAINST IT: this month's record on this repo is 0/19 gates that passed a
+    #    forward walk-forward test after being proposed on lab/backtest data (see the PRUNED block
+    #    below -- micro_strict, ufat_band, micro_cal, lead30, etc. all looked good on lab scoring
+    #    and then lost forward). spread_gate is the FIRST gate to pass its OWN walk-forward split
+    #    before being added here -- that is exactly why it is being pre-registered for a live
+    #    shadow/forward test, same as every other candidate in this file, and NOT treated as
+    #    deployment-ready or promoted past the other TIER-1/2 candidates on the strength of the
+    #    walk-forward number alone. One gate clearing walk-forward out of many tried is also the
+    #    base rate you would expect from noise alone at these sample sizes; the forward test below
+    #    is what actually discriminates signal from a lucky split.
+    #
+    #    CAVEAT: a touch-spread filter may simply be re-expressing "don't join a wide touch" --
+    #    i.e. it could be capturing the same information as (or be dominated by) existing
+    #    book-quality/toxicity signals (`as`, `micro`, `band`) rather than adding independent edge.
+    #    The forward test is also the way to tell whether it contributes beyond av_stoikov alone.
+    #
+    #    PRE-REGISTERED promotion bar (declared BEFORE any forward data, same shape as every other
+    #    bar in this file): >=14 forward days, day-clustered t>=3 vs av_stoikov on the SAME days,
+    #    >=80% of forward days gross-positive vs av_stoikov same-days.
+    Strat("spread_gate", skew=0.99, gate="as", max_open_spread=0.02,
+          note="av_stoikov + max_open_spread=0.02: skip OPENING fills when the touch spread at "
+               "evaluation time exceeds 2c (completions always allowed) | walk-forward: "
+               "+0.235c/window t=3.04 (day-clustered) 12/13 test days+, sheds only 5.3% of windows "
+               "-- PRE-REGISTERED for forward validation, NOT deployment (see block comment above "
+               "for the honest 0/19 prior and the 'may just be avoiding wide touches' caveat)"),
 
     # -- TIER-1/2 candidates (mechanism-prior arms building on the two winners: full A-S reservation
     #    pricing, A-S optimal spread, queue depth, late-window sizing, vol-inverse sizing, cross-asset
@@ -337,6 +377,8 @@ def validate(strats: list[Strat] | None = None) -> list[str]:
                 lo, hi = s.px_band
                 if not (0.0 <= lo < hi <= 1.0):
                     errs.append(f"{s.name}: px_band must satisfy 0 <= lo < hi <= 1: {s.px_band!r}")
+        if s.max_open_spread is not None and not (0.0 < s.max_open_spread <= 1.0):
+            errs.append(f"{s.name}: max_open_spread out of range (0,1]: {s.max_open_spread}")
     return errs
 
 
@@ -347,7 +389,8 @@ def snapshot() -> dict:
             "disabled": [s.name for s in REGISTRY if not s.enabled],
             "roster": [{"name": s.name, "cap": s.cap, "skew": s.skew, "size_mode": s.size_mode,
                         "gate": s.gate, "tau_guard": s.tau_guard, "as_k": s.as_k, "mo_k": s.mo_k,
-                        "px_band": s.px_band, "enabled": s.enabled} for s in REGISTRY]}
+                        "px_band": s.px_band, "max_open_spread": s.max_open_spread,
+                        "enabled": s.enabled} for s in REGISTRY]}
 
 
 def main():
@@ -364,6 +407,8 @@ def main():
             ov += f" mo_k={s.mo_k:g}"
         if s.px_band is not None:
             ov += f" px_band=[{s.px_band[0]:g},{s.px_band[1]:g}]"
+        if s.max_open_spread is not None:
+            ov += f" max_open_spread={s.max_open_spread:g}"
         print(f" [{flag}] {s.name:<14} cap={s.cap:<5g} skew={s.skew:<5g} size={s.size_mode:<7} gate={g:<11}{ov} {s.note}")
     if errs:
         print("\nVALIDATION FAILED:")

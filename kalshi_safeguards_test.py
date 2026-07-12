@@ -3971,6 +3971,136 @@ def test_aged_cross_wide_bound():
 
 
 # ===========================================================================
+# TEST 38 — spread_gate shadow arm (strategies.py / shadow_compare.py):
+#   pre-registered pairing-probability arm, engine-level default-inertness
+#   (max_open_spread=None byte-identical to pre-spread_gate behavior), and
+#   OPENING-only / completions-unaffected semantics (px_band-style).
+# ===========================================================================
+
+def test_spread_gate_shadow_arm():
+    """
+    Pairing-probability study (walk-forward): skip OPENING fills in any window whose touch spread
+    (best-ask - best-bid) exceeded 2c at evaluation time. Walk-forward result: +0.235c/window,
+    day-clustered t=3.04, 12/13 test days positive, sheds only 5.3% of windows -- the FIRST gate
+    in this repo's history to pass its own walk-forward split (this month's record is otherwise
+    0/19 gates that survived forward validation after looking good on lab/backtest data). That is
+    exactly why it is pre-registered for a forward shadow test here, NOT treated as deployment-
+    ready. Strat.max_open_spread=<threshold> (default None=unchanged) skips OPENING quotes whose
+    CURRENT touch spread exceeds the threshold; completions are never affected -- the identical
+    OPENING-vs-completion carve-out px_band/`as` already use. Built on av_stoikov (skew=0.99,
+    gate="as"), same "build on the winner" pattern as as_trim70/as_band.
+
+    Same structural + logic-replica style as T36 (test_px_band_shadow_arms), the closest existing
+    precedent for a shadow_compare.py Strat-field arm.
+    """
+    name = "T38: spread_gate shadow arm (pre-registered, default-inert)"
+    try:
+        import strategies
+        import shadow_compare as sc
+        observations = []
+
+        # --- 1. registration: arm present, enabled, correctly configured, carries the
+        # pre-registration numbers + honest prior + promotion bar in its note/module docstring ---
+        errs = strategies.validate()
+        assert errs == [], f"strategies.validate() must pass with the new arm: {errs}"
+        by_name = {s.name: s for s in strategies.REGISTRY}
+        assert "spread_gate" in by_name, "spread_gate must be registered"
+        sg = by_name["spread_gate"]
+        assert sg.enabled, "spread_gate must be enabled (live shadow A/B)"
+        assert sg.gate == "as" and sg.skew == 0.99, "spread_gate must build on the av_stoikov (as) config"
+        assert sg.max_open_spread == 0.02, f"spread_gate max_open_spread mismatch: {sg.max_open_spread}"
+        assert sg.px_band is None, "spread_gate must not also set px_band (single orthogonal field)"
+        note_up = sg.note.upper()
+        assert "WALK-FORWARD" in note_up or "0.235" in sg.note, \
+            "spread_gate note must carry the walk-forward result"
+        assert "12/13" in sg.note, "spread_gate note must carry the day-positive count"
+        assert "PRE-REGISTERED" in note_up and "NOT DEPLOYMENT" in note_up, \
+            "spread_gate note must state it is pre-registered for forward validation, not deployment"
+        with open(os.path.join(os.path.dirname(os.path.abspath(__file__)) or ".",
+                                "strategies.py"), encoding="utf-8") as f:
+            src = f.read()
+        assert "0/19" in src, "the honest prior (0/19 gates survived forward validation) must be documented"
+        assert ">=14 forward days" in src and "t>=3" in src and "80%" in src, \
+            "the promotion bar (>=14 days, t>=3, >=80% days positive) must be documented"
+        assert "wide touch" in src.lower(), \
+            "the caveat that this may re-express 'don't join a wide touch' must be documented"
+        observations.append("spread_gate_registered_enabled_with_full_pre_registration=True")
+
+        # --- all OTHER arms must be untouched (max_open_spread=None default) ---
+        for s in strategies.REGISTRY:
+            if s.name == "spread_gate":
+                continue
+            assert s.max_open_spread is None, \
+                f"{s.name}: max_open_spread must stay None (default-inert) -- got {s.max_open_spread}"
+        observations.append("all_other_arms_max_open_spread_none_byte_identical=True")
+
+        # --- 2. engine: max_open_spread=None is a true no-op (_spread_gate_blocked always False) ---
+        mk = {"up": "TOK_UP", "down": "TOK_DOWN", "we": time.time() + 900}
+        shared = {"st": None, "s0": None, "spothist": [], "microhist": {}, "flow": {}, "qema": {}}
+        v_none = sc.Variant("v_none", mk, cap=50, skew=0.99, gate="as", shared=shared, max_open_spread=None)
+        v_none.set_tob("TOK_UP", 0.40, 10, 0.60, 10)   # 20c-wide touch -- would trip any real threshold
+        for d_per, delta in [(1.0, 0.0), (-1.0, 0.0), (1.0, 5.0), (1.0, -5.0)]:
+            v_none.delta = delta
+            assert v_none._spread_gate_blocked("TOK_UP", d_per) is False, \
+                f"max_open_spread=None must NEVER block (d_per={d_per} delta={delta})"
+        observations.append("max_open_spread_none_never_blocks_engine_level=True")
+
+        # --- 3. engine: OPENING fill with touch spread > threshold IS blocked; <= threshold is
+        # NOT; completions (opposite direction to current delta) are NEVER blocked regardless of
+        # spread ---
+        v = sc.Variant("v_sg", mk, cap=50, skew=0.99, gate=None, shared=shared, max_open_spread=0.02)
+        v.set_tob("TOK_UP", 0.50, 10, 0.53, 10)        # 3c spread > 2c threshold
+        assert v._spread_gate_blocked("TOK_UP", 1.0) is True, "opening fill over a wide (3c) touch must block"
+        v.set_tob("TOK_UP", 0.50, 10, 0.51, 10)        # 1c spread <= 2c threshold
+        assert v._spread_gate_blocked("TOK_UP", 1.0) is False, "opening fill over a narrow (1c) touch must pass"
+        v.set_tob("TOK_UP", 0.50, 10, 0.53, 10)        # back to wide (3c)
+        v.delta = 5.0
+        assert v._spread_gate_blocked("TOK_UP", 1.0) is True, "opening (same-direction) fill over wide touch still blocks"
+        assert v._spread_gate_blocked("TOK_UP", -1.0) is False, \
+            "completing (opposite-direction, reduces |inventory|) fill must NEVER be blocked, any spread"
+        observations.append("opening_blocked_over_wide_touch_completions_always_pass=True")
+
+        # --- 4. full on_trade() engine integration: wide-touch opening skipped (fill=0, delta
+        # unchanged), narrow-touch opening fills, and a subsequent completion over a wide touch
+        # still goes through (net delta returns toward 0) ---
+        vt = sc.Variant("vt", mk, cap=50, skew=0.99, gate=None, shared=shared, max_open_spread=0.02)
+        vt.set_tob("TOK_UP", 0.48, 10, 0.53, 2)        # 5c-wide touch ask, thin queue ahead
+        vt.on_trade("TOK_UP", "BUY", 0.53, 5)          # taker eats the 2 ahead + reaches us
+        assert vt.fills == 0 and vt.delta == 0.0, "wide-touch OPENING trade must be fully skipped"
+        observations.append("on_trade_skips_wide_touch_opening=True")
+
+        vt.set_tob("TOK_UP", 0.49, 10, 0.50, 2)        # 1c-wide touch ask
+        vt.on_trade("TOK_UP", "BUY", 0.50, 5)
+        assert vt.fills == 1 and vt.delta != 0.0, "narrow-touch OPENING trade must fill normally"
+        observations.append(f"on_trade_fills_narrow_touch_delta={vt.delta}=True")
+
+        vt.set_tob("TOK_UP", 0.90, 2, 0.97, 10)        # 7c-wide touch bid, thin queue ahead
+        vt.on_trade("TOK_UP", "SELL", 0.90, 5)         # opposite direction -> completion
+        assert vt.fills == 2, "completing trade over a wide touch must NOT be skipped by spread_gate"
+        observations.append("on_trade_completion_over_wide_touch_unaffected=True")
+
+        # --- 4b. completions carve-out also applies mid-window when the leg's price is missing
+        # (bb/ba None): spread_gate must never block on missing book data ---
+        v_missing = sc.Variant("v_missing", mk, cap=50, skew=0.99, gate=None, shared=shared, max_open_spread=0.02)
+        assert v_missing._spread_gate_blocked("TOK_UP", 1.0) is False, \
+            "no touch data yet (bb/ba None) must never block"
+        observations.append("missing_touch_data_never_blocks=True")
+
+        # --- 5. Variant.__init__ / configs() thread max_open_spread through from strategies.py ---
+        import inspect
+        cfg_src = inspect.getsource(sc.configs)
+        assert "max_open_spread=s.max_open_spread" in cfg_src, \
+            "configs() must thread Strat.max_open_spread into Variant"
+        init_src = inspect.getsource(sc.Variant.__init__)
+        assert "max_open_spread=None" in init_src and "self.max_open_spread = max_open_spread" in init_src
+        observations.append("configs_and_variant_init_thread_max_open_spread=True")
+
+        record(name, True, "; ".join(observations))
+    except Exception as e:
+        record(name, False, f"{type(e).__name__}: {e}\n{traceback.format_exc()}")
+
+
+# ===========================================================================
 # Main runner
 # ===========================================================================
 
@@ -4018,6 +4148,7 @@ def main():
     test_recon_carries_dispose_fields()
     test_px_band_shadow_arms()
     test_aged_cross_wide_bound()
+    test_spread_gate_shadow_arm()
 
     # Summary table
     print()
