@@ -417,3 +417,9 @@ Gating test (eICU, 172k paired POC↔lab glucose): (Q1) POC over-reads at low gl
 meters are Hct-corrected); (Q3) POC misses 33% of true hypoglycemia (real but KNOWN per ISO 15197, and NO Hct
 gradient). Novel/mechanistic angle weak, residual known + temporal-pairing confound. KILLED in one test — decisive-
 first discipline worked (no wasted build). Predicted win-likelihood 0.4; actual ~0 → logged.
+
+## eGFR (creatinine) vs cystatin-C over-dosing — FEASIBILITY-KILLED (no cystatin in reachable data)
+Best-fit C8-analog (true independent muscle-independent reference + ARITHMETIC dosing consequence). Feasibility gate:
+eICU lab has creatinine (1M+) but NO cystatin; MIMIC-IV d_labitems has NO cystatin C item at all. The muscle-
+independent reference does not exist in any reachable dataset → cannot run. Killed via tiny dictionary file (no 15GB
+labevents stream wasted) — decisive-first feasibility discipline. Predicted win-likelihood was ~0.5; unrunnable.
