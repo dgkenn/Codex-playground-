@@ -28,7 +28,7 @@ jobs:
         with:
           python-version: '3.12'
       - name: install deps
-        run: for i in 1 2 3; do pip install --quiet numpy scipy pandas requests && break; sleep 10; done
+        run: for i in 1 2 3; do pip install --quiet numpy scipy pandas requests scikit-learn && break; sleep 10; done
       - name: pull forward A/B ledger fragments from gha-data
         run: |
           if git fetch --depth=1 origin gha-data 2>/dev/null; then
