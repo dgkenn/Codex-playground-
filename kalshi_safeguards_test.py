@@ -1711,7 +1711,11 @@ def test_seed_empty_flag_off_byte_identical():
         if head_src:
             head_bp_idx = head_src.find('# --- book poll (REST; react-poll cadence) ---')
             if head_bp_idx >= 0:
-                head_block = head_src[head_bp_idx: head_bp_idx + 400]
+                # 1400 (matches bp_block's window below): the pristine HEAD block already carries
+                # several lines of --seed-empty comments/code before 'else:' (offset ~1060), so a
+                # narrower window here would clip it and false-fail this diff regardless of whether
+                # flag-off behavior actually changed -- widened to actually cover the lines checked.
+                head_block = head_src[head_bp_idx: head_bp_idx + 1400]
                 for line in (
                     'ybb, ybq, yba, yaq, _fresh = get_book_cached(mk["cid"])',
                     "if _fresh:",
@@ -1728,6 +1732,225 @@ def test_seed_empty_flag_off_byte_identical():
                 observations.append("pristine_HEAD_marker_not_found_skipped=True")
         else:
             observations.append("git_head_diff_skipped_no_history_available=True")
+
+        record(name, True, "; ".join(observations))
+    except Exception as e:
+        record(name, False, f"{type(e).__name__}: {e}")
+
+
+# ===========================================================================
+# TEST 22 — Seeding v2: --seed-fair-band trigger (crumb orders don't block seeding)
+# ===========================================================================
+
+def test_seed_fair_band_trigger():
+    """
+    kt.seed_fair_band_state(ws_entry, fair_cents, band_cents) refines seed_book_state's
+    'one_sided' verdict: a one-sided book still QUALIFIES for seeding ('crumbs_only') as long as
+    NO resting order (either side) falls inside [fair_cents-band, fair_cents+band]. Grounded in
+    the LIVE OBSERVATION 2026-07-12 ~04:12Z on KXBTC15M: the overnight book held penny-crumb
+    lottery bids (80,418 @ 0.001, ~2,600 @ 0.002, ~700 @ 0.003) with no asks and nothing near fair
+    (~0.50) -- seed_book_state alone classifies that as 'one_sided' and (pre-refinement) never
+    seeds it, missing --seed-empty's primary real-world use case.
+    """
+    name = "T22: --seed-fair-band trigger (crumb orders don't block seeding)"
+    try:
+        observations = []
+        fair_cents = 50.0
+        band = 15.0
+
+        # (a) THE EXACT OBSERVED CASE: crumb bids at 1c/2c/3c, no asks, fair=50c, band=15c ->
+        # nothing rests inside [35,65] -> MUST qualify for seeding.
+        st_crumbs = {"yes": {0.01: 80418.0, 0.02: 2600.0, 0.03: 700.0}, "no": {}}
+        assert kt.seed_book_state(st_crumbs) == "one_sided", "sanity: base classifier"
+        assert kt.seed_fair_band_state(st_crumbs, fair_cents, band) == "crumbs_only"
+        observations.append("observed_2026-07-12_crumb_case_qualifies=True")
+
+        # (b) a single REAL bid at 0.45 (inside band [35,65]) and nothing else -> MUST NOT qualify
+        st_real_one = {"yes": {0.45: 10.0}, "no": {}}
+        assert kt.seed_book_state(st_real_one) == "one_sided"
+        assert kt.seed_fair_band_state(st_real_one, fair_cents, band) == "one_sided"
+        observations.append("real_quote_inside_band_blocks_seeding=True")
+
+        # (c) literally empty -> still qualifies (band irrelevant)
+        assert kt.seed_fair_band_state({"yes": {}, "no": {}}, fair_cents, band) == "empty"
+        assert kt.seed_fair_band_state(None, fair_cents, band) == "unknown"
+        observations.append("literal_empty_qualifies_unknown_echoed=True")
+
+        # (d) both-sides real quotes -> NEVER qualifies, regardless of band position
+        st_full = {"yes": {0.45: 10.0}, "no": {0.40: 8.0}}
+        assert kt.seed_book_state(st_full) == "has_book"
+        assert kt.seed_fair_band_state(st_full, fair_cents, band) == "has_book"
+        # even when both real quotes sit FAR from fair (outside the band), has_book still never
+        # qualifies -- the band only ever refines a ONE-SIDED verdict, never a two-sided one.
+        st_full_far = {"yes": {0.01: 10.0}, "no": {0.01: 8.0}}
+        assert kt.seed_fair_band_state(st_full_far, fair_cents, band) == "has_book"
+        observations.append("both_sides_real_never_qualifies=True")
+
+        # band boundary: an order exactly AT the edge counts as "in band" (inclusive) -> blocks
+        st_edge = {"yes": {0.35: 5.0}, "no": {}}   # 35c == fair(50) - band(15) exactly
+        assert kt.seed_fair_band_state(st_edge, fair_cents, band) == "one_sided"
+        observations.append("band_edge_inclusive_blocks=True")
+
+        # just past the edge -> qualifies
+        st_just_outside = {"yes": {0.3499: 5.0}, "no": {}}
+        assert kt.seed_fair_band_state(st_just_outside, fair_cents, band) == "crumbs_only"
+        observations.append("just_outside_band_qualifies=True")
+
+        # NO-side (yes-ask side) real quote inside band also blocks -- mirror check. no-side price
+        # p implies a YES-ask at (1-p); a NO bid at 0.55 implies a YES ask at 0.45c, inside [35,65].
+        st_no_side_real = {"yes": {}, "no": {0.55: 5.0}}
+        assert kt.seed_book_state(st_no_side_real) == "one_sided"
+        assert kt.seed_fair_band_state(st_no_side_real, fair_cents, band) == "one_sided"
+        observations.append("no_side_real_quote_in_band_blocks=True")
+
+        # NO-side crumb far from fair (mirrors the (a) case on the other side) -> qualifies
+        st_no_side_crumb = {"yes": {}, "no": {0.999: 500.0}}   # implied yes-ask = 0.1c, far below band
+        assert kt.seed_fair_band_state(st_no_side_crumb, fair_cents, band) == "crumbs_only"
+        observations.append("no_side_crumb_qualifies=True")
+
+        record(name, True, "; ".join(observations))
+    except Exception as e:
+        record(name, False, f"{type(e).__name__}: {e}")
+
+
+# ===========================================================================
+# TEST 23 — Seeding v2: aggressor-burst cooldown (mechanical fill-count trip)
+# ===========================================================================
+
+def test_seed_burst_cooldown():
+    """
+    kt.seed_burst_should_trip(fill_ts, now, burst_n, window_s) / seed_burst_cooldown_active /
+    seed_burst_resume_width_mult: the AGGRESSOR-BURST COOLDOWN's pure mechanical helpers. If
+    seeded quotes take >= --seed-burst-n fills within any rolling 60s window, seeding is
+    suppressed for --seed-burst-cooldown-s; on resume, the first re-seed doubles the effective
+    width, decaying to normal on the next. Deliberately mechanical (fill-count threshold), not a
+    fitted model -- narrower than the reactive-pull gates the 32-day A/B found cost money via
+    false positives in NORMAL retail-dominated books; a burst against a SOLE maker in an unquoted
+    book (--seed-empty's only operating condition) has a different informed-flow prior.
+    """
+    name = "T23: --seed-empty aggressor-burst cooldown (mechanical, narrow)"
+    try:
+        observations = []
+        now = 1_000_000.0
+        burst_n = 2
+
+        # (a) trip at EXACTLY n fills within 60s
+        fills_exact = [now - 10.0, now]
+        assert kt.seed_burst_fill_count(fills_exact, now, 60.0) == 2
+        assert kt.seed_burst_should_trip(fills_exact, now, burst_n, 60.0) is True
+        observations.append("trip_at_exactly_n_fills_in_60s=True")
+
+        # window boundary: a fill exactly 60.0s old still counts (inclusive `<=`); one exceeding
+        # 60s is excluded from the count
+        fills_boundary = [now - 60.0, now]
+        assert kt.seed_burst_fill_count(fills_boundary, now, 60.0) == 2
+        assert kt.seed_burst_should_trip(fills_boundary, now, burst_n, 60.0) is True
+        fills_just_over = [now - 60.01, now]
+        assert kt.seed_burst_fill_count(fills_just_over, now, 60.0) == 1
+        assert kt.seed_burst_should_trip(fills_just_over, now, burst_n, 60.0) is False
+        observations.append("60s_window_boundary_inclusive_then_excludes=True")
+
+        # (b) NO trip for slower fills (only one falls inside the trailing 60s window)
+        fills_slow = [now - 90.0, now - 40.0]
+        assert kt.seed_burst_fill_count(fills_slow, now, 60.0) == 1
+        assert kt.seed_burst_should_trip(fills_slow, now, burst_n, 60.0) is False
+        observations.append("slow_fills_spread_beyond_60s_no_trip=True")
+
+        # below burst_n fills even if simultaneous -> no trip
+        assert kt.seed_burst_should_trip([now], now, burst_n, 60.0) is False
+        observations.append("single_fill_below_burst_n_no_trip=True")
+
+        # (c) width doubling then decay
+        assert kt.seed_burst_resume_width_mult(0) == 2.0, "first re-seed must be 2x width"
+        assert kt.seed_burst_resume_width_mult(1) == 1.0, "second re-seed decays to normal"
+        assert kt.seed_burst_resume_width_mult(2) == 1.0, "stays normal after decay"
+        observations.append("width_doubles_on_first_reseed_then_decays=True")
+
+        # (d) cooldown expiry allows re-seed
+        cooldown_s = 120.0
+        assert kt.seed_burst_cooldown_active(now, now, cooldown_s) is True
+        assert kt.seed_burst_cooldown_active(now, now + 119.9, cooldown_s) is True
+        assert kt.seed_burst_cooldown_active(now, now + 120.0, cooldown_s) is False, \
+            "cooldown must lift at exactly cooldown_s (age > cooldown_s is the trigger, not >=)"
+        assert kt.seed_burst_cooldown_active(now, now + 200.0, cooldown_s) is False
+        observations.append("cooldown_expires_at_boundary_allows_reseed=True")
+
+        # never tripped -> never active, regardless of `now`
+        assert kt.seed_burst_cooldown_active(None, now, cooldown_s) is False
+        assert kt.seed_burst_cooldown_active(None, now + 1e9, cooldown_s) is False
+        observations.append("never_tripped_never_active=True")
+
+        record(name, True, "; ".join(observations))
+    except Exception as e:
+        record(name, False, f"{type(e).__name__}: {e}")
+
+
+# ===========================================================================
+# TEST 24 — Seeding v2: flag-off / defaults-unchanged byte-identical (T21-style)
+# ===========================================================================
+
+def test_seed_v2_flag_off_byte_identical():
+    """
+    Seeding v2 (fair-band trigger + aggressor-burst cooldown) is entirely inert unless
+    --seed-empty is on (same top-level gate as v1 -- see T21). Checks:
+      1. New flags' argparse defaults are unchanged from the spec (--seed-fair-band=15.0,
+         --seed-burst-n=2, --seed-burst-cooldown-s=120.0) -- a default DOES affect behavior the
+         moment --seed-empty is on, so this pins them exactly rather than just "present".
+      2. The burst-fill bookkeeping (seed_fill_times.append / the trip check) lives strictly
+         inside book_fill's existing `if _is_seeded:` block, which itself is unreachable unless a
+         seed-placed order filled -- impossible unless --seed-empty was on when it was placed.
+      3. _seed_tick's cooldown/fair-band logic all sits below the pre-existing
+         `if not a.seed_empty or mk is None: return` guard at the top of the function, so none of
+         it executes when the flag is off.
+      4. T21's own diff (re-run here) still passes with seeding v2 in place -- the book-poll call
+         site itself is untouched by v2 (all v2 logic lives inside _seed_tick's body / book_fill,
+         not at the call site T21 already pins).
+    """
+    name = "T24: seeding v2 (fair-band + burst cooldown) flag-off byte-identical"
+    try:
+        observations = []
+        import inspect
+        src = inspect.getsource(kt)
+
+        # --- 1. argparse defaults pinned exactly ---
+        def _default_line(flag):
+            for line in src.splitlines():
+                if f'"{flag}"' in line:
+                    return line
+            return None
+
+        band_line = _default_line("--seed-fair-band")
+        assert band_line is not None and "default=15.0" in band_line, \
+            f"--seed-fair-band must default to 15.0: {band_line!r}"
+        burst_n_line = _default_line("--seed-burst-n")
+        assert burst_n_line is not None and "default=2" in burst_n_line, \
+            f"--seed-burst-n must default to 2: {burst_n_line!r}"
+        cooldown_line = _default_line("--seed-burst-cooldown-s")
+        assert cooldown_line is not None and "default=120.0" in cooldown_line, \
+            f"--seed-burst-cooldown-s must default to 120.0: {cooldown_line!r}"
+        observations.append("new_flag_defaults_pinned=15.0/2/120.0")
+
+        # --- 2. burst-fill bookkeeping is nested inside the existing `if _is_seeded:` block ---
+        seeded_idx = src.index('if _is_seeded:')
+        # the block runs until the next top-level `if meta:` (already there pre-v2 -- see T17-T21
+        # era code); everything about seed_fill_times must be inside that span
+        meta_idx = src.index("if meta:", seeded_idx)
+        is_seeded_block = src[seeded_idx:meta_idx]
+        assert "seed_fill_times.append" in is_seeded_block, \
+            "burst-fill timestamp bookkeeping must live inside the seeded-fill-only branch"
+        assert "seed_burst_should_trip(" in is_seeded_block
+        observations.append("burst_trip_check_nested_in_is_seeded_block=True")
+
+        # --- 3. _seed_tick's v2 logic sits below the pre-existing top-of-function guard ---
+        tick_idx = src.index("def _seed_tick(tau_left):")
+        guard = "if not a.seed_empty or mk is None:\n            return"
+        guard_idx = src.index(guard, tick_idx)
+        cooldown_check_idx = src.index('seed_burst_cooldown_active(seed_cooldown["tripped_at"]',
+                                       tick_idx)
+        fair_band_idx = src.index("seed_fair_band_state(ws_state.get(mk[\"cid\"])", tick_idx)
+        assert cooldown_check_idx > guard_idx, "cooldown check must be below the seed_empty guard"
+        assert fair_band_idx > guard_idx, "fair-band check must be below the seed_empty guard"
+        observations.append("v2_logic_below_seed_empty_guard_in_seed_tick=True")
 
         record(name, True, "; ".join(observations))
     except Exception as e:
@@ -1819,6 +2042,9 @@ def main():
     test_seed_spot_staleness()
     test_seed_reprice_discipline()
     test_seed_empty_flag_off_byte_identical()
+    test_seed_fair_band_trigger()
+    test_seed_burst_cooldown()
+    test_seed_v2_flag_off_byte_identical()
 
     # Summary table
     print()

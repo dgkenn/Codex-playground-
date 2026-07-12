@@ -893,6 +893,84 @@ def seed_target_cents(fair_p_up, eff_width_cents):
     return yb, ya
 
 
+# --- SEEDING v2: FAIR-BAND TRIGGER (--seed-fair-band) --------------------------------------
+# LIVE OBSERVATION (2026-07-12 ~04:12Z, verified via the public API + collected WS stream): the
+# real overnight KXBTC15M book was NOT literally empty -- it held penny-crumb lottery bids
+# (80,418 contracts @ 0.001, ~2,600 @ 0.002, ~700 @ 0.003) with NO asks and NOTHING near fair
+# (~0.50); the REST summary showed yes_bid/yes_ask null and volume_24h=0. seed_book_state alone
+# classifies that book as 'one_sided' (bids exist, asks don't) -> _seed_tick never seeds it --
+# missing --seed-empty's primary real-world use case. seed_fair_band_state narrows that verdict.
+def seed_fair_band_state(ws_entry, fair_cents, band_cents):
+    """Refines seed_book_state's 'one_sided' verdict using a band around the spot-implied fair.
+
+    Only 'one_sided' books are re-examined ('empty' always qualifies trivially, 'has_book' and
+    'unknown' never do, regardless of band -- both echoed straight through from seed_book_state).
+    For a 'one_sided' book, asks: is there a resting order (on EITHER side) inside
+    [fair_cents - band_cents, fair_cents + band_cents]?
+      - No  -> 'crumbs_only': the resting size is parked far from fair (the observed
+               0.001-0.003c crumb bids vs a 50c fair) and carries no informational content about
+               where the market actually is -- QUALIFIES for spot-anchored seeding.
+      - Yes -> 'one_sided' (echoed): a REAL quote sits inside the band -- somebody is actually
+               making a market there. Do NOT spot-seed in that case; the normal book-anchored
+               PLACE loop already knows how to join a one-sided real market (anchor off the
+               resting side), so spot-anchoring here would just duplicate/fight that logic with a
+               different pricing model. Deliberately conservative: when in doubt, defer to the
+               book-anchored path rather than the spot model.
+
+    ws_entry prices are dollars (see ws_feeder/_apply_snapshot); no-side entries are NO bids,
+    i.e. the YES-ask side of the book (mirrors seed_book_state's docstring), so they're converted
+    via implied_yes_ask = 1 - no_bid_price before the band comparison."""
+    base = seed_book_state(ws_entry)
+    if base != "one_sided":
+        return base
+    lo, hi = fair_cents - band_cents, fair_cents + band_cents
+    yb = (ws_entry or {}).get("yes") or {}   # resting YES bids (dollars)
+    nb = (ws_entry or {}).get("no") or {}    # resting NO bids == the YES-ask side (dollars)
+    for p in yb:
+        if lo <= p * 100.0 <= hi:
+            return "one_sided"
+    for p in nb:
+        if lo <= (1.0 - p) * 100.0 <= hi:
+            return "one_sided"
+    return "crumbs_only"
+
+
+# --- SEEDING v2: AGGRESSOR-BURST COOLDOWN (--seed-burst-n / --seed-burst-cooldown-s) --------
+# Mechanical (fill-count threshold), NOT a fitted toxicity model -- deliberately narrow. The
+# 32-day A/B found reactive-pull gates cost money in NORMAL (retail-dominated) books via false
+# positives, so this bot does not run one generally. But a burst of fills against a SOLE MAKER in
+# a book nobody else is quoting (--seed-empty's only operating condition) has a very different
+# informed-flow prior than a burst in a normal two-sided book -- hence this narrow, conservative,
+# purely-mechanical version scoped to seeded quotes only.
+def seed_burst_fill_count(fill_ts, now, window_s=60.0):
+    """Count of `fill_ts` (an iterable of epoch timestamps) within the trailing `window_s`
+    seconds of `now`. Pure/stateless so the caller's actual seeded-fill timestamp log can be
+    handed in each tick/fill without this function doing its own bookkeeping."""
+    return sum(1 for t in fill_ts if now - t <= window_s)
+
+
+def seed_burst_should_trip(fill_ts, now, burst_n, window_s=60.0):
+    """AGGRESSOR-BURST TRIP: True once seeded quotes have taken >= --seed-burst-n fills within
+    any trailing `window_s` (60s) window."""
+    return seed_burst_fill_count(fill_ts, now, window_s) >= burst_n
+
+
+def seed_burst_cooldown_active(tripped_at, now, cooldown_s):
+    """True while a burst-trip cooldown is in effect: seeding stays suppressed for
+    --seed-burst-cooldown-s after `tripped_at`. tripped_at=None (never tripped) -> never active."""
+    if tripped_at is None:
+        return False
+    return (now - tripped_at) < cooldown_s
+
+
+def seed_burst_resume_width_mult(reseeds_since_cooldown):
+    """WIDTH DOUBLING ON RESUME: the first seed placement after a cooldown lifts
+    (reseeds_since_cooldown == 0) uses 2x the effective seed width -- an informed-flow burst just
+    happened here, don't immediately re-offer the same tight quote. The next placement
+    (reseeds_since_cooldown >= 1) decays back to normal (1x) width."""
+    return 2.0 if reseeds_since_cooldown == 0 else 1.0
+
+
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
@@ -1153,6 +1231,29 @@ def main():
                          "many seconds of window close -- the same force-flatten discipline every "
                          "other rung gets, applied earlier because a sole-maker fill this late has "
                          "no time left to find a natural pair.")
+    ap.add_argument("--seed-fair-band", type=float, default=15.0,
+                    help="--seed-empty FAIR-BAND TRIGGER: cents around the SpotFair fair "
+                         "(fair*100 +/- this) used to refine a 'one_sided' book verdict (see "
+                         "seed_fair_band_state). A one-sided book still qualifies for seeding "
+                         "('crumbs_only') as long as NO resting order on either side falls inside "
+                         "the band -- e.g. penny-crumb lottery bids parked far from fair (observed "
+                         "2026-07-12 ~04:12Z on KXBTC15M: 80,418 contracts @0.001, ~2,600 @0.002, "
+                         "~700 @0.003, no asks, fair ~0.50) do NOT block seeding. A REAL quote "
+                         "inside the band on one side DOES block it -- the normal book-anchored "
+                         "PLACE loop handles joining that market instead.")
+    ap.add_argument("--seed-burst-n", type=int, default=2,
+                    help="--seed-empty AGGRESSOR-BURST COOLDOWN: if seeded quotes take >= this "
+                         "many fills within any rolling 60s window, cancel remaining seed quotes "
+                         "immediately and suppress new seeding for --seed-burst-cooldown-s. "
+                         "Mechanical fill-count trip, not a fitted model -- narrower than the "
+                         "reactive-pull gates that cost money via false positives in NORMAL "
+                         "retail-dominated books over the 32-day A/B: a fill burst against a SOLE "
+                         "maker in an unquoted book has a very different informed-flow prior.")
+    ap.add_argument("--seed-burst-cooldown-s", type=float, default=120.0,
+                    help="--seed-empty AGGRESSOR-BURST COOLDOWN: seconds to suppress new seeding "
+                         "after a --seed-burst-n trip. On resume, the first re-seed quotes at 2x "
+                         "the effective seed width (see seed_burst_resume_width_mult), decaying to "
+                         "normal width on the next re-seed.")
     a = ap.parse_args()
 
     live = a.live and os.environ.get("I_UNDERSTAND_REAL_MONEY") == "yes"
@@ -1243,6 +1344,16 @@ def main():
     _seed_log_ts = {"t": 0.0}     # rate-limits the "spot unavailable/stale" no-op log line
     seed_win = {"n_fills": 0, "cash": 0.0, "pos_yes": 0.0, "pos_no": 0.0}   # THIS window's seeded-fill
     # accumulator (audit: recon rows compute n_seeded_fills/seeded_net from this, reset at rollover).
+    # AGGRESSOR-BURST COOLDOWN (--seed-burst-n/--seed-burst-cooldown-s):
+    seed_fill_times: list = []     # epoch ts of seeded fills, pruned to a rolling 60s window on each
+    # append -- feeds seed_burst_should_trip. Never touched when --seed-empty is off (no seeded
+    # fills are possible), so this is zero cost/behavior change by default.
+    seed_cooldown = {"tripped_at": None, "resumes": None}   # tripped_at: epoch of the last burst
+    # trip (None = never tripped -> cooldown never active). resumes: # of seed placements since
+    # that cooldown lifted (None until the first trip ever happens; 0 -> the next placement gets
+    # 2x width per seed_burst_resume_width_mult, then increments so the one after decays to 1x).
+    seed_cooldown_win = {"n": 0}   # THIS window's burst-cooldown TRIP count -> recon row
+    # n_seed_cooldowns (mirrors seed_win's reset-at-rollover pattern).
     # COMPREHENSIVE per-window microstructure (live RCA 2026-06-13): the re-validation gate (strand
     # rate, legging gap, maker/taker mix, dispose-cross firing) plus the offline strand analysis read
     # this. Written per window to kalshi_winrec_<asset>15m.jsonl, reset at rollover.
@@ -1292,6 +1403,21 @@ def main():
         except Exception:
             pass
 
+    def _lifecycle_write_seed_cooldown(fills_in_burst):
+        """AGGRESSOR-BURST COOLDOWN trip event: {"event": "seed_cooldown", "fills_in_burst": n}.
+        Appended to the same order-lifecycle log as every other seed event (best-effort/non-
+        blocking, same try/except pattern as _lifecycle_write -- logging must never affect
+        trading)."""
+        try:
+            os.makedirs("gha_data", exist_ok=True)
+            with open(_LIFECYCLE_PATH, "a") as _lf:
+                _lf.write(json.dumps({
+                    "ts": time.time(), "event": "seed_cooldown",
+                    "fills_in_burst": int(fills_in_burst),
+                }) + "\n")
+        except Exception:
+            pass
+
     def _queue_ahead_est(side, price):
         """Size resting at `price` on `side` (yes/no book) at the instant we're about to join it,
         i.e. the WS book level BEFORE our own order lands there -- the queue-position proxy this
@@ -1310,13 +1436,15 @@ def main():
             return None
 
     def _recon_write(ws_epoch, requested, fills, net, gross, inv_max,
-                     n_seeded_fills=0, seeded_net=0.0):
+                     n_seeded_fills=0, seeded_net=0.0, n_seed_cooldowns=0):
         """Append one reconciliation row. Best-effort/non-blocking: any failure here must never
         affect trading (mirrors the try/except pattern around winrec_fh.write above).
         n_seeded_fills/seeded_net (AUDIT, --seed-empty PRE-REGISTERED EVALUATION): fills against
         seeded orders and their settled P&L for THIS window only (0/0.0 when --seed-empty is off,
         or when this window had no seeded fills). The bar: if seeded_net < 0 after >=30 cumulative
-        seeded fills across recon rows, --seed-empty should be disabled pending review."""
+        seeded fills across recon rows, --seed-empty should be disabled pending review.
+        n_seed_cooldowns (AUDIT, AGGRESSOR-BURST COOLDOWN): count of --seed-burst-n trips during
+        THIS window (0 when --seed-empty is off, or when no burst tripped)."""
         try:
             os.makedirs("gha_data", exist_ok=True)
             with open(_RECON_PATH, "a") as _rf:
@@ -1326,6 +1454,7 @@ def main():
                     "fill_rate": round(fills / requested, 4) if requested else 0.0,
                     "net": round(net, 4), "gross": round(gross, 4), "inv_max": round(inv_max, 2),
                     "n_seeded_fills": int(n_seeded_fills), "seeded_net": round(seeded_net, 4),
+                    "n_seed_cooldowns": int(n_seed_cooldowns),
                 }) + "\n")
         except Exception:
             pass
@@ -1779,28 +1908,62 @@ def main():
         extra is needed for those here."""
         if not a.seed_empty or mk is None:
             return
+        now_tick = time.time()
+        # AGGRESSOR-BURST COOLDOWN: seeding stays suppressed for --seed-burst-cooldown-s after a
+        # --seed-burst-n trip (the trip itself -- detecting the burst + the immediate cancel-all --
+        # happens fill-side, in book_fill(), since it must react the instant the Nth fill lands,
+        # not wait for the next poll tick). Nothing should be resting here (book_fill's trip
+        # handler already dropped it), but _seed_drop_all is idempotent, so make it a no-op guard
+        # rather than trusting that invariant.
+        if seed_burst_cooldown_active(seed_cooldown["tripped_at"], now_tick, a.seed_burst_cooldown_s):
+            _seed_drop_all("seed_burst_cooldown")
+            return
         # BOUNDARY DISCIPLINE: never seed inside the final --seed-tau-min-s of a window, and cancel
         # any resting seed quotes there -- same force-flatten discipline as every other rung, just
         # earlier (a sole-maker fill this late has no time left to find a natural pair).
         if tau_left < a.seed_tau_min_s:
             _seed_drop_all("seed_tau_guard")
             return
-        state = seed_book_state(ws_state.get(mk["cid"]))
-        if state != "empty":
-            # One-sided book does NOT qualify. If we were resting seed quotes, someone else just
-            # quoted inside us -- revert to normal book-anchored behavior immediately (an 'unknown'
-            # state, e.g. a brief WS gap, is not evidence the book stopped being empty, so it is
-            # left alone rather than churned).
-            if state == "one_sided":
-                _seed_drop_all("seed_book_one_sided")
+        raw_state = seed_book_state(ws_state.get(mk["cid"]))
+        if raw_state in ("has_book", "unknown"):
+            # has_book: real two-sided market -- normal book-anchored PLACE loop handles it, and
+            # any resting seed quotes are pulled the instant this is detected at the book-poll call
+            # site (see 'seed_book_no_longer_empty' above _seed_tick's call). unknown: no WS
+            # snapshot yet -- NOT evidence the book stopped being empty (e.g. a brief WS gap right
+            # after rollover), so left alone rather than churned.
             return
+        # FAIR-BAND TRIGGER (--seed-fair-band): needs `fair` even for a merely 'one_sided' book now
+        # (not just 'empty'), since seed_fair_band_state's crumbs-vs-real distinction is fair-
+        # relative. _seed_spot_fair is internally rate-limited (>=1/s), so this adds no meaningful
+        # extra cost on the 'one_sided' path.
         fair, sigma = _seed_spot_fair(tau_left)
         if fair is None:
             _seed_log_rl(f"spot feed unavailable/stale (>{a.seed_max_age_s:.0f}s) -- not seeding")
             _seed_drop_all("seed_spot_stale")
             return
-        eff_width = seed_effective_width(a.seed_width, tau_left, sigma)
         fair_cents = fair * 100.0
+        state = raw_state
+        if raw_state == "one_sided":
+            state = seed_fair_band_state(ws_state.get(mk["cid"]), fair_cents, a.seed_fair_band)
+            if state == "one_sided":
+                # A REAL quote sits inside the fair band -- someone is actually making a market
+                # here. Do NOT spot-seed: the normal book-anchored PLACE loop already knows how to
+                # join a one-sided real market (anchor off the resting side), so spot-anchoring
+                # here would just duplicate/fight that logic with a different pricing model. If we
+                # were resting seed quotes, someone else just quoted inside us -- revert to normal
+                # book-anchored behavior immediately.
+                _seed_drop_all("seed_book_one_sided")
+                return
+            # else: 'crumbs_only' -- every resting order on this book sits outside the fair band
+            # (e.g. the observed 2026-07-12 penny-crumb lottery bids at 0.001-0.003c vs a ~0.50
+            # fair) and carries no informational content about where the market actually is.
+            # QUALIFIES for spot-anchored seeding exactly like a literally-empty book.
+        eff_width = seed_effective_width(a.seed_width, tau_left, sigma)
+        # AGGRESSOR-BURST COOLDOWN, width doubling on resume: the first seed placement after a
+        # cooldown lifts quotes at 2x the effective width (seed_cooldown["resumes"] is None until
+        # the first-ever trip, so pre-trip behavior is byte-identical to before this feature).
+        if seed_cooldown["resumes"] is not None:
+            eff_width *= seed_burst_resume_width_mult(seed_cooldown["resumes"])
         # RE-PRICE DISCIPLINE: keep queue priority -- only cancel/re-post a seed quote if fair moved
         # more than half the CONFIGURED --seed-width since placement.
         for key, meta in list(resting.items()):
@@ -1812,6 +1975,7 @@ def main():
         seed_count = min(1, int(a.post))    # post-only 1-lot, but never exceed the configured --post
         if seed_count < 1:
             return
+        placed_any = False
         for side, price in (("yes", round(yb_cents / 100.0, 4)),
                             ("no", round(1.0 - ya_cents / 100.0, 4))):
             key = (side, round(price, 4))
@@ -1854,8 +2018,15 @@ def main():
                             "mid0": None, "qahead": _queue_ahead_est(side, price),
                             "seeded": True, "seed_fair_cents": fair_cents,
                             "seed_width_used": eff_width}
+            placed_any = True
             print(f"  [SEED] empty book -> {side.upper()} {seed_count}@{price:.4f} "
-                  f"fair={fair_cents:.1f}c width={eff_width:.1f}c tau={tau_left:.0f}s")
+                  f"fair={fair_cents:.1f}c width={eff_width:.1f}c tau={tau_left:.0f}s"
+                  f"{' state=' + state if state == 'crumbs_only' else ''}")
+        # AGGRESSOR-BURST COOLDOWN, width doubling on resume: advance the resume counter only after
+        # an actual placement -- seed_burst_resume_width_mult(0) applies once, then this bumps it
+        # to 1 so the NEXT tick's placement decays back to normal width.
+        if placed_any and seed_cooldown["resumes"] is not None:
+            seed_cooldown["resumes"] += 1
 
     # --- fill booking (poll-based, scoped to current ticker) ---
     def book_fill(ticker, f, sf):
@@ -1921,6 +2092,28 @@ def main():
                 seed_win["pos_yes"] += count
             else:
                 seed_win["pos_no"] += count
+            # AGGRESSOR-BURST COOLDOWN (--seed-burst-n/--seed-burst-cooldown-s): react to the burst
+            # the instant the Nth fill lands (fill-triggered, not poll-triggered -- the whole point
+            # is to cancel remaining seed quotes before more of them get picked off). Checked only
+            # when not already in cooldown, so a trip can't re-trip itself / reset the resume
+            # counter early while suppressed (no new seed quotes rest during cooldown anyway, so no
+            # further seeded fills should occur here until it lifts).
+            _now_fill = time.time()
+            seed_fill_times.append(_now_fill)
+            while seed_fill_times and _now_fill - seed_fill_times[0] > 60.0:
+                seed_fill_times.pop(0)
+            if not seed_burst_cooldown_active(seed_cooldown["tripped_at"], _now_fill,
+                                              a.seed_burst_cooldown_s):
+                if seed_burst_should_trip(seed_fill_times, _now_fill, a.seed_burst_n, 60.0):
+                    _fills_in_burst = seed_burst_fill_count(seed_fill_times, _now_fill, 60.0)
+                    _seed_drop_all("seed_burst_cooldown")
+                    seed_cooldown["tripped_at"] = _now_fill
+                    seed_cooldown["resumes"] = 0
+                    seed_cooldown_win["n"] += 1
+                    _lifecycle_write_seed_cooldown(_fills_in_burst)
+                    print(f"  [SEED] burst cooldown TRIP: {_fills_in_burst} fills in 60s -> "
+                          f"cancel remaining seed quotes, suppress seeding for "
+                          f"{a.seed_burst_cooldown_s:.0f}s")
         if meta:
             meta["filled"] = meta.get("filled", 0.0) + count
             _full = meta["filled"] >= meta.get("want", a.post) - 1e-9   # AUDIT M5: per-order size, not global post
@@ -2166,14 +2359,19 @@ def main():
                             # carried through to settlement so seeded_net can be computed the same way
                             # (cash + pos*payout) at the same time as the whole-window pnl.
                             "seed": dict(seed_win),
+                            # AUDIT (AGGRESSOR-BURST COOLDOWN): THIS window's cooldown-trip count,
+                            # carried through to settlement -> _recon_write's n_seed_cooldowns.
+                            "n_seed_cooldowns": seed_cooldown_win["n"],
                         }
                         pending_settles.append(entry)
                     else:
                         # no activity this window (no fills => no cash spent, no position held) ->
                         # net/gross are trivially $0; write the recon row now (no settlement to await).
                         # (pos empty implies seed_win is also empty -- every fill, seeded or not,
-                        # adds to pos -- so n_seeded_fills/seeded_net are trivially 0/0.0 here too.)
-                        _recon_write(mk["ws"], _recon_requested, _recon_fills, 0.0, 0.0, _recon_invmax)
+                        # adds to pos -- so n_seeded_fills/seeded_net/n_seed_cooldowns are trivially
+                        # 0/0.0/0 here too: a burst trip requires >=1 seeded fill.)
+                        _recon_write(mk["ws"], _recon_requested, _recon_fills, 0.0, 0.0, _recon_invmax,
+                                    n_seed_cooldowns=seed_cooldown_win["n"])
                     lm.window_summary(mk["ws"], realized, window_mark, net_delta)
                     # BOX telemetry: paired yes/no contracts pay $1 at settlement regardless of
                     # outcome -- the locked, risk-free component of this window's book.
@@ -2220,6 +2418,9 @@ def main():
                     winrec = {"taker": 0, "maker": 0, "maxnet": 0.0, "first_ts": {}, "dispose_cross": 0}
                     pos.clear(); cash = 0.0; net_delta = 0.0; window_mark = 0.0
                     seed_win = {"n_fills": 0, "cash": 0.0, "pos_yes": 0.0, "pos_no": 0.0}
+                    seed_cooldown_win = {"n": 0}   # reset THIS window's cooldown-trip counter; the
+                    # cooldown state itself (seed_cooldown: tripped_at/resumes) is NOT window-scoped
+                    # -- a 120s cooldown can span a rollover, so it persists independently.
                 win_fills = {"yes": 0, "no": 0}   # fresh window, fresh trend-exposure budget
                 win_cost = {"yes": 0.0, "no": 0.0}
                 ops = {"place": 0, "cancel": 0, "cancel_fail": 0}
@@ -2823,13 +3024,14 @@ def main():
                     # scoped to the seed_win snapshot captured at rollover.
                     _sw = en.get("seed") or {}
                     _swn = int(_sw.get("n_fills", 0))
+                    _sw_cd = int(en.get("n_seed_cooldowns", 0))
                     if r2 == "void" and time.time() - en.get("t0", 0) >= 20:
                         # voided/cancelled market: cash comes back, no P&L
                         realized += 0
                         print(f"  [VOID] ws={en['ws']} market voided; cash returned, no P&L")
                         _recon_write(en["ws"], en.get("recon_requested", 0), en.get("recon_fills", 0),
                                     0.0, 0.0, en.get("recon_invmax", 0.0),
-                                    n_seeded_fills=_swn, seeded_net=0.0)
+                                    n_seeded_fills=_swn, seeded_net=0.0, n_seed_cooldowns=_sw_cd)
                         seen_fills.pop(en["cid"], None)
                     elif r2 is not None and time.time() - en.get("t0", 0) >= 20:
                         # settle: YES pays $1 if r2==1, NO pays $1 if r2==0
@@ -2849,7 +3051,7 @@ def main():
                         # shadow schema in case that assumption ever breaks, see the FEE TRIPWIRE above).
                         _recon_write(en["ws"], en.get("recon_requested", 0), en.get("recon_fills", 0),
                                     pnl, pnl, en.get("recon_invmax", 0.0),
-                                    n_seeded_fills=_swn, seeded_net=seeded_pnl)
+                                    n_seeded_fills=_swn, seeded_net=seeded_pnl, n_seed_cooldowns=_sw_cd)
                         # DURABLE PER-WINDOW AUDIT RECORD (clean failure-audit + backtest dataset).
                         # Captures the settled RESULT (so it's never re-fetched / lost after markets
                         # age out) + the box/unpaired decomposition. Join to kalshi_fees_*.jsonl on
