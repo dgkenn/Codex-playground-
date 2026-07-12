@@ -1,0 +1,112 @@
+[
+{
+"ticker": "KXCPIYOY-26JUN-T3.9",
+"series": "KXCPIYOY",
+"rung": "above 3.9",
+"side": "YES",
+"entry_price": 0.040000000000000036,
+"ts": "2026-07-12T16:41:14+00:00",
+"close_time": "2026-07-14T12:29:00Z",
+"anchor_prob_at_entry": 0.1074,
+"edge_at_entry": 0.0724
+},
+{
+"ticker": "KXCPIYOY-26JUN-T3.8",
+"series": "KXCPIYOY",
+"rung": "above 3.8",
+"side": "YES",
+"entry_price": 0.26,
+"ts": "2026-07-12T16:41:14+00:00",
+"close_time": "2026-07-14T12:29:00Z",
+"anchor_prob_at_entry": 0.283,
+"edge_at_entry": 0.028
+},
+{
+"ticker": "KXCPIYOY-26JUN-T3.7",
+"series": "KXCPIYOY",
+"rung": "above 3.7",
+"side": "NO",
+"entry_price": 0.29,
+"ts": "2026-07-12T16:41:14+00:00",
+"close_time": "2026-07-14T12:29:00Z",
+"anchor_prob_at_entry": 0.5369,
+"edge_at_entry": -0.1781
+},
+{
+"ticker": "KXCPIYOY-26JUN-T3.6",
+"series": "KXCPIYOY",
+"rung": "above 3.6",
+"side": "NO",
+"entry_price": 0.03,
+"ts": "2026-07-12T16:41:14+00:00",
+"close_time": "2026-07-14T12:29:00Z",
+"anchor_prob_at_entry": 0.7762,
+"edge_at_entry": -0.1988
+},
+{
+"ticker": "KXCPICOREYOY-26JUN-T2.9",
+"series": "KXCPICOREYOY",
+"rung": "above 2.9",
+"side": "YES",
+"entry_price": 0.050000000000000044,
+"ts": "2026-07-12T16:41:14+00:00",
+"close_time": "2026-07-14T12:25:00Z",
+"anchor_prob_at_entry": 0.2637,
+"edge_at_entry": 0.2237
+},
+{
+"ticker": "KXCPICOREYOY-26JUN-T2.8",
+"series": "KXCPICOREYOY",
+"rung": "above 2.8",
+"side": "YES",
+"entry_price": 0.49,
+"ts": "2026-07-12T16:41:14+00:00",
+"close_time": "2026-07-14T12:25:00Z",
+"anchor_prob_at_entry": 0.5139,
+"edge_at_entry": 0.1039
+},
+{
+"ticker": "KXCPICOREYOY-26JUN-T2.7",
+"series": "KXCPICOREYOY",
+"rung": "above 2.7",
+"side": "NO",
+"entry_price": 0.18,
+"ts": "2026-07-12T16:41:14+00:00",
+"close_time": "2026-07-14T12:25:00Z",
+"anchor_prob_at_entry": 0.7585,
+"edge_at_entry": -0.0715
+},
+{
+"ticker": "KXCPICOREYOY-26JUN-T2.6",
+"series": "KXCPICOREYOY",
+"rung": "above 2.6",
+"side": "NO",
+"entry_price": 0.02,
+"ts": "2026-07-12T16:41:14+00:00",
+"close_time": "2026-07-14T12:25:00Z",
+"anchor_prob_at_entry": 0.9144,
+"edge_at_entry": -0.0706
+},
+{
+"ticker": "KXFEDDECISION-26JUL-H25",
+"series": "KXFEDDECISION",
+"rung": "H25",
+"side": "YES",
+"entry_price": 0.20999999999999996,
+"ts": "2026-07-12T16:41:14+00:00",
+"close_time": "2026-07-29T17:59:00Z",
+"anchor_prob_at_entry": 0.36,
+"edge_at_entry": 0.155
+},
+{
+"ticker": "KXFEDDECISION-26JUL-H0",
+"series": "KXFEDDECISION",
+"rung": "H0",
+"side": "NO",
+"entry_price": 0.21,
+"ts": "2026-07-12T16:41:14+00:00",
+"close_time": "2026-07-29T17:59:00Z",
+"anchor_prob_at_entry": 0.64,
+"edge_at_entry": -0.155
+}
+]
