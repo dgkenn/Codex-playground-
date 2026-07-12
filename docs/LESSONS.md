@@ -1151,3 +1151,17 @@ cross-nationally-validated part.
   triage) — the pattern is that a residual confound hides until the hardest-outcome test is run; run it EARLY.
   Residual real signals: Asian under-triage with EQUAL mortality (purer, small); Hispanic door-to-room +7min at
   matched acuity (operational). Salvage = a methods-cautionary paper, not a clinical-breakthrough claim.
+
+- **The C8 arithmetic-attenuation template requires the deployed measure's error to be NOISE, not a specificity-
+  increasing threshold shift — it does NOT transfer to SpO2/oxygenation (2026-07-11).** Redeployed the validated
+  eICU SpO2<->SaO2 paired data (42,847 stays) into the exact C8 move: is the hypoxemia->mortality OR larger by GOLD
+  SaO2 than by DEPLOYED SpO2 (as cuff attenuated hypotension-harm)? RESULT REVERSED: SpO2-defined OR is LARGER
+  (SaO2<88 OR 3.27 vs SpO2<88 OR 6.14; ratio 0.53). MECHANISM: cuff error is ~random noise at low BP -> cuff flag is
+  insensitive -> attenuated OR (C8). SpO2 error is a SYSTEMATIC over-read -> when SpO2 does cross <88 the patient is
+  profoundly hypoxemic (true SaO2 even lower) -> the SpO2 flag is MORE SPECIFIC -> HIGHER OR. RULE: the C8
+  "biased-measure attenuates the exposure-harm association" argument only holds when the measurement error is
+  approximately non-differential NOISE around the truth; when the error is a monotone shift that makes threshold-
+  crossing more specific for severity, the deployed measure can show a STRONGER (not attenuated) association -> the
+  arithmetic-consequence reframe fails. Check the error structure (noise vs shift) before assuming attenuation. The
+  only clean number was the KNOWN occult-hypoxemia point (SpO2 92-96 target permits 10-20% true SaO2<88; Sjoding).
+  4th decisive-first kill this session; the discipline works (data in hand, one run, no wasted build).

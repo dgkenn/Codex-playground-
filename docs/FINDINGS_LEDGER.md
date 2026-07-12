@@ -423,3 +423,9 @@ Best-fit C8-analog (true independent muscle-independent reference + ARITHMETIC d
 eICU lab has creatinine (1M+) but NO cystatin; MIMIC-IV d_labitems has NO cystatin C item at all. The muscle-
 independent reference does not exist in any reachable dataset → cannot run. Killed via tiny dictionary file (no 15GB
 labevents stream wasted) — decisive-first feasibility discipline. Predicted win-likelihood was ~0.5; unrunnable.
+
+## Oxygenation C8-analog (SpO2 attenuates hypoxemia-harm) — KILLED by decisive-first test (attenuation reversed)
+Reused validated SpO2<->SaO2 data (42,847 stays). C8-exact test: SpO2-defined hypoxemia OR is LARGER than SaO2-
+defined (SpO2<88 OR 6.14 vs SaO2<88 OR 3.27, ratio 0.53) — REVERSED from C8. SpO2's systematic over-read makes its
+threshold-flag MORE SPECIFIC for severe hypoxemia (higher OR), unlike cuff's noise (attenuation). Arithmetic reframe
+fails. Corrected-target number real but known (SpO2 92-96 permits 10-20% SaO2<88; Sjoding). Killed in one run.
