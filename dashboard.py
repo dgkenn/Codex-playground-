@@ -2,6 +2,9 @@
 assets, no JS chart libs -- hand-rolled inline SVG), dark-friendly ops snapshot of the shadow A/B.
 
 Sections:
+  (0) Portfolio -- account equity curve (gha_data/equity_*.jsonl), per-sleeve P&L attribution
+      (sleeve_ledger.py) and the fractional-Kelly allocator's current recommendation
+      (portfolio_allocator.py, alert-only -- this page never applies it to anything)
   (a) 30-day trend of daily edge-vs-baseline for the top arms (inline SVG line chart)
   (b) latest day-clustered leaderboard, parsed from the newest gha_data/<date>/SUMMARY.txt
   (c) decay-watch status line (same SUMMARY.txt)
@@ -46,6 +49,123 @@ SERIES_COLORS = [
 
 def _utc_date(ws: float) -> str:
     return datetime.fromtimestamp(ws, timezone.utc).strftime("%Y-%m-%d")
+
+
+# ------------------------------------------------------------------------------------------------
+# (0) Portfolio: equity curve + sleeve attribution + allocator recommendation
+# ------------------------------------------------------------------------------------------------
+
+def render_equity_curve() -> str:
+    files = jl_glob("gha_data/equity_*.jsonl")
+    if not files:
+        return '<p class="muted">no gha_data/equity_*.jsonl yet (equity_snap.py hasn\'t run/committed) -- equity curve pending.</p>'
+    rows = [r for fp in files for r in jl_lines(fp) if r.get("ts") is not None and r.get("balance_cents") is not None]
+    if not rows:
+        return '<p class="muted">equity_*.jsonl present but no parseable {ts, balance_cents} rows yet.</p>'
+    rows.sort(key=lambda r: r["ts"])
+    pts = [(r["ts"], r["balance_cents"] / 100.0) for r in rows]
+
+    W, H = 720, 200
+    ML, MR, MT, MB = 52, 12, 14, 24
+    plot_w, plot_h = W - ML - MR, H - MT - MB
+    vals = [v for _, v in pts]
+    lo, hi = min(vals), max(vals)
+    pad = (hi - lo) * 0.1 or 1.0
+    lo, hi = lo - pad, hi + pad
+
+    def x_of(i):
+        return ML + (i / max(len(pts) - 1, 1)) * plot_w
+
+    def y_of(v):
+        return MT + (1 - (v - lo) / (hi - lo)) * plot_h
+
+    parts = [f'<svg viewBox="0 0 {W} {H}" role="img" aria-label="account equity over time" '
+             f'class="viz-root" xmlns="http://www.w3.org/2000/svg">']
+    for i in range(5):
+        gy = MT + i * plot_h / 4
+        parts.append(f'<line x1="{ML}" y1="{gy:.1f}" x2="{ML+plot_w}" y2="{gy:.1f}" class="grid"/>')
+    parts.append(f'<text x="{ML-6}" y="{MT+4}" text-anchor="end" class="tick">${hi:.2f}</text>')
+    parts.append(f'<text x="{ML-6}" y="{MT+plot_h}" text-anchor="end" class="tick">${lo:.2f}</text>')
+    poly = " ".join(f"{x_of(i):.1f},{y_of(v):.1f}" for i, (_ts, v) in enumerate(pts))
+    parts.append(f'<polyline points="{poly}" fill="none" stroke="var(--s0)" stroke-width="2" '
+                  f'stroke-linecap="round" stroke-linejoin="round"/>')
+    lx, ly = x_of(len(pts) - 1), y_of(pts[-1][1])
+    parts.append(f'<circle cx="{lx:.1f}" cy="{ly:.1f}" r="3" fill="var(--s0)"/>')
+    parts.append("</svg>")
+
+    light, dark = SERIES_COLORS[0]
+    delta = pts[-1][1] - pts[0][1]
+    first_d = _utc_date(pts[0][0]); last_d = _utc_date(pts[-1][0])
+    summary = (f'<p>{len(pts)} snapshot(s), {html.escape(first_d)} &rarr; {html.escape(last_d)} &middot; '
+               f'balance ${pts[0][1]:.2f} &rarr; ${pts[-1][1]:.2f} ({delta:+.2f})</p>')
+    return (f'<div class="viz-root" style="--s0:{light};">'
+            f'<style>@media (prefers-color-scheme: dark) {{ .viz-root {{ --s0:{dark}; }} }}</style>'
+            f'{"".join(parts)}</div>{summary}')
+
+
+def render_sleeve_attribution() -> str:
+    try:
+        import sleeve_ledger
+    except Exception as e:
+        return f'<p class="muted">sleeve_ledger unavailable: {html.escape(str(e))}</p>'
+    rows = sleeve_ledger.load_all()
+    if not rows:
+        return '<p class="muted">no sleeve data yet (all sources absent/immature -- expected cold-start).</p>'
+    sleeves = sleeve_ledger.by_sleeve(rows)
+    body = []
+    for name in sorted(sleeves):
+        srows = sleeves[name]
+        pnl = sum(r["pnl_usd"] for r in srows)
+        notional = sum(r["notional_usd"] for r in srows)
+        n_trades = sum(r["n_trades"] for r in srows)
+        n_days = len(srows)
+        is_live = srows[0]["is_live"]
+        body.append(f'<tr><td>{html.escape(name)}</td><td class="num">{"live" if is_live else "paper"}</td>'
+                     f'<td class="num">{n_days}</td><td class="num">{pnl:+.4f}</td>'
+                     f'<td class="num">{notional:.4f}</td><td class="num">{n_trades}</td></tr>')
+    table = (f'<table><thead><tr><th>sleeve</th><th>kind</th><th>n_days</th><th>pnl_usd</th>'
+             f'<th>notional_usd</th><th>n_trades</th></tr></thead><tbody>{"".join(body)}</tbody></table>')
+    total_pnl = sum(r["pnl_usd"] for r in rows)
+    total_notional = sum(r["notional_usd"] for r in rows)
+    foot = (f'<p class="muted">totals across {len(sleeves)} sleeve(s): pnl_usd={total_pnl:+.4f} &middot; '
+            f'notional_usd={total_notional:.4f}</p>')
+    return table + foot
+
+
+def render_allocator() -> str:
+    try:
+        import portfolio_allocator
+    except Exception as e:
+        return f'<p class="muted">portfolio_allocator unavailable: {html.escape(str(e))}</p>'
+    res = portfolio_allocator.allocate(50.0)
+    if not res["sleeves"]:
+        return '<p class="muted">no sleeve data at all (cold start) -- nothing to allocate yet.</p>'
+    lines = [f'<p class="muted">bankroll=${res["bankroll"]:.2f} &middot; alert-only, never auto-applies '
+             f'to any trader flag.</p>']
+    if res["thin_data"]:
+        lines.append('<p class="status-critical">data is too thin for anything but priors right now -- '
+                      'means/vols/correlations below lean heavily on documented priors, not signal.</p>')
+    body = []
+    for r in res["sleeves"]:
+        body.append(f'<tr><td>{html.escape(r["sleeve"])}</td><td class="num">{"live" if r["is_live"] else "paper"}</td>'
+                     f'<td class="num">{r["n_days"]}</td><td class="num">{r["mean_per_day"]:+.4f}</td>'
+                     f'<td class="num">{r["vol_per_day"]:.4f}</td><td class="num">{r["sharpe"]:.3f}</td>'
+                     f'<td class="num">{r["kelly_quarter_frac"]:.4f}</td>'
+                     f'<td class="num">{r["alloc_usd"]:.4f}</td><td class="num">{r["would_be_usd"]:.4f}</td></tr>')
+    table = (f'<table><thead><tr><th>sleeve</th><th>kind</th><th>n_days</th><th>mean/day</th>'
+             f'<th>vol/day</th><th>sharpe</th><th>kelly(1/4)</th><th>alloc_usd</th><th>would_be_usd</th>'
+             f'</tr></thead><tbody>{"".join(body)}</tbody></table>')
+    checks = portfolio_allocator.crypto_notional_check(res)
+    check_lines = []
+    for c in checks:
+        cls = ' class="status-critical"' if c["flag"] != "in-range" else ""
+        check_lines.append(f'<p{cls}>{html.escape(c["sleeve"])}: implied --max-notional='
+                            f'{c["implied_max_notional"]:.2f} (deployed {c["deployed_max_notional"]:.2f}) &middot; '
+                            f'implied --loss-limit={c["implied_loss_limit"]:.2f} '
+                            f'(deployed {c["deployed_loss_limit"]:.2f}) &middot; '
+                            f'{c["divergence_x"]:.2f}x &middot; <strong>{html.escape(c["flag"])}</strong></p>')
+    checks_html = "".join(check_lines) if check_lines else ""
+    return "".join(lines) + table + checks_html
 
 
 # ------------------------------------------------------------------------------------------------
@@ -407,6 +527,9 @@ PAGE_TMPL = """<!doctype html>
 <h1>Kalshi maker-box shadow A/B -- dashboard</h1>
 <p class="generated">generated {generated} UTC</p>
 
+<section><h2>Portfolio: account equity</h2>{equity}</section>
+<section><h2>Portfolio: per-sleeve P&amp;L attribution</h2>{sleeve_attr}</section>
+<section><h2>Portfolio: allocator recommendation (alert-only)</h2>{allocator}</section>
 <section><h2>30-day trend: daily edge vs baseline (top arms)</h2>{trend}</section>
 <section><h2>Latest leaderboard</h2>{leaderboard}</section>
 <section><h2>Decay watch</h2>{decay}</section>
@@ -426,6 +549,9 @@ def _safe(label: str, fn) -> str:
 
 def build() -> str:
     by_ws = _safe_load()
+    equity = _safe("equity curve", render_equity_curve)
+    sleeve_attr = _safe("sleeve attribution", render_sleeve_attribution)
+    allocator = _safe("allocator recommendation", render_allocator)
     trend = _safe("trend chart", lambda: render_trend_svg(*day_means_by_variant(by_ws)) if by_ws
                    else '<p class="muted">no shadow-window data under gha_data/ yet.</p>')
     leaderboard = _safe("leaderboard", render_leaderboard)
@@ -433,7 +559,8 @@ def build() -> str:
     live_recon = _safe("live-recon", render_live_recon)
     verdicts = _safe("verdict ledger", render_verdict_stats)
     generated = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
-    return PAGE_TMPL.format(generated=generated, trend=trend, leaderboard=leaderboard,
+    return PAGE_TMPL.format(generated=generated, equity=equity, sleeve_attr=sleeve_attr,
+                             allocator=allocator, trend=trend, leaderboard=leaderboard,
                              decay=decay, live_recon=live_recon, verdicts=verdicts)
 
 
