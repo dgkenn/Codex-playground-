@@ -1,0 +1,68 @@
+shadow comparison over 12 de-duped windows | files=4
+
+     variant  net/win  Δvs base  paired t GROSS/win  gross t
+   mo_skew99  +26.459   +11.847     +2.05   +26.459    +2.28 <edge>
+      skew99  +24.212    +9.600     +1.73   +24.212    +2.21 <edge>
+  queue_gate  +24.212    +9.600     +1.73   +24.212    +2.21 <edge>
+   as_spread  +24.212    +9.600     +1.73   +24.212    +2.21 <edge>
+  as_markout  +19.105    +4.492     +1.60   +19.105    +2.13 <edge>
+   as_cap100  +16.947    +2.335     +0.60   +16.947    +1.94 <edge>
+        xnet  +16.453    +1.841     +0.76   +16.453    +2.03 <edge>
+  av_stoikov  +16.453    +1.841     +0.76   +16.453    +2.03 <edge>
+     as_resv  +16.453    +1.841     +0.76   +16.453    +2.03 <edge>
+   as_k_half  +16.453    +1.841     +0.76   +16.453    +2.03 <edge>
+     as_k_2x  +16.453    +1.841     +0.76   +16.453    +2.03 <edge>
+     mo_size  +16.247    +1.635     +1.61   +16.247    +2.16 <edge>
+   mo_k_half  +16.247    +1.635     +1.61   +16.247    +2.16 <edge>
+     mo_k_2x  +16.247    +1.635     +1.61   +16.247    +2.16 <edge>
+  late_boost  +14.782    +0.170     +2.04   +14.782    +2.18 <edge>
+    vol_size  +14.612    +0.000       n/a   +14.612    +2.18 <edge>
+  micro_gate  +14.612    +0.000       n/a   +14.612    +2.18 <edge>
+    baseline  +14.612                       +14.612    +2.18 <edge>
+
+Read: paired t = net edge OVER baseline (rebate-inclusive). GROSS/win = trade P&L EXCLUDING the rebate = the edge OUTSIDE rebates; gross t vs 0, |t|>2 notable. n=12.
+Only positive-GROSS variants have an edge beyond rebate harvesting (the micro-gate family).
+
+day-clustered (windows within a day share regime)
+     variant n_days mean Δ/day   clust t   days+
+   mo_skew99      2    +13.191     +3.27     2/2
+      skew99      2    +11.177     +2.36     2/2
+  queue_gate      2    +11.177     +2.36     2/2
+   as_spread      2    +11.177     +2.36     2/2
+  as_markout      2     +4.757     +6.00     2/2
+   as_cap100      2     +3.392     +1.07     2/2
+        xnet      2     +2.470     +1.31     2/2
+  av_stoikov      2     +2.470     +1.31     2/2
+     as_resv      2     +2.470     +1.31     2/2
+   as_k_half      2     +2.470     +1.31     2/2
+     as_k_2x      2     +2.470     +1.31     2/2
+     mo_size      2     +1.755     +4.89     2/2
+   mo_k_half      2     +1.755     +4.89     2/2
+     mo_k_2x      2     +1.755     +4.89     2/2
+  late_boost      2     +0.136     +1.35     2/2
+    vol_size      2     +0.000       n/a     0/2
+  micro_gate      2     +0.000       n/a     0/2
+
+DECAY-ALERT: micro_gate looks INERT over the last 2 UTC days -- mean|Δ vs baseline|=0.0000 < 0.01 across 12 windows (gate is barely diverging from baseline; it may not be firing).
+
+per-asset (enabled arms only): mean paired-Δ vs baseline, n windows
+     variant            btc            eth            sol            xrp
+  av_stoikov     +4.969/n=3     +2.021/n=3     +1.133/n=3     -0.758/n=3
+     mo_size     +5.604/n=3     +2.369/n=3     -0.062/n=3     -1.370/n=3
+  as_markout    +13.471/n=3     +3.418/n=3     +1.560/n=3     -0.479/n=3
+   mo_skew99    +24.448/n=3     +8.642/n=3     +9.862/n=3     +4.437/n=3
+      skew99    +15.377/n=3     +8.831/n=3    +10.277/n=3     +3.915/n=3
+   as_cap100     +5.042/n=3     +3.835/n=3     +6.123/n=3     -5.659/n=3
+   as_k_half     +4.969/n=3     +2.021/n=3     +1.133/n=3     -0.758/n=3
+     as_k_2x     +4.969/n=3     +2.021/n=3     +1.133/n=3     -0.758/n=3
+   mo_k_half     +5.604/n=3     +2.369/n=3     -0.062/n=3     -1.370/n=3
+     mo_k_2x     +5.604/n=3     +2.369/n=3     -0.062/n=3     -1.370/n=3
+     as_resv     +4.969/n=3     +2.021/n=3     +1.133/n=3     -0.758/n=3
+   as_spread    +15.377/n=3     +8.831/n=3    +10.277/n=3     +3.915/n=3
+  queue_gate    +15.377/n=3     +8.831/n=3    +10.277/n=3     +3.915/n=3
+  late_boost     +0.536/n=3     +0.113/n=3     -0.003/n=3     +0.033/n=3
+    vol_size     +0.000/n=3     +0.000/n=3     +0.000/n=3     +0.000/n=3
+        xnet     +4.969/n=3     +2.021/n=3     +1.133/n=3     -0.758/n=3
+  micro_gate     +0.000/n=3     +0.000/n=3     +0.000/n=3     +0.000/n=3
+
+regime split: insufficient rows with a 'regime' field yet (n=0, need >=4).
