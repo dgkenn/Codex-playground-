@@ -47,6 +47,18 @@ AS_K = 4e-4             # gate=="as": penalty = AS_K * |net_delta| * (tau/AS_WIN
 AS_WINDOW_S = 900.0     # KX*15M window length (s); tau-to-close normalizer for the "as" gate
 MO_K = 150.0            # size-mode=="markout": size *= clamp(1 + MO_K*fav, 0, 2) (MAKEREDGE.md #3)
 
+# --- PORTFOLIO-AWARE SIZING (opt-in via --portfolio-aware; default OFF -> zero behavior change).
+# From the 4-asset expansion on, each asset leg runs on its OWN GitHub Actions runner with NO
+# shared local state -- the Kalshi ACCOUNT itself, reachable only via the EXISTING authenticated
+# read-only calls (get_balance/get_positions, the same two startup reconciliation already uses;
+# no new endpoints), is the only place that knows the whole book. The two multipliers below are
+# deliberately MECHANICAL (clamp()'d linear ramps off venue-reported numbers) -- NOT a fitted
+# model. This repo's one fitted sizing/gate model (the ridge-ensemble "micro_cal" gate, fit by
+# gate_lab.py) failed its forward test (see GATING.md / PER_MARKET_STRATEGY.md's "pruned" row),
+# so anything touching live sizing off cross-asset state stays intentionally dumb and auditable.
+PORT_TICKER_PREFIX = "KX"     # crypto 15M series tickers look like "KX{ASSET}15M-..." (discover())
+PORT_TICKER_INFIX = "15M"     # excludes non-crypto KX* series (e.g. weather/elections) from delta
+
 # --- DECISION-TIME SPOT FEED (Prevention #0: wire `sig` into each fill record) -------------------
 # A daemon thread polls BTC spot so every fill can be stamped with the decision-time spot-move (the
 # leading adverse-selection signal the A/B tester's `sig` uses). TELEMETRY-ONLY and fully isolated:
@@ -531,6 +543,90 @@ def _parse_inherited_position(mpos_list, ticker):
     return None
 
 
+def portfolio_mult_budget(committed, port_budget):
+    """BUDGET multiplier (PORTFOLIO-AWARE SIZING, opt-in --portfolio-aware): shrinks smoothly
+    toward 0 as the WHOLE account's open-position notional (`committed`, $, across EVERY market
+    on the account -- not just this asset) fills the opt-in --port-budget envelope, BEFORE any
+    hard --max-notional/--max-net cap has to bind. clamp to [0,1]; port_budget<=0 is a
+    misconfiguration, not a divide-by-zero -- treated as "no budget left" (fail CLOSED on bad
+    config, unlike the API-unavailability fail-safe below which fails OPEN)."""
+    if port_budget <= 0:
+        return 0.0
+    return min(max((port_budget - committed) / port_budget, 0.0), 1.0)
+
+
+def portfolio_mult_delta(agg_delta_before, side, want, port_delta_max):
+    """DELTA-CONCENTRATION multiplier (PORTFOLIO-AWARE SIZING, opt-in --portfolio-aware).
+    `agg_delta_before` is the signed aggregate crypto delta across ALL KX*15M positions on the
+    account BEFORE this candidate fill: YES contracts count +1 toward 'up', NO contracts -1,
+    summed across every asset (same signed-contract convention this module's own `net_delta`
+    already uses for a single asset -- see net_delta's own docstring comment).
+
+    A fill that would REDUCE |aggregate delta| is a de-risking trade for the WHOLE portfolio and
+    is ALWAYS full size (mirrors gate_check's gate=="as" branch: "reducing |net_delta| is never
+    gated" -- de-risking is always welcome). A fill that INCREASES |aggregate delta| stays full
+    size until the result crosses --port-delta-max, then ramps 0.5 -> 0.0 linearly as the result
+    runs up to 1.5x the limit. This is a smooth DE-RATE, not a hard stop -- the hard stop remains
+    --max-net, re-applied unchanged after this multiplier composes (never bypassed)."""
+    if want <= 0:
+        return 1.0
+    sgn = 1.0 if side == "yes" else -1.0
+    agg_after = agg_delta_before + sgn * want
+    if abs(agg_after) <= abs(agg_delta_before) + 1e-9:
+        return 1.0                  # reduces (or doesn't increase) |delta| -> always full size
+    absd = abs(agg_after)
+    lo = float(port_delta_max)
+    hi = 1.5 * lo
+    if absd < lo:
+        return 1.0                   # increasing, but still comfortably under the limit
+    if hi <= lo or absd >= hi:
+        return 0.0                   # at/beyond 1.5x the limit -> fully de-rated
+    frac = (absd - lo) / (hi - lo)      # 0 at lo -> 1 at hi
+    return max(0.0, 0.5 * (1.0 - frac))  # 0.5 AT the limit -> 0.0 at 1.5x the limit
+
+
+def refresh_portfolio_state(sess, priv, asset, get_balance_fn=get_balance,
+                            get_positions_fn=get_positions):
+    """One refresh cycle of PortfolioState (PORTFOLIO-AWARE SIZING, opt-in --portfolio-aware):
+    pulls balance + ALL-market positions via the EXISTING authenticated read-only calls (the same
+    two startup reconciliation already uses -- no new endpoints) and reduces them to exactly the
+    two numbers portfolio_mult_{budget,delta} need:
+      committed        = sum(|market_exposure|) in dollars, across EVERY position on the account
+                          (the whole shared venue book, not just this asset).
+      agg_delta_other  = signed aggregate delta (YES=+1/contract, NO=-1) across all OTHER assets'
+                          KX*15M positions. THIS asset's own family is deliberately excluded here
+                          -- the caller already tracks its own net_delta live, fill-by-fill, far
+                          more current than any --port-refresh-s poll cadence could be, and adds
+                          that back on top of this before sizing (see main()'s _port_multipliers).
+
+    Raises on ANY failure (bad/empty response, exception) rather than swallowing it -- swallowing
+    is the CALLER's job (main()'s periodic refresh leaves the previous PortfolioState in place on
+    any exception here; staleness then does the fail-safe work). A single malformed position row
+    is skipped, not fatal -- one bad row must not blind the whole refresh."""
+    bal = get_balance_fn(sess, priv)
+    mpos = get_positions_fn(sess, priv)
+    if bal is None or mpos is None:
+        raise RuntimeError("get_balance/get_positions returned None (auth/network failure)")
+    committed = 0.0
+    agg_all = 0.0
+    agg_this = 0.0
+    this_prefix = f"KX{asset.upper()}15M"
+    for p in mpos:
+        try:
+            exp_c = p.get("market_exposure")
+            if exp_c is not None:
+                committed += abs(float(exp_c)) / 100.0
+            tkr = str(p.get("ticker") or "")
+            if tkr.startswith(PORT_TICKER_PREFIX) and PORT_TICKER_INFIX in tkr:
+                net = float(p.get("position") or 0.0)
+                agg_all += net
+                if tkr.startswith(this_prefix):
+                    agg_this += net
+        except Exception:
+            continue   # one malformed row must not poison the whole refresh
+    return {"committed": committed, "agg_delta_other": agg_all - agg_this, "ts": time.time()}
+
+
 def remote_switch_kill(gh_token, remote_switch_url, reason, sess=None, retries=3,
                        backoff_s=1.5, alert_fn=None):
     """Durable sticky-kill (DEADMAN_AUDIT.md fix #1). Previously the loss-limit/toxic-markout
@@ -911,6 +1007,30 @@ def main():
                          "placement (markout forensics: fills on >15s-old quotes run -2.04c/fill "
                          "vs +0.79c fresh -- stale quotes are the pick-off; queue position at a "
                          "wrong price is anti-value). 0 disables")
+    ap.add_argument("--portfolio-aware", action="store_true", default=False,
+                    help="OPT-IN, OFF by default (zero behavior change unless set). Composes two "
+                         "MECHANICAL multipliers (no fitted model -- see PORT_TICKER_PREFIX comment) "
+                         "onto whatever --size-mode already picked, using the account's OWN "
+                         "authenticated balance+positions (the shared venue state across ALL "
+                         "per-asset runners): a BUDGET multiplier that shrinks as the whole "
+                         "account's open notional fills --port-budget, and a DELTA-CONCENTRATION "
+                         "multiplier that de-rates fills which would push aggregate cross-asset "
+                         "directional exposure past --port-delta-max (de-risking fills are always "
+                         "exempt). Applied strictly BEFORE the existing --max-net/--max-notional "
+                         "hard rails, which are re-applied unchanged afterward -- can only shrink "
+                         "size, never bypass a cap. Any portfolio-state API failure or staleness "
+                         "(>3x --port-refresh-s) snaps both multipliers to 1.0 (fail-safe: never "
+                         "block trading on this being unavailable).")
+    ap.add_argument("--port-budget", type=float, default=20,
+                    help="--portfolio-aware: $ of whole-account open-position notional at which "
+                         "the BUDGET multiplier reaches 0 (linear ramp from --port-budget down to 0).")
+    ap.add_argument("--port-delta-max", type=int, default=12,
+                    help="--portfolio-aware: contracts of aggregate signed cross-asset KX*15M delta "
+                         "(YES=+1, NO=-1) at which the DELTA-CONCENTRATION multiplier starts "
+                         "de-rating add-inventory fills (0.5 at the limit, 0.0 at 1.5x the limit).")
+    ap.add_argument("--port-refresh-s", type=float, default=120,
+                    help="--portfolio-aware: PortfolioState refresh cadence (s). Data older than "
+                         "3x this is treated as stale -> multipliers fail-safe to 1.0.")
     a = ap.parse_args()
 
     live = a.live and os.environ.get("I_UNDERSTAND_REAL_MONEY") == "yes"
@@ -1014,7 +1134,12 @@ def main():
     # (same try/except pattern as _recon_write): logging must never affect trading.
     _LIFECYCLE_PATH = os.path.join("gha_data", f"order_lifecycle_{a.asset}15m_r{_RUNID}.jsonl")
 
-    def _lifecycle_write(event, order_id, side, price, size, queue_ahead_est):
+    def _lifecycle_write(event, order_id, side, price, size, queue_ahead_est,
+                         port_mult_budget=None, port_mult_delta=None):
+        """port_mult_budget/port_mult_delta (AUDITABILITY, PORTFOLIO-AWARE SIZING): the two
+        multipliers applied to THIS sizing decision when --portfolio-aware is on; always null
+        when it's off (or for event types the portfolio-aware path doesn't size, e.g. cancels) --
+        every sizing decision stays reconstructable from this log alone."""
         try:
             os.makedirs("gha_data", exist_ok=True)
             with open(_LIFECYCLE_PATH, "a") as _lf:
@@ -1022,6 +1147,10 @@ def main():
                     "ts": time.time(), "event": event, "order_id": order_id, "side": side,
                     "price": round(price, 4) if price is not None else None,
                     "size": size, "queue_ahead_est": queue_ahead_est,
+                    "port_mult_budget": (round(port_mult_budget, 4)
+                                        if port_mult_budget is not None else None),
+                    "port_mult_delta": (round(port_mult_delta, 4)
+                                       if port_mult_delta is not None else None),
                 }) + "\n")
         except Exception:
             pass
@@ -1057,6 +1186,61 @@ def main():
                 }) + "\n")
         except Exception:
             pass
+
+    # --- PORTFOLIO-AWARE SIZING runtime state (opt-in --portfolio-aware; see the module-level
+    # comment by PORT_TICKER_PREFIX and portfolio_mult_budget/portfolio_mult_delta/
+    # refresh_portfolio_state for the design). Entirely inert when the flag is off: neither
+    # closure below is ever called from the sizing path unless a.portfolio_aware is True.
+    _port_state = {"committed": 0.0, "agg_delta_other": 0.0, "last_attempt_ts": 0.0,
+                   "last_success_ts": 0.0, "ok": False}
+
+    def _port_refresh_if_due():
+        """Re-pull PortfolioState at most once per --port-refresh-s (rate-limited on ATTEMPT
+        time, not success, so a persistently-unavailable API -- e.g. DRY-RUN with no secrets --
+        logs/retries at a bounded cadence instead of hammering every loop tick)."""
+        if not a.portfolio_aware:
+            return
+        now = time.time()
+        if now - _port_state["last_attempt_ts"] < a.port_refresh_s:
+            return
+        _port_state["last_attempt_ts"] = now
+        if not live:
+            # DRY-RUN: no authenticated session is possible (no priv key) -- portfolio state is
+            # definitionally unavailable here. FAIL-SAFE (never blocks trading): _port_multipliers
+            # below reads "ok"/"last_success_ts" and snaps to 1.0 on its own; this is just the log.
+            print("[portfolio-aware] DRY-RUN: no authenticated session -> portfolio state "
+                  "unavailable, sizing multipliers snap to 1.0 (fail-safe)")
+            return
+        try:
+            fresh = refresh_portfolio_state(sess, priv, a.asset)
+            _port_state["committed"] = fresh["committed"]
+            _port_state["agg_delta_other"] = fresh["agg_delta_other"]
+            _port_state["last_success_ts"] = fresh["ts"]
+            _port_state["ok"] = True
+        except Exception as e:
+            # FAIL-SAFE: leave the previous (possibly-empty) state in place; staleness in
+            # _port_multipliers is what actually snaps sizing multipliers to 1.0 -- an API
+            # failure must never itself block or shrink trading.
+            print(f"[portfolio-aware] refresh FAILED (fail-safe: multipliers snap to 1.0 until "
+                  f"the next successful refresh): {type(e).__name__}: {str(e)[:120]}")
+
+    def _port_multipliers(side, want, net_delta):
+        """(mult_budget, mult_delta) for THIS candidate fill. FAIL-SAFE: unavailable (never
+        succeeded) or STALE (last success > 3x --port-refresh-s ago) snaps BOTH to 1.0 --
+        portfolio-state unavailability must never block/shrink trading, only ever additionally
+        constrain it when fresh data says to. agg_delta_other (refreshed, other assets) is
+        combined with `net_delta` (this session's OWN live, fill-by-fill-accurate inventory for
+        the current asset -- see refresh_portfolio_state's docstring for why the split)."""
+        now = time.time()
+        stale = (not _port_state["ok"]) or (now - _port_state["last_success_ts"] >
+                                            3.0 * a.port_refresh_s)
+        if stale:
+            return 1.0, 1.0
+        mb = portfolio_mult_budget(_port_state["committed"], a.port_budget)
+        agg_before = _port_state["agg_delta_other"] + net_delta
+        md = portfolio_mult_delta(agg_before, side, want, a.port_delta_max)
+        return mb, md
+
     loop_ctx = {}                              # decision-time book state, stamped onto each fill
     threading.Thread(target=_spot_poller, args=(_COINBASE_PRODUCT.get(a.asset, "BTC-USD"),),
                      daemon=True).start()   # sig telemetry (isolated; non-blocking; per-asset spot)
@@ -1315,13 +1499,17 @@ def main():
             pass
 
     # --- place helper ---
-    def place(side, price, yes_bid, yes_ask, count=None, cross=False):
+    def place(side, price, yes_bid, yes_ask, count=None, cross=False, port_mult=None):
         """Post one rung. Returns order_id or None. DRY-RUN: prints, returns fake id.
         side='yes'|'no'. price in dollars (up to 4 decimals).
         Post-only guard (cross=False, default): we only place maker BUYs; Kalshi's post_only=True
         rejects if marketable, and belt-and-suspenders we also refuse a BUY-YES >= yes_ask / BUY-NO
         >= (1-yes_bid) before sending. cross=True (DISPOSAL ONLY): deliberately TAKE the offer to
-        COMPLETE a stranded box (post_only=False) -- skip the guard; the caller bounds the give."""
+        COMPLETE a stranded box (post_only=False) -- skip the guard; the caller bounds the give.
+        port_mult (AUDITABILITY, PORTFOLIO-AWARE SIZING): optional (mult_budget, mult_delta) tuple
+        stamped onto the lifecycle log row when the caller applied portfolio-aware sizing to this
+        fill; None (default, and always for cross/chase/dispose call sites that don't size via
+        that path) -> both log fields are null."""
         if not cross:
             if side == "yes" and yes_ask is not None and price >= yes_ask:
                 print(f"  [POST-ONLY GUARD] BUY-YES {price} >= yes_ask {yes_ask}; skipped")
@@ -1334,10 +1522,12 @@ def main():
         t_dec = time.time()
         _sz = count or int(a.post)
         _qahead = _queue_ahead_est(side, price)   # snapshot BEFORE the order lands (queue-ahead proxy)
+        _pmb, _pmd = port_mult if port_mult is not None else (None, None)
         if not live:
             fake = f"dry_{side}_{price:.4f}_{int(t_dec*1000)%100000}"
             print(f"  [DRY {'CROSS-COMPLETE' if cross else 'place'}] BUY-{side.upper()} {count or int(a.post)} @ {price:.4f}")
-            _lifecycle_write("place", fake, side, price, _sz, _qahead)
+            _lifecycle_write("place", fake, side, price, _sz, _qahead,
+                             port_mult_budget=_pmb, port_mult_delta=_pmd)
             return fake, t_dec, time.time()
         oid, sc_, err_ = place_order(sess, priv, mk["cid"], side, price, count or int(a.post),
                                      ttl_s=(a.order_ttl_s or None), post_only=not cross)
@@ -1345,12 +1535,14 @@ def main():
         if oid is None:
             lm.place_reject(side, price, f"HTTP {sc_}: {err_}")
             reject_cd[(side, round(price, 4))] = time.time() + a.reject_cooldown_s
-            _lifecycle_write("reject", None, side, price, _sz, _qahead)
+            _lifecycle_write("reject", None, side, price, _sz, _qahead,
+                             port_mult_budget=_pmb, port_mult_delta=_pmd)
             return None
         placed_oids.add(oid)
         ops["place"] += 1
         lm.place_ack(side, price, False, (t_ack - t_dec) * 1e3)
-        _lifecycle_write("place", oid, side, price, _sz, _qahead)
+        _lifecycle_write("place", oid, side, price, _sz, _qahead,
+                         port_mult_budget=_pmb, port_mult_delta=_pmd)
         return oid, t_dec, t_ack
 
     # --- book: WS cache (primary) + REST cache (fallback) ---
@@ -1629,6 +1821,11 @@ def main():
     end = time.time() + a.duration
     while time.time() < end:
         try:
+            # PORTFOLIO-AWARE SIZING: refresh PortfolioState (opt-in --portfolio-aware; no-op and
+            # zero cost when off). Internally rate-limited to --port-refresh-s; safe to call every
+            # loop tick.
+            _port_refresh_if_due()
+
             # FAST OFF: operator flipped LIVE_SWITCH off -> flatten and exit this cycle now (<1 min),
             # don't ride out --duration. Returns None when not yet due (throttled), True/False on poll.
             if live and _remote_switch_is_off():
@@ -2034,7 +2231,27 @@ def main():
                     while units > 1 and abs(net_delta + _sgn * units * int(a.post)) > float(a.max_net) + 1e-9:
                         units -= 1
                     want = units * int(a.post)
-                res = place(side, price, ybb, yba, count=want)
+
+                # PORTFOLIO-AWARE SIZING (opt-in --portfolio-aware; OFF by default -> this whole
+                # block is skipped and `want`/place() below are BYTE-IDENTICAL to pre-existing
+                # behavior). Composes MULTIPLICATIVELY onto whatever size path (flat/kelly/depth/
+                # markout) just picked `want`, integer-rounds, THEN re-applies the exact same hard
+                # rails those paths already enforce above (max-net contract-by-contract shed +
+                # notional pre-check -- same pattern commit 67c6cb70's markout sizing used) so this
+                # can only ever SHRINK want, never let it slip past --max-net/--max-notional.
+                port_mult = None
+                if a.portfolio_aware:
+                    pmb, pmd = _port_multipliers(side, want, net_delta)
+                    want = int(round(want * pmb * pmd))
+                    while want > 0 and abs(net_delta + _sgn * want) > float(a.max_net) + 1e-9:
+                        want -= 1
+                    if want > 0 and exposure + price * want > a.max_notional:
+                        want = 0
+                    if want <= 0:
+                        continue
+                    port_mult = (pmb, pmd)
+
+                res = place(side, price, ybb, yba, count=want, port_mult=port_mult)
                 if res is None:
                     continue
                 if isinstance(res, tuple):

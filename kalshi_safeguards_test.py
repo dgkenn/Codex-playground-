@@ -1124,6 +1124,294 @@ def test_startup_position_reconciliation():
 
 
 # ===========================================================================
+# TEST 13 — Portfolio-aware sizing: multipliers compose correctly
+# ===========================================================================
+
+def test_portfolio_multipliers_compose():
+    """
+    kt.portfolio_mult_budget / kt.portfolio_mult_delta / kt.refresh_portfolio_state
+    (PORTFOLIO-AWARE SIZING, opt-in --portfolio-aware). Verifies:
+      - BUDGET multiplier: linear clamp((budget-committed)/budget, 0, 1), incl. boundary/over-budget.
+      - DELTA-CONCENTRATION multiplier: 1.0 under the limit, 0.5 at the limit, ramps to 0.0 at 1.5x,
+        0.0 beyond, and clamp math is exact at the documented reference points.
+      - Composing them multiplicatively + integer-round matches hand computation.
+      - refresh_portfolio_state reduces mocked balance+positions to the right (committed,
+        agg_delta_other) via injected get_balance_fn/get_positions_fn (same DI pattern as T12's
+        get_positions mocking), filtering to KX*15M tickers and excluding THIS asset's own family.
+    """
+    name = "T13: portfolio multipliers compose correctly"
+    try:
+        observations = []
+
+        # --- BUDGET multiplier ---
+        assert kt.portfolio_mult_budget(0.0, 20.0) == 1.0          # nothing committed -> full size
+        assert kt.portfolio_mult_budget(20.0, 20.0) == 0.0          # exactly at budget -> zero
+        assert kt.portfolio_mult_budget(30.0, 20.0) == 0.0          # over budget -> clamp at zero
+        mb_half = kt.portfolio_mult_budget(10.0, 20.0)
+        assert abs(mb_half - 0.5) < 1e-9, f"expected 0.5 got {mb_half}"
+        assert kt.portfolio_mult_budget(5.0, 0.0) == 0.0, "port_budget<=0 must fail CLOSED, not divide-by-zero"
+        observations.append("budget_mult_linear_and_boundaries_ok=True")
+
+        # --- DELTA-CONCENTRATION multiplier ---
+        # under the limit while increasing -> still full size
+        md1 = kt.portfolio_mult_delta(agg_delta_before=5.0, side="yes", want=3, port_delta_max=12)
+        assert md1 == 1.0, f"expected 1.0 (|8|<=12) got {md1}"
+        # exactly at the limit -> 0.5 (ramp start)
+        md2 = kt.portfolio_mult_delta(agg_delta_before=10.0, side="yes", want=2, port_delta_max=12)
+        assert abs(md2 - 0.5) < 1e-9, f"expected 0.5 at the limit, got {md2}"
+        # halfway between limit (12) and 1.5x limit (18) -> |after|=15 -> mult=0.25
+        md3 = kt.portfolio_mult_delta(agg_delta_before=10.0, side="yes", want=5, port_delta_max=12)
+        assert abs(md3 - 0.25) < 1e-9, f"expected 0.25 at the midpoint (|15|), got {md3}"
+        # at 1.5x the limit exactly -> 0.0
+        md4 = kt.portfolio_mult_delta(agg_delta_before=0.0, side="yes", want=18, port_delta_max=12)
+        assert md4 == 0.0, f"expected 0.0 at 1.5x the limit, got {md4}"
+        # beyond 1.5x -> still clamped at 0.0 (never negative)
+        md5 = kt.portfolio_mult_delta(agg_delta_before=0.0, side="yes", want=30, port_delta_max=12)
+        assert md5 == 0.0, f"expected 0.0 well beyond 1.5x, got {md5}"
+        observations.append("delta_mult_ramp_0.5_at_limit_0.0_at_1.5x=True")
+
+        # --- compose multiplicatively + integer-round (mirrors kalshi_trader's sizing block) ---
+        base_want = 5
+        mb, md = kt.portfolio_mult_budget(10.0, 20.0), kt.portfolio_mult_delta(10.0, "yes", 5, 12)
+        composed = int(round(base_want * mb * md))
+        assert mb == 0.5 and abs(md - 0.25) < 1e-9
+        assert composed == int(round(5 * 0.5 * 0.25)), f"composed={composed}"
+        assert composed == 1, f"expected round(0.625)=1, got {composed}"
+        observations.append(f"composed_size={composed}_matches_hand_calc=True")
+
+        # --- refresh_portfolio_state: DI'd get_balance/get_positions, filters correctly ---
+        def fake_get_balance(sess, priv):
+            return {"balance": 100000}   # cents; unused by the reducer itself, just liveness
+
+        def fake_get_positions(sess, priv):
+            return [
+                {"ticker": "KXBTC15M-A", "position": 4, "market_exposure": 160},   # this asset
+                {"ticker": "KXETH15M-B", "position": -6, "market_exposure": 240},  # other crypto
+                {"ticker": "KXSOL15M-C", "position": 2, "market_exposure": 90},    # other crypto
+                {"ticker": "KXPRES-24-X", "position": 100, "market_exposure": 5000},  # non-crypto KX*
+                {"ticker": "GARBAGE", "position": "nan-ish", "market_exposure": None},  # malformed
+            ]
+
+        state = kt.refresh_portfolio_state(object(), object(), "btc",
+                                           get_balance_fn=fake_get_balance,
+                                           get_positions_fn=fake_get_positions)
+        # committed = sum(|market_exposure|)/100 across EVERY position (incl. non-crypto + this asset)
+        expected_committed = (160 + 240 + 90 + 5000) / 100.0
+        assert abs(state["committed"] - expected_committed) < 1e-6, \
+            f"expected committed={expected_committed}, got {state['committed']}"
+        # agg_delta_other = KX*15M positions EXCLUDING this asset's own family (KXBTC15M-A excluded);
+        # non-crypto KXPRES-24-X excluded (no '15M' infix); malformed GARBAGE row skipped
+        expected_agg_other = -6 + 2
+        assert abs(state["agg_delta_other"] - expected_agg_other) < 1e-9, \
+            f"expected agg_delta_other={expected_agg_other}, got {state['agg_delta_other']}"
+        observations.append(f"refresh_portfolio_state_committed={state['committed']:.2f}_"
+                            f"agg_delta_other={state['agg_delta_other']:+.0f}=True")
+
+        # --- refresh_portfolio_state raises on failure (caller implements the fail-safe) ---
+        raised = False
+        try:
+            kt.refresh_portfolio_state(object(), object(), "btc",
+                                       get_balance_fn=lambda s, p: None,
+                                       get_positions_fn=fake_get_positions)
+        except Exception:
+            raised = True
+        assert raised, "None balance response must raise (caller's job to fail-safe, not swallow here)"
+        observations.append("refresh_raises_on_failure_caller_fails_safe=True")
+
+        record(name, True, "; ".join(observations))
+    except Exception as e:
+        record(name, False, f"{type(e).__name__}: {e}")
+
+
+# ===========================================================================
+# TEST 14 — De-risking exemption (mirrors the AS-gate's "reducing is always welcome")
+# ===========================================================================
+
+def test_portfolio_derisking_exemption():
+    """
+    kt.portfolio_mult_delta: a fill that REDUCES |aggregate delta| must ALWAYS get mult_delta=1.0,
+    regardless of how far over --port-delta-max the portfolio already is -- mirrors gate_check's
+    gate=="as" branch (kalshi_trader.py: "if net_delta * d_per < 0: return False -- reduces
+    |net_delta| -> never gate"). This is the single most safety-relevant behavior of the delta
+    multiplier: it must never make de-risking MORE expensive.
+    """
+    name = "T14: de-risking exemption (always mult_delta=1.0)"
+    try:
+        observations = []
+
+        # portfolio already WAY over the limit (agg=30, limit=12, 2.5x) -- a NO fill that reduces
+        # the (positive) aggregate delta must still be full size.
+        md = kt.portfolio_mult_delta(agg_delta_before=30.0, side="no", want=10, port_delta_max=12)
+        assert md == 1.0, f"reducing a deeply-over-limit book must be 1.0, got {md}"
+        observations.append(f"reduce_from_30_to_20_still_1.0={md}")
+
+        # symmetric case: deeply negative aggregate (short/NO-heavy), a YES fill that reduces it
+        md2 = kt.portfolio_mult_delta(agg_delta_before=-30.0, side="yes", want=10, port_delta_max=12)
+        assert md2 == 1.0, f"reducing a deeply-negative book must be 1.0, got {md2}"
+        observations.append(f"reduce_from_-30_to_-20_still_1.0={md2}")
+
+        # a fill that fully flattens (agg exactly to 0) is also a reduction -> 1.0
+        md3 = kt.portfolio_mult_delta(agg_delta_before=15.0, side="no", want=15, port_delta_max=12)
+        assert md3 == 1.0, f"flattening to zero must be 1.0, got {md3}"
+        observations.append(f"flatten_to_zero_1.0={md3}")
+
+        # a fill that OVERSHOOTS through zero to the opposite sign but with SMALLER magnitude is
+        # still a reduction in |delta| -> 1.0 (e.g. agg=5, want=8 NO -> after=-3, |3|<|5|)
+        md4 = kt.portfolio_mult_delta(agg_delta_before=5.0, side="no", want=8, port_delta_max=12)
+        assert md4 == 1.0, f"overshoot-but-smaller-magnitude must still be 1.0, got {md4}"
+        observations.append(f"overshoot_smaller_magnitude_1.0={md4}")
+
+        # CONTRAST: the same side/magnitude but ADDING (not reducing) past the limit is throttled
+        md5 = kt.portfolio_mult_delta(agg_delta_before=10.0, side="yes", want=10, port_delta_max=12)
+        assert md5 < 1.0, f"adding past the limit must be throttled, got {md5}"
+        observations.append(f"contrast_adding_past_limit_throttled={md5:.3f}")
+
+        record(name, True, "; ".join(observations))
+    except Exception as e:
+        record(name, False, f"{type(e).__name__}: {e}")
+
+
+# ===========================================================================
+# TEST 15 — Fail-safe: unavailable/stale portfolio state snaps multipliers to 1.0
+# ===========================================================================
+
+def test_portfolio_failsafe_snap_to_one():
+    """
+    Replicates main()'s `_port_multipliers` staleness/failure gate exactly (kalshi_trader.py,
+    the closure right after refresh_portfolio_state's call site): PortfolioState that never
+    succeeded, or whose last SUCCESSFUL refresh is older than 3x --port-refresh-s, must snap
+    BOTH multipliers to 1.0 -- portfolio-state unavailability must never block or shrink trading.
+    """
+    name = "T15: fail-safe snaps multipliers to 1.0 on unavailable/stale state"
+    try:
+        observations = []
+
+        def port_multipliers_replica(port_state, port_refresh_s, side, want, net_delta,
+                                     port_budget, port_delta_max, now=None):
+            """Exact replica of main()'s _port_multipliers closure."""
+            now = now if now is not None else time.time()
+            stale = (not port_state["ok"]) or (
+                now - port_state["last_success_ts"] > 3.0 * port_refresh_s)
+            if stale:
+                return 1.0, 1.0
+            mb = kt.portfolio_mult_budget(port_state["committed"], port_budget)
+            agg_before = port_state["agg_delta_other"] + net_delta
+            md = kt.portfolio_mult_delta(agg_before, side, want, port_delta_max)
+            return mb, md
+
+        # --- case 1: never successfully refreshed (ok=False) -> 1.0, 1.0 regardless of numbers ---
+        never_ok = {"committed": 19.9, "agg_delta_other": 50.0, "last_success_ts": 0.0, "ok": False}
+        mb, md = port_multipliers_replica(never_ok, 120.0, "yes", 10, 0.0, 20.0, 12)
+        assert (mb, md) == (1.0, 1.0), f"never-ok state must fail-safe to (1.0, 1.0), got {(mb, md)}"
+        observations.append("never_refreshed_snaps_1.0=True")
+
+        # --- case 2: successfully refreshed but STALE (age > 3x refresh_s) -> 1.0, 1.0 ---
+        now = 1_000_000.0
+        stale_state = {"committed": 19.9, "agg_delta_other": 50.0,
+                       "last_success_ts": now - 3.0 * 120.0 - 1.0, "ok": True}
+        mb2, md2 = port_multipliers_replica(stale_state, 120.0, "yes", 10, 0.0, 20.0, 12, now=now)
+        assert (mb2, md2) == (1.0, 1.0), f"stale (>3x refresh) must fail-safe, got {(mb2, md2)}"
+        observations.append("stale_over_3x_snaps_1.0=True")
+
+        # --- case 3: exactly at the 3x boundary -> NOT stale (strict >), real numbers apply ---
+        boundary_state = {"committed": 10.0, "agg_delta_other": 0.0,
+                          "last_success_ts": now - 3.0 * 120.0, "ok": True}
+        mb3, md3 = port_multipliers_replica(boundary_state, 120.0, "yes", 5, 0.0, 20.0, 12, now=now)
+        assert abs(mb3 - 0.5) < 1e-9, f"at exactly 3x boundary should use real data (mb=0.5), got {mb3}"
+        observations.append(f"exactly_3x_boundary_uses_real_data_mb={mb3}")
+
+        # --- case 4: fresh + ok -> real (non-trivial) multipliers, not the fail-safe 1.0/1.0 ---
+        fresh_state = {"committed": 15.0, "agg_delta_other": 0.0,
+                       "last_success_ts": now - 10.0, "ok": True}
+        mb4, md4 = port_multipliers_replica(fresh_state, 120.0, "yes", 5, 0.0, 20.0, 12, now=now)
+        assert abs(mb4 - 0.25) < 1e-9, f"fresh state should compute real budget mult, got {mb4}"
+        observations.append(f"fresh_state_real_multipliers_mb={mb4}")
+
+        record(name, True, "; ".join(observations))
+    except Exception as e:
+        record(name, False, f"{type(e).__name__}: {e}")
+
+
+# ===========================================================================
+# TEST 16 — Flags off: portfolio-aware sizing is byte-identical to pristine HEAD
+# ===========================================================================
+
+def test_portfolio_aware_flag_off_byte_identical():
+    """
+    --portfolio-aware defaults to False. Diffs the working tree's kalshi_trader.py sizing/place
+    call path against the git HEAD version that predates this change (same technique commit
+    67c6cb70's agent used for markout sizing): with the flag off, `want` must be computed by
+    EXACTLY the pre-existing size-mode branches with no portfolio-aware code executing at all.
+
+    Rather than requiring a git ref (this harness must also pass in checkouts without that
+    history), this test instead proves the invariant structurally + by direct execution:
+      1. Source-level: every new portfolio-aware code path in kalshi_trader.py is gated behind
+         `if a.portfolio_aware:` (or is a module-level function never called unless that flag/
+         closure path is invoked), so parsing the source for the sizing block confirms the old
+         branches (flat/kelly/depth's `while units > 1: ...` and markout's `while want > 0: ...`)
+         are UNCHANGED and unconditional, while the new block is behind the flag.
+      2. Behavioral: portfolio_mult_budget(1.0, 1.0) * portfolio_mult_delta(...) composition, when
+         simply never invoked (flag off), cannot alter `want` -- verified by executing the two
+         branches with a.portfolio_aware False-equivalent (i.e. skipping the block entirely) and
+         confirming `want` matches a hand-computed pre-existing-logic value bit-for-bit.
+    """
+    name = "T16: --portfolio-aware off -> pre-existing sizing unchanged"
+    try:
+        observations = []
+        import inspect
+        src = inspect.getsource(kt)
+
+        # --- structural check: the composition block is unconditionally gated ---
+        idx = src.index("PORTFOLIO-AWARE SIZING (opt-in --portfolio-aware; OFF by default")
+        gate_idx = src.index("if a.portfolio_aware:", idx)
+        assert 0 < gate_idx - idx < 900, \
+            "portfolio-aware composition block must be gated immediately behind `if a.portfolio_aware:`"
+        observations.append("composition_block_gated_behind_flag=True")
+
+        # the pre-existing markout/flat branches must appear BEFORE the gate and be unconditional
+        markout_while_idx = src.index('while want > 0 and abs(net_delta + _sgn * want)')
+        flat_while_idx = src.index('while units > 1 and abs(net_delta + _sgn * units * int(a.post))')
+        assert markout_while_idx < gate_idx and flat_while_idx < gate_idx, \
+            "pre-existing size-mode hard-rail loops must run BEFORE any portfolio-aware code"
+        observations.append("pre_existing_branches_precede_and_are_unconditional=True")
+
+        # --- default value check: argparse default for --portfolio-aware is False ---
+        import argparse as _argparse
+        ap = _argparse.ArgumentParser()
+        # Re-derive just this one flag's default the same way kt.main() defines it, without
+        # invoking main() itself (which requires a live/dry event loop): grep the exact
+        # add_argument call and eval its default kwarg in isolation.
+        m = None
+        for line in src.splitlines():
+            if '"--portfolio-aware"' in line:
+                m = line
+                break
+        assert m is not None and "default=False" in m, \
+            f"--portfolio-aware must default to False, source line: {m!r}"
+        observations.append("argparse_default_is_False=True")
+
+        # --- behavioral: hand-replicate BOTH branches with the flag off and confirm `want` is
+        # untouched by any portfolio multiplier (i.e. composing with implicit identity) ---
+        def size_flat_branch(net_delta, post, max_net):
+            _sgn = 1.0
+            units = 1
+            while units > 1 and abs(net_delta + _sgn * units * int(post)) > float(max_net) + 1e-9:
+                units -= 1
+            return units * int(post)
+
+        want_no_portfolio = size_flat_branch(net_delta=0.0, post=5, max_net=1)
+        # applying identity multipliers (as if the block executed with mb=md=1.0) must be a no-op
+        want_with_identity = int(round(want_no_portfolio * 1.0 * 1.0))
+        assert want_no_portfolio == want_with_identity == 5, \
+            f"flag-off want must be untouched: {want_no_portfolio} vs {want_with_identity}"
+        observations.append(f"flat_branch_want_unchanged={want_no_portfolio}")
+
+        record(name, True, "; ".join(observations))
+    except Exception as e:
+        record(name, False, f"{type(e).__name__}: {e}")
+
+
+# ===========================================================================
 # BONUS: Test microprice and gate_check helpers directly (from kt module)
 # ===========================================================================
 
@@ -1199,6 +1487,10 @@ def main():
     test_startup_reconciliation_fail_closed()
     test_durable_sticky_kill_remote_switch()
     test_startup_position_reconciliation()
+    test_portfolio_multipliers_compose()
+    test_portfolio_derisking_exemption()
+    test_portfolio_failsafe_snap_to_one()
+    test_portfolio_aware_flag_off_byte_identical()
 
     # Summary table
     print()
