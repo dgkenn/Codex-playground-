@@ -142,7 +142,19 @@ def _sign(private_key, method: str, path: str) -> dict:
 # Authenticated WebSocket book+fill feeder (mirrors live_trader.book_feeder)
 # ---------------------------------------------------------------------------
 
-def ws_feeder(ws_state, ws_sub, book_evt, ws_fills, private_key):
+def ws_reconnect_backoff_s(attempt, base=1.0, cap=5.0):
+    """WS RESILIENCE (RCA 2026-07-12): exponential backoff for the ws_feeder reconnect loop,
+    capped at `cap` seconds. Pre-fix this was a flat 1s sleep on every disconnect -- fine for a
+    single blip, but it hammers a genuinely down venue at the same 1s cadence the staleness
+    watchdog measures against, so a real outage and a quick reconnect gap looked identical from
+    the dead-man's point of view. `attempt` is 1-based (first failure = attempt 1). Pure/unit-
+    testable; ws_feeder's async loop calls this directly."""
+    if attempt < 1:
+        attempt = 1
+    return min(cap, base * (2 ** (attempt - 1)))
+
+
+def ws_feeder(ws_state, ws_sub, book_evt, ws_fills, private_key, ws_health=None):
     """Authenticated WS feeder: orderbook_delta + fill channels on Kalshi.
 
     Maintains ws_state[ticker] = {yes:{price:qty}, no:{price:qty}, ts, bb, bq, ba, aq}.
@@ -151,7 +163,16 @@ def ws_feeder(ws_state, ws_sub, book_evt, ws_fills, private_key):
     Resubscribes when ws_sub['epoch'] bumps (window rollover). recv timeout=1.0s so epoch
     changes are detected quickly even if the feed goes quiet (mirrors live_trader H-1 fix).
     websockets imported lazily -> if missing, prints warning and returns (REST stays active).
+
+    ws_health (WS RESILIENCE, RCA 2026-07-12; optional, defaults to a private dict if omitted so
+    this function stays callable standalone): shared {"connected": bool, "attempts": int} the
+    caller's REST fallback (get_book_cached) reads to tighten its poll cadence while the WS is
+    down, so 15s of staleness only happens on a REAL venue outage, not a routine reconnect gap.
+    Reconnects use exponential backoff (ws_reconnect_backoff_s, capped ~5s) instead of a flat 1s
+    sleep -- fast enough to recover from a blip, gentle enough not to hammer a real outage.
     """
+    if ws_health is None:
+        ws_health = {"connected": False, "attempts": 0}
     try:
         import websockets
     except Exception:
@@ -195,6 +216,8 @@ def ws_feeder(ws_state, ws_sub, book_evt, ws_fills, private_key):
                     })
                     await ws.send(sub_msg)
                     print(f"  [ws-book] subscribed ticker={ticker} epoch={epoch}")
+                    ws_health["connected"] = True
+                    ws_health["attempts"] = 0   # reset backoff on a clean (re)connect
                     while True:
                         # H-1 fix (mirrors live_trader): use a 1s timeout so epoch changes
                         # are detected promptly even when the feed goes quiet.
@@ -230,8 +253,12 @@ def ws_feeder(ws_state, ws_sub, book_evt, ws_fills, private_key):
                         elif mtype == "fill":
                             ws_fills.append(payload)
             except Exception as exc:
-                print(f"  [ws-book] disconnected ({type(exc).__name__}: {str(exc)[:80]}); reconnect in 1s")
-                await asyncio.sleep(1)
+                ws_health["connected"] = False
+                ws_health["attempts"] = ws_health.get("attempts", 0) + 1
+                backoff = ws_reconnect_backoff_s(ws_health["attempts"])
+                print(f"  [ws-book] disconnected ({type(exc).__name__}: {str(exc)[:80]}); "
+                      f"reconnect in {backoff:.1f}s (attempt {ws_health['attempts']})")
+                await asyncio.sleep(backoff)
 
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
@@ -1000,6 +1027,17 @@ def capped_completion_size(need, avail, max_net, cross_px, exposure, max_notiona
     return max(0, take)
 
 
+def is_completing_side(side, net_delta):
+    """True if a fill on `side` would REDUCE |net_delta| (a completing/pairing quote) rather than
+    open new directional risk. Shared by the main quoting loop's targets filter (is_completing,
+    exempt from the tau-guard/max-fills-side/close-ramp late-window guards) and the tiered
+    dead-man's tier-2 selective cancel (DEAD-MAN TIERING, 2026-07-12 RCA: cancel OPENING quotes
+    only on a moderate staleness trip -- a COMPLETING quote is risk-reducing and must be left
+    resting, since a binary cancel-all is exactly what stranded the leg the disposal-cross
+    machinery then chased 53x for -$0.55 in one window)."""
+    return (net_delta > 1e-9 and side == "no") or (net_delta < -1e-9 and side == "yes")
+
+
 # --- OPT-IN EMPTY-BOOK SEEDING (--seed-empty) pure helpers -----------------------------------
 # Pulled out to module level (same pattern as kelly_size/gate_check/portfolio_mult_budget above)
 # so the empty-book classification, width-floor, staleness, re-price-threshold, and target-price
@@ -1252,6 +1290,19 @@ def main():
                          "legs the give-cap refused to cross rode to settlement at -39.8c each). A certain "
                          "bounded completion now always beats the binary settlement variance. Requires "
                          "--dispose-cross. 0 = off (NOT recommended live).")
+    ap.add_argument("--dispose-max-attempts", type=int, default=3,
+                    help="DISPOSE-CROSS CIRCUIT BREAKER (RCA 2026-07-12, run r29198341684): a WS+REST "
+                         "staleness blip tripped the C1 dead-man mid-fill, stranding a 1-lot leg; the "
+                         "disposal chase then fired 53 crosses in that ONE window for just 6 fills and "
+                         "-$0.55 net (~20 windows of edge at a time). Hard cap on CROSS attempts per "
+                         "window -- once hit, stop crossing this window and defer to --close-force-s "
+                         "(which still gets exactly ONE more bounded attempt there), then accept the "
+                         "ride. 0 = unlimited (NOT recommended live).")
+    ap.add_argument("--dispose-budget", type=float, default=0.10,
+                    help="DISPOSE-CROSS CIRCUIT BREAKER: cumulative $ give paid on disposal crosses "
+                         "THIS window; exceeding it also stops further crossing (whichever of "
+                         "--dispose-max-attempts / --dispose-budget hits first wins). 0 = unlimited "
+                         "(NOT recommended live).")
     ap.add_argument("--max-net", type=int, default=1,
                     help="hard cap on |net YES-NO| contracts: 1 = strict BOX PAIRING (after a YES "
                          "fill, quote only NO until paired). Tape decomposition: box pairs earn "
@@ -1558,6 +1609,12 @@ def main():
     book_evt = threading.Event()
     # ws_fills: real-time own fills from WS fill channel; drained each loop before REST poll
     ws_fills = collections.deque()
+    # ws_health (WS RESILIENCE, RCA 2026-07-12): {"connected", "attempts"} updated by the ws_feeder
+    # thread; get_book_cached() reads "connected" to tighten its REST poll cadence while the WS is
+    # down, so a routine reconnect gap doesn't masquerade as a real 15s venue outage to the C1
+    # dead-man. Starts "connected"=False (dry-run / no live WS thread never flips it -> REST
+    # cadence is simply never tightened, which is correct: there's no WS to be down).
+    ws_health = {"connected": False, "attempts": 0}
     side_cooldown = {"yes": 0.0, "no": 0.0}   # no re-quote on a side until this ts (anti-knife)
     win_fills = {"yes": 0, "no": 0}            # fills per side THIS window (trend-exposure cap)
     win_cost = {"yes": 0.0, "no": 0.0}         # $ spent per side THIS window (box telemetry)
@@ -1595,7 +1652,7 @@ def main():
     # COMPREHENSIVE per-window microstructure (live RCA 2026-06-13): the re-validation gate (strand
     # rate, legging gap, maker/taker mix, dispose-cross firing) plus the offline strand analysis read
     # this. Written per window to kalshi_winrec_<asset>15m.jsonl, reset at rollover.
-    winrec = {"taker": 0, "maker": 0, "maxnet": 0.0, "first_ts": {}, "dispose_cross": 0}
+    winrec = {"taker": 0, "maker": 0, "maxnet": 0.0, "first_ts": {}, "dispose_cross": 0, "dispose_give": 0.0, "dispose_force_used": False}
     winrec_fh = open(f"kalshi_winrec_{a.asset}15m.jsonl", "a")
     # LIVE-VS-SHADOW RECONCILIATION (BACKTEST_VS_LIVE.md-style): one row per settled window, named
     # to match shadow_windows_<asset><tenor>m_r<RUNID>.jsonl so each live window pairs against the
@@ -1820,7 +1877,7 @@ def main():
         # Start authenticated WS feeder (live only; needs priv key + KALSHI_API_KEY_ID)
         threading.Thread(
             target=ws_feeder,
-            args=(ws_state, ws_sub, book_evt, ws_fills, priv),
+            args=(ws_state, ws_sub, book_evt, ws_fills, priv, ws_health),
             daemon=True,
         ).start()
         print("  [ws-book] feeder thread started")
@@ -1861,6 +1918,19 @@ def main():
 
     last_book_ok = time.time()
     deadman_tripped = False
+    # DEAD-MAN TIERING (RCA 2026-07-12, run r29198341684): a binary "stale > deadman_s ->
+    # cancel-all" tripped mid-fill and cancelled the COMPLETING quote ~12s after one side
+    # filled, stranding a 1-lot leg the disposal-cross chase then hit 53x for -$0.55. Resting
+    # orders already carry the venue-side --order-ttl-s TTL and die server-side even fully dark,
+    # so a short blip no longer needs an immediate hard cancel. Tiers (see the staleness
+    # watchdog below): 0=healthy, 1=stale>deadman_s (stop new OPENING quotes only, no cancel),
+    # 2=stale>2*deadman_s AND unpaired (cancel OPENING quotes + one bounded disposal cross),
+    # 3=stale>3*deadman_s (full cancel-all, the old behavior).
+    deadman_tier = 0
+    deadman_t2_dispose_pending = False   # tier-2 arms exactly ONE disposal-cross attempt; the
+    # dispose-cross block below consumes this flag (clears it whether the attempt fires,
+    # cap-blocks, or the book/net conditions aren't met) so a sustained tier-2 stay doesn't
+    # rearm a fresh attempt every loop tick.
     consec_err = 0
     total_err = 0            # audit M3: cumulative loop errors (intermittent errors never reach 5-consecutive)
     last_hk = 0.0
@@ -2073,8 +2143,14 @@ def main():
     def get_book_cached(ticker, max_age=None):
         """Prefer WS book when fresh (<2s). Falls back to throttled REST poll.
         Returns (yes_bid, ybq, yes_ask, yaq, fresh).
-        fresh=True when data is from the WS OR from a new REST fetch this call."""
-        max_age = max_age or a.react_poll
+        fresh=True when data is from the WS OR from a new REST fetch this call.
+
+        WS RESILIENCE (RCA 2026-07-12): while ws_health["connected"] is False (WS down --
+        disconnected or never connected in dry-run), the REST fallback cadence TIGHTENS to
+        half of --react-poll instead of the normal cadence, so a WS-down stretch is covered by
+        faster REST polling and 15s of true staleness only happens on a REAL venue outage (both
+        WS AND REST dark), not merely a WS reconnect gap."""
+        max_age = max_age or (a.react_poll * (0.5 if not ws_health.get("connected", True) else 1.0))
         # --- WS primary path ---
         ws_st = ws_state.get(ticker)
         if (ws_st is not None
@@ -2671,14 +2747,50 @@ def main():
                 _flatten_and_exit("remote switch off")
                 break
 
-            # C1 staleness watchdog: book dark > deadman-s with resting orders -> cancel-all
+            # C1 DEAD-MAN TIERING (RCA 2026-07-12, run r29198341684): the old binary "stale >
+            # deadman_s -> cancel-all" cancelled a COMPLETING quote ~12s after one side filled
+            # (a routine WS+REST blip), stranding a 1-lot leg the disposal-cross chase then hit
+            # 53x for -$0.55 in that one window. Resting orders already carry the venue-side
+            # --order-ttl-s TTL and die server-side even fully dark, so a short blip no longer
+            # needs an immediate hard cancel -- only sustained staleness does, and even then only
+            # OPENING quotes (never a leg that's actively reducing risk).
+            #   tier 1 (stale > 1x deadman_s):  stop NEW opening placement only; no cancel.
+            #   tier 2 (stale > 2x deadman_s AND unpaired net): cancel resting OPENING quotes +
+            #           arm exactly ONE bounded disposal cross (counted against the dispose-cross
+            #           circuit breaker below).
+            #   tier 3 (stale > 3x deadman_s): full cancel-all -- the old (pre-fix) behavior,
+            #           now the last resort instead of the first response.
             stale = time.time() - last_book_ok
-            if live and resting and stale > a.deadman_s and not deadman_tripped:
-                print(f"[DEAD-MAN] book feed stale {stale:.0f}s > {a.deadman_s}s -> cancel-all")
-                notify.alert(f"[kalshi] DEAD-MAN feed stale {stale:.0f}s: cancel-all")
-                lm.ws_stale(stale)
-                cancel_all_resting(reason="deadman_stale")
-                deadman_tripped = True
+            _new_deadman_tier = 0
+            if stale > 3 * a.deadman_s:
+                _new_deadman_tier = 3
+            elif stale > 2 * a.deadman_s and abs(net_delta) > 1e-9:
+                _new_deadman_tier = 2
+            elif stale > a.deadman_s:
+                _new_deadman_tier = 1
+            if live and not deadman_tripped and _new_deadman_tier > deadman_tier:
+                if _new_deadman_tier == 1:
+                    print(f"[DEAD-MAN/T1] feed stale {stale:.0f}s > {a.deadman_s:.0f}s -> "
+                          f"pausing new OPENING quotes (resting orders TTL-covered; no cancel)")
+                    lm.ws_stale(stale)
+                elif _new_deadman_tier == 2:
+                    print(f"[DEAD-MAN/T2] feed stale {stale:.0f}s > {2 * a.deadman_s:.0f}s w/ "
+                          f"unpaired net={net_delta:+.0f} -> cancel OPENING quotes + one "
+                          f"disposal cross")
+                    notify.alert(f"[kalshi] DEAD-MAN/T2 feed stale {stale:.0f}s: cancel opens + dispose")
+                    lm.ws_stale(stale)
+                    for _k in list(resting):
+                        if not is_completing_side(_k[0], net_delta):
+                            drop(_k, "deadman_t2_open_cancel")
+                    flush_cancels()
+                    deadman_t2_dispose_pending = True
+                elif _new_deadman_tier == 3:
+                    print(f"[DEAD-MAN/T3] feed stale {stale:.0f}s > {3 * a.deadman_s:.0f}s -> cancel-all")
+                    notify.alert(f"[kalshi] DEAD-MAN/T3 feed stale {stale:.0f}s: cancel-all")
+                    lm.ws_stale(stale)
+                    cancel_all_resting(reason="deadman_stale")
+                    deadman_tripped = True
+                deadman_tier = _new_deadman_tier
 
             # Window rollover
             if mk is None or time.time() >= mk["we"]:
@@ -2752,16 +2864,21 @@ def main():
                             "abs_strand": float(abs(py - pn)), "maxnet": winrec["maxnet"],
                             "legging_gap_s": _legging, "n_taker": winrec["taker"],
                             "n_maker": winrec["maker"], "n_dispose_cross": winrec["dispose_cross"],
+                            "dispose_give": round(winrec.get("dispose_give", 0.0), 4),
+                            "dispose_capped": bool(
+                                (a.dispose_max_attempts > 0 and winrec["dispose_cross"] >= a.dispose_max_attempts)
+                                or (a.dispose_budget > 0 and winrec.get("dispose_give", 0.0) >= a.dispose_budget)),
                             "cost_yes": round(win_cost["yes"], 4), "cost_no": round(win_cost["no"], 4),
                             "consec_strands": _consec_strands, "realized": round(realized, 4),
                             "window_mark": round(window_mark, 4),
                             "guard_yes": (a.guard_yes_spread or None),
                             "max_fills_side": a.max_fills_side, "dispose_cross_on": bool(a.dispose_cross),
+                            "dispose_max_attempts": a.dispose_max_attempts, "dispose_budget": a.dispose_budget,
                         }) + "\n")
                         winrec_fh.flush()
                     except Exception:
                         pass
-                    winrec = {"taker": 0, "maker": 0, "maxnet": 0.0, "first_ts": {}, "dispose_cross": 0}
+                    winrec = {"taker": 0, "maker": 0, "maxnet": 0.0, "first_ts": {}, "dispose_cross": 0, "dispose_give": 0.0, "dispose_force_used": False}
                     pos.clear(); cash = 0.0; net_delta = 0.0; window_mark = 0.0
                     seed_win = {"n_fills": 0, "cash": 0.0, "pos_yes": 0.0, "pos_no": 0.0}
                     seed_cooldown_win = {"n": 0}   # reset THIS window's cooldown-trip counter; the
@@ -2890,6 +3007,12 @@ def main():
             if ybb is not None and yba is not None:
                 if _fresh:
                     deadman_tripped = False
+                    # DEAD-MAN TIERING recovery: a fresh two-sided book means the feed is back,
+                    # so drop back to tier 0 immediately -- normal quoting resumes AND, since
+                    # tiers 1-2 never suppressed COMPLETING quotes (only opens), the
+                    # completion-chase / dispose-cross machinery for any unpaired inventory was
+                    # never paused and needs no separate re-arm here.
+                    deadman_tier = 0
                 # --seed-empty: a two-sided book exists again (get_book_cached only returns non-None
                 # bb/ba for a genuinely two-sided book -- see _seed_book_state's docstring). Any
                 # resting seed quotes' spot-anchored rationale is gone the instant that's true --
@@ -2930,6 +3053,13 @@ def main():
             mp = microprice(ybb, yba, clean_ybq, clean_yaq)
 
             targets = desired_levels(mk, ybb, yba, net_delta, 1, a.cap, a.skew, a.improve_tick)
+            # DEAD-MAN TIER >=1: feed is stale beyond --deadman-s -- stop placing NEW opening
+            # quotes (they'd be quoted blind into a possibly-moved market and are the ones that
+            # create fresh unpaired risk). COMPLETING quotes are exempt -- they only ever reduce
+            # risk, and this is exactly the guard the pre-fix binary cancel-all lacked (it
+            # cancelled a completing quote mid-fill and stranded the leg).
+            if deadman_tier >= 1:
+                targets = [t for t in targets if is_completing_side(t[0], net_delta)]
             # post-completion freeze: hold off NEW opens for a beat after a box completes (net==0 means
             # every target is an opening rung; completing quotes live at net!=0 and are never frozen).
             if (a.post_complete_freeze > 0 and abs(net_delta) <= 1e-9
@@ -3002,8 +3132,7 @@ def main():
                     _skip_ct["side_cd"] = _skip_ct.get("side_cd",0)+1; continue              # tweak 1: post-fill cooldown (don't re-quote into the trend)
                 # is this quote COMPLETING a box (reducing |net|)? completing only ever cuts
                 # directional risk, so it is exempt from the open-only late-window guards.
-                is_completing = ((net_delta > 1e-9 and side == "no") or
-                                 (net_delta < -1e-9 and side == "yes"))
+                is_completing = is_completing_side(side, net_delta)
                 if win_fills.get(side, 0) >= a.max_fills_side and not is_completing:
                     _skip_ct["max_fills"] = _skip_ct.get("max_fills",0)+1; continue              # tweak 4 (post-mortem): trends outlast the cooldown -- the
                                           # 5th+ same-side fill in a window is where the edge dies
@@ -3157,13 +3286,32 @@ def main():
             # so in a moving market the leg rides naked to settlement (-21.76c live, RCA 2026-06-13).
             # When --dispose-cross is armed and the leg is aged (>--chase-unpaired-s) OR near close
             # (<--close-flatten-tau), TAKE the offer to lock the box, bounded by the give budget.
+            #
+            # CIRCUIT BREAKER + REAL-ATTEMPT FIX (RCA 2026-07-12, run r29198341684): a stale-feed
+            # dead-man trip stranded a leg mid-fill; this block then fired 53 crosses in ONE window
+            # for 6 fills and -$0.55 (~20 windows of edge). Lifecycle-row forensics: the pre-existing
+            # reject_cd throttle (0.8-3s between attempts on a side) WAS firing as designed -- the
+            # actual gap was that nothing capped the TOTAL number of attempts, so that cadence ran
+            # for the entire remaining window (55 places in 65s) chasing a leg the feed-stale book
+            # couldn't price correctly. Fixed two ways: (1) a hard cap on attempts
+            # (--dispose-max-attempts) and cumulative give (--dispose-budget) per window turns the
+            # existing per-attempt throttle into an actual circuit breaker; (2) only the FORCE
+            # (final-seconds) path and the tier-2 one-shot (DEAD-MAN TIERING above) may cross while
+            # the feed is stale -- the routine aged/near-close chase requires a trustworthy (tier-0)
+            # book, so a capped attempt is a REAL attempt at the CURRENT ask, not a retry against a
+            # price a stale book made up.
             if (a.dispose_cross and abs(net_delta) > 1e-9 and unpaired_since is not None
                     and ybb is not None and yba is not None):
                 age_unp = time.time() - unpaired_since
                 near_close = tau_left < a.close_flatten_tau
                 aged = a.dispose_cross_s > 0 and age_unp >= a.dispose_cross_s
                 force = tau_left < a.close_force_s   # FINAL seconds: flatten at ANY cost (escaped-strand fix)
-                if aged or near_close or force:
+                tier2_shot = deadman_t2_dispose_pending and deadman_tier == 2
+                # while the feed is stale (tier>=1), only a FINAL-seconds force-flatten or the
+                # tier-2 one-shot may cross -- the ordinary aged/near-close chase needs a book we
+                # actually trust, else it's not a real attempt.
+                stale_blocked = deadman_tier != 0 and not (force or tier2_shot)
+                if (aged or near_close or force or tier2_shot) and not stale_blocked:
                     give = a.close_max_give if near_close else a.chase_max_give
                     if net_delta > 1e-9:            # hold YES -> COMPLETE by BUY-NO, take the no-offer
                         cside = "no"; cross_px = round(1.0 - ybb, 4)
@@ -3175,44 +3323,71 @@ def main():
                         basis = win_cost["no"] / pn_ if pn_ > 0 else 0.0
                     lock = 1.0 - basis - cross_px    # $ locked completing the box at the cross price
                     need = int(round(abs(net_delta)))
-                    # AUDIT C3: size the cross to AVAILABLE offer depth (BUY-NO takes the YES-bid qty;
-                    # BUY-YES takes the YES-ask qty). A multi-lot strand on a thin offer would otherwise
-                    # partial-fill and strand the residual. Re-cross the remainder next loop (short
-                    # throttle when forcing) until net is flat.
-                    avail = (ybq if cside == "no" else yaq) or need
-                    # CHASE BRAKE (2026-07-12 incident fix): the completion-chase is what
-                    # amplified the phantom-long into a real short -- crossing with a `need`
-                    # that doubled (1,2,4,8,16) as the corrupted net_delta grew. Cap a single
-                    # cross order at --max-net and clip (never skip-then-double) to remaining
-                    # --max-notional headroom, defense in depth on top of the direction/sync
-                    # fixes above (which already prevent net_delta from getting corrupted).
-                    _open_notional = sum(max(a.post - m.get("filled", 0.0), 0.0) * price_
-                                         for (_, price_), m in resting.items())
-                    _exposure = _open_notional + max(-cash, 0.0)
-                    take = capped_completion_size(need, avail, a.max_net, cross_px,
-                                                  _exposure, a.max_notional)
                     ckey = (cside, "_xcross")
-                    # GIVE-CAPPED disposal (audit 2026-06-14): cross when CHEAP (lock>=-give, the
-                    # opportunistic/early path) OR when forcing near close BUT only up to --dispose-max-give.
-                    # If even the forced completion would lock worse than the cap (book ran far away), HOLD
-                    # the bounded leg instead -- a -22c expected hold beats a -83c catastrophic cross
-                    # (the force-at-ANY-price fix overpaid: it created the -16.4c/box crossed-completion leak).
-                    cross_ok = (lock >= -give - 1e-9) or (force and lock >= -a.dispose_max_give - 1e-9)
-                    if (0.0 < cross_px < 1.0 and need >= 1 and take >= 1 and cross_ok
-                            and reject_cd.get(ckey, 0.0) <= time.time()):
-                        if place(cside, cross_px, ybb, yba, count=take, cross=True) is not None:
-                            ops["dispose_cross"] = ops.get("dispose_cross", 0) + 1
-                            winrec["dispose_cross"] += 1
-                            print(f"  [DISPOSE-CROSS{'/FORCE' if force else ''}] {take}/{need}x "
-                                  f"{cside.upper()} @ {cross_px:.4f} lock={lock:+.3f} "
-                                  f"(age={age_unp:.0f}s tau={tau_left:.0f}s)")
-                        reject_cd[ckey] = time.time() + (0.8 if (force or take < need) else 3.0)
-                    elif force and lock < -a.dispose_max_give:
-                        # bounded HOLD: crossing would cost more than the cap; ride the (capped) leg
-                        if reject_cd.get(ckey, 0.0) <= time.time():
-                            print(f"  [HOLD-CAPPED] {cside.upper()} cross lock={lock:+.3f} < -{a.dispose_max_give:.2f} "
-                                  f"cap; holding bounded leg vs catastrophic cross (tau={tau_left:.0f}s)")
-                            reject_cd[ckey] = time.time() + 5.0
+                    # DISPOSE-CAP: attempts + cumulative give, per window (winrec resets at
+                    # rollover). The FORCE path still gets exactly ONE bounded attempt even after
+                    # the cap is hit -- "stop crossing; leave the position to the close-force
+                    # flatten, one more bounded attempt there, then accept the ride."
+                    attempts_capped = (a.dispose_max_attempts > 0
+                                       and winrec["dispose_cross"] >= a.dispose_max_attempts)
+                    budget_capped = (a.dispose_budget > 0
+                                     and winrec.get("dispose_give", 0.0) >= a.dispose_budget)
+                    cap_hit = attempts_capped or budget_capped
+                    force_bonus = force and cap_hit and not winrec.get("dispose_force_used", False)
+                    if cap_hit and not force_bonus:
+                        if reject_cd.get(("_dispose_cap_log", cside), 0.0) <= time.time():
+                            reason = "attempts" if attempts_capped else "budget"
+                            print(f"  [DISPOSE-CAP] window cross attempts exhausted "
+                                  f"(n={winrec['dispose_cross']} give=${winrec.get('dispose_give', 0.0):.3f} "
+                                  f"cap={reason}) -> deferring to close-force")
+                            reject_cd[("_dispose_cap_log", cside)] = time.time() + 5.0
+                        deadman_t2_dispose_pending = False
+                    else:
+                        # AUDIT C3: size the cross to AVAILABLE offer depth (BUY-NO takes the YES-bid
+                        # qty; BUY-YES takes the YES-ask qty). A multi-lot strand on a thin offer
+                        # would otherwise partial-fill and strand the residual. Re-cross the
+                        # remainder next loop (short throttle when forcing) until net is flat.
+                        avail = (ybq if cside == "no" else yaq) or need
+                        # CHASE BRAKE (2026-07-12 incident fix): the completion-chase is what
+                        # amplified the phantom-long into a real short -- crossing with a `need`
+                        # that doubled (1,2,4,8,16) as the corrupted net_delta grew. Cap a single
+                        # cross order at --max-net and clip (never skip-then-double) to remaining
+                        # --max-notional headroom, defense in depth on top of the direction/sync
+                        # fixes above (which already prevent net_delta from getting corrupted).
+                        _open_notional = sum(max(a.post - m.get("filled", 0.0), 0.0) * price_
+                                             for (_, price_), m in resting.items())
+                        _exposure = _open_notional + max(-cash, 0.0)
+                        take = capped_completion_size(need, avail, a.max_net, cross_px,
+                                                      _exposure, a.max_notional)
+                        # GIVE-CAPPED disposal (audit 2026-06-14): cross when CHEAP (lock>=-give, the
+                        # opportunistic/early path) OR when forcing near close BUT only up to --dispose-max-give.
+                        # If even the forced completion would lock worse than the cap (book ran far away), HOLD
+                        # the bounded leg instead -- a -22c expected hold beats a -83c catastrophic cross
+                        # (the force-at-ANY-price fix overpaid: it created the -16.4c/box crossed-completion leak).
+                        cross_ok = (lock >= -give - 1e-9) or (force and lock >= -a.dispose_max_give - 1e-9)
+                        if (0.0 < cross_px < 1.0 and need >= 1 and take >= 1 and cross_ok
+                                and reject_cd.get(ckey, 0.0) <= time.time()):
+                            if place(cside, cross_px, ybb, yba, count=take, cross=True) is not None:
+                                ops["dispose_cross"] = ops.get("dispose_cross", 0) + 1
+                                winrec["dispose_cross"] += 1
+                                winrec["dispose_give"] = (winrec.get("dispose_give", 0.0)
+                                                          + max(0.0, -lock) * take)
+                                if force_bonus:
+                                    winrec["dispose_force_used"] = True
+                                deadman_t2_dispose_pending = False
+                                print(f"  [DISPOSE-CROSS{'/FORCE' if force else ''}] {take}/{need}x "
+                                      f"{cside.upper()} @ {cross_px:.4f} lock={lock:+.3f} "
+                                      f"(age={age_unp:.0f}s tau={tau_left:.0f}s "
+                                      f"attempt={winrec['dispose_cross']}/{a.dispose_max_attempts or 'inf'} "
+                                      f"give=${winrec['dispose_give']:.3f}/{a.dispose_budget or 'inf'})")
+                            reject_cd[ckey] = time.time() + (0.8 if (force or take < need) else 3.0)
+                        elif force and lock < -a.dispose_max_give:
+                            # bounded HOLD: crossing would cost more than the cap; ride the (capped) leg
+                            if reject_cd.get(ckey, 0.0) <= time.time():
+                                print(f"  [HOLD-CAPPED] {cside.upper()} cross lock={lock:+.3f} < -{a.dispose_max_give:.2f} "
+                                      f"cap; holding bounded leg vs catastrophic cross (tau={tau_left:.0f}s)")
+                                reject_cd[ckey] = time.time() + 5.0
+                            deadman_t2_dispose_pending = False
 
             # --- PULL stale / toxic / off-target rungs ---
             for key in list(resting):

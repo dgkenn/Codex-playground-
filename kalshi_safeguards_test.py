@@ -2467,6 +2467,360 @@ def test_incident_fixture_replay():
 
 
 # ===========================================================================
+# TEST 28 — 2026-07-12 CHURN INCIDENT (run r29198341684): dispose-cross circuit
+#   breaker (--dispose-max-attempts / --dispose-budget)
+# ===========================================================================
+
+# The incident's OWN winrec row, verbatim from live_state/2026-07-12/kalshi_winrec_btc15m.jsonl
+# (live-state branch) for the exact ws under review. 62 quotes requested, only 6 fills, 53 of
+# those requests were disposal crosses that never landed -- net -$0.55 in one window.
+INCIDENT2_WINREC_ROW = {
+    "ws": 1783870200, "asset": "btc", "tenor": 15, "cid": "KXBTC15M-26JUL121145-45",
+    "net_final": 1.0, "n_yes": 3, "n_no": 3, "n_boxes": 3, "stranded": True, "abs_strand": 1.0,
+    "legging_gap_s": 12.061690330505371, "n_taker": 1, "n_maker": 5, "n_dispose_cross": 53,
+    "cost_yes": 2.26, "cost_no": 1.29, "consec_strands": 1, "realized": -0.55,
+    "window_mark": 0.065, "max_fills_side": 3, "dispose_cross_on": True,
+}
+INCIDENT2_RECON_ROW = {  # live_state/2026-07-12/live_recon_btc15m_r29198341684.jsonl
+    "ws": 1783870200, "requested": 62, "fills": 6, "fill_rate": 0.0968, "net": -0.55,
+}
+
+
+def _dispose_cap_decision(dispose_cross_n, dispose_give, dispose_max_attempts, dispose_budget,
+                           force, dispose_force_used):
+    """Replicates the DISPOSE-CAP decision from kalshi_trader.py's dispose-cross block
+    (search '[DISPOSE-CAP]' in kalshi_trader.py -- the STRAND DISPOSAL comment block):
+
+        attempts_capped = (a.dispose_max_attempts > 0
+                           and winrec["dispose_cross"] >= a.dispose_max_attempts)
+        budget_capped = (a.dispose_budget > 0
+                         and winrec.get("dispose_give", 0.0) >= a.dispose_budget)
+        cap_hit = attempts_capped or budget_capped
+        force_bonus = force and cap_hit and not winrec.get("dispose_force_used", False)
+        # blocked (no cross attempted) iff cap_hit and not force_bonus
+
+    Returns (cap_hit, force_bonus, blocked, attempts_capped, budget_capped).
+    """
+    attempts_capped = dispose_max_attempts > 0 and dispose_cross_n >= dispose_max_attempts
+    budget_capped = dispose_budget > 0 and dispose_give >= dispose_budget
+    cap_hit = attempts_capped or budget_capped
+    force_bonus = force and cap_hit and not dispose_force_used
+    blocked = cap_hit and not force_bonus
+    return cap_hit, force_bonus, blocked, attempts_capped, budget_capped
+
+
+def test_dispose_cross_circuit_breaker():
+    """
+    FIX 1 (RCA 2026-07-12, run r29198341684): a feed-stale dead-man trip stranded a leg mid-fill;
+    the disposal-cross chase then fired 53 crosses in ONE window for just 6 fills, net -$0.55 (the
+    incident's own kalshi_winrec_btc15m.jsonl row: n_dispose_cross=53, realized=-0.55). At the
+    strategy's ~2.7c/window edge, one such window erases ~20 windows of profit.
+
+    Checks:
+      1. The incident's own recon numbers (53 attempts, 62 requested, 6 fills) against the
+         DEPLOYED default --dispose-max-attempts=3: the fix would have stopped crossing after
+         attempt 3, not 53.
+      2. Attempt cap trips at EXACTLY N attempts (not N-1, not N+1) then blocks further crosses.
+      3. Budget cap arithmetic: cumulative give = sum(max(0, -lock) * take) across crosses; a
+         PROFITABLE cross (lock >= 0) contributes $0 to the budget (never reduces headroom); the
+         cap trips the instant cumulative give reaches --dispose-budget.
+      4. Whichever cap (attempts or budget) is hit first wins, independently.
+      5. FORCE (close-force) still gets exactly ONE bounded attempt after the cap trips, then
+         reverts to blocked -- "stop crossing; defer to close-force; one more bounded attempt
+         there; then accept the ride."
+    """
+    name = "T28: dispose-cross circuit breaker (53-cross incident replay + cap arithmetic)"
+    try:
+        import inspect
+        import re
+        observations = []
+
+        # --- 1. incident replay against the deployed default cap ---
+        default_max_attempts = 3
+        incident_n = INCIDENT2_WINREC_ROW["n_dispose_cross"]
+        assert incident_n == 53, f"fixture drift: expected 53, got {incident_n}"
+        assert INCIDENT2_RECON_ROW["requested"] == 62 and INCIDENT2_RECON_ROW["fills"] == 6
+        assert INCIDENT2_RECON_ROW["net"] == -0.55
+        cap_hit, _, blocked, attempts_capped, _ = _dispose_cap_decision(
+            dispose_cross_n=default_max_attempts, dispose_give=0.0,
+            dispose_max_attempts=default_max_attempts, dispose_budget=0.10,
+            force=False, dispose_force_used=False)
+        assert attempts_capped and blocked, \
+            "the deployed default (max_attempts=3) must cap well before the incident's 53"
+        observations.append(f"incident_53_attempts_would_have_capped_at={default_max_attempts}"
+                             f"_of_62_requested={INCIDENT2_RECON_ROW['requested']}")
+
+        # --- 2. attempt cap trips at EXACTLY N, not off-by-one ---
+        for n in (0, 1, 2):
+            cap_hit, _, blocked, _, _ = _dispose_cap_decision(n, 0.0, 3, 0.10, False, False)
+            assert not cap_hit and not blocked, f"attempt {n} (< 3) must NOT be capped"
+        cap_hit, _, blocked, attempts_capped, _ = _dispose_cap_decision(3, 0.0, 3, 0.10, False, False)
+        assert cap_hit and blocked and attempts_capped, "attempt 3 (== max) MUST be capped"
+        cap_hit, _, blocked, _, _ = _dispose_cap_decision(4, 0.0, 3, 0.10, False, False)
+        assert cap_hit and blocked, "attempt 4 (> max) must stay capped"
+        observations.append("attempt_cap_trips_at_exactly_n=True")
+
+        # --- 3. budget cap arithmetic: cumulative give, profitable crosses contribute $0 ---
+        give = 0.0
+        crosses = [(-0.04, 1), (-0.03, 1), (0.01, 1), (-0.02, 1)]   # (lock, take)
+        running = []
+        for lock, take in crosses:
+            give += max(0.0, -lock) * take
+            running.append(round(give, 4))
+        assert running == [0.04, 0.07, 0.07, 0.09], f"cumulative give trace wrong: {running}"
+        observations.append(f"cumulative_give_trace={running}_profitable_cross_contributes_0=True")
+        cap_hit, _, blocked, _, budget_capped = _dispose_cap_decision(0, 0.09, 3, 0.10, False, False)
+        assert not cap_hit, "give=0.09 must be UNDER a 0.10 budget"
+        cap_hit, _, blocked, _, budget_capped = _dispose_cap_decision(0, 0.10, 3, 0.10, False, False)
+        assert cap_hit and budget_capped and blocked, "give=0.10 (== budget) MUST trip the cap"
+        observations.append("budget_cap_trips_at_exactly_the_dollar_threshold=True")
+
+        # --- 4. whichever cap hits first wins, independently ---
+        # attempts far from cap, but budget already blown -> still capped (via budget)
+        cap_hit, _, blocked, attempts_capped, budget_capped = _dispose_cap_decision(
+            1, 0.15, 10, 0.10, False, False)
+        assert cap_hit and budget_capped and not attempts_capped, \
+            "budget-only trip must cap even with attempts nowhere near its own limit"
+        # attempts blown, budget nowhere near its cap -> still capped (via attempts)
+        cap_hit, _, blocked, attempts_capped, budget_capped = _dispose_cap_decision(
+            3, 0.01, 3, 10.0, False, False)
+        assert cap_hit and attempts_capped and not budget_capped, \
+            "attempts-only trip must cap even with budget nowhere near its own limit"
+        observations.append("either_cap_independently_trips_the_breaker=True")
+
+        # --- 5. FORCE gets exactly ONE bounded attempt after the cap, then blocks again ---
+        cap_hit, force_bonus, blocked, _, _ = _dispose_cap_decision(
+            3, 0.0, 3, 0.10, force=True, dispose_force_used=False)
+        assert cap_hit and force_bonus and not blocked, \
+            "FORCE with the bonus not yet spent must be allowed through despite the cap"
+        cap_hit, force_bonus, blocked, _, _ = _dispose_cap_decision(
+            3, 0.0, 3, 0.10, force=True, dispose_force_used=True)
+        assert cap_hit and not force_bonus and blocked, \
+            "FORCE must block once the one bonus attempt is already spent (accept the ride)"
+        cap_hit, force_bonus, blocked, _, _ = _dispose_cap_decision(
+            3, 0.0, 3, 0.10, force=False, dispose_force_used=False)
+        assert cap_hit and not force_bonus and blocked, \
+            "the bonus is FORCE-only; a non-force aged/near-close attempt stays blocked at cap"
+        observations.append("force_gets_exactly_one_bonus_attempt_then_blocks=True")
+
+        # --- structural: the deployed flags exist with the documented defaults ---
+        import re
+        src = inspect.getsource(kt)
+        m1 = re.search(r'"--dispose-max-attempts",\s*type=int,\s*default=(\d+)', src)
+        m2 = re.search(r'"--dispose-budget",\s*type=float,\s*default=([\d.]+)', src)
+        assert m1 and int(m1.group(1)) == 3, "‑-dispose-max-attempts default must be 3"
+        assert m2 and float(m2.group(1)) == 0.10, "--dispose-budget default must be 0.10"
+        observations.append("cli_defaults_pinned=max_attempts_3_budget_0.10")
+
+        # --- structural: the cap check runs BEFORE the pre-existing per-attempt reject_cd
+        # throttle (order matters -- the throttle alone let the incident's 53-cross cadence run
+        # for the whole window; the cap is what actually bounds the TOTAL) and ckey stays the
+        # stable per-side sentinel (not price-keyed), so the throttle isn't reset by ordinary
+        # price movement between attempts ---
+        idx_dc = src.index("# --- STRAND DISPOSAL: cross to COMPLETE")
+        idx_dc_end = src.index("# --- PULL stale / toxic / off-target rungs ---", idx_dc)
+        dc_block = src[idx_dc: idx_dc_end]
+        assert 'ckey = (cside, "_xcross")' in dc_block, \
+            "the per-side rate-limit key must stay a stable sentinel, not the (movable) cross price"
+        idx_cap = dc_block.index("attempts_capped = (a.dispose_max_attempts")
+        idx_reject = dc_block.index("reject_cd.get(ckey, 0.0) <= time.time()")
+        assert idx_cap < idx_reject, \
+            "the attempt/budget cap check must gate BEFORE the pre-existing reject_cd throttle"
+        assert 'winrec["dispose_cross"] >= a.dispose_max_attempts' in dc_block
+        assert 'winrec.get("dispose_give", 0.0) >= a.dispose_budget' in dc_block
+        observations.append("cap_gates_before_pre_existing_throttle_using_stable_side_key=True")
+
+        record(name, True, "; ".join(observations))
+    except Exception as e:
+        record(name, False, f"{type(e).__name__}: {e}\n{traceback.format_exc()}")
+
+
+# ===========================================================================
+# TEST 29 — DEAD-MAN TIERING (2026-07-12 RCA): stale > 1x/2x/3x deadman_s
+# ===========================================================================
+
+def _deadman_tier_for(stale, deadman_s, net_delta):
+    """Replicates the tier computation from kalshi_trader.py's staleness watchdog (search
+    'DEAD-MAN TIERING' in kalshi_trader.py):
+
+        if stale > 3 * a.deadman_s: tier = 3
+        elif stale > 2 * a.deadman_s and abs(net_delta) > 1e-9: tier = 2
+        elif stale > a.deadman_s: tier = 1
+        else: tier = 0
+    """
+    if stale > 3 * deadman_s:
+        return 3
+    if stale > 2 * deadman_s and abs(net_delta) > 1e-9:
+        return 2
+    if stale > deadman_s:
+        return 1
+    return 0
+
+
+def test_deadman_tiering():
+    """
+    FIX 2 (RCA 2026-07-12, run r29198341684): the pre-fix binary "stale > deadman_s ->
+    cancel-all" cancelled a COMPLETING quote ~12s after one side filled (a routine WS+REST blip),
+    stranding the 1-lot leg the disposal-cross chase then hit 53x. Tiering scales the response to
+    how stale the feed actually is, leaning on the venue-side --order-ttl-s TTL (150s default)
+    for resting orders instead of an immediate hard cancel.
+
+    Checks:
+      1. Tier boundaries at exactly 1x/2x/3x deadman_s (strict >, matching the pre-existing
+         stale-book dead-man's own strict-> convention).
+      2. Tier 2 requires BOTH staleness AND unpaired net -- a flat book at 2x staleness stays
+         tier 1 (nothing unpaired to protect via the one-shot disposal cross).
+      3. Tier 3 fires from staleness alone, matching the pre-fix full-cancel behavior (now the
+         LAST resort instead of the first response).
+      4. STRUCTURAL: tier 1's branch contains no cancel call (no cancel-all, no per-order
+         drop()) -- resting orders are left for the venue-side TTL, not touched locally.
+      5. STRUCTURAL: tier 2's branch cancels only OPENING quotes (is_completing_side-gated) and
+         arms exactly one disposal-cross attempt (deadman_t2_dispose_pending), which is then
+         consumed (counted) by the dispose-cross circuit breaker from T28.
+      6. Recovery: a fresh two-sided book resets tier to 0 in the same statement that resets
+         deadman_tripped (the pre-existing reset path), and since tiers 1-2 never touch
+         COMPLETING quotes (is_completing_side exempts them from the opening-suppression filter
+         and from the tier-2 cancel sweep), the completion-chase for any unpaired inventory was
+         never paused and needs no separate re-arm -- verified directly via kt.is_completing_side.
+    """
+    name = "T29: dead-man tiering (1x/2x/3x transitions, tier-1 no-cancel, TTL reliance, recovery)"
+    try:
+        import inspect
+        import re
+        observations = []
+        deadman_s = 15.0
+
+        # --- 1. tier boundaries, strict > ---
+        assert _deadman_tier_for(15.0, deadman_s, 0.0) == 0, "exactly 1x must NOT yet be tier 1 (strict >)"
+        assert _deadman_tier_for(15.001, deadman_s, 0.0) == 1, "just past 1x -> tier 1"
+        assert _deadman_tier_for(29.999, deadman_s, 1.0) == 1, "just under 2x stays tier 1 even w/ unpaired net"
+        assert _deadman_tier_for(30.0, deadman_s, 1.0) == 1, "exactly 2x must NOT yet be tier 2 (strict >)"
+        assert _deadman_tier_for(30.001, deadman_s, 1.0) == 2, "just past 2x w/ unpaired net -> tier 2"
+        assert _deadman_tier_for(44.999, deadman_s, 1.0) == 2, "just under 3x stays tier 2"
+        assert _deadman_tier_for(45.0, deadman_s, 1.0) == 2, "exactly 3x must NOT yet be tier 3 (strict >)"
+        assert _deadman_tier_for(45.001, deadman_s, 1.0) == 3, "just past 3x -> tier 3"
+        observations.append("tier_boundaries_strict_gt_at_1x_2x_3x=True")
+
+        # --- 2. tier 2 requires BOTH staleness AND unpaired net ---
+        assert _deadman_tier_for(35.0, deadman_s, 0.0) == 1, \
+            "2x-3x staleness with a FLAT book must stay tier 1, not escalate to tier 2"
+        assert _deadman_tier_for(35.0, deadman_s, -2.0) == 2, \
+            "2x-3x staleness with unpaired net (either sign) escalates to tier 2"
+        observations.append("tier_2_requires_unpaired_net_not_staleness_alone=True")
+
+        # --- 3. tier 3 fires from staleness alone (matches pre-fix full-cancel, now last resort) ---
+        assert _deadman_tier_for(50.0, deadman_s, 0.0) == 3
+        assert _deadman_tier_for(50.0, deadman_s, 5.0) == 3
+        observations.append("tier_3_unconditional_on_net_delta=True")
+
+        # --- 4/5. structural checks on the real source ---
+        src = inspect.getsource(kt)
+        idx1 = src.index("DEAD-MAN TIERING (RCA 2026-07-12")
+        idx_t1 = src.index("if _new_deadman_tier == 1:", idx1)
+        idx_t2 = src.index("elif _new_deadman_tier == 2:", idx1)
+        idx_t3 = src.index("elif _new_deadman_tier == 3:", idx1)
+        tier1_block = src[idx_t1:idx_t2]
+        tier2_block = src[idx_t2:idx_t3]
+        assert "cancel_all_resting(" not in tier1_block and "drop(" not in tier1_block, \
+            "tier 1 must NOT cancel anything -- resting orders rely on the venue-side TTL"
+        observations.append("tier1_no_cancel_relies_on_venue_ttl=True")
+        assert "is_completing_side(" in tier2_block and "drop(" in tier2_block, \
+            "tier 2 must selectively cancel OPENING quotes via is_completing_side"
+        assert "deadman_t2_dispose_pending = True" in tier2_block, \
+            "tier 2 must arm exactly one disposal-cross attempt"
+        assert "cancel_all_resting(reason=\"deadman_stale\")" in src[idx_t3:idx_t3 + 400], \
+            "tier 3 must still be the full cancel-all (last resort, pre-fix behavior preserved)"
+        observations.append("tier2_selective_cancel_plus_one_shot_dispose_armed=True")
+
+        # venue-side TTL the tier-1 no-cancel design leans on actually exists and is generous
+        # enough to cover a real blip window (150s default, vs a 15s deadman_s tier-1 trip)
+        m = re.search(r'"--order-ttl-s",\s*type=float,\s*default=([\d.]+)', src)
+        assert m and float(m.group(1)) == 150.0, "--order-ttl-s default (venue TTL) must be 150.0"
+        observations.append("order_ttl_s_default=150.0_covers_tier1_blips")
+
+        # --- 6. recovery: tier reset colocated with the pre-existing deadman_tripped reset ---
+        idx_bp = src.index('# --- book poll (REST; react-poll cadence) ---')
+        bp_block = src[idx_bp: idx_bp + 1600]
+        assert "deadman_tripped = False" in bp_block and "deadman_tier = 0" in bp_block, \
+            "tier must reset to 0 alongside the pre-existing deadman_tripped reset on fresh book"
+        idx_reset = bp_block.index("deadman_tripped = False")
+        idx_tier_reset = bp_block.index("deadman_tier = 0")
+        assert idx_tier_reset > idx_reset, "tier reset should immediately follow the tripped reset"
+        observations.append("recovery_resets_tier_alongside_deadman_tripped=True")
+
+        # completion-chase re-engagement: is_completing_side (the REAL module-level function, not
+        # a replica) is what exempts completing quotes from both the tier>=1 opening-suppression
+        # filter and the tier-2 cancel sweep -- so completions were never paused by any tier and
+        # need no special re-arm on recovery. Verify the predicate directly.
+        assert kt.is_completing_side("no", net_delta=1.0) is True, "BUY-NO completes a stranded YES"
+        assert kt.is_completing_side("yes", net_delta=1.0) is False, "BUY-YES opens further when net=+1"
+        assert kt.is_completing_side("yes", net_delta=-1.0) is True, "BUY-YES completes a stranded NO"
+        assert kt.is_completing_side("no", net_delta=-1.0) is False, "BUY-NO opens further when net=-1"
+        assert kt.is_completing_side("yes", net_delta=0.0) is False, "flat book: nothing is 'completing'"
+        observations.append("is_completing_side_predicate_correct_for_both_signs=True")
+        # and confirm the tier>=1 opening-suppression filter in the main loop actually calls it
+        idx_targets = src.index("targets = desired_levels(")
+        filt_block = src[idx_targets: idx_targets + 700]
+        assert "if deadman_tier >= 1:" in filt_block and "is_completing_side(t[0], net_delta)" in filt_block, \
+            "tier>=1 must filter targets down to completing-only via is_completing_side"
+        observations.append("tier_ge_1_opening_suppression_uses_is_completing_side=True")
+
+        record(name, True, "; ".join(observations))
+    except Exception as e:
+        record(name, False, f"{type(e).__name__}: {e}\n{traceback.format_exc()}")
+
+
+# ===========================================================================
+# TEST 30 — WS RESILIENCE: exponential-backoff reconnect + tightened REST cadence
+# ===========================================================================
+
+def test_ws_resilience():
+    """
+    FIX 2e (RCA 2026-07-12): the ws_feeder reconnect loop used a flat 1s sleep on every
+    disconnect, and get_book_cached's REST fallback cadence never tightened when the WS was
+    down -- so a routine reconnect gap and a real venue outage looked identical to the staleness
+    watchdog. Checks:
+      1. kt.ws_reconnect_backoff_s (the REAL function) grows exponentially and caps at ~5s.
+      2. get_book_cached's REST poll cadence halves while ws_health["connected"] is False
+         (structural: source inspection, since get_book_cached is a closure inside main()).
+      3. ws_feeder marks ws_health connected/disconnected and resets the backoff counter on a
+         clean (re)connect (structural).
+    """
+    name = "T30: WS resilience (exponential-backoff reconnect, tightened REST cadence on WS-down)"
+    try:
+        import inspect
+        observations = []
+
+        # --- 1. exponential backoff, capped at 5s ---
+        seq = [kt.ws_reconnect_backoff_s(n) for n in range(1, 8)]
+        assert seq == [1.0, 2.0, 4.0, 5.0, 5.0, 5.0, 5.0], f"backoff sequence wrong: {seq}"
+        observations.append(f"backoff_sequence={seq}")
+        assert kt.ws_reconnect_backoff_s(0) == kt.ws_reconnect_backoff_s(1), \
+            "attempt < 1 must clamp to attempt 1 (no zero/negative sleep)"
+        observations.append("sub_1_attempt_clamped=True")
+
+        # --- 2/3. structural checks on the real source ---
+        src = inspect.getsource(kt)
+        gbc_idx = src.index("def get_book_cached(ticker, max_age=None):")
+        gbc_block = src[gbc_idx: gbc_idx + 900]
+        assert 'ws_health.get("connected", True) else 1.0' in gbc_block, \
+            "REST cadence must tighten (halve) when ws_health reports disconnected"
+        observations.append("rest_cadence_tightens_on_ws_down=True")
+
+        feeder_src = src[src.index("def ws_feeder("): src.index("def _apply_snapshot(")]
+        assert 'ws_health["connected"] = True' in feeder_src, "feeder must mark connected on subscribe"
+        assert 'ws_health["attempts"] = 0' in feeder_src, "feeder must reset backoff counter on connect"
+        assert 'ws_health["connected"] = False' in feeder_src, "feeder must mark disconnected on exception"
+        assert "ws_reconnect_backoff_s(ws_health" in feeder_src, \
+            "feeder's reconnect sleep must use the exponential-backoff helper, not a flat sleep"
+        observations.append("ws_feeder_health_tracking_and_backoff_wired=True")
+
+        record(name, True, "; ".join(observations))
+    except Exception as e:
+        record(name, False, f"{type(e).__name__}: {e}\n{traceback.format_exc()}")
+
+
+# ===========================================================================
 # BONUS: Test microprice and gate_check helpers directly (from kt module)
 # ===========================================================================
 
@@ -2557,6 +2911,9 @@ def main():
     test_seed_v3_rest_fallback_and_heartbeat()
     test_place_order_v2_schema()
     test_incident_fixture_replay()
+    test_dispose_cross_circuit_breaker()
+    test_deadman_tiering()
+    test_ws_resilience()
 
     # Summary table
     print()
