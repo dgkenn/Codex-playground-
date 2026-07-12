@@ -2318,6 +2318,155 @@ def test_place_order_v2_schema():
 
 
 # ===========================================================================
+# TEST 27 — 2026-07-12 REAL-MONEY INCIDENT (run r29188732828): V2 fill-booking
+#   direction fix + venue position sync + completion-chase brake
+# ===========================================================================
+
+# The 5 EXACT raw fill records from the incident, verbatim from the "raw" field of
+# live_state/2026-07-12/kalshi_fees_btc15m.jsonl (live-state branch). Pre-fix, book_fill()
+# booked every one of these as a straight BUY-YES (naive side-of-record), walking internal
+# net_delta 1,2,4,8,16 while the venue's own post_position_fp (ground truth) walked
+# 1,0,-2,-6,-14 -- the phantom long that the completion-chase then doubled into a real short.
+INCIDENT_FIXTURES = [
+    {"trade_id": "81d7557c-d319-4c79-6cce-72acd928d54a",
+     "order_id": "9ae9e287-84a0-470b-940f-eaa4ead036a6", "is_taker": False, "side": "yes",
+     "yes_price_dollars": "0.3400", "count_fp": "1.00", "fee_cost": "0.000000",
+     "action": "buy", "post_position_fp": "1.00", "purchased_side": "yes",
+     "outcome_side": "yes", "book_side": "bid"},
+    {"trade_id": "04c3052d-fa8b-46d8-9ef2-27452787ddad",
+     "order_id": "2de33729-e6ae-477a-8ee3-d11a7941c615", "is_taker": False, "side": "yes",
+     "yes_price_dollars": "0.3500", "count_fp": "1.00", "fee_cost": "0.000000",
+     "action": "sell", "post_position_fp": "0.00", "purchased_side": "no",
+     "outcome_side": "no", "book_side": "ask"},
+    {"trade_id": "faa17f7d-9c82-652e-50fd-8485f2a77fcb",
+     "order_id": "4bd3b141-4a26-4ba0-b4d7-a38bc4817ab5", "is_taker": True, "side": "yes",
+     "yes_price_dollars": "0.4000", "count_fp": "2.00", "fee_cost": "0.033600",
+     "action": "sell", "post_position_fp": "-2.00", "purchased_side": "no",
+     "outcome_side": "no", "book_side": "ask"},
+    {"trade_id": "13f0e730-c456-5a38-3867-9e9e1e5b800f",
+     "order_id": "a312cb53-28db-4560-a811-1c8080cc0a51", "is_taker": True, "side": "yes",
+     "yes_price_dollars": "0.4200", "count_fp": "4.00", "fee_cost": "0.068300",
+     "action": "sell", "post_position_fp": "-6.00", "purchased_side": "no",
+     "outcome_side": "no", "book_side": "ask"},
+    {"trade_id": "88b5700e-5df6-5760-e7d8-98135c7776df",
+     "order_id": "45c3ae9c-8eb3-4636-9ffe-dd23d04737e5", "is_taker": True, "side": "yes",
+     "yes_price_dollars": "0.4200", "count_fp": "8.00", "fee_cost": "0.136500",
+     "action": "sell", "post_position_fp": "-14.00", "purchased_side": "no",
+     "outcome_side": "no", "book_side": "ask"},
+]
+
+
+def test_incident_fixture_replay():
+    """
+    Replays the 5 exact 2026-07-12 incident fixtures through the REAL fix functions
+    (kt.resolve_fill_side / kt.venue_position_from_fill / kt.should_snap_to_venue /
+    kt.capped_completion_size -- the same module-level helpers book_fill(),
+    sweep_window_fills(), and the dispose-cross completion path call at runtime) and checks:
+
+      1. DIRECTION: booking net_delta the same way book_fill() does (sgn = +1 if
+         resolve_fill_side()=="yes" else -1) tracks the venue's own post_position_fp at
+         EVERY step: 1, 0, -2, -6, -14 -- not the pre-fix phantom 1, 2, 4, 8, 16.
+      2. Cash/cost-basis direction: fixture[1] ("sell yes @ 0.35") must resolve to a NO
+         purchase (cost 1-0.35=0.65), not the pre-fix bug's naive 0.35 debit that silently
+         treated a yes-SALE as a cheap yes-BUY.
+      3. AUTHORITATIVE SYNC: should_snap_to_venue() stays quiet on this healthy (post-fix)
+         stream, but fires and reports the correct venue value when net_delta is deliberately
+         desynced -- proving the sync rail is armed, not just coincidentally unneeded here.
+      4. CHASE BRAKE: capped_completion_size(), fed the incident's own escalating
+         (pre-fix-style corrupted) need values 1,2,4,8,16 directly, never lets a single cross
+         order exceed --max-net (defense in depth even if net_delta were still somehow
+         corrupted upstream), and CLIPS (rather than skips) when --max-notional headroom
+         is tight.
+    """
+    name = "T27: 2026-07-12 incident fixture replay (direction fix + venue sync + chase brake)"
+    try:
+        observations = []
+        expected_venue = [1.0, 0.0, -2.0, -6.0, -14.0]
+        naive_pre_fix_trace = []
+        net_delta = 0.0
+        naive_net_delta = 0.0
+        for i, f in enumerate(INCIDENT_FIXTURES):
+            count = float(f["count_fp"])
+
+            # --- fixed direction (book_fill()'s own booking arithmetic) ---
+            side = kt.resolve_fill_side(f)
+            sgn = 1.0 if side == "yes" else -1.0
+            net_delta += sgn * count
+
+            # --- pre-fix behavior for contrast: naive side-of-record, ignoring action ---
+            naive_sgn = 1.0 if str(f["side"]).lower() == "yes" else -1.0
+            naive_net_delta += naive_sgn * count
+            naive_pre_fix_trace.append(naive_net_delta)
+
+            venue = kt.venue_position_from_fill(f)
+            assert venue == expected_venue[i], \
+                f"fixture {i}: venue parse {venue} != {expected_venue[i]}"
+            assert abs(net_delta - venue) < 1e-9, (
+                f"fixture {i}: internal net_delta={net_delta} diverged from venue={venue} "
+                f"post_position_fp (pre-fix this walked 1,2,4,8,16 vs venue truth 1,0,-2,-6,-14)")
+            assert not kt.should_snap_to_venue(net_delta, venue), \
+                f"fixture {i}: healthy (post-fix) stream should never need a sync snap"
+        observations.append(f"net_delta_trace={[round(expected_venue[i], 1) for i in range(5)]}"
+                            f"_matches_venue_trace=True")
+        # sanity: the naive (pre-fix) trace really is the reported incident's 1,2,4,8,16,
+        # confirming this replay actually reproduces the bug when the fix is bypassed
+        assert naive_pre_fix_trace == [1.0, 2.0, 4.0, 8.0, 16.0], \
+            f"pre-fix trace should reproduce the reported phantom-long walk, got {naive_pre_fix_trace}"
+        observations.append(f"naive_pre_fix_trace_reproduces_incident={naive_pre_fix_trace}")
+
+        # --- direction-accounting: sell-yes cash/cost basis ---
+        sell_yes = INCIDENT_FIXTURES[1]
+        resolved = kt.resolve_fill_side(sell_yes)
+        assert resolved == "no", f"sell-yes fill must resolve to a NO purchase, got {resolved!r}"
+        yp = float(sell_yes["yes_price_dollars"])
+        fp_correct = yp if resolved == "yes" else round(1.0 - yp, 4)
+        fp_buggy = yp  # pre-fix: always priced off yes_price_dollars regardless of direction
+        assert fp_correct == 0.65, f"expected NO-leg cost basis 0.65, got {fp_correct}"
+        assert fp_correct != fp_buggy, "fixed cost basis must diverge from the pre-fix (buggy) one"
+        yes_equiv_received = round(1.0 - fp_correct, 4)
+        assert yes_equiv_received == 0.35, \
+            ("selling yes @0.35 is cash-equivalent to receiving 0.35/contract either way "
+             f"it's booked, got {yes_equiv_received}")
+        observations.append(f"sell_yes_cost_basis_fixed={fp_correct}_buggy_would_be={fp_buggy}")
+
+        # --- venue-sync rail, standalone (boundary behavior) ---
+        assert kt.should_snap_to_venue(net_delta=5.0, venue_pos=-14.0) is True
+        assert kt.should_snap_to_venue(net_delta=-14.0, venue_pos=-14.0) is False
+        assert kt.should_snap_to_venue(net_delta=-14.3, venue_pos=-14.0) is False, \
+            "a 0.3-contract wobble under the 0.5 tolerance must not spuriously snap"
+        assert kt.should_snap_to_venue(net_delta=1.0, venue_pos=None) is False, \
+            "no post_position_fp on the record (older schema) must never force a snap"
+        observations.append("sync_rail_snap_boundary_correct=True")
+
+        # --- chase brake: single cross order never exceeds --max-net, even fed the exact
+        # corrupted (pre-fix-style, doubling) `need` sizes the incident produced ---
+        max_net_deployed = 1  # BOX_PLAYBOOK.md / CLAUDE.md deployed default (--max-net 1)
+        for corrupted_need in (1, 2, 4, 8, 16):
+            take = kt.capped_completion_size(corrupted_need, avail=999, max_net=max_net_deployed,
+                                             cross_px=0.5, exposure=0.0, max_notional=25.0)
+            assert take <= max_net_deployed, (
+                f"chase brake failed: corrupted need={corrupted_need} produced take={take} "
+                f"> max_net={max_net_deployed}")
+        observations.append("chase_brake_caps_every_escalating_incident_need_at_max_net=True")
+
+        # --- chase brake: --max-notional headroom is CLIPPED, not skipped-then-doubled ---
+        take_clip = kt.capped_completion_size(4, avail=999, max_net=10, cross_px=0.50,
+                                              exposure=24.5, max_notional=25.0)
+        assert take_clip == 1, f"expected notional headroom (0.5/0.50) to clip to 1, got {take_clip}"
+        take_none = kt.capped_completion_size(4, avail=999, max_net=10, cross_px=0.50,
+                                              exposure=25.0, max_notional=25.0)
+        assert take_none == 0, f"expected zero remaining headroom -> take=0, got {take_none}"
+        take_full = kt.capped_completion_size(4, avail=999, max_net=10, cross_px=0.50,
+                                              exposure=0.0, max_notional=25.0)
+        assert take_full == 4, f"ample headroom should not clip a legitimate need, got {take_full}"
+        observations.append("notional_headroom_clipped_not_skipped=True")
+
+        record(name, True, "; ".join(observations))
+    except Exception as e:
+        record(name, False, f"{type(e).__name__}: {e}\n{traceback.format_exc()}")
+
+
+# ===========================================================================
 # BONUS: Test microprice and gate_check helpers directly (from kt module)
 # ===========================================================================
 
@@ -2407,6 +2556,7 @@ def main():
     test_seed_v2_flag_off_byte_identical()
     test_seed_v3_rest_fallback_and_heartbeat()
     test_place_order_v2_schema()
+    test_incident_fixture_replay()
 
     # Summary table
     print()

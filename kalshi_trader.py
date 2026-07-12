@@ -908,6 +908,98 @@ def gate_check(side, price, yes_bid, yes_ask, net_delta, gate, fv_margin, bq=0.0
         return mp > yes_equiv + margin
 
 
+# --- FILL-BOOKING DIRECTION / VENUE SYNC / CHASE BRAKE (2026-07-12 incident fix, run
+# r29188732828) -- pulled to module level (same pattern as kelly_size/gate_check above) so the
+# direction rule and the chase-brake sizing are unit-testable without spinning up main()'s loop.
+#
+# ROOT CAUSE: V2-era Kalshi fill records report side:"yes" on EVERY fill of a YES-book order --
+# this market has only one book on the wire, so a "sell yes" fill (us taking the offer /
+# resting a NO order, which Kalshi implements as a sell on the yes book) ALSO reports
+# side:"yes". The real direction lives in action:"buy"/"sell" (and is echoed directly in
+# purchased_side). Pre-fix, book_fill() booked every fill as a straight buy-of-`side`, so every
+# NO-side fill was booked as a YES buy: internal net_delta walked 1,2,4,8,16 while the venue's
+# own post_position_fp (authoritative) walked 1,0,-2,-6,-14 -- a phantom long that the
+# completion-chase then doubled into a real short, tripping the loss-limit kill (worst_open
+# -6.53). Ground truth for these 5 numbers: kalshi_fees_btc15m.jsonl, 2026-07-12 10:17Z.
+
+def resolve_fill_side(f):
+    """Resolve which side (yes/no) a Kalshi fill record actually acquired for us -- i.e. the
+    side book_fill()/sweep_window_fills() must use for pos[], cash, net_delta, win_fills,
+    win_cost, and the resting-order key lookup (all of which keyed off the raw `side` field
+    pre-fix, which is WRONG under V2 for any fill that isn't a plain buy).
+
+    Rule (derived from, and verified against, all 5 2026-07-12 incident fixture records):
+      1. purchased_side, when present, is authoritative -- it's the venue's own statement of
+         which side this fill made us net long, independent of which book/action carried it.
+      2. Else, if action+side are both present, derive it symmetrically: a "buy" on a book
+         is a purchase of that book's side; a "sell" on a book is economically a purchase of
+         the OTHER side (this binary market has only a yes book, so shorting yes IS going
+         long no, and vice versa for a hypothetical no-book record).
+      3. Else (no action/purchased_side at all -- pre-V2 REST shape): fall back to the
+         original assumption that `side` IS the traded side (straight buy of `side`).
+    """
+    raw_side = str(f.get("side") or "").lower()
+    purchased = str(f.get("purchased_side") or "").lower()
+    action = str(f.get("action") or "").lower()
+    if purchased in ("yes", "no"):
+        return purchased
+    if action in ("buy", "sell") and raw_side in ("yes", "no"):
+        if action == "buy":
+            return raw_side
+        return "no" if raw_side == "yes" else "yes"
+    return raw_side
+
+
+def venue_position_from_fill(f):
+    """Extract the venue's own authoritative post-fill position (post_position_fp) from a V2
+    fill record, in the SAME signed convention as this module's net_delta (YES positions - NO
+    positions -- verified against all 5 incident fixtures, e.g. an 8-count sell-yes/buy-no fill
+    takes post_position_fp from -6.00 to -14.00, an 8-contract move in the NO direction).
+    Returns None if the record doesn't carry the field (older/non-V2 schema)."""
+    raw = f.get("post_position_fp")
+    if raw is None:
+        return None
+    try:
+        return float(raw)
+    except (TypeError, ValueError):
+        return None
+
+
+def should_snap_to_venue(net_delta, venue_pos, tol=0.5):
+    """True if internal net_delta has diverged from the venue's own post_position_fp by more
+    than `tol` contracts. POSITION-SYNC rail (2026-07-12 fix): the venue is always right -- a
+    booking bug, a missed fill, or a race can desync internal inventory from what's actually
+    resting/settled at Kalshi; this re-anchors it after every single fill instead of letting an
+    error compound silently across a whole window (the exact failure mode of the incident)."""
+    return venue_pos is not None and abs(net_delta - venue_pos) > tol
+
+
+def capped_completion_size(need, avail, max_net, cross_px, exposure, max_notional):
+    """Compute the actual contract count for a single completion/cross (dispose-cross) order.
+    CHASE BRAKE (2026-07-12 fix): defense in depth against a phantom/corrupted net_delta (or
+    any other bug) driving an ever-larger completion order -- the completion-chase is exactly
+    what amplified the phantom-long into a real short during the incident, doubling size
+    (1,2,4,8,16) as `need` (abs(net_delta)) grew.
+      1. never exceed the available offer depth (pre-existing behavior, preserved)
+      2. never exceed --max-net in a SINGLE cross order, no matter how large `need` has grown
+         -- a corrupted net_delta must not be able to size an order past the position limit
+         the rest of the bot enforces everywhere else
+      3. never exceed remaining --max-notional headroom -- CLIP the size down to what fits
+         rather than placing the full (possibly doubled) size; returns 0 only if there is no
+         headroom left for even a single contract (the caller should then hold, not skip-and-
+         retry-larger next loop).
+    """
+    take = max(1, min(int(need), int(avail)))
+    take = min(take, max(1, int(max_net)))
+    if cross_px > 0 and max_notional > 0:
+        headroom = max_notional - exposure
+        if headroom <= 1e-9:
+            return 0
+        afford = int(headroom / cross_px + 1e-9)
+        take = min(take, max(0, afford))
+    return max(0, take)
+
+
 # --- OPT-IN EMPTY-BOOK SEEDING (--seed-empty) pure helpers -----------------------------------
 # Pulled out to module level (same pattern as kelly_size/gate_check/portfolio_mult_budget above)
 # so the empty-book classification, width-floor, staleness, re-price-threshold, and target-price
@@ -1742,6 +1834,7 @@ def main():
     # --- state ---
     mk = None
     net_delta = 0.0          # YES positions - NO positions (signed)
+    last_position_sync_print = 0.0  # wall-clock of last [POSITION-SYNC] print (rate-limited 1/10s)
     unpaired_since = None    # wall-clock when |net| left 0 (completion-urgency chase clock)
     last_complete_ts = 0.0   # wall-clock of the last |net|->0 completion (over-fill freeze clock)
     prev_net_freeze = 0.0    # net_delta at the previous loop top (to detect a completion transition)
@@ -2264,8 +2357,13 @@ def main():
         Shared by ws_fills drain (real-time) and REST poll_fills (backstop).
         sf is the seen_fills set for this ticker; caller must add fid to sf on return.
         Returns True if the fill was booked, False if skipped (caller should still add to sf)."""
-        nonlocal cash, net_delta
-        fside = str(f.get("side") or "").lower()    # "yes" or "no"
+        nonlocal cash, net_delta, last_position_sync_print
+        # V2 FIX (2026-07-12 incident): `side` is the BOOK side (always "yes" for this market's
+        # V2 fills), not the traded direction -- resolve_fill_side() derives the side we
+        # actually acquired from action/purchased_side. See its docstring for the full rule;
+        # every downstream consumer below (pos[], cash, net_delta, win_fills, win_cost, the
+        # resting-order key lookup, and the markout ctx) keys off this corrected `fside`.
+        fside = resolve_fill_side(f)                 # "yes" or "no" (traded/purchased side)
         count = float(f.get("count_fp") or f.get("count") or 0)
         # H-3: prefer yes_price_dollars; if only yes_price and > 1.0, divide by 100
         yp_raw = f.get("yes_price_dollars")
@@ -2290,6 +2388,17 @@ def main():
         pos[pos_key] = pos.get(pos_key, 0.0) + count
         cash -= fp * count               # buy spends cash
         net_delta += sgn * count
+        # AUTHORITATIVE SYNC (2026-07-12 fix): post_position_fp is the venue's OWN post-fill
+        # position -- if internal net_delta has drifted from it (booking bug, missed fill,
+        # race), snap to the venue value now instead of letting the error compound across the
+        # rest of the window. Rate-limited to 1 print/10s so a persistent desync doesn't spam.
+        _venue_pos = venue_position_from_fill(f)
+        if should_snap_to_venue(net_delta, _venue_pos):
+            _now_sync = time.time()
+            if _now_sync - last_position_sync_print >= 10.0:
+                print(f"[POSITION-SYNC] internal={net_delta:+.2f} venue={_venue_pos:+.2f} -> snapped")
+                last_position_sync_print = _now_sync
+            net_delta = _venue_pos
         if abs(net_delta) > float(a.max_net) + 0.5:      # clamp leak tripwire (double-fill forensics)
             notify.alert(f"\u26a0\ufe0f INVENTORY BREACH: |net|={net_delta:+.0f} exceeds max-net "
                          f"{a.max_net} after {fside} fill @ {fp} -- clamp leak, investigate")
@@ -2491,7 +2600,7 @@ def main():
             fid = str(f.get("trade_id") or f.get("fill_id") or "")
             if not fid or fid in sf:
                 continue
-            fside = str(f.get("side") or "").lower()
+            raw_side = str(f.get("side") or "").lower()
             count = float(f.get("count_fp") or f.get("count") or 0)
             # H-3: prefer yes_price_dollars; if only yes_price and > 1.0, divide by 100
             yp_raw = f.get("yes_price_dollars")
@@ -2499,8 +2608,11 @@ def main():
             if yp_raw is None:
                 yp_raw = f.get("yes_price")
                 from_cents = True
-            if yp_raw is None or count <= 0 or fside not in ("yes", "no"):
+            if yp_raw is None or count <= 0 or raw_side not in ("yes", "no"):
                 sf.add(fid); continue
+            # V2 FIX (2026-07-12 incident, same rule as book_fill()): `side` is the book side,
+            # not the traded direction -- resolve it via action/purchased_side.
+            fside = resolve_fill_side(f)
             yp = float(yp_raw)
             if from_cents and yp > 1.0:
                 yp /= 100
@@ -2515,6 +2627,10 @@ def main():
                 pos[pk] = pos.get(pk, 0.0) + count
                 cash -= fp * count
                 net_delta += sgn * count
+                _venue_pos = venue_position_from_fill(f)
+                if should_snap_to_venue(net_delta, _venue_pos):
+                    print(f"[POSITION-SYNC] internal={net_delta:+.2f} venue={_venue_pos:+.2f} -> snapped")
+                    net_delta = _venue_pos
             else:
                 if fside == "yes":
                     en["pos_yes"] += count
@@ -3064,7 +3180,17 @@ def main():
                     # partial-fill and strand the residual. Re-cross the remainder next loop (short
                     # throttle when forcing) until net is flat.
                     avail = (ybq if cside == "no" else yaq) or need
-                    take = max(1, min(need, int(avail)))
+                    # CHASE BRAKE (2026-07-12 incident fix): the completion-chase is what
+                    # amplified the phantom-long into a real short -- crossing with a `need`
+                    # that doubled (1,2,4,8,16) as the corrupted net_delta grew. Cap a single
+                    # cross order at --max-net and clip (never skip-then-double) to remaining
+                    # --max-notional headroom, defense in depth on top of the direction/sync
+                    # fixes above (which already prevent net_delta from getting corrupted).
+                    _open_notional = sum(max(a.post - m.get("filled", 0.0), 0.0) * price_
+                                         for (_, price_), m in resting.items())
+                    _exposure = _open_notional + max(-cash, 0.0)
+                    take = capped_completion_size(need, avail, a.max_net, cross_px,
+                                                  _exposure, a.max_notional)
                     ckey = (cside, "_xcross")
                     # GIVE-CAPPED disposal (audit 2026-06-14): cross when CHEAP (lock>=-give, the
                     # opportunistic/early path) OR when forcing near close BUT only up to --dispose-max-give.
@@ -3072,7 +3198,7 @@ def main():
                     # the bounded leg instead -- a -22c expected hold beats a -83c catastrophic cross
                     # (the force-at-ANY-price fix overpaid: it created the -16.4c/box crossed-completion leak).
                     cross_ok = (lock >= -give - 1e-9) or (force and lock >= -a.dispose_max_give - 1e-9)
-                    if (0.0 < cross_px < 1.0 and need >= 1 and cross_ok
+                    if (0.0 < cross_px < 1.0 and need >= 1 and take >= 1 and cross_ok
                             and reject_cd.get(ckey, 0.0) <= time.time()):
                         if place(cside, cross_px, ybb, yba, count=take, cross=True) is not None:
                             ops["dispose_cross"] = ops.get("dispose_cross", 0) + 1
