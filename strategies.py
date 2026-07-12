@@ -21,6 +21,26 @@ KALSHI GEARING: no rebate -> Insight-10 reverses (without per-fill rebate subsid
 micro_strict/micro_asym are first-line candidates); queue replay shows back-of-queue fills are toxic at depth
 (q>=500 -> negative) so the deployable expression is sub-cent price-improvement to the FRONT + gate; the live
 A/B on kalshi_collect data decides.
+
+PRE-REGISTRATION NOTE -- wide-box (W=15c) market-making, NOT added to this roster (2026-07-12): a 33-day
+path-simulation (scratchpad/boxwidth/{RESULTS.txt,simulate_boxwidth.py}, 1,414,602 sim rows, btc/eth/sol/xrp)
+found that resting BOTH box legs W~15c below their side of fair (YES buy at mid-W, NO buy at (1-mid)-W),
+entered at a FIXED anchor (minute 2 of the window), with an uncompleted leg disposed via a taker cross at
+mid-/+1c after 60s if the other leg has not also filled, is profitable pooled across all 4 assets on the
+SIMULATED grid (W in {1,2,3,4,5,7,10}c; day-clustered t up to +48 at W=10c vs W=1c) and W=15c extrapolates
+that same diminishing-returns curve a further ~5c past the tested grid edge -- NOT itself a directly
+simulated point. Ride-to-settle (skip the 60s disposal) is NEGATIVE at every simulated W; the disposal is
+THE mechanism, not an optional refinement. Edge decays with entry minute and is dead by minute 10.
+THIS IS NOT a shadow_compare.py Strat arm: the mechanism requires a quote resting at a price FIXED at t0 and
+left there while the touch moves freely around it, filled only when the tape actually crosses that fixed
+level -- Variant.set_tob/on_trade instead assume the strategy's quote IS the current touch (queue state is
+keyed off `bb`/`ba` and is dropped the instant the touch moves, "QUEUE STALENESS FIX" in shadow_compare.py),
+so it cannot express a resting-away-from-touch, crossing-triggered fill without rewriting its core queue/
+fill machinery -- unlike px_band above, this is not expressible as an orthogonal, default-inert Strat field.
+Forward-validated instead as a STANDALONE paper sleeve: kalshi_boxwide_paper.py (state under
+gha_data/boxwide/, scored by kalshi_boxwide_report.py against the same >=14-day/t>=3/>=80%-days-positive
+pre-registered bar used everywhere else in this repo, vs a null of 0 -- see that module's docstring for why
+"vs av_stoikov" does not apply to a sleeve with no shared per-fill unit against the Variant engine).
 """
 from __future__ import annotations
 from dataclasses import dataclass
