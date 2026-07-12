@@ -5,6 +5,20 @@
 # .github/workflows/live.yml on the code branch (still gated by LIVE_SWITCH + secrets, same as
 # today -- adopting this file does not itself start any new trading).
 #
+# PER-ASSET CHAMPION MAPPING (per_market_champion.py, PER_MARKET_STRATEGY.md, 33-day gha-data
+# record 2026-06-10..2026-07-12): av_stoikov (--gate as --skew 0.99) is the GLOBAL champion AND,
+# under the pre-registered selection-discipline rule (head-to-head day-t>=3, days+>=70% vs
+# av_stoikov, n_days>=10 -- see per_market_champion.py's module docstring), it is ALSO the
+# per-asset champion on all four of btc/eth/sol/xrp: no challenger arm (mo_size included) clears
+# that bar on any asset -- every evaluable challenger is NEGATIVE head-to-head vs av_stoikov.
+# The matrix `include:` block below is therefore a per-asset flag table that happens to carry the
+# SAME champion flags on every row today; it is structured per-asset (not a single shared
+# constant) so a future asset-specific winner can be dropped in without reshaping the workflow.
+# NOTE this is a REAL CHANGE vs both the current live .github/workflows/live.yml AND vs this
+# file's own previous version: neither ever passed --gate/--skew, so both silently ran
+# kalshi_trader.py's DEFAULTS (--gate ufat --skew 0.25 -- a different, un-validated gate/skew
+# combination) instead of the shadow-validated av_stoikov champion (--gate as --skew 0.99).
+#
 # WHAT CHANGED vs the live workflow, and why (full detail in LIVE_EXPANSION.md):
 #   1. `trade` is now a matrix job over ASSET in [btc, eth, sol, xrp] (fail-fast: false) instead
 #      of a single ASSET=btc job. Trim the matrix list below to whichever subset LIVE_EXPANSION.md's
@@ -78,6 +92,16 @@ jobs:
         # recommendation (this full 4-asset list is the "everything that cleared the bar" case,
         # not an unconditional "turn it all on" instruction).
         asset: [btc, eth, sol, xrp]
+        # PER-ASSET CHAMPION FLAGS (PER_MARKET_STRATEGY.md / per_market_champion.py). Every row
+        # currently carries the SAME champion (av_stoikov: --gate as --skew 0.99) because no
+        # asset earned a tailored champion under the pre-registered selection-discipline rule --
+        # this is a per-asset table on purpose so a future asset-specific winner slots in as a
+        # one-line change to just that asset's row, not a workflow reshape.
+        include:
+          - { asset: btc, gate: as, skew: "0.99" }
+          - { asset: eth, gate: as, skew: "0.99" }
+          - { asset: sol, gate: as, skew: "0.99" }
+          - { asset: xrp, gate: as, skew: "0.99" }
     concurrency:
       # Per-asset singleton: never two live bots on the SAME asset (would double real orders).
       # Different assets get different groups on purpose -- they run in parallel, not serialized.
@@ -85,6 +109,8 @@ jobs:
       cancel-in-progress: false
     env:
       ASSET: ${{ matrix.asset }}
+      CHAMPION_GATE: ${{ matrix.gate }}
+      CHAMPION_SKEW: ${{ matrix.skew }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -148,9 +174,15 @@ jobs:
             python -c "import notify; notify.alert_sync('🟢 live session armed ($ASSET) — preflight GO, \$5 cap, posting both sides. Box/settlement alerts follow on fills.')" || true
             timeout --signal=TERM --kill-after=60 2820 \
               python -u kalshi_trader.py --asset "$ASSET" --live --size-mode flat \
+                --gate "$CHAMPION_GATE" --skew "$CHAMPION_SKEW" \
                 --post 1 --max-notional 5 --loss-limit 6 --max-rungs 1 \
                 --guard-yes-spread 0 --strand-scaledown "0.75,0.5,0.25" --max-fills-side 3 --pair-gate --pair-min-depth 33000 --open-k-min 2 --open-k-max 10 --open-sig-lo 0 --open-sig-hi 10 --dispose-cross --dispose-cross-s 15 --close-force-s 45 --chase-unpaired-s 15 --dispose-max-give 0.25 --post-complete-freeze 1.5 --duration 2760 \
                 --remote-switch-s 20 || true
+                # --gate/--skew are now PER-ASSET (matrix.gate / matrix.skew above) instead of
+                # hardcoded/omitted: today every asset resolves to av_stoikov (as / 0.99), the
+                # per_market_champion.py verdict -- see PER_MARKET_STRATEGY.md. --size-mode stays
+                # "flat" (av_stoikov's own size_mode; mo_size's --size-mode markout did NOT clear
+                # the per-asset tailoring bar anywhere, see that doc's head-to-head table).
           else
             python -c "import notify; notify.alert_sync('🟡 live cycle skipped ($ASSET) — preflight NO-GO (market/balance gate); retries next cycle.')" || true
             echo "preflight NO-GO -> not trading this cycle"
