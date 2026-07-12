@@ -1830,6 +1830,7 @@ def main():
     # any error is ignored (fail-safe: a transient fetch failure must NOT kill a healthy session).
     # _gh_tok is hoisted above _record_kill now (durable sticky-kill needs it first); reused here.
     _rsw = {"last": 0.0}
+    _loop_diag = {"t": 0.0}
 
     def _remote_switch_is_off():
         url = a.remote_switch_url
@@ -2697,6 +2698,15 @@ def main():
             ybb, ybq, yba, yaq, _fresh = get_book_cached(mk["cid"])
             if _fresh:
                 last_book_ok = time.time()
+            # [LOOP] once-a-minute loop-level diagnostic (added after three silent live legs made
+            # branch-level truth unknowable from the outside). Shows exactly what the loop sees.
+            if time.time() - _loop_diag.get("t", 0) >= 60:
+                _loop_diag["t"] = time.time()
+                _ws_e = ws_state.get(mk["cid"]) or {}
+                print(f"[LOOP] rest_bb={ybb} rest_ba={yba} fresh={_fresh} "
+                      f"ws_bb={_ws_e.get('bb')} ws_ba={_ws_e.get('ba')} "
+                      f"branch={'BOOK' if (ybb is not None and yba is not None) else 'SEED'} "
+                      f"resting={len(resting)} places={ops.get('place',0)}", flush=True)
             if ybb is not None and yba is not None:
                 if _fresh:
                     deadman_tripped = False
