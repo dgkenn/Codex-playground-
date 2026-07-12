@@ -18,6 +18,25 @@ RIDE-TO-SETTLE (no 60s disposal) is NEGATIVE at every simulated W -- the 60s dis
 optional cleanup, it is THE mechanism that makes this profitable; this module implements it as a
 first-class state (never as an afterthought / manual step).
 
+P300 PARALLEL CHALLENGER TRACK (added after the 60s policy above was pre-registered and shipped):
+a follow-up DP (dynamic-programming) study over the same tape found the only statistically
+significant completion-policy effect anywhere in this family -- for wide quoting, a ~300s
+disposal deadline beats 60s by +0.32-0.51c/leg (p=0.015; a vol-conditioned variant, 300s if
+trailing-30s vol <=~1.6c else 180s, was also examined but is NOT what this module implements).
+Because the 60s deadline (P60) was pre-registered from the earlier width simulation BEFORE this
+DP result existed, it stays the primary/unchanged mechanism above. What this module ADDS is a
+second, purely-observational disposal-policy track (P300: dispose at t_fill+300s, or at
+window_close-45s if that is sooner) computed off the SAME first-fill event and the SAME polled
+tape as P60 -- no extra API calls, pure bookkeeping. Both tracks watch independently for the
+completing leg after a strand: whichever deadline is hit first without a completion disposes on
+its own schedule, so P60 and P300 CAN diverge on the same box (e.g. P60 disposes at 60s for a
+loss while P300, still watching, catches the completing leg at t=120s and locks for the
+deterministic 2W profit -- or vice versa if the tape moves against the position between the two
+deadlines). P300 is a DP-informed CHALLENGER tracked in parallel for comparison; it is NOT a
+promotion criterion by itself -- kalshi_boxwide_report.py's pre-registered go-live bar (below)
+remains defined on P60 only, exactly as pre-registered, until/unless P300 clears its own bar and
+gets separately pre-registered.
+
 VEHICLE CHOICE -- standalone paper sleeve, NOT a shadow_compare.py Strat arm (see the box-width
 pre-registration note in strategies.py for the full reasoning): shadow_compare.py's Variant engine
 assumes the strategy's resting quote IS the current best bid/ask (Variant.set_tob keys off `bb`/
@@ -44,18 +63,28 @@ FILL MODEL / HONESTY NOTES:
     order/timing -- no settlement wait needed to score it.
   * The "disposed" (managed-strand) outcome's P&L is also fully realized at dispose time (exit
     mid -/+ 1c, minus the taker fee) -- again no settlement wait needed. Kalshi settlement is only
-    consulted for the rare RIDE-FORCED edge case: a leg fills so late in the window that the 60s
-    dispose deadline falls after window close (only possible for a strand forming after ~t=840s;
-    the anchor at minute 2 makes this rare but not impossible on a wide W that fills late).
+    consulted for the rare RIDE-FORCED edge case: a leg fills so late in the window that a policy's
+    dispose deadline falls after window close (only possible for a strand forming after ~t=840s
+    for P60; P300's window_close-45s cap makes this rare-but-possible for P300 too on a very late
+    strand -- the anchor at minute 2 makes either rare but not impossible on a wide W that fills
+    late). P60 and P300 each independently fall back to RIDE-FORCED settlement scoring; one policy
+    finishing does not force the other to do so, they resolve on their own schedules.
+  * P60 and P300 are scored from the SAME polled tape/fills -- the only difference is how long
+    each is willing to wait, after the first leg fills, before giving up and disposing the
+    stranded leg via a taker cross. A pending box is not written to the settled CSV until BOTH
+    policies have reached a terminal outcome (locked/disposed/ride_forced); the row otherwise
+    stays open exactly as long as the slower of the two policies needs.
 
 WHAT THIS SCRIPT DOES, each polling cycle (default --duration 2520s, matching the tailbias/kxwti
 paper-sleeve idiom -- one process invocation runs many cycles, see main()):
   1. Advance every open (armed/stranded) pending row against a fresh orderbook read: detect leg
-     crossings, transition armed->stranded on the first fill, stranded->locked if the other leg
-     completes within 60s, stranded->disposed at the 60s deadline (taker cross), or armed->neither
-     if the window closes with no fill at all. Settled/expired rows are appended to
-     <state_dir>/boxwide_settled.csv; anything still open is written back to
-     <state_dir>/boxwide_pending.json.
+     crossings, transition armed->stranded on the first fill, then advance the P60 and P300
+     disposal-policy tracks IN PARALLEL off that same strand -- each locks if the other leg
+     completes before ITS OWN deadline, else disposes at ITS OWN deadline (taker cross); armed
+     rows with no fill by window close settle "neither" for both policies at once (no strand ever
+     happened, no divergence possible). A row is only appended to <state_dir>/boxwide_settled.csv
+     once BOTH policies have reached a terminal outcome; until then it stays in
+     <state_dir>/boxwide_pending.json (now carrying both policies' in-progress state).
   2. DISCOVER the current open KX{BTC,ETH,SOL,XRP}15M window per asset (mirrors
      kalshi_tailbias_paper.discover_window). If elapsed-since-open is in the minute-2 anchor band
      and this window has not already been armed (checked against pending), read the two-sided
@@ -126,8 +155,15 @@ ARM_LO_S, ARM_HI_S = 115.0, 145.0   # minute-2 anchor band (elapsed seconds sinc
 #                                     a small band, not an exact instant, so imprecise poll timing
 #                                     still catches "minute 2" (mirrors tailbias's tau-band idiom)
 DISPOSE_DELAY_S = 60.0          # seconds after the first leg fills before disposing an uncompleted
-#                                 strand -- THE essential mechanism (ride-to-settle is negative)
+#                                 strand -- THE essential mechanism (ride-to-settle is negative).
+#                                 This is P60, the pre-registered PRIMARY policy -- unchanged.
 DISPOSE_TICK = 0.01             # dollars; disposal crosses 1c through the mid, same as the sim
+P300_DISPOSE_DELAY_S = 300.0    # seconds after first fill before P300 (the DP-informed CHALLENGER
+#                                 disposal policy) disposes an uncompleted strand -- tracked in
+#                                 PARALLEL with P60 off the same fill event/tape, never in place of
+#                                 it. See "P300 PARALLEL CHALLENGER TRACK" in the module docstring.
+P300_CLOSE_BUFFER_S = 45.0      # P300 never waits past window_close - this many seconds, even if
+#                                 t_fill + P300_DISPOSE_DELAY_S would fall later than that
 FEE_MULT = 0.07                 # standard Kalshi quadratic taker-fee schedule (as elsewhere in
 #                                 this repo -- fees.py/macro_paper.py/kalshi_tailbias_paper.py)
 WINDOW_S = 900.0                # 15-min market length (s)
@@ -197,6 +233,15 @@ def check_leg_fill(yes_bid, yes_ask, L_yes, trig_no):
     return yes_hit, no_hit
 
 
+def p300_deadline_for(t_fill, we):
+    """P300's own dispose deadline: 300s after first fill, or window_close - 45s if that is
+    sooner (never wait past the close-buffer, mirrors the P60 RIDE-FORCED edge-case rationale but
+    proactively instead of reactively -- P300's 5x-longer window makes running into window close
+    much more likely for a late strand, so it caps itself instead of relying on the ride-forced
+    fallback as the common case)."""
+    return min(t_fill + P300_DISPOSE_DELAY_S, we - P300_CLOSE_BUFFER_S)
+
+
 def taker_fee_cents(p):
     """Standard Kalshi quadratic taker-fee schedule: ceil(7*p*(1-p)) cents/contract, p in [0,1].
     Returns None on an out-of-range/missing price (caller must not silently coerce)."""
@@ -235,51 +280,72 @@ def ride_pnl(strand_side, cost, resolved_yes):
     return round((1.0 - resolved_yes) - cost, 4)
 
 
+# P60 columns (unchanged names/positions -- backward compatible with any reader of the old
+# schema) followed by the new P300 challenger columns, appended at the end.
 SETTLED_FIELDS = ["settle_ts", "asset", "ticker", "ws", "we", "entry_ts", "entry_mid", "w",
                    "L_yes", "L_no", "outcome", "strand_side", "t_fill", "dispose_mid", "fee_c",
-                   "pnl", "status"]
+                   "pnl", "status",
+                   "p300_outcome", "p300_dispose_mid", "p300_fee_c", "p300_pnl", "p300_status"]
+
+
+def _base_settled_fields(row, now_iso_):
+    """Fields shared by every settled-row shape (asset/ticker/window/entry identity)."""
+    return {"settle_ts": now_iso_, "asset": row["asset"], "ticker": row["ticker"], "ws": row["ws"],
+            "we": row["we"], "entry_ts": row["entry_ts_iso"], "entry_mid": row["entry_mid"],
+            "w": row["w"], "L_yes": row["L_yes"], "L_no": row["L_no"]}
 
 
 def make_locked_row(row, now_iso_):
-    return {"settle_ts": now_iso_, "asset": row["asset"], "ticker": row["ticker"], "ws": row["ws"],
-            "we": row["we"], "entry_ts": row["entry_ts_iso"], "entry_mid": row["entry_mid"],
-            "w": row["w"], "L_yes": row["L_yes"], "L_no": row["L_no"], "outcome": "locked",
-            "strand_side": row.get("strand_side") or "", "t_fill": row.get("t_fill_iso") or "",
-            "dispose_mid": "", "fee_c": 0, "pnl": lock_pnl(row["w"]), "status": "settled"}
+    """Both legs crossed in the SAME poll (never stranded) -- P60 and P300 trivially agree, there
+    was no divergence window for them to disagree in."""
+    out = _base_settled_fields(row, now_iso_)
+    out.update(outcome="locked", strand_side=row.get("strand_side") or "",
+               t_fill=row.get("t_fill_iso") or "", dispose_mid="", fee_c=0,
+               pnl=lock_pnl(row["w"]), status="settled",
+               p300_outcome="locked", p300_dispose_mid="", p300_fee_c=0,
+               p300_pnl=lock_pnl(row["w"]), p300_status="settled")
+    return out
 
 
 def make_neither_row(row, now_iso_):
-    return {"settle_ts": now_iso_, "asset": row["asset"], "ticker": row["ticker"], "ws": row["ws"],
-            "we": row["we"], "entry_ts": row["entry_ts_iso"], "entry_mid": row["entry_mid"],
-            "w": row["w"], "L_yes": row["L_yes"], "L_no": row["L_no"], "outcome": "neither",
-            "strand_side": "", "t_fill": "", "dispose_mid": "", "fee_c": 0, "pnl": 0.0,
-            "status": "settled"}
-
-
-def make_disposed_row(row, exit_mid, now_iso_):
-    pnl, fee_c, _ = dispose_outcome(row["strand_side"], row["cost"], exit_mid)
-    return {"settle_ts": now_iso_, "asset": row["asset"], "ticker": row["ticker"], "ws": row["ws"],
-            "we": row["we"], "entry_ts": row["entry_ts_iso"], "entry_mid": row["entry_mid"],
-            "w": row["w"], "L_yes": row["L_yes"], "L_no": row["L_no"], "outcome": "disposed",
-            "strand_side": row["strand_side"], "t_fill": row.get("t_fill_iso") or "",
-            "dispose_mid": round(exit_mid, 4), "fee_c": fee_c, "pnl": pnl, "status": "settled"}
-
-
-def make_ride_forced_row(row, resolved_yes, now_iso_):
-    pnl = ride_pnl(row["strand_side"], row["cost"], resolved_yes)
-    return {"settle_ts": now_iso_, "asset": row["asset"], "ticker": row["ticker"], "ws": row["ws"],
-            "we": row["we"], "entry_ts": row["entry_ts_iso"], "entry_mid": row["entry_mid"],
-            "w": row["w"], "L_yes": row["L_yes"], "L_no": row["L_no"], "outcome": "ride_forced",
-            "strand_side": row["strand_side"], "t_fill": row.get("t_fill_iso") or "",
-            "dispose_mid": "", "fee_c": 0, "pnl": pnl, "status": "settled"}
+    """No leg ever crossed by window close -- no strand ever formed, so again no divergence
+    window; both policies report "neither" identically."""
+    out = _base_settled_fields(row, now_iso_)
+    out.update(outcome="neither", strand_side="", t_fill="", dispose_mid="", fee_c=0, pnl=0.0,
+               status="settled",
+               p300_outcome="neither", p300_dispose_mid="", p300_fee_c=0, p300_pnl=0.0,
+               p300_status="settled")
+    return out
 
 
 def make_expired_row(row, now_iso_):
-    return {"settle_ts": now_iso_, "asset": row["asset"], "ticker": row["ticker"], "ws": row["ws"],
-            "we": row["we"], "entry_ts": row["entry_ts_iso"], "entry_mid": row["entry_mid"],
-            "w": row["w"], "L_yes": row["L_yes"], "L_no": row["L_no"], "outcome": "expired",
-            "strand_side": row.get("strand_side") or "", "t_fill": row.get("t_fill_iso") or "",
-            "dispose_mid": "", "fee_c": "", "pnl": "", "status": "expired_unscored"}
+    """STALE_ROW_S safety-net trip (book unfetchable for far longer than any policy's deadline
+    could legitimately take). Whole row is excluded from report stats -- all-or-nothing, same as
+    before P300 existed: if P60 had already resolved but P300 got stuck, that P60 result is lost
+    along with P300's rather than partially reported, matching this safety net's existing
+    philosophy elsewhere in the module (see STALE_ROW_S docstring)."""
+    out = _base_settled_fields(row, now_iso_)
+    out.update(outcome="expired", strand_side=row.get("strand_side") or "",
+               t_fill=row.get("t_fill_iso") or "", dispose_mid="", fee_c="", pnl="",
+               status="expired_unscored",
+               p300_outcome="", p300_dispose_mid="", p300_fee_c="", p300_pnl="",
+               p300_status="expired_unscored")
+    return out
+
+
+def make_dual_settled_row(row, now_iso_):
+    """Both disposal-policy tracks reached a terminal outcome (possibly at different times, via
+    different mechanisms -- one locked while the other disposed, etc). P60's result fills the
+    original/unchanged top-level columns; P300's result fills the new p300_* columns."""
+    p60 = row["p60_result"]
+    p300 = row["p300_result"]
+    out = _base_settled_fields(row, now_iso_)
+    out.update(outcome=p60["outcome"], strand_side=row.get("strand_side") or "",
+               t_fill=row.get("t_fill_iso") or "", dispose_mid=p60["dispose_mid"],
+               fee_c=p60["fee_c"], pnl=p60["pnl"], status="settled",
+               p300_outcome=p300["outcome"], p300_dispose_mid=p300["dispose_mid"],
+               p300_fee_c=p300["fee_c"], p300_pnl=p300["pnl"], p300_status="settled")
+    return out
 
 
 # --------------------------------------------------------------------------------------------
@@ -337,13 +403,33 @@ def fetch_market(ticker):
 # --------------------------------------------------------------------------------------------
 # state I/O
 # --------------------------------------------------------------------------------------------
+def upgrade_row_for_p300(row):
+    """Backward-compat: pending rows written by the pre-P300 code (or an armed row that has not
+    yet been through a strand under the new code) lack the p60_done/p60_result/p300_* bookkeeping
+    fields. Initialize them in place so the dual-track state machine can pick the row up exactly
+    where it left off -- an in-flight "stranded" row gets a P300 deadline computed from its
+    existing t_fill/we (so it starts watching for P300 immediately instead of losing that data);
+    an "armed" row just gets inert defaults since neither policy is live until it strands. Idempo-
+    tent (a no-op on a row that already has the fields)."""
+    row.setdefault("p60_done", False)
+    row.setdefault("p60_result", None)
+    row.setdefault("p300_done", False)
+    row.setdefault("p300_result", None)
+    if row.get("state") == "stranded" and row.get("p300_deadline") is None:
+        row["p300_deadline"] = p300_deadline_for(row["t_fill"], row["we"])
+    else:
+        row.setdefault("p300_deadline", None)
+    return row
+
+
 def load_pending(path):
     if not os.path.exists(path):
         return []
     try:
-        return json.load(open(path))
+        rows = json.load(open(path))
     except Exception:
         return []
+    return [upgrade_row_for_p300(r) for r in rows]
 
 
 def append_settled_csv(path, rows):
@@ -370,6 +456,40 @@ def append_daily_jsonl(state_dir, date_str, rows):
 # --------------------------------------------------------------------------------------------
 # one polling cycle: advance every open row, then discover+arm new windows
 # --------------------------------------------------------------------------------------------
+def _settle_policy(row, done_key, result_key, deadline, other_crossed, exit_mid, now_ts, now_iso_,
+                    get_market):
+    """Advance ONE disposal-policy track (P60 or P300) for a stranded row, in place. No-op if
+    that policy already reached a terminal outcome. Mutates row[done_key]/row[result_key] when it
+    transitions; does not touch the other policy's keys, so P60 and P300 progress independently
+    off the same other_crossed/exit_mid inputs -- one can lock/dispose while the other keeps
+    watching, which is exactly how the two policies are meant to diverge."""
+    if row[done_key]:
+        return
+    if other_crossed:
+        row[result_key] = {"outcome": "locked", "dispose_mid": "", "fee_c": 0,
+                            "pnl": lock_pnl(row["w"]), "t_settle_iso": now_iso_}
+        row[done_key] = True
+        return
+    if now_ts < deadline:
+        return                                       # still watching -- not this policy's turn yet
+    if exit_mid is not None:
+        pnl, fee_c, _ = dispose_outcome(row["strand_side"], row["cost"], exit_mid)
+        row[result_key] = {"outcome": "disposed", "dispose_mid": round(exit_mid, 4),
+                            "fee_c": fee_c, "pnl": pnl, "t_settle_iso": now_iso_}
+        row[done_key] = True
+        return
+    if now_ts >= row["we"]:                          # book unavailable AND window has closed --
+        m = get_market()                              # fall back to actual settlement (RIDE-FORCED)
+        status = (m.get("status") or "").lower(); result = (m.get("result") or "").lower()
+        if status == "finalized" and result in ("yes", "no"):
+            resolved_yes = 1.0 if result == "yes" else 0.0
+            pnl = ride_pnl(row["strand_side"], row["cost"], resolved_yes)
+            row[result_key] = {"outcome": "ride_forced", "dispose_mid": "", "fee_c": 0,
+                                "pnl": pnl, "t_settle_iso": now_iso_}
+            row[done_key] = True
+    # else: transient fetch failure past deadline with window still open -- retry next cycle
+
+
 def _advance_row(row, now):
     """Fetch the row's book once and return (new_row_or_None, settled_row_or_None). new_row is
     None when the row has settled/expired this cycle; settled_row is None while still open."""
@@ -391,34 +511,43 @@ def _advance_row(row, now):
                 return None, make_locked_row(row, now_iso_)
             if yes_hit or no_hit:
                 side = "yes" if yes_hit else "no"
+                t_fill = now_ts
                 new_row = dict(row)
-                new_row.update(state="stranded", strand_side=side, t_fill=now_ts,
+                new_row.update(state="stranded", strand_side=side, t_fill=t_fill,
                                 t_fill_iso=now_iso_,
                                 cost=row["L_yes"] if side == "yes" else row["L_no"],
-                                dispose_deadline=now_ts + DISPOSE_DELAY_S)
+                                dispose_deadline=t_fill + DISPOSE_DELAY_S,
+                                p60_done=False, p60_result=None,
+                                p300_deadline=p300_deadline_for(t_fill, row["we"]),
+                                p300_done=False, p300_result=None)
                 return new_row, None
         if now_ts >= row["we"]:
             return None, make_neither_row(row, now_iso_)
         return row, None                            # transient fetch failure -- try again next cycle
 
-    # row["state"] == "stranded"
+    # row["state"] == "stranded" -- advance BOTH disposal-policy tracks off the same tape read.
+    new_row = upgrade_row_for_p300(dict(row))         # tolerate rows from the pre-P300 schema
+    other_crossed = False
     if have_book:
-        yes_hit, no_hit = check_leg_fill(yb, ya, row["L_yes"], row["trig_no"])
-        other_hit = no_hit if row["strand_side"] == "yes" else yes_hit
-        if other_hit:
-            return None, make_locked_row(row, now_iso_)
+        yes_hit, no_hit = check_leg_fill(yb, ya, new_row["L_yes"], new_row["trig_no"])
+        other_crossed = no_hit if new_row["strand_side"] == "yes" else yes_hit
     exit_mid = round((yb + ya) / 2.0, 4) if have_book else None
-    if now_ts >= row["dispose_deadline"]:
-        if exit_mid is not None:
-            return None, make_disposed_row(row, exit_mid, now_iso_)
-        if now_ts >= row["we"]:                    # book unavailable AND window has closed --
-            m = fetch_market(row["ticker"])          # fall back to actual settlement (RIDE-FORCED)
-            status = (m.get("status") or "").lower(); result = (m.get("result") or "").lower()
-            if status == "finalized" and result in ("yes", "no"):
-                resolved_yes = 1.0 if result == "yes" else 0.0
-                return None, make_ride_forced_row(row, resolved_yes, now_iso_)
-        return row, None                            # keep trying next cycle
-    return row, None
+
+    market_cache = {}
+
+    def get_market():
+        if "m" not in market_cache:
+            market_cache["m"] = fetch_market(new_row["ticker"])
+        return market_cache["m"]
+
+    _settle_policy(new_row, "p60_done", "p60_result", new_row["dispose_deadline"], other_crossed,
+                    exit_mid, now_ts, now_iso_, get_market)
+    _settle_policy(new_row, "p300_done", "p300_result", new_row["p300_deadline"], other_crossed,
+                    exit_mid, now_ts, now_iso_, get_market)
+
+    if new_row["p60_done"] and new_row["p300_done"]:
+        return None, make_dual_settled_row(new_row, now_iso_)
+    return new_row, None                              # at least one policy still watching
 
 
 def run_cycle(state_dir, pending):
@@ -457,7 +586,11 @@ def run_cycle(state_dir, pending):
                "we": window["we"], "entry_ts": now.timestamp(), "entry_ts_iso": iso(now),
                "entry_mid": entry_mid, "w": BOX_W, "L_yes": L_yes, "L_no": L_no,
                "trig_no": trig_no, "strand_side": None, "t_fill": None, "t_fill_iso": None,
-               "cost": None, "dispose_deadline": None}
+               "cost": None, "dispose_deadline": None,
+               # P60/P300 dual-track bookkeeping -- inert until the row strands (see
+               # _advance_row's "armed" branch, which populates these on the first leg fill).
+               "p60_done": False, "p60_result": None,
+               "p300_deadline": None, "p300_done": False, "p300_result": None}
         still_pending.append(row)
         new_rows.append(row)
         have.add(window["ticker"])
