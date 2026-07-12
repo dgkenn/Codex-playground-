@@ -1412,6 +1412,329 @@ def test_portfolio_aware_flag_off_byte_identical():
 
 
 # ===========================================================================
+# TEST 17 — --seed-empty: empty-book detection (one-sided must NOT qualify)
+# ===========================================================================
+
+def test_seed_book_state():
+    """
+    kt.seed_book_state(ws_entry) classifies a ws_state[ticker] entry precisely, which the
+    empty-book seeding feature (--seed-empty) needs because get_book_cached()/get_book() both
+    collapse a ONE-SIDED book to the exact same all-None tuple as a fully empty one (fine for
+    "stand down", not precise enough to gate a feature that must never seed into a one-sided
+    book). Checks all four classes: empty, one_sided (both directions), has_book, unknown.
+    """
+    name = "T17: --seed-empty empty-book detection (one-sided does NOT qualify)"
+    try:
+        observations = []
+
+        # 'unknown': no WS snapshot yet for this ticker at all
+        assert kt.seed_book_state(None) == "unknown"
+        observations.append("no_snapshot_unknown=True")
+
+        # 'empty': both sides have no resting size
+        st_empty = {"yes": {}, "no": {}}
+        assert kt.seed_book_state(st_empty) == "empty"
+        observations.append("both_sides_empty_dicts=empty")
+
+        # 'has_book': both sides populated
+        st_full = {"yes": {0.45: 100.0}, "no": {0.50: 80.0}}
+        assert kt.seed_book_state(st_full) == "has_book"
+        observations.append("both_sides_populated=has_book")
+
+        # 'one_sided': yes bids only, no asks (no no-side bids) -- must NOT be treated as empty
+        st_yes_only = {"yes": {0.45: 50.0}, "no": {}}
+        assert kt.seed_book_state(st_yes_only) == "one_sided"
+        observations.append("yes_only_one_sided=True_not_empty")
+
+        # 'one_sided': no bids (yes-ask side) only, no yes bids -- the mirror case
+        st_no_only = {"yes": {}, "no": {0.55: 30.0}}
+        assert kt.seed_book_state(st_no_only) == "one_sided"
+        observations.append("no_only_one_sided=True_not_empty")
+
+        # missing keys entirely (defensive: .get(...) or {} pattern) still classifies correctly
+        assert kt.seed_book_state({}) == "empty"
+        observations.append("missing_keys_treated_as_empty_dicts=empty")
+
+        # a zero-quantity level should never appear (ws feeder pops empty levels -- see
+        # _apply_delta's epsilon pop), but if it somehow did, a non-empty dict with ANY key still
+        # counts as "has size" per this classifier (the feeder is the one responsible for keeping
+        # the dict clean; the classifier just checks truthiness of the dict).
+        assert kt.seed_book_state({"yes": {0.45: 0.01}, "no": {}}) == "one_sided"
+        observations.append("nonzero_residual_still_one_sided=True")
+
+        record(name, True, "; ".join(observations))
+    except Exception as e:
+        record(name, False, f"{type(e).__name__}: {e}")
+
+
+# ===========================================================================
+# TEST 18 — --seed-empty: WIDTH FLOOR math
+# ===========================================================================
+
+def test_seed_width_floor():
+    """
+    kt.seed_width_floor(tau_s, sigma) implements floor_cents = 100 * 1.0 * sigma * sqrt(tau_s/900)
+    (the --seed-empty spec's documented formula). kt.seed_effective_width(cfg, tau_s, sigma) is
+    max(--seed-width, that floor) -- the floor can only WIDEN the configured default.
+    """
+    name = "T18: --seed-empty WIDTH FLOOR math"
+    try:
+        observations = []
+        import math as _math
+
+        # hand-computed reference values
+        tau_s, sigma = 900.0, 6.5e-5   # full window, offline-calibrated BTC sigma_default
+        floor = kt.seed_width_floor(tau_s, sigma)
+        expected = 100.0 * 1.0 * sigma * _math.sqrt(tau_s / 900.0)
+        assert abs(floor - expected) < 1e-12, f"floor={floor} expected={expected}"
+        observations.append(f"formula_matches_hand_calc floor={floor:.6f}c")
+
+        # sqrt(tau/900) scaling: half the time-to-close -> floor shrinks by sqrt(0.5)
+        floor_half = kt.seed_width_floor(450.0, sigma)
+        assert abs(floor_half - floor * _math.sqrt(0.5)) < 1e-9
+        observations.append("tau_sqrt_scaling_correct=True")
+
+        # tau_s=0 -> floor is exactly 0 (no time left, no expected move)
+        assert kt.seed_width_floor(0.0, sigma) == 0.0
+        observations.append("tau_zero_floor_zero=True")
+
+        # negative tau_s clamped to 0 (defensive -- callers pass max(tau_left, 0) upstream too)
+        assert kt.seed_width_floor(-10.0, sigma) == 0.0
+        observations.append("negative_tau_clamped=True")
+
+        # effective width: tiny BTC-scale sigma at default --seed-width=4c -> floor is negligible,
+        # configured default wins
+        eff_small = kt.seed_effective_width(4.0, 900.0, sigma)
+        assert eff_small == 4.0, f"expected configured default to win, got {eff_small}"
+        observations.append(f"floor_negligible_default_wins eff={eff_small}")
+
+        # effective width: a large (stress-regime) sigma pushes the floor ABOVE the configured
+        # default -- the floor must win (can only widen, never tighten)
+        big_sigma = 0.05   # ~770x the calibrated default -- simulates a volatile-regime spike
+        floor_big = kt.seed_width_floor(900.0, big_sigma)
+        assert floor_big > 4.0, f"test fixture should produce a floor > 4c, got {floor_big}"
+        eff_big = kt.seed_effective_width(4.0, 900.0, big_sigma)
+        assert eff_big == floor_big, f"floor should win when it exceeds configured width: {eff_big} vs {floor_big}"
+        assert eff_big > 4.0
+        observations.append(f"floor_wins_when_larger eff={eff_big:.2f}c > cfg=4.0c")
+
+        record(name, True, "; ".join(observations))
+    except Exception as e:
+        record(name, False, f"{type(e).__name__}: {e}")
+
+
+# ===========================================================================
+# TEST 19 — --seed-empty: spot-feed staleness -> no-op
+# ===========================================================================
+
+def test_seed_spot_staleness():
+    """
+    kt.seed_spot_is_stale(last_update_ts, ok, s0, now, max_age_s) gates the "if spot feed
+    unavailable or older than --seed-max-age-s -> do nothing" rule. True in every case that must
+    no-op: never updated, feed not ok, no window anchor, or update older than the max age.
+    """
+    name = "T19: --seed-empty spot-feed staleness -> no-op"
+    try:
+        observations = []
+        now = 1_000_000.0
+        max_age = 10.0
+
+        # never updated (no tape at all) -> stale
+        assert kt.seed_spot_is_stale(None, True, 50000.0, now, max_age) is True
+        observations.append("never_updated_stale=True")
+
+        # feed not ok (last fetch failed) even if recently timestamped -> stale
+        assert kt.seed_spot_is_stale(now - 1.0, False, 50000.0, now, max_age) is True
+        observations.append("not_ok_stale=True")
+
+        # no window anchor (s0 is None, e.g. window just rolled and anchor fetch hasn't landed)
+        assert kt.seed_spot_is_stale(now - 1.0, True, None, now, max_age) is True
+        observations.append("no_window_anchor_stale=True")
+
+        # exactly at the max-age boundary -> NOT stale (age > max_age_s is the trigger, not >=)
+        assert kt.seed_spot_is_stale(now - max_age, True, 50000.0, now, max_age) is False
+        observations.append("exactly_at_max_age_not_stale=True")
+
+        # one tick past the boundary -> stale
+        assert kt.seed_spot_is_stale(now - max_age - 0.01, True, 50000.0, now, max_age) is True
+        observations.append("just_past_max_age_stale=True")
+
+        # fresh, ok, anchored -> not stale
+        assert kt.seed_spot_is_stale(now - 0.5, True, 50000.0, now, max_age) is False
+        observations.append("fresh_ok_anchored_not_stale=True")
+
+        record(name, True, "; ".join(observations))
+    except Exception as e:
+        record(name, False, f"{type(e).__name__}: {e}")
+
+
+# ===========================================================================
+# TEST 20 — --seed-empty: re-price discipline thresholds
+# ===========================================================================
+
+def test_seed_reprice_discipline():
+    """
+    kt.seed_should_reprice(fair_now, fair_at_placement, seed_width_cfg): only cancel/re-post a
+    seed quote if fair moved more than HALF the configured --seed-width since placement (keeps
+    queue priority otherwise). Also covers kt.seed_target_cents' bid<ask/clamping invariants,
+    since the reprice trigger and the initial placement share the same fair-cents convention.
+    """
+    name = "T20: --seed-empty re-price discipline thresholds"
+    try:
+        observations = []
+        width = 4.0   # --seed-width default; threshold is width/2 = 2.0c
+
+        # no movement -> no reprice
+        assert kt.seed_should_reprice(50.0, 50.0, width) is False
+        observations.append("no_move_no_reprice=True")
+
+        # exactly at threshold (2.0c move) -> NOT yet (condition is strictly '>', with a small eps)
+        assert kt.seed_should_reprice(52.0, 50.0, width) is False
+        observations.append("exactly_at_half_width_no_reprice=True")
+
+        # just past threshold -> reprice
+        assert kt.seed_should_reprice(52.2, 50.0, width) is True
+        observations.append("just_past_half_width_reprices=True")
+
+        # symmetric in the negative direction
+        assert kt.seed_should_reprice(47.8, 50.0, width) is True
+        observations.append("negative_direction_symmetric=True")
+
+        # scales with the configured width: a wider --seed-width raises the threshold
+        assert kt.seed_should_reprice(53.0, 50.0, 8.0) is False   # 3c move, threshold now 4c
+        observations.append("wider_seed_width_raises_threshold=True")
+
+        # --- seed_target_cents: bid/ask ordering + clamping invariants used at placement time,
+        # which is what seed_fair_cents (the reprice baseline) is derived from ---
+        yb, ya = kt.seed_target_cents(0.50, 4.0)
+        assert (yb, ya) == (46, 54), f"expected (46,54) got ({yb},{ya})"
+        observations.append(f"target_cents_centered={yb},{ya}")
+
+        # extreme fair near the boundary -> both clamped into [1,99], ask still > bid
+        yb2, ya2 = kt.seed_target_cents(0.99, 4.0)
+        assert 1 <= yb2 < ya2 <= 99, f"invariant violated: ({yb2},{ya2})"
+        observations.append(f"near_ceiling_clamped_and_ordered={yb2},{ya2}")
+
+        yb3, ya3 = kt.seed_target_cents(0.01, 4.0)
+        assert 1 <= yb3 < ya3 <= 99, f"invariant violated: ({yb3},{ya3})"
+        observations.append(f"near_floor_clamped_and_ordered={yb3},{ya3}")
+
+        # pathological: huge width at an extreme fair still can't invert bid/ask
+        yb4, ya4 = kt.seed_target_cents(0.995, 40.0)
+        assert 1 <= yb4 < ya4 <= 99, f"invariant violated: ({yb4},{ya4})"
+        observations.append(f"huge_width_still_ordered={yb4},{ya4}")
+
+        record(name, True, "; ".join(observations))
+    except Exception as e:
+        record(name, False, f"{type(e).__name__}: {e}")
+
+
+# ===========================================================================
+# TEST 21 — --seed-empty: flag-off -> byte-identical to pristine (pre-feature) behavior
+# ===========================================================================
+
+def test_seed_empty_flag_off_byte_identical():
+    """
+    --seed-empty defaults to False. Proves the empty-book-else-branch of the main loop's book-poll
+    section is UNCHANGED for a flag-off run vs the pristine (pre---seed-empty) HEAD:
+      1. argparse default is False.
+      2. Structural: the seeding call sites in the book-poll section are gated behind
+         `if a.seed_empty:` (grep source), so with the flag off the branch executes exactly the
+         same two statements (`time.sleep(a.react_poll); continue`) as the pristine version, and
+         no seed_fv/network object is even constructed (`seed_fv = SpotFair(...) if a.seed_empty
+         else None`).
+      3. Diffs the current book-poll branch's surviving (non-seed-gated) statements against
+         `git show HEAD:kalshi_trader.py` (this repo's pristine pre-feature commit) to confirm the
+         original two-line body is present verbatim and unindented/unwrapped by any new
+         unconditional code.
+    """
+    name = "T21: --seed-empty flag-off byte-identical to pristine HEAD"
+    try:
+        observations = []
+        import inspect
+        import re
+        import subprocess
+        src = inspect.getsource(kt)
+
+        # --- argparse default ---
+        m = None
+        for line in src.splitlines():
+            if '"--seed-empty"' in line:
+                m = line
+                break
+        assert m is not None and "default=False" in m, f"--seed-empty must default False: {m!r}"
+        observations.append("argparse_default_is_False=True")
+
+        # --- seed_fv construction itself is flag-gated (no SpotFair instance/network object built
+        # when the flag is off) ---
+        assert "SpotFair(requests.Session(), symbol=" in src
+        ctor_line = next(l for l in src.splitlines() if "seed_fv = SpotFair(" in l)
+        assert "if a.seed_empty else None" in ctor_line, \
+            f"seed_fv construction must be flag-gated: {ctor_line!r}"
+        observations.append("seed_fv_construction_flag_gated=True")
+
+        # --- the book-poll branch: locate it and confirm the seeding call sites are each behind
+        # their own `if a.seed_empty:` ---
+        bp_idx = src.index('# --- book poll (REST; react-poll cadence) ---')
+        bp_block = src[bp_idx: bp_idx + 1400]
+        # the pristine two-line body must still be present, unconditionally reachable when the
+        # book has no bb/ba (i.e. NOT itself wrapped in `if a.seed_empty:`)
+        assert "time.sleep(a.react_poll); continue" in bp_block
+        sleep_idx = bp_block.index("time.sleep(a.react_poll); continue")
+        preceding = bp_block[:sleep_idx]
+        # the seed-tick call must appear before the sleep/continue, gated behind its own flag check
+        assert "_seed_tick(" in preceding, "seed tick call must precede the else-branch sleep"
+        seed_call_idx = preceding.index("_seed_tick(")
+        gate_snippet = preceding[max(0, seed_call_idx - 60):seed_call_idx]
+        assert "if a.seed_empty:" in gate_snippet, \
+            f"_seed_tick call must be immediately gated by 'if a.seed_empty:': {gate_snippet!r}"
+        observations.append("seed_tick_call_gated_before_original_sleep_continue=True")
+
+        # the "book repopulated" drop must also be gated, inside the OTHER (bb/ba present) arm
+        assert "if a.seed_empty and any(m.get(\"seeded\") for m in resting.values()):" in bp_block
+        observations.append("seed_drop_on_repopulation_gated=True")
+
+        # --- diff against pristine git HEAD's book-poll branch: the exact original 4-statement
+        # body (fresh/deadman-tripped-reset guard + else sleep/continue) must be present verbatim,
+        # proving the flag-off control flow through this section is unchanged, just with new
+        # (gated, inert) branches interleaved. Skipped gracefully if git/HEAD isn't available in
+        # this checkout (e.g. a shallow export with no history) -- the structural checks above
+        # already cover the invariant this diff exists to double-check.
+        try:
+            head_src = subprocess.run(
+                ["git", "show", "HEAD:kalshi_trader.py"],
+                cwd=os.path.dirname(os.path.abspath(kt.__file__)),
+                capture_output=True, text=True, timeout=10,
+            ).stdout
+        except Exception:
+            head_src = ""
+        if head_src:
+            head_bp_idx = head_src.find('# --- book poll (REST; react-poll cadence) ---')
+            if head_bp_idx >= 0:
+                head_block = head_src[head_bp_idx: head_bp_idx + 400]
+                for line in (
+                    'ybb, ybq, yba, yaq, _fresh = get_book_cached(mk["cid"])',
+                    "if _fresh:",
+                    "last_book_ok = time.time()",
+                    'if ybb is not None and yba is not None:',
+                    "deadman_tripped = False",
+                    "else:",
+                    "time.sleep(a.react_poll); continue",
+                ):
+                    assert line in head_block, f"pristine HEAD missing expected line {line!r}"
+                    assert line in bp_block, f"current source missing pristine line {line!r}"
+                observations.append("pristine_HEAD_lines_all_present_unchanged=True")
+            else:
+                observations.append("pristine_HEAD_marker_not_found_skipped=True")
+        else:
+            observations.append("git_head_diff_skipped_no_history_available=True")
+
+        record(name, True, "; ".join(observations))
+    except Exception as e:
+        record(name, False, f"{type(e).__name__}: {e}")
+
+
+# ===========================================================================
 # BONUS: Test microprice and gate_check helpers directly (from kt module)
 # ===========================================================================
 
@@ -1491,6 +1814,11 @@ def main():
     test_portfolio_derisking_exemption()
     test_portfolio_failsafe_snap_to_one()
     test_portfolio_aware_flag_off_byte_identical()
+    test_seed_book_state()
+    test_seed_width_floor()
+    test_seed_spot_staleness()
+    test_seed_reprice_discipline()
+    test_seed_empty_flag_off_byte_identical()
 
     # Summary table
     print()

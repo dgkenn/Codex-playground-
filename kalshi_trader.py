@@ -22,6 +22,7 @@ import atexit
 import base64
 import collections
 import json
+import math
 import os
 import signal
 import threading
@@ -33,6 +34,7 @@ from datetime import datetime, timezone
 import requests
 
 import notify          # Telegram alerts (no-op if env unset)
+from fvfeed import SpotFair   # opt-in --seed-empty: spot-implied fair for empty-book seeding
 from live_metrics import LiveMetrics
 
 BASE = "https://api.elections.kalshi.com/trade-api/v2"
@@ -805,6 +807,92 @@ def gate_check(side, price, yes_bid, yes_ask, net_delta, gate, fv_margin, bq=0.0
         return mp > yes_equiv + margin
 
 
+# --- OPT-IN EMPTY-BOOK SEEDING (--seed-empty) pure helpers -----------------------------------
+# Pulled out to module level (same pattern as kelly_size/gate_check/portfolio_mult_budget above)
+# so the empty-book classification, width-floor, staleness, re-price-threshold, and target-price
+# math is unit-testable without spinning up main()'s live/dry-run event loop. main()'s nested
+# `_seed_tick` closure (state: resting orders, cash, net_delta, SpotFair instance) calls these;
+# see kalshi_trader.py's main() for that wiring and the full design rationale.
+SEED_WINDOW_S = 900.0    # KX*15M window length (s) -- the width-floor sqrt(tau_s/900) normalizer
+SEED_FLOOR_Z = 1.0       # width-floor "Z" (one sigma of the remaining-window expected move)
+
+
+def seed_book_state(ws_entry):
+    """Classify book emptiness on BOTH sides from a ws_state[ticker] entry (or None if no WS
+    snapshot has arrived yet for this ticker). This is deliberately NOT derived from
+    get_book_cached()/get_book(): both of those collapse a ONE-SIDED book (bids with no asks, or
+    vice versa) to the exact same all-None result as a FULLY EMPTY book -- fine for "should we
+    stand down" (yes, either way) but not precise enough to gate empty-book seeding, which must
+    NEVER fire on a one-sided book.
+    Returns:
+      'empty'     -- no yes-side bids AND no no-side bids (no-side bids are the yes-ask side of
+                     the book) -- the ONLY state that qualifies for seeding.
+      'one_sided' -- exactly one side has any resting size -- does NOT qualify.
+      'has_book'  -- both sides have resting size -- normal book-anchored quoting applies.
+      'unknown'   -- no WS snapshot for this ticker yet -- NOT evidence of an empty book, so
+                     never treated as 'empty' (avoids seeding on a false negative right after a
+                     window rollover, before the WS feeder's first snapshot arrives)."""
+    if ws_entry is None:
+        return "unknown"
+    yb = ws_entry.get("yes") or {}   # yes-side resting bids
+    nb = ws_entry.get("no") or {}    # no-side resting bids == the yes-ask side of the book
+    if not yb and not nb:
+        return "empty"
+    if not yb or not nb:
+        return "one_sided"
+    return "has_book"
+
+
+def seed_width_floor(tau_s, sigma, z=SEED_FLOOR_Z, window_s=SEED_WINDOW_S):
+    """WIDTH FLOOR: being the SOLE maker on an empty book means an informed taker can pick off a
+    too-tight quote with zero competing flow to absorb the loss first -- the half-spread must
+    cover the expected move over the time this quote will sit unchallenged:
+        floor_cents = 100 * Z * sigma_per_s * sqrt(tau_s / 900)
+    Z=1.0 (one sigma of the remaining-window move; 100x converts the probability-space sigma to
+    cents); sigma_per_s is SpotFair's live per-second log-vol estimate, which itself falls back
+    internally to the offline-calibrated constant when the tape hasn't warmed up yet (see
+    fvfeed.SpotFair.sigma) -- so "sigma if available, else the static default" is already
+    satisfied by the caller passing seed_fv.sigma() through unchanged, no extra branching needed
+    here. 900 = the KX*15M window length (s), so sqrt(tau_s/900) normalizes remaining time to a
+    fraction of a full window."""
+    return 100.0 * z * sigma * math.sqrt(max(tau_s, 0.0) / window_s)
+
+
+def seed_effective_width(seed_width_cfg, tau_s, sigma):
+    """Effective half-spread used to quote: max(--seed-width, the width floor). The floor can
+    only WIDEN the configured default, never tighten it."""
+    return max(seed_width_cfg, seed_width_floor(tau_s, sigma))
+
+
+def seed_should_reprice(fair_cents_now, fair_cents_at_placement, seed_width_cfg):
+    """RE-PRICE DISCIPLINE: keep queue priority -- only cancel/re-post a seed quote if fair moved
+    more than half the CONFIGURED --seed-width since placement. Deliberately compares against the
+    static --seed-width (not the dynamic per-tick floor, which only ever widens what gets quoted)
+    so the reprice trigger is a fixed, testable threshold independent of tau decay."""
+    return abs(fair_cents_now - fair_cents_at_placement) > seed_width_cfg / 2.0 + 1e-9
+
+
+def seed_spot_is_stale(last_update_ts, ok, s0, now, max_age_s):
+    """True if the SpotFair feed is unavailable (never updated, not ok, or no window anchor) OR
+    its last successful poll is older than --seed-max-age-s. Caller's contract on True: do
+    nothing (no place, no keep-resting quotes) and log once, rate-limited -- never quote off a
+    stale model."""
+    if last_update_ts is None or not ok or s0 is None:
+        return True
+    return (now - last_update_ts) > max_age_s
+
+
+def seed_target_cents(fair_p_up, eff_width_cents):
+    """(yes_bid_cents, yes_ask_cents) around fair, clamped to the tradeable [1, 99] range with the
+    ask forced strictly above the bid (>=1c) if width/clamping would otherwise collapse them."""
+    fair_cents = fair_p_up * 100.0
+    yb = max(1, round(fair_cents - eff_width_cents))
+    ya = min(99, round(fair_cents + eff_width_cents))
+    if ya <= yb:
+        ya = min(99, yb + 1)
+    return yb, ya
+
+
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
@@ -1031,6 +1119,40 @@ def main():
     ap.add_argument("--port-refresh-s", type=float, default=120,
                     help="--portfolio-aware: PortfolioState refresh cadence (s). Data older than "
                          "3x this is treated as stale -> multipliers fail-safe to 1.0.")
+    ap.add_argument("--seed-empty", action="store_true", default=False,
+                    help="OPT-IN, OFF by default (zero behavior change unless set). Normally an "
+                         "empty book (no resting YES bids AND no resting YES asks from ANYONE) "
+                         "makes the bot stand down -- it anchors quotes off the existing book. But "
+                         "an empty book is the single most favorable maker condition (zero queue "
+                         "competition, full spread to whoever quotes). When enabled, on a book "
+                         "confirmed empty on BOTH sides (a one-sided book does NOT qualify -- see "
+                         "_seed_book_state), post post-only 1-lot quotes around the SpotFair spot-"
+                         "implied fair P(up) instead. Being the SOLE maker also means an informed "
+                         "taker can pick you off with zero competing flow to absorb it first, so "
+                         "width is floored by expected move (--seed-width) and quotes are pulled the "
+                         "instant fair drifts past half the width or the book is no longer empty. "
+                         "PRE-REGISTERED EVALUATION BAR: seeded orders are tagged {'seeded': true} "
+                         "in the order-lifecycle log; recon window rows gain n_seeded_fills/"
+                         "seeded_net. If seeded_net < 0 after >=30 seeded fills, this mode should be "
+                         "disabled pending review -- that is an operator action off the recon data, "
+                         "not an automatic kill.")
+    ap.add_argument("--seed-width", type=float, default=4.0,
+                    help="--seed-empty: half-spread (cents) each side of the SpotFair fair when "
+                         "seeding an empty book -- YES bid = fair-width, YES ask = fair+width. Also "
+                         "the re-price threshold (fair moving > width/2 since placement reprices the "
+                         "seed quotes). Floored per-tick by the expected-move formula: effective "
+                         "width = max(--seed-width, 100*1.0*sigma*sqrt(tau_s/900)) -- see the "
+                         "WIDTH FLOOR comment on _seed_width_floor.")
+    ap.add_argument("--seed-max-age-s", type=float, default=10.0,
+                    help="--seed-empty: max SpotFair staleness (s). If the spot feed has no update "
+                         "newer than this (or never got one), seeding no-ops -- does not place or "
+                         "keep resting seed quotes -- and logs one rate-limited line. Never quote "
+                         "off a stale model.")
+    ap.add_argument("--seed-tau-min-s", type=int, default=150,
+                    help="--seed-empty: never seed (and cancel any resting seed quotes) inside this "
+                         "many seconds of window close -- the same force-flatten discipline every "
+                         "other rung gets, applied earlier because a sole-maker fill this late has "
+                         "no time left to find a natural pair.")
     a = ap.parse_args()
 
     live = a.live and os.environ.get("I_UNDERSTAND_REAL_MONEY") == "yes"
@@ -1111,6 +1233,16 @@ def main():
     side_cooldown = {"yes": 0.0, "no": 0.0}   # no re-quote on a side until this ts (anti-knife)
     win_fills = {"yes": 0, "no": 0}            # fills per side THIS window (trend-exposure cap)
     win_cost = {"yes": 0.0, "no": 0.0}         # $ spent per side THIS window (box telemetry)
+
+    # --- OPT-IN empty-book seeding (--seed-empty; OFF by default -> seed_fv stays None and every
+    # seeding closure below no-ops on that, zero cost/behavior change). SpotFair instance mirrors
+    # kalshi_collect.KalshiMarket's own (same class, same per-asset symbol construction) so the fair
+    # value seeded quotes anchor to is the SAME validated model, not a reimplementation.
+    seed_fv = SpotFair(requests.Session(), symbol=f"{a.asset.upper()}USDT") if a.seed_empty else None
+    _seed_poll_ts = {"t": 0.0}    # rate-limits SpotFair.update() to >=1/s (independent of --react-poll)
+    _seed_log_ts = {"t": 0.0}     # rate-limits the "spot unavailable/stale" no-op log line
+    seed_win = {"n_fills": 0, "cash": 0.0, "pos_yes": 0.0, "pos_no": 0.0}   # THIS window's seeded-fill
+    # accumulator (audit: recon rows compute n_seeded_fills/seeded_net from this, reset at rollover).
     # COMPREHENSIVE per-window microstructure (live RCA 2026-06-13): the re-validation gate (strand
     # rate, legging gap, maker/taker mix, dispose-cross firing) plus the offline strand analysis read
     # this. Written per window to kalshi_winrec_<asset>15m.jsonl, reset at rollover.
@@ -1135,11 +1267,15 @@ def main():
     _LIFECYCLE_PATH = os.path.join("gha_data", f"order_lifecycle_{a.asset}15m_r{_RUNID}.jsonl")
 
     def _lifecycle_write(event, order_id, side, price, size, queue_ahead_est,
-                         port_mult_budget=None, port_mult_delta=None):
+                         port_mult_budget=None, port_mult_delta=None, seeded=False):
         """port_mult_budget/port_mult_delta (AUDITABILITY, PORTFOLIO-AWARE SIZING): the two
         multipliers applied to THIS sizing decision when --portfolio-aware is on; always null
         when it's off (or for event types the portfolio-aware path doesn't size, e.g. cancels) --
-        every sizing decision stays reconstructable from this log alone."""
+        every sizing decision stays reconstructable from this log alone.
+        seeded (AUDIT, --seed-empty): True for every event on an order that was placed by the
+        empty-book seeding path; False (default) for everything else -- always present (not just
+        when true) so seeded vs. normal rows are trivially filterable for the pre-registered
+        seeded_net evaluation."""
         try:
             os.makedirs("gha_data", exist_ok=True)
             with open(_LIFECYCLE_PATH, "a") as _lf:
@@ -1151,6 +1287,7 @@ def main():
                                         if port_mult_budget is not None else None),
                     "port_mult_delta": (round(port_mult_delta, 4)
                                        if port_mult_delta is not None else None),
+                    "seeded": bool(seeded),
                 }) + "\n")
         except Exception:
             pass
@@ -1172,9 +1309,14 @@ def main():
         except Exception:
             return None
 
-    def _recon_write(ws_epoch, requested, fills, net, gross, inv_max):
+    def _recon_write(ws_epoch, requested, fills, net, gross, inv_max,
+                     n_seeded_fills=0, seeded_net=0.0):
         """Append one reconciliation row. Best-effort/non-blocking: any failure here must never
-        affect trading (mirrors the try/except pattern around winrec_fh.write above)."""
+        affect trading (mirrors the try/except pattern around winrec_fh.write above).
+        n_seeded_fills/seeded_net (AUDIT, --seed-empty PRE-REGISTERED EVALUATION): fills against
+        seeded orders and their settled P&L for THIS window only (0/0.0 when --seed-empty is off,
+        or when this window had no seeded fills). The bar: if seeded_net < 0 after >=30 cumulative
+        seeded fills across recon rows, --seed-empty should be disabled pending review."""
         try:
             os.makedirs("gha_data", exist_ok=True)
             with open(_RECON_PATH, "a") as _rf:
@@ -1183,6 +1325,7 @@ def main():
                     "strategy": _STRATEGY_TAG, "fills": int(fills), "requested": int(requested),
                     "fill_rate": round(fills / requested, 4) if requested else 0.0,
                     "net": round(net, 4), "gross": round(gross, 4), "inv_max": round(inv_max, 2),
+                    "n_seeded_fills": int(n_seeded_fills), "seeded_net": round(seeded_net, 4),
                 }) + "\n")
         except Exception:
             pass
@@ -1389,7 +1532,8 @@ def main():
                 ops["cancel"] += 1
                 if ok2:
                     pending_cancel.pop(key, None)        # venue-confirmed gone -> stop counting it
-                    _lifecycle_write("cancel", oid, key[0], key[1], _rem, _meta.get("qahead"))
+                    _lifecycle_write("cancel", oid, key[0], key[1], _rem, _meta.get("qahead"),
+                                     seeded=bool(_meta.get("seeded")))
                 else:
                     ops["cancel_fail"] += 1
                     lm.event("cancel_fail", side=key[0], price=key[1], reason=reason)
@@ -1399,7 +1543,8 @@ def main():
             else:
                 print(f"  [DRY cancel] key={key} reason={reason}")
                 pending_cancel.pop(key, None)
-                _lifecycle_write("cancel", oid, key[0], key[1], _rem, _meta.get("qahead"))
+                _lifecycle_write("cancel", oid, key[0], key[1], _rem, _meta.get("qahead"),
+                                 seeded=bool(_meta.get("seeded")))
         lm.cancel_batch(len(batch), (time.time() - t_sent) * 1e3, ok)
 
     def cancel_all_resting(reason="rollover"):
@@ -1499,7 +1644,7 @@ def main():
             pass
 
     # --- place helper ---
-    def place(side, price, yes_bid, yes_ask, count=None, cross=False, port_mult=None):
+    def place(side, price, yes_bid, yes_ask, count=None, cross=False, port_mult=None, seeded=False):
         """Post one rung. Returns order_id or None. DRY-RUN: prints, returns fake id.
         side='yes'|'no'. price in dollars (up to 4 decimals).
         Post-only guard (cross=False, default): we only place maker BUYs; Kalshi's post_only=True
@@ -1509,7 +1654,9 @@ def main():
         port_mult (AUDITABILITY, PORTFOLIO-AWARE SIZING): optional (mult_budget, mult_delta) tuple
         stamped onto the lifecycle log row when the caller applied portfolio-aware sizing to this
         fill; None (default, and always for cross/chase/dispose call sites that don't size via
-        that path) -> both log fields are null."""
+        that path) -> both log fields are null.
+        seeded (AUDIT, --seed-empty): True when this order is an empty-book seed quote -- stamped
+        onto the lifecycle row so seeded orders are provably tagged from placement through fill."""
         if not cross:
             if side == "yes" and yes_ask is not None and price >= yes_ask:
                 print(f"  [POST-ONLY GUARD] BUY-YES {price} >= yes_ask {yes_ask}; skipped")
@@ -1527,7 +1674,7 @@ def main():
             fake = f"dry_{side}_{price:.4f}_{int(t_dec*1000)%100000}"
             print(f"  [DRY {'CROSS-COMPLETE' if cross else 'place'}] BUY-{side.upper()} {count or int(a.post)} @ {price:.4f}")
             _lifecycle_write("place", fake, side, price, _sz, _qahead,
-                             port_mult_budget=_pmb, port_mult_delta=_pmd)
+                             port_mult_budget=_pmb, port_mult_delta=_pmd, seeded=seeded)
             return fake, t_dec, time.time()
         oid, sc_, err_ = place_order(sess, priv, mk["cid"], side, price, count or int(a.post),
                                      ttl_s=(a.order_ttl_s or None), post_only=not cross)
@@ -1536,13 +1683,13 @@ def main():
             lm.place_reject(side, price, f"HTTP {sc_}: {err_}")
             reject_cd[(side, round(price, 4))] = time.time() + a.reject_cooldown_s
             _lifecycle_write("reject", None, side, price, _sz, _qahead,
-                             port_mult_budget=_pmb, port_mult_delta=_pmd)
+                             port_mult_budget=_pmb, port_mult_delta=_pmd, seeded=seeded)
             return None
         placed_oids.add(oid)
         ops["place"] += 1
         lm.place_ack(side, price, False, (t_ack - t_dec) * 1e3)
         _lifecycle_write("place", oid, side, price, _sz, _qahead,
-                         port_mult_budget=_pmb, port_mult_delta=_pmd)
+                         port_mult_budget=_pmb, port_mult_delta=_pmd, seeded=seeded)
         return oid, t_dec, t_ack
 
     # --- book: WS cache (primary) + REST cache (fallback) ---
@@ -1570,6 +1717,145 @@ def main():
             return ybb, ybq, yba, yaq, True
         # return stale if available (keeps dead-man watchdog from over-firing on single blips)
         return (c[1], c[2], c[3], c[4], False) if c else (None, None, None, None, False)
+
+    # ------------------------------------------------------------------
+    # OPT-IN EMPTY-BOOK SEEDING (--seed-empty; every closure below is a no-op when the flag is off
+    # -- seed_fv is None, and every call site below is itself gated on a.seed_empty, so this is
+    # zero behavior/cost change by default).
+    #
+    # WHY: the normal path (below, in the main loop) stands down when get_book_cached returns no
+    # usable bb/ba -- it anchors quotes off the EXISTING book, so no book means no anchor. But a
+    # book with NO resting orders from anyone is the single most favorable maker condition: zero
+    # queue competition, the full spread to whoever quotes first. This mode fills that gap with a
+    # SpotFair spot-implied fair (the same model kalshi_collect.py's shadow/backtest pipeline
+    # validates offline) instead of the book, ONLY when the book is confirmed empty on BOTH sides.
+    #
+    # PRE-REGISTERED EVALUATION BAR (documented here, enforced by the operator off the recon data,
+    # NOT automatically by this code): seeded orders carry {"seeded": true} through every lifecycle
+    # event (see place()/_lifecycle_write() above); recon window rows gain n_seeded_fills/seeded_net
+    # (see the pending_settles loop below). If seeded_net < 0 after >=30 cumulative seeded fills,
+    # --seed-empty should be disabled pending review.
+    # ------------------------------------------------------------------
+
+    def _seed_spot_fair(tau_left):
+        """Rate-limited (>=1/s, independent of --react-poll) SpotFair poll, then delegates the
+        actual staleness/availability call to the module-level seed_spot_is_stale() (unit-tested
+        directly). Returns (fair_p_up, sigma_per_s) or (None, None) if the feed is unavailable or
+        stale -- the caller's contract is to then do nothing (no place, no keep-resting) and log
+        once, rate-limited. Never quote off a stale model."""
+        if seed_fv is None:
+            return None, None
+        now = time.time()
+        if now - _seed_poll_ts["t"] >= 1.0:
+            _seed_poll_ts["t"] = now
+            seed_fv.update()
+        last_ts = seed_fv.tape[-1][0] if seed_fv.tape else None
+        if seed_spot_is_stale(last_ts, seed_fv.ok, seed_fv.s0, now, a.seed_max_age_s):
+            return None, None
+        fair = seed_fv.p_up(tau_left)
+        if fair is None:
+            return None, None
+        return fair, seed_fv.sigma()
+
+    def _seed_log_rl(msg):
+        now = time.time()
+        if now - _seed_log_ts["t"] >= 30.0:
+            _seed_log_ts["t"] = now
+            print(f"  [SEED] {msg}")
+
+    def _seed_drop_all(reason):
+        for key in [k for k, m in resting.items() if m.get("seeded")]:
+            drop(key, reason)
+
+    def _seed_tick(tau_left):
+        """Empty-book seeding entry point. Called ONLY from the main loop's book-poll branch where
+        the normal book-anchored path found no usable bb/ba (both REST and WS agree there is no
+        two-sided book) -- see the call site below. Entirely self-contained: mirrors (does not
+        share, so this stays independently testable/auditable) the --max-notional / --max-net /
+        --max-fills-side / --max-rungs / gate_check rails the normal PLACE loop enforces, plus the
+        module-level seed_book_state/seed_effective_width/seed_should_reprice/seed_target_cents
+        helpers above for the empty-book-specific math. loss-limit and the rolling-markout kill are
+        already enforced upstream of this call every tick (top of the main while-loop), so nothing
+        extra is needed for those here."""
+        if not a.seed_empty or mk is None:
+            return
+        # BOUNDARY DISCIPLINE: never seed inside the final --seed-tau-min-s of a window, and cancel
+        # any resting seed quotes there -- same force-flatten discipline as every other rung, just
+        # earlier (a sole-maker fill this late has no time left to find a natural pair).
+        if tau_left < a.seed_tau_min_s:
+            _seed_drop_all("seed_tau_guard")
+            return
+        state = seed_book_state(ws_state.get(mk["cid"]))
+        if state != "empty":
+            # One-sided book does NOT qualify. If we were resting seed quotes, someone else just
+            # quoted inside us -- revert to normal book-anchored behavior immediately (an 'unknown'
+            # state, e.g. a brief WS gap, is not evidence the book stopped being empty, so it is
+            # left alone rather than churned).
+            if state == "one_sided":
+                _seed_drop_all("seed_book_one_sided")
+            return
+        fair, sigma = _seed_spot_fair(tau_left)
+        if fair is None:
+            _seed_log_rl(f"spot feed unavailable/stale (>{a.seed_max_age_s:.0f}s) -- not seeding")
+            _seed_drop_all("seed_spot_stale")
+            return
+        eff_width = seed_effective_width(a.seed_width, tau_left, sigma)
+        fair_cents = fair * 100.0
+        # RE-PRICE DISCIPLINE: keep queue priority -- only cancel/re-post a seed quote if fair moved
+        # more than half the CONFIGURED --seed-width since placement.
+        for key, meta in list(resting.items()):
+            if not meta.get("seeded"):
+                continue
+            if seed_should_reprice(fair_cents, meta.get("seed_fair_cents", fair_cents), a.seed_width):
+                drop(key, "seed_reprice")
+        yb_cents, ya_cents = seed_target_cents(fair, eff_width)
+        seed_count = min(1, int(a.post))    # post-only 1-lot, but never exceed the configured --post
+        if seed_count < 1:
+            return
+        for side, price in (("yes", round(yb_cents / 100.0, 4)),
+                            ("no", round(1.0 - ya_cents / 100.0, 4))):
+            key = (side, round(price, 4))
+            if key in resting or reject_cd.get(key, 0.0) > time.time():
+                continue
+            if time.time() < side_cooldown[side]:
+                continue
+            if win_fills.get(side, 0) >= a.max_fills_side:
+                continue
+            if sum(1 for k in resting if k[0] == side) >= a.max_rungs:
+                continue
+            # inventory clamp (--max-net), worst-case projection (mirrors the main PLACE loop)
+            sgn = 1.0 if side == "yes" else -1.0
+            rest_same = sum(max(a.post - m.get("filled", 0.0), 0.0)
+                            for (s_, _p), m in resting.items() if s_ == side)
+            rest_same += sum(max(a.post - m.get("filled", 0.0), 0.0)
+                             for (s_, _p), m in pending_cancel.items() if s_ == side)
+            if abs(net_delta + sgn * (rest_same + seed_count)) > float(a.max_net) + 1e-9:
+                continue
+            # aggregate notional cap (--max-notional), same formula as the main PLACE loop
+            open_buy_notional = sum(max(a.post - m.get("filled", 0.0), 0.0) * price_
+                                    for (_, price_), m in resting.items())
+            exposure = open_buy_notional + max(-cash, 0.0)
+            if exposure + price * seed_count > a.max_notional:
+                continue
+            # AS gate (or whichever --gate is active): gate_check always returns False when
+            # yes_bid/yes_ask are None (empty book -- nothing to be toxic against), so this is
+            # provably a pass-through, not an exemption -- seeded quotes go through the SAME gate
+            # call every other quote does.
+            if gate_check(side, price, None, None, net_delta, a.gate, 0.0, 0.0, 0.0, tau_left=tau_left):
+                continue
+            res = place(side, price, None, None, count=seed_count, seeded=True)
+            if res is None:
+                continue
+            if isinstance(res, tuple):
+                oid, t_dec, t_ack = res
+            else:
+                oid = res; t_ack = time.time()
+            resting[key] = {"oid": oid, "ts": t_ack, "filled": 0.0, "want": seed_count,
+                            "mid0": None, "qahead": _queue_ahead_est(side, price),
+                            "seeded": True, "seed_fair_cents": fair_cents,
+                            "seed_width_used": eff_width}
+            print(f"  [SEED] empty book -> {side.upper()} {seed_count}@{price:.4f} "
+                  f"fair={fair_cents:.1f}c width={eff_width:.1f}c tau={tau_left:.0f}s")
 
     # --- fill booking (poll-based, scoped to current ticker) ---
     def book_fill(ticker, f, sf):
@@ -1623,17 +1909,29 @@ def main():
         fid = str(f.get("trade_id") or f.get("fill_id") or "")
         _lifecycle_oid = (meta or {}).get("oid", fid)
         _lifecycle_qahead = (meta or {}).get("qahead")
+        _is_seeded = bool((meta or {}).get("seeded"))
+        if _is_seeded:
+            # AUDIT (--seed-empty PRE-REGISTERED EVALUATION): this window's seeded-fill accumulator
+            # -- mirrors the whole-window cash/pos_yes/pos_no bookkeeping above but scoped to fills
+            # against seeded orders only, so seeded_net at settlement is computed the exact same way
+            # (cash + pos*payout) just partitioned to the seeded subset.
+            seed_win["n_fills"] += 1
+            seed_win["cash"] -= fp * count
+            if fside == "yes":
+                seed_win["pos_yes"] += count
+            else:
+                seed_win["pos_no"] += count
         if meta:
             meta["filled"] = meta.get("filled", 0.0) + count
             _full = meta["filled"] >= meta.get("want", a.post) - 1e-9   # AUDIT M5: per-order size, not global post
             if _full:
                 resting.pop(key, None)
             _lifecycle_write("fill" if _full else "partial", _lifecycle_oid, fside, fp, count,
-                             _lifecycle_qahead)
+                             _lifecycle_qahead, seeded=_is_seeded)
         else:
             # no resting-meta match (e.g. a taker/cross completion fill, or a race where the local
             # order already dropped): still a genuine fill, log it without queue-ahead context.
-            _lifecycle_write("fill", _lifecycle_oid, fside, fp, count, None)
+            _lifecycle_write("fill", _lifecycle_oid, fside, fp, count, None, seeded=_is_seeded)
         # MARKOUT CURVE (adverse-selection telemetry): score this fill against the mid at
         # 5s/30s/60s/300s. 5s feeds the rolling markout kill; the full curve is the offline
         # "am I getting picked off?" measurement. cid pins the window so a markout never
@@ -1864,11 +2162,17 @@ def main():
                             # carried through to the settle block below for _recon_write (fills>0 here)
                             "recon_requested": _recon_requested, "recon_fills": _recon_fills,
                             "recon_invmax": _recon_invmax,
+                            # AUDIT (--seed-empty): snapshot of THIS window's seeded-fill accumulator,
+                            # carried through to settlement so seeded_net can be computed the same way
+                            # (cash + pos*payout) at the same time as the whole-window pnl.
+                            "seed": dict(seed_win),
                         }
                         pending_settles.append(entry)
                     else:
                         # no activity this window (no fills => no cash spent, no position held) ->
                         # net/gross are trivially $0; write the recon row now (no settlement to await).
+                        # (pos empty implies seed_win is also empty -- every fill, seeded or not,
+                        # adds to pos -- so n_seeded_fills/seeded_net are trivially 0/0.0 here too.)
                         _recon_write(mk["ws"], _recon_requested, _recon_fills, 0.0, 0.0, _recon_invmax)
                     lm.window_summary(mk["ws"], realized, window_mark, net_delta)
                     # BOX telemetry: paired yes/no contracts pay $1 at settlement regardless of
@@ -1915,6 +2219,7 @@ def main():
                         pass
                     winrec = {"taker": 0, "maker": 0, "maxnet": 0.0, "first_ts": {}, "dispose_cross": 0}
                     pos.clear(); cash = 0.0; net_delta = 0.0; window_mark = 0.0
+                    seed_win = {"n_fills": 0, "cash": 0.0, "pos_yes": 0.0, "pos_no": 0.0}
                 win_fills = {"yes": 0, "no": 0}   # fresh window, fresh trend-exposure budget
                 win_cost = {"yes": 0.0, "no": 0.0}
                 ops = {"place": 0, "cancel": 0, "cancel_fail": 0}
@@ -1959,6 +2264,24 @@ def main():
                 ws_sub["epoch"] += 1
                 print(f"WINDOW {mk['ws']} {datetime.fromtimestamp(mk['ws'], timezone.utc):%H:%M}Z "
                       f"ticker={mk['cid']}")
+
+                # --seed-empty: anchor SpotFair's S0 at this window's open (mirrors
+                # kalshi_collect.KalshiMarket.discover's own fv.update()/set_window pattern).
+                # Invalidate the PREVIOUS window's anchor synchronously (cheap, no network -- using
+                # a stale S0 would silently mis-price the fair for the whole new window) but do the
+                # actual spot fetch off-thread, same pattern as the next-window prefetch just above:
+                # this rollover path is the queue-priority-sensitive one (zero-RTT rollover comment
+                # above) for EVERY window, seeded or not, so it must never block on a spot HTTP call.
+                if a.seed_empty and seed_fv is not None:
+                    seed_fv.s0 = None
+                    def _seed_anchor(ws_open=mk["ws"]):
+                        try:
+                            sp = seed_fv.update()
+                            if sp and time.time() - ws_open <= 60:
+                                seed_fv.set_window(sp)
+                        except Exception:
+                            pass
+                    threading.Thread(target=_seed_anchor, daemon=True).start()
 
             hk = (time.time() - last_hk) >= a.poll
 
@@ -2009,7 +2332,17 @@ def main():
             if ybb is not None and yba is not None:
                 if _fresh:
                     deadman_tripped = False
+                # --seed-empty: a two-sided book exists again (get_book_cached only returns non-None
+                # bb/ba for a genuinely two-sided book -- see _seed_book_state's docstring). Any
+                # resting seed quotes' spot-anchored rationale is gone the instant that's true --
+                # pull them immediately rather than waiting for the generic reshape grace period
+                # (spec: "someone else quoted inside us -> revert to normal book-anchored behavior
+                # immediately"). The normal PLACE loop below then re-quotes off the real book as usual.
+                if a.seed_empty and any(m.get("seeded") for m in resting.values()):
+                    _seed_drop_all("seed_book_no_longer_empty")
             else:
+                if a.seed_empty:
+                    _seed_tick(max(mk["we"] - time.time(), 0.0))
                 time.sleep(a.react_poll); continue
 
             # CLAMP-LEAK FIX (audit H1): book EVERY known WS fill into net_delta BEFORE any placement
@@ -2364,7 +2697,7 @@ def main():
                         meta["_lifecycle_expired"] = True
                         _rem = max(meta.get("want", a.post) - meta.get("filled", 0.0), 0.0)
                         _lifecycle_write("expire", meta.get("oid"), key[0], key[1], _rem,
-                                        meta.get("qahead"))
+                                        meta.get("qahead"), seeded=bool(meta.get("seeded")))
 
             # Rung cap: evict rungs farthest from touch if over max_rungs
             for side, touch in (("yes", ybb), ("no", round(1.0 - yba, 4))):
@@ -2485,12 +2818,18 @@ def main():
                     if r2 is None:
                         r2 = resolve_result(sess, en["cid"])
                         en["r"] = r2
+                    # AUDIT (--seed-empty PRE-REGISTERED EVALUATION): seeded fills settle exactly like
+                    # any other fill (same $1/$0 payout) -- compute their slice of pnl the same way,
+                    # scoped to the seed_win snapshot captured at rollover.
+                    _sw = en.get("seed") or {}
+                    _swn = int(_sw.get("n_fills", 0))
                     if r2 == "void" and time.time() - en.get("t0", 0) >= 20:
                         # voided/cancelled market: cash comes back, no P&L
                         realized += 0
                         print(f"  [VOID] ws={en['ws']} market voided; cash returned, no P&L")
                         _recon_write(en["ws"], en.get("recon_requested", 0), en.get("recon_fills", 0),
-                                    0.0, 0.0, en.get("recon_invmax", 0.0))
+                                    0.0, 0.0, en.get("recon_invmax", 0.0),
+                                    n_seeded_fills=_swn, seeded_net=0.0)
                         seen_fills.pop(en["cid"], None)
                     elif r2 is not None and time.time() - en.get("t0", 0) >= 20:
                         # settle: YES pays $1 if r2==1, NO pays $1 if r2==0
@@ -2499,11 +2838,18 @@ def main():
                                + en["pos_no"]  * (1.0 if r2 == 0 else 0.0))
                         realized += pnl
                         print(f"  [SETTLE] ws={en['ws']} r={r2} pnl={pnl:+.4f} realized={realized:+.2f}")
+                        seeded_pnl = ((_sw.get("cash", 0.0)
+                                      + _sw.get("pos_yes", 0.0) * (1.0 if r2 == 1 else 0.0)
+                                      + _sw.get("pos_no", 0.0) * (1.0 if r2 == 0 else 0.0))
+                                     if _swn > 0 else 0.0)
+                        if _swn > 0:
+                            print(f"  [SEED] ws={en['ws']} seeded_fills={_swn} seeded_pnl={seeded_pnl:+.4f}")
                         # LIVE-VS-SHADOW reconciliation row (CRYPTO15M maker fee is $0, confirmed on
                         # every live fill -- gross == net here; kept as separate fields to match the
                         # shadow schema in case that assumption ever breaks, see the FEE TRIPWIRE above).
                         _recon_write(en["ws"], en.get("recon_requested", 0), en.get("recon_fills", 0),
-                                    pnl, pnl, en.get("recon_invmax", 0.0))
+                                    pnl, pnl, en.get("recon_invmax", 0.0),
+                                    n_seeded_fills=_swn, seeded_net=seeded_pnl)
                         # DURABLE PER-WINDOW AUDIT RECORD (clean failure-audit + backtest dataset).
                         # Captures the settled RESULT (so it's never re-fetched / lost after markets
                         # age out) + the box/unpaired decomposition. Join to kalshi_fees_*.jsonl on
