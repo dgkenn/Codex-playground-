@@ -65,3 +65,49 @@ jobs:
             done
           fi
           exit 0    # never fail the monitor itself (it already alerted)
+      - name: live-watchdog (re-dispatch live.yml if switch=on and its chain stalled)
+        # THIRD restart path for the live money bot, independent of live.yml's own cron (3,28,53) and
+        # self-chain -- both depend on GitHub's cron firing, which is unreliable (skipped slots have
+        # delayed the FIRST start / chain-death recovery by 50+ min). Same pattern as the CRITICAL ->
+        # reseed block above, but targets live.yml. Read-only guard: never flips LIVE_SWITCH, never
+        # dispatches when the switch is off.
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # LIVE_SWITCH is already on disk: the checkout at the top of this job targets $BRANCH, the
+          # same branch live.yml itself reads the switch from -- no extra fetch needed.
+          sw=$(tr -d '[:space:]' < LIVE_SWITCH 2>/dev/null || echo off)
+          echo "live switch = $sw"
+          if [ "$sw" != "on" ]; then
+            echo "switch off -> nothing to guard"
+            exit 0
+          fi
+
+          healthy=$(curl -s -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/workflows/live.yml/runs?per_page=1" \
+            | python3 -c "import sys,json,datetime as dt; d=json.load(sys.stdin); r=(d.get('workflow_runs') or [{}])[0]; s=r.get('status'); t=r.get('updated_at') or r.get('created_at'); ok=s=='in_progress' or (s=='completed' and t and (dt.datetime.now(dt.timezone.utc)-dt.datetime.strptime(t,'%Y-%m-%dT%H:%M:%SZ').replace(tzinfo=dt.timezone.utc)).total_seconds()<1800); print('yes' if ok else 'no')" \
+            2>/dev/null) || healthy=no
+          echo "live chain healthy (in_progress or completed <30m ago)? ${healthy:-no}"
+          if [ "$healthy" = "yes" ]; then
+            echo "live chain healthy -> no action"
+            exit 0
+          fi
+
+          echo "switch=on but live.yml chain looks stalled -> re-dispatching (independent restart path)"
+          ok=0
+          for i in 1 2 3; do
+            code=$(curl -s -o /tmp/lw.out -w '%{http_code}' -X POST \
+              -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/${{ github.repository }}/actions/workflows/live.yml/dispatches" \
+              -d '{"ref":"main"}') || code=""
+            [ "$code" = "204" ] && { ok=1; echo "live chain re-dispatched"; break; }
+            echo "live re-dispatch attempt $i -> HTTP $code"; cat /tmp/lw.out || true; sleep $((2**i))
+          done
+          if [ "$ok" = "1" ]; then
+            python3 -c "import notify; notify.alert_sync('live watchdog: chain stalled with switch=on -> re-dispatched')" || true
+          else
+            python3 -c "import notify; notify.alert_sync('CRITICAL: live watchdog re-dispatch FAILED 3x with switch=on -- live chain may be dead')" || true
+          fi
+          exit 0    # never fail the monitor itself (it already alerted)
