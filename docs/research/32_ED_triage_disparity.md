@@ -64,3 +64,25 @@ signal in both systems).
 replicated with an objective severity anchor — the #1 gate is cleared. Remaining: chief-complaint case-mix
 adjustment, door-to-room *time* mechanism, harder outcome (30-day post-discharge mortality via dod did not populate
 sufficiently among discharged — needs better mortality linkage), adversarial red-team. Tier raised toward JAMA/JAMA IM.
+
+## HARDENING + RED-TEAM + DEATH-ANCHORED VALIDATION → headline claim DOWNGRADED (honest)
+Ran all four hardening steps + sonnet red-team. Robustness that HELD: under-triage survives a standardized NEWS2
+anchor (Black 0.84, Hispanic 0.76) and top-15 chief-complaint adjustment (Black 0.86, Hispanic 0.77); replicates
+across every acuity cutpoint in MIMIC; Hispanic door-to-room +6.9 min at matched ESI (a timing disparity independent
+of the vitals anchor).
+
+**But the decisive death-anchored validation (red-team's #1 demand) largely DISSOLVES the harm claim:** at matched
+NEWS2, MORTALITY (unbiasable, unlike admission) is LOWER for Black/Hispanic than White in BOTH cohorts (NEWS2 5+:
+Hispanic 4.8–6.3%, Black 7.0–8.8% vs White 10–11%). So the objective vitals anchor OVER-states minority mortality
+risk — minorities at a given NEWS2 are genuinely lower-risk — and much of the apparent "under-triage relative to
+vitals" is appropriate calibration, not bias. Admission rates ARE lower for minorities at matched NEWS2, but
+admission is itself a biasable decision; death is not, and death says they are less sick.
+
+**Honest verdict:** the two-center "minorities under-triaged" *label* disparity is real and replicated, but the
+death-anchored test shows it does NOT cleanly establish HARM/missed-severity for Black/Hispanic patients — it is
+largely explained by race-differential calibration of vitals-based severity scores to outcomes. Residual cleaner
+signals: (i) ASIAN under-triage with EQUAL mortality to White at matched NEWS2 (a purer bias signal, smaller n);
+(ii) Hispanic door-to-room delay at matched acuity (operational, likely language/registration). Tier: downgraded from
+JAMA-IM clinical claim to a **methods-cautionary contribution** — "vitals-anchored ED triage-equity analyses overstate
+under-triage because early-warning scores are not outcome-calibrated across race" — plus the two residual signals.
+This is a genuine, publishable cautionary methods finding, not the clinical breakthrough it first appeared to be.

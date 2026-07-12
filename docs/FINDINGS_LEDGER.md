@@ -402,3 +402,11 @@ Under-triage at matched MEWS+age+sex REPLICATES & strengthens: Black OR 0.78 [0.
 Asian 0.83 [0.77-0.89] (all sig). 72h-return: Black OR 1.19 [1.14-1.24] (replicates MC-MED 1.60); Hispanic null,
 Asian lower (both match MC-MED). **Two US health systems, ~500k visits — #1 gate (external replication) CLEARED.**
 Predicted win-likelihood revised 0.45 -> 0.6 (two-center objective-anchored disparity + consequence). Tier -> JAMA/JAMA IM.
+
+### ED under-triage — DEATH-ANCHORED VALIDATION downgrades the harm claim
+Hardening held (NEWS2 anchor, chief-complaint adj, all ESI cutpoints, MIMIC replication, Hispanic door-to-room
++6.9min). BUT death-anchored test (unbiasable): at matched NEWS2, Black/Hispanic mortality LOWER than White in BOTH
+cohorts (NEWS2 5+: Hisp ~5%, Black ~8% vs White ~11%) → vitals anchor over-states minority risk → apparent
+under-triage largely appropriate calibration, not bias. Downgrade: JAMA-IM clinical claim → methods-cautionary
+contribution (+ residual Asian-under-triage-at-equal-mortality and Hispanic door-to-room signals). Predicted
+win-likelihood 0.6 → actual: dissolved by decisive validation → logged.

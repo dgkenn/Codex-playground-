@@ -1134,3 +1134,20 @@ cross-nationally-validated part.
   matched reference before betting a study on it; here the clean test killed it. Net: occult hypoxemia is well-trodden
   (Sjoding, Wong 2021, Fawzy 2022) and my differentiator failed, so this is a replication, not the breakthrough.
   The pipeline + validated eICU co-oximetry reference are now reusable assets for the next SaO2-anchored question.
+
+- **Vitals-based severity anchors (MEWS/NEWS2) are NOT outcome-calibrated across race — anchoring triage-equity
+  claims on them OVERSTATES "under-triage" (ED triage finding downgraded, 2026-07-11).** A two-center (Stanford
+  MC-MED + MIMIC-IV-ED, ~500k visits) RTM-safe analysis showed Black/Hispanic patients get lower ESI acuity at
+  matched objective vitals (NEWS2), robust to chief-complaint adjustment, a standardized anchor, all acuity cutpoints,
+  and external replication — looked like a strong health-equity finding. The decisive DEATH-anchored validation
+  (death is not biasable; admission is) KILLED the harm interpretation: at matched NEWS2, Black/Hispanic MORTALITY is
+  markedly LOWER than White (NEWS2 5+: Hispanic ~5%, Black ~8% vs White ~11%) in BOTH cohorts → the vitals anchor
+  over-states minority risk, so lower acuity is largely appropriate calibration, not bias. RULE: when a fairness/
+  disparity finding conditions on an objective SEVERITY PROXY (vitals score, lab panel, risk model), you MUST verify
+  the proxy is equally calibrated to a HARD, unbiasable outcome (death) across the groups — if minorities have lower
+  death at matched proxy, the 'under-treatment relative to proxy' is partly proxy miscalibration, not discrimination.
+  Admission/treatment endpoints are themselves biasable and cannot adjudicate this; death can. Meta: this is the 3rd
+  promising lead this session dissolved by its own decisive validation (occult-hypoxemia hemodynamic, dyshemoglobin,
+  triage) — the pattern is that a residual confound hides until the hardest-outcome test is run; run it EARLY.
+  Residual real signals: Asian under-triage with EQUAL mortality (purer, small); Hispanic door-to-room +7min at
+  matched acuity (operational). Salvage = a methods-cautionary paper, not a clinical-breakthrough claim.
