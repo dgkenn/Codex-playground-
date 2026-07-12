@@ -29,6 +29,11 @@ LONG_LO, LONG_HI = 0.05, 0.15     # optimal band -- net +5.45c vs the old [0.02,
 MAXSPREAD = 0.10
 MIN_VOL = 200.0                   # require some real volume to be plausibly fillable
 MAX_LIFE_FRAC = 0.50              # quote only the first half of a market's life (late third is -EV)
+MAX_DAYS_TO_CLOSE = 60             # LONGSHOT_RUNBOOK.md: forward-track should validate the SAME
+                                   # deployable band as the live bot -- don't open positions that
+                                   # won't mature for months/years (was unbounded; found markets
+                                   # with close_time years out accumulating in longshot_pending.json)
+STALE_PENDING_DAYS = 45            # drop (as expired_unscored) if still unresolved this long after snapshot
 
 
 def _life_frac(m):
@@ -38,6 +43,15 @@ def _life_frac(m):
         now = dt.datetime.now(dt.timezone.utc)
         span = (c - o).total_seconds()
         return (now - o).total_seconds() / span if span > 0 else None
+    except Exception:
+        return None
+
+
+def _days_to_close(m):
+    try:
+        c = dt.datetime.fromisoformat((m.get("close_time") or "").replace("Z", "+00:00"))
+        now = dt.datetime.now(dt.timezone.utc)
+        return (c - now).total_seconds() / 86400.0
     except Exception:
         return None
 NEW_PER_RUN = 60                  # cap new snapshots/run
@@ -89,6 +103,60 @@ def is_maker_free(m):
     return "maker_fee" not in ft        # quadratic (soft default) = zero maker fee; exclude *_with_maker_fees
 
 
+def accepts_market(m):
+    """True iff an OPEN market m passes every entry filter for a new snapshot (the same
+    deployable band the live bot quotes -- see LONGSHOT_RUNBOOK.md). Pulled out of the
+    SNAPSHOT loop so it's independently testable (see --selftest / kalshi_longshot_paper_test.py)."""
+    if m.get("mve_collection_ticker") or (m.get("market_type") and m.get("market_type") != "binary"):
+        return False
+    if not is_maker_free(m):
+        return False
+    yb = fnum(m.get("yes_bid_dollars")); ya = fnum(m.get("yes_ask_dollars"))
+    if yb is None or ya is None or not (0 < yb < ya < 1):
+        return False
+    mid = (yb + ya) / 2
+    if not (LONG_LO <= mid <= LONG_HI):
+        return False
+    if (ya - yb) > MAXSPREAD:
+        return False
+    if (fnum(m.get("volume_fp")) or 0) < MIN_VOL:
+        return False
+    lf = _life_frac(m)                  # OPT+EXEC: quote only the first half of life
+    if lf is not None and lf > MAX_LIFE_FRAC:
+        return False
+    dtc = _days_to_close(m)             # RUNBOOK: forward-track the deployable band --
+    if dtc is None or not (0 < dtc <= MAX_DAYS_TO_CLOSE):   # don't open far-dated positions
+        return False
+    return True
+
+
+def classify_settlement(p, m, now, stale_days=STALE_PENDING_DAYS):
+    """Decide the fate of one pending position p given its current market state m (the dict
+    returned by GET /markets/{ticker}, or {} if the ticker 404'd/vanished).
+    Returns ("settle", row) | ("pending", None) | ("expired", row)."""
+    status = (m.get("status") or "").lower()
+    result = (m.get("result") or "").lower()
+    if status == "finalized" and result in ("yes", "no"):
+        settle_yes = 1.0 if result == "yes" else 0.0
+        pnl = p["entry_sell_yes"] - settle_yes          # short YES at entry; zero maker fee
+        vol_after = (fnum(m.get("volume_fp")) or 0.0) - p.get("vol_at_entry", 0.0)
+        return "settle", {
+            "settle_ts": now.isoformat(timespec="seconds"), "snap_ts": p["ts"], "ticker": p["ticker"],
+            "category": p["category"], "entry_sell_yes": round(p["entry_sell_yes"], 4),
+            "result": result, "pnl_per_contract": round(pnl, 4),
+            "vol_after_entry": round(vol_after, 1), "status": "settled",
+        }
+    age = (now - dt.datetime.fromisoformat(p["ts"])).days
+    if age <= stale_days:
+        return "pending", None
+    return "expired", {
+        "settle_ts": now.isoformat(timespec="seconds"), "snap_ts": p["ts"], "ticker": p["ticker"],
+        "category": p["category"], "entry_sell_yes": round(p["entry_sell_yes"], 4),
+        "result": result or "unresolved", "pnl_per_contract": "",
+        "vol_after_entry": "", "status": "expired_unscored",
+    }
+
+
 def main():
     state_dir = sys.argv[1] if len(sys.argv) > 1 else "."
     os.makedirs(state_dir, exist_ok=True)
@@ -105,34 +173,34 @@ def main():
             pending = []
 
     # ---------- 1. SETTLE matured pendings ----------
+    # Kalshi's ACTUAL per-market `status` field value for a resolved market is "finalized"
+    # (confirmed against the live API 2026-07-12; "settled" is only a *query filter* value
+    # accepted by GET /markets?status=settled, it never appears in a returned market object --
+    # that mismatch was the root cause of zero settlements for 24 days straight: every pending
+    # ticker gets fetched via GET /markets/{ticker}, whose `status` field is "closed" -> then
+    # "finalized" once the settlement source posts, never literally "settled"). See also
+    # weather_settle.py which already checks `status == "finalized"` for the same API.
+    # still open / awaiting settlement source / vanished (404 -> m == {}) is kept unless it's
+    # gone stale (>STALE_PENDING_DAYS since snapshot). Previously stale rows were silently
+    # dropped with no record; now they get an explicit expired_unscored row so the CSV reflects
+    # every pending position's fate (per LONGSHOT_RUNBOOK.md go-live gate, which reads
+    # realized-edge stats off this file -- silent drops understated n).
     settled_rows, still_pending = [], []
     for p in pending:
         m = get(f"/markets/{p['ticker']}").get("market") or {}
-        status = (m.get("status") or "").lower()
-        result = (m.get("result") or "").lower()
-        if status == "settled" and result in ("yes", "no"):
-            settle_yes = 1.0 if result == "yes" else 0.0
-            pnl = p["entry_sell_yes"] - settle_yes          # short YES at entry; zero maker fee
-            vol_after = (fnum(m.get("volume_fp")) or 0.0) - p.get("vol_at_entry", 0.0)
-            settled_rows.append({
-                "settle_ts": nowiso, "snap_ts": p["ts"], "ticker": p["ticker"],
-                "category": p["category"], "entry_sell_yes": round(p["entry_sell_yes"], 4),
-                "result": result, "pnl_per_contract": round(pnl, 4),
-                "vol_after_entry": round(vol_after, 1),
-            })
-        elif status in ("", "active", "open", "initialized") or result not in ("yes", "no"):
-            # still open (or unresolved) -- keep, unless it's gone stale (>45d past snapshot)
-            age = (now - dt.datetime.fromisoformat(p["ts"])).days
-            if age <= 45:
-                still_pending.append(p)
-        # markets that 404 / vanish are dropped
+        action, row = classify_settlement(p, m, now)
+        if action == "pending":
+            still_pending.append(p)
+        else:
+            settled_rows.append(row)
 
-    # append settled rows
-    new_settle = bool(settled_rows)
+    # append settled rows (both real settlements and expired_unscored)
     file_exists = os.path.exists(settled_path)
     if settled_rows:
+        fieldnames = ["settle_ts", "snap_ts", "ticker", "category", "entry_sell_yes",
+                      "result", "pnl_per_contract", "vol_after_entry", "status"]
         with open(settled_path, "a", newline="") as f:
-            w = csv.DictWriter(f, fieldnames=list(settled_rows[0].keys()))
+            w = csv.DictWriter(f, fieldnames=fieldnames)
             if not file_exists:
                 w.writeheader()
             for r in settled_rows:
@@ -153,23 +221,10 @@ def main():
                 tk = m.get("ticker")
                 if not tk or tk in have:
                     continue
-                if m.get("mve_collection_ticker") or (m.get("market_type") and m.get("market_type") != "binary"):
-                    continue
-                if not is_maker_free(m):
+                if not accepts_market(m):
                     continue
                 yb = fnum(m.get("yes_bid_dollars")); ya = fnum(m.get("yes_ask_dollars"))
-                if yb is None or ya is None or not (0 < yb < ya < 1):
-                    continue
                 mid = (yb + ya) / 2
-                if not (LONG_LO <= mid <= LONG_HI):
-                    continue
-                if (ya - yb) > MAXSPREAD:
-                    continue
-                if (fnum(m.get("volume_fp")) or 0) < MIN_VOL:
-                    continue
-                lf = _life_frac(m)                  # OPT+EXEC: quote only the first half of life
-                if lf is not None and lf > MAX_LIFE_FRAC:
-                    continue
                 still_pending.append({
                     "ts": nowiso, "ticker": tk, "series": st, "category": cat,
                     "yes_bid": round(yb, 4), "yes_ask": round(ya, 4), "mid": round(mid, 4),
@@ -182,12 +237,17 @@ def main():
     json.dump(still_pending, open(pend_path, "w"), indent=0)
 
     # ---------- 3. report running aggregate ----------
-    n = tot = wins = 0
+    # (expired_unscored rows carry no pnl -- exclude from the realized-edge stats, but count
+    #  them separately so a growing expired pile is visible rather than silently invisible)
+    n = tot = wins = expired = 0
     if os.path.exists(settled_path):
         for r in csv.DictReader(open(settled_path)):
+            if r.get("status") == "expired_unscored":
+                expired += 1
+                continue
             n += 1; tot += float(r["pnl_per_contract"]); wins += (r["result"] == "no")
     print(f"[{nowiso}] settled+{len(settled_rows)} (new) | snapshotted {added} new longshots | "
-          f"pending now {len(still_pending)}")
+          f"pending now {len(still_pending)} | expired_unscored (lifetime) {expired}")
     if n:
         print(f"  CUMULATIVE paper harvest: n={n}  mean P&L={tot/n*100:+.2f}c/contract  "
               f"NO-win rate={wins/n:.3f}  total={tot*100:+.1f}c (per 1-contract clip)")
@@ -196,4 +256,7 @@ def main():
 
 
 if __name__ == "__main__":
+    if len(sys.argv) > 1 and sys.argv[1] == "--selftest":
+        import kalshi_longshot_paper_test
+        sys.exit(kalshi_longshot_paper_test.run())
     main()

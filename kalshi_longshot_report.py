@@ -40,6 +40,12 @@ def main():
         print("  by category: " + ", ".join(f"{k}:{v}" for k, v in sorted(cats.items(), key=lambda x: -x[1])))
 
     # ---- realized results ----
+    # expired_unscored rows (dropped as stale/unresolvable, no P&L) don't belong in the edge
+    # stats -- filter them out here but still surface the count so a growing pile is visible.
+    expired = [r for r in rows if r.get("status") == "expired_unscored"]
+    rows = [r for r in rows if r.get("status") != "expired_unscored"]
+    if expired:
+        print(f"\n(expired_unscored, excluded from stats below: {len(expired)})")
     if not rows:
         print("\nNo SETTLED paper positions yet. The edge is validated as snapshots resolve")
         print("(soft-market longshots can take days-weeks to settle). Re-run after they mature.")
