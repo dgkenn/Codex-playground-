@@ -866,6 +866,264 @@ def test_startup_reconciliation_fail_closed():
 
 
 # ===========================================================================
+# TEST 11 — Durable sticky-kill (DEADMAN_AUDIT.md fix #1): kt.remote_switch_kill
+# ===========================================================================
+
+class _FakeGHResp:
+    """Minimal stand-in for a requests.Response, enough for remote_switch_kill's needs."""
+    def __init__(self, status_code, json_data=None, text=""):
+        self.status_code = status_code
+        self._json = json_data if json_data is not None else {}
+        self.text = text
+
+    def json(self):
+        return self._json
+
+
+def test_durable_sticky_kill_remote_switch():
+    """
+    kt.remote_switch_kill(gh_token, remote_switch_url, reason, sess=..., retries=..., ...) is the
+    module-level function _record_kill (a closure inside main()) now calls IMMEDIATELY when a
+    loss-limit / toxic-markout kill fires, instead of relying solely on a later workflow step to
+    push LIVE_SWITCH=off. Exercises: clean no-op without GH_TOKEN/url, a successful GET-sha-then-
+    PUT commit with the right sha/branch/content, retry-then-success, and total-failure alerting.
+    """
+    name = "T11: durable sticky-kill (contents-API PUT)"
+    try:
+        observations = []
+        url = "https://api.github.com/repos/dgkenn/Codex-playground-/contents/LIVE_SWITCH?ref=mybranch"
+
+        # --- case 1: no GH_TOKEN -> clean no-op, zero network calls ---
+        class _AssertNoCallsSess:
+            def get(self, *a, **kw):
+                raise AssertionError("GET must not be called without a gh_token")
+            def put(self, *a, **kw):
+                raise AssertionError("PUT must not be called without a gh_token")
+
+        r1 = kt.remote_switch_kill(None, url, "loss_limit test", sess=_AssertNoCallsSess())
+        assert r1 is False, "no gh_token should return False"
+        observations.append("noop_no_token=True")
+
+        # --- case 2: no remote_switch_url -> clean no-op ---
+        r2 = kt.remote_switch_kill("tok123", "", "loss_limit test", sess=_AssertNoCallsSess())
+        assert r2 is False, "no url should return False"
+        observations.append("noop_no_url=True")
+
+        # --- case 3: non-api.github.com url -> clean no-op (never PUTs to an arbitrary host) ---
+        r2b = kt.remote_switch_kill("tok123", "https://example.com/whatever", "x",
+                                    sess=_AssertNoCallsSess())
+        assert r2b is False
+        observations.append("noop_non_github_url=True")
+
+        # --- case 4: success on first attempt -> True, correct sha/branch/content ---
+        put_calls = []
+        get_calls = []
+
+        class _OkSess:
+            def get(self, u, headers=None, timeout=None):
+                get_calls.append((u, headers))
+                return _FakeGHResp(200, {"sha": "abc123sha"})
+            def put(self, u, headers=None, json=None, timeout=None):
+                put_calls.append((u, headers, json))
+                return _FakeGHResp(201, {})
+
+        alerted = []
+        r3 = kt.remote_switch_kill("tok123", url, "loss_limit realized=-6.10", sess=_OkSess(),
+                                   alert_fn=lambda m: alerted.append(m))
+        assert r3 is True, "successful PUT should return True"
+        assert not alerted, "alert must NOT fire on success"
+        assert len(get_calls) == 1 and len(put_calls) == 1
+        put_url, put_hdrs, put_body = put_calls[0]
+        assert "?" not in put_url, f"PUT url should be the bare contents path, got {put_url!r}"
+        assert put_body["sha"] == "abc123sha", f"PUT must carry the sha fetched via GET: {put_body!r}"
+        assert put_body["branch"] == "mybranch", f"branch must come from the url's ?ref=: {put_body!r}"
+        import base64 as _b64
+        assert _b64.b64decode(put_body["content"]) == b"off", \
+            f"PUT content must base64-decode to literal 'off': {put_body!r}"
+        assert put_hdrs["Authorization"] == "Bearer tok123"
+        observations.append("success_first_attempt=True; sha+branch+content_correct=True")
+
+        # --- case 5: PUT fails twice (5xx) then succeeds -> retried, eventually True ---
+        attempt_ct = [0]
+
+        class _FlakySess:
+            def get(self, u, headers=None, timeout=None):
+                return _FakeGHResp(200, {"sha": f"sha-{attempt_ct[0]}"})
+            def put(self, u, headers=None, json=None, timeout=None):
+                attempt_ct[0] += 1
+                if attempt_ct[0] < 3:
+                    return _FakeGHResp(500, text="server error")
+                return _FakeGHResp(200, {})
+
+        r4 = kt.remote_switch_kill("tok", url, "toxic_markout", sess=_FlakySess(), backoff_s=0.001)
+        assert r4 is True, "should eventually succeed within the retry budget"
+        assert attempt_ct[0] == 3, f"expected exactly 3 PUT attempts, got {attempt_ct[0]}"
+        observations.append("retry_then_success=True")
+
+        # --- case 6: total failure (retries exhausted) -> False + fallback alert fires ---
+        class _AlwaysConflictSess:
+            def get(self, u, headers=None, timeout=None):
+                return _FakeGHResp(200, {"sha": "s"})
+            def put(self, u, headers=None, json=None, timeout=None):
+                return _FakeGHResp(409, text="sha mismatch")
+
+        alerts2 = []
+        r5 = kt.remote_switch_kill("tok", url, "loss_limit realized=-6.50", sess=_AlwaysConflictSess(),
+                                   retries=3, backoff_s=0.001, alert_fn=lambda m: alerts2.append(m))
+        assert r5 is False, "should return False after exhausting retries"
+        assert len(alerts2) == 1, f"exactly one fallback alert expected, got {len(alerts2)}"
+        msg = alerts2[0]
+        assert "FAILED" in msg or "may NOT" in msg, f"alert should flag non-durability: {msg!r}"
+        observations.append("total_failure_alerts_and_returns_False=True")
+
+        # --- case 7: GET never returns a sha -> treated as failure, still retries, still no-crash ---
+        class _NoShaSess:
+            def get(self, u, headers=None, timeout=None):
+                return _FakeGHResp(200, {})   # no "sha" key
+            def put(self, u, headers=None, json=None, timeout=None):
+                raise AssertionError("PUT must never be attempted without a sha")
+
+        r6 = kt.remote_switch_kill("tok", url, "x", sess=_NoShaSess(), retries=2, backoff_s=0.001,
+                                   alert_fn=lambda m: None)
+        assert r6 is False
+        observations.append("missing_sha_never_puts_blind=True")
+
+        record(name, True, "; ".join(observations))
+    except Exception as e:
+        record(name, False, f"{type(e).__name__}: {e}")
+
+
+# ===========================================================================
+# TEST 12 — Startup venue-position reconciliation (DEADMAN_AUDIT.md fix #2)
+# ===========================================================================
+
+class _FakeSignKey:
+    """Stand-in private key: only needs a .sign() the real _sign() calls happily discard."""
+    def sign(self, *a, **kw):
+        return b"fake-signature-bytes"
+
+
+class _FakePositionsResp:
+    def __init__(self, status_code, payload):
+        self.status_code = status_code
+        self._payload = payload
+    def json(self):
+        return self._payload
+
+
+class _FakePositionsSess:
+    """Stand-in for the requests.Session passed through _api() -> get_positions()."""
+    def __init__(self, payload, status=200):
+        self.payload = payload; self.status = status; self.calls = []
+    def get(self, url, headers=None, params=None, timeout=None):
+        self.calls.append((url, params))
+        return _FakePositionsResp(self.status, self.payload)
+
+
+def test_startup_position_reconciliation():
+    """
+    kt.get_positions() (new: GET /trade-api/v2/portfolio/positions, never called anywhere in this
+    file before this fix) and kt._parse_inherited_position() (new: pure parser, ticker-filtered,
+    Kalshi position-sign -> yes/no side, market_exposure cents -> cost-basis dollars) together
+    replace the pre-fix assumption that a restarted process is always flat. Also exercises the
+    "seed net_delta/pos/win_cost exactly once, only for the ticker actually attached to" rollover
+    logic (inline in main(), same reasoning kalshi_safeguards_test.py's T10 uses for C7's inline
+    order-reconciliation: replicate the exact source logic rather than reach into main()'s locals).
+    """
+    name = "T12: startup venue-position reconciliation"
+    try:
+        observations = []
+
+        # --- get_positions(): end-to-end through _api() with a mocked session + fake key ---
+        fsess = _FakePositionsSess({"market_positions": [
+            {"ticker": "KXBTC15M-OTHER", "position": -7, "market_exposure": 555},
+            {"ticker": "KXBTC15M-X", "position": 3, "market_exposure": 120},
+        ]})
+        rows = kt.get_positions(fsess, _FakeSignKey())
+        assert len(rows) == 2 and fsess.calls, "get_positions should hit the mocked session and parse the body"
+        observations.append("get_positions_mocked_end_to_end=True")
+
+        # non-2xx -> defensive empty list, never raises
+        fsess_fail = _FakePositionsSess({}, status=500)
+        rows_fail = kt.get_positions(fsess_fail, _FakeSignKey())
+        assert rows_fail == [], "non-2xx must safe-default to an empty list"
+        observations.append("get_positions_5xx_safe_default_empty=True")
+
+        # --- _parse_inherited_position: filters to ticker, both sides, defensive on garbage ---
+        flat = kt._parse_inherited_position([{"ticker": "KXBTC15M-X", "position": 0}], "KXBTC15M-X")
+        assert flat is None, "zero position must parse as flat (None), not seed anything"
+        observations.append("flat_position_returns_None=True")
+
+        ih_yes = kt._parse_inherited_position(rows, "KXBTC15M-X")
+        assert ih_yes == {"side": "yes", "count": 3.0, "cost": 1.20}, f"got {ih_yes!r}"
+        observations.append(f"long_yes_parsed={ih_yes}")
+
+        ih_no = kt._parse_inherited_position(
+            [{"ticker": "KXBTC15M-X", "position": -4, "market_exposure": 150}], "KXBTC15M-X")
+        assert ih_no == {"side": "no", "count": 4.0, "cost": 1.50}, f"got {ih_no!r}"
+        observations.append(f"long_no_parsed={ih_no}")
+
+        assert kt._parse_inherited_position(rows, "KXBTC15M-NOT-PRESENT") is None
+        observations.append("ticker_not_present_None=True")
+
+        # malformed row skipped without raising; a later valid row still found; missing
+        # market_exposure safe-defaults cost to 0.0 (under- not over-estimates worst_open)
+        garbage = [{"ticker": "KXBTC15M-X", "position": "not-a-number"},
+                   {"ticker": "KXBTC15M-X", "position": 1, "market_exposure": None}]
+        ih_garbage = kt._parse_inherited_position(garbage, "KXBTC15M-X")
+        assert ih_garbage == {"side": "yes", "count": 1.0, "cost": 0.0}, f"got {ih_garbage!r}"
+        observations.append("malformed_row_skipped_safe_default=True")
+
+        # a plain exception-raising list (e.g. positions is None) must not raise
+        raised = False
+        try:
+            r = kt._parse_inherited_position(None, "X")
+        except Exception:
+            raised = True
+        assert not raised and r is None
+        observations.append("none_input_safe_default=True")
+
+        # --- replicate the rollover "seed exactly once, ticker-matched" logic (source: the
+        # `if not _inherited_seed_done:` block in main(), right after `mk` is assigned) ---
+        def seed_once(pos, win_cost, net_delta, inherited, seed_done, attached_ticker, queried_ticker):
+            if not seed_done[0]:
+                seed_done[0] = True
+                if inherited and queried_ticker == attached_ticker:
+                    pk = attached_ticker + ":" + inherited["side"].upper()
+                    pos[pk] = pos.get(pk, 0.0) + inherited["count"]
+                    net_delta += inherited["count"] if inherited["side"] == "yes" else -inherited["count"]
+                    win_cost[inherited["side"]] = win_cost.get(inherited["side"], 0.0) + inherited["cost"]
+            return net_delta
+
+        # matching ticker -> net_delta/pos/win_cost seeded (risk clamps now see truth)
+        pos_a, wc_a, done_a = {}, {"yes": 0.0, "no": 0.0}, [False]
+        nd_a = seed_once(pos_a, wc_a, 0.0, ih_no, done_a, "KXBTC15M-X", "KXBTC15M-X")
+        assert nd_a == -4.0 and pos_a["KXBTC15M-X:NO"] == 4.0 and wc_a["no"] == 1.50
+        observations.append(f"seed_applied_net_delta={nd_a:+.0f}_pos_and_cost_correct=True")
+
+        # window rolled to a DIFFERENT ticker before this session attached -> must NOT misattribute
+        pos_b, wc_b, done_b = {}, {"yes": 0.0, "no": 0.0}, [False]
+        nd_b = seed_once(pos_b, wc_b, 0.0, ih_yes, done_b, "KXBTC15M-NEW", "KXBTC15M-OLD")
+        assert nd_b == 0.0 and pos_b == {}
+        observations.append("ticker_mismatch_skips_seed_no_misattribution=True")
+
+        # exactly-once: a second rollover on the SAME (already-seeded) session must not re-seed
+        nd_a2 = seed_once(pos_a, wc_a, nd_a, ih_no, done_a, "KXBTC15M-X", "KXBTC15M-X")
+        assert nd_a2 == nd_a and pos_a["KXBTC15M-X:NO"] == 4.0, "must only ever seed once per session"
+        observations.append("exactly_once_enforced=True")
+
+        # flat venue (inherited=None) still marks itself consumed (doesn't dangle to a later window)
+        pos_c, wc_c, done_c = {}, {"yes": 0.0, "no": 0.0}, [False]
+        seed_once(pos_c, wc_c, 0.0, None, done_c, "KXBTC15M-X", "KXBTC15M-X")
+        assert done_c[0] is True and pos_c == {}
+        observations.append("flat_venue_still_marks_consumed=True")
+
+        record(name, True, "; ".join(observations))
+    except Exception as e:
+        record(name, False, f"{type(e).__name__}: {e}")
+
+
+# ===========================================================================
 # BONUS: Test microprice and gate_check helpers directly (from kt module)
 # ===========================================================================
 
@@ -939,6 +1197,8 @@ def main():
     test_no_side_markout_sign()
     test_settlement_ledger_signs()
     test_startup_reconciliation_fail_closed()
+    test_durable_sticky_kill_remote_switch()
+    test_startup_position_reconciliation()
 
     # Summary table
     print()

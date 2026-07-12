@@ -26,6 +26,7 @@ import os
 import signal
 import threading
 import time
+import urllib.parse
 import uuid
 from datetime import datetime, timezone
 
@@ -486,6 +487,113 @@ def get_balance(sess, private_key):
     return resp if (200 <= sc < 300 and resp is not None) else None
 
 
+def get_positions(sess, private_key):
+    """GET /portfolio/positions. Returns list of market-position dicts (may be empty on error).
+    DEADMAN_AUDIT.md fix #2: this endpoint was never called anywhere in this file before, so a
+    restarted process had no way to learn about pre-existing venue inventory at startup."""
+    sc, resp = _api(sess, private_key, "GET", "/portfolio/positions", timeout=6)
+    if sc < 200 or sc >= 300 or resp is None:
+        return []
+    return resp.get("market_positions") or resp.get("positions") or []
+
+
+def _parse_inherited_position(mpos_list, ticker):
+    """Extract an inherited (side, count, cost_dollars) dict for `ticker` from a
+    GET /portfolio/positions response's market_positions list, or None if flat/absent.
+
+    Sign convention matches net_delta elsewhere in this file (line ~970: "YES positions - NO
+    positions, signed"): Kalshi's own `position` field is positive when long YES, negative when
+    long NO. `market_exposure` (cents, the position's cost basis) seeds a best-effort win_cost so
+    the C2 loss-limit's worst-open calc (kalshi_trader.py ~1584-1591, itself keyed off
+    win_cost[side]/count) isn't blind to inherited inventory. A missing/odd market_exposure just
+    leaves cost=0.0 -- that UNDER-estimates worst_open, never over-estimates, so a parse gap can
+    only make the loss-limit slower to fire on inherited inventory, never falsely trip it.
+
+    Defensive/never-raises: any malformed row is skipped rather than aborting the whole scan
+    (startup must safe-default to pre-fix flat-assumed behavior on any parse trouble, not crash)."""
+    for p in (mpos_list or []):
+        try:
+            if str(p.get("ticker") or "") != ticker:
+                continue
+            net = p.get("position")
+            if net is None:
+                continue
+            net = float(net)
+            if abs(net) < 1e-9:
+                continue
+            side = "yes" if net > 0 else "no"
+            count = abs(net)
+            cost_c = p.get("market_exposure")
+            cost = round(float(cost_c) / 100.0, 4) if cost_c is not None else 0.0
+            return {"side": side, "count": count, "cost": cost}
+        except Exception:
+            continue
+    return None
+
+
+def remote_switch_kill(gh_token, remote_switch_url, reason, sess=None, retries=3,
+                       backoff_s=1.5, alert_fn=None):
+    """Durable sticky-kill (DEADMAN_AUDIT.md fix #1). Previously the loss-limit/toxic-markout
+    trip only became permanent if a LATER workflow step, running on the SAME runner after this
+    process exits, committed LIVE_SWITCH=off -- a runner hard-killed in between silently
+    discarded the kill and the next cron tick resumed trading unaware anything happened. This
+    does the durable part synchronously, the instant the kill fires, via the GitHub contents API
+    (a PUT needs the file's current sha, fetched via a GET on the same url first). Reuses the
+    exact url/repo/path/ref the process already has via REMOTE_SWITCH_URL + GH_TOKEN -- no new
+    config surface.
+
+    Clean no-op (returns False immediately, no network call) when gh_token or remote_switch_url
+    is absent, e.g. local/dry runs. On total failure after `retries` attempts, falls back to the
+    pre-existing sentinel+workflow-step path (caller already writes the local sentinel) and fires
+    a Telegram alert flagging that the kill may not be durable.
+
+    `sess`/`alert_fn` are injectable for testability; default to the `requests` module itself
+    (matching _remote_switch_is_off's use of bare `requests.get`, not a Session) and
+    notify.alert_sync respectively."""
+    sess = sess or requests
+    alert_fn = alert_fn or notify.alert_sync
+    if not (gh_token and remote_switch_url and "api.github.com" in remote_switch_url):
+        return False   # no-op: local/dry runs, or remote switch not configured
+    parsed = urllib.parse.urlsplit(remote_switch_url)
+    branch = (urllib.parse.parse_qs(parsed.query).get("ref") or [None])[0]
+    put_url = urllib.parse.urlunsplit((parsed.scheme, parsed.netloc, parsed.path, "", ""))
+    hdrs = {"Authorization": f"Bearer {gh_token}", "Accept": "application/vnd.github+json"}
+    last_err = "unknown error"
+    for attempt in range(retries):
+        try:
+            g = sess.get(remote_switch_url, headers=hdrs, timeout=8)
+            if g.status_code != 200:
+                last_err = f"GET {g.status_code}"
+            else:
+                sha = (g.json() or {}).get("sha")
+                if not sha:
+                    last_err = "GET 200 but response had no sha"
+                else:
+                    body = {
+                        "message": f"STICKY KILL (trader-side, durable): {reason}"[:200],
+                        "content": base64.b64encode(b"off").decode("ascii"),
+                        "sha": sha,
+                    }
+                    if branch:
+                        body["branch"] = branch
+                    p = sess.put(put_url, headers=hdrs, json=body, timeout=8)
+                    if 200 <= p.status_code < 300:
+                        return True
+                    last_err = f"PUT {p.status_code}: {str(getattr(p, 'text', ''))[:120]}"
+        except Exception as e:
+            last_err = f"{type(e).__name__}: {str(e)[:100]}"
+        if attempt < retries - 1:
+            time.sleep(backoff_s * (2 ** attempt))
+    try:
+        alert_fn(f"⚠️ [kalshi] STICKY KILL fired ({reason}) but the durable "
+                 f"LIVE_SWITCH=off commit FAILED after {retries} attempts ({last_err}) -- "
+                 "falling back to the local sentinel + workflow-step path; this kill may NOT "
+                 "survive a runner death. Verify LIVE_SWITCH manually.")
+    except Exception:
+        pass
+    return False
+
+
 # ---------------------------------------------------------------------------
 # Quote geometry (Kalshi two-view adaptation)
 # ---------------------------------------------------------------------------
@@ -814,12 +922,30 @@ def main():
     # isn't immediately overridden. Delete the file manually after investigating.
     kill_sentinel = f".kalshi_killed_{a.asset}15m"
 
+    # Hoisted above _record_kill (below) and reused by _remote_switch_is_off (further down): both
+    # need the same GH token, and _record_kill needs it FIRST so a kill trip can commit
+    # LIVE_SWITCH=off durably at the moment it fires (DEADMAN_AUDIT.md fix #1) rather than only
+    # ever writing the local, gitignored, non-durable sentinel below.
+    _gh_tok = os.environ.get("GH_TOKEN") or os.environ.get("GITHUB_TOKEN")
+
     def _record_kill(why):
         try:
             with open(kill_sentinel, "w") as fh:
                 fh.write(json.dumps({"ts": time.time(), "reason": why}) + "\n")
         except Exception:
             pass
+        # DURABLE STICKY-KILL (DEADMAN_AUDIT.md fix #1): commit LIVE_SWITCH=off to the branch
+        # RIGHT NOW via the GitHub contents API, instead of depending on a later workflow step
+        # (on the same runner) to push it -- a runner hard-killed between here and that step
+        # previously lost the kill entirely. No-op when GH_TOKEN/--remote-switch-url are absent
+        # (local/dry runs); on total failure, remote_switch_kill() itself alerts and we still
+        # fall back to the sentinel written just above + the existing workflow-step path.
+        try:
+            if remote_switch_kill(_gh_tok, a.remote_switch_url, why):
+                print("[STICKY-KILL] LIVE_SWITCH=off committed durably via GitHub contents API")
+        except Exception as e:
+            print(f"[STICKY-KILL] remote commit raised unexpectedly (sentinel still written): "
+                  f"{type(e).__name__}: {str(e)[:120]}")
 
     if live and os.path.exists(kill_sentinel):
         raise SystemExit(f"REFUSING to start live: kill sentinel {kill_sentinel} exists. "
@@ -936,6 +1062,14 @@ def main():
                      daemon=True).start()   # sig telemetry (isolated; non-blocking; per-asset spot)
     ops = {"place": 0, "cancel": 0, "cancel_fail": 0}   # per-window execution-quality counters
 
+    # DEADMAN_AUDIT.md fix #2 payload: filled in by the startup position-reconciliation block
+    # below (live only) and consumed once, when this session first attaches to a window (see
+    # "_inherited_seed_done" near the state-init block a little further down). Stays None for
+    # dry-run/local so the seeding path there is a guaranteed no-op. init_mk is likewise defined
+    # unconditionally (None unless live) so the later rollover block can reference it safely.
+    _inherited = None
+    init_mk = None
+
     if live:
         print("[startup] reconciling open orders on series...")
         init_mk = discover(sess, a.asset)
@@ -950,6 +1084,40 @@ def main():
             except Exception as e:
                 raise SystemExit(f"startup cancel FAILED ({type(e).__name__}: {str(e)[:120]}) -- "
                                  "refusing to quote on top of unknown resting orders")
+
+        # C8 startup INVENTORY reconciliation (DEADMAN_AUDIT.md fix #2): the trader previously
+        # never queried real venue positions, so a restarted process always assumed
+        # net_delta==0 -- combined with poll_fills'/sweep_window_fills' first-call fill-seeding
+        # (which marks any already-resting fills "seen" without booking them), a restart landing
+        # on the same still-open ticker as a dead predecessor had NO way to learn it wasn't
+        # actually flat. Query positions here (read-only, same auth already established above)
+        # and filter to the active ticker; the state-init block below seeds net_delta/pos/
+        # win_cost from `_inherited` so every downstream risk clamp (--max-net, the C2 loss-limit
+        # worst-open calc, dispose-cross/chase-unpaired) sees the TRUE starting inventory instead
+        # of a blind zero, and treats it exactly like any position opened this session.
+        # Defensive/never-fatal throughout, unlike the fail-closed order reconciliation above:
+        # any failure here logs and safe-defaults to the PRE-FIX behavior (assume flat) rather
+        # than blocking startup -- a missed inherited position is the status quo ante, not a new
+        # hazard this fix could introduce.
+        try:
+            print("[startup] reconciling venue positions...")
+            mpos = get_positions(sess, priv)
+            if init_mk:
+                _inherited = _parse_inherited_position(mpos, init_mk["cid"])
+            if _inherited:
+                _msg = (f"inherited venue position at startup: {_inherited['side'].upper()} "
+                        f"x{_inherited['count']:.0f} {init_mk['cid']} "
+                        f"cost~${_inherited['cost']:.2f} -- seeding into risk state, existing "
+                        "disposal/flatten machinery will manage it like any position")
+                print(f"  [startup] {_msg}")
+                notify.alert(f"⚠️ [kalshi] {_msg}")
+            else:
+                print("  [startup] venue positions clean (flat) on active ticker")
+        except Exception as e:
+            print(f"[startup] position reconciliation FAILED (non-fatal; defaulting to flat, "
+                  f"same as pre-fix behavior): {type(e).__name__}: {str(e)[:120]}")
+            _inherited = None
+
         print("[startup] reconciliation done.")
         # Start authenticated WS feeder (live only; needs priv key + KALSHI_API_KEY_ID)
         threading.Thread(
@@ -977,6 +1145,12 @@ def main():
     window_mark = 0.0        # current window mark-to-mid (open position value)
     pos = {}                 # ticker+"YES"|"NO" -> contracts held (from fills)
     cash = 0.0               # net cash flow this window (positive = received)
+    # DEADMAN_AUDIT.md fix #2: `_inherited` (set by startup reconciliation above; None if flat/
+    # dry-run/lookup failed) is applied exactly once, at the first window this session attaches
+    # to (see the rollover block below). `_inherited_seed_done` gates that "exactly once" -- it
+    # must flip regardless of whether `_inherited` actually held anything, so a flat-venue result
+    # doesn't leave this dangling to (incorrectly) fire on some later window instead.
+    _inherited_seed_done = False
     resting = {}             # (side, price) -> {"oid", "ts"}  for THIS window
     placed_oids = set()      # every order_id placed this session
     seen_fills = {}          # ticker -> set of fill "trade_id" already booked
@@ -1106,8 +1280,8 @@ def main():
     # FAST REMOTE OFF: poll the live switch out-of-band so flipping it OFF stops a RUNNING trader
     # within --remote-switch-s (the cron/cycle only gates STARTING; this gates STOPPING). Cheap GET;
     # any error is ignored (fail-safe: a transient fetch failure must NOT kill a healthy session).
+    # _gh_tok is hoisted above _record_kill now (durable sticky-kill needs it first); reused here.
     _rsw = {"last": 0.0}
-    _gh_tok = os.environ.get("GH_TOKEN") or os.environ.get("GITHUB_TOKEN")
 
     def _remote_switch_is_off():
         url = a.remote_switch_url
@@ -1559,6 +1733,29 @@ def main():
                     mk = discover(sess, a.asset)
                 if not mk:
                     time.sleep(a.poll); continue
+
+                # DEADMAN_AUDIT.md fix #2: apply the startup-inherited venue position (if any)
+                # exactly once, the FIRST time this session attaches to a window -- only relevant
+                # when that window is the SAME ticker the startup positions query filtered to
+                # (init_mk["cid"]); if the window rolled between the startup query and here (a
+                # narrow race), we deliberately do NOT misattribute the old ticker's inventory to
+                # a new one -- seeding is skipped and the Telegram alert already sent above is
+                # the record of it. pos/net_delta/win_cost are seeded exactly as book_fill() would
+                # book a real fill, so every downstream risk clamp and the existing dispose-cross/
+                # chase-unpaired/close-force machinery treats it like any position opened this
+                # session -- no separate handling needed.
+                if not _inherited_seed_done:
+                    _inherited_seed_done = True
+                    if _inherited and init_mk and mk["cid"] == init_mk["cid"]:
+                        _ih_side = _inherited["side"]; _ih_ct = _inherited["count"]
+                        _ih_pk = mk["cid"] + ":" + _ih_side.upper()
+                        pos[_ih_pk] = pos.get(_ih_pk, 0.0) + _ih_ct
+                        net_delta += _ih_ct if _ih_side == "yes" else -_ih_ct
+                        win_cost[_ih_side] = win_cost.get(_ih_side, 0.0) + _inherited["cost"]
+                        print(f"[startup] seeded inherited position into risk state: "
+                              f"net_delta={net_delta:+.0f} pos[{_ih_pk}]={pos[_ih_pk]:.0f} "
+                              f"win_cost[{_ih_side}]={win_cost[_ih_side]:.2f}")
+
                 _last_book_cache.clear()
                 # Update WS feeder subscription: new ticker + bump epoch so feeder resubscribes
                 ws_sub["ticker"] = mk["cid"]

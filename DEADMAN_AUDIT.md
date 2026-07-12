@@ -207,3 +207,68 @@ which:
   `collect.yml` already uses via `HEARTBEAT_URL`) on `live.yml` specifically.
 - **For #6:** update `SWITCH.md`'s stated loss-limit to match the code (`$6`) — a pure documentation
   fix, no code risk.
+
+## Fixes implemented
+
+Both HIGH-severity gaps (#1, #2) are now fixed in `kalshi_trader.py`. #3/#4/#5/#6 remain as
+documented above (out of scope for this change; #4 was already delivered separately via
+`equity_snap.py`).
+
+### Fix #1 — durable sticky-kill (`kalshi_trader.py`)
+
+Added `remote_switch_kill(gh_token, remote_switch_url, reason, sess=..., retries=3,
+backoff_s=1.5, alert_fn=...)` as a module-level function (testable independent of `main()`).
+`_record_kill()` — the closure both the loss-limit kill and the toxic-markout kill already called
+— now calls it immediately after writing the local sentinel, at the moment the kill fires, rather
+than deferring durability to a later `live.yml` workflow step that a hard-killed runner never
+reaches:
+
+1. GETs the current `LIVE_SWITCH` file via the GitHub contents API (reusing the exact
+   `REMOTE_SWITCH_URL` + `GH_TOKEN` the process already receives — no new config surface) to
+   obtain the file's current `sha`, then PUTs `off` (base64-encoded) back with that `sha`, setting
+   `branch` from the url's `?ref=` query parameter.
+2. Retries 3x with exponential backoff (re-fetching `sha` on every attempt, since a stale `sha`
+   from a prior attempt would 409).
+3. On total failure, falls back to the pre-existing sentinel + workflow-step path (unchanged) and
+   fires a Telegram alert (`notify.alert_sync`) flagging that the kill may not survive a runner
+   death, so an operator is not silently unaware.
+4. Clean no-op (zero network calls, returns `False`) when `GH_TOKEN` or `REMOTE_SWITCH_URL` is
+   absent, or the url isn't `api.github.com` — local/dry runs are unaffected.
+
+Unit-tested in `kalshi_safeguards_test.py` as **T11** (8 sub-cases: no-token no-op, no-url no-op,
+non-GitHub-host no-op, first-attempt success with sha/branch/content verification, retry-then-
+success, total-failure-triggers-alert, and a GET-with-no-sha guard that never PUTs blind).
+
+### Fix #2 — startup venue-position reconciliation (`kalshi_trader.py`)
+
+Added `get_positions(sess, private_key)` (GET `/trade-api/v2/portfolio/positions`, following the
+same `_api()`/error-handling pattern as the existing `get_open_orders`/`get_fills`/`get_balance`)
+and `_parse_inherited_position(mpos_list, ticker)` (pure, defensive parser: filters to the active
+ticker, maps Kalshi's signed `position` field to this file's own `side`/`net_delta` sign
+convention — positive = long YES — and best-effort seeds a cost basis from `market_exposure`
+cents so it under-, never over-, estimates the C2 loss-limit's worst-open calc on inherited
+inventory).
+
+Wired into `main()`, live mode only, immediately after the existing (fail-closed) startup order
+reconciliation:
+
+1. Queries positions and Telegram-alerts (`notify.alert`) immediately if the active ticker has
+   nonzero inherited inventory, independent of whether this session ever actually attaches to
+   that ticker's window.
+2. The state-init block seeds `net_delta`/`pos`/`win_cost` from the inherited position exactly
+   once, the first time this session attaches to a window — and only if that window's ticker
+   still matches the one the startup query was filtered to (a narrow race — the window rolling
+   between the startup query and loop entry — is handled by skipping the seed rather than
+   misattributing inventory to the wrong ticker). Once seeded, every existing risk clamp
+   (`--max-net`, the C2 loss-limit worst-open calc) and disposal mechanism (`--dispose-cross`,
+   `--chase-unpaired-s`, `--close-force-s`) treats it exactly like a position opened this session
+   — no separate handling needed, per the audit's recommendation (b).
+3. Defensive throughout: any exception during the positions query/parse logs and safe-defaults to
+   the pre-fix behavior (assume flat) rather than blocking startup, unlike the fail-closed order
+   reconciliation it sits next to.
+
+Unit-tested in `kalshi_safeguards_test.py` as **T12** (12 sub-cases): `get_positions` driven
+end-to-end through a mocked session (including a 5xx safe-default-to-`[]` case), `_parse_
+inherited_position` against long-YES/long-NO/flat/ticker-absent/malformed-row/`None`-input
+payloads, and a replica of the "seed exactly once, ticker-matched" rollover logic covering the
+seed-applied, ticker-mismatch-skips, exactly-once, and flat-venue-still-marks-consumed cases.
