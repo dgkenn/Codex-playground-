@@ -1,0 +1,251 @@
+# PROPOSED multi-asset live-trade workflow -- NOT applied. This file is a sibling of the live
+# .github/workflows/live.yml (single-asset, ASSET=btc); see LIVE_EXPANSION.md for the evidence
+# (per_asset_edge.py verdicts + MM_FINGERPRINT.md competition reads) and the reasoning behind
+# every change below. The operator reviews this diff and, if they agree, copies it over
+# .github/workflows/live.yml on the code branch (still gated by LIVE_SWITCH + secrets, same as
+# today -- adopting this file does not itself start any new trading).
+#
+# WHAT CHANGED vs the live workflow, and why (full detail in LIVE_EXPANSION.md):
+#   1. `trade` is now a matrix job over ASSET in [btc, eth, sol, xrp] (fail-fast: false) instead
+#      of a single ASSET=btc job. Trim the matrix list below to whichever subset LIVE_EXPANSION.md's
+#      verdict table clears before applying -- the recommendation is NOT "flip on all four
+#      unconditionally," see the doc's staged-rollout section.
+#   2. Concurrency is now PER-ASSET (`live-trade-<asset>`), not one global singleton. The old
+#      single group would have serialized all 4 assets onto one runner slot, one at a time,
+#      defeating the point of trading them in parallel. Per-asset groups still guarantee "never
+#      two live bots on the SAME asset" (the property that actually matters -- two bots on
+#      DIFFERENT assets never double an order).
+#   3. NEW: per-asset switch files `LIVE_SWITCH_<ASSET>` (e.g. LIVE_SWITCH_ETH), checked in
+#      addition to the existing global `LIVE_SWITCH`. A loss-limit kill on one asset now flips
+#      only that asset's file off (sticky, durable, committed like the old global flip was) --
+#      NOT the global switch. The global `LIVE_SWITCH` remains the master "stop everything now"
+#      switch (operator-controlled, and still the fast (<1 min) in-process flatten path via
+#      REMOTE_SWITCH_URL, unchanged). This is the fix for the "one bad asset kills all four"
+#      failure mode the operator should NOT want. Missing LIVE_SWITCH_<ASSET> file == "on"
+#      (backward compatible: a bare LIVE_SWITCH=on with no per-asset files behaves exactly like
+#      today for whichever assets you enable).
+#   4. The self-chain dispatch is now a SEPARATE non-matrixed `chain` job (needs: trade,
+#      if: always()) that fires exactly ONE workflow_dispatch per cycle. IMPORTANT: if each of
+#      the 4 matrix legs independently re-dispatched this same (4-asset-matrix) workflow, every
+#      cycle would 4x the number of in-flight runs (4 legs -> 4 dispatches -> 16 legs -> 64 ...).
+#      Splitting the chain into one job that runs once after the whole matrix completes avoids
+#      that fan-out entirely while preserving the "cron re-checks every ~25 min, self-chain
+#      covers the rest" continuity design.
+#   5. Per-asset telemetry/kill-sentinel filenames were already asset-parameterized in the
+#      live workflow (`kalshi_fees_${ASSET}15m.jsonl`, `.kalshi_killed_${ASSET}15m`, ...) --
+#      no changes needed there; they just now run under 4 parallel jobs instead of 1.
+#
+# KNOWN LIMITATION (documented, not silently swept -- see LIVE_EXPANSION.md): manually stopping
+# ONE asset fast (<1 min, mid-cycle) still requires either (a) waiting for that asset's current
+# ~47-min leg to finish naturally, or (b) flipping the GLOBAL switch, which fast-stops ALL
+# assets. There is no per-asset fast-stop in this proposal -- adding one needs a kalshi_trader.py
+# code change (a second remote-switch URL) which is out of scope for this (new-files-only) pass.
+#
+#   ON/OFF: global emergency stop = the LIVE_SWITCH file (one word: on|off), same as today.
+#           Per-asset stop = LIVE_SWITCH_<ASSET> file (e.g. LIVE_SWITCH_XRP), same convention.
+#
+#   ONE-TIME ACTIVATION: unchanged from live.yml (KALSHI_API_KEY_ID / KALSHI_PRIVATE_KEY repo
+#     secrets, file must live on the default branch (main) for schedule/dispatch to fire, then
+#     flip LIVE_SWITCH on). Adding this file to main is INERT for any asset until secrets exist,
+#     LIVE_SWITCH=on, AND that asset's own LIVE_SWITCH_<ASSET> is missing/on.
+#   SAFE BY DEFAULT: missing secrets OR LIVE_SWITCH!=on OR LIVE_SWITCH_<ASSET>=off => that leg
+#     does nothing. Same per-asset caps as today: $5 max notional, $6 sticky loss-limit,
+#     post-only, reconciliation, dead-man.
+#   SECURITY: triggers are schedule + workflow_dispatch ONLY (never pull_request) -- unchanged.
+name: live-trade
+
+on:
+  schedule:
+    - cron: '3,28,53 * * * *'   # re-check the switches / restart the chain; offsets dodge congestion
+  workflow_dispatch: {}
+
+permissions:
+  contents: write              # persist telemetry + sticky-kill switch flips
+  actions: write               # self-chain the successor run
+
+env:
+  BRANCH: claude/polymarket-bot-live-ready-vw7ut5
+
+jobs:
+  trade:
+    runs-on: ubuntu-latest
+    timeout-minutes: 56
+    strategy:
+      fail-fast: false         # one asset's preflight NO-GO / kill must not cancel the others
+      matrix:
+        # Trim this list to whatever LIVE_EXPANSION.md's verdict table + the operator's risk
+        # appetite actually clears before applying this file -- see the doc's staged-rollout
+        # recommendation (this full 4-asset list is the "everything that cleared the bar" case,
+        # not an unconditional "turn it all on" instruction).
+        asset: [btc, eth, sol, xrp]
+    concurrency:
+      # Per-asset singleton: never two live bots on the SAME asset (would double real orders).
+      # Different assets get different groups on purpose -- they run in parallel, not serialized.
+      group: live-trade-${{ matrix.asset }}
+      cancel-in-progress: false
+    env:
+      ASSET: ${{ matrix.asset }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.BRANCH }}
+          fetch-depth: 1
+      - name: gate on the switches (fail-closed; global AND per-asset)
+        id: gate
+        run: |
+          AU=$(echo "$ASSET" | tr '[:lower:]' '[:upper:]')
+          gsw=$(tr -d '[:space:]' < LIVE_SWITCH 2>/dev/null || echo off)
+          asw=on
+          [ -f "LIVE_SWITCH_${AU}" ] && asw=$(tr -d '[:space:]' < "LIVE_SWITCH_${AU}" 2>/dev/null || echo on)
+          sw=off
+          [ "$gsw" = "on" ] && [ "$asw" = "on" ] && sw=on
+          [ -f ".kalshi_killed_${ASSET}15m" ] && sw=off
+          echo "switch=$sw" >> "$GITHUB_OUTPUT"
+          echo "asset_switch_file=LIVE_SWITCH_${AU}" >> "$GITHUB_OUTPUT"
+          echo "live switch ($ASSET) = $sw  (global=$gsw asset=$asw)"
+      - name: gate on secrets present
+        id: sec
+        run: |
+          if [ -n "${{ secrets.KALSHI_API_KEY_ID }}" ] && [ -n "${{ secrets.KALSHI_PRIVATE_KEY }}" ]; then
+            echo "have=yes" >> "$GITHUB_OUTPUT"
+          else
+            echo "have=no" >> "$GITHUB_OUTPUT"; echo "::notice::KALSHI secrets not set -> inert"
+          fi
+      - uses: actions/setup-python@v5
+        if: steps.gate.outputs.switch == 'on' && steps.sec.outputs.have == 'yes'
+        with:
+          python-version: '3.12'
+      - name: cache pip wheels (cuts install ~90s -> ~15s so ON lands under a minute)
+        if: steps.gate.outputs.switch == 'on' && steps.sec.outputs.have == 'yes'
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: pip-live-v1-numpy-scipy-requests-cryptography-websockets
+      - name: install deps
+        if: steps.gate.outputs.switch == 'on' && steps.sec.outputs.have == 'yes'
+        run: for i in 1 2 3; do pip install --quiet numpy scipy requests cryptography websockets && break; sleep 10; done
+      - name: preflight + live trade (~46 min, full caps + rails)
+        if: steps.gate.outputs.switch == 'on' && steps.sec.outputs.have == 'yes'
+        env:
+          KALSHI_API_KEY_ID: ${{ secrets.KALSHI_API_KEY_ID }}
+          KALSHI_PRIVATE_KEY: ${{ secrets.KALSHI_PRIVATE_KEY }}
+          # BUGFIX carried over from live.yml: the trader's per-fill / settlement / kill alerts
+          # no-op without these.
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          # FAST OFF: unchanged -- still points at the GLOBAL switch on purpose (see the "known
+          # limitation" note above the job list: this remains the only <1-min stop path, and it
+          # intentionally stops every asset, matching "global switch = emergency stop everything").
+          GH_TOKEN: ${{ github.token }}
+          REMOTE_SWITCH_URL: https://api.github.com/repos/${{ github.repository }}/contents/LIVE_SWITCH?ref=${{ env.BRANCH }}
+          I_UNDERSTAND_REAL_MONEY: "yes"
+        run: |
+          umask 077
+          printf '%s\n' "$KALSHI_PRIVATE_KEY" > "$RUNNER_TEMP/k.pem"
+          chmod 600 "$RUNNER_TEMP/k.pem"
+          export KALSHI_PRIVATE_KEY_PATH="$RUNNER_TEMP/k.pem"
+          if python kalshi_preflight.py --asset "$ASSET" | tee /tmp/pf.txt && grep -q "VERDICT: GO" /tmp/pf.txt; then
+            python -c "import notify; notify.alert_sync('🟢 live session armed ($ASSET) — preflight GO, \$5 cap, posting both sides. Box/settlement alerts follow on fills.')" || true
+            timeout --signal=TERM --kill-after=60 2820 \
+              python -u kalshi_trader.py --asset "$ASSET" --live --size-mode flat \
+                --post 1 --max-notional 5 --loss-limit 6 --max-rungs 1 \
+                --guard-yes-spread 0 --strand-scaledown "0.75,0.5,0.25" --max-fills-side 3 --pair-gate --pair-min-depth 33000 --open-k-min 2 --open-k-max 10 --open-sig-lo 0 --open-sig-hi 10 --dispose-cross --dispose-cross-s 15 --close-force-s 45 --chase-unpaired-s 15 --dispose-max-give 0.25 --post-complete-freeze 1.5 --duration 2760 \
+                --remote-switch-s 20 || true
+          else
+            python -c "import notify; notify.alert_sync('🟡 live cycle skipped ($ASSET) — preflight NO-GO (market/balance gate); retries next cycle.')" || true
+            echo "preflight NO-GO -> not trading this cycle"
+          fi
+          shred -u "$RUNNER_TEMP/k.pem" 2>/dev/null || rm -f "$RUNNER_TEMP/k.pem"
+      - name: persist telemetry + sticky-kill (PER-ASSET, not global)
+        if: always() && steps.gate.outputs.switch == 'on'
+        run: |
+          git config user.name  "live-bot"
+          git config user.email "live-bot@users.noreply.github.com"
+          AU="${{ steps.gate.outputs.asset_switch_file }}"
+          AU="${AU#LIVE_SWITCH_}"
+          # STICKY KILL, PER ASSET: a loss-limit trip wrote the sentinel -> flip THIS asset's
+          # own LIVE_SWITCH_<ASSET> off. Unlike the old single-asset workflow this does NOT
+          # touch the global LIVE_SWITCH -- one asset's bad day must not stop the others (see
+          # header comment #3 / LIVE_EXPANSION.md for why this was the single-workflow's
+          # sharpest multi-asset footgun).
+          if [ -f ".kalshi_killed_${ASSET}15m" ]; then
+            echo off > "LIVE_SWITCH_${AU}"
+            for i in 1 2 3 4 5; do
+              git add "LIVE_SWITCH_${AU}" && git commit -q -m "auto: ${ASSET} loss-limit -> LIVE_SWITCH_${AU} OFF (sticky, per-asset)" || true
+              git push origin "HEAD:${BRANCH}" && break
+              git fetch -q origin "$BRANCH" && git rebase -q "origin/${BRANCH}" || true
+              sleep $((RANDOM % 5 + 2))
+            done
+            python -c "import notify; notify.alert_sync('🔴 [$ASSET] loss-limit kill -> LIVE_SWITCH_${AU} OFF (per-asset sticky). Other assets keep trading. Re-arm: clear LIVE_SWITCH_${AU} (echo on, commit, push) once reviewed.')" || true
+          fi
+          # TELEMETRY -> live-state branch (never pollute the code branch). Filenames were
+          # already asset-parameterized -- no collision across the 4 parallel matrix legs.
+          mkdir -p /tmp/ls
+          cp -f "kalshi_fees_${ASSET}15m.jsonl" kalshi_markout.jsonl "kalshi_winrec_${ASSET}15m.jsonl" \
+                "live_metrics_kalshi_${ASSET}15m.jsonl" /tmp/ls/ 2>/dev/null || true
+          if [ -n "$(ls -A /tmp/ls 2>/dev/null)" ]; then
+            day=$(date -u +%Y-%m-%d)
+            if git fetch --depth=1 origin live-state 2>/dev/null; then
+              git worktree add --detach "/tmp/lw-${ASSET}" origin/live-state; cd "/tmp/lw-${ASSET}" && git checkout -B live-state
+            else
+              git worktree add --detach "/tmp/lw-${ASSET}" HEAD; cd "/tmp/lw-${ASSET}" && git checkout --orphan live-state
+              git rm -rf --cached . >/dev/null 2>&1 || true
+              find "/tmp/lw-${ASSET}" -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+            fi
+            mkdir -p "/tmp/lw-${ASSET}/live_state/$day"
+            cp /tmp/ls/* "/tmp/lw-${ASSET}/live_state/$day/" 2>/dev/null || true
+            cd "/tmp/lw-${ASSET}" && git add live_state
+            git commit -q -m "live telemetry r${{ github.run_id }} $ASSET ($day $(date -u +%H:%MZ))" || true
+            for i in 1 2 3 4 5; do
+              git push origin HEAD:live-state && break
+              git fetch --depth=1 origin live-state && git rebase origin/live-state || true
+              sleep $((RANDOM % 5 + 2))
+            done
+          fi
+
+  chain:
+    # Fires the ONE successor dispatch for the whole matrix. Deliberately NOT part of the
+    # matrix: if each of the 4 asset legs independently dispatched this workflow, every cycle
+    # would multiply the number of in-flight runs by 4 (4 legs -> 4 dispatches -> 16 legs -> ...).
+    # `needs: trade` + `if: always()` means this waits for all 4 (parallel) legs to finish, so
+    # wall-clock cadence is unchanged from the single-asset workflow (~47 min/cycle either way);
+    # it only gates on the GLOBAL switch, so a per-asset kill never stops the other assets' next
+    # cycle -- each leg's own gate step (above) independently decides whether IT trades.
+    name: schedule next cycle
+    needs: trade
+    if: always()
+    runs-on: ubuntu-latest
+    concurrency:
+      group: live-trade-chain
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.BRANCH }}
+          fetch-depth: 1
+      - name: gate on secrets present
+        id: sec
+        run: |
+          if [ -n "${{ secrets.KALSHI_API_KEY_ID }}" ] && [ -n "${{ secrets.KALSHI_PRIVATE_KEY }}" ]; then
+            echo "have=yes" >> "$GITHUB_OUTPUT"
+          else
+            echo "have=no" >> "$GITHUB_OUTPUT"
+          fi
+      - name: dispatch successor (only while the GLOBAL switch is on)
+        if: steps.sec.outputs.have == 'yes'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          sw=$(tr -d '[:space:]' < LIVE_SWITCH 2>/dev/null || echo off)
+          if [ "$sw" = "on" ]; then
+            for i in 1 2 3 4 5; do
+              code=$(curl -s -o /dev/null -w '%{http_code}' -X POST \
+                -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
+                "https://api.github.com/repos/${{ github.repository }}/actions/workflows/live.yml/dispatches" \
+                -d '{"ref":"main"}')
+              [ "$code" = "204" ] && { echo "chained successor"; break; }
+              echo "dispatch -> HTTP $code"; sleep $((2 ** i))
+            done
+          else
+            echo "global switch off -> chain stops (cron re-checks every ~25 min)"
+          fi
