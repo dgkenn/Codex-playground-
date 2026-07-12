@@ -1,0 +1,3 @@
+{"ws": 1783880100, "asset": "btc", "tenor": 15, "strategy": "as+markout", "fills": 7, "requested": 10, "fill_rate": 0.7, "net": 0.02, "gross": 0.02, "inv_max": 1.0, "n_seeded_fills": 0, "seeded_net": 0.0, "n_seed_cooldowns": 0}
+{"ws": 1783881000, "asset": "btc", "tenor": 15, "strategy": "as+markout", "fills": 6, "requested": 9, "fill_rate": 0.6667, "net": 0.03, "gross": 0.03, "inv_max": 1.0, "n_seeded_fills": 0, "seeded_net": 0.0, "n_seed_cooldowns": 0}
+{"ws": 1783881900, "asset": "btc", "tenor": 15, "strategy": "as+markout", "fills": 6, "requested": 11, "fill_rate": 0.5455, "net": 0.0, "gross": 0.0, "inv_max": 1.0, "n_seeded_fills": 0, "seeded_net": 0.0, "n_seed_cooldowns": 0}
