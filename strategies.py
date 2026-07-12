@@ -40,6 +40,12 @@ class Strat:
     #                                   constant -- current behavior for every pre-existing strat.
     mo_k: float | None = None         # PARAMETER SWEEP: per-strat override of shadow_compare.MO_K
     #                                   (the "markout" size_mode's favorability slope). None = module const.
+    px_band: tuple[float, float] | None = None   # FILL-EFFICIENCY ARM (2026-07-12 live fills study):
+    #   (lo, hi) -> skip OPENING fills (fills that build/hold inventory in its current direction,
+    #   i.e. do NOT reduce |inventory| -- same completion carve-out `as`/`as_full` already use)
+    #   whose price falls outside [lo, hi]. Completions are NEVER affected. None (default) = unchanged
+    #   -- byte-identical to pre-px_band behavior. Orthogonal to `gate`/`size_mode` (own code path in
+    #   Variant.on_trade); see shadow_compare.py's Variant._px_band_blocked.
     enabled: bool = True
     note: str = ""
 
@@ -118,6 +124,27 @@ REGISTRY: list[Strat] = [
           note="MO_K sweep: half the markout-size favorability slope (mo_size config, flatter sizing curve)"),
     Strat("mo_k_2x", size_mode="markout", mo_k=_MO_K_BASE * 2.0,
           note="MO_K sweep: double the markout-size favorability slope (mo_size config, steeper sizing curve)"),
+
+    # -- FILL-EFFICIENCY arms (px_band; live fills study, 2026-07-12): quotes at extreme prices
+    #    (>=0.70) had 41% cancelled-unfilled (wasted queue effort) while <0.30 fills were the BEST
+    #    performers live. Hypothesis: trim quoting effort in the expensive (>=0.70) band only --
+    #    px_band skips OPENING quotes outside [lo, hi]; completions are never affected (see
+    #    Strat.px_band docstring above / shadow_compare.py Variant._px_band_blocked).
+    #    PRE-REGISTERED promotion bar (declared BEFORE any data, same bar as the other 2026-07
+    #    candidate blocks): >=14 forward days, day-clustered t>=3, gross-positive >=80% of days,
+    #    mean edge >= av_stoikov (the config both arms are built on) same-days.
+    Strat("as_trim70", skew=0.99, gate="as", px_band=(0.0, 0.70),
+          note="av_stoikov + px_band=(0.0,0.70): trims ONLY the expensive (>=0.70) side that wasted "
+               "queue effort live (41% cancelled-unfilled there) -- the direct, single-sided fix "
+               "the fills study points at. A-PRIORI: expected to WIN or be neutral (trims a "
+               "wasteful band without touching the cheap side where fills already do best)."),
+    Strat("as_band", skew=0.99, gate="as", px_band=(0.30, 0.70),
+          note="av_stoikov + px_band=(0.30,0.70): trims BOTH tails, including the <0.30 band that "
+               "was the BEST-performing fill bucket live. A-PRIORI: expected to LOSE relative to "
+               "as_trim70/av_stoikov -- deliberately included to isolate whether the cheap band is "
+               "where av_stoikov's edge actually lives; a loss here is a POSITIVE result (it "
+               "confirms the edge is concentrated <0.30, not spread evenly) and is not grounds to "
+               "abandon px_band on its own."),
 
     # -- TIER-1/2 candidates (mechanism-prior arms building on the two winners: full A-S reservation
     #    pricing, A-S optimal spread, queue depth, late-window sizing, vol-inverse sizing, cross-asset
@@ -283,6 +310,13 @@ def validate(strats: list[Strat] | None = None) -> list[str]:
             errs.append(f"{s.name}: as_k must be > 0 (or None for module default): {s.as_k}")
         if s.mo_k is not None and s.mo_k <= 0:
             errs.append(f"{s.name}: mo_k must be > 0 (or None for module default): {s.mo_k}")
+        if s.px_band is not None:
+            if len(s.px_band) != 2:
+                errs.append(f"{s.name}: px_band must be a (lo, hi) pair: {s.px_band!r}")
+            else:
+                lo, hi = s.px_band
+                if not (0.0 <= lo < hi <= 1.0):
+                    errs.append(f"{s.name}: px_band must satisfy 0 <= lo < hi <= 1: {s.px_band!r}")
     return errs
 
 
@@ -293,7 +327,7 @@ def snapshot() -> dict:
             "disabled": [s.name for s in REGISTRY if not s.enabled],
             "roster": [{"name": s.name, "cap": s.cap, "skew": s.skew, "size_mode": s.size_mode,
                         "gate": s.gate, "tau_guard": s.tau_guard, "as_k": s.as_k, "mo_k": s.mo_k,
-                        "enabled": s.enabled} for s in REGISTRY]}
+                        "px_band": s.px_band, "enabled": s.enabled} for s in REGISTRY]}
 
 
 def main():
@@ -308,6 +342,8 @@ def main():
             ov += f" as_k={s.as_k:g}"
         if s.mo_k is not None:
             ov += f" mo_k={s.mo_k:g}"
+        if s.px_band is not None:
+            ov += f" px_band=[{s.px_band[0]:g},{s.px_band[1]:g}]"
         print(f" [{flag}] {s.name:<14} cap={s.cap:<5g} skew={s.skew:<5g} size={s.size_mode:<7} gate={g:<11}{ov} {s.note}")
     if errs:
         print("\nVALIDATION FAILED:")

@@ -220,7 +220,7 @@ class Variant:
     """One strategy config; own book/queue/inventory; fed the shared live event stream."""
 
     def __init__(self, name, mk, cap, skew, size_mode="flat", gate=None, shared=None,
-                 short_skew=None, tau_guard=0, as_k=None, mo_k=None):
+                 short_skew=None, tau_guard=0, as_k=None, mo_k=None, px_band=None):
         self.name = name; self.mk = mk; self.cap = cap; self.skew = skew
         self.tau_guard = tau_guard   # pull ALL quotes when < tau_guard seconds to close (late = informed)
         # asymmetric inventory leash: separate (usually tighter) threshold for building SHORT,
@@ -230,6 +230,10 @@ class Variant:
         # PARAMETER SWEEP ARMS: per-strat override of the module-level AS_K/MO_K constants.
         # None (default) = use the module constant -- byte-identical to pre-sweep behavior.
         self.as_k = as_k; self.mo_k = mo_k
+        # FILL-EFFICIENCY ARM (2026-07-12 live fills study): (lo, hi) or None. See
+        # Strat.px_band (strategies.py) for the full spec; None (default) is byte-identical to
+        # pre-px_band behavior -- _px_band_blocked() below short-circuits on it immediately.
+        self.px_band = px_band
         self.post = 20.0
         self.up_inv = self.dn_inv = self.cash = self.rebate = self.delta = 0.0
         self.fills = 0
@@ -290,6 +294,24 @@ class Variant:
         tau = max(self.mk["we"] - time.time(), 0.0)
         p = fair_up(s["st"], s["s0"], SIGMA, tau)
         return p if self.is_up(token) else (1.0 - p)
+
+    def _px_band_blocked(self, price, d_per):
+        """FILL-EFFICIENCY ARM (px_band, 2026-07-12 live fills study): True to SKIP an OPENING
+        fill priced outside [lo, hi]. Orthogonal to `gate`/`_gated` -- its own code path, checked
+        separately in on_trade -- and default-inert (returns False immediately when px_band is
+        None, the default for every existing strat, so this is byte-identical to pre-px_band
+        behavior for all of them).
+
+        OPENING vs completing follows the exact same carve-out the `as`/`as_full` gates already
+        use (`self.delta * d_per < 0` -> reduces |inventory| -> completion, never blocked here):
+        a fill that does not reduce |inventory| (builds it, or the book is flat) is an opening
+        fill and is the only kind px_band ever touches."""
+        if self.px_band is None:
+            return False
+        if self.delta * d_per < 0:            # reduces |inventory| -> completion, never blocked
+            return False
+        lo, hi = self.px_band
+        return not (lo <= price <= hi)
 
     def _gated(self, token, our_side, price, ahead=None):
         """Return True to SKIP the fill (pull the quote) per this variant's gate. `ahead` (resting
@@ -831,6 +853,8 @@ class Variant:
         lim = (self.short_skew if d_per < 0 else self.skew) * self.cap
         if self._gated(token, our_side, price, ahead):
             reason, fill = "gated", 0.0
+        elif self._px_band_blocked(price, d_per):
+            reason, fill = "px_band", 0.0
         elif abs(self.delta) >= lim and (self.delta * d_per) > 0:
             reason, fill = "skew_block", 0.0
         else:
@@ -962,7 +986,7 @@ def configs(mk, shared):
     import strategies
     return [Variant(s.name, mk, s.cap, s.skew, size_mode=s.size_mode, gate=s.gate,
                     shared=shared, short_skew=s.short_skew, tau_guard=s.tau_guard,
-                    as_k=s.as_k, mo_k=s.mo_k)
+                    as_k=s.as_k, mo_k=s.mo_k, px_band=s.px_band)
             for s in strategies.enabled()]
 
 

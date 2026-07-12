@@ -3268,6 +3268,486 @@ def test_completion_deficit_fix():
 
 
 # ===========================================================================
+# TEST 33 — GAP 1 (2026-07-12 telemetry forensics): winrec row for EVERY
+#   traded window, including zero-fill traded windows and windows lost to
+#   evict/relaunch (kalshi_winrec_btc15m.jsonl got only 3 rows for ~11 traded
+#   windows because the row was only ever written when the loop lived long
+#   enough to see the NEXT window's rollover -- see _write_winrec_row /
+#   _flatten_and_exit in kalshi_trader.py).
+# ===========================================================================
+
+def _winrec_exit_guard(requested, n_yes, n_no, mk_ws, already_written_ws):
+    """Replicates the GAP 1 exit-path guard verbatim (kalshi_trader.py _flatten_and_exit,
+    right after cancel_all_resting()):
+
+        if mk is not None and (ops.get("place", 0) > 0
+                                or (win_fills.get("yes", 0) + win_fills.get("no", 0)) > 0):
+            _write_winrec_row(mk, None)
+
+    combined with _write_winrec_row's own idempotency guard:
+
+        if mk_ is None or _winrec_written_ws["ws"] == mk_["ws"]:
+            return
+
+    Returns True iff a row would actually be written."""
+    traded = requested > 0 or (n_yes + n_no) > 0
+    if not traded:
+        return False
+    return already_written_ws != mk_ws
+
+
+def test_winrec_every_traded_window():
+    """
+    GAP 1 root cause: winrec_fh.write() lived ONLY inside the "Window rollover" branch of the
+    main loop, which only runs once the loop observes time.time() >= mk["we"] for the NEXT
+    window while still alive. The trader is routinely evicted + relaunched at/near a window
+    boundary (see kalshi_trader.py git history: "evict ... + relaunch at window boundary") --
+    a fresh process has blank in-memory state (win_fills/ops/winrec all reset to zero), so the
+    window that was actively trading when the OLD process died never reached the rollover code
+    and its row was silently lost forever. Fix: factor the row-build into a shared
+    _write_winrec_row(), called both at normal rollover (unconditional, unchanged) AND from
+    _flatten_and_exit() (every exit path: normal, exception, SIGTERM, atexit) whenever the
+    still-open window was actually traded (requested>0 OR fills>0).
+
+    Checks:
+      1. Guard logic: a traded window with ZERO fills (requested>0, n_yes=n_no=0) still gets a
+         row; a window with neither requests nor fills does NOT (avoids spurious empty rows for
+         a window that was open but never touched at process exit); idempotent (won't double
+         write a window already flushed by the normal rollover path).
+      2. Structural: _write_winrec_row exists, is called unconditionally at the normal rollover
+         site AND from _flatten_and_exit under the exact requested>0-or-fills>0 gate;
+         _flatten_and_exit runs on every exit (atexit/SIGTERM/SIGINT/exception) per T6/T7.
+      3. Schema: the row still carries every pre-existing field (net_final, n_yes, n_no,
+         n_dispose_cross, dispose_give, stranded, legging_gap_s, ...) PLUS the new
+         deadman_max_tier field (peak dead-man tier reached during the window -- tracked
+         separately from deadman_tier because that resets to 0 on transport recovery mid-window).
+    """
+    name = "T33: winrec row for every traded window (GAP 1, 2026-07-12 telemetry forensics)"
+    try:
+        import inspect
+        observations = []
+
+        # --- 1. guard logic: zero-fill-but-traded window still gets a row ---
+        assert _winrec_exit_guard(requested=5, n_yes=0, n_no=0, mk_ws=100, already_written_ws=None) is True, \
+            "a traded window with zero fills (requested>0) must still get a winrec row"
+        observations.append("zero_fill_traded_window_writes=True")
+
+        # --- untraded window (never touched) does NOT get a spurious row at exit ---
+        assert _winrec_exit_guard(requested=0, n_yes=0, n_no=0, mk_ws=101, already_written_ws=None) is False, \
+            "a window with no requests and no fills must not get a spurious exit-time row"
+        observations.append("untouched_window_no_spurious_row=True")
+
+        # --- some fills but ops['place'] undercounted (shouldn't happen, but fills alone qualify) ---
+        assert _winrec_exit_guard(requested=0, n_yes=2, n_no=1, mk_ws=102, already_written_ws=None) is True
+        observations.append("fills_alone_qualify_as_traded=True")
+
+        # --- idempotent: a window already flushed by the normal rollover must not double-write
+        # if the exit path also runs (the exact race the shared _winrec_written_ws guard exists for) ---
+        assert _winrec_exit_guard(requested=5, n_yes=1, n_no=1, mk_ws=200, already_written_ws=200) is False, \
+            "a window whose row was already written must not be written again at exit"
+        assert _winrec_exit_guard(requested=5, n_yes=1, n_no=1, mk_ws=201, already_written_ws=200) is True, \
+            "a DIFFERENT (new, in-progress) window must still get its own row at exit"
+        observations.append("idempotent_no_double_write_new_window_still_written=True")
+
+        # --- 2. structural: shared writer exists, used at both call sites ---
+        src = inspect.getsource(kt)
+        assert "def _write_winrec_row(mk_, r_now):" in src
+        assert 'if mk_ is None or _winrec_written_ws["ws"] == mk_["ws"]:' in src, \
+            "the writer must guard on identity + already-written, matching the replica above"
+        observations.append("shared_writer_present_with_idempotency_guard=True")
+
+        # normal rollover site: unconditional call (byte-identical trigger condition to before --
+        # every window, traded or not, as it always was)
+        idx_roll = src.index("# Window rollover")
+        idx_roll_end = src.index("win_fills = {\"yes\": 0, \"no\": 0}   # fresh window", idx_roll)
+        roll_block = src[idx_roll: idx_roll_end]
+        assert "_write_winrec_row(mk, r_now)" in roll_block, \
+            "the normal rollover path must call the shared writer unconditionally"
+        observations.append("rollover_site_calls_shared_writer_unconditionally=True")
+
+        # exit site: gated call, right after cancel_all_resting(reason="deadman")
+        idx_exit = src.index("def _flatten_and_exit(reason):")
+        idx_exit_end = src.index("def ", idx_exit + 40)
+        exit_block = src[idx_exit: idx_exit_end]
+        assert 'cancel_all_resting(reason="deadman")' in exit_block
+        assert ('ops.get("place", 0) > 0\n' in exit_block
+                or 'ops.get("place", 0) > 0' in exit_block), \
+            "exit path must gate on ops['place']>0 (matches the replica's `requested`)"
+        assert '(win_fills.get("yes", 0) + win_fills.get("no", 0)) > 0' in exit_block, \
+            "exit path must ALSO gate on fills>0 (requested>0 OR fills>0, matches the replica)"
+        assert "_write_winrec_row(mk, None)" in exit_block, \
+            "exit path must call the shared writer for the still-open window"
+        idx_cancel_in_exit = exit_block.index('cancel_all_resting(reason="deadman")')
+        idx_write_in_exit = exit_block.index("_write_winrec_row(mk, None)")
+        assert idx_cancel_in_exit < idx_write_in_exit, \
+            "cancel_all_resting must run before the exit-time winrec flush (final state snapshot)"
+        observations.append("exit_site_gated_call_present_after_cancel_all_resting=True")
+
+        # atexit/signal wiring already validated by T6/T7 (error-storm/stale-book dead-man) --
+        # confirm _flatten_and_exit is STILL the thing registered for every exit path.
+        assert 'atexit.register(lambda: _flatten_and_exit("process exit"))' in src
+        assert "signal.signal(_sig," in src and "_flatten_and_exit(f\"signal {s_}\")" in src
+        observations.append("flatten_and_exit_still_wired_to_atexit_and_signals=True")
+
+        # --- 3. schema: pre-existing fields kept + new deadman_max_tier field added ---
+        writer_idx = src.index("def _write_winrec_row(mk_, r_now):")
+        writer_end = src.index("\n    def _sweep_unresolved_lifecycle", writer_idx)
+        writer_src = src[writer_idx: writer_end]
+        for field in ('"ts"', '"asset"', '"ws"', '"cid"', '"settle"', '"net_final"', '"n_yes"',
+                      '"n_no"', '"n_boxes"', '"stranded"', '"abs_strand"', '"maxnet"',
+                      '"legging_gap_s"', '"n_taker"', '"n_maker"', '"n_dispose_cross"',
+                      '"dispose_give"', '"dispose_capped"', '"cost_yes"', '"cost_no"',
+                      '"consec_strands"', '"realized"', '"window_mark"', '"guard_yes"',
+                      '"max_fills_side"', '"dispose_cross_on"', '"dispose_max_attempts"',
+                      '"dispose_budget"'):
+            assert field in writer_src, f"pre-existing winrec schema field {field} missing"
+        assert '"deadman_max_tier"' in writer_src, "new deadman_max_tier field missing"
+        observations.append("schema_preserved_plus_deadman_max_tier_added=True")
+
+        # deadman_max_tier is tracked separately from deadman_tier (which resets on recovery)
+        assert 'winrec["deadman_max_tier"] = max(winrec.get("deadman_max_tier", 0), _new_deadman_tier)' in src
+        assert '"deadman_max_tier": 0' in src, "winrec reset dict must (re-)seed the new field"
+        observations.append("deadman_max_tier_tracked_independent_of_recovery_reset=True")
+
+        record(name, True, "; ".join(observations))
+    except Exception as e:
+        record(name, False, f"{type(e).__name__}: {e}\n{traceback.format_exc()}")
+
+
+# ===========================================================================
+# TEST 34 — GAP 2 (2026-07-12 telemetry forensics): every placed order
+#   eventually gets EXACTLY ONE terminal lifecycle row. TTL-assumed expiry is
+#   promoted from "observational only" to an actual drop + "expire_assumed"
+#   terminal row; a periodic sweep closes out anything still tracked (e.g. a
+#   cancel that never got a venue-side confirmation) at window/session end
+#   with "unresolved_window_end".
+# ===========================================================================
+
+def _ttl_expire_sweep(resting, order_ttl_s, now):
+    """Replicates kalshi_trader.py's promoted TTL EXPIRE block: any resting order aged
+    >= order_ttl_s is POPPED (we now trust the venue-side TTL -- no redundant cancel_order()
+    call) and an 'expire_assumed' terminal event is recorded for it."""
+    events = []
+    if not order_ttl_s or order_ttl_s <= 0:
+        return events
+    for key in [k for k, m in resting.items() if (now - m["ts"]) >= order_ttl_s]:
+        meta = resting.pop(key)
+        events.append(("expire_assumed", meta.get("oid"), key))
+    return events
+
+
+def _unresolved_sweep(pending_cancel, resting):
+    """Replicates kalshi_trader.py's _sweep_unresolved_lifecycle(): every order still tracked
+    in pending_cancel or resting gets a terminal 'unresolved_window_end' row and is purged."""
+    events = []
+    for key in list(pending_cancel.keys()):
+        meta = pending_cancel.pop(key)
+        events.append(("unresolved_window_end", meta.get("oid"), key))
+    for key in list(resting.keys()):
+        meta = resting.pop(key)
+        events.append(("unresolved_window_end", meta.get("oid"), key))
+    return events
+
+
+def test_lifecycle_every_place_gets_terminal_row():
+    """
+    GAP 2 root cause: 43% of placed orders on 2026-07-12 had NO terminal lifecycle event. Two
+    leaks: (a) TTL-assumed-expired orders were only ever flagged '_lifecycle_expired' + logged
+    an 'expire' row WITHOUT being removed from `resting` -- never actually terminal, and (b) a
+    cancel that failed venue-side (cancel_fail in flush_cancels) left the order in
+    `pending_cancel` forever with no fill/cancel/expire row ever written.
+
+    Checks (simulated window, mirrors the real dict shapes/flow -- resting/pending_cancel keyed
+    by (side, price), meta carries oid/ts/want/filled):
+      1. TTL-assumed expiry: an order aged past --order-ttl-s is dropped from `resting` and gets
+         exactly one 'expire_assumed' row; an order NOT yet aged is left alone (still trackable
+         by the normal fill/cancel paths).
+      2. Unresolved-at-window-end sweep: whatever is STILL in pending_cancel (cancel_fail
+         leftover) or resting at window end gets exactly one 'unresolved_window_end' row.
+      3. End-to-end: a simulated window with N placed orders (fill / cancel / TTL-expire /
+         cancel_fail-leftover) produces exactly N terminal rows, no order left uncovered and none
+         double-covered.
+      4. Structural: the real TTL block actually pops from `resting` now (promoted from
+         observational-only) and writes 'expire_assumed'; the old passive '_lifecycle_expired'
+         flag marker is GONE; _sweep_unresolved_lifecycle pops both dicts and writes
+         'unresolved_window_end'; it's called at the normal rollover site (right after
+         cancel_all_resting()) AND inside _flatten_and_exit (every exit path).
+    """
+    name = "T34: every placed order gets exactly one terminal lifecycle row (GAP 2)"
+    try:
+        import inspect
+        observations = []
+
+        # --- 1. TTL-assumed expiry ---
+        now = 1_000_000.0
+        resting = {
+            ("yes", 0.45): {"oid": "o1", "ts": now - 200, "filled": 0.0, "want": 5},  # aged past TTL
+            ("no", 0.30):  {"oid": "o2", "ts": now - 10,  "filled": 0.0, "want": 5},  # fresh
+        }
+        events = _ttl_expire_sweep(resting, order_ttl_s=150.0, now=now)
+        assert len(events) == 1 and events[0][0] == "expire_assumed" and events[0][1] == "o1", \
+            f"expected exactly one expire_assumed for the aged order, got {events}"
+        assert ("yes", 0.45) not in resting, "TTL-assumed-expired order must be DROPPED from resting"
+        assert ("no", 0.30) in resting, "not-yet-aged order must be left alone"
+        observations.append("ttl_assumed_expiry_drops_aged_only=True")
+
+        # order_ttl_s off -> no-op (matches the real `if a.order_ttl_s and a.order_ttl_s > 0:` guard)
+        resting2 = {("yes", 0.5): {"oid": "o3", "ts": now - 999, "filled": 0.0, "want": 1}}
+        assert _ttl_expire_sweep(resting2, order_ttl_s=0, now=now) == []
+        assert ("yes", 0.5) in resting2, "TTL sweep must be a no-op when order_ttl_s is falsy"
+        observations.append("ttl_sweep_noop_when_disabled=True")
+
+        # --- 2. unresolved-at-window-end sweep ---
+        pending_cancel = {("yes", 0.60): {"oid": "o2b", "ts": now, "filled": 0.0, "want": 5}}
+        resting3 = {("no", 0.30): {"oid": "o2", "ts": now, "filled": 0.0, "want": 5}}
+        events2 = _unresolved_sweep(pending_cancel, resting3)
+        assert len(events2) == 2, f"expected 2 unresolved_window_end rows, got {events2}"
+        assert all(e[0] == "unresolved_window_end" for e in events2)
+        assert pending_cancel == {} and resting3 == {}, \
+            "the sweep must fully purge both dicts (idempotent -- nothing left to double-write later)"
+        observations.append("unresolved_sweep_closes_out_both_dicts=True")
+
+        # --- 3. end-to-end: N placed orders -> N terminal rows, no gaps, no doubles ---
+        # simulate a window with 4 placed orders: 1 fills, 1 cancels cleanly (not our sweep's
+        # concern -- covered by the pre-existing "cancel" event path), 1 TTL-assumed-expires,
+        # 1 gets stuck in pending_cancel (cancel_fail) until window end.
+        terminal_rows = []
+        # order A: fills (pre-existing path, not simulated here -- just accounted for)
+        terminal_rows.append(("fill", "oA"))
+        # order B: cancels cleanly (pre-existing path)
+        terminal_rows.append(("cancel", "oB"))
+        # order C: TTL-assumed-expires mid-window
+        resting_sim = {("yes", 0.20): {"oid": "oC", "ts": now - 200, "filled": 0.0, "want": 5}}
+        terminal_rows += [(e, oid) for e, oid, _ in _ttl_expire_sweep(resting_sim, 150.0, now)]
+        # order D: cancel_fail leftover, only resolved by the window-end sweep
+        pending_cancel_sim = {("no", 0.55): {"oid": "oD", "ts": now, "filled": 0.0, "want": 5}}
+        terminal_rows += [(e, oid) for e, oid, _ in _unresolved_sweep(pending_cancel_sim, resting_sim)]
+        oids = sorted(oid for _, oid in terminal_rows)
+        assert oids == ["oA", "oB", "oC", "oD"], f"every placed order must get exactly one terminal row: {oids}"
+        assert len(terminal_rows) == len(set(oids)) == 4, "no order may get zero or multiple terminal rows"
+        assert resting_sim == {} and pending_cancel_sim == {}, "nothing left tracked after window end"
+        observations.append("four_orders_four_distinct_terminal_rows_no_gaps_no_doubles=True")
+
+        # --- 4. structural: real source promoted from observational-only + wired at both sites ---
+        src = inspect.getsource(kt)
+        idx_ttl = src.index("# ORDER-LIFECYCLE: TTL EXPIRE detection")
+        idx_ttl_end = src.index("# Rung cap: evict rungs", idx_ttl)
+        ttl_block = src[idx_ttl: idx_ttl_end]
+        assert '"expire_assumed"' in ttl_block, "TTL block must emit the expire_assumed event"
+        assert "resting.pop(key" in ttl_block, \
+            "TTL-assumed-expired orders must actually be dropped from `resting` now"
+        assert "_lifecycle_expired" not in ttl_block, \
+            "the old passive flag-only marker must be gone (promoted to an actual drop)"
+        assert '"expire",' not in ttl_block, \
+            "the old non-terminal 'expire' observational event must be replaced, not duplicated"
+        observations.append("ttl_block_promoted_drops_and_emits_expire_assumed=True")
+
+        assert "def _sweep_unresolved_lifecycle():" in src
+        sweep_idx = src.index("def _sweep_unresolved_lifecycle():")
+        sweep_end = src.index("\n    # --- poll live balance", sweep_idx) if "\n    # --- poll live balance" in src[sweep_idx:] else src.index("\n    def ", sweep_idx + 40)
+        sweep_src = src[sweep_idx: sweep_end]
+        assert '"unresolved_window_end"' in sweep_src
+        assert "pending_cancel.pop(key, None)" in sweep_src
+        assert "resting.pop(key, None)" in sweep_src
+        observations.append("sweep_function_pops_both_dicts_emits_unresolved_window_end=True")
+
+        # called at rollover, right after cancel_all_resting()
+        idx_roll2 = src.index('cancel_all_resting()   # tokens change on rollover')
+        roll2_tail = src[idx_roll2: idx_roll2 + 300]
+        assert "_sweep_unresolved_lifecycle()" in roll2_tail, \
+            "rollover must sweep for unresolved orders right after cancel_all_resting()"
+        observations.append("rollover_calls_sweep_after_cancel_all_resting=True")
+
+        # called inside _flatten_and_exit too (every exit path)
+        idx_exit2 = src.index("def _flatten_and_exit(reason):")
+        idx_exit2_end = src.index("def ", idx_exit2 + 40)
+        exit2_block = src[idx_exit2: idx_exit2_end]
+        assert "_sweep_unresolved_lifecycle()" in exit2_block, \
+            "_flatten_and_exit must also sweep for unresolved orders on process exit"
+        observations.append("exit_path_calls_sweep_too=True")
+
+        record(name, True, "; ".join(observations))
+    except Exception as e:
+        record(name, False, f"{type(e).__name__}: {e}\n{traceback.format_exc()}")
+
+
+# ===========================================================================
+# TEST 35 — GAP 3 (2026-07-12 telemetry forensics): live_recon rows carry
+#   n_dispose_cross/dispose_give (previously winrec-only), so the two files
+#   can be analyzed independently without a join.
+# ===========================================================================
+
+def _recon_row(requested, fills, net, gross, inv_max, n_dispose_cross=0, dispose_give=0.0):
+    """Replicates the _recon_write() row shape (kalshi_trader.py) for the fields under test."""
+    return {
+        "fills": int(fills), "requested": int(requested),
+        "fill_rate": round(fills / requested, 4) if requested else 0.0,
+        "net": round(net, 4), "gross": round(gross, 4), "inv_max": round(inv_max, 2),
+        "n_dispose_cross": int(n_dispose_cross), "dispose_give": round(dispose_give, 4),
+    }
+
+
+def test_recon_carries_dispose_fields():
+    """
+    GAP 3: n_dispose_cross/dispose_give existed ONLY in kalshi_winrec_btc15m.jsonl; live_recon
+    rows had no disposal-cross telemetry at all, forcing a join to winrec for any recon-only
+    analysis. Fix: _recon_write() gains n_dispose_cross/dispose_give params (default 0/0.0 --
+    every pre-existing call site that doesn't pass them stays byte-identical), and every one of
+    the three call sites (no-activity immediate write, void settlement, real settlement) now
+    threads the window's own dispose-cross snapshot through.
+    """
+    name = "T35: live_recon rows carry n_dispose_cross/dispose_give (GAP 3)"
+    try:
+        import inspect
+        observations = []
+
+        # --- 1. row shape / default-inert (byte-identical when not passed) ---
+        row_default = _recon_row(10, 3, 0.5, 0.5, 2.0)
+        assert row_default["n_dispose_cross"] == 0 and row_default["dispose_give"] == 0.0, \
+            "default (no dispose activity) must be 0/0.0, matching pre-GAP-3 call sites"
+        observations.append("dispose_fields_default_zero=True")
+
+        row_active = _recon_row(62, 6, -0.55, -0.55, 1.0, n_dispose_cross=53, dispose_give=0.09)
+        assert row_active["n_dispose_cross"] == 53 and row_active["dispose_give"] == 0.09
+        observations.append("dispose_fields_carry_through_when_nonzero=True")
+
+        # --- 2. structural: _recon_write signature + row + all 3 call sites threaded ---
+        src = inspect.getsource(kt)
+        assert ("def _recon_write(ws_epoch, requested, fills, net, gross, inv_max,\n"
+                "                     n_seeded_fills=0, seeded_net=0.0, n_seed_cooldowns=0,\n"
+                "                     n_dispose_cross=0, dispose_give=0.0):") in src, \
+            "_recon_write must gain n_dispose_cross/dispose_give with 0/0.0 defaults"
+        rw_idx = src.index("def _recon_write(ws_epoch")
+        rw_end = src.index("\n    # WINDOW-END GUARD", rw_idx)
+        rw_src = src[rw_idx: rw_end]
+        assert '"n_dispose_cross": int(n_dispose_cross), "dispose_give": round(dispose_give, 4),' in rw_src
+        observations.append("recon_write_row_carries_new_fields=True")
+
+        # entry snapshot at rollover (mirrors the pre-existing recon_invmax pattern)
+        assert "_recon_dispose_cross = winrec[\"dispose_cross\"]" in src
+        assert '_recon_dispose_give = winrec.get("dispose_give", 0.0)' in src
+        assert '"recon_dispose_cross": _recon_dispose_cross,' in src
+        assert '"recon_dispose_give": _recon_dispose_give,' in src
+        observations.append("rollover_snapshots_dispose_fields_into_pending_settle_entry=True")
+
+        # all three call sites pass the fields through
+        n_immediate = src.count("n_dispose_cross=_recon_dispose_cross, dispose_give=_recon_dispose_give")
+        n_settle = src.count('n_dispose_cross=en.get("recon_dispose_cross", 0),\n'
+                             '                                    dispose_give=en.get("recon_dispose_give", 0.0))')
+        assert n_immediate == 1, f"expected exactly 1 no-activity call site threading dispose fields, got {n_immediate}"
+        assert n_settle == 2, f"expected exactly 2 settle-path (void + real) call sites, got {n_settle}"
+        observations.append(f"all_three_recon_write_call_sites_threaded=immediate={n_immediate}_settle={n_settle}")
+
+        record(name, True, "; ".join(observations))
+    except Exception as e:
+        record(name, False, f"{type(e).__name__}: {e}\n{traceback.format_exc()}")
+
+
+# ===========================================================================
+# TEST 36 — px_band shadow-test arms (strategies.py / shadow_compare.py):
+#   pre-registered fill-efficiency arms as_trim70 / as_band, engine-level
+#   default-inertness (px_band=None byte-identical to pre-px_band behavior),
+#   and OPENING-only / completions-unaffected semantics.
+# ===========================================================================
+
+def test_px_band_shadow_arms():
+    """
+    Fills study (2026-07-12): quotes at extreme prices (>=0.70) had 41% cancelled-unfilled
+    (wasted queue effort) while <0.30 fills were the BEST performers live. Strat.px_band=(lo, hi)
+    (default None=unchanged) skips OPENING quotes priced outside [lo, hi]; completions are never
+    affected. Two pre-registered arms: as_trim70 (av_stoikov + px_band=(0.0,0.70), trims only the
+    expensive side) and as_band (av_stoikov + px_band=(0.30,0.70), trims both tails -- expected to
+    LOSE since <0.30 was the best band live; isolates whether the edge lives there).
+
+    shadow_compare.py has no existing test file, so this is the small standalone px_band unit +
+    engine-level test called for in that case.
+    """
+    name = "T36: px_band fill-efficiency shadow arms (pre-registered, default-inert)"
+    try:
+        import strategies
+        import shadow_compare as sc
+        observations = []
+
+        # --- 1. registration: both arms present, enabled, correctly configured ---
+        errs = strategies.validate()
+        assert errs == [], f"strategies.validate() must pass with the new arms: {errs}"
+        by_name = {s.name: s for s in strategies.REGISTRY}
+        assert "as_trim70" in by_name and "as_band" in by_name
+        t70, band = by_name["as_trim70"], by_name["as_band"]
+        assert t70.enabled and band.enabled, "both px_band arms must be enabled (live A/B)"
+        assert t70.gate == "as" and band.gate == "as", "both build on the av_stoikov (as) config"
+        assert t70.skew == 0.99 and band.skew == 0.99, "both must match av_stoikov's skew=0.99"
+        assert t70.px_band == (0.0, 0.70), f"as_trim70 px_band mismatch: {t70.px_band}"
+        assert band.px_band == (0.30, 0.70), f"as_band px_band mismatch: {band.px_band}"
+        assert t70.note and band.note, "pre-registered a-priori notes must be present"
+        assert "WIN" in t70.note.upper() or "NEUTRAL" in t70.note.upper(), \
+            "as_trim70 must carry an a-priori (pre-registered) directional expectation"
+        assert "LOSE" in band.note.upper(), \
+            "as_band must carry the pre-registered expectation that it LOSES (isolates the <0.30 edge)"
+        observations.append("both_arms_registered_enabled_correctly_configured_with_a_priori_notes=True")
+
+        # --- baseline/av_stoikov and every OTHER strat must be untouched (px_band=None default) ---
+        for s in strategies.REGISTRY:
+            if s.name in ("as_trim70", "as_band"):
+                continue
+            assert s.px_band is None, f"{s.name}: px_band must stay None (default-inert) -- got {s.px_band}"
+        observations.append("all_other_arms_px_band_none_byte_identical=True")
+
+        # --- 2. engine: px_band=None is a true no-op (_px_band_blocked always False) ---
+        mk = {"up": "TOK_UP", "down": "TOK_DOWN", "we": time.time() + 900}
+        shared = {"st": None, "s0": None, "spothist": [], "microhist": {}, "flow": {}, "qema": {}}
+        v_none = sc.Variant("v_none", mk, cap=50, skew=0.99, gate="as", shared=shared, px_band=None)
+        for price, d_per, delta in [(0.01, 1.0, 0.0), (0.99, -1.0, 0.0), (0.5, 1.0, 5.0), (2.0, 1.0, -5.0)]:
+            v_none.delta = delta
+            assert v_none._px_band_blocked(price, d_per) is False, \
+                f"px_band=None must NEVER block (price={price} d_per={d_per} delta={delta})"
+        observations.append("px_band_none_never_blocks_engine_level=True")
+
+        # --- 3. engine: OPENING fill outside [lo,hi] IS blocked; inside is NOT; completions
+        # (opposite direction to current delta) are NEVER blocked regardless of price ---
+        v = sc.Variant("v_band", mk, cap=50, skew=0.99, gate=None, shared=shared, px_band=(0.30, 0.70))
+        assert v._px_band_blocked(0.85, 1.0) is True, "opening fill outside band must block (delta=0 flat)"
+        assert v._px_band_blocked(0.50, 1.0) is False, "opening fill inside band must pass"
+        v.delta = 5.0
+        assert v._px_band_blocked(0.85, 1.0) is True, "opening (same-direction) fill outside band still blocks"
+        assert v._px_band_blocked(0.85, -1.0) is False, \
+            "completing (opposite-direction, reduces |inventory|) fill must NEVER be blocked, any price"
+        observations.append("opening_blocked_outside_band_completions_always_pass=True")
+
+        # --- 4. full on_trade() engine integration: outside-band opening skipped (fill=0, delta
+        # unchanged), in-band opening fills, and a subsequent completion outside the band still
+        # goes through (net delta returns toward 0) ---
+        vt = sc.Variant("vt", mk, cap=50, skew=0.99, gate=None, shared=shared, px_band=(0.30, 0.70))
+        vt.set_tob("TOK_UP", 0.83, 10, 0.85, 2)     # touch ask outside the band, thin queue ahead
+        vt.on_trade("TOK_UP", "BUY", 0.85, 5)        # taker eats the 2 ahead + reaches us
+        assert vt.fills == 0 and vt.delta == 0.0, "outside-band OPENING trade must be fully skipped"
+        observations.append("on_trade_skips_outside_band_opening=True")
+
+        vt.set_tob("TOK_UP", 0.45, 10, 0.50, 2)      # touch ask inside the band
+        vt.on_trade("TOK_UP", "BUY", 0.50, 5)
+        assert vt.fills == 1 and vt.delta != 0.0, "in-band OPENING trade must fill normally"
+        opened_delta = vt.delta
+        observations.append(f"on_trade_fills_inside_band_delta={opened_delta}=True")
+
+        vt.set_tob("TOK_UP", 0.90, 2, 0.95, 10)      # touch bid outside the band, thin queue ahead
+        vt.on_trade("TOK_UP", "SELL", 0.90, 5)       # opposite direction -> completion
+        assert vt.fills == 2, "completing trade outside the band must NOT be skipped by px_band"
+        observations.append("on_trade_completion_outside_band_unaffected=True")
+
+        # --- 5. Variant.__init__ / configs() thread px_band through from strategies.py ---
+        import inspect
+        cfg_src = inspect.getsource(sc.configs)
+        assert "px_band=s.px_band" in cfg_src, "configs() must thread Strat.px_band into Variant"
+        init_src = inspect.getsource(sc.Variant.__init__)
+        assert "px_band=None" in init_src and "self.px_band = px_band" in init_src
+        observations.append("configs_and_variant_init_thread_px_band=True")
+
+        record(name, True, "; ".join(observations))
+    except Exception as e:
+        record(name, False, f"{type(e).__name__}: {e}\n{traceback.format_exc()}")
+
+
+# ===========================================================================
 # Main runner
 # ===========================================================================
 
@@ -3310,6 +3790,10 @@ def main():
     test_ws_resilience()
     test_transport_health_deadman()
     test_completion_deficit_fix()
+    test_winrec_every_traded_window()
+    test_lifecycle_every_place_gets_terminal_row()
+    test_recon_carries_dispose_fields()
+    test_px_band_shadow_arms()
 
     # Summary table
     print()

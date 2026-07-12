@@ -1712,7 +1712,7 @@ def main():
     # COMPREHENSIVE per-window microstructure (live RCA 2026-06-13): the re-validation gate (strand
     # rate, legging gap, maker/taker mix, dispose-cross firing) plus the offline strand analysis read
     # this. Written per window to kalshi_winrec_<asset>15m.jsonl, reset at rollover.
-    winrec = {"taker": 0, "maker": 0, "maxnet": 0.0, "first_ts": {}, "dispose_cross": 0, "dispose_give": 0.0, "dispose_force_used": False}
+    winrec = {"taker": 0, "maker": 0, "maxnet": 0.0, "first_ts": {}, "dispose_cross": 0, "dispose_give": 0.0, "dispose_force_used": False, "deadman_max_tier": 0}
     winrec_fh = open(f"kalshi_winrec_{a.asset}15m.jsonl", "a")
     # LIVE-VS-SHADOW RECONCILIATION (BACKTEST_VS_LIVE.md-style): one row per settled window, named
     # to match shadow_windows_<asset><tenor>m_r<RUNID>.jsonl so each live window pairs against the
@@ -1795,7 +1795,8 @@ def main():
             return None
 
     def _recon_write(ws_epoch, requested, fills, net, gross, inv_max,
-                     n_seeded_fills=0, seeded_net=0.0, n_seed_cooldowns=0):
+                     n_seeded_fills=0, seeded_net=0.0, n_seed_cooldowns=0,
+                     n_dispose_cross=0, dispose_give=0.0):
         """Append one reconciliation row. Best-effort/non-blocking: any failure here must never
         affect trading (mirrors the try/except pattern around winrec_fh.write above).
         n_seeded_fills/seeded_net (AUDIT, --seed-empty PRE-REGISTERED EVALUATION): fills against
@@ -1803,7 +1804,11 @@ def main():
         or when this window had no seeded fills). The bar: if seeded_net < 0 after >=30 cumulative
         seeded fills across recon rows, --seed-empty should be disabled pending review.
         n_seed_cooldowns (AUDIT, AGGRESSOR-BURST COOLDOWN): count of --seed-burst-n trips during
-        THIS window (0 when --seed-empty is off, or when no burst tripped)."""
+        THIS window (0 when --seed-empty is off, or when no burst tripped).
+        n_dispose_cross/dispose_give (GAP 3, 2026-07-12 telemetry forensics): mirrors the same
+        two fields already in winrec so live_recon can be analyzed on its own without a winrec
+        join -- disposal-cross firing rate and give ($ conceded crossing the spread to complete a
+        stranded box) for THIS window (0/0.0 when dispose-cross never fired)."""
         try:
             os.makedirs("gha_data", exist_ok=True)
             with open(_RECON_PATH, "a") as _rf:
@@ -1814,9 +1819,85 @@ def main():
                     "net": round(net, 4), "gross": round(gross, 4), "inv_max": round(inv_max, 2),
                     "n_seeded_fills": int(n_seeded_fills), "seeded_net": round(seeded_net, 4),
                     "n_seed_cooldowns": int(n_seed_cooldowns),
+                    "n_dispose_cross": int(n_dispose_cross), "dispose_give": round(dispose_give, 4),
                 }) + "\n")
         except Exception:
             pass
+
+    # WINDOW-END GUARD (GAP 1, 2026-07-12 telemetry-gap forensics): root cause of the sparse
+    # winrec file (3 rows for ~11 traded windows) -- the row was ONLY ever written when the main
+    # loop itself lived long enough to observe the NEXT window's rollover (see the "Window
+    # rollover" block below). The trader is routinely evicted + relaunched at/near a window
+    # boundary (fresh process, blank in-memory state), so the window that was actively trading
+    # when it died never reached that code and its row was lost -- silently, forever. This
+    # shared writer + guard let BOTH the normal rollover path and _flatten_and_exit (below, which
+    # already runs on every exit: normal, exception, SIGTERM, atexit) emit the identical row
+    # shape for whichever window is ending, exactly once each.
+    _winrec_written_ws = {"ws": None}
+
+    def _write_winrec_row(mk_, r_now):
+        """Append one winrec row for the window mk_ that is now closing, built from whatever
+        pos/cash/win_fills/win_cost/winrec/ops state is currently live for it. No-op if mk_ is
+        None or this window's row was already written (idempotent -- safe to call from both the
+        rollover path and the exit path without risking a duplicate)."""
+        if mk_ is None or _winrec_written_ws["ws"] == mk_["ws"]:
+            return
+        py = sum(v for k, v in pos.items() if k.endswith(":YES"))
+        pn = sum(v for k, v in pos.items() if k.endswith(":NO"))
+        _ft = winrec["first_ts"]
+        _legging = (abs(_ft["yes"] - _ft["no"]) if ("yes" in _ft and "no" in _ft) else None)
+        try:
+            winrec_fh.write(json.dumps({
+                "ts": time.time(), "asset": a.asset, "ws": mk_["ws"], "cid": mk_["cid"],
+                "settle": r_now, "net_final": net_delta,
+                "n_yes": win_fills["yes"], "n_no": win_fills["no"],
+                "n_boxes": int(min(py, pn)), "stranded": bool(abs(py - pn) > 0.5),
+                "abs_strand": float(abs(py - pn)), "maxnet": winrec["maxnet"],
+                "legging_gap_s": _legging, "n_taker": winrec["taker"],
+                "n_maker": winrec["maker"], "n_dispose_cross": winrec["dispose_cross"],
+                "dispose_give": round(winrec.get("dispose_give", 0.0), 4),
+                "dispose_capped": bool(
+                    (a.dispose_max_attempts > 0 and winrec["dispose_cross"] >= a.dispose_max_attempts)
+                    or (a.dispose_budget > 0 and winrec.get("dispose_give", 0.0) >= a.dispose_budget)),
+                "cost_yes": round(win_cost["yes"], 4), "cost_no": round(win_cost["no"], 4),
+                "consec_strands": _consec_strands, "realized": round(realized, 4),
+                "window_mark": round(window_mark, 4),
+                "guard_yes": (a.guard_yes_spread or None),
+                "max_fills_side": a.max_fills_side, "dispose_cross_on": bool(a.dispose_cross),
+                "dispose_max_attempts": a.dispose_max_attempts, "dispose_budget": a.dispose_budget,
+                # NEW (GAP 1): highest dead-man tier (0-3) reached at any point during this window
+                # -- deadman_tier itself resets on transport recovery mid-window, so this is
+                # tracked separately in winrec and is NOT reconstructable from deadman_tier alone.
+                "deadman_max_tier": winrec.get("deadman_max_tier", 0),
+            }) + "\n")
+            winrec_fh.flush()
+            _winrec_written_ws["ws"] = mk_["ws"]
+        except Exception:
+            pass
+
+    def _sweep_unresolved_lifecycle():
+        """GAP 2 (order-lifecycle telemetry, 2026-07-12 forensics): 43% of placed orders had NO
+        terminal lifecycle row. The TTL-assumed-expire path (below) now closes one leak inline;
+        this closes the other -- an order whose cancel never got a venue-side confirmation
+        (network/API error in flush_cancels -- cancel_fail) sat in `pending_cancel` forever with
+        no fill/cancel/expire_assumed row ever written for it. Call at every window boundary
+        (right after cancel_all_resting()) and on process exit so every place() eventually gets
+        exactly one terminal row: fill/cancel/expire_assumed close it out normally; this is the
+        backstop for whatever's STILL tracked and unresolved when the window/session ends."""
+        for key, meta in list(pending_cancel.items()):
+            _rem = max(meta.get("want", a.post) - meta.get("filled", 0.0), 0.0)
+            _lifecycle_write("unresolved_window_end", meta.get("oid"), key[0], key[1], _rem,
+                             meta.get("qahead"), seeded=bool(meta.get("seeded")))
+            pending_cancel.pop(key, None)
+        # defensive: cancel_all_resting()'s drop() unconditionally empties `resting` into
+        # pending_cancel before this runs, so this should normally be a no-op -- but any tracked
+        # order left resting for any other reason still gets closed out here rather than silently
+        # carrying over into the next window's counters.
+        for key, meta in list(resting.items()):
+            _rem = max(meta.get("want", a.post) - meta.get("filled", 0.0), 0.0)
+            _lifecycle_write("unresolved_window_end", meta.get("oid"), key[0], key[1], _rem,
+                             meta.get("qahead"), seeded=bool(meta.get("seeded")))
+            resting.pop(key, None)
 
     # --- PORTFOLIO-AWARE SIZING runtime state (opt-in --portfolio-aware; see the module-level
     # comment by PORT_TICKER_PREFIX and portfolio_mult_budget/portfolio_mult_delta/
@@ -2087,6 +2168,17 @@ def main():
         try:
             print(f"[DEAD-MAN] {reason}: cancelling all resting orders")
             cancel_all_resting(reason="deadman")
+            # GAP 2 (2026-07-12 telemetry forensics): close out anything that resisted
+            # cancel_all_resting's cancel (cancel_fail leftovers) with a terminal lifecycle row --
+            # otherwise a process exit here is exactly the kind of event that used to leave 43%
+            # of placed orders with no terminal row at all.
+            _sweep_unresolved_lifecycle()
+            # GAP 1: flush a winrec row for whatever window was still open when we exit, IF it was
+            # actually traded (requested>0 OR fills>0) -- an evicted/relaunched process used to
+            # lose this window's row entirely because it never lived to see the next rollover.
+            if mk is not None and (ops.get("place", 0) > 0
+                                    or (win_fills.get("yes", 0) + win_fills.get("no", 0)) > 0):
+                _write_winrec_row(mk, None)
             # LIQUIDATE open inventory (audit C2): cancel-only left naked legs riding to settlement,
             # so the loss-limit/dead-man/remote-off rails could NOT actually cap the loss. Cross to
             # flatten any net position before exiting. (Skip on 'rollover' -- that path settles normally.)
@@ -2878,6 +2970,10 @@ def main():
                     cancel_all_resting(reason="deadman_stale")
                     deadman_tripped = True
                 deadman_tier = _new_deadman_tier
+                # GAP 1: deadman_tier itself resets to 0 on transport recovery (below), which
+                # would otherwise erase the fact that a tier was ever hit mid-window -- track the
+                # window's peak separately so the winrec row can report it.
+                winrec["deadman_max_tier"] = max(winrec.get("deadman_max_tier", 0), _new_deadman_tier)
 
             # Window rollover
             if mk is None or time.time() >= mk["we"]:
@@ -2891,6 +2987,12 @@ def main():
                     _recon_requested = ops["place"]
                     _recon_fills = win_fills["yes"] + win_fills["no"]
                     _recon_invmax = winrec["maxnet"]
+                    # GAP 3 (2026-07-12 telemetry forensics): snapshot dispose-cross telemetry
+                    # BEFORE winrec resets below, same pattern as _recon_invmax above -- so
+                    # live_recon carries n_dispose_cross/dispose_give too and can be analyzed
+                    # without a winrec join.
+                    _recon_dispose_cross = winrec["dispose_cross"]
+                    _recon_dispose_give = winrec.get("dispose_give", 0.0)
                     if pos or abs(cash) > 1e-9:
                         entry = {
                             "cid": mk["cid"], "ws": mk["ws"],
@@ -2900,6 +3002,8 @@ def main():
                             # carried through to the settle block below for _recon_write (fills>0 here)
                             "recon_requested": _recon_requested, "recon_fills": _recon_fills,
                             "recon_invmax": _recon_invmax,
+                            "recon_dispose_cross": _recon_dispose_cross,
+                            "recon_dispose_give": _recon_dispose_give,
                             # AUDIT (--seed-empty): snapshot of THIS window's seeded-fill accumulator,
                             # carried through to settlement so seeded_net can be computed the same way
                             # (cash + pos*payout) at the same time as the whole-window pnl.
@@ -2916,7 +3020,8 @@ def main():
                         # adds to pos -- so n_seeded_fills/seeded_net/n_seed_cooldowns are trivially
                         # 0/0.0/0 here too: a burst trip requires >=1 seeded fill.)
                         _recon_write(mk["ws"], _recon_requested, _recon_fills, 0.0, 0.0, _recon_invmax,
-                                    n_seed_cooldowns=seed_cooldown_win["n"])
+                                    n_seed_cooldowns=seed_cooldown_win["n"],
+                                    n_dispose_cross=_recon_dispose_cross, dispose_give=_recon_dispose_give)
                     lm.window_summary(mk["ws"], realized, window_mark, net_delta)
                     # BOX telemetry: paired yes/no contracts pay $1 at settlement regardless of
                     # outcome -- the locked, risk-free component of this window's book.
@@ -2940,32 +3045,11 @@ def main():
                         _consec_strands = _consec_strands + 1 if abs(py - pn) > 0.5 else 0
                     # COMPREHENSIVE per-window microstructure record (re-validation gate + analysis):
                     # strand state, box edge, legging gap, maker/taker mix, dispose-cross firing.
-                    _ft = winrec["first_ts"]
-                    _legging = (abs(_ft["yes"] - _ft["no"]) if ("yes" in _ft and "no" in _ft) else None)
-                    try:
-                        winrec_fh.write(json.dumps({
-                            "ts": time.time(), "asset": a.asset, "ws": mk["ws"], "cid": mk["cid"],
-                            "settle": r_now, "net_final": net_delta,
-                            "n_yes": win_fills["yes"], "n_no": win_fills["no"],
-                            "n_boxes": int(min(py, pn)), "stranded": bool(abs(py - pn) > 0.5),
-                            "abs_strand": float(abs(py - pn)), "maxnet": winrec["maxnet"],
-                            "legging_gap_s": _legging, "n_taker": winrec["taker"],
-                            "n_maker": winrec["maker"], "n_dispose_cross": winrec["dispose_cross"],
-                            "dispose_give": round(winrec.get("dispose_give", 0.0), 4),
-                            "dispose_capped": bool(
-                                (a.dispose_max_attempts > 0 and winrec["dispose_cross"] >= a.dispose_max_attempts)
-                                or (a.dispose_budget > 0 and winrec.get("dispose_give", 0.0) >= a.dispose_budget)),
-                            "cost_yes": round(win_cost["yes"], 4), "cost_no": round(win_cost["no"], 4),
-                            "consec_strands": _consec_strands, "realized": round(realized, 4),
-                            "window_mark": round(window_mark, 4),
-                            "guard_yes": (a.guard_yes_spread or None),
-                            "max_fills_side": a.max_fills_side, "dispose_cross_on": bool(a.dispose_cross),
-                            "dispose_max_attempts": a.dispose_max_attempts, "dispose_budget": a.dispose_budget,
-                        }) + "\n")
-                        winrec_fh.flush()
-                    except Exception:
-                        pass
-                    winrec = {"taker": 0, "maker": 0, "maxnet": 0.0, "first_ts": {}, "dispose_cross": 0, "dispose_give": 0.0, "dispose_force_used": False}
+                    # (GAP 1: this now goes through the shared _write_winrec_row() -- see its
+                    # definition above -- so the exit path can emit the identical row shape for a
+                    # window that never reaches this rollover at all.)
+                    _write_winrec_row(mk, r_now)
+                    winrec = {"taker": 0, "maker": 0, "maxnet": 0.0, "first_ts": {}, "dispose_cross": 0, "dispose_give": 0.0, "dispose_force_used": False, "deadman_max_tier": 0}
                     pos.clear(); cash = 0.0; net_delta = 0.0; window_mark = 0.0
                     seed_win = {"n_fills": 0, "cash": 0.0, "pos_yes": 0.0, "pos_no": 0.0}
                     seed_cooldown_win = {"n": 0}   # reset THIS window's cooldown-trip counter; the
@@ -2976,6 +3060,8 @@ def main():
                 ops = {"place": 0, "cancel": 0, "cancel_fail": 0}
 
                 cancel_all_resting()   # tokens change on rollover; reset resting book
+                _sweep_unresolved_lifecycle()   # GAP 2: close out anything cancel_all_resting
+                                                 # couldn't get a terminal confirmation for
 
                 # Use prefetched next window if available (zero-RTT rollover for queue priority)
                 pf = next_mk["mk"]
@@ -3571,20 +3657,24 @@ def main():
                             and abs(mid_now - m0) >= 0.01 - 1e-9):
                         drop(key, "stale_refresh")
 
-            # ORDER-LIFECYCLE: TTL EXPIRE detection (observational only -- does NOT touch `resting`/
-            # trading state; every other path here already reshapes on-target rungs well inside
-            # --order-ttl-s under normal operation, so this fires only in the edge case an on-target
-            # rung sits untouched long enough for the venue-side TTL dead-man to self-cancel it,
-            # which local bookkeeping would otherwise never learn about until the next fill/cancel).
+            # ORDER-LIFECYCLE: TTL EXPIRE detection (GAP 2, 2026-07-12 telemetry forensics --
+            # PROMOTED from observational-only). Every other path here already reshapes
+            # on-target rungs well inside --order-ttl-s under normal operation, so this fires only
+            # in the edge case an on-target rung sits untouched long enough for the venue-side TTL
+            # dead-man to self-cancel it. It used to only stamp a flag and log an "expire" row
+            # while leaving the order in `resting` forever (never actually terminal) -- one of the
+            # sources of the 43% of placed orders with no terminal lifecycle row. Now: we TRUST
+            # the venue-side TTL (no redundant cancel_order() call -- the order is already gone
+            # there) and drop it locally, stamping the terminal "expire_assumed" event as we do.
             if a.order_ttl_s and a.order_ttl_s > 0:
-                for key, meta in resting.items():
-                    if meta.get("_lifecycle_expired"):
+                for key in [k for k, m in resting.items()
+                            if (time.time() - m["ts"]) >= a.order_ttl_s]:
+                    meta = resting.pop(key, None)
+                    if meta is None:
                         continue
-                    if (time.time() - meta["ts"]) >= a.order_ttl_s:
-                        meta["_lifecycle_expired"] = True
-                        _rem = max(meta.get("want", a.post) - meta.get("filled", 0.0), 0.0)
-                        _lifecycle_write("expire", meta.get("oid"), key[0], key[1], _rem,
-                                        meta.get("qahead"), seeded=bool(meta.get("seeded")))
+                    _rem = max(meta.get("want", a.post) - meta.get("filled", 0.0), 0.0)
+                    _lifecycle_write("expire_assumed", meta.get("oid"), key[0], key[1], _rem,
+                                    meta.get("qahead"), seeded=bool(meta.get("seeded")))
 
             # Rung cap: evict rungs farthest from touch if over max_rungs
             for side, touch in (("yes", ybb), ("no", round(1.0 - yba, 4))):
@@ -3717,7 +3807,9 @@ def main():
                         print(f"  [VOID] ws={en['ws']} market voided; cash returned, no P&L")
                         _recon_write(en["ws"], en.get("recon_requested", 0), en.get("recon_fills", 0),
                                     0.0, 0.0, en.get("recon_invmax", 0.0),
-                                    n_seeded_fills=_swn, seeded_net=0.0, n_seed_cooldowns=_sw_cd)
+                                    n_seeded_fills=_swn, seeded_net=0.0, n_seed_cooldowns=_sw_cd,
+                                    n_dispose_cross=en.get("recon_dispose_cross", 0),
+                                    dispose_give=en.get("recon_dispose_give", 0.0))
                         seen_fills.pop(en["cid"], None)
                     elif r2 is not None and time.time() - en.get("t0", 0) >= 20:
                         # settle: YES pays $1 if r2==1, NO pays $1 if r2==0
@@ -3737,7 +3829,9 @@ def main():
                         # shadow schema in case that assumption ever breaks, see the FEE TRIPWIRE above).
                         _recon_write(en["ws"], en.get("recon_requested", 0), en.get("recon_fills", 0),
                                     pnl, pnl, en.get("recon_invmax", 0.0),
-                                    n_seeded_fills=_swn, seeded_net=seeded_pnl, n_seed_cooldowns=_sw_cd)
+                                    n_seeded_fills=_swn, seeded_net=seeded_pnl, n_seed_cooldowns=_sw_cd,
+                                    n_dispose_cross=en.get("recon_dispose_cross", 0),
+                                    dispose_give=en.get("recon_dispose_give", 0.0))
                         # DURABLE PER-WINDOW AUDIT RECORD (clean failure-audit + backtest dataset).
                         # Captures the settled RESULT (so it's never re-fetched / lost after markets
                         # age out) + the box/unpaired decomposition. Join to kalshi_fees_*.jsonl on
