@@ -1071,6 +1071,31 @@ def is_completing_side(side, net_delta):
     return (net_delta > 1e-9 and side == "no") or (net_delta < -1e-9 and side == "yes")
 
 
+def completion_size_clamp(want, is_completing, net_delta):
+    """FIX 1 (ws=1783876500 RCA 2026-07-12, run r29200721447): clamp a COMPLETING maker quote's
+    size to the actual unpaired deficit -- never overshoot into the OPPOSITE imbalance.
+
+    The regular quoting-loop sizing (size_mode kelly/depth/markout, all capable of sizing above
+    1 contract; markout up to 2x --post) only ever bounded a completing quote by --max-net and
+    --max-notional headroom, NOT by how much inventory there actually was left to pair off. In
+    the incident window, the deficit was exactly 1 contract at t=127.5s and again at t=149.9s;
+    size-mode markout computed want=2 both times, and each fill flipped net imbalance +1 -> -1
+    instead of landing at 0 -- a fresh strand in the opposite direction, twice, in one window.
+    (Only the dispose-cross TAKE path already had this discipline, via capped_completion_size()'s
+    `take = max(1, min(int(need), int(avail)))` -- this is the same clamp for the regular
+    maker-completion path, which had no equivalent.)
+
+    Non-completing (opening) quotes are untouched -- `want` passes through unchanged. Returns 0
+    if the side isn't actually completing anything (net_delta already ~0) despite `is_completing`
+    somehow being True, so the caller's `if want <= 0: continue` naturally skips placement."""
+    if not is_completing or want <= 0:
+        return want
+    deficit = int(round(abs(net_delta)))
+    if deficit <= 0:
+        return 0
+    return max(1, min(int(want), deficit))
+
+
 # --- OPT-IN EMPTY-BOOK SEEDING (--seed-empty) pure helpers -----------------------------------
 # Pulled out to module level (same pattern as kelly_size/gate_check/portfolio_mult_budget above)
 # so the empty-book classification, width-floor, staleness, re-price-threshold, and target-price
@@ -2983,6 +3008,16 @@ def main():
                         print(f"[startup] seeded inherited position into risk state: "
                               f"net_delta={net_delta:+.0f} pos[{_ih_pk}]={pos[_ih_pk]:.0f} "
                               f"win_cost[{_ih_side}]={win_cost[_ih_side]:.2f}")
+                        # FIX 3 (ws=1783876500 RCA 2026-07-12 follow-up): confirm the completion
+                        # machinery engages on this inherited leg from t=0 of this session, not just
+                        # after this session's own first fill. desired_levels()'s quote_yes/quote_no
+                        # gates and is_completing_side() (the targets filter a few hundred lines
+                        # below) both key purely off `net_delta`, which is already synced above --
+                        # so the completing side is in `targets` on the FIRST tick a book is
+                        # available this session, no dependency on this session placing or filling
+                        # anything of its own first. This log line is the one-time confirmation.
+                        if abs(net_delta) > 1e-9:
+                            print(f"[INHERITED] unpaired net={net_delta:+.0f} engaging completion")
 
                 _last_book_cache.clear()
                 # Update WS feeder subscription: new ticker + bump epoch so feeder resubscribes
@@ -3283,7 +3318,24 @@ def main():
                                         for (_, price_), m in resting.items())
                 exposure = open_buy_notional + max(-cash, 0.0)
                 if exposure + price * a.post > a.max_notional:
-                    _skip_ct["notional"] = _skip_ct.get("notional",0)+1; continue
+                    # FIX 2 (ws=1783876500 RCA 2026-07-12): a COMPLETING quote is exempt from the
+                    # notional cap, mirroring the pre-existing is_completing exemptions on
+                    # win_fills (max_fills_side) and tau_guard above -- a completing quote REDUCES
+                    # risk, and blocking it is exactly what locked in the strand: size-mode
+                    # overshoot (FIX 1) pushed cumulative window notional to $5.37 (cost_yes 3.04 +
+                    # cost_no 2.33) past --max-notional 5, then EVERY placement -- including the
+                    # risk-reducing completion -- was blocked for the remaining 743s of the window,
+                    # riding a 1-lot naked leg to settlement (-$1.00 vs ~+$0.05 for a clean window).
+                    # Bounded: FIX 1 (completion_size_clamp, above) already clamps a completing
+                    # want to the unpaired deficit, so the worst-case notional overshoot let through
+                    # here is bounded by that deficit (itself bounded by --max-fills-side), never an
+                    # unbounded budget breach.
+                    if not is_completing:
+                        _skip_ct["notional"] = _skip_ct.get("notional",0)+1; continue
+                    if reject_cd.get(("_notional_exempt_log", side), 0.0) <= time.time():
+                        print(f"  [NOTIONAL-EXEMPT] completing side={side} size={a.post} "
+                              f"(net_delta={net_delta:+.2f})")
+                        reject_cd[("_notional_exempt_log", side)] = time.time() + 5.0
                 # Side ladder rung cap
                 if sum(1 for k in resting if k[0] == side) >= a.max_rungs:
                     continue
@@ -3322,7 +3374,9 @@ def main():
                         want -= 1
                     # never bypass --max-notional: the C8 check above only reserved a.post; markout can
                     # size up to 2x --post, so re-check against the ACTUAL want before placing.
-                    if want > 0 and exposure + price * want > a.max_notional:
+                    # FIX 2: exempt completing quotes here too (mirrors the C8 gate above) -- else a
+                    # completing quote let through the C8 gate would be re-zeroed right back here.
+                    if want > 0 and exposure + price * want > a.max_notional and not is_completing:
                         want = 0
                     if want <= 0:
                         continue
@@ -3330,6 +3384,14 @@ def main():
                     while units > 1 and abs(net_delta + _sgn * units * int(a.post)) > float(a.max_net) + 1e-9:
                         units -= 1
                     want = units * int(a.post)
+
+                # FIX 1 (ws=1783876500 RCA 2026-07-12): clamp a COMPLETING want to the actual
+                # unpaired deficit, regardless of which size_mode picked it -- see
+                # completion_size_clamp()'s docstring for the incident this closes (size-mode
+                # markout overshooting want=2 against a deficit of 1, flipping net +1 -> -1).
+                want = completion_size_clamp(want, is_completing, net_delta)
+                if want <= 0:
+                    continue
 
                 # PORTFOLIO-AWARE SIZING (opt-in --portfolio-aware; OFF by default -> this whole
                 # block is skipped and `want`/place() below are BYTE-IDENTICAL to pre-existing
@@ -3344,7 +3406,10 @@ def main():
                     want = int(round(want * pmb * pmd))
                     while want > 0 and abs(net_delta + _sgn * want) > float(a.max_net) + 1e-9:
                         want -= 1
-                    if want > 0 and exposure + price * want > a.max_notional:
+                    # FIX 2: exempt completing quotes (mirrors the C8 gate above); portfolio-aware
+                    # sizing can only ever SHRINK want, and the FIX 1 clamp already ran before this
+                    # block, so a completing want here is already bounded to the unpaired deficit.
+                    if want > 0 and exposure + price * want > a.max_notional and not is_completing:
                         want = 0
                     if want <= 0:
                         continue

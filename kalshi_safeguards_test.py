@@ -3087,6 +3087,187 @@ def test_transport_health_deadman():
 
 
 # ===========================================================================
+# TEST 32 — ws=1783876500 RCA (run r29200721447): completion-size overshoot +
+# no notional exemption for completions + inherited-position engagement
+# ===========================================================================
+
+def _notional_gate_blocks(exposure, price, post, max_notional, is_completing):
+    """Replicates the C8 aggregate notional cap decision (source: the '# C8 aggregate notional
+    cap' comment block in kalshi_trader.py's main(), right before the size_mode branches) --
+    returns True iff this quote would be blocked/skipped.
+
+        if exposure + price * post > max_notional:
+            if not is_completing: BLOCKED
+            else: PERMITTED (FIX 2 exemption; want is still bounded by completion_size_clamp)
+        else: PERMITTED
+    """
+    if exposure + price * post > max_notional:
+        return not is_completing
+    return False
+
+
+def test_completion_deficit_fix():
+    """
+    FORENSIC RCA (live telemetry 2026-07-12, window ws=1783876500 17:15Z, run r29200721447,
+    winrec-confirmed stranded=true, net_final=-1.0): the box legged in cleanly and fast
+    (legging_gap 0.135s), but the completing-quote SIZING overshot -- size-mode markout computed
+    want=2 when the unpaired deficit was only 1 (at t=127.5s and t=149.9s), each time flipping net
+    imbalance +1 -> -1 instead of landing at 0. The extra contracts pushed cumulative window
+    notional to $5.37 (cost_yes 3.04 + cost_no 2.33), breaching --max-notional 5, after which
+    EVERY placement -- including risk-reducing completions -- was blocked for the remaining 743s
+    of the window. Result: a 1-lot naked leg rode to settlement (-$1.00 vs ~+$0.05 for a clean
+    window).
+
+    Checks:
+      (a) FIX 1 -- kt.completion_size_clamp(): deficit=1, sizing wants 2 -> placed size clamps to
+          1; deficit 0 -> no completion quote (returns 0); want never gets sized UP to the
+          deficit if sizing under-wanted; non-completing (opening) quotes pass through untouched.
+      (b) FIX 2 -- the C8 notional gate: replays the incident's own arithmetic (cost_yes 3.04 +
+          cost_no 2.33 = 5.37 > --max-notional 5.00, deficit 1) showing a completing quote is now
+          PERMITTED (clamped to the deficit) while an opening quote at the same exposure stays
+          BLOCKED. Structural check that all THREE notional re-checks in the sizing block (the C8
+          gate itself, the markout re-check, the portfolio-aware re-check) carry the same
+          is_completing exemption, and that the exemption logs a rate-limited [NOTIONAL-EXEMPT]
+          line.
+      (c) FIX 3 -- inherited-position engagement: verifies (by calling the REAL kt.desired_levels
+          + kt.is_completing_side, not a source replica) that once startup reconciliation seeds
+          net_delta from an inherited venue position, the completing side is the ONLY side in
+          `targets` on the very first tick a book is available -- with no dependency on this
+          session placing or filling anything of its own first. Also checks the [INHERITED] log
+          line exists, fires only when net_delta != 0, and is positioned AFTER net_delta is
+          seeded in the source.
+    """
+    name = "T32: ws=1783876500 RCA -- completion deficit clamp, notional exemption, inherited engagement"
+    try:
+        import inspect
+        import re
+        observations = []
+
+        # --- (a) FIX 1: completion_size_clamp ---
+        # incident replay: deficit=1 (net_delta=+1, completing side wants to reduce it to 0),
+        # size-mode markout wanted 2 -> must clamp to 1
+        assert kt.completion_size_clamp(2, True, 1.0) == 1, \
+            "deficit=1, sizing wants 2 -> must clamp to 1 (the exact incident overshoot)"
+        assert kt.completion_size_clamp(2, True, -1.0) == 1, "sign of net_delta must not matter, only magnitude"
+        observations.append("incident_overshoot_want2_deficit1_clamps_to_1=True")
+
+        # deficit 0 (net_delta ~flat) -> no completion quote at all
+        assert kt.completion_size_clamp(2, True, 0.0) == 0, "deficit 0 must return 0 (no completion quote)"
+        assert kt.completion_size_clamp(3, True, 1e-10) == 0, "sub-contract net_delta rounds to 0 deficit -> 0"
+        observations.append("deficit_0_returns_0_no_completion_quote=True")
+
+        # never sizes UP past what sizing actually wanted, even if the deficit is larger
+        assert kt.completion_size_clamp(1, True, 5.0) == 1, "must never inflate want up to the deficit"
+        # a want that already matches (or undershoots) the deficit passes through unchanged
+        assert kt.completion_size_clamp(1, True, 1.0) == 1
+        assert kt.completion_size_clamp(3, True, 3.0) == 3
+        observations.append("never_inflates_want_only_clamps_down=True")
+
+        # non-completing (opening) quotes are untouched, no matter the size or net_delta
+        assert kt.completion_size_clamp(5, False, 3.0) == 5, "opening quotes must pass through unclamped"
+        assert kt.completion_size_clamp(0, True, 4.0) == 0, "want<=0 passes through (nothing to clamp)"
+        observations.append("opening_quotes_and_zero_want_pass_through_unchanged=True")
+
+        # structural: the real call site is wired between the size-mode branches and the
+        # portfolio-aware block, so it applies uniformly regardless of size_mode
+        src = inspect.getsource(kt)
+        idx_sizes = src.index('if a.size_mode == "markout":')
+        idx_port = src.index("# PORTFOLIO-AWARE SIZING (opt-in --portfolio-aware")
+        between = src[idx_sizes:idx_port]
+        assert "want = completion_size_clamp(want, is_completing, net_delta)" in between, \
+            "FIX 1 must clamp `want` for every size_mode, before portfolio-aware sizing runs"
+        observations.append("fix1_call_site_wired_after_all_size_modes_before_portfolio_aware=True")
+
+        # --- (b) FIX 2: notional-gate exemption, replaying the incident's own arithmetic ---
+        cost_yes, cost_no = 3.04, 2.33
+        exposure = round(cost_yes + cost_no, 4)
+        assert exposure == 5.37, f"fixture drift: expected 5.37, got {exposure}"
+        max_notional = 5.00
+        assert exposure > max_notional, "fixture sanity: cumulative notional must already breach the cap"
+        deficit = 1
+        observations.append(f"incident_fixture_exposure={exposure}_max_notional={max_notional}_deficit={deficit}")
+
+        # opening (fresh) quote at this exposure must stay BLOCKED -- exactly as before the fix
+        assert _notional_gate_blocks(exposure, 0.50, 1, max_notional, is_completing=False) is True, \
+            "an OPENING quote must remain blocked once the cap is breached"
+        observations.append("opening_quote_still_blocked_at_breached_cap=True")
+
+        # a COMPLETING quote at the SAME breached exposure must now be PERMITTED (FIX 2) --
+        # this is the exact gate that stranded the ws=1783876500 leg for the remaining 743s
+        assert _notional_gate_blocks(exposure, 0.50, 1, max_notional, is_completing=True) is False, \
+            "a COMPLETING quote must be permitted through the notional cap post-fix"
+        observations.append("completing_quote_now_permitted_at_breached_cap=True")
+
+        # and its SIZE is still bounded to the deficit by FIX 1 -- exempt from the dollar cap,
+        # never exempt from the pairing-size cap
+        assert kt.completion_size_clamp(2, True, float(deficit)) == deficit, \
+            "the exempted completing quote's size must still clamp to the unpaired deficit"
+        observations.append("exempted_completion_still_size_clamped_to_deficit=True")
+
+        # structural: all THREE notional checks in the sizing block carry the is_completing
+        # exemption (the C8 gate itself, the markout branch re-check, the portfolio-aware re-check)
+        idx_c8 = src.index("# C8 aggregate notional cap (BUY side only")
+        idx_rung = src.index("# Side ladder rung cap", idx_c8)
+        c8_block = src[idx_c8:idx_rung]
+        assert "if not is_completing:" in c8_block, "the C8 gate must exempt completing quotes"
+        assert "[NOTIONAL-EXEMPT]" in c8_block, "the exemption must log a rate-limited marker line"
+        assert 'reject_cd.get(("_notional_exempt_log", side)' in c8_block, \
+            "the exemption log must be rate-limited via the existing reject_cd mechanism"
+        observations.append("c8_gate_exempts_and_logs=True")
+
+        idx_markout = src.index('if a.size_mode == "markout":')
+        idx_else = src.index("\n                else:\n", idx_markout)
+        markout_block = src[idx_markout:idx_else]
+        assert re.search(r"exposure \+ price \* want > a\.max_notional and not is_completing", markout_block), \
+            "the markout branch's own notional re-check must also exempt completing quotes"
+        observations.append("markout_recheck_exempts_completing=True")
+
+        idx_pa = src.index("if a.portfolio_aware:")
+        idx_place = src.index("res = place(side, price, ybb, yba", idx_pa)
+        pa_block = src[idx_pa:idx_place]
+        assert re.search(r"exposure \+ price \* want > a\.max_notional and not is_completing", pa_block), \
+            "the portfolio-aware branch's own notional re-check must also exempt completing quotes"
+        observations.append("portfolio_aware_recheck_exempts_completing=True")
+
+        # --- (c) FIX 3: inherited-position engagement (real desired_levels/is_completing_side) ---
+        # session restarts holding 1 NO (net_delta=-1) inherited from a predecessor mid-window
+        net_delta_inherited = -1.0
+        mk_stub = {"tick": 0.01}
+        targets = kt.desired_levels(mk_stub, 0.42, 0.44, net_delta_inherited, 1, 1.0, 0.0, 0.0)
+        assert targets, "an inherited unpaired position must produce at least one target immediately"
+        assert all(kt.is_completing_side(side, net_delta_inherited) for side, _ in targets), \
+            "with cap=1 and skew=0, EVERY target must be the completing (yes) side -- opening " \
+            "(no) is gated off by desired_levels' own inventory cap, with no dependency on this " \
+            "session's own first fill"
+        assert any(side == "yes" for side, _ in targets), "net_delta=-1 -> the completing side is YES"
+        observations.append(f"inherited_net={net_delta_inherited:+.0f}_targets_completing_only={targets}")
+
+        # symmetric check: inherited long YES (net_delta=+1) -> only NO (completing) targets
+        targets2 = kt.desired_levels(mk_stub, 0.42, 0.44, 1.0, 1, 1.0, 0.0, 0.0)
+        assert targets2 and all(s == "no" for s, _ in targets2)
+        observations.append("symmetric_inherited_net_+1_targets_no_only=True")
+
+        # structural: the [INHERITED] log line exists, is gated on abs(net_delta) > 1e-9, and is
+        # positioned AFTER net_delta is actually seeded (so it reflects the seeded value, not a
+        # stale pre-seed read)
+        idx_seed_block = src.index("if not _inherited_seed_done:")
+        idx_seed_end = src.index("_last_book_cache.clear()", idx_seed_block)
+        seed_block = src[idx_seed_block:idx_seed_end]
+        assert "[INHERITED]" in seed_block, "the inherited-engagement confirmation log must exist"
+        idx_netdelta_assign = seed_block.index("net_delta += _ih_ct")
+        idx_inherited_log = seed_block.index("[INHERITED]")
+        assert idx_netdelta_assign < idx_inherited_log, \
+            "the [INHERITED] log must fire AFTER net_delta is seeded, not before"
+        assert "if abs(net_delta) > 1e-9:" in seed_block, \
+            "the log must be gated on an actual nonzero inherited position"
+        observations.append("inherited_log_present_gated_and_ordered_after_seed=True")
+
+        record(name, True, "; ".join(observations))
+    except Exception as e:
+        record(name, False, f"{type(e).__name__}: {e}\n{traceback.format_exc()}")
+
+
+# ===========================================================================
 # Main runner
 # ===========================================================================
 
@@ -3128,6 +3309,7 @@ def main():
     test_deadman_tiering()
     test_ws_resilience()
     test_transport_health_deadman()
+    test_completion_deficit_fix()
 
     # Summary table
     print()
