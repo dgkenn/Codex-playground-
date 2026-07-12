@@ -1,2 +1,3 @@
 {"ts": "2026-07-14T12:25:00Z", "name": "CPI release (headline/core/YoY)", "impact": "high", "source": "kalshi_series", "series_ticker": "KXCPI-26JUN-T-0.3"}
-{"ts": "2026-07-14T12:30:00Z", "name": "PPI (approx.)", "impact": "high", "source": "static_approx", "note": "mid-month heuristic, NOT the real BLS schedule -- verify vs bls.gov/schedule before relying on this date"}
+{"ts": "2026-07-15T12:30:00Z", "name": "Core PPI m/m", "impact": "high", "source": "forexfactory"}
+{"ts": "2026-07-15T12:30:00Z", "name": "PPI m/m", "impact": "high", "source": "forexfactory"}
