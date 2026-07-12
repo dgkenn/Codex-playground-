@@ -410,3 +410,10 @@ cohorts (NEWS2 5+: Hisp ~5%, Black ~8% vs White ~11%) → vitals anchor over-sta
 under-triage largely appropriate calibration, not bias. Downgrade: JAMA-IM clinical claim → methods-cautionary
 contribution (+ residual Asian-under-triage-at-equal-mortality and Hispanic door-to-room signals). Predicted
 win-likelihood 0.6 → actual: dissolved by decisive validation → logged.
+
+## POC vs lab glucose → iatrogenic hypoglycemia — KILLED fast by decisive-first test (lesson applied)
+Gating test (eICU, 172k paired POC↔lab glucose): (Q1) POC over-reads at low glucose (+17 mean at lab<54 but medABS
+~7, outlier/temporal-drift driven); (Q2) the bet-on ANEMIA mechanism is tiny (~3.6 mg/dL across Hct range — modern
+meters are Hct-corrected); (Q3) POC misses 33% of true hypoglycemia (real but KNOWN per ISO 15197, and NO Hct
+gradient). Novel/mechanistic angle weak, residual known + temporal-pairing confound. KILLED in one test — decisive-
+first discipline worked (no wasted build). Predicted win-likelihood 0.4; actual ~0 → logged.
