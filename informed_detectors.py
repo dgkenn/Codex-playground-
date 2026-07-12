@@ -3,9 +3,22 @@ Causal features from trades up to decision minute k=7; label = STRANDED window
 (exactly one box leg fills in the k+1..k+2 fill window, front-of-queue q0=0).
 Faithful to collect_fills / box_policy_ab conventions. Run synchronously; compact output."""
 import numpy as np, pandas as pd, sys
-from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import roc_auc_score
-from sklearn.preprocessing import StandardScaler
+# sklearn is only needed by safe_auc()/main() (the standalone AUC-ranking analysis below);
+# detectors()/vpin_buckets()/vpin_at() are pure numpy and are imported by box_policy_ab.py
+# (`from informed_detectors import detectors`) for every live scoring run. Make the sklearn
+# import optional so a missing/broken sklearn install can't null the whole metrics pipeline
+# (2026-07: box_policy_ab.py failed for 30 days / ~1000 runs with ModuleNotFoundError('sklearn')
+# purely because this module-level import raised before box_policy_ab even got to use detectors()).
+try:
+    from sklearn.linear_model import LogisticRegression
+    from sklearn.metrics import roc_auc_score
+    from sklearn.preprocessing import StandardScaler
+    _HAS_SKLEARN = True
+except ImportError:
+    _HAS_SKLEARN = False
+    print("[informed_detectors] WARNING: sklearn not installed -- detectors() still works "
+          "(box_policy_ab.py's live gate is unaffected); safe_auc()/main() (AUC-ranking "
+          "analysis) are disabled until `pip install scikit-learn`.", file=sys.stderr)
 
 K = 7                     # decision minute
 ASSETS = ["btc", "eth", "sol", "xrp"]
@@ -130,6 +143,9 @@ def build(asset):
     return pd.DataFrame(rows)
 
 def safe_auc(y, x):
+    if not _HAS_SKLEARN:
+        raise RuntimeError("safe_auc() requires scikit-learn (pip install scikit-learn); "
+                            "not needed for detectors()/box_policy_ab.py's live gate.")
     m = ~(np.isnan(x) | np.isnan(y))
     if m.sum() < 30 or len(np.unique(y[m])) < 2: return np.nan, int(m.sum())
     xx = x[m].copy()
@@ -137,6 +153,11 @@ def safe_auc(y, x):
     return float(roc_auc_score(y[m], xx)), int(m.sum())
 
 def main():
+    if not _HAS_SKLEARN:
+        print("ERROR: this standalone AUC-ranking analysis requires scikit-learn "
+              "(pip install scikit-learn). detectors()/box_policy_ab.py's live gate does "
+              "not need it and is unaffected.", file=sys.stderr)
+        sys.exit(1)
     dfs = [build(a) for a in ASSETS]
     df = pd.concat(dfs, ignore_index=True)
     print(f"=== POOLED windows n={len(df)} | strand rate={df.stranded.mean():.3f} | "
