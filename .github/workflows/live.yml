@@ -105,7 +105,7 @@ jobs:
             # caps, and disposal/strand machinery unchanged.
             timeout --signal=TERM --kill-after=60 2820 \
               python -u kalshi_trader.py --asset "$ASSET" --live --gate as --size-mode markout --skew 0.99 --seed-empty --seed-fair-band 15 --seed-width 4 \
-                --post 1 --max-notional 5 --loss-limit 6 --max-rungs 1 \
+                --post 2 --max-notional 7 --loss-limit 6 --max-rungs 1 \
                 --guard-yes-spread 0 --strand-scaledown "0.75,0.5,0.25" --max-fills-side 3 --open-k-min 1 --open-k-max 9 --dispose-cross --dispose-cross-s 120 --close-force-s 45 --chase-unpaired-s 120 --dispose-max-give 0.25 --post-complete-freeze 1.5 --duration 2760 \
                 --remote-switch-s 20 || true
           else
