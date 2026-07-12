@@ -2132,6 +2132,192 @@ def test_seed_v3_rest_fallback_and_heartbeat():
 
 
 # ===========================================================================
+# TEST 26 — place_order/cancel_order migrated to the V2 Kalshi order schema
+#           (2026-07-12: legacy POST/DELETE /portfolio/orders* now 410 "Please
+#           switch to the V2 endpoints"; every live order was rejected)
+# ===========================================================================
+
+class _FakeOrderResp:
+    def __init__(self, status_code, payload):
+        self.status_code = status_code
+        self._payload = payload
+    def json(self):
+        return self._payload
+
+
+class _FakeOrderSess:
+    """Stand-in for the requests.Session passed through _api() -> place_order()/cancel_order().
+    Records every call (method, url, json body) so tests can assert on the EXACT wire shape."""
+    def __init__(self, post_payload=None, post_status=201, delete_status=200):
+        self.post_payload = post_payload
+        self.post_status = post_status
+        self.delete_status = delete_status
+        self.calls = []
+
+    def post(self, url, headers=None, json=None, timeout=None):
+        self.calls.append(("POST", url, json))
+        return _FakeOrderResp(self.post_status, self.post_payload)
+
+    def delete(self, url, headers=None, timeout=None):
+        self.calls.append(("DELETE", url, None))
+        return _FakeOrderResp(self.delete_status, {"order_id": "oid-1", "reduced_by": "1"})
+
+
+def test_place_order_v2_schema():
+    """
+    Confirms place_order()/cancel_order() build the CURRENT Kalshi V2 order schema (researched
+    2026-07-12 against docs.kalshi.com's raw OpenAPI spec, cross-checked against 3 independent
+    pages -- create-order-v2.md, order_direction.md, and changelog/index.md -- all agreeing):
+
+      * Endpoint: POST /portfolio/events/orders (legacy POST /portfolio/orders now 410s
+        "Please switch to the V2 endpoints" -- exact wording confirmed in the Kalshi changelog
+        entry "Legacy order mutation endpoints deprecated", June 18-25 2026).
+      * side is 'bid'/'ask' (BookSide, YES-leg-only): buy-YES -> 'bid' @ price_dollars;
+        buy-NO -> 'ask' @ (1 - price_dollars) (the endpoint's own docs state this equivalence).
+      * count is a STRING (FixedPointCount), not an int.
+      * price is a single 'price' field (FixedPointDollars string), not side-prefixed
+        '{side}_price_dollars'.
+      * time_in_force is a new REQUIRED enum field; self_trade_prevention_type is a new
+        REQUIRED enum field (no legacy equivalent) -- we send 'taker_at_cross'.
+      * ttl_s maps to 'expiration_time' (renamed from 'expiration_ts'), only under
+        time_in_force='good_till_canceled'.
+      * The 'action' and 'type' fields (legacy) are GONE.
+      * Response is FLAT: order_id is top-level, not nested under {"order": {...}}.
+      * Cancel moved too: DELETE /portfolio/events/orders/{order_id} (was
+        /portfolio/orders/{order_id}).
+    """
+    name = "T26: place_order/cancel_order V2 schema migration"
+    try:
+        observations = []
+        fkey = _FakeSignKey()
+
+        # --- BUY YES: side='yes' -> api side='bid', price unchanged ---
+        fsess = _FakeOrderSess(post_payload={
+            "order_id": "abc-123", "client_order_id": "coid-1",
+            "fill_count": "0", "remaining_count": "5", "ts_ms": 1234567890123,
+        })
+        oid, sc, err = kt.place_order(fsess, fkey, "KXBTC15M-TEST", "yes", 0.27, 5,
+                                      client_oid="coid-1", ttl_s=30, post_only=True)
+        assert len(fsess.calls) == 1, "expected exactly one POST"
+        method, url, body = fsess.calls[0]
+        observations.append(f"yes_url={url}")
+        assert method == "POST"
+        assert url.endswith("/portfolio/events/orders"), f"expected V2 create path, got {url!r}"
+        assert "/portfolio/orders" not in url or "/portfolio/events/orders" in url, \
+            f"legacy path leaked into URL: {url!r}"
+
+        # exact-match the wire body against the researched V2 schema
+        assert body["ticker"] == "KXBTC15M-TEST"
+        assert body["client_order_id"] == "coid-1"
+        assert body["side"] == "bid", f"buy-YES must map to api side='bid', got {body['side']!r}"
+        assert body["count"] == "5" and isinstance(body["count"], str), \
+            f"count must be a STRING (FixedPointCount), got {body['count']!r}"
+        assert body["price"] == "0.2700", f"expected price='0.2700', got {body['price']!r}"
+        assert body["time_in_force"] == "good_till_canceled"
+        assert body["self_trade_prevention_type"] == "taker_at_cross"
+        assert body["post_only"] is True
+        assert "expiration_time" in body, "ttl_s was given -- expiration_time must be present"
+        assert "expiration_ts" not in body, "legacy expiration_ts field must not be sent"
+        assert "action" not in body, "legacy 'action' field must not be sent"
+        assert "type" not in body, "legacy 'type' field must not be sent"
+        assert "yes_price_dollars" not in body and "no_price_dollars" not in body, \
+            "legacy side-prefixed price field must not be sent"
+        # response parsing: flat order_id (no {"order": {...}} wrapper)
+        assert oid == "abc-123" and sc == 201 and err == "", \
+            f"expected flat order_id parse, got oid={oid!r} sc={sc} err={err!r}"
+        observations.append("buy_yes_body_exact_match=True")
+
+        # --- BUY NO: side='no' -> api side='ask', price = 1 - price_dollars ---
+        fsess2 = _FakeOrderSess(post_payload={"order_id": "def-456", "ts_ms": 1})
+        oid2, sc2, err2 = kt.place_order(fsess2, fkey, "KXBTC15M-TEST", "no", 0.35, 3,
+                                         ttl_s=None, post_only=True)
+        _, _, body2 = fsess2.calls[0]
+        assert body2["side"] == "ask", f"buy-NO must map to api side='ask', got {body2['side']!r}"
+        assert body2["price"] == "0.6500", \
+            f"buy-NO @ 0.35 must send price=1-0.35=0.6500, got {body2['price']!r}"
+        assert "expiration_time" not in body2, \
+            "ttl_s=None must NOT send expiration_time (true GTC, dead-man mechanism preserved)"
+        assert body2["time_in_force"] == "good_till_canceled", \
+            "true GTC still requires time_in_force=good_till_canceled (just without expiration_time)"
+        assert oid2 == "def-456"
+        observations.append("buy_no_price_flip_and_no_ttl=True")
+
+        # --- sub-penny price round-trips cleanly (the actual trigger of the 2026-07-12 incident) ---
+        fsess3 = _FakeOrderSess(post_payload={"order_id": "ghi-789"})
+        kt.place_order(fsess3, fkey, "KXBTC15M-TEST", "yes", 0.001, 1)
+        _, _, body3 = fsess3.calls[0]
+        assert body3["price"] == "0.0010", f"sub-penny price mishandled: {body3['price']!r}"
+        observations.append("sub_penny_price=0.0010")
+
+        # --- reject path: V2 error body is FLAT ({"message": ...}, no "error" wrapper) ---
+        fsess_rej = _FakeOrderSess(post_payload={"code": "bad_request",
+                                                  "message": "price outside valid range"},
+                                   post_status=400)
+        oid_r, sc_r, err_r = kt.place_order(fsess_rej, fkey, "KXBTC15M-TEST", "yes", 0.27, 5)
+        assert oid_r is None and sc_r == 400
+        assert err_r == "price outside valid range", \
+            f"flat V2 error body must be parsed via top-level 'message', got {err_r!r}"
+        observations.append("flat_error_body_parsed=True")
+
+        # --- legacy nested {"error": {"message": ...}} still falls back correctly ---
+        fsess_rej2 = _FakeOrderSess(post_payload={"error": {"message": "legacy nested shape"}},
+                                    post_status=400)
+        _, _, err_r2 = kt.place_order(fsess_rej2, fkey, "KXBTC15M-TEST", "yes", 0.27, 5)
+        assert err_r2 == "legacy nested shape", f"nested fallback broken: {err_r2!r}"
+        observations.append("nested_error_fallback=True")
+
+        # --- cancel_order(): DELETE /portfolio/events/orders/{order_id} ---
+        fsess_c = _FakeOrderSess(delete_status=200)
+        ok = kt.cancel_order(fsess_c, fkey, "abc-123")
+        method_c, url_c, _ = fsess_c.calls[0]
+        assert method_c == "DELETE"
+        assert url_c.endswith("/portfolio/events/orders/abc-123"), \
+            f"expected V2 cancel path, got {url_c!r}"
+        assert ok is True
+        observations.append("cancel_v2_path=True")
+
+        # --- [PLACE-REJECT] stdout visibility is rate-limited per distinct error, per 60s ---
+        import io, contextlib
+        kt._PLACE_REJECT_LAST_PRINT.clear()
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            kt._print_place_reject(410, "Please switch to the V2 endpoints")   # 1st: prints
+            kt._print_place_reject(410, "Please switch to the V2 endpoints")   # repeat <60s: suppressed
+            kt._print_place_reject(400, "a different error")                  # new error: prints
+        out = buf.getvalue()
+        n_410 = out.count("[PLACE-REJECT] HTTP 410: Please switch to the V2 endpoints")
+        n_400 = out.count("[PLACE-REJECT] HTTP 400: a different error")
+        assert n_410 == 1, f"expected exactly 1 print for the repeated 410, got {n_410}\n{out!r}"
+        assert n_400 == 1, f"expected exactly 1 print for the new 400, got {n_400}\n{out!r}"
+        # simulate the 60s window elapsing -> the same error prints again
+        kt._PLACE_REJECT_LAST_PRINT[f"410:Please switch to the V2 endpoints"] = time.time() - 61
+        buf2 = io.StringIO()
+        with contextlib.redirect_stdout(buf2):
+            kt._print_place_reject(410, "Please switch to the V2 endpoints")
+        assert "[PLACE-REJECT] HTTP 410" in buf2.getvalue(), "should re-print after 60s window"
+        kt._PLACE_REJECT_LAST_PRINT.clear()
+        observations.append("place_reject_rate_limited_per_distinct_error=True")
+
+        # --- dry-run smoke: DRY-RUN never calls place_order() / never POSTs ---
+        import inspect
+        src = inspect.getsource(kt)
+        assert 'if not live:' in src and 'return fake, t_dec, time.time()' in src, \
+            "dry-run early-return before place_order() must still be present"
+        observations.append("dry_run_short_circuit_present=True")
+
+        # --- lifecycle reject row now carries the venue error (extend _lifecycle_write) ---
+        assert '"err": err' in src or '"err": err,' in src, \
+            "_lifecycle_write must serialize the venue err onto reject rows"
+        assert 'err=f"HTTP {sc_}: {err_}"' in src, \
+            "the place() call site must thread err_ into the reject lifecycle row"
+        observations.append("lifecycle_reject_err_threaded=True")
+
+        record(name, True, "; ".join(observations))
+    except Exception as e:
+        record(name, False, f"{type(e).__name__}: {e}\n{traceback.format_exc()}")
+
+
+# ===========================================================================
 # BONUS: Test microprice and gate_check helpers directly (from kt module)
 # ===========================================================================
 
@@ -2220,6 +2406,7 @@ def main():
     test_seed_burst_cooldown()
     test_seed_v2_flag_off_byte_identical()
     test_seed_v3_rest_fallback_and_heartbeat()
+    test_place_order_v2_schema()
 
     # Summary table
     print()

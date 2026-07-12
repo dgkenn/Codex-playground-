@@ -480,45 +480,101 @@ def _api(sess, private_key, method, path_suffix, body=None, params=None, timeout
         return 0, {"_exc": str(e)[:80]}
 
 
+_PLACE_REJECT_LAST_PRINT: dict = {}
+
+
+def _print_place_reject(sc, err):
+    """[PLACE-REJECT] stdout visibility, rate-limited per distinct error string per 60s.
+    2026-07-12 incident: every live POST was rejected (HTTP 410 "Please switch to the V2
+    endpoints", 1,068 rejects in one 46-min leg, zero orders placed) and this was COMPLETELY
+    INVISIBLE in stdout for ~8 hours -- lm.place_reject() (live_metrics.py) only appends to a
+    JSONL file, it never prints. This is now unconditional on every reject (lives inside
+    place_order() itself, so it covers every call site including future ones), rate-limited to
+    1 line/60s PER DISTINCT (status, error) PAIR so a reject storm can't spam stdout -- a
+    genuinely NEW error is never suppressed, only repeats of an already-seen one within the
+    window."""
+    key = f"{sc}:{err}"
+    now = time.time()
+    if now - _PLACE_REJECT_LAST_PRINT.get(key, 0.0) >= 60.0:
+        _PLACE_REJECT_LAST_PRINT[key] = now
+        print(f"[PLACE-REJECT] HTTP {sc}: {err}")
+
+
 def place_order(sess, private_key, ticker, side, price_dollars, count, client_oid=None,
                 ttl_s=None, post_only=True):
-    """POST /portfolio/orders (action=buy). post_only=True (default) = maker-only (venue rejects if
-    marketable). post_only=False = allow CROSSING (taker) -- used ONLY by the strand-disposal path to
-    COMPLETE a stranded box by taking the offer (live RCA 2026-06-13: post-only-only could never
-    complete -> strands rode naked to settlement at -21.76c). Returns order_id or None (NOT PLACED).
-    ttl_s -> expiration_ts: the VENUE-SIDE dead-man. A SIGKILLed process (container reap, 2x now)
-    leaves GTC orders working an unattended window -- the 2026-06-12 death cost ~$1.13 when its
-    orphans kept filling one side. With a TTL every orphan self-cancels at the venue within ttl_s."""
+    """POST /portfolio/events/orders (V2). The legacy POST /portfolio/orders now returns HTTP 410
+    "Please switch to the V2 endpoints" -- Kalshi deprecated the legacy /portfolio/orders
+    MUTATION endpoints (create/cancel/decrease/amend/batched) between June 18-25 2026 in favor of
+    the V2 /portfolio/events/orders family (GET /portfolio/orders is UNCHANGED and still used by
+    get_open_orders/get_fills below -- only the write endpoints moved).
+    V2 quotes a SINGLE book from the YES side only (side='bid'|'ask', price always YES-scale), so
+    this function's own side='yes'/'no' vocabulary (used by every call site) is translated here:
+      side='yes' -> api side='bid', price=price_dollars          (buy YES @ price_dollars)
+      side='no'  -> api side='ask', price=1-price_dollars        (buy NO @ price_dollars ==
+                    sell YES @ 1-price_dollars -- V2's own docs state this equivalence
+                    explicitly: "ask means sell YES. Selling YES is economically equivalent to
+                    buying NO at 1 - price, but this endpoint quotes everything from the YES
+                    side.")
+    post_only=True (default) = maker-only (venue rejects if marketable). post_only=False = allow
+    CROSSING (taker) -- used ONLY by the strand-disposal path to COMPLETE a stranded box by taking
+    the offer (live RCA 2026-06-13: post-only-only could never complete -> strands rode naked to
+    settlement at -21.76c). Returns (order_id_or_None, status_code, err_str).
+    ttl_s -> expiration_time (V2 renamed expiration_ts -> expiration_time; ALSO now requires
+    time_in_force="good_till_canceled" to accompany it -- "GTT" is not itself a valid
+    time_in_force value). This is still the VENUE-SIDE dead-man: omitting expiration_time under
+    good_till_canceled is a true GTC order (what we send when ttl_s is falsy), so the TTL
+    mechanism is fully preserved under V2, just renamed/re-nested. A SIGKILLed process (container
+    reap, 2x now) leaves GTC orders working an unattended window -- the 2026-06-12 death cost
+    ~$1.13 when its orphans kept filling one side. With a TTL every orphan self-cancels at the
+    venue within ttl_s.
+    self_trade_prevention_type is a NEW required V2 field with no legacy equivalent; we send
+    "taker_at_cross" (cancel OUR new/incoming order on a self-cross, never an existing resting
+    order) as the conservative choice consistent with this bot's post-only philosophy. In normal
+    operation this should never fire: the maker-box invariant (b_yes_bid + b_no_bid < $1, i.e.
+    our own YES bid price is always < the ask price implied by our own NO buy, 1 - no_bid) means
+    our own two legs never cross each other."""
     coid = client_oid or str(uuid.uuid4())
+    api_side = "bid" if side == "yes" else "ask"
+    api_price = price_dollars if side == "yes" else round(1.0 - price_dollars, 4)
     body = {
         "ticker": ticker,
         "client_order_id": coid,
-        "side": side,
-        "action": "buy",
-        "count": int(count),
-        "type": "limit",
-        f"{side}_price_dollars": f"{price_dollars:.4f}",
+        "side": api_side,
+        "count": str(int(count)),
+        "price": f"{api_price:.4f}",
+        "time_in_force": "good_till_canceled",
+        "self_trade_prevention_type": "taker_at_cross",
         "post_only": post_only,
-        "expiration_ts": int(time.time() + ttl_s) if ttl_s else None,
     }
-    body = {k: v for k, v in body.items() if v is not None}
-    sc, resp = _api(sess, private_key, "POST", "/portfolio/orders", body=body)
+    if ttl_s:
+        body["expiration_time"] = int(time.time() + ttl_s)
+    sc, resp = _api(sess, private_key, "POST", "/portfolio/events/orders", body=body)
     if sc < 200 or sc >= 300 or resp is None:
         # surface the venue's actual reason (2,140 rejects were logged as the useless
-        # "no order_id from venue" because this was discarded -- reject forensics 2026-06-12)
+        # "no order_id from venue" because this was discarded -- reject forensics 2026-06-12).
+        # V2 error bodies are FLAT ({"code","message","details","service"}, no "error" wrapper);
+        # the "error"->"message" fallback stays for any endpoint that still nests it.
         err = ""
         try:
-            err = (resp or {}).get("error", {}).get("message") or json.dumps(resp)[:120]
+            err = ((resp or {}).get("message")
+                   or (resp or {}).get("error", {}).get("message")
+                   or json.dumps(resp)[:120])
         except Exception:
             err = str(resp)[:120]
+        _print_place_reject(sc, err)
         return None, sc, err
-    oid = (resp.get("order") or {}).get("order_id")
+    # V2 response is FLAT (order_id top-level) -- no more {"order": {...}} wrapper.
+    oid = resp.get("order_id")
     return (str(oid), sc, "") if oid else (None, sc, "2xx but no order_id")
 
 
 def cancel_order(sess, private_key, order_id):
-    """DELETE /portfolio/orders/{order_id}. Returns True if venue accepted (2xx)."""
-    sc, _ = _api(sess, private_key, "DELETE", f"/portfolio/orders/{order_id}", timeout=4)
+    """DELETE /portfolio/events/orders/{order_id} (V2). The legacy DELETE /portfolio/orders/{id}
+    was deprecated in the same June 18-25 2026 sweep as the create endpoint (see place_order) and
+    now also 410s. Returns True if venue accepted (2xx). V2 response shape changed too
+    ({"order_id","client_order_id","reduced_by","ts_ms"} vs the old full order object) but this
+    function only checks the status code, so no further change is needed here."""
+    sc, _ = _api(sess, private_key, "DELETE", f"/portfolio/events/orders/{order_id}", timeout=4)
     return 200 <= sc < 300
 
 
@@ -1468,7 +1524,7 @@ def main():
     _LIFECYCLE_PATH = os.path.join("gha_data", f"order_lifecycle_{a.asset}15m_r{_RUNID}.jsonl")
 
     def _lifecycle_write(event, order_id, side, price, size, queue_ahead_est,
-                         port_mult_budget=None, port_mult_delta=None, seeded=False):
+                         port_mult_budget=None, port_mult_delta=None, seeded=False, err=None):
         """port_mult_budget/port_mult_delta (AUDITABILITY, PORTFOLIO-AWARE SIZING): the two
         multipliers applied to THIS sizing decision when --portfolio-aware is on; always null
         when it's off (or for event types the portfolio-aware path doesn't size, e.g. cancels) --
@@ -1476,7 +1532,10 @@ def main():
         seeded (AUDIT, --seed-empty): True for every event on an order that was placed by the
         empty-book seeding path; False (default) for everything else -- always present (not just
         when true) so seeded vs. normal rows are trivially filterable for the pre-registered
-        seeded_net evaluation."""
+        seeded_net evaluation.
+        err (VISIBILITY, 2026-07-12 HTTP-410 incident): the venue's reject reason (f"HTTP {sc}:
+        {err}"), stamped only on "reject" events (None otherwise) -- makes the lifecycle log
+        alone sufficient to see WHY every reject happened, not just that it happened."""
         try:
             os.makedirs("gha_data", exist_ok=True)
             with open(_LIFECYCLE_PATH, "a") as _lf:
@@ -1489,6 +1548,7 @@ def main():
                     "port_mult_delta": (round(port_mult_delta, 4)
                                        if port_mult_delta is not None else None),
                     "seeded": bool(seeded),
+                    "err": err,
                 }) + "\n")
         except Exception:
             pass
@@ -1904,7 +1964,8 @@ def main():
             lm.place_reject(side, price, f"HTTP {sc_}: {err_}")
             reject_cd[(side, round(price, 4))] = time.time() + a.reject_cooldown_s
             _lifecycle_write("reject", None, side, price, _sz, _qahead,
-                             port_mult_budget=_pmb, port_mult_delta=_pmd, seeded=seeded)
+                             port_mult_budget=_pmb, port_mult_delta=_pmd, seeded=seeded,
+                             err=f"HTTP {sc_}: {err_}")
             return None
         placed_oids.add(oid)
         ops["place"] += 1
