@@ -56,6 +56,13 @@ jobs:
           fi
           mkdir -p /tmp/dw/gha_data
           cd "$GITHUB_WORKSPACE"
+          # live_recon/order_lifecycle rows are persisted to the LIVE-STATE branch (live.yml
+          # telemetry step), not gha-data -- bridge them into the data dir before calibrating.
+          if git fetch --depth=1 origin live-state 2>/dev/null; then
+            git ls-tree -r --name-only origin/live-state | grep -E "live_recon|order_lifecycle" | while read f; do
+              git show "origin/live-state:$f" > "/tmp/dw/gha_data/$(basename "$f")" 2>/dev/null || true
+            done
+          fi
           python recon_calibrate.py --data-dir /tmp/dw/gha_data > /tmp/dw/gha_data/CALIBRATION.txt
           cd /tmp/dw
           git add gha_data/CALIBRATION.txt
