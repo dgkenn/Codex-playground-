@@ -67,6 +67,8 @@ KNOWN_GATES = {
     # TIER-1/2 mechanism-prior arms (build on the two live winners: full A-S reservation pricing,
     # A-S optimal spread, queue depth, cross-asset netting -- see shadow_compare.py Variant._gate_one)
     "as_resv", "as_spread", "queue_gate", "xnet",
+    # STACKED COMPOSITE arm (_gated): union of "as" + "queue_gate" -- see Variant._gated.
+    "as_qg",
 }
 KNOWN_SIZE_MODES = {"flat", "fv", "markout", "late_boost", "vol_size"}
 
@@ -148,6 +150,36 @@ REGISTRY: list[Strat] = [
                "process (multi_market.py subprocess-per-market) with no shared Python memory -- this "
                "is a polling-based filesystem approximation (staleness <=XNET_STALE_S=30s), degrading "
                "to exactly the `as` gate if the shared dir/files are unavailable"),
+
+    # -- STACKED COMPOSITE arms (three-mechanism stacking of the TIER-1/2 candidates above with the
+    #    two live winners -- the operator's ask: a fill only goes through if EVERY stacked mechanism
+    #    independently agrees, or a mechanism-prior gate is combined with markout sizing). All skew=0.99
+    #    (av_stoikov's leash). Composability note: `as_resv`/`as_spread` are GATE mechanisms and
+    #    "markout" is a SIZE mechanism -- disjoint code paths (Variant._gated vs Variant._size), same
+    #    pattern already proven live by as_markout ("as" gate + "markout" size); no new engine code was
+    #    needed for resv_mo/sprd_mo, only the new `as_qg` composite gate (Variant._gated) for as_qg/as_qg_mo.
+    #    PROMOTION BAR -- same PRE-REGISTERED bar as the TIER-1/2 block above (declared BEFORE any data):
+    #    >=14 forward days, day-clustered t>=3, gross-positive >=80% of days, mean edge >= max(av_stoikov,
+    #    mo_size) same-days -- PLUS the per-market dethronement bar (per_market_champion.py): these arms
+    #    exist specifically to find PER-MARKET tailored champions, so an arm that misses the global
+    #    promotion bar can still earn a per-asset slot by beating av_stoikov head-to-head ON THAT ASSET
+    #    (day-clustered t>=3, days-positive fraction >=70%, >=10 days of head-to-head data).
+    Strat("as_qg", skew=0.99, gate="as_qg",
+          note="STACK: union of the two live inventory/queue mechanisms -- reject a fill if EITHER the "
+               "A-S inventory penalty (`as`) OR the queue-position filter (`queue_gate`) fires; the "
+               "strictest gate combination in the roster, testing whether double-gating over-prunes flow "
+               "or compounds two independently-supported toxicity signals"),
+    Strat("resv_mo", gate="as_resv", size_mode="markout", skew=0.99,
+          note="STACK: full A-S SIGNED reservation-price gate (as_resv) + markout-weighted sizing -- "
+               "the pricing-half mechanism paired with the winner #2 sizing mechanism, same as_markout "
+               "composition pattern (gate + size are orthogonal code paths)"),
+    Strat("sprd_mo", gate="as_spread", size_mode="markout", skew=0.99,
+          note="STACK: A-S vol-scaled minimum-edge gate (as_spread) + markout-weighted sizing -- a "
+               "mechanism distinct from inventory (vol-adaptive quoting threshold) paired with markout "
+               "sizing, again the orthogonal gate+size composition already proven by as_markout"),
+    Strat("as_qg_mo", gate="as_qg", size_mode="markout", skew=0.99,
+          note="STACK: the triple -- as_qg's union gate (as OR queue_gate) + markout-weighted sizing; "
+               "the strictest-gate/best-sizing-mechanism combination in the roster"),
 
     # -- WATCH (operational purpose) --
     Strat("micro_gate", gate="micro",

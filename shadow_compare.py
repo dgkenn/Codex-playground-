@@ -297,6 +297,14 @@ class Variant:
         queue_gate; every other gate ignores it, so passing/not-passing it is byte-identical for them."""
         if self.tau_guard and (self.mk["we"] - time.time()) < self.tau_guard:
             return True               # late-window pull: last-2min sells were the most adverse
+        if self.gate == "as_qg":       # TIER-1/2 STACK: union of the two live mechanism-prior gates --
+            # reject iff EITHER the A-S inventory penalty ("as") OR the queue-position filter
+            # ("queue_gate") fires. A union of REJECTIONS is the STRICTEST composite (both sub-gates
+            # must independently clear/pass-through for the fill to go through) -- deliberately the
+            # tight end of the stack, mirroring gross_max's union-of-toxicity-signals pattern above.
+            # queue_gate needs `ahead`; `as` ignores it -- threading it through is byte-identical for `as`.
+            return (self._gate_one("as", token, our_side, price)
+                    or self._gate_one("queue_gate", token, our_side, price, ahead))
         if self.gate == "micro_spot":  # cause+symptom: pull if EITHER book-imbalance OR BTC-lag flags
             return (self._gate_one("micro", token, our_side, price)
                     or self._gate_one("spot", token, our_side, price))
