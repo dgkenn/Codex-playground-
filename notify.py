@@ -15,10 +15,19 @@ def alert_sync(msg: str) -> bool:
     if not tok or not chat:
         return False
     try:
-        requests.post(f"https://api.telegram.org/bot{tok}/sendMessage",
-                      json={"chat_id": chat, "text": msg[:4000]}, timeout=8)
+        r = requests.post(f"https://api.telegram.org/bot{tok}/sendMessage",
+                          json={"chat_id": chat, "text": msg[:4000]}, timeout=8)
+        body = r.json() if r.headers.get("content-type", "").startswith("application/json") else {}
+        if r.status_code != 200 or not body.get("ok", False):
+            # Telegram REJECTED the send (stale token -> 401, wrong chat_id -> 400). This used to
+            # return True silently -- the operator saw "no alerts ever" with no trace. One line,
+            # no secrets, lands in the workflow log.
+            print(f"[notify] telegram send FAILED: HTTP {r.status_code} "
+                  f"{body.get('description', r.text[:120])}", flush=True)
+            return False
         return True
-    except Exception:
+    except Exception as e:
+        print(f"[notify] telegram send error: {type(e).__name__}: {e}", flush=True)
         return False
 
 
