@@ -2874,6 +2874,219 @@ def test_helpers():
 
 
 # ===========================================================================
+# TEST 31 — TRANSPORT HEALTH: end-of-window quiet book no longer trips the dead-man
+# ===========================================================================
+
+def test_transport_health_deadman():
+    """
+    RCA 2026-07-12 (confirmed from live telemetry, run r29198341684-successor): ws_stale events
+    with stale_s 45-49 fired at 16:59Z, 17:14Z, 17:30Z -- the FINAL MINUTE of three consecutive
+    15-min windows, culminating in a T3 "cancel-all" at 17:30Z. Root cause: the market goes quiet
+    at expiry (everyone pulls quotes -> book empty/one-sided), which is normal, but the dead-man
+    clock (`last_book_ok`) only refreshed on a NON-EMPTY two-sided book. A REST poll that
+    succeeded (HTTP OK) but found an empty/one-sided book left the clock stuck, so tiers escalated
+    on a routine end-of-window pattern EVERY window -- and T3's cancel-all could cancel a
+    COMPLETING quote near expiry, manufacturing exactly the stranded legs the tiering (bb27db0a)
+    was built to prevent.
+
+    THE FIX: transport health (`last_transport_ok` -- any REST poll that completed, or any WS
+    message received, regardless of book content) is now what the dead-man tiering measures,
+    while `last_book_ok` (content freshness) is left untouched for everything else that uses it.
+
+    Checks:
+      1. kt.get_book(sess, ticker): ok=True on a genuinely empty/one-sided book (HTTP succeeded),
+         ok=True on a real two-sided book, ok=False on a transport failure (exception/timeout).
+      2. kt.ws_transport_alive(last_msg_ts, now): strict boundary at WS_TRANSPORT_ALIVE_S, and
+         None (never received) is never "alive".
+      3. Quiet-market fixture (replays the incident): repeated REST success-with-empty-book, WS
+         silent, over a span far longer than 3x deadman_s -- dead-man tier stays 0 throughout,
+         even though the CONTENT clock (last_book_ok, never refreshed) would have reproduced the
+         observed 45-49s staleness and tripped T1/T2/T3 under the pre-fix logic.
+      4. Genuine outage: REST failing (ok=False) AND WS silent -- tier escalates through
+         1x/2x/3x deadman_s at the SAME thresholds/semantics as the pre-existing tiering (T29):
+         tier 2 still requires unpaired net, tier 3 fires from staleness alone.
+      5. Recovery: once REST starts succeeding again (or a WS message arrives), the tier resets
+         to 0 on the very next tick -- transport-driven, not book-content-driven.
+      6. WS message receipt alone -- even with REST continuously failing and no two-sided book --
+         keeps the tier at 0 for as long as messages keep arriving.
+      7. STRUCTURAL: the dead-man staleness computation in the real source reads
+         `last_transport_ok`, not `last_book_ok`; get_book_cached returns a transport_ok signal;
+         ws_feeder stamps ws_health["last_msg_ts"] on every message (before any type dispatch, so
+         even a heartbeat/empty-book delta counts); the T2/T3 alert text names both failure modes.
+    """
+    name = "T31: transport health (end-of-window quiet book no longer a false dead-man trip)"
+    try:
+        import inspect
+        observations = []
+        deadman_s = 15.0
+
+        # --- 1. kt.get_book: ok distinguishes transport failure from book emptiness ---
+        class _FakeResp:
+            def __init__(self, payload):
+                self._payload = payload
+            def json(self):
+                return self._payload
+
+        class _FakeSess:
+            def __init__(self, payload):
+                self._payload = payload
+            def get(self, url, timeout=4):
+                return _FakeResp(self._payload)
+
+        class _RaiseSess:
+            def get(self, url, timeout=4):
+                raise ConnectionError("simulated venue outage")
+
+        # exact end-of-window shape: HTTP 200, both sides empty (everyone pulled quotes)
+        empty_sess = _FakeSess({"orderbook_fp": {"yes_dollars": [], "no_dollars": []}})
+        ybb, ybq, yba, yaq, ok = kt.get_book(empty_sess, "KXBTC15M-TEST")
+        assert (ybb, ybq, yba, yaq) == (None, None, None, None), "empty book must still be all-None content"
+        assert ok is True, "empty book with a completed HTTP call must be ok=True (transport alive)"
+        observations.append("empty_book_transport_ok_true=True")
+
+        two_sided_sess = _FakeSess({"orderbook_fp": {
+            "yes_dollars": [["0.45", "10"]], "no_dollars": [["0.40", "8"]],
+        }})
+        ybb2, ybq2, yba2, yaq2, ok2 = kt.get_book(two_sided_sess, "KXBTC15M-TEST")
+        assert ybb2 == 0.45 and yba2 == 0.60 and ok2 is True
+        observations.append("two_sided_book_ok_true_and_parsed=True")
+
+        r3 = kt.get_book(_RaiseSess(), "KXBTC15M-TEST")
+        assert r3 == (None, None, None, None, False), "a real transport failure must be ok=False"
+        observations.append("transport_failure_ok_false=True")
+
+        # --- 2. kt.ws_transport_alive: strict boundary, None never alive ---
+        now0 = 1_000_000.0
+        thr = kt.WS_TRANSPORT_ALIVE_S
+        assert kt.ws_transport_alive(None, now0) is False, "never-received must not be alive"
+        assert kt.ws_transport_alive(now0 - thr, now0) is True, "exactly at threshold -> alive"
+        assert kt.ws_transport_alive(now0 - thr - 0.001, now0) is False, "just past threshold -> not alive"
+        assert kt.ws_transport_alive(now0, now0) is True, "a message this instant is alive"
+        observations.append(f"ws_transport_alive_boundary_correct(thr={thr:.0f}s)=True")
+
+        # --- shared one-tick-lag simulator, mirrors the real main-loop ordering: escalate off the
+        # PREVIOUS tick's last_transport_ok, then refresh the clock from THIS tick's REST/WS
+        # evidence, then apply the same-tick recovery reset -- exactly the sequence now wired into
+        # the DEAD-MAN TIERING block + book-poll section of kalshi_trader.py's main loop. Reuses
+        # the REAL kt.ws_transport_alive and the tier-boundary math T29 already validates against
+        # the actual source (_deadman_tier_for is that same validated replica).
+        def _replay(events, net_delta=0.0):
+            last_transport_ok = events[0][0]
+            tier = 0
+            tripped = False
+            trace = []
+            for now, rest_ok, ws_msg_ts in events:
+                stale = now - last_transport_ok
+                new_tier = _deadman_tier_for(stale, deadman_s, net_delta)
+                if not tripped and new_tier > tier:
+                    tier = new_tier
+                    if tier == 3:
+                        tripped = True
+                if rest_ok or kt.ws_transport_alive(ws_msg_ts, now):
+                    last_transport_ok = now
+                if (now - last_transport_ok) <= deadman_s:
+                    tripped = False
+                    tier = 0
+                trace.append(tier)
+            return trace
+
+        # --- 3. Quiet-market fixture: replays the incident (stale_s 45-49 in CONTENT terms, over
+        # 3 consecutive windows' final minutes) -- REST always succeeds, book always empty, WS
+        # silent. Content clock (last_book_ok) never refreshes -> would hit the observed 45-49s
+        # and trip T1/T2/T3 under the PRE-FIX logic. Transport clock refreshes every tick.
+        t0 = 1_783_875_601.0   # 16:59Z timestamp from the live telemetry (first ws_stale event)
+        quiet_events = [(t0 + i, True, None) for i in range(0, 90)]   # 90s of REST-ok/empty-book
+        quiet_trace = _replay(quiet_events, net_delta=0.0)
+        assert all(t == 0 for t in quiet_trace), \
+            f"quiet market (REST ok, empty book) must never leave tier 0: {set(quiet_trace)}"
+        observations.append(f"quiet_market_{len(quiet_events)}_ticks_tier_always_0=True")
+        # the CONTENT-clock staleness this fixture would have produced under pre-fix logic
+        # (last_book_ok pinned at t0 the whole time -- book is never fresh)
+        content_stale_at_49s = 49.0
+        pre_fix_tier = _deadman_tier_for(content_stale_at_49s, deadman_s, 0.0)
+        assert pre_fix_tier == 3, "sanity: the observed 49s content-staleness WOULD have been tier 3 pre-fix"
+        observations.append(f"pre_fix_would_have_tripped_tier={pre_fix_tier}_post_fix_stays_0=True")
+
+        # --- 4. Genuine outage: REST failing + WS silent -- same 1x/2x/3x thresholds as T29.
+        # tick i has stale=i (last_transport_ok pinned at t0, event i is t0+i), and the tiering
+        # boundaries are strict-> (matching T29's own convention), so tier 1 begins at i=16
+        # (stale=16 > 15), tier 3 at i=46 (stale=46 > 45).
+        outage_events_flat = [(t0 + i, False, None) for i in range(0, 60)]
+        trace_flat = _replay(outage_events_flat, net_delta=0.0)   # flat book -> tier 2 unreachable
+        assert trace_flat[15] == 0 and trace_flat[16] == 1, "tier 1 boundary at >15s"
+        assert max(trace_flat[16:46]) == 1, "flat book (no unpaired net) must stay tier 1 through 2x"
+        assert trace_flat[46] == 3, "tier 3 boundary at >45s, unconditional on net_delta"
+        observations.append("genuine_outage_flat_book_tier_1_then_3_at_correct_boundaries=True")
+
+        outage_events_unpaired = [(t0 + i, False, None) for i in range(0, 60)]
+        trace_up = _replay(outage_events_unpaired, net_delta=2.0)
+        assert trace_up[16] == 1 and trace_up[30] == 1 and trace_up[31] == 2 and trace_up[46] == 3
+        observations.append("genuine_outage_unpaired_net_tier_1_2_3_at_correct_boundaries=True")
+
+        # --- 5. Recovery: REST resumes -> tier resets to 0 on the very next tick ---
+        recovered_events = outage_events_unpaired + [(t0 + 60, True, None), (t0 + 61, True, None)]
+        trace_recov = _replay(recovered_events, net_delta=2.0)
+        assert trace_recov[-2] == 0 and trace_recov[-1] == 0, \
+            f"transport recovery must reset tier to 0 immediately: {trace_recov[-3:]}"
+        observations.append("recovery_resets_tier_to_0_on_first_healthy_tick=True")
+
+        # --- 6. WS message receipt alone (no two-sided book needed) keeps transport alive ---
+        ws_only_events = [(t0 + i, False, t0 + i) for i in range(0, 60)]   # REST always failing,
+        # a WS message stamped THIS same instant every tick (content irrelevant to ws_transport_alive)
+        trace_ws_only = _replay(ws_only_events, net_delta=2.0)
+        assert all(t == 0 for t in trace_ws_only), \
+            f"WS messages alone (REST failing throughout) must hold tier at 0: {set(trace_ws_only)}"
+        observations.append("ws_message_receipt_alone_holds_transport_alive_rest_failing=True")
+
+        # --- 7. structural: real source wiring ---
+        src = inspect.getsource(kt)
+        # anchor on the escalation block's OWN comment ("C1 DEAD-MAN TIERING..."), not the
+        # deadman_tier init comment earlier in main() -- both share the "DEAD-MAN TIERING (RCA
+        # 2026-07-12" substring, but only this one is adjacent to the staleness computation.
+        idx1 = src.index("C1 DEAD-MAN TIERING (RCA 2026-07-12")
+        tiering_block = src[idx1: idx1 + 3200]
+        assert "stale = time.time() - last_transport_ok" in tiering_block, \
+            "dead-man staleness must be measured off last_transport_ok, not last_book_ok"
+        assert "stale = time.time() - last_book_ok" not in tiering_block, \
+            "the CONTENT clock must no longer drive tier escalation"
+        observations.append("tiering_reads_last_transport_ok_not_last_book_ok=True")
+
+        gbc_idx = src.index("def get_book_cached(ticker, max_age=None):")
+        gbc_src = src[gbc_idx: src.index("\n    def ", gbc_idx + 40)]
+        assert "transport_ok" in gbc_src, "get_book_cached must expose a transport_ok signal"
+        assert "ybb, ybq, yba, yaq, ok = get_book(sess, ticker)" in gbc_src, \
+            "get_book_cached must consume get_book's ok flag"
+        observations.append("get_book_cached_threads_transport_ok=True")
+
+        gb_idx = src.index("def get_book(sess, ticker):")
+        gb_src = src[gb_idx: src.index("\ndef parse_book_entry(", gb_idx)]
+        assert "return None, None, None, None, True" in gb_src, \
+            "get_book must return ok=True on a genuinely empty/one-sided book"
+        assert "return None, None, None, None, False" in gb_src, \
+            "get_book must return ok=False on a transport failure"
+        observations.append("get_book_ok_flag_present_both_branches=True")
+
+        feeder_src = src[src.index("def ws_feeder("): src.index("def _apply_snapshot(")]
+        stamp_idx = feeder_src.index('ws_health["last_msg_ts"] = time.time()')
+        raw_check_idx = feeder_src.index("if not raw:")
+        assert stamp_idx < raw_check_idx, \
+            "last_msg_ts must be stamped BEFORE the empty-message check, so even a heartbeat counts"
+        observations.append("ws_feeder_stamps_last_msg_ts_before_content_dispatch=True")
+
+        assert "ws_transport_alive(ws_health" in src, \
+            "the main loop must actually call ws_transport_alive against ws_health"
+        observations.append("main_loop_calls_ws_transport_alive=True")
+
+        # alert text names both failure modes (ws silent, rest failing), per the RCA's spec example
+        assert "ws silent, rest failing" in tiering_block
+        observations.append("alert_text_names_both_transport_failure_modes=True")
+
+        record(name, True, "; ".join(observations))
+    except Exception as e:
+        record(name, False, f"{type(e).__name__}: {e}\n{traceback.format_exc()}")
+
+
+# ===========================================================================
 # Main runner
 # ===========================================================================
 
@@ -2914,6 +3127,7 @@ def main():
     test_dispose_cross_circuit_breaker()
     test_deadman_tiering()
     test_ws_resilience()
+    test_transport_health_deadman()
 
     # Summary table
     print()

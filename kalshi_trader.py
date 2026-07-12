@@ -154,6 +154,21 @@ def ws_reconnect_backoff_s(attempt, base=1.0, cap=5.0):
     return min(cap, base * (2 ** (attempt - 1)))
 
 
+# TRANSPORT HEALTH (RCA 2026-07-12 pt.2, end-of-window false dead-man): how recent a WS message
+# has to be (ws_health["last_msg_ts"], stamped on EVERY message the feeder receives -- snapshot,
+# delta, fill, even one that empties the book out -- see ws_feeder below) to count as proof the
+# socket is alive. Deliberately generous vs. the 1.0s recv() timeout in ws_feeder's inner loop.
+WS_TRANSPORT_ALIVE_S = 5.0
+
+
+def ws_transport_alive(last_msg_ts, now, threshold_s=WS_TRANSPORT_ALIVE_S):
+    """True when the ws_feeder recorded ANY message within `threshold_s` of `now` -- TRANSPORT
+    liveness, deliberately decoupled from book CONTENT (a quiet/empty end-of-window book still
+    means the socket is receiving traffic; see last_transport_ok vs last_book_ok in the main
+    loop). Pure/unit-testable; the main loop calls this against ws_health['last_msg_ts']."""
+    return last_msg_ts is not None and (now - last_msg_ts) <= threshold_s
+
+
 def ws_feeder(ws_state, ws_sub, book_evt, ws_fills, private_key, ws_health=None):
     """Authenticated WS feeder: orderbook_delta + fill channels on Kalshi.
 
@@ -165,14 +180,20 @@ def ws_feeder(ws_state, ws_sub, book_evt, ws_fills, private_key, ws_health=None)
     websockets imported lazily -> if missing, prints warning and returns (REST stays active).
 
     ws_health (WS RESILIENCE, RCA 2026-07-12; optional, defaults to a private dict if omitted so
-    this function stays callable standalone): shared {"connected": bool, "attempts": int} the
-    caller's REST fallback (get_book_cached) reads to tighten its poll cadence while the WS is
-    down, so 15s of staleness only happens on a REAL venue outage, not a routine reconnect gap.
-    Reconnects use exponential backoff (ws_reconnect_backoff_s, capped ~5s) instead of a flat 1s
-    sleep -- fast enough to recover from a blip, gentle enough not to hammer a real outage.
+    this function stays callable standalone): shared {"connected": bool, "attempts": int,
+    "last_msg_ts": float|None} the caller's REST fallback (get_book_cached) reads to tighten its
+    poll cadence while the WS is down, so 15s of staleness only happens on a REAL venue outage,
+    not a routine reconnect gap. Reconnects use exponential backoff (ws_reconnect_backoff_s,
+    capped ~5s) instead of a flat 1s sleep -- fast enough to recover from a blip, gentle enough
+    not to hammer a real outage.
+
+    last_msg_ts (RCA 2026-07-12 pt.2, TRANSPORT HEALTH): stamped on EVERY message received on the
+    socket -- snapshot, delta, fill, even one that empties the book out to nothing -- so the
+    dead-man's transport clock (last_transport_ok, main loop) can tell "venue quiet" apart from
+    "venue down" without caring whether the message produced a usable two-sided book.
     """
     if ws_health is None:
-        ws_health = {"connected": False, "attempts": 0}
+        ws_health = {"connected": False, "attempts": 0, "last_msg_ts": None}
     try:
         import websockets
     except Exception:
@@ -229,6 +250,11 @@ def ws_feeder(ws_state, ws_sub, book_evt, ws_fills, private_key, ws_health=None)
                             continue
                         if ws_sub.get("epoch") != epoch:
                             break       # epoch changed mid-message -> reconnect
+                        # TRANSPORT HEALTH (RCA 2026-07-12 pt.2): stamp on receipt of ANYTHING
+                        # from the socket, before we even know its type/content -- proves the
+                        # transport is alive independent of whether it turns out to be a
+                        # heartbeat, an empty-book delta, or a real snapshot.
+                        ws_health["last_msg_ts"] = time.time()
                         if not raw:
                             continue
                         try:
@@ -375,20 +401,27 @@ def discover(sess, asset="btc"):
 
 
 def get_book(sess, ticker):
-    """(yes_bid, ybq, yes_ask, yaq) from public orderbook_fp. best-at-END; YES ask=1-best_NO_bid."""
+    """(yes_bid, ybq, yes_ask, yaq, ok) from public orderbook_fp. best-at-END; YES ask=1-best_NO_bid.
+
+    ok (TRANSPORT HEALTH, RCA 2026-07-12 pt.2): True whenever the HTTP request completed and the
+    response parsed, REGARDLESS of whether the book itself has two sides. An empty/one-sided book
+    (e.g. everyone pulls quotes in the final minute of a 15m window) is a normal market state, not
+    a venue outage -- callers (get_book_cached, the dead-man feed) must be able to tell the two
+    apart instead of collapsing both to the same all-None result. ok=False only on an actual
+    request/parse failure (timeout, HTTP error, bad JSON)."""
     try:
         ob = sess.get(f"{BASE}/markets/{ticker}/orderbook", timeout=4).json()
     except Exception:
-        return None, None, None, None
+        return None, None, None, None, False
     o = ob.get("orderbook_fp") or ob.get("orderbook") or {}
     yb = o.get("yes_dollars") or []
     nb = o.get("no_dollars") or []
     if not yb or not nb:
-        return None, None, None, None
+        return None, None, None, None, True
     ybb, ybq = float(yb[-1][0]), float(yb[-1][1])   # best YES bid (price, qty)
     nbb, nbq = float(nb[-1][0]), float(nb[-1][1])   # best NO bid
     yba = round(1.0 - nbb, 4)                        # YES ask = 1 - best NO bid (mirror)
-    return ybb, ybq, yba, nbq
+    return ybb, ybq, yba, nbq, True
 
 
 def parse_book_entry(ob_json):
@@ -1609,12 +1642,14 @@ def main():
     book_evt = threading.Event()
     # ws_fills: real-time own fills from WS fill channel; drained each loop before REST poll
     ws_fills = collections.deque()
-    # ws_health (WS RESILIENCE, RCA 2026-07-12): {"connected", "attempts"} updated by the ws_feeder
-    # thread; get_book_cached() reads "connected" to tighten its REST poll cadence while the WS is
-    # down, so a routine reconnect gap doesn't masquerade as a real 15s venue outage to the C1
-    # dead-man. Starts "connected"=False (dry-run / no live WS thread never flips it -> REST
-    # cadence is simply never tightened, which is correct: there's no WS to be down).
-    ws_health = {"connected": False, "attempts": 0}
+    # ws_health (WS RESILIENCE, RCA 2026-07-12): {"connected", "attempts", "last_msg_ts"} updated
+    # by the ws_feeder thread; get_book_cached() reads "connected" to tighten its REST poll
+    # cadence while the WS is down, so a routine reconnect gap doesn't masquerade as a real 15s
+    # venue outage to the C1 dead-man. Starts "connected"=False (dry-run / no live WS thread
+    # never flips it -> REST cadence is simply never tightened, which is correct: there's no WS
+    # to be down). "last_msg_ts" (RCA 2026-07-12 pt.2) feeds ws_transport_alive() -- the dead-man
+    # TRANSPORT clock, decoupled from book content (see last_transport_ok below).
+    ws_health = {"connected": False, "attempts": 0, "last_msg_ts": None}
     side_cooldown = {"yes": 0.0, "no": 0.0}   # no re-quote on a side until this ts (anti-knife)
     win_fills = {"yes": 0, "no": 0}            # fills per side THIS window (trend-exposure cap)
     win_cost = {"yes": 0.0, "no": 0.0}         # $ spent per side THIS window (box telemetry)
@@ -1916,7 +1951,13 @@ def main():
     _settle_cache = {}       # cid -> settled result (audit H3: score post-rollover markouts vs settlement)
     next_mk = {"mk": None, "tried_we": 0}   # prefetched next-window market
 
-    last_book_ok = time.time()
+    last_book_ok = time.time()       # CONTENT freshness: only a non-empty two-sided book refreshes
+    # this (see get_book_cached's `fresh`) -- used for the [LOOP] diagnostic and anything that
+    # genuinely needs "do we have a usable book right now", NOT the dead-man clock (below).
+    last_transport_ok = time.time()  # TRANSPORT freshness (RCA 2026-07-12 pt.2): refreshed by ANY
+    # proof the venue is reachable -- a REST poll that completed (even on an empty/one-sided
+    # book) or a WS message received (ditto) -- so a quiet end-of-window book no longer reads as
+    # a feed outage to the dead-man tiering below, which keys off THIS clock.
     deadman_tripped = False
     # DEAD-MAN TIERING (RCA 2026-07-12, run r29198341684): a binary "stale > deadman_s ->
     # cancel-all" tripped mid-fill and cancelled the COMPLETING quote ~12s after one side
@@ -2028,7 +2069,7 @@ def main():
                 try:
                     nd = net_delta
                     if abs(nd) > 1e-9:
-                        bb_, _bq, ba_, _aq, _f = get_book_cached(mk["cid"], max_age=3.0)
+                        bb_, _bq, ba_, _aq, _f, _tok = get_book_cached(mk["cid"], max_age=3.0)
                         if bb_ is not None and ba_ is not None:
                             need_ = int(round(abs(nd)))
                             if nd > 0:    # hold YES -> BUY NO at the no-offer to flatten
@@ -2054,6 +2095,7 @@ def main():
     # _gh_tok is hoisted above _record_kill now (durable sticky-kill needs it first); reused here.
     _rsw = {"last": 0.0}
     _loop_diag = {"t": 0.0}
+    _quiet_book_log = {"t": 0.0}   # rate-limits the [QUIET-BOOK] diagnostic (RCA 2026-07-12 pt.2)
     _skip_ct = {}
 
     def _remote_switch_is_off():
@@ -2142,32 +2184,39 @@ def main():
 
     def get_book_cached(ticker, max_age=None):
         """Prefer WS book when fresh (<2s). Falls back to throttled REST poll.
-        Returns (yes_bid, ybq, yes_ask, yaq, fresh).
-        fresh=True when data is from the WS OR from a new REST fetch this call.
+        Returns (yes_bid, ybq, yes_ask, yaq, fresh, transport_ok) -- transport_ok (RCA 2026-07-12
+        pt.2) is the LOOSER signal: True on fresh evidence the venue is reachable, even on an
+        empty/one-sided book; see the TRANSPORT HEALTH note below the WS/REST paths.
 
-        WS RESILIENCE (RCA 2026-07-12): while ws_health["connected"] is False (WS down --
-        disconnected or never connected in dry-run), the REST fallback cadence TIGHTENS to
-        half of --react-poll instead of the normal cadence, so a WS-down stretch is covered by
-        faster REST polling and 15s of true staleness only happens on a REAL venue outage (both
-        WS AND REST dark), not merely a WS reconnect gap."""
+        WS RESILIENCE (RCA 2026-07-12): while ws_health["connected"] is False (WS down), the REST
+        fallback cadence TIGHTENS to half of --react-poll, so a WS-down stretch is covered by
+        faster REST polling and 15s of true staleness only happens on a REAL venue outage."""
         max_age = max_age or (a.react_poll * (0.5 if not ws_health.get("connected", True) else 1.0))
+        # TRANSPORT HEALTH (RCA 2026-07-12 pt.2): `fresh` requires a non-empty two-sided book, so
+        # it under-reports venue health at the end of every window (everyone pulls quotes at
+        # expiry -> book empty/one-sided -> REST succeeds but fresh=False forever). transport_ok
+        # is what the dead-man tiering now keys off of instead (see last_transport_ok, main loop).
         # --- WS primary path ---
         ws_st = ws_state.get(ticker)
         if (ws_st is not None
                 and ws_st.get("bb") is not None
                 and ws_st.get("ba") is not None
                 and (time.time() - ws_st["ts"]) <= 2.0):
-            return ws_st["bb"], ws_st["bq"], ws_st["ba"], ws_st["aq"], True
+            return ws_st["bb"], ws_st["bq"], ws_st["ba"], ws_st["aq"], True, True
         # --- REST fallback ---
         c = _last_book_cache.get(ticker)
         if c and (time.time() - c[0]) < max_age:
-            return c[1], c[2], c[3], c[4], False
-        ybb, ybq, yba, yaq = get_book(sess, ticker)
+            return c[1], c[2], c[3], c[4], False, False
+        ybb, ybq, yba, yaq, ok = get_book(sess, ticker)
         if ybb is not None:
             _last_book_cache[ticker] = (time.time(), ybb, ybq, yba, yaq)
-            return ybb, ybq, yba, yaq, True
-        # return stale if available (keeps dead-man watchdog from over-firing on single blips)
-        return (c[1], c[2], c[3], c[4], False) if c else (None, None, None, None, False)
+            return ybb, ybq, yba, yaq, True, True
+        # return stale content if available (keeps the CONTENT-freshness watchdog from over-firing
+        # on single blips) -- but transport_ok tracks `ok` on its own merits: a successful REST
+        # call that found an empty/one-sided book is still transport_ok=True (RCA 2026-07-12 pt.2).
+        if c:
+            return c[1], c[2], c[3], c[4], False, ok
+        return None, None, None, None, False, ok
 
     # ------------------------------------------------------------------
     # OPT-IN EMPTY-BOOK SEEDING (--seed-empty; every closure below is a no-op when the flag is off
@@ -2760,7 +2809,17 @@ def main():
             #           circuit breaker below).
             #   tier 3 (stale > 3x deadman_s): full cancel-all -- the old (pre-fix) behavior,
             #           now the last resort instead of the first response.
-            stale = time.time() - last_book_ok
+            #
+            # TRANSPORT vs CONTENT staleness (RCA 2026-07-12 pt.2, end-of-window false trip): this
+            # clock is `last_transport_ok`, NOT `last_book_ok`. last_book_ok only refreshes on a
+            # non-empty two-sided book, so it goes stale every single window's final minute (the
+            # market goes quiet at expiry -- everyone pulls quotes, book empties/one-sides) even
+            # though the venue is completely healthy -- that pattern alone was firing T1-T3 (with
+            # T3's cancel-all risking a COMPLETING quote near expiry) on EVERY window, not just a
+            # real outage. last_transport_ok refreshes on ANY proof of life -- a REST poll that
+            # completed (HTTP ok, regardless of book content) OR a WS message received (ditto) --
+            # so it only goes stale when BOTH are genuinely dark.
+            stale = time.time() - last_transport_ok
             _new_deadman_tier = 0
             if stale > 3 * a.deadman_s:
                 _new_deadman_tier = 3
@@ -2770,14 +2829,16 @@ def main():
                 _new_deadman_tier = 1
             if live and not deadman_tripped and _new_deadman_tier > deadman_tier:
                 if _new_deadman_tier == 1:
-                    print(f"[DEAD-MAN/T1] feed stale {stale:.0f}s > {a.deadman_s:.0f}s -> "
-                          f"pausing new OPENING quotes (resting orders TTL-covered; no cancel)")
+                    print(f"[DEAD-MAN/T1] transport stale {stale:.0f}s > {a.deadman_s:.0f}s "
+                          f"(ws silent, rest failing) -> pausing new OPENING quotes (resting "
+                          f"orders TTL-covered; no cancel)")
                     lm.ws_stale(stale)
                 elif _new_deadman_tier == 2:
-                    print(f"[DEAD-MAN/T2] feed stale {stale:.0f}s > {2 * a.deadman_s:.0f}s w/ "
-                          f"unpaired net={net_delta:+.0f} -> cancel OPENING quotes + one "
-                          f"disposal cross")
-                    notify.alert(f"[kalshi] DEAD-MAN/T2 feed stale {stale:.0f}s: cancel opens + dispose")
+                    print(f"[DEAD-MAN/T2] transport stale {stale:.0f}s > {2 * a.deadman_s:.0f}s "
+                          f"(ws silent, rest failing) w/ unpaired net={net_delta:+.0f} -> cancel "
+                          f"OPENING quotes + one disposal cross")
+                    notify.alert(f"[kalshi] DEAD-MAN/T2 transport stale {stale:.0f}s (ws silent, "
+                                 f"rest failing): cancel opens + dispose")
                     lm.ws_stale(stale)
                     for _k in list(resting):
                         if not is_completing_side(_k[0], net_delta):
@@ -2785,8 +2846,9 @@ def main():
                     flush_cancels()
                     deadman_t2_dispose_pending = True
                 elif _new_deadman_tier == 3:
-                    print(f"[DEAD-MAN/T3] feed stale {stale:.0f}s > {3 * a.deadman_s:.0f}s -> cancel-all")
-                    notify.alert(f"[kalshi] DEAD-MAN/T3 feed stale {stale:.0f}s: cancel-all")
+                    _t3msg = f"transport stale {stale:.0f}s (ws silent, rest failing): cancel-all"
+                    print(f"[DEAD-MAN/T3] {_t3msg}")
+                    notify.alert(f"[kalshi] DEAD-MAN/T3 {_t3msg}")
                     lm.ws_stale(stale)
                     cancel_all_resting(reason="deadman_stale")
                     deadman_tripped = True
@@ -2990,29 +3052,38 @@ def main():
                 cancel_all_resting(reason="toxic_kill"); break
 
             # --- book poll (REST; react-poll cadence) ---
-            ybb, ybq, yba, yaq, _fresh = get_book_cached(mk["cid"])
+            ybb, ybq, yba, yaq, _fresh, _rest_ok = get_book_cached(mk["cid"])
             if _fresh:
                 last_book_ok = time.time()
+            # TRANSPORT HEALTH (RCA 2026-07-12 pt.2): update the dead-man's clock from proof of
+            # reachability, NOT proof of a two-sided book -- a REST call that completed (_rest_ok,
+            # even on an empty/one-sided book) or a WS message received within the last few
+            # seconds (ws_transport_alive) both count. This is what fixes the end-of-window false
+            # trip: the book legitimately empties out in the final minute of every window, but the
+            # venue itself never stopped answering.
+            if _rest_ok or ws_transport_alive(ws_health.get("last_msg_ts"), time.time()):
+                last_transport_ok = time.time()
+            # DEAD-MAN TIERING recovery: run every tick (not just when THIS tick's book happens to
+            # be two-sided) so a genuine outage clears the instant transport proves alive again,
+            # even if the book is still empty/one-sided right after (that's the normal post-outage
+            # state, not still-stale transport). Tiers 1-2 never suppressed COMPLETING quotes
+            # (only opens), so the completion-chase / dispose-cross machinery for any unpaired
+            # inventory was never paused and needs no separate re-arm here.
+            if (time.time() - last_transport_ok) <= a.deadman_s:
+                deadman_tripped = False
+                deadman_tier = 0
             # [LOOP] once-a-minute loop-level diagnostic (added after three silent live legs made
             # branch-level truth unknowable from the outside). Shows exactly what the loop sees.
             if time.time() - _loop_diag.get("t", 0) >= 60:
                 _loop_diag["t"] = time.time()
                 _ws_e = ws_state.get(mk["cid"]) or {}
-                print(f"[LOOP] rest_bb={ybb} rest_ba={yba} fresh={_fresh} "
+                print(f"[LOOP] rest_bb={ybb} rest_ba={yba} fresh={_fresh} rest_ok={_rest_ok} "
                       f"ws_bb={_ws_e.get('bb')} ws_ba={_ws_e.get('ba')} "
                       f"branch={'BOOK' if (ybb is not None and yba is not None) else 'SEED'} "
                       f"resting={len(resting)} places={ops.get('place',0)} "
                       f"skips={dict(_skip_ct)}", flush=True)
                 _skip_ct.clear()
             if ybb is not None and yba is not None:
-                if _fresh:
-                    deadman_tripped = False
-                    # DEAD-MAN TIERING recovery: a fresh two-sided book means the feed is back,
-                    # so drop back to tier 0 immediately -- normal quoting resumes AND, since
-                    # tiers 1-2 never suppressed COMPLETING quotes (only opens), the
-                    # completion-chase / dispose-cross machinery for any unpaired inventory was
-                    # never paused and needs no separate re-arm here.
-                    deadman_tier = 0
                 # --seed-empty: a two-sided book exists again (get_book_cached only returns non-None
                 # bb/ba for a genuinely two-sided book -- see _seed_book_state's docstring). Any
                 # resting seed quotes' spot-anchored rationale is gone the instant that's true --
@@ -3022,6 +3093,14 @@ def main():
                 if a.seed_empty and any(m.get("seeded") for m in resting.values()):
                     _seed_drop_all("seed_book_no_longer_empty")
             else:
+                # QUIET-BOOK DIAGNOSTIC (RCA 2026-07-12 pt.2): book content is empty/one-sided but
+                # transport is healthy -- the routine final-minute-of-window pattern, not a feed
+                # outage. Rate-limited, informational only (no alert, no dead-man action -- that's
+                # exactly the point of this fix).
+                if _rest_ok and time.time() - _quiet_book_log["t"] >= 30.0:
+                    _quiet_book_log["t"] = time.time()
+                    print(f"  [QUIET-BOOK] REST ok, book empty/one-sided (transport healthy) "
+                          f"tau={max(mk['we'] - time.time(), 0.0):.0f}s -- not a feed outage")
                 if a.seed_empty:
                     _seed_tick(max(mk["we"] - time.time(), 0.0))
                 time.sleep(a.react_poll); continue
@@ -3501,7 +3580,7 @@ def main():
                     if mk is not None and fcid in (None, mk["cid"]):
                         # same (open) window: score against the current book
                         try:
-                            ybb2, _, yba2, _, _fresh2 = get_book_cached(mk["cid"], max_age=0.1)
+                            ybb2, _, yba2, _, _fresh2, _tok2 = get_book_cached(mk["cid"], max_age=0.1)
                         except Exception:
                             pending_markouts.extend([(due_t, f)])
                             break
@@ -3623,7 +3702,7 @@ def main():
 
                 # Mark open window to mid (feeds loss-limit kill)
                 wm = cash
-                ybb_m, _, yba_m, _, _fresh_m = get_book_cached(mk["cid"])
+                ybb_m, _, yba_m, _, _fresh_m, _tok_m = get_book_cached(mk["cid"])
                 mid_m = (ybb_m + yba_m) / 2.0 if (ybb_m is not None and yba_m is not None) else 0.5
                 for pk, sh in pos.items():
                     if abs(sh) < 1e-9:
