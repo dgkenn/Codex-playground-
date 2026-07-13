@@ -63,6 +63,32 @@ jobs:
           else
             echo "have=no" >> "$GITHUB_OUTPUT"; echo "::notice::KALSHI secrets not set -> inert"
           fi
+      - name: pre-chain successor (closes the inter-leg coverage hole)
+        # 2026-07-13 audit (DECISION_MAP F7): dispatching the successor only AFTER the ~46-min
+        # trading step left a 2-4 min hole per leg -- one whole window lost per cycle (zero-box
+        # windows on the leg-restart cadence), and a runner hard-kill lost the dispatch entirely
+        # (chain waits up to ~25 min for the cron). Dispatching HERE parks the successor as
+        # PENDING in the live-trade-singleton concurrency group (cancel-in-progress: false), so
+        # it starts the INSTANT this job ends -- gap shrinks to setup time (~60-90s), and the
+        # chain now survives runner crashes. The successor re-reads LIVE_SWITCH + the kill
+        # sentinel in its own gate step, so a kill during THIS leg still stops the chain (the
+        # sticky-kill commit lands on $BRANCH before the successor's checkout). The end-of-job
+        # dispatch below stays as belt-and-suspenders; GitHub keeps only the newest pending run.
+        # Trader-side, --join-fresh-s 60 makes the successor's first (inherited, in-progress)
+        # window open-suppressed, so the shorter gap can never double-fill a window two legs
+        # both touched (the 12:00Z ny=5 strand class).
+        if: steps.gate.outputs.switch == 'on' && steps.sec.outputs.have == 'yes'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for i in 1 2 3; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' -X POST \
+              -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/${{ github.repository }}/actions/workflows/live.yml/dispatches" \
+              -d '{"ref":"main"}')
+            [ "$code" = "204" ] && { echo "successor parked in concurrency queue"; break; }
+            echo "pre-dispatch -> HTTP $code"; sleep $((2 ** i))
+          done
       - uses: actions/setup-python@v5
         if: steps.gate.outputs.switch == 'on' && steps.sec.outputs.have == 'yes'
         with:
@@ -106,7 +132,7 @@ jobs:
             timeout --signal=TERM --kill-after=60 2820 \
               python -u kalshi_trader.py --asset "$ASSET" --live --gate as --size-mode markout --skew 0.99 --seed-empty --seed-fair-band 15 --seed-width 4 \
                 --post 2 --max-net 2 --max-notional 7 --loss-limit 6 --max-rungs 1 \
-                --guard-yes-spread 0 --strand-scaledown "0.75,0.5,0.25" --max-fills-side 3 --open-k-min 1 --open-k-max 5 --dispose-cross --dispose-cross-s 120 --close-force-s 45 --chase-unpaired-s 120 --dispose-max-give 0.25 --post-complete-freeze 1.5 --duration 2760 \
+                --guard-yes-spread 0 --strand-scaledown "0.75,0.5,0.25" --max-fills-side 3 --open-k-min 1 --open-k-max 5 --join-fresh-s 60 --dispose-cross --dispose-cross-s 120 --close-force-s 45 --chase-unpaired-s 120 --dispose-max-give 0.25 --post-complete-freeze 1.5 --duration 2760 \
                 --remote-switch-s 20 || true
           else
             python -c "import notify; notify.alert_sync('🟡 live cycle skipped ($ASSET) — preflight NO-GO (market/balance gate); retries next cycle.')" || true
