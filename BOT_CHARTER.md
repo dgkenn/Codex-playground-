@@ -18,6 +18,16 @@ money was in disposal policy at unchanged AUC).
    held-out FORWARD data (>= 10 forward days), tested on the gate-passed subset,
    with the selection made on earlier data (train-select/test-validate). In-sample
    discoveries are hypotheses, not results.
+   EARLY PROMOTION (added 2026-07-13): an arm MAY be promoted before 10 forward days
+   ONLY via the always-valid confidence sequence (avseq.py, surfaced by
+   box_shadow_report.py's "early-promotion" flag) — NEVER by "first day t>=2"
+   (optional-stopping peeking inflates false-positives to ~22%, sim-proven in
+   test_avseq.py). avseq controls Type-I error across all daily looks. HONEST
+   CAVEAT: for a stack-strength effect (~t2.8) avseq typically fires ~day 14 > 10,
+   so the fixed gate stays the faster path; avseq only shortcuts a
+   dramatically-stronger-than-replay edge. Both paths still require the operator
+   word for any LIVE change (rail 1) — early-eligible only means "prepare the
+   proposal now".
 2b. THE GATE APPLIES TO FIXES TOO (operator directive 2026-07-13). A "fix" with a
    compelling mechanism story is still a hypothesis until data-backed: mechanism +
    asymmetry arguments alone do NOT authorize deployment (case study: the late-join
