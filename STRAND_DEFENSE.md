@@ -19,7 +19,8 @@ interact: each upstream layer shrinks the population the next layer sees.
 ## Layer 1 — SENSE: know a strand is developing
 | control | effect | evidence | status |
 |---|---|---|---|
-| 5s pairing hazard model | P(pair next 5s \| state), AUC 0.909, calibrated | pairalarm study | powers Layer 2; logistic-33 is the deployable form (J) |
+| 5s pairing hazard model | P(pair next 5s \| state), AUC 0.909, calibrated | pairalarm study | powers Layer 2 |
+| **L1 CHAMPION: UNCERTAINTY-LCB** (7-model bootstrap ensemble; wait_edge uses hazard LOWER confidence bound — conservative when unsure) | gate-passed +1.150c t=2.81 (vs baseline +1.110c t=2.64); all 7 challengers clustered near baseline = sensor near ceiling | L1 study, fixed-pipeline money metric | deployable numpy form verified: logit-LCB gate +1.081c t=2.56 |
 
 ## Layer 2 — ACT OPTIMALLY: cut losers early, let pairers breathe
 | control | effect | evidence | status |
