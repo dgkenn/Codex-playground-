@@ -16,6 +16,15 @@ interact: each upstream layer shrinks the population the next layer sees.
 | composite entry score | reconfirms C1: test AUC 0.511 ≈ random, loses to hand vetoes at every volume | L0 study | dead |
 | C3 depth-share veto (mild, >0.9) | book leaning against completion | +1.42c t=5.15 marginal (replay) | backlog top |
 
+## Layer 0.5 — QUOTE CONSTRUCTION (researched 2026-07-13): JOIN survives
+5 structural variants replayed (harness reproduced the 214-strand baseline exactly).
+THEO-anchored quoting ❌ decisively dead (−0.85c t=−4.66, strand +2.16pp t=6.74).
+BACK-1c ❌ falsifies "backing off is safer" — deeper-sweep fills are MORE toxic.
+IMPROVE-1c ❌ flat-to-worse. ASYM (join predicted-completing side, back the other,
+from pre-fill book thinness) 🟡 only candidate beating JOIN in BOTH halves on EV
+(+0.37c), strand (−0.64pp) AND markout — but sub-t=2: forward-arm candidate, not
+deployment. Champion: JOIN (status quo).
+
 ## Layer 1 — SENSE: know a strand is developing
 | control | effect | evidence | status |
 |---|---|---|---|
