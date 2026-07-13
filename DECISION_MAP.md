@@ -63,3 +63,26 @@ policy, researched independently, EV-tested with day-clustered stats. Status leg
 
 Everything below the line already researched: C1 (dead), A1/A2/A6/D1/D2 (numbers above),
 per PAIRING_FINDINGS.md and PAIR_GATE.md.
+
+## F. ROUND-2 NODES (brainstorm 2026-07-13, quick data verdicts same day)
+
+| node | decision | verdict | evidence |
+|---|---|---|---|
+| F1 | expand universe (DOGE/BNB/ZEC/NEAR/HYPE 15m) | ❌ mostly dead | midday vol: HYPE~27k, BNB~19k, DOGE~18k ≈ SOL-tier (16k); BTC=733k mean. SOL-tier assets don't pair profitably (PAIR_GATE). ZEC/NEAR dead (<5k). Only HYPE merits a 1-day tape look if ever expanding |
+| F2 | adaptive quoted edge (wider in high vol) | ❓ promising | vol top-quintile costs +0.64c/event (t=7.9); demand more edge instead of skipping. Needs fill-rate elasticity study |
+| F3 | competitor-MM fingerprint → edge/stand-down | ❓ | low priority; flicker features were weak at fill |
+| F4 | multi-box re-entry same window | ❓ | needs per-window multi-fill replay; medium value |
+| F5 | strand-clustering cooldown | ❌ NO basis | P(strand\|prev strand)=0.143 vs base 0.142, t=−0.71. Strands do NOT cluster window-to-window. Keep consec-strand kill only as cheap tail insurance; don't extend it |
+| F6 | inventory skew across concurrent legs | ❓ | covered partially by --max-net; model later |
+| F7 | coverage gaps (GHA cycle restarts) | 🟡 REAL LOSS | only 87% of windows observed per asset-day (collector proxy). ~13% missed volume ≈ free EV at current edge. Ops fix, not model: tighten cycle overlap/handoff |
+| F8 | dispose maker-out vs taker-out | ❓ | fold into C2/D1 prototype (rest an improve-order for 5-10s before crossing) |
+| F9 | within-day circuit breaker / loss-limit level | ✅ SUPPORTED | day P&L serially correlated: corr(1st-half, 2nd-half EV)=+0.28; after bottom-quartile first half, 2nd-half EV −5.33c vs −4.18c. Bad days stay bad → the $6 loss-limit is directionally right; tightening is defensible. Risk reducer |
+| F10 | settle-vs-spot basis on held legs | ❓ | only matters if D3 hold-branch ships |
+
+### Round-2 clear winners (no further research needed)
+- **F9**: keep/tighten the daily loss-limit — first data-backed validation of it (bad days persist).
+- **F5 negative**: don't build strand-cooldown logic beyond what exists — no signal.
+- **F7**: operational — recover ~13% missed windows (cycle handoff), pure volume gain.
+### Round-2 promising (prospective tests queued)
+- F2 adaptive edge (vol-conditional pricing) — after C2 lands, same hazard machinery.
+- F8 maker-out disposal — bolt onto the D1/C2 paper prototype.
