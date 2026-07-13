@@ -1060,6 +1060,57 @@ def capped_completion_size(need, avail, max_net, cross_px, exposure, max_notiona
     return max(0, take)
 
 
+def cash_at_risk(cash, pos):
+    """Risk-true cash-at-risk for the C8 aggregate notional cap (solution A,
+    operator-approved, DECISION_MAP.md node M).
+
+    INVARIANT: a paired box -- equal YES and NO contracts on the same window's
+    `pos` dict -- settles for EXACTLY $1.00/contract at expiry no matter which
+    side wins. That portion of the cash spent buying it is a guaranteed
+    return, not risk. The naive `max(-cash, 0.0)` (cash always negative or
+    zero while buying, since this window never receives cash) counts the
+    FULL principal spent as exposure, double-counting the paired guarantee.
+    Only cash spent ABOVE that guaranteed $1/contract return -- i.e. genuine
+    overpayment, or an unpaired leg with no offsetting contract -- is at risk:
+
+        paired_guaranteed = min(total YES contracts, total NO contracts) * 1.00
+        cash_at_risk      = max(-cash - paired_guaranteed, 0.0)
+
+    `pos` must be the SAME window-scoped dict `cash` was accumulated against
+    (both reset together at window rollover, both fed by the same book_fill()
+    calls) -- see kalshi_trader.py's main() state block and DECISION_MAP.md
+    node M for the scoping audit. Never raises: bad/missing/positive-cash
+    input degrades to a conservative (>=0) estimate instead of raising.
+    """
+    try:
+        spent = -float(cash)
+    except (TypeError, ValueError):
+        spent = 0.0
+    if spent != spent:  # NaN check (math.isnan without importing math into a hot-path helper)
+        spent = 0.0
+    if spent <= 0.0:
+        return 0.0
+    try:
+        items = list((pos or {}).items())
+    except AttributeError:
+        items = []
+    py = 0.0
+    pn = 0.0
+    for k, v in items:
+        try:
+            v = float(v)
+        except (TypeError, ValueError):
+            continue
+        if not isinstance(k, str):
+            continue
+        if k.endswith(":YES"):
+            py += v
+        elif k.endswith(":NO"):
+            pn += v
+    paired_guaranteed = min(max(py, 0.0), max(pn, 0.0)) * 1.0
+    return max(spent - paired_guaranteed, 0.0)
+
+
 def is_completing_side(side, net_delta):
     """True if a fill on `side` would REDUCE |net_delta| (a completing/pairing quote) rather than
     open new directional risk. Shared by the main quoting loop's targets filter (is_completing,
@@ -2566,7 +2617,12 @@ def main():
             # aggregate notional cap (--max-notional), same formula as the main PLACE loop
             open_buy_notional = sum(max(a.post - m.get("filled", 0.0), 0.0) * price_
                                     for (_, price_), m in resting.items())
-            exposure = open_buy_notional + max(-cash, 0.0)
+            # PAIRED-BOX FIX (solution A, operator-approved, DECISION_MAP.md node M): `pos` here
+            # is the SAME this-window dict `cash` accumulates against (both closures over main()'s
+            # window-scoped state, both reset together at rollover, both fed by book_fill()) --
+            # scoping verified consistent with the main PLACE loop's C8 site below. See
+            # cash_at_risk()'s docstring for the invariant/formula.
+            exposure = open_buy_notional + cash_at_risk(cash, pos)
             if exposure + price * seed_count > a.max_notional:
                 continue
             # AS gate (or whichever --gate is active): gate_check always returns False when
@@ -3405,7 +3461,11 @@ def main():
                 # C8 aggregate notional cap (BUY side only; both YES and NO are buys)
                 open_buy_notional = sum(max(a.post - m.get("filled", 0.0), 0.0) * price_
                                         for (_, price_), m in resting.items())
-                exposure = open_buy_notional + max(-cash, 0.0)
+                # PAIRED-BOX FIX (solution A, operator-approved, DECISION_MAP.md node M): `pos`/
+                # `cash` are the same window-scoped pair used everywhere else in this loop (e.g.
+                # the box-completion basis calc just above at py_/pn_) -- scoping verified
+                # consistent. See cash_at_risk()'s docstring for the invariant/formula.
+                exposure = open_buy_notional + cash_at_risk(cash, pos)
                 if exposure + price * a.post > a.max_notional:
                     # FIX 2 (ws=1783876500 RCA 2026-07-12): a COMPLETING quote is exempt from the
                     # notional cap, mirroring the pre-existing is_completing exemptions on
@@ -3589,7 +3649,11 @@ def main():
                         # fixes above (which already prevent net_delta from getting corrupted).
                         _open_notional = sum(max(a.post - m.get("filled", 0.0), 0.0) * price_
                                              for (_, price_), m in resting.items())
-                        _exposure = _open_notional + max(-cash, 0.0)
+                        # PAIRED-BOX FIX (solution A, operator-approved, DECISION_MAP.md node M):
+                        # same window-scoped `pos`/`cash` pair as the other two C8 sites (this is
+                        # the dispose-cross sizing path, still inside the same main() window loop
+                        # -- scoping verified consistent). See cash_at_risk()'s docstring.
+                        _exposure = _open_notional + cash_at_risk(cash, pos)
                         take = capped_completion_size(need, avail, a.max_net, cross_px,
                                                       _exposure, a.max_notional)
                         # GIVE-CAPPED disposal (audit 2026-06-14): cross when CHEAP (lock>=-give, the
