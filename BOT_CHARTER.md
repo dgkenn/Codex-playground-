@@ -126,13 +126,26 @@ Upgrades ranked by lesson-learned leverage; daily cycles implement one at a time
 - Deploy queue (10 levers, replay-validated, awaiting forward validation): see
   DECISION_MAP.md "DEPLOY QUEUE". Highest value: hazard-based state-dependent
   disposal (+1.11c/box gate-passed, t=2.64 in replay).
-- Priority implementation task (free action): DONE 2026-07-13 — STACK-FULL and
-  STACK-LEAN arms live in box_shadow.py (161cd2e73). NEW priority task: P1
-  sub-second websocket tick collector (DECISION_MAP P1) — add a Kalshi ws
-  book/trade recorder to the sidecar feeds so microstructure below the current
-  1.2s sampling floor becomes visible. Collector-side only (free action). Every
-  latency/pre-fill verdict (C1 ceiling, L1.5 leads, F10 durations) is
-  resolution-conditional and gets re-tested once ~5 days of ws data exist.
+- Priority implementation tasks: STACK arms DONE (161cd2e73); P1 ws collector
+  DONE 2026-07-13 (4ea3714a3, hires files confirmed landing on gha-data).
+- RESEARCH QUEUE (ranked 2026-07-13 evening, operator-requested; daily cycle
+  step 4 works these in order unless fresher data demands otherwise):
+  1. ETH tailored wide-quote strategy (F1b): replay box engine on ETH tapes with
+     seed-width 2-3c variants; measure width-capture vs fill-rate elasticity +
+     tradeable depth/window. Doubles-the-bot candidate; answers F2 as a side
+     effect. ETH forward sleeve already accruing via box-shadow.yml.
+  2. FILL-MODEL CALIBRATION vs live tape: fit replay fill model to
+     order_lifecycle (every resting quote) x fills (which filled) x book context.
+     Collapses opt/pess uncertainty; upgrades ALL future replays to absolute EV.
+  3. Hires re-tests (~2026-07-18, needs ~5 days ws data): C1 at-fill ceiling,
+     L1.5 pre-fill lead, F10 sub-2.4s pool, hazard-model sub-second features.
+  4. C3 depth-share veto -> box_shadow arm (backlog top, +1.42c t=5.15 prior).
+  5. Cross-venue Kalshi<->Polymarket box persistence (pmkt_btc_updown feed
+     already collected) — new pool, real engineering lift, after 1-3.
+  DO-NOT-STUDY (closed honestly, stop re-litigating): window selection
+  (calendar/hours/cells), BTC box-count levers (F4/F4b/F4c/F4d/F-size),
+  disposal micro-optimization (L3 within ~1c of floor), width-gated pairing
+  (F11), stale-quote sniping at >=2.4s (F10).
 - Data locations: market/shadow data = gha_data/ on branch
   claude/polymarket-bot-live-ready-vw7ut5 (sparse-checkout it; multi-GB);
   live telemetry = live_state/ on branch live-state; studies' methodology =
