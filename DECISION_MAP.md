@@ -106,6 +106,27 @@ per PAIRING_FINDINGS.md and PAIR_GATE.md.
 | H5 | stale-feed threshold (currently ~15s suppress) | ❓ low value | only 4 stale events/day, all ~15.5s; not enough data to tune; leave |
 | H6 | strike-band selection when quoting (near-money only vs wider) | 🟡 note | strikes are chained (next strike = last settle, verified in index); current near-money-only is right; revisit only with multi-strike quoting ambitions |
 
+## J. HAZARD DISTILLATION (overnight run 1, 2026-07-13)
+
+Deploy target is numpy-only (collector/live env has no sklearn). Tested distilling the
+stopping rule's hazard model:
+
+| variant | AUC | full-sample delta t | gate-passed delta t |
+|---|---|---|---|
+| HGB 33-feat (re-implementation) | 0.909 | 1.07 | 1.75 |
+| **Logistic 33-feat (numpy-deployable)** | 0.903 | 1.12 | **1.88** |
+| Logistic 6/4/2-feat | 0.90 | ~0 | ~0.16 (kappa pinned at grid edge — degenerate) |
+
+Verdicts: (1) **logistic-all is the deployable form** — matches the boosted model;
+coefficients exported to the shadow-arm implementation. (2) **Feature pruning kills the
+EV while barely moving AUC** — the money is in fine calibration, not rank order; do NOT
+ship a "simple" hazard. (3) **Robustness warning:** the re-implementation (different
+NaN handling + linear cost model) got t=1.07 vs the original t=2.36 full-sample — the
+stopping edge is implementation-sensitive. This DOWNGRADES confidence in the +1.11c
+point estimate and makes forward paper validation strictly mandatory before any live
+deploy; the shadow arm must replicate the original pipeline exactly (HGB-equivalent
+NaN handling, fitted cost regressor, kappa=-0.5c).
+
 ## DEPLOY QUEUE (validated, ready; 2026-07-13)
 
 Beyond the earlier five (hazard stopping +1.11c t=2.64; thick-book veto t=10.1;
