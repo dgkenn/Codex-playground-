@@ -179,6 +179,24 @@ replay numbers are only trustworthy at small skip fractions; at scale they must 
 validated as box_shadow forward arms with apples-to-apples accounting. This artifact is
 exactly why NOTHING goes straight to live regardless of in-sample t-stat.
 
+## L. ACTIVE vs INACTIVE HOURS — one strategy or two? (2026-07-13, resolved)
+
+Question: do quiet hours need a different strategy? Verdict: **NO dual strategy — one
+state-adaptive strategy trading 24/7.**
+- Per-event economics are uniform across regimes: lull (07-08 UTC) EV −4.34c/strand
+  13.1% vs rest −4.55c/11.6%; state-quiet (low tick-rate) actually best (−3.05c).
+  Quiet = fewer fills, not worse fills. Spread-bucket EV flat across regimes.
+- The ONE real difference: pairing is ~70% slower in quiet tape (med time-to-pair 41s
+  vs 24s; pairs completing ≤120s: 75% vs 81%) → fixed deadlines clip more good boxes
+  when quiet. The state-dependent stopping rule (hazard uses tickrate/vol) adapts to
+  this automatically — third independent argument for it over any fixed deadline.
+- Clock-based rules are now 0-for-2 under honest validation (G7 skip-hours, and this
+  study's regime-conditional spread floor which reproduced the volume-cut artifact,
+  +4.4c t=17 REJECTED as mechanical — same failure mode as DECISION_MAP K).
+- 24/7 posture data-validated: every UTC hour fills 3-4.2 of 4 windows historically;
+  P(zero-fill hour) ≤12% except 07-08 (~21%). Keep quoting all hours; the activity
+  guard (built 2026-07-13) alarms if placements stop during non-lull hours.
+
 ### Round-2-of-loop meta-lesson
 Both round-1 "promising" leads (G7 hours, G8 near-par) died under honest validation
 (held-out test / deployable-subset). In-sample screens on 13 test days overfit fast —
