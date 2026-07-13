@@ -107,8 +107,15 @@ LOO ablations (the point of the exercise):
   converts ~17/983 borderline crosses into forced holds = near-total losers).
   Champions-in-isolation ≠ champions-in-stack.
 - L5 dormant on the stack's own path (0/13 days) — correct backstop behavior.
-DEPLOYMENT PATH: no piecemeal shipping. Forward arms: STACK-FULL (primary),
-STACK-LEAN (2-step + base sensor + cap25) challenger, L0-runner-up variant.
+DEPLOYMENT PATH: ✅ WIRED (161cd2e73 on bot branch, 2026-07-13): STACK-FULL +
+STACK-LEAN forward arms live in box_shadow; box_shadow_report.py computes the
+per-arm RISK benchmark table (variance, CVaR5, worst day, day-Sharpe, max DD,
+day-clustered deltas) for the daily ledger. LEAKAGE AUDIT: the L2 2-step replay
+DID use realized next-step state (confirmed leakage); the honest expectation
+version scores gate +1.128c t=3.04 (vs leaky +1.176c t=2.82, gap only 0.048c) —
+the edge SURVIVES delooking, and the arms embed the honest coefficients. L1-LCB
+deployable ensemble verified (+1.083c t=2.57). Fidelity: zero legacy-field
+mismatches; new arms sane.
 Promote whichever wins the forward gate (~10 days). Give-cap 15c REMOVED from the
 awaiting-word queue pending forward adjudication (stack evidence now contradicts
 its isolation evidence). Late-join cap unaffected (live-architecture fix, outside
