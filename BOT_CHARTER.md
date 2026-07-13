@@ -126,11 +126,13 @@ Upgrades ranked by lesson-learned leverage; daily cycles implement one at a time
 - Deploy queue (10 levers, replay-validated, awaiting forward validation): see
   DECISION_MAP.md "DEPLOY QUEUE". Highest value: hazard-based state-dependent
   disposal (+1.11c/box gate-passed, t=2.64 in replay).
-- Priority implementation task (free action): add STACK-FULL and STACK-LEAN arms
-  to box_shadow.py per STRAND_DEFENSE.md stack-test verdict (exact rules in
-  scratchpad/stacktest/results_stacktest.txt and the layer studies; if scratchpad
-  is gone, reconstruct from STRAND_DEFENSE.md layer champions). These two arms are
-  the deployment path — nothing ships until one wins the forward gate.
+- Priority implementation task (free action): DONE 2026-07-13 — STACK-FULL and
+  STACK-LEAN arms live in box_shadow.py (161cd2e73). NEW priority task: P1
+  sub-second websocket tick collector (DECISION_MAP P1) — add a Kalshi ws
+  book/trade recorder to the sidecar feeds so microstructure below the current
+  1.2s sampling floor becomes visible. Collector-side only (free action). Every
+  latency/pre-fill verdict (C1 ceiling, L1.5 leads, F10 durations) is
+  resolution-conditional and gets re-tested once ~5 days of ws data exist.
 - Data locations: market/shadow data = gha_data/ on branch
   claude/polymarket-bot-live-ready-vw7ut5 (sparse-checkout it; multi-GB);
   live telemetry = live_state/ on branch live-state; studies' methodology =
