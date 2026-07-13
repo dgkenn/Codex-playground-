@@ -70,6 +70,32 @@ bot branch), and whole paper-track workflows (crons on main).
    Final message = a 5-line scoreboard: live P&L yesterday, top arm deltas,
    promotions/deaths, tomorrow's question.
 
+## FACTORY V2 — roadmap to a best-in-class research factory
+Upgrades ranked by lesson-learned leverage; daily cycles implement one at a time
+(as the step-4 research slot when no data-driven question is more urgent):
+1. STUDY PROTOCOL TEMPLATE (from the G7/G8 overfit deaths): every study runs
+   train-select/test-validate with day-clustered stats, pre-named metrics, and a
+   pre-stated kill criterion — TEMPLATE.md checked into the repo; agent prompts
+   reference it instead of restating it.
+2. REPLICATION GATE (from the J-section sensitivity, t=2.36→1.07 on re-impl):
+   any result feeding a live deploy must be reproduced by an independent
+   implementation before promotion. Two matching numbers or it isn't real.
+3. POWER CHECK before launching any study: compute minimum days/events needed to
+   detect the hypothesized effect at t>=2; if the data can't support a verdict,
+   don't run it (saves tokens and prevents false negatives).
+4. VERDICT REGISTRY: DECISION_MAP.md is the single source of truth. Formal states:
+   ❓ open → 🟡 replay-supported → forward-testing → ✅ promoted / ❌ dead.
+   Dead stays recorded forever (negative results are assets).
+5. FACTORY META-METRICS in FORWARD_LEDGER.md monthly: time-to-verdict, kill rate,
+   false-promotion rate (promoted then de-promoted), token cost per verdict.
+   The factory improves what it measures about itself.
+6. AGENT EXECUTION STANDARD (from the early-return/timeout failures): no timeout
+   wrappers, OMP_NUM_THREADS=2, final message must contain the numbers, fixture
+   validation before any push. Bake into every research-agent prompt.
+7. CROSS-SLEEVE GENERALIZATION: run the other paper tracks (weather/sports/etf/
+   macro/wti CLV) through the same gates + ledger, so capital allocation across
+   sleeves becomes an output of the factory, not a vibe.
+
 ## Standing context (2026-07-13)
 - Live: BTC-only, size-2 experiment since 07-12; pre-registered evaluation
   2026-07-19 per SIZE2_EVAL_PLAN.md (balance>=100 & edge within 30% of anchor &
