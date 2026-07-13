@@ -70,18 +70,39 @@ SEVERITY (ESCALATION_PLAN.md MONITORING, verbatim thresholds):
 RED is a strict superset check over AMBER (if both would fire, RED wins and is reported; AMBER
 conditions are still included in the message for context).
 
+FLOOR CHECK (exit 30, SIZE2_EVAL_PLAN.md pre-registered decision rule; operator instruction
+2026-07-13 "hold size 2 to the $55 floor"): independent of the statistical guard above -- runs
+first, and short-circuits straight to exit 30 on breach without needing the winrec pipeline to
+succeed at all. Reads the LATEST balance sample for `today` (UTC) from live-state's
+live_metrics_kalshi_<asset>15m.jsonl (kind=='balance', field raw.balance_dollars), falling back to
+yesterday's file if today's hasn't been written yet (fresh UTC-day rollover). Same git-plumbing
+access load_live_winrec_rows() already uses (local live_state/ checkout first, else
+`git show origin/live-state:...`). FLOOR_BALANCE_USD (55.0) breach -> exit 30, message
+"*** $55 FLOOR BREACH *** balance=$XX.XX < $55 -- pre-registered size-2 revert triggered
+(SIZE2_EVAL_PLAN.md)". Balance unreadable/absent (missing file, unparsable row, unfetchable
+branch, anything) -> NEVER breach -- noted in the printed line as "balance=unreadable (...)"
+instead, same "telemetry gap != alert" discipline as the rest of this script. This script does
+not itself flip LIVE_SWITCH; health.yml on main does that off the back of exit 30, mirroring how
+SEV-RED above is reported-only and de-escalation is a separate consumer's job.
+
 USAGE:
   python3 pnl_guard.py                        # real run: fetch+read origin/live-state, today=UTC now
   python3 pnl_guard.py --fixture FILE.json     # TEST run: read winrec rows from FILE.json instead
                                                 # of live-state (never touches git/network)
   python3 pnl_guard.py --fixture FILE.json --as-of 2026-07-01   # pin "today" for reproducibility
-  (env vars PNL_GUARD_FIXTURE / PNL_GUARD_AS_OF work the same as the flags, for CI convenience)
+  python3 pnl_guard.py --fixture FILE.json --balance-fixture 54.20   # TEST the $55 floor check in
+                                                # isolation (never touches git/network either)
+  (env vars PNL_GUARD_FIXTURE / PNL_GUARD_AS_OF / PNL_GUARD_BALANCE_FIXTURE work the same as the
+  flags, for CI convenience)
 
-Exit codes: 0 OK, 10 SEV-AMBER, 20 SEV-RED. This script's own failures (bad data, git errors, etc)
-are caught and reported as OK-exit-0 "guard could not evaluate" rather than raising, matching the
-"guard failures of the script itself must not fail the workflow" convention used elsewhere in this
-repo (health_check.py's `exit 0 # never fail the monitor itself` is the model) -- health.yml is
-still responsible for wrapping the invocation itself in `|| true` as belt-and-suspenders.
+Exit codes: 0 OK, 10 SEV-AMBER, 20 SEV-RED, 30 FLOOR BREACH ($55 pre-registered floor,
+SIZE2_EVAL_PLAN.md). This script's own failures (bad data, git errors, etc) are caught and
+reported as OK-exit-0 "guard could not evaluate" rather than raising, matching the "guard failures
+of the script itself must not fail the workflow" convention used elsewhere in this repo
+(health_check.py's `exit 0 # never fail the monitor itself` is the model) -- health.yml is still
+responsible for wrapping the invocation itself in `|| true` as belt-and-suspenders. The floor
+check is resolved before that try/except (see main()) specifically so a winrec-pipeline failure
+can never suppress a real $55 breach.
 """
 from __future__ import annotations
 
@@ -127,7 +148,12 @@ MIN_TRADED_FOR_STRAND_CHECK = 5    # don't fire the strand check off a handful o
 Z_05 = -1.6448536269514722   # Phi^-1(0.05)
 Z_01 = -2.3263478740408408   # Phi^-1(0.01)
 
-EXIT_OK, EXIT_AMBER, EXIT_RED = 0, 10, 20
+# PRE-REGISTERED $55 BALANCE FLOOR (SIZE2_EVAL_PLAN.md decision rule; operator instruction
+# 2026-07-13 "hold size 2 to the $55 floor"). Below this, the size-2 experiment reverts. Changing
+# this is an operator decision, same discipline as the ESCALATION_PLAN.md constants above.
+FLOOR_BALANCE_USD = 55.0
+
+EXIT_OK, EXIT_AMBER, EXIT_RED, EXIT_FLOOR = 0, 10, 20, 30
 
 
 # ==================================================================================================
@@ -204,6 +230,69 @@ def load_fixture_rows(path: str) -> list[dict]:
     if isinstance(data, dict):
         data = data.get("rows", [])
     return list(data)
+
+
+# ==================================================================================================
+# $55 balance floor (SIZE2_EVAL_PLAN.md) -- reads live_metrics_kalshi_<asset>15m.jsonl, NOT the
+# winrec files above. Same git-plumbing access pattern (local live_state/ checkout first, else
+# git-plumbing against a fetched-but-not-checked-out origin/live-state ref); independent of the
+# winrec loader since it's a different file per UTC day rather than one file per asset overall.
+# ==================================================================================================
+
+def _prev_utc_day(day: str) -> str:
+    return (datetime.strptime(day, "%Y-%m-%d") - timedelta(days=1)).strftime("%Y-%m-%d")
+
+
+def _read_balance_rows_for_day(day: str, asset: str) -> list[dict]:
+    """kind=='balance' rows from live_state/<day>/live_metrics_kalshi_<asset>15m.jsonl. Local
+    checkout first (if one happens to exist), else `git show` against origin/live-state (assumed
+    already fetched by the caller, mirroring load_live_winrec_rows()). Returns [] on any
+    failure/absence; never raises."""
+    fname = f"live_metrics_kalshi_{asset}15m.jsonl"
+    local_path = os.path.join("live_state", day, fname)
+    if os.path.isfile(local_path):
+        try:
+            with open(local_path) as fh:
+                rows = _read_jsonl_text(fh.read())
+            return [r for r in rows if r.get("kind") == "balance"]
+        except Exception:
+            return []
+    try:
+        remote_path = f"live_state/{day}/{fname}"
+        show = _git("show", f"{LIVE_STATE_REMOTE}:{remote_path}")
+        if show.returncode != 0:
+            return []
+        return [r for r in _read_jsonl_text(show.stdout) if r.get("kind") == "balance"]
+    except Exception:
+        return []
+
+
+def resolve_balance(balance_fixture: str | None, today: str, asset: str) -> tuple[float | None, str]:
+    """Resolves the latest known balance ($) for the $55 floor check. Returns (balance, note);
+    balance is None on any absence/error, which the caller treats as 'do not breach' -- a
+    telemetry gap must never masquerade as a floor breach.
+
+    `balance_fixture` (--balance-fixture / PNL_GUARD_BALANCE_FIXTURE) is the testing escape hatch,
+    mirroring the guarantee --fixture already makes for the winrec pipeline: when set, this NEVER
+    touches git/network, full stop. When unset (real runs), reads today's live_metrics file,
+    falling back to yesterday's if today's hasn't been written yet (fresh UTC-day rollover) --
+    within each day, the LATEST sample by `ts` wins."""
+    if balance_fixture is not None:
+        try:
+            return float(balance_fixture), "fixture"
+        except Exception:
+            return None, "unreadable (bad --balance-fixture value)"
+
+    for day, label in ((today, "today"), (_prev_utc_day(today), "yesterday-fallback")):
+        rows = _read_balance_rows_for_day(day, asset)
+        if not rows:
+            continue
+        try:
+            best = max(rows, key=lambda r: float(r.get("ts") or 0))
+            return float(best["raw"]["balance_dollars"]), label
+        except Exception:
+            continue
+    return None, "unreadable"
 
 
 # ==================================================================================================
@@ -465,7 +554,28 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--as-of", default=os.environ.get("PNL_GUARD_AS_OF"),
                      help="Override 'today' (UTC, YYYY-MM-DD). Defaults to real UTC now.")
     ap.add_argument("--asset", default="btc")
+    ap.add_argument("--balance-fixture", default=os.environ.get("PNL_GUARD_BALANCE_FIXTURE"),
+                     help="Override balance ($) for the $55 floor check (testing only; bypasses "
+                          "live-state entirely, never touches git/network -- mirrors --fixture)")
     args = ap.parse_args(argv)
+
+    today = args.as_of or datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+    # FLOOR CHECK first, independent of the winrec-based variance guard below, and wrapped on its
+    # own so a bug in balance resolution can never suppress it (degrades to "unreadable" instead).
+    # This also means a failure in the winrec pipeline further down can never suppress a real $55
+    # breach -- the floor already returned by the time that pipeline runs.
+    try:
+        balance, balance_note = resolve_balance(args.balance_fixture, today, args.asset)
+    except Exception as e:
+        balance, balance_note = None, f"unreadable ({type(e).__name__})"
+
+    if balance is not None and balance < FLOOR_BALANCE_USD:
+        print(f"*** $55 FLOOR BREACH *** balance=${balance:.2f} < $55 -- pre-registered size-2 "
+              f"revert triggered (SIZE2_EVAL_PLAN.md)")
+        return EXIT_FLOOR
+
+    balance_suffix = f" balance={'$%.2f' % balance if balance is not None else 'unreadable'} ({balance_note})"
 
     try:
         if args.fixture:
@@ -474,10 +584,9 @@ def main(argv: list[str] | None = None) -> int:
             fetch_live_state()
             rows = load_live_winrec_rows(args.asset)
 
-        today = args.as_of or datetime.now(timezone.utc).strftime("%Y-%m-%d")
         days = bucket_by_day(rows, args.asset)
         result = evaluate(days, today, args.asset)
-        msg = format_message(result)
+        msg = format_message(result) + balance_suffix
         print(msg)
         return result["status"]
     except Exception as e:
@@ -485,7 +594,7 @@ def main(argv: list[str] | None = None) -> int:
         # health.yml also wraps the invocation in `|| true` as belt-and-suspenders, but the script
         # itself should degrade gracefully first (matches health_check.py's own convention).
         print(f"[pnl_guard OK] guard could not evaluate this cycle ({type(e).__name__}: {e}) -- "
-              f"treating as non-fatal, no alert", file=sys.stderr)
+              f"treating as non-fatal, no alert{balance_suffix}", file=sys.stderr)
         return EXIT_OK
 
 
