@@ -25,7 +25,10 @@ interact: each upstream layer shrinks the population the next layer sees.
 ## Layer 2 — ACT OPTIMALLY: cut losers early, let pairers breathe
 | control | effect | evidence | status |
 |---|---|---|---|
-| state-dependent stopping | +1.11c/box gate-passed t=2.64; adaptive (cuts runaways ~37s, holds oscillators) | replay, 2x reproduced (sensitivity noted, J) | forward-validating (~Jul 23) |
+| state-dependent stopping (incumbent) | +1.11c/box gate-passed t=2.64 | replay, 2x reproduced | forward-validating (~Jul 23) |
+| **L2 CHAMPION: 2-step lookahead** w2 = hz·(dist+fee) − (1−hz)·E[dca] + (1−hz)·wait_edge(s+5), κ=−0.5c | gate +1.176c t=2.82, capture 29.2%, false-fire 0.802 (better than incumbent on all three) | L2 study, 10 candidates; near-miss: join-aware κ (+1.130c t=2.25, false-fire slightly over bar) | forward-test alongside incumbent |
+| dca cost model replacement | ❌ tested and worse (corr 0.132 HGB-mean stands) — NOT the weak link | L2 study | dead |
+| hazard-floor AND-gate | ❌ degenerates to incumbent (wait_edge already embeds hazard) | L2 study | dead |
 | fixed-deadline retuning | REJECTED — no constant beats live 120s | sweep 15–300s all NS | dead |
 | completion repricing (pay up) | REJECTED — worse than binary stop t=−2.66 | C2 study | dead |
 
