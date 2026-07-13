@@ -4175,6 +4175,119 @@ def test_join_fresh_guard():
         record(name, False, f"{type(e).__name__}: {e}")
 
 
+# ===========================================================================
+# TEST 40 — F14 fractional flatten (--flatten-fractional, count_fp, default-off)
+# ===========================================================================
+
+def test_frac_flatten_count_fp():
+    """
+    KXBTC15M is a Kalshi FRACTIONAL-ENABLED market -- a partial fill can leave a non-integer
+    residual position (e.g. a 2-lot filling 1.52, leaving 0.48) that the legacy integer "count"
+    field used by place_order() can NEVER size an order to flatten exactly (proven live: a window
+    oscillated 1.00-lot integer crosses -0.47 -> 0.53 -> -0.47 -> 0.53, never reaching 0). This
+    checks:
+      (a) place_order(..., count_fp=None) [every pre-existing call site] is byte-identical to
+          pre-fix: body has "count" (string), no "count_fp" key.
+      (b) place_order(..., count_fp=0.48) sends Kalshi's fixed-point "count_fp" (2-decimal
+          string) and OMITS the legacy "count" key entirely (the two are mutually exclusive).
+      (c) a pure-logic replica of the --flatten-fractional close-window trigger (mirrors the
+          main() flatten block byte-for-byte in its decision structure, T39-style since main()'s
+          live loop can't be invoked directly): fires only when flatten_fractional>0 AND
+          abs(net)>threshold AND tau_left<close_force_s AND the residual is genuinely fractional;
+          picks the completing side correctly (net=+0.48 -> buy no; net=-0.48 -> buy yes); sizes
+          count_fp=round(abs(net),2); and does NOT fire when the flag is 0 (byte-identical/off).
+    """
+    name = "T40: F14 fractional flatten (--flatten-fractional, count_fp, default-off)"
+    try:
+        import re
+        observations = []
+        fkey = _FakeSignKey()
+        src = open(os.path.join(os.path.dirname(os.path.abspath(__file__)) or ".",
+                                "kalshi_trader.py"), encoding="utf-8").read()
+
+        # --- (a) count_fp=None (every existing call site) -> byte-identical to pre-fix ---
+        fsess = _FakeOrderSess(post_payload={"order_id": "legacy-1", "ts_ms": 1})
+        oid, sc, err = kt.place_order(fsess, fkey, "KXBTC15M-TEST", "yes", 0.27, 5,
+                                      client_oid="coid-legacy", ttl_s=None, post_only=True)
+        _, _, body = fsess.calls[0]
+        assert body["count"] == "5" and isinstance(body["count"], str), \
+            f"count_fp=None must still send legacy string count, got {body.get('count')!r}"
+        assert "count_fp" not in body, "count_fp=None must NOT add a count_fp key to the body"
+        assert oid == "legacy-1" and sc == 201
+        observations.append("count_fp_none_byte_identical=True")
+
+        # --- (b) count_fp=0.48 -> fixed-point field, NO legacy count key ---
+        fsess2 = _FakeOrderSess(post_payload={"order_id": "frac-1", "ts_ms": 2})
+        oid2, sc2, err2 = kt.place_order(fsess2, fkey, "KXBTC15M-TEST", "no", 0.65, 0,
+                                         client_oid="coid-frac", count_fp=0.48)
+        _, _, body2 = fsess2.calls[0]
+        assert body2.get("count_fp") == "0.48", \
+            f"count_fp=0.48 must send count_fp='0.48', got {body2.get('count_fp')!r}"
+        assert "count" not in body2, \
+            f"count_fp given must OMIT the legacy count key entirely, got keys={list(body2)}"
+        assert oid2 == "frac-1" and sc2 == 201
+        observations.append("count_fp_0.48_omits_legacy_count=True")
+
+        # --- source: flag registered, default 0.0 (off) ---
+        assert '"--flatten-fractional"' in src, "--flatten-fractional must be registered"
+        m = re.search(r'"--flatten-fractional",\s*type=float,\s*default=([0-9.]+)', src)
+        assert m and float(m.group(1)) == 0.0, "--flatten-fractional default must be 0.0 (off)"
+        observations.append("flag_registered_default_off=True")
+
+        # --- source: the flatten block is gated on a.flatten_fractional > 0 (unreachable at 0.0) ---
+        assert re.search(r"a\.flatten_fractional\s*>\s*0\s+and", src), \
+            "flatten block must be gated on a.flatten_fractional > 0 (default-inert)"
+        observations.append("default_inert_gate_present=True")
+
+        # --- source: winrec carries the telemetry field ---
+        assert '"frac_flatten_count"' in src, \
+            "winrec row must carry frac_flatten_count telemetry"
+        observations.append("winrec_carries_frac_flatten_count=True")
+
+        # --- (c) pure-logic replica of the trigger (mirrors the main() block's decision structure) ---
+        def frac_flatten_trigger(flatten_fractional, net_delta, tau_left, close_force_s,
+                                 already_used):
+            """Byte-for-byte replica of the guard condition in kalshi_trader.py's main() F14
+            block, plus the completing-side pick and count_fp sizing."""
+            if not (flatten_fractional > 0
+                    and tau_left < close_force_s
+                    and abs(net_delta) > flatten_fractional
+                    and abs(net_delta - round(net_delta)) > 1e-9
+                    and not already_used):
+                return None
+            if net_delta > 0:
+                side = "no"
+            else:
+                side = "yes"
+            return (side, round(abs(net_delta), 2))
+
+        # fires: fractional residual, flag on, within close-force window
+        assert frac_flatten_trigger(0.05, 0.48, 10.0, 30.0, False) == ("no", 0.48), \
+            "net=+0.48 must fire a BUY-NO count_fp=0.48 flatten"
+        assert frac_flatten_trigger(0.05, -0.48, 10.0, 30.0, False) == ("yes", 0.48), \
+            "net=-0.48 must fire a BUY-YES count_fp=0.48 flatten"
+        # does NOT fire: flag off (byte-identical/legacy)
+        assert frac_flatten_trigger(0.0, 0.48, 10.0, 30.0, False) is None, \
+            "flatten_fractional=0.0 (default) must never fire -- byte-identical legacy behavior"
+        # does NOT fire: below threshold
+        assert frac_flatten_trigger(0.5, 0.48, 10.0, 30.0, False) is None, \
+            "abs(net) below the threshold must not fire"
+        # does NOT fire: outside the close-force window
+        assert frac_flatten_trigger(0.05, 0.48, 60.0, 30.0, False) is None, \
+            "outside tau_left < close_force_s must not fire"
+        # does NOT fire: already used this window (at-most-once guard)
+        assert frac_flatten_trigger(0.05, 0.48, 10.0, 30.0, True) is None, \
+            "must not re-fire once already used this window"
+        # does NOT fire: exact-integer residual (the existing integer close-force handles it)
+        assert frac_flatten_trigger(0.05, 2.0, 10.0, 30.0, False) is None, \
+            "an exact-integer net_delta must defer to the existing integer close-force"
+        observations.append("logic_replica_semantics=True")
+
+        record(name, True, "; ".join(observations))
+    except Exception as e:
+        record(name, False, f"{type(e).__name__}: {e}\n{traceback.format_exc()}")
+
+
 def main():
     print("=" * 70)
     print("kalshi_trader.py Safety Rail Test Harness")
@@ -4221,6 +4334,7 @@ def main():
     test_aged_cross_wide_bound()
     test_spread_gate_shadow_arm()
     test_join_fresh_guard()
+    test_frac_flatten_count_fp()
 
     # Summary table
     print()

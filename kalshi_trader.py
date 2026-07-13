@@ -561,7 +561,7 @@ def _print_place_reject(sc, err):
 
 
 def place_order(sess, private_key, ticker, side, price_dollars, count, client_oid=None,
-                ttl_s=None, post_only=True):
+                ttl_s=None, post_only=True, count_fp=None):
     """POST /portfolio/events/orders (V2). The legacy POST /portfolio/orders now returns HTTP 410
     "Please switch to the V2 endpoints" -- Kalshi deprecated the legacy /portfolio/orders
     MUTATION endpoints (create/cancel/decrease/amend/batched) between June 18-25 2026 in favor of
@@ -592,7 +592,13 @@ def place_order(sess, private_key, ticker, side, price_dollars, count, client_oi
     order) as the conservative choice consistent with this bot's post-only philosophy. In normal
     operation this should never fire: the maker-box invariant (b_yes_bid + b_no_bid < $1, i.e.
     our own YES bid price is always < the ask price implied by our own NO buy, 1 - no_bid) means
-    our own two legs never cross each other."""
+    our own two legs never cross each other.
+    count_fp (F14, DECISION_MAP.md node F14, DEFAULT None -- every existing call site is
+    byte-identical): fractional-enabled markets (e.g. KXBTC15M) can leave a non-integer residual
+    position after a partial fill (a 2-lot filling 1.52, leaving 0.48) that the legacy integer
+    "count" field can NEVER size an order to flatten exactly. When count_fp is given, send
+    Kalshi's fixed-point "count_fp" field (2-decimal string, per Kalshi's count_fp migration)
+    INSTEAD of "count" -- the two are mutually exclusive on this endpoint."""
     coid = client_oid or str(uuid.uuid4())
     api_side = "bid" if side == "yes" else "ask"
     api_price = price_dollars if side == "yes" else round(1.0 - price_dollars, 4)
@@ -600,12 +606,16 @@ def place_order(sess, private_key, ticker, side, price_dollars, count, client_oi
         "ticker": ticker,
         "client_order_id": coid,
         "side": api_side,
-        "count": str(int(count)),
-        "price": f"{api_price:.4f}",
-        "time_in_force": "good_till_canceled",
-        "self_trade_prevention_type": "taker_at_cross",
-        "post_only": post_only,
     }
+    if count_fp is not None:
+        # F14 fixed-point flatten: fractional order sizing, no legacy "count" key (see docstring).
+        body["count_fp"] = f"{count_fp:.2f}"
+    else:
+        body["count"] = str(int(count))
+    body["price"] = f"{api_price:.4f}"
+    body["time_in_force"] = "good_till_canceled"
+    body["self_trade_prevention_type"] = "taker_at_cross"
+    body["post_only"] = post_only
     if ttl_s:
         body["expiration_time"] = int(time.time() + ttl_s)
     sc, resp = _api(sess, private_key, "POST", "/portfolio/events/orders", body=body)
@@ -1402,6 +1412,11 @@ def main():
                          "legs the give-cap refused to cross rode to settlement at -39.8c each). A certain "
                          "bounded completion now always beats the binary settlement variance. Requires "
                          "--dispose-cross. 0 = off (NOT recommended live).")
+    ap.add_argument("--flatten-fractional", type=float, default=0.0,
+                    help="F14: in the final --close-force-s window, flatten ANY residual "
+                         "|net_delta|>this via a single count_fp taker order sized to the exact "
+                         "position (fractional-enabled markets only; 0=OFF, byte-identical legacy "
+                         "integer behavior).")
     ap.add_argument("--dispose-max-attempts", type=int, default=3,
                     help="DISPOSE-CROSS CIRCUIT BREAKER (RCA 2026-07-12, run r29198341684): a WS+REST "
                          "staleness blip tripped the C1 dead-man mid-fill, stranding a 1-lot leg; the "
@@ -1775,7 +1790,7 @@ def main():
     # COMPREHENSIVE per-window microstructure (live RCA 2026-06-13): the re-validation gate (strand
     # rate, legging gap, maker/taker mix, dispose-cross firing) plus the offline strand analysis read
     # this. Written per window to kalshi_winrec_<asset>15m.jsonl, reset at rollover.
-    winrec = {"taker": 0, "maker": 0, "maxnet": 0.0, "first_ts": {}, "dispose_cross": 0, "dispose_give": 0.0, "dispose_force_used": False, "deadman_max_tier": 0}
+    winrec = {"taker": 0, "maker": 0, "maxnet": 0.0, "first_ts": {}, "dispose_cross": 0, "dispose_give": 0.0, "dispose_force_used": False, "deadman_max_tier": 0, "frac_flatten_used": False, "frac_flatten_count": 0.0}
     winrec_fh = open(f"kalshi_winrec_{a.asset}15m.jsonl", "a")
     # LIVE-VS-SHADOW RECONCILIATION (BACKTEST_VS_LIVE.md-style): one row per settled window, named
     # to match shadow_windows_<asset><tenor>m_r<RUNID>.jsonl so each live window pairs against the
@@ -1937,6 +1952,11 @@ def main():
                 # the late-join strand class (node N) that legging_gap_s could not measure.
                 "join_s": (round(_win_join_s, 1) if _win_join_s is not None else None),
                 "joined_late": bool(_win_joined_late),
+                # F14 (--flatten-fractional, DEFAULT OFF): count_fp size of the single fractional
+                # taker flatten fired this window, else 0.0 -- measures the drag/benefit of
+                # flattening the sub-integer residual the legacy integer count field can never
+                # size an order to close exactly.
+                "frac_flatten_count": round(winrec.get("frac_flatten_count", 0.0), 2),
             }) + "\n")
             winrec_fh.flush()
             _winrec_written_ws["ws"] = mk_["ws"]
@@ -2317,7 +2337,8 @@ def main():
             pass
 
     # --- place helper ---
-    def place(side, price, yes_bid, yes_ask, count=None, cross=False, port_mult=None, seeded=False):
+    def place(side, price, yes_bid, yes_ask, count=None, cross=False, port_mult=None, seeded=False,
+             count_fp=None):
         """Post one rung. Returns order_id or None. DRY-RUN: prints, returns fake id.
         side='yes'|'no'. price in dollars (up to 4 decimals).
         Post-only guard (cross=False, default): we only place maker BUYs; Kalshi's post_only=True
@@ -2329,7 +2350,10 @@ def main():
         fill; None (default, and always for cross/chase/dispose call sites that don't size via
         that path) -> both log fields are null.
         seeded (AUDIT, --seed-empty): True when this order is an empty-book seed quote -- stamped
-        onto the lifecycle row so seeded orders are provably tagged from placement through fill."""
+        onto the lifecycle row so seeded orders are provably tagged from placement through fill.
+        count_fp (F14, DEFAULT None -- every existing call site is byte-identical): when given,
+        sizes via Kalshi's fixed-point count_fp field instead of the legacy integer count (see
+        place_order's docstring) -- used ONLY by the --flatten-fractional close-window flatten."""
         if not cross:
             if side == "yes" and yes_ask is not None and price >= yes_ask:
                 print(f"  [POST-ONLY GUARD] BUY-YES {price} >= yes_ask {yes_ask}; skipped")
@@ -2340,17 +2364,18 @@ def main():
                     print(f"  [POST-ONLY GUARD] BUY-NO {price} >= no_ask {no_ask}; skipped")
                     return None
         t_dec = time.time()
-        _sz = count or int(a.post)
+        _sz = count_fp if count_fp is not None else (count or int(a.post))
         _qahead = _queue_ahead_est(side, price)   # snapshot BEFORE the order lands (queue-ahead proxy)
         _pmb, _pmd = port_mult if port_mult is not None else (None, None)
         if not live:
             fake = f"dry_{side}_{price:.4f}_{int(t_dec*1000)%100000}"
-            print(f"  [DRY {'CROSS-COMPLETE' if cross else 'place'}] BUY-{side.upper()} {count or int(a.post)} @ {price:.4f}")
+            print(f"  [DRY {'CROSS-COMPLETE' if cross else 'place'}] BUY-{side.upper()} {_sz} @ {price:.4f}")
             _lifecycle_write("place", fake, side, price, _sz, _qahead,
                              port_mult_budget=_pmb, port_mult_delta=_pmd, seeded=seeded)
             return fake, t_dec, time.time()
         oid, sc_, err_ = place_order(sess, priv, mk["cid"], side, price, count or int(a.post),
-                                     ttl_s=(a.order_ttl_s or None), post_only=not cross)
+                                     ttl_s=(a.order_ttl_s or None), post_only=not cross,
+                                     count_fp=count_fp)
         t_ack = time.time()
         if oid is None:
             lm.place_reject(side, price, f"HTTP {sc_}: {err_}")
@@ -3124,7 +3149,7 @@ def main():
                     # definition above -- so the exit path can emit the identical row shape for a
                     # window that never reaches this rollover at all.)
                     _write_winrec_row(mk, r_now)
-                    winrec = {"taker": 0, "maker": 0, "maxnet": 0.0, "first_ts": {}, "dispose_cross": 0, "dispose_give": 0.0, "dispose_force_used": False, "deadman_max_tier": 0}
+                    winrec = {"taker": 0, "maker": 0, "maxnet": 0.0, "first_ts": {}, "dispose_cross": 0, "dispose_give": 0.0, "dispose_force_used": False, "deadman_max_tier": 0, "frac_flatten_used": False, "frac_flatten_count": 0.0}
                     pos.clear(); cash = 0.0; net_delta = 0.0; window_mark = 0.0
                     seed_win = {"n_fills": 0, "cash": 0.0, "pos_yes": 0.0, "pos_no": 0.0}
                     seed_cooldown_win = {"n": 0}   # reset THIS window's cooldown-trip counter; the
@@ -3742,6 +3767,44 @@ def main():
                                       f"cap; holding bounded leg vs catastrophic cross (tau={tau_left:.0f}s)")
                                 reject_cd[ckey] = time.time() + 5.0
                             deadman_t2_dispose_pending = False
+
+            # --- F14 FRACTIONAL FLATTEN (DEFAULT OFF, --flatten-fractional; DECISION_MAP.md node
+            # F14): KXBTC15M is a fractional-enabled market -- a partial fill can leave a
+            # non-integer residual (e.g. a 2-lot filling 1.52, leaving 0.48) that the legacy
+            # integer "count" field used by every quote/dispose/close-force site in this file can
+            # NEVER size an order to flatten exactly (proven live: a window oscillated 1.00-lot
+            # integer crosses -0.47 -> 0.53 -> -0.47 -> 0.53, never reaching 0). Reuses the
+            # existing close-force timing (tau_left < --close-force-s, same threshold the
+            # dispose-cross force branch above uses) so it only fires in the final seconds before
+            # settlement, independent of whether --dispose-cross is armed. Fires AT MOST ONCE per
+            # window (frac_flatten_used, reset at rollover -- same pattern as dispose_force_used
+            # above) -- a single count_fp order sized to the EXACT position, not the
+            # int(round(...)) the rest of this file uses for sizing, so this is exempt from (and
+            # does not touch) completion_size_clamp/capped_completion_size/the deadman need_
+            # helper. flatten_fractional=0.0 (default) makes this condition permanently False:
+            # byte-identical legacy behavior.
+            if (a.flatten_fractional > 0 and ybb is not None and yba is not None
+                    and tau_left < a.close_force_s
+                    and abs(net_delta) > a.flatten_fractional
+                    # genuine fractional residual only -- an exact-integer net is already fully
+                    # handled by the int-sized close-force/dispose-cross machinery above.
+                    and abs(net_delta - round(net_delta)) > 1e-9
+                    and not winrec.get("frac_flatten_used", False)):
+                if net_delta > 0:      # hold YES -> COMPLETE by BUY-NO (is_completing_side logic)
+                    fside = "no"; fpx = round(1.0 - ybb, 4)
+                else:                   # hold NO -> COMPLETE by BUY-YES
+                    fside = "yes"; fpx = round(yba, 4)
+                fkey = (fside, "_fraccross")
+                if (0.0 < fpx < 1.0 and is_completing_side(fside, net_delta)
+                        and reject_cd.get(fkey, 0.0) <= time.time()):
+                    fcount_fp = round(abs(net_delta), 2)
+                    if place(fside, fpx, ybb, yba, count_fp=fcount_fp, cross=True) is not None:
+                        winrec["frac_flatten_used"] = True
+                        winrec["frac_flatten_count"] = fcount_fp
+                        print(f"  [FRAC-FLATTEN] count_fp={fcount_fp:.2f} {fside.upper()} @ "
+                              f"{fpx:.4f} (net={net_delta:+.2f} tau={tau_left:.0f}s)")
+                    else:
+                        reject_cd[fkey] = time.time() + 3.0
 
             # --- PULL stale / toxic / off-target rungs ---
             for key in list(resting):
