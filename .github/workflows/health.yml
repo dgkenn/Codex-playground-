@@ -8,6 +8,10 @@
 #   - Runs pnl_guard.py (statistical P&L variance guard, ESCALATION_PLAN.md MONITORING section):
 #     Telegram-alerts on SEV-AMBER/SEV-RED. Read-only guard: reports only, never touches
 #     LIVE_SWITCH/bankroll/the ladder step -- de-escalation on SEV-RED is an OPERATOR action.
+#     EXCEPTION: exit 30 ($55 pre-registered balance floor, SIZE2_EVAL_PLAN.md) -- this ONE case is
+#     enforced, not just reported: alert + flip LIVE_SWITCH off on $BRANCH (idempotent -- no-op if
+#     already off) + file/update a FLOOR-BREACH tracking issue. Never touches live.yml; the size-1
+#     revert itself stays an operator/session action off the back of the alert + issue.
 #   - Runs activity_guard.py (2026-07-13 incident fix: 38h zero-placements while every other check
 #     said "running"). Telegram-alerts on SEV-AMBER/SEV-RED like pnl_guard, AND opens/updates a
 #     tracking GitHub issue ("BOT-INACTIVE: zero placements during active hours") that the daily
@@ -24,9 +28,11 @@ on:
   workflow_dispatch: {}
 
 permissions:
-  contents: read
+  contents: write               # pnl-guard floor enforcement: commit+push LIVE_SWITCH off on $BRANCH
+                                 # when pnl_guard.py reports exit 30 ($55 floor breach, SIZE2_EVAL_PLAN.md)
   actions: write               # reseed: dispatch collect.yml if collection is dead
   issues: write                 # activity_guard debugging-loop trigger: open/comment/close BOT-INACTIVE issue
+                                 # (also used by the floor-breach FLOOR-BREACH issue below)
 
 concurrency:
   group: health
@@ -127,9 +133,20 @@ jobs:
         # SEV-RED also implies the de-escalation rule in ESCALATION_PLAN.md's "De-escalation"
         # section, but that's an OPERATOR action off the back of the alert, not something this
         # workflow does automatically (this step is read-only, like live-watchdog above).
+        #
+        # exit 30 (FLOOR BREACH -- the $55 pre-registered balance floor, SIZE2_EVAL_PLAN.md;
+        # operator instruction 2026-07-13 "hold size 2 to the $55 floor") is the one case this step
+        # is NOT read-only for: it flips LIVE_SWITCH off on $BRANCH (same sticky-kill git pattern
+        # live.yml already uses for its own loss-limit kill: commit + push with rebase-retry) and
+        # files/updates a FLOOR-BREACH tracking issue (same find-open-issue pattern as the
+        # activity-guard step below). It does NOT touch live.yml -- the size-1 revert itself
+        # (--post 1 --max-notional 5) stays an operator/session action off the back of the alert +
+        # issue. Idempotent: a no-op (no repeat alert, no repeat commit/issue-comment) once
+        # LIVE_SWITCH is already off, so a bleeding balance under $55 doesn't spam every 30 min.
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           for i in 1 2 3; do pip install --quiet numpy && break; sleep 5; done
           rc=0; out=$(OMP_NUM_THREADS=2 python3 pnl_guard.py 2>&1) || rc=$?
@@ -139,6 +156,49 @@ jobs:
             export PNL_GUARD_MSG="$out"
             if [ "$rc" = "20" ]; then export PNL_GUARD_MSG="*** SEV-RED *** $out"; fi
             python3 -c "import os, notify; notify.alert_sync(os.environ['PNL_GUARD_MSG'])" || true
+          elif [ "$rc" = "30" ]; then
+            sw=$(tr -d '[:space:]' < LIVE_SWITCH 2>/dev/null || echo off)
+            if [ "$sw" != "on" ]; then
+              echo "floor breach reported but LIVE_SWITCH already off -> idempotent no-op, no repeat alert"
+            else
+              echo "*** \$55 FLOOR *** LIVE_SWITCH=on -> enforcing pre-registered revert (SIZE2_EVAL_PLAN.md)"
+              export FLOOR_MSG="*** \$55 FLOOR *** $out"
+              python3 -c "import os, notify; notify.alert_sync(os.environ['FLOOR_MSG'])" || true
+
+              echo off > LIVE_SWITCH
+              git config user.name  "floor-guard"
+              git config user.email "floor-guard@users.noreply.github.com"
+              pushed=0
+              for i in 1 2 3 4 5; do
+                git add LIVE_SWITCH && git commit -q -m "floor: balance<\$55 -> LIVE_SWITCH off per pre-registered plan" || true
+                git push origin "HEAD:${BRANCH}" && { pushed=1; break; }
+                git fetch -q origin "$BRANCH" && git rebase -q "origin/${BRANCH}" || true
+                sleep $((RANDOM % 5 + 2))
+              done
+              echo "LIVE_SWITCH push pushed=$pushed"
+
+              BAL=$(echo "$out" | grep -oP 'balance=\$\K[0-9.]+' | head -1)
+              TITLE="FLOOR-BREACH: \$55 pre-registered revert"
+              TS="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+              body="**[$TS UTC] pnl_guard exit=30 -- LIVE_SWITCH flipped off (pushed=$pushed)**
+
+          balance=\$${BAL:-unknown} < \$55 pre-registered floor (SIZE2_EVAL_PLAN.md). Pre-registered
+          decision rule: revert the size-2 experiment. This workflow enforced the STOP (LIVE_SWITCH
+          off) only -- it does NOT edit live.yml. Operator/session still needs to push the size-1
+          revert (--post 1 --max-notional 5) on main and re-enable when ready.
+
+          \`\`\`
+          $out
+          \`\`\`"
+              num=$(gh issue list --state open --json number,title --jq ".[] | select(.title == \"$TITLE\") | .number" 2>/dev/null | head -1)
+              if [ -n "$num" ]; then
+                echo "existing open FLOOR-BREACH issue #$num -> commenting"
+                gh issue comment "$num" --body "$body" || true
+              else
+                echo "no open FLOOR-BREACH issue -> creating"
+                gh issue create --title "$TITLE" --body "$body" || true
+              fi
+            fi
           fi
           exit 0    # never fail the monitor itself (guard failures aren't collection/live failures)
       - name: activity guard (bot-inactive detector -- 2026-07-13 38h-zero-placements incident fix)
