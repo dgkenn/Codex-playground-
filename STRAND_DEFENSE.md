@@ -6,6 +6,15 @@ cuts frequency or depth; no layer may buy risk reduction with paired-box volume 
 EV source). Layers are measured individually AND stacked (forward arms), because they
 interact: each upstream layer shrinks the population the next layer sees.
 
+## Layer −1 — CALENDAR/REGIME (researched 2026-07-13): NO deployable rule
+6 candidates, 9 cells, macro dates verified against BLS/BEA/Fed primary sources.
+Well-powered clean nulls: macro event days (MDE 1.58c), weekends (MDE 1.28c),
+trailing-vol and prior-day-return regimes (sign flips train→test). One watch item:
+Friday ~19-22 UTC POSITIVE anomaly (EV t=+3.03, 5/5 Fridays agree, survives 6
+robustness checks) — but n=5 and 1-of-9-cells multiple-testing exposure → track
+~8-10 more Fridays, no action (and it's positive: nothing to defend against).
+Champion: trade the calendar flat, as today.
+
 ## Layer 0 — PREVENT: don't take strand-prone entries
 | control | effect | evidence | status |
 |---|---|---|---|
