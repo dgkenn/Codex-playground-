@@ -134,10 +134,25 @@ jobs:
           git add gha_data
           git commit -m "gha: paper-collect r${{ github.run_id }} ($day $(date -u +%H:%MZ))" \
             || { echo "nothing to commit"; exit 0; }
-          for i in 1 2 3 4 5; do
+          for i in 1 2 3 4 5 6; do
             git push origin "HEAD:gha-data" && exit 0
-            git fetch --depth=1 origin gha-data && git rebase origin/gha-data || true
-            sleep $((RANDOM % 6 + 2))
+            # Push race on the shared gha-data branch: the old shallow fetch+rebase retry
+            # corrupted state (stale shallow.lock, unparseable shallow commits) and lost the
+            # run's data ~60% of cycles (2026-07-13 incident). Files are uniquely named per
+            # run_id, so the safe retry is: rebuild the worktree from the fresh remote tip
+            # and re-commit -- no rebase, no conflicts possible.
+            sleep $((RANDOM % 8 + 2))
+            cd "$GITHUB_WORKSPACE"
+            git worktree remove --force /tmp/dw 2>/dev/null || rm -rf /tmp/dw
+            rm -f .git/shallow.lock
+            git fetch --depth=1 origin gha-data || true
+            git worktree add --detach /tmp/dw origin/gha-data
+            cd /tmp/dw && git checkout -B gha-data
+            mkdir -p "/tmp/dw/gha_data/$day"
+            cp -r "$GITHUB_WORKSPACE/gha_data/." "/tmp/dw/gha_data/$day/"
+            git add gha_data
+            git commit -m "gha: paper-collect r${{ github.run_id }} ($day $(date -u +%H:%MZ)) retry$i" \
+              || { echo "nothing to commit"; exit 0; }
           done
           echo "push failed after retries" >&2; exit 1
       - name: live watchdog -- reseed the live chain if the switch is on and no live run is active
