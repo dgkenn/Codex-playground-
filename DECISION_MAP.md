@@ -132,6 +132,15 @@ Killed by honest validation this round (do NOT deploy): loss-limit tightening
 completion repricing (worse than binary stop, t=−2.66), PM cross-venue completion
 (contract mismatch), strand cooldowns (no clustering), day-after downsizing (NS).
 
+## I. ROUND-5 NODES (loop-2 round 1/3, 2026-07-13)
+
+| node | decision + solutions | verdict | evidence |
+|---|---|---|---|
+| I1 | minimum-spread-to-quote (skip 1c-spread windows?): (a) no floor, (b) require ≥2c | ❌ dead | thin-spread windows are NOT worse (1c vs rest −0.24c, t=−0.51); cost is monotone in WIDER spreads (already covered by wide-spread veto). No floor |
+| I5 | minute-of-hour gating (:00/:15/:30/:45): (a) uniform, (b) skip worst slot | ❌ dead | train-worst slot (:30) came back BETTER on test (+1.05c, t=1.81 wrong-signed). No stable effect |
+| I9 | model retrain cadence: (a) daily, (b) weekly, (c) on-drift-only | ✅ STABILITY FINDING → (b/c) | daily edge trend over 33 days: +0.018c/day, corr +0.13 — NO decay, first and last 5-day means identical (−5.16c). The regime is stationary at month scale → weekly refit + drift alarm suffices; no need for aggressive retraining (E4 input) |
+| I10 | extreme-moneyness window veto (\|mid−0.5\|>0.35): (a) skip, (b) keep | ❌ dead | +1.62c t=1.62 wrong-signed (extreme windows slightly BETTER, consistent with G8's monotone); only 3% of events. Keep trading them |
+
 ### Round-2-of-loop meta-lesson
 Both round-1 "promising" leads (G7 hours, G8 near-par) died under honest validation
 (held-out test / deployable-subset). In-sample screens on 13 test days overfit fast —
