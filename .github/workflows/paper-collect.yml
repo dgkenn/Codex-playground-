@@ -125,6 +125,16 @@ jobs:
             python box_policy_ab.py --asset "$A" --dir gha_data \
               --ledger "gha_data/box_policy_ledger_${A}_r${{ github.run_id }}.jsonl" 2>/dev/null || true
           done
+      - name: box_shadow -- forward-validation harness for decision-layer policies (pre-registered arms)
+        if: always()
+        run: |
+          # additive, read-only shadow scorer: replays this run's freshly-collected windows through
+          # the live policy plus 5 pre-registered challenger arms (hazard-based disposal stop, two
+          # entry vetoes, a tighter dispose give-cap, and their combination) and appends one row per
+          # (window, arm) to gha_data/box_shadow_<asset>15m.jsonl. Never touches live orders/state.
+          for A in btc eth sol xrp; do
+            python box_shadow.py --asset "$A" --data-dir gha_data 2>/dev/null || true
+          done
       - name: commit data to the gha-data branch (worktree, shallow, date-partitioned)
         if: always()
         run: |
