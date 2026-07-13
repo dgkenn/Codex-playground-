@@ -30,6 +30,7 @@ after 10+ forward days.
 | stack_full / stack_lean | replay: EV +1.47c t=2.84, strand 6.73→2.14%, CVaR5 halved (STRAND_DEFENSE stack test) | accruing from 2026-07-14 (box-shadow.yml) |
 | c3_share (added 2026-07-13, 17514ec87) | +1.42c t=5.15 marginal beyond thickbook (in-sample; large-skip artifact known — forward is the only valid sizing). NOTE: observed veto rate 39-49% of windows, higher than the 'mild' label implied; investigated at wiring (real property of depth-share stat, values span full range; thickbook 18-22% in same runs confirms harness). Judge on gate-passed forward deltas only | accruing from 2026-07-14 |
 | eth 'live' sleeve (added 2026-07-13) | node F1b viability: ETH pair 87.6%, 30% of fills at 2-3c spread | accruing from 2026-07-14 |
+| back2 (added 2026-07-13, 0f5bdf4ac; runs BOTH assets) | HONEST triangulated prior: +0.2-0.4c/window on ETH (study t=8.96 did NOT survive replication — F1b-repl; three implementations agree weak-positive). BTC = falsification control (L0.5: back-quoting toxic). Deploy bar: ETH day-clustered t>=2 vs eth-live over >=10 forward days AND BTC control non-positive | accruing from 2026-07-14 |
 
 ## Daily entries
 ### 2026-07-13 (day 0 — deployment day)
