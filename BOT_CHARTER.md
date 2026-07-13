@@ -18,6 +18,17 @@ money was in disposal policy at unchanged AUC).
    held-out FORWARD data (>= 10 forward days), tested on the gate-passed subset,
    with the selection made on earlier data (train-select/test-validate). In-sample
    discoveries are hypotheses, not results.
+2b. THE GATE APPLIES TO FIXES TOO (operator directive 2026-07-13). A "fix" with a
+   compelling mechanism story is still a hypothesis until data-backed: mechanism +
+   asymmetry arguments alone do NOT authorize deployment (case study: the late-join
+   k-cap fix, node N — recommended on 2 live events + n=30 corpus, correctly
+   withdrawn pending validation). When the relevant population is ABSENT from the
+   corpus (live-architecture effects the replays never simulated), MANUFACTURE it:
+   re-run the replay with the architectural condition imposed (e.g., delayed quote
+   starts for leg-joins) and validate against the standard gates. Exceptions: only
+   reverting to a previously-validated config, or stopping trading entirely, may
+   proceed on operator word alone — de-risking never needs a study; re-risking
+   always does.
 3. Token budget per daily cycle: ~100k. Prefer local python over subagents; one
    focused question per cycle beats broad sweeps (the dataset only grows ~1 day/cycle).
 4. Do not create new external accounts/services. Public read-only APIs are fine
