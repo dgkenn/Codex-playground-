@@ -43,6 +43,15 @@ Six PRE-REGISTERED arms, one output row per (asset, ws, arm):
                          honest 2-step stopping rule, but the L1 sensor is the BASE single
                          logistic-33 hazard (hazard_predict -- reused verbatim from arm (2)/(6), no
                          ensemble) and the L3 give-cap is 0.25 instead of 0.15.
+  9. c3_share         -- live policy, but skip (0 P&L, no participation, same semantics as (3)) windows
+                         whose completing-side depth SHARE at fill, qdepth_c/(qdepth_c+qdepth_f),
+                         exceeds 0.90 (C3 completing-side depth-share veto, MILD variant -- the book
+                         is leaning overwhelmingly against completion). Division-by-zero guarded: if
+                         qdepth_c+qdepth_f <= 0, do NOT veto. Replay prior: +1.42c/window t=5.15
+                         marginal beyond thickbook_veto (in-sample; known large-skip accounting
+                         artifact -> forward arm is the only valid sizing (DECISION_MAP K artifact) --
+                         which is exactly why this ships only as a forward arm here, not a standalone
+                         live change).
 
 Output: gha_data/<day>/box_shadow_<asset>15m.jsonl (append, idempotent per (ws,asset,arm)).
 Rows: {"ws":.., "asset":.., "arm":.., "locked":.., "filled":.., "stranded":.., "disposed_at_s":..,
@@ -181,8 +190,13 @@ L0_QDEPTH_C_MAX = 6717.0
 L0_MINUTE1_MAX = 7.0
 
 ARMS = ["live", "hazard_stop", "thickbook_veto", "cell_veto", "givecap15", "combined",
-        "stack_full", "stack_lean"]
+        "stack_full", "stack_lean", "c3_share"]
 STACK_ARMS = ("stack_full", "stack_lean")
+
+# ---- c3_share: C3 completing-side depth-share veto, MILD variant (forward arm only) ----
+# Replay prior +1.42c/window t=5.15 marginal beyond thickbook_veto (in-sample; known large-skip
+# accounting artifact -> forward arm is the only valid sizing (DECISION_MAP K artifact)).
+C3_SHARE_MAX = 0.9
 
 # ============================================================================================
 # Hazard model: frozen "LOGIT-all" artifact from minhaz/run_minhaz.py, embedded verbatim as a
@@ -839,7 +853,12 @@ def process_window(ws, rows, asset, resolved_up, thick_threshold, existing_keys,
     idx_i, idx_fill, ri = ff["idx_i"], ff["idx_fill"], ff["row_i"]
     bsz1, asz1 = ri[5], ri[7]
     qdepth_c = (asz1 if side == "yes" else bsz1) or 0
+    qdepth_f = (bsz1 if side == "yes" else asz1) or 0
     thick_flag = qdepth_c > thick_threshold
+    # c3_share: completing-side depth SHARE at fill (MILD variant, veto iff share > 0.9). Guard
+    # div-by-zero: if both sides are empty at fill, do NOT veto (see module docstring item 9).
+    c3_denom = qdepth_c + qdepth_f
+    c3_flag = (c3_denom > 0) and ((qdepth_c / c3_denom) > C3_SHARE_MAX)
     # L0 champion entry veto (stack_full/stack_lean only): minute1 taken from the FILL row itself
     # (ri[0]) rather than base_const's c_series[0][0]-derived minute1, so it is defined identically
     # whether or not c_series ends up empty below (single source of truth, see module docstring).
@@ -853,6 +872,7 @@ def process_window(ws, rows, asset, resolved_up, thick_threshold, existing_keys,
         for arm in ARMS:
             veto = (cell_flag and arm in ("cell_veto", "combined")) or \
                    (thick_flag and arm in ("thickbook_veto", "combined")) or \
+                   (c3_flag and arm == "c3_share") or \
                    (l0_flag and arm in STACK_ARMS)
             if veto:
                 emit(arm, 0.0, False, False, None, qdepth_c=qdepth_c)
@@ -872,18 +892,19 @@ def process_window(ws, rows, asset, resolved_up, thick_threshold, existing_keys,
         drift_need30=need * momentum(rows, idx_i, 30),
         imb1=((bsz1 or 0) / tot1) if tot1 > 0 else None,
         micdev_need=(need * (mic1 - ri[1])) if (mic1 is not None and ri[1] is not None) else None,
-        qdepth_c=qdepth_c, qdepth_f=(bsz1 if side == "yes" else asz1) or 0,
+        qdepth_c=qdepth_c, qdepth_f=qdepth_f,
         tickrate30_1=tickrate(rows, idx_i, 30),
     )
 
     for arm in ARMS:
         veto = (cell_flag and arm in ("cell_veto", "combined")) or \
                (thick_flag and arm in ("thickbook_veto", "combined")) or \
+               (c3_flag and arm == "c3_share") or \
                (l0_flag and arm in STACK_ARMS)
         if veto:
             emit(arm, 0.0, False, False, None, qdepth_c=qdepth_c)
             continue
-        if arm in ("live", "thickbook_veto", "cell_veto"):
+        if arm in ("live", "thickbook_veto", "cell_veto", "c3_share"):
             b = policy_live(p1, c_series, side, resolved_up, dispose_max_give=DISPOSE_MAX_GIVE)
         elif arm == "givecap15":
             b = policy_live(p1, c_series, side, resolved_up, dispose_max_give=0.15)
