@@ -5,8 +5,12 @@ from `--post 1 --max-notional 5` to `--post 2 --max-notional 7`, time-boxed to ~
 the capacity study (BTC per-box edge flat at 2x) and the Kelly study
 (ladder `size(B) = clamp(floor(0.02·B), 1, 30)`; revert early if balance drops below $55).
 
-**Evaluate on/after 2026-07-19.** A one-shot in-session reminder is scheduled for
-2026-07-19 ~09:00, but it dies with the session — this file is the durable copy.
+**Evaluate on/after 2026-07-20.** CLOCK RESTARTED 2026-07-13: the size-2 config was
+dark from deploy (2026-07-12 21:08Z) until 2026-07-13 ~12:00Z — the inventory clamp
+(--max-net default 1 vs --post 2) vetoed 100% of placements; fixed on main
+(c4ef514d1, --max-net 2). No size-2 data exists before the fix, so the one-week
+window runs 2026-07-13 → 2026-07-20. A scheduled reminder exists but dies with the
+session — this file is the durable copy.
 
 ## Checklist
 
