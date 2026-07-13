@@ -166,9 +166,11 @@ cmd_package() {
         status="${status}_OVERSIZE"
       fi
 
+      local uniq_dates
+      uniq_dates="$(printf '%s\n' "${part_dates[@]}" | sort -u | paste -sd, -)"
       printf '%s\t%s\t%s\t%s\t%s\t%d\t%d\t%d\t%s\n' \
         "$branch_label" "$month" "$part_num" "$(basename "$tarfile")" \
-        "$(IFS=,; echo "${part_dates[*]}")" "$expect_count" "$expect_bytes" "$compressed_bytes" "$status" \
+        "$uniq_dates" "$expect_count" "$expect_bytes" "$compressed_bytes" "$status" \
         >> "$manifest"
 
       part_num=$((part_num + 1))
