@@ -121,10 +121,11 @@ Upgrades ranked by lesson-learned leverage; daily cycles implement one at a time
 - Deploy queue (10 levers, replay-validated, awaiting forward validation): see
   DECISION_MAP.md "DEPLOY QUEUE". Highest value: hazard-based state-dependent
   disposal (+1.11c/box gate-passed, t=2.64 in replay).
-- Priority implementation task (free action): add the four decision-layer arms to
-  shadow_compare.py (hazard_stop, cell_veto, thickbook_veto, givecap15 + combined)
-  and prune the 17 dead arms (list in DECISION_MAP.md). Until these arms run
-  forward, the deploy queue cannot clear the promotion gate.
+- Priority implementation task (free action): add STACK-FULL and STACK-LEAN arms
+  to box_shadow.py per STRAND_DEFENSE.md stack-test verdict (exact rules in
+  scratchpad/stacktest/results_stacktest.txt and the layer studies; if scratchpad
+  is gone, reconstruct from STRAND_DEFENSE.md layer champions). These two arms are
+  the deployment path — nothing ships until one wins the forward gate.
 - Data locations: market/shadow data = gha_data/ on branch
   claude/polymarket-bot-live-ready-vw7ut5 (sparse-checkout it; multi-GB);
   live telemetry = live_state/ on branch live-state; studies' methodology =

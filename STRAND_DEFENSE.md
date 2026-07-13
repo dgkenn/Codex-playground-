@@ -68,6 +68,26 @@ adverse-selected position with no cheap insurance — the money is upstream.
 | $55 balance floor → auto switch-off | bounds the experiment | live (enforced, tested) |
 | variance guard (P&L percentiles) + activity guard | alarm on statistical anomaly / silent stall | live, 30-min cadence |
 
+## STACK TEST VERDICT (2026-07-13, engine reproduced all layer studies bit-for-bit)
+STACK-FULL vs current live policy (BTC, test days, day-clustered):
+EV/window −4.34c→−3.28c (Δ+1.47c, t=2.84) · strand 6.73%→2.14% · CVaR5 −55.6c→−27.1c
+· variance −59% · worst day −$10.98→−$7.09 · holds on per-retained-window AND per-day
+EV (not a volume-cut mirage).
+LOO ablations (the point of the exercise):
+- L2 2-step stopping is the engine of the stack.
+- L0 contributes ~0 EV inside the stack but carries tail protection.
+- ⚠ L1-LCB and L3-cap15 have NEGATIVE marginal inside the stack — the base sensor
+  and the live 25c cap each beat their 'champions' once L2 is present (cap15
+  converts ~17/983 borderline crosses into forced holds = near-total losers).
+  Champions-in-isolation ≠ champions-in-stack.
+- L5 dormant on the stack's own path (0/13 days) — correct backstop behavior.
+DEPLOYMENT PATH: no piecemeal shipping. Forward arms: STACK-FULL (primary),
+STACK-LEAN (2-step + base sensor + cap25) challenger, L0-runner-up variant.
+Promote whichever wins the forward gate (~10 days). Give-cap 15c REMOVED from the
+awaiting-word queue pending forward adjudication (stack evidence now contradicts
+its isolation evidence). Late-join cap unaffected (live-architecture fix, outside
+this replay's scope) — still validated, still awaiting word.
+
 ## Deployment sequence (each step data-gated)
 1. NOW (validated, one word): late-join cap + give-cap 15c.
 2. ~Jul 23 (forward gate): hazard stopping — the Layer 2 core; then thickbook/cell
