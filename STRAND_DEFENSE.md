@@ -47,7 +47,7 @@ interact: each upstream layer shrinks the population the next layer sees.
 |---|---|---|
 | strand-scaledown 0.75/0.5/0.25 | shrink after consecutive strands | live |
 | per-session loss-limit $6 + sticky kill | bounds a leg | live |
-| DAILY aggregate loss-limit | bounds a death-by-papercuts day (2026-07-13 gap: −$1.7/leg never trips $6/leg) | PROPOSED — F9-backed |
+| DAILY aggregate loss-limit **$8** | ✅ L5 CHAMPION (2026-07-13): worst day −$15.68→−$8.75, +$31 saved t=2.97, fires 42% of replay days but 0/33 on sign-flipped positive-mean control (zero tax); honesty cost $0.02 total. Falsification control (strand-count stop) failed exactly as F5 predicted — methodology validated. Re-derive threshold after ~20 live days; $10 = conservative fallback | validated, propose with next live batch |
 | $55 balance floor → auto switch-off | bounds the experiment | live (enforced, tested) |
 | variance guard (P&L percentiles) + activity guard | alarm on statistical anomaly / silent stall | live, 30-min cadence |
 
