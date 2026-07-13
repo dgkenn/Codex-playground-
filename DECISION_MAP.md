@@ -179,6 +179,26 @@ replay numbers are only trustworthy at small skip fractions; at scale they must 
 validated as box_shadow forward arms with apples-to-apples accounting. This artifact is
 exactly why NOTHING goes straight to live regardless of in-sample t-stat.
 
+## N. LEG-BOUNDARY LATE-JOIN STRANDS (diagnosed live 2026-07-13)
+
+Both of today's live strands were windows the restarting leg JOINED mid-flight
+(first fills at t=536s / min 9, vs t=60-64s in every clean window). The ~46-min leg
+chain makes ~1/3 of windows late-joins — a population the replay corpus structurally
+lacks (only 1.1% of replay events have t1>=300s, because shadow quoting always starts
+at window open). All available evidence is directionally consistent:
+- live today: 2/2 strands were late-joins;
+- corpus (thin, n=30 btc): late first-fills strand 30.0% vs 11.5% early (2.6x);
+- pooled minute-9 pair rate 56% vs 86% at minute 2 (pairprob).
+This also partly explains live strand rates (7-22%) running far above the study's
+gated 1.9% — the k<=9/10 cap was validated for start-quoted windows only.
+
+PREPARED FIX (propose-only, awaiting operator): live.yml `--open-k-max 9` -> `5`
+(no opening fills past minute 5 anywhere; disposal/completion unaffected; costs a few
+% of volume). Alternative: trader-side join-window-only rule (preserves more volume,
+needs code+tests). Replay CANNOT size this precisely (population absent) — the live
+A/B after deploy is the measurement. Asymmetry favors deploying: cost is bounded
+volume, benefit is removing a 2.6x-strand entry class at size-2 strand costs.
+
 ## M. PAIRED-BOX RISK ACCOUNTING (operator insight 2026-07-13)
 
 Paired boxes are settlement-guaranteed ($1/contract in <=15min) yet the notional cap
