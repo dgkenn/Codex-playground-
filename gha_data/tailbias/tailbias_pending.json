@@ -1,1 +1,20 @@
-[]
+[
+{
+"tail_side": "yes",
+"tail_px": 0.11,
+"fav_side": "no",
+"fav_bid": 0.89,
+"fav_ask": 0.9,
+"spread": 0.01,
+"size_at_touch": 276.0,
+"taker_px": 0.9,
+"taker_fee_c": 1,
+"maker_px": 0.89,
+"ts": "2026-07-13T01:50:04+00:00",
+"asset": "ETH",
+"ticker": "KXETH15M-26JUL122200-00",
+"ws": 1783907100,
+"we": 1783908000,
+"tau_s_at_entry": 595.8
+}
+]
