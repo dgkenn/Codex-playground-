@@ -189,8 +189,12 @@ a paired box is only max(cost-1.00, 0) ≈ 0.
   both bind at 3 pairs/window (the constant n_boxes=6). No volume lost yet.
 - At post>=3 (Kelly ladder): notional (2*post+3) binds BEFORE the fills rail →
   throttles risk-free volume. Fix required before auto-sizer deploy.
-- PROPOSAL (propose-only): exposure := open_buy_notional + unpaired_cost +
-  overpayment_on_paired. Bundle with the auto-sizer's max-net companion fix.
+- ✅ FIXED (operator-approved, d5a6cd3d6 on bot branch, 2026-07-13): module-level
+  cash_at_risk(cash,pos) helper — paired_guaranteed = min(ΣYES,ΣNO)·$1;
+  cash_at_risk = max(spent − paired_guaranteed, 0). Applied at all 3 C8 sites
+  (scoping verified: pos/cash always window-synced). Gates: 7/7 new unit tests,
+  38/39 safeguards (pre-existing T21 only), 18/18 guardian, dry-run byte-equivalent.
+  NOTE: auto-sizer worktree (--post auto) predates this — rebase it before its deploy.
 - The real volume unlock at current size is --max-fills-side (F4 multi-box node) —
   needs its own study; the 3-cap has adverse-selection data behind it (4th-5th
   same-side fill post-mortem). F4 priority raised.
