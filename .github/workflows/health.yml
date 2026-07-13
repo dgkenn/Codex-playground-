@@ -5,9 +5,12 @@
 #   - Runs health_check.py (git-based freshness of every collected stream on the gha-data branch).
 #   - On CRITICAL (collection stalled >130 min): alert + reseed the collect chain.
 #   - Once/day (~14:14 UTC): a "collectors healthy" heartbeat so SILENCE never means "is it dead?".
+#   - Runs pnl_guard.py (statistical P&L variance guard, ESCALATION_PLAN.md MONITORING section):
+#     Telegram-alerts on SEV-AMBER/SEV-RED. Read-only guard: reports only, never touches
+#     LIVE_SWITCH/bankroll/the ladder step -- de-escalation on SEV-RED is an OPERATOR action.
 #
 # Like the others, this file must live on the DEFAULT branch (main) for its schedule to fire; it
-# checks out CODE (health_check.py, notify.py) from $BRANCH.
+# checks out CODE (health_check.py, notify.py, pnl_guard.py) from $BRANCH.
 name: health
 
 on:
@@ -111,3 +114,24 @@ jobs:
             python3 -c "import notify; notify.alert_sync('CRITICAL: live watchdog re-dispatch FAILED 3x with switch=on -- live chain may be dead')" || true
           fi
           exit 0    # never fail the monitor itself (it already alerted)
+      - name: pnl variance guard (statistical P&L guard -- ESCALATION_PLAN.md MONITORING)
+        # Thresholds are PRE-REGISTERED in ESCALATION_PLAN.md on $BRANCH; this step only runs the
+        # script and forwards its verdict -- it does not decide/tune thresholds itself. Same
+        # Telegram mechanism as every other step in this file (notify.alert_sync, same secrets).
+        # SEV-RED also implies the de-escalation rule in ESCALATION_PLAN.md's "De-escalation"
+        # section, but that's an OPERATOR action off the back of the alert, not something this
+        # workflow does automatically (this step is read-only, like live-watchdog above).
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          for i in 1 2 3; do pip install --quiet numpy && break; sleep 5; done
+          rc=0; out=$(OMP_NUM_THREADS=2 python3 pnl_guard.py 2>&1) || rc=$?
+          echo "pnl_guard rc=$rc"
+          echo "$out"
+          if [ "$rc" = "10" ] || [ "$rc" = "20" ]; then
+            export PNL_GUARD_MSG="$out"
+            if [ "$rc" = "20" ]; then export PNL_GUARD_MSG="*** SEV-RED *** $out"; fi
+            python3 -c "import os, notify; notify.alert_sync(os.environ['PNL_GUARD_MSG'])" || true
+          fi
+          exit 0    # never fail the monitor itself (guard failures aren't collection/live failures)
