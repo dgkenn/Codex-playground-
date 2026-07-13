@@ -20,7 +20,7 @@ policy, researched independently, EV-tested with day-clustered stats. Status leg
 
 | node | decision | status | notes |
 |---|---|---|---|
-| B1 | pull/reprice quotes on regime change | ❓ | informed-flow signature → cancel before being run over. Sweep-fill study says sweeps DON'T strand more, so likely low value |
+| B1 | pull/reprice quotes on regime change | ❌ CLOSED (L1.5 study) | 18 signal×cooldown arms, 0 clear the bar (best t=1.17). Mechanism: median signal-to-fill lead = 1.2s (ONE tick) — there is no 'before' to act in; 90-95% of avoided fills would have paired; replacements statistically identical. Completes the trio with C1 and the sweep study: toxic fills are indistinguishable at, by-type, and BEFORE the fill. All information lives post-fill (Layer 2's domain) |
 | B2 | stale-feed guard | ✅ | live (ws_stale suppresses quoting) |
 
 ## C. FIRST FILL LANDS (the box is legged)

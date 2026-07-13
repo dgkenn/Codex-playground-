@@ -40,6 +40,14 @@ deployment. Champion: JOIN (status quo).
 | 5s pairing hazard model | P(pair next 5s \| state), AUC 0.909, calibrated | pairalarm study | powers Layer 2 |
 | **L1 CHAMPION: UNCERTAINTY-LCB** (7-model bootstrap ensemble; wait_edge uses hazard LOWER confidence bound — conservative when unsure) | gate-passed +1.150c t=2.81 (vs baseline +1.110c t=2.64); all 7 challengers clustered near baseline = sensor near ceiling | L1 study, fixed-pipeline money metric | deployable numpy form verified: logit-LCB gate +1.081c t=2.56 |
 
+## Layer 1.5 — PRE-FILL WITHDRAWAL (researched 2026-07-13): ❌ CLOSED
+0/18 arms significant. The finding: median danger-signal lead time before a fill is
+1.2 SECONDS — one tick. There is no 'before' to defend in; pulls avoid fills that
+would have paired 90-95% of the time and replacements are statistically identical.
+Completes the epistemic trio (C1 at-fill ceiling, sweep-fill null, B1 null): the
+strand information does not exist until AFTER the fill — which is exactly why
+Layer 2 post-fill stopping is where all the money is.
+
 ## Layer 2 — ACT OPTIMALLY: cut losers early, let pairers breathe
 | control | effect | evidence | status |
 |---|---|---|---|
