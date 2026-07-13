@@ -206,12 +206,13 @@ Fix pricing decomposed (income foregone vs cost avoided, artifact-aware): pooled
 {5,7,9} net +2.93c/window t=17.6 (absolute EV inflated by replay's negative baseline
 — the trustworthy signal is the strand-rate climb). Cost of the fix at min-3/5 joins:
 <=1.5% volume dropped. Meets charter 2b. 
-PREPARED FIX (validated, awaiting operator word): live.yml `--open-k-max 9` -> `5`
-(no opening fills past minute 5 anywhere; disposal/completion unaffected; costs a few
-% of volume). Alternative: trader-side join-window-only rule (preserves more volume,
-needs code+tests). Replay CANNOT size this precisely (population absent) — the live
-A/B after deploy is the measurement. Asymmetry favors deploying: cost is bounded
-volume, benefit is removing a 2.6x-strand entry class at size-2 strand costs.
+✅ DEPLOYED 2026-07-13 (main 59b56c58d, explicit operator word "go ahead with all
+recommendations"): live.yml `--open-k-max 9` -> `5` (no opening fills past minute 5
+anywhere; disposal/completion unaffected; costs a few % of volume). Alternative
+trader-side join-window-only rule remains a backlog option if volume cost bites.
+Replay could not size the benefit precisely (population absent) — the live A/B from
+here IS the measurement: daily cycle tracks strand-rate before/after deploy; expected
+direction ~19% fewer strands overall (late-join class removed).
 
 ## M. PAIRED-BOX RISK ACCOUNTING (operator insight 2026-07-13)
 

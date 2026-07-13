@@ -19,7 +19,7 @@ Champion: trade the calendar flat, as today.
 | control | effect | evidence | status |
 |---|---|---|---|
 | entry gate (depth/k/sig) | ⚠ L0 study: the depth>=median LOWER bound alone is HARMFUL (retains thick/informed tail) — conflicts with PAIR_GATE's window-level validation; stack test adjudicates | L0 study vs PAIR_GATE | under review |
-| late-join cap (open-k-max 9→5) | kills the 1.7x leg-restart strand class | manufactured-population replay: monotone, t≤7.6 (nearly inert on natural corpus — live-architecture specific) | validated, AWAITING WORD |
+| late-join cap (open-k-max 9→5) | kills the 1.7x leg-restart strand class | manufactured-population replay: monotone, t≤7.6 (nearly inert on natural corpus — live-architecture specific) | ✅ DEPLOYED 2026-07-13 (main 59b56c58d, operator word); live A/B on strand rate is the sizing measurement |
 | **L0 CHAMPION: depth UPPER bound (qdepth<=train-q95) + minute<=7** | 90.5% volume, EV +0.74c (t=1.17 NS); runner-up q80+min5: +1.28c t=1.83 at 67% volume | L0 study, 30 candidates | flagged for forward validation (below t=2) |
 | cell veto (worst vol×spread opens) | ❌ DEMOTED: BTC-only day-clustered test = HARMFUL (−0.062c, t=−2.40) — pooled +2.77t was likely multiple-testing artifact | L0 study | forward arm will adjudicate; removed from deploy queue |
 | composite entry score | reconfirms C1: test AUC 0.511 ≈ random, loses to hand vetoes at every volume | L0 study | dead |
@@ -122,7 +122,8 @@ its isolation evidence). Late-join cap unaffected (live-architecture fix, outsid
 this replay's scope) — still validated, still awaiting word.
 
 ## Deployment sequence (each step data-gated)
-1. NOW (validated, one word): late-join cap + give-cap 15c.
+1. ✅ DONE 2026-07-13: late-join cap deployed (59b56c58d). Give-cap 15c withdrawn
+   (stack LOO showed negative marginal — forward arms adjudicate).
 2. ~Jul 23 (forward gate): hazard stopping — the Layer 2 core; then thickbook/cell
    vetoes as their forward evidence matures.
 3. After D4 study: hedge-and-wait replaces or augments Layer 3 crossing if it wins
