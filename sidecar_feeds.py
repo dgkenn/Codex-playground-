@@ -11,6 +11,16 @@ stay flat instead of spawning another whole workflow:
      deciding whether a VPS is worth the money (CLAUDE.md: "this container is ephemeral").
   3. MACRO CALENDAR (once per run): next 7 days of high-impact US macro events (CPI/FOMC/NFP/PPI/GDP).
      Purpose: pre-known vol-regime timestamps for a future regime router.
+  4. KALSHI HIRES (BTC only; DECISION_MAP node P1): every `orderbook_delta`/`trade`/`ticker` ws
+     message for the active KXBTC15M market, recorded raw with a local ms timestamp. Purpose: the
+     1.2s REST poll cadence is the SAMPLING FLOOR under every "no pre-fill signal" verdict (C1
+     ceiling, L1.5 1.2s lead = one tick); this stream makes sub-second microstructure visible so
+     those verdicts can be re-tested at true resolution, and F10 (stale-quote exceedance duration)
+     can be measured below 3s. Env-gated: SIDECAR_HIRES=0 turns loops 4+5 off.
+  5. SPOT HIRES (BTC only; same node): Binance btcusdt bookTicker (change-only, >=50ms apart) +
+     aggTrade (all) + Coinbase BTC-USD matches (all), raw with local ms timestamps. Purpose: the
+     composite spot loop samples at 1s -- too coarse to time a theo move against a Kalshi quote
+     update in the sniping race; this is the native-resolution theo clock.
 
 DESIGN: each loop is wrapped so ONE loop's failure (bad creds, network flake, unexpected schema) can
 NEVER take down the other two -- this mirrors kalshi_trader.ws_feeder's "websockets missing -> warn
@@ -37,6 +47,8 @@ existing collector convention in kalshi_ladder_collect.py / pmkt_collect.py):
     spot_composite_r<RUNID>.jsonl.gz   {"ts_local","asset","binance_mid","coinbase_mid","spread_bps"}
     ws_latency_r<RUNID>.jsonl.gz       {"ts_venue","ts_local","lag_ms"}
     macro_calendar.jsonl               {"ts","name","impact",...}  (overwritten every run, NOT gzipped)
+    hires_kalshi_btc_r<RUNID>.jsonl.gz {"tl":local_ms,"t":msg_type,"m":raw_payload[,"seq"]}
+    hires_spot_btc_r<RUNID>.jsonl.gz   {"tl":local_ms,"src":"bnb_bt|bnb_tr|cb_tr",...essential fields}
 """
 from __future__ import annotations
 
@@ -548,6 +560,247 @@ async def macro_calendar_once(out_dir):
 
 
 # =============================================================================================
+# LOOP 4 -- KALSHI HIRES (BTC): raw ws tape at native resolution (DECISION_MAP P1)
+# =============================================================================================
+# Same auth idiom as loop 2. Differences: subscribes orderbook_delta + trade + ticker (not just
+# ticker), records EVERY message raw (no sampling -- the whole point is the sub-1.2s structure),
+# and re-discovers the active market on the SAME connection (a fresh `subscribe` cmd on rollover)
+# so window transitions don't cost a reconnect gap. Size guard: writing stops (loop keeps draining
+# so reconnect churn stays low) past HIRES_MAX_BYTES of uncompressed output -- a stuck burst can
+# then never flood the gha-data branch.
+
+HIRES_ON = os.environ.get("SIDECAR_HIRES", "1") != "0"
+HIRES_MAX_BYTES = 60_000_000          # ~60MB raw -> ~5-8MB gz per 42-min run, worst case
+HIRES_ASSET = "btc"
+
+
+async def kalshi_hires_loop(out_dir, stop_evt):
+    if not HIRES_ON:
+        _log("k_hires", "SIDECAR_HIRES=0 -> loop OFF")
+        return
+    if websockets is None:
+        _log("k_hires", "websockets not installed -> loop OFF")
+        return
+    if not os.environ.get("KALSHI_API_KEY_ID"):
+        _log("k_hires", "KALSHI_API_KEY_ID not set -> loop OFF (signed ws required)")
+        return
+    private_key = _load_kalshi_private_key()
+    if private_key is None:
+        _log("k_hires", "no usable KALSHI_PRIVATE_KEY_PATH -> loop OFF")
+        return
+
+    path = os.path.join(out_dir, f"hires_kalshi_{HIRES_ASSET}_r{RUNID}.jsonl.gz")
+    fh = gzip.open(path, "at")
+    sess = requests.Session()
+    loop = asyncio.get_running_loop()
+    n_written = bytes_written = 0
+    sub_id = [1]
+    backoff = 1.0
+
+    def _discover_one():
+        t = _discover_tickers(sess)
+        return t.get(HIRES_ASSET)
+
+    try:
+        while not stop_evt.is_set():
+            ticker = await loop.run_in_executor(None, _discover_one)
+            if not ticker:
+                _log("k_hires", "no open KXBTC15M market; retry in 10s")
+                try:
+                    await asyncio.wait_for(stop_evt.wait(), timeout=10.0)
+                except asyncio.TimeoutError:
+                    pass
+                continue
+            try:
+                auth_hdrs = _kalshi_sign(private_key, "GET", "/trade-api/ws/v2")
+                try:
+                    connect_ctx = websockets.connect(
+                        KALSHI_WS_URL, additional_headers=auth_hdrs,
+                        ping_interval=10, ping_timeout=20, max_size=None)
+                except TypeError:
+                    connect_ctx = websockets.connect(
+                        KALSHI_WS_URL, extra_headers=auth_hdrs,
+                        ping_interval=10, ping_timeout=20, max_size=None)
+                async with connect_ctx as ws:
+                    subscribed = set()
+
+                    async def _sub(mk):
+                        sub_id[0] += 1
+                        await ws.send(json.dumps({
+                            "id": sub_id[0], "cmd": "subscribe",
+                            "params": {"channels": ["orderbook_delta", "trade", "ticker"],
+                                       "market_tickers": [mk]},
+                        }))
+                        subscribed.add(mk)
+                        _log("k_hires", f"subscribed {mk}")
+
+                    await _sub(ticker)
+                    backoff = 1.0
+                    next_discover = time.time() + 45
+                    while not stop_evt.is_set():
+                        if time.time() >= next_discover:
+                            next_discover = time.time() + 45
+                            nt = await loop.run_in_executor(None, _discover_one)
+                            if nt and nt not in subscribed:
+                                await _sub(nt)     # rollover: add next window, same connection
+                        try:
+                            raw = await asyncio.wait_for(ws.recv(), timeout=2.0)
+                        except asyncio.TimeoutError:
+                            continue
+                        tl_ms = time.time() * 1000.0
+                        if bytes_written >= HIRES_MAX_BYTES:
+                            continue               # size guard: drain, don't write
+                        try:
+                            msg = json.loads(raw)
+                        except Exception:
+                            continue
+                        mtype = msg.get("type")
+                        if mtype not in ("orderbook_snapshot", "orderbook_delta",
+                                          "trade", "ticker"):
+                            continue               # skip subscribe acks/heartbeats
+                        row = {"tl": round(tl_ms, 1), "t": mtype, "m": msg.get("msg")}
+                        if msg.get("seq") is not None:
+                            row["seq"] = msg["seq"]
+                        line = json.dumps(row, separators=(",", ":")) + "\n"
+                        fh.write(line)
+                        n_written += 1
+                        bytes_written += len(line)
+                        if n_written % 500 == 0:
+                            fh.flush()
+            except Exception as e:
+                if stop_evt.is_set():
+                    break
+                _log("k_hires", f"disconnected ({type(e).__name__}: {str(e)[:80]}); "
+                                 f"reconnect in {backoff:.0f}s")
+                await asyncio.sleep(backoff)
+                backoff = min(backoff * 2, 30.0)
+    finally:
+        fh.close()
+        _log("k_hires", f"done: {n_written} msgs ({bytes_written/1e6:.1f}MB raw"
+                         f"{', SIZE-CAPPED' if bytes_written >= HIRES_MAX_BYTES else ''}) -> {path}")
+
+
+# =============================================================================================
+# LOOP 5 -- SPOT HIRES (BTC): native-resolution theo clock (DECISION_MAP P1)
+# =============================================================================================
+
+async def _bnb_hires_reader(fh, counters, stop_evt):
+    url = "wss://stream.binance.com:9443/stream?streams=btcusdt@bookTicker/btcusdt@aggTrade"
+    backoff = 1.0
+    last_bt_ms = 0.0
+    last_bt = (None, None)
+    while not stop_evt.is_set():
+        try:
+            async with websockets.connect(url, ping_interval=15, ping_timeout=20,
+                                           close_timeout=2) as ws:
+                _log("s_hires", "binance connected")
+                backoff = 1.0
+                while not stop_evt.is_set():
+                    try:
+                        raw = await asyncio.wait_for(ws.recv(), timeout=2.0)
+                    except asyncio.TimeoutError:
+                        continue
+                    tl_ms = time.time() * 1000.0
+                    if counters["bytes"] >= HIRES_MAX_BYTES:
+                        continue
+                    try:
+                        env = json.loads(raw)
+                        stream = env.get("stream", "")
+                        d = env.get("data") or {}
+                        if stream.endswith("bookTicker"):
+                            bid, ask = d.get("b"), d.get("a")
+                            # change-only + >=50ms apart: bookTicker repeats identical quotes at
+                            # high frequency; the theo clock only needs actual moves
+                            if (bid, ask) == last_bt or tl_ms - last_bt_ms < 50:
+                                continue
+                            last_bt, last_bt_ms = (bid, ask), tl_ms
+                            row = {"tl": round(tl_ms, 1), "src": "bnb_bt", "b": bid, "a": ask}
+                        elif stream.endswith("aggTrade"):
+                            row = {"tl": round(tl_ms, 1), "src": "bnb_tr", "p": d.get("p"),
+                                   "q": d.get("q"), "tv": d.get("T"), "mm": d.get("m")}
+                        else:
+                            continue
+                        line = json.dumps(row, separators=(",", ":")) + "\n"
+                        fh.write(line)
+                        counters["n"] += 1
+                        counters["bytes"] += len(line)
+                        if counters["n"] % 1000 == 0:
+                            fh.flush()
+                    except Exception:
+                        continue
+        except Exception as e:
+            if stop_evt.is_set():
+                break
+            _log("s_hires", f"binance disconnected ({type(e).__name__}: {str(e)[:80]}); "
+                             f"reconnect in {backoff:.0f}s")
+            await asyncio.sleep(backoff)
+            backoff = min(backoff * 2, 30.0)
+
+
+async def _cb_hires_reader(fh, counters, stop_evt):
+    backoff = 1.0
+    while not stop_evt.is_set():
+        try:
+            async with websockets.connect("wss://ws-feed.exchange.coinbase.com", ping_interval=15,
+                                           ping_timeout=20, close_timeout=2) as ws:
+                await ws.send(json.dumps({"type": "subscribe", "product_ids": ["BTC-USD"],
+                                           "channels": ["matches"]}))
+                _log("s_hires", "coinbase connected")
+                backoff = 1.0
+                while not stop_evt.is_set():
+                    try:
+                        raw = await asyncio.wait_for(ws.recv(), timeout=2.0)
+                    except asyncio.TimeoutError:
+                        continue
+                    tl_ms = time.time() * 1000.0
+                    if counters["bytes"] >= HIRES_MAX_BYTES:
+                        continue
+                    try:
+                        msg = json.loads(raw)
+                        if msg.get("type") not in ("match", "last_match"):
+                            continue
+                        row = {"tl": round(tl_ms, 1), "src": "cb_tr", "p": msg.get("price"),
+                               "q": msg.get("size"), "tv": msg.get("time"),
+                               "sd": msg.get("side")}
+                        line = json.dumps(row, separators=(",", ":")) + "\n"
+                        fh.write(line)
+                        counters["n"] += 1
+                        counters["bytes"] += len(line)
+                        if counters["n"] % 1000 == 0:
+                            fh.flush()
+                    except Exception:
+                        continue
+        except Exception as e:
+            if stop_evt.is_set():
+                break
+            _log("s_hires", f"coinbase disconnected ({type(e).__name__}: {str(e)[:80]}); "
+                             f"reconnect in {backoff:.0f}s")
+            await asyncio.sleep(backoff)
+            backoff = min(backoff * 2, 30.0)
+
+
+async def spot_hires_loop(out_dir, stop_evt):
+    if not HIRES_ON:
+        _log("s_hires", "SIDECAR_HIRES=0 -> loop OFF")
+        return
+    if websockets is None:
+        _log("s_hires", "websockets not installed -> loop OFF")
+        return
+    path = os.path.join(out_dir, f"hires_spot_{HIRES_ASSET}_r{RUNID}.jsonl.gz")
+    counters = {"n": 0, "bytes": 0}
+    fh = gzip.open(path, "at")
+    try:
+        await asyncio.gather(
+            _bnb_hires_reader(fh, counters, stop_evt),
+            _cb_hires_reader(fh, counters, stop_evt),
+        )
+    finally:
+        fh.close()
+        _log("s_hires", f"done: {counters['n']} rows ({counters['bytes']/1e6:.1f}MB raw"
+                         f"{', SIZE-CAPPED' if counters['bytes'] >= HIRES_MAX_BYTES else ''}) -> {path}")
+
+
+# =============================================================================================
 # entrypoint
 # =============================================================================================
 
@@ -580,6 +833,8 @@ async def _amain(duration_s, out_dir):
         _run_loop_safe("spot", spot_composite_loop(out_dir, stop_evt)),
         _run_loop_safe("ws_latency", ws_latency_loop(out_dir, stop_evt)),
         _run_loop_safe("macro", macro_calendar_once(out_dir)),
+        _run_loop_safe("k_hires", kalshi_hires_loop(out_dir, stop_evt)),
+        _run_loop_safe("s_hires", spot_hires_loop(out_dir, stop_evt)),
     )
     _log("main", "all loops finished")
 
