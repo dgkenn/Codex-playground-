@@ -324,12 +324,13 @@ def _is_traded(row: dict) -> bool:
 
 
 class DayStats:
-    __slots__ = ("pnl", "n_traded", "n_stranded")
+    __slots__ = ("pnl", "n_traded", "n_stranded", "last_ws")
 
     def __init__(self) -> None:
         self.pnl = 0.0
         self.n_traded = 0
         self.n_stranded = 0
+        self.last_ws = -1.0
 
     def __repr__(self) -> str:
         return f"DayStats(pnl={self.pnl!r}, n_traded={self.n_traded!r}, n_stranded={self.n_stranded!r})"
@@ -347,7 +348,18 @@ def bucket_by_day(rows: list[dict], asset: str) -> dict[str, DayStats]:
         traded = _is_traded(r)
         if traded:
             st.n_traded += 1
-            st.pnl += float(r.get("realized") or 0.0)
+            # winrec `realized` is SESSION-CUMULATIVE at window close (the trader
+            # accumulates it across the leg), NOT per-window. Summing rows double-counts
+            # (2026-07-13 false SEV-RED: phantom -5.02 vs actual -1.68). The day file
+            # holds the latest leg's rows, so the day's realized = the row with the
+            # largest ws (the most recent cumulative reading).
+            try:
+                row_ws = float(r.get("ws") or 0)
+            except Exception:
+                row_ws = 0.0
+            if row_ws >= st.last_ws:
+                st.last_ws = row_ws
+                st.pnl = float(r.get("realized") or 0.0)
             if r.get("stranded"):
                 st.n_stranded += 1
     return dict(out)
