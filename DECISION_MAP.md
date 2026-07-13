@@ -162,6 +162,23 @@ completion repricing (worse than binary stop, t=−2.66), PM cross-venue complet
 | I9 | model retrain cadence: (a) daily, (b) weekly, (c) on-drift-only | ✅ STABILITY FINDING → (b/c) | daily edge trend over 33 days: +0.018c/day, corr +0.13 — NO decay, first and last 5-day means identical (−5.16c). The regime is stationary at month scale → weekly refit + drift alarm suffices; no need for aggressive retraining (E4 input) |
 | I10 | extreme-moneyness window veto (\|mid−0.5\|>0.35): (a) skip, (b) keep | ❌ dead | +1.62c t=1.62 wrong-signed (extreme windows slightly BETTER, consistent with G8's monotone); only 3% of events. Keep trading them |
 
+## K. REPLACEMENT-ARM CANDIDATES (brainstormed + tested 2026-07-13, post-prune)
+
+| candidate | test result (train-thresh → test, day-clustered) | verdict |
+|---|---|---|
+| C1 front-load entries (skip minute 7–10) | +0.46c, t=1.11, skips 0.6% | ❌ NS — k≤10 already captures it |
+| C2 thick-book veto q80 | +1.25c t=10.1 full / survives gate subset | 🟡 already in deploy queue (forward arm live) |
+| **C3 completing-side depth-share veto** | share>0.8: +2.38c t=8.3; **+1.42c t=5.15 BEYOND C2** (P(C3\|C2)=0.72, partially independent) | 🟡 → backlog top; mechanism: book leaning against completion = informed pressure. Forward-test MILD variant (share>0.9) only |
+| C4 skip alts on BTC vol top-decile | +0.35c t=6.8, alt-only | 🟡 backlog (inert while BTC-only) |
+| C5 skip dead-book opens (low tickrate0) | +0.65c t=1.58 | ❌ NS |
+
+**Accounting artifact caught (important):** on the gate-passed subset the C2\|C3 combined
+veto shows t=12.45 — but skips 90.9% of traded windows. In this replay (mean −5c/event,
+blind to the live strategy's positive edge) any large skip "wins" mechanically. Entry-veto
+replay numbers are only trustworthy at small skip fractions; at scale they must be
+validated as box_shadow forward arms with apples-to-apples accounting. This artifact is
+exactly why NOTHING goes straight to live regardless of in-sample t-stat.
+
 ### Round-2-of-loop meta-lesson
 Both round-1 "promising" leads (G7 hours, G8 near-par) died under honest validation
 (held-out test / deployable-subset). In-sample screens on 13 test days overfit fast —

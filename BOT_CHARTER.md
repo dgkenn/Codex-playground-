@@ -43,10 +43,16 @@ bot branch), and whole paper-track workflows (crons on main).
   box_shadow 'live' arm.
 - REPLACE on retirement: promote the next candidate from the BACKLOG below into the
   vacated slot the same day (keeps the roster rich). Pre-registered backlog, in order:
-  (1) F2 adaptive quoted edge (vol-scaled); (2) F8 maker-out disposal (rest improve
-  order 5-10s before crossing); (3) hazard_stop kappa=-0.25 variant; (4) thickbook
-  q90 variant; (5) A wide-spread veto >=3c variant. Add new candidates to this list
-  as research produces them; every addition needs a one-line replay prior.
+  (1) C3 completing-side depth-share veto, MILD variant share>0.9 (replay prior:
+      +1.42c t=5.15 marginal beyond thickbook; see DECISION_MAP K — beware the
+      large-skip accounting artifact, forward arm is the only valid sizing);
+  (2) F2 adaptive quoted edge (vol-scaled); (3) F8 maker-out disposal (rest improve
+  order 5-10s before crossing); (4) hazard_stop kappa=-0.25 variant; (5) thickbook
+  q90 variant; (6) A wide-spread veto >=3c variant; (7) C4 alt-skip on BTC vol
+  top-decile (multi-asset only, t=6.8). NOTE: the daily cycle may also ADD backlog
+  arms to box_shadow without waiting for a retirement when the roster has headroom
+  (<10 arms). Every addition needs a one-line replay prior. NOTHING skips forward
+  validation regardless of in-sample t-stat (see DECISION_MAP K artifact).
 - WORKFLOW-level: a paper-track workflow whose every tracked metric is dead by the
   same 10-day rule gets its cron commented out (main), file kept. Overlap watch:
   boxwide-paper's P300 disposal track vs box_shadow arms — consolidate after both
