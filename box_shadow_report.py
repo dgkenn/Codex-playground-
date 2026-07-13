@@ -49,6 +49,11 @@ import statistics
 
 import numpy as np
 
+try:
+    import avseq   # always-valid confidence sequence for early-promotion (Factory V2)
+except Exception:
+    avseq = None
+
 
 def load_rows(data_dir, asset, days=None):
     """Load all box_shadow_<asset>15m.jsonl rows from day-partitioned subdirectories of data_dir.
@@ -171,7 +176,19 @@ def build_vs_live(rows_by_arm, live_by_key):
                 (1.0 if r.get("stranded") else 0.0) - (1.0 if lv.get("stranded") else 0.0))
         ev_m, ev_se, ev_t, ev_nd = day_cluster_stats(ev_by_day)
         st_m, st_se, st_t, st_nd = day_cluster_stats(strand_by_day)
-        out[arm] = dict(d_ev=ev_m, d_ev_t=ev_t, d_strand_pp=st_m * 1.0, d_strand_t=st_t, nd=ev_nd)
+        # ALWAYS-VALID early-promotion (avseq): the per-day EV-delta means, in day order, fed to a
+        # time-uniform confidence sequence. av_promote=True <=> the lower CS bound cleared 0 with
+        # Type-I error controlled across ALL daily peeks (NOT the invalid "first day t>2"). This is
+        # reported ALONGSIDE the standard fixed-horizon gate (t>=2 over >=10 days), never replacing
+        # it -- and for a stack-strength effect it typically fires LATER than day 10, so the fixed
+        # gate remains the primary path; av only shortcuts a dramatically-stronger-than-replay edge.
+        av_promote, av_lb = False, float("nan")
+        if avseq is not None and ev_by_day:
+            daily = [statistics.mean(ev_by_day[d]) for d in sorted(ev_by_day) if ev_by_day[d]]
+            dec = avseq.promote_decision(daily)
+            av_promote, av_lb = dec["promote"], dec["lb"]
+        out[arm] = dict(d_ev=ev_m, d_ev_t=ev_t, d_strand_pp=st_m * 1.0, d_strand_t=st_t, nd=ev_nd,
+                        av_promote=av_promote, av_lb=av_lb)
     return out
 
 
@@ -230,6 +247,21 @@ def main():
     for arm in arms:
         v = vs_live.get(arm, {})
         print(f"  {arm:<14} nd={v.get('nd')}")
+    # ALWAYS-VALID early-promotion flags (avseq): eligible arms have cleared the time-uniform
+    # lower confidence bound above 0 -- promotable NOW under alpha control even before the 10-day
+    # fixed gate. Absent any flag, keep waiting for the standard gate. See avseq.py for the method.
+    print()
+    if avseq is None:
+        print("early-promotion (always-valid): avseq module unavailable -> skipped")
+    else:
+        flagged = [a for a in arms if vs_live.get(a, {}).get("av_promote")]
+        print(f"early-promotion (always-valid, alpha=0.05, min_days={avseq.MIN_DAYS}): "
+              f"{'ELIGIBLE -> ' + ', '.join(flagged) if flagged else 'none yet (keep to the 10-day fixed gate)'}")
+        for arm in arms:
+            v = vs_live.get(arm, {})
+            if v.get("av_promote"):
+                print(f"  {arm:<14} always-valid LB(dEV)={fmt(v.get('av_lb'), 8, 3)}c > 0 "
+                      f"-> forward edge real under time-uniform control; prepare deploy proposal")
 
 
 if __name__ == "__main__":
