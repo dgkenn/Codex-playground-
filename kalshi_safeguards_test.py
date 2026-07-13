@@ -4104,6 +4104,77 @@ def test_spread_gate_shadow_arm():
 # Main runner
 # ===========================================================================
 
+# ===========================================================================
+# TEST 39 — JOIN-FRESH guard (--join-fresh-s; node N + 2026-07-13 live audit)
+# ===========================================================================
+
+def test_join_fresh_guard():
+    """The guard suppresses OPENING quotes in a window this PROCESS attached to late (leg-restart
+    join), leaving completions exempt -- the trader-side fix for (a) the late-join strand class
+    (node N: strand rate climbs monotonically with join lateness) and (b) the sequential
+    double-leg over-fill (2026-07-13 12:00Z: ny=5 > max_fills_side 3 across two legs).
+
+    main()'s quote loop can't be invoked directly (live event loop), so this uses the suite's
+    established source-assertion style (T21/T35 precedent) plus a standalone logic replica of the
+    targets filter, which is byte-identical to the EDGE-SELECT/streak-guard completing-side idiom
+    tested implicitly by T-earlier tests."""
+    name = "T39: join-fresh guard (--join-fresh-s, default-inert, completions exempt)"
+    try:
+        import re
+        observations = []
+        src = open(os.path.join(os.path.dirname(os.path.abspath(__file__)) or ".",
+                                "kalshi_trader.py"), encoding="utf-8").read()
+
+        # --- 1. flag exists, default 0.0 (OFF -> behavior identical to pre-fix) ---
+        assert '"--join-fresh-s"' in src, "--join-fresh-s must be registered in argparse"
+        m = re.search(r'"--join-fresh-s",\s*type=float,\s*default=([0-9.]+)', src)
+        assert m and float(m.group(1)) == 0.0, "--join-fresh-s default must be 0.0 (off)"
+        observations.append("flag_registered_default_off=True")
+
+        # --- 2. the guard can NEVER arm when the flag is off: _win_joined_late requires
+        # a.join_fresh_s > 0 in the same boolean ---
+        assert re.search(r"_win_joined_late\s*=\s*bool\(a\.join_fresh_s\s*>\s*0\s*and", src), \
+            "_win_joined_late must be gated on a.join_fresh_s > 0 (default-inert)"
+        observations.append("default_inert_condition=True")
+
+        # --- 3. rollover stamps attach time from the NEW window's ws, non-negative ---
+        assert re.search(r"_win_join_s\s*=\s*max\(0\.0,\s*time\.time\(\)\s*-\s*mk\[.ws.\]\)", src), \
+            "rollover must stamp _win_join_s = max(0, now - mk['ws'])"
+        observations.append("rollover_stamps_join_s=True")
+
+        # --- 4. the targets filter uses the exact completing-side idiom (opens suppressed,
+        # completions kept) keyed on _win_joined_late ---
+        assert re.search(
+            r"if _win_joined_late:\s*\n\s*targets = \[t for t in targets\s*\n\s*"
+            r"if \(net_delta > 0\.5 and t\[0\] == \"no\"\) or \(net_delta < -0\.5 and t\[0\] == \"yes\"\)\]",
+            src), "guard must filter targets to the completing side only (same idiom as EDGE-SELECT)"
+        observations.append("filter_is_completing_side_idiom=True")
+
+        # --- 5. winrec rows carry the A/B fields ---
+        assert '"join_s"' in src and '"joined_late"' in src, \
+            "winrec row must carry join_s + joined_late (the node-N A/B telemetry)"
+        observations.append("winrec_carries_join_fields=True")
+
+        # --- 6. logic replica: the filter's semantics ---
+        def apply_guard(targets, net_delta, joined_late):
+            if joined_late:
+                targets = [t for t in targets
+                           if (net_delta > 0.5 and t[0] == "no") or (net_delta < -0.5 and t[0] == "yes")]
+            return targets
+        both = [("yes", 0.48), ("no", 0.50)]
+        assert apply_guard(both, 0.0, True) == [], "flat + joined late -> ALL opens suppressed"
+        assert apply_guard(both, 2.0, True) == [("no", 0.50)], \
+            "long YES + joined late -> only the completing NO quote survives"
+        assert apply_guard(both, -2.0, True) == [("yes", 0.48)], \
+            "long NO + joined late -> only the completing YES quote survives"
+        assert apply_guard(both, 0.0, False) == both, "guard off -> targets untouched"
+        observations.append("logic_replica_semantics=True")
+
+        record(name, True, "; ".join(observations))
+    except Exception as e:
+        record(name, False, f"{type(e).__name__}: {e}")
+
+
 def main():
     print("=" * 70)
     print("kalshi_trader.py Safety Rail Test Harness")
@@ -4149,6 +4220,7 @@ def main():
     test_px_band_shadow_arms()
     test_aged_cross_wide_bound()
     test_spread_gate_shadow_arm()
+    test_join_fresh_guard()
 
     # Summary table
     print()

@@ -1526,6 +1526,15 @@ def main():
                     help="EDGE-SELECT: only OPEN when the window-minute k >= this (0=off). t_edge_select=5.")
     ap.add_argument("--open-k-max", type=int, default=12,
                     help="EDGE-SELECT: only OPEN when window-minute k <= this. t_edge_select=9.")
+    ap.add_argument("--join-fresh-s", type=float, default=0.0,
+                    help="JOIN-FRESH guard (node N + 2026-07-13 audit): if this process ATTACHES to a "
+                         "window more than this many seconds after the window opened (a leg-restart "
+                         "late join), suppress OPENING quotes for that window entirely; completions/"
+                         "disposal are exempt (they reduce |net|). Kills both the late-join strand "
+                         "class (strand rate climbs monotonically with join lateness, node N) and "
+                         "the sequential double-leg over-fill (successor re-opening a window its "
+                         "predecessor already traded, e.g. 2026-07-13 12:00Z ny=5 strand). "
+                         "0=off (default: byte-identical to prior behavior).")
     ap.add_argument("--open-sig-lo", type=float, default=0.0,
                     help="EDGE-SELECT: only OPEN when |sig| (spot move bps) >= this. t_edge_select=3.")
     ap.add_argument("--open-sig-hi", type=float, default=0.0,
@@ -1923,6 +1932,11 @@ def main():
                 # -- deadman_tier itself resets on transport recovery mid-window, so this is
                 # tracked separately in winrec and is NOT reconstructable from deadman_tier alone.
                 "deadman_max_tier": winrec.get("deadman_max_tier", 0),
+                # JOIN-FRESH telemetry (2026-07-13 audit): seconds into the window this process
+                # attached, and whether the guard suppressed opens -- the direct A/B field for
+                # the late-join strand class (node N) that legging_gap_s could not measure.
+                "join_s": (round(_win_join_s, 1) if _win_join_s is not None else None),
+                "joined_late": bool(_win_joined_late),
             }) + "\n")
             winrec_fh.flush()
             _winrec_written_ws["ws"] = mk_["ws"]
@@ -2085,6 +2099,8 @@ def main():
 
     # --- state ---
     mk = None
+    _win_join_s = None       # JOIN-FRESH guard: seconds into the window when THIS process attached
+    _win_joined_late = False  # True -> suppress opens this window (completions exempt)
     net_delta = 0.0          # YES positions - NO positions (signed)
     last_position_sync_print = 0.0  # wall-clock of last [POSITION-SYNC] print (rate-limited 1/10s)
     unpaired_since = None    # wall-clock when |net| left 0 (completion-urgency chase clock)
@@ -3132,6 +3148,18 @@ def main():
                 if not mk:
                     time.sleep(a.poll); continue
 
+                # JOIN-FRESH guard: stamp how far into the new window this process attached.
+                # Normal mid-session rollovers attach at ~0-2s; only the FIRST window after a
+                # process (re)start can attach late -- exactly the leg-restart late-join class
+                # node N validated as strand-prone. joined_late suppresses OPENS for this one
+                # window (see the targets filter in the quote loop); completions stay exempt.
+                _win_join_s = max(0.0, time.time() - mk["ws"])
+                _win_joined_late = bool(a.join_fresh_s > 0 and _win_join_s > a.join_fresh_s)
+                if _win_joined_late:
+                    print(f"[JOIN-FRESH] attached {_win_join_s:.0f}s into {mk['cid']} "
+                          f"(> {a.join_fresh_s:.0f}s) -> opens suppressed this window "
+                          f"(completions/disposal unaffected)")
+
                 # DEADMAN_AUDIT.md fix #2: apply the startup-inherited venue position (if any)
                 # exactly once, the FIRST time this session attaches to a window -- only relevant
                 # when that window is the SAME ticker the startup positions query filtered to
@@ -3350,6 +3378,14 @@ def main():
                 if not (in_k and in_vol):
                     targets = [t for t in targets
                                if (net_delta > 0.5 and t[0] == "no") or (net_delta < -0.5 and t[0] == "yes")]
+            # JOIN-FRESH guard (--join-fresh-s; node N + 2026-07-13 audit): this process attached
+            # to the current window late (leg-restart join) -- suppress ALL opens for this one
+            # window, keep completions (they reduce |net|). Same completing-side idiom as the
+            # EDGE-SELECT/streak-guard filters above; stacks with (is a superset of nothing in)
+            # open-k-max, which caps by wall-clock minute regardless of who attached when.
+            if _win_joined_late:
+                targets = [t for t in targets
+                           if (net_delta > 0.5 and t[0] == "no") or (net_delta < -0.5 and t[0] == "yes")]
             # PAIR-OR-DONT-PLAY gate (audit 2026-06-14): the edge is intact on PAIRED boxes (+0.69c);
             # the entire loss is STRANDS. So only OPEN a box when BOTH legs are likely to pair: a
             # BALANCED book (microprice near mid -- not being swept one way) AND DEPTH on both the bid
