@@ -34,7 +34,13 @@ interact: each upstream layer shrinks the population the next layer sees.
 |---|---|---|---|
 | early-cross > late-force | +1.69c/strand | disposal study | live |
 | give-cap 0.25→0.15 | caps tail, mean-flat (15–22c identical) | disposal study | validated, AWAITING WORD |
-| maker-out first (rest improve 5–10s before crossing) | saves spread+fee when filled | untested | backlog (F8) |
+| maker-out first (rest improve 5–10s before crossing) | ❌ DEAD on the hard-strand population: fill rate only 12-14% while forced-hold fallbacks (give grows past cap while waiting) climb 3-6x faster and cost ~90c each; test t=−3.9 to −7.6 across ALL wait-based mechanics (spread-wait, two-tranche, completion-race, adaptive cap all rejected) | L3 study, 214 strands | dead |
+
+**LAYER 3 CHAMPION: INCUMBENT — cross immediately at decision, ask+fee, give-cap 15c.**
+99% of strands cross at s=0 for mean give ~3.4c; there is almost nothing left to
+optimize. Stranded legs settle ITM only 0.9% of the time (near-total toxicity) —
+every second of waiting is exposure to a ~90c forced-hold tail. Give-cap resweep
+reconfirms 15c (18c 'improvement' = n=1, t=1.00).
 
 ## Layer 4 — HEDGE THE RESIDUAL: strands that survive Layers 0–3
 | control | effect | evidence | status |
