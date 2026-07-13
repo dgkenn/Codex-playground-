@@ -39,7 +39,7 @@ policy, researched independently, EV-tested with day-clustered stats. Status leg
 | D2 | give-up action: cross the spread (sell/complete at loss) | ✅ | early-cross with give-cap 15c beats late-force-hold +1.69c/strand |
 | D3 | give-up action: HOLD to settlement when theo favors | 🟡 | stopping rule holds implicitly; explicit "ride the winner" branch (leg deep ITM → holding is +EV) unmodeled |
 | D4 | hedge stranded leg with perp delta | ❓ | binary delta-hedge via Binance perp until expiry: EV ≈ −costs but kills the −42c tail → Sharpe ↑. Simulable with tick spot paths |
-| D5 | cross-venue completion: buy opposite side on Polymarket if Kalshi won't fill | ❓ NOVEL | synthetic pair across venues when PM opposite < Kalshi cross cost. pmkt_btc_updown stream exists; PM leads Kalshi (+0.045 AUC) so quotes may lag = capturable. Feasibility: contract equivalence, fees, settlement basis |
+| D5 | cross-venue completion: buy opposite side on Polymarket if Kalshi won't fill | ❌ DEAD (contract mismatch) | PM's product is a 5-MINUTE up/down from period open — different strike reference, expiry grid, and settlement vs Kalshi's fixed-strike 15m. No fungible completion possible; at best a partial hedge with ugly basis. PM stream stays useful only as a leading price signal (H4, +0.045 AUC) |
 | D6 | partial disposal / scale-out | ❓ | only relevant at size ≥3; defer until sizing up |
 
 ## E. PORTFOLIO / META
@@ -105,6 +105,32 @@ per PAIRING_FINDINGS.md and PAIR_GATE.md.
 | H2 | iceberg/display-size quoting | ❓ no data | Kalshi API has no iceberg; moot |
 | H5 | stale-feed threshold (currently ~15s suppress) | ❓ low value | only 4 stale events/day, all ~15.5s; not enough data to tune; leave |
 | H6 | strike-band selection when quoting (near-money only vs wider) | 🟡 note | strikes are chained (next strike = last settle, verified in index); current near-money-only is right; revisit only with multi-strike quoting ambitions |
+
+## DEPLOY QUEUE (validated, ready; 2026-07-13)
+
+Beyond the earlier five (hazard stopping +1.11c t=2.64; thick-book veto t=10.1;
+vol/momentum filters; alt downsizing), the next five deploy-ready items:
+
+1. **Kelly --post auto ladder** — code built on bot branch worktree, 11/11 tests,
+   pre-registered sizing study. Deploy at the Jul-19 size-2 decision point. (Growth-
+   optimal EV; fail-safe post=1/$5.)
+2. **Window-cell entry veto** — skip window-open (vol×spread) cells that were worst
+   on train: TEST +0.124c/window, t=2.77, skips only 3.2% of windows (pairprob Q2 —
+   honest train-select→test-validate). One-line entry filter.
+3. **Tighten --dispose-max-give 0.25 → 0.15** — disposal study: give-caps 15–22c have
+   identical mean cost, beyond that admits tail; live sits at 25c, outside the flat
+   region. Pure tail-risk (Sharpe) cut, zero expected-cost change, one flag.
+4. **Cycle-coverage recovery (ops)** — only 87% of windows are covered around GHA
+   cycle boundaries; closing the gap is ~+15% volume at the live +0.85c/box edge
+   with unchanged per-window risk limits. Workflow scheduling fix, no model.
+5. **Wide-spread entry veto (spread >2c)** — train-chosen threshold, TEST +0.35c/event,
+   t=2.03. Currently inert on BTC (its spread never exceeds 2c) → a free safety rail
+   that activates if BTC's book regime changes or alts return. Honest caveat attached.
+
+Killed by honest validation this round (do NOT deploy): loss-limit tightening
+(t=−0.33 held-out), hour gating (t=0.24), near-par filter (absorbed by gate),
+completion repricing (worse than binary stop, t=−2.66), PM cross-venue completion
+(contract mismatch), strand cooldowns (no clustering), day-after downsizing (NS).
 
 ### Round-2-of-loop meta-lesson
 Both round-1 "promising" leads (G7 hours, G8 near-par) died under honest validation
