@@ -28,7 +28,7 @@ policy, researched independently, EV-tested with day-clustered stats. Status leg
 | node | decision | status | notes |
 |---|---|---|---|
 | C1 | predict pairing at fill | ✅ DEAD END | hard ceiling AUC ~0.58 across 300+ features, all labels. Don't revisit |
-| C2 | completion-quote management: hold price vs reprice tighter (pay up, smaller box) vs widen (bigger box) vs instant self-cross | ❓ **TOP PRIORITY** | the continuous generalization of the disposal rule. Hazard model (AUC 0.909) already estimates P(fill at price p); extend to P(fill ≤ t \| quote at p) per p → maximize E[box value]. "When to buy to complete, big or small box" |
+| C2 | completion-quote management: hold vs reprice tighter vs widen vs self-cross | ❌ RESOLVED: binary wins | tested static ladders (16 configs) AND dynamic one-step-lookahead pricing: BOTH significantly worse than the binary stopping rule (dynamic vs binary t=−2.66; gate-passed +0.35c t=0.99 vs binary's +1.11c t=2.64). Paying up sacrifices locked spread for hazard the wait branch gets free. Don't build the advanced model — D1's binary stop is the optimum in this action space |
 | C3 | live pairing likelihood (holding the leg) | ✅ | 5s hazard AUC 0.909, calibrated. THE core in-flight model |
 
 ## D. LEG LOOKS UNLIKELY TO PAIR (hazard collapsed)
@@ -86,3 +86,13 @@ per PAIRING_FINDINGS.md and PAIR_GATE.md.
 ### Round-2 promising (prospective tests queued)
 - F2 adaptive edge (vol-conditional pricing) — after C2 lands, same hazard machinery.
 - F8 maker-out disposal — bolt onto the D1/C2 paper prototype.
+
+## G. ROUND-3 NODES (loop round 1/3, 2026-07-13; solutions tested where data allows)
+
+| node | decision + candidate solutions | verdict | evidence |
+|---|---|---|---|
+| G2 | side selection at quote: (a) both always (status quo), (b) lean drift-aligned, (c) only theo-favored side, (d) asymmetric size | ❌ dead | drift-aligned vs against fills: EV diff −0.03c, t=−0.08. Side doesn't matter at fill; no lean justified |
+| G6 | day-after-bad-day sizing: (a) full size, (b) half size, (c) skip day | ❌ no basis | day-EV lag-1 autocorr +0.126 (n=33, NS). Bad days do NOT persist across days (they persist WITHIN days — F9). Keep full size next day |
+| G7 | hour-of-day gating: (a) trade all hours, (b) skip worst-k hours, (c) vol-condition instead, (d) hour-specific edge demand | 🟡 promising, caveat | worst-4 hours (5,9,1,20 UTC) cost −1.44c/event, t=−2.09 — BUT hours picked post-hoc on same data (multiple-testing inflated). Needs train-select/test-validate before adoption; run in round 2 |
+| G8 | avoid near-par entries (\|p1−0.5\|<0.1): (a) hard skip, (b) demand wider edge near par, (c) size down near par | 🟡 strongest new signal | near-par fills cost −1.13c MORE per event, t=−3.62, monotone across buckets (−5.66c near par → −1.81c extreme). Mechanism: fees peak at p=0.5 + maximal outcome uncertainty. 43% of events → hard skip too costly in volume; (b)/(c) preferred. Needs net-of-box-edge eval |
+| G9 | concurrent multi-asset exposure: (a) independent sizing (status quo), (b) same-window combined cap, (c) correlation-scaled sizing | ✅ RISK FINDING | same-window strand correlation across assets is LARGE: btc-eth 0.43, eth-sol 0.40, all pairs 0.28–0.43. Concurrent legs ≈ one correlated bet, not four. Validates net-delta caps; if multi-asset ever resumes, size as ~1.5 independent bets, not 4. Pure Sharpe protection |
