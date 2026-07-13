@@ -192,7 +192,14 @@ at window open). All available evidence is directionally consistent:
 This also partly explains live strand rates (7-22%) running far above the study's
 gated 1.9% — the k<=9/10 cap was validated for start-quoted windows only.
 
-PREPARED FIX (propose-only, awaiting operator): live.yml `--open-k-max 9` -> `5`
+✅ VALIDATED (manufactured-population replay, 2026-07-13): 2,745 BTC windows re-replayed
+with delayed quote starts. Strand rate climbs monotonically with join lateness:
+11.6% (min2) -> 15.1% (min5, t=3.9) -> 18.0% (min7, t=5.7) -> 19.4% (min9, t=7.6).
+Fix pricing decomposed (income foregone vs cost avoided, artifact-aware): pooled
+{5,7,9} net +2.93c/window t=17.6 (absolute EV inflated by replay's negative baseline
+— the trustworthy signal is the strand-rate climb). Cost of the fix at min-3/5 joins:
+<=1.5% volume dropped. Meets charter 2b. 
+PREPARED FIX (validated, awaiting operator word): live.yml `--open-k-max 9` -> `5`
 (no opening fills past minute 5 anywhere; disposal/completion unaffected; costs a few
 % of volume). Alternative: trader-side join-window-only rule (preserves more volume,
 needs code+tests). Replay CANNOT size this precisely (population absent) — the live
