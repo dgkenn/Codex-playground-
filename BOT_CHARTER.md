@@ -76,7 +76,12 @@ bot branch), and whole paper-track workflows (crons on main).
    telemetry freshness, balance trend. Alert operator on anomaly; else silent.
 2. INGEST: pull the new day of gha_data (bot branch) + live_state. Append to the
    forward-validation ledger (FORWARD_LEDGER.md, create if absent): per-arm
-   net/window for the day, live realized EV, strand rate.
+   net/window for the day, live realized EV, strand rate — AND the RISK BENCHMARK
+   TABLE from box_shadow_report.py (bot branch): per-arm variance, CVaR5, worst
+   window/day, day-Sharpe, max drawdown, day-clustered deltas vs the live arm.
+   Risk reduction is a first-class promotion criterion alongside EV (operator
+   directive 2026-07-13): an arm may promote on significant risk reduction at
+   EV-neutral, same t>=2 bar on the risk metric.
 3. VALIDATE: update day-clustered stats for every OPEN item in DECISION_MAP.md's
    deploy queue and the shadow A/B arms. Items reaching the promotion gate:
    mark PROMOTED in the map, prepare the deploy diff, notify operator.
