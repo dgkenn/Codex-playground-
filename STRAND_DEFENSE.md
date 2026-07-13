@@ -39,8 +39,14 @@ interact: each upstream layer shrinks the population the next layer sees.
 |---|---|---|---|
 | perp hedge-and-hold (D4) | ❌ DEAD: gamma churn costs $1.03/event median (>max payout), variance UP 20x | 214-strand tick-path study | dead |
 | perp hedge-and-WAIT | ❌ DEAD: 0/214 completions after decision point — nothing to wait for | same study | dead |
-| H1 uncertainty band | legs within ~10bps of strike at close = coin flips; never "ride" inside the band | settle-basis measurement (abs-med 2bps, p95 10bps) | parameter, adopt with any hold branch |
-| D3 ride-the-winner | deep-ITM stranded legs: holding is +EV | unmodeled | open |
+| H1 uncertainty band | moot for L4 (no hold branch survives); retained as a parameter for any future hold logic | settle-basis measurement | shelved |
+| D3 ride-the-winner | ❌ DEAD: theo averages 0.255 AGAINST held side at decision — no winner exists to ride | L4 study, 214 strands | dead |
+
+**LAYER 4 CHAMPION: no action (hold-to-settle under Layer 3's give-cap, as today).**
+All 13 hedge variants strictly worse on mean/CVaR/variance (best hedge −1.16 vs −0.45;
+independent replication matched base study to 3 decimals). Layer 4 is structurally
+empty: once Layers 0–3 have done their jobs, the residual strand is an
+adverse-selected position with no cheap insurance — the money is upstream.
 
 ## Layer 5 — CONTAIN: portfolio-level backstops (when everything above fails)
 | control | effect | status |
