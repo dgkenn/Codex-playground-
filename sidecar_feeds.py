@@ -568,9 +568,22 @@ async def macro_calendar_once(out_dir):
 # so window transitions don't cost a reconnect gap. Size guard: writing stops (loop keeps draining
 # so reconnect churn stays low) past HIRES_MAX_BYTES of uncompressed output -- a stuck burst can
 # then never flood the gha-data branch.
+#
+# SLICED DELTA BUDGET (v2, first-run forensics 2026-07-13): the delta stream runs ~450 msg/s, so a
+# single global cap filled in ~8 min of a 42-min run -- and because sidecar runs start at :06/:36,
+# the captured slice systematically MISSED window-open minutes (where most fills happen). Fix: the
+# ORDERBOOK budget is split into sequential time slices (HIRES_SLICE_S each, HIRES_DELTA_PER_SLICE
+# bytes of deltas per slice); when a slice's budget is spent, deltas pause until the next slice, and
+# on entering a slice with fresh budget the market is RE-SUBSCRIBED so Kalshi re-sends a full
+# orderbook_snapshot (book reconstruction stays anchored within every slice -- deltas without a
+# snapshot anchor are useless). trade/ticker rows are small and are written UNCONDITIONALLY under
+# their own generous cap, so the trade tape (the honest event clock) has no coverage holes at all.
 
 HIRES_ON = os.environ.get("SIDECAR_HIRES", "1") != "0"
-HIRES_MAX_BYTES = 60_000_000          # ~60MB raw -> ~5-8MB gz per 42-min run, worst case
+HIRES_MAX_BYTES = 60_000_000          # loop-5 (spot) global cap, unchanged
+HIRES_SLICE_S = 420.0                 # 7-min slices -> 6 per 42-min run, sampling all window phases
+HIRES_DELTA_PER_SLICE = 10_000_000    # ~10MB raw deltas/slice (~60MB/run worst case, as before)
+HIRES_AUX_MAX = 25_000_000            # trades+ticker: own ceiling; never realistically hit
 HIRES_ASSET = "btc"
 
 
@@ -594,6 +607,10 @@ async def kalshi_hires_loop(out_dir, stop_evt):
     sess = requests.Session()
     loop = asyncio.get_running_loop()
     n_written = bytes_written = 0
+    t_start = time.time()              # sliced delta budget: slice index = elapsed // HIRES_SLICE_S
+    slice_bytes = {}                   # slice idx -> delta bytes written this slice
+    aux_bytes = 0                      # trade/ticker bytes (own cap, no slicing)
+    cur_slice = [0]                    # last slice idx seen (detects slice rollover -> resubscribe)
     sub_id = [1]
     backoff = 1.0
 
@@ -648,8 +665,16 @@ async def kalshi_hires_loop(out_dir, stop_evt):
                         except asyncio.TimeoutError:
                             continue
                         tl_ms = time.time() * 1000.0
-                        if bytes_written >= HIRES_MAX_BYTES:
-                            continue               # size guard: drain, don't write
+                        sl = int((time.time() - t_start) // HIRES_SLICE_S)
+                        if sl != cur_slice[0]:
+                            cur_slice[0] = sl
+                            # fresh slice with budget -> force a fresh orderbook_snapshot so the
+                            # delta stream is reconstruction-anchored within every slice
+                            for mk_t in sorted(subscribed):
+                                try:
+                                    await _sub(mk_t)
+                                except Exception:
+                                    break          # connection issue -> outer handler reconnects
                         try:
                             msg = json.loads(raw)
                         except Exception:
@@ -662,6 +687,14 @@ async def kalshi_hires_loop(out_dir, stop_evt):
                         if msg.get("seq") is not None:
                             row["seq"] = msg["seq"]
                         line = json.dumps(row, separators=(",", ":")) + "\n"
+                        if mtype in ("orderbook_snapshot", "orderbook_delta"):
+                            if slice_bytes.get(sl, 0) >= HIRES_DELTA_PER_SLICE:
+                                continue           # this slice's delta budget spent; drain
+                            slice_bytes[sl] = slice_bytes.get(sl, 0) + len(line)
+                        else:                      # trade / ticker: small, never sliced
+                            if aux_bytes >= HIRES_AUX_MAX:
+                                continue
+                            aux_bytes += len(line)
                         fh.write(line)
                         n_written += 1
                         bytes_written += len(line)
@@ -676,8 +709,8 @@ async def kalshi_hires_loop(out_dir, stop_evt):
                 backoff = min(backoff * 2, 30.0)
     finally:
         fh.close()
-        _log("k_hires", f"done: {n_written} msgs ({bytes_written/1e6:.1f}MB raw"
-                         f"{', SIZE-CAPPED' if bytes_written >= HIRES_MAX_BYTES else ''}) -> {path}")
+        _log("k_hires", f"done: {n_written} msgs ({bytes_written/1e6:.1f}MB raw, "
+                         f"{len(slice_bytes)} slices, aux {aux_bytes/1e6:.1f}MB) -> {path}")
 
 
 # =============================================================================================
