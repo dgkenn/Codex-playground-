@@ -1,0 +1,89 @@
+================================================================================================
+recon_calibrate.py -- sim-to-real fill-model calibration report (ALERT-ONLY)
+generated: 2026-07-13T11:37:32.163968+00:00
+================================================================================================
+COMPARABILITY NOTICE: this report NEVER edits shadow_compare.py. shadow's queue model and
+constants (AS_K, MO_K, 1-tick/`ahead` fill logic, ...) are validated against a comparable
+history (the 32-day forward A/B in WINNING_STRATEGY.md / strategies.py). Any constant change
+is an OPERATOR decision -- applying one resets what future runs are comparable to. Every
+'RECOMMENDED' line below is advisory text for a human, not an instruction this script acts on.
+
+--- 1. DATA INVENTORY -----------------------------------------------------------------
+live_recon:       40 file(s), 109 row(s)  assets=['btc']
+order_lifecycle:  22 file(s), 13566 event row(s) (302 distinct 'place' order_ids)
+shadow_windows (kalshi): 4164 file(s), 11308 row(s), 0 duplicate (asset,ws) keys (last-seen wins)
+
+--- 2. LIVE STRATEGY-TAG -> SHADOW-ARM MAPPING (defensive; see map_strategy_tag) --------
+  as+depth         -> (unmapped)     no shadow analog for live size_mode 'depth'
+  as+flat          -> av_stoikov     AMBIGUOUS: gate+size_mode also matches ['as_cap100', 'as_k_half', 'as_k_2x', 'as_trim70', 'as_band', 'spread_gate'] (no cap=50/skew=0.25 match at all); chose 'av_stoikov' (first in strategies.REGISTRY order)
+  as+kelly         -> (unmapped)     no shadow analog for live size_mode 'kelly'
+  as+markout       -> as_markout     no cap=50/skew=0.25 match; used 'as_markout' (cap=50.0 skew=0.99) as the closest gate+size_mode match -- shadow has never run this gate at live's actual cap/skew, so this comparison is approximate
+  marg+depth       -> (unmapped)     no shadow analog for live size_mode 'depth'
+  marg+flat        -> micro_marg     
+  marg+kelly       -> (unmapped)     no shadow analog for live size_mode 'kelly'
+  marg+markout     -> (unmapped)     no registry Strat with gate='micro_marg' size_mode='markout'
+  micro+depth      -> (unmapped)     no shadow analog for live size_mode 'depth'
+  micro+flat       -> micro_gate     
+  micro+kelly      -> (unmapped)     no shadow analog for live size_mode 'kelly'
+  micro+markout    -> (unmapped)     no registry Strat with gate='micro' size_mode='markout'
+  ufat+depth       -> (unmapped)     no shadow analog for live size_mode 'depth'
+  ufat+flat        -> micro_ufat     
+  ufat+kelly       -> (unmapped)     no shadow analog for live size_mode 'kelly'
+  ufat+markout     -> (unmapped)     no registry Strat with gate='micro_ufat' size_mode='markout'
+
+--- 3. JOIN COVERAGE (live_recon <-> shadow_windows on asset+ws+mapped-arm) -------------
+live_recon rows total:            109
+  mapped to a known shadow arm:    109
+  + matching shadow (asset,ws):    46
+  + arm present in that window:    46   <- final joined rows
+
+insufficient live data (n windows=46, need >=50)
+
+first real joins (up to 5 shown):
+  2026-07-12 btc ws=1783825200 arm=as_markout | live: fills=0 requested=0 fill_rate=0.0 net=+0.0000 | shadow: fills=2019 fill_vol=23267.9 fill_rate=0.0138 net=+85.6185   [no cap=50/skew=0.25 match; used 'as_markout' (cap=50.0 skew=0.99) as the closest gate+size_mode match -- shadow has never run this gate at live's actual cap/skew, so this comparison is approximate]
+  2026-07-12 btc ws=1783826100 arm=as_markout | live: fills=0 requested=0 fill_rate=0.0 net=+0.0000 | shadow: fills=2367 fill_vol=29265.8 fill_rate=0.013 net=+135.0529   [no cap=50/skew=0.25 match; used 'as_markout' (cap=50.0 skew=0.99) as the closest gate+size_mode match -- shadow has never run this gate at live's actual cap/skew, so this comparison is approximate]
+  2026-07-12 btc ws=1783827000 arm=as_markout | live: fills=0 requested=0 fill_rate=0.0 net=+0.0000 | shadow: fills=1101 fill_vol=11252.9 fill_rate=0.0098 net=+47.1265   [no cap=50/skew=0.25 match; used 'as_markout' (cap=50.0 skew=0.99) as the closest gate+size_mode match -- shadow has never run this gate at live's actual cap/skew, so this comparison is approximate]
+  2026-07-12 btc ws=1783827900 arm=as_markout | live: fills=0 requested=0 fill_rate=0.0 net=+0.0000 | shadow: fills=2913 fill_vol=36768.6 fill_rate=0.0147 net=+190.2546   [no cap=50/skew=0.25 match; used 'as_markout' (cap=50.0 skew=0.99) as the closest gate+size_mode match -- shadow has never run this gate at live's actual cap/skew, so this comparison is approximate]
+  2026-07-12 btc ws=1783828800 arm=as_markout | live: fills=0 requested=0 fill_rate=0.0 net=+0.0000 | shadow: fills=3125 fill_vol=39021.2 fill_rate=0.0149 net=+222.9442   [no cap=50/skew=0.25 match; used 'as_markout' (cap=50.0 skew=0.99) as the closest gate+size_mode match -- shadow has never run this gate at live's actual cap/skew, so this comparison is approximate]
+
+--- 4. DIVERGENCE SUMMARY (live vs shadow, joined windows) ------------------------------
+fills, VOLUME-scaled: (live_fills*LIVE_POST_CONTRACTS) / shadow_fill_vol  (n_windows=44)
+    n_days=2 < 5 -- point estimate only (no CI): mean_ratio=0.0038
+    pooled (sum/sum) ratio = 0.0001
+fills, raw EVENT-count ratio (unscaled -- ignores per-event size entirely)  (n_windows=44)
+    n_days=2 < 5 -- point estimate only (no CI): mean_ratio=0.0750
+    pooled (sum/sum) ratio = 0.0017
+net $/contract ratio: (live_net/live_fills) / (shadow_net/shadow_fill_vol)  (n_windows=19)
+    n_days=1 < 5 -- point estimate only (no CI): mean_ratio=-13.0909
+    pooled (sum/sum) ratio = -2.7409
+fill_rate (side-by-side ONLY -- definitions differ, not a ratio):
+    live fill_rate  = fills / requested (our own order-placement success rate)
+    shadow fill_rate = fill_vol / trade_vol (our share of that window's total taker flow)
+    mean live fill_rate=0.2931 (n=46)
+    mean shadow fill_rate=0.0103 (n=46)
+
+--- 5. EMPIRICAL FILL-PROBABILITY TABLE (order_lifecycle) -------------------------------
+(excluded 8 'place' events with no queue_ahead_est)
+overall reject rate: 0.9773 (13014/13316 placement attempts)
+
+queue_ahead tau_to_close  placed  any_fill%  full_fill%   cancel%   expire% still_open
+--------------------------------------------------------------------------------------
+0          300-600s         2      0.000       0.000     0.000     0.000          2
+0          600-900s        34      0.382       0.353     0.176     0.000         15
+1-50       300-600s         1      1.000       1.000     0.000     0.000          0
+1-50       600-900s         6      1.000       1.000     0.000     0.000          0
+51-200     <=60s           51      0.000       0.000     0.000     0.000         51
+51-200     60-300s          3      0.000       0.000     0.333     0.000          2
+51-200     300-600s         1      1.000       1.000     0.000     0.000          0
+51-200     600-900s        18      0.833       0.833     0.056     0.000          2
+201-500    300-600s         2      0.500       0.500     0.500     0.000          0
+201-500    600-900s        33      0.879       0.848     0.030     0.000          3
+>500       300-600s         5      0.600       0.600     0.400     0.000          0
+>500       600-900s       138      0.558       0.558     0.377     0.000          9
+
+(cells with n<20 are noisy: [('0', '300-600s', 2), ('1-50', '300-600s', 1), ('1-50', '600-900s', 6), ('51-200', '60-300s', 3), ('51-200', '300-600s', 1), ('51-200', '600-900s', 18), ('201-500', '300-600s', 2), ('>500', '300-600s', 5)])
+
+--- 6. RECOMMENDED shadow-constant adjustments (ALERT-ONLY -- operator decides) --------
+no recommendations yet -- insufficient data (need >=50 joined windows across >=5 days; have 46 joined windows).
+
+SUMMARY: insufficient live data (n windows=46, need >=50). join coverage: 109 live_recon rows -> 109 mapped -> 46 asset+ws matched -> 46 joined.
