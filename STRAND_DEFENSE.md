@@ -9,10 +9,11 @@ interact: each upstream layer shrinks the population the next layer sees.
 ## Layer 0 — PREVENT: don't take strand-prone entries
 | control | effect | evidence | status |
 |---|---|---|---|
-| entry gate (depth/k/sig) | strand 14.8%→1.9% (replay) | PAIR_GATE, IS==OOS | partially live (k-cap, as-gate) |
-| late-join cap (open-k-max 9→5) | kills the 1.7x leg-restart strand class | ✅ manufactured-population replay: 11.6%→19.4% monotone, t≤7.6 | validated, AWAITING WORD |
-| thick-book veto (depth≤q80) | thick books strand more (informed size) | t=10.1 in-sample | forward arm accruing |
-| cell veto (worst vol×spread opens) | +0.124c/win t=2.77 train→test | validated | forward arm accruing |
+| entry gate (depth/k/sig) | ⚠ L0 study: the depth>=median LOWER bound alone is HARMFUL (retains thick/informed tail) — conflicts with PAIR_GATE's window-level validation; stack test adjudicates | L0 study vs PAIR_GATE | under review |
+| late-join cap (open-k-max 9→5) | kills the 1.7x leg-restart strand class | manufactured-population replay: monotone, t≤7.6 (nearly inert on natural corpus — live-architecture specific) | validated, AWAITING WORD |
+| **L0 CHAMPION: depth UPPER bound (qdepth<=train-q95) + minute<=7** | 90.5% volume, EV +0.74c (t=1.17 NS); runner-up q80+min5: +1.28c t=1.83 at 67% volume | L0 study, 30 candidates | flagged for forward validation (below t=2) |
+| cell veto (worst vol×spread opens) | ❌ DEMOTED: BTC-only day-clustered test = HARMFUL (−0.062c, t=−2.40) — pooled +2.77t was likely multiple-testing artifact | L0 study | forward arm will adjudicate; removed from deploy queue |
+| composite entry score | reconfirms C1: test AUC 0.511 ≈ random, loses to hand vetoes at every volume | L0 study | dead |
 | C3 depth-share veto (mild, >0.9) | book leaning against completion | +1.42c t=5.15 marginal (replay) | backlog top |
 
 ## Layer 1 — SENSE: know a strand is developing
