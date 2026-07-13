@@ -179,6 +179,22 @@ replay numbers are only trustworthy at small skip fractions; at scale they must 
 validated as box_shadow forward arms with apples-to-apples accounting. This artifact is
 exactly why NOTHING goes straight to live regardless of in-sample t-stat.
 
+## M. PAIRED-BOX RISK ACCOUNTING (operator insight 2026-07-13)
+
+Paired boxes are settlement-guaranteed ($1/contract in <=15min) yet the notional cap
+counts their full cash cost as exposure (kalshi_trader.py:3408: exposure =
+open_buy_notional + max(-cash,0) — includes paired principal). Risk-true exposure of
+a paired box is only max(cost-1.00, 0) ≈ 0.
+- Today: harmless coincidence — at size 2 the notional cap AND --max-fills-side 3
+  both bind at 3 pairs/window (the constant n_boxes=6). No volume lost yet.
+- At post>=3 (Kelly ladder): notional (2*post+3) binds BEFORE the fills rail →
+  throttles risk-free volume. Fix required before auto-sizer deploy.
+- PROPOSAL (propose-only): exposure := open_buy_notional + unpaired_cost +
+  overpayment_on_paired. Bundle with the auto-sizer's max-net companion fix.
+- The real volume unlock at current size is --max-fills-side (F4 multi-box node) —
+  needs its own study; the 3-cap has adverse-selection data behind it (4th-5th
+  same-side fill post-mortem). F4 priority raised.
+
 ## L. ACTIVE vs INACTIVE HOURS — one strategy or two? (2026-07-13, resolved)
 
 Question: do quiet hours need a different strategy? Verdict: **NO dual strategy — one
