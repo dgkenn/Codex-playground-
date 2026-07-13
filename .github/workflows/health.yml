@@ -100,9 +100,15 @@ jobs:
             exit 0
           fi
 
+          # Scan the last several runs, not just the newest (per_page=1 regression 2026-07-13):
+          # live.yml's pre-chain step parks a PENDING successor run at each leg's START, so during
+          # a healthy leg the NEWEST run is that pending successor -- which is neither in_progress
+          # nor completed, so per_page=1 misread it as a stall and re-dispatched every health cycle
+          # (harmless churn + false alarms that would mask a REAL stall). Fix: the chain is alive if
+          # ANY recent run is in_progress, or ANY completed within the last cycle (handoff moment).
           healthy=$(curl -s -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/repos/${{ github.repository }}/actions/workflows/live.yml/runs?per_page=1" \
-            | python3 -c "import sys,json,datetime as dt; d=json.load(sys.stdin); r=(d.get('workflow_runs') or [{}])[0]; s=r.get('status'); t=r.get('updated_at') or r.get('created_at'); ok=s=='in_progress' or (s=='completed' and t and (dt.datetime.now(dt.timezone.utc)-dt.datetime.strptime(t,'%Y-%m-%dT%H:%M:%SZ').replace(tzinfo=dt.timezone.utc)).total_seconds()<1800); print('yes' if ok else 'no')" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/workflows/live.yml/runs?per_page=8" \
+            | python3 -c "import sys,json,datetime as dt; d=json.load(sys.stdin); runs=d.get('workflow_runs') or []; now=dt.datetime.now(dt.timezone.utc); age=lambda r:(now-dt.datetime.strptime((r.get('updated_at') or r.get('created_at') or '1970-01-01T00:00:00Z'),'%Y-%m-%dT%H:%M:%SZ').replace(tzinfo=dt.timezone.utc)).total_seconds(); ok=any(r.get('status')=='in_progress' for r in runs) or any(r.get('status')=='completed' and age(r)<1800 for r in runs); print('yes' if ok else 'no')" \
             2>/dev/null) || healthy=no
           echo "live chain healthy (in_progress or completed <30m ago)? ${healthy:-no}"
           if [ "$healthy" = "yes" ]; then
