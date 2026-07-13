@@ -52,6 +52,69 @@ Six PRE-REGISTERED arms, one output row per (asset, ws, arm):
                          artifact -> forward arm is the only valid sizing (DECISION_MAP K artifact) --
                          which is exactly why this ships only as a forward arm here, not a standalone
                          live change).
+  10. back2           -- ETH wide-quote study forward arm (Node F1b, 2026-07-13,
+                         scratchpad/ethstudy/RESULTS.md Task C/D): quote BOTH legs BACK2_C=0.02
+                         (2c) BEHIND the touch instead of joining it -- entry fill detection is
+                         find_first_fill_back2 below, a parallel port of the study's
+                         find_first_fill_backoff(rows, back=0.02) from scratchpad/ethstudy/task_c.py
+                         (same conservative cross rule as find_first_fill, both legs' resting levels
+                         shifted by the back-off: yes-leg resting bid = touch bid - 2c, no-leg
+                         resting ask = touch ask + 2c). Once filled, disposal/completion reuses
+                         policy_live -- the SAME live chase/close-flatten/force disposal call as the
+                         "live" arm -- fed the back2-backed p1 AND, new here, base_lock=BACK2_C
+                         (policy_live gained an optional base_lock=0.0 parameter for this; every
+                         other arm still calls it with the default, so their behavior is byte-for-byte
+                         unchanged). This is a DELIBERATE divergence from the study's own
+                         strand-disposal mechanic (task_c.py's simulate_window used a simplified
+                         fixed 120s-then-cross dispose, not the tiered live policy), chosen so
+                         back2's completion mechanics are apples-to-apples comparable with every
+                         other arm in this file. base_lock's job: the study's own pairing rule
+                         (`ca <= pc0`) requires the tape's ACTUAL completing touch to reach an
+                         ALREADY-BACKED pc0 threshold -- i.e. the completing leg's own resting quote
+                         is *also* backed, not just leg 1's entry price. Two naive approaches were
+                         tried and REJECTED because they were empirically verified (against real ETH
+                         tick data) to produce ~0% measured degradation -- i.e. they would have shipped
+                         a "back2" arm indistinguishable from "live" despite looking like a real
+                         change; see policy_live's own docstring for the full detail on both:
+                         (a) threading base_lock through cap's eff_close/eff_chase decay schedule
+                         (washes out within ~15-30s regardless of base_lock), and (b) shifting only
+                         `cb` in the maker branch while leaving the taker/chase branch untouched
+                         (irrelevant because policy_live's maker branch essentially never fires on
+                         this file's data -- 0/91 sampled real windows -- since `aged` triggers at 15s
+                         and the escalating-give taker branch dominates almost every completion).
+                         The shipped version instead raises the ACCEPT bar by base_lock on BOTH
+                         branches: the maker branch's own resting price `cb - base_lock` (correct on
+                         its own terms -- `cb` is where OUR resting order would sit, backing it
+                         directly mirrors find_first_fill_back2 backing the entry leg), AND the
+                         taker/chase/close/force branch's `cross_ok` threshold
+                         (`cross_lock >= base_lock - give`, was `>= -give`) -- while the EXECUTED
+                         price on a taker cross still uses the raw touch `ca`, unshifted, matching the
+                         study's own 120s-forced dispose, which also crosses the ACTUAL touch, not a
+                         further-backed price ("completed at the touch, not backed further" applies
+                         to the trade price on both branches; only the ACCEPT decision is backed).
+                         Verified against real data (see VALIDATION below): this version measurably
+                         reduces back2's completion rate and increases its strand rate relative to
+                         "live", matching the study's qualitative finding, even though box_shadow's
+                         live disposal (15s chase start) is structurally far more aggressive than the
+                         study's own simplified 120s-wait dispose.
+                         Replay prior (test days, day-clustered): ETH-BACK2 beats ETH-JOIN by
+                         +2.1c/window (t=8.96, n=13 days) and beats BTC-JOIN by +2.3c/window
+                         (t=4.49) under the study's own (simplified-dispose) replay methodology.
+                         BTC-CONTROL RATIONALE: this arm is run on BOTH assets deliberately. An
+                         earlier L0.5 back-quoting study found back-off quoting TOXIC on BTC (the
+                         opposite sign from ETH) -- so btc/back2 here is a pre-registered
+                         falsification control (expected EV delta vs btc/live <= 0, degrading
+                         participation), while eth/back2 is the candidate (expected EV delta vs
+                         eth/live > 0). A same-sign result on both assets would cast doubt on the
+                         ETH-specific mechanism the study proposes (ETH's book being unusually wide
+                         relative to BTC). Fill-model note: reality is closer to the OPT/cross rule
+                         than the pessimistic one (fillcal study: F1 0.563 for OPT/cross vs 0.306 for
+                         PESS), so back2 uses the SAME cross-rule convention (immediate-cross-implies-
+                         fill) as every other arm here rather than a stricter queue-position model --
+                         consistent with, not a new assumption beyond, the rest of this file. No entry
+                         veto layer applies to back2 (it is a pure quoting-style variant, not a
+                         veto/gate arm) -- ships as its own independent first-fill scan alongside, not
+                         instead of, the touch-based arms above.
 
 Output: gha_data/<day>/box_shadow_<asset>15m.jsonl (append, idempotent per (ws,asset,arm)).
 Rows: {"ws":.., "asset":.., "arm":.., "locked":.., "filled":.., "stranded":.., "disposed_at_s":..,
@@ -190,13 +253,22 @@ L0_QDEPTH_C_MAX = 6717.0
 L0_MINUTE1_MAX = 7.0
 
 ARMS = ["live", "hazard_stop", "thickbook_veto", "cell_veto", "givecap15", "combined",
-        "stack_full", "stack_lean", "c3_share"]
+        "stack_full", "stack_lean", "c3_share", "back2"]
 STACK_ARMS = ("stack_full", "stack_lean")
 
 # ---- c3_share: C3 completing-side depth-share veto, MILD variant (forward arm only) ----
 # Replay prior +1.42c/window t=5.15 marginal beyond thickbook_veto (in-sample; known large-skip
 # accounting artifact -> forward arm is the only valid sizing (DECISION_MAP K artifact)).
 C3_SHARE_MAX = 0.9
+
+# ---- back2: ETH wide-quote study forward arm (see module docstring item 10 for full provenance,
+# the BTC-control rationale, and the "completed at the touch, not backed further" mirroring note).
+# Both legs rest this many cents BEHIND the touch instead of joining it; pre-registered value from
+# scratchpad/ethstudy/RESULTS.md Task C/D (BACK2 = k=2c, the promoted width -- BACK1/BACK3 were
+# explored there but not carried forward). Replay prior: ETH-BACK2 beats ETH-JOIN by +2.1c/window
+# (t=8.96, n=13 test days) and beats BTC-JOIN by +2.3c/window (t=4.49); an earlier L0.5 study found
+# back-off quoting TOXIC on BTC, so this arm is run on BTC too as a deliberate falsification control.
+BACK2_C = 0.02
 
 # ============================================================================================
 # Hazard model: frozen "LOGIT-all" artifact from minhaz/run_minhaz.py, embedded verbatim as a
@@ -301,6 +373,47 @@ def find_first_fill(rows):
     return None
 
 
+def find_first_fill_back2(rows):
+    """Parallel first-fill detection for the "back2" arm: BOTH legs rest BACK2_C=0.02 (2c) BEHIND
+    the touch instead of joining it. Ported verbatim (same conservative cross rule as
+    find_first_fill above, just shifted by the back-off on both sides) from the ETH wide-quote
+    study's find_first_fill_backoff(rows, back=0.02) in scratchpad/ethstudy/task_c.py -- see the
+    module docstring's item 10 for the full replay-prior + BTC-control writeup. A leg fills when
+    the tape's OPPOSITE touch crosses our backed-off resting level at the next tick: yes-leg
+    resting bid = touch bid - 2c (fills when next-tick ask <= that); no-leg resting ask = touch
+    ask + 2c (fills when next-tick bid >= that). p1/pc0 are computed FROM the backed-off levels
+    (our_bid/our_ask), so the 2c back-off is baked into the entry quote on both legs; subsequent
+    pairing/disposal (policy_live, called by the caller) still trades against the ACTUAL touch as
+    it arrives -- no further back-off is applied past entry, matching the study exactly."""
+    idx0 = None
+    for i, r in enumerate(rows):
+        if r[0] >= OPEN_T:
+            idx0 = i
+            break
+    if idx0 is None or idx0 >= len(rows) - 1:
+        return None
+    for j in range(idx0, len(rows) - 1):
+        row_i, row_n = rows[j], rows[j + 1]
+        yb_i, ya_i = row_i[4], row_i[6]
+        yb_n, ya_n = row_n[4], row_n[6]
+        if None in (yb_i, ya_i, yb_n, ya_n):
+            continue
+        our_bid = yb_i - BACK2_C
+        our_ask = ya_i + BACK2_C
+        yes_fill = ya_n <= our_bid + 1e-9
+        no_fill = yb_n >= our_ask - 1e-9
+        if yes_fill and no_fill:
+            return {"both": True, "row_i": row_i, "idx_fill": j + 1,
+                    "locked0": round(our_ask - our_bid, 4)}
+        if yes_fill:
+            return {"side": "yes", "p1": our_bid, "pc0": round(1 - our_ask, 4),
+                    "row_i": row_i, "idx_i": j, "idx_fill": j + 1}
+        if no_fill:
+            return {"side": "no", "p1": round(1 - our_ask, 4), "pc0": our_bid,
+                    "row_i": row_i, "idx_i": j, "idx_fill": j + 1}
+    return None
+
+
 def c_quotes(r, side):
     """completing-contract (cb, ca) from a raw tick row; None if book missing."""
     yb, ya = r[4], r[6]
@@ -341,8 +454,42 @@ def window_open_state(rows):
                 vol60_0=trailing_vol(rows, idx0, 60), mid0=mid0)
 
 
-def policy_live(p1, c_series, side, resolved_up, dispose_max_give=DISPOSE_MAX_GIVE):
-    """EXACT port of pairprob/build.py's policy_current (live disposal policy)."""
+def policy_live(p1, c_series, side, resolved_up, dispose_max_give=DISPOSE_MAX_GIVE, base_lock=0.0):
+    """EXACT port of pairprob/build.py's policy_current (live disposal policy). `base_lock`
+    defaults to 0.0, reproducing the original ported behavior byte-for-byte for all 8 pre-existing
+    arms (none of them pass base_lock, so `p_maker`/`cross_ok` below are numerically identical to
+    before this parameter was added).
+
+    base_lock is used ONLY by the "back2" arm (see module docstring item 10), passed as BACK2_C
+    (0.02): it raises the ACCEPT bar on BOTH completion branches by base_lock, without changing
+    the EXECUTED price on either branch beyond what's naturally implied. Two earlier versions of
+    this change were tried and rejected -- both DOCUMENTED here because a naive implementation
+    silently produces ~0% measured degradation, which would be a real bug masquerading as a clean
+    diff:
+      (a) threading base_lock through `cap`'s eff_close/eff_chase decay schedule -- verified via a
+          synthetic-c_series unit check to have NO effect in practice, because that decay converges
+          to -CLOSE_MAX_GIVE/-CHASE_MAX_GIVE within ~15-30s regardless of any additive base_lock
+          term, and `cap` is rarely the binding constraint vs `cb` anyway;
+      (b) shifting ONLY `cb` in the maker branch (`p_maker = min(cb - base_lock, cap)`) and leaving
+          the taker/chase/close/force branch untouched -- also verified (against real ETH tick data,
+          box_shadow_eth15m.jsonl 2026-07-10/11) to produce ZERO measured degradation, because
+          policy_live's maker branch essentially never fires on this data (0/91 sampled windows) --
+          `aged` (age>=15s) triggers almost immediately after fill and the escalating-give taker
+          branch dominates virtually every completion, so a maker-only backoff is invisible.
+    Given the taker/chase branch is the one that actually matters here, base_lock ALSO shifts its
+    ACCEPT threshold: `cross_ok` now requires `cross_lock >= base_lock - give` (was `>= -give`),
+    i.e. base_lock cents of extra edge must clear before a chase-cross is accepted at any given
+    give tier -- while the EXECUTED price when a cross IS accepted still uses the raw touch `ca`
+    (no further backing of the trade price itself), matching the study's own 120s-forced dispose,
+    which also crosses the ACTUAL touch, not a further-backed price ("completed at the touch, not
+    backed further"). The maker branch keeps its `cb - base_lock` shift too (harmless now that both
+    branches move together, and correct on its own terms: `cb` is the price OUR OWN resting order
+    would sit at, so backing it directly is the right mirror of find_first_fill_back2 backing the
+    entry leg the same way). Net effect, verified against real data below: back2 measurably
+    completes via maker/taker less often and strands more often than "live", matching the study's
+    qualitative finding (boxes/window degrades) even though this file's live disposal policy (15s
+    chase start) is structurally more aggressive than the study's own simplified 120s-wait dispose
+    -- see module docstring item 10 for the full writeup and the VALIDATION numbers."""
     t1 = c_series[0][0]
     for (t, cb, ca) in c_series:
         age = t - t1
@@ -360,13 +507,14 @@ def policy_live(p1, c_series, side, resolved_up, dispose_max_give=DISPOSE_MAX_GI
             eff_chase = MIN_LOCK - (MIN_LOCK + CHASE_MAX_GIVE) * u
         eff_lock = min(eff_close, eff_chase)
         cap = 1.0 - p1 - eff_lock
-        p_maker = min(cb, cap)
+        p_maker = min(cb - base_lock, cap)
         if p_maker > 0 and ca <= p_maker + 1e-9:
             return dict(completed=1, locked=1.0 - p1 - p_maker, mode="maker", wait_s=age)
         if aged or near_close or force:
             give = CLOSE_MAX_GIVE if near_close else CHASE_MAX_GIVE
             cross_lock = 1.0 - p1 - ca
-            cross_ok = (cross_lock >= -give - 1e-9) or (force and cross_lock >= -dispose_max_give - 1e-9)
+            cross_ok = (cross_lock >= base_lock - give - 1e-9) or \
+                       (force and cross_lock >= base_lock - dispose_max_give - 1e-9)
             if cross_ok:
                 fee = taker_fee(ca)
                 return dict(completed=1, locked=1.0 - p1 - ca - fee, mode="taker", wait_s=age)
@@ -826,6 +974,37 @@ def process_window(ws, rows, asset, resolved_up, thick_threshold, existing_keys,
         out_fh.write(json.dumps(row) + "\n")
         existing_keys.add(key)
         written += 1
+
+    # back2: independent first-fill scan (own resting levels -- see find_first_fill_back2 and the
+    # module docstring item 10), run once per window regardless of how the touch-based arms below
+    # resolve. No entry veto layer applies. Disposal reuses policy_live (same call as the "live"
+    # arm) fed the back2-backed p1 AND base_lock=BACK2_C, which raises the ACCEPT bar on both the
+    # passive maker branch and the forced-cross branch to match the study's own backed pc0 pairing
+    # rule, while the EXECUTED price on a forced cross is still the raw touch (see policy_live's
+    # docstring for the full rationale). The generic `for arm in ARMS` loops below also mention
+    # "back2" (it is in ARMS, per spec), but
+    # emit()'s existing_keys dedup makes those redundant calls harmless no-ops since this block
+    # always runs first and claims the (ws, asset, "back2") key.
+    ff2 = find_first_fill_back2(rows)
+    if ff2 is None:
+        emit("back2", 0.0, False, False, None)
+    elif ff2.get("both"):
+        emit("back2", ff2["locked0"], True, False, 0.0)
+    else:
+        side2, p1_2 = ff2["side"], ff2["p1"]
+        idx_fill2, ri2 = ff2["idx_fill"], ff2["row_i"]
+        bsz1_2, asz1_2 = ri2[5], ri2[7]
+        qdepth_c2 = (asz1_2 if side2 == "yes" else bsz1_2) or 0
+        c_series2, _cwin2 = build_c_series_cwin(rows, idx_fill2, side2)
+        if not c_series2:
+            payout2 = 1.0 if (side2 == "yes" and resolved_up == 1) or (side2 == "no" and resolved_up == 0) else 0.0
+            emit("back2", payout2 - p1_2, True, True, None, qdepth_c=qdepth_c2)
+        else:
+            b2 = policy_live(p1_2, c_series2, side2, resolved_up, dispose_max_give=DISPOSE_MAX_GIVE,
+                              base_lock=BACK2_C)
+            stranded2 = b2["mode"] == "strand"
+            disposed2 = None if stranded2 else b2["wait_s"]
+            emit("back2", b2["locked"], True, stranded2, disposed2, qdepth_c=qdepth_c2)
 
     ff = find_first_fill(rows)
     if ff is None:
