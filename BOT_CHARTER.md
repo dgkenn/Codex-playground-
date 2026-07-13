@@ -74,6 +74,10 @@ bot branch), and whole paper-track workflows (crons on main).
 ## Daily cycle (in order, stop when budget spent)
 1. HEALTH: fetch bot branch + live-state. Check LIVE_SWITCH, kill sentinel,
    telemetry freshness, balance trend. Alert operator on anomaly; else silent.
+   ALSO scan the day's winrec for FRACTIONAL RESIDUALS (node F14): any window with
+   abs_strand in (0, 0.5] escaped the strand machinery (3 int-round blind spots) and
+   rode to settlement — log each, accumulate the settle-P&L drag, and flag if the
+   running drag exceeds ~5% of EV (the trigger to prioritize the F14 flatten fix).
 2. INGEST: pull the new day of gha_data (bot branch) + live_state. Append to the
    forward-validation ledger (FORWARD_LEDGER.md, create if absent): per-arm
    net/window for the day, live realized EV, strand rate — AND the RISK BENCHMARK
