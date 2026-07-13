@@ -37,8 +37,8 @@ interact: each upstream layer shrinks the population the next layer sees.
 ## Layer 4 — HEDGE THE RESIDUAL: strands that survive Layers 0–3
 | control | effect | evidence | status |
 |---|---|---|---|
-| perp hedge-and-hold (D4) | neutralize delta to settlement for bps | STUDY RUNNING (214 strands, real tick paths) | pending |
-| perp hedge-and-WAIT | hedge + keep completion quote alive → recover full box if late fill | same study | pending |
+| perp hedge-and-hold (D4) | ❌ DEAD: gamma churn costs $1.03/event median (>max payout), variance UP 20x | 214-strand tick-path study | dead |
+| perp hedge-and-WAIT | ❌ DEAD: 0/214 completions after decision point — nothing to wait for | same study | dead |
 | H1 uncertainty band | legs within ~10bps of strike at close = coin flips; never "ride" inside the band | settle-basis measurement (abs-med 2bps, p95 10bps) | parameter, adopt with any hold branch |
 | D3 ride-the-winner | deep-ITM stranded legs: holding is +EV | unmodeled | open |
 

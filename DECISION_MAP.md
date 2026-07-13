@@ -38,7 +38,7 @@ policy, researched independently, EV-tested with day-clustered stats. Status leg
 | D1 | when to give up waiting | ✅ | state-dependent stopping: +1.11c/box on traded windows, t=2.64 (vs any fixed deadline incl. live 120s). Deployable |
 | D2 | give-up action: cross the spread (sell/complete at loss) | ✅ | early-cross with give-cap 15c beats late-force-hold +1.69c/strand |
 | D3 | give-up action: HOLD to settlement when theo favors | 🟡 | stopping rule holds implicitly; explicit "ride the winner" branch (leg deep ITM → holding is +EV) unmodeled |
-| D4 | hedge stranded leg with perp delta | ❓ | binary delta-hedge via Binance perp until expiry: EV ≈ −costs but kills the −42c tail → Sharpe ↑. Simulable with tick spot paths |
+| D4 | hedge stranded leg with perp delta | ❌ DEAD (2026-07-13 study, 214 real strands) | worse on mean AND variance AND CVaR: portfolio variance UP >20x, mean −4.5c→−15.5c. Near-expiry binary gamma defeats linear hedging: median 97 rehedges costing $1.03/event (>max payout), hedge/settlement corr only −0.31. Hedge-and-wait recovers 0/214 (completing quote NEVER refills after the decision point — the 'option' is worthless). Layer 4 collapses to cheap disposal (L3) + possibly D3 ride-the-winner |
 | D5 | cross-venue completion: buy opposite side on Polymarket if Kalshi won't fill | ❌ DEAD (contract mismatch) | PM's product is a 5-MINUTE up/down from period open — different strike reference, expiry grid, and settlement vs Kalshi's fixed-strike 15m. No fungible completion possible; at best a partial hedge with ugly basis. PM stream stays useful only as a leading price signal (H4, +0.045 AUC) |
 | D6 | partial disposal / scale-out | ❓ | only relevant at size ≥3; defer until sizing up |
 
