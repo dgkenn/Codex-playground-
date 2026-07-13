@@ -47,6 +47,13 @@ is night float; the night-float slot advances by one each week. Within that:
   arriving intern continues the block ("a new intern starts night float when the
   month ends"). Blocks are 4–7 consecutive nights per hospital.
 - No intern is on daytime (LC/SC) **and** night float the same day.
+- **LSH interns ending their rotation:** no LSH intern may be on night float on
+  the last day of their monthly block or the day immediately before (they would
+  transition directly from a night shift into their next rotation). The month-end
+  night-float week must belong to an intern continuing past the boundary (either
+  staying at LSH or a Lahey/BMC rotator whose assignment spans it). Exceptions
+  exist only if the departing intern's next month is outpatient/elective/vacation,
+  explicitly listed in the audit's `NEXT_IS_OUTPATIENT` set.
 
 ## Saturday 24h details
 
