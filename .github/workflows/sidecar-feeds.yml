@@ -40,7 +40,7 @@ env:
 jobs:
   collect:
     runs-on: ubuntu-latest
-    timeout-minutes: 44
+    timeout-minutes: 52
     steps:
       - uses: actions/checkout@v4
         with:
