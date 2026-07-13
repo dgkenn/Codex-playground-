@@ -31,6 +31,29 @@ Research studies, shadow/paper A/B arm changes, dataset builds, doc updates,
 prototype code behind flags in worktrees (never pushed to main), data-collection
 fixes on collector workflows (not live.yml).
 
+## Arm & experiment lifecycle (self-pruning + replacement — run inside daily step 3)
+The paper layer must stay ultra-rich but self-cleaning. Applies to: quoting arms
+(strategies.py REGISTRY, the single source of truth — prune by setting enabled=False
+with a dated note, never delete code), box arms (ARMS list in box_shadow.py on the
+bot branch), and whole paper-track workflows (crons on main).
+- RETIRE when: day-clustered t < -2 vs baseline/live over >= 10 days under the arm's
+  CURRENT definition; or byte-identical duplicate of baseline for >= 10 days.
+- PROTECTED (never retire): baseline, as_markout (live twin), micro_gate
+  (legacy-contrast anchor), av_stoikov + mo_size (month-validated winners),
+  box_shadow 'live' arm.
+- REPLACE on retirement: promote the next candidate from the BACKLOG below into the
+  vacated slot the same day (keeps the roster rich). Pre-registered backlog, in order:
+  (1) F2 adaptive quoted edge (vol-scaled); (2) F8 maker-out disposal (rest improve
+  order 5-10s before crossing); (3) hazard_stop kappa=-0.25 variant; (4) thickbook
+  q90 variant; (5) A wide-spread veto >=3c variant. Add new candidates to this list
+  as research produces them; every addition needs a one-line replay prior.
+- WORKFLOW-level: a paper-track workflow whose every tracked metric is dead by the
+  same 10-day rule gets its cron commented out (main), file kept. Overlap watch:
+  boxwide-paper's P300 disposal track vs box_shadow arms — consolidate after both
+  have 10 days.
+- Every retire/replace action: log in FORWARD_LEDGER.md with the stats that
+  justified it.
+
 ## Daily cycle (in order, stop when budget spent)
 1. HEALTH: fetch bot branch + live-state. Check LIVE_SWITCH, kill sentinel,
    telemetry freshness, balance trend. Alert operator on anomaly; else silent.
