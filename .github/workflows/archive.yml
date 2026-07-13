@@ -1,0 +1,303 @@
+# Data-retention system: hot git branches keep only a rolling window; full raw history moves to
+# GitHub RELEASE ASSETS (up to 2GB/asset, and -- critically -- release assets do NOT count toward
+# a repo's git/.git size). Without this, collectors committing multi-GB market data straight to
+# git branches will keep growing .git past GitHub's ~5GB soft limit and pushes start failing.
+#
+# Touches two places:
+#   * `gha-data` branch  -- data-only (see collect.yml). We fully rewrite it (orphan re-init +
+#     force-push) to contain only the last RETENTION_DAYS days. History loss here is the POINT:
+#     this branch holds nothing but day-partitioned data dirs, so discarding old commits actually
+#     shrinks the branch's git objects and relieves repo size.
+#   * bot branch `claude/polymarket-bot-live-ready-vw7ut5`'s `gha_data/` directory -- this is a
+#     CODE branch that also happens to accumulate data. We only `git rm` the old day-dirs with a
+#     normal commit; we deliberately do NOT rewrite its history here (that would need a force-push
+#     on a branch with real commit history, which is an operator decision, not something a cron
+#     job should do unattended). This DOES free working-tree size going forward and stops the
+#     directory from growing further, but the OLD blobs remain reachable through history until a
+#     human does a history rewrite. See the "operator-only" note at the bottom of this file and the
+#     recommendation the run appends to RETENTION_LOG.md.
+#
+# Every archive step is idempotent (skips assets already uploaded under a release tag) and pruning
+# is hard-gated on a post-upload, post-download integrity verification (see the `if:` conditions on
+# the two prune-* steps) -- we never delete data whose release copy hasn't been proven byte-for-byte
+# intact.
+name: archive-and-prune-data
+
+on:
+  schedule:
+    - cron: '37 2 * * 0'   # weekly, Sunday 02:37 UTC -- off-the-hour, clear of collect/health/live crons
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:                # two archive runs must never overlap (force-push + orphan rewrite races)
+  group: archive-data
+  cancel-in-progress: false
+
+env:
+  BOT_BRANCH: claude/polymarket-bot-live-ready-vw7ut5
+  DATA_BRANCH: gha-data
+  RETENTION_DAYS: 14
+  MAX_ASSET_BYTES: 1932735283   # 1.8 GiB uncompressed-budget-per-part (see scripts/archive_retention.sh)
+
+jobs:
+  archive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - name: checkout main (repo scripts only)
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+
+      - name: report compressor available
+        run: |
+          if command -v zstd >/dev/null 2>&1; then
+            echo "zstd available -- archive_retention.sh will produce .tar.zst parts"
+          else
+            echo "zstd NOT available -- archive_retention.sh will fall back to gzip (.tar.gz parts)"
+          fi
+
+      # ---------------------------------------------------------------------------------------
+      # FETCH PHASE
+      # ---------------------------------------------------------------------------------------
+      - name: fetch gha-data branch (full -- it is data-only, so "full" = its entire current tree)
+        run: |
+          set -euo pipefail
+          git fetch --no-tags --depth=1 origin "${DATA_BRANCH}:refs/remotes/origin/${DATA_BRANCH}"
+          git worktree add --detach /tmp/gha-data-wt "origin/${DATA_BRANCH}"
+          echo "gha-data worktree bytes: $(du -sh /tmp/gha-data-wt/gha_data 2>/dev/null | cut -f1)"
+
+      - name: sparse-fetch bot branch's gha_data/ directory only
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/bot-wt
+          git -C /tmp/bot-wt init -q
+          git -C /tmp/bot-wt remote add origin "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}"
+          git -C /tmp/bot-wt config core.sparseCheckout true
+          echo "gha_data/*" > /tmp/bot-wt/.git/info/sparse-checkout
+          git -C /tmp/bot-wt fetch --no-tags --depth=1 origin "${BOT_BRANCH}"
+          git -C /tmp/bot-wt checkout -b "${BOT_BRANCH}" FETCH_HEAD
+          echo "bot-branch gha_data/ worktree bytes: $(du -sh /tmp/bot-wt/gha_data 2>/dev/null | cut -f1)"
+          # COST NOTE: GitHub's server-side transport does not currently support partial clone
+          # filtered *by pathspec* on a plain `fetch` (only `--filter=blob:none`/`blob:limit`,
+          # which are size- not path-based). `core.sparseCheckout` therefore only limits what gets
+          # materialized into the WORKING TREE to gha_data/ -- the `--depth=1` fetch above still
+          # transfers the full tree + all blobs reachable from that one commit (i.e. the whole
+          # branch's current content, code included), same network cost as a normal shallow clone
+          # of that branch. If this becomes measurably expensive, switch to
+          # `git fetch --filter=blob:none --depth=1` + `git sparse-checkout set gha_data` (partial
+          # clone), which *does* defer non-gha_data blobs, and only fetch them lazily if ever
+          # touched (we never touch them, so they'd never be downloaded).
+
+      # ---------------------------------------------------------------------------------------
+      # ARCHIVE PHASE (package + local self-verify; scripts/archive_retention.sh is the single
+      # source of truth also exercised by the local dry-run -- see RETENTION_LOG.md / repo docs)
+      # ---------------------------------------------------------------------------------------
+      - name: package gha-data branch day-dirs older than retention window
+        run: |
+          mkdir -p /tmp/pkg-gha-data
+          bash scripts/archive_retention.sh package /tmp/gha-data-wt/gha_data /tmp/pkg-gha-data gha-data "${RETENTION_DAYS}" "${MAX_ASSET_BYTES}"
+
+      - name: package bot branch gha_data/ day-dirs older than retention window
+        run: |
+          mkdir -p /tmp/pkg-bot
+          bash scripts/archive_retention.sh package /tmp/bot-wt/gha_data /tmp/pkg-bot bot "${RETENTION_DAYS}" "${MAX_ASSET_BYTES}"
+
+      # ---------------------------------------------------------------------------------------
+      # UPLOAD + VERIFY PHASE -- this is the mandatory gate. Nothing is pruned unless every part
+      # uploaded here comes back down byte-identical AND passes the tar integrity + count/bytes
+      # check a second time (post-download). Idempotent: an asset already present on the release
+      # (by name) is not re-uploaded.
+      # ---------------------------------------------------------------------------------------
+      - name: upload release assets and verify integrity (gate for pruning)
+        id: archive_upload
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          echo true > /tmp/archive_all_ok
+          : > /tmp/archive_summary.tsv   # branch  days_archived  bytes_freed  tags
+
+          process_manifest() {
+            local manifest_dir="$1" branch_label="$2"
+            local manifest="$manifest_dir/manifest.tsv"
+            [ -f "$manifest" ] || { echo "no manifest for $branch_label"; return 0; }
+
+            local days=0 bytes=0
+            local tags=""
+            while IFS=$'\t' read -r branch month part_num tarfile day_list file_count total_bytes compressed_bytes verify_status; do
+              [ "$branch" = "branch" ] && continue   # header
+              local tag="data-archive-${month}"
+              local asset_path="${manifest_dir}/${tarfile}"
+              echo "== ${tarfile} -> release ${tag} =="
+
+              gh release view "$tag" >/dev/null 2>&1 || \
+                gh release create "$tag" --title "Data archive ${month}" \
+                  --notes "Automated weekly archive for ${month}. Restore: gh release download ${tag} -p '*' then extract into gha_data/. See RETENTION_LOG.md at repo root."
+
+              if gh release view "$tag" --json assets --jq '.assets[].name' | grep -qx "$tarfile"; then
+                echo "asset $tarfile already on $tag -- skip upload (idempotent)"
+              else
+                gh release upload "$tag" "$asset_path" || { echo false > /tmp/archive_all_ok; continue; }
+              fi
+
+              rm -rf /tmp/verify_dl && mkdir -p /tmp/verify_dl
+              if ! gh release download "$tag" -p "$tarfile" -D /tmp/verify_dl --clobber; then
+                echo "DOWNLOAD FAILED for $tarfile" >&2; echo false > /tmp/archive_all_ok; continue
+              fi
+
+              local dl="/tmp/verify_dl/${tarfile}"
+              local local_sum dl_sum
+              local_sum="$(sha256sum "$asset_path" | awk '{print $1}')"
+              dl_sum="$(sha256sum "$dl" | awk '{print $1}')"
+              if [ "$local_sum" != "$dl_sum" ]; then
+                echo "CHECKSUM MISMATCH for $tarfile (local=$local_sum downloaded=$dl_sum)" >&2
+                echo false > /tmp/archive_all_ok; continue
+              fi
+
+              if ! bash scripts/archive_retention.sh verify-tar "$dl" "$file_count" "$total_bytes"; then
+                echo "POST-DOWNLOAD VERIFY FAILED for $tarfile" >&2
+                echo false > /tmp/archive_all_ok; continue
+              fi
+
+              echo "verified OK: $tarfile ($file_count files, $total_bytes bytes)"
+              days=$((days + $(tr ',' '\n' <<< "$day_list" | wc -l)))
+              bytes=$((bytes + total_bytes))
+              [[ ",$tags," == *",$tag,"* ]] || tags="${tags:+$tags,}$tag"
+            done < "$manifest"
+
+            printf '%s\t%d\t%d\t%s\n' "$branch_label" "$days" "$bytes" "$tags" >> /tmp/archive_summary.tsv
+          }
+
+          process_manifest /tmp/pkg-gha-data gha-data
+          process_manifest /tmp/pkg-bot bot
+
+          all_ok="$(cat /tmp/archive_all_ok)"
+          echo "all_ok=${all_ok}" >> "$GITHUB_OUTPUT"
+          echo "== archive summary =="
+          cat /tmp/archive_summary.tsv
+
+      # ---------------------------------------------------------------------------------------
+      # PRUNE PHASE -- gated on the verify step above. gha-data: orphan rewrite (force-push,
+      # intentional history loss on a data-only branch). bot branch: git rm + normal commit
+      # (NO history rewrite -- see header comment and the operator-only note below).
+      # ---------------------------------------------------------------------------------------
+      - name: prune gha-data branch to last RETENTION_DAYS days (orphan reinit, race-safe force-push)
+        if: steps.archive_upload.outputs.all_ok == 'true'
+        run: |
+          set -euo pipefail
+          KEEP_FROM="$(date -u -d "$(date -u +%F) -$((RETENTION_DAYS - 1)) days" +%F)"
+          echo "keeping day-dirs >= ${KEEP_FROM}"
+          success=false
+          for attempt in 1 2 3 4 5; do
+            git -C /tmp/gha-data-wt fetch --no-tags --depth=1 origin "${DATA_BRANCH}"
+            pre_sha="$(git -C /tmp/gha-data-wt rev-parse "origin/${DATA_BRANCH}")"
+
+            rm -rf /tmp/gha-data-new && mkdir -p /tmp/gha-data-new
+            git -C /tmp/gha-data-wt archive "origin/${DATA_BRANCH}" gha_data | tar -x -C /tmp/gha-data-new
+
+            # delete only day-dirs strictly older than KEEP_FROM, at any depth; everything else
+            # (recent days, non-dated files/dirs) is left exactly as the remote currently has it --
+            # this is what makes the loop safe against a collect.yml push landing mid-run.
+            find /tmp/gha-data-new/gha_data -mindepth 1 -type d -regextype posix-extended \
+                -regex '.*/[0-9]{4}-[0-9]{2}-[0-9]{2}' | while read -r d; do
+              base="$(basename "$d")"
+              [[ "$base" < "$KEEP_FROM" ]] && rm -rf "$d"
+            done
+
+            cd /tmp/gha-data-wt
+            git checkout --orphan "gha-data-pruned-tmp" "origin/${DATA_BRANCH}" >/dev/null 2>&1 \
+              || git checkout --orphan "gha-data-pruned-tmp"
+            git rm -rf --cached . >/dev/null 2>&1 || true
+            find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+            cp -r /tmp/gha-data-new/gha_data .
+            git add gha_data
+            git -c user.name=retention-bot -c user.email=retention-bot@users.noreply.github.com \
+              commit -m "retention: prune gha-data to last ${RETENTION_DAYS} days (keep >= ${KEEP_FROM})" \
+              || { echo "nothing to prune (already within window)"; success=true; break; }
+
+            # atomic compare-and-swap: only push if origin/gha-data is still exactly pre_sha.
+            if git push --force-with-lease="${DATA_BRANCH}:${pre_sha}" origin "HEAD:${DATA_BRANCH}"; then
+              success=true; break
+            fi
+            echo "lease rejected (remote moved during prune) -- attempt ${attempt}, retrying"
+            git checkout --detach HEAD >/dev/null 2>&1 || true
+            git branch -D gha-data-pruned-tmp >/dev/null 2>&1 || true
+          done
+          [ "$success" = true ] || { echo "gha-data prune failed after retries" >&2; exit 1; }
+
+      - name: prune bot branch gha_data/ day-dirs (git rm, normal commit -- NO history rewrite)
+        if: steps.archive_upload.outputs.all_ok == 'true'
+        run: |
+          set -euo pipefail
+          KEEP_FROM="$(date -u -d "$(date -u +%F) -$((RETENTION_DAYS - 1)) days" +%F)"
+          cd /tmp/bot-wt
+          to_remove="$(find gha_data -mindepth 1 -type d -regextype posix-extended \
+              -regex '.*/[0-9]{4}-[0-9]{2}-[0-9]{2}' | while read -r d; do
+            base="$(basename "$d")"
+            [[ "$base" < "$KEEP_FROM" ]] && echo "$d"
+          done)"
+          if [ -z "$to_remove" ]; then
+            echo "nothing to prune on bot branch (already within window)"; exit 0
+          fi
+          echo "$to_remove" | xargs -d '\n' git rm -rq -- || true
+          git -c user.name=retention-bot -c user.email=retention-bot@users.noreply.github.com \
+            commit -m "retention: prune archived gha_data/ day-dirs older than ${KEEP_FROM} (raw data preserved in GitHub Release; old blobs remain in this branch's git history -- see RETENTION_LOG.md)"
+          for i in 1 2 3 4 5; do
+            git push origin "HEAD:${BOT_BRANCH}" && exit 0
+            git fetch --no-tags --depth=1 origin "${BOT_BRANCH}"
+            git rebase "origin/${BOT_BRANCH}" || { echo "rebase conflict pruning bot branch -- manual intervention needed" >&2; exit 1; }
+            sleep $((RANDOM % 6 + 2))
+          done
+          echo "bot branch prune push failed after retries" >&2; exit 1
+
+      # ---------------------------------------------------------------------------------------
+      # LOG PHASE -- always append a summary row, even on a no-op or a failed/skipped prune, so
+      # RETENTION_LOG.md is a complete audit trail of every run.
+      # ---------------------------------------------------------------------------------------
+      - name: append run summary to RETENTION_LOG.md on main
+        if: always()
+        run: |
+          set -euo pipefail
+          RUN_DATE="$(date -u +%F)"
+          STATUS="ok"
+          [ -f /tmp/archive_all_ok ] && [ "$(cat /tmp/archive_all_ok)" = "true" ] || STATUS="verify-failed-no-prune"
+          [ -f /tmp/archive_all_ok ] || STATUS="archive-phase-error"
+
+          [ -f RETENTION_LOG.md ] || printf '# Retention Log\n\nAutomated rows appended by .github/workflows/archive.yml. Each row is one archive-and-prune run: day-dirs older than RETENTION_DAYS (14) moved from a hot git branch into a GitHub Release asset (verified byte-for-byte before any deletion), then pruned from the branch.\n\n| run_date (UTC) | branch | days_archived | bytes_freed | release_tag(s) | status |\n|---|---|---|---|---|---|\n' > RETENTION_LOG.md
+
+          if [ -f /tmp/archive_summary.tsv ] && [ -s /tmp/archive_summary.tsv ]; then
+            while IFS=$'\t' read -r branch days bytes tags; do
+              printf '| %s | %s | %s | %s | %s | %s |\n' "$RUN_DATE" "$branch" "$days" "$bytes" "${tags:-none}" "$STATUS" >> RETENTION_LOG.md
+            done < /tmp/archive_summary.tsv
+          else
+            printf '| %s | (none) | 0 | 0 | none | %s |\n' "$RUN_DATE" "$STATUS" >> RETENTION_LOG.md
+          fi
+
+          git config user.name  "retention-bot"
+          git config user.email "retention-bot@users.noreply.github.com"
+          git add RETENTION_LOG.md
+          git commit -m "retention: log ${RUN_DATE} archive run (${STATUS})" || { echo "no log changes"; exit 0; }
+          for i in 1 2 3 4 5; do
+            git push origin HEAD:main && exit 0
+            git fetch --depth=1 origin main
+            git rebase origin/main || { echo "rebase conflict on RETENTION_LOG.md -- manual intervention needed" >&2; exit 1; }
+            sleep $((RANDOM % 6 + 2))
+          done
+          echo "RETENTION_LOG.md push failed after retries" >&2; exit 1
+
+# ---------------------------------------------------------------------------------------------
+# OPERATOR-ONLY FOLLOW-UP (not automated by this workflow, on purpose):
+#
+# Pruning claude/polymarket-bot-live-ready-vw7ut5's gha_data/ only removes the CURRENT tree
+# entries for old day-dirs -- the blobs are still reachable through that branch's commit history,
+# so this alone does not shrink .git for that branch. Reclaiming that space requires rewriting the
+# bot branch's history (e.g. `git filter-repo --path gha_data --invert-paths` scoped to commits
+# older than the retention window, or a periodic squash of old history), which force-rewrites a
+# branch with real code commits -- a decision with blast radius (open PRs, other clones, CI caches
+# keyed to commit SHAs) that should be made deliberately by a human, not by a scheduled job. This
+# workflow's RETENTION_LOG.md rows make the accumulating cost visible; when it's material, an
+# operator should run a one-off history rewrite on that branch and force-push it themselves.
