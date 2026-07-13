@@ -8,9 +8,14 @@
 #   - Runs pnl_guard.py (statistical P&L variance guard, ESCALATION_PLAN.md MONITORING section):
 #     Telegram-alerts on SEV-AMBER/SEV-RED. Read-only guard: reports only, never touches
 #     LIVE_SWITCH/bankroll/the ladder step -- de-escalation on SEV-RED is an OPERATOR action.
+#   - Runs activity_guard.py (2026-07-13 incident fix: 38h zero-placements while every other check
+#     said "running"). Telegram-alerts on SEV-AMBER/SEV-RED like pnl_guard, AND opens/updates a
+#     tracking GitHub issue ("BOT-INACTIVE: zero placements during active hours") that the daily
+#     improvement cycle reads as its debugging queue -- and self-heals (comments + closes) that
+#     issue once activity resumes.
 #
 # Like the others, this file must live on the DEFAULT branch (main) for its schedule to fire; it
-# checks out CODE (health_check.py, notify.py, pnl_guard.py) from $BRANCH.
+# checks out CODE (health_check.py, notify.py, pnl_guard.py, activity_guard.py) from $BRANCH.
 name: health
 
 on:
@@ -21,6 +26,7 @@ on:
 permissions:
   contents: read
   actions: write               # reseed: dispatch collect.yml if collection is dead
+  issues: write                 # activity_guard debugging-loop trigger: open/comment/close BOT-INACTIVE issue
 
 concurrency:
   group: health
@@ -133,5 +139,58 @@ jobs:
             export PNL_GUARD_MSG="$out"
             if [ "$rc" = "20" ]; then export PNL_GUARD_MSG="*** SEV-RED *** $out"; fi
             python3 -c "import os, notify; notify.alert_sync(os.environ['PNL_GUARD_MSG'])" || true
+          fi
+          exit 0    # never fail the monitor itself (guard failures aren't collection/live failures)
+      - name: activity guard (bot-inactive detector -- 2026-07-13 38h-zero-placements incident fix)
+        # activity_guard.py is stdlib-only (no numpy dependency needed for its counting logic), so
+        # no extra pip install step. Same Telegram mechanism as pnl_guard above. ADDITIONALLY opens
+        # the debugging-loop trigger: SEV-AMBER/SEV-RED create-or-comment a tracking issue (the
+        # daily improvement cycle's debugging queue is "open issues"); a later OK-with-activity run
+        # self-heals by commenting + closing that issue. Read-only on trading state: never touches
+        # LIVE_SWITCH/bankroll/the ladder step, only files/updates the issue and alerts.
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          rc=0; out=$(OMP_NUM_THREADS=2 python3 activity_guard.py 2>&1) || rc=$?
+          echo "activity_guard rc=$rc"
+          echo "$out"
+          TITLE="BOT-INACTIVE: zero placements during active hours"
+          TS="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+          find_open_issue() {
+            gh issue list --state open --json number,title --jq \
+              ".[] | select(.title == \"$TITLE\") | .number" 2>/dev/null | head -1
+          }
+
+          if [ "$rc" = "10" ] || [ "$rc" = "20" ]; then
+            export ACTIVITY_GUARD_MSG="$out"
+            if [ "$rc" = "20" ]; then export ACTIVITY_GUARD_MSG="*** SEV-RED *** $out"; fi
+            python3 -c "import os, notify; notify.alert_sync(os.environ['ACTIVITY_GUARD_MSG'])" || true
+
+            num=$(find_open_issue)
+            body="**[$TS UTC] activity_guard exit=$rc**
+
+          \`\`\`
+          $out
+          \`\`\`"
+            if [ -n "$num" ]; then
+              echo "existing open issue #$num -> commenting"
+              gh issue comment "$num" --body "$body" || true
+            else
+              echo "no open issue -> creating"
+              gh issue create --title "$TITLE" --body "$body" || true
+            fi
+          elif echo "$out" | grep -q "placements="; then
+            plc=$(echo "$out" | grep -oP 'placements=\K[0-9]+' | head -1)
+            if [ -n "$plc" ] && [ "$plc" -gt 0 ]; then
+              num=$(find_open_issue)
+              if [ -n "$num" ]; then
+                echo "activity restored -> commenting + closing open issue #$num"
+                gh issue comment "$num" --body "**[$TS UTC]** activity restored :: $out" || true
+                gh issue close "$num" --reason completed || true
+              fi
+            fi
           fi
           exit 0    # never fail the monitor itself (guard failures aren't collection/live failures)
