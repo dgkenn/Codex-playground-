@@ -93,6 +93,21 @@ per PAIRING_FINDINGS.md and PAIR_GATE.md.
 |---|---|---|---|
 | G2 | side selection at quote: (a) both always (status quo), (b) lean drift-aligned, (c) only theo-favored side, (d) asymmetric size | ❌ dead | drift-aligned vs against fills: EV diff −0.03c, t=−0.08. Side doesn't matter at fill; no lean justified |
 | G6 | day-after-bad-day sizing: (a) full size, (b) half size, (c) skip day | ❌ no basis | day-EV lag-1 autocorr +0.126 (n=33, NS). Bad days do NOT persist across days (they persist WITHIN days — F9). Keep full size next day |
-| G7 | hour-of-day gating: (a) trade all hours, (b) skip worst-k hours, (c) vol-condition instead, (d) hour-specific edge demand | 🟡 promising, caveat | worst-4 hours (5,9,1,20 UTC) cost −1.44c/event, t=−2.09 — BUT hours picked post-hoc on same data (multiple-testing inflated). Needs train-select/test-validate before adoption; run in round 2 |
-| G8 | avoid near-par entries (\|p1−0.5\|<0.1): (a) hard skip, (b) demand wider edge near par, (c) size down near par | 🟡 strongest new signal | near-par fills cost −1.13c MORE per event, t=−3.62, monotone across buckets (−5.66c near par → −1.81c extreme). Mechanism: fees peak at p=0.5 + maximal outcome uncertainty. 43% of events → hard skip too costly in volume; (b)/(c) preferred. Needs net-of-box-edge eval |
+| G7 | hour-of-day gating: (a) trade all hours, (b) skip worst-k hours, (c) vol-condition instead, (d) hour-specific edge demand | ❌ DEAD (round-2 honest test) | train-selected worst hours evaluated on held-out test days: +0.12c, t=0.24. The round-1 −1.44c was a multiple-testing artifact. Trade all hours |
+| G8 | avoid near-par entries (\|p1−0.5\|<0.1): (a) hard skip, (b) wider edge near par, (c) size down | ❌ ABSORBED by gate (round-2) | full-sample t=−3.62 is real but vanishes on gate-passed events (pooled −0.02c t=−0.02; BTC +0.95c NS). The near-par penalty lives in windows the live gate already rejects. No add-on needed |
 | G9 | concurrent multi-asset exposure: (a) independent sizing (status quo), (b) same-window combined cap, (c) correlation-scaled sizing | ✅ RISK FINDING | same-window strand correlation across assets is LARGE: btc-eth 0.43, eth-sol 0.40, all pairs 0.28–0.43. Concurrent legs ≈ one correlated bet, not four. Validates net-delta caps; if multi-asset ever resumes, size as ~1.5 independent bets, not 4. Pure Sharpe protection |
+
+## H. ROUND-4 NODES (loop round 2/3, 2026-07-13)
+
+| node | decision + solutions | verdict | evidence |
+|---|---|---|---|
+| H1 | settlement-basis risk on held legs: how close to strike is "too close to call" at expiry? Solutions: (a) ignore, (b) fixed uncertainty band, (c) modeled CF-vs-spot basis | ✅ QUANTIFIED → (b) | settle vs our spot ~57s pre-close: abs-median ≈ 2bps, p95 ≈ 9–11bps (BTC & ETH, n=355). Any D3 hold-to-settle model must treat legs within ~10bps of strike late-window as coin flips (uncertainty floor). Risk parameter, zero engineering beyond a constant |
+| H2 | iceberg/display-size quoting | ❓ no data | Kalshi API has no iceberg; moot |
+| H5 | stale-feed threshold (currently ~15s suppress) | ❓ low value | only 4 stale events/day, all ~15.5s; not enough data to tune; leave |
+| H6 | strike-band selection when quoting (near-money only vs wider) | 🟡 note | strikes are chained (next strike = last settle, verified in index); current near-money-only is right; revisit only with multi-strike quoting ambitions |
+
+### Round-2-of-loop meta-lesson
+Both round-1 "promising" leads (G7 hours, G8 near-par) died under honest validation
+(held-out test / deployable-subset). In-sample screens on 13 test days overfit fast —
+every future lever gets the train-select/test-validate treatment before entering the
+deploy queue.
