@@ -784,3 +784,17 @@ fast/slow markout split daily as data accumulates — if the >1s-fill adverse se
 ~2 weeks, the anti-staleness edge is real; (b) OR test it on the hires sub-second tape (~07-18) where
 staleness is directly observable. Deploy proposal (operator, propose-only): tighten --order-ttl-s /
 add cancel-on-spot-move; forward-validate that it shifts fills toward <1s and lifts realized.
+
+## NO-EDGE-DEFINITIVE (2026-07-14, /goal — the complete-data verdict)
+Pooled ALL available live realized (settlement-reconciled): 06-13, 06-14, 07-12, 07-13, 07-14 =
+139 windows / 5 days. Per-day sums: +1.96, −2.85, −0.27, −1.52, −2.11. POOLED mean/win −0.0344,
+per-window t=−1.23, **day-clustered t = −0.08** (5 days), 95% CI [−0.089, +0.020]. The current
+strategy's realized edge is STATISTICALLY ZERO. This is the definitive answer to /goal: a "winning
+profitable strategy" requires demonstrated t>2 POSITIVE realized edge; the complete data gives
+t=−0.08. You cannot demonstrate profitability the data does not contain — this is a statistical fact,
+not a research shortfall. Every alternative tested (~15) fails OOS on this sample; the best lead
+(ADV-SELECT anti-staleness) is mechanism-grounded but flips OOS on 3 days. DEMONSTRATION is therefore
+gated on one of: (a) deploying a candidate and accumulating weeks of realized data; (b) the hires
+fill model (~07-18) to counterfactually test quote-changing candidates. No honest analysis of the
+current 5 days can produce a demonstrated winner. Operator decision required — this is the terminal
+state of what analysis alone can establish.
