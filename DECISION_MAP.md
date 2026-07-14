@@ -369,3 +369,37 @@ spot realized vol (from fills_all ctx.spot, 97 windows 07-13/07-14):
   disposal stack already shrank the losses to ~−15c — the streak is a real but low-stakes bleed.
   VERDICT: statistically sound predictor + prevention lever BUILT and forward-testing; deploy
   only after the gate (rail-1 propose-only for any live entry-veto regardless).
+
+## OV-STATE (2026-07-14, operator ask: "pool all data at finest fidelity; unsupervised learning / Markov / K-means to define the streak-causing state")
+Pooled 2864 BTC windows over 33 days (regime/tick_features.csv: per-window realized vol, mean
+spread, mean depth, tick count) joined to box_shadow live-arm outcomes (631 windows, 10 days;
+bad = bottom-quintile locked OR stranded, ~7.6%). GaussianMixture, BIC-selected K=5. Method
+broke the small-live-sample bottleneck by using the replayed live-arm P&L as the large-N label.
+
+- STATE DISCOVERY ✅ **A sharp bad-window state exists: tight-spread / illiquid / quiet.** The 5
+  GMM states span 2.8%→22.7% bad rate (8× spread). Worst state = LOW tick-rate (314 vs ~650),
+  low vol = the quiet/illiquid window (matches STRAND-ATTR: price hovers at strike, one leg never
+  completes). Contemporaneous discrimination is STRONG and temporally validated: single mean_spread
+  AUC ~0.74 pooled, and on a June-train/July-test holdout the tight-spread→bad direction holds at
+  AUC ≈0.76 (widest-spread quintile has 0.29× the bad rate). This is a much sharper CONTEMPORANEOUS
+  signal than single trailing-vol (0.65) — answers "there should be a higher-AUC signal": yes, but
+  only WITHIN the window, from the full microstructure state.
+
+- MARKOV / PERSISTENCE ✅ **The bad state does NOT persist → it CANNOT be the streak cause.** Fitted
+  5-state transition matrix: self-persistence p_stay 0.25–0.37, expected dwell ~1.4 windows (~21 min)
+  for EVERY state incl. the worst (0.29). Simulating the fitted state-Markov + state-conditional bad
+  rates over 97 windows: P(bad-run≥6) = 0.000 (mean max-run 1.45) — FEWER long runs than independent
+  draws (P≥6 = 0.003). And LEADING (prior-window state → this-window bad) AUC = 0.48 (nil). The market
+  microstructure state reshuffles too fast to generate a 6-in-a-row streak.
+
+- VERDICT ✅ **Unsupervised + Markov DECISIVELY REFUTES the persistent-market-regime hypothesis for
+  the streaks.** The bad state is real but TRANSIENT (visited, not dwelt in). Reconciles with OV-CLUSTER
+  (streaks = compounding of weak autocorr + chance clustering of the tiny near-strike coin-flips), not a
+  sticky regime. The lever therefore is NOT a pre-window streak-breaker (leading signal ~nil) but an
+  IN-WINDOW defensive trigger: tight-spread/illiquid is detectable in a window's first seconds → switch
+  to defensive completion. CAVEATS: (1) outcome is replay locked, and mean_spread may couple
+  mechanically with locked — needs live-P&L confirmation before any deploy; (2) a persistent driver, if
+  one exists, must live OUTSIDE these 4 market features — directional spot drift, bot inventory carryover,
+  or sub-second structure (P1 hires, retest ~07-18). Those are the only remaining places a streak-
+  predictor could hide. NEXT: build the in-window tight-spread/illiquid defensive-completion arm; test
+  drift-persistence + hires sub-second features for any true leading signal.
