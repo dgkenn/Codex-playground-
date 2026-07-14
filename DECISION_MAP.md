@@ -840,3 +840,27 @@ strategy is edgeless (t=−0.08) AND the leading fix hypothesis is refuted by th
 edge must come from capturing positive box width at ENTRY (a quoting/pricing question needing the
 fill model + weeks) — not from quote-timing. Research has converged: no winning strategy is
 discoverable OR mechanistically supported in the data available today.
+
+## SPREAD-CAPTURE (2026-07-14, "more research" — the edge LOCATED precisely, grounded in measurement)
+Hard-measured the theoretical edge and where it leaks. The bot is a double-maker: buy-YES@bid +
+buy-NO@bid -> a completed box costs $1 − spread, so the EDGE IS THE SPREAD. Measured spread at our
+3860 fills: mean 1.18c/box (median 1c, 84% at 1c). Theoretical prize if every box completed
+double-maker: ~1.18c * ~730 boxes = ~$8.59/window. REALIZED clean-box ≈ 0 -> we capture ~NONE of it.
+CRUCIALLY it is NOT lost to crossing (only 3.0% taker fills). It is lost to MAKER-CHASING: the bot
+seeds wide (--seed-width 4c) but reprices the COMPLETING leg toward the ask to get filled, eroding
+box cost from ~$0.96 back to ~$1.00. We give the spread away to complete.
+THE HYPOTHESIS (best-grounded of the session): HOLD the completing quote FIRM at the target width
+(the completing-leg price cap: never complete a box above $1 − w) instead of chasing. Then completed
+boxes capture the full spread w (~1c), and the cost is MORE strands. The logic for why this is
+positive-EV: strands are ~ZERO-MEAN (NO-EDGE-DEFINITIVE / t=−1.39). If hold-firm strands stay
+zero-mean, expected edge = (completion_rate) * spread > 0 -- you capture ~1c on completions and the
+extra strands don't cost in expectation. Expected realized ≈ p_complete * 1c/box, plausibly +$3-5/wk.
+THE CATCH (why it needs the fill model): hold-firm may strand SELECTIVELY on adverse moves (you fail
+to complete precisely when the market ran away), making hold-firm strands NEGATIVE-mean, not zero.
+Whether the strand distribution stays zero-mean under hold-firm is THE question, and it is a
+counterfactual (which fills would/wouldn't happen) -> needs the fill model (hires tape, ~07-18).
+STATUS: this is a HYPOTHESIS with a real mechanism + hard measurement (spread=1.18c, 97% maker,
+realized≈0), far better grounded than anti-staleness (refuted) — but NOT demonstrated; the strand-
+neutrality assumption is unvalidated. This is the #1 thing to test with the fill model: simulate
+hold-firm completion, measure the resulting strand-mean and net realized. If strands stay ~zero-mean,
+this is the winning strategy. Supersedes ADV-STALE-CONFIG as the lead candidate.
