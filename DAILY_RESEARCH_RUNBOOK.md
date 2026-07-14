@@ -115,7 +115,11 @@ the channel. Never take a live action to "fix" it — escalate to the operator.
 
 ## 4. STEP 2 — INGEST (append the new day to the forward ledger)
 - Pull the new day's `gha_data` (box_shadow rows) and `live_state` (winrec/metrics).
-- Score the forward arms: on the bot branch, run `box_shadow_report.py` over the gha-data
+- Score the forward arms TWO ways, realized first:
+  (a) `python live_anchor.py --days <all live days>` (research branch) — entry-veto arms scored on
+  ACTUAL realized P&L (tested==live by construction; node LIVE-ANCHOR). THIS is the promotion
+  currency for veto arms; box_shadow deltas are advisory only (fill model is fiction — SIM-LIVE-GAP).
+  (b) on the bot branch, run `box_shadow_report.py` over the gha-data
   box_shadow rows to get, **per arm**: day-clustered mean EV/window and t vs the `live` arm,
   strand%, and the **risk benchmark** (variance, CVaR5, worst window/day, day-Sharpe, max
   drawdown). Risk reduction is a first-class promotion criterion — an arm may promote on a

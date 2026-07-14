@@ -675,3 +675,20 @@ hires-tape fill model exists (~07-18, node P1). (3) Entry-VETO arms don't need a
 — they only REMOVE windows whose realized P&L we KNOW. BUILD: live-anchored counterfactual scorer
 (live_anchor.py) — scores veto arms against actual live realized outcomes; sim=live by construction.
 This is the only strategy-testing path that satisfies the #1 goal TODAY.
+
+## LIVE-ANCHOR (2026-07-14, built — the tested==live scorer, and its first verdict)
+live_anchor.py scores entry-veto arms against ACTUAL live realized P&L (paired→window_mark,
+strand→net_final): tested==live by construction, no fill model involved. First run (07-12..14,
+108 windows, realized +$1.57):
+  volgate  veto 28 → kept −$0.31 (delta −$1.88, vol-match p=0.79)
+  nsmove   veto 26 → kept −$0.21 (delta −$1.78, p=0.79)
+  thickbook veto 9 → kept −$0.51 (delta −$2.08, p=0.95)
+  c3_share veto 7 → kept −$0.81 (delta −$2.38, p=0.99)
+❗ ON REAL MONEY, EVERY VETO ARM HURTS: each removes windows that were BETTER than random
+(p 0.79–0.99 = their removals cost more than random removals). The replay said +1–2c/win because
+its fictional baseline made typical windows look like −5c losers worth skipping; in reality windows
+average +1.5c and skipping them burns realized profit. The sim-live gap, caught in the act.
+CAVEATS: 3 days / 108 windows, strand variance in kept sets, feature parity with box_shadow is
+approximate (fills-derived depth/vol vs tape-derived). Not a kill — a REBASE: the 07-24 promotion
+gate for veto arms must be judged on live_anchor realized deltas, NOT box_shadow locked deltas.
+An arm that passes the fictional gate but fails the realized gate does not deploy. Runbook updated.
