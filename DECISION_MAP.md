@@ -717,3 +717,33 @@ default-off, operator word to enable): (1) --cross-self-cancel: before a crossin
 flatten order, cancel own resting opposite-side orders that would self-cross; (2) unconditional
 logging of the 400 response body (diagnostics; decides the count_fp question). Forward validation
 after enable: rejects/day ↓, negative-width tail ↓, TRUE realized/window ↑ vs the reconciled baseline.
+
+## ZERO-EDGE (2026-07-14, /goal find-a-winning-strategy — the honest bottom line; CORRECTS EXEC-FAIL)
+Two of my own EXEC-FAIL claims are REFUTED by the discriminating tests I then ran (recording both,
+per the do-not-fabricate rule this whole session established):
+- SELF-CROSS causes rejects → REFUTED. Rejected orders self-cross 75%, FILLED orders self-cross 91%
+  (the bot always has opposite quotes up). Self-cross does not cause the 400s.
+- REJECTS cause the losses → REFUTED. corr(reject_count, realized)=0.053; the worst window (−$1.84)
+  had ZERO rejects; worst 3 windows are all STRANDS. Do NOT build --cross-self-cancel.
+What survives from EXEC-FAIL: 115 rejects/2d is real hygiene debt (60 fractional count_fp → F14
+flatten silently failing; 55 integer rejects cause UNKNOWN). The reject-body `details` logging
+(prepared, propose-only) is the right + only justified fix — it diagnoses without a behavior change.
+
+TRUE realized decomposition (settlement-based, 103 windows, 2.1 days), THE bottom line:
+- CLEAN paired boxes (n=96): mean **−0.0002/win**, sum −$0.02 — **BREAKEVEN. There is no width edge.**
+- STRAND (n=7): mean −0.556/win, sum −$3.89, mean t vs 0 = −1.39 — **zero-mean coin-flips, unlucky.**
+- The −$3.49 balance = negative strand variance on a ZERO-edge base. Not execution, not measurement,
+  not a specific loss mode — the strategy simply has no realized edge.
+WHY (mechanism): live markout is NEGATIVE (−$10.44/SIM-LIVE-GAP-2) = ADVERSE SELECTION. The bot
+captures nominal quoted width but gives it all back to fills that precede adverse moves; net width
+after adverse selection ≈ 0. This is also why every mechanical lever (vetoes/price-cap/k-cap/
+cost-stop) FAILS realized testing — you cannot re-slice a zero-mean process into profit.
+
+GOAL VERDICT — HONEST: **we do NOT have a demonstrated winning profitable strategy.** The current
+approach is zero-edge; "days to confirm profitability at t=2" = ∞ because the true mean is ~0. A real
+edge must come from REDUCING ADVERSE SELECTION — wider quoting (buffer vs the leg1→leg2 move) or
+faster/smarter quoting (avoid toxic fills). BOTH are quote-changing → require a calibrated fill model
+to test honestly (hires tape, node P1, ~07-18). Until then, no honest test can produce a winner, and
+manufacturing one would be the av_stoikov error again. The deliverable toward the goal is therefore:
+(1) this rigorous zero-edge finding; (2) the fill-model harness as the prerequisite; (3) the
+adverse-selection-reduction hypotheses (quote-width, latency) queued for when it exists.
