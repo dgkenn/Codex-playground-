@@ -624,3 +624,32 @@ against realized. FIX (the only way to "accurately test strategies"): score on R
 settlement P&L reconciled to the balance. Built realized_pnl.py (this cycle). MANDATE (added to
 runbook): no strategy is a "winner" until it clears the gate on realized P&L, not markout/paper-mark.
 Re-validate av_stoikov + all arms on realized before any deploy weight is placed on them.
+
+## SIM-LIVE-GAP (2026-07-14, #1 GOAL: tested performance must match live performance)
+Quantified box_shadow 'live' arm (the sim) vs actual live realized (winrec window_mark), 95 aligned
+windows 07-12/07-13. VERDICT: the sim CANNOT predict live — and it's not a fixable offset.
+- OVERALL: sim −5.19c/win vs live −1.68c/win → bias −3.51c (sim too pessimistic); per-window
+  corr **0.17**. A bias constant can't fix a 0.17 correlation.
+- DETERMINISTIC (neither stranded, n=79, no settlement luck): sim −0.71c vs live **+1.30c** (live
+  paired edge is POSITIVE, sim gets the sign wrong); per-window corr **0.036**. The sim fails on the
+  DETERMINISTIC box economics — proof the FILL MODEL doesn't reproduce which quotes fill at what
+  price (box cost is what it gets wrong). This is the core defect, not settlement luck.
+- STRAND (n=16): sim −27c vs live −16c, corr −0.23. Settlement is a $0/$1 coin flip → irreducible.
+- VARIANCE DECOMP: strand windows are 7% of windows but **54% of total P&L variance**. The signal
+  (deterministic edge +1.3c, var 0.0033) is dwarfed by strand coin-flip noise (var 0.183). So both
+  measurement AND prediction are luck-dominated.
+
+WHY TESTED ≠ LIVE (root): (1) the fill model has ~zero correlation with actual fills → the sim's
+box costs are fiction; (2) strand settlement variance (54%) is irreducible noise that no sim predicts
+and that swamps the small edge, so aggregate P&L is a luck read over ~200 windows.
+
+TWO LEVERS TO EARN CONFIDENCE (both required):
+  A. CALIBRATE THE FILL MODEL against the live tape (order_lifecycle × fills × book context) so the
+     sim reproduces actual box costs — validate: per-window corr(sim, live) on deterministic windows
+     rises from 0.036 toward >0.5 and bias → 0. Until then no sim number is trustworthy.
+  B. ELIMINATE STRANDS to remove the 54%-of-variance coin-flip. With strands gone, live P&L ≈ the
+     deterministic paired edge (+1.3c, low-variance, measurable), which a calibrated sim CAN predict.
+     (This re-frames the disposal stack: its value isn't just EV, it's making the system MEASURABLE.)
+NEXT: build the fill-model calibration harness (lever A) — fit P(fill|book,quote-position) to the
+live order/fill tape, re-run box_shadow with it, and re-measure corr + bias vs live. That harness IS
+the confidence gate: a strategy's tested number is only trusted once the sim predicts the balance.
