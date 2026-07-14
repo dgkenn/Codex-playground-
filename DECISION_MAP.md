@@ -923,3 +923,25 @@ analysis. CONCLUSION: the last existing-data lead is closed. Every path a strate
 current data is now exhausted. Advancing the /goal requires NEW DATA or an INFRA decision (both the
 operator's), not further autonomous analysis on what we have. Holding for operator direction; will not
 fabricate a winner.
+
+## PAIRED-ZERO-DECOMP (2026-07-14, cleanest single proof; kills positive-selection too)
+Tested the one counterintuitive live-money angle left: live_anchor showed every ENTRY VETO HURTS realized
+(kept EV < base $2.57), which means the windows vetoes REMOVE are better than average -> a positive-
+SELECTION strategy ("trade ONLY thick-book / high-depth-share / high-vol windows") might be the hidden
+winner. Decomposed the realized to find out. RESULT -- it is 100% strand luck, not edge:
+  - PAIRED boxes (real box economics): +$0.16 over 148 windows = +0.1c/window == EXACTLY ZERO. Independent
+    confirmation of NO-EDGE-DEFINITIVE / t=-0.08, from raw decomposition with no model.
+  - STRANDS (naked-leg coin flips, +-$1-2 each): +$2.43 over just 16 windows. The ENTIRE apparent +$2.57
+    "profit" is 16 strands that happened to settle up. +$2.43 over 16 Bernoulli legs is well inside the
+    +-$4-5 noise band -- could as easily be -$2.43. Top-12 windows by realized are ALL stranded.
+  - So "thick-book/c3_share removes the profitable windows" was an ARTIFACT: those windows stranded and got
+    lucky. Positive-selection on them = selecting high-variance coin flips that won IN-SAMPLE; zero forward
+    value (a strand is zero-mean by construction). Confirmed: NO real positive subset exists.
+TRIANGULATED NULL now from THREE independent angles: (1) mechanism (leg-in adverse selection),
+(2) aggregate realized day-clustered t=-0.08, (3) this paired/strand decomposition (paired = +0.1c/win).
+ALTERNATIVE STRATEGY FAMILIES also closed this session: directional 15m-settlement forecasting is NOT
+testable (no strike/settled_up recorded in telemetry; and 15m BTC direction is a near-martingale a 2c
+spread cannot beat) and ETH is unfalsifiable (ETH-NO-REALIZED). CONCLUSION stands, now maximally hardened:
+no winning profitable strategy exists in the current data or instrument -- the paired edge is zero to 0.1c
+and the only P&L is strand variance. A real winner requires a structurally different instrument/edge and
+NEW data to test it on; it cannot be manufactured from what we have without fabricating.
