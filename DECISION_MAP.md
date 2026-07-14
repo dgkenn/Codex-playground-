@@ -907,3 +907,19 @@ zero (t=-0.08), every fix is refuted by the leg-in adverse-selection mechanism, 
 infra is marginal. The honest, complete, terminal finding. The realized-truth measurement framework
 built this session (realized_pnl, live_anchor, the settlement reconciliation, the hires analyses) is
 the durable asset: it is what makes this a PROVEN negative instead of another markout-based illusion.
+
+## ETH-NO-REALIZED (2026-07-14, closing the last data-existing lead)
+Before accepting the terminal box-making verdict, chased the one remaining within-scope lead: the ETH
+sleeve, which FORWARD_LEDGER flagged weak-positive (back2 +0.2-0.4c/win; pair 87.6%; 30% of fills at
+2-3c) exactly where BTC is the toxic falsification control. Hypothesis: ETH's wider spread / thinner
+book might exceed the chase cost that zeroes out BTC. RESULT: NOT TESTABLE ON REALIZED MONEY. ETH was
+never traded live -- origin/live-state carries BTC only (winrec/recon/metrics/fees all *_btc15m). The
+ETH "metrics" on gha-data are paper box_policy_ab job logs (many are sklearn-ImportError tracebacks),
+not settlement records, and the only ETH P&L signal (back2) is quote-CHANGING -> it lives on the
+box_shadow fill model, which SIM-LIVE-GAP proved has ~0 correlation (0.036) with live realized. So the
+ETH edge is UNFALSIFIABLE with existing data -- the same wall as BTC, not a way around it. To become a
+real lead ETH needs live paper/small-size collection (an operator data-collection decision), not more
+analysis. CONCLUSION: the last existing-data lead is closed. Every path a strategy search can reach with
+current data is now exhausted. Advancing the /goal requires NEW DATA or an INFRA decision (both the
+operator's), not further autonomous analysis on what we have. Holding for operator direction; will not
+fabricate a winner.
