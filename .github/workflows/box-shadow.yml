@@ -29,7 +29,10 @@ name: box-shadow
 
 on:
   schedule:
-    - cron: '47 2 * * *'
+    - cron: '47 */3 * * *'   # every 3h (00:47,03:47,...): idempotent replay, backfills the
+    #                              trailing week; frequent cadence dodges GitHub's unreliable
+    #                              first-run-of-a-new-daily-cron skip (observed 2026-07-14: the
+    #                              02:47 daily slot never fired). Multiple chances/day + dedup.
   workflow_dispatch: {}
 
 permissions:
