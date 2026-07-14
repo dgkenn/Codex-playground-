@@ -438,3 +438,24 @@ noise (don't try to prevent them). NEXT: (a) sharpen the leading detector to TAR
 big-loss subset (trailing |drift| / vol regime) rather than all negatives; (b) forward-collect the
 big-loss subset to validate the 0.875; (c) trigger defensive completion (not skip) when the regime
 fires, since the loss mode is adverse completion.
+
+## OV-STRIKE (2026-07-14, operator: "could it be pegged to price or movement of price in BTC?")
+YES — unifies both loss populations. The Kalshi box strike is pegged to BTC price; the leg prob
+mid≈0.5 is a direct readout of "spot AT the strike." Live overnight (moneyness = |mid−0.5|,
+leg-swing = mid range over the window):
+- SETUP (both loss types): near-strike. entry |mid−0.5| big=0.068 small=0.076 vs winners 0.102;
+  closest approach big=0.048 small=0.059 vs 0.085. You can only lose when spot is at the strike
+  (coin-flip zone) — confirms STRAND-ATTR for BOTH populations.
+- TRIGGER (separates big from small): PRICE MOVEMENT at the strike. leg-swing big=0.114 vs
+  small=0.050 ≈ winners 0.048 (2.3×). AUC(mid_travel→big)=0.611, →small=0.520. Strike CROSSING
+  per se does not discriminate (AUC 0.49) — it's the magnitude of movement, not a discrete cross.
+- MECHANISM (complete unification): spot at strike + STILL → leg never completes → strand/coin-flip
+  = SMALL loss (movement ≈ winners). Spot at strike + MOVING → complete 2nd leg at adverse price
+  = BIG loss (movement 2.3×, = OV-2POP's drift-driven type). And movement persists (|drift| autocorr
+  0.52) → big losses cluster + are leading-predictable (OV-2POP AUC 0.875 provisional).
+- PRICE LEVEL (round numbers): losses marginally nearer $500 marks (dist $82/$85 vs winners $112)
+  but n=6, weak — do not over-read.
+CAVEAT: n=6 big, mid_travel AUC 0.611 modest/noisy. VERDICT: the loss is pegged to price-relative-
+to-strike (setup) AND triggered by price movement at the strike (trigger) — both required. The
+sharpened predictive feature is the INTERACTION near-strike × high-movement-regime, not raw drift;
+forward-test that as the big-loss detector.
