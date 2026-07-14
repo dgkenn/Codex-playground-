@@ -253,7 +253,7 @@ L0_QDEPTH_C_MAX = 6717.0
 L0_MINUTE1_MAX = 7.0
 
 ARMS = ["live", "hazard_stop", "thickbook_veto", "cell_veto", "givecap15", "combined",
-        "stack_full", "stack_lean", "c3_share", "back2"]
+        "stack_full", "stack_lean", "c3_share", "back2", "volgate"]
 STACK_ARMS = ("stack_full", "stack_lean")
 
 # ---- c3_share: C3 completing-side depth-share veto, MILD variant (forward arm only) ----
@@ -320,6 +320,36 @@ def trailing_vol(rows, idx, sec):
         return statistics.pstdev(mids)
     except Exception:
         return 0.0
+
+
+# ---- volgate: leading vol-REGIME entry veto (forward arm, 2026-07-14) ------------------------
+# Negative-window streaks are VOLATILITY CLUSTERING, not outcome-carryover. Overnight/streak study
+# (DECISION_MAP OV-VOLGATE): per-window spot logret vol has lag-1 autocorr r=0.58, and the PRIOR
+# window's vol predicts THIS window going negative with AUC 0.655 -- beating the prior OUTCOME
+# (the naive circuit-breaker's signal, AUC 0.619) and legging-gap (0.498); the CONTEMPORANEOUS
+# within-window vol does NOT predict (AUC 0.48), so the signal must be LEADING. Skip-gating the
+# top trailing-vol quartile beat a volume-matched random-skip null at p=0.001 (top decile), the
+# artifact that sank the naive breaker. This arm vetoes opening a box when the immediately-PRIOR
+# window's realized mid-return vol sat in the top quartile of the trailing regime. Rolling-quantile
+# idiom mirrors thickbook_veto; carry is process-global and ascending-ws (see run_asset sort).
+# HONEST LIMIT: validated on only 2 day-clusters -> forward arm, NOT deploy (gate ~10 fwd days).
+VOLGATE_Q = 0.75          # veto when prior-window vol is above the 75th pct of the trailing regime
+VOLGATE_MIN_HIST = 12     # need this many prior windows before the quantile is meaningful
+_VOLGATE_PREV = {}        # asset -> realized mid-return vol of the immediately-preceding window
+_VOLGATE_HIST = {}        # asset -> rolling list of recent window vols (threshold source)
+
+
+def window_vol(rows):
+    """Realized within-window vol = pstdev of successive mid CHANGES (returns), not mid levels
+    (a level-pstdev would mostly measure p1 drift, not volatility)."""
+    mids = [r[1] for r in rows if r[1] is not None]
+    if len(mids) < 4:
+        return None
+    d = [mids[i + 1] - mids[i] for i in range(len(mids) - 1)]
+    try:
+        return statistics.pstdev(d)
+    except Exception:
+        return None
 
 
 def momentum(rows, idx, sec):
@@ -951,6 +981,23 @@ def process_window(ws, rows, asset, resolved_up, thick_threshold, existing_keys,
         return 0
     cell_flag = open_state["spread0"] > CELL_VETO_SPREAD0 + 1e-12
 
+    # volgate: read the immediately-PRIOR window's realized vol, decide veto against the trailing
+    # regime, THEN fold this window's vol into the carry for the next window. Ascending-ws order is
+    # guaranteed by run_asset's sorted() iteration so "prior" is the real predecessor window.
+    _vg_lead = _VOLGATE_PREV.get(asset)
+    _vg_hist = _VOLGATE_HIST.setdefault(asset, [])
+    volgate_flag = False
+    if _vg_lead is not None and len(_vg_hist) >= VOLGATE_MIN_HIST:
+        _s = sorted(_vg_hist)
+        _thr = _s[min(len(_s) - 1, int(VOLGATE_Q * len(_s)))]
+        volgate_flag = _vg_lead > _thr
+    _wv = window_vol(rows)
+    if _wv is not None:
+        _VOLGATE_PREV[asset] = _wv
+        _vg_hist.append(_wv)
+        if len(_vg_hist) > 800:
+            del _vg_hist[:len(_vg_hist) - 800]
+
     def emit(arm, locked, filled, stranded, disposed_at_s, qdepth_c=None):
         nonlocal written
         key = (ws, asset, arm)
@@ -1021,7 +1068,8 @@ def process_window(ws, rows, asset, resolved_up, thick_threshold, existing_keys,
         l0_flag_both = l0_minute1_both > L0_MINUTE1_MAX
         for arm in ARMS:
             veto = (cell_flag and arm in ("cell_veto", "combined")) or \
-                   (l0_flag_both and arm in STACK_ARMS)
+                   (l0_flag_both and arm in STACK_ARMS) or \
+                   (volgate_flag and arm == "volgate")
             if veto:
                 emit(arm, 0.0, False, False, None)
             else:
@@ -1052,7 +1100,8 @@ def process_window(ws, rows, asset, resolved_up, thick_threshold, existing_keys,
             veto = (cell_flag and arm in ("cell_veto", "combined")) or \
                    (thick_flag and arm in ("thickbook_veto", "combined")) or \
                    (c3_flag and arm == "c3_share") or \
-                   (l0_flag and arm in STACK_ARMS)
+                   (l0_flag and arm in STACK_ARMS) or \
+                   (volgate_flag and arm == "volgate")
             if veto:
                 emit(arm, 0.0, False, False, None, qdepth_c=qdepth_c)
             else:
@@ -1079,11 +1128,12 @@ def process_window(ws, rows, asset, resolved_up, thick_threshold, existing_keys,
         veto = (cell_flag and arm in ("cell_veto", "combined")) or \
                (thick_flag and arm in ("thickbook_veto", "combined")) or \
                (c3_flag and arm == "c3_share") or \
-               (l0_flag and arm in STACK_ARMS)
+               (l0_flag and arm in STACK_ARMS) or \
+               (volgate_flag and arm == "volgate")
         if veto:
             emit(arm, 0.0, False, False, None, qdepth_c=qdepth_c)
             continue
-        if arm in ("live", "thickbook_veto", "cell_veto", "c3_share"):
+        if arm in ("live", "thickbook_veto", "cell_veto", "c3_share", "volgate"):
             b = policy_live(p1, c_series, side, resolved_up, dispose_max_give=DISPOSE_MAX_GIVE)
         elif arm == "givecap15":
             b = policy_live(p1, c_series, side, resolved_up, dispose_max_give=0.15)
@@ -1116,7 +1166,7 @@ def run_asset(asset, data_dir, day):
     n_windows = 0
     n_rows = 0
     with open(out_fp, "a") as out_fh:
-        for ws, rows in per_ws.items():
+        for ws, rows in sorted(per_ws.items()):   # ascending ws: volgate's prior-window carry
             key = (asset, ws)
             if key not in settle_map:
                 continue
