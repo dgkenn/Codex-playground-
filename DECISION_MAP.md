@@ -653,3 +653,25 @@ TWO LEVERS TO EARN CONFIDENCE (both required):
 NEXT: build the fill-model calibration harness (lever A) — fit P(fill|book,quote-position) to the
 live order/fill tape, re-run box_shadow with it, and re-measure corr + bias vs live. That harness IS
 the confidence gate: a strategy's tested number is only trusted once the sim predicts the balance.
+
+## SIM-LIVE-GAP-2 (2026-07-14, confirmation pass — "be absolutely sure before building")
+Three independent evidence chains converge; diagnosis CONFIRMED at the mechanism level:
+- P&L: per-box (normalized, deterministic windows n=42) corr(sim,live)=0.077; live realized/box
+  clusters at +1c (26/42 windows) while sim's mode is −4c/box. Live wins small and consistently;
+  the sim thinks the typical box loses.
+- FILL: aligned first-fills (07-13, 32 windows): sim matches live's actual first fill on SIDE only
+  50% (chance), median |price gap| 11.5c, timing +55s late. The sim replays different events.
+- ORDER (prior fillcal study, 618 real placements vs tape): OPT rule (what box_shadow uses) F1=0.56
+  — misses ~half of real fills; misses concentrate in orders living < the tape's ~1.2s sampling gap;
+  a 1-param calibration grid COLLAPSES back to OPT on both folds. Within the 1.2s tape, the fill
+  model is UNFIXABLE — tape resolution is the binding constraint (this is what P1 hires solves).
+- METRIC bonus: live fills have NEGATIVE 60s markout (−2.6c) while the same fills realize +1c/box —
+  markout is anti-correlated with completion-based box P&L. Second, independent kill of the
+  markout-based av_stoikov validation.
+VERDICT: the gap is the fill model + tape resolution. Consequences: (1) all box_shadow ABSOLUTE
+EVs are fiction; deltas between arms sharing the same fill path are weaker-poisoned but unproven.
+(2) Quote-changing strategy testing (price-cap, back2, av_stoikov family) is BLOCKED until a
+hires-tape fill model exists (~07-18, node P1). (3) Entry-VETO arms don't need a fill model at all
+— they only REMOVE windows whose realized P&L we KNOW. BUILD: live-anchored counterfactual scorer
+(live_anchor.py) — scores veto arms against actual live realized outcomes; sim=live by construction.
+This is the only strategy-testing path that satisfies the #1 goal TODAY.
