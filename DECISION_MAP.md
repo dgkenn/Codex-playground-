@@ -329,3 +329,43 @@ Corpus: 97 live-traded windows across 07-13/07-14 (winrec_all.jsonl), total +4.0
   replay priors, they are NOT held-out forward evidence. The forward clock starts 07-14
   (box-shadow.yml now running); promotion gate ~07-24 (≥10 forward days, day-clustered
   t≥2, avseq early-promotion only). Do not promote on these numbers.
+
+## OV-VOLGATE (2026-07-14, operator ask: "predict AND prevent the negative-window streaks, statistically sound")
+Follow-up to OV-CLUSTER (streaks are real, perm p=0.033, but regime-bound). The naive
+circuit-breaker (OV-BREAKER) was rejected because it conditions on the noisy prior OUTCOME.
+A sound predictor needs a CAUSAL, LEADING regime variable. Built one from per-window BTC
+spot realized vol (from fills_all ctx.spot, 97 windows 07-13/07-14):
+
+- MECHANISM ✅ **Streaks = volatility clustering.** Per-window spot logret-vol has lag-1
+  autocorrelation **r=0.58** — high-vol regimes persist across windows. Negative windows are
+  higher-vol (vol +32%, drift +42%, range +25% vs winners). The loss mode (negative-width
+  completion) IS an adverse-price-move event, so it concentrates where vol/drift is high — and
+  because vol clusters, the losses cluster. This is the generating mechanism of the streaks.
+
+- PREDICTOR ✅ **Trailing (prior-window) vol is a sound leading signal.** AUC 0.655 for
+  prior-window vol → this-window negative, beating prior-OUTCOME (0.619, the circuit-breaker's
+  signal) and prior legging-gap (0.498). CONTEMPORANEOUS within-window vol does NOT predict
+  (AUC 0.48) — so the tradeable signal must be LEADING, which only works because vol persists.
+  Generalizes OOS across the day boundary: day-2 negatives also had higher trailing vol
+  (1.20e-4 vs 7.60e-5); a day-1-trained threshold skipped 2 of 3 day-2 negatives.
+
+- VS THE VOLUME-CUT NULL ✅ **Vol-gating beats volume-matched random-skip.** The artifact that
+  invalidates any skip rule (skipping x% of a negative-mean process looks good) is defeated by
+  a permutation null that skips the SAME NUMBER of random windows: top-decile-vol skip gives
+  ruleEV +5.82 vs random-skip mean +4.38, **p=0.001**; top-quartile p=0.014. The rule
+  preferentially skips bad windows far beyond chance — unlike the naive breaker.
+
+- PREVENTION ✅ built as forward arm **volgate** (box_shadow, bot branch 70ed86897): veto
+  opening a box when the immediately-prior window's realized vol sat in the top quartile of the
+  trailing regime. Chosen over skip-on-outcome (noisy) and over a hard skip of ALL high-vol
+  windows (forgoes the wider maker edge high vol also brings). Existing arms byte-identical
+  (1850 rows). Replay prior 06-10..06-13: strand 7.6%→4.9%, +0.96c/win pooled, t=+1.59 (4 days).
+
+- HONEST LIMITS: (1) validated on 2 day-clusters for the signal, 4 days for the arm prior —
+  CANNOT pass the day-clustered gate yet; forward clock starts now, gate ~07-24+. (2) The arm
+  uses KALSHI-MID vol as the in-harness regime proxy (BTC spot is not in the replay tape), a
+  weaker signal than the study's spot logret vol — the forward arm may underperform the study.
+  (3) Absolute prevention value is small (~+0.05c/day walk-forward on 07-14) because the
+  disposal stack already shrank the losses to ~−15c — the streak is a real but low-stakes bleed.
+  VERDICT: statistically sound predictor + prevention lever BUILT and forward-testing; deploy
+  only after the gate (rail-1 propose-only for any live entry-veto regardless).
