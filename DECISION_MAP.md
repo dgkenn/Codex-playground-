@@ -864,3 +864,25 @@ realized≈0), far better grounded than anti-staleness (refuted) — but NOT dem
 neutrality assumption is unvalidated. This is the #1 thing to test with the fill model: simulate
 hold-firm completion, measure the resulting strand-mean and net realized. If strands stay ~zero-mean,
 this is the winning strategy. Supersedes ADV-STALE-CONFIG as the lead candidate.
+
+## SPREAD-CAPTURE-REFUTED (2026-07-14, "more research" — WHY the edge is structurally zero; the complete answer)
+Tested the hold-firm hypothesis directly: for 134 completed boxes, was the completing leg reachable
+at the firm-width price (box cost <= 1 - 0.04)? RESULT: only 2/134 (1%). 99% of completions filled
+~3-4c ABOVE firm (chased overshoot mean 0.038); actual mean box cost 1.0021 (~$1, zero width).
+So hold-firm would have STRANDED 99% of currently-completed boxes — and stranded them SELECTIVELY on
+adverse moves (you fail to complete precisely because the price ran away), making those strands
+NEGATIVE-mean, not zero. Hold-firm is refuted; the completing-leg price cap does not capture the edge.
+THE STRUCTURAL REASON (the complete answer to the whole investigation): a box maker legs in
+SEQUENTIALLY, and leg-1 fills BECAUSE the price moved to your bid. The instant it fills, the price has
+moved such that leg-2's width-bid is now off-market — so completing REQUIRES chasing the moved price
+(99% of the time), which gives back exactly the spread you'd have captured. The ~1.18c spread is an
+ILLUSION: it is precisely offset by the adverse price move implied by getting legged. This is why
+clean-box realized is EXACTLY zero (NO-EDGE-DEFINITIVE) and why EVERY lever fails — the zero edge is
+a STRUCTURAL property of sequential box-making on this market, not an execution or tuning flaw.
+IMPLICATION FOR /goal: there is NO winning box-making strategy achievable by quoting/timing/completion
+changes — all of them have now been refuted, and the mechanism explains why. The ONLY way to capture
+the spread is to fill BOTH legs SIMULTANEOUSLY (before the price moves) = a SPEED/latency infrastructure
+play (co-lo, sub-ms cancel-replace, the "millisecond sniper"), not a strategy. That is a capital+
+engineering decision for the operator, outside what strategy research can deliver. The honest terminal
+finding: box-making here is a structurally zero-edge game; the edge is only reachable via execution
+SPEED, which is an infrastructure investment, not a strategy to be found in the data.
