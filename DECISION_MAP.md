@@ -886,3 +886,24 @@ play (co-lo, sub-ms cancel-replace, the "millisecond sniper"), not a strategy. T
 engineering decision for the operator, outside what strategy research can deliver. The honest terminal
 finding: box-making here is a structurally zero-edge game; the edge is only reachable via execution
 SPEED, which is an infrastructure investment, not a strategy to be found in the data.
+
+## LATENCY-ROI (2026-07-14, final research — even the speed escape hatch is marginal; investigation closed)
+Tested whether execution speed could capture the spread SPREAD-CAPTURE-REFUTED said we chase away.
+Measured completing-leg overshoot vs the leg-to-leg time-gap (134 box pairs). corr(gap, overshoot)
+= +0.72 (waiting longer costs more -> speed helps directionally), BUT the level is ~instantaneous:
+overshoot by gap bin: <0.5s +3.0c | 0.5-2s +3.2c | 2-10s +3.7c | >10s +3.5c. Even sub-0.5s
+completions capture width 0% (0/27) and overshoot ~3c. So ~3c of adverse move is BAKED IN at the
+instant of legging; only ~0.5c is time-dependent (recoverable by speed). CONCLUSION: speed
+infrastructure recovers at most ~0.5c/box of the ~3-4c chase — a marginal improvement that does NOT
+convert the structurally-zero-edge game into a clear winner. The adverse selection is in the fill
+EVENT (you get legged because the price already moved), not in the reaction latency.
+INVESTIGATION CLOSED. Every path is now exhausted with a mechanism, not just a null:
+  - Strategy tactics (vetoes/price-cap/anti-staleness/hold-firm): REFUTED (legging is structurally adverse).
+  - Speed/latency infrastructure: MARGINAL (adverse move is instantaneous, not latency-driven).
+  - Other sleeves/markets: same sequential-legging structure, or paper-markout (proven untrustworthy).
+DEFINITIVE ANSWER to /goal 'find a winning profitable strategy': for Kalshi short-dated binary
+box-making, NONE exists that is demonstrable or mechanistically supported — the edge is structurally
+zero (t=-0.08), every fix is refuted by the leg-in adverse-selection mechanism, and even speed
+infra is marginal. The honest, complete, terminal finding. The realized-truth measurement framework
+built this session (realized_pnl, live_anchor, the settlement reconciliation, the hires analyses) is
+the durable asset: it is what makes this a PROVEN negative instead of another markout-based illusion.
