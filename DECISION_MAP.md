@@ -527,3 +527,28 @@ volgate would also skip, so it can only remove volgate's collateral, never add r
   question. n=6 → both are provisional until the forward gate. Response is still veto here; a
   defensive-COMPLETE variant (mechanistically preferred, since the loss mode is adverse completion)
   is the next iteration once forward data shows nsmove targets the right windows.
+
+## OV-ORTHO (2026-07-14, operator: "combine the orthogonal winning strategies + retest — maybe instantly promotable")
+Tested. Orthogonality structure (4-day replay, per-window improvement correlation + Jaccard):
+volgate ⟂ thickbook (corr 0.01, Jac 0.16) and ⟂ c3_share (0.14) — genuinely act on DIFFERENT
+windows; thickbook↔c3_share redundant (0.37/0.36, pick one); volgate↔nsmove redundant (Jac 0.63,
+subset); cell_veto inert (1 veto); hazard_stop = disposal, different mechanism (~0.41 with all).
+So the orthogonal trio = disposal(hazard) + one book-veto + volgate; combined already has
+hazard+thickbook but NOT volgate — the missing orthogonal ingredient.
+- Synthesized combined+volgate: raw EV −1.90→−1.38c/win, t 3.39→3.29 — LOOKS better BUT veto rate
+  35%→51% = the volume-cut artifact (DECISION_MAP K). Raw EV is invalid here.
+- DECISIVE VOLUME-MATCHED TEST ❌ NO orthogonal value. Volgate additionally vetoes 30 of combined's
+  120 kept windows; combined's hazard disposal earns −3.32c on those vs −2.82c on the kept — only
+  slightly worse, and removing them is INDISTINGUISHABLE from removing 30 RANDOM combined-kept
+  windows (permutation p=0.371). The EV "gain" is just cutting 16% more volume.
+- MECHANISM (the real lesson): volgate and thickbook are orthogonal in WHICH WINDOWS they touch,
+  but NOT in VALUE — hazard_stop's disposal already rescues the high-vol windows volgate would skip,
+  so stacking volgate on top adds nothing but volume loss. Orthogonal-in-window ≠ orthogonal-in-value
+  when a disposal layer subsumes both.
+- VERDICT: combined+volgate is NOT promotable (no validated gain; and nothing is instantly live-
+  promotable regardless — forward gate + rail-1). Do NOT build it as a new arm (roster already 12;
+  additions need a positive replay prior, this has none). CAVEAT: these 4 days (06-10..13) are light
+  on the vol-driven big-loss population (that lives in the overnight 07-13/14 sample) — volgate MIGHT
+  add orthogonal value forward where that population appears. PLAN: at the ~07-24 gate, SYNTHESIZE
+  combined+volgate from the forward rows of the individual arms (both accruing) and re-run the
+  volume-matched test — no new arm needed. If volgate then shows orthogonal value, promote the combo.
