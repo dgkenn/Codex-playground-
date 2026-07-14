@@ -459,3 +459,32 @@ CAVEAT: n=6 big, mid_travel AUC 0.611 modest/noisy. VERDICT: the loss is pegged 
 to-strike (setup) AND triggered by price movement at the strike (trigger) — both required. The
 sharpened predictive feature is the INTERACTION near-strike × high-movement-regime, not raw drift;
 forward-test that as the big-loss detector.
+
+## STRATEGY SCOREBOARD — top 10, tested + tiered (2026-07-14, operator ask: rank the 10 best, promote winners)
+Consolidated day-clustered replay (11 days: 06-10..13 + 07-07..13; volgate 4 days) vs live baseline
+(strand 8.3%). TIER LADDER: ✅DEPLOYED(live) · 🟢PROPOSAL(prepared, awaits operator word + fwd gate)
+· 🟡FORWARD-TESTING(replay-validated t>2, accruing toward ~07-24 gate) · 🟠PROVISIONAL(positive,
+under bar/thin) · 🔬HYPOTHESIS(mechanism, n too small) · ❌DEAD. HARD HONESTY: the 11 days are the
+arms' fit/test period, NOT forward — strong t = replay-validated, NOT gate-passed. Nothing is live-
+promotable until ≥10 FORWARD days (clock started 07-14) + operator word (rail 1). avseq early-promo
+needs ≥5 fwd days — not yet reachable either.
+
+  #  strategy            Δc/win   t    strand%  tier          note
+  1  c3_share           +1.94  +7.02   4.4   🟡 FWD-TEST   highest EV+t; completing-side depth-share veto
+  2  combined           +1.90  +6.07   0.0   🟢 PROPOSAL   strand ELIMINATOR (haz+thick+cell); top deploy candidate
+  3  stack_full         +1.47  +4.15   0.0   🟡 FWD-TEST   full L0-L4 stack, give-cap 0.15 + LCB sensor
+  4  stack_lean         +1.39  +4.28   0.0   🟡 FWD-TEST   stack, give-cap 0.25, no LCB (leaner)
+  5  thickbook_veto     +1.05  +3.29   6.3   🟡 FWD-TEST   skip when completing-side book too thick
+  6  hazard_stop        +0.96  +3.49   0.0   🟡 FWD-TEST   FOUNDATIONAL state-dependent disposal (kappa)
+  7  volgate            +0.96  +1.59   4.9   🟠 PROVIS     vol-regime entry veto (4d, under t2; OV-VOLGATE)
+  8  F14 frac-flatten     —      —      —    🟢 PROPOSAL   de-risking residual-leak fix; graceful-failure; 0 live fires
+  9  join-fresh/k-cap5    —      —      —    ✅ DEPLOYED   late-join suppression + open-k-max 5 (in live.yml)
+ 10  nearstrike×move      —      —      —    🔬 HYPOTH     OV-STRIKE/2POP big-loss detector; leading AUC 0.875 @ n=6
+
+PROMOTIONS THIS CYCLE: #1-6 advanced replay-supported → FORWARD-TESTING (accruing to ~07-24 gate).
+#2 combined + #8 F14 → deploy PROPOSAL prepared (operator word required; F14 de-risking so operator
+word alone suffices, the arms need the fwd gate too). #7 volgate stays provisional pending fwd days.
+#10 stays hypothesis (n=6, forward-collect the big-loss subset to validate the 0.875).
+DEAD (not winners, recorded — do not re-litigate): cell_veto (t=-1.0 inert), givecap15 (byte-identical
+to live), back2-on-BTC (-0.85, the deliberate falsification control — correct), F-size, NS-DISP,
+NS-QUOTE, F10 stale-snipe, F11 width-gate, hours/window selection.
