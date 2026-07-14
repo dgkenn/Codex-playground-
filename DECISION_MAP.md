@@ -477,7 +477,7 @@ needs ≥5 fwd days — not yet reachable either.
   5  thickbook_veto     +1.05  +3.29   6.3   🟡 FWD-TEST   skip when completing-side book too thick
   6  hazard_stop        +0.96  +3.49   0.0   🟡 FWD-TEST   FOUNDATIONAL state-dependent disposal (kappa)
   7  volgate            +0.96  +1.59   4.9   🟠 PROVIS     vol-regime entry veto (4d, under t2; OV-VOLGATE)
-  8  F14 frac-flatten     —      —      —    🟢 PROPOSAL   de-risking residual-leak fix; graceful-failure; 0 live fires
+  8  F14 frac-flatten     —      —      —    ✅ DEPLOYED   live since 2cd9ae62c (operator-approved); 0 fires=no >0.1 residual yet
   9  join-fresh/k-cap5    —      —      —    ✅ DEPLOYED   late-join suppression + open-k-max 5 (in live.yml)
  10  nearstrike×move      —      —      —    🔬 HYPOTH     OV-STRIKE/2POP big-loss detector; leading AUC 0.875 @ n=6
 
@@ -508,3 +508,22 @@ set ≈ spot-at-open. Inferred strike per window = spot where mid≈0.5 (198 win
   as suggestive-underpowered — re-run strike_liquidity_probe.py once the tick corpus spans ≥12 distinct
   $1000 bands (many weeks of wider BTC range), which cleanly deconfounds round-number from level. Do not
   invest further until then.
+
+## OV-2POP-ARM / nsmove (2026-07-14, operator: "build the #10 near-strike×movement arm to accrue forward data")
+BUILT + pushed (bot branch, box_shadow.py). nsmove = veto opening a box iff prior-window movement
+regime high (reuses volgate_flag: prior-window vol top-quartile) AND entry near-strike (|p1−0.5|<0.15).
+Operationalizes OV-2POP/OV-STRIKE: targets the drift-driven BIG-loss population (leading |drift| AUC
+0.875 provisional, n=6), a strict SUBSET of volgate's vetoes — it spares the far-from-strike volume
+volgate would also skip, so it can only remove volgate's collateral, never add risk.
+- Verified: existing arms (incl volgate) BYTE-IDENTICAL (2035 rows, 06-10..13). Fixed an indentation
+  bug (main-loop veto is 15-space vs 19-space nested; first pass added nsmove only to the strand path
+  → 0 fires) — now fires 29× on the test days.
+- Replay prior 06-10..13: +0.55c/win, t=0.79, strand 7.6→6.5% (29 vetoes). WEAKER than volgate
+  (+0.96/t1.59) — expected: the big-loss population that motivates nsmove is in the OVERNIGHT 07-13/14
+  sample, not this June period, so the near-strike restriction just skips fewer windows here for less
+  benefit. Not a refutation; the arm's thesis is forward, not in-sample.
+- TIER: 🔬→forward-testing. Now accruing forward rows alongside volgate; the head-to-head (does the
+  targeted near-strike×movement veto beat the broad vol veto on the big-loss subset?) is the forward
+  question. n=6 → both are provisional until the forward gate. Response is still veto here; a
+  defensive-COMPLETE variant (mechanistically preferred, since the loss mode is adverse completion)
+  is the next iteration once forward data shows nsmove targets the right windows.
