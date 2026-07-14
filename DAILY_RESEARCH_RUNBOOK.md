@@ -44,6 +44,16 @@ per day beats a broad sweep — the dataset only grows ~1 day per cycle.
    of windows raises per-window EV. A veto/skip/sizing result is meaningless without a
    **volume-matched null** (does it skip the *worst* windows beyond chance?) or forward data.
    Always report veto-rate alongside EV. See DECISION_MAP node K and OV-ORTHO for worked cases.
+7b. **REALIZED-P&L MANDATE** (node METRIC-INVALID, 2026-07-14): score strategies on REALIZED box
+   settlement P&L reconciled to the BALANCE — never on markout, paper-shadow "net/win", or any
+   mark/estimate proxy. The month-long av_stoikov "winner" was scored on markout-Δ-vs-baseline
+   (rebate-inclusive, per-win units, simulated fills): it rated a *losing* live baseline at +6.9/win
+   while the account bled. `window_mark` == paired-box realized ONLY for truly-complete boxes; it
+   still ignores strand settlement variance, fractional residuals, and open-position marks. Run
+   `python realized_pnl.py --start ... --end ...` (research branch) every cycle; if telemetry and
+   balance diverge, the balance wins and the strategy is NOT a winner. Box_shadow's `locked` field
+   (box economics) is an acceptable proxy for the negative-width leak specifically, but absolute
+   claims still require the balance reconciliation.
 8. **Token budget ~100k per cycle.** Prefer local python over subagents. One focused question.
 9. **No new external accounts/services.** Public read-only APIs only (Kalshi, data.binance.vision,
    Deribit public). No new paid infra.

@@ -592,3 +592,35 @@ VERDICT: we were "green" on mark while red on the balance. The edge is real but 
 rail 1): (a) balance-truth realized-P&L metric, re-score everything on it; (b) completing-leg price
 cap (never complete a box >$1) — test in box_shadow, the highest-value NEW lever; (c) fix F14 firing;
 (d) re-examine whether entry width is wide enough to survive the leg1→leg2 adverse move.
+
+## METRIC-INVALID (2026-07-14, operator: "av_stoikov was supposed to be mega-profitable across a month — what happened? data-collection error? is realized ≠ estimated?")
+ROOT CAUSE FOUND — and it invalidates the whole strategy-validation stack, not just av_stoikov.
+The month-long A/B that crowned av_stoikov ("mega profitable, never net negative on the day",
+WINNING_STRATEGY.md) was scored on the PAPER SHADOW layer (gha_data/<d>/SUMMARY.txt): per-fill
+MARKOUT (5-min mid change) under a SIMULATED fill model, REBATE-INCLUSIVE, in per-win NORMALIZED
+units, reported as **Δ vs baseline**. Every one of those four removes it from realized dollars:
+- **Relative, not absolute.** 07-13 SUMMARY: baseline net/win = **+6.897 (positive)**, av_stoikov
+  +11.890 (Δ +4.993). EVERY variant scores +6.9..+14.4/win. But live realized box P&L on 07-13 was
+  flat-to-negative and live markout was −2.17. **The paper scores a losing live baseline at +6.9.**
+  "Never negative on the day" always meant "beat baseline," never "made money."
+- **Markout ≠ settlement.** Markout is the 5-min mid move on a fill; the live box settles $0/$1 at
+  15 min. A fill with good markout still becomes a negative-width box or a strand (LIVE-BLEED).
+- **Simulated fill model.** The paper fills the strategy against the live book with an OPTIMISTIC
+  model (fills the strategy wouldn't get live / at better prices) → systematic over-estimate for
+  ALL variants (baseline included), which is exactly what "+6.9 baseline vs negative live" shows.
+- **Rebate-inclusive / per-win units.** Not dollars.
+
+THREE LIVE P&L METRICS THAT DON'T RECONCILE (3-day sums): markout −$10.44, box-mark(window_mark)
++$0.57, BALANCE −$3.49. None agrees with another or with the money. **We literally cannot measure
+strategy P&L today.** ANSWER to the operator's questions: (1) not a data-COLLECTION error — the
+data is captured fine; it's a METRIC-VALIDITY error (the scored metric is not realized P&L). (2) YES
+realized is drastically different from estimated — opposite SIGN (estimated +7..+14/win, realized
+negative). (3) av_stoikov isn't "broken"; it was never measured on realized dollars — its edge is
+"beats an inflated phantom baseline on a markout proxy," which does not imply live profit.
+
+CONSEQUENCE: every ranking built on the paper metric (av_stoikov, mo_size, the box_shadow arm
+deltas, the whole STRATEGY SCOREBOARD) is SUSPECT in absolute terms and its ordering is unproven
+against realized. FIX (the only way to "accurately test strategies"): score on REALIZED box
+settlement P&L reconciled to the balance. Built realized_pnl.py (this cycle). MANDATE (added to
+runbook): no strategy is a "winner" until it clears the gate on realized P&L, not markout/paper-mark.
+Re-validate av_stoikov + all arms on realized before any deploy weight is placed on them.
