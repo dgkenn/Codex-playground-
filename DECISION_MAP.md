@@ -552,3 +552,43 @@ hazard+thickbook but NOT volgate — the missing orthogonal ingredient.
   add orthogonal value forward where that population appears. PLAN: at the ~07-24 gate, SYNTHESIZE
   combined+volgate from the forward rows of the individual arms (both accruing) and re-run the
   volume-matched test — no new arm needed. If volgate then shows orthogonal value, promote the combo.
+
+## LIVE-BLEED (2026-07-14, operator: "unprofitable 36h, figure out what we're missing")
+Went to BALANCE ground-truth (not mark/replay). Post-deposit trading window 07-12 15:30 ($61.16
+peak) → 07-14 16:50 ($57.67) = **−$3.49 over ~49h** — a slow persistent bleed, not one disaster
+(peaks ~$60.5-61 repeatedly and gives it back). Findings:
+
+1. ❗ **OUR TELEMETRY OVER-REPORTS P&L vs the balance.** window_mark=+$0.17, net_final=+$1.17,
+   `realized`=−$10.9 (this one is a cumulative running-sum of mark — do NOT sum it). Winrec-implied
+   total ≈ +$1.6; balance says −$3.5. A ~$5 gap over 2 days we cannot explain from winrec fields —
+   most likely open-position mark-to-market at the snapshot + window_mark's optimistic "every box
+   settles to exactly $1" assumption + fractional-residual settlement. **We have been optimizing
+   window_mark, which is NOT realized P&L.** First fix: a balance-truth realized-P&L reconciliation;
+   stop scoring success on mark. (All arm/replay work is mark/locked-based — revalidate on realized.)
+
+2. ❗ **The paired-box edge is razor-thin and BRUTALLY ASYMMETRIC.** Over 127 paired windows: 97
+   positive-width wins (+$5.03, avg **+5.2c**) vs 25 negative-width losses (−$3.26, avg **−13.0c**) —
+   **loss:win ratio 2.5:1**, net paired only ~+$1.8 and easily flipped negative by variance/fees. We
+   win small and lose big. The whole strategy hinges on avoiding the −13c negative-width completions.
+
+3. ❗ **Negative-width completions are NOT from crossing** — total dispose_give = $0.04, only 22 taker
+   fills. They come from BOTH LEGS filling as MAKER at prices summing >$1: leg-1 fills cheap, the
+   market moves, and the completing leg's resting quote fills at an adverse price (box costs >$1).
+   This is the OV-2POP/OV-STRIKE adverse-completion mode, now measured in REALIZED terms. **The bot
+   chases the pair — it completes the second leg at ANY price rather than capping it at ≤(1 − leg1 −
+   target_width).** NEW UNTESTED LEVER: price-cap the completing MAKER quote so the box never
+   completes above $1; if it can't fill there, strand it (strand EV vs guaranteed −13c). Distinct
+   from the disposal stack (which manages strands after the fact; strands netted ~flat +$0.39 this
+   window — the leak is adverse completions, not strands).
+
+4. ❗ **F14 deployed but 0 fires despite 11 fractional-residual windows** (incl. one at abs_strand
+   4.39) riding to settlement. `--flatten-fractional 0.1` is in live.yml but frac_flatten_count=0
+   everywhere — the flatten isn't triggering on residuals it should catch. Concrete bug to chase.
+
+5. Fees −$0.57 over the window — small but real drag on a ~breakeven edge.
+
+VERDICT: we were "green" on mark while red on the balance. The edge is real but thin (+5c) and the
+−13c adverse completions + fees + strand variance eat it. PRIORITIES (all propose-only / research —
+rail 1): (a) balance-truth realized-P&L metric, re-score everything on it; (b) completing-leg price
+cap (never complete a box >$1) — test in box_shadow, the highest-value NEW lever; (c) fix F14 firing;
+(d) re-examine whether entry width is wide enough to survive the leg1→leg2 adverse move.
