@@ -488,3 +488,23 @@ word alone suffices, the arms need the fwd gate too). #7 volgate stays provision
 DEAD (not winners, recorded — do not re-litigate): cell_veto (t=-1.0 inert), givecap15 (byte-identical
 to live), back2-on-BTC (-0.85, the deliberate falsification control — correct), F-size, NS-DISP,
 NS-QUOTE, F10 stale-snipe, F11 width-gate, hours/window selection.
+
+## OV-ROUND (2026-07-14, operator: "pull the actual strike ladder; test round-number / liquidity-cliff effects properly")
+KXBTC15M is ONE ATM strike per 15-min window (ticker suffix = quarter-hour, not a ladder); strike is
+set ≈ spot-at-open. Inferred strike per window = spot where mid≈0.5 (198 windows, local 06-10..13 ticks;
+130k ticks parsed). Tick = [t,mid,spot,micro,bb,bq,ba,aq]. Reusable test: scratchpad/strike_liquidity_probe.py.
+- STRIKE ROUND-CLUSTERING ❌ REFUTED. Inferred strikes are ~uniform vs $100/$500/$1000 (mean dist-to-
+  multiple ≈ uniform-expected). Kalshi sets the strike at spot, not at round numbers — so there is no
+  round-number STRIKE-placement effect to exploit.
+- LIQUIDITY-CLIFF 🟡 SUGGESTIVE but UNDERPOWERED (confounded). Pooled: near-$1000 depth 2195 vs far 2472
+  (t=-10.6) + wider spread (0.0100 vs 0.0092, t=13.6) = ~11-14% thinner book near $1000 marks, and it
+  SURVIVES day-demeaning (near/far depth ratio 0.86). BUT the $500 test flips sign (near-$500 = MORE depth,
+  t=5.7) and there are only 4 distinct $1000 bands in the 4-day corpus (61/62/63/64k) — so "near round"
+  is confounded with 4 specific price levels on 4 specific days. Cannot distinguish a round-number LAW from
+  level/regime effects at this spot range. Direction (thinner near $1000) is consistent + significant, but
+  not proven as a round-number law.
+- ACTIONABILITY: even if real, a ~14% depth dip is second-order vs the primary loss driver (OV-STRIKE:
+  movement-at-strike). Not a near-term lever. VERDICT: strike-round-number REFUTED; liquidity-cliff PARKED
+  as suggestive-underpowered — re-run strike_liquidity_probe.py once the tick corpus spans ≥12 distinct
+  $1000 bands (many weeks of wider BTC range), which cleanly deconfounds round-number from level. Do not
+  invest further until then.
