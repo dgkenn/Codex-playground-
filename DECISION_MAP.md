@@ -403,3 +403,38 @@ broke the small-live-sample bottleneck by using the replayed live-arm P&L as the
   or sub-second structure (P1 hires, retest ~07-18). Those are the only remaining places a streak-
   predictor could hide. NEXT: build the in-window tight-spread/illiquid defensive-completion arm; test
   drift-persistence + hires sub-second features for any true leading signal.
+
+## OV-2POP (2026-07-14, operator hypothesis: "the clustered/consecutive negatives have a predictable state; other negatives are a different population")
+CONFIRMED. Pooling the loss populations was diluting the signal. Two mechanistically distinct
+loss types, split cleanly by MAGNITUDE (live overnight, 97 windows):
+- BIG losses (mark < −0.15, n=6): DRIFT-DRIVEN adverse completions. mean |spot-drift| 0.0005
+  vs 0.0002 for winners (~2.5×).
+- SMALL negatives (−0.15 ≤ mark < 0, n=11): quiet near-strike COIN-FLIPS. mean |drift| 0.0001
+  (BELOW winners) — genuinely driftless noise.
+
+DISCRIMINATION (the vindication of the two-population hypothesis):
+- Contemporaneous |drift| → BIG loss AUC 0.635; → SMALL neg AUC **0.500 (exactly chance)**. The
+  clean separation (drift predicts big, is chance for small) is strong internal evidence the two
+  populations are real and distinct, not one continuum.
+- LEADING (prior-window |drift|) → BIG loss AUC **0.875**; → SMALL neg 0.568. The drift-driven
+  big losses ARE predictable one window ahead, because |drift| (volatility) PERSISTS: |drift|
+  lag-1 autocorr r=0.52 (signed-drift only 0.23 — magnitude persists, direction doesn't). This is
+  why the pooled predictor capped at AUC 0.65: it averaged a strong signal (0.875, big) with noise
+  (0.50, small).
+
+RECONCILES EVERYTHING: (1) the 07-13 22:10–23:30 "streak" = 2 genuine drift-driven big losses
+(22:10, 22:30, in a persistent high-|drift| stretch) + a TAIL of unrelated quiet coin-flips that
+happened to follow → the run LENGTH is padded by noise, but its CORE is a real predictable regime.
+(2) OV-STATE's replay showed no clustering because the replay lacks the directional price path —
+the clustering driver is DRIFT/VOLATILITY, not Kalshi microstructure. (3) Matches vol-clustering
+(vol autocorr 0.58) and volgate.
+
+CRITICAL CAVEAT: n=6 big losses over 2 days — AUC 0.875 is a strong HINT with a huge CI, NOT
+validated. The clean contemp big-vs-small separation (0.635 vs 0.500) is the robust part; the
+0.875 leading figure needs forward data on the big-loss subset. VERDICT: operator was right —
+the consecutive/clustered losses have a predictable state (persistent high-|drift|/volatility
+regime, leading AUC ~0.875 provisional); the scattered small negatives are irreducible low-stakes
+noise (don't try to prevent them). NEXT: (a) sharpen the leading detector to TARGET the drift-driven
+big-loss subset (trailing |drift| / vol regime) rather than all negatives; (b) forward-collect the
+big-loss subset to validate the 0.875; (c) trigger defensive completion (not skip) when the regime
+fires, since the loss mode is adverse completion.
