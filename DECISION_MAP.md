@@ -798,3 +798,24 @@ gated on one of: (a) deploying a candidate and accumulating weeks of realized da
 fill model (~07-18) to counterfactually test quote-changing candidates. No honest analysis of the
 current 5 days can produce a demonstrated winner. Operator decision required — this is the terminal
 state of what analysis alone can establish.
+
+## ADV-STALE-CONFIG (2026-07-14, /goal — the candidate ROOT-CAUSED to a specific mis-tuned live flag)
+The ADV-SELECT edge maps to a concrete, fixable config error. Live trader staleness protection:
+  --requote-stale-s = 20.0  (drop a stale rung only after 20s + a mid move)
+  --qtime-mp-margin = 0.0    (OFF: no microprice-divergence fast-cancel)
+But ADV-SELECT shows fills get sniped at resting >=1-2s (fast <1s +$1.77 / slow >=1s -$3.45), and the
+bot's OWN prior markout forensics (in-code, 2026-06-12) already found "fills on >15s-old quotes run
+-2.04c/fill vs +0.79c fresh". So the live config re-quotes stale rungs an order of magnitude too
+SLOWLY (20s vs the 1-2s sniping timescale) and the purpose-built fast-cancel is disabled. The entire
+1-20s adverse-selection window is unprotected. This is the most likely single cause of the zero edge.
+CANDIDATE WINNING STRATEGY, PACKAGED (deploy proposal — propose-only, rail 1, operator word):
+  add to live.yml trader args:  --requote-stale-s 2  --qtime-mp-margin 0.01
+  (tighten stale-requote 20s->2s to the sniping timescale; enable microprice fast-cancel)
+HONEST STATUS: this is the identified + root-caused + packaged candidate, grounded in (a) ADV-SELECT
+fill-level evidence, (b) the bot's own prior forensics, (c) a clear microstructure mechanism. It is
+NOT yet a DEMONSTRATED winner — ADV-SELECT flips OOS on 3 days and the forensic support is markout-
+based. DEMONSTRATION requires running it: forward-validate that it (1) shifts the fill distribution
+toward <1s resting, (2) lifts realized/win vs the current zero-edge baseline over ~1-2 weeks (or
+confirm on the hires tape ~07-18). This is the terminal analytical result: the winning-strategy
+HYPOTHESIS is now a specific two-flag change with a mechanism and a forward test, awaiting operator
+go-ahead. Analysis cannot demonstrate it further without live measurement.
