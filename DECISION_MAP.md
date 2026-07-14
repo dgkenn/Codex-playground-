@@ -274,3 +274,58 @@ Both round-1 "promising" leads (G7 hours, G8 near-par) died under honest validat
 (held-out test / deployable-subset). In-sample screens on 13 test days overfit fast —
 every future lever gets the train-select/test-validate treatment before entering the
 deploy queue.
+
+## OVERNIGHT ROOT-CAUSE (2026-07-14, operator ask: analyze every trade esp. negatives; do stacks work; are losses clustered?)
+Corpus: 97 live-traded windows across 07-13/07-14 (winrec_all.jsonl), total +4.0c mark
+(net POSITIVE overnight); 17 negative windows (17.5%). Plus 7-day BTC stack replay (bs.jsonl).
+
+- OV-LOSSMODE ✅ **Losses are negative-width COMPLETIONS, not true strands.** Of 17 neg
+  windows: only **2 are true strands** (|abs_strand|>0.5, mean −0.47c); **15 are
+  negative-width completions** (|abs_strand|≈0, box bought >$1 at adverse price, mean
+  −0.15c). True-strand rate is just 2/97=2.1% (well below the ~11% corpus baseline) — the
+  disposal stack IS suppressing strands; the residual bleed is the machinery COMPLETING at
+  an adverse price rather than leaving a leg naked. Reframes the loss target from "prevent
+  strands" to "complete boxes before the price crosses through $1."
+
+- OV-MECHANISM ✅ **legging_gap_s is the adverse-completion signal — NOT late-join.**
+  Neg windows: mean legging_gap 27.4s vs winners 7.9s (3.5×). AUC 0.585. Threshold table:
+  gap<5s → 14% neg-rate, +0.053c mean (69 windows, the healthy core); gap≥30s → 50%
+  neg-rate, −0.021c mean (10 windows, the danger zone). By contrast join_s is a red
+  herring: neg=20.5s vs pos=19.0s (identical); deadman_tier lift 0.99×; joined_late n=0.
+  MECHANISM: when the second leg is slow to complete, spot drifts and the completing leg
+  is bought through par → box costs >$1. This is exactly what the stack's hazard/thickbook
+  stopping targets — coherent with the stack design.
+
+- OV-CLUSTER 🟡 **Streaks are REAL but rare and regime-bound — earlier "no-clustering"
+  verdict REVERSED by the fuller corpus.** Permutation run-test: 6 observed consec-negative
+  pairs vs 2.81 expected under independence, **p=0.033**; lag-1 autocorr +0.226;
+  P(neg|prev neg)=35% vs P(neg|prev clean)=13%. BUT it is entirely one 80-min regime:
+  07-13 22:10–23:30 UTC = six near-consecutive neg windows (all full-size 6-box, all
+  negative-width completions); 07-14 shows ZERO consec-neg pairs. So it's a persistent
+  adverse-drift STRETCH, not a mechanical bot-state carryover. (Supersedes the 72-window
+  peek that said lag1=−0.05; that sample missed the 07-13 evening regime.)
+
+- OV-BREAKER ❌ **Streak circuit-breaker is NOT worth it.** Backtested skip-after-N-neg:
+  skip-after-2 recovers only +0.22c over 97 windows by skipping 3 windows (2 neg / 1 pos);
+  skip-after-1 recovers +0.09c but sacrifices 8 profitable windows (skips 8 pos / 4 neg);
+  half-size-after-neg +0.14c. All marginal on tiny absolute numbers and the breaker throws
+  away nearly as much good as bad — negativity isn't predictable enough window-ahead to
+  gate on. The lever is the disposal stack (completes faster/cleaner), not a meta-skip.
+  (Any size/skip change is live rail-1 propose-only regardless.)
+
+- OV-STACK 🟡 **Stacks perform as designed in the 7-day TEST-period replay (07-07..07-13)
+  — but this is NOT yet forward data.** BTC, day-clustered t vs live (live baseline
+  −4.98c/win, 8.5% strand):
+    combined      strand 8.5%→**0.0%**, +1.93c/win, **t=+4.68**
+    stack_lean    0.0%, +1.46c, t=+4.51
+    stack_full    0.0%, +1.61c, t=+4.34
+    c3_share      4.3%, **+2.21c** (highest EV), **t=+8.02**
+    hazard_stop   0.0%, +0.91c, t=+2.70
+    thickbook_veto 6.4%, +1.20c, t=+2.47
+    back2         13.8%, −0.67c, **t=−0.95** (falsification control on BTC — correctly
+                  WORSE than live, as expected for quoting 2c behind touch)
+    cell_veto / givecap15  byte-identical to live (inert; retire-watch at 10 days)
+  CRITICAL CAVEAT: 07-07..07-13 is the arms' OWN fit/test window — these reproduce the
+  replay priors, they are NOT held-out forward evidence. The forward clock starts 07-14
+  (box-shadow.yml now running); promotion gate ~07-24 (≥10 forward days, day-clustered
+  t≥2, avseq early-promotion only). Do not promote on these numbers.
