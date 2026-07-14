@@ -761,3 +761,26 @@ which requires the calibrated fill model (hires tape, ~07-18). INTERIM decision-
 the operator; de-risking = rail-1 exception, operator's call): given proven EV<=0, minimizing size
 or pausing until an edge is demonstrated PRESERVES capital vs a guaranteed slow bleed — the only
 "winning" (loss-minimizing) move available before the fill model exists.
+
+## ADV-SELECT (2026-07-14, /goal — the identified candidate winning strategy + the honest ceiling)
+Found the strongest mechanism-grounded lead: ADVERSE SELECTION BY QUOTE STALENESS. Fill-level live
+markout (3467 fills): fills that rest <1s before filling = markout +$1.77; fills resting >=1s =
+−$3.45. Textbook microstructure: a quote that sits gets filled BECAUSE the market moved to it
+(sniped by informed flow); a fast fill is uninformed. Median resting = 0.80s; 17% of fills rest >2s
+and carry the loss. This is WHY the strategy is zero-edge (ZERO-EDGE) and why markout is negative
+(SIM-LIVE-GAP-2): the bot's quotes are stale-sniped.
+THE CANDIDATE WINNING STRATEGY: anti-staleness quoting — cancel/reprice a quote BEFORE it rests long
+enough to be picked off (shorter --order-ttl-s and/or cancel-on-spot-move), keeping the profitable
+fast-fill flow and shedding the slow-fill adverse selection. Grounded in real microstructure, not a
+statistical fluke. The bot already logs resting_s and reprices on a ~1.2s heartbeat, so this is a
+threshold change (propose-only, rail 1).
+HONEST CEILING: the fast/slow split does NOT survive 07-12/13 → 07-14 train/test (fast-only markout:
+TRAIN +$4.1 improvement, TEST −$0.7 — flips). 3 days is too thin to VALIDATE any edge; ~15 candidates
+tested this session ALL fail OOS, which is the expected behavior of train/test on a near-efficient
+process with tiny data. So anti-staleness is the #1 HYPOTHESIS (mechanism + strong in-sample), NOT a
+validated winner. Further slicing of these 3 days is p-hacking and risks manufacturing a false
+positive — declined. VALIDATION PATH (the honest way to a confirmed winner): (a) measure the
+fast/slow markout split daily as data accumulates — if the >1s-fill adverse selection is stable over
+~2 weeks, the anti-staleness edge is real; (b) OR test it on the hires sub-second tape (~07-18) where
+staleness is directly observable. Deploy proposal (operator, propose-only): tighten --order-ttl-s /
+add cancel-on-spot-move; forward-validate that it shifts fills toward <1s and lifts realized.
