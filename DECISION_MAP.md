@@ -819,3 +819,24 @@ toward <1s resting, (2) lifts realized/win vs the current zero-edge baseline ove
 confirm on the hires tape ~07-18). This is the terminal analytical result: the winning-strategy
 HYPOTHESIS is now a specific two-flag change with a mechanism and a forward test, awaiting operator
 go-ahead. Analysis cannot demonstrate it further without live measurement.
+
+## HIRES-ADVSELECT (2026-07-14, "wait + more research" — hires spot data WEAKENS the anti-staleness candidate)
+Used the ms-resolution hires tape (07-14: 229k Coinbase spot ticks + full Kalshi books) to test the
+ADV-SELECT sniping mechanism against TRUE spot, aligning 1761 of our fills to spot by ms timestamp.
+RESULT: NO spot-driven adverse selection by fill speed. Spot markout (favorable=+) fast<1s vs slow>=1s:
+  h=0.25s +0.000000/+0.000001 | 0.5s +0.000001/+0.000002 | 1s +0.000001/+0.000002 | 2s +0.000000/+0.000003
+Slow fills are, if anything, very slightly POSITIVE post-fill (opposite of pickoff), and pre-fill
+(the classic pickoff window) shows nothing. The Kalshi-`markout` fast/slow split (+$1.77/−$3.45) that
+motivated ADV-SELECT does NOT reproduce on clean spot — and it already flipped OOS (train +$4.1/test
+−$0.7). CONCLUSION: the "stale quotes get sniped by informed spot flow" story is NOT supported by the
+best available data. The Kalshi-markout signal is book-microstructure noise, not spot-driven adverse
+selection. DEEPER POINT: short-horizon markout (spot OR Kalshi) is (a) not robust and (b) IRRELEVANT
+to realized P&L, which is settlement-driven (breakeven boxes + zero-mean strand coin-flips, 15-min
+horizon). There is no markout-based fix because markout is not the P&L.
+IMPACT ON ADV-STALE-CONFIG: the two-flag anti-staleness proposal is now WEAKLY supported, not the
+confident candidate it looked like. Deploying it would likely change fill timing without lifting
+realized edge (nothing to avoid). DO NOT present it as the likely winner. HONEST STANDING: current
+strategy is edgeless (t=−0.08) AND the leading fix hypothesis is refuted by the hires data. A real
+edge must come from capturing positive box width at ENTRY (a quoting/pricing question needing the
+fill model + weeks) — not from quote-timing. Research has converged: no winning strategy is
+discoverable OR mechanistically supported in the data available today.
