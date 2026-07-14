@@ -253,7 +253,7 @@ L0_QDEPTH_C_MAX = 6717.0
 L0_MINUTE1_MAX = 7.0
 
 ARMS = ["live", "hazard_stop", "thickbook_veto", "cell_veto", "givecap15", "combined",
-        "stack_full", "stack_lean", "c3_share", "back2", "volgate"]
+        "stack_full", "stack_lean", "c3_share", "back2", "volgate", "nsmove"]
 STACK_ARMS = ("stack_full", "stack_lean")
 
 # ---- c3_share: C3 completing-side depth-share veto, MILD variant (forward arm only) ----
@@ -337,6 +337,17 @@ VOLGATE_Q = 0.75          # veto when prior-window vol is above the 75th pct of 
 VOLGATE_MIN_HIST = 12     # need this many prior windows before the quantile is meaningful
 _VOLGATE_PREV = {}        # asset -> realized mid-return vol of the immediately-preceding window
 _VOLGATE_HIST = {}        # asset -> rolling list of recent window vols (threshold source)
+
+# ---- nsmove: near-strike x movement veto (forward arm, 2026-07-14) ---------------------------
+# OV-2POP/OV-STRIKE: the BIG losses (the cluster-prone population) are near-strike entries that get
+# hit by an adverse price MOVE (leg-swing 2.3x winners); the SMALL near-strike coin-flips (low
+# movement) are irreducible low-stakes noise. So gate MORE tightly than volgate: veto ONLY when the
+# prior-window movement regime is high (reuse volgate_flag) AND the entry is near-strike
+# (|p1-0.5| < NSMOVE_MNY, the loss zone: losers |mid-0.5|~0.07 vs winners ~0.10). This TARGETS the
+# drift-driven big-loss subset (leading |drift| AUC 0.875 provisional, n=6) while sparing the good
+# far-from-strike volume that volgate's broader veto would also skip. nsmove is a strict SUBSET of
+# volgate's vetoes. HONEST LIMIT: motivating n=6 -> forward arm to validate the mechanism, not deploy.
+NSMOVE_MNY = 0.15         # near-strike = |p1-0.5| < 0.15 (p1 in 0.35..0.65, the coin-flip zone)
 
 
 def window_vol(rows):
@@ -1067,6 +1078,8 @@ def process_window(ws, rows, asset, resolved_up, thick_threshold, existing_keys,
         l0_minute1_both = float(int(ff["row_i"][0] // 60))
         l0_flag_both = l0_minute1_both > L0_MINUTE1_MAX
         for arm in ARMS:
+            # nsmove does NOT apply to simultaneous both-fills (box is locked, no completing leg to
+            # defend) -> it is absent here and gets the normal locked-spread emit like other arms.
             veto = (cell_flag and arm in ("cell_veto", "combined")) or \
                    (l0_flag_both and arm in STACK_ARMS) or \
                    (volgate_flag and arm == "volgate")
@@ -1077,6 +1090,8 @@ def process_window(ws, rows, asset, resolved_up, thick_threshold, existing_keys,
         return written
 
     side, p1, pc0 = ff["side"], ff["p1"], ff["pc0"]
+    # nsmove: veto only the near-strike entries during a high prior-movement regime (subset of volgate)
+    nsmove_flag = volgate_flag and (abs(p1 - 0.5) < NSMOVE_MNY)
     idx_i, idx_fill, ri = ff["idx_i"], ff["idx_fill"], ff["row_i"]
     bsz1, asz1 = ri[5], ri[7]
     qdepth_c = (asz1 if side == "yes" else bsz1) or 0
@@ -1101,7 +1116,8 @@ def process_window(ws, rows, asset, resolved_up, thick_threshold, existing_keys,
                    (thick_flag and arm in ("thickbook_veto", "combined")) or \
                    (c3_flag and arm == "c3_share") or \
                    (l0_flag and arm in STACK_ARMS) or \
-                   (volgate_flag and arm == "volgate")
+                   (volgate_flag and arm == "volgate") or \
+                   (nsmove_flag and arm == "nsmove")
             if veto:
                 emit(arm, 0.0, False, False, None, qdepth_c=qdepth_c)
             else:
@@ -1129,11 +1145,12 @@ def process_window(ws, rows, asset, resolved_up, thick_threshold, existing_keys,
                (thick_flag and arm in ("thickbook_veto", "combined")) or \
                (c3_flag and arm == "c3_share") or \
                (l0_flag and arm in STACK_ARMS) or \
-               (volgate_flag and arm == "volgate")
+               (volgate_flag and arm == "volgate") or \
+               (nsmove_flag and arm == "nsmove")
         if veto:
             emit(arm, 0.0, False, False, None, qdepth_c=qdepth_c)
             continue
-        if arm in ("live", "thickbook_veto", "cell_veto", "c3_share", "volgate"):
+        if arm in ("live", "thickbook_veto", "cell_veto", "c3_share", "volgate", "nsmove"):
             b = policy_live(p1, c_series, side, resolved_up, dispose_max_give=DISPOSE_MAX_GIVE)
         elif arm == "givecap15":
             b = policy_live(p1, c_series, side, resolved_up, dispose_max_give=0.15)
