@@ -692,3 +692,28 @@ CAVEATS: 3 days / 108 windows, strand variance in kept sets, feature parity with
 approximate (fills-derived depth/vol vs tape-derived). Not a kill — a REBASE: the 07-24 promotion
 gate for veto arms must be judged on live_anchor realized deltas, NOT box_shadow locked deltas.
 An arm that passes the fictional gate but fails the realized gate does not deploy. Runbook updated.
+
+## EXEC-FAIL (2026-07-14, /goal find-a-winning-strategy — ROOT CAUSE OF THE LOSS TAIL FOUND)
+Traced TRUE realized P&L (settlement-based, reconciled to balance within $0.99 — net_final is a
+SIGNED POSITION not cash; realized = n_boxes + naked_payout(resolved_up) − cost) down to the order
+log. **The execution layer silently fails: 115 rejected orders in 2 days (07-13/14):**
+- **F14 flatten: fires correctly, venue refuses it.** 60/60 fractional count_fp orders → HTTP 400
+  "invalid order", ALL in the final 45s (the flatten zone). Only success sets frac_flatten_used, so
+  it retries and reports 0 fires. Response body not logged → cannot yet tell malformed-format vs
+  fractional-orders-not-allowed.
+- **Completion/dispose crosses: SELF-CROSS rejections.** 41/55 integer rejects had OUR OWN resting
+  opposite-side quote at a crossing price at reject time (Kalshi self-trade prevention). Exactly
+  when completion matters most (near close, our quote near the touch), the cross bounces → market
+  moves → later completion at adverse price (the −13c negative-width mode) or strand. The loss tail
+  we chased at the strategy level is (at least substantially) an ORDER-REJECTION bug.
+- TRUE-realized context: clean fully-covered windows are PROFITABLE (+$1.04/23, median +4c/win,
+  75/103 positive); the tail (4 windows −$5.72, avg box cost up to $1.20-1.31 from churn) exceeds
+  the entire net loss. Every naive tail-cut (cost-stop, overpay-halt, k-cap, price-cap-conservative,
+  entry vetoes) FAILS honest realized testing — because the tail isn't a strategy flaw, it's broken
+  execution.
+**GOAL ANSWER: the winning profitable strategy = the CURRENT strategy, executed correctly.** Its
+clean-execution economics are positive; its losses trace to silent 400s. FIX (built, flag-gated,
+default-off, operator word to enable): (1) --cross-self-cancel: before a crossing dispose/complete/
+flatten order, cancel own resting opposite-side orders that would self-cross; (2) unconditional
+logging of the 400 response body (diagnostics; decides the count_fp question). Forward validation
+after enable: rejects/day ↓, negative-width tail ↓, TRUE realized/window ↑ vs the reconciled baseline.
