@@ -747,3 +747,17 @@ to test honestly (hires tape, node P1, ~07-18). Until then, no honest test can p
 manufacturing one would be the av_stoikov error again. The deliverable toward the goal is therefore:
 (1) this rigorous zero-edge finding; (2) the fill-model harness as the prerequisite; (3) the
 adverse-selection-reduction hypotheses (quote-width, latency) queued for when it exists.
+
+## ZERO-EDGE-CONFIRM (2026-07-14, rebate check — closes the last "hidden income" hope)
+Checked for maker rebate income (the balance was $0.40 better than winrec-realized; the old paper
+metric was "rebate-inclusive"). RESULT: NO rebate. 866 maker fills = $0.000 fee AND $0.000 rebate;
+22 taker fills = −$0.571 total. fee_reported has ZERO negative (credit) values. The winrec↔balance
+$0.40 gap is unresolved-settlement/open-position accounting, NOT income. Kalshi 15m pays makers
+nothing and charges takers only. So the strategy is zero-edge MINUS a small taker-fee drag =
+slightly NEGATIVE EV. Exhaustive honest search now complete — clean-edge zero, strands zero-mean,
+no rebate, every window-level lever fails realized OOS. A positive edge is NOT discoverable in the
+current window-level data; it must come from sub-window quoting (adverse-selection reduction),
+which requires the calibrated fill model (hires tape, ~07-18). INTERIM decision-theoretic note (for
+the operator; de-risking = rail-1 exception, operator's call): given proven EV<=0, minimizing size
+or pausing until an edge is demonstrated PRESERVES capital vs a guaranteed slow bleed — the only
+"winning" (loss-minimizing) move available before the fill model exists.
