@@ -108,5 +108,82 @@
 "close_time": "2026-07-29T17:59:00Z",
 "anchor_prob_at_entry": 0.64,
 "edge_at_entry": -0.155
+},
+{
+"ticker": "KXCPIYOY-26JUL-T3.8",
+"series": "KXCPIYOY",
+"rung": "above 3.8",
+"side": "NO",
+"entry_price": 0.97,
+"ts": "2026-07-15T16:59:55+00:00",
+"close_time": "2026-08-12T12:29:00Z",
+"anchor_prob_at_entry": 0.0007,
+"edge_at_entry": -0.0443
+},
+{
+"ticker": "KXCPIYOY-26JUL-T3.7",
+"series": "KXCPIYOY",
+"rung": "above 3.7",
+"side": "NO",
+"entry_price": 0.96,
+"ts": "2026-07-15T16:59:55+00:00",
+"close_time": "2026-08-12T12:29:00Z",
+"anchor_prob_at_entry": 0.0056,
+"edge_at_entry": -0.0544
+},
+{
+"ticker": "KXCPIYOY-26JUL-T3.6",
+"series": "KXCPIYOY",
+"rung": "above 3.6",
+"side": "NO",
+"entry_price": 0.9,
+"ts": "2026-07-15T16:59:55+00:00",
+"close_time": "2026-08-12T12:29:00Z",
+"anchor_prob_at_entry": 0.0306,
+"edge_at_entry": -0.0894
+},
+{
+"ticker": "KXCPIYOY-26JUL-T3.5",
+"series": "KXCPIYOY",
+"rung": "above 3.5",
+"side": "NO",
+"entry_price": 0.75,
+"ts": "2026-07-15T16:59:55+00:00",
+"close_time": "2026-08-12T12:29:00Z",
+"anchor_prob_at_entry": 0.114,
+"edge_at_entry": -0.161
+},
+{
+"ticker": "KXCPIYOY-26JUL-T3.4",
+"series": "KXCPIYOY",
+"rung": "above 3.4",
+"side": "NO",
+"entry_price": 0.52,
+"ts": "2026-07-15T16:59:55+00:00",
+"close_time": "2026-08-12T12:29:00Z",
+"anchor_prob_at_entry": 0.2949,
+"edge_at_entry": -0.1951
+},
+{
+"ticker": "KXCPIYOY-26JUL-T3.3",
+"series": "KXCPIYOY",
+"rung": "above 3.3",
+"side": "NO",
+"entry_price": 0.3,
+"ts": "2026-07-15T16:59:55+00:00",
+"close_time": "2026-08-12T12:29:00Z",
+"anchor_prob_at_entry": 0.5508,
+"edge_at_entry": -0.1742
+},
+{
+"ticker": "KXCPIYOY-26JUL-T3.2",
+"series": "KXCPIYOY",
+"rung": "above 3.2",
+"side": "NO",
+"entry_price": 0.17,
+"ts": "2026-07-15T16:59:55+00:00",
+"close_time": "2026-08-12T12:29:00Z",
+"anchor_prob_at_entry": 0.7865,
+"edge_at_entry": -0.0635
 }
 ]
