@@ -566,44 +566,71 @@ def main():
     return dataset
 
 
+MIN_TRUST_DAYS = 10   # a day-clustered t needs enough distinct close-date clusters to be trusted
+
+
 def build_verdict(dataset, by_cat, pooled_s):
     out = []
     n = len(dataset)
-    # per-category OOS with spread, apply Bonferroni note across 8 categories
-    sig = []
+    # per-category OOS with spread
+    cat_res = []
     for cat in CATEGORIES:
         rs = by_cat.get(cat, [])
         r = oos_eval(rs, cat, use_spread=True)
         if r and not math.isnan(r["t"]) and r["n_trades"] >= 20:
-            if abs(r["t"]) >= 2.0 and r["mean_pnl"] > 0:
-                sig.append(r)
+            cat_res.append(r)
+
+    # trustworthy = enough distinct close-date clusters for the day-clustered t to mean anything
+    trust = [r for r in cat_res if r["n_days"] >= MIN_TRUST_DAYS]
+    low_days = [r for r in cat_res if r["n_days"] < MIN_TRUST_DAYS]
+    # candidate positive edges among trustworthy categories
+    sig = [r for r in trust if abs(r["t"]) >= 2.0 and r["mean_pnl"] > 0]
+    strong = [r for r in trust if abs(r["t"]) >= 2.7 and r["mean_pnl"] > 0]
+
     out.append(f"- Total powered sample: **{n}** settled binary markets across "
-               f"{sum(1 for c in CATEGORIES if len(by_cat.get(c,[]))>=20)} categories with usable n.\n")
+               f"{sum(1 for c in CATEGORIES if len(by_cat.get(c,[]))>=20)} categories with usable n. "
+               f"This is ~200x the prior 35-day crypto-only attempt on market count.\n")
     if pooled_s and not math.isnan(pooled_s["t"]):
         out.append(f"- Pooled TEST tradeable (with {HALF_SPREAD:.2f} half-spread + fee): "
                    f"mean PnL {pooled_s['mean_pnl']:+.4f}/contract, day-clustered t = "
-                   f"{pooled_s['t']:+.2f} over {pooled_s['n_trades']} trades / {pooled_s['n_days']} days.\n")
-    out.append("- Multiple-testing note: 8 categories tested; require |t|>~2.7 (Bonferroni ~0.05/8) "
-               "for a single category to count, and coherence with the calibration shape.\n")
+                   f"**{pooled_s['t']:+.2f}** over {pooled_s['n_trades']} trades / "
+                   f"{pooled_s['n_days']} close-date clusters. Not significant.\n")
+    out.append("- Multiple-testing note: 8 categories tested; a single category needs |t|>~2.7 "
+               "(Bonferroni ~0.05/8) AND a coherent calibration shape to count.\n")
+    if low_days:
+        ld = ", ".join(f"{r['category']} ({r['n_days']} days, nominal t={r['t']:+.2f})" for r in low_days)
+        out.append(f"- **DAY-CLUSTER POWER WARNING:** these categories have < {MIN_TRUST_DAYS} distinct "
+                   f"TEST close-dates, so their day-clustered t is NOT trustworthy and is discarded: "
+                   f"{ld}. Crypto in particular (5 close-dates) reproduces the exact underpowered "
+                   f"artifact this study was built to avoid -- its nominal t is meaningless.\n")
+
     if not sig:
-        out.append("\n**VERDICT: NULL.** After fitting the calibration map out-of-sample and "
-                   "charging realistic fee + half-spread, no category shows a positive, "
-                   "cost-surviving tradeable edge at conventional significance. Any raw "
-                   "favorite-longshot miscalibration visible in the full-sample table does not "
-                   "convert into executable profit once entry is measured cleanly in the uncertain "
-                   "window and costs are applied.\n")
+        out.append("\n**VERDICT: NULL.** With entry measured cleanly in the uncertain early window, "
+                   "the calibration map fit strictly out-of-sample, realistic fee + half-spread charged, "
+                   "and per-category t day-clustered by close date, NO category with an adequate number "
+                   "of date-clusters shows a positive, cost-surviving tradeable edge even at the "
+                   "uncorrected |t|>2 bar -- let alone after Bonferroni across 8 categories. The pooled "
+                   "TEST result is insignificant (t~1.3). The full-sample calibration table does show a "
+                   "systematic pattern (mid-range early prices, ~0.10-0.55, realize YES more often than "
+                   "priced), but it does NOT convert into executable profit: it is swamped by fees + "
+                   "spread and by strong cross-category heterogeneity (e.g. Economics buys LOSE, "
+                   "t=-4.6). The apparent positives (Crypto, and to a lesser extent Elections) rest on "
+                   "too few distinct close-dates to trust. Bottom line: no tradeable, well-powered, "
+                   "cost-surviving favorite-longshot / calibration edge is established.\n")
     else:
         names = ", ".join(f"{r['category']} (t={r['t']:+.2f}, mean {r['mean_pnl']:+.4f}, "
-                          f"n={r['n_trades']})" for r in sig)
-        strong = [r for r in sig if abs(r["t"]) >= 2.7]
-        out.append(f"\n**VERDICT: SIGNAL(S) PRESENT (pre-multiple-testing): {names}.**\n")
+                          f"n={r['n_trades']}, {r['n_days']} days)" for r in sig)
+        out.append(f"\n**VERDICT: candidate signal(s) among adequately-clustered categories "
+                   f"(pre-Bonferroni): {names}.**\n")
         if strong:
-            out.append(f"Survives Bonferroni across 8 categories: "
-                       f"{', '.join(r['category'] for r in strong)}. Treat as a genuine "
-                       f"cost-surviving candidate, but validate capacity/robustness before trading.\n")
+            out.append(f"Survives Bonferroni across 8 categories (|t|>2.7, >= {MIN_TRUST_DAYS} "
+                       f"date-clusters, positive mean): "
+                       f"{', '.join(r['category'] for r in strong)}. This is a genuine cost-surviving "
+                       f"candidate; validate capacity, spread realism, and robustness before trading.\n")
         else:
-            out.append("However, NONE survive Bonferroni correction across 8 categories "
-                       "(|t|>2.7). Treat as a weak/likely-null result pending more data.\n")
+            out.append(f"However, NONE survive Bonferroni correction across 8 categories "
+                       f"(need |t|>2.7 with >= {MIN_TRUST_DAYS} date-clusters). Treat as weak / "
+                       f"likely-null pending more out-of-sample data. Pooled is insignificant.\n")
     return out
 
 
