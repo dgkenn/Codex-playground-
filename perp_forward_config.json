@@ -1,0 +1,30 @@
+{
+  "_comment": "FROZEN forward-validation config for perp<->15m-binary BASIS (edge a). Persisted 2026-07-15, BEFORE forward day 1. Forward days apply this UNCHANGED (no refit). See perp_forward.py header and perp_strategy_design.md sec 1.",
+  "edge": "a_basis",
+  "freeze_date": "2026-07-15",
+  "forward_start": "2026-07-15",
+  "gate_min_days": 10,
+  "gate_t": 2.0,
+  "assets_basis": ["btc", "eth", "sol", "xrp"],
+  "assets_favlong": ["btc", "eth", "sol"],
+  "entry_thr_bps": 15.0,
+  "exit_thr_bps": 6.0,
+  "anchor_max_s": 180.0,
+  "decision_lo_s": 300.0,
+  "decision_hi_s": 720.0,
+  "settle_min_s": 780.0,
+  "atm_band": 0.35,
+  "align_tol_s": 6.0,
+  "tau_floor_s": 30.0,
+  "nbin_cap": 40.0,
+  "perp_taker_bps": 6.0,
+  "kalshi_fee_coef": 0.07,
+  "_notes": {
+    "entry": "enter ONE delta-neutral basis trade per window at the FIRST decision-band tick where |basis_bps|>entry_thr_bps AND entry near-ATM (|p-0.5|<atm_band). basis>0 => perp rich => SHORT perp + LONG binary YES; basis<0 => LONG perp + SHORT binary YES.",
+    "exit": "PRIMARY accounting HOLDS TO BINARY SETTLE (self-settling, no mark ambiguity). exit_thr_bps persisted for a future early-revert variant; not used in the primary path.",
+    "sizing": "delta-neutral to a 1%-spot move: perp leg = $1 spot notional; binary leg multiplier n_bin = (sigma*sqrt(tau))/phi(z), capped at nbin_cap. P&L booked as $ per $1 spot-delta notional (return units).",
+    "costs": "perp 6 bps taker per fill (round trip 2 fills = 12 bps on the $1 perp notional); binary filled at executable yes_ask (buy)/yes_bid (sell) + Kalshi fee 0.07*p*(1-p)/contract; binary settles 0/1 (no fee on settlement).",
+    "threshold_rationale": "On the 2026-07-15 freeze/collection day (pre-forward; forward_start is EXCLUSIVE of it), the same-venue perp<->binary basis was SMALL: mean|basis|~4-5 bps, p90~9-11 bps, max~20-24 bps across btc/eth/sol/xrp. entry_thr_bps set to the LOW end of the pre-registered 15-40 bps candidate band so the harness can accrue gate-eligible trades while still clearing the ~12 bps perp round-trip + binary fees. FROZEN here; forward days apply it unchanged. ECONOMIC-THINNESS RISK: this basis is near-mechanical and may not clear cost at achievable size -> watch the economic screen, not just the t-stat.",
+    "binary_implied_spot": "single-strike 15m up/down market has no dollar strike in the feed; K0 is calibrated ONCE per window from the earliest window tick (t-ws<=anchor_max_s) by forcing perp<->binary agreement there, then S_bin(t)=K0/(1-z*(t)*sigma(t)*sqrt(tau(t))) via the FAVLONG fair-value inversion (z*=probit(yes_mid)). basis_bps=1e4*(S_perp/S_bin-1)."
+  }
+}
