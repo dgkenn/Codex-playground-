@@ -1,0 +1,69 @@
+# favlong-forward -- FORWARD-VALIDATION runner for the FAVLONG near-expiry contrarian-taker edge.
+#
+# favlong_forward.py is a READ-ONLY replay harness (stdlib only, no keys, no orders) that imports
+# favlongshot_edge.build_asset / .score and re-runs the ONE validated config (decision_t=720,
+# edge=0.05, +Kalshi fees, clean market-settlement labels, no fill lag) on each COMPLETE tick-archive
+# day AFTER 2026-07-14, for btc/eth/sol. It appends one per-(asset,day) record to
+# favlong_forward_log.jsonl and prints the running POOLED day-clustered gate status.
+# FORWARD_LEDGER.md pre-registers this edge as "forward clock starts at the first tick-archive day
+# after 2026-07-14; gate opens ~2026-07-25"; this workflow is what actually accrues those days.
+#
+# It is a REPLAY, not a live poll loop: the script fetches the gha-data branch itself (with retries)
+# and reads ticks via `git show origin/gha-data:...`. It is idempotent -- keyed on (asset, day), so
+# re-runs only fill gaps and only score days STRICTLY BEFORE today UTC (a completed day never
+# changes). Once daily is plenty. Unlike box-shadow.yml the OUTPUT (the log) is a CODE-branch
+# artifact that lives beside favlongshot_edge.py, so we commit it back to $BRANCH, not to gha-data.
+# No numpy / external deps -- favlongshot_edge.py + favlong_forward.py are pure stdlib.
+#
+# Pull results: git show ${BRANCH}:favlong_forward_log.jsonl   (or run `python favlong_forward.py --report`)
+#
+# CRON OFFSET: box-shadow=:47 every 3h / collect=:9,29,49 / live=:3,28,53 / health=:14,44 /
+# strategy-alert=:17 / wallet-track=:23. This one is DAILY at 06:33 UTC -- distinct minute, and
+# late enough that the prior UTC day's ticks are fully collected + committed to gha-data.
+name: favlong-forward
+
+on:
+  schedule:
+    - cron: '33 6 * * *'   # daily 06:33 UTC (dodges box-shadow :47 and the minute-crons above)
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: favlong-forward
+  cancel-in-progress: false
+
+env:
+  BRANCH: claude/coding-bot-ab-test-results-ffmhxw
+
+jobs:
+  favlong-forward:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.BRANCH }}
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: score new forward days + commit the log to the code branch
+        if: always()
+        run: |
+          set -e
+          git config user.name  "favlong-forward-bot"
+          git config user.email "favlong-forward-bot@users.noreply.github.com"
+          # favlong_forward.py fetches origin gha-data itself (retry/backoff) and reads ticks via git-show;
+          # it appends only NEW complete forward (asset,day) rows and prints the pooled gate status.
+          python -u favlong_forward.py || true
+          # commit only the forward log (nothing else changes)
+          git add favlong_forward_log.jsonl 2>/dev/null || true
+          git commit -m "favlong forward rows $(date -u +%FT%HZ)" || { echo "nothing to commit"; exit 0; }
+          for i in 1 2 3 4 5; do
+            git push origin HEAD:${BRANCH} && exit 0
+            git fetch origin ${BRANCH} && git rebase origin/${BRANCH} || true
+            sleep $((RANDOM % 6 + 2))
+          done
+          echo "push failed after retries" >&2; exit 1
