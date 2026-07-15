@@ -1280,3 +1280,43 @@ CRITICAL FOLLOW-UP RAISED: the clean-label SELECTION inflated a spot-direction s
 FAVLONG is ALSO validated on clean-label windows and its signal is spot-vs-strike -> MUST verify FAVLONG's
 edge survives WITHOUT the clean-label selection, else our one edge shares this leak. Check launched. Report:
 edge_dumbflow.md (LATE-FLOW-FOLLOW section).
+
+## FAVLONG-INFLATED (2026-07-15, CRITICAL — overturns the central result) — the "one edge" was a look-ahead artifact
+FAVLONG's validated edge is MATERIALLY a LOOK-AHEAD SELECTION ARTIFACT of the clean-label filter
+(favlongshot_edge.py:137 / favlong_model_v2.py:123: `if out_proxy != outcome: continue`, dropping windows
+where sign(final_spot-open_spot) != (mid_close>0.5)). That drop PEEKS at the terminal outcome (a live trader
+cannot apply it) and deletes exactly the ~7% of windows where FAVLONG's spot-direction signal disagrees with
+settlement -- the trades most likely to LOSE (dropped windows realize -0.20..-0.23/ct).
+INDEPENDENTLY VERIFIED (lead re-ran, toggling ONLY that line): calibrated OOS pooled t 5.74 -> 1.80 without
+the drop (btc 1.97, eth 1.41, sol -0.27), mean 0.051 -> 0.015/ct; agent got 1.87/0.018 and in-sample t=-0.34.
+BOTH BELOW the t>=2 charter gate -- no deployable edge in OR out of sample; only btc alone is near-2 (1.97).
+The favorite>=0.60 "rescue" (t=2.24) was itself computed on the selected subset (deployable t=0.66). Isotonic-
+fit-on-selected-rows is second-order (refit -> t~1.80). ROOT CAUSE: the STRIKE is proxied as open-spot (the
+real Kalshi strike isn't in the tick archive; binmid confirms open YES mid 0.365/0.625 != 0.5 => strike !=
+open). The proxy is wrong in ~7% of windows, flipping the outcome; clean-label hid those losses by outcome-
+peeking.
+IMPLICATIONS: (1) FAVLONG as validated is NOT a deployable edge. (2) The forward harnesses (favlong_forward.py,
+favlong_taker.py) score the INFLATED clean-label version -> the forward gate measures the WRONG thing and MUST
+be corrected (drop the filter; label = market terminal on ALL windows). (3) POSSIBLE RECOVERY (not yet done):
+re-derive FAVLONG with the TRUE strike / real binary price (the binmid ticker carries the real market) instead
+of the open-spot proxy -- fixes the ~7% bad windows and removes the clean-label crutch; the deployable edge may
+recover to >=2 or confirm dead. Report: favlong_cleanlabel_robustness.md.
+
+## PMKT-WALLETS (2026-07-15) — Polymarket wallet-level smart/dumb: skill is REAL+persistent but NULL for a tradeable edge
+Data fully obtainable: data-api.polymarket.com/trades (wallet addr, side, price, size) + Gamma UMA resolution;
+632 btc-updown-5m markets, 2.53M trades, 30,761 wallets, 35d, zero-sum-validated. Smart/dumb PERSISTS in rank
+(Spearman train->test ROI 0.16-0.18, z~6-8; top decile +11% OOS ROI, bottom negative) -- so with real IDs,
+skill is genuinely identifiable. BUT NO follow/fade clears net: FOLLOW-smart +$28.7k (t=2.08) collapses to
+-$2.1k without the top-10 whales; FADE-new t=4.82 but 88% is 50 blow-up accounts, reverses to -$64k (t=-5.71)
+without the worst-200 -- the dollars live in ex-ante-UNIDENTIFIABLE tails. Size-independent directional signal
+clears nothing (best t=1.89 pre-cost); FADE-dumb clean null. ROOT CAUSE: Polymarket books tight/deep/EFFICIENT
+-> even ZERO fees open no fadeable behavioral mispricing (confirms newedge_polymarket). Transfer to Kalshi: LOW.
+Verdict: excellent data + real persistent skill, rigorous NULL for a portable follow/fade edge. Report:
+edge_polymarket_wallets.md.
+
+## STATE OF THE PROGRAM (2026-07-15, honest reset)
+After exhaustive search we currently have ZERO validated DEPLOYABLE edges. FAVLONG (the presumed winner) was
+look-ahead-inflated -> deployable t~1.8 < gate. Box-making structurally dead. All sleeves/orthogonal/perp/
+participant/flow/Polymarket avenues null. The rigor caught FAVLONG BEFORE any money was risked (live box-maker
+OFF since LIVE-HALT). Concrete open recovery path: real-strike FAVLONG (use the true Kalshi strike from the
+binary market spec, not the open-spot proxy). If that fails, 15m-crypto binary has no demonstrable edge for us.
