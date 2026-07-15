@@ -1,8 +1,8 @@
-thin_collect: 2520s -> gha_data/thin_mkts_r29387229099.jsonl.gz
+thin_collect: 2520s -> gha_data/thin_mkts_r29389107895.jsonl.gz
 series catalogue: 7047 non-parlay series
-universe: 25 tracked (+25 candidates this cycle)
-universe: 40 tracked (+20 candidates this cycle)
-universe: 40 tracked (+20 candidates this cycle)
-universe: 40 tracked (+27 candidates this cycle)
-universe: 40 tracked (+2 candidates this cycle)
+universe: 15 tracked (+15 candidates this cycle)
+universe: 30 tracked (+15 candidates this cycle)
+universe: 40 tracked (+13 candidates this cycle)
+universe: 40 tracked (+28 candidates this cycle)
+universe: 40 tracked (+7 candidates this cycle)
 done
