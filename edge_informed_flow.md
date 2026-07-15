@@ -67,3 +67,68 @@ binary price in a followable way; heavy early flow is if anything a weak *fade* 
 already captures direction better than any flow signature. Do not build a flow-following taker strategy.
 The only place aggressive flow carries information is the already-known FAVLONG channel (fade the
 dislocated favorite), not "follow the informed size."
+
+---
+
+## FADE (direct test) — take the side OPPOSITE heavy flow at ITS executable price
+
+Follow-up (2026-07-15): follow-flow was NULL because heavy takers lift the losing underdog. Operator's
+point: a reliably-wrong signal inverted should be reliably right. So this section tests **FADING as a
+standalone strategy** — take the OPPOSITE side of heavy flow at ITS OWN executable price (cross the
+spread, pay the Kalshi fee). This is NOT the negative of the follow P&L: fading buys the favorite at its
+ask / sells the underdog at its bid, so it still eats a half-spread + fee. Same 19-day split
+(11 train ≤06-30 / 8 test), btc/eth/sol, clean realized-settlement labels, day-clustered by (asset,day).
+
+### Task 1 — Fade each flow signal (train-select / test-once)
+| Signal (fade) | Train pick (of N) | **OOS pooled t** | **OOS pooled mean $/ct** | Verdict |
+|---|---|---|---|---|
+| A. Net taker-flow imbalance (dt 300/450/600/720 × 6 thr = 24) | dt=300, |imb|≥4000; train t=1.00 | **−0.50** | **−0.0030** | NULL |
+| B. Large-trade, fade every large print (5 thr) | sz≥600; train t=**−2.06** | **−1.77** | **−0.0151** | NULL (loses) |
+| C. Directional consensus, fade the consensus (5) | K≥3, sz≥300; train t=−0.01 | +1.01 (n=131) | +0.0189 | NULL (insig., sparse) |
+
+Per-asset OOS for Signal A (best config): btc t=−0.50 (−0.0106/ct, n=557), eth t=+1.35 (+0.0479/ct, n=124),
+sol t=−1.15 (−0.0596/ct, n=37). Only eth is positive and it is not significant on tiny n; no pooled edge.
+**Multiple-testing count: 34 fade configs across the 3 families; none clears OOS t≥2 (max pooled OOS t=+1.01
+on the sparsest, n=131).** Signal B is *actively negative in-sample* (train t=−2.06): fading all 133k large
+prints crosses the spread 133k times and the cost buries any edge.
+
+### Task 2 — THE DECISIVE ECONOMICS (anti-flow / favorite side, Signal-A best config dt=300, |imb|≥4000)
+| | TRAIN (n=927) | **TEST/OOS (n=718)** |
+|---|---|---|
+| anti-flow side win-rate | 0.661 | **0.641** |
+| avg executable price paid | 0.644 | 0.630 |
+| avg mid-implied price | 0.639 | 0.625 |
+| spread cost (exec − mid) | +0.005 | +0.005 |
+| GROSS edge vs mid (winrate − mid) | +0.0225 | **+0.0156** |
+| GROSS edge vs EXEC (winrate − exec, after crossing spread) | +0.0175 | **+0.0102** |
+| Kalshi fee | 0.0129 | 0.0133 |
+| **NET $/ct (gross_exec − fee)** | **+0.0045** | **−0.0030** |
+
+**This is the crux.** The anti-flow (favorite) side DOES carry a genuine small GROSS directional edge:
+it wins ~64% at an executable price of ~0.63, i.e. **+1.0¢/ct gross even after crossing the spread** OOS.
+But the Kalshi fee at these ~0.63 prices is **~1.3¢/ct**, which is LARGER than the gross edge, so the trade
+**NETS −0.3¢/ct out-of-sample. The fade does NOT clear cost** — the fee, not the direction, kills it.
+The signal is real (favorite mildly underpriced) but too small to monetize as an unconditional taker at 300s.
+
+### Task 3 — Does heavy flow give a BETTER favorite entry than unconditional favorite-buy?
+OOS favorite-buy, ALL windows: t=−2.07, mean **−0.0181**/ct (n=1773).
+OOS favorite-buy, HEAVY-flow windows only: t=+0.09, mean **−0.0242**/ct (n=717).
+Conditioning on heavy flow does **not** improve the favorite-buy *mean* (it is if anything slightly worse
+per contract; the day-clustered t is less negative only because of higher day-to-day variance on the smaller
+sample). Heavy flow does not select systematically cheaper/righter favorites — both variants lose net of fee.
+
+### Task 4 — FADE vs FAVLONG correlation
+Per-window return corr(FADE Signal-A, FAVLONG) on 399 overlapping OOS windows = **−0.220** — confirms the
+predicted low/mild-negative, mostly-orthogonal relationship (follow was +0.199, fade is its rough mirror in
+*direction* but not in P&L). Orthogonality holds, but it is **moot**: a strategy that does not clear cost is
+not a stack candidate no matter how orthogonal.
+
+### FADE verdict: **NULL (net of cost).**
+Inverting the wrong signal recovers a real but tiny gross directional edge (favorite wins ~1¢/ct more than
+its executable price OOS), yet the ~1.3¢/ct Kalshi fee swamps it, leaving **−0.3¢/ct net OOS, pooled t=−0.50**.
+It also fails to beat an unconditional favorite-buy. Why FAVLONG clears cost and this does not: FAVLONG only
+fires on the rare *dislocated wide-book, near-expiry* windows where the model-vs-price edge exceeds 5%
+(gross ≫ fee), whereas fading ALL heavy-flow at 300s harvests a ~1¢ gross edge that cannot beat the fee.
+The fade is essentially an unfiltered, fee-dominated version of FAVLONG's favorite-side logic, not a new
+orthogonal edge. **Do not deploy a flow-fade taker strategy; the only monetizable form of this direction is
+FAVLONG's edge-gated favorite trade.**

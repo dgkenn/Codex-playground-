@@ -1228,3 +1228,19 @@ Three studies (FINGERPRINT + PLAYER-REID + INFORMED-FLOW) answer "learn from oth
   mechanism (it fades naive longshot-chasing flow via fair value), (2) a whale STAND-DOWN filter, (3) a
   DECAY EARLY-WARNING (counterparty reprice-latency falling -> wire a forward tripwire), (4) box-maker-off is
   a <=1% ecosystem change. Participant intel improves/monitors FAVLONG; it is not a second edge.
+
+## FADE-FLOW (2026-07-15) — fading dumb heavy flow: DIRECTION VALIDATED but NULL net-of-fee (the FEE is the killer)
+Directly tested FADING heavy dumb flow (take the OPPOSITE side at executable price, cross spread, net Kalshi
+fee -- not inferred from the follow). VERDICT: NULL net-of-cost, BUT the operator's direction is VALIDATED:
+the anti-flow (favorite) side wins ~64% at exec price ~0.63 = +1.0c/ct GROSS (after spread, OOS). The Kalshi
+fee ~= 0.07*p*(1-p) ~= 1.3c/ct at those prices EXCEEDS the 1c gross -> nets -0.3c/ct. THE FEE, NOT THE SIGNAL,
+KILLS IT. 34 fade configs, none OOS t>=2 (best pooled t=-0.50, -0.003/ct; per-asset btc -0.011, eth +0.048
+tiny-n, sol -0.060). Conditioning on heavy flow does NOT beat unconditional favorite-buy (-0.024 vs -0.018).
+FADE-vs-FAVLONG corr = -0.220 (low/orthogonal, as predicted) -- moot while sub-fee.
+KEY INSIGHT (reframes the DumbFlow hunt): FAVLONG monetizes this SAME favorite direction ONLY because it is
+SELECTIVE -- it fires only on dislocated wide-book near-expiry windows where gross (3-4c) >> fee. The
+unconditional/flow-conditioned fade's gross (1c) sits below the ~1.3c fee. => To monetize a fade you must get
+GROSS > FEE, via (a) a MORE SELECTIVE dumb subset (bigger dislocation, like FAVLONG's wide-book gate), or
+(b) trading at EXTREME prices where the fee 0.07*p(1-p) is SMALLER (p~0.1/0.9 fee ~0.6c vs ~1.75c at 0.5).
+This is exactly what the DumbFlow-signature hunt (counter-spot/tail/round-lot/late/session) should surface --
+tail/extreme-price fades naturally pay a lower fee. Report: edge_informed_flow.md (FADE section).
