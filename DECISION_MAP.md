@@ -1202,3 +1202,29 @@ follow the persistent winners. VERDICT: NULL, and the re-ID premise is INFEASIBL
 CONCLUSION: player re-ID is not feasible on the public feed (no IDs; size/timing don't isolate actors), and
 the tape is efficient -- nothing persistent to follow. The rare informed-whale FINGERPRINT signal remains
 only as a FAVLONG stand-down FILTER, not a standalone followable edge. Report: edge_player_reid.md.
+
+## INFORMED-FLOW (2026-07-15) — follow large/informed taker flow: NULL, hypothesis DISCONFIRMED (heavy flow is DUMB money)
+Operator hypothesis: large/one-sided/clustered aggressive taker flow is informed -> follow it. VERDICT NULL.
+Tape HAS aggressor side (BUY/SELL = taker). 19 days (11 train/8 test), btc/eth/sol, ~1550 windows/asset,
+day-clustered. FOLLOW-the-flow results: Test2 net-flow-imbalance OOS t=-1.93 (-$0.037/ct; train already
+neg -1.27); Test1 large-trade t=-0.14; Test3 consensus t=-0.42; Test4 smart-money-late-large t=+0.70 (only
+train pick t=1.96 collapses OOS); 40 configs, none positive. DECISIVE DIAGNOSTIC: in heavy-flow windows the
+FOLLOWED side hits settlement only ~37% while the book mid hits ~71-74% and flow agrees with mid only ~31%
+-- heavy aggressive flow LIFTS THE UNDERDOG (longshot), the MIRROR of FAVLONG. So the bulk heavy flow is
+DUMB MONEY (longshot chasing), NOT informed; following it pays spread+fee to chase an already-priced,
+usually-wrong direction. FAVLONG corr = +0.199 (low). IMPLICATION: this REINFORCES FAVLONG's mechanism --
+naive longshot-chasing flow is part of WHY favorites are underpriced near expiry, and FAVLONG partially
+FADES it. Fading heavy flow ~= FAVLONG's favorite-buy (correlated, pays spread) -> at most a FAVLONG
+confirmation/strength signal, NOT a standalone orthogonal edge. Report: edge_informed_flow.md.
+
+## PARTICIPANT/FLOW THREAD SYNTHESIS (2026-07-15) — closed
+Three studies (FINGERPRINT + PLAYER-REID + INFORMED-FLOW) answer "learn from other participants?":
+- The 15m tape is ANONYMOUS with no account/order ids; size+timing do NOT fingerprint individuals -> player
+  re-ID is INFEASIBLE, and best-effort synthetic-player search finds no OOS winner (fewer in-sample winners
+  than chance).
+- Aggressive flow is DUMB (longshot-chasing, ~63% wrong) not informed; following it LOSES. Only the RARE
+  >5000ct whales are informed (markout -0.083).
+- NET RESULT: no NEW followable edge in participant behavior. What we DID gain: (1) confirmation of FAVLONG's
+  mechanism (it fades naive longshot-chasing flow via fair value), (2) a whale STAND-DOWN filter, (3) a
+  DECAY EARLY-WARNING (counterparty reprice-latency falling -> wire a forward tripwire), (4) box-maker-off is
+  a <=1% ecosystem change. Participant intel improves/monitors FAVLONG; it is not a second edge.
