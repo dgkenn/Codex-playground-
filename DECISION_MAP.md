@@ -1320,3 +1320,26 @@ look-ahead-inflated -> deployable t~1.8 < gate. Box-making structurally dead. Al
 participant/flow/Polymarket avenues null. The rigor caught FAVLONG BEFORE any money was risked (live box-maker
 OFF since LIVE-HALT). Concrete open recovery path: real-strike FAVLONG (use the true Kalshi strike from the
 binary market spec, not the open-spot proxy). If that fails, 15m-crypto binary has no demonstrable edge for us.
+
+## FAVLONG-DEAD (2026-07-15, DEFINITIVE) — true-strike recovery KILLS it; it never had a deployable edge
+The true-strike test (real Kalshi floor_strike + result, ~100% coverage back to 06-10, so availability was a
+non-issue) is the decisive kill. With the TRUE strike + TRUE result + NO clean-label drop, deployable OOS
+pooled t = 0.91 (cache-days) / 0.78 (full), per-asset btc -0.27 / eth 1.16 / sol 0.66 -- below even the flawed
+1.80, and the TRAIN edge is GONE (all 24 v2 variants <=0 on train; most-generous best-of-24 post-hoc TEST
+t=1.31). Harness reproduced the prior 5.76 (inflated) / 1.79 (proxy-deployable) exactly -> alignment valid.
+THE EDGE WAS A DOUBLE ARTIFACT: (1) the clean-label outcome-peek inflated 5.74; (2) the residual "1.80" was
+itself the proxy-vs-true-strike MISSPECIFICATION -- not a real floor. PROFOUND: with the true strike the model
+is BETTER CALIBRATED (Brier improves, e.g. sol 0.100->0.089) but CANNOT TRADE, because a correctly-specified
+model AGREES with an already-EFFICIENT market. CONCLUSION: FAVLONG has NO deployable edge and never did.
+Report: favlong_truestrike_recovery.md.
+
+## STATE (2026-07-15) — 15m-crypto is efficient for us; the exhaustive search is null
+Every edge TYPE has now been tested and is null-or-artifact for a correctly-specified small participant at our
+cost structure: spread-capture (box, structurally dead), repricing-lag (FAVLONG, double artifact), directional/
+informed-flow (null; flow is dumb but sub-fee), cross-strike arb (null, within-spread), calibration (null),
+vol/event-VRP (null/insufficient), carry (perp funding=0), participant re-ID (infeasible, no ids), flow fade
+(direction real but sub-fee), Polymarket wallets (real persistent skill but tail-dominated/untradeable).
+The ONLY confirmed REAL signal in the whole program = Polymarket top-decile wallet skill (+11% OOS ROI,
+Spearman 0.16-0.18) -- naive harvest is tail-dominated, but a TAIL-ROBUST copy-trade is the one un-exhausted
+thread (pursuing). Also undecided: perp-basis forward gate (~07-25). Live box-maker remains OFF; NOTHING was
+risked to learn all this -- the rigor (esp. the tested-vs-live discipline) worked, catching our own flagship.
