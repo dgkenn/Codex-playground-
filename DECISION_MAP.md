@@ -1562,3 +1562,16 @@ Operator "widen the free-data net": does a faster venue lead the Kalshi settleme
 VERDICT: the lead is real but HFT-only. ALL predictive microstructure info decays within SECONDS; our tradeable
 horizon is MINUTES. This is the crux of why every free-data signal is priced FOR US: the edge exists but lives in a
 latency band we cannot access. Consistent with order-flow + derivatives nulls.
+
+## EXO-BOOKDEPTH (2026-07-15) — order-book depth imbalance is priced too (NULL); on-chain is horizon-mismatched
+Operator option 3 (grind remaining free microstructure). Binance Vision futures bookDepth (±1-5% depth, ~30s
+snapshots) -> 1-min book imbalance vs forward 1/5/15-min return; 24 days 2024-25, joined to 1m klines, train/test.
+- corr(imbalance, fwd return) = +0.003..+0.05 (tiny, train/test inconsistent). MOM net 1bp: -0.5..-1.0 bps (t neg);
+  REV also -0.9..-1.5. Both directions LOSE net even 1bp. NULL.
+- On-chain exchange flows (blockchain.info etc.) deliberately NOT run as a 15m signal: on-chain operates at HOURS-DAYS
+  horizon, structurally mismatched to a 15-min bet (would be a category error to test it here).
+VERDICT: every free microstructure signal (order flow, positioning, lead-lag, book depth) is priced at the 15m/taker
+horizon. Unifying finding (EXO-LEADLAG): predictive info in crypto lives sub-second (microstructure) or multi-hour
+(fundamental/on-chain); the 15m binary sits in the efficient dead zone between, gated by a latency band we can't reach.
+The productive pivots are (1) LONGER-horizon Kalshi markets where slow info survives to resolution, or (2) sub-second
+crypto HFT (different instrument+infra). Grinding more free 15m microstructure has exhausted its value.
