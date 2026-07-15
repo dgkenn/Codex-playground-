@@ -1,0 +1,115 @@
+# settle-sleeves -- REALIZED-SETTLEMENT recorder for all four paper sleeves.
+#
+# WHY: the paper sleeves logged ENTRY-side proxies but several never durably recorded the actual
+# SETTLEMENT of each paper position (the only thing that validates a sleeve on realized money).
+# Root cause (see SETTLEMENT_LOGGING_PLAN.md): macro_paper.py / kxwti_paper.py gate their inline
+# settle blocks on `status == "settled"`, but Kalshi returns `status == "finalized"` for resolved
+# markets, so those blocks never fire and *_settled.* was never created. settle_recorder.py is a
+# decoupled, idempotent, READ-ONLY recorder that keys resolution on `result in ("yes","no")`
+# (immune to the status-string trap) and appends one row per settled position to <sleeve>_settled.jsonl.
+#
+# WHAT THIS WORKFLOW DOES: once daily it checks out CODE (settle_recorder.py) from $BRANCH, fetches
+# the gha-data DATA branch into a /tmp/dw worktree, runs settle_recorder.py for EACH of the four
+# sleeves against that sleeve's entry log (read from the gha-data worktree), and commits the
+# resulting *_settled.jsonl ledgers BACK to gha-data (retry/backoff on push).
+#
+# READ-ONLY public Kalshi REST (GET /markets/{ticker}) -- NO auth, NO secrets, NO orders, NO money,
+# NO live-config. Idempotent: keyed on (ticker, entry_ts), so re-running never double-counts; still
+# -unresolved markets are simply retried on a later run. Missing sleeve logs are skipped gracefully.
+#
+# STRUCTURE MIRRORS kalshi-longshot.yml (the proven gha-data commit pattern: checkout CODE from
+# $BRANCH -> worktree on gha-data -> run stdlib script from $GITHUB_WORKSPACE against /tmp/dw ->
+# commit DATA to gha-data with push retry/backoff). $BRANCH matches favlong-forward.yml.
+# GitHub fires schedule only from the DEFAULT branch (main); this file lives on main.
+#
+# Pull results:  git fetch origin gha-data && git checkout origin/gha-data -- gha_data/
+#                (then: python edge_verdicts.py score gha_data/<sleeve>_settled.jsonl)
+#
+# CRON OFFSET: collect=:9,29,49 / live=:3,28,53 / box-shadow=:47 / favlong=:33 (06h) /
+# health=:14,44 / strategy-alert=:17 / wallet-track=:23. This one is DAILY at 06:52 UTC -- a
+# distinct minute, and late enough that the prior UTC day's sleeve entry logs are committed to gha-data.
+name: settle-sleeves
+
+on:
+  schedule:
+    - cron: '52 6 * * *'      # daily 06:52 UTC (distinct minute; dodges the crons above)
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: settle-sleeves
+  cancel-in-progress: false
+
+env:
+  BRANCH: claude/coding-bot-ab-test-results-ffmhxw
+
+jobs:
+  settle-sleeves:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.BRANCH }}
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: record settlements for all sleeves + commit to gha-data
+        if: always()
+        run: |
+          set -e
+          git config user.name  "settle-sleeves-bot"
+          git config user.email "settle-sleeves-bot@users.noreply.github.com"
+          # pull existing gha-data state into a worktree so ledgers update in place (idempotent).
+          if git fetch --depth=1 origin gha-data 2>/dev/null; then
+            git worktree add --detach /tmp/dw origin/gha-data
+            cd /tmp/dw && git checkout -B gha-data
+          else
+            git worktree add --detach /tmp/dw HEAD
+            cd /tmp/dw && git checkout --orphan gha-data && git rm -rf --cached . >/dev/null 2>&1 || true
+            find /tmp/dw -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          fi
+          mkdir -p /tmp/dw/gha_data/longshot /tmp/dw/gha_data/tailbias
+          cd "$GITHUB_WORKSPACE"
+          D=/tmp/dw/gha_data
+          # --- one recorder call per sleeve; skip gracefully if that sleeve's entry log is missing ---
+          # macro : durable pending entry log (taker binary buys)
+          if [ -f "$D/macro_pending.json" ]; then
+            python -u settle_recorder.py "$D/macro_pending.json" \
+              --sleeve macro --venue kalshi --out "$D/macro_settled.jsonl" || true
+          else echo "skip macro: $D/macro_pending.json missing"; fi
+          # kxwti : durable pending entry log (FILLED maker quotes only)
+          if [ -f "$D/kxwti_pending.json" ]; then
+            python -u settle_recorder.py "$D/kxwti_pending.json" \
+              --sleeve kxwti --venue kalshi --out "$D/kxwti_settled.jsonl" || true
+          else echo "skip kxwti: $D/kxwti_pending.json missing"; fi
+          # longshot : durable pending entry log (maker sell-YES)
+          if [ -f "$D/longshot/longshot_pending.json" ]; then
+            python -u settle_recorder.py "$D/longshot/longshot_pending.json" \
+              --sleeve longshot --venue kalshi --out "$D/longshot/longshot_settled.jsonl" || true
+          else echo "skip longshot: $D/longshot/longshot_pending.json missing"; fi
+          # tailbias : pending.json empties out fast (15-min markets), so the durable entry log is the
+          # daily *_<date>.jsonl tape. Recorder is idempotent on (ticker, entry_ts), so replay every
+          # tape into one ledger; already-recorded positions are skipped.
+          tb_any=0
+          for f in "$D"/tailbias/tailbias_*.jsonl; do
+            [ -e "$f" ] || continue
+            case "$f" in *_settled.jsonl) continue;; esac
+            tb_any=1
+            python -u settle_recorder.py "$f" \
+              --sleeve tailbias --venue kalshi --out "$D/tailbias/tailbias_settled.jsonl" || true
+          done
+          [ "$tb_any" = 1 ] || echo "skip tailbias: no $D/tailbias/tailbias_*.jsonl tapes"
+          # --- commit the settled ledgers back to gha-data ---
+          cd /tmp/dw
+          git add gha_data
+          git commit -m "settle-sleeves realized settlement $(date -u +%FT%HZ)" || { echo "nothing to commit"; exit 0; }
+          for i in 1 2 3 4 5; do
+            git push origin HEAD:gha-data && exit 0
+            git fetch --depth=1 origin gha-data && git rebase origin/gha-data || true
+            sleep $((RANDOM % 6 + 2))
+          done
+          echo "push failed after retries" >&2; exit 1
