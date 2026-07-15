@@ -1409,3 +1409,16 @@ selection audits + adversarial toggles + from-scratch independent reproduction o
 separates real edges from illusions -- it just killed two convincing ones. A winning strategy requires a
 STRUCTURALLY DIFFERENT domain/edge + infrastructure (an operator strategic decision); it cannot be honestly
 manufactured from this universe.
+
+## PERP-ALLASSETS (2026-07-15) — all 16 Kalshi perps probed for carry+basis: NULL (venue efficient, funding structurally 0)
+Checked the genuinely-untested corner (illiquid altcoin perps, where new-venue inefficiency is most likely).
+Across ALL 16 perps (btc/eth + hype/kshib/zec/sui/near/hbar/link/ltc/doge/bch/dot/xlm/xrp/sol):
+- FUNDING = 0% annualized for EVERY asset -> Kalshi perp funding is structurally ~0/not implemented, so the
+  funding-CARRY edge (the one thing that worked historically -- Deribit BTC OOS t=6.67, PERPS_BACKTEST.md) is
+  UNAVAILABLE here. Not tradeable on any coin.
+- MID-vs-INDEX basis is small and BELOW the spread for every asset (range -5.6bp near .. +2.6bp bch; e.g.
+  near basis -5.6 vs spread 8.0; bch +2.6 vs 6.6; btc +1.4 vs 1.2) -> no tradeable basis arb even on the
+  illiquid altcoins; the venue tracks its index tightly across all coins.
+So the perp venue is EFFICIENT (0 funding, sub-spread basis) even in its thinnest corners. The only remaining
+perp thread is edge-a (perp<->15m-binary basis), forward-gating with a thin day-1 read. This closes the last
+genuinely-untested backtestable avenue with a real prior. Terminal conclusion stands.
