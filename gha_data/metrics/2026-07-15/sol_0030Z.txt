@@ -1,0 +1,464 @@
+TRIAL-STRATEGY PROSPECTIVE A/B (sol) -- 2917 forward windows (+2917 new this run)
+  live_current auto-tracks live.yml: guard_yes_spread=0.0 (deploy bar judges candidate - live_current)
+  P0 always-pair (baseline) net/win -19.11c  OOSnet -17.85c  Calmar  -1.0  maxDD 55742c  win  23%  n=2917
+                           bench   PF 0.14  Sortino -0.51  Recov  -1.0  Exp -19.11c/win  prof-win  23%  [PF:✗ Sor:✗ Rec:✗ Exp:✗]
+  (metrics: net/win, OOS net, OOS Calmar, maxDD, win%, per-fill, paired t vs P0;
+   bench tiers per operator sheet: m=minimum S=strong G=gold ✗=below; window-level)
+  [f5_fav_lowsig_complete] net/win  -5.88c  OOSnet  -5.64c  Calmar  -1.0  maxDD 17169c  win  30%  perfill -0.40c | diff +13.228c  t=+27.89 (n=2917)
+                           bench   PF 0.22  Sortino -0.25  Recov  -1.0  Exp -5.88c/win  prof-win  30%  [PF:✗ Sor:✗ Rec:✗ Exp:✗]
+      *** f5_fav_lowsig_complete CLEARS THE DEPLOY BAR vs LIVE (n>=2917, t_vs_live=+27.89>3.0, DD ok) -> bring to operator ***
+  [live_current]           net/win -19.11c  OOSnet -17.85c  Calmar  -1.0  maxDD 55742c  win  23%  perfill -1.28c | diff +0.000c  t=+nan (n=2917)
+                           bench   PF 0.14  Sortino -0.51  Recov  -1.0  Exp -19.11c/win  prof-win  23%  [PF:✗ Sor:✗ Rec:✗ Exp:✗]
+  [p2_signal_hold]         net/win  -1.20c  OOSnet  -1.34c  Calmar  -0.6  maxDD 4103c  win  47%  perfill -0.08c | diff +17.908c  t=+18.85 (n=2917)
+                           bench   PF 0.94  Sortino -0.03  Recov  -0.9  Exp -1.20c/win  prof-win  47%  [PF:✗ Sor:✗ Rec:✗ Exp:✗]
+      *** p2_signal_hold CLEARS THE DEPLOY BAR vs LIVE (n>=2917, t_vs_live=+18.85>3.0, DD ok) -> bring to operator ***
+  [t01_deep_tail_skip]     net/win -17.78c  OOSnet -16.34c  Calmar  -1.0  maxDD 51867c  win  26%  perfill -1.20c | diff +1.330c  t=+5.87 (n=2917)
+                           bench   PF 0.14  Sortino -0.47  Recov  -1.0  Exp -17.78c/win  prof-win  26%  [PF:✗ Sor:✗ Rec:✗ Exp:✗]
+      *** t01_deep_tail_skip CLEARS THE DEPLOY BAR vs LIVE (n>=2917, t_vs_live=+5.87>3.0, DD ok) -> bring to operator ***
+  [t02_yes_caution]        net/win -16.42c  OOSnet -14.77c  Calmar  -1.0  maxDD 47896c  win  29%  perfill -1.10c | diff +2.693c  t=+7.07 (n=2917)
+                           bench   PF 0.21  Sortino -0.43  Recov  -1.0  Exp -16.42c/win  prof-win  29%  [PF:✗ Sor:✗ Rec:✗ Exp:✗]
+      *** t02_yes_caution CLEARS THE DEPLOY BAR vs LIVE (n>=2917, t_vs_live=+7.07>3.0, DD ok) -> bring to operator ***
+  [t03_early_window]       net/win -13.82c  OOSnet -13.22c  Calmar  -1.0  maxDD 40317c  win  26%  perfill -0.93c | diff +5.288c  t=+14.95 (n=2917)
+                           bench   PF 0.15  Sortino -0.49  Recov  -1.0  Exp -13.82c/win  prof-win  26%  [PF:✗ Sor:✗ Rec:✗ Exp:✗]
+      *** t03_early_window CLEARS THE DEPLOY BAR vs LIVE (n>=2917, t_vs_live=+14.95>3.0, DD ok) -> bring to operator ***
+  [t04_thin_book]          net/win -18.95c  OOSnet -17.45c  Calmar  -1.0  maxDD 55278c  win  23%  perfill -1.27c | diff +0.159c  t=+2.05 (n=2917)
+                           bench   PF 0.13  Sortino -0.51  Recov  -1.0  Exp -18.95c/win  prof-win  23%  [PF:✗ Sor:✗ Rec:✗ Exp:✗]
+  [t05_flat_oi]            net/win  -5.44c  OOSnet  -3.56c  Calmar  -1.0  maxDD 15896c  win   6%  perfill -0.37c | diff +13.668c  t=+29.27 (n=2917)
+                           bench   PF 0.14  Sortino -0.15  Recov  -1.0  Exp -5.44c/win  prof-win   6%  [PF:✗ Sor:✗ Rec:✗ Exp:✗]
+      *** t05_flat_oi CLEARS THE DEPLOY BAR vs LIVE (n>=2917, t_vs_live=+29.27>3.0, DD ok) -> bring to operator ***
+  [t06_balanced_flow]      net/win -11.79c  OOSnet -10.52c  Calmar  -1.0  maxDD 34426c  win  32%  perfill -0.79c | diff +7.322c  t=+18.34 (n=2917)
+                           bench   PF 0.16  Sortino -0.41  Recov  -1.0  Exp -11.79c/win  prof-win  32%  [PF:✗ Sor:✗ Rec:✗ Exp:✗]
+      *** t06_balanced_flow CLEARS THE DEPLOY BAR vs LIVE (n>=2917, t_vs_live=+18.34>3.0, DD ok) -> bring to operator ***
+  [t07_spot_gate]          net/win -17.39c  OOSnet -16.67c  Calmar  -1.0  maxDD 50715c  win  24%  perfill -1.17c | diff +1.724c  t=+4.73 (n=2917)
+                           bench   PF 0.18  Sortino -0.48  Recov  -1.0  Exp -17.39c/win  prof-win  24%  [PF:✗ Sor:✗ Rec:✗ Exp:✗]
+      *** t07_spot_gate CLEARS THE DEPLOY BAR vs LIVE (n>=2917, t_vs_live=+4.73>3.0, DD ok) -> bring to operator ***
+  [t08_hold_no]            net/win  -4.32c  OOSnet  -3.71c  Calmar  -1.0  maxDD 13223c  win  43%  perfill -0.29c | diff +14.793c  t=+16.29 (n=2917)
+                           bench   PF 0.80  Sortino -0.10  Recov  -1.0  Exp -4.32c/win  prof-win  43%  [PF:✗ Sor:✗ Rec:✗ Exp:✗]
+      *** t08_hold_no CLEARS THE DEPLOY BAR vs LIVE (n>=2917, t_vs_live=+16.29>3.0, DD ok) -> bring to operator ***
+  [t09_completion_target]  net/win -15.19c  OOSnet -13.72c  Calmar  -1.0  maxDD 44329c  win  27%  perfill -1.02c | diff +3.921c  t=+11.51 (n=2917)
+                           bench   PF 0.13  Sortino -0.47  Recov  -1.0  Exp -15.19c/win  prof-win  27%  [PF:✗ Sor:✗ Rec:✗ Exp:✗]
+      *** t09_completion_target CLEARS THE DEPLOY BAR vs LIVE (n>=2917, t_vs_live=+11.51>3.0, DD ok) -> bring to operator ***
+  [t10_target_and_hold]    net/win  -1.06c  OOSnet  -1.07c  Calmar  -0.6  maxDD 3655c  win  47%  perfill -0.07c | diff +18.046c  t=+19.10 (n=2917)
+                           bench   PF 0.95  Sortino -0.02  Recov  -0.8  Exp -1.06c/win  prof-win  47%  [PF:✗ Sor:✗ Rec:✗ Exp:✗]
+      *** t10_target_and_hold CLEARS THE DEPLOY BAR vs LIVE (n>=2917, t_vs_live=+19.10>3.0, DD ok) -> bring to operator ***
+  [t11_sell_cheap_unpaired] net/win -18.22c  OOSnet -16.95c  Calmar  -1.0  maxDD 53154c  win  25%  perfill -1.23c | diff +0.888c  t=+6.61 (n=2917)
+                           bench   PF 0.13  Sortino -0.50  Recov  -1.0  Exp -18.22c/win  prof-win  25%  [PF:✗ Sor:✗ Rec:✗ Exp:✗]
+      *** t11_sell_cheap_unpaired CLEARS THE DEPLOY BAR vs LIVE (n>=2917, t_vs_live=+6.61>3.0, DD ok) -> bring to operator ***
+  [t12_sell_all_unpaired]  net/win -17.44c  OOSnet -15.94c  Calmar  -1.0  maxDD 50864c  win  25%  perfill -1.17c | diff +1.673c  t=+8.58 (n=2917)
+                           bench   PF 0.14  Sortino -0.50  Recov  -1.0  Exp -17.44c/win  prof-win  25%  [PF:✗ Sor:✗ Rec:✗ Exp:✗]
+      *** t12_sell_all_unpaired CLEARS THE DEPLOY BAR vs LIVE (n>=2917, t_vs_live=+8.58>3.0, DD ok) -> bring to operator ***
+  [t13_sell_unpaired_vpin] net/win -17.78c  OOSnet -16.37c  Calmar  -1.0  maxDD 51875c  win  24%  perfill -1.20c | diff +1.326c  t=+8.87 (n=2917)
+                           bench   PF 0.14  Sortino -0.50  Recov  -1.0  Exp -17.78c/win  prof-win  24%  [PF:✗ Sor:✗ Rec:✗ Exp:✗]
+      *** t13_sell_unpaired_vpin CLEARS THE DEPLOY BAR vs LIVE (n>=2917, t_vs_live=+8.87>3.0, DD ok) -> bring to operator ***
+  [t14_perp_hedge_unpaired] net/win -14.56c  OOSnet -14.83c  Calmar  -1.0  maxDD 42489c  win  30%  perfill -0.98c | diff +4.545c  t=+16.98 (n=2917)
+                           bench   PF 0.25  Sortino -0.40  Recov  -1.0  Exp -14.56c/win  prof-win  30%  [PF:✗ Sor:✗ Rec:✗ Exp:✗]
+      *** t14_perp_hedge_unpaired CLEARS THE DEPLOY BAR vs LIVE (n>=2917, t_vs_live=+16.98>3.0, DD ok) -> bring to operator ***
+  [t15_gamma_size_down]    net/win -12.48c  OOSnet -11.89c  Calmar  -1.0  maxDD 36393c  win  27%  perfill -0.84c | diff +6.634c  t=+23.12 (n=2917)
+                           bench   PF 0.17  Sortino -0.48  Recov  -1.0  Exp -12.48c/win  prof-win  27%  [PF:✗ Sor:✗ Rec:✗ Exp:✗]
+      *** t15_gamma_size_down CLEARS THE DEPLOY BAR vs LIVE (n>=2917, t_vs_live=+23.12>3.0, DD ok) -> bring to operator ***
+  [t16_no_leg_preference]  net/win -14.83c  OOSnet -13.61c  Calmar  -1.0  maxDD 43283c  win  36%  perfill -1.00c | diff +4.277c  t=+7.25 (n=2917)
+                           bench   PF 0.29  Sortino -0.36  Recov  -1.0  Exp -14.83c/win  prof-win  36%  [PF:✗ Sor:✗ Rec:✗ Exp:✗]
+      *** t16_no_leg_preference CLEARS THE DEPLOY BAR vs LIVE (n>=2917, t_vs_live=+7.25>3.0, DD ok) -> bring to operator ***
+  [t17_tox_exit_unpaired]  net/win -18.37c  OOSnet -17.32c  Calmar  -1.0  maxDD 53588c  win  24%  perfill -1.24c | diff +0.739c  t=+5.65 (n=2917)
+                           bench   PF 0.13  Sortino -0.51  Recov  -1.0  Exp -18.37c/win  prof-win  24%  [PF:✗ Sor:✗ Rec:✗ Exp:✗]
+      *** t17_tox_exit_unpaired CLEARS THE DEPLOY BAR vs LIVE (n>=2917, t_vs_live=+5.65>3.0, DD ok) -> bring to operator ***
+  [t18_tox_open_gate]      net/win -18.23c  OOSnet -16.82c  Calmar  -1.0  maxDD 53174c  win  27%  perfill -1.23c | diff +0.881c  t=+2.90 (n=2917)
+                           bench   PF 0.16  Sortino -0.47  Recov  -1.0  Exp -18.23c/win  prof-win  27%  [PF:✗ Sor:✗ Rec:✗ Exp:✗]
+  [t19_tox_gate_and_exit]  net/win -17.89c  OOSnet -16.53c  Calmar  -1.0  maxDD 52174c  win  27%  perfill -1.20c | diff +1.224c  t=+3.84 (n=2917)
+                           bench   PF 0.16  Sortino -0.47  Recov  -1.0  Exp -17.89c/win  prof-win  27%  [PF:✗ Sor:✗ Rec:✗ Exp:✗]
+      *** t19_tox_gate_and_exit CLEARS THE DEPLOY BAR vs LIVE (n>=2917, t_vs_live=+3.84>3.0, DD ok) -> bring to operator ***
+  [t20_low_vol_open]       net/win -11.71c  OOSnet -12.12c  Calmar  -1.0  maxDD 34158c  win  32%  perfill -0.79c | diff +7.402c  t=+18.78 (n=2917)
+                           bench   PF 0.17  Sortino -0.42  Recov  -1.0  Exp -11.71c/win  prof-win  32%  [PF:✗ Sor:✗ Rec:✗ Exp:✗]
+      *** t20_low_vol_open CLEARS THE DEPLOY BAR vs LIVE (n>=2917, t_vs_live=+18.78>3.0, DD ok) -> bring to operator ***
+  [t21_sweepable_queue]    net/win  -3.51c  OOSnet  -3.56c  Calmar  -1.0  maxDD 10251c  win  40%  perfill -0.24c | diff +15.601c  t=+32.94 (n=2917)
+                           bench   PF 0.31  Sortino -0.15  Recov  -1.0  Exp -3.51c/win  prof-win  40%  [PF:✗ Sor:✗ Rec:✗ Exp:✗]
+      *** t21_sweepable_queue CLEARS THE DEPLOY BAR vs LIVE (n>=2917, t_vs_live=+32.94>3.0, DD ok) -> bring to operator ***
+  [t22_size_sweetspot]     net/win -20.54c  OOSnet -19.31c  Calmar  -1.0  maxDD 59909c  win  23%  perfill -1.38c | diff -1.428c  t=-16.85 (n=2917)
+                           bench   PF 0.13  Sortino -0.52  Recov  -1.0  Exp -20.54c/win  prof-win  23%  [PF:✗ Sor:✗ Rec:✗ Exp:✗]
+  [t23_quarter_kelly]      net/win -30.45c  OOSnet -28.46c  Calmar  -1.0  maxDD 88834c  win  25%  perfill -2.05c | diff -11.344c  t=-32.07 (n=2917)
+                           bench   PF 0.12  Sortino -0.51  Recov  -1.0  Exp -30.45c/win  prof-win  25%  [PF:✗ Sor:✗ Rec:✗ Exp:✗]
+  [t24_tox_sized]          net/win -19.73c  OOSnet -18.34c  Calmar  -1.0  maxDD 57552c  win  24%  perfill -1.33c | diff -0.621c  t=-3.44 (n=2917)
+                           bench   PF 0.13  Sortino -0.49  Recov  -1.0  Exp -19.73c/win  prof-win  24%  [PF:✗ Sor:✗ Rec:✗ Exp:✗]
+  [t25_hour_sized]         net/win -20.89c  OOSnet -19.85c  Calmar  -1.0  maxDD 60930c  win  23%  perfill -1.40c | diff -1.779c  t=-9.46 (n=2917)
+                           bench   PF 0.13  Sortino -0.50  Recov  -1.0  Exp -20.89c/win  prof-win  23%  [PF:✗ Sor:✗ Rec:✗ Exp:✗]
+  [t26_gamma_sized]        net/win -12.91c  OOSnet -12.19c  Calmar  -1.0  maxDD 37652c  win  24%  perfill -0.87c | diff +6.202c  t=+23.92 (n=2917)
+                           bench   PF 0.12  Sortino -0.53  Recov  -1.0  Exp -12.91c/win  prof-win  24%  [PF:✗ Sor:✗ Rec:✗ Exp:✗]
+      *** t26_gamma_sized CLEARS THE DEPLOY BAR vs LIVE (n>=2917, t_vs_live=+23.92>3.0, DD ok) -> bring to operator ***
+  [t28_hold_deep_favorite] net/win -16.27c  OOSnet -14.99c  Calmar  -1.0  maxDD 47529c  win  35%  perfill -1.09c | diff +2.842c  t=+7.41 (n=2917)
+                           bench   PF 0.28  Sortino -0.36  Recov  -1.0  Exp -16.27c/win  prof-win  35%  [PF:✗ Sor:✗ Rec:✗ Exp:✗]
+      *** t28_hold_deep_favorite CLEARS THE DEPLOY BAR vs LIVE (n>=2917, t_vs_live=+7.41>3.0, DD ok) -> bring to operator ***
+  [t29_favorite_only_opens] net/win -11.92c  OOSnet -10.74c  Calmar  -1.0  maxDD 34763c  win  24%  perfill -0.80c | diff +7.193c  t=+19.94 (n=2917)
+                           bench   PF 0.16  Sortino -0.37  Recov  -1.0  Exp -11.92c/win  prof-win  24%  [PF:✗ Sor:✗ Rec:✗ Exp:✗]
+      *** t29_favorite_only_opens CLEARS THE DEPLOY BAR vs LIVE (n>=2917, t_vs_live=+19.94>3.0, DD ok) -> bring to operator ***
+  [t30_asym_playbook]      net/win -12.15c  OOSnet -10.93c  Calmar  -1.0  maxDD 35467c  win  31%  perfill -0.82c | diff +6.964c  t=+16.03 (n=2917)
+                           bench   PF 0.26  Sortino -0.31  Recov  -1.0  Exp -12.15c/win  prof-win  31%  [PF:✗ Sor:✗ Rec:✗ Exp:✗]
+      *** t30_asym_playbook CLEARS THE DEPLOY BAR vs LIVE (n>=2917, t_vs_live=+16.03>3.0, DD ok) -> bring to operator ***
+  [t31_face_contrarian]    net/win -14.81c  OOSnet -13.95c  Calmar  -1.0  maxDD 43185c  win  30%  perfill -1.00c | diff +4.300c  t=+7.83 (n=2917)
+                           bench   PF 0.25  Sortino -0.39  Recov  -1.0  Exp -14.81c/win  prof-win  30%  [PF:✗ Sor:✗ Rec:✗ Exp:✗]
+      *** t31_face_contrarian CLEARS THE DEPLOY BAR vs LIVE (n>=2917, t_vs_live=+7.83>3.0, DD ok) -> bring to operator ***
+  [t32_vpin_open_gate]     net/win  -6.75c  OOSnet  -6.57c  Calmar  -1.0  maxDD 19703c  win  27%  perfill -0.45c | diff +12.355c  t=+27.24 (n=2917)
+                           bench   PF 0.23  Sortino -0.23  Recov  -1.0  Exp -6.75c/win  prof-win  27%  [PF:✗ Sor:✗ Rec:✗ Exp:✗]
+      *** t32_vpin_open_gate CLEARS THE DEPLOY BAR vs LIVE (n>=2917, t_vs_live=+27.24>3.0, DD ok) -> bring to operator ***
+  [t33_take_tail_trim]     net/win -19.07c  OOSnet -17.62c  Calmar  -1.0  maxDD 55629c  win  23%  perfill -1.28c | diff +0.042c  t=+0.23 (n=2917)
+                           bench   PF 0.14  Sortino -0.51  Recov  -1.0  Exp -19.07c/win  prof-win  23%  [PF:✗ Sor:✗ Rec:✗ Exp:✗]
+  [t34_avoid_combined]     net/win -14.68c  OOSnet -13.73c  Calmar  -1.0  maxDD 42806c  win  31%  perfill -0.99c | diff +4.431c  t=+8.13 (n=2917)
+                           bench   PF 0.25  Sortino -0.39  Recov  -1.0  Exp -14.68c/win  prof-win  31%  [PF:✗ Sor:✗ Rec:✗ Exp:✗]
+      *** t34_avoid_combined CLEARS THE DEPLOY BAR vs LIVE (n>=2917, t_vs_live=+8.13>3.0, DD ok) -> bring to operator ***
+  [t35_combo_tox_gate]     net/win  -6.90c  OOSnet  -8.34c  Calmar  -1.0  maxDD 20163c  win  27%  perfill -0.46c | diff +12.207c  t=+28.51 (n=2917)
+                           bench   PF 0.24  Sortino -0.22  Recov  -1.0  Exp -6.90c/win  prof-win  27%  [PF:✗ Sor:✗ Rec:✗ Exp:✗]
+      *** t35_combo_tox_gate CLEARS THE DEPLOY BAR vs LIVE (n>=2917, t_vs_live=+28.51>3.0, DD ok) -> bring to operator ***
+  [t36_guarded_opener]     net/win -15.88c  OOSnet -14.36c  Calmar  -1.0  maxDD 46328c  win  28%  perfill -1.07c | diff +3.231c  t=+8.70 (n=2917)
+                           bench   PF 0.21  Sortino -0.44  Recov  -1.0  Exp -15.88c/win  prof-win  28%  [PF:✗ Sor:✗ Rec:✗ Exp:✗]
+      *** t36_guarded_opener CLEARS THE DEPLOY BAR vs LIVE (n>=2917, t_vs_live=+8.70>3.0, DD ok) -> bring to operator ***
+  [t_buf_1c]               net/win -18.46c  OOSnet -17.13c  Calmar  -1.0  maxDD 53859c  win  24%  perfill -1.24c | diff +0.646c  t=+5.13 (n=2917)
+                           bench   PF 0.14  Sortino -0.50  Recov  -1.0  Exp -18.46c/win  prof-win  24%  [PF:✗ Sor:✗ Rec:✗ Exp:✗]
+      *** t_buf_1c CLEARS THE DEPLOY BAR vs LIVE (n>=2917, t_vs_live=+5.13>3.0, DD ok) -> bring to operator ***
+  [t_buf_dyn]              net/win -15.79c  OOSnet -15.33c  Calmar  -1.0  maxDD 46055c  win  26%  perfill -1.06c | diff +3.321c  t=+13.10 (n=2917)
+                           bench   PF 0.16  Sortino -0.46  Recov  -1.0  Exp -15.79c/win  prof-win  26%  [PF:✗ Sor:✗ Rec:✗ Exp:✗]
+      *** t_buf_dyn CLEARS THE DEPLOY BAR vs LIVE (n>=2917, t_vs_live=+13.10>3.0, DD ok) -> bring to operator ***
+  [t_buf_dyn_eth]          net/win -15.79c  OOSnet -15.33c  Calmar  -1.0  maxDD 46055c  win  26%  perfill -1.06c | diff +3.321c  t=+13.10 (n=2917)
+                           bench   PF 0.16  Sortino -0.46  Recov  -1.0  Exp -15.79c/win  prof-win  26%  [PF:✗ Sor:✗ Rec:✗ Exp:✗]
+      *** t_buf_dyn_eth CLEARS THE DEPLOY BAR vs LIVE (n>=2917, t_vs_live=+13.10>3.0, DD ok) -> bring to operator ***
+  [t_buf_dyn_hedge]        net/win -11.36c  OOSnet -12.24c  Calmar  -1.0  maxDD 33147c  win  32%  perfill -0.76c | diff +7.748c  t=+20.49 (n=2917)
+                           bench   PF 0.29  Sortino -0.35  Recov  -1.0  Exp -11.36c/win  prof-win  32%  [PF:✗ Sor:✗ Rec:✗ Exp:✗]
+      *** t_buf_dyn_hedge CLEARS THE DEPLOY BAR vs LIVE (n>=2917, t_vs_live=+20.49>3.0, DD ok) -> bring to operator ***
+  [t_buf_dyn_manage]       net/win -15.14c  OOSnet -14.85c  Calmar  -1.0  maxDD 44154c  win  27%  perfill -1.02c | diff +3.973c  t=+14.67 (n=2917)
+                           bench   PF 0.15  Sortino -0.46  Recov  -1.0  Exp -15.14c/win  prof-win  27%  [PF:✗ Sor:✗ Rec:✗ Exp:✗]
+      *** t_buf_dyn_manage CLEARS THE DEPLOY BAR vs LIVE (n>=2917, t_vs_live=+14.67>3.0, DD ok) -> bring to operator ***
+  [t_edge_k59]             net/win -10.33c  OOSnet -10.38c  Calmar  -1.0  maxDD 30138c  win  30%  perfill -0.69c | diff +8.777c  t=+21.50 (n=2917)
+                           bench   PF 0.17  Sortino -0.42  Recov  -1.0  Exp -10.33c/win  prof-win  30%  [PF:✗ Sor:✗ Rec:✗ Exp:✗]
+      *** t_edge_k59 CLEARS THE DEPLOY BAR vs LIVE (n>=2917, t_vs_live=+21.50>3.0, DD ok) -> bring to operator ***
+  [t_edge_midvol]          net/win  -9.94c  OOSnet -10.76c  Calmar  -1.0  maxDD 29011c  win  14%  perfill -0.67c | diff +9.166c  t=+22.77 (n=2917)
+                           bench   PF 0.16  Sortino -0.28  Recov  -1.0  Exp -9.94c/win  prof-win  14%  [PF:✗ Sor:✗ Rec:✗ Exp:✗]
+      *** t_edge_midvol CLEARS THE DEPLOY BAR vs LIVE (n>=2917, t_vs_live=+22.77>3.0, DD ok) -> bring to operator ***
+  [t_edge_select]          net/win  -5.65c  OOSnet  -6.42c  Calmar  -1.0  maxDD 16489c  win  17%  perfill -0.38c | diff +13.458c  t=+28.19 (n=2917)
+                           bench   PF 0.19  Sortino -0.24  Recov  -1.0  Exp -5.65c/win  prof-win  17%  [PF:✗ Sor:✗ Rec:✗ Exp:✗]
+      *** t_edge_select CLEARS THE DEPLOY BAR vs LIVE (n>=2917, t_vs_live=+28.19>3.0, DD ok) -> bring to operator ***
+  [t_k78_mid]              net/win  -1.00c  OOSnet  -0.71c  Calmar  -1.0  maxDD 2956c  win  19%  perfill -0.07c | diff +18.106c  t=+34.97 (n=2917)
+                           bench   PF 0.38  Sortino -0.05  Recov  -1.0  Exp -1.00c/win  prof-win  19%  [PF:✗ Sor:✗ Rec:✗ Exp:✗]
+      *** t_k78_mid CLEARS THE DEPLOY BAR vs LIVE (n>=2917, t_vs_live=+34.97>3.0, DD ok) -> bring to operator ***
+  [t_k8_tilt]              net/win  -0.40c  OOSnet  -0.72c  Calmar  -1.0  maxDD 1171c  win  15%  perfill -0.03c | diff +18.711c  t=+35.96 (n=2917)
+                           bench   PF 0.49  Sortino -0.03  Recov  -1.0  Exp -0.40c/win  prof-win  15%  [PF:✗ Sor:✗ Rec:✗ Exp:✗]
+      *** t_k8_tilt CLEARS THE DEPLOY BAR vs LIVE (n>=2917, t_vs_live=+35.96>3.0, DD ok) -> bring to operator ***
+  [t_k8_window]            net/win  -2.30c  OOSnet  -2.24c  Calmar  -1.0  maxDD 6717c  win  59%  perfill -0.15c | diff +16.815c  t=+33.64 (n=2917)
+                           bench   PF 0.33  Sortino -0.13  Recov  -1.0  Exp -2.30c/win  prof-win  59%  [PF:✗ Sor:✗ Rec:✗ Exp:✗]
+      *** t_k8_window CLEARS THE DEPLOY BAR vs LIVE (n>=2917, t_vs_live=+33.64>3.0, DD ok) -> bring to operator ***
+  [t_mid_window]           net/win  -5.90c  OOSnet  -5.86c  Calmar  -1.0  maxDD 17221c  win  45%  perfill -0.40c | diff +13.207c  t=+27.23 (n=2917)
+                           bench   PF 0.23  Sortino -0.32  Recov  -1.0  Exp -5.90c/win  prof-win  45%  [PF:✗ Sor:✗ Rec:✗ Exp:✗]
+      *** t_mid_window CLEARS THE DEPLOY BAR vs LIVE (n>=2917, t_vs_live=+27.23>3.0, DD ok) -> bring to operator ***
+  [tc_mid_hedge]           net/win  -4.70c  OOSnet  -4.93c  Calmar  -1.0  maxDD 13710c  win  47%  perfill -0.32c | diff +14.411c  t=+28.23 (n=2917)
+                           bench   PF 0.35  Sortino -0.26  Recov  -1.0  Exp -4.70c/win  prof-win  47%  [PF:✗ Sor:✗ Rec:✗ Exp:✗]
+      *** tc_mid_hedge CLEARS THE DEPLOY BAR vs LIVE (n>=2917, t_vs_live=+28.23>3.0, DD ok) -> bring to operator ***
+  [tc_mid_hedge_h150]      net/win  -4.10c  OOSnet  -4.46c  Calmar  -1.0  maxDD 11991c  win  47%  perfill -0.28c | diff +15.012c  t=+27.46 (n=2917)
+                           bench   PF 0.43  Sortino -0.23  Recov  -1.0  Exp -4.10c/win  prof-win  47%  [PF:✗ Sor:✗ Rec:✗ Exp:✗]
+      *** tc_mid_hedge_h150 CLEARS THE DEPLOY BAR vs LIVE (n>=2917, t_vs_live=+27.46>3.0, DD ok) -> bring to operator ***
+  [tc_mid_sellall]         net/win  -5.62c  OOSnet  -5.57c  Calmar  -1.0  maxDD 16400c  win  45%  perfill -0.38c | diff +13.489c  t=+27.72 (n=2917)
+                           bench   PF 0.23  Sortino -0.32  Recov  -1.0  Exp -5.62c/win  prof-win  45%  [PF:✗ Sor:✗ Rec:✗ Exp:✗]
+      *** tc_mid_sellall CLEARS THE DEPLOY BAR vs LIVE (n>=2917, t_vs_live=+27.72>3.0, DD ok) -> bring to operator ***
+  [tc_mid_sellcheap]       net/win  -5.78c  OOSnet  -5.78c  Calmar  -1.0  maxDD 16874c  win  45%  perfill -0.39c | diff +13.326c  t=+27.44 (n=2917)
+                           bench   PF 0.23  Sortino -0.32  Recov  -1.0  Exp -5.78c/win  prof-win  45%  [PF:✗ Sor:✗ Rec:✗ Exp:✗]
+      *** tc_mid_sellcheap CLEARS THE DEPLOY BAR vs LIVE (n>=2917, t_vs_live=+27.44>3.0, DD ok) -> bring to operator ***
+  [tc_mid_tailtrim]        net/win  -5.85c  OOSnet  -5.84c  Calmar  -1.0  maxDD 17068c  win  44%  perfill -0.39c | diff +13.260c  t=+27.32 (n=2917)
+                           bench   PF 0.23  Sortino -0.32  Recov  -1.0  Exp -5.85c/win  prof-win  44%  [PF:✗ Sor:✗ Rec:✗ Exp:✗]
+      *** tc_mid_tailtrim CLEARS THE DEPLOY BAR vs LIVE (n>=2917, t_vs_live=+27.32>3.0, DD ok) -> bring to operator ***
+  [tc_pairmax]             net/win  -8.52c  OOSnet  -8.88c  Calmar  -1.0  maxDD 24854c  win  38%  perfill -0.57c | diff +10.590c  t=+23.15 (n=2917)
+                           bench   PF 0.15  Sortino -0.36  Recov  -1.0  Exp -8.52c/win  prof-win  38%  [PF:✗ Sor:✗ Rec:✗ Exp:✗]
+      *** tc_pairmax CLEARS THE DEPLOY BAR vs LIVE (n>=2917, t_vs_live=+23.15>3.0, DD ok) -> bring to operator ***
+  [tc_tailtrim_hedge]      net/win -14.62c  OOSnet -14.63c  Calmar  -1.0  maxDD 42660c  win  30%  perfill -0.98c | diff +4.490c  t=+13.70 (n=2917)
+                           bench   PF 0.26  Sortino -0.40  Recov  -1.0  Exp -14.62c/win  prof-win  30%  [PF:✗ Sor:✗ Rec:✗ Exp:✗]
+      *** tc_tailtrim_hedge CLEARS THE DEPLOY BAR vs LIVE (n>=2917, t_vs_live=+13.70>3.0, DD ok) -> bring to operator ***
+
+[STRATEGY WATCH] sol: trial(s) past the 2-sigma bar (tracking; not yet deploy-ready).
+  f5_fav_lowsig_complete: paired t=+27.89 over n=2917 (2-sigma +)
+  p2_signal_hold: paired t=+18.85 over n=2917 (2-sigma +)
+  t01_deep_tail_skip: paired t=+5.87 over n=2917 (2-sigma +)
+  t02_yes_caution: paired t=+7.07 over n=2917 (2-sigma +)
+  t03_early_window: paired t=+14.95 over n=2917 (2-sigma +)
+  t04_thin_book: paired t=+2.05 over n=2917 (2-sigma +)
+  t05_flat_oi: paired t=+29.27 over n=2917 (2-sigma +)
+  t06_balanced_flow: paired t=+18.34 over n=2917 (2-sigma +)
+  t07_spot_gate: paired t=+4.73 over n=2917 (2-sigma +)
+  t08_hold_no: paired t=+16.29 over n=2917 (2-sigma +)
+  t09_completion_target: paired t=+11.51 over n=2917 (2-sigma +)
+  t10_target_and_hold: paired t=+19.10 over n=2917 (2-sigma +)
+  t11_sell_cheap_unpaired: paired t=+6.61 over n=2917 (2-sigma +)
+  t12_sell_all_unpaired: paired t=+8.58 over n=2917 (2-sigma +)
+  t13_sell_unpaired_vpin: paired t=+8.87 over n=2917 (2-sigma +)
+  t14_perp_hedge_unpaired: paired t=+16.98 over n=2917 (2-sigma +)
+  t15_gamma_size_down: paired t=+23.12 over n=2917 (2-sigma +)
+  t16_no_leg_preference: paired t=+7.25 over n=2917 (2-sigma +)
+  t17_tox_exit_unpaired: paired t=+5.65 over n=2917 (2-sigma +)
+  t18_tox_open_gate: paired t=+2.90 over n=2917 (2-sigma +)
+  t19_tox_gate_and_exit: paired t=+3.84 over n=2917 (2-sigma +)
+  t20_low_vol_open: paired t=+18.78 over n=2917 (2-sigma +)
+  t21_sweepable_queue: paired t=+32.94 over n=2917 (2-sigma +)
+  t22_size_sweetspot: paired t=-16.85 over n=2917 (2-sigma -)
+  t23_quarter_kelly: paired t=-32.07 over n=2917 (2-sigma -)
+  t24_tox_sized: paired t=-3.44 over n=2917 (2-sigma -)
+  t25_hour_sized: paired t=-9.46 over n=2917 (2-sigma -)
+  t26_gamma_sized: paired t=+23.92 over n=2917 (2-sigma +)
+  t28_hold_deep_favorite: paired t=+7.41 over n=2917 (2-sigma +)
+  t29_favorite_only_opens: paired t=+19.94 over n=2917 (2-sigma +)
+  t30_asym_playbook: paired t=+16.03 over n=2917 (2-sigma +)
+  t31_face_contrarian: paired t=+7.83 over n=2917 (2-sigma +)
+  t32_vpin_open_gate: paired t=+27.24 over n=2917 (2-sigma +)
+  t34_avoid_combined: paired t=+8.13 over n=2917 (2-sigma +)
+  t35_combo_tox_gate: paired t=+28.51 over n=2917 (2-sigma +)
+  t36_guarded_opener: paired t=+8.70 over n=2917 (2-sigma +)
+  t_buf_1c: paired t=+5.13 over n=2917 (2-sigma +)
+  t_buf_dyn: paired t=+13.10 over n=2917 (2-sigma +)
+  t_buf_dyn_eth: paired t=+13.10 over n=2917 (2-sigma +)
+  t_buf_dyn_hedge: paired t=+20.49 over n=2917 (2-sigma +)
+  t_buf_dyn_manage: paired t=+14.67 over n=2917 (2-sigma +)
+  t_edge_k59: paired t=+21.50 over n=2917 (2-sigma +)
+  t_edge_midvol: paired t=+22.77 over n=2917 (2-sigma +)
+  t_edge_select: paired t=+28.19 over n=2917 (2-sigma +)
+  t_k78_mid: paired t=+34.97 over n=2917 (2-sigma +)
+  t_k8_tilt: paired t=+35.96 over n=2917 (2-sigma +)
+  t_k8_window: paired t=+33.64 over n=2917 (2-sigma +)
+  t_mid_window: paired t=+27.23 over n=2917 (2-sigma +)
+  tc_mid_hedge: paired t=+28.23 over n=2917 (2-sigma +)
+  tc_mid_hedge_h150: paired t=+27.46 over n=2917 (2-sigma +)
+  tc_mid_sellall: paired t=+27.72 over n=2917 (2-sigma +)
+  tc_mid_sellcheap: paired t=+27.44 over n=2917 (2-sigma +)
+  tc_mid_tailtrim: paired t=+27.32 over n=2917 (2-sigma +)
+  tc_pairmax: paired t=+23.15 over n=2917 (2-sigma +)
+  tc_tailtrim_hedge: paired t=+13.70 over n=2917 (2-sigma +)/home/runner/work/Codex-playground-/Codex-playground-/box_policy_ab.py:1335: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  fh.write(f"{__import__('datetime').datetime.utcnow().isoformat()}Z  {banner}\n")
+
+::warning title=Strategy past 2-sigma (watch)::f5_fav_lowsig_complete t=+27.89 n=2917 (sol)
+::warning title=Strategy past 2-sigma (watch)::p2_signal_hold t=+18.85 n=2917 (sol)
+::warning title=Strategy past 2-sigma (watch)::t01_deep_tail_skip t=+5.87 n=2917 (sol)
+::warning title=Strategy past 2-sigma (watch)::t02_yes_caution t=+7.07 n=2917 (sol)
+::warning title=Strategy past 2-sigma (watch)::t03_early_window t=+14.95 n=2917 (sol)
+::warning title=Strategy past 2-sigma (watch)::t04_thin_book t=+2.05 n=2917 (sol)
+::warning title=Strategy past 2-sigma (watch)::t05_flat_oi t=+29.27 n=2917 (sol)
+::warning title=Strategy past 2-sigma (watch)::t06_balanced_flow t=+18.34 n=2917 (sol)
+::warning title=Strategy past 2-sigma (watch)::t07_spot_gate t=+4.73 n=2917 (sol)
+::warning title=Strategy past 2-sigma (watch)::t08_hold_no t=+16.29 n=2917 (sol)
+::warning title=Strategy past 2-sigma (watch)::t09_completion_target t=+11.51 n=2917 (sol)
+::warning title=Strategy past 2-sigma (watch)::t10_target_and_hold t=+19.10 n=2917 (sol)
+::warning title=Strategy past 2-sigma (watch)::t11_sell_cheap_unpaired t=+6.61 n=2917 (sol)
+::warning title=Strategy past 2-sigma (watch)::t12_sell_all_unpaired t=+8.58 n=2917 (sol)
+::warning title=Strategy past 2-sigma (watch)::t13_sell_unpaired_vpin t=+8.87 n=2917 (sol)
+::warning title=Strategy past 2-sigma (watch)::t14_perp_hedge_unpaired t=+16.98 n=2917 (sol)
+::warning title=Strategy past 2-sigma (watch)::t15_gamma_size_down t=+23.12 n=2917 (sol)
+::warning title=Strategy past 2-sigma (watch)::t16_no_leg_preference t=+7.25 n=2917 (sol)
+::warning title=Strategy past 2-sigma (watch)::t17_tox_exit_unpaired t=+5.65 n=2917 (sol)
+::warning title=Strategy past 2-sigma (watch)::t18_tox_open_gate t=+2.90 n=2917 (sol)
+::warning title=Strategy past 2-sigma (watch)::t19_tox_gate_and_exit t=+3.84 n=2917 (sol)
+::warning title=Strategy past 2-sigma (watch)::t20_low_vol_open t=+18.78 n=2917 (sol)
+::warning title=Strategy past 2-sigma (watch)::t21_sweepable_queue t=+32.94 n=2917 (sol)
+::warning title=Strategy past 2-sigma (watch)::t22_size_sweetspot t=-16.85 n=2917 (sol)
+::warning title=Strategy past 2-sigma (watch)::t23_quarter_kelly t=-32.07 n=2917 (sol)
+::warning title=Strategy past 2-sigma (watch)::t24_tox_sized t=-3.44 n=2917 (sol)
+::warning title=Strategy past 2-sigma (watch)::t25_hour_sized t=-9.46 n=2917 (sol)
+::warning title=Strategy past 2-sigma (watch)::t26_gamma_sized t=+23.92 n=2917 (sol)
+::warning title=Strategy past 2-sigma (watch)::t28_hold_deep_favorite t=+7.41 n=2917 (sol)
+::warning title=Strategy past 2-sigma (watch)::t29_favorite_only_opens t=+19.94 n=2917 (sol)
+::warning title=Strategy past 2-sigma (watch)::t30_asym_playbook t=+16.03 n=2917 (sol)
+::warning title=Strategy past 2-sigma (watch)::t31_face_contrarian t=+7.83 n=2917 (sol)
+::warning title=Strategy past 2-sigma (watch)::t32_vpin_open_gate t=+27.24 n=2917 (sol)
+::warning title=Strategy past 2-sigma (watch)::t34_avoid_combined t=+8.13 n=2917 (sol)
+::warning title=Strategy past 2-sigma (watch)::t35_combo_tox_gate t=+28.51 n=2917 (sol)
+::warning title=Strategy past 2-sigma (watch)::t36_guarded_opener t=+8.70 n=2917 (sol)
+::warning title=Strategy past 2-sigma (watch)::t_buf_1c t=+5.13 n=2917 (sol)
+::warning title=Strategy past 2-sigma (watch)::t_buf_dyn t=+13.10 n=2917 (sol)
+::warning title=Strategy past 2-sigma (watch)::t_buf_dyn_eth t=+13.10 n=2917 (sol)
+::warning title=Strategy past 2-sigma (watch)::t_buf_dyn_hedge t=+20.49 n=2917 (sol)
+::warning title=Strategy past 2-sigma (watch)::t_buf_dyn_manage t=+14.67 n=2917 (sol)
+::warning title=Strategy past 2-sigma (watch)::t_edge_k59 t=+21.50 n=2917 (sol)
+::warning title=Strategy past 2-sigma (watch)::t_edge_midvol t=+22.77 n=2917 (sol)
+::warning title=Strategy past 2-sigma (watch)::t_edge_select t=+28.19 n=2917 (sol)
+::warning title=Strategy past 2-sigma (watch)::t_k78_mid t=+34.97 n=2917 (sol)
+::warning title=Strategy past 2-sigma (watch)::t_k8_tilt t=+35.96 n=2917 (sol)
+::warning title=Strategy past 2-sigma (watch)::t_k8_window t=+33.64 n=2917 (sol)
+::warning title=Strategy past 2-sigma (watch)::t_mid_window t=+27.23 n=2917 (sol)
+::warning title=Strategy past 2-sigma (watch)::tc_mid_hedge t=+28.23 n=2917 (sol)
+::warning title=Strategy past 2-sigma (watch)::tc_mid_hedge_h150 t=+27.46 n=2917 (sol)
+::warning title=Strategy past 2-sigma (watch)::tc_mid_sellall t=+27.72 n=2917 (sol)
+::warning title=Strategy past 2-sigma (watch)::tc_mid_sellcheap t=+27.44 n=2917 (sol)
+::warning title=Strategy past 2-sigma (watch)::tc_mid_tailtrim t=+27.32 n=2917 (sol)
+::warning title=Strategy past 2-sigma (watch)::tc_pairmax t=+23.15 n=2917 (sol)
+::warning title=Strategy past 2-sigma (watch)::tc_tailtrim_hedge t=+13.70 n=2917 (sol)
+
+🚀 DEPLOY-READY [sol]: trial(s) cleared the pre-registered deploy bar -- promote per SCALE_GATE (ONE at a time; confirm live behavior matches the ledger; no arming within 48h of a kill).
+  f5_fav_lowsig_complete: t_vs_live=+27.89 n=2917 (beats CURRENT LIVE past deploy bar: t>3.0, n>=300, DD ok)
+  p2_signal_hold: t_vs_live=+18.85 n=2917 (beats CURRENT LIVE past deploy bar: t>3.0, n>=300, DD ok)
+  t01_deep_tail_skip: t_vs_live=+5.87 n=2917 (beats CURRENT LIVE past deploy bar: t>3.0, n>=300, DD ok)
+  t02_yes_caution: t_vs_live=+7.07 n=2917 (beats CURRENT LIVE past deploy bar: t>3.0, n>=300, DD ok)
+  t03_early_window: t_vs_live=+14.95 n=2917 (beats CURRENT LIVE past deploy bar: t>3.0, n>=300, DD ok)
+  t05_flat_oi: t_vs_live=+29.27 n=2917 (beats CURRENT LIVE past deploy bar: t>3.0, n>=300, DD ok)
+  t06_balanced_flow: t_vs_live=+18.34 n=2917 (beats CURRENT LIVE past deploy bar: t>3.0, n>=300, DD ok)
+  t07_spot_gate: t_vs_live=+4.73 n=2917 (beats CURRENT LIVE past deploy bar: t>3.0, n>=300, DD ok)
+  t08_hold_no: t_vs_live=+16.29 n=2917 (beats CURRENT LIVE past deploy bar: t>3.0, n>=300, DD ok)
+  t09_completion_target: t_vs_live=+11.51 n=2917 (beats CURRENT LIVE past deploy bar: t>3.0, n>=300, DD ok)
+  t10_target_and_hold: t_vs_live=+19.10 n=2917 (beats CURRENT LIVE past deploy bar: t>3.0, n>=300, DD ok)
+  t11_sell_cheap_unpaired: t_vs_live=+6.61 n=2917 (beats CURRENT LIVE past deploy bar: t>3.0, n>=300, DD ok)
+  t12_sell_all_unpaired: t_vs_live=+8.58 n=2917 (beats CURRENT LIVE past deploy bar: t>3.0, n>=300, DD ok)
+  t13_sell_unpaired_vpin: t_vs_live=+8.87 n=2917 (beats CURRENT LIVE past deploy bar: t>3.0, n>=300, DD ok)
+  t14_perp_hedge_unpaired: t_vs_live=+16.98 n=2917 (beats CURRENT LIVE past deploy bar: t>3.0, n>=300, DD ok)
+  t15_gamma_size_down: t_vs_live=+23.12 n=2917 (beats CURRENT LIVE past deploy bar: t>3.0, n>=300, DD ok)
+  t16_no_leg_preference: t_vs_live=+7.25 n=2917 (beats CURRENT LIVE past deploy bar: t>3.0, n>=300, DD ok)
+  t17_tox_exit_unpaired: t_vs_live=+5.65 n=2917 (beats CURRENT LIVE past deploy bar: t>3.0, n>=300, DD ok)
+  t19_tox_gate_and_exit: t_vs_live=+3.84 n=2917 (beats CURRENT LIVE past deploy bar: t>3.0, n>=300, DD ok)
+  t20_low_vol_open: t_vs_live=+18.78 n=2917 (beats CURRENT LIVE past deploy bar: t>3.0, n>=300, DD ok)
+  t21_sweepable_queue: t_vs_live=+32.94 n=2917 (beats CURRENT LIVE past deploy bar: t>3.0, n>=300, DD ok)
+  t26_gamma_sized: t_vs_live=+23.92 n=2917 (beats CURRENT LIVE past deploy bar: t>3.0, n>=300, DD ok)
+  t28_hold_deep_favorite: t_vs_live=+7.41 n=2917 (beats CURRENT LIVE past deploy bar: t>3.0, n>=300, DD ok)
+  t29_favorite_only_opens: t_vs_live=+19.94 n=2917 (beats CURRENT LIVE past deploy bar: t>3.0, n>=300, DD ok)
+  t30_asym_playbook: t_vs_live=+16.03 n=2917 (beats CURRENT LIVE past deploy bar: t>3.0, n>=300, DD ok)
+  t31_face_contrarian: t_vs_live=+7.83 n=2917 (beats CURRENT LIVE past deploy bar: t>3.0, n>=300, DD ok)
+  t32_vpin_open_gate: t_vs_live=+27.24 n=2917 (beats CURRENT LIVE past deploy bar: t>3.0, n>=300, DD ok)
+  t34_avoid_combined: t_vs_live=+8.13 n=2917 (beats CURRENT LIVE past deploy bar: t>3.0, n>=300, DD ok)
+  t35_combo_tox_gate: t_vs_live=+28.51 n=2917 (beats CURRENT LIVE past deploy bar: t>3.0, n>=300, DD ok)
+  t36_guarded_opener: t_vs_live=+8.70 n=2917 (beats CURRENT LIVE past deploy bar: t>3.0, n>=300, DD ok)
+  t_buf_1c: t_vs_live=+5.13 n=2917 (beats CURRENT LIVE past deploy bar: t>3.0, n>=300, DD ok)
+  t_buf_dyn: t_vs_live=+13.10 n=2917 (beats CURRENT LIVE past deploy bar: t>3.0, n>=300, DD ok)
+  t_buf_dyn_eth: t_vs_live=+13.10 n=2917 (beats CURRENT LIVE past deploy bar: t>3.0, n>=300, DD ok)
+  t_buf_dyn_hedge: t_vs_live=+20.49 n=2917 (beats CURRENT LIVE past deploy bar: t>3.0, n>=300, DD ok)
+  t_buf_dyn_manage: t_vs_live=+14.67 n=2917 (beats CURRENT LIVE past deploy bar: t>3.0, n>=300, DD ok)
+  t_edge_k59: t_vs_live=+21.50 n=2917 (beats CURRENT LIVE past deploy bar: t>3.0, n>=300, DD ok)
+  t_edge_midvol: t_vs_live=+22.77 n=2917 (beats CURRENT LIVE past deploy bar: t>3.0, n>=300, DD ok)
+  t_edge_select: t_vs_live=+28.19 n=2917 (beats CURRENT LIVE past deploy bar: t>3.0, n>=300, DD ok)
+  t_k78_mid: t_vs_live=+34.97 n=2917 (beats CURRENT LIVE past deploy bar: t>3.0, n>=300, DD ok)
+  t_k8_tilt: t_vs_live=+35.96 n=2917 (beats CURRENT LIVE past deploy bar: t>3.0, n>=300, DD ok)
+  t_k8_window: t_vs_live=+33.64 n=2917 (beats CURRENT LIVE past deploy bar: t>3.0, n>=300, DD ok)
+  t_mid_window: t_vs_live=+27.23 n=2917 (beats CURRENT LIVE past deploy bar: t>3.0, n>=300, DD ok)
+  tc_mid_hedge: t_vs_live=+28.23 n=2917 (beats CURRENT LIVE past deploy bar: t>3.0, n>=300, DD ok)
+  tc_mid_hedge_h150: t_vs_live=+27.46 n=2917 (beats CURRENT LIVE past deploy bar: t>3.0, n>=300, DD ok)
+  tc_mid_sellall: t_vs_live=+27.72 n=2917 (beats CURRENT LIVE past deploy bar: t>3.0, n>=300, DD ok)
+  tc_mid_sellcheap: t_vs_live=+27.44 n=2917 (beats CURRENT LIVE past deploy bar: t>3.0, n>=300, DD ok)
+  tc_mid_tailtrim: t_vs_live=+27.32 n=2917 (beats CURRENT LIVE past deploy bar: t>3.0, n>=300, DD ok)
+  tc_pairmax: t_vs_live=+23.15 n=2917 (beats CURRENT LIVE past deploy bar: t>3.0, n>=300, DD ok)
+  tc_tailtrim_hedge: t_vs_live=+13.70 n=2917 (beats CURRENT LIVE past deploy bar: t>3.0, n>=300, DD ok)/home/runner/work/Codex-playground-/Codex-playground-/box_policy_ab.py:1356: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  fh.write(f"{__import__('datetime').datetime.utcnow().isoformat()}Z  {dbanner}\n")
+
+::warning title=DEPLOY-READY::f5_fav_lowsig_complete t=+27.89 n=2917 (sol)
+::warning title=DEPLOY-READY::p2_signal_hold t=+18.85 n=2917 (sol)
+::warning title=DEPLOY-READY::t01_deep_tail_skip t=+5.87 n=2917 (sol)
+::warning title=DEPLOY-READY::t02_yes_caution t=+7.07 n=2917 (sol)
+::warning title=DEPLOY-READY::t03_early_window t=+14.95 n=2917 (sol)
+::warning title=DEPLOY-READY::t05_flat_oi t=+29.27 n=2917 (sol)
+::warning title=DEPLOY-READY::t06_balanced_flow t=+18.34 n=2917 (sol)
+::warning title=DEPLOY-READY::t07_spot_gate t=+4.73 n=2917 (sol)
+::warning title=DEPLOY-READY::t08_hold_no t=+16.29 n=2917 (sol)
+::warning title=DEPLOY-READY::t09_completion_target t=+11.51 n=2917 (sol)
+::warning title=DEPLOY-READY::t10_target_and_hold t=+19.10 n=2917 (sol)
+::warning title=DEPLOY-READY::t11_sell_cheap_unpaired t=+6.61 n=2917 (sol)
+::warning title=DEPLOY-READY::t12_sell_all_unpaired t=+8.58 n=2917 (sol)
+::warning title=DEPLOY-READY::t13_sell_unpaired_vpin t=+8.87 n=2917 (sol)
+::warning title=DEPLOY-READY::t14_perp_hedge_unpaired t=+16.98 n=2917 (sol)
+::warning title=DEPLOY-READY::t15_gamma_size_down t=+23.12 n=2917 (sol)
+::warning title=DEPLOY-READY::t16_no_leg_preference t=+7.25 n=2917 (sol)
+::warning title=DEPLOY-READY::t17_tox_exit_unpaired t=+5.65 n=2917 (sol)
+::warning title=DEPLOY-READY::t19_tox_gate_and_exit t=+3.84 n=2917 (sol)
+::warning title=DEPLOY-READY::t20_low_vol_open t=+18.78 n=2917 (sol)
+::warning title=DEPLOY-READY::t21_sweepable_queue t=+32.94 n=2917 (sol)
+::warning title=DEPLOY-READY::t26_gamma_sized t=+23.92 n=2917 (sol)
+::warning title=DEPLOY-READY::t28_hold_deep_favorite t=+7.41 n=2917 (sol)
+::warning title=DEPLOY-READY::t29_favorite_only_opens t=+19.94 n=2917 (sol)
+::warning title=DEPLOY-READY::t30_asym_playbook t=+16.03 n=2917 (sol)
+::warning title=DEPLOY-READY::t31_face_contrarian t=+7.83 n=2917 (sol)
+::warning title=DEPLOY-READY::t32_vpin_open_gate t=+27.24 n=2917 (sol)
+::warning title=DEPLOY-READY::t34_avoid_combined t=+8.13 n=2917 (sol)
+::warning title=DEPLOY-READY::t35_combo_tox_gate t=+28.51 n=2917 (sol)
+::warning title=DEPLOY-READY::t36_guarded_opener t=+8.70 n=2917 (sol)
+::warning title=DEPLOY-READY::t_buf_1c t=+5.13 n=2917 (sol)
+::warning title=DEPLOY-READY::t_buf_dyn t=+13.10 n=2917 (sol)
+::warning title=DEPLOY-READY::t_buf_dyn_eth t=+13.10 n=2917 (sol)
+::warning title=DEPLOY-READY::t_buf_dyn_hedge t=+20.49 n=2917 (sol)
+::warning title=DEPLOY-READY::t_buf_dyn_manage t=+14.67 n=2917 (sol)
+::warning title=DEPLOY-READY::t_edge_k59 t=+21.50 n=2917 (sol)
+::warning title=DEPLOY-READY::t_edge_midvol t=+22.77 n=2917 (sol)
+::warning title=DEPLOY-READY::t_edge_select t=+28.19 n=2917 (sol)
+::warning title=DEPLOY-READY::t_k78_mid t=+34.97 n=2917 (sol)
+::warning title=DEPLOY-READY::t_k8_tilt t=+35.96 n=2917 (sol)
+::warning title=DEPLOY-READY::t_k8_window t=+33.64 n=2917 (sol)
+::warning title=DEPLOY-READY::t_mid_window t=+27.23 n=2917 (sol)
+::warning title=DEPLOY-READY::tc_mid_hedge t=+28.23 n=2917 (sol)
+::warning title=DEPLOY-READY::tc_mid_hedge_h150 t=+27.46 n=2917 (sol)
+::warning title=DEPLOY-READY::tc_mid_sellall t=+27.72 n=2917 (sol)
+::warning title=DEPLOY-READY::tc_mid_sellcheap t=+27.44 n=2917 (sol)
+::warning title=DEPLOY-READY::tc_mid_tailtrim t=+27.32 n=2917 (sol)
+::warning title=DEPLOY-READY::tc_pairmax t=+23.15 n=2917 (sol)
+::warning title=DEPLOY-READY::tc_tailtrim_hedge t=+13.70 n=2917 (sol)
+
+==========================================================================================
+CURATED METRICS BACKTEST  (sol)  n=2917 windows  (note: tail metrics unreliable at n<50; n~160 = moderate confidence)
+  Global adverse-fill rate (sig>0 on P0 fills): 37.1%  (14127/38065 fills across all windows)
+  Skipped metrics: slippage/VWAP/IS (maker fee=0, posts at touch); quote-latency/uptime/margin (live-only); BTC alpha/beta/TE/R2 (IR+t-stat covers this); inventory-imbalance (structurally capped at +-1 -> strand-rate is the proxy).
+  Future/deferred: Monte-Carlo/WFA/regime; quarterly-consistency (needs n>=300).
+==========================================================================================
+  trial                       Sharpe  Sortino    Skew    Kurt  Recovery  Ulcer_c  CVaR95_c  IR_live  AdvSel%
+  ----------------------------------------------------------------------------------------
+  [P0_baseline]               -0.680   -0.513   -0.49   +1.60     -1.00 32811.960    87.585   +0.000    37.1%
+  [f5_fav_lowsig_complete]    -0.399   -0.248   -1.36   +3.95     -1.00 10061.577    48.286   +0.516    37.1%
+  [live_current]              -0.680   -0.513   -0.49   +1.60     -1.00 32811.960    87.585   +0.000    37.1%
+  [p2_signal_hold]            -0.027   -0.028   +0.11   -1.33     -0.85 2378.165    73.607   +0.349    37.1%
+  [t01_deep_tail_skip]        -0.651   -0.471   -0.82   +1.68     -1.00 30703.302    87.815   +0.109    37.1%
+  [t02_yes_caution]           -0.551   -0.433   -0.32   +1.22     -1.00 28757.247    86.395   +0.131    37.1%
+  [t03_early_window]          -0.665   -0.490   -0.59   +1.23     -1.00 23574.484    64.452   +0.277    37.1%
+  [t04_thin_book]             -0.680   -0.512   -0.52   +1.66     -1.00 32742.536    87.646   +0.038    37.1%
+  [t05_flat_oi]               -0.313   -0.148   -2.10   +9.87     -1.00 10375.752    62.922   +0.542    37.1%
+  [t06_balanced_flow]         -0.559   -0.408   -0.99   +3.02     -1.00 20632.869    68.420   +0.340    37.1%
+  [t07_spot_gate]             -0.605   -0.482   -0.09   +1.85     -1.00 29733.646    83.590   +0.088    37.1%
+  [t08_hold_no]               -0.098   -0.098   +0.11   -0.87     -0.95 8321.056    82.432   +0.302    37.1%
+  [t09_completion_target]     -0.640   -0.475   -0.82   +2.56     -1.00 26364.339    77.608   +0.213    37.1%
+  [t10_target_and_hold]       -0.024   -0.025   +0.13   -1.25     -0.85 2032.827    72.882   +0.354    37.1%
+  [t11_sell_cheap_unpaired]   -0.671   -0.498   -0.75   +1.41     -1.00 31332.587    86.918   +0.122    37.1%
+  [t12_sell_all_unpaired]     -0.672   -0.499   -0.71   +1.31     -1.00 30188.769    82.309   +0.159    37.1%
+  [t13_sell_unpaired_vpin]    -0.660   -0.496   -0.61   +1.66     -1.00 30712.568    84.592   +0.164    37.1%
+  [t14_perp_hedge_unpaired]   -0.484   -0.401   +0.06   +3.51     -1.00 24471.405    84.623   +0.314    37.1%
+  [t15_gamma_size_down]       -0.640   -0.482   -0.33   +0.76     -1.00 21270.135    57.488   +0.428    37.1%
+  [t16_no_leg_preference]     -0.461   -0.362   -0.37   +0.34     -1.00 25905.915    88.319   +0.134    37.1%
+  [t17_tox_exit_unpaired]     -0.678   -0.506   -0.62   +1.41     -1.00 31455.844    85.802   +0.105    37.1%
+  [t18_tox_open_gate]         -0.617   -0.469   -0.63   +1.78     -1.00 31266.302    92.822   +0.054    37.1%
+  [t19_tox_gate_and_exit]     -0.620   -0.467   -0.71   +1.65     -1.00 30673.689    91.464   +0.071    37.1%
+  [t20_low_vol_open]          -0.573   -0.424   -0.87   +2.27     -1.00 19436.801    65.910   +0.348    37.1%
+  [t21_sweepable_queue]       -0.263   -0.149   -1.87  +11.50     -1.00 5793.477    46.386   +0.610    37.1%
+  [t22_size_sweetspot]        -0.692   -0.517   -0.51   +1.22     -1.00 35157.029    92.241   -0.312    37.1%
+  [t23_quarter_kelly]         -0.705   -0.514   -0.63   +0.91     -1.00 52190.027   136.295   -0.594    37.1%
+  [t24_tox_sized]             -0.648   -0.490   -0.92   +2.78     -1.00 33977.780   101.174   -0.064    37.1%
+  [t25_hour_sized]            -0.652   -0.499   -0.66   +2.45     -1.00 35647.003   104.221   -0.175    37.1%
+  [t26_gamma_sized]           -0.738   -0.532   -0.56   +0.59     -1.00 22063.039    54.452   +0.443    37.1%
+  [t28_hold_deep_favorite]    -0.473   -0.364   -0.63   +0.55     -1.00 28422.303    99.677   +0.137    37.1%
+  [t29_favorite_only_opens]   -0.534   -0.370   -0.73   +2.68     -1.00 20608.699    69.654   +0.369    37.1%
+  [t30_asym_playbook]         -0.441   -0.315   -0.80   +1.23     -1.00 21291.672    82.718   +0.297    37.1%
+  [t31_face_contrarian]       -0.481   -0.387   -0.64   +1.83     -1.00 25350.151    92.898   +0.145    37.1%
+  [t32_vpin_open_gate]        -0.361   -0.235   -1.50   +8.32     -1.00 11480.970    61.882   +0.504    37.1%
+  [t33_take_tail_trim]        -0.680   -0.511   -0.50   +1.53     -1.00 32767.976    87.497   +0.004    37.1%
+  [t34_avoid_combined]        -0.481   -0.386   -0.65   +1.80     -1.00 25172.154    92.108   +0.151    37.1%
+  [t35_combo_tox_gate]        -0.344   -0.223   -1.47   +6.63     -1.00 10740.313    68.075   +0.528    37.1%
+  [t36_guarded_opener]        -0.560   -0.440   -0.30   +1.32     -1.00 27797.331    83.296   +0.161    37.1%
+  [t_buf_1c]                  -0.672   -0.499   -0.62   +1.50     -1.00 31776.684    86.767   +0.095    37.1%
+  [t_buf_dyn]                 -0.618   -0.457   -0.64   +1.70     -1.00 26787.555    80.070   +0.243    37.1%
+  [t_buf_dyn_eth]             -0.618   -0.457   -0.64   +1.70     -1.00 26787.555    80.070   +0.243    37.1%
+  [t_buf_dyn_hedge]           -0.414   -0.349   +0.48   +7.35     -1.00 18528.932    74.610   +0.379    37.1%
+  [t_buf_dyn_manage]          -0.633   -0.464   -0.60   +1.04     -1.00 25608.205    73.795   +0.272    37.1%
+  [t_edge_k59]                -0.570   -0.419   -0.95   +1.54     -1.00 17363.006    57.059   +0.398    37.1%
+  [t_edge_midvol]             -0.445   -0.278   -1.35   +4.44     -1.00 16225.760    74.534   +0.422    37.1%
+  [t_edge_select]             -0.396   -0.238   -1.64   +4.57     -1.00 8982.084    47.658   +0.522    37.1%
+  [t_k78_mid]                 -0.153   -0.053   -3.86  +24.61     -0.99 1896.116    24.388   +0.648    37.1%
+  [t_k8_tilt]                 -0.093   -0.027   -7.18 +111.44     -0.99  500.576    14.244   +0.666    37.1%
+  [t_k8_window]               -0.253   -0.129   -3.11  +12.47     -1.00 3891.512    33.906   +0.623    37.1%
+  [t_mid_window]              -0.469   -0.320   -1.14   +3.69     -1.00 9863.783    39.676   +0.504    37.1%
+  [tc_mid_hedge]              -0.311   -0.259   +2.63  +42.56     -1.00 7863.808    37.969   +0.523    37.1%
+  [tc_mid_hedge_h150]         -0.223   -0.225   +5.98  +98.09     -1.00 6867.907    37.966   +0.508    37.1%
+  [tc_mid_sellall]            -0.466   -0.315   -1.32   +2.32     -1.00 9433.043    37.944   +0.513    37.1%
+  [tc_mid_sellcheap]          -0.467   -0.316   -1.39   +2.62     -1.00 9669.506    39.640   +0.508    37.1%
+  [tc_mid_tailtrim]           -0.463   -0.317   -1.12   +3.75     -1.00 9725.927    39.942   +0.506    37.1%
+  [tc_pairmax]                -0.542   -0.364   -1.51   +2.98     -1.00 13950.060    53.151   +0.429    37.1%
+  [tc_tailtrim_hedge]         -0.484   -0.402   +0.08   +3.57     -1.00 24599.134    84.583   +0.254    37.1%
+
+==========================================================================================
+AUTOMATED INSIGHTS (from metrics table above)
+==========================================================================================
+
+RISKY (positive mean but tail/skew/DD concerns) -- n=0:
+
+STABLE SLEEVE (modest mean, good risk-adjusted profile) -- n=0:
+
+ADVERSE-SELECTION NOTE: Global adverse-fill rate = 37.1% (sig>0 = spot moved adversely at fill time).  All trials share the same fill pool (P0 accepts all |net|<=1 fills); entry-gate trials reduce total fills but cannot selectively remove the adverseSel fraction without the per-fill sig filter (t07_spot_gate and t36_guarded_opener are the dedicated adverse-signal defenses).
+
+SMALL-N CAVEAT: n=2917 windows (~160 in gha_data). Skewness/kurtosis/CVaR estimates have high variance at this sample size; treat tail metrics as directional indicators only.  IR and Sharpe are more reliable; t-stat is the primary decision criterion (needs n>=300 for the pre-registered deploy bar).
