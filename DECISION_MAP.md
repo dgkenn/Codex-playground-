@@ -1457,3 +1457,18 @@ clean-label drop. GATE (ofi_forward.py, frozen): pooled per-(asset,day) day-clus
 AND btc-alone mean>0 (no single-asset corner); KILL if t<0 after 10d. PROPOSE-ONLY. Prior is WEAK (observable
 exogenous signal already priced) but this is the honest way to actually TEST the operator's chosen domain rather
 than declare it dead on a proxy. Clock starts at first full collection day; gate opens ~10 forward days later.
+
+## EXO-XASSET (2026-07-15) — cross-asset BTC->alt lead-lag is also PRICED (null/negative in-sample)
+Tested the one remaining backtestable exogenous PRICE signal distinct from own-asset momentum: does BTC's recent
+spot move (leader, 120s causal return) predict the ETH/SOL binary outcome beyond the alt's own mid (BTC leads alts)?
+Same discipline as EXO-MOM (settlement label, no strike proxy, no clean-label drop, ONE signal + fixed thresholds
+reported in full, day-clustered t, +fees; windows joined on shared ws). Tool: crossasset_edge.py.
+- RESIDUAL (gross): btc->eth NULL (train -0.44, test -0.14); btc->sol train NEGATIVE -1.39 -> test 2.71 = sign-flip
+  noise. eth->btc / sol->btc controls null-to-negative.
+- TRADEABLE (net fees): NEGATIVE train day-clustered t for EVERY fixed threshold (btc->eth -1.93/-0.79/-0.88;
+  btc->sol -3.61/-2.45/-0.82/-1.86). Positive test blips (btc->sol thr .002 test 1.93) rest on n=15 trades, negative
+  in train -> noise.
+VERDICT: the alts already embed BTC's move (arbitraged within seconds); no residual 2-3min lead-lag to trade. Both
+backtestable exogenous PRICE signals (own momentum EXO-MOM, cross-asset lead-lag EXO-XASSET) are PRICED. The ONLY
+untested exogenous signal is true signed ORDER FLOW (EXO-OFI), which is forward-only and now collecting. The
+backtestable exogenous-signal space is exhausted; terminal conclusion stands, with EXO-OFI as the live forward thread.
