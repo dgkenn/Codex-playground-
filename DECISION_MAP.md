@@ -1182,3 +1182,23 @@ ACTIONABLE FAVLONG ENHANCEMENTS (propose-only, forward-gate-first): staleness en
 unchanged >=2-3 ticks AND spread>1c), whale stand-down, btc-weight sizing, latency/depth decay tripwire.
 Report: participant_fingerprint.md. (The whale-informed finding feeds the separate informed-large-flow
 edge test now running.)
+
+## PLAYER-REID (2026-07-15) — re-identify+follow recurring winning players: NULL + INFEASIBLE on this feed
+Operator hypothesis: fingerprint recurring players by repeatable signatures, backtest each one's win rate,
+follow the persistent winners. VERDICT: NULL, and the re-ID premise is INFEASIBLE on the Kalshi public feed.
+- The 15m trade tape exposes only an anonymous per-print UUID (tid), ms exchange ts, ws/side/price/size,
+  always the 'up' leg -- NO account/order id. Only persistence-capable handles = exact size + sub-second
+  phase, and they FAIL as actor fingerprints: each recurring odd-size cohort is ~50/50 buy/sell, active
+  20-21/24h, all price bands, timing-phase resultant R~=0.01-0.11 (uniform, no bot cadence) -> a size does
+  NOT carry one player. Re-ID confidence LOW by construction.
+- Rigor: 14 days across the train/test wall, 4.50M trades, 1,027 settled windows; each exact size = a
+  "synthetic player", 1,115 cohorts screened (multiple-testing count). 13/1,115 in-sample winners (train
+  day-clustered t>=2) -- at/BELOW the ~25-41 false positives expected by chance -- and 0/13 reached OOS
+  t>=2 (only 2/13 even stayed positive OOS vs ~6.5 by coin flip). No OOS-winning player, no positive
+  follow t/mean.
+- Baselines: whale (>=5000ct) follow/fade flips sign train->test (train t=-2.64, test t=-0.61, never sig);
+  all-flow aggressor loses to fees on 0/21 test asset-days (efficient tape); FAVLONG-shaped proxy null
+  (test -0.034); correlation of spurious train-winners with FAVLONG small/mixed (-0.27..+0.32) = no linkage.
+CONCLUSION: player re-ID is not feasible on the public feed (no IDs; size/timing don't isolate actors), and
+the tape is efficient -- nothing persistent to follow. The rare informed-whale FINGERPRINT signal remains
+only as a FAVLONG stand-down FILTER, not a standalone followable edge. Report: edge_player_reid.md.
