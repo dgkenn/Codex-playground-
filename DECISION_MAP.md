@@ -1244,3 +1244,23 @@ GROSS > FEE, via (a) a MORE SELECTIVE dumb subset (bigger dislocation, like FAVL
 (b) trading at EXTREME prices where the fee 0.07*p(1-p) is SMALLER (p~0.1/0.9 fee ~0.6c vs ~1.75c at 0.5).
 This is exactly what the DumbFlow-signature hunt (counter-spot/tail/round-lot/late/session) should surface --
 tail/extreme-price fades naturally pay a lower fee. Report: edge_informed_flow.md (FADE section).
+
+## DUMBFLOW-HUNT (2026-07-15) — 5 DumbFlow fade signatures on Kalshi: all NULL; Kalshi participant theme EXHAUSTED
+Tested fading counter-spot, tail/extreme-price, round-lot, late-window-chase, session. 18 days, 4298 windows,
+18.9M prints, train-select/test-once, (asset,day)-clustered. VERDICT: NULL -- none clears cost.
+- PREMISE CONFIRMED per-trade: dumb subsets are -EV (counter-spot takerEV -0.021, round-lot -0.013, lottery
+  tail(buy YES<0.15) -0.016). BUT fading loses net OOS: window-aggregated net direction carries ~0 gross
+  edge (counter-spot +0.0014, round-lot +0.0024), and the one real per-trade wrongness (lottery -1.6c) is
+  SMALLER than the ~1c round-trip cost + rare tail losses (fade net -0.0185). You cannot monetize spread-
+  payers by also paying the spread.
+- KEY CORRECTION: late-window "chasers" are NOT dumb -- they are INFORMED (86% correct, takerEV +0.027);
+  fading them is strongly negative (OOS day-clustered t=-4.44). Tail-high buys near-fair + FAVLONG-collinear
+  (corr +0.44). Session/retail-hours: no stable effect (wrong sign if any).
+- ONE POSITIVE, flagged NOT-a-new-edge: FOLLOWING late directional flow nets +0.019/ct OOS (t=+2.74) but it
+  is mechanically FAVLONG's terminal-convergence re-expressed through the tape (corr -0.23, same 720s band,
+  contradicts the prior informed-flow late-follow null) -> mild independent tape-CONFIRMATION of FAVLONG,
+  must NOT be stacked without a FAVLONG-controlled forward test.
+CONCLUSION: the KALSHI participant/flow theme is EXHAUSTED -- every follow/fade variant is NULL net-of-fee
+(the mid prices direction efficiently; residual wrong flow's per-trade edge < round-trip cost; can't fade
+spread-payers by paying the spread). The remaining hope for a participant edge is POLYMARKET (zero-fee CLOB +
+persistent wallet IDs, analysis running). Report: edge_dumbflow.md.
