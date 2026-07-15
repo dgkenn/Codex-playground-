@@ -1161,3 +1161,24 @@ momentum/VRP/lead-lag) + orthogonal sweep (reversion/maker null, XS-RV marginal+
 (no upgrade). The ONE in-scope orthogonal avenue remaining = PERP<->15m-BINARY BASIS (operator confirmed
 in scope; perp collector deployed, data pending). DIRECTION: build the perp-basis paper strategy once perp
 data lands (collect-then-forward). Honest: the 15m pond may support only ~1-2 edges; the "stack" is thin.
+
+## FINGERPRINT (2026-07-15) — participant behavioral fingerprint; FAVLONG decay early-warning + whale-informed flag
+Behaviorally fingerprinted non-us participants (Kalshi anonymous + aggregated depth -> SIGNATURES only,
+no actor IDs/count; "concentration" a weak proxy). Data: deduped trades, 1.2s ticks, our fills subtracted;
+35 days fills, 12 days heavy book/trades. KEY FINDINGS:
+- NAIVE-DOMINATED near-expiry: aggressor flow fat-tailed (median sweep 12-28ct, single-level); a RARE
+  INFORMED WHALE tail (>5000ct, 11 fills, markout-to-settlement -0.083) -- i.e. LARGE trades ARE informed
+  but rare. Actionable: FAVLONG "whale stand-down" regime flag (don't take when a whale sweeps).
+- FAVLONG FEED IS EXTERNAL: our box-maker executed only ~0.6-1.0% of near-expiry volume -> turning it OFF
+  is a <=1% ecosystem change; forward ~= archive for the feed (box-maker-off concern is minor).
+- DECAY EARLY-WARNING (most important): even with FLAT backtest P&L slope, the counterparty is measurably
+  WISING UP -- near-expiry reprice latency FALLING (median t=-7.45, stale-tail p90 t=-2.61), inside depth
+  RISING (t=+2.50), spreads not yet tightening. The stale-quote lag that IS FAVLONG's edge is eroding
+  FASTER than P&L reveals -> add a forward TRIPWIRE on reprice-latency-p90 / inside-depth to catch decay
+  before it hits P&L. (Moderate confidence: 12-day regression, characterization not proof.)
+- ASSET DURABILITY: btc feed deep/fast/many-sourced (most durable); sol slow/wide/stale but thin/round-lot
+  (most fragile, thinnest capture); eth intermediate -> btc-weighted sizing.
+ACTIONABLE FAVLONG ENHANCEMENTS (propose-only, forward-gate-first): staleness entry filter (inside quote
+unchanged >=2-3 ticks AND spread>1c), whale stand-down, btc-weight sizing, latency/depth decay tripwire.
+Report: participant_fingerprint.md. (The whale-informed finding feeds the separate informed-large-flow
+edge test now running.)
