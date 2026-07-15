@@ -1,11 +1,26 @@
 #!/usr/bin/env python3
 """favlongshot_edge.py -- the FIRST validated positive edge of the research program.
 
-WHAT (node FAVLONG, 2026-07-14): a near-expiry CONTRARIAN TAKER strategy on Kalshi 15m crypto
-binaries (btc/eth/sol 'up/above-strike' contracts). In the last ~2-3 minutes of a window the book
-is OVER-CONFIDENT: underdog contracts priced ~0.09 settle in-the-money ~0.32 (favorite-longshot
-bias / terminal overconfidence). We compute a fair-value probability from spot-vs-strike scaled by
-causal realized vol and shrinking time-to-expiry, and TAKE the side the book underprices.
+WHAT (node FAVLONG, 2026-07-14): a near-expiry TAKER strategy on Kalshi 15m crypto binaries
+(btc/eth/sol 'up/above-strike' contracts). In the last ~2-3 minutes of a window the book's price
+lags the settlement-implied probability in DISLOCATED (wide-spread) books; we compute a fair-value
+probability from spot-vs-strike scaled by causal realized vol and shrinking time-to-expiry, and
+TAKE the side the executable price underprices.
+
+MECHANISM CORRECTION (2026-07-15, nodes FAVLONG-MECHANISM / FAVLONG-SEGMENT — supersedes the
+original 'favorite-longshot / buy-cheap-underdog 0.09->0.32' framing, which was an unrepresentative
+median-buy slice on BTC-test and is RETRACTED):
+  - It is NOT a buy-the-cheap-underdog edge. Deep-underdog trades (executable price <0.15, ~62% of
+    all trades) carry NO out-of-sample edge (OOS t~1.0). The profit concentrates on the NEAR-ATM-
+    TO-FAVORITE side (entry price >=0.40: OOS ~+0.13/ct; pre-registered favorite>=0.60: OOS t=2.24).
+  - It lives in WIDE/dislocated books (spread >1c: ~+3.6c/ct) and MID realized-vol regimes; in
+    TIGHT-AND-DEEP books (the operator's own box-maker footprint) the edge is ~ZERO. => low
+    cannibalization of the box-maker; the two are complementary.
+  - It is ASSET-SPECIFIC: btc/eth/sol replicate; XRP is a NULL (OOS t=-0.32). XRP is excluded.
+  - No decay across the 35-day archive (slope t~1.1, insignificant). Persistence risk MEDIUM.
+  - The raw Gaussian fair-value systematically mis-shapes the 0.2-0.5 band; an EMPIRICAL ISOTONIC
+    calibration (fit train-only, node FAVLONG-MODELV2) ~doubles the backtested OOS edge (pooled
+    t 3.97 -> 7.70; all 3 assets clear t>=2 individually). See favlong_model_v2.py.
 
 WHY IT IS TRUSTED (unlike every prior 'winner'):  av_stoikov et al. were markout illusions that
 DIED under realized-money scrutiny (nodes METRIC-INVALID / LIVE-BLEED). This edge was built ON

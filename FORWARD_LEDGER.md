@@ -34,20 +34,35 @@ after 10+ forward days.
 | volgate (added 2026-07-14, 70ed86897; node OV-VOLGATE) | vol-regime ENTRY veto: skip when prior-window realized vol in top quartile of trailing regime. Replay prior (06-10..13): +0.96c/win t=1.59, strand 7.6→4.9% (46 vetoes). Streak study: vol lag-1 autocorr 0.58; prior-window vol AUC 0.655 (>prior-outcome 0.619). Fidelity caveat: harness uses Kalshi-mid vol, weaker than study's spot vol. Deploy bar: day-clustered t>=2 vs live over >=10 fwd days | accruing from first box-shadow run after 2026-07-14 ~14:47Z |
 | nsmove (added 2026-07-14, bot-branch; node OV-2POP-ARM) | near-strike × movement veto: STRICT SUBSET of volgate — veto only when volgate fires AND entry near-strike (|p1-0.5|<0.15). Targets the drift-driven BIG-loss population (leading |drift| AUC 0.875 provisional, n=6). Replay prior (06-10..13): +0.55c/win t=0.79, strand 7.6→6.5% (29 vetoes) — weaker than volgate here because motivating population is in the overnight sample. Head-to-head vs volgate is the forward question. Deploy bar: t>=2 vs live over >=10 fwd days | accruing from first box-shadow run after 2026-07-14 ~14:47Z |
 
-## FAVLONG near-expiry contrarian taker (added 2026-07-14; node FAVLONG) — NEW STRATEGY FAMILY
-**First validated positive edge of the program.** A TAKER strategy (not the maker box bot):
-in the last ~2-3 min of each Kalshi 15m window, take the side the book underprices per a
-causal-vol fair-value model (favorite-longshot / terminal-overconfidence bias). Scored on
-reconstructed SETTLEMENT, not markout. Tool: `favlongshot_edge.py`.
+## FAVLONG near-expiry taker (added 2026-07-14; nodes FAVLONG + 07-15 follow-ups) — NEW STRATEGY FAMILY
+**First validated positive edge of the program.** A TAKER strategy (not the maker box bot): in the
+last ~2-3 min of each Kalshi 15m window, take the side the executable price underprices per a
+fair-value model. Scored on reconstructed SETTLEMENT, not markout. Tool: `favlongshot_edge.py`;
+calibrated model `favlong_model_v2.py`.
 - Backtest priors (35 days, +Kalshi fees, clean market-settlement labels, latency-robust):
-  BTC ALL t=3.25 (OOS test 2.97), ETH 1.84, SOL 1.77; **POOLED per-(asset,day) clustered
-  t=3.99 over 105 asset-days, 65/105 positive**; ~2c/ct pooled (~4c BTC); traded-side depth
-  median 420 ct. Concentrated at decision_t>=600s.
-- Caveats: small; per-asset only BTC clears t>=2 OOS; ~62% asset-days positive; TAKER = new
-  execution code; known effect, can decay.
+  raw model POOLED clustered t=3.99/105 asset-days; tuned (720/edge0.03/sigma0.8) OOS pooled t=3.97.
+  **CALIBRATED model (isotonic, train-fit) OOS pooled t=7.70, +$0.059/ct, all 3 assets clear t>=2
+  individually (btc 5.58 eth 3.84 sol 4.09)** — the recommended variant.
+- **CORRECTED characterization (07-15, supersedes the 'favorite-longshot / buy-cheap-underdog'
+  framing, RETRACTED):** it is a repricing lag in WIDE/dislocated books, MID-vol regimes, concentrated
+  on the NEAR-ATM-TO-FAVORITE side (entry>=0.40; deep-underdog <0.15 has NO OOS edge). No archive decay.
+  Box-maker cannibalization LOW (edge ~0 in tight/deep books). No second independent edge found.
+- **Universe: btc/eth/sol ONLY. XRP is a NULL (OOS t=-0.32) — excluded.**
+- Caveats: small (~2-6c/ct); ~62% asset-days positive; TAKER = new execution; calibration map is a
+  fitted component (needs periodic refit, can decay).
 - **Deploy bar (charter gate): day-clustered t>=2 vs zero over >=10 FORWARD days, POOLED across
-  btc/eth/sol** (per-asset is underpowered). PROPOSE-ONLY: no live sizing without operator word.
-  Forward clock starts at the first tick-archive day after 2026-07-14; gate opens ~2026-07-25.
+  btc/eth/sol** (per-asset underpowered; xrp excluded). Recommend forward-tracking BOTH the raw
+  (control) and the calibrated model (pre-registered now, before any forward data exists — ungameable).
+  PROPOSE-ONLY: no live sizing without operator word. Forward clock starts at first tick-archive day
+  after 2026-07-14; gate opens ~2026-07-25.
+
+### Forward-validation harness (node C, 2026-07-14)
+`favlong_forward.py` scores each COMPLETE forward day (btc/eth/sol) with the validated config, appends
+idempotently to `favlong_forward_log.jsonl`, and prints the running POOLED gate (PASS >=10d & t>=2;
+KILL >=10d & t<0). Daily GHA `.github/workflows/favlong-forward.yml` at 06:33 UTC (stdlib-only, default
+token). `--report` prints status without re-fetching. Enabling the Action (or a claude-code-remote
+Routine at a fixed UTC time) starts automated accrual. Current: CLOCK-NOT-STARTED (first forward day
+07-15 in progress).
 
 ### Forward-validation harness (added 2026-07-15)
 - **Tool:** `favlong_forward.py` (imports `favlongshot_edge.build_asset`/`.score`; does not

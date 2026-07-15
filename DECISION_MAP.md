@@ -975,3 +975,62 @@ VERDICT: this is a GENUINE winning candidate -- the first that survives realized
 fees, latency, size, AND out-of-sample cross-asset replication. NOT box-making. PROPOSE-ONLY to live
 (Rail 1): forward-gate (day-clustered t>=2 over >=10 FORWARD days) is required before any live sizing;
 no switch/size/flag is touched without the operator's explicit word.
+
+## LIVE-HALT (2026-07-15, operator-authorized) — box-maker stopped
+Operator explicitly authorized halting live trading until a strategy is PROVEN profitable ("stop it,
+don't start it until we prove a strategy to be profitable"). Set LIVE_SWITCH=off on branch
+claude/polymarket-bot-live-ready-vw7ut5 (commit 024f57693); confirmed remote=off. The live-trade
+GHA workflow gates fail-closed on this file + the kill sentinel, so the bot goes inert at its next
+~25-min gate check and each self-chained leg re-reads it. Rationale: box-making is structurally
+zero-edge (NO-EDGE-DEFINITIVE / PAIRED-ZERO-DECOMP) and the live account bled -$4.92 real balance
+over the prior ~2.5 days while telemetry claimed +$3.23 (the ~$8 window-mark overstatement).
+Do NOT re-arm until a candidate clears its forward gate AND the operator flips it back on.
+
+## FAVLONG follow-up research (2026-07-15) — sharpened, RE-CHARACTERIZED, and one framing RETRACTED
+Four delegated agents + independent verification. Net: the edge is REAL and materially IMPROVED, but
+the original mechanism story was wrong and is corrected.
+
+FAVLONG-MECHANISM: WHY/persist/cannibalization. No decay on the 35-day archive (per-day edge vs date
+slope t=1.1, insignificant; late-half >= early-half). Edge concentrates in WIDE/dislocated books
+(spread>1c ~+3.6c/ct vs tight <=1c ~+0.5c) and MID realized-vol days (t=4.07). In the TIGHT-AND-DEEP
+book (the box-maker footprint) edge ~ZERO (-0.0003, n=889) => box-maker cannibalization LOW; strategies
+complementary. Persistence risk MEDIUM (small, variance-heavy, known-arbitrageable). HONESTY: agent
+could not reproduce the "0.09->0.32" headline; retracted (see below).
+
+FAVLONG-XRP-NULL: the edge does NOT replicate on XRP (full-sample t=-1.35, OOS t=-0.32). Adding xrp
+dilutes the pool (OOS t 3.03->2.63). The effect is asset-specific (btc/eth/sol), NOT a universal
+crypto-binary bias. XRP excluded from the tradeable universe and the forward gate.
+
+FAVLONG-SEGMENT: 38 segments, train-selected + single OOS look. Only MONEYNESS concentrates the edge:
+deep-underdog (<0.15, ~62% of trades) has NO OOS edge (t=1.04); the profit is on the NEAR-ATM-TO-
+FAVORITE side — favorite>=0.60 OOS t=2.24, near-ATM(0.40-0.60) OOS t=2.63, union entry>=0.40 (post-hoc)
+OOS +0.136/ct t=4.06 (~6x pooled mean/ct). Depth/vol/time-of-day: no OOS-robust segment. => the
+"buy the cheap longshot" framing (original FAVLONG headline) is REFUTED; retained id 'FAVLONG' is a
+misnomer — it's a dislocated-book repricing-lag captured on the richer side.
+
+FAVLONG-MODELV2: the raw Gaussian fair-value mis-shapes the 0.2-0.5 band. An EMPIRICAL ISOTONIC
+calibration (fit model_fairP->empirical P(up) on TRAIN pooled, applied to TEST; leak-checked: fit on
+train rows only, per-asset t=7.72 ~= pooled 7.70 so not a pooling artifact) ~DOUBLES the backtested
+edge: OOS pooled day-clustered t 3.97 -> 7.70, mean +$0.059/ct, 36/42 positive asset-days, and for the
+FIRST time all three assets clear t>=2 OOS individually (btc 5.58, eth 3.84, sol 4.09). All 8 iso
+variants beat all 16 raw variants on test; 24-config Bonferroni still overwhelming. Tool favlong_model_v2.py.
+CAVEAT: the isotonic map is a FITTED component (21 train days) that can decay -> needs periodic refit;
+forward gate still mandatory. RECOMMEND forward-tracking the calibrated model (pre-registered now, before
+any forward data exists, so ungameable) alongside the raw as control.
+
+F14-FIX (propose-only): the fractional-flattener never fires because the bot-branch live.yml omits
+'--flatten-fractional 0.1' from the trader invocation, so a.flatten_fractional defaults 0.0 and the
+guard (kalshi_trader.py ~L3789, flatten_fractional>0) is always False. Not a logic bug, a not-wired
+flag. Fix = add the flag to the live.yml trader command. NOT applied (bot is halted; live change =
+propose-only). See F14_FLATTEN_BUG.md.
+
+## FAVLONG-SECOND-EDGE-NULL (2026-07-15) — no independent second edge (rigorous null)
+Hunted a second settlement-validated edge distinct from FAVLONG: (1) book imbalance, (2) binary-mid
+momentum/reversion, (3) vol-risk-premium, (4) cross-asset lead-lag. 186 configs, train-select/test-
+confirm, realized labels + fees + executable spread-crossing + day-clustered t. ALL NULL (OOS net t:
+-1.18 / -0.25 / -0.51 / -1.37; none even positive on train net). Finding: the MID-window is efficient
+for a TAKER — imbalance & short-horizon momentum carry a real but tiny GROSS signal (~1-2.4c/ct) that
+is <= the spread+fee, so net collapses to ~0 / negative OOS. This CORROBORATES FAVLONG from two sides:
+its terminal-window overconfidence is the one gross edge large enough to clear costs, and candidate-3
+confirms the fair-value model has ~zero predictive value BEFORE the last few minutes (genuine terminal-
+convergence effect, not a whole-window artifact). Report: favlong_second_edge_report.md.
