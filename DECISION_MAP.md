@@ -1472,3 +1472,27 @@ VERDICT: the alts already embed BTC's move (arbitraged within seconds); no resid
 backtestable exogenous PRICE signals (own momentum EXO-MOM, cross-asset lead-lag EXO-XASSET) are PRICED. The ONLY
 untested exogenous signal is true signed ORDER FLOW (EXO-OFI), which is forward-only and now collecting. The
 backtestable exogenous-signal space is exhausted; terminal conclusion stands, with EXO-OFI as the live forward thread.
+
+## RICHDATA (2026-07-15) — STRATEGY PIVOT: ultra-rich exogenous BTC data -> signal -> downstream to the 15m binary
+Operator reframed the search (correctly): the edge is NOT in the venue's own book (everyone sees it -> efficient,
+as proven exhaustively above). It is in RICH EXOGENOUS BTC data that predicts the short-horizon move the binary
+settles on, which the Kalshi makers are NOT pricing -- "information not everyone has." Program: assemble multiple
+ultra-rich multi-year BTC datasets, discover signals that predict forward BTC returns/vol OOS, then apply survivors
+DOWNSTREAM to the 15m binary (which must additionally clear the ~2-4c spread + fee at t=720 -> forward execution test).
+DATA SOURCES confirmed reachable through the proxy (all free/no-auth, multi-year):
+- Binance Vision SPOT aggTrades (2017+, signed via isBuyerMaker) -> order flow / CVD.
+- Binance Vision FUTURES metrics (5-min: open interest, top-trader & global long/short ratio, taker buy/sell vol),
+  klines, aggTrades, bookDepth (L2 order-book depth history), fundingRate -> positioning/leverage/book stress.
+- Deribit options API: instruments, DVOL implied-vol index history, per-option IV/greeks summary -> vol surface,
+  skew, dealer-gamma (GEX). Full historical GEX needs forward collection; DVOL history is backtestable now.
+- blockchain.info charts (on-chain), OKX funding history, Kraken/Coinbase OHLC, cryptodatadownload.
+- One-day smoke (2024-03-01): corr(minute-OFI, fwd-3min spot ret) = -0.058, sign-hit 49% -> hints MEAN-REVERSION
+  (transient impact), not momentum; needs the multi-year verdict.
+LAUNCHED (rigorous anti-artifact specs: causal features, OOS-by-time, real costs, full grid, no cherry-pick;
+any positive to be INDEPENDENTLY reproduced before it counts):
+- btc_orderflow_backtest.py  -> spot order flow vs fwd 1/3/5/15min return, momentum AND reversion, ~90 days 2022-25.
+- btc_derivatives_backtest.py -> OI/long-short/taker/funding stress vs fwd 5/15/30min return, ~90 days.
+- kalshi_calibration.py -> favorite-longshot at scale across 8 Kalshi categories (de-emphasized per operator; BTC-data
+  downstream is the better bet, but let it finish for completeness).
+WAVE 2 (after wave-1 verdicts, to manage disk + verification): Deribit options GEX/skew/DVOL; futures bookDepth L2
+imbalance. Verdicts pending; this node records the program + the confirmed data foundation.
