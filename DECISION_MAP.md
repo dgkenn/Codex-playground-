@@ -1264,3 +1264,19 @@ CONCLUSION: the KALSHI participant/flow theme is EXHAUSTED -- every follow/fade 
 (the mid prices direction efficiently; residual wrong flow's per-trade edge < round-trip cost; can't fade
 spread-payers by paying the spread). The remaining hope for a participant edge is POLYMARKET (zero-fee CLOB +
 persistent wallet IDs, analysis running). Report: edge_dumbflow.md.
+
+## LATE-FLOW-CONTROLLED (2026-07-15) — "bet WITH late chasers?": NO -- the +2.74 was a CLEAN-LABEL LOOK-AHEAD artifact
+FAVLONG-controlled test resolved it. VERDICT: do NOT bet with late chasers, do NOT stack; NOT deployable.
+- The +2.74 "follow late flow" was a CLEAN-LABEL SELECTION / LOOK-AHEAD artifact: in clean-label windows
+  sign(spot@720-open) = outcome 90.3% BY CONSTRUCTION. Removing that undeployable filter (a live trader
+  cannot know the terminal label at t=720) collapses OOS t +2.74 -> +0.28 (net ~0), turns pure-momentum
+  train-negative, and flips the FAVLONG-neutral residual +2.05 -> -2.22.
+- Raw late taker-flow-follow actually LOSES (OOS t=-2.97). The strongest variant used NO tape at all (just
+  sign(spot@720-open), t=+3.91) => it was spot-momentum, not a flow edge. Contradiction w/ informed-flow
+  null (+0.70) resolved: single-largest-print spec reproduces the null.
+- Correlation reconciliation: NOT FAVLONG re-expressed (earlier call wrong) -- corr -0.20, opposite sides 81%
+  (FAVLONG near-expiry CONTRARIAN; momentum-follow goes WITH the move). Partly-orthogonal but no deployable edge.
+CRITICAL FOLLOW-UP RAISED: the clean-label SELECTION inflated a spot-direction signal by ~2.5 t of look-ahead.
+FAVLONG is ALSO validated on clean-label windows and its signal is spot-vs-strike -> MUST verify FAVLONG's
+edge survives WITHOUT the clean-label selection, else our one edge shares this leak. Check launched. Report:
+edge_dumbflow.md (LATE-FLOW-FOLLOW section).

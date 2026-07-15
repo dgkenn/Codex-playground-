@@ -112,6 +112,8 @@ INFORMED-FLOW late-follow test (edge_informed_flow.md Test 4, OOS t ≈ 0.70). I
 FAVLONG-collinear rather than a new orthogonal edge and must NOT be stacked without a dedicated
 follow-side forward test that controls for FAVLONG. Sensitivity: the follow signal weakens as entry
 moves later (T=780 t +1.68; T=840 t +0.30), i.e. it lives in the same 720s terminal band as FAVLONG.
+**[SUPERSEDED — see "LATE-FLOW-FOLLOW: FAVLONG-controlled" below: the +2.74 is a clean-label
+selection artifact, not a real edge, and not FAVLONG-collinear either.]**
 
 ## Bottom line
 **NULL.** Fading dumb flow does not add a tradeable edge on the 15m crypto binaries. The recurring
@@ -123,4 +125,79 @@ is the **late-window, move-aligned** flow, which is the informed/correct side (f
 strongly −EV); its followable content is FAVLONG's terminal-convergence mechanism, not a new edge.
 Best OOS number produced by any *fade* is negative; the best *follow* number (late-chase, t +2.74) is
 FAVLONG-adjacent and unestablished. Recommend: do not build a dumb-flow fade; the only DumbFlow worth
+pursuing remains the separately-tracked heavy-flow fade.
+
+---
+
+## LATE-FLOW-FOLLOW: FAVLONG-controlled (2026-07-15, follow-up)
+
+**Question (operator):** should we bet WITH the late "chasers"? The fade-side null (signature 4) had a
+mirror: *following* late move-aligned flow netted **+0.019/ct OOS, day-clustered t +2.74**. Is that a
+REAL edge beyond FAVLONG, or FAVLONG re-expressed / an artifact? Same 18 days / 3 assets / clean-label
+/ (asset,day) clustering; caches rebuilt to store FAVLONG fire+side per window and spec variants.
+
+### 1. Reconciling +2.74 (mine) vs +0.70 (prior INFORMED-FLOW Test 4) — spec sensitivity
+The two measured **different signals**. Replicating the prior spec ("largest late print sz≥1000, follow
+its side") on my data reproduces the null: **OOS t = +0.72** (train −1.97). My +2.74 signal is *net
+move-aligned late flow*, and its edge does **not** come from the flow at all:
+
+| Follow spec (entry@720) | TRAIN t | TEST t | TEST net $/ct |
+|---|---|---|---|
+| move-aligned late net, t0=600, thr=100 (**headline**) | +2.06 | **+2.74** | +0.0188 |
+| &nbsp;&nbsp;thr=50 / 250 | +1.78 / +2.20 | +2.73 / +2.62 | +0.019 / +0.017 |
+| &nbsp;&nbsp;t0=500 / 660 | +2.38 / +1.38 | +1.75 / +3.23 | +0.012 / +0.023 |
+| &nbsp;&nbsp;size-gate sz≥100 / sz≥1000 | +1.67 / +0.58 | +2.33 / +2.61 | +0.017 / +0.019 |
+| **RAW late net (ignore move-alignment)**, thr=100 | **−3.41** | **−2.97** | **−0.0212** |
+| largest late print sz≥1000 (prior Test 4 replic) | −1.97 | +0.72 | −0.007 |
+| **pure momentum sign(spot@720−open), NO flow** | +1.57 | **+3.91** | +0.0233 |
+| headline, entry@780 | +1.01 | +0.76 | +0.007 |
+
+Reading: the signal is robust to threshold/t0/size-gate **but the "flow" is illusory** — following the
+*raw* late taker-flow direction **loses** (t −2.97), and a signal using **no tape at all** (just the
+sign of the spot move by t=720) is the **strongest** (t +3.91). So "late-flow-follow" is not a flow
+edge; it is a **momentum / terminal-convergence** signal on the underlying, and it decays out of the
+720s band (entry@780 → t +0.76). This resolves the contradiction: the prior agent measured a genuine
+flow-print signal (null); I inadvertently measured spot momentum.
+
+### 2. FAVLONG-controlled — the decisive test (net of Kalshi fee, OOS)
+- **(a) FAVLONG-neutral windows** (where FAVLONG does not fire), clean-label: late-follow still nets
+  **+0.0143/ct, t +2.05** (gross +0.0224, cost 0.0081) — *appears* to be a residual edge beyond FAVLONG.
+- **(b) Incremental combo:** stacking a momentum-follow filler into FAVLONG-off windows lifts pooled OOS
+  from FAVLONG-alone (n=952, mean +0.0309, **t +3.04**) to (n=1648, mean +0.0239, **t +4.37**) — *appears*
+  additive.
+
+But both (a) and (b) rely on **clean-label**, and for a pure direction signal that filter is
+near-circular: it keeps only windows where sign(last_spot−open)==market outcome, and sign(spot@720−open)
+≈ sign(spot@900−open). Measured directly: **P(sign(spot@720−open)==outcome) = 0.903 in clean-label
+windows vs 0.870 in all windows** — the filter injects hit-rate into the signal, and a live trader
+cannot apply it (the terminal label is unknown at t=720). Re-running **without clean-label** (market
+label only — the deployable case):
+
+| Signal (OOS, market label only) | TRAIN t | TEST t | TEST net | FAV-neutral residual |
+|---|---|---|---|---|
+| headline move-aligned late-follow | −0.13 | **+0.28** | +0.0031 | **−0.0187 (t −2.22)** |
+| pure momentum sign@720 | **−1.48** | +1.37 | +0.0056 | −0.0128 (t −1.42) |
+
+The edge **collapses**: headline OOS t +2.74 → **+0.28** (net ~0), pure momentum is **train-negative**,
+and the "residual beyond FAVLONG" flips to **−2.22**. The +2.74 and the incremental-stack lift were
+**clean-label selection artifacts**, not deployable edge.
+
+### 3. Correlation reconciliation — same trade, or partly orthogonal?
+On the 936 OOS windows where both fire: **corr(late-follow pl, FAVLONG pl) = −0.20**, and direction
+agreement (late-follow side == FAVLONG side) = **0.19** — i.e. in shared windows they take
+**opposite sides ~81% of the time**. So it is **not** FAVLONG re-expressed (my earlier "FAVLONG-collinear"
+call was wrong): FAVLONG is a *near-expiry CONTRARIAN* trade (fade the dislocated favorite), while
+late-follow is *momentum* (go with the move) — structurally opposite, firing largely in different
+windows (hence the low, negative correlation). They share only the **mechanism** (book lags terminal
+settlement near expiry), not the direction. The low correlation is real: it's a different, partly-
+orthogonal signal — which is exactly why it needed its own falsification, and why it fails it.
+
+### VERDICT: JUST-FAVLONG-adjacent ARTIFACT — do NOT stack, do NOT bet with the late chasers
+The apparent late-flow-follow edge (OOS t +2.74, +1.9c/ct) is a **fragile, spec-dependent clean-label
+selection artifact**: (i) the "flow" content is illusory — raw flow-follow loses (t −2.97) and pure
+spot-momentum is stronger (t +3.91); (ii) removing the undeployable clean-label filter collapses it to
+t +0.28 / net ~0 and turns the FAVLONG-neutral residual **negative** (t −2.22); (iii) it is not even
+FAVLONG re-expressed — it's the opposite (momentum vs contrarian, 81% opposite side, corr −0.20) with
+no deployable standalone edge. It is **not a REAL-COMPLEMENT**. Recommendation: do **not** bet with the
+late chasers and do **not** stack this on FAVLONG. FAVLONG stands alone; the only DumbFlow worth
 pursuing remains the separately-tracked heavy-flow fade.
