@@ -1378,3 +1378,34 @@ implementation can't rule it out). (3) EXECUTION -- filling 0.84 while the favor
 signals/day, capacity bounded by favorite ask depth. STATUS: strongest candidate of the whole program; passed
 the audit FAVLONG failed -- but gated on (a) a SECOND from-scratch independent reproduction and (b) live
 fill-quality before any winner claim or sizing. Report: pmkt_favlong_verify.md.
+
+## PMKT-FAVLONG-INDEPENDENT (2026-07-15, DEFINITIVE) — the candidate is an ARTIFACT; independent repro on FRESH data kills it
+From-scratch independent pipeline (own fetch, own code, forbidden files untouched), 1,239 resolved
+btc-updown-5m markets incl. genuinely FRESH/forward 2026-07-15 data. VERDICT: NOT-CONFIRMED. The +5.4 does
+NOT reproduce. ROOT CAUSES:
+- THE FAVORITE IS CALIBRATED: in the ~0.84 band it wins ~86-88% (= its price), NOT 97% -> there is NO
+  favorite mispricing to capture. The reported "97%" was small-n (forward n=15) + selection.
+- THE GATE IS INERT: liquid markets have a MEDIAN ~217 distinct underdog buyers before T, so ">=2 wallets
+  bought the underdog" is satisfied by ~100% of markets -> no "68% ungated" population exists. The prior
+  +5.4 depended on a SMALL fixed wallet-set gate whose selectivity is a within-sample SELECTION artifact
+  (the exact untestable concern flagged) -- not reproduced on fresh data or an independent build.
+- OPTIMISTIC PRICING: the backtest used a mid ~1.7c below the real lifted ask (p90 9.5c on fast moves),
+  inflating the mild residual. Clean net-of-realistic-fill day-clustered t: ~0.3 (tight 0.84 band) to ~1.4
+  (realistic ask) -- BELOW the gate. Fresh 07-15 data behaves identically (gate saturated). Capacity micro.
+LESSON: the adversarial audit SURVIVED only because it reused the original construction (shared the leak);
+only a FROM-SCRATCH independent build on FRESH data caught it -> validates the two-independent-implementations +
+forward-data discipline. Report: pmkt_favlong_independent.md.
+
+## TERMINAL (2026-07-15) — no deployable winning strategy in the accessible universe; the market is efficient for us
+After an exhaustive search, there is NO deployable winning strategy in the accessible universe (Kalshi 15m
+crypto binaries + Polymarket 5m crypto + Kalshi perps; every edge TYPE: spread-capture, repricing-lag,
+directional/informed-flow, cross-strike arb, calibration, vol/event-VRP, carry/funding, participant re-ID,
+flow-follow/fade, wallet skill-copy, favorite-longshot). BOTH high-t candidates were ARTIFACTS caught by
+verification: FAVLONG (t=5.74 -> deployable 0.9, clean-label look-ahead + strike misspecification) and the
+Polymarket favorite-longshot (t=5.4 -> ~0.3-1.4, selection + optimistic-mid). Correctly-specified models AGREE
+with these efficient/calibrated markets at our cost structure and size. NOTHING was risked (live box-maker OFF
+since LIVE-HALT). The durable asset is a battle-tested VALIDATION FRAMEWORK (realized-settlement + look-ahead/
+selection audits + adversarial toggles + from-scratch independent reproduction on fresh data) that reliably
+separates real edges from illusions -- it just killed two convincing ones. A winning strategy requires a
+STRUCTURALLY DIFFERENT domain/edge + infrastructure (an operator strategic decision); it cannot be honestly
+manufactured from this universe.
