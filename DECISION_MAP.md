@@ -1530,3 +1530,18 @@ with its stated WEAK prior). This is the well-powered version of EXO-MOM's null,
 Remaining exogenous angles still open: derivatives positioning stress (running), options GEX/skew/DVOL (wave 2),
 sub-second flow (not backtestable). "Information not everyone has" at the flow level is real but ~0.1-0.3bp -> unpriced
 by almost nothing; the venue/market prices it to within costs.
+
+## EXO-DERIV-BACKTEST (2026-07-15) — derivatives positioning stress does NOT predict short-horizon returns (NULL)
+Tested "information not everyone has": open interest change, top-trader & global long/short ratios, taker imbalance,
+funding -> forward 5/15/30-min BTC returns. 40 days 2022-01..2026-05 (Binance Vision futures metrics 5-min + klines +
+funding), causal z-features, train(28d)/test(12d), momentum AND reversion + 4 classic named setups. Tool:
+btc_derivatives_backtest.py / btc_derivatives_report.md.
+- Strongest signal = crowded long/short ratio (contrarian): gross corr only -0.03..-0.08. Best cell ~+1bp/trade gross
+  with day-clustered t<1 (ls_top 30m 1bp REV +1.42/+0.91, t 0.92/0.70) -> insignificant + cost-dead.
+- NO cell in the 138-cell grid is POSITIVE + significant (t>=+2) in BOTH train and test. Every direction loses net cost.
+- The agent's report claimed "77 SURVIVED" -- that was a BUG (survive-flag used |t|>=2, so it flagged consistent
+  LOSERS; all 77 have negative train AND test bps). I corrected the report; TRUE verdict is NULL.
+VERDICT: derivatives-positioning stress has no positive, cost-surviving short-horizon predictability (sample thinner
+than order-flow at 40 days, but signal clearly absent, not just underpowered). Positioning is priced too.
+Now two well-powered exogenous nulls (order flow, derivatives). Remaining: options GEX/skew/DVOL (wave 2 -- the one
+with a mechanism, dealer gamma hedging, that maps onto the binary's STRIKE-relative settlement).

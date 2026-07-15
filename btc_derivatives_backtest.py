@@ -36,8 +36,10 @@ Causality / anti-artifact
   * FULL grid reported (every signal x horizon x cost, momentum AND reversion, plus
     the 4 named classic setups) so multiple-testing is visible. No per-day cherry pick.
 
-Verdict rule: a rule "survives" only if, for some (horizon,cost), its mean bps/trade
-has the SAME SIGN in TRAIN and TEST AND |day-clustered t| >= 2.0 in BOTH.
+Verdict rule: a rule "survives" only if, for some (horizon,cost), it is PROFITABLE net
+of cost -- mean bps/trade > 0 AND day-clustered t >= +2.0 in BOTH train and test.
+(Both MOM and REV directions are tested, so a genuine edge in either direction is caught;
+a consistently negative+significant rule is a reliable loser, not a tradeable edge.)
 """
 import os, io, sys, time, zipfile, warnings, math
 import numpy as np
@@ -75,6 +77,10 @@ def sample_dates():
                     continue
                 if ts <= TODAY:
                     ds.append(ts.strftime("%Y-%m-%d"))
+    n = os.environ.get("SMOKE_N")
+    if n:
+        step = max(1, len(ds) // int(n))
+        ds = ds[::step][:int(n)]
     return ds
 
 # ---------------------------------------------------------------- download helpers
@@ -124,7 +130,7 @@ def get_funding_month(mstr, session):
     raw = read_zip_csv(content)
     df = read_csv_robust(raw, ["calc_time", "funding_interval_hours", "last_funding_rate"])
     df = df.rename(columns={"last_funding_rate": "rate"})
-    df["calc_time"] = pd.to_datetime(df["calc_time"], unit="ms")
+    df["calc_time"] = pd.to_datetime(df["calc_time"], unit="ms").astype("datetime64[ns]")
     df = df.sort_values("calc_time").reset_index(drop=True)
     # causal trailing z within month (expanding, min 6 obs = 2 days)
     m = df["rate"].expanding(min_periods=6).mean()
@@ -148,7 +154,7 @@ def process_day(dstr, session):
         "count_toptrader_long_short_ratio", "sum_toptrader_long_short_ratio",
         "count_long_short_ratio", "sum_taker_long_short_vol_ratio"])
     ct = dm["create_time"]
-    if np.issubdtype(pd.Series(ct).dtype, np.number):
+    if pd.api.types.is_numeric_dtype(ct):
         dm["ts"] = pd.to_datetime(ct.astype("int64"), unit="ms")
     else:
         dm["ts"] = pd.to_datetime(ct)
@@ -164,6 +170,8 @@ def process_day(dstr, session):
         "quote_volume", "count", "taker_buy_volume", "taker_buy_quote_volume", "ignore"])
     dk["ts"] = pd.to_datetime(dk["open_time"].astype("int64"), unit="ms")
     dk = dk.rename(columns={"close": "close"})[["ts", "close"]]
+    dm["ts"] = dm["ts"].astype("datetime64[ns]")
+    dk["ts"] = dk["ts"].astype("datetime64[ns]")
     df = dm.merge(dk, on="ts", how="inner").sort_values("ts").reset_index(drop=True)
     if len(df) < 60:
         return "too_few_rows", None
@@ -231,6 +239,14 @@ def eval_rule(df, dir_series, h, cost):
     te = d[~d["is_train"]]
     return {"train": day_clustered_t(tr[["date", "pnl"]]),
             "test":  day_clustered_t(te[["date", "pnl"]])}
+
+def is_profitable(mb_tr, t_tr, mb_te, t_te):
+    """A rule survives only if it is a PROFITABLE, cost-surviving, OOS predictor:
+    positive net mean bps AND day-clustered t >= +2 in BOTH train and test.
+    (A consistently NEGATIVE, significant rule is a losing rule, not an edge; because
+    we test both MOM and REV, any genuine directional edge shows up as positive in one.)"""
+    return (np.isfinite(t_tr) and np.isfinite(t_te)
+            and mb_tr > 0 and mb_te > 0 and t_tr >= 2.0 and t_te >= 2.0)
 
 def corr_hit(df, sig, h, train):
     sub = df[df["is_train"] == train]
@@ -313,7 +329,8 @@ def main():
     P("")
     P("`r` = Pearson corr(signal_z, fwd_ret); `hit` = P(sign(z)=sign(fwd)). "
       "Overlapping targets inflate corr significance, so these are DESCRIPTIVE; "
-      "the day-clustered trade t-stats in Test 2 are the robust arbiter.")
+      "the day-clustered trade t-stats in Test 2 are the robust arbiter. "
+      "A profitable predictor should show |r|>0 with a hit rate above 0.50.")
     P("")
     P("| signal | horizon | r_train | hit_train | r_test | hit_test | n_test |")
     P("|---|---|---|---|---|---|---|")
@@ -332,8 +349,11 @@ def main():
     P("")
     P("Reported for BOTH directions of the bet: **MOM** = trade with sign(z) "
       "(dir=+sign z), **REV** = trade against sign(z) (dir=-sign z). "
-      "`t` is DAY-CLUSTERED. bps = mean net bps/trade. A cell SURVIVES only if same-sign "
-      "mean bps in train & test AND |t|>=2 in both.")
+      "`t` is DAY-CLUSTERED. bps = mean net bps/trade. A cell SURVIVES only if it is "
+      "PROFITABLE: mean bps > 0 AND day-clustered t >= +2 in BOTH train and test. "
+      "(A consistently negative+significant cell is a reliable LOSER, not an edge; a real "
+      "directional edge appears as a positive survivor in either MOM or REV. Note at 5bp "
+      "cost almost every cell is deeply negative because cost swamps any micro-edge.)")
     P("")
     for mode, mult in [("MOM", 1.0), ("REV", -1.0)]:
         P(f"### Mode {mode} (dir = {'+' if mult>0 else '-'}sign z)")
@@ -349,9 +369,7 @@ def main():
                     res = eval_rule(alld, dir_s, h, cost)
                     (mb_tr, n_tr2, nd_tr, t_tr) = res["train"]
                     (mb_te, n_te2, nd_te, t_te) = res["test"]
-                    surv = (np.isfinite(t_tr) and np.isfinite(t_te)
-                            and abs(t_tr) >= 2 and abs(t_te) >= 2
-                            and np.sign(mb_tr) == np.sign(mb_te))
+                    surv = is_profitable(mb_tr, t_tr, mb_te, t_te)
                     tag = "**YES**" if surv else ""
                     if surv:
                         survivors.append((f"{mode} {name}", f"{h*5}m", cost, mb_tr, t_tr, mb_te, t_te))
@@ -396,9 +414,7 @@ def main():
                 res = eval_rule(alld, dir_s, h, cost)
                 (mb_tr, n_tr2, nd_tr, t_tr) = res["train"]
                 (mb_te, n_te2, nd_te, t_te) = res["test"]
-                surv = (np.isfinite(t_tr) and np.isfinite(t_te)
-                        and abs(t_tr) >= 2 and abs(t_te) >= 2
-                        and np.sign(mb_tr) == np.sign(mb_te))
+                surv = is_profitable(mb_tr, t_tr, mb_te, t_te)
                 tag = "**YES**" if surv else ""
                 if surv:
                     survivors.append((sname, f"{h*5}m", cost, mb_tr, t_tr, mb_te, t_te))
@@ -410,22 +426,25 @@ def main():
     P("## VERDICT")
     P("")
     if survivors:
-        P(f"**{len(survivors)} rule(s) SURVIVED** (same-sign mean bps in train & test, "
-          f"|day-clustered t|>=2 in BOTH):")
+        P(f"**{len(survivors)} rule(s) SURVIVED** -- PROFITABLE net of cost (mean bps>0 and "
+          f"day-clustered t>=+2) in BOTH train and test:")
         P("")
         P("| rule | horizon | cost | train_bps | train_t | test_bps | test_t |")
         P("|---|---|---|---|---|---|---|")
         for s in survivors:
             P(f"| {s[0]} | {s[1]} | {s[2]:.0f}bp | {s[3]:+.2f} | {s[4]:+.2f} | {s[5]:+.2f} | {s[6]:+.2f} |")
         P("")
-        P("Interpretation: these passed a strict OOS + cost + day-clustered bar. "
+        P("Interpretation: these passed a strict PROFITABLE + OOS + cost + day-clustered bar. "
           "Given the size of the grid, weigh against multiple testing before deployment.")
     else:
         P("**NO rule survived.** Across the full grid (8 signals x 3 horizons x 2 costs x "
-          "{MOM,REV} + 7 named setups x 3 x 2), NOT ONE achieved same-sign mean bps in both "
-          "train and test with |day-clustered t|>=2 in both. Net of even 1bp round-trip cost, "
+          "{MOM,REV} + 7 named setups x 3 x 2), NOT ONE was profitable net of cost (mean bps>0 "
+          "with day-clustered t>=+2) in BOTH train and test. Net of even 1bp round-trip cost, "
           "BTC derivatives-positioning signals show **no reliable out-of-sample short-horizon "
-          "predictive edge** in this sample. This is a clean null.")
+          "predictive edge** in this sample. Note that many cells are significantly NEGATIVE in "
+          "both train and test (a reliable loser once cost is charged) -- confirming the signals "
+          "do move with price microstructure, but not enough to overcome cost in any direction. "
+          "This is a clean null.")
     P("")
     P(f"_Grid size: {len(signals)} signals x {len(HORIZONS)} horizons x {len(COSTS)} costs x 2 modes "
       f"+ {len(setups)} setups x {len(HORIZONS)} x {len(COSTS)} = "
