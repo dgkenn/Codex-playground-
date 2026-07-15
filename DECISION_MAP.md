@@ -1360,3 +1360,21 @@ efficient / FAVLONG-null-there' finding; and 97%-win-at-0.85 is economically imp
 STATUS: PROBABLE ARTIFACT, pending an adversarial deployability/look-ahead audit (entry-ask causality at T,
 settlement/favorite-label leak, real executable depth, reconcile with Polymarket-efficient). NOT a declared
 winner. Report: edge_polymarket_copytrade.md.
+
+## PMKT-FAVLONG-VERIFY (2026-07-15) — the candidate SURVIVED adversarial audit (unlike FAVLONG) -> strong, pending independent repro
+Adversarial 9-toggle audit of the Polymarket "buy favorite when >=2 wallets late-buy underdog" candidate.
+VERDICT: survived every deployable toggle. Entry-price toggle (THE FAVLONG KILLER) SURVIVES -- the ~0.84
+favorite is a real executable ask off a tight 1c book, matches contemporaneous taker-print fair value
+(0.835 vs 0.837); re-priced true-executable t=+5.85 (+5.37 with extra 1c slippage). Signal strictly causal
+(underdog buys ts<=T on correct epoch; measuring EARLIER strengthens it, t up to +8.5) -> no post-T/settled
+leak of the FAVLONG kind; settlement = true Gamma/UMA. Holds TRAIN (+6.2) + TEST, 15 days, 42 window-runs
+(run-clustered t 4.96). Mechanism NOT skill nor momentum (random wallet sets reproduce it; momentum-gate null)
+-- a "cheap-side participation marks a decisive/continuing move" residual: within a fixed price band the gate
+splits same-priced favorites 100% (gate) vs 68% (non-gate). Strict deployable OOS day-clustered t ~= +5.4.
+RESERVATIONS (do NOT declare winner yet): (1) ECONOMIC -- a costless PUBLIC (on-chain) signal splitting
+68/100% at one price on a liquid 0-fee book should be arbitraged; persistence implies tiny/non-scalable
+capacity OR a hidden leak. (2) UNTESTED sample-wide selection (all 632 markets share one construction; single
+implementation can't rule it out). (3) EXECUTION -- filling 0.84 while the favorite climbs through it, ~6 thin
+signals/day, capacity bounded by favorite ask depth. STATUS: strongest candidate of the whole program; passed
+the audit FAVLONG failed -- but gated on (a) a SECOND from-scratch independent reproduction and (b) live
+fill-quality before any winner claim or sizing. Report: pmkt_favlong_verify.md.
