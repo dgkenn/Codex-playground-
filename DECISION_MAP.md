@@ -1343,3 +1343,20 @@ The ONLY confirmed REAL signal in the whole program = Polymarket top-decile wall
 Spearman 0.16-0.18) -- naive harvest is tail-dominated, but a TAIL-ROBUST copy-trade is the one un-exhausted
 thread (pursuing). Also undecided: perp-basis forward gate (~07-25). Live box-maker remains OFF; NOTHING was
 risked to learn all this -- the rigor (esp. the tested-vs-live discipline) worked, catching our own flagship.
+
+## PMKT-COPYTRADE (2026-07-15) — skill-copy NULL; a favorite-longshot candidate emerged -> PENDING adversarial verify
+Tail-robust copy-trade of persistent-skill Polymarket wallets. SKILL-COPY = NULL: agent caught its own
+lookahead leak (signals used final-SETTLED positions; rebuilt from as-of-T, causal entry 0.50->0.75, edge
+shrank ~3x). Quorum-copy / smart-vs-dumb-disagreement / consensus-strength all null net-of-spread; smart
+DIRECTION carries no signal beyond price (unconditional favorite-buy t=+0.05; when smart lean diverges from
+favorite it is WRONG 94-97%). => wallet skill is real (persists) but NOT harvestable directionally.
+HOWEVER a favorite-longshot MICROSTRUCTURE candidate emerged: "buy the underpriced favorite when >=2 tracked
+wallets late-buy the underdog" -- OOS day-clustered t=+5.5 net of 1c spread, win 97% at entry ~0.85, survives
+all jackknifes (drop-top-5-mkts +3.7, drop-top-20-wallets +5.8, trim +8.3), IDENTITY-INDEPENDENT (smart/dumb/
+random signal it equally => it's fade-noise-flow / favorite-longshot microstructure, NOT skill). ~180 configs.
+DO NOT TRUST YET -- FAVLONG PARALLEL: same shape (favorite-longshot, high-t, jackknife-surviving) as FAVLONG
+which was JUST proven a double look-ahead/misspecification artifact; it CONTRADICTS the prior 'Polymarket
+efficient / FAVLONG-null-there' finding; and 97%-win-at-0.85 is economically implausible for an efficient book.
+STATUS: PROBABLE ARTIFACT, pending an adversarial deployability/look-ahead audit (entry-ask causality at T,
+settlement/favorite-label leak, real executable depth, reconcile with Polymarket-efficient). NOT a declared
+winner. Report: edge_polymarket_copytrade.md.
