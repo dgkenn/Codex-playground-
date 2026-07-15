@@ -1,13 +1,13 @@
-pmkt_collect: 2520s -> gha_data/pmkt_btc_updown_r29408928605.jsonl.gz
+pmkt_collect: 2520s -> gha_data/pmkt_btc_updown_r29411629076.jsonl.gz
 /home/runner/work/Codex-playground-/Codex-playground-/pmkt_collect.py:102: DeprecationWarning: datetime.datetime.utcfromtimestamp() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.fromtimestamp(timestamp, datetime.UTC).
   print(f"{now():%H:%M}Z live: {live[1]} (ends {datetime.utcfromtimestamp(cur_end):%H:%MZ})", flush=True)
-10:40Z live: btc-updown-5m-1784112000 (ends 10:45Z)
-10:45Z live: btc-updown-5m-1784112300 (ends 10:50Z)
-10:50Z live: btc-updown-5m-1784112600 (ends 10:55Z)
-10:55Z live: btc-updown-5m-1784112900 (ends 11:00Z)
-11:00Z live: btc-updown-5m-1784113200 (ends 11:05Z)
-11:05Z live: btc-updown-5m-1784113500 (ends 11:10Z)
-11:10Z live: btc-updown-5m-1784113800 (ends 11:15Z)
-11:15Z live: btc-updown-5m-1784114100 (ends 11:20Z)
-11:20Z live: btc-updown-5m-1784114400 (ends 11:25Z)
+11:26Z live: btc-updown-5m-1784114700 (ends 11:30Z)
+11:30Z live: btc-updown-5m-1784115000 (ends 11:35Z)
+11:35Z live: btc-updown-5m-1784115300 (ends 11:40Z)
+11:40Z live: btc-updown-5m-1784115600 (ends 11:45Z)
+11:45Z live: btc-updown-5m-1784115900 (ends 11:50Z)
+11:50Z live: btc-updown-5m-1784116200 (ends 11:55Z)
+11:55Z live: btc-updown-5m-1784116500 (ends 12:00Z)
+12:00Z live: btc-updown-5m-1784116800 (ends 12:05Z)
+12:05Z live: btc-updown-5m-1784117100 (ends 12:10Z)
 done
