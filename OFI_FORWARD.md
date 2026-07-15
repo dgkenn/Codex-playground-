@@ -18,17 +18,32 @@ convention (trade `side` = maker side → taker is the opposite).
 
 ## Frozen decision rule (implemented in `ofi_forward.py` — DO NOT retune)
 Universe: btc/eth/sol. Decision instant per Kalshi 15m window = ws+720s (last ~3 min), matching the
-tick archive that supplies the window list and the outcome.
-- **Primary signal** `S = OFI_2m / scale` where `OFI_2m = Σ ofi` over Coinbase snapshots in
-  `[ws+600, ws+720]`, and `scale` = trailing-30-window median of `Σ|ofi|` in the same sub-interval
-  for that asset (scale-free, computed causally from prior windows only).
-- **Threshold** `Z = 1.0` (FIXED, pre-registered, no grid). Trade only if `|S| ≥ Z`.
-- **Direction:** `S>0` (net buying pressure) → BUY YES at the Kalshi ask; `S<0` → SELL YES at bid.
-- **P&L:** `outcome − ask − fee` (buy) or `bid − outcome − fee` (sell), fee `= 0.07·p·(1−p)`.
-- **Outcome label:** market's own terminal settlement (final tick mid > 0.5). No strike proxy, no
-  outcome-dependent window dropping (both are known look-ahead traps in this repo).
-- Secondary/report-only diagnostics (NOT the gate): book_imb at decision, OFI_1m, CVD slope. These
-  are logged for understanding but the gate is the primary signal above.
+tick archive that supplies the window list and the outcome. Common frame for every signal below:
+`S = signal_2m / scale`, `signal_2m = Σ signal` over Coinbase-clock snapshots in `[ws+600, ws+720]`,
+`scale` = trailing-30-window median of `Σ|signal|` (causal, prior windows only); **threshold Z=1.0
+FIXED**; direction = sign(S) → `S>0` BUY YES at ask / `S<0` SELL YES at bid; P&L `= outcome−ask−fee`
+or `bid−outcome−fee`, fee `= 0.07·p·(1−p)`; label = market's own terminal settlement (final mid>0.5,
+no strike proxy); NO outcome-dependent window dropping. (Both dropping and strike-proxy are known
+look-ahead traps in this repo.)
+
+**PRIMARY signal (headline gate, unchanged since first registration):** `cb_ofi` — Coinbase signed
+order-flow imbalance.
+
+**SECONDARY signals (WIDENED 2026-07-15, operator-approved; frozen, forward-gated, exploratory):**
+1. `multi_ofi` — 3-venue aggregate signed flow (Coinbase+crypto.com+Kraken). Tests whether pooling
+   venues sharpens the flow signal.
+2. `multi_ofi | consensus` — same as (1) but trade ONLY when all present venues agree in sign over
+   the sub-interval (cross-venue disagreement = noise filter; informed flow shows as consensus).
+3. `multi_ofi | cascade` — trade only in windows with a LEVERAGE-STRESS signature: perp mark-vs-spot
+   basis range OR |ΔOI| over `[ws+600,ws+720]` in the top quartile of the trailing 30 windows
+   (liquidation-cascade proxy; bet WITH the flow when leverage is unwinding).
+
+## Multiple-testing discipline (do not launder a false positive)
+Testing 4 signals inflates the false-positive rate. Therefore: the PRIMARY (`cb_ofi`) is the only
+headline gate. A SECONDARY clearing t≥2 is NOT a winner on its own — it must ALSO (a) be positive on
+BTC alone, and (b) survive an INDEPENDENT from-scratch forward re-check on data collected AFTER it
+first cleared (the exact discipline that killed FAVLONG t=5.74 and the Polymarket t=5.5 candidate).
+No secondary is deployed on its in-sample-forward t alone.
 
 ## Gate (charter, do not relax)
 - **PASS:** pooled per-(asset,day) day-clustered t ≥ 2 over ≥ 10 FORWARD days (days strictly after

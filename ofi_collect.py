@@ -1,45 +1,44 @@
 #!/usr/bin/env python3
-"""ofi_collect.py -- EXOGENOUS order-flow collector (node EXO-OFI, 2026-07-15).
+"""ofi_collect.py -- WIDENED exogenous order-flow collector (node EXO-OFI / EXO-OFI-WIDE, 2026-07-15).
 
-WHY: the operator chose "exogenous signal -> Kalshi 15m binaries" as the next research domain.
-The gha-data tick archive already carries sampled `spot` and `micro`, and the backtest showed that
-observable SPOT MOMENTUM is already priced by the Kalshi book (node EXO-MOM: tradeable overlay
-negative in-sample). The one exogenous signal the archive does NOT contain -- and therefore the
-only genuinely-untested part of this hypothesis -- is TRUE SIGNED ORDER FLOW and BOOK IMBALANCE
-from a major spot venue (CVD/OFI, depth imbalance, aggressor ratio, trade intensity). Microstructure
-theory says signed flow can lead price at a seconds-to-minutes horizon; if that lead survives into
-the 15m binary's terminal settlement it would be a directional taker signal the Kalshi book misses.
-This can ONLY be forward-tested (no historical signed-flow archive exists), so this collector starts
-the forward clock. The hypothesis is PRE-REGISTERED in OFI_FORWARD.md before any data exists.
+WHY: operator chose to widen the live EXO-OFI forward experiment to test the RICHEST version of the
+order-flow hypothesis (still pre-registered, still forward-gated). The archive has sampled
+spot+microprice (already priced -> EXO-MOM/EXO-XASSET); the untested exogenous signals are TRUE
+signed order flow and leverage-stress microstructure, captured here across MULTIPLE venues:
+  - MULTI-VENUE SIGNED FLOW: Coinbase + crypto.com + Kraken spot (informed flow often hits one venue
+    first -> cross-venue OFI divergence is itself a signal).
+  - LEVERAGE STRESS / LIQUIDATION-CASCADE PROXY: crypto.com BTCUSD-PERP mark + OPEN INTEREST, and
+    perp-vs-spot basis. A liquidation cascade shows as a one-sided flow burst + spread widening +
+    rapid OI drop / basis spike (no direct liquidation feed is reachable stdlib/no-auth; this is the
+    standard proxy). Kalshi perp funding is structurally 0 (PERP-ALLASSETS), so OI/basis carry the
+    leverage signal, not funding.
 
-WHAT: polls Coinbase Exchange public REST (no auth) for BTC-USD / ETH-USD / SOL-USD, and every
-~POLL_SEC seconds writes one snapshot row per asset with signed-flow + book-imbalance features
-computed since the previous poll. Output mirrors the tick archive's shape so it can be JOINED to
-each Kalshi 15m window (by wall-clock timestamp) and to the window outcome (from settle_recorder).
+Aggressor-sign conventions (handled per venue):
+  - Coinbase /trades `side` = MAKER side -> taker is the opposite (side 'sell' => BUY-aggressor).
+  - crypto.com get-trades `s` = TAKER side -> 's'=='buy' => BUY-aggressor.
+  - Kraken Trades side (idx 3) 'b'/'s' = aggressor -> 'b' => BUY-aggressor.
 
 Row schema (gzipped JSONL, one object per asset per poll):
-  ts        : unix seconds (float) of this snapshot
-  asset     : btc/eth/sol
-  mid       : (best_bid+best_ask)/2  from the L2 book
-  spread    : best_ask - best_bid
-  buy_vol   : base-asset volume of BUY-aggressor trades since last poll
-  sell_vol  : base-asset volume of SELL-aggressor trades since last poll
-  ntrades   : trade count since last poll
-  ofi       : buy_vol - sell_vol  (signed order-flow imbalance over the interval)
-  cvd       : running cumulative (buy_vol - sell_vol) within this collector run
-  book_imb  : (bid_depth10 - ask_depth10)/(bid_depth10 + ask_depth10), top-10 levels
-  last_price: last trade price seen
+  ts, asset,
+  cb_mid, cb_spread, cb_book_imb, cb_ofi,       # Coinbase (PRIMARY gate uses cb_ofi)
+  cdc_mid, cdc_ofi,                             # crypto.com spot
+  kr_mid, kr_ofi,                               # Kraken spot
+  multi_ofi,                                     # cb_ofi+cdc_ofi+kr_ofi (venues present)
+  perp_mark, perp_oi, perp_basis                 # crypto.com perp mark, open interest, mark-cb_mid
 
-READ-ONLY (public REST, no keys, no orders). PROPOSE-ONLY: this only COLLECTS. No live trading
-decision is made here or on this data without the operator's explicit word and a passed forward gate.
-Self-chaining + graceful SIGTERM drain mirror collect.yml so the forward series has no gaps.
+READ-ONLY public REST, no auth, no orders. PROPOSE-ONLY. Self-chaining + SIGTERM drain mirror
+collect.yml so the forward series has no gaps. Every venue poll is independently try/except-guarded
+so one venue outage never drops the row (the primary cb_ofi is preserved whenever Coinbase is up).
 """
-import json, gzip, os, sys, time, signal, urllib.request, urllib.error
+import json, gzip, os, sys, time, signal, urllib.request
 from datetime import datetime, timezone
 
-ASSETS = {"btc": "BTC-USD", "eth": "ETH-USD", "sol": "SOL-USD"}
-POLL_SEC = float(os.environ.get("OFI_POLL_SEC", "2.0"))
-RUN_SEC = float(os.environ.get("OFI_RUN_SEC", "1080"))     # ~18 min, > one 15m window; self-chain continues
+CB = {"btc": "BTC-USD", "eth": "ETH-USD", "sol": "SOL-USD"}
+CDC = {"btc": "BTC_USD", "eth": "ETH_USD", "sol": "SOL_USD"}
+KR = {"btc": "XBTUSD", "eth": "ETHUSD", "sol": "SOLUSD"}
+PERP = {"btc": "BTCUSD-PERP", "eth": "ETHUSD-PERP", "sol": "SOLUSD-PERP"}
+POLL_SEC = float(os.environ.get("OFI_POLL_SEC", "3.0"))
+RUN_SEC = float(os.environ.get("OFI_RUN_SEC", "1080"))
 OUT_DIR = os.environ.get("OFI_OUT_DIR", "gha_data")
 BOOK_LEVELS = 10
 _STOP = {"v": False}
@@ -59,13 +58,14 @@ def _get(url, timeout=8):
         return json.loads(r.read())
 
 
-def poll_trades(product, after_id):
-    """Return (rows_newer_than_after_id, newest_id). Coinbase returns newest-first."""
+def cb_trades(product, after_id):
+    """Coinbase: (buy_vol, sell_vol, newest_id). side=maker -> taker is opposite."""
     try:
         d = _get(f"https://api.exchange.coinbase.com/products/{product}/trades?limit=100")
     except Exception:
-        return [], after_id
-    rows, newest = [], after_id
+        return 0.0, 0.0, after_id
+    buy = sell = 0.0
+    newest = after_id
     for tr in d:
         tid = tr.get("trade_id")
         if tid is None:
@@ -74,12 +74,15 @@ def poll_trades(product, after_id):
             newest = tid
         if after_id is not None and tid <= after_id:
             continue
-        rows.append(tr)
-    return rows, newest
+        sz = float(tr.get("size", 0) or 0)
+        if tr.get("side") == "sell":       # maker sold -> taker bought
+            buy += sz
+        elif tr.get("side") == "buy":
+            sell += sz
+    return buy, sell, newest
 
 
-def poll_book(product):
-    """Return (mid, spread, book_imbalance, last_price_none). Level-2, top BOOK_LEVELS."""
+def cb_book(product):
     try:
         d = _get(f"https://api.exchange.coinbase.com/products/{product}/book?level=2")
     except Exception:
@@ -94,11 +97,81 @@ def poll_book(product):
     return (bb + ba) / 2.0, ba - bb, imb
 
 
+def cdc_trades(inst, seen_ts):
+    """crypto.com: (buy_vol, sell_vol, mid_est, newest_ts). s=taker side."""
+    try:
+        d = _get(f"https://api.crypto.com/exchange/v1/public/get-trades?instrument_name={inst}")
+        rows = d.get("result", {}).get("data", [])
+    except Exception:
+        return 0.0, 0.0, None, seen_ts
+    buy = sell = 0.0
+    newest = seen_ts
+    last_p = None
+    for tr in rows:
+        ts = int(tr.get("t", 0))
+        if newest is None or ts > newest:
+            newest = ts
+        if seen_ts is not None and ts <= seen_ts:
+            continue
+        q = float(tr.get("q", 0) or 0)
+        if tr.get("s") == "buy":
+            buy += q
+        elif tr.get("s") == "sell":
+            sell += q
+        last_p = float(tr.get("p")) if tr.get("p") else last_p
+    return buy, sell, last_p, newest
+
+
+def kr_trades(pair, since):
+    """Kraken: (buy_vol, sell_vol, last_price, newest_since). side idx3 'b'/'s' = aggressor."""
+    try:
+        url = f"https://api.kraken.com/0/public/Trades?pair={pair}&count=100"
+        d = _get(url)
+        res = d.get("result", {})
+        key = [k for k in res if k != "last"]
+        rows = res[key[0]] if key else []
+    except Exception:
+        return 0.0, 0.0, None, since
+    buy = sell = 0.0
+    last_p = None
+    newest = since
+    for tr in rows:
+        # [price, volume, time, side, ordertype, misc, id]
+        t = float(tr[2])
+        if newest is None or t > newest:
+            newest = t
+        if since is not None and t <= since:
+            continue
+        vol = float(tr[1])
+        if tr[3] == "b":
+            buy += vol
+        elif tr[3] == "s":
+            sell += vol
+        last_p = float(tr[0])
+    return buy, sell, last_p, newest
+
+
+def cdc_perp(inst):
+    """crypto.com perp: (mark, open_interest). a=last/mark, oi=open interest."""
+    try:
+        d = _get(f"https://api.crypto.com/exchange/v1/public/get-tickers?instrument_name={inst}")
+        r = d.get("result", {}).get("data", [])
+        if not r:
+            return None
+        t = r[0]
+        mark = float(t.get("a")) if t.get("a") else None
+        oi = float(t.get("oi")) if t.get("oi") else None
+        return mark, oi
+    except Exception:
+        return None
+
+
 def main():
     os.makedirs(OUT_DIR, exist_ok=True)
     run_id = os.environ.get("GITHUB_RUN_ID", str(int(time.time())))
-    last_id = {a: None for a in ASSETS}
-    cvd = {a: 0.0 for a in ASSETS}
+    cb_id = {a: None for a in CB}
+    cdc_ts = {a: None for a in CDC}
+    kr_since = {a: None for a in KR}
     writers = {}
 
     def writer_for(asset, day):
@@ -106,49 +179,53 @@ def main():
         if key not in writers:
             d = os.path.join(OUT_DIR, day)
             os.makedirs(d, exist_ok=True)
-            path = os.path.join(d, f"ofi_coinbase_{asset}_r{run_id}.jsonl.gz")
-            writers[key] = gzip.open(path, "at")
+            writers[key] = gzip.open(os.path.join(d, f"ofi_coinbase_{asset}_r{run_id}.jsonl.gz"), "at")
         return writers[key]
 
-    # prime trade ids so the first interval's OFI isn't a huge backlog
-    for a, prod in ASSETS.items():
-        _, last_id[a] = poll_trades(prod, None)
+    # prime trade cursors so the first interval isn't a backlog
+    for a in CB:
+        _, _, cb_id[a] = cb_trades(CB[a], None)
+        _, _, _, cdc_ts[a] = cdc_trades(CDC[a], None)
+        _, _, _, kr_since[a] = kr_trades(KR[a], None)
 
     t_end = time.time() + RUN_SEC
     npolls = 0
     while time.time() < t_end and not _STOP["v"]:
-        cycle_start = time.time()
-        for a, prod in ASSETS.items():
-            trades, newest = poll_trades(prod, last_id[a])
-            last_id[a] = newest
-            buy_vol = sell_vol = 0.0
-            last_price = None
-            for tr in trades:
-                sz = float(tr.get("size", 0) or 0)
-                # Coinbase 'side' = the MAKER side; taker aggressor is the opposite.
-                # side=='buy' => resting bid was hit => SELL-aggressor; side=='sell' => BUY-aggressor.
-                if tr.get("side") == "sell":
-                    buy_vol += sz
-                elif tr.get("side") == "buy":
-                    sell_vol += sz
-                last_price = float(tr.get("price")) if tr.get("price") else last_price
-            ofi = buy_vol - sell_vol
-            cvd[a] += ofi
-            bk = poll_book(prod)
-            if bk is None:
-                continue
-            mid, spread, imb = bk
+        cyc = time.time()
+        for a in CB:
+            row = {"asset": a}
+            # Coinbase (primary)
+            b, s, cb_id[a] = cb_trades(CB[a], cb_id[a])
+            cb_ofi = b - s
+            bk = cb_book(CB[a])
+            cb_mid = None
+            if bk:
+                cb_mid, cb_spread, cb_imb = bk
+                row.update(cb_mid=cb_mid, cb_spread=round(cb_spread, 4),
+                           cb_book_imb=round(cb_imb, 5))
+            row["cb_ofi"] = round(cb_ofi, 6)
+            # crypto.com spot
+            cb2, cs2, cdc_mid, cdc_ts[a] = cdc_trades(CDC[a], cdc_ts[a])
+            cdc_ofi = cb2 - cs2
+            row.update(cdc_mid=cdc_mid, cdc_ofi=round(cdc_ofi, 6))
+            # Kraken spot
+            kb, ks, kr_mid, kr_since[a] = kr_trades(KR[a], kr_since[a])
+            kr_ofi = kb - ks
+            row.update(kr_mid=kr_mid, kr_ofi=round(kr_ofi, 6))
+            # multi-venue OFI (venues that reported)
+            row["multi_ofi"] = round(cb_ofi + cdc_ofi + kr_ofi, 6)
+            # perp leverage stress
+            pp = cdc_perp(PERP[a])
+            if pp:
+                mark, oi = pp
+                row.update(perp_mark=mark, perp_oi=oi,
+                           perp_basis=(round(mark - cb_mid, 3) if (mark and cb_mid) else None))
             now = time.time()
-            row = dict(ts=round(now, 3), asset=a, mid=mid, spread=spread,
-                       buy_vol=round(buy_vol, 6), sell_vol=round(sell_vol, 6),
-                       ntrades=len(trades), ofi=round(ofi, 6), cvd=round(cvd[a], 6),
-                       book_imb=round(imb, 5), last_price=last_price)
+            row["ts"] = round(now, 3)
             day = datetime.fromtimestamp(now, tz=timezone.utc).strftime("%Y-%m-%d")
-            w = writer_for(a, day)
-            w.write(json.dumps(row) + "\n")
+            writer_for(a, day).write(json.dumps(row) + "\n")
         npolls += 1
-        # pace to POLL_SEC
-        slp = POLL_SEC - (time.time() - cycle_start)
+        slp = POLL_SEC - (time.time() - cyc)
         while slp > 0 and not _STOP["v"]:
             step = min(0.25, slp)
             time.sleep(step)
