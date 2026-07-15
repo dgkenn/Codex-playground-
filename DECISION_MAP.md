@@ -1126,3 +1126,17 @@ one-time BACKFILL is possible NOW to re-audit macro/kxwti on realized money. Tem
 kxwti-paper provided (kxwti-paper.settle-step.yml.snippet). PROPOSAL (not yet wired live): drop the
 settle step into kxwti/macro workflows -> those sleeves become validatable like FAVLONG. Plan:
 SETTLEMENT_LOGGING_PLAN.md.
+
+## OTHER-TENOR (2026-07-15) — hourly crypto FAVLONG: no transfer at candle resolution, but UNDERPOWERED/confounded
+No stored non-15m Kalshi time-series exists (gha-data is 15m-crypto only; hires is still 15m BTC; the
+bot-branch kalshi_hourly_box_backtest.py / kalshi_econ.py hit live API / a parquet not in the branch).
+Agent reconstructed a LIVE test on hourly directional KXBTCD/ETHD/XRPD from public minute candlesticks
+(yes_bid/yes_ask + result/expiration_value/floor_strike) with Binance-vision spot for fair value.
+DISLOCATION PRECONDITION HOLDS: hourly near-expiry ATM books are WIDE (p50 1c, p90 2-3c, 29% of
+near-expiry minutes >1c) -- wider than 15m, clearly not Polymarket-tight. BUT the edge does NOT transfer:
+18 cells (3 assets x 3 edges x 2 decision times) all pooled <=0, day-clustered t -1.1..-1.7, 12-18% win;
+BTC alone ~0 insignificant. HEAVY CAVEATS -> this is a WEAK null, not a kill: underpowered (5-6 days,
+66-86 windows, 7-10 clusters) and confounded by (a) 1-min-candle executable prices vs the SUB-SECOND
+top-of-book FAVLONG actually trades, (b) Binance-vs-Kalshi index basis. A fair test needs a forward
+COLLECT: sub-second top-of-book for the final ~5 min of KXBTCD/ETHD/SOLD, mirroring the 15m tick schema,
+>=15 days. Parked with no live-sizeable signal until then. Report: newmarket_favlong_tenor.md.
