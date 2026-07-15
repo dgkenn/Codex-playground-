@@ -1011,8 +1011,11 @@ misnomer — it's a dislocated-book repricing-lag captured on the richer side.
 FAVLONG-MODELV2: the raw Gaussian fair-value mis-shapes the 0.2-0.5 band. An EMPIRICAL ISOTONIC
 calibration (fit model_fairP->empirical P(up) on TRAIN pooled, applied to TEST; leak-checked: fit on
 train rows only, per-asset t=7.72 ~= pooled 7.70 so not a pooling artifact) ~DOUBLES the backtested
-edge: OOS pooled day-clustered t 3.97 -> 7.70, mean +$0.059/ct, 36/42 positive asset-days, and for the
-FIRST time all three assets clear t>=2 OOS individually (btc 5.58, eth 3.84, sol 4.09). All 8 iso
+edge: OOS pooled day-clustered t 3.97 -> 7.70 (sklearn isotonic), mean +$0.059/ct, 36/42 positive
+asset-days, all three assets clear t>=2 OOS for the first time (btc 5.58, eth 3.84, sol 4.09). NOTE:
+the forward harness uses a STDLIB-BUCKET map (GHA has no sklearn), reproducing OOS pooled t=5.74
+(btc 4.24 eth 2.87 sol 2.87, +$0.051/ct) -- 5.74 is the honest forward-tracked prior, not 7.70.
+Verified independently via favlong_forward.py --acceptance. All 8 iso
 variants beat all 16 raw variants on test; 24-config Bonferroni still overwhelming. Tool favlong_model_v2.py.
 CAVEAT: the isotonic map is a FITTED component (21 train days) that can decay -> needs periodic refit;
 forward gate still mandatory. RECOMMEND forward-tracking the calibrated model (pre-registered now, before

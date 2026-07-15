@@ -41,8 +41,10 @@ fair-value model. Scored on reconstructed SETTLEMENT, not markout. Tool: `favlon
 calibrated model `favlong_model_v2.py`.
 - Backtest priors (35 days, +Kalshi fees, clean market-settlement labels, latency-robust):
   raw model POOLED clustered t=3.99/105 asset-days; tuned (720/edge0.03/sigma0.8) OOS pooled t=3.97.
-  **CALIBRATED model (isotonic, train-fit) OOS pooled t=7.70, +$0.059/ct, all 3 assets clear t>=2
-  individually (btc 5.58 eth 3.84 sol 4.09)** — the recommended variant.
+  **CALIBRATED model (isotonic, train-fit) — the recommended variant.** Research figure (sklearn
+  isotonic): OOS pooled t=7.70. The FORWARD HARNESS uses a stdlib-bucket map (GHA has no sklearn),
+  which reproduces **OOS pooled t=5.74, +$0.051/ct, all 3 assets clear t>=2 (btc 4.24 eth 2.87 sol 2.87)**
+  — this bucket figure (5.74) is the honest forward-tracked prior, not 7.70.
 - **CORRECTED characterization (07-15, supersedes the 'favorite-longshot / buy-cheap-underdog'
   framing, RETRACTED):** it is a repricing lag in WIDE/dislocated books, MID-vol regimes, concentrated
   on the NEAR-ATM-TO-FAVORITE side (entry>=0.40; deep-underdog <0.15 has NO OOS edge). No archive decay.

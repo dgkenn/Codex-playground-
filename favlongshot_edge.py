@@ -19,8 +19,10 @@ median-buy slice on BTC-test and is RETRACTED):
   - It is ASSET-SPECIFIC: btc/eth/sol replicate; XRP is a NULL (OOS t=-0.32). XRP is excluded.
   - No decay across the 35-day archive (slope t~1.1, insignificant). Persistence risk MEDIUM.
   - The raw Gaussian fair-value systematically mis-shapes the 0.2-0.5 band; an EMPIRICAL ISOTONIC
-    calibration (fit train-only, node FAVLONG-MODELV2) ~doubles the backtested OOS edge (pooled
-    t 3.97 -> 7.70; all 3 assets clear t>=2 individually). See favlong_model_v2.py.
+    calibration (fit train-only, node FAVLONG-MODELV2) ~doubles the backtested OOS edge: pooled
+    t 3.97 -> 7.70 with sklearn isotonic, or -> 5.74 with the stdlib-bucket map the forward harness
+    uses (all 3 assets clear t>=2 individually either way). 5.74 is the honest forward prior. See
+    favlong_model_v2.py (research) and favlong_forward.py (forward-tracked, stdlib).
 
 WHY IT IS TRUSTED (unlike every prior 'winner'):  av_stoikov et al. were markout illusions that
 DIED under realized-money scrutiny (nodes METRIC-INVALID / LIVE-BLEED). This edge was built ON
