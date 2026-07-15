@@ -1037,3 +1037,29 @@ is <= the spread+fee, so net collapses to ~0 / negative OOS. This CORROBORATES F
 its terminal-window overconfidence is the one gross edge large enough to clear costs, and candidate-3
 confirms the fair-value model has ~zero predictive value BEFORE the last few minutes (genuine terminal-
 convergence effect, not a whole-window artifact). Report: favlong_second_edge_report.md.
+
+## NO-OTHER-EDGE sweep (2026-07-15) — 8 sleeves audited + 2 new hypotheses tested; FAVLONG stands alone
+Answering "does any OTHER strategy have a clear edge?" — delegated 6 agents, all judged on REALIZED
+settlement (not self-metrics). Result: NO. FAVLONG remains the ONLY validated edge.
+EXISTING SLEEVES (all NO edge): longshot (15 bets/3d t=0.84) + tailbias (19/3d t=0.87) = underpowered
+noise; weather-CLV = CLV-ILLUSION (CLV +49 but realized -11.84, 10% win); sports-CLV = no data (API key
+unset); macro = no settlement recorded; etf = 2wk noise; kxwti = no settlement recorded; boxwide =
+mark-ILLUSION (realized -1.27c vs mark +0.27c, does not escape adverse legging). SYSTEMIC: most sleeves
+log PROXIES (CLV/mark/pre-entry edge) and never record settlement; the two that do (weather, boxwide)
+lose real money. Reports: audit_longshot_tailbias / audit_weather_sports_clv / audit_macro_etf_kxwti /
+audit_boxwide .md.
+NEW HYPOTHESES (both fail to add a winner):
+- POLYMARKET btc up/down (5-min up-from-open, tight ~1c + deep): FAVLONG mechanism is NULL/NEGATIVE
+  (full-sample t=-4.22, OOS t=-2.24, even at ZERO fees). An apparent +5.69 was a MARKOUT ILLUSION (scored
+  vs a Kalshi-spot-derived label sharing the fair-value feed; flips to -3.43 under real Polymarket
+  settlement). Cross-venue arb not clean (5m vs 15m, up-from-open vs fixed-strike don't align). This is a
+  POSITIVE confirmation of the mechanism: tight/deep books are efficient; FAVLONG lives only in WIDE/
+  dislocated books. Report: newedge_polymarket.md.
+- FAVLONG refinements (dislocation-conditioning, window-extension, favorite tilt): no upgrade. Wide-spread
+  filter collapses pooled t (calibration already absorbs the wide-book premium); window does NOT extend
+  before ~600s; favorite>=0.60 tilt gives +28% $/ct but lower pooled t (fewer trades) -> optional SIZING
+  lever only. FAVLONG is near its ceiling on this data. Report: newedge_favlong_refine.md.
+CONCLUSION: after auditing every existing sleeve and testing the two best-grounded new bets, FAVLONG
+(near-expiry taker, wide-book repricing lag, btc/eth/sol, calibrated OOS t~5.74) is the sole demonstrable
+edge. Everything else is null/illusion/insufficient. Forward gate (~07-25) remains the arbiter; all
+propose-only. The favorite>=0.60 sizing tilt is the one usable add-on.
