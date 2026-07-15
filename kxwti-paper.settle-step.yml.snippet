@@ -1,0 +1,40 @@
+# ==============================================================================================
+# DRAFT workflow-step snippet -- settle_recorder wiring for the kxwti-paper sleeve (TEMPLATE).
+# NOT a standalone workflow. This is the extra step to add to .github/workflows/kxwti-paper.yml
+# (on main) so a durable, idempotent settlement ledger is recorded every run. Read-only market
+# data; no orders; no live-config edits. Lead reviews + applies.
+#
+# WHERE IT GOES: inside the existing "run KXWTI paper-track + commit to gha-data" step, in the
+# /tmp/dw worktree (which already holds the gha-data checkout), AFTER `python kxwti_paper.py`
+# runs and BEFORE `git add gha_data`. kxwti_paper.py writes kxwti_pending.json into
+# /tmp/dw/gha_data; settle_recorder reads that durable entry log and appends resolved positions
+# to /tmp/dw/gha_data/kxwti_settled.jsonl, which the existing `git add gha_data/` + push commits.
+#
+# WHY kxwti as the template: KXWTI is a DAILY-settlement ladder, so positions resolve within
+# ~1 day and the ledger becomes scoreable (day-clustered t over >=14 forward days -- exactly the
+# kxwti pre-registered bar) fastest. macro-paper is identical wiring but monthly cadence, so its
+# ledger fills slowly; see SETTLEMENT_LOGGING_PLAN.md for the one-line-per-sleeve extension table.
+# ==============================================================================================
+
+# ---- add these lines after `python kxwti_paper.py /tmp/dw/gha_data || true` ----
+      - name: record realized settlements (read-only; idempotent ledger)
+        if: always()
+        run: |
+          set -e
+          cd "$GITHUB_WORKSPACE"
+          # kxwti_paper.py already wrote /tmp/dw/gha_data/kxwti_pending.json (the durable entry
+          # log of FILLED maker quotes). settle_recorder queries each market's actual Kalshi
+          # result (read-only GET /markets/{ticker}), computes realized P&L with kxwti's own
+          # maker convention, and appends new settled rows to kxwti_settled.jsonl. Idempotent:
+          # (ticker, entry_ts) already in the ledger are skipped, so running it every invocation
+          # never double-counts. Never fails the job (settlement is best-effort catch-up).
+          python settle_recorder.py /tmp/dw/gha_data/kxwti_pending.json \
+              --sleeve kxwti --venue kalshi \
+              --out /tmp/dw/gha_data/kxwti_settled.jsonl || true
+          # score anytime (uniform ledger carries "date"+"pnl" -> generic loader):
+          #   python edge_verdicts.py score gha_data/kxwti_settled.jsonl
+
+# NOTE: if you prefer a single step, just insert the `python settle_recorder.py ...` line into
+# the existing run block between `python kxwti_paper.py ...` and `cd /tmp/dw` -- no new checkout
+# needed (settle_recorder.py is stdlib-only, lives on $BRANCH, and is already checked out at
+# $GITHUB_WORKSPACE alongside kxwti_paper.py).

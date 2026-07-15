@@ -1098,3 +1098,31 @@ uncorrelated, capacity-capped edges. This VALIDATES the orthogonal/perp/other-te
 strategy, not a side quest -- FAVLONG alone is a trickle. Portfolio construction (many small edges,
 low mutual correlation, each depth-capped) is the goal. Also informs: consider funding the account only
 once a STACK exists, since one edge at $56 earns cents.
+
+## PERP-COLLECTOR-LIVE (2026-07-15) — Kalshi perps confirmed real; read-only collector deployed
+Operator confirmed perps run on Kalshi. Agent live-validated it: /margin/markets (public reads today)
+lists 16 crypto perps (btc/eth/sol/xrp + link/ltc/doge/bch/dot/hbar/near/sui/xlm/zec/hype/kshib), each
+exposing bid/ask/mid, index (BRTI reference_price), mark (settlement_mark_price), funding_rate +
+next_funding_time, OI/volume/notional, contract_size (now 0.0001 BTC), full depth. Deployed a READ-ONLY,
+discovery-driven collector (kalshi_perp_collect.py on the bot branch; kalshi-perp-collect.yml on main,
+cron 1,21,41 self-chaining; data -> gha-data). GET-only, no order path, no LIVE_SWITCH/live.yml touch.
+Co-collects the aligned 15m-binary YES mid for the perp<->binary basis. First CI run dumps the full raw
+schema (registry_kalshi_perp). COLLECT-THEN-FORWARD-VALIDATE 3 paper edges (perp_strategy_design.md):
+(a) perp<->binary basis [same-venue, cleanest], (b) funding carry, (c) perp<->spot basis -- each with a
+FAVLONG-style gate (pooled per-(asset,day) t>=2 over >=10 fwd days, frozen params). PRIOR ART flagged:
+PERPS_BACKTEST.md (Deribit carry) had ETH sign-reverse OOS -> per-asset (not just pooled) forward gating
+mandated. Fits CAPACITY-CAP thesis: another small capacity-capped orthogonal sleeve for the stack.
+
+## SETTLEMENT-BUG (2026-07-15) — why sleeves lacked settlement: a status-string bug (fix built)
+Root cause of "sleeves log proxies, never settlement": a resolved Kalshi market reports
+status=="finalized", NOT "settled". macro_paper.py (~L534) + kxwti_paper.py (~L291) gate their inline
+settle blocks on status=="settled" -> never fires (that is why macro_settled.jsonl / kxwti_settled.csv
+were never created), while longshot/tailbias check "finalized" and DID settle. Built settle_recorder.py:
+reusable, stdlib-only, READ-ONLY; loads a sleeve's entry log, queries GET /markets/{ticker}, keys
+resolution on result in {yes,no} (immune to the status-string trap), appends realized P&L per position to
+<sleeve>_settled.jsonl (idempotent on ticker+entry_ts; per-sleeve fee/PnL conventions mirrored). Tested
+offline (all 4 sleeves) + live (4/4 resolved w/ correct signed P&L). Markets are ALREADY finalized ->
+one-time BACKFILL is possible NOW to re-audit macro/kxwti on realized money. Template wiring for
+kxwti-paper provided (kxwti-paper.settle-step.yml.snippet). PROPOSAL (not yet wired live): drop the
+settle step into kxwti/macro workflows -> those sleeves become validatable like FAVLONG. Plan:
+SETTLEMENT_LOGGING_PLAN.md.
