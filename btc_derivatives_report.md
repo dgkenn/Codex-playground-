@@ -1,6 +1,6 @@
 # BTC Derivatives-Positioning Short-Horizon Predictability - Backtest Report
 
-Generated 2026-07-15 22:43 UTC. Model produced numbers, verbatim below.
+Generated 2026-07-15 22:49 UTC. Model produced numbers, verbatim below.
 
 ## Sample achieved
 
@@ -17,12 +17,12 @@ Generated 2026-07-15 22:43 UTC. Model produced numbers, verbatim below.
 
 | signal | horizon | r_train | hit_train | r_test | hit_test | n_test |
 |---|---|---|---|---|---|---|
-| dOI_1 | 5m | +nan | 0.503 | +nan | 0.496 | 12,836 |
-| dOI_1 | 15m | +nan | 0.498 | +nan | 0.495 | 12,738 |
-| dOI_1 | 30m | +nan | 0.503 | +nan | 0.498 | 12,591 |
-| dOI_3 | 5m | +nan | 0.501 | +nan | 0.496 | 12,738 |
-| dOI_3 | 15m | +nan | 0.499 | +nan | 0.498 | 12,640 |
-| dOI_3 | 30m | +nan | 0.495 | +nan | 0.496 | 12,493 |
+| dOI_1 | 5m | +0.0088 | 0.503 | -0.0152 | 0.496 | 12,834 |
+| dOI_1 | 15m | +0.0127 | 0.498 | -0.0008 | 0.495 | 12,736 |
+| dOI_1 | 30m | +0.0029 | 0.503 | -0.0096 | 0.499 | 12,589 |
+| dOI_3 | 5m | +0.0114 | 0.501 | -0.0019 | 0.496 | 12,736 |
+| dOI_3 | 15m | +0.0138 | 0.499 | +0.0082 | 0.498 | 12,638 |
+| dOI_3 | 30m | -0.0050 | 0.495 | -0.0042 | 0.496 | 12,491 |
 | ls_top | 5m | -0.0165 | 0.497 | -0.0109 | 0.494 | 12,885 |
 | ls_top | 15m | -0.0283 | 0.496 | -0.0182 | 0.495 | 12,787 |
 | ls_top | 30m | -0.0406 | 0.497 | -0.0314 | 0.491 | 12,640 |
