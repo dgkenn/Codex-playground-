@@ -1438,7 +1438,9 @@ Tool: momentum_edge.py. Protocol: market's own terminal settlement label (no str
 - The initial per-asset feature+threshold search printed a shiny POOLED OOS t=2.41 -> that was the SAME selection
   artifact machinery as FAVLONG's 5.74: it cherry-picked SOL's lucky test corner while BTC (deepest) was null (0.20).
 VERDICT: observable spot momentum is PRICED by the Kalshi book; any residual ~1c momentum lead is SUB-FEE/spread ->
-not deployable as a taker. (Independent from-scratch repro of this null delegated.) This kills the *backtestable*
+not deployable as a taker. INDEPENDENT from-scratch repro (separate code, 6,459 windows) CONFIRMS the null: tradeable
+overlay negative in-sample for ALL 16 (lookback,threshold) configs (train t down to -3.64); gross residual weak,
+sign-UNSTABLE across train/test (L=120 flips -0.96->+2.72), and <spread+fee. This kills the *backtestable*
 part of the exogenous-signal domain and confirms: adding degrees of freedom (per-asset feat/thresh) manufactures
 false positives; a SINGLE pre-registered signal is the only honest test.
 
