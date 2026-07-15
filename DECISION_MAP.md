@@ -1422,3 +1422,36 @@ Across ALL 16 perps (btc/eth + hype/kshib/zec/sui/near/hbar/link/ltc/doge/bch/do
 So the perp venue is EFFICIENT (0 funding, sub-spread basis) even in its thinnest corners. The only remaining
 perp thread is edge-a (perp<->15m-binary basis), forward-gating with a thin day-1 read. This closes the last
 genuinely-untested backtestable avenue with a real prior. Terminal conclusion stands.
+
+## EXO-MOM (2026-07-15) — exogenous SPOT MOMENTUM near expiry is already PRICED (backtestable slice, NULL/negative)
+Operator reopened the search on a NEW domain: "exogenous signal -> Kalshi 15m binaries." First the backtestable
+part — does recent EXOGENOUS spot momentum (log-return over the last 1-5 min, causal) predict the binary's
+terminal outcome BEYOND the Kalshi mid? FAVLONG's fair value assumed zero drift; if short-horizon spot flow had
+un-priced continuation, sign(recent_return)*(outcome-mid) would be reliably >0 and a taker overlay would clear fees.
+Tool: momentum_edge.py. Protocol: market's own terminal settlement label (no strike proxy), NO clean-label drop
+(both known look-ahead traps here), train<=06-30 / test>06-30, day-clustered t, +Kalshi fees.
+- RESIDUAL (gross, no cost), pooled all 3 assets, FIXED feature (no selection): ret3m weak-positive both train
+  (0.81) and test (2.52) ~ +1.2c gross; ret2m sign-FLIPS train(-1.53)->test(2.34) = noise; others null.
+- TRADEABLE overlay, PRE-REGISTERED fixed feat+threshold (no per-asset pick), net fees: NEGATIVE train
+  day-clustered t for EVERY config (-4.75,-3.17,-2.53,-2.81,...). It LOSES in-sample. The only positive OOS blips
+  (ret1m/thr .0015 test 2.20) were random in train (0.43) on tiny n.
+- The initial per-asset feature+threshold search printed a shiny POOLED OOS t=2.41 -> that was the SAME selection
+  artifact machinery as FAVLONG's 5.74: it cherry-picked SOL's lucky test corner while BTC (deepest) was null (0.20).
+VERDICT: observable spot momentum is PRICED by the Kalshi book; any residual ~1c momentum lead is SUB-FEE/spread ->
+not deployable as a taker. (Independent from-scratch repro of this null delegated.) This kills the *backtestable*
+part of the exogenous-signal domain and confirms: adding degrees of freedom (per-asset feat/thresh) manufactures
+false positives; a SINGLE pre-registered signal is the only honest test.
+
+## EXO-OFI (2026-07-15) — true signed ORDER FLOW: the one untested exogenous signal; forward experiment DEPLOYED + PRE-REGISTERED
+The archive has sampled spot+microprice (EXO-MOM shows that's priced) but NOT true signed trade flow. The only
+genuinely-untested exogenous signal is CVD/OFI + book imbalance + aggressor intensity from a major spot venue,
+which can lead price at seconds-to-minutes horizons. No historical signed-flow archive exists -> forward-only.
+DEPLOYED: ofi_collect.py (Coinbase public REST, ~2s poll, signed flow via aggressor side + top-10 book imbalance,
+self-chaining always-on like collect.yml) writing gha_data/<day>/ofi_coinbase_<asset>_r*.jsonl.gz; workflow
+.github/workflows/ofi-collect.yml on main. PRE-REGISTERED (OFI_FORWARD.md, before any data exists = ungameable):
+ONE primary signal = OFI over [ws+600,ws+720] normalized by trailing-30-window median |OFI|; FIXED threshold Z=1.0;
+bet WITH the flow at the Kalshi ask/bid; net fees; label = terminal market settlement, no strike proxy, no
+clean-label drop. GATE (ofi_forward.py, frozen): pooled per-(asset,day) day-clustered t>=2 over >=10 FORWARD days
+AND btc-alone mean>0 (no single-asset corner); KILL if t<0 after 10d. PROPOSE-ONLY. Prior is WEAK (observable
+exogenous signal already priced) but this is the honest way to actually TEST the operator's chosen domain rather
+than declare it dead on a proxy. Clock starts at first full collection day; gate opens ~10 forward days later.
