@@ -1,3 +1,7 @@
 # local Claude Code harness state (settings, worktree admin) -- not project content
 .claude/
 __pycache__/
+
+# stray agent working artifacts
+extra.log
+scratchpad/
