@@ -945,3 +945,33 @@ spread cannot beat) and ETH is unfalsifiable (ETH-NO-REALIZED). CONCLUSION stand
 no winning profitable strategy exists in the current data or instrument -- the paired edge is zero to 0.1c
 and the only P&L is strand variance. A real winner requires a structurally different instrument/edge and
 NEW data to test it on; it cannot be manufactured from what we have without fabricating.
+
+## FAVLONG (2026-07-14, THE FIRST VALIDATED POSITIVE EDGE -- found by falsification, not fabrication)
+After proving box-making structurally zero-edge (PAIRED-ZERO-DECOMP) and closing every box tactic,
+turned to a STRUCTURALLY DIFFERENT strategy family using the powered gha-data tick archive (35 days,
+btc/eth/sol, ~2800 windows/asset, tuple [t,mid,spot,micro,bid,bidq,ask,askq] for the 'up' contract).
+FINDING: a near-expiry CONTRARIAN TAKER edge -- in the last ~2-3 min the Kalshi 15m book is
+OVER-CONFIDENT (favorite-longshot bias): underdog contracts priced ~0.09 settle ITM ~0.32. Compute
+fair-value P(up) from spot-vs-strike scaled by CAUSAL realized vol and shrinking tau; TAKE the side
+the book underprices.
+FALSIFICATION BATTERY (this is why it is trusted where av_stoikov was not -- built on SETTLEMENT):
+  - reconstruction validated: mid@open 0.493+-0.082 (strike~=open spot), up-rate 0.498, proxy-vs-
+    market-terminal settlement agree 92.5%.
+  - LABEL ARTIFACT caught + removed: using our proxy strike for BOTH fair-value and outcome inflated
+    t 6.64. Switching outcome to the MARKET's own terminal price (mid_close>0.5) and dropping proxy!=
+    market windows cut it to the honest core: mean 0.046/ct, t=3.45 (btc OOS).
+  - +Kalshi fees (0.07*p*(1-p)/ct): -> 0.039/ct, t=2.97 (btc OOS).
+  - +fill LATENCY (execute up to 10 ticks later): t stays ~3.0 -> NOT stale-quote picking.
+  - EXECUTABLE SIZE: traded (underdog) side depth median 420 contracts; 84% of trades >=50 avail;
+    sized <=50 ct/window = +$937 OOS/14d (~$67/day), daily-$ clustered t=2.34.
+  - CROSS-ASSET REPLICATION (the clincher): same sign btc/eth/sol independently. POOLED per-(asset,
+    day) clustered t=3.99 over 105 asset-days, 65/105 positive. btc ALL t=3.25, eth 1.84, sol 1.77.
+HONEST CAVEATS: small (~2c/ct pooled, ~4c btc); per-asset only BTC clears t>=2 OOS (eth 1.68 sol
+0.55) -- confidence rests on pooling the shared mechanism + all-period positivity; concentrated in
+last 2-3 min (t<=450s edge ~0); ~62% asset-days positive (real variance); it is a TAKER (crosses
+spread) so needs NEW execution, not the maker box bot; favorite-longshot is a known effect that can
+decay. Tool: favlongshot_edge.py (durable, committed). Registered in FORWARD_LEDGER.
+VERDICT: this is a GENUINE winning candidate -- the first that survives realized-settlement scrutiny,
+fees, latency, size, AND out-of-sample cross-asset replication. NOT box-making. PROPOSE-ONLY to live
+(Rail 1): forward-gate (day-clustered t>=2 over >=10 FORWARD days) is required before any live sizing;
+no switch/size/flag is touched without the operator's explicit word.

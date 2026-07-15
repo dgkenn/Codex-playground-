@@ -34,6 +34,21 @@ after 10+ forward days.
 | volgate (added 2026-07-14, 70ed86897; node OV-VOLGATE) | vol-regime ENTRY veto: skip when prior-window realized vol in top quartile of trailing regime. Replay prior (06-10..13): +0.96c/win t=1.59, strand 7.6→4.9% (46 vetoes). Streak study: vol lag-1 autocorr 0.58; prior-window vol AUC 0.655 (>prior-outcome 0.619). Fidelity caveat: harness uses Kalshi-mid vol, weaker than study's spot vol. Deploy bar: day-clustered t>=2 vs live over >=10 fwd days | accruing from first box-shadow run after 2026-07-14 ~14:47Z |
 | nsmove (added 2026-07-14, bot-branch; node OV-2POP-ARM) | near-strike × movement veto: STRICT SUBSET of volgate — veto only when volgate fires AND entry near-strike (|p1-0.5|<0.15). Targets the drift-driven BIG-loss population (leading |drift| AUC 0.875 provisional, n=6). Replay prior (06-10..13): +0.55c/win t=0.79, strand 7.6→6.5% (29 vetoes) — weaker than volgate here because motivating population is in the overnight sample. Head-to-head vs volgate is the forward question. Deploy bar: t>=2 vs live over >=10 fwd days | accruing from first box-shadow run after 2026-07-14 ~14:47Z |
 
+## FAVLONG near-expiry contrarian taker (added 2026-07-14; node FAVLONG) — NEW STRATEGY FAMILY
+**First validated positive edge of the program.** A TAKER strategy (not the maker box bot):
+in the last ~2-3 min of each Kalshi 15m window, take the side the book underprices per a
+causal-vol fair-value model (favorite-longshot / terminal-overconfidence bias). Scored on
+reconstructed SETTLEMENT, not markout. Tool: `favlongshot_edge.py`.
+- Backtest priors (35 days, +Kalshi fees, clean market-settlement labels, latency-robust):
+  BTC ALL t=3.25 (OOS test 2.97), ETH 1.84, SOL 1.77; **POOLED per-(asset,day) clustered
+  t=3.99 over 105 asset-days, 65/105 positive**; ~2c/ct pooled (~4c BTC); traded-side depth
+  median 420 ct. Concentrated at decision_t>=600s.
+- Caveats: small; per-asset only BTC clears t>=2 OOS; ~62% asset-days positive; TAKER = new
+  execution code; known effect, can decay.
+- **Deploy bar (charter gate): day-clustered t>=2 vs zero over >=10 FORWARD days, POOLED across
+  btc/eth/sol** (per-asset is underpowered). PROPOSE-ONLY: no live sizing without operator word.
+  Forward clock starts at the first tick-archive day after 2026-07-14; gate opens ~2026-07-25.
+
 ## Daily entries
 ### 2026-07-13 (day 0 — deployment day)
 - Live: SWITCH=on, no kill sentinel, telemetry fresh. Size-2 experiment day 2.
