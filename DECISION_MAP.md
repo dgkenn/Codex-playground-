@@ -1063,3 +1063,22 @@ CONCLUSION: after auditing every existing sleeve and testing the two best-ground
 (near-expiry taker, wide-book repricing lag, btc/eth/sol, calibrated OOS t~5.74) is the sole demonstrable
 edge. Everything else is null/illusion/insufficient. Forward gate (~07-25) remains the arbiter; all
 propose-only. The favorite>=0.60 sizing tilt is the one usable add-on.
+
+## ORTHOSTACK sweep (2026-07-15) — 3 orthogonal candidates on existing data; none is a clean diversifier
+Sought return streams uncorrelated with FAVLONG to STACK (raise combined Sharpe). Each scored on realized
+settlement, day-clustered, OOS, + per-window/day correlation with FAVLONG.
+- SHOCK-REVERSION (fade a sharp mid-window spot move): NULL. Settlement OOS t=0.29; round-trip t=-2.02
+  (costs>alpha). Orthogonal (r~0) but no edge -> no value.
+- TIGHT-BOOK single-sided MAKER (complement regime): NULL. OOS t=0.52; adverse selection 61-64% correct
+  (need >=75% vs fees) -- pick-off trap. Confirms tight books efficient; double-sided just re-derives the
+  dead box-maker.
+- CROSS-SECTIONAL RV (beta-neutral btc/eth/sol laggard-vs-peers): MARGINAL/underpowered. OOS t=1.33
+  (dt=600), +0.138/ct, 57 trades/13d -- below the t>=2 bar. AND daily corr with FAVLONG = +0.53
+  (complementary, NOT orthogonal) so limited diversification; per-window r~-0.06. Reports:
+  orthostack_shock_reversion / orthostack_tightbook_maker / orthostack_xsectional_rv .md.
+CONCLUSION: no clean orthogonal diversifier exists in the current Kalshi-15m data. XS-RV is the only
+non-dead one but is underpowered + correlated; parked as a low-priority forward watch, not crowned.
+NEXT ORTHOGONAL AVENUE: perp-based edges on Kalshi (carry/basis) -- a genuinely different return driver
+(carry, not repricing). Operator confirmed perps run on Kalshi; no perp data collected yet -> building a
+collector to start collect-then-forward-validate (all 3 shapes: perp<->binary basis, funding carry,
+perp<->spot basis).
