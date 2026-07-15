@@ -1140,3 +1140,24 @@ BTC alone ~0 insignificant. HEAVY CAVEATS -> this is a WEAK null, not a kill: un
 top-of-book FAVLONG actually trades, (b) Binance-vs-Kalshi index basis. A fair test needs a forward
 COLLECT: sub-second top-of-book for the final ~5 min of KXBTCD/ETHD/SOLD, mirroring the 15m tick schema,
 >=15 days. Parked with no live-sizeable signal until then. Report: newmarket_favlong_tenor.md.
+
+## CANDIDATES-3 + 15m-SCOPE (2026-07-15) — /goal 3 candidates all NULL; scope locked to liquid 15m crypto
+/goal "find 3 candidates orthogonal to FAVLONG, validatable on our/accessible data". Found + validated 3;
+NONE is a usable edge, and the operator's 15m-liquidity constraint rules out the non-15m ones regardless:
+- LADDER NO-ARB (arb family): NULL. 59,640 archive poll cycles + live snapshots; violations exist at MID
+  but never at executable prices (inside spread / empty-book phantoms); live full-ladder snapshot = 0
+  crossable; realized locked-arb $0.00. Multi-strike (non-15m) -> out of scope anyway. cand_ladder_noarb.md
+- EVENT-VOL PREMIUM (vol family): INSUFFICIENT-DATA / point-estimate no-edge. n=7 events (API serves ~3
+  recent monthly/series); implied~=realized move (ratio 1.005), premium ~0 gross, slightly neg net. Econ
+  (non-15m) -> out of scope. cand_event_vol.md
+- CROSS-FAMILY CALIBRATION (behavioral): NULL across all 6 families. 323 snapshots; deep tails (75% of
+  markets) perfectly calibrated (0.007->0.006, 0.989->0.986); the eye-catching +0.058/ct t=5.99 was a
+  ZERO-LOSS BOUNDARY ILLUSION (all 19 resolved NO; favorite side flat/neg) -- same illusion already ruled
+  null for longshot/tailbias. crypto_15m + econ INSUFFICIENT (1-3 days). No exploitable home. cand_xfamily_calibration.md
+OPERATOR SCOPE (2026-07-15): keep strategies constrained to LIQUID 15m crypto binaries (btc/eth/sol) --
+FAVLONG's capacity study already showed depth is the binding limit, so less-liquid Kalshi markets are
+strictly worse. Within 15m the space is heavily fished: FAVLONG (win) + second-edge nulls (imbalance/
+momentum/VRP/lead-lag) + orthogonal sweep (reversion/maker null, XS-RV marginal+correlated) + refinements
+(no upgrade). The ONE in-scope orthogonal avenue remaining = PERP<->15m-BINARY BASIS (operator confirmed
+in scope; perp collector deployed, data pending). DIRECTION: build the perp-basis paper strategy once perp
+data lands (collect-then-forward). Honest: the 15m pond may support only ~1-2 edges; the "stack" is thin.
