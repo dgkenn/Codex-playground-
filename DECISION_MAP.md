@@ -1545,3 +1545,20 @@ VERDICT: derivatives-positioning stress has no positive, cost-surviving short-ho
 than order-flow at 40 days, but signal clearly absent, not just underpowered). Positioning is priced too.
 Now two well-powered exogenous nulls (order flow, derivatives). Remaining: options GEX/skew/DVOL (wave 2 -- the one
 with a mechanism, dealer gamma hedging, that maps onto the binary's STRIKE-relative settlement).
+
+## EXO-DERIV update: agent re-ran to 163 days (2022-01..2026-07, 46,427 5-min bars) with a FIXED survive-flag
+(profitable = mean bps>0 AND t>=+2 in BOTH splits). Confirms NULL: ZERO profitable survivors in MOM or REV across
+the full 138-cell grid; strongest signal still crowded long/short (contrarian) at gross corr -0.03..-0.08, cost-dead.
+The larger 163-day run only strengthens the null. (dOI corr shows nan due to an agent corr-calc glitch, but the
+day-clustered trade tests -- the robust arbiter -- are clean and negative.)
+
+## EXO-LEADLAG (2026-07-15) — cross-exchange lead-lag: REAL but HFT-scale, NOT tradeable for us
+Operator "widen the free-data net": does a faster venue lead the Kalshi settlement price? Binance PERP vs SPOT
+1-second lead-lag (Binance Vision aggTrades, years). Tool: cross_venue_leadlag.py.
+- corr(perp_ret[t], spot_ret[t+k]): k=-1s +0.088, k=0 +0.832, k=+1s +0.172, k=+2s +0.078, k=+3s +0.047.
+- PERP LEADS SPOT (0.17@+1s > 0.09@-1s) -- the documented price-discovery lead -- but at ~1 SECOND, decaying to
+  ~0.05 by 3s. Utterly irrelevant at the 15m binary's ~180s decision horizon; unexploitable at a Kalshi taker's
+  seconds-of-latency (needs colocation/sub-second execution).
+VERDICT: the lead is real but HFT-only. ALL predictive microstructure info decays within SECONDS; our tradeable
+horizon is MINUTES. This is the crux of why every free-data signal is priced FOR US: the edge exists but lives in a
+latency band we cannot access. Consistent with order-flow + derivatives nulls.

@@ -251,7 +251,7 @@ def is_profitable(mb_tr, t_tr, mb_te, t_te):
 def corr_hit(df, sig, h, train):
     sub = df[df["is_train"] == train]
     x = sub[sig]; y = sub[f"fwd_{h}"]
-    m = x.notna() & y.notna()
+    m = np.isfinite(x) & np.isfinite(y)
     x = x[m]; y = y[m]
     if len(x) < 30 or x.std() == 0 or y.std() == 0:
         return (np.nan, np.nan, len(x))
