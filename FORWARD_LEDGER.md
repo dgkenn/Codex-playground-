@@ -49,6 +49,27 @@ reconstructed SETTLEMENT, not markout. Tool: `favlongshot_edge.py`.
   btc/eth/sol** (per-asset is underpowered). PROPOSE-ONLY: no live sizing without operator word.
   Forward clock starts at the first tick-archive day after 2026-07-14; gate opens ~2026-07-25.
 
+### Forward-validation harness (added 2026-07-15)
+- **Tool:** `favlong_forward.py` (imports `favlongshot_edge.build_asset`/`.score`; does not
+  duplicate the math). Run `python favlong_forward.py` to fetch the gha-data branch, score every
+  new COMPLETE forward day (strictly after 2026-07-14 and strictly before today UTC, so logged
+  days are final) for btc/eth/sol with the validated config (decision_t=720, edge=0.05, +Kalshi
+  fees, no fill lag), append per-(asset,day) rows, and print the pooled gate status.
+  `python favlong_forward.py --report` prints the gate from the log without re-fetching.
+- **Log:** `favlong_forward_log.jsonl` (repo root). One JSON record per (asset, day):
+  asset, day, n_trades, mean_ct ($/contract), day_pnl, winrate, config. Idempotent, keyed on
+  (asset, day); already-logged days are skipped and n_trades=0 days are marked so they aren't
+  re-scanned.
+- **Gate (headline):** pooled per-(asset,day) day-clustered t over the traded forward rows.
+  PASSED = >=10 forward days AND pooled t>=2; FAILED = >=10 forward days AND pooled t<0 (kill per
+  charter); otherwise not-yet (clock not started / too few days / 0<=t<2).
+- **Automated accrual:** enabling `.github/workflows/favlong-forward.yml` (daily 06:33 UTC; commits
+  the updated log back to this code branch) OR a claude-code-remote daily Routine that runs
+  `python favlong_forward.py` at a fixed UTC time starts hands-off accrual. Until one is enabled,
+  the log only advances on a manual run. As of 2026-07-15 the clock has NOT started (07-15 is the
+  first forward day and is still in progress); the first complete forward day is 2026-07-15,
+  scored on the 2026-07-16 run.
+
 ## Daily entries
 ### 2026-07-13 (day 0 — deployment day)
 - Live: SWITCH=on, no kill sentinel, telemetry fresh. Size-2 experiment day 2.
