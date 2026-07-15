@@ -1496,3 +1496,18 @@ any positive to be INDEPENDENTLY reproduced before it counts):
   downstream is the better bet, but let it finish for completeness).
 WAVE 2 (after wave-1 verdicts, to manage disk + verification): Deribit options GEX/skew/DVOL; futures bookDepth L2
 imbalance. Verdicts pending; this node records the program + the confirmed data foundation.
+
+## KALSHI-CALIB (2026-07-15) — favorite-longshot/calibration at scale: NULL (well-powered, 7579 markets)
+De-emphasized per operator (BTC-data-downstream is the better bet) but finished for completeness. 7,579 settled
+binary Kalshi markets across 8 categories (~200x the prior 35-day crypto attempt); entry = count-weighted YES-VWAP
+over trades in the FIRST HALF of [open,close] only (anti-artifact: never last_price/settlement), OOS split by
+close_time, isotonic map fit TRAIN-only, PnL net fee 0.07p(1-p) + 1c half-spread. Tool: kalshi_calibration.py.
+- Calibration: mild POSITIVE deviation in the mid-low range (~0.10-0.55 early prices realize YES more often than
+  priced, +0.05..+0.09); extremes well-calibrated. NOT classic favorite-longshot; and not tradeable after costs.
+- OOS tradeable: POOLED TEST t=+1.25 (NULL). Strong cross-category heterogeneity (Economics buys LOSE t=-4.6).
+  Crypto headline t=+3.45 rests on only 5 close-dates -> discarded (the exact thin-clustering artifact this was
+  built to avoid). Only Climate/Weather is positive with adequate clustering (t=+2.39, +$0.042/ct, 13 dates) but
+  FAILS Bonferroni across 8 categories (need |t|>2.7). PARKED (not pursued; weather is a possible future thread).
+VERDICT: no well-powered, cost-surviving calibration/favorite-longshot edge in any Kalshi category. The venue's
+own settled-market data is calibrated for a taker at our costs -> reinforces that the edge must come from EXOGENOUS
+BTC data (RICHDATA program), not the venue's own information.
