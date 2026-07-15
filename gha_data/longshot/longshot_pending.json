@@ -2523,19 +2523,6 @@
 },
 {
 "ts": "2026-06-24T19:06:49+00:00",
-"ticker": "KXBURNHAMPM-27JAN01-0711",
-"series": "KXBURNHAMPM",
-"category": "Politics",
-"yes_bid": 0.05,
-"yes_ask": 0.06,
-"mid": 0.055,
-"entry_sell_yes": 0.06,
-"close_time": "2026-07-18T14:00:00Z",
-"vol_at_entry": 5835.38,
-"title": "Will Andy Burnham formally hold the role of Prime Minister of the United Kingdom"
-},
-{
-"ts": "2026-06-24T19:06:49+00:00",
 "ticker": "KXTAIWANLVL4-27JAN01",
 "series": "KXTAIWANLVL4",
 "category": "Politics",
@@ -3937,19 +3924,6 @@
 "close_time": "2026-12-31T15:00:00Z",
 "vol_at_entry": 3647.92,
 "title": "Will Donald Trump be the #2 rank on Google\u2019s Year in Search 2026 Global \u2013 People"
-},
-{
-"ts": "2026-06-27T18:40:57+00:00",
-"ticker": "KXGEDATOLISIB-26-ND",
-"series": "KXGEDATOLISIB",
-"category": "Science and Technology",
-"yes_bid": 0.06,
-"yes_ask": 0.07,
-"mid": 0.065,
-"entry_sell_yes": 0.07,
-"close_time": "2026-08-01T03:59:00Z",
-"vol_at_entry": 1762.93,
-"title": "What will the FDA's decision be on Gedatolisib by Celcuity Inc. in July 2026?"
 },
 {
 "ts": "2026-06-27T18:40:57+00:00",
@@ -5536,19 +5510,6 @@
 "close_time": "2027-12-31T21:00:00Z",
 "vol_at_entry": 574.0,
 "title": "Will the price of DDR5 be above $105 at year-end 2027?"
-},
-{
-"ts": "2026-07-02T18:54:33+00:00",
-"ticker": "KXGEDATOLISIB-26-CA",
-"series": "KXGEDATOLISIB",
-"category": "Science and Technology",
-"yes_bid": 0.08,
-"yes_ask": 0.09,
-"mid": 0.085,
-"entry_sell_yes": 0.09,
-"close_time": "2026-08-01T03:59:00Z",
-"vol_at_entry": 352.0,
-"title": "What will the FDA's decision be on Gedatolisib by Celcuity Inc. in July 2026?"
 },
 {
 "ts": "2026-07-02T18:54:33+00:00",
@@ -8191,19 +8152,6 @@
 },
 {
 "ts": "2026-07-13T18:54:57+00:00",
-"ticker": "KXHIGHTPHX-26JUL14-B105.5",
-"series": "KXHIGHTPHX",
-"category": "Climate and Weather",
-"yes_bid": 0.05,
-"yes_ask": 0.07,
-"mid": 0.06,
-"entry_sell_yes": 0.07,
-"close_time": "2026-07-15T07:00:00Z",
-"vol_at_entry": 440.53,
-"title": "Will the maximum temperature be 105-106\u00b0 on Jul 14, 2026?"
-},
-{
-"ts": "2026-07-13T18:54:57+00:00",
 "ticker": "KXHMONTHRANGE-26JUL-B1.270",
 "series": "KXHMONTHRANGE",
 "category": "Climate and Weather",
@@ -8227,84 +8175,6 @@
 "close_time": "2026-08-16T03:59:00Z",
 "vol_at_entry": 332.0,
 "title": "Jul 2026 temperature increase?"
-},
-{
-"ts": "2026-07-13T18:54:57+00:00",
-"ticker": "KXHIGHLAX-26JUL14-T81",
-"series": "KXHIGHLAX",
-"category": "Climate and Weather",
-"yes_bid": 0.04,
-"yes_ask": 0.06,
-"mid": 0.05,
-"entry_sell_yes": 0.06,
-"close_time": "2026-07-15T07:59:00Z",
-"vol_at_entry": 1968.33,
-"title": "Will the **high temp in LA** be >81\u00b0 on Jul 14, 2026?"
-},
-{
-"ts": "2026-07-13T18:54:57+00:00",
-"ticker": "KXHIGHLAX-26JUL14-T74",
-"series": "KXHIGHLAX",
-"category": "Climate and Weather",
-"yes_bid": 0.05,
-"yes_ask": 0.06,
-"mid": 0.055,
-"entry_sell_yes": 0.06,
-"close_time": "2026-07-15T07:59:00Z",
-"vol_at_entry": 3352.4,
-"title": "Will the **high temp in LA** be <74\u00b0 on Jul 14, 2026?"
-},
-{
-"ts": "2026-07-13T18:54:57+00:00",
-"ticker": "KXHIGHLAX-26JUL14-B80.5",
-"series": "KXHIGHLAX",
-"category": "Climate and Weather",
-"yes_bid": 0.07,
-"yes_ask": 0.08,
-"mid": 0.075,
-"entry_sell_yes": 0.08,
-"close_time": "2026-07-15T07:59:00Z",
-"vol_at_entry": 1489.36,
-"title": "Will the **high temp in LA** be 80-81\u00b0 on Jul 14, 2026?"
-},
-{
-"ts": "2026-07-13T18:54:57+00:00",
-"ticker": "KXHIGHCHI-26JUL14-B100.5",
-"series": "KXHIGHCHI",
-"category": "Climate and Weather",
-"yes_bid": 0.07,
-"yes_ask": 0.09,
-"mid": 0.08,
-"entry_sell_yes": 0.09,
-"close_time": "2026-07-15T05:59:00Z",
-"vol_at_entry": 359.0,
-"title": "Will the high temp in Chicago be 100-101\u00b0 on Jul 14, 2026?"
-},
-{
-"ts": "2026-07-13T18:54:57+00:00",
-"ticker": "KXLOWTNYC-26JUL14-B67.5",
-"series": "KXLOWTNYC",
-"category": "Climate and Weather",
-"yes_bid": 0.1,
-"yes_ask": 0.11,
-"mid": 0.105,
-"entry_sell_yes": 0.11,
-"close_time": "2026-07-15T05:00:00Z",
-"vol_at_entry": 237.71,
-"title": "Will the minimum temperature be 67-68\u00b0 on Jul 14, 2026?"
-},
-{
-"ts": "2026-07-13T18:54:57+00:00",
-"ticker": "KXHIGHPHIL-26JUL14-T89",
-"series": "KXHIGHPHIL",
-"category": "Climate and Weather",
-"yes_bid": 0.08,
-"yes_ask": 0.1,
-"mid": 0.09,
-"entry_sell_yes": 0.1,
-"close_time": "2026-07-15T04:59:00Z",
-"vol_at_entry": 223.29,
-"title": "Will the **high temp in Philadelphia** be <89\u00b0 on Jul 14, 2026?"
 },
 {
 "ts": "2026-07-14T18:36:49+00:00",
@@ -8383,5 +8253,57 @@
 "close_time": "2026-09-01T03:59:00Z",
 "vol_at_entry": 1095.91,
 "title": "Will Kash Patel be out as FBI Director before Sep 1, 2026?"
+},
+{
+"ts": "2026-07-15T18:36:57+00:00",
+"ticker": "KXRTX5090MON-26JUL31-0.580",
+"series": "KXRTX5090MON",
+"category": "Science and Technology",
+"yes_bid": 0.07,
+"yes_ask": 0.16,
+"mid": 0.115,
+"entry_sell_yes": 0.16,
+"close_time": "2026-08-01T03:59:59Z",
+"vol_at_entry": 255.67,
+"title": "Will the RTX 5090 compute per hour price be above $0.58 on Jul 31?"
+},
+{
+"ts": "2026-07-15T18:36:57+00:00",
+"ticker": "KXRAINDALM-26JUL-4",
+"series": "KXRAINDALM",
+"category": "Climate and Weather",
+"yes_bid": 0.09,
+"yes_ask": 0.13,
+"mid": 0.11,
+"entry_sell_yes": 0.13,
+"close_time": "2026-08-01T03:59:59Z",
+"vol_at_entry": 415.02,
+"title": "Rain in Dallas in Jul 2026?"
+},
+{
+"ts": "2026-07-15T18:36:57+00:00",
+"ticker": "KXHIGHLAX-26JUL16-T79",
+"series": "KXHIGHLAX",
+"category": "Climate and Weather",
+"yes_bid": 0.06,
+"yes_ask": 0.07,
+"mid": 0.065,
+"entry_sell_yes": 0.07,
+"close_time": "2026-07-17T07:59:00Z",
+"vol_at_entry": 1947.25,
+"title": "Will the **high temp in LA** be <79\u00b0 on Jul 16, 2026?"
+},
+{
+"ts": "2026-07-15T18:36:57+00:00",
+"ticker": "KXHIGHLAX-26JUL16-B85.5",
+"series": "KXHIGHLAX",
+"category": "Climate and Weather",
+"yes_bid": 0.05,
+"yes_ask": 0.07,
+"mid": 0.06,
+"entry_sell_yes": 0.07,
+"close_time": "2026-07-17T07:59:00Z",
+"vol_at_entry": 1152.29,
+"title": "Will the **high temp in LA** be 85-86\u00b0 on Jul 16, 2026?"
 }
 ]
