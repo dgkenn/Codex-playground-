@@ -1082,3 +1082,19 @@ NEXT ORTHOGONAL AVENUE: perp-based edges on Kalshi (carry/basis) -- a genuinely 
 (carry, not repricing). Operator confirmed perps run on Kalshi; no perp data collected yet -> building a
 collector to start collect-then-forward-validate (all 3 shapes: perp<->binary basis, funding carry,
 perp<->spot basis).
+
+## CAPACITY-CAP (2026-07-15) — FAVLONG is REAL but SMALL-CAPACITY; the strategy must be a STACK
+Realistic capacity + sizing study (favlong_capacity_sizing.md). KEY FINDING: FAVLONG's earnings are
+HARD-CAPPED BY NEAR-EXPIRY BOOK DEPTH, not by capital. After a market-impact haircut the tradeable
+size is ~50-100 contracts/window, so the capacity ceiling is a ~$200-400 EFFECTIVE position REGARDLESS
+of bankroll (more capital just increases impact, doesn't earn more). Resulting P&L ceiling ~a few $/day
+(~$50-150/month at best). At the current ~$56 balance: ~cents/day (~$0.50/month) << operational
+overhead -> VALIDATION-ONLY, not worth live-deploying for profit. Becomes marginally worth it only
+near the depth-capped ceiling (~$400 effective, ~$45-110/month) IF the forward gate confirms t>=2.
+(Numbers are estimates from a haiku pass; the QUALITATIVE result -- depth-capped, small -- is robust:
+edge ~2-6c/ct x ~50-100 ct x ~10 trades/day.)
+STRATEGIC REFRAME: no single edge in this arena scales. Meaningful P&L requires a STACK of many small,
+uncorrelated, capacity-capped edges. This VALIDATES the orthogonal/perp/other-tenor program as the core
+strategy, not a side quest -- FAVLONG alone is a trickle. Portfolio construction (many small edges,
+low mutual correlation, each depth-capped) is the goal. Also informs: consider funding the account only
+once a STACK exists, since one edge at $56 earns cents.
