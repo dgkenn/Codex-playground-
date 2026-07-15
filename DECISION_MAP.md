@@ -1511,3 +1511,22 @@ close_time, isotonic map fit TRAIN-only, PnL net fee 0.07p(1-p) + 1c half-spread
 VERDICT: no well-powered, cost-surviving calibration/favorite-longshot edge in any Kalshi category. The venue's
 own settled-market data is calibrated for a taker at our costs -> reinforces that the edge must come from EXOGENOUS
 BTC data (RICHDATA program), not the venue's own information.
+
+## EXO-OFI-BACKTEST (2026-07-15) — signed order flow does NOT predict short-horizon returns net of cost (NULL, well-powered)
+FIRST backtest of the order-flow thesis on years of data (the reason OFI was forward-only: no historical signed-flow
+archive existed -> now solved via Binance Vision aggTrades). 164 days across 2022-01..2026-07, 1-min bars, signed OFI
+features (scale-free, causal), forward 3/15-min returns, train(115d)/test(49d), momentum AND reversion, day-clustered.
+Tools: btc_orderflow_backtest.py (agent, had an epoch-minute reindex bug -> 80.8M fabricated rows, OOM; I fixed via
+vol>0 filter + independent recompute) and btc_orderflow_report.md.
+- GROSS momentum edge: ~ZERO in TRAIN (0.01-0.1 bps, t<1; one cell negative), tiny +0.1-0.3 bps in TEST (large t only
+  from millions of obs). Era-UNSTABLE (train~0, test small+).
+- NET of a token 1bp round-trip: EVERY cell, BOTH directions (momentum & reversion), BOTH splits is NEGATIVE
+  (test t ~ -50..-145). MOM loses ~0.7-1.0 bps/trade; REV loses ~1.0-1.3 bps/trade.
+- The 15m binary requires crossing ~2-4c spread = HUNDREDS of bps on a ~50c contract -> a <=0.3bp gross signal cannot
+  possibly survive downstream.
+VERDICT: signed order flow nudges price (as expected) but has NO cost-surviving short-horizon predictability -> the
+momentum/OFI-leads-price thesis is dead at the tradeable level, and EXO-OFI's downstream prospects are poor (consistent
+with its stated WEAK prior). This is the well-powered version of EXO-MOM's null, now on years of real signed flow.
+Remaining exogenous angles still open: derivatives positioning stress (running), options GEX/skew/DVOL (wave 2),
+sub-second flow (not backtestable). "Information not everyone has" at the flow level is real but ~0.1-0.3bp -> unpriced
+by almost nothing; the venue/market prices it to within costs.
