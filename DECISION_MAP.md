@@ -1575,3 +1575,22 @@ horizon. Unifying finding (EXO-LEADLAG): predictive info in crypto lives sub-sec
 (fundamental/on-chain); the 15m binary sits in the efficient dead zone between, gated by a latency band we can't reach.
 The productive pivots are (1) LONGER-horizon Kalshi markets where slow info survives to resolution, or (2) sub-second
 crypto HFT (different instrument+infra). Grinding more free 15m microstructure has exhausted its value.
+
+## EXO-SUFFICIENCY (2026-07-15) — the 15m binary mid is a CONDITIONALLY-SUFFICIENT STATISTIC -> exotic math has no target
+Operator asked whether exotic math/stats could work on the 15m market. First: KXBTC15M is SINGLE-STRIKE (one
+greater_or_equal floor per event) -> cross-strike/butterfly arb and Breeden-Litzenberger implied-density are
+IMPOSSIBLE. That leaves the distribution (vol/tail/skew) as the only predictable object. Decisive cheap diagnostic
+on 2938 BTC windows: is mid a sufficient statistic? mean(outcome - mid) conditioned on the exact dimensions an
+exotic distribution-model would exploit:
+- overall calibration bias = +0.0014 (calibrated).
+- by REALIZED VOL quintile: all |t|<1.6 (vol regimes priced correctly -> no GARCH/HAR-RV/rough-vol edge).
+- by |MONEYNESS| quintile: all |t|<1.6 (tails priced correctly -> no EVT/fat-tail edge, no favorite-longshot).
+- by SIGNED moneyness: all |t|<1.8.
+- by UTC HOUR (vol seasonality): 24 tested, NONE reach |t|=2 (max +1.96; ~1 expected by chance) -> no seasonality edge.
+VERDICT: the market mid conditionally captures vol, moneyness, and time-of-day -> it is a sufficient statistic on
+every measurable distribution dimension. Therefore exotic distribution methods (GARCH/HAR-RV/EVT/rough-vol/HMM-regime/
+Hawkes) have NO systematic bias to exploit -- they would only overfit noise. Exotic math cannot manufacture info that
+conditional calibration shows isn't there. The ONLY non-foreclosed exotic-adjacent path is a genuinely NEW conditioning
+variable carrying information the mid lacks -- i.e. options GEX/skew (wave 2, untested) -- and even that must beat the
+~2-4c spread on a single-strike 15m contract. Combined with EXO-OFI-BACKTEST + EXO-BOOKDEPTH + derivatives nulls:
+the 15m BTC binary is efficient for us in direction AND distribution.
