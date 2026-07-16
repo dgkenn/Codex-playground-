@@ -45,7 +45,9 @@ jobs:
           git config user.name  "pmkt-shortvol-bot"
           git config user.email "pmkt-shortvol-bot@users.noreply.github.com"
           python -u pmkt_shortvol_paper.py all || true
-          git add pmkt_shortvol_positions.jsonl pmkt_shortvol_settled.jsonl 2>/dev/null || true
+          python -u pmkt_econ_paper.py all || true
+          git add pmkt_shortvol_positions.jsonl pmkt_shortvol_settled.jsonl \
+                  pmkt_econ_positions.jsonl pmkt_econ_settled.jsonl 2>/dev/null || true
           git commit -m "pmkt-shortvol $(date -u +%FT%H%MZ)" || { echo "nothing to commit"; exit 0; }
           for i in 1 2 3 4 5; do
             git push origin HEAD:${BRANCH} && exit 0

@@ -23,9 +23,11 @@ from collections import defaultdict
 SLEEVES = {
     "pmkt_shortvol": ("pmkt_shortvol_settled.jsonl", "pnl", "close_date",
                       "CONFIRMED backtest edge (t=2.88 realistic fills); forward-gating"),
+    "pmkt_econ":     ("pmkt_econ_settled.jsonl", "pnl", "close_date",
+                      "CONFIRMED backtest edge (t=3.09/3.77, 55wk); uncorrelated w/ crypto (-0.01); forward-gating"),
     "wing_vrp":      ("wing_paper_settled.jsonl", "pnl", "close_date",
                       "DEAD in backtest (market-weighting artifact); kept as control"),
-    # future sleeves (cross-category longshot, cross-venue convergence, wallet-copy) append here as they pass gate
+    # future sleeves (cross-venue convergence rejected; wallet-copy null) append here as they pass gate
 }
 
 
