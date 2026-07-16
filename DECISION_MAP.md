@@ -1594,3 +1594,32 @@ conditional calibration shows isn't there. The ONLY non-foreclosed exotic-adjace
 variable carrying information the mid lacks -- i.e. options GEX/skew (wave 2, untested) -- and even that must beat the
 ~2-4c spread on a single-strike 15m contract. Combined with EXO-OFI-BACKTEST + EXO-BOOKDEPTH + derivatives nulls:
 the 15m BTC binary is efficient for us in direction AND distribution.
+
+## EXO-GEX/PINNING (2026-07-15) — round-number magnetism (GEX mechanism proxy) is NULL; GEX not worth a forward build
+Tested the backtestable CORE of the options-GEX thesis without options data: option gamma concentrates at round
+strikes, so if GEX-pinning moved 15m BTC spot it would show as magnetism toward round $500/$1000 levels. 2938 BTC
+windows, decision t=720:
+- corr(signed dist-to-round, fwd 720->end spot return) = -0.016 ($500) / +0.018 ($1000): ~zero, sign-inconsistent.
+- Nearest-to-round quartile (strongest-pinning zone): corr -0.045 / -0.030 (still ~0).
+- Bet-toward-round vs mid: mean(sign(dist)*(outcome-mid)) t = -0.05 / -0.11 (null); nearest quartile t=-0.09/+0.20.
+Plus: GEX is FORWARD-ONLY (Deribit exposes only the current chain; no free historical OI/greeks -> not backtestable),
+and the Kalshi 15m strike = arbitrary OPEN spot, NOT a round option strike -> the pinning->binary link is broken even
+if pinning existed. So GEX has a weak mechanism for THIS market AND its backtestable proxy is null -> not worth the
+forward-collection build. Last exotic-adjacent card is face-up.
+
+## TERMINAL-15M (2026-07-15) — the 15-minute BTC binary is efficient for us across DIRECTION and DISTRIBUTION (evidenced)
+With years of rich free data (Binance Vision spot+futures, Deribit) the 15m market has now been tested on every
+measurable axis and is efficient for a small taker at our costs:
+- DIRECTION: martingale. Order flow (164d), derivatives positioning/OI/funding (163d), book-depth imbalance, perp->spot
+  lead-lag -- ALL null-to-negative net of even 1bp (EXO-OFI-BACKTEST, derivatives, EXO-BOOKDEPTH, EXO-LEADLAG).
+- DISTRIBUTION: mid is a CONDITIONALLY-sufficient statistic (calibrated across vol regime, moneyness, hour) ->
+  exotic vol/tail/seasonality math has no target (EXO-SUFFICIENCY). Pinning/round-number null (EXO-GEX).
+- STRUCTURE: single-strike -> no cross-strike/butterfly arb. Venue's own calibration null (KALSHI-CALIB, 7579 mkts).
+ROOT CAUSE (binding constraint): the 15m/single-strike/~2-4c-spread box. Predictive info in crypto lives sub-second
+(unreachable latency band) or multi-hour (survives to resolution only at LONGER horizons); the 15m bet sits in the
+efficient dead zone between, and its ~2-4c spread (= hundreds of bps) buries every free-data signal (<=0.3bp gross).
+HONEST CONCLUSION: no deployable winning strategy exists for the 15m BTC binary using free public data. A winner
+requires relaxing ONE constraint: (a) LONGER-horizon Kalshi crypto (slow info survives to resolution), (b) a MULTI-
+STRIKE market (enables distribution/arb math), (c) a lower-cost/maker-rebate venue, or (d) PAID exclusive data
+(true "information not everyone has": L3 tick, on-chain whale flows, options order flow) -- an operator decision.
+One live forward experiment (EXO-OFI, weak prior) still accrues; nothing risked. Not fabricating a winner.
