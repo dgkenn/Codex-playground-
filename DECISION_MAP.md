@@ -1885,3 +1885,15 @@ band now on the EXECUTABLE SELL PRICE (bid) in [band] AND spread<=0.06, so entry
 (24 positions, sell 0.10-0.34). Bot stack now: 2 confirmed uncorrelated edges (crypto+econ, +27% stacked Sharpe) -> harnesses
 (bid-band, first-half, zero-fee, tail-gated) -> portfolio.py (gates + correlation + risk-parity weights) -> sizing.py
 (tail-first nested caps + fractional-Kelly). All PROPOSE-ONLY paper; forward gates accruing; live capital = operator sign-off.
+
+## MULTISTRAT-BUSINESS (2026-07-16) — 3rd stackable sleeve (BUSINESS/COMPANIES longshots), but MARGINAL: add & forward-gate, size smallest
+Vertical sweep (pmkt_verticals.py) across geo/business/techai/weather/ent/sports-splits. Only BUSINESS passed the two-part
+gate (real + uncorrelated). MY recompute: equal-wt t=1.68 (matches agent) -- NOTE <2; clears only via YES-BUY-SHARE-wt
+t=2.28 (favorable adverse selection: share-wt print rate 0.032 << unweighted 0.076), jackknife-min 2.04, drop-best-week 2.04
+(not one-week-driven, top week 14%), monotone-overpriced calibration. 394 mkts / 21 weeks (just clears power bar). corr to
+CRYPTO +0.07, to ECON +0.07 (both <0.3 -> stacks). HONEST CAVEATS: equal-wt<2, DOLLAR-wt t=0.48 (~0 -> strong capacity
+limit; edge is on many small retail buys, near-zero for big size), wider spread (2c), worst week -0.80, only 21 weeks ->
+the FORWARD GATE is decisive, not the backtest. -> ADD as sleeve #3 but SIZE SMALLEST (lowest Kelly frac) and flag marginal.
+7/8 verticals REJECTED (discipline held): TECHAI/ENT/WEATHER/NBA = tail mirages that collapse under YES-buy-vol weighting
+(equal-wt looked good); GEO/NFL adverse-selected; SOCCER genuinely absent. Confirms the durable edge = longshot premium on
+INDEPENDENT DOMAINS; the reliable stack is now crypto + econ + business (3 uncorrelated legs). PROPOSE-ONLY.
