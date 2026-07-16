@@ -1909,3 +1909,19 @@ CAVEATS (honest): absolute Sharpes backtest-derived + assume weekly independence
 the ROBUST result is the +37% RELATIVE lift (driven by ~0 cross-corr). Remaining untested verticals were rejected (7/8) or
 absent -> the durable edge is the longshot premium across independent domains; crypto/econ/business are the liquid ones that
 carry it uncorrelated. Next widening candidates thinner. Forward gates accrue; live capital = operator sign-off.
+
+## RISKLESS (2026-07-16) — taxonomy + live scan: real arbs are RARE/SMALL; the genuine one is Polymarket bucket-underround
+Enumerated riskless structures: (1) YES+NO ask-sum<1 within a market; (2) exclusive-exhaustive bucket set sum(asks)<1
+buy-all / sum(bids)>1 sell-all; (3) ladder monotonicity bid(hi-strike)>ask(lo-strike); (4) vertical/butterfly; (5)
+cross-venue same-event (already: rare, diff oracles); (6) decided-but-unresolved. Built riskless_scan.py (READ-ONLY).
+FINDINGS (with a fixed scanner + executability filters -- FIRST pass had bugs: inverted ladder direction + treating
+cumulative 'above X' ladders as exclusive buckets -> false positives, corrected):
+- KALSHI ladder "violations" = STALE-QUOTE ARTIFACTS on thin hourly books (e.g. 'BTC>$63,900' ask 0.09 while spot ~$64k
+  is nonsensical). Summary bid/ask not executable; a real scanner needs the live /orderbook + real arbs ~absent on liquid mkts.
+- POLYMARKET EXCLUSIVE-BUCKET UNDERROUND = GENUINE (zero fee). VERIFIED live: GDP-2026 (6 exhaustive buckets <0.5..>2.5)
+  sum(asks)=0.940 -> buy-all = +6.0c/$1 riskless; Fed-Oct (5 buckets) sum=0.979 -> +2.1c; Fed-cuts sell-all +0.7c.
+  These are REAL but: SMALL (2-6c), CAPITAL-LOCKED to resolution (GDP-2026 -> months; ~12%/yr), LOW CAPACITY (bounded by
+  thinnest leg's depth), and carry LEG/STRAND RISK (partial fills -> directional) = the SAME stranding problem as box bets.
+VERDICT: riskless arbs EXIST but are rare/small on liquid markets (MMs enforce no-arb); the harvestable one is a CONTINUOUS
+Polymarket bucket-underround scanner + fast ATOMIC multi-leg execution. Genuinely UNCORRELATED (it's arbitrage, not a risk
+premium) -> a candidate 4th sleeve. Caveat: leg-risk makes it near-riskless not truly riskless without atomic fills.
