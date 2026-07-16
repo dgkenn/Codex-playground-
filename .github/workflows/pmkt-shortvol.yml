@@ -1,0 +1,55 @@
+# pmkt-shortvol -- FORWARD paper validation of the Polymarket weekly short-vol/longshot RISK PREMIUM
+# (node PMKT-HORIZON-VRP). READ-ONLY Polymarket public API, NO orders, NO capital. PROPOSE-ONLY.
+#
+# The one real edge the search produced: SELLING far-OTM weekly "BTC/ETH above $X on <date>" longshots
+# earns a short-vol/lottery risk premium (robust band entry mid in [0.15,0.30], week-clustered t=2.26
+# conservatively volume-weighted, calibration solid, zero-fee makes it accessible). It is a RISK PREMIUM
+# not arbitrage (Deribit cross-market null) with real TAIL risk -> the harness gates on tail metrics too.
+# This workflow is the charter gate: tested performance must match live. Frozen rule in PMKT_SHORTVOL.md.
+#
+# Runs a few times/day so each new weekly's first-half window is captured. Logs (pmkt_shortvol_positions/
+# settled.jsonl) committed back to $BRANCH. CRON :21,:51 -- distinct from collect/live/wing/favlong.
+name: pmkt-shortvol
+
+on:
+  schedule:
+    - cron: '21 */6 * * *'     # every 6h (new weeklies open daily; first-half window is days-long)
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pmkt-shortvol
+  cancel-in-progress: false
+
+env:
+  BRANCH: claude/coding-bot-ab-test-results-ffmhxw
+
+jobs:
+  pmkt-shortvol:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.BRANCH }}
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: snapshot + settle Polymarket short-vol paper positions, commit logs
+        if: always()
+        run: |
+          set -e
+          git config user.name  "pmkt-shortvol-bot"
+          git config user.email "pmkt-shortvol-bot@users.noreply.github.com"
+          python -u pmkt_shortvol_paper.py all || true
+          git add pmkt_shortvol_positions.jsonl pmkt_shortvol_settled.jsonl 2>/dev/null || true
+          git commit -m "pmkt-shortvol $(date -u +%FT%H%MZ)" || { echo "nothing to commit"; exit 0; }
+          for i in 1 2 3 4 5; do
+            git push origin HEAD:${BRANCH} && exit 0
+            git fetch origin ${BRANCH} && git rebase origin/${BRANCH} || true
+            sleep $((RANDOM % 6 + 2))
+          done
+          echo "push failed after retries" >&2; exit 1
