@@ -1897,3 +1897,15 @@ the FORWARD GATE is decisive, not the backtest. -> ADD as sleeve #3 but SIZE SMA
 7/8 verticals REJECTED (discipline held): TECHAI/ENT/WEATHER/NBA = tail mirages that collapse under YES-buy-vol weighting
 (equal-wt looked good); GEO/NFL adverse-selected; SOCCER genuinely absent. Confirms the durable edge = longshot premium on
 INDEPENDENT DOMAINS; the reliable stack is now crypto + econ + business (3 uncorrelated legs). PROPOSE-ONLY.
+
+## MULTISTRAT-3EDGE (2026-07-16) — book widened to 3 uncorrelated legs; stacked ann Sharpe 4.87 -> 5.26 (+37% vs best single)
+Option-a executed: hunt uncorrelated underlyings. Now 3 live-accruing sleeves (all PROPOSE-ONLY paper, deployed):
+  crypto short-vol (ann Sharpe 3.85) + econ macro-release (3.00) + business/company (2.65), pairwise corr {-0.01,+0.07,+0.07}.
+Risk-parity stack (w~0.36/0.37/0.27): weekly Sharpe 0.729 = ann ~5.26, +37% over the best single sleeve. Adding the
+MARGINAL business leg still lifted the 2-edge stack (4.87 -> 5.26) -- the point of stacking: each UNCORRELATED leg, even a
+weak one, raises risk-adjusted return + diversifies the tail. Bot now: 3 sleeves -> harnesses (bid-band, first-half, zero-fee,
+tail-gated) -> portfolio.py (gates+corr+risk-parity) -> sizing.py (tail-first caps + per-sleeve Kelly, business smallest).
+CAVEATS (honest): absolute Sharpes backtest-derived + assume weekly independence; business is marginal (fwd gate decisive);
+the ROBUST result is the +37% RELATIVE lift (driven by ~0 cross-corr). Remaining untested verticals were rejected (7/8) or
+absent -> the durable edge is the longshot premium across independent domains; crypto/econ/business are the liquid ones that
+carry it uncorrelated. Next widening candidates thinner. Forward gates accrue; live capital = operator sign-off.
