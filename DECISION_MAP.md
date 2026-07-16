@@ -1623,3 +1623,19 @@ requires relaxing ONE constraint: (a) LONGER-horizon Kalshi crypto (slow info su
 STRIKE market (enables distribution/arb math), (c) a lower-cost/maker-rebate venue, or (d) PAID exclusive data
 (true "information not everyone has": L3 tick, on-chain whale flows, options order flow) -- an operator decision.
 One live forward experiment (EXO-OFI, weak prior) still accrues; nothing risked. Not fabricating a winner.
+
+## MULTISTRIKE-ARB (2026-07-15) — ladder monotonicity/butterfly arbitrage is DEAD for us (taker + maker), live-confirmed
+Operator chose the multi-strike direction (unlocks distribution/arb math the single-strike 15m foreclosed). Kalshi has
+hourly ladders: KXBTC (188 'between' $100 buckets = discrete density) and KXBTCD (188 'greater' strikes = implied CDF),
+plus KXETHD/KXINXU/KXNASDAQ. Analyzed the existing kalshi_ladder_collect month (2026-06-12..07-15, 22,087 within-event
+snapshots) + a LIVE ground-truth pull:
+- Crossable monotonicity violations appear in 8% of snapshots BUT: 96% last a single 45s poll (transient/phantom);
+  42% are exactly 1c gaps; Kalshi fee rounds UP to the cent (min 1c/leg -> >=2c per 2-leg lock) so a 1c gap nets ~-1c;
+  the big ~0.99 gaps are stale one-sided deep-ITM wing quotes (ask absent), not real locks.
+- LIVE pull (grouped correctly BY EVENT -- cross-event strike compares are NOT locks, they settle at different times):
+  ZERO within-event crossable locks on KXBTCD or KXINXU right now (52-119 live strikes/event).
+VERDICT: taker ladder-arb dead (transient + fee-negative, matches prior 'all phantom'); maker version also dead
+(lock needs captured gap > ~2c fee, i.e. the market must move >=2c against a resting leg after it fills = adverse
+selection, not free money). The ARBITRAGE sub-angle of multi-strike is closed. Remaining multi-strike sub-angles
+(different prior): cross-market KXBTC-vs-KXBTCD consistency, and WING mispricing / variance-risk-premium (deep-OTM
+lottery tickets where fee~0 since p~0) -- under test next.
