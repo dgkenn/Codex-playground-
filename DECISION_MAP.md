@@ -1680,3 +1680,24 @@ which is WHY it survives where mechanism-free signals died. Net harvestable ~+1-
 STATUS: FIRST candidate to clear well-powered OOS + fees + correctly-measured spreads + independent from-scratch repro
 + liquidity/selection checks. NOT yet deployed: the final charter gate is FORWARD paper validation (tested must match
 live) -- building the forward harness now (pre-registered, PROPOSE-ONLY, day-clustered gate). Nothing risked.
+
+## MULTISTRIKE-WING-XASSET (2026-07-15) — cross-asset test DOWNGRADES the edge: real phenomenon, but marginal + BTC-specific tradeable
+The cross-asset replication (the FAVLONG-style clincher) delivers a SOBERING correction to the earlier optimism.
+Tool: kalshi_wing_xasset.py. 44 settled dates (Jun3-Jul16 2026, one regime), hourly ladders KXBTCD/ETHD/SOLD/XRPD/DOGED.
+- PHENOMENON replicates universally: calibration gap negative on EVERY asset (wings settle YES less than priced) --
+  the favorite-longshot overpricing is real and not asset-specific.
+- TRADEABLE edge (net fee, at the REAL executable bid, strict date-OOS) replicates CLEANLY ONLY ON BTC: full
+  +0.99c t=2.97, but **OOS-TEST t=1.49** (<2). ETH weak (OOS +0.54c t=0.53). SOL replicates at the MID but DIES at
+  the executable bid (wider wing spread eats it, OOS t=0.25). XRP null/underpowered. DOGE +6.96 t=6.48 but degenerate
+  zero-variance bins / ~0 ct/day = ARTIFACT, discarded.
+- The earlier headline +1.27c t=4.76 (kalshi_wing_verify) was ONE optimistic entry/exec definition; the conservative
+  real-bid + strict-OOS view gives BTC OOS t~1.5. The t=4.76-vs-1.49 spread IS the warning: significance hinges on
+  execution assumptions -- exactly the uncertain part a backtest can't settle.
+- CAPACITY small: ~$0.6-1.5k/day realistic edge PnL on BTC (wide-and-shallow across 24 hourly events, median wing
+  fill ~279 ct); other assets negligible. SINGLE 6-week regime -- no multi-regime robustness available.
+REVISED VERDICT: the wing overpricing is a REAL, universal phenomenon, but the *deployable* edge is BTC-specific,
+small-capacity, single-regime, and only MARGINALLY significant OOS at realistic execution (t~1.5). This is a
+PROMISING CANDIDATE, NOT a confirmed deployable winner -- downgraded from the earlier "first real edge" framing. The
+FORWARD PAPER GATE is therefore ESSENTIAL (not a formality): the backtest evidence is mixed across execution
+assumptions, so only live-matched forward data can resolve whether +1c/ct at the real bid actually holds. Do NOT
+deploy capital on the backtest. Paper gate accruing; decision deferred to forward evidence.
