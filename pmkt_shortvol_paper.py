@@ -164,7 +164,9 @@ def snapshot():
                 if bb is None or ba is None:
                     continue
                 mid = (bb + ba) / 2.0
-                if not (BAND_LO <= mid <= BAND_HI) or bb <= 0:
+                # band on the EXECUTABLE SELL PRICE (bid) + sane spread, not mid: a near-zero bid collects
+                # no premium but bears full print risk (not the measured edge). Keeps entry ~ backtest mid.
+                if bb <= 0 or not (BAND_LO <= bb <= BAND_HI) or (ba - bb) > 0.06:
                     continue
                 try:
                     yes_token = json.loads(m.get("clobTokenIds") or "[]")[0]

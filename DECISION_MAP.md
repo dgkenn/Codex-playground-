@@ -1873,3 +1873,15 @@ INSIGHT: the durable harvestable thing in these markets is the LONGSHOT / SHORT-
 partly the same phenomenon. Genuinely-different-mechanism hunts have now hit walls (drift=non-orthogonal; cross-venue=low
 capacity; wallet-copy=earlier null). RELIABLE stacking path = MORE UNCORRELATED LONGSHOT UNDERLYINGS (crypto & econ proven;
 each new independent underlying diversifies even at the same mechanism). Portfolio stays at 2 confirmed uncorrelated edges.
+
+## MULTISTRAT-SIZING (2026-07-16) — tail-first sizing layer + execution-realism fix (band on the BID, not the mid)
+Built sizing.py: TAIL-FIRST position sizing (these are short-vol premia -> size for the blow-up, not the mean). Nested
+hard caps: per-trade worst-case <=0.5% bankroll, per-event <=1%, per-sleeve <=15%, per-WEEK-if-all-print <=20% (the
+correlated-blowup guard), scaled within caps by fractional-Kelly (crypto 0.25, econ 0.20). Outputs proposed contract sizes
+per open paper position. PROPOSE-ONLY (no orders). On $1000 paper: worst-case-if-all-print 11.5%, premium $32.
+EXECUTION-REALISM BUG caught + fixed: both harnesses banded on the MID; wide-spread buckets had mid in-band but a near-ZERO
+BID -> selling there collects ~0 premium but bears full print risk (NOT the measured edge, which entered ~0.22 mid). Fixed:
+band now on the EXECUTABLE SELL PRICE (bid) in [band] AND spread<=0.06, so entry ~ backtest mid. Re-snapshotted econ clean
+(24 positions, sell 0.10-0.34). Bot stack now: 2 confirmed uncorrelated edges (crypto+econ, +27% stacked Sharpe) -> harnesses
+(bid-band, first-half, zero-fee, tail-gated) -> portfolio.py (gates + correlation + risk-parity weights) -> sizing.py
+(tail-first nested caps + fractional-Kelly). All PROPOSE-ONLY paper; forward gates accruing; live capital = operator sign-off.

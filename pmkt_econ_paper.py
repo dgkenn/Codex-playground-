@@ -98,7 +98,12 @@ def snapshot():
                     if bb is None or ba is None or bb <= 0:
                         continue
                     mid = (bb + ba) / 2
-                    if not (BAND[0] <= mid <= BAND[1]):
+                    # band on the EXECUTABLE SELL PRICE (bid), not mid: selling a longshot at a near-zero
+                    # bid collects no premium but bears full print risk -> not the measured edge. Require
+                    # the bid itself in-band AND a sane spread (<=0.06) so entry ~ the backtest's ~0.22 mid.
+                    if not (BAND[0] <= bb <= BAND[1]):
+                        continue
+                    if (ba - bb) > 0.06:
                         continue
                     rec = dict(market_id=mid_, event=str(et), event_title=ev.get("title", "")[:80],
                                question=m.get("question", "")[:100], ts=round(now, 1),
