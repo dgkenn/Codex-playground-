@@ -1777,3 +1777,21 @@ fills, adverse-selection sign unresolved, and carrying genuine blow-up risk. It 
 tail insurance), not a mispricing. NOT deployable on backtest alone. Honest next steps: (1) reconcile per-trade vs
 per-volume weighting on trade-level data; (2) forward paper w/ strict tail-aware (fractional-Kelly, position caps) sizing;
 (3) treat expected return as thin compensation for real tail risk, size accordingly. PROPOSE-ONLY; nothing risked.
+
+## PMKT-SHORTVOL-CONFIRMED (2026-07-16) — the short-vol longshot edge is REAL at realistic fills (my own recompute CONFIRMS; earlier "adverse" was MY weighting error)
+Resolved the contested adverse-vs-favorable question with trade-level data (601 settled [0.15,0.30]-band weekly BTC/ETH
+"above $X" markets, 49 weeks) + MY OWN independent recompute from scratchpad/advsel_rows.json:
+- PRINT RATE: unweighted 0.1032 vs YES-BUY-taker-volume-weighted 0.0850 = -0.018 -> FAVORABLE (a resting YES seller fills
+  into buy-flow that tilts toward NON-printing longshots). My earlier PMKT-HORIZON-VRP "adverse" verdict weighted by
+  per-market TOTAL volume (both sides) = the WRONG object; a seller only fills YES-BUY taker flow. Corrected -> favorable.
+- SELLER PnL/ct net half-spread, week-clustered: per-market equal +0.090 (t=3.73); YES-BUY-VOLUME-weighted (realistic
+  fills) +0.090 (t=2.88, >2). SURVIVES realistic fills. (Unlike the WING edge, where my trade-weighting KILLED it; here
+  my recompute CONFIRMS it.) Half-spread median 0.6c, p90 2.1c << the ~9c gross edge.
+- TAIL (respect it): worst week -0.44/ct (~5 wks of edge), 24% of weeks negative, negatively skewed (many small wins,
+  occasional correlated full-print week when BTC pumps and many longshots hit at once). MUST size fractional-Kelly + caps.
+VERDICT: this is a REAL, well-powered (49 wks), execution-validated, mechanism-backed edge -- selling the short-dated OTM
+crypto lottery/variance RISK PREMIUM on zero-fee Polymarket. NOT an arbitrage (Deribit cross-market null) and NOT an
+adverse-selection artifact (the tie-breaker + my own recompute both clear it). It is the FIRST genuine deployable-track
+winner of the entire program, real precisely BECAUSE it is a risk premium (paid to bear tail risk), not a mispricing.
+Status: forward paper gate deployed (pmkt_shortvol_paper.py + workflow, accruing). Remaining to capital: forward
+confirmation (~8 wks) + operator capital/Polymarket-access sign-off + fractional tail-aware sizing. PROPOSE-ONLY.
