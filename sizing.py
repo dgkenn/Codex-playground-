@@ -22,6 +22,7 @@ from collections import defaultdict
 SLEEVES = {
     "pmkt_shortvol": ("pmkt_shortvol_positions.jsonl", "sell_price", "market_id", 0.25, 0.090),
     "pmkt_econ":     ("pmkt_econ_positions.jsonl",     "sell_price", "event",     0.20, 0.069),
+    "pmkt_biz":      ("pmkt_biz_positions.jsonl",      "sell_price", "event",     0.10, 0.050),  # smallest: marginal + capacity-ltd
 }
 RISK_PER_TRADE = 0.005    # <=0.5% of bankroll worst-case on any single short
 EVENT_CAP      = 0.010    # <=1% per event

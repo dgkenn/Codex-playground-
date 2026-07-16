@@ -25,6 +25,8 @@ SLEEVES = {
                       "CONFIRMED backtest edge (t=2.88 realistic fills); forward-gating"),
     "pmkt_econ":     ("pmkt_econ_settled.jsonl", "pnl", "close_date",
                       "CONFIRMED backtest edge (t=3.09/3.77, 55wk); uncorrelated w/ crypto (-0.01); forward-gating"),
+    "pmkt_biz":      ("pmkt_biz_settled.jsonl", "pnl", "close_date",
+                      "MARGINAL edge (share-wt t=2.28, equal 1.68, 21wk, capacity-ltd); uncorr (+0.07); forward-gate decisive"),
     "wing_vrp":      ("wing_paper_settled.jsonl", "pnl", "close_date",
                       "DEAD in backtest (market-weighting artifact); kept as control"),
     # future sleeves (cross-venue convergence rejected; wallet-copy null) append here as they pass gate
