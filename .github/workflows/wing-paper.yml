@@ -1,0 +1,57 @@
+# wing-paper -- FORWARD paper validation of the WING-VRP edge (node MULTISTRIKE-WING-VRP).
+#
+# wing_paper.py is READ-ONLY (Kalshi public REST, no keys, NO orders). Each run:
+#   snapshot: record a paper SELL of 1 YES contract at yes_bid for every KXBTCD wing (mid in [0.04,0.15])
+#             whose hourly event is still in its FIRST HALF and isn't already held;
+#   settle:   resolve held paper-sells whose market has settled -> PnL = sell_price - outcome - fee;
+#   report:   print the pooled per-close-date day-clustered gate (PASS >=10 dates & t>=2 & mean>0).
+# Frozen rule pre-registered in WING_PAPER.md; the edge cleared backtest + independent from-scratch repro
+# (kalshi_wing_verify.py). This harness is the charter gate: tested performance must match live. PROPOSE-ONLY.
+#
+# Runs every 30 min so each hourly event's first half is captured. Logs (wing_paper_positions.jsonl /
+# wing_paper_settled.jsonl) are CODE-branch artifacts committed back to $BRANCH, like favlong-forward.
+# CRON OFFSET :6,:36 -- distinct from collect(:9,29,49)/live(:3,28,53)/health(:14,44)/favlong(06:33).
+name: wing-paper
+
+on:
+  schedule:
+    - cron: '6,36 * * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: wing-paper
+  cancel-in-progress: false
+
+env:
+  BRANCH: claude/coding-bot-ab-test-results-ffmhxw
+
+jobs:
+  wing-paper:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.BRANCH }}
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: snapshot + settle wing paper positions, commit the logs
+        if: always()
+        run: |
+          set -e
+          git config user.name  "wing-paper-bot"
+          git config user.email "wing-paper-bot@users.noreply.github.com"
+          python -u wing_paper.py all || true
+          git add wing_paper_positions.jsonl wing_paper_settled.jsonl 2>/dev/null || true
+          git commit -m "wing-paper $(date -u +%FT%H%MZ)" || { echo "nothing to commit"; exit 0; }
+          for i in 1 2 3 4 5; do
+            git push origin HEAD:${BRANCH} && exit 0
+            git fetch origin ${BRANCH} && git rebase origin/${BRANCH} || true
+            sleep $((RANDOM % 6 + 2))
+          done
+          echo "push failed after retries" >&2; exit 1
