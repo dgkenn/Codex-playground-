@@ -233,6 +233,74 @@ def main():
     json.dump(recs, open(os.path.join(CACHE,"recs.json"),"w"))
     return recs
 
+def cluster_t(pairs):
+    """pairs: list of (value, cluster_key) -> (mean, day-clustered t, N, G)."""
+    from collections import defaultdict
+    vals=[p[0] for p in pairs]; N=len(vals)
+    if N<2: return (float('nan'),float('nan'),N,0)
+    mean=sum(vals)/N; cs=defaultdict(float)
+    for v,g in pairs: cs[g]+=(v-mean)
+    G=len(cs)
+    if G<2: return (mean,float('nan'),N,G)
+    meat=sum(s*s for s in cs.values())
+    var=(G/(G-1.0))*meat/(N*N)   # K=1 -> (N-1)/(N-K)=1
+    se=math.sqrt(var) if var>0 else float('nan')
+    return (mean, mean/se if se and se>0 else float('nan'), N, G)
+
+def analyze(recs, fee=kalshi_fee):
+    """Full adversarial analysis. See kalshi_wing_verify_report.md for interpretation."""
+    print("="*90)
+    print(f"TOTAL first-half-traded settled markets: {len(recs)}")
+    ad=sorted(set(r['close_date'] for r in recs))
+    print(f"distinct close-dates: {len(ad)} ({ad[0]}..{ad[-1]})")
+
+    print("\n(1) CALIBRATION under 3 entry defs  (edge_buy=realized-entry; sellNet=(entry-result)-fee)")
+    for d in ["vwap","near","med"]:
+        print(f"\n-- entry def: {d} --")
+        print(f"{'bin':>10}{'N':>6}{'dates':>6}{'entry':>8}{'realiz':>8}{'edgeBuy':>8}{'sellNet¢':>9}{'tClust':>8}")
+        for lo,hi in BINS+[(0.0,WING_MAX)]:
+            sub=[r for r in recs if r[d] is not None and lo<r[d]<=hi] if (lo,hi)!=(0.0,WING_MAX) else [r for r in recs if r[d] is not None and 0<r[d]<=WING_MAX]
+            if not sub: print(f"{lo:.2f}-{hi:.2f}     0"); continue
+            e=statistics.mean(r[d] for r in sub); rz=statistics.mean(r['result'] for r in sub)
+            m,t,N,G=cluster_t([((r[d]-r['result'])-fee(r[d]),r['close_date']) for r in sub])
+            lab=f"{lo:.2f}-{hi:.2f}" if (lo,hi)!=(0.0,WING_MAX) else "ALL<=.15"
+            print(f"{lab:>10}{N:>6}{G:>6}{e:>8.3f}{rz:>8.3f}{rz-e:>8.3f}{m*100:>9.2f}{t:>8.2f}")
+
+    wings=[r for r in recs if r['vwap'] is not None and 0<r['vwap']<=WING_MAX]
+    tb=sum(r['buy_cnt'] for r in wings); ts=sum(r['sell_cnt'] for r in wings)
+    print("\n(2) EXECUTABLE SELL PRICE")
+    print(f"  fraction of early wing volume = aggressive BUYERS: {tb/(tb+ts):.3f}")
+    nw=sum(1 for r in wings if r['sell_cnt']>0)
+    print(f"  wings with a real taker-SELL (observed bid): {nw}/{len(wings)} = {nw/len(wings):.3f}")
+    hs={}
+    for lo,hi in BINS:
+        h=[(statistics.mean(r['first_buy_px'])-statistics.mean(r['first_sell_px']))/2
+           for r in wings if lo<r['vwap']<=hi and r['first_buy_px'] and r['first_sell_px']]
+        if h: hs[(lo,hi)]=statistics.median(h)
+    print("  within-mkt half-spread by bin (¢):", {f"{lo:.2f}-{hi:.2f}":round(v*100,2) for (lo,hi),v in hs.items()})
+    print(f"\n  SELLER net ¢: A=sell@VWAP  B=sell@real-bid  C=VWAP-halfspread  D=VWAP-1c")
+    print(f"{'bin':>10}{'N':>6}{'A':>7}{'tA':>6}{'B':>7}{'tB':>6}{'nB':>6}{'C':>7}{'tC':>6}{'D':>7}{'tD':>6}")
+    for lo,hi in BINS+[(0.0,WING_MAX)]:
+        sub=[r for r in wings if lo<r['vwap']<=hi] if (lo,hi)!=(0.0,WING_MAX) else wings
+        if not sub: continue
+        h=hs.get((lo,hi), statistics.median(list(hs.values())) if hs else .005)
+        A=cluster_t([((r['vwap']-r['result'])-fee(r['vwap']),r['close_date']) for r in sub])
+        B=cluster_t([((statistics.mean(r['first_sell_px'])-r['result'])-fee(max(statistics.mean(r['first_sell_px']),.001)),r['close_date']) for r in sub if r['first_sell_px']])
+        C=cluster_t([((r['vwap']-h-r['result'])-fee(max(r['vwap']-h,.001)),r['close_date']) for r in sub])
+        D=cluster_t([((r['vwap']-.01-r['result'])-fee(max(r['vwap']-.01,.001)),r['close_date']) for r in sub])
+        lab=f"{lo:.2f}-{hi:.2f}" if (lo,hi)!=(0.0,WING_MAX) else "ALL<=.15"
+        print(f"{lab:>10}{A[2]:>6}{A[0]*100:>7.2f}{A[1]:>6.2f}{B[0]*100:>7.2f}{B[1]:>6.2f}{B[2]:>6}{C[0]*100:>7.2f}{C[1]:>6.2f}{D[0]*100:>7.2f}{D[1]:>6.2f}")
+
+    print("\n(3) SELECTION: wing volume distribution & edge-vs-size")
+    vols=sorted(r['volume'] for r in wings)
+    q=lambda p:vols[min(len(vols)-1,int(p/100*len(vols)))]
+    print(f"  volume_fp pctiles p10={q(10):.0f} p50={q(50):.0f} p90={q(90):.0f} max={vols[-1]:.0f}")
+    ws=sorted(wings,key=lambda r:r['volume']); n=len(ws)
+    for nm,g in [("low",ws[:n//3]),("mid",ws[n//3:2*n//3]),("high",ws[2*n//3:])]:
+        A=cluster_t([((r['vwap']-r['result'])-fee(r['vwap']),r['close_date']) for r in g])
+        B=cluster_t([((statistics.mean(r['first_sell_px'])-r['result'])-fee(max(statistics.mean(r['first_sell_px']),.001)),r['close_date']) for r in g if r['first_sell_px']])
+        print(f"  {nm:>4} vol[{g[0]['volume']:.0f}-{g[-1]['volume']:.0f}] sellVWAP={A[0]*100:.2f}c t={A[1]:.2f} | sellRealBid={B[0]*100:.2f}c t={B[1]:.2f}")
+
 if __name__=="__main__":
     recs=main()
-    print("records:",len(recs))
+    analyze(recs)

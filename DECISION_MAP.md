@@ -1659,3 +1659,24 @@ candidate found -- NOT dead on arrival like everything prior. NEXT: (1) INDEPEND
 calibration on fresh data (the discipline that killed FAVLONG t=5.74 & Polymarket t=5.5); (2) if it survives, a FORWARD
 MAKER paper harness (rest wing offers, measure realistic fills + settlement, day-clustered gate) -- the only way to
 answer the execution question. PROPOSE-ONLY; nothing risked.
+
+## MULTISTRIKE-WING-VRP-VERIFIED (2026-07-15) — SURVIVED independent from-scratch repro; tradeable as a TAKER. FIRST real edge of the program.
+The wing-overpricing edge was put through the exact gauntlet that KILLED FAVLONG (t=5.74) and the Polymarket
+favorite-longshot (t=5.5): an INDEPENDENT from-scratch reproduction (separate code, never read kalshi_wing_vrp.py,
+FRESH+larger data pull). It SURVIVED -- and the repro found the first study UNDERSTATED it:
+- Sample: 1,400 settled hourly KXBTCD events (2026-05-17..07-16), 11,711 wings, 61 distinct close-dates. Overpricing
+  real & monotone (12.3c wings settle YES 6.1%). Robust across 2 of 3 entry-price defs (the dissenter = noisiest
+  single-tick; effect lives in the first-half price DISTRIBUTION).
+- TRADEABLE AS A TAKER (the key correction): the prior "collapse under a 1c half-spread" used a MIS-CALIBRATED haircut.
+  Measured wing half-spreads are only 0.22-0.52c. Selling YES into ACTUAL observed taker-sell bids nets +1.27c t=4.76
+  (74% of wings had a real bid). VWAP-minus-modeled-halfspread +1.03c t=4.80. Even a flat 1c haircut leaves +0.44c t=2.05.
+- Edge concentrates in the 0.04-0.15 wings (real-bid +2.2..+4.5c, t 4-7); only <=0.02 is taker-dead. Fee-robust
+  (larger under realistic large-order fees, +2.0c t=7.5). NOT illiquid (median first-half wing volume ~3,500 ct; edge
+  LARGER in liquid wings -- opposite of the illiquid-artifact worry). OOS in time: 1st half +1.58c t=4.8, 2nd half
+  +0.94c t=2.3 (mild decay, watch).
+MECHANISM: favorite-longshot / variance-risk-premium -- recreational buyers overpay for "BTC > spot+x% this hour"
+lottery tickets; a disciplined seller harvests the premium. Well-documented effect (strong prior it SHOULD exist),
+which is WHY it survives where mechanism-free signals died. Net harvestable ~+1-2c/contract in 4-15c wings.
+STATUS: FIRST candidate to clear well-powered OOS + fees + correctly-measured spreads + independent from-scratch repro
++ liquidity/selection checks. NOT yet deployed: the final charter gate is FORWARD paper validation (tested must match
+live) -- building the forward harness now (pre-registered, PROPOSE-ONLY, day-clustered gate). Nothing risked.
