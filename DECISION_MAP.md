@@ -1826,3 +1826,22 @@ weekly series (matches agent exactly -> reproducible):
   edges now: crypto short-vol (t=2.88) + econ longshot (t=3.09/3.77). Portfolio forming.
 NEXT: build ECON forward paper sleeve + add to portfolio.py registry; size ECON smaller (capacity + tail). Cross-venue
 convergence agent still running (candidate orthogonal edge #3). PROPOSE-ONLY.
+
+## MULTISTRAT-XVENUE (2026-07-16) — cross-venue convergence NOT a confirmed stackable edge (real but tiny/low-capacity/not-riskless)
+xvenue_converge.py: matched same-event pairs across Polymarket/Kalshi/Deribit. 1,554 PM markets -> only 10 genuine
+same-coin+threshold+date matches. |mid gap| mean 0.019, max 0.055; short-dated crypto gaps sub-cent/inside fees. ONE real
+signal: BTC year-end touch ladder persistently 2-5c RICHER on Kalshi than Polymarket (7/7 strikes monotone; Deribit
+corroborates Kalshi overpriced 8/10). BUT: one correlated cluster (n_eff~1-2, no meaningful t), NOT riskless (Kalshi vs PM
+settle a 5.5-month barrier off DIFFERENT oracles -> wick can split settlement), capital locked ~5.5 months for a few cents,
+and the single-leg version collapses into the longshot-RP trade (not orthogonal). VERDICT: small, low-capacity, corroborated
+relative-value tilt -- NOT a robust orthogonal edge on this evidence. Not added to the portfolio. (Watch: if venue coverage
+of the SAME shorter-dated events grows, revisit.)
+
+## MULTISTRAT-STATUS (2026-07-16) — portfolio = 2 confirmed uncorrelated edges; econ sleeve needs population-matched discovery
+CONFIRMED STACKABLE EDGES: (1) crypto short-vol longshot (t=2.88 realistic fills), (2) econ macro-release longshot
+(t=3.09 equal / 3.77 share, my recompute matches) -- weekly-PnL corr -0.01 => genuinely diversifying. Cross-venue = no.
+Sports/politics/other = rejected. ECON FORWARD-SLEEVE CAVEAT: the measured edge is on RECURRING multi-strike macro-release
+BUCKETS (CPI/PPI/JOLTS/net-worth); the currently-active PM econ longshots are mostly LONG-DATED one-offs (recession-by-2026)
+= a DIFFERENT population. The econ paper sleeve must discover the recurring bucket-release events specifically to faithfully
+forward-test the edge (else it tests an unvalidated population). Next: build population-matched econ sleeve + hunt more
+orthogonal edges (Polymarket smart-wallet copy). portfolio.py aggregates sleeves w/ correlation-aware sizing. PROPOSE-ONLY.
