@@ -1701,3 +1701,23 @@ PROMISING CANDIDATE, NOT a confirmed deployable winner -- downgraded from the ea
 FORWARD PAPER GATE is therefore ESSENTIAL (not a formality): the backtest evidence is mixed across execution
 assumptions, so only live-matched forward data can resolve whether +1c/ct at the real bid actually holds. Do NOT
 deploy capital on the backtest. Paper gate accruing; decision deferred to forward evidence.
+
+## MULTISTRIKE-WING-DEAD (2026-07-15) — the wing edge is a MARKET-WEIGHTING artifact; adverse selection kills it at realistic fills
+Prompted by the maker-execution question, I computed the wing economics WEIGHTED BY TRADE (realistic fills) instead of
+BY MARKET (the agents' method), from the cached trade-price lists (wing_cache/recs.json, 34,260 BTC wings, no API).
+Decisive contrast on the SAME data:
+- MARKET-weighted (1 obs/wing at VWAP -- what kalshi_wing_vrp / _verify / _xasset all did): +3.9c/ct t=9.20, TEST t=3.80.
+- TRADE-weighted (fills proportional to real volume, maker sell@ask OR taker sell@bid): ~0/NEGATIVE. Maker net-fee
+  -0.17c t=-0.26 (TEST -0.61); taker@bid net-fee -0.34c t=-0.49 (TEST -0.88); even GROSS maker only +0.8c t=1.26 (TEST 0.10).
+- ADVERSE SELECTION mechanism (the smoking gun): wing YES-rate = 3.4% weighted by MARKET but 8.7% weighted by TRADE.
+  Buyers pile into wings ~2.6x more heavily exactly when those wings are about to go ITM; a seller fills
+  disproportionately on the wings that WIN FOR THE BUYER -> gets run over when volume is high.
+VERDICT: the "edge" is a MARKET-WEIGHTING ARTIFACT. The +1-4c figures (kalshi_wing_verify t=4.76, xasset t=1.49-2.97)
+equal-weighted markets you would fill UNEQUALLY, and ignored that fills concentrate in adversely-selected (ITM-bound)
+wings. At realistic volume-proportional execution the edge is ~0 to negative in BOTH train and test, maker AND taker.
+The favorite-longshot OVERPRICING is real (calibration), but it is NOT profitably harvestable: the counterparties who
+overpay for wings are the same flow that front-runs the wings into the money. This is the SAME class of subtle
+weighting/execution artifact as FAVLONG (clean-label) and Polymarket (optimistic-mid) -- caught by asking "what do
+REALISTIC FILLS look like," which two independent agents missed. The wing candidate is DEAD as a deployable edge.
+The forward paper harness (wing_paper.py, 1 ct/wing at the bid) tests the OPTIMISTIC market-weighted version; keep it
+running as free forward data but it is NOT trustworthy as deploy-proof given this finding. No capital -- correctly.
