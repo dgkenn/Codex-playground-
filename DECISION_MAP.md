@@ -1639,3 +1639,23 @@ VERDICT: taker ladder-arb dead (transient + fee-negative, matches prior 'all pha
 selection, not free money). The ARBITRAGE sub-angle of multi-strike is closed. Remaining multi-strike sub-angles
 (different prior): cross-market KXBTC-vs-KXBTCD consistency, and WING mispricing / variance-risk-premium (deep-OTM
 lottery tickets where fee~0 since p~0) -- under test next.
+
+## MULTISTRIKE-WING-VRP (2026-07-15) — REAL, well-powered wing-overpricing on the hourly BTC ladder; edge survives FEES, gated by MAKER execution
+Operator's multi-strike direction. Tested favorite-longshot / variance-risk-premium on the KXBTCD HOURLY BTC ladder:
+are deep-OTM wing strikes ("BTC > spot+x% this hour") systematically overpriced? Tool: kalshi_wing_vrp.py. Sample:
+330 events, 2775 WING obs across 55 distinct close-dates (2026-05-22..07-15) -- WELL-POWERED, no thin-cluster risk.
+Entry = first-half-of-life count-weighted VWAP (>=2 early trades; look-ahead-free); result from settlement only.
+- CALIBRATION (huge, monotone, robust): EVERY wing bin settles far below entry. (0,0.02]: entry 0.013 -> realized
+  0.0008 (t=-15.5). (0.10,0.15]: 0.123 -> 0.063 (t=-3.95). Symmetric deep-ITM favorites UNDERpriced (0.96-1.0:
+  0.984 -> 0.999, t=+16.5). Classic favorite-longshot / VRP -- the FIRST large real mispricing found this program.
+- TRADEABLE (SELL YES on wings, OOS by date, day-clustered): gross TEST +0.0227 t=3.26. Net of ROUNDED fee at VWAP:
+  TRAIN +0.0158 (t=4.07), TEST +0.0127 (t=1.83) -> THE FEE DOES NOT KILL IT (p~0 -> fee ~1c). Net of fee + 1c
+  half-spread: TRAIN +0.0058 (t=1.49), TEST +0.0027 (t=0.39) -> execution kills it.
+VERDICT: a genuine, well-powered, FEE-surviving wing-overpricing edge exists; tradeability hinges ENTIRELY on MAKER
+execution -- capturing better-than-VWAP fills by RESTING YES offers / NO bids that the longshot-BUYERS lift, rather
+than crossing the spread. Mechanistically plausible (naive longshot demand is what creates the overpricing AND is the
+counterparty that lifts a resting offer), but the backtest CANNOT prove resting fills are achievable. This is the best
+candidate found -- NOT dead on arrival like everything prior. NEXT: (1) INDEPENDENT from-scratch repro of the
+calibration on fresh data (the discipline that killed FAVLONG t=5.74 & Polymarket t=5.5); (2) if it survives, a FORWARD
+MAKER paper harness (rest wing offers, measure realistic fills + settlement, day-clustered gate) -- the only way to
+answer the execution question. PROPOSE-ONLY; nothing risked.
