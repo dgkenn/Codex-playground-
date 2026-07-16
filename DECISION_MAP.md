@@ -1795,3 +1795,17 @@ adverse-selection artifact (the tie-breaker + my own recompute both clear it). I
 winner of the entire program, real precisely BECAUSE it is a risk premium (paid to bear tail risk), not a mispricing.
 Status: forward paper gate deployed (pmkt_shortvol_paper.py + workflow, accruing). Remaining to capital: forward
 confirmation (~8 wks) + operator capital/Polymarket-access sign-off + fractional tail-aware sizing. PROPOSE-ONLY.
+
+## MULTISTRAT-PROGRAM (2026-07-16) — operator: build a multi-model/multi-strategy bot; hunt STACKABLE (uncorrelated) edges across ALL data sources
+Confirmed edge #1: PMKT-SHORTVOL (weekly crypto longshot risk premium, t=2.88 realistic fills). Goal now: a PORTFOLIO of
+uncorrelated edges + a bot that runs them with correlation-aware (portfolio-Kelly) sizing. Stackability = low cross-edge
+PnL correlation (diversifies the short-vol tail). Data sources to mine: Polymarket (all categories + wallets + trades),
+Kalshi (all categories + trades), Deribit (vol surface), Binance Vision (years spot/futures/options), on-chain.
+Candidate STACKABLE edges (orthogonal to crypto short-vol):
+- (A) Favorite-longshot risk premium in NON-crypto Polymarket (sports/politics/econ) -- same mechanism, UNCORRELATED
+  underlyings -> diversifies the tail. Highest-value stack (multiplies edge #1 across independent domains).
+- (B) Cross-venue convergence (same event on Polymarket vs Kalshi vs Deribit) -- market-neutral, orthogonal to risk premia.
+- (C) Smart-wallet copy on Polymarket -- alpha-following, orthogonal.
+DISCIPLINE (locked in from the 4 mirages + the wing/short-vol weighting lesson): YES-BUY-taker-volume weighting (NOT total
+volume) from the start, OOS, tail metrics, favorable-vs-adverse check, independent recompute of any positive, cross-edge
+CORRELATION matrix (a "stack" only counts if uncorrelated). PROPOSE-ONLY paper sleeves; portfolio harness combines them.
