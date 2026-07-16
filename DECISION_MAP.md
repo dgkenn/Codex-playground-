@@ -1809,3 +1809,20 @@ Candidate STACKABLE edges (orthogonal to crypto short-vol):
 DISCIPLINE (locked in from the 4 mirages + the wing/short-vol weighting lesson): YES-BUY-taker-volume weighting (NOT total
 volume) from the start, OOS, tail metrics, favorable-vs-adverse check, independent recompute of any positive, cross-edge
 CORRELATION matrix (a "stack" only counts if uncorrelated). PROPOSE-ONLY paper sleeves; portfolio harness combines them.
+
+## MULTISTRAT-ECON (2026-07-16) — CONFIRMED 2nd stackable edge: Polymarket ECON longshots (my recompute matches); + stackability proven
+Cross-category longshot-premium sweep (pmkt_categories.py) + MY independent recompute from scratchpad/cat_results.json
+weekly series (matches agent exactly -> reproducible):
+- ECON (macro-release buckets: PPI/CPI/JOLTS/net-worth): SELL longshots [0.10,0.35]. equal-wt t=3.09 (my recompute
+  matches), YES-BUY-SHARE-wt t=3.77, 400 mkts / 55 weeks, jackknife drop-1-week t in [2.89,4.82], top week only 8.4%
+  of PnL, adverse-sel neutral, monotone-overpriced calibration. REAL, WELL-POWERED, robust.
+  CAVEATS (honest): wider spread (2.1c vs crypto 0.6c); DOLLAR-wt t=1.90 (<2) -> edge weaker on large buys = a CAPACITY
+  limit (strong selling to many small retail buyers, thinner for big size); worse tail (worst week -0.72 vs crypto -0.44).
+- SPORTS: t=0.55 but 74.8% of PnL from ONE week + dollar-wt -1.66 -> NULL (correctly rejected). OTHER: t=2.44 but
+  dollar-wt 0.19, 19% top-week concentration -> MARGINAL, not confirmed. POLITICS: t=-0.70, ADVERSE (YES-buy flow lands
+  on printing longshots 0.177->0.311) -> do NOT sell politics longshots (discipline caught it).
+- STACKABILITY (the point): CRYPTO x ECON weekly-PnL corr = -0.01 (crypto weeks 2025, econ 2024-26 macro releases =
+  independent events). Adding ECON DIVERSIFIES the short-vol tail rather than doubling it. TWO confirmed uncorrelated
+  edges now: crypto short-vol (t=2.88) + econ longshot (t=3.09/3.77). Portfolio forming.
+NEXT: build ECON forward paper sleeve + add to portfolio.py registry; size ECON smaller (capacity + tail). Cross-venue
+convergence agent still running (candidate orthogonal edge #3). PROPOSE-ONLY.
