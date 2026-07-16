@@ -1859,3 +1859,17 @@ The ROBUST result is the RELATIVE +27% from stacking (mechanism-driven by corr~0
 Sleeve #3 (drift/momentum, different mechanism) under test. portfolio.py will recompute the true correlation + weights as
 forward settled data lands. Size fractional-Kelly per sleeve w/ per-event caps (bucket events: only one outcome prints ->
 selling multiple buckets/event already diversifies within-event). PROPOSE-ONLY.
+
+## MULTISTRAT-DRIFT (2026-07-16) — drift/reversion: real overreaction but NOT a stackable 3rd edge (not orthogonal + not robust)
+pmkt_drift.py: 8,684 settled markets, 138 weeks, momentum vs reversion decided at 40%-life, held to resolution, executable
+net spread, week-clustered. Reversion is the positive side (pooled +0.011 t=2.93 at hs=0.01; continuous corr(m,outcome-p_mid)
+=-0.045 pooled, crypto -0.115 t=-5.08). REJECTED as a 3rd edge on TWO independent gates:
+1. NOT ORTHOGONAL: reversion weekly PnL corr -0.61 with the sell-longshots series -> it BUYS fallen longshots / SELLS risen
+   favorites = largely the longshot premium INVERTED, not a diversifier.
+2. NOT ROBUST: move the anchor off the noisy OPENING print to a fully-interior [10%->40%] window -> corr -0.021 (CI includes
+   zero), reversion net-positive 0/3 thresholds. Much of the raw effect was mean-reversion of the seeded opening quote.
+   Thin net of spread (~1-2c at hs=0.01, ~0 by 2c).
+INSIGHT: the durable harvestable thing in these markets is the LONGSHOT / SHORT-VOL RISK PREMIUM; the "overreaction" is
+partly the same phenomenon. Genuinely-different-mechanism hunts have now hit walls (drift=non-orthogonal; cross-venue=low
+capacity; wallet-copy=earlier null). RELIABLE stacking path = MORE UNCORRELATED LONGSHOT UNDERLYINGS (crypto & econ proven;
+each new independent underlying diversifies even at the same mechanism). Portfolio stays at 2 confirmed uncorrelated edges.
