@@ -1737,3 +1737,20 @@ PLAN: (a) KXBTCMAXMON one-touch barrier mispricing vs GBM/Deribit fair value; (b
 (c) cross-market Kalshi-vs-Deribit divergence. DISCIPLINE (from the 4 killed mirages): TRADE-WEIGHTED realistic-fill
 economics from the start, OOS by time, honest power/multiple-testing, independent from-scratch re-check of any positive.
 PROPOSE-ONLY. Delegated test launching.
+
+## HORIZON-KALSHI-WALL (2026-07-16) — relaxing to longer-horizon Kalshi crypto hits a DATA + EFFICIENCY wall
+Tested option-1 (relax 15m constraint) on Kalshi. Findings:
+- Kalshi crypto liquidity map: 15m + HOURLY (KXBTCD/KXETHD are ~1.0h tenor, NOT daily -- the "D" != daily) are liquid
+  but that's the same fast/efficient regime. TRUE daily/weekly above-below series (BTCD/BTC) are EMPTY. The only liquid
+  LONGER product is KXBTCMAXMON (monthly one-touch).
+- KXBTCMAXMON history: only ~3 close-months (May/Jun/Jul 2026) -> ~2-3 independent macro draws. Backtest is SEVERELY
+  UNDERPOWERED and in-sample NULL/negative (kalshi_onetouch.py); adverse-selection check fired (vol-wtd touch 0.115 >>
+  mkt-wtd 0.033) so the harness is sound, but no trustworthy conclusion possible from 3 months. DATA WALL (markets too new).
+- LIVE cross-market check (the powered angle, cross-sectional today): current KXBTCMAXMON-26JUL31 ladder (7 upside
+  strikes) vs Deribit vol-implied driftless one-touch FV: mean(Kalshi_mid - Deribit_FV) = -0.006 (0.6c), mixed sign,
+  ALL within the ~2-4c spread. Far longshot strikes if anything slightly RICH (+0.2c), contradicting the retail-underprice
+  hypothesis. -> Kalshi monthly one-touch is priced IN LINE with the Deribit smart-money surface. No tradeable divergence.
+VERDICT: relaxing the horizon on KALSHI does NOT open an edge -- the liquid longer product is both too new to backtest
+AND live-efficient vs Deribit. Kalshi crypto is young: no venue-internal series has both long horizon AND many settled
+cycles. The horizon-relaxation thesis is sound but needs a venue WITH longer crypto history (Polymarket has years of
+daily/weekly/monthly "BTC above X by date" + wallet data) OR the maker-rebate / proprietary-data paths. Fork back to operator.
