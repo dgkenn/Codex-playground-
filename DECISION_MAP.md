@@ -1721,3 +1721,19 @@ weighting/execution artifact as FAVLONG (clean-label) and Polymarket (optimistic
 REALISTIC FILLS look like," which two independent agents missed. The wing candidate is DEAD as a deployable edge.
 The forward paper harness (wing_paper.py, 1 ct/wing at the bid) tests the OPTIMISTIC market-weighted version; keep it
 running as free forward data but it is NOT trustworthy as deploy-proof given this finding. No capital -- correctly.
+
+## HORIZON-PIVOT (2026-07-16) — operator authorized relaxing the 15-min constraint -> daily/weekly/monthly Kalshi crypto
+Operator chose path 1 (relax horizon). Rationale (validated this session): the 15m binary is efficient BECAUSE it is
+fast (arbed to a martingale; slow "info not everyone has" decays before settlement). At longer horizon slow signals
+operate at the bet's timescale and survive to resolution. Discovery of LIQUID longer-horizon Kalshi crypto:
+- KXBTCMAXMON: MONTHLY BTC ONE-TOUCH ("will BTC touch $X this month"). VERY liquid (settled markets 100k-880k contracts,
+  total 3.8M). One-touch/barrier probs are a KNOWN retail-mispricing zone (P(touch)~2*P(end-above) under GBM; retail
+  underprices touch). Smart fair value from Deribit vol surface or realized vol. HIGH prior. CAVEAT: ~15 monthly events
+  = LOW independent-time power; account honestly (strikes within a month path-correlated).
+- KXETHD: DAILY ETH above/below, 100+ markets = more time-power, moderate volume.
+- Deribit BTC options: daily/weekly/monthly expiries -> matched smart-money fair value.
+- Daily/weekly BTC above/below (BTCD/BTC) = EMPTY; liquid longer-horizon BTC is the MONTHLY one-touch.
+PLAN: (a) KXBTCMAXMON one-touch barrier mispricing vs GBM/Deribit fair value; (b) KXETHD daily direction/calibration;
+(c) cross-market Kalshi-vs-Deribit divergence. DISCIPLINE (from the 4 killed mirages): TRADE-WEIGHTED realistic-fill
+economics from the start, OOS by time, honest power/multiple-testing, independent from-scratch re-check of any positive.
+PROPOSE-ONLY. Delegated test launching.
