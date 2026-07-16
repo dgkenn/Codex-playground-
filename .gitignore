@@ -5,3 +5,4 @@ __pycache__/
 # stray agent working artifacts
 extra.log
 scratchpad/
+.kalshi_cache/
