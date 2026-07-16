@@ -1,10 +1,10 @@
-shadow comparison over 10333 de-duped windows | files=3744
+shadow comparison over 10345 de-duped windows | files=3748
 
      variant  net/win  Δvs base  paired t GROSS/win  gross t
-  av_stoikov  +11.415    +3.333    +31.49   +11.415   +44.77 <edge>
-     mo_size   +9.603    +1.521    +27.56    +9.603   +44.82 <edge>
-  micro_gate   +8.083    +0.000       n/a    +8.083   +45.15 <edge>
-    baseline   +8.083                        +8.083   +45.15 <edge>
+  av_stoikov  +11.406    +3.330    +31.50   +11.406   +44.78 <edge>
+     mo_size   +9.596    +1.520    +27.58    +9.596   +44.83 <edge>
+  micro_gate   +8.076    +0.000       n/a    +8.076   +45.16 <edge>
+    baseline   +8.076                        +8.076   +45.16 <edge>
   micro_soft   +7.776    +0.000       n/a    +7.776   +41.69 <edge>
      fv_size   +7.655    -0.121     -2.87    +7.655   +40.92 <edge>
   micro_asym   +7.482    -0.294     -8.21    +7.482   +42.00 <edge>
@@ -26,55 +26,55 @@ micro_skew15   +6.341    -1.435    -28.93    +6.341   +41.61 <edge>
     dneutral   +5.014    -2.762    -36.00    +5.014   +41.88 <edge>
    micro_cal   +4.818    -2.958    -24.74    +4.818   +39.95 <edge>
 micro_strict   +4.532    -3.244    -26.37    +4.532   +37.89 <edge>
-   mo_skew99  +18.556    +8.538    +16.56   +18.556   +17.59 <edge>
-     sprd_mo  +18.462    +8.517    +16.32   +18.462   +17.30 <edge>
-      skew99  +16.881    +6.864    +15.57   +16.881   +17.47 <edge>
-   as_spread  +16.881    +6.864    +15.57   +16.881   +17.47 <edge>
-  queue_gate  +16.878    +6.860    +15.56   +16.878   +17.47 <edge>
-   as_cap100  +15.735    +5.717    +10.91   +15.735   +16.76 <edge>
-  as_markout  +15.540    +5.523    +15.58   +15.540   +17.94 <edge>
-   as_k_half  +15.512    +5.495    +15.24   +15.512   +17.82 <edge>
-     resv_mo  +15.502    +5.557    +15.43   +15.502   +17.67 <edge>
-    as_qg_mo  +15.493    +5.549    +15.40   +15.493   +17.65 <edge>
-        xnet  +13.910    +3.892    +13.22   +13.910   +17.82 <edge>
-     as_resv  +13.910    +3.892    +13.22   +13.910   +17.82 <edge>
-       as_qg  +13.881    +3.937    +13.20   +13.881   +17.56 <edge>
-     mo_k_2x  +11.888    +1.870    +11.51   +11.888   +17.36 <edge>
-     as_k_2x  +11.598    +1.581     +7.07   +11.598   +17.90 <edge>
-   mo_k_half  +11.354    +1.336     +9.80   +11.354   +17.41 <edge>
-  late_boost  +10.138    +0.120     +2.33   +10.138   +17.51 <edge>
-    vol_size  +10.018    +0.000       n/a   +10.018   +17.59 <edge>
-   as_trim70  +12.607    +3.690    +11.53   +12.607   +15.97 <edge>
-     as_band  +12.607    +3.690    +11.53   +12.607   +15.97 <edge>
- spread_gate  +12.481    +3.678    +11.44   +12.481   +15.91 <edge>
+   mo_skew99  +18.423    +8.471    +16.55   +18.423   +17.60 <edge>
+     sprd_mo  +18.326    +8.448    +16.31   +18.326   +17.30 <edge>
+      skew99  +16.762    +6.810    +15.55   +16.762   +17.48 <edge>
+   as_spread  +16.762    +6.810    +15.55   +16.762   +17.48 <edge>
+  queue_gate  +16.758    +6.806    +15.55   +16.758   +17.48 <edge>
+   as_cap100  +15.628    +5.676    +10.92   +15.628   +16.77 <edge>
+  as_markout  +15.438    +5.486    +15.59   +15.438   +17.95 <edge>
+   as_k_half  +15.413    +5.461    +15.26   +15.413   +17.84 <edge>
+     resv_mo  +15.397    +5.519    +15.44   +15.397   +17.68 <edge>
+    as_qg_mo  +15.388    +5.511    +15.41   +15.388   +17.66 <edge>
+        xnet  +13.823    +3.871    +13.25   +13.823   +17.84 <edge>
+     as_resv  +13.823    +3.871    +13.25   +13.823   +17.84 <edge>
+       as_qg  +13.792    +3.914    +13.23   +13.792   +17.58 <edge>
+     mo_k_2x  +11.812    +1.860    +11.53   +11.812   +17.37 <edge>
+     as_k_2x  +11.526    +1.574     +7.10   +11.526   +17.92 <edge>
+   mo_k_half  +11.284    +1.332     +9.84   +11.284   +17.43 <edge>
+  late_boost  +10.072    +0.120     +2.36   +10.072   +17.53 <edge>
+    vol_size   +9.952    +0.000       n/a    +9.952   +17.61 <edge>
+   as_trim70  +12.512    +3.665    +11.57   +12.512   +16.00 <edge>
+     as_band  +12.512    +3.665    +11.57   +12.512   +16.00 <edge>
+ spread_gate  +12.385    +3.653    +11.48   +12.385   +15.94 <edge>
 
-Read: paired t = net edge OVER baseline (rebate-inclusive). GROSS/win = trade P&L EXCLUDING the rebate = the edge OUTSIDE rebates; gross t vs 0, |t|>2 notable. n=10333.
+Read: paired t = net edge OVER baseline (rebate-inclusive). GROSS/win = trade P&L EXCLUDING the rebate = the edge OUTSIDE rebates; gross t vs 0, |t|>2 notable. n=10345.
 Only positive-GROSS variants have an edge beyond rebate harvesting (the micro-gate family).
 
 day-clustered (windows within a day share regime)
      variant n_days mean Δ/day   clust t   days+
-   mo_skew99      6     +9.856     +6.07     6/6
-     sprd_mo      5     +8.459     +9.29     5/5
-      skew99      6     +8.258     +5.09     6/6
-   as_spread      6     +8.258     +5.09     6/6
-  queue_gate      6     +8.256     +5.09     6/6
-   as_cap100      6     +5.798    +19.69     6/6
-     resv_mo      5     +5.564    +11.11     5/5
-    as_qg_mo      5     +5.553    +10.92     5/5
-  as_markout      6     +5.499    +15.73     6/6
-   as_k_half      6     +5.290    +14.41     6/6
-        xnet      6     +3.976    +19.54     6/6
-     as_resv      6     +3.976    +19.54     6/6
-       as_qg      5     +3.969    +13.16     5/5
-   as_trim70      5     +3.930    +15.33     5/5
-     as_band      5     +3.930    +15.33     5/5
- spread_gate      4     +3.706    +22.88     4/4
-  av_stoikov     31     +3.406    +20.94   31/31
-     as_k_2x      6     +2.055     +4.31     6/6
-     mo_k_2x      6     +1.923    +10.25     6/6
-     mo_size     31     +1.527    +18.14   31/31
-   mo_k_half      6     +1.487     +7.03     6/6
-  late_boost      6     +0.118     +2.79     5/6
+   mo_skew99      6     +9.795     +5.96     6/6
+     sprd_mo      5     +8.386     +8.98     5/5
+      skew99      6     +8.208     +5.02     6/6
+   as_spread      6     +8.208     +5.02     6/6
+  queue_gate      6     +8.206     +5.01     6/6
+   as_cap100      6     +5.755    +19.40     6/6
+     resv_mo      5     +5.520    +10.87     5/5
+    as_qg_mo      5     +5.510    +10.66     5/5
+  as_markout      6     +5.463    +15.39     6/6
+   as_k_half      6     +5.255    +14.41     6/6
+        xnet      6     +3.952    +19.63     6/6
+     as_resv      6     +3.952    +19.63     6/6
+       as_qg      5     +3.939    +13.19     5/5
+   as_trim70      5     +3.900    +15.45     5/5
+     as_band      5     +3.900    +15.45     5/5
+ spread_gate      4     +3.669    +27.90     4/4
+  av_stoikov     31     +3.401    +20.99   31/31
+     as_k_2x      6     +2.045     +4.28     6/6
+     mo_k_2x      6     +1.914    +10.09     6/6
+     mo_size     31     +1.525    +18.15   31/31
+   mo_k_half      6     +1.484     +7.00     6/6
+  late_boost      6     +0.117     +2.79     5/6
     vol_size      6     +0.000       n/a     0/6
   micro_soft     26     +0.000       n/a    0/26
   micro_gate     31     +0.000       n/a    0/31
@@ -99,33 +99,33 @@ micro_skew15     26     -1.414    -14.19    0/26
    micro_cal     26     -2.923    -10.33    0/26
 micro_strict     26     -3.228    -12.06    0/26
 
-DECAY-ALERT: micro_gate looks INERT over the last 14 UTC days -- mean|Δ vs baseline|=0.0000 < 0.01 across 4629 windows (gate is barely diverging from baseline; it may not be firing).
+DECAY-ALERT: micro_gate looks INERT over the last 14 UTC days -- mean|Δ vs baseline|=0.0000 < 0.01 across 4641 windows (gate is barely diverging from baseline; it may not be firing).
 
 per-asset (enabled arms only): mean paired-Δ vs baseline, n windows
      variant            btc            eth            sol            xrp
-  av_stoikov  +9.253/n=2586  +2.164/n=2586  +0.647/n=2584  +1.258/n=2577
-     mo_size  +4.896/n=2586  +0.564/n=2586  +0.226/n=2584  +0.392/n=2577
-  as_markout  +15.603/n=353   +4.073/n=353   +0.683/n=353   +1.732/n=353
-   mo_skew99  +26.448/n=353   +4.642/n=353   +0.828/n=353   +2.235/n=353
-      skew99  +20.774/n=353   +3.968/n=353   +0.722/n=353   +1.991/n=353
-   as_cap100  +14.550/n=353   +5.197/n=353   +0.914/n=353   +2.207/n=353
-   as_k_half  +16.120/n=353   +4.020/n=353   +0.397/n=353   +1.442/n=353
-     as_k_2x   +2.295/n=353   +2.046/n=353   +0.632/n=353   +1.349/n=353
-   mo_k_half   +4.513/n=353   +0.390/n=353   +0.213/n=353   +0.228/n=353
-     mo_k_2x   +6.340/n=353   +0.364/n=353   +0.205/n=353   +0.571/n=353
-   as_trim70   +9.308/n=280   +3.450/n=280   +0.532/n=280   +1.470/n=280
-     as_band   +9.308/n=280   +3.450/n=280   +0.532/n=280   +1.470/n=280
- spread_gate   +9.309/n=277   +3.407/n=277   +0.608/n=277   +1.386/n=277
-     as_resv  +10.390/n=353   +3.446/n=353   +0.449/n=353   +1.284/n=353
-   as_spread  +20.774/n=353   +3.968/n=353   +0.722/n=353   +1.991/n=353
-  queue_gate  +20.772/n=353   +3.975/n=353   +0.701/n=353   +1.991/n=353
-  late_boost   +0.200/n=353   +0.090/n=353   +0.005/n=353   +0.185/n=353
-    vol_size   +0.000/n=353   +0.000/n=353   +0.000/n=353   +0.000/n=353
-        xnet  +10.390/n=353   +3.446/n=353   +0.449/n=353   +1.284/n=353
-       as_qg  +10.356/n=344   +3.459/n=344   +0.473/n=344   +1.459/n=344
-     resv_mo  +15.505/n=344   +4.098/n=344   +0.731/n=344   +1.894/n=344
-     sprd_mo  +26.260/n=344   +4.627/n=344   +0.841/n=344   +2.340/n=344
-    as_qg_mo  +15.499/n=344   +4.070/n=344   +0.733/n=344   +1.894/n=344
-  micro_gate  +0.000/n=2586  +0.000/n=2586  +0.000/n=2584  +0.000/n=2577
+  av_stoikov  +9.246/n=2589  +2.160/n=2589  +0.649/n=2587  +1.256/n=2580
+     mo_size  +4.892/n=2589  +0.565/n=2589  +0.226/n=2587  +0.392/n=2580
+  as_markout  +15.533/n=356   +4.018/n=356   +0.677/n=356   +1.715/n=356
+   mo_skew99  +26.279/n=356   +4.582/n=356   +0.817/n=356   +2.204/n=356
+      skew99  +20.616/n=356   +3.928/n=356   +0.746/n=356   +1.950/n=356
+   as_cap100  +14.448/n=356   +5.167/n=356   +0.927/n=356   +2.163/n=356
+   as_k_half  +16.036/n=356   +3.965/n=356   +0.424/n=356   +1.419/n=356
+     as_k_2x   +2.277/n=356   +2.049/n=356   +0.631/n=356   +1.338/n=356
+   mo_k_half   +4.502/n=356   +0.379/n=356   +0.222/n=356   +0.227/n=356
+     mo_k_2x   +6.306/n=356   +0.350/n=356   +0.216/n=356   +0.567/n=356
+   as_trim70   +9.249/n=283   +3.405/n=283   +0.553/n=283   +1.453/n=283
+     as_band   +9.249/n=283   +3.405/n=283   +0.553/n=283   +1.453/n=283
+ spread_gate   +9.250/n=280   +3.362/n=280   +0.629/n=280   +1.369/n=280
+     as_resv  +10.334/n=356   +3.410/n=356   +0.467/n=356   +1.271/n=356
+   as_spread  +20.616/n=356   +3.928/n=356   +0.746/n=356   +1.950/n=356
+  queue_gate  +20.614/n=356   +3.935/n=356   +0.725/n=356   +1.950/n=356
+  late_boost   +0.198/n=356   +0.089/n=356   +0.005/n=356   +0.188/n=356
+    vol_size   +0.000/n=356   +0.000/n=356   +0.000/n=356   +0.000/n=356
+        xnet  +10.334/n=356   +3.410/n=356   +0.467/n=356   +1.271/n=356
+       as_qg  +10.299/n=347   +3.422/n=347   +0.491/n=347   +1.444/n=347
+     resv_mo  +15.434/n=347   +4.041/n=347   +0.725/n=347   +1.875/n=347
+     sprd_mo  +26.089/n=347   +4.565/n=347   +0.830/n=347   +2.308/n=347
+    as_qg_mo  +15.428/n=347   +4.014/n=347   +0.726/n=347   +1.875/n=347
+  micro_gate  +0.000/n=2589  +0.000/n=2589  +0.000/n=2587  +0.000/n=2580
 
 regime split: insufficient rows with a 'regime' field yet (n=0, need >=4).
