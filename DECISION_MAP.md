@@ -1845,3 +1845,17 @@ BUCKETS (CPI/PPI/JOLTS/net-worth); the currently-active PM econ longshots are mo
 = a DIFFERENT population. The econ paper sleeve must discover the recurring bucket-release events specifically to faithfully
 forward-test the edge (else it tests an unvalidated population). Next: build population-matched econ sleeve + hunt more
 orthogonal edges (Polymarket smart-wallet copy). portfolio.py aggregates sleeves w/ correlation-aware sizing. PROPOSE-ONLY.
+
+## MULTISTRAT-STACK-VALUE (2026-07-16) — quantified: stacking the 2 uncorrelated edges lifts risk-adjusted return +27%
+Both sleeves now LIVE-accruing (crypto short-vol + econ macro-release longshots, one workflow, portfolio.py aggregates).
+Quantified the stacking benefit from the backtest weekly-PnL series (crypto from advsel_rows, econ from cat_results):
+- CRYPTO sleeve: weekly Sharpe 0.533 (ann ~3.85), mean +0.090/ct, worst wk -0.435.
+- ECON sleeve:   weekly Sharpe 0.416 (ann ~3.00), mean +0.069/ct, worst wk -0.716.
+- STACKED risk-parity (w~50/50, measured corr -0.01): weekly Sharpe 0.675 (ann ~4.87) = +27% over the best single sleeve,
+  and the joint worst-week is far less likely (independent tails). THIS is the concrete payoff of the multi-strategy design:
+  two uncorrelated risk premia combine to raise risk-adjusted return and diversify the blow-up, not double it.
+CAVEATS: annualized Sharpes assume weekly independence + edge persists forward (the live gates test that); backtest-derived.
+The ROBUST result is the RELATIVE +27% from stacking (mechanism-driven by corr~0), less so the absolute Sharpe level.
+Sleeve #3 (drift/momentum, different mechanism) under test. portfolio.py will recompute the true correlation + weights as
+forward settled data lands. Size fractional-Kelly per sleeve w/ per-event caps (bucket events: only one outcome prints ->
+selling multiple buckets/event already diversifies within-event). PROPOSE-ONLY.
