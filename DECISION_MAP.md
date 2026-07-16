@@ -1754,3 +1754,26 @@ VERDICT: relaxing the horizon on KALSHI does NOT open an edge -- the liquid long
 AND live-efficient vs Deribit. Kalshi crypto is young: no venue-internal series has both long horizon AND many settled
 cycles. The horizon-relaxation thesis is sound but needs a venue WITH longer crypto history (Polymarket has years of
 daily/weekly/monthly "BTC above X by date" + wallet data) OR the maker-rebate / proprietary-data paths. Fork back to operator.
+
+## PMKT-HORIZON-VRP (2026-07-16) — REAL short-vol/longshot risk premium on zero-fee Polymarket, but MARGINAL at realistic fills + severe tail; PROMISING not proven
+Operator authorized relaxing horizon; Kalshi lacked longer-horizon history so tested on Polymarket (years of weekly
+"BTC/ETH above $X on <date>", zero-fee, ~7000 settled markets / 50 weeks). Tool: pmkt_horizon.py (agent) + my independent
+recompute from scratchpad/pmkt_rows.json.
+- CALIBRATION: solid favorite-longshot -- far-OTM weekly longshots settle YES far below entry (e.g. [.15,.30): entry .218
+  -> realized .105). Real, well-powered, mechanism-backed (short-dated OTM crypto lottery/variance risk premium).
+- CROSS-MARKET vs Deribit = NULL (Brier tied, t=0.08): NOT a Polymarket inefficiency/arbitrage -- the same premium exists
+  on Deribit. It is a RISK PREMIUM (paid to sell tail insurance), not free money.
+- ZERO-FEE is why it's accessible: Kalshi's 0.07p(1-p) (~0.6c at p~0.1) would eat the trade-weighted magnitude.
+- MY INDEPENDENT RECOMPUTE tempers the agent's enthusiasm (agent claimed trade-wtd t=5-7, favorable adverse-sel):
+  VOLUME-weighted (realistic-capacity proxy) COLLAPSES it: [.03,.15) t 1.63->0.16; [.03,.30) t 2.46->1.10; only the mid
+  band [.15,.30) marginally survives (t 3.45->2.26). And adverse selection is ADVERSE in my volume weighting (YES-rate
+  vol-wtd > mkt-wtd everywhere) -- CONTRADICTING the agent's per-trade "favorable" claim. Discrepancy (per-trade-size vs
+  per-market-volume weighting) is UNRESOLVED and is the make-or-break question.
+- TAIL: worst week -0.43/ct (wipes ~10+ wks of premium), ~25% of weeks negative, printing positions lose ~0.85/ct. Classic
+  short-vol blow-up profile; 49 weeks under-samples the tail.
+VERDICT: the most promising result of the program -- a REAL, mechanism-backed risk premium that partially survives the
+discipline that killed the 4 prior mirages -- but NOT a clean deployable edge: marginal at realistic (volume-weighted)
+fills, adverse-selection sign unresolved, and carrying genuine blow-up risk. It is a RISK-BEARING trade (selling lottery/
+tail insurance), not a mispricing. NOT deployable on backtest alone. Honest next steps: (1) reconcile per-trade vs
+per-volume weighting on trade-level data; (2) forward paper w/ strict tail-aware (fractional-Kelly, position caps) sizing;
+(3) treat expected return as thin compensation for real tail risk, size accordingly. PROPOSE-ONLY; nothing risked.
