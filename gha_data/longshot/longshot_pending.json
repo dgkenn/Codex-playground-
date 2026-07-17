@@ -8229,32 +8229,6 @@
 "title": "Rain in Dallas in Jul 2026?"
 },
 {
-"ts": "2026-07-15T18:36:57+00:00",
-"ticker": "KXHIGHLAX-26JUL16-T79",
-"series": "KXHIGHLAX",
-"category": "Climate and Weather",
-"yes_bid": 0.06,
-"yes_ask": 0.07,
-"mid": 0.065,
-"entry_sell_yes": 0.07,
-"close_time": "2026-07-17T07:59:00Z",
-"vol_at_entry": 1947.25,
-"title": "Will the **high temp in LA** be <79\u00b0 on Jul 16, 2026?"
-},
-{
-"ts": "2026-07-15T18:36:57+00:00",
-"ticker": "KXHIGHLAX-26JUL16-B85.5",
-"series": "KXHIGHLAX",
-"category": "Climate and Weather",
-"yes_bid": 0.05,
-"yes_ask": 0.07,
-"mid": 0.06,
-"entry_sell_yes": 0.07,
-"close_time": "2026-07-17T07:59:00Z",
-"vol_at_entry": 1152.29,
-"title": "Will the **high temp in LA** be 85-86\u00b0 on Jul 16, 2026?"
-},
-{
 "ts": "2026-07-16T18:38:08+00:00",
 "ticker": "KXWCFIRSTSONG-BTS26JUL20-SWI",
 "series": "KXWCFIRSTSONG",
@@ -8539,5 +8513,57 @@
 "close_time": "2026-09-01T03:59:00Z",
 "vol_at_entry": 4344.8,
 "title": "Will Brian Johnson be confirmed as Director of the Consumer Financial Protection"
+},
+{
+"ts": "2026-07-17T18:32:52+00:00",
+"ticker": "KXSPCXLAUNCH-CRS35-26SEP04",
+"series": "KXSPCXLAUNCH",
+"category": "Science and Technology",
+"yes_bid": 0.05,
+"yes_ask": 0.09,
+"mid": 0.07,
+"entry_sell_yes": 0.09,
+"close_time": "2026-09-04T03:59:00Z",
+"vol_at_entry": 3210.03,
+"title": "When will SpaceX launch Dragon CRS-35?"
+},
+{
+"ts": "2026-07-17T18:32:52+00:00",
+"ticker": "KXSPCXLAUNCH-CRS35-26AUG14",
+"series": "KXSPCXLAUNCH",
+"category": "Science and Technology",
+"yes_bid": 0.03,
+"yes_ask": 0.07,
+"mid": 0.05,
+"entry_sell_yes": 0.07,
+"close_time": "2026-08-14T03:59:00Z",
+"vol_at_entry": 453.0,
+"title": "When will SpaceX launch Dragon CRS-35?"
+},
+{
+"ts": "2026-07-17T18:32:52+00:00",
+"ticker": "KXA100MS-26AUG-1.250",
+"series": "KXA100MS",
+"category": "Science and Technology",
+"yes_bid": 0.06,
+"yes_ask": 0.07,
+"mid": 0.065,
+"entry_sell_yes": 0.07,
+"close_time": "2026-09-01T03:59:59Z",
+"vol_at_entry": 2088.52,
+"title": "Will the monthly average compute price of NVIDIA's A100 be above $1.25 in August"
+},
+{
+"ts": "2026-07-17T18:32:52+00:00",
+"ticker": "KXHIGHLAX-26JUL18-B76.5",
+"series": "KXHIGHLAX",
+"category": "Climate and Weather",
+"yes_bid": 0.13,
+"yes_ask": 0.14,
+"mid": 0.135,
+"entry_sell_yes": 0.14,
+"close_time": "2026-07-19T07:59:00Z",
+"vol_at_entry": 946.01,
+"title": "Will the **high temp in LA** be 76-77\u00b0 on Jul 18, 2026?"
 }
 ]
