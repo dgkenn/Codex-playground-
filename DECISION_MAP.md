@@ -2012,3 +2012,18 @@ superior information. High EV requires PRIVATE/proprietary data or infrastructur
 GOAL STATUS (high-EV highly-profitable): both new high-EV probes NULL (conditional-slice #7, weather #8). The accessible
 public-data universe yields only the THIN longshot risk premium (~+12c/ct, real, tail-bearing) -- NOT a "highly profitable"
 high-capacity edge. That ceiling is now very well established across ~8 killed high-t candidates + multiple efficiency nulls.
+
+## RISKLESS-LOGICAL (2026-07-17) — cross-market logical-consistency arb is NULL (nested markets kept monotone to within spread)
+Tested cross-MARKET (separate but logically-nested) no-arb violations on Polymarket: STRIKE monotonicity (P(reach X)
+non-increasing in X) + TIME nesting (subperiod <= period <= superset). riskless_logical.py + direct verification.
+- 23 crypto threshold families, 18 multi-strike; the richest = "BTC reach $X by Dec 31" (52 separate markets).
+- STRIKE ladder is cleanly MONOTONE (bid 0.999 @ $65k -> 0.010 @ $1M, decreasing); ZERO executable violations. TIME nesting
+  cleanly consistent (BTC $70k: July13-19=0.005 <= in-July=0.16 <= by-Dec31=0.999; ETH analogous). The ONLY imperfection: a
+  ~0.1c non-monotonicity at the deep tail ($180k bid 0.019 < $200k bid 0.021) -- real but SUB-SPREAD, untradeable.
+VERDICT: NULL. Separate nested markets are kept no-arb-consistent to within the bid-ask spread (existing arbitrageurs / the
+shared MMs already enforce it). Candidate #9 dead. Completes the RISKLESS family: bucket-underround (tiny/depth-capped),
+ladder-mono (stale-quote artifacts), logical-nesting (consistent) -> the riskless universe yields only single-dollar,
+depth-capped, or sub-spread opportunities for a small participant. NO high-EV riskless strategy exists here.
+GOAL (high-EV highly-profitable): candidates #7 (conditional), #8 (weather), #9 (logical-arb) all NULL. Cumulative: the
+accessible public universe's CEILING is the thin longshot risk premium (~+12c/ct, real, tail-bearing). "Highly profitable"
+(high return AND high capacity) is not achievable here for a small participant without private data / speed / capital we lack.
