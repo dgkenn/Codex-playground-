@@ -1998,3 +1998,17 @@ Probed whether selecting the MOST-overpriced longshots by observable features yi
 - SILVER LINING: this independently RE-CONFIRMS the core edge -- UNCONDITIONAL buy-vol-weighted +12.0c/ct t=4.6 (TEST +13.3c
   t=4.4), consistent with advsel (+9c t=2.88) under a slightly different construction. The engine is real; it just can't be
   sharpened by conditioning. TRADE IT UNCONDITIONALLY. Candidate #7 (conditional slice) dead.
+
+## WEATHER-EDGE (2026-07-17) — Kalshi weather markets already fully price public NWS forecasts: NULL (high-EV info probe fails)
+Probed a superior-INFORMATION edge (the classic high-EV route): NBM-MOS/NWS forecast vs Kalshi daily temperature buckets.
+weather_edge.py: 315 city-days, 1890 buckets, 7 cities, Dec2025-Jul2026; forecast->P(bucket) via calibrated error, backtest
+divergence net Kalshi fee + spread, day-clustered.
+- Forecast skill REAL (sigma~2.49F) but the MARKET PRICES IT BETTER: Brier market-mid 0.099 < forecast 0.124 (forecast Brier
+  in-sample-flattered). Divergence large (median |fcast-mid|=0.092, 47% >0.10) but WRONG-SIGNED -> trading it LOSES
+  -1.7c/ct, day-clustered t=-2.18, win 24%, 6/7 cities negative. Capacity ~$0 (liquidity fine, edge absent). Robust null
+  (all caveats bias TOWARD an edge; none appears).
+LESSON (the session's wall, restated): PUBLIC information (forecasts, public data) is PRICED. A public forecast is not
+superior information. High EV requires PRIVATE/proprietary data or infrastructure (speed) we do not have. Candidate #8 dead.
+GOAL STATUS (high-EV highly-profitable): both new high-EV probes NULL (conditional-slice #7, weather #8). The accessible
+public-data universe yields only the THIN longshot risk premium (~+12c/ct, real, tail-bearing) -- NOT a "highly profitable"
+high-capacity edge. That ceiling is now very well established across ~8 killed high-t candidates + multiple efficiency nulls.
