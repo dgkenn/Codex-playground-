@@ -1958,3 +1958,17 @@ FREE opportunistic add-on (the deployed sleeve already scans + self-validates). 
 engine (real capacity + ~+20-25%/mo expected at scale, at the cost of bearing the tail). Riskless-arb capped this thin is a
 known property of liquid prediction markets: MMs keep the overround >=~1, so underrounds are rare, small, and shallow.
 Caveat: full multi-hundred-event enumeration timed out; a handful more small arbs may exist but the depth ceiling applies to all.
+
+## RISKLESS-CAPACITY-CORRECTION (2026-07-17) — broader scan found more candidates ($75/snapshot) BUT they're TRANSIENT; verdict holds
+Correcting the earlier "$1.25/negligible" (which only checked GDP/Fed). The agent's fuller scan (629 PM + 54 Kalshi events,
+riskless_opportunity_result.json) found 9 arbs = $75.76 capturable in one snapshot, DOMINATED by one deep one: "Balance of
+Power: 2026 Midterms" sell-all, edge 1.1c x 6627 sets = $72.90. BUT MY LIVE VERIFICATION MINUTES LATER: that overround had
+DECAYED from sum-bids 1.011 -> 1.001 (edge +1.1c -> +0.1c) -> only $6 capturable, and it's a SELL-ALL (needs short / negRisk-
+convert mechanics, harder than buy-all). So the big number was TRANSIENT -- it evaporated in minutes. The persistent easy
+(buy-all underround) ones stay thin (GDP $0.43, Fed $0.82).
+HONEST CORRECTED VERDICT: a broad scan surfaces ~$5-75 of candidates per snapshot, but the deep ones are FLEETING (decay in
+minutes as MMs/other arbers close them) and the durable ones are shallow. Realistic SUSTAINED capture requires a FAST
+continuous scanner + atomic multi-leg (incl. negRisk sell-all) execution to catch the transient deep ones before they close.
+=> The riskless sleeve is worth MORE than "$1.25" but still NOT a set-and-forget profit center; it needs real HFT-ish infra
+to matter. Absent that, keep bucket_arb as the slow buy-all-underround scraper (few $/week). The LONGSHOT PREMIA remain the
+engine. KEY NEW INSIGHT: these arbs are transient (minutes) -> confirms don't-over-invest unless building fast execution.
