@@ -1972,3 +1972,17 @@ continuous scanner + atomic multi-leg (incl. negRisk sell-all) execution to catc
 => The riskless sleeve is worth MORE than "$1.25" but still NOT a set-and-forget profit center; it needs real HFT-ish infra
 to matter. Absent that, keep bucket_arb as the slow buy-all-underround scraper (few $/week). The LONGSHOT PREMIA remain the
 engine. KEY NEW INSIGHT: these arbs are transient (minutes) -> confirms don't-over-invest unless building fast execution.
+
+## LONGSHOT-TIMING (2026-07-17) — later entry does NOT help; edge decays monotonically with time; keep (or slightly EARLIER) first-half entry
+Studied entry timing for the longshot engine (longshot_timing.py): sell at life-fractions f in {.20,.35,.50,.65,.80},
+crypto (2626 qualified) + econ (143, underpowered), causal entry, week-clustered, YES-buy-vol-weighted, annualized ROC.
+- EDGE/CT is RICHEST EARLIEST and decays MONOTONICALLY: crypto +0.061 (f=.20) -> +0.010 (f=.80); econ positive only f<=.50.
+  Pure mechanical convergence (as f->1 price drifts to outcome, premium -> 0). NO interior sweet spot; earliest tested is best.
+- ANNUALIZED ROC also peaks early (crypto max +5.88 at f=.35) -- edge shrinks FASTER than the hold, so delaying doesn't pay.
+- CAVEAT (yellow flag): on this FRESH post-2025-06, differently-constructed sample ("still-in-band-at-f" conditioning, fixed
+  half-spread), the YES-BUY-volume-weighted edge is weak/negative at most fractions (crypto t_bv~1.5 at f=.20 down to <0
+  later; econ t_bv<0). Agent flags this is NOT directly comparable to the frozen live rule (different conditioning) -> do NOT
+  retune the frozen gate from it; the forward gate is the arbiter. But it's a reminder the edge is thin at realistic fills.
+ACTION: KEEP the current first-half entry (harness FIRST_HALF=0.5) -- it's on the correct (early) side. Do NOT delay entry
+hoping for a fatter late premium (it mechanically decays). Candidate refinement for AFTER the current gate resolves: bias
+entry EARLIER (first ~third, f~0.2-0.35) where edge/ct and ROC both peak -- but NOT mid-experiment (breaks pre-registration).
