@@ -1925,3 +1925,20 @@ cumulative 'above X' ladders as exclusive buckets -> false positives, corrected)
 VERDICT: riskless arbs EXIST but are rare/small on liquid markets (MMs enforce no-arb); the harvestable one is a CONTINUOUS
 Polymarket bucket-underround scanner + fast ATOMIC multi-leg execution. Genuinely UNCORRELATED (it's arbitrage, not a risk
 premium) -> a candidate 4th sleeve. Caveat: leg-risk makes it near-riskless not truly riskless without atomic fills.
+
+## STRAND-MODEL (2026-07-16) — rich-feature ML does NOT beat a simple moneyness rule; strands are a LOPSIDED-MARKET effect
+Built strand_model.py: join box_shadow strand labels (ws,asset,stranded; 1,469 live-arm windows btc+eth, 133 strands =
+9.05% base) to causal tick features, time-OOS (6d train / 3d test), logistic + GBT. My independent check of results.json
+CONFIRMS the headline:
+- OOS AUC: logistic 0.635, GBT 0.617 (weak, CI>0.5). A SINGLE feature BEATS the ensemble: univariate OOS AUC rel_strike
+  0.715, spread 0.709, |mid-0.5| 0.705 -- all > multivariate. Rich features (book depth, imbalance, rvol 0.56, recent_move)
+  add OOS NOISE. Small n (133 events) -> the GBT/logistic OVERFIT.
+- CAUSAL STORY (new, contradicts prior heuristics): strands are a LOPSIDED-MARKET / moneyness phenomenon -- when price moves
+  OFF the strike, the off-side leg sits where nobody trades and never fills. NOT thin-book / high-vol / near-strike-movement.
+  The deployed arms volgate & nsmove are COUNTERPRODUCTIVE here (kept-strand rate ABOVE no-veto baseline).
+- VETO TRADEOFF (OOS, matched 20-25% veto): a one-line |mid-0.5| veto BEATS both the ML model and the heuristics
+  (kept-strand 9.3%->~6-7%, retains ~77-81% of good fills). But lift is SMALL -- not enough to rescue the ~zero-edge box.
+VERDICT (answers the operator's Q2): rich data does NOT build a materially better strand model; ship a PLAIN |mid-0.5| /
+|spot-strike| threshold, not ML, and retrain as days accrue. The moneyness signal is real & worth using as a box veto AND
+(principle, not the exact feature) as a reminder to check leg-fill probability before committing multi-leg arbs. The box
+stays halted (lift too small); the useful artifact is the simple moneyness veto + the corrected causal understanding.
