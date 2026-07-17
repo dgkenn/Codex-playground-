@@ -1986,3 +1986,15 @@ crypto (2626 qualified) + econ (143, underpowered), causal entry, week-clustered
 ACTION: KEEP the current first-half entry (harness FIRST_HALF=0.5) -- it's on the correct (early) side. Do NOT delay entry
 hoping for a fatter late premium (it mechanically decays). Candidate refinement for AFTER the current gate resolves: bias
 entry EARLIER (first ~third, f~0.2-0.35) where edge/ct and ROC both peak -- but NOT mid-experiment (breaks pre-registration).
+
+## LONGSHOT-CONDITIONAL (2026-07-17) — no higher-EV conditional slice survives OOS+fills; but core edge RE-CONFIRMED (bv t=4.6)
+Probed whether selecting the MOST-overpriced longshots by observable features yields 2x+ EV (longshot_conditional.py).
+601 crypto weekly longshots, TRAIN 60%(29wk)/TEST 40%(20wk), rule picked on train -> evaluated once on test, 25 rules tried
+(demand-intensity terciles, entry sub-bands, day-of-week, demand x moneyness), week-clustered EQUAL + YES-BUY-VOL weighted.
+- NULL: no rule beats the unconditional at realistic (buy-vol) fills OOS. Best train pick (resolves_Wed, train bv +16c) ->
+  TEST bv +7.9c = -5.4c BELOW baseline + worst week -85c (2x tail). TEST winners were TRAIN losers (ranking uncorrelated).
+- Retail-demand hypothesis REJECTED at realistic fills: high-demand slices' equal-weight "overpricing" is an artifact of
+  tiny unfillable markets; vanishes under buy-vol weighting. Conditioning adds DoF + fatter tails + thinner fills, no OOS lift.
+- SILVER LINING: this independently RE-CONFIRMS the core edge -- UNCONDITIONAL buy-vol-weighted +12.0c/ct t=4.6 (TEST +13.3c
+  t=4.4), consistent with advsel (+9c t=2.88) under a slightly different construction. The engine is real; it just can't be
+  sharpened by conditioning. TRADE IT UNCONDITIONALLY. Candidate #7 (conditional slice) dead.
