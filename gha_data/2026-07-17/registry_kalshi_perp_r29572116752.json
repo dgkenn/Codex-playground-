@@ -1,0 +1,739 @@
+{
+  "utc": "2026-07-17T10:03:15.140208+00:00",
+  "tag": "r29572116752",
+  "authed": true,
+  "n_perps": 16,
+  "discovery": {
+    "utc": "2026-07-17T10:03:15.139725+00:00",
+    "authed": true,
+    "endpoint": "/margin/markets",
+    "rtt_ms": 153.9,
+    "n_markets_listed": 16,
+    "all_tickers": [
+      "KXBCHPERP",
+      "KXBTCPERP",
+      "KXDOGEPERP",
+      "KXDOTPERP",
+      "KXETHPERP",
+      "KXHBARPERP",
+      "KXHYPEPERP",
+      "KXKSHIBPERP",
+      "KXLINKPERP",
+      "KXLTCPERP",
+      "KXNEARPERP",
+      "KXSOLPERP",
+      "KXSUIPERP",
+      "KXXLMPERP",
+      "KXXRPPERP",
+      "KXZECPERP"
+    ],
+    "perps": [
+      {
+        "ticker": "KXBCHPERP",
+        "asset": "bch"
+      },
+      {
+        "ticker": "KXBTCPERP",
+        "asset": "btc"
+      },
+      {
+        "ticker": "KXDOGEPERP",
+        "asset": "doge"
+      },
+      {
+        "ticker": "KXDOTPERP",
+        "asset": "dot"
+      },
+      {
+        "ticker": "KXETHPERP",
+        "asset": "eth"
+      },
+      {
+        "ticker": "KXHBARPERP",
+        "asset": "hbar"
+      },
+      {
+        "ticker": "KXHYPEPERP",
+        "asset": "hype"
+      },
+      {
+        "ticker": "KXKSHIBPERP",
+        "asset": "kshib"
+      },
+      {
+        "ticker": "KXLINKPERP",
+        "asset": "link"
+      },
+      {
+        "ticker": "KXLTCPERP",
+        "asset": "ltc"
+      },
+      {
+        "ticker": "KXNEARPERP",
+        "asset": "near"
+      },
+      {
+        "ticker": "KXSOLPERP",
+        "asset": "sol"
+      },
+      {
+        "ticker": "KXSUIPERP",
+        "asset": "sui"
+      },
+      {
+        "ticker": "KXXLMPERP",
+        "asset": "xlm"
+      },
+      {
+        "ticker": "KXXRPPERP",
+        "asset": "xrp"
+      },
+      {
+        "ticker": "KXZECPERP",
+        "asset": "zec"
+      }
+    ]
+  },
+  "markets": {
+    "KXBCHPERP": {
+      "series": "",
+      "asset": "bch",
+      "raw": {
+        "ask": "2.2315",
+        "bid": "2.2301",
+        "contract_size": "0.010000",
+        "fractional_trading_enabled": false,
+        "leverage_estimate": 3.0368,
+        "leverage_estimates": {
+          "1000": 3.019,
+          "10000": 2.9506,
+          "100000": 2.648,
+          "1000000": 1.6917
+        },
+        "liquidation_mark_price": {
+          "price": "2.2302",
+          "ts_ms": 1784282594000
+        },
+        "open_interest": "344633.00",
+        "open_interest_notional_value_dollars": "768738.369800",
+        "price": "2.2306",
+        "reference_price": {
+          "price": "2.2302",
+          "ts_ms": 1784282594000
+        },
+        "settlement_mark_price": {
+          "price": "2.2306",
+          "ts_ms": 1784282590882
+        },
+        "status": "active",
+        "tick_size": "0.0001",
+        "ticker": "KXBCHPERP",
+        "title": "0.01 BCH",
+        "volume": "34711838.00",
+        "volume_24h": "615380.00",
+        "volume_24h_notional_value_dollars": "1368168.945900",
+        "volume_notional_value_dollars": "75156973.099300"
+      }
+    },
+    "KXBTCPERP": {
+      "series": "",
+      "asset": "btc",
+      "raw": {
+        "ask": "6.3021",
+        "bid": "6.3008",
+        "contract_size": "0.000100",
+        "fractional_trading_enabled": false,
+        "leverage_estimate": 6.0143,
+        "leverage_estimates": {
+          "1000": 6.0143,
+          "10000": 6.0143,
+          "100000": 6.0143,
+          "1000000": 5.9308
+        },
+        "liquidation_mark_price": {
+          "price": "6.3007",
+          "ts_ms": 1784282594000
+        },
+        "open_interest": "852336.00",
+        "open_interest_notional_value_dollars": "5371847.640000",
+        "price": "6.3025",
+        "reference_price": {
+          "price": "6.3006",
+          "ts_ms": 1784282594000
+        },
+        "settlement_mark_price": {
+          "price": "6.3023",
+          "ts_ms": 1784282590882
+        },
+        "status": "active",
+        "tick_size": "0.0001",
+        "ticker": "KXBTCPERP",
+        "title": "0.0001 BTC",
+        "volume": "1803408626.00",
+        "volume_24h": "15895167.00",
+        "volume_24h_notional_value_dollars": "101360504.170800",
+        "volume_notional_value_dollars": "11337870613.576900"
+      }
+    },
+    "KXDOGEPERP": {
+      "series": "",
+      "asset": "doge",
+      "raw": {
+        "ask": "7.1743",
+        "bid": "7.1698",
+        "contract_size": "100.000000",
+        "fractional_trading_enabled": false,
+        "leverage_estimate": 2.7239,
+        "leverage_estimates": {
+          "1000": 2.7201,
+          "10000": 2.7067,
+          "100000": 2.6389,
+          "1000000": 2.3424
+        },
+        "liquidation_mark_price": {
+          "price": "7.1747",
+          "ts_ms": 1784282594000
+        },
+        "open_interest": "29807.00",
+        "open_interest_notional_value_dollars": "213477.734000",
+        "price": "7.1620",
+        "reference_price": {
+          "price": "7.1747",
+          "ts_ms": 1784282594000
+        },
+        "settlement_mark_price": {
+          "price": "7.1732",
+          "ts_ms": 1784282590882
+        },
+        "status": "active",
+        "tick_size": "0.0001",
+        "ticker": "KXDOGEPERP",
+        "title": "100 DOGE",
+        "volume": "19827074.00",
+        "volume_24h": "639058.00",
+        "volume_24h_notional_value_dollars": "4682316.903100",
+        "volume_notional_value_dollars": "147339653.922400"
+      }
+    },
+    "KXDOTPERP": {
+      "series": "",
+      "asset": "dot",
+      "raw": {
+        "ask": "0.0000",
+        "bid": "0.0000",
+        "contract_size": "10.000000",
+        "fractional_trading_enabled": false,
+        "leverage_estimate": 3.3257,
+        "leverage_estimates": {
+          "1000": 3.3257,
+          "10000": 3.3257,
+          "100000": 3.3257,
+          "1000000": 3.3257
+        },
+        "liquidation_mark_price": {
+          "price": "8.5587",
+          "ts_ms": 1784282594000
+        },
+        "open_interest": "0.00",
+        "open_interest_notional_value_dollars": "0.000000",
+        "price": "0.0000",
+        "reference_price": {
+          "price": "8.5587",
+          "ts_ms": 1784282594000
+        },
+        "settlement_mark_price": {
+          "price": "8.5595",
+          "ts_ms": 1784282590882
+        },
+        "status": "inactive",
+        "tick_size": "0.0001",
+        "ticker": "KXDOTPERP",
+        "title": "10 DOT",
+        "volume": "0.00",
+        "volume_24h": "0.00",
+        "volume_24h_notional_value_dollars": "0.000000",
+        "volume_notional_value_dollars": "0.000000"
+      }
+    },
+    "KXETHPERP": {
+      "series": "",
+      "asset": "eth",
+      "raw": {
+        "ask": "1.8357",
+        "bid": "1.8355",
+        "contract_size": "0.001000",
+        "fractional_trading_enabled": false,
+        "leverage_estimate": 4.5382,
+        "leverage_estimates": {
+          "1000": 4.5382,
+          "10000": 4.5329,
+          "100000": 4.5143,
+          "1000000": 4.4209
+        },
+        "liquidation_mark_price": {
+          "price": "1.8359",
+          "ts_ms": 1784282594000
+        },
+        "open_interest": "1224673.00",
+        "open_interest_notional_value_dollars": "2247642.356900",
+        "price": "1.8353",
+        "reference_price": {
+          "price": "1.8359",
+          "ts_ms": 1784282594000
+        },
+        "settlement_mark_price": {
+          "price": "1.8360",
+          "ts_ms": 1784282590882
+        },
+        "status": "active",
+        "tick_size": "0.0001",
+        "ticker": "KXETHPERP",
+        "title": "0.001 ETH",
+        "volume": "3728556822.00",
+        "volume_24h": "48885351.00",
+        "volume_24h_notional_value_dollars": "91297730.194000",
+        "volume_notional_value_dollars": "6298706450.998800"
+      }
+    },
+    "KXHBARPERP": {
+      "series": "",
+      "asset": "hbar",
+      "raw": {
+        "ask": "0.0000",
+        "bid": "0.0000",
+        "contract_size": "100.000000",
+        "fractional_trading_enabled": false,
+        "leverage_estimate": 2.5065,
+        "leverage_estimates": {
+          "1000": 2.5065,
+          "10000": 2.5065,
+          "100000": 2.5065,
+          "1000000": 2.5065
+        },
+        "liquidation_mark_price": {
+          "price": "6.6301",
+          "ts_ms": 1784282594000
+        },
+        "open_interest": "0.00",
+        "open_interest_notional_value_dollars": "0.000000",
+        "price": "0.0000",
+        "reference_price": {
+          "price": "6.6301",
+          "ts_ms": 1784282594000
+        },
+        "settlement_mark_price": {
+          "price": "6.6296",
+          "ts_ms": 1784282590882
+        },
+        "status": "inactive",
+        "tick_size": "0.0001",
+        "ticker": "KXHBARPERP",
+        "title": "100 HBAR",
+        "volume": "0.00",
+        "volume_24h": "0.00",
+        "volume_24h_notional_value_dollars": "0.000000",
+        "volume_notional_value_dollars": "0.000000"
+      }
+    },
+    "KXHYPEPERP": {
+      "series": "",
+      "asset": "hype",
+      "raw": {
+        "ask": "6.0599",
+        "bid": "6.0579",
+        "contract_size": "0.100000",
+        "fractional_trading_enabled": false,
+        "leverage_estimate": 2.1841,
+        "leverage_estimates": {
+          "1000": 2.1816,
+          "10000": 2.176,
+          "100000": 2.1433,
+          "1000000": 1.9923
+        },
+        "liquidation_mark_price": {
+          "price": "6.0611",
+          "ts_ms": 1784282594000
+        },
+        "open_interest": "115076.00",
+        "open_interest_notional_value_dollars": "697349.052400",
+        "price": "6.0599",
+        "reference_price": {
+          "price": "6.0610",
+          "ts_ms": 1784282594000
+        },
+        "settlement_mark_price": {
+          "price": "6.0580",
+          "ts_ms": 1784282590882
+        },
+        "status": "active",
+        "tick_size": "0.0001",
+        "ticker": "KXHYPEPERP",
+        "title": "0.1 HYPE",
+        "volume": "85228543.00",
+        "volume_24h": "5728940.00",
+        "volume_24h_notional_value_dollars": "35215541.354800",
+        "volume_notional_value_dollars": "563140952.142800"
+      }
+    },
+    "KXKSHIBPERP": {
+      "series": "",
+      "asset": "kshib",
+      "raw": {
+        "ask": "4.1307",
+        "bid": "4.1260",
+        "contract_size": "1000.000000",
+        "fractional_trading_enabled": false,
+        "leverage_estimate": 2.0058,
+        "leverage_estimates": {
+          "1000": 1.9913,
+          "10000": 1.9357,
+          "100000": 1.6906,
+          "1000000": 0.9636
+        },
+        "liquidation_mark_price": {
+          "price": "4.1300",
+          "ts_ms": 1784282594000
+        },
+        "open_interest": "55715.00",
+        "open_interest_notional_value_dollars": "229495.656500",
+        "price": "4.1191",
+        "reference_price": {
+          "price": "4.1300",
+          "ts_ms": 1784282594000
+        },
+        "settlement_mark_price": {
+          "price": "4.1293",
+          "ts_ms": 1784282590882
+        },
+        "status": "active",
+        "tick_size": "0.0001",
+        "ticker": "KXKSHIBPERP",
+        "title": "1K kSHIB",
+        "volume": "14815168.00",
+        "volume_24h": "110986.00",
+        "volume_24h_notional_value_dollars": "459329.426500",
+        "volume_notional_value_dollars": "65872392.820500"
+      }
+    },
+    "KXLINKPERP": {
+      "series": "",
+      "asset": "link",
+      "raw": {
+        "ask": "8.2101",
+        "bid": "8.2042",
+        "contract_size": "1.000000",
+        "fractional_trading_enabled": false,
+        "leverage_estimate": 3.4052,
+        "leverage_estimates": {
+          "1000": 3.3947,
+          "10000": 3.3547,
+          "100000": 3.1682,
+          "1000000": 2.4537
+        },
+        "liquidation_mark_price": {
+          "price": "8.2070",
+          "ts_ms": 1784282594000
+        },
+        "open_interest": "30499.00",
+        "open_interest_notional_value_dollars": "249594.666300",
+        "price": "8.1837",
+        "reference_price": {
+          "price": "8.2070",
+          "ts_ms": 1784282594000
+        },
+        "settlement_mark_price": {
+          "price": "8.2105",
+          "ts_ms": 1784282590882
+        },
+        "status": "active",
+        "tick_size": "0.0001",
+        "ticker": "KXLINKPERP",
+        "title": "1 LINK",
+        "volume": "8753957.00",
+        "volume_24h": "131351.00",
+        "volume_24h_notional_value_dollars": "1096194.473200",
+        "volume_notional_value_dollars": "68496388.718200"
+      }
+    },
+    "KXLTCPERP": {
+      "series": "",
+      "asset": "ltc",
+      "raw": {
+        "ask": "4.4590",
+        "bid": "4.4568",
+        "contract_size": "0.100000",
+        "fractional_trading_enabled": false,
+        "leverage_estimate": 3.7125,
+        "leverage_estimates": {
+          "1000": 3.6947,
+          "10000": 3.6284,
+          "100000": 3.3214,
+          "1000000": 2.288
+        },
+        "liquidation_mark_price": {
+          "price": "4.4591",
+          "ts_ms": 1784282594000
+        },
+        "open_interest": "69286.00",
+        "open_interest_notional_value_dollars": "308925.488200",
+        "price": "4.4587",
+        "reference_price": {
+          "price": "4.4591",
+          "ts_ms": 1784282594000
+        },
+        "settlement_mark_price": {
+          "price": "4.4612",
+          "ts_ms": 1784282590882
+        },
+        "status": "active",
+        "tick_size": "0.0001",
+        "ticker": "KXLTCPERP",
+        "title": "0.1 LTC",
+        "volume": "18651326.00",
+        "volume_24h": "761692.00",
+        "volume_24h_notional_value_dollars": "3429618.779300",
+        "volume_notional_value_dollars": "81161246.272500"
+      }
+    },
+    "KXNEARPERP": {
+      "series": "",
+      "asset": "near",
+      "raw": {
+        "ask": "1.9095",
+        "bid": "1.9073",
+        "contract_size": "1.000000",
+        "fractional_trading_enabled": false,
+        "leverage_estimate": 2.8177,
+        "leverage_estimates": {
+          "1000": 2.8095,
+          "10000": 2.781,
+          "100000": 2.6434,
+          "1000000": 2.104
+        },
+        "liquidation_mark_price": {
+          "price": "1.9075",
+          "ts_ms": 1784282594000
+        },
+        "open_interest": "183993.00",
+        "open_interest_notional_value_dollars": "351040.244700",
+        "price": "1.9079",
+        "reference_price": {
+          "price": "1.9075",
+          "ts_ms": 1784282594000
+        },
+        "settlement_mark_price": {
+          "price": "1.9081",
+          "ts_ms": 1784282590882
+        },
+        "status": "active",
+        "tick_size": "0.0001",
+        "ticker": "KXNEARPERP",
+        "title": "1 NEAR",
+        "volume": "24406167.00",
+        "volume_24h": "1796326.00",
+        "volume_24h_notional_value_dollars": "3560903.785600",
+        "volume_notional_value_dollars": "47437336.652200"
+      }
+    },
+    "KXSOLPERP": {
+      "series": "",
+      "asset": "sol",
+      "raw": {
+        "ask": "7.4670",
+        "bid": "7.4641",
+        "contract_size": "0.100000",
+        "fractional_trading_enabled": false,
+        "leverage_estimate": 2.6934,
+        "leverage_estimates": {
+          "1000": 2.6915,
+          "10000": 2.6868,
+          "100000": 2.6626,
+          "1000000": 2.5497
+        },
+        "liquidation_mark_price": {
+          "price": "7.4660",
+          "ts_ms": 1784282594000
+        },
+        "open_interest": "37804.00",
+        "open_interest_notional_value_dollars": "282339.174000",
+        "price": "7.4685",
+        "reference_price": {
+          "price": "7.4660",
+          "ts_ms": 1784282594000
+        },
+        "settlement_mark_price": {
+          "price": "7.4688",
+          "ts_ms": 1784282590882
+        },
+        "status": "active",
+        "tick_size": "0.0001",
+        "ticker": "KXSOLPERP",
+        "title": "0.1 SOL",
+        "volume": "41287579.00",
+        "volume_24h": "528208.00",
+        "volume_24h_notional_value_dollars": "3997204.368000",
+        "volume_notional_value_dollars": "298015725.068600"
+      }
+    },
+    "KXSUIPERP": {
+      "series": "",
+      "asset": "sui",
+      "raw": {
+        "ask": "7.3424",
+        "bid": "7.3393",
+        "contract_size": "10.000000",
+        "fractional_trading_enabled": false,
+        "leverage_estimate": 2.4878,
+        "leverage_estimates": {
+          "1000": 2.483,
+          "10000": 2.4623,
+          "100000": 2.3661,
+          "1000000": 1.9658
+        },
+        "liquidation_mark_price": {
+          "price": "7.3432",
+          "ts_ms": 1784282594000
+        },
+        "open_interest": "35981.00",
+        "open_interest_notional_value_dollars": "264204.884900",
+        "price": "7.3429",
+        "reference_price": {
+          "price": "7.3431",
+          "ts_ms": 1784282594000
+        },
+        "settlement_mark_price": {
+          "price": "7.3429",
+          "ts_ms": 1784282590882
+        },
+        "status": "active",
+        "tick_size": "0.0001",
+        "ticker": "KXSUIPERP",
+        "title": "10 SUI",
+        "volume": "18470106.00",
+        "volume_24h": "446305.00",
+        "volume_24h_notional_value_dollars": "3305114.202500",
+        "volume_notional_value_dollars": "137271606.458800"
+      }
+    },
+    "KXXLMPERP": {
+      "series": "",
+      "asset": "xlm",
+      "raw": {
+        "ask": "0.0000",
+        "bid": "0.0000",
+        "contract_size": "10.000000",
+        "fractional_trading_enabled": false,
+        "leverage_estimate": 2.4935,
+        "leverage_estimates": {
+          "1000": 2.4935,
+          "10000": 2.4935,
+          "100000": 2.4935,
+          "1000000": 2.4935
+        },
+        "liquidation_mark_price": {
+          "price": "1.8376",
+          "ts_ms": 1784282594000
+        },
+        "open_interest": "0.00",
+        "open_interest_notional_value_dollars": "0.000000",
+        "price": "0.0000",
+        "reference_price": {
+          "price": "1.8375",
+          "ts_ms": 1784282594000
+        },
+        "settlement_mark_price": {
+          "price": "1.8378",
+          "ts_ms": 1784282590882
+        },
+        "status": "inactive",
+        "tick_size": "0.0001",
+        "ticker": "KXXLMPERP",
+        "title": "10 XLM",
+        "volume": "0.00",
+        "volume_24h": "0.00",
+        "volume_24h_notional_value_dollars": "0.000000",
+        "volume_notional_value_dollars": "0.000000"
+      }
+    },
+    "KXXRPPERP": {
+      "series": "",
+      "asset": "xrp",
+      "raw": {
+        "ask": "1.0858",
+        "bid": "1.0854",
+        "contract_size": "1.000000",
+        "fractional_trading_enabled": false,
+        "leverage_estimate": 2.7942,
+        "leverage_estimates": {
+          "1000": 2.7921,
+          "10000": 2.781,
+          "100000": 2.7316,
+          "1000000": 2.504
+        },
+        "liquidation_mark_price": {
+          "price": "1.0857",
+          "ts_ms": 1784282594000
+        },
+        "open_interest": "407906.00",
+        "open_interest_notional_value_dollars": "442578.010000",
+        "price": "1.0850",
+        "reference_price": {
+          "price": "1.0856",
+          "ts_ms": 1784282594000
+        },
+        "settlement_mark_price": {
+          "price": "1.0860",
+          "ts_ms": 1784282590882
+        },
+        "status": "active",
+        "tick_size": "0.0001",
+        "ticker": "KXXRPPERP",
+        "title": "1 XRP",
+        "volume": "136561532.00",
+        "volume_24h": "1262156.00",
+        "volume_24h_notional_value_dollars": "1385938.321500",
+        "volume_notional_value_dollars": "156551051.052000"
+      }
+    },
+    "KXZECPERP": {
+      "series": "",
+      "asset": "zec",
+      "raw": {
+        "ask": "5.3391",
+        "bid": "5.3358",
+        "contract_size": "0.010000",
+        "fractional_trading_enabled": false,
+        "leverage_estimate": 2.5237,
+        "leverage_estimates": {
+          "1000": 2.5212,
+          "10000": 2.5122,
+          "100000": 2.4686,
+          "1000000": 2.2705
+        },
+        "liquidation_mark_price": {
+          "price": "5.3376",
+          "ts_ms": 1784282594000
+        },
+        "open_interest": "85605.00",
+        "open_interest_notional_value_dollars": "456831.082500",
+        "price": "5.3365",
+        "reference_price": {
+          "price": "5.3376",
+          "ts_ms": 1784282594000
+        },
+        "settlement_mark_price": {
+          "price": "5.3384",
+          "ts_ms": 1784282590882
+        },
+        "status": "active",
+        "tick_size": "0.0001",
+        "ticker": "KXZECPERP",
+        "title": "0.01 ZEC",
+        "volume": "27103849.00",
+        "volume_24h": "2554640.00",
+        "volume_24h_notional_value_dollars": "13832100.664100",
+        "volume_notional_value_dollars": "134438060.078100"
+      }
+    }
+  }
+}
