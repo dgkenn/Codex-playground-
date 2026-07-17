@@ -1942,3 +1942,19 @@ VERDICT (answers the operator's Q2): rich data does NOT build a materially bette
 |spot-strike| threshold, not ML, and retrain as days accrue. The moneyness signal is real & worth using as a box veto AND
 (principle, not the exact feature) as a reminder to check leg-fill probability before committing multi-leg arbs. The box
 stays halted (lift too small); the useful artifact is the simple moneyness veto + the corrected causal understanding.
+
+## RISKLESS-CAPACITY (2026-07-16) — riskless bucket-arb is REAL but NEGLIGIBLE in $; thin-leg DEPTH is the binding constraint
+Studied "how much riskless money is actually there" using REAL CLOB book depth (not stale gamma summary quotes).
+Direct verification of the two live arbs:
+- GDP-2026: sum(CLOB ask)=0.960 -> edge +4.0c/$1, but thinnest leg = 11 shares -> CAPTURABLE = $0.43 (deploy ~$10.6,
+  capital-locked ~5.5 months to resolution -> rate ~9% annualized riskless but $0.43 ABSOLUTE).
+- Fed-Oct: sum=0.989 -> +1.1c/$1, thinnest leg 75 shares -> CAPTURABLE = $0.82 (deploy ~$74, ~3mo -> ~4%/yr).
+BINDING CONSTRAINT = THIN-LEG DEPTH, not the edge. Deep events (Fed) have sums barely under 1 (tiny edge); the bigger
+edges (GDP 4c) sit on thin legs (11 shares). Total capturable across the live arbs ~ $1.25.
+VERDICT: riskless money is REAL (confirms the structure + the framework) but NEGLIGIBLE in absolute $ (single dollars per
+snapshot, capital-locked for months). The RATE (~5-9%/yr riskless) isn't nothing, but capacity (~$10-75/arb, few arbs) makes
+absolute profit trivial. DO NOT build a fast execution engine for it or allocate meaningful capital -- keep bucket_arb as a
+FREE opportunistic add-on (the deployed sleeve already scans + self-validates). The 3 LONGSHOT RISK PREMIA remain the profit
+engine (real capacity + ~+20-25%/mo expected at scale, at the cost of bearing the tail). Riskless-arb capped this thin is a
+known property of liquid prediction markets: MMs keep the overround >=~1, so underrounds are rare, small, and shallow.
+Caveat: full multi-hundred-event enumeration timed out; a handful more small arbs may exist but the depth ceiling applies to all.
