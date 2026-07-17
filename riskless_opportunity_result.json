@@ -1,0 +1,111 @@
+{
+ "ts": "2026-07-17 14:39:42Z",
+ "pm_events": 629,
+ "pm_candidates": 210,
+ "k_events": 54,
+ "k_markets": 1189,
+ "n_arbs": 9,
+ "total_capturable": 75.76,
+ "arbs": [
+  {
+   "venue": "POLY",
+   "kind": "bucket sell-all",
+   "title": "Balance of Power: 2026 Midterms",
+   "n": 5,
+   "negrisk": true,
+   "edge": 0.011,
+   "sum": 1.011,
+   "depth_sets": 6627.6,
+   "capturable": 72.9
+  },
+  {
+   "venue": "POLY",
+   "kind": "bucket buy-all",
+   "title": "Highest temperature in Warsaw on July 17?",
+   "n": 11,
+   "negrisk": true,
+   "edge": 0.022,
+   "sum": 0.978,
+   "depth_sets": 0.9,
+   "capturable": 0.02
+  },
+  {
+   "venue": "POLY",
+   "kind": "bucket buy-all",
+   "title": "Where will the next next round of US-Iran peace talks be...?",
+   "n": 19,
+   "negrisk": true,
+   "edge": 0.014,
+   "sum": 0.986,
+   "depth_sets": 6.2,
+   "capturable": 0.09
+  },
+  {
+   "venue": "POLY",
+   "kind": "bucket sell-all",
+   "title": "Highest temperature in Paris on July 18?",
+   "n": 11,
+   "negrisk": true,
+   "edge": 0.026,
+   "sum": 1.026,
+   "depth_sets": 1.1,
+   "capturable": 0.03
+  },
+  {
+   "venue": "POLY",
+   "kind": "bucket sell-all",
+   "title": "Highest temperature in Panama City on July 18?",
+   "n": 11,
+   "negrisk": true,
+   "edge": 0.014,
+   "sum": 1.014,
+   "depth_sets": 5.0,
+   "capturable": 0.07
+  },
+  {
+   "venue": "POLY",
+   "kind": "bucket buy-all",
+   "title": "Clacton by-election: Count Binface Vote %",
+   "n": 5,
+   "negrisk": true,
+   "edge": 0.031,
+   "sum": 0.969,
+   "depth_sets": 36.4,
+   "capturable": 1.13
+  },
+  {
+   "venue": "POLY",
+   "kind": "bucket sell-all",
+   "title": "Highest temperature in Chengdu on July 19?",
+   "n": 11,
+   "negrisk": true,
+   "edge": 0.017,
+   "sum": 1.017,
+   "depth_sets": 18.3,
+   "capturable": 0.31
+  },
+  {
+   "venue": "POLY",
+   "kind": "bucket buy-all",
+   "title": "Japan Core CPI YoY in 2026",
+   "n": 6,
+   "negrisk": true,
+   "edge": 0.014,
+   "sum": 0.986,
+   "depth_sets": 27.9,
+   "capturable": 0.39
+  },
+  {
+   "venue": "POLY",
+   "kind": "bucket buy-all",
+   "title": "Fed Decision in October?",
+   "n": 5,
+   "negrisk": true,
+   "edge": 0.011,
+   "sum": 0.989,
+   "depth_sets": 75.0,
+   "capturable": 0.82
+  }
+ ],
+ "elapsed_s": 459.7
+}
