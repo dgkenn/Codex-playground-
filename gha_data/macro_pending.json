@@ -185,5 +185,16 @@
 "close_time": "2026-08-12T12:29:00Z",
 "anchor_prob_at_entry": 0.7865,
 "edge_at_entry": -0.0635
+},
+{
+"ticker": "KXCPIYOY-26JUL-T3.1",
+"series": "KXCPIYOY",
+"rung": "above 3.1",
+"side": "NO",
+"entry_price": 0.04,
+"ts": "2026-07-17T16:55:31+00:00",
+"close_time": "2026-08-12T12:29:00Z",
+"anchor_prob_at_entry": 0.928,
+"edge_at_entry": -0.047
 }
 ]
