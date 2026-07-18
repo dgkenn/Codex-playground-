@@ -1,0 +1,564 @@
+{
+  "generated": "2026-07-18T15:22:50.571800+00:00",
+  "n_weekly_markets": 6848,
+  "n_distinct_weeks": 49,
+  "n_markets_capped": 0,
+  "n_yes_among_qualifying": 257,
+  "date_range": [
+    "2025-01-01",
+    "2026-07-18"
+  ],
+  "verdict": {
+    "history": "Enumerated 6848 settled weekly BTC/ETH 'above' markets across 49 resolution-weeks (vs 4 weeks in the prior active-search study); 1804 markets (26%) had fillable in-band first-half YES-buy prints across 49 weeks.",
+    "fills_real": "YES - fills occur at genuine band prices (avg in-band fill 0.219); qualifying-market YES-resolution rate 0.142 confirms longshots bought cheap resolve NO.",
+    "print_edge": "Equal-weight seller edge 0.059/ct (week-clustered t=2.376, k=49 weeks, n=1804); trade-weighted (by fillable $) 0.121/ct (week-clustered t=4.166). Backtest ref +0.12/ct.",
+    "reconfirms": "RE-CONFIRMS at print level: week-clustered t>=2 over real history.",
+    "capacity": "Gross in-band fillable YES-buy flow is median ~$9360.78/week (mean ~$13715.85, ~37 fillable markets/week), NOT the ~$128/market the thin 4-week prior sample implied -- capacity comes from BREADTH (many small fills), since per market is small & right-skewed (median $80.72, mean $372.55). Total ~$672076.87 fillable notional over 49 weeks. A lone resting seller who captured, say, a third of that flow could deploy low-single-digit $k/week; at the 0.121/ct trade-weighted edge that is a few hundred $/week gross before maker competition and adverse fills -- a REAL but modest niche, capacity-bound by retail longshot-buy volume rather than by the edge.",
+    "calibration": "In-band priced YES ~0.219 vs realized YES ~0.142 -- edge confirmed (realized < priced)."
+  },
+  "sanity": {
+    "n_longshots": 3364,
+    "longshot_yes_resolution_rate": 0.0056,
+    "note": "longshots (median yes-long price<=0.30) should mostly resolve NO -> rate well below 0.5 confirms sign mapping"
+  },
+  "fill_realism": {
+    "n_all_weekly": 6848,
+    "n_zero_inband": 5044,
+    "frac_zero_inband": 0.7366,
+    "n_qualifying": 1804,
+    "frac_qualifying": 0.2634,
+    "inband_shares_quantiles_all": {
+      "0": 0,
+      "0.1": 0,
+      "0.25": 0,
+      "0.5": 0,
+      "0.75": 7.0,
+      "0.9": 728.36,
+      "1.0": 63191.72
+    },
+    "inband_dollars_quantiles_all": {
+      "0": 0,
+      "0.1": 0,
+      "0.25": 0,
+      "0.5": 0,
+      "0.75": 1.5,
+      "0.9": 157.99,
+      "1.0": 11995.1
+    },
+    "inband_shares_quantiles_qualifying": {
+      "0": 1.26,
+      "0.1": 13.45,
+      "0.25": 65.0,
+      "0.5": 377.65,
+      "0.75": 1495.38,
+      "0.9": 4518.27,
+      "1.0": 63191.72
+    },
+    "inband_dollars_quantiles_qualifying": {
+      "0": 0.2,
+      "0.1": 3.0,
+      "0.25": 13.23,
+      "0.5": 81.25,
+      "0.75": 326.95,
+      "0.9": 1014.5,
+      "1.0": 11995.1
+    },
+    "median_qualifying_shares": 376.35,
+    "median_qualifying_dollars": 80.72
+  },
+  "edge": {
+    "n_qualifying": 1804,
+    "n_week_clusters": 49,
+    "equal_weight_edge": 0.0589,
+    "equal_weight_t": 2.376,
+    "equal_weight_edge_takercost": 0.047,
+    "equal_weight_t_takercost": 1.895,
+    "trade_weighted_edge": 0.121,
+    "trade_weighted_t": 4.166,
+    "backtest_reference": 0.12,
+    "by_asset": {
+      "BTC": {
+        "n": 1019,
+        "eq_edge": 0.0606,
+        "t": 2.34,
+        "yes_rate": 0.1443
+      },
+      "ETH": {
+        "n": 785,
+        "eq_edge": 0.0589,
+        "t": 2.07,
+        "yes_rate": 0.1401
+      }
+    },
+    "adverse_selection": {
+      "median_split_shares": 376.35,
+      "heavy_n": 902,
+      "light_n": 902,
+      "heavy_yes_rate": 0.1364,
+      "light_yes_rate": 0.1486,
+      "heavy_seller_edge": 0.0828,
+      "light_seller_edge": 0.0707
+    }
+  },
+  "calibration": {
+    "avg_priced_yes": 0.2192,
+    "realized_yes_rate": 0.1425,
+    "buckets": [
+      {
+        "band": "[0.15,0.20)",
+        "n": 666,
+        "avg_priced": 0.1753,
+        "realized_yes": 0.0691
+      },
+      {
+        "band": "[0.20,0.25)",
+        "n": 647,
+        "avg_priced": 0.2226,
+        "realized_yes": 0.1267
+      },
+      {
+        "band": "[0.25,0.30)",
+        "n": 491,
+        "avg_priced": 0.2743,
+        "realized_yes": 0.2627
+      }
+    ]
+  },
+  "capacity": {
+    "median_qualifying_market_dollars": 80.72,
+    "mean_qualifying_market_dollars": 372.55,
+    "per_market_dollar_quantiles": {
+      "0": 0.2,
+      "0.1": 3.0,
+      "0.25": 13.23,
+      "0.5": 81.25,
+      "0.75": 326.95,
+      "0.9": 1014.5,
+      "1.0": 11995.1
+    },
+    "per_week_fillable_dollar_quantiles": {
+      "0": 1436.54,
+      "0.1": 3840.9,
+      "0.25": 5408.76,
+      "0.5": 9360.78,
+      "0.75": 16031.2,
+      "0.9": 32972.18,
+      "1.0": 62424.37
+    },
+    "median_week_fillable_dollars": 9360.78,
+    "mean_week_fillable_dollars": 13715.85,
+    "n_weeks_with_any_fill": 49,
+    "n_weeks_total": 49,
+    "total_fillable_dollars": 672076.87
+  },
+  "week_table": [
+    {
+      "week": "2025-W33",
+      "n": 9,
+      "yes_rate": 0.7778,
+      "eq_edge": -0.5166,
+      "avg_fill": 0.2612,
+      "fillable_dollars": 5408.76
+    },
+    {
+      "week": "2025-W34",
+      "n": 16,
+      "yes_rate": 0.125,
+      "eq_edge": 0.0958,
+      "avg_fill": 0.2208,
+      "fillable_dollars": 29085.09
+    },
+    {
+      "week": "2025-W35",
+      "n": 17,
+      "yes_rate": 0.2353,
+      "eq_edge": -0.0185,
+      "avg_fill": 0.2168,
+      "fillable_dollars": 39266.92
+    },
+    {
+      "week": "2025-W36",
+      "n": 25,
+      "yes_rate": 0.16,
+      "eq_edge": 0.0619,
+      "avg_fill": 0.2219,
+      "fillable_dollars": 20520.6
+    },
+    {
+      "week": "2025-W37",
+      "n": 28,
+      "yes_rate": 0.2857,
+      "eq_edge": -0.0675,
+      "avg_fill": 0.2182,
+      "fillable_dollars": 32996.17
+    },
+    {
+      "week": "2025-W38",
+      "n": 29,
+      "yes_rate": 0,
+      "eq_edge": 0.23,
+      "avg_fill": 0.23,
+      "fillable_dollars": 16160.4
+    },
+    {
+      "week": "2025-W39",
+      "n": 37,
+      "yes_rate": 0,
+      "eq_edge": 0.223,
+      "avg_fill": 0.223,
+      "fillable_dollars": 10328.31
+    },
+    {
+      "week": "2025-W40",
+      "n": 47,
+      "yes_rate": 0.7234,
+      "eq_edge": -0.5036,
+      "avg_fill": 0.2198,
+      "fillable_dollars": 16070.55
+    },
+    {
+      "week": "2025-W41",
+      "n": 41,
+      "yes_rate": 0.2439,
+      "eq_edge": -0.0382,
+      "avg_fill": 0.2057,
+      "fillable_dollars": 9360.78
+    },
+    {
+      "week": "2025-W42",
+      "n": 68,
+      "yes_rate": 0.0294,
+      "eq_edge": 0.192,
+      "avg_fill": 0.2214,
+      "fillable_dollars": 37394.73
+    },
+    {
+      "week": "2025-W43",
+      "n": 46,
+      "yes_rate": 0.1304,
+      "eq_edge": 0.0963,
+      "avg_fill": 0.2268,
+      "fillable_dollars": 15104.78
+    },
+    {
+      "week": "2025-W44",
+      "n": 40,
+      "yes_rate": 0.175,
+      "eq_edge": 0.053,
+      "avg_fill": 0.228,
+      "fillable_dollars": 12039.07
+    },
+    {
+      "week": "2025-W45",
+      "n": 46,
+      "yes_rate": 0,
+      "eq_edge": 0.2211,
+      "avg_fill": 0.2211,
+      "fillable_dollars": 11010.17
+    },
+    {
+      "week": "2025-W46",
+      "n": 46,
+      "yes_rate": 0.087,
+      "eq_edge": 0.1303,
+      "avg_fill": 0.2172,
+      "fillable_dollars": 8324.53
+    },
+    {
+      "week": "2025-W47",
+      "n": 59,
+      "yes_rate": 0,
+      "eq_edge": 0.2153,
+      "avg_fill": 0.2153,
+      "fillable_dollars": 42808.99
+    },
+    {
+      "week": "2025-W48",
+      "n": 52,
+      "yes_rate": 0.2308,
+      "eq_edge": -0.0127,
+      "avg_fill": 0.218,
+      "fillable_dollars": 32972.18
+    },
+    {
+      "week": "2025-W49",
+      "n": 40,
+      "yes_rate": 0.15,
+      "eq_edge": 0.0635,
+      "avg_fill": 0.2135,
+      "fillable_dollars": 10226.02
+    },
+    {
+      "week": "2025-W50",
+      "n": 34,
+      "yes_rate": 0.1765,
+      "eq_edge": 0.0415,
+      "avg_fill": 0.2179,
+      "fillable_dollars": 15233.84
+    },
+    {
+      "week": "2025-W51",
+      "n": 48,
+      "yes_rate": 0.0208,
+      "eq_edge": 0.2001,
+      "avg_fill": 0.221,
+      "fillable_dollars": 6924.66
+    },
+    {
+      "week": "2025-W52",
+      "n": 43,
+      "yes_rate": 0.093,
+      "eq_edge": 0.1216,
+      "avg_fill": 0.2146,
+      "fillable_dollars": 5648.23
+    },
+    {
+      "week": "2026-W01",
+      "n": 25,
+      "yes_rate": 0.2,
+      "eq_edge": 0.0026,
+      "avg_fill": 0.2026,
+      "fillable_dollars": 4157.97
+    },
+    {
+      "week": "2026-W02",
+      "n": 33,
+      "yes_rate": 0.2424,
+      "eq_edge": -0.0214,
+      "avg_fill": 0.221,
+      "fillable_dollars": 4566.24
+    },
+    {
+      "week": "2026-W03",
+      "n": 39,
+      "yes_rate": 0.359,
+      "eq_edge": -0.1399,
+      "avg_fill": 0.2191,
+      "fillable_dollars": 3840.9
+    },
+    {
+      "week": "2026-W04",
+      "n": 44,
+      "yes_rate": 0,
+      "eq_edge": 0.226,
+      "avg_fill": 0.226,
+      "fillable_dollars": 6634.87
+    },
+    {
+      "week": "2026-W05",
+      "n": 38,
+      "yes_rate": 0,
+      "eq_edge": 0.2116,
+      "avg_fill": 0.2116,
+      "fillable_dollars": 10720.07
+    },
+    {
+      "week": "2026-W06",
+      "n": 73,
+      "yes_rate": 0,
+      "eq_edge": 0.2219,
+      "avg_fill": 0.2219,
+      "fillable_dollars": 26630.43
+    },
+    {
+      "week": "2026-W07",
+      "n": 73,
+      "yes_rate": 0.1096,
+      "eq_edge": 0.0983,
+      "avg_fill": 0.2079,
+      "fillable_dollars": 62424.37
+    },
+    {
+      "week": "2026-W08",
+      "n": 36,
+      "yes_rate": 0,
+      "eq_edge": 0.2154,
+      "avg_fill": 0.2154,
+      "fillable_dollars": 16031.2
+    },
+    {
+      "week": "2026-W09",
+      "n": 34,
+      "yes_rate": 0.0294,
+      "eq_edge": 0.188,
+      "avg_fill": 0.2174,
+      "fillable_dollars": 15180.91
+    },
+    {
+      "week": "2026-W10",
+      "n": 41,
+      "yes_rate": 0.2927,
+      "eq_edge": -0.0678,
+      "avg_fill": 0.2249,
+      "fillable_dollars": 13997.64
+    },
+    {
+      "week": "2026-W11",
+      "n": 38,
+      "yes_rate": 0.1316,
+      "eq_edge": 0.0872,
+      "avg_fill": 0.2188,
+      "fillable_dollars": 7248.26
+    },
+    {
+      "week": "2026-W12",
+      "n": 38,
+      "yes_rate": 0.1316,
+      "eq_edge": 0.0919,
+      "avg_fill": 0.2235,
+      "fillable_dollars": 8670.1
+    },
+    {
+      "week": "2026-W13",
+      "n": 39,
+      "yes_rate": 0.0256,
+      "eq_edge": 0.1917,
+      "avg_fill": 0.2174,
+      "fillable_dollars": 26203.25
+    },
+    {
+      "week": "2026-W14",
+      "n": 41,
+      "yes_rate": 0.0488,
+      "eq_edge": 0.1708,
+      "avg_fill": 0.2196,
+      "fillable_dollars": 9839.82
+    },
+    {
+      "week": "2026-W15",
+      "n": 33,
+      "yes_rate": 0.4545,
+      "eq_edge": -0.2339,
+      "avg_fill": 0.2206,
+      "fillable_dollars": 4109.79
+    },
+    {
+      "week": "2026-W16",
+      "n": 36,
+      "yes_rate": 0.4167,
+      "eq_edge": -0.1942,
+      "avg_fill": 0.2225,
+      "fillable_dollars": 6461.42
+    },
+    {
+      "week": "2026-W17",
+      "n": 37,
+      "yes_rate": 0.1892,
+      "eq_edge": 0.0344,
+      "avg_fill": 0.2236,
+      "fillable_dollars": 7451.52
+    },
+    {
+      "week": "2026-W18",
+      "n": 32,
+      "yes_rate": 0.0938,
+      "eq_edge": 0.1315,
+      "avg_fill": 0.2253,
+      "fillable_dollars": 12834.65
+    },
+    {
+      "week": "2026-W19",
+      "n": 24,
+      "yes_rate": 0.3333,
+      "eq_edge": -0.1094,
+      "avg_fill": 0.224,
+      "fillable_dollars": 6783.68
+    },
+    {
+      "week": "2026-W20",
+      "n": 26,
+      "yes_rate": 0,
+      "eq_edge": 0.2238,
+      "avg_fill": 0.2238,
+      "fillable_dollars": 5580.5
+    },
+    {
+      "week": "2026-W21",
+      "n": 32,
+      "yes_rate": 0,
+      "eq_edge": 0.2134,
+      "avg_fill": 0.2134,
+      "fillable_dollars": 3770.92
+    },
+    {
+      "week": "2026-W22",
+      "n": 20,
+      "yes_rate": 0,
+      "eq_edge": 0.2074,
+      "avg_fill": 0.2074,
+      "fillable_dollars": 4993.64
+    },
+    {
+      "week": "2026-W23",
+      "n": 36,
+      "yes_rate": 0,
+      "eq_edge": 0.2141,
+      "avg_fill": 0.2141,
+      "fillable_dollars": 3741.19
+    },
+    {
+      "week": "2026-W24",
+      "n": 43,
+      "yes_rate": 0.0698,
+      "eq_edge": 0.1483,
+      "avg_fill": 0.2181,
+      "fillable_dollars": 6027.81
+    },
+    {
+      "week": "2026-W25",
+      "n": 24,
+      "yes_rate": 0.25,
+      "eq_edge": -0.013,
+      "avg_fill": 0.237,
+      "fillable_dollars": 3276.04
+    },
+    {
+      "week": "2026-W26",
+      "n": 29,
+      "yes_rate": 0.0345,
+      "eq_edge": 0.1853,
+      "avg_fill": 0.2197,
+      "fillable_dollars": 2679.41
+    },
+    {
+      "week": "2026-W27",
+      "n": 26,
+      "yes_rate": 0.3462,
+      "eq_edge": -0.1241,
+      "avg_fill": 0.2221,
+      "fillable_dollars": 4855.88
+    },
+    {
+      "week": "2026-W28",
+      "n": 28,
+      "yes_rate": 0.3571,
+      "eq_edge": -0.1447,
+      "avg_fill": 0.2125,
+      "fillable_dollars": 5043.07
+    },
+    {
+      "week": "2026-W29",
+      "n": 15,
+      "yes_rate": 0.1333,
+      "eq_edge": 0.0817,
+      "avg_fill": 0.215,
+      "fillable_dollars": 1436.54
+    }
+  ],
+  "worst_week": {
+    "week": "2025-W33",
+    "n": 9,
+    "yes_rate": 0.7778,
+    "eq_edge": -0.5166,
+    "avg_fill": 0.2612,
+    "fillable_dollars": 5408.76
+  },
+  "best_week": {
+    "week": "2025-W38",
+    "n": 29,
+    "yes_rate": 0,
+    "eq_edge": 0.23,
+    "avg_fill": 0.23,
+    "fillable_dollars": 16160.4
+  }
+}

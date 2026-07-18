@@ -2297,3 +2297,21 @@ BOT ARCHITECTURE (ranked by usefulness to us):
 5. ryanfrigo/kalshi-ai-trading-bot (528*), OctoBot-Prediction-Market (98*), truthlayer (67*, Poly/Kalshi arb) -- reference.
 ACTIONABLE: (a) homerun's Cox fill model is the go-live answer to our ~18%-fillable risk; (b) Wang Transform is the one
 principled selection idea we haven't tried -- worth a focused OOS test despite prior selection nulls.
+
+## TRADE-FLOW-HIST (2026-07-18, farm S3) — CONFIRMED: edge re-confirms on REAL PRINTS over 49 weeks (5th independent, strongest yet)
+Fixed the prior 4-week discovery bottleneck by enumerating weekly markets via deterministic slugs (bitcoin/ethereum-above-on-
+<date>) back to 2025-01-01, then pulled ALL real data-api/trades per conditionId. Result: 6848 settled weekly BTC/ETH markets,
+49 resolution-weeks, ~722MB real prints (scratchpad/trade_cache_hist/). Independently verified summary JSON.
+- TRADE-WEIGHTED edge (by fillable $) = +0.121/ct, week-clustered t=4.17 -> reproduces the snapshot backtest +0.12 EXACTLY, now
+  on REAL EXECUTED PRINTS over a full year. Equal-weight +0.059/ct t=2.38 (k=49). Both assets sig (BTC t=2.34, ETH t=2.07).
+- CALIBRATION OOS monotonic: priced 0.219 vs realized 0.142; buckets [0.15,0.20)->0.069, [0.20,0.25)->0.127, [0.25,0.30)->0.263.
+- MAKER-ONLY CONFIRMED: cross-the-spread (taker) drops edge to +0.047 (t=1.90, sub-2). Edge lives on the resting-maker side.
+- Adverse selection negligible (heavy-flow YES 0.136 vs light 0.149). Sign passes (3364 longshots resolve YES 0.56%).
+- Worst week 2025-W33 -0.52/ct (rally); 15/49 weeks negative (short-vol tail, expected).
+- CAPACITY (honest, corrected up from the thin 4-wk sample): 26% of markets fillable, median $81/market (mean $373), ~37
+  fillable markets/wk -> gross in-band fillable YES-buy flow median ~$9.4k/wk (mean $13.7k), ~$672k over 49 wks. Realistic
+  single-maker capture = low-single-digit $k/wk gross -> a few hundred $/wk gross profit. BINDING CONSTRAINT = retail buy-flow
+  capacity, NOT signal validity. (For a $50 bankroll capacity is NOT binding; return is edge x turnover x fill, ~frontier.)
+VERDICT: CONFIRMED, strongest validation short of live capital -- tested MATCHES live-prints over 49 weeks. Does NOT move the
+%/day frontier (~0.3-1%/day sound; capacity caps absolute $, not the small-bankroll %). The one real edge is now print-validated.
+Farm S3 done.

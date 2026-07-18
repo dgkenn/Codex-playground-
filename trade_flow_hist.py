@@ -472,10 +472,15 @@ def compute_results(rows, markets, capped_n):
                     f"Point-estimate edge is POSITIVE and near backtest, but week-clustered t={f(eq_t)} is BELOW the "
                     f"t>=2 bar -- the print-level edge is weaker/noisier than the snapshot t~4.6. Capacity selectivity "
                     f"(only {nq/n_markets:.0%} of markets fillable) and low realized-YES variance drive the softness."),
-        capacity=f"Median fillable qualifying market ~${capacity['median_qualifying_market_dollars']} YES-notional; "
-                 f"median week with any fill ~${capacity['median_week_fillable_dollars']}; "
-                 f"mean ~${capacity['mean_week_fillable_dollars']}/week. Only {n_weeks_qualifying}/{n_weeks_all} weeks "
-                 f"had ANY fillable in-band flow. Deployable capital is SMALL (tens-to-low-hundreds of $ per week).",
+        capacity=f"Gross in-band fillable YES-buy flow is median ~${capacity['median_week_fillable_dollars']}/week "
+                 f"(mean ~${capacity['mean_week_fillable_dollars']}, ~{nq/max(n_weeks_qualifying,1):.0f} fillable markets/week), "
+                 f"NOT the ~$128/market the thin 4-week prior sample implied -- capacity comes from BREADTH (many small "
+                 f"fills), since per market is small & right-skewed (median ${capacity['median_qualifying_market_dollars']}, "
+                 f"mean ${capacity['mean_qualifying_market_dollars']}). Total ~${capacity['total_fillable_dollars']} fillable "
+                 f"notional over {n_weeks_qualifying} weeks. A lone resting seller who captured, say, a third of that flow "
+                 f"could deploy low-single-digit $k/week; at the {round(tw_edge,3) if tw_edge else 'na'}/ct trade-weighted "
+                 f"edge that is a few hundred $/week gross before maker competition and adverse fills -- a REAL but modest "
+                 f"niche, capacity-bound by retail longshot-buy volume rather than by the edge.",
         calibration=f"In-band priced YES ~{f(priced_yes)} vs realized YES ~{f(realized_yes)} -- "
                     f"{'edge confirmed (realized < priced)' if (realized_yes is not None and priced_yes is not None and realized_yes < priced_yes) else 'check'}.")
     return dict(
