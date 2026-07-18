@@ -1,0 +1,386 @@
+[
+  {
+    "ticker": "KXHIGHTBOS-26JUL06-B69.5",
+    "error": "empty_book"
+  },
+  {
+    "ticker": "KXHIGHTATL-26JUL08-T90",
+    "error": "empty_book"
+  },
+  {
+    "ticker": "KXHIGHTATL-26JUL08-B92.5",
+    "side": "SHORT",
+    "family": "HIGH",
+    "city": "Atlanta",
+    "date": "2026-07-08",
+    "snapshot_ts_ms": 1783540323879,
+    "requested_ts_ms": 1783539780000,
+    "best_price": 0.55,
+    "size_at_best": 6,
+    "depth_within_1c": 16,
+    "depth_within_2c": 116
+  },
+  {
+    "ticker": "KXLOWTSFO-26JUN10-T55",
+    "error": "empty_book"
+  },
+  {
+    "ticker": "KXHIGHDEN-26JUN14-B68.5",
+    "side": "SHORT",
+    "family": "HIGH",
+    "city": "Denver",
+    "date": "2026-06-14",
+    "snapshot_ts_ms": 1781465940087,
+    "requested_ts_ms": 1781465940000,
+    "best_price": 0.93,
+    "size_at_best": 9,
+    "depth_within_1c": 44,
+    "depth_within_2c": 115
+  },
+  {
+    "ticker": "KXLOWTMIA-26MAY18-B79.5",
+    "side": "SHORT",
+    "family": "LOW",
+    "city": "Miami",
+    "date": "2026-05-18",
+    "snapshot_ts_ms": 1779084777974,
+    "requested_ts_ms": 1779084600000,
+    "best_price": 0.87,
+    "size_at_best": 16,
+    "depth_within_1c": 30,
+    "depth_within_2c": 43
+  },
+  {
+    "ticker": "KXLOWTAUS-26MAY23-B67.5",
+    "side": "SHORT",
+    "family": "LOW",
+    "city": "Austin (Bergstrom)",
+    "date": "2026-05-23",
+    "snapshot_ts_ms": 1779532683769,
+    "requested_ts_ms": 1779532680000,
+    "best_price": 0.79,
+    "size_at_best": 58,
+    "depth_within_1c": 458,
+    "depth_within_2c": 458
+  },
+  {
+    "ticker": "KXHIGHDEN-26JUN26-B85.5",
+    "error": "no_snapshot_in_window"
+  },
+  {
+    "ticker": "KXHIGHDEN-26JUL05-T94",
+    "side": "LONG",
+    "family": "HIGH",
+    "city": "Denver",
+    "date": "2026-07-05",
+    "snapshot_ts_ms": 1783282653999,
+    "requested_ts_ms": 1783282260000,
+    "best_price": 0.77,
+    "size_at_best": 0,
+    "depth_within_1c": 5,
+    "depth_within_2c": 34
+  },
+  {
+    "ticker": "KXLOWTOKC-26JUL13-T72",
+    "error": "empty_book"
+  },
+  {
+    "ticker": "KXHIGHTLV-26JUN28-B91.5",
+    "side": "SHORT",
+    "family": "HIGH",
+    "city": "Las Vegas",
+    "date": "2026-06-28",
+    "snapshot_ts_ms": 1782685082768,
+    "requested_ts_ms": 1782685080000,
+    "best_price": 0.91,
+    "size_at_best": 11,
+    "depth_within_1c": 97,
+    "depth_within_2c": 141
+  },
+  {
+    "ticker": "KXHIGHTHOU-26MAY30-T90",
+    "error": "empty_book"
+  },
+  {
+    "ticker": "KXLOWTNYC-26MAY20-B72.5",
+    "error": "empty_book"
+  },
+  {
+    "ticker": "KXLOWTNYC-26JUL06-B65.5",
+    "error": "no_snapshot_in_window"
+  },
+  {
+    "ticker": "KXHIGHTHOU-26MAY22-B87.5",
+    "error": "no_snapshot_in_window"
+  },
+  {
+    "ticker": "KXHIGHAUS-26MAY13-T88",
+    "error": "no_snapshot_in_window"
+  },
+  {
+    "ticker": "KXHIGHTATL-26JUL13-T81",
+    "error": "empty_book"
+  },
+  {
+    "ticker": "KXLOWTDEN-26JUN09-B57.5",
+    "side": "SHORT",
+    "family": "LOW",
+    "city": "Denver",
+    "date": "2026-06-09",
+    "snapshot_ts_ms": 1780994824659,
+    "requested_ts_ms": 1780994700000,
+    "best_price": 0.85,
+    "size_at_best": 13,
+    "depth_within_1c": 23,
+    "depth_within_2c": 32
+  },
+  {
+    "ticker": "KXLOWTOKC-26JUN16-T64",
+    "error": "empty_book"
+  },
+  {
+    "ticker": "KXHIGHTSFO-26MAY31-T68",
+    "error": "empty_book"
+  },
+  {
+    "ticker": "KXHIGHTHOU-26MAY15-B88.5",
+    "side": "SHORT",
+    "family": "HIGH",
+    "city": "Houston (Hobby)",
+    "date": "2026-05-15",
+    "snapshot_ts_ms": 1778873940206,
+    "requested_ts_ms": 1778873940000,
+    "best_price": 0.54,
+    "size_at_best": 15,
+    "depth_within_1c": 95,
+    "depth_within_2c": 95
+  },
+  {
+    "ticker": "KXHIGHLAX-26JUN26-B70.5",
+    "error": "no_snapshot_in_window"
+  },
+  {
+    "ticker": "KXHIGHTHOU-26JUN27-B91.5",
+    "error": "no_snapshot_in_window"
+  },
+  {
+    "ticker": "KXHIGHTSATX-26JUL03-T92",
+    "error": "no_snapshot_in_window"
+  },
+  {
+    "ticker": "KXHIGHTPHX-26MAY23-T95",
+    "error": "empty_book"
+  },
+  {
+    "ticker": "KXHIGHMIA-26JUN21-B88.5",
+    "error": "empty_book"
+  },
+  {
+    "ticker": "KXHIGHTDAL-26JUN02-B92.5",
+    "side": "SHORT",
+    "family": "HIGH",
+    "city": "Dallas",
+    "date": "2026-06-02",
+    "snapshot_ts_ms": 1780424221159,
+    "requested_ts_ms": 1780424220000,
+    "best_price": 0.94,
+    "size_at_best": 9,
+    "depth_within_1c": 9,
+    "depth_within_2c": 30
+  },
+  {
+    "ticker": "KXLOWTAUS-26JUL02-T76",
+    "error": "no_snapshot_in_window"
+  },
+  {
+    "ticker": "KXHIGHAUS-26MAY18-B90.5",
+    "side": "SHORT",
+    "family": "HIGH",
+    "city": "Austin (Bergstrom)",
+    "date": "2026-05-18",
+    "snapshot_ts_ms": 1779136561891,
+    "requested_ts_ms": 1779136560000,
+    "best_price": 0.85,
+    "size_at_best": 1,
+    "depth_within_1c": 6,
+    "depth_within_2c": 14
+  },
+  {
+    "ticker": "KXLOWTOKC-26JUL12-B72.5",
+    "side": "SHORT",
+    "family": "LOW",
+    "city": "Oklahoma City",
+    "date": "2026-07-12",
+    "snapshot_ts_ms": 1783838349629,
+    "requested_ts_ms": 1783838340000,
+    "best_price": 0.85,
+    "size_at_best": 50,
+    "depth_within_1c": 50,
+    "depth_within_2c": 50
+  },
+  {
+    "ticker": "KXHIGHTSEA-26JUL06-T79",
+    "error": "no_snapshot_in_window"
+  },
+  {
+    "ticker": "KXHIGHTOKC-26JUN15-B79.5",
+    "error": "empty_book"
+  },
+  {
+    "ticker": "KXLOWTNYC-26MAY16-T56",
+    "side": "SHORT",
+    "family": "LOW",
+    "city": "New York (Central Park)",
+    "date": "2026-05-16",
+    "snapshot_ts_ms": 1778911680058,
+    "requested_ts_ms": 1778911680000,
+    "best_price": 0.93,
+    "size_at_best": 23,
+    "depth_within_1c": 229,
+    "depth_within_2c": 309
+  },
+  {
+    "ticker": "KXLOWTNYC-26JUL03-T84",
+    "error": "no_snapshot_in_window"
+  },
+  {
+    "ticker": "KXHIGHTPHX-26JUN16-B109.5",
+    "side": "SHORT",
+    "family": "HIGH",
+    "city": "Phoenix",
+    "date": "2026-06-16",
+    "snapshot_ts_ms": 1781645341208,
+    "requested_ts_ms": 1781645340000,
+    "best_price": 0.93,
+    "size_at_best": 8,
+    "depth_within_1c": 39,
+    "depth_within_2c": 97
+  },
+  {
+    "ticker": "KXLOWTSEA-26JUL15-T60",
+    "error": "empty_book"
+  },
+  {
+    "ticker": "KXHIGHTSATX-26MAY24-B83.5",
+    "error": "empty_book"
+  },
+  {
+    "ticker": "KXHIGHMIA-26MAY15-B85.5",
+    "error": "empty_book"
+  },
+  {
+    "ticker": "KXLOWTOKC-26JUN19-T68",
+    "error": "empty_book"
+  },
+  {
+    "ticker": "KXHIGHTSFO-26JUN20-T65",
+    "error": "empty_book"
+  },
+  {
+    "ticker": "KXHIGHTSATX-26JUN02-B89.5",
+    "side": "SHORT",
+    "family": "HIGH",
+    "city": "San Antonio",
+    "date": "2026-06-02",
+    "snapshot_ts_ms": 1780427702115,
+    "requested_ts_ms": 1780427700000,
+    "best_price": 0.98,
+    "size_at_best": 93,
+    "depth_within_1c": 293,
+    "depth_within_2c": 293
+  },
+  {
+    "ticker": "KXHIGHCHI-26MAY17-B84.5",
+    "side": "SHORT",
+    "family": "HIGH",
+    "city": "Chicago (Midway)",
+    "date": "2026-05-17",
+    "snapshot_ts_ms": 1779046681268,
+    "requested_ts_ms": 1779046680000,
+    "best_price": 0.85,
+    "size_at_best": 6,
+    "depth_within_1c": 86,
+    "depth_within_2c": 86
+  },
+  {
+    "ticker": "KXHIGHAUS-26JUN13-T91",
+    "error": "empty_book"
+  },
+  {
+    "ticker": "KXLOWTNYC-26MAY15-B53.5",
+    "side": "SHORT",
+    "family": "LOW",
+    "city": "New York (Central Park)",
+    "date": "2026-05-15",
+    "snapshot_ts_ms": 1778821806828,
+    "requested_ts_ms": 1778821800000,
+    "best_price": 0.95,
+    "size_at_best": 6,
+    "depth_within_1c": 18,
+    "depth_within_2c": 98
+  },
+  {
+    "ticker": "KXHIGHTOKC-26MAY28-B81.5",
+    "side": "SHORT",
+    "family": "HIGH",
+    "city": "Oklahoma City",
+    "date": "2026-05-28",
+    "snapshot_ts_ms": 1780001789831,
+    "requested_ts_ms": 1780001760000,
+    "best_price": 0.85,
+    "size_at_best": 1,
+    "depth_within_1c": 1,
+    "depth_within_2c": 1
+  },
+  {
+    "ticker": "KXHIGHTNOLA-26JUN04-B80.5",
+    "error": "no_snapshot_in_window"
+  },
+  {
+    "ticker": "KXLOWTMIA-26MAY28-B77.5",
+    "side": "SHORT",
+    "family": "LOW",
+    "city": "Miami",
+    "date": "2026-05-28",
+    "snapshot_ts_ms": 1779965375179,
+    "requested_ts_ms": 1779965340000,
+    "best_price": 0.63,
+    "size_at_best": 2,
+    "depth_within_1c": 2,
+    "depth_within_2c": 2
+  },
+  {
+    "ticker": "KXHIGHTMIN-26JUN03-B81.5",
+    "error": "no_snapshot_in_window"
+  },
+  {
+    "ticker": "KXHIGHTATL-26JUN29-B93.5",
+    "error": "empty_book"
+  },
+  {
+    "ticker": "KXHIGHTATL-26MAY30-B82.5",
+    "side": "SHORT",
+    "family": "HIGH",
+    "city": "Atlanta",
+    "date": "2026-05-30",
+    "snapshot_ts_ms": 1780162761912,
+    "requested_ts_ms": 1780162740000,
+    "best_price": 0.83,
+    "size_at_best": 2,
+    "depth_within_1c": 34,
+    "depth_within_2c": 34
+  },
+  {
+    "ticker": "KXLOWTSATX-26MAY27-B64.5",
+    "side": "SHORT",
+    "family": "LOW",
+    "city": "San Antonio",
+    "date": "2026-05-27",
+    "snapshot_ts_ms": 1779870858754,
+    "requested_ts_ms": 1779870780000,
+    "best_price": 0.78,
+    "size_at_best": 5,
+    "depth_within_1c": 5,
+    "depth_within_2c": 157
+  }
+]
