@@ -1,0 +1,55 @@
+# Persistent Telegram CONTROL poller for the weather bot. Keeps kwx_telegram.py long-polling so your
+# phone commands (/on /off /status) land and flip KWX_SWITCH. Self-restarts hourly (each job polls ~55
+# min then exits; the next hourly cron picks up). Telegram holds unread updates ~24h, so commands sent
+# during the brief handoff gap are still delivered on the next run -- and /on /off are idempotent.
+#
+# INERT if TELEGRAM_BOT_TOKEN secret is unset. Uses the repo GITHUB_TOKEN (contents:write) to flip the
+# KWX_SWITCH file, or a GH_PAT secret if you prefer. This poller does NOT trade -- it only flips the switch;
+# the kwx-live workflow is what actually trades, gated on that switch.
+name: kwx-telegram
+
+on:
+  schedule:
+    - cron: '0 * * * *'        # hourly restart of the ~55-min poll job
+  workflow_dispatch: {}
+
+permissions:
+  contents: write              # flip KWX_SWITCH via the contents API
+
+concurrency:
+  group: kwx-telegram-singleton   # only one poller at a time
+  cancel-in-progress: false
+
+env:
+  BRANCH: claude/coding-bot-ab-test-results-ffmhxw
+
+jobs:
+  poll:
+    runs-on: ubuntu-latest
+    timeout-minutes: 58
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.BRANCH }}
+          fetch-depth: 1
+      - name: gate on telegram secret
+        id: sec
+        run: |
+          if [ -n "${{ secrets.TELEGRAM_BOT_TOKEN }}" ]; then
+            echo "have=yes" >> "$GITHUB_OUTPUT"
+          else
+            echo "have=no" >> "$GITHUB_OUTPUT"; echo "::notice::TELEGRAM_BOT_TOKEN not set -> inert"
+          fi
+      - uses: actions/setup-python@v5
+        if: steps.sec.outputs.have == 'yes'
+        with:
+          python-version: '3.12'
+      - name: poll Telegram for control commands (~55 min)
+        if: steps.sec.outputs.have == 'yes'
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          GH_TOKEN: ${{ secrets.GH_PAT || github.token }}
+          BRANCH: ${{ env.BRANCH }}
+        run: |
+          timeout 3300 python -u kwx_telegram.py || true   # ~55 min; hourly cron restarts it
