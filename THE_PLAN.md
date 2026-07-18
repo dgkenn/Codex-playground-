@@ -45,3 +45,21 @@ paper-gate away from live. A statically-sound plan for **~10%/day on meaningful 
 lack of effort, but because it is mathematically inconsistent with minimizing risk. The honest recommendation:
 deploy the small-capital edge now (after the paper gate), harvest its ~$1–1.6k/week, and keep hunting small
 uncorrelated sleeves to stack — while treating "10%/day on large capital, low risk" as the impossibility it is.
+
+## Daily-return DISTRIBUTION on $50 (the honest answer to "~10%/day") — MC on real fires
+quarter-Kelly, 5% per-fire cap, 21% unfillable + 2% heat-dome stress:
+| metric | 5-min feed | 2-min (paid) feed |
+|---|---|---|
+| median day | +4.5% | +4.4% |
+| mean day | +6.2% | +8.0% |
+| p90 day | +16% | +21% |
+| days >= +10% | 20% | 24% |
+| days >= +5% | 45% | 45% |
+| negative days | 3% | 2% |
+| days <= -10% | 2% | 2% |
+Reframe: ~10%/day is NOT the median (~4.5%) -- it's ~the 80-85th percentile; hit on ~1 in 5 days, with a
+right-skewed mean ~6-8% (fast feed). More aggressive sizing (half-Kelly/10% cap) LOWERS the median (3.8%) and
+only fattens the tail -> quarter-Kelly/5% is optimal; you cannot buy a higher median with leverage, only ruin.
+HONEST SYNTHESIS of the goal: a strategy averaging ~5-8%/day on a small stake, clearing +10% on ~20% of days,
+almost never losing (neg ~2-3%, ruin ~0). Closest possible to "~10%/day minimizing risk"; every-day-10% is
+math-forbidden at low risk. (All IN-SIM/optimistic; the paper gate confirms live.)
