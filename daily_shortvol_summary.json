@@ -1,0 +1,305 @@
+{
+  "horizon_curve": [
+    {
+      "H": 48,
+      "n": 17,
+      "days": 14,
+      "entry": 0.21273529411764705,
+      "realized": 0.29411764705882354,
+      "winrate": 0.7058823529411765,
+      "mean_mid": -0.08138235294117649,
+      "t_mid": -0.6702398650865056,
+      "mean_exe": -0.0913823529411765,
+      "t_exe": -0.7525967693616816,
+      "mean_fee": -0.10961764705882356,
+      "t_fee": -0.9006433102128752
+    },
+    {
+      "H": 24,
+      "n": 11,
+      "days": 11,
+      "entry": 0.21727272727272726,
+      "realized": 0.45454545454545453,
+      "winrate": 0.5454545454545454,
+      "mean_mid": -0.23727272727272727,
+      "t_mid": -1.5334457580783516,
+      "mean_exe": -0.24727272727272728,
+      "t_exe": -1.5980737402195848,
+      "mean_fee": -0.2618181818181818,
+      "t_fee": -1.6894994074666763
+    },
+    {
+      "H": 12,
+      "n": 13,
+      "days": 11,
+      "entry": 0.2186153846153846,
+      "realized": 0.23076923076923078,
+      "winrate": 0.7692307692307693,
+      "mean_mid": -0.012153846153846161,
+      "t_mid": -0.09366564134724364,
+      "mean_exe": -0.022153846153846152,
+      "t_exe": -0.17073230827851993,
+      "mean_fee": -0.040615384615384616,
+      "t_fee": -0.31393603383997826
+    },
+    {
+      "H": 6,
+      "n": 12,
+      "days": 11,
+      "entry": 0.23016666666666666,
+      "realized": 0.3333333333333333,
+      "winrate": 0.6666666666666666,
+      "mean_mid": -0.10316666666666668,
+      "t_mid": -0.6867892870534451,
+      "mean_exe": -0.11316666666666668,
+      "t_exe": -0.7533601387872201,
+      "mean_fee": -0.13150000000000003,
+      "t_fee": -0.8740671407927325
+    }
+  ],
+  "primary": {
+    "n": 11,
+    "days": 11,
+    "ew_mid_mean": -0.23727272727272727,
+    "ew_mid_t": -1.5334457580783516,
+    "ew_exe_mean": -0.24727272727272728,
+    "ew_exe_t": -1.5980737402195848,
+    "ew_fee_mean": -0.2618181818181818,
+    "ew_fee_t": -1.6894994074666763,
+    "entry_mean": 0.21727272727272726,
+    "realized_yes": 0.45454545454545453,
+    "winrate": 0.5454545454545454,
+    "vw_mid_mean": -0.24471589689709347,
+    "vw_exe_mean": -0.25471589689709345,
+    "vw_day_mean": -0.2372727272727273,
+    "vw_day_t": -1.5334457580783518,
+    "vw_day_k": 11,
+    "worst_day": {
+      "date": "2026-07-10",
+      "mean_pnl": -0.845,
+      "n": 1
+    },
+    "best_day": {
+      "date": "2026-06-26",
+      "mean_pnl": 0.3,
+      "n": 1
+    },
+    "neg_day_frac": 0.45454545454545453,
+    "by_asset": {
+      "bitcoin": {
+        "n": 5,
+        "days": 5,
+        "mean": -0.24099999999999996,
+        "t": -0.9937320566607759,
+        "entry": 0.159,
+        "realized": 0.4
+      },
+      "ethereum": {
+        "n": 6,
+        "days": 6,
+        "mean": -0.23416666666666666,
+        "t": -1.0625066538491632,
+        "entry": 0.2658333333333333,
+        "realized": 0.5
+      }
+    },
+    "positions_per_day": 1.0,
+    "band_obs_list": [
+      [
+        "2026-06-19",
+        "bitcoin",
+        0.155,
+        0,
+        345295.0
+      ],
+      [
+        "2026-06-20",
+        "bitcoin",
+        0.175,
+        1,
+        456265.0
+      ],
+      [
+        "2026-06-23",
+        "bitcoin",
+        0.155,
+        0,
+        306156.0
+      ],
+      [
+        "2026-06-24",
+        "ethereum",
+        0.17,
+        0,
+        68909.0
+      ],
+      [
+        "2026-06-25",
+        "bitcoin",
+        0.155,
+        0,
+        374006.0
+      ],
+      [
+        "2026-06-26",
+        "ethereum",
+        0.3,
+        0,
+        206108.0
+      ],
+      [
+        "2026-07-01",
+        "ethereum",
+        0.235,
+        1,
+        49600.0
+      ],
+      [
+        "2026-07-06",
+        "ethereum",
+        0.299,
+        0,
+        53756.0
+      ],
+      [
+        "2026-07-10",
+        "bitcoin",
+        0.155,
+        1,
+        398388.0
+      ],
+      [
+        "2026-07-14",
+        "ethereum",
+        0.295,
+        1,
+        49855.0
+      ],
+      [
+        "2026-07-15",
+        "ethereum",
+        0.296,
+        1,
+        59451.0
+      ]
+    ]
+  },
+  "calibration_24h": [
+    {
+      "lo": 0.02,
+      "hi": 0.05,
+      "n": 20,
+      "days": 15,
+      "entry": 0.03085,
+      "realized": 0,
+      "edge": -0.03085,
+      "sell_pnl": 0.03085,
+      "t": 15.434606553363675
+    },
+    {
+      "lo": 0.05,
+      "hi": 0.1,
+      "n": 16,
+      "days": 12,
+      "entry": 0.07278125,
+      "realized": 0,
+      "edge": -0.07278125,
+      "sell_pnl": 0.07278125,
+      "t": 20.545293790903436
+    },
+    {
+      "lo": 0.1,
+      "hi": 0.15,
+      "n": 9,
+      "days": 9,
+      "entry": 0.12433333333333334,
+      "realized": 0.2222222222222222,
+      "edge": 0.09788888888888887,
+      "sell_pnl": -0.09788888888888887,
+      "t": -0.674799330039062
+    },
+    {
+      "lo": 0.15,
+      "hi": 0.3,
+      "n": 11,
+      "days": 11,
+      "entry": 0.21727272727272726,
+      "realized": 0.45454545454545453,
+      "edge": 0.23727272727272727,
+      "sell_pnl": -0.23727272727272727,
+      "t": -1.5334457580783516
+    },
+    {
+      "lo": 0.3,
+      "hi": 0.5,
+      "n": 19,
+      "days": 14,
+      "entry": 0.4008421052631579,
+      "realized": 0.3684210526315789,
+      "edge": -0.03242105263157896,
+      "sell_pnl": 0.03242105263157894,
+      "t": 0.26102691076220474
+    },
+    {
+      "lo": 0.5,
+      "hi": 0.7,
+      "n": 18,
+      "days": 14,
+      "entry": 0.6073888888888889,
+      "realized": 0.6666666666666666,
+      "edge": 0.05927777777777776,
+      "sell_pnl": -0.05927777777777779,
+      "t": -0.4090985922550084
+    },
+    {
+      "lo": 0.7,
+      "hi": 0.85,
+      "n": 15,
+      "days": 12,
+      "entry": 0.7857666666666666,
+      "realized": 0.6666666666666666,
+      "edge": -0.11909999999999998,
+      "sell_pnl": 0.11909999999999998,
+      "t": 0.7952543177047933
+    },
+    {
+      "lo": 0.85,
+      "hi": 0.98,
+      "n": 44,
+      "days": 27,
+      "entry": 0.9365795454545455,
+      "realized": 0.9772727272727273,
+      "edge": 0.04069318181818182,
+      "sell_pnl": -0.040693181818181816,
+      "t": -1.6820126439428942
+    }
+  ],
+  "n_valid_24h": 638,
+  "both_wings": {
+    "n": 26,
+    "days": 17,
+    "mean": -0.16909615384615387,
+    "t": -1.7907156879988604
+  },
+  "updown": {
+    "n": 60,
+    "mean_entry_yes": 0.4783833333333333,
+    "realized_yes": 0.5833333333333334,
+    "sell_yes_pnl": -0.10494999999999999,
+    "sell_no_pnl": 0.10494999999999999,
+    "mean_abs_edge": 0.3219666666666667
+  },
+  "_verdict": "**The weekly [0.15,0.30] short-vol premium does NOT survive at the daily horizon in that band \u2014 the frequency lever does not multiply the edge; it inverts it.**\n\n\n1. **Same-band test fails.** Entering the daily ladder 24h-to-close, YES\u2208[0.15,0.30] gives n=11 over 11 days: mean seller PnL **-0.237/ct** (day-clustered t=-1.53), and calibration is INVERTED \u2014 entry 0.217 vs realized YES 0.455 (realized > priced). At daily horizon the coarse ~$2k ladder collapses to 0/1, so band strikes are NEAR-MONEY, not lottery longshots; they are fairly-to-UNDER-priced, so selling them LOSES. This is the opposite sign of the weekly overpricing, i.e. a clean fail of the transported hypothesis.\n\n2. **Only the deep-OTM tail is sellable, and trivially so.** The 2\u201310c buckets resolve YES \u22480.000, so selling earns ~their price (e.g. 5\u201310c bucket sellPnL \u22480.073, mechanical t huge because the payoff is near-deterministic). But (a) this is a DIFFERENT, lower band than the weekly; (b) magnitude per contract (\u22483\u20137c gross) is well BELOW the weekly +0.12/ct; (c) it is the taker-dead wing (nobody lifts your 3\u20137c bid reliably) \u2014 the same executability trap that killed prior deep-wing candidates; (d) with feesEnabled=0.07\u00b7p(1-p) and a ~1c spread haircut the net shrinks further.\n\n3. **Corroborating higher-power checks all point the same way.** Both-wings (YES+NO longshot, n=26): mean -0.169/ct t=-1.79 (negative, not significant). Up/Down daily (n=60): sell-YES -0.105, sell-NO 0.105 \u2014 a directional artifact (BTC/ETH drifted up in-sample), NOT a stable short-vol premium; no sellable vol edge.\n\n4. **Capacity/frequency.** In the pre-registered [0.15,0.30] band the daily ladder yields only ~1.0 tradeable position per resolution-day (n=11 over 11 days) \u2014 the coarse strike grid + short horizon starve the band. So even the intended 7\u00d7 frequency uplift does not materialize AT the profitable band.\n\n5. **BLUNT.** Daily \u2260 a faster weekly. The premium's magnitude at the weekly band is **negative** at daily horizon (point est. -0.24/ct vs weekly +0.12); the only positive is a tiny deterministic deep-tail scrape (~3\u20137c gross, taker-dead, sub-weekly, ~1 name/day). **Verdict: NULL-to-NEGATIVE for the transported edge; do NOT treat daily resolution as a lever to multiply the confirmed weekly short-vol return.** Caveat: n in-band is small (structurally, not by choice); the calibration inversion and unanimous corroboration make a hidden positive unlikely.",
+  "meta": {
+    "band": [
+      0.15,
+      0.3
+    ],
+    "primary_h": 24,
+    "haircut": 0.01,
+    "weekly_ref": 0.12,
+    "n_settled_ladders": 94,
+    "n_obs_total": 660,
+    "asof": "2026-07-18"
+  }
+}

@@ -2050,3 +2050,29 @@ CEILING RESTATED & now very firm across ~10 killed high-t/high-EV candidates: th
 thin longshot risk premium (~+12c/ct, real, tail-bearing). A DIFFERENT liquid market's line (sportsbook) is NOT superior info
 -- it is already priced in, same lesson as public forecasts (#8). Highest-value next work is MATURING the forward gates
 (pmkt_shortvol/econ/biz + bucket_arb), not hunting more new-signal probes -- diminishing returns are now explicit.
+
+## DAILY-SHORTVOL (2026-07-18) — the weekly short-vol premium does NOT transport to DAILY horizon: NULL-to-NEGATIVE
+GOAL "~10%/day": tested the single highest-value lever for a per-DAY target -- bet FREQUENCY. The confirmed edge is
+WEEKLY (+0.12/ct, t~4.6); if the same short-vol premium existed on DAILY "BTC/ETH above $X on <date>" ladders (~7x the
+resolutions/wk) the achievable daily rate would multiply. daily_shortvol.py: own pull of 94 settled BTC+ETH daily ladders
+(Jun1-Jul17 2026), 1052 strike-markets, ~660 with valid entry; entry ~24h before close; CLOB hourly mid (haircut mid->bid 1c
++ with-fee variant); day-clustered t. Independently verified summary JSON + fee fields.
+- IN-BAND (YES[0.15,0.30], 24h): n=11 mkts/11 days -- band STRUCTURALLY STARVED (~1 position/day, NOT 7x). Mean seller PnL
+  -0.237/ct t=-1.53 (equal-wt mid); VW -0.245; exe-1c -0.247; exe+fee -0.262. EVERY weighting negative. Calibration
+  INVERTED: entry 0.217 vs realized YES 0.455 (realized ABOVE priced -> selling loses).
+- MECHANISM (the real finding): the coarse ~$2k-spaced ladder collapses toward 0/1 by 24h out, so [0.15,0.30] no longer
+  holds lottery longshots -- it holds NEAR-MONEY strikes that hit ~half the time. The deep-OTM 2-10c tail IS mechanically
+  sellable (realized~0, t=15-20) but is a LOWER band than weekly, only ~3-7c gross/ct (vs +0.12), taker-dead (unreliable
+  fills), and fee-eaten. Both-wings n=26 -0.169/ct t=-1.79; Up/Down daily n=60 is a directional drift artifact, not vol prem.
+VERDICT: NULL-to-NEGATIVE. Frequency does NOT multiply the edge; at the profitable band it INVERTS. Daily resolution is not
+a lever to compound the weekly short-vol return. The DAILY_RETURN_PLAN frontier (~0.27%/day sound at 1/4-Kelly) stands as the
+ceiling -- the weekly edge is the engine; there is no daily analog to raise the per-day rate.
+
+## FEE-REGIME-FLAG (2026-07-18) — Polymarket crypto markets now carry crypto_fees_v2 (0.07 TAKER-only, 0.2 maker rebate)
+Surfaced by the daily study; VERIFIED directly on live weekly+daily BTC ladders: markets now show feeType='crypto_fees_v2',
+feesEnabled=True, feeSchedule={rate:0.07, exponent:1, takerOnly:TRUE, rebateRate:0.2}, maker/takerBaseFee=1000bps.
+- IMPACT on the CONFIRMED weekly edge: the edge is a RESTING SELLER (MAKER) -- bands on the bid and fills passively. Fee is
+  takerOnly, so maker fills pay NO fee and may earn the 0.2 rebate -> the "zero fee" assumption SURVIVES for maker execution.
+  BUT any spread-crossing (taker) fill now costs 0.07*p*(1-p); and the regime is NEW (post-validation). ACTION: forward gate
+  must confirm fills are maker (no adverse fee), and pmkt_shortvol_paper must not assume taker entry. Not a kill; a live-vs-
+  tested integrity check. Recorded so the gate watches it.
