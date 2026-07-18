@@ -15,3 +15,7 @@ scratchpad/
 .tailrisk_cache/
 .kalshi_creds
 kwx_exec_log.jsonl
+.orderbook_cache/
+kwx_forward_settled.jsonl
+kwx_runner_state.json
+kwx_runner_plan.jsonl
