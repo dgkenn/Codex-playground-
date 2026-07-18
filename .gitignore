@@ -6,3 +6,4 @@ __pycache__/
 extra.log
 scratchpad/
 .kalshi_cache/
+.nowcast_cache/
