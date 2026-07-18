@@ -1,35 +1,29 @@
-# LIVE weather-nowcast bot ($10 canary) -- the durable light switch, modeled on the box's live.yml.
-# Runs the real-money weather trader ONLY when KWX_SWITCH=on AND the Kalshi secrets exist; otherwise
-# it is completely inert. No Claude session needed -- it runs on GitHub's schedule.
+# LIVE weather-nowcast bot ($10 canary) -- durable light switch + SELF-HEALING, modeled on the box's live.yml.
+# Trades ONLY when KWX_SWITCH=on AND the Kalshi secrets exist; otherwise completely inert.
 #
-#   ON/OFF: edit the KWX_SWITCH file (one word: on|off) on $BRANCH -- or run ./kwx_switch.sh on|off,
-#           or the Telegram bot's /on /off (kwx_telegram.py). That is the entire control surface.
-#   ALERTS: FIRE / SETTLE / HALT / daily-PnL go to Telegram if TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID
-#           secrets are set (reuses the box's bot). No-op if unset.
+# SELF-HEALING (so a down bot recovers on its own):
+#   - SELF-CHAIN: each run dispatches the NEXT run at the end (github.token) -> near-continuous coverage that
+#     does NOT depend on GitHub's flaky cron.
+#   - CRON BACKUP: every 20 min, restarts the chain if a run died without chaining.
+#   - HEARTBEAT: each run commits .kwx_heartbeat (UTC ts). The kwx-watchdog workflow alerts on Telegram +
+#     re-dispatches if the heartbeat goes stale (both chain AND cron dead).
+#   - singleton concurrency -> never two live bots at once.
 #
-#   ONE-TIME ACTIVATION (deliberate; real money + secrets):
-#     1. Repo secrets (reuse the box's -- already set if the box ran live):
-#          KALSHI_API_KEY_ID  = your Kalshi API key id
-#          KALSHI_PRIVATE_KEY = the full RSA PEM (multiline ok)
-#          TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID (optional, for alerts)
-#     2. This file must be on the DEFAULT branch (main) for `schedule` to fire (merge the PR).
-#     3. Flip KWX_SWITCH on.
-#
-#   SAFE BY DEFAULT: missing Kalshi secrets OR KWX_SWITCH!=on => the job does NOTHING. Bot-side guards stay
-#     on (BANKROLL=$10, 5% per-fire cap, 60%/day deploy cap, circuit breaker, fat-finger ceilings, kill switch).
-#   SECURITY: schedule + workflow_dispatch ONLY (never pull_request), so a fork PR can't reach the secret.
+#   ON/OFF: KWX_SWITCH file (on|off) -- ./kwx_switch.sh, or Telegram /on /off. ALERTS: FIRE/SETTLE/HALT to
+#   Telegram if TELEGRAM_* secrets set. SAFE BY DEFAULT: missing Kalshi secrets OR switch!=on => nothing.
 name: kwx-live
 
 on:
   schedule:
-    - cron: '*/20 * * * *'      # every 20 min; each run time-boxes an ~18-min live poll loop
+    - cron: '*/20 * * * *'      # BACKUP restart (self-chain is primary continuity)
   workflow_dispatch: {}
 
 permissions:
-  contents: write               # persist exec/plan/settled logs back to the branch (for monitoring)
+  contents: write               # persist logs + heartbeat
+  actions: write                # self-chain: dispatch the next run
 
 concurrency:
-  group: kwx-live-singleton     # never two live weather bots at once (would double real orders)
+  group: kwx-live-singleton
   cancel-in-progress: false
 
 env:
@@ -62,7 +56,7 @@ jobs:
         if: steps.gate.outputs.switch == 'on' && steps.sec.outputs.have == 'yes'
         with:
           python-version: '3.12'
-      - name: run live weather bot (~18 min), commit logs
+      - name: run live weather bot (~16 min), commit logs + heartbeat
         if: steps.gate.outputs.switch == 'on' && steps.sec.outputs.have == 'yes'
         env:
           KWX_LIVE: "1"
@@ -75,18 +69,36 @@ jobs:
           pip -q install cryptography || true
           git config user.name  "kwx-live-bot"
           git config user.email "kwx-live-bot@users.noreply.github.com"
-          # time-boxed live loop: poll + settle for ~18 min, then exit (cron restarts the next one)
-          END=$(( $(date +%s) + 1080 ))
+          END=$(( $(date +%s) + 960 ))     # ~16 min live loop
           while [ "$(date +%s)" -lt "$END" ]; do
-            python -u kwx_paper_gate.py --once || true    # --once does one poll+settle+report cycle
+            python -u kwx_paper_gate.py --once || true
+            date -u +%FT%TZ > .kwx_heartbeat   # liveness beat each cycle
             sleep 30
           done
-          # -f: these logs are gitignored for local dev; force-add so live monitoring data commits back
-          git add -f kwx_runner_plan.jsonl kwx_forward_settled.jsonl kwx_exec_log.jsonl kwx_gate_status.txt 2>/dev/null || true
-          git commit -m "kwx-live $(date -u +%FT%H%MZ)" || { echo "nothing to commit"; exit 0; }
+          git add -f kwx_runner_plan.jsonl kwx_forward_settled.jsonl kwx_exec_log.jsonl kwx_gate_status.txt .kwx_heartbeat 2>/dev/null || true
+          git commit -m "kwx-live $(date -u +%FT%H%MZ)" || echo "nothing to commit"
           for i in 1 2 3 4 5; do
-            git push origin HEAD:${BRANCH} && exit 0
+            git push origin HEAD:${BRANCH} && break
             git fetch origin ${BRANCH} && git rebase origin/${BRANCH} || true
             sleep $((RANDOM % 6 + 2))
           done
-          echo "push failed after retries" >&2; exit 1
+      - name: self-chain (dispatch next run while switch on) -- self-healing continuity
+        if: steps.gate.outputs.switch == 'on' && steps.sec.outputs.have == 'yes'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          sw=$(tr -d '[:space:]' < KWX_SWITCH 2>/dev/null || echo off)
+          [ -f ".kwx_halt" ] && sw=off
+          if [ "$sw" = "on" ]; then
+            for i in 1 2 3 4 5; do
+              code=$(curl -s -o /dev/null -w '%{http_code}' -X POST \
+                -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
+                "https://api.github.com/repos/${{ github.repository }}/actions/workflows/kwx-live.yml/dispatches" \
+                -d '{"ref":"main"}')
+              echo "self-chain dispatch -> HTTP $code"
+              [ "$code" = "204" ] && break
+              sleep $((2 ** i))
+            done
+          else
+            echo "switch off -> not chaining"
+          fi
