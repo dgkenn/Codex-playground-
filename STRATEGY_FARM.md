@@ -84,6 +84,15 @@ Discipline unchanged: NET of Kalshi fees always (the recurring killer); executab
 6. Strategy sources to farm (K5): ryanfrigo/kalshi-ai-trading-bot, OctagonAI/kalshi-trading-bot-cli, djmorgan26/Invest (10 strats x 40k mkts), homerun Kalshi strategies.
 PRIORITY: #1 (deep history) is the biggest unlock — it converts our null-with-thin-n results into properly-powered tests; #2 sharpens K4.
 
+
+## K-WX REFINEMENT PLAN (execute IF deep-history confirms, per operator 2026-07-18)
+Make the weather-nowcast the best-possible strategy. Priority:
+1. SHRINK THE TAIL (loss=free-ASOS>official-CLI): (a) multi-source obs agreement (METAR + 1-min ASOS + 6-hr max) before firing; (b) require SUSTAINED above strike (N min, not a 1-min spike — the Miami loss); (c) per-STATION margin calibrated from that station's historical ASOS-vs-CLI bias.
+2. OPTIMIZE margin/entry-timing (gap vs fillability) + tail-aware Kelly sizing + CROSS-CITY correlation (heat waves fire many cities together → size as correlated).
+3. EXTEND: full KXHIGH bracket ('between X,Y' once obs clears X); optional forecast-assisted early-entry spectrum (earlier=bigger gap+more risk).
+4. FORWARD PAPER GATE (tested==live) before any sizing.
+Deploy only after: adequate n, honest tail acceptable, forward-gate-confirmed.
+
 ## Confirmed stack so far
 Polymarket weekly crypto short-vol (+0.12/ct, engine) + ECON (uncorrelated, small) + biz (marginal) + bucket-arb (riskless, tiny).
 Frontier ~0.3–1%/day sound. Kalshi short-vol = NULL (calibrated) → Kalshi edges must come from S4–S6 (earnings/S&P/weather) or structural, not longshot-selling.

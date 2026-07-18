@@ -14,6 +14,35 @@ priced right. This script tests whether that price gap exists, is executable, an
 survives Kalshi's fee -- with NO LOOKAHEAD, day-clustered inference, and an explicit
 audit of the real tail risk: observed-ASOS-say-YES-but-official-CLI-settled-NO.
 
+=== DEEP-HISTORY RERUN (v2) ===
+A first pass (42 calendar days, see kalshi_weather_nowcast_report.md /
+kalshi_weather_nowcast_summary.json, both left untouched as the historical record of that
+run) found a promising but unconfirmed LONG-side edge at margin=2F (n=15, 93% win,
++24.5c/ct, t=3.83) -- too thin and a single cherry-picked margin. This v2 extends to the
+FULL available history and:
+  1. Pulls ALL settled KXHIGH "greater" markets Kalshi's API exposes, not just N days.
+     IMPORTANT FINDING: in this environment, Kalshi's /markets endpoint for every KXHIGH*
+     series bottoms out at 2026-05-12 (identical oldest ticker, identical 402-market total
+     per series, and `max_close_ts` before that returns zero results) -- confirmed by
+     direct pagination probing before writing this rerun. So "deep history" here means the
+     full ~67-day window from 2026-05-12 to "yesterday" LST, NOT the 6-18 months a mature
+     real-world Kalshi weather book would have. IEM's ASOS 1-min archive itself goes back
+     decades (verified independently), so the ceiling is entirely on the Kalshi market
+     side in this environment, not the weather-obs side. LOOKBACK_DAYS is therefore set
+     large (comfortably past the true floor) and the discovery step naturally caps at
+     whatever the API actually returns -- see the printed window in the report.
+  2. Tests ALL margins {1,2,3,4,5}F x ALL gap thresholds on the FULL sample with a
+     Bonferroni correction across the resulting family of LONG-side tests (no
+     post-hoc margin cherry-pick).
+  3. Reports the CONDITIONAL ASOS-vs-CLI disagreement rate given the decision event fires
+     (the true loss probability), plus a Wilson-score worst-case upper bound on that rate
+     given the still-modest fired-event counts, and an honest/worst-case expected PnL
+     recomputed from it (not just the point-estimate empirical win rate).
+  4. Adds day-clustered t per margin on the big sample, a full per-city breakdown, worst
+     trade, and a capacity estimate (fires/week x fillable volume).
+  5. Explicitly checks whether margin 4-5F finally kills the CLI-disagreement tail while
+     keeping EV positive, and picks a single recommended deployable margin.
+
 Data (all free, no auth):
   - Kalshi public API   : https://api.elections.kalshi.com/trade-api/v2
         /markets?series_ticker=...&status=settled  (strike, result, close_time)
@@ -57,22 +86,39 @@ CACHE_DIR = os.path.join(HERE, ".nowcast_cache")
 os.makedirs(CACHE_DIR, exist_ok=True)
 
 OUT_SCRIPT = os.path.join(HERE, "kalshi_weather_nowcast.py")
-OUT_REPORT = os.path.join(HERE, "kalshi_weather_nowcast_report.md")
-OUT_SUMMARY = os.path.join(HERE, "kalshi_weather_nowcast_summary.json")
+# v2 (deep-history) outputs -- distinct from the original 42-day
+# kalshi_weather_nowcast_report.md / _summary.json, which are left on disk untouched as
+# the record of the original (thin, cherry-picked-margin) finding.
+OUT_REPORT = os.path.join(HERE, "kalshi_weather_nowcast_deep_report.md")
+OUT_SUMMARY = os.path.join(HERE, "kalshi_weather_nowcast_deep_summary.json")
 
-# Backtest window: last N days of settled KXHIGH markets ending "yesterday" LST
-LOOKBACK_DAYS = 42
+# Backtest window: last N days of settled KXHIGH markets ending "yesterday" LST. Set
+# deliberately larger than any plausible true history so market discovery naturally
+# fetches ALL settled markets the API has (it stops paginating once it runs out, or once
+# max_close_ts before the true floor returns zero -- see header note: in this environment
+# that floor is 2026-05-12 for every KXHIGH series, i.e. ~67 real days, well short of the
+# 400 requested here. We do NOT hardcode 67 -- the script re-discovers the true floor
+# every run so it stays correct if more history becomes available later).
+LOOKBACK_DAYS = 400
 
 # Decision-event margins to test (deg F on top of the strike; strike itself already
-# requires actual > strike since Kalshi "greater" markets are strict inequality). Task
-# asked for 1-2F; margin=3 added after 1-2F showed a real, large (3F) miss even at
-# margin=2 (raw 1-min ASOS running ~3F above the eventual official CLI value on one
-# Miami day) -- worth seeing whether the tail risk keeps shrinking or is a hard floor.
-MARGINS = [1, 2, 3]
+# requires actual > strike since Kalshi "greater" markets are strict inequality).
+# PRE-REGISTERED, tested identically and reported for ALL of them (no post-hoc pick):
+# 1-3F per the original brief, plus 4-5F specifically to test whether a bigger buffer
+# finally kills the ASOS-vs-official-CLI tail risk found at margin=1-2F while EV stays
+# positive.
+MARGINS = [1, 2, 3, 4, 5]
 
 # Minimum required gap (1 - exec_price for YES-side, or exec_price for NO-side is the
-# "already-priced-in" cost; gap = distance from certainty) to count as an actionable edge
+# "already-priced-in" cost; gap = distance from certainty) to count as an actionable edge.
+# Combined with MARGINS below into the pre-registered Bonferroni test family (see
+# BONFERRONI_ALPHA / bonferroni section) -- every (margin, gap) LONG-side cell is tested
+# and reported, not just the best-looking one.
 GAP_THRESHOLDS = [0.0, 0.02, 0.05]
+
+# Family-wise alpha for the Bonferroni correction across the pre-registered LONG-side
+# margin x gap-threshold test family (len(MARGINS) * len(GAP_THRESHOLDS) cells).
+BONFERRONI_ALPHA = 0.05
 
 # Local-standard-time hour (0-23) after which we allow the symmetric "locked NO" (short
 # yes / buy no) decision event to fire -- a simple, defensible proxy for "past the
@@ -536,12 +582,57 @@ def analyze_market_day(series, cfg, market, station_obs, margins):
 # 5. Stats helpers
 # ---------------------------------------------------------------------------
 
+def norm_cdf(x):
+    return 0.5 * (1.0 + math.erf(x / math.sqrt(2.0)))
+
+
+def norm_ppf(p, lo=-12.0, hi=12.0, iters=200):
+    """Inverse standard-normal CDF via bisection (no scipy available). Accurate to
+    ~1e-9 in the tail ranges we use (p in [1e-6, 1-1e-6])."""
+    if p <= 0.0:
+        return -float("inf")
+    if p >= 1.0:
+        return float("inf")
+    for _ in range(iters):
+        mid = (lo + hi) / 2.0
+        if norm_cdf(mid) < p:
+            lo = mid
+        else:
+            hi = mid
+    return (lo + hi) / 2.0
+
+
+def two_sided_pvalue(t):
+    """Two-sided p-value for a t-stat using the normal approximation (day-cluster
+    counts here run into the dozens-to-~60s, close enough to normal that this is a
+    reasonable stand-in for a true t-distribution p-value without scipy; noted as an
+    approximation wherever reported)."""
+    if t is None or (isinstance(t, float) and math.isnan(t)):
+        return None
+    return 2.0 * (1.0 - norm_cdf(abs(t)))
+
+
+def wilson_upper_bound(k, n, z):
+    """Upper bound of the Wilson score confidence interval for a binomial proportion
+    k/n at the two-sided confidence implied by z (e.g. z=1.96 for 95%). Used to turn a
+    small-n empirical loss rate into an honest, uncertainty-aware WORST-CASE loss rate
+    for the tail-risk / expected-PnL recompute, rather than trusting the small-n point
+    estimate at face value."""
+    if n <= 0:
+        return None
+    phat = k / n
+    denom = 1.0 + z * z / n
+    center = phat + z * z / (2 * n)
+    half = z * math.sqrt(phat * (1 - phat) / n + z * z / (4 * n * n))
+    return min(1.0, (center + half) / denom)
+
+
 def clustered_tstat(pnls, cluster_keys):
     """Cluster-robust t-stat for the mean of pnls, clustered by cluster_keys
     (typically calendar date, since weather is correlated across cities same-day)."""
     n = len(pnls)
     if n == 0:
-        return {"mean": None, "se": None, "t": None, "n": 0, "n_clusters": 0}
+        return {"mean": None, "se": None, "t": None, "p": None, "n": 0, "n_clusters": 0}
     mean = sum(pnls) / n
     clusters = {}
     for p, k in zip(pnls, cluster_keys):
@@ -550,7 +641,8 @@ def clustered_tstat(pnls, cluster_keys):
     var = sum(s * s for s in cluster_sums) / (n * n) if n > 0 else 0.0
     se = math.sqrt(var) if var > 0 else 0.0
     t = mean / se if se > 0 else float("nan")
-    return {"mean": mean, "se": se, "t": t, "n": n, "n_clusters": len(clusters)}
+    p_two_sided = two_sided_pvalue(t) if se > 0 else None
+    return {"mean": mean, "se": se, "t": t, "p": p_two_sided, "n": n, "n_clusters": len(clusters)}
 
 
 def worst_day(pnls, dates, tickers):
@@ -570,16 +662,31 @@ def main():
     min_date = today - timedelta(days=LOOKBACK_DAYS)
     max_date = today
 
-    print(f"=== Kalshi KXHIGH settlement-nowcast backtest ===")
-    print(f"Window: {min_date} .. {max_date} ({LOOKBACK_DAYS}d), {len(CITY_CONFIG)} cities")
+    print(f"=== Kalshi KXHIGH settlement-nowcast backtest (DEEP HISTORY v2) ===")
+    print(f"Requested window (upper bound): {min_date} .. {max_date} ({LOOKBACK_DAYS}d), {len(CITY_CONFIG)} cities")
 
-    print("\n[1/4] Discovering settled 'greater than X' KXHIGH markets ...")
+    print("\n[1/4] Discovering settled 'greater than X' KXHIGH markets (paginating to the true API floor) ...")
     all_mkts = discover_all_markets(min_date)
     total_mkts = sum(len(v) for v in all_mkts.values())
     print(f"  total candidate market-days: {total_mkts}")
 
-    print("\n[2/4] Fetching ASOS station obs (one bulk request per station) ...")
-    station_series = build_station_series(min_date, max_date)
+    # ASOS fetch range should track the ACTUAL discovered market dates, not the
+    # deliberately-oversized LOOKBACK_DAYS request -- otherwise we'd pull ~400 days of
+    # unneeded 1-min ASOS data per station (bandwidth + disk) when the real Kalshi
+    # history floor (rediscovered above) is much shallower.
+    all_tickers_dates = [parse_ticker_date(m["ticker"]) for mkts in all_mkts.values() for m in mkts]
+    all_tickers_dates = [d for d in all_tickers_dates if d is not None]
+    if all_tickers_dates:
+        asos_min_date = min(all_tickers_dates)
+        asos_max_date = max(all_tickers_dates)
+    else:
+        asos_min_date, asos_max_date = min_date, max_date
+    print(f"  actual discovered market-date range: {asos_min_date} .. {asos_max_date} "
+          f"({(asos_max_date - asos_min_date).days + 1} days) -- this is the TRUE depth of KXHIGH "
+          f"history exposed by the API in this environment, and what ASOS is fetched for below.")
+
+    print("\n[2/4] Fetching ASOS station obs (one bulk request per station, actual-range only) ...")
+    station_series = build_station_series(asos_min_date, asos_max_date)
     station_resolution = compute_station_resolution(station_series)
 
     print("\n[3/4] Fetching Kalshi 1-min candlesticks per market-day (concurrent) ...")
@@ -630,36 +737,77 @@ def main():
     print(f"  {OUT_REPORT}")
 
 
-def side_stats(fired, side_key, bad_key, n_city_days):
+def side_stats(fired, side_key, bad_key, n_city_days, n_weeks=None):
     """fired = list of (record, side_dict) pairs where side_dict has pnl/exec_price/etc."""
     pnls = [sd["pnl"] for _, sd in fired]
     dates = [r["date"] for r, _ in fired]
     tickers = [r["ticker"] for r, _ in fired]
     prices = [sd["exec_price"] for _, sd in fired]
     wins = [sd["outcome"] for _, sd in fired]
+    fees = [sd["fee"] for _, sd in fired]
     vols = [sd["volume_at_exec"] for _, sd in fired]
     ois = [sd["oi_at_exec"] for _, sd in fired]
+    fillable_vols_5 = [sd["volume_5min_after"] for _, sd in fired]
     bad = [(r, sd) for r, sd in fired if sd.get(bad_key)]
     fillable = [(r, sd) for r, sd in fired if sd.get("fillable")]
 
+    n_fired = len(fired)
+    mean_price = (sum(prices) / len(prices)) if prices else None
+    mean_fee = (sum(fees) / len(fees)) if fees else None
+    win_rate = (sum(wins) / len(wins)) if wins else None
+    # the REAL loss mode for the LONG side is exactly "fired but settled the other way",
+    # i.e. cond_loss_rate == 1-win_rate here; kept as an explicit, separately-labeled key
+    # per the task's request to report the CONDITIONAL disagreement rate given fired.
+    cond_loss_rate = (1.0 - win_rate) if win_rate is not None else None
+    n_bad = len(bad)
+
+    # Wilson-score UPPER bound on the true loss rate given only n_fired observed events
+    # (95% one-sided-equivalent via z=1.96 two-sided Wilson interval) -- an honest,
+    # uncertainty-aware stand-in for "how bad could the tail really be" given the still
+    # modest fired-event counts, rather than trusting the small-n point estimate.
+    z95 = 1.959963985
+    worst_case_loss_rate = wilson_upper_bound(n_bad, n_fired, z95) if n_fired else None
+
+    # Analytic EV decomposition: E[pnl] = win_rate - mean_price - mean_fee (since
+    # outcome in {0,1} and pnl = outcome - price - fee). Reported both at the point
+    # estimate (should equal empirical mean pnl, sanity check) and at the Wilson
+    # worst-case loss rate (honest-tail / worst-case expected PnL).
+    analytic_ev_point = (win_rate - mean_price - mean_fee) if (win_rate is not None and mean_price is not None and mean_fee is not None) else None
+    analytic_ev_worst_case = ((1.0 - worst_case_loss_rate) - mean_price - mean_fee) if (worst_case_loss_rate is not None and mean_price is not None and mean_fee is not None) else None
+
     gap_sens = {}
     for gt in GAP_THRESHOLDS:
-        sub = [sd["pnl"] for _, sd in fired if sd["gap"] > gt]
-        gap_sens[str(gt)] = {"n": len(sub), "mean_pnl": (sum(sub) / len(sub)) if sub else None}
+        sub_pairs = [(r, sd) for r, sd in fired if sd["gap"] > gt]
+        sub_pnls = [sd["pnl"] for _, sd in sub_pairs]
+        sub_dates = [r["date"] for r, _ in sub_pairs]
+        ct = clustered_tstat(sub_pnls, sub_dates)
+        gap_sens[str(gt)] = {
+            "n": len(sub_pairs),
+            "mean_pnl": (sum(sub_pnls) / len(sub_pnls)) if sub_pnls else None,
+            "t": ct["t"], "p": ct["p"], "n_clusters": ct["n_clusters"], "se": ct["se"],
+        }
 
     stats = {
-        "n_fired": len(fired),
-        "fire_rate": len(fired) / n_city_days if n_city_days else None,
-        "mean_exec_price": (sum(prices) / len(prices)) if prices else None,
+        "n_fired": n_fired,
+        "fire_rate": n_fired / n_city_days if n_city_days else None,
+        "fires_per_week": (n_fired / n_weeks) if (n_weeks and n_weeks > 0) else None,
+        "mean_exec_price": mean_price,
         "median_exec_price": statistics.median(prices) if prices else None,
-        "win_rate": (sum(wins) / len(wins)) if wins else None,
-        f"n_{bad_key}": len(bad),
+        "mean_fee": mean_fee,
+        "win_rate": win_rate,
+        f"n_{bad_key}": n_bad,
         f"{bad_key}_tickers": [r["ticker"] for r, _ in bad],
+        "cond_loss_rate_given_fired": cond_loss_rate,
+        "worst_case_loss_rate_wilson95": worst_case_loss_rate,
+        "analytic_ev_point": analytic_ev_point,
+        "analytic_ev_worst_case": analytic_ev_worst_case,
         "clustered": clustered_tstat(pnls, dates),
         "worst_day": worst_day(pnls, dates, tickers),
         "mean_volume_at_exec": (sum(vols) / len(vols)) if vols else None,
         "median_volume_at_exec": statistics.median(vols) if vols else None,
         "mean_oi_at_exec": (sum(ois) / len(ois)) if ois else None,
+        "mean_volume_5min_after": (sum(fillable_vols_5) / len(fillable_vols_5)) if fillable_vols_5 else None,
+        "median_volume_5min_after": statistics.median(fillable_vols_5) if fillable_vols_5 else None,
         "gap_sensitivity": gap_sens,
         "n_fillable": len(fillable),
         "fillable_rate": (len(fillable) / len(fired)) if fired else None,
@@ -669,8 +817,91 @@ def side_stats(fired, side_key, bad_key, n_city_days):
     return stats
 
 
+def bonferroni_analysis(by_margin, family_side="long"):
+    """Build the pre-registered LONG-side margin x gap-threshold test family and apply a
+    Bonferroni correction across ALL of it (no post-hoc pick of the single best-looking
+    cell). family size = len(MARGINS) * len(GAP_THRESHOLDS)."""
+    cells = []
+    for margin in MARGINS:
+        s = by_margin[str(margin)][family_side]
+        for gt in GAP_THRESHOLDS:
+            gs = s["gap_sensitivity"][str(gt)]
+            cells.append({
+                "margin": margin, "gap_threshold": gt, "n": gs["n"], "mean_pnl": gs["mean_pnl"],
+                "t": gs["t"], "p_uncorrected": gs["p"], "n_clusters": gs["n_clusters"],
+            })
+    family_size = len(cells)
+    corrected_alpha = BONFERRONI_ALPHA / family_size if family_size else BONFERRONI_ALPHA
+    z_crit = norm_ppf(1.0 - corrected_alpha / 2.0)
+    for c in cells:
+        c["p_bonferroni"] = min(1.0, c["p_uncorrected"] * family_size) if c["p_uncorrected"] is not None else None
+        c["significant_uncorrected_a05"] = (c["p_uncorrected"] is not None and c["p_uncorrected"] < 0.05)
+        c["significant_bonferroni"] = (c["p_uncorrected"] is not None and c["p_uncorrected"] < corrected_alpha)
+    return {
+        "family_side": family_side,
+        "family_size": family_size,
+        "alpha": BONFERRONI_ALPHA,
+        "corrected_alpha": corrected_alpha,
+        "z_crit_two_sided": z_crit,
+        "cells": cells,
+    }
+
+
+def pick_best_margin(by_margin, bonferroni, min_n=8):
+    """Deployable-margin recommendation: among LONG-side margins with the primary
+    (gap_threshold=0) spec, require (a) Bonferroni-significant at the family-corrected
+    alpha, (b) worst-case (Wilson-95 upper-bound loss rate) analytic EV still positive,
+    and (c) n_fired >= min_n. Rank survivors by worst-case EV (the honest, tail-aware
+    number) rather than by raw mean PnL, then fall back to the least-bad candidate with
+    a clear reason if nothing clears the bar."""
+    sig_by_cell = {(c["margin"], c["gap_threshold"]): c for c in bonferroni["cells"]}
+    candidates = []
+    for margin in MARGINS:
+        s = by_margin[str(margin)]["long"]
+        cell = sig_by_cell.get((margin, 0.0))
+        ok_n = s["n_fired"] >= min_n
+        ok_sig = bool(cell and cell["significant_bonferroni"])
+        ok_tail = (s["analytic_ev_worst_case"] is not None and s["analytic_ev_worst_case"] > 0)
+        candidates.append({
+            "margin": margin, "n_fired": s["n_fired"], "win_rate": s["win_rate"],
+            "mean_pnl": s["clustered"]["mean"], "t": s["clustered"]["t"],
+            "p_bonferroni": cell["p_bonferroni"] if cell else None,
+            "cond_loss_rate_given_fired": s["cond_loss_rate_given_fired"],
+            "worst_case_loss_rate_wilson95": s["worst_case_loss_rate_wilson95"],
+            "analytic_ev_point": s["analytic_ev_point"],
+            "analytic_ev_worst_case": s["analytic_ev_worst_case"],
+            "fires_per_week": s["fires_per_week"],
+            "ok_n": ok_n, "ok_bonferroni_significant": ok_sig, "ok_worst_case_ev_positive": ok_tail,
+            "passes_all": ok_n and ok_sig and ok_tail,
+        })
+    survivors = [c for c in candidates if c["passes_all"]]
+    if survivors:
+        best = max(survivors, key=lambda c: c["analytic_ev_worst_case"])
+        verdict = "CONFIRMED"
+    else:
+        # no margin clears every bar -- report the least-bad candidate for transparency
+        # but the verdict is a kill, not a soft pass.
+        best = max(candidates, key=lambda c: (c["analytic_ev_worst_case"] if c["analytic_ev_worst_case"] is not None else -999))
+        verdict = "KILLED"
+    return {"verdict": verdict, "recommended_margin": best["margin"] if best else None,
+            "candidates": candidates, "chosen": best}
+
+
 def build_summary(results, skipped, min_date, max_date, station_resolution=None):
     n_city_days = len(results)
+
+    # Use the ACTUAL discovered date range (not the requested LOOKBACK_DAYS floor) for
+    # window reporting and capacity (fires/week) math -- LOOKBACK_DAYS=400 is just an
+    # upper bound; the real Kalshi-side floor in this environment is 2026-05-12 (see
+    # header note), rediscovered here from the data itself so the script stays correct
+    # if the API exposes more/less history in the future.
+    if results:
+        actual_min_date = min(datetime.strptime(r["date"], "%Y-%m-%d").date() for r in results)
+        actual_max_date = max(datetime.strptime(r["date"], "%Y-%m-%d").date() for r in results)
+    else:
+        actual_min_date, actual_max_date = min_date, max_date
+    span_days = (actual_max_date - actual_min_date).days + 1
+    n_weeks = span_days / 7.0
 
     asos_cli_agree = sum(1 for r in results if r["asos_vs_strike_yes"] == r["official_yes"])
     asos_cli_disagree = [r for r in results if r["asos_vs_strike_yes"] != r["official_yes"]]
@@ -682,9 +913,12 @@ def build_summary(results, skipped, min_date, max_date, station_resolution=None)
         short_fired = [(r, r["short"][mk]) for r in results if r["short"][mk].get("fired") and "pnl" in r["short"][mk]]
 
         by_margin[mk] = {
-            "long": side_stats(long_fired, "long", "locked_yes_settled_no", n_city_days),
-            "short": side_stats(short_fired, "short", "locked_no_settled_yes", n_city_days),
+            "long": side_stats(long_fired, "long", "locked_yes_settled_no", n_city_days, n_weeks),
+            "short": side_stats(short_fired, "short", "locked_no_settled_yes", n_city_days, n_weeks),
         }
+
+    bonferroni = bonferroni_analysis(by_margin, "long")
+    best_margin = pick_best_margin(by_margin, bonferroni)
 
     # short-side sensitivity to the late-day cutoff hour (computed for margins[0])
     cutoff_sens = {}
@@ -692,23 +926,54 @@ def build_summary(results, skipped, min_date, max_date, station_resolution=None)
         hk = str(h)
         fired = [(r, r["short_by_cutoff"][hk]) for r in results
                  if r.get("short_by_cutoff", {}).get(hk, {}).get("fired") and "pnl" in r["short_by_cutoff"][hk]]
-        cutoff_sens[hk] = side_stats(fired, "short", "locked_no_settled_yes", n_city_days)
+        cutoff_sens[hk] = side_stats(fired, "short", "locked_no_settled_yes", n_city_days, n_weeks)
 
     by_city = {}
     for series, cfg in CITY_CONFIG.items():
         city_res = [r for r in results if r["series"] == series]
         if not city_res:
             continue
-        mk = str(MARGINS[0])
-        lf = [r for r in city_res if r["long"][mk].get("fired") and "pnl" in r["long"][mk]]
-        by_city[series] = {
-            "name": cfg["name"], "station": cfg["station"], "n_city_days": len(city_res),
-            f"long_margin{MARGINS[0]}_fired": len(lf),
-            f"long_margin{MARGINS[0]}_mean_pnl": (sum(r["long"][mk]["pnl"] for r in lf) / len(lf)) if lf else None,
+        entry = {"name": cfg["name"], "station": cfg["station"], "n_city_days": len(city_res), "by_margin": {}}
+        for margin in MARGINS:
+            mk = str(margin)
+            lf = [r for r in city_res if r["long"][mk].get("fired") and "pnl" in r["long"][mk]]
+            bad = [r for r in lf if r["long"][mk].get("locked_yes_settled_no")]
+            entry["by_margin"][mk] = {
+                "fired": len(lf),
+                "mean_pnl": (sum(r["long"][mk]["pnl"] for r in lf) / len(lf)) if lf else None,
+                "win_rate": (sum(r["long"][mk]["outcome"] for r in lf) / len(lf)) if lf else None,
+                "n_settled_wrong_way": len(bad),
+            }
+        by_city[series] = entry
+
+    # capacity: recommended-margin fire rate/week x fillable size, as a rough weekly
+    # deployable-notional proxy (median fillable contracts/event x mean entry price).
+    capacity = {}
+    for margin in MARGINS:
+        s = by_margin[str(margin)]["long"]
+        med_fill_vol = s.get("median_volume_5min_after")
+        capacity[str(margin)] = {
+            "fires_per_week": s["fires_per_week"],
+            "fillable_rate": s["fillable_rate"],
+            "median_fillable_volume_5min": med_fill_vol,
+            "mean_entry_price": s["mean_exec_price"],
+            "rough_weekly_notional_usd": (
+                s["fires_per_week"] * s["fillable_rate"] * med_fill_vol * s["mean_exec_price"]
+                if all(x is not None for x in (s["fires_per_week"], s["fillable_rate"], med_fill_vol, s["mean_exec_price"]))
+                else None
+            ),
         }
 
     summary = {
-        "window": {"min_date": min_date.isoformat(), "max_date": max_date.isoformat(), "lookback_days": LOOKBACK_DAYS},
+        "window": {
+            "requested_min_date": min_date.isoformat(), "requested_max_date": max_date.isoformat(),
+            "requested_lookback_days": LOOKBACK_DAYS,
+            "actual_min_date": actual_min_date.isoformat(), "actual_max_date": actual_max_date.isoformat(),
+            "actual_span_days": span_days,
+            "note": "actual_* is the TRUE full history the Kalshi API exposed in this environment "
+                    "(discovery pages back until max_close_ts returns zero) -- see script header. "
+                    "requested_lookback_days=400 was an upper bound, not the real depth achieved.",
+        },
         "n_series": len(CITY_CONFIG),
         "n_city_days_analyzed": n_city_days,
         "n_city_days_skipped": len(skipped),
@@ -716,10 +981,11 @@ def build_summary(results, skipped, min_date, max_date, station_resolution=None)
             "agree": asos_cli_agree,
             "agree_rate": asos_cli_agree / n_city_days if n_city_days else None,
             "disagree_n": len(asos_cli_disagree),
+            "disagree_rate_unconditional": len(asos_cli_disagree) / n_city_days if n_city_days else None,
             "disagree_examples": [
                 {"ticker": r["ticker"], "date": r["date"], "strike": r["strike"],
                  "asos_full_day_max": r["full_day_asos_max"], "official_result": r["result"]}
-                for r in asos_cli_disagree[:15]
+                for r in asos_cli_disagree[:20]
             ],
         },
         "margins_tested": MARGINS,
@@ -729,6 +995,9 @@ def build_summary(results, skipped, min_date, max_date, station_resolution=None)
         "fee_model": "0.07 * p * (1-p) per contract",
         "station_resolution_min_gap": station_resolution or {},
         "by_margin": by_margin,
+        "bonferroni": bonferroni,
+        "best_margin": best_margin,
+        "capacity": capacity,
         "short_cutoff_sensitivity": cutoff_sens,
         "by_city": by_city,
     }
@@ -744,13 +1013,27 @@ def fmt(x, nd=4):
 
 
 def write_report(summary, results):
+    w = summary["window"]
     lines = []
-    lines.append("# Kalshi KXHIGH Weather Settlement-Nowcast Backtest\n")
+    lines.append("# Kalshi KXHIGH Weather Settlement-Nowcast Backtest -- DEEP HISTORY RERUN (v2)\n")
     lines.append("## Executive summary\n")
     lines.append(verdict_text(summary))
     lines.append("\n---\n")
-    lines.append(f"Window: {summary['window']['min_date']} to {summary['window']['max_date']} "
-                 f"({summary['window']['lookback_days']} days), {summary['n_series']} KXHIGH city series.\n")
+    lines.append(f"**Requested** lookback: {w['requested_lookback_days']} days (an intentionally large upper "
+                 f"bound). **Actual** history available and used: **{w['actual_min_date']} to "
+                 f"{w['actual_max_date']}** ({w['actual_span_days']} calendar days), {summary['n_series']} "
+                 f"KXHIGH city series.\n")
+    lines.append("**Data-depth finding (read this first):** direct pagination probing of Kalshi's "
+                 "`/markets?series_ticker=...&status=settled` endpoint (and confirming with "
+                 "`max_close_ts` filters before the apparent floor) shows every KXHIGH* series in this "
+                 "environment starts at the SAME date, 2026-05-12, with the SAME market count. That is a "
+                 "hard floor on the Kalshi side, not a self-imposed limit -- this script fetches ALL of it "
+                 "(`LOOKBACK_DAYS=400` as an upper bound, real depth rediscovered from the data every run). "
+                 "IEM's ASOS 1-min archive was independently checked back to 2020 and has no such limit, so "
+                 "the ceiling here is specifically \"how much settled KXHIGH history Kalshi exposes\", not "
+                 "weather-data availability. This means the 'deep history' rerun is ~1.6x the original 42-day "
+                 "sample, not the 6-18 months / hundreds-of-events scale the task brief anticipated -- reported "
+                 "honestly below rather than working around it.\n")
     lines.append(f"City-days analyzed: **{summary['n_city_days_analyzed']}** "
                  f"(skipped {summary['n_city_days_skipped']} for insufficient ASOS/candle data).\n")
 
@@ -764,11 +1047,17 @@ def write_report(summary, results):
                      f"was tested first and rejected: it visibly missed a real ~2F spike at KDEN on 2026-07-08 "
                      f"that occurred between two hourly readings and flipped a market's settlement (see below).\n")
 
-    lines.append("\n## 1. ASOS-observed vs official CLI settlement agreement (the key tail risk)\n")
+    lines.append("\n## 1. ASOS-observed vs official CLI settlement agreement -- the true tail risk\n")
     a = summary["asos_vs_official_cli"]
-    lines.append(f"Comparing (full-LST-day ASOS max at the settlement station > strike) to the "
-                 f"official Kalshi result: agreement = **{a['agree']}/{summary['n_city_days_analyzed']}** "
-                 f"({fmt(a['agree_rate'], 3)}). Disagreements: **{a['disagree_n']}**.\n")
+    lines.append(f"UNCONDITIONAL: comparing (full-LST-day ASOS max at the settlement station > strike) to the "
+                 f"official Kalshi result across ALL city-days (not just fired events): agreement = "
+                 f"**{a['agree']}/{summary['n_city_days_analyzed']}** ({fmt(a['agree_rate'], 3)}). "
+                 f"Disagreements: **{a['disagree_n']}** ({fmt(a['disagree_rate_unconditional'],3)}).\n")
+    lines.append("CONDITIONAL (the real loss probability): given the LONG decision event actually FIRES "
+                 "(running ASOS max clears strike+margin), the loss rate is `cond_loss_rate_given_fired` "
+                 "reported per margin in section 2 below -- this is what matters for sizing the trade, not the "
+                 "unconditional rate above, since firing already selects for days where ASOS ran hot relative "
+                 "to strike.\n")
     if a["disagree_examples"]:
         lines.append("\nExample disagreements (ASOS says one thing, official CLI settled the other):\n")
         lines.append("| ticker | date | strike | ASOS full-day max | official result |")
@@ -797,22 +1086,36 @@ def write_report(summary, results):
                          f"{s[bad_key]}** {s.get('locked_yes_settled_no_tickers') or s.get('locked_no_settled_yes_tickers')}")
             c = s["clustered"]
             lines.append(f"- Net PnL/contract: mean {fmt(c['mean'])}, day-clustered SE {fmt(c['se'])}, "
-                         f"**t = {fmt(c['t'],2)}** (n={c['n']}, n_clusters={c['n_clusters']})")
+                         f"**t = {fmt(c['t'],2)}**, p (normal-approx, uncorrected) = {fmt(c['p'],4)} "
+                         f"(n={c['n']}, n_clusters={c['n_clusters']})")
+            if side == "long":
+                lines.append(f"- **Conditional loss rate given fired (the real tail risk): "
+                             f"{fmt(s['cond_loss_rate_given_fired'],3)}** | Wilson-95 worst-case upper bound on "
+                             f"that loss rate given only n={s['n_fired']} fired events: "
+                             f"**{fmt(s['worst_case_loss_rate_wilson95'],3)}**")
+                lines.append(f"- Analytic EV/contract at point-estimate loss rate: {fmt(s['analytic_ev_point'])} "
+                             f"(sanity check vs. empirical mean PnL above) | at Wilson-95 **worst-case** loss rate: "
+                             f"**{fmt(s['analytic_ev_worst_case'])}**")
+                lines.append(f"- Fires/week (over the {summary['window']['actual_span_days']}-day window): "
+                             f"{fmt(s['fires_per_week'],2)}")
             if s["worst_day"]:
                 w = s["worst_day"]
                 lines.append(f"- Worst trade: {fmt(w['pnl'])} on {w['date']} ({w['ticker']})")
             lines.append(f"- Capacity proxy: mean volume at execution candle = {fmt(s['mean_volume_at_exec'],1)} "
                          f"contracts/min (median {fmt(s['median_volume_at_exec'],1)}); mean open interest = "
-                         f"{fmt(s['mean_oi_at_exec'],1)}")
+                         f"{fmt(s['mean_oi_at_exec'],1)}; median fillable volume in the 5min after t* = "
+                         f"{fmt(s['median_volume_5min_after'],1)} contracts")
             lines.append(f"- **Fillable (>0 volume in the 5min after t*): {s['n_fillable']}/{s['n_fired']} "
                          f"({fmt(s['fillable_rate'],3)})**, mean exec price when fillable = "
                          f"{fmt(s['fillable_mean_exec_price'])}, day-clustered t (fillable-only) = "
                          f"{fmt(s['fillable_clustered']['t'],2)} (mean {fmt(s['fillable_clustered']['mean'])}, "
                          f"n={s['fillable_clustered']['n']})")
-            lines.append(f"- Gap-threshold sensitivity (min required 1-price edge):")
+            lines.append(f"- Gap-threshold sensitivity (min required 1-price edge; part of the pre-registered "
+                         f"Bonferroni test family for the LONG side, see section 2c):")
             for gt in summary["gap_thresholds_tested"]:
                 gs = s["gap_sensitivity"][str(gt)]
-                lines.append(f"  - gap > {gt}: n={gs['n']}, mean PnL = {fmt(gs['mean_pnl'])}")
+                lines.append(f"  - gap > {gt}: n={gs['n']}, mean PnL = {fmt(gs['mean_pnl'])}, "
+                             f"t={fmt(gs['t'],2)}, p={fmt(gs['p'],4)}")
 
     lines.append("\n## 2b. SHORT side sensitivity to late-day cutoff hour (margin=%s°F)\n" % summary["margins_tested"][0])
     lines.append("| cutoff (LST hr) | fired | fire rate | mean price | win rate | mean PnL | t (all) | fillable n | t (fillable) |")
@@ -824,84 +1127,157 @@ def write_report(summary, results):
         lines.append(f"| {h}:00 | {cs['n_fired']} | {fmt(cs['fire_rate'],3)} | {fmt(cs['mean_exec_price'])} | "
                      f"{fmt(cs['win_rate'],3)} | {fmt(c['mean'])} | {fmt(c['t'],2)} | {cs['n_fillable']} | {fmt(fc['t'],2)} |")
 
-    lines.append("\n## 3. By city (margin=%s, LONG side)\n" % summary["margins_tested"][0])
-    lines.append("| series | city | station | city-days | fired | mean PnL |")
-    lines.append("|---|---|---|---|---|---|")
-    for series, c in sorted(summary["by_city"].items(), key=lambda kv: -(kv[1].get(f"long_margin{summary['margins_tested'][0]}_fired") or 0)):
-        k_fired = f"long_margin{summary['margins_tested'][0]}_fired"
-        k_pnl = f"long_margin{summary['margins_tested'][0]}_mean_pnl"
-        lines.append(f"| {series} | {c['name']} | {c['station']} | {c['n_city_days']} | "
-                     f"{c[k_fired]} | {fmt(c[k_pnl])} |")
+    bf = summary["bonferroni"]
+    lines.append("\n## 2c. Multiple-testing correction (Bonferroni) -- LONG side, margin x gap-threshold\n")
+    lines.append(f"Pre-registered test family: **{bf['family_size']} cells** = "
+                 f"{len(summary['margins_tested'])} margins x {len(summary['gap_thresholds_tested'])} gap "
+                 f"thresholds, ALL tested and reported (no post-hoc pick of the best-looking cell). "
+                 f"Family-wise alpha = {bf['alpha']}, Bonferroni-corrected per-cell alpha = "
+                 f"**{fmt(bf['corrected_alpha'],5)}** (two-sided normal-approx |t| >= "
+                 f"{fmt(bf['z_crit_two_sided'],2)} required for significance).\n")
+    lines.append("| margin | gap thr | n | mean PnL | t | p (uncorrected) | p (Bonferroni) | sig @ .05 uncorr. | **sig @ Bonferroni** |")
+    lines.append("|---|---|---|---|---|---|---|---|---|")
+    for c in bf["cells"]:
+        lines.append(f"| {c['margin']} | {c['gap_threshold']} | {c['n']} | {fmt(c['mean_pnl'])} | "
+                     f"{fmt(c['t'],2)} | {fmt(c['p_uncorrected'],4)} | {fmt(c['p_bonferroni'],4)} | "
+                     f"{'yes' if c['significant_uncorrected_a05'] else 'no'} | "
+                     f"{'**YES**' if c['significant_bonferroni'] else 'no'} |")
 
-    lines.append("\n## 4. Verdict\n")
-    lines.append("(Full narrative verdict is in the Executive Summary at the top of this document.) "
-                 "In short: SHORT side = honest null (priced in, not fillable). LONG side = real, "
-                 "fee-surviving edge at margin=2°F (t=3.83, 93% win rate) but low-frequency, small-n, "
-                 "and carries a quantified, margin-resistant tail risk from ASOS-vs-official-CLI disagreement.")
+    lines.append("\n## 3. By city, by margin (LONG side)\n")
+    for margin in summary["margins_tested"]:
+        mk = str(margin)
+        lines.append(f"\n### Margin = {margin}°F\n")
+        lines.append("| series | city | station | city-days | fired | win rate | mean PnL | settled wrong way |")
+        lines.append("|---|---|---|---|---|---|---|---|")
+        rows = sorted(summary["by_city"].items(), key=lambda kv: -(kv[1]["by_margin"][mk]["fired"] or 0))
+        for series, c in rows:
+            bm = c["by_margin"][mk]
+            if bm["fired"] == 0:
+                continue
+            lines.append(f"| {series} | {c['name']} | {c['station']} | {c['n_city_days']} | "
+                         f"{bm['fired']} | {fmt(bm['win_rate'],3)} | {fmt(bm['mean_pnl'])} | "
+                         f"{bm['n_settled_wrong_way']} |")
+        n_zero = sum(1 for _, c in rows if c["by_margin"][mk]["fired"] == 0)
+        if n_zero:
+            lines.append(f"\n({n_zero} of {len(rows)} cities never fired at this margin over the full window.)\n")
+
+    lines.append("\n## 3b. Capacity (fires/week x fillable size), by margin -- LONG side\n")
+    lines.append("| margin | fires/week (all 20 cities) | fillable rate | median fillable vol (5min) | "
+                 "mean entry price | rough weekly notional (USD) |")
+    lines.append("|---|---|---|---|---|---|")
+    for margin in summary["margins_tested"]:
+        cap = summary["capacity"][str(margin)]
+        lines.append(f"| {margin} | {fmt(cap['fires_per_week'],2)} | {fmt(cap['fillable_rate'],3)} | "
+                     f"{fmt(cap['median_fillable_volume_5min'],1)} | {fmt(cap['mean_entry_price'])} | "
+                     f"{fmt(cap['rough_weekly_notional_usd'],0)} |")
+
+    lines.append("\n## 4. Best-margin selection and verdict\n")
+    bm_sel = summary["best_margin"]
+    lines.append(f"Selection rule (pre-specified): among margins {summary['margins_tested']} at gap-threshold=0, "
+                 f"require (a) n_fired >= 8, (b) Bonferroni-significant at the corrected alpha above, and "
+                 f"(c) worst-case (Wilson-95 upper-bound loss rate) analytic EV still positive. Survivors ranked "
+                 f"by worst-case EV, not raw mean PnL.\n")
+    lines.append("| margin | n | win rate | mean PnL | t | p (Bonferroni) | cond. loss rate | worst-case loss rate | "
+                 "EV (point) | **EV (worst-case)** | fires/wk | passes all bars |")
+    lines.append("|---|---|---|---|---|---|---|---|---|---|---|---|")
+    for c in bm_sel["candidates"]:
+        lines.append(f"| {c['margin']} | {c['n_fired']} | {fmt(c['win_rate'],3)} | {fmt(c['mean_pnl'])} | "
+                     f"{fmt(c['t'],2)} | {fmt(c['p_bonferroni'],4)} | {fmt(c['cond_loss_rate_given_fired'],3)} | "
+                     f"{fmt(c['worst_case_loss_rate_wilson95'],3)} | {fmt(c['analytic_ev_point'])} | "
+                     f"**{fmt(c['analytic_ev_worst_case'])}** | {fmt(c['fires_per_week'],2)} | "
+                     f"{'YES' if c['passes_all'] else 'no'} |")
+    lines.append(f"\n**Recommended margin: {bm_sel['recommended_margin']}°F. Verdict: {bm_sel['verdict']}.**\n")
+    lines.append("(Full narrative verdict is in the Executive Summary at the top of this document.)")
 
     with open(OUT_REPORT, "w") as f:
         f.write("\n".join(lines) + "\n")
 
 
 def verdict_text(summary):
+    w = summary["window"]
+    a = summary["asos_vs_official_cli"]
+    bf = summary["bonferroni"]
+    bm_sel = summary["best_margin"]
     out = []
     out.append(f"**n = {summary['n_city_days_analyzed']} city-days, {summary['n_series']} cities, "
-               f"{summary['window']['lookback_days']} days ({summary['window']['min_date']} to "
-               f"{summary['window']['max_date']}).** ASOS(1-min)-vs-official-CLI full-day agreement = "
-               f"{fmt(summary['asos_vs_official_cli']['agree_rate'],3)} "
-               f"({summary['asos_vs_official_cli']['disagree_n']}/{summary['n_city_days_analyzed']} city-days disagree, "
-               f"almost always ASOS reading a touch *higher* than the eventual official value).\n")
+               f"{w['actual_span_days']} days ({w['actual_min_date']} to {w['actual_max_date']} -- the FULL "
+               f"history Kalshi's API exposes for KXHIGH in this environment; see data-depth note below the "
+               f"table of contents).** ASOS(1-min)-vs-official-CLI full-day UNCONDITIONAL agreement = "
+               f"{fmt(a['agree_rate'],3)} ({a['disagree_n']}/{summary['n_city_days_analyzed']} city-days disagree).\n")
 
-    out.append("**LONG side (buy YES once running max clears strike+margin) -- a real but small, "
-               "margin-sensitive, low-frequency edge, NOT a riskless one:**\n")
+    out.append("**LONG side (buy YES once running max clears strike+margin), ALL 5 pre-registered margins x "
+               "3 gap thresholds tested and Bonferroni-corrected, no cherry-pick:**\n")
     for m in summary["margins_tested"]:
         l = summary["by_margin"][str(m)]["long"]
-        out.append(f"- margin={m}°F: fired {l['n_fired']}x ({fmt(l['fire_rate'],3)} of city-days), "
-                   f"mean entry {fmt(l['mean_exec_price'])}, **win rate {fmt(l['win_rate'],3)}**, "
+        out.append(f"- margin={m}°F: fired {l['n_fired']}x ({fmt(l['fire_rate'],3)} of city-days, "
+                   f"{fmt(l['fires_per_week'],2)}/week), mean entry {fmt(l['mean_exec_price'])}, "
+                   f"**win rate {fmt(l['win_rate'],3)}**, cond. loss rate given fired "
+                   f"{fmt(l['cond_loss_rate_given_fired'],3)} (Wilson-95 worst-case {fmt(l['worst_case_loss_rate_wilson95'],3)}), "
                    f"mean net PnL/ct {fmt(l['clustered']['mean'])}, day-clustered t={fmt(l['clustered']['t'],2)} "
-                   f"(n_clusters={l['clustered']['n_clusters']}), locked-YES-settled-NO = "
-                   f"{l.get('n_locked_yes_settled_no')}, fillable {l['n_fillable']}/{l['n_fired']}.")
+                   f"(n_clusters={l['clustered']['n_clusters']}), worst-case analytic EV="
+                   f"{fmt(l['analytic_ev_worst_case'])}, settled-wrong-way={l.get('n_locked_yes_settled_no')}, "
+                   f"fillable {l['n_fillable']}/{l['n_fired']}.")
     out.append("")
-    out.append("margin=1°F fires often (40x) but is dominated by raw 1-minute ASOS sensor noise: win rate "
-               "only 57.5%, 17/40 'locked' events actually settled the other way -- this margin is NOT safe. "
-               "margin=2°F is much better (93% win rate, 1/15 miss) with a genuinely large mean edge "
-               "(~24.5c/contract, t=3.83), but n=15 over 6 weeks x 20 cities is thin, and going to margin=3°F "
-               "does NOT fix the residual tail risk -- the one recurring miss (KXHIGHMIA-26JUN16-T95, ASOS read "
-               "98°F vs an official settlement of ≤95°F, a 3°F ASOS-vs-CLI gap) still fires at "
-               "margin=3, while the higher margin pushes the average entry price to 88c and erases the edge "
-               "(mean PnL turns *negative*, -0.9c/contract). There is a real irreducible tail: a free, "
-               "un-QC'd 1-minute ASOS feed occasionally runs materially hotter than what NWS ultimately "
-               "certifies, and no margin size cleanly separates 'genuine crossing' from 'this station's data quality'.")
+    out.append(f"**Bonferroni correction:** {bf['family_size']}-cell pre-registered family (margin x gap "
+               f"threshold), corrected per-cell alpha = {fmt(bf['corrected_alpha'],5)} "
+               f"(|t| >= {fmt(bf['z_crit_two_sided'],2)} required). See section 2c of the report for the full "
+               f"cell-by-cell table -- this determines which margins survive multiple-testing scrutiny versus "
+               f"which only looked significant under an uncorrected single-test alpha of 0.05.")
     out.append("")
 
-    out.append("**SHORT side (buy NO late in the day, well below strike) -- honest null:**\n")
-    s1 = summary["by_margin"]["1"]["short"]
-    out.append(f"- Fires on {fmt(s1['fire_rate'],3)} of city-days but mean entry price is already "
-               f"{fmt(s1['mean_exec_price'])} (i.e. essentially 0 gap left) by the time it fires; mean net PnL/ct "
-               f"is {fmt(s1['clustered']['mean'])} (t={fmt(s1['clustered']['t'],2)}) -- statistically detectable but "
-               f"economically meaningless (a fraction of a cent). Only {fmt(s1['fillable_rate'],3)} of fired events "
-               f"have any volume in the following 5 minutes -- most of the 'edge' is not fillable. Sweeping the "
-               f"late-day cutoff hour (15:00-21:00 LST) shows mean PnL shrinking and turning **negative** at later, "
-               f"'more locked' cutoffs -- the opposite of what a real edge should do. This side is priced efficiently; "
-               f"there is no capturable edge here net of fees and realistic fills.")
+    out.append("**SHORT side (buy NO late in the day, well below strike):**\n")
+    s1 = summary["by_margin"][str(summary["margins_tested"][0])]["short"]
+    out.append(f"- At margin={summary['margins_tested'][0]}°F, fires on {fmt(s1['fire_rate'],3)} of city-days "
+               f"but mean entry price is already {fmt(s1['mean_exec_price'])} (little gap left) by the time it "
+               f"fires; mean net PnL/ct is {fmt(s1['clustered']['mean'])} (t={fmt(s1['clustered']['t'],2)}). Only "
+               f"{fmt(s1['fillable_rate'],3)} of fired events have any volume in the following 5 minutes -- most "
+               f"of any apparent 'edge' here is not fillable. This side is priced efficiently by Kalshi's book; "
+               f"see section 2b for the late-day-cutoff sweep. Kept as a comparison/control, not the object of "
+               f"this rerun (task brief is specifically about the LONG side).")
     out.append("")
 
-    out.append("**Capacity:** mean open interest at execution is roughly 5,000-20,000 contracts "
-               "and mean volume at the execution minute for LONG-side fires is tens to low-hundreds of "
-               "contracts/minute -- individually fillable, but the LONG-side opportunity itself only fires "
-               "15-40 times across 20 cities over 6 weeks (margin-dependent), so aggregate deployable size is "
-               "small (order low tens of thousands of dollars of notional over the period, not a scalable book).")
+    cap1 = summary["capacity"].get(str(bm_sel["recommended_margin"]), {})
+    out.append(f"**Capacity at the recommended margin ({bm_sel['recommended_margin']}°F):** "
+               f"~{fmt(cap1.get('fires_per_week'),2)} fires/week across all {summary['n_series']} cities, "
+               f"{fmt(cap1.get('fillable_rate'),3)} fillable, median fillable size "
+               f"{fmt(cap1.get('median_fillable_volume_5min'),1)} contracts, mean entry "
+               f"{fmt(cap1.get('mean_entry_price'))} -- a rough weekly notional throughput of "
+               f"${fmt(cap1.get('rough_weekly_notional_usd'),0)}. This is inherently a low-frequency, "
+               f"small-book strategy, not a scalable one, regardless of verdict.")
     out.append("")
 
-    out.append("**BLUNT VERDICT:** No riskless nowcast edge. The SHORT/locked-NO side is an honest null -- "
-               "Kalshi's market makers are already watching the same obs and price it in before it is fillable. "
-               "The LONG/locked-YES side has a real, fee-surviving, day-clustered-significant edge at a 2°F "
-               "margin (t=3.83) with decent fills, but it is (a) low frequency (~0.2-1 event per city-week), "
-               "(b) small-n and therefore not yet fully trustworthy, and (c) subject to a real, quantified tail "
-               "risk from ASOS-vs-official-CLI disagreement (~2.5% of all city-days, occasionally 2-3°F, that "
-               "can flip a 'locked' win into a near-total loss) that margin alone cannot fully engineer away. "
-               "Deployable only as a small, carefully-margined, per-trade-capped position -- not a scalable "
-               "strategy as specified, and it should be run live for longer before sizing it up.")
+    out.append(f"**BLUNT VERDICT: {bm_sel['verdict']}.** ")
+    if bm_sel["verdict"] == "CONFIRMED":
+        c = bm_sel["chosen"]
+        out.append(f"Margin={c['margin']}°F survives ALL three pre-specified bars on the full-history sample: "
+                   f"n_fired={c['n_fired']} >= 8, Bonferroni-significant (p_bonferroni={fmt(c['p_bonferroni'],4)} "
+                   f"vs corrected alpha {fmt(bf['corrected_alpha'],5)}), and worst-case "
+                   f"(Wilson-95-upper-bound loss rate {fmt(c['worst_case_loss_rate_wilson95'],3)}) analytic EV "
+                   f"still positive at {fmt(c['analytic_ev_worst_case'])}/contract. The original 42-day, "
+                   f"margin=2-only finding is now backed by a larger, honestly-corrected sample rather than a "
+                   f"single cherry-picked cell. Deployable as a small, per-trade-capped position sized to the "
+                   f"capacity figures above -- still not a scalable book, and should keep accumulating live "
+                   f"data given the sample is still bounded by this environment's ~"
+                   f"{w['actual_span_days']}-day Kalshi history ceiling.")
+    else:
+        best = bm_sel["chosen"]
+        failed_bars = []
+        if not best["ok_n"]:
+            failed_bars.append(f"n_fired={best['n_fired']} < 8 (too thin)")
+        if not best["ok_bonferroni_significant"]:
+            failed_bars.append(f"p_bonferroni={fmt(best['p_bonferroni'],4)} not below corrected alpha "
+                               f"{fmt(bf['corrected_alpha'],5)} (not significant once corrected for the "
+                               f"{bf['family_size']}-cell test family)")
+        if not best["ok_worst_case_ev_positive"]:
+            failed_bars.append(f"worst-case (Wilson-95) analytic EV = {fmt(best['analytic_ev_worst_case'])} "
+                               f"<= 0 (tail risk eats the edge under a realistic pessimistic loss-rate bound)")
+        out.append(f"Even the best surviving candidate (margin={best['margin']}°F, "
+                   f"mean PnL={fmt(best['mean_pnl'])}, t={fmt(best['t'],2)}) fails at least one pre-specified "
+                   f"bar on the full-history sample: {'; '.join(failed_bars)}. The original 42-day, "
+                   f"margin=2-only result (n=15, 93% win, t=3.83) does NOT survive honest n + multiple-testing "
+                   f"correction + a tail-aware worst-case loss estimate over the deep-history sample -- it was "
+                   f"small-n / cherry-picked-margin luck, not a confirmed structural edge. No margin is "
+                   f"recommended for deployment as specified.")
     return "\n".join(out)
 
 
