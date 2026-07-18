@@ -47,7 +47,8 @@ Gap half-life ≈ 3.3 min. Captured EV: +0.187/ct if we act at the cross, +0.15�
    with a per-market size and a cross-city daily cap from the Tier-1 capacity/correlation study.
 
 ## Go-live sequence (do NOT skip the gate) — staged, each stage gates the next
-1. **Paper** — run `kwx_runner.py loop` on the persistent host (free feed is fine). Daily
+1. **Paper** — run `python kwx_paper_gate.py` (turnkey: drives the runner in paper, hourly settles +
+   reports, writes `kwx_gate_status.txt` with a READY-FOR-CANARY verdict). Equivalent to `kwx_runner.py loop` on the persistent host (free feed is fine). Daily
    `kwx_forward.py settle` then `report`.
 2. **Paper gate** — proceed only once forward `report` shows **live == tested** (win ≈99.6%,
    EV ≈+0.20, n≥~30 clustered). This is the hard gate; nothing live before it passes.
