@@ -2424,3 +2424,23 @@ Tested de-risking the short-vol tail (worst week -70%). Defined-risk verticals o
 VERDICT: viable de-risk = NAKED short + hard ~35%/wk gross cap, sized as one correlated crypto bet -> worst week -25% @ ~2.7%/wk
 (~0.38%/day). Verticals only as optional overlay vs a specific feared rally. Dynamic stop/perp-hedge feasible but add path-dep/
 basis; not modeled. TECHNIQUE IS GENERAL (applies to any short-vol sleeve). Completes pre-pivot round. Farm S11 done.
+
+## STRATEGY-SWEEP-2 (2026-07-18) — Kalshi GitHub strategy sweep: top new candidate = K2 structural no-arb; K1 maker-rebate un-killed
+Two Sonnet sweeps mined ~15 Kalshi repos, deduped vs kill list. RESULTS:
+- **K2 (intra-Kalshi logical/structural NO-ARB) = strongest new hit**, 3 reference impls: Hulkmode85/kalshi-logical-arb-scanner
+  (most complete: ladder-monotonicity + complement-sum + range-sum, fee model net=gross*(1-1.75% maker), MIN_ARB=2c),
+  Dbentley142/kalshi-bot-toolkit (field_scan, keyless), oracle3 (Exclusivity/Implication/EventSum/Conditional arb, kalshi_trader
+  .py). Math-provable, free data (/markets,/orderbook), day-scale. PRIOR CAVEAT: Polymarket version was NULL (RISKLESS-LOGICAL:
+  violations=stale-quote artifacts) + Kalshi 1.75% maker fee makes arbs HARDER -> must clear that bar. TOP candidate to test.
+- **K1 (Kalshi maker-rebate MM) = un-killed correction**: our LP-rewards kill was Polymarket's latency-bound liquidity POOL;
+  Kalshi is pure CLOB with a DIFFERENT published CFTC rebate formula (aasuper1/kalshi-alpha-strategies models it). Genuinely
+  distinct. Day-scale rebate accrual. Worth testing net of adverse selection.
+- Premium-decay (oracle3): premium highest early, decays to resolution; test w/ NON-Wang fair value (Wang killed). Medium; note
+  VRP-timing was null.
+- Cascade/derivative (aasuper1): related markets lag after a SOURCE event resolves (distinct from settlement-scrape = downstream
+  lag). Needs causal map. Secondary.
+- SKIP (all kill-list): quantgalore (S&P brackets), Krypt-Trader (crypto/flow), sririthishpalani (crypto), truthlayer (cross-
+  venue), CloddsBot/Kalshi-Quant-TeleBot/orallexa (mostly LLM-wrappers/broken/known mechanisms; CloddsBot confirms K2 logic).
+- OPEN NICHES (zero public repos): Kalshi new-listing mispricing, decided-but-unresolved/settlement-timing -> build from scratch.
+NEXT: OOS-test K2 (structural no-arb, net of Kalshi fee, verify violations aren't stale quotes) as the top Kalshi candidate;
+then K1 (maker rebate). Powered by the Kalshi historical API backbone.

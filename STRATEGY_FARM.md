@@ -59,8 +59,8 @@ calibrated/NULL across everything farmed (longshot, index brackets, earnings). H
 ### Kalshi-only backlog (to farm next)
 | # | Kalshi angle | why it might work / untested |
 |---|---|---|
-| K1 | Kalshi MAKER-REBATE / liquidity-incentive capture | Kalshi runs maker programs; near-riskless yield if it exists (check terms) |
-| K2 | Kalshi intra-venue LOGICAL-CONSISTENCY / nested-market arb | related Kalshi markets must be no-arb; retail may not enforce across distinct tickers |
+| K1 | Kalshi MAKER-REBATE MM (CFTC rebate formula) | UN-KILLED (distinct from Poly LP-pool); ref: aasuper1/kalshi-alpha-strategies; net-of-adverse-sel |
+| K2 | Kalshi structural NO-ARB (ladder-mono + complement-sum + range-sum) | **TOP candidate**; 3 ref impls (Hulkmode85/Dbentley142/oracle3); math-provable, free data; caveat: Poly ver was NULL (stale quotes)+1.75% fee |
 | K3 | Kalshi NEW-LISTING / cold-market mispricing | freshly listed Kalshi markets before MMs tighten (thin-book inefficiency) |
 | K4 | Kalshi SPORTS vs sharp book / vs QCX-Global | Kalshi now lists sports; is it mispriced vs de-vigged lines? (legal, uncorrelated) |
 | K5 | Farm GitHub Kalshi bots (ryanfrigo, Krypt-Trader, quantgalore, homerun-Kalshi) → OOS test each on Kalshi data | direct strategy transfer |
