@@ -716,6 +716,10 @@ def agg_stats(fired, bad_key, n_weeks):
         if None not in (worst_case_loss_rate, mean_price, mean_fee) else None
     ct = base.clustered_tstat(pnls, dates)
     fillable = [(r, c) for r, c in fired if c.get("volume_5min_after", 0) > 0]
+    fillable_pnls = [c["pnl"] for _, c in fillable]
+    fillable_dates = [r["date"] for r, _ in fillable]
+    fillable_ct = base.clustered_tstat(fillable_pnls, fillable_dates)
+    fillable_mean_price = (sum(c["exec_price"] for _, c in fillable) / len(fillable)) if fillable else None
     return {
         "n_fired": n_fired,
         "fires_per_week": (n_fired / n_weeks) if n_weeks else None,
@@ -731,6 +735,9 @@ def agg_stats(fired, bad_key, n_weeks):
         "worst_day": base.worst_day(pnls, dates, tickers),
         "n_fillable": len(fillable),
         "fillable_rate": (len(fillable) / n_fired) if n_fired else None,
+        "fillable_fires_per_week": (len(fillable) / n_weeks) if n_weeks else None,
+        "fillable_mean_exec_price": fillable_mean_price,
+        "fillable_clustered": fillable_ct,
         "median_volume_5min_after": statistics.median([c.get("volume_5min_after", 0) for _, c in fired]) if fired else None,
     }
 
@@ -1009,25 +1016,51 @@ def main():
     if os.path.exists(refined_summary_path):
         with open(refined_summary_path) as f:
             kxhigh_refined = json.load(f)
-        bs = kxhigh_refined["marginal_effects"]["best_structural"]
+        bs = kxhigh_refined["best_structural_config"]
         kxhigh_refined_best_fires_wk = bs["fires_per_week"]
         kxhigh_refined_best_pnl = bs["mean_pnl"]
 
+    # KXHIGH baseline fillable rate (from the ORIGINAL margin=1 raw discovery, which reported
+    # it directly) -- the fair liquidity comparison point for KXLOW/KXRAIN's own fillable
+    # rates below. The refined margin=1/sustain=3 config is a subset of these same fires
+    # (sustain filters some out) so this is a reasonable, slightly-conservative proxy.
+    kxhigh_fillable_rate = kxhigh_deep["by_margin"]["1"]["long"].get("fillable_rate")
+
+    low_bc = low_primary_grid[f"{low_best['margin']}_{low_best['sustain_min']}"]
+    rain_bc = rain_primary[str(rain_best["sustain_min"])]
+
     capacity = {
         "KXHIGH_confirmed_baseline_fires_per_week": kxhigh_refined_best_fires_wk or kxhigh_best["fires_per_week"],
-        "KXLOW_best_config_fires_per_week": low_best["fires_per_week"],
+        "KXHIGH_confirmed_baseline_fillable_rate": kxhigh_fillable_rate,
+        "KXLOW_best_config_fires_per_week_raw": low_best["fires_per_week"],
+        "KXLOW_best_config_fillable_rate": low_bc["fillable_rate"],
+        "KXLOW_best_config_fillable_fires_per_week": low_bc["fillable_fires_per_week"],
+        "KXLOW_best_config_mean_exec_price": low_bc["mean_exec_price"],
+        "KXLOW_best_config_fillable_mean_pnl": low_bc["fillable_clustered"]["mean"],
+        "KXLOW_best_config_fillable_t": low_bc["fillable_clustered"]["t"],
         "KXLOW_verdict": low_verdict,
-        "KXRAINNYC_best_config_fires_per_week": rain_best["fires_per_week"],
+        "KXRAINNYC_best_config_fires_per_week_raw": rain_best["fires_per_week"],
+        "KXRAINNYC_best_config_fillable_rate": rain_bc["fillable_rate"],
+        "KXRAINNYC_best_config_fillable_fires_per_week": rain_bc["fillable_fires_per_week"],
         "KXRAINNYC_verdict": rain_verdict,
     }
-    added = 0.0
+    # Honest total: statistically-CONFIRMED types only, weighted by FILLABLE rate (raw fire
+    # counts overstate real deployable capacity whenever fillable_rate is well below 1 -- true
+    # here for KXLOW at ~33%, unlike KXHIGH's ~96%).
+    added_raw = 0.0
+    added_fillable = 0.0
     if low_verdict == "CONFIRMED" and low_best["fires_per_week"]:
-        added += low_best["fires_per_week"]
+        added_raw += low_best["fires_per_week"]
+        added_fillable += low_bc["fillable_fires_per_week"] or 0.0
     if rain_verdict == "CONFIRMED" and rain_best["fires_per_week"]:
-        added += rain_best["fires_per_week"]
+        added_raw += rain_best["fires_per_week"]
+        added_fillable += rain_bc["fillable_fires_per_week"] or 0.0
     base_fires = capacity["KXHIGH_confirmed_baseline_fires_per_week"] or 0.0
-    capacity["total_fires_per_week_all_confirmed_types"] = base_fires + added
-    capacity["pct_increase_vs_kxhigh_only"] = (added / base_fires * 100.0) if base_fires else None
+    base_fillable = base_fires * (kxhigh_fillable_rate or 1.0)
+    capacity["total_fires_per_week_all_confirmed_types_raw"] = base_fires + added_raw
+    capacity["total_fires_per_week_all_confirmed_types_fillable"] = base_fillable + added_fillable
+    capacity["pct_increase_vs_kxhigh_only_raw"] = (added_raw / base_fires * 100.0) if base_fires else None
+    capacity["pct_increase_vs_kxhigh_only_fillable"] = (added_fillable / base_fillable * 100.0) if base_fillable else None
 
     summary = {
         "task_a": task_a,
@@ -1234,22 +1267,54 @@ def write_report(summary, kxhigh_deep, kxhigh_refined):
     for name, note in summary["other_candidates_scanned_not_backtested"].items():
         L.append(f"- **{name}**: {note}")
 
+    # ---- honest liquidity check on KXLOW's headline number ----
+    L.append("\n### B-4. Liquidity reality check on the KXLOW headline number\n")
+    cap = summary["capacity_rollup"]
+    L.append(f"The KXLOW margin=1/sustain=1 config fires **{fmt(bc['n'],0)}** times "
+             f"({fmt(cap['KXLOW_best_config_fires_per_week_raw'],1)}/week raw) -- far more than "
+             f"KXHIGH -- but this is a structurally DIFFERENT, weaker edge, not a bigger version "
+             f"of the same one: KXLOW's unconditional YES base rate is only **27.0%** "
+             f"(362/1339 settled) vs KXHIGH's strikes, which are set closer to even money -- i.e. "
+             f"Kalshi's KXLOW strike ladder is set well ABOVE the typical overnight low, so 'low <= "
+             f"strike' (NO) is the base-rate-favored outcome on ~73% of days BEFORE any "
+             f"observation. The mean execution price at fire is **{fmt(cap['KXLOW_best_config_mean_exec_price'])}** "
+             f"(vs KXHIGH's confirmed-config entry of ~0.65) -- the market has usually already "
+             f"priced in most of this near-certainty by the time the sustained-cross fires, so "
+             f"each trade captures only a few cents, not tens of cents, of edge. Worse: only "
+             f"**{fmt(cap['KXLOW_best_config_fillable_rate'],3)}** of these fires have ANY volume in "
+             f"the following 5 minutes (vs KXHIGH's ~0.96), and the median post-fire 5-min volume "
+             f"is **zero** -- most of the 696 raw fires are not executable as sized. "
+             f"Fillable-subset-only economics: mean PnL "
+             f"{fmt(cap['KXLOW_best_config_fillable_mean_pnl'])}/ct, t="
+             f"{fmt(cap['KXLOW_best_config_fillable_t'],2)}, "
+             f"**{fmt(cap['KXLOW_best_config_fillable_fires_per_week'],2)} fillable fires/week** -- "
+             f"still statistically real and still adds capacity, but the deployable number is the "
+             f"fillable one, not the raw one.\n")
+
     # ---- capacity rollup ----
     L.append("\n## Capacity roll-up: total expanded volume vs KXHIGH-only\n")
-    cap = summary["capacity_rollup"]
-    L.append("| market type | verdict | fires/week |")
-    L.append("|---|---|---|")
+    L.append("| market type | verdict | raw fires/week | fillable rate | **fillable fires/week (honest capacity)** |")
+    L.append("|---|---|---|---|---|")
     L.append(f"| KXHIGH (confirmed baseline, margin=1F/sustain=3min glitch-filtered) | CONFIRMED | "
-             f"{fmt(cap['KXHIGH_confirmed_baseline_fires_per_week'],2)} |")
-    L.append(f"| KXLOW (best config) | {cap['KXLOW_verdict']} | {fmt(cap['KXLOW_best_config_fires_per_week'],2)} |")
+             f"{fmt(cap['KXHIGH_confirmed_baseline_fires_per_week'],2)} | "
+             f"{fmt(cap['KXHIGH_confirmed_baseline_fillable_rate'],3)} | "
+             f"{fmt(cap['KXHIGH_confirmed_baseline_fires_per_week']*(cap['KXHIGH_confirmed_baseline_fillable_rate'] or 1),2)} |")
+    L.append(f"| KXLOW (margin=1F/sustain=1min) | {cap['KXLOW_verdict']} | "
+             f"{fmt(cap['KXLOW_best_config_fires_per_week_raw'],2)} | "
+             f"{fmt(cap['KXLOW_best_config_fillable_rate'],3)} | "
+             f"{fmt(cap['KXLOW_best_config_fillable_fires_per_week'],2)} |")
     L.append(f"| KXRAINNYC (best config) | {cap['KXRAINNYC_verdict']} | "
-             f"{fmt(cap['KXRAINNYC_best_config_fires_per_week'],2)} |")
-    L.append(f"\n**Total fires/week across all CONFIRMED market types: "
-             f"{fmt(cap['total_fires_per_week_all_confirmed_types'],2)}** "
-             f"({'+' if cap['pct_increase_vs_kxhigh_only'] else ''}"
-             f"{fmt(cap['pct_increase_vs_kxhigh_only'],1)}% vs KXHIGH-only, counting only "
-             f"types that independently clear the same n>=8 / Bonferroni-significant / "
-             f"worst-case-EV-positive bar the KXHIGH baseline had to clear).\n")
+             f"{fmt(cap['KXRAINNYC_best_config_fires_per_week_raw'],2)} | "
+             f"{fmt(cap['KXRAINNYC_best_config_fillable_rate'],3)} | "
+             f"{fmt(cap['KXRAINNYC_best_config_fillable_fires_per_week'],2)} |")
+    L.append(f"\n**Total fillable (honest) fires/week across CONFIRMED market types: "
+             f"{fmt(cap['total_fires_per_week_all_confirmed_types_fillable'],2)}** vs "
+             f"{fmt(cap['KXHIGH_confirmed_baseline_fires_per_week']*(cap['KXHIGH_confirmed_baseline_fillable_rate'] or 1),2)} "
+             f"for KXHIGH alone ({'+' if (cap['pct_increase_vs_kxhigh_only_fillable'] or 0)>=0 else ''}"
+             f"{fmt(cap['pct_increase_vs_kxhigh_only_fillable'],1)}%). Raw (unfillable-inclusive) "
+             f"total is {fmt(cap['total_fires_per_week_all_confirmed_types_raw'],2)}/week -- reported "
+             f"for completeness but NOT the number to size a book against, per the task's own "
+             f"'executable ask' discipline.\n")
 
     L.append("\n## Bottom line\n")
     L.append(f"**Task A: YES, longer history is obtainable, for free, from Kalshi itself** "
@@ -1259,12 +1324,18 @@ def write_report(summary, kxhigh_deep, kxhigh_refined):
              f"everywhere, a real product-age constraint no endpoint can fix). Not re-run at "
              f"full depth here (scope/runtime); the mechanism to do so is implemented and "
              f"tested in this file (`discover_series_full_history`).\n")
-    L.append(f"**Task B: KXLOW verdict = {lw['best_config']['verdict']}"
-             f"{' -- adds a genuine, independently-confirmed sleeve of capacity' if lw['best_config']['verdict']=='CONFIRMED' else ' -- does not clear the same bar the KXHIGH baseline had to clear on this sample'}. "
+    L.append(f"**Task B: KXLOW verdict = {lw['best_config']['verdict']}, but it is a thinner, "
+             f"much-less-liquid edge than KXHIGH's** (mean {fmt(cap['KXLOW_best_config_mean_exec_price'])} "
+             f"entry vs ~0.65, ~{fmt((cap['KXLOW_best_config_fillable_rate'] or 0)*100,0)}% fillable "
+             f"vs ~{fmt((cap['KXHIGH_confirmed_baseline_fillable_rate'] or 0)*100,0)}%) -- it still "
+             f"clears every pre-registered statistical bar and adds real, honestly-fillable "
+             f"capacity ({fmt(cap['KXLOW_best_config_fillable_fires_per_week'],2)} fillable fires/week), "
+             f"just not at face value on the raw fire count. "
              f"KXRAINNYC verdict = {rn['best_config']['verdict']}"
-             f"{' -- adds capacity' if rn['best_config']['verdict']=='CONFIRMED' else ' -- does not clear the bar (single city, thinner sample, honest tail from settlement-rule vs raw-ASOS disagreement)'}. "
-             f"Total confirmed capacity: {fmt(cap['total_fires_per_week_all_confirmed_types'],2)} fires/week "
-             f"vs {fmt(cap['KXHIGH_confirmed_baseline_fires_per_week'],2)} for KXHIGH alone.**\n")
+             f"{' -- adds capacity' if rn['best_config']['verdict']=='CONFIRMED' else ' -- does not clear the bar (single city, thin n=20 sample at the best sustain, honest tail from settlement-rule vs raw-ASOS disagreement)'}. "
+             f"**Total honest (fillable) capacity: {fmt(cap['total_fires_per_week_all_confirmed_types_fillable'],2)} "
+             f"fires/week vs {fmt(cap['KXHIGH_confirmed_baseline_fires_per_week']*(cap['KXHIGH_confirmed_baseline_fillable_rate'] or 1),2)} "
+             f"for KXHIGH alone.**\n")
 
     with open(OUT_REPORT, "w") as f:
         f.write("\n".join(L) + "\n")

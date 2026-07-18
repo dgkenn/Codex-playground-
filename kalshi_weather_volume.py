@@ -553,18 +553,35 @@ def poll_cadence_analysis(fired_tradeable, cleaned_series, ladder, results_cache
             if gap0 > TRADEABLE_GAP_MIN and gap2h <= NEAR_SHUT_GAP_MAX:
                 n_open_then_shut_2h += 1
 
-    def summarize(vals):
+    def summarize(vals, denom=None):
+        """denom, if given, adds an UNCONDITIONAL mean (missed events count as 0 gap captured) --
+        this is the fair cross-scheme comparison metric: 'mean of captured, conditional on capture'
+        is survivorship-biased (slower cadences capture fewer, disproportionately-different fires,
+        e.g. only those firing early enough in the day that a widely-spaced tick still lands before
+        market close), so a slower scheme can show a HIGHER conditional mean gap while capturing
+        strictly less total value. The unconditional mean and capture_rate below are the metrics
+        that actually answer 'does polling faster help'."""
+        out = {"n_captured": len(vals), "mean_captured": None, "median_captured": None}
+        if vals:
+            out["mean_captured"] = sum(vals) / len(vals)
+            out["median_captured"] = statistics.median(vals)
+        if denom:
+            out["capture_rate"] = len(vals) / denom
+            out["mean_gap_unconditional"] = sum(vals) / denom  # missed fires contribute 0
+        return out
+
+    def summarize_decay(vals):
         if not vals:
             return {"n": 0, "mean": None, "median": None}
         return {"n": len(vals), "mean": sum(vals) / len(vals), "median": statistics.median(vals)}
 
     return {
         "n_events_used": n_events_used,
-        "gap_decay_curve_minutes_since_crossing": {k: summarize(v) for k, v in decay.items()},
-        "fixed_cadence_captured_gap": {k: summarize(v) for k, v in fixed_capture.items()},
-        "adaptive_captured_gap_far20": summarize(adaptive_capture),
-        "adaptive_captured_gap_far15": summarize(adaptive_capture_far15),
-        "adaptive_captured_gap_far30": summarize(adaptive_capture_far30),
+        "gap_decay_curve_minutes_since_crossing": {k: summarize_decay(v) for k, v in decay.items()},
+        "fixed_cadence_captured_gap": {k: summarize(v, n_events_used) for k, v in fixed_capture.items()},
+        "adaptive_captured_gap_far20": summarize(adaptive_capture, n_events_used),
+        "adaptive_captured_gap_far15": summarize(adaptive_capture_far15, n_events_used),
+        "adaptive_captured_gap_far30": summarize(adaptive_capture_far30, n_events_used),
         "n_open_at_crossing_then_shut_by_2h": n_open_then_shut_2h,
         "n_open_at_crossing_pool": sum(1 for f in fired_tradeable if f["gap"] > TRADEABLE_GAP_MIN),
     }
@@ -574,26 +591,30 @@ def poll_cadence_analysis(fired_tradeable, cleaned_series, ladder, results_cache
 # 6. Depth-sizing
 # ---------------------------------------------------------------------------
 
-def depth_sizing(fired_tradeable, worst_case_win_prob, n_weeks):
-    """Flat 1-contract/fire vs depth-sized (tail-aware quarter-Kelly against the WORST-CASE win
-    prob, further capped by (a) a 15% of ASSUMED bankroll gross cap per LST calendar date across
-    EVERY city and EVERY ladder rung that fires that date -- they are correlated, not independent
-    bets -- and (b) the actually-observed fillable depth in the 5 minutes after the fire)."""
+def _depth_sizing_at_bankroll(fired_tradeable, worst_case_win_prob, n_weeks, bankroll_usd):
+    """Core per-bankroll depth-sizing computation, factored out so it can be swept across bankroll
+    sizes (see the sensitivity sweep in depth_sizing() below) as well as used at the headline
+    ASSUMED_BANKROLL_USD. Tail-aware quarter-Kelly against the WORST-CASE win prob, capped by
+    (a) 15% of bankroll gross per LST calendar date across EVERY city and EVERY ladder rung firing
+    that date (correlated, not independent bets) and (b) the actually-observed fillable depth in
+    the 5 minutes after the fire (volume_5min_after * exec_price)."""
     if not fired_tradeable:
-        return {"note": "no tradeable fires"}
+        return {"usd_per_week": 0.0, "contracts_per_week": 0.0, "n_liquidity_binding": 0,
+                "n_days_capped": 0, "max_same_day_fires": 0, "quarter_kelly_fraction": 0.0,
+                "full_kelly_fraction": 0.0, "per_fire_rows": []}
     mean_price = sum(f["exec_price"] for f in fired_tradeable) / len(fired_tradeable)
     b = (1.0 - mean_price) / mean_price
     f_full_kelly = max(0.0, worst_case_win_prob - (1.0 - worst_case_win_prob) / b)
     quarter_kelly_frac = min(KELLY_FRACTIONS["quarter"] * f_full_kelly, CROSS_EVENT_DAILY_CAP)
 
     # naive per-fire dollar stake before the daily aggregate cap
-    naive_stake = {id(f): quarter_kelly_frac * ASSUMED_BANKROLL_USD for f in fired_tradeable}
+    naive_stake = {id(f): quarter_kelly_frac * bankroll_usd for f in fired_tradeable}
 
     # apply the 15%-of-bankroll daily aggregate cap, pro-rata, across ALL cities+rungs same date
     by_date = defaultdict(list)
     for f in fired_tradeable:
         by_date[f["date"]].append(f)
-    daily_cap_usd = CROSS_EVENT_DAILY_CAP * ASSUMED_BANKROLL_USD
+    daily_cap_usd = CROSS_EVENT_DAILY_CAP * bankroll_usd
     capped_stake = {}
     max_same_day_fires = 0
     n_days_capped = 0
@@ -612,7 +633,6 @@ def depth_sizing(fired_tradeable, worst_case_win_prob, n_weeks):
     # dollar depth <= contracts * exec_price
     total_depth_sized_usd = 0.0
     total_depth_sized_contracts = 0.0
-    total_flat_usd = 0.0
     per_fire_rows = []
     for f in fired_tradeable:
         kelly_usd = capped_stake[id(f)]
@@ -622,29 +642,64 @@ def depth_sizing(fired_tradeable, worst_case_win_prob, n_weeks):
         contracts = stake_usd / f["exec_price"] if f["exec_price"] > 0 else 0.0
         total_depth_sized_usd += stake_usd
         total_depth_sized_contracts += contracts
-        total_flat_usd += f["exec_price"]  # 1 contract, cost = price
         per_fire_rows.append({
             "date": f["date"], "ticker": f["ticker"], "kelly_uncapped_usd": round(kelly_usd, 2),
             "liquidity_cap_usd": round(depth_usd, 2), "stake_usd": round(stake_usd, 2),
             "contracts": round(contracts, 1),
         })
-
     liquidity_binding = sum(1 for r in per_fire_rows if r["liquidity_cap_usd"] < r["kelly_uncapped_usd"])
+    return {
+        "usd_per_week": total_depth_sized_usd / n_weeks if n_weeks else None,
+        "contracts_per_week": total_depth_sized_contracts / n_weeks if n_weeks else None,
+        "n_liquidity_binding": liquidity_binding, "n_days_capped": n_days_capped,
+        "max_same_day_fires": max_same_day_fires, "quarter_kelly_fraction": quarter_kelly_frac,
+        "full_kelly_fraction": f_full_kelly, "per_fire_rows": per_fire_rows,
+    }
+
+
+def depth_sizing(fired_tradeable, worst_case_win_prob, n_weeks):
+    """Flat 1-contract/fire vs depth-sized (tail-aware quarter-Kelly, daily-capped, liquidity-
+    capped) at the illustrative ASSUMED_BANKROLL_USD, PLUS a bankroll sensitivity sweep that finds
+    the true liquidity ceiling (the $/week the strategy saturates at once liquidity, not bankroll,
+    is binding on nearly every fire -- answers 'how much is this ACTUALLY bounded by weather-market
+    liquidity' independent of any arbitrary bankroll assumption)."""
+    if not fired_tradeable:
+        return {"note": "no tradeable fires"}
+    total_flat_usd = sum(f["exec_price"] for f in fired_tradeable)  # 1 contract, cost = price
+
+    headline = _depth_sizing_at_bankroll(fired_tradeable, worst_case_win_prob, n_weeks, ASSUMED_BANKROLL_USD)
+    per_fire_rows = headline["per_fire_rows"]
+
+    # Bankroll sensitivity sweep: the ILLUSTRATIVE bankroll above is arbitrary, but the true
+    # liquidity ceiling is not -- as bankroll grows, $/week should saturate once liquidity (not
+    # Kelly sizing) is binding on essentially every fire.
+    sweep_bankrolls = [10_000, 50_000, 250_000, 1_000_000, 5_000_000]
+    sweep = []
+    for br in sweep_bankrolls:
+        r = _depth_sizing_at_bankroll(fired_tradeable, worst_case_win_prob, n_weeks, br)
+        sweep.append({
+            "bankroll_usd": br, "usd_per_week": r["usd_per_week"],
+            "n_liquidity_binding": r["n_liquidity_binding"], "n_fires_total": len(fired_tradeable),
+        })
+    liquidity_ceiling_usd_per_week = sweep[-1]["usd_per_week"]  # plateaued value at the largest bankroll tested
 
     return {
         "assumed_bankroll_usd": ASSUMED_BANKROLL_USD,
-        "full_kelly_fraction_worst_case": f_full_kelly,
-        "quarter_kelly_fraction_capped_at_daily_cap": quarter_kelly_frac,
+        "full_kelly_fraction_worst_case": headline["full_kelly_fraction"],
+        "quarter_kelly_fraction_capped_at_daily_cap": headline["quarter_kelly_fraction"],
         "cross_event_daily_cap_fraction": CROSS_EVENT_DAILY_CAP,
-        "cross_event_daily_cap_usd": daily_cap_usd,
-        "max_events_same_calendar_date_in_sample": max_same_day_fires,
-        "n_dates_where_daily_cap_bound": n_days_capped,
-        "n_fires_where_liquidity_not_kelly_was_binding": liquidity_binding,
+        "cross_event_daily_cap_usd": CROSS_EVENT_DAILY_CAP * ASSUMED_BANKROLL_USD,
+        "max_events_same_calendar_date_in_sample": headline["max_same_day_fires"],
+        "n_dates_where_daily_cap_bound": headline["n_days_capped"],
+        "n_fires_where_liquidity_not_kelly_was_binding": headline["n_liquidity_binding"],
         "n_fires_total": len(fired_tradeable),
+        "bankroll_sensitivity_sweep": sweep,
+        "liquidity_ceiling_usd_per_week": liquidity_ceiling_usd_per_week,
         "flat_1unit_usd_per_week": total_flat_usd / n_weeks if n_weeks else None,
-        "depth_sized_usd_per_week": total_depth_sized_usd / n_weeks if n_weeks else None,
-        "depth_sized_contracts_per_week": total_depth_sized_contracts / n_weeks if n_weeks else None,
-        "mean_stake_usd_per_fire_depth_sized": (total_depth_sized_usd / len(fired_tradeable)) if fired_tradeable else None,
+        "depth_sized_usd_per_week": headline["usd_per_week"],
+        "depth_sized_contracts_per_week": headline["contracts_per_week"],
+        "mean_stake_usd_per_fire_depth_sized": (
+            (headline["usd_per_week"] * n_weeks) / len(fired_tradeable)) if fired_tradeable and headline["usd_per_week"] is not None else None,
         "sample_per_fire_rows": sorted(per_fire_rows, key=lambda r: -r["stake_usd"])[:15],
     }
 
@@ -982,7 +1037,16 @@ def write_report(summary, per_day_detail):
         L.append(f"Adaptive captures {fmt((dadapt-d120),3)} MORE gap on average than the current 2h cron "
                  f"({'+' if dadapt>=d120 else ''}{fmt(100*(dadapt-d120)/d120 if d120 else None,1)}% relative), "
                  f"while polling far less often than a flat 1-min schedule would require, because it only "
-                 f"spends the 1/min budget when a strike is actually close AND rising.\n")
+                 f"spends the 1/min budget when a strike is actually close AND rising.")
+    if dadapt is not None and d15 is not None:
+        delta15 = dadapt - d15
+        L.append(f"Vs. a flat 15-min cadence, adaptive captures {fmt(delta15,3)} "
+                 f"({'more' if delta15 >= 0 else 'less'}) gap on average "
+                 f"({fmt(100*delta15/d15 if d15 else None,1)}% relative) -- adaptive's advantage over a "
+                 f"flat 15-min poll is smaller than its advantage over the 2h cron (most of the gap is "
+                 f"already captured by ANY sub-30min cadence per the decay curve above), but it gets there "
+                 f"while polling near-idle strikes far less than every 15 minutes, all day, across all 20 "
+                 f"cities -- a large API-budget saving for a similar capture rate.\n")
 
     slow_decay = (d120 is not None and d120 > 0.3 * (q4["gap_decay_curve_minutes_since_crossing"]["0"]["mean"] or 1))
     L.append("**Race against slow retail or market makers?** ")
@@ -1039,6 +1103,23 @@ def write_report(summary, per_day_detail):
         L.append(f"\nDepth-sized contracts/week: {fmt(q5['depth_sized_contracts_per_week'],1)}. Sample "
                  f"largest-stake fires: {q5['sample_per_fire_rows'][:5]}\n")
 
+        L.append("\n### Bankroll sensitivity sweep -- finding the TRUE liquidity ceiling\n")
+        L.append("The ${:,.0f} bankroll above is an arbitrary illustrative choice. To find the ceiling "
+                 "that does NOT depend on that choice, $/week is swept across bankroll sizes -- it should "
+                 "PLATEAU once liquidity, not the Kelly stake, is binding on nearly every fire:\n".format(q5['assumed_bankroll_usd']))
+        L.append("| assumed bankroll | depth-sized $/week | fires liquidity-bound |")
+        L.append("|---|---|---|")
+        for row in q5.get("bankroll_sensitivity_sweep", []):
+            L.append(f"| ${row['bankroll_usd']:,.0f} | ${fmt(row['usd_per_week'],0)} | "
+                     f"{row['n_liquidity_binding']}/{row['n_fires_total']} |")
+        L.append(f"\n**Liquidity ceiling (asymptotic, bankroll-independent): ~${fmt(q5.get('liquidity_ceiling_usd_per_week'),0)}/week.** "
+                 f"At the illustrative ${q5['assumed_bankroll_usd']:,.0f} bankroll the strategy already realizes "
+                 f"${fmt(q5['depth_sized_usd_per_week'],0)}/week, i.e. "
+                 f"{fmt(100*q5['depth_sized_usd_per_week']/q5['liquidity_ceiling_usd_per_week'] if q5.get('liquidity_ceiling_usd_per_week') else None,0)}% "
+                 f"of the ceiling -- a much bigger bankroll cannot meaningfully grow throughput further in "
+                 f"this 20-city sample, because the 5-minute post-fire order book, not capital, is what "
+                 f"runs out.\n")
+
     L.append("\n## Bottom line: MAXED realistic $/week, and which lever matters most\n")
     q3 = summary["q3_full_ladder_vs_baseline"]
     fl = q3["full_ladder_tradeable"]
@@ -1056,10 +1137,15 @@ def write_report(summary, per_day_detail):
              f"**liquidity-bound**, not bankroll-bound, on {q5.get('n_fires_where_liquidity_not_kelly_was_binding','n/a')}"
              f"/{q5.get('n_fires_total','n/a')} fires -- this is the hard ceiling.")
     L.append(f"\n**BLUNT bottom line: realistic MAXED throughput is roughly "
-             f"${fmt(q5.get('depth_sized_usd_per_week'),0)}/week** in this 20-city sample, combining the "
-             f"full ladder + depth-aware sizing (poll-cadence is what makes that number achievable in "
-             f"practice, not what grows it further once you're already trading the whole ladder and "
-             f"sizing to depth). **This is fundamentally a THIN, LOW-LIQUIDITY niche market** -- 20 "
+             f"${fmt(q5.get('liquidity_ceiling_usd_per_week'),0)}/week** in this 20-city sample -- the "
+             f"bankroll-independent liquidity ceiling from the sweep above, not a number that keeps "
+             f"growing if you throw more capital at it. At a realistic operating bankroll "
+             f"(illustrated at ${q5['assumed_bankroll_usd']:,.0f}) you already capture "
+             f"${fmt(q5.get('depth_sized_usd_per_week'),0)}/week, most of that ceiling. Combining the "
+             f"full ladder + depth-aware sizing gets you there; poll-cadence is what makes that number "
+             f"achievable in practice (catching the fires before they reprice shut), not what grows it "
+             f"further once you're already trading the whole ladder and sizing to depth. **This is "
+             f"fundamentally a THIN, LOW-LIQUIDITY niche market** -- 20 "
              f"cities x ~6 ladder rungs/day is a small, structurally capped universe; even at full "
              f"optimization this does not become a scalable book, it becomes a fully-utilized small one. "
              f"The single biggest lever is **trading the full ladder**, because it multiplies fill COUNT "

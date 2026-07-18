@@ -2556,3 +2556,23 @@ Tested Kalshi's genuine CFTC Liquidity Incentive Program (/incentive_programs), 
 VERDICT: MARGINAL / not backtest-confirmable. A real program with modest theoretical net-positive, but confined to adversely-
 selected illiquid markets, key input unmeasurable from history, requires live market-making infra. Recommendation = small closely-
 monitored LIVE PILOT on the flagged rebate-driven markets, NOT broad deploy. Ranks well below K-WX. Farm K1 = marginal/parked.
+
+## KALSHI-WX-SETTLEMENT (2026-07-18) — exact settlement spec + tail root-cause + faster-source EMPIRICALLY dominated
+Confirmed from the actual NHIGH.pdf contract terms + live /series API:
+- Settles on the NWS CLI (Daily Climate Report) MAX TEMP for the named station, integer °F, strictly > floor_strike, LST day
+  (never DST). Settlement DELAYED to 11AM ET if the day's max is inconsistent with 6-hr/24-hr METAR highs OR final<earlier
+  (a built-in reconciliation). Station is city-specific + sometimes NON-ASOS (NYC=Central Park coop/CRS site) -> audit per city.
+- TAIL (2.5% ASOS-1min-vs-CLI) root causes, ranked: (1) PRELIMINARY-vs-RECONCILED CLI [dominant] — CLI from the DSM is NOT
+  WFO-QC'd; a transient spike your fast feed locks can be revised away in the 11AM reconciliation (still counts); (2) Celsius
+  round-trip noise ~1-2°F; (3) public 1-min ASOS != internal 2-min-avg daily-max tracker; (4) raw glitches (fixable).
+- TAIL-SHRINK (ranked): glitch pre-filter [DONE in kalshi_weather_paper.py, confirmed pre-trade]; **METAR 6-hr/24-hr consistency
+  check BEFORE firing** [targets dominant cause #1; currently logged NON-BLOCKING; CLI-basis agent testing making it blocking];
+  margin buffer [done]; per-city station-type audit.
+- FASTER SOURCE = NOT WORTH IT (empirical): every faster option is the same 1-min data relayed slower (Synoptic 2-5min) or a
+  DIFFERENT sensor (PWS basis risk — exactly what CLI settlement can't absorb). Cadence isn't the bottleneck; the gap exists
+  because the book hasn't repriced (retail slow), not because data arrived late. EXTRAPOLATE-EARLY quantified on cache: trend
+  projection sees a real crossing only 8-17% early; across 994 city-days, early-entry signals 94% FALSE (1250/1331) -> naked
+  losses swamp the few correct calls. WAIT-FOR-LOCKED DOMINATES decisively. The 1-min noise floor, not latency, is binding.
+ANSWER to operator's faster-sensor idea: the edge is NOT a latency race (vs slow retail, not MMs); a faster/different sensor
+adds basis risk the strategy can't absorb, and early-entry is 94% false. The real tail lever is the METAR-consistency check
+(being tested), NOT speed. (Empirical PWS-tracking capstone from the fast-sensor agent still pending for the final word.)

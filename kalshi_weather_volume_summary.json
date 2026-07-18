@@ -1,0 +1,401 @@
+{
+  "window": {
+    "min_date": "2026-05-12",
+    "max_date": "2026-07-17",
+    "span_days": 67,
+    "n_weeks": 9.571428571428571,
+    "n_cities": 20
+  },
+  "q1_per_day_vs_per_strike": {
+    "finding": "The confirmed rule (both kalshi_weather_nowcast.py and kalshi_weather_refined.py) fires ONCE per (city, day, margin) -- first crossing of running max vs a SINGLE strike -- see analyze_market_day()/analyze_market_day_refined(): `for t,v,cmax in running: if cmax>=strike+margin: t_star=t; break`. This is confirmed a genuine per-day rule, not an undercount: in this Kalshi environment every KXHIGH city-day has exactly ONE settled 'greater' (above-X) market -- there is no ladder of multiple above-X strikes to begin with.",
+    "n_city_days_with_multiple_greater_strikes": 0,
+    "n_city_days_checked": 1340
+  },
+  "q2_real_ladder_shape": {
+    "finding": "The REAL Kalshi KXHIGH ladder per city-day is 1 'greater' (top) + ~4 'between' (middle buckets) + 1 'less' (bottom) = ~6 markets, covering the full range. The monotonic running-max-only-rises ratchet the confirmed edge exploits on the top 'greater' market (locks YES) applies in MIRROR IMAGE to every 'between'/'less' rung (locks NO the instant running max clears that bucket's cap_strike): once the day's temp has passed a bucket, it can never fall back into it. This is the true, data-grounded 'ladder multiplier' -- not more above-X strikes, a cascade of locked-NO events on lower rungs plus the original locked-YES event up top.",
+    "ladder_shape_stats": {
+      "n_city_days_total": 1340,
+      "n_city_days_with_multiple_greater_strikes": 0,
+      "n_city_days_complete_ladder": 1340,
+      "between_count_distribution": {
+        "4": 1340
+      },
+      "mean_between_per_day": 4,
+      "mean_ladder_size_per_day": 6
+    },
+    "strike_type_totals": {
+      "greater": 1340,
+      "less": 1340,
+      "between": 5360
+    }
+  },
+  "q3_full_ladder_vs_baseline": {
+    "config": {
+      "margin": 2,
+      "sustain_min": 1,
+      "note": "glitch-filtered + sustained, imported directly from kalshi_weather_refined.py -- the CONSERVATIVE confirmed config (smallest change from the original confirmed baseline). ALT sensitivity config (margin=1,sustain=3min) also run, see alt_config_full_ladder below."
+    },
+    "per_day_tradeable_strike_distribution": {
+      "n_firing_city_days": 446,
+      "mean_tradeable_strikes_per_firing_day": 0.9349775784753364,
+      "median_tradeable_strikes_per_firing_day": 1.0,
+      "max_tradeable_strikes_per_firing_day": 4,
+      "histogram": {
+        "0": 116,
+        "1": 259,
+        "2": 58,
+        "3": 10,
+        "4": 3
+      }
+    },
+    "baseline_one_per_day_greater_only_tradeable": {
+      "label": "baseline: greater-only, 1/day, tradeable",
+      "n": 22,
+      "n_clusters_days": 21,
+      "fires_per_week": 2.298507462686567,
+      "mean_exec_price": 0.6695454545454546,
+      "win_rate": 0.9545454545454546,
+      "n_bad": 1,
+      "cond_loss_rate_given_fired": 0.045454545454545414,
+      "worst_case_loss_rate_wilson95": 0.21798045844323216,
+      "analytic_ev_point": 0.27299340909090913,
+      "analytic_ev_worst_case": 0.10046749610222243,
+      "mean_pnl": 0.2729934090909091,
+      "se_clustered": 0.044156072549829055,
+      "t_clustered": 6.182465815609906,
+      "p_clustered": 6.310796329955792e-10
+    },
+    "baseline_one_per_day_greater_only_all_fired": {
+      "label": "baseline: greater-only, 1/day, ALL fired (no gap filter)",
+      "n": 23,
+      "n_clusters_days": 21,
+      "fires_per_week": 2.4029850746268657,
+      "mean_exec_price": 0.6821739130434782,
+      "win_rate": 0.9565217391304348,
+      "n_bad": 1,
+      "cond_loss_rate_given_fired": 0.04347826086956519,
+      "worst_case_loss_rate_wilson95": 0.20991155075768483,
+      "analytic_ev_point": 0.26274639130434796,
+      "analytic_ev_worst_case": 0.09631310141622826,
+      "mean_pnl": 0.2627463913043478,
+      "se_clustered": 0.044788517784254,
+      "t_clustered": 5.866378355497171,
+      "p_clustered": 4.454167701339884e-09
+    },
+    "full_ladder_tradeable": {
+      "label": "full ladder, tradeable",
+      "n": 417,
+      "n_clusters_days": 64,
+      "fires_per_week": 43.56716417910448,
+      "mean_exec_price": 0.734340527577938,
+      "win_rate": 0.9760191846522782,
+      "n_bad": 10,
+      "cond_loss_rate_given_fired": 0.023980815347721784,
+      "worst_case_loss_rate_wilson95": 0.043574829097812816,
+      "analytic_ev_point": 0.23139292086330904,
+      "analytic_ev_worst_case": 0.21179890711321797,
+      "mean_pnl": 0.23139292086330904,
+      "se_clustered": 0.010126518594195744,
+      "t_clustered": 22.85019463608524,
+      "p_clustered": 0.0
+    },
+    "full_ladder_all_fired": {
+      "label": "full ladder, ALL fired (no gap filter)",
+      "n": 639,
+      "n_clusters_days": 65,
+      "fires_per_week": 66.76119402985074,
+      "mean_exec_price": 0.8187167449139301,
+      "win_rate": 0.9843505477308294,
+      "n_bad": 10,
+      "cond_loss_rate_given_fired": 0.015649452269170583,
+      "worst_case_loss_rate_wilson95": 0.02856533607085293,
+      "analytic_ev_point": 0.1583830297339572,
+      "analytic_ev_worst_case": 0.14546714593227492,
+      "mean_pnl": 0.15838302973395943,
+      "se_clustered": 0.008164824976139433,
+      "t_clustered": 19.398214927669834,
+      "p_clustered": 0.0
+    },
+    "between_less_rungs_only_tradeable": {
+      "label": "between/less rungs ONLY, tradeable",
+      "n": 395,
+      "n_clusters_days": 64,
+      "fires_per_week": 41.26865671641791,
+      "mean_exec_price": 0.7379493670886076,
+      "win_rate": 0.9772151898734177,
+      "n_bad": 9,
+      "cond_loss_rate_given_fired": 0.02278481012658229,
+      "worst_case_loss_rate_wilson95": 0.04272970679053696,
+      "analytic_ev_point": 0.22907593164556964,
+      "analytic_ev_worst_case": 0.20913103498161492,
+      "mean_pnl": 0.22907593164556933,
+      "se_clustered": 0.009754951896346141,
+      "t_clustered": 23.483040621796714,
+      "p_clustered": 0.0
+    },
+    "alt_config_full_ladder_tradeable": {
+      "label": "full ladder, ALT config, tradeable",
+      "n": 674,
+      "n_clusters_days": 64,
+      "fires_per_week": 70.4179104477612,
+      "mean_exec_price": 0.7113204747774485,
+      "win_rate": 0.9910979228486647,
+      "n_bad": 6,
+      "cond_loss_rate_given_fired": 0.008902077151335286,
+      "worst_case_loss_rate_wilson95": 0.01928434221190559,
+      "analytic_ev_point": 0.26933613798219536,
+      "analytic_ev_worst_case": 0.2589538729216251,
+      "mean_pnl": 0.26933613798219563,
+      "se_clustered": 0.010074443238341483,
+      "t_clustered": 26.73459283160698,
+      "p_clustered": 0.0
+    },
+    "volume_multiplier_tradeable_fires": 18.954545454545453
+  },
+  "q4_poll_cadence": {
+    "note": "Simulated on every TRADEABLE fired rung (primary config), using each rung's own already-fetched full-day 1-min candle series -- no lookahead, detection = first scheduled check time at/after the true (data-determined) crossing t*.",
+    "n_events_used": 417,
+    "gap_decay_curve_minutes_since_crossing": {
+      "0": {
+        "n": 417,
+        "mean": 0.2656594724220625,
+        "median": 0.17999999999999994
+      },
+      "1": {
+        "n": 407,
+        "mean": 0.2631449631449632,
+        "median": 0.18000000000000005
+      },
+      "5": {
+        "n": 248,
+        "mean": 0.22955645161290306,
+        "median": 0.16000000000000003
+      },
+      "15": {
+        "n": 186,
+        "mean": 0.21897849462365593,
+        "median": 0.135
+      },
+      "30": {
+        "n": 143,
+        "mean": 0.23734265734265733,
+        "median": 0.15000000000000002
+      },
+      "60": {
+        "n": 78,
+        "mean": 0.31461538461538463,
+        "median": 0.20499999999999996
+      },
+      "120": {
+        "n": 36,
+        "mean": 0.5047222222222223,
+        "median": 0.41000000000000003
+      }
+    },
+    "fixed_cadence_captured_gap": {
+      "120": {
+        "n": 88,
+        "mean": 0.29170454545454544,
+        "median": 0.18999999999999995
+      },
+      "30": {
+        "n": 195,
+        "mean": 0.23651282051282047,
+        "median": 0.15000000000000002
+      },
+      "15": {
+        "n": 248,
+        "mean": 0.23254032258064516,
+        "median": 0.15500000000000003
+      }
+    },
+    "adaptive_captured_gap_far20": {
+      "n": 254,
+      "mean": 0.22897637795275594,
+      "median": 0.15500000000000003
+    },
+    "adaptive_captured_gap_far15": {
+      "n": 275,
+      "mean": 0.23836363636363636,
+      "median": 0.16000000000000003
+    },
+    "adaptive_captured_gap_far30": {
+      "n": 250,
+      "mean": 0.2280000000000001,
+      "median": 0.16000000000000003
+    },
+    "n_open_at_crossing_then_shut_by_2h": 2,
+    "n_open_at_crossing_pool": 417
+  },
+  "q5_depth_sizing": {
+    "assumed_bankroll_usd": 50000.0,
+    "full_kelly_fraction_worst_case": 0.835974871513017,
+    "quarter_kelly_fraction_capped_at_daily_cap": 0.15,
+    "cross_event_daily_cap_fraction": 0.15,
+    "cross_event_daily_cap_usd": 7500.0,
+    "max_events_same_calendar_date_in_sample": 12,
+    "n_dates_where_daily_cap_bound": 64,
+    "n_fires_where_liquidity_not_kelly_was_binding": 313,
+    "n_fires_total": 417,
+    "bankroll_sensitivity_sweep": [
+      {
+        "bankroll_usd": 10000,
+        "usd_per_week": 6814.947705201267,
+        "n_liquidity_binding": 173,
+        "n_fires_total": 417
+      },
+      {
+        "bankroll_usd": 50000,
+        "usd_per_week": 21367.809570511075,
+        "n_liquidity_binding": 313,
+        "n_fires_total": 417
+      },
+      {
+        "bankroll_usd": 250000,
+        "usd_per_week": 34769.41921641792,
+        "n_liquidity_binding": 412,
+        "n_fires_total": 417
+      },
+      {
+        "bankroll_usd": 1000000,
+        "usd_per_week": 35190.1676835821,
+        "n_liquidity_binding": 417,
+        "n_fires_total": 417
+      },
+      {
+        "bankroll_usd": 5000000,
+        "usd_per_week": 35190.1676835821,
+        "n_liquidity_binding": 417,
+        "n_fires_total": 417
+      }
+    ],
+    "liquidity_ceiling_usd_per_week": 35190.1676835821,
+    "flat_1unit_usd_per_week": 31.993134328358224,
+    "depth_sized_usd_per_week": 21367.809570511075,
+    "depth_sized_contracts_per_week": 34016.53738719042,
+    "mean_stake_usd_per_fire_depth_sized": 490.45674588017886,
+    "sample_per_fire_rows": [
+      {
+        "date": "2026-06-08",
+        "ticker": "KXHIGHMIA-26JUN08-B88.5",
+        "kelly_uncapped_usd": 2500.0,
+        "liquidity_cap_usd": 2383.07,
+        "stake_usd": 2383.07,
+        "contracts": 2647.9
+      },
+      {
+        "date": "2026-05-19",
+        "ticker": "KXHIGHDEN-26MAY19-B45.5",
+        "kelly_uncapped_usd": 1875.0,
+        "liquidity_cap_usd": 3584.05,
+        "stake_usd": 1875.0,
+        "contracts": 1973.7
+      },
+      {
+        "date": "2026-07-02",
+        "ticker": "KXHIGHMIA-26JUL02-B89.5",
+        "kelly_uncapped_usd": 1875.0,
+        "liquidity_cap_usd": 4952.59,
+        "stake_usd": 1875.0,
+        "contracts": 2717.4
+      },
+      {
+        "date": "2026-07-02",
+        "ticker": "KXHIGHMIA-26JUL02-B87.5",
+        "kelly_uncapped_usd": 1875.0,
+        "liquidity_cap_usd": 2710.29,
+        "stake_usd": 1875.0,
+        "contracts": 1994.7
+      },
+      {
+        "date": "2026-05-19",
+        "ticker": "KXHIGHTDAL-26MAY19-B85.5",
+        "kelly_uncapped_usd": 1875.0,
+        "liquidity_cap_usd": 2060.47,
+        "stake_usd": 1875.0,
+        "contracts": 2286.6
+      },
+      {
+        "date": "2026-05-21",
+        "ticker": "KXHIGHMIA-26MAY21-B87.5",
+        "kelly_uncapped_usd": 1875.0,
+        "liquidity_cap_usd": 1847.63,
+        "stake_usd": 1847.63,
+        "contracts": 2757.7
+      },
+      {
+        "date": "2026-06-03",
+        "ticker": "KXHIGHTSEA-26JUN03-B67.5",
+        "kelly_uncapped_usd": 1875.0,
+        "liquidity_cap_usd": 1519.9,
+        "stake_usd": 1519.9,
+        "contracts": 1788.1
+      },
+      {
+        "date": "2026-06-17",
+        "ticker": "KXHIGHCHI-26JUN17-B67.5",
+        "kelly_uncapped_usd": 1500.0,
+        "liquidity_cap_usd": 4420.61,
+        "stake_usd": 1500.0,
+        "contracts": 1578.9
+      },
+      {
+        "date": "2026-06-18",
+        "ticker": "KXHIGHMIA-26JUN18-B91.5",
+        "kelly_uncapped_usd": 1500.0,
+        "liquidity_cap_usd": 2943.42,
+        "stake_usd": 1500.0,
+        "contracts": 1875.0
+      },
+      {
+        "date": "2026-06-01",
+        "ticker": "KXHIGHMIA-26JUN01-B90.5",
+        "kelly_uncapped_usd": 1500.0,
+        "liquidity_cap_usd": 2550.97,
+        "stake_usd": 1500.0,
+        "contracts": 2586.2
+      },
+      {
+        "date": "2026-06-28",
+        "ticker": "KXHIGHTPHX-26JUN28-B102.5",
+        "kelly_uncapped_usd": 1500.0,
+        "liquidity_cap_usd": 1567.26,
+        "stake_usd": 1500.0,
+        "contracts": 5357.1
+      },
+      {
+        "date": "2026-06-17",
+        "ticker": "KXHIGHLAX-26JUN17-B69.5",
+        "kelly_uncapped_usd": 1500.0,
+        "liquidity_cap_usd": 5738.57,
+        "stake_usd": 1500.0,
+        "contracts": 2205.9
+      },
+      {
+        "date": "2026-06-28",
+        "ticker": "KXHIGHLAX-26JUN28-B69.5",
+        "kelly_uncapped_usd": 1500.0,
+        "liquidity_cap_usd": 3316.59,
+        "stake_usd": 1500.0,
+        "contracts": 1807.2
+      },
+      {
+        "date": "2026-06-30",
+        "ticker": "KXHIGHDEN-26JUN30-B89.5",
+        "kelly_uncapped_usd": 1875.0,
+        "liquidity_cap_usd": 1484.31,
+        "stake_usd": 1484.31,
+        "contracts": 2854.4
+      },
+      {
+        "date": "2026-07-10",
+        "ticker": "KXHIGHTSFO-26JUL10-B64.5",
+        "kelly_uncapped_usd": 3750.0,
+        "liquidity_cap_usd": 1450.9,
+        "stake_usd": 1450.9,
+        "contracts": 1884.3
+      }
+    ]
+  },
+  "elapsed_sec": 31.4
+}
