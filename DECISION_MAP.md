@@ -2827,3 +2827,10 @@ NOTHING (25-ct depth cap binds); above ~$400 bankroll the per-fire cap NEVER bin
 PHYSICALLY IMPOSSIBLE. Ruin stays ~0% and worst-day ~-62% ONLY because of the 60%/day deploy cap (without it, -93/-101%).
 VERDICT: detect conviction, press MILDLY (10-15% cap), keep the daily cap + depth limits. Do NOT max-the-bankroll: the
 book won't allow it and it's pure tail for ~0 extra growth. The daily cap, not the per-fire cap, is the real risk control.
+
+## CONVICTION OPTIMAL THRESHOLDS (2026-07-18) — flat plateau ~+5%; risk-optimal = cushion>=2F, gap>=15c, cap~12%
+Grid-searched cushion x gap x cap (kwx_conviction_optimize.py). NO sharp optimum: broad flat plateau, entire top region
+(gap 5-25c, cap 10-25%, any cushion) = median ~12.4-12.6x vs base 12.0x = +4-5%, statistically indistinguishable. Growth
+driver = GAP threshold (upsize cheap fires); cushion barely affects growth so set it >=2F for free safety; cap >20% does
+nothing (depth). Risk control is the 60%/day cap, not these thresholds. Recommended (risk-optimal in the plateau):
+cushion>=2F, gap>=15c, conv-cap 12%. Effect is small (+5%/60d) and 65-summer-day precision is limited -> confirm on forward.

@@ -37,3 +37,17 @@ oppose. The real target = high cushion AND still-cheap: cushion≥2°F & gap≥1
 - Do NOT "unload the clip": impossible above small bankroll (depth), and pure added tail with ~0 extra growth.
 The instinct (press the safest+cheapest fires) is right and mildly +EV; the "max the bankroll" version is
 contained by the order book and would only be dangerous without the daily cap.
+
+## OPTIMAL THRESHOLDS (grid search, kwx_conviction_optimize.py, $150, ruin<=0.5% & p5>=1x)
+Grid: cushion{1,2,3}F x gap{5..30}c x conv-cap{5..25}%, 2500 trials each. KEY FINDING: there is NO sharp
+optimum -- it's a BROAD FLAT PLATEAU. The entire top region (gap 5-25c, cap 10-25%, any cushion) yields
+median ~12.4-12.6x vs base flat-5% 12.0x = **+4-5%, statistically indistinguishable across the region**.
+- Growth DRIVER = the GAP threshold (upsize cheap/high-gap fires). Optimizer peak: gap>=20c, cap 20% (12.6x).
+- CUSHION barely affects growth (the daily-cap + depth-cap contain ruin regardless), so it's a FREE safety knob:
+  require cushion>=2F to upsize only the 0%-in-sample-loss fires at ~no growth cost.
+- CAP: 10% = 20% = 25% within noise; >20% does nothing (depth binds). Pick the LOW end (less concentration).
+- ruin stays ~0% and worst-day ~-62% across the whole plateau -- because the 60%/day cap, not these thresholds,
+  is the risk control.
+HONEST: +5% over 60 days is small and the plateau is flat -> precision beyond "gap>=15-20c, cushion>=2F,
+cap~10-12%" is overfitting 65 summer days. Confirm on forward paper before trusting.
+RISK-OPTIMAL POINT (within the flat plateau): cushion>=2F, gap>=15c, conv-cap 12%.
