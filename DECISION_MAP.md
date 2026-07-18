@@ -2270,3 +2270,30 @@ capacity (~18% of weeklies fillable, ~$128 median) — important for sizing/fron
 + gamma only surface ~4 recent weeks of settled weeklies, so the multi-week t~4.6 can't be re-confirmed here. PATH to re-confirm
 + robust capacity: (a) discover older settled weeklies via gamma /markets?closed=true pagination then pull their /trades, or
 (b) ingest the Jon-Becker 36GB archive (full history). Filed as the highest-value data follow-up.
+
+## GITHUB-ARCH-FIND (2026-07-18) — Kalshi data + bot architectures worth reusing
+Operator asked for Kalshi data + helpful bot/trading architectures on GitHub.
+KALSHI DATA:
+- Jon-Becker/prediction-market-analysis (3.6k*): Kalshi trades (trade_id,ticker,count,yes_price,no_price,taker_side,
+  created_time) + markets (result,close_time,bid/ask,OI,volume) — trade-level w/ taker_side. (36GB monolithic.)
+- Oddpool/PredictionMarketBench (24*): Kalshi market REPLAY data + a backtesting benchmark for PM agents.
+- Kalshi public API (we already cache .kalshi_cache). NOTE our KALSHI-SHORTVOL null: Kalshi longshots are calibrated, so
+  Kalshi data helps FAVLONG/structural work, NOT the short-vol edge.
+BOT ARCHITECTURE (ranked by usefulness to us):
+1. braedonsaunders/homerun (122*) -- CLOSEST to what we're building + validates our charter. Poly+Kalshi platform with:
+   Cox proportional-hazards FILL MODEL (P(fill|queue depth,spread,trade intensity,time-to-resolution) -- directly answers our
+   trade-flow "~18% fillable" question); L2 tick replay backtester w/ trade-vs-cancel decomposition + latency injection;
+   SHADOW->LIVE single-flip with a "triangulation panel" (backtest/shadow/live PnL side-by-side to catch fill-model
+   divergence) = our "tested must match live" productized; maker-mode zero-fee limit orders, Kelly sizing, risk gates,
+   circuit breakers. BEST candidate to adopt for go-live OMS + fill realism.
+2. YichengYang-Ethan/oracle3 (263*) -- WANG TRANSFORM pricing = the THEORY of our edge. Distortion p_mkt=Phi(Phi^-1(p*)+lambda),
+   hierarchical lambda=0.259-0.072ln(1+V)+0.143ln(1+D)-0.477|p-0.5| -> extreme/longshot contracts face LARGER distortion (the
+   favorite-longshot bias we harvest); calibrated on 291K contracts (longshots ~57c should be ~50c). A PRINCIPLED longshot-
+   overpricing model we could test as a selection overlay (our ad-hoc selection was null 3x; a calibrated distortion is a
+   different, stronger approach). "Premium decay" strategy matches our first-half-entry finding.
+3. betcode-org/flumine (240*) -- mature event-driven OMS (place/cancel/replace, streaming, multi-strategy) BUT Kalshi/Polymarket
+   are ROADMAP-only (Betfair-centric) -> good PATTERNS, not directly usable for our venues yet.
+4. pmxt (2k*, CCXT-for-PM unified API) + arshka/pykalshi (117*, clean Kalshi ws client) -- execution clients for go-live.
+5. ryanfrigo/kalshi-ai-trading-bot (528*), OctoBot-Prediction-Market (98*), truthlayer (67*, Poly/Kalshi arb) -- reference.
+ACTIONABLE: (a) homerun's Cox fill model is the go-live answer to our ~18%-fillable risk; (b) Wang Transform is the one
+principled selection idea we haven't tried -- worth a focused OOS test despite prior selection nulls.
