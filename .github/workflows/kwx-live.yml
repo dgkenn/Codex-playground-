@@ -68,7 +68,7 @@ jobs:
           KALSHI_PRIVATE_KEY: ${{ secrets.KALSHI_PRIVATE_KEY }}
         run: |
           set -e
-          pip -q install cryptography || true
+          pip -q install cryptography numpy scipy || true   # scipy/numpy: MADIS hfmetar netCDF parse (free 5-min feed)
           git config user.name  "kwx-live-bot"
           git config user.email "kwx-live-bot@users.noreply.github.com"
           # time-boxed live loop: poll + settle for ~18 min, then exit (cron restarts the next one)

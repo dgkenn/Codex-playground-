@@ -220,10 +220,9 @@ class PrimaryWithFallback:
     it only covers a gap when the primary has nothing. Glitch protection is still the sustain=3 filter, which
     runs on whichever feed's obs are used; single-feed Synoptic is acceptable because HF-ASOS IS the ASOS
     sensor the official CLI settles on (the free feeds merely re-stream it)."""
-    name = "synoptic+fallback"
-
     def __init__(self, primary, backup):
         self.primary, self.backup = primary, backup
+        self.name = f"{getattr(primary, 'name', '?')}+fallback"
 
     def running_extreme(self, station, lst_date, offset, kind):
         try:
@@ -238,7 +237,26 @@ class PrimaryWithFallback:
 # --- feed instances (module singletons) ---
 _WGOV = WeatherGovFeedWrap()
 _METAR = MetarFeed()
-_FREE = MultiFeedConsensus([_WGOV, _METAR])   # conservative consensus of the two FREE feeds (both must agree)
+_FREE_CONSENSUS = MultiFeedConsensus([_WGOV, _METAR])   # conservative consensus of the two slow free feeds
+
+
+def _madis_primary():
+    """MADIS hfmetar (FREE, open public tier) as a fresher primary over the weather.gov/METAR consensus.
+    MEASURED: 5-min resolution at ~10-15 min latency for SPECI-reporting stations -- fresher than weather.gov
+    (~15-20 min), and validated to return the SAME sensor values (KMIA/KLAX ran identical to weather.gov). It
+    is NOT the 1-min tier (only Synoptic is), so it's a modest free baseline bump, not the 2x jump. Falls back
+    to the consensus for hourly-only stations (KDEN, KNYC) that have no hfmetar 5-min stream. Default-ON (no
+    credential needed); if MADIS/scipy is unavailable at runtime the fetch raises and PrimaryWithFallback
+    quietly uses the consensus -- so this can only ever help, never break the free default."""
+    try:
+        import madis_feed
+        return PrimaryWithFallback(madis_feed.MadisFeed(), _FREE_CONSENSUS)
+    except Exception:
+        return None
+
+
+# FREE default: MADIS primary (fresher 5-min) -> weather.gov/METAR consensus fallback.
+_FREE = _madis_primary() or _FREE_CONSENSUS
 
 
 def _synoptic_primary():
@@ -249,13 +267,13 @@ def _synoptic_primary():
     try:
         import synoptic_feed
         if os.path.exists(synoptic_feed.TOKEN_PATH):
-            return PrimaryWithFallback(synoptic_feed.SynopticFeed(), _FREE)
+            return PrimaryWithFallback(synoptic_feed.SynopticFeed(), _FREE)   # cascade: synoptic->madis->consensus
     except Exception:
         pass
     return None
 
 
-# DEFAULT feed: Synoptic-primary (fast) when credentialed, else the free 2-feed consensus. set_feed() overrides.
+# DEFAULT feed cascade: Synoptic (1-min, if credentialed) -> MADIS (free 5-min) -> weather.gov/METAR consensus.
 _FEED = _synoptic_primary() or _FREE
 
 # PER-STATION feed policy (operator's insight: some feeds are better for certain cities). Maps a station to a
