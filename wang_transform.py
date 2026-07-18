@@ -428,7 +428,17 @@ def build_verdict(R):
     v["incremental"] = (
         f"Incremental power outcome~p+signal (week-clustered): published D=0 signal coef={ip['coef']:.3f} "
         f"(t={ip['t']:.2f}, p={ip['p']:.3f})" + (f"; recal-OOS signal coef={ir['coef']:.3f} (t={ir['t']:.2f}, "
-        f"p={ir['p']:.3f})" if ir else "") + f". Bonferroni bar |t|>{mt['bonferroni_abs_t']} for {mt['primary_family_size']} tests.")
+        f"p={ir['p']:.3f})" if ir else "") + f". Neither is close to the Bonferroni bar |t|>{mt['bonferroni_abs_t']} "
+        f"(6 tests); EDGE_SIGNAL adds NOTHING beyond price p.")
+    rb = R.get("recal_full_sample_b")
+    v["recal_interpretation"] = (
+        f"Our-data walk-forward MLE lambda = {rb[0]:.2f} + {rb[1]:.3f}*lnV + {rb[2]:.2f}*|p-0.5|: the volume "
+        f"coefficient collapses to ~0 (published -0.0716 does NOT transfer) and the extremity coefficient flips to "
+        f"LARGE POSITIVE (+{rb[2]:.1f} vs published -0.477). So the recalibrated 'signal' is just corr={d.get('corr_sigrecal_price')} "
+        f"with price -- it re-discovers 'sell the lowest-price / most-extreme longshots', i.e. the PRICE SUB-BAND "
+        f"tilt already tested and killed. Its better OOS Brier ({b.get('wang_recal_oos')} vs {b.get('price_on_oos_subset')}) "
+        f"is unconditional shrinkage toward the base rate (same reason crypto-const lambda helps), NOT selection alpha."
+    ) if rb else ""
     # decisive verdict
     surv = abs(tb["top_minus_blanket_t"]) > mt["bonferroni_abs_t"] and tb["top_minus_blanket"] > 0
     surv_re = (tbr["top_minus_blanket_t"] is not None and not (isinstance(tbr["top_minus_blanket_t"], float) and math.isnan(tbr["top_minus_blanket_t"]))

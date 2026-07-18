@@ -1,0 +1,1505 @@
+{
+  "generated": "2026-07-18T15:31:22.956211+00:00",
+  "universe": {
+    "n_markets": 1804,
+    "n_weeks": 49,
+    "band": [
+      0.15,
+      0.3
+    ],
+    "burn_in_weeks": 8
+  },
+  "confirmed_edge_reference": {
+    "equal_weight_edge": 0.0589,
+    "week_clustered_t": 2.376,
+    "k": 49,
+    "source": "trade_flow_hist"
+  },
+  "published_coeffs": {
+    "intercept": 0.259,
+    "ln_volume": -0.0716,
+    "ln_duration_or_dispute": 0.1431,
+    "extremity": -0.4772,
+    "crypto_const": 0.253,
+    "note": "repo covariate #3 is ln(DURATION); task labeled it dispute-rate D. We run both."
+  },
+  "recal_full_sample_b": [
+    -1.1992354370949303,
+    0.005997754835230674,
+    5.3677365821372085
+  ],
+  "recal_b_labels": [
+    "b0(intercept)",
+    "b1(lnV)",
+    "b2(|p-.5|)"
+  ],
+  "recal_coeffs_over_time": [
+    [
+      "2025-W41",
+      [
+        -1.2239412758209725,
+        0.019545032719096515,
+        3.1713537786539328
+      ]
+    ],
+    [
+      "2025-W42",
+      [
+        -1.0240178522333958,
+        0.006331955122791718,
+        2.875390847524142
+      ]
+    ],
+    [
+      "2025-W43",
+      [
+        -0.561423361271819,
+        -0.004733840333394145,
+        2.1687450232230474
+      ]
+    ],
+    [
+      "2025-W44",
+      [
+        -0.5118303619783918,
+        -0.022024720408250178,
+        2.7059985518138467
+      ]
+    ],
+    [
+      "2025-W45",
+      [
+        -0.24118553155552092,
+        -0.04817695144662331,
+        2.582703411734641
+      ]
+    ],
+    [
+      "2025-W46",
+      [
+        0.14390747921897493,
+        -0.07470523414327211,
+        2.2639186782924665
+      ]
+    ],
+    [
+      "2026-W27",
+      [
+        -1.1024966644432361,
+        0.002403426749158318,
+        5.234745196854056
+      ]
+    ],
+    [
+      "2026-W28",
+      [
+        -1.1106135762949387,
+        0.0030844675879733454,
+        5.1892415702202825
+      ]
+    ],
+    [
+      "2026-W29",
+      [
+        -1.1572335950839758,
+        0.005726357616877743,
+        5.217692281159867
+      ]
+    ]
+  ],
+  "diagnostics": {
+    "corr_sigpub_price": -0.1352,
+    "corr_sigpub_lnV": -0.993,
+    "corr_price_lnV": 0.04,
+    "lam_pub_mean": -0.4681,
+    "lam_pub_min": -0.7489,
+    "lam_pub_max": 0.0384,
+    "ptrue_pub_mean": 0.3783,
+    "price_mean": 0.2192,
+    "realized_rate": 0.1425,
+    "corr_sigrecal_price": -0.5603,
+    "corr_sigrecal_lnV": -0.0281
+  },
+  "brier": {
+    "price": 0.12306,
+    "wang_pub_D0": 0.17438,
+    "wang_pub_dur": 0.13571,
+    "wang_crypto_const": 0.11797,
+    "wang_recal_oos": 0.10688,
+    "price_on_oos_subset": 0.11297,
+    "n_oos": 1596
+  },
+  "incremental": {
+    "pub_D0": {
+      "coef": 0.04345014650773585,
+      "se": 0.21464800605124637,
+      "t": 0.2024251112650089,
+      "p": 0.8395843987786162,
+      "n": 1804,
+      "k": 49,
+      "coef_p": 1.9270425753340048,
+      "t_p": 6.663231281009053
+    },
+    "pub_dur": {
+      "coef": 0.011736558120069879,
+      "se": 0.25901464818230424,
+      "t": 0.045312333500958014,
+      "p": 0.9638583568245095,
+      "n": 1804,
+      "k": 49,
+      "coef_p": 1.9209647710352815,
+      "t_p": 6.602782506101276
+    },
+    "recal_oos": {
+      "coef": 0.36533423660727826,
+      "se": 0.47148916656875867,
+      "t": 0.7748518152940435,
+      "p": 0.4384272273626054,
+      "n": 1596,
+      "k": 41,
+      "coef_p": 2.0784027446603055,
+      "t_p": 4.483891923815696
+    }
+  },
+  "selection": {
+    "pub_D0": {
+      "n_top": 469,
+      "n_bot": 469,
+      "n_all": 1804,
+      "top_edge": 0.0552,
+      "top_t": 1.754,
+      "top_k": 49,
+      "top_sharpe": 0.251,
+      "blanket_edge": 0.0589,
+      "blanket_t": 2.376,
+      "blanket_k": 49,
+      "blanket_sharpe": 0.339,
+      "bot_edge": 0.0455,
+      "bot_t": 1.608,
+      "bot_k": 49,
+      "bot_sharpe": 0.23,
+      "top_minus_blanket": -0.0036,
+      "top_minus_blanket_t": -0.235,
+      "tb_k": 49,
+      "top_minus_bottom": 0.0097,
+      "top_minus_bottom_t": 0.335,
+      "tbot_k": 49,
+      "week_detail": [
+        {
+          "week": "2025-W33",
+          "n": 9,
+          "n_top": 3,
+          "n_bot": 3,
+          "top": -0.7571,
+          "blanket": -0.5166,
+          "bot": -0.3819
+        },
+        {
+          "week": "2025-W34",
+          "n": 16,
+          "n_top": 4,
+          "n_bot": 4,
+          "top": 0.2116,
+          "blanket": 0.0958,
+          "bot": -0.2616
+        },
+        {
+          "week": "2025-W35",
+          "n": 17,
+          "n_top": 5,
+          "n_bot": 5,
+          "top": -0.4011,
+          "blanket": -0.0185,
+          "bot": 0.2248
+        },
+        {
+          "week": "2025-W36",
+          "n": 25,
+          "n_top": 7,
+          "n_bot": 7,
+          "top": 0.2181,
+          "blanket": 0.0619,
+          "bot": -0.1923
+        },
+        {
+          "week": "2025-W37",
+          "n": 28,
+          "n_top": 7,
+          "n_bot": 7,
+          "top": -0.2221,
+          "blanket": -0.0675,
+          "bot": -0.1861
+        },
+        {
+          "week": "2025-W38",
+          "n": 29,
+          "n_top": 8,
+          "n_bot": 8,
+          "top": 0.2371,
+          "blanket": 0.23,
+          "bot": 0.2407
+        },
+        {
+          "week": "2025-W39",
+          "n": 37,
+          "n_top": 10,
+          "n_bot": 10,
+          "top": 0.2017,
+          "blanket": 0.223,
+          "bot": 0.2447
+        },
+        {
+          "week": "2025-W40",
+          "n": 47,
+          "n_top": 12,
+          "n_bot": 12,
+          "top": -0.5455,
+          "blanket": -0.5036,
+          "bot": -0.4121
+        },
+        {
+          "week": "2025-W41",
+          "n": 41,
+          "n_top": 11,
+          "n_bot": 11,
+          "top": -0.0726,
+          "blanket": -0.0382,
+          "bot": 0.052
+        },
+        {
+          "week": "2025-W42",
+          "n": 68,
+          "n_top": 17,
+          "n_bot": 17,
+          "top": 0.2248,
+          "blanket": 0.192,
+          "bot": 0.1106
+        },
+        {
+          "week": "2025-W43",
+          "n": 46,
+          "n_top": 12,
+          "n_bot": 12,
+          "top": 0.1141,
+          "blanket": 0.0963,
+          "bot": 0.0074
+        },
+        {
+          "week": "2025-W44",
+          "n": 40,
+          "n_top": 10,
+          "n_bot": 10,
+          "top": 0.1297,
+          "blanket": 0.053,
+          "bot": -0.1482
+        },
+        {
+          "week": "2025-W45",
+          "n": 46,
+          "n_top": 12,
+          "n_bot": 12,
+          "top": 0.2043,
+          "blanket": 0.2211,
+          "bot": 0.2206
+        },
+        {
+          "week": "2025-W46",
+          "n": 46,
+          "n_top": 12,
+          "n_bot": 12,
+          "top": 0.1156,
+          "blanket": 0.1303,
+          "bot": 0.1593
+        },
+        {
+          "week": "2025-W47",
+          "n": 59,
+          "n_top": 15,
+          "n_bot": 15,
+          "top": 0.2013,
+          "blanket": 0.2153,
+          "bot": 0.236
+        },
+        {
+          "week": "2025-W48",
+          "n": 52,
+          "n_top": 13,
+          "n_bot": 13,
+          "top": -0.0908,
+          "blanket": -0.0127,
+          "bot": 0.1553
+        },
+        {
+          "week": "2025-W49",
+          "n": 40,
+          "n_top": 10,
+          "n_bot": 10,
+          "top": -0.0818,
+          "blanket": 0.0635,
+          "bot": 0.1228
+        },
+        {
+          "week": "2025-W50",
+          "n": 34,
+          "n_top": 9,
+          "n_bot": 9,
+          "top": -0.0203,
+          "blanket": 0.0415,
+          "bot": 0.2323
+        },
+        {
+          "week": "2025-W51",
+          "n": 48,
+          "n_top": 12,
+          "n_bot": 12,
+          "top": 0.2296,
+          "blanket": 0.2002,
+          "bot": 0.1453
+        },
+        {
+          "week": "2025-W52",
+          "n": 43,
+          "n_top": 11,
+          "n_bot": 11,
+          "top": 0.1123,
+          "blanket": 0.1216,
+          "bot": 0.1149
+        },
+        {
+          "week": "2026-W01",
+          "n": 25,
+          "n_top": 7,
+          "n_bot": 7,
+          "top": -0.1042,
+          "blanket": 0.0026,
+          "bot": 0.0671
+        },
+        {
+          "week": "2026-W02",
+          "n": 33,
+          "n_top": 9,
+          "n_bot": 9,
+          "top": 0.2069,
+          "blanket": -0.0214,
+          "bot": 0.0085
+        },
+        {
+          "week": "2026-W03",
+          "n": 39,
+          "n_top": 10,
+          "n_bot": 10,
+          "top": -0.2869,
+          "blanket": -0.1399,
+          "bot": 0.1293
+        },
+        {
+          "week": "2026-W04",
+          "n": 44,
+          "n_top": 11,
+          "n_bot": 11,
+          "top": 0.1925,
+          "blanket": 0.226,
+          "bot": 0.248
+        },
+        {
+          "week": "2026-W05",
+          "n": 38,
+          "n_top": 10,
+          "n_bot": 10,
+          "top": 0.2187,
+          "blanket": 0.2116,
+          "bot": 0.2026
+        },
+        {
+          "week": "2026-W06",
+          "n": 73,
+          "n_top": 19,
+          "n_bot": 19,
+          "top": 0.2162,
+          "blanket": 0.2219,
+          "bot": 0.2319
+        },
+        {
+          "week": "2026-W07",
+          "n": 73,
+          "n_top": 19,
+          "n_bot": 19,
+          "top": 0.1476,
+          "blanket": 0.0983,
+          "bot": -0.0481
+        },
+        {
+          "week": "2026-W08",
+          "n": 36,
+          "n_top": 9,
+          "n_bot": 9,
+          "top": 0.2161,
+          "blanket": 0.2154,
+          "bot": 0.2064
+        },
+        {
+          "week": "2026-W09",
+          "n": 34,
+          "n_top": 9,
+          "n_bot": 9,
+          "top": 0.2046,
+          "blanket": 0.188,
+          "bot": 0.1285
+        },
+        {
+          "week": "2026-W10",
+          "n": 41,
+          "n_top": 11,
+          "n_bot": 11,
+          "top": 0.1111,
+          "blanket": -0.0678,
+          "bot": 0.1451
+        },
+        {
+          "week": "2026-W11",
+          "n": 38,
+          "n_top": 10,
+          "n_bot": 10,
+          "top": 0.0253,
+          "blanket": 0.0872,
+          "bot": 0.0201
+        },
+        {
+          "week": "2026-W12",
+          "n": 38,
+          "n_top": 10,
+          "n_bot": 10,
+          "top": 0.1179,
+          "blanket": 0.0919,
+          "bot": 0.0303
+        },
+        {
+          "week": "2026-W13",
+          "n": 39,
+          "n_top": 10,
+          "n_bot": 10,
+          "top": 0.2076,
+          "blanket": 0.1917,
+          "bot": 0.2257
+        },
+        {
+          "week": "2026-W14",
+          "n": 41,
+          "n_top": 11,
+          "n_bot": 11,
+          "top": 0.2221,
+          "blanket": 0.1708,
+          "bot": 0.2358
+        },
+        {
+          "week": "2026-W15",
+          "n": 33,
+          "n_top": 9,
+          "n_bot": 9,
+          "top": -0.0276,
+          "blanket": -0.2339,
+          "bot": -0.5288
+        },
+        {
+          "week": "2026-W16",
+          "n": 36,
+          "n_top": 9,
+          "n_bot": 9,
+          "top": -0.2186,
+          "blanket": -0.1942,
+          "bot": -0.3256
+        },
+        {
+          "week": "2026-W17",
+          "n": 37,
+          "n_top": 10,
+          "n_bot": 10,
+          "top": 0.2038,
+          "blanket": 0.0344,
+          "bot": -0.0592
+        },
+        {
+          "week": "2026-W18",
+          "n": 32,
+          "n_top": 8,
+          "n_bot": 8,
+          "top": 0.0876,
+          "blanket": 0.1315,
+          "bot": -0.0094
+        },
+        {
+          "week": "2026-W19",
+          "n": 24,
+          "n_top": 6,
+          "n_bot": 6,
+          "top": 0.0529,
+          "blanket": -0.1094,
+          "bot": -0.081
+        },
+        {
+          "week": "2026-W20",
+          "n": 26,
+          "n_top": 7,
+          "n_bot": 7,
+          "top": 0.2264,
+          "blanket": 0.2238,
+          "bot": 0.2269
+        },
+        {
+          "week": "2026-W21",
+          "n": 32,
+          "n_top": 8,
+          "n_bot": 8,
+          "top": 0.2261,
+          "blanket": 0.2134,
+          "bot": 0.2431
+        },
+        {
+          "week": "2026-W22",
+          "n": 20,
+          "n_top": 5,
+          "n_bot": 5,
+          "top": 0.2186,
+          "blanket": 0.2074,
+          "bot": 0.209
+        },
+        {
+          "week": "2026-W23",
+          "n": 36,
+          "n_top": 9,
+          "n_bot": 9,
+          "top": 0.2046,
+          "blanket": 0.2141,
+          "bot": 0.2353
+        },
+        {
+          "week": "2026-W24",
+          "n": 43,
+          "n_top": 11,
+          "n_bot": 11,
+          "top": 0.2235,
+          "blanket": 0.1483,
+          "bot": 0.0513
+        },
+        {
+          "week": "2026-W25",
+          "n": 24,
+          "n_top": 6,
+          "n_bot": 6,
+          "top": -0.0761,
+          "blanket": -0.013,
+          "bot": 0.0476
+        },
+        {
+          "week": "2026-W26",
+          "n": 29,
+          "n_top": 8,
+          "n_bot": 8,
+          "top": 0.2183,
+          "blanket": 0.1853,
+          "bot": 0.1132
+        },
+        {
+          "week": "2026-W27",
+          "n": 26,
+          "n_top": 7,
+          "n_bot": 7,
+          "top": -0.0826,
+          "blanket": -0.1241,
+          "bot": -0.199
+        },
+        {
+          "week": "2026-W28",
+          "n": 28,
+          "n_top": 7,
+          "n_bot": 7,
+          "top": -0.224,
+          "blanket": -0.1447,
+          "bot": -0.1998
+        },
+        {
+          "week": "2026-W29",
+          "n": 15,
+          "n_top": 4,
+          "n_bot": 4,
+          "top": -0.0308,
+          "blanket": 0.0817,
+          "bot": -0.0073
+        }
+      ]
+    },
+    "pub_dur": {
+      "n_top": 469,
+      "n_bot": 469,
+      "n_all": 1804,
+      "top_edge": 0.0555,
+      "top_t": 1.702,
+      "top_k": 49,
+      "top_sharpe": 0.243,
+      "blanket_edge": 0.0589,
+      "blanket_t": 2.376,
+      "blanket_k": 49,
+      "blanket_sharpe": 0.339,
+      "bot_edge": 0.0547,
+      "bot_t": 1.827,
+      "bot_k": 49,
+      "bot_sharpe": 0.261,
+      "top_minus_blanket": -0.0034,
+      "top_minus_blanket_t": -0.213,
+      "tb_k": 49,
+      "top_minus_bottom": 0.0007,
+      "top_minus_bottom_t": 0.026,
+      "tbot_k": 49,
+      "week_detail": [
+        {
+          "week": "2025-W33",
+          "n": 9,
+          "n_top": 3,
+          "n_bot": 3,
+          "top": -0.7484,
+          "blanket": -0.5166,
+          "bot": -0.712
+        },
+        {
+          "week": "2025-W34",
+          "n": 16,
+          "n_top": 4,
+          "n_bot": 4,
+          "top": 0.2116,
+          "blanket": 0.0958,
+          "bot": -0.2616
+        },
+        {
+          "week": "2025-W35",
+          "n": 17,
+          "n_top": 5,
+          "n_bot": 5,
+          "top": -0.4011,
+          "blanket": -0.0185,
+          "bot": 0.2248
+        },
+        {
+          "week": "2025-W36",
+          "n": 25,
+          "n_top": 7,
+          "n_bot": 7,
+          "top": 0.2181,
+          "blanket": 0.0619,
+          "bot": -0.1999
+        },
+        {
+          "week": "2025-W37",
+          "n": 28,
+          "n_top": 7,
+          "n_bot": 7,
+          "top": -0.3546,
+          "blanket": -0.0675,
+          "bot": -0.1861
+        },
+        {
+          "week": "2025-W38",
+          "n": 29,
+          "n_top": 8,
+          "n_bot": 8,
+          "top": 0.2508,
+          "blanket": 0.23,
+          "bot": 0.2339
+        },
+        {
+          "week": "2025-W39",
+          "n": 37,
+          "n_top": 10,
+          "n_bot": 10,
+          "top": 0.2017,
+          "blanket": 0.223,
+          "bot": 0.2447
+        },
+        {
+          "week": "2025-W40",
+          "n": 47,
+          "n_top": 12,
+          "n_bot": 12,
+          "top": -0.5455,
+          "blanket": -0.5036,
+          "bot": -0.337
+        },
+        {
+          "week": "2025-W41",
+          "n": 41,
+          "n_top": 11,
+          "n_bot": 11,
+          "top": -0.0726,
+          "blanket": -0.0382,
+          "bot": 0.1284
+        },
+        {
+          "week": "2025-W42",
+          "n": 68,
+          "n_top": 17,
+          "n_bot": 17,
+          "top": 0.2248,
+          "blanket": 0.192,
+          "bot": 0.1062
+        },
+        {
+          "week": "2025-W43",
+          "n": 46,
+          "n_top": 12,
+          "n_bot": 12,
+          "top": 0.1204,
+          "blanket": 0.0963,
+          "bot": 0.0005
+        },
+        {
+          "week": "2025-W44",
+          "n": 40,
+          "n_top": 10,
+          "n_bot": 10,
+          "top": 0.1297,
+          "blanket": 0.053,
+          "bot": -0.2572
+        },
+        {
+          "week": "2025-W45",
+          "n": 46,
+          "n_top": 12,
+          "n_bot": 12,
+          "top": 0.2138,
+          "blanket": 0.2211,
+          "bot": 0.2098
+        },
+        {
+          "week": "2025-W46",
+          "n": 46,
+          "n_top": 12,
+          "n_bot": 12,
+          "top": 0.2088,
+          "blanket": 0.1303,
+          "bot": 0.2279
+        },
+        {
+          "week": "2025-W47",
+          "n": 59,
+          "n_top": 15,
+          "n_bot": 15,
+          "top": 0.2086,
+          "blanket": 0.2153,
+          "bot": 0.2319
+        },
+        {
+          "week": "2025-W48",
+          "n": 52,
+          "n_top": 13,
+          "n_bot": 13,
+          "top": -0.0908,
+          "blanket": -0.0127,
+          "bot": 0.2237
+        },
+        {
+          "week": "2025-W49",
+          "n": 40,
+          "n_top": 10,
+          "n_bot": 10,
+          "top": 0.0246,
+          "blanket": 0.0635,
+          "bot": 0.1186
+        },
+        {
+          "week": "2025-W50",
+          "n": 34,
+          "n_top": 9,
+          "n_bot": 9,
+          "top": -0.1259,
+          "blanket": 0.0415,
+          "bot": 0.2051
+        },
+        {
+          "week": "2025-W51",
+          "n": 48,
+          "n_top": 12,
+          "n_bot": 12,
+          "top": 0.2417,
+          "blanket": 0.2002,
+          "bot": 0.1402
+        },
+        {
+          "week": "2025-W52",
+          "n": 43,
+          "n_top": 11,
+          "n_bot": 11,
+          "top": 0.2249,
+          "blanket": 0.1216,
+          "bot": 0.1821
+        },
+        {
+          "week": "2026-W01",
+          "n": 25,
+          "n_top": 7,
+          "n_bot": 7,
+          "top": -0.0842,
+          "blanket": 0.0026,
+          "bot": 0.0542
+        },
+        {
+          "week": "2026-W02",
+          "n": 33,
+          "n_top": 9,
+          "n_bot": 9,
+          "top": 0.1152,
+          "blanket": -0.0214,
+          "bot": 0.0007
+        },
+        {
+          "week": "2026-W03",
+          "n": 39,
+          "n_top": 10,
+          "n_bot": 10,
+          "top": -0.274,
+          "blanket": -0.1399,
+          "bot": 0.1054
+        },
+        {
+          "week": "2026-W04",
+          "n": 44,
+          "n_top": 11,
+          "n_bot": 11,
+          "top": 0.2046,
+          "blanket": 0.226,
+          "bot": 0.248
+        },
+        {
+          "week": "2026-W05",
+          "n": 38,
+          "n_top": 10,
+          "n_bot": 10,
+          "top": 0.2187,
+          "blanket": 0.2116,
+          "bot": 0.1976
+        },
+        {
+          "week": "2026-W06",
+          "n": 73,
+          "n_top": 19,
+          "n_bot": 19,
+          "top": 0.2241,
+          "blanket": 0.2219,
+          "bot": 0.2196
+        },
+        {
+          "week": "2026-W07",
+          "n": 73,
+          "n_top": 19,
+          "n_bot": 19,
+          "top": 0.1575,
+          "blanket": 0.0983,
+          "bot": -0.0515
+        },
+        {
+          "week": "2026-W08",
+          "n": 36,
+          "n_top": 9,
+          "n_bot": 9,
+          "top": 0.2323,
+          "blanket": 0.2154,
+          "bot": 0.2
+        },
+        {
+          "week": "2026-W09",
+          "n": 34,
+          "n_top": 9,
+          "n_bot": 9,
+          "top": 0.2112,
+          "blanket": 0.188,
+          "bot": 0.1186
+        },
+        {
+          "week": "2026-W10",
+          "n": 41,
+          "n_top": 11,
+          "n_bot": 11,
+          "top": 0.1184,
+          "blanket": -0.0678,
+          "bot": 0.1372
+        },
+        {
+          "week": "2026-W11",
+          "n": 38,
+          "n_top": 10,
+          "n_bot": 10,
+          "top": 0.0401,
+          "blanket": 0.0872,
+          "bot": 0.1063
+        },
+        {
+          "week": "2026-W12",
+          "n": 38,
+          "n_top": 10,
+          "n_bot": 10,
+          "top": 0.1302,
+          "blanket": 0.0919,
+          "bot": 0.0275
+        },
+        {
+          "week": "2026-W13",
+          "n": 39,
+          "n_top": 10,
+          "n_bot": 10,
+          "top": 0.2076,
+          "blanket": 0.1917,
+          "bot": 0.2222
+        },
+        {
+          "week": "2026-W14",
+          "n": 41,
+          "n_top": 11,
+          "n_bot": 11,
+          "top": 0.1518,
+          "blanket": 0.1708,
+          "bot": 0.2228
+        },
+        {
+          "week": "2026-W15",
+          "n": 33,
+          "n_top": 9,
+          "n_bot": 9,
+          "top": -0.0276,
+          "blanket": -0.2339,
+          "bot": -0.4212
+        },
+        {
+          "week": "2026-W16",
+          "n": 36,
+          "n_top": 9,
+          "n_bot": 9,
+          "top": -0.2186,
+          "blanket": -0.1942,
+          "bot": -0.3338
+        },
+        {
+          "week": "2026-W17",
+          "n": 37,
+          "n_top": 10,
+          "n_bot": 10,
+          "top": 0.2138,
+          "blanket": 0.0344,
+          "bot": 0.128
+        },
+        {
+          "week": "2026-W18",
+          "n": 32,
+          "n_top": 8,
+          "n_bot": 8,
+          "top": 0.1018,
+          "blanket": 0.1315,
+          "bot": 0.1022
+        },
+        {
+          "week": "2026-W19",
+          "n": 24,
+          "n_top": 6,
+          "n_bot": 6,
+          "top": 0.0529,
+          "blanket": -0.1094,
+          "bot": 0.0539
+        },
+        {
+          "week": "2026-W20",
+          "n": 26,
+          "n_top": 7,
+          "n_bot": 7,
+          "top": 0.2264,
+          "blanket": 0.2238,
+          "bot": 0.2089
+        },
+        {
+          "week": "2026-W21",
+          "n": 32,
+          "n_top": 8,
+          "n_bot": 8,
+          "top": 0.2261,
+          "blanket": 0.2134,
+          "bot": 0.231
+        },
+        {
+          "week": "2026-W22",
+          "n": 20,
+          "n_top": 5,
+          "n_bot": 5,
+          "top": 0.2246,
+          "blanket": 0.2074,
+          "bot": 0.197
+        },
+        {
+          "week": "2026-W23",
+          "n": 36,
+          "n_top": 9,
+          "n_bot": 9,
+          "top": 0.2046,
+          "blanket": 0.2141,
+          "bot": 0.2224
+        },
+        {
+          "week": "2026-W24",
+          "n": 43,
+          "n_top": 11,
+          "n_bot": 11,
+          "top": 0.2267,
+          "blanket": 0.1483,
+          "bot": 0.1323
+        },
+        {
+          "week": "2026-W25",
+          "n": 24,
+          "n_top": 6,
+          "n_bot": 6,
+          "top": -0.0761,
+          "blanket": -0.013,
+          "bot": 0.0221
+        },
+        {
+          "week": "2026-W26",
+          "n": 29,
+          "n_top": 8,
+          "n_bot": 8,
+          "top": 0.2183,
+          "blanket": 0.1853,
+          "bot": 0.0961
+        },
+        {
+          "week": "2026-W27",
+          "n": 26,
+          "n_top": 7,
+          "n_bot": 7,
+          "top": -0.195,
+          "blanket": -0.1241,
+          "bot": -0.0714
+        },
+        {
+          "week": "2026-W28",
+          "n": 28,
+          "n_top": 7,
+          "n_bot": 7,
+          "top": -0.224,
+          "blanket": -0.1447,
+          "bot": -0.1998
+        },
+        {
+          "week": "2026-W29",
+          "n": 15,
+          "n_top": 4,
+          "n_bot": 4,
+          "top": -0.0308,
+          "blanket": 0.0817,
+          "bot": -0.0186
+        }
+      ]
+    },
+    "recal_oos": {
+      "n_top": 413,
+      "n_bot": 413,
+      "n_all": 1596,
+      "top_edge": 0.0983,
+      "top_t": 5.514,
+      "top_k": 41,
+      "top_sharpe": 0.861,
+      "blanket_edge": 0.0825,
+      "blanket_t": 4.007,
+      "blanket_k": 41,
+      "blanket_sharpe": 0.626,
+      "bot_edge": 0.0225,
+      "bot_t": 0.608,
+      "bot_k": 41,
+      "bot_sharpe": 0.095,
+      "top_minus_blanket": 0.0158,
+      "top_minus_blanket_t": 1.144,
+      "tb_k": 41,
+      "top_minus_bottom": 0.0757,
+      "top_minus_bottom_t": 2.488,
+      "tbot_k": 41,
+      "week_detail": [
+        {
+          "week": "2025-W41",
+          "n": 41,
+          "n_top": 11,
+          "n_bot": 11,
+          "top": 0.0752,
+          "blanket": -0.0382,
+          "bot": -0.1066
+        },
+        {
+          "week": "2025-W42",
+          "n": 68,
+          "n_top": 17,
+          "n_bot": 17,
+          "top": 0.1657,
+          "blanket": 0.192,
+          "bot": 0.2804
+        },
+        {
+          "week": "2025-W43",
+          "n": 46,
+          "n_top": 12,
+          "n_bot": 12,
+          "top": 0.17,
+          "blanket": 0.0963,
+          "bot": -0.053
+        },
+        {
+          "week": "2025-W44",
+          "n": 40,
+          "n_top": 10,
+          "n_bot": 10,
+          "top": 0.1755,
+          "blanket": 0.053,
+          "bot": -0.023
+        },
+        {
+          "week": "2025-W45",
+          "n": 46,
+          "n_top": 12,
+          "n_bot": 12,
+          "top": 0.1799,
+          "blanket": 0.2211,
+          "bot": 0.2697
+        },
+        {
+          "week": "2025-W46",
+          "n": 46,
+          "n_top": 12,
+          "n_bot": 12,
+          "top": 0.1156,
+          "blanket": 0.1303,
+          "bot": 0.0947
+        },
+        {
+          "week": "2025-W47",
+          "n": 59,
+          "n_top": 15,
+          "n_bot": 15,
+          "top": 0.178,
+          "blanket": 0.2153,
+          "bot": 0.255
+        },
+        {
+          "week": "2025-W48",
+          "n": 52,
+          "n_top": 13,
+          "n_bot": 13,
+          "top": -0.0243,
+          "blanket": -0.0127,
+          "bot": -0.1927
+        },
+        {
+          "week": "2025-W49",
+          "n": 40,
+          "n_top": 10,
+          "n_bot": 10,
+          "top": -0.0058,
+          "blanket": 0.0635,
+          "bot": 0.1588
+        },
+        {
+          "week": "2025-W50",
+          "n": 34,
+          "n_top": 9,
+          "n_bot": 9,
+          "top": -0.0379,
+          "blanket": 0.0415,
+          "bot": 0.2646
+        },
+        {
+          "week": "2025-W51",
+          "n": 48,
+          "n_top": 12,
+          "n_bot": 12,
+          "top": 0.1681,
+          "blanket": 0.2002,
+          "bot": 0.2019
+        },
+        {
+          "week": "2025-W52",
+          "n": 43,
+          "n_top": 11,
+          "n_bot": 11,
+          "top": 0.0857,
+          "blanket": 0.1216,
+          "bot": 0.0057
+        },
+        {
+          "week": "2026-W01",
+          "n": 25,
+          "n_top": 7,
+          "n_bot": 7,
+          "top": -0.1213,
+          "blanket": 0.0026,
+          "bot": 0.1253
+        },
+        {
+          "week": "2026-W02",
+          "n": 33,
+          "n_top": 9,
+          "n_bot": 9,
+          "top": 0.0719,
+          "blanket": -0.0214,
+          "bot": -0.1754
+        },
+        {
+          "week": "2026-W03",
+          "n": 39,
+          "n_top": 10,
+          "n_bot": 10,
+          "top": -0.2246,
+          "blanket": -0.1399,
+          "bot": -0.325
+        },
+        {
+          "week": "2026-W04",
+          "n": 44,
+          "n_top": 11,
+          "n_bot": 11,
+          "top": 0.1709,
+          "blanket": 0.226,
+          "bot": 0.2883
+        },
+        {
+          "week": "2026-W05",
+          "n": 38,
+          "n_top": 10,
+          "n_bot": 10,
+          "top": 0.1732,
+          "blanket": 0.2116,
+          "bot": 0.2585
+        },
+        {
+          "week": "2026-W06",
+          "n": 73,
+          "n_top": 19,
+          "n_bot": 19,
+          "top": 0.1726,
+          "blanket": 0.2219,
+          "bot": 0.2766
+        },
+        {
+          "week": "2026-W07",
+          "n": 73,
+          "n_top": 19,
+          "n_bot": 19,
+          "top": 0.1346,
+          "blanket": 0.0983,
+          "bot": -0.0123
+        },
+        {
+          "week": "2026-W08",
+          "n": 36,
+          "n_top": 9,
+          "n_bot": 9,
+          "top": 0.1764,
+          "blanket": 0.2154,
+          "bot": 0.2751
+        },
+        {
+          "week": "2026-W09",
+          "n": 34,
+          "n_top": 9,
+          "n_bot": 9,
+          "top": 0.1834,
+          "blanket": 0.188,
+          "bot": 0.162
+        },
+        {
+          "week": "2026-W10",
+          "n": 41,
+          "n_top": 11,
+          "n_bot": 11,
+          "top": 0.0845,
+          "blanket": -0.0678,
+          "bot": -0.1799
+        },
+        {
+          "week": "2026-W11",
+          "n": 38,
+          "n_top": 10,
+          "n_bot": 10,
+          "top": 0.1719,
+          "blanket": 0.0872,
+          "bot": -0.2386
+        },
+        {
+          "week": "2026-W12",
+          "n": 38,
+          "n_top": 10,
+          "n_bot": 10,
+          "top": 0.1727,
+          "blanket": 0.0919,
+          "bot": 0.08
+        },
+        {
+          "week": "2026-W13",
+          "n": 39,
+          "n_top": 10,
+          "n_bot": 10,
+          "top": 0.1786,
+          "blanket": 0.1917,
+          "bot": 0.2701
+        },
+        {
+          "week": "2026-W14",
+          "n": 41,
+          "n_top": 11,
+          "n_bot": 11,
+          "top": 0.1683,
+          "blanket": 0.1708,
+          "bot": 0.0951
+        },
+        {
+          "week": "2026-W15",
+          "n": 33,
+          "n_top": 9,
+          "n_bot": 9,
+          "top": -0.1512,
+          "blanket": -0.2339,
+          "bot": -0.3942
+        },
+        {
+          "week": "2026-W16",
+          "n": 36,
+          "n_top": 9,
+          "n_bot": 9,
+          "top": 0.0617,
+          "blanket": -0.1942,
+          "bot": -0.3951
+        },
+        {
+          "week": "2026-W17",
+          "n": 37,
+          "n_top": 10,
+          "n_bot": 10,
+          "top": 0.0732,
+          "blanket": 0.0344,
+          "bot": -0.2176
+        },
+        {
+          "week": "2026-W18",
+          "n": 32,
+          "n_top": 8,
+          "n_bot": 8,
+          "top": 0.1689,
+          "blanket": 0.1315,
+          "bot": 0.0313
+        },
+        {
+          "week": "2026-W19",
+          "n": 24,
+          "n_top": 6,
+          "n_bot": 6,
+          "top": -0.1617,
+          "blanket": -0.1094,
+          "bot": -0.5534
+        },
+        {
+          "week": "2026-W20",
+          "n": 26,
+          "n_top": 7,
+          "n_bot": 7,
+          "top": 0.1749,
+          "blanket": 0.2238,
+          "bot": 0.2739
+        },
+        {
+          "week": "2026-W21",
+          "n": 32,
+          "n_top": 8,
+          "n_bot": 8,
+          "top": 0.1648,
+          "blanket": 0.2134,
+          "bot": 0.2686
+        },
+        {
+          "week": "2026-W22",
+          "n": 20,
+          "n_top": 5,
+          "n_bot": 5,
+          "top": 0.1707,
+          "blanket": 0.2074,
+          "bot": 0.2498
+        },
+        {
+          "week": "2026-W23",
+          "n": 36,
+          "n_top": 9,
+          "n_bot": 9,
+          "top": 0.1721,
+          "blanket": 0.2141,
+          "bot": 0.2626
+        },
+        {
+          "week": "2026-W24",
+          "n": 43,
+          "n_top": 11,
+          "n_bot": 11,
+          "top": 0.1838,
+          "blanket": 0.1483,
+          "bot": 0.0749
+        },
+        {
+          "week": "2026-W25",
+          "n": 24,
+          "n_top": 6,
+          "n_bot": 6,
+          "top": 0.0108,
+          "blanket": -0.013,
+          "bot": -0.0494
+        },
+        {
+          "week": "2026-W26",
+          "n": 29,
+          "n_top": 8,
+          "n_bot": 8,
+          "top": 0.1751,
+          "blanket": 0.1853,
+          "bot": 0.14
+        },
+        {
+          "week": "2026-W27",
+          "n": 26,
+          "n_top": 7,
+          "n_bot": 7,
+          "top": -0.1159,
+          "blanket": -0.1241,
+          "bot": -0.2861
+        },
+        {
+          "week": "2026-W28",
+          "n": 28,
+          "n_top": 7,
+          "n_bot": 7,
+          "top": 0.1674,
+          "blanket": -0.1447,
+          "bot": -0.3057
+        },
+        {
+          "week": "2026-W29",
+          "n": 15,
+          "n_top": 4,
+          "n_bot": 4,
+          "top": 0.1751,
+          "blanket": 0.0817,
+          "bot": -0.2311
+        }
+      ]
+    }
+  },
+  "multiple_testing": {
+    "primary_family_size": 6,
+    "bonferroni_alpha": 0.0083,
+    "bonferroni_abs_t": 2.638,
+    "note": "6 decisive tests: 3 top-vs-blanket + 3 incremental-signal. |t|>bonf_abs_t to survive."
+  },
+  "verdict": {
+    "degeneracy": "Published-coeff signal collapses to a VOLUME sort: corr(EDGE_SIGNAL, ln V)=-0.993, corr(EDGE_SIGNAL, price)=-0.1352. At our volume scale the -0.0716*ln(1+V) term dominates, driving lambda NEGATIVE (mean -0.4681, range [-0.7489,0.0384]) so published p_true (mean 0.3783) sits ABOVE price (0.2192) and FAR above the realized rate (0.1425). It does NOT reproduce price (unlike Deribit density), it degenerates to ranking by low volume.",
+    "brier": "Brier: price=0.12306, Wang-published(D=0)=0.17438 (WORSE), Wang-duration=0.13571, Wang-crypto-const(0.253)=0.11797, Wang-recal-OOS=0.10688 vs price-on-subset=0.11297. Only a CONSTANT crypto lambda improves calibration (unconditional premium); the hierarchical covariates do not.",
+    "selection": "SELECTION (published D=0): top-quartile-signal edge=0.0552/ct (t=1.754), blanket=0.0589/ct (t=2.376), bottom=0.0455/ct (t=1.608); paired top-minus-blanket=-0.0036/ct (week-clustered t=-0.235). Recalibrated OOS: top=0.0983/ct (t=5.514), blanket=0.0825/ct, top-minus-blanket=0.0158/ct (t=1.144).",
+    "incremental": "Incremental power outcome~p+signal (week-clustered): published D=0 signal coef=0.043 (t=0.20, p=0.840); recal-OOS signal coef=0.365 (t=0.77, p=0.438). Bonferroni bar |t|>2.638 for 6 tests.",
+    "bottom_line": "NULL / NO IMPROVEMENT. The Wang Transform does NOT sharpen the confirmed short-vol edge OOS. Neither the published-coeff overlay nor the walk-forward-recalibrated overlay produces a top-quartile seller edge that beats the blanket [0.15,0.30] band by a margin surviving the week-clustered, Bonferroni-haircut bar (|t|>2.638). Published top-minus-blanket=-0.0036/ct (t=-0.235); recalibrated top-minus-blanket=0.0158/ct (t=1.144). This is the 4th consecutive SELECTION null: the ~0.06/ct premium is essentially unconditional, and the principled Wang covariates add no per-trade EV once the volume-driven degeneracy is accounted for."
+  }
+}
