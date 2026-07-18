@@ -119,6 +119,31 @@ validation, so the forward gate must confirm fills are maker; any spread-crossin
 
 ---
 
+## 4b. The full risk/return tradeoff — pick your appetite with real numbers (`aggressive_frontier.py`)
+
+Monte-Carlo of the confirmed book on **$50 over 30-day paths** (40k sims), sweeping leverage from safe to
+reckless. This is the honest "how hard can I push, and what does it cost" table:
+
+| leverage | median daily-eq | median end $ | P(finish up) | P(≥2×) | **P(RUIN)** | 5th pct $ | 95th pct $ |
+|---|---|---|---|---|---|---|---|
+| 0.25 (safe) | +0.30%/day | $54.68 | 86% | 0% | **0%** | $47 | $60 |
+| 0.50 | +0.58%/day | $59.49 | 84% | 0% | **0%** | $43 | $72 |
+| 1.00 | +1.10%/day | $69.41 | 82% | 5% | **0%** | $35 | $100 |
+| 2.00 | +1.99%/day | $90.27 | 78% | 43% | **6%** | $9 | $182 |
+| 4.00 | +3.41%/day | $136.57 | 72% | 59% | **20%** | $0 | $480 |
+| 8.00 | +4.62%/day | $194.04 | 58% | 55% | **40%** | $0 | $2,067 |
+| 16.0 | −0.96%/day | $37.42 | 50% | 48% | **49%** | $0 | $14,844 |
+| 32–49 | −100%/day | $0 | 37% | 37% | **63%** | $0 | (lottery tail) |
+
+**The punchline:** the median daily return **peaks at ~4.6%/day (leverage 8×) with a 40% chance of ruin in
+one month**, then *collapses* — beyond that, ruin compounds faster than the edge, so pushing harder makes you
+**poorer**, not richer. **10%/day is not attainable even as a median at any leverage.** The only place a
+"10%/day" path exists is the 95th-percentile lottery tail (a rare lucky run), while the *typical* outcome on
+that same setting is $0. That is a lottery ticket, not a plan.
+
+The honest operating range is the top of the table: **leverage 0.25–1×, ~0.3–1.1%/day, P(ruin)≈0.** Anything
+labeled "minimized risk" lives there.
+
 ## 5. Verdict
 
 - **Goal as stated (10%/day, minimized risk): infeasible.** Proven by compounding and by the leverage/ruin
