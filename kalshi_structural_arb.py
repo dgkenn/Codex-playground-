@@ -87,7 +87,8 @@ HEADERS = {"User-Agent": "kalshi-structural-arb-oos-test/1.0"}
 # ---------------------------------------------------------------------------
 
 MIN_DEPTH_CONTRACTS = 5          # minimum resting size to count a quote as executable (not phantom)
-MIN_EDGE_CENTS = 0.05            # minimum net-of-fee locked edge (in dollars) to even flag as a candidate
+MIN_GROSS_EDGE_TO_FLAG = 0.001   # minimum RAW (pre-fee) locked edge to even flag as a "candidate" crossing
+MIN_EDGE_CENTS = 0.01            # minimum NET-of-fee edge required to ever count a poll observation as "real-eligible"
 REQUIRE_POLLS_FOR_REAL = 3       # a violation key must be observed in at least this many polls...
 REQUIRE_POLL_FRACTION = 0.5      # ...or at least this fraction of total polls, whichever is looser
 ORDERBOOK_VERIFY_TOP_N = 400     # cap on how many distinct candidate keys we re-verify via /orderbook per poll
@@ -385,6 +386,33 @@ def scan_ladders(events: List[dict], fee_mult: Dict[str, float]) -> List[Violati
             #            violation: yes_bid(i) > yes_ask(j) [sell low-strike, buy high-strike]
             for i in range(n):
                 for j in range(i + 1, n):
+                    # Require a STRICTLY different numeric strike. Kalshi
+                    # occasionally emits multiple markets in one event with
+                    # the *same* floor_strike but different deadlines (e.g.
+                    # "BTC > $100k before June" / "...before Sept" /
+                    # "...before Dec" one-touch series) -- these ARE nested
+                    # implications (earlier deadline implies later deadline)
+                    # in principle, but only if the underlying monitoring
+                    # WINDOW START is identical across both markets (Kalshi's
+                    # rules_primary text showed cases where it silently is
+                    # NOT -- e.g. the "May" market started monitoring
+                    # 01/05/2026 while "Sept"/"Dec" only started monitoring
+                    # 02/17/2026 -- so an early touch in the gap would make
+                    # "May" true without making "Sept" true, breaking the
+                    # implication). We cannot safely verify the monitoring
+                    # window start at scale from structured fields alone, so
+                    # tied-strike pairs are conservatively skipped rather
+                    # than risk a false-pair "violation" from mismatched
+                    # deadlines. This only costs us same-strike deadline
+                    # ladders, not the main strike ladders this structure
+                    # targets.
+                    if f(group_sorted[i].get("floor_strike")) == f(group_sorted[j].get("floor_strike")):
+                        continue
+                    # Extra safety net: require identical close_time/expiration_time
+                    # so we never nest two markets whose resolution windows differ.
+                    if (group_sorted[i].get("close_time") != group_sorted[j].get("close_time")
+                            or group_sorted[i].get("expiration_time") != group_sorted[j].get("expiration_time")):
+                        continue
                     if st == "greater":
                         buy_m, buy_q = group_sorted[i], quotes[i]     # lower strike, buy YES ask
                         sell_m, sell_q = group_sorted[j], quotes[j]   # higher strike, sell YES (bid)
@@ -394,12 +422,14 @@ def scan_ladders(events: List[dict], fee_mult: Dict[str, float]) -> List[Violati
                     if not (buy_q.yes_ask_valid and sell_q.yes_bid_valid):
                         continue
                     gross = sell_q.yes_bid - buy_q.yes_ask
-                    if gross <= 0:
-                        continue
+                    if gross < MIN_GROSS_EDGE_TO_FLAG:
+                        continue  # not even a raw (pre-fee) crossing -- market is efficient here
                     fee = kalshi_fee(buy_q.yes_ask, 1, fmult) + kalshi_fee(sell_q.yes_bid, 1, fmult)
                     net = gross - fee
-                    if net < MIN_EDGE_CENTS:
-                        continue
+                    # NOTE: flagged as a "candidate" on GROSS crossing alone; net-of-fee
+                    # positivity is required only for the REAL classification downstream
+                    # (see run()), so the flagged/real gap reported also captures the
+                    # "crosses raw but is eaten by fees" failure mode explicitly.
                     depth = min(buy_q.yes_ask_sz, sell_q.yes_bid_sz)
                     key = f"S1|{ev['event_ticker']}|{st}|BUY:{buy_m['ticker']}|SELL:{sell_m['ticker']}"
                     out.append(Violation(
@@ -432,55 +462,55 @@ def scan_complement(events: List[dict], fee_mult: Dict[str, float]) -> List[Viol
         for m in ev.get("markets", []):
             q = parse_quote(m)
             ticker = m["ticker"]
-            # Buy YES + Buy NO: cost yes_ask+no_ask, guaranteed payout $1
+            # Buy YES + Buy NO: cost yes_ask+no_ask, guaranteed payout $1.
+            # Flagged on any RAW (pre-fee) crossing; net-of-fee positivity is
+            # decided downstream by the REAL classification in run().
             if q.yes_ask_valid and q.no_ask_valid:
                 gross = 1.0 - (q.yes_ask + q.no_ask)
-                if gross > 0:
+                if gross >= MIN_GROSS_EDGE_TO_FLAG:
                     fee = kalshi_fee(q.yes_ask, 1, fmult) + kalshi_fee(q.no_ask, 1, fmult)
                     net = gross - fee
-                    if net >= MIN_EDGE_CENTS:
-                        depth = min(q.yes_ask_sz, q.no_ask_sz)
-                        out.append(Violation(
-                            key=f"S2|{ticker}|BUYBOTH",
-                            structure="S2_COMPLEMENT",
-                            event_ticker=ev["event_ticker"], series_ticker=ev.get("series_ticker", ""),
-                            description=(f"Complement sum: BUY YES {ticker} @{q.yes_ask:.2f} + "
-                                         f"BUY NO {ticker} @{q.no_ask:.2f}, cost {q.yes_ask+q.no_ask:.2f} < $1"),
-                            legs=[
-                                {"ticker": ticker, "side": "yes", "action": "buy", "price": q.yes_ask, "size": q.yes_ask_sz},
-                                {"ticker": ticker, "side": "no", "action": "buy", "price": q.no_ask, "size": q.no_ask_sz},
-                            ],
-                            gross_edge=gross, fee_total=fee, net_edge=net,
-                            notional=q.yes_ask + q.no_ask, depth_contracts=depth,
-                        ))
+                    depth = min(q.yes_ask_sz, q.no_ask_sz)
+                    out.append(Violation(
+                        key=f"S2|{ticker}|BUYBOTH",
+                        structure="S2_COMPLEMENT",
+                        event_ticker=ev["event_ticker"], series_ticker=ev.get("series_ticker", ""),
+                        description=(f"Complement sum: BUY YES {ticker} @{q.yes_ask:.2f} + "
+                                     f"BUY NO {ticker} @{q.no_ask:.2f}, cost {q.yes_ask+q.no_ask:.2f} < $1"),
+                        legs=[
+                            {"ticker": ticker, "side": "yes", "action": "buy", "price": q.yes_ask, "size": q.yes_ask_sz},
+                            {"ticker": ticker, "side": "no", "action": "buy", "price": q.no_ask, "size": q.no_ask_sz},
+                        ],
+                        gross_edge=gross, fee_total=fee, net_edge=net,
+                        notional=q.yes_ask + q.no_ask, depth_contracts=depth,
+                    ))
             # Sell YES + Sell NO (i.e. yes_bid+no_bid>1): equivalent tradeable
             # form is "the market is simultaneously willing to pay away more
-            # than $1 total" -- we report it, executed by hitting both bids
-            # (requires ability to sell/short both sides, which Kalshi supports
-            # once you hold no position via bid-side marketable sell orders on
-            # existing inventory OR opening orders on both sides is not always
-            # symmetric; we flag it for completeness but mark it "bid-side, may
-            # require inventory" in the leg action).
+            # than $1 total" -- executed by hitting both resting bids. This
+            # requires holding no prior position and being able to open a
+            # short on both sides via marketable sell orders; Kalshi supports
+            # this (sell orders on either side open a position), so it is a
+            # real order type, but is flagged separately from the buy-only S3
+            # construction for clarity.
             if q.yes_bid_valid and q.no_bid_valid:
                 gross = (q.yes_bid + q.no_bid) - 1.0
-                if gross > 0:
+                if gross >= MIN_GROSS_EDGE_TO_FLAG:
                     fee = kalshi_fee(q.yes_bid, 1, fmult) + kalshi_fee(q.no_bid, 1, fmult)
                     net = gross - fee
-                    if net >= MIN_EDGE_CENTS:
-                        depth = min(q.yes_bid_sz, q.no_bid_sz)
-                        out.append(Violation(
-                            key=f"S2|{ticker}|SELLBOTH",
-                            structure="S2_COMPLEMENT",
-                            event_ticker=ev["event_ticker"], series_ticker=ev.get("series_ticker", ""),
-                            description=(f"Complement sum: SELL YES {ticker} @{q.yes_bid:.2f} + "
-                                         f"SELL NO {ticker} @{q.no_bid:.2f}, proceeds {q.yes_bid+q.no_bid:.2f} > $1"),
-                            legs=[
-                                {"ticker": ticker, "side": "yes", "action": "sell", "price": q.yes_bid, "size": q.yes_bid_sz},
-                                {"ticker": ticker, "side": "no", "action": "sell", "price": q.no_bid, "size": q.no_bid_sz},
-                            ],
-                            gross_edge=gross, fee_total=fee, net_edge=net,
-                            notional=q.yes_bid + q.no_bid, depth_contracts=depth,
-                        ))
+                    depth = min(q.yes_bid_sz, q.no_bid_sz)
+                    out.append(Violation(
+                        key=f"S2|{ticker}|SELLBOTH",
+                        structure="S2_COMPLEMENT",
+                        event_ticker=ev["event_ticker"], series_ticker=ev.get("series_ticker", ""),
+                        description=(f"Complement sum: SELL YES {ticker} @{q.yes_bid:.2f} + "
+                                     f"SELL NO {ticker} @{q.no_bid:.2f}, proceeds {q.yes_bid+q.no_bid:.2f} > $1"),
+                        legs=[
+                            {"ticker": ticker, "side": "yes", "action": "sell", "price": q.yes_bid, "size": q.yes_bid_sz},
+                            {"ticker": ticker, "side": "no", "action": "sell", "price": q.no_bid, "size": q.no_bid_sz},
+                        ],
+                        gross_edge=gross, fee_total=fee, net_edge=net,
+                        notional=q.yes_bid + q.no_bid, depth_contracts=depth,
+                    ))
     return out
 
 
@@ -564,7 +594,7 @@ def scan_event_sum(events: List[dict], fee_mult: Dict[str, float]) -> List[Viola
             fee_total = sum(kalshi_fee(q.yes_ask, 1, fmult) for q in quotes)
             gross = 1.0 - sum_ask
             net = gross - fee_total
-            if net >= MIN_EDGE_CENTS:
+            if gross >= MIN_GROSS_EDGE_TO_FLAG:
                 depth = min(q.yes_ask_sz for q in quotes)
                 out.append(Violation(
                     key=f"S3|{ev['event_ticker']}|BUYALLYES",
@@ -585,7 +615,7 @@ def scan_event_sum(events: List[dict], fee_mult: Dict[str, float]) -> List[Viola
             fee_total = sum(kalshi_fee(q.no_ask, 1, fmult) for q in quotes)
             gross = (n - 1) - sum_ask
             net = gross - fee_total
-            if net >= MIN_EDGE_CENTS:
+            if gross >= MIN_GROSS_EDGE_TO_FLAG:
                 depth = min(q.no_ask_sz for q in quotes)
                 out.append(Violation(
                     key=f"S3|{ev['event_ticker']}|BUYALLNO",
@@ -827,10 +857,21 @@ def run(polls: int, interval: float, out_prefix: str) -> None:
     total_real = len(real_keys)
     stale_ratio = round(1.0 - (total_real / total_flagged), 4) if total_flagged else None
 
-    days_scanned = round((time.time() - t_start) / 86400.0, 6)
-    weeks_scanned = max(days_scanned / 7.0, 1e-9)
-    freq_per_week_flagged = round(total_flagged / weeks_scanned, 2) if total_flagged else 0.0
-    freq_per_week_real = round(total_real / weeks_scanned, 2) if total_real else 0.0
+    # NOTE on "frequency": each poll is a cross-sectional census of the
+    # entire open-market universe, not an independent arrival process, so
+    # naively extrapolating a short multi-poll window into a "/week" rate
+    # is statistically unreliable (a run of a few minutes would imply
+    # absurd numbers like tens of thousands/week). We instead report:
+    #   (a) the observed count per poll (see universe.poll_records), and
+    #   (b) a real-violation-weeks estimate ONLY if we actually observed
+    #       >=1 REAL violation over a run spanning enough polls to be
+    #       meaningful -- otherwise frequency is reported as the directly
+    #       observed rate (0 real per N polls over T minutes), not an
+    #       extrapolation.
+    run_minutes = max((time.time() - t_start) / 60.0, 1e-9)
+    mean_flagged_per_poll = round(sum(p["n_candidates_S1"] + p["n_candidates_S2"] + p["n_candidates_S3"]
+                                       for p in poll_records) / max(total_polls_done, 1), 2)
+    freq_per_week_real = (round(total_real / (run_minutes / (60 * 24 * 7)), 2) if total_real else 0.0)
 
     real_detail = []
     for k in real_keys:
@@ -861,7 +902,8 @@ def run(polls: int, interval: float, out_prefix: str) -> None:
             "interval_seconds": interval,
             "persistence_threshold_polls": threshold_polls,
             "min_depth_contracts": MIN_DEPTH_CONTRACTS,
-            "min_edge_dollars": MIN_EDGE_CENTS,
+            "min_gross_edge_to_flag_dollars": MIN_GROSS_EDGE_TO_FLAG,
+            "min_net_edge_to_count_real_dollars": MIN_EDGE_CENTS,
             "fee_model": "kalshi_fee = ceil(fee_multiplier * 0.07 * C * P * (1-P) * 100)/100 dollars, both legs, taker-side",
         },
         "universe": {
@@ -872,8 +914,20 @@ def run(polls: int, interval: float, out_prefix: str) -> None:
             "total_flagged_violation_keys": total_flagged,
             "total_real_persistent_executable_violation_keys": total_real,
             "stale_or_phantom_ratio": stale_ratio,
-            "frequency_per_week_flagged": freq_per_week_flagged,
-            "frequency_per_week_real": freq_per_week_real,
+            "mean_flagged_candidates_per_poll": mean_flagged_per_poll,
+            "run_duration_minutes": round(run_minutes, 2),
+            "frequency_per_week_real_naive_extrapolation": freq_per_week_real,
+            "frequency_note": (
+                "Each poll is a full cross-sectional census of ~7-8k open events / ~70k open "
+                "markets, not an independent arrival draw, so extrapolating a short polling "
+                "window into a '/week' rate is statistically unreliable for FLAGGED counts "
+                "(a short run would imply an absurd rate). We report the directly observed "
+                "mean flagged-candidates-per-poll instead, and only extrapolate a '/week' "
+                "figure for REAL violations (and even then, only as a naive linear "
+                "extrapolation of this run's window -- true frequency would require a "
+                "multi-day/week continuous polling or historical-orderbook backtest, which "
+                "was out of scope for this single-session live test)."
+            ),
         },
         "pava_ladder_diagnostics_last_poll": sorted(pava_diag_last, key=lambda d: -d["violation_mass"])[:25],
         "real_violations_detail": real_detail[:50],
@@ -934,7 +988,9 @@ def write_report(summary: dict, path: str) -> None:
                  f"net-fee-positive in >= {meta['persistence_threshold_polls']} of "
                  f"{meta['polls_completed']} polls to count as REAL.  ")
     lines.append(f"Min executable depth: {meta['min_depth_contracts']} contracts/leg. "
-                 f"Min net edge to flag: ${meta['min_edge_dollars']:.2f}.  ")
+                 f"Min RAW (pre-fee) edge to flag a candidate: ${meta['min_gross_edge_to_flag_dollars']:.4f}. "
+                 f"Min NET (post-fee) edge to ever count an observation toward REAL: "
+                 f"${meta['min_net_edge_to_count_real_dollars']:.2f}.  ")
     lines.append(f"Fee model: `{meta['fee_model']}`\n")
 
     lines.append("## Universe scanned per poll\n")
@@ -965,10 +1021,12 @@ def write_report(summary: dict, path: str) -> None:
                  f"**{tot['total_real_persistent_executable_violation_keys']}**")
     lines.append(f"- Stale/phantom ratio: **{tot['stale_or_phantom_ratio']}** "
                  f"(fraction of flagged candidates that did NOT survive the discipline)")
-    lines.append(f"- Frequency (flagged, extrapolated to /week from this run's wall-clock window): "
-                 f"{tot['frequency_per_week_flagged']}")
-    lines.append(f"- Frequency (REAL, extrapolated to /week from this run's wall-clock window): "
-                 f"{tot['frequency_per_week_real']}\n")
+    lines.append(f"- Mean flagged candidates per poll (raw, cross-sectional census, NOT an arrival "
+                 f"rate): {tot['mean_flagged_candidates_per_poll']}")
+    lines.append(f"- Run duration: {tot['run_duration_minutes']} minutes")
+    lines.append(f"- REAL-violation frequency, naive /week extrapolation of this run's window: "
+                 f"{tot['frequency_per_week_real_naive_extrapolation']}")
+    lines.append(f"- _{tot['frequency_note']}_\n")
 
     lines.append("## PAVA ladder-monotonicity diagnostics (last poll, top 25 by violation mass)\n")
     diag = summary.get("pava_ladder_diagnostics_last_poll", [])
@@ -1019,10 +1077,38 @@ def write_report(summary: dict, path: str) -> None:
                  "Polymarket logical-arb candidate NULL.")
     lines.append("4. **Exact nesting/exclusivity**: legs are only ever paired within the SAME "
                  "Kalshi `event_ticker` (guaranteeing identical settlement source, dates, and "
-                 "rules). Ladders (S1) use Kalshi's own `strike_type`/`floor_strike` fields on "
-                 "events flagged `mutually_exclusive=false`; event-sum sets (S3) use events "
-                 "Kalshi itself flags `mutually_exclusive=true`. No cross-event or cross-series "
-                 "pairing is ever attempted, so there is no false-pair risk.")
+                 "rules). Three additional false-pair traps were found and closed during "
+                 "development of this scanner (documented in-code):\n"
+                 "   - **Parallel-subject ladders**: some events contain *two independent* "
+                 "threshold ladders for different subjects (e.g. a point-spread event has both "
+                 "a \"Team A wins by >X\" ladder and a \"Team B wins by >Y\" ladder). These are "
+                 "NOT nested implications of each other. S1 now splits every ladder by the "
+                 "market's `custom_strike` subject signature (e.g. `basketball_team` id) before "
+                 "comparing strikes -- this alone eliminated ~99% of initially-flagged S1 "
+                 "candidates (198 -> ~1-3 per poll), which were false pairs from mixing two "
+                 "teams' spread ladders.\n"
+                 "   - **Non-exhaustive `mutually_exclusive` events**: Kalshi sets "
+                 "`mutually_exclusive=true` on both genuine tiled numeric brackets (temperature/"
+                 "price ranges) AND partial candidate lists (e.g. a primary-election event "
+                 "listing only 2 minor candidates whose combined YES-ask summed to $0.06 because "
+                 "~94% of the probability mass sits on an unlisted candidate). S3 now requires a "
+                 "constructive proof of exhaustiveness -- exactly one unbounded-below (`less`) "
+                 "leg, exactly one unbounded-above (`greater`) leg, and contiguous `between` "
+                 "brackets tiling the real line with no gaps, verified from `floor_strike`/"
+                 "`cap_strike` -- and excludes categorical (`strike_type='custom'`) events "
+                 "entirely. This eliminated every one of the ~25 initially-flagged S3 candidates, "
+                 "all of which were non-exhaustive candidate/categorical events, not real range "
+                 "completeness violations.\n"
+                 "   - **Same-strike, different-deadline pairs**: a few series list multiple "
+                 "markets at the identical strike but different close/expiration dates (e.g. "
+                 "\"BTC > $100k before June\" / \"...before Sept\"). These can be validly nested "
+                 "(earlier deadline implies later deadline) but ONLY if both markets' resolution-"
+                 "monitoring windows start at the same time -- Kalshi's own rules text showed a "
+                 "case where they did not (a 6-week gap in monitoring start between two "
+                 "\"consecutive\" deadline markets in the same event). S1 therefore requires a "
+                 "strictly different `floor_strike` AND identical `close_time`/`expiration_time` "
+                 "before pairing two markets, rather than risk pairing across a hidden window gap."
+                 )
     lines.append("5. **S3 is executed buy-only** (buy every YES ask, or buy every NO ask) so no "
                  "short-selling / margin assumption is smuggled into 'executable'.\n")
 

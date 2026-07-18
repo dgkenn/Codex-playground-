@@ -1,0 +1,1639 @@
+{
+  "sample_window": {
+    "min_date": "2026-05-12",
+    "max_date": "2026-07-17",
+    "span_days": 67,
+    "n_city_days": 1272,
+    "n_series": 20
+  },
+  "glitch_filter": {
+    "abs_cap_f": 130.0,
+    "abs_floor_f": -60.0,
+    "jump_f_per_min": 8.0,
+    "total_obs_removed": 11,
+    "removed_by_station": {
+      "KATL": 2,
+      "KLAX": 2,
+      "KMDW": 1,
+      "KMIA": 4,
+      "KPHL": 2
+    },
+    "removed_detail": {
+      "KATL": [
+        [
+          "2026-05-18T03:02:00+00:00",
+          79.0,
+          "isolated_spike"
+        ],
+        [
+          "2026-07-03T13:33:00+00:00",
+          78.0,
+          "isolated_spike"
+        ]
+      ],
+      "KLAX": [
+        [
+          "2026-05-24T14:06:00+00:00",
+          120.0,
+          "isolated_spike"
+        ],
+        [
+          "2026-05-24T17:09:00+00:00",
+          -29.0,
+          "isolated_spike"
+        ]
+      ],
+      "KMDW": [
+        [
+          "2026-07-07T08:41:00+00:00",
+          -1.0,
+          "isolated_spike"
+        ]
+      ],
+      "KMIA": [
+        [
+          "2026-05-16T23:46:00+00:00",
+          97.0,
+          "isolated_spike"
+        ],
+        [
+          "2026-06-19T07:43:00+00:00",
+          74.0,
+          "isolated_spike"
+        ],
+        [
+          "2026-06-26T07:41:00+00:00",
+          96.0,
+          "isolated_spike"
+        ],
+        [
+          "2026-07-07T07:38:00+00:00",
+          94.0,
+          "isolated_spike"
+        ]
+      ],
+      "KPHL": [
+        [
+          "2026-05-11T01:36:00+00:00",
+          76.0,
+          "isolated_spike"
+        ],
+        [
+          "2026-05-15T01:35:00+00:00",
+          68.0,
+          "isolated_spike"
+        ]
+      ]
+    },
+    "lax_feasibility_demo": {
+      "ticker": "KXHIGHLAX-26MAY24-T69",
+      "asos_1min_reported_max_f": 120.0,
+      "independent_hourly_metar_max_f": 68.0,
+      "caught_by_glitch_filter": true,
+      "would_also_be_caught_by_hourly_crosscheck": true
+    }
+  },
+  "baseline_confirmed": {
+    "margin": 2,
+    "n_fired": 35,
+    "win_rate": 0.9142857142857143,
+    "mean_pnl": 0.16781568571428573,
+    "t": 4.601059918019277,
+    "cond_loss_rate_given_fired": 0.08571428571428574,
+    "worst_case_loss_rate_wilson95": 0.22379273970048333,
+    "analytic_ev_worst_case": 0.029737231728088155,
+    "fires_per_week": 3.656716417910448,
+    "n_bad": 3,
+    "bad_tickers": [
+      "KXHIGHMIA-26JUN16-T95",
+      "KXHIGHMIA-26MAY16-T91",
+      "KXHIGHLAX-26MAY24-T69"
+    ]
+  },
+  "grid_margin_x_sustain": {
+    "1_1": {
+      "n_fired": 68,
+      "fire_rate": 0.05345911949685535,
+      "fires_per_week": 7.104477611940299,
+      "mean_exec_price": 0.41544117647058815,
+      "win_rate": 0.6470588235294118,
+      "n_bad": 24,
+      "bad_tickers": [
+        "KXHIGHDEN-26JUL09-T91",
+        "KXHIGHDEN-26JUN27-T97",
+        "KXHIGHDEN-26JUN18-T88",
+        "KXHIGHDEN-26JUN16-T93",
+        "KXHIGHMIA-26JUN16-T95",
+        "KXHIGHTBOS-26MAY16-T80",
+        "KXHIGHTSEA-26JUL10-T78",
+        "KXHIGHTSEA-26JUN27-T70",
+        "KXHIGHTSFO-26JUL02-T71",
+        "KXHIGHTSFO-26JUN30-T73",
+        "KXHIGHTSFO-26JUN25-T70",
+        "KXHIGHTSFO-26MAY18-T80",
+        "KXHIGHTATL-26JUL16-T93",
+        "KXHIGHTATL-26JUL11-T94",
+        "KXHIGHTATL-26MAY30-T85",
+        "KXHIGHTATL-26MAY28-T88",
+        "KXHIGHTDAL-26JUN06-T89",
+        "KXHIGHTSATX-26MAY23-T85",
+        "KXHIGHTOKC-26JUN12-T91",
+        "KXHIGHTOKC-26MAY28-T84",
+        "KXHIGHTHOU-26MAY22-T90",
+        "KXHIGHPHIL-26JUL11-T89",
+        "KXHIGHPHIL-26JUN02-T80",
+        "KXHIGHLAX-26JUN28-T72"
+      ],
+      "cond_loss_rate_given_fired": 0.3529411764705882,
+      "worst_case_loss_rate_wilson95": 0.4715894478031233,
+      "analytic_ev_point": 0.22131827941176482,
+      "analytic_ev_worst_case": 0.10267000807922974,
+      "clustered": {
+        "mean": 0.2213182794117647,
+        "se": 0.05130257604571631,
+        "t": 4.313979851899552,
+        "p": 1.6034156586686166e-05,
+        "n": 68,
+        "n_clusters": 44
+      },
+      "worst_trade": {
+        "pnl": -0.6952320000000001,
+        "date": "2026-05-23",
+        "ticker": "KXHIGHTSATX-26MAY23-T85"
+      },
+      "gap_sensitivity": {
+        "0.0": {
+          "n": 68,
+          "mean_pnl": 0.2213182794117647,
+          "t": 4.313979851899552,
+          "n_clusters": 44
+        },
+        "0.02": {
+          "n": 67,
+          "mean_pnl": 0.22448262686567164,
+          "t": 4.361075317995305,
+          "n_clusters": 44
+        },
+        "0.05": {
+          "n": 65,
+          "mean_pnl": 0.2308166153846154,
+          "t": 4.411607495000869,
+          "n_clusters": 44
+        }
+      },
+      "n_hourly_flagged_disagree": 11,
+      "n_hourly_flagged_that_were_actual_losses": 3
+    },
+    "1_3": {
+      "n_fired": 42,
+      "fire_rate": 0.0330188679245283,
+      "fires_per_week": 4.388059701492537,
+      "mean_exec_price": 0.646190476190476,
+      "win_rate": 1.0,
+      "n_bad": 0,
+      "bad_tickers": [],
+      "cond_loss_rate_given_fired": 0.0,
+      "worst_case_loss_rate_wilson95": 0.08379879090173831,
+      "analytic_ev_point": 0.3433481904761907,
+      "analytic_ev_worst_case": 0.25954939957445233,
+      "clustered": {
+        "mean": 0.3433481904761905,
+        "se": 0.04541677609571859,
+        "t": 7.559941941994374,
+        "p": 4.04121180963557e-14,
+        "n": 42,
+        "n_clusters": 29
+      },
+      "worst_trade": {
+        "pnl": 0.0,
+        "date": "2026-05-21",
+        "ticker": "KXHIGHDEN-26MAY21-T68"
+      },
+      "gap_sensitivity": {
+        "0.0": {
+          "n": 36,
+          "mean_pnl": 0.40057288888888887,
+          "t": 9.387981582803059,
+          "n_clusters": 25
+        },
+        "0.02": {
+          "n": 35,
+          "mean_pnl": 0.4117519142857143,
+          "t": 9.681788765073517,
+          "n_clusters": 24
+        },
+        "0.05": {
+          "n": 34,
+          "mean_pnl": 0.4227648529411765,
+          "t": 10.318953805370269,
+          "n_clusters": 24
+        }
+      },
+      "n_hourly_flagged_disagree": 3,
+      "n_hourly_flagged_that_were_actual_losses": 0
+    },
+    "1_5": {
+      "n_fired": 33,
+      "fire_rate": 0.025943396226415096,
+      "fires_per_week": 3.4477611940298507,
+      "mean_exec_price": 0.8869696969696972,
+      "win_rate": 1.0,
+      "n_bad": 0,
+      "bad_tickers": [],
+      "cond_loss_rate_given_fired": 0.0,
+      "worst_case_loss_rate_wilson95": 0.10426999758628748,
+      "analytic_ev_point": 0.10742160606060584,
+      "analytic_ev_worst_case": 0.0031516084743183235,
+      "clustered": {
+        "mean": 0.10742160606060605,
+        "se": 0.024842037203990395,
+        "t": 4.32418666708022,
+        "p": 1.5309562665599685e-05,
+        "n": 33,
+        "n_clusters": 26
+      },
+      "worst_trade": {
+        "pnl": 0.0,
+        "date": "2026-07-07",
+        "ticker": "KXHIGHDEN-26JUL07-T96"
+      },
+      "gap_sensitivity": {
+        "0.0": {
+          "n": 20,
+          "mean_pnl": 0.17724564999999998,
+          "t": 5.773691882398059,
+          "n_clusters": 18
+        },
+        "0.02": {
+          "n": 20,
+          "mean_pnl": 0.17724564999999998,
+          "t": 5.773691882398059,
+          "n_clusters": 18
+        },
+        "0.05": {
+          "n": 17,
+          "mean_pnl": 0.20358882352941177,
+          "t": 6.369917051218096,
+          "n_clusters": 16
+        }
+      },
+      "n_hourly_flagged_disagree": 2,
+      "n_hourly_flagged_that_were_actual_losses": 0
+    },
+    "1_10": {
+      "n_fired": 21,
+      "fire_rate": 0.01650943396226415,
+      "fires_per_week": 2.1940298507462686,
+      "mean_exec_price": 0.9799999999999999,
+      "win_rate": 1.0,
+      "n_bad": 0,
+      "bad_tickers": [],
+      "cond_loss_rate_given_fired": 0.0,
+      "worst_case_loss_rate_wilson95": 0.15463901898620194,
+      "analytic_ev_point": 0.018725333333333462,
+      "analytic_ev_worst_case": -0.13591368565286846,
+      "clustered": {
+        "mean": 0.018725333333333333,
+        "se": 0.007928491511871414,
+        "t": 2.3617775594885475,
+        "p": 0.018187551431349647,
+        "n": 21,
+        "n_clusters": 19
+      },
+      "worst_trade": {
+        "pnl": 0.0,
+        "date": "2026-06-14",
+        "ticker": "KXHIGHDEN-26JUN14-T69"
+      },
+      "gap_sensitivity": {
+        "0.0": {
+          "n": 5,
+          "mean_pnl": 0.07864639999999999,
+          "t": 8.674508612792359,
+          "n_clusters": 5
+        },
+        "0.02": {
+          "n": 5,
+          "mean_pnl": 0.07864639999999999,
+          "t": 8.674508612792359,
+          "n_clusters": 5
+        },
+        "0.05": {
+          "n": 5,
+          "mean_pnl": 0.07864639999999999,
+          "t": 8.674508612792359,
+          "n_clusters": 5
+        }
+      },
+      "n_hourly_flagged_disagree": 1,
+      "n_hourly_flagged_that_were_actual_losses": 0
+    },
+    "2_1": {
+      "n_fired": 33,
+      "fire_rate": 0.025943396226415096,
+      "fires_per_week": 3.4477611940298507,
+      "mean_exec_price": 0.7784848484848486,
+      "win_rate": 0.9696969696969697,
+      "n_bad": 1,
+      "bad_tickers": [
+        "KXHIGHMIA-26JUN16-T95"
+      ],
+      "cond_loss_rate_given_fired": 0.030303030303030276,
+      "worst_case_loss_rate_wilson95": 0.15318725386413604,
+      "analytic_ev_point": 0.1831262727272727,
+      "analytic_ev_worst_case": 0.060242049166166954,
+      "clustered": {
+        "mean": 0.1831262727272728,
+        "se": 0.039239292184198984,
+        "t": 4.666910704393764,
+        "p": 3.0576213094768434e-06,
+        "n": 33,
+        "n_clusters": 28
+      },
+      "worst_trade": {
+        "pnl": -0.148428,
+        "date": "2026-06-16",
+        "ticker": "KXHIGHMIA-26JUN16-T95"
+      },
+      "gap_sensitivity": {
+        "0.0": {
+          "n": 23,
+          "mean_pnl": 0.2627463913043479,
+          "t": 5.866378355497172,
+          "n_clusters": 21
+        },
+        "0.02": {
+          "n": 23,
+          "mean_pnl": 0.2627463913043479,
+          "t": 5.866378355497172,
+          "n_clusters": 21
+        },
+        "0.05": {
+          "n": 22,
+          "mean_pnl": 0.2729934090909092,
+          "t": 6.182465815609909,
+          "n_clusters": 21
+        }
+      },
+      "n_hourly_flagged_disagree": 2,
+      "n_hourly_flagged_that_were_actual_losses": 0
+    },
+    "2_3": {
+      "n_fired": 19,
+      "fire_rate": 0.014937106918238994,
+      "fires_per_week": 1.9850746268656716,
+      "mean_exec_price": 0.9231578947368421,
+      "win_rate": 1.0,
+      "n_bad": 0,
+      "bad_tickers": [],
+      "cond_loss_rate_given_fired": 0.0,
+      "worst_case_loss_rate_wilson95": 0.1681792241182747,
+      "analytic_ev_point": 0.07344010526315793,
+      "analytic_ev_worst_case": -0.09473911885511675,
+      "clustered": {
+        "mean": 0.07344010526315789,
+        "se": 0.03318098598467388,
+        "t": 2.213318956135887,
+        "p": 0.026875663629434277,
+        "n": 19,
+        "n_clusters": 17
+      },
+      "worst_trade": {
+        "pnl": 0.0,
+        "date": "2026-05-21",
+        "ticker": "KXHIGHDEN-26MAY21-T68"
+      },
+      "gap_sensitivity": {
+        "0.0": {
+          "n": 7,
+          "mean_pnl": 0.19933742857142858,
+          "t": 2.9875885994054747,
+          "n_clusters": 7
+        },
+        "0.02": {
+          "n": 7,
+          "mean_pnl": 0.19933742857142858,
+          "t": 2.9875885994054747,
+          "n_clusters": 7
+        },
+        "0.05": {
+          "n": 5,
+          "mean_pnl": 0.2660174,
+          "t": 3.5511827538033622,
+          "n_clusters": 5
+        }
+      },
+      "n_hourly_flagged_disagree": 1,
+      "n_hourly_flagged_that_were_actual_losses": 0
+    },
+    "2_5": {
+      "n_fired": 14,
+      "fire_rate": 0.0110062893081761,
+      "fires_per_week": 1.462686567164179,
+      "mean_exec_price": 0.97,
+      "win_rate": 1.0,
+      "n_bad": 0,
+      "bad_tickers": [],
+      "cond_loss_rate_given_fired": 0.0,
+      "worst_case_loss_rate_wilson95": 0.21531080281693193,
+      "analytic_ev_point": 0.028327000000000026,
+      "analytic_ev_worst_case": -0.18698380281693192,
+      "clustered": {
+        "mean": 0.028327,
+        "se": 0.01846607315664407,
+        "t": 1.5340023707102008,
+        "p": 0.1250290695565095,
+        "n": 14,
+        "n_clusters": 13
+      },
+      "worst_trade": {
+        "pnl": 0.0,
+        "date": "2026-06-14",
+        "ticker": "KXHIGHDEN-26JUN14-T69"
+      },
+      "gap_sensitivity": {
+        "0.0": {
+          "n": 3,
+          "mean_pnl": 0.13219266666666668,
+          "t": 2.5577953606694317,
+          "n_clusters": 3
+        },
+        "0.02": {
+          "n": 3,
+          "mean_pnl": 0.13219266666666668,
+          "t": 2.5577953606694317,
+          "n_clusters": 3
+        },
+        "0.05": {
+          "n": 2,
+          "mean_pnl": 0.1843075,
+          "t": 4.188867184904326,
+          "n_clusters": 2
+        }
+      },
+      "n_hourly_flagged_disagree": 1,
+      "n_hourly_flagged_that_were_actual_losses": 0
+    },
+    "2_10": {
+      "n_fired": 9,
+      "fire_rate": 0.007075471698113208,
+      "fires_per_week": 0.9402985074626866,
+      "mean_exec_price": 0.9966666666666666,
+      "win_rate": 1.0,
+      "n_bad": 0,
+      "bad_tickers": [],
+      "cond_loss_rate_given_fired": 0.0,
+      "worst_case_loss_rate_wilson95": 0.2991450485179449,
+      "analytic_ev_point": 0.0031070000000000767,
+      "analytic_ev_worst_case": -0.2960380485179448,
+      "clustered": {
+        "mean": 0.003107000000000003,
+        "se": 0.002929307692195474,
+        "t": 1.0606601717798212,
+        "p": 0.2888443663464848,
+        "n": 9,
+        "n_clusters": 9
+      },
+      "worst_trade": {
+        "pnl": 0.0,
+        "date": "2026-06-14",
+        "ticker": "KXHIGHDEN-26JUN14-T69"
+      },
+      "gap_sensitivity": {
+        "0.0": {
+          "n": 1,
+          "mean_pnl": 0.027963000000000026,
+          "t": NaN,
+          "n_clusters": 1
+        },
+        "0.02": {
+          "n": 1,
+          "mean_pnl": 0.027963000000000026,
+          "t": NaN,
+          "n_clusters": 1
+        },
+        "0.05": {
+          "n": 0,
+          "mean_pnl": null,
+          "t": null,
+          "n_clusters": 0
+        }
+      },
+      "n_hourly_flagged_disagree": 1,
+      "n_hourly_flagged_that_were_actual_losses": 0
+    },
+    "3_1": {
+      "n_fired": 17,
+      "fire_rate": 0.013364779874213837,
+      "fires_per_week": 1.7761194029850746,
+      "mean_exec_price": 0.9370588235294117,
+      "win_rate": 0.9411764705882353,
+      "n_bad": 1,
+      "bad_tickers": [
+        "KXHIGHMIA-26JUN16-T95"
+      ],
+      "cond_loss_rate_given_fired": 0.05882352941176472,
+      "worst_case_loss_rate_wilson95": 0.26982030644146804,
+      "analytic_ev_point": 0.0023260588235294415,
+      "analytic_ev_worst_case": -0.2086707182061739,
+      "clustered": {
+        "mean": 0.0023260588235294137,
+        "se": 0.01629008878611466,
+        "t": 0.14278981864801737,
+        "p": 0.8864561782247411,
+        "n": 17,
+        "n_clusters": 16
+      },
+      "worst_trade": {
+        "pnl": -0.232012,
+        "date": "2026-06-16",
+        "ticker": "KXHIGHMIA-26JUN16-T95"
+      },
+      "gap_sensitivity": {
+        "0.0": {
+          "n": 5,
+          "mean_pnl": 0.007908600000000005,
+          "t": 0.14268136643222593,
+          "n_clusters": 5
+        },
+        "0.02": {
+          "n": 5,
+          "mean_pnl": 0.007908600000000005,
+          "t": 0.14268136643222593,
+          "n_clusters": 5
+        },
+        "0.05": {
+          "n": 3,
+          "mean_pnl": -0.01169366666666668,
+          "t": -0.12902500239988954,
+          "n_clusters": 3
+        }
+      },
+      "n_hourly_flagged_disagree": 1,
+      "n_hourly_flagged_that_were_actual_losses": 0
+    },
+    "3_3": {
+      "n_fired": 4,
+      "fire_rate": 0.0031446540880503146,
+      "fires_per_week": 0.417910447761194,
+      "mean_exec_price": 1.0,
+      "win_rate": 1.0,
+      "n_bad": 0,
+      "bad_tickers": [],
+      "cond_loss_rate_given_fired": 0.0,
+      "worst_case_loss_rate_wilson95": 0.48989083657188465,
+      "analytic_ev_point": 0.0,
+      "analytic_ev_worst_case": -0.4898908365718846,
+      "clustered": {
+        "mean": 0.0,
+        "se": 0.0,
+        "t": NaN,
+        "p": null,
+        "n": 4,
+        "n_clusters": 4
+      },
+      "worst_trade": {
+        "pnl": 0.0,
+        "date": "2026-06-14",
+        "ticker": "KXHIGHDEN-26JUN14-T69"
+      },
+      "gap_sensitivity": {
+        "0.0": {
+          "n": 0,
+          "mean_pnl": null,
+          "t": null,
+          "n_clusters": 0
+        },
+        "0.02": {
+          "n": 0,
+          "mean_pnl": null,
+          "t": null,
+          "n_clusters": 0
+        },
+        "0.05": {
+          "n": 0,
+          "mean_pnl": null,
+          "t": null,
+          "n_clusters": 0
+        }
+      },
+      "n_hourly_flagged_disagree": 0,
+      "n_hourly_flagged_that_were_actual_losses": 0
+    },
+    "3_5": {
+      "n_fired": 4,
+      "fire_rate": 0.0031446540880503146,
+      "fires_per_week": 0.417910447761194,
+      "mean_exec_price": 1.0,
+      "win_rate": 1.0,
+      "n_bad": 0,
+      "bad_tickers": [],
+      "cond_loss_rate_given_fired": 0.0,
+      "worst_case_loss_rate_wilson95": 0.48989083657188465,
+      "analytic_ev_point": 0.0,
+      "analytic_ev_worst_case": -0.4898908365718846,
+      "clustered": {
+        "mean": 0.0,
+        "se": 0.0,
+        "t": NaN,
+        "p": null,
+        "n": 4,
+        "n_clusters": 4
+      },
+      "worst_trade": {
+        "pnl": 0.0,
+        "date": "2026-06-14",
+        "ticker": "KXHIGHDEN-26JUN14-T69"
+      },
+      "gap_sensitivity": {
+        "0.0": {
+          "n": 0,
+          "mean_pnl": null,
+          "t": null,
+          "n_clusters": 0
+        },
+        "0.02": {
+          "n": 0,
+          "mean_pnl": null,
+          "t": null,
+          "n_clusters": 0
+        },
+        "0.05": {
+          "n": 0,
+          "mean_pnl": null,
+          "t": null,
+          "n_clusters": 0
+        }
+      },
+      "n_hourly_flagged_disagree": 0,
+      "n_hourly_flagged_that_were_actual_losses": 0
+    },
+    "3_10": {
+      "n_fired": 3,
+      "fire_rate": 0.0023584905660377358,
+      "fires_per_week": 0.31343283582089554,
+      "mean_exec_price": 1.0,
+      "win_rate": 1.0,
+      "n_bad": 0,
+      "bad_tickers": [],
+      "cond_loss_rate_given_fired": 0.0,
+      "worst_case_loss_rate_wilson95": 0.5614970318706057,
+      "analytic_ev_point": 0.0,
+      "analytic_ev_worst_case": -0.5614970318706057,
+      "clustered": {
+        "mean": 0.0,
+        "se": 0.0,
+        "t": NaN,
+        "p": null,
+        "n": 3,
+        "n_clusters": 3
+      },
+      "worst_trade": {
+        "pnl": 0.0,
+        "date": "2026-06-14",
+        "ticker": "KXHIGHDEN-26JUN14-T69"
+      },
+      "gap_sensitivity": {
+        "0.0": {
+          "n": 0,
+          "mean_pnl": null,
+          "t": null,
+          "n_clusters": 0
+        },
+        "0.02": {
+          "n": 0,
+          "mean_pnl": null,
+          "t": null,
+          "n_clusters": 0
+        },
+        "0.05": {
+          "n": 0,
+          "mean_pnl": null,
+          "t": null,
+          "n_clusters": 0
+        }
+      },
+      "n_hourly_flagged_disagree": 0,
+      "n_hourly_flagged_that_were_actual_losses": 0
+    }
+  },
+  "grid_candidates": [
+    {
+      "margin": 1,
+      "sustain_min": 1,
+      "n_fired": 68,
+      "win_rate": 0.6470588235294118,
+      "mean_pnl": 0.2213182794117647,
+      "t": 4.313979851899552,
+      "cond_loss_rate_given_fired": 0.3529411764705882,
+      "worst_case_loss_rate": 0.4715894478031233,
+      "analytic_ev_worst_case": 0.10267000807922974,
+      "fires_per_week": 7.104477611940299,
+      "ok_n": true,
+      "ok_t_ge_2": true,
+      "ok_worst_case_ev_positive": true,
+      "passes_all": true
+    },
+    {
+      "margin": 1,
+      "sustain_min": 3,
+      "n_fired": 42,
+      "win_rate": 1.0,
+      "mean_pnl": 0.3433481904761905,
+      "t": 7.559941941994374,
+      "cond_loss_rate_given_fired": 0.0,
+      "worst_case_loss_rate": 0.08379879090173831,
+      "analytic_ev_worst_case": 0.25954939957445233,
+      "fires_per_week": 4.388059701492537,
+      "ok_n": true,
+      "ok_t_ge_2": true,
+      "ok_worst_case_ev_positive": true,
+      "passes_all": true
+    },
+    {
+      "margin": 1,
+      "sustain_min": 5,
+      "n_fired": 33,
+      "win_rate": 1.0,
+      "mean_pnl": 0.10742160606060605,
+      "t": 4.32418666708022,
+      "cond_loss_rate_given_fired": 0.0,
+      "worst_case_loss_rate": 0.10426999758628748,
+      "analytic_ev_worst_case": 0.0031516084743183235,
+      "fires_per_week": 3.4477611940298507,
+      "ok_n": true,
+      "ok_t_ge_2": true,
+      "ok_worst_case_ev_positive": true,
+      "passes_all": true
+    },
+    {
+      "margin": 1,
+      "sustain_min": 10,
+      "n_fired": 21,
+      "win_rate": 1.0,
+      "mean_pnl": 0.018725333333333333,
+      "t": 2.3617775594885475,
+      "cond_loss_rate_given_fired": 0.0,
+      "worst_case_loss_rate": 0.15463901898620194,
+      "analytic_ev_worst_case": -0.13591368565286846,
+      "fires_per_week": 2.1940298507462686,
+      "ok_n": true,
+      "ok_t_ge_2": true,
+      "ok_worst_case_ev_positive": false,
+      "passes_all": false
+    },
+    {
+      "margin": 2,
+      "sustain_min": 1,
+      "n_fired": 33,
+      "win_rate": 0.9696969696969697,
+      "mean_pnl": 0.1831262727272728,
+      "t": 4.666910704393764,
+      "cond_loss_rate_given_fired": 0.030303030303030276,
+      "worst_case_loss_rate": 0.15318725386413604,
+      "analytic_ev_worst_case": 0.060242049166166954,
+      "fires_per_week": 3.4477611940298507,
+      "ok_n": true,
+      "ok_t_ge_2": true,
+      "ok_worst_case_ev_positive": true,
+      "passes_all": true
+    },
+    {
+      "margin": 2,
+      "sustain_min": 3,
+      "n_fired": 19,
+      "win_rate": 1.0,
+      "mean_pnl": 0.07344010526315789,
+      "t": 2.213318956135887,
+      "cond_loss_rate_given_fired": 0.0,
+      "worst_case_loss_rate": 0.1681792241182747,
+      "analytic_ev_worst_case": -0.09473911885511675,
+      "fires_per_week": 1.9850746268656716,
+      "ok_n": true,
+      "ok_t_ge_2": true,
+      "ok_worst_case_ev_positive": false,
+      "passes_all": false
+    },
+    {
+      "margin": 2,
+      "sustain_min": 5,
+      "n_fired": 14,
+      "win_rate": 1.0,
+      "mean_pnl": 0.028327,
+      "t": 1.5340023707102008,
+      "cond_loss_rate_given_fired": 0.0,
+      "worst_case_loss_rate": 0.21531080281693193,
+      "analytic_ev_worst_case": -0.18698380281693192,
+      "fires_per_week": 1.462686567164179,
+      "ok_n": true,
+      "ok_t_ge_2": false,
+      "ok_worst_case_ev_positive": false,
+      "passes_all": false
+    },
+    {
+      "margin": 2,
+      "sustain_min": 10,
+      "n_fired": 9,
+      "win_rate": 1.0,
+      "mean_pnl": 0.003107000000000003,
+      "t": 1.0606601717798212,
+      "cond_loss_rate_given_fired": 0.0,
+      "worst_case_loss_rate": 0.2991450485179449,
+      "analytic_ev_worst_case": -0.2960380485179448,
+      "fires_per_week": 0.9402985074626866,
+      "ok_n": true,
+      "ok_t_ge_2": false,
+      "ok_worst_case_ev_positive": false,
+      "passes_all": false
+    },
+    {
+      "margin": 3,
+      "sustain_min": 1,
+      "n_fired": 17,
+      "win_rate": 0.9411764705882353,
+      "mean_pnl": 0.0023260588235294137,
+      "t": 0.14278981864801737,
+      "cond_loss_rate_given_fired": 0.05882352941176472,
+      "worst_case_loss_rate": 0.26982030644146804,
+      "analytic_ev_worst_case": -0.2086707182061739,
+      "fires_per_week": 1.7761194029850746,
+      "ok_n": true,
+      "ok_t_ge_2": false,
+      "ok_worst_case_ev_positive": false,
+      "passes_all": false
+    },
+    {
+      "margin": 3,
+      "sustain_min": 3,
+      "n_fired": 4,
+      "win_rate": 1.0,
+      "mean_pnl": 0.0,
+      "t": NaN,
+      "cond_loss_rate_given_fired": 0.0,
+      "worst_case_loss_rate": 0.48989083657188465,
+      "analytic_ev_worst_case": -0.4898908365718846,
+      "fires_per_week": 0.417910447761194,
+      "ok_n": false,
+      "ok_t_ge_2": false,
+      "ok_worst_case_ev_positive": false,
+      "passes_all": false
+    },
+    {
+      "margin": 3,
+      "sustain_min": 5,
+      "n_fired": 4,
+      "win_rate": 1.0,
+      "mean_pnl": 0.0,
+      "t": NaN,
+      "cond_loss_rate_given_fired": 0.0,
+      "worst_case_loss_rate": 0.48989083657188465,
+      "analytic_ev_worst_case": -0.4898908365718846,
+      "fires_per_week": 0.417910447761194,
+      "ok_n": false,
+      "ok_t_ge_2": false,
+      "ok_worst_case_ev_positive": false,
+      "passes_all": false
+    },
+    {
+      "margin": 3,
+      "sustain_min": 10,
+      "n_fired": 3,
+      "win_rate": 1.0,
+      "mean_pnl": 0.0,
+      "t": NaN,
+      "cond_loss_rate_given_fired": 0.0,
+      "worst_case_loss_rate": 0.5614970318706057,
+      "analytic_ev_worst_case": -0.5614970318706057,
+      "fires_per_week": 0.31343283582089554,
+      "ok_n": false,
+      "ok_t_ge_2": false,
+      "ok_worst_case_ev_positive": false,
+      "passes_all": false
+    }
+  ],
+  "best_structural_config": {
+    "margin": 1,
+    "sustain_min": 3,
+    "n_fired": 42,
+    "win_rate": 1.0,
+    "mean_pnl": 0.3433481904761905,
+    "t": 7.559941941994374,
+    "cond_loss_rate_given_fired": 0.0,
+    "worst_case_loss_rate": 0.08379879090173831,
+    "analytic_ev_worst_case": 0.25954939957445233,
+    "fires_per_week": 4.388059701492537,
+    "ok_n": true,
+    "ok_t_ge_2": true,
+    "ok_worst_case_ev_positive": true,
+    "passes_all": true
+  },
+  "marginal_effects": {
+    "glitch_filter_only_margin2_sustain1": {
+      "n_fired": 33,
+      "fire_rate": 0.025943396226415096,
+      "fires_per_week": 3.4477611940298507,
+      "mean_exec_price": 0.7784848484848486,
+      "win_rate": 0.9696969696969697,
+      "n_bad": 1,
+      "bad_tickers": [
+        "KXHIGHMIA-26JUN16-T95"
+      ],
+      "cond_loss_rate_given_fired": 0.030303030303030276,
+      "worst_case_loss_rate_wilson95": 0.15318725386413604,
+      "analytic_ev_point": 0.1831262727272727,
+      "analytic_ev_worst_case": 0.060242049166166954,
+      "clustered": {
+        "mean": 0.1831262727272728,
+        "se": 0.039239292184198984,
+        "t": 4.666910704393764,
+        "p": 3.0576213094768434e-06,
+        "n": 33,
+        "n_clusters": 28
+      },
+      "worst_trade": {
+        "pnl": -0.148428,
+        "date": "2026-06-16",
+        "ticker": "KXHIGHMIA-26JUN16-T95"
+      },
+      "gap_sensitivity": {
+        "0.0": {
+          "n": 23,
+          "mean_pnl": 0.2627463913043479,
+          "t": 5.866378355497172,
+          "n_clusters": 21
+        },
+        "0.02": {
+          "n": 23,
+          "mean_pnl": 0.2627463913043479,
+          "t": 5.866378355497172,
+          "n_clusters": 21
+        },
+        "0.05": {
+          "n": 22,
+          "mean_pnl": 0.2729934090909092,
+          "t": 6.182465815609909,
+          "n_clusters": 21
+        }
+      },
+      "n_hourly_flagged_disagree": 2,
+      "n_hourly_flagged_that_were_actual_losses": 0
+    },
+    "glitch_plus_sustain_margin2_bestsustain": {
+      "n_fired": 19,
+      "fire_rate": 0.014937106918238994,
+      "fires_per_week": 1.9850746268656716,
+      "mean_exec_price": 0.9231578947368421,
+      "win_rate": 1.0,
+      "n_bad": 0,
+      "bad_tickers": [],
+      "cond_loss_rate_given_fired": 0.0,
+      "worst_case_loss_rate_wilson95": 0.1681792241182747,
+      "analytic_ev_point": 0.07344010526315793,
+      "analytic_ev_worst_case": -0.09473911885511675,
+      "clustered": {
+        "mean": 0.07344010526315789,
+        "se": 0.03318098598467388,
+        "t": 2.213318956135887,
+        "p": 0.026875663629434277,
+        "n": 19,
+        "n_clusters": 17
+      },
+      "worst_trade": {
+        "pnl": 0.0,
+        "date": "2026-05-21",
+        "ticker": "KXHIGHDEN-26MAY21-T68"
+      },
+      "gap_sensitivity": {
+        "0.0": {
+          "n": 7,
+          "mean_pnl": 0.19933742857142858,
+          "t": 2.9875885994054747,
+          "n_clusters": 7
+        },
+        "0.02": {
+          "n": 7,
+          "mean_pnl": 0.19933742857142858,
+          "t": 2.9875885994054747,
+          "n_clusters": 7
+        },
+        "0.05": {
+          "n": 5,
+          "mean_pnl": 0.2660174,
+          "t": 3.5511827538033622,
+          "n_clusters": 5
+        }
+      },
+      "n_hourly_flagged_disagree": 1,
+      "n_hourly_flagged_that_were_actual_losses": 0
+    },
+    "best_sustain_minutes": 3
+  },
+  "per_station_bias_table": {
+    "KDEN": {
+      "n_fired_at_margin1": 9,
+      "n_misses": 4,
+      "miss_rate_given_fired": 0.4444444444444444,
+      "miss_tickers": [
+        "KXHIGHDEN-26JUL09-T91",
+        "KXHIGHDEN-26JUN27-T97",
+        "KXHIGHDEN-26JUN18-T88",
+        "KXHIGHDEN-26JUN16-T93"
+      ],
+      "miss_overshoots_f": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "recommended_extra_margin_f": 2
+    },
+    "KMIA": {
+      "n_fired_at_margin1": 9,
+      "n_misses": 1,
+      "miss_rate_given_fired": 0.1111111111111111,
+      "miss_tickers": [
+        "KXHIGHMIA-26JUN16-T95"
+      ],
+      "miss_overshoots_f": [
+        3.0
+      ],
+      "recommended_extra_margin_f": 4
+    },
+    "KBOS": {
+      "n_fired_at_margin1": 7,
+      "n_misses": 1,
+      "miss_rate_given_fired": 0.14285714285714285,
+      "miss_tickers": [
+        "KXHIGHTBOS-26MAY16-T80"
+      ],
+      "miss_overshoots_f": [
+        1.0
+      ],
+      "recommended_extra_margin_f": 2
+    },
+    "KAUS": {
+      "n_fired_at_margin1": 2,
+      "n_misses": 0,
+      "miss_rate_given_fired": 0.0,
+      "miss_tickers": [],
+      "miss_overshoots_f": [],
+      "recommended_extra_margin_f": 0
+    },
+    "KSEA": {
+      "n_fired_at_margin1": 3,
+      "n_misses": 2,
+      "miss_rate_given_fired": 0.6666666666666666,
+      "miss_tickers": [
+        "KXHIGHTSEA-26JUL10-T78",
+        "KXHIGHTSEA-26JUN27-T70"
+      ],
+      "miss_overshoots_f": [
+        1.0,
+        1.0
+      ],
+      "recommended_extra_margin_f": 2
+    },
+    "KSFO": {
+      "n_fired_at_margin1": 10,
+      "n_misses": 4,
+      "miss_rate_given_fired": 0.4,
+      "miss_tickers": [
+        "KXHIGHTSFO-26JUL02-T71",
+        "KXHIGHTSFO-26JUN30-T73",
+        "KXHIGHTSFO-26JUN25-T70",
+        "KXHIGHTSFO-26MAY18-T80"
+      ],
+      "miss_overshoots_f": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "recommended_extra_margin_f": 2
+    },
+    "KDCA": {
+      "n_fired_at_margin1": 3,
+      "n_misses": 0,
+      "miss_rate_given_fired": 0.0,
+      "miss_tickers": [],
+      "miss_overshoots_f": [],
+      "recommended_extra_margin_f": 0
+    },
+    "KATL": {
+      "n_fired_at_margin1": 6,
+      "n_misses": 4,
+      "miss_rate_given_fired": 0.6666666666666666,
+      "miss_tickers": [
+        "KXHIGHTATL-26JUL16-T93",
+        "KXHIGHTATL-26JUL11-T94",
+        "KXHIGHTATL-26MAY30-T85",
+        "KXHIGHTATL-26MAY28-T88"
+      ],
+      "miss_overshoots_f": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "recommended_extra_margin_f": 2
+    },
+    "KDFW": {
+      "n_fired_at_margin1": 2,
+      "n_misses": 1,
+      "miss_rate_given_fired": 0.5,
+      "miss_tickers": [
+        "KXHIGHTDAL-26JUN06-T89"
+      ],
+      "miss_overshoots_f": [
+        1.0
+      ],
+      "recommended_extra_margin_f": 2
+    },
+    "KSAT": {
+      "n_fired_at_margin1": 1,
+      "n_misses": 1,
+      "miss_rate_given_fired": 1.0,
+      "miss_tickers": [
+        "KXHIGHTSATX-26MAY23-T85"
+      ],
+      "miss_overshoots_f": [
+        1.0
+      ],
+      "recommended_extra_margin_f": 2
+    },
+    "NYC": {
+      "n_fired_at_margin1": 3,
+      "n_misses": 0,
+      "miss_rate_given_fired": 0.0,
+      "miss_tickers": [],
+      "miss_overshoots_f": [],
+      "recommended_extra_margin_f": 0
+    },
+    "KOKC": {
+      "n_fired_at_margin1": 4,
+      "n_misses": 2,
+      "miss_rate_given_fired": 0.5,
+      "miss_tickers": [
+        "KXHIGHTOKC-26JUN12-T91",
+        "KXHIGHTOKC-26MAY28-T84"
+      ],
+      "miss_overshoots_f": [
+        1.0,
+        1.0
+      ],
+      "recommended_extra_margin_f": 2
+    },
+    "KHOU": {
+      "n_fired_at_margin1": 1,
+      "n_misses": 1,
+      "miss_rate_given_fired": 1.0,
+      "miss_tickers": [
+        "KXHIGHTHOU-26MAY22-T90"
+      ],
+      "miss_overshoots_f": [
+        1.0
+      ],
+      "recommended_extra_margin_f": 2
+    },
+    "KPHL": {
+      "n_fired_at_margin1": 3,
+      "n_misses": 2,
+      "miss_rate_given_fired": 0.6666666666666666,
+      "miss_tickers": [
+        "KXHIGHPHIL-26JUL11-T89",
+        "KXHIGHPHIL-26JUN02-T80"
+      ],
+      "miss_overshoots_f": [
+        1.0,
+        1.0
+      ],
+      "recommended_extra_margin_f": 2
+    },
+    "KMSY": {
+      "n_fired_at_margin1": 1,
+      "n_misses": 0,
+      "miss_rate_given_fired": 0.0,
+      "miss_tickers": [],
+      "miss_overshoots_f": [],
+      "recommended_extra_margin_f": 0
+    },
+    "KLAX": {
+      "n_fired_at_margin1": 4,
+      "n_misses": 1,
+      "miss_rate_given_fired": 0.25,
+      "miss_tickers": [
+        "KXHIGHLAX-26JUN28-T72"
+      ],
+      "miss_overshoots_f": [
+        1.0
+      ],
+      "recommended_extra_margin_f": 2
+    }
+  },
+  "per_station_margin_variants": {
+    "base2_sustain1": {
+      "n_fired": 5,
+      "fire_rate": 0.003930817610062893,
+      "fires_per_week": 0.5223880597014926,
+      "mean_exec_price": 0.782,
+      "win_rate": 1.0,
+      "n_bad": 0,
+      "bad_tickers": [],
+      "cond_loss_rate_given_fired": 0.0,
+      "worst_case_loss_rate_wilson95": 0.4344824648984954,
+      "analytic_ev_point": 0.20883699999999997,
+      "analytic_ev_worst_case": -0.22564546489849543,
+      "clustered": {
+        "mean": 0.208837,
+        "se": 0.08566349361028885,
+        "t": 2.437876290104015,
+        "p": 0.0147738290014372,
+        "n": 5,
+        "n_clusters": 5
+      },
+      "worst_trade": {
+        "pnl": 0.0,
+        "date": "2026-05-18",
+        "ticker": "KXHIGHNY-26MAY18-T84"
+      },
+      "gap_sensitivity": {
+        "0.0": {
+          "n": 3,
+          "mean_pnl": 0.34806166666666666,
+          "t": 5.350958412047098,
+          "n_clusters": 3
+        },
+        "0.02": {
+          "n": 3,
+          "mean_pnl": 0.34806166666666666,
+          "t": 5.350958412047098,
+          "n_clusters": 3
+        },
+        "0.05": {
+          "n": 3,
+          "mean_pnl": 0.34806166666666666,
+          "t": 5.350958412047098,
+          "n_clusters": 3
+        }
+      },
+      "n_hourly_flagged_disagree": 0,
+      "n_hourly_flagged_that_were_actual_losses": 0,
+      "untestable_stations": [
+        [
+          "KATL",
+          4
+        ],
+        [
+          "KBOS",
+          4
+        ],
+        [
+          "KDEN",
+          4
+        ],
+        [
+          "KDFW",
+          4
+        ],
+        [
+          "KHOU",
+          4
+        ],
+        [
+          "KLAX",
+          4
+        ],
+        [
+          "KMIA",
+          6
+        ],
+        [
+          "KOKC",
+          4
+        ],
+        [
+          "KPHL",
+          4
+        ],
+        [
+          "KSAT",
+          4
+        ],
+        [
+          "KSEA",
+          4
+        ],
+        [
+          "KSFO",
+          4
+        ]
+      ]
+    },
+    "base2_bestsustain": {
+      "n_fired": 3,
+      "fire_rate": 0.0023584905660377358,
+      "fires_per_week": 0.31343283582089554,
+      "mean_exec_price": 1.0,
+      "win_rate": 1.0,
+      "n_bad": 0,
+      "bad_tickers": [],
+      "cond_loss_rate_given_fired": 0.0,
+      "worst_case_loss_rate_wilson95": 0.5614970318706057,
+      "analytic_ev_point": 0.0,
+      "analytic_ev_worst_case": -0.5614970318706057,
+      "clustered": {
+        "mean": 0.0,
+        "se": 0.0,
+        "t": NaN,
+        "p": null,
+        "n": 3,
+        "n_clusters": 3
+      },
+      "worst_trade": {
+        "pnl": 0.0,
+        "date": "2026-07-08",
+        "ticker": "KXHIGHNY-26JUL08-T83"
+      },
+      "gap_sensitivity": {
+        "0.0": {
+          "n": 0,
+          "mean_pnl": null,
+          "t": null,
+          "n_clusters": 0
+        },
+        "0.02": {
+          "n": 0,
+          "mean_pnl": null,
+          "t": null,
+          "n_clusters": 0
+        },
+        "0.05": {
+          "n": 0,
+          "mean_pnl": null,
+          "t": null,
+          "n_clusters": 0
+        }
+      },
+      "n_hourly_flagged_disagree": 0,
+      "n_hourly_flagged_that_were_actual_losses": 0,
+      "untestable_stations": [
+        [
+          "KATL",
+          4
+        ],
+        [
+          "KBOS",
+          4
+        ],
+        [
+          "KDEN",
+          4
+        ],
+        [
+          "KDFW",
+          4
+        ],
+        [
+          "KHOU",
+          4
+        ],
+        [
+          "KLAX",
+          4
+        ],
+        [
+          "KMIA",
+          6
+        ],
+        [
+          "KOKC",
+          4
+        ],
+        [
+          "KPHL",
+          4
+        ],
+        [
+          "KSAT",
+          4
+        ],
+        [
+          "KSEA",
+          4
+        ],
+        [
+          "KSFO",
+          4
+        ]
+      ]
+    },
+    "base1_sustain1": {
+      "n_fired": 19,
+      "fire_rate": 0.014937106918238994,
+      "fires_per_week": 1.9850746268656716,
+      "mean_exec_price": 0.7642105263157895,
+      "win_rate": 1.0,
+      "n_bad": 0,
+      "bad_tickers": [],
+      "cond_loss_rate_given_fired": 0.0,
+      "worst_case_loss_rate_wilson95": 0.1681792241182747,
+      "analytic_ev_point": 0.23103757894736845,
+      "analytic_ev_worst_case": 0.06285835482909376,
+      "clustered": {
+        "mean": 0.2310375789473684,
+        "se": 0.07246405589656324,
+        "t": 3.18830592752297,
+        "p": 0.00143109039267042,
+        "n": 19,
+        "n_clusters": 17
+      },
+      "worst_trade": {
+        "pnl": 0.0,
+        "date": "2026-05-21",
+        "ticker": "KXHIGHDEN-26MAY21-T68"
+      },
+      "gap_sensitivity": {
+        "0.0": {
+          "n": 13,
+          "mean_pnl": 0.33767030769230766,
+          "t": 3.6561727687965395,
+          "n_clusters": 11
+        },
+        "0.02": {
+          "n": 12,
+          "mean_pnl": 0.3650339166666667,
+          "t": 3.7799227981785717,
+          "n_clusters": 10
+        },
+        "0.05": {
+          "n": 9,
+          "mean_pnl": 0.4763505555555556,
+          "t": 4.1411372463171405,
+          "n_clusters": 9
+        }
+      },
+      "n_hourly_flagged_disagree": 1,
+      "n_hourly_flagged_that_were_actual_losses": 0,
+      "untestable_stations": [
+        [
+          "KMIA",
+          5
+        ]
+      ]
+    },
+    "base1_bestsustain": {
+      "n_fired": 12,
+      "fire_rate": 0.009433962264150943,
+      "fires_per_week": 1.2537313432835822,
+      "mean_exec_price": 0.6766666666666666,
+      "win_rate": 1.0,
+      "n_bad": 0,
+      "bad_tickers": [],
+      "cond_loss_rate_given_fired": 0.0,
+      "worst_case_loss_rate_wilson95": 0.24249400674145444,
+      "analytic_ev_point": 0.31520983333333336,
+      "analytic_ev_worst_case": 0.07271582659187886,
+      "clustered": {
+        "mean": 0.3152098333333333,
+        "se": 0.07822953892570353,
+        "t": 4.029294275052492,
+        "p": 5.594455038515633e-05,
+        "n": 12,
+        "n_clusters": 11
+      },
+      "worst_trade": {
+        "pnl": 0.0,
+        "date": "2026-06-14",
+        "ticker": "KXHIGHDEN-26JUN14-T69"
+      },
+      "gap_sensitivity": {
+        "0.0": {
+          "n": 9,
+          "mean_pnl": 0.42027977777777775,
+          "t": 4.223343525728094,
+          "n_clusters": 9
+        },
+        "0.02": {
+          "n": 8,
+          "mean_pnl": 0.471651375,
+          "t": 4.822699940136039,
+          "n_clusters": 8
+        },
+        "0.05": {
+          "n": 7,
+          "mean_pnl": 0.5336998571428572,
+          "t": 5.932791025047999,
+          "n_clusters": 7
+        }
+      },
+      "n_hourly_flagged_disagree": 0,
+      "n_hourly_flagged_that_were_actual_losses": 0,
+      "untestable_stations": [
+        [
+          "KMIA",
+          5
+        ]
+      ]
+    }
+  },
+  "aggressive_sleeve_margin1": {
+    "key": "1_3",
+    "stats": {
+      "n_fired": 42,
+      "fire_rate": 0.0330188679245283,
+      "fires_per_week": 4.388059701492537,
+      "mean_exec_price": 0.646190476190476,
+      "win_rate": 1.0,
+      "n_bad": 0,
+      "bad_tickers": [],
+      "cond_loss_rate_given_fired": 0.0,
+      "worst_case_loss_rate_wilson95": 0.08379879090173831,
+      "analytic_ev_point": 0.3433481904761907,
+      "analytic_ev_worst_case": 0.25954939957445233,
+      "clustered": {
+        "mean": 0.3433481904761905,
+        "se": 0.04541677609571859,
+        "t": 7.559941941994374,
+        "p": 4.04121180963557e-14,
+        "n": 42,
+        "n_clusters": 29
+      },
+      "worst_trade": {
+        "pnl": 0.0,
+        "date": "2026-05-21",
+        "ticker": "KXHIGHDEN-26MAY21-T68"
+      },
+      "gap_sensitivity": {
+        "0.0": {
+          "n": 36,
+          "mean_pnl": 0.40057288888888887,
+          "t": 9.387981582803059,
+          "n_clusters": 25
+        },
+        "0.02": {
+          "n": 35,
+          "mean_pnl": 0.4117519142857143,
+          "t": 9.681788765073517,
+          "n_clusters": 24
+        },
+        "0.05": {
+          "n": 34,
+          "mean_pnl": 0.4227648529411765,
+          "t": 10.318953805370269,
+          "n_clusters": 24
+        }
+      },
+      "n_hourly_flagged_disagree": 3,
+      "n_hourly_flagged_that_were_actual_losses": 0
+    }
+  },
+  "gap_threshold_overlay_on_best": {
+    "0.0": {
+      "n": 36,
+      "mean_pnl": 0.40057288888888887,
+      "t": 9.387981582803059,
+      "n_clusters": 25
+    },
+    "0.02": {
+      "n": 35,
+      "mean_pnl": 0.4117519142857143,
+      "t": 9.681788765073517,
+      "n_clusters": 24
+    },
+    "0.05": {
+      "n": 34,
+      "mean_pnl": 0.4227648529411765,
+      "t": 10.318953805370269,
+      "n_clusters": 24
+    }
+  },
+  "sizing": {
+    "config": "1_3",
+    "entry_price": 0.646190476190476,
+    "win_prob_point_estimate": 1.0,
+    "win_prob_worst_case_wilson95": 0.9162012090982616,
+    "full_kelly_fraction_worst_case": 0.7631528117178326,
+    "recommended_stakes": {
+      "quarter": {
+        "per_fire_bankroll_fraction": 0.15
+      },
+      "tenth": {
+        "per_fire_bankroll_fraction": 0.0763
+      }
+    },
+    "cross_city_correlation_cap": {
+      "rule": "cap TOTAL gross stake across ALL cities firing on the same LST calendar date at 15% of bankroll (split pro-rata across that day's fires) -- heat waves fire multiple cities on the same synoptic pattern, so same-day fires are treated as correlated, not independent, for gross-exposure purposes.",
+      "max_cities_fired_same_day_in_sample": 3,
+      "n_days_with_multi_city_fire": 10,
+      "daily_cap_bankroll_fraction": 0.15
+    },
+    "worked_example": "At entry price 0.646, worst-case win prob 0.916: full-Kelly stake = 0.763 of bankroll per fire. Quarter-Kelly (recommended) = 0.1500 of bankroll per fire, capped at 15% gross per LST day across all cities combined."
+  },
+  "multi_source_crosscheck": {
+    "feasible": true,
+    "source": "IEM hourly METAR archive (asos.py, report_type=3,4) -- an independently processed IEM product from the same underlying station transmissions, not a subsample of the 1-min feed; hourly cadence means it lags the 1-min feed by up to ~60min, so it is used as a real-time-safe corroboration check (hourly-max-so-far within tolerance of strike), not a primary signal.",
+    "n_fired_flagged_disagree_at_best_config": 3,
+    "n_of_those_that_were_actual_losses": 0
+  },
+  "elapsed_sec": 8.2
+}
