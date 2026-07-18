@@ -50,6 +50,24 @@ US-legal venues only: **Kalshi** (clean) + **Polymarket US / QCX** (CFTC DCM, KY
 for US** (geoblocked 2022) — our confirmed +0.121/ct edge is validated THERE, so it is proven-but-not-US-deployable until
 we confirm it PORTS to Polymarket US (QCX). Do not evade geoblocks. Primary = Kalshi-native edges; test QCX portability.
 
+## KALSHI-ONLY PIVOT (effective after S10/S11 land, per operator 2026-07-18)
+Farm + goals CONSTRAINED TO KALSHI ONLY going forward. Rationale: Polymarket Global = illegal US; Polymarket US/QCX =
+sports-only. Kalshi is the one clean, legal, full venue. CONSEQUENCE: the confirmed crypto short-vol edge (Polymarket) is
+SHELVED as non-deployable (kept as research/technique); the hunt resets to a NEW Kalshi edge. HONEST STATE: Kalshi has been
+calibrated/NULL across everything farmed (longshot, index brackets, earnings). Hard venue. Untried Kalshi-only angles below.
+
+### Kalshi-only backlog (to farm next)
+| # | Kalshi angle | why it might work / untested |
+|---|---|---|
+| K1 | Kalshi MAKER-REBATE / liquidity-incentive capture | Kalshi runs maker programs; near-riskless yield if it exists (check terms) |
+| K2 | Kalshi intra-venue LOGICAL-CONSISTENCY / nested-market arb | related Kalshi markets must be no-arb; retail may not enforce across distinct tickers |
+| K3 | Kalshi NEW-LISTING / cold-market mispricing | freshly listed Kalshi markets before MMs tighten (thin-book inefficiency) |
+| K4 | Kalshi SPORTS vs sharp book / vs QCX-Global | Kalshi now lists sports; is it mispriced vs de-vigged lines? (legal, uncorrelated) |
+| K5 | Farm GitHub Kalshi bots (ryanfrigo, Krypt-Trader, quantgalore, homerun-Kalshi) → OOS test each on Kalshi data | direct strategy transfer |
+| K6 | Kalshi settlement-timing / decided-but-unresolved capture | Kalshi's fixed close/settlement mechanics |
+| K7 | Kalshi FAVLONG revisit (favorite-longshot on Kalshi tenors) | prior program work; re-test net-of-fee on current data |
+Discipline unchanged: NET of Kalshi fees always (the recurring killer); executable prices; cluster t; multiple-testing; honest nulls.
+
 ## Confirmed stack so far
 Polymarket weekly crypto short-vol (+0.12/ct, engine) + ECON (uncorrelated, small) + biz (marginal) + bucket-arb (riskless, tiny).
 Frontier ~0.3–1%/day sound. Kalshi short-vol = NULL (calibrated) → Kalshi edges must come from S4–S6 (earnings/S&P/weather) or structural, not longshot-selling.
