@@ -1,0 +1,1582 @@
+{
+  "nyc": {
+    "city": "New York (Central Park)",
+    "iem_id": "NYC",
+    "network": "NY_ASOS",
+    "lat": 40.7667,
+    "lon": -73.9833,
+    "wu_candidates": [
+      {
+        "stationId": "KNYNEWYO982",
+        "lat": 40.76513,
+        "lon": -73.9884,
+        "distanceKm": 0.5,
+        "qcStatus": -1
+      },
+      {
+        "stationId": "KNYNEWYO1615",
+        "lat": 40.762,
+        "lon": -73.977,
+        "distanceKm": 0.75,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KNYNEWYO2008",
+        "lat": 40.761,
+        "lon": -73.991,
+        "distanceKm": 0.95,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KNYNEWYO2087",
+        "lat": 40.77641,
+        "lon": -73.98136,
+        "distanceKm": 1.06,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KNYNEWYO2109",
+        "lat": 40.778,
+        "lon": -73.985,
+        "distanceKm": 1.23,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KNYNEWYO1796",
+        "lat": 40.779,
+        "lon": -73.979,
+        "distanceKm": 1.38,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KNYNEWYO2140",
+        "lat": 40.761,
+        "lon": -73.998,
+        "distanceKm": 1.43,
+        "qcStatus": -1
+      },
+      {
+        "stationId": "KNYNEWYO1686",
+        "lat": 40.779,
+        "lon": -73.976,
+        "distanceKm": 1.46,
+        "qcStatus": -1
+      },
+      {
+        "stationId": "KNYNEWYO270",
+        "lat": 40.78184,
+        "lon": -73.9743,
+        "distanceKm": 1.81,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KNYNEWYO1596",
+        "lat": 40.7845,
+        "lon": -73.97703,
+        "distanceKm": 2.01,
+        "qcStatus": 1
+      }
+    ]
+  },
+  "chi": {
+    "city": "Chicago (Midway)",
+    "iem_id": "KMDW",
+    "network": "IL_ASOS",
+    "lat": 41.78597,
+    "lon": -87.75242,
+    "wu_candidates": [
+      {
+        "stationId": "KILCHICA37",
+        "lat": 41.77825,
+        "lon": -87.74318,
+        "distanceKm": 1.13,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KILCHICA1000",
+        "lat": 41.792,
+        "lon": -87.767,
+        "distanceKm": 1.41,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KILCHICA711",
+        "lat": 41.79501,
+        "lon": -87.76746,
+        "distanceKm": 1.63,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KILCHICA954",
+        "lat": 41.8,
+        "lon": -87.768,
+        "distanceKm": 2.05,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KILCHICA1223",
+        "lat": 41.79787,
+        "lon": -87.78198,
+        "distanceKm": 2.81,
+        "qcStatus": 0
+      },
+      {
+        "stationId": "KILCHICA1272",
+        "lat": 41.783,
+        "lon": -87.715,
+        "distanceKm": 3.09,
+        "qcStatus": -1
+      },
+      {
+        "stationId": "KILSTICK3",
+        "lat": 41.81979,
+        "lon": -87.78471,
+        "distanceKm": 4.63,
+        "qcStatus": 0
+      },
+      {
+        "stationId": "KILSTICK6",
+        "lat": 41.815,
+        "lon": -87.801,
+        "distanceKm": 5.19,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KILBRIDG5",
+        "lat": 41.768,
+        "lon": -87.813,
+        "distanceKm": 5.44,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KILBERWY5",
+        "lat": 41.82805,
+        "lon": -87.78689,
+        "distanceKm": 5.5,
+        "qcStatus": 0
+      }
+    ]
+  },
+  "dal": {
+    "city": "Dallas-Fort Worth",
+    "iem_id": "KDFW",
+    "network": "TX_ASOS",
+    "lat": 32.89683,
+    "lon": -97.038,
+    "wu_candidates": [
+      {
+        "stationId": "KTXIRVIN221",
+        "lat": 32.923,
+        "lon": -97.006,
+        "distanceKm": 4.16,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KTXEULES41",
+        "lat": 32.876,
+        "lon": -97.075,
+        "distanceKm": 4.17,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KTXEULES54",
+        "lat": 32.874,
+        "lon": -97.075,
+        "distanceKm": 4.3,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KTXEULES79",
+        "lat": 32.87393,
+        "lon": -97.07554,
+        "distanceKm": 4.34,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KTXGRAPE70",
+        "lat": 32.88202,
+        "lon": -97.08401,
+        "distanceKm": 4.61,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KTXEULES21",
+        "lat": 32.87473,
+        "lon": -97.08202,
+        "distanceKm": 4.8,
+        "qcStatus": -1
+      },
+      {
+        "stationId": "KTXIRVIN236",
+        "lat": 32.85218,
+        "lon": -97.02992,
+        "distanceKm": 5.04,
+        "qcStatus": -1
+      },
+      {
+        "stationId": "KTXEULES60",
+        "lat": 32.87614,
+        "lon": -97.08594,
+        "distanceKm": 5.04,
+        "qcStatus": -1
+      },
+      {
+        "stationId": "KTXGRAPE202",
+        "lat": 32.885,
+        "lon": -97.091,
+        "distanceKm": 5.13,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KTXGRAPE166",
+        "lat": 32.89505,
+        "lon": -97.09394,
+        "distanceKm": 5.23,
+        "qcStatus": 1
+      }
+    ]
+  },
+  "hou": {
+    "city": "Houston (Hobby)",
+    "iem_id": "KHOU",
+    "network": "TX_ASOS",
+    "lat": 29.63747,
+    "lon": -95.28245,
+    "wu_candidates": [
+      {
+        "stationId": "KTXHOUST4910",
+        "lat": 29.652,
+        "lon": -95.308,
+        "distanceKm": 3.02,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KTXHOUST3557",
+        "lat": 29.60908,
+        "lon": -95.25159,
+        "distanceKm": 4.28,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KTXSOUTH79",
+        "lat": 29.65833,
+        "lon": -95.24384,
+        "distanceKm": 4.38,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KTXHOUST4608",
+        "lat": 29.64018,
+        "lon": -95.23293,
+        "distanceKm": 4.76,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KTXSOUTH173",
+        "lat": 29.653,
+        "lon": -95.236,
+        "distanceKm": 4.79,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KTXHOUST5216",
+        "lat": 29.63269,
+        "lon": -95.33319,
+        "distanceKm": 4.97,
+        "qcStatus": -1
+      },
+      {
+        "stationId": "KTXHOUST4108",
+        "lat": 29.672,
+        "lon": -95.314,
+        "distanceKm": 4.97,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KTXPEARL187",
+        "lat": 29.591,
+        "lon": -95.276,
+        "distanceKm": 5.15,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KTXHOUST5249",
+        "lat": 29.642,
+        "lon": -95.226,
+        "distanceKm": 5.44,
+        "qcStatus": -1
+      },
+      {
+        "stationId": "KTXHOUST3277",
+        "lat": 29.68,
+        "lon": -95.311,
+        "distanceKm": 5.54,
+        "qcStatus": 1
+      }
+    ]
+  },
+  "atl": {
+    "city": "Atlanta",
+    "iem_id": "KATL",
+    "network": "GA_ASOS",
+    "lat": 33.65,
+    "lon": -84.4,
+    "wu_candidates": [
+      {
+        "stationId": "KGAHAPEV1",
+        "lat": 33.661,
+        "lon": -84.399,
+        "distanceKm": 1.23,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KGAATLAN557",
+        "lat": 33.664,
+        "lon": -84.43298,
+        "distanceKm": 3.43,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KGAFORES13",
+        "lat": 33.638,
+        "lon": -84.352,
+        "distanceKm": 4.64,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KGACONLE4",
+        "lat": 33.654,
+        "lon": -84.335,
+        "distanceKm": 6.03,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KGAATLAN972",
+        "lat": 33.717,
+        "lon": -84.415,
+        "distanceKm": 7.58,
+        "qcStatus": -1
+      },
+      {
+        "stationId": "KGAATLAN707",
+        "lat": 33.71149,
+        "lon": -84.36172,
+        "distanceKm": 7.7,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KGARIVER19",
+        "lat": 33.576,
+        "lon": -84.429,
+        "distanceKm": 8.66,
+        "qcStatus": -1
+      },
+      {
+        "stationId": "KGAATLAN378",
+        "lat": 33.68098,
+        "lon": -84.48737,
+        "distanceKm": 8.79,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KGAATLAN628",
+        "lat": 33.732,
+        "lon": -84.376,
+        "distanceKm": 9.38,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KGAPEOPL2",
+        "lat": 33.73542,
+        "lon": -84.38959,
+        "distanceKm": 9.55,
+        "qcStatus": 1
+      }
+    ]
+  },
+  "aus": {
+    "city": "Austin",
+    "iem_id": "KAUS",
+    "network": "TX_ASOS",
+    "lat": 30.1945278,
+    "lon": -97.6698889,
+    "wu_candidates": [
+      {
+        "stationId": "KTXAUSTI3939",
+        "lat": 30.18,
+        "lon": -97.686,
+        "distanceKm": 2.27,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KTXAUSTI2283",
+        "lat": 30.1684,
+        "lon": -97.69712,
+        "distanceKm": 3.94,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KTXAUSTI1864",
+        "lat": 30.229,
+        "lon": -97.704,
+        "distanceKm": 5,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KTXAUSTI4040",
+        "lat": 30.236,
+        "lon": -97.7,
+        "distanceKm": 5.39,
+        "qcStatus": -1
+      },
+      {
+        "stationId": "KTXAUSTI2523",
+        "lat": 30.24226,
+        "lon": -97.69394,
+        "distanceKm": 5.74,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KTXAUSTI2090",
+        "lat": 30.226,
+        "lon": -97.718,
+        "distanceKm": 5.76,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KTXAUSTI3746",
+        "lat": 30.161,
+        "lon": -97.716,
+        "distanceKm": 5.82,
+        "qcStatus": -1
+      },
+      {
+        "stationId": "KTXDELVA43",
+        "lat": 30.166,
+        "lon": -97.619,
+        "distanceKm": 5.87,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KTXAUSTI2929",
+        "lat": 30.163,
+        "lon": -97.72,
+        "distanceKm": 5.98,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KTXAUSTI768",
+        "lat": 30.19917,
+        "lon": -97.73282,
+        "distanceKm": 6.06,
+        "qcStatus": 1
+      }
+    ]
+  },
+  "bos": {
+    "city": "Boston (Logan)",
+    "iem_id": "KBOS",
+    "network": "MA_ASOS",
+    "lat": 42.36057,
+    "lon": -71.00973,
+    "wu_candidates": [
+      {
+        "stationId": "KMAEASTB68",
+        "lat": 42.364,
+        "lon": -71.03,
+        "distanceKm": 1.68,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KMAWINTH63",
+        "lat": 42.37,
+        "lon": -70.99,
+        "distanceKm": 1.92,
+        "qcStatus": -1
+      },
+      {
+        "stationId": "KMAWINTH27",
+        "lat": 42.372,
+        "lon": -70.99,
+        "distanceKm": 2.05,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KMABOSTO198",
+        "lat": 42.36625,
+        "lon": -71.03446,
+        "distanceKm": 2.09,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KMABOSTO297",
+        "lat": 42.3668,
+        "lon": -71.03524,
+        "distanceKm": 2.17,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KMAEASTB53",
+        "lat": 42.3686,
+        "lon": -71.03643,
+        "distanceKm": 2.33,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KMAWINTH38",
+        "lat": 42.371,
+        "lon": -70.985,
+        "distanceKm": 2.34,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KMAEASTB73",
+        "lat": 42.37,
+        "lon": -71.036,
+        "distanceKm": 2.36,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KMAEASTB78",
+        "lat": 42.371,
+        "lon": -71.037,
+        "distanceKm": 2.48,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KMAWINTH20",
+        "lat": 42.383,
+        "lon": -70.99,
+        "distanceKm": 2.95,
+        "qcStatus": 1
+      }
+    ]
+  },
+  "dca": {
+    "city": "Washington DC (Reagan)",
+    "iem_id": "KDCA",
+    "network": "DC_ASOS",
+    "lat": 38.8472,
+    "lon": -77.03455,
+    "wu_candidates": [
+      {
+        "stationId": "KVAARLIN288",
+        "lat": 38.847,
+        "lon": -77.057,
+        "distanceKm": 1.91,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KVAALEXA437",
+        "lat": 38.836,
+        "lon": -77.053,
+        "distanceKm": 1.98,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KVAALEXA403",
+        "lat": 38.83953,
+        "lon": -77.05639,
+        "distanceKm": 2.03,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KVAARLIN374",
+        "lat": 38.852,
+        "lon": -77.059,
+        "distanceKm": 2.15,
+        "qcStatus": -1
+      },
+      {
+        "stationId": "KVAARLIN170",
+        "lat": 38.85209,
+        "lon": -77.06078,
+        "distanceKm": 2.3,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KVAARLIN325",
+        "lat": 38.853,
+        "lon": -77.064,
+        "distanceKm": 2.6,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KVAALEXA359",
+        "lat": 38.824,
+        "lon": -77.049,
+        "distanceKm": 2.83,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KVAALEXA538",
+        "lat": 38.82701,
+        "lon": -77.05549,
+        "distanceKm": 2.84,
+        "qcStatus": -1
+      },
+      {
+        "stationId": "KVAARLIN384",
+        "lat": 38.853,
+        "lon": -77.067,
+        "distanceKm": 2.85,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KVAALEXA283",
+        "lat": 38.83,
+        "lon": -77.061,
+        "distanceKm": 2.94,
+        "qcStatus": 1
+      }
+    ]
+  },
+  "den": {
+    "city": "Denver",
+    "iem_id": "KDEN",
+    "network": "CO_ASOS",
+    "lat": 39.86262159,
+    "lon": -104.70093689,
+    "wu_candidates": [
+      {
+        "stationId": "KCOCOMME103",
+        "lat": 39.89317,
+        "lon": -104.75498,
+        "distanceKm": 5.7,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KCOCOMME85",
+        "lat": 39.88,
+        "lon": -104.776,
+        "distanceKm": 6.67,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KCOAUROR879",
+        "lat": 39.81522,
+        "lon": -104.75143,
+        "distanceKm": 6.84,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KCOAUROR983",
+        "lat": 39.80963,
+        "lon": -104.74157,
+        "distanceKm": 6.87,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KCOAUROR870",
+        "lat": 39.809,
+        "lon": -104.741,
+        "distanceKm": 6.91,
+        "qcStatus": 0
+      },
+      {
+        "stationId": "KCOCOMME107",
+        "lat": 39.87,
+        "lon": -104.783,
+        "distanceKm": 7.04,
+        "qcStatus": -1
+      },
+      {
+        "stationId": "KCOCOMME31",
+        "lat": 39.871,
+        "lon": -104.7843,
+        "distanceKm": 7.16,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KCOCOMME25",
+        "lat": 39.88022,
+        "lon": -104.78407,
+        "distanceKm": 7.34,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KCOCOMME60",
+        "lat": 39.865,
+        "lon": -104.787,
+        "distanceKm": 7.34,
+        "qcStatus": -1
+      },
+      {
+        "stationId": "KCOCOMME17",
+        "lat": 39.88547,
+        "lon": -104.78874,
+        "distanceKm": 7.89,
+        "qcStatus": 0
+      }
+    ]
+  },
+  "las": {
+    "city": "Las Vegas",
+    "iem_id": "KLAS",
+    "network": "NV_ASOS",
+    "lat": 36.08006,
+    "lon": -115.15225,
+    "wu_candidates": [
+      {
+        "stationId": "KNVLASVE1096",
+        "lat": 36.08571,
+        "lon": -115.12793,
+        "distanceKm": 2.25,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KNVLASVE1052",
+        "lat": 36.074,
+        "lon": -115.185,
+        "distanceKm": 3.04,
+        "qcStatus": 0
+      },
+      {
+        "stationId": "KNVLASVE1739",
+        "lat": 36.052,
+        "lon": -115.147,
+        "distanceKm": 3.15,
+        "qcStatus": -1
+      },
+      {
+        "stationId": "KNVLASVE1632",
+        "lat": 36.10915,
+        "lon": -115.1626,
+        "distanceKm": 3.38,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KNVLASVE554",
+        "lat": 36.0909,
+        "lon": -115.11278,
+        "distanceKm": 3.73,
+        "qcStatus": 0
+      },
+      {
+        "stationId": "KNVLASVE1039",
+        "lat": 36.107,
+        "lon": -115.125,
+        "distanceKm": 3.86,
+        "qcStatus": -1
+      },
+      {
+        "stationId": "KNVLASVE1691",
+        "lat": 36.04643,
+        "lon": -115.14106,
+        "distanceKm": 3.86,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KNVLASVE715",
+        "lat": 36.046,
+        "lon": -115.141,
+        "distanceKm": 3.91,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KNVLASVE1129",
+        "lat": 36.053,
+        "lon": -115.124,
+        "distanceKm": 3.92,
+        "qcStatus": -1
+      },
+      {
+        "stationId": "KNVLASVE1069",
+        "lat": 36.044,
+        "lon": -115.158,
+        "distanceKm": 4.04,
+        "qcStatus": 0
+      }
+    ]
+  },
+  "lax": {
+    "city": "Los Angeles",
+    "iem_id": "KLAX",
+    "network": "CA_ASOS",
+    "lat": 33.93816,
+    "lon": -118.38653,
+    "wu_candidates": [
+      {
+        "stationId": "KCAELSEG28",
+        "lat": 33.92755,
+        "lon": -118.40396,
+        "distanceKm": 1.95,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KCALOSAN958",
+        "lat": 33.959,
+        "lon": -118.401,
+        "distanceKm": 2.67,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KCALOSAN961",
+        "lat": 33.962,
+        "lon": -118.393,
+        "distanceKm": 2.73,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KCALOSAN1102",
+        "lat": 33.964,
+        "lon": -118.388,
+        "distanceKm": 2.89,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KCAELSEG23",
+        "lat": 33.925,
+        "lon": -118.416,
+        "distanceKm": 3.04,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KCAELSEG35",
+        "lat": 33.93,
+        "lon": -118.419,
+        "distanceKm": 3.08,
+        "qcStatus": -1
+      },
+      {
+        "stationId": "KCAHAWTH17",
+        "lat": 33.915,
+        "lon": -118.368,
+        "distanceKm": 3.1,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KCALOSAN698",
+        "lat": 33.96466,
+        "lon": -118.3971,
+        "distanceKm": 3.11,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KCAELSEG31",
+        "lat": 33.93008,
+        "lon": -118.42287,
+        "distanceKm": 3.42,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KCALOSAN1317",
+        "lat": 33.965,
+        "lon": -118.407,
+        "distanceKm": 3.52,
+        "qcStatus": -1
+      }
+    ]
+  },
+  "mia": {
+    "city": "Miami",
+    "iem_id": "KMIA",
+    "network": "FL_ASOS",
+    "lat": 25.82,
+    "lon": -80.2,
+    "wu_candidates": [
+      {
+        "stationId": "KFLMIAMI1006",
+        "lat": 25.827,
+        "lon": -80.19,
+        "distanceKm": 1.27,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KFLMIAMI1102",
+        "lat": 25.823,
+        "lon": -80.183,
+        "distanceKm": 1.73,
+        "qcStatus": -1
+      },
+      {
+        "stationId": "KFLMIAMI1024",
+        "lat": 25.802,
+        "lon": -80.213,
+        "distanceKm": 2.39,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KFLMIAMI1118",
+        "lat": 25.842,
+        "lon": -80.183,
+        "distanceKm": 2.98,
+        "qcStatus": -1
+      },
+      {
+        "stationId": "KFLMIAMI1081",
+        "lat": 25.842,
+        "lon": -80.179,
+        "distanceKm": 3.23,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KFLMIAMI932",
+        "lat": 25.848,
+        "lon": -80.216,
+        "distanceKm": 3.5,
+        "qcStatus": -1
+      },
+      {
+        "stationId": "KFLMIAMI208",
+        "lat": 25.78781,
+        "lon": -80.21597,
+        "distanceKm": 3.92,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KFLELPOR2",
+        "lat": 25.858,
+        "lon": -80.201,
+        "distanceKm": 4.23,
+        "qcStatus": -1
+      },
+      {
+        "stationId": "KFLMIAMI1032",
+        "lat": 25.859,
+        "lon": -80.196,
+        "distanceKm": 4.36,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KFLMIAMI407",
+        "lat": 25.77448,
+        "lon": -80.194,
+        "distanceKm": 5.1,
+        "qcStatus": 1
+      }
+    ]
+  },
+  "msp": {
+    "city": "Minneapolis",
+    "iem_id": "KMSP",
+    "network": "MN_ASOS",
+    "lat": 44.88537,
+    "lon": -93.23131,
+    "wu_candidates": [
+      {
+        "stationId": "KMNMINNE758",
+        "lat": 44.9,
+        "lon": -93.237,
+        "distanceKm": 1.73,
+        "qcStatus": -1
+      },
+      {
+        "stationId": "KMNRICHF9",
+        "lat": 44.881,
+        "lon": -93.253,
+        "distanceKm": 1.79,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KMNMINNE908",
+        "lat": 44.902,
+        "lon": -93.226,
+        "distanceKm": 1.93,
+        "qcStatus": -1
+      },
+      {
+        "stationId": "KMNMINNE838",
+        "lat": 44.9,
+        "lon": -93.246,
+        "distanceKm": 2.04,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KMNRICHF24",
+        "lat": 44.875,
+        "lon": -93.254,
+        "distanceKm": 2.13,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KMNRICHF21",
+        "lat": 44.886,
+        "lon": -93.26,
+        "distanceKm": 2.29,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KMNRICHF23",
+        "lat": 44.866,
+        "lon": -93.253,
+        "distanceKm": 2.73,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KMNRICHF15",
+        "lat": 44.88,
+        "lon": -93.265,
+        "distanceKm": 2.74,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KMNMINNE888",
+        "lat": 44.894,
+        "lon": -93.264,
+        "distanceKm": 2.79,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KMNRICHF8",
+        "lat": 44.87,
+        "lon": -93.261,
+        "distanceKm": 2.89,
+        "qcStatus": 1
+      }
+    ]
+  },
+  "msy": {
+    "city": "New Orleans",
+    "iem_id": "KMSY",
+    "network": "LA_ASOS",
+    "lat": 29.9933,
+    "lon": -90.2511,
+    "wu_candidates": [
+      {
+        "stationId": "KLAKENNE70",
+        "lat": 29.999,
+        "lon": -90.237,
+        "distanceKm": 1.5,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KLAKENNE117",
+        "lat": 29.972,
+        "lon": -90.244,
+        "distanceKm": 2.43,
+        "qcStatus": -1
+      },
+      {
+        "stationId": "KLAMETAI272",
+        "lat": 29.991,
+        "lon": -90.223,
+        "distanceKm": 2.71,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KLAKENNE65",
+        "lat": 30.01597,
+        "lon": -90.23574,
+        "distanceKm": 2.95,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KLAKENNE85",
+        "lat": 30.02,
+        "lon": -90.257,
+        "distanceKm": 3.06,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KLARIVER20",
+        "lat": 29.972,
+        "lon": -90.227,
+        "distanceKm": 3.29,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KLARIVER18",
+        "lat": 29.969,
+        "lon": -90.231,
+        "distanceKm": 3.29,
+        "qcStatus": -1
+      },
+      {
+        "stationId": "KLAMETAI263",
+        "lat": 30.001,
+        "lon": -90.216,
+        "distanceKm": 3.49,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KLAKENNE78",
+        "lat": 30.015,
+        "lon": -90.277,
+        "distanceKm": 3.5,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KLARIVER2",
+        "lat": 29.97213,
+        "lon": -90.22331,
+        "distanceKm": 3.54,
+        "qcStatus": 1
+      }
+    ]
+  },
+  "okc": {
+    "city": "Oklahoma City",
+    "iem_id": "KOKC",
+    "network": "OK_ASOS",
+    "lat": 35.4,
+    "lon": -97.6,
+    "wu_candidates": [
+      {
+        "stationId": "KOKOKLAH4610",
+        "lat": 35.38576,
+        "lon": -97.56673,
+        "distanceKm": 3.41,
+        "qcStatus": -1
+      },
+      {
+        "stationId": "KOKOKLAH4604",
+        "lat": 35.374,
+        "lon": -97.626,
+        "distanceKm": 3.73,
+        "qcStatus": -1
+      },
+      {
+        "stationId": "KOKOKLAH870",
+        "lat": 35.37364,
+        "lon": -97.5732,
+        "distanceKm": 3.81,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KOKOKLAH4599",
+        "lat": 35.416,
+        "lon": -97.558,
+        "distanceKm": 4.2,
+        "qcStatus": -1
+      },
+      {
+        "stationId": "KOKOKLAH727",
+        "lat": 35.369,
+        "lon": -97.573,
+        "distanceKm": 4.23,
+        "qcStatus": -1
+      },
+      {
+        "stationId": "KOKOKLAH622",
+        "lat": 35.38099,
+        "lon": -97.64191,
+        "distanceKm": 4.35,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KOKOKLAH656",
+        "lat": 35.42,
+        "lon": -97.642,
+        "distanceKm": 4.41,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KOKOKLAH534",
+        "lat": 35.372,
+        "lon": -97.636,
+        "distanceKm": 4.51,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KOKOKLAH1131",
+        "lat": 35.37,
+        "lon": -97.557,
+        "distanceKm": 5.13,
+        "qcStatus": -1
+      },
+      {
+        "stationId": "KOKOKLAH321",
+        "lat": 35.37161,
+        "lon": -97.55461,
+        "distanceKm": 5.19,
+        "qcStatus": 1
+      }
+    ]
+  },
+  "phl": {
+    "city": "Philadelphia",
+    "iem_id": "KPHL",
+    "network": "PA_ASOS",
+    "lat": 39.86833,
+    "lon": -75.23111,
+    "wu_candidates": [
+      {
+        "stationId": "KNJPAULS3",
+        "lat": 39.84506,
+        "lon": -75.24183,
+        "distanceKm": 2.71,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KNJWESTD12",
+        "lat": 39.848,
+        "lon": -75.2,
+        "distanceKm": 3.46,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KNJWESTD8",
+        "lat": 39.847,
+        "lon": -75.2,
+        "distanceKm": 3.53,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KNJNATIO5",
+        "lat": 39.87,
+        "lon": -75.187,
+        "distanceKm": 3.76,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KNJNATIO2",
+        "lat": 39.86519,
+        "lon": -75.17473,
+        "distanceKm": 4.81,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KNJWESTD11",
+        "lat": 39.833,
+        "lon": -75.184,
+        "distanceKm": 5.59,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KNJWESTD7",
+        "lat": 39.86283,
+        "lon": -75.15979,
+        "distanceKm": 6.1,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KPAPROSP26",
+        "lat": 39.878,
+        "lon": -75.302,
+        "distanceKm": 6.16,
+        "qcStatus": 0
+      },
+      {
+        "stationId": "KNJWESTD15",
+        "lat": 39.831,
+        "lon": -75.177,
+        "distanceKm": 6.18,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KNJWOODB87",
+        "lat": 39.844,
+        "lon": -75.165,
+        "distanceKm": 6.23,
+        "qcStatus": -1
+      }
+    ]
+  },
+  "phx": {
+    "city": "Phoenix",
+    "iem_id": "KPHX",
+    "network": "AZ_ASOS",
+    "lat": 33.43,
+    "lon": -112.0,
+    "wu_candidates": [
+      {
+        "stationId": "KAZPHOEN2262",
+        "lat": 33.404,
+        "lon": -112.015,
+        "distanceKm": 3.21,
+        "qcStatus": -1
+      },
+      {
+        "stationId": "KAZPHOEN2060",
+        "lat": 33.399,
+        "lon": -111.986,
+        "distanceKm": 3.68,
+        "qcStatus": 0
+      },
+      {
+        "stationId": "KAZPHOEN406",
+        "lat": 33.45786,
+        "lon": -111.97028,
+        "distanceKm": 4.15,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KAZPHOEN1422",
+        "lat": 33.389,
+        "lon": -111.994,
+        "distanceKm": 4.59,
+        "qcStatus": 0
+      },
+      {
+        "stationId": "KAZPHOEN1240",
+        "lat": 33.399,
+        "lon": -112.033,
+        "distanceKm": 4.61,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KAZTEMPE84",
+        "lat": 33.43499,
+        "lon": -111.94875,
+        "distanceKm": 4.79,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KAZTEMPE208",
+        "lat": 33.42429,
+        "lon": -111.94564,
+        "distanceKm": 5.08,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KAZTEMPE306",
+        "lat": 33.39,
+        "lon": -111.972,
+        "distanceKm": 5.15,
+        "qcStatus": -1
+      },
+      {
+        "stationId": "KAZPHOEN5617",
+        "lat": 33.467,
+        "lon": -112.034,
+        "distanceKm": 5.18,
+        "qcStatus": -1
+      },
+      {
+        "stationId": "KAZPHOEN2091",
+        "lat": 33.388,
+        "lon": -112.028,
+        "distanceKm": 5.34,
+        "qcStatus": 1
+      }
+    ]
+  },
+  "sat": {
+    "city": "San Antonio",
+    "iem_id": "KSAT",
+    "network": "TX_ASOS",
+    "lat": 29.53369,
+    "lon": -98.46978,
+    "wu_candidates": [
+      {
+        "stationId": "KTXSANAN1697",
+        "lat": 29.539,
+        "lon": -98.495,
+        "distanceKm": 2.48,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KTXSANAN3451",
+        "lat": 29.521,
+        "lon": -98.446,
+        "distanceKm": 2.74,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KTXSANAN3506",
+        "lat": 29.514,
+        "lon": -98.452,
+        "distanceKm": 2.82,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KTXSANAN1758",
+        "lat": 29.514,
+        "lon": -98.491,
+        "distanceKm": 3.01,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KTXSANAN3210",
+        "lat": 29.561,
+        "lon": -98.467,
+        "distanceKm": 3.02,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KTXSANAN1287",
+        "lat": 29.542,
+        "lon": -98.5,
+        "distanceKm": 3.04,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KTXSANAN2913",
+        "lat": 29.562,
+        "lon": -98.465,
+        "distanceKm": 3.15,
+        "qcStatus": -1
+      },
+      {
+        "stationId": "KTXSANAN2509",
+        "lat": 29.51,
+        "lon": -98.452,
+        "distanceKm": 3.19,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KTXSANAN2966",
+        "lat": 29.564,
+        "lon": -98.47,
+        "distanceKm": 3.34,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KTXSANAN2626",
+        "lat": 29.532,
+        "lon": -98.435,
+        "distanceKm": 3.39,
+        "qcStatus": 1
+      }
+    ]
+  },
+  "sea": {
+    "city": "Seattle-Tacoma",
+    "iem_id": "KSEA",
+    "network": "WA_ASOS",
+    "lat": 47.44469,
+    "lon": -122.31437,
+    "wu_candidates": [
+      {
+        "stationId": "KWABURIE59",
+        "lat": 47.454,
+        "lon": -122.333,
+        "distanceKm": 1.74,
+        "qcStatus": -1
+      },
+      {
+        "stationId": "KWANORMA24",
+        "lat": 47.448,
+        "lon": -122.339,
+        "distanceKm": 1.91,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KWANORMA3",
+        "lat": 47.43612,
+        "lon": -122.33921,
+        "distanceKm": 2.14,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KWANORMA27",
+        "lat": 47.432,
+        "lon": -122.336,
+        "distanceKm": 2.2,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KWANORMA9",
+        "lat": 47.432,
+        "lon": -122.336,
+        "distanceKm": 2.2,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KWASEATT2476",
+        "lat": 47.46029,
+        "lon": -122.29511,
+        "distanceKm": 2.22,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KWADESMO8",
+        "lat": 47.42585,
+        "lon": -122.32542,
+        "distanceKm": 2.3,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KWASEATT2470",
+        "lat": 47.46066,
+        "lon": -122.29408,
+        "distanceKm": 2.3,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KWASEATT4",
+        "lat": 47.42631,
+        "lon": -122.3295,
+        "distanceKm": 2.38,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KWABURIE58",
+        "lat": 47.453,
+        "lon": -122.345,
+        "distanceKm": 2.5,
+        "qcStatus": -1
+      }
+    ]
+  },
+  "sfo": {
+    "city": "San Francisco",
+    "iem_id": "KSFO",
+    "network": "CA_ASOS",
+    "lat": 37.61897,
+    "lon": -122.37489,
+    "wu_candidates": [
+      {
+        "stationId": "KCAMILLB8",
+        "lat": 37.60031,
+        "lon": -122.39199,
+        "distanceKm": 2.56,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KCASANBR92",
+        "lat": 37.617,
+        "lon": -122.405,
+        "distanceKm": 2.65,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KCASANBR107",
+        "lat": 37.619,
+        "lon": -122.408,
+        "distanceKm": 2.91,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KCAMILLB11",
+        "lat": 37.59898,
+        "lon": -122.40011,
+        "distanceKm": 3.14,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KCASANBR16",
+        "lat": 37.62116,
+        "lon": -122.4131,
+        "distanceKm": 3.36,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KCAMILLB13",
+        "lat": 37.591,
+        "lon": -122.39,
+        "distanceKm": 3.38,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KCASANBR40",
+        "lat": 37.61242,
+        "lon": -122.41423,
+        "distanceKm": 3.53,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KCABURLI61",
+        "lat": 37.587,
+        "lon": -122.37,
+        "distanceKm": 3.59,
+        "qcStatus": -1
+      },
+      {
+        "stationId": "KCABURLI77",
+        "lat": 37.587,
+        "lon": -122.381,
+        "distanceKm": 3.6,
+        "qcStatus": 1
+      },
+      {
+        "stationId": "KCASANBR104",
+        "lat": 37.61441,
+        "lon": -122.41603,
+        "distanceKm": 3.65,
+        "qcStatus": 1
+      }
+    ]
+  }
+}

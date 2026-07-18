@@ -1,0 +1,26 @@
+{
+  "nyc": {
+    "iem_id": "NYC",
+    "wu_id": "KNYNEWYO1615",
+    "dist_km": 0.75,
+    "city": "New York (Central Park)"
+  },
+  "chi": {
+    "iem_id": "KMDW",
+    "wu_id": "KILCHICA37",
+    "dist_km": 1.13,
+    "city": "Chicago (Midway)"
+  },
+  "dal": {
+    "iem_id": "KDFW",
+    "wu_id": "KTXIRVIN221",
+    "dist_km": 4.16,
+    "city": "Dallas-Fort Worth"
+  },
+  "hou": {
+    "iem_id": "KHOU",
+    "wu_id": "KTXHOUST4910",
+    "dist_km": 3.02,
+    "city": "Houston (Hobby)"
+  }
+}

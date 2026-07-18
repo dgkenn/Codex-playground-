@@ -1,0 +1,893 @@
+{
+  "generated": "2026-07-18T17:54:53.985033Z",
+  "methodology": {
+    "official_ground_truth": "IEM asos1min (1-minute ASOS), free/public/no key",
+    "fast_sensor_tested": "Weather Underground PWS, via api.weather.com using a publicly-shared frontend key (not a private/owned-station credential)",
+    "deep_test_window": "2026-07-04 to 2026-07-17 (14 days)",
+    "deep_test_cities": [
+      "nyc",
+      "chi",
+      "dal",
+      "hou"
+    ]
+  },
+  "wu_cadence_scan_all_20_cities": {
+    "n_stations_checked": 80,
+    "n_with_data": 77,
+    "median_cadence_s": 300.0,
+    "min_cadence_s": 296.0,
+    "max_cadence_s": 900.0,
+    "n_faster_than_60s": 0,
+    "n_faster_than_120s": 0,
+    "n_at_or_near_300s": 69
+  },
+  "per_city_enumeration": {
+    "nyc": {
+      "city": "New York (Central Park)",
+      "official_station_iem_id": "NYC",
+      "official_icao": "KNYC",
+      "n_wu_pws_within_10km": 10,
+      "best_wu_candidate": {
+        "stationId": "KNYNEWYO1615",
+        "lat": 40.762,
+        "lon": -73.977,
+        "distanceKm": 0.75,
+        "qcStatus": 1,
+        "n_obs_1day": 163,
+        "median_cadence_s": 300.0,
+        "error": null
+      },
+      "deep_tested": true
+    },
+    "chi": {
+      "city": "Chicago (Midway)",
+      "official_station_iem_id": "MDW",
+      "official_icao": "KMDW",
+      "n_wu_pws_within_10km": 10,
+      "best_wu_candidate": {
+        "stationId": "KILCHICA37",
+        "lat": 41.77825,
+        "lon": -87.74318,
+        "distanceKm": 1.13,
+        "qcStatus": 1,
+        "n_obs_1day": 151,
+        "median_cadence_s": 300.0,
+        "error": null
+      },
+      "deep_tested": true
+    },
+    "dal": {
+      "city": "Dallas-Fort Worth",
+      "official_station_iem_id": "DFW",
+      "official_icao": "KDFW",
+      "n_wu_pws_within_10km": 10,
+      "best_wu_candidate": {
+        "stationId": "KTXIRVIN221",
+        "lat": 32.923,
+        "lon": -97.006,
+        "distanceKm": 4.16,
+        "qcStatus": 1,
+        "n_obs_1day": 133,
+        "median_cadence_s": 305.0,
+        "error": null
+      },
+      "deep_tested": true
+    },
+    "hou": {
+      "city": "Houston (Hobby)",
+      "official_station_iem_id": "HOU",
+      "official_icao": "KHOU",
+      "n_wu_pws_within_10km": 10,
+      "best_wu_candidate": {
+        "stationId": "KTXHOUST4910",
+        "lat": 29.652,
+        "lon": -95.308,
+        "distanceKm": 3.02,
+        "qcStatus": 1,
+        "n_obs_1day": 151,
+        "median_cadence_s": 300.0,
+        "error": null
+      },
+      "deep_tested": true
+    },
+    "atl": {
+      "city": "Atlanta",
+      "official_station_iem_id": "ATL",
+      "official_icao": "KATL",
+      "n_wu_pws_within_10km": 10,
+      "best_wu_candidate": {
+        "stationId": "KGAHAPEV1",
+        "lat": 33.661,
+        "lon": -84.399,
+        "distanceKm": 1.23,
+        "qcStatus": 1,
+        "n_obs_1day": 163,
+        "median_cadence_s": 300.0,
+        "error": null
+      },
+      "deep_tested": false
+    },
+    "aus": {
+      "city": "Austin",
+      "official_station_iem_id": "AUS",
+      "official_icao": "KAUS",
+      "n_wu_pws_within_10km": 10,
+      "best_wu_candidate": {
+        "stationId": "KTXAUSTI3939",
+        "lat": 30.18,
+        "lon": -97.686,
+        "distanceKm": 2.27,
+        "qcStatus": 1,
+        "n_obs_1day": 151,
+        "median_cadence_s": 298.0,
+        "error": null
+      },
+      "deep_tested": false
+    },
+    "bos": {
+      "city": "Boston (Logan)",
+      "official_station_iem_id": "BOS",
+      "official_icao": "KBOS",
+      "n_wu_pws_within_10km": 10,
+      "best_wu_candidate": {
+        "stationId": "KMAEASTB68",
+        "lat": 42.364,
+        "lon": -71.03,
+        "distanceKm": 1.68,
+        "qcStatus": 1,
+        "n_obs_1day": 163,
+        "median_cadence_s": 306.0,
+        "error": null
+      },
+      "deep_tested": false
+    },
+    "dca": {
+      "city": "Washington DC (Reagan)",
+      "official_station_iem_id": "DCA",
+      "official_icao": "KDCA",
+      "n_wu_pws_within_10km": 10,
+      "best_wu_candidate": {
+        "stationId": "KVAARLIN288",
+        "lat": 38.847,
+        "lon": -77.057,
+        "distanceKm": 1.91,
+        "qcStatus": 1,
+        "n_obs_1day": 162,
+        "median_cadence_s": 300,
+        "error": null
+      },
+      "deep_tested": false
+    },
+    "den": {
+      "city": "Denver",
+      "official_station_iem_id": "DEN",
+      "official_icao": "KDEN",
+      "n_wu_pws_within_10km": 10,
+      "best_wu_candidate": {
+        "stationId": "KCOCOMME103",
+        "lat": 39.89317,
+        "lon": -104.75498,
+        "distanceKm": 5.7,
+        "qcStatus": 1,
+        "n_obs_1day": 139,
+        "median_cadence_s": 305.0,
+        "error": null
+      },
+      "deep_tested": false
+    },
+    "las": {
+      "city": "Las Vegas",
+      "official_station_iem_id": "LAS",
+      "official_icao": "KLAS",
+      "n_wu_pws_within_10km": 10,
+      "best_wu_candidate": {
+        "stationId": "KNVLASVE1096",
+        "lat": 36.08571,
+        "lon": -115.12793,
+        "distanceKm": 2.25,
+        "qcStatus": 1,
+        "n_obs_1day": 127,
+        "median_cadence_s": 300.0,
+        "error": null
+      },
+      "deep_tested": false
+    },
+    "lax": {
+      "city": "Los Angeles",
+      "official_station_iem_id": "LAX",
+      "official_icao": "KLAX",
+      "n_wu_pws_within_10km": 10,
+      "best_wu_candidate": {
+        "stationId": "KCAELSEG28",
+        "lat": 33.92755,
+        "lon": -118.40396,
+        "distanceKm": 1.95,
+        "qcStatus": 1,
+        "n_obs_1day": 127,
+        "median_cadence_s": 304.0,
+        "error": null
+      },
+      "deep_tested": false
+    },
+    "mia": {
+      "city": "Miami",
+      "official_station_iem_id": "MIA",
+      "official_icao": "KMIA",
+      "n_wu_pws_within_10km": 10,
+      "best_wu_candidate": {
+        "stationId": "KFLMIAMI1006",
+        "lat": 25.827,
+        "lon": -80.19,
+        "distanceKm": 1.27,
+        "qcStatus": 1,
+        "n_obs_1day": 163,
+        "median_cadence_s": 304.0,
+        "error": null
+      },
+      "deep_tested": false
+    },
+    "msp": {
+      "city": "Minneapolis",
+      "official_station_iem_id": "MSP",
+      "official_icao": "KMSP",
+      "n_wu_pws_within_10km": 10,
+      "best_wu_candidate": {
+        "stationId": "KMNRICHF9",
+        "lat": 44.881,
+        "lon": -93.253,
+        "distanceKm": 1.79,
+        "qcStatus": 1,
+        "n_obs_1day": 151,
+        "median_cadence_s": 304.0,
+        "error": null
+      },
+      "deep_tested": false
+    },
+    "msy": {
+      "city": "New Orleans",
+      "official_station_iem_id": "MSY",
+      "official_icao": "KMSY",
+      "n_wu_pws_within_10km": 10,
+      "best_wu_candidate": {
+        "stationId": "KLAKENNE70",
+        "lat": 29.999,
+        "lon": -90.237,
+        "distanceKm": 1.5,
+        "qcStatus": 1,
+        "n_obs_1day": 151,
+        "median_cadence_s": 300.0,
+        "error": null
+      },
+      "deep_tested": false
+    },
+    "okc": {
+      "city": "Oklahoma City",
+      "official_station_iem_id": "OKC",
+      "official_icao": "KOKC",
+      "n_wu_pws_within_10km": 10,
+      "best_wu_candidate": {
+        "stationId": "KOKOKLAH870",
+        "lat": 35.37364,
+        "lon": -97.5732,
+        "distanceKm": 3.81,
+        "qcStatus": 1,
+        "n_obs_1day": 151,
+        "median_cadence_s": 300.0,
+        "error": null
+      },
+      "deep_tested": false
+    },
+    "phl": {
+      "city": "Philadelphia",
+      "official_station_iem_id": "PHL",
+      "official_icao": "KPHL",
+      "n_wu_pws_within_10km": 10,
+      "best_wu_candidate": {
+        "stationId": "KNJPAULS3",
+        "lat": 39.84506,
+        "lon": -75.24183,
+        "distanceKm": 2.71,
+        "qcStatus": 1,
+        "n_obs_1day": 163,
+        "median_cadence_s": 300.0,
+        "error": null
+      },
+      "deep_tested": false
+    },
+    "phx": {
+      "city": "Phoenix",
+      "official_station_iem_id": "PHX",
+      "official_icao": "KPHX",
+      "n_wu_pws_within_10km": 10,
+      "best_wu_candidate": {
+        "stationId": "KAZPHOEN2262",
+        "lat": 33.404,
+        "lon": -112.015,
+        "distanceKm": 3.21,
+        "qcStatus": -1,
+        "n_obs_1day": 127,
+        "median_cadence_s": 300.0,
+        "error": null
+      },
+      "deep_tested": false
+    },
+    "sat": {
+      "city": "San Antonio",
+      "official_station_iem_id": "SAT",
+      "official_icao": "KSAT",
+      "n_wu_pws_within_10km": 10,
+      "best_wu_candidate": {
+        "stationId": "KTXSANAN1697",
+        "lat": 29.539,
+        "lon": -98.495,
+        "distanceKm": 2.48,
+        "qcStatus": 1,
+        "n_obs_1day": 50,
+        "median_cadence_s": 900,
+        "error": null
+      },
+      "deep_tested": false
+    },
+    "sea": {
+      "city": "Seattle-Tacoma",
+      "official_station_iem_id": "SEA",
+      "official_icao": "KSEA",
+      "n_wu_pws_within_10km": 10,
+      "best_wu_candidate": {
+        "stationId": "KWANORMA24",
+        "lat": 47.448,
+        "lon": -122.339,
+        "distanceKm": 1.91,
+        "qcStatus": 1,
+        "n_obs_1day": 127,
+        "median_cadence_s": 304.0,
+        "error": null
+      },
+      "deep_tested": false
+    },
+    "sfo": {
+      "city": "San Francisco",
+      "official_station_iem_id": "SFO",
+      "official_icao": "KSFO",
+      "n_wu_pws_within_10km": 10,
+      "best_wu_candidate": {
+        "stationId": "KCAMILLB8",
+        "lat": 37.60031,
+        "lon": -122.39199,
+        "distanceKm": 2.56,
+        "qcStatus": 1,
+        "n_obs_1day": 127,
+        "median_cadence_s": 300.0,
+        "error": null
+      },
+      "deep_tested": false
+    }
+  },
+  "deep_backtest_results": {
+    "nyc": {
+      "city": "New York (Central Park)",
+      "wu_id": "KNYNEWYO1615",
+      "iem_id": "NYC",
+      "dist_km": 0.75,
+      "n_official_1min_pts": 14951,
+      "n_wu_pts": 4031,
+      "n_matched_pairs": 2987,
+      "wu_cadence_s_median": 300,
+      "bias_mean_F": 3.01606963508537,
+      "bias_std_F": 1.5817451954237236,
+      "bias_median_F": 3.0,
+      "pct_within_0_2F": 4.385671242048878,
+      "pct_within_0_3F": 4.385671242048878,
+      "pct_within_0_5F": 4.385671242048878,
+      "pct_within_1_0F": 15.701372614663542,
+      "n_days": 13,
+      "daily_max_rows": [
+        {
+          "day": "2026-07-04",
+          "o_max": 95.0,
+          "w_max": 96.0,
+          "max_diff": 1.0
+        },
+        {
+          "day": "2026-07-05",
+          "o_max": 81.0,
+          "w_max": 91.0,
+          "max_diff": 10.0
+        },
+        {
+          "day": "2026-07-06",
+          "o_max": 71.0,
+          "w_max": 82.0,
+          "max_diff": 11.0
+        },
+        {
+          "day": "2026-07-07",
+          "o_max": 70.0,
+          "w_max": 73.0,
+          "max_diff": 3.0
+        },
+        {
+          "day": "2026-07-08",
+          "o_max": 85.0,
+          "w_max": 86.0,
+          "max_diff": 1.0
+        },
+        {
+          "day": "2026-07-09",
+          "o_max": 83.0,
+          "w_max": 87.0,
+          "max_diff": 4.0
+        },
+        {
+          "day": "2026-07-10",
+          "o_max": 85.0,
+          "w_max": 88.0,
+          "max_diff": 3.0
+        },
+        {
+          "day": "2026-07-11",
+          "o_max": 82.0,
+          "w_max": 84.0,
+          "max_diff": 2.0
+        },
+        {
+          "day": "2026-07-12",
+          "o_max": 85.0,
+          "w_max": 86.0,
+          "max_diff": 1.0
+        },
+        {
+          "day": "2026-07-13",
+          "o_max": 85.0,
+          "w_max": 87.0,
+          "max_diff": 2.0
+        },
+        {
+          "day": "2026-07-14",
+          "o_max": 90.0,
+          "w_max": 93.0,
+          "max_diff": 3.0
+        },
+        {
+          "day": "2026-07-15",
+          "o_max": 95.0,
+          "w_max": 96.0,
+          "max_diff": 1.0
+        },
+        {
+          "day": "2026-07-16",
+          "o_max": 81.0,
+          "w_max": 89.0,
+          "max_diff": 8.0
+        }
+      ],
+      "daily_max_bias_mean_F": 3.8461538461538463,
+      "daily_max_bias_std_F": 3.370600353877945,
+      "raw_crossing": {
+        "n_events": 187,
+        "mean_lead_s": 13552.053475935829,
+        "median_lead_s": 1263.0,
+        "pct_truly_leading": 61.49732620320856,
+        "false_crossings": 0,
+        "missed_crossings": 0,
+        "total_thresholds": 187
+      },
+      "biascorrected_nearmax_crossing": {
+        "n_events": 59,
+        "mean_lead_s": 1538.4863331694914,
+        "median_lead_s": -2401.820891,
+        "pct_truly_leading": 22.033898305084747,
+        "false_crossings": 0,
+        "missed_crossings": 19,
+        "total_thresholds": 78
+      },
+      "qualifies_as_usable_leading_tracker": false
+    },
+    "chi": {
+      "city": "Chicago (Midway)",
+      "wu_id": "KILCHICA37",
+      "iem_id": "KMDW",
+      "dist_km": 1.13,
+      "n_official_1min_pts": 18423,
+      "n_wu_pts": 4031,
+      "n_matched_pairs": 3626,
+      "wu_cadence_s_median": 300,
+      "bias_mean_F": 1.2010479867622725,
+      "bias_std_F": 0.9689663346904572,
+      "bias_median_F": 1.0,
+      "pct_within_0_2F": 20.711527854384997,
+      "pct_within_0_3F": 20.711527854384997,
+      "pct_within_0_5F": 20.711527854384997,
+      "pct_within_1_0F": 66.85052399338113,
+      "n_days": 14,
+      "daily_max_rows": [
+        {
+          "day": "2026-07-04",
+          "o_max": 85.0,
+          "w_max": 88.0,
+          "max_diff": 3.0
+        },
+        {
+          "day": "2026-07-05",
+          "o_max": 77.0,
+          "w_max": 77.0,
+          "max_diff": 0.0
+        },
+        {
+          "day": "2026-07-06",
+          "o_max": 80.0,
+          "w_max": 81.0,
+          "max_diff": 1.0
+        },
+        {
+          "day": "2026-07-07",
+          "o_max": 85.0,
+          "w_max": 86.0,
+          "max_diff": 1.0
+        },
+        {
+          "day": "2026-07-08",
+          "o_max": 89.0,
+          "w_max": 92.0,
+          "max_diff": 3.0
+        },
+        {
+          "day": "2026-07-09",
+          "o_max": 87.0,
+          "w_max": 90.0,
+          "max_diff": 3.0
+        },
+        {
+          "day": "2026-07-10",
+          "o_max": 84.0,
+          "w_max": 86.0,
+          "max_diff": 2.0
+        },
+        {
+          "day": "2026-07-11",
+          "o_max": 83.0,
+          "w_max": 83.0,
+          "max_diff": 0.0
+        },
+        {
+          "day": "2026-07-12",
+          "o_max": 86.0,
+          "w_max": 86.0,
+          "max_diff": 0.0
+        },
+        {
+          "day": "2026-07-13",
+          "o_max": 92.0,
+          "w_max": 94.0,
+          "max_diff": 2.0
+        },
+        {
+          "day": "2026-07-14",
+          "o_max": 96.0,
+          "w_max": 98.0,
+          "max_diff": 2.0
+        },
+        {
+          "day": "2026-07-15",
+          "o_max": 95.0,
+          "w_max": 97.0,
+          "max_diff": 2.0
+        },
+        {
+          "day": "2026-07-16",
+          "o_max": 91.0,
+          "w_max": 92.0,
+          "max_diff": 1.0
+        },
+        {
+          "day": "2026-07-17",
+          "o_max": 85.0,
+          "w_max": 94.0,
+          "max_diff": 9.0
+        }
+      ],
+      "daily_max_bias_mean_F": 2.0714285714285716,
+      "daily_max_bias_std_F": 2.186461123573424,
+      "raw_crossing": {
+        "n_events": 297,
+        "mean_lead_s": 2595.3535353535353,
+        "median_lead_s": -240.0,
+        "pct_truly_leading": 23.569023569023567,
+        "false_crossings": 0,
+        "missed_crossings": 0,
+        "total_thresholds": 297
+      },
+      "biascorrected_nearmax_crossing": {
+        "n_events": 75,
+        "mean_lead_s": -3652.20750136,
+        "median_lead_s": -240.0,
+        "pct_truly_leading": 26.666666666666668,
+        "false_crossings": 0,
+        "missed_crossings": 9,
+        "total_thresholds": 84
+      },
+      "qualifies_as_usable_leading_tracker": false
+    },
+    "dal": {
+      "city": "Dallas-Fort Worth",
+      "wu_id": "KTXIRVIN221",
+      "iem_id": "KDFW",
+      "dist_km": 4.16,
+      "n_official_1min_pts": 15066,
+      "n_wu_pts": 3736,
+      "n_matched_pairs": 2818,
+      "wu_cadence_s_median": 300,
+      "bias_mean_F": 2.521291696238467,
+      "bias_std_F": 2.2255072147150297,
+      "bias_median_F": 2.0,
+      "pct_within_0_2F": 11.958836053938963,
+      "pct_within_0_3F": 11.958836053938963,
+      "pct_within_0_5F": 11.958836053938963,
+      "pct_within_1_0F": 40.70262597586941,
+      "n_days": 13,
+      "daily_max_rows": [
+        {
+          "day": "2026-07-04",
+          "o_max": 100.0,
+          "w_max": 107.0,
+          "max_diff": 7.0
+        },
+        {
+          "day": "2026-07-05",
+          "o_max": 98.0,
+          "w_max": 104.0,
+          "max_diff": 6.0
+        },
+        {
+          "day": "2026-07-06",
+          "o_max": 99.0,
+          "w_max": 105.0,
+          "max_diff": 6.0
+        },
+        {
+          "day": "2026-07-07",
+          "o_max": 101.0,
+          "w_max": 106.0,
+          "max_diff": 5.0
+        },
+        {
+          "day": "2026-07-08",
+          "o_max": 101.0,
+          "w_max": 105.0,
+          "max_diff": 4.0
+        },
+        {
+          "day": "2026-07-09",
+          "o_max": 101.0,
+          "w_max": 105.0,
+          "max_diff": 4.0
+        },
+        {
+          "day": "2026-07-10",
+          "o_max": 99.0,
+          "w_max": 101.0,
+          "max_diff": 2.0
+        },
+        {
+          "day": "2026-07-11",
+          "o_max": 98.0,
+          "w_max": 101.0,
+          "max_diff": 3.0
+        },
+        {
+          "day": "2026-07-12",
+          "o_max": 98.0,
+          "w_max": 103.0,
+          "max_diff": 5.0
+        },
+        {
+          "day": "2026-07-13",
+          "o_max": 91.0,
+          "w_max": 96.0,
+          "max_diff": 5.0
+        },
+        {
+          "day": "2026-07-14",
+          "o_max": 94.0,
+          "w_max": 93.0,
+          "max_diff": -1.0
+        },
+        {
+          "day": "2026-07-15",
+          "o_max": 91.0,
+          "w_max": 96.0,
+          "max_diff": 5.0
+        },
+        {
+          "day": "2026-07-16",
+          "o_max": 79.0,
+          "w_max": 97.0,
+          "max_diff": 18.0
+        }
+      ],
+      "daily_max_bias_mean_F": 5.3076923076923075,
+      "daily_max_bias_std_F": 4.158117462073717,
+      "raw_crossing": {
+        "n_events": 263,
+        "mean_lead_s": 10507.285171102661,
+        "median_lead_s": 797.0,
+        "pct_truly_leading": 53.99239543726236,
+        "false_crossings": 0,
+        "missed_crossings": 1,
+        "total_thresholds": 264
+      },
+      "biascorrected_nearmax_crossing": {
+        "n_events": 72,
+        "mean_lead_s": 5615.225420083333,
+        "median_lead_s": 3627.7218775,
+        "pct_truly_leading": 70.83333333333333,
+        "false_crossings": 0,
+        "missed_crossings": 5,
+        "total_thresholds": 77
+      },
+      "qualifies_as_usable_leading_tracker": false
+    },
+    "hou": {
+      "city": "Houston (Hobby)",
+      "wu_id": "KTXHOUST4910",
+      "iem_id": "KHOU",
+      "dist_km": 3.02,
+      "n_official_1min_pts": 18411,
+      "n_wu_pts": 4032,
+      "n_matched_pairs": 3627,
+      "wu_cadence_s_median": 300,
+      "bias_mean_F": -1.209539564378274,
+      "bias_std_F": 2.6048855464248564,
+      "bias_median_F": -2.0,
+      "pct_within_0_2F": 8.105872622001653,
+      "pct_within_0_3F": 8.105872622001653,
+      "pct_within_0_5F": 8.105872622001653,
+      "pct_within_1_0F": 29.05982905982906,
+      "n_days": 14,
+      "daily_max_rows": [
+        {
+          "day": "2026-07-04",
+          "o_max": 99.0,
+          "w_max": 103.0,
+          "max_diff": 4.0
+        },
+        {
+          "day": "2026-07-05",
+          "o_max": 98.0,
+          "w_max": 102.0,
+          "max_diff": 4.0
+        },
+        {
+          "day": "2026-07-06",
+          "o_max": 98.0,
+          "w_max": 102.0,
+          "max_diff": 4.0
+        },
+        {
+          "day": "2026-07-07",
+          "o_max": 94.0,
+          "w_max": 100.0,
+          "max_diff": 6.0
+        },
+        {
+          "day": "2026-07-08",
+          "o_max": 96.0,
+          "w_max": 101.0,
+          "max_diff": 5.0
+        },
+        {
+          "day": "2026-07-09",
+          "o_max": 95.0,
+          "w_max": 101.0,
+          "max_diff": 6.0
+        },
+        {
+          "day": "2026-07-10",
+          "o_max": 92.0,
+          "w_max": 93.0,
+          "max_diff": 1.0
+        },
+        {
+          "day": "2026-07-11",
+          "o_max": 91.0,
+          "w_max": 92.0,
+          "max_diff": 1.0
+        },
+        {
+          "day": "2026-07-12",
+          "o_max": 95.0,
+          "w_max": 97.0,
+          "max_diff": 2.0
+        },
+        {
+          "day": "2026-07-13",
+          "o_max": 85.0,
+          "w_max": 86.0,
+          "max_diff": 1.0
+        },
+        {
+          "day": "2026-07-14",
+          "o_max": 81.0,
+          "w_max": 79.0,
+          "max_diff": -2.0
+        },
+        {
+          "day": "2026-07-15",
+          "o_max": 88.0,
+          "w_max": 89.0,
+          "max_diff": 1.0
+        },
+        {
+          "day": "2026-07-16",
+          "o_max": 93.0,
+          "w_max": 97.0,
+          "max_diff": 4.0
+        },
+        {
+          "day": "2026-07-17",
+          "o_max": 87.0,
+          "w_max": 99.0,
+          "max_diff": 12.0
+        }
+      ],
+      "daily_max_bias_mean_F": 3.5,
+      "daily_max_bias_std_F": 3.2237954561133595,
+      "raw_crossing": {
+        "n_events": 227,
+        "mean_lead_s": -6935.97577092511,
+        "median_lead_s": -288.0,
+        "pct_truly_leading": 28.634361233480178,
+        "false_crossings": 0,
+        "missed_crossings": 2,
+        "total_thresholds": 229
+      },
+      "biascorrected_nearmax_crossing": {
+        "n_events": 83,
+        "mean_lead_s": -2129.747376759036,
+        "median_lead_s": 2174.861869,
+        "pct_truly_leading": 68.67469879518072,
+        "false_crossings": 0,
+        "missed_crossings": 1,
+        "total_thresholds": 84
+      },
+      "qualifies_as_usable_leading_tracker": false
+    }
+  },
+  "other_networks_desk_research": {
+    "weatherflow_tempest": {
+      "advertised_cadence_s": 3,
+      "api": "REST + WebSocket, https://swd.weatherflow.com/swd/rest/...",
+      "history_available": "Yes, but gated behind a Personal Access Token tied to a Tempest account, and that token can normally only see stations the account owns or has been explicitly shared. There is no public 'read any station' key analogous to what we found for WU. Historical station-stats endpoint exists (/swd/rest/stats/station/{id}) once authenticated.",
+      "blocker": "No self-serve public token for arbitrary third-party stations; would need the operator's own Tempest device or a cooperating station owner's PAT."
+    },
+    "ambient_weather": {
+      "advertised_cadence_s": "~60 (console upload interval, user-configurable, often set to 1-5 min)",
+      "api": "REST, api.ambientweather.net/v1, requires both an applicationKey (app-level) and apiKey (per-user, generated in the user's dashboard).",
+      "history_available": "Yes for stations you own/have been granted access to; no public discovery of arbitrary nearby stations without a key.",
+      "blocker": "Both keys require an authenticated account; no public demo credential documented."
+    },
+    "netatmo": {
+      "advertised_cadence_s": 300,
+      "api": "OAuth2, requires a registered Netatmo 'app' plus a logged-in user consenting to share their station.",
+      "history_available": "Only for stations the OAuth user owns or that have opted into Netatmo's public weathermap sharing.",
+      "blocker": "Full OAuth login flow, not obtainable headlessly. Also, Netatmo's own native cadence (5 min) is not fast enough to beat 1-min ASOS even if access were available."
+    },
+    "synoptic_mesonet": {
+      "advertised_cadence_s": "varies by network, typically 5-60 min for state mesonets, ~5-15 min for CWOP/APRSWXNET-fed citizen stations",
+      "api": "REST, api.synopticdata.com, free tier (5,000 calls/5M service units per month) but requires account signup + token generation.",
+      "history_available": "Yes, extensive, and this would have been the best single aggregator (covers WU-fed CWOP-like feeds, OK Mesonet, NY State Mesonet, West Texas Mesonet, etc. through one API).",
+      "blocker": "Signup requires email verification (docs: 'sign up with your email, and they will immediately send you a private key in a welcome email') -- not completable without inbox access in an automated session. The public 'demotoken' documented in Synoptic's own docs is explicitly restricted to a single demo network (id 281, a Greenland glaciology network) and returned 403 'Invalid request per token rules' for every station/network we actually need. IEM (which we do have full access to) does NOT mirror any Mesonet/CWOP/PWS networks -- confirmed by scanning all 600 networks IEM exposes; every one is an official ASOS/AWOS network."
+    },
+    "state_mesonets_direct": {
+      "advertised_cadence_s": "300 (5 min) typical for Oklahoma Mesonet, West Texas Mesonet, NY State Mesonet",
+      "api": "Each network has its own site; several require a separate account/data-request process for bulk/API history.",
+      "history_available": "Partial / inconsistent across networks.",
+      "blocker": "Even where accessible, native cadence is 5 min -- 5x SLOWER than the 1-min official ASOS we are trying to beat, so these fail the 'fast' requirement before basis risk is even considered. Only relevant for OKC among our 20 cities, and OKC's official station is itself 1-min ASOS, so Oklahoma Mesonet is a non-starter as a leading indicator for KXHIGH-OKC."
+    }
+  },
+  "verdict": {
+    "any_station_qualifies": false,
+    "qualifying_cities": [],
+    "headline": "NONE of the 4 deep-tested WU PWS trackers qualify as tight, unbiased/leading sensors usable to front-run the official 1-minute ASOS reading."
+  }
+}

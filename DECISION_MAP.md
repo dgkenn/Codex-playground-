@@ -2613,3 +2613,17 @@ CLI-disagreement TAIL rate), (2) KXLOW, (3) FULL-LADDER rungs (does the +0.21 EV
 artifact?), (4) margin/sustain optimization (re-pick on full data, walk-forward, no 67-day cherry-pick), (5) glitch-filter +
 METAR-consistency tail-shrink (CLI-basis), (6) depth-sizing vs real L2 (order-book agent), (7) adaptive poll cadence. Report the
 full-history numbers vs the 67-day; where they DISAGREE, the full-history wins. Only then update the forward gate + size.
+
+## KALSHI-WX-FASTSENSOR (2026-07-18) — no usable faster/leading sensor: empirical NULL (basis risk confirmed)
+Empirically tested the operator's faster-sensor idea (find sub-min sensors that track the official ASOS tightly enough to
+front-run). kalshi_fast_sensor.py: ground truth IEM asos1min; candidates = WU PWS (only third-party stations reachable free).
+- Scanned 77-80 nearby WU PWS across all 20 cities: ZERO had historical cadence <~296s (median 300s=5min) = 5x SLOWER than the
+  1-min official ASOS. Archive can't deliver seconds-early. (Live "current" endpoint showed ~15-90s for some, but that's not in
+  the backtestable archive.)
+- Deep-tested NYC/CHI/DAL/HOU vs 14 days paired: mean bias +3.0/+1.2/+2.5/-1.2 F -- NONE unbiased, only 4-21% within +-0.3F.
+  Warm bias -> spurious "hours-early" artifact; cool bias (HOU) -> lags. Bias-corrected crossing-lead = noise (swings 1000s s
+  both ways). Tempest/Ambient/Netatmo/Synoptic couldn't be pulled (need account creds) -> desk-research only.
+VERDICT: NULL. No accessible fast sensor is a usable leading indicator; basis risk empirically confirmed. Combined w/ settlement
+agent's extrapolate-early=94%-false + edge-is-not-latency-bound -> faster-sensor path DEAD for now. Residual sliver: a hand-
+picked OWNED Tempest (3s, low-bias, well-sited) per station COULD theoretically work but needs a live-capture build w/ unproven
+payoff -> deprioritize vs tail-shrink + volume levers. Answers operator's idea empirically: NO.
