@@ -2747,3 +2747,13 @@ FREE api.weather.gov (5-min resolution, MEASURED ~15-20min latency for most stat
 Synoptic (synoptic_feed.py) stays as the optional UPGRADE for scaling past a few hundred $, where extra throughput pays.
 => the deployment feed blocker is REMOVED for a small-bankroll start: free, no signup. Use the 14-day Synoptic trial only to
 MEASURE the upside of the fast band (does throughput ~2.5x justify the paid cost at your chosen bankroll), not as a dependency.
+
+## MULTI-FEED CONSENSUS (2026-07-18) — conservative agreement gate for accuracy (operator request)
+Built MultiFeedConsensus (kwx_runner.py): queries N feeds, fires only when a QUORUM (default unanimous) agree, using the
+conservative extreme (MIN running-max for a high-lock / MAX running-min for a low-lock) so EVERY feed must independently
+clear strike+margin -> a spurious high glitch in any one feed is auto-ignored. DEFAULT feed is now consensus of the two
+FREE feeds (api.weather.gov 5-min + aviationweather METAR). IMPORTANT LIMIT (told operator): these feeds mostly re-stream
+the SAME airport ASOS sensor, so consensus guards against FEED-specific faults (staleness/parsing/QC/one lagging), NOT
+against the sensor itself -- the CLI-agreement study (phase3_feed_correlation, running) is the separate guard for sensor-vs-
+settlement. Trade-off: unanimity + hourly METAR cuts fire count (fine at $50, fire-rich). quorum relaxable for throughput.
+Will be calibrated by the feed-correlation results (per-feed bias/margin, which stations to derate).

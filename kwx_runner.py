@@ -121,14 +121,51 @@ class WeatherGovFeedWrap:
         return W.WeatherGovFeed().running_extreme(station, lst_date, offset, kind)
 
 
-# DEFAULT = free api.weather.gov. Upgrade to synoptic_feed.SynopticFeed (paid, ~2-5min) only when scaling
-# past a few hundred dollars, where the extra fire throughput actually pays. METAR (hourly) is the fallback.
-_FEED = WeatherGovFeedWrap()
+class MultiFeedConsensus:
+    """CONSERVATIVE multi-feed consensus (operator's accuracy request). Queries several feeds and only
+    reports a running extreme that a QUORUM of them agree on -- using the MIN running-max (or MAX running-
+    min) across feeds, so EVERY contributing feed must independently be at least that extreme before a rung
+    can lock. A spurious high glitch in one feed is automatically ignored (we take the lower feed).
+
+    IMPORTANT: these feeds mostly re-stream the SAME airport ASOS sensor, so this guards against feed-
+    specific faults (staleness, parsing, QC) -- NOT against the sensor itself; the CLI-agreement check is
+    the separate guard for that. quorum=len(feeds) requires unanimity; lower it to survive a feed outage."""
+    name = "consensus"
+
+    def __init__(self, feeds, quorum=None):
+        self.feeds = feeds
+        self.quorum = quorum if quorum is not None else max(1, len(feeds))  # default: unanimous
+
+    def running_extreme(self, station, lst_date, offset, kind):
+        vals, present = [], []
+        for f in self.feeds:
+            try:
+                r = f.running_extreme(station, lst_date, offset, kind)
+            except Exception:
+                r = None
+            if not r:
+                continue
+            s = sustained_extreme(r.get("obs") or [], kind)
+            if s is None:
+                s = r["extreme_f"]
+            vals.append(s)
+            present.append(getattr(f, "name", "?"))
+        if len(vals) < self.quorum:
+            return None   # not enough feeds agree -> do NOT trade (safety over throughput)
+        cons = min(vals) if kind == "max" else max(vals)   # conservative: every feed >= this (max) / <= (min)
+        return {"extreme_f": cons, "obs": [], "feeds": present}
+
+
+# DEFAULT = conservative consensus of the two FREE feeds (weather.gov 5-min + METAR hourly): fire only when
+# BOTH independently agree the sustained running-max cleared the strike. Add synoptic_feed.SynopticFeed() to
+# the list when scaling (paid, ~2-5min) for more throughput. quorum defaults to unanimity for max safety.
+_FEED = MultiFeedConsensus([WeatherGovFeedWrap(), MetarFeed()])
 
 
 def set_feed(feed):
-    """Swap the obs feed. Options: WeatherGovFeedWrap() [free default], synoptic_feed.SynopticFeed() [paid,
-    fast], MetarFeed() [hourly fallback]. Any object exposing running_extreme(station,date,offset,kind)."""
+    """Swap the obs feed. Options: MultiFeedConsensus([...]) [safe default], WeatherGovFeedWrap() [free
+    single], synoptic_feed.SynopticFeed() [paid fast], MetarFeed() [hourly]. Any object exposing
+    running_extreme(station,date,offset,kind)."""
     global _FEED
     _FEED = feed
 
