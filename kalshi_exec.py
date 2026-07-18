@@ -30,6 +30,17 @@ _CTX = ssl.create_default_context(cafile=_CA) if os.path.exists(_CA) else None
 KBASE = "https://api.elections.kalshi.com/trade-api/v2"
 CREDS_PATH = os.path.join(HERE, ".kalshi_creds")
 
+# --- free execution guards (only bite in bad scenarios; zero cost in normal operation) ---
+HALT_FILE = os.path.join(HERE, ".kwx_halt")   # `touch .kwx_halt` -> manual kill switch, blocks ALL live orders
+HARD_MAX_CONTRACTS = 200                        # fat-finger / bug ceiling: refuse any single order above this
+HARD_MAX_PRICE_CENTS = 98                       # never pay above this (no-gap / dead-on-arrival protection)
+
+
+def _client_order_id(ticker, side):
+    """Deterministic idempotency key: one order per ticker+side (ticker already encodes the day). A retried
+    identical order carries the SAME id -> Kalshi dedupes it, so a crash/retry can't double-fill."""
+    return f"kwx-{ticker}-{side}"
+
 
 class KalshiExec:
     def __init__(self, base=KBASE, log_path=os.path.join(HERE, "kwx_exec_log.jsonl")):
@@ -78,6 +89,23 @@ class KalshiExec:
             "KALSHI-ACCESS-SIGNATURE": self._sign(ts, method, path),
         }
 
+    def _guard(self, ticker, count, price_cents):
+        """Pre-trade safety guards (free insurance). Returns a 'blocked' record if the order must be
+        refused, else None. Applies to BOTH dry-run and live so paper testing exercises them too."""
+        if os.path.exists(HALT_FILE):
+            return {"status": "BLOCKED_HALT", "ticker": ticker, "reason": "kill-switch .kwx_halt present"}
+        if int(count) < 1:
+            return {"status": "BLOCKED_SIZE", "ticker": ticker, "reason": f"count {count} < 1"}
+        if int(count) > HARD_MAX_CONTRACTS:
+            return {"status": "BLOCKED_SIZE", "ticker": ticker,
+                    "reason": f"count {count} > HARD_MAX_CONTRACTS {HARD_MAX_CONTRACTS} (fat-finger guard)"}
+        if int(price_cents) > HARD_MAX_PRICE_CENTS:
+            return {"status": "BLOCKED_PRICE", "ticker": ticker,
+                    "reason": f"price {price_cents}c > cap {HARD_MAX_PRICE_CENTS}c (no gap left)"}
+        if int(price_cents) < 1 or int(price_cents) > 99:
+            return {"status": "BLOCKED_PRICE", "ticker": ticker, "reason": f"price {price_cents}c out of [1,99]"}
+        return None
+
     def _log(self, rec):
         rec = {**rec, "ts": int(time.time() * 1000), "live": self.live}
         with open(self.log_path, "a") as f:
@@ -89,10 +117,14 @@ class KalshiExec:
 
         dry_fill_price (cents) lets a simulator/backtest inject the price it believes fillable; if
         None, the dry-run assumes a fill at max_price_cents (conservative)."""
+        blocked = self._guard(ticker, count, max_price_cents)
+        if blocked:
+            self._log(blocked)
+            return blocked
         order = {
             "ticker": ticker, "action": "buy", "side": "yes",
             "count": int(count), "type": "limit", "yes_price": int(max_price_cents),
-            "time_in_force": "immediate_or_cancel",
+            "time_in_force": "immediate_or_cancel", "client_order_id": _client_order_id(ticker, "yes"),
         }
         if not self.live:
             fill = int(dry_fill_price if dry_fill_price is not None else max_price_cents)
@@ -116,10 +148,14 @@ class KalshiExec:
 
     def buy_no(self, ticker, count, max_price_cents, dry_fill_price=None):
         """Buy `count` NO contracts (for the 'locked NO' rungs). Mirror of buy_yes."""
+        blocked = self._guard(ticker, count, max_price_cents)
+        if blocked:
+            self._log(blocked)
+            return blocked
         order = {
             "ticker": ticker, "action": "buy", "side": "no",
             "count": int(count), "type": "limit", "no_price": int(max_price_cents),
-            "time_in_force": "immediate_or_cancel",
+            "time_in_force": "immediate_or_cancel", "client_order_id": _client_order_id(ticker, "no"),
         }
         if not self.live:
             fill = int(dry_fill_price if dry_fill_price is not None else max_price_cents)

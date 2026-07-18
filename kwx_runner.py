@@ -56,6 +56,10 @@ KELLY_FRAC = 0.25       # fractional Kelly (quarter) -- robust to model/tail err
 PER_FIRE_CAP = 0.05     # max fraction of bankroll on ONE fire (THE risk control)
 DEPTH_CAP = 25          # never order more than the book can plausibly fill (Tier-1: books 5-100ct)
 
+# --- free operational guards (only bite in anomalies; zero cost normally) ---
+STALE_MIN = 45          # ignore a feed whose newest obs is older than this (dead/frozen feed protection)
+MAX_FIRES_PER_CYCLE = 15  # circuit breaker: a normal cycle fires a few; >this = feed glitch -> HALT + review
+
 
 def _kelly_fraction(price, p=0.9965):
     """Full-Kelly fraction of bankroll to stake on a contract at `price` (win prob p, lose full stake)."""
@@ -121,6 +125,16 @@ class WeatherGovFeedWrap:
         return W.WeatherGovFeed().running_extreme(station, lst_date, offset, kind)
 
 
+def _feed_is_stale(obs):
+    """True if the feed's newest obs is older than STALE_MIN minutes (dead/frozen feed). obs = [(iso,val)...]."""
+    try:
+        newest = max(dt.datetime.fromisoformat(t.replace("Z", "+00:00")) for t, _ in obs)
+        age_min = (dt.datetime.now(tz=dt.timezone.utc) - newest).total_seconds() / 60.0
+        return age_min > STALE_MIN
+    except Exception:
+        return False   # can't parse -> don't over-block; the consensus quorum still guards
+
+
 class MultiFeedConsensus:
     """CONSERVATIVE multi-feed consensus (operator's accuracy request). Queries several feeds and only
     reports a running extreme that a QUORUM of them agree on -- using the MIN running-max (or MAX running-
@@ -145,7 +159,10 @@ class MultiFeedConsensus:
                 r = None
             if not r:
                 continue
-            s = sustained_extreme(r.get("obs") or [], kind)
+            obs = r.get("obs") or []
+            if obs and _feed_is_stale(obs):
+                continue   # dead/frozen feed -> don't trust its running-max; drop from the quorum
+            s = sustained_extreme(obs, kind)
             if s is None:
                 s = r["extreme_f"]
             vals.append(s)
@@ -358,6 +375,14 @@ def poll_once(exec_client=None, verbose=True):
             size = size_for_fire(BANKROLL, cap_c, station)   # bankroll-aware, quarter-Kelly, 5% per-fire cap
             if size < 1:
                 continue
+            # CIRCUIT BREAKER: a normal cycle fires a few; an abnormal burst = feed glitch -> halt for review
+            if len(plans) >= MAX_FIRES_PER_CYCLE:
+                open(os.path.join(HERE, ".kwx_halt"), "w").write(
+                    f"auto-halt: >{MAX_FIRES_PER_CYCLE} fires in one cycle (possible feed glitch); review then rm this file\n")
+                if verbose:
+                    print(f"  !! CIRCUIT BREAKER tripped ({len(plans)} fires this cycle) -> .kwx_halt written, halting")
+                _save_state(state)
+                return plans, (min_interval or 900)
             fn = ex.buy_yes if side == "yes" else ex.buy_no
             res = fn(ticker, count=size, max_price_cents=cap_c)
             plan = {"ticker": ticker, "side": side, "cap_c": cap_c, "extreme_f": ext,
