@@ -277,6 +277,21 @@ def build_panel():
 # ------------------------------------------------------------------ PART 1: walk-forward
 from sklearn.linear_model import LogisticRegression, LinearRegression
 
+def robust_z_mat(Xtr, Xte):
+    """Winsorize each column at TRAIN 1/99 pct, then z-score by train mean/std. Causal.
+    Non-finite -> 0 after centering. Handles the basis/oi glitch outliers without lookahead."""
+    Xtr = np.asarray(Xtr, float); Xte = np.asarray(Xte, float)
+    ztr = np.zeros_like(Xtr); zte = np.zeros_like(Xte)
+    for j in range(Xtr.shape[1]):
+        col = Xtr[:, j]; fin = col[np.isfinite(col)]
+        if len(fin) < 5:
+            continue
+        ql, qh = np.percentile(fin, [1, 99])
+        cc = np.clip(fin, ql, qh); mu = cc.mean(); sd = cc.std(); sd = sd if sd > 0 else 1.0
+        ztr[:, j] = np.where(np.isfinite(Xtr[:, j]), (np.clip(Xtr[:, j], ql, qh) - mu) / sd, 0.0)
+        zte[:, j] = np.where(np.isfinite(Xte[:, j]), (np.clip(Xte[:, j], ql, qh) - mu) / sd, 0.0)
+    return ztr, zte
+
 def _auc(y, p):
     y = np.asarray(y); p = np.asarray(p)
     pos = p[y == 1]; neg = p[y == 0]
@@ -340,9 +355,7 @@ def walk_forward(panel):
             # combined model
             Xtr = train[feats].values.astype(float)
             Xte = test[feats].values.astype(float)
-            mu = np.nanmean(Xtr, axis=0); sd = np.nanstd(Xtr, axis=0); sd[sd == 0] = 1
-            Xtr_s = np.where(np.isfinite(Xtr), (Xtr - mu) / sd, 0.0)
-            Xte_s = np.where(np.isfinite(Xte), (Xte - mu) / sd, 0.0)
+            Xtr_s, Xte_s = robust_z_mat(Xtr, Xte)
             try:
                 clf = LogisticRegression(C=0.5, max_iter=500)
                 clf.fit(Xtr_s, ytr)
@@ -354,10 +367,8 @@ def walk_forward(panel):
                 base["y"].append(int(yte[j])); base["p"].append(base_rate); base["w"].append(wtest)
             # univariate models
             for fi, f in enumerate(feats):
-                xtr = train[f].values.astype(float); xte = test[f].values.astype(float)
-                m2 = np.nanmean(xtr); s2 = np.nanstd(xtr); s2 = s2 if s2 > 0 else 1
-                xtr_s = np.where(np.isfinite(xtr), (xtr - m2) / s2, 0.0).reshape(-1, 1)
-                xte_s = np.where(np.isfinite(xte), (xte - m2) / s2, 0.0).reshape(-1, 1)
+                xtr = train[[f]].values.astype(float); xte = test[[f]].values.astype(float)
+                xtr_s, xte_s = robust_z_mat(xtr, xte)
                 try:
                     c1 = LogisticRegression(C=1.0, max_iter=300).fit(xtr_s, ytr)
                     pu = c1.predict_proba(xte_s)[:, 1]
@@ -395,9 +406,7 @@ def walk_forward(panel):
         if len(train) < 40 or len(test) == 0:
             continue
         Xtr = train[feats].values.astype(float); Xte = test[feats].values.astype(float)
-        mu = np.nanmean(Xtr, axis=0); sd = np.nanstd(Xtr, axis=0); sd[sd == 0] = 1
-        Xtr_s = np.where(np.isfinite(Xtr), (Xtr - mu) / sd, 0.0)
-        Xte_s = np.where(np.isfinite(Xte), (Xte - mu) / sd, 0.0)
+        Xtr_s, Xte_s = robust_z_mat(Xtr, Xte)
         ytr = train["fwd_ret"].values; yte = test["fwd_ret"].values
         ybar = float(np.mean(ytr))
         try:
@@ -412,6 +421,50 @@ def walk_forward(panel):
     ss_base = np.sum((y_all - ybase_all) ** 2)
     oos_r2 = 1 - ss_res / ss_base if ss_base > 0 else np.nan
     results["continuous"] = dict(oos_r2_vs_drift=float(oos_r2), n_oos=len(y_all))
+
+    # ---- ECONOMIC / TRADEABLE test (the HONEST headline). A high classification AUC can be a
+    #      regime-autocorrelation illusion; the question is whether SIGNING positions by the
+    #      combined signal actually earns OOS, week-clustered, and beats always-long (passive beta).
+    def econ(pp):
+        rs, ws, poss, ys, ps = [], [], [], [], []
+        for i in range(MIN_TRAIN_WEEKS, len(weeks_sorted)):
+            wtest = weeks_sorted[i]
+            train = pp[pp["week"] < wtest]; test = pp[pp["week"] == wtest]
+            if len(train) < 40 or len(test) == 0:
+                continue
+            ytr = (train["fwd_ret"] > 0).astype(int).values
+            if ytr.sum() == 0 or ytr.sum() == len(ytr):
+                continue
+            Xtr_s, Xte_s = robust_z_mat(train[feats].values, test[feats].values)
+            try:
+                clf = LogisticRegression(C=0.5, max_iter=500).fit(Xtr_s, ytr)
+                pr = clf.predict_proba(Xte_s)[:, 1]
+            except Exception:
+                pr = np.full(len(test), ytr.mean())
+            fr = test["fwd_ret"].values
+            for j in range(len(fr)):
+                pos = 1.0 if pr[j] > 0.5 else -1.0
+                rs.append(fr[j]); ws.append(wtest); poss.append(pos)
+                ys.append(int(fr[j] > 0)); ps.append(float(pr[j]))
+        rs = np.asarray(rs); poss = np.asarray(poss)
+        strat = poss * rs
+        t_ls, k = week_cluster_t(ws, strat)
+        t_bh, _ = week_cluster_t(ws, rs)
+        return dict(auc=_auc(ys, ps), ls_mean_wk=float(strat.mean()), ls_wk_t=float(t_ls),
+                    always_long_mean_wk=float(rs.mean()), always_long_wk_t=float(t_bh),
+                    n=int(len(rs)), n_weeks=int(k))
+
+    real = econ(p)
+    # autocorrelation placebo: roll fwd_ret by 26 weeks within each asset (breaks true alignment,
+    # PRESERVES the slow regime autocorrelation). If AUC stays >0.5, the AUC is an autocorr artifact.
+    p_roll = p.copy()
+    p_roll["fwd_ret"] = p_roll.groupby("sym")["fwd_ret"].transform(lambda s: np.roll(s.values, 26))
+    roll = econ(p_roll)
+    # label-shuffle placebo: full permutation (breaks everything) -> AUC should be ~0.5, L/S ~0.
+    p_perm = p.copy()
+    p_perm["fwd_ret"] = np.random.default_rng(7).permutation(p_perm["fwd_ret"].values)
+    perm = econ(p_perm)
+    results["economic"] = dict(real=real, autocorr_placebo_roll26=roll, shuffle_placebo=perm)
     return results
 
 # ------------------------------------------------------------------ PART 2: vs Polymarket
@@ -567,7 +620,11 @@ def part2_residual_test(panel, pm_obs):
         d = df.dropna(subset=[f, "resid"])
         if len(d) < 20 or d[f].std() == 0:
             continue
-        x = (d[f] - d[f].mean()) / d[f].std()
+        ql, qh = np.percentile(d[f], [1, 99])
+        xw = d[f].clip(ql, qh)
+        if xw.std() == 0:
+            continue
+        x = (xw - xw.mean()) / xw.std()
         y = d["resid"].values
         # OLS slope
         slope, intercept, r, pnaive, se = ss.linregress(x, y)
