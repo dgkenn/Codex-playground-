@@ -3,19 +3,21 @@
 # it is completely inert. No Claude session needed -- it runs on GitHub's schedule.
 #
 #   ON/OFF: edit the KWX_SWITCH file (one word: on|off) on $BRANCH -- or run ./kwx_switch.sh on|off,
-#           or the Telegram bot's /kwxon /kwxoff (kwx_telegram.py). That is the entire control surface.
+#           or the Telegram bot's /on /off (kwx_telegram.py). That is the entire control surface.
+#   ALERTS: FIRE / SETTLE / HALT / daily-PnL go to Telegram if TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID
+#           secrets are set (reuses the box's bot). No-op if unset.
 #
 #   ONE-TIME ACTIVATION (deliberate; real money + secrets):
 #     1. Repo secrets (reuse the box's -- already set if the box ran live):
 #          KALSHI_API_KEY_ID  = your Kalshi API key id
 #          KALSHI_PRIVATE_KEY = the full RSA PEM (multiline ok)
+#          TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID (optional, for alerts)
 #     2. This file must be on the DEFAULT branch (main) for `schedule` to fire (merge the PR).
 #     3. Flip KWX_SWITCH on.
 #
-#   SAFE BY DEFAULT: missing secrets OR KWX_SWITCH!=on => the job does NOTHING. Bot-side guards stay on
-#     (BANKROLL=$10, 5% per-fire cap, 60%/day deploy cap, circuit breaker, fat-finger ceilings, kill switch).
+#   SAFE BY DEFAULT: missing Kalshi secrets OR KWX_SWITCH!=on => the job does NOTHING. Bot-side guards stay
+#     on (BANKROLL=$10, 5% per-fire cap, 60%/day deploy cap, circuit breaker, fat-finger ceilings, kill switch).
 #   SECURITY: schedule + workflow_dispatch ONLY (never pull_request), so a fork PR can't reach the secret.
-#     The PEM is written to a 0600 temp file and shredded after the run.
 name: kwx-live
 
 on:
@@ -66,6 +68,8 @@ jobs:
           KWX_LIVE: "1"
           KALSHI_API_KEY_ID: ${{ secrets.KALSHI_API_KEY_ID }}
           KALSHI_PRIVATE_KEY: ${{ secrets.KALSHI_PRIVATE_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
           set -e
           pip -q install cryptography || true
