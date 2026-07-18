@@ -666,23 +666,51 @@ def write_report(panel, p1, p2):
              "every feature uses only data up to the Monday-00:00 entry. Expanding-window "
              "walk-forward, standardisation on train stats only, pooled BTC+ETH, clustered by week.\n")
 
+    econ = p1["economic"]; real = econ["real"]; roll = econ["autocorr_placebo_roll26"]; perm = econ["shuffle_placebo"]
+    cont = p1["continuous"]
     L.append("## PART 1 -- Pure OOS prediction on Binance data\n")
+    L.append("### The HONEST headline: economic (tradeable) test\n")
+    L.append("A high classification AUC on weekly direction is easy to manufacture from **regime "
+             "autocorrelation** (level features like funding/OI/LSR are high in bull regimes, and bull "
+             "regimes have more up-weeks). The question that matters for a *stackable edge* is whether "
+             "SIGNING positions by the combined signal actually earns out-of-sample, week-clustered, and "
+             "beats simply being passively long (beta).\n")
+    L.append("| walk-forward variant | OOS AUC | signal L/S mean/wk | **L/S week-clustered t** | always-long mean/wk (t) |")
+    L.append("|---|---|---|---|---|")
+    L.append(f"| **REAL** | {real['auc']:.3f} | {real['ls_mean_wk']:+.4f} | **{real['ls_wk_t']:+.2f}** | "
+             f"{real['always_long_mean_wk']:+.4f} ({real['always_long_wk_t']:+.2f}) |")
+    L.append(f"| autocorr placebo (returns rolled 26w) | {roll['auc']:.3f} | {roll['ls_mean_wk']:+.4f} | {roll['ls_wk_t']:+.2f} | -- |")
+    L.append(f"| shuffle placebo (labels permuted) | {perm['auc']:.3f} | {perm['ls_mean_wk']:+.4f} | {perm['ls_wk_t']:+.2f} | -- |")
+    L.append("")
+    L.append(f"- **The combined signal's directional L/S earns {real['ls_mean_wk']:+.4f}/week at week-clustered "
+             f"t = {real['ls_wk_t']:+.2f}** — statistically indistinguishable from zero, and *below* the passive "
+             f"always-long return ({real['always_long_mean_wk']:+.4f}/wk). The AUC of {real['auc']:.3f} does NOT "
+             "translate into tradeable directional profit.\n")
+    L.append(f"- **Autocorrelation placebo (returns rolled 26 weeks, breaking true alignment but preserving "
+             f"regime autocorrelation) still shows AUC = {roll['auc']:.3f}** — proof that the AUC>0.5 is a "
+             "regime-autocorrelation artifact, not genuine predictive information. Week-clustering removes "
+             "the BTC/ETH cross-sectional correlation but NOT the serial regime persistence; the economic "
+             "L/S t (which is null) is the honest metric.\n")
+    L.append(f"- **Shuffle placebo (labels fully permuted): AUC = {perm['auc']:.3f}, L/S t = {perm['ls_wk_t']:+.2f}** — "
+             "confirms the pipeline is leak-free (shuffled labels give ~coin-flip / negative skill).\n")
+    L.append(f"- **Continuous target:** combined linear OOS R2 vs drift baseline = "
+             f"**{cont['oos_r2_vs_drift']:+.4f}** (n={cont['n_oos']}) — negative, i.e. the features predict the "
+             "weekly return *worse* than just guessing the historical mean.\n")
+
+    L.append("### Descriptive classification stats (AUC / clustered directional-skill t) -- INFLATED, shown for transparency\n")
+    L.append("These are the raw walk-forward classification numbers. They look strong, but per the placebos "
+             "above they are inflated by regime autocorrelation and do NOT survive the economic test. "
+             "The directional-skill t is week-clustered but NOT robust to serial regime persistence.\n")
     for tname in p1["targets"]:
         tr = p1["targets"][tname]
-        L.append(f"### Target: `{tname}`  (n_oos obs = {tr['n_oos']}, baseline Brier = {tr['baseline_brier']:.4f})\n")
         c = tr["combined"]
-        L.append(f"- **Combined logistic** (all {n_feats} features): OOS AUC = **{c['auc']:.4f}**, "
-                 f"Brier improvement vs random-walk base rate = **{c['brier_vs_base']:+.5f}** "
-                 f"(positive = better than baseline).\n")
-        L.append("- Univariate walk-forward, per feature (OOS AUC; Brier vs base; week-clustered directional-skill t; #weeks):\n")
-        L.append("| feature | OOS AUC | Brier-vs-base | wk-clustered t | #weeks |")
-        L.append("|---|---|---|---|---|")
+        L.append(f"**Target `{tname}`** (n_oos={tr['n_oos']}, base rate {tr['base_rate_mean']:.3f}); "
+                 f"combined AUC {c['auc']:.3f}:\n")
+        L.append("| feature | OOS AUC | skill t (inflated) | #weeks |")
+        L.append("|---|---|---|---|")
         for f, d in best_feat(tname):
-            L.append(f"| {f} | {d['auc']:.4f} | {d['brier_vs_base']:+.5f} | {d['wk_clustered_t']:+.2f} | {d['n_weeks']} |")
+            L.append(f"| {f} | {d['auc']:.3f} | {d['wk_clustered_t']:+.2f} | {d['n_weeks']} |")
         L.append("")
-    cont = p1["continuous"]
-    L.append(f"### Continuous target (weekly return): combined linear OOS R2 vs drift baseline = "
-             f"**{cont['oos_r2_vs_drift']:+.4f}** (n={cont['n_oos']}). Negative = worse than predicting the train mean.\n")
 
     L.append("## PART 2 -- Does the signal add info over the Polymarket price?\n")
     if p2.get("status") != "ok":
