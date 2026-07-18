@@ -2253,3 +2253,20 @@ USE (launched trade_flow_analysis): (A) HARDEN the confirmed edge — measure re
 selection + the TRUE trade-weighted edge from prints (does +0.12 survive?); (B) scout a Polymarket-NATIVE order-flow signal.
 This is the first genuinely NEW data capability since Binance Vision; it doesn't change the efficient-market nulls but lets us
 VALIDATE fills (the #1 pre-live risk) and test native flow. Result pending.
+
+## TRADE-FLOW (2026-07-18) — real prints CONFIRM fills are real & correctly signed; capacity ~18% fillable; native OFI NULL
+Used the new data-api/trades prints to harden the confirmed edge. trade_flow_analysis.py, 66 settled weekly BTC/ETH markets
+(4 resolution-weeks; the gamma-discoverable recent window), explicit YES-long/short mapping, cached to scratchpad/trade_cache/.
+- SIGN CHECK PASSES: longshot YES-resolution rate ~0 (bought cheap, resolve NO); mapping correct.
+- (A) FILL REALISM: fills are REAL & correctly signed, NO fatal adverse selection. Edge point-estimate survives on prints:
+  equal-wt +0.09/ct (wk-clust t=0.70), trade-wt +0.17/ct — bracket the backtest +0.12 but NOT significant on 4 wks.
+  CAPACITY IS THE BINDING CONSTRAINT: 54/66 (82%) of weeklies had ZERO in-band first-half YES-buy prints -> a resting seller
+  gets fillable flow in only ~18% of markets; median qualifying market ~611 shares / ~$128 YES-notional. Adverse-selection hint
+  (heavy-flow YES-rate 0.167 vs light 0.0) but n=1 YES resolution -> inconclusive.
+- (B) NATIVE ORDER-FLOW: NULL. outcome~price+flow_imbalance coef_flow=-0.69 (t=-2.13, wrong sign, driven by 1 event, fails
+  Bonferroni 2.39). The flow IS the retail overpricing the short-vol edge already harvests; not a stackable OFI signal.
+VERDICT: trade-level data HARDENS the edge (fills real, correctly signed, no fatal adverse selection) and QUANTIFIES a tighter
+capacity (~18% of weeklies fillable, ~$128 median) — important for sizing/frontier. NO native OFI edge. LIMITATION: the data-api
++ gamma only surface ~4 recent weeks of settled weeklies, so the multi-week t~4.6 can't be re-confirmed here. PATH to re-confirm
++ robust capacity: (a) discover older settled weeklies via gamma /markets?closed=true pagination then pull their /trades, or
+(b) ingest the Jon-Becker 36GB archive (full history). Filed as the highest-value data follow-up.
