@@ -2627,3 +2627,19 @@ VERDICT: NULL. No accessible fast sensor is a usable leading indicator; basis ri
 agent's extrapolate-early=94%-false + edge-is-not-latency-bound -> faster-sensor path DEAD for now. Residual sliver: a hand-
 picked OWNED Tempest (3s, low-bias, well-sited) per station COULD theoretically work but needs a live-capture build w/ unproven
 payoff -> deprioritize vs tail-shrink + volume levers. Answers operator's idea empirically: NO.
+
+## KALSHI-WX-ORDERBOOK (2026-07-18) — real L2 depth ~25x THINNER than volume proxy ($35k/wk OVERSTATED) + LIVE-OBS latency blocker
+Acquired real Kalshi weather order-book depth + dataset inventory. Two critical corrections:
+1. REAL DEPTH IS THIN: pulled live full-depth /orderbook for 80 open KXHIGH/KXLOW. KXLOW locked (n=4): median ~13 contracts at
+   yes_ask, ~65 within 1-2c (range 9-806, high variance). Depth-vs-24h-volume ratio ~0.04 -> the candlestick-VOLUME proxy the
+   volume agent used OVERSTATES real resting depth ~25x. => the ~$35k/wk liquidity ceiling is a BIG OVERSTATE; real depth-limited
+   capacity is much smaller (recompute on real L2). (KXHIGH not locked at run time = late-morning; rerun evening UTC to catch.)
+2. LIVE-OBS LATENCY BLOCKER (bigger than depth): free IEM asos1min archive LAGS 1-2 days -> the forward gate CANNOT FIRE LIVE as
+   built. FIX: switch live obs to aviationweather.gov METAR (free, real-time, 1-min) or Synoptic HF-ASOS (2-5min). MUST fix before
+   the gate produces real fires.
+3. Predexon free historical L2 (backfills real depth for the whole May-present backtest) needs a 5-MIN HUMAN email signup at
+   dashboard.predexon.com -> highest-value human follow-up (script can't self-signup).
+DATASET INVENTORY (reachability live-checked): have=Kalshi candles/trades/settlement + IEM ASOS(lagged) + live /orderbook.
+Reachable-not-yet-used: aviationweather METAR(realtime), Synoptic HF, ISD/NCEI, NWS CLI API, MADIS, NBM/HRRR(AWS), MRMS. Ranked
+gaps: (1) Predexon key [human], (2) LOW-LATENCY LIVE OBS [deployment blocker], (3) self-hosted fwd L2 poller, (4) CLI cross-check,
+(5) NBM/HRRR targeting. => Phase-2 depth-sizing MUST use real L2 (Predexon or fwd-capture), NOT the volume proxy.
