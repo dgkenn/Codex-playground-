@@ -41,7 +41,15 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 # ---------------------------------------------------------------------------
 
 KBASE = "https://api.elections.kalshi.com/trade-api/v2"
-ASOS_BASE = "https://mesonet.agron.iastate.edu/cgi-bin/request/asos.py"
+# NOTE: the plain /cgi-bin/request/asos.py archive turned out, on inspection, to return
+# HOURLY-cadence tmpf almost everywhere in this backtest window (median obs gap = 60min
+# even for "busy" stations) -- the extra sub-hourly timestamps it returns are for other
+# fields, with tmpf='M'. That is too coarse for a same-hour nowcast (it visibly missed a
+# real ~2F, ~40-minute spike at KDEN on 2026-07-08 between the 18:53 and 19:53 hourly
+# reads that pushed the true high past strike+1 and flipped the settlement). IEM also
+# publishes the actual NWS ASOS ONE-MINUTE product via a separate endpoint, which we use
+# instead for true minute-resolution running-max tracking.
+ASOS_BASE = "https://mesonet.agron.iastate.edu/cgi-bin/request/asos1min.py"
 UA = {"User-Agent": "kalshi-weather-nowcast-research dgkenn@bu.edu"}
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -239,30 +247,37 @@ def discover_all_markets(min_date):
 # 2. ASOS bulk fetch per station (one request per station covers whole window)
 # ---------------------------------------------------------------------------
 
-def fetch_asos_station(station, start_date, end_date):
+def asos1min_id(station):
+    """The one-minute ASOS product keys stations by bare 3-letter id (no leading K),
+    e.g. KDEN -> DEN. NYC (Central Park) is already bare."""
+    if len(station) == 4 and station.startswith("K"):
+        return station[1:]
+    return station
+
+
+def fetch_asos_station(station, start_dt, end_dt):
     """Return sorted list of (utc_datetime, tmpf) tuples for a station across
-    [start_date, end_date] inclusive (UTC calendar dates used only to bound the
-    request; timestamps returned are exact UTC datetimes)."""
-    cache_key = f"asos_{station}_{start_date.isoformat()}_{end_date.isoformat()}.json"
+    [start_dt, end_dt), using IEM's true one-minute ASOS product (asos1min.py) --
+    genuine minute-resolution obs, not the coarser hourly-cadence tmpf returned by the
+    plain archive endpoint (see note above ASOS_BASE)."""
+    cache_key = f"asos1min_{station}_{start_dt.date().isoformat()}_{end_dt.date().isoformat()}.json"
     cached = load_cache(cache_key)
     if cached is not None:
         return [(datetime.fromisoformat(t).replace(tzinfo=timezone.utc), v) for t, v in cached]
 
-    url = (
-        f"{ASOS_BASE}?station={station}&data=tmpf"
-        f"&year1={start_date.year}&month1={start_date.month}&day1={start_date.day}"
-        f"&year2={end_date.year}&month2={end_date.month}&day2={end_date.day}"
-        f"&tz=UTC&format=comma&latlon=no&elev=no&missing=M&trace=T&direct=no"
-    )
+    sid = asos1min_id(station)
+    sts = start_dt.strftime("%Y-%m-%dT%H:%MZ")
+    ets = end_dt.strftime("%Y-%m-%dT%H:%MZ")
+    url = f"{ASOS_BASE}?station={sid}&vars=tmpf&sts={sts}&ets={ets}&sample=1min&tz=UTC&format=onlycomma"
     text = http_get_text(url)
     out = []
     for line in text.splitlines():
-        if not line or line.startswith("#") or line.startswith("station,"):
+        if not line or line.startswith("station,"):
             continue
         parts = line.split(",")
-        if len(parts) < 3:
+        if len(parts) < 4:
             continue
-        _, valid, tmpf = parts[0], parts[1], parts[2]
+        valid, tmpf = parts[2], parts[3]
         if tmpf in ("", "M"):
             continue
         try:
@@ -281,14 +296,31 @@ def build_station_series(min_date, max_date):
     {station: [(utc_dt, tmpf), ...]}"""
     stations = sorted(set(c["station"] for c in CITY_CONFIG.values()))
     series = {}
+    start_dt = datetime(min_date.year, min_date.month, min_date.day, tzinfo=timezone.utc) - timedelta(days=1)
+    end_dt = datetime(max_date.year, max_date.month, max_date.day, tzinfo=timezone.utc) + timedelta(days=2)
     for st in stations:
         try:
-            series[st] = fetch_asos_station(st, min_date - timedelta(days=1), max_date + timedelta(days=1))
+            series[st] = fetch_asos_station(st, start_dt, end_dt)
             print(f"  ASOS {st}: {len(series[st])} obs")
         except Exception as e:
             print(f"  [warn] ASOS {st} fetch failed: {e}", file=sys.stderr)
             series[st] = []
     return series
+
+
+def compute_station_resolution(station_series):
+    """Diagnostic: median gap (minutes) between consecutive valid tmpf obs per
+    station, to confirm we really have minute-resolution data (not hourly)."""
+    out = {}
+    for st, obs in station_series.items():
+        if len(obs) < 5:
+            out[st] = {"n": len(obs), "median_gap_min": None}
+            continue
+        times = [t for t, v in obs]
+        gaps = [(times[i + 1] - times[i]).total_seconds() / 60.0 for i in range(len(times) - 1)]
+        gaps = [g for g in gaps if g > 0]
+        out[st] = {"n": len(obs), "median_gap_min": statistics.median(gaps) if gaps else None}
+    return out
 
 
 def slice_window(obs, start_utc, end_utc):
@@ -545,6 +577,7 @@ def main():
 
     print("\n[2/4] Fetching ASOS station obs (one bulk request per station) ...")
     station_series = build_station_series(min_date, max_date)
+    station_resolution = compute_station_resolution(station_series)
 
     print("\n[3/4] Fetching Kalshi 1-min candlesticks per market-day (concurrent) ...")
     jobs = []
@@ -582,7 +615,7 @@ def main():
     print(f"  analyzed {len(results)} city-days, skipped {len(skipped)} (insufficient data)")
 
     print("\n[4/4] Aggregating stats + writing report ...")
-    summary = build_summary(results, skipped, min_date, max_date)
+    summary = build_summary(results, skipped, min_date, max_date, station_resolution)
 
     with open(OUT_SUMMARY, "w") as f:
         json.dump(summary, f, indent=2, default=str)
@@ -633,7 +666,7 @@ def side_stats(fired, side_key, bad_key, n_city_days):
     return stats
 
 
-def build_summary(results, skipped, min_date, max_date):
+def build_summary(results, skipped, min_date, max_date, station_resolution=None):
     n_city_days = len(results)
 
     asos_cli_agree = sum(1 for r in results if r["asos_vs_strike_yes"] == r["official_yes"])
@@ -691,6 +724,7 @@ def build_summary(results, skipped, min_date, max_date):
         "late_day_cutoff_lst_hour": LATE_DAY_CUTOFF_HOUR,
         "late_day_cutoff_hours_tested": LATE_DAY_CUTOFF_HOURS,
         "fee_model": "0.07 * p * (1-p) per contract",
+        "station_resolution_min_gap": station_resolution or {},
         "by_margin": by_margin,
         "short_cutoff_sensitivity": cutoff_sens,
         "by_city": by_city,
@@ -713,6 +747,16 @@ def write_report(summary, results):
                  f"({summary['window']['lookback_days']} days), {summary['n_series']} KXHIGH city series.\n")
     lines.append(f"City-days analyzed: **{summary['n_city_days_analyzed']}** "
                  f"(skipped {summary['n_city_days_skipped']} for insufficient ASOS/candle data).\n")
+
+    sr = summary.get("station_resolution_min_gap") or {}
+    if sr:
+        gaps = [v["median_gap_min"] for v in sr.values() if v.get("median_gap_min") is not None]
+        lines.append(f"ASOS data resolution: using IEM's true **one-minute ASOS product** "
+                     f"(`asos1min.py`), median obs gap across {len(sr)} stations = "
+                     f"{fmt(statistics.median(gaps) if gaps else None,1)} min (min {fmt(min(gaps) if gaps else None,1)}, "
+                     f"max {fmt(max(gaps) if gaps else None,1)}). The plain hourly-cadence ASOS archive endpoint "
+                     f"was tested first and rejected: it visibly missed a real ~2F spike at KDEN on 2026-07-08 "
+                     f"that occurred between two hourly readings and flipped a market's settlement (see below).\n")
 
     lines.append("\n## 1. ASOS-observed vs official CLI settlement agreement (the key tail risk)\n")
     a = summary["asos_vs_official_cli"]
