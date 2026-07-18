@@ -1933,5 +1933,97 @@
       "analytic_ev_worst_case_margin1": 0.09312746424769305,
       "fire_rate_vs_raw1min_baseline": 1.0
     }
+  ],
+  "global_ranking_all_margins": [
+    {
+      "candidate": "gated1min",
+      "margin": 2,
+      "n_fired": 31,
+      "fire_rate_vs_raw1min_same_margin": 0.8857142857142857,
+      "cond_loss_rate": 0.0,
+      "worst_case_loss_rate": 0.11025539550647792,
+      "analytic_ev_worst_case": 0.025548281912876673
+    },
+    {
+      "candidate": "roll3",
+      "margin": 1,
+      "n_fired": 38,
+      "fire_rate_vs_raw1min_same_margin": 0.5352112676056338,
+      "cond_loss_rate": 0.02631578947368418,
+      "worst_case_loss_rate": 0.13494876119812985,
+      "analytic_ev_worst_case": 0.1364332651176596
+    },
+    {
+      "candidate": "gated1min",
+      "margin": 3,
+      "n_fired": 16,
+      "fire_rate_vs_raw1min_same_margin": 0.8421052631578947,
+      "cond_loss_rate": 0.0,
+      "worst_case_loss_rate": 0.19360768060771177,
+      "analytic_ev_worst_case": -0.18251799310771197
+    },
+    {
+      "candidate": "raw1min",
+      "margin": 2,
+      "n_fired": 35,
+      "fire_rate_vs_raw1min_same_margin": 1.0,
+      "cond_loss_rate": 0.08571428571428574,
+      "worst_case_loss_rate": 0.22379273970048333,
+      "analytic_ev_worst_case": 0.029737231728088155
+    },
+    {
+      "candidate": "roll3",
+      "margin": 2,
+      "n_fired": 19,
+      "fire_rate_vs_raw1min_same_margin": 0.5428571428571428,
+      "cond_loss_rate": 0.052631578947368474,
+      "worst_case_loss_rate": 0.24638731173082004,
+      "analytic_ev_worst_case": -0.16582899594134629
+    },
+    {
+      "candidate": "gated1min",
+      "margin": 1,
+      "n_fired": 43,
+      "fire_rate_vs_raw1min_same_margin": 0.6056338028169014,
+      "cond_loss_rate": 0.13953488372093026,
+      "worst_case_loss_rate": 0.2726358797106884,
+      "analytic_ev_worst_case": 0.012331143545125399
+    },
+    {
+      "candidate": "sixhr",
+      "margin": 1,
+      "n_fired": 47,
+      "fire_rate_vs_raw1min_same_margin": 0.6619718309859155,
+      "cond_loss_rate": 0.14893617021276595,
+      "worst_case_loss_rate": 0.27685622427094625,
+      "analytic_ev_worst_case": -0.12763192639860585
+    },
+    {
+      "candidate": "sixhr",
+      "margin": 2,
+      "n_fired": 23,
+      "fire_rate_vs_raw1min_same_margin": 0.6571428571428571,
+      "cond_loss_rate": 0.13043478260869568,
+      "worst_case_loss_rate": 0.3212748227540482,
+      "analytic_ev_worst_case": -0.20344869231926552
+    },
+    {
+      "candidate": "raw1min",
+      "margin": 3,
+      "n_fired": 19,
+      "fire_rate_vs_raw1min_same_margin": 1.0,
+      "cond_loss_rate": 0.1578947368421053,
+      "worst_case_loss_rate": 0.37565475276106236,
+      "analytic_ev_worst_case": -0.22460606855053583
+    },
+    {
+      "candidate": "raw1min",
+      "margin": 1,
+      "n_fired": 71,
+      "fire_rate_vs_raw1min_same_margin": 1.0,
+      "cond_loss_rate": 0.3802816901408451,
+      "worst_case_loss_rate": 0.49658143716075775,
+      "analytic_ev_worst_case": 0.09312746424769305
+    }
   ]
 }

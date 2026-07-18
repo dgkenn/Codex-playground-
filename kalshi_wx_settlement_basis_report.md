@@ -17,6 +17,8 @@
 
 **BLUNT VERDICT: the tail SHRINKS, and the deployable rule change is 'roll3'** (best worst-case EV among candidates keeping >=35% of the baseline's fire frequency): margin=1 worst-case loss rate 0.497 (raw1min) -> 0.135 (roll3), conditional loss rate 0.380 -> 0.026, worst-case EV 0.0931 -> **0.1364**/contract, while retaining 0.54 of the baseline's margin=1 fire frequency. **Concrete rule: at margin=1, watch roll3 instead of raw 1-min ASOS.** At margin=2 the raw-1min baseline is already fairly tight (see section 4) and none of the alternates improve worst-case EV there once their thinner fire counts are Wilson-penalized -- the fix is specifically a margin=1 fix, not a universal one.
 
+**EVEN STRONGER, once margin is allowed to move too (section 8): gated1min at margin=2°F is the single best cell in the whole grid** -- n=31 (0.89 of raw-1min's own margin=2 fire count), conditional loss rate 0.000, worst-case loss rate 0.110 (vs raw1min@margin=2's 0.224), worst-case EV 0.0255 (essentially matching raw1min@margin=2's 0.0297, but with the loss tail nearly eliminated). **This is the actual recommended deployable rule: fire the fast raw-1min trigger at strike+2°F as today, but hold execution until the published-METAR running max has ALSO independently reached the bare strike** -- see `first_cross_time_gated()`.
+
 ---
 
 ## 1. Datasets acquired
@@ -197,3 +199,20 @@ Of the **27** raw-1min margin=1 locked-YES-settled-NO misses:
 | 4 | gated1min | 43 | 0.140 | 0.273 | 0.0123 | 0.606 |
 | 5 | sixhr | 47 | 0.149 | 0.277 | -0.1276 | 0.662 |
 | 6 | raw1min | 71 | 0.380 | 0.497 | 0.0931 | 1.000 |
+
+## 8. GLOBAL ranking across every (candidate, margin) combo -- the actual best deployable rule
+
+Not limited to margin=1: every (candidate, margin) cell with n_fired>=8 that retains >=50% of the raw-1min baseline's OWN fire count at that same margin, ranked by worst-case loss rate. This is what finds combos like 'gated1min at margin=2', not just 'candidate X at margin=1'.
+
+| rank | candidate | margin | n fired | fire rate vs raw1min @ same margin | cond. loss rate | worst-case loss rate | EV worst-case |
+|---|---|---|---|---|---|---|---|
+| 1 | gated1min | 2 | 31 | 0.89 | 0.000 | 0.110 | 0.0255 |
+| 2 | roll3 | 1 | 38 | 0.54 | 0.026 | 0.135 | 0.1364 |
+| 3 | gated1min | 3 | 16 | 0.84 | 0.000 | 0.194 | -0.1825 |
+| 4 | raw1min | 2 | 35 | 1.00 | 0.086 | 0.224 | 0.0297 |
+| 5 | roll3 | 2 | 19 | 0.54 | 0.053 | 0.246 | -0.1658 |
+| 6 | gated1min | 1 | 43 | 0.61 | 0.140 | 0.273 | 0.0123 |
+| 7 | sixhr | 1 | 47 | 0.66 | 0.149 | 0.277 | -0.1276 |
+| 8 | sixhr | 2 | 23 | 0.66 | 0.130 | 0.321 | -0.2034 |
+| 9 | raw1min | 3 | 19 | 1.00 | 0.158 | 0.376 | -0.2246 |
+| 10 | raw1min | 1 | 71 | 1.00 | 0.380 | 0.497 | 0.0931 |
