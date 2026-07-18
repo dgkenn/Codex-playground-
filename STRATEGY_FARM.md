@@ -63,7 +63,7 @@ calibrated/NULL across everything farmed (longshot, index brackets, earnings). H
 |---|---|---|
 | K1 | Kalshi MAKER-REBATE MM | TESTING (net-of-adverse-sel) |
 | K2 | Kalshi structural NO-ARB | **DONE — NULL** (5/5 flagged=stale/fee-eaten, 0 real; same as Polymarket; Kalshi fee kills it) |
-| K3 | Kalshi NEW-LISTING mispricing | TESTING (net-of-entry-spread) |
+| K3 | Kalshi NEW-LISTING mispricing | **DONE — NULL (noisier but no direction; spread kills it)** |
 | K4 | Kalshi SPORTS vs sharp book / vs QCX-Global | Kalshi now lists sports; is it mispriced vs de-vigged lines? (legal, uncorrelated) |
 | K5 | Farm GitHub Kalshi bots (ryanfrigo, Krypt-Trader, quantgalore, homerun-Kalshi) → OOS test each on Kalshi data | direct strategy transfer |
 | K6 | Kalshi settlement-timing / decided-but-unresolved capture | Kalshi's fixed close/settlement mechanics |

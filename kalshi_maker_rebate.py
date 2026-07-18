@@ -468,6 +468,14 @@ def analyze_market(prog: dict, fee_info: Dict[str, Tuple[str, float]]) -> dict:
             fee_per_contract = kalshi_fee(mid_price or 0.5, 1.0, fee_mult) if fee_type == "quadratic_with_maker_fees" else 0.0
             fee_cost_per_day = est_fills_per_day * fee_per_contract
             net = est_daily_rebate - adverse_sel_per_day - fee_cost_per_day
+            # How much of a POSITIVE net is actually attributable to the Kalshi rebate itself,
+            # vs. to negative measured adverse-selection (i.e. realized bid/ask spread capture +
+            # short-sample mean-reversion in the trade tape, a generic market-making effect that
+            # exists with or without the incentive program)? This is the key honesty check: K1 is
+            # specifically about the REBATE, not about "is passive market-making profitable on
+            # Kalshi in general" (an interesting but DIFFERENT, unverified hypothesis riding on the
+            # same tape, and one very exposed to small-sample overfitting on a few days of data).
+            rebate_frac_of_net = (est_daily_rebate / net) if net > 0 else None
             scenarios[f"{share_frac:.2f}_{horizon_name}"] = dict(
                 capture_share=capture_share,
                 est_fills_per_day=est_fills_per_day,
@@ -475,6 +483,8 @@ def analyze_market(prog: dict, fee_info: Dict[str, Tuple[str, float]]) -> dict:
                 adverse_sel_per_day=adverse_sel_per_day,
                 fee_cost_per_day=fee_cost_per_day,
                 net_per_day=net,
+                rebate_frac_of_net=rebate_frac_of_net,
+                rebate_driven=(rebate_frac_of_net is not None and rebate_frac_of_net >= 0.25),
             )
     result["scenarios"] = scenarios
     return result
@@ -574,15 +584,23 @@ def write_outputs(universe_stats: dict, results: List[dict], args):
 
     scenario_summary = {}
     for sk in scenario_keys:
-        nets = [r["scenarios"][sk]["net_per_day"] for r in usable if sk in r["scenarios"]]
+        sc_rows = [r["scenarios"][sk] for r in usable if sk in r["scenarios"]]
+        nets = [s["net_per_day"] for s in sc_rows]
         n_pos = sum(1 for v in nets if v > 0)
+        n_rebate_driven = sum(1 for s in sc_rows if s.get("rebate_driven"))
+        n_spread_dominated = sum(1 for s in sc_rows if s["net_per_day"] > 0 and not s.get("rebate_driven"))
+        rebate_driven_nets = [s["net_per_day"] for s in sc_rows if s.get("rebate_driven")]
         scenario_summary[sk] = dict(
             n_markets=len(nets),
             n_net_positive=n_pos,
             frac_net_positive=(n_pos / len(nets) if nets else None),
+            n_rebate_driven_positive=n_rebate_driven,
+            n_spread_capture_dominated_positive=n_spread_dominated,
             mean_net=(statistics.mean(nets) if nets else None),
             median_net=(statistics.median(nets) if nets else None),
             sum_net_across_sample=(sum(nets) if nets else None),
+            mean_net_rebate_driven_only=(statistics.mean(rebate_driven_nets) if rebate_driven_nets else None),
+            median_net_rebate_driven_only=(statistics.median(rebate_driven_nets) if rebate_driven_nets else None),
         )
 
     # headline scenario for narrative: base case = 50% of heuristic share, short (15m) horizon
@@ -623,8 +641,11 @@ def write_outputs(universe_stats: dict, results: List[dict], args):
                 target_size=r["target_size"], daily_volume_contracts=r.get("daily_volume_contracts"),
                 spread=r["depth"].get("spread") if r.get("depth") else None,
                 heuristic_capture_share=r.get("heuristic_capture_share"),
+                book_turnover_per_day=r.get("book_turnover_per_day"),
                 net_per_day_headline=r["scenarios"][headline_key]["net_per_day"] if headline_key in r["scenarios"] else None,
                 net_per_day_stress=r["scenarios"][headline_stress_key]["net_per_day"] if headline_stress_key in r["scenarios"] else None,
+                rebate_driven=r["scenarios"][headline_key].get("rebate_driven") if headline_key in r["scenarios"] else None,
+                rebate_frac_of_net=r["scenarios"][headline_key].get("rebate_frac_of_net") if headline_key in r["scenarios"] else None,
                 is_top_n_sample=r["is_top_n_sample"],
             )
             for r in top_headline

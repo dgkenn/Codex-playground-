@@ -2530,3 +2530,15 @@ Tested homerun's TemporalDecayStrategy on 398 settled Kalshi markets (7 categori
   it just doesn't work either direction. Structural exec-cost story (curve flags "stale" exactly when real info arrives).
 VERDICT: NULL, wrong-signed. 4th confirmation Kalshi efficient vs naive path-shape signals (after VRP/timing, structural-arb,
 calibration). Farm K9 dead.
+
+## KALSHI-NEW-LISTING (2026-07-18, farm K3) — fresh markets noisier but NO exploitable direction: NULL
+Tested new-listing mispricing: 3602 obs / 1242 settled markets / 179 series, 2025-01-04..2026-07-12 (554 days!). Age 0-6/6-24/
+24-48h x spread(>=6c wide / tight), day-clustered t, 27-test Bonferroni.
+- Calibration IMPROVES: Brier(entry) 0.172 -> Brier(+48h) 0.135 (delta 0.032, t=6.6; strongest 0-6h+wide delta 0.043 t=3.84) =
+  real price discovery in first 48h. Informational premise TRUE.
+- BUT NO DIRECTION: price-drift + entry-bias-vs-outcome t's all |t|<1.1 (nowhere near 2), inconsistent sign. Fresh markets do
+  NOT open systematically too high/low on YES. So TRAIN rule-fit t=0.48/0.11 -> NO rule licensed -> nothing traded on TEST.
+  Wide entry spread kills it by pre-emption (no signal to charge it against). Capacity moot ($0 traded).
+VERDICT: NULL. Noise is unbiased dispersion, not a directional edge. Clean. NOTE: this ran on 554 days -> Kalshi /historical
+DOES expose long history for markets that EXISTED; the KXHIGH weather 67-day cap is specifically because those weather series
+are NEW (launched ~May 2026), confirming forward-accumulation is the only path for weather. Farm K3 dead.
