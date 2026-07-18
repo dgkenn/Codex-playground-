@@ -2802,3 +2802,19 @@ Checked whether US-aggregate temp markets could be a deeper-book extension of th
 - KXAVGTEMP settles on NCEI MONTHLY aggregate -> slow-accumulation, same DOA failure as rain. 0 open markets.
 => No deeper-book extension exists. The temp nowcast (city high+low) is the whole edge; capacity ceiling stands. Confirms
 THE_PLAN.md: ~5%/day sound on small capital, 10%/day-at-scale not soundly achievable. Levers exhausted; hunt closed.
+
+## DAILY RAIN (2026-07-18) — NULL: clean lock signal, but the market front-runs it via RADAR faster than we can act
+Tested daily rain markets (higher-volume premise) with an intraday precip-onset lock signal. Findings:
+- LOCK SIGNAL IS CLEAN: METAR present-weather + trace-precip -> 0.48% false-lock (n=207), far better than the naive
+  threshold's 18.5%. So daily rain's lock is REAL and observable (unlike monthly, which was too slow).
+- BUT DELAY-SENSITIVITY KILLS IT: the market closes the gap in ~1-2 min (TIGHTER than temp's 3.3-min half-life) because
+  participants trade off RADAR, not station obs. At realistic 2-min action delay: DOA jumps 72%->97%, tradeable tail 25->3
+  events, blended EV +0.055 (t=3.59) -> +0.0014/ct (t=0.30, NOT significant), net-negative past 10 min. Live anecdote: NYC
+  Jul-15 price was 0.98 a full 23 min BEFORE the fastest independent SPECI rain confirmation arrived.
+- "HIGHER VOLUME" PREMISE FALSE: a single rain market-day = 300-7,400 contracts, comparable-to-THINNER than one temp strike
+  (8k-100k+), and far thinner than a temp city's full multi-rung ladder. Rain is NOT deeper than the temp edge.
+- PRODUCT FAMILY MOSTLY DEAD: KXRAIND/KXRAINMIA zero markets ever; KXRAINSEA dead since 2022; live KXRAIN only 2 event-days.
+- Diversification null (+0.045 corr with temp fire-days).
+VERDICT: do NOT deploy. Rain (monthly AND daily) is null. Monthly = lock too slow; daily = lock real but market front-runs it
+via radar faster than METAR-polling infra can act. Would need a sub-1-min radar/MRMS-class signal. The temp ladder remains the
+edge, and the "rain = higher volume" thesis is disproven. Capacity expansion via rain is CLOSED.
