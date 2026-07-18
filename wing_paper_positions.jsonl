@@ -43,3 +43,4 @@
 {"ticker": "KXBTCD-26JUL2417-T66999.99", "event": "KXBTCD-26JUL2417", "ts": 1784332501.7, "sell_price": 0.13, "yes_bid": 0.13, "yes_ask": 0.15, "mid": 0.14, "floor_strike": 66999.99, "close_time": "2026-07-24T21:00:00Z"}
 {"ticker": "KXBTCD-26JUL1817-T64499.99", "event": "KXBTCD-26JUL1817", "ts": 1784332501.7, "sell_price": 0.14, "yes_bid": 0.14, "yes_ask": 0.15, "mid": 0.14500000000000002, "floor_strike": 64499.99, "close_time": "2026-07-18T21:00:00Z"}
 {"ticker": "KXBTCD-26JUL1802-T63999.99", "event": "KXBTCD-26JUL1802", "ts": 1784352569.8, "sell_price": 0.1, "yes_bid": 0.1, "yes_ask": 0.11, "mid": 0.10500000000000001, "floor_strike": 63999.99, "close_time": "2026-07-18T06:00:00Z"}
+{"ticker": "KXBTCD-26JUL1804-T64099.99", "event": "KXBTCD-26JUL1804", "ts": 1784358846.2, "sell_price": 0.07, "yes_bid": 0.07, "yes_ask": 0.08, "mid": 0.07500000000000001, "floor_strike": 64099.99, "close_time": "2026-07-18T08:00:00Z"}
