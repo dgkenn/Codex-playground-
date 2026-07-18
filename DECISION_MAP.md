@@ -2076,3 +2076,25 @@ feesEnabled=True, feeSchedule={rate:0.07, exponent:1, takerOnly:TRUE, rebateRate
   BUT any spread-crossing (taker) fill now costs 0.07*p*(1-p); and the regime is NEW (post-validation). ACTION: forward gate
   must confirm fills are maker (no adverse fee), and pmkt_shortvol_paper must not assume taker entry. Not a kill; a live-vs-
   tested integrity check. Recorded so the gate watches it.
+
+## LP-REWARDS (2026-07-18) — Polymarket liquidity-rewards program: REAL yield source, but it's latency-bound market-making, NOT risk-minimized (and my pro-rata estimate OVERSTATED it)
+GOAL "~10%/day minimize risk": probed the most risk-minimizing return type -- being PAID to provide liquidity (maker rebates +
+the CLOB Liquidity Rewards Program). Found via gamma fields clobRewards{rewardsDailyRate}, rewardsMinSize, rewardsMaxSpread;
+689 reward-bearing active markets (scanned 2000). Min-size gate: 385 markets allow a <=$50 order; reward-bearing pools
+$150-$1140/day; thin niche markets (esports handicaps, weather, song-order) show dailyRate/book-liquidity up to ~48%/day.
+- FIRST-PASS ESTIMATE WAS WRONG (recording the correction honestly): I approximated small-maker share as size/book-liquidity
+  -> "$50 -> ~46%/day". That OVERSTATES. Real formula (Polymarket docs): reward = (your Q_min / SUM Q_min) * daily_pool,
+  where Q is a QUADRATIC score in closeness to the MIDPOINT and requires TWO-SIDED quoting (Q_min=min(Q_bid,Q_ask), single-
+  sided adjusted only if mid in [0.10,0.90]). Share is won by out-quoting other makers AT THE MID, not by book-liq ratio.
+- WHY IT IS NOT A SOUND high-daily lever for us: (1) scoring forces quoting within rewardsMaxSpread (2.5-4.5c) of a MOVING
+  mid -> a static resting order drifts out of band, stops scoring, and gets picked off; earning it is a LOW-LATENCY REQUOTING
+  arms race (bots requote sub-second) we cannot run on snapshot/GH-Actions infra. (2) Quoting at the mid on thin niche markets
+  = you GET FILLED and hold inventory that resolves 0/1 -> the reward COMPENSATES adverse-selection/inventory risk; net PnL =
+  reward - adverse selection, which the public postmortems find is often negative for slow/small makers. (3) It is market-
+  MAKING, not the risk-minimized yield the goal wants.
+VERDICT: REAL and previously-unquantified, but it is competitive latency-bound market-making with genuine inventory/adverse-
+selection risk -- not a statistically-sound risk-minimized path to a high daily return for a small, slow participant. Requires
+different infra (live continuous two-sided quoting) than our paper harnesses; a snapshot "test" would be misleading. Does NOT
+change the DAILY_RETURN_PLAN ceiling. Filed as a candidate needing live-quoting infra + a net-of-adverse-selection study
+before any belief; NOT deployed. (Maker rebateRate 0.2 on crypto_fees_v2 remains a real minor tailwind for the confirmed
+weekly maker edge -- see FEE-REGIME-FLAG.)
