@@ -2818,3 +2818,12 @@ Tested daily rain markets (higher-volume premise) with an intraday precip-onset 
 VERDICT: do NOT deploy. Rain (monthly AND daily) is null. Monthly = lock too slow; daily = lock real but market front-runs it
 via radar faster than METAR-polling infra can act. Would need a sub-1-min radar/MRMS-class signal. The temp ladder remains the
 edge, and the "rain = higher volume" thesis is disproven. Capacity expansion via rain is CLOSED.
+
+## CONVICTION SIZING (2026-07-18) — "press the good ones / unload the clip": mildly yes, but bounded; NO to all-in
+Data-backed MC (kwx_conviction_sizing.py). Cushion (obs-over-strike) confirmed: 2°F+ cushion = 0% in-sample loss BUT
+smaller gap (market repriced the obvious). Best target = cushion>=2F & gap>=15c (n=350, 0% loss, +0.29-0.33/ct).
+Sweep: pressing conviction fires 5%->20% per-fire cap buys only ~+4% median growth (17.0x->17.7x @ $100); >20% does
+NOTHING (25-ct depth cap binds); above ~$400 bankroll the per-fire cap NEVER binds (depth does) so "unload the clip" is
+PHYSICALLY IMPOSSIBLE. Ruin stays ~0% and worst-day ~-62% ONLY because of the 60%/day deploy cap (without it, -93/-101%).
+VERDICT: detect conviction, press MILDLY (10-15% cap), keep the daily cap + depth limits. Do NOT max-the-bankroll: the
+book won't allow it and it's pure tail for ~0 extra growth. The daily cap, not the per-fire cap, is the real risk control.
