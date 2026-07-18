@@ -56,7 +56,8 @@ class KalshiExec:
         #   (a) the SAME env vars the box strategy (kalshi_trader.py) uses -- KALSHI_API_KEY_ID +
         #       KALSHI_PRIVATE_KEY_PATH (a PEM file) -- so an existing Kalshi setup works with no new config; OR
         #   (b) a local .kalshi_creds JSON ({access_key_id, private_key_pem|private_key_path}).
-        creds_available = bool(os.environ.get("KALSHI_API_KEY_ID") and os.environ.get("KALSHI_PRIVATE_KEY_PATH")) \
+        creds_available = bool(os.environ.get("KALSHI_API_KEY_ID") and
+                               (os.environ.get("KALSHI_PRIVATE_KEY_PATH") or os.environ.get("KALSHI_PRIVATE_KEY"))) \
             or os.path.exists(CREDS_PATH)
         self.live = (os.environ.get("KWX_LIVE") == "1") and creds_available
         if self.live:
@@ -68,11 +69,16 @@ class KalshiExec:
             from cryptography.hazmat.primitives.serialization import load_pem_private_key
             env_id = os.environ.get("KALSHI_API_KEY_ID")
             env_pem_path = os.environ.get("KALSHI_PRIVATE_KEY_PATH")
-            if env_id and env_pem_path:
-                # box-strategy-compatible path: env var key id + PEM file path
+            env_pem = os.environ.get("KALSHI_PRIVATE_KEY")   # PEM content directly (GitHub-secret style)
+            if env_id and (env_pem_path or env_pem):
+                # box-strategy-compatible: key id + PEM (from a file path OR the raw secret content)
                 self._key_id = env_id
-                with open(env_pem_path, "rb") as fh:
-                    self._priv = load_pem_private_key(fh.read(), password=None)
+                if env_pem_path:
+                    with open(env_pem_path, "rb") as fh:
+                        pem_bytes = fh.read()
+                else:
+                    pem_bytes = env_pem.encode()
+                self._priv = load_pem_private_key(pem_bytes, password=None)
             else:
                 creds = json.load(open(CREDS_PATH))
                 self._key_id = creds["access_key_id"]
