@@ -2846,3 +2846,17 @@ Tested exit rules (kwx_exit_rules.py, kwx_turnover.py):
   daily cap already keeps ruin ~0%.
 VERDICT: HOLD to settlement is optimal on both growth and (daily-cap-contained) risk. Conviction-tier (+5%) and exit-rules
 (null) both tested -> the strategy is already well-tuned on sizing/exit axes; further gains marginal, need forward data.
+
+## PER-CITY/RUNG SELECTION (2026-07-18) — NULL: every city & rung positive-EV; nothing to exclude
+Per-city EV all positive (+0.167 San Antonio .. +0.342 DC); dropping any EV-threshold keeps 100% of fires. Per family x
+rung all positive (HIGH-greater +0.41 but tiny n/87%DOA; HIGH/LOW-between +0.21 workhorse; HIGH-less +0.05 & LOW-greater
++0.10 weakest but positive). Phoenix only elevated-loss city (6.2%, n=32) but +0.199 EV -> keep derated, don't exclude.
+No inclusion filter improves risk-adjusted return. Strategy already trades the full profitable set.
+
+## OPTIMIZATION FRONTIER REACHED (2026-07-18) — strategy is well-tuned; +5% conviction is the only real gain
+Ran the recommended optimization tests: (1) conviction sizing = +5% (flat plateau, marginal); (2) exit-rules/turnover =
+NULL (hold-to-settle optimal); (3) per-city/rung selection = NULL (all positive, nothing to cut). CONCLUSION: the Phase-2
+config (margin1/sustain3, quarter-Kelly/5%/17.5%/60%-caps, consensus feed, glitch+sustain3 tail, Phoenix derate) captures
+essentially all available edge on the 65-day summer sample. Only real improvement = the conviction tier (cushion>=2F &
+gap>=15c -> 12% cap, +5%). Further backtest tuning risks OVERFITTING 65 summer days; the next real lever is FORWARD DATA
+(more samples -> tighter, out-of-time tuning), not more in-sample tests. STOP over-tuning; deploy + accumulate forward.
