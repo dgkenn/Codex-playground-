@@ -51,7 +51,7 @@ GLITCH_HI_F, GLITCH_LO_F = 130.0, -60.0
 # The per-fire CAP is the dominant risk lever: at a 20% cap a correlated 'heat-dome' loss day can wipe the
 # account (ruin ~10%); at 5% cap ruin ~0 with nearly the same median growth. Kelly-fraction barely matters
 # once the cap binds. So: quarter-Kelly, hard 5% per-fire cap, 17.5% per-city-day cap, min 1 contract.
-BANKROLL = 50.0         # set to your actual account; sizing scales with it
+BANKROLL = 10.0         # $10 CANARY (operator-authorized 2026-07-18): shake out execution at 1 ct/fire
 KELLY_FRAC = 0.25       # fractional Kelly (quarter) -- robust to model/tail error
 PER_FIRE_CAP = 0.05     # max fraction of bankroll on ONE fire (THE risk control)
 DEPTH_CAP = 25          # never order more than the book can plausibly fill (Tier-1: books 5-100ct)
