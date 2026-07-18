@@ -1,6 +1,6 @@
 # Wang Transform (oracle3) as a longshot-SELECTION overlay -- strict OOS on our short-vol data
 
-_Generated 2026-07-18T15:31:22.956211+00:00_
+_Generated 2026-07-18T15:33:27.440963+00:00_
 
 **Universe:** 1804 qualifying settled weekly BTC/ETH longshot markets (executable in-band first-half YES-buy fills in [0.15,0.3]) across 49 resolution-weeks. Confirmed blanket edge (reference, trade_flow_hist): 0.0589/ct, week-clustered t=2.376, k=49.
 
@@ -50,7 +50,7 @@ Brier: price=0.12306, Wang-published(D=0)=0.17438 (WORSE), Wang-duration=0.13571
 | recalibrated OOS | 0.3653 | 0.775 | 0.4384 | 1596 | 41 |
 
 
-Incremental power outcome~p+signal (week-clustered): published D=0 signal coef=0.043 (t=0.20, p=0.840); recal-OOS signal coef=0.365 (t=0.77, p=0.438). Bonferroni bar |t|>2.638 for 6 tests.
+Incremental power outcome~p+signal (week-clustered): published D=0 signal coef=0.043 (t=0.20, p=0.840); recal-OOS signal coef=0.365 (t=0.77, p=0.438). Neither is close to the Bonferroni bar |t|>2.638 (6 tests); EDGE_SIGNAL adds NOTHING beyond price p.
 
 ## DECISIVE selection test: top-quartile-signal vs blanket band vs bottom-quartile (seller PnL/ct)
 
@@ -67,6 +67,10 @@ Incremental power outcome~p+signal (week-clustered): published D=0 signal coef=0
 
 SELECTION (published D=0): top-quartile-signal edge=0.0552/ct (t=1.754), blanket=0.0589/ct (t=2.376), bottom=0.0455/ct (t=1.608); paired top-minus-blanket=-0.0036/ct (week-clustered t=-0.235). Recalibrated OOS: top=0.0983/ct (t=5.514), blanket=0.0825/ct, top-minus-blanket=0.0158/ct (t=1.144).
 
+## What the recalibration actually learned
+
+Our-data walk-forward MLE lambda = -1.20 + 0.006*lnV + 5.37*|p-0.5|: the volume coefficient collapses to ~0 (published -0.0716 does NOT transfer) and the extremity coefficient flips to LARGE POSITIVE (+5.4 vs published -0.477). So the recalibrated 'signal' is just corr=-0.5603 with price -- it re-discovers 'sell the lowest-price / most-extreme longshots', i.e. the PRICE SUB-BAND tilt already tested and killed. Its better OOS Brier (0.10688 vs 0.11297) is unconditional shrinkage toward the base rate (same reason crypto-const lambda helps), NOT selection alpha.
+
 ## Multiple testing
 
 - Decisive family size = **6** (3 top-vs-blanket + 3 incremental-signal). Bonferroni alpha=0.0083 -> survive bar **|t| > 2.638**.
@@ -77,8 +81,8 @@ SELECTION (published D=0): top-quartile-signal edge=0.0552/ct (t=1.754), blanket
 
 - **Calibration (Brier):** Brier: price=0.12306, Wang-published(D=0)=0.17438 (WORSE), Wang-duration=0.13571, Wang-crypto-const(0.253)=0.11797, Wang-recal-OOS=0.10688 vs price-on-subset=0.11297. Only a CONSTANT crypto lambda improves calibration (unconditional premium); the hierarchical covariates do not.
 
-- **Incremental signal:** Incremental power outcome~p+signal (week-clustered): published D=0 signal coef=0.043 (t=0.20, p=0.840); recal-OOS signal coef=0.365 (t=0.77, p=0.438). Bonferroni bar |t|>2.638 for 6 tests.
+- **Incremental signal:** Incremental power outcome~p+signal (week-clustered): published D=0 signal coef=0.043 (t=0.20, p=0.840); recal-OOS signal coef=0.365 (t=0.77, p=0.438). Neither is close to the Bonferroni bar |t|>2.638 (6 tests); EDGE_SIGNAL adds NOTHING beyond price p.
 
 - **Selection:** SELECTION (published D=0): top-quartile-signal edge=0.0552/ct (t=1.754), blanket=0.0589/ct (t=2.376), bottom=0.0455/ct (t=1.608); paired top-minus-blanket=-0.0036/ct (week-clustered t=-0.235). Recalibrated OOS: top=0.0983/ct (t=5.514), blanket=0.0825/ct, top-minus-blanket=0.0158/ct (t=1.144).
 
-- **Bottom line:** NULL / NO IMPROVEMENT. The Wang Transform does NOT sharpen the confirmed short-vol edge OOS. Neither the published-coeff overlay nor the walk-forward-recalibrated overlay produces a top-quartile seller edge that beats the blanket [0.15,0.30] band by a margin surviving the week-clustered, Bonferroni-haircut bar (|t|>2.638). Published top-minus-blanket=-0.0036/ct (t=-0.235); recalibrated top-minus-blanket=0.0158/ct (t=1.144). This is the 4th consecutive SELECTION null: the ~0.06/ct premium is essentially unconditional, and the principled Wang covariates add no per-trade EV once the volume-driven degeneracy is accounted for.
+- **Bottom line:** NULL / NO IMPROVEMENT. The Wang Transform does NOT sharpen the confirmed short-vol edge OOS. Neither the published-coeff overlay nor the walk-forward-recalibrated overlay produces a top-quartile seller edge that beats the blanket [0.15,0.30] band by a margin surviving the week-clustered, Bonferroni-haircut bar (|t|>2.638). Published top-minus-blanket=-0.0036/ct (t=-0.235, NEGATIVE -- selecting low-volume markets slightly HURTS); recalibrated top-minus-blanket=+0.0158/ct (t=1.144, fails even the nominal t>2 bar). The only 'significant' contrast, recalibrated top-minus-BOTTOM (+0.0757/ct, t=2.488), (i) is sub-Bonferroni, and (ii) is merely the known price-sub-band tilt (recal signal corr -0.5603 with price) -- not a NEW edge. 0 of 6 decisive tests survive. This is the 4th consecutive SELECTION null: the ~0.06/ct premium is essentially UNCONDITIONAL, and the principled Wang covariates add no per-trade EV once the volume-driven degeneracy and the price-tilt rediscovery are accounted for.

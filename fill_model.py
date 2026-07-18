@@ -239,48 +239,64 @@ def simulate_fill(arrivals, p, phi, S):
 
 
 # ============================================================ Cox proportional-hazards (own implementation)
-def cox_ph_fit(X, times, events, l2=1.0, iters=50, tol=1e-8):
-    """Cox PH via Breslow partial-likelihood Newton-Raphson (own code; numpy only).
+def _cox_grad_hess_ll(Xo, eo, beta, l2):
+    """Breslow gradient, Hessian, and ridge-penalized partial log-likelihood at beta.
+    Xo/eo are pre-sorted by DESCENDING time so cumsum builds the risk set."""
+    n, d = Xo.shape
+    eta = np.clip(Xo @ beta, -30.0, 30.0)
+    w = np.exp(eta)
+    cw = np.cumsum(w)
+    cwx = np.cumsum(w[:, None] * Xo, axis=0)
+    cwxx = np.cumsum(w[:, None, None] * (Xo[:, :, None] * Xo[:, None, :]), axis=0)
+    grad = np.zeros(d); hess = np.zeros((d, d)); ll = 0.0
+    ev = eo == 1.0
+    for i in np.nonzero(ev)[0]:
+        r = cw[i]
+        if r <= 0:
+            continue
+        mu = cwx[i] / r
+        grad += Xo[i] - mu
+        hess -= (cwxx[i] / r - np.outer(mu, mu))
+        ll += eta[i] - math.log(r)
+    grad -= l2 * beta
+    hess -= l2 * np.eye(d)
+    ll -= 0.5 * l2 * float(beta @ beta)
+    return grad, hess, ll
+
+
+def cox_ph_fit(X, times, events, l2=2.0, iters=100, tol=1e-7):
+    """Cox PH via Breslow partial-likelihood Newton-Raphson with step-halving (own code; numpy only).
 
     X: (n,d) standardized covariates. times: event/censoring time. events: 1=event,0=censored.
-    Ridge-penalized (l2) for stability with correlated covariates. Returns (beta, baseline_cumhaz_fn, stats).
-    """
-    X = np.asarray(X, float)
-    times = np.asarray(times, float)
-    events = np.asarray(events, float)
+    Ridge-penalized (l2) for stability. Returns (beta, baseline_cumhaz_fn, stats)."""
+    X = np.asarray(X, float); times = np.asarray(times, float); events = np.asarray(events, float)
     n, d = X.shape
-    order = np.argsort(-times)                       # descending time -> cumulative risk set
-    Xo, to, eo = X[order], times[order], events[order]
+    order = np.argsort(-times)                        # descending time -> cumulative risk set
+    Xo, eo = X[order], events[order]
     beta = np.zeros(d)
+    _, _, ll = _cox_grad_hess_ll(Xo, eo, beta, l2)
     for _ in range(iters):
-        eta = Xo @ beta
-        w = np.exp(eta)
-        # cumulative sums over risk set (all j with time >= current, i.e. earlier in descending order)
-        cw = np.cumsum(w)                            # sum of w over risk set
-        cwx = np.cumsum(w[:, None] * Xo, axis=0)     # sum of w*x
-        cwxx = np.cumsum((w[:, None, None] * (Xo[:, :, None] * Xo[:, None, :])), axis=0)
-        grad = np.zeros(d)
-        hess = np.zeros((d, d))
-        for i in range(n):
-            if eo[i] != 1.0:
-                continue
-            r = cw[i]
-            if r <= 0:
-                continue
-            mu = cwx[i] / r
-            grad += Xo[i] - mu
-            hess -= (cwxx[i] / r - np.outer(mu, mu))
-        grad -= l2 * beta
-        hess -= l2 * np.eye(d)
+        grad, hess, ll = _cox_grad_hess_ll(Xo, eo, beta, l2)
         try:
-            step = np.linalg.solve(hess, grad)
+            step = np.linalg.solve(hess - 1e-6 * np.eye(d), grad)   # H is neg-def; Newton = beta - H^-1 grad
         except np.linalg.LinAlgError:
             break
-        newbeta = beta - step
-        if np.max(np.abs(newbeta - beta)) < tol:
-            beta = newbeta
+        # step-halving line search: accept only if the penalized log-likelihood improves
+        lam = 1.0
+        improved = False
+        for _h in range(30):
+            cand = beta - lam * step
+            _, _, ll_c = _cox_grad_hess_ll(Xo, eo, cand, l2)
+            if np.isfinite(ll_c) and ll_c >= ll:
+                improved = True
+                break
+            lam *= 0.5
+        if not improved:
             break
-        beta = newbeta
+        if np.max(np.abs(cand - beta)) < tol:
+            beta = cand
+            break
+        beta = cand
     # Breslow baseline cumulative hazard on ascending unique event times
     eta = X @ beta
     w = np.exp(eta)
@@ -360,10 +376,12 @@ def weekly_capture(data, p, phi, S):
     Returns (weekly_means_list, mean, week_clustered_t, worst_week_val, n_markets_posted_per_week_median)."""
     byw_pnl = defaultdict(float)
     byw_n = defaultdict(int)
+    byw_shares = defaultdict(float)
     for m in data:
         b = phi * eligible_base(m["arrivals"], p)
         fill = min(S, b)
         byw_pnl[m["week"]] += fill * (p - m["yes_outcome"])
+        byw_shares[m["week"]] += fill
         byw_n[m["week"]] += 1
     weeks = sorted(byw_pnl)
     vals = [byw_pnl[w] for w in weeks]
@@ -371,7 +389,8 @@ def weekly_capture(data, p, phi, S):
     t = (mean / (st.stdev(vals) / math.sqrt(len(vals)))) if len(vals) >= 2 and st.stdev(vals) > 0 else float("nan")
     worst = min(vals) if vals else 0.0
     med_posted = st.median(list(byw_n.values())) if byw_n else 0
-    return vals, mean, t, worst, med_posted, dict(zip(weeks, vals))
+    mean_fill_shares = st.mean([byw_shares[w] for w in weeks]) if weeks else 0.0
+    return vals, mean, t, worst, med_posted, dict(zip(weeks, vals)), mean_fill_shares
 
 
 # ============================================================ reusable go-live estimator

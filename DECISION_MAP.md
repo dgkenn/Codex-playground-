@@ -2333,3 +2333,16 @@ RE-PLAN:
   "above $X" ladders, and is the longshot overpricing present on its order book (calibration priced vs realized), or is it
   calibrated like Kalshi? If the edge exists on QCX -> it's the "really good legal Polymarket opportunity" worth the KYC hassle.
 - The Polymarket-Global paper sleeves stay as MECHANISM validation / research, NOT as a US-deployable book.
+
+## WANG-TRANSFORM (2026-07-18, farm S1) — Wang distortion model does NOT sharpen longshot selection: NULL (4th selection null)
+Tested oracle3's Wang Transform as a selection overlay on our 1804 print-validated settled weeklies (49 wks). Agent read the
+repo source (found the 3rd covariate is ln(DURATION) coef +0.143, not "dispute rate" — task mislabel; ran both).
+- Published coeffs DEGENERATE to a volume sort: -0.0716*ln(1+V) dominates at our scale -> lambda mean -0.47, p_true 0.38 ABOVE
+  price 0.22 (mis-signed); EDGE_SIGNAL corr w/ ln(V)=-0.993. Brier: price 0.123, Wang-published 0.174 (WORSE), constant-lambda
+  0.118 (better = plain unconditional shrinkage, not selection).
+- Incremental power outcome~p+signal: coef t=0.20 (published), 0.78 (recal-OOS) -> adds nothing beyond price (Bonferroni 2.64).
+- Decisive selection top-quartile vs blanket (OOS seller PnL): published top-blanket -0.0036 (t=-0.24); recal-OOS +0.0158
+  (t=1.14, fails t>2). Recalibration just re-discovers "sell lowest-price/most-extreme longshots" = the price sub-band tilt
+  ALREADY KILLED; its one sub-Bonferroni contrast (top-bottom +0.076 t=2.49) is that known tilt, not a new edge.
+VERDICT: NULL. 0/6 decisive tests survive. 4th consecutive selection null (after Deribit-density, VRP-regime, strike sub-band).
+The ~0.06/ct premium is UNCONDITIONAL; principled distortion covariates add no per-trade EV. Trade the blanket band. Farm S1 dead.

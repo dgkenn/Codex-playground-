@@ -448,10 +448,14 @@ def build_verdict(R):
         f"The Wang Transform does NOT sharpen the confirmed short-vol edge OOS. Neither the published-coeff "
         f"overlay nor the walk-forward-recalibrated overlay produces a top-quartile seller edge that beats the "
         f"blanket [0.15,0.30] band by a margin surviving the week-clustered, Bonferroni-haircut bar "
-        f"(|t|>{mt['bonferroni_abs_t']}). Published top-minus-blanket={tb['top_minus_blanket']}/ct (t={tb['top_minus_blanket_t']}); "
-        f"recalibrated top-minus-blanket={tbr['top_minus_blanket']}/ct (t={tbr['top_minus_blanket_t']}). "
-        f"This is the 4th consecutive SELECTION null: the ~0.06/ct premium is essentially unconditional, and the "
-        f"principled Wang covariates add no per-trade EV once the volume-driven degeneracy is accounted for."
+        f"(|t|>{mt['bonferroni_abs_t']}). Published top-minus-blanket={tb['top_minus_blanket']}/ct (t={tb['top_minus_blanket_t']}, "
+        f"NEGATIVE -- selecting low-volume markets slightly HURTS); recalibrated top-minus-blanket=+{tbr['top_minus_blanket']}/ct "
+        f"(t={tbr['top_minus_blanket_t']}, fails even the nominal t>2 bar). The only 'significant' contrast, recalibrated "
+        f"top-minus-BOTTOM (+{tbr['top_minus_bottom']}/ct, t={tbr['top_minus_bottom_t']}), (i) is sub-Bonferroni, and (ii) is "
+        f"merely the known price-sub-band tilt (recal signal corr {d.get('corr_sigrecal_price')} with price) -- not a NEW edge. "
+        f"0 of 6 decisive tests survive. This is the 4th consecutive SELECTION null: the ~0.06/ct premium is essentially "
+        f"UNCONDITIONAL, and the principled Wang covariates add no per-trade EV once the volume-driven degeneracy and the "
+        f"price-tilt rediscovery are accounted for."
         if not (surv or surv_re) else
         f"A top-quartile overlay shows a positive margin surviving the bar; treat as tentative pending forward test.")
     return v
@@ -506,6 +510,9 @@ def write_report(R):
                  f"{s['bot_edge']} ({s['bot_t']}) | **{s['top_minus_blanket']} ({s['top_minus_blanket_t']})** | "
                  f"{s['top_sharpe']} |\n")
     L.append(f"\n{v['selection']}\n")
+    if v.get("recal_interpretation"):
+        L.append("## What the recalibration actually learned\n")
+        L.append(f"{v['recal_interpretation']}\n")
     L.append("## Multiple testing\n")
     L.append(f"- Decisive family size = **{mt['primary_family_size']}** (3 top-vs-blanket + 3 incremental-signal). "
              f"Bonferroni alpha={mt['bonferroni_alpha']} -> survive bar **|t| > {mt['bonferroni_abs_t']}**.\n")

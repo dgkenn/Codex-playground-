@@ -1,0 +1,222 @@
+{
+ "generated": "2026-07-18T15:34:57.832690+00:00",
+ "series": {
+  "KXINX": {
+   "human": "S&P 500",
+   "n_events": 45,
+   "exhaustive_days": 45,
+   "nonexhaustive_days": 0,
+   "shortvol": {
+    "band": [
+     0.05,
+     0.3
+    ],
+    "n_days": 45,
+    "n_trades": 209,
+    "mean_pnl_ct_contfee": -0.02023862193121693,
+    "t_day_clustered_contfee": -1.2641654956187904,
+    "mean_pnl_ct_ceilfee": -0.02540555555555556,
+    "t_day_clustered_ceilfee": -1.5826998890571602,
+    "worst_day_mean": -0.25519166666666665,
+    "seller_win_rate": 0.84688995215311,
+    "calibration_avg_mid": 0.1565311004784689,
+    "calibration_avg_bid": 0.13966507177033494,
+    "calibration_realized_yes": 0.15311004784688995
+   },
+   "structural": {
+    "mid_am": {
+     "n_days_full_buy": 45,
+     "underround_mean": -0.8526666666666671,
+     "underround_max": -0.6400000000000003,
+     "underround_positive_days": 0,
+     "n_days_full_sell": 0,
+     "overround_mean": null,
+     "overround_max": null,
+     "overround_positive_days": 0,
+     "details_sample": [
+      {
+       "event": "KXINX-26JUL16H1600",
+       "buy_cost": 1.6400000000000003,
+       "n_buyable": 30,
+       "sell_take": 0.86,
+       "n_sellable": 6,
+       "nbr": 30,
+       "winner_present": 1
+      },
+      {
+       "event": "KXINX-26JUL15H1600",
+       "buy_cost": 1.6400000000000003,
+       "n_buyable": 30,
+       "sell_take": 0.8500000000000001,
+       "n_sellable": 6,
+       "nbr": 30,
+       "winner_present": 1
+      },
+      {
+       "event": "KXINX-26JUL14H1600",
+       "buy_cost": 1.9700000000000006,
+       "n_buyable": 30,
+       "sell_take": 0.7899999999999999,
+       "n_sellable": 6,
+       "nbr": 30,
+       "winner_present": 1
+      }
+     ]
+    },
+    "early_pm": {
+     "n_days_full_buy": 45,
+     "underround_mean": -0.8433333333333337,
+     "underround_max": -0.6300000000000001,
+     "underround_positive_days": 0,
+     "n_days_full_sell": 0,
+     "overround_mean": null,
+     "overround_max": null,
+     "overround_positive_days": 0,
+     "details_sample": [
+      {
+       "event": "KXINX-26JUL16H1600",
+       "buy_cost": 1.6500000000000004,
+       "n_buyable": 30,
+       "sell_take": 0.8500000000000001,
+       "n_sellable": 6,
+       "nbr": 30,
+       "winner_present": 1
+      },
+      {
+       "event": "KXINX-26JUL15H1600",
+       "buy_cost": 1.6500000000000004,
+       "n_buyable": 30,
+       "sell_take": 0.86,
+       "n_sellable": 5,
+       "nbr": 30,
+       "winner_present": 1
+      },
+      {
+       "event": "KXINX-26JUL14H1600",
+       "buy_cost": 1.8200000000000005,
+       "n_buyable": 30,
+       "sell_take": 0.9,
+       "n_sellable": 5,
+       "nbr": 30,
+       "winner_present": 1
+      }
+     ]
+    }
+   },
+   "capacity_median_event_volume": 68443.85,
+   "capacity_max_event_volume": 224952.85999999996
+  },
+  "KXNASDAQ100": {
+   "human": "Nasdaq-100",
+   "n_events": 45,
+   "exhaustive_days": 45,
+   "nonexhaustive_days": 0,
+   "shortvol": {
+    "band": [
+     0.05,
+     0.3
+    ],
+    "n_days": 45,
+    "n_trades": 268,
+    "mean_pnl_ct_contfee": -0.03128505715167548,
+    "t_day_clustered_contfee": -2.8184518328799273,
+    "mean_pnl_ct_ceilfee": -0.03607522045855379,
+    "t_day_clustered_ceilfee": -3.26225948770029,
+    "worst_day_mean": -0.3057765,
+    "seller_win_rate": 0.8582089552238806,
+    "calibration_avg_mid": 0.13860074626865673,
+    "calibration_avg_bid": 0.12026119402985075,
+    "calibration_realized_yes": 0.1417910447761194
+   },
+   "structural": {
+    "mid_am": {
+     "n_days_full_buy": 45,
+     "underround_mean": -1.0371111111111115,
+     "underround_max": -0.6600000000000006,
+     "underround_positive_days": 0,
+     "n_days_full_sell": 0,
+     "overround_mean": null,
+     "overround_max": null,
+     "overround_positive_days": 0,
+     "details_sample": [
+      {
+       "event": "KXNASDAQ100-26JUL16H1600",
+       "buy_cost": 1.8600000000000003,
+       "n_buyable": 30,
+       "sell_take": 0.7400000000000001,
+       "n_sellable": 10,
+       "nbr": 30,
+       "winner_present": 1
+      },
+      {
+       "event": "KXNASDAQ100-26JUL15H1600",
+       "buy_cost": 1.8300000000000003,
+       "n_buyable": 30,
+       "sell_take": 0.7500000000000001,
+       "n_sellable": 12,
+       "nbr": 30,
+       "winner_present": 1
+      },
+      {
+       "event": "KXNASDAQ100-26JUL14H1600",
+       "buy_cost": 1.8100000000000003,
+       "n_buyable": 30,
+       "sell_take": 0.7300000000000001,
+       "n_sellable": 12,
+       "nbr": 30,
+       "winner_present": 1
+      }
+     ]
+    },
+    "early_pm": {
+     "n_days_full_buy": 45,
+     "underround_mean": -1.0528888888888892,
+     "underround_max": -0.6800000000000004,
+     "underround_positive_days": 0,
+     "n_days_full_sell": 0,
+     "overround_mean": null,
+     "overround_max": null,
+     "overround_positive_days": 0,
+     "details_sample": [
+      {
+       "event": "KXNASDAQ100-26JUL16H1600",
+       "buy_cost": 1.8800000000000003,
+       "n_buyable": 30,
+       "sell_take": 0.79,
+       "n_sellable": 11,
+       "nbr": 30,
+       "winner_present": 1
+      },
+      {
+       "event": "KXNASDAQ100-26JUL15H1600",
+       "buy_cost": 1.8900000000000003,
+       "n_buyable": 30,
+       "sell_take": 0.83,
+       "n_sellable": 9,
+       "nbr": 30,
+       "winner_present": 1
+      },
+      {
+       "event": "KXNASDAQ100-26JUL14H1600",
+       "buy_cost": 1.8400000000000007,
+       "n_buyable": 30,
+       "sell_take": 0.8200000000000001,
+       "n_sellable": 8,
+       "nbr": 30,
+       "winner_present": 1
+      }
+     ]
+    }
+   },
+   "capacity_median_event_volume": 30811.619999999995,
+   "capacity_max_event_volume": 417048.2699999999
+  }
+ },
+ "multiple_testing_count": 6,
+ "verdict": {
+  "fee_surviving_shortvol_edge": false,
+  "fee_surviving_structural_arb": false,
+  "deployable": false,
+  "statement": "NO fee-surviving Kalshi index-bracket edge. Daily S&P/Nasdaq brackets are near-perfectly calibrated (priced mid ~= realized YES rate to ~1pt). Selling outer brackets loses net of fee+spread (Nasdaq significantly negative, t=-2.8/-3.3), consistent with the prior calibrated-Kalshi-longshot null. Structurally the bracket set is verified exhaustive (45/45 days exactly one winner) but the bid/ask straddles $1.00 with a wide spread (sum asks ~1.6-2.0, sum bids ~0.85 with 24/30 wings bidless): no underround, no sellable overround, no risk-free lock. Nothing deployable; correlation with the crypto short-vol edge is moot (no edge to add)."
+ }
+}

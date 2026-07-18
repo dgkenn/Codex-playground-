@@ -1,0 +1,674 @@
+{
+  "generated": "2026-07-18T15:33:29.903379+00:00",
+  "n_posted_markets": 6848,
+  "n_with_inband_flow": 1804,
+  "frac_with_flow": 0.2634,
+  "n_weeks": 49,
+  "median_markets_posted_per_week": 153,
+  "assumptions": {
+    "phi_definition": "phi = fraction of eligible arriving in-band YES-buy flow the resting seller captures (queue-competition proxy; UNOBSERVABLE without L2 queue data).",
+    "phi_scenarios": {
+      "pessimistic": 0.15,
+      "realistic": 0.35,
+      "optimistic": 0.65
+    },
+    "phi_theoretical_ceiling": 1.0,
+    "operating_price": 0.2,
+    "resting_price_note": "Seller rests SELL YES at ask=operating_price; only in-band YES-buy takers paying >= ask can lift the offer (edge-vs-capacity frontier).",
+    "no_l2": "No L2 queue history on Polymarket public data; queue depth is unobservable and is collapsed into phi. This is a proxy for homerun's full-queue Cox model.",
+    "thin_n": "median ~6 in-band prints per fillable market -> per-market time-to-fill is granular; aggregate over 6848 markets / 49 weeks is robust."
+  },
+  "fill_probability_curve": [
+    {
+      "size": 5,
+      "pessimistic": {
+        "p_any_fill": 0.2209,
+        "p_full_fill": 0.1733,
+        "exp_fill_fraction": 0.1929
+      },
+      "realistic": {
+        "p_any_fill": 0.2209,
+        "p_full_fill": 0.1932,
+        "exp_fill_fraction": 0.2076
+      },
+      "optimistic": {
+        "p_any_fill": 0.2209,
+        "p_full_fill": 0.2062,
+        "exp_fill_fraction": 0.2155
+      }
+    },
+    {
+      "size": 10,
+      "pessimistic": {
+        "p_any_fill": 0.2209,
+        "p_full_fill": 0.1523,
+        "exp_fill_fraction": 0.1779
+      },
+      "realistic": {
+        "p_any_fill": 0.2209,
+        "p_full_fill": 0.1771,
+        "exp_fill_fraction": 0.1959
+      },
+      "optimistic": {
+        "p_any_fill": 0.2209,
+        "p_full_fill": 0.1913,
+        "exp_fill_fraction": 0.2065
+      }
+    },
+    {
+      "size": 25,
+      "pessimistic": {
+        "p_any_fill": 0.2209,
+        "p_full_fill": 0.125,
+        "exp_fill_fraction": 0.1534
+      },
+      "realistic": {
+        "p_any_fill": 0.2209,
+        "p_full_fill": 0.1501,
+        "exp_fill_fraction": 0.1761
+      },
+      "optimistic": {
+        "p_any_fill": 0.2209,
+        "p_full_fill": 0.1698,
+        "exp_fill_fraction": 0.1901
+      }
+    },
+    {
+      "size": 50,
+      "pessimistic": {
+        "p_any_fill": 0.2209,
+        "p_full_fill": 0.1012,
+        "exp_fill_fraction": 0.1328
+      },
+      "realistic": {
+        "p_any_fill": 0.2209,
+        "p_full_fill": 0.1298,
+        "exp_fill_fraction": 0.1577
+      },
+      "optimistic": {
+        "p_any_fill": 0.2209,
+        "p_full_fill": 0.1479,
+        "exp_fill_fraction": 0.1742
+      }
+    },
+    {
+      "size": 100,
+      "pessimistic": {
+        "p_any_fill": 0.2209,
+        "p_full_fill": 0.0717,
+        "exp_fill_fraction": 0.1089
+      },
+      "realistic": {
+        "p_any_fill": 0.2209,
+        "p_full_fill": 0.1072,
+        "exp_fill_fraction": 0.1376
+      },
+      "optimistic": {
+        "p_any_fill": 0.2209,
+        "p_full_fill": 0.1285,
+        "exp_fill_fraction": 0.1556
+      }
+    },
+    {
+      "size": 250,
+      "pessimistic": {
+        "p_any_fill": 0.2209,
+        "p_full_fill": 0.0399,
+        "exp_fill_fraction": 0.0758
+      },
+      "realistic": {
+        "p_any_fill": 0.2209,
+        "p_full_fill": 0.0689,
+        "exp_fill_fraction": 0.1063
+      },
+      "optimistic": {
+        "p_any_fill": 0.2209,
+        "p_full_fill": 0.0967,
+        "exp_fill_fraction": 0.1282
+      }
+    },
+    {
+      "size": 500,
+      "pessimistic": {
+        "p_any_fill": 0.2209,
+        "p_full_fill": 0.0229,
+        "exp_fill_fraction": 0.0529
+      },
+      "realistic": {
+        "p_any_fill": 0.2209,
+        "p_full_fill": 0.0457,
+        "exp_fill_fraction": 0.0814
+      },
+      "optimistic": {
+        "p_any_fill": 0.2209,
+        "p_full_fill": 0.0662,
+        "exp_fill_fraction": 0.1035
+      }
+    },
+    {
+      "size": 1000,
+      "pessimistic": {
+        "p_any_fill": 0.2209,
+        "p_full_fill": 0.0083,
+        "exp_fill_fraction": 0.0338
+      },
+      "realistic": {
+        "p_any_fill": 0.2209,
+        "p_full_fill": 0.0264,
+        "exp_fill_fraction": 0.0576
+      },
+      "optimistic": {
+        "p_any_fill": 0.2209,
+        "p_full_fill": 0.0426,
+        "exp_fill_fraction": 0.0787
+      }
+    },
+    {
+      "size": 2500,
+      "pessimistic": {
+        "p_any_fill": 0.2209,
+        "p_full_fill": 0.0016,
+        "exp_fill_fraction": 0.016
+      },
+      "realistic": {
+        "p_any_fill": 0.2209,
+        "p_full_fill": 0.0076,
+        "exp_fill_fraction": 0.032
+      },
+      "optimistic": {
+        "p_any_fill": 0.2209,
+        "p_full_fill": 0.0203,
+        "exp_fill_fraction": 0.0487
+      }
+    }
+  ],
+  "capture_curves_usd_per_week": {
+    "pessimistic": [
+      {
+        "size": 5,
+        "mean_week_usd": 5.89,
+        "week_t": 1.624,
+        "worst_week_usd": -94.04
+      },
+      {
+        "size": 10,
+        "mean_week_usd": 11.36,
+        "week_t": 1.697,
+        "worst_week_usd": -169.0
+      },
+      {
+        "size": 25,
+        "mean_week_usd": 25.2,
+        "week_t": 1.727,
+        "worst_week_usd": -354.52
+      },
+      {
+        "size": 50,
+        "mean_week_usd": 44.6,
+        "week_t": 1.734,
+        "worst_week_usd": -629.52
+      },
+      {
+        "size": 100,
+        "mean_week_usd": 74.44,
+        "week_t": 1.724,
+        "worst_week_usd": -1114.09
+      },
+      {
+        "size": 250,
+        "mean_week_usd": 134.52,
+        "week_t": 1.732,
+        "worst_week_usd": -2188.1
+      },
+      {
+        "size": 500,
+        "mean_week_usd": 200.64,
+        "week_t": 1.734,
+        "worst_week_usd": -3642.86
+      },
+      {
+        "size": 1000,
+        "mean_week_usd": 345.12,
+        "week_t": 2.457,
+        "worst_week_usd": -4089.35
+      },
+      {
+        "size": 2500,
+        "mean_week_usd": 495.06,
+        "week_t": 3.085,
+        "worst_week_usd": -4089.35
+      }
+    ],
+    "realistic": [
+      {
+        "size": 5,
+        "mean_week_usd": 5.92,
+        "week_t": 1.528,
+        "worst_week_usd": -100.97
+      },
+      {
+        "size": 10,
+        "mean_week_usd": 11.8,
+        "week_t": 1.6,
+        "worst_week_usd": -192.94
+      },
+      {
+        "size": 25,
+        "mean_week_usd": 28.1,
+        "week_t": 1.693,
+        "worst_week_usd": -417.67
+      },
+      {
+        "size": 50,
+        "mean_week_usd": 51.18,
+        "week_t": 1.707,
+        "worst_week_usd": -735.55
+      },
+      {
+        "size": 100,
+        "mean_week_usd": 92.43,
+        "week_t": 1.743,
+        "worst_week_usd": -1285.55
+      },
+      {
+        "size": 250,
+        "mean_week_usd": 182.23,
+        "week_t": 1.724,
+        "worst_week_usd": -2737.2
+      },
+      {
+        "size": 500,
+        "mean_week_usd": 286.61,
+        "week_t": 1.73,
+        "worst_week_usd": -4555.56
+      },
+      {
+        "size": 1000,
+        "mean_week_usd": 421.24,
+        "week_t": 1.699,
+        "worst_week_usd": -7641.35
+      },
+      {
+        "size": 2500,
+        "mean_week_usd": 836.23,
+        "week_t": 2.521,
+        "worst_week_usd": -9541.81
+      }
+    ],
+    "optimistic": [
+      {
+        "size": 5,
+        "mean_week_usd": 6.15,
+        "week_t": 1.552,
+        "worst_week_usd": -101.35
+      },
+      {
+        "size": 10,
+        "mean_week_usd": 11.82,
+        "week_t": 1.53,
+        "worst_week_usd": -201.86
+      },
+      {
+        "size": 25,
+        "mean_week_usd": 29.43,
+        "week_t": 1.651,
+        "worst_week_usd": -458.85
+      },
+      {
+        "size": 50,
+        "mean_week_usd": 55.45,
+        "week_t": 1.686,
+        "worst_week_usd": -825.67
+      },
+      {
+        "size": 100,
+        "mean_week_usd": 101.62,
+        "week_t": 1.717,
+        "worst_week_usd": -1444.59
+      },
+      {
+        "size": 250,
+        "mean_week_usd": 214.87,
+        "week_t": 1.718,
+        "worst_week_usd": -3083.93
+      },
+      {
+        "size": 500,
+        "mean_week_usd": 356.32,
+        "week_t": 1.726,
+        "worst_week_usd": -5376.23
+      },
+      {
+        "size": 1000,
+        "mean_week_usd": 557.09,
+        "week_t": 1.734,
+        "worst_week_usd": -8931.76
+      },
+      {
+        "size": 2500,
+        "mean_week_usd": 978.92,
+        "week_t": 1.839,
+        "worst_week_usd": -16760.8
+      }
+    ],
+    "theoretical": [
+      {
+        "size": 5,
+        "mean_week_usd": 6.29,
+        "week_t": 1.574,
+        "worst_week_usd": -101.0
+      },
+      {
+        "size": 10,
+        "mean_week_usd": 12.13,
+        "week_t": 1.538,
+        "worst_week_usd": -203.0
+      },
+      {
+        "size": 25,
+        "mean_week_usd": 29.55,
+        "week_t": 1.582,
+        "worst_week_usd": -490.54
+      },
+      {
+        "size": 50,
+        "mean_week_usd": 58.69,
+        "week_t": 1.695,
+        "worst_week_usd": -885.2
+      },
+      {
+        "size": 100,
+        "mean_week_usd": 106.9,
+        "week_t": 1.681,
+        "worst_week_usd": -1593.34
+      },
+      {
+        "size": 250,
+        "mean_week_usd": 238.25,
+        "week_t": 1.753,
+        "worst_week_usd": -3280.14
+      },
+      {
+        "size": 500,
+        "mean_week_usd": 401.48,
+        "week_t": 1.706,
+        "worst_week_usd": -5921.43
+      },
+      {
+        "size": 1000,
+        "mean_week_usd": 657.76,
+        "week_t": 1.735,
+        "worst_week_usd": -10159.74
+      },
+      {
+        "size": 2500,
+        "mean_week_usd": 1124.7,
+        "week_t": 1.719,
+        "worst_week_usd": -19659.32
+      }
+    ]
+  },
+  "price_frontier": {
+    "pessimistic": [
+      {
+        "price": 0.15,
+        "mean_week_usd": 31.72,
+        "realized_edge_per_ct": 0.0156,
+        "weekly_fill_shares": 2029.8
+      },
+      {
+        "price": 0.18,
+        "mean_week_usd": 60.73,
+        "realized_edge_per_ct": 0.0354,
+        "weekly_fill_shares": 1714.4
+      },
+      {
+        "price": 0.2,
+        "mean_week_usd": 74.44,
+        "realized_edge_per_ct": 0.0489,
+        "weekly_fill_shares": 1521.3
+      },
+      {
+        "price": 0.22,
+        "mean_week_usd": 77.24,
+        "realized_edge_per_ct": 0.0609,
+        "weekly_fill_shares": 1267.8
+      },
+      {
+        "price": 0.25,
+        "mean_week_usd": 67.06,
+        "realized_edge_per_ct": 0.0729,
+        "weekly_fill_shares": 920.0
+      },
+      {
+        "price": 0.28,
+        "mean_week_usd": 27.66,
+        "realized_edge_per_ct": 0.0577,
+        "weekly_fill_shares": 479.4
+      }
+    ],
+    "realistic": [
+      {
+        "price": 0.15,
+        "mean_week_usd": 36.14,
+        "realized_edge_per_ct": 0.0146,
+        "weekly_fill_shares": 2474.6
+      },
+      {
+        "price": 0.18,
+        "mean_week_usd": 75.87,
+        "realized_edge_per_ct": 0.0356,
+        "weekly_fill_shares": 2134.0
+      },
+      {
+        "price": 0.2,
+        "mean_week_usd": 92.43,
+        "realized_edge_per_ct": 0.0481,
+        "weekly_fill_shares": 1923.4
+      },
+      {
+        "price": 0.22,
+        "mean_week_usd": 98.79,
+        "realized_edge_per_ct": 0.0602,
+        "weekly_fill_shares": 1640.6
+      },
+      {
+        "price": 0.25,
+        "mean_week_usd": 93.05,
+        "realized_edge_per_ct": 0.0753,
+        "weekly_fill_shares": 1236.1
+      },
+      {
+        "price": 0.28,
+        "mean_week_usd": 47.46,
+        "realized_edge_per_ct": 0.0692,
+        "weekly_fill_shares": 686.0
+      }
+    ],
+    "optimistic": [
+      {
+        "price": 0.15,
+        "mean_week_usd": 37.51,
+        "realized_edge_per_ct": 0.0136,
+        "weekly_fill_shares": 2752.4
+      },
+      {
+        "price": 0.18,
+        "mean_week_usd": 81.5,
+        "realized_edge_per_ct": 0.0342,
+        "weekly_fill_shares": 2383.8
+      },
+      {
+        "price": 0.2,
+        "mean_week_usd": 101.62,
+        "realized_edge_per_ct": 0.0467,
+        "weekly_fill_shares": 2175.2
+      },
+      {
+        "price": 0.22,
+        "mean_week_usd": 111.91,
+        "realized_edge_per_ct": 0.0593,
+        "weekly_fill_shares": 1888.1
+      },
+      {
+        "price": 0.25,
+        "mean_week_usd": 112.52,
+        "realized_edge_per_ct": 0.0767,
+        "weekly_fill_shares": 1466.7
+      },
+      {
+        "price": 0.28,
+        "mean_week_usd": 62.75,
+        "realized_edge_per_ct": 0.0738,
+        "weekly_fill_shares": 849.8
+      }
+    ]
+  },
+  "phi_sensitivity": [
+    {
+      "phi": 0.1,
+      "mean_week_usd": 65.78,
+      "week_t": 1.735,
+      "worst_week_usd": -1015.97
+    },
+    {
+      "phi": 0.15,
+      "mean_week_usd": 74.44,
+      "week_t": 1.724,
+      "worst_week_usd": -1114.09
+    },
+    {
+      "phi": 0.25,
+      "mean_week_usd": 85.23,
+      "week_t": 1.719,
+      "worst_week_usd": -1225.36
+    },
+    {
+      "phi": 0.35,
+      "mean_week_usd": 92.43,
+      "week_t": 1.743,
+      "worst_week_usd": -1285.55
+    },
+    {
+      "phi": 0.5,
+      "mean_week_usd": 98.76,
+      "week_t": 1.746,
+      "worst_week_usd": -1365.07
+    },
+    {
+      "phi": 0.75,
+      "mean_week_usd": 103.13,
+      "week_t": 1.699,
+      "worst_week_usd": -1497.61
+    },
+    {
+      "phi": 1.0,
+      "mean_week_usd": 106.9,
+      "week_t": 1.681,
+      "worst_week_usd": -1593.34
+    }
+  ],
+  "cox": {
+    "hazard_ratios_per_sd": {
+      "log_arrival_rate": NaN,
+      "log_order_size": NaN,
+      "dist_from_floor": NaN,
+      "horizon_days": NaN
+    },
+    "c_index": 0.5,
+    "brier": NaN,
+    "cov_names": [
+      "log_arrival_rate",
+      "log_order_size",
+      "dist_from_floor",
+      "horizon_days"
+    ],
+    "beta": [
+      NaN,
+      NaN,
+      NaN,
+      NaN
+    ],
+    "note": "Own Breslow partial-likelihood Newton fit; HR>1 => covariate raises the fill hazard (faster/more-likely fill). Event=order fully filled within first-half window."
+  },
+  "cox_vs_empirical": [
+    {
+      "size": 10,
+      "empirical_p_full": 0.1771,
+      "cox_p_full": NaN
+    },
+    {
+      "size": 100,
+      "empirical_p_full": 0.1072,
+      "cox_p_full": NaN
+    },
+    {
+      "size": 1000,
+      "empirical_p_full": 0.0264,
+      "cox_p_full": NaN
+    }
+  ],
+  "capacity": {
+    "median_markets_posted_per_week": 153,
+    "theoretical_max_week_usd_phi1": 3528.99,
+    "realistic_capacity_ceiling_week_usd": 1235.15,
+    "bankroll_to_weekly_usd": [
+      {
+        "bankroll": 50,
+        "shares_per_market": 0.41,
+        "realistic_week_usd": 0.52,
+        "pessimistic_week_usd": 0.52,
+        "optimistic_week_usd": 0.52
+      },
+      {
+        "bankroll": 100,
+        "shares_per_market": 0.82,
+        "realistic_week_usd": 1.03,
+        "pessimistic_week_usd": 1.02,
+        "optimistic_week_usd": 1.04
+      },
+      {
+        "bankroll": 250,
+        "shares_per_market": 2.04,
+        "realistic_week_usd": 2.54,
+        "pessimistic_week_usd": 2.42,
+        "optimistic_week_usd": 2.58
+      },
+      {
+        "bankroll": 500,
+        "shares_per_market": 4.08,
+        "realistic_week_usd": 4.89,
+        "pessimistic_week_usd": 4.82,
+        "optimistic_week_usd": 5.07
+      },
+      {
+        "bankroll": 2000,
+        "shares_per_market": 16.34,
+        "realistic_week_usd": 19.24,
+        "pessimistic_week_usd": 17.27,
+        "optimistic_week_usd": 19.31
+      },
+      {
+        "bankroll": 10000,
+        "shares_per_market": 81.7,
+        "realistic_week_usd": 78.81,
+        "pessimistic_week_usd": 64.36,
+        "optimistic_week_usd": 84.82
+      },
+      {
+        "bankroll": 50000,
+        "shares_per_market": 408.5,
+        "realistic_week_usd": 253.81,
+        "pessimistic_week_usd": 175.9,
+        "optimistic_week_usd": 309.34
+      }
+    ],
+    "collateral_per_share": 0.8
+  },
+  "headline": {
+    "small_bankroll_realistic_usd_per_week": 2.06,
+    "large_size_realistic_ceiling_usd_per_week": 1235.15,
+    "realized_edge_per_ct_at_operating_point": 0.0481,
+    "fraction_of_0p12_edge_captured_per_ct": 0.4
+  }
+}

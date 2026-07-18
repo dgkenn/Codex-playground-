@@ -376,6 +376,35 @@ def analyze():
     n_tests = len(SERIES) * (1 + 2)  # 1 shortvol + 2 structural snapshots per series
     summary["multiple_testing_count"] = n_tests
 
+    # ---------- blunt verdict ----------
+    any_sv = any(
+        (summary["series"][s]["shortvol"]["mean_pnl_ct_ceilfee"] > 0 and
+         summary["series"][s]["shortvol"]["t_day_clustered_ceilfee"] > 2.5)
+        for s in summary["series"]
+    )
+    any_struct = any(
+        (summary["series"][s]["structural"][lab]["underround_positive_days"] > 0 or
+         summary["series"][s]["structural"][lab]["overround_positive_days"] > 0)
+        for s in summary["series"] for lab in ("mid_am", "early_pm")
+    )
+    verdict = {
+        "fee_surviving_shortvol_edge": bool(any_sv),
+        "fee_surviving_structural_arb": bool(any_struct),
+        "deployable": bool(any_sv or any_struct),
+        "statement": (
+            "NO fee-surviving Kalshi index-bracket edge. Daily S&P/Nasdaq brackets "
+            "are near-perfectly calibrated (priced mid ~= realized YES rate to ~1pt). "
+            "Selling outer brackets loses net of fee+spread (Nasdaq significantly "
+            "negative, t=-2.8/-3.3), consistent with the prior calibrated-Kalshi-longshot "
+            "null. Structurally the bracket set is verified exhaustive (45/45 days exactly "
+            "one winner) but the bid/ask straddles $1.00 with a wide spread (sum asks "
+            "~1.6-2.0, sum bids ~0.85 with 24/30 wings bidless): no underround, no "
+            "sellable overround, no risk-free lock. Nothing deployable; correlation with "
+            "the crypto short-vol edge is moot (no edge to add)."
+        ),
+    }
+    summary["verdict"] = verdict
+
     with open(os.path.join(ROOT, "kalshi_spx_summary.json"), "w") as f:
         json.dump(summary, f, indent=1, default=str)
 
@@ -391,8 +420,21 @@ def analyze():
         f"Multiple-testing count: {n_tests} tests "
         f"({len(SERIES)} series x [1 short-vol + 2 structural snapshots]).\n",
     ]
+    vsec = [
+        "## BLUNT VERDICT\n",
+        f"- Fee-surviving short-vol edge? **{verdict['fee_surviving_shortvol_edge']}**",
+        f"- Fee-surviving structural arb? **{verdict['fee_surviving_structural_arb']}**",
+        f"- Deployable? **{verdict['deployable']}**\n",
+        verdict["statement"],
+        "\n### Correlation-with-crypto note",
+        "Equity-index daily brackets and the confirmed crypto daily short-vol edge both "
+        "amount to shorting daily realized-vs-implied vol, so a *real* index premium would "
+        "be a partially-correlated (equity/crypto beta ~0.3-0.5 in risk-on/off) but distinct "
+        "VRP stream -- attractive diversification IF it existed. It does not: the index "
+        "brackets are efficiently priced, so there is nothing to add to the portfolio.",
+    ]
     with open(os.path.join(ROOT, "kalshi_spx_report.md"), "w") as f:
-        f.write("\n".join(hdr) + "\n" + "\n\n".join(report_sections))
+        f.write("\n".join(hdr) + "\n" + "\n\n".join(report_sections) + "\n\n" + "\n".join(vsec))
     print("[analyze] wrote kalshi_spx_report.md + kalshi_spx_summary.json")
     return summary
 
