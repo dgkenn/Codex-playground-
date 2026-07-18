@@ -418,6 +418,10 @@ def analyze_market(prog: dict, fee_info: Dict[str, Tuple[str, float]]) -> dict:
     result["trade_span_days"] = span_days
     result["trade_burst_span_sec"] = span_sec
 
+    price_vals = [float(t["yes_price_dollars"]) for t in trades]
+    result["price_range_observed"] = (min(price_vals), max(price_vals))
+    result["price_swing"] = max(price_vals) - min(price_vals)
+
     mo_short = compute_markout(trades, MARKOUT_HORIZON_SHORT_SEC)
     mo_long = compute_markout(trades, MARKOUT_HORIZON_LONG_SEC)
     result["markout_short"] = mo_short
@@ -431,6 +435,13 @@ def analyze_market(prog: dict, fee_info: Dict[str, Tuple[str, float]]) -> dict:
     heuristic_share = target / (avg_touch_depth + target) if (avg_touch_depth + target) > 0 else 0.0
     result["heuristic_capture_share"] = heuristic_share
     result["avg_touch_depth"] = avg_touch_depth
+    # Diagnostic only (NOT used to alter the math): how many times the CURRENT snapshot depth
+    # would need to "turn over" to account for the observed daily volume. A single live-orderbook
+    # snapshot is a poor proxy for cumulative competing liquidity on a book that turns over many
+    # times a day -- high turnover means the capture_share heuristic is on shakier ground (it
+    # implicitly assumes our resting size keeps its queue share across every one of those
+    # turnovers, which is optimistic and unverifiable without live quoting).
+    result["book_turnover_per_day"] = (daily_volume / avg_touch_depth) if avg_touch_depth > 0 else None
 
     series = prog["series"]
     fee_type, fee_mult = fee_info.get(series, ("quadratic", 1.0))
