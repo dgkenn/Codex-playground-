@@ -61,11 +61,12 @@ calibrated/NULL across everything farmed (longshot, index brackets, earnings). H
 |---|---|---|
 | K1 | Kalshi MAKER-REBATE MM (CFTC rebate formula) | UN-KILLED (distinct from Poly LP-pool); ref: aasuper1/kalshi-alpha-strategies; net-of-adverse-sel |
 | K2 | Kalshi structural NO-ARB (ladder-mono + complement-sum + range-sum) | **TOP candidate**; 3 ref impls (Hulkmode85/Dbentley142/oracle3); math-provable, free data; caveat: Poly ver was NULL (stale quotes)+1.75% fee |
-| K3 | Kalshi NEW-LISTING / cold-market mispricing | freshly listed Kalshi markets before MMs tighten (thin-book inefficiency) |
+| K3 | Kalshi NEW-LISTING mispricing | ref impl djmorgan26 (<48h, spread>=6c, 48h converge); day-scale patience play |
 | K4 | Kalshi SPORTS vs sharp book / vs QCX-Global | Kalshi now lists sports; is it mispriced vs de-vigged lines? (legal, uncorrelated) |
 | K5 | Farm GitHub Kalshi bots (ryanfrigo, Krypt-Trader, quantgalore, homerun-Kalshi) → OOS test each on Kalshi data | direct strategy transfer |
 | K6 | Kalshi settlement-timing / decided-but-unresolved capture | Kalshi's fixed close/settlement mechanics |
 | K7 | Kalshi FAVLONG revisit (favorite-longshot on Kalshi tenors) | prior program work; re-test net-of-fee on current data |
+| K9 | Theta-decay curve mispricing (homerun) | price vs sqrt-time decay curve to 0/1; trade >7% deviation; multi-day |
 | K8 | **Fill data holes from GitHub (high-leverage unlocks)** | see K8 data targets below — prioritize deep history + sharp lines |
 Discipline unchanged: NET of Kalshi fees always (the recurring killer); executable prices; cluster t; multiple-testing; honest nulls.
 

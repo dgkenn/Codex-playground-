@@ -64,8 +64,11 @@ OUT_SUMMARY = os.path.join(HERE, "kalshi_weather_nowcast_summary.json")
 LOOKBACK_DAYS = 42
 
 # Decision-event margins to test (deg F on top of the strike; strike itself already
-# requires actual > strike since Kalshi "greater" markets are strict inequality)
-MARGINS = [1, 2]
+# requires actual > strike since Kalshi "greater" markets are strict inequality). Task
+# asked for 1-2F; margin=3 added after 1-2F showed a real, large (3F) miss even at
+# margin=2 (raw 1-min ASOS running ~3F above the eventual official CLI value on one
+# Miami day) -- worth seeing whether the tail risk keeps shrinking or is a hard floor.
+MARGINS = [1, 2, 3]
 
 # Minimum required gap (1 - exec_price for YES-side, or exec_price for NO-side is the
 # "already-priced-in" cost; gap = distance from certainty) to count as an actionable edge
@@ -743,6 +746,9 @@ def fmt(x, nd=4):
 def write_report(summary, results):
     lines = []
     lines.append("# Kalshi KXHIGH Weather Settlement-Nowcast Backtest\n")
+    lines.append("## Executive summary\n")
+    lines.append(verdict_text(summary))
+    lines.append("\n---\n")
     lines.append(f"Window: {summary['window']['min_date']} to {summary['window']['max_date']} "
                  f"({summary['window']['lookback_days']} days), {summary['n_series']} KXHIGH city series.\n")
     lines.append(f"City-days analyzed: **{summary['n_city_days_analyzed']}** "
@@ -828,28 +834,75 @@ def write_report(summary, results):
                      f"{c[k_fired]} | {fmt(c[k_pnl])} |")
 
     lines.append("\n## 4. Verdict\n")
-    lines.append(verdict_text(summary))
+    lines.append("(Full narrative verdict is in the Executive Summary at the top of this document.) "
+                 "In short: SHORT side = honest null (priced in, not fillable). LONG side = real, "
+                 "fee-surviving edge at margin=2°F (t=3.83, 93% win rate) but low-frequency, small-n, "
+                 "and carries a quantified, margin-resistant tail risk from ASOS-vs-official-CLI disagreement.")
 
     with open(OUT_REPORT, "w") as f:
         f.write("\n".join(lines) + "\n")
 
 
 def verdict_text(summary):
-    m0 = str(summary["margins_tested"][0])
-    long0 = summary["by_margin"][m0]["long"]
-    short0 = summary["by_margin"][m0]["short"]
     out = []
-    out.append(f"n_city_days = {summary['n_city_days_analyzed']}. "
-               f"ASOS-vs-CLI agreement = {fmt(summary['asos_vs_official_cli']['agree_rate'],3)}.")
-    out.append(f"LONG margin={m0}: fired {long0['n_fired']}x, mean_ask={fmt(long0['mean_exec_price'])}, "
-               f"win_rate={fmt(long0['win_rate'],3)}, t={fmt(long0['clustered']['t'],2)}, "
-               f"fillable={long0['n_fillable']}/{long0['n_fired']} (t_fillable={fmt(long0['fillable_clustered']['t'],2)}), "
-               f"locked_yes_settled_no={long0['n_locked_yes_settled_no']}.")
-    out.append(f"SHORT margin={m0}: fired {short0['n_fired']}x, mean_price={fmt(short0['mean_exec_price'])}, "
-               f"win_rate={fmt(short0['win_rate'],3)}, t={fmt(short0['clustered']['t'],2)}, "
-               f"fillable={short0['n_fillable']}/{short0['n_fired']} (t_fillable={fmt(short0['fillable_clustered']['t'],2)}), "
-               f"locked_no_settled_yes={short0['n_locked_no_settled_yes']}.")
-    return "\n\n".join(out)
+    out.append(f"**n = {summary['n_city_days_analyzed']} city-days, {summary['n_series']} cities, "
+               f"{summary['window']['lookback_days']} days ({summary['window']['min_date']} to "
+               f"{summary['window']['max_date']}).** ASOS(1-min)-vs-official-CLI full-day agreement = "
+               f"{fmt(summary['asos_vs_official_cli']['agree_rate'],3)} "
+               f"({summary['asos_vs_official_cli']['disagree_n']}/{summary['n_city_days_analyzed']} city-days disagree, "
+               f"almost always ASOS reading a touch *higher* than the eventual official value).\n")
+
+    out.append("**LONG side (buy YES once running max clears strike+margin) -- a real but small, "
+               "margin-sensitive, low-frequency edge, NOT a riskless one:**\n")
+    for m in summary["margins_tested"]:
+        l = summary["by_margin"][str(m)]["long"]
+        out.append(f"- margin={m}°F: fired {l['n_fired']}x ({fmt(l['fire_rate'],3)} of city-days), "
+                   f"mean entry {fmt(l['mean_exec_price'])}, **win rate {fmt(l['win_rate'],3)}**, "
+                   f"mean net PnL/ct {fmt(l['clustered']['mean'])}, day-clustered t={fmt(l['clustered']['t'],2)} "
+                   f"(n_clusters={l['clustered']['n_clusters']}), locked-YES-settled-NO = "
+                   f"{l.get('n_locked_yes_settled_no')}, fillable {l['n_fillable']}/{l['n_fired']}.")
+    out.append("")
+    out.append("margin=1°F fires often (40x) but is dominated by raw 1-minute ASOS sensor noise: win rate "
+               "only 57.5%, 17/40 'locked' events actually settled the other way -- this margin is NOT safe. "
+               "margin=2°F is much better (93% win rate, 1/15 miss) with a genuinely large mean edge "
+               "(~24.5c/contract, t=3.83), but n=15 over 6 weeks x 20 cities is thin, and going to margin=3°F "
+               "does NOT fix the residual tail risk -- the one recurring miss (KXHIGHMIA-26JUN16-T95, ASOS read "
+               "98°F vs an official settlement of ≤95°F, a 3°F ASOS-vs-CLI gap) still fires at "
+               "margin=3, while the higher margin pushes the average entry price to 88c and erases the edge "
+               "(mean PnL turns *negative*, -0.9c/contract). There is a real irreducible tail: a free, "
+               "un-QC'd 1-minute ASOS feed occasionally runs materially hotter than what NWS ultimately "
+               "certifies, and no margin size cleanly separates 'genuine crossing' from 'this station's data quality'.")
+    out.append("")
+
+    out.append("**SHORT side (buy NO late in the day, well below strike) -- honest null:**\n")
+    s1 = summary["by_margin"]["1"]["short"]
+    out.append(f"- Fires on {fmt(s1['fire_rate'],3)} of city-days but mean entry price is already "
+               f"{fmt(s1['mean_exec_price'])} (i.e. essentially 0 gap left) by the time it fires; mean net PnL/ct "
+               f"is {fmt(s1['clustered']['mean'])} (t={fmt(s1['clustered']['t'],2)}) -- statistically detectable but "
+               f"economically meaningless (a fraction of a cent). Only {fmt(s1['fillable_rate'],3)} of fired events "
+               f"have any volume in the following 5 minutes -- most of the 'edge' is not fillable. Sweeping the "
+               f"late-day cutoff hour (15:00-21:00 LST) shows mean PnL shrinking and turning **negative** at later, "
+               f"'more locked' cutoffs -- the opposite of what a real edge should do. This side is priced efficiently; "
+               f"there is no capturable edge here net of fees and realistic fills.")
+    out.append("")
+
+    out.append("**Capacity:** mean open interest at execution is roughly 5,000-20,000 contracts "
+               "and mean volume at the execution minute for LONG-side fires is tens to low-hundreds of "
+               "contracts/minute -- individually fillable, but the LONG-side opportunity itself only fires "
+               "15-40 times across 20 cities over 6 weeks (margin-dependent), so aggregate deployable size is "
+               "small (order low tens of thousands of dollars of notional over the period, not a scalable book).")
+    out.append("")
+
+    out.append("**BLUNT VERDICT:** No riskless nowcast edge. The SHORT/locked-NO side is an honest null -- "
+               "Kalshi's market makers are already watching the same obs and price it in before it is fillable. "
+               "The LONG/locked-YES side has a real, fee-surviving, day-clustered-significant edge at a 2°F "
+               "margin (t=3.83) with decent fills, but it is (a) low frequency (~0.2-1 event per city-week), "
+               "(b) small-n and therefore not yet fully trustworthy, and (c) subject to a real, quantified tail "
+               "risk from ASOS-vs-official-CLI disagreement (~2.5% of all city-days, occasionally 2-3°F, that "
+               "can flip a 'locked' win into a near-total loss) that margin alone cannot fully engineer away. "
+               "Deployable only as a small, carefully-margined, per-trade-capped position -- not a scalable "
+               "strategy as specified, and it should be run live for longer before sizing it up.")
+    return "\n".join(out)
 
 
 if __name__ == "__main__":

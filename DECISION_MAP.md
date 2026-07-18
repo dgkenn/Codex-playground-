@@ -2444,3 +2444,20 @@ Two Sonnet sweeps mined ~15 Kalshi repos, deduped vs kill list. RESULTS:
 - OPEN NICHES (zero public repos): Kalshi new-listing mispricing, decided-but-unresolved/settlement-timing -> build from scratch.
 NEXT: OOS-test K2 (structural no-arb, net of Kalshi fee, verify violations aren't stale quotes) as the top Kalshi candidate;
 then K1 (maker rebate). Powered by the Kalshi historical API backbone.
+
+## STRATEGY-SWEEP-2b (2026-07-18) — platform sweep CORROBORATES: both sweeps rank K2 structural no-arb #1
+Platform sweep (homerun 30 strats, djmorgan26/Invest 11, ryanfrigo, OctagonAI, CloddsBot, orallexa, Kalshi-Quant-TeleBot) +
+fresh searches. CONVERGENCE: independently ranks K2 (logical-consistency/structural no-arb) #1, same as niche sweep.
+- K2 gains a rigorous tool: homerun ProbSurfaceArbStrategy uses ISOTONIC REGRESSION (PAVA) for ladder-monotonicity violation
+  (flag > spread*1.2); djmorgan26 "Event Cluster Arb" (mutually-exclusive YES sum != 100%). Skip 2-leg YES+NO<$1 (latency-sniped).
+- NEW: THETA-DECAY curve mispricing (homerun TemporalDecayStrategy) — expected_price = initial*ratio^decay_rate (sqrt-time toward
+  0/1); trade deviation >7% from curve; 1-30d horizon, no race. Falsifiable, option-theoretic. (Distinct from premium-decay; note
+  our VRP/timing priors are null-ish -> test skeptically.)
+- K3 New-listing HAS a ref impl (djmorgan26 "New Listing": <48h old, spread>=6c, converge over 48h) — contradicts niche sweep's
+  "zero repos"; day-scale patience play. Worth testing w/ real calibration (flat-10c placeholder is crude).
+- Secondary/novel-but-tiny: resolution-criteria LINGUISTIC arb (KevinZhu223 linguistic_sniper: LLM parses settlement text for
+  loopholes) — genuinely new mechanism, but tiny/unproven/low-freq. Sports-overreaction-fade = mirror of killed momentum (risky).
+- CONFIRMED DEAD: 6/8 platforms = kill-list rehash or LLM-estimate-vs-market (5 repos). ryanfrigo scalping PULLED after live 0%
+  win/-$208 (real-world confirmation scalping fails).
+CONSENSUS QUEUE (both sweeps): K2 structural no-arb (TOP) -> K1 maker-rebate -> theta-decay -> K3 new-listing. All pure-Kalshi-
+data, non-latency-bound, free. Test K2 first with PAVA + real fee model + stale-quote guard.
