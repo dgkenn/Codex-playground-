@@ -12,3 +12,4 @@ scratchpad/
 *.key
 .env
 .settlement_basis_cache/
+.tailrisk_cache/
