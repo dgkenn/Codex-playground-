@@ -46,8 +46,23 @@ Gap half-life ≈ 3.3 min. Captured EV: +0.187/ct if we act at the cross, +0.15�
 6. **Fund + set limits**: start tiny (this is a small-capital, high-%, depth-capped edge — not large-AUM),
    with a per-market size and a cross-city daily cap from the Tier-1 capacity/correlation study.
 
-## Go-live sequence (do NOT skip the gate)
-1. Run `kwx_runner.py loop` in **paper** on the persistent host with the fast feed.
-2. Daily `kwx_forward.py settle` then `report`.
-3. Only once forward `report` shows **live == tested** (win ≈99.6%, EV ≈+0.20, n≥~30 clustered) do you
-   place `.kalshi_creds` + set `KWX_LIVE=1`, and even then start at minimum size and scale on realized PnL.
+## Go-live sequence (do NOT skip the gate) — staged, each stage gates the next
+1. **Paper** — run `kwx_runner.py loop` on the persistent host (free feed is fine). Daily
+   `kwx_forward.py settle` then `report`.
+2. **Paper gate** — proceed only once forward `report` shows **live == tested** (win ≈99.6%,
+   EV ≈+0.20, n≥~30 clustered). This is the hard gate; nothing live before it passes.
+3. **$10 canary** — set `BANKROLL = 10` in `kwx_runner.py`, place `.kalshi_creds`, set `KWX_LIVE=1`.
+   At $10 the sizer floors to **1 contract per fire** (~$0.80) — the point is to shake out REAL execution
+   (fills, fee rounding, API quirks, settlement/withdrawal flow) at trivial risk, not to make money. Run it
+   ~1 week. Worst realistic day ≈ -$5 (a heat-dome day, ~6 fires all lose). Watch `kwx_exec_log.jsonl`.
+4. **$50 full** — only once the canary shows live orders behave exactly as the dry-run predicted, bump
+   `BANKROLL = 50` and let it run at the quarter-Kelly/5%-cap sizing. Scale further only on realized PnL.
+
+### Guards active at every stage (free; only bite in anomalies)
+- **Kill switch**: `touch .kwx_halt` blocks ALL live orders instantly; `rm` to resume.
+- **Circuit breaker**: >15 fires in one cycle auto-writes `.kwx_halt` (assumes a feed glitch) — you review.
+- **Daily-deployment cap**: never opens more than 60% of bankroll across a day's fires.
+- **Fat-finger ceilings**: refuses any order >200 contracts or >98¢.
+- **Idempotency**: `client_order_id` per ticker+side — a crash/retry can't double-fill.
+- **Feed-staleness drop**: a feed silent >45 min is dropped from the consensus.
+- Per-station margin/size derates (Phoenix etc.) and per-station feed policy stay on throughout.

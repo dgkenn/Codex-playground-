@@ -59,6 +59,8 @@ DEPTH_CAP = 25          # never order more than the book can plausibly fill (Tie
 # --- free operational guards (only bite in anomalies; zero cost normally) ---
 STALE_MIN = 45          # ignore a feed whose newest obs is older than this (dead/frozen feed protection)
 MAX_FIRES_PER_CYCLE = 15  # circuit breaker: a normal cycle fires a few; >this = feed glitch -> HALT + review
+MAX_DAILY_DEPLOY_FRAC = 0.60  # never deploy more than this fraction of bankroll across all fires in one day
+                              # (bounds the worst-day loss; e.g. $10 canary -> max ~$6 at risk/day)
 
 
 def _kelly_fraction(price, p=0.9965):
@@ -374,6 +376,14 @@ def poll_once(exec_client=None, verbose=True):
                 continue
             size = size_for_fire(BANKROLL, cap_c, station)   # bankroll-aware, quarter-Kelly, 5% per-fire cap
             if size < 1:
+                continue
+            # DAILY-DEPLOYMENT CAP: bound total capital opened across all fires in one day
+            today = dt.datetime.now(tz=dt.timezone.utc).date().isoformat()
+            deployed = state.setdefault("deployed", {})
+            cost = size * cap_c / 100.0
+            if deployed.get(today, 0.0) + cost > MAX_DAILY_DEPLOY_FRAC * BANKROLL:
+                if verbose:
+                    print(f"  [daily-cap] skip {ticker}: would exceed {MAX_DAILY_DEPLOY_FRAC:.0%} of bankroll today")
                 continue
             # CIRCUIT BREAKER: a normal cycle fires a few; an abnormal burst = feed glitch -> halt for review
             if len(plans) >= MAX_FIRES_PER_CYCLE:
