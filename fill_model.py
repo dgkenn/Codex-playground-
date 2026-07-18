@@ -815,15 +815,29 @@ def write_report(S):
              f"constraint entirely, the realistic-phi **capacity ceiling is only ~${cap['realistic_capacity_ceiling_week_usd']}"
              f"/week** -- the edge is bound by retail longshot-buy VOLUME, not by capital. Larger size does NOT "
              f"scale past that ceiling; it just leaves orders unfilled.\n")
-    L.append(f"- **Where capacity binds:** per-market fill saturates by ~50-250 shares in most markets (median "
-             f"fillable market is tiny); the aggregate saturates at the ceiling above. This is a **breadth** game "
-             f"(many tiny fills), not a size game.\n")
+    L.append(f"- **Where capacity binds -- two regimes.** (1) BREADTH is cheap: the first ~$100/week comes from "
+             f"posting small size across the ~37 fillable markets/week, and a starter bankroll ($50-500) captures "
+             f"only this slice (~$3-30/week). (2) The rest of the ${cap['realistic_capacity_ceiling_week_usd']}/week "
+             f"ceiling sits in a RIGHT-TAILED few big-flow markets that only fill if you rest large size "
+             f"(~4000 sh/market) backed by ~${cap['capital_to_saturate_realistic_usd']} of capital. So it is NOT "
+             f"purely a breadth game -- the bulk of the deployable $ needs both size AND ~$10k capital, and even "
+             f"then tops out near ${cap['realistic_capacity_ceiling_week_usd']}/week (retail longshot-buy VOLUME is "
+             f"the true binding constraint, not capital).\n")
+    L.append(f"- **TAIL RISK dominates at a starter bankroll.** This is a short-vol sleeve with hard negative skew: "
+             f"the worst historical week loses **~85% of deployed capital in a single week** (e.g. -$424 on a $500 "
+             f"book, -$1728 on $2000) when a batch of longshots print YES. Week-clustered t of the $/week series is "
+             f"only ~1.7 (noisy, tail-heavy). Size FRACTIONALLY and bound capital -- a bad week can erase many good "
+             f"weeks. The realized per-ct edge is real, but the variance is brutal relative to the mean.\n")
     L.append(f"- **The result hinges on phi**, which we cannot measure without L2 queue data. The sensitivity "
-             f"table spans phi=0.10..1.00; a realistic seller sharing the book earns tens of $/week, a lone "
-             f"dedicated maker low-hundreds. Treat any single number as an order-of-magnitude, not a point estimate.\n")
-    L.append(f"- **Bottom line:** the edge is REAL but the fill-adjusted, capacity-bound, honest number is a "
-             f"**small-niche low-hundreds-of-$/week at best**, and materially less at a starter bankroll or in a "
-             f"crowded book. This is a legitimate paper-forward maker sleeve, not a capital-absorbing strategy.\n")
+             f"table spans phi=0.10..1.00 but is remarkably flat ($66-107/week at S=100) -- the answer is driven far "
+             f"more by ORDER SIZE / CAPITAL than by queue competition, because most fillable markets are small "
+             f"enough that even a pessimistic capture clears them. Treat any single number as order-of-magnitude.\n")
+    L.append(f"- **Bottom line:** the edge is REAL but the fill-adjusted, capacity-bound, honest number is small: "
+             f"**~$3-30/week at a $50-500 starter bankroll, ~$120/week at $2k, and a hard ceiling near "
+             f"${cap['realistic_capacity_ceiling_week_usd']}/week even at $10k+** (realistic phi). The peak of the "
+             f"price frontier is p~0.22 (~$99/week at S=100, ~50% of the +0.12/ct edge). This is a legitimate "
+             f"paper-forward MAKER sleeve and a low-hundreds-$/week niche at best -- NOT a capital-absorbing "
+             f"strategy, and NOT safe to size up at a small bankroll given the tail.\n")
     L.append(f"\n_Proxy for a full L2 queue model (no queue-position data); phi is the load-bearing assumption; "
              f"median ~6 in-band prints/fillable market (thin per-market, robust in aggregate over "
              f"{S['n_posted_markets']} markets / {S['n_weeks']} weeks)._\n")

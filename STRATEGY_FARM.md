@@ -25,7 +25,7 @@
 | # | Strategy (repo) | Idea | Kalshi? | Prior | Status |
 |---|---|---|---|---|---|
 | S1 | Wang Transform (oracle3) | distortion model → sharpen longshot selection | yes | — | **DONE — NULL (4th selection null)** |
-| S2 | Cox fill model (homerun) | realistic maker fill-prob → honest capture | yes | n/a (engineering) | TESTING |
+| S2 | Cox fill model (homerun) | realistic maker fill-prob → honest capture | yes | — | **DONE — capture ~40% (+0.048/ct), ~$3-1235/wk, brutal tail; reusable arch** |
 | S3 | Print-level re-confirm (data-api) | confirm +0.12 edge OOS on real prints, full history | — | high | **DONE ✓ CONFIRMED** |
 | S4 | Earnings beat-rate (dragonbear666) | corp earnings vs Kalshi implied-prob divergence | **KALSHI** | — | **DONE — NULL (instrument barely exists; calibrated; fee-killed)** |
 | S5 | S&P daily brackets (quantgalore/kalshi-trading) | Kalshi S&P 500 daily bracket system | **KALSHI** | — | **DONE — NULL (priced ~1pt)** |

@@ -2382,3 +2382,18 @@ entry, net Kalshi fee, event-clustered t.
 VERDICT: NULL. Instrument barely exists + calibrated + fee-killed. Capacity thin/episodic (Tesla/Rivian/Boeing dominate).
 Uncorrelated (idiosyncratic) but moot. Farm S4 dead. KALSHI SCOREBOARD: longshot NULL, index-bracket NULL, earnings NULL ->
 Kalshi is consistently well-calibrated across everything farmed; hard venue for a retail edge.
+
+## FILL-MODEL (2026-07-18, farm S2) — Cox fill model: capture ~40% of edge, deployable low-hundreds-$/wk, brutal tail; REUSABLE architecture
+Adapted homerun's Cox PH fill model to Polymarket (no L2 queue -> proxy via in-band YES-buy arrival rate, offer price-distance,
+spread, time-to-resolution; queue collapses to phi=fraction of eligible flow captured). Own Cox PH fit (numpy), C-index 0.968,
+Brier 0.042; arrival-rate HR 2.7, size HR 0.63 (homerun pattern). Built on 6848-market/49-wk real print cache.
+- Fill prob vs size (phi=0.35, rest p=0.20): P(full fill) 17.7% @10sh -> 10.7% @100 -> 4.6% @500 -> 0.8% @2500. 74% of markets
+  never fill (no in-band taker arrives).
+- CAPTURE ~40% of +0.12 edge (realized +0.048/ct; peak ~50% +0.060 at p~0.22). Structural: to fill you rest near band floor.
+- Deployable $/wk (realistic phi): ~$3-30 @ $50-500 bankroll, ~$120 @ $2k, ~$1050 @ $10k, ceiling ~$1235/wk @ $50k+. Two regimes:
+  breadth (first ~$100/wk cheap across ~37 fillable mkts/wk) + right-tail big-flow mkts needing ~$10.8k to saturate. Binding =
+  retail buy-VOLUME not capital.
+- TAIL BRUTAL: worst week -85% of deployed capital; weekly-$ t~1.7. NOT safe to size up small. phi sensitivity flat ($66-107/wk).
+VERDICT: honest go-live number for the Polymarket maker edge = low-hundreds-$/wk niche, tail-heavy. CAVEAT: this is the GLOBAL
+(illegal-US) crypto edge -> NOT directly deployable; value = REUSABLE FillModel architecture (works for any PM-style CLOB maker
+strategy incl. QCX if it lists crypto). Completes the operator's "do all three" (S3 re-confirm CONFIRMED, S1 Wang NULL, S2 fill DONE).
