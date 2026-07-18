@@ -1,0 +1,1333 @@
+{
+  "window": {
+    "actual_min": "2026-05-12",
+    "actual_max": "2026-07-17",
+    "n_days": 67
+  },
+  "counts": {
+    "n_high_ladder_markets": 8040,
+    "n_low_ladder_markets": 8034,
+    "n_jobs_analyzed": 16074,
+    "n_rung_days_with_fires": 4383
+  },
+  "glitch_removed_total_obs": 11,
+  "walk_forward": {
+    "train_dates_n": 39,
+    "test_dates_n": 27,
+    "train_grid": [
+      {
+        "margin": 1,
+        "sustain": 1,
+        "n": 2731,
+        "mean": 0.07377142109117599,
+        "t": 15.054758941205312,
+        "p": 0.0,
+        "worst_case_ev": 0.06341165607594922,
+        "p_bonferroni": 0.0,
+        "sig_bonferroni": true
+      },
+      {
+        "margin": 1,
+        "sustain": 2,
+        "n": 2584,
+        "mean": 0.08682850657894792,
+        "t": 20.644501785374732,
+        "p": 0.0,
+        "worst_case_ev": 0.07915234779270326,
+        "p_bonferroni": 0.0,
+        "sig_bonferroni": true
+      },
+      {
+        "margin": 1,
+        "sustain": 3,
+        "n": 2442,
+        "mean": 0.08933476699426764,
+        "t": 25.807161252279606,
+        "p": 0.0,
+        "worst_case_ev": 0.08676846789588297,
+        "p_bonferroni": 0.0,
+        "sig_bonferroni": true
+      },
+      {
+        "margin": 1,
+        "sustain": 5,
+        "n": 2268,
+        "mean": 0.04527860802469143,
+        "t": 19.81563199066886,
+        "p": 0.0,
+        "worst_case_ev": 0.043226118023833845,
+        "p_bonferroni": 0.0,
+        "sig_bonferroni": true
+      },
+      {
+        "margin": 2,
+        "sustain": 1,
+        "n": 2109,
+        "mean": 0.03995701849217653,
+        "t": 15.28684780389022,
+        "p": 0.0,
+        "worst_case_ev": 0.03572753381839318,
+        "p_bonferroni": 0.0,
+        "sig_bonferroni": true
+      },
+      {
+        "margin": 2,
+        "sustain": 2,
+        "n": 1943,
+        "mean": 0.02225277663407101,
+        "t": 10.957627366758866,
+        "p": 0.0,
+        "worst_case_ev": 0.01926692732462248,
+        "p_bonferroni": 0.0,
+        "sig_bonferroni": true
+      },
+      {
+        "margin": 2,
+        "sustain": 3,
+        "n": 1812,
+        "mean": 0.014879098233995572,
+        "t": 9.189858194456905,
+        "p": 0.0,
+        "worst_case_ev": 0.012311457795475062,
+        "p_bonferroni": 0.0,
+        "sig_bonferroni": true
+      },
+      {
+        "margin": 2,
+        "sustain": 5,
+        "n": 1651,
+        "mean": 0.004674053301029677,
+        "t": 4.5829382892682915,
+        "p": 4.5848738006171175e-06,
+        "worst_case_ev": 0.0018567540817782148,
+        "p_bonferroni": 5.501848560740541e-05,
+        "sig_bonferroni": true
+      },
+      {
+        "margin": 3,
+        "sustain": 1,
+        "n": 1529,
+        "mean": 0.008207112491824712,
+        "t": 5.8555834459286675,
+        "p": 4.753382798483585e-09,
+        "worst_case_ev": 0.0038448687882321874,
+        "p_bonferroni": 5.704059358180302e-08,
+        "sig_bonferroni": true
+      },
+      {
+        "margin": 3,
+        "sustain": 2,
+        "n": 1393,
+        "mean": 0.005312898779612343,
+        "t": 3.6164315814471073,
+        "p": 0.00029869221888567665,
+        "worst_case_ev": 0.001975602304060981,
+        "p_bonferroni": 0.00358430662662812,
+        "sig_bonferroni": true
+      },
+      {
+        "margin": 3,
+        "sustain": 3,
+        "n": 1266,
+        "mean": 0.003055349921011061,
+        "t": 2.398927267441287,
+        "p": 0.01644318042613091,
+        "worst_case_ev": -0.0006154603135046144,
+        "p_bonferroni": 0.19731816511357092,
+        "sig_bonferroni": false
+      },
+      {
+        "margin": 3,
+        "sustain": 5,
+        "n": 1131,
+        "mean": 0.00043586383731211324,
+        "t": 0.3785271591084985,
+        "p": 0.7050390219836002,
+        "worst_case_ev": -0.0036712462738947684,
+        "p_bonferroni": 1.0,
+        "sig_bonferroni": false
+      }
+    ],
+    "bonferroni": {
+      "family_size": 12,
+      "corrected_alpha": 0.004166666666666667,
+      "candidates": [
+        {
+          "margin": 1,
+          "sustain": 1,
+          "n": 2731,
+          "mean": 0.07377142109117599,
+          "t": 15.054758941205312,
+          "p": 0.0,
+          "worst_case_ev": 0.06341165607594922,
+          "p_bonferroni": 0.0,
+          "sig_bonferroni": true,
+          "ok_n": true,
+          "ok_sig": true,
+          "ok_tail": true,
+          "passes_all": true
+        },
+        {
+          "margin": 1,
+          "sustain": 2,
+          "n": 2584,
+          "mean": 0.08682850657894792,
+          "t": 20.644501785374732,
+          "p": 0.0,
+          "worst_case_ev": 0.07915234779270326,
+          "p_bonferroni": 0.0,
+          "sig_bonferroni": true,
+          "ok_n": true,
+          "ok_sig": true,
+          "ok_tail": true,
+          "passes_all": true
+        },
+        {
+          "margin": 1,
+          "sustain": 3,
+          "n": 2442,
+          "mean": 0.08933476699426764,
+          "t": 25.807161252279606,
+          "p": 0.0,
+          "worst_case_ev": 0.08676846789588297,
+          "p_bonferroni": 0.0,
+          "sig_bonferroni": true,
+          "ok_n": true,
+          "ok_sig": true,
+          "ok_tail": true,
+          "passes_all": true
+        },
+        {
+          "margin": 1,
+          "sustain": 5,
+          "n": 2268,
+          "mean": 0.04527860802469143,
+          "t": 19.81563199066886,
+          "p": 0.0,
+          "worst_case_ev": 0.043226118023833845,
+          "p_bonferroni": 0.0,
+          "sig_bonferroni": true,
+          "ok_n": true,
+          "ok_sig": true,
+          "ok_tail": true,
+          "passes_all": true
+        },
+        {
+          "margin": 2,
+          "sustain": 1,
+          "n": 2109,
+          "mean": 0.03995701849217653,
+          "t": 15.28684780389022,
+          "p": 0.0,
+          "worst_case_ev": 0.03572753381839318,
+          "p_bonferroni": 0.0,
+          "sig_bonferroni": true,
+          "ok_n": true,
+          "ok_sig": true,
+          "ok_tail": true,
+          "passes_all": true
+        },
+        {
+          "margin": 2,
+          "sustain": 2,
+          "n": 1943,
+          "mean": 0.02225277663407101,
+          "t": 10.957627366758866,
+          "p": 0.0,
+          "worst_case_ev": 0.01926692732462248,
+          "p_bonferroni": 0.0,
+          "sig_bonferroni": true,
+          "ok_n": true,
+          "ok_sig": true,
+          "ok_tail": true,
+          "passes_all": true
+        },
+        {
+          "margin": 2,
+          "sustain": 3,
+          "n": 1812,
+          "mean": 0.014879098233995572,
+          "t": 9.189858194456905,
+          "p": 0.0,
+          "worst_case_ev": 0.012311457795475062,
+          "p_bonferroni": 0.0,
+          "sig_bonferroni": true,
+          "ok_n": true,
+          "ok_sig": true,
+          "ok_tail": true,
+          "passes_all": true
+        },
+        {
+          "margin": 2,
+          "sustain": 5,
+          "n": 1651,
+          "mean": 0.004674053301029677,
+          "t": 4.5829382892682915,
+          "p": 4.5848738006171175e-06,
+          "worst_case_ev": 0.0018567540817782148,
+          "p_bonferroni": 5.501848560740541e-05,
+          "sig_bonferroni": true,
+          "ok_n": true,
+          "ok_sig": true,
+          "ok_tail": true,
+          "passes_all": true
+        },
+        {
+          "margin": 3,
+          "sustain": 1,
+          "n": 1529,
+          "mean": 0.008207112491824712,
+          "t": 5.8555834459286675,
+          "p": 4.753382798483585e-09,
+          "worst_case_ev": 0.0038448687882321874,
+          "p_bonferroni": 5.704059358180302e-08,
+          "sig_bonferroni": true,
+          "ok_n": true,
+          "ok_sig": true,
+          "ok_tail": true,
+          "passes_all": true
+        },
+        {
+          "margin": 3,
+          "sustain": 2,
+          "n": 1393,
+          "mean": 0.005312898779612343,
+          "t": 3.6164315814471073,
+          "p": 0.00029869221888567665,
+          "worst_case_ev": 0.001975602304060981,
+          "p_bonferroni": 0.00358430662662812,
+          "sig_bonferroni": true,
+          "ok_n": true,
+          "ok_sig": true,
+          "ok_tail": true,
+          "passes_all": true
+        },
+        {
+          "margin": 3,
+          "sustain": 3,
+          "n": 1266,
+          "mean": 0.003055349921011061,
+          "t": 2.398927267441287,
+          "p": 0.01644318042613091,
+          "worst_case_ev": -0.0006154603135046144,
+          "p_bonferroni": 0.19731816511357092,
+          "sig_bonferroni": false,
+          "ok_n": true,
+          "ok_sig": false,
+          "ok_tail": false,
+          "passes_all": false
+        },
+        {
+          "margin": 3,
+          "sustain": 5,
+          "n": 1131,
+          "mean": 0.00043586383731211324,
+          "t": 0.3785271591084985,
+          "p": 0.7050390219836002,
+          "worst_case_ev": -0.0036712462738947684,
+          "p_bonferroni": 1.0,
+          "sig_bonferroni": false,
+          "ok_n": true,
+          "ok_sig": false,
+          "ok_tail": false,
+          "passes_all": false
+        }
+      ],
+      "best": {
+        "margin": 1,
+        "sustain": 3,
+        "n": 2442,
+        "mean": 0.08933476699426764,
+        "t": 25.807161252279606,
+        "p": 0.0,
+        "worst_case_ev": 0.08676846789588297,
+        "p_bonferroni": 0.0,
+        "sig_bonferroni": true,
+        "ok_n": true,
+        "ok_sig": true,
+        "ok_tail": true,
+        "passes_all": true
+      },
+      "verdict": "CONFIRMED"
+    },
+    "chosen_margin": 1,
+    "chosen_sustain": 3
+  },
+  "best_config": {
+    "key": "1_3",
+    "views": {
+      "train": {
+        "n_fired": 2442,
+        "win_rate": 0.9983619983619983,
+        "mean_exec_price": 0.9052538902538921,
+        "mean_fee": 0.0037733411138411123,
+        "mean_pnl": 0.08933476699426764,
+        "clustered": {
+          "mean": 0.08933476699426764,
+          "se": 0.003461627031387518,
+          "t": 25.807161252279606,
+          "p": 0.0,
+          "n": 2442,
+          "n_clusters": 39
+        },
+        "n_bad": 4,
+        "bad_tickers": [
+          "KXLOWTMIN-26MAY12-B55.5",
+          "KXHIGHNY-26JUN16-B75.5",
+          "KXHIGHTBOS-26JUN11-B89.5",
+          "KXHIGHTPHX-26MAY19-B90.5"
+        ],
+        "worst_case_loss_rate_wilson95": 0.004204300736383828,
+        "analytic_ev_worst_case": 0.08676846789588297,
+        "worst_trade": {
+          "pnl": -1.0,
+          "date": "2026-05-12",
+          "ticker": "KXLOWTMIN-26MAY12-B55.5"
+        },
+        "gap_quantiles": {
+          "p10": 0.0,
+          "p25": 0.0,
+          "p50": 0.0,
+          "p75": 0.10999999999999999,
+          "p90": 0.32000000000000006
+        },
+        "doa": {
+          "0.97": {
+            "n_doa": 1510,
+            "frac_doa": 0.6183456183456183,
+            "n_deployable": 932
+          },
+          "0.99": {
+            "n_doa": 1344,
+            "frac_doa": 0.5503685503685504,
+            "n_deployable": 1098
+          }
+        }
+      },
+      "test": {
+        "n_fired": 1449,
+        "win_rate": 0.9979296066252588,
+        "mean_exec_price": 0.9010628019323684,
+        "mean_fee": 0.003850850241545889,
+        "mean_pnl": 0.09301595445134603,
+        "clustered": {
+          "mean": 0.09301595445134603,
+          "se": 0.004874600022063461,
+          "t": 19.08176138151568,
+          "p": 0.0,
+          "n": 1449,
+          "n_clusters": 27
+        },
+        "n_bad": 3,
+        "bad_tickers": [
+          "KXHIGHTNOLA-26JUN29-B92.5",
+          "KXHIGHTPHX-26JUN22-B108.5",
+          "KXHIGHMIA-26JUN20-B92.5"
+        ],
+        "worst_case_loss_rate_wilson95": 0.0060695736805629315,
+        "analytic_ev_worst_case": 0.08901677414552275,
+        "worst_trade": {
+          "pnl": -0.587157,
+          "date": "2026-06-20",
+          "ticker": "KXHIGHMIA-26JUN20-B92.5"
+        },
+        "gap_quantiles": {
+          "p10": 0.0,
+          "p25": 0.0,
+          "p50": 0.0,
+          "p75": 0.10999999999999999,
+          "p90": 0.38
+        },
+        "doa": {
+          "0.97": {
+            "n_doa": 946,
+            "frac_doa": 0.6528640441683919,
+            "n_deployable": 503
+          },
+          "0.99": {
+            "n_doa": 849,
+            "frac_doa": 0.5859213250517599,
+            "n_deployable": 600
+          }
+        }
+      },
+      "full": {
+        "n_fired": 3891,
+        "win_rate": 0.9982009766126959,
+        "mean_exec_price": 0.9036931380107887,
+        "mean_fee": 0.0038022053456694747,
+        "mean_pnl": 0.09070563325623233,
+        "clustered": {
+          "mean": 0.09070563325623233,
+          "se": 0.00284532406703032,
+          "t": 31.878840905072124,
+          "p": 0.0,
+          "n": 3891,
+          "n_clusters": 66
+        },
+        "n_bad": 7,
+        "bad_tickers": [
+          "KXLOWTMIN-26MAY12-B55.5",
+          "KXHIGHNY-26JUN16-B75.5",
+          "KXHIGHTNOLA-26JUN29-B92.5",
+          "KXHIGHTPHX-26JUN22-B108.5",
+          "KXHIGHMIA-26JUN20-B92.5",
+          "KXHIGHTBOS-26JUN11-B89.5",
+          "KXHIGHTPHX-26MAY19-B90.5"
+        ],
+        "worst_case_loss_rate_wilson95": 0.0037090647529250233,
+        "analytic_ev_worst_case": 0.08879559189061689,
+        "worst_trade": {
+          "pnl": -1.0,
+          "date": "2026-05-12",
+          "ticker": "KXLOWTMIN-26MAY12-B55.5"
+        },
+        "gap_quantiles": {
+          "p10": 0.0,
+          "p25": 0.0,
+          "p50": 0.0,
+          "p75": 0.10999999999999999,
+          "p90": 0.3400000000000001
+        },
+        "doa": {
+          "0.97": {
+            "n_doa": 2456,
+            "frac_doa": 0.6312002056026729,
+            "n_deployable": 1435
+          },
+          "0.99": {
+            "n_doa": 2193,
+            "frac_doa": 0.5636083269082498,
+            "n_deployable": 1698
+          }
+        }
+      }
+    },
+    "breakdown_full": {
+      "by_family": {
+        "HIGH": {
+          "n_fired": 2288,
+          "win_rate": 0.9973776223776224,
+          "mean_exec_price": 0.9116564685314719,
+          "mean_fee": 0.0033005214160839224,
+          "mean_pnl": 0.08242063243007039,
+          "clustered": {
+            "mean": 0.08242063243007039,
+            "se": 0.003625353881814694,
+            "t": 22.734506786635187,
+            "p": 0.0,
+            "n": 2288,
+            "n_clusters": 65
+          },
+          "n_bad": 6,
+          "bad_tickers": [
+            "KXHIGHNY-26JUN16-B75.5",
+            "KXHIGHTNOLA-26JUN29-B92.5",
+            "KXHIGHTPHX-26JUN22-B108.5",
+            "KXHIGHMIA-26JUN20-B92.5",
+            "KXHIGHTBOS-26JUN11-B89.5",
+            "KXHIGHTPHX-26MAY19-B90.5"
+          ],
+          "worst_case_loss_rate_wilson95": 0.005709713091886655,
+          "analytic_ev_worst_case": 0.0793332969605576,
+          "worst_trade": {
+            "pnl": -0.772768,
+            "date": "2026-05-19",
+            "ticker": "KXHIGHTPHX-26MAY19-B90.5"
+          },
+          "gap_quantiles": {
+            "p10": 0.0,
+            "p25": 0.0,
+            "p50": 0.0,
+            "p75": 0.07000000000000006,
+            "p90": 0.30000000000000004
+          },
+          "doa": {
+            "0.97": {
+              "n_doa": 1543,
+              "frac_doa": 0.6743881118881119,
+              "n_deployable": 745
+            },
+            "0.99": {
+              "n_doa": 1390,
+              "frac_doa": 0.6075174825174825,
+              "n_deployable": 898
+            }
+          }
+        },
+        "LOW": {
+          "n_fired": 1603,
+          "win_rate": 0.9993761696818465,
+          "mean_exec_price": 0.8923268870867137,
+          "mean_fee": 0.0045182707423580895,
+          "mean_pnl": 0.10253101185277652,
+          "clustered": {
+            "mean": 0.10253101185277652,
+            "se": 0.004490898851346204,
+            "t": 22.830844168766248,
+            "p": 0.0,
+            "n": 1603,
+            "n_clusters": 66
+          },
+          "n_bad": 1,
+          "bad_tickers": [
+            "KXLOWTMIN-26MAY12-B55.5"
+          ],
+          "worst_case_loss_rate_wilson95": 0.003525237396134501,
+          "analytic_ev_worst_case": 0.09962960477479368,
+          "worst_trade": {
+            "pnl": -1.0,
+            "date": "2026-05-12",
+            "ticker": "KXLOWTMIN-26MAY12-B55.5"
+          },
+          "gap_quantiles": {
+            "p10": 0.0,
+            "p25": 0.0,
+            "p50": 0.010000000000000009,
+            "p75": 0.14,
+            "p90": 0.36799999999999955
+          },
+          "doa": {
+            "0.97": {
+              "n_doa": 913,
+              "frac_doa": 0.569557080474111,
+              "n_deployable": 690
+            },
+            "0.99": {
+              "n_doa": 803,
+              "frac_doa": 0.5009357454772302,
+              "n_deployable": 800
+            }
+          }
+        }
+      },
+      "by_rung_group": {
+        "greater": {
+          "n_fired": 713,
+          "win_rate": 1.0,
+          "mean_exec_price": 0.9666760168302958,
+          "mean_fee": 0.001245018232819077,
+          "mean_pnl": 0.032078964936886376,
+          "clustered": {
+            "mean": 0.032078964936886376,
+            "se": 0.004557674740597968,
+            "t": 7.038449815459541,
+            "p": 1.943778471513724e-12,
+            "n": 713,
+            "n_clusters": 66
+          },
+          "n_bad": 0,
+          "bad_tickers": [],
+          "worst_case_loss_rate_wilson95": 0.00535886809449772,
+          "analytic_ev_worst_case": 0.026720096842387416,
+          "worst_trade": {
+            "pnl": 0.0,
+            "date": "2026-05-26",
+            "ticker": "KXLOWTDEN-26MAY26-T56"
+          },
+          "gap_quantiles": {
+            "p10": 0.0,
+            "p25": 0.0,
+            "p50": 0.0,
+            "p75": 0.0,
+            "p90": 0.050000000000000044
+          },
+          "doa": {
+            "0.97": {
+              "n_doa": 623,
+              "frac_doa": 0.8737727910238429,
+              "n_deployable": 90
+            },
+            "0.99": {
+              "n_doa": 595,
+              "frac_doa": 0.8345021037868162,
+              "n_deployable": 118
+            }
+          }
+        },
+        "between_or_less": {
+          "n_fired": 3178,
+          "win_rate": 0.9977973568281938,
+          "mean_exec_price": 0.8895626179987393,
+          "mean_fee": 0.00437592290748897,
+          "mean_pnl": 0.10385881592196385,
+          "clustered": {
+            "mean": 0.10385881592196385,
+            "se": 0.00321161538391056,
+            "t": 32.338497455913355,
+            "p": 0.0,
+            "n": 3178,
+            "n_clusters": 66
+          },
+          "n_bad": 7,
+          "bad_tickers": [
+            "KXLOWTMIN-26MAY12-B55.5",
+            "KXHIGHNY-26JUN16-B75.5",
+            "KXHIGHTNOLA-26JUN29-B92.5",
+            "KXHIGHTPHX-26JUN22-B108.5",
+            "KXHIGHMIA-26JUN20-B92.5",
+            "KXHIGHTBOS-26JUN11-B89.5",
+            "KXHIGHTPHX-26MAY19-B90.5"
+          ],
+          "worst_case_loss_rate_wilson95": 0.004539898404670462,
+          "analytic_ev_worst_case": 0.10152156068910126,
+          "worst_trade": {
+            "pnl": -1.0,
+            "date": "2026-05-12",
+            "ticker": "KXLOWTMIN-26MAY12-B55.5"
+          },
+          "gap_quantiles": {
+            "p10": 0.0,
+            "p25": 0.0,
+            "p50": 0.010000000000000009,
+            "p75": 0.14,
+            "p90": 0.38
+          },
+          "doa": {
+            "0.97": {
+              "n_doa": 1833,
+              "frac_doa": 0.5767778477029578,
+              "n_deployable": 1345
+            },
+            "0.99": {
+              "n_doa": 1598,
+              "frac_doa": 0.5028319697923223,
+              "n_deployable": 1580
+            }
+          }
+        }
+      }
+    },
+    "decay": {
+      "mean_gap_by_min": {
+        "0": 0.09630686198920536,
+        "1": 0.07640906749098399,
+        "2": 0.06105955143078119,
+        "5": 0.031470967741935495,
+        "10": 0.026354247353472776,
+        "30": 0.017586742620403956,
+        "60": 0.011184450821810592
+      },
+      "n_by_min": {
+        "0": 3891,
+        "1": 3882,
+        "2": 3879,
+        "5": 3875,
+        "10": 3873,
+        "30": 3862,
+        "60": 3833
+      },
+      "half_life_min": 3.3085574394401167
+    },
+    "latency_ev": {
+      "0": {
+        "n": 1897,
+        "mean_pnl": 0.1865764992092778
+      },
+      "1": {
+        "n": 1511,
+        "mean_pnl": 0.18447123097286666
+      },
+      "2": {
+        "n": 1300,
+        "mean_pnl": 0.1700048023076934
+      },
+      "5": {
+        "n": 740,
+        "mean_pnl": 0.14933344729729792
+      },
+      "10": {
+        "n": 638,
+        "mean_pnl": 0.14333775705329188
+      },
+      "30": {
+        "n": 431,
+        "mean_pnl": 0.1366963294663573
+      },
+      "60": {
+        "n": 197,
+        "mean_pnl": 0.17885589340101515
+      }
+    }
+  },
+  "conservative_margin2_sustain1": {
+    "key": "2_1",
+    "views": {
+      "train": {
+        "n_fired": 2109,
+        "win_rate": 0.9943100995732574,
+        "mean_exec_price": 0.9524324324324355,
+        "mean_fee": 0.0019206486486486472,
+        "mean_pnl": 0.03995701849217653,
+        "clustered": {
+          "mean": 0.03995701849217653,
+          "se": 0.0026138167269519233,
+          "t": 15.28684780389022,
+          "p": 0.0,
+          "n": 2109,
+          "n_clusters": 39
+        },
+        "n_bad": 12,
+        "bad_tickers": [
+          "KXHIGHTLV-26MAY28-B82.5",
+          "KXHIGHMIA-26MAY30-B87.5",
+          "KXHIGHPHIL-26JUN05-B91.5",
+          "KXLOWTMIN-26MAY12-B55.5",
+          "KXHIGHTPHX-26JUN02-B103.5",
+          "KXHIGHMIA-26JUN16-B94.5",
+          "KXHIGHMIA-26JUN16-T95",
+          "KXLOWTMIA-26MAY27-B78.5",
+          "KXHIGHTLV-26MAY23-B94.5",
+          "KXHIGHDEN-26MAY24-B81.5",
+          "KXLOWTATL-26JUN09-T71",
+          "KXLOWTATL-26MAY25-B68.5"
+        ],
+        "worst_case_loss_rate_wilson95": 0.00991938510052274,
+        "analytic_ev_worst_case": 0.03572753381839318,
+        "worst_trade": {
+          "pnl": -1.0,
+          "date": "2026-05-12",
+          "ticker": "KXLOWTMIN-26MAY12-B55.5"
+        },
+        "gap_quantiles": {
+          "p10": 0.0,
+          "p25": 0.0,
+          "p50": 0.0,
+          "p75": 0.010000000000000009,
+          "p90": 0.14
+        },
+        "doa": {
+          "0.97": {
+            "n_doa": 1678,
+            "frac_doa": 0.7956377430061641,
+            "n_deployable": 431
+          },
+          "0.99": {
+            "n_doa": 1582,
+            "frac_doa": 0.7501185395922239,
+            "n_deployable": 527
+          }
+        }
+      },
+      "test": {
+        "n_fired": 1201,
+        "win_rate": 0.9958368026644463,
+        "mean_exec_price": 0.9498917568692774,
+        "mean_fee": 0.0020185528726061617,
+        "mean_pnl": 0.043926492922564515,
+        "clustered": {
+          "mean": 0.043926492922564515,
+          "se": 0.002760620387519128,
+          "t": 15.91181935812613,
+          "p": 0.0,
+          "n": 1201,
+          "n_clusters": 27
+        },
+        "n_bad": 5,
+        "bad_tickers": [
+          "KXLOWTMIA-26JUN30-B79.5",
+          "KXHIGHTPHX-26JUN29-B102.5",
+          "KXHIGHTPHX-26JUN22-B108.5",
+          "KXLOWTPHIL-26JUL07-T68",
+          "KXLOWTLAX-26JUL05-T63"
+        ],
+        "worst_case_loss_rate_wilson95": 0.009708658904151044,
+        "analytic_ev_worst_case": 0.03838103135396537,
+        "worst_trade": {
+          "pnl": -0.695232,
+          "date": "2026-06-30",
+          "ticker": "KXLOWTMIA-26JUN30-B79.5"
+        },
+        "gap_quantiles": {
+          "p10": 0.0,
+          "p25": 0.0,
+          "p50": 0.0,
+          "p75": 0.010000000000000009,
+          "p90": 0.16000000000000003
+        },
+        "doa": {
+          "0.97": {
+            "n_doa": 964,
+            "frac_doa": 0.8026644462947544,
+            "n_deployable": 237
+          },
+          "0.99": {
+            "n_doa": 910,
+            "frac_doa": 0.7577019150707743,
+            "n_deployable": 291
+          }
+        }
+      },
+      "full": {
+        "n_fired": 3310,
+        "win_rate": 0.9948640483383686,
+        "mean_exec_price": 0.9515105740181233,
+        "mean_fee": 0.001956172205438071,
+        "mean_pnl": 0.04139730211480385,
+        "clustered": {
+          "mean": 0.04139730211480385,
+          "se": 0.0019671355963839262,
+          "t": 21.04445783549551,
+          "p": 0.0,
+          "n": 3310,
+          "n_clusters": 66
+        },
+        "n_bad": 17,
+        "bad_tickers": [
+          "KXLOWTMIA-26JUN30-B79.5",
+          "KXHIGHTLV-26MAY28-B82.5",
+          "KXHIGHMIA-26MAY30-B87.5",
+          "KXHIGHTPHX-26JUN29-B102.5",
+          "KXHIGHPHIL-26JUN05-B91.5",
+          "KXLOWTMIN-26MAY12-B55.5",
+          "KXHIGHTPHX-26JUN02-B103.5",
+          "KXHIGHMIA-26JUN16-B94.5",
+          "KXHIGHMIA-26JUN16-T95",
+          "KXHIGHTPHX-26JUN22-B108.5",
+          "KXLOWTMIA-26MAY27-B78.5",
+          "KXHIGHTLV-26MAY23-B94.5",
+          "KXHIGHDEN-26MAY24-B81.5",
+          "KXLOWTATL-26JUN09-T71",
+          "KXLOWTATL-26MAY25-B68.5",
+          "KXLOWTPHIL-26JUL07-T68",
+          "KXLOWTLAX-26JUL05-T63"
+        ],
+        "worst_case_loss_rate_wilson95": 0.008210042095832816,
+        "analytic_ev_worst_case": 0.03832321168060573,
+        "worst_trade": {
+          "pnl": -1.0,
+          "date": "2026-05-12",
+          "ticker": "KXLOWTMIN-26MAY12-B55.5"
+        },
+        "gap_quantiles": {
+          "p10": 0.0,
+          "p25": 0.0,
+          "p50": 0.0,
+          "p75": 0.010000000000000009,
+          "p90": 0.15000000000000002
+        },
+        "doa": {
+          "0.97": {
+            "n_doa": 2642,
+            "frac_doa": 0.7981873111782477,
+            "n_deployable": 668
+          },
+          "0.99": {
+            "n_doa": 2492,
+            "frac_doa": 0.7528700906344411,
+            "n_deployable": 818
+          }
+        }
+      }
+    },
+    "breakdown_full": {
+      "by_family": {
+        "HIGH": {
+          "n_fired": 2106,
+          "win_rate": 0.9952516619183286,
+          "mean_exec_price": 0.9449952516619214,
+          "mean_fee": 0.0022000208926875606,
+          "mean_pnl": 0.04805638936372282,
+          "clustered": {
+            "mean": 0.04805638936372282,
+            "se": 0.0030225613438491523,
+            "t": 15.899227144394123,
+            "p": 0.0,
+            "n": 2106,
+            "n_clusters": 65
+          },
+          "n_bad": 10,
+          "bad_tickers": [
+            "KXHIGHTLV-26MAY28-B82.5",
+            "KXHIGHMIA-26MAY30-B87.5",
+            "KXHIGHTPHX-26JUN29-B102.5",
+            "KXHIGHPHIL-26JUN05-B91.5",
+            "KXHIGHTPHX-26JUN02-B103.5",
+            "KXHIGHMIA-26JUN16-B94.5",
+            "KXHIGHMIA-26JUN16-T95",
+            "KXHIGHTPHX-26JUN22-B108.5",
+            "KXHIGHTLV-26MAY23-B94.5",
+            "KXHIGHDEN-26MAY24-B81.5"
+          ],
+          "worst_case_loss_rate_wilson95": 0.008718855084841983,
+          "analytic_ev_worst_case": 0.04408587236054906,
+          "worst_trade": {
+            "pnl": -0.772768,
+            "date": "2026-05-23",
+            "ticker": "KXHIGHTLV-26MAY23-B94.5"
+          },
+          "gap_quantiles": {
+            "p10": 0.0,
+            "p25": 0.0,
+            "p50": 0.0,
+            "p75": 0.020000000000000018,
+            "p90": 0.175
+          },
+          "doa": {
+            "0.97": {
+              "n_doa": 1642,
+              "frac_doa": 0.7796771130104464,
+              "n_deployable": 464
+            },
+            "0.99": {
+              "n_doa": 1543,
+              "frac_doa": 0.7326685660018993,
+              "n_deployable": 563
+            }
+          }
+        },
+        "LOW": {
+          "n_fired": 1204,
+          "win_rate": 0.9941860465116279,
+          "mean_exec_price": 0.9629069767441879,
+          "mean_fee": 0.0015296395348837223,
+          "mean_pnl": 0.029749430232558122,
+          "clustered": {
+            "mean": 0.029749430232558122,
+            "se": 0.0030569709803493533,
+            "t": 9.731669166567729,
+            "p": 0.0,
+            "n": 1204,
+            "n_clusters": 66
+          },
+          "n_bad": 7,
+          "bad_tickers": [
+            "KXLOWTMIA-26JUN30-B79.5",
+            "KXLOWTMIN-26MAY12-B55.5",
+            "KXLOWTMIA-26MAY27-B78.5",
+            "KXLOWTATL-26JUN09-T71",
+            "KXLOWTATL-26MAY25-B68.5",
+            "KXLOWTPHIL-26JUL07-T68",
+            "KXLOWTLAX-26JUL05-T63"
+          ],
+          "worst_case_loss_rate_wilson95": 0.011952264873892896,
+          "analytic_ev_worst_case": 0.02361111884703548,
+          "worst_trade": {
+            "pnl": -1.0,
+            "date": "2026-05-12",
+            "ticker": "KXLOWTMIN-26MAY12-B55.5"
+          },
+          "gap_quantiles": {
+            "p10": 0.0,
+            "p25": 0.0,
+            "p50": 0.0,
+            "p75": 0.010000000000000009,
+            "p90": 0.09999999999999998
+          },
+          "doa": {
+            "0.97": {
+              "n_doa": 1000,
+              "frac_doa": 0.8305647840531561,
+              "n_deployable": 204
+            },
+            "0.99": {
+              "n_doa": 949,
+              "frac_doa": 0.7882059800664452,
+              "n_deployable": 255
+            }
+          }
+        }
+      },
+      "by_rung_group": {
+        "greater": {
+          "n_fired": 555,
+          "win_rate": 0.9927927927927928,
+          "mean_exec_price": 0.9776936936936941,
+          "mean_fee": 0.0007480036036036041,
+          "mean_pnl": 0.01435109549549549,
+          "clustered": {
+            "mean": 0.01435109549549549,
+            "se": 0.002833179640864725,
+            "t": 5.0653672956351405,
+            "p": 4.076136532749075e-07,
+            "n": 555,
+            "n_clusters": 66
+          },
+          "n_bad": 4,
+          "bad_tickers": [
+            "KXHIGHMIA-26JUN16-T95",
+            "KXLOWTATL-26JUN09-T71",
+            "KXLOWTPHIL-26JUL07-T68",
+            "KXLOWTLAX-26JUL05-T63"
+          ],
+          "worst_case_loss_rate_wilson95": 0.018383091225910347,
+          "analytic_ev_worst_case": 0.0031752114767920102,
+          "worst_trade": {
+            "pnl": -0.23201199999999997,
+            "date": "2026-06-09",
+            "ticker": "KXLOWTATL-26JUN09-T71"
+          },
+          "gap_quantiles": {
+            "p10": 0.0,
+            "p25": 0.0,
+            "p50": 0.0,
+            "p75": 0.0,
+            "p90": 0.016000000000000243
+          },
+          "doa": {
+            "0.97": {
+              "n_doa": 509,
+              "frac_doa": 0.9171171171171171,
+              "n_deployable": 46
+            },
+            "0.99": {
+              "n_doa": 499,
+              "frac_doa": 0.8990990990990991,
+              "n_deployable": 56
+            }
+          }
+        },
+        "between_or_less": {
+          "n_fired": 2755,
+          "win_rate": 0.9952813067150635,
+          "mean_exec_price": 0.9462359346642454,
+          "mean_fee": 0.0021995600725952854,
+          "mean_pnl": 0.04684581197822158,
+          "clustered": {
+            "mean": 0.04684581197822158,
+            "se": 0.0021441514641915888,
+            "t": 21.84818225790961,
+            "p": 0.0,
+            "n": 2755,
+            "n_clusters": 66
+          },
+          "n_bad": 13,
+          "bad_tickers": [
+            "KXLOWTMIA-26JUN30-B79.5",
+            "KXHIGHTLV-26MAY28-B82.5",
+            "KXHIGHMIA-26MAY30-B87.5",
+            "KXHIGHTPHX-26JUN29-B102.5",
+            "KXHIGHPHIL-26JUN05-B91.5",
+            "KXLOWTMIN-26MAY12-B55.5",
+            "KXHIGHTPHX-26JUN02-B103.5",
+            "KXHIGHMIA-26JUN16-B94.5",
+            "KXHIGHTPHX-26JUN22-B108.5",
+            "KXLOWTMIA-26MAY27-B78.5",
+            "KXHIGHTLV-26MAY23-B94.5",
+            "KXHIGHDEN-26MAY24-B81.5",
+            "KXLOWTATL-26MAY25-B68.5"
+          ],
+          "worst_case_loss_rate_wilson95": 0.008056913836141447,
+          "analytic_ev_worst_case": 0.04350759142701784,
+          "worst_trade": {
+            "pnl": -1.0,
+            "date": "2026-05-12",
+            "ticker": "KXLOWTMIN-26MAY12-B55.5"
+          },
+          "gap_quantiles": {
+            "p10": 0.0,
+            "p25": 0.0,
+            "p50": 0.0,
+            "p75": 0.020000000000000018,
+            "p90": 0.17000000000000004
+          },
+          "doa": {
+            "0.97": {
+              "n_doa": 2133,
+              "frac_doa": 0.7742286751361162,
+              "n_deployable": 622
+            },
+            "0.99": {
+              "n_doa": 1993,
+              "frac_doa": 0.7234119782214156,
+              "n_deployable": 762
+            }
+          }
+        }
+      }
+    },
+    "decay": {
+      "mean_gap_by_min": {
+        "0": 0.048489425981873224,
+        "1": 0.042731958762886706,
+        "2": 0.038467839805825285,
+        "5": 0.02211807668898358,
+        "10": 0.017287412374276143,
+        "30": 0.01303058103975536,
+        "60": 0.00893603936039361
+      },
+      "n_by_min": {
+        "0": 3310,
+        "1": 3298,
+        "2": 3296,
+        "5": 3286,
+        "10": 3281,
+        "30": 3270,
+        "60": 3252
+      },
+      "half_life_min": 4.60978585070219
+    }
+  },
+  "predexon_depth_samples": [
+    {
+      "ticker": "KXHIGHPHIL-26JUN22-B84.5",
+      "error": "no_snapshot_in_window",
+      "family": "HIGH",
+      "city": "Philadelphia",
+      "date": "2026-06-22"
+    },
+    {
+      "ticker": "KXHIGHTMIN-26JUN01-B78.5",
+      "error": "HTTP Error 429: Too Many Requests",
+      "family": "HIGH",
+      "city": "Minneapolis",
+      "date": "2026-06-01"
+    },
+    {
+      "ticker": "KXLOWTMIA-26MAY23-B80.5",
+      "error": "HTTP Error 429: Too Many Requests",
+      "family": "LOW",
+      "city": "Miami",
+      "date": "2026-05-23"
+    },
+    {
+      "ticker": "KXLOWTOKC-26JUN27-T71",
+      "error": "no_snapshot_in_window",
+      "family": "LOW",
+      "city": "Oklahoma City",
+      "date": "2026-06-27"
+    },
+    {
+      "ticker": "KXHIGHMIA-26JUN04-B79.5",
+      "error": "HTTP Error 429: Too Many Requests",
+      "family": "HIGH",
+      "city": "Miami",
+      "date": "2026-06-04"
+    },
+    {
+      "ticker": "KXHIGHPHIL-26MAY30-B68.5",
+      "error": "HTTP Error 429: Too Many Requests",
+      "family": "HIGH",
+      "city": "Philadelphia",
+      "date": "2026-05-30"
+    },
+    {
+      "ticker": "KXLOWTOKC-26MAY13-B60.5",
+      "side": "SHORT",
+      "snapshot_ts_ms": 1778664974755,
+      "requested_ts_ms": 1778664900000,
+      "best_price": 0.64,
+      "size_at_best": 10,
+      "depth_within_1c": 10,
+      "depth_within_2c": 10,
+      "family": "LOW",
+      "city": "Oklahoma City",
+      "date": "2026-05-13"
+    },
+    {
+      "ticker": "KXHIGHTSATX-26JUL03-T92",
+      "error": "HTTP Error 429: Too Many Requests",
+      "family": "HIGH",
+      "city": "San Antonio",
+      "date": "2026-07-03"
+    },
+    {
+      "ticker": "KXHIGHTNOLA-26JUL03-B91.5",
+      "side": "SHORT",
+      "snapshot_ts_ms": 1783102440726,
+      "requested_ts_ms": 1783102440000,
+      "best_price": 0.8,
+      "size_at_best": 40,
+      "depth_within_1c": 93,
+      "depth_within_2c": 99,
+      "family": "HIGH",
+      "city": "New Orleans",
+      "date": "2026-07-03"
+    },
+    {
+      "ticker": "KXLOWTDEN-26JUN06-B61.5",
+      "error": "HTTP Error 429: Too Many Requests",
+      "family": "LOW",
+      "city": "Denver",
+      "date": "2026-06-06"
+    },
+    {
+      "ticker": "KXLOWTDAL-26JUL11-T81",
+      "error": "HTTP Error 429: Too Many Requests",
+      "family": "LOW",
+      "city": "Dallas",
+      "date": "2026-07-11"
+    },
+    {
+      "ticker": "KXHIGHTLV-26MAY25-B93.5",
+      "side": "SHORT",
+      "snapshot_ts_ms": 1779746400654,
+      "requested_ts_ms": 1779746400000,
+      "best_price": 0.72,
+      "size_at_best": 13,
+      "depth_within_1c": 13,
+      "depth_within_2c": 13,
+      "family": "HIGH",
+      "city": "Las Vegas",
+      "date": "2026-05-25"
+    },
+    {
+      "ticker": "KXLOWTOKC-26JUN27-B71.5",
+      "error": "no_snapshot_in_window",
+      "family": "LOW",
+      "city": "Oklahoma City",
+      "date": "2026-06-27"
+    },
+    {
+      "ticker": "KXHIGHPHIL-26JUN29-B88.5",
+      "error": "HTTP Error 429: Too Many Requests",
+      "family": "HIGH",
+      "city": "Philadelphia",
+      "date": "2026-06-29"
+    },
+    {
+      "ticker": "KXHIGHAUS-26JUN09-B90.5",
+      "error": "HTTP Error 429: Too Many Requests",
+      "family": "HIGH",
+      "city": "Austin (Bergstrom)",
+      "date": "2026-06-09"
+    },
+    {
+      "ticker": "KXLOWTDEN-26MAY12-T55",
+      "error": "HTTP Error 429: Too Many Requests",
+      "family": "LOW",
+      "city": "Denver",
+      "date": "2026-05-12"
+    },
+    {
+      "ticker": "KXHIGHTNOLA-26MAY20-T84",
+      "error": "empty_book",
+      "family": "HIGH",
+      "city": "New Orleans",
+      "date": "2026-05-20"
+    },
+    {
+      "ticker": "KXLOWTMIA-26MAY16-B78.5",
+      "error": "HTTP Error 429: Too Many Requests",
+      "family": "LOW",
+      "city": "Miami",
+      "date": "2026-05-16"
+    },
+    {
+      "ticker": "KXHIGHTSFO-26JUN30-B70.5",
+      "side": "SHORT",
+      "snapshot_ts_ms": 1782853261355,
+      "requested_ts_ms": 1782853260000,
+      "best_price": 0.31,
+      "size_at_best": 10,
+      "depth_within_1c": 10,
+      "depth_within_2c": 10,
+      "family": "HIGH",
+      "city": "San Francisco",
+      "date": "2026-06-30"
+    },
+    {
+      "ticker": "KXHIGHTMIN-26MAY30-B82.5",
+      "side": "SHORT",
+      "snapshot_ts_ms": 1780164628356,
+      "requested_ts_ms": 1780164600000,
+      "best_price": 0.7,
+      "size_at_best": 1,
+      "depth_within_1c": 1,
+      "depth_within_2c": 4,
+      "family": "HIGH",
+      "city": "Minneapolis",
+      "date": "2026-05-30"
+    }
+  ]
+}
