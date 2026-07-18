@@ -100,14 +100,15 @@ def handle(cmd, chat):
     if _owner() and str(chat) != str(_owner()):
         return  # owner-only; silently ignore others
     c = cmd.strip().lower().split()[0] if cmd.strip() else ""
-    if c in ("/on", "/start_live"):
+    # accept BOTH slash-commands and plain words (on/off/status), so "on" works like "/on"
+    if c in ("/on", "on", "start", "resume", "/resume"):
         ok, msg = set_switch("on"); send(chat, ("✅ " if ok else "⚠️ ") + msg + ("  ($10 canary armed)" if ok else ""))
-    elif c in ("/off", "/stop", "/pause"):
+    elif c in ("/off", "off", "stop", "pause", "/stop", "/pause", "halt"):
         ok, msg = set_switch("off"); send(chat, ("🛑 " if ok else "⚠️ ") + msg)
-    elif c == "/status":
+    elif c in ("/status", "status"):
         send(chat, status_text())
     else:
-        send(chat, "KWX commands: /on  /off  /status  /help")
+        send(chat, "KWX commands: on | off | status  (or /on /off /status)")
 
 
 def main():
