@@ -22,7 +22,7 @@ most likely to actually move the number.
 | W1-a | Deribit implied density → sharpen weekly longshot strike selection | sharpen edge/ct | RUNNING | — |
 | W1-b | Extend short-vol to more underlyings (SOL/XRP/DOGE…) | stack + frequency | RUNNING | — |
 | W1-c | Binance funding/basis/OI → weekly directional signal | stack (uncorrelated) | RUNNING | — |
-| W1-d | VRP-regime timing → size up in high-premium weeks | sharpen (Sharpe via sizing) | RUNNING | — |
+| W1-d | VRP-regime timing → size up in high-premium weeks | sharpen (Sharpe via sizing) | **DONE** | NULL — regime timing lowers Sharpe; edge is unconditional (baseline re-confirmed t=4.27) |
 
 ## Confirmed so far (the baseline to beat)
 - **Polymarket weekly BTC/ETH short-vol longshot premium**: +0.12/ct, week-clustered t~4.6, maker (survives

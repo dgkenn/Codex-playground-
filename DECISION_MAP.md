@@ -2098,3 +2098,20 @@ different infra (live continuous two-sided quoting) than our paper harnesses; a 
 change the DAILY_RETURN_PLAN ceiling. Filed as a candidate needing live-quoting infra + a net-of-adverse-selection study
 before any belief; NOT deployed. (Maker rebateRate 0.2 on crypto_fees_v2 remains a real minor tailwind for the confirmed
 weekly maker edge -- see FEE-REGIME-FLAG.)
+
+## VRP-REGIME (2026-07-18, campaign W1-d) — vol-regime timing does NOT sharpen the short-vol edge: NULL (and backwards)
+Tested whether conditioning the confirmed weekly short-vol sell on an entry-time VOL-REGIME signal (VRP=implied-realized
+via Deribit DVOL, trailing RV7/RV30, rv-trend, funding, trend/drawdown) separates high- from low-premium weeks -> size up in
+high-premium regimes to raise Sharpe without raising avg risk. vrp_regime.py: 601 settled longshots, 49 wks BTC+ETH, regime
+observed as-of market START (no lookahead), walk-forward sizing rules, Bonferroni over 27 tests.
+- BASELINE RE-CONFIRMED (4th independent): unconditional +10.57c/ct, week-clustered t=4.27.
+- EVERY regime sign is BACKWARDS vs hypothesis: LOW-VRP tercile +14.4c(t5.6) vs HIGH-VRP +5.5c(t1.4); HIGH-LOW spread
+  -8.97c t=-2.05 (premium SMALLER when implied>>realized). RV7: premium LARGER when realized vol HIGH. None clears
+  Bonferroni |t|=3.11.
+- WALK-FORWARD Sharpe (decisive): unconditional weekly Sharpe 0.701 (ann 5.06); 0 of 18 sizing rules beat it; the
+  pre-registered "size up when VRP high" collapses to 0.239 (dSharpe -0.462, the single WORST rule). Sign-mined w/ hindsight
+  only 7/18 beat, marginal +0.18 requiring the anti-theoretical direction.
+VERDICT: NULL — regime timing LOWERS the frontier. The +0.12/ct premium is effectively UNCONDITIONAL: it is a roughly-constant
+retail-overpricing/lottery premium (band longshots settle YES ~10.5% vs priced ~22%), NOT a vol-risk-premium concentrating in
+high-VRP weeks. Extends LONGSHOT-CONDITIONAL (moneyness) to the vol/Sharpe axis. ACTION: trade unconditionally with fractional
+capital-bounded sizing; NO vol-regime overlay. Campaign W1-d dead. (Silver lining: independent re-validation of the edge.)
