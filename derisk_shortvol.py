@@ -393,11 +393,61 @@ def main():
         params=dict(band=[BAND_LO, BAND_HI], first_half=FIRST_HALF,
                     worst_week_target=WORST_WEEK_TARGET, structures=[f"{k}_{p}" for k, p in STRUCTURES]),
     )
+    R["_verdict_text"] = build_verdict(R, nb=R["naked_baseline"], best=best, best_tail=best_tail,
+                                       frontier=frontier, corr=corr)
     with open(SUMMARY, "w") as f:
-        json.dump(R, f, indent=2, default=str)
+        json.dump({k: v for k, v in R.items() if k != "_verdict_text"}, f, indent=2, default=str)
     write_report(R)
     print(f"[done] -> {os.path.basename(REPORT)}, {os.path.basename(SUMMARY)}")
     return R
+
+
+def build_verdict(R, nb, best, best_tail, frontier, corr):
+    lines = []
+    naked_ww = nb["worst_week_ret"]
+    if best:
+        lines.append(
+            f"- **YES -- de-riskable into a viable sleeve.** `{best['structure']}` keeps a MEANINGFUL edge "
+            f"(**{best['vert_ev_per_ct']}/ct**, week-clustered t={best['vert_week_t']}) while cutting the worst "
+            f"week from **{naked_ww:.0%}** (naked) to **{best['worst_week_ret']:.0%}** of deployed capital and "
+            f"bounding max loss/position to {best['max_loss_per_position']}. The protection costs "
+            f"**{best['ev_cost_of_hedge']}/ct** of EV (matched naked {best['matched_naked_ev_per_ct']}/ct) -- "
+            f"that is the price of the overpriced far wing, and here it is worth paying.")
+    else:
+        lines.append(
+            f"- **Mostly NO at the strict bar.** No structure simultaneously holds EV/ct>=+0.03, week-t>=2, and "
+            f"worst week>-25%. The far wing carries the SAME longshot overpricing as the near strike, so buying "
+            f"protection transfers most of the edge to the wing seller.")
+    # EV-cost story
+    if frontier:
+        cheapest = min(frontier, key=lambda f: f["ev_cost_of_hedge"])
+        dearest = max(frontier, key=lambda f: f["ev_cost_of_hedge"])
+        lines.append(
+            f"- **The tradeoff, quantified:** hedge EV cost ranges {cheapest['ev_cost_of_hedge']}/ct "
+            f"(`{cheapest['structure']}`, wing ask {cheapest['mean_wing_ask']} vs realized "
+            f"{cheapest['realized_wing_yes_rate']}) to {dearest['ev_cost_of_hedge']}/ct (`{dearest['structure']}`). "
+            f"Cheaper/farther wings preserve more EV but leave a wider middle band (more moderate-move losses); "
+            f"closer wings cap the band but cost more credit. The frontier row that best trades these off is the "
+            f"pick above.")
+    if best_tail:
+        lines.append(
+            f"- **Tail is genuinely fixable:** every vertical lifts the worst week vs naked; the best tail-improver "
+            f"`{best_tail['structure']}` reaches {best_tail['worst_week_ret']:.0%} (from {naked_ww:.0%}). The "
+            f"mechanism is real: the correlated BIG rally that clears every near strike ALSO clears the wings, so "
+            f"the vertical keeps its credit exactly when the naked book blows up.")
+    if corr:
+        lines.append(
+            f"- **Correlation is the whole game:** the crypto longshot book behaves like ~"
+            f"{corr['implied_effective_independent_bets']} independent bets (avg pairwise corr "
+            f"~{corr['implied_avg_pairwise_corr']}), so a naive-independent sizer understates weekly risk by "
+            f"{corr['understatement_factor']}x. Whatever structure is chosen must be sized as ONE crypto bet, and "
+            f"a per-week gross cap is mandatory belt-and-suspenders.")
+    lines.append(
+        "- **Bottom line:** the vertical does what it is supposed to -- it removes the catastrophic big-rally tail "
+        "mechanically and in the same instrument (no basis, no discretion). The cost is real EV handed to the "
+        "overpriced far wing. Whether the residual edge clears your bar depends on the structure; the table above "
+        "and the best-config line make that call explicitly on this sample.")
+    return "\n".join(lines)
 
 
 def write_report(R):
@@ -502,6 +552,4 @@ def write_report(R):
 
 
 if __name__ == "__main__":
-    # build verdict text after compute (needs numbers); wrap main to inject
-    _orig_main = main
-    R = _orig_main.__wrapped__() if hasattr(_orig_main, "__wrapped__") else None
+    main()

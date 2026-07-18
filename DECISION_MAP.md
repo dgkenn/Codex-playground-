@@ -2397,3 +2397,17 @@ Brier 0.042; arrival-rate HR 2.7, size HR 0.63 (homerun pattern). Built on 6848-
 VERDICT: honest go-live number for the Polymarket maker edge = low-hundreds-$/wk niche, tail-heavy. CAVEAT: this is the GLOBAL
 (illegal-US) crypto edge -> NOT directly deployable; value = REUSABLE FillModel architecture (works for any PM-style CLOB maker
 strategy incl. QCX if it lists crypto). Completes the operator's "do all three" (S3 re-confirm CONFIRMED, S1 Wang NULL, S2 fill DONE).
+
+## QCX-SPORTS (2026-07-18, farm S10) — new legal Polymarket US venue tracks sharp lines: NULL (closes QCX)
+Tested the one legally-deployable QCX product (sports) for mispricing vs sharp closing lines. qcx_sports.py: 2599 settled QCX
+moneyline markets (NFL/NBA/NHL/CFB/CBB/UFC, Oct2025-Jan2026), pre-game executable print (book OHLC last-before-kickoff, live-only
+excluded, winner cross-checked to settlement) vs ESPN de-vigged closing line. Clean n=757 matched (679 fresh <6h).
+- Deviation QCX vs closing book: median |dev| 1.3c, |dev|>5c only 5%, >10c 1%. ~1.5-2x looser than mature Global (sub-cent) but
+  QCX ALREADY tracks the sharp line. Brier: book 0.231 vs QCX 0.234 (book marginally sharper -> QCX adds no info).
+- Backtest net of QCX taker fee (0.06*p(1-p), max 1.5c): best-powered |dev|>0.03 (n=110) +0.106/ct but day-clustered t=0.69
+  (NOT sig); no n>=30 threshold clears |t|>2.4; only |t|>2 has n=6 (dies on multiple-testing). Insignificant even w/o fees, and
+  the backtest is an UPPER BOUND (look-ahead: early print vs eventual close). QCX maker rebate -0.0125*p(1-p) exists (minor).
+- Cross-venue (QCX vs Kalshi/Global): not reconstructable (QCX exposes no timestamped historical book) -> untested, not claimed.
+VERDICT: NULL. New legal QCX sports venue is NOT tradeably mispriced; tracks sharp lines, fee kills residual. Being new/thin did
+NOT make it exploitable (consistent w/ mature-venue sportsbook null #10). CLOSES QCX: sports-only AND efficient -> no deployable
+edge. Reinforces KALSHI-ONLY pivot. Farm S10 dead.

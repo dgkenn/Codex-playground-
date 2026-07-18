@@ -596,11 +596,17 @@ def build_verdict(ds, br, bt, bt_nofee):
     tiny_best = max(tiny, key=lambda b: b.get("t_day", -9)) if tiny else None
     tradeable = bool(populated) and best.get("mean_edge", 0) > 0 and abs(best.get("t_day", 0)) > 2.4
     book_sharper = br["brier_book"] < br["brier_qcx"]
-    V.append(f"- QCX pre-game prints deviate from the closing book by mean|dev| "
-             f"**{ds['mean_abs']*100:.1f} cents** (median {ds['median_abs']*100:.1f}c); "
-             f"|dev|>5c on {ds['frac_gt5']:.0%} of games. This is "
-             f"{'MUCH WIDER than' if ds['mean_abs']>0.02 else 'comparable to'} a "
-             "sub-cent mature-venue tracking error -> QCX prints are noisier.")
+    if ds['median_abs'] > 0.04:
+        tightness = "MUCH LOOSER than a sub-cent mature venue -> materially noisier prints"
+    elif ds['median_abs'] > 0.010:
+        tightness = ("modestly looser than a mature venue's sub-cent tracking (~1.5-2x), "
+                     "but QCX still tracks the sharp line closely")
+    else:
+        tightness = "essentially as tight as a mature venue (sub-cent)"
+    V.append(f"- QCX pre-game prints deviate from the closing book by median|dev| "
+             f"**{ds['median_abs']*100:.1f} cents** (mean {ds['mean_abs']*100:.1f}c); "
+             f"|dev|>5c on only {ds['frac_gt5']:.0%} of games, >10c on {ds['frac_gt10']:.0%}. "
+             f"That is {tightness}.")
     V.append(f"- Brier(book)={br['brier_book']:.3f} vs Brier(QCX)={br['brier_qcx']:.3f}: "
              f"the {'closing book is sharper' if book_sharper else 'QCX is as/more sharp'}.")
     if tradeable:
@@ -624,9 +630,10 @@ def build_verdict(ds, br, bt, bt_nofee):
              "mispricing. Treat a positive backtest as an UPPER BOUND.")
     if not tradeable:
         V.append("\n**BLUNT: NULL (fee-surviving edge not demonstrated).** The new QCX venue's "
-                 "pre-game prices are NOISIER than a mature venue (wider dispersion vs the "
-                 "closing line, thin books), consistent with a young sports venue. But that "
-                 "dispersion is symmetric noise, not a systematic mispricing: the closing "
+                 "pre-game prices are only marginally looser than a mature venue "
+                 f"(median {ds['median_abs']*100:.1f}c vs the closing line, thinner books) and "
+                 "still track the sharp line closely. That residual dispersion is symmetric "
+                 "noise, not a systematic mispricing: the closing "
                  "book is at least as sharp (Brier), and once the QCX taker fee (up to 1.5c "
                  "at p=0.5) is charged, the deviation-chasing backtest does not clear a "
                  "day-clustered significance bar. Even the raw (no-fee, look-ahead-inflated) "
