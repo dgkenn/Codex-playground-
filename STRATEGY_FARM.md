@@ -27,8 +27,8 @@
 | S1 | Wang Transform (oracle3) | distortion model → sharpen longshot selection | yes | med (selection null 3x, but principled) | TESTING |
 | S2 | Cox fill model (homerun) | realistic maker fill-prob → honest capture | yes | n/a (engineering) | TESTING |
 | S3 | Print-level re-confirm (data-api) | confirm +0.12 edge OOS on real prints, full history | — | high | **DONE ✓ CONFIRMED** |
-| S4 | Earnings beat-rate (dragonbear666) | corp earnings vs Kalshi implied-prob divergence | **KALSHI** | med | QUEUED |
-| S5 | S&P daily brackets (quantgalore/kalshi-trading) | Kalshi S&P 500 daily bracket system | **KALSHI** | med | QUEUED |
+| S4 | Earnings beat-rate (dragonbear666) | corp earnings vs Kalshi implied-prob divergence | **KALSHI** | med | TESTING |
+| S5 | S&P daily brackets (quantgalore/kalshi-trading) | Kalshi S&P 500 daily bracket system | **KALSHI** | med | TESTING |
 | S6 | Weather ensemble (suislanchez) | 31-member GFS ensemble → Kalshi KXHIGH temp | **KALSHI** | low (weather-info null, but ensemble differs) | QUEUED |
 | S7 | homerun 25+ built-ins (copy/arb/AI-score) | scan for any with OOS edge | both | low-med | QUEUED |
 | S8 | Premium-decay (oracle3) | distortion decays toward resolution → entry timing | yes | low (first-half already best) | QUEUED |
