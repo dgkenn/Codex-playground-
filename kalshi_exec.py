@@ -11,10 +11,13 @@ This matches the program charter: no live capital without explicit human authori
 
 Live auth (only when you deliberately enable it) uses Kalshi's RSA-signed scheme: an access-key id +
 an RSA private key, signing `timestamp(ms) + METHOD + path` with RSA-PSS-SHA256, sent as headers
-KALSHI-ACCESS-KEY / KALSHI-ACCESS-TIMESTAMP / KALSHI-ACCESS-SIGNATURE. Create .kalshi_creds as JSON:
-    {"access_key_id": "<your-key-id>", "private_key_pem": "-----BEGIN RSA PRIVATE KEY-----\\n..."}
-(or {"private_key_path": "/abs/path/to/key.pem"}). The file is gitignored. RSA signing needs
-`cryptography` (pip install cryptography) -- only imported on the live path, so dry-run has no deps.
+KALSHI-ACCESS-KEY / KALSHI-ACCESS-TIMESTAMP / KALSHI-ACCESS-SIGNATURE. Credentials resolve from EITHER:
+  (a) the SAME env vars the existing box strategy (kalshi_trader.py) already uses --
+      KALSHI_API_KEY_ID and KALSHI_PRIVATE_KEY_PATH (path to the RSA PEM) -- so if you already run a Kalshi
+      bot on this host, K-WX picks up its credentials with NOTHING new to configure; OR
+  (b) a local .kalshi_creds JSON: {"access_key_id": "...", "private_key_pem"|"private_key_path": "..."}.
+Either way the secret never touches git (env vars aren't files; .kalshi_creds is gitignored). RSA signing
+needs `cryptography` -- only imported on the live path, so dry-run has no deps.
 
 Usage (all dry-run unless the two gates are set):
     from kalshi_exec import KalshiExec
@@ -48,21 +51,35 @@ class KalshiExec:
         self.log_path = log_path
         self._priv = None
         self._key_id = None
-        # LIVE requires BOTH gates. Absent either -> permanently dry-run for this instance.
-        self.live = (os.environ.get("KWX_LIVE") == "1") and os.path.exists(CREDS_PATH)
+        # LIVE requires the explicit KWX_LIVE gate AND usable credentials. Credentials resolve from EITHER
+        # source (whichever is present):
+        #   (a) the SAME env vars the box strategy (kalshi_trader.py) uses -- KALSHI_API_KEY_ID +
+        #       KALSHI_PRIVATE_KEY_PATH (a PEM file) -- so an existing Kalshi setup works with no new config; OR
+        #   (b) a local .kalshi_creds JSON ({access_key_id, private_key_pem|private_key_path}).
+        creds_available = bool(os.environ.get("KALSHI_API_KEY_ID") and os.environ.get("KALSHI_PRIVATE_KEY_PATH")) \
+            or os.path.exists(CREDS_PATH)
+        self.live = (os.environ.get("KWX_LIVE") == "1") and creds_available
         if self.live:
             self._load_creds()  # may flip self.live back to False if creds unusable
 
     # ---- credential loading (live path only) ----
     def _load_creds(self):
         try:
-            creds = json.load(open(CREDS_PATH))
-            self._key_id = creds["access_key_id"]
-            pem = creds.get("private_key_pem")
-            if not pem and creds.get("private_key_path"):
-                pem = open(creds["private_key_path"]).read()
             from cryptography.hazmat.primitives.serialization import load_pem_private_key
-            self._priv = load_pem_private_key(pem.encode() if isinstance(pem, str) else pem, password=None)
+            env_id = os.environ.get("KALSHI_API_KEY_ID")
+            env_pem_path = os.environ.get("KALSHI_PRIVATE_KEY_PATH")
+            if env_id and env_pem_path:
+                # box-strategy-compatible path: env var key id + PEM file path
+                self._key_id = env_id
+                with open(env_pem_path, "rb") as fh:
+                    self._priv = load_pem_private_key(fh.read(), password=None)
+            else:
+                creds = json.load(open(CREDS_PATH))
+                self._key_id = creds["access_key_id"]
+                pem = creds.get("private_key_pem")
+                if not pem and creds.get("private_key_path"):
+                    pem = open(creds["private_key_path"]).read()
+                self._priv = load_pem_private_key(pem.encode() if isinstance(pem, str) else pem, password=None)
         except Exception as e:
             # Any failure -> stay in dry-run rather than risk a malformed live attempt.
             print(f"[kalshi_exec] creds load failed ({e}); staying DRY_RUN")
