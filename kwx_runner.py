@@ -40,6 +40,23 @@ CITY = {
     "KXHIGHTNOLA": ("KMSY", -6), "KXHIGHLAX": ("KLAX", -8),
 }
 
+# HIGH series -> its matching LOW (overnight-min) series. EXPLICIT + data-verified, because Kalshi's naming
+# is inconsistent (some HIGH series carry a 'T' -- KXHIGHTBOS -- and the LOW family does NOT double it:
+# KXLOWTBOS, not KXLOWTTBOS; and NY's low is KXLOWTNYC, not KXLOWTNY). The old series.replace("KXHIGH",
+# "KXLOWT") produced WRONG tickers for 14/20 cities (double-T / missing 'C') -> those low events silently
+# returned no rungs and never traded. This map is the authoritative HIGH->LOW correspondence (all 20 verified
+# against the KXLOWT* series present in the backtest data). LOW markets settle on the SAME LST calendar day
+# as the HIGH (the day's minimum), so they reuse the high's lst_date/offset; only kind flips to 'min'.
+CITY_LOW_SERIES = {
+    "KXHIGHDEN": "KXLOWTDEN", "KXHIGHMIA": "KXLOWTMIA", "KXHIGHCHI": "KXLOWTCHI",
+    "KXHIGHTBOS": "KXLOWTBOS", "KXHIGHAUS": "KXLOWTAUS", "KXHIGHTSEA": "KXLOWTSEA",
+    "KXHIGHTSFO": "KXLOWTSFO", "KXHIGHTMIN": "KXLOWTMIN", "KXHIGHTDC": "KXLOWTDC",
+    "KXHIGHTATL": "KXLOWTATL", "KXHIGHTDAL": "KXLOWTDAL", "KXHIGHTSATX": "KXLOWTSATX",
+    "KXHIGHNY": "KXLOWTNYC", "KXHIGHTOKC": "KXLOWTOKC", "KXHIGHTLV": "KXLOWTLV",
+    "KXHIGHTPHX": "KXLOWTPHX", "KXHIGHTHOU": "KXLOWTHOU", "KXHIGHPHIL": "KXLOWTPHIL",
+    "KXHIGHTNOLA": "KXLOWTNOLA", "KXHIGHLAX": "KXLOWTLAX",
+}
+
 # ---- frozen strategy params (from Phase-2: Track A walk-forward + Track B multi-year tail + Tier-1) ----
 MARGIN_F = 1.0          # base: observed extreme must clear strike by this many degF (Track A/Tier-1: best)
 SUSTAIN_MIN = 3         # sustained this many minutes -- glitch-robust (Tier-1 S2: sustain=3 reconfirmed;
@@ -283,7 +300,7 @@ def active_market_days(today_lst=None):
         lst = (now_utc + dt.timedelta(hours=offset)).date()
         ev = f"{series}-{lst.strftime('%y%b%d').upper()}"
         out.append((series, ev, station, offset, lst.isoformat(), "max"))
-        low = series.replace("KXHIGH", "KXLOWT", 1) if series.startswith("KXHIGH") else None
+        low = CITY_LOW_SERIES.get(series)   # explicit, data-verified HIGH->LOW map (not a fragile string sub)
         if low:
             evl = f"{low}-{lst.strftime('%y%b%d').upper()}"
             out.append((low, evl, station, offset, lst.isoformat(), "min"))
