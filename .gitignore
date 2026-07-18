@@ -25,3 +25,6 @@ kwx_gate_status.txt
 kwx_gate_run.log
 wx_forecast_paper.jsonl
 wx_forecast_settled.jsonl
+
+# early-lock study cache (agent artifact, do not commit)
+_earlylock_cache/
