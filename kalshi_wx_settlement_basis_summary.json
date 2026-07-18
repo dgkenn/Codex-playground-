@@ -868,6 +868,130 @@
           }
         ]
       }
+    },
+    "gated1min": {
+      "1": {
+        "n_fired": 43,
+        "win_rate": 0.8604651162790697,
+        "cond_loss_rate_given_fired": 0.13953488372093026,
+        "worst_case_loss_rate_wilson95": 0.2726358797106884,
+        "mean_exec_price": 0.7079069767441861,
+        "mean_fee": 0.0071259999999999995,
+        "mean_pnl": 0.14543213953488374,
+        "clustered_se": 0.0420601320515263,
+        "clustered_t": 3.4577195182535387,
+        "clustered_p": 0.0005447682234684947,
+        "n_clusters": 33,
+        "analytic_ev_point": 0.14543213953488363,
+        "analytic_ev_worst_case": 0.012331143545125399,
+        "n_locked_yes_settled_no": 6,
+        "bad_detail": [
+          {
+            "ticker": "KXHIGHDEN-26JUL09-T91",
+            "date": "2026-07-09",
+            "strike": 91,
+            "cli_high": 91
+          },
+          {
+            "ticker": "KXHIGHDEN-26JUN16-T93",
+            "date": "2026-06-16",
+            "strike": 93,
+            "cli_high": 93
+          },
+          {
+            "ticker": "KXHIGHTATL-26JUL11-T94",
+            "date": "2026-07-11",
+            "strike": 94,
+            "cli_high": 94
+          },
+          {
+            "ticker": "KXHIGHTDAL-26JUN06-T89",
+            "date": "2026-06-06",
+            "strike": 89,
+            "cli_high": 89
+          },
+          {
+            "ticker": "KXHIGHTOKC-26JUN12-T91",
+            "date": "2026-06-12",
+            "strike": 91,
+            "cli_high": 91
+          },
+          {
+            "ticker": "KXHIGHTHOU-26MAY22-T90",
+            "date": "2026-05-22",
+            "strike": 90,
+            "cli_high": 90
+          }
+        ]
+      },
+      "2": {
+        "n_fired": 31,
+        "win_rate": 1.0,
+        "cond_loss_rate_given_fired": 0.0,
+        "worst_case_loss_rate_wilson95": 0.11025539550647792,
+        "mean_exec_price": 0.8587096774193551,
+        "mean_fee": 0.005486645161290323,
+        "mean_pnl": 0.13580367741935484,
+        "clustered_se": 0.037826446201068994,
+        "clustered_t": 3.590178064771968,
+        "clustered_p": 0.0003304521406586325,
+        "n_clusters": 26,
+        "analytic_ev_point": 0.13580367741935456,
+        "analytic_ev_worst_case": 0.025548281912876673,
+        "n_locked_yes_settled_no": 0,
+        "bad_detail": []
+      },
+      "3": {
+        "n_fired": 16,
+        "win_rate": 1.0,
+        "cond_loss_rate_given_fired": 0.0,
+        "worst_case_loss_rate_wilson95": 0.19360768060771177,
+        "mean_exec_price": 0.9881250000000001,
+        "mean_fee": 0.0007853125000000004,
+        "mean_pnl": 0.011089687500000002,
+        "clustered_se": 0.004754399663540609,
+        "clustered_t": 2.3325105764754945,
+        "clustered_p": 0.019673847174577652,
+        "n_clusters": 15,
+        "analytic_ev_point": 0.011089687499999858,
+        "analytic_ev_worst_case": -0.18251799310771197,
+        "n_locked_yes_settled_no": 0,
+        "bad_detail": []
+      },
+      "4": {
+        "n_fired": 5,
+        "win_rate": 1.0,
+        "cond_loss_rate_given_fired": 0.0,
+        "worst_case_loss_rate_wilson95": 0.4344824648984954,
+        "mean_exec_price": 1.0,
+        "mean_fee": 0.0,
+        "mean_pnl": 0.0,
+        "clustered_se": 0.0,
+        "clustered_t": NaN,
+        "clustered_p": null,
+        "n_clusters": 5,
+        "analytic_ev_point": 0.0,
+        "analytic_ev_worst_case": -0.4344824648984954,
+        "n_locked_yes_settled_no": 0,
+        "bad_detail": []
+      },
+      "5": {
+        "n_fired": 2,
+        "win_rate": 1.0,
+        "cond_loss_rate_given_fired": 0.0,
+        "worst_case_loss_rate_wilson95": 0.6576197725990219,
+        "mean_exec_price": 1.0,
+        "mean_fee": 0.0,
+        "mean_pnl": 0.0,
+        "clustered_se": 0.0,
+        "clustered_t": NaN,
+        "clustered_p": null,
+        "n_clusters": 2,
+        "analytic_ev_point": 0.0,
+        "analytic_ev_worst_case": -0.6576197725990219,
+        "n_locked_yes_settled_no": 0,
+        "bad_detail": []
+      }
     }
   },
   "headline_margin_1_and_2": {
@@ -1177,6 +1301,60 @@
               "cli_high": 84
             }
           ]
+        },
+        "gated1min": {
+          "n_fired": 43,
+          "win_rate": 0.8604651162790697,
+          "cond_loss_rate_given_fired": 0.13953488372093026,
+          "worst_case_loss_rate_wilson95": 0.2726358797106884,
+          "mean_exec_price": 0.7079069767441861,
+          "mean_fee": 0.0071259999999999995,
+          "mean_pnl": 0.14543213953488374,
+          "clustered_se": 0.0420601320515263,
+          "clustered_t": 3.4577195182535387,
+          "clustered_p": 0.0005447682234684947,
+          "n_clusters": 33,
+          "analytic_ev_point": 0.14543213953488363,
+          "analytic_ev_worst_case": 0.012331143545125399,
+          "n_locked_yes_settled_no": 6,
+          "bad_detail": [
+            {
+              "ticker": "KXHIGHDEN-26JUL09-T91",
+              "date": "2026-07-09",
+              "strike": 91,
+              "cli_high": 91
+            },
+            {
+              "ticker": "KXHIGHDEN-26JUN16-T93",
+              "date": "2026-06-16",
+              "strike": 93,
+              "cli_high": 93
+            },
+            {
+              "ticker": "KXHIGHTATL-26JUL11-T94",
+              "date": "2026-07-11",
+              "strike": 94,
+              "cli_high": 94
+            },
+            {
+              "ticker": "KXHIGHTDAL-26JUN06-T89",
+              "date": "2026-06-06",
+              "strike": 89,
+              "cli_high": 89
+            },
+            {
+              "ticker": "KXHIGHTOKC-26JUN12-T91",
+              "date": "2026-06-12",
+              "strike": 91,
+              "cli_high": 91
+            },
+            {
+              "ticker": "KXHIGHTHOU-26MAY22-T90",
+              "date": "2026-05-22",
+              "strike": 90,
+              "cli_high": 90
+            }
+          ]
         }
       }
     },
@@ -1311,6 +1489,23 @@
               "cli_high": 75
             }
           ]
+        },
+        "gated1min": {
+          "n_fired": 31,
+          "win_rate": 1.0,
+          "cond_loss_rate_given_fired": 0.0,
+          "worst_case_loss_rate_wilson95": 0.11025539550647792,
+          "mean_exec_price": 0.8587096774193551,
+          "mean_fee": 0.005486645161290323,
+          "mean_pnl": 0.13580367741935484,
+          "clustered_se": 0.037826446201068994,
+          "clustered_t": 3.590178064771968,
+          "clustered_p": 0.0003304521406586325,
+          "n_clusters": 26,
+          "analytic_ev_point": 0.13580367741935456,
+          "analytic_ev_worst_case": 0.025548281912876673,
+          "n_locked_yes_settled_no": 0,
+          "bad_detail": []
         }
       }
     }
@@ -1325,7 +1520,8 @@
         "cli_high": 91,
         "roll3": "did_not_fire",
         "roll5": "did_not_fire",
-        "metar": "did_not_fire"
+        "metar": "did_not_fire",
+        "gated1min": "still_missed"
       },
       {
         "ticker": "KXHIGHDEN-26JUN27-T97",
@@ -1334,7 +1530,8 @@
         "cli_high": 97,
         "roll3": "did_not_fire",
         "roll5": "did_not_fire",
-        "metar": "did_not_fire"
+        "metar": "did_not_fire",
+        "gated1min": "did_not_fire"
       },
       {
         "ticker": "KXHIGHDEN-26JUN18-T88",
@@ -1343,7 +1540,8 @@
         "cli_high": 88,
         "roll3": "did_not_fire",
         "roll5": "did_not_fire",
-        "metar": "did_not_fire"
+        "metar": "did_not_fire",
+        "gated1min": "did_not_fire"
       },
       {
         "ticker": "KXHIGHDEN-26JUN16-T93",
@@ -1352,7 +1550,8 @@
         "cli_high": 93,
         "roll3": "did_not_fire",
         "roll5": "did_not_fire",
-        "metar": "did_not_fire"
+        "metar": "did_not_fire",
+        "gated1min": "still_missed"
       },
       {
         "ticker": "KXHIGHMIA-26JUN26-T95",
@@ -1361,7 +1560,8 @@
         "cli_high": 92,
         "roll3": "did_not_fire",
         "roll5": "did_not_fire",
-        "metar": "did_not_fire"
+        "metar": "did_not_fire",
+        "gated1min": "did_not_fire"
       },
       {
         "ticker": "KXHIGHMIA-26JUN16-T95",
@@ -1370,7 +1570,8 @@
         "cli_high": 95,
         "roll3": "did_not_fire",
         "roll5": "did_not_fire",
-        "metar": "did_not_fire"
+        "metar": "did_not_fire",
+        "gated1min": "did_not_fire"
       },
       {
         "ticker": "KXHIGHMIA-26MAY16-T91",
@@ -1379,7 +1580,8 @@
         "cli_high": 90,
         "roll3": "did_not_fire",
         "roll5": "did_not_fire",
-        "metar": "did_not_fire"
+        "metar": "did_not_fire",
+        "gated1min": "did_not_fire"
       },
       {
         "ticker": "KXHIGHTBOS-26MAY16-T80",
@@ -1388,7 +1590,8 @@
         "cli_high": 80,
         "roll3": "did_not_fire",
         "roll5": "did_not_fire",
-        "metar": "did_not_fire"
+        "metar": "did_not_fire",
+        "gated1min": "did_not_fire"
       },
       {
         "ticker": "KXHIGHTSEA-26JUL10-T78",
@@ -1397,7 +1600,8 @@
         "cli_high": 78,
         "roll3": "did_not_fire",
         "roll5": "did_not_fire",
-        "metar": "did_not_fire"
+        "metar": "did_not_fire",
+        "gated1min": "did_not_fire"
       },
       {
         "ticker": "KXHIGHTSEA-26JUN27-T70",
@@ -1406,7 +1610,8 @@
         "cli_high": 70,
         "roll3": "did_not_fire",
         "roll5": "did_not_fire",
-        "metar": "did_not_fire"
+        "metar": "did_not_fire",
+        "gated1min": "did_not_fire"
       },
       {
         "ticker": "KXHIGHTSFO-26JUL02-T71",
@@ -1415,7 +1620,8 @@
         "cli_high": 71,
         "roll3": "did_not_fire",
         "roll5": "did_not_fire",
-        "metar": "did_not_fire"
+        "metar": "did_not_fire",
+        "gated1min": "did_not_fire"
       },
       {
         "ticker": "KXHIGHTSFO-26JUN30-T73",
@@ -1424,7 +1630,8 @@
         "cli_high": 73,
         "roll3": "did_not_fire",
         "roll5": "did_not_fire",
-        "metar": "did_not_fire"
+        "metar": "did_not_fire",
+        "gated1min": "did_not_fire"
       },
       {
         "ticker": "KXHIGHTSFO-26JUN25-T70",
@@ -1433,7 +1640,8 @@
         "cli_high": 70,
         "roll3": "did_not_fire",
         "roll5": "did_not_fire",
-        "metar": "did_not_fire"
+        "metar": "did_not_fire",
+        "gated1min": "did_not_fire"
       },
       {
         "ticker": "KXHIGHTSFO-26MAY18-T80",
@@ -1442,7 +1650,8 @@
         "cli_high": 80,
         "roll3": "did_not_fire",
         "roll5": "did_not_fire",
-        "metar": "did_not_fire"
+        "metar": "did_not_fire",
+        "gated1min": "did_not_fire"
       },
       {
         "ticker": "KXHIGHTATL-26JUL16-T93",
@@ -1451,7 +1660,8 @@
         "cli_high": 93,
         "roll3": "did_not_fire",
         "roll5": "did_not_fire",
-        "metar": "did_not_fire"
+        "metar": "did_not_fire",
+        "gated1min": "did_not_fire"
       },
       {
         "ticker": "KXHIGHTATL-26JUL11-T94",
@@ -1460,7 +1670,8 @@
         "cli_high": 94,
         "roll3": "did_not_fire",
         "roll5": "did_not_fire",
-        "metar": "did_not_fire"
+        "metar": "did_not_fire",
+        "gated1min": "still_missed"
       },
       {
         "ticker": "KXHIGHTATL-26MAY30-T85",
@@ -1469,7 +1680,8 @@
         "cli_high": 85,
         "roll3": "did_not_fire",
         "roll5": "did_not_fire",
-        "metar": "did_not_fire"
+        "metar": "did_not_fire",
+        "gated1min": "did_not_fire"
       },
       {
         "ticker": "KXHIGHTATL-26MAY28-T88",
@@ -1478,7 +1690,8 @@
         "cli_high": 88,
         "roll3": "did_not_fire",
         "roll5": "did_not_fire",
-        "metar": "did_not_fire"
+        "metar": "did_not_fire",
+        "gated1min": "did_not_fire"
       },
       {
         "ticker": "KXHIGHTDAL-26JUN06-T89",
@@ -1487,7 +1700,8 @@
         "cli_high": 89,
         "roll3": "did_not_fire",
         "roll5": "did_not_fire",
-        "metar": "did_not_fire"
+        "metar": "did_not_fire",
+        "gated1min": "still_missed"
       },
       {
         "ticker": "KXHIGHTSATX-26MAY23-T85",
@@ -1496,7 +1710,8 @@
         "cli_high": 85,
         "roll3": "did_not_fire",
         "roll5": "did_not_fire",
-        "metar": "did_not_fire"
+        "metar": "did_not_fire",
+        "gated1min": "did_not_fire"
       },
       {
         "ticker": "KXHIGHTOKC-26JUN12-T91",
@@ -1505,7 +1720,8 @@
         "cli_high": 91,
         "roll3": "did_not_fire",
         "roll5": "did_not_fire",
-        "metar": "did_not_fire"
+        "metar": "did_not_fire",
+        "gated1min": "still_missed"
       },
       {
         "ticker": "KXHIGHTOKC-26MAY28-T84",
@@ -1514,7 +1730,8 @@
         "cli_high": 84,
         "roll3": "did_not_fire",
         "roll5": "did_not_fire",
-        "metar": "did_not_fire"
+        "metar": "did_not_fire",
+        "gated1min": "did_not_fire"
       },
       {
         "ticker": "KXHIGHTHOU-26MAY22-T90",
@@ -1523,7 +1740,8 @@
         "cli_high": 90,
         "roll3": "did_not_fire",
         "roll5": "did_not_fire",
-        "metar": "did_not_fire"
+        "metar": "did_not_fire",
+        "gated1min": "still_missed"
       },
       {
         "ticker": "KXHIGHPHIL-26JUL11-T89",
@@ -1532,7 +1750,8 @@
         "cli_high": 89,
         "roll3": "did_not_fire",
         "roll5": "did_not_fire",
-        "metar": "did_not_fire"
+        "metar": "did_not_fire",
+        "gated1min": "did_not_fire"
       },
       {
         "ticker": "KXHIGHPHIL-26JUN02-T80",
@@ -1541,7 +1760,8 @@
         "cli_high": 80,
         "roll3": "did_not_fire",
         "roll5": "did_not_fire",
-        "metar": "did_not_fire"
+        "metar": "did_not_fire",
+        "gated1min": "did_not_fire"
       },
       {
         "ticker": "KXHIGHLAX-26JUN28-T72",
@@ -1550,7 +1770,8 @@
         "cli_high": 71,
         "roll3": "did_not_fire",
         "roll5": "did_not_fire",
-        "metar": "did_not_fire"
+        "metar": "did_not_fire",
+        "gated1min": "did_not_fire"
       },
       {
         "ticker": "KXHIGHLAX-26MAY24-T69",
@@ -1559,12 +1780,14 @@
         "cli_high": 68,
         "roll3": "still_missed",
         "roll5": "still_missed",
-        "metar": "did_not_fire"
+        "metar": "did_not_fire",
+        "gated1min": "did_not_fire"
       }
     ],
     "n_fixed_by_roll5": 0,
     "n_fixed_by_roll3": 0,
     "n_fixed_by_metar": 0,
+    "n_fixed_by_gated1min": 0,
     "n_still_missed_by_roll5": 1
   },
   "rejected_datasets": {
@@ -1651,8 +1874,8 @@
         "year": 2025,
         "ok": true,
         "n_compared": 167,
-        "mean_abs_diff_F": 2.5815568862275446,
-        "max_abs_diff_F": 13.939999999999998
+        "mean_abs_diff_F": 0.045628742514970684,
+        "max_abs_diff_F": 0.0800000000000125
       },
       "reason": "NCEI global-hourly/isd-lite archive directories for 2026 return HTTP 404 in this environment as of the run date (2024/ and 2025/ both return 200), i.e. NCEI has not finalized/published this year's ISD data yet -- a real publication lag, not a fetch bug. Because ISD-Lite's own format spec confirms its hourly temperature IS the routine METAR stream, the 'metar' candidate above is used as the realtime-available stand-in, and the equivalence was spot-validated against real 2025 ISD-Lite data for KDEN."
     },
@@ -1668,7 +1891,7 @@
       "worst_case_loss_rate_margin1": 0.12455502979304453,
       "cond_loss_rate_margin1": 0.0,
       "analytic_ev_worst_case_margin1": -0.03712499275600761,
-      "coverage_rate": 1.0
+      "fire_rate_vs_raw1min_baseline": 0.38028169014084506
     },
     {
       "candidate": "roll3",
@@ -1676,7 +1899,7 @@
       "worst_case_loss_rate_margin1": 0.13494876119812985,
       "cond_loss_rate_margin1": 0.02631578947368418,
       "analytic_ev_worst_case_margin1": 0.1364332651176596,
-      "coverage_rate": 0.9507462686567164
+      "fire_rate_vs_raw1min_baseline": 0.5352112676056338
     },
     {
       "candidate": "roll5",
@@ -1684,7 +1907,15 @@
       "worst_case_loss_rate_margin1": 0.15318725386413604,
       "cond_loss_rate_margin1": 0.030303030303030276,
       "analytic_ev_worst_case_margin1": -0.020328587197469446,
-      "coverage_rate": 0.9507462686567164
+      "fire_rate_vs_raw1min_baseline": 0.4647887323943662
+    },
+    {
+      "candidate": "gated1min",
+      "n_fired_margin1": 43,
+      "worst_case_loss_rate_margin1": 0.2726358797106884,
+      "cond_loss_rate_margin1": 0.13953488372093026,
+      "analytic_ev_worst_case_margin1": 0.012331143545125399,
+      "fire_rate_vs_raw1min_baseline": 0.6056338028169014
     },
     {
       "candidate": "sixhr",
@@ -1692,7 +1923,7 @@
       "worst_case_loss_rate_margin1": 0.27685622427094625,
       "cond_loss_rate_margin1": 0.14893617021276595,
       "analytic_ev_worst_case_margin1": -0.12763192639860585,
-      "coverage_rate": 1.0
+      "fire_rate_vs_raw1min_baseline": 0.6619718309859155
     },
     {
       "candidate": "raw1min",
@@ -1700,7 +1931,7 @@
       "worst_case_loss_rate_margin1": 0.49658143716075775,
       "cond_loss_rate_margin1": 0.3802816901408451,
       "analytic_ev_worst_case_margin1": 0.09312746424769305,
-      "coverage_rate": 0.9507462686567164
+      "fire_rate_vs_raw1min_baseline": 1.0
     }
   ]
 }

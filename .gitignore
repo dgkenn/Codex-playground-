@@ -7,3 +7,8 @@ extra.log
 scratchpad/
 .kalshi_cache/
 .nowcast_cache/
+.predexon_key
+.secrets
+*.key
+.env
+.settlement_basis_cache/

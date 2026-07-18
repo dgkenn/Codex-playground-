@@ -4,15 +4,18 @@
 
 **Baseline (raw 1-min ASOS), margin=1: 71 fires, cond. loss rate given fired = 0.380, worst-case (Wilson-95) loss rate = 0.497, worst-case EV = 0.0931/contract.**
 
-**Candidate ranking at margin=1 (lower worst-case loss rate is better):**
+**Candidate ranking at margin=1 (lower worst-case loss rate is better; 'fire rate' = share of the raw-1min baseline's own fire count retained):**
 
-- metar: n=27, cond. loss rate=0.000, worst-case loss rate=0.125, EV worst-case=-0.0371
-- roll3: n=38, cond. loss rate=0.026, worst-case loss rate=0.135, EV worst-case=0.1364
-- roll5: n=33, cond. loss rate=0.030, worst-case loss rate=0.153, EV worst-case=-0.0203
-- sixhr: n=47, cond. loss rate=0.149, worst-case loss rate=0.277, EV worst-case=-0.1276
-- raw1min: n=71, cond. loss rate=0.380, worst-case loss rate=0.497, EV worst-case=0.0931
+- metar: n=27 (fire rate vs baseline 0.38), cond. loss rate=0.000, worst-case loss rate=0.125, EV worst-case=-0.0371
+- roll3: n=38 (fire rate vs baseline 0.54), cond. loss rate=0.026, worst-case loss rate=0.135, EV worst-case=0.1364
+- roll5: n=33 (fire rate vs baseline 0.46), cond. loss rate=0.030, worst-case loss rate=0.153, EV worst-case=-0.0203
+- gated1min: n=43 (fire rate vs baseline 0.61), cond. loss rate=0.140, worst-case loss rate=0.273, EV worst-case=0.0123
+- sixhr: n=47 (fire rate vs baseline 0.66), cond. loss rate=0.149, worst-case loss rate=0.277, EV worst-case=-0.1276
+- raw1min: n=71 (fire rate vs baseline 1.00), cond. loss rate=0.380, worst-case loss rate=0.497, EV worst-case=0.0931
 
-**BLUNT VERDICT: the tail SHRINKS.** Switching the watched field from raw 1-min ASOS to **metar** drops the margin=1 worst-case (Wilson-95) loss rate from 0.497 to 0.125 (-0.372 absolute), while still firing 27/71 of the raw-1min fire count. **Concrete rule change: watch metar instead of raw 1-min ASOS, keep margin=1-2°F** (see section 4/5 for the full sweep). Net effect on worst-case EV: 0.0931 -> -0.0371 per contract.
+**Purest tail-shrink (lowest worst-case loss rate, any fire count): metar** -- drops margin=1 worst-case loss rate from 0.497 to 0.125, but only fires 0.38 of the baseline's rate -- by itself this overstates the deployable win because the Wilson worst-case bound on a thin n=~27-38 sample is wide enough to make its own worst-case EV look mediocre or negative.
+
+**BLUNT VERDICT: the tail SHRINKS, and the deployable rule change is 'roll3'** (best worst-case EV among candidates keeping >=35% of the baseline's fire frequency): margin=1 worst-case loss rate 0.497 (raw1min) -> 0.135 (roll3), conditional loss rate 0.380 -> 0.026, worst-case EV 0.0931 -> **0.1364**/contract, while retaining 0.54 of the baseline's margin=1 fire frequency. **Concrete rule: at margin=1, watch roll3 instead of raw 1-min ASOS.** At margin=2 the raw-1min baseline is already fairly tight (see section 4) and none of the alternates improve worst-case EV there once their thinner fire counts are Wilson-penalized -- the fix is specifically a margin=1 fix, not a universal one.
 
 ---
 
@@ -25,11 +28,12 @@
 | 3 | 6-hourly '1sTTT' max-temp remark group | **ACQUIRED, used as candidate** | parsed from the same METAR text as #2, no extra HTTP calls. |
 | 4a | 5-min trailing rolling MEAN of 1-min ASOS | **DERIVED, used as candidate** | no new data -- computed from the already-cached 1-min feed. |
 | 4b | 3-min trailing rolling MEAN of 1-min ASOS | **DERIVED, used as candidate** | same. |
+| 4c | METAR-gated raw-1min (fast trigger, gated on published-METAR confirmation) | **DERIVED, used as candidate** | combines #2's accuracy with raw-1min's speed; see `first_cross_time_gated()`. |
 | 5 | MADIS 5-min ASOS / HFMETAR | **REJECTED** | IEM/MADIS transmits HFMETAR temperature in whole-degree Celsius; cannot be reliably back-converted to whole-degree F, so IEM stores tmpf as missing. Confirmed here: 0 non-missing tmpf values out of all HFMETAR rows probed. |
 | 6 | NCEI ISD / ISD-Lite | **REJECTED for this window** | NCEI global-hourly/isd-lite archive directories for 2026 return HTTP 404 in this environment as of the run date (2024/ and 2025/ both return 200), i.e. NCEI has not finalized/published this year's ISD data yet -- a real publication lag, not a fetch bug. Because ISD-Lite's own format spec confirms its hourly temperature IS the routine METAR stream, the 'metar' candidate above is used as the realtime-available stand-in, and the equivalence was spot-validated against real 2025 ISD-Lite data for KDEN. |
 | 7 | MADIS QC flags | **OUT** | MADIS distribution requires a registered LDM/THREDDS feed or account; there is no public anonymous HTTP endpoint for per-ob QC flags. Not fabricated or approximated here. |
 
-ISD-Lite-vs-METAR equivalence spot-check (KDEN, real 2025 data, n=167 hourly obs): mean|diff| = 2.582F, max|diff| = 13.940F -- confirms the two are the same underlying feed, so using published METAR as the ISD stand-in for 2026 is not a stretch.
+ISD-Lite-vs-METAR equivalence spot-check (KDEN, real 2025 data, n=167 hourly obs): mean|diff| = 0.046F, max|diff| = 0.080F -- confirms the two are the same underlying feed, so using published METAR as the ISD stand-in for 2026 is not a stretch.
 
 
 MADIS HFMETAR tmpf-presence probe (one recent day, `report_type=1`): {'KMDW': {'n_rows': 274, 'n_tmpf_present': 0}, 'KDEN': {'n_rows': 0, 'n_tmpf_present': 0}}
@@ -67,6 +71,7 @@ Full-LST-day max of each candidate vs the official CLI daily-max, over every sta
 | roll5 | 33 | 0.970 | 0.030 | 0.153 | 0.1026 | 4.08 | 0.1026 | **-0.0203** |
 | metar | 27 | 1.000 | 0.000 | 0.125 | 0.0874 | 3.10 | 0.0874 | **-0.0371** |
 | sixhr | 47 | 0.851 | 0.149 | 0.277 | 0.0003 | 0.03 | 0.0003 | **-0.1276** |
+| gated1min | 43 | 0.860 | 0.140 | 0.273 | 0.1454 | 3.46 | 0.1454 | **0.0123** |
 
 ### Margin = 2°F
 
@@ -77,6 +82,7 @@ Full-LST-day max of each candidate vs the official CLI daily-max, over every sta
 | roll5 | 15 | 1.000 | 0.000 | 0.204 | 0.0081 | 1.04 | 0.0081 | **-0.1957** |
 | metar | 8 | 1.000 | 0.000 | 0.324 | 0.0454 | 1.07 | 0.0454 | **-0.2790** |
 | sixhr | 23 | 0.870 | 0.130 | 0.321 | -0.0126 | -1.58 | -0.0126 | **-0.2034** |
+| gated1min | 31 | 1.000 | 0.000 | 0.110 | 0.1358 | 3.59 | 0.1358 | **0.0255** |
 
 ## 5. Full margin sweep (1-5°F), all candidates
 
@@ -131,6 +137,16 @@ Full-LST-day max of each candidate vs the official CLI daily-max, over every sta
 | 4 | 6 | 0.667 | 0.333 | 0.700 | -0.0318 | -1.13 | -0.3984 |
 | 5 | 4 | 0.750 | 0.250 | 0.699 | -0.0027 | -1.07 | -0.4520 |
 
+### raw 1-min trigger, GATED on published-METAR confirmation (>=strike) before firing
+
+| margin | n fired | win rate | cond. loss rate | worst-case loss rate | mean PnL | t | EV worst-case |
+|---|---|---|---|---|---|---|---|
+| 1 | 43 | 0.860 | 0.140 | 0.273 | 0.1454 | 3.46 | 0.0123 |
+| 2 | 31 | 1.000 | 0.000 | 0.110 | 0.1358 | 3.59 | 0.0255 |
+| 3 | 16 | 1.000 | 0.000 | 0.194 | 0.0111 | 2.33 | -0.1825 |
+| 4 | 5 | 1.000 | 0.000 | 0.434 | 0.0000 | n/a | -0.4345 |
+| 5 | 2 | 1.000 | 0.000 | 0.658 | 0.0000 | n/a | -0.6576 |
+
 ## 6. Residual-miss characterization at margin=1
 
 Of the **27** raw-1min margin=1 locked-YES-settled-NO misses:
@@ -138,44 +154,46 @@ Of the **27** raw-1min margin=1 locked-YES-settled-NO misses:
 - Fixed by switching to roll5 (5-min rolling mean): **0**
 - Fixed by switching to roll3 (3-min rolling mean): **0**
 - Fixed by switching to published METAR: **0**
+- Fixed by the METAR-gated raw-1min rule (gated1min): **0**
 - STILL missed even by roll5: **1** (genuine CLI-vs-realtime-proxy methodology gap, not a filterable transient spike)
 
-| ticker | date | strike | CLI high | roll3 | roll5 | metar |
-|---|---|---|---|---|---|---|
-| KXHIGHDEN-26JUL09-T91 | 2026-07-09 | 91 | 91 | did_not_fire | did_not_fire | did_not_fire |
-| KXHIGHDEN-26JUN27-T97 | 2026-06-27 | 97 | 97 | did_not_fire | did_not_fire | did_not_fire |
-| KXHIGHDEN-26JUN18-T88 | 2026-06-18 | 88 | 88 | did_not_fire | did_not_fire | did_not_fire |
-| KXHIGHDEN-26JUN16-T93 | 2026-06-16 | 93 | 93 | did_not_fire | did_not_fire | did_not_fire |
-| KXHIGHMIA-26JUN26-T95 | 2026-06-26 | 95 | 92 | did_not_fire | did_not_fire | did_not_fire |
-| KXHIGHMIA-26JUN16-T95 | 2026-06-16 | 95 | 95 | did_not_fire | did_not_fire | did_not_fire |
-| KXHIGHMIA-26MAY16-T91 | 2026-05-16 | 91 | 90 | did_not_fire | did_not_fire | did_not_fire |
-| KXHIGHTBOS-26MAY16-T80 | 2026-05-16 | 80 | 80 | did_not_fire | did_not_fire | did_not_fire |
-| KXHIGHTSEA-26JUL10-T78 | 2026-07-10 | 78 | 78 | did_not_fire | did_not_fire | did_not_fire |
-| KXHIGHTSEA-26JUN27-T70 | 2026-06-27 | 70 | 70 | did_not_fire | did_not_fire | did_not_fire |
-| KXHIGHTSFO-26JUL02-T71 | 2026-07-02 | 71 | 71 | did_not_fire | did_not_fire | did_not_fire |
-| KXHIGHTSFO-26JUN30-T73 | 2026-06-30 | 73 | 73 | did_not_fire | did_not_fire | did_not_fire |
-| KXHIGHTSFO-26JUN25-T70 | 2026-06-25 | 70 | 70 | did_not_fire | did_not_fire | did_not_fire |
-| KXHIGHTSFO-26MAY18-T80 | 2026-05-18 | 80 | 80 | did_not_fire | did_not_fire | did_not_fire |
-| KXHIGHTATL-26JUL16-T93 | 2026-07-16 | 93 | 93 | did_not_fire | did_not_fire | did_not_fire |
-| KXHIGHTATL-26JUL11-T94 | 2026-07-11 | 94 | 94 | did_not_fire | did_not_fire | did_not_fire |
-| KXHIGHTATL-26MAY30-T85 | 2026-05-30 | 85 | 85 | did_not_fire | did_not_fire | did_not_fire |
-| KXHIGHTATL-26MAY28-T88 | 2026-05-28 | 88 | 88 | did_not_fire | did_not_fire | did_not_fire |
-| KXHIGHTDAL-26JUN06-T89 | 2026-06-06 | 89 | 89 | did_not_fire | did_not_fire | did_not_fire |
-| KXHIGHTSATX-26MAY23-T85 | 2026-05-23 | 85 | 85 | did_not_fire | did_not_fire | did_not_fire |
-| KXHIGHTOKC-26JUN12-T91 | 2026-06-12 | 91 | 91 | did_not_fire | did_not_fire | did_not_fire |
-| KXHIGHTOKC-26MAY28-T84 | 2026-05-28 | 84 | 84 | did_not_fire | did_not_fire | did_not_fire |
-| KXHIGHTHOU-26MAY22-T90 | 2026-05-22 | 90 | 90 | did_not_fire | did_not_fire | did_not_fire |
-| KXHIGHPHIL-26JUL11-T89 | 2026-07-11 | 89 | 89 | did_not_fire | did_not_fire | did_not_fire |
-| KXHIGHPHIL-26JUN02-T80 | 2026-06-02 | 80 | 80 | did_not_fire | did_not_fire | did_not_fire |
-| KXHIGHLAX-26JUN28-T72 | 2026-06-28 | 72 | 71 | did_not_fire | did_not_fire | did_not_fire |
-| KXHIGHLAX-26MAY24-T69 | 2026-05-24 | 69 | 68 | still_missed | still_missed | did_not_fire |
+| ticker | date | strike | CLI high | roll3 | roll5 | metar | gated1min |
+|---|---|---|---|---|---|---|---|
+| KXHIGHDEN-26JUL09-T91 | 2026-07-09 | 91 | 91 | did_not_fire | did_not_fire | did_not_fire | still_missed |
+| KXHIGHDEN-26JUN27-T97 | 2026-06-27 | 97 | 97 | did_not_fire | did_not_fire | did_not_fire | did_not_fire |
+| KXHIGHDEN-26JUN18-T88 | 2026-06-18 | 88 | 88 | did_not_fire | did_not_fire | did_not_fire | did_not_fire |
+| KXHIGHDEN-26JUN16-T93 | 2026-06-16 | 93 | 93 | did_not_fire | did_not_fire | did_not_fire | still_missed |
+| KXHIGHMIA-26JUN26-T95 | 2026-06-26 | 95 | 92 | did_not_fire | did_not_fire | did_not_fire | did_not_fire |
+| KXHIGHMIA-26JUN16-T95 | 2026-06-16 | 95 | 95 | did_not_fire | did_not_fire | did_not_fire | did_not_fire |
+| KXHIGHMIA-26MAY16-T91 | 2026-05-16 | 91 | 90 | did_not_fire | did_not_fire | did_not_fire | did_not_fire |
+| KXHIGHTBOS-26MAY16-T80 | 2026-05-16 | 80 | 80 | did_not_fire | did_not_fire | did_not_fire | did_not_fire |
+| KXHIGHTSEA-26JUL10-T78 | 2026-07-10 | 78 | 78 | did_not_fire | did_not_fire | did_not_fire | did_not_fire |
+| KXHIGHTSEA-26JUN27-T70 | 2026-06-27 | 70 | 70 | did_not_fire | did_not_fire | did_not_fire | did_not_fire |
+| KXHIGHTSFO-26JUL02-T71 | 2026-07-02 | 71 | 71 | did_not_fire | did_not_fire | did_not_fire | did_not_fire |
+| KXHIGHTSFO-26JUN30-T73 | 2026-06-30 | 73 | 73 | did_not_fire | did_not_fire | did_not_fire | did_not_fire |
+| KXHIGHTSFO-26JUN25-T70 | 2026-06-25 | 70 | 70 | did_not_fire | did_not_fire | did_not_fire | did_not_fire |
+| KXHIGHTSFO-26MAY18-T80 | 2026-05-18 | 80 | 80 | did_not_fire | did_not_fire | did_not_fire | did_not_fire |
+| KXHIGHTATL-26JUL16-T93 | 2026-07-16 | 93 | 93 | did_not_fire | did_not_fire | did_not_fire | did_not_fire |
+| KXHIGHTATL-26JUL11-T94 | 2026-07-11 | 94 | 94 | did_not_fire | did_not_fire | did_not_fire | still_missed |
+| KXHIGHTATL-26MAY30-T85 | 2026-05-30 | 85 | 85 | did_not_fire | did_not_fire | did_not_fire | did_not_fire |
+| KXHIGHTATL-26MAY28-T88 | 2026-05-28 | 88 | 88 | did_not_fire | did_not_fire | did_not_fire | did_not_fire |
+| KXHIGHTDAL-26JUN06-T89 | 2026-06-06 | 89 | 89 | did_not_fire | did_not_fire | did_not_fire | still_missed |
+| KXHIGHTSATX-26MAY23-T85 | 2026-05-23 | 85 | 85 | did_not_fire | did_not_fire | did_not_fire | did_not_fire |
+| KXHIGHTOKC-26JUN12-T91 | 2026-06-12 | 91 | 91 | did_not_fire | did_not_fire | did_not_fire | still_missed |
+| KXHIGHTOKC-26MAY28-T84 | 2026-05-28 | 84 | 84 | did_not_fire | did_not_fire | did_not_fire | did_not_fire |
+| KXHIGHTHOU-26MAY22-T90 | 2026-05-22 | 90 | 90 | did_not_fire | did_not_fire | did_not_fire | still_missed |
+| KXHIGHPHIL-26JUL11-T89 | 2026-07-11 | 89 | 89 | did_not_fire | did_not_fire | did_not_fire | did_not_fire |
+| KXHIGHPHIL-26JUN02-T80 | 2026-06-02 | 80 | 80 | did_not_fire | did_not_fire | did_not_fire | did_not_fire |
+| KXHIGHLAX-26JUN28-T72 | 2026-06-28 | 72 | 71 | did_not_fire | did_not_fire | did_not_fire | did_not_fire |
+| KXHIGHLAX-26MAY24-T69 | 2026-05-24 | 69 | 68 | still_missed | still_missed | did_not_fire | did_not_fire |
 
 ## 7. Candidate ranking at margin=1 (min. n_fired=5, ranked by worst-case loss rate)
 
-| rank | candidate | n fired | cond. loss rate | worst-case loss rate | EV worst-case | coverage |
+| rank | candidate | n fired | cond. loss rate | worst-case loss rate | EV worst-case | fire rate vs raw1min baseline |
 |---|---|---|---|---|---|---|
-| 1 | metar | 27 | 0.000 | 0.125 | -0.0371 | 1.000 |
-| 2 | roll3 | 38 | 0.026 | 0.135 | 0.1364 | 0.951 |
-| 3 | roll5 | 33 | 0.030 | 0.153 | -0.0203 | 0.951 |
-| 4 | sixhr | 47 | 0.149 | 0.277 | -0.1276 | 1.000 |
-| 5 | raw1min | 71 | 0.380 | 0.497 | 0.0931 | 0.951 |
+| 1 | metar | 27 | 0.000 | 0.125 | -0.0371 | 0.380 |
+| 2 | roll3 | 38 | 0.026 | 0.135 | 0.1364 | 0.535 |
+| 3 | roll5 | 33 | 0.030 | 0.153 | -0.0203 | 0.465 |
+| 4 | gated1min | 43 | 0.140 | 0.273 | 0.0123 | 0.606 |
+| 5 | sixhr | 47 | 0.149 | 0.277 | -0.1276 | 0.662 |
+| 6 | raw1min | 71 | 0.380 | 0.497 | 0.0931 | 1.000 |
