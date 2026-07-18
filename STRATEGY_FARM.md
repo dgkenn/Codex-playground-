@@ -68,7 +68,7 @@ calibrated/NULL across everything farmed (longshot, index brackets, earnings). H
 | K5 | Farm GitHub Kalshi bots (ryanfrigo, Krypt-Trader, quantgalore, homerun-Kalshi) → OOS test each on Kalshi data | direct strategy transfer |
 | K6 | Kalshi settlement-timing / decided-but-unresolved capture | Kalshi's fixed close/settlement mechanics |
 | K7 | Kalshi FAVLONG revisit (favorite-longshot on Kalshi tenors) | prior program work; re-test net-of-fee on current data |
-| K9 | Theta-decay curve mispricing | TESTING (is it novel or relabeled momentum?) |
+| K9 | Theta-decay curve mispricing | **DONE — NULL (wrong-signed, t=-3.19 OOS)** |
 | K8 | **Fill data holes from GitHub (high-leverage unlocks)** | see K8 data targets below — prioritize deep history + sharp lines |
 Discipline unchanged: NET of Kalshi fees always (the recurring killer); executable prices; cluster t; multiple-testing; honest nulls.
 

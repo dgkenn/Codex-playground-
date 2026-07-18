@@ -1,0 +1,200 @@
+{
+  "generated": "2026-07-18T17:22:19.191277+00:00",
+  "n_markets": 398,
+  "n_train": 278,
+  "n_test": 120,
+  "train_date_range": [
+    "2026-05-22",
+    "2026-07-16"
+  ],
+  "test_date_range": [
+    "2026-07-16",
+    "2026-07-18"
+  ],
+  "categories": [
+    "Economics",
+    "Financials",
+    "Climate and Weather",
+    "Sports",
+    "Politics",
+    "Crypto",
+    "Entertainment"
+  ],
+  "mt_count": 24,
+  "curves": [
+    "sqrt",
+    "linear"
+  ],
+  "thresholds": [
+    0.05,
+    0.07,
+    0.1
+  ],
+  "horizons": [
+    1,
+    3,
+    6,
+    "resolution"
+  ],
+  "fee_model": "ceil_to_cent(0.07*p*(1-p)), entry always, exit only on horizon close (not resolution)",
+  "headline_config": {
+    "curve": "linear",
+    "threshold": 0.1,
+    "horizon": "resolution"
+  },
+  "train_stats": {
+    "mean": -0.07277777777777766,
+    "se": 0.029874078056750856,
+    "t": -2.4361514233016326,
+    "n": 198,
+    "groups": 51
+  },
+  "test_stats": {
+    "mean": -0.08323809523809521,
+    "se": 0.029433329670828005,
+    "t": -2.828021707669528,
+    "n": 105,
+    "groups": 7
+  },
+  "pooled_stats": {
+    "mean": -0.07640264026402636,
+    "se": 0.02395365010504213,
+    "t": -3.1896032516540753,
+    "n": 303,
+    "groups": 54,
+    "mean_gross": -0.05953795379537959,
+    "mean_fee": 0.016864686468646778
+  },
+  "sign_flip_check_stats": {
+    "mean": -0.057386138613861354,
+    "se": 0.03272310935614721,
+    "t": -1.753688440462369,
+    "n": 303,
+    "groups": 54,
+    "mean_gross": -0.0407194719471947,
+    "mean_fee": 0.01666666666666658
+  },
+  "win_rate_pooled": 0.39603960396039606,
+  "worst_period": [
+    "2026-05-27",
+    -0.96,
+    1
+  ],
+  "novelty_check": {
+    "corr_abs_deviation_vs_price_level": -0.1084733088070732,
+    "corr_abs_deviation_vs_recent_change": 0.0009463160379649841,
+    "corr_signed_deviation_vs_signed_recent_change": 0.15188222323786688,
+    "n_signal_obs": 23198
+  },
+  "category_breakdown": {
+    "Economics": {
+      "n": 18,
+      "groups": 9,
+      "mean": -0.09777777777777778,
+      "t": -1.15910779246367
+    },
+    "Entertainment": {
+      "n": 8,
+      "groups": 5,
+      "mean": -0.09875000000000003,
+      "t": -0.6151350494725181
+    },
+    "Sports": {
+      "n": 39,
+      "groups": 11,
+      "mean": -0.08256410256410253,
+      "t": -1.2514079472412258
+    },
+    "Crypto": {
+      "n": 88,
+      "groups": 10,
+      "mean": -0.10193181818181815,
+      "t": -9.079007056795263
+    },
+    "Climate and Weather": {
+      "n": 118,
+      "groups": 22,
+      "mean": -0.028135593220338987,
+      "t": -0.7511077169812386
+    },
+    "Financials": {
+      "n": 28,
+      "groups": 3,
+      "mean": -0.1578571428571429,
+      "t": -1.7646703631768446
+    },
+    "Politics": {
+      "n": 4,
+      "groups": 1,
+      "mean": -0.16750000000000004,
+      "t": null
+    }
+  },
+  "top5_train_configs": [
+    {
+      "t": -2.4361514233016326,
+      "curve": "linear",
+      "threshold": 0.1,
+      "horizon": "resolution",
+      "stats": {
+        "mean": -0.07277777777777766,
+        "se": 0.029874078056750856,
+        "t": -2.4361514233016326,
+        "n": 198,
+        "groups": 51
+      }
+    },
+    {
+      "t": -2.5492402474396423,
+      "curve": "sqrt",
+      "threshold": 0.05,
+      "horizon": "resolution",
+      "stats": {
+        "mean": -0.0767619047619047,
+        "se": 0.03011167928915345,
+        "t": -2.5492402474396423,
+        "n": 210,
+        "groups": 49
+      }
+    },
+    {
+      "t": -2.5554237367867616,
+      "curve": "sqrt",
+      "threshold": 0.1,
+      "horizon": "resolution",
+      "stats": {
+        "mean": -0.08362244897959178,
+        "se": 0.03272351578166846,
+        "t": -2.5554237367867616,
+        "n": 196,
+        "groups": 48
+      }
+    },
+    {
+      "t": -2.8029144099772414,
+      "curve": "sqrt",
+      "threshold": 0.07,
+      "horizon": "resolution",
+      "stats": {
+        "mean": -0.08911330049261074,
+        "se": 0.03179308657281986,
+        "t": -2.8029144099772414,
+        "n": 203,
+        "groups": 48
+      }
+    },
+    {
+      "t": -2.887523306578687,
+      "curve": "linear",
+      "threshold": 0.05,
+      "horizon": "resolution",
+      "stats": {
+        "mean": -0.08165094339622629,
+        "se": 0.028277154754110464,
+        "t": -2.887523306578687,
+        "n": 212,
+        "groups": 48
+      }
+    }
+  ]
+}

@@ -298,8 +298,12 @@ def theo_curve(initial, r, k):
     return target + (initial - target) * (max(0.0, min(1.0, r)) ** k)
 
 
-def build_trades_for_market(rec, curve_name, k, threshold, horizon):
-    """Non-overlapping trade scan for ONE (market, curve, threshold, horizon) config."""
+def build_trades_for_market(rec, curve_name, k, threshold, horizon, flip=False):
+    """Non-overlapping trade scan for ONE (market, curve, threshold, horizon) config.
+    flip=True inverts the trade direction (bet WITH the deviation / continuation,
+    instead of toward the curve / reversion) at IDENTICAL entry/exit timestamps --
+    used only for the "is this a sign-flipped momentum bet" novelty check, not a
+    separately re-optimized strategy."""
     cs = rec["candles"]
     n = len(cs)
     if n < MIN_CANDLES:
@@ -324,6 +328,8 @@ def build_trades_for_market(rec, curve_name, k, threshold, horizon):
         recent_change = actual - prev_mid
         if abs(deviation) > threshold:
             side = "BUY" if deviation < 0 else "SELL"
+            if flip:
+                side = "SELL" if side == "BUY" else "BUY"
             if horizon == "resolution":
                 exit_fill = rec["outcome"]
                 exit_fee = 0.0
@@ -336,17 +342,15 @@ def build_trades_for_market(rec, curve_name, k, threshold, horizon):
                 exit_c = cs[exit_idx]
                 exit_fill = exit_c["bid"] if side == "BUY" else exit_c["ask"]
                 exit_fee = fee(exit_fill)
-            if side == "BUY":
-                entry_fill = cs[i]["ask"]
-                pnl = exit_fill - entry_fill - fee(entry_fill) - exit_fee
-            else:
-                entry_fill = cs[i]["bid"]
-                pnl = entry_fill - exit_fill - fee(entry_fill) - exit_fee
+            total_fee = fee(entry_fill := (cs[i]["ask"] if side == "BUY" else cs[i]["bid"])) + exit_fee
+            gross = (exit_fill - entry_fill) if side == "BUY" else (entry_fill - exit_fill)
+            pnl = gross - total_fee
             entry_date = dt.datetime.fromtimestamp(t, tz=dt.timezone.utc).date().isoformat()
             trades.append({
                 "cat": rec["cat"], "ticker": rec["ticker"], "curve": curve_name,
                 "threshold": threshold, "horizon": horizon, "side": side,
-                "pnl": pnl, "entry_date": entry_date, "close_date": rec["close_date"],
+                "pnl": pnl, "gross_pnl": gross, "fee_paid": total_fee,
+                "entry_date": entry_date, "close_date": rec["close_date"],
                 "deviation": deviation, "abs_deviation": abs(deviation),
                 "price_level": actual, "recent_change": recent_change,
                 "theo": theo, "r": r,
@@ -452,7 +456,29 @@ def analyze(records):
         pnls = [tr["pnl"] for tr in pooled_trades]
         clusters = [tr["entry_date"] for tr in pooled_trades]
         pooled_st = cluster_stats(pnls, clusters)
+        if pooled_trades:
+            pooled_st["mean_gross"] = sum(t["gross_pnl"] for t in pooled_trades) / len(pooled_trades)
+            pooled_st["mean_fee"] = sum(t["fee_paid"] for t in pooled_trades) / len(pooled_trades)
         pooled_eval = dict(trades=pooled_trades, stats=pooled_st)
+
+    # SIGN-FLIP CHECK: identical entry/exit timing, opposite trade direction. If this
+    # is significantly POSITIVE where the reversion trade was significantly NEGATIVE,
+    # it directly demonstrates the "deviation" signal is really a continuation/momentum
+    # signal wearing a decay-curve costume -- the CRITICAL question this study must answer.
+    flip_eval = None
+    if best_key is not None:
+        cn, thr, h = best_key
+        k = CURVES[cn]
+        flip_trades = []
+        for rec in records:
+            flip_trades.extend(build_trades_for_market(rec, cn, k, thr, h, flip=True))
+        pnls = [tr["pnl"] for tr in flip_trades]
+        clusters = [tr["entry_date"] for tr in flip_trades]
+        flip_st = cluster_stats(pnls, clusters)
+        if flip_trades:
+            flip_st["mean_gross"] = sum(t["gross_pnl"] for t in flip_trades) / len(flip_trades)
+            flip_st["mean_fee"] = sum(t["fee_paid"] for t in flip_trades) / len(flip_trades)
+        flip_eval = dict(trades=flip_trades, stats=flip_st)
 
     # worst period (worst day-mean) on pooled trades of headline config
     worst_period = None
@@ -542,7 +568,7 @@ def analyze(records):
         train_date_range=train_dates, test_date_range=test_dates,
         mt_count=mt_count, configs_tested=len(configs),
         best_key=best_key, best_train_stats=best_train_stats,
-        test_eval=test_eval, pooled_eval=pooled_eval,
+        test_eval=test_eval, pooled_eval=pooled_eval, flip_eval=flip_eval,
         worst_period=worst_period, winrate=winrate,
         corr_dev_price=corr_dev_price, corr_dev_momentum=corr_dev_momentum,
         corr_dev_signed_momentum=corr_dev_signed_momentum,
@@ -574,7 +600,9 @@ def write_report(res):
     test_eval = res["test_eval"]
     train_st = res["best_train_stats"]
 
+    flip = res.get("flip_eval")
     verdict_real = False
+    verdict_adverse = False
     if best_key is not None and test_eval is not None:
         tst = test_eval["stats"]
         pst = pooled["stats"]
@@ -583,11 +611,43 @@ def write_report(res):
             and tst["t"] == tst["t"] and tst["t"] >= 2.0
             and pst["mean"] > 0 and pst["t"] >= 2.0
         )
+        verdict_adverse = (
+            not verdict_real and pst["mean"] == pst["mean"] and pst["mean"] < 0
+            and pst["t"] == pst["t"] and pst["t"] <= -2.0
+            and tst["mean"] < 0 and tst["t"] == tst["t"] and tst["t"] <= -1.5
+        )
 
     w("## VERDICT (blunt)\n")
     if verdict_real:
         w("**Signal present net of fees in this sample -- but treat with caution "
           "given the multiple-testing count below; see novelty check before trusting it.**\n")
+    elif verdict_adverse:
+        fst = flip["stats"] if flip else None
+        flip_positive = (fst and fst["mean"] == fst["mean"] and fst["mean"] > 0
+                          and fst["t"] == fst["t"] and fst["t"] >= 2.0)
+        if flip_positive:
+            flip_note = (f" Flipping the trade direction (betting WITH the deviation instead of toward "
+                         f"the curve) turns significantly POSITIVE (mean {fst['mean']:+.4f}/ct, "
+                         f"t={fst['t']:+.2f}) -- a direct sign-flip of a continuation/momentum effect, "
+                         f"i.e. NOT a novel theta-decay edge, just the mirror image of structure already "
+                         f"tested (and killed as deployable) elsewhere in the program.")
+        elif fst and fst["mean"] == fst["mean"] and fst["mean"] < 0:
+            flip_note = (f" IMPORTANTLY, flipping the trade direction (betting WITH the deviation / "
+                         f"continuation, identical entries) is ALSO negative (mean {fst['mean']:+.4f}/ct, "
+                         f"t={fst['t']:+.2f}). Neither reversion NOR continuation earns a positive net "
+                         f"edge here -- this rules out a clean 'it's just sign-flipped momentum' story and "
+                         f"points instead to a structural execution cost (crossing the bid/ask spread at a "
+                         f"moment the curve flags as 'stale', which correlates with genuinely elevated "
+                         f"realized volatility / information arrival) that eats BOTH directions. Either way "
+                         f"there is no tradeable theta-decay edge.")
+        else:
+            flip_note = ""
+        w(f"**NULL, and actively WRONG-SIGNED (in the specified direction), not merely priced-away.** "
+          f"Reversion-to-the-decay-curve loses money net of fees with day-clustered t={pst['t']:+.2f} "
+          f"pooled (TEST OOS t={tst['t']:+.2f}), and the loss is NOT just fee drag -- gross PnL/ct is "
+          f"itself negative (see below).{flip_note} Read this as evidence against the mechanism as "
+          f"specified: prices that deviate >=10% from the naive time-decay path do not reliably "
+          f"mean-revert to it.\n")
     else:
         w("**NULL / PRICED.** No curve x threshold x horizon configuration produces a "
           "fee-surviving, day-clustered-significant edge that replicates out-of-sample. "
@@ -613,9 +673,20 @@ def write_report(res):
           f"mean net PnL/ct={tst['mean']:+.4f}, day-clustered t={tst['t']:+.2f}")
     if pooled:
         pst = pooled["stats"]
+        wr = f", win rate={res['winrate']*100:.1f}%" if res['winrate'] is not None else ""
         w(f"  - POOLED (train+test, same config): n={pst['n']}, day-groups={pst['groups']}, "
-          f"mean net PnL/ct={pst['mean']:+.4f}, day-clustered t={pst['t']:+.2f}, "
-          f"win rate={res['winrate']*100:.1f}%" if res['winrate'] is not None else "")
+          f"mean net PnL/ct={pst['mean']:+.4f}, day-clustered t={pst['t']:+.2f}{wr}")
+        if "mean_gross" in pst:
+            w(f"  - POOLED gross/fee split: mean GROSS pnl/ct={pst['mean_gross']:+.4f} "
+              f"(before fee), mean fee/ct={pst['mean_fee']:+.4f} -- "
+              f"{'genuinely adverse-signed (gross itself negative), NOT just fee-killed' if pst['mean_gross'] < 0 else 'gross positive but fee-killed'}")
+    flip = res.get("flip_eval")
+    if flip:
+        fst = flip["stats"]
+        w(f"  - **SIGN-FLIP CHECK** (identical entries, opposite direction -- bet WITH the "
+          f"deviation/continuation instead of toward the curve): n={fst['n']}, "
+          f"mean net PnL/ct={fst['mean']:+.4f}, day-clustered t={fst['t']:+.2f}, "
+          f"mean gross={fst.get('mean_gross', float('nan')):+.4f}")
     if res["worst_period"]:
         wd, wm, wc = res["worst_period"]
         w(f"  - Worst single day (pooled headline config): {wd}, mean {wm:+.4f}/ct over {wc} trades")
@@ -695,6 +766,7 @@ def write_summary(res):
         "train_stats": res["best_train_stats"],
         "test_stats": res["test_eval"]["stats"] if res["test_eval"] else None,
         "pooled_stats": res["pooled_eval"]["stats"] if res["pooled_eval"] else None,
+        "sign_flip_check_stats": res["flip_eval"]["stats"] if res.get("flip_eval") else None,
         "win_rate_pooled": res["winrate"],
         "worst_period": res["worst_period"],
         "novelty_check": {

@@ -1,26 +1,28 @@
 # K9: Kalshi THETA / temporal-decay curve mispricing
 
-_generated 2026-07-18T17:18:10.136670+00:00_
+_generated 2026-07-18T17:22:19.190814+00:00_
 
 ## VERDICT (blunt)
 
-**NULL / PRICED.** No curve x threshold x horizon configuration produces a fee-surviving, day-clustered-significant edge that replicates out-of-sample. This is consistent with the program's prior: Kalshi is efficiently priced against naive path-shape signals, mirroring the VRP/timing NULL.
+**NULL, and actively WRONG-SIGNED (in the specified direction), not merely priced-away.** Reversion-to-the-decay-curve loses money net of fees with day-clustered t=-3.19 pooled (TEST OOS t=-2.83), and the loss is NOT just fee drag -- gross PnL/ct is itself negative (see below). IMPORTANTLY, flipping the trade direction (betting WITH the deviation / continuation, identical entries) is ALSO negative (mean -0.0574/ct, t=-1.75). Neither reversion NOR continuation earns a positive net edge here -- this rules out a clean 'it's just sign-flipped momentum' story and points instead to a structural execution cost (crossing the bid/ask spread at a moment the curve flags as 'stale', which correlates with genuinely elevated realized volatility / information arrival) that eats BOTH directions. Either way there is no tradeable theta-decay edge. Read this as evidence against the mechanism as specified: prices that deviate >=10% from the naive time-decay path do not reliably mean-revert to it.
 
 
-- Markets used: **15** settled Kalshi markets across 7 categories (Economics, Financials, Climate and Weather, Sports, Politics, Crypto, Entertainment), TRAIN=10 (close 2026-06-30..2026-06-30), TEST=5 (close 2026-06-30..2026-06-30).
+- Markets used: **398** settled Kalshi markets across 7 categories (Economics, Financials, Climate and Weather, Sports, Politics, Crypto, Entertainment), TRAIN=278 (close 2026-05-22..2026-07-16), TEST=120 (close 2026-07-16..2026-07-18).
 - Multiple-testing count: **24** configs (curves=2 x thresholds=3 x horizons=4). Headline config selected by MAX day-clustered t on TRAIN ONLY, then re-evaluated on held-out TEST -- the number below is what survives that filter, not a cherry-pick over the full sample.
-- Headline config (TRAIN-selected): **curve=linear, threshold=10%, horizon=6 candle-steps**
-  - TRAIN: n=77, day-groups=15, mean net PnL/ct=-0.0464, day-clustered t=-2.04
-  - TEST (OOS): n=41, day-groups=12, mean net PnL/ct=-0.0420, day-clustered t=-1.03
-  - POOLED (train+test, same config): n=118, day-groups=15, mean net PnL/ct=-0.0448, day-clustered t=-1.97, win rate=10.2%
-  - Worst single day (pooled headline config): 2026-06-14, mean -0.5300/ct over 1 trades
+- Headline config (TRAIN-selected): **curve=linear, threshold=10%, horizon=resolution**
+  - TRAIN: n=198, day-groups=51, mean net PnL/ct=-0.0728, day-clustered t=-2.44
+  - TEST (OOS): n=105, day-groups=7, mean net PnL/ct=-0.0832, day-clustered t=-2.83
+  - POOLED (train+test, same config): n=303, day-groups=54, mean net PnL/ct=-0.0764, day-clustered t=-3.19, win rate=39.6%
+  - POOLED gross/fee split: mean GROSS pnl/ct=-0.0595 (before fee), mean fee/ct=+0.0169 -- genuinely adverse-signed (gross itself negative), NOT just fee-killed
+  - **SIGN-FLIP CHECK** (identical entries, opposite direction -- bet WITH the deviation/continuation instead of toward the curve): n=303, mean net PnL/ct=-0.0574, day-clustered t=-1.75, mean gross=-0.0407
+  - Worst single day (pooled headline config): 2026-05-27, mean -0.9600/ct over 1 trades
 
 ## Novelty check: is this just relabeled moneyness/momentum? (CRITICAL)
 
-- corr(|deviation from theoretical curve|, price level): **-0.422**
-- corr(|deviation from theoretical curve|, recent price change [momentum]): **-0.058**
-- corr(SIGNED deviation, SIGNED recent price change): **+0.172**
-- computed over 1128 candle-level observations (sqrt curve, all markets, no threshold gate).
+- corr(|deviation from theoretical curve|, price level): **-0.108**
+- corr(|deviation from theoretical curve|, recent price change [momentum]): **+0.001**
+- corr(SIGNED deviation, SIGNED recent price change): **+0.152**
+- computed over 23198 candle-level observations (sqrt curve, all markets, no threshold gate).
 
 Interpretation: |corr| >= 0.3 with price level means the 'decay deviation' is largely just moneyness (how far from 0.5) in disguise -- the exact structure already killed under favorite-longshot/calibration work. |corr| >= 0.3 with recent price change (especially the SIGNED version) means the 'reversion to curve' bet is largely a same-direction restatement of a momentum/mean-reversion signal already tested elsewhere (a sign-flip of momentum is exactly what the reversion trade would look like if the curve is doing no real path-specific work).
 
@@ -29,17 +31,23 @@ Interpretation: |corr| >= 0.3 with price level means the 'decay deviation' is la
 
 | category | n | day-groups | mean net PnL/ct | day-clustered t |
 |---|--:|--:|--:|--:|
-| Economics | 118 | 15 | -0.0448 | -1.97
+| Climate and Weather | 118 | 22 | -0.0281 | -0.75
+| Crypto | 88 | 10 | -0.1019 | -9.08
+| Sports | 39 | 11 | -0.0826 | -1.25
+| Financials | 28 | 3 | -0.1579 | -1.76
+| Economics | 18 | 9 | -0.0978 | -1.16
+| Entertainment | 8 | 5 | -0.0988 | -0.62
+| Politics | 4 | 1 | -0.1675 | n/a |
 
 ## Top 5 configs by TRAIN day-clustered t (for transparency on the search)
 
 | curve | threshold | horizon | n | day-groups | mean net PnL/ct | day-clustered t |
 |---|--:|--:|--:|--:|--:|--:|
-| linear | 10% | 6 steps | 77 | 15 | -0.0464 | -2.04 |
-| linear | 7% | 6 steps | 83 | 16 | -0.0445 | -2.14 |
-| linear | 5% | 6 steps | 88 | 17 | -0.0486 | -2.27 |
-| sqrt | 7% | 6 steps | 93 | 17 | -0.0457 | -2.30 |
-| sqrt | 5% | 6 steps | 94 | 17 | -0.0517 | -2.37 |
+| linear | 10% | resolution | 198 | 51 | -0.0728 | -2.44 |
+| sqrt | 5% | resolution | 210 | 49 | -0.0768 | -2.55 |
+| sqrt | 10% | resolution | 196 | 48 | -0.0836 | -2.56 |
+| sqrt | 7% | resolution | 203 | 48 | -0.0891 | -2.80 |
+| linear | 5% | resolution | 212 | 48 | -0.0817 | -2.89 |
 
 ## Method notes
 

@@ -2520,3 +2520,13 @@ P(1-P))/leg both sides.
 VERDICT: NULL. Same conclusion as Polymarket RISKLESS-LOGICAL: top-of-book crossings are stale/fee-eaten artifacts, not
 tradeable. Kalshi's fee makes structural arb HARDER than zero-fee Polymarket. K2 dead. (Excellent discipline: 2 traps that
 would have faked a positive were caught.)
+
+## KALSHI-THETA-DECAY (2026-07-18, farm K9) — reversion-to-decay-curve is NULL and wrong-signed
+Tested homerun's TemporalDecayStrategy on 398 settled Kalshi markets (7 categories), theo=target+(init-target)*r^k (k=0.5 sqrt /
+1.0 linear), signal>5/7/10% dev, trade toward curve, TRAIN 278 / TEST 120, day-clustered t, 24-config multiple-testing.
+- Headline (linear,10%,hold-to-resolution): TRAIN -0.073/ct t=-2.44, TEST OOS -0.083/ct t=-2.83, POOLED -0.076/ct t=-3.19,
+  win 39.6%. Gross pre-fee -0.060 (adverse-signed, not just fee). Sign-flip (continuation) ALSO loses (-0.057, t=-1.75).
+- Novelty check: corr(|dev|,price)=-0.11, corr(|dev|,recent-change)=+0.00, signed +0.15 -> NOT relabeled moneyness/momentum;
+  it just doesn't work either direction. Structural exec-cost story (curve flags "stale" exactly when real info arrives).
+VERDICT: NULL, wrong-signed. 4th confirmation Kalshi efficient vs naive path-shape signals (after VRP/timing, structural-arb,
+calibration). Farm K9 dead.
