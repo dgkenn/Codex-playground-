@@ -156,16 +156,33 @@ class MultiFeedConsensus:
         return {"extreme_f": cons, "obs": [], "feeds": present}
 
 
+# --- feed instances (module singletons) ---
+_WGOV = WeatherGovFeedWrap()
+_METAR = MetarFeed()
 # DEFAULT = conservative consensus of the two FREE feeds (weather.gov 5-min + METAR hourly): fire only when
-# BOTH independently agree the sustained running-max cleared the strike. Add synoptic_feed.SynopticFeed() to
-# the list when scaling (paid, ~2-5min) for more throughput. quorum defaults to unanimity for max safety.
-_FEED = MultiFeedConsensus([WeatherGovFeedWrap(), MetarFeed()])
+# BOTH agree the sustained running-max cleared the strike. Add synoptic_feed.SynopticFeed() when scaling.
+_FEED = MultiFeedConsensus([_WGOV, _METAR])
+
+# PER-STATION feed policy (operator's insight: some feeds are better for certain cities). Maps a station to a
+# feed object to use INSTEAD of the global default. Seeded with what we already know; the phase3_feed_
+# correlation study will populate the rest (per-station best feed, required margin, whether a feed is too
+# sparse to require in a quorum). Examples of the two known issues:
+#   - KNYC (Central Park) reports sparsely on weather.gov -> lean on METAR, quorum=1 (don't block on the sparse feed).
+#   - KDEN sometimes falls back to hourly on weather.gov -> keep the 2-feed consensus (METAR covers the gap).
+# Any station NOT listed uses _FEED (the default 2-free-feed consensus).
+STATION_FEED_OVERRIDE = {
+    "NYC": MultiFeedConsensus([_METAR, _WGOV], quorum=1),   # KNYC sparse -> either feed suffices (still conservative min)
+}
+
+
+def feed_for_station(station):
+    """Return the obs feed to use for a given station (per-station override, else the global default)."""
+    return STATION_FEED_OVERRIDE.get(station, _FEED)
 
 
 def set_feed(feed):
-    """Swap the obs feed. Options: MultiFeedConsensus([...]) [safe default], WeatherGovFeedWrap() [free
-    single], synoptic_feed.SynopticFeed() [paid fast], MetarFeed() [hourly]. Any object exposing
-    running_extreme(station,date,offset,kind)."""
+    """Swap the GLOBAL default feed (per-station overrides in STATION_FEED_OVERRIDE still win). Options:
+    MultiFeedConsensus([...]) [safe default], WeatherGovFeedWrap(), synoptic_feed.SynopticFeed() [paid], MetarFeed()."""
     global _FEED
     _FEED = feed
 
@@ -318,7 +335,7 @@ def poll_once(exec_client=None, verbose=True):
         if not rungs:
             continue
         try:
-            feed = _FEED.running_extreme(station, lst_date, offset, kind)
+            feed = feed_for_station(station).running_extreme(station, lst_date, offset, kind)
         except Exception as e:
             if verbose:
                 print(f"  [feed skip] {station} {kind}: {type(e).__name__}")
