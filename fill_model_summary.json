@@ -1,5 +1,5 @@
 {
-  "generated": "2026-07-18T15:37:21.686668+00:00",
+  "generated": "2026-07-18T15:39:04.730905+00:00",
   "n_posted_markets": 6848,
   "n_with_inband_flow": 1804,
   "frac_with_flow": 0.2634,
@@ -616,64 +616,64 @@
     "bankroll_to_weekly_usd": [
       {
         "bankroll": 50,
-        "pessimistic_week_usd": 2.55,
-        "realistic_week_usd": 2.55,
         "realistic_shares_per_market": 2.05,
         "realistic_capital_used": 50,
+        "pessimistic_week_usd": 2.43,
+        "realistic_week_usd": 2.55,
         "realistic_worst_week_usd": -41.5,
-        "optimistic_week_usd": 2.56
+        "optimistic_week_usd": 2.59
       },
       {
         "bankroll": 100,
-        "pessimistic_week_usd": 5.42,
-        "realistic_week_usd": 5.09,
         "realistic_shares_per_market": 4.26,
         "realistic_capital_used": 100,
+        "pessimistic_week_usd": 5.03,
+        "realistic_week_usd": 5.09,
         "realistic_worst_week_usd": -86.19,
-        "optimistic_week_usd": 5.1
+        "optimistic_week_usd": 5.27
       },
       {
         "bankroll": 250,
-        "pessimistic_week_usd": 14.26,
-        "realistic_week_usd": 13.64,
         "realistic_shares_per_market": 11.58,
         "realistic_capital_used": 250,
+        "pessimistic_week_usd": 12.84,
+        "realistic_week_usd": 13.64,
         "realistic_worst_week_usd": -218.1,
-        "optimistic_week_usd": 12.88
+        "optimistic_week_usd": 13.69
       },
       {
         "bankroll": 500,
-        "pessimistic_week_usd": 29.81,
-        "realistic_week_usd": 28.53,
         "realistic_shares_per_market": 25.47,
         "realistic_capital_used": 500,
+        "pessimistic_week_usd": 25.62,
+        "realistic_week_usd": 28.53,
         "realistic_worst_week_usd": -424.18,
-        "optimistic_week_usd": 27.5
+        "optimistic_week_usd": 29.99
       },
       {
         "bankroll": 2000,
-        "pessimistic_week_usd": 126.44,
-        "realistic_week_usd": 120.08,
         "realistic_shares_per_market": 141.18,
         "realistic_capital_used": 2000,
+        "pessimistic_week_usd": 94.91,
+        "realistic_week_usd": 120.08,
         "realistic_worst_week_usd": -1727.53,
-        "optimistic_week_usd": 118.37
+        "optimistic_week_usd": 137.89
       },
       {
         "bankroll": 10000,
-        "pessimistic_week_usd": 529.35,
-        "realistic_week_usd": 1050.63,
         "realistic_shares_per_market": 4216.68,
         "realistic_capital_used": 10000,
+        "pessimistic_week_usd": 527.94,
+        "realistic_week_usd": 1050.63,
         "realistic_worst_week_usd": -9541.81,
-        "optimistic_week_usd": 638.48
+        "optimistic_week_usd": 1473.11
       },
       {
         "bankroll": 50000,
-        "pessimistic_week_usd": 529.35,
-        "realistic_week_usd": 1235.15,
         "realistic_shares_per_market": "capacity-bound",
         "realistic_capital_used": 10777.15,
+        "pessimistic_week_usd": 529.35,
+        "realistic_week_usd": 1235.15,
         "realistic_worst_week_usd": -9541.81,
         "optimistic_week_usd": 2293.84
       }
