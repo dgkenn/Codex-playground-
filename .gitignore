@@ -23,3 +23,5 @@ kwx_runner_plan.jsonl
 .phase3_feed_cache/
 kwx_gate_status.txt
 kwx_gate_run.log
+wx_forecast_paper.jsonl
+wx_forecast_settled.jsonl
