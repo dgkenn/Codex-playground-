@@ -23,6 +23,7 @@ most likely to actually move the number.
 | W1-b | Extend short-vol to more underlyings (SOL/XRP/DOGE…) | stack + frequency | **DONE** | NULL-of-benefit — only SOL/XRP exist & they're 0.6-0.8 corr w/ BTC/ETH (no diversification; +capacity only) |
 | W1-c | Binance funding/basis/OI → weekly directional signal | stack (uncorrelated) | RUNNING | — |
 | W1-d | VRP-regime timing → size up in high-premium weeks | sharpen (Sharpe via sizing) | **DONE** | NULL — regime timing lowers Sharpe; edge is unconditional (baseline re-confirmed t=4.27) |
+| W2-a | Cross-category longshot premium (sports/politics/pop/sci) + corr | stack (non-crypto uncorrelated) | RUNNING | — |
 
 ## Confirmed so far (the baseline to beat)
 - **Polymarket weekly BTC/ETH short-vol longshot premium**: +0.12/ct, week-clustered t~4.6, maker (survives
