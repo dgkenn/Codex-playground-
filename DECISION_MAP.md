@@ -2027,3 +2027,26 @@ depth-capped, or sub-spread opportunities for a small participant. NO high-EV ri
 GOAL (high-EV highly-profitable): candidates #7 (conditional), #8 (weather), #9 (logical-arb) all NULL. Cumulative: the
 accessible public universe's CEILING is the thin longshot risk premium (~+12c/ct, real, tail-bearing). "Highly profitable"
 (high return AND high capacity) is not achievable here for a small participant without private data / speed / capital we lack.
+
+## SPORTSBOOK-CALIB (2026-07-18) — Polymarket sports already track de-vigged sportsbook lines to sub-cent: NULL (candidate #10)
+Tested the classic superior-INFORMATION route from a DIFFERENT liquid market: are Polymarket sports (MLB/WNBA) mispriced vs
+de-vigged ESPN sportsbook moneylines? Prior: books better-calibrated than PM retail; if PM deviates beyond its spread, buy
+the book-favored side. pmkt_sportsbook.py: ESPN core-API odds (DraftKings ML, single book -> flagged, de-vig to 1) vs PM
+pre-game mid (CLOB prices-history last point <= gameStartTime); conservative team+date matching; in-progress games EXCLUDED
+(PM live vs pregame book -> not comparable). Independently verified: script logic (line 149 skip non-final/non-scheduled,
+line 121 <= cutoff), summary JSON read directly.
+- 88 matched games (~90% match, 0 accepted wrong-order), 68 backtestable finals.
+- Deviation P_poly-P_book (finals, mid at start): mean |dev|=0.95c, median 0.6c, 1.5% >5c, 0% >10c, max 8c. Live: 0.76c,
+  0% >3c. PM tracks the de-vigged DK line TIGHTER than its own ~1c bid/ask spread.
+- Brier (68 finals): book 0.2429 vs poly 0.2452 (book marginally better, delta 0.0023, indistinguishable at n=68 -- matches
+  prior DIRECTION but not significant). Backtest (trade toward book when |dev|>thr, buy mid+0.5c, day-clustered): 3c->2
+  trades, 5c->1, 10c->0. Never triggers; nonzero PnLs are 1-2 obs noise.
+- TRAP caught: the only large deviations were IN-PROGRESS games (PM live price vs pregame book, up to 45c apparent gap) --
+  a data-hygiene artifact, not edge. Excluding in-progress removed all of them.
+VERDICT: NULL. PM tracks the sportsbook to sub-cent; deviations < round-trip cost; nothing to trade. To beat PM you'd need a
+line sharper than DraftKings by >~1c+cost, which free ESPN data can't give. Candidate #10 dead.
+GOAL (high-EV highly-profitable): candidates #7 (conditional), #8 (weather), #9 (logical-arb), #10 (sportsbook) all NULL.
+CEILING RESTATED & now very firm across ~10 killed high-t/high-EV candidates: the accessible public universe yields only the
+thin longshot risk premium (~+12c/ct, real, tail-bearing). A DIFFERENT liquid market's line (sportsbook) is NOT superior info
+-- it is already priced in, same lesson as public forecasts (#8). Highest-value next work is MATURING the forward gates
+(pmkt_shortvol/econ/biz + bucket_arb), not hunting more new-signal probes -- diminishing returns are now explicit.
