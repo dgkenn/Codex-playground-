@@ -1,0 +1,156 @@
+{
+  "generated": "2026-07-18T15:53:17.307521+00:00",
+  "venue": "QCX / Polymarket US (gateway.polymarket.us)",
+  "n_qcx_markets": 2599,
+  "pipeline_counts": {
+    "total": 2599,
+    "live_only": 833,
+    "no_book": 0,
+    "draw": 1,
+    "no_espn": 960,
+    "winner_mismatch": 35,
+    "no_odds": 0,
+    "ok": 757
+  },
+  "per_league": {
+    "nfl": {
+      "n": 163,
+      "matched": 98,
+      "ok": 98
+    },
+    "nba": {
+      "n": 487,
+      "matched": 355,
+      "ok": 355
+    },
+    "cfb": {
+      "n": 56,
+      "matched": 30,
+      "ok": 30
+    },
+    "nhl": {
+      "n": 319,
+      "matched": 252,
+      "ok": 252
+    },
+    "cbb": {
+      "n": 1561,
+      "matched": 22,
+      "ok": 22
+    },
+    "ufc": {
+      "n": 13,
+      "matched": 0,
+      "ok": 0
+    }
+  },
+  "dev_all": {
+    "n": 757,
+    "mean_dev": 0.0017702822924987372,
+    "median_abs": 0.013007358953393333,
+    "mean_abs": 0.022410465084667944,
+    "frac_gt3": 0.18494055482166447,
+    "frac_gt5": 0.07397622192866579,
+    "frac_gt10": 0.018494055482166448,
+    "rmse": 0.05391454618991717
+  },
+  "dev_fresh": {
+    "n": 679,
+    "mean_dev": 0.0006254686557332884,
+    "median_abs": 0.012524773804394651,
+    "mean_abs": 0.01762156803632853,
+    "frac_gt3": 0.16200294550810015,
+    "frac_gt5": 0.05154639175257732,
+    "frac_gt10": 0.008836524300441826,
+    "rmse": 0.027304655484326167
+  },
+  "brier_all": {
+    "n": 757,
+    "brier_qcx": 0.2340449260237781,
+    "brier_book": 0.22841335249291184
+  },
+  "brier_fresh": {
+    "n": 679,
+    "brier_qcx": 0.23421183063328443,
+    "brier_book": 0.23077009369102913
+  },
+  "backtest_fresh_withfee": {
+    "0.03": {
+      "n": 110,
+      "mean_edge": 0.10634385072727273,
+      "t_day": 0.6948237787008645,
+      "n_days": 54,
+      "winrate": 0.5181818181818182,
+      "total_pnl": 11.697823579999994
+    },
+    "0.05": {
+      "n": 35,
+      "mean_edge": 0.19152574457142857,
+      "t_day": 1.30573479788319,
+      "n_days": 24,
+      "winrate": 0.6,
+      "total_pnl": 6.703401059999999
+    },
+    "0.10": {
+      "n": 6,
+      "mean_edge": 0.44801535,
+      "t_day": 2.1961505169082374,
+      "n_days": 6,
+      "winrate": 0.8333333333333334,
+      "total_pnl": 2.6880920999999995
+    }
+  },
+  "backtest_fresh_nofee": {
+    "0.03": {
+      "n": 110,
+      "mean_edge": 0.11933636363636363,
+      "t_day": 0.9310115256781679,
+      "n_days": 54,
+      "winrate": 0.5181818181818182,
+      "total_pnl": 13.127000000000002
+    },
+    "0.05": {
+      "n": 35,
+      "mean_edge": 0.20425714285714286,
+      "t_day": 1.4398302084817558,
+      "n_days": 24,
+      "winrate": 0.6,
+      "total_pnl": 7.149
+    },
+    "0.10": {
+      "n": 6,
+      "mean_edge": 0.46149999999999997,
+      "t_day": 2.265740636846926,
+      "n_days": 6,
+      "winrate": 0.8333333333333334,
+      "total_pnl": 2.7689999999999997
+    }
+  },
+  "n_thresholds_tested": 3,
+  "capacity_notional_usd": {
+    "n": 679,
+    "median": 21510.879,
+    "p90": 247237.142,
+    "max": 2064877.338,
+    "mean": 77970.04126067746
+  },
+  "qcx_fee_schedule": {
+    "taker": "0.06 * p * (1-p) per contract",
+    "maker_rebate": "-0.0125 * p * (1-p) per contract",
+    "taker_fee_examples_usd_per_contract": {
+      "0.5": 0.015,
+      "0.7": 0.0126,
+      "0.8": 0.0096,
+      "0.9": 0.0054
+    },
+    "note": "fee maximal at p=0.5 (1.5c/contract); volume taker rebates 10/25/50% >$250k/$1M/$10M monthly"
+  },
+  "cross_venue": "NOT reconstructable retrospectively: QCX exposes no timestamped historical book, and Kalshi/Global historical books are not aligned to these settled games. Reported as untested.",
+  "verdict": [
+    "- QCX pre-game prints deviate from the closing book by mean|dev| **1.8 cents** (median 1.3c); |dev|>5c on 5% of games. This is comparable to a sub-cent mature-venue tracking error -> QCX prints are noisier.",
+    "- Brier(book)=0.231 vs Brier(QCX)=0.234: the closing book is sharper.",
+    "- Backtest: after the 0.06*p*(1-p) taker fee, NO threshold delivers a fee-surviving edge at day-clustered |t|>2.4. (best day-clustered t=+2.20, mean +0.448/contract.)",
+    "- **KEY CAVEAT (look-ahead):** the 'edge' compares a QCX print (median a couple hours pre-game) to the EVENTUAL closing line. Trading toward the closing line requires knowing it in advance; part of any raw gap is just closing-line-value (the later, sharper line), NOT a real-time exploitable mispricing. Treat a positive backtest as an UPPER BOUND.",
+    "\n**BLUNT: NULL (fee-surviving edge not demonstrated).** The new QCX venue's pre-game prices are NOISIER than a mature venue (wider dispersion vs the closing line, thin books), consistent with a young sports venue. But that dispersion is symmetric noise, not a systematic mispricing: the closing book is at least as sharp (Brier), and once the QCX taker fee (up to 1.5c at p=0.5) is charged, the deviation-chasing backtest does not clear a day-clustered significance bar. Even the raw (no-fee, look-ahead-inflated) signal is the ceiling. Consistent with the prior sportsbook null: legal QCX sports are not a free lunch."
+  ]
+}

@@ -66,7 +66,21 @@ calibrated/NULL across everything farmed (longshot, index brackets, earnings). H
 | K5 | Farm GitHub Kalshi bots (ryanfrigo, Krypt-Trader, quantgalore, homerun-Kalshi) → OOS test each on Kalshi data | direct strategy transfer |
 | K6 | Kalshi settlement-timing / decided-but-unresolved capture | Kalshi's fixed close/settlement mechanics |
 | K7 | Kalshi FAVLONG revisit (favorite-longshot on Kalshi tenors) | prior program work; re-test net-of-fee on current data |
+| K8 | **Fill data holes from GitHub (high-leverage unlocks)** | see K8 data targets below — prioritize deep history + sharp lines |
 Discipline unchanged: NET of Kalshi fees always (the recurring killer); executable prices; cluster t; multiple-testing; honest nulls.
+
+
+### K8 data targets (found 2026-07-18, ranked by leverage)
+1. **DEEP KALSHI HISTORY (fixes our #1 weakness = short API window starving t-stats):**
+   - Jon-Becker/prediction-market-analysis — full Kalshi trades (taker_side) + markets (result), retrospective (36GB monolithic; extract Kalshi slice).
+   - PCeltide/snapevent (Rust) — Kalshi L2 order books + trade tape -> Parquet, deterministic replay (FORWARD collector; start now to build our own depth history).
+   - vcorp-dev/kalshi-price-data — DepthFeed aggregator: yes/no prices, full order-book depth, price history (verify if real history vs paid).
+2. **SHARP CONSENSUS SPORTSBOOK LINES (unlock for K4 sports):** TheRundown API — 16+ sportsbooks + Kalshi, free tier. Far better 'truth' than single-book ESPN.
+3. **STRUCTURAL SCANNER + fee math (jumpstarts K2):** Dbentley142/kalshi-bot-toolkit — structural mispricing scanner, fee-aware, keyless.
+4. **WEATHER GROUND-TRUTH (if weather revisited):** mostlyright-sdk — METAR/ASOS/GHCNh/NWS-CLI + Kalshi settlements.
+5. **ECON DIVERGENCE (econ signals):** emmett-hannam/economic-signals-framework — 50+ sources (FRED/BLS/GDELT) vs prediction markets.
+6. Strategy sources to farm (K5): ryanfrigo/kalshi-ai-trading-bot, OctagonAI/kalshi-trading-bot-cli, djmorgan26/Invest (10 strats x 40k mkts), homerun Kalshi strategies.
+PRIORITY: #1 (deep history) is the biggest unlock — it converts our null-with-thin-n results into properly-powered tests; #2 sharpens K4.
 
 ## Confirmed stack so far
 Polymarket weekly crypto short-vol (+0.12/ct, engine) + ECON (uncorrelated, small) + biz (marginal) + bucket-arb (riskless, tiny).
