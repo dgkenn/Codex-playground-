@@ -32,11 +32,17 @@
 | S6 | Weather ensemble (suislanchez) | 31-member GFS ensemble → Kalshi KXHIGH temp | **KALSHI** | low (weather-info null, but ensemble differs) | QUEUED |
 | S7 | homerun 25+ built-ins (copy/arb/AI-score) | scan for any with OOS edge | both | low-med | QUEUED |
 | S8 | Premium-decay (oracle3) | distortion decays toward resolution → entry timing | yes | low (first-half already best) | QUEUED |
+| S9 | **Edge portability to Polymarket US (QCX)** | does the short-vol edge exist on the LEGAL US venue? | **legal-PM** | unknown (KYC'd participants) | QUEUED-HIGH |
 
 ## Results (OOS verdicts) — see DECISION_MAP for detail
 | strategy | OOS verdict | stack? |
 |---|---|---|
 | S3 print-reconfirm | **CONFIRMED** — +0.121/ct trade-wt t=4.17 over 49 wks real prints; maker-only; ~$9k/wk flow | already the engine |
+
+## LEGAL CONSTRAINT (2026-07-18)
+US-legal venues only: **Kalshi** (clean) + **Polymarket US / QCX** (CFTC DCM, KYC+USD). **Polymarket GLOBAL is NOT legal
+for US** (geoblocked 2022) — our confirmed +0.121/ct edge is validated THERE, so it is proven-but-not-US-deployable until
+we confirm it PORTS to Polymarket US (QCX). Do not evade geoblocks. Primary = Kalshi-native edges; test QCX portability.
 
 ## Confirmed stack so far
 Polymarket weekly crypto short-vol (+0.12/ct, engine) + ECON (uncorrelated, small) + biz (marginal) + bucket-arb (riskless, tiny).

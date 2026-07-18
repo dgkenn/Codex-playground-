@@ -2315,3 +2315,21 @@ Fixed the prior 4-week discovery bottleneck by enumerating weekly markets via de
 VERDICT: CONFIRMED, strongest validation short of live capital -- tested MATCHES live-prints over 49 weeks. Does NOT move the
 %/day frontier (~0.3-1%/day sound; capacity caps absolute $, not the small-bankroll %). The one real edge is now print-validated.
 Farm S3 done.
+
+## LEGAL-CONSTRAINT (2026-07-18) — CRITICAL: our confirmed edge is on Polymarket GLOBAL (illegal for US); legal US venue is a SEPARATE, untested market
+Operator: Polymarket OK only if LEGAL in USA; prefers Kalshi; will do (legal) Polymarket for a great opportunity. Researched:
+- **Polymarket GLOBAL** (polymarket.com, USDC/Polygon, no-KYC) = geoblocked from US since 2022 CFTC settlement -> NOT legal for
+  US residents. THIS IS THE VENUE OUR CONFIRMED EDGE IS VALIDATED ON (gamma/data-api/CLOB; the +0.121/ct 49-wk result).
+- **Polymarket US** (QCX LLC, launched 2025-12-03) = CFTC-regulated Designated Contract Market, LEGAL for US residents; full
+  KYC, USD settlement via FCMs (not crypto), intermediated. Has a CFTC-regulated CLOB/WebSocket API (US-accessible).
+- **Kalshi** = CFTC DCM, cleanly legal US (already our secondary focus; S4/S5 tests running).
+IMPLICATION (honest, material): the confirmed short-vol edge is a PARTICIPANT effect (offshore retail lottery-buyers). Polymarket
+US (QCX) is a DIFFERENT venue with a KYC'd USD participant base, possibly different markets/fees/liquidity -> the edge may be
+weaker/absent (cf. Kalshi, where pros keep longshots calibrated -> NULL). The 49-week validation proves the MECHANISM is real
+but is NOT directly deployable by a US person (wrong venue). DO NOT suggest evading the geoblock (VPN) -- that defeats "legal".
+RE-PLAN:
+- PRIMARY = Kalshi-native edges (legal, uncorrelated): S4 earnings, S5 S&P brackets running; more queued.
+- NEW REQUIRED TASK = test whether the short-vol edge PORTS to Polymarket US (QCX): does the US venue carry the weekly crypto
+  "above $X" ladders, and is the longshot overpricing present on its order book (calibration priced vs realized), or is it
+  calibrated like Kalshi? If the edge exists on QCX -> it's the "really good legal Polymarket opportunity" worth the KYC hassle.
+- The Polymarket-Global paper sleeves stay as MECHANISM validation / research, NOT as a US-deployable book.
