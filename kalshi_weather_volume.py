@@ -1005,34 +1005,62 @@ def write_report(summary, per_day_detail):
     for k in ["0", "1", "5", "15", "30", "60", "120"]:
         d = q4["gap_decay_curve_minutes_since_crossing"][k]
         L.append(f"| {k} | {d['n']} | {fmt(d['mean'])} | {fmt(d['median'])} |")
+    n0 = q4["gap_decay_curve_minutes_since_crossing"]["0"]["n"]
+    n120 = q4["gap_decay_curve_minutes_since_crossing"]["120"]["n"]
+    L.append(f"\n**Read the 'n' column, not just the mean:** it shrinks from {n0} at t* to {n120} at "
+             f"+120min, because most ladder fires happen close enough to that city-day's market close that "
+             f"there simply is no candle 120min later to sample (late-day fires, thin end-of-day trading). "
+             f"The apparent gap INCREASE at +60/+120min in the table above is a **survivorship/staleness "
+             f"artifact**, not real re-opening edge: the small surviving subset skews toward early-morning "
+             f"fires on markets that go quiet (no more trades, stale wide quotes) once the outcome is "
+             f"obvious and nobody bothers tightening the spread on a near-dead contract -- do not read this "
+             f"as 'wait longer, get a better price'.\n")
 
     L.append("\n### Captured gap by polling scheme\n")
-    L.append("| scheme | n captured | mean gap captured | median gap captured |")
+    L.append("Two ways to read this: **'mean captured (conditional)'** is the average gap among fires the "
+             "scheme actually detects in time to trade -- but this is SURVIVORSHIP-BIASED (a slow cadence "
+             "only 'succeeds' on the subset of fires that happen early enough in the day for a widely-"
+             "spaced tick to still land before market close, which is not a random subset). **'mean gap, "
+             f"unconditional'** (missed fires count as 0) and **capture rate** (fraction of the {q4['n_events_used']} "
+             "tradeable fires the scheme detects AT ALL before the tradeable window is gone) are the fair "
+             "cross-scheme comparison -- this is what actually answers 'does polling faster help'.\n")
+    L.append("| scheme | capture rate | mean captured (conditional) | mean gap, unconditional |")
     L.append("|---|---|---|---|")
     for cad in FIXED_CADENCES_MIN:
         d = q4["fixed_cadence_captured_gap"][str(cad)]
-        L.append(f"| fixed, every {cad}min (current live gate = 120min) | {d['n']} | {fmt(d['mean'])} | {fmt(d['median'])} |")
+        L.append(f"| fixed, every {cad}min (current live gate = 120min) | "
+                 f"{fmt(d.get('capture_rate'),3)} ({d['n_captured']}/{q4['n_events_used']}) | "
+                 f"{fmt(d['mean_captured'])} | {fmt(d.get('mean_gap_unconditional'))} |")
     for lbl, key in [("ADAPTIVE (FAR=15min, APPROACH=3min, IMMINENT=1min)", "adaptive_captured_gap_far15"),
                      ("ADAPTIVE (FAR=20min, APPROACH=3min, IMMINENT=1min)", "adaptive_captured_gap_far20"),
                      ("ADAPTIVE (FAR=30min, APPROACH=3min, IMMINENT=1min)", "adaptive_captured_gap_far30")]:
         d = q4[key]
-        L.append(f"| {lbl} | {d['n']} | {fmt(d['mean'])} | {fmt(d['median'])} |")
+        L.append(f"| {lbl} | {fmt(d.get('capture_rate'),3)} ({d['n_captured']}/{q4['n_events_used']}) | "
+                 f"{fmt(d['mean_captured'])} | {fmt(d.get('mean_gap_unconditional'))} |")
 
     L.append(f"\n**Open-then-shut fires (a 2h cron would open the tradeable window and miss it before "
              f"the next poll):** {q4['n_open_at_crossing_then_shut_by_2h']} / "
              f"{q4['n_open_at_crossing_pool']} of the tradeable-at-crossing pool had gap already <= "
              f"{NEAR_SHUT_GAP_MAX} by t*+120min.\n")
 
-    d120 = q4["fixed_cadence_captured_gap"]["120"]["mean"]
-    d30 = q4["fixed_cadence_captured_gap"]["30"]["mean"]
-    d15 = q4["fixed_cadence_captured_gap"]["15"]["mean"]
-    dadapt = q4["adaptive_captured_gap_far20"]["mean"]
+    d120 = q4["fixed_cadence_captured_gap"]["120"]["mean_gap_unconditional"]
+    d30 = q4["fixed_cadence_captured_gap"]["30"]["mean_gap_unconditional"]
+    d15 = q4["fixed_cadence_captured_gap"]["15"]["mean_gap_unconditional"]
+    dadapt = q4["adaptive_captured_gap_far20"]["mean_gap_unconditional"]
+    c120 = q4["fixed_cadence_captured_gap"]["120"]["capture_rate"]
+    c15 = q4["fixed_cadence_captured_gap"]["15"]["capture_rate"]
+    cadapt = q4["adaptive_captured_gap_far20"]["capture_rate"]
+    L.append(f"**Capture-rate delta (the volume-relevant number):** the current 2h cron detects only "
+             f"{fmt(c120,3)} of tradeable fires in time vs {fmt(cadapt,3)} for the adaptive scheme and "
+             f"{fmt(c15,3)} for a flat 15min poll -- i.e. the 2h cadence is silently missing the majority "
+             f"of fires entirely (they cross, reprice, and settle between polls), which is a bigger "
+             f"problem than gap SIZE on the ones it does catch.\n")
     L.append("**Physical ceiling:** IEM's one-minute ASOS product updates ~once/minute, so the "
              "IMMINENT tier (1/min) is the fastest polling that can ever see NEW information -- "
              "checking every 10-30 seconds when close to a strike would just re-read the same stale "
              "1-minute value and burn API budget for nothing.\n")
-    L.append(f"**Comparison:** mean captured gap at 120min cadence = {fmt(d120)}, 30min = {fmt(d30)}, "
-             f"15min = {fmt(d15)}, ADAPTIVE (proximity-proportional) = {fmt(dadapt)}. ")
+    L.append(f"**Comparison (unconditional mean gap/fire, missed fires = 0):** 120min cadence = {fmt(d120)}, "
+             f"30min = {fmt(d30)}, 15min = {fmt(d15)}, ADAPTIVE (proximity-proportional) = {fmt(dadapt)}. ")
     if dadapt is not None and d120 is not None:
         L.append(f"Adaptive captures {fmt((dadapt-d120),3)} MORE gap on average than the current 2h cron "
                  f"({'+' if dadapt>=d120 else ''}{fmt(100*(dadapt-d120)/d120 if d120 else None,1)}% relative), "
