@@ -801,6 +801,11 @@ def write_report(summary: dict, results: List[dict], universe_stats: dict):
     else:
         a("*(none -- see verdict below)*")
     a("")
+    a("*(\"rebate's share of NET\" can exceed 100% when adverse selection is a genuine positive cost "
+      "that eats into the rebate but doesn't flip NET negative -- that's the intended, healthy case: "
+      "the rebate is doing all the work and then some is lost to real adverse selection. It's the "
+      "**spread-capture** flag, not a >100% figure, that signals a market to distrust.)*")
+    a("")
     a("## 4. Capacity")
     a("")
     headline_scen = summary["headline_scenario"]
@@ -868,48 +873,78 @@ def build_verdict(summary: dict) -> str:
                 "is not currently possible from the public tape.")
 
     lines = []
-    opt_pos = optimistic.get("frac_net_positive") or 0
-    head_pos = headline.get("frac_net_positive") or 0
-    stress_pos = stress.get("frac_net_positive") or 0
+
+    def rd_frac(sc):
+        n = sc.get("n_markets") or 0
+        return (sc.get("n_rebate_driven_positive") or 0) / n if n else 0.0
+
+    def sc_frac(sc):
+        n = sc.get("n_markets") or 0
+        return (sc.get("n_spread_capture_dominated_positive") or 0) / n if n else 0.0
+
+    opt_rd, opt_sc = rd_frac(optimistic), sc_frac(optimistic)
+    head_rd, head_sc = rd_frac(headline), sc_frac(headline)
+    stress_rd, stress_sc = rd_frac(stress), sc_frac(stress)
 
     lines.append(
-        f"At the MOST OPTIMISTIC scenario tested (100% capture of the depth heuristic, 15-min "
-        f"active-MM markout), **{opt_pos*100:.0f}%** of analyzed markets are net-positive "
-        f"(mean ${optimistic.get('mean_net', 0):.2f}/day, median ${optimistic.get('median_net', 0):.2f}/day). "
-        f"At the headline (50% capture, 15-min) scenario, **{head_pos*100:.0f}%** are net-positive "
-        f"(mean ${headline.get('mean_net', 0):.2f}/day). Under the stress scenario (5% capture, "
-        f"6h passive markout), **{stress_pos*100:.0f}%** are net-positive."
+        f"**The rebate-driven vs. spread-capture-dominated split is the whole story here.** At the "
+        f"MOST OPTIMISTIC scenario tested (100% capture of the depth heuristic, 15-min active-MM "
+        f"markout): **{opt_rd*100:.0f}%** of analyzed markets are net-positive WITH the rebate "
+        f"itself doing >=25% of the work (mean ${optimistic.get('mean_net_rebate_driven_only', 0) or 0:.2f}/day "
+        f"on that subset), vs. a further **{opt_sc*100:.0f}%** that are net-positive only because "
+        f"measured adverse-selection came out negative (i.e. realized spread capture / short-sample "
+        f"mean reversion swamps a reward pool that is a rounding error by comparison -- NOT evidence "
+        f"the rebate program itself works, and heavily exposed to small-sample overfitting on a few "
+        f"days of trade tape). At the headline (50% capture, 15-min) scenario: "
+        f"**{head_rd*100:.0f}%** rebate-driven, **{head_sc*100:.0f}%** spread-capture-only. Under "
+        f"the stress scenario (5% capture, 6h passive): **{stress_rd*100:.0f}%** rebate-driven, "
+        f"**{stress_sc*100:.0f}%** spread-capture-only."
     )
 
-    if head_pos < 0.15 or (headline.get("mean_net") or 0) < 1.0:
+    if head_rd < 0.15 or (headline.get("mean_net_rebate_driven_only") or 0) < 1.0:
         lines.append(
-            "\n**BLUNT VERDICT: mostly NULL, and the reasons are structural, not just noisy "
-            "estimation.** The reward pools are real and the fee side is genuinely favorable "
-            "(maker fills are free on 193/196 series) -- but (a) Kalshi deliberately concentrates "
-            "incentives on markets with essentially no organic liquidity, which is exactly where "
-            "resting quotes get picked off hardest; (b) the median reward pool (~$15/day total, "
-            "SHARED pro-rata across every maker who shows up) is too small to matter once split "
-            "even a modest number of ways, let alone once adverse selection is netted out; (c) "
-            "with only public depth-snapshot data we cannot rule out that our capture-share "
-            "heuristic is itself too generous -- if other makers are already resting comparable or "
-            "larger size at the touch (plausible on any market Kalshi bothers to advertise a "
-            "reward for), our real share collapses further than even the 5% stress scenario. A "
-            "small minority of markets DO show a positive headline NET -- these are worth flagging "
-            "individually (see table above) but do not constitute a systematic, capacity-bearing "
-            "edge: they are concentrated in short-lived, single-event novelty markets (game-day "
-            "props, one-off gas-price windows) with no persistent structure to exploit at scale, "
-            "and the positive read is highly sensitive to the unmeasured capture-share assumption."
+            "\n**BLUNT VERDICT ON THE REBATE ITSELF: mostly NULL, and the reasons are structural, "
+            "not just noisy estimation.** The reward pools are real and the fee side is genuinely "
+            "favorable (maker fills are free on 193/196 series) -- but (a) Kalshi deliberately "
+            "concentrates incentives on markets with essentially no organic liquidity, which is "
+            "exactly where resting quotes get picked off hardest; (b) the median reward pool (~$15/"
+            "day total, SHARED pro-rata across every maker who shows up) is too small to matter once "
+            "split even a modest number of ways, let alone once adverse selection is netted out; (c) "
+            "with only public depth-snapshot data we cannot rule out that our capture-share heuristic "
+            "is itself too generous -- if other makers are already resting comparable or larger size "
+            "at the touch (plausible on any market Kalshi bothers to advertise a reward for), our "
+            "real share collapses further than even the 5% stress scenario. A small minority of "
+            "markets DO show a genuinely rebate-driven positive NET (see table above, filtered to "
+            "REBATE-DRIVEN) -- worth flagging individually but not a systematic, capacity-bearing "
+            "edge: concentrated in short-lived, single-event novelty markets (game-day props, "
+            "one-off gas-price windows) with no persistent structure to exploit at scale.\n\n"
+            "**Separately**, a chunk of the sample shows large positive NET that is NOT rebate-"
+            "driven -- it comes from measured adverse-selection being negative (the trade tape shows "
+            "the resting side of real trades profiting on average over the following minutes/hours). "
+            "That is a genuinely different, unverified hypothesis (\"is passive market-making on "
+            "thin, jumpy Kalshi novelty/political markets profitable purely from spread capture, "
+            "rebate or no rebate\") riding on the same tape -- and it is exactly the kind of result "
+            "that demands the discipline used to kill prior candidates: it comes from a short (up to "
+            "~5-day) lookback window on markets undergoing real price discovery (one flagged example, "
+            "a Senate-primary candidate market, saw its price swing from $0.01 to $0.79 in the "
+            "window), so a negative markout there is plausibly a small-sample artifact of a market "
+            "trending through a specific historical realization, not a stable structural edge. It is "
+            "reported here for transparency but is explicitly OUT OF SCOPE for the K1 rebate verdict "
+            "and should not be read as a second confirmed edge without its own dedicated, longer-"
+            "horizon OOS test."
         )
     else:
         lines.append(
-            "\n**VERDICT: a real, if modest, edge on a subset of markets -- but it lives entirely "
-            "on illiquid novelty markets, not Kalshi's liquid flagship products (no incentive "
-            "program exists on any high-volume series). Deployability is capped by (a) the small "
-            "absolute size of most reward pools once shared pro-rata, and (b) genuine uncertainty "
-            "in our capture-share estimate, which is the single least-verifiable input in this "
-            "analysis without live two-sided quoting. Worth a small, closely-monitored live pilot "
-            "on the specific markets flagged net-positive above, sized to the smaller end of the "
-            "capacity estimate -- NOT a scalable standalone strategy."
+            "\n**VERDICT ON THE REBATE ITSELF: a real, if modest, edge on a subset of markets -- but "
+            "it lives entirely on illiquid novelty markets, not Kalshi's liquid flagship products (no "
+            "incentive program exists on any high-volume series). Deployability is capped by (a) the "
+            "small absolute size of most reward pools once shared pro-rata, and (b) genuine "
+            "uncertainty in our capture-share estimate, which is the single least-verifiable input in "
+            "this analysis without live two-sided quoting. Worth a small, closely-monitored live pilot "
+            "on the specific REBATE-DRIVEN markets flagged net-positive above, sized to the smaller "
+            "end of the capacity estimate -- NOT a scalable standalone strategy. The additional "
+            "spread-capture-dominated markets in the sample are a separate, unverified hypothesis "
+            "(see caveat above) and are excluded from this verdict."
         )
     return "\n".join(lines)
 

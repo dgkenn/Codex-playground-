@@ -61,7 +61,7 @@ calibrated/NULL across everything farmed (longshot, index brackets, earnings). H
 ### Kalshi-only backlog (to farm next)
 | # | Kalshi angle | why it might work / untested |
 |---|---|---|
-| K1 | Kalshi MAKER-REBATE MM | TESTING (net-of-adverse-sel) |
+| K1 | Kalshi MAKER-REBATE MM | **DONE — MARGINAL/unverifiable** (real program but illiquid novelty mkts, capture-share unmeasurable, needs live pilot) |
 | K2 | Kalshi structural NO-ARB | **DONE — NULL** (5/5 flagged=stale/fee-eaten, 0 real; same as Polymarket; Kalshi fee kills it) |
 | K3 | Kalshi NEW-LISTING mispricing | **DONE — NULL (noisier but no direction; spread kills it)** |
 | K4 | Kalshi SPORTS vs sharp book / vs QCX-Global | Kalshi now lists sports; is it mispriced vs de-vigged lines? (legal, uncorrelated) |

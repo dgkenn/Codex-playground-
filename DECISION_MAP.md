@@ -2542,3 +2542,17 @@ Tested new-listing mispricing: 3602 obs / 1242 settled markets / 179 series, 202
 VERDICT: NULL. Noise is unbiased dispersion, not a directional edge. Clean. NOTE: this ran on 554 days -> Kalshi /historical
 DOES expose long history for markets that EXISTED; the KXHIGH weather 67-day cap is specifically because those weather series
 are NEW (launched ~May 2026), confirming forward-accumulation is the only path for weather. Farm K3 dead.
+
+## KALSHI-MAKER-REBATE (2026-07-18, farm K1) — real rebate program but MARGINAL + unverifiable-from-data (not deployable w/o live pilot)
+Tested Kalshi's genuine CFTC Liquidity Incentive Program (/incentive_programs), confirmed distinct from killed Poly LP-pool.
+- Program is REAL: 2717 active programs / 196 series, $55,577/day total, median $15/day/market, target 300-10k ct. 193/196 series
+  charge ZERO maker fee.
+- KILLER CAVEAT #1: ZERO incentives on flagship LIQUID series (BTC/ETH, weather, presidential, NFL/NBA) -> every $ subsidizes
+  ILLIQUID novelty markets (gas micro-strikes, WC props) = worst adverse selection.
+- Headline (50% capture, 15min horizon): ~84% of 32 estimable markets net-positive, rebate>=25% of the work, ~27 markets /
+  ~$1,100/day combined. BUT: capture-share is the load-bearing UNVERIFIABLE input (no L3 queue data; can't measure without live
+  two-sided quoting); it's MARKET-MAKING (needs live infra we lack); one market's huge "net" was spread-capture/mean-reversion
+  not rebate (agent split rebate-driven vs spread-capture, good discipline). Bug caught: 89k ct/day false extrapolation fixed.
+VERDICT: MARGINAL / not backtest-confirmable. A real program with modest theoretical net-positive, but confined to adversely-
+selected illiquid markets, key input unmeasurable from history, requires live market-making infra. Recommendation = small closely-
+monitored LIVE PILOT on the flagged rebate-driven markets, NOT broad deploy. Ranks well below K-WX. Farm K1 = marginal/parked.

@@ -1,6 +1,6 @@
 # Kalshi K1: Maker-Rebate / Liquidity-Incentive Capture -- OOS Test
 
-Generated: 2026-07-18T17:22:13.722939+00:00
+Generated: 2026-07-18T17:26:52.252220+00:00
 
 ## Correction to prior kill
 
@@ -64,42 +64,46 @@ For each estimable market:
 
 ## 3. Results by scenario
 
-Net-positive rate and average NET/day across the analyzed sample, at each capture-share x markout-horizon combination:
+Net-positive rate and average NET/day across the analyzed sample, at each capture-share x markout-horizon combination. **Two positive counts are shown**: `rebate-driven` (the Kalshi reward pool itself accounts for >=25% of the positive NET -- the thing K1 is actually about) vs `spread-capture-dominated` (positive NET, but the reward pool is a rounding error next to negative measured adverse-selection, i.e. the trade tape shows realized mean-reversion/spread capture that would exist with or without any incentive program -- a DIFFERENT, unverified hypothesis about generic Kalshi market-making profitability, not a finding about the rebate):
 
-| Capture-share scenario | Markout horizon | n markets | # net-positive | % net-positive | mean NET/day | median NET/day |
+| Capture-share scenario | Markout horizon | n markets | # net-positive | of which rebate-driven | of which spread-capture-dominated | mean NET/day (rebate-driven only) |
 |---|---|---|---|---|---|---|
-| 100% | 15 min (active) | 32 | 28 | 88% | $102.80 | $12.85 |
-| 100% | 6h (passive/stress) | 32 | 30 | 94% | $177.07 | $19.82 |
-| 50% | 15 min (active) | 32 | 28 | 88% | $51.40 | $6.43 |
-| 50% | 6h (passive/stress) | 32 | 30 | 94% | $88.53 | $9.91 |
-| 20% | 15 min (active) | 32 | 28 | 88% | $20.56 | $2.57 |
-| 20% | 6h (passive/stress) | 32 | 30 | 94% | $35.41 | $3.96 |
-| 5% | 15 min (active) | 32 | 28 | 88% | $5.14 | $0.64 |
-| 5% | 6h (passive/stress) | 32 | 30 | 94% | $8.85 | $0.99 |
+| 100% | 15 min (active) | 32 | 28 | 27 | 1 | $82.16 |
+| 100% | 6h (passive/stress) | 32 | 30 | 29 | 1 | $97.45 |
+| 50% | 15 min (active) | 32 | 28 | 27 | 1 | $41.08 |
+| 50% | 6h (passive/stress) | 32 | 30 | 29 | 1 | $48.72 |
+| 20% | 15 min (active) | 32 | 28 | 27 | 1 | $16.43 |
+| 20% | 6h (passive/stress) | 32 | 30 | 29 | 1 | $19.49 |
+| 5% | 15 min (active) | 32 | 28 | 27 | 1 | $4.11 |
+| 5% | 6h (passive/stress) | 32 | 30 | 29 | 1 | $4.87 |
 
-**Headline scenario** (50% of the depth heuristic, 15-min active-MM markout -- a middle-of-the-road read, not the most flattering one): top net-positive markets in the analyzed sample:
+**Headline scenario** (50% of the depth heuristic, 15-min active-MM markout -- a middle-of-the-road read, not the most flattering one): top net-positive markets in the analyzed sample, flagged by whether the rebate itself is actually doing the work:
 
-| Ticker | Series | $/day pool | target size | vol/day (ct) | spread | capture share (heur.) | NET/day (headline) | NET/day (stress) |
+| Ticker | Series | $/day pool | vol/day (ct) | book turnover/day | capture share (heur.) | NET/day (headline) | NET/day (stress) | rebate's share of NET |
 |---|---|---|---|---|---|---|---|---|
-| KXSCRSENS-26-DNOR | KXSCRSENS | $8.70 | 1000 | 68518.0 | 0.01 | 70% | $657.51 | $149.46 |
-| KXLATENIGHTMENTION-26JUL19-GOAT | KXLATENIGHTMENTION | $145.75 | 1000 | 609.1 | 0.01 | 96% | $168.82 | $15.85 |
-| KXAAAGASD-26JUL19-3.995 | KXAAAGASD | $192.00 | 1000 | 4158.5 | 0.01 | 100% | $147.79 | $9.66 |
-| KXLATENIGHTMENTION-26JUL19-AI | KXLATENIGHTMENTION | $145.75 | 1000 | 1227.5 | 0.01 | 63% | $113.37 | $12.22 |
-| KXLATENIGHTMENTION-26JUL19-GOLD | KXLATENIGHTMENTION | $145.75 | 1000 | 896.7 | 0.01 | 99% | $106.66 | $10.77 |
-| KXMLBMENTION-26JUL18LADNYY-PITC | KXMLBMENTION | $188.24 | 1000 | 7625.6 | 0.01 | 95% | $102.57 | $12.11 |
-| KXLATENIGHTMENTION-26JUL19-RED | KXLATENIGHTMENTION | $145.75 | 1000 | 761.4 | 0.01 | 98% | $90.86 | $8.82 |
-| KXMLBMENTION-26JUL18LADNYY-WHAT | KXMLBMENTION | $188.24 | 1000 | 1183.6 | 0.02 | 96% | $90.68 | $9.36 |
-| KXLATENIGHTMENTION-26JUL19-GIAN | KXLATENIGHTMENTION | $145.75 | 1000 | 846.0 | 0.02 | 98% | $77.62 | $7.69 |
-| KXLATENIGHTMENTION-26JUL19-SHAK | KXLATENIGHTMENTION | $145.75 | 1000 | 304.6 | 0.01 | 96% | $71.44 | $7.18 |
-| KXAAAGASD-26JUL19-4.010 | KXAAAGASD | $192.00 | 1000 | 10799.9 | 0.01 | 95% | $51.84 | $7.50 |
-| KXCPICOMBO-26JULB-0203 | KXCPICOMBO | $20.88 | 1000 | 1203.5 | 0.01 | 91% | $29.45 | $2.66 |
-| KXWCMENTION-26JUL18FRAENG-GOLB | KXWCMENTION | $31.18 | 1000 | 8024.6 | 0.01 | 72% | $22.97 | $0.69 |
-| KXWCFIRSTSONG-MAD26JUL20-VIV | KXWCFIRSTSONG | $20.88 | 1000 | 2980.3 | 0.01 | 58% | $8.35 | $0.82 |
-| KXAIRFARECPI-26AUG12-T304 | KXAIRFARECPI | $20.88 | 1000 | 54.5 | 0.01 | 64% | $8.07 | $0.79 |
+| KXSCRSENS-26-DNOR | KXSCRSENS | $8.70 | 68427.2 | 166.8x | 71% | $669.69 | $152.23 | 0% (spread-capture) |
+| KXLATENIGHTMENTION-26JUL19-GOAT | KXLATENIGHTMENTION | $145.75 | 592.9 | 15.8x | 96% | $166.21 | $15.62 | 42% (REBATE-DRIVEN) |
+| KXAAAGASD-26JUL19-3.995 | KXAAAGASD | $192.00 | 4010.7 | 422.2x | 99% | $133.34 | $11.64 | 71% (REBATE-DRIVEN) |
+| KXLATENIGHTMENTION-26JUL19-AI | KXLATENIGHTMENTION | $145.75 | 1194.9 | 2.0x | 63% | $111.58 | $12.01 | 41% (REBATE-DRIVEN) |
+| KXLATENIGHTMENTION-26JUL19-GOLD | KXLATENIGHTMENTION | $145.75 | 872.9 | 49.9x | 98% | $105.17 | $10.62 | 68% (REBATE-DRIVEN) |
+| KXMLBMENTION-26JUL18LADNYY-PITC | KXMLBMENTION | $188.24 | 7359.1 | 138.9x | 95% | $102.53 | $12.05 | 87% (REBATE-DRIVEN) |
+| KXMLBMENTION-26JUL18LADNYY-WHAT | KXMLBMENTION | $188.24 | 1142.2 | 57.1x | 98% | $92.19 | $9.51 | 100% (REBATE-DRIVEN) |
+| KXLATENIGHTMENTION-26JUL19-RED | KXLATENIGHTMENTION | $145.75 | 741.2 | 34.1x | 98% | $90.23 | $8.76 | 79% (REBATE-DRIVEN) |
+| KXLATENIGHTMENTION-26JUL19-GIAN | KXLATENIGHTMENTION | $145.75 | 823.5 | 31.1x | 97% | $77.37 | $7.66 | 92% (REBATE-DRIVEN) |
+| KXLATENIGHTMENTION-26JUL19-SHAK | KXLATENIGHTMENTION | $145.75 | 296.5 | 7.3x | 96% | $71.26 | $7.16 | 98% (REBATE-DRIVEN) |
+| KXAAAGASD-26JUL19-4.010 | KXAAAGASD | $192.00 | 10374.6 | 190.4x | 95% | $53.38 | $7.56 | 171% (REBATE-DRIVEN) |
+| KXCPICOMBO-26JULB-0203 | KXCPICOMBO | $20.88 | 1201.9 | 6.1x | 84% | $26.96 | $2.43 | 32% (REBATE-DRIVEN) |
+| KXWCMENTION-26JUL18FRAENG-GOLB | KXWCMENTION | $31.18 | 8015.2 | 21.6x | 73% | $23.12 | $0.69 | 49% (REBATE-DRIVEN) |
+| KXWCFIRSTSONG-MAD26JUL20-VIV | KXWCFIRSTSONG | $20.88 | 2976.3 | 4.0x | 58% | $8.35 | $0.82 | 72% (REBATE-DRIVEN) |
+| KXAIRFARECPI-26AUG12-T304 | KXAIRFARECPI | $20.88 | 54.4 | 0.1x | 64% | $8.06 | $0.79 | 83% (REBATE-DRIVEN) |
+
+*("rebate's share of NET" can exceed 100% when adverse selection is a genuine positive cost that eats into the rebate but doesn't flip NET negative -- that's the intended, healthy case: the rebate is doing all the work and then some is lost to real adverse selection. It's the **spread-capture** flag, not a >100% figure, that signals a market to distrust.)*
 
 ## 4. Capacity
 
-Under the headline scenario, **28** of the 32 analyzed markets are net-positive, with combined qualifying target size of **26,600 contracts** and combined estimated NET of **$1,787.19/day** if a maker could simultaneously rest at target size on every one of them. Two caveats on capacity: (1) this requires standing capital roughly equal to target_size x mid-price on BOTH the yes and no side of every market simultaneously (order of target_size dollars per market at ~$0.50 mid, more at higher mid); (2) these are almost all micro-liquidity novelty markets -- the target sizes (300-10,000 contracts) sound large but the markets themselves trade only a handful of contracts per trade, so the depth-proportional capture-share assumption is the single most load-bearing (and least verifiable without live quoting) number in this whole analysis.
+Restricting to the **rebate-driven** subset only (the honest answer to "is the rebate program itself deployable"): **27** of 32 analyzed markets, combined qualifying target size **25,600 contracts**, combined estimated NET **$1,109.15/day** if resting target size on all of them simultaneously. (The 1 spread-capture-dominated markets are excluded from this capacity figure -- see Section 3's caveat; their large modeled NET is not attributable to the rebate program and is separately, and more skeptically, discussed in the verdict.)
+
+Two caveats even on the rebate-driven capacity figure: (1) it requires standing capital roughly equal to target_size x mid-price on BOTH the yes and no side of every market simultaneously (order of target_size dollars per market at ~$0.50 mid, more at higher mid); (2) these are almost all micro-liquidity novelty markets -- the target sizes (300-10,000 contracts) sound large but many of these markets trade only a handful of contracts per print, so the depth-proportional capture-share assumption is the single most load-bearing (and least verifiable without live quoting) number in this whole analysis.
 
 ## 5. What's measured vs. estimated (explicit)
 
@@ -113,6 +117,6 @@ Under the headline scenario, **28** of the 32 analyzed markets are net-positive,
 
 ## 6. Verdict
 
-At the MOST OPTIMISTIC scenario tested (100% capture of the depth heuristic, 15-min active-MM markout), **88%** of analyzed markets are net-positive (mean $102.80/day, median $12.85/day). At the headline (50% capture, 15-min) scenario, **88%** are net-positive (mean $51.40/day). Under the stress scenario (5% capture, 6h passive markout), **94%** are net-positive.
+**The rebate-driven vs. spread-capture-dominated split is the whole story here.** At the MOST OPTIMISTIC scenario tested (100% capture of the depth heuristic, 15-min active-MM markout): **84%** of analyzed markets are net-positive WITH the rebate itself doing >=25% of the work (mean $82.16/day on that subset), vs. a further **3%** that are net-positive only because measured adverse-selection came out negative (i.e. realized spread capture / short-sample mean reversion swamps a reward pool that is a rounding error by comparison -- NOT evidence the rebate program itself works, and heavily exposed to small-sample overfitting on a few days of trade tape). At the headline (50% capture, 15-min) scenario: **84%** rebate-driven, **3%** spread-capture-only. Under the stress scenario (5% capture, 6h passive): **91%** rebate-driven, **3%** spread-capture-only.
 
-**VERDICT: a real, if modest, edge on a subset of markets -- but it lives entirely on illiquid novelty markets, not Kalshi's liquid flagship products (no incentive program exists on any high-volume series). Deployability is capped by (a) the small absolute size of most reward pools once shared pro-rata, and (b) genuine uncertainty in our capture-share estimate, which is the single least-verifiable input in this analysis without live two-sided quoting. Worth a small, closely-monitored live pilot on the specific markets flagged net-positive above, sized to the smaller end of the capacity estimate -- NOT a scalable standalone strategy.
+**VERDICT ON THE REBATE ITSELF: a real, if modest, edge on a subset of markets -- but it lives entirely on illiquid novelty markets, not Kalshi's liquid flagship products (no incentive program exists on any high-volume series). Deployability is capped by (a) the small absolute size of most reward pools once shared pro-rata, and (b) genuine uncertainty in our capture-share estimate, which is the single least-verifiable input in this analysis without live two-sided quoting. Worth a small, closely-monitored live pilot on the specific REBATE-DRIVEN markets flagged net-positive above, sized to the smaller end of the capacity estimate -- NOT a scalable standalone strategy. The additional spread-capture-dominated markets in the sample are a separate, unverified hypothesis (see caveat above) and are excluded from this verdict.
