@@ -40,12 +40,21 @@ CITY = {
     "KXHIGHTNOLA": ("KMSY", -6), "KXHIGHLAX": ("KLAX", -8),
 }
 
-# ---- frozen strategy params (from Phase-2 Track A walk-forward) ----
-MARGIN_F = 1.0          # observed extreme must clear strike by this many degF
-SUSTAIN_MIN = 3         # ...sustained this many minutes (glitch-robust). Tier-1 study may revise.
-MAX_PAY_CENTS = 98      # never pay above this (skip dead-on-arrival fires with no gap)
-DEFAULT_SIZE = 10       # contracts/market; real sizing comes from the depth/impact study (Tier-1 S3)
+# ---- frozen strategy params (from Phase-2: Track A walk-forward + Track B multi-year tail + Tier-1) ----
+MARGIN_F = 1.0          # base: observed extreme must clear strike by this many degF (Track A/Tier-1: best)
+SUSTAIN_MIN = 3         # sustained this many minutes -- glitch-robust (Tier-1 S2: sustain=3 reconfirmed;
+                        # sustain=1 turns 13.7% of fires into glitch losses vs 0.35% at sustain=3)
+MAX_PAY_CENTS = 98      # never pay above this (skip dead-on-arrival fires -- ~63% of raw fires have no gap)
+DEFAULT_SIZE = 10       # contracts/market; capacity study (Tier-1 S3) caps real size; books are 5-100ct deep
 GLITCH_HI_F, GLITCH_LO_F = 130.0, -60.0
+
+# Per-station RISK derate (Track B multi-year + Tier-1): a handful of stations disagree with the official
+# CLI far more often (obs-vs-CLI lock-failure). Raise their margin (fewer, safer fires) and/or shrink size.
+# KPHX(Phoenix) is the worst in BOTH studies (23% raw / 6.25% deployable) -> highest margin + smallest size.
+STATION_MARGIN = {"KPHX": 3.0, "KLAX": 2.0, "KMIA": 2.0, "KPHL": 2.0, "KSEA": 2.0}   # else MARGIN_F
+STATION_SIZE_MULT = {"KPHX": 0.25, "KLAX": 0.5, "KMIA": 0.5, "KPHL": 0.5, "KSEA": 0.5}  # else 1.0
+# HIGH-family "between" rungs carried ALL 6 deployable glitch losses (Tier-1 S1) -> extra sustain there.
+PER_CITY_DAILY_CAP_FRAC = 0.175   # cross-city daily exposure cap (Tier-1 S4: precautionary, 15-20%)
 
 
 def _get(url, to=20):
@@ -168,40 +177,39 @@ def event_rungs(event_ticker):
 
 
 # ---------------- lock logic (which rung side locks, given the observed extreme) ----------------
-def locked_orders(rungs, extreme_f, kind):
-    """Return list of (ticker, side, buy_price_cap_c) for rungs that are now mechanically locked by the
-    observed extreme (with MARGIN_F). HIGH/max: floor-only rung locks YES once max>floor+margin; any
-    capped rung locks NO once max>cap+margin. LOW/min mirrors with the running min."""
+def locked_orders(rungs, extreme_f, kind, margin=MARGIN_F):
+    """Return list of (ticker, side, buy_price_cap_c) for rungs now mechanically locked by the observed
+    extreme (with `margin`, which may be raised per-station for high-disagreement stations). HIGH/max:
+    floor-only rung locks YES once max>floor+margin; any capped rung locks NO once max>cap+margin.
+    LOW/min mirrors with the running min."""
     orders = []
     for r in rungs:
         floor, cap = r["floor"], r["cap"]
         if kind == "max":
-            if cap is not None and extreme_f > cap + MARGIN_F:
-                # YES impossible -> buy NO
+            if cap is not None and extreme_f > cap + margin:
                 if r["no_ask_c"] and r["no_ask_c"] <= MAX_PAY_CENTS:
                     orders.append((r["ticker"], "no", r["no_ask_c"]))
-            elif cap is None and floor is not None and extreme_f > floor + MARGIN_F:
+            elif cap is None and floor is not None and extreme_f > floor + margin:
                 if r["yes_ask_c"] and r["yes_ask_c"] <= MAX_PAY_CENTS:
                     orders.append((r["ticker"], "yes", r["yes_ask_c"]))
         else:  # min
-            if floor is not None and extreme_f < floor - MARGIN_F:
+            if floor is not None and extreme_f < floor - margin:
                 if r["no_ask_c"] and r["no_ask_c"] <= MAX_PAY_CENTS:
                     orders.append((r["ticker"], "no", r["no_ask_c"]))
-            elif floor is None and cap is not None and extreme_f < cap - MARGIN_F:
+            elif floor is None and cap is not None and extreme_f < cap - margin:
                 if r["yes_ask_c"] and r["yes_ask_c"] <= MAX_PAY_CENTS:
                     orders.append((r["ticker"], "yes", r["yes_ask_c"]))
     return orders
 
 
-def nearest_strike_distance(rungs, extreme_f, kind):
+def nearest_strike_distance(rungs, extreme_f, kind, margin=MARGIN_F):
     """Smallest |extreme - relevant_strike| among rungs NOT yet locked -> drives adaptive cadence."""
     best = None
     for r in rungs:
         for strike in (r["floor"], r["cap"]):
             if strike is None:
                 continue
-            d = (strike + MARGIN_F) - extreme_f if kind == "max" else extreme_f - (strike - MARGIN_F)
-            # d>0 means not yet crossed; track the closest not-yet-crossed
+            d = (strike + margin) - extreme_f if kind == "max" else extreme_f - (strike - margin)
             if d > 0 and (best is None or d < best):
                 best = d
     return best
@@ -243,16 +251,19 @@ def poll_once(exec_client=None, verbose=True):
         ext = sustained_extreme(feed["obs"], kind)
         if ext is None:
             ext = feed["extreme_f"]
+        # per-station risk derate (Track B / Tier-1): high-disagreement stations get a higher margin + smaller size
+        st_margin = STATION_MARGIN.get(station, MARGIN_F)
+        st_size = max(1, round(DEFAULT_SIZE * STATION_SIZE_MULT.get(station, 1.0)))
         # cadence signal
-        dist = nearest_strike_distance(rungs, ext, kind)
+        dist = nearest_strike_distance(rungs, ext, kind, margin=st_margin)
         iv = adaptive_interval_s(dist)
         min_interval = iv if min_interval is None else min(min_interval, iv)
         # fire locked rungs not already fired
-        for ticker, side, cap_c in locked_orders(rungs, ext, kind):
+        for ticker, side, cap_c in locked_orders(rungs, ext, kind, margin=st_margin):
             if ticker in state["fired"]:
                 continue
             fn = ex.buy_yes if side == "yes" else ex.buy_no
-            res = fn(ticker, count=DEFAULT_SIZE, max_price_cents=cap_c)
+            res = fn(ticker, count=st_size, max_price_cents=cap_c)
             plan = {"ticker": ticker, "side": side, "cap_c": cap_c, "extreme_f": ext,
                     "station": station, "kind": kind, "status": res.get("status"),
                     "ts": int(time.time() * 1000)}

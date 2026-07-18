@@ -2683,3 +2683,34 @@ CONSEQUENCE — the "full dataset" splits into two tracks, and the honest re-val
     CLI disagreement + lock-failure rate across many years AND all seasons for the ~20 settlement stations -> the all-season tail
     the warm-season price sample structurally cannot reveal (winter radiational cooling / frontal passages may differ). This is
     where "multi-year" genuinely applies and is the risk backbone. Deployable sizing = Track-A EV with Track-B worst-case tail.
+
+## PHASE-2 SYNTHESIS (2026-07-18) — K-WX weather-nowcast: CONFIRMED & deployable, gated on ONE hard blocker (real-time feed)
+All four studies + both tracks landed. The edge is REAL, robust, and survives every stress test — but the
+honest deployable number is below the headline, and one infrastructure blocker gates going live.
+TRACK A (price EV, full all-city ladder, 67d = the complete Kalshi history): CONFIRMED. margin1/sustain3,
+  n=3891 fires, +0.091/ct pooled t=31.9; DEPLOYABLE (price<99c) n=1698, +0.207/ct t=37.4. Walk-forward holds.
+  BUT 63% dead-on-arrival (already ~100c); gap HALF-LIFE = 3.3 min; brackets >> ">X" rung; KXLOW >= KXHIGH.
+TRACK B (tail, MULTI-YEAR 2021-2026, 120 station-yrs, ALL seasons — the winter the price sample can't see):
+  OUR rule glitch+sustain3/margin1 = 0.4% all-season conditional loss (Wilson 0.4%); winter NOT worse
+  (DJF 0.3% vs JJA 0.5%). Matches Track A's summer deployable loss (0.35%). UPDATE: glitch+sustain3 (0.4%)
+  BEATS the METAR-confirmation gate (7.9%) for tail control — supersedes the CLIBASIS claim that METAR-gate
+  was the primary tail-shrink; METAR's role is the LIVE feed (latency), glitch+sustain3 is the tail control.
+  Worst stations (obs-vs-CLI): KPHX 23% > KLAX 21% > KMIA 20% > KPHL/KSEA ~18% (raw1min m1); KMDW/KMSP best.
+TIER-1 (deployability): deployable +0.207 is REAL not adverse-selected, but COMPENSATED risk (deployable loss
+  0.35% = 7.7x DOA; all 6 losses HIGH-family between-rung glitch reversals; Phoenix outlier 6.25%). sustain=3
+  reconfirmed (sustain=1 -> 13.7% glitch losses). Real capacity ~$1.1-1.6k/wk (books bimodal, 21% EMPTY at
+  fire instant). NO correlated tail in-sample (0 net-negative days, cross-city corr ~0) — precautionary
+  per-city daily cap 15-20% anyway (67d can't rule out heat-dome contagion).
+TIER-2 (infra): (5) REAL-TIME FEED IS THE BLOCKER — measured api.weather.gov at 16-24min lag (too slow vs
+  3.3min half-life); METAR hourly useless for detection; ONLY Synoptic HF-ASOS is true ~1-min but needs
+  PAID/commercial signup + was DOWN 2023->Jan2026 (reliability flag) -> lands us at the OUTER edge of the
+  act@2-5min band. (7) Kalshi position limit = 25k contracts/strike/member — NON-binding (book depth 5-100ct
+  binds 250-5000x first).
+NET REALISTIC EV: at the best obtainable feed latency (Synoptic ~2-5min), captured EV ~+0.15-0.17/ct (Track A
+  latency table), NOT +0.207 (which needs act@0). Free feeds (16-24min) -> gap mostly gone -> not viable.
+FROZEN CONFIG (baked into kwx_runner.py): margin=1 base, sustain=3, max-pay 98c; per-station derate (KPHX
+  margin3/size0.25; KLAX/KMIA/KPHL/KSEA margin2/size0.5); per-city daily cap 17.5%. Position limits non-binding.
+DEPLOY GATES (all human, none automatable): (a) Synoptic HF-ASOS paid feed [THE blocker], (b) persistent
+  low-latency host (GH-Actions fatal), (c) Kalshi API creds in gitignored .kalshi_creds + KWX_LIVE=1,
+  (d) forward paper gate (kwx_forward.py) must show live==tested (win~99.6%, EV~+0.20, n>=30) BEFORE capital,
+  (e) start tiny, scale on realized PnL. VERDICT: deployable small-capital high-% edge; the feed is the crux.
