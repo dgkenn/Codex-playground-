@@ -1,0 +1,777 @@
+{
+  "generated": "2026-07-18T05:29:53.148997+00:00",
+  "n_tests": 9,
+  "bonferroni_t": 2.77,
+  "categories": {
+    "CRYPTO": {
+      "n_band": 601,
+      "n_filled": 601,
+      "n_notaker": 0,
+      "weeks": 49,
+      "mean_entry": 0.21807951094399516,
+      "m_eq": 0.09018079348054357,
+      "t_eq": 3.7329710560248524,
+      "m_yesbuyvol": 0.09001922097920888,
+      "t_yesbuyvol": 2.8751440779799298,
+      "t_day": 4.823481188509934,
+      "winrate": 89.6838602329451,
+      "worst_week": [
+        "2025-W40",
+        -0.4352836853241856
+      ],
+      "pct_neg_weeks": 24.489795918367346,
+      "unw_yes": 0.10316139767054909,
+      "w_yes_share": 0.085035862224747,
+      "cap_total_yesbuy_usd": 554124.3344844456,
+      "cap_per_week": 11308.659887437665,
+      "calib": [
+        [
+          0.1,
+          0.175,
+          125,
+          0.16216205433697573,
+          0.064
+        ],
+        [
+          0.175,
+          0.25,
+          311,
+          0.2107297969187222,
+          0.09967845659163987
+        ],
+        [
+          0.25,
+          0.325,
+          165,
+          0.2742943178393731,
+          0.1393939393939394
+        ]
+      ]
+    },
+    "WEATHER": {
+      "n_band": 1719,
+      "n_filled": 1690,
+      "n_notaker": 29,
+      "weeks": 6,
+      "mean_entry": 0.20767080010154287,
+      "m_eq": -0.12203640193666258,
+      "t_eq": -0.8403486504722931,
+      "m_yesbuyvol": -0.12104362972315365,
+      "t_yesbuyvol": -0.8313074026966641,
+      "t_day": -0.9363136116304336,
+      "winrate": 80.53254437869822,
+      "worst_week": [
+        "2026-W13",
+        -0.8401588528487987
+      ],
+      "pct_neg_weeks": 66.66666666666667,
+      "unw_yes": 0.19467455621301774,
+      "w_yes_share": 0.2082216290925983,
+      "cap_total_yesbuy_usd": 172588.59985688247,
+      "cap_per_week": 28764.766642813745,
+      "calib": [
+        [
+          0.1,
+          0.175,
+          606,
+          0.13540609293379338,
+          0.0924092409240924
+        ],
+        [
+          0.175,
+          0.25,
+          587,
+          0.21049510177900202,
+          0.20783645655877342
+        ],
+        [
+          0.25,
+          0.325,
+          425,
+          0.2847570604933854,
+          0.3129411764705882
+        ],
+        [
+          0.325,
+          0.35,
+          72,
+          0.3378497833300784,
+          0.25
+        ]
+      ]
+    },
+    "SCITECH": {
+      "n_band": 597,
+      "n_filled": 366,
+      "n_notaker": 231,
+      "weeks": 25,
+      "mean_entry": 0.19943285331486907,
+      "m_eq": 0.04457269879291003,
+      "t_eq": 1.8679223558200193,
+      "m_yesbuyvol": 0.0007140784119371124,
+      "t_yesbuyvol": 0.014443953384077427,
+      "t_day": 2.43909499405859,
+      "winrate": 86.6120218579235,
+      "worst_week": [
+        "2026-W11",
+        -0.2427409948680746
+      ],
+      "pct_neg_weeks": 28.0,
+      "unw_yes": 0.13387978142076504,
+      "w_yes_share": 0.16721619934602125,
+      "cap_total_yesbuy_usd": 107456.13825554536,
+      "cap_per_week": 4298.245530221814,
+      "calib": [
+        [
+          0.1,
+          0.175,
+          163,
+          0.1356147385439878,
+          0.09202453987730061
+        ],
+        [
+          0.175,
+          0.25,
+          108,
+          0.20668608468617103,
+          0.1388888888888889
+        ],
+        [
+          0.25,
+          0.325,
+          70,
+          0.2874659482477345,
+          0.21428571428571427
+        ],
+        [
+          0.325,
+          0.35,
+          25,
+          0.3377003362849672,
+          0.16
+        ]
+      ]
+    },
+    "ENTERTAINMENT": {
+      "n_band": 695,
+      "n_filled": 327,
+      "n_notaker": 368,
+      "weeks": 13,
+      "mean_entry": 0.20406197984696078,
+      "m_eq": 0.0746397889638891,
+      "t_eq": 4.5347085589585685,
+      "m_yesbuyvol": 0.005501871431001651,
+      "t_yesbuyvol": 0.10526907240944428,
+      "t_day": 1.784617835543415,
+      "winrate": 90.51987767584097,
+      "worst_week": [
+        "2026-W28",
+        -0.04214418052647264
+      ],
+      "pct_neg_weeks": 7.6923076923076925,
+      "unw_yes": 0.09480122324159021,
+      "w_yes_share": 0.22533635698799273,
+      "cap_total_yesbuy_usd": 80808.39096428189,
+      "cap_per_week": 6216.03007417553,
+      "calib": [
+        [
+          0.1,
+          0.175,
+          138,
+          0.13265440018729496,
+          0.043478260869565216
+        ],
+        [
+          0.175,
+          0.25,
+          84,
+          0.21217486832647325,
+          0.07142857142857142
+        ],
+        [
+          0.25,
+          0.325,
+          91,
+          0.28437912152288913,
+          0.17582417582417584
+        ],
+        [
+          0.325,
+          0.35,
+          14,
+          0.33719794186448654,
+          0.21428571428571427
+        ]
+      ]
+    },
+    "ECON": {
+      "n_band": 436,
+      "n_filled": 237,
+      "n_notaker": 199,
+      "weeks": 45,
+      "mean_entry": 0.2010990675917389,
+      "m_eq": 0.06464566412091545,
+      "t_eq": 2.1989745981838644,
+      "m_yesbuyvol": 0.08388788217917499,
+      "t_yesbuyvol": 2.5928157750865526,
+      "t_day": 3.0434411243597728,
+      "winrate": 89.0295358649789,
+      "worst_week": [
+        "2025-W23",
+        -0.7158626112005
+      ],
+      "pct_neg_weeks": 31.11111111111111,
+      "unw_yes": 0.10970464135021098,
+      "w_yes_share": 0.12040752695873051,
+      "cap_total_yesbuy_usd": 158780.92742031216,
+      "cap_per_week": 3528.4650537847147,
+      "calib": [
+        [
+          0.1,
+          0.175,
+          114,
+          0.13757285120375964,
+          0.06140350877192982
+        ],
+        [
+          0.175,
+          0.25,
+          54,
+          0.21114125383009896,
+          0.12962962962962962
+        ],
+        [
+          0.25,
+          0.325,
+          53,
+          0.2864228185609032,
+          0.20754716981132076
+        ],
+        [
+          0.325,
+          0.35,
+          16,
+          0.33719605571626965,
+          0.0625
+        ]
+      ]
+    },
+    "BUSINESS": {
+      "n_band": 36,
+      "n_filled": 18,
+      "n_notaker": 18,
+      "weeks": 7,
+      "mean_entry": 0.21398907457872599,
+      "m_eq": 0.1700857443027161,
+      "t_eq": 4.147364676900362,
+      "m_yesbuyvol": 0.1854949536472806,
+      "t_yesbuyvol": 5.252514745030664,
+      "t_day": 4.443229110609716,
+      "winrate": 94.44444444444444,
+      "worst_week": [
+        "2024-W18",
+        -0.03423062723275149
+      ],
+      "pct_neg_weeks": 14.285714285714286,
+      "unw_yes": 0.05555555555555555,
+      "w_yes_share": 0.13719856154425325,
+      "cap_total_yesbuy_usd": 16318.186334883,
+      "cap_per_week": 2331.169476411857,
+      "calib": [
+        [
+          0.1,
+          0.175,
+          6,
+          0.12419253059462776,
+          0.0
+        ],
+        [
+          0.175,
+          0.25,
+          5,
+          0.21840394130294252,
+          0.2
+        ],
+        [
+          0.25,
+          0.325,
+          6,
+          0.28147233248596004,
+          0.0
+        ],
+        [
+          0.325,
+          0.35,
+          1,
+          0.3257944574188283,
+          0.0
+        ]
+      ]
+    },
+    "ELECTIONS": {
+      "n_band": 346,
+      "n_filled": 236,
+      "n_notaker": 110,
+      "weeks": 25,
+      "mean_entry": 0.20364578506411019,
+      "m_eq": 0.015623564335223154,
+      "t_eq": 0.6311954092669859,
+      "m_yesbuyvol": -0.015970587027853946,
+      "t_yesbuyvol": -0.3710716408902992,
+      "t_day": -0.5055852763128743,
+      "winrate": 81.35593220338984,
+      "worst_week": [
+        "2026-W25",
+        -0.26393600444024035
+      ],
+      "pct_neg_weeks": 52.0,
+      "unw_yes": 0.1864406779661017,
+      "w_yes_share": 0.2660610882184264,
+      "cap_total_yesbuy_usd": 52928.04439855943,
+      "cap_per_week": 2117.121775942377,
+      "calib": [
+        [
+          0.1,
+          0.175,
+          97,
+          0.13893982174116462,
+          0.1134020618556701
+        ],
+        [
+          0.175,
+          0.25,
+          74,
+          0.20779140101438093,
+          0.16216216216216217
+        ],
+        [
+          0.25,
+          0.325,
+          51,
+          0.28384562296902205,
+          0.27450980392156865
+        ],
+        [
+          0.325,
+          0.35,
+          14,
+          0.33789657998233713,
+          0.5
+        ]
+      ]
+    },
+    "GEOPOL": {
+      "n_band": 396,
+      "n_filled": 352,
+      "n_notaker": 44,
+      "weeks": 73,
+      "mean_entry": 0.20728430873445197,
+      "m_eq": 0.019667825889509716,
+      "t_eq": 0.6672182150106492,
+      "m_yesbuyvol": -0.000538465662940212,
+      "t_yesbuyvol": -0.013672570540335825,
+      "t_day": 0.2725084563327476,
+      "winrate": 84.0909090909091,
+      "worst_week": [
+        "2026-W06",
+        -0.8728435996210868
+      ],
+      "pct_neg_weeks": 32.87671232876713,
+      "unw_yes": 0.1590909090909091,
+      "w_yes_share": 0.2955351021429426,
+      "cap_total_yesbuy_usd": 1695395.4704686427,
+      "cap_per_week": 23224.595485871818,
+      "calib": [
+        [
+          0.1,
+          0.175,
+          135,
+          0.13472125178652716,
+          0.11851851851851852
+        ],
+        [
+          0.175,
+          0.25,
+          115,
+          0.21101621133210377,
+          0.16521739130434782
+        ],
+        [
+          0.25,
+          0.325,
+          82,
+          0.29001538009765104,
+          0.17073170731707318
+        ],
+        [
+          0.325,
+          0.35,
+          20,
+          0.33642911060733083,
+          0.35
+        ]
+      ]
+    },
+    "SPORTS": {
+      "n_band": 385,
+      "n_filled": 356,
+      "n_notaker": 29,
+      "weeks": 26,
+      "mean_entry": 0.2223960475942858,
+      "m_eq": 0.02725958561800793,
+      "t_eq": 0.9806310057755767,
+      "m_yesbuyvol": 0.06524334922984364,
+      "t_yesbuyvol": 2.018083128793761,
+      "t_day": 0.005623932020830734,
+      "winrate": 77.52808988764045,
+      "worst_week": [
+        "2024-W17",
+        -0.29145823573271606
+      ],
+      "pct_neg_weeks": 42.30769230769231,
+      "unw_yes": 0.2247191011235955,
+      "w_yes_share": 0.1768940544045072,
+      "cap_total_yesbuy_usd": 89272.21195649891,
+      "cap_per_week": 3433.546613711497,
+      "calib": [
+        [
+          0.1,
+          0.175,
+          97,
+          0.13929233670673022,
+          0.16494845360824742
+        ],
+        [
+          0.175,
+          0.25,
+          126,
+          0.2130623458249246,
+          0.16666666666666666
+        ],
+        [
+          0.25,
+          0.325,
+          110,
+          0.2823759961550296,
+          0.3090909090909091
+        ],
+        [
+          0.325,
+          0.35,
+          23,
+          0.3371487448703981,
+          0.391304347826087
+        ]
+      ]
+    },
+    "POLITICS": {
+      "n_band": 286,
+      "n_filled": 283,
+      "n_notaker": 3,
+      "weeks": 32,
+      "mean_entry": 0.21403942480867214,
+      "m_eq": 0.023605690366844047,
+      "t_eq": 0.7810235455708411,
+      "m_yesbuyvol": -0.04058118472145829,
+      "t_yesbuyvol": -0.7715937155706235,
+      "t_day": 0.18836335357800835,
+      "winrate": 81.2720848056537,
+      "worst_week": [
+        "2024-W28",
+        -0.33361537198647345
+      ],
+      "pct_neg_weeks": 40.625,
+      "unw_yes": 0.1872791519434629,
+      "w_yes_share": 0.25918164531004656,
+      "cap_total_yesbuy_usd": 648654.8281453361,
+      "cap_per_week": 20270.463379541754,
+      "calib": [
+        [
+          0.1,
+          0.175,
+          100,
+          0.13588245650479014,
+          0.1
+        ],
+        [
+          0.175,
+          0.25,
+          81,
+          0.21299268076424202,
+          0.1728395061728395
+        ],
+        [
+          0.25,
+          0.325,
+          82,
+          0.2802757664389247,
+          0.3048780487804878
+        ],
+        [
+          0.325,
+          0.35,
+          20,
+          0.337494579023988,
+          0.2
+        ]
+      ]
+    }
+  },
+  "verdict": {
+    "WEATHER": "UNDERPOWERED",
+    "SCITECH": "MARGINAL (positive, t<2)",
+    "ENTERTAINMENT": "UNDERPOWERED",
+    "ECON": "REAL-nominal (t\u22652 but < Bonferroni)",
+    "BUSINESS": "UNDERPOWERED",
+    "ELECTIONS": "NULL/negative",
+    "GEOPOL": "NULL/negative",
+    "SPORTS": "REAL-nominal (t\u22652 but < Bonferroni)",
+    "POLITICS": "NULL/negative"
+  },
+  "corr_vs_crypto": {
+    "CRYPTO": {
+      "corr": 1.0,
+      "n_common": 49
+    },
+    "WEATHER": {
+      "corr": null,
+      "n_common": 6
+    },
+    "SCITECH": {
+      "corr": -0.13555455032510574,
+      "n_common": 25
+    },
+    "ENTERTAINMENT": {
+      "corr": 0.2929653808204742,
+      "n_common": 13
+    },
+    "ECON": {
+      "corr": -0.05432353381606771,
+      "n_common": 30
+    },
+    "BUSINESS": {
+      "corr": null,
+      "n_common": 4
+    },
+    "ELECTIONS": {
+      "corr": -0.027878936434416846,
+      "n_common": 25
+    },
+    "GEOPOL": {
+      "corr": -0.07697813420691464,
+      "n_common": 38
+    },
+    "SPORTS": {
+      "corr": null,
+      "n_common": 0
+    },
+    "POLITICS": {
+      "corr": null,
+      "n_common": 0
+    }
+  },
+  "corr_matrix": {
+    "CRYPTO|CRYPTO": 1.0,
+    "CRYPTO|WEATHER": NaN,
+    "CRYPTO|SCITECH": -0.13555455032510574,
+    "CRYPTO|ENTERTAINMENT": 0.29296538082047413,
+    "CRYPTO|ECON": -0.05432353381606771,
+    "CRYPTO|BUSINESS": NaN,
+    "CRYPTO|ELECTIONS": -0.027878936434416846,
+    "CRYPTO|GEOPOL": -0.07697813420691464,
+    "CRYPTO|SPORTS": NaN,
+    "CRYPTO|POLITICS": NaN,
+    "WEATHER|CRYPTO": NaN,
+    "WEATHER|WEATHER": 1.0,
+    "WEATHER|SCITECH": NaN,
+    "WEATHER|ENTERTAINMENT": NaN,
+    "WEATHER|ECON": NaN,
+    "WEATHER|BUSINESS": NaN,
+    "WEATHER|ELECTIONS": NaN,
+    "WEATHER|GEOPOL": NaN,
+    "WEATHER|SPORTS": NaN,
+    "WEATHER|POLITICS": NaN,
+    "SCITECH|CRYPTO": -0.13555455032510574,
+    "SCITECH|WEATHER": NaN,
+    "SCITECH|SCITECH": 1.0,
+    "SCITECH|ENTERTAINMENT": -0.48909108150142805,
+    "SCITECH|ECON": 0.028260943513503396,
+    "SCITECH|BUSINESS": NaN,
+    "SCITECH|ELECTIONS": 0.14939219486361538,
+    "SCITECH|GEOPOL": -0.0700033632520414,
+    "SCITECH|SPORTS": NaN,
+    "SCITECH|POLITICS": NaN,
+    "ENTERTAINMENT|CRYPTO": 0.2929653808204742,
+    "ENTERTAINMENT|WEATHER": NaN,
+    "ENTERTAINMENT|SCITECH": -0.48909108150142805,
+    "ENTERTAINMENT|ENTERTAINMENT": 1.0,
+    "ENTERTAINMENT|ECON": NaN,
+    "ENTERTAINMENT|BUSINESS": NaN,
+    "ENTERTAINMENT|ELECTIONS": -0.19895107521894972,
+    "ENTERTAINMENT|GEOPOL": NaN,
+    "ENTERTAINMENT|SPORTS": NaN,
+    "ENTERTAINMENT|POLITICS": NaN,
+    "ECON|CRYPTO": -0.05432353381606771,
+    "ECON|WEATHER": NaN,
+    "ECON|SCITECH": 0.028260943513503393,
+    "ECON|ENTERTAINMENT": NaN,
+    "ECON|ECON": 1.0,
+    "ECON|BUSINESS": NaN,
+    "ECON|ELECTIONS": 0.3122842855971962,
+    "ECON|GEOPOL": -0.17073535597384226,
+    "ECON|SPORTS": NaN,
+    "ECON|POLITICS": NaN,
+    "BUSINESS|CRYPTO": NaN,
+    "BUSINESS|WEATHER": NaN,
+    "BUSINESS|SCITECH": NaN,
+    "BUSINESS|ENTERTAINMENT": NaN,
+    "BUSINESS|ECON": NaN,
+    "BUSINESS|BUSINESS": 1.0,
+    "BUSINESS|ELECTIONS": NaN,
+    "BUSINESS|GEOPOL": NaN,
+    "BUSINESS|SPORTS": NaN,
+    "BUSINESS|POLITICS": NaN,
+    "ELECTIONS|CRYPTO": -0.027878936434416846,
+    "ELECTIONS|WEATHER": NaN,
+    "ELECTIONS|SCITECH": 0.14939219486361538,
+    "ELECTIONS|ENTERTAINMENT": -0.19895107521894972,
+    "ELECTIONS|ECON": 0.31228428559719623,
+    "ELECTIONS|BUSINESS": NaN,
+    "ELECTIONS|ELECTIONS": 1.0,
+    "ELECTIONS|GEOPOL": -0.14482103757529585,
+    "ELECTIONS|SPORTS": NaN,
+    "ELECTIONS|POLITICS": NaN,
+    "GEOPOL|CRYPTO": -0.07697813420691464,
+    "GEOPOL|WEATHER": NaN,
+    "GEOPOL|SCITECH": -0.0700033632520414,
+    "GEOPOL|ENTERTAINMENT": NaN,
+    "GEOPOL|ECON": -0.17073535597384223,
+    "GEOPOL|BUSINESS": NaN,
+    "GEOPOL|ELECTIONS": -0.14482103757529585,
+    "GEOPOL|GEOPOL": 1.0,
+    "GEOPOL|SPORTS": 0.1294422363003319,
+    "GEOPOL|POLITICS": -0.1735176806653827,
+    "SPORTS|CRYPTO": NaN,
+    "SPORTS|WEATHER": NaN,
+    "SPORTS|SCITECH": NaN,
+    "SPORTS|ENTERTAINMENT": NaN,
+    "SPORTS|ECON": NaN,
+    "SPORTS|BUSINESS": NaN,
+    "SPORTS|ELECTIONS": NaN,
+    "SPORTS|GEOPOL": 0.1294422363003319,
+    "SPORTS|SPORTS": 1.0,
+    "SPORTS|POLITICS": -0.23454247736665945,
+    "POLITICS|CRYPTO": NaN,
+    "POLITICS|WEATHER": NaN,
+    "POLITICS|SCITECH": NaN,
+    "POLITICS|ENTERTAINMENT": NaN,
+    "POLITICS|ECON": NaN,
+    "POLITICS|BUSINESS": NaN,
+    "POLITICS|ELECTIONS": NaN,
+    "POLITICS|GEOPOL": -0.17351768066538267,
+    "POLITICS|SPORTS": -0.23454247736665945,
+    "POLITICS|POLITICS": 1.0
+  },
+  "corr_overlap_n": {
+    "CRYPTO|CRYPTO": 49,
+    "CRYPTO|WEATHER": 6,
+    "CRYPTO|SCITECH": 25,
+    "CRYPTO|ENTERTAINMENT": 13,
+    "CRYPTO|ECON": 30,
+    "CRYPTO|BUSINESS": 4,
+    "CRYPTO|ELECTIONS": 25,
+    "CRYPTO|GEOPOL": 38,
+    "CRYPTO|SPORTS": 0,
+    "CRYPTO|POLITICS": 0,
+    "WEATHER|CRYPTO": 6,
+    "WEATHER|WEATHER": 6,
+    "WEATHER|SCITECH": 6,
+    "WEATHER|ENTERTAINMENT": 0,
+    "WEATHER|ECON": 6,
+    "WEATHER|BUSINESS": 0,
+    "WEATHER|ELECTIONS": 3,
+    "WEATHER|GEOPOL": 6,
+    "WEATHER|SPORTS": 0,
+    "WEATHER|POLITICS": 0,
+    "SCITECH|CRYPTO": 25,
+    "SCITECH|WEATHER": 6,
+    "SCITECH|SCITECH": 25,
+    "SCITECH|ENTERTAINMENT": 13,
+    "SCITECH|ECON": 17,
+    "SCITECH|BUSINESS": 2,
+    "SCITECH|ELECTIONS": 16,
+    "SCITECH|GEOPOL": 16,
+    "SCITECH|SPORTS": 0,
+    "SCITECH|POLITICS": 0,
+    "ENTERTAINMENT|CRYPTO": 13,
+    "ENTERTAINMENT|WEATHER": 0,
+    "ENTERTAINMENT|SCITECH": 13,
+    "ENTERTAINMENT|ENTERTAINMENT": 13,
+    "ENTERTAINMENT|ECON": 6,
+    "ENTERTAINMENT|BUSINESS": 0,
+    "ENTERTAINMENT|ELECTIONS": 10,
+    "ENTERTAINMENT|GEOPOL": 5,
+    "ENTERTAINMENT|SPORTS": 0,
+    "ENTERTAINMENT|POLITICS": 0,
+    "ECON|CRYPTO": 30,
+    "ECON|WEATHER": 6,
+    "ECON|SCITECH": 17,
+    "ECON|ENTERTAINMENT": 6,
+    "ECON|ECON": 45,
+    "ECON|BUSINESS": 3,
+    "ECON|ELECTIONS": 17,
+    "ECON|GEOPOL": 36,
+    "ECON|SPORTS": 0,
+    "ECON|POLITICS": 5,
+    "BUSINESS|CRYPTO": 4,
+    "BUSINESS|WEATHER": 0,
+    "BUSINESS|SCITECH": 2,
+    "BUSINESS|ENTERTAINMENT": 0,
+    "BUSINESS|ECON": 3,
+    "BUSINESS|BUSINESS": 7,
+    "BUSINESS|ELECTIONS": 1,
+    "BUSINESS|GEOPOL": 4,
+    "BUSINESS|SPORTS": 2,
+    "BUSINESS|POLITICS": 2,
+    "ELECTIONS|CRYPTO": 25,
+    "ELECTIONS|WEATHER": 3,
+    "ELECTIONS|SCITECH": 16,
+    "ELECTIONS|ENTERTAINMENT": 10,
+    "ELECTIONS|ECON": 17,
+    "ELECTIONS|BUSINESS": 1,
+    "ELECTIONS|ELECTIONS": 25,
+    "ELECTIONS|GEOPOL": 19,
+    "ELECTIONS|SPORTS": 0,
+    "ELECTIONS|POLITICS": 0,
+    "GEOPOL|CRYPTO": 38,
+    "GEOPOL|WEATHER": 6,
+    "GEOPOL|SCITECH": 16,
+    "GEOPOL|ENTERTAINMENT": 5,
+    "GEOPOL|ECON": 36,
+    "GEOPOL|BUSINESS": 4,
+    "GEOPOL|ELECTIONS": 19,
+    "GEOPOL|GEOPOL": 73,
+    "GEOPOL|SPORTS": 11,
+    "GEOPOL|POLITICS": 12,
+    "SPORTS|CRYPTO": 0,
+    "SPORTS|WEATHER": 0,
+    "SPORTS|SCITECH": 0,
+    "SPORTS|ENTERTAINMENT": 0,
+    "SPORTS|ECON": 0,
+    "SPORTS|BUSINESS": 2,
+    "SPORTS|ELECTIONS": 0,
+    "SPORTS|GEOPOL": 11,
+    "SPORTS|SPORTS": 26,
+    "SPORTS|POLITICS": 18,
+    "POLITICS|CRYPTO": 0,
+    "POLITICS|WEATHER": 0,
+    "POLITICS|SCITECH": 0,
+    "POLITICS|ENTERTAINMENT": 0,
+    "POLITICS|ECON": 5,
+    "POLITICS|BUSINESS": 2,
+    "POLITICS|ELECTIONS": 0,
+    "POLITICS|GEOPOL": 12,
+    "POLITICS|SPORTS": 18,
+    "POLITICS|POLITICS": 32
+  }
+}

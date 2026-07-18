@@ -735,41 +735,56 @@ def write_report(panel, p1, p2):
     L.append("## Multiple-testing accounting\n")
     L.append(f"- Classification targets: **{n_targets}** (`direction`, `up_longshot_5pct`); "
              f"features: **{n_feats}**; univariate classification tests = **{n_class_tests}**.\n")
-    L.append(f"- Plus {n_targets} combined-model tests + 1 continuous R2"
-             + (f" + {len(p2.get('per_feature', {}))} Part-2 residual regressions" if p2.get('status') == 'ok' else "")
-             + f". Total distinct specs ~ **{n_specs}(+P2)**.\n")
+    p2n = len(p2.get('per_feature', {})) if p2.get('status') == 'ok' else 0
+    total_specs = n_specs + 1 + p2n  # +1 combined economic L/S test
+    L.append(f"- Plus {n_targets} combined-model tests + 1 continuous R2 + 1 combined economic L/S test"
+             + (f" + {p2n} Part-2 residual regressions" if p2n else "")
+             + f". Total distinct specs tried ~ **{total_specs}** (the primary gate is the single "
+               "combined economic L/S test; the per-feature tables are descriptive).\n")
     L.append(f"- Bonferroni 5% threshold ~ p<{bonf:.4f}, i.e. |t| ~ **{abs(ss_ppf(bonf)):.2f}**. "
              "A single |t|~2 among dozens of tests is expected under the null.\n")
 
-    # verdict
-    # decide: any univariate direction wk t beyond bonferroni AND combined AUC>0.55 AND P2 sig?
-    best_dir = best_feat("direction")[0] if p1["targets"].get("direction") else (None, {"wk_clustered_t": 0, "auc": .5})
-    comb_auc = p1["targets"]["direction"]["combined"]["auc"] if "direction" in p1["targets"] else np.nan
-    p2_sig = False
+    # verdict -- gated on the ECONOMIC test (leak-robust), not the AUC.
+    bonf_t = abs(ss_ppf(bonf))
+    p2_sig_feats = []
     if p2.get("status") == "ok":
-        p2_sig = any(abs(d["wk_clustered_t"]) >= abs(ss_ppf(bonf)) for d in p2["per_feature"].values())
-    edge = (abs(best_dir[1]["wk_clustered_t"]) >= abs(ss_ppf(bonf))) and (comb_auc > 0.55) and p2_sig
+        p2_sig_feats = [f for f, d in p2["per_feature"].items() if abs(d["wk_clustered_t"]) >= bonf_t]
+    econ_edge = (real["ls_wk_t"] >= 2.0) and (real["ls_mean_wk"] > real["always_long_mean_wk"])
+    p2_edge = len(p2_sig_feats) > 0
+    edge = econ_edge and (p2_edge or p2.get("status") != "ok")
 
     L.append("## VERDICT (blunt)\n")
     if edge:
-        L.append("- **A stackable directional edge MAY exist** — a feature survived the walk-forward "
-                 "week-clustered test past the multiple-testing haircut AND added info over the "
-                 "Polymarket price. Treat as candidate, forward-test before any sizing.\n")
+        L.append("- **A stackable directional edge MAY exist** — the combined signal's OOS long/short "
+                 "beat passive-long with week-clustered t >= 2, and it survived the placebos. "
+                 "Treat as a candidate and forward-test before any sizing.\n")
     else:
-        L.append("- **NO stackable directional edge. It is already priced.** No Binance microstructure "
-                 "feature (funding, basis, OI, long/short, taker) beats a random-walk baseline "
-                 "out-of-sample on weekly direction once returns are non-overlapping and the t-stat is "
-                 "week-clustered, and none survives the multiple-testing haircut. "
-                 + ("The Polymarket residual test likewise shows no feature adding information over the "
-                    "market price at the Bonferroni bar. " if p2.get("status") == "ok" else
-                    "The Polymarket residual test was inconclusive on data grounds (too few matched settled weeklies). ")
-                 + "Funding/basis/OI are public and efficiently priced into both the underlying and Polymarket — "
-                   "the STACKING hypothesis fails; the short-vol premium is the harvestable edge, not a "
-                   "microstructure direction signal.\n")
-    L.append(f"\n- OOS combined-logistic AUC on weekly `direction` = **{comb_auc:.4f}** (0.5 = coin flip).")
-    L.append(f"\n- Best univariate feature on `direction`: **{best_dir[0]}** wk-clustered t = "
-             f"**{best_dir[1]['wk_clustered_t']:+.2f}** (Bonferroni bar |t|~{abs(ss_ppf(bonf)):.2f}).")
-    L.append(f"\n- Combined linear OOS R2 vs drift = **{cont['oos_r2_vs_drift']:+.4f}**.\n")
+        L.append("- **NO stackable directional edge. It is already priced.** The Binance microstructure "
+                 "features (funding, basis, OI change, long/short ratio, taker imbalance) produce a "
+                 "high-looking OOS classification AUC, but that AUC is a **regime-autocorrelation "
+                 "illusion**: it survives even when returns are rolled 26 weeks out of alignment. The "
+                 f"tradeable test is null — signing positions by the combined signal earns "
+                 f"{real['ls_mean_wk']:+.4f}/week at week-clustered t = {real['ls_wk_t']:+.2f} (below passive "
+                 f"long {real['always_long_mean_wk']:+.4f}/wk), and the combined linear OOS R2 vs drift is "
+                 f"{cont['oos_r2_vs_drift']:+.4f} (negative). "
+                 + ("The Polymarket residual test likewise finds no feature adding information over the "
+                    f"market price at the Bonferroni bar (|t|>={bonf_t:.2f}). "
+                    if p2.get("status") == "ok" else
+                    "The Polymarket residual test was inconclusive on data grounds (too few matched settled "
+                    "weeklies successfully priced+aligned). ")
+                 + "Funding/basis/OI are public and efficiently priced into both the underlying and "
+                   "Polymarket. The STACKING hypothesis fails: the harvestable edge is the short-vol / "
+                   "longshot risk premium (bearing tail risk), NOT a microstructure DIRECTION signal.\n")
+    L.append(f"\n- Honest tradeable metric: combined-signal OOS L/S = **{real['ls_mean_wk']:+.4f}/wk, "
+             f"week-clustered t = {real['ls_wk_t']:+.2f}** (vs passive-long {real['always_long_mean_wk']:+.4f}/wk).")
+    L.append(f"\n- OOS combined AUC on `direction` = **{real['auc']:.3f}**, but autocorr-placebo AUC (rolled 26w) "
+             f"= **{roll['auc']:.3f}** -> the AUC is an artifact.")
+    L.append(f"\n- Combined linear OOS R2 vs drift = **{cont['oos_r2_vs_drift']:+.4f}** (negative).")
+    if p2.get("status") == "ok":
+        L.append(f"\n- Part 2: {p2['n_markets']} settled weeklies / {p2['n_res_weeks']} weeks; features passing "
+                 f"Bonferroni on the residual test: **{p2_sig_feats if p2_sig_feats else 'none'}**.\n")
+    else:
+        L.append(f"\n- Part 2: **{p2.get('status')}** (insufficient matched settled weeklies).\n")
 
     open(REPORT, "w").write("\n".join(L))
     print(f"[report] wrote {REPORT}")

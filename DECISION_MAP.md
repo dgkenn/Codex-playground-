@@ -2151,3 +2151,23 @@ records 62 pairs for later settle). Verified independently from summary JSON.
 VERDICT: NULL. Deribit does not sharpen selection (adds ~nothing beyond p; residual is flat, no dispersion). Reaffirms the
 edge is REAL (better calibration-in-level) but calibration != selection power. Consistent with prior Deribit cross-market null.
 Campaign W1-a done. (Incremental Brier/PnL split DEFERRED to forward settle after 07-20/21/24 resolve.)
+
+## XCAT-LONGSHOT (2026-07-18, campaign W2-a) — no large non-crypto uncorrelated twin; best diversifier is ECON (small, nominal): NULL-of-lift
+Scanned 9 non-crypto categories for a sellable longshot-overpricing premium that is UNCORRELATED with crypto (the true way to
+raise the diversified frontier). xcat_longshot.py: causal first-half YES entry mid, band [0.10,0.35], executable=mid-taker
+half-spread, no-taker excluded, week-clustered t (+ day-cluster robustness), calibration, capacity, vs-crypto corr. Bonferroni
+|t|>=2.77 for 9 cats. Independent discipline reproduced prior verdicts.
+- PER-CATEGORY (n_filled / wks / PnL/ct / week-t / day-t / vs-crypto corr / cap/wk):
+  CRYPTO ref 601/49 +0.090 t2.88 (day4.82) corr1.0 $11.3k [confirmed]
+  ECON 237/45 +0.084 t2.59 (day3.04) corr -0.05(n=30) $3.5k [REAL but nominal — below Bonferroni]
+  SPORTS 356/26 +0.065 t2.02 (day0.01) $3.4k [REJECT = de-vig artifact, reproduces cand#10; eq-wt t0.98]
+  ENTERTAINMENT 327/13 +0.006 t0.11 $6.2k [REJECT — pretty eq-wt collapses at real fills, adverse sel +0.13]
+  SCITECH 366/25 +0.001 t0.01 corr -0.14 $4.3k [dead at real fills, adverse sel +0.03]
+  GEOPOL 352/73 -0.001 corr -0.08 $23k [NULL]; ELECTIONS 236/25 -0.016 corr -0.03 $2.1k [NULL];
+  POLITICS 283/32 -0.041 $20k [NULL]; WEATHER 1690/6 -0.121 $29k [NULL/neg, fat left tail]
+- MULTIPLE TESTING: 0 of 9 powered cats clear Bonferroni 2.77 (BUSINESS t5.25 is n=18 noise).
+VERDICT: NULL-of-lift. The confirmed crypto short-vol edge has NO large independent non-crypto twin. Best diversifier = ECON
+(same macro-bucket mechanism, clean calibration 0.138->0.061 / 0.286->0.208, uncorrelated corr -0.05) BUT small (~$3.5k/wk)
+and only nominally sig (2.59<2.77 -> "forward-test", not "confirmed"). So the diversified book is essentially CRYPTO (engine) +
+ECON (uncorrelated tail-diversifier, small) + BIZ (marginal). The frontier is what the earlier docs say; no new sleeve lifts it
+materially. Re-confirmed crypto (+0.090 t2.88) and ECON independently. Campaign W2-a done.
