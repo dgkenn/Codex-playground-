@@ -2208,3 +2208,31 @@ walk-forward.
 VERDICT: ~+2% capturable, all via the maker rebate; selection adds nothing (subtracts at real fills). ACTION: (1) add rebate to
 sleeve accounting (+0.24c/ct); (2) enforce MAKER-ONLY (never cross) in pmkt_shortvol_paper + live rules; (3) trade the blanket
 band unconditionally. Campaign W3-b done.
+
+## KALSHI-SHORTVOL (2026-07-18, campaign W3-a) — no fee-surviving longshot premium, no structural arb on Kalshi: NULL (edge is Polymarket-participant-specific)
+Tested Kalshi (separate venue) for a longshot short-vol premium or structural mispricing uncorrelated with the Polymarket book.
+kalshi_shortvol.py: settled markets, 4 cats/28 series, first-half candlestick executable entry (NOT terminal last_price =
+lookahead trap), PnL net of Kalshi fee ceil(0.07*p(1-p)) ~1.6c/ct.
+- Longshot band [0.10,0.35]: Weather n=1888/10wk net -0.023 (t=-2.82, NEGATIVE), Commodity n=783 net -0.029 (t=-0.62),
+  Econ/Crypto small-n flagged. KEY: premium ABSENT AT GROSS level too -- Kalshi longshots are WELL-CALIBRATED (priced~realized,
+  per-bucket gaps +-0.04 noise, alternating sign), the OPPOSITE of Polymarket (band prints ~10.5% vs priced ~22%). With no
+  overpricing, the fee just makes selling negative.
+- Structural: 1273 genuine weather range-bucket partitions (excluded cumulative ladders), ZERO underround/overround survives
+  per-leg fees; books carry 11-16c vig. No riskless structure.
+- Correlation moot (no survivor). CALIBRATION not correlation is the binding constraint.
+VERDICT: NULL. Kalshi is NOT a new uncorrelated sleeve. WHY IT DOESN'T PORT (the deep insight): the Polymarket edge is a
+VENUE/PARTICIPANT effect -- retail lottery-buyers overpaying the wing on a ZERO-FEE book -- NOT a universal prediction-market
+law. Kalshi's CFTC-regulated professional MMs arb the ladder to calibration. => the confirmed edge's DURABILITY is tied to
+Polymarket retail flow persisting. Campaign W3-a done.
+
+## CAMPAIGN SUMMARY (2026-07-18) — edge-hunt waves 1-3 complete: 6 new candidates, all NULL (1 tiny +rebate); frontier empirically established
+The operator pushed to keep hunting ("fail at 1000 ideas"). Ran a rigorous round: W1-a Deribit-density (null), W1-b xasset-
+crypto (correlated, no diversification), W1-c funding/basis/OI direction (autocorr illusion), W1-d VRP-regime (null, edge
+unconditional), W2-a cross-category x9 (only ECON survives: uncorr but small+nominal), W3-a Kalshi (null, edge is Polymarket-
+participant-specific), W3-b edge-capture (maker rebate +2% REAL; strike selection null; "rest never cross" = +11% protection).
+CUMULATIVE: ~18 distinct edge candidates tested across the program; the accessible public-data universe yields ONLY the
+Polymarket retail short-vol/longshot premium (crypto engine +0.12c/ct + maker rebate +0.24c; ECON small uncorrelated
+diversifier; biz marginal). No directional signal, no density/regime/strike sharpening, no large uncorrelated diversifier, no
+higher-frequency or cross-venue analog exists. FRONTIER (empirically, not assumed): ~0.3-1%/day sound (1/4-1x Kelly, P(ruin)~0);
+10%/day requires ruinous leverage (unchanged). HIGHEST-VALUE NEXT WORK: mature the live forward gates + maximize capture (add
+rebate accounting, enforce maker-only) -- NEW-edge discovery has hit a disciplined wall of nulls.

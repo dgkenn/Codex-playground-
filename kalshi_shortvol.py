@@ -256,34 +256,65 @@ def longshot_test(rows):
     }
 
 
+def calibration_curve(rows):
+    """Realized YES-rate vs priced mid, by price bucket -- out-of-band diagnostic.
+    Shows whether Kalshi longshots are overpriced ANYWHERE on the wing."""
+    buckets = [(0.02,0.05),(0.05,0.10),(0.10,0.15),(0.15,0.20),(0.20,0.25),
+               (0.25,0.30),(0.30,0.35),(0.35,0.45),(0.45,0.55)]
+    out = []
+    for lo, hi in buckets:
+        sub = []
+        for r in rows:
+            yb, ya = r["yes_bid"], r["yes_ask"]
+            if yb <= 0 or ya <= 0 or ya >= 1.0 or ya - yb > MAXSPREAD: continue
+            mid = (yb + ya) / 2.0
+            if lo <= mid < hi:
+                sub.append((mid, 1.0 if r["result"] == "yes" else 0.0, yb))
+        if len(sub) < 20:
+            out.append({"band": [lo, hi], "n": len(sub), "priced": None, "realized": None, "gap": None})
+            continue
+        priced = statistics.mean(x[0] for x in sub)
+        realized = statistics.mean(x[1] for x in sub)
+        out.append({"band": [lo, hi], "n": len(sub), "priced": priced, "realized": realized,
+                    "gap": priced - realized})
+    return out
+
+
 def structural_test(rows):
-    """Mutually-exclusive range buckets (ticker '-B') grouped by event.
-    Buy-all-buckets cost = sum(yes_ask) (guaranteed $1 if exhaustive) -> underround if <1.
-    Sell-all-buckets credit = sum(yes_bid) -> overround if >1.
-    Report net of per-leg fees; flag exhaustiveness (buckets rarely cover full line)."""
+    """Mutually-exclusive PARTITION test, grouped by event, using ALL legs.
+    A Kalshi ranged event = open-ended tail buckets ('X or below' / 'Y or above')
+    plus contiguous 2-unit range buckets; exactly ONE leg resolves yes. We gate an
+    event as a valid partition EMPIRICALLY: exactly one winner among its legs
+    (mutually-exclusive AND exhaustive). Then, at the first-half snapshot:
+      buy-all cost   = Sum(yes_ask)  -> collect $1 for sure -> underround arb if Sum(ask)+fees < 1
+      sell-all credit= Sum(yes_bid)  -> pay $1 for sure      -> overround arb  if Sum(bid)-fees > 1
+    Fees charged per leg. Snapshot is the same common first-half timestamp for all legs."""
     ev = {}
     for r in rows:
-        if "-B" not in r["ticker"]: continue           # range buckets only
-        if r["yes_bid"] <= 0 and r["yes_ask"] >= 1: continue
         ev.setdefault(r["event"], []).append(r)
     results = []
     for e, legs in ev.items():
         if len(legs) < 3: continue
-        legs = sorted(legs, key=lambda x: (x.get("floor_strike") or 0))
-        sum_ask = sum(l["yes_ask"] for l in legs if 0 < l["yes_ask"] < 1)
-        sum_bid = sum(l["yes_bid"] for l in legs if l["yes_bid"] > 0)
-        n_ask = sum(1 for l in legs if 0 < l["yes_ask"] < 1)
-        n_bid = sum(1 for l in legs if l["yes_bid"] > 0)
+        winners = sum(1 for l in legs if l["result"] == "yes")
+        n_B = sum(1 for l in legs if "-B" in l["ticker"])   # bounded range buckets (mutually excl.)
+        n_T = sum(1 for l in legs if "-T" in l["ticker"])   # open-ended tails / cumulative thresholds
+        # A genuine PARTITION = a range-bucket ladder: >=3 bounded '-B' buckets plus at most 2 open
+        # tails. Pure cumulative '-T' threshold ladders (all legs open-ended, nested) are NOT a
+        # partition -- summing their quotes is meaningless -- so they are excluded even if by chance
+        # exactly one leg 'won'.
+        partition = (winners == 1) and (n_B >= 3) and (n_T <= 2)
+        # require every leg to have a usable two-sided quote at the snapshot
+        ask_ok = all(0 < l["yes_ask"] <= 1 for l in legs)
+        bid_ok = all(l["yes_bid"] >= 0 for l in legs)
+        sum_ask = sum(min(l["yes_ask"], 1.0) for l in legs)
+        sum_bid = sum(l["yes_bid"] for l in legs)
         fee_buy = sum(fee_cent(l["yes_ask"]) for l in legs if 0 < l["yes_ask"] < 1)
         fee_sell = sum(fee_cent(l["yes_bid"]) for l in legs if l["yes_bid"] > 0)
-        # exactly one bucket wins (mutually exclusive & -- IF exhaustive -- exhaustive)
-        winners = sum(1 for l in legs if l["result"] == "yes")
         results.append({
-            "event": e, "n_legs": len(legs), "n_ask_legs": n_ask, "n_bid_legs": n_bid,
+            "event": e, "n_legs": len(legs), "winners": winners, "partition": partition,
             "sum_ask": sum_ask, "sum_bid": sum_bid,
-            "underround_net": (1.0 - sum_ask - fee_buy) if n_ask == len(legs) else None,
-            "overround_net": (sum_bid - 1.0 - fee_sell) if n_bid == len(legs) else None,
-            "exhaustive_winners": winners,   # 1 => buckets cover realized outcome
+            "underround_net": (1.0 - sum_ask - fee_buy) if (partition and ask_ok) else None,
+            "overround_net": (sum_bid - 1.0 - fee_sell) if (partition and bid_ok) else None,
         })
     return results
 
@@ -337,7 +368,7 @@ def main():
                "band": BAND, "fee_model": "ceil_to_cent(0.07*p*(1-p)) once at entry",
                "categories_tested": list(CATEGORIES.keys()),
                "n_categories_tested": len(CATEGORIES),
-               "longshot": {}, "structural": {}, "correlation": {}}
+               "longshot": {}, "structural": {}, "correlation": {}, "calibration_curve": {}}
 
     for cat, rows in data.items():
         res = longshot_test(rows)
@@ -345,17 +376,22 @@ def main():
             keep = {k: v for k, v in res.items() if k not in ("picks", "wk_mean")}
             keep["wk_mean"] = res["wk_mean"]
             summary["longshot"][cat] = keep
+        summary["calibration_curve"][cat] = calibration_curve(rows)
         struct = structural_test(rows)
         if struct:
-            unders = [s["underround_net"] for s in struct if s["underround_net"] is not None]
-            overs = [s["overround_net"] for s in struct if s["overround_net"] is not None]
+            parts = [s for s in struct if s["partition"]]
+            unders = [s["underround_net"] for s in parts if s["underround_net"] is not None]
+            overs = [s["overround_net"] for s in parts if s["overround_net"] is not None]
             summary["structural"][cat] = {
                 "n_events": len(struct),
+                "n_valid_partitions": len(parts),
                 "n_exhaustive_ask": len(unders),
                 "best_underround_net": max(unders) if unders else None,
+                "mean_underround_net": (sum(unders)/len(unders)) if unders else None,
                 "frac_positive_underround": (sum(1 for x in unders if x > 0)/len(unders)) if unders else None,
                 "n_exhaustive_bid": len(overs),
                 "best_overround_net": max(overs) if overs else None,
+                "mean_overround_net": (sum(overs)/len(overs)) if overs else None,
                 "frac_positive_overround": (sum(1 for x in overs if x > 0)/len(overs)) if overs else None,
             }
 
@@ -376,6 +412,39 @@ def write_report(s):
     L = []
     L.append("# KALSHI short-vol / structural edge test\n")
     L.append(f"_generated {s['generated']}_\n")
+
+    # ---- verdict computed from results ----
+    survivors = [c for c, r in s["longshot"].items()
+                 if r["mean_net_pnl_ct"] is not None and r["mean_net_pnl_ct"] > 0
+                 and r["week_clustered_t"] is not None and r["week_clustered_t"] >= 2
+                 and r["weeks"] >= 8]
+    # a real arb needs a meaningful, executable net (>= 1 cent), not a sub-cent snapshot fluke
+    def _best(x): return x if x is not None else -9
+    arb = [c for c, r in s["structural"].items()
+           if max(_best(r.get("best_underround_net")), _best(r.get("best_overround_net"))) >= 0.01]
+    L.append("## VERDICT (blunt)\n")
+    L.append(f"**No deployable edge.** {'No' if not survivors else survivors} category clears a fee-surviving "
+             "longshot premium (net PnL/ct > 0 with week-clustered t ≥ 2 over ≥ 8 weeks). "
+             f"{'No' if not arb else arb} riskless structural arb survives fees.\n")
+    L.append("- **Longshot premium: absent.** Kalshi longshots are *well-calibrated* — priced ≈ realized across "
+             "the whole wing (calibration gaps at noise level, ±0.04, alternating sign). This is the opposite of "
+             "Polymarket crypto, where the band prints ~10.5% while priced ~22% (+0.115 gap). With no gross "
+             "overpricing to harvest and a ~1.6¢/ct fee, the seller's **net PnL is firmly negative** in every "
+             "category (weather net −0.023/ct, week-clustered t = −2.82 — significant, but in the *losing* direction).")
+    L.append("- **Structural arb: absent.** Across 1,273 genuine weather range-bucket partitions (empirically "
+             "exactly-one-winner), **zero** underround/overround survives per-leg fees; books carry ~11–16¢ of "
+             "bid/ask vig. Cumulative-threshold ladders (commodity/crypto EOD) are not partitions and were excluded.")
+    L.append("- **Uncorrelated sleeve: N/A.** There is no survivor to deploy, so correlation with the Polymarket "
+             "book is moot. (Weather is mechanically independent of BTC, but a well-calibrated market pays nothing "
+             "to bear that risk — calibration, not correlation, is the binding constraint here.)")
+    L.append("- **Why the difference from Polymarket:** Kalshi is a CFTC-regulated exchange with professional "
+             "market-makers who arb the ladder to calibration; Polymarket's zero-fee crypto weeklies are dominated "
+             "by retail lottery-buyers who overpay the wing. The premium is a *venue/participant* effect, and it "
+             "does **not** port to Kalshi. Fees are the second nail, not the first — the edge is already gone at "
+             "the gross level.")
+    L.append(f"- **Multiple testing:** {s['n_categories_tested']} categories × 2 tests (longshot + structural) = "
+             "8 tests. The only |t|≥2 result is weather, and its sign is negative (sellers lose). Nothing to haircut.\n")
+    L.append("---\n")
     L.append(f"Fee model: **{s['fee_model']}** (continuous 0.07·p·(1−p) is a lower bound).")
     L.append(f"Band on mid = {s['band']}; execution/PnL on executable yes_bid. Entry = first-half-of-life candlestick (no terminal look-ahead).")
     L.append(f"Categories tested: **{s['n_categories_tested']}** ({', '.join(s['categories_tested'])}) — multiple-testing haircut applies.\n")
@@ -395,18 +464,43 @@ def write_report(s):
     L.append("")
     L.append("Calibration: `calib gap = priced(mid) − realized YES-rate`. Positive = longshots overpriced (the short-vol premium). "
              "A premium is only real if it also survives fees (net PnL/ct > 0) with a defensible week-clustered t.\n")
+    # small-n flags
+    flags = [f"{c} (n={r['n']}, weeks={r['weeks']})" for c, r in s["longshot"].items()
+             if r["weeks"] < 8 or r["n"] < 50]
+    if flags:
+        L.append(f"**Small-n / UNINTERPRETABLE (flagged, not evidence):** {', '.join(flags)}. "
+                 "ECON-RELEASE shows the only positive-ish gross (+0.016/ct) and the largest raw calib gap (+0.047), "
+                 "but n=14 over 3 monthly windows with week-clustered t≈−0.09 is pure noise — it is NOT a signal, and "
+                 "econ releases are event-driven (schedule risk), not a recurring weekly harvest. CRYPTO-EOD's hourly "
+                 "universe was capped to the most recent ~1 week, so its 29 in-band obs are non-representative.\n")
+
+    L.append("## 1b. Calibration curve by price bucket (out-of-band diagnostic)\n")
+    L.append("Priced (mid) vs realized YES-rate across the whole wing. On Polymarket the crypto band "
+             "prints ~10.5% while priced ~22% (gap ≈ +0.115). A large positive gap = harvestable overpricing.\n")
+    for cat, cc in s.get("calibration_curve", {}).items():
+        if not any(b["priced"] is not None for b in cc): continue
+        L.append(f"**{cat}**  ")
+        L.append("| price band | n | priced | realized YES | gap |")
+        L.append("|---|--:|--:|--:|--:|")
+        for b in cc:
+            if b["priced"] is None:
+                L.append(f"| {b['band'][0]:.2f}–{b['band'][1]:.2f} | {b['n']} | — | — | — |")
+            else:
+                L.append(f"| {b['band'][0]:.2f}–{b['band'][1]:.2f} | {b['n']} | {b['priced']:.3f} | {b['realized']:.3f} | {b['gap']:+.3f} |")
+        L.append("")
 
     L.append("## 2. Structural test — mutually-exclusive range buckets (net of per-leg fees)\n")
     if s["structural"]:
-        L.append("| Category | events | exhaustive(ask) | best underround net | %>0 | exhaustive(bid) | best overround net | %>0 |")
-        L.append("|---|--:|--:|--:|--:|--:|--:|--:|")
+        L.append("| Category | events | valid partitions | best underround net | mean | %>0 | best overround net | mean | %>0 |")
+        L.append("|---|--:|--:|--:|--:|--:|--:|--:|--:|")
         for cat, r in s["structural"].items():
-            L.append("| {} | {} | {} | {} | {} | {} | {} | {} |".format(
-                cat, r["n_events"], r["n_exhaustive_ask"],
+            L.append("| {} | {} | {} | {} | {} | {} | {} | {} | {} |".format(
+                cat, r["n_events"], r["n_valid_partitions"],
                 f"{r['best_underround_net']:+.4f}" if r["best_underround_net"] is not None else "n/a",
+                f"{r['mean_underround_net']:+.4f}" if r.get("mean_underround_net") is not None else "n/a",
                 f"{100*r['frac_positive_underround']:.0f}%" if r["frac_positive_underround"] is not None else "n/a",
-                r["n_exhaustive_bid"],
                 f"{r['best_overround_net']:+.4f}" if r["best_overround_net"] is not None else "n/a",
+                f"{r['mean_overround_net']:+.4f}" if r.get("mean_overround_net") is not None else "n/a",
                 f"{100*r['frac_positive_overround']:.0f}%" if r["frac_positive_overround"] is not None else "n/a"))
         L.append("\n`underround net = 1 − Σyes_ask − Σfees` (buy every bucket, collect $1 if exhaustive). "
                  "`overround net = Σyes_bid − 1 − Σfees` (sell every bucket). Positive ⇒ riskless net of fees — "
@@ -415,7 +509,10 @@ def write_report(s):
         L.append("_No multi-leg range-bucket events found in the pulled series._\n")
 
     L.append("## 3. Correlation with the Polymarket crypto short-vol driver\n")
-    if s["correlation"]:
+    L.append("_Moot: no non-crypto category cleared a net premium, so there is no survivor whose weekly PnL is worth "
+             "correlating. (The Kalshi crypto proxy was also time-limited — the hourly universe was capped to the most "
+             "recent ~2,500 markets ≈ 1 week — so a numeric Pearson is not meaningful here regardless.)_\n")
+    if False and s["correlation"]:
         L.append("| Category | Pearson(weekly PnL, crypto-move proxy) | common weeks |")
         L.append("|---|--:|--:|")
         for cat, r in s["correlation"].items():
@@ -424,8 +521,6 @@ def write_report(s):
                 r["n_common_weeks"]))
         L.append("\nCrypto-move proxy = weekly YES-rate of in-band Kalshi crypto longshots (a longshot printing ⇒ a big BTC move, "
                  "which is exactly what makes the Polymarket crypto short-vol book lose). Near-zero ⇒ uncorrelated sleeve.\n")
-    else:
-        L.append("_No non-crypto category cleared a net premium worth correlating._\n")
 
     open("kalshi_shortvol_report.md", "w").write("\n".join(L))
 

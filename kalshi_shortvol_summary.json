@@ -1,0 +1,551 @@
+{
+  "generated": "2026-07-18T06:03:05.832783+00:00",
+  "band": [
+    0.1,
+    0.35
+  ],
+  "fee_model": "ceil_to_cent(0.07*p*(1-p)) once at entry",
+  "categories_tested": [
+    "WEATHER-HIGHTEMP",
+    "COMMODITY-EOD",
+    "ECON-RELEASE",
+    "CRYPTO-EOD"
+  ],
+  "n_categories_tested": 4,
+  "longshot": {
+    "WEATHER-HIGHTEMP": {
+      "n": 1888,
+      "weeks": 10,
+      "week_clustered_t": -2.8227354408855527,
+      "mean_net_pnl_ct": -0.022897245762711866,
+      "mean_gross_pnl_ct": -0.0068961864406779615,
+      "mean_fee_ct": 0.016001059322033898,
+      "avg_entry_mid": 0.2185301906779661,
+      "avg_sell_bid": 0.2054978813559322,
+      "realized_yes_rate": 0.21239406779661016,
+      "implied_by_mid": 0.2185301906779661,
+      "calib_gap_priced_minus_realized": 0.006136122881355954,
+      "worst_week": "2026-W26",
+      "worst_week_mean_net": -0.07725925925925926,
+      "neg_week_frac": 0.7,
+      "capacity_vol_contracts": 38747434.28999998,
+      "wk_mean": {
+        "2026-W29": 0.00040697674418604604,
+        "2026-W28": -0.028402366863905328,
+        "2026-W27": -0.03554216867469879,
+        "2026-W26": -0.07725925925925926,
+        "2026-W25": 0.0037500000000000003,
+        "2026-W24": -0.027872340425531914,
+        "2026-W23": 0.017312775330396473,
+        "2026-W22": -0.013696682464454976,
+        "2026-W21": -0.038584070796460174,
+        "2026-W20": -0.05651685393258427
+      }
+    },
+    "COMMODITY-EOD": {
+      "n": 783,
+      "weeks": 10,
+      "week_clustered_t": -0.6245080680375882,
+      "mean_net_pnl_ct": -0.028620689655172414,
+      "mean_gross_pnl_ct": -0.012809706257982115,
+      "mean_fee_ct": 0.015810983397190295,
+      "avg_entry_mid": 0.2145338441890166,
+      "avg_sell_bid": 0.1953639846743295,
+      "realized_yes_rate": 0.2081736909323116,
+      "implied_by_mid": 0.2145338441890166,
+      "calib_gap_priced_minus_realized": 0.006360153256704998,
+      "worst_week": "2026-W22",
+      "worst_week_mean_net": -0.17727272727272728,
+      "neg_week_frac": 0.6,
+      "capacity_vol_contracts": 11803826.180000002,
+      "wk_mean": {
+        "2026-W29": 0.026220472440944883,
+        "2026-W28": 0.0653448275862069,
+        "2026-W27": 0.07294117647058825,
+        "2026-W26": -0.001794871794871797,
+        "2026-W25": 0.1206060606060606,
+        "2026-W24": -0.027976190476190477,
+        "2026-W23": -0.1694949494949495,
+        "2026-W22": -0.17727272727272728,
+        "2026-W21": -0.01661290322580645,
+        "2026-W20": -0.08962962962962963
+      }
+    },
+    "ECON-RELEASE": {
+      "n": 14,
+      "weeks": 3,
+      "week_clustered_t": -0.08668586332957907,
+      "mean_net_pnl_ct": 0.000714285714285708,
+      "mean_gross_pnl_ct": 0.01571428571428571,
+      "mean_fee_ct": 0.015,
+      "avg_entry_mid": 0.18964285714285714,
+      "avg_sell_bid": 0.15857142857142859,
+      "realized_yes_rate": 0.14285714285714285,
+      "implied_by_mid": 0.18964285714285714,
+      "calib_gap_priced_minus_realized": 0.04678571428571429,
+      "worst_week": "2026-W20",
+      "worst_week_mean_net": -0.09250000000000001,
+      "neg_week_frac": 0.6666666666666666,
+      "capacity_vol_contracts": 606908.59,
+      "wk_mean": {
+        "2026-W24": -0.042000000000000016,
+        "2026-W20": -0.09250000000000001,
+        "2026-W29": 0.11800000000000001
+      }
+    },
+    "CRYPTO-EOD": {
+      "n": 29,
+      "weeks": 1,
+      "week_clustered_t": null,
+      "mean_net_pnl_ct": -0.007241379310344824,
+      "mean_gross_pnl_ct": 0.009310344827586215,
+      "mean_fee_ct": 0.016551724137931035,
+      "avg_entry_mid": 0.22293103448275864,
+      "avg_sell_bid": 0.21620689655172415,
+      "realized_yes_rate": 0.20689655172413793,
+      "implied_by_mid": 0.22293103448275864,
+      "calib_gap_priced_minus_realized": 0.01603448275862071,
+      "worst_week": "2026-W29",
+      "worst_week_mean_net": -0.007241379310344824,
+      "neg_week_frac": 1.0,
+      "capacity_vol_contracts": 8170242.430000002,
+      "wk_mean": {
+        "2026-W29": -0.007241379310344824
+      }
+    }
+  },
+  "structural": {
+    "WEATHER-HIGHTEMP": {
+      "n_events": 1273,
+      "n_valid_partitions": 1273,
+      "n_exhaustive_ask": 1273,
+      "best_underround_net": -4.163336342344337e-17,
+      "mean_underround_net": -0.16095051060486973,
+      "frac_positive_underround": 0.0,
+      "n_exhaustive_bid": 1273,
+      "best_overround_net": 5.551115123125783e-17,
+      "mean_overround_net": -0.11056559308719542,
+      "frac_positive_overround": 0.0007855459544383347
+    },
+    "COMMODITY-EOD": {
+      "n_events": 159,
+      "n_valid_partitions": 0,
+      "n_exhaustive_ask": 0,
+      "best_underround_net": null,
+      "mean_underround_net": null,
+      "frac_positive_underround": null,
+      "n_exhaustive_bid": 0,
+      "best_overround_net": null,
+      "mean_overround_net": null,
+      "frac_positive_overround": null
+    },
+    "ECON-RELEASE": {
+      "n_events": 9,
+      "n_valid_partitions": 0,
+      "n_exhaustive_ask": 0,
+      "best_underround_net": null,
+      "mean_underround_net": null,
+      "frac_positive_underround": null,
+      "n_exhaustive_bid": 0,
+      "best_overround_net": null,
+      "mean_overround_net": null,
+      "frac_positive_overround": null
+    },
+    "CRYPTO-EOD": {
+      "n_events": 53,
+      "n_valid_partitions": 0,
+      "n_exhaustive_ask": 0,
+      "best_underround_net": null,
+      "mean_underround_net": null,
+      "frac_positive_underround": null,
+      "n_exhaustive_bid": 0,
+      "best_overround_net": null,
+      "mean_overround_net": null,
+      "frac_positive_overround": null
+    }
+  },
+  "correlation": {
+    "WEATHER-HIGHTEMP": {
+      "pearson_vs_crypto_move_proxy": null,
+      "n_common_weeks": 1
+    },
+    "COMMODITY-EOD": {
+      "pearson_vs_crypto_move_proxy": null,
+      "n_common_weeks": 1
+    },
+    "ECON-RELEASE": {
+      "pearson_vs_crypto_move_proxy": null,
+      "n_common_weeks": 1
+    }
+  },
+  "calibration_curve": {
+    "WEATHER-HIGHTEMP": [
+      {
+        "band": [
+          0.02,
+          0.05
+        ],
+        "n": 1303,
+        "priced": 0.030752110514198006,
+        "realized": 0.02532617037605526,
+        "gap": 0.005425940138142748
+      },
+      {
+        "band": [
+          0.05,
+          0.1
+        ],
+        "n": 841,
+        "priced": 0.07089179548156956,
+        "realized": 0.06896551724137931,
+        "gap": 0.0019262782401902462
+      },
+      {
+        "band": [
+          0.1,
+          0.15
+        ],
+        "n": 483,
+        "priced": 0.12266045548654245,
+        "realized": 0.12215320910973085,
+        "gap": 0.0005072463768115987
+      },
+      {
+        "band": [
+          0.15,
+          0.2
+        ],
+        "n": 335,
+        "priced": 0.1726268656716418,
+        "realized": 0.15223880597014924,
+        "gap": 0.020388059701492545
+      },
+      {
+        "band": [
+          0.2,
+          0.25
+        ],
+        "n": 324,
+        "priced": 0.22405864197530864,
+        "realized": 0.2654320987654321,
+        "gap": -0.04137345679012347
+      },
+      {
+        "band": [
+          0.25,
+          0.3
+        ],
+        "n": 363,
+        "priced": 0.2725619834710744,
+        "realized": 0.2369146005509642,
+        "gap": 0.035647382920110215
+      },
+      {
+        "band": [
+          0.3,
+          0.35
+        ],
+        "n": 365,
+        "priced": 0.3223972602739726,
+        "realized": 0.30684931506849317,
+        "gap": 0.015547945205479419
+      },
+      {
+        "band": [
+          0.35,
+          0.45
+        ],
+        "n": 715,
+        "priced": 0.39753146853146853,
+        "realized": 0.42097902097902096,
+        "gap": -0.023447552447552422
+      },
+      {
+        "band": [
+          0.45,
+          0.55
+        ],
+        "n": 499,
+        "priced": 0.49195390781563125,
+        "realized": 0.46693386773547096,
+        "gap": 0.02502004008016029
+      }
+    ],
+    "COMMODITY-EOD": [
+      {
+        "band": [
+          0.02,
+          0.05
+        ],
+        "n": 208,
+        "priced": 0.03182692307692308,
+        "realized": 0.038461538461538464,
+        "gap": -0.006634615384615385
+      },
+      {
+        "band": [
+          0.05,
+          0.1
+        ],
+        "n": 249,
+        "priced": 0.0727710843373494,
+        "realized": 0.03614457831325301,
+        "gap": 0.03662650602409639
+      },
+      {
+        "band": [
+          0.1,
+          0.15
+        ],
+        "n": 199,
+        "priced": 0.12097989949748744,
+        "realized": 0.11055276381909548,
+        "gap": 0.010427135678391958
+      },
+      {
+        "band": [
+          0.15,
+          0.2
+        ],
+        "n": 146,
+        "priced": 0.17366438356164382,
+        "realized": 0.15753424657534246,
+        "gap": 0.016130136986301363
+      },
+      {
+        "band": [
+          0.2,
+          0.25
+        ],
+        "n": 154,
+        "priced": 0.2214935064935065,
+        "realized": 0.23376623376623376,
+        "gap": -0.012272727272727268
+      },
+      {
+        "band": [
+          0.25,
+          0.3
+        ],
+        "n": 147,
+        "priced": 0.2734013605442177,
+        "realized": 0.23129251700680273,
+        "gap": 0.04210884353741498
+      },
+      {
+        "band": [
+          0.3,
+          0.35
+        ],
+        "n": 130,
+        "priced": 0.32153846153846155,
+        "realized": 0.34615384615384615,
+        "gap": -0.024615384615384595
+      },
+      {
+        "band": [
+          0.35,
+          0.45
+        ],
+        "n": 264,
+        "priced": 0.4006439393939394,
+        "realized": 0.3939393939393939,
+        "gap": 0.006704545454545463
+      },
+      {
+        "band": [
+          0.45,
+          0.55
+        ],
+        "n": 257,
+        "priced": 0.5003891050583658,
+        "realized": 0.490272373540856,
+        "gap": 0.010116731517509747
+      }
+    ],
+    "ECON-RELEASE": [
+      {
+        "band": [
+          0.02,
+          0.05
+        ],
+        "n": 0,
+        "priced": null,
+        "realized": null,
+        "gap": null
+      },
+      {
+        "band": [
+          0.05,
+          0.1
+        ],
+        "n": 10,
+        "priced": null,
+        "realized": null,
+        "gap": null
+      },
+      {
+        "band": [
+          0.1,
+          0.15
+        ],
+        "n": 5,
+        "priced": null,
+        "realized": null,
+        "gap": null
+      },
+      {
+        "band": [
+          0.15,
+          0.2
+        ],
+        "n": 4,
+        "priced": null,
+        "realized": null,
+        "gap": null
+      },
+      {
+        "band": [
+          0.2,
+          0.25
+        ],
+        "n": 3,
+        "priced": null,
+        "realized": null,
+        "gap": null
+      },
+      {
+        "band": [
+          0.25,
+          0.3
+        ],
+        "n": 0,
+        "priced": null,
+        "realized": null,
+        "gap": null
+      },
+      {
+        "band": [
+          0.3,
+          0.35
+        ],
+        "n": 1,
+        "priced": null,
+        "realized": null,
+        "gap": null
+      },
+      {
+        "band": [
+          0.35,
+          0.45
+        ],
+        "n": 4,
+        "priced": null,
+        "realized": null,
+        "gap": null
+      },
+      {
+        "band": [
+          0.45,
+          0.55
+        ],
+        "n": 2,
+        "priced": null,
+        "realized": null,
+        "gap": null
+      }
+    ],
+    "CRYPTO-EOD": [
+      {
+        "band": [
+          0.02,
+          0.05
+        ],
+        "n": 31,
+        "priced": 0.03096774193548387,
+        "realized": 0.03225806451612903,
+        "gap": -0.0012903225806451604
+      },
+      {
+        "band": [
+          0.05,
+          0.1
+        ],
+        "n": 13,
+        "priced": null,
+        "realized": null,
+        "gap": null
+      },
+      {
+        "band": [
+          0.1,
+          0.15
+        ],
+        "n": 7,
+        "priced": null,
+        "realized": null,
+        "gap": null
+      },
+      {
+        "band": [
+          0.15,
+          0.2
+        ],
+        "n": 7,
+        "priced": null,
+        "realized": null,
+        "gap": null
+      },
+      {
+        "band": [
+          0.2,
+          0.25
+        ],
+        "n": 2,
+        "priced": null,
+        "realized": null,
+        "gap": null
+      },
+      {
+        "band": [
+          0.25,
+          0.3
+        ],
+        "n": 6,
+        "priced": null,
+        "realized": null,
+        "gap": null
+      },
+      {
+        "band": [
+          0.3,
+          0.35
+        ],
+        "n": 7,
+        "priced": null,
+        "realized": null,
+        "gap": null
+      },
+      {
+        "band": [
+          0.35,
+          0.45
+        ],
+        "n": 2,
+        "priced": null,
+        "realized": null,
+        "gap": null
+      },
+      {
+        "band": [
+          0.45,
+          0.55
+        ],
+        "n": 9,
+        "priced": null,
+        "realized": null,
+        "gap": null
+      }
+    ]
+  }
+}
