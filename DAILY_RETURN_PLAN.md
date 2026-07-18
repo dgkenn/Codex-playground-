@@ -115,6 +115,7 @@ validation, so the forward gate must confirm fills are maker; any spread-crossin
 | Private/faster data | genuine new edge | we don't have it; every *public*-data probe (forecasts, sportsbook lines, order flow) is already priced |
 | Higher frequency (daily/intraday) | more compounding events | TESTED, DEAD — daily band inverts (−0.24/ct), the coarse ladder collapses to near-money by 24h out |
 | More capital | same %, more $ | changes $ not %; and thin books cap deployable size anyway |
+| LP liquidity rewards (maker) | real daily payouts; thin markets show high headline yield | PROBED — it's a Q-score competition (quadratic in closeness to mid, two-sided) won by low-latency requoting we can't run; the reward compensates adverse-selection/inventory risk → market-making, not risk-minimized yield. My first pro-rata estimate ($50→46%/day) OVERSTATED and is retracted. |
 
 ---
 
