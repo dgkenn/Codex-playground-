@@ -60,6 +60,7 @@ from datetime import datetime, timedelta, timezone, date
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 
+import urllib.request                          # noqa: E402
 import kalshi_weather_nowcast as base          # noqa: E402  CITY_CONFIG, ASOS fetch, slice_window, wilson bound
 import kalshi_weather_refined as refined        # noqa: E402  glitch filter (clean_station_obs)
 import kalshi_weather_expand as expand          # noqa: E402  LOW_CITY_CONFIG (KXLOW station map)
@@ -196,20 +197,80 @@ def sustained_extreme_k(obs_day, k, kind, max_gap_min=2.5):
 # ---------------------------------------------------------------------------
 
 def fetch_weathergov_station(station, start_utc, end_utc):
-    try:
-        return wg.fetch_obs(station, start_utc, end_utc)
-    except Exception as e:
-        print(f"    [warn] weathergov fetch failed {station}: {e}", file=sys.stderr)
-        return []
+    """CHUNKED fetch, one calendar-day-ish window per HTTP call. IMPORTANT OPERATIONAL FINDING
+    (measured, not documented anywhere in weathergov_feed.py): api.weather.gov's /observations
+    endpoint SILENTLY CAPS at 500 records per request -- a single request spanning the full
+    ~7-day window returns only the most recent ~500 obs (for a 5-min-cadence station that's
+    ~1.7 days, NOT 7), with no error/warning. A wide single-shot call therefore silently
+    truncates history. Chunking in <=24h windows (well under the 288 obs/day a 5-min station
+    can produce) avoids the cap and recovers the true ~7-day retention."""
+    out = []
+    t = start_utc
+    while t < end_utc:
+        t_next = min(t + timedelta(hours=24), end_utc)
+        for attempt in range(3):
+            try:
+                chunk = wg.fetch_obs(station, t, t_next)
+                out.extend(chunk)
+                break
+            except Exception as e:
+                if attempt == 2:
+                    print(f"    [warn] weathergov chunk fetch failed {station} {t}: {e}", file=sys.stderr)
+                else:
+                    time.sleep(1.0)
+        t = t_next
+    out = sorted(set(out), key=lambda x: x[0])
+    return out
 
 
-def fetch_metar_station_live(station, hours):
-    try:
-        recs = av.fetch_metar(station, hours=hours)
-        return [(r["time"], r["temp_f"]) for r in recs]
-    except Exception as e:
-        print(f"    [warn] aviationweather METAR fetch failed {station}: {e}", file=sys.stderr)
-        return []
+def fetch_metar_chunk(station, end_utc, hours=48):
+    """Direct aviationweather.gov call using its `date` (end-of-window) + `hours` (lookback)
+    params -- aviationweather_metar.fetch_metar() only exposes `hours` relative to NOW, so it
+    cannot reach further back than its own 400-record-per-request cap (measured: a single
+    hours=15*24 call truncates at 400 rows, ~14 days for a busy-METAR station like KATL, not
+    the full window). Chunking with explicit `date` recovers the true retention. Reuses
+    aviationweather_metar's alias/UA/SSL-context internals so behavior matches the live module."""
+    sid = av._STATION_ALIAS.get(station, station)
+    if len(sid) == 3 and not sid.startswith("K"):
+        sid = "K" + sid
+    ds = end_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
+    url = f"{av._API}?ids={sid}&format=json&date={ds}&hours={int(hours)}"
+    req = urllib.request.Request(url, headers={"Accept": "application/json", "User-Agent": "wx-research"})
+    data = json.load(urllib.request.urlopen(req, timeout=30, context=av._CTX))
+    out = []
+    for r in data:
+        t = r.get("temp")
+        ts = r.get("reportTime") or r.get("obsTime")
+        if t is None or ts is None:
+            continue
+        try:
+            if isinstance(ts, (int, float)):
+                when = datetime.fromtimestamp(ts, tz=timezone.utc)
+            else:
+                when = datetime.fromisoformat(ts.replace("Z", "+00:00"))
+        except Exception:
+            continue
+        out.append((when, av._c_to_f(float(t))))
+    return out
+
+
+def fetch_metar_station_live(station, start_utc, end_utc):
+    out = []
+    t = start_utc
+    while t < end_utc:
+        t_next = min(t + timedelta(hours=48), end_utc)
+        for attempt in range(3):
+            try:
+                out.extend(fetch_metar_chunk(station, t_next, hours=48))
+                break
+            except Exception as e:
+                if attempt == 2:
+                    print(f"    [warn] metar chunk fetch failed {station} {t_next}: {e}", file=sys.stderr)
+                else:
+                    time.sleep(1.0)
+        t = t_next
+    out = sorted(set(out), key=lambda x: x[0])
+    return out
 
 
 def day_extreme(series, start_utc, end_utc, kind):
@@ -232,7 +293,8 @@ def build_station_records(station, now_utc):
     wg_start = now_utc - timedelta(days=10)
     wg_obs = fetch_weathergov_station(station, wg_start, now_utc + timedelta(hours=2))
 
-    metar_obs = fetch_metar_station_live(station, hours=17 * 24)
+    metar_start = now_utc - timedelta(days=18)
+    metar_obs = fetch_metar_station_live(station, metar_start, now_utc + timedelta(hours=2))
 
     iem_start = now_utc - timedelta(days=18)
     iem_raw = base.fetch_asos_station(station, iem_start, now_utc + timedelta(days=1))
