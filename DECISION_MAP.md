@@ -2461,3 +2461,18 @@ fresh searches. CONVERGENCE: independently ranks K2 (logical-consistency/structu
   win/-$208 (real-world confirmation scalping fails).
 CONSENSUS QUEUE (both sweeps): K2 structural no-arb (TOP) -> K1 maker-rebate -> theta-decay -> K3 new-listing. All pure-Kalshi-
 data, non-latency-bound, free. Test K2 first with PAVA + real fee model + stale-quote guard.
+
+## KALSHI-WX-NOWCAST (2026-07-18, farm K-WX) — FIRST non-null Kalshi signal: real but UNCONFIRMED (small-n, tail-fragile)
+Tested weather settlement-nowcast on Kalshi KXHIGH (buy YES once observed running-max clears strike+margin). kalshi_weather_
+nowcast.py: 808 city-days, 20 cities, 42 days (Jun6-Jul18), Kalshi candlesticks + IEM 1-min ASOS (verified 1-min gap; plain asos.py
+was hourly & missed a Denver spike -> switched to asos1min.py). Standard-time close (never DST). Independently verified JSON.
+- SHORT side (buy NO late-day): NULL. mean ~0.0007/ct (~0), 23% fillable, negative at later cutoffs -> Kalshi prices near-certain
+  NO to ~99.5c. Dead.
+- LONG side margin=2F: n=15 fires, win 93.3% (14/15), mean exec 0.678, mean net +24.5c/ct, day-clustered t=3.83, fillable. REAL
+  in-sample BUT: (1) n=15 tiny; (2) margin=2 cherry-picked (m=1=noise 57.5% win/40 fires; m=3 negative/8 fires) x3 gaps x4 cutoffs
+  = multiple-testing; (3) TAIL margin-resistant: ASOS-vs-official-CLI disagree 2.5% (20/808, ASOS reads HIGHER = the loss mode),
+  only 1 loss observed -> tail underestimated (e.g. KXHIGHMIA ASOS 98 vs CLI <=95). Capacity small (15 fires/6wk/20 cities).
+VERDICT: PROMISING CANDIDATE, NOT confirmed. First positive Kalshi mechanism (retail underprices observed running-max). Blocked
+by 42-day window. NEXT (deep-history unlock): re-run on 1-2 YEARS (IEM 1-min back ~20y, Kalshi wx markets established) -> n=15 ->
+hundreds, measure true CLI-disagree loss rate + margin robustness (no cherry-pick) + forward gate. A better obs source (official
+NWS running-max) would shrink the tail. Do NOT deploy on n=15.

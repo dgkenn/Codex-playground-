@@ -37,6 +37,7 @@
 | S11 | **De-risk short-vol** | cap the -70% tail | technique | — | **DONE — verticals overpriced; fix = per-week gross cap + corr-aware sizing (worst -25% @ ~2.7%/wk)** |
 
 ## Results (OOS verdicts) — see DECISION_MAP for detail
+_K-WX weather-nowcast: FIRST non-null — LONG margin=2 +24.5c/ct t=3.83 but n=15/tail-fragile → deep-history re-run pending. SHORT=null._
 | strategy | OOS verdict | stack? |
 |---|---|---|
 | S3 print-reconfirm | **CONFIRMED** — +0.121/ct trade-wt t=4.17 over 49 wks real prints; maker-only; ~$9k/wk flow | engine (Global, NOT legal-US) |
