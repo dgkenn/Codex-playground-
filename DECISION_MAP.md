@@ -2489,3 +2489,34 @@ x 3 gaps, Bonferroni (15-cell, corrected alpha=0.0033, |t|>=2.94). Independently
 VERDICT: CONFIRMED, first legal Kalshi edge. Real but SMALL/capacity-limited; 67-day max backtest (API limit) -> forward gate
 grows n. Mechanism: Kalshi retail underprices the observed running-max once it clears a strike. NEXT: refine (filter glitch,
 per-station margin esp Miami, sustained-above-strike, multi-source obs, xcity-corr sizing) + forward paper gate. Do the refinement.
+
+## KALSHI-WX-REFINED (2026-07-18, farm K-WX) — refinement ~DOUBLED the edge + eliminated observed tail; forward gate built
+Refined the confirmed weather-nowcast. Verified JSON. 12-cell margin×sustain grid, Bonferroni (corrected a=0.0042, z=2.87).
+- BEST config = margin=1F + SUSTAIN>=3min: n=42, win 100%, +0.343/ct, day-clustered t=7.56 (Bonferroni p=4.8e-13), cond-loss 0,
+  Wilson-95 worst-case loss 8.4% -> worst-case EV +0.260. fires 4.39/wk. passes_all=True. ~2x baseline (+0.168, t4.60).
+- CONSERVATIVE config = margin=2F + glitch-filter: n=33, win 97%, +0.183/ct, t=4.67, worst-case EV +0.060, tail=1 (Miami).
+- GLITCH FILTER (>8F/min isolated spike): removed 11 obs incl LAX 120F; corroborated by hourly METAR (68F actual). Works.
+- SUSTAIN (>=3min above strike+margin): kills transient spikes (the Miami misses). Works.
+- PER-STATION margin: NOT baked in (too thin, most stations single-digit fires) -- honest, avoids in-sample overfit.
+- SIZING: quarter-Kelly off Wilson-95 worst-case win prob (0.916), 15% per-fire cap, 15% CROSS-CITY same-day cap (10 days had
+  multi-city fires, max 3 same day). METAR multi-source crosscheck feasible (flagged 3 disagrees, 0 were losses).
+- FORWARD GATE built: kalshi_weather_paper.py (snapshot/settle/report, PROPOSE-ONLY, stdlib, tracks BOTH rules). Tested end-to-end
+  (synthetic 10 fills). 0 live fires in THIS sandbox (IEM feed stops 2026-07-16 = env ceiling, not a bug).
+VERDICT: best-possible strategy delivered (per operator). CAVEAT: 100% win is in-sample on 67-day cap; honest tail is ~8% worst-
+case (EV still +). Deploy the forward gate to grow n + prove live==tested BEFORE sizing. NEXT: wire kalshi-weather.yml GH Actions.
+
+## KALSHI-STRUCTURAL-ARB (2026-07-18, farm K2) — NO real fee-surviving structural arb on Kalshi: NULL (same as Polymarket)
+Tested the top sweep candidate: intra-Kalshi structural no-arb (ladder-mono + complement-sum + event-sum). kalshi_structural_arb
+.py: 8 polls x 90s (13.5min), ~7960 events/~72k markets/poll, full /orderbook depth re-verify, net of Kalshi fee ceil(0.07*C*
+P(1-P))/leg both sides.
+- FLAGGED 5 total (S1 ladder 4, S2 complement 0-never-crossed, S3 event-sum 1). REAL (persistent+executable+exact+fee-net+): 0.
+  Stale/non-surviving ratio = 5/5 = 100%. Real violations 0/week.
+- Fee kills everything: raw gross crossings (S1 max +1c, S3 -7c gross) all go NET-NEGATIVE after the per-leg fee; fee-survival
+  alone killed all 5 (didn't even need the persistence filter).
+- TWO false-positive traps caught + closed (would've fabricated a positive): (1) parallel-subject ladders (NBA A-spread vs
+  B-spread in one event) -> 198 fake violations/poll, fixed by splitting on custom_strike subject; (2) non-exhaustive
+  mutually_exclusive events (Kalshi flags primary events ME even when only 2 of many candidates listed, sum 0.06) -> fixed by
+  requiring a constructive tiling proof (one unbounded less + one unbounded greater + contiguous between) -> killed ~25 fake S3.
+VERDICT: NULL. Same conclusion as Polymarket RISKLESS-LOGICAL: top-of-book crossings are stale/fee-eaten artifacts, not
+tradeable. Kalshi's fee makes structural arb HARDER than zero-fee Polymarket. K2 dead. (Excellent discipline: 2 traps that
+would have faked a positive were caught.)

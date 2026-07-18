@@ -1,0 +1,303 @@
+{
+  "run_metadata": {
+    "started_utc": "2026-07-18T16:53:37.657641+00:00",
+    "finished_utc": "2026-07-18T17:07:07.964660+00:00",
+    "polls_requested": 8,
+    "polls_completed": 8,
+    "interval_seconds": 90.0,
+    "persistence_threshold_polls": 3,
+    "min_depth_contracts": 5,
+    "min_gross_edge_to_flag_dollars": 0.001,
+    "min_net_edge_to_count_real_dollars": 0.01,
+    "fee_model": "kalshi_fee = ceil(fee_multiplier * 0.07 * C * P * (1-P) * 100)/100 dollars, both legs, taker-side"
+  },
+  "universe": {
+    "poll_records": [
+      {
+        "poll_idx": 0,
+        "ts": "2026-07-18T16:53:47.898057+00:00",
+        "fetch_seconds": 7.25,
+        "n_events": 7969,
+        "n_markets": 72186,
+        "n_mece_events": 3186,
+        "n_candidates_S1": 3,
+        "n_candidates_S2": 0,
+        "n_candidates_S3": 1,
+        "n_orderbook_verifications": 12
+      },
+      {
+        "poll_idx": 1,
+        "ts": "2026-07-18T16:55:44.080608+00:00",
+        "fetch_seconds": 25.26,
+        "n_events": 7974,
+        "n_markets": 72192,
+        "n_mece_events": 3187,
+        "n_candidates_S1": 3,
+        "n_candidates_S2": 0,
+        "n_candidates_S3": 1,
+        "n_orderbook_verifications": 12
+      },
+      {
+        "poll_idx": 2,
+        "ts": "2026-07-18T16:57:37.341896+00:00",
+        "fetch_seconds": 22.37,
+        "n_events": 7970,
+        "n_markets": 72183,
+        "n_mece_events": 3183,
+        "n_candidates_S1": 2,
+        "n_candidates_S2": 0,
+        "n_candidates_S3": 0,
+        "n_orderbook_verifications": 4
+      },
+      {
+        "poll_idx": 3,
+        "ts": "2026-07-18T16:59:31.933872+00:00",
+        "fetch_seconds": 23.71,
+        "n_events": 7970,
+        "n_markets": 72183,
+        "n_mece_events": 3183,
+        "n_candidates_S1": 3,
+        "n_candidates_S2": 0,
+        "n_candidates_S3": 1,
+        "n_orderbook_verifications": 12
+      },
+      {
+        "poll_idx": 4,
+        "ts": "2026-07-18T17:01:26.514958+00:00",
+        "fetch_seconds": 23.63,
+        "n_events": 7966,
+        "n_markets": 72175,
+        "n_mece_events": 3182,
+        "n_candidates_S1": 3,
+        "n_candidates_S2": 0,
+        "n_candidates_S3": 0,
+        "n_orderbook_verifications": 6
+      },
+      {
+        "poll_idx": 5,
+        "ts": "2026-07-18T17:03:18.868455+00:00",
+        "fetch_seconds": 21.42,
+        "n_events": 7960,
+        "n_markets": 72159,
+        "n_mece_events": 3178,
+        "n_candidates_S1": 3,
+        "n_candidates_S2": 0,
+        "n_candidates_S3": 0,
+        "n_orderbook_verifications": 6
+      },
+      {
+        "poll_idx": 6,
+        "ts": "2026-07-18T17:05:13.500142+00:00",
+        "fetch_seconds": 23.67,
+        "n_events": 7959,
+        "n_markets": 72171,
+        "n_mece_events": 3177,
+        "n_candidates_S1": 3,
+        "n_candidates_S2": 0,
+        "n_candidates_S3": 0,
+        "n_orderbook_verifications": 6
+      },
+      {
+        "poll_idx": 7,
+        "ts": "2026-07-18T17:07:07.964503+00:00",
+        "fetch_seconds": 23.59,
+        "n_events": 7966,
+        "n_markets": 72251,
+        "n_mece_events": 3184,
+        "n_candidates_S1": 3,
+        "n_candidates_S2": 0,
+        "n_candidates_S3": 0,
+        "n_orderbook_verifications": 6
+      }
+    ]
+  },
+  "structure_summary": {
+    "S1_LADDER": {
+      "flagged": 4,
+      "mean_net_edge_cents_per_dollar": -2.5,
+      "max_net_edge_cents_per_dollar": -1.0,
+      "mean_depth_contracts": 135.2,
+      "real": 0,
+      "stale_or_unconfirmed": 4
+    },
+    "S2_COMPLEMENT": {
+      "flagged": 0,
+      "real": 0,
+      "mean_net_edge_cents_per_dollar": 0.0,
+      "mean_depth_contracts": 0.0,
+      "max_net_edge_cents_per_dollar": 0.0,
+      "stale_or_unconfirmed": 0
+    },
+    "S3_EVENTSUM": {
+      "flagged": 1,
+      "mean_net_edge_cents_per_dollar": -7.0,
+      "max_net_edge_cents_per_dollar": -7.0,
+      "mean_depth_contracts": 72.4,
+      "real": 0,
+      "stale_or_unconfirmed": 1
+    }
+  },
+  "totals": {
+    "total_flagged_violation_keys": 5,
+    "total_real_persistent_executable_violation_keys": 0,
+    "stale_or_phantom_ratio": 1.0,
+    "mean_flagged_candidates_per_poll": 3.25,
+    "run_duration_minutes": 13.51,
+    "frequency_per_week_real_naive_extrapolation": 0.0,
+    "frequency_note": "Each poll is a full cross-sectional census of ~7-8k open events / ~70k open markets, not an independent arrival draw, so extrapolating a short polling window into a '/week' rate is statistically unreliable for FLAGGED counts (a short run would imply an absurd rate). We report the directly observed mean flagged-candidates-per-poll instead, and only extrapolate a '/week' figure for REAL violations (and even then, only as a naive linear extrapolation of this run's window -- true frequency would require a multi-day/week continuous polling or historical-orderbook backtest, which was out of scope for this single-session live test)."
+  },
+  "pava_ladder_diagnostics_last_poll": [
+    {
+      "event_ticker": "KXBNBD-26JUL2417",
+      "strike_type": "greater",
+      "n_points": 50,
+      "violation_mass": 11.9504
+    },
+    {
+      "event_ticker": "KXBNBD-26JUL1817",
+      "strike_type": "greater",
+      "n_points": 40,
+      "violation_mass": 7.7954
+    },
+    {
+      "event_ticker": "KXHYPED-26JUL1817",
+      "strike_type": "greater",
+      "n_points": 40,
+      "violation_mass": 4.7684
+    },
+    {
+      "event_ticker": "KXCPIYOY-26SEP",
+      "strike_type": "greater",
+      "n_points": 21,
+      "violation_mass": 4.132
+    },
+    {
+      "event_ticker": "KXHYPED-26JUL1814",
+      "strike_type": "greater",
+      "n_points": 75,
+      "violation_mass": 3.158
+    },
+    {
+      "event_ticker": "KXHYPED-26JUL2417",
+      "strike_type": "greater",
+      "n_points": 50,
+      "violation_mass": 2.86
+    },
+    {
+      "event_ticker": "KXDEGDPQOQF-26JUL30",
+      "strike_type": "greater",
+      "n_points": 15,
+      "violation_mass": 2.7807
+    },
+    {
+      "event_ticker": "KXSOLD-26JUL1814",
+      "strike_type": "greater",
+      "n_points": 300,
+      "violation_mass": 2.6172
+    },
+    {
+      "event_ticker": "KXCPICOREYOY-26NOV",
+      "strike_type": "greater",
+      "n_points": 16,
+      "violation_mass": 2.5542
+    },
+    {
+      "event_ticker": "KXB200MON-26JUL31",
+      "strike_type": "greater",
+      "n_points": 30,
+      "violation_mass": 2.2799
+    },
+    {
+      "event_ticker": "KXGDPNOM-CHN26",
+      "strike_type": "greater",
+      "n_points": 16,
+      "violation_mass": 2.2617
+    },
+    {
+      "event_ticker": "KXGDPNOM-IND26",
+      "strike_type": "greater",
+      "n_points": 10,
+      "violation_mass": 2.1556
+    },
+    {
+      "event_ticker": "KXCPICORE-26OCT",
+      "strike_type": "greater",
+      "n_points": 11,
+      "violation_mass": 2.0317
+    },
+    {
+      "event_ticker": "KXCPIYOY-26NOV",
+      "strike_type": "greater",
+      "n_points": 21,
+      "violation_mass": 1.8864
+    },
+    {
+      "event_ticker": "KXCPICORE-26NOV",
+      "strike_type": "greater",
+      "n_points": 11,
+      "violation_mass": 1.8114
+    },
+    {
+      "event_ticker": "KXCPICORE-26SEP",
+      "strike_type": "greater",
+      "n_points": 11,
+      "violation_mass": 1.7967
+    },
+    {
+      "event_ticker": "KXCPICOREYOY-26AUG",
+      "strike_type": "greater",
+      "n_points": 15,
+      "violation_mass": 1.4867
+    },
+    {
+      "event_ticker": "KXCPICOREYOY-26SEP",
+      "strike_type": "greater",
+      "n_points": 15,
+      "violation_mass": 1.2833
+    },
+    {
+      "event_ticker": "KXCPICORE-26AUG",
+      "strike_type": "greater",
+      "n_points": 11,
+      "violation_mass": 1.2275
+    },
+    {
+      "event_ticker": "KXITGDPQOQA-26JUL30",
+      "strike_type": "greater",
+      "n_points": 15,
+      "violation_mass": 1.19
+    },
+    {
+      "event_ticker": "KXGOLDW-26JUL2417",
+      "strike_type": "greater",
+      "n_points": 40,
+      "violation_mass": 1.1845
+    },
+    {
+      "event_ticker": "KXUSDTTBILL-27FEB28",
+      "strike_type": "greater",
+      "n_points": 8,
+      "violation_mass": 1.1014
+    },
+    {
+      "event_ticker": "KXDEGDPYOYF-26JUL30",
+      "strike_type": "greater",
+      "n_points": 15,
+      "violation_mass": 1.0845
+    },
+    {
+      "event_ticker": "KXH200MON-26JUL31",
+      "strike_type": "greater",
+      "n_points": 30,
+      "violation_mass": 1.0126
+    },
+    {
+      "event_ticker": "KXRTX5090MAX-26DEC31",
+      "strike_type": "greater",
+      "n_points": 15,
+      "violation_mass": 0.84
+    }
+  ],
+  "real_violations_detail": [],
+  "verdict": "NULL RESULT (same conclusion as the Polymarket OOS test). Across 8 polls of Kalshi's live order book (~7966 open events / ~72251 open markets per poll), 5 candidate structural violations were flagged at top-of-book across all three structures (ladder monotonicity, complement sum, event-sum completeness), but ZERO survived the anti-stale-quote gauntlet (persistence across >=3 polls AND live /orderbook depth re-confirmation AND net-of-fee positivity every time observed). Every flagged crossing was a single-snapshot, thin/zero-depth, or fee-eaten artifact -- i.e. a stale or phantom quote, not a real tradeable edge. There is NO real, fee-surviving, deployable structural no-arb edge on Kalshi at the scale and depth thresholds tested here."
+}

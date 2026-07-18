@@ -497,6 +497,15 @@ def main():
     # ---- Best structural config selection: search margin x sustain, require n_fired>=8 (same bar as
     # baseline), rank survivors by worst-case (Wilson-95) analytic EV -- identical selection rule to
     # the confirmed baseline's pick_best_margin, just extended over the extra sustain dimension. ----
+    # ---- Bonferroni correction across this pre-registered 12-cell family (TEST_MARGINS x
+    # SUSTAIN_MINUTES, all declared in the script header and tested/reported in full above -- no
+    # post-hoc cell pick), mirroring the rigor the baseline applied to its own 15-cell family. A
+    # 12-cell grid search is a bigger multiple-testing surface than eyeballing one number, so a
+    # standout cell must clear the CORRECTED bar, not just |t|>=2, to be trusted. ----
+    family_size = len(TEST_MARGINS) * len(SUSTAIN_MINUTES)
+    corrected_alpha = base.BONFERRONI_ALPHA / family_size
+    z_crit = base.norm_ppf(1.0 - corrected_alpha / 2.0)
+
     candidates = []
     for margin in TEST_MARGINS:
         for sustain in SUSTAIN_MINUTES:
@@ -505,16 +514,23 @@ def main():
             ok_n = s["n_fired"] >= 8
             ok_tail = (s["analytic_ev_worst_case"] is not None and s["analytic_ev_worst_case"] > 0)
             t = s["clustered"]["t"]
-            ok_sig = (t is not None and not (isinstance(t, float) and math.isnan(t)) and abs(t) >= 2.0)
+            t_valid = (t is not None and not (isinstance(t, float) and math.isnan(t)))
+            p_uncorrected = base.two_sided_pvalue(t) if t_valid else None
+            p_bonferroni = min(1.0, p_uncorrected * family_size) if p_uncorrected is not None else None
+            ok_sig_uncorrected = (t_valid and abs(t) >= 2.0)
+            ok_sig_bonferroni = (t_valid and abs(t) >= z_crit)
             candidates.append({
                 "margin": margin, "sustain_min": sustain, "n_fired": s["n_fired"],
                 "win_rate": s["win_rate"], "mean_pnl": s["clustered"]["mean"], "t": t,
+                "p_bonferroni": p_bonferroni,
                 "cond_loss_rate_given_fired": s["cond_loss_rate_given_fired"],
                 "worst_case_loss_rate": s["worst_case_loss_rate_wilson95"],
                 "analytic_ev_worst_case": s["analytic_ev_worst_case"],
                 "fires_per_week": s["fires_per_week"],
-                "ok_n": ok_n, "ok_t_ge_2": ok_sig, "ok_worst_case_ev_positive": ok_tail,
-                "passes_all": ok_n and ok_sig and ok_tail,
+                "ok_n": ok_n, "ok_t_ge_2": ok_sig_uncorrected,
+                "ok_bonferroni_significant": ok_sig_bonferroni,
+                "ok_worst_case_ev_positive": ok_tail,
+                "passes_all": ok_n and ok_sig_bonferroni and ok_tail,
             })
     survivors = [c for c in candidates if c["passes_all"]]
     if survivors:
@@ -582,6 +598,8 @@ def main():
         "baseline_confirmed": BASELINE,
         "grid_margin_x_sustain": grid,
         "grid_candidates": candidates,
+        "bonferroni": {"family_size": family_size, "alpha": base.BONFERRONI_ALPHA,
+                       "corrected_alpha": corrected_alpha, "z_crit_two_sided": z_crit},
         "best_structural_config": best_structural,
         "marginal_effects": {
             "glitch_filter_only_margin2_sustain1": glitch_only_2_1,
@@ -710,20 +728,30 @@ def write_report(summary):
 
     L.append("\n## 2. Margin x sustained-above-strike grid (glitch-filtered obs)\n")
     L.append("sustain_min=1 reproduces the baseline's 'first crossing of the running max' rule on "
-             "glitch-filtered data (i.e. isolates the glitch filter's effect alone at each margin).\n")
-    L.append("| margin | sustain (min) | n fired | win rate | mean PnL/ct | t (clustered) | cond. loss rate | "
-             "worst-case loss rate | worst-case EV | fires/wk | passes bar (n>=8,\\|t\\|>=2,EV_wc>0) |")
-    L.append("|---|---|---|---|---|---|---|---|---|---|---|")
+             "glitch-filtered data (i.e. isolates the glitch filter's effect alone at each margin). "
+             "12-cell pre-registered family (3 margins x 4 sustains, all declared up front and "
+             "reported here, no post-hoc cell pick) -- Bonferroni-corrected below, same rigor the "
+             "baseline applied to its own 15-cell margin x gap family.\n")
+    bf = summary["bonferroni"]
+    L.append(f"Family size = {bf['family_size']}, corrected alpha = {fmt(bf['corrected_alpha'],5)} "
+             f"(requires \\|t\\| >= {fmt(bf['z_crit_two_sided'],2)}).\n")
+    L.append("| margin | sustain (min) | n fired | win rate | mean PnL/ct | t (clustered) | p (Bonferroni) | "
+             "cond. loss rate | worst-case loss rate | worst-case EV | fires/wk | **sig @ Bonferroni** | "
+             "passes bar (n>=8, Bonferroni-sig, EV_wc>0) |")
+    L.append("|---|---|---|---|---|---|---|---|---|---|---|---|---|")
     for c in summary["grid_candidates"]:
         L.append(f"| {c['margin']} | {c['sustain_min']} | {c['n_fired']} | {fmt(c['win_rate'],3)} | "
-                 f"{fmt(c['mean_pnl'])} | {fmt(c['t'],2)} | {fmt(c['cond_loss_rate_given_fired'],3)} | "
+                 f"{fmt(c['mean_pnl'])} | {fmt(c['t'],2)} | {fmt(c.get('p_bonferroni'),4)} | "
+                 f"{fmt(c['cond_loss_rate_given_fired'],3)} | "
                  f"{fmt(c['worst_case_loss_rate'],3)} | {fmt(c['analytic_ev_worst_case'])} | "
-                 f"{fmt(c['fires_per_week'],2)} | {'YES' if c['passes_all'] else 'no'} |")
+                 f"{fmt(c['fires_per_week'],2)} | {'**YES**' if c.get('ok_bonferroni_significant') else 'no'} | "
+                 f"{'YES' if c['passes_all'] else 'no'} |")
 
     bs = summary["best_structural_config"]
-    L.append(f"\n**Best structural config (ranked by worst-case EV among survivors): margin={bs['margin']}F, "
-             f"sustain={bs['sustain_min']}min.** n={bs['n_fired']}, win rate {fmt(bs['win_rate'],3)}, "
-             f"mean PnL {fmt(bs['mean_pnl'])}, t={fmt(bs['t'],2)}, worst-case EV={fmt(bs['analytic_ev_worst_case'])}.\n")
+    L.append(f"\n**Best structural config (ranked by worst-case EV among Bonferroni-surviving candidates): "
+             f"margin={bs['margin']}F, sustain={bs['sustain_min']}min.** n={bs['n_fired']}, win rate "
+             f"{fmt(bs['win_rate'],3)}, mean PnL {fmt(bs['mean_pnl'])}, t={fmt(bs['t'],2)}, "
+             f"p(Bonferroni)={fmt(bs.get('p_bonferroni'),5)}, worst-case EV={fmt(bs['analytic_ev_worst_case'])}.\n")
 
     me = summary["marginal_effects"]
     g21 = me["glitch_filter_only_margin2_sustain1"]
@@ -817,6 +845,47 @@ def write_report(summary):
              f"{bs['n_fired'] - round(bs['win_rate']*bs['n_fired']) if bs['win_rate'] is not None else '?'} |")
     L.append(f"| worst-case (Wilson-95) EV | {fmt(base_['analytic_ev_worst_case'])} | {fmt(bs['analytic_ev_worst_case'])} |")
     L.append(f"| fires/week | {fmt(base_['fires_per_week'],2)} | {fmt(bs['fires_per_week'],2)} |")
+
+    L.append("\n## 9. Honest caveats -- read before deploying\n")
+    L.append("**margin=1F/sustain=3min is a DIFFERENT decision rule from the confirmed margin=2F baseline, "
+             "not a drop-in refinement of it.** It survives the 12-cell Bonferroni correction comfortably "
+             "(p=4.8e-13) and dominates the baseline on every reported axis (win rate, mean PnL, t, "
+             "worst-case EV, AND fires/week) on this 67-day sample -- but three things temper that:\n")
+    L.append("1. **Mechanism is understood, not just a lucky number.** Going margin=1/sustain=1 (n=68, "
+             "64.7% win) -> margin=1/sustain=3 (n=42, 100% win) removes exactly the ~26 noise-triggered "
+             "false fires (single-reading blips that never sustain), which mechanically raises both win "
+             "rate AND mean PnL among survivors (removing deeply-negative-PnL losers pulls the average up "
+             "hard). Going sustain=3 -> 5 -> 10 then shows mean PnL and worst-case EV DECAYING (0.34 -> "
+             "0.11 -> 0.02) as later, more-confirmed entries buy at prices closer to certainty -- i.e. "
+             "sustain=3 is a genuine interior optimum trading off noise-rejection against edge-decay, not "
+             "an edge-of-grid artifact. That said, the exact tipping point (3 vs 4 vs 2 minutes) was itself "
+             "chosen from a 4-point grid and could shift with more data.\n")
+    L.append("2. **It is a bigger change than items 1-3 alone intended.** The task's own framing (item 5) "
+             "expected margin=2 to remain the anchor with margin=1 as an optional side sleeve; the data "
+             "says margin=1+sustain=3 is actually the stronger rule on this sample. That is a real, "
+             "measured finding -- but a genuinely different strike offset combined with a new timing rule "
+             "is more degrees of freedom than pure margin-2 refinement, so it deserves a higher forward-"
+             "confirmation bar before being trusted at the same level as the original margin=2 finding.\n")
+    L.append("3. **n=42 (or n=33 for the conservative margin=2+glitch-filter variant) is still a 67-day "
+             "sample.** Zero observed losses at margin=1/sustain=3 is a strong in-sample signal, not a "
+             "promise of zero losses forever -- the Wilson-95 worst-case loss rate (8.4%) is the honest "
+             "number to size against, not the point-estimate 0%.\n")
+    L.append("\n**Recommendation:** run BOTH in the forward paper harness, not just one:\n")
+    L.append("- **CONSERVATIVE** = margin=2F, glitch-filtered, sustain=1min (n=33, 97.0% win, "
+             "+0.183/ct, t=4.67, worst-case EV=+0.060/ct) -- the smallest possible change from the "
+             "confirmed baseline (just the glitch filter), and it alone doubles worst-case EV and cuts "
+             "the tail from 3 to 1. This is the low-risk, high-confidence refinement.\n")
+    L.append("- **PRIMARY/AGGRESSIVE** = margin=1F, glitch-filtered, sustain=3min (n=42, 100% win, "
+             "+0.343/ct, t=7.56, worst-case EV=+0.260/ct, more fires/week too) -- the strongest measured "
+             "result, Bonferroni-significant, but a materially different rule that most needs forward "
+             "data to confirm tested==live (exactly what kalshi_weather_paper.py is for).\n")
+    L.append("- Per-station margin (section 3-4) is **not** adopted into either frozen forward rule: most "
+             "stations have single-digit fired counts at margin=1, far too thin to trust a per-station "
+             "buffer yet -- logged and monitored going forward, not baked in.\n")
+    L.append("- The hourly-METAR cross-check (section 7) is retained as a **logged, non-blocking** signal "
+             "in the forward harness: it demonstrably would have caught the LAX glitch on its own (a "
+             "second line of defense independent of the jump filter), but added no extra bite beyond the "
+             "glitch filter + sustain on this sample, so it does not gate live paper fills yet.\n")
 
     with open(OUT_REPORT, "w") as f:
         f.write("\n".join(L) + "\n")

@@ -40,6 +40,7 @@
 _K-WX weather-nowcast: **CONFIRMED** (deep n=35, margin=2, +0.168/ct, t=4.60 Bonferroni-sig, worst-case EV+); FIRST legal Kalshi edge (small ~$1.2k/wk). Refinement in progress. SHORT=null._
 | strategy | OOS verdict | stack? |
 |---|---|---|
+| **K-WX weather-nowcast (refined)** | **CONFIRMED+REFINED** — margin1+sustain3: +0.34/ct t=7.56 Bonferroni-sig, worst-case-EV+; forward gate built; FIRST legal Kalshi edge (small ~$1k/wk) | **YES (forward-gating)** |
 | S3 print-reconfirm | **CONFIRMED** — +0.121/ct trade-wt t=4.17 over 49 wks real prints; maker-only; ~$9k/wk flow | engine (Global, NOT legal-US) |
 | S1 Wang selection | NULL — 4th selection null; edge unconditional | no |
 | S5 Kalshi S&P brackets | NULL — priced ~1pt | no |
@@ -61,7 +62,7 @@ calibrated/NULL across everything farmed (longshot, index brackets, earnings). H
 | # | Kalshi angle | why it might work / untested |
 |---|---|---|
 | K1 | Kalshi MAKER-REBATE MM (CFTC rebate formula) | UN-KILLED (distinct from Poly LP-pool); ref: aasuper1/kalshi-alpha-strategies; net-of-adverse-sel |
-| K2 | Kalshi structural NO-ARB (ladder-mono + complement-sum + range-sum) | **TOP candidate**; 3 ref impls (Hulkmode85/Dbentley142/oracle3); math-provable, free data; caveat: Poly ver was NULL (stale quotes)+1.75% fee |
+| K2 | Kalshi structural NO-ARB | **DONE — NULL** (5/5 flagged=stale/fee-eaten, 0 real; same as Polymarket; Kalshi fee kills it) |
 | K3 | Kalshi NEW-LISTING mispricing | ref impl djmorgan26 (<48h, spread>=6c, 48h converge); day-scale patience play |
 | K4 | Kalshi SPORTS vs sharp book / vs QCX-Global | Kalshi now lists sports; is it mispriced vs de-vigged lines? (legal, uncorrelated) |
 | K5 | Farm GitHub Kalshi bots (ryanfrigo, Krypt-Trader, quantgalore, homerun-Kalshi) → OOS test each on Kalshi data | direct strategy transfer |

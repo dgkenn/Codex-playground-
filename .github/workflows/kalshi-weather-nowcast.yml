@@ -1,0 +1,59 @@
+# kalshi-weather-nowcast -- FORWARD paper gate for the CONFIRMED Kalshi weather settlement-nowcast edge
+# (node KALSHI-WX-REFINED). READ-ONLY Kalshi + IEM ASOS public APIs. NO orders, NO capital. PROPOSE-ONLY.
+#
+# The one confirmed LEGAL Kalshi edge: buy YES on KXHIGH once the observed 1-min ASOS running-max clears
+# strike+margin (glitch-filtered, sustained N min). Backtest (67-day, Kalshi-API-capped) = +0.34/ct t=7.56
+# Bonferroni-significant, worst-case-EV positive -- but n is small, so this gate accumulates LIVE fires to grow
+# n and prove tested==live BEFORE any sizing. Tracks BOTH rules (conservative margin2+glitch, primary
+# margin1+sustain3) in parallel. Frozen rules live in kalshi_weather_paper.py.
+#
+# Runs every 2h to catch intraday running-max crossings across 20 US cities' afternoons (spread over UTC).
+# Logs (kalshi_weather_positions/settled.jsonl) committed back to $BRANCH. CRON :35 even hours -- distinct
+# from the other sleeves' crons. NOTE: GitHub fires scheduled workflows only from the DEFAULT branch, so this
+# must be on main (or merged) to actually run on schedule; workflow_dispatch works from any branch it lives on.
+name: kalshi-weather-nowcast
+
+on:
+  schedule:
+    - cron: '35 */2 * * *'     # every 2h (daily-high crossings occur mid-afternoon local across US timezones)
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: kalshi-weather-nowcast
+  cancel-in-progress: false
+
+env:
+  BRANCH: claude/coding-bot-ab-test-results-ffmhxw
+
+jobs:
+  kalshi-weather-nowcast:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.BRANCH }}
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: snapshot + settle Kalshi weather-nowcast paper positions, commit logs
+        if: always()
+        run: |
+          set -e
+          git config user.name  "kalshi-weather-bot"
+          git config user.email "kalshi-weather-bot@users.noreply.github.com"
+          python -u kalshi_weather_paper.py snapshot || true
+          python -u kalshi_weather_paper.py settle || true
+          python -u kalshi_weather_paper.py report || true
+          git add kalshi_weather_positions.jsonl kalshi_weather_settled.jsonl 2>/dev/null || true
+          git commit -m "kalshi-weather-nowcast $(date -u +%FT%H%MZ)" || { echo "nothing to commit"; exit 0; }
+          for i in 1 2 3 4 5; do
+            git push origin HEAD:${BRANCH} && exit 0
+            git fetch origin ${BRANCH} && git rebase origin/${BRANCH} || true
+            sleep $((RANDOM % 6 + 2))
+          done
+          echo "push failed after retries" >&2; exit 1

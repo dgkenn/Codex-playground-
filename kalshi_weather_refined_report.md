@@ -20,24 +20,26 @@ Absolute cap 130.0F / floor -60.0F, isolated-spike threshold 8.0F/min (both ente
 
 ## 2. Margin x sustained-above-strike grid (glitch-filtered obs)
 
-sustain_min=1 reproduces the baseline's 'first crossing of the running max' rule on glitch-filtered data (i.e. isolates the glitch filter's effect alone at each margin).
+sustain_min=1 reproduces the baseline's 'first crossing of the running max' rule on glitch-filtered data (i.e. isolates the glitch filter's effect alone at each margin). 12-cell pre-registered family (3 margins x 4 sustains, all declared up front and reported here, no post-hoc cell pick) -- Bonferroni-corrected below, same rigor the baseline applied to its own 15-cell margin x gap family.
 
-| margin | sustain (min) | n fired | win rate | mean PnL/ct | t (clustered) | cond. loss rate | worst-case loss rate | worst-case EV | fires/wk | passes bar (n>=8,\|t\|>=2,EV_wc>0) |
-|---|---|---|---|---|---|---|---|---|---|---|
-| 1 | 1 | 68 | 0.647 | 0.2213 | 4.31 | 0.353 | 0.472 | 0.1027 | 7.10 | YES |
-| 1 | 3 | 42 | 1.000 | 0.3433 | 7.56 | 0.000 | 0.084 | 0.2595 | 4.39 | YES |
-| 1 | 5 | 33 | 1.000 | 0.1074 | 4.32 | 0.000 | 0.104 | 0.0032 | 3.45 | YES |
-| 1 | 10 | 21 | 1.000 | 0.0187 | 2.36 | 0.000 | 0.155 | -0.1359 | 2.19 | no |
-| 2 | 1 | 33 | 0.970 | 0.1831 | 4.67 | 0.030 | 0.153 | 0.0602 | 3.45 | YES |
-| 2 | 3 | 19 | 1.000 | 0.0734 | 2.21 | 0.000 | 0.168 | -0.0947 | 1.99 | no |
-| 2 | 5 | 14 | 1.000 | 0.0283 | 1.53 | 0.000 | 0.215 | -0.1870 | 1.46 | no |
-| 2 | 10 | 9 | 1.000 | 0.0031 | 1.06 | 0.000 | 0.299 | -0.2960 | 0.94 | no |
-| 3 | 1 | 17 | 0.941 | 0.0023 | 0.14 | 0.059 | 0.270 | -0.2087 | 1.78 | no |
-| 3 | 3 | 4 | 1.000 | 0.0000 | n/a | 0.000 | 0.490 | -0.4899 | 0.42 | no |
-| 3 | 5 | 4 | 1.000 | 0.0000 | n/a | 0.000 | 0.490 | -0.4899 | 0.42 | no |
-| 3 | 10 | 3 | 1.000 | 0.0000 | n/a | 0.000 | 0.561 | -0.5615 | 0.31 | no |
+Family size = 12, corrected alpha = 0.00417 (requires \|t\| >= 2.87).
 
-**Best structural config (ranked by worst-case EV among survivors): margin=1F, sustain=3min.** n=42, win rate 1.000, mean PnL 0.3433, t=7.56, worst-case EV=0.2595.
+| margin | sustain (min) | n fired | win rate | mean PnL/ct | t (clustered) | p (Bonferroni) | cond. loss rate | worst-case loss rate | worst-case EV | fires/wk | **sig @ Bonferroni** | passes bar (n>=8, Bonferroni-sig, EV_wc>0) |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | 1 | 68 | 0.647 | 0.2213 | 4.31 | 0.0002 | 0.353 | 0.472 | 0.1027 | 7.10 | **YES** | YES |
+| 1 | 3 | 42 | 1.000 | 0.3433 | 7.56 | 0.0000 | 0.000 | 0.084 | 0.2595 | 4.39 | **YES** | YES |
+| 1 | 5 | 33 | 1.000 | 0.1074 | 4.32 | 0.0002 | 0.000 | 0.104 | 0.0032 | 3.45 | **YES** | YES |
+| 1 | 10 | 21 | 1.000 | 0.0187 | 2.36 | 0.2183 | 0.000 | 0.155 | -0.1359 | 2.19 | no | no |
+| 2 | 1 | 33 | 0.970 | 0.1831 | 4.67 | 0.0000 | 0.030 | 0.153 | 0.0602 | 3.45 | **YES** | YES |
+| 2 | 3 | 19 | 1.000 | 0.0734 | 2.21 | 0.3225 | 0.000 | 0.168 | -0.0947 | 1.99 | no | no |
+| 2 | 5 | 14 | 1.000 | 0.0283 | 1.53 | 1.0000 | 0.000 | 0.215 | -0.1870 | 1.46 | no | no |
+| 2 | 10 | 9 | 1.000 | 0.0031 | 1.06 | 1.0000 | 0.000 | 0.299 | -0.2960 | 0.94 | no | no |
+| 3 | 1 | 17 | 0.941 | 0.0023 | 0.14 | 1.0000 | 0.059 | 0.270 | -0.2087 | 1.78 | no | no |
+| 3 | 3 | 4 | 1.000 | 0.0000 | n/a | n/a | 0.000 | 0.490 | -0.4899 | 0.42 | no | no |
+| 3 | 5 | 4 | 1.000 | 0.0000 | n/a | n/a | 0.000 | 0.490 | -0.4899 | 0.42 | no | no |
+| 3 | 10 | 3 | 1.000 | 0.0000 | n/a | n/a | 0.000 | 0.561 | -0.5615 | 0.31 | no | no |
+
+**Best structural config (ranked by worst-case EV among Bonferroni-surviving candidates): margin=1F, sustain=3min.** n=42, win rate 1.000, mean PnL 0.3433, t=7.56, p(Bonferroni)=0.00000, worst-case EV=0.2595.
 
 ### Isolated marginal effects (margin=2F held fixed)
 
@@ -125,3 +127,25 @@ At the best structural config, the hourly cross-check flags **3** fired event(s)
 | n settled wrong way (tail) | 3 (['KXHIGHMIA-26JUN16-T95', 'KXHIGHMIA-26MAY16-T91', 'KXHIGHLAX-26MAY24-T69']) | 0 |
 | worst-case (Wilson-95) EV | 0.0297 | 0.2595 |
 | fires/week | 3.66 | 4.39 |
+
+## 9. Honest caveats -- read before deploying
+
+**margin=1F/sustain=3min is a DIFFERENT decision rule from the confirmed margin=2F baseline, not a drop-in refinement of it.** It survives the 12-cell Bonferroni correction comfortably (p=4.8e-13) and dominates the baseline on every reported axis (win rate, mean PnL, t, worst-case EV, AND fires/week) on this 67-day sample -- but three things temper that:
+
+1. **Mechanism is understood, not just a lucky number.** Going margin=1/sustain=1 (n=68, 64.7% win) -> margin=1/sustain=3 (n=42, 100% win) removes exactly the ~26 noise-triggered false fires (single-reading blips that never sustain), which mechanically raises both win rate AND mean PnL among survivors (removing deeply-negative-PnL losers pulls the average up hard). Going sustain=3 -> 5 -> 10 then shows mean PnL and worst-case EV DECAYING (0.34 -> 0.11 -> 0.02) as later, more-confirmed entries buy at prices closer to certainty -- i.e. sustain=3 is a genuine interior optimum trading off noise-rejection against edge-decay, not an edge-of-grid artifact. That said, the exact tipping point (3 vs 4 vs 2 minutes) was itself chosen from a 4-point grid and could shift with more data.
+
+2. **It is a bigger change than items 1-3 alone intended.** The task's own framing (item 5) expected margin=2 to remain the anchor with margin=1 as an optional side sleeve; the data says margin=1+sustain=3 is actually the stronger rule on this sample. That is a real, measured finding -- but a genuinely different strike offset combined with a new timing rule is more degrees of freedom than pure margin-2 refinement, so it deserves a higher forward-confirmation bar before being trusted at the same level as the original margin=2 finding.
+
+3. **n=42 (or n=33 for the conservative margin=2+glitch-filter variant) is still a 67-day sample.** Zero observed losses at margin=1/sustain=3 is a strong in-sample signal, not a promise of zero losses forever -- the Wilson-95 worst-case loss rate (8.4%) is the honest number to size against, not the point-estimate 0%.
+
+
+**Recommendation:** run BOTH in the forward paper harness, not just one:
+
+- **CONSERVATIVE** = margin=2F, glitch-filtered, sustain=1min (n=33, 97.0% win, +0.183/ct, t=4.67, worst-case EV=+0.060/ct) -- the smallest possible change from the confirmed baseline (just the glitch filter), and it alone doubles worst-case EV and cuts the tail from 3 to 1. This is the low-risk, high-confidence refinement.
+
+- **PRIMARY/AGGRESSIVE** = margin=1F, glitch-filtered, sustain=3min (n=42, 100% win, +0.343/ct, t=7.56, worst-case EV=+0.260/ct, more fires/week too) -- the strongest measured result, Bonferroni-significant, but a materially different rule that most needs forward data to confirm tested==live (exactly what kalshi_weather_paper.py is for).
+
+- Per-station margin (section 3-4) is **not** adopted into either frozen forward rule: most stations have single-digit fired counts at margin=1, far too thin to trust a per-station buffer yet -- logged and monitored going forward, not baked in.
+
+- The hourly-METAR cross-check (section 7) is retained as a **logged, non-blocking** signal in the forward harness: it demonstrably would have caught the LAX glitch on its own (a second line of defense independent of the jump filter), but added no extra bite beyond the glitch filter + sustain on this sample, so it does not gate live paper fills yet.
+
