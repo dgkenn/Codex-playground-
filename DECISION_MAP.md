@@ -2346,3 +2346,14 @@ repo source (found the 3rd covariate is ln(DURATION) coef +0.143, not "dispute r
   ALREADY KILLED; its one sub-Bonferroni contrast (top-bottom +0.076 t=2.49) is that known tilt, not a new edge.
 VERDICT: NULL. 0/6 decisive tests survive. 4th consecutive selection null (after Deribit-density, VRP-regime, strike sub-band).
 The ~0.06/ct premium is UNCONDITIONAL; principled distortion covariates add no per-trade EV. Trade the blanket band. Farm S1 dead.
+
+## KALSHI-SPX (2026-07-18, farm S5) — Kalshi S&P/Nasdaq daily bracket edge is NULL (efficiently priced)
+Tested short-vol (sell outer brackets) + structural arb on Kalshi KXINX (S&P) + KXNASDAQ100 daily 25pt bracket sets, 45 settled
+days each (May13-Jul17), executable yes_bid from 11am-ET candle (no lookahead), net of Kalshi quadratic fee, day-clustered t.
+- SHORT-VOL: KXINX net -0.020/ct t=-1.26; KXNASDAQ100 net -0.031/ct t=-2.82 (NEGATIVE). Calibration near-perfect (SPX priced
+  0.157 vs realized 0.153; Nasdaq 0.139 vs 0.142 -> if anything underpriced -> selling loses). Retail doesn't overpay index
+  brackets enough to beat fee+spread.
+- STRUCTURAL: bracket sets verified EXHAUSTIVE (45/45 exactly one winner) but NO arb: buy-all costs 1.64-2.04 net (overround
+  asks), sell-all not executable (24/30 wing brackets zero bid). No underround/overround lock.
+VERDICT: NULL, both edges. Index brackets efficiently priced (~1pt), wide retail spreads the taker pays. Reinforces calibrated-
+Kalshi prior. Capacity large (median 68k/31k ct) but moot. Farm S5 dead.

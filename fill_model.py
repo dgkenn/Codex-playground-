@@ -536,7 +536,7 @@ def main():
     for sc, phi in dict(PHI, theoretical=PHI_THEORETICAL_CEIL).items():
         rows = []
         for S in SIZE_GRID:
-            vals, mean, tt, worst, medn, _ = weekly_capture(data, OPERATING_PRICE, phi, S)
+            vals, mean, tt, worst, medn, _, _fs = weekly_capture(data, OPERATING_PRICE, phi, S)
             rows.append(dict(size=S, mean_week_usd=round(mean, 2),
                              week_t=round(tt, 3) if not math.isnan(tt) else None,
                              worst_week_usd=round(worst, 2)))
@@ -547,7 +547,7 @@ def main():
     for sc, phi in PHI.items():
         rows = []
         for p in PRICE_GRID:
-            vals, mean, tt, worst, medn, _ = weekly_capture(data, p, phi, 100)
+            vals, mean, tt, worst, medn, _, _fs = weekly_capture(data, p, phi, 100)
             # per-contract realized captured edge = mean over filled contracts of (p - outcome)
             base = np.array([phi * eligible_base(m["arrivals"], p) for m in data])
             fill = np.minimum(100, base)
@@ -561,7 +561,7 @@ def main():
     # phi sensitivity: realistic weekly $ at S=100, p=OPERATING_PRICE across phi
     phi_sens = []
     for phi in PHI_SENS:
-        vals, mean, tt, worst, medn, _ = weekly_capture(data, OPERATING_PRICE, phi, 100)
+        vals, mean, tt, worst, medn, _, _fs = weekly_capture(data, OPERATING_PRICE, phi, 100)
         phi_sens.append(dict(phi=phi, mean_week_usd=round(mean, 2),
                              week_t=round(tt, 3) if not math.isnan(tt) else None,
                              worst_week_usd=round(worst, 2)))
@@ -592,32 +592,53 @@ def main():
     n_weeks = len(set(m["week"] for m in data))
     med_posted = st.median([sum(1 for m in data if m["week"] == w) for w in set(m["week"] for m in data)])
     # theoretical max weekly capture (phi=1, p=OPERATING_PRICE, unbounded size)
-    _, maxcap_mean, _, _, _, _ = weekly_capture(data, OPERATING_PRICE, PHI_THEORETICAL_CEIL, 10**9)
-    _, realcap_ceiling, _, _, _, _ = weekly_capture(data, OPERATING_PRICE, PHI["realistic"], 10**9)
+    _, maxcap_mean, _, _, _, _, _ = weekly_capture(data, OPERATING_PRICE, PHI_THEORETICAL_CEIL, 10**9)
+    _, realcap_ceiling, _, _, _, _, realcap_ceiling_shares = weekly_capture(data, OPERATING_PRICE, PHI["realistic"], 10**9)
 
-    # bankroll -> feasible per-market size -> weekly $ (spread evenly across posted markets, hold 1 week)
-    coll_per_share = 1.0 - OPERATING_PRICE            # collateral to sell 1 YES at price p
+    # Capital model: a RESTING order ties up collateral only when it FILLS. Selling 1 YES at price p needs
+    # (1-p) collateral, held to resolution (~1 week). So required capital ~= weekly FILLED collateral =
+    # weekly_fill_shares * (1-p). We invert: for a bankroll B, find the per-market size S whose realized weekly
+    # filled collateral equals B (capped where flow-capacity binds, i.e. S -> infinity still under-uses B).
+    coll_per_share = 1.0 - OPERATING_PRICE
+    phi_r = PHI["realistic"]
+
+    def week_usd_and_capital(S, phi):
+        _, mean, _, worst, _, _, fill_sh = weekly_capture(data, OPERATING_PRICE, phi, S)
+        return mean, worst, fill_sh * coll_per_share      # weekly $, worst week $, capital tied (collateral)
+
+    def size_for_bankroll(B, phi):
+        # binary-search per-market size so weekly filled collateral ~= B; cap if capacity binds first
+        _, _, cap_ceil = week_usd_and_capital(10**9, phi)
+        if cap_ceil <= B:
+            return None, cap_ceil                          # capacity-bound: any size fits under bankroll
+        lo, hi = 0.0, 1e7
+        for _ in range(60):
+            mid = 0.5 * (lo + hi)
+            _, _, capm = week_usd_and_capital(mid, phi)
+            if capm < B:
+                lo = mid
+            else:
+                hi = mid
+        return 0.5 * (lo + hi), B
+
     bankrolls = [50, 100, 250, 500, 2000, 10000, 50000]
     bankroll_rows = []
     for B in bankrolls:
-        # spread across all posted markets in a week; shares/market = B / (coll * n_posted)
-        S_per = B / (coll_per_share * med_posted)
-        rows = {}
+        row = dict(bankroll=B)
         for sc, phi in PHI.items():
-            vals, mean, tt, worst, medn, _ = weekly_capture(data, OPERATING_PRICE, phi, S_per)
-            rows[sc] = round(mean, 2)
-        bankroll_rows.append(dict(bankroll=B, shares_per_market=round(S_per, 2),
-                                  realistic_week_usd=rows["realistic"],
-                                  pessimistic_week_usd=rows["pessimistic"],
-                                  optimistic_week_usd=rows["optimistic"]))
+            S_per, capital = size_for_bankroll(B, phi)
+            Suse = 10**9 if S_per is None else S_per
+            wk, worst, _ = week_usd_and_capital(Suse, phi)
+            row[f"{sc}_week_usd"] = round(wk, 2)
+            if sc == "realistic":
+                row["realistic_shares_per_market"] = ("capacity-bound" if S_per is None else round(S_per, 2))
+                row["realistic_capital_used"] = round(capital, 2)
+                row["realistic_worst_week_usd"] = round(worst, 2)
+        bankroll_rows.append(row)
 
-    # headline realistic capture at small ($50-500) vs larger size
-    def realistic_week(B):
-        S_per = B / (coll_per_share * med_posted)
-        _, mean, _, _, _, _ = weekly_capture(data, OPERATING_PRICE, PHI["realistic"], S_per)
-        return mean
-    small_usd = realistic_week(200)       # representative small bankroll
+    small_usd = bankroll_rows[[r["bankroll"] for r in bankroll_rows].index(500)]["realistic_week_usd"]
     large_usd = realcap_ceiling            # realistic-phi capacity ceiling (size unbounded)
+    capital_to_saturate_realistic = realcap_ceiling_shares * coll_per_share
 
     # fraction of the +0.12/ct edge captured (per-contract at operating point) and capacity utilization
     base_op = np.array([PHI["realistic"] * eligible_base(m["arrivals"], OPERATING_PRICE) for m in data])
@@ -655,8 +676,12 @@ def main():
             median_markets_posted_per_week=med_posted,
             theoretical_max_week_usd_phi1=round(maxcap_mean, 2),
             realistic_capacity_ceiling_week_usd=round(realcap_ceiling, 2),
+            capital_to_saturate_realistic_usd=round(capital_to_saturate_realistic, 2),
             bankroll_to_weekly_usd=bankroll_rows,
-            collateral_per_share=round(coll_per_share, 3)),
+            collateral_per_share=round(coll_per_share, 3),
+            capital_note="Resting orders consume collateral only when filled; a bankroll B funds up to B of "
+                         "weekly FILLED collateral. Beyond the capital that saturates realized flow, extra "
+                         "capital cannot be deployed (capacity-bound)."),
         headline=dict(
             small_bankroll_realistic_usd_per_week=round(small_usd, 2),
             large_size_realistic_ceiling_usd_per_week=round(large_usd, 2),
@@ -756,15 +781,17 @@ def write_report(S):
     L.append(f"- Realistic-phi **capacity ceiling** (size unbounded): **${cap['realistic_capacity_ceiling_week_usd']}/week**.\n")
     L.append(f"- Theoretical max (phi=1, size unbounded): ${cap['theoretical_max_week_usd_phi1']}/week.\n")
 
-    L.append("### Bankroll -> deployable $/week (spread across ~all posted markets, hold to resolution)\n")
-    L.append(f"Collateral to sell 1 YES at p={A['operating_price']} is ${cap['collateral_per_share']}; a bankroll B "
-             f"spread over ~{cap['median_markets_posted_per_week']:.0f} weekly markets funds "
-             f"B/({cap['collateral_per_share']}*{cap['median_markets_posted_per_week']:.0f}) shares/market.\n")
-    L.append("| bankroll $ | shares/market | pess $/wk | real $/wk | opt $/wk |")
-    L.append("|---|---|---|---|---|")
+    L.append("### Bankroll -> deployable $/week\n")
+    L.append(f"A resting order ties up collateral **only when it fills** (${cap['collateral_per_share']}/share at "
+             f"p={A['operating_price']}, held ~1 week to resolution). A bankroll B funds up to B of weekly FILLED "
+             f"collateral; **~${cap['capital_to_saturate_realistic_usd']} of capital saturates realized flow** at "
+             f"realistic phi -- beyond that, extra capital sits idle (capacity-bound).\n")
+    L.append("| bankroll $ | real shares/mkt | real capital used | pess $/wk | real $/wk | opt $/wk | real worst-wk $ |")
+    L.append("|---|---|---|---|---|---|---|")
     for r in cap["bankroll_to_weekly_usd"]:
-        L.append(f"| {r['bankroll']} | {r['shares_per_market']} | {r['pessimistic_week_usd']:+.2f} | "
-                 f"{r['realistic_week_usd']:+.2f} | {r['optimistic_week_usd']:+.2f} |")
+        L.append(f"| {r['bankroll']} | {r['realistic_shares_per_market']} | {r['realistic_capital_used']} | "
+                 f"{r['pessimistic_week_usd']:+.2f} | {r['realistic_week_usd']:+.2f} | {r['optimistic_week_usd']:+.2f} | "
+                 f"{r['realistic_worst_week_usd']:+.2f} |")
     L.append("")
 
     L.append("### phi sensitivity (size=100, p=operating)\n")

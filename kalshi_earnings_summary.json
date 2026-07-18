@@ -1,0 +1,365 @@
+{
+  "n_markets": 201,
+  "n_events": 21,
+  "n_series": 20,
+  "n_weeks": 9,
+  "top_companies": [
+    [
+      "Tesla Inc.",
+      36
+    ],
+    [
+      "Rivian Automotive Inc.",
+      18
+    ],
+    [
+      "Boeing Company (The)",
+      14
+    ],
+    [
+      "United Airlines Holdings Inc.",
+      13
+    ],
+    [
+      "Vail Resorts Inc.",
+      12
+    ],
+    [
+      "CAVA Group Inc.",
+      11
+    ],
+    [
+      "FedEx Corporation",
+      11
+    ],
+    [
+      "Ford Motor Company",
+      9
+    ],
+    [
+      "Constellation Brands, Inc.",
+      9
+    ],
+    [
+      "Costco Wholesale Corporation",
+      8
+    ]
+  ],
+  "top_series": [
+    [
+      "KXTSLA",
+      36
+    ],
+    [
+      "KXRIVN",
+      18
+    ],
+    [
+      "KXBA",
+      14
+    ],
+    [
+      "KXUAL",
+      13
+    ],
+    [
+      "KXMTN",
+      12
+    ],
+    [
+      "KXCAVA",
+      11
+    ],
+    [
+      "KXFDX",
+      11
+    ],
+    [
+      "KXF",
+      9
+    ],
+    [
+      "KXSTZ",
+      9
+    ],
+    [
+      "KXCOST",
+      8
+    ]
+  ],
+  "realized_yes_rate": 0.5920398009950248,
+  "mean_priced_mid": 0.600771144278607,
+  "mean_priced_yes_ask": 0.6192039800995025,
+  "calibration": [
+    {
+      "band": "[0.00,0.10)",
+      "n": 56,
+      "mean_mid": 0.0443,
+      "realized": 0
+    },
+    {
+      "band": "[0.10,0.25)",
+      "n": 15,
+      "mean_mid": 0.175,
+      "realized": 0.1333
+    },
+    {
+      "band": "[0.25,0.40)",
+      "n": 7,
+      "mean_mid": 0.3221,
+      "realized": 0.2857
+    },
+    {
+      "band": "[0.40,0.60)",
+      "n": 9,
+      "mean_mid": 0.5144,
+      "realized": 0.5556
+    },
+    {
+      "band": "[0.60,0.75)",
+      "n": 7,
+      "mean_mid": 0.6843,
+      "realized": 0.7143
+    },
+    {
+      "band": "[0.75,0.90)",
+      "n": 9,
+      "mean_mid": 0.8294,
+      "realized": 0.7778
+    },
+    {
+      "band": "[0.90,1.01)",
+      "n": 98,
+      "mean_mid": 0.9848,
+      "realized": 1
+    }
+  ],
+  "median_strike_beat_rate": 0.2857142857142857,
+  "median_strike_n_events": 21,
+  "median_strike_t_vs_0.5": -2.1213203435596424,
+  "median_strike_detail": [
+    {
+      "event": "KXBA-26JULDELIV",
+      "company": "Boeing Company (The)",
+      "mid": 0.015,
+      "result": 0,
+      "week": "2026-W29"
+    },
+    {
+      "event": "KXBULL-26MAYFUND",
+      "company": "Webull Corporation",
+      "mid": 0.235,
+      "result": 0,
+      "week": "2026-W21"
+    },
+    {
+      "event": "KXCAVA-26MAYREST",
+      "company": "CAVA Group Inc.",
+      "mid": 0.76,
+      "result": 1,
+      "week": "2026-W21"
+    },
+    {
+      "event": "KXCCL-26JUNALBD",
+      "company": "Carnival Corporation",
+      "mid": 0.035,
+      "result": 0,
+      "week": "2026-W26"
+    },
+    {
+      "event": "KXCOST-26MAYCARDS",
+      "company": "Costco Wholesale Corporation",
+      "mid": 0.455,
+      "result": 0,
+      "week": "2026-W22"
+    },
+    {
+      "event": "KXF-26JULUSSALES",
+      "company": "Ford Motor Company",
+      "mid": 0.285,
+      "result": 0,
+      "week": "2026-W28"
+    },
+    {
+      "event": "KXFDX-26JUNADV",
+      "company": "FedEx Corporation",
+      "mid": 0.58,
+      "result": 0,
+      "week": "2026-W26"
+    },
+    {
+      "event": "KXFUTU-26MAYFUNDED",
+      "company": "Futu Holdings Limited",
+      "mid": 0.61,
+      "result": 0,
+      "week": "2026-W22"
+    },
+    {
+      "event": "KXHD-26MAYTRAN",
+      "company": "The Home Depot, Inc.",
+      "mid": 0.335,
+      "result": 0,
+      "week": "2026-W21"
+    },
+    {
+      "event": "KXKLAR-26MAYCONS",
+      "company": "Klarna Group plc",
+      "mid": 0.225,
+      "result": 0,
+      "week": "2026-W20"
+    },
+    {
+      "event": "KXLOW-26MAYTRAN",
+      "company": "Lowe's Companies, Inc.",
+      "mid": 0.295,
+      "result": 0,
+      "week": "2026-W21"
+    },
+    {
+      "event": "KXMTN-26JUNSKIER",
+      "company": "Vail Resorts Inc.",
+      "mid": 0.315,
+      "result": 1,
+      "week": "2026-W24"
+    },
+    {
+      "event": "KXRIVN-26AUGDELIV",
+      "company": "Rivian Automotive Inc.",
+      "mid": 0.065,
+      "result": 0,
+      "week": "2026-W27"
+    },
+    {
+      "event": "KXSNOWFLAKE-26MAYCUST",
+      "company": "Snowflake Inc.",
+      "mid": 0.17,
+      "result": 0,
+      "week": "2026-W22"
+    },
+    {
+      "event": "KXSTZ-26JUNBEER",
+      "company": "Constellation Brands, Inc.",
+      "mid": 0.325,
+      "result": 1,
+      "week": "2026-W27"
+    },
+    {
+      "event": "KXTGT-26MAYTRAN",
+      "company": "Target Corporation",
+      "mid": 0.995,
+      "result": 1,
+      "week": "2026-W21"
+    },
+    {
+      "event": "KXTSLA-26JULDELIV",
+      "company": "Tesla Inc.",
+      "mid": 0.515,
+      "result": 1,
+      "week": "2026-W27"
+    },
+    {
+      "event": "KXTSLA-26JULPROD",
+      "company": "Tesla Inc.",
+      "mid": 0.595,
+      "result": 1,
+      "week": "2026-W27"
+    },
+    {
+      "event": "KXUAL-26JULPAX",
+      "company": "United Airlines Holdings Inc.",
+      "mid": 0.14,
+      "result": 0,
+      "week": "2026-W29"
+    },
+    {
+      "event": "KXULTA-26JUNTXGRW",
+      "company": "Ulta Beauty Inc.",
+      "mid": 0.45,
+      "result": 0,
+      "week": "2026-W23"
+    },
+    {
+      "event": "KXURBN-26MAYSTOR",
+      "company": "Urban Outfitters, Inc.",
+      "mid": 0.515,
+      "result": 0,
+      "week": "2026-W21"
+    }
+  ],
+  "strategies": {
+    "S1_buyYES_all": {
+      "label": "buy YES, all liquid strikes",
+      "n": 201,
+      "n_events": 21,
+      "n_weeks": 9,
+      "mean_pnl_ct": -0.0348,
+      "mean_pnl_ct_contfee": -0.0315,
+      "gross_pnl_ct": -0.0272,
+      "t_event": -2.761,
+      "t_week": -2.432,
+      "win_rate": 0.174
+    },
+    "S2_buyYES_midband": {
+      "label": "buy YES, mid mid in [.35,.65]",
+      "n": 12,
+      "n_events": 7,
+      "n_weeks": 5,
+      "mean_pnl_ct": -0.0733,
+      "mean_pnl_ct_contfee": -0.0701,
+      "gross_pnl_ct": -0.0533,
+      "t_event": -2.363,
+      "t_week": -2.328,
+      "win_rate": 0.5
+    },
+    "S3_buyYES_liqband": {
+      "label": "buy YES, mid in [.10,.90]",
+      "n": 48,
+      "n_events": 17,
+      "n_weeks": 9,
+      "mean_pnl_ct": -0.0617,
+      "mean_pnl_ct_contfee": -0.0569,
+      "gross_pnl_ct": -0.0442,
+      "t_event": -2.069,
+      "t_week": -1.73,
+      "win_rate": 0.458
+    },
+    "S4_buyYES_lowband": {
+      "label": "buy YES, mid in [.10,.35] (upside longshot)",
+      "n": 21,
+      "n_events": 15,
+      "n_weeks": 9,
+      "mean_pnl_ct": -0.0686,
+      "mean_pnl_ct_contfee": -0.0629,
+      "gross_pnl_ct": -0.0505,
+      "t_event": -0.819,
+      "t_week": -0.598,
+      "win_rate": 0.19
+    },
+    "S5_buyNO_all": {
+      "label": "buy NO, all liquid strikes",
+      "n": 201,
+      "n_events": 21,
+      "n_weeks": 9,
+      "mean_pnl_ct": -0.0214,
+      "gross_pnl_ct": -0.0097,
+      "t_event": 0.392,
+      "t_week": 0.752,
+      "win_rate": 0.408
+    },
+    "S6_buyNO_midband": {
+      "label": "buy NO, mid in [.35,.65]",
+      "n": 12,
+      "n_events": 7,
+      "n_weeks": 5,
+      "mean_pnl_ct": -0.0325,
+      "gross_pnl_ct": -0.0125,
+      "t_event": 1.668,
+      "t_week": 1.712,
+      "win_rate": 0.5
+    }
+  },
+  "n_strategies_tried": 6,
+  "n_multiple_testing_looks": 14,
+  "median_entry_spread": 0.02,
+  "mean_hours_before_close": 16.47
+}
