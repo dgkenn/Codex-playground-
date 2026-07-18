@@ -586,8 +586,15 @@ def build_verdict(ds, br, bt, bt_nofee):
     V = []
     if not ds or not br:
         return ["INSUFFICIENT DATA."]
-    best = max(bt.values(), key=lambda b: b.get("t_day", -9) if b.get("n") else -9)
-    tradeable = best.get("n") and best.get("mean_edge", 0) > 0 and abs(best.get("t_day", 0)) > 2.4
+    # headline = most-populated threshold (most credible n), not the tiny-n outlier
+    populated = [b for b in bt.values() if b.get("n", 0) >= 30]
+    head = max(populated, key=lambda b: b["n"]) if populated else \
+           max(bt.values(), key=lambda b: b.get("n", 0))
+    # "best t" among adequately-powered thresholds only (n>=30)
+    best = max(populated, key=lambda b: b.get("t_day", -9)) if populated else head
+    tiny = [b for b in bt.values() if 0 < b.get("n", 0) < 30]
+    tiny_best = max(tiny, key=lambda b: b.get("t_day", -9)) if tiny else None
+    tradeable = bool(populated) and best.get("mean_edge", 0) > 0 and abs(best.get("t_day", 0)) > 2.4
     book_sharper = br["brier_book"] < br["brier_qcx"]
     V.append(f"- QCX pre-game prints deviate from the closing book by mean|dev| "
              f"**{ds['mean_abs']*100:.1f} cents** (median {ds['median_abs']*100:.1f}c); "
@@ -601,10 +608,14 @@ def build_verdict(ds, br, bt, bt_nofee):
                  f"(best mean {best['mean_edge']:+.3f}/contract, day-clustered t={best['t_day']:+.2f}). "
                  "-> Potentially tradeable, BUT see caveat.")
     else:
-        V.append("- Backtest: after the 0.06*p*(1-p) taker fee, NO threshold delivers a "
-                 "fee-surviving edge at day-clustered |t|>2.4. "
-                 f"(best day-clustered t={best.get('t_day',0):+.2f}, "
-                 f"mean {best.get('mean_edge',0):+.3f}/contract.)")
+        V.append("- Backtest (fee-net): most-populated threshold "
+                 f"n={head.get('n')} gives mean {head.get('mean_edge',0):+.3f}/contract, "
+                 f"day-clustered t={head.get('t_day',0):+.2f} -> NOT significant. "
+                 "No adequately-powered (n>=30) threshold clears |t|>2.4.")
+        if tiny_best:
+            V.append(f"- The only threshold with |t|>2 (t={tiny_best.get('t_day',0):+.2f}) "
+                     f"has n={tiny_best.get('n')} trades -- underpowered, dies under the "
+                     "3-threshold multiple-testing haircut. Not credible.")
     # look-ahead caveat is central
     V.append("- **KEY CAVEAT (look-ahead):** the 'edge' compares a QCX print (median a "
              "couple hours pre-game) to the EVENTUAL closing line. Trading toward the "

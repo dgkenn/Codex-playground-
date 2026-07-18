@@ -1,6 +1,6 @@
 # QCX (Polymarket US) Sports Efficiency / Mispricing Test
 
-_Generated 2026-07-18T15:53:17.307521+00:00. Venue: QCX / Polymarket US (gateway.polymarket.us)._
+_Generated 2026-07-18T15:54:21.951093+00:00. Venue: QCX / Polymarket US (gateway.polymarket.us)._
 
 ## Setup
 
@@ -83,7 +83,8 @@ Multiple-testing: 3 thresholds tested; apply ~sqrt haircut / require |t|>~2.4 fo
 
 - QCX pre-game prints deviate from the closing book by mean|dev| **1.8 cents** (median 1.3c); |dev|>5c on 5% of games. This is comparable to a sub-cent mature-venue tracking error -> QCX prints are noisier.
 - Brier(book)=0.231 vs Brier(QCX)=0.234: the closing book is sharper.
-- Backtest: after the 0.06*p*(1-p) taker fee, NO threshold delivers a fee-surviving edge at day-clustered |t|>2.4. (best day-clustered t=+2.20, mean +0.448/contract.)
+- Backtest (fee-net): most-populated threshold n=110 gives mean +0.106/contract, day-clustered t=+0.69 -> NOT significant. No adequately-powered (n>=30) threshold clears |t|>2.4.
+- The only threshold with |t|>2 (t=+2.20) has n=6 trades -- underpowered, dies under the 3-threshold multiple-testing haircut. Not credible.
 - **KEY CAVEAT (look-ahead):** the 'edge' compares a QCX print (median a couple hours pre-game) to the EVENTUAL closing line. Trading toward the closing line requires knowing it in advance; part of any raw gap is just closing-line-value (the later, sharper line), NOT a real-time exploitable mispricing. Treat a positive backtest as an UPPER BOUND.
 
 **BLUNT: NULL (fee-surviving edge not demonstrated).** The new QCX venue's pre-game prices are NOISIER than a mature venue (wider dispersion vs the closing line, thin books), consistent with a young sports venue. But that dispersion is symmetric noise, not a systematic mispricing: the closing book is at least as sharp (Brier), and once the QCX taker fee (up to 1.5c at p=0.5) is charged, the deviation-chasing backtest does not clear a day-clustered significance bar. Even the raw (no-fee, look-ahead-inflated) signal is the ceiling. Consistent with the prior sportsbook null: legal QCX sports are not a free lunch.
