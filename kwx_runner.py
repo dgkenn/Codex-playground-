@@ -45,8 +45,35 @@ MARGIN_F = 1.0          # base: observed extreme must clear strike by this many 
 SUSTAIN_MIN = 3         # sustained this many minutes -- glitch-robust (Tier-1 S2: sustain=3 reconfirmed;
                         # sustain=1 turns 13.7% of fires into glitch losses vs 0.35% at sustain=3)
 MAX_PAY_CENTS = 98      # never pay above this (skip dead-on-arrival fires -- ~63% of raw fires have no gap)
-DEFAULT_SIZE = 10       # contracts/market; capacity study (Tier-1 S3) caps real size; books are 5-100ct deep
 GLITCH_HI_F, GLITCH_LO_F = 130.0, -60.0
+
+# --- bankroll-aware sizing (kwx_sizing.py Monte-Carlo optimum for a small bankroll) ---
+# The per-fire CAP is the dominant risk lever: at a 20% cap a correlated 'heat-dome' loss day can wipe the
+# account (ruin ~10%); at 5% cap ruin ~0 with nearly the same median growth. Kelly-fraction barely matters
+# once the cap binds. So: quarter-Kelly, hard 5% per-fire cap, 17.5% per-city-day cap, min 1 contract.
+BANKROLL = 50.0         # set to your actual account; sizing scales with it
+KELLY_FRAC = 0.25       # fractional Kelly (quarter) -- robust to model/tail error
+PER_FIRE_CAP = 0.05     # max fraction of bankroll on ONE fire (THE risk control)
+DEPTH_CAP = 25          # never order more than the book can plausibly fill (Tier-1: books 5-100ct)
+
+
+def _kelly_fraction(price, p=0.9965):
+    """Full-Kelly fraction of bankroll to stake on a contract at `price` (win prob p, lose full stake)."""
+    q = 1 - p
+    b = (1 - price) / price
+    return max(0.0, p - q / b)
+
+
+def size_for_fire(bankroll, price_c, station):
+    """Contracts to buy for a fire at price_c (cents), given bankroll. Quarter-Kelly, 5% per-fire cap,
+    per-station size derate, integer, min 1 if affordable, capped by plausible depth."""
+    price = price_c / 100.0
+    frac = min(KELLY_FRAC * _kelly_fraction(price), PER_FIRE_CAP) * STATION_SIZE_MULT.get(station, 1.0)
+    n = int(frac * bankroll / price)
+    n = min(n, DEPTH_CAP)
+    if n < 1 and price <= bankroll:   # floor of 1 contract if we can afford it and intend to trade
+        n = 1
+    return n
 
 # Per-station RISK derate (Track B multi-year + Tier-1): a handful of stations disagree with the official
 # CLI far more often (obs-vs-CLI lock-failure). Raise their margin (fewer, safer fires) and/or shrink size.
@@ -251,9 +278,8 @@ def poll_once(exec_client=None, verbose=True):
         ext = sustained_extreme(feed["obs"], kind)
         if ext is None:
             ext = feed["extreme_f"]
-        # per-station risk derate (Track B / Tier-1): high-disagreement stations get a higher margin + smaller size
+        # per-station risk derate (Track B / Tier-1): high-disagreement stations get a higher margin
         st_margin = STATION_MARGIN.get(station, MARGIN_F)
-        st_size = max(1, round(DEFAULT_SIZE * STATION_SIZE_MULT.get(station, 1.0)))
         # cadence signal
         dist = nearest_strike_distance(rungs, ext, kind, margin=st_margin)
         iv = adaptive_interval_s(dist)
@@ -262,8 +288,11 @@ def poll_once(exec_client=None, verbose=True):
         for ticker, side, cap_c in locked_orders(rungs, ext, kind, margin=st_margin):
             if ticker in state["fired"]:
                 continue
+            size = size_for_fire(BANKROLL, cap_c, station)   # bankroll-aware, quarter-Kelly, 5% per-fire cap
+            if size < 1:
+                continue
             fn = ex.buy_yes if side == "yes" else ex.buy_no
-            res = fn(ticker, count=st_size, max_price_cents=cap_c)
+            res = fn(ticker, count=size, max_price_cents=cap_c)
             plan = {"ticker": ticker, "side": side, "cap_c": cap_c, "extreme_f": ext,
                     "station": station, "kind": kind, "status": res.get("status"),
                     "ts": int(time.time() * 1000)}
