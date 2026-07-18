@@ -2794,3 +2794,11 @@ w/o netting blowup risk). Full available history (2mo x 10 cities, brand-new pro
 (a) wait for more calendar time to accumulate history, or (b) a genuinely faster corroboration source (radar/MRMS precip,
 untested) -- but the fundamental slow-accumulation-vs-fast-repricing problem likely persists. DO NOT build a rain harness now.
 STACK STAYS TEMP-ONLY. 10%/day on meaningful capital still requires a DIFFERENT orthogonal edge (rain is not it).
+
+## US-AGGREGATE TEMP (2026-07-18) — NULL, closes the last deeper-book scale-up candidate for the temp nowcast
+Checked whether US-aggregate temp markets could be a deeper-book extension of the (validated) city temp nowcast:
+- KXHIGHUS settles on an NWS/WPC forecaster's national-HIGH pick from a TEXT discussion -> not cleanly computable from our
+  20 cities (true US high is usually an untracked desert station). 0 open markets. Not nowcast-able.
+- KXAVGTEMP settles on NCEI MONTHLY aggregate -> slow-accumulation, same DOA failure as rain. 0 open markets.
+=> No deeper-book extension exists. The temp nowcast (city high+low) is the whole edge; capacity ceiling stands. Confirms
+THE_PLAN.md: ~5%/day sound on small capital, 10%/day-at-scale not soundly achievable. Levers exhausted; hunt closed.
