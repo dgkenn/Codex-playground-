@@ -2643,3 +2643,13 @@ DATASET INVENTORY (reachability live-checked): have=Kalshi candles/trades/settle
 Reachable-not-yet-used: aviationweather METAR(realtime), Synoptic HF, ISD/NCEI, NWS CLI API, MADIS, NBM/HRRR(AWS), MRMS. Ranked
 gaps: (1) Predexon key [human], (2) LOW-LATENCY LIVE OBS [deployment blocker], (3) self-hosted fwd L2 poller, (4) CLI cross-check,
 (5) NBM/HRRR targeting. => Phase-2 depth-sizing MUST use real L2 (Predexon or fwd-capture), NOT the volume proxy.
+
+## PREDEXON-L2-UNLOCK (2026-07-18) — real Kalshi weather order-book depth acquired (key stored gitignored)
+Operator provided a Predexon API key (stored in gitignored .predexon_key, never committed/echoed). CONFIRMED WORKING: the
+orderbooks endpoint (GET /v2/kalshi/orderbooks, timestamps in MILLISECONDS, prices in cents, free-tier-included, data since
+2026-01-07) returns FULL L2 for KXHIGH weather markets: KXHIGHNY/MIA/CHI each 2000 snapshots over their 2-day life, fields
+yes_bids/yes_asks[{price,size}]/best_bid/best_ask/bid_depth/ask_depth/sequence at ms resolution. Depth is modest (level sizes ~1-
+115 ct) confirming the volume-proxy $35k/wk was overstated. KXLOW tickers need /historical discovery (live endpoint drops old).
+=> UNLOCKS true depth-sizing on the full backtest window (Predexon Jan-7-2026 to present covers our May-present fires). Phase-2
+depth-sizing now uses REAL L2, not the candlestick-volume proxy. (Note: a newer sub-cent orderbook endpoint is recommended as the
+whole-cent one deprecates -- switch if precision needed.)
