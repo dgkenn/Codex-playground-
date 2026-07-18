@@ -13,3 +13,5 @@ scratchpad/
 .env
 .settlement_basis_cache/
 .tailrisk_cache/
+.kalshi_creds
+kwx_exec_log.jsonl

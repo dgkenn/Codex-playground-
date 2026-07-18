@@ -25,7 +25,7 @@ Usage:
   python aviationweather_metar.py KDEN                 # last 24h temps + running max/min (degF)
   python aviationweather_metar.py KDEN 2026-07-17 -7   # running max/min for one LST day (offset hrs)
 """
-import urllib.request, json, ssl, os, sys, datetime as dt
+import urllib.request, urllib.error, json, ssl, os, sys, time, datetime as dt
 
 _CA = "/root/.ccr/ca-bundle.crt"
 _CTX = ssl.create_default_context(cafile=_CA) if os.path.exists(_CA) else None
@@ -50,7 +50,22 @@ def fetch_metar(station, hours=24, timeout=30):
         sid = "K" + sid  # 3-letter US ids -> ICAO K-prefixed
     url = f"{_API}?ids={sid}&format=json&hours={int(hours)}"
     req = urllib.request.Request(url, headers={"Accept": "application/json", "User-Agent": "wx-research"})
-    data = json.load(urllib.request.urlopen(req, timeout=timeout, context=_CTX))
+    data = None
+    last_err = None
+    for attempt in range(4):  # tolerate transient 5xx from aviationweather (seen: sporadic 502)
+        try:
+            data = json.load(urllib.request.urlopen(req, timeout=timeout, context=_CTX))
+            break
+        except urllib.error.HTTPError as e:
+            last_err = e
+            if e.code not in (500, 502, 503, 504):
+                raise
+            time.sleep(1.5 * (attempt + 1))
+        except (urllib.error.URLError, TimeoutError) as e:
+            last_err = e
+            time.sleep(1.5 * (attempt + 1))
+    if data is None:
+        raise last_err if last_err else RuntimeError("metar fetch failed")
     out = []
     for r in data:
         t = r.get("temp")
