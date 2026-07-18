@@ -56,6 +56,17 @@ KELLY_FRAC = 0.25       # fractional Kelly (quarter) -- robust to model/tail err
 PER_FIRE_CAP = 0.05     # max fraction of bankroll on ONE fire (THE risk control)
 DEPTH_CAP = 25          # never order more than the book can plausibly fill (Tier-1: books 5-100ct)
 
+# --- CONVICTION tier (kwx_conviction_optimize.py robust plateau): press the demonstrably-safe fires harder.
+# A fire is "conviction" when it has BOTH a temperature CUSHION (obs cleared the strike by >= this many degF,
+# = safety margin vs a late CLI revision) AND a price GAP still open (>= this many cents of edge left, = the
+# market hasn't repriced it yet). On those, raise the per-fire cap from 5% to CONV_CAP. The grid search's
+# risk-optimal, robust (non-knife-edge) plateau was cushion>=2F & gap>=15c & cap 12%: ~+5% median growth over
+# flat-5% while ruin stays ~0 even under a stressed non-zero conviction-loss tail. Station derate still applies
+# multiplicatively on top, so high-disagreement stations (KPHX etc.) stay tempered even when "conviction".
+CONV_CUSHION_F = 2.0    # obs must clear the strike by >= this many degF to qualify as conviction
+CONV_GAP_C = 15         # AND price gap (100 - pay_cents) must be >= this many cents
+CONV_CAP = 0.12         # per-fire bankroll cap on conviction fires (vs PER_FIRE_CAP=5% base)
+
 # --- free operational guards (only bite in anomalies; zero cost normally) ---
 STALE_MIN = 45          # ignore a feed whose newest obs is older than this (dead/frozen feed protection)
 MAX_FIRES_PER_CYCLE = 15  # circuit breaker: a normal cycle fires a few; >this = feed glitch -> HALT + review
@@ -70,11 +81,20 @@ def _kelly_fraction(price, p=0.9965):
     return max(0.0, p - q / b)
 
 
-def size_for_fire(bankroll, price_c, station):
-    """Contracts to buy for a fire at price_c (cents), given bankroll. Quarter-Kelly, 5% per-fire cap,
-    per-station size derate, integer, min 1 if affordable, capped by plausible depth."""
+def is_conviction(cushion_f, gap_c):
+    """A fire is CONVICTION when it clears BOTH the cushion (safety) and gap (edge) thresholds. Either being
+    None (unknown) -> not conviction (fail safe: never upsize on missing info)."""
+    return (cushion_f is not None and gap_c is not None
+            and cushion_f >= CONV_CUSHION_F and gap_c >= CONV_GAP_C)
+
+
+def size_for_fire(bankroll, price_c, station, cushion_f=None, gap_c=None):
+    """Contracts to buy for a fire at price_c (cents), given bankroll. Quarter-Kelly capped by the per-fire
+    cap (CONV_CAP on conviction fires, else 5%), per-station size derate, integer, min 1 if affordable,
+    capped by plausible depth. cushion_f/gap_c drive the conviction upsizing (default None -> base 5% cap)."""
     price = price_c / 100.0
-    frac = min(KELLY_FRAC * _kelly_fraction(price), PER_FIRE_CAP) * STATION_SIZE_MULT.get(station, 1.0)
+    per_fire_cap = CONV_CAP if is_conviction(cushion_f, gap_c) else PER_FIRE_CAP
+    frac = min(KELLY_FRAC * _kelly_fraction(price), per_fire_cap) * STATION_SIZE_MULT.get(station, 1.0)
     n = int(frac * bankroll / price)
     n = min(n, DEPTH_CAP)
     if n < 1 and price <= bankroll:   # floor of 1 contract if we can afford it and intend to trade
@@ -291,27 +311,28 @@ def event_rungs(event_ticker):
 
 # ---------------- lock logic (which rung side locks, given the observed extreme) ----------------
 def locked_orders(rungs, extreme_f, kind, margin=MARGIN_F):
-    """Return list of (ticker, side, buy_price_cap_c) for rungs now mechanically locked by the observed
-    extreme (with `margin`, which may be raised per-station for high-disagreement stations). HIGH/max:
+    """Return list of (ticker, side, buy_price_cap_c, cushion_f) for rungs now mechanically locked by the
+    observed extreme (with `margin`, which may be raised per-station for high-disagreement stations). HIGH/max:
     floor-only rung locks YES once max>floor+margin; any capped rung locks NO once max>cap+margin.
-    LOW/min mirrors with the running min."""
+    LOW/min mirrors with the running min. cushion_f = |obs - the relevant strike| (degF the obs cleared the
+    strike by) -> feeds the conviction upsizing; larger cushion = more headroom vs a late CLI revision."""
     orders = []
     for r in rungs:
         floor, cap = r["floor"], r["cap"]
         if kind == "max":
             if cap is not None and extreme_f > cap + margin:
                 if r["no_ask_c"] and r["no_ask_c"] <= MAX_PAY_CENTS:
-                    orders.append((r["ticker"], "no", r["no_ask_c"]))
+                    orders.append((r["ticker"], "no", r["no_ask_c"], extreme_f - cap))
             elif cap is None and floor is not None and extreme_f > floor + margin:
                 if r["yes_ask_c"] and r["yes_ask_c"] <= MAX_PAY_CENTS:
-                    orders.append((r["ticker"], "yes", r["yes_ask_c"]))
+                    orders.append((r["ticker"], "yes", r["yes_ask_c"], extreme_f - floor))
         else:  # min
             if floor is not None and extreme_f < floor - margin:
                 if r["no_ask_c"] and r["no_ask_c"] <= MAX_PAY_CENTS:
-                    orders.append((r["ticker"], "no", r["no_ask_c"]))
+                    orders.append((r["ticker"], "no", r["no_ask_c"], floor - extreme_f))
             elif floor is None and cap is not None and extreme_f < cap - margin:
                 if r["yes_ask_c"] and r["yes_ask_c"] <= MAX_PAY_CENTS:
-                    orders.append((r["ticker"], "yes", r["yes_ask_c"]))
+                    orders.append((r["ticker"], "yes", r["yes_ask_c"], cap - extreme_f))
     return orders
 
 
@@ -371,10 +392,13 @@ def poll_once(exec_client=None, verbose=True):
         iv = adaptive_interval_s(dist)
         min_interval = iv if min_interval is None else min(min_interval, iv)
         # fire locked rungs not already fired
-        for ticker, side, cap_c in locked_orders(rungs, ext, kind, margin=st_margin):
+        for ticker, side, cap_c, cushion_f in locked_orders(rungs, ext, kind, margin=st_margin):
             if ticker in state["fired"]:
                 continue
-            size = size_for_fire(BANKROLL, cap_c, station)   # bankroll-aware, quarter-Kelly, 5% per-fire cap
+            gap_c = 100 - cap_c   # cents of edge still open (100c payout - price we pay)
+            conv = is_conviction(cushion_f, gap_c)
+            # bankroll-aware, quarter-Kelly; conviction fires (cushion>=2F & gap>=15c) get the raised 12% cap
+            size = size_for_fire(BANKROLL, cap_c, station, cushion_f=cushion_f, gap_c=gap_c)
             if size < 1:
                 continue
             # DAILY-DEPLOYMENT CAP: bound total capital opened across all fires in one day
