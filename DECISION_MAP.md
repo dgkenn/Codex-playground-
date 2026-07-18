@@ -2134,3 +2134,20 @@ VERDICT: NULL-of-benefit. SOL/XRP add CAPACITY, not a better-diversified frontie
 vol bet traded 4 ways. ACTION: size the combined crypto-longshot book on its SHARED tail risk (not per-underlying independent).
 STRATEGIC REDIRECT: raising the frontier via diversification requires genuinely NON-crypto uncorrelated edges (econ/biz already
 partial) -- wave 2 should hunt orthogonal (non-crypto-beta) sleeves, not more crypto tickers. Campaign W1-b done.
+
+## DERIBIT-DENSITY (2026-07-18, campaign W1-a) — options risk-neutral density does NOT sharpen strike selection: NULL (corroborated by my own JSON read)
+Tested whether Deribit's BTC/ETH implied risk-neutral density (skew-adjusted Breeden-Litzenberger, arbitrage-free, 0 mono
+violations) can rank WHICH weekly longshots are most overpriced, to beat the blanket +0.12/ct. deribit_density.py: live chain
+only (Deribit serves no historical marks -> realized backtest INFEASIBLE; forward harness deribit_density_forward.jsonl
+records 62 pairs for later settle). Verified independently from summary JSON.
+- Deribit ~= Polymarket price: across 62 aligned strikes corr(p, P_deribit)=0.9996, slope 1.02, residual std ~1.2c. The
+  density REPRODUCES the market price.
+- Signal p-P_deribit correctly signed (+0.031 in longshot region, t=7.4 -> Deribit AGREES longshots overpriced, reaffirming
+  short-vol direction) but a near-CONSTANT +3c offset: regress signal on p R2=0.09 n.s., within-band dispersion ~1.3c -> NO
+  basis to rank one strike over another. Any "top-signal" ordering is ~1c of noise.
+- Calibration in LEVEL: in-band P_deribit ~0.125, between Polymarket (~0.16-0.23) and realized 0.105 -> nearer-physical,
+  capturing ~0.27 of the overpricing on strict band. The BULK of the 12c edge is a SHARED tail-risk premium both markets
+  carry, invisible to any risk-neutral density.
+VERDICT: NULL. Deribit does not sharpen selection (adds ~nothing beyond p; residual is flat, no dispersion). Reaffirms the
+edge is REAL (better calibration-in-level) but calibration != selection power. Consistent with prior Deribit cross-market null.
+Campaign W1-a done. (Incremental Brier/PnL split DEFERRED to forward settle after 07-20/21/24 resolve.)
