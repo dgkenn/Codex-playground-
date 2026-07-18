@@ -1,0 +1,296 @@
+{
+  "sample": {
+    "n_markets": 601,
+    "n_weeks": 49,
+    "date_range": [
+      "2025-08-11",
+      "2026-07-15"
+    ],
+    "yes_win_rate": 0.10316139767054909
+  },
+  "lever1_rebate": {
+    "mechanics": "deterministic 20% pass-through of own taker fee (pool self-normalizes); no min-size/two-sided/requote requirement; $1 accrual to payout",
+    "taker_rate": 0.07,
+    "rebate_share": 0.2,
+    "rebate_mean_ct": 0.0023610831910209494,
+    "rebate_bv_ct": 0.0023387436492175017,
+    "rebate_min_ct": 0.0017856057167430623,
+    "rebate_max_ct": 0.0029374222797709897,
+    "baseline_eq_ct": 0.10565546761637994,
+    "baseline_bv_ct": 0.11968282625548919,
+    "rebate_pct_of_eq_edge": 2.2347004317786077,
+    "rebate_pct_of_bv_edge": 1.9541179987051287,
+    "taker_cost_if_cross_ct": 0.011805415955104747,
+    "taker_cost_pct_of_eq_edge": 11.173502158893038
+  },
+  "lever2_subband_insample": {
+    "BLANKET": {
+      "n": 601,
+      "eq_mean": 0.09018079348054356,
+      "eq_t": 3.7329710560248515,
+      "bv_mean": 0.09001922097920886,
+      "bv_t": 2.8751440779799293,
+      "weeks": 49
+    },
+    "0.15-0.20": {
+      "n": 242,
+      "eq_mean": 0.08919927377809153,
+      "eq_t": 4.103684419122235,
+      "bv_mean": 0.07974039574641027,
+      "bv_t": 2.4379357406302926,
+      "eq_lift_vs_blanket": -0.0009815197024520272,
+      "bv_lift_vs_blanket": -0.010278825232798591,
+      "weeks": 49
+    },
+    "0.20-0.25": {
+      "n": 194,
+      "eq_mean": 0.07712122277696469,
+      "eq_t": 2.067046304414046,
+      "bv_mean": 0.10506969435031391,
+      "bv_t": 2.834915345544372,
+      "eq_lift_vs_blanket": -0.013059570703578868,
+      "bv_lift_vs_blanket": 0.015050473371105044,
+      "weeks": 46
+    },
+    "0.25-0.30": {
+      "n": 165,
+      "eq_mean": 0.13432310462678607,
+      "eq_t": 3.896362102421873,
+      "bv_mean": 0.15018390901777448,
+      "bv_t": 3.939062652150357,
+      "eq_lift_vs_blanket": 0.04414231114624251,
+      "bv_lift_vs_blanket": 0.06016468803856562,
+      "weeks": 47
+    }
+  },
+  "lever2_walkforward_eq": {
+    "test_weeks": 36,
+    "picks": {
+      "0.15-0.20": 20,
+      "0.25-0.30": 16
+    },
+    "adaptive_mean_ct": 0.12444407072877355,
+    "adaptive_sharpe_wk": 0.7109093167014922,
+    "adaptive_sharpe_ann": 5.126439987144596,
+    "blanket_mean_ct": 0.11089421094122409,
+    "blanket_sharpe_wk": 0.7403717573946862,
+    "blanket_sharpe_ann": 5.3388966683838515,
+    "mean_diff_ct": 0.013549859787549455,
+    "diff_t": 0.5685356445070556,
+    "weight_metric": "eq"
+  },
+  "lever2_walkforward_bv": {
+    "test_weeks": 35,
+    "picks": {
+      "0.15-0.20": 12,
+      "0.20-0.25": 23
+    },
+    "adaptive_mean_ct": 0.08433999276326164,
+    "adaptive_sharpe_wk": 0.2971726309566441,
+    "adaptive_sharpe_ann": 2.1429423171574347,
+    "blanket_mean_ct": 0.11924661541122568,
+    "blanket_sharpe_wk": 0.6624791343480843,
+    "blanket_sharpe_ann": 4.777204975634029,
+    "mean_diff_ct": -0.034906622647964035,
+    "diff_t": -0.8164533305646339,
+    "weight_metric": "bv"
+  },
+  "lever2_walkforward_sensitivity": [
+    {
+      "min_train": 8,
+      "metric": "eq",
+      "adaptive_mean_ct": 0.12005487924673854,
+      "blanket_mean_ct": 0.11166319524312263,
+      "mean_diff_ct": 0.00839168400361591,
+      "diff_t": 0.38905616922150116,
+      "adaptive_sharpe_wk": 0.7117280298505655,
+      "blanket_sharpe_wk": 0.7711745476251808
+    },
+    {
+      "min_train": 8,
+      "metric": "bv",
+      "adaptive_mean_ct": 0.08007391776276897,
+      "blanket_mean_ct": 0.11825052704544327,
+      "mean_diff_ct": -0.0381766092826743,
+      "diff_t": -0.9908200735037722,
+      "adaptive_sharpe_wk": 0.28828202989203744,
+      "blanket_sharpe_wk": 0.6690074081256829
+    },
+    {
+      "min_train": 12,
+      "metric": "eq",
+      "adaptive_mean_ct": 0.12444407072877355,
+      "blanket_mean_ct": 0.11089421094122409,
+      "mean_diff_ct": 0.013549859787549455,
+      "diff_t": 0.5685356445070556,
+      "adaptive_sharpe_wk": 0.7109093167014922,
+      "blanket_sharpe_wk": 0.7403717573946862
+    },
+    {
+      "min_train": 12,
+      "metric": "bv",
+      "adaptive_mean_ct": 0.08433999276326164,
+      "blanket_mean_ct": 0.11924661541122568,
+      "mean_diff_ct": -0.034906622647964035,
+      "diff_t": -0.8164533305646339,
+      "adaptive_sharpe_wk": 0.2971726309566441,
+      "blanket_sharpe_wk": 0.6624791343480843
+    },
+    {
+      "min_train": 16,
+      "metric": "eq",
+      "adaptive_mean_ct": 0.11854955214630424,
+      "blanket_mean_ct": 0.1053549050873254,
+      "mean_diff_ct": 0.013194647058978845,
+      "diff_t": 0.5024871209788564,
+      "adaptive_sharpe_wk": 0.6403838159628663,
+      "blanket_sharpe_wk": 0.6806953026313609
+    },
+    {
+      "min_train": 16,
+      "metric": "bv",
+      "adaptive_mean_ct": 0.07295291248490847,
+      "blanket_mean_ct": 0.11070469652483148,
+      "mean_diff_ct": -0.037751784039923,
+      "diff_t": -0.782804996613008,
+      "adaptive_sharpe_wk": 0.24303498317325162,
+      "blanket_sharpe_wk": 0.5862710901284541
+    },
+    {
+      "min_train": 20,
+      "metric": "eq",
+      "adaptive_mean_ct": 0.12317725764305626,
+      "blanket_mean_ct": 0.09714148914809355,
+      "mean_diff_ct": 0.026035768494962704,
+      "diff_t": 0.9021114189444914,
+      "adaptive_sharpe_wk": 0.6494511089901099,
+      "blanket_sharpe_wk": 0.6027843256091774
+    },
+    {
+      "min_train": 20,
+      "metric": "bv",
+      "adaptive_mean_ct": 0.05946748094849826,
+      "blanket_mean_ct": 0.09809135272375702,
+      "mean_diff_ct": -0.03862387177525875,
+      "diff_t": -0.6958829690906839,
+      "adaptive_sharpe_wk": 0.18575099877806567,
+      "blanket_sharpe_wk": 0.49136169635398824
+    }
+  ],
+  "lever2_fixed_pick_oos": {
+    "pick": "0.20-0.25",
+    "test_n": 188,
+    "sub_n": 57,
+    "sub_eq": 0.028675267470288042,
+    "sub_eq_t": 0.4153589531994421,
+    "blanket_eq": 0.09613001221958753,
+    "eq_oos_lift": -0.0674547447492995,
+    "sub_bv": 0.04166646466216959,
+    "blanket_bv": 0.08815812388594628,
+    "bv_oos_lift": -0.04649165922377669
+  },
+  "lever2_moneyness": {
+    "slope_edge_on_moneyness": -0.07518312373194454,
+    "intercept": 0.1648370844403631,
+    "pearson_r": -0.0362459163072777,
+    "buckets": {
+      "low_OTM(near)": {
+        "n": 200,
+        "mean_moneyness": 0.6154111316224328,
+        "eq_mean": 0.12763141642977063,
+        "eq_t": 3.8716538460635674,
+        "edge_per_moneyness": 0.20906412640319338
+      },
+      "mid": {
+        "n": 200,
+        "mean_moneyness": 0.7891940622029304,
+        "eq_mean": 0.052573956187301936,
+        "eq_t": 1.3130230006781989,
+        "edge_per_moneyness": 0.1098814847098382
+      },
+      "high_OTM(far)": {
+        "n": 201,
+        "mean_moneyness": 0.9560491119926808,
+        "eq_mean": 0.09295970218799535,
+        "eq_t": 3.910824876501354,
+        "edge_per_moneyness": 0.10850694458776712
+      }
+    }
+  },
+  "lever2_timing": {
+    "grid": [
+      {
+        "f": 0.2,
+        "n": 1202,
+        "edge_ct": 0.06106322795341098,
+        "t_eq": 1.5646192545539728,
+        "vw_edge_ct": -0.024888655996345366,
+        "t_bv": 1.4878911687802738,
+        "ann_roc": 5.185007989075347
+      },
+      {
+        "f": 0.35,
+        "n": 1062,
+        "edge_ct": 0.05693314500941619,
+        "t_eq": 1.5989249415387974,
+        "vw_edge_ct": -0.03274515642569138,
+        "t_bv": 0.29099755887772827,
+        "ann_roc": 5.875628921652183
+      },
+      {
+        "f": 0.5,
+        "n": 827,
+        "edge_ct": 0.03225392986698911,
+        "t_eq": 0.512422135949416,
+        "vw_edge_ct": -0.06469001251216197,
+        "t_bv": -0.6978869061693647,
+        "ann_roc": 4.249575570499471
+      },
+      {
+        "f": 0.65,
+        "n": 594,
+        "edge_ct": 0.022079966329966325,
+        "t_eq": 0.36188313568967184,
+        "vw_edge_ct": -0.12747412207201128,
+        "t_bv": -0.45613244900978384,
+        "ann_roc": 4.2701726428759335
+      },
+      {
+        "f": 0.8,
+        "n": 385,
+        "edge_ct": 0.009602597402597392,
+        "t_eq": -0.028389422411552286,
+        "vw_edge_ct": -0.04695223495511517,
+        "t_bv": -0.7563610114953714,
+        "ann_roc": 3.4914814080356456
+      }
+    ],
+    "best_eq_fraction": 0.2,
+    "note": "equal-weight edge decays monotonically with later entry; earliest first-half fraction is best; volume-weighted edge negative at every fraction (adverse selection). No later sweet spot."
+  },
+  "blanket_weekly_sharpe": {
+    "weekly": 0.5332815794321215,
+    "annualized": 3.845548157805873,
+    "weeks": 49
+  },
+  "multiple_testing": {
+    "n_subband_candidates": 3,
+    "n_timing_fractions": 5,
+    "prior_conditioning_tests": "LONGSHOT-CONDITIONAL 25 rules; VRP-REGIME 27 tests \u2014 both null",
+    "bonferroni_note": "with 4 sub-band candidates, |t|~1.96 nominal -> ~2.50 Bonferroni-adjusted bar for a single robust winner"
+  },
+  "BLUNT_VERDICT": {
+    "rebate_ct_added": 0.0023610831910209494,
+    "rebate_pct_of_edge": 2.2347004317786077,
+    "rebate_feasible_small_book": true,
+    "rebate_mechanics": "deterministic 20% pass-through of own taker fee; NO min-size/two-sided/requote",
+    "selection_robust_improvement": false,
+    "selection_walkforward_eq_diff_ct": 0.013549859787549455,
+    "selection_walkforward_eq_diff_t": 0.5685356445070556,
+    "selection_walkforward_bv_diff_ct": -0.034906622647964035,
+    "timing_lever": "none \u2014 earliest first-half already optimal, edge decays later, bv-negative",
+    "taker_drag_if_cross_pct_of_edge": 11.173502158893038,
+    "total_more_capturable_pct": 2.2347004317786077,
+    "one_liner": "~+2% of the confirmed edge is capturable, ALL of it the maker rebate (~+0.24c/ct); strike/timing selection adds nothing robust and is ~-3.7c worse on the fill-weighted metric; the real execution rule is negative: stay a resting maker, never cross (taker fee = ~-11% of edge)."
+  }
+}

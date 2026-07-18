@@ -2189,3 +2189,22 @@ causal winsorize.
 VERDICT: NULL. Funding/basis/OI/L-S/taker flow are public and efficiently priced into BOTH the underlying and Polymarket. The
 STACKING-via-direction hypothesis fails. Harvestable edge remains the short-vol/longshot premium (tail-bearing), not a
 microstructure direction signal. Campaign W1-c done. (Exemplary discipline: the autocorr placebo caught a false +.)
+
+## EDGE-CAPTURE (2026-07-18, campaign W3-b) — maker rebate adds ~+2% (real); strike/timing selection NULL; "rest never cross" is the key execution rule
+Quantified how much MORE of the confirmed crypto short-vol edge is capturable (not a new edge). edge_capture.py, 601 markets,
+walk-forward.
+- LEVER 1 REBATE = REAL +0.236c/ct (~+2.2% of the +0.12 edge). Mechanics verified: crypto_fees_v2 Maker Rebate pays
+  0.20*0.07*p*(1-p) per share (self-normalizes to a flat 20% pass-through of the taker fee). This is the MAKER REBATE program
+  (NO min-size, NO two-sided/requote requirement, just $1 accrual) -> feasible for a small book. CORRECTS the earlier
+  LP-REWARDS note: that (rightly-deflated) latency-bound thing was the separate CLOB Liquidity-Rewards POOL; this deterministic
+  rebate is the clean lever. Small but free.
+- EXECUTION RULE (bigger than the rebate): taker fills COST 0.07*p(1-p) ~ -1.18c/ct = -11% of the edge. So "REST, NEVER CROSS
+  THE SPREAD" protects ~50x what the rebate adds. Operational rail for the live sleeve.
+- LEVER 2 STRIKE/TIMING SELECTION = NULL (3rd independent confirmation edge is unconditional): sub-band walk-forward never
+  sig (t<=0.90), and on realistic fill-weighted metric it SUBTRACTS ~3.7c and halves Sharpe; in-sample best band flips across
+  samples (0.20-0.25 vs 0.25-0.30) -> overfit; moneyness r=-0.036; earliest first-half entry already best. Best robust
+  selection = the BLANKET band (weekly Sharpe 0.53, ann 3.85, +10.57c eq/+11.97c bv). ~60 cumulative conditioning tests now,
+  zero robust winners.
+VERDICT: ~+2% capturable, all via the maker rebate; selection adds nothing (subtracts at real fills). ACTION: (1) add rebate to
+sleeve accounting (+0.24c/ct); (2) enforce MAKER-ONLY (never cross) in pmkt_shortvol_paper + live rules; (3) trade the blanket
+band unconditionally. Campaign W3-b done.

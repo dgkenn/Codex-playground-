@@ -25,7 +25,7 @@ most likely to actually move the number.
 | W1-d | VRP-regime timing → size up in high-premium weeks | sharpen (Sharpe via sizing) | **DONE** | NULL — regime timing lowers Sharpe; edge is unconditional (baseline re-confirmed t=4.27) |
 | W2-a | Cross-category longshot premium (sports/politics/pop/sci) + corr | stack (non-crypto uncorrelated) | **DONE** | NULL-of-lift — no large non-crypto twin; best diversifier=ECON (uncorr -0.05 but small $3.5k/wk, nominal t=2.59) |
 | W3-a | Kalshi-native longshot premium + structural arb (net of fees) | stack (separate venue) | RUNNING | — |
-| W3-b | Maker-rebate + optimal-strike LIFT on the confirmed edge | capture more of real edge | RUNNING | — |
+| W3-b | Maker-rebate + optimal-strike LIFT on the confirmed edge | capture more of real edge | **DONE** | rebate +0.24c/ct (~+2%, real, no min-size); strike selection NULL; rule: REST never cross (taker=-11%) |
 
 ## Confirmed so far (the baseline to beat)
 - **Polymarket weekly BTC/ETH short-vol longshot premium**: +0.12/ct, week-clustered t~4.6, maker (survives
