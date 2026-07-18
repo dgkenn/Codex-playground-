@@ -2714,3 +2714,25 @@ DEPLOY GATES (all human, none automatable): (a) Synoptic HF-ASOS paid feed [THE 
   low-latency host (GH-Actions fatal), (c) Kalshi API creds in gitignored .kalshi_creds + KWX_LIVE=1,
   (d) forward paper gate (kwx_forward.py) must show live==tested (win~99.6%, EV~+0.20, n>=30) BEFORE capital,
   (e) start tiny, scale on realized PnL. VERDICT: deployable small-capital high-% edge; the feed is the crux.
+
+## PHASE-3 CAPACITY EXPANSION (2026-07-18) — nowcast edge does NOT scale to deep markets; rain a modest add-on
+Tested whether the settlement-nowcast/lock principle breaks past weather's ~$1-1.6k/wk ceiling on DEEPER Kalshi markets.
+- SPORTS in-game (KXMLBGAME): NULL. Books are 100-1000x deeper than weather (1.3M-5.0M contracts/side; 14k-68k within 20c)
+  BUT the lag doesn't survive: a settled game closed 99c->100c in ~3 min while 14k-69k contracts traded AT 99c -- already
+  efficiently priced, no exploitable stale window, and capturing it needs a paid PBP feed + sub-minute exec racing pro
+  live-odds bots. STRUCTURAL LESSON: depth and efficiency arrive together -- the edge exists in weather precisely BECAUSE
+  it's thin/ignored; the one deep-book venue is exactly where the mechanic dies.
+- RAIN: weak positive add-on. Daily KXRAIN too new (2 event-days). MONTHLY cumulative rain-threshold ladders (~9-10 cities)
+  = same monotonic lock, 10-100x deeper books, ~34-min convergence (MORE latency-forgiving than weather's 3.3min), BUT 11%
+  false-lock rate (2/18 "jumped to >=98c" settled NO) -> needs an independent real-time precip feed (buildable off METAR
+  infra) before trading. Est. incremental ~$1.5-4k/wk, additive, seasonal (zero in arid cities).
+- BOTTOM LINE: weather+rain combined ~$2-6k/wk -- a 1-3x lift, NOT the 10x+ needed. K-WX is INHERENTLY a small-capital edge.
+  Materially higher daily $ requires STACKING orthogonal edges, not scaling this one. (Rain is worth building as sleeve #2.)
+
+## PHASE-3 SIZING (2026-07-18) — optimized for a small ($50) bankroll; per-fire CAP is the risk lever
+MC (kwx_sizing.py) on the real 1698 deployable fires + 21% unfillable + 5-min latency haircut (+0.161/ct) + 2%/day synthetic
+heat-dome stressor. FINDING: the PER-FIRE CAP dominates ruin, not the Kelly fraction. 5% cap -> ruin~0, p5 well above start;
+20% cap -> ruin ~9%, wipeout on a contagion day (p5 negative); Kelly-fraction barely matters once the cap binds. FROZEN RULE
+(in kwx_runner.size_for_fire): quarter-Kelly x 5% per-fire cap x 17.5% per-city-day cap x per-station derate. On $50: ~$1-2.50
+risked/fire (1-5 ct). In-sim median ~5-6%/day at 5-min latency (OPTIMISTIC -- assumes backtest edge holds live; forward-gate
+must confirm), NOT reliably 10%/day. Growth is depth-limited (plateaus ~$1.5k over 60d). Confirm live==tested before scaling.
