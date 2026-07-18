@@ -66,3 +66,20 @@ discussed — and even a PASS is only a license to paper-size fractionally, neve
 - `gamma-api.polymarket.com/markets/{id}` → settlement: `closed`, `umaResolutionStatus == "resolved"`,
   `outcomePrices` (`["1","0"]` = YES won, `["0","1"]` = NO won).
 - `clob.polymarket.com/book?token_id=…` available as a book fallback if gamma bid/ask is missing.
+
+## MATURATION (2026-07-18) — fee regime, maker-only execution, rebate
+
+The edge-hunt campaign (DECISION_MAP nodes W1-a..W3-b) validated and hardened this sleeve:
+- **Fee regime changed:** Polymarket crypto markets now carry `crypto_fees_v2` = `{rate 0.07, takerOnly, rebateRate 0.2}`.
+  The frozen paper rule fills at the BID (a *taker*), which under this regime now costs `0.07·p(1−p)` (~1.2¢/ct ≈ **−11% of the edge**).
+- **LIVE EXECUTION RULE — MAKER-ONLY, NEVER CROSS THE SPREAD.** Resting as a maker pays no fee and earns the 0.2
+  rebate (`0.014·p(1−p)` ≈ +0.24¢/ct ≈ **+2%**). The paper harness now records `pnl_taker_net` (pessimistic, if crossing)
+  and `pnl_maker_net` (intended live, resting + rebate) alongside the frozen `pnl`; the report prints both brackets.
+- **Entry rule UNCHANGED** (charter: do not retune) — only the accounting/reporting matured.
+- **Selection does NOT help:** strike sub-band, entry-timing, moneyness, and vol-regime conditioning are all NULL
+  (~60 cumulative conditioning tests). **Trade the blanket [0.15,0.30] band unconditionally.**
+- **Diversification map:** this is a crypto-BETA bet; SOL/XRP are 0.6–0.8 correlated (capacity, not diversification).
+  ECON is the only validated non-crypto diversifier (corr −0.05, small). No larger uncorrelated sleeve exists in public data.
+- **Durability:** the premium is a *participant* effect (Polymarket retail overpaying the wing); it does not exist on
+  Kalshi (pros arb it to calibration). It persists as long as Polymarket retail lottery-flow does — monitor the forward
+  calibration (band should keep settling YES ~10.5% vs ~22% priced) as the live health check.

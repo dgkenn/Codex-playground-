@@ -22,7 +22,10 @@ FROZEN RULE (pre-registered in PMKT_SHORTVOL.md; do NOT retune):
              the executable price = best_bid (conservative taker; Polymarket is zero-fee). Also log the
              estimated half-spread (best_ask-best_bid)/2 at entry.
   Exit     : hold to UMA resolution. PnL/unit = sell_price - outcome  (outcome=1 if resolved YES, else 0).
-             Zero fee.
+             Frozen headline is zero-fee. MATURATION (2026-07-18): crypto markets now carry crypto_fees_v2
+             (0.07 takerOnly, 0.2 maker rebate) -> settle also records pnl_taker_net (if crossing) and
+             pnl_maker_net (if resting, +rebate). LIVE EXECUTION MUST BE MAKER-ONLY (rest, never cross):
+             taker fee ~ -11% of edge, maker rebate ~ +2%. Entry rule itself is UNCHANGED (not retuned).
   Metrics  : per-resolution-week PnL, worst-week, running max drawdown, and a fractional-Kelly(0.1)
              capital-bounded equity overlay reported alongside the flat 1-unit series.
   GATE     : PASS = week-clustered t >= 2 over >= 8 forward resolution-weeks AND mean PnL/unit > 0 AND
@@ -213,9 +216,20 @@ def settle():
             if yes_p not in (0.0, 1.0):        # only definitive YES/NO resolutions
                 continue
             outcome = 1 if yes_p == 1.0 else 0
-            pnl = p["sell_price"] - outcome     # zero fee
+            pnl = p["sell_price"] - outcome     # frozen headline: zero-fee fill (pre-registered)
+            # --- MATURATION (node EDGE-CAPTURE 2026-07-18): Polymarket crypto markets now carry
+            # crypto_fees_v2 (rate 0.07, takerOnly, 0.2 maker rebate). The frozen rule fills at the BID
+            # = a TAKER, which now costs 0.07*p*(1-p). A resting MAKER pays no fee and earns a 20% rebate.
+            # We keep `pnl` as the frozen headline for gate continuity and record BOTH realistic variants
+            # alongside so the gate brackets the true net. LIVE EXECUTION MUST BE MAKER (rest, never cross).
+            s = p["sell_price"]
+            fee_taker = round(0.07 * s * (1 - s), 4)      # cost if crossing the spread (pessimistic floor)
+            rebate_maker = round(0.014 * s * (1 - s), 4)  # 20% maker rebate if resting (intended live path)
             res_dt = _iso(p.get("resolution")) or _iso(m.get("endDate"))
             rec = dict(p, outcome=outcome, pnl=round(pnl, 4),
+                       pnl_taker_net=round(pnl - fee_taker, 4),   # realistic IF crossing under new fees
+                       pnl_maker_net=round(pnl + rebate_maker, 4),# realistic IF resting (maker, no fee, +rebate)
+                       fee_taker=fee_taker, rebate_maker=rebate_maker,
                        resolution_week=_iso_week(res_dt) if res_dt else "?",
                        settled_ts=datetime.now(timezone.utc).isoformat())
             f.write(json.dumps(rec) + "\n")
@@ -300,6 +314,17 @@ def report():
           f"forward resolution-weeks = {k}")
     print(f"  mean PnL/unit        = {mean:+.4f}   week-clustered t = {t:.2f}   "
           f"(need t>=2 over >={MIN_WEEKS} wks)")
+    # MATURATION: net-of-fee brackets (taker floor vs maker ceiling under crypto_fees_v2). Falls back to
+    # recomputing from sell_price for any pre-maturation settled rows lacking the fields.
+    def _net(rr, kind):
+        if kind in rr:
+            return rr[kind]
+        s = rr["sell_price"]
+        return rr["pnl"] - (0.07 * s * (1 - s)) if kind == "pnl_taker_net" else rr["pnl"] + (0.014 * s * (1 - s))
+    mean_taker = st.mean([_net(r, "pnl_taker_net") for r in settled])
+    mean_maker = st.mean([_net(r, "pnl_maker_net") for r in settled])
+    print(f"  net-of-fee brackets  : taker(cross)={mean_taker:+.4f}   maker(rest,+rebate)={mean_maker:+.4f}/unit   "
+          f"-> LIVE = MAKER-ONLY (never cross; taker fee ~ -11% of edge)")
     print(f"  WIN rate (settle NO) = {win:.3f}   worst-week mean = {worst_week:+.4f}/unit   "
           f"(tol {WORST_WEEK_TOL:+.2f})")
     print(f"  flat 1-unit cum PnL  = {flat_eq[-1]:+.4f}/unit   running max drawdown = {flat_mdd:+.4f}/unit")

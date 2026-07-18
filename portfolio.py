@@ -20,11 +20,15 @@ import json, os, math, sys, statistics as st
 from collections import defaultdict
 
 # sleeve registry: name -> (settled_jsonl, pnl_field, period_field, live_gate_status_note)
+# CAMPAIGN 2026-07-18 correlation map (nodes XCAT-LONGSHOT / MULTISTRIKE-WING-XASSET-STACK): the crypto book is
+# ONE crypto-beta bet -- SOL/XRP are 0.6-0.8 correlated (add capacity, not diversification), so size crypto on its
+# SHARED tail. ECON is the only validated non-crypto diversifier (corr -0.05, but small ~$3.5k/wk, nominal t=2.59).
+# Maker rebate adds ~+2% to crypto edge; LIVE = MAKER-ONLY (taker fee ~ -11%). No larger uncorrelated sleeve exists.
 SLEEVES = {
     "pmkt_shortvol": ("pmkt_shortvol_settled.jsonl", "pnl", "close_date",
-                      "CONFIRMED backtest edge (t=2.88 realistic fills); forward-gating"),
+                      "CONFIRMED (re-confirmed 4x, latest t=4.27/601mkts); crypto-BETA engine; maker-only +rebate; forward-gating"),
     "pmkt_econ":     ("pmkt_econ_settled.jsonl", "pnl", "close_date",
-                      "CONFIRMED backtest edge (t=3.09/3.77, 55wk); uncorrelated w/ crypto (-0.01); forward-gating"),
+                      "CONFIRMED (t=3.09/3.77); ONLY validated non-crypto diversifier (corr -0.05, xcat re-confirmed); small cap; forward-gating"),
     "pmkt_biz":      ("pmkt_biz_settled.jsonl", "pnl", "close_date",
                       "MARGINAL edge (share-wt t=2.28, equal 1.68, 21wk, capacity-ltd); uncorr (+0.07); forward-gate decisive"),
     "bucket_arb":    ("bucket_arb_settled.jsonl", "pnl", "close_date",

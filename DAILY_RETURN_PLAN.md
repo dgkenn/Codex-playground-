@@ -144,6 +144,26 @@ that same setting is $0. That is a lottery ticket, not a plan.
 The honest operating range is the top of the table: **leverage 0.25–1×, ~0.3–1.1%/day, P(ruin)≈0.** Anything
 labeled "minimized risk" lives there.
 
+## 4b. Edge-hunt campaign result (2026-07-18) — the frontier is empirically mapped
+
+After the operator pushed to keep hunting, a rigorous wave of 6 more candidates ran (nodes W1-a..W3-b). All null except a
+tiny real capture:
+- **Sharpen (Deribit density, vol-regime): NULL** — density = price; the premium is unconditional (~60 conditioning tests, 0 winners).
+- **Stack (more crypto tickers, 9 non-crypto categories, funding/basis direction, Kalshi venue): NULL-of-lift** — SOL/XRP
+  are 0.6–0.8 correlated; the only non-crypto diversifier is ECON (corr −0.05, small); funding "signal" was an
+  autocorrelation illusion; Kalshi is calibrated (the edge is Polymarket-retail-specific).
+- **Capture (rebate + maker-only): +2% real** — the one positive; wired into the sleeve.
+
+So the achievable frontier stands at **~0.3–1%/day sound**, now *empirically* established (not assumed) across ~18 tested
+candidates. The book is: crypto short-vol (engine) + ECON (small uncorrelated diversifier) + biz (marginal) + bucket-arb (riskless, tiny).
+
+## 4c. Forward-gate status (2026-07-18)
+
+The live GitHub-Actions gates are capturing clean, in-band paper positions (12 shortvol, 38 econ, 23 biz, 5 bucket-arb) but
+**nothing has settled yet** — earliest resolutions: shortvol **2026-07-20→24**, econ **2026-07-30**. So there is **no realized
+forward PnL to evaluate as promising/unpromising yet**; the first real read lands ~July 20–30. The pipeline is verified
+end-to-end (snapshot→settle→report all run clean; settle correctly reports 0 while positions are pre-resolution).
+
 ## 5. Verdict
 
 - **Goal as stated (10%/day, minimized risk): infeasible.** Proven by compounding and by the leverage/ruin
