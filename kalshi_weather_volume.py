@@ -480,6 +480,7 @@ def poll_cadence_analysis(fired_tradeable, cleaned_series, ladder, results_cache
     adaptive_capture_far15 = []
     adaptive_capture_far30 = []
     n_open_then_shut_2h = 0
+    n_open_at_crossing_with_2h_data = 0
     n_events_used = 0
 
     for f in fired_tradeable:
@@ -548,6 +549,7 @@ def poll_cadence_analysis(fired_tradeable, cleaned_series, ladder, results_cache
         p0 = price_at_or_after(t_star)
         p2h = price_at_or_after(t_star + timedelta(minutes=120))
         if p0 is not None and p2h is not None:
+            n_open_at_crossing_with_2h_data += 1
             gap0 = 1.0 - p0
             gap2h = 1.0 - p2h
             if gap0 > TRADEABLE_GAP_MIN and gap2h <= NEAR_SHUT_GAP_MAX:
@@ -583,6 +585,7 @@ def poll_cadence_analysis(fired_tradeable, cleaned_series, ladder, results_cache
         "adaptive_captured_gap_far15": summarize(adaptive_capture_far15, n_events_used),
         "adaptive_captured_gap_far30": summarize(adaptive_capture_far30, n_events_used),
         "n_open_at_crossing_then_shut_by_2h": n_open_then_shut_2h,
+        "n_open_at_crossing_with_2h_data": n_open_at_crossing_with_2h_data,
         "n_open_at_crossing_pool": sum(1 for f in fired_tradeable if f["gap"] > TRADEABLE_GAP_MIN),
     }
 
@@ -1040,8 +1043,11 @@ def write_report(summary, per_day_detail):
 
     L.append(f"\n**Open-then-shut fires (a 2h cron would open the tradeable window and miss it before "
              f"the next poll):** {q4['n_open_at_crossing_then_shut_by_2h']} / "
-             f"{q4['n_open_at_crossing_pool']} of the tradeable-at-crossing pool had gap already <= "
-             f"{NEAR_SHUT_GAP_MAX} by t*+120min.\n")
+             f"{q4['n_open_at_crossing_with_2h_data']} of the fires with both a t* price AND a t*+120min "
+             f"price available (most of the {q4['n_open_at_crossing_pool']}-strong tradeable-at-crossing "
+             f"pool has NO candle left 120min later at all -- see the shrinking-n note above -- so this "
+             f"ratio is necessarily on the smaller surviving subset, not the full pool) had gap open "
+             f"(>{TRADEABLE_GAP_MIN}) at t* but already <= {NEAR_SHUT_GAP_MAX} by t*+120min.\n")
 
     d120 = q4["fixed_cadence_captured_gap"]["120"]["mean_gap_unconditional"]
     d30 = q4["fixed_cadence_captured_gap"]["30"]["mean_gap_unconditional"]

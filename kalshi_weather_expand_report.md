@@ -146,6 +146,8 @@ ASOS(1-min cumulative precip > 0.005in) vs official Kalshi result, UNCONDITIONAL
 
 **KXRAINNYC best config: sustain=1min. Verdict: KILLED.** n=20, win rate 1.000, t=1.03, worst-case EV=-0.1550, fires/week=2.15.
 
+**Why it fails, structurally (not just n=20):** **19/20** of the fires execute at yes_ask essentially = **$1.00** -- i.e. by the time even the FIRST measurable 1-min precip reading registers, Kalshi's thin rain book has usually already jumped straight to full certainty (no queued liquidity between 'dry' and 'certain rain'), leaving ~zero cents of gap to capture. Only 1 of the 20 fires caught genuine daylight ($0.87 entry). This is a different failure mode than small-n alone: KXHIGH's book has continuous, granular price discovery through the crossing zone (hence a real, capturable gap); KXRAINNYC's book does not.
+
 SECONDARY (locked-NO, late-cutoff, still bone dry):
 
 | cutoff (LST hr) | fired | win rate | mean PnL | t |

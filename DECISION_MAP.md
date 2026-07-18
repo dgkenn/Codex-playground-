@@ -2576,3 +2576,16 @@ Confirmed from the actual NHIGH.pdf contract terms + live /series API:
 ANSWER to operator's faster-sensor idea: the edge is NOT a latency race (vs slow retail, not MMs); a faster/different sensor
 adds basis risk the strategy can't absorb, and early-entry is 94% false. The real tail lever is the METAR-consistency check
 (being tested), NOT speed. (Empirical PWS-tracking capstone from the fast-sensor agent still pending for the final word.)
+
+## KALSHI-WX-EXPAND (2026-07-18) — MAJOR: full history IS obtainable (~years) + KXLOW confirmed (+572% volume)
+(A) LONGER HISTORY UNLOCKED: the 67-day cap was an artifact of the LIVE /markets endpoint (drops old markets, /historical/cutoff
+~2026-05-19). Kalshi's /historical/markets + /historical/markets/{ticker}/candlesticks + /historical/trades (free, unauth,
+cursor-paginated) serve the FULL record. VERIFIED direct: KXHIGHNY/CHI back to 2021-08-06 (~4.9y, pre-rename ticker HIGHNY-*),
+MIA 2023-05, DEN 2024-11, LAX 2025-01; IEM ASOS 1-min matches to 2021. KXLOW newer (2025-12-13, ~7mo product-age limit).
+=> the small-n/67-day concern is FIXABLE: re-backtest KXHIGH+KXLOW on YEARS -> real n (thousands), real tail. (Agent built
+discover_series_full_history but did NOT re-run full backtest = 25-30x pull budget -> Phase-2 top job.)
+(B) KXLOW CONFIRMED (mirror edge, buy NO once running-MIN locks <= strike-margin): best margin=1/sustain=1, n=696, win 99.6%,
++0.0175/ct raw t=6.54 Bonferroni-sig, worst-case-EV+. Thinner/less liquid (exec 0.977 -> small gap, only 33% have post-fire vol),
+fillable econ +0.047/ct t=6.89, 24.0 FILLABLE FIRES/WEEK. RAIN (KXRAINNYC): KILLED (n=20 t=1.03, book jumps to $1.00 no gap).
+TOTAL: KXHIGH 4.2 + KXLOW 24 = 28.2 fillable fires/wk, +572% vs KXHIGH-only. KXLOW = the big VOLUME win (6x fires, small each).
+NEXT (Phase 2): re-backtest KXHIGH+KXLOW on FULL multi-year history (real n + tail); integrate into forward gate.

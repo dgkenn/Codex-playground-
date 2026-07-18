@@ -935,11 +935,18 @@ def main():
     print(f"  KXRAINNYC: analyzed {len(rain_results)} market-days")
 
     rain_primary = {}
+    rain_price_saturation = {}
     for sustain in [1, 2, 3]:
         key = str(sustain)
         fired = [(r, r["primary"][key]) for r in rain_results
                  if r["primary"][key].get("fired") and "pnl" in r["primary"][key]]
         rain_primary[key] = agg_stats(fired, "locked_yes_settled_no", rain_n_weeks)
+        # structural diagnostic: how many fires execute at (or essentially at) yes_ask=$1.00,
+        # i.e. zero edge left by the time the signal fires -- explains WHY rain fails, not just
+        # that it fails on n/significance grounds.
+        n_saturated = sum(1 for _, c in fired if c["exec_price"] >= 0.999)
+        rain_price_saturation[key] = {"n_fired": len(fired), "n_at_saturation_1_00": n_saturated,
+                                       "saturation_rate": (n_saturated / len(fired)) if fired else None}
 
     rain_secondary = {}
     for cutoff_h in RAIN_SECONDARY_CUTOFF_HOURS:
@@ -993,6 +1000,7 @@ def main():
                                                       "asos_cum_precip": r["full_day_cum_precip"],
                                                       "official_result": r["result"]} for r in rain_disagree[:10]]},
         "primary_by_sustain": rain_primary, "secondary_by_cutoff": rain_secondary,
+        "price_saturation_by_sustain": rain_price_saturation,
         "bonferroni": rain_bonferroni,
         "best_config": {"verdict": rain_verdict, "chosen": rain_best, "candidates": rain_survivors},
         "kxrain_multicity_feasibility": {
@@ -1248,6 +1256,17 @@ def write_report(summary, kxhigh_deep, kxhigh_refined):
              f"{rn['best_config']['verdict']}.** n={rb['n']}, win rate {fmt(rb['win_rate'],3)}, "
              f"t={fmt(rb['t'],2)}, worst-case EV={fmt(rb['analytic_ev_worst_case'])}, "
              f"fires/week={fmt(rb['fires_per_week'],2)}.\n")
+
+    sat = rn["price_saturation_by_sustain"][str(rb["sustain_min"])]
+    L.append(f"**Why it fails, structurally (not just n=20):** "
+             f"**{sat['n_at_saturation_1_00']}/{sat['n_fired']}** of the fires execute at "
+             f"yes_ask essentially = **$1.00** -- i.e. by the time even the FIRST measurable "
+             f"1-min precip reading registers, Kalshi's thin rain book has usually already "
+             f"jumped straight to full certainty (no queued liquidity between 'dry' and "
+             f"'certain rain'), leaving ~zero cents of gap to capture. Only 1 of the 20 fires "
+             f"caught genuine daylight ($0.87 entry). This is a different failure mode than "
+             f"small-n alone: KXHIGH's book has continuous, granular price discovery through "
+             f"the crossing zone (hence a real, capturable gap); KXRAINNYC's book does not.\n")
 
     L.append("SECONDARY (locked-NO, late-cutoff, still bone dry):\n")
     L.append("| cutoff (LST hr) | fired | win rate | mean PnL | t |")

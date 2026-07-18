@@ -65,24 +65,31 @@ Simulated on n=417 tradeable fired rungs, walking each rung's own full-day 1-min
 | 60 | 78 | 0.3146 | 0.2050 |
 | 120 | 36 | 0.5047 | 0.4100 |
 
+**Read the 'n' column, not just the mean:** it shrinks from 417 at t* to 36 at +120min, because most ladder fires happen close enough to that city-day's market close that there simply is no candle 120min later to sample (late-day fires, thin end-of-day trading). The apparent gap INCREASE at +60/+120min in the table above is a **survivorship/staleness artifact**, not real re-opening edge: the small surviving subset skews toward early-morning fires on markets that go quiet (no more trades, stale wide quotes) once the outcome is obvious and nobody bothers tightening the spread on a near-dead contract -- do not read this as 'wait longer, get a better price'.
+
+
 ### Captured gap by polling scheme
 
-| scheme | n captured | mean gap captured | median gap captured |
-|---|---|---|---|
-| fixed, every 120min (current live gate = 120min) | 88 | 0.2917 | 0.1900 |
-| fixed, every 30min (current live gate = 120min) | 195 | 0.2365 | 0.1500 |
-| fixed, every 15min (current live gate = 120min) | 248 | 0.2325 | 0.1550 |
-| ADAPTIVE (FAR=15min, APPROACH=3min, IMMINENT=1min) | 275 | 0.2384 | 0.1600 |
-| ADAPTIVE (FAR=20min, APPROACH=3min, IMMINENT=1min) | 254 | 0.2290 | 0.1550 |
-| ADAPTIVE (FAR=30min, APPROACH=3min, IMMINENT=1min) | 250 | 0.2280 | 0.1600 |
+Two ways to read this: **'mean captured (conditional)'** is the average gap among fires the scheme actually detects in time to trade -- but this is SURVIVORSHIP-BIASED (a slow cadence only 'succeeds' on the subset of fires that happen early enough in the day for a widely-spaced tick to still land before market close, which is not a random subset). **'mean gap, unconditional'** (missed fires count as 0) and **capture rate** (fraction of the 417 tradeable fires the scheme detects AT ALL before the tradeable window is gone) are the fair cross-scheme comparison -- this is what actually answers 'does polling faster help'.
 
-**Open-then-shut fires (a 2h cron would open the tradeable window and miss it before the next poll):** 2 / 417 of the tradeable-at-crossing pool had gap already <= 0.02 by t*+120min.
+| scheme | capture rate | mean captured (conditional) | mean gap, unconditional |
+|---|---|---|---|
+| fixed, every 120min (current live gate = 120min) | 0.211 (88/417) | 0.2917 | 0.0616 |
+| fixed, every 30min (current live gate = 120min) | 0.468 (195/417) | 0.2365 | 0.1106 |
+| fixed, every 15min (current live gate = 120min) | 0.595 (248/417) | 0.2325 | 0.1383 |
+| ADAPTIVE (FAR=15min, APPROACH=3min, IMMINENT=1min) | 0.659 (275/417) | 0.2384 | 0.1572 |
+| ADAPTIVE (FAR=20min, APPROACH=3min, IMMINENT=1min) | 0.609 (254/417) | 0.2290 | 0.1395 |
+| ADAPTIVE (FAR=30min, APPROACH=3min, IMMINENT=1min) | 0.600 (250/417) | 0.2280 | 0.1367 |
+
+**Open-then-shut fires (a 2h cron would open the tradeable window and miss it before the next poll):** 2 / 36 of the fires with both a t* price AND a t*+120min price available (most of the 417-strong tradeable-at-crossing pool has NO candle left 120min later at all -- see the shrinking-n note above -- so this ratio is necessarily on the smaller surviving subset, not the full pool) had gap open (>0.05) at t* but already <= 0.02 by t*+120min.
+
+**Capture-rate delta (the volume-relevant number):** the current 2h cron detects only 0.211 of tradeable fires in time vs 0.609 for the adaptive scheme and 0.595 for a flat 15min poll -- i.e. the 2h cadence is silently missing the majority of fires entirely (they cross, reprice, and settle between polls), which is a bigger problem than gap SIZE on the ones it does catch.
 
 **Physical ceiling:** IEM's one-minute ASOS product updates ~once/minute, so the IMMINENT tier (1/min) is the fastest polling that can ever see NEW information -- checking every 10-30 seconds when close to a strike would just re-read the same stale 1-minute value and burn API budget for nothing.
 
-**Comparison:** mean captured gap at 120min cadence = 0.2917, 30min = 0.2365, 15min = 0.2325, ADAPTIVE (proximity-proportional) = 0.2290. 
-Adaptive captures -0.063 MORE gap on average than the current 2h cron (-21.5% relative), while polling far less often than a flat 1-min schedule would require, because it only spends the 1/min budget when a strike is actually close AND rising.
-Vs. a flat 15-min cadence, adaptive captures -0.004 (less) gap on average (-1.5% relative) -- adaptive's advantage over a flat 15-min poll is smaller than its advantage over the 2h cron (most of the gap is already captured by ANY sub-30min cadence per the decay curve above), but it gets there while polling near-idle strikes far less than every 15 minutes, all day, across all 20 cities -- a large API-budget saving for a similar capture rate.
+**Comparison (unconditional mean gap/fire, missed fires = 0):** 120min cadence = 0.0616, 30min = 0.1106, 15min = 0.1383, ADAPTIVE (proximity-proportional) = 0.1395. 
+Adaptive captures 0.078 MORE gap on average than the current 2h cron (+126.6% relative), while polling far less often than a flat 1-min schedule would require, because it only spends the 1/min budget when a strike is actually close AND rising.
+Vs. a flat 15-min cadence, adaptive captures 0.001 (more) gap on average (0.8% relative) -- adaptive's advantage over a flat 15-min poll is smaller than its advantage over the 2h cron (most of the gap is already captured by ANY sub-30min cadence per the decay curve above), but it gets there while polling near-idle strikes far less than every 15 minutes, all day, across all 20 cities -- a large API-budget saving for a similar capture rate.
 
 **Race against slow retail or market makers?** 
 The decay curve shows gap persisting well past the first few minutes (mean 0.2657 at t*, still 0.2296 at +5min, 0.3146 at +60min, 0.5047 at +120min) -- this is consistent with a race against SLOW, inattentive participants (thin retail order flow in a low-liquidity weather market that is simply slow to update), not against co-located market makers who would close a real gap within seconds. That is GOOD news for a poll-based bot: cadence matters for capturing MORE fires and a bit more gap size, but even the current 2h cadence is not racing algorithmic competition for the gap that does survive.
