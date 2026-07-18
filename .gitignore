@@ -19,3 +19,4 @@ kwx_exec_log.jsonl
 kwx_forward_settled.jsonl
 kwx_runner_state.json
 kwx_runner_plan.jsonl
+.synoptic_token
