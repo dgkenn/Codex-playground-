@@ -2834,3 +2834,15 @@ Grid-searched cushion x gap x cap (kwx_conviction_optimize.py). NO sharp optimum
 driver = GAP threshold (upsize cheap fires); cushion barely affects growth so set it >=2F for free safety; cap >20% does
 nothing (depth). Risk control is the 60%/day cap, not these thresholds. Recommended (risk-optimal in the plateau):
 cushion>=2F, gap>=15c, conv-cap 12%. Effect is small (+5%/60d) and 65-summer-day precision is limited -> confirm on forward.
+
+## EXIT RULES / TURNOVER (2026-07-18) — NULL: HOLD-to-settlement is optimal (2 optimizations tested, both marginal/null)
+Data fact: LOSING fires NEVER converge to 99c intraday (0/6); 88% of WINNERS do -> the market itself flags losers.
+Tested exit rules (kwx_exit_rules.py, kwx_turnover.py):
+- SELL99 (sell winners at ~99c to recycle capital): EV +0.174 vs HOLD +0.202 (gives up ~3c spread+2nd fee). Intraday
+  turnover sim: SELL99 median daily return LOWER than HOLD at every bankroll ($50: 3.71% vs 5.17%). Capital is NOT the
+  intraday binding constraint (daily cap + fire spacing -> rarely run out mid-day), so recycling just costs the spread.
+- TIMESTOP (exit at T to dodge the settlement crash): DOES halve worst-case (-0.78->-0.43; the 6 losers -0.25..-0.78 ->
+  -0.02..-0.11) BUT costs 34% of EV (+0.202->+0.134) by clipping the ~12% slow-converging WINNERS. Not worth it since the
+  daily cap already keeps ruin ~0%.
+VERDICT: HOLD to settlement is optimal on both growth and (daily-cap-contained) risk. Conviction-tier (+5%) and exit-rules
+(null) both tested -> the strategy is already well-tuned on sizing/exit axes; further gains marginal, need forward data.
