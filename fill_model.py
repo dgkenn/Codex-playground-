@@ -624,15 +624,17 @@ def main():
     bankrolls = [50, 100, 250, 500, 2000, 10000, 50000]
     bankroll_rows = []
     for B in bankrolls:
-        row = dict(bankroll=B)
+        # size the book on the REALISTIC (central) phi, then evaluate all three phi at that SAME size,
+        # so the ensemble is monotone (opt >= real >= pess) and not confounded by size choice.
+        S_per, capital = size_for_bankroll(B, phi_r)
+        Suse = 10**9 if S_per is None else S_per
+        row = dict(bankroll=B,
+                   realistic_shares_per_market=("capacity-bound" if S_per is None else round(S_per, 2)),
+                   realistic_capital_used=round(capital, 2))
         for sc, phi in PHI.items():
-            S_per, capital = size_for_bankroll(B, phi)
-            Suse = 10**9 if S_per is None else S_per
             wk, worst, _ = week_usd_and_capital(Suse, phi)
             row[f"{sc}_week_usd"] = round(wk, 2)
             if sc == "realistic":
-                row["realistic_shares_per_market"] = ("capacity-bound" if S_per is None else round(S_per, 2))
-                row["realistic_capital_used"] = round(capital, 2)
                 row["realistic_worst_week_usd"] = round(worst, 2)
         bankroll_rows.append(row)
 

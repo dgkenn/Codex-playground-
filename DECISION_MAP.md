@@ -2369,3 +2369,16 @@ IMPLICATION: legal-deployable universe = Kalshi (calibrated so far: longshot/ind
 Dec-2025 venue, untested -- new/thin venues can be less efficient than mature ones). NEW legal candidate S10 = QCX sports pricing
 efficiency (mispriced vs sharp book / vs Kalshi / vs mature Global?). The prior sportsbook null was on the MATURE Global venue;
 the new QCX venue could differ. Honest state: NO confirmed LEGAL edge yet.
+
+## KALSHI-EARNINGS (2026-07-18, farm S4) — no fee-surviving earnings-beat edge; instrument barely exists: NULL
+Tested corporate earnings-beat mispricing on Kalshi. FINDING: Kalshi has ZERO binary "beat EPS" markets (swept 1514
+Companies/Financials series) -> only operational-KPI threshold ladders (deliveries/vehicles/customers ABOVE X). The EPS-beat
+edge can't port. Tested the KPI-ladder analog: 201 settled ladders / 21 events / 20 cos / 9 weeks (tiny), pre-close executable
+entry, net Kalshi fee, event-clustered t.
+- Calibration textbook-clean: realized "beat" 0.592 vs priced 0.601; every mid band maps to realized (0.175->0.13, 0.51->0.56,
+  0.68->0.71). Ladders well-calibrated, NO systematic upside underpricing.
+- Backtests all net-NEGATIVE after fees: buy-beat NET -0.035/ct t=-2.76; buy-NO gross~0 -> negative after fee. Fee
+  ceil(0.07*p(1-p))~2c/side dominates any residual.
+VERDICT: NULL. Instrument barely exists + calibrated + fee-killed. Capacity thin/episodic (Tesla/Rivian/Boeing dominate).
+Uncorrelated (idiosyncratic) but moot. Farm S4 dead. KALSHI SCOREBOARD: longshot NULL, index-bracket NULL, earnings NULL ->
+Kalshi is consistently well-calibrated across everything farmed; hard venue for a retail edge.
