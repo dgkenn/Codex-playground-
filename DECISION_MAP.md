@@ -2653,3 +2653,18 @@ yes_bids/yes_asks[{price,size}]/best_bid/best_ask/bid_depth/ask_depth/sequence a
 => UNLOCKS true depth-sizing on the full backtest window (Predexon Jan-7-2026 to present covers our May-present fires). Phase-2
 depth-sizing now uses REAL L2, not the candlestick-volume proxy. (Note: a newer sub-cent orderbook endpoint is recommended as the
 whole-cent one deprecates -- switch if precision needed.)
+
+## KALSHI-WX-CLIBASIS (2026-07-18) — tail-shrink CONFIRMED: METAR-confirmation gate cuts conditional loss ~to 0% (also fixes live-obs)
+Ground truth validated: independent NWS CLI daily-max matches Kalshi settled yes/no 1340/1340 = 100%. CLI is the exact source.
+- The "2.5%" is UNCONDITIONAL; conditional loss at a FIRING event is worse: 38% at margin=1, 8.6% at margin=2 (raw-1min).
+- TAIL-SHRINK RULES (both work): (a) gated1min margin=2 -- fire raw-1min at strike+2 but WITHHOLD until published METAR running
+  max independently reaches the bare strike -> conditional loss 8.6%->0.0%, worst-case 22.4%->11.0%, keeps 89% of fires, EV
+  unchanged (+0.026). (b) roll3 margin=1 -- 3-min rolling mean of the free 1-min feed -> conditional loss 38%->2.6%, worst-case
+  49.7%->13.5%, worst-case EV IMPROVED to +0.136 (fires 54% of raw). Best worst-case-EV cell = roll3/margin1.
+- Residual misses = boundary cases (CLI high == strike exactly; transient 1-min spike to strike+1 never persists) -> METAR-
+  confirmation / smoothing kills them (not glitches).
+- Data: 5-min MADIS unusable (whole-°C); ISD not yet published for 2026 (NCEI lag); published METAR = faithful stand-in (0.05°F
+  vs 2025 ISD). MADIS QC flags need account (skipped).
+BONUS: switching the live obs feed to PUBLISHED METAR solves BOTH the tail (independent confirmation gate) AND the live-obs
+latency blocker (METAR is real-time, vs IEM's 1-2d lag). => Phase-2 integrated rule: raw-1min trigger + METAR-confirmation gate
+(or roll3/margin1), glitch filter, full-ladder, KXLOW, real Predexon L2 depth. PHASE 1 COMPLETE.
