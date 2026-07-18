@@ -347,7 +347,8 @@
 "edge_at_quote": 0.0841,
 "sigma_daily_at_quote": 0.02781,
 "horizon_days_at_quote": 114.1985,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26NOV03-T99.99",
@@ -409,7 +410,8 @@
 "edge_at_quote": 0.087,
 "sigma_daily_at_quote": 0.02781,
 "horizon_days_at_quote": 114.1985,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26NOV03-T104.99",
@@ -421,7 +423,8 @@
 "edge_at_quote": 0.0927,
 "sigma_daily_at_quote": 0.02781,
 "horizon_days_at_quote": 114.1985,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26NOV03-T105.99",
@@ -433,7 +436,8 @@
 "edge_at_quote": 0.088,
 "sigma_daily_at_quote": 0.02781,
 "horizon_days_at_quote": 114.1985,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26NOV03-T106.99",
@@ -482,7 +486,8 @@
 "edge_at_quote": 0.0869,
 "sigma_daily_at_quote": 0.02781,
 "horizon_days_at_quote": 114.1985,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26NOV03-T110.99",
@@ -531,7 +536,8 @@
 "edge_at_quote": 0.0822,
 "sigma_daily_at_quote": 0.02781,
 "horizon_days_at_quote": 114.1985,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26NOV03-T114.99",
@@ -1219,7 +1225,8 @@
 "edge_at_quote": 0.0499,
 "sigma_daily_at_quote": 0.02876,
 "horizon_days_at_quote": 113.8754,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26NOV03-T99.99",
@@ -1293,7 +1300,8 @@
 "edge_at_quote": 0.0434,
 "sigma_daily_at_quote": 0.02876,
 "horizon_days_at_quote": 113.8754,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26NOV03-T102.99",
@@ -1317,7 +1325,8 @@
 "edge_at_quote": 0.0505,
 "sigma_daily_at_quote": 0.02876,
 "horizon_days_at_quote": 113.8754,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26NOV03-T103.99",
@@ -1341,7 +1350,8 @@
 "edge_at_quote": 0.0474,
 "sigma_daily_at_quote": 0.02876,
 "horizon_days_at_quote": 113.8754,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26NOV03-T104.99",
@@ -1390,7 +1400,8 @@
 "edge_at_quote": 0.0503,
 "sigma_daily_at_quote": 0.02876,
 "horizon_days_at_quote": 113.8754,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26NOV03-T106.99",
@@ -1414,7 +1425,8 @@
 "edge_at_quote": 0.0563,
 "sigma_daily_at_quote": 0.02876,
 "horizon_days_at_quote": 113.8754,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26NOV03-T107.99",
@@ -2289,7 +2301,8 @@
 "edge_at_quote": 0.0336,
 "sigma_daily_at_quote": 0.02949,
 "horizon_days_at_quote": 113.1389,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26NOV03-T99.99",
@@ -2387,7 +2400,8 @@
 "edge_at_quote": 0.0356,
 "sigma_daily_at_quote": 0.02949,
 "horizon_days_at_quote": 113.1389,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26NOV03-T103.99",
@@ -2411,7 +2425,8 @@
 "edge_at_quote": 0.0428,
 "sigma_daily_at_quote": 0.02949,
 "horizon_days_at_quote": 113.1389,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26NOV03-T104.99",
@@ -2460,7 +2475,8 @@
 "edge_at_quote": 0.0363,
 "sigma_daily_at_quote": 0.02949,
 "horizon_days_at_quote": 113.1389,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26NOV03-T106.99",
@@ -2484,7 +2500,8 @@
 "edge_at_quote": 0.0427,
 "sigma_daily_at_quote": 0.02949,
 "horizon_days_at_quote": 113.1389,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26NOV03-T107.99",
@@ -2746,7 +2763,8 @@
 "edge_at_quote": 0.0499,
 "sigma_daily_at_quote": 0.03279,
 "horizon_days_at_quote": 112.8721,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26NOV03-T74.99",
@@ -2870,7 +2888,8 @@
 "edge_at_quote": 0.0246,
 "sigma_daily_at_quote": 0.03279,
 "horizon_days_at_quote": 112.8721,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26NOV03-T79.99",
@@ -2943,7 +2962,8 @@
 "edge_at_quote": 0.0171,
 "sigma_daily_at_quote": 0.03279,
 "horizon_days_at_quote": 112.8721,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26NOV03-T82.99",
@@ -2967,7 +2987,8 @@
 "edge_at_quote": 0.0108,
 "sigma_daily_at_quote": 0.03279,
 "horizon_days_at_quote": 112.8721,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26NOV03-T83.99",
@@ -2991,7 +3012,8 @@
 "edge_at_quote": 0.0142,
 "sigma_daily_at_quote": 0.03279,
 "horizon_days_at_quote": 112.8721,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26NOV03-T84.99",
@@ -3027,7 +3049,8 @@
 "edge_at_quote": 0.0104,
 "sigma_daily_at_quote": 0.03279,
 "horizon_days_at_quote": 112.8721,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26NOV03-T86.99",
@@ -3051,7 +3074,8 @@
 "edge_at_quote": 0.013,
 "sigma_daily_at_quote": 0.03279,
 "horizon_days_at_quote": 112.8721,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26NOV03-T87.99",
@@ -3075,7 +3099,8 @@
 "edge_at_quote": 0.0054,
 "sigma_daily_at_quote": 0.03279,
 "horizon_days_at_quote": 112.8721,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26NOV03-T88.99",
@@ -3099,7 +3124,8 @@
 "edge_at_quote": 0.0076,
 "sigma_daily_at_quote": 0.03279,
 "horizon_days_at_quote": 112.8721,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26NOV03-T89.99",
@@ -3147,7 +3173,8 @@
 "edge_at_quote": 0.0022,
 "sigma_daily_at_quote": 0.03279,
 "horizon_days_at_quote": 112.8721,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26NOV03-T92.99",
@@ -3279,7 +3306,8 @@
 "edge_at_quote": 0.0038,
 "sigma_daily_at_quote": 0.03279,
 "horizon_days_at_quote": 112.8721,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26NOV03-T98.99",
@@ -3327,7 +3355,8 @@
 "edge_at_quote": 0.0022,
 "sigma_daily_at_quote": 0.03279,
 "horizon_days_at_quote": 112.8721,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26NOV03-T100.99",
@@ -3531,7 +3560,8 @@
 "edge_at_quote": 0.0081,
 "sigma_daily_at_quote": 0.03279,
 "horizon_days_at_quote": 112.8721,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26NOV03-T110.99",
@@ -3615,7 +3645,8 @@
 "edge_at_quote": 0.002,
 "sigma_daily_at_quote": 0.03279,
 "horizon_days_at_quote": 112.8721,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26NOV03-T114.99",
@@ -4254,7 +4285,8 @@
 "edge_at_quote": 0.0048,
 "sigma_daily_at_quote": 0.03298,
 "horizon_days_at_quote": 112.1783,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26NOV03-T116.99",
@@ -4315,7 +4347,8 @@
 "edge_at_quote": 0.0224,
 "sigma_daily_at_quote": 0.03326,
 "horizon_days_at_quote": 111.8702,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26NOV03-T74.99",
@@ -4919,7 +4952,8 @@
 "edge_at_quote": 0.0335,
 "sigma_daily_at_quote": 0.03129,
 "horizon_days_at_quote": 111.1796,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26NOV03-T74.99",
@@ -5331,7 +5365,8 @@
 "edge_at_quote": 0.0034,
 "sigma_daily_at_quote": 0.03129,
 "horizon_days_at_quote": 111.1796,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26NOV03-T101.99",
@@ -5427,7 +5462,8 @@
 "edge_at_quote": 0.0073,
 "sigma_daily_at_quote": 0.03129,
 "horizon_days_at_quote": 111.1796,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26NOV03-T105.99",
@@ -5499,7 +5535,8 @@
 "edge_at_quote": 0.0098,
 "sigma_daily_at_quote": 0.03129,
 "horizon_days_at_quote": 111.1796,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26NOV03-T108.99",
@@ -5547,7 +5584,8 @@
 "edge_at_quote": 0.0235,
 "sigma_daily_at_quote": 0.03129,
 "horizon_days_at_quote": 111.1796,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26NOV03-T110.99",
@@ -5619,7 +5657,8 @@
 "edge_at_quote": 0.0222,
 "sigma_daily_at_quote": 0.03129,
 "horizon_days_at_quote": 111.1796,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26NOV03-T113.99",
@@ -5643,7 +5682,8 @@
 "edge_at_quote": 0.018,
 "sigma_daily_at_quote": 0.03129,
 "horizon_days_at_quote": 111.1796,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26NOV03-T114.99",
@@ -5667,7 +5707,8 @@
 "edge_at_quote": 0.0236,
 "sigma_daily_at_quote": 0.03129,
 "horizon_days_at_quote": 111.1796,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26NOV03-T115.99",
@@ -5706,162 +5747,6 @@
 "status": "resting"
 },
 {
-"ticker": "KXWTI-26JUL1614-T71.49",
-"event_ticker": "KXWTI-26JUL1614",
-"side": "bid",
-"quote_price": 0.92,
-"snap_ts": "2026-07-15T15:11:18+00:00",
-"fair_p_at_quote": 0.9983360699765758,
-"edge_at_quote": 0.0783,
-"sigma_daily_at_quote": 0.03129,
-"horizon_days_at_quote": 1.138,
-"status": "resting",
-"stale_runs": 4
-},
-{
-"ticker": "KXWTI-26JUL1614-T71.99",
-"event_ticker": "KXWTI-26JUL1614",
-"side": "bid",
-"quote_price": 0.93,
-"snap_ts": "2026-07-15T15:11:18+00:00",
-"fair_p_at_quote": 0.9968034121011775,
-"edge_at_quote": 0.0668,
-"sigma_daily_at_quote": 0.03129,
-"horizon_days_at_quote": 1.138,
-"status": "resting",
-"stale_runs": 4
-},
-{
-"ticker": "KXWTI-26JUL1614-T72.49",
-"event_ticker": "KXWTI-26JUL1614",
-"side": "bid",
-"quote_price": 0.97,
-"snap_ts": "2026-07-15T15:11:18+00:00",
-"fair_p_at_quote": 0.9941246299821456,
-"edge_at_quote": 0.0241,
-"sigma_daily_at_quote": 0.03129,
-"horizon_days_at_quote": 1.138,
-"status": "resting",
-"stale_runs": 4
-},
-{
-"ticker": "KXWTI-26JUL1614-T72.99",
-"event_ticker": "KXWTI-26JUL1614",
-"side": "bid",
-"quote_price": 0.96,
-"snap_ts": "2026-07-15T15:11:18+00:00",
-"fair_p_at_quote": 0.989655363952402,
-"edge_at_quote": 0.0297,
-"sigma_daily_at_quote": 0.03129,
-"horizon_days_at_quote": 1.138,
-"status": "resting",
-"stale_runs": 4
-},
-{
-"ticker": "KXWTI-26JUL1614-T72.99",
-"event_ticker": "KXWTI-26JUL1614",
-"side": "ask",
-"quote_price": 0.99,
-"snap_ts": "2026-07-15T15:11:18+00:00",
-"fair_p_at_quote": 0.989655363952402,
-"edge_at_quote": 0.0003,
-"sigma_daily_at_quote": 0.03129,
-"horizon_days_at_quote": 1.138,
-"status": "resting",
-"stale_runs": 4
-},
-{
-"ticker": "KXWTI-26JUL1614-T73.49",
-"event_ticker": "KXWTI-26JUL1614",
-"side": "bid",
-"quote_price": 0.94,
-"snap_ts": "2026-07-15T15:11:18+00:00",
-"fair_p_at_quote": 0.9825310698379148,
-"edge_at_quote": 0.0425,
-"sigma_daily_at_quote": 0.03129,
-"horizon_days_at_quote": 1.138,
-"status": "resting",
-"stale_runs": 4
-},
-{
-"ticker": "KXWTI-26JUL1614-T73.49",
-"event_ticker": "KXWTI-26JUL1614",
-"side": "ask",
-"quote_price": 0.99,
-"snap_ts": "2026-07-15T15:11:18+00:00",
-"fair_p_at_quote": 0.9825310698379148,
-"edge_at_quote": 0.0075,
-"sigma_daily_at_quote": 0.03129,
-"horizon_days_at_quote": 1.138,
-"status": "resting",
-"stale_runs": 4
-},
-{
-"ticker": "KXWTI-26JUL1614-T73.99",
-"event_ticker": "KXWTI-26JUL1614",
-"side": "bid",
-"quote_price": 0.91,
-"snap_ts": "2026-07-15T15:11:18+00:00",
-"fair_p_at_quote": 0.9716706980234157,
-"edge_at_quote": 0.0617,
-"sigma_daily_at_quote": 0.03129,
-"horizon_days_at_quote": 1.138,
-"status": "resting",
-"stale_runs": 4
-},
-{
-"ticker": "KXWTI-26JUL1614-T74.49",
-"event_ticker": "KXWTI-26JUL1614",
-"side": "bid",
-"quote_price": 0.91,
-"snap_ts": "2026-07-15T15:11:18+00:00",
-"fair_p_at_quote": 0.9558244776181952,
-"edge_at_quote": 0.0458,
-"sigma_daily_at_quote": 0.03129,
-"horizon_days_at_quote": 1.138,
-"status": "resting",
-"stale_runs": 4
-},
-{
-"ticker": "KXWTI-26JUL1614-T74.99",
-"event_ticker": "KXWTI-26JUL1614",
-"side": "bid",
-"quote_price": 0.9,
-"snap_ts": "2026-07-15T15:11:18+00:00",
-"fair_p_at_quote": 0.9336753529165409,
-"edge_at_quote": 0.0337,
-"sigma_daily_at_quote": 0.03129,
-"horizon_days_at_quote": 1.138,
-"status": "resting",
-"stale_runs": 4
-},
-{
-"ticker": "KXWTI-26JUL1614-T75.49",
-"event_ticker": "KXWTI-26JUL1614",
-"side": "bid",
-"quote_price": 0.83,
-"snap_ts": "2026-07-15T15:11:18+00:00",
-"fair_p_at_quote": 0.9039928760253411,
-"edge_at_quote": 0.074,
-"sigma_daily_at_quote": 0.03129,
-"horizon_days_at_quote": 1.138,
-"status": "resting",
-"stale_runs": 4
-},
-{
-"ticker": "KXWTI-26JUL1614-T75.99",
-"event_ticker": "KXWTI-26JUL1614",
-"side": "bid",
-"quote_price": 0.75,
-"snap_ts": "2026-07-15T15:11:18+00:00",
-"fair_p_at_quote": 0.865823894940416,
-"edge_at_quote": 0.1158,
-"sigma_daily_at_quote": 0.03129,
-"horizon_days_at_quote": 1.138,
-"status": "resting",
-"stale_runs": 4
-},
-{
 "ticker": "KXWTI-26JUL1614-T76.49",
 "event_ticker": "KXWTI-26JUL1614",
 "side": "bid",
@@ -5872,7 +5757,7 @@
 "sigma_daily_at_quote": 0.03129,
 "horizon_days_at_quote": 1.138,
 "status": "resting",
-"stale_runs": 3
+"stale_runs": 4
 },
 {
 "ticker": "KXWTI-26JUL1614-T76.99",
@@ -5885,7 +5770,7 @@
 "sigma_daily_at_quote": 0.03129,
 "horizon_days_at_quote": 1.138,
 "status": "resting",
-"stale_runs": 3
+"stale_runs": 4
 },
 {
 "ticker": "KXWTI-26JUL1614-T77.49",
@@ -5898,7 +5783,7 @@
 "sigma_daily_at_quote": 0.03129,
 "horizon_days_at_quote": 1.138,
 "status": "resting",
-"stale_runs": 3
+"stale_runs": 4
 },
 {
 "ticker": "KXWTI-26JUL1614-T77.99",
@@ -5911,7 +5796,7 @@
 "sigma_daily_at_quote": 0.03129,
 "horizon_days_at_quote": 1.138,
 "status": "resting",
-"stale_runs": 3
+"stale_runs": 4
 },
 {
 "ticker": "KXWTI-26JUL1614-T78.49",
@@ -5924,7 +5809,7 @@
 "sigma_daily_at_quote": 0.03129,
 "horizon_days_at_quote": 1.138,
 "status": "resting",
-"stale_runs": 3
+"stale_runs": 4
 },
 {
 "ticker": "KXWTI-26JUL1614-T78.99",
@@ -5937,7 +5822,7 @@
 "sigma_daily_at_quote": 0.03129,
 "horizon_days_at_quote": 1.138,
 "status": "resting",
-"stale_runs": 3
+"stale_runs": 4
 },
 {
 "ticker": "KXWTI-26JUL1614-T79.49",
@@ -5950,7 +5835,7 @@
 "sigma_daily_at_quote": 0.03129,
 "horizon_days_at_quote": 1.138,
 "status": "resting",
-"stale_runs": 3
+"stale_runs": 4
 },
 {
 "ticker": "KXWTI-26JUL1614-T79.99",
@@ -5964,7 +5849,7 @@
 "horizon_days_at_quote": 1.138,
 "status": "filled",
 "filled_ts": "2026-07-16T15:21:17+00:00",
-"stale_runs": 3
+"stale_runs": 4
 },
 {
 "ticker": "KXWTI-26JUL1614-T80.49",
@@ -5978,7 +5863,7 @@
 "horizon_days_at_quote": 1.138,
 "status": "filled",
 "filled_ts": "2026-07-16T15:21:17+00:00",
-"stale_runs": 3
+"stale_runs": 4
 },
 {
 "ticker": "KXWTI-26JUL1614-T80.99",
@@ -5992,7 +5877,7 @@
 "horizon_days_at_quote": 1.138,
 "status": "filled",
 "filled_ts": "2026-07-16T15:21:17+00:00",
-"stale_runs": 3
+"stale_runs": 4
 },
 {
 "ticker": "KXWTI-26JUL1614-T81.49",
@@ -6006,7 +5891,7 @@
 "horizon_days_at_quote": 1.138,
 "status": "filled",
 "filled_ts": "2026-07-16T15:21:17+00:00",
-"stale_runs": 3
+"stale_runs": 4
 },
 {
 "ticker": "KXWTI-26JUL1614-T81.99",
@@ -6020,19 +5905,6 @@
 "horizon_days_at_quote": 1.138,
 "status": "filled",
 "filled_ts": "2026-07-16T15:21:17+00:00",
-"stale_runs": 3
-},
-{
-"ticker": "KXWTI-26JUL1614-T82.49",
-"event_ticker": "KXWTI-26JUL1614",
-"side": "bid",
-"quote_price": 0.06,
-"snap_ts": "2026-07-15T15:11:18+00:00",
-"fair_p_at_quote": 0.08817829096657215,
-"edge_at_quote": 0.0282,
-"sigma_daily_at_quote": 0.03129,
-"horizon_days_at_quote": 1.138,
-"status": "resting",
 "stale_runs": 4
 },
 {
@@ -6047,116 +5919,6 @@
 "horizon_days_at_quote": 1.138,
 "status": "filled",
 "filled_ts": "2026-07-16T15:21:17+00:00",
-"stale_runs": 3
-},
-{
-"ticker": "KXWTI-26JUL1614-T83.49",
-"event_ticker": "KXWTI-26JUL1614",
-"side": "bid",
-"quote_price": 0.03,
-"snap_ts": "2026-07-15T15:11:18+00:00",
-"fair_p_at_quote": 0.043350519067354654,
-"edge_at_quote": 0.0134,
-"sigma_daily_at_quote": 0.03129,
-"horizon_days_at_quote": 1.138,
-"status": "resting",
-"stale_runs": 4
-},
-{
-"ticker": "KXWTI-26JUL1614-T83.49",
-"event_ticker": "KXWTI-26JUL1614",
-"side": "ask",
-"quote_price": 0.06,
-"snap_ts": "2026-07-15T15:11:18+00:00",
-"fair_p_at_quote": 0.043350519067354654,
-"edge_at_quote": 0.0166,
-"sigma_daily_at_quote": 0.03129,
-"horizon_days_at_quote": 1.138,
-"status": "filled",
-"filled_ts": "2026-07-15T22:35:33+00:00",
-"stale_runs": 4
-},
-{
-"ticker": "KXWTI-26JUL1614-T83.99",
-"event_ticker": "KXWTI-26JUL1614",
-"side": "bid",
-"quote_price": 0.02,
-"snap_ts": "2026-07-15T15:11:18+00:00",
-"fair_p_at_quote": 0.02924907208119293,
-"edge_at_quote": 0.0092,
-"sigma_daily_at_quote": 0.03129,
-"horizon_days_at_quote": 1.138,
-"status": "resting",
-"stale_runs": 4
-},
-{
-"ticker": "KXWTI-26JUL1614-T83.99",
-"event_ticker": "KXWTI-26JUL1614",
-"side": "ask",
-"quote_price": 0.05,
-"snap_ts": "2026-07-15T15:11:18+00:00",
-"fair_p_at_quote": 0.02924907208119293,
-"edge_at_quote": 0.0208,
-"sigma_daily_at_quote": 0.03129,
-"horizon_days_at_quote": 1.138,
-"status": "filled",
-"filled_ts": "2026-07-15T22:35:33+00:00",
-"stale_runs": 4
-},
-{
-"ticker": "KXWTI-26JUL1614-T84.49",
-"event_ticker": "KXWTI-26JUL1614",
-"side": "ask",
-"quote_price": 0.04,
-"snap_ts": "2026-07-15T15:11:18+00:00",
-"fair_p_at_quote": 0.0192370283221584,
-"edge_at_quote": 0.0208,
-"sigma_daily_at_quote": 0.03129,
-"horizon_days_at_quote": 1.138,
-"status": "filled",
-"filled_ts": "2026-07-15T22:35:33+00:00",
-"stale_runs": 4
-},
-{
-"ticker": "KXWTI-26JUL1614-T84.99",
-"event_ticker": "KXWTI-26JUL1614",
-"side": "ask",
-"quote_price": 0.04,
-"snap_ts": "2026-07-15T15:11:18+00:00",
-"fair_p_at_quote": 0.012334690336898324,
-"edge_at_quote": 0.0277,
-"sigma_daily_at_quote": 0.03129,
-"horizon_days_at_quote": 1.138,
-"status": "filled",
-"filled_ts": "2026-07-15T22:35:33+00:00",
-"stale_runs": 4
-},
-{
-"ticker": "KXWTI-26JUL1614-T85.49",
-"event_ticker": "KXWTI-26JUL1614",
-"side": "ask",
-"quote_price": 0.03,
-"snap_ts": "2026-07-15T15:11:18+00:00",
-"fair_p_at_quote": 0.0077117997216547,
-"edge_at_quote": 0.0223,
-"sigma_daily_at_quote": 0.03129,
-"horizon_days_at_quote": 1.138,
-"status": "filled",
-"filled_ts": "2026-07-15T22:35:33+00:00",
-"stale_runs": 4
-},
-{
-"ticker": "KXWTI-26JUL1614-T85.99",
-"event_ticker": "KXWTI-26JUL1614",
-"side": "ask",
-"quote_price": 0.03,
-"snap_ts": "2026-07-15T15:11:18+00:00",
-"fair_p_at_quote": 0.004702264003883405,
-"edge_at_quote": 0.0253,
-"sigma_daily_at_quote": 0.03129,
-"horizon_days_at_quote": 1.138,
-"status": "filled",
-"filled_ts": "2026-07-15T22:35:33+00:00",
 "stale_runs": 4
 },
 {
@@ -6663,7 +6425,8 @@
 "edge_at_quote": 0.0097,
 "sigma_daily_at_quote": 0.03143,
 "horizon_days_at_quote": 110.8711,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26NOV03-T110.99",
@@ -6735,7 +6498,8 @@
 "edge_at_quote": 0.0095,
 "sigma_daily_at_quote": 0.03143,
 "horizon_days_at_quote": 110.8711,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26NOV03-T113.99",
@@ -6759,7 +6523,8 @@
 "edge_at_quote": 0.0056,
 "sigma_daily_at_quote": 0.03143,
 "horizon_days_at_quote": 110.8711,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26NOV03-T114.99",
@@ -6783,7 +6548,8 @@
 "edge_at_quote": 0.0115,
 "sigma_daily_at_quote": 0.03143,
 "horizon_days_at_quote": 110.8711,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26NOV03-T115.99",
@@ -6822,136 +6588,6 @@
 "status": "resting"
 },
 {
-"ticker": "KXWTI-26JUL1614-T71.49",
-"event_ticker": "KXWTI-26JUL1614",
-"side": "bid",
-"quote_price": 0.98,
-"snap_ts": "2026-07-15T22:35:33+00:00",
-"fair_p_at_quote": 0.9999725068559886,
-"edge_at_quote": 0.02,
-"sigma_daily_at_quote": 0.03143,
-"horizon_days_at_quote": 0.8295,
-"status": "resting",
-"stale_runs": 4
-},
-{
-"ticker": "KXWTI-26JUL1614-T71.99",
-"event_ticker": "KXWTI-26JUL1614",
-"side": "bid",
-"quote_price": 0.98,
-"snap_ts": "2026-07-15T22:35:33+00:00",
-"fair_p_at_quote": 0.9999246442153514,
-"edge_at_quote": 0.0199,
-"sigma_daily_at_quote": 0.03143,
-"horizon_days_at_quote": 0.8295,
-"status": "resting",
-"stale_runs": 4
-},
-{
-"ticker": "KXWTI-26JUL1614-T72.49",
-"event_ticker": "KXWTI-26JUL1614",
-"side": "bid",
-"quote_price": 0.98,
-"snap_ts": "2026-07-15T22:35:33+00:00",
-"fair_p_at_quote": 0.9998060034714327,
-"edge_at_quote": 0.0198,
-"sigma_daily_at_quote": 0.03143,
-"horizon_days_at_quote": 0.8295,
-"status": "resting",
-"stale_runs": 4
-},
-{
-"ticker": "KXWTI-26JUL1614-T72.99",
-"event_ticker": "KXWTI-26JUL1614",
-"side": "bid",
-"quote_price": 0.98,
-"snap_ts": "2026-07-15T22:35:33+00:00",
-"fair_p_at_quote": 0.9995301854533659,
-"edge_at_quote": 0.0195,
-"sigma_daily_at_quote": 0.03143,
-"horizon_days_at_quote": 0.8295,
-"status": "resting",
-"stale_runs": 4
-},
-{
-"ticker": "KXWTI-26JUL1614-T73.49",
-"event_ticker": "KXWTI-26JUL1614",
-"side": "bid",
-"quote_price": 0.97,
-"snap_ts": "2026-07-15T22:35:33+00:00",
-"fair_p_at_quote": 0.9989280266716637,
-"edge_at_quote": 0.0289,
-"sigma_daily_at_quote": 0.03143,
-"horizon_days_at_quote": 0.8295,
-"status": "resting",
-"stale_runs": 4
-},
-{
-"ticker": "KXWTI-26JUL1614-T73.99",
-"event_ticker": "KXWTI-26JUL1614",
-"side": "bid",
-"quote_price": 0.96,
-"snap_ts": "2026-07-15T22:35:33+00:00",
-"fair_p_at_quote": 0.9976919832778499,
-"edge_at_quote": 0.0377,
-"sigma_daily_at_quote": 0.03143,
-"horizon_days_at_quote": 0.8295,
-"status": "resting",
-"stale_runs": 4
-},
-{
-"ticker": "KXWTI-26JUL1614-T74.49",
-"event_ticker": "KXWTI-26JUL1614",
-"side": "bid",
-"quote_price": 0.96,
-"snap_ts": "2026-07-15T22:35:33+00:00",
-"fair_p_at_quote": 0.9953035537155699,
-"edge_at_quote": 0.0353,
-"sigma_daily_at_quote": 0.03143,
-"horizon_days_at_quote": 0.8295,
-"status": "resting",
-"stale_runs": 4
-},
-{
-"ticker": "KXWTI-26JUL1614-T74.99",
-"event_ticker": "KXWTI-26JUL1614",
-"side": "bid",
-"quote_price": 0.96,
-"snap_ts": "2026-07-15T22:35:33+00:00",
-"fair_p_at_quote": 0.9909538833857445,
-"edge_at_quote": 0.031,
-"sigma_daily_at_quote": 0.03143,
-"horizon_days_at_quote": 0.8295,
-"status": "resting",
-"stale_runs": 4
-},
-{
-"ticker": "KXWTI-26JUL1614-T75.49",
-"event_ticker": "KXWTI-26JUL1614",
-"side": "bid",
-"quote_price": 0.96,
-"snap_ts": "2026-07-15T22:35:33+00:00",
-"fair_p_at_quote": 0.9834797232283012,
-"edge_at_quote": 0.0235,
-"sigma_daily_at_quote": 0.03143,
-"horizon_days_at_quote": 0.8295,
-"status": "resting",
-"stale_runs": 4
-},
-{
-"ticker": "KXWTI-26JUL1614-T75.99",
-"event_ticker": "KXWTI-26JUL1614",
-"side": "bid",
-"quote_price": 0.94,
-"snap_ts": "2026-07-15T22:35:33+00:00",
-"fair_p_at_quote": 0.9713481882087766,
-"edge_at_quote": 0.0313,
-"sigma_daily_at_quote": 0.03143,
-"horizon_days_at_quote": 0.8295,
-"status": "resting",
-"stale_runs": 4
-},
-{
 "ticker": "KXWTI-26JUL1614-T76.49",
 "event_ticker": "KXWTI-26JUL1614",
 "side": "bid",
@@ -6962,7 +6598,7 @@
 "sigma_daily_at_quote": 0.03143,
 "horizon_days_at_quote": 0.8295,
 "status": "resting",
-"stale_runs": 3
+"stale_runs": 4
 },
 {
 "ticker": "KXWTI-26JUL1614-T76.99",
@@ -6975,7 +6611,7 @@
 "sigma_daily_at_quote": 0.03143,
 "horizon_days_at_quote": 0.8295,
 "status": "resting",
-"stale_runs": 3
+"stale_runs": 4
 },
 {
 "ticker": "KXWTI-26JUL1614-T77.49",
@@ -6988,7 +6624,7 @@
 "sigma_daily_at_quote": 0.03143,
 "horizon_days_at_quote": 0.8295,
 "status": "resting",
-"stale_runs": 3
+"stale_runs": 4
 },
 {
 "ticker": "KXWTI-26JUL1614-T77.99",
@@ -7001,7 +6637,7 @@
 "sigma_daily_at_quote": 0.03143,
 "horizon_days_at_quote": 0.8295,
 "status": "resting",
-"stale_runs": 3
+"stale_runs": 4
 },
 {
 "ticker": "KXWTI-26JUL1614-T78.49",
@@ -7014,7 +6650,7 @@
 "sigma_daily_at_quote": 0.03143,
 "horizon_days_at_quote": 0.8295,
 "status": "resting",
-"stale_runs": 3
+"stale_runs": 4
 },
 {
 "ticker": "KXWTI-26JUL1614-T78.99",
@@ -7028,7 +6664,7 @@
 "horizon_days_at_quote": 0.8295,
 "status": "filled",
 "filled_ts": "2026-07-16T15:21:17+00:00",
-"stale_runs": 3
+"stale_runs": 4
 },
 {
 "ticker": "KXWTI-26JUL1614-T79.49",
@@ -7042,7 +6678,7 @@
 "horizon_days_at_quote": 0.8295,
 "status": "filled",
 "filled_ts": "2026-07-16T15:21:17+00:00",
-"stale_runs": 3
+"stale_runs": 4
 },
 {
 "ticker": "KXWTI-26JUL1614-T79.99",
@@ -7056,7 +6692,7 @@
 "horizon_days_at_quote": 0.8295,
 "status": "filled",
 "filled_ts": "2026-07-16T15:21:17+00:00",
-"stale_runs": 3
+"stale_runs": 4
 },
 {
 "ticker": "KXWTI-26JUL1614-T80.49",
@@ -7070,7 +6706,7 @@
 "horizon_days_at_quote": 0.8295,
 "status": "filled",
 "filled_ts": "2026-07-16T15:21:17+00:00",
-"stale_runs": 3
+"stale_runs": 4
 },
 {
 "ticker": "KXWTI-26JUL1614-T80.99",
@@ -7084,7 +6720,7 @@
 "horizon_days_at_quote": 0.8295,
 "status": "filled",
 "filled_ts": "2026-07-16T15:21:17+00:00",
-"stale_runs": 3
+"stale_runs": 4
 },
 {
 "ticker": "KXWTI-26JUL1614-T81.49",
@@ -7098,7 +6734,7 @@
 "horizon_days_at_quote": 0.8295,
 "status": "filled",
 "filled_ts": "2026-07-16T15:21:17+00:00",
-"stale_runs": 3
+"stale_runs": 4
 },
 {
 "ticker": "KXWTI-26JUL1614-T81.99",
@@ -7112,19 +6748,6 @@
 "horizon_days_at_quote": 0.8295,
 "status": "filled",
 "filled_ts": "2026-07-16T15:21:17+00:00",
-"stale_runs": 3
-},
-{
-"ticker": "KXWTI-26JUL1614-T82.49",
-"event_ticker": "KXWTI-26JUL1614",
-"side": "bid",
-"quote_price": 0.13,
-"snap_ts": "2026-07-15T22:35:33+00:00",
-"fair_p_at_quote": 0.16701480578921757,
-"edge_at_quote": 0.037,
-"sigma_daily_at_quote": 0.03143,
-"horizon_days_at_quote": 0.8295,
-"status": "resting",
 "stale_runs": 4
 },
 {
@@ -7139,84 +6762,6 @@
 "horizon_days_at_quote": 0.8295,
 "status": "filled",
 "filled_ts": "2026-07-16T15:21:17+00:00",
-"stale_runs": 3
-},
-{
-"ticker": "KXWTI-26JUL1614-T83.49",
-"event_ticker": "KXWTI-26JUL1614",
-"side": "ask",
-"quote_price": 0.1,
-"snap_ts": "2026-07-15T22:35:33+00:00",
-"fair_p_at_quote": 0.08272899751119855,
-"edge_at_quote": 0.0173,
-"sigma_daily_at_quote": 0.03143,
-"horizon_days_at_quote": 0.8295,
-"status": "resting",
-"stale_runs": 4
-},
-{
-"ticker": "KXWTI-26JUL1614-T83.99",
-"event_ticker": "KXWTI-26JUL1614",
-"side": "ask",
-"quote_price": 0.08,
-"snap_ts": "2026-07-15T22:35:33+00:00",
-"fair_p_at_quote": 0.05529813906922498,
-"edge_at_quote": 0.0247,
-"sigma_daily_at_quote": 0.03143,
-"horizon_days_at_quote": 0.8295,
-"status": "resting",
-"stale_runs": 4
-},
-{
-"ticker": "KXWTI-26JUL1614-T84.49",
-"event_ticker": "KXWTI-26JUL1614",
-"side": "ask",
-"quote_price": 0.07,
-"snap_ts": "2026-07-15T22:35:33+00:00",
-"fair_p_at_quote": 0.03570566912822826,
-"edge_at_quote": 0.0343,
-"sigma_daily_at_quote": 0.03143,
-"horizon_days_at_quote": 0.8295,
-"status": "resting",
-"stale_runs": 4
-},
-{
-"ticker": "KXWTI-26JUL1614-T84.99",
-"event_ticker": "KXWTI-26JUL1614",
-"side": "ask",
-"quote_price": 0.05,
-"snap_ts": "2026-07-15T22:35:33+00:00",
-"fair_p_at_quote": 0.022270505457857803,
-"edge_at_quote": 0.0277,
-"sigma_daily_at_quote": 0.03143,
-"horizon_days_at_quote": 0.8295,
-"status": "resting",
-"stale_runs": 4
-},
-{
-"ticker": "KXWTI-26JUL1614-T85.49",
-"event_ticker": "KXWTI-26JUL1614",
-"side": "ask",
-"quote_price": 0.04,
-"snap_ts": "2026-07-15T22:35:33+00:00",
-"fair_p_at_quote": 0.013419030320068581,
-"edge_at_quote": 0.0266,
-"sigma_daily_at_quote": 0.03143,
-"horizon_days_at_quote": 0.8295,
-"status": "resting",
-"stale_runs": 4
-},
-{
-"ticker": "KXWTI-26JUL1614-T85.99",
-"event_ticker": "KXWTI-26JUL1614",
-"side": "ask",
-"quote_price": 0.05,
-"snap_ts": "2026-07-15T22:35:33+00:00",
-"fair_p_at_quote": 0.007812224796167333,
-"edge_at_quote": 0.0422,
-"sigma_daily_at_quote": 0.03143,
-"horizon_days_at_quote": 0.8295,
-"status": "resting",
 "stale_runs": 4
 },
 {
@@ -7605,7 +7150,8 @@
 "edge_at_quote": 0.0062,
 "sigma_daily_at_quote": 0.03107,
 "horizon_days_at_quote": 110.1727,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26NOV03-T101.99",
@@ -7809,7 +7355,8 @@
 "edge_at_quote": 0.0184,
 "sigma_daily_at_quote": 0.03107,
 "horizon_days_at_quote": 110.1727,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26NOV03-T110.99",
@@ -7881,7 +7428,8 @@
 "edge_at_quote": 0.0178,
 "sigma_daily_at_quote": 0.03107,
 "horizon_days_at_quote": 110.1727,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26NOV03-T113.99",
@@ -7905,7 +7453,8 @@
 "edge_at_quote": 0.0038,
 "sigma_daily_at_quote": 0.03107,
 "horizon_days_at_quote": 110.1727,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26NOV03-T114.99",
@@ -7929,7 +7478,8 @@
 "edge_at_quote": 0.0196,
 "sigma_daily_at_quote": 0.03107,
 "horizon_days_at_quote": 110.1727,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26NOV03-T115.99",
@@ -7991,7 +7541,7 @@
 "sigma_daily_at_quote": 0.03107,
 "horizon_days_at_quote": 1.1311,
 "status": "resting",
-"stale_runs": 3
+"stale_runs": 4
 },
 {
 "ticker": "KXWTI-26JUL1714-T72.99",
@@ -8004,7 +7554,7 @@
 "sigma_daily_at_quote": 0.03107,
 "horizon_days_at_quote": 1.1311,
 "status": "resting",
-"stale_runs": 3
+"stale_runs": 4
 },
 {
 "ticker": "KXWTI-26JUL1714-T73.49",
@@ -8017,7 +7567,7 @@
 "sigma_daily_at_quote": 0.03107,
 "horizon_days_at_quote": 1.1311,
 "status": "resting",
-"stale_runs": 3
+"stale_runs": 4
 },
 {
 "ticker": "KXWTI-26JUL1714-T73.99",
@@ -8030,7 +7580,7 @@
 "sigma_daily_at_quote": 0.03107,
 "horizon_days_at_quote": 1.1311,
 "status": "resting",
-"stale_runs": 3
+"stale_runs": 4
 },
 {
 "ticker": "KXWTI-26JUL1714-T74.49",
@@ -8043,7 +7593,7 @@
 "sigma_daily_at_quote": 0.03107,
 "horizon_days_at_quote": 1.1311,
 "status": "resting",
-"stale_runs": 3
+"stale_runs": 4
 },
 {
 "ticker": "KXWTI-26JUL1714-T74.49",
@@ -8056,7 +7606,7 @@
 "sigma_daily_at_quote": 0.03107,
 "horizon_days_at_quote": 1.1311,
 "status": "resting",
-"stale_runs": 3
+"stale_runs": 4
 },
 {
 "ticker": "KXWTI-26JUL1714-T74.99",
@@ -8069,7 +7619,7 @@
 "sigma_daily_at_quote": 0.03107,
 "horizon_days_at_quote": 1.1311,
 "status": "resting",
-"stale_runs": 3
+"stale_runs": 4
 },
 {
 "ticker": "KXWTI-26JUL1714-T75.49",
@@ -8082,7 +7632,7 @@
 "sigma_daily_at_quote": 0.03107,
 "horizon_days_at_quote": 1.1311,
 "status": "resting",
-"stale_runs": 3
+"stale_runs": 4
 },
 {
 "ticker": "KXWTI-26JUL1714-T75.99",
@@ -8095,7 +7645,7 @@
 "sigma_daily_at_quote": 0.03107,
 "horizon_days_at_quote": 1.1311,
 "status": "resting",
-"stale_runs": 2
+"stale_runs": 3
 },
 {
 "ticker": "KXWTI-26JUL1714-T76.49",
@@ -8108,7 +7658,7 @@
 "sigma_daily_at_quote": 0.03107,
 "horizon_days_at_quote": 1.1311,
 "status": "resting",
-"stale_runs": 3
+"stale_runs": 4
 },
 {
 "ticker": "KXWTI-26JUL1714-T76.99",
@@ -8121,7 +7671,7 @@
 "sigma_daily_at_quote": 0.03107,
 "horizon_days_at_quote": 1.1311,
 "status": "resting",
-"stale_runs": 3
+"stale_runs": 4
 },
 {
 "ticker": "KXWTI-26JUL1714-T77.49",
@@ -8134,7 +7684,7 @@
 "sigma_daily_at_quote": 0.03107,
 "horizon_days_at_quote": 1.1311,
 "status": "resting",
-"stale_runs": 2
+"stale_runs": 3
 },
 {
 "ticker": "KXWTI-26JUL1714-T77.99",
@@ -8147,7 +7697,7 @@
 "sigma_daily_at_quote": 0.03107,
 "horizon_days_at_quote": 1.1311,
 "status": "resting",
-"stale_runs": 2
+"stale_runs": 3
 },
 {
 "ticker": "KXWTI-26JUL1714-T78.49",
@@ -8160,7 +7710,7 @@
 "sigma_daily_at_quote": 0.03107,
 "horizon_days_at_quote": 1.1311,
 "status": "resting",
-"stale_runs": 2
+"stale_runs": 3
 },
 {
 "ticker": "KXWTI-26JUL1714-T78.99",
@@ -8173,7 +7723,7 @@
 "sigma_daily_at_quote": 0.03107,
 "horizon_days_at_quote": 1.1311,
 "status": "resting",
-"stale_runs": 2
+"stale_runs": 3
 },
 {
 "ticker": "KXWTI-26JUL1714-T79.49",
@@ -8186,7 +7736,7 @@
 "sigma_daily_at_quote": 0.03107,
 "horizon_days_at_quote": 1.1311,
 "status": "resting",
-"stale_runs": 2
+"stale_runs": 3
 },
 {
 "ticker": "KXWTI-26JUL1714-T79.99",
@@ -8199,7 +7749,7 @@
 "sigma_daily_at_quote": 0.03107,
 "horizon_days_at_quote": 1.1311,
 "status": "resting",
-"stale_runs": 2
+"stale_runs": 3
 },
 {
 "ticker": "KXWTI-26JUL1714-T80.49",
@@ -8213,7 +7763,7 @@
 "horizon_days_at_quote": 1.1311,
 "status": "filled",
 "filled_ts": "2026-07-17T15:04:12+00:00",
-"stale_runs": 2
+"stale_runs": 3
 },
 {
 "ticker": "KXWTI-26JUL1714-T80.99",
@@ -8227,7 +7777,7 @@
 "horizon_days_at_quote": 1.1311,
 "status": "filled",
 "filled_ts": "2026-07-17T15:04:12+00:00",
-"stale_runs": 2
+"stale_runs": 3
 },
 {
 "ticker": "KXWTI-26JUL1714-T81.49",
@@ -8241,7 +7791,7 @@
 "horizon_days_at_quote": 1.1311,
 "status": "filled",
 "filled_ts": "2026-07-17T15:04:12+00:00",
-"stale_runs": 2
+"stale_runs": 3
 },
 {
 "ticker": "KXWTI-26JUL1714-T81.99",
@@ -8255,7 +7805,7 @@
 "horizon_days_at_quote": 1.1311,
 "status": "filled",
 "filled_ts": "2026-07-17T15:04:12+00:00",
-"stale_runs": 2
+"stale_runs": 3
 },
 {
 "ticker": "KXWTI-26JUL1714-T82.49",
@@ -8269,7 +7819,7 @@
 "horizon_days_at_quote": 1.1311,
 "status": "filled",
 "filled_ts": "2026-07-17T15:04:12+00:00",
-"stale_runs": 2
+"stale_runs": 3
 },
 {
 "ticker": "KXWTI-26JUL1714-T82.99",
@@ -8283,7 +7833,7 @@
 "horizon_days_at_quote": 1.1311,
 "status": "filled",
 "filled_ts": "2026-07-17T15:04:12+00:00",
-"stale_runs": 2
+"stale_runs": 3
 },
 {
 "ticker": "KXWTI-26JUL1714-T82.99",
@@ -8296,7 +7846,7 @@
 "sigma_daily_at_quote": 0.03107,
 "horizon_days_at_quote": 1.1311,
 "status": "resting",
-"stale_runs": 2
+"stale_runs": 3
 },
 {
 "ticker": "KXWTI-26JUL1714-T83.49",
@@ -8310,7 +7860,7 @@
 "horizon_days_at_quote": 1.1311,
 "status": "filled",
 "filled_ts": "2026-07-17T15:04:12+00:00",
-"stale_runs": 2
+"stale_runs": 3
 },
 {
 "ticker": "KXWTI-26JUL1714-T83.49",
@@ -8323,7 +7873,7 @@
 "sigma_daily_at_quote": 0.03107,
 "horizon_days_at_quote": 1.1311,
 "status": "resting",
-"stale_runs": 2
+"stale_runs": 3
 },
 {
 "ticker": "KXWTI-26JUL1714-T83.99",
@@ -8337,7 +7887,7 @@
 "horizon_days_at_quote": 1.1311,
 "status": "filled",
 "filled_ts": "2026-07-17T15:04:12+00:00",
-"stale_runs": 2
+"stale_runs": 3
 },
 {
 "ticker": "KXWTI-26JUL1714-T83.99",
@@ -8350,7 +7900,7 @@
 "sigma_daily_at_quote": 0.03107,
 "horizon_days_at_quote": 1.1311,
 "status": "resting",
-"stale_runs": 2
+"stale_runs": 3
 },
 {
 "ticker": "KXWTI-26JUL1714-T84.49",
@@ -8364,7 +7914,7 @@
 "horizon_days_at_quote": 1.1311,
 "status": "filled",
 "filled_ts": "2026-07-17T15:04:12+00:00",
-"stale_runs": 2
+"stale_runs": 3
 },
 {
 "ticker": "KXWTI-26JUL1714-T84.49",
@@ -8377,7 +7927,7 @@
 "sigma_daily_at_quote": 0.03107,
 "horizon_days_at_quote": 1.1311,
 "status": "resting",
-"stale_runs": 2
+"stale_runs": 3
 },
 {
 "ticker": "KXWTI-26JUL1714-T84.99",
@@ -8390,7 +7940,7 @@
 "sigma_daily_at_quote": 0.03107,
 "horizon_days_at_quote": 1.1311,
 "status": "resting",
-"stale_runs": 3
+"stale_runs": 4
 },
 {
 "ticker": "KXWTI-26JUL1714-T84.99",
@@ -8403,7 +7953,7 @@
 "sigma_daily_at_quote": 0.03107,
 "horizon_days_at_quote": 1.1311,
 "status": "resting",
-"stale_runs": 3
+"stale_runs": 4
 },
 {
 "ticker": "KXWTI-26JUL1714-T85.49",
@@ -8416,7 +7966,7 @@
 "sigma_daily_at_quote": 0.03107,
 "horizon_days_at_quote": 1.1311,
 "status": "resting",
-"stale_runs": 3
+"stale_runs": 4
 },
 {
 "ticker": "KXWTI-26JUL1714-T85.99",
@@ -8429,7 +7979,7 @@
 "sigma_daily_at_quote": 0.03107,
 "horizon_days_at_quote": 1.1311,
 "status": "resting",
-"stale_runs": 3
+"stale_runs": 4
 },
 {
 "ticker": "KXWTI-26JUL1714-T85.99",
@@ -8442,7 +7992,7 @@
 "sigma_daily_at_quote": 0.03107,
 "horizon_days_at_quote": 1.1311,
 "status": "resting",
-"stale_runs": 3
+"stale_runs": 4
 },
 {
 "ticker": "KXWTI-26JUL1614-T76.49",
@@ -8455,7 +8005,7 @@
 "sigma_daily_at_quote": 0.03107,
 "horizon_days_at_quote": 0.1311,
 "status": "resting",
-"stale_runs": 3
+"stale_runs": 4
 },
 {
 "ticker": "KXWTI-26JUL1614-T76.99",
@@ -8468,7 +8018,7 @@
 "sigma_daily_at_quote": 0.03107,
 "horizon_days_at_quote": 0.1311,
 "status": "resting",
-"stale_runs": 3
+"stale_runs": 4
 },
 {
 "ticker": "KXWTI-26JUL1614-T77.49",
@@ -8481,7 +8031,7 @@
 "sigma_daily_at_quote": 0.03107,
 "horizon_days_at_quote": 0.1311,
 "status": "resting",
-"stale_runs": 3
+"stale_runs": 4
 },
 {
 "ticker": "KXWTI-26JUL1614-T77.99",
@@ -8494,7 +8044,7 @@
 "sigma_daily_at_quote": 0.03107,
 "horizon_days_at_quote": 0.1311,
 "status": "resting",
-"stale_runs": 3
+"stale_runs": 4
 },
 {
 "ticker": "KXWTI-26JUL1614-T78.49",
@@ -8507,7 +8057,7 @@
 "sigma_daily_at_quote": 0.03107,
 "horizon_days_at_quote": 0.1311,
 "status": "resting",
-"stale_runs": 3
+"stale_runs": 4
 },
 {
 "ticker": "KXWTI-26JUL1614-T78.99",
@@ -8520,7 +8070,7 @@
 "sigma_daily_at_quote": 0.03107,
 "horizon_days_at_quote": 0.1311,
 "status": "resting",
-"stale_runs": 3
+"stale_runs": 4
 },
 {
 "ticker": "KXWTI-26JUL1614-T79.49",
@@ -8533,7 +8083,7 @@
 "sigma_daily_at_quote": 0.03107,
 "horizon_days_at_quote": 0.1311,
 "status": "resting",
-"stale_runs": 3
+"stale_runs": 4
 },
 {
 "ticker": "KXWTI-26JUL1614-T79.99",
@@ -8546,7 +8096,7 @@
 "sigma_daily_at_quote": 0.03107,
 "horizon_days_at_quote": 0.1311,
 "status": "resting",
-"stale_runs": 3
+"stale_runs": 4
 },
 {
 "ticker": "KXWTI-26JUL1614-T80.49",
@@ -8559,7 +8109,7 @@
 "sigma_daily_at_quote": 0.03107,
 "horizon_days_at_quote": 0.1311,
 "status": "resting",
-"stale_runs": 3
+"stale_runs": 4
 },
 {
 "ticker": "KXWTI-26JUL1614-T80.99",
@@ -8572,7 +8122,7 @@
 "sigma_daily_at_quote": 0.03107,
 "horizon_days_at_quote": 0.1311,
 "status": "resting",
-"stale_runs": 3
+"stale_runs": 4
 },
 {
 "ticker": "KXWTI-26JUL1614-T81.49",
@@ -8585,7 +8135,7 @@
 "sigma_daily_at_quote": 0.03107,
 "horizon_days_at_quote": 0.1311,
 "status": "resting",
-"stale_runs": 3
+"stale_runs": 4
 },
 {
 "ticker": "KXWTI-26JUL1614-T81.99",
@@ -8598,7 +8148,7 @@
 "sigma_daily_at_quote": 0.03107,
 "horizon_days_at_quote": 0.1311,
 "status": "resting",
-"stale_runs": 3
+"stale_runs": 4
 },
 {
 "ticker": "KXWTI-26JUL1614-T82.99",
@@ -8611,7 +8161,7 @@
 "sigma_daily_at_quote": 0.03107,
 "horizon_days_at_quote": 0.1311,
 "status": "resting",
-"stale_runs": 3
+"stale_runs": 4
 },
 {
 "ticker": "KXWTI-26NOV03-T72.99",
@@ -9142,7 +8692,8 @@
 "edge_at_quote": 0.0125,
 "sigma_daily_at_quote": 0.03093,
 "horizon_days_at_quote": 109.1846,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26NOV03-T110.99",
@@ -9214,7 +8765,8 @@
 "edge_at_quote": 0.0126,
 "sigma_daily_at_quote": 0.03093,
 "horizon_days_at_quote": 109.1846,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26NOV03-T113.99",
@@ -9250,7 +8802,8 @@
 "edge_at_quote": 0.0147,
 "sigma_daily_at_quote": 0.03093,
 "horizon_days_at_quote": 109.1846,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26NOV03-T115.99",
@@ -9298,7 +8851,8 @@
 "edge_at_quote": 0.016,
 "sigma_daily_at_quote": 0.03093,
 "horizon_days_at_quote": 109.1846,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26JUL2014-T70.49",
@@ -9311,7 +8865,7 @@
 "sigma_daily_at_quote": 0.03093,
 "horizon_days_at_quote": 3.1429,
 "status": "resting",
-"stale_runs": 2
+"stale_runs": 3
 },
 {
 "ticker": "KXWTI-26JUL2014-T71.49",
@@ -9324,7 +8878,7 @@
 "sigma_daily_at_quote": 0.03093,
 "horizon_days_at_quote": 3.1429,
 "status": "resting",
-"stale_runs": 2
+"stale_runs": 3
 },
 {
 "ticker": "KXWTI-26JUL2014-T71.49",
@@ -9337,7 +8891,7 @@
 "sigma_daily_at_quote": 0.03093,
 "horizon_days_at_quote": 3.1429,
 "status": "resting",
-"stale_runs": 2
+"stale_runs": 3
 },
 {
 "ticker": "KXWTI-26JUL2014-T71.99",
@@ -9350,7 +8904,7 @@
 "sigma_daily_at_quote": 0.03093,
 "horizon_days_at_quote": 3.1429,
 "status": "resting",
-"stale_runs": 1
+"stale_runs": 2
 },
 {
 "ticker": "KXWTI-26JUL2014-T72.49",
@@ -9362,7 +8916,8 @@
 "edge_at_quote": 0.0174,
 "sigma_daily_at_quote": 0.03093,
 "horizon_days_at_quote": 3.1429,
-"status": "resting"
+"status": "resting",
+"stale_runs": 1
 },
 {
 "ticker": "KXWTI-26JUL2014-T72.99",
@@ -9375,7 +8930,8 @@
 "sigma_daily_at_quote": 0.03093,
 "horizon_days_at_quote": 3.1429,
 "status": "filled",
-"filled_ts": "2026-07-17T22:29:20+00:00"
+"filled_ts": "2026-07-17T22:29:20+00:00",
+"stale_runs": 1
 },
 {
 "ticker": "KXWTI-26JUL2014-T73.49",
@@ -9710,7 +9266,7 @@
 "sigma_daily_at_quote": 0.03093,
 "horizon_days_at_quote": 0.1429,
 "status": "resting",
-"stale_runs": 2
+"stale_runs": 3
 },
 {
 "ticker": "KXWTI-26JUL1714-T77.49",
@@ -9723,7 +9279,7 @@
 "sigma_daily_at_quote": 0.03093,
 "horizon_days_at_quote": 0.1429,
 "status": "resting",
-"stale_runs": 2
+"stale_runs": 3
 },
 {
 "ticker": "KXWTI-26JUL1714-T77.99",
@@ -9736,7 +9292,7 @@
 "sigma_daily_at_quote": 0.03093,
 "horizon_days_at_quote": 0.1429,
 "status": "resting",
-"stale_runs": 2
+"stale_runs": 3
 },
 {
 "ticker": "KXWTI-26JUL1714-T78.49",
@@ -9749,7 +9305,7 @@
 "sigma_daily_at_quote": 0.03093,
 "horizon_days_at_quote": 0.1429,
 "status": "resting",
-"stale_runs": 2
+"stale_runs": 3
 },
 {
 "ticker": "KXWTI-26JUL1714-T78.99",
@@ -9762,7 +9318,7 @@
 "sigma_daily_at_quote": 0.03093,
 "horizon_days_at_quote": 0.1429,
 "status": "resting",
-"stale_runs": 2
+"stale_runs": 3
 },
 {
 "ticker": "KXWTI-26JUL1714-T79.49",
@@ -9775,7 +9331,7 @@
 "sigma_daily_at_quote": 0.03093,
 "horizon_days_at_quote": 0.1429,
 "status": "resting",
-"stale_runs": 2
+"stale_runs": 3
 },
 {
 "ticker": "KXWTI-26JUL1714-T79.99",
@@ -9788,7 +9344,7 @@
 "sigma_daily_at_quote": 0.03093,
 "horizon_days_at_quote": 0.1429,
 "status": "resting",
-"stale_runs": 2
+"stale_runs": 3
 },
 {
 "ticker": "KXWTI-26JUL1714-T80.49",
@@ -9801,7 +9357,7 @@
 "sigma_daily_at_quote": 0.03093,
 "horizon_days_at_quote": 0.1429,
 "status": "resting",
-"stale_runs": 2
+"stale_runs": 3
 },
 {
 "ticker": "KXWTI-26JUL1714-T80.99",
@@ -9814,7 +9370,7 @@
 "sigma_daily_at_quote": 0.03093,
 "horizon_days_at_quote": 0.1429,
 "status": "resting",
-"stale_runs": 2
+"stale_runs": 3
 },
 {
 "ticker": "KXWTI-26JUL1714-T81.49",
@@ -9827,7 +9383,7 @@
 "sigma_daily_at_quote": 0.03093,
 "horizon_days_at_quote": 0.1429,
 "status": "resting",
-"stale_runs": 2
+"stale_runs": 3
 },
 {
 "ticker": "KXWTI-26JUL1714-T81.99",
@@ -9840,7 +9396,7 @@
 "sigma_daily_at_quote": 0.03093,
 "horizon_days_at_quote": 0.1429,
 "status": "resting",
-"stale_runs": 2
+"stale_runs": 3
 },
 {
 "ticker": "KXWTI-26JUL1714-T82.49",
@@ -9853,7 +9409,7 @@
 "sigma_daily_at_quote": 0.03093,
 "horizon_days_at_quote": 0.1429,
 "status": "resting",
-"stale_runs": 2
+"stale_runs": 3
 },
 {
 "ticker": "KXWTI-26JUL1714-T82.99",
@@ -9866,7 +9422,7 @@
 "sigma_daily_at_quote": 0.03093,
 "horizon_days_at_quote": 0.1429,
 "status": "resting",
-"stale_runs": 2
+"stale_runs": 3
 },
 {
 "ticker": "KXWTI-26JUL1714-T83.49",
@@ -9879,7 +9435,7 @@
 "sigma_daily_at_quote": 0.03093,
 "horizon_days_at_quote": 0.1429,
 "status": "resting",
-"stale_runs": 2
+"stale_runs": 3
 },
 {
 "ticker": "KXWTI-26JUL1714-T83.99",
@@ -9892,7 +9448,7 @@
 "sigma_daily_at_quote": 0.03093,
 "horizon_days_at_quote": 0.1429,
 "status": "resting",
-"stale_runs": 2
+"stale_runs": 3
 },
 {
 "ticker": "KXWTI-26JUL1714-T84.49",
@@ -9905,7 +9461,7 @@
 "sigma_daily_at_quote": 0.03093,
 "horizon_days_at_quote": 0.1429,
 "status": "resting",
-"stale_runs": 2
+"stale_runs": 3
 },
 {
 "ticker": "KXWTI-26NOV03-T72.99",
@@ -10482,7 +10038,8 @@
 "edge_at_quote": 0.004,
 "sigma_daily_at_quote": 0.03149,
 "horizon_days_at_quote": 108.8755,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26NOV03-T114.99",
@@ -10554,7 +10111,8 @@
 "edge_at_quote": 0.0022,
 "sigma_daily_at_quote": 0.03149,
 "horizon_days_at_quote": 108.8755,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26JUL2014-T71.99",
@@ -10567,7 +10125,7 @@
 "sigma_daily_at_quote": 0.03149,
 "horizon_days_at_quote": 2.8338,
 "status": "resting",
-"stale_runs": 1
+"stale_runs": 2
 },
 {
 "ticker": "KXWTI-26JUL2014-T72.49",
@@ -10579,7 +10137,8 @@
 "edge_at_quote": 0.0085,
 "sigma_daily_at_quote": 0.03149,
 "horizon_days_at_quote": 2.8338,
-"status": "resting"
+"status": "resting",
+"stale_runs": 1
 },
 {
 "ticker": "KXWTI-26JUL2014-T72.49",
@@ -10591,7 +10150,8 @@
 "edge_at_quote": 0.0015,
 "sigma_daily_at_quote": 0.03149,
 "horizon_days_at_quote": 2.8338,
-"status": "resting"
+"status": "resting",
+"stale_runs": 1
 },
 {
 "ticker": "KXWTI-26JUL2014-T72.99",
@@ -10603,7 +10163,8 @@
 "edge_at_quote": 0.0039,
 "sigma_daily_at_quote": 0.03149,
 "horizon_days_at_quote": 2.8338,
-"status": "resting"
+"status": "resting",
+"stale_runs": 1
 },
 {
 "ticker": "KXWTI-26JUL2014-T72.99",
@@ -10615,7 +10176,8 @@
 "edge_at_quote": 0.0061,
 "sigma_daily_at_quote": 0.03149,
 "horizon_days_at_quote": 2.8338,
-"status": "resting"
+"status": "resting",
+"stale_runs": 1
 },
 {
 "ticker": "KXWTI-26JUL2014-T73.49",
@@ -10688,7 +10250,8 @@
 "edge_at_quote": 0.0458,
 "sigma_daily_at_quote": 0.03149,
 "horizon_days_at_quote": 2.8338,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26JUL2014-T75.99",
@@ -10712,7 +10275,8 @@
 "edge_at_quote": 0.074,
 "sigma_daily_at_quote": 0.03149,
 "horizon_days_at_quote": 2.8338,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26JUL2014-T76.99",
@@ -11697,7 +11261,8 @@
 "edge_at_quote": 0.0156,
 "sigma_daily_at_quote": 0.03191,
 "horizon_days_at_quote": 3.1604,
-"status": "resting"
+"status": "resting",
+"stale_runs": 1
 },
 {
 "ticker": "KXWTI-26JUL2114-T70.99",
@@ -11709,7 +11274,8 @@
 "edge_at_quote": 0.0137,
 "sigma_daily_at_quote": 0.03191,
 "horizon_days_at_quote": 3.1604,
-"status": "resting"
+"status": "resting",
+"stale_runs": 1
 },
 {
 "ticker": "KXWTI-26JUL2114-T71.49",
@@ -11829,7 +11395,8 @@
 "edge_at_quote": 0.0433,
 "sigma_daily_at_quote": 0.03191,
 "horizon_days_at_quote": 3.1604,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26JUL2114-T75.49",
@@ -11841,7 +11408,8 @@
 "edge_at_quote": 0.0492,
 "sigma_daily_at_quote": 0.03191,
 "horizon_days_at_quote": 3.1604,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26JUL2114-T75.99",
@@ -11853,7 +11421,8 @@
 "edge_at_quote": 0.0578,
 "sigma_daily_at_quote": 0.03191,
 "horizon_days_at_quote": 3.1604,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26JUL2114-T76.49",
@@ -11865,7 +11434,8 @@
 "edge_at_quote": 0.0693,
 "sigma_daily_at_quote": 0.03191,
 "horizon_days_at_quote": 3.1604,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26JUL2114-T76.99",
@@ -11877,7 +11447,8 @@
 "edge_at_quote": 0.0837,
 "sigma_daily_at_quote": 0.03191,
 "horizon_days_at_quote": 3.1604,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26JUL2114-T77.49",
@@ -11889,7 +11460,8 @@
 "edge_at_quote": 0.0911,
 "sigma_daily_at_quote": 0.03191,
 "horizon_days_at_quote": 3.1604,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26JUL2114-T77.99",
@@ -11901,7 +11473,8 @@
 "edge_at_quote": 0.1015,
 "sigma_daily_at_quote": 0.03191,
 "horizon_days_at_quote": 3.1604,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26JUL2114-T78.49",
@@ -11913,7 +11486,8 @@
 "edge_at_quote": 0.1046,
 "sigma_daily_at_quote": 0.03191,
 "horizon_days_at_quote": 3.1604,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26JUL2114-T78.99",
@@ -11925,7 +11499,8 @@
 "edge_at_quote": 0.1203,
 "sigma_daily_at_quote": 0.03191,
 "horizon_days_at_quote": 3.1604,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26JUL2114-T79.49",
@@ -11937,7 +11512,8 @@
 "edge_at_quote": 0.1183,
 "sigma_daily_at_quote": 0.03191,
 "horizon_days_at_quote": 3.1604,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26JUL2114-T79.99",
@@ -11949,7 +11525,8 @@
 "edge_at_quote": 0.1082,
 "sigma_daily_at_quote": 0.03191,
 "horizon_days_at_quote": 3.1604,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26JUL2114-T80.49",
@@ -11961,7 +11538,8 @@
 "edge_at_quote": 0.1096,
 "sigma_daily_at_quote": 0.03191,
 "horizon_days_at_quote": 3.1604,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26JUL2114-T80.99",
@@ -11973,7 +11551,8 @@
 "edge_at_quote": 0.1021,
 "sigma_daily_at_quote": 0.03191,
 "horizon_days_at_quote": 3.1604,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26JUL2114-T81.49",
@@ -11985,7 +11564,8 @@
 "edge_at_quote": 0.095,
 "sigma_daily_at_quote": 0.03191,
 "horizon_days_at_quote": 3.1604,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26JUL2114-T81.99",
@@ -11997,7 +11577,8 @@
 "edge_at_quote": 0.088,
 "sigma_daily_at_quote": 0.03191,
 "horizon_days_at_quote": 3.1604,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26JUL2114-T82.49",
@@ -12009,7 +11590,8 @@
 "edge_at_quote": 0.0706,
 "sigma_daily_at_quote": 0.03191,
 "horizon_days_at_quote": 3.1604,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26JUL2114-T82.99",
@@ -12021,7 +11603,8 @@
 "edge_at_quote": 0.0621,
 "sigma_daily_at_quote": 0.03191,
 "horizon_days_at_quote": 3.1604,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26JUL2114-T83.49",
@@ -12033,7 +11616,8 @@
 "edge_at_quote": 0.0424,
 "sigma_daily_at_quote": 0.03191,
 "horizon_days_at_quote": 3.1604,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26JUL2114-T83.99",
@@ -12045,7 +11629,8 @@
 "edge_at_quote": 0.0408,
 "sigma_daily_at_quote": 0.03191,
 "horizon_days_at_quote": 3.1604,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26JUL2114-T84.49",
@@ -12069,7 +11654,8 @@
 "edge_at_quote": 0.0072,
 "sigma_daily_at_quote": 0.03191,
 "horizon_days_at_quote": 3.1604,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26JUL2114-T84.99",
@@ -12093,7 +11679,8 @@
 "edge_at_quote": 0.0149,
 "sigma_daily_at_quote": 0.03191,
 "horizon_days_at_quote": 2.1604,
-"status": "resting"
+"status": "resting",
+"stale_runs": 1
 },
 {
 "ticker": "KXWTI-26JUL2014-T72.99",
@@ -12105,7 +11692,8 @@
 "edge_at_quote": 0.0123,
 "sigma_daily_at_quote": 0.03191,
 "horizon_days_at_quote": 2.1604,
-"status": "resting"
+"status": "resting",
+"stale_runs": 1
 },
 {
 "ticker": "KXWTI-26JUL2014-T73.49",
@@ -12189,7 +11777,8 @@
 "edge_at_quote": 0.024,
 "sigma_daily_at_quote": 0.03191,
 "horizon_days_at_quote": 2.1604,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26JUL2014-T75.99",
@@ -12213,7 +11802,8 @@
 "edge_at_quote": 0.047,
 "sigma_daily_at_quote": 0.03191,
 "horizon_days_at_quote": 2.1604,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26JUL2014-T76.99",
@@ -12225,7 +11815,8 @@
 "edge_at_quote": 0.0791,
 "sigma_daily_at_quote": 0.03191,
 "horizon_days_at_quote": 2.1604,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26JUL2014-T77.49",
@@ -12261,7 +11852,8 @@
 "edge_at_quote": 0.1507,
 "sigma_daily_at_quote": 0.03191,
 "horizon_days_at_quote": 2.1604,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26JUL2014-T78.99",
@@ -12273,7 +11865,8 @@
 "edge_at_quote": 0.1696,
 "sigma_daily_at_quote": 0.03191,
 "horizon_days_at_quote": 2.1604,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26JUL2014-T79.49",
@@ -12285,7 +11878,8 @@
 "edge_at_quote": 0.1824,
 "sigma_daily_at_quote": 0.03191,
 "horizon_days_at_quote": 2.1604,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26JUL2014-T79.99",
@@ -12297,7 +11891,8 @@
 "edge_at_quote": 0.1885,
 "sigma_daily_at_quote": 0.03191,
 "horizon_days_at_quote": 2.1604,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26JUL2014-T80.49",
@@ -12309,7 +11904,8 @@
 "edge_at_quote": 0.1873,
 "sigma_daily_at_quote": 0.03191,
 "horizon_days_at_quote": 2.1604,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26JUL2014-T80.99",
@@ -12321,7 +11917,8 @@
 "edge_at_quote": 0.188,
 "sigma_daily_at_quote": 0.03191,
 "horizon_days_at_quote": 2.1604,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26JUL2014-T81.49",
@@ -12333,7 +11930,8 @@
 "edge_at_quote": 0.1798,
 "sigma_daily_at_quote": 0.03191,
 "horizon_days_at_quote": 2.1604,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26JUL2014-T81.99",
@@ -12345,7 +11943,8 @@
 "edge_at_quote": 0.1518,
 "sigma_daily_at_quote": 0.03191,
 "horizon_days_at_quote": 2.1604,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26JUL2014-T82.49",
@@ -12357,7 +11956,8 @@
 "edge_at_quote": 0.1431,
 "sigma_daily_at_quote": 0.03191,
 "horizon_days_at_quote": 2.1604,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26JUL2014-T82.99",
@@ -12369,7 +11969,8 @@
 "edge_at_quote": 0.1129,
 "sigma_daily_at_quote": 0.03191,
 "horizon_days_at_quote": 2.1604,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26JUL2014-T83.49",
@@ -12381,7 +11982,8 @@
 "edge_at_quote": 0.1105,
 "sigma_daily_at_quote": 0.03191,
 "horizon_days_at_quote": 2.1604,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26JUL2014-T83.99",
@@ -12393,7 +11995,8 @@
 "edge_at_quote": 0.0951,
 "sigma_daily_at_quote": 0.03191,
 "horizon_days_at_quote": 2.1604,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26JUL2014-T84.49",
@@ -12405,7 +12008,8 @@
 "edge_at_quote": 0.0865,
 "sigma_daily_at_quote": 0.03191,
 "horizon_days_at_quote": 2.1604,
-"status": "resting"
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
 },
 {
 "ticker": "KXWTI-26JUL2014-T84.99",
@@ -12417,6 +12021,1591 @@
 "edge_at_quote": 0.0641,
 "sigma_daily_at_quote": 0.03191,
 "horizon_days_at_quote": 2.1604,
+"status": "filled",
+"filled_ts": "2026-07-18T22:30:13+00:00"
+},
+{
+"ticker": "KXWTI-26NOV03-T72.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "ask",
+"quote_price": 0.69,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.634225330384784,
+"edge_at_quote": 0.0558,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T73.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "ask",
+"quote_price": 0.67,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.6186782709779404,
+"edge_at_quote": 0.0513,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T74.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "bid",
+"quote_price": 0.59,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.6031497760757234,
+"edge_at_quote": 0.0131,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T74.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "ask",
+"quote_price": 0.62,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.6031497760757234,
+"edge_at_quote": 0.0169,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T75.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "bid",
+"quote_price": 0.58,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.5876648297544615,
+"edge_at_quote": 0.0077,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T75.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "ask",
+"quote_price": 0.64,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.5876648297544615,
+"edge_at_quote": 0.0523,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T76.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "bid",
+"quote_price": 0.52,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.5722472227996417,
+"edge_at_quote": 0.0522,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T77.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "bid",
+"quote_price": 0.52,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.5569195036495942,
+"edge_at_quote": 0.0369,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T77.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "ask",
+"quote_price": 0.57,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.5569195036495942,
+"edge_at_quote": 0.0131,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T78.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "bid",
+"quote_price": 0.53,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.5417029419991984,
+"edge_at_quote": 0.0117,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T78.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "ask",
+"quote_price": 0.58,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.5417029419991984,
+"edge_at_quote": 0.0383,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T79.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "bid",
+"quote_price": 0.52,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.5266175041378444,
+"edge_at_quote": 0.0066,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T79.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "ask",
+"quote_price": 0.55,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.5266175041378444,
+"edge_at_quote": 0.0234,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T80.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "bid",
+"quote_price": 0.46,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.5116818390752061,
+"edge_at_quote": 0.0517,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T80.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "ask",
+"quote_price": 0.53,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.5116818390752061,
+"edge_at_quote": 0.0183,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T81.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "bid",
+"quote_price": 0.47,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.49691327450284034,
+"edge_at_quote": 0.0269,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T81.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "ask",
+"quote_price": 0.52,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.49691327450284034,
+"edge_at_quote": 0.0231,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T82.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "bid",
+"quote_price": 0.46,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.4823278216470409,
+"edge_at_quote": 0.0223,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T82.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "ask",
+"quote_price": 0.5,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.4823278216470409,
+"edge_at_quote": 0.0177,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T83.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "bid",
+"quote_price": 0.44,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.46794018808666105,
+"edge_at_quote": 0.0279,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T83.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "ask",
+"quote_price": 0.48,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.46794018808666105,
+"edge_at_quote": 0.0121,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T84.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "bid",
+"quote_price": 0.42,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.45376379763688834,
+"edge_at_quote": 0.0338,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T84.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "ask",
+"quote_price": 0.46,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.45376379763688834,
+"edge_at_quote": 0.0062,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T85.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "bid",
+"quote_price": 0.4,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.4398108164344523,
+"edge_at_quote": 0.0398,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T85.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "ask",
+"quote_price": 0.45,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.4398108164344523,
+"edge_at_quote": 0.0102,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T86.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "bid",
+"quote_price": 0.39,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.4260921843999156,
+"edge_at_quote": 0.0361,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T87.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "bid",
+"quote_price": 0.38,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.41261765129713235,
+"edge_at_quote": 0.0326,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T87.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "ask",
+"quote_price": 0.42,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.41261765129713235,
+"edge_at_quote": 0.0074,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T88.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "bid",
+"quote_price": 0.37,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.3993958166574185,
+"edge_at_quote": 0.0294,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T88.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "ask",
+"quote_price": 0.41,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.3993958166574185,
+"edge_at_quote": 0.0106,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T89.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "bid",
+"quote_price": 0.35,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.3864341728853892,
+"edge_at_quote": 0.0364,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T89.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "ask",
+"quote_price": 0.39,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.3864341728853892,
+"edge_at_quote": 0.0036,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T90.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "bid",
+"quote_price": 0.33,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.37373915091383203,
+"edge_at_quote": 0.0437,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T90.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "ask",
+"quote_price": 0.38,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.37373915091383203,
+"edge_at_quote": 0.0063,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T91.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "bid",
+"quote_price": 0.34,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.3613161678256244,
+"edge_at_quote": 0.0213,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T91.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "ask",
+"quote_price": 0.38,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.3613161678256244,
+"edge_at_quote": 0.0187,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T92.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "bid",
+"quote_price": 0.3,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.34916967591086867,
+"edge_at_quote": 0.0492,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T92.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "ask",
+"quote_price": 0.36,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.34916967591086867,
+"edge_at_quote": 0.0108,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T93.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "bid",
+"quote_price": 0.27,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.3373032126765864,
+"edge_at_quote": 0.0673,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T94.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "bid",
+"quote_price": 0.27,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.3257194513740046,
+"edge_at_quote": 0.0557,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T95.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "bid",
+"quote_price": 0.26,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.31442025165433185,
+"edge_at_quote": 0.0544,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T96.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "bid",
+"quote_price": 0.25,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.30340671000769825,
+"edge_at_quote": 0.0534,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T96.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "ask",
+"quote_price": 0.31,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.30340671000769825,
+"edge_at_quote": 0.0066,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T97.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "bid",
+"quote_price": 0.26,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.29267920968138506,
+"edge_at_quote": 0.0327,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T97.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "ask",
+"quote_price": 0.3,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.29267920968138506,
+"edge_at_quote": 0.0073,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T98.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "bid",
+"quote_price": 0.24,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.2822374698124926,
+"edge_at_quote": 0.0422,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T99.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "bid",
+"quote_price": 0.26,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.2720805935466738,
+"edge_at_quote": 0.0121,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T99.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "ask",
+"quote_price": 0.29,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.2720805935466738,
+"edge_at_quote": 0.0179,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T100.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "bid",
+"quote_price": 0.24,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.2622071149484705,
+"edge_at_quote": 0.0222,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T101.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "bid",
+"quote_price": 0.19,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.25261504454012285,
+"edge_at_quote": 0.0626,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T102.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "bid",
+"quote_price": 0.19,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.24330191333451462,
+"edge_at_quote": 0.0533,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T102.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "ask",
+"quote_price": 0.25,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.24330191333451462,
+"edge_at_quote": 0.0067,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T103.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "bid",
+"quote_price": 0.19,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.23426481525422005,
+"edge_at_quote": 0.0443,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T103.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "ask",
+"quote_price": 0.24,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.23426481525422005,
+"edge_at_quote": 0.0057,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T104.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "bid",
+"quote_price": 0.2,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.22550044785251372,
+"edge_at_quote": 0.0255,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T104.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "ask",
+"quote_price": 0.23,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.22550044785251372,
+"edge_at_quote": 0.0045,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T105.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "bid",
+"quote_price": 0.18,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.21700515127379133,
+"edge_at_quote": 0.037,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T106.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "bid",
+"quote_price": 0.17,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.20877494541022623,
+"edge_at_quote": 0.0388,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T106.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "ask",
+"quote_price": 0.22,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.20877494541022623,
+"edge_at_quote": 0.0112,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T107.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "bid",
+"quote_price": 0.18,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.20080556522877813,
+"edge_at_quote": 0.0208,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T108.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "bid",
+"quote_price": 0.16,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.19309249425799285,
+"edge_at_quote": 0.0331,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T108.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "ask",
+"quote_price": 0.2,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.19309249425799285,
+"edge_at_quote": 0.0069,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T109.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "bid",
+"quote_price": 0.18,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.18563099623752216,
+"edge_at_quote": 0.0056,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T109.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "ask",
+"quote_price": 0.2,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.18563099623752216,
+"edge_at_quote": 0.0144,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T110.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "bid",
+"quote_price": 0.13,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.17841614494505814,
+"edge_at_quote": 0.0484,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T110.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "ask",
+"quote_price": 0.18,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.17841614494505814,
+"edge_at_quote": 0.0016,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T111.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "bid",
+"quote_price": 0.13,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.17144285222556538,
+"edge_at_quote": 0.0414,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T112.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "bid",
+"quote_price": 0.16,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.16470589425641768,
+"edge_at_quote": 0.0047,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T112.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "ask",
+"quote_price": 0.18,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.16470589425641768,
+"edge_at_quote": 0.0153,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T113.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "ask",
+"quote_price": 0.18,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.1581999360894299,
+"edge_at_quote": 0.0218,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T114.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "bid",
+"quote_price": 0.15,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.1519195545169315,
+"edge_at_quote": 0.0019,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T114.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "ask",
+"quote_price": 0.17,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.1519195545169315,
+"edge_at_quote": 0.0181,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T115.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "bid",
+"quote_price": 0.14,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.14585925931408328,
+"edge_at_quote": 0.0059,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T115.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "ask",
+"quote_price": 0.16,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.14585925931408328,
+"edge_at_quote": 0.0141,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T116.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "bid",
+"quote_price": 0.14,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.1400135129136783,
+"edge_at_quote": 0.0,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26NOV03-T116.99",
+"event_ticker": "KXWTI-26NOV03",
+"side": "ask",
+"quote_price": 0.15,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.1400135129136783,
+"edge_at_quote": 0.01,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 107.8748,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26JUL2114-T71.49",
+"event_ticker": "KXWTI-26JUL2114",
+"side": "bid",
+"quote_price": 0.98,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.9938509175517027,
+"edge_at_quote": 0.0139,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 2.8332,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26JUL2114-T71.99",
+"event_ticker": "KXWTI-26JUL2114",
+"side": "bid",
+"quote_price": 0.98,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.9911950559162692,
+"edge_at_quote": 0.0112,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 2.8332,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26JUL2114-T72.49",
+"event_ticker": "KXWTI-26JUL2114",
+"side": "bid",
+"quote_price": 0.98,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.9876116702646061,
+"edge_at_quote": 0.0076,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 2.8332,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26JUL2114-T72.49",
+"event_ticker": "KXWTI-26JUL2114",
+"side": "ask",
+"quote_price": 0.99,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.9876116702646061,
+"edge_at_quote": 0.0024,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 2.8332,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26JUL2114-T72.99",
+"event_ticker": "KXWTI-26JUL2114",
+"side": "bid",
+"quote_price": 0.98,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.9828658271926385,
+"edge_at_quote": 0.0029,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 2.8332,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26JUL2114-T72.99",
+"event_ticker": "KXWTI-26JUL2114",
+"side": "ask",
+"quote_price": 0.99,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.9828658271926385,
+"edge_at_quote": 0.0071,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 2.8332,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26JUL2114-T73.49",
+"event_ticker": "KXWTI-26JUL2114",
+"side": "ask",
+"quote_price": 0.99,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.9766938555685718,
+"edge_at_quote": 0.0133,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 2.8332,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26JUL2114-T73.99",
+"event_ticker": "KXWTI-26JUL2114",
+"side": "ask",
+"quote_price": 0.99,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.9688092438780311,
+"edge_at_quote": 0.0212,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 2.8332,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26JUL2114-T74.49",
+"event_ticker": "KXWTI-26JUL2114",
+"side": "ask",
+"quote_price": 0.99,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.9589115529590689,
+"edge_at_quote": 0.0311,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 2.8332,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26JUL2114-T74.99",
+"event_ticker": "KXWTI-26JUL2114",
+"side": "ask",
+"quote_price": 0.99,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.946698272067695,
+"edge_at_quote": 0.0433,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 2.8332,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26JUL2114-T75.49",
+"event_ticker": "KXWTI-26JUL2114",
+"side": "ask",
+"quote_price": 0.98,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.9318792404155932,
+"edge_at_quote": 0.0481,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 2.8332,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26JUL2114-T75.99",
+"event_ticker": "KXWTI-26JUL2114",
+"side": "ask",
+"quote_price": 0.98,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.9141929387388777,
+"edge_at_quote": 0.0658,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 2.8332,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26JUL2114-T76.49",
+"event_ticker": "KXWTI-26JUL2114",
+"side": "ask",
+"quote_price": 0.98,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.8934236648409347,
+"edge_at_quote": 0.0866,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 2.8332,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26JUL2114-T76.99",
+"event_ticker": "KXWTI-26JUL2114",
+"side": "ask",
+"quote_price": 0.97,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.8694183836334141,
+"edge_at_quote": 0.1006,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 2.8332,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26JUL2114-T77.49",
+"event_ticker": "KXWTI-26JUL2114",
+"side": "ask",
+"quote_price": 0.97,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.8421019216236021,
+"edge_at_quote": 0.1279,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 2.8332,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26JUL2114-T77.99",
+"event_ticker": "KXWTI-26JUL2114",
+"side": "ask",
+"quote_price": 0.96,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.8114891832457432,
+"edge_at_quote": 0.1485,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 2.8332,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26JUL2114-T78.49",
+"event_ticker": "KXWTI-26JUL2114",
+"side": "ask",
+"quote_price": 0.95,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.7776932120029669,
+"edge_at_quote": 0.1723,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 2.8332,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26JUL2114-T78.99",
+"event_ticker": "KXWTI-26JUL2114",
+"side": "ask",
+"quote_price": 0.93,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.7409281956141661,
+"edge_at_quote": 0.1891,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 2.8332,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26JUL2114-T79.49",
+"event_ticker": "KXWTI-26JUL2114",
+"side": "ask",
+"quote_price": 0.92,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.7015068964433684,
+"edge_at_quote": 0.2185,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 2.8332,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26JUL2114-T79.99",
+"event_ticker": "KXWTI-26JUL2114",
+"side": "ask",
+"quote_price": 0.87,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.6598324372228539,
+"edge_at_quote": 0.2102,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 2.8332,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26JUL2114-T80.49",
+"event_ticker": "KXWTI-26JUL2114",
+"side": "ask",
+"quote_price": 0.84,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.6163848390680887,
+"edge_at_quote": 0.2236,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 2.8332,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26JUL2114-T80.99",
+"event_ticker": "KXWTI-26JUL2114",
+"side": "ask",
+"quote_price": 0.78,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.571703143048497,
+"edge_at_quote": 0.2083,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 2.8332,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26JUL2114-T81.49",
+"event_ticker": "KXWTI-26JUL2114",
+"side": "ask",
+"quote_price": 0.73,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.5263643014962917,
+"edge_at_quote": 0.2036,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 2.8332,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26JUL2114-T81.99",
+"event_ticker": "KXWTI-26JUL2114",
+"side": "ask",
+"quote_price": 0.73,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.4809602646351442,
+"edge_at_quote": 0.249,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 2.8332,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26JUL2114-T82.49",
+"event_ticker": "KXWTI-26JUL2114",
+"side": "ask",
+"quote_price": 0.68,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.43607479064209975,
+"edge_at_quote": 0.2439,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 2.8332,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26JUL2114-T82.99",
+"event_ticker": "KXWTI-26JUL2114",
+"side": "ask",
+"quote_price": 0.58,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.39226146842252824,
+"edge_at_quote": 0.1877,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 2.8332,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26JUL2114-T83.49",
+"event_ticker": "KXWTI-26JUL2114",
+"side": "ask",
+"quote_price": 0.56,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.35002427407733117,
+"edge_at_quote": 0.21,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 2.8332,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26JUL2114-T83.99",
+"event_ticker": "KXWTI-26JUL2114",
+"side": "ask",
+"quote_price": 0.48,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.3098017098808658,
+"edge_at_quote": 0.1702,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 2.8332,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26JUL2114-T84.49",
+"event_ticker": "KXWTI-26JUL2114",
+"side": "ask",
+"quote_price": 0.44,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.2719552335673866,
+"edge_at_quote": 0.168,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 2.8332,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26JUL2114-T84.99",
+"event_ticker": "KXWTI-26JUL2114",
+"side": "ask",
+"quote_price": 0.38,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.2367623150865058,
+"edge_at_quote": 0.1432,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 2.8332,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26JUL2014-T73.49",
+"event_ticker": "KXWTI-26JUL2014",
+"side": "bid",
+"quote_price": 0.98,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.993313750860396,
+"edge_at_quote": 0.0133,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 1.8332,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26JUL2014-T73.99",
+"event_ticker": "KXWTI-26JUL2014",
+"side": "bid",
+"quote_price": 0.98,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.9897416655157051,
+"edge_at_quote": 0.0097,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 1.8332,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26JUL2014-T73.99",
+"event_ticker": "KXWTI-26JUL2014",
+"side": "ask",
+"quote_price": 0.99,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.9897416655157051,
+"edge_at_quote": 0.0003,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 1.8332,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26JUL2014-T74.49",
+"event_ticker": "KXWTI-26JUL2014",
+"side": "bid",
+"quote_price": 0.98,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.9846480890738685,
+"edge_at_quote": 0.0046,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 1.8332,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26JUL2014-T74.49",
+"event_ticker": "KXWTI-26JUL2014",
+"side": "ask",
+"quote_price": 0.99,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.9846480890738685,
+"edge_at_quote": 0.0054,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 1.8332,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26JUL2014-T74.99",
+"event_ticker": "KXWTI-26JUL2014",
+"side": "ask",
+"quote_price": 0.99,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.9775751089514038,
+"edge_at_quote": 0.0124,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 1.8332,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26JUL2014-T75.49",
+"event_ticker": "KXWTI-26JUL2014",
+"side": "ask",
+"quote_price": 0.99,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.9680057461873492,
+"edge_at_quote": 0.022,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 1.8332,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26JUL2014-T75.99",
+"event_ticker": "KXWTI-26JUL2014",
+"side": "ask",
+"quote_price": 0.98,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.9553850986941258,
+"edge_at_quote": 0.0246,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 1.8332,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26JUL2014-T76.49",
+"event_ticker": "KXWTI-26JUL2014",
+"side": "ask",
+"quote_price": 0.99,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.9391516715902752,
+"edge_at_quote": 0.0508,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 1.8332,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26JUL2014-T76.99",
+"event_ticker": "KXWTI-26JUL2014",
+"side": "ask",
+"quote_price": 0.99,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.9187777005068465,
+"edge_at_quote": 0.0712,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 1.8332,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26JUL2014-T77.49",
+"event_ticker": "KXWTI-26JUL2014",
+"side": "ask",
+"quote_price": 0.98,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.8938156572039329,
+"edge_at_quote": 0.0862,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 1.8332,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26JUL2014-T77.99",
+"event_ticker": "KXWTI-26JUL2014",
+"side": "ask",
+"quote_price": 0.97,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.8639466399401314,
+"edge_at_quote": 0.1061,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 1.8332,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26JUL2014-T78.49",
+"event_ticker": "KXWTI-26JUL2014",
+"side": "ask",
+"quote_price": 0.97,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.8290253001504317,
+"edge_at_quote": 0.141,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 1.8332,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26JUL2014-T78.99",
+"event_ticker": "KXWTI-26JUL2014",
+"side": "ask",
+"quote_price": 0.98,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.7891156069233993,
+"edge_at_quote": 0.1909,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 1.8332,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26JUL2014-T79.49",
+"event_ticker": "KXWTI-26JUL2014",
+"side": "ask",
+"quote_price": 0.97,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.7445122585777089,
+"edge_at_quote": 0.2255,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 1.8332,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26JUL2014-T79.99",
+"event_ticker": "KXWTI-26JUL2014",
+"side": "ask",
+"quote_price": 0.96,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.6957439183758527,
+"edge_at_quote": 0.2643,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 1.8332,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26JUL2014-T80.49",
+"event_ticker": "KXWTI-26JUL2014",
+"side": "ask",
+"quote_price": 0.92,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.6435565121457247,
+"edge_at_quote": 0.2764,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 1.8332,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26JUL2014-T80.99",
+"event_ticker": "KXWTI-26JUL2014",
+"side": "ask",
+"quote_price": 0.92,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.5888772685087746,
+"edge_at_quote": 0.3311,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 1.8332,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26JUL2014-T81.49",
+"event_ticker": "KXWTI-26JUL2014",
+"side": "ask",
+"quote_price": 0.88,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.5327626124619608,
+"edge_at_quote": 0.3472,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 1.8332,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26JUL2014-T81.99",
+"event_ticker": "KXWTI-26JUL2014",
+"side": "ask",
+"quote_price": 0.8,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.47633504086181533,
+"edge_at_quote": 0.3237,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 1.8332,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26JUL2014-T82.49",
+"event_ticker": "KXWTI-26JUL2014",
+"side": "ask",
+"quote_price": 0.77,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.42071539110789746,
+"edge_at_quote": 0.3493,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 1.8332,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26JUL2014-T82.99",
+"event_ticker": "KXWTI-26JUL2014",
+"side": "ask",
+"quote_price": 0.71,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.3669572781192951,
+"edge_at_quote": 0.343,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 1.8332,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26JUL2014-T83.49",
+"event_ticker": "KXWTI-26JUL2014",
+"side": "ask",
+"quote_price": 0.64,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.315989904464757,
+"edge_at_quote": 0.324,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 1.8332,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26JUL2014-T83.99",
+"event_ticker": "KXWTI-26JUL2014",
+"side": "ask",
+"quote_price": 0.54,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.26857409049558667,
+"edge_at_quote": 0.2714,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 1.8332,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26JUL2014-T84.49",
+"event_ticker": "KXWTI-26JUL2014",
+"side": "ask",
+"quote_price": 0.47,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.22527449280923367,
+"edge_at_quote": 0.2447,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 1.8332,
+"status": "resting"
+},
+{
+"ticker": "KXWTI-26JUL2014-T84.99",
+"event_ticker": "KXWTI-26JUL2014",
+"side": "ask",
+"quote_price": 0.42,
+"snap_ts": "2026-07-18T22:30:13+00:00",
+"fair_p_at_quote": 0.18644890758519628,
+"edge_at_quote": 0.2336,
+"sigma_daily_at_quote": 0.03191,
+"horizon_days_at_quote": 1.8332,
 "status": "resting"
 }
 ]
