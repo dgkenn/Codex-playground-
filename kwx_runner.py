@@ -391,10 +391,23 @@ def poll_once(exec_client=None, verbose=True):
                     f"auto-halt: >{MAX_FIRES_PER_CYCLE} fires in one cycle (possible feed glitch); review then rm this file\n")
                 if verbose:
                     print(f"  !! CIRCUIT BREAKER tripped ({len(plans)} fires this cycle) -> .kwx_halt written, halting")
+                try:
+                    import kwx_notify
+                    kwx_notify.alert(f"🛑 KWX HALT: circuit breaker tripped ({len(plans)} fires in one cycle — "
+                                     f"possible feed glitch). Trading stopped; review then rm .kwx_halt")
+                except Exception:
+                    pass
                 _save_state(state)
                 return plans, (min_interval or 900)
             fn = ex.buy_yes if side == "yes" else ex.buy_no
             res = fn(ticker, count=size, max_price_cents=cap_c)
+            try:
+                import kwx_notify
+                mode = "LIVE" if getattr(ex, "live", False) else "paper"
+                kwx_notify.alert(f"🌡️ KWX FIRE [{mode}]: buy {size} {side.upper()} {ticker} @≤{cap_c}¢ "
+                                 f"(obs {kind} {ext:.1f}°F cleared strike) [{res.get('status')}]")
+            except Exception:
+                pass
             plan = {"ticker": ticker, "side": side, "cap_c": cap_c, "extreme_f": ext,
                     "station": station, "kind": kind, "status": res.get("status"),
                     "ts": int(time.time() * 1000)}

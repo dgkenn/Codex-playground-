@@ -77,7 +77,24 @@ def settle():
             out.write(json.dumps(rec) + "\n")
             already.add(tk)
             n_new += 1
+            try:
+                import kwx_notify
+                emoji = "✅" if won else "❌"
+                kwx_notify.alert(f"{emoji} KWX SETTLE: {tk} -> {result} (bought {side}@{entry*100:.0f}¢) "
+                                 f"PnL {pnl:+.2f}/ct")
+            except Exception:
+                pass
     print(f"settled {n_new} new paper fires -> {SETTLED}")
+    if n_new:
+        try:
+            import kwx_notify
+            rows = _load_jsonl(SETTLED)
+            wins = sum(1 for r in rows if r.get("won"))
+            tot = sum(r["pnl"] for r in rows)
+            kwx_notify.alert(f"📊 KWX running: {len(rows)} settled, {wins}/{len(rows)} won, "
+                             f"cum PnL {tot:+.2f}/ct")
+        except Exception:
+            pass
 
 
 def report():
