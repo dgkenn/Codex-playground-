@@ -212,21 +212,58 @@ class MultiFeedConsensus:
         return {"extreme_f": cons, "obs": [], "feeds": present}
 
 
+class PrimaryWithFallback:
+    """Use a FAST primary feed (Synoptic 1-min HF-ASOS); if it errors or returns None (outage / station it
+    doesn't cover), fall back to a slower BACKUP. This is the correct shape for mixing a fast + slow feed:
+    the slow feed NEVER gates the fast fire (that would kill the speed edge -- a 15-min-laggy free feed in a
+    conservative-min consensus reports a lower running-max and would block the lock we detected at 1 min),
+    it only covers a gap when the primary has nothing. Glitch protection is still the sustain=3 filter, which
+    runs on whichever feed's obs are used; single-feed Synoptic is acceptable because HF-ASOS IS the ASOS
+    sensor the official CLI settles on (the free feeds merely re-stream it)."""
+    name = "synoptic+fallback"
+
+    def __init__(self, primary, backup):
+        self.primary, self.backup = primary, backup
+
+    def running_extreme(self, station, lst_date, offset, kind):
+        try:
+            r = self.primary.running_extreme(station, lst_date, offset, kind)
+            if r:
+                return r
+        except Exception:
+            pass
+        return self.backup.running_extreme(station, lst_date, offset, kind)
+
+
 # --- feed instances (module singletons) ---
 _WGOV = WeatherGovFeedWrap()
 _METAR = MetarFeed()
-# DEFAULT = conservative consensus of the two FREE feeds (weather.gov 5-min + METAR hourly): fire only when
-# BOTH agree the sustained running-max cleared the strike. Add synoptic_feed.SynopticFeed() when scaling.
-_FEED = MultiFeedConsensus([_WGOV, _METAR])
+_FREE = MultiFeedConsensus([_WGOV, _METAR])   # conservative consensus of the two FREE feeds (both must agree)
+
+
+def _synoptic_primary():
+    """Return a Synoptic-primary feed IF a .synoptic_token is present, else None. Wiring Synoptic in ~doubles
+    fire capacity AND improves EV/ct (kwx_bankroll_curve: ~$900 -> ~$2,280/mo modeled) because the 1-min feed
+    detects the lock ~14 min before the free ~15-min feed, capturing fires while the gap is still open. Kept
+    OPT-IN via token presence so the free-feed default is unchanged when uncredentialed (safe, zero-cost)."""
+    try:
+        import synoptic_feed
+        if os.path.exists(synoptic_feed.TOKEN_PATH):
+            return PrimaryWithFallback(synoptic_feed.SynopticFeed(), _FREE)
+    except Exception:
+        pass
+    return None
+
+
+# DEFAULT feed: Synoptic-primary (fast) when credentialed, else the free 2-feed consensus. set_feed() overrides.
+_FEED = _synoptic_primary() or _FREE
 
 # PER-STATION feed policy (operator's insight: some feeds are better for certain cities). Maps a station to a
-# feed object to use INSTEAD of the global default. Seeded with what we already know; the phase3_feed_
-# correlation study will populate the rest (per-station best feed, required margin, whether a feed is too
-# sparse to require in a quorum). Examples of the two known issues:
-#   - KNYC (Central Park) reports sparsely on weather.gov -> lean on METAR, quorum=1 (don't block on the sparse feed).
-#   - KDEN sometimes falls back to hourly on weather.gov -> keep the 2-feed consensus (METAR covers the gap).
-# Any station NOT listed uses _FEED (the default 2-free-feed consensus).
-STATION_FEED_OVERRIDE = {
+# feed object to use INSTEAD of the global default. When Synoptic is the global default it already covers the
+# sparse-on-weather.gov stations (KNYC->Synoptic 1-min via its alias), so no per-station override is needed;
+# only when running the FREE default do we special-case KNYC (sparse -> METAR/WGOV quorum=1, don't block on
+# the sparse feed). Any station NOT listed uses _FEED.
+STATION_FEED_OVERRIDE = {} if _synoptic_primary() else {
     "NYC": MultiFeedConsensus([_METAR, _WGOV], quorum=1),   # KNYC sparse -> either feed suffices (still conservative min)
 }
 
