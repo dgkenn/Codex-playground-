@@ -87,13 +87,13 @@
       "n": 417,
       "n_clusters_days": 64,
       "fires_per_week": 43.56716417910448,
-      "mean_exec_price": 0.7343405275779379,
+      "mean_exec_price": 0.734340527577938,
       "win_rate": 0.9760191846522782,
       "n_bad": 10,
       "cond_loss_rate_given_fired": 0.023980815347721784,
       "worst_case_loss_rate_wilson95": 0.043574829097812816,
-      "analytic_ev_point": 0.23139292086330915,
-      "analytic_ev_worst_case": 0.21179890711321808,
+      "analytic_ev_point": 0.23139292086330904,
+      "analytic_ev_worst_case": 0.21179890711321797,
       "mean_pnl": 0.2313929208633091,
       "se_clustered": 0.010126518594195746,
       "t_clustered": 22.85019463608524,
@@ -104,13 +104,13 @@
       "n": 639,
       "n_clusters_days": 65,
       "fires_per_week": 66.76119402985074,
-      "mean_exec_price": 0.8187167449139299,
+      "mean_exec_price": 0.8187167449139301,
       "win_rate": 0.9843505477308294,
       "n_bad": 10,
       "cond_loss_rate_given_fired": 0.015649452269170583,
       "worst_case_loss_rate_wilson95": 0.02856533607085293,
-      "analytic_ev_point": 0.15838302973395743,
-      "analytic_ev_worst_case": 0.14546714593227514,
+      "analytic_ev_point": 0.1583830297339572,
+      "analytic_ev_worst_case": 0.14546714593227492,
       "mean_pnl": 0.15838302973395943,
       "se_clustered": 0.008164824976139433,
       "t_clustered": 19.398214927669834,
@@ -128,9 +128,9 @@
       "worst_case_loss_rate_wilson95": 0.04272970679053696,
       "analytic_ev_point": 0.22907593164556964,
       "analytic_ev_worst_case": 0.20913103498161492,
-      "mean_pnl": 0.2290759316455693,
+      "mean_pnl": 0.2290759316455694,
       "se_clustered": 0.00975495189634614,
-      "t_clustered": 23.483040621796718,
+      "t_clustered": 23.483040621796725,
       "p_clustered": 0.0
     },
     "alt_config_full_ladder_tradeable": {
@@ -138,16 +138,16 @@
       "n": 674,
       "n_clusters_days": 64,
       "fires_per_week": 70.4179104477612,
-      "mean_exec_price": 0.7113204747774484,
+      "mean_exec_price": 0.7113204747774486,
       "win_rate": 0.9910979228486647,
       "n_bad": 6,
       "cond_loss_rate_given_fired": 0.008902077151335286,
       "worst_case_loss_rate_wilson95": 0.01928434221190559,
-      "analytic_ev_point": 0.26933613798219547,
-      "analytic_ev_worst_case": 0.2589538729216252,
+      "analytic_ev_point": 0.26933613798219525,
+      "analytic_ev_worst_case": 0.258953872921625,
       "mean_pnl": 0.2693361379821957,
-      "se_clustered": 0.010074443238341484,
-      "t_clustered": 26.73459283160698,
+      "se_clustered": 0.010074443238341483,
+      "t_clustered": 26.73459283160699,
       "p_clustered": 0.0
     },
     "volume_multiplier_tradeable_fires": 18.954545454545453
@@ -173,12 +173,12 @@
       },
       "15": {
         "n": 186,
-        "mean": 0.2189784946236559,
+        "mean": 0.21897849462365587,
         "median": 0.135
       },
       "30": {
         "n": 143,
-        "mean": 0.2373426573426574,
+        "mean": 0.23734265734265733,
         "median": 0.15000000000000002
       },
       "60": {
@@ -195,17 +195,17 @@
     "fixed_cadence_captured_gap": {
       "120": {
         "n_captured": 88,
-        "mean_captured": 0.29170454545454544,
+        "mean_captured": 0.2917045454545454,
         "median_captured": 0.18999999999999995,
         "capture_rate": 0.21103117505995203,
-        "mean_gap_unconditional": 0.06155875299760191
+        "mean_gap_unconditional": 0.061558752997601905
       },
       "30": {
         "n_captured": 195,
-        "mean_captured": 0.23651282051282047,
+        "mean_captured": 0.23651282051282044,
         "median_captured": 0.15000000000000002,
         "capture_rate": 0.4676258992805755,
-        "mean_gap_unconditional": 0.11059952038369303
+        "mean_gap_unconditional": 0.110599520383693
       },
       "15": {
         "n_captured": 248,
@@ -217,7 +217,7 @@
     },
     "adaptive_captured_gap_far20": {
       "n_captured": 254,
-      "mean_captured": 0.2289763779527559,
+      "mean_captured": 0.22897637795275594,
       "median_captured": 0.15500000000000003,
       "capture_rate": 0.6091127098321343,
       "mean_gap_unconditional": 0.13947242206235014
@@ -231,10 +231,10 @@
     },
     "adaptive_captured_gap_far30": {
       "n_captured": 250,
-      "mean_captured": 0.2280000000000001,
+      "mean_captured": 0.22800000000000015,
       "median_captured": 0.16000000000000003,
       "capture_rate": 0.5995203836930456,
-      "mean_gap_unconditional": 0.13669064748201443
+      "mean_gap_unconditional": 0.13669064748201448
     },
     "n_open_at_crossing_then_shut_by_2h": 2,
     "n_open_at_crossing_with_2h_data": 36,
@@ -242,7 +242,7 @@
   },
   "q5_depth_sizing": {
     "assumed_bankroll_usd": 50000.0,
-    "full_kelly_fraction_worst_case": 0.8359748715130171,
+    "full_kelly_fraction_worst_case": 0.835974871513017,
     "quarter_kelly_fraction_capped_at_daily_cap": 0.15,
     "cross_event_daily_cap_fraction": 0.15,
     "cross_event_daily_cap_usd": 7500.0,
@@ -253,7 +253,7 @@
     "bankroll_sensitivity_sweep": [
       {
         "bankroll_usd": 10000,
-        "usd_per_week": 6814.947705201269,
+        "usd_per_week": 6814.947705201268,
         "n_liquidity_binding": 173,
         "n_fires_total": 417
       },
@@ -265,25 +265,25 @@
       },
       {
         "bankroll_usd": 250000,
-        "usd_per_week": 34769.41921641792,
+        "usd_per_week": 34769.419216417926,
         "n_liquidity_binding": 412,
         "n_fires_total": 417
       },
       {
         "bankroll_usd": 1000000,
-        "usd_per_week": 35190.1676835821,
+        "usd_per_week": 35190.167683582105,
         "n_liquidity_binding": 417,
         "n_fires_total": 417
       },
       {
         "bankroll_usd": 5000000,
-        "usd_per_week": 35190.1676835821,
+        "usd_per_week": 35190.167683582105,
         "n_liquidity_binding": 417,
         "n_fires_total": 417
       }
     ],
-    "liquidity_ceiling_usd_per_week": 35190.1676835821,
-    "flat_1unit_usd_per_week": 31.99313432835822,
+    "liquidity_ceiling_usd_per_week": 35190.167683582105,
+    "flat_1unit_usd_per_week": 31.993134328358224,
     "depth_sized_usd_per_week": 21367.809570511068,
     "depth_sized_contracts_per_week": 34016.53738719043,
     "mean_stake_usd_per_fire_depth_sized": 490.4567458801787,
@@ -377,20 +377,20 @@
         "contracts": 5357.1
       },
       {
-        "date": "2026-06-28",
-        "ticker": "KXHIGHLAX-26JUN28-B69.5",
-        "kelly_uncapped_usd": 1500.0,
-        "liquidity_cap_usd": 3316.59,
-        "stake_usd": 1500.0,
-        "contracts": 1807.2
-      },
-      {
         "date": "2026-06-17",
         "ticker": "KXHIGHLAX-26JUN17-B69.5",
         "kelly_uncapped_usd": 1500.0,
         "liquidity_cap_usd": 5738.57,
         "stake_usd": 1500.0,
         "contracts": 2205.9
+      },
+      {
+        "date": "2026-06-28",
+        "ticker": "KXHIGHLAX-26JUN28-B69.5",
+        "kelly_uncapped_usd": 1500.0,
+        "liquidity_cap_usd": 3316.59,
+        "stake_usd": 1500.0,
+        "contracts": 1807.2
       },
       {
         "date": "2026-06-30",
@@ -410,5 +410,5 @@
       }
     ]
   },
-  "elapsed_sec": 30.9
+  "elapsed_sec": 31.2
 }

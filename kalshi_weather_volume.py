@@ -1134,8 +1134,14 @@ def write_report(summary, per_day_detail):
         L.append(f"|---|---|")
         L.append(f"| flat, 1 contract/fire | ${fmt(q5['flat_1unit_usd_per_week'],0)} |")
         L.append(f"| depth-sized (quarter-Kelly, daily-capped, liquidity-capped) | ${fmt(q5['depth_sized_usd_per_week'],0)} |")
-        L.append(f"\nDepth-sized contracts/week: {fmt(q5['depth_sized_contracts_per_week'],1)}. Sample "
-                 f"largest-stake fires: {q5['sample_per_fire_rows'][:5]}\n")
+        L.append(f"\nDepth-sized contracts/week: {fmt(q5['depth_sized_contracts_per_week'],1)}.\n")
+        L.append("Sample largest-stake fires (Kelly stake vs the liquidity cap that actually bound it):\n")
+        L.append("| date | ticker | Kelly-uncapped $ | liquidity cap $ | actual stake $ | contracts |")
+        L.append("|---|---|---|---|---|---|")
+        for r in q5["sample_per_fire_rows"][:8]:
+            L.append(f"| {r['date']} | {r['ticker']} | ${r['kelly_uncapped_usd']:,.0f} | "
+                     f"${r['liquidity_cap_usd']:,.0f} | ${r['stake_usd']:,.0f} | {r['contracts']:,.0f} |")
+        L.append("")
 
         L.append("\n### Bankroll sensitivity sweep -- finding the TRUE liquidity ceiling\n")
         L.append("The ${:,.0f} bankroll above is an arbitrary illustrative choice. To find the ceiling "

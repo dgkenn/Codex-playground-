@@ -2589,3 +2589,27 @@ discover_series_full_history but did NOT re-run full backtest = 25-30x pull budg
 fillable econ +0.047/ct t=6.89, 24.0 FILLABLE FIRES/WEEK. RAIN (KXRAINNYC): KILLED (n=20 t=1.03, book jumps to $1.00 no gap).
 TOTAL: KXHIGH 4.2 + KXLOW 24 = 28.2 fillable fires/wk, +572% vs KXHIGH-only. KXLOW = the big VOLUME win (6x fires, small each).
 NEXT (Phase 2): re-backtest KXHIGH+KXLOW on FULL multi-year history (real n + tail); integrate into forward gate.
+
+## KALSHI-WX-VOLUME (2026-07-18) — full-LADDER = ~19x volume, ~$35k/wk ceiling; BUT 67-day, must re-validate on full history
+Verified JSON. The throughput lever is NOT an "above X" ladder (only 1 "greater"/city-day) -- it's that each city-day settles 6
+markets (1 greater + 4 between + 1 less) and the SAME monotonic lock applies to every rung (running-max clears a bucket's cap ->
+that bucket/less locks NO, mirror of top locking YES).
+- FULL LADDER (margin2/sustain1 conservative): 43.6 fires/wk vs 2.3 baseline = 18.95x, n=417, day-clustered t=22.85, win 97.6%,
+  worst-case EV +0.212/ct. Between/less rungs alone: t=23.5, worst-case EV +0.209 -> mechanism HOLDS EV, not just volume. Alt
+  config (margin1): 70/wk, t=26.7, worst-case EV +0.259. CAVEAT: all rungs same-day are CORRELATED (same temp path) = throughput
+  not diversification.
+- POLL CADENCE: 2h cron catches only 21% of fires; flat-15min 59%; ADAPTIVE (far>3F 15-30min / approaching 1-3F ~3min / imminent
+  <1F 1min, capped by ASOS 1/min) 61-66%. Gap decay persists minutes-to-tens-of-min (race vs slow retail, not MMs). Use adaptive.
+- DEPTH-SIZING: flat 1-unit $32/wk; depth-sized (quarter-Kelly worst-case, 15% daily cross-event cap, liquidity-capped) $21.4k/wk
+  @ $50k bankroll, plateauing at LIQUIDITY CEILING ~$35,190/wk (capital-independent above ~$50k; liquidity binds on 313/417 fires).
+=> MAXED throughput ~$35k/wk, bounded by weather-market liquidity not capital/strategy. Dominant lever = full ladder (19x).
+*** ALL OF THIS IS 67-DAY (2026-05-12..07-17), summer regime, correlated rungs -> t-stats likely INFLATED. NOT BELIEVED until
+re-run on full multi-year history. ***
+
+## PHASE-2 RE-VALIDATION MANDATE (operator 2026-07-18) — re-run EVERYTHING on the full dataset before belief/deploy
+HARD GATE: no weather result is trusted or sized until re-confirmed on the FULL multi-year history (KXHIGH to ~2021, KXLOW to
+2025-12, via /historical/markets+candlesticks + IEM ASOS to 2021). Re-run on full data: (1) KXHIGH core edge (real n, real
+CLI-disagreement TAIL rate), (2) KXLOW, (3) FULL-LADDER rungs (does the +0.21 EV hold over years/winter, or is it a summer
+artifact?), (4) margin/sustain optimization (re-pick on full data, walk-forward, no 67-day cherry-pick), (5) glitch-filter +
+METAR-consistency tail-shrink (CLI-basis), (6) depth-sizing vs real L2 (order-book agent), (7) adaptive poll cadence. Report the
+full-history numbers vs the 67-day; where they DISAGREE, the full-history wins. Only then update the forward gate + size.

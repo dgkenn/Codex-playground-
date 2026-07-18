@@ -112,7 +112,20 @@ Assumed illustrative bankroll: **$50,000** (arbitrary, flagged -- the $/week fig
 | flat, 1 contract/fire | $32 |
 | depth-sized (quarter-Kelly, daily-capped, liquidity-capped) | $21368 |
 
-Depth-sized contracts/week: 34016.5. Sample largest-stake fires: [{'date': '2026-06-08', 'ticker': 'KXHIGHMIA-26JUN08-B88.5', 'kelly_uncapped_usd': 2500.0, 'liquidity_cap_usd': 2383.07, 'stake_usd': 2383.07, 'contracts': 2647.9}, {'date': '2026-05-19', 'ticker': 'KXHIGHDEN-26MAY19-B45.5', 'kelly_uncapped_usd': 1875.0, 'liquidity_cap_usd': 3584.05, 'stake_usd': 1875.0, 'contracts': 1973.7}, {'date': '2026-07-02', 'ticker': 'KXHIGHMIA-26JUL02-B89.5', 'kelly_uncapped_usd': 1875.0, 'liquidity_cap_usd': 4952.59, 'stake_usd': 1875.0, 'contracts': 2717.4}, {'date': '2026-07-02', 'ticker': 'KXHIGHMIA-26JUL02-B87.5', 'kelly_uncapped_usd': 1875.0, 'liquidity_cap_usd': 2710.29, 'stake_usd': 1875.0, 'contracts': 1994.7}, {'date': '2026-05-19', 'ticker': 'KXHIGHTDAL-26MAY19-B85.5', 'kelly_uncapped_usd': 1875.0, 'liquidity_cap_usd': 2060.47, 'stake_usd': 1875.0, 'contracts': 2286.6}]
+Depth-sized contracts/week: 34016.5.
+
+Sample largest-stake fires (Kelly stake vs the liquidity cap that actually bound it):
+
+| date | ticker | Kelly-uncapped $ | liquidity cap $ | actual stake $ | contracts |
+|---|---|---|---|---|---|
+| 2026-06-08 | KXHIGHMIA-26JUN08-B88.5 | $2,500 | $2,383 | $2,383 | 2,648 |
+| 2026-05-19 | KXHIGHDEN-26MAY19-B45.5 | $1,875 | $3,584 | $1,875 | 1,974 |
+| 2026-07-02 | KXHIGHMIA-26JUL02-B89.5 | $1,875 | $4,953 | $1,875 | 2,717 |
+| 2026-07-02 | KXHIGHMIA-26JUL02-B87.5 | $1,875 | $2,710 | $1,875 | 1,995 |
+| 2026-05-19 | KXHIGHTDAL-26MAY19-B85.5 | $1,875 | $2,060 | $1,875 | 2,287 |
+| 2026-05-21 | KXHIGHMIA-26MAY21-B87.5 | $1,875 | $1,848 | $1,848 | 2,758 |
+| 2026-06-03 | KXHIGHTSEA-26JUN03-B67.5 | $1,875 | $1,520 | $1,520 | 1,788 |
+| 2026-06-17 | KXHIGHCHI-26JUN17-B67.5 | $1,500 | $4,421 | $1,500 | 1,579 |
 
 
 ### Bankroll sensitivity sweep -- finding the TRUE liquidity ceiling
