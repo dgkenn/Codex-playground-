@@ -2236,3 +2236,20 @@ diversifier; biz marginal). No directional signal, no density/regime/strike shar
 higher-frequency or cross-venue analog exists. FRONTIER (empirically, not assumed): ~0.3-1%/day sound (1/4-1x Kelly, P(ruin)~0);
 10%/day requires ruinous leverage (unchanged). HIGHEST-VALUE NEXT WORK: mature the live forward gates + maximize capture (add
 rebate accounting, enforce maker-only) -- NEW-edge discovery has hit a disciplined wall of nulls.
+
+## DATA-SOURCE-FIND (2026-07-18) — GitHub hunt for richer prediction-market data SUCCEEDED; surgical trade-level flow now accessible
+Operator asked to hunt GitHub for better data than the public snapshot APIs. Found genuinely rich sources:
+- **Jon-Becker/prediction-market-analysis** (3.6k*): "largest publicly available dataset of Polymarket+Kalshi market & trade
+  data", 36GiB zstd parquet (data.tar.zst @ s3.jbecker.dev, MONOLITHIC — no partial download, too big for session disk).
+  Schemas confirm TRADE-LEVEL: Polymarket trades = block,tx,order_hash,maker,taker,maker/taker_asset_id,maker/taker_amount,fee
+  (full CTF-Exchange fills w/ wallets); Kalshi trades = trade_id,ticker,count,yes_price,no_price,taker_side,created_time.
+- **martkir/poly-trade-scan** (81*): on-demand Polymarket trade download via free Polygon RPC (wallet,side,size,price,usdc).
+- **pmxt-dev/pmxt** (2k*): CCXT-for-prediction-markets unified Poly/Kalshi API (execution infra, not new data).
+- THE SURGICAL WIN (no 36GB needed): Polymarket's OWN data-api `GET data-api.polymarket.com/trades?market=<conditionId>&
+  limit=1000&offset=` returns per-market TRADE PRINTS: proxyWallet, side(BUY/SELL), asset(token), size, price, timestamp,
+  outcome(Yes/No), transactionHash. This is the real executed flow our snapshot harnesses only ESTIMATED (the YES-buy-taker-
+  volume weighting that originally confirmed the edge). Verified reachable + full-field.
+USE (launched trade_flow_analysis): (A) HARDEN the confirmed edge — measure real in-band YES-buy fill volume + adverse
+selection + the TRUE trade-weighted edge from prints (does +0.12 survive?); (B) scout a Polymarket-NATIVE order-flow signal.
+This is the first genuinely NEW data capability since Binance Vision; it doesn't change the efficient-market nulls but lets us
+VALIDATE fills (the #1 pre-live risk) and test native flow. Result pending.
