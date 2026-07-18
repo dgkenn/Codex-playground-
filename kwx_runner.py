@@ -111,11 +111,24 @@ class MetarFeed:
         return {"extreme_f": r["extreme_f"], "obs": obs}
 
 
-_FEED = MetarFeed()
+class WeatherGovFeedWrap:
+    """FREE default feed: api.weather.gov 5-min obs (~15-20 min latency). Sufficient for a small bankroll
+    (catches ~6-7 slower-repricing fires/day at ~+0.15/ct; at $50 you're capital- not fire-limited)."""
+    name = "weathergov-free"
+
+    def running_extreme(self, station, lst_date, offset, kind):
+        import weathergov_feed as W
+        return W.WeatherGovFeed().running_extreme(station, lst_date, offset, kind)
+
+
+# DEFAULT = free api.weather.gov. Upgrade to synoptic_feed.SynopticFeed (paid, ~2-5min) only when scaling
+# past a few hundred dollars, where the extra fire throughput actually pays. METAR (hourly) is the fallback.
+_FEED = WeatherGovFeedWrap()
 
 
 def set_feed(feed):
-    """Swap in a faster feed (e.g. a Synoptic HF-ASOS 1-min feed) exposing running_extreme(...)."""
+    """Swap the obs feed. Options: WeatherGovFeedWrap() [free default], synoptic_feed.SynopticFeed() [paid,
+    fast], MetarFeed() [hourly fallback]. Any object exposing running_extreme(station,date,offset,kind)."""
     global _FEED
     _FEED = feed
 
