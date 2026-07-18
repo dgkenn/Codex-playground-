@@ -1,5 +1,5 @@
 {
-  "generated": "2026-07-18T15:33:29.903379+00:00",
+  "generated": "2026-07-18T15:37:21.686668+00:00",
   "n_posted_markets": 6848,
   "n_with_inband_flow": 1804,
   "frac_with_flow": 0.2634,
@@ -570,13 +570,13 @@
   ],
   "cox": {
     "hazard_ratios_per_sd": {
-      "log_arrival_rate": NaN,
-      "log_order_size": NaN,
-      "dist_from_floor": NaN,
-      "horizon_days": NaN
+      "log_arrival_rate": 2.7,
+      "log_order_size": 0.628,
+      "dist_from_floor": 1.0,
+      "horizon_days": 0.989
     },
-    "c_index": 0.5,
-    "brier": NaN,
+    "c_index": 0.968,
+    "brier": 0.0421,
     "cov_names": [
       "log_arrival_rate",
       "log_order_size",
@@ -584,10 +584,10 @@
       "horizon_days"
     ],
     "beta": [
-      NaN,
-      NaN,
-      NaN,
-      NaN
+      0.9933,
+      -0.4657,
+      -0.0,
+      -0.0115
     ],
     "note": "Own Breslow partial-likelihood Newton fit; HR>1 => covariate raises the fill hazard (faster/more-likely fill). Event=order fully filled within first-half window."
   },
@@ -595,78 +595,94 @@
     {
       "size": 10,
       "empirical_p_full": 0.1771,
-      "cox_p_full": NaN
+      "cox_p_full": 0.1604
     },
     {
       "size": 100,
       "empirical_p_full": 0.1072,
-      "cox_p_full": NaN
+      "cox_p_full": 0.0943
     },
     {
       "size": 1000,
       "empirical_p_full": 0.0264,
-      "cox_p_full": NaN
+      "cox_p_full": 0.0536
     }
   ],
   "capacity": {
     "median_markets_posted_per_week": 153,
     "theoretical_max_week_usd_phi1": 3528.99,
     "realistic_capacity_ceiling_week_usd": 1235.15,
+    "capital_to_saturate_realistic_usd": 10777.15,
     "bankroll_to_weekly_usd": [
       {
         "bankroll": 50,
-        "shares_per_market": 0.41,
-        "realistic_week_usd": 0.52,
-        "pessimistic_week_usd": 0.52,
-        "optimistic_week_usd": 0.52
+        "pessimistic_week_usd": 2.55,
+        "realistic_week_usd": 2.55,
+        "realistic_shares_per_market": 2.05,
+        "realistic_capital_used": 50,
+        "realistic_worst_week_usd": -41.5,
+        "optimistic_week_usd": 2.56
       },
       {
         "bankroll": 100,
-        "shares_per_market": 0.82,
-        "realistic_week_usd": 1.03,
-        "pessimistic_week_usd": 1.02,
-        "optimistic_week_usd": 1.04
+        "pessimistic_week_usd": 5.42,
+        "realistic_week_usd": 5.09,
+        "realistic_shares_per_market": 4.26,
+        "realistic_capital_used": 100,
+        "realistic_worst_week_usd": -86.19,
+        "optimistic_week_usd": 5.1
       },
       {
         "bankroll": 250,
-        "shares_per_market": 2.04,
-        "realistic_week_usd": 2.54,
-        "pessimistic_week_usd": 2.42,
-        "optimistic_week_usd": 2.58
+        "pessimistic_week_usd": 14.26,
+        "realistic_week_usd": 13.64,
+        "realistic_shares_per_market": 11.58,
+        "realistic_capital_used": 250,
+        "realistic_worst_week_usd": -218.1,
+        "optimistic_week_usd": 12.88
       },
       {
         "bankroll": 500,
-        "shares_per_market": 4.08,
-        "realistic_week_usd": 4.89,
-        "pessimistic_week_usd": 4.82,
-        "optimistic_week_usd": 5.07
+        "pessimistic_week_usd": 29.81,
+        "realistic_week_usd": 28.53,
+        "realistic_shares_per_market": 25.47,
+        "realistic_capital_used": 500,
+        "realistic_worst_week_usd": -424.18,
+        "optimistic_week_usd": 27.5
       },
       {
         "bankroll": 2000,
-        "shares_per_market": 16.34,
-        "realistic_week_usd": 19.24,
-        "pessimistic_week_usd": 17.27,
-        "optimistic_week_usd": 19.31
+        "pessimistic_week_usd": 126.44,
+        "realistic_week_usd": 120.08,
+        "realistic_shares_per_market": 141.18,
+        "realistic_capital_used": 2000,
+        "realistic_worst_week_usd": -1727.53,
+        "optimistic_week_usd": 118.37
       },
       {
         "bankroll": 10000,
-        "shares_per_market": 81.7,
-        "realistic_week_usd": 78.81,
-        "pessimistic_week_usd": 64.36,
-        "optimistic_week_usd": 84.82
+        "pessimistic_week_usd": 529.35,
+        "realistic_week_usd": 1050.63,
+        "realistic_shares_per_market": 4216.68,
+        "realistic_capital_used": 10000,
+        "realistic_worst_week_usd": -9541.81,
+        "optimistic_week_usd": 638.48
       },
       {
         "bankroll": 50000,
-        "shares_per_market": 408.5,
-        "realistic_week_usd": 253.81,
-        "pessimistic_week_usd": 175.9,
-        "optimistic_week_usd": 309.34
+        "pessimistic_week_usd": 529.35,
+        "realistic_week_usd": 1235.15,
+        "realistic_shares_per_market": "capacity-bound",
+        "realistic_capital_used": 10777.15,
+        "realistic_worst_week_usd": -9541.81,
+        "optimistic_week_usd": 2293.84
       }
     ],
-    "collateral_per_share": 0.8
+    "collateral_per_share": 0.8,
+    "capital_note": "Resting orders consume collateral only when filled; a bankroll B funds up to B of weekly FILLED collateral. Beyond the capital that saturates realized flow, extra capital cannot be deployed (capacity-bound)."
   },
   "headline": {
-    "small_bankroll_realistic_usd_per_week": 2.06,
+    "small_bankroll_realistic_usd_per_week": 28.53,
     "large_size_realistic_ceiling_usd_per_week": 1235.15,
     "realized_edge_per_ct_at_operating_point": 0.0481,
     "fraction_of_0p12_edge_captured_per_ct": 0.4

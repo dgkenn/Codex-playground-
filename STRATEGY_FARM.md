@@ -24,15 +24,16 @@
 ## Strategy backlog (to test OOS, ranked by prior × Kalshi-deployability)
 | # | Strategy (repo) | Idea | Kalshi? | Prior | Status |
 |---|---|---|---|---|---|
-| S1 | Wang Transform (oracle3) | distortion model → sharpen longshot selection | yes | med (selection null 3x, but principled) | TESTING |
+| S1 | Wang Transform (oracle3) | distortion model → sharpen longshot selection | yes | — | **DONE — NULL (4th selection null)** |
 | S2 | Cox fill model (homerun) | realistic maker fill-prob → honest capture | yes | n/a (engineering) | TESTING |
 | S3 | Print-level re-confirm (data-api) | confirm +0.12 edge OOS on real prints, full history | — | high | **DONE ✓ CONFIRMED** |
 | S4 | Earnings beat-rate (dragonbear666) | corp earnings vs Kalshi implied-prob divergence | **KALSHI** | med | TESTING |
-| S5 | S&P daily brackets (quantgalore/kalshi-trading) | Kalshi S&P 500 daily bracket system | **KALSHI** | med | TESTING |
+| S5 | S&P daily brackets (quantgalore/kalshi-trading) | Kalshi S&P 500 daily bracket system | **KALSHI** | — | **DONE — NULL (priced ~1pt)** |
 | S6 | Weather ensemble (suislanchez) | 31-member GFS ensemble → Kalshi KXHIGH temp | **KALSHI** | low (weather-info null, but ensemble differs) | QUEUED |
 | S7 | homerun 25+ built-ins (copy/arb/AI-score) | scan for any with OOS edge | both | low-med | QUEUED |
 | S8 | Premium-decay (oracle3) | distortion decays toward resolution → entry timing | yes | low (first-half already best) | QUEUED |
-| S9 | **Edge portability to Polymarket US (QCX)** | does the short-vol edge exist on the LEGAL US venue? | **legal-PM** | unknown (KYC'd participants) | QUEUED-HIGH |
+| S9 | **Edge portability to Polymarket US (QCX)** | does the short-vol edge exist on the LEGAL US venue? | **legal-PM** | — | **DONE — QCX is SPORTS-ONLY; crypto edge has no market there** |
+| S10 | **QCX sports pricing efficiency** | is the new legal QCX venue mispriced vs sharp book / Kalshi / Global? | **legal-PM** | med (new/thin venue) | TESTING |
 
 ## Results (OOS verdicts) — see DECISION_MAP for detail
 | strategy | OOS verdict | stack? |

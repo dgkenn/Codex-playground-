@@ -809,7 +809,7 @@ def write_report(S):
              f"structural: to fill at all you rest near the band floor, which trades per-contract edge for fill "
              f"probability; and 74% of markets never fill.\n")
     L.append(f"- **Honest deployable $/week:** at a small bankroll ($50-500) the realistic capture is roughly "
-             f"**${hd['small_bankroll_realistic_usd_per_week']}/week** (~$200 bankroll). Even removing the bankroll "
+             f"**${hd['small_bankroll_realistic_usd_per_week']}/week** (~$500 bankroll). Even removing the bankroll "
              f"constraint entirely, the realistic-phi **capacity ceiling is only ~${cap['realistic_capacity_ceiling_week_usd']}"
              f"/week** -- the edge is bound by retail longshot-buy VOLUME, not by capital. Larger size does NOT "
              f"scale past that ceiling; it just leaves orders unfilled.\n")

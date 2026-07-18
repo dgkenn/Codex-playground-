@@ -2357,3 +2357,15 @@ days each (May13-Jul17), executable yes_bid from 11am-ET candle (no lookahead), 
   asks), sell-all not executable (24/30 wing brackets zero bid). No underround/overround lock.
 VERDICT: NULL, both edges. Index brackets efficiently priced (~1pt), wide retail spreads the taker pays. Reinforces calibrated-
 Kalshi prior. Capacity large (median 68k/31k ct) but moot. Farm S5 dead.
+
+## QCX-PORTABILITY (2026-07-18, farm S9) — legal Polymarket US (QCX) is SPORTS-ONLY: confirmed crypto edge has NO market there
+Operator approved QCX onboarding to test if the +0.121/ct short-vol edge ports to the legal venue. Public API confirmed:
+`https://gateway.polymarket.us/v1/markets|events|markets/{id}/bbo|book|settlement` (NO API key for market data). Paged 2,999
+markets + 200 events -> **100% category=sports, ZERO crypto/price/econ markets.** So QCX does NOT list the weekly BTC/ETH
+"above $X" ladders our edge trades. 
+VERDICT: the confirmed short-vol crypto edge is NOT legally deployable -- it lives on Polymarket GLOBAL (illegal US) and the legal
+US Polymarket (QCX) carries only SPORTS. Onboarding QCX only helps IF there's a SPORTS edge there (or when QCX later lists crypto).
+IMPLICATION: legal-deployable universe = Kalshi (calibrated so far: longshot/index NULL, earnings S4 pending) + QCX SPORTS (new
+Dec-2025 venue, untested -- new/thin venues can be less efficient than mature ones). NEW legal candidate S10 = QCX sports pricing
+efficiency (mispriced vs sharp book / vs Kalshi / vs mature Global?). The prior sportsbook null was on the MATURE Global venue;
+the new QCX venue could differ. Honest state: NO confirmed LEGAL edge yet.
