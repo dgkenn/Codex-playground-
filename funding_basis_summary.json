@@ -1,0 +1,371 @@
+{
+  "as_of": "2026-07-18",
+  "panel": {
+    "rows": 576,
+    "weeks": 288,
+    "span": [
+      "2021-01-04",
+      "2026-07-06"
+    ],
+    "features": [
+      "funding_lvl",
+      "funding_trend",
+      "basis",
+      "basis_trend",
+      "oi_chg",
+      "oi_z",
+      "lsr_glob",
+      "lsr_top",
+      "lsr_chg",
+      "taker",
+      "mom"
+    ]
+  },
+  "part1_pure_prediction": {
+    "targets": {
+      "direction": {
+        "base_rate_mean": 0.4914455077932727,
+        "n_oos": 456,
+        "baseline_brier": 0.23343238664578447,
+        "combined": {
+          "auc": 0.6566179016620498,
+          "brier": 0.21629529192538216,
+          "brier_vs_base": 0.017137094720402313
+        },
+        "univariate": {
+          "funding_lvl": {
+            "auc": 0.7193775969529086,
+            "brier": 0.22352550453292377,
+            "brier_vs_base": 0.009906882112860699,
+            "wk_clustered_t": 4.14158412938629,
+            "n_weeks": 228
+          },
+          "funding_trend": {
+            "auc": 0.6941222299168975,
+            "brier": 0.2330726373043012,
+            "brier_vs_base": 0.00035974934148327864,
+            "wk_clustered_t": 4.275585126972169,
+            "n_weeks": 228
+          },
+          "basis": {
+            "auc": 0.6172957063711911,
+            "brier": 0.22743603147943556,
+            "brier_vs_base": 0.005996355166348916,
+            "wk_clustered_t": 1.9286272635035013,
+            "n_weeks": 228
+          },
+          "basis_trend": {
+            "auc": 0.6736063019390581,
+            "brier": 0.23299481728717783,
+            "brier_vs_base": 0.00043756935860664314,
+            "wk_clustered_t": 4.176868821031809,
+            "n_weeks": 228
+          },
+          "oi_chg": {
+            "auc": 0.6817217797783933,
+            "brier": 0.23394849672462156,
+            "brier_vs_base": -0.0005161100788370898,
+            "wk_clustered_t": 3.477024084356997,
+            "n_weeks": 228
+          },
+          "oi_z": {
+            "auc": 0.6899671052631579,
+            "brier": 0.22994305893389172,
+            "brier_vs_base": 0.0034893277118927535,
+            "wk_clustered_t": 4.067851454407933,
+            "n_weeks": 228
+          },
+          "lsr_glob": {
+            "auc": 0.6765711565096952,
+            "brier": 0.23414480707318208,
+            "brier_vs_base": -0.0007124204273976087,
+            "wk_clustered_t": 3.853383803069587,
+            "n_weeks": 228
+          },
+          "lsr_top": {
+            "auc": 0.6438170879501385,
+            "brier": 0.22244225525687375,
+            "brier_vs_base": 0.010990131388910723,
+            "wk_clustered_t": 3.2195604304554952,
+            "n_weeks": 228
+          },
+          "lsr_chg": {
+            "auc": 0.6662699099722992,
+            "brier": 0.23505986689032884,
+            "brier_vs_base": -0.0016274802445443715,
+            "wk_clustered_t": 3.6103719401836707,
+            "n_weeks": 228
+          },
+          "taker": {
+            "auc": 0.6654150796398892,
+            "brier": 0.23632962368686244,
+            "brier_vs_base": -0.0028972370410779713,
+            "wk_clustered_t": 3.4081428657744963,
+            "n_weeks": 228
+          },
+          "mom": {
+            "auc": 0.6744611322714681,
+            "brier": 0.23392043873041868,
+            "brier_vs_base": -0.00048805208463420513,
+            "wk_clustered_t": 3.870375555658533,
+            "n_weeks": 228
+          }
+        }
+      },
+      "up_longshot_5pct": {
+        "base_rate_mean": 0.28222544586337384,
+        "n_oos": 456,
+        "baseline_brier": 0.146812185110981,
+        "combined": {
+          "auc": 0.5899212598425196,
+          "brier": 0.15083183490254834,
+          "brier_vs_base": -0.004019649791567326
+        },
+        "univariate": {
+          "funding_lvl": {
+            "auc": 0.6609448818897637,
+            "brier": 0.14553845865958495,
+            "brier_vs_base": 0.0012737264513960622,
+            "wk_clustered_t": 2.3693753941172577,
+            "n_weeks": 228
+          },
+          "funding_trend": {
+            "auc": 0.6231846019247594,
+            "brier": 0.14776596320533422,
+            "brier_vs_base": -0.0009537780943532082,
+            "wk_clustered_t": 2.111630736087597,
+            "n_weeks": 228
+          },
+          "basis": {
+            "auc": 0.5769728783902012,
+            "brier": 0.14735498260274707,
+            "brier_vs_base": -0.0005427974917660561,
+            "wk_clustered_t": 1.0374631341476628,
+            "n_weeks": 228
+          },
+          "basis_trend": {
+            "auc": 0.6150831146106737,
+            "brier": 0.14759417934175917,
+            "brier_vs_base": -0.0007819942307781547,
+            "wk_clustered_t": 1.200265330798875,
+            "n_weeks": 228
+          },
+          "oi_chg": {
+            "auc": 0.6408748906386702,
+            "brier": 0.14568255427154608,
+            "brier_vs_base": 0.0011296308394349308,
+            "wk_clustered_t": 3.3535924561723784,
+            "n_weeks": 228
+          },
+          "oi_z": {
+            "auc": 0.6311811023622047,
+            "brier": 0.14748710421901434,
+            "brier_vs_base": -0.0006749191080333283,
+            "wk_clustered_t": 2.4262674796172115,
+            "n_weeks": 228
+          },
+          "lsr_glob": {
+            "auc": 0.6394400699912511,
+            "brier": 0.14850678008714935,
+            "brier_vs_base": -0.0016945949761683343,
+            "wk_clustered_t": 4.0391981661143,
+            "n_weeks": 228
+          },
+          "lsr_top": {
+            "auc": 0.5909886264216972,
+            "brier": 0.1452254352300377,
+            "brier_vs_base": 0.0015867498809433167,
+            "wk_clustered_t": 2.5416999305675456,
+            "n_weeks": 228
+          },
+          "lsr_chg": {
+            "auc": 0.631321084864392,
+            "brier": 0.1482151477291243,
+            "brier_vs_base": -0.0014029626181432941,
+            "wk_clustered_t": 2.588250449727209,
+            "n_weeks": 228
+          },
+          "taker": {
+            "auc": 0.6232370953630796,
+            "brier": 0.148666778085961,
+            "brier_vs_base": -0.0018545929749799739,
+            "wk_clustered_t": 3.4567472575449862,
+            "n_weeks": 228
+          },
+          "mom": {
+            "auc": 0.6455293088363955,
+            "brier": 0.14734925456015316,
+            "brier_vs_base": -0.000537069449172145,
+            "wk_clustered_t": 2.101898088127563,
+            "n_weeks": 228
+          }
+        }
+      }
+    },
+    "n_features": 11,
+    "features": [
+      "funding_lvl",
+      "funding_trend",
+      "basis",
+      "basis_trend",
+      "oi_chg",
+      "oi_z",
+      "lsr_glob",
+      "lsr_top",
+      "lsr_chg",
+      "taker",
+      "mom"
+    ],
+    "continuous": {
+      "oos_r2_vs_drift": -0.11296419963784787,
+      "n_oos": 456
+    },
+    "economic": {
+      "real": {
+        "auc": 0.6566179016620498,
+        "ls_mean_wk": 0.0014915445268391862,
+        "ls_wk_t": 0.40339769777548107,
+        "always_long_mean_wk": 0.004623557249564078,
+        "always_long_wk_t": 1.0000222354950228,
+        "n": 456,
+        "n_weeks": 228
+      },
+      "autocorr_placebo_roll26": {
+        "auc": 0.5599096464514047,
+        "ls_mean_wk": -0.0011523362629267393,
+        "ls_wk_t": -0.29845002513966984,
+        "always_long_mean_wk": 0.004901418050359554,
+        "always_long_wk_t": 0.9450273839667359,
+        "n": 456,
+        "n_weeks": 228
+      },
+      "shuffle_placebo": {
+        "auc": 0.49309122034727315,
+        "ls_mean_wk": -0.007627969169180153,
+        "ls_wk_t": -1.9034328215426362,
+        "always_long_mean_wk": 0.007692182967566736,
+        "always_long_wk_t": 1.9246283443800547,
+        "n": 456,
+        "n_weeks": 228
+      }
+    }
+  },
+  "part2_vs_polymarket": {
+    "status": "ok",
+    "n_markets": 594,
+    "n_res_weeks": 5,
+    "n_res_dates": 27,
+    "underpowered": true,
+    "date_range": [
+      "2026-06-21",
+      "2026-07-17"
+    ],
+    "caveat": "Only settled 7-day 'above' ladders from a ~4-week window were recoverable via the Polymarket API; they resolve DAILY (overlapping 7-day windows) so residual observations are highly autocorrelated, and there are only 5 iso-week clusters. The residual regression is UNDERPOWERED and its t-stats are NOT credible; also the ladder is near-money (mean price ~0.5), not the 0.15-0.30 longshot band.",
+    "pm_calibration": {
+      "mean_pm_price": 0.4982104377104377,
+      "mean_outcome": 0.51010101010101
+    },
+    "per_feature": {
+      "funding_lvl": {
+        "slope": 0.0045959212525511885,
+        "naive_t": 0.5321501502476578,
+        "wk_clustered_t": -0.1407581629572686,
+        "date_clustered_t": 0.48538584574409094,
+        "n": 594,
+        "n_weeks": 5,
+        "n_dates": 27,
+        "corr": 0.021866007261006657
+      },
+      "funding_trend": {
+        "slope": -0.013875483371317205,
+        "naive_t": -1.6097346252546374,
+        "wk_clustered_t": -2.3183224336552493,
+        "date_clustered_t": -1.0811941550984066,
+        "n": 594,
+        "n_weeks": 5,
+        "n_dates": 27,
+        "corr": -0.06601536524995534
+      },
+      "basis": {
+        "slope": -0.012325404284667286,
+        "naive_t": -1.4292458183845929,
+        "wk_clustered_t": -0.3283573615755102,
+        "date_clustered_t": -1.8064971057770227,
+        "n": 594,
+        "n_weeks": 5,
+        "n_dates": 27,
+        "corr": -0.05864055643550758
+      },
+      "basis_trend": {
+        "slope": -0.015663964611392533,
+        "naive_t": -1.8183137758075627,
+        "wk_clustered_t": 0.00022662284973055596,
+        "date_clustered_t": -1.0750723972178717,
+        "n": 594,
+        "n_weeks": 5,
+        "n_dates": 27,
+        "corr": -0.0745244196120058
+      },
+      "oi_chg": {
+        "slope": 0.03431119030915654,
+        "naive_t": 4.025859321502685,
+        "wk_clustered_t": 2.7081674586557374,
+        "date_clustered_t": 2.276361288134239,
+        "n": 594,
+        "n_weeks": 5,
+        "n_dates": 27,
+        "corr": 0.16324229576765198
+      },
+      "oi_z": {
+        "slope": 0.004199885811175567,
+        "naive_t": 0.4862750233589405,
+        "wk_clustered_t": -0.01381937882202212,
+        "date_clustered_t": 0.8380718612833348,
+        "n": 594,
+        "n_weeks": 5,
+        "n_dates": 27,
+        "corr": 0.019981790069093654
+      },
+      "lsr_glob": {
+        "slope": 0.010466811249281179,
+        "naive_t": 1.2131410902284754,
+        "wk_clustered_t": 0.08325011284724573,
+        "date_clustered_t": 0.7451504219450931,
+        "n": 594,
+        "n_weeks": 5,
+        "n_dates": 27,
+        "corr": 0.0497979312959996
+      },
+      "lsr_top": {
+        "slope": 0.004922662001295214,
+        "naive_t": 0.5700027127761077,
+        "wk_clustered_t": -0.21481855148976123,
+        "date_clustered_t": 0.7244022198069461,
+        "n": 594,
+        "n_weeks": 5,
+        "n_dates": 27,
+        "corr": 0.023420541203584045
+      },
+      "lsr_chg": {
+        "slope": -0.0067163366549208596,
+        "naive_t": -0.7778790173972077,
+        "wk_clustered_t": -0.5559432499258904,
+        "date_clustered_t": -0.4422069004413483,
+        "n": 594,
+        "n_weeks": 5,
+        "n_dates": 27,
+        "corr": -0.03195430426105395
+      },
+      "taker": {
+        "slope": -0.02572997325971032,
+        "naive_t": -3.0010677172159204,
+        "wk_clustered_t": -1.8530514859008202,
+        "date_clustered_t": -1.7973500188191585,
+        "n": 594,
+        "n_weeks": 5,
+        "n_dates": 27,
+        "corr": -0.12241545300847514
+      }
+    }
+  }
+}

@@ -2171,3 +2171,21 @@ VERDICT: NULL-of-lift. The confirmed crypto short-vol edge has NO large independ
 and only nominally sig (2.59<2.77 -> "forward-test", not "confirmed"). So the diversified book is essentially CRYPTO (engine) +
 ECON (uncorrelated tail-diversifier, small) + BIZ (marginal). The frontier is what the earlier docs say; no new sleeve lifts it
 materially. Re-confirmed crypto (+0.090 t2.88) and ECON independently. Campaign W2-a done.
+
+## FUNDING-BASIS-SIGNAL (2026-07-18, campaign W1-c) — funding/basis/OI directional stack is NULL (regime-autocorrelation illusion, priced)
+Tested a DIRECTIONAL weekly signal from Binance Vision futures microstructure (funding level/trend, basis+trend, OI change/z,
+global+top L/S ratio, L/S change, taker imbalance, momentum) to STACK on short-vol. funding_basis_signal.py: non-overlapping
+weekly panel Mon->Mon, BTC+ETH, 2021-01-04..2026-07-06 (576 rows/288 wks), expanding walk-forward, train-only standardization,
+causal winsorize.
+- The AUC LOOKS strong (combined 0.657; univariate 0.62-0.72, clustered "skill" t up to 4.3) but it is a REGIME-AUTOCORR
+  ILLUSION, proven 3 ways: (1) ECONOMIC test — signing positions by the signal earns +0.0015/wk, week-clustered t=+0.40,
+  BELOW passively-always-long (+0.0046/wk); (2) AUTOCORR PLACEBO — roll returns 26 wks out of alignment, AUC still 0.560 ->
+  the AUC>0.5 is serial regime persistence, not info; (3) SHUFFLE PLACEBO — permuted labels AUC 0.493, L/S t -1.90 -> pipeline
+  leak-free. Continuous OOS R2 vs drift = -0.113 (worse than the historical mean).
+- Part 2 vs Polymarket: only 5 recoverable iso-week clusters (near-money mean price 0.498 vs realized 0.510, well-calibrated),
+  residual~signal underpowered; the 1-2 |t|~2-3 clear neither Bonferroni (3.09) nor date-cluster. Inconclusive/leaning null on
+  data grounds (earlier weeklies not settled-recoverable via API).
+- MULTIPLE TESTING: ~36 specs, Bonferroni |t|~3.09; NOTHING survives on leak-robust metrics.
+VERDICT: NULL. Funding/basis/OI/L-S/taker flow are public and efficiently priced into BOTH the underlying and Polymarket. The
+STACKING-via-direction hypothesis fails. Harvestable edge remains the short-vol/longshot premium (tail-bearing), not a
+microstructure direction signal. Campaign W1-c done. (Exemplary discipline: the autocorr placebo caught a false +.)

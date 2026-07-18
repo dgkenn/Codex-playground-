@@ -601,7 +601,8 @@ def part2_residual_test(panel, pm_obs):
         # guard staleness: feature week within 10 days of entry
         if (entry_dt - srow["week_ts"]).total_seconds() > 10 * 86400:
             continue
-        rec = dict(res_week=o["res_week"], sym=sym, pm_price=o["pm_price"],
+        rec = dict(res_week=o["res_week"], res_date=str(pd.Timestamp(o["resolution"]).date()),
+                   sym=sym, pm_price=o["pm_price"],
                    outcome=o["outcome"], resid=o["outcome"] - o["pm_price"])
         for f in feats:
             rec[f] = srow[f]
@@ -611,7 +612,17 @@ def part2_residual_test(panel, pm_obs):
         return {"status": "too_few_matched", "n": int(len(df))}
 
     import scipy.stats as ss
-    out = {"status": "ok", "n_markets": int(len(df)), "n_res_weeks": int(df["res_week"].nunique()),
+    n_weeks = int(df["res_week"].nunique()); n_dates = int(df["res_date"].nunique())
+    underpowered = n_weeks < 8
+    out = {"status": "ok", "n_markets": int(len(df)), "n_res_weeks": n_weeks,
+           "n_res_dates": n_dates, "underpowered": bool(underpowered),
+           "date_range": [df["res_date"].min(), df["res_date"].max()],
+           "caveat": ("Only settled 7-day 'above' ladders from a ~4-week window were recoverable via the "
+                      "Polymarket API; they resolve DAILY (overlapping 7-day windows) so residual "
+                      "observations are highly autocorrelated, and there are only "
+                      f"{n_weeks} iso-week clusters. The residual regression is UNDERPOWERED and its "
+                      "t-stats are NOT credible; also the ladder is near-money (mean price ~0.5), not the "
+                      "0.15-0.30 longshot band."),
            "pm_calibration": dict(mean_pm_price=float(df["pm_price"].mean()),
                                   mean_outcome=float(df["outcome"].mean())),
            "per_feature": {}}
@@ -632,9 +643,10 @@ def part2_residual_test(panel, pm_obs):
         # coefficient sign test via per-week mean of (standardized signal * residual)
         prod = x.values * y
         t_clu, k = week_cluster_t(d["res_week"].values, prod)
+        t_date, kd = week_cluster_t(d["res_date"].values, prod)
         out["per_feature"][f] = dict(slope=float(slope), naive_t=float(slope / se) if se > 0 else np.nan,
-                                     wk_clustered_t=float(t_clu), n=int(len(d)), n_weeks=int(k),
-                                     corr=float(r))
+                                     wk_clustered_t=float(t_clu), date_clustered_t=float(t_date),
+                                     n=int(len(d)), n_weeks=int(k), n_dates=int(kd), corr=float(r))
     return out
 
 # ------------------------------------------------------------------ report
@@ -654,8 +666,19 @@ def write_report(panel, p1, p2):
     L.append("# FUNDING / BASIS / OI DIRECTIONAL SIGNAL vs POLYMARKET WEEKLY LONGSHOTS\n")
     L.append(f"_As-of {TODAY.date()}. Binance USD-M futures microstructure -> weekly BTC & ETH "
              f"direction, out-of-sample, and vs the Polymarket price on settled weeklies._\n")
+    _real = p1["economic"]["real"]; _roll = p1["economic"]["autocorr_placebo_roll26"]
     L.append("## TL;DR verdict\n")
-    L.append("SEE THE VERDICT SECTION AT THE BOTTOM (filled from the numbers below).\n")
+    L.append(f"**NULL — no stackable directional edge; it is already priced.** Across 11 Binance "
+             f"microstructure features, the walk-forward classification AUC on weekly BTC/ETH direction "
+             f"looks strong ({_real['auc']:.2f}) but is a REGIME-AUTOCORRELATION ILLUSION (it survives — "
+             f"AUC {_roll['auc']:.2f} — even when returns are rolled 26 weeks out of alignment). The "
+             f"leak-robust economic test is null: signing positions by the combined signal earns "
+             f"{_real['ls_mean_wk']:+.4f}/wk at week-clustered t = **{_real['ls_wk_t']:+.2f}**, BELOW passive "
+             f"long ({_real['always_long_mean_wk']:+.4f}/wk); combined linear OOS R2 vs drift is "
+             f"{p1['continuous']['oos_r2_vs_drift']:+.3f} (negative). The Polymarket residual test is "
+             f"data-limited (only {p2.get('n_res_weeks','?')} independent settled-weekly week-clusters) and "
+             f"inconclusive/leaning-null. Funding/basis/OI are public and efficiently priced — the "
+             f"harvestable edge remains the short-vol/longshot risk premium, not a direction signal.\n")
 
     L.append("## Data / panel\n")
     L.append(f"- Weekly non-overlapping panel: **{len(panel)} rows** "
@@ -720,17 +743,24 @@ def write_report(panel, p1, p2):
     else:
         cal = p2["pm_calibration"]
         L.append(f"- Settled weekly strike-markets matched: **{p2['n_markets']}** across "
-                 f"**{p2['n_res_weeks']}** resolution weeks.\n")
+                 f"**{p2['n_res_dates']}** resolution dates but only **{p2['n_res_weeks']} iso-week clusters** "
+                 f"({p2['date_range'][0]} -> {p2['date_range'][1]}).\n")
+        if p2.get("underpowered"):
+            L.append(f"- **DATA-LIMITATION CAVEAT (important):** {p2['caveat']}\n")
         L.append(f"- Polymarket calibration on this set: mean YES price **{cal['mean_pm_price']:.3f}** "
-                 f"vs realized YES rate **{cal['mean_outcome']:.3f}**.\n")
+                 f"vs realized YES rate **{cal['mean_outcome']:.3f}** — near-money and well calibrated "
+                 "(no gross mispricing for a directional signal to exploit).\n")
         L.append("- Regression of residual `(outcome - pm_price)` on each standardised Binance signal "
-                 "(known at entry). Positive t = signal predicts info the market missed. "
-                 "**Week-clustered t is the honest one.**\n")
-        L.append("| feature | slope | naive t | **wk-clustered t** | n | #weeks |")
-        L.append("|---|---|---|---|---|---|")
+                 "known at entry. Week-clustered t (k iso-weeks) is the honest one; date-clustered t "
+                 "shown too, but overlapping 7-day windows inflate both.\n")
+        L.append("| feature | slope | naive t | wk-clustered t (k wks) | date-clustered t |")
+        L.append("|---|---|---|---|---|")
         for f, d in sorted(p2["per_feature"].items(), key=lambda kv: -abs(kv[1]["wk_clustered_t"])):
-            L.append(f"| {f} | {d['slope']:+.4f} | {d['naive_t']:+.2f} | **{d['wk_clustered_t']:+.2f}** | {d['n']} | {d['n_weeks']} |")
+            L.append(f"| {f} | {d['slope']:+.4f} | {d['naive_t']:+.2f} | {d['wk_clustered_t']:+.2f} (k={d['n_weeks']}) | {d['date_clustered_t']:+.2f} |")
         L.append("")
+        L.append(f"- With only **{p2['n_res_weeks']} independent week-clusters** and ~{len(p2['per_feature'])} "
+                 "features tested, any single |t|~2-3 here is expected noise and would not clear the "
+                 "Bonferroni bar. **Part 2 is treated as inconclusive / data-limited, leaning null.**\n")
 
     L.append("## Multiple-testing accounting\n")
     L.append(f"- Classification targets: **{n_targets}** (`direction`, `up_longshot_5pct`); "
@@ -747,11 +777,12 @@ def write_report(panel, p1, p2):
     # verdict -- gated on the ECONOMIC test (leak-robust), not the AUC.
     bonf_t = abs(ss_ppf(bonf))
     p2_sig_feats = []
+    p2_usable = p2.get("status") == "ok" and not p2.get("underpowered")
     if p2.get("status") == "ok":
         p2_sig_feats = [f for f, d in p2["per_feature"].items() if abs(d["wk_clustered_t"]) >= bonf_t]
     econ_edge = (real["ls_wk_t"] >= 2.0) and (real["ls_mean_wk"] > real["always_long_mean_wk"])
-    p2_edge = len(p2_sig_feats) > 0
-    edge = econ_edge and (p2_edge or p2.get("status") != "ok")
+    # A credible edge needs the leak-robust economic test AND (if Part 2 is powered) confirmation there.
+    edge = econ_edge and (len(p2_sig_feats) > 0 if p2_usable else True)
 
     L.append("## VERDICT (blunt)\n")
     if edge:
@@ -769,9 +800,10 @@ def write_report(panel, p1, p2):
                  f"{cont['oos_r2_vs_drift']:+.4f} (negative). "
                  + ("The Polymarket residual test likewise finds no feature adding information over the "
                     f"market price at the Bonferroni bar (|t|>={bonf_t:.2f}). "
-                    if p2.get("status") == "ok" else
-                    "The Polymarket residual test was inconclusive on data grounds (too few matched settled "
-                    "weeklies successfully priced+aligned). ")
+                    if p2_usable else
+                    f"The Polymarket residual test is data-limited (only {p2.get('n_res_weeks','?')} "
+                    "independent week-clusters of settled 7-day ladders recoverable, overlapping windows, "
+                    "near-money not longshot) and is treated as inconclusive/leaning-null, not a positive. ")
                  + "Funding/basis/OI are public and efficiently priced into both the underlying and "
                    "Polymarket. The STACKING hypothesis fails: the harvestable edge is the short-vol / "
                    "longshot risk premium (bearing tail risk), NOT a microstructure DIRECTION signal.\n")

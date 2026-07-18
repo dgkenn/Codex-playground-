@@ -21,7 +21,7 @@ most likely to actually move the number.
 |---|---|---|---|---|
 | W1-a | Deribit implied density → sharpen weekly longshot strike selection | sharpen edge/ct | **DONE** | NULL — density=price (corr 0.9996); residual is flat +3c, no cross-strike ranking power |
 | W1-b | Extend short-vol to more underlyings (SOL/XRP/DOGE…) | stack + frequency | **DONE** | NULL-of-benefit — only SOL/XRP exist & they're 0.6-0.8 corr w/ BTC/ETH (no diversification; +capacity only) |
-| W1-c | Binance funding/basis/OI → weekly directional signal | stack (uncorrelated) | RUNNING | — |
+| W1-c | Binance funding/basis/OI → weekly directional signal | stack (uncorrelated) | **DONE** | NULL — AUC 0.66 is regime-autocorr illusion (tradeable t=0.40, placebos confirm); priced |
 | W1-d | VRP-regime timing → size up in high-premium weeks | sharpen (Sharpe via sizing) | **DONE** | NULL — regime timing lowers Sharpe; edge is unconditional (baseline re-confirmed t=4.27) |
 | W2-a | Cross-category longshot premium (sports/politics/pop/sci) + corr | stack (non-crypto uncorrelated) | **DONE** | NULL-of-lift — no large non-crypto twin; best diversifier=ECON (uncorr -0.05 but small $3.5k/wk, nominal t=2.59) |
 
