@@ -762,53 +762,68 @@ def write_report(summary: dict, results: List[dict], universe_stats: dict):
     a("## 3. Results by scenario")
     a("")
     a("Net-positive rate and average NET/day across the analyzed sample, at each capture-share x "
-      "markout-horizon combination:")
+      "markout-horizon combination. **Two positive counts are shown**: `rebate-driven` (the Kalshi "
+      "reward pool itself accounts for >=25% of the positive NET -- the thing K1 is actually about) "
+      "vs `spread-capture-dominated` (positive NET, but the reward pool is a rounding error next to "
+      "negative measured adverse-selection, i.e. the trade tape shows realized mean-reversion/spread "
+      "capture that would exist with or without any incentive program -- a DIFFERENT, unverified "
+      "hypothesis about generic Kalshi market-making profitability, not a finding about the rebate):")
     a("")
-    a("| Capture-share scenario | Markout horizon | n markets | # net-positive | % net-positive | mean NET/day | median NET/day |")
+    a("| Capture-share scenario | Markout horizon | n markets | # net-positive | of which rebate-driven | of which spread-capture-dominated | mean NET/day (rebate-driven only) |")
     a("|---|---|---|---|---|---|---|")
     for sk, s in summary["scenario_summary"].items():
-        frac_str, horizon = sk.rsplit("_", 1) if False else (sk[:4], sk[5:])
         frac_label = f"{float(sk.split('_')[0]) * 100:.0f}%"
         horizon_label = "15 min (active)" if "short" in sk else "6h (passive/stress)"
         if s["n_markets"] == 0:
             a(f"| {frac_label} | {horizon_label} | 0 | -- | -- | -- | -- |")
             continue
+        mnr = f"${s['mean_net_rebate_driven_only']:.2f}" if s["mean_net_rebate_driven_only"] is not None else "n/a"
         a(f"| {frac_label} | {horizon_label} | {s['n_markets']} | {s['n_net_positive']} | "
-          f"{s['frac_net_positive']*100:.0f}% | ${s['mean_net']:.2f} | ${s['median_net']:.2f} |")
+          f"{s['n_rebate_driven_positive']} | {s['n_spread_capture_dominated_positive']} | {mnr} |")
     a("")
     a(f"**Headline scenario** (50% of the depth heuristic, 15-min active-MM markout -- a middle-of-the-road "
-      f"read, not the most flattering one): top net-positive markets in the analyzed sample:")
+      f"read, not the most flattering one): top net-positive markets in the analyzed sample, flagged by "
+      f"whether the rebate itself is actually doing the work:")
     a("")
     if summary["top_headline_net_positive_markets"]:
-        a("| Ticker | Series | $/day pool | target size | vol/day (ct) | spread | capture share (heur.) | NET/day (headline) | NET/day (stress) |")
+        a("| Ticker | Series | $/day pool | vol/day (ct) | book turnover/day | capture share (heur.) | NET/day (headline) | NET/day (stress) | rebate's share of NET |")
         a("|---|---|---|---|---|---|---|---|---|")
         for r in summary["top_headline_net_positive_markets"]:
-            spread_s = f"{r['spread']:.2f}" if r["spread"] is not None else "n/a"
             vol_s = f"{r['daily_volume_contracts']:.1f}" if r["daily_volume_contracts"] is not None else "n/a"
+            turn_s = f"{r['book_turnover_per_day']:.1f}x" if r.get("book_turnover_per_day") is not None else "n/a"
             cs_s = f"{r['heuristic_capture_share']*100:.0f}%" if r["heuristic_capture_share"] is not None else "n/a"
             net_h = f"${r['net_per_day_headline']:.2f}" if r["net_per_day_headline"] is not None else "n/a"
             net_s = f"${r['net_per_day_stress']:.2f}" if r["net_per_day_stress"] is not None else "n/a"
-            a(f"| {r['ticker']} | {r['series']} | ${r['daily_reward_usd']:.2f} | {r['target_size']:.0f} | "
-              f"{vol_s} | {spread_s} | {cs_s} | {net_h} | {net_s} |")
+            rf = r.get("rebate_frac_of_net")
+            rf_s = f"{rf*100:.0f}%{' (REBATE-DRIVEN)' if r.get('rebate_driven') else ' (spread-capture)'}" if rf is not None else "n/a"
+            a(f"| {r['ticker']} | {r['series']} | ${r['daily_reward_usd']:.2f} | "
+              f"{vol_s} | {turn_s} | {cs_s} | {net_h} | {net_s} | {rf_s} |")
     else:
         a("*(none -- see verdict below)*")
     a("")
     a("## 4. Capacity")
     a("")
-    net_pos_headline = [r for r in results if r.get("scenarios", {}).get(summary["headline_scenario"], {}).get("net_per_day", -1) > 0]
-    total_target = sum(r["target_size"] for r in net_pos_headline)
-    total_daily_net = sum(r["scenarios"][summary["headline_scenario"]]["net_per_day"] for r in net_pos_headline)
-    a(f"Under the headline scenario, **{len(net_pos_headline)}** of the {summary['n_markets_with_estimate']} "
-      f"analyzed markets are net-positive, with combined qualifying target size of "
-      f"**{total_target:,.0f} contracts** and combined estimated NET of "
-      f"**${total_daily_net:,.2f}/day** if a maker could simultaneously rest at target size on every "
-      f"one of them. Two caveats on capacity: (1) this requires standing capital roughly equal to "
-      f"target_size x mid-price on BOTH the yes and no side of every market simultaneously (order of "
-      f"target_size dollars per market at ~$0.50 mid, more at higher mid); (2) these are almost all "
-      f"micro-liquidity novelty markets -- the target sizes (300-10,000 contracts) sound large but the "
-      f"markets themselves trade only a handful of contracts per trade, so the depth-proportional "
-      f"capture-share assumption is the single most load-bearing (and least verifiable without live "
-      f"quoting) number in this whole analysis.")
+    headline_scen = summary["headline_scenario"]
+    net_pos_headline = [r for r in results if r.get("scenarios", {}).get(headline_scen, {}).get("net_per_day", -1) > 0]
+    rebate_driven_rows = [r for r in net_pos_headline if r["scenarios"][headline_scen].get("rebate_driven")]
+    spread_rows = [r for r in net_pos_headline if not r["scenarios"][headline_scen].get("rebate_driven")]
+    total_target_rebate = sum(r["target_size"] for r in rebate_driven_rows)
+    total_daily_net_rebate = sum(r["scenarios"][headline_scen]["net_per_day"] for r in rebate_driven_rows)
+    a(f"Restricting to the **rebate-driven** subset only (the honest answer to \"is the rebate program "
+      f"itself deployable\"): **{len(rebate_driven_rows)}** of {summary['n_markets_with_estimate']} "
+      f"analyzed markets, combined qualifying target size **{total_target_rebate:,.0f} contracts**, "
+      f"combined estimated NET **${total_daily_net_rebate:,.2f}/day** if resting target size on all of "
+      f"them simultaneously. (The {len(spread_rows)} spread-capture-dominated markets are excluded from "
+      f"this capacity figure -- see Section 3's caveat; their large modeled NET is not attributable to "
+      f"the rebate program and is separately, and more skeptically, discussed in the verdict.)")
+    a("")
+    a("Two caveats even on the rebate-driven capacity figure: (1) it requires standing capital roughly "
+      "equal to target_size x mid-price on BOTH the yes and no side of every market simultaneously "
+      "(order of target_size dollars per market at ~$0.50 mid, more at higher mid); (2) these are "
+      "almost all micro-liquidity novelty markets -- the target sizes (300-10,000 contracts) sound "
+      "large but many of these markets trade only a handful of contracts per print, so the "
+      "depth-proportional capture-share assumption is the single most load-bearing (and least "
+      "verifiable without live quoting) number in this whole analysis.")
     a("")
     a("## 5. What's measured vs. estimated (explicit)")
     a("")
