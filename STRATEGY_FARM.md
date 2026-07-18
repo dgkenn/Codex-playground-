@@ -34,7 +34,7 @@
 | S8 | Premium-decay (oracle3) | distortion decays toward resolution → entry timing | yes | low (first-half already best) | QUEUED |
 | S9 | **Edge portability to Polymarket US (QCX)** | does the short-vol edge exist on the LEGAL US venue? | **legal-PM** | — | **DONE — QCX is SPORTS-ONLY; crypto edge has no market there** |
 | S10 | **QCX sports pricing efficiency** | is the new legal QCX venue mispriced vs sharp book / Kalshi / Global? | **legal-PM** | — | **DONE — NULL (tracks sharp lines ~1.3c; fee kills it; closes QCX)** |
-| S11 | **De-risk short-vol via defined-risk verticals** | cap the -85% tail: sell near-wing + buy far-wing insurance | technique | high-value | TESTING |
+| S11 | **De-risk short-vol** | cap the -70% tail | technique | — | **DONE — verticals overpriced; fix = per-week gross cap + corr-aware sizing (worst -25% @ ~2.7%/wk)** |
 
 ## Results (OOS verdicts) — see DECISION_MAP for detail
 | strategy | OOS verdict | stack? |

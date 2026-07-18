@@ -2411,3 +2411,16 @@ excluded, winner cross-checked to settlement) vs ESPN de-vigged closing line. Cl
 VERDICT: NULL. New legal QCX sports venue is NOT tradeably mispriced; tracks sharp lines, fee kills residual. Being new/thin did
 NOT make it exploitable (consistent w/ mature-venue sportsbook null #10). CLOSES QCX: sports-only AND efficient -> no deployable
 edge. Reinforces KALSHI-ONLY pivot. Farm S10 dead.
+
+## DERISK-SHORTVOL (2026-07-18, farm S11) — verticals overpriced; the fix is a PER-WEEK GROSS CAP + correlation-aware sizing
+Tested de-risking the short-vol tail (worst week -70%). Defined-risk verticals on 634 ladders (49 wks), legs at executable ask.
+- Verticals WORK mechanically (cut worst week -70%->~-30%) but NOT worth it: EV_vertical = EV_naked - (wing_ask - realized_wing_
+  rate); the far wing is ~4-5x overpriced (ask 0.087 vs realized 0.020), hedge cost 0.05-0.08/ct EXCEEDS most of the 0.06-0.075
+  matched-naked edge. No structure clears EV>=0.03 & t>=2 & worst>-25% (best: ceil_0.06 +0.028 t1.30 worst-33%).
+- DECISIVE: a plain PER-WEEK GROSS CAP beats every vertical. To hold worst week at -25%: naked capped g=36% earns 2.66%/wk vs
+  best capped vertical 2.60%/wk. Buying the overpriced wing costs more EV than the tail it removes.
+- KEY INSIGHT: the tail was never unbounded per-position (loss <=0.85/ct); it is CORRELATION. Crypto book ~4.1 effective indep
+  bets (avg pairwise corr ~0.22 across-strike, 3x understatement vs naive-indep) -> MUST size as ONE bet w/ mandatory weekly cap.
+VERDICT: viable de-risk = NAKED short + hard ~35%/wk gross cap, sized as one correlated crypto bet -> worst week -25% @ ~2.7%/wk
+(~0.38%/day). Verticals only as optional overlay vs a specific feared rally. Dynamic stop/perp-hedge feasible but add path-dep/
+basis; not modeled. TECHNIQUE IS GENERAL (applies to any short-vol sleeve). Completes pre-pivot round. Farm S11 done.

@@ -442,11 +442,36 @@ def build_verdict(R, nb, best, best_tail, frontier, corr):
             f"~{corr['implied_avg_pairwise_corr']}), so a naive-independent sizer understates weekly risk by "
             f"{corr['understatement_factor']}x. Whatever structure is chosen must be sized as ONE crypto bet, and "
             f"a per-week gross cap is mandatory belt-and-suspenders.")
+    # DECISIVE comparison: naked+per-week-cap vs best capped vertical, both hitting the same worst-week target
+    cf = R["per_week_cap_frontier"]
+    naked_cap = cf.get("naked")
+    vert_caps = [(name, c) for name, c in cf.items() if name != "naked" and c]
+    best_vcap = max(vert_caps, key=lambda kv: kv[1]["mean_week_return_at_that_cap"]) if vert_caps else None
+    if naked_cap and best_vcap:
+        lines.append(
+            f"- **The decisive comparison -- a plain per-week cap on the NAKED short beats every vertical.** "
+            f"To hold the worst week at -{int(R['params']['worst_week_target']*100)}%, deploy a per-week gross cap: "
+            f"NAKED capped at g={naked_cap['max_gross_cap_for_target']:.0%} earns "
+            f"**{naked_cap['mean_week_return_at_that_cap']:.2%}/week**; the best capped vertical "
+            f"(`{best_vcap[0]}`, g={best_vcap[1]['max_gross_cap_for_target']:.0%}) earns only "
+            f"**{best_vcap[1]['mean_week_return_at_that_cap']:.2%}/week**. Because the far wing is overpriced "
+            f"~4-5x its realized rate, paying for it costs MORE EV than the tail it removes -- so the cheapest, "
+            f"cleanest way to bound the tail is simply to SIZE THE NAKED SHORT DOWN, not to buy verticals.")
     lines.append(
-        "- **Bottom line:** the vertical does what it is supposed to -- it removes the catastrophic big-rally tail "
-        "mechanically and in the same instrument (no basis, no discretion). The cost is real EV handed to the "
-        "overpriced far wing. Whether the residual edge clears your bar depends on the structure; the table above "
-        "and the best-config line make that call explicitly on this sample.")
+        "- **A caveat on per-position risk:** the naked YES short already has a bounded per-position loss "
+        "(max 1-p_s <= 0.85/ct). The vertical does NOT shrink that -- its max loss/contract (1-credit ~ 0.89-0.99) "
+        "is actually LARGER. The naked tail was never unbounded per position; it was CORRELATION (many strikes "
+        "losing ~0.80 together in one rally). The vertical only half-fixes that: it converts big-rally weeks into "
+        "credit-keeps but leaves a MODERATE-rally band-loss cluster, which is why its worst week stalls near "
+        "-30% and never reaches -25% while keeping meaningful EV.")
+    lines.append(
+        "- **Bottom line:** de-risking with verticals WORKS mechanically (worst week -70% -> ~-30%, big-rally tail "
+        "removed in-instrument with no basis or discretion) but is NOT worth it here: the far wing carries the same "
+        "longshot overpricing, so protection hands back most of the +0.059/ct equal-weight edge (hedge cost "
+        "0.05-0.08/ct). No vertical clears EV>=+0.03 AND t>=2 AND worst>-25% simultaneously. The viable sleeve is "
+        "the NAKED short with a hard PER-WEEK GROSS CAP (~35% of bankroll) sized as ONE ~4-effective-bet crypto "
+        "position -- that bounds the worst week to -25% at ~2.7%/week, beating every spread. Keep verticals only as "
+        "an optional overlay in weeks where a large directional rally is specifically feared.")
     return "\n".join(lines)
 
 
