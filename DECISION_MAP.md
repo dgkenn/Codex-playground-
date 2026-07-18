@@ -2736,3 +2736,14 @@ heat-dome stressor. FINDING: the PER-FIRE CAP dominates ruin, not the Kelly frac
 (in kwx_runner.size_for_fire): quarter-Kelly x 5% per-fire cap x 17.5% per-city-day cap x per-station derate. On $50: ~$1-2.50
 risked/fire (1-5 ct). In-sim median ~5-6%/day at 5-min latency (OPTIMISTIC -- assumes backtest edge holds live; forward-gate
 must confirm), NOT reliably 10%/day. Growth is depth-limited (plateaus ~$1.5k over 60d). Confirm live==tested before scaling.
+
+## FREE FEED SUBSTITUTE (2026-07-18) — api.weather.gov replaces paid Synoptic for a small bankroll
+Operator flagged Synoptic paid tier as likely too expensive. KEY DATA INSIGHT (from Track A decay, real): as feed latency
+rises, EV/ct barely moves (+0.202@0min -> +0.158@5min -> +0.150@30min) -- it's the FIRE COUNT that drops (26 -> 10 -> 5.8
+fires/day). So a slow free feed loses THROUGHPUT, not per-fire EDGE. And at $50 you're CAPITAL-limited not fire-limited:
+catching all 26 fires/day@0min needs ~$62/day deployment (> the whole account), so ~6-7 fires/day is plenty ->
+FREE api.weather.gov (5-min resolution, MEASURED ~15-20min latency for most stations; some hourly e.g. KDEN/KNYC) yields
+~the SAME ~5%/day at $50 as paid Synoptic. Built weathergov_feed.py (WeatherGovFeed) and made it the runner DEFAULT.
+Synoptic (synoptic_feed.py) stays as the optional UPGRADE for scaling past a few hundred $, where extra throughput pays.
+=> the deployment feed blocker is REMOVED for a small-bankroll start: free, no signup. Use the 14-day Synoptic trial only to
+MEASURE the upside of the fast band (does throughput ~2.5x justify the paid cost at your chosen bankroll), not as a dependency.
