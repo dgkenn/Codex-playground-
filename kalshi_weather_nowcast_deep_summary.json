@@ -1,0 +1,2525 @@
+{
+  "window": {
+    "requested_min_date": "2025-06-13",
+    "requested_max_date": "2026-07-18",
+    "requested_lookback_days": 400,
+    "actual_min_date": "2026-05-12",
+    "actual_max_date": "2026-07-17",
+    "actual_span_days": 67,
+    "note": "actual_* is the TRUE full history the Kalshi API exposed in this environment (discovery pages back until max_close_ts returns zero) -- see script header. requested_lookback_days=400 was an upper bound, not the real depth achieved."
+  },
+  "n_series": 20,
+  "n_city_days_analyzed": 1272,
+  "n_city_days_skipped": 68,
+  "asos_vs_official_cli": {
+    "agree": 1240,
+    "agree_rate": 0.9748427672955975,
+    "disagree_n": 32,
+    "disagree_rate_unconditional": 0.025157232704402517,
+    "disagree_examples": [
+      {
+        "ticker": "KXHIGHDEN-26JUL09-T91",
+        "date": "2026-07-09",
+        "strike": 91,
+        "asos_full_day_max": 92.0,
+        "official_result": "no"
+      },
+      {
+        "ticker": "KXHIGHDEN-26JUN27-T97",
+        "date": "2026-06-27",
+        "strike": 97,
+        "asos_full_day_max": 98.0,
+        "official_result": "no"
+      },
+      {
+        "ticker": "KXHIGHDEN-26JUN24-T90",
+        "date": "2026-06-24",
+        "strike": 90,
+        "asos_full_day_max": 78.0,
+        "official_result": "yes"
+      },
+      {
+        "ticker": "KXHIGHDEN-26JUN16-T93",
+        "date": "2026-06-16",
+        "strike": 93,
+        "asos_full_day_max": 94.0,
+        "official_result": "no"
+      },
+      {
+        "ticker": "KXHIGHDEN-26JUN18-T88",
+        "date": "2026-06-18",
+        "strike": 88,
+        "asos_full_day_max": 89.0,
+        "official_result": "no"
+      },
+      {
+        "ticker": "KXHIGHDEN-26MAY23-T74",
+        "date": "2026-05-23",
+        "strike": 74,
+        "asos_full_day_max": 73.0,
+        "official_result": "yes"
+      },
+      {
+        "ticker": "KXHIGHMIA-26JUN26-T95",
+        "date": "2026-06-26",
+        "strike": 95,
+        "asos_full_day_max": 96.0,
+        "official_result": "no"
+      },
+      {
+        "ticker": "KXHIGHMIA-26JUN16-T95",
+        "date": "2026-06-16",
+        "strike": 95,
+        "asos_full_day_max": 98.0,
+        "official_result": "no"
+      },
+      {
+        "ticker": "KXHIGHMIA-26MAY16-T91",
+        "date": "2026-05-16",
+        "strike": 91,
+        "asos_full_day_max": 97.0,
+        "official_result": "no"
+      },
+      {
+        "ticker": "KXHIGHTBOS-26MAY16-T80",
+        "date": "2026-05-16",
+        "strike": 80,
+        "asos_full_day_max": 81.0,
+        "official_result": "no"
+      },
+      {
+        "ticker": "KXHIGHTSEA-26JUL10-T78",
+        "date": "2026-07-10",
+        "strike": 78,
+        "asos_full_day_max": 79.0,
+        "official_result": "no"
+      },
+      {
+        "ticker": "KXHIGHTSEA-26JUN27-T70",
+        "date": "2026-06-27",
+        "strike": 70,
+        "asos_full_day_max": 71.0,
+        "official_result": "no"
+      },
+      {
+        "ticker": "KXHIGHTSFO-26JUL02-T71",
+        "date": "2026-07-02",
+        "strike": 71,
+        "asos_full_day_max": 72.0,
+        "official_result": "no"
+      },
+      {
+        "ticker": "KXHIGHTSFO-26JUN30-T73",
+        "date": "2026-06-30",
+        "strike": 73,
+        "asos_full_day_max": 74.0,
+        "official_result": "no"
+      },
+      {
+        "ticker": "KXHIGHTSFO-26JUN25-T70",
+        "date": "2026-06-25",
+        "strike": 70,
+        "asos_full_day_max": 71.0,
+        "official_result": "no"
+      },
+      {
+        "ticker": "KXHIGHTSFO-26MAY18-T80",
+        "date": "2026-05-18",
+        "strike": 80,
+        "asos_full_day_max": 81.0,
+        "official_result": "no"
+      },
+      {
+        "ticker": "KXHIGHTDC-26JUL11-T89",
+        "date": "2026-07-11",
+        "strike": 89,
+        "asos_full_day_max": 85.0,
+        "official_result": "yes"
+      },
+      {
+        "ticker": "KXHIGHTATL-26JUL16-T93",
+        "date": "2026-07-16",
+        "strike": 93,
+        "asos_full_day_max": 94.0,
+        "official_result": "no"
+      },
+      {
+        "ticker": "KXHIGHTATL-26JUL11-T94",
+        "date": "2026-07-11",
+        "strike": 94,
+        "asos_full_day_max": 95.0,
+        "official_result": "no"
+      },
+      {
+        "ticker": "KXHIGHTATL-26MAY30-T85",
+        "date": "2026-05-30",
+        "strike": 85,
+        "asos_full_day_max": 86.0,
+        "official_result": "no"
+      }
+    ]
+  },
+  "margins_tested": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "gap_thresholds_tested": [
+    0.0,
+    0.02,
+    0.05
+  ],
+  "late_day_cutoff_lst_hour": 15,
+  "late_day_cutoff_hours_tested": [
+    15,
+    17,
+    19,
+    21
+  ],
+  "fee_model": "0.07 * p * (1-p) per contract",
+  "station_resolution_min_gap": {
+    "KATL": {
+      "n": 91183,
+      "median_gap_min": 1.0
+    },
+    "KAUS": {
+      "n": 67857,
+      "median_gap_min": 1.0
+    },
+    "KBOS": {
+      "n": 77444,
+      "median_gap_min": 1.0
+    },
+    "KDCA": {
+      "n": 38867,
+      "median_gap_min": 1.0
+    },
+    "KDEN": {
+      "n": 86768,
+      "median_gap_min": 1.0
+    },
+    "KDFW": {
+      "n": 77491,
+      "median_gap_min": 1.0
+    },
+    "KHOU": {
+      "n": 88009,
+      "median_gap_min": 1.0
+    },
+    "KLAS": {
+      "n": 71830,
+      "median_gap_min": 1.0
+    },
+    "KLAX": {
+      "n": 60771,
+      "median_gap_min": 1.0
+    },
+    "KMDW": {
+      "n": 90481,
+      "median_gap_min": 1.0
+    },
+    "KMIA": {
+      "n": 76944,
+      "median_gap_min": 1.0
+    },
+    "KMSP": {
+      "n": 81682,
+      "median_gap_min": 1.0
+    },
+    "KMSY": {
+      "n": 81017,
+      "median_gap_min": 1.0
+    },
+    "KOKC": {
+      "n": 80243,
+      "median_gap_min": 1.0
+    },
+    "KPHL": {
+      "n": 73633,
+      "median_gap_min": 1.0
+    },
+    "KPHX": {
+      "n": 64245,
+      "median_gap_min": 1.0
+    },
+    "KSAT": {
+      "n": 74625,
+      "median_gap_min": 1.0
+    },
+    "KSEA": {
+      "n": 85134,
+      "median_gap_min": 1.0
+    },
+    "KSFO": {
+      "n": 73992,
+      "median_gap_min": 1.0
+    },
+    "NYC": {
+      "n": 76455,
+      "median_gap_min": 1.0
+    }
+  },
+  "by_margin": {
+    "1": {
+      "long": {
+        "n_fired": 71,
+        "fire_rate": 0.05581761006289308,
+        "fires_per_week": 7.417910447761194,
+        "mean_exec_price": 0.40028169014084497,
+        "median_exec_price": 0.27,
+        "mean_fee": 0.010009408450704223,
+        "win_rate": 0.6197183098591549,
+        "n_locked_yes_settled_no": 27,
+        "locked_yes_settled_no_tickers": [
+          "KXHIGHDEN-26JUL09-T91",
+          "KXHIGHDEN-26JUN27-T97",
+          "KXHIGHDEN-26JUN16-T93",
+          "KXHIGHDEN-26JUN18-T88",
+          "KXHIGHMIA-26JUN26-T95",
+          "KXHIGHMIA-26JUN16-T95",
+          "KXHIGHMIA-26MAY16-T91",
+          "KXHIGHTBOS-26MAY16-T80",
+          "KXHIGHTSEA-26JUL10-T78",
+          "KXHIGHTSEA-26JUN27-T70",
+          "KXHIGHTSFO-26JUL02-T71",
+          "KXHIGHTSFO-26JUN30-T73",
+          "KXHIGHTSFO-26JUN25-T70",
+          "KXHIGHTSFO-26MAY18-T80",
+          "KXHIGHTATL-26JUL16-T93",
+          "KXHIGHTATL-26JUL11-T94",
+          "KXHIGHTATL-26MAY30-T85",
+          "KXHIGHTATL-26MAY28-T88",
+          "KXHIGHTDAL-26JUN06-T89",
+          "KXHIGHTSATX-26MAY23-T85",
+          "KXHIGHTOKC-26JUN12-T91",
+          "KXHIGHTOKC-26MAY28-T84",
+          "KXHIGHTHOU-26MAY22-T90",
+          "KXHIGHPHIL-26JUL11-T89",
+          "KXHIGHPHIL-26JUN02-T80",
+          "KXHIGHLAX-26JUN28-T72",
+          "KXHIGHLAX-26MAY24-T69"
+        ],
+        "n_bad_glitch": 1,
+        "n_bad_plausible": 26,
+        "bad_glitch_tickers": [
+          "KXHIGHLAX-26MAY24-T69"
+        ],
+        "bad_glitch_detail": [
+          {
+            "ticker": "KXHIGHLAX-26MAY24-T69",
+            "strike": 69,
+            "asos_full_day_max": 120.0
+          }
+        ],
+        "cond_loss_rate_given_fired": 0.3802816901408451,
+        "worst_case_loss_rate_wilson95": 0.49658143716075775,
+        "analytic_ev_point": 0.2094272112676057,
+        "analytic_ev_worst_case": 0.09312746424769305,
+        "clustered": {
+          "mean": 0.20942721126760563,
+          "se": 0.05043380709929369,
+          "t": 4.152516403437222,
+          "p": 3.288391747036101e-05,
+          "n": 71,
+          "n_clusters": 45
+        },
+        "worst_day": {
+          "pnl": -0.6952320000000001,
+          "date": "2026-05-23",
+          "ticker": "KXHIGHTSATX-26MAY23-T85"
+        },
+        "mean_volume_at_exec": 76.85183098591551,
+        "median_volume_at_exec": 8.1,
+        "mean_oi_at_exec": 9822.447464788731,
+        "mean_volume_5min_after": 767.1795774647888,
+        "median_volume_5min_after": 307.73,
+        "gap_sensitivity": {
+          "0.0": {
+            "n": 71,
+            "mean_pnl": 0.20942721126760563,
+            "t": 4.152516403437222,
+            "p": 3.288391747036101e-05,
+            "n_clusters": 45,
+            "se": 0.05043380709929369
+          },
+          "0.02": {
+            "n": 70,
+            "mean_pnl": 0.21228607142857142,
+            "t": 4.190360687291226,
+            "p": 2.785113725600752e-05,
+            "n_clusters": 45,
+            "se": 0.050660572506897844
+          },
+          "0.05": {
+            "n": 68,
+            "mean_pnl": 0.21798189705882354,
+            "t": 4.251344388593307,
+            "p": 2.124911265433127e-05,
+            "n_clusters": 45,
+            "se": 0.05127363890906749
+          }
+        },
+        "n_fillable": 68,
+        "fillable_rate": 0.9577464788732394,
+        "fillable_clustered": {
+          "mean": 0.22069957352941175,
+          "se": 0.05181450045147947,
+          "t": 4.259417182571912,
+          "p": 2.0496062007158145e-05,
+          "n": 68,
+          "n_clusters": 43
+        },
+        "fillable_mean_exec_price": 0.41602941176470576
+      },
+      "short": {
+        "n_fired": 1089,
+        "fire_rate": 0.8561320754716981,
+        "fires_per_week": 113.77611940298507,
+        "mean_exec_price": 0.9943250688705237,
+        "median_exec_price": 1.0,
+        "mean_fee": 7.563085399449036e-05,
+        "win_rate": 0.9935720844811754,
+        "n_locked_no_settled_yes": 7,
+        "locked_no_settled_yes_tickers": [
+          "KXHIGHDEN-26JUN24-T90",
+          "KXHIGHDEN-26MAY23-T74",
+          "KXHIGHTBOS-26MAY25-T75",
+          "KXHIGHTBOS-26MAY17-T88",
+          "KXHIGHTDC-26JUL11-T89",
+          "KXHIGHTDAL-26JUN15-T85",
+          "KXHIGHLAX-26MAY20-T76"
+        ],
+        "n_bad_glitch": 0,
+        "n_bad_plausible": 7,
+        "bad_glitch_tickers": [],
+        "bad_glitch_detail": [],
+        "cond_loss_rate_given_fired": 0.006427915518824601,
+        "worst_case_loss_rate_wilson95": 0.013208635275722578,
+        "analytic_ev_point": -0.0008286152433428338,
+        "analytic_ev_worst_case": -0.0076093350002408135,
+        "clustered": {
+          "mean": -0.0008286152433425167,
+          "se": 0.0012696014384408405,
+          "t": -0.6526577697959403,
+          "p": 0.5139769333171538,
+          "n": 1089,
+          "n_clusters": 66
+        },
+        "worst_day": {
+          "pnl": -0.9720369999999999,
+          "date": "2026-05-25",
+          "ticker": "KXHIGHTBOS-26MAY25-T75"
+        },
+        "mean_volume_at_exec": 37.16284664830118,
+        "median_volume_at_exec": 0.0,
+        "mean_oi_at_exec": 9015.052736455462,
+        "mean_volume_5min_after": 68.96957759412305,
+        "median_volume_5min_after": 0.0,
+        "gap_sensitivity": {
+          "0.0": {
+            "n": 44,
+            "mean_pnl": -0.02050822727272729,
+            "t": -0.645691676855727,
+            "p": 0.5184790518931328,
+            "n_clusters": 31,
+            "se": 0.03176164105536339
+          },
+          "0.02": {
+            "n": 23,
+            "mean_pnl": -0.0477308260869565,
+            "t": -0.7993384089402412,
+            "p": 0.42409421327853414,
+            "n_clusters": 20,
+            "se": 0.05971291452169524
+          },
+          "0.05": {
+            "n": 13,
+            "mean_pnl": -0.026163615384615393,
+            "t": -0.34964028085471766,
+            "p": 0.7266086769117441,
+            "n_clusters": 12,
+            "se": 0.07483009486394643
+          }
+        },
+        "n_fillable": 251,
+        "fillable_rate": 0.23048668503213957,
+        "fillable_clustered": {
+          "mean": -0.0038702310756972124,
+          "se": 0.005498556179549483,
+          "t": -0.7038631504924107,
+          "p": 0.481518001662969,
+          "n": 251,
+          "n_clusters": 63
+        },
+        "fillable_mean_exec_price": 0.9916334661354581
+      }
+    },
+    "2": {
+      "long": {
+        "n_fired": 35,
+        "fire_rate": 0.027515723270440252,
+        "fires_per_week": 3.656716417910448,
+        "mean_exec_price": 0.7385714285714285,
+        "median_exec_price": 0.83,
+        "mean_fee": 0.007898599999999999,
+        "win_rate": 0.9142857142857143,
+        "n_locked_yes_settled_no": 3,
+        "locked_yes_settled_no_tickers": [
+          "KXHIGHMIA-26JUN16-T95",
+          "KXHIGHMIA-26MAY16-T91",
+          "KXHIGHLAX-26MAY24-T69"
+        ],
+        "n_bad_glitch": 1,
+        "n_bad_plausible": 2,
+        "bad_glitch_tickers": [
+          "KXHIGHLAX-26MAY24-T69"
+        ],
+        "bad_glitch_detail": [
+          {
+            "ticker": "KXHIGHLAX-26MAY24-T69",
+            "strike": 69,
+            "asos_full_day_max": 120.0
+          }
+        ],
+        "cond_loss_rate_given_fired": 0.08571428571428574,
+        "worst_case_loss_rate_wilson95": 0.22379273970048333,
+        "analytic_ev_point": 0.1678156857142857,
+        "analytic_ev_worst_case": 0.029737231728088155,
+        "clustered": {
+          "mean": 0.16781568571428573,
+          "se": 0.036473266748182055,
+          "t": 4.601059918019277,
+          "p": 4.2034647858013585e-06,
+          "n": 35,
+          "n_clusters": 29
+        },
+        "worst_day": {
+          "pnl": -0.15892499999999998,
+          "date": "2026-05-24",
+          "ticker": "KXHIGHLAX-26MAY24-T69"
+        },
+        "mean_volume_at_exec": 212.50428571428571,
+        "median_volume_at_exec": 5.0,
+        "mean_oi_at_exec": 14555.31628571429,
+        "mean_volume_5min_after": 1784.2471428571432,
+        "median_volume_5min_after": 470.92999999999995,
+        "gap_sensitivity": {
+          "0.0": {
+            "n": 25,
+            "mean_pnl": 0.23494196000000003,
+            "t": 5.3795632998262315,
+            "p": 7.466673812572822e-08,
+            "n_clusters": 22,
+            "se": 0.04367305428074227
+          },
+          "0.02": {
+            "n": 25,
+            "mean_pnl": 0.23494196000000003,
+            "t": 5.3795632998262315,
+            "p": 7.466673812572822e-08,
+            "n_clusters": 22,
+            "se": 0.04367305428074227
+          },
+          "0.05": {
+            "n": 24,
+            "mean_pnl": 0.2431765416666667,
+            "t": 5.523405150780085,
+            "p": 3.324918207425753e-08,
+            "n_clusters": 22,
+            "se": 0.044026562424507684
+          }
+        },
+        "n_fillable": 33,
+        "fillable_rate": 0.9428571428571428,
+        "fillable_clustered": {
+          "mean": 0.1783103636363637,
+          "se": 0.03829080021770987,
+          "t": 4.656741635655173,
+          "p": 3.212531812568642e-06,
+          "n": 33,
+          "n_clusters": 27
+        },
+        "fillable_mean_exec_price": 0.7527272727272727
+      },
+      "short": {
+        "n_fired": 1026,
+        "fire_rate": 0.8066037735849056,
+        "fires_per_week": 107.19402985074628,
+        "mean_exec_price": 0.9956920077972712,
+        "median_exec_price": 1.0,
+        "mean_fee": 3.3116959064327507e-05,
+        "win_rate": 0.9951267056530214,
+        "n_locked_no_settled_yes": 5,
+        "locked_no_settled_yes_tickers": [
+          "KXHIGHDEN-26JUN24-T90",
+          "KXHIGHTBOS-26MAY25-T75",
+          "KXHIGHTDC-26JUL11-T89",
+          "KXHIGHTDAL-26JUN15-T85",
+          "KXHIGHLAX-26MAY20-T76"
+        ],
+        "n_bad_glitch": 0,
+        "n_bad_plausible": 5,
+        "bad_glitch_tickers": [],
+        "bad_glitch_detail": [],
+        "cond_loss_rate_given_fired": 0.004873294346978585,
+        "worst_case_loss_rate_wilson95": 0.011357055758086732,
+        "analytic_ev_point": -0.0005984191033140961,
+        "analytic_ev_worst_case": -0.007082180514422276,
+        "clustered": {
+          "mean": -0.0005984191033138407,
+          "se": 0.000954374123365808,
+          "t": -0.6270277961889678,
+          "p": 0.5306410148946126,
+          "n": 1026,
+          "n_clusters": 66
+        },
+        "worst_day": {
+          "pnl": -0.9720369999999999,
+          "date": "2026-05-25",
+          "ticker": "KXHIGHTBOS-26MAY25-T75"
+        },
+        "mean_volume_at_exec": 34.87824561403508,
+        "median_volume_at_exec": 0.0,
+        "mean_oi_at_exec": 8635.985896686156,
+        "mean_volume_5min_after": 62.646569200779716,
+        "median_volume_5min_after": 0.0,
+        "gap_sensitivity": {
+          "0.0": {
+            "n": 28,
+            "mean_pnl": -0.02192778571428573,
+            "t": -0.6242207866222952,
+            "p": 0.5324825974309677,
+            "n_clusters": 22,
+            "se": 0.0351282529903219
+          },
+          "0.02": {
+            "n": 14,
+            "mean_pnl": -0.053162571428571434,
+            "t": -0.7721492396666544,
+            "p": 0.44002604158977965,
+            "n_clusters": 13,
+            "se": 0.06885012468771234
+          },
+          "0.05": {
+            "n": 6,
+            "mean_pnl": 0.01155766666666668,
+            "t": 0.8866336111389539,
+            "p": 0.37527619188921646,
+            "n_clusters": 6,
+            "se": 0.013035448376268868
+          }
+        },
+        "n_fillable": 225,
+        "fillable_rate": 0.21929824561403508,
+        "fillable_clustered": {
+          "mean": -0.003041911111111112,
+          "se": 0.004329096967557352,
+          "t": -0.70266642995236,
+          "p": 0.48226365302359175,
+          "n": 225,
+          "n_clusters": 63
+        },
+        "fillable_mean_exec_price": 0.9940444444444444
+      }
+    },
+    "3": {
+      "long": {
+        "n_fired": 19,
+        "fire_rate": 0.014937106918238994,
+        "fires_per_week": 1.9850746268656716,
+        "mean_exec_price": 0.8468421052631577,
+        "median_exec_price": 1.0,
+        "mean_fee": 0.00210921052631579,
+        "win_rate": 0.8421052631578947,
+        "n_locked_yes_settled_no": 3,
+        "locked_yes_settled_no_tickers": [
+          "KXHIGHMIA-26JUN16-T95",
+          "KXHIGHMIA-26MAY16-T91",
+          "KXHIGHLAX-26MAY24-T69"
+        ],
+        "n_bad_glitch": 1,
+        "n_bad_plausible": 2,
+        "bad_glitch_tickers": [
+          "KXHIGHLAX-26MAY24-T69"
+        ],
+        "bad_glitch_detail": [
+          {
+            "ticker": "KXHIGHLAX-26MAY24-T69",
+            "strike": 69,
+            "asos_full_day_max": 120.0
+          }
+        ],
+        "cond_loss_rate_given_fired": 0.1578947368421053,
+        "worst_case_loss_rate_wilson95": 0.37565475276106236,
+        "analytic_ev_point": -0.006846052631578829,
+        "analytic_ev_worst_case": -0.22460606855053583,
+        "clustered": {
+          "mean": -0.006846052631578945,
+          "se": 0.01572697804274343,
+          "t": -0.4353063006111194,
+          "p": 0.6633401121654794,
+          "n": 19,
+          "n_clusters": 17
+        },
+        "worst_day": {
+          "pnl": -0.232012,
+          "date": "2026-06-16",
+          "ticker": "KXHIGHMIA-26JUN16-T95"
+        },
+        "mean_volume_at_exec": 485.79105263157896,
+        "median_volume_at_exec": 20.0,
+        "mean_oi_at_exec": 20402.996315789478,
+        "mean_volume_5min_after": 1015.838947368421,
+        "median_volume_5min_after": 179.69,
+        "gap_sensitivity": {
+          "0.0": {
+            "n": 7,
+            "mean_pnl": -0.018582142857142853,
+            "t": -0.44777333716891093,
+            "p": 0.6543167878668332,
+            "n_clusters": 6,
+            "se": 0.041498993608306826
+          },
+          "0.02": {
+            "n": 7,
+            "mean_pnl": -0.018582142857142853,
+            "t": -0.44777333716891093,
+            "p": 0.6543167878668332,
+            "n_clusters": 6,
+            "se": 0.041498993608306826
+          },
+          "0.05": {
+            "n": 5,
+            "mean_pnl": -0.040939800000000005,
+            "t": -0.6773538850748244,
+            "p": 0.4981814496868431,
+            "n_clusters": 5,
+            "se": 0.06044078420761927
+          }
+        },
+        "n_fillable": 16,
+        "fillable_rate": 0.8421052631578947,
+        "fillable_clustered": {
+          "mean": -0.0074613749999999975,
+          "se": 0.018532461724483824,
+          "t": -0.402611110759373,
+          "p": 0.6872343346935277,
+          "n": 16,
+          "n_clusters": 15
+        },
+        "fillable_mean_exec_price": 0.88
+      },
+      "short": {
+        "n_fired": 893,
+        "fire_rate": 0.7020440251572327,
+        "fires_per_week": 93.29850746268657,
+        "mean_exec_price": 0.9954535274356103,
+        "median_exec_price": 1.0,
+        "mean_fee": 1.0848824188129911e-05,
+        "win_rate": 0.9955207166853304,
+        "n_locked_no_settled_yes": 4,
+        "locked_no_settled_yes_tickers": [
+          "KXHIGHDEN-26JUN24-T90",
+          "KXHIGHTDC-26JUL11-T89",
+          "KXHIGHTDAL-26JUN15-T85",
+          "KXHIGHLAX-26MAY20-T76"
+        ],
+        "n_bad_glitch": 0,
+        "n_bad_plausible": 4,
+        "bad_glitch_tickers": [],
+        "bad_glitch_detail": [],
+        "cond_loss_rate_given_fired": 0.004479283314669624,
+        "worst_case_loss_rate_wilson95": 0.011460270944212368,
+        "analytic_ev_point": 5.6340425531915564e-05,
+        "analytic_ev_worst_case": -0.006924647204010774,
+        "clustered": {
+          "mean": 5.634042553191495e-05,
+          "se": 4.302544145637719e-05,
+          "t": 1.3094676922498891,
+          "p": 0.1903759746457081,
+          "n": 893,
+          "n_clusters": 66
+        },
+        "worst_day": {
+          "pnl": -0.01069300000000001,
+          "date": "2026-06-24",
+          "ticker": "KXHIGHDEN-26JUN24-T90"
+        },
+        "mean_volume_at_exec": 31.410627099664044,
+        "median_volume_at_exec": 0.0,
+        "mean_oi_at_exec": 7615.556931690927,
+        "mean_volume_5min_after": 40.13534154535274,
+        "median_volume_5min_after": 0.0,
+        "gap_sensitivity": {
+          "0.0": {
+            "n": 13,
+            "mean_pnl": 0.00387015384615385,
+            "t": 1.3940050460165807,
+            "p": 0.16331608087688299,
+            "n_clusters": 13,
+            "se": 0.002776283957660665
+          },
+          "0.02": {
+            "n": 5,
+            "mean_pnl": -0.004828800000000005,
+            "t": -0.9206306955553175,
+            "p": 0.3572432706333246,
+            "n_clusters": 5,
+            "se": 0.005245099933461711
+          },
+          "0.05": {
+            "n": 4,
+            "mean_pnl": -0.01069300000000001,
+            "t": NaN,
+            "p": null,
+            "n_clusters": 4,
+            "se": 0.0
+          }
+        },
+        "n_fillable": 173,
+        "fillable_rate": 0.1937290033594625,
+        "fillable_clustered": {
+          "mean": 0.00026105780346820834,
+          "se": 0.00016465190554995117,
+          "t": 1.585513405364204,
+          "p": 0.11284973360380324,
+          "n": 173,
+          "n_clusters": 63
+        },
+        "fillable_mean_exec_price": 0.9939306358381502
+      }
+    },
+    "4": {
+      "long": {
+        "n_fired": 7,
+        "fire_rate": 0.00550314465408805,
+        "fires_per_week": 0.7313432835820896,
+        "mean_exec_price": 0.7371428571428572,
+        "median_exec_price": 1.0,
+        "mean_fee": 0.0013740000000000002,
+        "win_rate": 0.7142857142857143,
+        "n_locked_yes_settled_no": 2,
+        "locked_yes_settled_no_tickers": [
+          "KXHIGHMIA-26MAY16-T91",
+          "KXHIGHLAX-26MAY24-T69"
+        ],
+        "n_bad_glitch": 1,
+        "n_bad_plausible": 1,
+        "bad_glitch_tickers": [
+          "KXHIGHLAX-26MAY24-T69"
+        ],
+        "bad_glitch_detail": [
+          {
+            "ticker": "KXHIGHLAX-26MAY24-T69",
+            "strike": 69,
+            "asos_full_day_max": 120.0
+          }
+        ],
+        "cond_loss_rate_given_fired": 0.2857142857142857,
+        "worst_case_loss_rate_wilson95": 0.641065548235854,
+        "analytic_ev_point": -0.02423114285714291,
+        "analytic_ev_worst_case": -0.37958240537871124,
+        "clustered": {
+          "mean": -0.024231142857142857,
+          "se": 0.020830441756539746,
+          "t": -1.1632563121007962,
+          "p": 0.24472552529561864,
+          "n": 7,
+          "n_clusters": 7
+        },
+        "worst_day": {
+          "pnl": -0.15892499999999998,
+          "date": "2026-05-24",
+          "ticker": "KXHIGHLAX-26MAY24-T69"
+        },
+        "mean_volume_at_exec": 14.31,
+        "median_volume_at_exec": 0.0,
+        "mean_oi_at_exec": 15535.755714285711,
+        "mean_volume_5min_after": 40.6,
+        "median_volume_5min_after": 9.35,
+        "gap_sensitivity": {
+          "0.0": {
+            "n": 2,
+            "mean_pnl": -0.084809,
+            "t": -1.618247585019427,
+            "p": 0.10560925159160561,
+            "n_clusters": 2,
+            "se": 0.052407926194422146
+          },
+          "0.02": {
+            "n": 2,
+            "mean_pnl": -0.084809,
+            "t": -1.618247585019427,
+            "p": 0.10560925159160561,
+            "n_clusters": 2,
+            "se": 0.052407926194422146
+          },
+          "0.05": {
+            "n": 2,
+            "mean_pnl": -0.084809,
+            "t": -1.618247585019427,
+            "p": 0.10560925159160561,
+            "n_clusters": 2,
+            "se": 0.052407926194422146
+          }
+        },
+        "n_fillable": 5,
+        "fillable_rate": 0.7142857142857143,
+        "fillable_clustered": {
+          "mean": -0.031784999999999994,
+          "se": 0.028429368265932318,
+          "t": -1.118033988749895,
+          "p": 0.2635524772829727,
+          "n": 5,
+          "n_clusters": 5
+        },
+        "fillable_mean_exec_price": 0.8300000000000001
+      },
+      "short": {
+        "n_fired": 712,
+        "fire_rate": 0.559748427672956,
+        "fires_per_week": 74.38805970149254,
+        "mean_exec_price": 0.9943679775280899,
+        "median_exec_price": 1.0,
+        "mean_fee": 8.740168539325853e-06,
+        "win_rate": 0.9943820224719101,
+        "n_locked_no_settled_yes": 4,
+        "locked_no_settled_yes_tickers": [
+          "KXHIGHDEN-26JUN24-T90",
+          "KXHIGHTDC-26JUL11-T89",
+          "KXHIGHTDAL-26JUN15-T85",
+          "KXHIGHLAX-26MAY20-T76"
+        ],
+        "n_bad_glitch": 0,
+        "n_bad_plausible": 4,
+        "bad_glitch_tickers": [],
+        "bad_glitch_detail": [],
+        "cond_loss_rate_given_fired": 0.005617977528089901,
+        "worst_case_loss_rate_wilson95": 0.014355186824863333,
+        "analytic_ev_point": 5.304775280853659e-06,
+        "analytic_ev_worst_case": -0.008731904521492608,
+        "clustered": {
+          "mean": 5.304775280898878e-06,
+          "se": 4.583443810306307e-05,
+          "t": 0.1157377618325022,
+          "p": 0.9078603777266598,
+          "n": 712,
+          "n_clusters": 66
+        },
+        "worst_day": {
+          "pnl": -0.01069300000000001,
+          "date": "2026-06-24",
+          "ticker": "KXHIGHDEN-26JUN24-T90"
+        },
+        "mean_volume_at_exec": 29.515337078651687,
+        "median_volume_at_exec": 0.0,
+        "mean_oi_at_exec": 6460.7138483146055,
+        "mean_volume_5min_after": 35.571081460674165,
+        "median_volume_5min_after": 0.0,
+        "gap_sensitivity": {
+          "0.0": {
+            "n": 8,
+            "mean_pnl": 0.0004721250000000001,
+            "t": 0.11587629269103357,
+            "p": 0.907750584798672,
+            "n_clusters": 8,
+            "se": 0.004074388203451152
+          },
+          "0.02": {
+            "n": 5,
+            "mean_pnl": -0.004828800000000005,
+            "t": -0.9206306955553175,
+            "p": 0.3572432706333246,
+            "n_clusters": 5,
+            "se": 0.005245099933461711
+          },
+          "0.05": {
+            "n": 4,
+            "mean_pnl": -0.01069300000000001,
+            "t": NaN,
+            "p": null,
+            "n_clusters": 4,
+            "se": 0.0
+          }
+        },
+        "n_fillable": 128,
+        "fillable_rate": 0.1797752808988764,
+        "fillable_clustered": {
+          "mean": 0.0001347031250000001,
+          "se": 0.00018288030349330024,
+          "t": 0.7365644217937057,
+          "p": 0.46138727760365317,
+          "n": 128,
+          "n_clusters": 58
+        },
+        "fillable_mean_exec_price": 0.9920312499999999
+      }
+    },
+    "5": {
+      "long": {
+        "n_fired": 4,
+        "fire_rate": 0.0031446540880503146,
+        "fires_per_week": 0.417910447761194,
+        "mean_exec_price": 0.5399999999999999,
+        "median_exec_price": 0.575,
+        "mean_fee": 0.0024045000000000004,
+        "win_rate": 0.5,
+        "n_locked_yes_settled_no": 2,
+        "locked_yes_settled_no_tickers": [
+          "KXHIGHMIA-26MAY16-T91",
+          "KXHIGHLAX-26MAY24-T69"
+        ],
+        "n_bad_glitch": 1,
+        "n_bad_plausible": 1,
+        "bad_glitch_tickers": [
+          "KXHIGHLAX-26MAY24-T69"
+        ],
+        "bad_glitch_detail": [
+          {
+            "ticker": "KXHIGHLAX-26MAY24-T69",
+            "strike": 69,
+            "asos_full_day_max": 120.0
+          }
+        ],
+        "cond_loss_rate_given_fired": 0.5,
+        "worst_case_loss_rate_wilson95": 0.8499610108897435,
+        "analytic_ev_point": -0.04240449999999993,
+        "analytic_ev_worst_case": -0.3923655108897434,
+        "clustered": {
+          "mean": -0.0424045,
+          "se": 0.03370731503787419,
+          "t": -1.2580206982476498,
+          "p": 0.20838427078689103,
+          "n": 4,
+          "n_clusters": 4
+        },
+        "worst_day": {
+          "pnl": -0.15892499999999998,
+          "date": "2026-05-24",
+          "ticker": "KXHIGHLAX-26MAY24-T69"
+        },
+        "mean_volume_at_exec": 25.0425,
+        "median_volume_at_exec": 18.025,
+        "mean_oi_at_exec": 14523.425000000001,
+        "mean_volume_5min_after": 55.7925,
+        "median_volume_5min_after": 21.74,
+        "gap_sensitivity": {
+          "0.0": {
+            "n": 2,
+            "mean_pnl": -0.084809,
+            "t": -1.618247585019427,
+            "p": 0.10560925159160561,
+            "n_clusters": 2,
+            "se": 0.052407926194422146
+          },
+          "0.02": {
+            "n": 2,
+            "mean_pnl": -0.084809,
+            "t": -1.618247585019427,
+            "p": 0.10560925159160561,
+            "n_clusters": 2,
+            "se": 0.052407926194422146
+          },
+          "0.05": {
+            "n": 2,
+            "mean_pnl": -0.084809,
+            "t": -1.618247585019427,
+            "p": 0.10560925159160561,
+            "n_clusters": 2,
+            "se": 0.052407926194422146
+          }
+        },
+        "n_fillable": 3,
+        "fillable_rate": 0.75,
+        "fillable_clustered": {
+          "mean": -0.052974999999999994,
+          "se": 0.04325390637464628,
+          "t": -1.2247448713915892,
+          "p": 0.22067136191984682,
+          "n": 3,
+          "n_clusters": 3
+        },
+        "fillable_mean_exec_price": 0.7166666666666667
+      },
+      "short": {
+        "n_fired": 527,
+        "fire_rate": 0.4143081761006289,
+        "fires_per_week": 55.059701492537314,
+        "mean_exec_price": 0.9962049335863378,
+        "median_exec_price": 1.0,
+        "mean_fee": 5.233396584440233e-06,
+        "win_rate": 0.9962049335863378,
+        "n_locked_no_settled_yes": 2,
+        "locked_no_settled_yes_tickers": [
+          "KXHIGHDEN-26JUN24-T90",
+          "KXHIGHLAX-26MAY20-T76"
+        ],
+        "n_bad_glitch": 0,
+        "n_bad_plausible": 2,
+        "bad_glitch_tickers": [],
+        "bad_glitch_detail": [],
+        "cond_loss_rate_given_fired": 0.003795066413662229,
+        "worst_case_loss_rate_wilson95": 0.013730391047732469,
+        "analytic_ev_point": -5.233396584440233e-06,
+        "analytic_ev_worst_case": -0.00994055803065465,
+        "clustered": {
+          "mean": -5.233396584440234e-06,
+          "se": 4.550187418165494e-05,
+          "t": -0.11501496759336105,
+          "p": 0.9084332583516148,
+          "n": 527,
+          "n_clusters": 66
+        },
+        "worst_day": {
+          "pnl": -0.01069300000000001,
+          "date": "2026-06-24",
+          "ticker": "KXHIGHDEN-26JUN24-T90"
+        },
+        "mean_volume_at_exec": 33.15231499051234,
+        "median_volume_at_exec": 0.0,
+        "mean_oi_at_exec": 6632.741480075899,
+        "mean_volume_5min_after": 40.2415559772296,
+        "median_volume_5min_after": 0.0,
+        "gap_sensitivity": {
+          "0.0": {
+            "n": 3,
+            "mean_pnl": -0.0009193333333333345,
+            "t": -0.11520229034814651,
+            "p": 0.9082847833301908,
+            "n_clusters": 3,
+            "se": 0.007980165416460626
+          },
+          "0.02": {
+            "n": 3,
+            "mean_pnl": -0.0009193333333333345,
+            "t": -0.11520229034814651,
+            "p": 0.9082847833301908,
+            "n_clusters": 3,
+            "se": 0.007980165416460626
+          },
+          "0.05": {
+            "n": 2,
+            "mean_pnl": -0.01069300000000001,
+            "t": NaN,
+            "p": null,
+            "n_clusters": 2,
+            "se": 0.0
+          }
+        },
+        "n_fillable": 89,
+        "fillable_rate": 0.16888045540796964,
+        "fillable_clustered": {
+          "mean": 8.915730337078658e-05,
+          "se": 0.00024100917631322808,
+          "t": 0.36993323131776984,
+          "p": 0.7114322401340858,
+          "n": 89,
+          "n_clusters": 51
+        },
+        "fillable_mean_exec_price": 0.9886516853932585
+      }
+    }
+  },
+  "bonferroni": {
+    "family_side": "long",
+    "family_size": 15,
+    "alpha": 0.05,
+    "corrected_alpha": 0.0033333333333333335,
+    "z_crit_two_sided": 2.935199468866684,
+    "cells": [
+      {
+        "margin": 1,
+        "gap_threshold": 0.0,
+        "n": 71,
+        "mean_pnl": 0.20942721126760563,
+        "t": 4.152516403437222,
+        "p_uncorrected": 3.288391747036101e-05,
+        "n_clusters": 45,
+        "p_bonferroni": 0.0004932587620554152,
+        "significant_uncorrected_a05": true,
+        "significant_bonferroni": true
+      },
+      {
+        "margin": 1,
+        "gap_threshold": 0.02,
+        "n": 70,
+        "mean_pnl": 0.21228607142857142,
+        "t": 4.190360687291226,
+        "p_uncorrected": 2.785113725600752e-05,
+        "n_clusters": 45,
+        "p_bonferroni": 0.0004177670588401128,
+        "significant_uncorrected_a05": true,
+        "significant_bonferroni": true
+      },
+      {
+        "margin": 1,
+        "gap_threshold": 0.05,
+        "n": 68,
+        "mean_pnl": 0.21798189705882354,
+        "t": 4.251344388593307,
+        "p_uncorrected": 2.124911265433127e-05,
+        "n_clusters": 45,
+        "p_bonferroni": 0.00031873668981496905,
+        "significant_uncorrected_a05": true,
+        "significant_bonferroni": true
+      },
+      {
+        "margin": 2,
+        "gap_threshold": 0.0,
+        "n": 25,
+        "mean_pnl": 0.23494196000000003,
+        "t": 5.3795632998262315,
+        "p_uncorrected": 7.466673812572822e-08,
+        "n_clusters": 22,
+        "p_bonferroni": 1.1200010718859232e-06,
+        "significant_uncorrected_a05": true,
+        "significant_bonferroni": true
+      },
+      {
+        "margin": 2,
+        "gap_threshold": 0.02,
+        "n": 25,
+        "mean_pnl": 0.23494196000000003,
+        "t": 5.3795632998262315,
+        "p_uncorrected": 7.466673812572822e-08,
+        "n_clusters": 22,
+        "p_bonferroni": 1.1200010718859232e-06,
+        "significant_uncorrected_a05": true,
+        "significant_bonferroni": true
+      },
+      {
+        "margin": 2,
+        "gap_threshold": 0.05,
+        "n": 24,
+        "mean_pnl": 0.2431765416666667,
+        "t": 5.523405150780085,
+        "p_uncorrected": 3.324918207425753e-08,
+        "n_clusters": 22,
+        "p_bonferroni": 4.98737731113863e-07,
+        "significant_uncorrected_a05": true,
+        "significant_bonferroni": true
+      },
+      {
+        "margin": 3,
+        "gap_threshold": 0.0,
+        "n": 7,
+        "mean_pnl": -0.018582142857142853,
+        "t": -0.44777333716891093,
+        "p_uncorrected": 0.6543167878668332,
+        "n_clusters": 6,
+        "p_bonferroni": 1.0,
+        "significant_uncorrected_a05": false,
+        "significant_bonferroni": false
+      },
+      {
+        "margin": 3,
+        "gap_threshold": 0.02,
+        "n": 7,
+        "mean_pnl": -0.018582142857142853,
+        "t": -0.44777333716891093,
+        "p_uncorrected": 0.6543167878668332,
+        "n_clusters": 6,
+        "p_bonferroni": 1.0,
+        "significant_uncorrected_a05": false,
+        "significant_bonferroni": false
+      },
+      {
+        "margin": 3,
+        "gap_threshold": 0.05,
+        "n": 5,
+        "mean_pnl": -0.040939800000000005,
+        "t": -0.6773538850748244,
+        "p_uncorrected": 0.4981814496868431,
+        "n_clusters": 5,
+        "p_bonferroni": 1.0,
+        "significant_uncorrected_a05": false,
+        "significant_bonferroni": false
+      },
+      {
+        "margin": 4,
+        "gap_threshold": 0.0,
+        "n": 2,
+        "mean_pnl": -0.084809,
+        "t": -1.618247585019427,
+        "p_uncorrected": 0.10560925159160561,
+        "n_clusters": 2,
+        "p_bonferroni": 1.0,
+        "significant_uncorrected_a05": false,
+        "significant_bonferroni": false
+      },
+      {
+        "margin": 4,
+        "gap_threshold": 0.02,
+        "n": 2,
+        "mean_pnl": -0.084809,
+        "t": -1.618247585019427,
+        "p_uncorrected": 0.10560925159160561,
+        "n_clusters": 2,
+        "p_bonferroni": 1.0,
+        "significant_uncorrected_a05": false,
+        "significant_bonferroni": false
+      },
+      {
+        "margin": 4,
+        "gap_threshold": 0.05,
+        "n": 2,
+        "mean_pnl": -0.084809,
+        "t": -1.618247585019427,
+        "p_uncorrected": 0.10560925159160561,
+        "n_clusters": 2,
+        "p_bonferroni": 1.0,
+        "significant_uncorrected_a05": false,
+        "significant_bonferroni": false
+      },
+      {
+        "margin": 5,
+        "gap_threshold": 0.0,
+        "n": 2,
+        "mean_pnl": -0.084809,
+        "t": -1.618247585019427,
+        "p_uncorrected": 0.10560925159160561,
+        "n_clusters": 2,
+        "p_bonferroni": 1.0,
+        "significant_uncorrected_a05": false,
+        "significant_bonferroni": false
+      },
+      {
+        "margin": 5,
+        "gap_threshold": 0.02,
+        "n": 2,
+        "mean_pnl": -0.084809,
+        "t": -1.618247585019427,
+        "p_uncorrected": 0.10560925159160561,
+        "n_clusters": 2,
+        "p_bonferroni": 1.0,
+        "significant_uncorrected_a05": false,
+        "significant_bonferroni": false
+      },
+      {
+        "margin": 5,
+        "gap_threshold": 0.05,
+        "n": 2,
+        "mean_pnl": -0.084809,
+        "t": -1.618247585019427,
+        "p_uncorrected": 0.10560925159160561,
+        "n_clusters": 2,
+        "p_bonferroni": 1.0,
+        "significant_uncorrected_a05": false,
+        "significant_bonferroni": false
+      }
+    ]
+  },
+  "best_margin": {
+    "verdict": "CONFIRMED",
+    "recommended_margin": 1,
+    "candidates": [
+      {
+        "margin": 1,
+        "n_fired": 71,
+        "win_rate": 0.6197183098591549,
+        "mean_pnl": 0.20942721126760563,
+        "t": 4.152516403437222,
+        "p_bonferroni": 0.0004932587620554152,
+        "cond_loss_rate_given_fired": 0.3802816901408451,
+        "worst_case_loss_rate_wilson95": 0.49658143716075775,
+        "analytic_ev_point": 0.2094272112676057,
+        "analytic_ev_worst_case": 0.09312746424769305,
+        "fires_per_week": 7.417910447761194,
+        "ok_n": true,
+        "ok_bonferroni_significant": true,
+        "ok_worst_case_ev_positive": true,
+        "passes_all": true
+      },
+      {
+        "margin": 2,
+        "n_fired": 35,
+        "win_rate": 0.9142857142857143,
+        "mean_pnl": 0.16781568571428573,
+        "t": 4.601059918019277,
+        "p_bonferroni": 1.1200010718859232e-06,
+        "cond_loss_rate_given_fired": 0.08571428571428574,
+        "worst_case_loss_rate_wilson95": 0.22379273970048333,
+        "analytic_ev_point": 0.1678156857142857,
+        "analytic_ev_worst_case": 0.029737231728088155,
+        "fires_per_week": 3.656716417910448,
+        "ok_n": true,
+        "ok_bonferroni_significant": true,
+        "ok_worst_case_ev_positive": true,
+        "passes_all": true
+      },
+      {
+        "margin": 3,
+        "n_fired": 19,
+        "win_rate": 0.8421052631578947,
+        "mean_pnl": -0.006846052631578945,
+        "t": -0.4353063006111194,
+        "p_bonferroni": 1.0,
+        "cond_loss_rate_given_fired": 0.1578947368421053,
+        "worst_case_loss_rate_wilson95": 0.37565475276106236,
+        "analytic_ev_point": -0.006846052631578829,
+        "analytic_ev_worst_case": -0.22460606855053583,
+        "fires_per_week": 1.9850746268656716,
+        "ok_n": true,
+        "ok_bonferroni_significant": false,
+        "ok_worst_case_ev_positive": false,
+        "passes_all": false
+      },
+      {
+        "margin": 4,
+        "n_fired": 7,
+        "win_rate": 0.7142857142857143,
+        "mean_pnl": -0.024231142857142857,
+        "t": -1.1632563121007962,
+        "p_bonferroni": 1.0,
+        "cond_loss_rate_given_fired": 0.2857142857142857,
+        "worst_case_loss_rate_wilson95": 0.641065548235854,
+        "analytic_ev_point": -0.02423114285714291,
+        "analytic_ev_worst_case": -0.37958240537871124,
+        "fires_per_week": 0.7313432835820896,
+        "ok_n": false,
+        "ok_bonferroni_significant": false,
+        "ok_worst_case_ev_positive": false,
+        "passes_all": false
+      },
+      {
+        "margin": 5,
+        "n_fired": 4,
+        "win_rate": 0.5,
+        "mean_pnl": -0.0424045,
+        "t": -1.2580206982476498,
+        "p_bonferroni": 1.0,
+        "cond_loss_rate_given_fired": 0.5,
+        "worst_case_loss_rate_wilson95": 0.8499610108897435,
+        "analytic_ev_point": -0.04240449999999993,
+        "analytic_ev_worst_case": -0.3923655108897434,
+        "fires_per_week": 0.417910447761194,
+        "ok_n": false,
+        "ok_bonferroni_significant": false,
+        "ok_worst_case_ev_positive": false,
+        "passes_all": false
+      }
+    ],
+    "chosen": {
+      "margin": 1,
+      "n_fired": 71,
+      "win_rate": 0.6197183098591549,
+      "mean_pnl": 0.20942721126760563,
+      "t": 4.152516403437222,
+      "p_bonferroni": 0.0004932587620554152,
+      "cond_loss_rate_given_fired": 0.3802816901408451,
+      "worst_case_loss_rate_wilson95": 0.49658143716075775,
+      "analytic_ev_point": 0.2094272112676057,
+      "analytic_ev_worst_case": 0.09312746424769305,
+      "fires_per_week": 7.417910447761194,
+      "ok_n": true,
+      "ok_bonferroni_significant": true,
+      "ok_worst_case_ev_positive": true,
+      "passes_all": true
+    }
+  },
+  "capacity": {
+    "1": {
+      "fires_per_week": 7.417910447761194,
+      "fillable_rate": 0.9577464788732394,
+      "median_fillable_volume_5min": 307.73,
+      "mean_entry_price": 0.40028169014084497,
+      "rough_weekly_notional_usd": 875.1202063485388
+    },
+    "2": {
+      "fires_per_week": 3.656716417910448,
+      "fillable_rate": 0.9428571428571428,
+      "median_fillable_volume_5min": 470.92999999999995,
+      "mean_entry_price": 0.7385714285714285,
+      "rough_weekly_notional_usd": 1199.184586567164
+    },
+    "3": {
+      "fires_per_week": 1.9850746268656716,
+      "fillable_rate": 0.8421052631578947,
+      "median_fillable_volume_5min": 179.69,
+      "mean_entry_price": 0.8468421052631577,
+      "rough_weekly_notional_usd": 254.3721564807541
+    },
+    "4": {
+      "fires_per_week": 0.7313432835820896,
+      "fillable_rate": 0.7142857142857143,
+      "median_fillable_volume_5min": 9.35,
+      "mean_entry_price": 0.7371428571428572,
+      "rough_weekly_notional_usd": 3.6004477611940304
+    },
+    "5": {
+      "fires_per_week": 0.417910447761194,
+      "fillable_rate": 0.75,
+      "median_fillable_volume_5min": 21.74,
+      "mean_entry_price": 0.5399999999999999,
+      "rough_weekly_notional_usd": 3.6795761194029843
+    }
+  },
+  "short_cutoff_sensitivity": {
+    "15": {
+      "n_fired": 1089,
+      "fire_rate": 0.8561320754716981,
+      "fires_per_week": 113.77611940298507,
+      "mean_exec_price": 0.9943250688705237,
+      "median_exec_price": 1.0,
+      "mean_fee": 7.563085399449036e-05,
+      "win_rate": 0.9935720844811754,
+      "n_locked_no_settled_yes": 7,
+      "locked_no_settled_yes_tickers": [
+        "KXHIGHDEN-26JUN24-T90",
+        "KXHIGHDEN-26MAY23-T74",
+        "KXHIGHTBOS-26MAY25-T75",
+        "KXHIGHTBOS-26MAY17-T88",
+        "KXHIGHTDC-26JUL11-T89",
+        "KXHIGHTDAL-26JUN15-T85",
+        "KXHIGHLAX-26MAY20-T76"
+      ],
+      "n_bad_glitch": 0,
+      "n_bad_plausible": 7,
+      "bad_glitch_tickers": [],
+      "bad_glitch_detail": [],
+      "cond_loss_rate_given_fired": 0.006427915518824601,
+      "worst_case_loss_rate_wilson95": 0.013208635275722578,
+      "analytic_ev_point": -0.0008286152433428338,
+      "analytic_ev_worst_case": -0.0076093350002408135,
+      "clustered": {
+        "mean": -0.0008286152433425167,
+        "se": 0.0012696014384408405,
+        "t": -0.6526577697959403,
+        "p": 0.5139769333171538,
+        "n": 1089,
+        "n_clusters": 66
+      },
+      "worst_day": {
+        "pnl": -0.9720369999999999,
+        "date": "2026-05-25",
+        "ticker": "KXHIGHTBOS-26MAY25-T75"
+      },
+      "mean_volume_at_exec": 37.16284664830118,
+      "median_volume_at_exec": 0.0,
+      "mean_oi_at_exec": 9015.052736455462,
+      "mean_volume_5min_after": 68.96957759412305,
+      "median_volume_5min_after": 0.0,
+      "gap_sensitivity": {
+        "0.0": {
+          "n": 44,
+          "mean_pnl": -0.02050822727272729,
+          "t": -0.645691676855727,
+          "p": 0.5184790518931328,
+          "n_clusters": 31,
+          "se": 0.03176164105536339
+        },
+        "0.02": {
+          "n": 23,
+          "mean_pnl": -0.0477308260869565,
+          "t": -0.7993384089402412,
+          "p": 0.42409421327853414,
+          "n_clusters": 20,
+          "se": 0.05971291452169524
+        },
+        "0.05": {
+          "n": 13,
+          "mean_pnl": -0.026163615384615393,
+          "t": -0.34964028085471766,
+          "p": 0.7266086769117441,
+          "n_clusters": 12,
+          "se": 0.07483009486394643
+        }
+      },
+      "n_fillable": 251,
+      "fillable_rate": 0.23048668503213957,
+      "fillable_clustered": {
+        "mean": -0.0038702310756972124,
+        "se": 0.005498556179549483,
+        "t": -0.7038631504924107,
+        "p": 0.481518001662969,
+        "n": 251,
+        "n_clusters": 63
+      },
+      "fillable_mean_exec_price": 0.9916334661354581
+    },
+    "17": {
+      "n_fired": 1030,
+      "fire_rate": 0.809748427672956,
+      "fires_per_week": 107.61194029850746,
+      "mean_exec_price": 0.9950582524271844,
+      "median_exec_price": 1.0,
+      "mean_fee": 1.2253398058252433e-05,
+      "win_rate": 0.9951456310679612,
+      "n_locked_no_settled_yes": 5,
+      "locked_no_settled_yes_tickers": [
+        "KXHIGHDEN-26JUN24-T90",
+        "KXHIGHDEN-26MAY23-T74",
+        "KXHIGHTDC-26JUL11-T89",
+        "KXHIGHTDAL-26JUN15-T85",
+        "KXHIGHLAX-26MAY20-T76"
+      ],
+      "n_bad_glitch": 0,
+      "n_bad_plausible": 5,
+      "bad_glitch_tickers": [],
+      "bad_glitch_detail": [],
+      "cond_loss_rate_given_fired": 0.004854368932038833,
+      "worst_case_loss_rate_wilson95": 0.011313151384516851,
+      "analytic_ev_point": 7.512524271853937e-05,
+      "analytic_ev_worst_case": -0.006383657209759456,
+      "clustered": {
+        "mean": 7.512524271844656e-05,
+        "se": 9.078025570364411e-05,
+        "t": 0.8275504638772556,
+        "p": 0.40792513178645873,
+        "n": 1030,
+        "n_clusters": 66
+      },
+      "worst_day": {
+        "pnl": -0.01069300000000001,
+        "date": "2026-06-24",
+        "ticker": "KXHIGHDEN-26JUN24-T90"
+      },
+      "mean_volume_at_exec": 30.879980582524258,
+      "median_volume_at_exec": 0.0,
+      "mean_oi_at_exec": 9149.672262135922,
+      "mean_volume_5min_after": 44.17309708737865,
+      "median_volume_5min_after": 0.0,
+      "gap_sensitivity": {
+        "0.0": {
+          "n": 9,
+          "mean_pnl": 0.008597666666666663,
+          "t": 0.867102454398168,
+          "p": 0.3858858759282642,
+          "n_clusters": 8,
+          "se": 0.009915398835578279
+        },
+        "0.02": {
+          "n": 7,
+          "mean_pnl": 0.008394999999999991,
+          "t": 0.6586106840064767,
+          "p": 0.5101458003677097,
+          "n_clusters": 7,
+          "se": 0.012746528721537465
+        },
+        "0.05": {
+          "n": 6,
+          "mean_pnl": 0.005133666666666654,
+          "t": 0.3553275108735064,
+          "p": 0.7223442477366708,
+          "n_clusters": 6,
+          "se": 0.01444770390574738
+        }
+      },
+      "n_fillable": 204,
+      "fillable_rate": 0.19805825242718447,
+      "fillable_clustered": {
+        "mean": 0.0004977303921568627,
+        "se": 0.0004361520951393604,
+        "t": 1.1411853747895597,
+        "p": 0.2537927891588141,
+        "n": 204,
+        "n_clusters": 63
+      },
+      "fillable_mean_exec_price": 0.9945588235294117
+    },
+    "19": {
+      "n_fired": 948,
+      "fire_rate": 0.7452830188679245,
+      "fires_per_week": 99.04477611940298,
+      "mean_exec_price": 0.9947784810126582,
+      "median_exec_price": 1.0,
+      "mean_fee": 3.6550632911392436e-06,
+      "win_rate": 0.9947257383966245,
+      "n_locked_no_settled_yes": 5,
+      "locked_no_settled_yes_tickers": [
+        "KXHIGHDEN-26JUN24-T90",
+        "KXHIGHDEN-26MAY23-T74",
+        "KXHIGHTDC-26JUL11-T89",
+        "KXHIGHTDAL-26JUN15-T85",
+        "KXHIGHLAX-26MAY20-T76"
+      ],
+      "n_bad_glitch": 0,
+      "n_bad_plausible": 5,
+      "bad_glitch_tickers": [],
+      "bad_glitch_detail": [],
+      "cond_loss_rate_given_fired": 0.0052742616033755185,
+      "worst_case_loss_rate_wilson95": 0.012286878549009415,
+      "analytic_ev_point": -5.639767932485779e-05,
+      "analytic_ev_worst_case": -0.00706901462495879,
+      "clustered": {
+        "mean": -5.6397679324894564e-05,
+        "se": 2.4220015938441636e-05,
+        "t": -2.328556656124286,
+        "p": 0.019882564520600887,
+        "n": 948,
+        "n_clusters": 66
+      },
+      "worst_day": {
+        "pnl": -0.01069300000000001,
+        "date": "2026-06-24",
+        "ticker": "KXHIGHDEN-26JUN24-T90"
+      },
+      "mean_volume_at_exec": 39.800000000000004,
+      "median_volume_at_exec": 0.0,
+      "mean_oi_at_exec": 9873.765928270042,
+      "mean_volume_5min_after": 48.437035864978895,
+      "median_volume_5min_after": 0.0,
+      "gap_sensitivity": {
+        "0.0": {
+          "n": 5,
+          "mean_pnl": -0.01069300000000001,
+          "t": NaN,
+          "p": null,
+          "n_clusters": 5,
+          "se": 0.0
+        },
+        "0.02": {
+          "n": 5,
+          "mean_pnl": -0.01069300000000001,
+          "t": NaN,
+          "p": null,
+          "n_clusters": 5,
+          "se": 0.0
+        },
+        "0.05": {
+          "n": 5,
+          "mean_pnl": -0.01069300000000001,
+          "t": NaN,
+          "p": null,
+          "n_clusters": 5,
+          "se": 0.0
+        }
+      },
+      "n_fillable": 197,
+      "fillable_rate": 0.20780590717299577,
+      "fillable_clustered": {
+        "mean": -5.427918781725893e-05,
+        "se": 5.3206330299831416e-05,
+        "t": -1.0201640953507165,
+        "p": 0.307650642756816,
+        "n": 197,
+        "n_clusters": 61
+      },
+      "fillable_mean_exec_price": 0.9949746192893401
+    },
+    "21": {
+      "n_fired": 827,
+      "fire_rate": 0.6501572327044025,
+      "fires_per_week": 86.40298507462687,
+      "mean_exec_price": 0.9940145102781136,
+      "median_exec_price": 1.0,
+      "mean_fee": 4.189842805320439e-06,
+      "win_rate": 0.9939540507859734,
+      "n_locked_no_settled_yes": 5,
+      "locked_no_settled_yes_tickers": [
+        "KXHIGHDEN-26JUN24-T90",
+        "KXHIGHDEN-26MAY23-T74",
+        "KXHIGHTDC-26JUL11-T89",
+        "KXHIGHTDAL-26JUN15-T85",
+        "KXHIGHLAX-26MAY20-T76"
+      ],
+      "n_bad_glitch": 0,
+      "n_bad_plausible": 5,
+      "bad_glitch_tickers": [],
+      "bad_glitch_detail": [],
+      "cond_loss_rate_given_fired": 0.006045949214026569,
+      "worst_case_loss_rate_wilson95": 0.014074415516696444,
+      "analytic_ev_point": -6.46493349454951e-05,
+      "analytic_ev_worst_case": -0.00809311563761534,
+      "clustered": {
+        "mean": -6.464933494558651e-05,
+        "se": 2.7824167453842906e-05,
+        "t": -2.323495754287431,
+        "p": 0.020152535474614375,
+        "n": 827,
+        "n_clusters": 66
+      },
+      "worst_day": {
+        "pnl": -0.01069300000000001,
+        "date": "2026-06-24",
+        "ticker": "KXHIGHDEN-26JUN24-T90"
+      },
+      "mean_volume_at_exec": 50.55284159613059,
+      "median_volume_at_exec": 0.0,
+      "mean_oi_at_exec": 11254.413264812578,
+      "mean_volume_5min_after": 62.32330108827086,
+      "median_volume_5min_after": 0.0,
+      "gap_sensitivity": {
+        "0.0": {
+          "n": 5,
+          "mean_pnl": -0.01069300000000001,
+          "t": NaN,
+          "p": null,
+          "n_clusters": 5,
+          "se": 0.0
+        },
+        "0.02": {
+          "n": 5,
+          "mean_pnl": -0.01069300000000001,
+          "t": NaN,
+          "p": null,
+          "n_clusters": 5,
+          "se": 0.0
+        },
+        "0.05": {
+          "n": 5,
+          "mean_pnl": -0.01069300000000001,
+          "t": NaN,
+          "p": null,
+          "n_clusters": 5,
+          "se": 0.0
+        }
+      },
+      "n_fillable": 187,
+      "fillable_rate": 0.22611850060459493,
+      "fillable_clustered": {
+        "mean": -0.00011436363636363647,
+        "se": 7.991587595953918e-05,
+        "t": -1.4310502761871489,
+        "p": 0.1524158065559158,
+        "n": 187,
+        "n_clusters": 61
+      },
+      "fillable_mean_exec_price": 0.9894117647058822
+    }
+  },
+  "by_city": {
+    "KXHIGHDEN": {
+      "name": "Denver",
+      "station": "KDEN",
+      "n_city_days": 65,
+      "by_margin": {
+        "1": {
+          "fired": 9,
+          "mean_pnl": 0.10273033333333334,
+          "win_rate": 0.5555555555555556,
+          "n_settled_wrong_way": 4
+        },
+        "2": {
+          "fired": 4,
+          "mean_pnl": 0.12020075000000001,
+          "win_rate": 1.0,
+          "n_settled_wrong_way": 0
+        },
+        "3": {
+          "fired": 2,
+          "mean_pnl": 0.018656000000000016,
+          "win_rate": 1.0,
+          "n_settled_wrong_way": 0
+        },
+        "4": {
+          "fired": 2,
+          "mean_pnl": 0.0,
+          "win_rate": 1.0,
+          "n_settled_wrong_way": 0
+        },
+        "5": {
+          "fired": 2,
+          "mean_pnl": 0.0,
+          "win_rate": 1.0,
+          "n_settled_wrong_way": 0
+        }
+      }
+    },
+    "KXHIGHMIA": {
+      "name": "Miami",
+      "station": "KMIA",
+      "n_city_days": 65,
+      "by_margin": {
+        "1": {
+          "fired": 11,
+          "mean_pnl": 0.3866066363636364,
+          "win_rate": 0.7272727272727273,
+          "n_settled_wrong_way": 3
+        },
+        "2": {
+          "fired": 8,
+          "mean_pnl": 0.113609,
+          "win_rate": 0.75,
+          "n_settled_wrong_way": 2
+        },
+        "3": {
+          "fired": 6,
+          "mean_pnl": -0.04045083333333333,
+          "win_rate": 0.6666666666666666,
+          "n_settled_wrong_way": 2
+        },
+        "4": {
+          "fired": 1,
+          "mean_pnl": -0.010693000000000001,
+          "win_rate": 0.0,
+          "n_settled_wrong_way": 1
+        },
+        "5": {
+          "fired": 1,
+          "mean_pnl": -0.010693000000000001,
+          "win_rate": 0.0,
+          "n_settled_wrong_way": 1
+        }
+      }
+    },
+    "KXHIGHCHI": {
+      "name": "Chicago (Midway)",
+      "station": "KMDW",
+      "n_city_days": 64,
+      "by_margin": {
+        "1": {
+          "fired": 0,
+          "mean_pnl": null,
+          "win_rate": null,
+          "n_settled_wrong_way": 0
+        },
+        "2": {
+          "fired": 0,
+          "mean_pnl": null,
+          "win_rate": null,
+          "n_settled_wrong_way": 0
+        },
+        "3": {
+          "fired": 0,
+          "mean_pnl": null,
+          "win_rate": null,
+          "n_settled_wrong_way": 0
+        },
+        "4": {
+          "fired": 0,
+          "mean_pnl": null,
+          "win_rate": null,
+          "n_settled_wrong_way": 0
+        },
+        "5": {
+          "fired": 0,
+          "mean_pnl": null,
+          "win_rate": null,
+          "n_settled_wrong_way": 0
+        }
+      }
+    },
+    "KXHIGHTBOS": {
+      "name": "Boston",
+      "station": "KBOS",
+      "n_city_days": 67,
+      "by_margin": {
+        "1": {
+          "fired": 7,
+          "mean_pnl": 0.34593371428571423,
+          "win_rate": 0.8571428571428571,
+          "n_settled_wrong_way": 1
+        },
+        "2": {
+          "fired": 4,
+          "mean_pnl": 0.12344799999999999,
+          "win_rate": 1.0,
+          "n_settled_wrong_way": 0
+        },
+        "3": {
+          "fired": 2,
+          "mean_pnl": 0.0,
+          "win_rate": 1.0,
+          "n_settled_wrong_way": 0
+        },
+        "4": {
+          "fired": 1,
+          "mean_pnl": 0.0,
+          "win_rate": 1.0,
+          "n_settled_wrong_way": 0
+        },
+        "5": {
+          "fired": 0,
+          "mean_pnl": null,
+          "win_rate": null,
+          "n_settled_wrong_way": 0
+        }
+      }
+    },
+    "KXHIGHAUS": {
+      "name": "Austin (Bergstrom)",
+      "station": "KAUS",
+      "n_city_days": 64,
+      "by_margin": {
+        "1": {
+          "fired": 2,
+          "mean_pnl": 0.12293,
+          "win_rate": 1.0,
+          "n_settled_wrong_way": 0
+        },
+        "2": {
+          "fired": 0,
+          "mean_pnl": null,
+          "win_rate": null,
+          "n_settled_wrong_way": 0
+        },
+        "3": {
+          "fired": 0,
+          "mean_pnl": null,
+          "win_rate": null,
+          "n_settled_wrong_way": 0
+        },
+        "4": {
+          "fired": 0,
+          "mean_pnl": null,
+          "win_rate": null,
+          "n_settled_wrong_way": 0
+        },
+        "5": {
+          "fired": 0,
+          "mean_pnl": null,
+          "win_rate": null,
+          "n_settled_wrong_way": 0
+        }
+      }
+    },
+    "KXHIGHTSEA": {
+      "name": "Seattle",
+      "station": "KSEA",
+      "n_city_days": 66,
+      "by_margin": {
+        "1": {
+          "fired": 3,
+          "mean_pnl": 0.11203300000000001,
+          "win_rate": 0.3333333333333333,
+          "n_settled_wrong_way": 2
+        },
+        "2": {
+          "fired": 1,
+          "mean_pnl": 0.603508,
+          "win_rate": 1.0,
+          "n_settled_wrong_way": 0
+        },
+        "3": {
+          "fired": 0,
+          "mean_pnl": null,
+          "win_rate": null,
+          "n_settled_wrong_way": 0
+        },
+        "4": {
+          "fired": 0,
+          "mean_pnl": null,
+          "win_rate": null,
+          "n_settled_wrong_way": 0
+        },
+        "5": {
+          "fired": 0,
+          "mean_pnl": null,
+          "win_rate": null,
+          "n_settled_wrong_way": 0
+        }
+      }
+    },
+    "KXHIGHTSFO": {
+      "name": "San Francisco",
+      "station": "KSFO",
+      "n_city_days": 63,
+      "by_margin": {
+        "1": {
+          "fired": 10,
+          "mean_pnl": 0.11670699999999998,
+          "win_rate": 0.6,
+          "n_settled_wrong_way": 4
+        },
+        "2": {
+          "fired": 5,
+          "mean_pnl": 0.23374579999999998,
+          "win_rate": 1.0,
+          "n_settled_wrong_way": 0
+        },
+        "3": {
+          "fired": 2,
+          "mean_pnl": 0.0610415,
+          "win_rate": 1.0,
+          "n_settled_wrong_way": 0
+        },
+        "4": {
+          "fired": 0,
+          "mean_pnl": null,
+          "win_rate": null,
+          "n_settled_wrong_way": 0
+        },
+        "5": {
+          "fired": 0,
+          "mean_pnl": null,
+          "win_rate": null,
+          "n_settled_wrong_way": 0
+        }
+      }
+    },
+    "KXHIGHTMIN": {
+      "name": "Minneapolis",
+      "station": "KMSP",
+      "n_city_days": 65,
+      "by_margin": {
+        "1": {
+          "fired": 0,
+          "mean_pnl": null,
+          "win_rate": null,
+          "n_settled_wrong_way": 0
+        },
+        "2": {
+          "fired": 0,
+          "mean_pnl": null,
+          "win_rate": null,
+          "n_settled_wrong_way": 0
+        },
+        "3": {
+          "fired": 0,
+          "mean_pnl": null,
+          "win_rate": null,
+          "n_settled_wrong_way": 0
+        },
+        "4": {
+          "fired": 0,
+          "mean_pnl": null,
+          "win_rate": null,
+          "n_settled_wrong_way": 0
+        },
+        "5": {
+          "fired": 0,
+          "mean_pnl": null,
+          "win_rate": null,
+          "n_settled_wrong_way": 0
+        }
+      }
+    },
+    "KXHIGHTDC": {
+      "name": "Washington DC",
+      "station": "KDCA",
+      "n_city_days": 38,
+      "by_margin": {
+        "1": {
+          "fired": 3,
+          "mean_pnl": 0.8384999999999999,
+          "win_rate": 1.0,
+          "n_settled_wrong_way": 0
+        },
+        "2": {
+          "fired": 1,
+          "mean_pnl": 0.49250700000000003,
+          "win_rate": 1.0,
+          "n_settled_wrong_way": 0
+        },
+        "3": {
+          "fired": 0,
+          "mean_pnl": null,
+          "win_rate": null,
+          "n_settled_wrong_way": 0
+        },
+        "4": {
+          "fired": 0,
+          "mean_pnl": null,
+          "win_rate": null,
+          "n_settled_wrong_way": 0
+        },
+        "5": {
+          "fired": 0,
+          "mean_pnl": null,
+          "win_rate": null,
+          "n_settled_wrong_way": 0
+        }
+      }
+    },
+    "KXHIGHTATL": {
+      "name": "Atlanta",
+      "station": "KATL",
+      "n_city_days": 67,
+      "by_margin": {
+        "1": {
+          "fired": 6,
+          "mean_pnl": 0.051822166666666676,
+          "win_rate": 0.3333333333333333,
+          "n_settled_wrong_way": 4
+        },
+        "2": {
+          "fired": 2,
+          "mean_pnl": 0.03742399999999998,
+          "win_rate": 1.0,
+          "n_settled_wrong_way": 0
+        },
+        "3": {
+          "fired": 2,
+          "mean_pnl": 0.03742399999999998,
+          "win_rate": 1.0,
+          "n_settled_wrong_way": 0
+        },
+        "4": {
+          "fired": 1,
+          "mean_pnl": 0.0,
+          "win_rate": 1.0,
+          "n_settled_wrong_way": 0
+        },
+        "5": {
+          "fired": 0,
+          "mean_pnl": null,
+          "win_rate": null,
+          "n_settled_wrong_way": 0
+        }
+      }
+    },
+    "KXHIGHTDAL": {
+      "name": "Dallas",
+      "station": "KDFW",
+      "n_city_days": 65,
+      "by_margin": {
+        "1": {
+          "fired": 2,
+          "mean_pnl": -0.060597999999999985,
+          "win_rate": 0.5,
+          "n_settled_wrong_way": 1
+        },
+        "2": {
+          "fired": 1,
+          "mean_pnl": 0.39306700000000006,
+          "win_rate": 1.0,
+          "n_settled_wrong_way": 0
+        },
+        "3": {
+          "fired": 1,
+          "mean_pnl": 0.03731200000000003,
+          "win_rate": 1.0,
+          "n_settled_wrong_way": 0
+        },
+        "4": {
+          "fired": 0,
+          "mean_pnl": null,
+          "win_rate": null,
+          "n_settled_wrong_way": 0
+        },
+        "5": {
+          "fired": 0,
+          "mean_pnl": null,
+          "win_rate": null,
+          "n_settled_wrong_way": 0
+        }
+      }
+    },
+    "KXHIGHTSATX": {
+      "name": "San Antonio",
+      "station": "KSAT",
+      "n_city_days": 66,
+      "by_margin": {
+        "1": {
+          "fired": 1,
+          "mean_pnl": -0.6952320000000001,
+          "win_rate": 0.0,
+          "n_settled_wrong_way": 1
+        },
+        "2": {
+          "fired": 0,
+          "mean_pnl": null,
+          "win_rate": null,
+          "n_settled_wrong_way": 0
+        },
+        "3": {
+          "fired": 0,
+          "mean_pnl": null,
+          "win_rate": null,
+          "n_settled_wrong_way": 0
+        },
+        "4": {
+          "fired": 0,
+          "mean_pnl": null,
+          "win_rate": null,
+          "n_settled_wrong_way": 0
+        },
+        "5": {
+          "fired": 0,
+          "mean_pnl": null,
+          "win_rate": null,
+          "n_settled_wrong_way": 0
+        }
+      }
+    },
+    "KXHIGHNY": {
+      "name": "New York (Central Park)",
+      "station": "NYC",
+      "n_city_days": 66,
+      "by_margin": {
+        "1": {
+          "fired": 3,
+          "mean_pnl": 0.16139699999999998,
+          "win_rate": 1.0,
+          "n_settled_wrong_way": 0
+        },
+        "2": {
+          "fired": 3,
+          "mean_pnl": 0.18389266666666662,
+          "win_rate": 1.0,
+          "n_settled_wrong_way": 0
+        },
+        "3": {
+          "fired": 2,
+          "mean_pnl": 0.0,
+          "win_rate": 1.0,
+          "n_settled_wrong_way": 0
+        },
+        "4": {
+          "fired": 1,
+          "mean_pnl": 0.0,
+          "win_rate": 1.0,
+          "n_settled_wrong_way": 0
+        },
+        "5": {
+          "fired": 0,
+          "mean_pnl": null,
+          "win_rate": null,
+          "n_settled_wrong_way": 0
+        }
+      }
+    },
+    "KXHIGHTOKC": {
+      "name": "Oklahoma City",
+      "station": "KOKC",
+      "n_city_days": 66,
+      "by_margin": {
+        "1": {
+          "fired": 4,
+          "mean_pnl": 0.22886375,
+          "win_rate": 0.5,
+          "n_settled_wrong_way": 2
+        },
+        "2": {
+          "fired": 1,
+          "mean_pnl": 0.0,
+          "win_rate": 1.0,
+          "n_settled_wrong_way": 0
+        },
+        "3": {
+          "fired": 0,
+          "mean_pnl": null,
+          "win_rate": null,
+          "n_settled_wrong_way": 0
+        },
+        "4": {
+          "fired": 0,
+          "mean_pnl": null,
+          "win_rate": null,
+          "n_settled_wrong_way": 0
+        },
+        "5": {
+          "fired": 0,
+          "mean_pnl": null,
+          "win_rate": null,
+          "n_settled_wrong_way": 0
+        }
+      }
+    },
+    "KXHIGHTLV": {
+      "name": "Las Vegas",
+      "station": "KLAS",
+      "n_city_days": 63,
+      "by_margin": {
+        "1": {
+          "fired": 0,
+          "mean_pnl": null,
+          "win_rate": null,
+          "n_settled_wrong_way": 0
+        },
+        "2": {
+          "fired": 0,
+          "mean_pnl": null,
+          "win_rate": null,
+          "n_settled_wrong_way": 0
+        },
+        "3": {
+          "fired": 0,
+          "mean_pnl": null,
+          "win_rate": null,
+          "n_settled_wrong_way": 0
+        },
+        "4": {
+          "fired": 0,
+          "mean_pnl": null,
+          "win_rate": null,
+          "n_settled_wrong_way": 0
+        },
+        "5": {
+          "fired": 0,
+          "mean_pnl": null,
+          "win_rate": null,
+          "n_settled_wrong_way": 0
+        }
+      }
+    },
+    "KXHIGHTPHX": {
+      "name": "Phoenix",
+      "station": "KPHX",
+      "n_city_days": 64,
+      "by_margin": {
+        "1": {
+          "fired": 0,
+          "mean_pnl": null,
+          "win_rate": null,
+          "n_settled_wrong_way": 0
+        },
+        "2": {
+          "fired": 0,
+          "mean_pnl": null,
+          "win_rate": null,
+          "n_settled_wrong_way": 0
+        },
+        "3": {
+          "fired": 0,
+          "mean_pnl": null,
+          "win_rate": null,
+          "n_settled_wrong_way": 0
+        },
+        "4": {
+          "fired": 0,
+          "mean_pnl": null,
+          "win_rate": null,
+          "n_settled_wrong_way": 0
+        },
+        "5": {
+          "fired": 0,
+          "mean_pnl": null,
+          "win_rate": null,
+          "n_settled_wrong_way": 0
+        }
+      }
+    },
+    "KXHIGHTHOU": {
+      "name": "Houston (Hobby)",
+      "station": "KHOU",
+      "n_city_days": 64,
+      "by_margin": {
+        "1": {
+          "fired": 1,
+          "mean_pnl": -0.137917,
+          "win_rate": 0.0,
+          "n_settled_wrong_way": 1
+        },
+        "2": {
+          "fired": 0,
+          "mean_pnl": null,
+          "win_rate": null,
+          "n_settled_wrong_way": 0
+        },
+        "3": {
+          "fired": 0,
+          "mean_pnl": null,
+          "win_rate": null,
+          "n_settled_wrong_way": 0
+        },
+        "4": {
+          "fired": 0,
+          "mean_pnl": null,
+          "win_rate": null,
+          "n_settled_wrong_way": 0
+        },
+        "5": {
+          "fired": 0,
+          "mean_pnl": null,
+          "win_rate": null,
+          "n_settled_wrong_way": 0
+        }
+      }
+    },
+    "KXHIGHPHIL": {
+      "name": "Philadelphia",
+      "station": "KPHL",
+      "n_city_days": 65,
+      "by_margin": {
+        "1": {
+          "fired": 3,
+          "mean_pnl": -0.027871666666666683,
+          "win_rate": 0.3333333333333333,
+          "n_settled_wrong_way": 2
+        },
+        "2": {
+          "fired": 1,
+          "mean_pnl": 0.06544299999999996,
+          "win_rate": 1.0,
+          "n_settled_wrong_way": 0
+        },
+        "3": {
+          "fired": 0,
+          "mean_pnl": null,
+          "win_rate": null,
+          "n_settled_wrong_way": 0
+        },
+        "4": {
+          "fired": 0,
+          "mean_pnl": null,
+          "win_rate": null,
+          "n_settled_wrong_way": 0
+        },
+        "5": {
+          "fired": 0,
+          "mean_pnl": null,
+          "win_rate": null,
+          "n_settled_wrong_way": 0
+        }
+      }
+    },
+    "KXHIGHTNOLA": {
+      "name": "New Orleans",
+      "station": "KMSY",
+      "n_city_days": 67,
+      "by_margin": {
+        "1": {
+          "fired": 1,
+          "mean_pnl": 0.872608,
+          "win_rate": 1.0,
+          "n_settled_wrong_way": 0
+        },
+        "2": {
+          "fired": 1,
+          "mean_pnl": 0.0,
+          "win_rate": 1.0,
+          "n_settled_wrong_way": 0
+        },
+        "3": {
+          "fired": 0,
+          "mean_pnl": null,
+          "win_rate": null,
+          "n_settled_wrong_way": 0
+        },
+        "4": {
+          "fired": 0,
+          "mean_pnl": null,
+          "win_rate": null,
+          "n_settled_wrong_way": 0
+        },
+        "5": {
+          "fired": 0,
+          "mean_pnl": null,
+          "win_rate": null,
+          "n_settled_wrong_way": 0
+        }
+      }
+    },
+    "KXHIGHLAX": {
+      "name": "Los Angeles",
+      "station": "KLAX",
+      "n_city_days": 62,
+      "by_margin": {
+        "1": {
+          "fired": 5,
+          "mean_pnl": 0.2921588,
+          "win_rate": 0.6,
+          "n_settled_wrong_way": 2
+        },
+        "2": {
+          "fired": 3,
+          "mean_pnl": 0.213434,
+          "win_rate": 0.6666666666666666,
+          "n_settled_wrong_way": 1
+        },
+        "3": {
+          "fired": 2,
+          "mean_pnl": -0.07946249999999999,
+          "win_rate": 0.5,
+          "n_settled_wrong_way": 1
+        },
+        "4": {
+          "fired": 1,
+          "mean_pnl": -0.15892499999999998,
+          "win_rate": 0.0,
+          "n_settled_wrong_way": 1
+        },
+        "5": {
+          "fired": 1,
+          "mean_pnl": -0.15892499999999998,
+          "win_rate": 0.0,
+          "n_settled_wrong_way": 1
+        }
+      }
+    }
+  }
+}

@@ -2476,3 +2476,16 @@ VERDICT: PROMISING CANDIDATE, NOT confirmed. First positive Kalshi mechanism (re
 by 42-day window. NEXT (deep-history unlock): re-run on 1-2 YEARS (IEM 1-min back ~20y, Kalshi wx markets established) -> n=15 ->
 hundreds, measure true CLI-disagree loss rate + margin robustness (no cherry-pick) + forward gate. A better obs source (official
 NWS running-max) would shrink the tail. Do NOT deploy on n=15.
+
+## KALSHI-WX-NOWCAST-CONFIRMED (2026-07-18, farm K-WX) — FIRST CONFIRMED LEGAL KALSHI EDGE (small)
+Deep-history re-run (n=1272 city-days; but Kalshi API bottoms out 2026-05-12 -> true window only 67 days, ~1.6x). All 5 margins
+x 3 gaps, Bonferroni (15-cell, corrected alpha=0.0033, |t|>=2.94). Independently verified JSON.
+- margin=2F LONG: n=35, win 91.4%, mean exec 0.739, +0.168/ct net, t=4.60 (Bonferroni-SIG). cond loss 8.6%, Wilson-95 worst
+  22.4% -> worst-case EV STILL +0.030. 94% fillable, ~1784 ct trade in 5min after. fires 3.66/wk. CONFIRMED.
+- margin=1F: +0.209/ct t=4.15 (also Bonferroni-sig) BUT 38% loss rate = higher-variance probabilistic bet, not "locked".
+- margin 3-5F: NOT sig, don't fix tail (same 2-3 misses recur), shrink n.
+- TAIL anatomy: 3 losses at m=2 = 1 sensor GLITCH (LAX 120F, filterable) + 2 Miami (station bias). Attackable via refinement.
+- SHORT side: NULL confirmed (~0 EV, 23% fillable). Capacity small (~$1.2k/wk notional throughput) -> niche, non-scalable.
+VERDICT: CONFIRMED, first legal Kalshi edge. Real but SMALL/capacity-limited; 67-day max backtest (API limit) -> forward gate
+grows n. Mechanism: Kalshi retail underprices the observed running-max once it clears a strike. NEXT: refine (filter glitch,
+per-station margin esp Miami, sustained-above-strike, multi-source obs, xcity-corr sizing) + forward paper gate. Do the refinement.

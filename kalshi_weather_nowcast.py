@@ -737,6 +737,21 @@ def main():
     print(f"  {OUT_REPORT}")
 
 
+def classify_miss(strike, full_day_asos_max):
+    """Distinguish a plausible ASOS-vs-official-CLI methodology/rounding gap from a
+    raw-feed sensor/transmission glitch. The free, un-QC'd IEM 1-min ASOS product
+    occasionally contains physically implausible single readings (e.g. one LAX May
+    reading of 120F -- discovered while building this report; there is no realistic
+    weather explanation for that value). overshoot>8F above strike, or an absolute
+    reading above a physically-implausible bound for continental-US summer temps, is
+    flagged 'glitch'; everything else that still disagreed with the official CLI is
+    'plausible' (real sub-quality-controlled station reading a few degrees hot)."""
+    overshoot = full_day_asos_max - strike
+    if overshoot > 8 or full_day_asos_max > 125 or full_day_asos_max < -60:
+        return "glitch"
+    return "plausible"
+
+
 def side_stats(fired, side_key, bad_key, n_city_days, n_weeks=None):
     """fired = list of (record, side_dict) pairs where side_dict has pnl/exec_price/etc."""
     pnls = [sd["pnl"] for _, sd in fired]
@@ -750,6 +765,8 @@ def side_stats(fired, side_key, bad_key, n_city_days, n_weeks=None):
     fillable_vols_5 = [sd["volume_5min_after"] for _, sd in fired]
     bad = [(r, sd) for r, sd in fired if sd.get(bad_key)]
     fillable = [(r, sd) for r, sd in fired if sd.get("fillable")]
+    bad_glitch = [(r, sd) for r, sd in bad if classify_miss(r["strike"], r["full_day_asos_max"]) == "glitch"]
+    bad_plausible = [(r, sd) for r, sd in bad if classify_miss(r["strike"], r["full_day_asos_max"]) == "plausible"]
 
     n_fired = len(fired)
     mean_price = (sum(prices) / len(prices)) if prices else None
@@ -797,6 +814,13 @@ def side_stats(fired, side_key, bad_key, n_city_days, n_weeks=None):
         "win_rate": win_rate,
         f"n_{bad_key}": n_bad,
         f"{bad_key}_tickers": [r["ticker"] for r, _ in bad],
+        "n_bad_glitch": len(bad_glitch),
+        "n_bad_plausible": len(bad_plausible),
+        "bad_glitch_tickers": [r["ticker"] for r, _ in bad_glitch],
+        "bad_glitch_detail": [
+            {"ticker": r["ticker"], "strike": r["strike"], "asos_full_day_max": r["full_day_asos_max"]}
+            for r, _ in bad_glitch
+        ],
         "cond_loss_rate_given_fired": cond_loss_rate,
         "worst_case_loss_rate_wilson95": worst_case_loss_rate,
         "analytic_ev_point": analytic_ev_point,
@@ -1093,6 +1117,10 @@ def write_report(summary, results):
                              f"{fmt(s['cond_loss_rate_given_fired'],3)}** | Wilson-95 worst-case upper bound on "
                              f"that loss rate given only n={s['n_fired']} fired events: "
                              f"**{fmt(s['worst_case_loss_rate_wilson95'],3)}**")
+                lines.append(f"  - Miss decomposition: {s['n_bad_plausible']} plausible ASOS-vs-CLI methodology "
+                             f"gap(s) (station reads a few degrees hot vs the certified CLI value) vs "
+                             f"**{s['n_bad_glitch']} raw-feed glitch(es)** (overshoot>8F or a physically "
+                             f"implausible reading) {s['bad_glitch_detail']}")
                 lines.append(f"- Analytic EV/contract at point-estimate loss rate: {fmt(s['analytic_ev_point'])} "
                              f"(sanity check vs. empirical mean PnL above) | at Wilson-95 **worst-case** loss rate: "
                              f"**{fmt(s['analytic_ev_worst_case'])}**")
@@ -1223,6 +1251,18 @@ def verdict_text(summary):
                f"(|t| >= {fmt(bf['z_crit_two_sided'],2)} required). See section 2c of the report for the full "
                f"cell-by-cell table -- this determines which margins survive multiple-testing scrutiny versus "
                f"which only looked significant under an uncorrected single-test alpha of 0.05.")
+    out.append("")
+    g1 = summary["by_margin"]["1"]["long"]
+    out.append(f"**Tail-risk root cause, not just its rate:** decomposing the {g1['n_locked_yes_settled_no']} "
+               f"margin=1 misses finds {g1['n_bad_glitch']} are outright **raw-feed sensor/transmission "
+               f"glitches**, not genuine ASOS-vs-official-CLI methodology gaps -- e.g. "
+               f"{g1['bad_glitch_detail'][0] if g1['bad_glitch_detail'] else 'n/a'}: a single free 1-min ASOS "
+               f"reading that is not a physically plausible temperature for that city/season. This is exactly "
+               f"the un-QC'd-feed risk the original 42-day report warned about in the abstract; deep history "
+               f"now shows a concrete example of it. It also means part of the tail is in principle cheaply "
+               f"fixable with a basic outlier filter (reject single-point spikes far outside the recent rolling "
+               f"range before treating them as a settlement-deciding cross) rather than being an irreducible "
+               f"property of the strategy -- a natural next iteration, not implemented here.")
     out.append("")
 
     out.append("**SHORT side (buy NO late in the day, well below strike):**\n")

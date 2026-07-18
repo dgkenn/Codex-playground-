@@ -73,6 +73,7 @@ import sys
 import time
 import traceback
 from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -92,6 +93,7 @@ REQUIRE_POLL_FRACTION = 0.5      # ...or at least this fraction of total polls, 
 ORDERBOOK_VERIFY_TOP_N = 400     # cap on how many distinct candidate keys we re-verify via /orderbook per poll
 REQUEST_TIMEOUT = 25
 MAX_RETRIES = 3
+ORDERBOOK_VERIFY_WORKERS = 24     # thread pool size for concurrent /orderbook re-verification
 
 
 # ---------------------------------------------------------------------------
@@ -126,6 +128,9 @@ def kalshi_fee(price_dollars: float, contracts: float = 1.0, fee_multiplier: flo
 
 _session = requests.Session()
 _session.headers.update(HEADERS)
+_adapter = requests.adapters.HTTPAdapter(pool_connections=64, pool_maxsize=64)
+_session.mount("https://", _adapter)
+_session.mount("http://", _adapter)
 
 
 def _get(path: str, params: Optional[dict] = None) -> dict:
@@ -164,16 +169,27 @@ def fetch_all_open_events(page_limit: int = 200, max_pages: int = 500) -> List[d
     return events
 
 
-def fetch_series_fee_multipliers(series_tickers: List[str]) -> Dict[str, float]:
-    """Best-effort lookup of fee_multiplier per series (defaults to 1.0)."""
+def _fetch_one_series_fee(t: str) -> Tuple[str, float]:
+    try:
+        d = _get(f"/series/{t}")
+        s = d.get("series", {})
+        return t, float(s.get("fee_multiplier", 1.0) or 1.0)
+    except Exception:
+        return t, 1.0
+
+
+def fetch_series_fee_multipliers(series_tickers: List[str], workers: int = 24) -> Dict[str, float]:
+    """Best-effort lookup of fee_multiplier per series (defaults to 1.0).
+    Kalshi has thousands of series in total, but only a handful are ever
+    involved in an actual flagged candidate on a given poll, so this is
+    called lazily (only for series that appear in flagged candidates) and
+    in parallel, rather than for the whole ~3000-series universe up front."""
     out: Dict[str, float] = {}
-    for t in series_tickers:
-        try:
-            d = _get(f"/series/{t}")
-            s = d.get("series", {})
-            out[t] = float(s.get("fee_multiplier", 1.0) or 1.0)
-        except Exception:
-            out[t] = 1.0
+    if not series_tickers:
+        return out
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        for t, mult in pool.map(_fetch_one_series_fee, series_tickers):
+            out[t] = mult
     return out
 
 
@@ -451,6 +467,66 @@ def scan_complement(events: List[dict], fee_mult: Dict[str, float]) -> List[Viol
     return out
 
 
+def verify_exhaustive_numeric_partition(mkts: List[dict]) -> bool:
+    """PROOF of collective exhaustiveness for a range/bracket event, not just
+    Kalshi's `mutually_exclusive` flag (which only guarantees "at most one").
+
+    This matters because Kalshi's `mutually_exclusive=true` flag is used on
+    BOTH (a) genuine tiled numeric brackets (temperature/price ranges, which
+    ARE collectively exhaustive) and (b) named-candidate/categorical fields
+    (elections, "who wins" markets) that are only a *partial list* of
+    possible outcomes -- e.g. a primary race can list 2 minor candidates
+    whose combined YES-ask sums to a few cents because the market assigns
+    ~95% probability to an unlisted candidate winning. Buying "all" legs of
+    a non-exhaustive set is NOT a guaranteed $1 payout -- it is a bet that
+    one of the *listed* options wins, which is exactly the false-completeness
+    trap this scan must avoid.
+
+    We therefore only allow Structure 3 (event-sum) on events where EVERY
+    market has a numeric strike_type ("less"/"between"/"greater") that can
+    be proven, from Kalshi's own floor_strike/cap_strike fields, to TILE the
+    real line with no gaps and no overlaps: exactly one unbounded-below
+    ("less") leg, exactly one unbounded-above ("greater") leg, and
+    contiguous "between" brackets in between. Categorical/candidate-style
+    events (strike_type == "custom") are excluded entirely from S3, even
+    though Kalshi flags them mutually_exclusive=true, because exhaustiveness
+    cannot be verified from structured fields alone.
+    """
+    if len(mkts) < 2:
+        return False
+    for m in mkts:
+        if m.get("strike_type") not in ("less", "between", "greater"):
+            return False
+    less = [m for m in mkts if m["strike_type"] == "less"]
+    greater = [m for m in mkts if m["strike_type"] == "greater"]
+    between = [m for m in mkts if m["strike_type"] == "between"]
+    if len(less) != 1 or len(greater) != 1:
+        return False
+    intervals: List[Tuple[float, float]] = [(-math.inf, f(less[0].get("cap_strike")))]
+    for m in sorted(between, key=lambda m: f(m.get("floor_strike"))):
+        fl, cp = f(m.get("floor_strike")), f(m.get("cap_strike"))
+        if cp <= fl:
+            return False
+        intervals.append((fl, cp))
+    intervals.append((f(greater[0].get("floor_strike")), math.inf))
+    gaps = []
+    for i in range(len(intervals) - 1):
+        gap = intervals[i + 1][0] - intervals[i][1]
+        if gap < -1e-6:
+            return False  # overlapping brackets -> ambiguous, not safe
+        gaps.append(gap)
+    if not gaps:
+        return True
+    med = sorted(gaps)[len(gaps) // 2]
+    finite_widths = [b - a for a, b in intervals[1:-1]]
+    typical_width = (sum(finite_widths) / len(finite_widths)) if finite_widths else 1.0
+    outlier_tol = max(med, 0.0) + max(typical_width * 0.5, 1.0)
+    for g in gaps:
+        if g > outlier_tol:
+            return False  # a genuinely missing bracket -> not proven exhaustive
+    return True
+
+
 def scan_event_sum(events: List[dict], fee_mult: Dict[str, float]) -> List[Violation]:
     out: List[Violation] = []
     for ev in events:
@@ -459,6 +535,8 @@ def scan_event_sum(events: List[dict], fee_mult: Dict[str, float]) -> List[Viola
         mkts = ev.get("markets", [])
         n = len(mkts)
         if n < 2:
+            continue
+        if not verify_exhaustive_numeric_partition(mkts):
             continue
         fmult = fee_mult.get(ev.get("series_ticker", ""), 1.0)
         quotes = [parse_quote(m) for m in mkts]
@@ -575,35 +653,72 @@ def run(polls: int, interval: float, out_prefix: str) -> None:
             continue
         fetch_s = time.time() - t0
 
-        series_here = {ev.get("series_ticker", "") for ev in events if ev.get("series_ticker")}
-        new_series = series_here - all_series_seen
-        if new_series:
-            fee_mult_cache.update(fetch_series_fee_multipliers(sorted(new_series)))
-            all_series_seen |= new_series
-
         n_events = len(events)
         n_markets = sum(len(ev.get("markets", [])) for ev in events)
         n_mece_events = sum(1 for ev in events if ev.get("mutually_exclusive"))
 
+        # Pass 1: cheap candidate discovery using cached / default (1.0) fee
+        # multipliers. Kalshi has ~3000 distinct series in total but a given
+        # poll only ever flags candidates in a handful of them, so we do NOT
+        # eagerly fetch fee_multiplier for the whole universe (that would be
+        # ~3000 sequential/parallel /series calls every poll). Instead we
+        # discover which series are actually involved in a flagged candidate,
+        # fetch just those (parallel, cached across polls), then re-run the
+        # scan once more (pass 2) so every REPORTED edge uses the true
+        # per-series fee_multiplier, not the 1.0 default.
         cand_s1 = scan_ladders(events, fee_mult_cache)
         cand_s2 = scan_complement(events, fee_mult_cache)
         cand_s3 = scan_event_sum(events, fee_mult_cache)
+        involved_series = {v.series_ticker for v in (cand_s1 + cand_s2 + cand_s3) if v.series_ticker}
+        new_series = involved_series - all_series_seen
+        if new_series:
+            fee_mult_cache.update(fetch_series_fee_multipliers(sorted(new_series)))
+            all_series_seen |= new_series
+            # Pass 2: recompute with accurate multipliers for involved series.
+            cand_s1 = scan_ladders(events, fee_mult_cache)
+            cand_s2 = scan_complement(events, fee_mult_cache)
+            cand_s3 = scan_event_sum(events, fee_mult_cache)
         all_cand = cand_s1 + cand_s2 + cand_s3
 
         pava_diag_last = ladder_pava_diagnostics(events)
 
-        # Orderbook re-verification for every candidate this poll (cap to avoid runaway calls)
-        verified = 0
-        for v in all_cand[:ORDERBOOK_VERIFY_TOP_N]:
+        # Orderbook re-verification for every candidate this poll (cap to avoid runaway calls).
+        # Parallelized across a thread pool since each leg check is one HTTP round-trip
+        # (~0.2-0.3s serial -> hundreds of legs would otherwise dominate wall-clock time).
+        cand_to_verify = all_cand[:ORDERBOOK_VERIFY_TOP_N]
+        for v in cand_to_verify:
             violation_meta[v.key] = v
+
+        leg_jobs = []  # (violation_key, leg_idx, ticker, side_key, price)
+        for v in cand_to_verify:
+            for leg_idx, leg in enumerate(v.legs):
+                side_key = f"{leg['side']}_{'ask' if leg['action']=='buy' else 'bid'}"
+                leg_jobs.append((v.key, leg_idx, leg["ticker"], side_key, leg["price"]))
+
+        leg_results: Dict[Tuple[str, int], Tuple[bool, float]] = {}
+        verified = 0
+        if leg_jobs:
+            with ThreadPoolExecutor(max_workers=ORDERBOOK_VERIFY_WORKERS) as pool:
+                fut_map = {
+                    pool.submit(verify_orderbook_depth, ticker, side_key, price, MIN_DEPTH_CONTRACTS): (vk, li)
+                    for (vk, li, ticker, side_key, price) in leg_jobs
+                }
+                for fut in as_completed(fut_map):
+                    vk, li = fut_map[fut]
+                    try:
+                        ok, sz = fut.result()
+                    except Exception:
+                        ok, sz = False, 0.0
+                    leg_results[(vk, li)] = (ok, sz)
+                    verified += 1
+
+        for v in cand_to_verify:
             ok_all = True
             min_confirmed_depth = float("inf")
-            for leg in v.legs:
-                side_key = f"{leg['side']}_{'ask' if leg['action']=='buy' else 'bid'}"
-                ok, sz = verify_orderbook_depth(leg["ticker"], side_key, leg["price"], MIN_DEPTH_CONTRACTS)
+            for leg_idx in range(len(v.legs)):
+                ok, sz = leg_results.get((v.key, leg_idx), (False, 0.0))
                 ok_all = ok_all and ok
                 min_confirmed_depth = min(min_confirmed_depth, sz)
-                verified += 1
             violation_history[v.key].append({
                 "poll_idx": poll_idx,
                 "ts": datetime.now(timezone.utc).isoformat(),
