@@ -24,6 +24,8 @@ most likely to actually move the number.
 | W1-c | Binance funding/basis/OI → weekly directional signal | stack (uncorrelated) | **DONE** | NULL — AUC 0.66 is regime-autocorr illusion (tradeable t=0.40, placebos confirm); priced |
 | W1-d | VRP-regime timing → size up in high-premium weeks | sharpen (Sharpe via sizing) | **DONE** | NULL — regime timing lowers Sharpe; edge is unconditional (baseline re-confirmed t=4.27) |
 | W2-a | Cross-category longshot premium (sports/politics/pop/sci) + corr | stack (non-crypto uncorrelated) | **DONE** | NULL-of-lift — no large non-crypto twin; best diversifier=ECON (uncorr -0.05 but small $3.5k/wk, nominal t=2.59) |
+| W3-a | Kalshi-native longshot premium + structural arb (net of fees) | stack (separate venue) | RUNNING | — |
+| W3-b | Maker-rebate + optimal-strike LIFT on the confirmed edge | capture more of real edge | RUNNING | — |
 
 ## Confirmed so far (the baseline to beat)
 - **Polymarket weekly BTC/ETH short-vol longshot premium**: +0.12/ct, week-clustered t~4.6, maker (survives
@@ -39,3 +41,14 @@ LP-rewards (real but latency-bound MM).
   mispricing; cross-underlying dispersion (sell rich-vol, buy cheap-vol longshots).
 - W3: whatever W1/W2 winners suggest (e.g. combine density + regime; multi-underlying stacked sizing).
 - Iterate until marginal waves return only nulls (then the frontier height is empirically established).
+
+
+## Interim synthesis (after 16+ candidates, 5 this round all null)
+The accessible public-data edge universe is now firmly mapped: **crypto short-vol (engine, +0.12/ct) + ECON
+(uncorrelated diversifier, small ~$3.5k/wk, nominal) + biz (marginal)**. Ruled out with discipline: options-density
+sharpening, vol-regime timing, cross-crypto stacking (correlated), 8 non-crypto categories (only ECON survives),
+funding/basis/OI direction (autocorr illusion), daily frequency, LP-reward farming. No directional signal, no
+sharpening, no LARGE uncorrelated diversifier exists in the public data. Wave 3 tests the last two real levers
+(a separate venue = Kalshi; capturing MORE of the confirmed edge via rebate/strike). After wave 3, the honest
+highest-value work shifts from NEW-edge discovery to (a) maturing the live forward gates and (b) maximizing capture
+of the confirmed edge — the frontier height (~0.3-1%/day sound) is empirically established, not assumed.
