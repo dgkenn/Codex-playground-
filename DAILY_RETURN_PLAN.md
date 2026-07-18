@@ -85,13 +85,24 @@ The sound plan is the multi-sleeve book already built and forward-gating. Concre
 6. **Gate before scaling:** do not raise size until the forward settled logs confirm the backtest edge
    (day/week-clustered t, tail within model). Tested must match live.
 
-### The one lever that could raise the *daily* rate (under test)
-Because the target is per-*day*, the highest-value improvement is **bet frequency**: the confirmed edge is
-*weekly*; Polymarket also lists **daily** "BTC/ETH above $X on <date>" ladders. If the short-vol premium
-survives at daily horizon, ~7× the resolutions/week compound into a materially higher daily rate (still not
-10%, but higher than the weekly-only frontier). **This is being measured now** (`daily_shortvol.py`); result
-folds into §2 when it lands. A thinner-but-real daily premium raises the frontier; an efficient daily market
-leaves §2 as the ceiling.
+### The one lever that could raise the *daily* rate — TESTED, DEAD
+Because the target is per-*day*, the highest-value improvement would be **bet frequency**: the confirmed edge
+is *weekly*; Polymarket also lists **daily** "BTC/ETH above $X on <date>" ladders. I measured whether the
+short-vol premium transports to daily horizon (`daily_shortvol.py`, 94 settled BTC+ETH daily ladders,
+day-clustered). **It does not.** In the [0.15,0.30] band at ~24h-to-close the seller loses **−0.24/ct
+(t=−1.5)**, calibration **inverts** (entry 0.217 vs realized 0.455), and the band is structurally starved to
+**~1 position/day, not 7×** — because the coarse ~$2k ladder collapses toward 0/1 by 24h out, so the band
+holds *near-money* strikes (hit ~half the time), not lottery longshots. The only sellable daily region is the
+deep 2–10c tail, which is a lower band, ~3–7c/ct, taker-illiquid, and fee-eaten. **Frequency does not
+multiply the edge; at the profitable band it inverts.** The §2 frontier (~0.27%/day sound) therefore stands
+as the ceiling — the weekly edge is the engine, with no daily analog to raise the per-day rate.
+
+### Live-integrity flag (new): Polymarket crypto fee regime
+As of 2026-07, Polymarket crypto markets carry `crypto_fees_v2`: **0.07 fee, `takerOnly: true`, maker
+`rebateRate: 0.2`**. The confirmed weekly edge is a **resting seller (maker)**, so it pays no taker fee (and
+may earn the rebate) — the "zero fee" assumption **survives for maker fills**. But this regime post-dates the
+validation, so the forward gate must confirm fills are maker; any spread-crossing entry now costs
+0.07·p(1−p). Recorded as a live-vs-tested check, not a kill.
 
 ---
 
@@ -102,7 +113,7 @@ leaves §2 as the ceiling.
 | Leverage / full-Kelly+ | scales return linearly | scales the fat left tail too → drawdowns/ruin; violates "minimize risk" |
 | More uncorrelated sleeves | raises Sharpe → more size at same risk | diminishing; we've killed ~10 candidates finding uncorrelated edges are rare |
 | Private/faster data | genuine new edge | we don't have it; every *public*-data probe (forecasts, sportsbook lines, order flow) is already priced |
-| Higher frequency (daily/intraday) | more compounding events | under test; helps but bounded, and shorter horizon = thinner premium |
+| Higher frequency (daily/intraday) | more compounding events | TESTED, DEAD — daily band inverts (−0.24/ct), the coarse ladder collapses to near-money by 24h out |
 | More capital | same %, more $ | changes $ not %; and thin books cap deployable size anyway |
 
 ---
