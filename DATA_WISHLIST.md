@@ -40,3 +40,20 @@ NET of Kalshi fees; executable prices; cluster t; multiple-testing; realistic la
 - **Politics/news: GDELT 2.0** free, 15-min news events (news-gap lead; Doc API 3mo, BigQuery to 1979); **538 polls** GitHub CSV (backtest, day/wk granularity).
 - **Injury/live: ESPN hidden API** (free, unofficial: scoreboard/PBP/injuries); RotoBaller feeds.
 - BUILD ORDER: Kalshi candlesticks (price backbone) → Polymarket prices-history (cross-venue) + GDELT (news) → TheRundown (sports) → VIX+Stooq (index). All free-tier except ORATS-full / Odds-API-historical / Databento-premium / bettingiscool.
+
+## FOUND — hunt-1 (Kalshi microstructure + cross-venue) + hunt-2 (weather+econ), Sonnet, 2026-07-18
+### Kalshi price/tape backbone (FREE, full history):
+- Kalshi `/historical/trades` (trade_id,ticker,count,yes/no_price,taker_outcome_side,taker_book_side,created_time,is_block) + `/historical/markets/{ticker}/candlesticks` (1/60/1440min) + `/historical/cutoff`. Full history to inception. NO L2 book ever (Kalshi doesn't retain it).
+- Incentive/maker-reward config: `/incentive-programs/get-incentives` (period_reward, target_size_fp, discount_bps) → for K1.
+- L2 depth (if needed): Predexon (FREE, since Jan2026 ~6mo), PCeltide/snapevent (self-host fwd), michael3vili/Kalshi-Sports-Market-Data (FREE GitHub CSV, 1-sec depth+OFI, sports in-game only). Paid: DepthFeed/Lychee/OddPool.
+### Cross-venue (Global↔Kalshi lead-lag): Jon-Becker (free, both venues, DIY title-match) / dino-markets (free, does matching, immature) / DIY Kalshi-hist + Polymarket prices-history + matcher. HARD PART = event matching across venues.
+### WEATHER (top actionable lead — day-scale, observable):
+- Kalshi KXHIGH/KXLOW settle on NWS CLI, ONE ASOS station/city, LOCAL STANDARD TIME, ~20 cities (Chicago=KMDW, Dallas=KDFW, Houston=KHOU).
+- Live obs: Synoptic HF-ASOS (2-5min latency, free tier) = best tradeable; aviationweather.gov METAR (1min,free,15d rolling); IEM ASOS archive (deep to 2000, but real-time lags 1-2d → BACKTEST only). mostlyright-sdk + wethr.net = prebuilt Kalshi-weather tooling (solve station/DST/CLI mapping).
+- Forecast: NOAA NBM (best), GFS ensemble (Open-Meteo/AWS 30d).
+### ECON: release times fixed 8:30ET/sec (edge=scrape-speed race → NOT actionable on our slow infra, FLAG OUT). Nowcasts: Cleveland Fed inflation (daily), Atlanta Fed GDPNow (FRED/ALFRED), ALFRED vintages (no-lookahead). Rate-futures: Atlanta Fed Market Prob Tracker (free SOFR) / CME FedWatch (paid intraday).
+
+## ACTIONABLE RANKING (our GH-Actions infra = day/hours-scale only, sub-second races excluded)
+1. **WEATHER settlement-nowcast (KXHIGH):** observed running-max leads settlement; once max clears strike, outcome ~decided → is Kalshi still mispriced net of fees? Day-scale, observable, backtestable (IEM obs + Kalshi candlesticks). TOP.
+2. **Cross-venue lead-lag** (Global→Kalshi on politics/Fed/news). Hours-scale.
+3. **Nowcast lead** on CPI/GDP Kalshi markets (Cleveland Fed/GDPNow daily). Day-scale.
