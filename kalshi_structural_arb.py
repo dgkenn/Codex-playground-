@@ -349,13 +349,30 @@ def scan_ladders(events: List[dict], fee_mult: Dict[str, float]) -> List[Violati
         mkts = ev.get("markets", [])
         if len(mkts) < 2:
             continue
-        # group by strike_type; only "greater"/"less" numeric ladders qualify
-        by_type: Dict[str, List[dict]] = defaultdict(list)
+        # Group by (strike_type, subject signature); only "greater"/"less"
+        # numeric ladders qualify. CRITICAL: some events contain multiple
+        # *parallel* ladders for different subjects (e.g. a point-spread
+        # event has a "Team A wins by >X" ladder AND an independent
+        # "Team B wins by >Y" ladder, distinguished only by the market's
+        # `custom_strike` payload, e.g. {"basketball_team": "<id>"}). Those
+        # two ladders are NOT nested implications of each other (Team A's
+        # spread and Team B's spread are a different, correlated-but-risky
+        # basis trade, not a logical subset relation) -- grouping them
+        # together would manufacture false "violations" out of two
+        # unrelated markets. We therefore always split by the full
+        # (sorted) custom_strike key/value signature in addition to
+        # strike_type, so only genuinely same-subject markets are ever
+        # compared.
+        def subject_key(m: dict) -> tuple:
+            cs = m.get("custom_strike") or {}
+            return tuple(sorted(cs.items()))
+
+        by_type: Dict[Tuple[str, tuple], List[dict]] = defaultdict(list)
         for m in mkts:
             st = m.get("strike_type")
             if st in ("greater", "less") and m.get("floor_strike") is not None:
-                by_type[st].append(m)
-        for st, group in by_type.items():
+                by_type[(st, subject_key(m))].append(m)
+        for (st, _subj), group in by_type.items():
             if len(group) < 2:
                 continue
             group_sorted = sorted(group, key=lambda m: f(m.get("floor_strike")))
@@ -593,12 +610,17 @@ def ladder_pava_diagnostics(events: List[dict]) -> List[dict]:
         if ev.get("mutually_exclusive"):
             continue
         mkts = ev.get("markets", [])
-        by_type: Dict[str, List[dict]] = defaultdict(list)
+
+        def subject_key(m: dict) -> tuple:
+            cs = m.get("custom_strike") or {}
+            return tuple(sorted(cs.items()))
+
+        by_type: Dict[Tuple[str, tuple], List[dict]] = defaultdict(list)
         for m in mkts:
             st = m.get("strike_type")
             if st in ("greater", "less") and m.get("floor_strike") is not None:
-                by_type[st].append(m)
-        for st, group in by_type.items():
+                by_type[(st, subject_key(m))].append(m)
+        for (st, _subj), group in by_type.items():
             if len(group) < 3:
                 continue
             group_sorted = sorted(group, key=lambda m: f(m.get("floor_strike")))
