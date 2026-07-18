@@ -2757,3 +2757,21 @@ the SAME airport ASOS sensor, so consensus guards against FEED-specific faults (
 against the sensor itself -- the CLI-agreement study (phase3_feed_correlation, running) is the separate guard for sensor-vs-
 settlement. Trade-off: unanimity + hourly METAR cuts fire count (fine at $50, fire-rich). quorum relaxable for throughput.
 Will be calibrated by the feed-correlation results (per-feed bias/margin, which stations to derate).
+
+## FEED-vs-CLI CORRELATION (2026-07-18) — live feeds agree with official settlement; all bias SAFE; METAR is the anchor
+Validated the LIVE feeds (api.weather.gov 5-min, aviationweather METAR) against official NWS CLI settlement per station.
+- METAR: r=0.992 vs CLI day-max, MAE 0.93F, biased LOW -0.82F (SAFE direction). Lock-failure @margin1 = 0.41% (n=488,
+  Wilson 1.48%) -- MATCHES Track B's 6-year IEM glitch+sustain3 baseline (0.4%). METAR is the trustworthy anchor feed.
+- weathergov 5-min: accurate on adequate samples (KDEN/NYC 7-day: MAE 0.6-0.9F, biased low/safe, 0 lock-failures); the
+  scary pooled -4F bias is a SHORT-RETENTION ARTIFACT (api.weather.gov keeps only ~1-7 days -> truncated LST-day maxes on
+  n=2 stations). Retention does NOT affect LIVE use (runner accumulates the max intraday as 5-min obs arrive). 0 lock-fails.
+- DIRECTION: ALL feeds bias in the SAFE direction (read LOW for day-max, HIGH for day-min) -> structurally protected against
+  firing on a peak CLI won't confirm. weathergov over-read only 10.6% of days, METAR 12.6%.
+- KXLOW: both live feeds 0 lock-failures @margin1 (weathergov n=15, METAR n=88).
+- Sec-4 "margin needed for 0.4% Wilson bar: NOT REACHED" is a SMALL-SAMPLE artifact -- the ~2-week overlap can't drive the
+  Wilson-95 UPPER bound below 0.4% even for IEM glitch+sustain3 (known-good on 6yr); point-estimates are all excellent.
+- Per-station: METAR worst = KDEN (MAE 1.81, one 13.6F outlier day), KMDW (1.49) -> exactly where the 2-feed CONSENSUS earns
+  its keep (weathergov must also confirm). No station needs EXCLUSION; all bias safe.
+VERDICT: margin=1 is CONFIRMED safe for the live feeds (METAR 0.41%). Current config validated unchanged: consensus(weathergov
++METAR) default, margin=1 base, Phoenix/high-disagreement derates (Track B SENSOR axis, separate from feed axis), NYC quorum=1.
+METAR is the anchor; weathergov adds 5-min fast detection. Forward paper gate remains the final confirm on the SHORT live window.
