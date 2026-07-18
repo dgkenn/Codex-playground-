@@ -1,0 +1,67 @@
+# WATCHDOG for the live weather bot -- the self-healing backstop. Independent of kwx-live's own cron/chain,
+# so it catches the case where BOTH the self-chain AND the main cron died (silent death = the worst failure).
+#
+# Every 15 min: if KWX_SWITCH=on but no kwx-live run has STARTED in the last ~35 min, it (1) Telegram-alerts
+# "bot may be down" and (2) re-dispatches kwx-live to restart the chain. If the switch is off, it does nothing.
+# Inert without the Telegram secret (it can still re-dispatch). Being a separate, tiny, fast workflow, it is
+# far less likely to be deprioritized than the heavy live job -- both failing at once is unlikely.
+name: kwx-watchdog
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  actions: write        # read kwx-live runs + re-dispatch
+
+concurrency:
+  group: kwx-watchdog-singleton
+  cancel-in-progress: false
+
+env:
+  BRANCH: claude/coding-bot-ab-test-results-ffmhxw
+  STALE_SECS: "2100"    # 35 min
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.BRANCH }}
+          fetch-depth: 1
+      - name: check liveness; alert + restart if stale
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          sw=$(tr -d '[:space:]' < KWX_SWITCH 2>/dev/null || echo off)
+          if [ "$sw" != "on" ]; then echo "switch off -> nothing to watch"; exit 0; fi
+          # newest kwx-live run start time (epoch); if none, treat as stale
+          started=$(curl -s -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/workflows/kwx-live.yml/runs?per_page=1" \
+            | jq -r '.workflow_runs[0].run_started_at // empty')
+          now=$(date -u +%s)
+          if [ -n "$started" ]; then age=$(( now - $(date -u -d "$started" +%s) )); else age=999999; fi
+          echo "last kwx-live run age = ${age}s (stale > ${STALE_SECS}s)"
+          if [ "$age" -gt "${STALE_SECS}" ]; then
+            mins=$(( age / 60 ))
+            if [ -n "$TELEGRAM_BOT_TOKEN" ] && [ -n "$TELEGRAM_CHAT_ID" ]; then
+              curl -s -o /dev/null -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+                -d chat_id="${TELEGRAM_CHAT_ID}" \
+                -d text="⚠️ KWX bot DOWN: no live run in ${mins} min. Watchdog restarting it. If this repeats, check GitHub Actions / secrets." || true
+            fi
+            for i in 1 2 3; do
+              code=$(curl -s -o /dev/null -w '%{http_code}' -X POST \
+                -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
+                "https://api.github.com/repos/${{ github.repository }}/actions/workflows/kwx-live.yml/dispatches" \
+                -d '{"ref":"main"}')
+              echo "watchdog re-dispatch -> HTTP $code"; [ "$code" = "204" ] && break; sleep 3
+            done
+          else
+            echo "bot healthy (last run ${age}s ago)"
+          fi
