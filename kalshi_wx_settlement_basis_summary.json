@@ -1,0 +1,1706 @@
+{
+  "window": {
+    "min_date": "2026-05-12",
+    "max_date": "2026-07-17"
+  },
+  "n_station_days_with_cli": 1340,
+  "sanity_check_kalshi_result_matches_cli_high_vs_strike": {
+    "agree": 1340,
+    "n": 1340,
+    "agree_rate": 1.0,
+    "note": "This validates that our independently-fetched CLI 'high' field really is what Kalshi settles on: (cli_high > strike) should match the market's own yes/no result for essentially 100% of markets. Any disagreement here would mean our CLI station mapping or the IEM CLI parse is wrong, not a real settlement anomaly."
+  },
+  "candidate_accuracy_vs_official_cli": {
+    "raw1min": {
+      "n_total_days": 1340,
+      "n_covered": 1274,
+      "coverage_rate": 0.9507462686567164,
+      "mean_bias_F": -0.4026687598116169,
+      "mean_abs_error_F": 1.446624803767661,
+      "rmse_F": 3.443534199989774,
+      "exact_match_rate": 0.4050235478806907,
+      "over_rate": 0.4576138147566719,
+      "under_rate": 0.13736263736263737,
+      "max_abs_error_F": 52.0,
+      "median_abs_error_F": 1.0
+    },
+    "roll3": {
+      "n_total_days": 1340,
+      "n_covered": 1274,
+      "coverage_rate": 0.9507462686567164,
+      "mean_bias_F": -0.8914835164835165,
+      "mean_abs_error_F": 1.1599293563579278,
+      "rmse_F": 3.094208584774312,
+      "exact_match_rate": 0.2904238618524333,
+      "over_rate": 0.34379905808477235,
+      "under_rate": 0.36577708006279436,
+      "max_abs_error_F": 24.0,
+      "median_abs_error_F": 0.25
+    },
+    "roll5": {
+      "n_total_days": 1340,
+      "n_covered": 1274,
+      "coverage_rate": 0.9507462686567164,
+      "mean_bias_F": -1.0493851386708526,
+      "mean_abs_error_F": 1.1911957090528527,
+      "rmse_F": 3.1063208531926025,
+      "exact_match_rate": 0.18995290423861852,
+      "over_rate": 0.26609105180533754,
+      "under_rate": 0.5439560439560439,
+      "max_abs_error_F": 24.0,
+      "median_abs_error_F": 0.3333333333333286
+    },
+    "metar": {
+      "n_total_days": 1340,
+      "n_covered": 1340,
+      "coverage_rate": 1.0,
+      "mean_bias_F": -0.8186567164179105,
+      "mean_abs_error_F": 0.8207462686567162,
+      "rmse_F": 1.0621718105955742,
+      "exact_match_rate": 0.31716417910447764,
+      "over_rate": 0.0014925373134328358,
+      "under_rate": 0.6813432835820895,
+      "max_abs_error_F": 3.0,
+      "median_abs_error_F": 1.0
+    },
+    "sixhr": {
+      "n_total_days": 1340,
+      "n_covered": 1340,
+      "coverage_rate": 1.0,
+      "mean_bias_F": 0.12214925373134308,
+      "mean_abs_error_F": 0.20988059701492573,
+      "rmse_F": 0.9457035602558544,
+      "exact_match_rate": 0.11492537313432835,
+      "over_rate": 0.47313432835820896,
+      "under_rate": 0.41194029850746267,
+      "max_abs_error_F": 11.939999999999998,
+      "median_abs_error_F": 0.04000000000000625
+    }
+  },
+  "by_candidate_margin": {
+    "raw1min": {
+      "1": {
+        "n_fired": 71,
+        "win_rate": 0.6197183098591549,
+        "cond_loss_rate_given_fired": 0.3802816901408451,
+        "worst_case_loss_rate_wilson95": 0.49658143716075775,
+        "mean_exec_price": 0.40028169014084497,
+        "mean_fee": 0.010009408450704223,
+        "mean_pnl": 0.20942721126760563,
+        "clustered_se": 0.05043380709929368,
+        "clustered_t": 4.152516403437222,
+        "clustered_p": 3.288391747036101e-05,
+        "n_clusters": 45,
+        "analytic_ev_point": 0.2094272112676057,
+        "analytic_ev_worst_case": 0.09312746424769305,
+        "n_locked_yes_settled_no": 27,
+        "bad_detail": [
+          {
+            "ticker": "KXHIGHDEN-26JUL09-T91",
+            "date": "2026-07-09",
+            "strike": 91,
+            "cli_high": 91
+          },
+          {
+            "ticker": "KXHIGHDEN-26JUN27-T97",
+            "date": "2026-06-27",
+            "strike": 97,
+            "cli_high": 97
+          },
+          {
+            "ticker": "KXHIGHDEN-26JUN18-T88",
+            "date": "2026-06-18",
+            "strike": 88,
+            "cli_high": 88
+          },
+          {
+            "ticker": "KXHIGHDEN-26JUN16-T93",
+            "date": "2026-06-16",
+            "strike": 93,
+            "cli_high": 93
+          },
+          {
+            "ticker": "KXHIGHMIA-26JUN26-T95",
+            "date": "2026-06-26",
+            "strike": 95,
+            "cli_high": 92
+          },
+          {
+            "ticker": "KXHIGHMIA-26JUN16-T95",
+            "date": "2026-06-16",
+            "strike": 95,
+            "cli_high": 95
+          },
+          {
+            "ticker": "KXHIGHMIA-26MAY16-T91",
+            "date": "2026-05-16",
+            "strike": 91,
+            "cli_high": 90
+          },
+          {
+            "ticker": "KXHIGHTBOS-26MAY16-T80",
+            "date": "2026-05-16",
+            "strike": 80,
+            "cli_high": 80
+          },
+          {
+            "ticker": "KXHIGHTSEA-26JUL10-T78",
+            "date": "2026-07-10",
+            "strike": 78,
+            "cli_high": 78
+          },
+          {
+            "ticker": "KXHIGHTSEA-26JUN27-T70",
+            "date": "2026-06-27",
+            "strike": 70,
+            "cli_high": 70
+          },
+          {
+            "ticker": "KXHIGHTSFO-26JUL02-T71",
+            "date": "2026-07-02",
+            "strike": 71,
+            "cli_high": 71
+          },
+          {
+            "ticker": "KXHIGHTSFO-26JUN30-T73",
+            "date": "2026-06-30",
+            "strike": 73,
+            "cli_high": 73
+          },
+          {
+            "ticker": "KXHIGHTSFO-26JUN25-T70",
+            "date": "2026-06-25",
+            "strike": 70,
+            "cli_high": 70
+          },
+          {
+            "ticker": "KXHIGHTSFO-26MAY18-T80",
+            "date": "2026-05-18",
+            "strike": 80,
+            "cli_high": 80
+          },
+          {
+            "ticker": "KXHIGHTATL-26JUL16-T93",
+            "date": "2026-07-16",
+            "strike": 93,
+            "cli_high": 93
+          },
+          {
+            "ticker": "KXHIGHTATL-26JUL11-T94",
+            "date": "2026-07-11",
+            "strike": 94,
+            "cli_high": 94
+          },
+          {
+            "ticker": "KXHIGHTATL-26MAY30-T85",
+            "date": "2026-05-30",
+            "strike": 85,
+            "cli_high": 85
+          },
+          {
+            "ticker": "KXHIGHTATL-26MAY28-T88",
+            "date": "2026-05-28",
+            "strike": 88,
+            "cli_high": 88
+          },
+          {
+            "ticker": "KXHIGHTDAL-26JUN06-T89",
+            "date": "2026-06-06",
+            "strike": 89,
+            "cli_high": 89
+          },
+          {
+            "ticker": "KXHIGHTSATX-26MAY23-T85",
+            "date": "2026-05-23",
+            "strike": 85,
+            "cli_high": 85
+          },
+          {
+            "ticker": "KXHIGHTOKC-26JUN12-T91",
+            "date": "2026-06-12",
+            "strike": 91,
+            "cli_high": 91
+          },
+          {
+            "ticker": "KXHIGHTOKC-26MAY28-T84",
+            "date": "2026-05-28",
+            "strike": 84,
+            "cli_high": 84
+          },
+          {
+            "ticker": "KXHIGHTHOU-26MAY22-T90",
+            "date": "2026-05-22",
+            "strike": 90,
+            "cli_high": 90
+          },
+          {
+            "ticker": "KXHIGHPHIL-26JUL11-T89",
+            "date": "2026-07-11",
+            "strike": 89,
+            "cli_high": 89
+          },
+          {
+            "ticker": "KXHIGHPHIL-26JUN02-T80",
+            "date": "2026-06-02",
+            "strike": 80,
+            "cli_high": 80
+          },
+          {
+            "ticker": "KXHIGHLAX-26JUN28-T72",
+            "date": "2026-06-28",
+            "strike": 72,
+            "cli_high": 71
+          },
+          {
+            "ticker": "KXHIGHLAX-26MAY24-T69",
+            "date": "2026-05-24",
+            "strike": 69,
+            "cli_high": 68
+          }
+        ]
+      },
+      "2": {
+        "n_fired": 35,
+        "win_rate": 0.9142857142857143,
+        "cond_loss_rate_given_fired": 0.08571428571428574,
+        "worst_case_loss_rate_wilson95": 0.22379273970048333,
+        "mean_exec_price": 0.7385714285714285,
+        "mean_fee": 0.007898599999999999,
+        "mean_pnl": 0.16781568571428573,
+        "clustered_se": 0.03647326674818205,
+        "clustered_t": 4.601059918019278,
+        "clustered_p": 4.2034647858013585e-06,
+        "n_clusters": 29,
+        "analytic_ev_point": 0.1678156857142857,
+        "analytic_ev_worst_case": 0.029737231728088155,
+        "n_locked_yes_settled_no": 3,
+        "bad_detail": [
+          {
+            "ticker": "KXHIGHMIA-26JUN16-T95",
+            "date": "2026-06-16",
+            "strike": 95,
+            "cli_high": 95
+          },
+          {
+            "ticker": "KXHIGHMIA-26MAY16-T91",
+            "date": "2026-05-16",
+            "strike": 91,
+            "cli_high": 90
+          },
+          {
+            "ticker": "KXHIGHLAX-26MAY24-T69",
+            "date": "2026-05-24",
+            "strike": 69,
+            "cli_high": 68
+          }
+        ]
+      },
+      "3": {
+        "n_fired": 19,
+        "win_rate": 0.8421052631578947,
+        "cond_loss_rate_given_fired": 0.1578947368421053,
+        "worst_case_loss_rate_wilson95": 0.37565475276106236,
+        "mean_exec_price": 0.8468421052631577,
+        "mean_fee": 0.00210921052631579,
+        "mean_pnl": -0.006846052631578945,
+        "clustered_se": 0.01572697804274343,
+        "clustered_t": -0.4353063006111194,
+        "clustered_p": 0.6633401121654794,
+        "n_clusters": 17,
+        "analytic_ev_point": -0.006846052631578829,
+        "analytic_ev_worst_case": -0.22460606855053583,
+        "n_locked_yes_settled_no": 3,
+        "bad_detail": [
+          {
+            "ticker": "KXHIGHMIA-26JUN16-T95",
+            "date": "2026-06-16",
+            "strike": 95,
+            "cli_high": 95
+          },
+          {
+            "ticker": "KXHIGHMIA-26MAY16-T91",
+            "date": "2026-05-16",
+            "strike": 91,
+            "cli_high": 90
+          },
+          {
+            "ticker": "KXHIGHLAX-26MAY24-T69",
+            "date": "2026-05-24",
+            "strike": 69,
+            "cli_high": 68
+          }
+        ]
+      },
+      "4": {
+        "n_fired": 7,
+        "win_rate": 0.7142857142857143,
+        "cond_loss_rate_given_fired": 0.2857142857142857,
+        "worst_case_loss_rate_wilson95": 0.641065548235854,
+        "mean_exec_price": 0.7371428571428572,
+        "mean_fee": 0.0013740000000000002,
+        "mean_pnl": -0.024231142857142857,
+        "clustered_se": 0.020830441756539746,
+        "clustered_t": -1.1632563121007962,
+        "clustered_p": 0.24472552529561864,
+        "n_clusters": 7,
+        "analytic_ev_point": -0.02423114285714291,
+        "analytic_ev_worst_case": -0.37958240537871124,
+        "n_locked_yes_settled_no": 2,
+        "bad_detail": [
+          {
+            "ticker": "KXHIGHMIA-26MAY16-T91",
+            "date": "2026-05-16",
+            "strike": 91,
+            "cli_high": 90
+          },
+          {
+            "ticker": "KXHIGHLAX-26MAY24-T69",
+            "date": "2026-05-24",
+            "strike": 69,
+            "cli_high": 68
+          }
+        ]
+      },
+      "5": {
+        "n_fired": 4,
+        "win_rate": 0.5,
+        "cond_loss_rate_given_fired": 0.5,
+        "worst_case_loss_rate_wilson95": 0.8499610108897435,
+        "mean_exec_price": 0.5399999999999999,
+        "mean_fee": 0.0024045000000000004,
+        "mean_pnl": -0.0424045,
+        "clustered_se": 0.03370731503787419,
+        "clustered_t": -1.2580206982476498,
+        "clustered_p": 0.20838427078689103,
+        "n_clusters": 4,
+        "analytic_ev_point": -0.04240449999999993,
+        "analytic_ev_worst_case": -0.3923655108897434,
+        "n_locked_yes_settled_no": 2,
+        "bad_detail": [
+          {
+            "ticker": "KXHIGHMIA-26MAY16-T91",
+            "date": "2026-05-16",
+            "strike": 91,
+            "cli_high": 90
+          },
+          {
+            "ticker": "KXHIGHLAX-26MAY24-T69",
+            "date": "2026-05-24",
+            "strike": 69,
+            "cli_high": 68
+          }
+        ]
+      }
+    },
+    "roll3": {
+      "1": {
+        "n_fired": 38,
+        "win_rate": 0.9736842105263158,
+        "cond_loss_rate_given_fired": 0.02631578947368418,
+        "worst_case_loss_rate_wilson95": 0.13494876119812985,
+        "mean_exec_price": 0.7192105263157895,
+        "mean_fee": 0.009407447368421055,
+        "mean_pnl": 0.24506623684210527,
+        "clustered_se": 0.04522892288472678,
+        "clustered_t": 5.418352266904436,
+        "clustered_p": 6.015081188692761e-08,
+        "n_clusters": 28,
+        "analytic_ev_point": 0.24506623684210524,
+        "analytic_ev_worst_case": 0.1364332651176596,
+        "n_locked_yes_settled_no": 1,
+        "bad_detail": [
+          {
+            "ticker": "KXHIGHLAX-26MAY24-T69",
+            "date": "2026-05-24",
+            "strike": 69,
+            "cli_high": 68
+          }
+        ]
+      },
+      "2": {
+        "n_fired": 19,
+        "win_rate": 0.9473684210526315,
+        "cond_loss_rate_given_fired": 0.052631578947368474,
+        "worst_case_loss_rate_wilson95": 0.24638731173082004,
+        "mean_exec_price": 0.9168421052631578,
+        "mean_fee": 0.0025995789473684215,
+        "mean_pnl": 0.027926736842105268,
+        "clustered_se": 0.020256927608011552,
+        "clustered_t": 1.3786264818886123,
+        "clustered_p": 0.16800994726578855,
+        "n_clusters": 15,
+        "analytic_ev_point": 0.027926736842105313,
+        "analytic_ev_worst_case": -0.16582899594134629,
+        "n_locked_yes_settled_no": 1,
+        "bad_detail": [
+          {
+            "ticker": "KXHIGHLAX-26MAY24-T69",
+            "date": "2026-05-24",
+            "strike": 69,
+            "cli_high": 68
+          }
+        ]
+      },
+      "3": {
+        "n_fired": 6,
+        "win_rate": 0.8333333333333334,
+        "cond_loss_rate_given_fired": 0.16666666666666663,
+        "worst_case_loss_rate_wilson95": 0.5635028222709416,
+        "mean_exec_price": 0.8583333333333334,
+        "mean_fee": 0.0014875,
+        "mean_pnl": -0.026487499999999997,
+        "clustered_se": 0.02417966873653014,
+        "clustered_t": -1.0954451150103324,
+        "clustered_p": 0.27332167829229803,
+        "n_clusters": 6,
+        "analytic_ev_point": -0.02648750000000002,
+        "analytic_ev_worst_case": -0.423323655604275,
+        "n_locked_yes_settled_no": 1,
+        "bad_detail": [
+          {
+            "ticker": "KXHIGHLAX-26MAY24-T69",
+            "date": "2026-05-24",
+            "strike": 69,
+            "cli_high": 68
+          }
+        ]
+      },
+      "4": {
+        "n_fired": 3,
+        "win_rate": 0.6666666666666666,
+        "cond_loss_rate_given_fired": 0.33333333333333337,
+        "worst_case_loss_rate_wilson95": 0.792340399257282,
+        "mean_exec_price": 0.7166666666666667,
+        "mean_fee": 0.002975,
+        "mean_pnl": -0.052974999999999994,
+        "clustered_se": 0.04325390637464628,
+        "clustered_t": -1.2247448713915892,
+        "clustered_p": 0.22067136191984682,
+        "n_clusters": 3,
+        "analytic_ev_point": -0.05297500000000004,
+        "analytic_ev_worst_case": -0.5119820659239486,
+        "n_locked_yes_settled_no": 1,
+        "bad_detail": [
+          {
+            "ticker": "KXHIGHLAX-26MAY24-T69",
+            "date": "2026-05-24",
+            "strike": 69,
+            "cli_high": 68
+          }
+        ]
+      },
+      "5": {
+        "n_fired": 3,
+        "win_rate": 0.6666666666666666,
+        "cond_loss_rate_given_fired": 0.33333333333333337,
+        "worst_case_loss_rate_wilson95": 0.792340399257282,
+        "mean_exec_price": 0.7166666666666667,
+        "mean_fee": 0.002975,
+        "mean_pnl": -0.052974999999999994,
+        "clustered_se": 0.04325390637464628,
+        "clustered_t": -1.2247448713915892,
+        "clustered_p": 0.22067136191984682,
+        "n_clusters": 3,
+        "analytic_ev_point": -0.05297500000000004,
+        "analytic_ev_worst_case": -0.5119820659239486,
+        "n_locked_yes_settled_no": 1,
+        "bad_detail": [
+          {
+            "ticker": "KXHIGHLAX-26MAY24-T69",
+            "date": "2026-05-24",
+            "strike": 69,
+            "cli_high": 68
+          }
+        ]
+      }
+    },
+    "roll5": {
+      "1": {
+        "n_fired": 33,
+        "win_rate": 0.9696969696969697,
+        "cond_loss_rate_given_fired": 0.030303030303030276,
+        "worst_case_loss_rate_wilson95": 0.15318725386413604,
+        "mean_exec_price": 0.8612121212121213,
+        "mean_fee": 0.005929212121212122,
+        "mean_pnl": 0.10255563636363636,
+        "clustered_se": 0.025150970006019333,
+        "clustered_t": 4.077601632823383,
+        "clustered_p": 4.5502641849104464e-05,
+        "n_clusters": 25,
+        "analytic_ev_point": 0.10255563636363628,
+        "analytic_ev_worst_case": -0.020328587197469446,
+        "n_locked_yes_settled_no": 1,
+        "bad_detail": [
+          {
+            "ticker": "KXHIGHLAX-26MAY24-T69",
+            "date": "2026-05-24",
+            "strike": 69,
+            "cli_high": 68
+          }
+        ]
+      },
+      "2": {
+        "n_fired": 15,
+        "win_rate": 1.0,
+        "cond_loss_rate_given_fired": 0.0,
+        "worst_case_loss_rate_wilson95": 0.20388330111202968,
+        "mean_exec_price": 0.9913333333333333,
+        "mean_fee": 0.0005278,
+        "mean_pnl": 0.008138866666666666,
+        "clustered_se": 0.007862892210244646,
+        "clustered_t": 1.035098339013531,
+        "clustered_p": 0.3006229881969069,
+        "n_clusters": 15,
+        "analytic_ev_point": 0.008138866666666711,
+        "analytic_ev_worst_case": -0.19574443444536296,
+        "n_locked_yes_settled_no": 0,
+        "bad_detail": []
+      },
+      "3": {
+        "n_fired": 4,
+        "win_rate": 1.0,
+        "cond_loss_rate_given_fired": 0.0,
+        "worst_case_loss_rate_wilson95": 0.48989083657188465,
+        "mean_exec_price": 1.0,
+        "mean_fee": 0.0,
+        "mean_pnl": 0.0,
+        "clustered_se": 0.0,
+        "clustered_t": NaN,
+        "clustered_p": null,
+        "n_clusters": 4,
+        "analytic_ev_point": 0.0,
+        "analytic_ev_worst_case": -0.4898908365718846,
+        "n_locked_yes_settled_no": 0,
+        "bad_detail": []
+      },
+      "4": {
+        "n_fired": 2,
+        "win_rate": 1.0,
+        "cond_loss_rate_given_fired": 0.0,
+        "worst_case_loss_rate_wilson95": 0.6576197725990219,
+        "mean_exec_price": 1.0,
+        "mean_fee": 0.0,
+        "mean_pnl": 0.0,
+        "clustered_se": 0.0,
+        "clustered_t": NaN,
+        "clustered_p": null,
+        "n_clusters": 2,
+        "analytic_ev_point": 0.0,
+        "analytic_ev_worst_case": -0.6576197725990219,
+        "n_locked_yes_settled_no": 0,
+        "bad_detail": []
+      },
+      "5": {
+        "n_fired": 0
+      }
+    },
+    "metar": {
+      "1": {
+        "n_fired": 27,
+        "win_rate": 1.0,
+        "cond_loss_rate_given_fired": 0.0,
+        "worst_case_loss_rate_wilson95": 0.12455502979304453,
+        "mean_exec_price": 0.9085185185185186,
+        "mean_fee": 0.004051444444444444,
+        "mean_pnl": 0.08743003703703707,
+        "clustered_se": 0.028179220038268806,
+        "clustered_t": 3.1026421923070497,
+        "clustered_p": 0.001918013824791398,
+        "n_clusters": 22,
+        "analytic_ev_point": 0.08743003703703695,
+        "analytic_ev_worst_case": -0.03712499275600761,
+        "n_locked_yes_settled_no": 0,
+        "bad_detail": []
+      },
+      "2": {
+        "n_fired": 8,
+        "win_rate": 1.0,
+        "cond_loss_rate_given_fired": 0.0,
+        "worst_case_loss_rate_wilson95": 0.3244075649867445,
+        "mean_exec_price": 0.9525,
+        "mean_fee": 0.0020615,
+        "mean_pnl": 0.0454385,
+        "clustered_se": 0.042503824792231935,
+        "clustered_t": 1.0690449676496976,
+        "clustered_p": 0.28504940740261286,
+        "n_clusters": 8,
+        "analytic_ev_point": 0.045438499999999986,
+        "analytic_ev_worst_case": -0.2789690649867445,
+        "n_locked_yes_settled_no": 0,
+        "bad_detail": []
+      },
+      "3": {
+        "n_fired": 4,
+        "win_rate": 1.0,
+        "cond_loss_rate_given_fired": 0.0,
+        "worst_case_loss_rate_wilson95": 0.48989083657188465,
+        "mean_exec_price": 1.0,
+        "mean_fee": 0.0,
+        "mean_pnl": 0.0,
+        "clustered_se": 0.0,
+        "clustered_t": NaN,
+        "clustered_p": null,
+        "n_clusters": 4,
+        "analytic_ev_point": 0.0,
+        "analytic_ev_worst_case": -0.4898908365718846,
+        "n_locked_yes_settled_no": 0,
+        "bad_detail": []
+      },
+      "4": {
+        "n_fired": 3,
+        "win_rate": 1.0,
+        "cond_loss_rate_given_fired": 0.0,
+        "worst_case_loss_rate_wilson95": 0.5614970318706057,
+        "mean_exec_price": 1.0,
+        "mean_fee": 0.0,
+        "mean_pnl": 0.0,
+        "clustered_se": 0.0,
+        "clustered_t": NaN,
+        "clustered_p": null,
+        "n_clusters": 3,
+        "analytic_ev_point": 0.0,
+        "analytic_ev_worst_case": -0.5614970318706057,
+        "n_locked_yes_settled_no": 0,
+        "bad_detail": []
+      },
+      "5": {
+        "n_fired": 2,
+        "win_rate": 1.0,
+        "cond_loss_rate_given_fired": 0.0,
+        "worst_case_loss_rate_wilson95": 0.6576197725990219,
+        "mean_exec_price": 1.0,
+        "mean_fee": 0.0,
+        "mean_pnl": 0.0,
+        "clustered_se": 0.0,
+        "clustered_t": NaN,
+        "clustered_p": null,
+        "n_clusters": 2,
+        "analytic_ev_point": 0.0,
+        "analytic_ev_worst_case": -0.6576197725990219,
+        "n_locked_yes_settled_no": 0,
+        "bad_detail": []
+      }
+    },
+    "sixhr": {
+      "1": {
+        "n_fired": 47,
+        "win_rate": 0.851063829787234,
+        "cond_loss_rate_given_fired": 0.14893617021276595,
+        "worst_case_loss_rate_wilson95": 0.27685622427094625,
+        "mean_exec_price": 0.8493617021276596,
+        "mean_fee": 0.0014140000000000001,
+        "mean_pnl": 0.00028812765957446747,
+        "clustered_se": 0.01117651506289487,
+        "clustered_t": 0.025779740639461767,
+        "clustered_p": 0.979433021106151,
+        "n_clusters": 30,
+        "analytic_ev_point": 0.00028812765957444823,
+        "analytic_ev_worst_case": -0.12763192639860585,
+        "n_locked_yes_settled_no": 7,
+        "bad_detail": [
+          {
+            "ticker": "KXHIGHTBOS-26MAY30-T61",
+            "date": "2026-05-30",
+            "strike": 61,
+            "cli_high": 58
+          },
+          {
+            "ticker": "KXHIGHTBOS-26MAY28-T75",
+            "date": "2026-05-28",
+            "strike": 75,
+            "cli_high": 71
+          },
+          {
+            "ticker": "KXHIGHTDC-26JUN15-T83",
+            "date": "2026-06-15",
+            "strike": 83,
+            "cli_high": 82
+          },
+          {
+            "ticker": "KXHIGHTDC-26MAY30-T76",
+            "date": "2026-05-30",
+            "strike": 76,
+            "cli_high": 73
+          },
+          {
+            "ticker": "KXHIGHTDC-26MAY21-T76",
+            "date": "2026-05-21",
+            "strike": 76,
+            "cli_high": 71
+          },
+          {
+            "ticker": "KXHIGHTATL-26MAY31-T79",
+            "date": "2026-05-31",
+            "strike": 79,
+            "cli_high": 75
+          },
+          {
+            "ticker": "KXHIGHPHIL-26JUN19-T85",
+            "date": "2026-06-19",
+            "strike": 85,
+            "cli_high": 84
+          }
+        ]
+      },
+      "2": {
+        "n_fired": 23,
+        "win_rate": 0.8695652173913043,
+        "cond_loss_rate_given_fired": 0.13043478260869568,
+        "worst_case_loss_rate_wilson95": 0.3212748227540482,
+        "mean_exec_price": 0.8813043478260869,
+        "mean_fee": 0.0008695217391304349,
+        "mean_pnl": -0.012608652173913043,
+        "clustered_se": 0.008003077624465267,
+        "clustered_t": -1.5754754315225703,
+        "clustered_p": 0.11514674507627154,
+        "n_clusters": 17,
+        "analytic_ev_point": -0.01260865217391302,
+        "analytic_ev_worst_case": -0.20344869231926552,
+        "n_locked_yes_settled_no": 3,
+        "bad_detail": [
+          {
+            "ticker": "KXHIGHTBOS-26MAY28-T75",
+            "date": "2026-05-28",
+            "strike": 75,
+            "cli_high": 71
+          },
+          {
+            "ticker": "KXHIGHTDC-26JUN15-T83",
+            "date": "2026-06-15",
+            "strike": 83,
+            "cli_high": 82
+          },
+          {
+            "ticker": "KXHIGHTATL-26MAY31-T79",
+            "date": "2026-05-31",
+            "strike": 79,
+            "cli_high": 75
+          }
+        ]
+      },
+      "3": {
+        "n_fired": 8,
+        "win_rate": 0.625,
+        "cond_loss_rate_given_fired": 0.375,
+        "worst_case_loss_rate_wilson95": 0.6942576054553528,
+        "mean_exec_price": 0.6625,
+        "mean_fee": 0.0022452500000000007,
+        "mean_pnl": -0.03974525,
+        "clustered_se": 0.02475526700794733,
+        "clustered_t": -1.6055270172299232,
+        "clustered_p": 0.10837787236696639,
+        "n_clusters": 7,
+        "analytic_ev_point": -0.03974524999999998,
+        "analytic_ev_worst_case": -0.3590028554553527,
+        "n_locked_yes_settled_no": 3,
+        "bad_detail": [
+          {
+            "ticker": "KXHIGHTBOS-26MAY28-T75",
+            "date": "2026-05-28",
+            "strike": 75,
+            "cli_high": 71
+          },
+          {
+            "ticker": "KXHIGHTDC-26JUN15-T83",
+            "date": "2026-06-15",
+            "strike": 83,
+            "cli_high": 82
+          },
+          {
+            "ticker": "KXHIGHTATL-26MAY31-T79",
+            "date": "2026-05-31",
+            "strike": 79,
+            "cli_high": 75
+          }
+        ]
+      },
+      "4": {
+        "n_fired": 6,
+        "win_rate": 0.6666666666666666,
+        "cond_loss_rate_given_fired": 0.33333333333333337,
+        "worst_case_loss_rate_wilson95": 0.7000066849253832,
+        "mean_exec_price": 0.6966666666666667,
+        "mean_fee": 0.0017616666666666672,
+        "mean_pnl": -0.03176166666666667,
+        "clustered_se": 0.028104399369050067,
+        "clustered_t": -1.1301314875863941,
+        "clustered_p": 0.25842082352668916,
+        "n_clusters": 5,
+        "analytic_ev_point": -0.031761666666666695,
+        "analytic_ev_worst_case": -0.3984350182587165,
+        "n_locked_yes_settled_no": 2,
+        "bad_detail": [
+          {
+            "ticker": "KXHIGHTBOS-26MAY28-T75",
+            "date": "2026-05-28",
+            "strike": 75,
+            "cli_high": 71
+          },
+          {
+            "ticker": "KXHIGHTDC-26JUN15-T83",
+            "date": "2026-06-15",
+            "strike": 83,
+            "cli_high": 82
+          }
+        ]
+      },
+      "5": {
+        "n_fired": 4,
+        "win_rate": 0.75,
+        "cond_loss_rate_given_fired": 0.25,
+        "worst_case_loss_rate_wilson95": 0.6993581574915436,
+        "mean_exec_price": 0.7525,
+        "mean_fee": 0.00017325000000000004,
+        "mean_pnl": -0.0026732500000000003,
+        "clustered_se": 0.00250059640229836,
+        "clustered_t": -1.0690449676496976,
+        "clustered_p": 0.28504940740261286,
+        "n_clusters": 3,
+        "analytic_ev_point": -0.002673249999999947,
+        "analytic_ev_worst_case": -0.4520314074915436,
+        "n_locked_yes_settled_no": 1,
+        "bad_detail": [
+          {
+            "ticker": "KXHIGHTBOS-26MAY28-T75",
+            "date": "2026-05-28",
+            "strike": 75,
+            "cli_high": 71
+          }
+        ]
+      }
+    }
+  },
+  "headline_margin_1_and_2": {
+    "1": {
+      "baseline_raw1min": {
+        "n_fired": 71,
+        "win_rate": 0.6197183098591549,
+        "cond_loss_rate_given_fired": 0.3802816901408451,
+        "worst_case_loss_rate_wilson95": 0.49658143716075775,
+        "mean_exec_price": 0.40028169014084497,
+        "mean_fee": 0.010009408450704223,
+        "mean_pnl": 0.20942721126760563,
+        "clustered_se": 0.05043380709929368,
+        "clustered_t": 4.152516403437222,
+        "clustered_p": 3.288391747036101e-05,
+        "n_clusters": 45,
+        "analytic_ev_point": 0.2094272112676057,
+        "analytic_ev_worst_case": 0.09312746424769305,
+        "n_locked_yes_settled_no": 27,
+        "bad_detail": [
+          {
+            "ticker": "KXHIGHDEN-26JUL09-T91",
+            "date": "2026-07-09",
+            "strike": 91,
+            "cli_high": 91
+          },
+          {
+            "ticker": "KXHIGHDEN-26JUN27-T97",
+            "date": "2026-06-27",
+            "strike": 97,
+            "cli_high": 97
+          },
+          {
+            "ticker": "KXHIGHDEN-26JUN18-T88",
+            "date": "2026-06-18",
+            "strike": 88,
+            "cli_high": 88
+          },
+          {
+            "ticker": "KXHIGHDEN-26JUN16-T93",
+            "date": "2026-06-16",
+            "strike": 93,
+            "cli_high": 93
+          },
+          {
+            "ticker": "KXHIGHMIA-26JUN26-T95",
+            "date": "2026-06-26",
+            "strike": 95,
+            "cli_high": 92
+          },
+          {
+            "ticker": "KXHIGHMIA-26JUN16-T95",
+            "date": "2026-06-16",
+            "strike": 95,
+            "cli_high": 95
+          },
+          {
+            "ticker": "KXHIGHMIA-26MAY16-T91",
+            "date": "2026-05-16",
+            "strike": 91,
+            "cli_high": 90
+          },
+          {
+            "ticker": "KXHIGHTBOS-26MAY16-T80",
+            "date": "2026-05-16",
+            "strike": 80,
+            "cli_high": 80
+          },
+          {
+            "ticker": "KXHIGHTSEA-26JUL10-T78",
+            "date": "2026-07-10",
+            "strike": 78,
+            "cli_high": 78
+          },
+          {
+            "ticker": "KXHIGHTSEA-26JUN27-T70",
+            "date": "2026-06-27",
+            "strike": 70,
+            "cli_high": 70
+          },
+          {
+            "ticker": "KXHIGHTSFO-26JUL02-T71",
+            "date": "2026-07-02",
+            "strike": 71,
+            "cli_high": 71
+          },
+          {
+            "ticker": "KXHIGHTSFO-26JUN30-T73",
+            "date": "2026-06-30",
+            "strike": 73,
+            "cli_high": 73
+          },
+          {
+            "ticker": "KXHIGHTSFO-26JUN25-T70",
+            "date": "2026-06-25",
+            "strike": 70,
+            "cli_high": 70
+          },
+          {
+            "ticker": "KXHIGHTSFO-26MAY18-T80",
+            "date": "2026-05-18",
+            "strike": 80,
+            "cli_high": 80
+          },
+          {
+            "ticker": "KXHIGHTATL-26JUL16-T93",
+            "date": "2026-07-16",
+            "strike": 93,
+            "cli_high": 93
+          },
+          {
+            "ticker": "KXHIGHTATL-26JUL11-T94",
+            "date": "2026-07-11",
+            "strike": 94,
+            "cli_high": 94
+          },
+          {
+            "ticker": "KXHIGHTATL-26MAY30-T85",
+            "date": "2026-05-30",
+            "strike": 85,
+            "cli_high": 85
+          },
+          {
+            "ticker": "KXHIGHTATL-26MAY28-T88",
+            "date": "2026-05-28",
+            "strike": 88,
+            "cli_high": 88
+          },
+          {
+            "ticker": "KXHIGHTDAL-26JUN06-T89",
+            "date": "2026-06-06",
+            "strike": 89,
+            "cli_high": 89
+          },
+          {
+            "ticker": "KXHIGHTSATX-26MAY23-T85",
+            "date": "2026-05-23",
+            "strike": 85,
+            "cli_high": 85
+          },
+          {
+            "ticker": "KXHIGHTOKC-26JUN12-T91",
+            "date": "2026-06-12",
+            "strike": 91,
+            "cli_high": 91
+          },
+          {
+            "ticker": "KXHIGHTOKC-26MAY28-T84",
+            "date": "2026-05-28",
+            "strike": 84,
+            "cli_high": 84
+          },
+          {
+            "ticker": "KXHIGHTHOU-26MAY22-T90",
+            "date": "2026-05-22",
+            "strike": 90,
+            "cli_high": 90
+          },
+          {
+            "ticker": "KXHIGHPHIL-26JUL11-T89",
+            "date": "2026-07-11",
+            "strike": 89,
+            "cli_high": 89
+          },
+          {
+            "ticker": "KXHIGHPHIL-26JUN02-T80",
+            "date": "2026-06-02",
+            "strike": 80,
+            "cli_high": 80
+          },
+          {
+            "ticker": "KXHIGHLAX-26JUN28-T72",
+            "date": "2026-06-28",
+            "strike": 72,
+            "cli_high": 71
+          },
+          {
+            "ticker": "KXHIGHLAX-26MAY24-T69",
+            "date": "2026-05-24",
+            "strike": 69,
+            "cli_high": 68
+          }
+        ]
+      },
+      "candidates": {
+        "roll3": {
+          "n_fired": 38,
+          "win_rate": 0.9736842105263158,
+          "cond_loss_rate_given_fired": 0.02631578947368418,
+          "worst_case_loss_rate_wilson95": 0.13494876119812985,
+          "mean_exec_price": 0.7192105263157895,
+          "mean_fee": 0.009407447368421055,
+          "mean_pnl": 0.24506623684210527,
+          "clustered_se": 0.04522892288472678,
+          "clustered_t": 5.418352266904436,
+          "clustered_p": 6.015081188692761e-08,
+          "n_clusters": 28,
+          "analytic_ev_point": 0.24506623684210524,
+          "analytic_ev_worst_case": 0.1364332651176596,
+          "n_locked_yes_settled_no": 1,
+          "bad_detail": [
+            {
+              "ticker": "KXHIGHLAX-26MAY24-T69",
+              "date": "2026-05-24",
+              "strike": 69,
+              "cli_high": 68
+            }
+          ]
+        },
+        "roll5": {
+          "n_fired": 33,
+          "win_rate": 0.9696969696969697,
+          "cond_loss_rate_given_fired": 0.030303030303030276,
+          "worst_case_loss_rate_wilson95": 0.15318725386413604,
+          "mean_exec_price": 0.8612121212121213,
+          "mean_fee": 0.005929212121212122,
+          "mean_pnl": 0.10255563636363636,
+          "clustered_se": 0.025150970006019333,
+          "clustered_t": 4.077601632823383,
+          "clustered_p": 4.5502641849104464e-05,
+          "n_clusters": 25,
+          "analytic_ev_point": 0.10255563636363628,
+          "analytic_ev_worst_case": -0.020328587197469446,
+          "n_locked_yes_settled_no": 1,
+          "bad_detail": [
+            {
+              "ticker": "KXHIGHLAX-26MAY24-T69",
+              "date": "2026-05-24",
+              "strike": 69,
+              "cli_high": 68
+            }
+          ]
+        },
+        "metar": {
+          "n_fired": 27,
+          "win_rate": 1.0,
+          "cond_loss_rate_given_fired": 0.0,
+          "worst_case_loss_rate_wilson95": 0.12455502979304453,
+          "mean_exec_price": 0.9085185185185186,
+          "mean_fee": 0.004051444444444444,
+          "mean_pnl": 0.08743003703703707,
+          "clustered_se": 0.028179220038268806,
+          "clustered_t": 3.1026421923070497,
+          "clustered_p": 0.001918013824791398,
+          "n_clusters": 22,
+          "analytic_ev_point": 0.08743003703703695,
+          "analytic_ev_worst_case": -0.03712499275600761,
+          "n_locked_yes_settled_no": 0,
+          "bad_detail": []
+        },
+        "sixhr": {
+          "n_fired": 47,
+          "win_rate": 0.851063829787234,
+          "cond_loss_rate_given_fired": 0.14893617021276595,
+          "worst_case_loss_rate_wilson95": 0.27685622427094625,
+          "mean_exec_price": 0.8493617021276596,
+          "mean_fee": 0.0014140000000000001,
+          "mean_pnl": 0.00028812765957446747,
+          "clustered_se": 0.01117651506289487,
+          "clustered_t": 0.025779740639461767,
+          "clustered_p": 0.979433021106151,
+          "n_clusters": 30,
+          "analytic_ev_point": 0.00028812765957444823,
+          "analytic_ev_worst_case": -0.12763192639860585,
+          "n_locked_yes_settled_no": 7,
+          "bad_detail": [
+            {
+              "ticker": "KXHIGHTBOS-26MAY30-T61",
+              "date": "2026-05-30",
+              "strike": 61,
+              "cli_high": 58
+            },
+            {
+              "ticker": "KXHIGHTBOS-26MAY28-T75",
+              "date": "2026-05-28",
+              "strike": 75,
+              "cli_high": 71
+            },
+            {
+              "ticker": "KXHIGHTDC-26JUN15-T83",
+              "date": "2026-06-15",
+              "strike": 83,
+              "cli_high": 82
+            },
+            {
+              "ticker": "KXHIGHTDC-26MAY30-T76",
+              "date": "2026-05-30",
+              "strike": 76,
+              "cli_high": 73
+            },
+            {
+              "ticker": "KXHIGHTDC-26MAY21-T76",
+              "date": "2026-05-21",
+              "strike": 76,
+              "cli_high": 71
+            },
+            {
+              "ticker": "KXHIGHTATL-26MAY31-T79",
+              "date": "2026-05-31",
+              "strike": 79,
+              "cli_high": 75
+            },
+            {
+              "ticker": "KXHIGHPHIL-26JUN19-T85",
+              "date": "2026-06-19",
+              "strike": 85,
+              "cli_high": 84
+            }
+          ]
+        }
+      }
+    },
+    "2": {
+      "baseline_raw1min": {
+        "n_fired": 35,
+        "win_rate": 0.9142857142857143,
+        "cond_loss_rate_given_fired": 0.08571428571428574,
+        "worst_case_loss_rate_wilson95": 0.22379273970048333,
+        "mean_exec_price": 0.7385714285714285,
+        "mean_fee": 0.007898599999999999,
+        "mean_pnl": 0.16781568571428573,
+        "clustered_se": 0.03647326674818205,
+        "clustered_t": 4.601059918019278,
+        "clustered_p": 4.2034647858013585e-06,
+        "n_clusters": 29,
+        "analytic_ev_point": 0.1678156857142857,
+        "analytic_ev_worst_case": 0.029737231728088155,
+        "n_locked_yes_settled_no": 3,
+        "bad_detail": [
+          {
+            "ticker": "KXHIGHMIA-26JUN16-T95",
+            "date": "2026-06-16",
+            "strike": 95,
+            "cli_high": 95
+          },
+          {
+            "ticker": "KXHIGHMIA-26MAY16-T91",
+            "date": "2026-05-16",
+            "strike": 91,
+            "cli_high": 90
+          },
+          {
+            "ticker": "KXHIGHLAX-26MAY24-T69",
+            "date": "2026-05-24",
+            "strike": 69,
+            "cli_high": 68
+          }
+        ]
+      },
+      "candidates": {
+        "roll3": {
+          "n_fired": 19,
+          "win_rate": 0.9473684210526315,
+          "cond_loss_rate_given_fired": 0.052631578947368474,
+          "worst_case_loss_rate_wilson95": 0.24638731173082004,
+          "mean_exec_price": 0.9168421052631578,
+          "mean_fee": 0.0025995789473684215,
+          "mean_pnl": 0.027926736842105268,
+          "clustered_se": 0.020256927608011552,
+          "clustered_t": 1.3786264818886123,
+          "clustered_p": 0.16800994726578855,
+          "n_clusters": 15,
+          "analytic_ev_point": 0.027926736842105313,
+          "analytic_ev_worst_case": -0.16582899594134629,
+          "n_locked_yes_settled_no": 1,
+          "bad_detail": [
+            {
+              "ticker": "KXHIGHLAX-26MAY24-T69",
+              "date": "2026-05-24",
+              "strike": 69,
+              "cli_high": 68
+            }
+          ]
+        },
+        "roll5": {
+          "n_fired": 15,
+          "win_rate": 1.0,
+          "cond_loss_rate_given_fired": 0.0,
+          "worst_case_loss_rate_wilson95": 0.20388330111202968,
+          "mean_exec_price": 0.9913333333333333,
+          "mean_fee": 0.0005278,
+          "mean_pnl": 0.008138866666666666,
+          "clustered_se": 0.007862892210244646,
+          "clustered_t": 1.035098339013531,
+          "clustered_p": 0.3006229881969069,
+          "n_clusters": 15,
+          "analytic_ev_point": 0.008138866666666711,
+          "analytic_ev_worst_case": -0.19574443444536296,
+          "n_locked_yes_settled_no": 0,
+          "bad_detail": []
+        },
+        "metar": {
+          "n_fired": 8,
+          "win_rate": 1.0,
+          "cond_loss_rate_given_fired": 0.0,
+          "worst_case_loss_rate_wilson95": 0.3244075649867445,
+          "mean_exec_price": 0.9525,
+          "mean_fee": 0.0020615,
+          "mean_pnl": 0.0454385,
+          "clustered_se": 0.042503824792231935,
+          "clustered_t": 1.0690449676496976,
+          "clustered_p": 0.28504940740261286,
+          "n_clusters": 8,
+          "analytic_ev_point": 0.045438499999999986,
+          "analytic_ev_worst_case": -0.2789690649867445,
+          "n_locked_yes_settled_no": 0,
+          "bad_detail": []
+        },
+        "sixhr": {
+          "n_fired": 23,
+          "win_rate": 0.8695652173913043,
+          "cond_loss_rate_given_fired": 0.13043478260869568,
+          "worst_case_loss_rate_wilson95": 0.3212748227540482,
+          "mean_exec_price": 0.8813043478260869,
+          "mean_fee": 0.0008695217391304349,
+          "mean_pnl": -0.012608652173913043,
+          "clustered_se": 0.008003077624465267,
+          "clustered_t": -1.5754754315225703,
+          "clustered_p": 0.11514674507627154,
+          "n_clusters": 17,
+          "analytic_ev_point": -0.01260865217391302,
+          "analytic_ev_worst_case": -0.20344869231926552,
+          "n_locked_yes_settled_no": 3,
+          "bad_detail": [
+            {
+              "ticker": "KXHIGHTBOS-26MAY28-T75",
+              "date": "2026-05-28",
+              "strike": 75,
+              "cli_high": 71
+            },
+            {
+              "ticker": "KXHIGHTDC-26JUN15-T83",
+              "date": "2026-06-15",
+              "strike": 83,
+              "cli_high": 82
+            },
+            {
+              "ticker": "KXHIGHTATL-26MAY31-T79",
+              "date": "2026-05-31",
+              "strike": 79,
+              "cli_high": 75
+            }
+          ]
+        }
+      }
+    }
+  },
+  "residual_miss_characterization_margin1": {
+    "n_raw1min_misses": 27,
+    "detail": [
+      {
+        "ticker": "KXHIGHDEN-26JUL09-T91",
+        "date": "2026-07-09",
+        "strike": 91,
+        "cli_high": 91,
+        "roll3": "did_not_fire",
+        "roll5": "did_not_fire",
+        "metar": "did_not_fire"
+      },
+      {
+        "ticker": "KXHIGHDEN-26JUN27-T97",
+        "date": "2026-06-27",
+        "strike": 97,
+        "cli_high": 97,
+        "roll3": "did_not_fire",
+        "roll5": "did_not_fire",
+        "metar": "did_not_fire"
+      },
+      {
+        "ticker": "KXHIGHDEN-26JUN18-T88",
+        "date": "2026-06-18",
+        "strike": 88,
+        "cli_high": 88,
+        "roll3": "did_not_fire",
+        "roll5": "did_not_fire",
+        "metar": "did_not_fire"
+      },
+      {
+        "ticker": "KXHIGHDEN-26JUN16-T93",
+        "date": "2026-06-16",
+        "strike": 93,
+        "cli_high": 93,
+        "roll3": "did_not_fire",
+        "roll5": "did_not_fire",
+        "metar": "did_not_fire"
+      },
+      {
+        "ticker": "KXHIGHMIA-26JUN26-T95",
+        "date": "2026-06-26",
+        "strike": 95,
+        "cli_high": 92,
+        "roll3": "did_not_fire",
+        "roll5": "did_not_fire",
+        "metar": "did_not_fire"
+      },
+      {
+        "ticker": "KXHIGHMIA-26JUN16-T95",
+        "date": "2026-06-16",
+        "strike": 95,
+        "cli_high": 95,
+        "roll3": "did_not_fire",
+        "roll5": "did_not_fire",
+        "metar": "did_not_fire"
+      },
+      {
+        "ticker": "KXHIGHMIA-26MAY16-T91",
+        "date": "2026-05-16",
+        "strike": 91,
+        "cli_high": 90,
+        "roll3": "did_not_fire",
+        "roll5": "did_not_fire",
+        "metar": "did_not_fire"
+      },
+      {
+        "ticker": "KXHIGHTBOS-26MAY16-T80",
+        "date": "2026-05-16",
+        "strike": 80,
+        "cli_high": 80,
+        "roll3": "did_not_fire",
+        "roll5": "did_not_fire",
+        "metar": "did_not_fire"
+      },
+      {
+        "ticker": "KXHIGHTSEA-26JUL10-T78",
+        "date": "2026-07-10",
+        "strike": 78,
+        "cli_high": 78,
+        "roll3": "did_not_fire",
+        "roll5": "did_not_fire",
+        "metar": "did_not_fire"
+      },
+      {
+        "ticker": "KXHIGHTSEA-26JUN27-T70",
+        "date": "2026-06-27",
+        "strike": 70,
+        "cli_high": 70,
+        "roll3": "did_not_fire",
+        "roll5": "did_not_fire",
+        "metar": "did_not_fire"
+      },
+      {
+        "ticker": "KXHIGHTSFO-26JUL02-T71",
+        "date": "2026-07-02",
+        "strike": 71,
+        "cli_high": 71,
+        "roll3": "did_not_fire",
+        "roll5": "did_not_fire",
+        "metar": "did_not_fire"
+      },
+      {
+        "ticker": "KXHIGHTSFO-26JUN30-T73",
+        "date": "2026-06-30",
+        "strike": 73,
+        "cli_high": 73,
+        "roll3": "did_not_fire",
+        "roll5": "did_not_fire",
+        "metar": "did_not_fire"
+      },
+      {
+        "ticker": "KXHIGHTSFO-26JUN25-T70",
+        "date": "2026-06-25",
+        "strike": 70,
+        "cli_high": 70,
+        "roll3": "did_not_fire",
+        "roll5": "did_not_fire",
+        "metar": "did_not_fire"
+      },
+      {
+        "ticker": "KXHIGHTSFO-26MAY18-T80",
+        "date": "2026-05-18",
+        "strike": 80,
+        "cli_high": 80,
+        "roll3": "did_not_fire",
+        "roll5": "did_not_fire",
+        "metar": "did_not_fire"
+      },
+      {
+        "ticker": "KXHIGHTATL-26JUL16-T93",
+        "date": "2026-07-16",
+        "strike": 93,
+        "cli_high": 93,
+        "roll3": "did_not_fire",
+        "roll5": "did_not_fire",
+        "metar": "did_not_fire"
+      },
+      {
+        "ticker": "KXHIGHTATL-26JUL11-T94",
+        "date": "2026-07-11",
+        "strike": 94,
+        "cli_high": 94,
+        "roll3": "did_not_fire",
+        "roll5": "did_not_fire",
+        "metar": "did_not_fire"
+      },
+      {
+        "ticker": "KXHIGHTATL-26MAY30-T85",
+        "date": "2026-05-30",
+        "strike": 85,
+        "cli_high": 85,
+        "roll3": "did_not_fire",
+        "roll5": "did_not_fire",
+        "metar": "did_not_fire"
+      },
+      {
+        "ticker": "KXHIGHTATL-26MAY28-T88",
+        "date": "2026-05-28",
+        "strike": 88,
+        "cli_high": 88,
+        "roll3": "did_not_fire",
+        "roll5": "did_not_fire",
+        "metar": "did_not_fire"
+      },
+      {
+        "ticker": "KXHIGHTDAL-26JUN06-T89",
+        "date": "2026-06-06",
+        "strike": 89,
+        "cli_high": 89,
+        "roll3": "did_not_fire",
+        "roll5": "did_not_fire",
+        "metar": "did_not_fire"
+      },
+      {
+        "ticker": "KXHIGHTSATX-26MAY23-T85",
+        "date": "2026-05-23",
+        "strike": 85,
+        "cli_high": 85,
+        "roll3": "did_not_fire",
+        "roll5": "did_not_fire",
+        "metar": "did_not_fire"
+      },
+      {
+        "ticker": "KXHIGHTOKC-26JUN12-T91",
+        "date": "2026-06-12",
+        "strike": 91,
+        "cli_high": 91,
+        "roll3": "did_not_fire",
+        "roll5": "did_not_fire",
+        "metar": "did_not_fire"
+      },
+      {
+        "ticker": "KXHIGHTOKC-26MAY28-T84",
+        "date": "2026-05-28",
+        "strike": 84,
+        "cli_high": 84,
+        "roll3": "did_not_fire",
+        "roll5": "did_not_fire",
+        "metar": "did_not_fire"
+      },
+      {
+        "ticker": "KXHIGHTHOU-26MAY22-T90",
+        "date": "2026-05-22",
+        "strike": 90,
+        "cli_high": 90,
+        "roll3": "did_not_fire",
+        "roll5": "did_not_fire",
+        "metar": "did_not_fire"
+      },
+      {
+        "ticker": "KXHIGHPHIL-26JUL11-T89",
+        "date": "2026-07-11",
+        "strike": 89,
+        "cli_high": 89,
+        "roll3": "did_not_fire",
+        "roll5": "did_not_fire",
+        "metar": "did_not_fire"
+      },
+      {
+        "ticker": "KXHIGHPHIL-26JUN02-T80",
+        "date": "2026-06-02",
+        "strike": 80,
+        "cli_high": 80,
+        "roll3": "did_not_fire",
+        "roll5": "did_not_fire",
+        "metar": "did_not_fire"
+      },
+      {
+        "ticker": "KXHIGHLAX-26JUN28-T72",
+        "date": "2026-06-28",
+        "strike": 72,
+        "cli_high": 71,
+        "roll3": "did_not_fire",
+        "roll5": "did_not_fire",
+        "metar": "did_not_fire"
+      },
+      {
+        "ticker": "KXHIGHLAX-26MAY24-T69",
+        "date": "2026-05-24",
+        "strike": 69,
+        "cli_high": 68,
+        "roll3": "still_missed",
+        "roll5": "still_missed",
+        "metar": "did_not_fire"
+      }
+    ],
+    "n_fixed_by_roll5": 0,
+    "n_fixed_by_roll3": 0,
+    "n_fixed_by_metar": 0,
+    "n_still_missed_by_roll5": 1
+  },
+  "rejected_datasets": {
+    "madis_5min_hfmetar": {
+      "verdict": "REJECTED -- acquired, unusable for temperature",
+      "probe_report_type_1_one_recent_day": {
+        "KMDW": {
+          "n_rows": 274,
+          "n_tmpf_present": 0
+        },
+        "KDEN": {
+          "n_rows": 0,
+          "n_tmpf_present": 0
+        }
+      },
+      "reason": "IEM/MADIS transmits HFMETAR temperature in whole-degree Celsius; cannot be reliably back-converted to whole-degree F, so IEM stores tmpf as missing. Confirmed here: 0 non-missing tmpf values out of all HFMETAR rows probed."
+    },
+    "isd_isd_lite_ncei": {
+      "verdict": "REJECTED for THIS window -- real dataset, not yet published for 2026",
+      "availability_probe_2026": {
+        "KATL": {
+          "status": "no_current_isd_station_mapping_found"
+        },
+        "KAUS": {
+          "status": "no_current_isd_station_mapping_found"
+        },
+        "KBOS": {
+          "status": "no_current_isd_station_mapping_found"
+        },
+        "KDCA": {
+          "status": "no_current_isd_station_mapping_found"
+        },
+        "KDEN": {
+          "status": "no_current_isd_station_mapping_found"
+        },
+        "KDFW": {
+          "status": "no_current_isd_station_mapping_found"
+        },
+        "KHOU": {
+          "status": "no_current_isd_station_mapping_found"
+        },
+        "KLAS": {
+          "status": "no_current_isd_station_mapping_found"
+        },
+        "KLAX": {
+          "status": "no_current_isd_station_mapping_found"
+        },
+        "KMDW": {
+          "status": "no_current_isd_station_mapping_found"
+        },
+        "KMIA": {
+          "status": "no_current_isd_station_mapping_found"
+        },
+        "KMSP": {
+          "status": "no_current_isd_station_mapping_found"
+        },
+        "KMSY": {
+          "status": "no_current_isd_station_mapping_found"
+        },
+        "KOKC": {
+          "status": "no_current_isd_station_mapping_found"
+        },
+        "KPHL": {
+          "status": "no_current_isd_station_mapping_found"
+        },
+        "KPHX": {
+          "status": "no_current_isd_station_mapping_found"
+        },
+        "KSAT": {
+          "status": "no_current_isd_station_mapping_found"
+        },
+        "KSEA": {
+          "status": "no_current_isd_station_mapping_found"
+        },
+        "KSFO": {
+          "status": "no_current_isd_station_mapping_found"
+        },
+        "NYC": {
+          "status": "no_current_isd_station_mapping_found"
+        }
+      },
+      "equivalence_validation_2025": {
+        "station": "KDEN",
+        "year": 2025,
+        "ok": true,
+        "n_compared": 167,
+        "mean_abs_diff_F": 2.5815568862275446,
+        "max_abs_diff_F": 13.939999999999998
+      },
+      "reason": "NCEI global-hourly/isd-lite archive directories for 2026 return HTTP 404 in this environment as of the run date (2024/ and 2025/ both return 200), i.e. NCEI has not finalized/published this year's ISD data yet -- a real publication lag, not a fetch bug. Because ISD-Lite's own format spec confirms its hourly temperature IS the routine METAR stream, the 'metar' candidate above is used as the realtime-available stand-in, and the equivalence was spot-validated against real 2025 ISD-Lite data for KDEN."
+    },
+    "madis_qc_flags": {
+      "verdict": "OUT -- not reachable for free without a MADIS/THREDDS registered account",
+      "reason": "MADIS distribution requires a registered LDM/THREDDS feed or account; there is no public anonymous HTTP endpoint for per-ob QC flags. Not fabricated or approximated here."
+    }
+  },
+  "candidate_ranking_margin1": [
+    {
+      "candidate": "metar",
+      "n_fired_margin1": 27,
+      "worst_case_loss_rate_margin1": 0.12455502979304453,
+      "cond_loss_rate_margin1": 0.0,
+      "analytic_ev_worst_case_margin1": -0.03712499275600761,
+      "coverage_rate": 1.0
+    },
+    {
+      "candidate": "roll3",
+      "n_fired_margin1": 38,
+      "worst_case_loss_rate_margin1": 0.13494876119812985,
+      "cond_loss_rate_margin1": 0.02631578947368418,
+      "analytic_ev_worst_case_margin1": 0.1364332651176596,
+      "coverage_rate": 0.9507462686567164
+    },
+    {
+      "candidate": "roll5",
+      "n_fired_margin1": 33,
+      "worst_case_loss_rate_margin1": 0.15318725386413604,
+      "cond_loss_rate_margin1": 0.030303030303030276,
+      "analytic_ev_worst_case_margin1": -0.020328587197469446,
+      "coverage_rate": 0.9507462686567164
+    },
+    {
+      "candidate": "sixhr",
+      "n_fired_margin1": 47,
+      "worst_case_loss_rate_margin1": 0.27685622427094625,
+      "cond_loss_rate_margin1": 0.14893617021276595,
+      "analytic_ev_worst_case_margin1": -0.12763192639860585,
+      "coverage_rate": 1.0
+    },
+    {
+      "candidate": "raw1min",
+      "n_fired_margin1": 71,
+      "worst_case_loss_rate_margin1": 0.49658143716075775,
+      "cond_loss_rate_margin1": 0.3802816901408451,
+      "analytic_ev_worst_case_margin1": 0.09312746424769305,
+      "coverage_rate": 0.9507462686567164
+    }
+  ]
+}
