@@ -2668,3 +2668,18 @@ Ground truth validated: independent NWS CLI daily-max matches Kalshi settled yes
 BONUS: switching the live obs feed to PUBLISHED METAR solves BOTH the tail (independent confirmation gate) AND the live-obs
 latency blocker (METAR is real-time, vs IEM's 1-2d lag). => Phase-2 integrated rule: raw-1min trigger + METAR-confirmation gate
 (or roll3/margin1), glitch filter, full-ladder, KXLOW, real Predexon L2 depth. PHASE 1 COMPLETE.
+
+## PHASE-2 REALITY CHECK (2026-07-18) — Kalshi weather PRICE history is only ~10 weeks (product launched ~May-2026), NOT multi-year
+Before running the mandated full-history re-validation I probed the true depth of Kalshi KXHIGH price history. HARD FINDING:
+- Paged ALL settled KXHIGHNY + KXHIGHCHI markets (cursor exhausted, 3 pages, 402 mkts each): earliest close_time = 2026-05-13.
+- Events resolve for older dates (KXHIGHNY-25JUL17 returns 200) but carry 0 markets; specific pre-May-2026 rung tickers 404;
+  /historical/markets/.../candlesticks 400s. => NO tradeable markets and NO candlesticks before ~2026-05-13. The weather series
+  are NEW listings. There is NO multi-year Kalshi PRICE dataset to re-validate on. (Corrects the summary's "history to 2021".)
+CONSEQUENCE — the "full dataset" splits into two tracks, and the honest re-validation runs BOTH:
+  TRACK A (PRICE EDGE, capped at real Kalshi history ~2026-05-13->today, ALL ~20 cities x full 6-rung ladder x KXHIGH+KXLOW):
+    this is the real "full dataset" for the EV/win/t -- far more fires than the original single-city n=42, but WARM-SEASON ONLY
+    (May-Jul), so it cannot see winter behavior. Re-optimize margin/sustain walk-forward; depth-size vs REAL Predexon L2.
+  TRACK B (TAIL/RISK, genuinely MULTI-YEAR via ASOS 1-min + NWS CLI, NO Kalshi price needed): measure obs-running-max-vs-official-
+    CLI disagreement + lock-failure rate across many years AND all seasons for the ~20 settlement stations -> the all-season tail
+    the warm-season price sample structurally cannot reveal (winter radiational cooling / frontal passages may differ). This is
+    where "multi-year" genuinely applies and is the risk backbone. Deployable sizing = Track-A EV with Track-B worst-case tail.
