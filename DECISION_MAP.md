@@ -2775,3 +2775,22 @@ Validated the LIVE feeds (api.weather.gov 5-min, aviationweather METAR) against 
 VERDICT: margin=1 is CONFIRMED safe for the live feeds (METAR 0.41%). Current config validated unchanged: consensus(weathergov
 +METAR) default, margin=1 base, Phoenix/high-disagreement derates (Track B SENSOR axis, separate from feed axis), NYC quorum=1.
 METAR is the anchor; weathergov adds 5-min fast detection. Forward paper gate remains the final confirm on the SHORT live window.
+
+## RAIN SLEEVE (2026-07-18) — NULL as a deployable sleeve #2 (mechanism real, EV negligible)
+Validated Kalshi monthly rain ladders (KXRAINxxxM) as a potential second sleeve. Findings:
+- SETTLEMENT SOURCE confirmed: NWS CLI monthly total precip, same station/report family as temp. Clean.
+- CLEAN LOCK SIGNAL found: the CLI daily "MONTH-TO-DATE" report is perfectly monotonic, matches Kalshi settlement to
+  0.02-0.05in, and gives 0/58 false locks (vs the price-momentum signal's 11% -- it RESOLVED both prior false-lock cases as
+  genuine market overreactions, not data errors). Raw ASOS 1-min summation is NOT usable alone (21-25% missing-telemetry
+  months undercount by 33-43%). So the mechanic is real and now correctly understood.
+- OOS EV = KILLER: rain accumulates over days-to-weeks, so by the time any observable confirmation exists the book has
+  already repriced to ~99-100c. 96.5% DOA (CLI trigger) / 90% DOA (ASOS trigger). Blended EV +0.0046 to +0.0107/ct -- ~2
+  orders of magnitude below temp's +0.15-0.20. Non-DOA tail (n=1-5) looks good but is far too thin to trust.
+- DIVERSIFICATION: weak-POSITIVE corr (+0.13 to +0.17) with temp fires, not negative -> doesn't smooth (and temp has 0 net-
+  negative days anyway). No stacking benefit.
+- Depth is genuinely deeper ($130-4200/rung vs temp's $10-90) but irrelevant if the trigger can't beat the market to it.
+VERDICT: NULL for deployment. Honest EV ~$5-100/wk (not the prior scan's $1.5-4k/wk, which used the unvalidated price trigger
+w/o netting blowup risk). Full available history (2mo x 10 cities, brand-new product) -> more backtest won't fix it. Only paths:
+(a) wait for more calendar time to accumulate history, or (b) a genuinely faster corroboration source (radar/MRMS precip,
+untested) -- but the fundamental slow-accumulation-vs-fast-repricing problem likely persists. DO NOT build a rain harness now.
+STACK STAYS TEMP-ONLY. 10%/day on meaningful capital still requires a DIFFERENT orthogonal edge (rain is not it).
