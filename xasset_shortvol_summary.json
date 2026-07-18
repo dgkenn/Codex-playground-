@@ -543,6 +543,106 @@
     "end": "2026-07-17",
     "asof": "2026-07-18"
   },
+  "deep_tail": {
+    "BTC": {
+      "lo": 0.02,
+      "hi": 0.1,
+      "n": 49,
+      "weeks": 4,
+      "mean_mid": 0.04243877551020408,
+      "t_mid": 18.982899950505388,
+      "mean_exe1": 0.03243877551020407,
+      "t_exe1": 14.509891546683484,
+      "entry": 0.04243877551020408,
+      "realized": 0
+    },
+    "ETH": {
+      "lo": 0.02,
+      "hi": 0.1,
+      "n": 36,
+      "weeks": 4,
+      "mean_mid": 0.012750000000000004,
+      "t_mid": 0.42975798102021945,
+      "mean_exe1": 0.0027500000000000024,
+      "t_exe1": 0.0926928978671062,
+      "entry": 0.04052777777777778,
+      "realized": 0.027777777777777776
+    },
+    "SOL": {
+      "lo": 0.02,
+      "hi": 0.1,
+      "n": 47,
+      "weeks": 4,
+      "mean_mid": -0.008776595744680853,
+      "t_mid": -0.24653800109326768,
+      "mean_exe1": -0.01877659574468085,
+      "t_exe1": -0.5274419053692332,
+      "entry": 0.03377659574468085,
+      "realized": 0.0425531914893617
+    },
+    "XRP": {
+      "lo": 0.02,
+      "hi": 0.1,
+      "n": 54,
+      "weeks": 4,
+      "mean_mid": 0.034277777777777775,
+      "t_mid": 47.1508409516875,
+      "mean_exe1": 0.024277777777777773,
+      "t_exe1": 33.39532819430701,
+      "entry": 0.034277777777777775,
+      "realized": 0
+    }
+  },
+  "wide_longshot": {
+    "BTC": {
+      "lo": 0.05,
+      "hi": 0.3,
+      "n": 40,
+      "weeks": 4,
+      "mean_mid": 0.021225000000000004,
+      "t_mid": 0.541260873055131,
+      "mean_exe1": 0.011224999999999995,
+      "t_exe1": 0.286249861015022,
+      "entry": 0.146225,
+      "realized": 0.125
+    },
+    "ETH": {
+      "lo": 0.05,
+      "hi": 0.3,
+      "n": 32,
+      "weeks": 4,
+      "mean_mid": -0.09253125,
+      "t_mid": -0.9367592591756072,
+      "mean_exe1": -0.10253125000000002,
+      "t_exe1": -1.0379963287251497,
+      "entry": 0.15746875,
+      "realized": 0.25
+    },
+    "SOL": {
+      "lo": 0.05,
+      "hi": 0.3,
+      "n": 21,
+      "weeks": 4,
+      "mean_mid": -0.13745238095238094,
+      "t_mid": -0.6675027832375311,
+      "mean_exe1": -0.14745238095238095,
+      "t_exe1": -0.7160652583734679,
+      "entry": 0.14826190476190476,
+      "realized": 0.2857142857142857
+    },
+    "XRP": {
+      "lo": 0.05,
+      "hi": 0.3,
+      "n": 27,
+      "weeks": 4,
+      "mean_mid": 0.008481481481481486,
+      "t_mid": 0.11788501627085739,
+      "mean_exe1": -0.0015185185185185189,
+      "t_exe1": -0.02110605094805743,
+      "entry": 0.15662962962962962,
+      "realized": 0.14814814814814814
+    }
+  },
   "horizon_sens": {
     "BTC": [
       {
@@ -781,5 +881,5 @@
       "pos_per_week": 14.0
     }
   },
-  "_verdict": "**BTC**: n=15 over 4 wks | seller PnL/ct mid **-0.039** (wk-clustered t=-0.34), exe-1c -0.049 (t=-0.43), exe+fee -0.068 (t=-0.59) | entry 0.228 vs realized YES 0.267 (NOT overpriced), win 0.733, worst wk -0.398.\n\n**ETH**: n=19 over 4 wks | seller PnL/ct mid **-0.058** (wk-clustered t=-0.46), exe-1c -0.068 (t=-0.54), exe+fee -0.084 (t=-0.66) | entry 0.205 vs realized YES 0.263 (NOT overpriced), win 0.737, worst wk -0.314.\n\n**SOL**: n=8 over 4 wks | seller PnL/ct mid **-0.150** (wk-clustered t=-0.80), exe-1c -0.160 (t=-0.85), exe+fee -0.178 (t=-0.95) | entry 0.225 vs realized YES 0.375 (NOT overpriced), win 0.625, worst wk -0.448.\n\n**XRP**: n=14 over 4 wks | seller PnL/ct mid **-0.056** (wk-clustered t=-0.37), exe-1c -0.066 (t=-0.43), exe+fee -0.086 (t=-0.56) | entry 0.230 vs realized YES 0.286 (NOT overpriced), win 0.714, worst wk -0.269.\n\n\n\n**Does the premium EXTEND?**\n\nNO \u2014 neither SOL nor XRP clears a positive, significant, correctly-calibrated band edge; the premium is (on this sample) BTC/ETH-specific.\n\nNot clearly extending: SOL, XRP (small-n and/or weak t \u2014 see table).\n\n\n\n**Correlation / diversification.** Cross-underlying weekly-PnL correlations (primary 144h horizon, 2026-05-22..2026-07-17): BTC-ETH 0.82, BTC-SOL 0.79, BTC-XRP 0.71, ETH-SOL 0.36, ETH-XRP 0.32, SOL-XRP 0.98. SOL vs BTC+ETH ref 0.59, XRP vs ref 0.53.\n\nThese weeklies are DIRECTIONALLY LINKED longshots \u2014 a broad crypto rally lifts every underlying's spot together, so the same weeks tend to be the losing (longshot-prints) weeks across names. High positive weekly-PnL correlation => LIMITED true diversification: adding SOL/XRP raises positions/week but does NOT give ~independent streams (variance falls far less than 1/k). n_weeks per pair is only ~4 \u2014 correlations are noisy, treat as directional.\n\n\n\n**Frontier / capacity.** Positions/week (band, primary horizon): BTC 3.8, ETH 4.8, SOL 2.0, XRP 3.5. BTC+ETH pooled ~8.5/wk (t=-0.43, wk-Sharpe -0.29); ALL-4 pooled ~14.0/wk (t=-0.54, wk-Sharpe -0.29).\n\n\n\n**BLUNT VERDICT.** On this ~8-week settled sample the premium is BTC/ETH-specific; SOL/XRP do not deliver a clean, significant, correctly-calibrated band edge. Extension is a NULL (frequency lever does not open). Caveat: n per underlying is small \u2014 this is 'not shown to extend', not 'proven absent'."
+  "_verdict": "**BTC**: [0.15,0.30] band n=15 over 4 wks | seller PnL/ct mid **-0.039** (wk-clustered t=-0.34), exe-1c -0.049 | entry 0.228 vs realized YES 0.267 (UNDER/at (rally regime)).\n\n**ETH**: [0.15,0.30] band n=19 over 4 wks | seller PnL/ct mid **-0.058** (wk-clustered t=-0.46), exe-1c -0.068 | entry 0.205 vs realized YES 0.263 (UNDER/at (rally regime)).\n\n**SOL**: [0.15,0.30] band n=8 over 4 wks | seller PnL/ct mid **-0.150** (wk-clustered t=-0.80), exe-1c -0.160 | entry 0.225 vs realized YES 0.375 (UNDER/at (rally regime)).\n\n**XRP**: [0.15,0.30] band n=14 over 4 wks | seller PnL/ct mid **-0.056** (wk-clustered t=-0.37), exe-1c -0.066 | entry 0.230 vs realized YES 0.286 (UNDER/at (rally regime)).\n\n\n\n**Reference sanity FIRST.** The confirmed edge is +0.12/ct with band longshots settling YES ~10.5%. In THIS 8-week window (2026-05-22..07-17) the BTC/ETH [0.15,0.30] band settled YES 0.27/0.26 (vs 0.105 confirmed) and the seller mean was -0.039/-0.058/ct \u2014 i.e. the reference band edge does NOT reproduce here. This window is a RALLY REGIME: 'above $X' band strikes printed YES far more than priced, so the band lost money on ALL FOUR underlyings including BTC/ETH. => **this short window cannot adjudicate band EXTENSION** (the yardstick itself is broken in-sample). Read the band rows as regime-confounded + underpowered (only 4 populated ISO-weeks, n<20 each), NOT as 'SOL/XRP specifically fail'.\n\n\n\n**Where the longshot-overpricing STRUCTURE is measurable \u2014 the deep-OTM tail [0.02,0.10].** Far-enough strikes stayed OTM even through the rally, so the overpricing is visible regime-free:\n\n  - BTC: n=49, entry 0.042 vs realized YES 0.000 -> seller 0.042/ct (exe-1c 0.032, t=19.0).\n\n  - ETH: n=36, entry 0.041 vs realized YES 0.028 -> seller 0.013/ct (exe-1c 0.003, t=0.4).\n\n  - SOL: n=47, entry 0.034 vs realized YES 0.043 -> seller -0.009/ct (exe-1c -0.019, t=-0.2).\n\n  - XRP: n=54, entry 0.034 vs realized YES 0.000 -> seller 0.034/ct (exe-1c 0.024, t=47.2).\n\nThe overpricing is clean on **BTC (+0.042, t=19) and XRP (+0.034, t=47)** \u2014 realized YES ~0 vs a 3-4c ask \u2014 and weak-positive on ETH; on SOL it is a small NEGATIVE (2 of 47 deep strikes printed, small-n noise). So the longshot-overpricing STRUCTURE that underpins the BTC/ETH edge does appear on the new underlyings (clearly on XRP, noisily on SOL). BUT this is the taker-dead deep wing (the exact executability trap that killed ~5 prior candidates): per-contract only ~3-4c gross, nobody reliably lifts a 3-4c bid, and with the 0.07*p(1-p) fee + spread haircut the net shrinks further. It is a structural extension, not a clean tradeable one.\n\n\n\n**Correlation / diversification (the decisive question for STACKING).** Weekly-PnL correlations (band, primary 144h, 2026-05-22..2026-07-17): BTC-ETH 0.82, BTC-SOL 0.79, BTC-XRP 0.71, ETH-SOL 0.36, ETH-XRP 0.32, SOL-XRP 0.98; SOL vs BTC+ETH ref 0.59, XRP vs ref 0.53. The weekly PnL series make it concrete: EVERY underlying's worst week is the SAME week (2026-W27: BTC -0.40, ETH -0.31, SOL -0.45, XRP -0.26) \u2014 they all die together when spot rallies through the strikes. These are NOT uncorrelated bets; they are one shared crypto-beta longshot trade wearing four tickers. (Only ~4 common weeks -> correlations are noisy, but the co-movement is structural, not a sampling fluke: all four sell the same directional 'crypto went up' risk.)\n\n\n\n**Frontier / capacity.** Band positions/week: BTC ~3.8, ETH ~4.8, SOL ~2.0, XRP ~3.5; BTC+ETH pooled ~8.5/wk, ALL-4 pooled ~14.0/wk (a ~65% frequency increase). But wk-Sharpe barely moves (BTC+ETH -0.29 -> ALL-4 -0.29) because the added streams are ~correlated: with corr~0.6-0.8 the variance-reduction from stacking is small (an uncorrelated 2x stack would raise Sharpe ~sqrt(2)=1.41x; here it is ~flat).\n\n\n\n**BLUNT VERDICT.** Three honest conclusions:\n1. **Universe:** only BTC, ETH, SOL, XRP have Polymarket weekly 'above $X' ladders \u2014 DOGE and every other crypto/non-crypto probed do NOT. So at most +2 underlyings (SOL, XRP) are even candidates.\n2. **Band extension = NOT ADJUDICABLE here (lean null-of-benefit).** The [0.15,0.30] band premium did not reproduce on the reference BTC/ETH in this recent 8-week rally window (realized YES ~26% vs 10.5% confirmed; seller mean negative), so SOL/XRP can't be judged against a working yardstick. The longshot-OVERPRICING STRUCTURE does extend to SOL/XRP in the deep-OTM tail, but that tail is taker-dead and per-contract tiny \u2014 not the clean [0.15,0.30] edge.\n3. **Diversification = the real killer.** Even granting the premium, SOL/XRP weekly PnL is strongly POSITIVELY correlated with BTC/ETH (they all crater the same rally week). Stacking them buys FREQUENCY (~14 vs ~8 positions/wk) but almost NO diversification \u2014 the efficient frontier rises only marginally, far below the naive sqrt(k). **Do NOT treat SOL/XRP as independent positions.** They are the same crypto-beta short-vol bet; size the COMBINED crypto-longshot book on its shared tail risk, not per-underlying. The '4 uncorrelated underlyings' premise is false: it is effectively ~1 underlying (crypto) traded 4 ways."
 }

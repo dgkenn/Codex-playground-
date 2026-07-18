@@ -2,77 +2,77 @@
   "analysis": {
     "all_strikes": {
       "n": 62,
-      "mean_p_mid": 0.5531,
-      "mean_p_bid": 0.546,
-      "mean_p_deribit": 0.55,
-      "mean_signal_mid": 0.00312,
-      "median_signal_mid": 0.00107,
-      "std_signal_mid": 0.01445,
-      "signal_clustered_t": 5.9,
+      "mean_p_mid": 0.5525,
+      "mean_p_bid": 0.5454,
+      "mean_p_deribit": 0.5501,
+      "mean_signal_mid": 0.00241,
+      "median_signal_mid": 0.00038,
+      "std_signal_mid": 0.01453,
+      "signal_clustered_t": 3.79,
       "n_clusters": 6,
       "corr_p_deribit": 0.9996,
       "regress_deribit_on_p": {
-        "intercept": -0.0133,
-        "slope": 1.0184,
-        "slope_t": 290.21,
-        "resid_std": 0.01197
+        "intercept": -0.0125,
+        "slope": 1.0183,
+        "slope_t": 287.49,
+        "resid_std": 0.01208
       }
     },
     "band_longshots": {
       "n": 2,
       "mean_p_mid": 0.2275,
       "mean_p_bid": 0.22,
-      "mean_p_deribit": 0.1944,
-      "mean_signal_mid": 0.0331,
-      "median_signal_mid": 0.0331,
-      "std_signal_mid": 0.00099,
-      "signal_clustered_t": 33.27,
+      "mean_p_deribit": 0.1955,
+      "mean_signal_mid": 0.03202,
+      "median_signal_mid": 0.03202,
+      "std_signal_mid": 0.00096,
+      "signal_clustered_t": 33.53,
       "n_clusters": 2,
       "corr_p_deribit": null,
       "regress_deribit_on_p": null
     },
     "longshot_region": {
       "n": 8,
-      "mean_p_mid": 0.1557,
-      "mean_p_bid": 0.1475,
-      "mean_p_deribit": 0.1243,
-      "mean_signal_mid": 0.03139,
-      "median_signal_mid": 0.03449,
-      "std_signal_mid": 0.01396,
-      "signal_clustered_t": 7.52,
+      "mean_p_mid": 0.1553,
+      "mean_p_bid": 0.1467,
+      "mean_p_deribit": 0.1249,
+      "mean_signal_mid": 0.03041,
+      "median_signal_mid": 0.03338,
+      "std_signal_mid": 0.01345,
+      "signal_clustered_t": 7.56,
       "n_clusters": 6,
-      "corr_p_deribit": 0.9861,
+      "corr_p_deribit": 0.9873,
       "regress_deribit_on_p": {
-        "intercept": -0.023,
-        "slope": 0.9459,
-        "slope_t": 14.55,
-        "resid_std": 0.01322
+        "intercept": -0.0221,
+        "slope": 0.9465,
+        "slope_t": 15.23,
+        "resid_std": 0.01269
       }
     },
     "signal_vs_p_collinearity": {
       "n": 8,
-      "slope": 0.0541,
-      "slope_t": 0.83,
-      "r2": 0.104,
-      "resid_std": 0.01322,
+      "slope": 0.0535,
+      "slope_t": 0.86,
+      "r2": 0.11,
+      "resid_std": 0.01269,
       "note": "residual std = signal info orthogonal to p (the only thing that could sharpen selection beyond the price itself)"
     },
     "calibration_anchor": {
       "realized_band_rate": 0.105,
       "n_anchor": 8,
       "anchor_set": "region[0.05,0.35]",
-      "mean_poly_price": 0.1557,
-      "mean_deribit_prob": 0.1243,
-      "poly_gap_to_realized": 0.0507,
-      "deribit_gap_to_realized": 0.0193,
-      "frac_overpricing_captured": 0.619,
-      "interpretation": "Deribit prob sits closer to the realized band rate than to the Polymarket price: Deribit density is nearer-physical and COULD sharpen selection."
+      "mean_poly_price": 0.1553,
+      "mean_deribit_prob": 0.1249,
+      "poly_gap_to_realized": 0.0503,
+      "deribit_gap_to_realized": 0.0199,
+      "frac_overpricing_captured": 0.604,
+      "interpretation": "Deribit prob sits closer to the realized band rate than to the Polymarket price: Deribit density is nearer-physical in LEVEL. NOTE this is a calibration (level) fact, not selection power \u2014 sharpening WHICH strike to sell needs cross-strike dispersion in the signal, which is near-zero (see collinearity)."
     },
     "meta": {
-      "ts": "2026-07-18T05:16:10.309048+00:00",
+      "ts": "2026-07-18T05:18:01.621423+00:00",
       "spot": {
-        "BTC": 63892.16,
-        "ETH": 1842.21
+        "BTC": 63894.8,
+        "ETH": 1842.27
       },
       "n_open_markets": 105,
       "n_aligned": 62,

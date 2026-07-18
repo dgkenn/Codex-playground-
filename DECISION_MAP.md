@@ -2115,3 +2115,22 @@ VERDICT: NULL — regime timing LOWERS the frontier. The +0.12/ct premium is eff
 retail-overpricing/lottery premium (band longshots settle YES ~10.5% vs priced ~22%), NOT a vol-risk-premium concentrating in
 high-VRP weeks. Extends LONGSHOT-CONDITIONAL (moneyness) to the vol/Sharpe axis. ACTION: trade unconditionally with fractional
 capital-bounded sizing; NO vol-regime overlay. Campaign W1-d dead. (Silver lining: independent re-validation of the edge.)
+
+## MULTISTRIKE-WING-XASSET-STACK (2026-07-18, campaign W1-b) — SOL/XRP extend the premium but are ~0.6-0.8 CORRELATED with BTC/ETH: NULL-of-benefit (no diversification)
+Tested extending the confirmed weekly short-vol premium to more underlyings for STACKING. xasset_shortvol.py: discovery + 224
+settled ladders / 2482 strike-markets, 2026-05-22..07-17. DISCOVERY: only BTC/ETH/SOL/XRP have the weekly "above $X" ladder;
+DOGE=only 5-15m micro; ADA/AVAX/LINK/BNB/... and non-crypto (SP500/NASDAQ/gold/TSLA/NVDA) = no settled weekly ladders. So
+the only new candidates are SOL, XRP.
+- WINDOW BROKE THE YARDSTICK (agent honest): the 8-wk window is a RALLY regime -> band strikes settled YES ~26% vs confirmed
+  10.5%, so BTC/ETH band reconstruction came out NEGATIVE (-0.04/-0.06) too. Band extension NOT adjudicable here (regime-
+  confounded + underpowered, only 4 populated weeks, n<20/underlying). Lean null-of-benefit, not "SOL/XRP fail".
+- STRUCTURE does extend into the DEEP-OTM tail [0.02,0.10]: BTC +0.042 t=19, XRP +0.034 t=47, ETH weak+, SOL noise -> the
+  overpricing structure is real on new tickers BUT it's the TAKER-DEAD deep wing (~3-4c/ct, the executability trap that killed
+  prior candidates), not the tradeable [0.15,0.30] band.
+- DECISIVE = CORRELATION: weekly-PnL corr BTC-ETH 0.82, BTC-SOL 0.79, BTC-XRP 0.71, SOL-XRP 0.98; SOL/XRP vs BTC+ETH ref
+  0.59/0.53. ALL share the same worst week (W27: BTC-0.40 ETH-0.31 SOL-0.45 XRP-0.26). Stacking 4 raises frequency ~65%
+  (8.5->14 band pos/wk) but week-Sharpe FLAT (-0.29->-0.29): with corr ~0.6-0.8 there is ~zero variance reduction.
+VERDICT: NULL-of-benefit. SOL/XRP add CAPACITY, not a better-diversified frontier -- it is effectively ONE crypto-beta short-
+vol bet traded 4 ways. ACTION: size the combined crypto-longshot book on its SHARED tail risk (not per-underlying independent).
+STRATEGIC REDIRECT: raising the frontier via diversification requires genuinely NON-crypto uncorrelated edges (econ/biz already
+partial) -- wave 2 should hunt orthogonal (non-crypto-beta) sleeves, not more crypto tickers. Campaign W1-b done.

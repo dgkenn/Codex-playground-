@@ -518,7 +518,9 @@ def _anchor_interpretation(mp, md):
                 "premium; Deribit ECHOES Polymarket and adds no independent info -> NULL.")
     if d_real < d_poly:
         return ("Deribit prob sits closer to the realized band rate than to the Polymarket "
-                "price: Deribit density is nearer-physical and COULD sharpen selection.")
+                "price: Deribit density is nearer-physical in LEVEL. NOTE this is a calibration "
+                "(level) fact, not selection power — sharpening WHICH strike to sell needs "
+                "cross-strike dispersion in the signal, which is near-zero (see collinearity).")
     return ("Deribit prob between Polymarket price and realized rate; weak/ambiguous signal.")
 
 
@@ -672,6 +674,9 @@ def write_report(res, settle_res):
         L.append(f"- regress (p - P_deribit) ~ p over region (n={col['n']}): slope "
                  f"{col['slope']} (t={col['slope_t']}), R^2 = **{col['r2']}**, residual std "
                  f"**{col['resid_std']}**. {col['note']}\n")
+        L.append("- Low R^2 here means the signal is NOT explained by p; combined with its small "
+                 "within-region dispersion it is a near-CONSTANT positive offset -> agrees "
+                 "longshots are overpriced but does not discriminate WHICH strike to prefer.\n")
 
     if anc:
         L.append("## Calibration anchor (the crux)\n")
@@ -724,28 +729,35 @@ def _verdict(res):
                 "align with a Deribit expiry.\n")
     corr = allb.get("corr_p_deribit")
     resid = (allb.get("regress_deribit_on_p") or {}).get("resid_std")
+    reg = res.get("longshot_region", {})
     parts = []
-    parts.append(f"**Mechanism is essentially NULL.** Across all aligned strikes the Deribit "
-                 f"risk-neutral prob tracks the Polymarket price almost perfectly "
+    parts.append(f"**The sharpening hypothesis is essentially NULL.** Across all aligned strikes "
+                 f"the Deribit risk-neutral prob tracks the Polymarket price almost perfectly "
                  f"(corr={corr}, slope~1.0, residual std ~{resid}): Polymarket price ~= the "
-                 "options-implied risk-neutral density, so the density adds little beyond p.")
+                 "options-implied risk-neutral density.")
+    parts.append(f"In the longshot region the signal (p - P_deribit) is consistently POSITIVE "
+                 f"(mean +{reg.get('mean_signal_mid')}, expiry/asset-clustered t="
+                 f"{reg.get('signal_clustered_t')}) — Deribit AGREES the longshots are overpriced, "
+                 "confirming the short-vol direction — but the magnitude is only ~3 cents versus "
+                 f"the ~{BLANKET_EDGE} edge.")
     if anc:
-        parts.append(f"In the longshot region P_deribit ({anc['mean_deribit_prob']}) sits "
-                     f"between the Polymarket price ({anc['mean_poly_price']}) and the realized "
-                     f"band rate ({anc['realized_band_rate']}), capturing only "
-                     f"~{anc.get('frac_overpricing_captured')} of the overpricing — the bulk is "
-                     "a shared tail-risk premium BOTH markets carry and a risk-neutral density "
-                     "cannot see.")
+        parts.append(f"P_deribit ({anc['mean_deribit_prob']}) sits between the Polymarket price "
+                     f"({anc['mean_poly_price']}) and the realized band rate "
+                     f"({anc['realized_band_rate']}); it captures only a minority-to-moderate part "
+                     "of the overpricing (~0.27 on the strict n=2 band, ~0.62 on the wider, "
+                     "lower-priced region) — the bulk is a shared tail-risk premium BOTH markets "
+                     "carry and a risk-neutral density cannot see.")
     if col:
-        parts.append(f"The signal (p - P_deribit) is largely a function of p itself "
-                     f"(R^2={col.get('r2')} on p), leaving only ~{col.get('resid_std')} of "
-                     "orthogonal variation — too little in-band dispersion to rank strikes "
-                     f"independently of the price. It does NOT plausibly beat the blanket "
-                     f"+{BLANKET_EDGE}/ct; any directional sharpening is a few cents at most and "
-                     "collinear with 'more OTM', which p already encodes.")
-    parts.append("Realized incremental-predictive power (outcome ~ p + P_deribit), Brier, and "
-                 "top-vs-bottom PnL are DEFERRED to the forward settle (n_resolved=0 now) — "
-                 "historical Deribit density is not retrievable from the public API.")
+        parts.append(f"Crucially, the signal is nearly CONSTANT across strikes (regressed on p: "
+                     f"R^2={col.get('r2')}, slope t={col.get('slope_t')} n.s.; within-region "
+                     f"dispersion std ~{col.get('resid_std')}). A roughly flat +3 cent signal "
+                     "gives almost no basis to rank one longshot strike as more overpriced than "
+                     f"another, so it CANNOT sharpen selection enough to beat the blanket "
+                     f"+{BLANKET_EDGE}/ct. Any 'top-signal' ordering is ~1 cent of unvalidated noise.")
+    parts.append("Realized incremental-predictive power (outcome ~ p + P_deribit), Brier(deribit) "
+                 "vs Brier(poly), and top-vs-bottom PnL are DEFERRED to the forward settle "
+                 "(n_resolved=0 now) — historical Deribit density is not retrievable from the "
+                 "public API, so a settled-market backtest is infeasible.")
     return " ".join(parts) + "\n"
 
 

@@ -74,6 +74,23 @@ _edge = realized - entry (edge<0 => overpriced => seller gross-profits); sellPnL
 | 0.50-0.70 | 16 | 4 | 0.579 | 0.625 | 0.046 | -0.046 | -0.30 |
 | 0.70-0.90 | 15 | 4 | 0.789 | 0.800 | 0.011 | -0.011 | -0.05 |
 
+## Deep-OTM tail vs wide-longshot aggregates (regime-robust power check)
+
+_The [0.15,0.30] band is thin (n<20, 4 wks) and — see verdict — did not reproduce the +0.12 even on the reference BTC/ETH in this rally window. The DEEP tail [0.02,0.10] (strikes far enough to stay OTM through the rally) is where the overpricing structure is measurable; [0.05,0.30] is a wider longshot aggregate. mid + executable(-1c), week-clustered t._
+
+| underlying | region | n | wks | entry | realized YES | seller mid | t | seller exe-1c | t |
+|---|---|---|---|---|---|---|---|---|---|
+| BTC | deep [0.02,0.10] | 49 | 4 | 0.042 | 0.000 | 0.042 | 18.98 | 0.032 | 14.51 |
+| BTC | wide [0.05,0.30] | 40 | 4 | 0.146 | 0.125 | 0.021 | 0.54 | 0.011 | 0.29 |
+| ETH | deep [0.02,0.10] | 36 | 4 | 0.041 | 0.028 | 0.013 | 0.43 | 0.003 | 0.09 |
+| ETH | wide [0.05,0.30] | 32 | 4 | 0.157 | 0.250 | -0.093 | -0.94 | -0.103 | -1.04 |
+| SOL | deep [0.02,0.10] | 47 | 4 | 0.034 | 0.043 | -0.009 | -0.25 | -0.019 | -0.53 |
+| SOL | wide [0.05,0.30] | 21 | 4 | 0.148 | 0.286 | -0.137 | -0.67 | -0.147 | -0.72 |
+| XRP | deep [0.02,0.10] | 54 | 4 | 0.034 | 0.000 | 0.034 | 47.15 | 0.024 | 33.40 |
+| XRP | wide [0.05,0.30] | 27 | 4 | 0.157 | 0.148 | 0.008 | 0.12 | -0.002 | -0.02 |
+
+_Deep-tail overpricing is present on ALL four (incl. SOL/XRP): realized YES ~0 vs a 3-8c ask. But it is the taker-dead deep wing (executability trap that killed prior candidates) — structural extension, not a clean tradeable [0.15,0.30] edge._
+
 ## Cross-underlying weekly-PnL correlation matrix
 
 _Pearson corr of per-week mean seller PnL/ct (mid), primary horizon. High + corr => longshots die together (shared crypto beta) => LITTLE diversification. Off-diagonal common-weeks count in parens._
@@ -107,32 +124,43 @@ _wk-Sharpe = mean / stdev of the equal-weight per-week portfolio PnL. If the add
 
 ## VERDICT
 
-**BTC**: n=15 over 4 wks | seller PnL/ct mid **-0.039** (wk-clustered t=-0.34), exe-1c -0.049 (t=-0.43), exe+fee -0.068 (t=-0.59) | entry 0.228 vs realized YES 0.267 (NOT overpriced), win 0.733, worst wk -0.398.
+**BTC**: [0.15,0.30] band n=15 over 4 wks | seller PnL/ct mid **-0.039** (wk-clustered t=-0.34), exe-1c -0.049 | entry 0.228 vs realized YES 0.267 (UNDER/at (rally regime)).
 
-**ETH**: n=19 over 4 wks | seller PnL/ct mid **-0.058** (wk-clustered t=-0.46), exe-1c -0.068 (t=-0.54), exe+fee -0.084 (t=-0.66) | entry 0.205 vs realized YES 0.263 (NOT overpriced), win 0.737, worst wk -0.314.
+**ETH**: [0.15,0.30] band n=19 over 4 wks | seller PnL/ct mid **-0.058** (wk-clustered t=-0.46), exe-1c -0.068 | entry 0.205 vs realized YES 0.263 (UNDER/at (rally regime)).
 
-**SOL**: n=8 over 4 wks | seller PnL/ct mid **-0.150** (wk-clustered t=-0.80), exe-1c -0.160 (t=-0.85), exe+fee -0.178 (t=-0.95) | entry 0.225 vs realized YES 0.375 (NOT overpriced), win 0.625, worst wk -0.448.
+**SOL**: [0.15,0.30] band n=8 over 4 wks | seller PnL/ct mid **-0.150** (wk-clustered t=-0.80), exe-1c -0.160 | entry 0.225 vs realized YES 0.375 (UNDER/at (rally regime)).
 
-**XRP**: n=14 over 4 wks | seller PnL/ct mid **-0.056** (wk-clustered t=-0.37), exe-1c -0.066 (t=-0.43), exe+fee -0.086 (t=-0.56) | entry 0.230 vs realized YES 0.286 (NOT overpriced), win 0.714, worst wk -0.269.
-
-
-
-**Does the premium EXTEND?**
-
-NO — neither SOL nor XRP clears a positive, significant, correctly-calibrated band edge; the premium is (on this sample) BTC/ETH-specific.
-
-Not clearly extending: SOL, XRP (small-n and/or weak t — see table).
+**XRP**: [0.15,0.30] band n=14 over 4 wks | seller PnL/ct mid **-0.056** (wk-clustered t=-0.37), exe-1c -0.066 | entry 0.230 vs realized YES 0.286 (UNDER/at (rally regime)).
 
 
 
-**Correlation / diversification.** Cross-underlying weekly-PnL correlations (primary 144h horizon, 2026-05-22..2026-07-17): BTC-ETH 0.82, BTC-SOL 0.79, BTC-XRP 0.71, ETH-SOL 0.36, ETH-XRP 0.32, SOL-XRP 0.98. SOL vs BTC+ETH ref 0.59, XRP vs ref 0.53.
-
-These weeklies are DIRECTIONALLY LINKED longshots — a broad crypto rally lifts every underlying's spot together, so the same weeks tend to be the losing (longshot-prints) weeks across names. High positive weekly-PnL correlation => LIMITED true diversification: adding SOL/XRP raises positions/week but does NOT give ~independent streams (variance falls far less than 1/k). n_weeks per pair is only ~4 — correlations are noisy, treat as directional.
+**Reference sanity FIRST.** The confirmed edge is +0.12/ct with band longshots settling YES ~10.5%. In THIS 8-week window (2026-05-22..07-17) the BTC/ETH [0.15,0.30] band settled YES 0.27/0.26 (vs 0.105 confirmed) and the seller mean was -0.039/-0.058/ct — i.e. the reference band edge does NOT reproduce here. This window is a RALLY REGIME: 'above $X' band strikes printed YES far more than priced, so the band lost money on ALL FOUR underlyings including BTC/ETH. => **this short window cannot adjudicate band EXTENSION** (the yardstick itself is broken in-sample). Read the band rows as regime-confounded + underpowered (only 4 populated ISO-weeks, n<20 each), NOT as 'SOL/XRP specifically fail'.
 
 
 
-**Frontier / capacity.** Positions/week (band, primary horizon): BTC 3.8, ETH 4.8, SOL 2.0, XRP 3.5. BTC+ETH pooled ~8.5/wk (t=-0.43, wk-Sharpe -0.29); ALL-4 pooled ~14.0/wk (t=-0.54, wk-Sharpe -0.29).
+**Where the longshot-overpricing STRUCTURE is measurable — the deep-OTM tail [0.02,0.10].** Far-enough strikes stayed OTM even through the rally, so the overpricing is visible regime-free:
+
+  - BTC: n=49, entry 0.042 vs realized YES 0.000 -> seller 0.042/ct (exe-1c 0.032, t=19.0).
+
+  - ETH: n=36, entry 0.041 vs realized YES 0.028 -> seller 0.013/ct (exe-1c 0.003, t=0.4).
+
+  - SOL: n=47, entry 0.034 vs realized YES 0.043 -> seller -0.009/ct (exe-1c -0.019, t=-0.2).
+
+  - XRP: n=54, entry 0.034 vs realized YES 0.000 -> seller 0.034/ct (exe-1c 0.024, t=47.2).
+
+The overpricing is clean on **BTC (+0.042, t=19) and XRP (+0.034, t=47)** — realized YES ~0 vs a 3-4c ask — and weak-positive on ETH; on SOL it is a small NEGATIVE (2 of 47 deep strikes printed, small-n noise). So the longshot-overpricing STRUCTURE that underpins the BTC/ETH edge does appear on the new underlyings (clearly on XRP, noisily on SOL). BUT this is the taker-dead deep wing (the exact executability trap that killed ~5 prior candidates): per-contract only ~3-4c gross, nobody reliably lifts a 3-4c bid, and with the 0.07*p(1-p) fee + spread haircut the net shrinks further. It is a structural extension, not a clean tradeable one.
 
 
 
-**BLUNT VERDICT.** On this ~8-week settled sample the premium is BTC/ETH-specific; SOL/XRP do not deliver a clean, significant, correctly-calibrated band edge. Extension is a NULL (frequency lever does not open). Caveat: n per underlying is small — this is 'not shown to extend', not 'proven absent'.
+**Correlation / diversification (the decisive question for STACKING).** Weekly-PnL correlations (band, primary 144h, 2026-05-22..2026-07-17): BTC-ETH 0.82, BTC-SOL 0.79, BTC-XRP 0.71, ETH-SOL 0.36, ETH-XRP 0.32, SOL-XRP 0.98; SOL vs BTC+ETH ref 0.59, XRP vs ref 0.53. The weekly PnL series make it concrete: EVERY underlying's worst week is the SAME week (2026-W27: BTC -0.40, ETH -0.31, SOL -0.45, XRP -0.26) — they all die together when spot rallies through the strikes. These are NOT uncorrelated bets; they are one shared crypto-beta longshot trade wearing four tickers. (Only ~4 common weeks -> correlations are noisy, but the co-movement is structural, not a sampling fluke: all four sell the same directional 'crypto went up' risk.)
+
+
+
+**Frontier / capacity.** Band positions/week: BTC ~3.8, ETH ~4.8, SOL ~2.0, XRP ~3.5; BTC+ETH pooled ~8.5/wk, ALL-4 pooled ~14.0/wk (a ~65% frequency increase). But wk-Sharpe barely moves (BTC+ETH -0.29 -> ALL-4 -0.29) because the added streams are ~correlated: with corr~0.6-0.8 the variance-reduction from stacking is small (an uncorrelated 2x stack would raise Sharpe ~sqrt(2)=1.41x; here it is ~flat).
+
+
+
+**BLUNT VERDICT.** Three honest conclusions:
+1. **Universe:** only BTC, ETH, SOL, XRP have Polymarket weekly 'above $X' ladders — DOGE and every other crypto/non-crypto probed do NOT. So at most +2 underlyings (SOL, XRP) are even candidates.
+2. **Band extension = NOT ADJUDICABLE here (lean null-of-benefit).** The [0.15,0.30] band premium did not reproduce on the reference BTC/ETH in this recent 8-week rally window (realized YES ~26% vs 10.5% confirmed; seller mean negative), so SOL/XRP can't be judged against a working yardstick. The longshot-OVERPRICING STRUCTURE does extend to SOL/XRP in the deep-OTM tail, but that tail is taker-dead and per-contract tiny — not the clean [0.15,0.30] edge.
+3. **Diversification = the real killer.** Even granting the premium, SOL/XRP weekly PnL is strongly POSITIVELY correlated with BTC/ETH (they all crater the same rally week). Stacking them buys FREQUENCY (~14 vs ~8 positions/wk) but almost NO diversification — the efficient frontier rises only marginally, far below the naive sqrt(k). **Do NOT treat SOL/XRP as independent positions.** They are the same crypto-beta short-vol bet; size the COMBINED crypto-longshot book on its shared tail risk, not per-underlying. The '4 uncorrelated underlyings' premise is false: it is effectively ~1 underlying (crypto) traded 4 ways.

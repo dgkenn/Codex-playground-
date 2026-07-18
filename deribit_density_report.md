@@ -1,6 +1,6 @@
 # Deribit implied density vs Polymarket longshot pricing — strike selection
 
-_Generated 2026-07-18T05:16:10.309048+00:00. Deribit spot: BTC 63892.16, ETH 1842.21._
+_Generated 2026-07-18T05:18:01.621423+00:00. Deribit spot: BTC 63894.8, ETH 1842.27._
 
 ## Question
 
@@ -28,45 +28,47 @@ Deribit's public API serves only the **current** option chain — no historical 
 
 ### All aligned strikes (n=62, clusters=6)
 
-- mean Polymarket mid p = **0.5531**, mean bid = 0.546, mean P_deribit = **0.55**
+- mean Polymarket mid p = **0.5525**, mean bid = 0.5454, mean P_deribit = **0.5501**
 
-- signal (p_mid - P_deribit): mean **0.00312**, median 0.00107, std 0.01445, expiry/asset-clustered t = **5.9**
+- signal (p_mid - P_deribit): mean **0.00241**, median 0.00038, std 0.01453, expiry/asset-clustered t = **3.79**
 
 - corr(p_mid, P_deribit) = **0.9996**
 
-- regress P_deribit ~ p_mid: slope **1.0184** (t=290.21), intercept -0.0133, residual std **0.01197** (residual std = independent info Deribit adds beyond p)
+- regress P_deribit ~ p_mid: slope **1.0183** (t=287.49), intercept -0.0125, residual std **0.01208** (residual std = independent info Deribit adds beyond p)
 
 ### Longshot region (mid in [0.05,0.35]) (n=8, clusters=6)
 
-- mean Polymarket mid p = **0.1557**, mean bid = 0.1475, mean P_deribit = **0.1243**
+- mean Polymarket mid p = **0.1553**, mean bid = 0.1467, mean P_deribit = **0.1249**
 
-- signal (p_mid - P_deribit): mean **0.03139**, median 0.03449, std 0.01396, expiry/asset-clustered t = **7.52**
+- signal (p_mid - P_deribit): mean **0.03041**, median 0.03338, std 0.01345, expiry/asset-clustered t = **7.56**
 
-- corr(p_mid, P_deribit) = **0.9861**
+- corr(p_mid, P_deribit) = **0.9873**
 
-- regress P_deribit ~ p_mid: slope **0.9459** (t=14.55), intercept -0.023, residual std **0.01322** (residual std = independent info Deribit adds beyond p)
+- regress P_deribit ~ p_mid: slope **0.9465** (t=15.23), intercept -0.0221, residual std **0.01269** (residual std = independent info Deribit adds beyond p)
 
 ### Longshot band (mid in [0.15,0.30]) (n=2, clusters=2)
 
-- mean Polymarket mid p = **0.2275**, mean bid = 0.22, mean P_deribit = **0.1944**
+- mean Polymarket mid p = **0.2275**, mean bid = 0.22, mean P_deribit = **0.1955**
 
-- signal (p_mid - P_deribit): mean **0.0331**, median 0.0331, std 0.00099, expiry/asset-clustered t = **33.27**
+- signal (p_mid - P_deribit): mean **0.03202**, median 0.03202, std 0.00096, expiry/asset-clustered t = **33.53**
 
 - corr(p_mid, P_deribit) = **None**
 
 ### Is the signal independent of p? (collinearity)
 
-- regress (p - P_deribit) ~ p over region (n=8): slope 0.0541 (t=0.83), R^2 = **0.104**, residual std **0.01322**. residual std = signal info orthogonal to p (the only thing that could sharpen selection beyond the price itself)
+- regress (p - P_deribit) ~ p over region (n=8): slope 0.0535 (t=0.86), R^2 = **0.11**, residual std **0.01269**. residual std = signal info orthogonal to p (the only thing that could sharpen selection beyond the price itself)
+
+- Low R^2 here means the signal is NOT explained by p; combined with its small within-region dispersion it is a near-CONSTANT positive offset -> agrees longshots are overpriced but does not discriminate WHICH strike to prefer.
 
 ## Calibration anchor (the crux)
 
 - Documented realized in-band YES rate: **0.105**
 
-- Mean Polymarket price in band: **0.1557** (gap to realized: 0.0507)
+- Mean Polymarket price in band: **0.1553** (gap to realized: 0.0503)
 
-- Mean Deribit prob in band: **0.1243** (gap to realized: 0.0193)
+- Mean Deribit prob in band: **0.1249** (gap to realized: 0.0199)
 
-- **Deribit prob sits closer to the realized band rate than to the Polymarket price: Deribit density is nearer-physical and COULD sharpen selection.**
+- **Deribit prob sits closer to the realized band rate than to the Polymarket price: Deribit density is nearer-physical in LEVEL. NOTE this is a calibration (level) fact, not selection power — sharpening WHICH strike to sell needs cross-strike dispersion in the signal, which is near-zero (see collinearity).**
 
 ## Forward realized test (deferred)
 
@@ -77,4 +79,4 @@ Deribit's public API serves only the **current** option chain — no historical 
 
 ## Verdict
 
-**Mechanism is essentially NULL.** Across all aligned strikes the Deribit risk-neutral prob tracks the Polymarket price almost perfectly (corr=0.9996, slope~1.0, residual std ~0.01197): Polymarket price ~= the options-implied risk-neutral density, so the density adds little beyond p. In the longshot region P_deribit (0.1243) sits between the Polymarket price (0.1557) and the realized band rate (0.105), capturing only ~0.619 of the overpricing — the bulk is a shared tail-risk premium BOTH markets carry and a risk-neutral density cannot see. The signal (p - P_deribit) is largely a function of p itself (R^2=0.104 on p), leaving only ~0.01322 of orthogonal variation — too little in-band dispersion to rank strikes independently of the price. It does NOT plausibly beat the blanket +0.12/ct; any directional sharpening is a few cents at most and collinear with 'more OTM', which p already encodes. Realized incremental-predictive power (outcome ~ p + P_deribit), Brier, and top-vs-bottom PnL are DEFERRED to the forward settle (n_resolved=0 now) — historical Deribit density is not retrievable from the public API.
+**The sharpening hypothesis is essentially NULL.** Across all aligned strikes the Deribit risk-neutral prob tracks the Polymarket price almost perfectly (corr=0.9996, slope~1.0, residual std ~0.01208): Polymarket price ~= the options-implied risk-neutral density. In the longshot region the signal (p - P_deribit) is consistently POSITIVE (mean +0.03041, expiry/asset-clustered t=7.56) — Deribit AGREES the longshots are overpriced, confirming the short-vol direction — but the magnitude is only ~3 cents versus the ~0.12 edge. P_deribit (0.1249) sits between the Polymarket price (0.1553) and the realized band rate (0.105); it captures only a minority-to-moderate part of the overpricing (~0.27 on the strict n=2 band, ~0.62 on the wider, lower-priced region) — the bulk is a shared tail-risk premium BOTH markets carry and a risk-neutral density cannot see. Crucially, the signal is nearly CONSTANT across strikes (regressed on p: R^2=0.11, slope t=0.86 n.s.; within-region dispersion std ~0.01269). A roughly flat +3 cent signal gives almost no basis to rank one longshot strike as more overpriced than another, so it CANNOT sharpen selection enough to beat the blanket +0.12/ct. Any 'top-signal' ordering is ~1 cent of unvalidated noise. Realized incremental-predictive power (outcome ~ p + P_deribit), Brier(deribit) vs Brier(poly), and top-vs-bottom PnL are DEFERRED to the forward settle (n_resolved=0 now) — historical Deribit density is not retrievable from the public API, so a settled-market backtest is infeasible.

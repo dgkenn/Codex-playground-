@@ -20,7 +20,7 @@ most likely to actually move the number.
 | # | Hypothesis | Raises frontier via | Status | Verdict |
 |---|---|---|---|---|
 | W1-a | Deribit implied density → sharpen weekly longshot strike selection | sharpen edge/ct | RUNNING | — |
-| W1-b | Extend short-vol to more underlyings (SOL/XRP/DOGE…) | stack + frequency | RUNNING | — |
+| W1-b | Extend short-vol to more underlyings (SOL/XRP/DOGE…) | stack + frequency | **DONE** | NULL-of-benefit — only SOL/XRP exist & they're 0.6-0.8 corr w/ BTC/ETH (no diversification; +capacity only) |
 | W1-c | Binance funding/basis/OI → weekly directional signal | stack (uncorrelated) | RUNNING | — |
 | W1-d | VRP-regime timing → size up in high-premium weeks | sharpen (Sharpe via sizing) | **DONE** | NULL — regime timing lowers Sharpe; edge is unconditional (baseline re-confirmed t=4.27) |
 

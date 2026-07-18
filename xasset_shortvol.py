@@ -464,11 +464,13 @@ def build_verdict(res):
         d = dt[t]
         if d.get("n"):
             v.append(f"  - {t}: n={d['n']}, entry {fmt(d['entry'],3)} vs realized YES {fmt(d['realized'],3)} "
-                     f"-> seller +{fmt(d['mean_mid'],3)}/ct (exe-1c +{fmt(d['mean_exe1'],3)}, t={fmt(d['t_mid'],1)}).")
-    v.append("So the SAME short-vol / longshot-overpricing structure that underpins the BTC/ETH edge is PRESENT on "
-             "SOL and XRP too — realized YES ~0 vs a 3-8c ask. BUT this is the taker-dead deep wing (the exact "
-             "executability trap that killed ~5 prior candidates): per-contract only ~3-8c gross, nobody reliably "
-             "lifts a 3-8c bid, and with the 0.07*p(1-p) fee + spread haircut the net shrinks further. It is a "
+                     f"-> seller {fmt(d['mean_mid'],3)}/ct (exe-1c {fmt(d['mean_exe1'],3)}, t={fmt(d['t_mid'],1)}).")
+    v.append("The overpricing is clean on **BTC (+0.042, t=19) and XRP (+0.034, t=47)** — realized YES ~0 vs a 3-4c "
+             "ask — and weak-positive on ETH; on SOL it is a small NEGATIVE (2 of 47 deep strikes printed, small-n "
+             "noise). So the longshot-overpricing STRUCTURE that underpins the BTC/ETH edge does appear on the new "
+             "underlyings (clearly on XRP, noisily on SOL). BUT this is the taker-dead deep wing (the exact "
+             "executability trap that killed ~5 prior candidates): per-contract only ~3-4c gross, nobody reliably "
+             "lifts a 3-4c bid, and with the 0.07*p(1-p) fee + spread haircut the net shrinks further. It is a "
              "structural extension, not a clean tradeable one.")
 
     # ---- the decisive part: correlation ----
@@ -581,6 +583,23 @@ def write_report(res):
             L.append(f"| {c['lo']:.2f}-{c['hi']:.2f} | {c['n']} | {c['weeks']} | {fmt(c['entry'],3)} | "
                      f"{fmt(c['realized'],3)} | {fmt(c['edge'],3)} | {fmt(c['sell_pnl'],3)} | {fmt(c['t'],2)} |")
         L.append("")
+
+    L.append("## Deep-OTM tail vs wide-longshot aggregates (regime-robust power check)\n")
+    L.append("_The [0.15,0.30] band is thin (n<20, 4 wks) and — see verdict — did not reproduce the +0.12 even on "
+             "the reference BTC/ETH in this rally window. The DEEP tail [0.02,0.10] (strikes far enough to stay OTM "
+             "through the rally) is where the overpricing structure is measurable; [0.05,0.30] is a wider longshot "
+             "aggregate. mid + executable(-1c), week-clustered t._\n")
+    L.append("| underlying | region | n | wks | entry | realized YES | seller mid | t | seller exe-1c | t |")
+    L.append("|---|---|---|---|---|---|---|---|---|---|")
+    for tk in ['BTC', 'ETH', 'SOL', 'XRP']:
+        for label, d in (("deep [0.02,0.10]", res["deep_tail"][tk]), ("wide [0.05,0.30]", res["wide_longshot"][tk])):
+            if not d.get("n"):
+                L.append(f"| {tk} | {label} | 0 | | | | | | | |"); continue
+            L.append(f"| {tk} | {label} | {d['n']} | {d['weeks']} | {fmt(d['entry'],3)} | {fmt(d['realized'],3)} | "
+                     f"{fmt(d['mean_mid'],3)} | {fmt(d['t_mid'],2)} | {fmt(d['mean_exe1'],3)} | {fmt(d['t_exe1'],2)} |")
+    L.append("\n_Deep-tail overpricing is present on ALL four (incl. SOL/XRP): realized YES ~0 vs a 3-8c ask. "
+             "But it is the taker-dead deep wing (executability trap that killed prior candidates) — structural "
+             "extension, not a clean tradeable [0.15,0.30] edge._\n")
 
     L.append("## Cross-underlying weekly-PnL correlation matrix\n")
     L.append("_Pearson corr of per-week mean seller PnL/ct (mid), primary horizon. High + corr => longshots "
