@@ -31,3 +31,12 @@
 
 ## Discipline for anything found
 NET of Kalshi fees; executable prices; cluster t; multiple-testing; realistic latency (can WE act before Kalshi reprices? our infra is GH-Actions/slow → favor day-scale leads, not sub-second); flag paid-vs-free + history depth + timestamp granularity. Honest nulls.
+
+## FOUND — hunt-3 (sports/index/politics), Sonnet, 2026-07-18
+- **Kalshi historical API = the price(t) backbone (free+key):** `/historical/markets/{ticker}/candlesticks` (1/60/1440-min), `/historical/trades`, `/historical/orders`; cursor-paginated, history beyond the ~3mo live window. FETCH FIRST — it's the join key for every lead below. (Partly fixes our thin-n problem for Kalshi itself.)
+- **Cross-venue (biggest combine): Polymarket CLOB `/prices-history`** — free, no key, startTs/endTs, 1-min agg → lead-lag vs Kalshi on same events (elections/Fed). Deep L2 backfill only via paid 3rd-party (DepthFeed back to Aug2025).
+- **Sports sharp lines: TheRundown API** free tier (20k dp/day, 3 books, opener→close per-line-change ts). Backfill pre-2021 via GitHub `FinnedAI/sportsbookreview-scraper` (2011-21). The-Odds-API has clean 5-min snapshots but historical is PAID. Pinnacle-pure deep = bettingiscool (paid).
+- **Index/vol: CBOE `VIX_History.csv`** free daily since 1990 (also FRED VIXCLS); **Stooq** 5-min SPX/NDX free (~1mo/pull → poll-and-archive); ORATS free samples (options IV surface; full=paid); dolthub/options free SQL (verify freshness).
+- **Politics/news: GDELT 2.0** free, 15-min news events (news-gap lead; Doc API 3mo, BigQuery to 1979); **538 polls** GitHub CSV (backtest, day/wk granularity).
+- **Injury/live: ESPN hidden API** (free, unofficial: scoreboard/PBP/injuries); RotoBaller feeds.
+- BUILD ORDER: Kalshi candlesticks (price backbone) → Polymarket prices-history (cross-venue) + GDELT (news) → TheRundown (sports) → VIX+Stooq (index). All free-tier except ORATS-full / Odds-API-historical / Databento-premium / bettingiscool.
