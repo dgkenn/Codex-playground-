@@ -28,6 +28,11 @@ wx_forecast_settled.jsonl
 
 # early-lock study cache (agent artifact, do not commit)
 _earlylock_cache/
+
+# pmkt settlement-basis study caches (agent artifact, do not commit)
+_pmkt_cache/
+_pmkt_basis_cache/
+pmkt_settlement_basis_results.json
 # early-lock forward PAPER logs: force-added by the kwx-earlylock workflow (git add -f), like the forecast
 # sleeve, so they accumulate on the branch without cluttering local `git status`. The committed
 # _earlylock_climatology.json (NOT ignored) is what live snapshots load.
