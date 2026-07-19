@@ -42,7 +42,11 @@ jobs:
           python -u wx_forecast_forward.py settle   || true
           python -u wx_forecast_forward.py snapshot || true
           python -u wx_forecast_forward.py report   || true
-          git add -f wx_forecast_paper.jsonl wx_forecast_settled.jsonl 2>/dev/null || true
+          # add per-file: a batched `git add a b c` aborts ENTIRELY if any pathspec matches nothing,
+          # and the paper/settled jsonls don't exist until the first snapshot/settle writes them.
+          for f in wx_forecast_paper.jsonl wx_forecast_settled.jsonl; do
+            if [ -e "$f" ]; then git add -f -- "$f"; fi
+          done
           git commit -q -m "forecast paper $(date -u +%FT%HZ)" || { echo "nothing to commit"; exit 0; }
           for i in 1 2 3 4 5; do
             git push origin "HEAD:${BRANCH}" && exit 0
