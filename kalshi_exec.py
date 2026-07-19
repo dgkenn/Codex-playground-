@@ -134,6 +134,23 @@ class KalshiExec:
         with open(self.log_path, "a") as f:
             f.write(json.dumps(rec) + "\n")
 
+    @staticmethod
+    def _reconcile(resp, count):
+        """Best-effort fill reconciliation from Kalshi's create-order response (schema-tolerant). IOC orders
+        fill-or-cancel immediately, so the response's order object carries the outcome. Returns
+        (filled_count_or_None, order_status). Lets the caller record ACTUAL fills, not just what was requested
+        -- so a partial fill (book thinner than our size) doesn't silently overstate our position."""
+        o = resp.get("order", {}) if isinstance(resp, dict) else {}
+        if not isinstance(o, dict):
+            o = {}
+        filled = o.get("filled_count", o.get("filled"))
+        if filled is None and o.get("remaining_count") is not None:
+            try:
+                filled = int(count) - int(o["remaining_count"])
+            except Exception:
+                filled = None
+        return filled, o.get("status")
+
     # ---- public: place a YES buy (taker, immediate-or-cancel at a price cap) ----
     def buy_yes(self, ticker, count, max_price_cents, dry_fill_price=None):
         """Buy `count` YES contracts at up to `max_price_cents`. DRY-RUN unless gated live.
@@ -163,7 +180,9 @@ class KalshiExec:
                                      headers=self._headers("POST", path))
         try:
             resp = json.load(urllib.request.urlopen(req, timeout=10, context=_CTX))
-            r = {"status": "live", "ticker": ticker, "requested": count, "response": resp}
+            filled, ostatus = self._reconcile(resp, count)
+            r = {"status": "live", "ticker": ticker, "requested": int(count),
+                 "filled": filled, "order_status": ostatus, "response": resp}
         except urllib.error.HTTPError as e:
             r = {"status": "live_error", "ticker": ticker, "code": e.code, "body": e.read().decode()[:300]}
         self._log(r)
@@ -192,7 +211,9 @@ class KalshiExec:
                                      data=body, method="POST", headers=self._headers("POST", path))
         try:
             resp = json.load(urllib.request.urlopen(req, timeout=10, context=_CTX))
-            r = {"status": "live", "ticker": ticker, "side": "no", "requested": count, "response": resp}
+            filled, ostatus = self._reconcile(resp, count)
+            r = {"status": "live", "ticker": ticker, "side": "no", "requested": int(count),
+                 "filled": filled, "order_status": ostatus, "response": resp}
         except urllib.error.HTTPError as e:
             r = {"status": "live_error", "ticker": ticker, "code": e.code, "body": e.read().decode()[:300]}
         self._log(r)

@@ -517,9 +517,13 @@ def poll_once(exec_client=None, verbose=True):
             res = fn(ticker, count=size, max_price_cents=cap_c)
             # accumulate deployed capital for the caps -- ONLY if the order actually placed (a guard-BLOCKED
             # order deployed nothing). Without this the daily/per-city caps never bind (the bug this fixes).
+            # Use the ACTUAL filled count when the live exec reconciled it (partial fills deploy less than we
+            # requested); fall back to intended size on dry-run / unknown.
+            filled = res.get("filled")
+            eff_cost = (filled * cap_c / 100.0) if isinstance(filled, int) and filled >= 0 else cost
             if not str(res.get("status", "")).startswith("BLOCKED"):
-                deployed[today] = deployed.get(today, 0.0) + cost
-                city_spent[city_key] = city_spent.get(city_key, 0.0) + cost
+                deployed[today] = deployed.get(today, 0.0) + eff_cost
+                city_spent[city_key] = city_spent.get(city_key, 0.0) + eff_cost
             try:
                 import kwx_notify
                 mode = "LIVE" if getattr(ex, "live", False) else "paper"
@@ -529,6 +533,7 @@ def poll_once(exec_client=None, verbose=True):
                 pass
             plan = {"ticker": ticker, "side": side, "cap_c": cap_c, "extreme_f": ext,
                     "station": station, "kind": kind, "status": res.get("status"),
+                    "requested": size, "filled": res.get("filled"),   # reconciliation: actual vs intended
                     "ts": int(time.time() * 1000)}
             plans.append(plan)
             state["fired"][ticker] = plan
