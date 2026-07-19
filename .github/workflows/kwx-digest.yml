@@ -1,0 +1,47 @@
+# Daily end-of-day Telegram digest for the weather bot: one summary a day of paper-gate progress
+# (n/30 settled, win rate, EV/ct, day-clustered t), last-24h fires, free-feed freshness, and the
+# READY-FOR-CANARY / ACCRUING verdict -- so the whole go/no-go picture is visible without digging
+# through logs. See kwx_daily_digest.py (on the trading branch) for what each section reuses.
+#
+# READ-ONLY + STATELESS: checks out the trading branch only to run the script; never writes anything
+# back (contents: read). Runs after all US LST market days have settled for the day. INERT-SAFE: the
+# script prints the digest to the workflow log regardless of whether the Telegram secrets are set, and
+# `|| true` on the call means a flaky send (or any transient exception inside the script) can never
+# fail the job.
+name: kwx-digest
+
+on:
+  schedule:
+    - cron: '30 7 * * *'       # ~07:30 UTC, after all US LST market days have settled
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: kwx-digest-singleton
+  cancel-in-progress: false
+
+env:
+  BRANCH: claude/coding-bot-ab-test-results-ffmhxw
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.BRANCH }}
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: send daily digest
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          GH_TOKEN: ${{ secrets.GH_PAT || github.token }}
+          BRANCH: ${{ env.BRANCH }}
+        run: |
+          python kwx_daily_digest.py || true
