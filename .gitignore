@@ -33,3 +33,7 @@ _earlylock_cache/
 # _earlylock_climatology.json (NOT ignored) is what live snapshots load.
 wx_earlylock_paper.jsonl
 wx_earlylock_settled.jsonl
+
+# synoptic trial detection-latency log: force-added by the kwx-synoptic-trial workflow (git add -f),
+# same pattern as the forecast/earlylock sleeves above.
+wx_synoptic_trial.jsonl
