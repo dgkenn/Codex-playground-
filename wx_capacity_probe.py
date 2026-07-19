@@ -48,7 +48,7 @@ def retro():
     probe is the definitive measure. Still, they answer the shape: are the fires our FREE feed catches on
     thin/quiet rungs (DEPTH_CAP~right) or deep ones (headroom)?"""
     import json, statistics as st
-    raw = json.load(open(os.path.join(HERE, "_trackA_results_raw.json")))
+    raw = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "_trackA_results_raw.json")))
     caught_vol, caught_oi = [], []
     for r in raw:
         c = r["cells"].get("1_3")
