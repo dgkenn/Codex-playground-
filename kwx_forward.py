@@ -55,10 +55,20 @@ def settle():
     plans = _load_jsonl(PLAN_LOG)
     already = {r["ticker"] for r in _load_jsonl(SETTLED)}
     n_new = 0
+    n_zero_fill = 0
     with open(SETTLED, "a") as out:
         for p in plans:
             tk = p["ticker"]
             if tk in already:
+                continue
+            # honest-fill gate hygiene: depth_v1 dry-runs can report filled=0 (public book was empty at
+            # fire time -- kwx_runner.py deploys $0 and does NOT mark the rung fired for these, so it can
+            # re-fire later with a real fill). A filled=0 "fire" never actually happened as a trade, so it
+            # must NOT be counted as a settled paper fire in the tested==live gate -- that would silently
+            # inflate n and dilute/pollute win-rate & EV with a phantom position. Skip it (don't even hit
+            # the network); a later plan record for the same ticker with filled>0 will settle normally.
+            if p.get("filled") == 0:
+                n_zero_fill += 1
                 continue
             try:
                 m = _get(f"{KBASE}/markets/{tk}").get("market", {})
@@ -68,7 +78,10 @@ def settle():
                 continue
             result = m.get("result")  # 'yes'/'no'
             side = p["side"]
-            entry = p["cap_c"] / 100.0
+            # entry price: prefer the depth_v1 simulated fill VWAP (the price we'd ACTUALLY have paid
+            # walking the book) over the old cap-price assumption -- cap_c only remains as the fallback
+            # for older plan records / assumed_full fires that never got a vwap.
+            entry = (p["fill_vwap_c"] / 100.0) if p.get("fill_vwap_c") is not None else (p["cap_c"] / 100.0)
             fee = _kalshi_fee(entry)
             # we bought `side`; we win if result == side
             won = (result == side)
@@ -84,7 +97,9 @@ def settle():
                                  f"PnL {pnl:+.2f}/ct")
             except Exception:
                 pass
-    print(f"settled {n_new} new paper fires -> {SETTLED}")
+    print(f"settled {n_new} new paper fires -> {SETTLED}"
+          + (f"  ({n_zero_fill} zero-fill plan(s) skipped -- book was empty, not counted toward the gate)"
+             if n_zero_fill else ""))
     if n_new:
         try:
             import kwx_notify

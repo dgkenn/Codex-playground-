@@ -1,0 +1,260 @@
+{
+ "_comment": "kwx-marketwatch baseline: every Kalshi daily temp series ever seen. Do not edit by hand; wx_market_coverage.py --watch maintains it (deleting an entry makes the next run re-alert it as NEW, which is also how you test the alert path).",
+ "series": {
+  "KXHIGHAUS": {
+   "title": "Highest temperature in Austin",
+   "status": "active",
+   "first_seen": "2026-07-19"
+  },
+  "KXHIGHCHI": {
+   "title": "Highest temperature in Chicago",
+   "status": "active",
+   "first_seen": "2026-07-19"
+  },
+  "KXHIGHDEN": {
+   "title": "Highest temperature in Denver",
+   "status": "active",
+   "first_seen": "2026-07-19"
+  },
+  "KXHIGHHOU": {
+   "title": "Highest temperature in Houston",
+   "status": "deprecated",
+   "first_seen": "2026-07-19"
+  },
+  "KXHIGHLAX": {
+   "title": "Highest temperature in Los Angeles",
+   "status": "active",
+   "first_seen": "2026-07-19"
+  },
+  "KXHIGHMIA": {
+   "title": "Highest temperature in Miami",
+   "status": "active",
+   "first_seen": "2026-07-19"
+  },
+  "KXHIGHNY": {
+   "title": "Highest temperature in NYC",
+   "status": "active",
+   "first_seen": "2026-07-19"
+  },
+  "KXHIGHOU": {
+   "title": "Highest temperature in Houston",
+   "status": "deprecated",
+   "first_seen": "2026-07-19"
+  },
+  "KXHIGHPHIL": {
+   "title": "Highest temperature in Philadelphia",
+   "status": "active",
+   "first_seen": "2026-07-19"
+  },
+  "KXHIGHTATL": {
+   "title": "Atlanta Max Temperature",
+   "status": "active",
+   "first_seen": "2026-07-19"
+  },
+  "KXHIGHTBOS": {
+   "title": "Boston Maximum Daily Temperature",
+   "status": "active",
+   "first_seen": "2026-07-19"
+  },
+  "KXHIGHTDAL": {
+   "title": "Dallas Maximum Temperature",
+   "status": "active",
+   "first_seen": "2026-07-19"
+  },
+  "KXHIGHTDC": {
+   "title": "Washington DC Daily Max Temp",
+   "status": "active",
+   "first_seen": "2026-07-19"
+  },
+  "KXHIGHTHOU": {
+   "title": "Daily High Temperature Houston",
+   "status": "active",
+   "first_seen": "2026-07-19"
+  },
+  "KXHIGHTLV": {
+   "title": "Las Vegas Max Daily Temperature",
+   "status": "active",
+   "first_seen": "2026-07-19"
+  },
+  "KXHIGHTMIN": {
+   "title": "Minneapolis Daily High Temperature",
+   "status": "active",
+   "first_seen": "2026-07-19"
+  },
+  "KXHIGHTNOLA": {
+   "title": "New Orleans Max temp Daily",
+   "status": "active",
+   "first_seen": "2026-07-19"
+  },
+  "KXHIGHTOKC": {
+   "title": "Oklahoma City Maximum High Temperature",
+   "status": "active",
+   "first_seen": "2026-07-19"
+  },
+  "KXHIGHTPHX": {
+   "title": "Phoenix High Temperature Daily",
+   "status": "active",
+   "first_seen": "2026-07-19"
+  },
+  "KXHIGHTSATX": {
+   "title": "San Antonio Daily Maximum Temperature",
+   "status": "active",
+   "first_seen": "2026-07-19"
+  },
+  "KXHIGHTSEA": {
+   "title": "Seattle Maximum Temperature Daily",
+   "status": "active",
+   "first_seen": "2026-07-19"
+  },
+  "KXHIGHTSFO": {
+   "title": "San Francisco High Temperature Daily",
+   "status": "active",
+   "first_seen": "2026-07-19"
+  },
+  "KXHIGHUS": {
+   "title": "High temp in United States",
+   "status": "deprecated",
+   "first_seen": "2026-07-19"
+  },
+  "KXLOWAUS": {
+   "title": "Lowest temperature in Austin",
+   "status": "deprecated",
+   "first_seen": "2026-07-19"
+  },
+  "KXLOWCHI": {
+   "title": "Lowest temperature in Chicago",
+   "status": "deprecated",
+   "first_seen": "2026-07-19"
+  },
+  "KXLOWDEN": {
+   "title": "Lowest temperature in Denver",
+   "status": "deprecated",
+   "first_seen": "2026-07-19"
+  },
+  "KXLOWLAX": {
+   "title": "Lowest temperature in Los Angeles",
+   "status": "deprecated",
+   "first_seen": "2026-07-19"
+  },
+  "KXLOWMIA": {
+   "title": "Lowest temperature in Miami",
+   "status": "deprecated",
+   "first_seen": "2026-07-19"
+  },
+  "KXLOWNY": {
+   "title": "Lowest Temperature in NYC",
+   "status": "deprecated",
+   "first_seen": "2026-07-19"
+  },
+  "KXLOWNYC": {
+   "title": "Lowest temperature in New York",
+   "status": "deprecated",
+   "first_seen": "2026-07-19"
+  },
+  "KXLOWPHIL": {
+   "title": "Lowest temperature in Philadelphia",
+   "status": "deprecated",
+   "first_seen": "2026-07-19"
+  },
+  "KXLOWTATL": {
+   "title": "Low Temperature Atlanta",
+   "status": "active",
+   "first_seen": "2026-07-19"
+  },
+  "KXLOWTAUS": {
+   "title": "Lowest temperature in Austin",
+   "status": "active",
+   "first_seen": "2026-07-19"
+  },
+  "KXLOWTBOS": {
+   "title": "Low Temperature Boston",
+   "status": "active",
+   "first_seen": "2026-07-19"
+  },
+  "KXLOWTCHI": {
+   "title": "Lowest Temperature Chicago",
+   "status": "active",
+   "first_seen": "2026-07-19"
+  },
+  "KXLOWTDAL": {
+   "title": "Lowest temperature Dallas",
+   "status": "active",
+   "first_seen": "2026-07-19"
+  },
+  "KXLOWTDC": {
+   "title": "Lowest Temperature DC ",
+   "status": "active",
+   "first_seen": "2026-07-19"
+  },
+  "KXLOWTDEN": {
+   "title": "Lowest temperature in Denver",
+   "status": "active",
+   "first_seen": "2026-07-19"
+  },
+  "KXLOWTHOU": {
+   "title": "Low Temperature Houston",
+   "status": "active",
+   "first_seen": "2026-07-19"
+  },
+  "KXLOWTLAX": {
+   "title": "Lowest Temperature in LA",
+   "status": "active",
+   "first_seen": "2026-07-19"
+  },
+  "KXLOWTLV": {
+   "title": "Las Vegas Daily Low Temperature",
+   "status": "active",
+   "first_seen": "2026-07-19"
+  },
+  "KXLOWTMIA": {
+   "title": "Lowest temperature in Miami",
+   "status": "active",
+   "first_seen": "2026-07-19"
+  },
+  "KXLOWTMIN": {
+   "title": "Low  temperature Minnesota",
+   "status": "active",
+   "first_seen": "2026-07-19"
+  },
+  "KXLOWTNOLA": {
+   "title": "NOLA Low Temperature",
+   "status": "active",
+   "first_seen": "2026-07-19"
+  },
+  "KXLOWTNYC": {
+   "title": "Lowest temperature in NYC",
+   "status": "active",
+   "first_seen": "2026-07-19"
+  },
+  "KXLOWTOKC": {
+   "title": "Low Temperature Oklahoma City",
+   "status": "active",
+   "first_seen": "2026-07-19"
+  },
+  "KXLOWTPHIL": {
+   "title": "Lowest temperature in Philadelphia",
+   "status": "active",
+   "first_seen": "2026-07-19"
+  },
+  "KXLOWTPHX": {
+   "title": "Low Temperature Phoenix",
+   "status": "active",
+   "first_seen": "2026-07-19"
+  },
+  "KXLOWTSATX": {
+   "title": "Lowest Temperature SATX",
+   "status": "active",
+   "first_seen": "2026-07-19"
+  },
+  "KXLOWTSEA": {
+   "title": "Low Temperature Seattle",
+   "status": "active",
+   "first_seen": "2026-07-19"
+  },
+  "KXLOWTSFO": {
+   "title": "Lowest Temperature San Francisco",
+   "status": "active",
+   "first_seen": "2026-07-19"
+  }
+ }
+}
