@@ -1,0 +1,37 @@
+# kwx-ci -- guard the LIVE weather path against regressions. Runs the end-to-end self-test (synthetic lock ->
+# detect -> size -> dry-run order -> guards) + an import sanity check on every push that touches the weather
+# code. The bot trades real money, so a broken fire path or a bad import must fail here, not silently at run
+# time. No secrets, no network trades -- kwx_selftest monkeypatches the feed/market and uses the dry-run exec.
+name: kwx-ci
+
+on:
+  push:
+    branches: [claude/coding-bot-ab-test-results-ffmhxw]
+    paths:
+      - 'kwx_*.py'
+      - 'wx_*.py'
+      - 'madis_feed.py'
+      - 'weathergov_feed.py'
+      - 'aviationweather_metar.py'
+      - '.github/workflows/kwx-ci.yml'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: install deps
+        run: for i in 1 2 3; do pip -q install numpy scipy cryptography && break; sleep 8; done
+      - name: end-to-end fire-path + guards self-test
+        run: python kwx_selftest.py
+      - name: import sanity (runner + feeds + harnesses load)
+        run: |
+          python -c "import kwx_runner, madis_feed, weathergov_feed, kwx_paper_gate, kwx_forward, wx_forecast_model, wx_forecast_forward; print('imports OK')"
