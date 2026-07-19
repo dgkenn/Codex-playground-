@@ -534,9 +534,14 @@ def poll_once(exec_client=None, verbose=True):
             plan = {"ticker": ticker, "side": side, "cap_c": cap_c, "extreme_f": ext,
                     "station": station, "kind": kind, "status": res.get("status"),
                     "requested": size, "filled": res.get("filled"),   # reconciliation: actual vs intended
+                    "fill_vwap_c": res.get("fill_vwap_c"),   # depth_v1: actual walk-the-book avg price paid
                     "ts": int(time.time() * 1000)}
             plans.append(plan)
-            state["fired"][ticker] = plan
+            # depth_v1 dry-run can report filled=0 (book was empty at fire time): don't mark the rung
+            # fired so it can re-fire once depth shows up. (A guard-BLOCKED order has filled=None, not
+            # 0, and still gets marked fired below as before -- it was never eligible to retry sooner.)
+            if res.get("filled") != 0:
+                state["fired"][ticker] = plan
             with open(PLAN_LOG, "a") as f:
                 f.write(json.dumps(plan) + "\n")
             if verbose:
