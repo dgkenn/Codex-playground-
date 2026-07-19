@@ -31,14 +31,27 @@ _CA = "/root/.ccr/ca-bundle.crt"
 _CTX = ssl.create_default_context(cafile=_CA) if os.path.exists(_CA) else None
 OM_BASE = "https://api.open-meteo.com/v1/forecast"
 
-# --- predictive-distribution width (day-ahead forecast-vs-ASOS dispersion). Top-of-file constants so they can
-# be RECALIBRATED once the harness has collected forecast/realized pairs (compute the residual std per kind and
-# drop it in here). 2.0F is a deliberately-honest day-ahead starting point for a GFS/HRRR daily max/min; too
-# small and every rung looks mispriced, too large and nothing does. sigma is what makes or breaks the edge. ---
-SIGMA_MAX = 2.0   # degF: std of (realized daily max - forecast max), ~day-ahead lead
-SIGMA_MIN = 2.0   # degF: std of (realized daily min - forecast min), ~day-ahead lead
+# --- predictive-distribution width (forecast-vs-ASOS dispersion). Top-of-file constants so they can be
+# RECALIBRATED once the harness has collected forecast/realized pairs (compute the residual std per kind and
+# drop it in here). CALIBRATED 2026-07 from an 8-station x 45-day lead-0 (same-day, morning-of) backtest vs IEM
+# ASOS truth (n=360 max / 359 min): after removing the systematic max cold bias below, the max residual std is
+# ~1.17F, so SIGMA_MAX=1.2 (was a 2.0 placeholder -- too wide, it under-fired +EV rungs). MIN is left at 2.0:
+# its residual is only tightenable (2.09->1.62) via a PER-STATION de-bias we don't apply globally (min biases
+# cancel across stations), so tightening min sigma without that de-bias would be overconfident. The harness
+# trades morning HIGHS, so the max calibration is the one that drives EV. CAVEAT: summer-only fit; re-derive
+# per season and, preferably, from the harness's OWN accumulating settled residuals as they build up. ---
+SIGMA_MAX = 1.2   # degF: std of (realized daily max - BIAS-CORRECTED forecast max), lead-0; from the 2026-07 fit
+SIGMA_MIN = 2.0   # degF: uncorrected min residual (~2.09); left wide -- see note above (no global min de-bias)
 # crude lead-time inflation (uncertainty grows with lead); identity at lead 0-1d until recalibrated.
 _LEAD_INFLATE = {0: 1.0, 1: 1.0, 2: 1.25, 3: 1.5}
+
+# --- systematic forecast-vs-sensor bias correction (added to the raw Open-Meteo mu). MEASURED 2026-07: the
+# gfs_seamless daily max runs ~1.09F COLD at these airport points (bias = forecast - truth = -1.09), a stable
+# grid-vs-station representativeness effect (leave-one-out == in-sample to ~0.02F, so it's structural, not
+# overfit). Correcting it moves prob mass to the correct rung (e.g. a true-90F day: winning-rung P 0.416->0.558).
+# MIN global bias is ~0 (-0.09; station-specific biases cancel), so no global min correction is applied. ---
+BIAS_MAX_CORRECTION = 1.09   # degF added to the raw forecast max (warms the cold bias out)
+BIAS_MIN_CORRECTION = 0.0    # degF: global min bias ~0; would need a per-station table (not applied)
 
 
 def predictive_sigma(kind, lead_days=0):
@@ -113,7 +126,8 @@ def fetch_forecast(station, date=None, forecast_days=3):
     if i >= len(mx) or i >= len(mn) or mx[i] is None or mn[i] is None:
         return None
     return {
-        "max": float(mx[i]), "min": float(mn[i]),
+        # apply the measured systematic bias correction so the mu points at the right rung (see BIAS_* notes).
+        "max": float(mx[i]) + BIAS_MAX_CORRECTION, "min": float(mn[i]) + BIAS_MIN_CORRECTION,
         "issued": dt.datetime.now(tz=dt.timezone.utc).isoformat(),
         "date": target, "lead_days": days.index(target),
     }
