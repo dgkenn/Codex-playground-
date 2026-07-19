@@ -1,0 +1,65 @@
+# kwx-marketwatch -- weekly watcher for Kalshi daily-temp LISTING changes (new city = new capacity).
+# The bot's capacity is depth-capped PER CITY, so every new Kalshi daily-temperature series is roughly
+# proportional new capacity -- but a new listing is silent: the 2026-07-19 "all 20 active cities covered"
+# finding was a one-shot snapshot nobody re-runs. This workflow runs wx_market_coverage.py --watch weekly:
+# it diffs the live series list against the committed baseline (wx_known_series.json on the code branch),
+# Telegram-alerts on NEW / DELISTED / REVIVED / RETIRED series (inert without the TELEGRAM_* secrets), and
+# commits the updated baseline back so next week diffs against this week. READ-ONLY on Kalshi: no orders,
+# no Kalshi creds, never touches kwx-live.yml / KWX_SWITCH / .kwx_halt -- it only watches the catalog.
+name: kwx-marketwatch
+
+on:
+  schedule:
+    # weekly is enough: a new city listing is actionable on a scale of days, and each run costs ~35 public
+    # GETs. Monday 12:23 UTC = US market morning, so an alert lands while someone can act the same day.
+    - cron: '23 12 * * 1'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write          # commit the updated wx_known_series.json baseline back to the code branch
+
+concurrency:
+  group: kwx-marketwatch
+  cancel-in-progress: false
+
+env:
+  # the python + committed baseline live on the CODE branch (same pattern as every other kwx-* workflow:
+  # workflows on main, code on the bot branch).
+  BRANCH: claude/coding-bot-ab-test-results-ffmhxw
+
+jobs:
+  marketwatch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.BRANCH }}
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      # no pip installs: wx_market_coverage + kwx_runner + kwx_notify import stdlib only at module level.
+      - name: watch for listing changes + commit baseline
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          set -e
+          git config user.name  "kwx-marketwatch-bot"
+          git config user.email "kwx-marketwatch-bot@users.noreply.github.com"
+          # `|| true`: if this workflow merges before the companion code-branch PR (mis-ordered merge),
+          # --watch doesn't exist yet -- the run must degrade to a no-op, never to a red X that pages.
+          python -u wx_market_coverage.py --watch || true
+          # PER-FILE guarded add (never a batched multi-file `git add -f a b c`: that form aborts the
+          # WHOLE add when any listed file is missing, silently dropping the files that DO exist --
+          # the exact failure being fixed repo-wide).
+          git add -f wx_known_series.json 2>/dev/null || true
+          git commit -q -m "marketwatch baseline $(date -u +%FT%HZ)" || { echo "nothing to commit"; exit 0; }
+          # push with rebase-retry: the code branch also receives commits from the other kwx crons.
+          for i in 1 2 3 4 5; do
+            git push origin "HEAD:${BRANCH}" && exit 0
+            git fetch -q origin "$BRANCH" && git rebase -q "origin/${BRANCH}" || true
+            sleep $((RANDOM % 5 + 2))
+          done
+          echo "push failed after 5 attempts"; exit 1
