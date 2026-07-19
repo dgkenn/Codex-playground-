@@ -54,9 +54,47 @@ def main():
     had_halt = os.path.exists(halt)
 
     from kalshi_exec import KalshiExec
-    ex = KalshiExec()   # dry-run (no KWX_LIVE / no creds)
+    # Keep this test OFFLINE and deterministic (its charter: "No network"): the honest-fill dry-run model
+    # now reads the PUBLIC orderbook at fire time, but this test's tickers are synthetic (would 404 anyway).
+    # Use the supported offline seam (fetch_book=False) instead of monkeypatching the private
+    # _fetch_orderbook function -- this disables the book fetch entirely so every dry-run books the old
+    # full-fill behavior (fill_model="assumed_full"), which is exactly what these checks were written
+    # against. The depth model itself is unit-tested directly below (check 0) and exercised against a REAL
+    # book in the e2e recipe.
+    ex = KalshiExec(fetch_book=False)   # dry-run (no KWX_LIVE / no creds), no network
     print(f"exec live mode: {getattr(ex, 'live', False)} (must be False for this test)\n")
     check("exec is dry-run (no real orders possible)", not getattr(ex, "live", False))
+
+    # 0) DEPTH FILL MODEL: _sim_depth_fill against a canned, hand-computed book (offline, deterministic).
+    # Book convention: each side lists resting BIDS; a buyer lifts the OPPOSITE side's bids (ask = 100-bid).
+    print("\n0) _sim_depth_fill unit test against a canned orderbook:")
+    from kalshi_exec import _sim_depth_fill
+    book = {"yes": [[92, 5], [90, 3]],    # -> derived NO asks: 8c x5, 10c x3
+            "no": [[80, 10], [75, 4]]}    # -> derived YES asks: 20c x10, 25c x4
+
+    # buy YES, plenty of cap headroom -> fully filled at the cheapest (20c) level
+    f = _sim_depth_fill(book, "yes", count=5, max_price_cents=30)
+    check("depth fill: buy_yes fills fully from the cheap level", f["filled"] == 5, f)
+    check("depth fill: buy_yes vwap is the cheapest ask (20c)", f["fill_vwap_c"] == 20.0, f)
+    check("depth fill: buy_yes depth_at_cap sums both levels (14)", f["depth_at_cap"] == 14, f)
+    check("depth fill: buy_yes best_ask_c is 20", f["best_ask_c"] == 20, f)
+
+    # buy YES with a cap BELOW the best ask -> nothing fillable, but the book is still recorded as evidence
+    f = _sim_depth_fill(book, "yes", count=5, max_price_cents=15)
+    check("depth fill: cap below best ask -> filled 0", f["filled"] == 0, f)
+    check("depth fill: cap below best ask -> vwap None", f["fill_vwap_c"] is None, f)
+    check("depth fill: cap below best ask -> best_ask_c still reported (20)", f["best_ask_c"] == 20, f)
+
+    # buy NO, cap only reaches the first derived level -> partial fill against just that level
+    f = _sim_depth_fill(book, "no", count=6, max_price_cents=9)
+    check("depth fill: buy_no partial-caps at the 8c level (5 of 6)", f["filled"] == 5, f)
+    check("depth fill: buy_no vwap is 8c", f["fill_vwap_c"] == 8.0, f)
+
+    # empty book -> filled 0, no best ask, no evidence levels
+    f = _sim_depth_fill({"yes": [], "no": []}, "yes", count=5, max_price_cents=50)
+    check("depth fill: empty book -> filled 0", f["filled"] == 0, f)
+    check("depth fill: empty book -> best_ask_c None", f["best_ask_c"] is None, f)
+    check("depth fill: empty book -> book_top empty", f["book_top"] == [], f)
 
     # 1) HAPPY PATH: obs 93F clears a floor-90 YES rung by margin -> a fire is produced
     print("\n1) happy path -- lock produces a (dry-run) order:")
