@@ -2,9 +2,11 @@
 # Trades ONLY when KWX_SWITCH=on AND the Kalshi secrets exist; otherwise completely inert.
 #
 # SELF-HEALING (so a down bot recovers on its own):
-#   - SELF-CHAIN: each run dispatches the NEXT run at the end (github.token) -> near-continuous coverage that
-#     does NOT depend on GitHub's flaky cron.
-#   - CRON BACKUP: every 20 min, restarts the chain if a run died without chaining.
+#   - PRE-CHAIN: each run dispatches its successor at the START (parked pending in the singleton group) so the
+#     next leg starts the instant this one ends EVEN IF this leg is cancelled/times out -- closes the 15-19 min
+#     coverage gaps the diagnostic found (2026-07-19).
+#   - SELF-CHAIN: each run also dispatches the NEXT run at the end (belt-and-suspenders).
+#   - CRON BACKUP: every 20 min, restarts the chain if both dispatches were lost.
 #   - HEARTBEAT: each run commits .kwx_heartbeat (UTC ts). The kwx-watchdog workflow alerts on Telegram +
 #     re-dispatches if the heartbeat goes stale (both chain AND cron dead).
 #   - singleton concurrency -> never two live bots at once.
@@ -15,12 +17,12 @@ name: kwx-live
 
 on:
   schedule:
-    - cron: '*/20 * * * *'      # BACKUP restart (self-chain is primary continuity)
+    - cron: '*/20 * * * *'      # BACKUP restart (pre-chain + self-chain are primary continuity)
   workflow_dispatch: {}
 
 permissions:
   contents: write               # persist logs + heartbeat
-  actions: write                # self-chain: dispatch the next run
+  actions: write                # pre-chain/self-chain: dispatch the next run
 
 concurrency:
   group: kwx-live-singleton
@@ -52,6 +54,25 @@ jobs:
           else
             echo "have=no" >> "$GITHUB_OUTPUT"; echo "::notice::KALSHI secrets not set -> inert"
           fi
+      - name: pre-chain successor (parks in the concurrency queue -> starts the instant this leg ends)
+        # Coverage fix (2026-07-19): the diagnostic saw 15-19 min uncovered gaps because the END-of-run
+        # self-chain never fires when a leg is cancelled or times out -> nothing restarts until the ~20-min
+        # cron. Dispatching the successor HERE parks it as PENDING in the kwx-live-singleton group
+        # (cancel-in-progress:false serializes it), so it starts the moment this job ends EVEN IF this job dies
+        # -- shrinking the inter-leg gap to setup time (~60-90s). The successor re-reads KWX_SWITCH + .kwx_halt
+        # in its own gate, so OFF/halt during this leg still stops the chain. End-of-run self-chain kept too.
+        if: steps.gate.outputs.switch == 'on' && steps.sec.outputs.have == 'yes'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for i in 1 2 3; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' -X POST \
+              -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/${{ github.repository }}/actions/workflows/kwx-live.yml/dispatches" \
+              -d '{"ref":"main"}')
+            [ "$code" = "204" ] && { echo "successor parked in concurrency queue"; break; }
+            echo "pre-dispatch -> HTTP $code"; sleep $((2 ** i))
+          done
       - uses: actions/setup-python@v5
         if: steps.gate.outputs.switch == 'on' && steps.sec.outputs.have == 'yes'
         with:
@@ -66,7 +87,7 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
           set -e
-          pip -q install cryptography || true
+          pip -q install cryptography numpy scipy || true   # scipy/numpy: MADIS hfmetar netCDF parse (free 5-min feed)
           git config user.name  "kwx-live-bot"
           git config user.email "kwx-live-bot@users.noreply.github.com"
           END=$(( $(date +%s) + 960 ))     # ~16 min live loop
