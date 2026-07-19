@@ -41,6 +41,7 @@ _CTX = ssl.create_default_context(cafile=_CA) if os.path.exists(_CA) else None
 ASOS = "https://mesonet.agron.iastate.edu/cgi-bin/request/asos.py"
 DAILY = "https://mesonet.agron.iastate.edu/cgi-bin/request/daily.py"
 CACHE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "_earlylock_cache")
+CLIMO_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "_earlylock_climatology.json")
 
 # --- study knobs ---
 N_DAYS = 75                 # trailing LST days to sample
@@ -285,6 +286,55 @@ def simulate():
     return recs, meta
 
 
+def build_fixed_climatology(end_date=END_DATE, n_days=N_DAYS, verbose=True):
+    """FIXED (ALL historical days, NOT leave-one-out) per-station per-15min-bin (E[remaining_rise], resid_std)
+    for LIVE forward use. LOO exists only to prevent a day's own final-max leaking into its own backtest
+    estimate; a live forward day is a genuinely new day never in the sample, so pooling ALL cached days is
+    correct (more support, no self-leak). Reuses the exact study machinery (build_days -> climatology) so the
+    persisted numbers match the backtested ones. Returns the climatology dict and writes it to CLIMO_PATH.
+
+    Shape: {"meta": {...}, "stations": {stn: {"<bin_index>": [mean_rise, resid_std, n_days], ...}, ...}}
+    bin_index b covers local minute-of-day [b*BIN, (b+1)*BIN); at snapshot time look up b = lst_minute // BIN."""
+    import json as _json
+    start = end_date - dt.timedelta(days=n_days - 1)
+    stations = sorted({s for s, _ in CITY.values()})
+    nb = (24 * 60) // BIN
+    out = {"meta": {"built_utc": dt.datetime.now(tz=dt.timezone.utc).isoformat(),
+                    "end_date": end_date.isoformat(), "n_days": n_days, "bin_min": BIN, "step_min": STEP,
+                    "std_floor": STD_FLOOR, "min_days": MIN_LOO_DAYS, "n_bins": nb,
+                    "note": "FIXED all-days (no LOO) remaining-rise climatology for live early-lock; HIGH case"},
+           "stations": {}}
+    for stn in stations:
+        try:
+            days, thin, xdiff = build_days(stn, start, end_date)
+        except Exception as e:
+            if verbose:
+                print(f"  [{stn}] fetch/parse failed: {e}", file=sys.stderr)
+            continue
+        if len(days) < MIN_LOO_DAYS + 1:
+            if verbose:
+                print(f"  [{stn}] only {len(days)} usable days -- skipped", file=sys.stderr)
+            continue
+        bin_samples = climatology(days)
+        binmap = {}
+        for b in range(nb):
+            vals = [v for (_d, v) in bin_samples.get(b, [])]
+            if len(vals) < MIN_LOO_DAYS:
+                continue                       # too few days in this bin -> no live prediction (fail safe)
+            a = np.asarray(vals)
+            binmap[str(b)] = [round(float(a.mean()), 4),
+                              round(float(max(STD_FLOOR, a.std(ddof=1))), 4), len(vals)]
+        if binmap:
+            out["stations"][stn] = binmap
+            if verbose:
+                print(f"  [{stn}] {len(days)} days -> {len(binmap)}/{nb} bins with climatology")
+    with open(CLIMO_PATH, "w") as f:
+        _json.dump(out, f)
+    if verbose:
+        print(f"wrote fixed climatology for {len(out['stations'])} stations -> {CLIMO_PATH}")
+    return out
+
+
 def pct(a, q):
     a = np.asarray([x for x in a if not np.isnan(x)])
     return float(np.percentile(a, q)) if len(a) else float("nan")
@@ -357,6 +407,10 @@ def report(recs, meta):
 
 if __name__ == "__main__":
     t0 = time.time()
-    recs, meta = simulate()
-    report(recs, meta)
-    print(f"\n(done in {time.time()-t0:.0f}s; cache: {CACHE})")
+    if "--dump-climatology" in sys.argv:
+        build_fixed_climatology()
+        print(f"\n(done in {time.time()-t0:.0f}s; cache: {CACHE})")
+    else:
+        recs, meta = simulate()
+        report(recs, meta)
+        print(f"\n(done in {time.time()-t0:.0f}s; cache: {CACHE})")
