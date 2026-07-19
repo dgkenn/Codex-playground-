@@ -1,5 +1,5 @@
 === K-WX FORWARD PAPER GATE status ===
-updated: 2026-07-19T21:28:53.826173+00:00
+updated: 2026-07-19T21:45:19.017144+00:00
 last poll: 0 new paper locks; next poll in ~5s
 kill-switch (.kwx_halt): off
 
