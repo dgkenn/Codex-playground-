@@ -41,7 +41,42 @@ def orderbook_ask_depth(ticker, max_pay_c=98):
     return depth
 
 
+def retro():
+    """Retrospective depth-proxy read from the backtest (available any hour, unlike the live probe which needs
+    active US markets). volume_at_exec / oi_at_exec sit at each lock moment. CAVEAT: traded volume + open
+    interest are NOT resting-ask depth -- they bound liquidity but don't pin the fillable number; the live
+    probe is the definitive measure. Still, they answer the shape: are the fires our FREE feed catches on
+    thin/quiet rungs (DEPTH_CAP~right) or deep ones (headroom)?"""
+    import json, statistics as st
+    raw = json.load(open(os.path.join(HERE, "_trackA_results_raw.json")))
+    caught_vol, caught_oi = [], []
+    for r in raw:
+        c = r["cells"].get("1_3")
+        if not c or not c.get("fired") or not c.get("exec_price") or c["exec_price"] >= 0.99:
+            continue
+        g = c.get("decay_gap_by_min", {}).get("10")   # catchable on the free/MADIS feed (~10 min)?
+        if g is None or (1 - g) >= 0.99:
+            continue
+        caught_vol.append(c.get("volume_at_exec") or 0)
+        caught_oi.append(c.get("oi_at_exec") or 0)
+    if not caught_vol:
+        print("no caught fires"); return
+    pc = lambda a, q: sorted(a)[min(len(a) - 1, int(q * len(a)))]
+    n = len(caught_vol)
+    print(f"RETROSPECTIVE depth proxy | {n} fires catchable at ~10min (free feed)")
+    print(f"  volume_at_exec (traded):  median {st.median(caught_vol):.0f}  p75 {pc(caught_vol,.75):.0f}  p90 {pc(caught_vol,.90):.0f}")
+    print(f"  oi_at_exec (open interest): median {st.median(caught_oi):.0f}  p90 {pc(caught_oi,.90):.0f}")
+    print(f"  share of caught fires with volume_at_exec < DEPTH_CAP({R.DEPTH_CAP}): "
+          f"{100*sum(1 for v in caught_vol if v < R.DEPTH_CAP)/n:.0f}%")
+    print("  read: the free feed catches thin/quiet rungs (low traded volume) -> DEPTH_CAP~25 is likely near-right\n"
+          "  for them, NOT obviously conservative. The depth headroom lives in the DEEP/fast fires that need\n"
+          "  Synoptic; so Synoptic likely compounds -- more fires AND deeper fills. Live probe confirms the number.")
+
+
 def main():
+    import sys
+    if "--retro" in sys.argv:
+        retro(); return
     mkts = R.active_market_days()
     print(f"sampling live Kalshi weather books | {len(mkts)} city-market-days today | DEPTH_CAP(assumed)={R.DEPTH_CAP}\n")
     depths = []
