@@ -39,10 +39,25 @@ HARD_MAX_CONTRACTS = 200                        # fat-finger / bug ceiling: refu
 HARD_MAX_PRICE_CENTS = 98                       # never pay above this (no-gap / dead-on-arrival protection)
 
 
-def _client_order_id(ticker, side):
+class _GuardBlocked(Exception):
+    """Raised by _submit_guarded when _guard refuses an order (HALT_FILE kill-switch / size / price).
+    Carries the blocked record so callers can log/return it without re-deriving the reason."""
+    def __init__(self, record):
+        super().__init__(record.get("reason", "blocked"))
+        self.record = record
+
+
+def _client_order_id(ticker, side, attempt=0):
     """Deterministic idempotency key: one order per ticker+side (ticker already encodes the day). A retried
-    identical order carries the SAME id -> Kalshi dedupes it, so a crash/retry can't double-fill."""
-    return f"kwx-{ticker}-{side}"
+    identical order carries the SAME id -> Kalshi dedupes it, so a crash/retry can't double-fill.
+
+    `attempt` handles the one deliberate exception: after a CONFIRMED zero-fill IOC (ask moved between quote
+    and order) we re-quote and retry ONCE. Kalshi dedupes on client_order_id, so reusing the unsuffixed id
+    would make the retry silently no-op -- the retry MUST carry a distinct id. The suffix is still
+    deterministic ("-r1", not a uuid): if we crash between attempt 1 and attempt 2, a restart regenerates the
+    SAME retry id and Kalshi dedupes it, so there is no code path that creates a third order."""
+    base = f"kwx-{ticker}-{side}"
+    return base if attempt == 0 else f"{base}-r{attempt}"
 
 
 class KalshiExec:
@@ -151,6 +166,131 @@ class KalshiExec:
                 filled = None
         return filled, o.get("status")
 
+    # ---- live-order plumbing (shared by buy_yes / buy_no and the one bounded retry) ----
+    def _post_order(self, order):
+        """POST one signed create-order request; returns the parsed response dict. Raises on HTTP/network
+        errors -- callers decide how to fail (buy_* logs live_error; the retry path fails CLOSED back to
+        the original zero-fill record)."""
+        path = "/trade-api/v2/portfolio/orders"
+        body = json.dumps(order).encode()
+        req = urllib.request.Request(self.base.replace("/trade-api/v2", "") + path,
+                                     data=body, method="POST",
+                                     headers=self._headers("POST", path))
+        return json.load(urllib.request.urlopen(req, timeout=10, context=_CTX))
+
+    def _submit_guarded(self, ticker, side, count, price_cents, client_order_id):
+        """SINGLE chokepoint for every live order POST -- the initial attempt AND the bounded retry both
+        go through here, no exceptions. Runs _guard (HALT_FILE kill-switch + count/size/price guards)
+        IMMEDIATELY before building/sending the order.
+
+        This exists because the retry previously called _post_order directly and only re-checked price
+        ad-hoc: `touch .kwx_halt` between the initial zero-fill and the retry would NOT have stopped the
+        retry order. Routing both call sites through one guarded method closes that gap structurally --
+        there is no live POST path that skips _guard.
+
+        Raises _GuardBlocked(record) if refused (record is the same shape _guard/buy_* already produce).
+        Otherwise POSTs and returns (resp, order); raises urllib.error.HTTPError / other network errors
+        same as _post_order (callers decide how to handle those)."""
+        blocked = self._guard(ticker, count, price_cents)
+        if blocked:
+            raise _GuardBlocked(blocked)
+        price_key = "yes_price" if side == "yes" else "no_price"
+        order = {
+            "ticker": ticker, "action": "buy", "side": side,
+            "count": int(count), "type": "limit", price_key: int(price_cents),
+            "time_in_force": "immediate_or_cancel", "client_order_id": client_order_id,
+        }
+        return self._post_order(order), order
+
+    def _requote_ask_cents(self, ticker, side):
+        """Re-fetch the CURRENT displayed ask for one side from the PUBLIC market endpoint
+        (GET /trade-api/v2/markets/{ticker} -- no auth, same data kwx_runner.event_rungs reads off the
+        events endpoint). Returns int cents in [1,99], or None on any failure/absence -- callers treat
+        None as 'do not retry' (fail closed). Schema-tolerant like kwx_runner._dollars: prefers the
+        integer-cents `yes_ask`/`no_ask` field, falls back to the `*_dollars` variant."""
+        try:
+            req = urllib.request.Request(f"{self.base}/markets/{ticker}",
+                                         headers={"Accept": "application/json"})
+            m = json.load(urllib.request.urlopen(req, timeout=10, context=_CTX)).get("market") or {}
+            key = "yes_ask" if side == "yes" else "no_ask"
+            v = m.get(key)
+            # `yes_ask`/`no_ask` are documented as integer CENTS; only trust integral values so a
+            # dollars-float (e.g. 0.55) can never be misread as 1c.
+            if isinstance(v, int) and not isinstance(v, bool) and 1 <= v <= 99:
+                return v
+            vd = m.get(key + "_dollars")
+            if vd is not None:
+                c = int(round(float(vd) * 100))
+                if 1 <= c <= 99:
+                    return c
+        except Exception as e:
+            print(f"[kalshi_exec] re-quote failed for {ticker}/{side} ({e}); no retry")
+        return None
+
+    def _retry_once(self, first_rec, ticker, side, count, max_price_cents):
+        """ONE bounded retry after a CONFIRMED zero-fill live IOC (the 'ask moved between quote and order'
+        case -- without this the runner marks the ticker fired and the edge is permanently abandoned).
+        Re-quotes the ask and re-fires ONLY if it is still <= the original max_price_cents (and <= the 98c
+        hard ceiling), using the distinct-but-deterministic '-r1' client_order_id (see _client_order_id for
+        why reuse would silently no-op), and ALWAYS through _submit_guarded so the retry re-runs _guard
+        (HALT_FILE kill-switch + count/price) fresh, not just a price re-check.
+
+        Outcome handling is deliberately NOT one blanket try/except:
+          - a re-quote miss, an over-cap re-quote, or a _GuardBlocked -> the retry was never sent; the
+            original zero-fill record stands untouched (nothing ambiguous happened).
+          - urllib.error.HTTPError -> Kalshi gave us a DEFINITIVE rejection response; the -r1 order was
+            never accepted, so this is still a clean, provable zero-fill.
+          - any OTHER exception (timeout, connection drop, decode error, ...) can happen AFTER the retry
+            bytes left this process -- we have no proof whether -r1 reached Kalshi or filled. That case
+            is recorded as fill_state="unknown" (never as a clean zero) so nothing downstream silently
+            treats an ambiguous send as flat; it must be reconciled against client_order_id before being
+            trusted either way.
+        Returns the record to log."""
+        ask = self._requote_ask_cents(ticker, side)
+        if ask is None:
+            return {**first_rec, "retry": {"attempted": False, "requote_ask_c": None,
+                                           "reason": "re-quote failed or no ask"}}
+        if ask > int(max_price_cents) or ask > HARD_MAX_PRICE_CENTS:
+            return {**first_rec, "retry": {"attempted": False, "requote_ask_c": ask,
+                                           "reason": f"requoted ask {ask}c > cap"}}
+        retry_id = _client_order_id(ticker, side, attempt=1)
+        try:
+            resp, _order = self._submit_guarded(ticker, side, count, max_price_cents, retry_id)
+        except _GuardBlocked as e:
+            # Not sent at all (e.g. HALT_FILE touched between the first attempt and now) -- unambiguous,
+            # original zero-fill stands.
+            return {**first_rec, "retry": {"attempted": False, "requote_ask_c": ask,
+                                           "reason": e.record.get("reason", "guard blocked"),
+                                           "guard_status": e.record.get("status")}}
+        except urllib.error.HTTPError as e:
+            # Definitive rejection -- we got an HTTP response back, so the retry order was never
+            # accepted by Kalshi. Not ambiguous: still a clean zero-fill.
+            body = e.read().decode()[:300] if hasattr(e, "read") else ""
+            return {**first_rec, "retry": {"attempted": True, "requote_ask_c": ask,
+                                           "client_order_id": retry_id,
+                                           "error": f"HTTP {e.code}: {body}"}}
+        except Exception as e:
+            print(f"[kalshi_exec] retry send AMBIGUOUS for {ticker}/{side} ({e}); "
+                  f"fill_state=unknown -- reconcile client_order_id={retry_id} before assuming flat")
+            return {**first_rec, "filled": None, "fill_state": "unknown",
+                    "retry": {"attempted": True, "requote_ask_c": ask, "fill_state": "unknown",
+                              "client_order_id": retry_id, "error": str(e)[:200],
+                              "reason": "send outcome unknown (not an HTTP rejection) -- "
+                                        "reconcile before assuming flat"}}
+        filled, ostatus = self._reconcile(resp, count)
+        fill_state = ("flat" if filled == 0 else "filled" if filled == count
+                      else "partial" if isinstance(filled, int) else "unknown")
+        # Retry succeeded (as an API call): the record's top-level fields now reflect the FINAL
+        # outcome (attempt 1 filled exactly 0, so retry fill == total fill); the first attempt's
+        # outcome is preserved under first_attempt. All keys are additive -> shape stays
+        # backward-compatible with existing log readers.
+        return {**first_rec, "attempts": 2, "filled": filled, "order_status": ostatus,
+                "fill_state": fill_state, "response": resp,
+                "retry": {"attempted": True, "requote_ask_c": ask, "filled": filled,
+                          "order_status": ostatus, "client_order_id": retry_id},
+                "first_attempt": {"filled": first_rec.get("filled"),
+                                  "order_status": first_rec.get("order_status")}}
+
     # ---- public: place a YES buy (taker, immediate-or-cancel at a price cap) ----
     def buy_yes(self, ticker, count, max_price_cents, dry_fill_price=None):
         """Buy `count` YES contracts at up to `max_price_cents`. DRY-RUN unless gated live.
@@ -173,16 +313,20 @@ class KalshiExec:
             self._log(r)
             return r
         # ---- live path (only reached when KWX_LIVE=1 AND creds present) ----
-        path = "/trade-api/v2/portfolio/orders"
-        body = json.dumps(order).encode()
-        req = urllib.request.Request(self.base.replace("/trade-api/v2", "") + path,
-                                     data=body, method="POST",
-                                     headers=self._headers("POST", path))
         try:
-            resp = json.load(urllib.request.urlopen(req, timeout=10, context=_CTX))
+            # _submit_guarded re-runs _guard right before sending -- same chokepoint the retry uses, so
+            # a HALT_FILE written between the guard check above and this POST still blocks the order.
+            resp, order = self._submit_guarded(ticker, "yes", count, max_price_cents, order["client_order_id"])
             filled, ostatus = self._reconcile(resp, count)
             r = {"status": "live", "ticker": ticker, "requested": int(count),
                  "filled": filled, "order_status": ostatus, "response": resp}
+            # CONFIRMED zero fill (ask moved between the runner's quote and our IOC) -> one bounded
+            # retry at a fresh quote. `type(filled) is int` deliberately excludes None/unknown fill
+            # state (and bool): retrying when we can't PROVE zero fill risks doubling the position.
+            if type(filled) is int and filled == 0:
+                r = self._retry_once(r, ticker, "yes", count, max_price_cents)
+        except _GuardBlocked as e:
+            r = e.record
         except urllib.error.HTTPError as e:
             r = {"status": "live_error", "ticker": ticker, "code": e.code, "body": e.read().decode()[:300]}
         self._log(r)
@@ -205,15 +349,17 @@ class KalshiExec:
                  "filled": int(count), "avg_price_cents": fill, "order": order}
             self._log(r)
             return r
-        path = "/trade-api/v2/portfolio/orders"
-        body = json.dumps(order).encode()
-        req = urllib.request.Request(self.base.replace("/trade-api/v2", "") + path,
-                                     data=body, method="POST", headers=self._headers("POST", path))
         try:
-            resp = json.load(urllib.request.urlopen(req, timeout=10, context=_CTX))
+            # Same guarded chokepoint as buy_yes (see comment there).
+            resp, order = self._submit_guarded(ticker, "no", count, max_price_cents, order["client_order_id"])
             filled, ostatus = self._reconcile(resp, count)
             r = {"status": "live", "ticker": ticker, "side": "no", "requested": int(count),
                  "filled": filled, "order_status": ostatus, "response": resp}
+            # Same bounded zero-fill retry as buy_yes (see comment there); None/unknown -> no retry.
+            if type(filled) is int and filled == 0:
+                r = self._retry_once(r, ticker, "no", count, max_price_cents)
+        except _GuardBlocked as e:
+            r = e.record
         except urllib.error.HTTPError as e:
             r = {"status": "live_error", "ticker": ticker, "code": e.code, "body": e.read().decode()[:300]}
         self._log(r)
