@@ -29,6 +29,9 @@ wx_forecast_settled.jsonl
 # early-lock study cache (agent artifact, do not commit)
 _earlylock_cache/
 
+# Polymarket gap-study cache (raw ASOS/CLOB pulls, agent artifact, do not commit)
+.pmkt_cache/
+
 # pmkt settlement-basis study caches (agent artifact, do not commit)
 _pmkt_cache/
 _pmkt_basis_cache/
