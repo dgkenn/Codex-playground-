@@ -1,0 +1,46 @@
+# kwx-depthprobe -- sample live Kalshi weather book depth during US-afternoon peak fire hours, to CALIBRATE
+# DEPTH_CAP (the single lever that sets the capacity ceiling). wx_capacity_probe found off-peak books are thin/
+# empty, so it must run when markets are active (afternoon rise, when rungs lock and asks are live). Appends the
+# probe output to kwx_depth_log.txt and commits it. Read-only public market data: no credentials, no orders.
+name: kwx-depthprobe
+
+on:
+  schedule:
+    - cron: '23 18,20,22 * * *'   # ~US afternoon (UTC-5 -> 1-5pm, UTC-8 -> 10am-2pm): active fire windows
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: kwx-depthprobe
+  cancel-in-progress: false
+
+env:
+  BRANCH: claude/coding-bot-ab-test-results-ffmhxw
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.BRANCH }}
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: probe live book depth + append log
+        run: |
+          set -e
+          git config user.name  "kwx-depthprobe-bot"
+          git config user.email "kwx-depthprobe-bot@users.noreply.github.com"
+          { echo "=== $(date -u +%FT%H:%MZ) ==="; python -u wx_capacity_probe.py; } >> kwx_depth_log.txt 2>&1 || true
+          git add -f kwx_depth_log.txt || true
+          git commit -q -m "depth probe $(date -u +%FT%HZ)" || { echo "nothing to commit"; exit 0; }
+          for i in 1 2 3 4 5; do
+            git push origin "HEAD:${BRANCH}" && exit 0
+            git fetch -q origin "$BRANCH" && git rebase -q "origin/${BRANCH}" || true
+            sleep $((RANDOM % 5 + 2))
+          done

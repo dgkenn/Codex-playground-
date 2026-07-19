@@ -1,0 +1,51 @@
+# kwx-forecast -- daily PAPER snapshots for the forecast-edge sleeve (2nd-edge validation, no orders).
+# Runs wx_forecast_forward.py settle+snapshot a few times in the US-morning UTC window (so each city is
+# captured BEFORE its afternoon high, per the harness's validity guard), scores finished days from IEM ASOS
+# truth, and commits the accumulating jsonl logs so the forward record survives ephemeral runners. Paper-only:
+# no Kalshi credentials, no live-trading code -- it just measures whether forecast_prob beats the market price.
+name: kwx-forecast
+
+on:
+  schedule:
+    - cron: '3 13,15,17 * * *'   # ~US morning: catches eastern (UTC-5) and western (UTC-8) cities in local 5-11h
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: kwx-forecast
+  cancel-in-progress: false
+
+env:
+  BRANCH: claude/coding-bot-ab-test-results-ffmhxw
+
+jobs:
+  snap:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.BRANCH }}
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: install deps
+        run: for i in 1 2 3; do pip -q install numpy scipy && break; sleep 8; done
+      - name: settle + snapshot (paper) + commit logs
+        run: |
+          set -e
+          git config user.name  "kwx-forecast-bot"
+          git config user.email "kwx-forecast-bot@users.noreply.github.com"
+          python -u wx_forecast_forward.py settle   || true
+          python -u wx_forecast_forward.py snapshot || true
+          python -u wx_forecast_forward.py report   || true
+          git add -f wx_forecast_paper.jsonl wx_forecast_settled.jsonl 2>/dev/null || true
+          git commit -q -m "forecast paper $(date -u +%FT%HZ)" || { echo "nothing to commit"; exit 0; }
+          for i in 1 2 3 4 5; do
+            git push origin "HEAD:${BRANCH}" && exit 0
+            git fetch -q origin "$BRANCH" && git rebase -q "origin/${BRANCH}" || true
+            sleep $((RANDOM % 5 + 2))
+          done
