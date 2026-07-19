@@ -1,12 +1,18 @@
-# kwx-depthprobe -- sample live Kalshi weather book depth during US-afternoon peak fire hours, to CALIBRATE
-# DEPTH_CAP (the single lever that sets the capacity ceiling). wx_capacity_probe found off-peak books are thin/
-# empty, so it must run when markets are active (afternoon rise, when rungs lock and asks are live). Appends the
-# probe output to kwx_depth_log.txt and commits it. Read-only public market data: no credentials, no orders.
+# kwx-depthprobe -- structured order-book snapshots of near-lock Kalshi weather rungs during the US-afternoon
+# fire window, to CALIBRATE DEPTH_CAP (the single lever that sets the monthly capacity ceiling). Runs
+# `wx_capacity_probe.py --snapshot` every ~30 min through 18:00-01:00 UTC, appending full two-sided ladder
+# levels (schema: wx_book_snapshot_schema.md) to wx_book_snapshots.jsonl, plus one daily `--report` printing
+# the depth-distribution evidence after the window closes. Read-only public market data: no credentials, no
+# orders. PROPOSE-ONLY, same pattern as kwx-earlylock's paper logs (gitignored jsonl, force-added by CI).
 name: kwx-depthprobe
 
 on:
   schedule:
-    - cron: '23 18,20,22 * * *'   # ~US afternoon (UTC-5 -> 1-5pm, UTC-8 -> 10am-2pm): active fire windows
+    # snapshot sweep every ~30 min through the US-afternoon fire window, 18:00 UTC through 01:00 UTC next day
+    - cron: '4,34 18-23 * * *'
+    - cron: '4,34 0-1 * * *'
+    # one daily aggregate report, after the window closes
+    - cron: '40 1 * * *'
   workflow_dispatch: {}
 
 permissions:
@@ -31,14 +37,23 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: probe live book depth + append log
+      - name: snapshot book depth (+ daily report) + commit
         run: |
           set -e
           git config user.name  "kwx-depthprobe-bot"
           git config user.email "kwx-depthprobe-bot@users.noreply.github.com"
-          { echo "=== $(date -u +%FT%H:%MZ) ==="; python -u wx_capacity_probe.py; } >> kwx_depth_log.txt 2>&1 || true
-          git add -f kwx_depth_log.txt || true
-          git commit -q -m "depth probe $(date -u +%FT%HZ)" || { echo "nothing to commit"; exit 0; }
+          # structured sweep: append near-lock rung rows (full ladder levels) to wx_book_snapshots.jsonl
+          python -u wx_capacity_probe.py --snapshot || true
+          # once-daily aggregate report (identified by the specific cron entry, or on manual dispatch) --
+          # prints to the run log only, no file output, so it doesn't affect what gets committed below.
+          if [ "${{ github.event.schedule }}" = "40 1 * * *" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            python -u wx_capacity_probe.py --report || true
+          fi
+          # force-add the single gitignored snapshot file, guarded -- never batch multiple files in one add.
+          if [ -f wx_book_snapshots.jsonl ]; then
+            git add -f wx_book_snapshots.jsonl || true
+          fi
+          git commit -q -m "depth snapshot $(date -u +%FT%H:%MZ)" || { echo "nothing to commit"; exit 0; }
           for i in 1 2 3 4 5; do
             git push origin "HEAD:${BRANCH}" && exit 0
             git fetch -q origin "$BRANCH" && git rebase -q "origin/${BRANCH}" || true
