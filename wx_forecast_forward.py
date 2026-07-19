@@ -73,8 +73,17 @@ def snapshot(verbose=True):
     n_rows = 0
     examples = []
     fc_cache = {}       # (station, date) -> forecast dict (one Open-Meteo call per station-day)
+    now_utc = dt.datetime.now(tz=dt.timezone.utc)
     fout = open(PAPER, "a")
     for series, ev, station, offset, lst_date, kind in R.active_market_days():
+        # VALIDITY GUARD (no post-hoc snapshots): a forecast test must capture the market BEFORE the extreme
+        # is set, when the price reflects genuine forecast uncertainty. Scope the first forward test to HIGHS
+        # snapshotted in the station's MORNING (local 5-11h, before the afternoon peak). A late-day snapshot
+        # would log near-settled rungs (price ~0.99) and score them trivially -> meaningless EV. Lows peak at
+        # dawn, so they need an EVENING (prior-day) snapshot -- deferred until the highs test is validated.
+        local_hour = (now_utc + dt.timedelta(hours=offset)).hour
+        if kind != "max" or not (5 <= local_hour <= 11):
+            continue
         rungs = R.event_rungs(ev)
         if not rungs:
             continue
