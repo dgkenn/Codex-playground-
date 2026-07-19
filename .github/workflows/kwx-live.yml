@@ -90,12 +90,14 @@ jobs:
           pip -q install cryptography numpy scipy || true   # scipy/numpy: MADIS hfmetar netCDF parse (free 5-min feed)
           git config user.name  "kwx-live-bot"
           git config user.email "kwx-live-bot@users.noreply.github.com"
-          END=$(( $(date +%s) + 960 ))     # ~16 min live loop
-          while [ "$(date +%s)" -lt "$END" ]; do
-            python -u kwx_paper_gate.py --once || true
-            date -u +%FT%TZ > .kwx_heartbeat   # liveness beat each cycle
-            sleep 30
-          done
+          # single ~16-min python leg (fits the 20-min job timeout with slack for pip + git push):
+          # the runner computes an adaptive 5s/20s near-strike cadence every cycle, but the old bash
+          # `--once; sleep 30` wrapper DISCARDED it (flat 30s + a full interpreter/import start per
+          # poll -- exactly when strikes are in play we polled slowest). --max-seconds runs the real
+          # adaptive loop and exits cleanly at the bound; the python loop now writes .kwx_heartbeat
+          # itself once per poll cycle, so the watchdog goes stale exactly when polling stops
+          # (the bash beat could keep "alive" ticking around a wedged runner).
+          python -u kwx_paper_gate.py --max-seconds 960 || true
           # add per-file: a batched `git add a b c` aborts ENTIRELY (staging nothing) if any one
           # pathspec matches nothing, and several of these files don't exist until a fire/settle has
           # happened -- which silently dropped heartbeat + paper fires + cap state every leg.
