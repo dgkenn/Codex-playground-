@@ -493,8 +493,151 @@ class KalshiExec:
         self._log(r)
         return r
 
+    # ---- public: read the account's cash balance (READ-ONLY; sizing input, never a gate-loosener) ----
+    def get_balance(self):
+        """Return the Kalshi account's available cash balance in DOLLARS, or None if unavailable.
+
+        READ-ONLY: authenticated GET /trade-api/v2/portfolio/balance, reusing the exact same RSA-PSS
+        signing (_sign/_headers) as order placement -- no new auth surface. Deliberately gated on
+        self.live (KWX_LIVE=1 AND usable creds): we do NOT load credentials just to read a balance,
+        because keeping "creds are only ever touched when the operator explicitly went live" true is
+        worth more than a paper-mode balance display. This can only make live sizing SAFER (see
+        effective_bankroll); it never enables anything.
+
+        Units: Kalshi's API returns the balance in CENTS -- the response is {"balance": <int cents>}
+        (e.g. {"balance": 1234} == $12.34). We read the "balance" field and divide by 100.0.
+
+        SEMANTICS (deliberate, both fail-safe DOWNWARD -- this function may only ever shrink sizing):
+          - "balance" is AVAILABLE SETTLED CASH: it excludes money already tied up in open orders and
+            positions. Sizing off available cash is intentionally conservative -- deployed capital
+            can't be bet again anyway, and using net account value here would let sizing outrun cash.
+          - A genuine 0 balance returns 0.0, NOT None: an empty account must size to zero (and
+            _guard's count<1 check will refuse orders), never fall back to a fatter default.
+          - The .kwx_halt kill switch means "stop interacting with Kalshi", so even this read-only
+            probe stands down while halted (returns None). Purely a tightener; the order-side halt
+            enforcement in _guard is untouched.
+
+        NEVER RAISES. Any failure mode -> None, so callers fall back to their configured default:
+          - not live / creds missing        -> None (no request is even attempted)
+          - kill switch (.kwx_halt) present -> None (no request is even attempted)
+          - HTTP error, timeout, bad JSON   -> None
+          - "balance" field absent/non-int  -> None
+        Failing closed to None (=> default bankroll) keeps a flaky balance endpoint from ever
+        changing sizing behavior mid-session in a surprising way.
+        """
+        # belt-and-braces: live=True already implies creds loaded (constructor flips live off on any
+        # cred failure), but a fail-closed path double-checks rather than trusts the invariant
+        if not self.live or self._priv is None or self._key_id is None:
+            return None
+        if os.path.exists(HALT_FILE):
+            return None
+        path = "/trade-api/v2/portfolio/balance"
+        req = urllib.request.Request(self.base.replace("/trade-api/v2", "") + path,
+                                     method="GET", headers=self._headers("GET", path))
+        try:
+            resp = json.load(urllib.request.urlopen(req, timeout=10, context=_CTX))
+            cents = resp.get("balance") if isinstance(resp, dict) else None
+            if cents is None:
+                return None
+            return int(cents) / 100.0
+        except Exception:
+            # Broad on purpose: a balance probe must never crash the trading loop, and there is
+            # nothing actionable to do besides "use the default". No key material in any exception
+            # we could log here, but we stay silent anyway -- the None return IS the signal.
+            return None
+
+
+def effective_bankroll(default_dollars, exec_client=None):
+    """The bankroll the sizer should use: min(default_dollars, live account balance).
+
+    WHY min() and not the live balance outright: `default_dollars` (the runner's BANKROLL constant)
+    is the OPERATOR'S authorized risk ceiling, not an estimate of account size. Two failure modes,
+    both covered:
+      - Fat account (balance > constant): sizing must NOT silently scale UP past what the operator
+        authorized -- e.g. a $10 canary must stay a $10 canary even on a $5k account. min() keeps
+        the constant binding.
+      - Drawn-down account (balance < constant): sizing MUST scale DOWN, because sizing off a
+        bankroll we no longer have overbets every fire (Kelly fractions assume the denominator is
+        real money). min() makes the real balance binding.
+    So min() is fail-safe in BOTH directions; the only way to size bigger is the operator editing
+    the constant, exactly as intended.
+
+    When no live balance is available (paper mode, missing creds, API hiccup -> get_balance()
+    returns None) we fall back to default_dollars unchanged, which preserves today's behavior
+    exactly -- this function is a pure, optional tightener.
+
+    exec_client: pass an existing KalshiExec to reuse its loaded creds; else one is constructed.
+    Construction alone never touches the network and only loads creds when gated live -- but a
+    per-poll-cycle caller (the runner) should pass its existing client, so the live path doesn't
+    re-read + re-parse the RSA PEM from disk every cycle.
+    """
+    try:
+        ex = exec_client if exec_client is not None else KalshiExec()
+        bal = ex.get_balance()
+    except Exception:
+        bal = None  # even a constructor surprise must not break sizing -- fall back to the default
+    if bal is None:
+        return float(default_dollars)
+    return min(float(default_dollars), bal)
+
+
+def _runner_default_bankroll(fallback=10.0):
+    """Best-effort read of kwx_runner.BANKROLL for the --balance smoke path, WITHOUT importing
+    kwx_runner (its import constructs the live feed stack -- too heavy/side-effectful for a smoke
+    print). Parsing the constant straight out of the source keeps the smoke display from silently
+    drifting when the operator bumps the runner's ceiling. Any problem -> `fallback` ($10 canary,
+    operator-authorized 2026-07-18). Display-only: the runner itself always passes its own constant."""
+    import re
+    try:
+        with open(os.path.join(HERE, "kwx_runner.py")) as fh:
+            m = re.search(r"^BANKROLL\s*=\s*([0-9]+(?:\.[0-9]+)?)", fh.read(), re.M)
+        return float(m.group(1)) if m else fallback
+    except Exception:
+        return fallback
+
 
 if __name__ == "__main__":
+    import sys
+    _balflags = [a for a in sys.argv[1:] if a == "--balance" or a.startswith("--balance=")]
+    if _balflags:
+        # Smoke path: `python kalshi_exec.py --balance [default_dollars]` (or `--balance=50`)
+        # prints the effective bankroll and its provenance. Default ceiling comes from
+        # kwx_runner.BANKROLL (parsed, not imported -- see _runner_default_bankroll); an explicit
+        # value lets the operator smoke-test against any ceiling.
+        _default = _runner_default_bankroll()
+        _raw = None
+        if "=" in _balflags[0]:
+            _raw = _balflags[0].split("=", 1)[1]
+        else:
+            _rest = sys.argv[sys.argv.index("--balance") + 1:]
+            if _rest:
+                _raw = _rest[0]
+        if _raw is not None:
+            try:
+                _default = float(_raw)
+            except ValueError:
+                print(f"[kalshi_exec] ignoring non-numeric default {_raw!r}; using {_default}")
+        _ex = KalshiExec()
+        _bal = _ex.get_balance()   # the ONLY balance probe: one HTTP round-trip even when live
+
+        class _Probed:
+            """Feeds the single probe result back through effective_bankroll, so the printed number
+            is exactly the policy function's output without a second HTTP call (and without the
+            display and the policy ever disagreeing about which balance they saw)."""
+            def get_balance(self):
+                return _bal
+
+        _eff = effective_bankroll(_default, exec_client=_Probed())
+        if _bal is None:
+            # covers: paper mode, missing creds, halt, or API failure -- all fail closed to default
+            _why = "no creds -> default" if not _ex.live else "live but balance unavailable -> default"
+            print(f"effective bankroll: ${_eff:.2f} ({_why})")
+        else:
+            # provenance derived from the policy OUTPUT (_eff vs _default), not a re-derived rule
+            _src = "live balance binds" if _eff < _default else "default (operator ceiling) binds"
+            print(f"live balance: ${_bal:.2f}; effective bankroll: ${_eff:.2f} "
+                  f"(min of default ${_default:.2f} and live -> {_src})")
+        sys.exit(0)
     ex = KalshiExec()
     print("LIVE ENABLED:", ex.live, "(needs KWX_LIVE=1 AND .kalshi_creds)")
     print("dry-run demo:", ex.buy_yes("KXHIGHNY-26JUL17-T90", count=10, max_price_cents=95, dry_fill_price=88))
