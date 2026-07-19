@@ -1,0 +1,840 @@
+{
+ "run_utc": "2026-07-19T18:10:31.084383+00:00",
+ "method": "near_money ladder {C-3..C+1} on official CLI high C; deployed rule = glitch filter + phase2_trackB_tail.sustained_max_k(k=3); lock-failure = fired AND K >= C; Wilson 95% CI per station",
+ "years_requested": [
+  2021,
+  2022,
+  2023,
+  2024,
+  2025,
+  2026
+ ],
+ "n_station_day_records": 35115,
+ "relaxation_bar": {
+  "rule": "Wilson-95 UPPER bound of station sustain3 m1 rate <= pooled all-station m1 rate + 1pp",
+  "pooled_m1_fired": 93834,
+  "pooled_m1_fail": 362,
+  "pooled_m1_rate": 0.003857876675831788,
+  "bar": 0.013857876675831788
+ },
+ "stations": [
+  {
+   "station": "KPHX",
+   "years": [
+    "2021",
+    "2022",
+    "2023",
+    "2024",
+    "2025",
+    "2026"
+   ],
+   "sustain3_m1": {
+    "fired": 4837,
+    "fail": 61,
+    "rate": 0.012611122596650816,
+    "wilson95_lo": 0.009830721407180231,
+    "wilson95_hi": 0.016165060502419257
+   },
+   "sustain3_m2": {
+    "fired": 3148,
+    "fail": 3,
+    "rate": 0.0009529860228716646
+   },
+   "sustain3_m3": {
+    "fired": 1481,
+    "fail": 2,
+    "rate": 0.0013504388926401081
+   },
+   "day_atm_m1": {
+    "days": 1873,
+    "fail_days": 59,
+    "rate": 0.03150026695141484
+   },
+   "raw1min_m1": {
+    "fired": 6582,
+    "fail": 1532,
+    "rate": 0.23275600121543605
+   },
+   "derated_now": true,
+   "derated_historically": true,
+   "verdict_vs_bar": "FAIL"
+  },
+  {
+   "station": "KMIA",
+   "years": [
+    "2021",
+    "2022",
+    "2023",
+    "2024",
+    "2025",
+    "2026"
+   ],
+   "sustain3_m1": {
+    "fired": 5222,
+    "fail": 33,
+    "rate": 0.006319417847567982,
+    "wilson95_lo": 0.004503401054260295,
+    "wilson95_hi": 0.00886123301908834
+   },
+   "sustain3_m2": {
+    "fired": 3400,
+    "fail": 7,
+    "rate": 0.002058823529411765
+   },
+   "sustain3_m3": {
+    "fired": 1606,
+    "fail": 6,
+    "rate": 0.0037359900373599006
+   },
+   "day_atm_m1": {
+    "days": 1915,
+    "fail_days": 29,
+    "rate": 0.015143603133159269
+   },
+   "raw1min_m1": {
+    "fired": 6836,
+    "fail": 1388,
+    "rate": 0.20304271503803395
+   },
+   "derated_now": false,
+   "derated_historically": true,
+   "verdict_vs_bar": "PASS"
+  },
+  {
+   "station": "KLAX",
+   "years": [
+    "2021",
+    "2022",
+    "2023",
+    "2024",
+    "2025",
+    "2026"
+   ],
+   "sustain3_m1": {
+    "fired": 4796,
+    "fail": 29,
+    "rate": 0.006046705587989992,
+    "wilson95_lo": 0.004213493242220327,
+    "wilson95_hi": 0.008670569565485014
+   },
+   "sustain3_m2": {
+    "fired": 3114,
+    "fail": 2,
+    "rate": 0.0006422607578676942
+   },
+   "sustain3_m3": {
+    "fired": 1449,
+    "fail": 1,
+    "rate": 0.0006901311249137336
+   },
+   "day_atm_m1": {
+    "days": 1838,
+    "fail_days": 28,
+    "rate": 0.015233949945593036
+   },
+   "raw1min_m1": {
+    "fired": 6390,
+    "fail": 1348,
+    "rate": 0.2109546165884194
+   },
+   "derated_now": false,
+   "derated_historically": true,
+   "verdict_vs_bar": "PASS"
+  },
+  {
+   "station": "KAUS",
+   "years": [
+    "2021",
+    "2022",
+    "2023",
+    "2024",
+    "2025",
+    "2026"
+   ],
+   "sustain3_m1": {
+    "fired": 4373,
+    "fail": 25,
+    "rate": 0.005716899153898925,
+    "wilson95_lo": 0.003875393385991462,
+    "wilson95_hi": 0.008426048036787892
+   },
+   "sustain3_m2": {
+    "fired": 2849,
+    "fail": 12,
+    "rate": 0.004212004212004212
+   },
+   "sustain3_m3": {
+    "fired": 1360,
+    "fail": 12,
+    "rate": 0.008823529411764706
+   },
+   "day_atm_m1": {
+    "days": 1855,
+    "fail_days": 19,
+    "rate": 0.010242587601078167
+   },
+   "raw1min_m1": {
+    "fired": 5386,
+    "fail": 832,
+    "rate": 0.15447456368362422
+   },
+   "derated_now": false,
+   "derated_historically": false,
+   "verdict_vs_bar": "PASS"
+  },
+  {
+   "station": "KMSY",
+   "years": [
+    "2022",
+    "2023",
+    "2024",
+    "2025",
+    "2026"
+   ],
+   "sustain3_m1": {
+    "fired": 3335,
+    "fail": 16,
+    "rate": 0.0047976011994002995,
+    "wilson95_lo": 0.0029553076419628747,
+    "wilson95_hi": 0.0077793915836593015
+   },
+   "sustain3_m2": {
+    "fired": 2182,
+    "fail": 6,
+    "rate": 0.002749770852428964
+   },
+   "sustain3_m3": {
+    "fired": 1047,
+    "fail": 6,
+    "rate": 0.0057306590257879654
+   },
+   "day_atm_m1": {
+    "days": 1217,
+    "fail_days": 13,
+    "rate": 0.010682004930156122
+   },
+   "raw1min_m1": {
+    "fired": 4052,
+    "fail": 614,
+    "rate": 0.15153010858835142
+   },
+   "derated_now": false,
+   "derated_historically": false,
+   "verdict_vs_bar": "PASS"
+  },
+  {
+   "station": "NYC",
+   "years": [
+    "2021",
+    "2022",
+    "2023",
+    "2024",
+    "2025",
+    "2026"
+   ],
+   "sustain3_m1": {
+    "fired": 4657,
+    "fail": 22,
+    "rate": 0.004724071290530384,
+    "wilson95_lo": 0.003121851385708484,
+    "wilson95_hi": 0.007142702610638695
+   },
+   "sustain3_m2": {
+    "fired": 3024,
+    "fail": 9,
+    "rate": 0.002976190476190476
+   },
+   "sustain3_m3": {
+    "fired": 1445,
+    "fail": 7,
+    "rate": 0.004844290657439446
+   },
+   "day_atm_m1": {
+    "days": 1830,
+    "fail_days": 17,
+    "rate": 0.009289617486338797
+   },
+   "raw1min_m1": {
+    "fired": 5590,
+    "fail": 777,
+    "rate": 0.13899821109123434
+   },
+   "derated_now": false,
+   "derated_historically": false,
+   "verdict_vs_bar": "PASS"
+  },
+  {
+   "station": "KDEN",
+   "years": [
+    "2021",
+    "2022",
+    "2023",
+    "2024",
+    "2025",
+    "2026"
+   ],
+   "sustain3_m1": {
+    "fired": 5085,
+    "fail": 24,
+    "rate": 0.00471976401179941,
+    "wilson95_lo": 0.003173792172764894,
+    "wilson95_hi": 0.007013489007437688
+   },
+   "sustain3_m2": {
+    "fired": 3322,
+    "fail": 4,
+    "rate": 0.0012040939193257074
+   },
+   "sustain3_m3": {
+    "fired": 1568,
+    "fail": 4,
+    "rate": 0.002551020408163265
+   },
+   "day_atm_m1": {
+    "days": 1885,
+    "fail_days": 22,
+    "rate": 0.011671087533156498
+   },
+   "raw1min_m1": {
+    "fired": 6456,
+    "fail": 1180,
+    "rate": 0.18277571251548946
+   },
+   "derated_now": false,
+   "derated_historically": false,
+   "verdict_vs_bar": "PASS"
+  },
+  {
+   "station": "KPHL",
+   "years": [
+    "2021",
+    "2022",
+    "2023",
+    "2024",
+    "2025",
+    "2026"
+   ],
+   "sustain3_m1": {
+    "fired": 5359,
+    "fail": 23,
+    "rate": 0.004291845493562232,
+    "wilson95_lo": 0.0028616585024497424,
+    "wilson95_hi": 0.006432194244306752
+   },
+   "sustain3_m2": {
+    "fired": 3514,
+    "fail": 10,
+    "rate": 0.0028457598178713715
+   },
+   "sustain3_m3": {
+    "fired": 1681,
+    "fail": 9,
+    "rate": 0.005353955978584176
+   },
+   "day_atm_m1": {
+    "days": 1925,
+    "fail_days": 18,
+    "rate": 0.00935064935064935
+   },
+   "raw1min_m1": {
+    "fired": 6740,
+    "fail": 1215,
+    "rate": 0.18026706231454007
+   },
+   "derated_now": false,
+   "derated_historically": true,
+   "verdict_vs_bar": "PASS"
+  },
+  {
+   "station": "KLAS",
+   "years": [
+    "2021",
+    "2022",
+    "2023",
+    "2024",
+    "2025",
+    "2026"
+   ],
+   "sustain3_m1": {
+    "fired": 4400,
+    "fail": 17,
+    "rate": 0.003863636363636364,
+    "wilson95_lo": 0.0024137264738758866,
+    "wilson95_hi": 0.006179103031075266
+   },
+   "sustain3_m2": {
+    "fired": 2875,
+    "fail": 0,
+    "rate": 0.0
+   },
+   "sustain3_m3": {
+    "fired": 1368,
+    "fail": 0,
+    "rate": 0.0
+   },
+   "day_atm_m1": {
+    "days": 1675,
+    "fail_days": 17,
+    "rate": 0.010149253731343283
+   },
+   "raw1min_m1": {
+    "fired": 5520,
+    "fail": 962,
+    "rate": 0.17427536231884058
+   },
+   "derated_now": false,
+   "derated_historically": false,
+   "verdict_vs_bar": "PASS"
+  },
+  {
+   "station": "KSEA",
+   "years": [
+    "2021",
+    "2022",
+    "2023",
+    "2024",
+    "2025",
+    "2026"
+   ],
+   "sustain3_m1": {
+    "fired": 5167,
+    "fail": 18,
+    "rate": 0.0034836462163731373,
+    "wilson95_lo": 0.0022047638182131142,
+    "wilson95_hi": 0.005500260429730037
+   },
+   "sustain3_m2": {
+    "fired": 3372,
+    "fail": 2,
+    "rate": 0.0005931198102016608
+   },
+   "sustain3_m3": {
+    "fired": 1600,
+    "fail": 2,
+    "rate": 0.00125
+   },
+   "day_atm_m1": {
+    "days": 1876,
+    "fail_days": 17,
+    "rate": 0.00906183368869936
+   },
+   "raw1min_m1": {
+    "fired": 6530,
+    "fail": 1170,
+    "rate": 0.17917304747320062
+   },
+   "derated_now": false,
+   "derated_historically": true,
+   "verdict_vs_bar": "PASS"
+  },
+  {
+   "station": "KHOU",
+   "years": [
+    "2021",
+    "2022",
+    "2023",
+    "2024",
+    "2025",
+    "2026"
+   ],
+   "sustain3_m1": {
+    "fired": 5215,
+    "fail": 15,
+    "rate": 0.0028763183125599234,
+    "wilson95_lo": 0.001743908219341298,
+    "wilson95_hi": 0.004740569052005545
+   },
+   "sustain3_m2": {
+    "fired": 3419,
+    "fail": 4,
+    "rate": 0.00116993272886809
+   },
+   "sustain3_m3": {
+    "fired": 1631,
+    "fail": 4,
+    "rate": 0.002452483139178418
+   },
+   "day_atm_m1": {
+    "days": 1901,
+    "fail_days": 13,
+    "rate": 0.006838506049447659
+   },
+   "raw1min_m1": {
+    "fired": 6468,
+    "fail": 1083,
+    "rate": 0.16743970315398887
+   },
+   "derated_now": false,
+   "derated_historically": false,
+   "verdict_vs_bar": "PASS"
+  },
+  {
+   "station": "KBOS",
+   "years": [
+    "2021",
+    "2022",
+    "2023",
+    "2024",
+    "2025",
+    "2026"
+   ],
+   "sustain3_m1": {
+    "fired": 5268,
+    "fail": 14,
+    "rate": 0.0026575550493545936,
+    "wilson95_lo": 0.0015837520309991027,
+    "wilson95_hi": 0.004456160032215539
+   },
+   "sustain3_m2": {
+    "fired": 3445,
+    "fail": 0,
+    "rate": 0.0
+   },
+   "sustain3_m3": {
+    "fired": 1641,
+    "fail": 0,
+    "rate": 0.0
+   },
+   "day_atm_m1": {
+    "days": 1921,
+    "fail_days": 14,
+    "rate": 0.007287870900572618
+   },
+   "raw1min_m1": {
+    "fired": 6380,
+    "fail": 956,
+    "rate": 0.14984326018808777
+   },
+   "derated_now": false,
+   "derated_historically": false,
+   "verdict_vs_bar": "PASS"
+  },
+  {
+   "station": "KSAT",
+   "years": [
+    "2021",
+    "2022",
+    "2023",
+    "2024",
+    "2025",
+    "2026"
+   ],
+   "sustain3_m1": {
+    "fired": 4169,
+    "fail": 10,
+    "rate": 0.0023986567522187576,
+    "wilson95_lo": 0.0013034500108417698,
+    "wilson95_hi": 0.0044100330097244424
+   },
+   "sustain3_m2": {
+    "fired": 2700,
+    "fail": 0,
+    "rate": 0.0
+   },
+   "sustain3_m3": {
+    "fired": 1269,
+    "fail": 0,
+    "rate": 0.0
+   },
+   "day_atm_m1": {
+    "days": 1732,
+    "fail_days": 10,
+    "rate": 0.005773672055427252
+   },
+   "raw1min_m1": {
+    "fired": 5123,
+    "fail": 781,
+    "rate": 0.15244973648252977
+   },
+   "derated_now": false,
+   "derated_historically": false,
+   "verdict_vs_bar": "PASS"
+  },
+  {
+   "station": "KDFW",
+   "years": [
+    "2021",
+    "2022",
+    "2023",
+    "2024",
+    "2025",
+    "2026"
+   ],
+   "sustain3_m1": {
+    "fired": 4602,
+    "fail": 11,
+    "rate": 0.0023902651021295088,
+    "wilson95_lo": 0.0013352373509699798,
+    "wilson95_hi": 0.004275346307526932
+   },
+   "sustain3_m2": {
+    "fired": 3009,
+    "fail": 0,
+    "rate": 0.0
+   },
+   "sustain3_m3": {
+    "fired": 1421,
+    "fail": 0,
+    "rate": 0.0
+   },
+   "day_atm_m1": {
+    "days": 1684,
+    "fail_days": 11,
+    "rate": 0.006532066508313539
+   },
+   "raw1min_m1": {
+    "fired": 5671,
+    "fail": 903,
+    "rate": 0.15923117615940752
+   },
+   "derated_now": false,
+   "derated_historically": false,
+   "verdict_vs_bar": "PASS"
+  },
+  {
+   "station": "KDCA",
+   "years": [
+    "2021",
+    "2022",
+    "2023",
+    "2024",
+    "2025",
+    "2026"
+   ],
+   "sustain3_m1": {
+    "fired": 2971,
+    "fail": 7,
+    "rate": 0.0023561090541905083,
+    "wilson95_lo": 0.0011417735742697847,
+    "wilson95_hi": 0.004855675052642621
+   },
+   "sustain3_m2": {
+    "fired": 1936,
+    "fail": 2,
+    "rate": 0.0010330578512396695
+   },
+   "sustain3_m3": {
+    "fired": 925,
+    "fail": 1,
+    "rate": 0.001081081081081081
+   },
+   "day_atm_m1": {
+    "days": 1128,
+    "fail_days": 6,
+    "rate": 0.005319148936170213
+   },
+   "raw1min_m1": {
+    "fired": 3605,
+    "fail": 541,
+    "rate": 0.15006934812760056
+   },
+   "derated_now": false,
+   "derated_historically": false,
+   "verdict_vs_bar": "PASS"
+  },
+  {
+   "station": "KSFO",
+   "years": [
+    "2021",
+    "2022",
+    "2023",
+    "2024",
+    "2025",
+    "2026"
+   ],
+   "sustain3_m1": {
+    "fired": 4870,
+    "fail": 11,
+    "rate": 0.0022587268993839835,
+    "wilson95_lo": 0.0012617318710928134,
+    "wilson95_hi": 0.004040340229697327
+   },
+   "sustain3_m2": {
+    "fired": 3167,
+    "fail": 1,
+    "rate": 0.00031575623618566466
+   },
+   "sustain3_m3": {
+    "fired": 1486,
+    "fail": 0,
+    "rate": 0.0
+   },
+   "day_atm_m1": {
+    "days": 1827,
+    "fail_days": 10,
+    "rate": 0.005473453749315818
+   },
+   "raw1min_m1": {
+    "fired": 6026,
+    "fail": 934,
+    "rate": 0.15499502157318287
+   },
+   "derated_now": false,
+   "derated_historically": false,
+   "verdict_vs_bar": "PASS"
+  },
+  {
+   "station": "KATL",
+   "years": [
+    "2021",
+    "2022",
+    "2023",
+    "2024",
+    "2025",
+    "2026"
+   ],
+   "sustain3_m1": {
+    "fired": 5021,
+    "fail": 9,
+    "rate": 0.0017924716191993627,
+    "wilson95_lo": 0.0009433303537023272,
+    "wilson95_hi": 0.0034033657563109286
+   },
+   "sustain3_m2": {
+    "fired": 3291,
+    "fail": 0,
+    "rate": 0.0
+   },
+   "sustain3_m3": {
+    "fired": 1572,
+    "fail": 0,
+    "rate": 0.0
+   },
+   "day_atm_m1": {
+    "days": 1813,
+    "fail_days": 9,
+    "rate": 0.004964147821290678
+   },
+   "raw1min_m1": {
+    "fired": 6160,
+    "fail": 978,
+    "rate": 0.15876623376623378
+   },
+   "derated_now": false,
+   "derated_historically": false,
+   "verdict_vs_bar": "PASS"
+  },
+  {
+   "station": "KMDW",
+   "years": [
+    "2021",
+    "2022",
+    "2023",
+    "2024",
+    "2025",
+    "2026"
+   ],
+   "sustain3_m1": {
+    "fired": 5228,
+    "fail": 7,
+    "rate": 0.0013389441469013007,
+    "wilson95_lo": 0.0006487429491746561,
+    "wilson95_hi": 0.002761425146116321
+   },
+   "sustain3_m2": {
+    "fired": 3435,
+    "fail": 4,
+    "rate": 0.0011644832605531296
+   },
+   "sustain3_m3": {
+    "fired": 1655,
+    "fail": 4,
+    "rate": 0.002416918429003021
+   },
+   "day_atm_m1": {
+    "days": 1869,
+    "fail_days": 5,
+    "rate": 0.002675227394328518
+   },
+   "raw1min_m1": {
+    "fired": 5996,
+    "fail": 642,
+    "rate": 0.10707138092061375
+   },
+   "derated_now": false,
+   "derated_historically": false,
+   "verdict_vs_bar": "PASS"
+  },
+  {
+   "station": "KMSP",
+   "years": [
+    "2021",
+    "2022",
+    "2023",
+    "2024",
+    "2026"
+   ],
+   "sustain3_m1": {
+    "fired": 4240,
+    "fail": 5,
+    "rate": 0.0011792452830188679,
+    "wilson95_lo": 0.0005038049871332482,
+    "wilson95_hi": 0.0027577350484216034
+   },
+   "sustain3_m2": {
+    "fired": 2783,
+    "fail": 0,
+    "rate": 0.0
+   },
+   "sustain3_m3": {
+    "fired": 1336,
+    "fail": 0,
+    "rate": 0.0
+   },
+   "day_atm_m1": {
+    "days": 1512,
+    "fail_days": 5,
+    "rate": 0.0033068783068783067
+   },
+   "raw1min_m1": {
+    "fired": 5041,
+    "fail": 692,
+    "rate": 0.137274350327316
+   },
+   "derated_now": false,
+   "derated_historically": false,
+   "verdict_vs_bar": "PASS"
+  },
+  {
+   "station": "KOKC",
+   "years": [
+    "2021",
+    "2022",
+    "2023",
+    "2024",
+    "2025",
+    "2026"
+   ],
+   "sustain3_m1": {
+    "fired": 5019,
+    "fail": 5,
+    "rate": 0.0009962143853357243,
+    "wilson95_lo": 0.00042559594896911425,
+    "wilson95_hi": 0.002330106960623005
+   },
+   "sustain3_m2": {
+    "fired": 3285,
+    "fail": 0,
+    "rate": 0.0
+   },
+   "sustain3_m3": {
+    "fired": 1559,
+    "fail": 0,
+    "rate": 0.0
+   },
+   "day_atm_m1": {
+    "days": 1839,
+    "fail_days": 5,
+    "rate": 0.0027188689505165853
+   },
+   "raw1min_m1": {
+    "fired": 6053,
+    "fail": 870,
+    "rate": 0.14373038162894433
+   },
+   "derated_now": false,
+   "derated_historically": false,
+   "verdict_vs_bar": "PASS"
+  }
+ ]
+}
