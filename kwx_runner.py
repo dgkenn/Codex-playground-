@@ -19,7 +19,7 @@ Usage:
     python kwx_runner.py once            # one poll cycle over today's active markets (paper), prints plan
     python kwx_runner.py loop            # continuous adaptive loop (paper) until killed
 """
-import json, os, time, sys, datetime as dt, urllib.request, ssl
+import json, math, os, time, sys, datetime as dt, urllib.request, ssl
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 _CA = "/root/.ccr/ca-bundle.crt"
@@ -61,6 +61,8 @@ CITY_LOW_SERIES = {
 MARGIN_F = 1.0          # base: observed extreme must clear strike by this many degF (Track A/Tier-1: best)
 SUSTAIN_MIN = 3         # sustained this many minutes -- glitch-robust (Tier-1 S2: sustain=3 reconfirmed;
                         # sustain=1 turns 13.7% of fires into glitch losses vs 0.35% at sustain=3)
+SUSTAIN_MAX_GAP_MIN = 75  # max gap between adjacent obs inside a sustain window (bridges hourly METAR;
+                          # never bridges a multi-hour feed outage)
 MAX_PAY_CENTS = 98      # never pay above this (skip dead-on-arrival fires -- ~63% of raw fires have no gap)
 GLITCH_HI_F, GLITCH_LO_F = 130.0, -60.0
 
@@ -91,10 +93,44 @@ MAX_DAILY_DEPLOY_FRAC = 0.60  # never deploy more than this fraction of bankroll
                               # (bounds the worst-day loss; e.g. $10 canary -> max ~$6 at risk/day)
 
 
-def _kelly_fraction(price, p=0.9965):
-    """Full-Kelly fraction of bankroll to stake on a contract at `price` (win prob p, lose full stake)."""
+def _kalshi_fee_c(price_c):
+    """Kalshi taker fee in CENTS per contract at price_c: the standard quadratic fee, multiplier 1,
+    ceil(0.07 * p * (1-p)) rounded UP to the whole cent -- the SAME formula as kwx_forward._kalshi_fee
+    (kept in cents here because the whole sizing block works in cents)."""
+    p = price_c / 100.0
+    return math.ceil(0.07 * p * (1 - p) * 100)
+
+
+# Minimum NET edge (cents) a fire's gross gap must clear BEYOND the fee to be worth entering:
+# skip when (100 - ask) <= fee + MIN_NET_EDGE_C. Why 0 and not more: at 0 the floor only rejects entries
+# whose winning payoff (gap - fee) is <= 0 -- trades that CANNOT profit even when they win, which is pure
+# arithmetic and needs no statistical evidence. Raising it to 1 would also exclude 98c entries (2c gross,
+# ~1c fee -> ~1c net), but the recorded data says NO: in _trackA_results_raw.json (deployed cell margin=1/
+# sustain=3) the 154 fires at 98c went 154/154 wins, aggregate pnl +$2.87 (+$1.54 under the live ceil'd
+# fee) -- EV-POSITIVE in sample, so the statistical-soundness rule (no param change without supporting
+# evidence) forbids excluding them. See wx_fee_floor_impact.py for the full numbers; revisit if live data
+# ever shows 98c losses (breakeven win rate at 98c net of fee is 99.0%; n=154 can't rule that out, rule-of-
+# three upper bound on the loss rate is ~1.95% -- but "can't rule out" is not evidence to act on).
+MIN_NET_EDGE_C = 0
+
+
+def _kelly_fraction(price_c, p=0.9965, fee_c=None):
+    """Full-Kelly fraction of bankroll to stake on a contract at `price_c` CENTS (win prob p, lose full
+    stake), NET OF THE KALSHI FEE. The old fee-blind version overstated the edge everywhere and most where
+    it matters: at 98c the gross gap is 2c but the fee is ~1c, so half the apparent edge never existed.
+    Per-contract net payoffs:  win = 100 - price_c - fee_c  (fee comes out of the 100c settlement);
+                              lose = price_c + fee_c        (we paid the price AND the fee).
+    fee_c is computed from price_c if not supplied (callers that already have it, e.g. size_for_fire's fee
+    floor, pass it through so the fee formula only runs once per fire).
+    If the net expected value is <= 0 there is no edge to size -- return 0 (caller skips the fire)."""
     q = 1 - p
-    b = (1 - price) / price
+    if fee_c is None:
+        fee_c = _kalshi_fee_c(price_c)
+    win_c = 100 - price_c - fee_c
+    lose_c = price_c + fee_c
+    if win_c <= 0:   # can't profit even on a win: never stake (p - q/b would already be <=0 here too)
+        return 0.0
+    b = win_c / lose_c
     return max(0.0, p - q / b)
 
 
@@ -108,10 +144,20 @@ def is_conviction(cushion_f, gap_c):
 def size_for_fire(bankroll, price_c, station, cushion_f=None, gap_c=None):
     """Contracts to buy for a fire at price_c (cents), given bankroll. Quarter-Kelly capped by the per-fire
     cap (CONV_CAP on conviction fires, else 5%), per-station size derate, integer, min 1 if affordable,
-    capped by plausible depth. cushion_f/gap_c drive the conviction upsizing (default None -> base 5% cap)."""
+    capped by plausible depth. cushion_f/gap_c drive the conviction upsizing (default None -> base 5% cap).
+    Returns 0 (skip, do not fire) when the entry has no NET edge after the Kalshi fee."""
+    # FEE-FLOOR: gross gap must clear the fee by more than MIN_NET_EDGE_C or the fire is skipped outright
+    # (at the default 0 this only rejects entries that cannot profit even on a win -- see MIN_NET_EDGE_C).
+    # fee_c is computed once here and reused in _kelly_fraction below instead of recomputing it.
+    fee_c = _kalshi_fee_c(price_c)
+    if (100 - price_c - fee_c) <= MIN_NET_EDGE_C:
+        return 0
     price = price_c / 100.0
     per_fire_cap = CONV_CAP if is_conviction(cushion_f, gap_c) else PER_FIRE_CAP
-    frac = min(KELLY_FRAC * _kelly_fraction(price), per_fire_cap) * STATION_SIZE_MULT.get(station, 1.0)
+    kelly = _kelly_fraction(price_c, fee_c=fee_c)
+    if kelly <= 0.0:                  # fee-aware Kelly says the net EV is <= 0: no stake, no 1-ct floor
+        return 0
+    frac = min(KELLY_FRAC * kelly, per_fire_cap) * STATION_SIZE_MULT.get(station, 1.0)
     n = int(frac * bankroll / price)
     n = min(n, DEPTH_CAP)
     if n < 1 and price <= bankroll:   # floor of 1 contract if we can afford it and intend to trade
@@ -208,9 +254,12 @@ class MultiFeedConsensus:
             obs = r.get("obs") or []
             if obs and _feed_is_stale(obs):
                 continue   # dead/frozen feed -> don't trust its running-max; drop from the quorum
-            s = sustained_extreme(obs, kind)
+            # no raw fallback: a feed with obs but no sustained window yet has NO signal this cycle
+            # (raw extreme = sustain=1 = the glitch-loss rule the tail study rejected); a feed that
+            # returns only an extreme with no obs trail (pre-filtered upstream) is trusted as-is.
+            s = sustained_extreme(obs, kind) if obs else r["extreme_f"]
             if s is None:
-                s = r["extreme_f"]
+                continue
             vals.append(s)
             present.append(getattr(f, "name", "?"))
         if len(vals) < self.quorum:
@@ -324,10 +373,17 @@ def adaptive_interval_s(distance_f):
 # ---------------- sustained-cross logic (glitch-robust) ----------------
 def sustained_extreme(obs, kind):
     """Given [(iso_ts, temp_f)...] ascending, return the glitch-filtered running extreme that has been
-    SUSTAINED >= SUSTAIN_MIN minutes (i.e. the extreme value that held, not a lone spike). For a max:
-    the highest value V such that at least SUSTAIN_MIN minutes of obs at/after V's first occurrence stay
-    >= V-? -- we approximate with: drop isolated spikes (a reading > neighbors by >8F/min) then take the
-    running extreme over what remains."""
+    SUSTAINED >= SUSTAIN_MIN minutes -- the validated Track-B "glitch_sustain3" rule
+    (phase2_trackB_tail.sustained_max_k): for a max, the largest threshold T such that some window of
+    consecutive surviving readings spanning >= SUSTAIN_MIN-1 minutes stays entirely >= T. On the study's
+    1-min data that is exactly 3 consecutive minutes; on the live 5-min/hourly feeds the smallest
+    qualifying window (two adjacent readings) spans >= 5 min, i.e. coarser feeds are strictly MORE
+    conservative than the validated rule, never less. Adjacent readings inside a window may be at most
+    SUSTAIN_MAX_GAP_MIN apart (bridges hourly METAR cadence, never a multi-hour outage).
+
+    Returns None when no window qualifies yet (single reading so far, sparse day, unparseable
+    timestamps). Callers MUST treat None as NO SIGNAL -- falling back to the raw running extreme would
+    silently reinstate sustain=1, the 13.7%-glitch-loss rule the tail study rejected."""
     clean = []
     prev = None
     for ts, f in obs:
@@ -338,17 +394,32 @@ def sustained_extreme(obs, kind):
             # (a true climb shows consecutive steps; a spike reverts). Conservative: skip the jump point.
             prev = f
             continue
-        clean.append((ts, f))
         prev = f
+        try:
+            t = dt.datetime.fromisoformat(str(ts).replace("Z", "+00:00"))
+        except (ValueError, TypeError):
+            continue
+        clean.append((t, f))
     if not clean:
         return None
-    vals = [f for _, f in clean]
-    if kind == "max":
-        # sustained max = the max value that appears with enough subsequent support
-        ext = max(vals)
-    else:
-        ext = min(vals)
-    return ext
+    span_need = dt.timedelta(minutes=max(0, SUSTAIN_MIN - 1))
+    max_gap = dt.timedelta(minutes=SUSTAIN_MAX_GAP_MIN)
+    sign = 1.0 if kind == "max" else -1.0
+    best = None
+    for j in range(len(clean)):
+        tj = clean[j][0]
+        wmin = sign * clean[j][1]
+        i = j
+        # grow the window leftward (gap-connected) until it spans SUSTAIN_MIN-1 minutes; the minimal
+        # qualifying window ending at j maximizes the window-min, so stop as soon as the span is met.
+        while tj - clean[i][0] < span_need and i > 0 and clean[i][0] - clean[i - 1][0] <= max_gap:
+            i -= 1
+            v = sign * clean[i][1]
+            if v < wmin:
+                wmin = v
+        if tj - clean[i][0] >= span_need and (best is None or wmin > best):
+            best = wmin
+    return None if best is None else sign * best
 
 
 # ---------------- market discovery ----------------
@@ -444,8 +515,13 @@ def _save_state(s):
 
 # ---------------- one poll cycle ----------------
 def poll_once(exec_client=None, verbose=True):
-    from kalshi_exec import KalshiExec
-    ex = exec_client or KalshiExec()
+    import kalshi_exec
+    ex = exec_client or kalshi_exec.KalshiExec()
+    # Bankroll source: prefer kalshi_exec.effective_bankroll (live-balance-aware helper, added in a separate
+    # change) when it exists; otherwise fall back to the frozen BANKROLL constant. getattr keeps the two
+    # changes independently mergeable in either order -- this line works with or without the helper.
+    _eff = getattr(kalshi_exec, "effective_bankroll", None)
+    bankroll = _eff(BANKROLL) if callable(_eff) else BANKROLL
     state = _load_state()
     # caps are PER-DAY: drop stale accumulators so a new day starts clean (state persists across the run's
     # 30s poll cycles via kwx_runner_state.json; keeping only today's keys also bounds the file size).
@@ -466,24 +542,32 @@ def poll_once(exec_client=None, verbose=True):
             continue
         if not feed:
             continue
-        ext = sustained_extreme(feed["obs"], kind)
-        if ext is None:
-            ext = feed["extreme_f"]
+        obs = feed.get("obs") or []
+        ext_raw = feed["extreme_f"]
+        # sustained extreme gates FIRING; consensus feeds (empty obs trail, pre-filtered per-feed
+        # upstream) are trusted as-is. None = no sustained window yet -> no fires this cycle; do NOT
+        # fall back to the raw extreme (that is sustain=1, the 13.7%-glitch-loss rule).
+        ext = sustained_extreme(obs, kind) if obs else ext_raw
         # per-station risk derate (Track B / Tier-1): high-disagreement stations get a higher margin
         st_margin = STATION_MARGIN.get(station, MARGIN_F)
-        # cadence signal
-        dist = nearest_strike_distance(rungs, ext, kind, margin=st_margin)
+        # cadence signal -- use the RAW running extreme so we keep polling fast while a fresh cross
+        # awaits its sustain confirmation
+        dist = nearest_strike_distance(rungs, ext_raw, kind, margin=st_margin)
         iv = adaptive_interval_s(dist)
         min_interval = iv if min_interval is None else min(min_interval, iv)
+        if ext is None:
+            continue
         # fire locked rungs not already fired
         for ticker, side, cap_c, cushion_f in locked_orders(rungs, ext, kind, margin=st_margin):
             if ticker in state["fired"]:
                 continue
             gap_c = 100 - cap_c   # cents of edge still open (100c payout - price we pay)
-            conv = is_conviction(cushion_f, gap_c)
-            # bankroll-aware, quarter-Kelly; conviction fires (cushion>=2F & gap>=15c) get the raised 12% cap
-            size = size_for_fire(BANKROLL, cap_c, station, cushion_f=cushion_f, gap_c=gap_c)
+            # bankroll-aware, quarter-Kelly; conviction fires (cushion>=2F & gap>=15c) get the raised 12% cap.
+            # size 0 = fee floor / no net edge after the Kalshi fee, or unaffordable -> skip, don't fire.
+            size = size_for_fire(bankroll, cap_c, station, cushion_f=cushion_f, gap_c=gap_c)
             if size < 1:
+                if verbose:
+                    print(f"  [size-skip] {ticker}: no net edge after fee (or unaffordable) at {cap_c}c")
                 continue
             # DAILY + PER-CITY DEPLOYMENT CAPS (match the validated sim's worst-day + diversification bounds).
             today = dt.datetime.now(tz=dt.timezone.utc).date().isoformat()
@@ -491,11 +575,11 @@ def poll_once(exec_client=None, verbose=True):
             city_spent = state.setdefault("city_spent", {})
             city_key = f"{today}:{station}"
             cost = size * cap_c / 100.0
-            if deployed.get(today, 0.0) + cost > MAX_DAILY_DEPLOY_FRAC * BANKROLL:
+            if deployed.get(today, 0.0) + cost > MAX_DAILY_DEPLOY_FRAC * bankroll:
                 if verbose:
                     print(f"  [daily-cap] skip {ticker}: would exceed {MAX_DAILY_DEPLOY_FRAC:.0%} of bankroll today")
                 continue
-            if city_spent.get(city_key, 0.0) + cost > PER_CITY_DAILY_CAP_FRAC * BANKROLL:
+            if city_spent.get(city_key, 0.0) + cost > PER_CITY_DAILY_CAP_FRAC * bankroll:
                 if verbose:
                     print(f"  [city-cap] skip {ticker}: would exceed {PER_CITY_DAILY_CAP_FRAC:.0%}/city ({station}) today")
                 continue
@@ -534,9 +618,14 @@ def poll_once(exec_client=None, verbose=True):
             plan = {"ticker": ticker, "side": side, "cap_c": cap_c, "extreme_f": ext,
                     "station": station, "kind": kind, "status": res.get("status"),
                     "requested": size, "filled": res.get("filled"),   # reconciliation: actual vs intended
+                    "fill_vwap_c": res.get("fill_vwap_c"),   # depth_v1: actual walk-the-book avg price paid
                     "ts": int(time.time() * 1000)}
             plans.append(plan)
-            state["fired"][ticker] = plan
+            # depth_v1 dry-run can report filled=0 (book was empty at fire time): don't mark the rung
+            # fired so it can re-fire once depth shows up. (A guard-BLOCKED order has filled=None, not
+            # 0, and still gets marked fired below as before -- it was never eligible to retry sooner.)
+            if res.get("filled") != 0:
+                state["fired"][ticker] = plan
             with open(PLAN_LOG, "a") as f:
                 f.write(json.dumps(plan) + "\n")
             if verbose:

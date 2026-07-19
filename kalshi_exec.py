@@ -60,10 +60,123 @@ def _client_order_id(ticker, side, attempt=0):
     return base if attempt == 0 else f"{base}-r{attempt}"
 
 
+# ---- honest paper fills: depth-aware dry-run fill model ("depth_v1") ----
+# WHY: the dry-run path used to assume a 100% fill of the requested size at the cap price. The repo's own
+# orderbook study (kalshi_weather_orderbook_summary.json / wx_capacity_probe.py) measured ~21% of books EMPTY
+# at the fire instant and a median best-ask size of ~13 contracts -- so "full fill" systematically overstates
+# paper fills, which makes the go-live gate's "live==tested" claim dishonest on the fill dimension. These two
+# helpers read the PUBLIC orderbook (no auth -- same endpoint wx_capacity_probe.py uses) at fire time and cap
+# the simulated fill at the DISPLAYED depth within our price cap. Expect measured paper EV to DROP vs the old
+# assumption; that drop is the honesty we're buying. Fail-OPEN on any fetch error: fall back to the old
+# full-fill behavior, tagged fill_model="assumed_full", so a network blip never crashes a paper cycle and
+# downstream analysis can segment honest vs assumed records.
+
+def _get(url, timeout=6, method="GET", data=None, headers=None):
+    """Shared JSON-over-HTTP helper: builds the Request, calls urlopen with our shared SSL context, and
+    parses the JSON body. Used for every request this module makes (public book fetch, live order POSTs)
+    so the timeout/context/json.load boilerplate lives in exactly one place."""
+    req = urllib.request.Request(url, data=data, method=method,
+                                  headers=headers or {"Accept": "application/json"})
+    return json.load(urllib.request.urlopen(req, timeout=timeout, context=_CTX))
+
+
+def _fetch_orderbook(ticker, timeout=1.5):
+    """Fetch the PUBLIC orderbook for `ticker`, normalized to {'yes': [[price_c, size], ...], 'no': [...]}
+    (integer cents / integer contracts -- the shape wx_capacity_probe was written against). Returns None on
+    ANY error OR an unrecognized schema -- callers treat None as "book unknown" and fall back to the old
+    full-fill assumption. Distinguishing "unknown" from "empty" matters: a schema drift must NOT masquerade
+    as 21%-style empty books and silently zero every paper fill.
+
+    Handles BOTH response schemas: the legacy 'orderbook' ({'yes': [[cents, count]], 'no': ...}) and the
+    current 'orderbook_fp' ({'yes_dollars': [['0.9900', '148.51'], ...], ...}) where prices are dollar
+    strings and sizes are (possibly fractional) CONTRACT counts -- verified against live data: a market's
+    top no_dollars level size exactly equals its yes_ask_size_fp quote, so the second element is contracts,
+    not notional dollars. Fractional sizes floor to int (we trade whole contracts; conservative).
+
+    timeout defaults to a TIGHT ~1.5s (not the module's normal 6-10s): this fetch sits in the adaptive
+    paper loop's fastest cadence (5s, when a cross is imminent -- see kwx_runner.adaptive_interval_s), so a
+    slow/hanging book endpoint must not stall detection. A timeout is just another fetch error -> fail open
+    to "book unknown" (assumed_full), never a crashed or stalled cycle.
+
+    Kept as a module-level function; KalshiExec(fetch_book=False) (or env KWX_NO_BOOK_FETCH=1) skips calling
+    it at all for offline/deterministic callers -- see the class docstring."""
+    def _norm(levels, price_scale):
+        out = []
+        for lvl in (levels or []):
+            try:
+                out.append([int(round(float(lvl[0]) * price_scale)), int(float(lvl[1]))])
+            except Exception:
+                continue   # schema-tolerant: skip a malformed level, keep the rest
+        return out
+    try:
+        url = f"{KBASE}/markets/{ticker}/orderbook"
+        d = _get(url, timeout=timeout)
+        ob = d.get("orderbook")
+        if isinstance(ob, dict):      # legacy schema: already integer cents
+            return {"yes": _norm(ob.get("yes"), 1), "no": _norm(ob.get("no"), 1)}
+        fp = d.get("orderbook_fp")
+        if isinstance(fp, dict):      # current schema: dollar strings -> cents
+            return {"yes": _norm(fp.get("yes_dollars"), 100), "no": _norm(fp.get("no_dollars"), 100)}
+        return None   # unrecognized schema -> unknown, NOT empty
+    except Exception:
+        return None   # fail open: unknown book != empty book
+
+
+def _sim_depth_fill(book, side, count, max_price_cents, top_n=3):
+    """Simulate an IOC taker fill against the displayed book. Returns a dict of fill fields to merge into the
+    dry-run record (fill_model="depth_v1").
+
+    Book convention (mirrors wx_capacity_probe.orderbook_ask_depth): Kalshi's public book lists resting BIDS
+    per side -- {'yes': [[price_c, size], ...], 'no': [[price_c, size], ...]}. A YES buyer lifts the resting
+    NO bids: a NO bid at q cents IS a YES ask at (100 - q). Symmetrically a NO buyer lifts the resting YES
+    bids: a YES bid at p IS a NO ask at (100 - p). So the ask ladder we can hit is derived from the OPPOSITE
+    side's bids.
+
+    Fill = min(requested, sum of derived ask sizes at price <= our cap) -- possibly 0 (empty book: the 21%
+    case the study measured). We also record what we saw (best ask, depth, top levels) so the exec log carries
+    the evidence, not just the conclusion, and fill_vwap_c = the walk-the-book average price actually paid
+    (<= cap; the old model charged the cap even when the ask was cheaper)."""
+    resting = (book.get("no") if side == "yes" else book.get("yes")) or []
+    levels = []
+    for lvl in resting:
+        try:
+            q, size = lvl[0], lvl[1]   # already normalized to int by _fetch_orderbook's _norm; no re-cast
+        except Exception:
+            continue   # schema-tolerant: skip malformed levels rather than crash a paper cycle
+        ask = 100 - q
+        if 1 <= ask <= 99 and size > 0:
+            levels.append((ask, size))
+    levels.sort()                                        # cheapest ask first = the order an IOC walks the book
+    depth = sum(s for a, s in levels if a <= int(max_price_cents))
+    filled = min(int(count), depth)
+    # walk the book for the volume-weighted price of the simulated fill (only levels within the cap)
+    remaining, cost = filled, 0
+    for a, s in levels:
+        if remaining <= 0 or a > int(max_price_cents):
+            break
+        take = min(s, remaining)
+        cost += take * a
+        remaining -= take
+    return {
+        "fill_model": "depth_v1",
+        "filled": filled,
+        "depth_at_cap": depth,
+        "best_ask_c": levels[0][0] if levels else None,   # best displayed ask, cap or not (None = empty book)
+        "best_ask_size": levels[0][1] if levels else None,
+        "book_top": [[a, s] for a, s in levels[:top_n]],  # compact snapshot: top few ask levels as evidence
+        "fill_vwap_c": (round(cost / filled, 2) if filled else None),
+    }
+
+
 class KalshiExec:
-    def __init__(self, base=KBASE, log_path=os.path.join(HERE, "kwx_exec_log.jsonl")):
+    def __init__(self, base=KBASE, log_path=os.path.join(HERE, "kwx_exec_log.jsonl"), fetch_book=True):
+        """fetch_book=False (or env KWX_NO_BOOK_FETCH=1) disables the depth_v1 public-book fetch on the
+        dry-run path entirely: every dry-run then books the old full-fill assumption (fill_model=
+        "assumed_full"), deterministically and with zero network calls. This is the supported OFFLINE seam
+        for tests/backtests -- prefer it over monkeypatching the private _fetch_orderbook function."""
         self.base = base
         self.log_path = log_path
+        self.fetch_book = bool(fetch_book) and os.environ.get("KWX_NO_BOOK_FETCH") != "1"
         self._priv = None
         self._key_id = None
         # LIVE requires the explicit KWX_LIVE gate AND usable credentials. Credentials resolve from EITHER
@@ -173,10 +286,8 @@ class KalshiExec:
         the original zero-fill record)."""
         path = "/trade-api/v2/portfolio/orders"
         body = json.dumps(order).encode()
-        req = urllib.request.Request(self.base.replace("/trade-api/v2", "") + path,
-                                     data=body, method="POST",
-                                     headers=self._headers("POST", path))
-        return json.load(urllib.request.urlopen(req, timeout=10, context=_CTX))
+        return _get(self.base.replace("/trade-api/v2", "") + path, timeout=10,
+                    method="POST", data=body, headers=self._headers("POST", path))
 
     def _submit_guarded(self, ticker, side, count, price_cents, client_order_id):
         """SINGLE chokepoint for every live order POST -- the initial attempt AND the bounded retry both
@@ -296,7 +407,10 @@ class KalshiExec:
         """Buy `count` YES contracts at up to `max_price_cents`. DRY-RUN unless gated live.
 
         dry_fill_price (cents) lets a simulator/backtest inject the price it believes fillable; if
-        None, the dry-run assumes a fill at max_price_cents (conservative)."""
+        None, the dry-run books avg_price_cents at max_price_cents (conservative). The dry-run FILL
+        COUNT is depth-aware (fill_model="depth_v1"): capped at the displayed public-book depth within
+        the cap at fire time, possibly 0 -- falling back to full-fill ("assumed_full") only if the book
+        can't be read. See _sim_depth_fill for why (honest paper EV)."""
         blocked = self._guard(ticker, count, max_price_cents)
         if blocked:
             self._log(blocked)
@@ -308,8 +422,15 @@ class KalshiExec:
         }
         if not self.live:
             fill = int(dry_fill_price if dry_fill_price is not None else max_price_cents)
+            # default = the OLD assumption (full fill at cap), tagged so analysis can tell it apart; the
+            # depth model below OVERWRITES filled/fill_model when the public book is actually readable.
             r = {"status": "DRY_RUN", "ticker": ticker, "requested": count,
-                 "filled": int(count), "avg_price_cents": fill, "order": order}
+                 "filled": int(count), "avg_price_cents": fill, "order": order,
+                 "fill_model": "assumed_full"}
+            if self.fetch_book:
+                book = _fetch_orderbook(ticker)
+                if book is not None:   # None = fetch failed -> fail open on the assumed-full record above
+                    r.update(_sim_depth_fill(book, "yes", count, max_price_cents))
             self._log(r)
             return r
         # ---- live path (only reached when KWX_LIVE=1 AND creds present) ----
@@ -345,8 +466,15 @@ class KalshiExec:
         }
         if not self.live:
             fill = int(dry_fill_price if dry_fill_price is not None else max_price_cents)
+            # same honest-fill treatment as buy_yes: assumed_full is the fail-open default, depth_v1 when
+            # the public book is readable (NO asks derived from resting YES bids -- see _sim_depth_fill).
             r = {"status": "DRY_RUN", "ticker": ticker, "side": "no", "requested": count,
-                 "filled": int(count), "avg_price_cents": fill, "order": order}
+                 "filled": int(count), "avg_price_cents": fill, "order": order,
+                 "fill_model": "assumed_full"}
+            if self.fetch_book:
+                book = _fetch_orderbook(ticker)
+                if book is not None:
+                    r.update(_sim_depth_fill(book, "no", count, max_price_cents))
             self._log(r)
             return r
         try:
