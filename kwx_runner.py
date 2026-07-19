@@ -121,8 +121,15 @@ def size_for_fire(bankroll, price_c, station, cushion_f=None, gap_c=None):
 # Per-station RISK derate (Track B multi-year + Tier-1): a handful of stations disagree with the official
 # CLI far more often (obs-vs-CLI lock-failure). Raise their margin (fewer, safer fires) and/or shrink size.
 # KPHX(Phoenix) is the worst in BOTH studies (23% raw / 6.25% deployable) -> highest margin + smallest size.
-STATION_MARGIN = {"KPHX": 3.0, "KLAX": 2.0, "KMIA": 2.0, "KPHL": 2.0, "KSEA": 2.0}   # else MARGIN_F
-STATION_SIZE_MULT = {"KPHX": 0.25, "KLAX": 0.5, "KMIA": 0.5, "KPHL": 0.5, "KSEA": 0.5}  # else 1.0
+# RE-CALIBRATED 2026-07-18 (wx_perstation_derate.py): the old derates (KPHX 3F, KLAX/KMIA/KPHL/KSEA 2F) were
+# set from Track B's RAW1MIN per-station tail (KPHX 23%, others 18-21% lock-failure @ m1). But that's the
+# UNFILTERED rule; under the DEPLOYED rule (glitch + sustain=3) those collapse 18-51x -> KPHX 1.26%, KMIA
+# 0.63%, KLAX 0.60%, KPHL 0.43%, KSEA 0.35% @ margin=1 (multi-year). At margin=1 the four non-KPHX stations
+# sit MID-PACK -- below never-derated KAUS/KMSY/KDEN -- so their derate was redundant with sustain=3 and cost
+# the ~3x EV of small-cushion fires (wx_cushion_optimize). Softened: only KPHX keeps an elevated margin (2F,
+# where it's 0.10%), the rest revert to base MARGIN_F=1. Size derate likewise kept only for KPHX (mild caution).
+STATION_MARGIN = {"KPHX": 2.0}                # else MARGIN_F=1 (re-validated safe under glitch+sustain3)
+STATION_SIZE_MULT = {"KPHX": 0.5}             # else 1.0
 # HIGH-family "between" rungs carried ALL 6 deployable glitch losses (Tier-1 S1) -> extra sustain there.
 PER_CITY_DAILY_CAP_FRAC = 0.175   # cross-city daily exposure cap (Tier-1 S4: precautionary, 15-20%)
 
