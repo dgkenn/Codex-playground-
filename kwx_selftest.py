@@ -107,8 +107,11 @@ def main():
         if not had_halt and os.path.exists(halt):
             os.remove(halt)
 
-    # 6) CIRCUIT BREAKER: many simultaneous locks -> auto-halt sentinel written, trading stops
+    # 6) CIRCUIT BREAKER: many simultaneous locks -> auto-halt sentinel written, trading stops. Bump bankroll
+    #    so the per-city cap (check 7) doesn't pre-empt the breaker (a single-city glitch is otherwise city-capped).
     print("\n6) circuit breaker trips on an abnormal burst of fires:")
+    _bank = R.BANKROLL
+    R.BANKROLL = 100000.0
     _fixture(floor=90, cap=None, yes_ask_c=80, ext=93.0, n_rungs=R.MAX_FIRES_PER_CYCLE + 5)
     os.path.exists(R.STATE_PATH) and os.remove(R.STATE_PATH)
     try:
@@ -117,8 +120,19 @@ def main():
         check("circuit breaker wrote .kwx_halt and capped the burst", tripped and len(plans) <= R.MAX_FIRES_PER_CYCLE,
               f"halt={tripped} plans={len(plans)}")
     finally:
+        R.BANKROLL = _bank
         if not had_halt and os.path.exists(halt):
             os.remove(halt)
+
+    # 7) PER-CITY CAP: many locks in ONE city are bounded by PER_CITY_DAILY_CAP_FRAC (the fix -- was unenforced)
+    print("\n7) per-city daily cap bounds single-city concentration:")
+    R.BANKROLL = 10.0
+    _fixture(floor=90, cap=None, yes_ask_c=80, ext=93.0, n_rungs=8)   # 8 rungs, same station
+    os.path.exists(R.STATE_PATH) and os.remove(R.STATE_PATH)
+    plans, _ = R.poll_once(exec_client=ex, verbose=False)
+    R.BANKROLL = _bank
+    # each fire ~1ct@80c=$0.80; per-city cap = 17.5% * $10 = $1.75 -> ~2 fires fit, rest skipped
+    check("single-city fires bounded by per-city cap (not all 8 fire)", 1 <= len(plans) < 8, f"plans={len(plans)}")
 
     print("\n" + ("ALL CHECKS PASSED -- the live fire path + guards work; 0 fills = no qualifying fires yet, not a bug."
                   if not FAILURES else f"{len(FAILURES)} CHECK(S) FAILED: {FAILURES}"))

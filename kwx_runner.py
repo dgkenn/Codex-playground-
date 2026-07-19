@@ -447,6 +447,11 @@ def poll_once(exec_client=None, verbose=True):
     from kalshi_exec import KalshiExec
     ex = exec_client or KalshiExec()
     state = _load_state()
+    # caps are PER-DAY: drop stale accumulators so a new day starts clean (state persists across the run's
+    # 30s poll cycles via kwx_runner_state.json; keeping only today's keys also bounds the file size).
+    _today = dt.datetime.now(tz=dt.timezone.utc).date().isoformat()
+    state["deployed"] = {k: v for k, v in state.get("deployed", {}).items() if k == _today}
+    state["city_spent"] = {k: v for k, v in state.get("city_spent", {}).items() if k.startswith(_today + ":")}
     min_interval = None
     plans = []
     for series, ev, station, offset, lst_date, kind in active_market_days():
@@ -480,13 +485,19 @@ def poll_once(exec_client=None, verbose=True):
             size = size_for_fire(BANKROLL, cap_c, station, cushion_f=cushion_f, gap_c=gap_c)
             if size < 1:
                 continue
-            # DAILY-DEPLOYMENT CAP: bound total capital opened across all fires in one day
+            # DAILY + PER-CITY DEPLOYMENT CAPS (match the validated sim's worst-day + diversification bounds).
             today = dt.datetime.now(tz=dt.timezone.utc).date().isoformat()
             deployed = state.setdefault("deployed", {})
+            city_spent = state.setdefault("city_spent", {})
+            city_key = f"{today}:{station}"
             cost = size * cap_c / 100.0
             if deployed.get(today, 0.0) + cost > MAX_DAILY_DEPLOY_FRAC * BANKROLL:
                 if verbose:
                     print(f"  [daily-cap] skip {ticker}: would exceed {MAX_DAILY_DEPLOY_FRAC:.0%} of bankroll today")
+                continue
+            if city_spent.get(city_key, 0.0) + cost > PER_CITY_DAILY_CAP_FRAC * BANKROLL:
+                if verbose:
+                    print(f"  [city-cap] skip {ticker}: would exceed {PER_CITY_DAILY_CAP_FRAC:.0%}/city ({station}) today")
                 continue
             # CIRCUIT BREAKER: a normal cycle fires a few; an abnormal burst = feed glitch -> halt for review
             if len(plans) >= MAX_FIRES_PER_CYCLE:
@@ -504,6 +515,11 @@ def poll_once(exec_client=None, verbose=True):
                 return plans, (min_interval or 900)
             fn = ex.buy_yes if side == "yes" else ex.buy_no
             res = fn(ticker, count=size, max_price_cents=cap_c)
+            # accumulate deployed capital for the caps -- ONLY if the order actually placed (a guard-BLOCKED
+            # order deployed nothing). Without this the daily/per-city caps never bind (the bug this fixes).
+            if not str(res.get("status", "")).startswith("BLOCKED"):
+                deployed[today] = deployed.get(today, 0.0) + cost
+                city_spent[city_key] = city_spent.get(city_key, 0.0) + cost
             try:
                 import kwx_notify
                 mode = "LIVE" if getattr(ex, "live", False) else "paper"
