@@ -33,3 +33,8 @@ _earlylock_cache/
 # _earlylock_climatology.json (NOT ignored) is what live snapshots load.
 wx_earlylock_paper.jsonl
 wx_earlylock_settled.jsonl
+
+# structured book snapshots: force-added by the kwx-depthprobe workflow (git add -f), same pattern as the
+# early-lock/forecast paper logs -- accrues on the branch without cluttering local `git status`. Schema:
+# wx_book_snapshot_schema.md (committed, NOT ignored).
+wx_book_snapshots.jsonl
