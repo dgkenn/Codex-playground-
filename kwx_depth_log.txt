@@ -1,0 +1,4 @@
+=== 2026-07-19T19:36Z ===
+sampling live Kalshi weather books | 40 city-market-days today | DEPTH_CAP(assumed)=25
+
+no active tradeable rungs found right now (markets may be pre-open or fully repriced).
