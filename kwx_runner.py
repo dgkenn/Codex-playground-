@@ -322,7 +322,7 @@ def _synoptic_primary():
     OPT-IN via token presence so the free-feed default is unchanged when uncredentialed (safe, zero-cost)."""
     try:
         import synoptic_feed
-        if os.path.exists(synoptic_feed.TOKEN_PATH):
+        if synoptic_feed.have_token():   # env SYNOPTIC_TOKEN first, .synoptic_token file second
             return PrimaryWithFallback(synoptic_feed.SynopticFeed(), _FREE)   # cascade: synoptic->madis->consensus
     except Exception:
         pass

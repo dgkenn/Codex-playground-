@@ -34,6 +34,10 @@ _earlylock_cache/
 wx_earlylock_paper.jsonl
 wx_earlylock_settled.jsonl
 
+# synoptic trial detection-latency log: force-added by the kwx-synoptic-trial workflow (git add -f),
+# same pattern as the forecast/earlylock sleeves above.
+wx_synoptic_trial.jsonl
+
 # structured book snapshots: force-added by the kwx-depthprobe workflow (git add -f), same pattern as the
 # early-lock/forecast paper logs -- accrues on the branch without cluttering local `git status`. Schema:
 # wx_book_snapshot_schema.md (committed, NOT ignored).
