@@ -61,6 +61,8 @@ CITY_LOW_SERIES = {
 MARGIN_F = 1.0          # base: observed extreme must clear strike by this many degF (Track A/Tier-1: best)
 SUSTAIN_MIN = 3         # sustained this many minutes -- glitch-robust (Tier-1 S2: sustain=3 reconfirmed;
                         # sustain=1 turns 13.7% of fires into glitch losses vs 0.35% at sustain=3)
+SUSTAIN_MAX_GAP_MIN = 75  # max gap between adjacent obs inside a sustain window (bridges hourly METAR;
+                          # never bridges a multi-hour feed outage)
 MAX_PAY_CENTS = 98      # never pay above this (skip dead-on-arrival fires -- ~63% of raw fires have no gap)
 GLITCH_HI_F, GLITCH_LO_F = 130.0, -60.0
 
@@ -208,9 +210,12 @@ class MultiFeedConsensus:
             obs = r.get("obs") or []
             if obs and _feed_is_stale(obs):
                 continue   # dead/frozen feed -> don't trust its running-max; drop from the quorum
-            s = sustained_extreme(obs, kind)
+            # no raw fallback: a feed with obs but no sustained window yet has NO signal this cycle
+            # (raw extreme = sustain=1 = the glitch-loss rule the tail study rejected); a feed that
+            # returns only an extreme with no obs trail (pre-filtered upstream) is trusted as-is.
+            s = sustained_extreme(obs, kind) if obs else r["extreme_f"]
             if s is None:
-                s = r["extreme_f"]
+                continue
             vals.append(s)
             present.append(getattr(f, "name", "?"))
         if len(vals) < self.quorum:
@@ -324,10 +329,17 @@ def adaptive_interval_s(distance_f):
 # ---------------- sustained-cross logic (glitch-robust) ----------------
 def sustained_extreme(obs, kind):
     """Given [(iso_ts, temp_f)...] ascending, return the glitch-filtered running extreme that has been
-    SUSTAINED >= SUSTAIN_MIN minutes (i.e. the extreme value that held, not a lone spike). For a max:
-    the highest value V such that at least SUSTAIN_MIN minutes of obs at/after V's first occurrence stay
-    >= V-? -- we approximate with: drop isolated spikes (a reading > neighbors by >8F/min) then take the
-    running extreme over what remains."""
+    SUSTAINED >= SUSTAIN_MIN minutes -- the validated Track-B "glitch_sustain3" rule
+    (phase2_trackB_tail.sustained_max_k): for a max, the largest threshold T such that some window of
+    consecutive surviving readings spanning >= SUSTAIN_MIN-1 minutes stays entirely >= T. On the study's
+    1-min data that is exactly 3 consecutive minutes; on the live 5-min/hourly feeds the smallest
+    qualifying window (two adjacent readings) spans >= 5 min, i.e. coarser feeds are strictly MORE
+    conservative than the validated rule, never less. Adjacent readings inside a window may be at most
+    SUSTAIN_MAX_GAP_MIN apart (bridges hourly METAR cadence, never a multi-hour outage).
+
+    Returns None when no window qualifies yet (single reading so far, sparse day, unparseable
+    timestamps). Callers MUST treat None as NO SIGNAL -- falling back to the raw running extreme would
+    silently reinstate sustain=1, the 13.7%-glitch-loss rule the tail study rejected."""
     clean = []
     prev = None
     for ts, f in obs:
@@ -338,17 +350,32 @@ def sustained_extreme(obs, kind):
             # (a true climb shows consecutive steps; a spike reverts). Conservative: skip the jump point.
             prev = f
             continue
-        clean.append((ts, f))
         prev = f
+        try:
+            t = dt.datetime.fromisoformat(str(ts).replace("Z", "+00:00"))
+        except (ValueError, TypeError):
+            continue
+        clean.append((t, f))
     if not clean:
         return None
-    vals = [f for _, f in clean]
-    if kind == "max":
-        # sustained max = the max value that appears with enough subsequent support
-        ext = max(vals)
-    else:
-        ext = min(vals)
-    return ext
+    span_need = dt.timedelta(minutes=max(0, SUSTAIN_MIN - 1))
+    max_gap = dt.timedelta(minutes=SUSTAIN_MAX_GAP_MIN)
+    sign = 1.0 if kind == "max" else -1.0
+    best = None
+    for j in range(len(clean)):
+        tj = clean[j][0]
+        wmin = sign * clean[j][1]
+        i = j
+        # grow the window leftward (gap-connected) until it spans SUSTAIN_MIN-1 minutes; the minimal
+        # qualifying window ending at j maximizes the window-min, so stop as soon as the span is met.
+        while tj - clean[i][0] < span_need and i > 0 and clean[i][0] - clean[i - 1][0] <= max_gap:
+            i -= 1
+            v = sign * clean[i][1]
+            if v < wmin:
+                wmin = v
+        if tj - clean[i][0] >= span_need and (best is None or wmin > best):
+            best = wmin
+    return None if best is None else sign * best
 
 
 # ---------------- market discovery ----------------
@@ -466,15 +493,21 @@ def poll_once(exec_client=None, verbose=True):
             continue
         if not feed:
             continue
-        ext = sustained_extreme(feed["obs"], kind)
-        if ext is None:
-            ext = feed["extreme_f"]
+        obs = feed.get("obs") or []
+        ext_raw = feed["extreme_f"]
+        # sustained extreme gates FIRING; consensus feeds (empty obs trail, pre-filtered per-feed
+        # upstream) are trusted as-is. None = no sustained window yet -> no fires this cycle; do NOT
+        # fall back to the raw extreme (that is sustain=1, the 13.7%-glitch-loss rule).
+        ext = sustained_extreme(obs, kind) if obs else ext_raw
         # per-station risk derate (Track B / Tier-1): high-disagreement stations get a higher margin
         st_margin = STATION_MARGIN.get(station, MARGIN_F)
-        # cadence signal
-        dist = nearest_strike_distance(rungs, ext, kind, margin=st_margin)
+        # cadence signal -- use the RAW running extreme so we keep polling fast while a fresh cross
+        # awaits its sustain confirmation
+        dist = nearest_strike_distance(rungs, ext_raw, kind, margin=st_margin)
         iv = adaptive_interval_s(dist)
         min_interval = iv if min_interval is None else min(min_interval, iv)
+        if ext is None:
+            continue
         # fire locked rungs not already fired
         for ticker, side, cap_c, cushion_f in locked_orders(rungs, ext, kind, margin=st_margin):
             if ticker in state["fired"]:
