@@ -31,6 +31,11 @@ _earlylock_cache/
 
 # Polymarket gap-study cache (raw ASOS/CLOB pulls, agent artifact, do not commit)
 .pmkt_cache/
+
+# pmkt settlement-basis study caches (agent artifact, do not commit)
+_pmkt_cache/
+_pmkt_basis_cache/
+pmkt_settlement_basis_results.json
 # early-lock forward PAPER logs: force-added by the kwx-earlylock workflow (git add -f), like the forecast
 # sleeve, so they accumulate on the branch without cluttering local `git status`. The committed
 # _earlylock_climatology.json (NOT ignored) is what live snapshots load.
