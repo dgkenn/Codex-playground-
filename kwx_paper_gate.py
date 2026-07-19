@@ -134,13 +134,37 @@ def _parse_argv(argv):
     return once, max_seconds
 
 
+def _startup_label():
+    """Derive the startup banner's mode label from the ACTUAL exec gate (kalshi_exec.KalshiExec.live),
+    instead of a hardcoded "PAPER/dry-run" string. The hardcoded label used to print regardless of
+    KWX_LIVE/creds -- an operator doing a live-canary health check could see "PAPER/dry-run" while the
+    bot was actually placing live orders. live == (KWX_LIVE=1 AND usable creds), exactly the same gate
+    kalshi_exec.buy_yes/buy_no use, so this can never disagree with what the runner actually does."""
+    try:
+        import kalshi_exec as KE
+        ex = KE.KalshiExec()
+    except Exception as e:
+        # Can't even construct the exec gate -- fall back to the raw env var so we never claim PAPER
+        # while KWX_LIVE=1 is set (that's the exact misleading failure mode this fixes).
+        live_env = os.environ.get("KWX_LIVE") == "1"
+        return f"*** LIVE (unconfirmed; gate probe failed: {e}) ***" if live_env else "PAPER/dry-run"
+    if not ex.live:
+        return "PAPER/dry-run"
+    try:
+        default = KE._runner_default_bankroll()
+        eff = KE.effective_bankroll(default, exec_client=ex)
+        return f"*** LIVE *** (effective bankroll ${eff:.2f})"
+    except Exception:
+        return "*** LIVE *** (effective bankroll unavailable)"
+
+
 def main():
     once, max_seconds = _parse_argv(sys.argv[1:])
     if once:
         cycle()
         return
     bound = f" (bounded to ~{max_seconds}s)" if max_seconds else ""
-    print(f"K-WX paper gate running (PAPER/dry-run){bound}. Status -> kwx_gate_status.txt. Ctrl-C to stop.")
+    print(f"K-WX paper gate running ({_startup_label()}){bound}. Status -> kwx_gate_status.txt. Ctrl-C to stop.")
     # --max-seconds: wall-clock bound so a CI job leg can run the adaptive loop directly (honoring the
     # 5s/20s near-strike cadence) and still hand back control before the job-level timeout kills it.
     deadline = (time.time() + max_seconds) if max_seconds else None

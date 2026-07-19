@@ -449,7 +449,9 @@ class KalshiExec:
         except _GuardBlocked as e:
             r = e.record
         except urllib.error.HTTPError as e:
-            r = {"status": "live_error", "ticker": ticker, "code": e.code, "body": e.read().decode()[:300]}
+            r = {"status": "live_error", "ticker": ticker, "side": "yes",
+                 "client_order_id": order["client_order_id"], "code": e.code,
+                 "body": e.read().decode()[:300]}
         self._log(r)
         return r
 
@@ -489,7 +491,9 @@ class KalshiExec:
         except _GuardBlocked as e:
             r = e.record
         except urllib.error.HTTPError as e:
-            r = {"status": "live_error", "ticker": ticker, "code": e.code, "body": e.read().decode()[:300]}
+            r = {"status": "live_error", "ticker": ticker, "side": "no",
+                 "client_order_id": order["client_order_id"], "code": e.code,
+                 "body": e.read().decode()[:300]}
         self._log(r)
         return r
 

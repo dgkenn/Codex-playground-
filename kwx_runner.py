@@ -557,8 +557,11 @@ def poll_once(exec_client=None, verbose=True):
         min_interval = iv if min_interval is None else min(min_interval, iv)
         if ext is None:
             continue
-        # fire locked rungs not already fired
-        for ticker, side, cap_c, cushion_f in locked_orders(rungs, ext, kind, margin=st_margin):
+        # fire locked rungs not already fired. Ordered by DESCENDING gap (== ascending cap_c, since
+        # gap_c = 100 - cap_c) so that if a daily/per-city cap binds partway through this event's
+        # rungs, the highest-EV rungs have already filled (see wx_rung_stacking.md).
+        locked = sorted(locked_orders(rungs, ext, kind, margin=st_margin), key=lambda t: t[2])
+        for ticker, side, cap_c, cushion_f in locked:
             if ticker in state["fired"]:
                 continue
             gap_c = 100 - cap_c   # cents of edge still open (100c payout - price we pay)

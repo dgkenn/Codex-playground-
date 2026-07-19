@@ -189,6 +189,32 @@ def compose():
         lines.append(f"feeds: check unavailable ({type(e).__name__})")
 
     lines.append(f"VERDICT: {verdict_line(m)}")
+
+    # settlement-drift monitor (wx_settlement_drift.py) -- optional dependency: it may not be merged
+    # onto this branch yet, so the import itself is guarded, not just the call. Fails soft either way:
+    # the digest must never crash because a study module is missing or errors on stale/partial logs.
+    try:
+        import wx_settlement_drift as SD
+        status = SD.check()
+        lines.append(f"drift: {status}")
+    except ImportError:
+        lines.append("drift: drift monitor not installed")
+    except Exception as e:
+        lines.append(f"drift: check unavailable ({type(e).__name__})")
+
+    # fill-quality monitor (kwx_fill_quality.py) -- reuse its own verdict function so this line can never
+    # drift from what `python kwx_fill_quality.py` itself would report. fetch_trades=False keeps this
+    # cheap and offline (no public-trade-tape calls) since it only needs to run once a day.
+    try:
+        import kwx_fill_quality as FQ
+        rows, _n_blocked = FQ.build_rows(fetch_trades=False)
+        verdict, detail = FQ.compute_verdict(rows)
+        lines.append(f"fill-quality: {verdict} (n={detail.get('n', len(rows))})")
+    except ImportError:
+        lines.append("fill-quality: fill-quality monitor not installed")
+    except Exception as e:
+        lines.append(f"fill-quality: check unavailable ({type(e).__name__})")
+
     return "\n".join(lines)
 
 
