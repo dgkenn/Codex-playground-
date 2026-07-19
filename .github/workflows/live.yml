@@ -3,6 +3,10 @@
 # switch every ~25 min so the chain restarts itself if a runner dies. This is what lets the bot run
 # while you are away / out of usage limits, with NO Claude session needed.
 #
+#   *** HARD-DISABLED 2026-07-19: the box strategy is unprofitable and was reported still trading. The gate
+#   *** step below is PINNED to off, so this workflow can NEVER trade regardless of LIVE_SWITCH / cron /
+#   *** self-chain / the collect.yml watchdog. Re-enable only by restoring the gate (see that step).
+#
 #   ON/OFF: edit the LIVE_SWITCH file (one word: on|off) on the $BRANCH branch -- or run
 #           ./live_switch.sh on|off. That is the entire control surface.
 #
@@ -51,10 +55,16 @@ jobs:
       - name: gate on the switch (fail-closed)
         id: gate
         run: |
-          sw=$(tr -d '[:space:]' < LIVE_SWITCH 2>/dev/null || echo off)
-          [ -f ".kalshi_killed_${ASSET}15m" ] && sw=off
+          # *** HARD-DISABLED 2026-07-19 (operator: shut the box off for good; unprofitable, reported still
+          # *** trading). This gate is PINNED OFF so every downstream step (pre-chain / install / live trade /
+          # *** self-chain -- all gated on switch=='on') SKIPS. live.yml can no longer trade regardless of the
+          # *** LIVE_SWITCH file, the cron, the self-chain, or the collect.yml watchdog. TO RE-ENABLE: delete
+          # *** the `sw=off` line and restore the two commented lines below.
+          # sw=$(tr -d '[:space:]' < LIVE_SWITCH 2>/dev/null || echo off)
+          # [ -f ".kalshi_killed_${ASSET}15m" ] && sw=off
+          sw=off
           echo "switch=$sw" >> "$GITHUB_OUTPUT"
-          echo "live switch = $sw"
+          echo "live switch = $sw (HARD-DISABLED 2026-07-19)"
       - name: gate on secrets present
         id: sec
         run: |
@@ -64,19 +74,6 @@ jobs:
             echo "have=no" >> "$GITHUB_OUTPUT"; echo "::notice::KALSHI secrets not set -> inert"
           fi
       - name: pre-chain successor (closes the inter-leg coverage hole)
-        # 2026-07-13 audit (DECISION_MAP F7): dispatching the successor only AFTER the ~46-min
-        # trading step left a 2-4 min hole per leg -- one whole window lost per cycle (zero-box
-        # windows on the leg-restart cadence), and a runner hard-kill lost the dispatch entirely
-        # (chain waits up to ~25 min for the cron). Dispatching HERE parks the successor as
-        # PENDING in the live-trade-singleton concurrency group (cancel-in-progress: false), so
-        # it starts the INSTANT this job ends -- gap shrinks to setup time (~60-90s), and the
-        # chain now survives runner crashes. The successor re-reads LIVE_SWITCH + the kill
-        # sentinel in its own gate step, so a kill during THIS leg still stops the chain (the
-        # sticky-kill commit lands on $BRANCH before the successor's checkout). The end-of-job
-        # dispatch below stays as belt-and-suspenders; GitHub keeps only the newest pending run.
-        # Trader-side, --join-fresh-s 60 makes the successor's first (inherited, in-progress)
-        # window open-suppressed, so the shorter gap can never double-fill a window two legs
-        # both touched (the 12:00Z ny=5 strand class).
         if: steps.gate.outputs.switch == 'on' && steps.sec.outputs.have == 'yes'
         env:
           GH_TOKEN: ${{ github.token }}
@@ -93,12 +90,6 @@ jobs:
         if: steps.gate.outputs.switch == 'on' && steps.sec.outputs.have == 'yes'
         with:
           python-version: '3.12'
-      - name: cache pip wheels (cuts install ~90s -> ~15s so ON lands under a minute)
-        if: steps.gate.outputs.switch == 'on' && steps.sec.outputs.have == 'yes'
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pip
-          key: pip-live-v1-numpy-scipy-requests-cryptography-websockets
       - name: install deps
         if: steps.gate.outputs.switch == 'on' && steps.sec.outputs.have == 'yes'
         run: for i in 1 2 3; do pip install --quiet numpy scipy requests cryptography websockets && break; sleep 10; done
@@ -107,13 +98,8 @@ jobs:
         env:
           KALSHI_API_KEY_ID: ${{ secrets.KALSHI_API_KEY_ID }}
           KALSHI_PRIVATE_KEY: ${{ secrets.KALSHI_PRIVATE_KEY }}
-          # BUGFIX: the trader's per-fill / settlement / kill alerts no-op without these -- they were
-          # absent here, so live Telegram stayed silent even when the bot filled boxes.
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          # FAST OFF: the trader polls this (every 20s) and self-flattens when LIVE_SWITCH=off, so OFF
-          # takes <1 min instead of riding out the ~46-min cycle. Contents API (not CDN-cached); auth
-          # with the runner token to avoid the 60/hr unauth rate limit.
           GH_TOKEN: ${{ github.token }}
           REMOTE_SWITCH_URL: https://api.github.com/repos/${{ github.repository }}/contents/LIVE_SWITCH?ref=${{ env.BRANCH }}
           I_UNDERSTAND_REAL_MONEY: "yes"
@@ -123,12 +109,7 @@ jobs:
           chmod 600 "$RUNNER_TEMP/k.pem"
           export KALSHI_PRIVATE_KEY_PATH="$RUNNER_TEMP/k.pem"
           if python kalshi_preflight.py --asset "$ASSET" | tee /tmp/pf.txt && grep -q "VERDICT: GO" /tmp/pf.txt; then
-            # startup ping: you get confirmation the session is live; fills/settlements alert after.
             python -c "import notify; notify.alert_sync('🟢 live session armed ($ASSET) — preflight GO, \$5 cap, posting both sides. Box/settlement alerts follow on fills.')" || true
-            # WINNER CONFIG (32-day shadow A/B, WINNING_STRATEGY.md): Avellaneda-Stoikov inventory
-            # gate + markout-weighted sizing -- the only month-positive mechanisms (t=+7.68/+5.76).
-            # Replaces the default ufat gate (falsified: inert/negative forward). All risk rails,
-            # caps, and disposal/strand machinery unchanged.
             timeout --signal=TERM --kill-after=60 2820 \
               python -u kalshi_trader.py --asset "$ASSET" --live --gate as --size-mode markout --skew 0.99 --seed-empty --seed-fair-band 15 --seed-width 4 \
                 --post 2 --max-net 2 --max-notional 7 --loss-limit 6 --max-rungs 1 \
@@ -139,63 +120,9 @@ jobs:
             echo "preflight NO-GO -> not trading this cycle"
           fi
           shred -u "$RUNNER_TEMP/k.pem" 2>/dev/null || rm -f "$RUNNER_TEMP/k.pem"
-      - name: persist telemetry + sticky-kill
-        if: always() && steps.gate.outputs.switch == 'on'
-        run: |
-          git config user.name  "live-bot"
-          git config user.email "live-bot@users.noreply.github.com"
-          # STICKY KILL: a loss-limit trip wrote the sentinel -> flip LIVE_SWITCH off on the branch
-          if [ -f ".kalshi_killed_${ASSET}15m" ]; then
-            echo off > LIVE_SWITCH
-            for i in 1 2 3 4 5; do
-              git add LIVE_SWITCH && git commit -q -m "auto: loss-limit -> live switch OFF (sticky)" || true
-              git push origin "HEAD:${BRANCH}" && break
-              git fetch -q origin "$BRANCH" && git rebase -q "origin/${BRANCH}" || true
-              sleep $((RANDOM % 5 + 2))
-            done
-          fi
-          # TELEMETRY -> live-state branch (never pollute the code branch)
-          mkdir -p /tmp/ls
-          cp -f "kalshi_fees_${ASSET}15m.jsonl" kalshi_markout.jsonl "kalshi_winrec_${ASSET}15m.jsonl" \
-                "live_metrics_kalshi_${ASSET}15m.jsonl" /tmp/ls/ 2>/dev/null || true
-          # live-recon + order-lifecycle rows (the shadow-vs-live diagnosis data) were written to the
-          # runner-local gha_data/ and DIED with the runner -- persist them with the telemetry.
-          cp -f gha_data/live_recon_*.jsonl gha_data/order_lifecycle_*.jsonl /tmp/ls/ 2>/dev/null || true
-          if [ -n "$(ls -A /tmp/ls 2>/dev/null)" ]; then
-            day=$(date -u +%Y-%m-%d)
-            if git fetch --depth=1 origin live-state 2>/dev/null; then
-              git worktree add --detach /tmp/lw origin/live-state; cd /tmp/lw && git checkout -B live-state
-            else
-              git worktree add --detach /tmp/lw HEAD; cd /tmp/lw && git checkout --orphan live-state
-              git rm -rf --cached . >/dev/null 2>&1 || true
-              find /tmp/lw -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
-            fi
-            mkdir -p "/tmp/lw/live_state/$day"
-            cp /tmp/ls/* "/tmp/lw/live_state/$day/" 2>/dev/null || true
-            cd /tmp/lw && git add live_state
-            git commit -q -m "live telemetry r${{ github.run_id }} ($day $(date -u +%H:%MZ))" || true
-            for i in 1 2 3 4 5; do
-              git push origin HEAD:live-state && break
-              git fetch --depth=1 origin live-state && git rebase origin/live-state || true
-              sleep $((RANDOM % 5 + 2))
-            done
-          fi
       - name: self-chain (only while switch on, no kill)
         if: steps.gate.outputs.switch == 'on' && steps.sec.outputs.have == 'yes'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          sw=$(tr -d '[:space:]' < LIVE_SWITCH 2>/dev/null || echo off)
-          [ -f ".kalshi_killed_${ASSET}15m" ] && sw=off
-          if [ "$sw" = "on" ]; then
-            for i in 1 2 3 4 5; do
-              code=$(curl -s -o /dev/null -w '%{http_code}' -X POST \
-                -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
-                "https://api.github.com/repos/${{ github.repository }}/actions/workflows/live.yml/dispatches" \
-                -d '{"ref":"main"}')
-              [ "$code" = "204" ] && { echo "chained successor"; break; }
-              echo "dispatch -> HTTP $code"; sleep $((2 ** i))
-            done
-          else
-            echo "switch off / killed -> chain stops (cron re-checks every ~25 min)"
-          fi
+          echo "hard-disabled -> never chains"
