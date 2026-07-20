@@ -1,0 +1,170 @@
+{
+  "spec": "Spec 2 - OFF-AIR PASSIVE QUOTING, MENTIONS",
+  "pre_registered_pass_bar": {
+    "mean_net_markout_gt": 0.03,
+    "one_sided_p_lt_bonferroni10": 0.005,
+    "adverse_selection_both_subchecks_pass": true,
+    "min_fills": 40,
+    "min_event_days": 10
+  },
+  "data_availability": {
+    "kxfedmention_events_listed": 12,
+    "kxfedmention_events_with_retrievable_markets": 1,
+    "kxhannitymention_events_listed": 2,
+    "kxhannitymention_events_with_retrievable_markets": 2,
+    "total_accessible_event_days": 3,
+    "total_accessible_markets": 74
+  },
+  "fee_schedule_verification": {
+    "series_fee_type": "quadratic",
+    "series_fee_multiplier": 1,
+    "resolution": "nonzero fee_multiplier -> maker fee NOT assumed zero; applied ceil(7*p*(1-p))/100 per contract to every simulated fill at the fill price, consistent with house convention that fees enter all EV math."
+  },
+  "chosen_k_per_series_cents": {
+    "KXFEDMENTION": 12.0,
+    "KXHANNITYMENTION": 12.0
+  },
+  "fit_events": [
+    "KXFEDMENTION-26JUN",
+    "KXHANNITYMENTION-26MAY19"
+  ],
+  "validation_events": [
+    "KXHANNITYMENTION-26MAY21"
+  ],
+  "validation_summary": {
+    "label": "validation_only",
+    "n_fills": 115,
+    "n_event_days": 1,
+    "mean_net_markout": -0.02286956521739131,
+    "mean_raw_markout": -0.003565217391304349,
+    "win_rate": 0.5130434782608696,
+    "wilson_95ci": [
+      0.42275514470281655,
+      0.6024885410099305
+    ],
+    "clustered_ttest": {
+      "n_days": 1,
+      "day_means": {
+        "KXHANNITYMENTION-26MAY21": -0.02286956521739131
+      },
+      "t": null,
+      "p": null,
+      "note": "insufficient clusters (<2) for a valid clustered SE / t-test"
+    },
+    "adverse_selection": {
+      "n_pre_air_24h": 14,
+      "pre_air_24h_mean_net_markout": -0.10428571428571431,
+      "n_earlier": 101,
+      "earlier_mean_net_markout": -0.0115841584158416,
+      "pct_fills_on_losing_side": 0.48695652173913045,
+      "check1_pre_air_nonneg_pass": false,
+      "check2_le70pct_losing_pass": true,
+      "both_pass": false
+    }
+  },
+  "all_accessible_pooled_summary": {
+    "label": "all_accessible_fit+validation_pooled",
+    "n_fills": 756,
+    "n_event_days": 3,
+    "mean_net_markout": -0.04567460317460312,
+    "mean_raw_markout": -0.02740740740740739,
+    "win_rate": 0.48412698412698413,
+    "wilson_95ci": [
+      0.4486730221831133,
+      0.5197414473589597
+    ],
+    "clustered_ttest": {
+      "n_days": 3,
+      "day_means": {
+        "KXHANNITYMENTION-26MAY21": -0.02286956521739131,
+        "KXFEDMENTION-26JUN": -0.04461538461538461,
+        "KXHANNITYMENTION-26MAY19": -0.07936842105263159
+      },
+      "mean": -0.04895112362846917,
+      "se": 0.016453258565453467,
+      "t": -2.9751628489721016,
+      "p_onesided": 0.951579250809412
+    },
+    "adverse_selection": {
+      "n_pre_air_24h": 567,
+      "pre_air_24h_mean_net_markout": -0.04788359788359787,
+      "n_earlier": 189,
+      "earlier_mean_net_markout": -0.03904761904761905,
+      "pct_fills_on_losing_side": 0.5158730158730159,
+      "check1_pre_air_nonneg_pass": false,
+      "check2_le70pct_losing_pass": true,
+      "both_pass": false
+    }
+  },
+  "by_series_all_accessible": {
+    "KXFEDMENTION": {
+      "label": "KXFEDMENTION_all_accessible",
+      "n_fills": 546,
+      "n_event_days": 1,
+      "mean_net_markout": -0.04461538461538461,
+      "mean_raw_markout": -0.02664835164835162,
+      "win_rate": 0.4835164835164835,
+      "wilson_95ci": [
+        0.4418608489198612,
+        0.5254024501830076
+      ],
+      "clustered_ttest": {
+        "n_days": 1,
+        "day_means": {
+          "KXFEDMENTION-26JUN": -0.04461538461538461
+        },
+        "t": null,
+        "p": null,
+        "note": "insufficient clusters (<2) for a valid clustered SE / t-test"
+      },
+      "adverse_selection": {
+        "n_pre_air_24h": 546,
+        "pre_air_24h_mean_net_markout": -0.04461538461538461,
+        "n_earlier": 0,
+        "earlier_mean_net_markout": null,
+        "pct_fills_on_losing_side": 0.5164835164835165,
+        "check1_pre_air_nonneg_pass": false,
+        "check2_le70pct_losing_pass": true,
+        "both_pass": false
+      }
+    },
+    "KXHANNITYMENTION": {
+      "label": "KXHANNITYMENTION_all_accessible",
+      "n_fills": 210,
+      "n_event_days": 2,
+      "mean_net_markout": -0.04842857142857145,
+      "mean_raw_markout": -0.029380952380952372,
+      "win_rate": 0.4857142857142857,
+      "wilson_95ci": [
+        0.4189815641153367,
+        0.5529602844305029
+      ],
+      "clustered_ttest": {
+        "n_days": 2,
+        "day_means": {
+          "KXHANNITYMENTION-26MAY21": -0.02286956521739131,
+          "KXHANNITYMENTION-26MAY19": -0.07936842105263159
+        },
+        "mean": -0.05111899313501145,
+        "se": 0.028249427917620137,
+        "t": -1.8095585257189148,
+        "p_onesided": 0.8393002195023129
+      },
+      "adverse_selection": {
+        "n_pre_air_24h": 21,
+        "pre_air_24h_mean_net_markout": -0.13285714285714287,
+        "n_earlier": 189,
+        "earlier_mean_net_markout": -0.03904761904761905,
+        "pct_fills_on_losing_side": 0.5142857142857142,
+        "check1_pre_air_nonneg_pass": false,
+        "check2_le70pct_losing_pass": true,
+        "both_pass": false
+      }
+    }
+  },
+  "min_n_met": false,
+  "verdict": "INCONCLUSIVE",
+  "verdict_reason": [
+    "Pre-registered minimum n not met: need >=40 validation fills across >=10 event-days; accessible data has only 3 event-days total (validation set has 115 fills across 1 event-days). Public Kalshi API only serves nested market/trade detail for the single most-recent settled event per series (see DATA-AVAILABILITY FINDING); 11 of 12 KXFEDMENTION events are listed as metadata shells with zero retrievable markets."
+  ]
+}

@@ -1,0 +1,349 @@
+{
+  "spec": "Spec 1: mention-open base-rate anchor",
+  "data_reality_check": {
+    "note": "Pre-registration assumed KXFEDMENTION=45 settled/12 events, KXHANNITYMENTION=29 settled/2 events. Kalshi's public markets API only returns markets for the two most recent events per series (current + most recently finalized); older events return 0 markets even though the /events listing shows them. Actual retrievable data: KXFEDMENTION=45 settled markets but ALL from a SINGLE event/broadcast-day (2026-06-17); KXHANNITYMENTION=29 settled/2 events, matching pre-registration. Total distinct broadcast-event-days available across both series: 3 (['KXHANNITYMENTION-26MAY19', 'KXHANNITYMENTION-26MAY21', 'KXFEDMENTION-26JUN']).",
+    "n_events_total": 3,
+    "events_chronological": [
+      "KXHANNITYMENTION-26MAY19",
+      "KXHANNITYMENTION-26MAY21",
+      "KXFEDMENTION-26JUN"
+    ]
+  },
+  "fit_validation_split": {
+    "fit_events": [
+      "KXHANNITYMENTION-26MAY19"
+    ],
+    "validation_events": [
+      "KXFEDMENTION-26JUN",
+      "KXHANNITYMENTION-26MAY21"
+    ],
+    "split_rule": "chronological by event; first floor(0.4*n_events) events = fit, remainder = validation"
+  },
+  "theta_selection": {
+    "grid_cents": [
+      10,
+      15,
+      20
+    ],
+    "scan": {
+      "10": {
+        "n_fit": 0,
+        "n_val": 16,
+        "fit_mean_net_ev": null
+      },
+      "15": {
+        "n_fit": 0,
+        "n_val": 16,
+        "fit_mean_net_ev": null
+      },
+      "20": {
+        "n_fit": 0,
+        "n_val": 16,
+        "fit_mean_net_ev": null
+      }
+    },
+    "selected_theta_cents": 15,
+    "method": "FALLBACK: no theta produced any fit-set entry (insufficient fit-period history); defaulted to median grid point 15c"
+  },
+  "validation_results": {
+    "n_val": 16,
+    "wins": 11,
+    "win_rate": 0.6875,
+    "wilson_95_ci": [
+      0.4440435582932624,
+      0.8583535614788456
+    ],
+    "avg_price_paid": 0.46125000000000005,
+    "avg_fee": 0.019375,
+    "breakeven_win_rate_fee_inclusive": 0.480625,
+    "mean_net_ev_per_contract": 0.20687499999999998,
+    "n_distinct_validation_event_days": 1,
+    "validation_event_days": [
+      "KXHANNITYMENTION-26MAY21"
+    ],
+    "event_day_clustered_ttest": {
+      "n_clusters": 1,
+      "t_stat": NaN,
+      "p_one_sided": NaN,
+      "mean": 0.20687499999999998
+    },
+    "p_raw_one_sided": NaN,
+    "p_bonferroni_x10": NaN
+  },
+  "adverse_selection_check": {
+    "matched_fired_correct_rate": null,
+    "matched_nonfired_correct_rate": null,
+    "quoted_divergence_edge_abs_mean": 0.461826923076923,
+    "realized_edge": null,
+    "pass": null,
+    "note": "INSUFFICIENT DATA: no overlapping price buckets between fired and non-fired same-series markets (n too small)."
+  },
+  "min_n_gate": {
+    "required_n": 30,
+    "required_event_days": 8,
+    "met": false
+  },
+  "verdict": "INCONCLUSIVE",
+  "verdict_reason": "Pre-registered minimum n gate NOT met: validation entries=16 (need >=30), distinct validation event-days=1 (need >=8). This is a pre-registered stop condition, not a goalpost move.",
+  "capacity_usd_per_month_estimate": 0.0,
+  "all_fired_trades_fit_and_validation": [
+    {
+      "ticker": "KXHANNITYMENTION-26MAY21-FBI",
+      "series": "KXHANNITYMENTION",
+      "event_ticker": "KXHANNITYMENTION-26MAY21",
+      "first_print": 0.76,
+      "phat": 0.07692307692307693,
+      "n_prior": 13,
+      "divergence": 0.6830769230769231,
+      "side": "NO",
+      "price": 0.24,
+      "win": false,
+      "fee": 0.02,
+      "net_ev": -0.26,
+      "settlement_ts": "2026-05-27T14:18:51.542861+00:00",
+      "in_fit": false
+    },
+    {
+      "ticker": "KXHANNITYMENTION-26MAY21-ZOHR",
+      "series": "KXHANNITYMENTION",
+      "event_ticker": "KXHANNITYMENTION-26MAY21",
+      "first_print": 0.89,
+      "phat": 0.07692307692307693,
+      "n_prior": 13,
+      "divergence": 0.813076923076923,
+      "side": "NO",
+      "price": 0.10999999999999999,
+      "win": false,
+      "fee": 0.01,
+      "net_ev": -0.11999999999999998,
+      "settlement_ts": "2026-05-27T14:19:41.540850+00:00",
+      "in_fit": false
+    },
+    {
+      "ticker": "KXHANNITYMENTION-26MAY21-BIDE",
+      "series": "KXHANNITYMENTION",
+      "event_ticker": "KXHANNITYMENTION-26MAY21",
+      "first_print": 0.76,
+      "phat": 0.07692307692307693,
+      "n_prior": 13,
+      "divergence": 0.6830769230769231,
+      "side": "NO",
+      "price": 0.24,
+      "win": true,
+      "fee": 0.02,
+      "net_ev": 0.74,
+      "settlement_ts": "2026-05-27T14:17:41.540581+00:00",
+      "in_fit": false
+    },
+    {
+      "ticker": "KXHANNITYMENTION-26MAY21-RADI",
+      "series": "KXHANNITYMENTION",
+      "event_ticker": "KXHANNITYMENTION-26MAY21",
+      "first_print": 0.73,
+      "phat": 0.07692307692307693,
+      "n_prior": 13,
+      "divergence": 0.6530769230769231,
+      "side": "NO",
+      "price": 0.27,
+      "win": true,
+      "fee": 0.02,
+      "net_ev": 0.71,
+      "settlement_ts": "2026-05-27T14:18:01.543117+00:00",
+      "in_fit": false
+    },
+    {
+      "ticker": "KXHANNITYMENTION-26MAY21-CHIN",
+      "series": "KXHANNITYMENTION",
+      "event_ticker": "KXHANNITYMENTION-26MAY21",
+      "first_print": 0.39,
+      "phat": 0.07692307692307693,
+      "n_prior": 13,
+      "divergence": 0.3130769230769231,
+      "side": "NO",
+      "price": 0.61,
+      "win": true,
+      "fee": 0.02,
+      "net_ev": 0.37,
+      "settlement_ts": "2026-05-27T14:18:11.542866+00:00",
+      "in_fit": false
+    },
+    {
+      "ticker": "KXHANNITYMENTION-26MAY21-BALL",
+      "series": "KXHANNITYMENTION",
+      "event_ticker": "KXHANNITYMENTION-26MAY21",
+      "first_print": 0.39,
+      "phat": 0.07692307692307693,
+      "n_prior": 13,
+      "divergence": 0.3130769230769231,
+      "side": "NO",
+      "price": 0.61,
+      "win": true,
+      "fee": 0.02,
+      "net_ev": 0.37,
+      "settlement_ts": "2026-05-27T14:18:31.591499+00:00",
+      "in_fit": false
+    },
+    {
+      "ticker": "KXHANNITYMENTION-26MAY21-ISRA",
+      "series": "KXHANNITYMENTION",
+      "event_ticker": "KXHANNITYMENTION-26MAY21",
+      "first_print": 0.38,
+      "phat": 0.07692307692307693,
+      "n_prior": 13,
+      "divergence": 0.3030769230769231,
+      "side": "NO",
+      "price": 0.62,
+      "win": false,
+      "fee": 0.02,
+      "net_ev": -0.64,
+      "settlement_ts": "2026-05-27T14:10:51.540540+00:00",
+      "in_fit": false
+    },
+    {
+      "ticker": "KXHANNITYMENTION-26MAY21-HORM",
+      "series": "KXHANNITYMENTION",
+      "event_ticker": "KXHANNITYMENTION-26MAY21",
+      "first_print": 0.57,
+      "phat": 0.07692307692307693,
+      "n_prior": 13,
+      "divergence": 0.493076923076923,
+      "side": "NO",
+      "price": 0.43000000000000005,
+      "win": false,
+      "fee": 0.02,
+      "net_ev": -0.45000000000000007,
+      "settlement_ts": "2026-05-27T14:19:01.544665+00:00",
+      "in_fit": false
+    },
+    {
+      "ticker": "KXHANNITYMENTION-26MAY21-CEAS",
+      "series": "KXHANNITYMENTION",
+      "event_ticker": "KXHANNITYMENTION-26MAY21",
+      "first_print": 0.4,
+      "phat": 0.07692307692307693,
+      "n_prior": 13,
+      "divergence": 0.3230769230769231,
+      "side": "NO",
+      "price": 0.6,
+      "win": true,
+      "fee": 0.02,
+      "net_ev": 0.38,
+      "settlement_ts": "2026-05-27T14:19:21.541204+00:00",
+      "in_fit": false
+    },
+    {
+      "ticker": "KXHANNITYMENTION-26MAY21-CORR",
+      "series": "KXHANNITYMENTION",
+      "event_ticker": "KXHANNITYMENTION-26MAY21",
+      "first_print": 0.39,
+      "phat": 0.07692307692307693,
+      "n_prior": 13,
+      "divergence": 0.3130769230769231,
+      "side": "NO",
+      "price": 0.61,
+      "win": true,
+      "fee": 0.02,
+      "net_ev": 0.37,
+      "settlement_ts": "2026-05-27T14:19:31.540796+00:00",
+      "in_fit": false
+    },
+    {
+      "ticker": "KXHANNITYMENTION-26MAY21-EBOL",
+      "series": "KXHANNITYMENTION",
+      "event_ticker": "KXHANNITYMENTION-26MAY21",
+      "first_print": 0.38,
+      "phat": 0.07692307692307693,
+      "n_prior": 13,
+      "divergence": 0.3030769230769231,
+      "side": "NO",
+      "price": 0.62,
+      "win": true,
+      "fee": 0.02,
+      "net_ev": 0.36,
+      "settlement_ts": "2026-05-27T14:19:51.540416+00:00",
+      "in_fit": false
+    },
+    {
+      "ticker": "KXHANNITYMENTION-26MAY21-WARS",
+      "series": "KXHANNITYMENTION",
+      "event_ticker": "KXHANNITYMENTION-26MAY21",
+      "first_print": 0.38,
+      "phat": 0.07692307692307693,
+      "n_prior": 13,
+      "divergence": 0.3030769230769231,
+      "side": "NO",
+      "price": 0.62,
+      "win": true,
+      "fee": 0.02,
+      "net_ev": 0.36,
+      "settlement_ts": "2026-05-27T14:20:11.541388+00:00",
+      "in_fit": false
+    },
+    {
+      "ticker": "KXHANNITYMENTION-26MAY21-BORD",
+      "series": "KXHANNITYMENTION",
+      "event_ticker": "KXHANNITYMENTION-26MAY21",
+      "first_print": 0.39,
+      "phat": 0.07692307692307693,
+      "n_prior": 13,
+      "divergence": 0.3130769230769231,
+      "side": "NO",
+      "price": 0.61,
+      "win": false,
+      "fee": 0.02,
+      "net_ev": -0.63,
+      "settlement_ts": "2026-05-27T14:17:31.539320+00:00",
+      "in_fit": false
+    },
+    {
+      "ticker": "KXHANNITYMENTION-26MAY21-OIL",
+      "series": "KXHANNITYMENTION",
+      "event_ticker": "KXHANNITYMENTION-26MAY21",
+      "first_print": 0.43,
+      "phat": 0.07692307692307693,
+      "n_prior": 13,
+      "divergence": 0.35307692307692307,
+      "side": "NO",
+      "price": 0.5700000000000001,
+      "win": true,
+      "fee": 0.02,
+      "net_ev": 0.4099999999999999,
+      "settlement_ts": "2026-05-27T14:19:11.539051+00:00",
+      "in_fit": false
+    },
+    {
+      "ticker": "KXHANNITYMENTION-26MAY21-AI",
+      "series": "KXHANNITYMENTION",
+      "event_ticker": "KXHANNITYMENTION-26MAY21",
+      "first_print": 0.57,
+      "phat": 0.07692307692307693,
+      "n_prior": 13,
+      "divergence": 0.493076923076923,
+      "side": "NO",
+      "price": 0.43000000000000005,
+      "win": true,
+      "fee": 0.02,
+      "net_ev": 0.5499999999999999,
+      "settlement_ts": "2026-05-27T14:20:01.543543+00:00",
+      "in_fit": false
+    },
+    {
+      "ticker": "KXHANNITYMENTION-26MAY21-MINN",
+      "series": "KXHANNITYMENTION",
+      "event_ticker": "KXHANNITYMENTION-26MAY21",
+      "first_print": 0.81,
+      "phat": 0.07692307692307693,
+      "n_prior": 13,
+      "divergence": 0.7330769230769232,
+      "side": "NO",
+      "price": 0.18999999999999995,
+      "win": true,
+      "fee": 0.02,
+      "net_ev": 0.79,
+      "settlement_ts": "2026-05-27T14:17:51.541716+00:00",
+      "in_fit": false
+    }
+  ],
+  "n_markets_total_finalized_with_trades": 74,
+  "n_markets_with_defined_phat": 16
+}
