@@ -13,6 +13,25 @@ When orchestrating Workflow/agent fan-outs in this repo:
   Fable adversarial verification stage before it is treated as real. A refuted or null
   result is a fine, useful answer — report it as such.
 
+## Skill suite (the fund's operating manual — `.claude/skills/`)
+
+Eight skills cover the whole workflow; each SKILL.md contains only commands verified in a real
+session. Invoke by slash command or let them auto-load:
+
+| Skill | Use it when |
+|---|---|
+| `/run-kwx` | Health-check or drive the bot: smoke, status, model, feed, digest, trial, studies. The committed driver is `.claude/skills/run-kwx/driver.sh`. |
+| `/kwx-research-funnel` | Hunting a new edge: ideate → pre-register → backtest → adversarially verify → ship study PR (Sonnet workers / Fable judges). |
+| `/kwx-study-audit` | Any positive result appears: the 10-point refutation checklist that has killed every false edge here. |
+| `/kwx-deploy-gates` | Money decisions: stage ladder, numeric gates, kill criteria, halt switch. |
+| `/kwx-capacity-model` | "What can this earn": run/read/update `wx_path_to_4k.py` + `p4k_params.json` honestly. |
+| `/kwx-feeds` | Obs-feed work: Synoptic credentials, probes, latency trial, per-station quality. |
+| `/kwx-portfolio` | Stacking sleeves: registry, shared caps, correlation, adding sleeve N+1. |
+| `/kwx-incident` | Fleet trouble: leg outages, git races with the bot, halt states, log pollution. |
+
+New-session quickstart: `./.claude/skills/run-kwx/driver.sh smoke`, then `python
+kwx_goal_status.py`, then read `PATH_TO_4K.md`'s GOAL RECALIBRATION before proposing anything.
+
 ## Research discipline (established by the 2026-07-20 program)
 
 - Pre-register success bars before reading test data; never move goalposts after results.
