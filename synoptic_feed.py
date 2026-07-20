@@ -38,15 +38,40 @@ def have_token():
     return bool(os.environ.get("SYNOPTIC_TOKEN", "").strip()) or os.path.exists(TOKEN_PATH)
 
 
+_minted = {}   # apikey-credential -> minted token, cached in-process (legs are short-lived)
+
+
 def _token():
     # ENV first: a GitHub Actions secret can feed the token without ever writing a file to the (public)
     # repo checkout. File second: the original gitignored local path. NEVER log/echo the value.
     tok = os.environ.get("SYNOPTIC_TOKEN", "").strip()
-    if tok:
-        return tok
-    if os.path.exists(TOKEN_PATH):
-        return open(TOKEN_PATH).read().strip()
-    raise RuntimeError("no SYNOPTIC_TOKEN env var and no .synoptic_token file (trial token; both gitignored)")
+    if not tok and os.path.exists(TOKEN_PATH):
+        tok = open(TOKEN_PATH).read().strip()
+    if not tok:
+        raise RuntimeError("no SYNOPTIC_TOKEN env var and no .synoptic_token file (trial token; both gitignored)")
+    return _minted.get(tok, tok)
+
+
+def _try_mint_from_apikey(cred):
+    """Synoptic has two credential kinds: an account APIKEY that mints TOKENs via /v2/auth, and the
+    tokens the data API actually accepts. If the operator pastes the APIKEY as SYNOPTIC_TOKEN (the
+    natural mistake -- the signup page shows the key first), data calls 401. On that 401 the caller
+    tries this exchange once: success caches apikey->token in-process and the call is retried; failure
+    returns False and the original 401 propagates. Never logs either value."""
+    if cred in _minted:
+        return False               # already exchanged this credential; a 401 now is a real auth failure
+    try:
+        q = urllib.parse.urlencode({"apikey": cred})
+        req = urllib.request.Request(f"https://api.synopticdata.com/v2/auth?{q}",
+                                     headers={"Accept": "application/json"})
+        data = json.load(urllib.request.urlopen(req, timeout=15, context=_CTX))
+        tok = (data or {}).get("TOKEN")
+        if tok:
+            _minted[cred] = tok.strip()
+            return True
+    except Exception:
+        pass                        # sanitized: no re-raise, no logging -- credential must never leak
+    return False
 
 
 def _sid(station):
@@ -110,16 +135,21 @@ def fetch_timeseries(stations, var="air_temp", recent_min=120, units="temp|F", t
     Bounded retries with backoff on 5xx/timeouts (mirrors aviationweather_metar; seen there: sporadic 502).
     Errors are re-raised SANITIZED so the token (in the query string) can never leak into logs."""
     stids = ",".join(_sid(s) for s in stations)
-    q = urllib.parse.urlencode({"stid": stids, "vars": var, "recent": int(recent_min),
-                                "obtimezone": "utc", "units": units, "token": _token()})
-    req = urllib.request.Request(f"{API}?{q}", headers={"Accept": "application/json"})
+
+    def _req():
+        q = urllib.parse.urlencode({"stid": stids, "vars": var, "recent": int(recent_min),
+                                    "obtimezone": "utc", "units": units, "token": _token()})
+        return urllib.request.Request(f"{API}?{q}", headers={"Accept": "application/json"})
+
     data, last_err = None, None
     for attempt in range(4):
         try:
-            data = json.load(urllib.request.urlopen(req, timeout=timeout, context=_CTX))
+            data = json.load(urllib.request.urlopen(_req(), timeout=timeout, context=_CTX))
             break
         except urllib.error.HTTPError as e:
             last_err = f"HTTP {e.code}"
+            if e.code == 401 and _try_mint_from_apikey(_token()):
+                continue              # credential was an APIKEY: token minted+cached, retry same attempt
             if e.code not in (500, 502, 503, 504):
                 raise RuntimeError(f"synoptic API error: {last_err}") from None  # 4xx = not transient
             time.sleep(1.5 * (attempt + 1))
