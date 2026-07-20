@@ -1,17 +1,36 @@
 # kwx-depthprobe -- structured order-book snapshots of near-lock Kalshi weather rungs during the US-afternoon
-# fire window, to CALIBRATE DEPTH_CAP (the single lever that sets the monthly capacity ceiling). Runs
-# `wx_capacity_probe.py --snapshot` every ~30 min through 18:00-01:00 UTC, appending full two-sided ladder
-# levels (schema: wx_book_snapshot_schema.md) to wx_book_snapshots.jsonl, plus one daily `--report` printing
-# the depth-distribution evidence after the window closes. Read-only public market data: no credentials, no
-# orders. PROPOSE-ONLY, same pattern as kwx-earlylock's paper logs (gitignored jsonl, force-added by CI).
+# fire window, to CALIBRATE DEPTH_CAP (the single lever that sets the monthly capacity ceiling) AND feed the
+# maker-study sibling (wx_maker_study.py on the code branch), which needs denser coverage through the lock
+# windows than a single sweep per cron firing was giving it.
+#
+# ACCELERATED (2026-07-20): the cron below still asks for a sweep every ~30 min, but observed run history
+# showed jobs landing ~60 min apart anyway -- GitHub Actions is known to silently drop a repo's second
+# within-hour schedule trigger under platform load, so cron precision can't be trusted for sub-hourly
+# cadence. Fix: each job now runs `wx_capacity_probe.py --snapshot-loop` and takes SEVERAL sweeps itself
+# (~5 min apart) inside one run, the same "loop inside one leg" shape kwx-live already uses for continuity,
+# instead of depending on the scheduler to hit the gap. This turns roughly 1 sweep/hour into roughly 4
+# sweeps/hour without adding a self-chain/dispatch loop (unlike kwx-live, this is read-only data collection
+# with no continuity requirement, so a plain cron-triggered burst is enough -- no need for the extra
+# pre-chain/self-chain machinery or its Actions-minutes cost).
+#
+# Growth control: the daily report leg also runs `--prune-days 14`, dropping rows older than 2 weeks (both
+# consumers -- DEPTH_CAP calibration and the maker study -- only need a rolling 1-2 weeks per their own
+# docstrings), keeping the committed jsonl bounded (~few MB/week net growth) despite the denser cadence.
+#
+# Appends full two-sided ladder levels + the running-extreme temperature (schema: wx_book_snapshot_schema.md,
+# schema_v=2) to wx_book_snapshots.jsonl, plus one daily `--report` after the window closes. Read-only public
+# market data: no credentials, no orders. PROPOSE-ONLY, same pattern as kwx-earlylock's paper logs
+# (gitignored jsonl, force-added by CI).
 name: kwx-depthprobe
 
 on:
   schedule:
-    # snapshot sweep every ~30 min through the US-afternoon fire window, 18:00 UTC through 01:00 UTC next day
-    - cron: '4,34 18-23 * * *'
+    # cron entry every ~30 min through the US-afternoon lock window, 17:00 UTC through 01:00 UTC next day --
+    # each firing now runs a multi-sweep --snapshot-loop burst (see header), so the EFFECTIVE cadence is
+    # denser than the cron interval itself even when GitHub coalesces firings to ~hourly.
+    - cron: '4,34 17-23 * * *'
     - cron: '4,34 0-1 * * *'
-    # one daily aggregate report, after the window closes
+    # one daily aggregate report + retention prune, after the window closes
     - cron: '40 1 * * *'
   workflow_dispatch: {}
 
@@ -28,7 +47,7 @@ env:
 jobs:
   probe:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 24
     steps:
       - uses: actions/checkout@v4
         with:
@@ -37,17 +56,21 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: snapshot book depth (+ daily report) + commit
+      - name: snapshot burst (+ daily report/prune) + commit
         run: |
           set -e
           git config user.name  "kwx-depthprobe-bot"
           git config user.email "kwx-depthprobe-bot@users.noreply.github.com"
-          # structured sweep: append near-lock rung rows (full ladder levels) to wx_book_snapshots.jsonl
-          python -u wx_capacity_probe.py --snapshot || true
-          # once-daily aggregate report (identified by the specific cron entry, or on manual dispatch) --
-          # prints to the run log only, no file output, so it doesn't affect what gets committed below.
+          # multi-sweep burst: ~4 sweeps ~5 min apart inside this one job (see header for why -- cron
+          # precision alone under-delivers). Bounded to 18 min so setup + git push stay inside the 24-min
+          # job timeout with slack.
+          python -u wx_capacity_probe.py --snapshot-loop --minutes 18 --every 5 || true
+          # once-daily aggregate report + retention prune (identified by the specific cron entry, or on
+          # manual dispatch) -- report prints to the run log only; prune rewrites the committed file, which
+          # the git add/commit below picks up like any other change.
           if [ "${{ github.event.schedule }}" = "40 1 * * *" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             python -u wx_capacity_probe.py --report || true
+            python -u wx_capacity_probe.py --prune-days 14 || true
           fi
           # force-add the single gitignored snapshot file, guarded -- never batch multiple files in one add.
           if [ -f wx_book_snapshots.jsonl ]; then
