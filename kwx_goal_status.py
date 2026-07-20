@@ -110,6 +110,30 @@ def summary_line(root=None):
     return _safe(_build, "goal-status unavailable")
 
 
+# Research-reopen calendar (PATH_TO_4K.md "GOAL RECALIBRATION" section). Each entry surfaces in the
+# daily digest via main() starting warn_days before its date and until it is removed from this list,
+# so the reminder rides the digest rather than depending on any external scheduler.
+REOPEN_CALENDAR = [
+    ("2026-11-15", "cool-season reopen: re-run directional SPECs 1/3/7 + season-conditional SPEC 4 "
+                   "redesign per WX_DIRECTIONAL.md reopen conditions; read early-lock forward gate"),
+    ("2027-05-15", "full-year reopen: directional re-run eligibility + R4-1 lead-time ceiling check "
+                   "(only if Kalshi lists markets earlier)"),
+]
+
+
+def reopen_due_lines(today=None, warn_days=14):
+    import datetime
+    today = today or datetime.date.today()
+    out = []
+    for d, task in REOPEN_CALENDAR:
+        due = datetime.date.fromisoformat(d)
+        days = (due - today).days
+        if days <= warn_days:
+            tag = "DUE NOW" if days <= 0 else f"due in {days}d"
+            out.append(f"REOPEN [{tag}] {d}: {task}")
+    return out
+
+
 def main():
     f = status_fields()
     root, n_fired, nm, n_missed = f["root"], f["n_fired"], f["nm"], f["n_missed"]
@@ -119,6 +143,8 @@ def main():
     print(f"CURRENT STAGE : {stage_txt} ({f['verdict']})")
     print(f"NEXT GATE     : {f['next_gate']}")
     print(f"BLOCKING ON   : {blocking_txt}")
+    for line in reopen_due_lines():
+        print(line)
     if root != os.path.dirname(os.path.abspath(__file__)):
         print(f"(repo root    : {root})")
 
