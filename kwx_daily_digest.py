@@ -256,6 +256,16 @@ def compose():
     except Exception as e:
         lines.append(f"earlylock: check unavailable ({type(e).__name__})")
 
+    # $4k/mo goal-status digest (kwx_goal_status.py) -- same guarded-import pattern as drift/fill-quality/
+    # earlylock above: fails soft so a missing or broken goal-status module never takes the digest down.
+    try:
+        import kwx_goal_status as GS
+        lines.append(f"goal: {GS.summary_line()}")
+    except ImportError:
+        lines.append("goal: goal-status monitor not installed")
+    except Exception as e:
+        lines.append(f"goal: check unavailable ({type(e).__name__})")
+
     return "\n".join(lines)
 
 

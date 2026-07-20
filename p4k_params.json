@@ -1,0 +1,394 @@
+{
+  "_readme": "Machine-readable inputs for wx_path_to_4k.py. Edit values here (or replace this whole file with a refreshed version) to update the model -- the script never needs code changes to pick up new numbers. Every leaf carries a 'quality' tag: MEASURED (directly counted from a live/committed data file this session), BACKTEST (walk-forward/historical study, in-sample), or ASSUMED (a repo constant, a docstring claim, or an extrapolation with no/thin direct measurement -- gets a wide uncertainty multiplier in the model and must render as visibly flagged in output).",
+  "generated": "2026-07-20",
+  "repo": "Codex-playground- @ claude/coding-bot-ab-test-results-ffmhxw (f5b7a8f)",
+  "goal_usd_per_month": 4000,
+  "fee": {
+    "formula": "ceil(0.07 * price * (1-price) * 100) / 100",
+    "quality": "MEASURED",
+    "source": "kwx_sizing.py:31-32 kalshi_fee()"
+  },
+  "win_rate": {
+    "conservative": 0.99,
+    "base": 0.994,
+    "optimistic": 0.996,
+    "quality": "BACKTEST",
+    "note": "Phase-2 Track A deployable win rate 99.6%, Wilson95 LB cited elsewhere ~99.2-99.4%. Conservative uses the Wilson lower bound family.",
+    "source": "facts.edge_win_rate",
+    "conservative_live": 0.99
+  },
+  "avg_loser_magnitude_usd_per_ct": {
+    "value": 0.88,
+    "quality": "ASSUMED",
+    "note": "kwx_sizing.py docstring cites real per-fire losses of -1.0 and -0.77 $/ct; 0.88 is their mean. Used only to split ev_per_ct into a win/loss magnitude pair for variance -- the MEAN pnl per contract is always pinned to ev_per_ct below, this value only shapes the spread.",
+    "source": "kwx_sizing.py:9-11"
+  },
+  "ev_per_ct_usd": {
+    "conservative": 0.15,
+    "base": 0.17,
+    "optimistic": 0.207,
+    "quality": "BACKTEST",
+    "note": "Deployable taker edge net of fees. +0.207 is in-sample/act-at-cross (Phase-2 Track A, t=37). +0.15-0.17 is the realistic-latency (2-5min) haircut -- what the live runner without book-watch actually captures. book_watch sleeve (below) interpolates a fire's captured EV back toward the +0.207 ceiling.",
+    "source": "facts.edge_ev_per_ct, facts.edge_ev_latency_haircut",
+    "conservative_live": 0.15
+  },
+  "exec_price": {
+    "low": 0.55,
+    "median": 0.89,
+    "high": 0.97,
+    "quality": "MEASURED",
+    "note": "Used only for Kelly-fraction and contract-count/depth conversion (budget / price), decoupled from the win/loss pnl model above to avoid double-counting the edge. Sampled from a triangular distribution with mode=median (was uniform[low,high], which silently ignored the median parameter and inflated contracts-per-budget ~17% wherever budget-bound -- judge review finding #6). Per-fire win magnitude is also now capped at the physical maximum gross payout (1-price) so no simulated fire can win more per contract than a YES/NO settlement can possibly pay, even though the SCENARIO-MEAN pnl/ct is still pinned to ev_per_ct via the uncapped fires' slack.",
+    "source": "wx_scaling_schedule.md depth-bind-point analysis (median exec $0.89); kalshi_weather_expand_summary.json KXLOW mean exec 0.977",
+    "sampling": "triangular(low, high, mode=median)"
+  },
+  "fires_per_day": {
+    "min": 0,
+    "median": 27,
+    "mean": 25.7,
+    "max": 39,
+    "n_days": 66,
+    "quality": "BACKTEST",
+    "note": "All-cities/rungs pooled, admissible fires including the full locked_orders() stackable set (i.e. stacking is already baked into this baseline -- see stacking sleeve below for how the model handles turning it OFF). UNRECONCILED SOURCES IN THIS REPO (judge review finding #5): wx_ev_concentration.md all-families backtest mean=25.7/day (used for the $/mo capacity arithmetic below); wx_scaling_schedule.md's own gate-ETA math uses 10.4/day (gate_basis_rate_per_day, exposed here and used for a sensitivity check in wx_path_to_4k.py's output and in PATH_TO_4K.md's Stage 0-2 ETAs); phase2_tier1 cites 58.95/day; the KXHIGH-only cut of kalshi_weather_expand_summary.json cites 4.39/WEEK (flagged unreconciled in that file itself). These are not reconciled to each other in this repo. The capacity model's headline $/mo bands use 25.7/day; a SENSITIVITY row at the gate-basis 10.4/day is printed separately so the gap is visible rather than silently resolved to the favorable rate. random.triangular(low, high, mode) takes MODE as its third argument, not mean; the model now derives mode = 3*mean - min - max analytically so the simulated distribution's mean matches the stated mean field exactly, instead of passing mean where mode was expected (judge review finding #10).",
+    "source": "facts.backtest_fire_rate_per_day_all_families (wx_ev_concentration.md:153)",
+    "gate_basis_rate_per_day": 10.4
+  },
+  "unfillable_frac": {
+    "conservative": 0.21,
+    "base": 0.1,
+    "optimistic": 0.0,
+    "quality": "BACKTEST (0.21) / ASSUMED (0.10 interpolated, 0.0 is a n=33/1-day point estimate not a robust rate); conservative_live is MEASURED live tonight (0 fills / 39 near-misses, Wilson95 upper bound on the fillable rate ~9% -> unfillable ~0.91), not backtest-derived",
+    "note": "Fraction of admissible fires with no executable book at fire time -- skipped entirely regardless of bankroll. conservative_live exists because the 'conservative, horizon 0' scenario's 0.21 unfillable_frac is a BACKTEST number that live evidence to date does not support: tonight's book_watch near-miss log shows 0 fires out of 39 near-misses, all logged ask>98 (repriced before capture). Report both; do not present conservative-scenario dollars without also showing the live-consistent number.",
+    "source": "facts.scaling_schedule_q1_legacy, facts.scaling_schedule_q1_optimistic",
+    "conservative_live": 0.91
+  },
+  "depth_at_or_below_98c_ct": {
+    "quality": "MEASURED",
+    "n": 86,
+    "n_distinct_sweeps": 3,
+    "n_distinct_calendar_days": 1,
+    "note": "Full sorted empirical array, computed directly from wx_book_snapshots.jsonl this session (field depth_at_or_below_98c). p25=72 p50=369.5 p75=999 mean=736.9 -- median real depth is ~15x the deployed DEPTH_CAP=25 constant, but the bottom decile (p10=6) is thinner than 25, so the fixed cap is not uniformly conservative. Sampled by bootstrap (random.choice) per simulated fire so the model uses the REAL distribution, not a point estimate. CAVEAT (judge review finding #8): n=86 rows are 3 sweeps of ~29 distinct markets on 1 calendar day -- effective independent n is closer to 29 (markets), or 1 (calendar days), not 86. The bootstrap (random.choice) draws are NOT independent across a simulated month the way iid sampling implies, and same-day fires share whatever drove that day's book depth. This sample additionally requires >=15 distinct calendar days before the repo's own depth_adaptive gate opens (see sleeves.depth_adaptive) -- Stage-5 $/mo figures that depend on depth_adaptive should be read as PENDING that 15-day sample, the same way Polymarket figures are excluded pending its own study.",
+    "source": "wx_book_snapshots.jsonl, computed this session",
+    "values": [
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      3,
+      4,
+      6,
+      7,
+      8,
+      9,
+      9,
+      12,
+      12,
+      12,
+      15,
+      17,
+      17,
+      49,
+      57,
+      72,
+      89,
+      93,
+      103,
+      143,
+      163,
+      202,
+      228,
+      231,
+      240,
+      240,
+      243,
+      252,
+      260,
+      266,
+      279,
+      283,
+      284,
+      286,
+      334,
+      335,
+      359,
+      380,
+      382,
+      420,
+      434,
+      454,
+      471,
+      538,
+      540,
+      540,
+      543,
+      601,
+      633,
+      663,
+      765,
+      766,
+      773,
+      788,
+      810,
+      846,
+      855,
+      995,
+      999,
+      1003,
+      1120,
+      1124,
+      1131,
+      1165,
+      1171,
+      1175,
+      1180,
+      1247,
+      1284,
+      1368,
+      1432,
+      1446,
+      1605,
+      1655,
+      1976,
+      3297,
+      3304,
+      5171,
+      5265,
+      5831
+    ]
+  },
+  "sizing": {
+    "depth_cap_deployed_ct": 25,
+    "kelly_frac": 0.25,
+    "per_fire_cap_frac": 0.05,
+    "conviction_cap_frac": 0.12,
+    "conviction_fire_frac": 0.15,
+    "per_city_daily_cap_frac": 0.175,
+    "assumed_concurrent_cities_per_day": 5,
+    "max_daily_deploy_frac": 0.6,
+    "station_size_mult_kphx": 0.5,
+    "depth_adaptive_alpha": 0.25,
+    "quality": "ASSUMED (all are repo constants/config, not measured outcomes)",
+    "source": "kwx_runner.py:79-97,182-185; kwx_sizing.py:27-28; wx_scaling_schedule.md Q2 (alpha=0.25)"
+  },
+  "sleeves": {
+    "taker_mechanical": {
+      "label": "taker mechanical (core edge)",
+      "status": "VALIDATED, LIVE ($10 canary switch on)",
+      "quality": "BACKTEST edge / MEASURED live infra state",
+      "gate": null,
+      "note": "Always active at any modeled bankroll >= $10. This is the base sleeve every other lever multiplies or adds to."
+    },
+    "stacking": {
+      "label": "rung stacking (fire full locked_orders() set)",
+      "status": "VALIDATED, DEPLOYED (wx_rung_stacking_verdict: KEEP CURRENT)",
+      "quality": "BACKTEST",
+      "gate": null,
+      "rank1_only_capacity_share": 0.631,
+      "note": "fires_per_day above is ALREADY the full-stack (deployed) rate. If 'stacking' is excluded from the active sleeve set, the model derates fires_per_day by rank1_only_capacity_share=0.631 to show what capacity looks like WITHOUT it.",
+      "source": "facts.rung_stacking_ev_uplift"
+    },
+    "station_derate_relax": {
+      "label": "per-station derate relaxation (KMIA/KLAX/KPHL/KSEA)",
+      "status": "VALIDATED by study, NOT YET applied live (a config change, not a data-accrual gate)",
+      "quality": "BACKTEST (validation) / ASSUMED (deploy timing)",
+      "gate": {
+        "metric": "manual_config_deploy",
+        "current_days_elapsed": 0,
+        "threshold_days": 1,
+        "accrual_per_day": 1
+      },
+      "size_mult_uplift": 0.08,
+      "note": "Blanket +8% aggregate size multiplier proxy for 4 of 20 stations moving off their 0.5x derate (ASSUMED aggregation, actual per-station effect varies by each station's EV share). Trivial engineering lift -- gate models it as 'ready same day it's deployed', so it is OFF only in a same-day (horizon=0) conservative read and ON once any time passes.",
+      "source": "facts.per_station_derate_relaxation / wx_perstation_derate_results.md"
+    },
+    "book_watch": {
+      "label": "book-watch transient-ask capture",
+      "status": "IN-VALIDATION, deployed but idle (0 fires attributed this cycle)",
+      "quality": "ASSUMED",
+      "gate": {
+        "metric": "n_attributed_fires",
+        "current": 0,
+        "threshold": 30,
+        "accrual_per_day": 7.8
+      },
+      "ev_bump_usd_per_ct": {
+        "conservative": 0.0,
+        "base": 0.015,
+        "optimistic": 0.03
+      },
+      "note": "Shifts a fire's captured EV/ct back toward the instant-action ceiling (+0.207) by catching stale-ask reprices inside the ~3.3min gap half-life. accrual_per_day=7.8 is ASSUMED (20% of the observed 39/day near-miss rate converting once tuned) -- no live fires yet, wide prior.",
+      "source": "facts.near_miss_gate_status_summary, facts.gap_half_life_pooled, levers[1]"
+    },
+    "early_lock": {
+      "label": "early-lock pre-positioning",
+      "status": "PRE-DECISION forward paper harness, 0 settled fires",
+      "quality": "ASSUMED",
+      "gate": {
+        "metric": "n_settled_fires",
+        "current": 0,
+        "threshold": 30,
+        "accrual_per_day": 0.7
+      },
+      "extra_fire_frac": {
+        "conservative": 0.0,
+        "base": 0.0,
+        "optimistic": 0.12
+      },
+      "note": "accrual_per_day=0.7 -> ~43 days to the n=30 decision bar, inside the repo's own '2-4 week (best case) to several-week' language but on the slow side since the LOW pre-dawn cron fix just landed and is itself unverified live. extra_fire_frac is a wide-prior guess at incremental captured fires if it activates and PASSES (not guaranteed to pass -- it could also come back DEAD).",
+      "source": "facts.early_lock_decision_bar_and_eta, facts.early_lock_forward_status"
+    },
+    "maker": {
+      "label": "maker resting bids",
+      "status": "BLOCKED then unwedged this session (schema v1->v2), 0 usable rows post-fix",
+      "quality": "ASSUMED",
+      "gate": {
+        "metric": "usable_rows_per_cell",
+        "current": 0,
+        "threshold": 30,
+        "accrual_per_day": 2.0
+      },
+      "eligible_fire_frac": 0.15,
+      "ev_bump_usd_per_ct_on_eligible": {
+        "conservative": 0.0,
+        "base": 0.0,
+        "optimistic": 0.02
+      },
+      "note": "accrual_per_day=2.0/cell is a rough per-cell share of the system-wide 5-15 usable placements/day estimate. Directionally could also be NEGATIVE (adverse selection unmeasured) -- optimistic-only, deliberately excluded from conservative/base.",
+      "source": "facts.maker_study_currently_blocked, facts.maker_study_eta_estimate, facts.maker_study_framing"
+    },
+    "depth_adaptive": {
+      "label": "depth-adaptive sizing (relax fixed DEPTH_CAP=25)",
+      "status": "IN-VALIDATION, explicit 'do not adopt yet' in repo",
+      "quality": "ASSUMED",
+      "gate": {
+        "metric": "distinct_calendar_days_of_snapshots",
+        "current": 1,
+        "threshold": 15,
+        "accrual_per_day": 1.0
+      },
+      "note": "Pre-registered bar also requires >=300 rows and station-median stability <2x sweep-to-sweep; row-count clears fast at the new cadence, so distinct-days is modeled as the binding sub-gate. When gate passes AND this sleeve is requested, per-fire cap becomes depth_adaptive_alpha * (bootstrap real depth sample) instead of the fixed depth_cap_deployed_ct.",
+      "source": "facts.scaling_schedule_data_threshold_for_depth_adaptive, facts.scaling_schedule_q2_depth_adaptive_ev"
+    },
+    "added_markets_polymarket": {
+      "label": "added markets (Polymarket cross-venue)",
+      "status": "SPECULATIVE, one unvalidated candidate found; Kalshi-side scan already exhausted/null",
+      "quality": "ASSUMED",
+      "gate": {
+        "metric": "basis_risk_and_reprice_study_complete",
+        "current": 0,
+        "threshold": 1,
+        "accrual_per_day": null
+      },
+      "fires_per_day_mult_if_validated": 1.5,
+      "note": "accrual_per_day=null -> this gate is NOT time-accruable in the model (a real study with unknown duration must run first, not just elapsed calendar time) -- it never auto-passes in conservative/base/optimistic horizons here. Reported separately as a labeled stretch case, excluded from the headline curve.",
+      "source": "facts.capacity_scan_polymarket_finding, facts.capacity_scan_q2_kalshi_null"
+    }
+  },
+  "bankroll_rungs": [
+    {
+      "range": "$10-$50",
+      "name": "Rung1",
+      "gate_metric": "n_live_fires",
+      "gate_current": 0,
+      "gate_threshold": 100,
+      "note": "$10 canary is live (KWX_SWITCH=on) but zero fires have actually fired yet (kwx_runner_state.json fired={})."
+    },
+    {
+      "range": "$50-$200",
+      "name": "Rung2",
+      "gate_metric": "n_live_fires",
+      "gate_current": 0,
+      "gate_threshold": 400
+    },
+    {
+      "range": "$200-$500",
+      "name": "Rung3",
+      "gate_metric": "depth_adaptive_sizing_decision",
+      "gate_current": 0,
+      "gate_threshold": 1,
+      "note": "Gated on a policy decision (depth_adaptive sleeve), not a fire count."
+    },
+    {
+      "range": "$500-$1000+",
+      "name": "Rung4",
+      "gate_metric": "depth_cap_resolution_or_more_volume",
+      "gate_current": 0,
+      "gate_threshold": 1
+    }
+  ],
+  "scenarios": {
+    "conservative": {
+      "horizon_days": 0,
+      "trials": 1500,
+      "conviction_frac_override": null
+    },
+    "base": {
+      "horizon_days": 30,
+      "trials": 1500,
+      "conviction_frac_override": null
+    },
+    "optimistic": {
+      "horizon_days": 90,
+      "trials": 1500,
+      "conviction_frac_override": null
+    },
+    "conservative_live": {
+      "horizon_days": 0,
+      "trials": 1500,
+      "conviction_frac_override": null,
+      "_note": "Same sleeves/horizon as conservative, but unfillable_frac forced to the live-observed 0/39 rate instead of the 0.21 backtest rate. Judge review finding #4."
+    }
+  },
+  "bankroll_grid_usd": [
+    10,
+    25,
+    50,
+    100,
+    250,
+    500,
+    1000,
+    2000,
+    5000,
+    10000,
+    25000,
+    50000
+  ],
+  "depth_fire_conditional_ct": {
+    "quality": "MEASURED (largest-n blocks only)",
+    "depth_within_2c_median_ct": 65.5,
+    "depth_within_2c_n": 58,
+    "best_ask_size_median_ct": 13.0,
+    "best_ask_size_n": 37,
+    "note": "depth_at_or_below_98c_ct above is the UNCONDITIONAL pooled book depth (all rungs, including deep-ITM ones a fire never touches). This block is the fire-relevant near-lock/touch-price depth instead: depth_within_2c and best_ask_size from the two largest-n station/day blocks in kalshi_weather_orderbook_summary.json's depth_report (n=58 and n=37 respectively, out of 14 blocks whose medians range 11-25389 with small unstable n elsewhere -- these two are the most reliable). Judge review flagged that gating depth_adaptive on the pooled 98c-or-below array (median 369.5) instead of this fire-conditional one overstates reachable size by ~5x. The model now takes min(alpha * pooled_bootstrap_sample, alpha * depth_within_2c_median_ct) per fire -- the pessimistic of the two gates the plan, per judge instruction.",
+    "source": "kalshi_weather_orderbook_summary.json depth_report (this session); judge review finding #1"
+  },
+  "market_impact": {
+    "reference_order_ct": 236,
+    "reference_haircut_frac": 0.16,
+    "cap_frac": 0.6,
+    "quality": "BACKTEST",
+    "note": "The repo's own Q2 depth-adaptive study measured EV/ct haircut from $196.66 (naive) to $165.18 (mean order 236ct, realistic-fill) -- a 16% impact/slippage haircut at that order size. wx_path_to_4k.py previously applied the flat backtest EV/ct at ANY order size up to int(0.25*max_bankroll_grid), 6-10x the study's mean order with zero impact term. The model now scales a per-fire EV haircut linearly with order size relative to this reference (impact_frac = min(cap_frac, reference_haircut_frac * n_ct/reference_order_ct)), applied to that fire's realized EV/ct before the win/loss split so both mean and variance shrink for large orders.",
+    "source": "facts.scaling_schedule_q2_depth_adaptive_ev; judge review finding #2"
+  },
+  "param_uncertainty": {
+    "win_rate_halfwidth": {
+      "conservative": 0.004,
+      "base": 0.003,
+      "optimistic": 0.002
+    },
+    "ev_per_ct_halfwidth_usd": {
+      "conservative": 0.02,
+      "base": 0.025,
+      "optimistic": 0.015
+    },
+    "unfillable_frac_halfwidth": {
+      "conservative": 0.05,
+      "base": 0.06,
+      "optimistic": 0.02
+    },
+    "quality": "ASSUMED (half-widths sized off the Wilson95 CI language already in win_rate.note and the BACKTEST-range spread already in ev_per_ct_usd.note -- e.g. win_rate note cites Wilson95 LB ~99.2-99.4% vs point 99.4-99.6%, ev_per_ct note cites +0.15-0.17 realistic-latency vs +0.207 in-sample ceiling)",
+    "note": "win_rate, ev_per_ct, and unfillable_frac are now redrawn ONCE PER TRIAL (one simulated month) from Uniform(point-halfwidth, point+halfwidth), clipped to valid ranges, instead of held fixed at the point value for all 1500 trials. This makes p10/p90 reflect genuine input uncertainty, not just Bernoulli win/loss and Poisson-ish fire-count sampling noise at a single fixed input. Previously bands were pure within-scenario sampling noise despite code comments and this file's _readme claiming inputs got 'a wide uncertainty multiplier' -- judge review finding #3.",
+    "source": "judge review finding #3"
+  }
+}
