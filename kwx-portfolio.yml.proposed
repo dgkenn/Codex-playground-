@@ -1,0 +1,85 @@
+# PROPOSED WORKFLOW -- NOT INSTALLED. Draft only, built by the 2026-07-20 orchestrator-builder run
+# (see STACKED_EDGES.md in the same build directory). Active workflows for this repo live on
+# `main`/the working branch under .github/workflows/ (see kwx-earlylock.yml, kwx-forecast.yml,
+# kwx-live.yml, kwx-depthprobe.yml, kwx-ci.yml for the established pattern this file mirrors) --
+# this file is intentionally suffixed `.proposed` so it does NOT run anywhere until an operator:
+#   1. reviews it,
+#   2. copies kwx_portfolio.py from scratchpad/stacked/final/ into the repo root (it is a
+#      standalone script with no repo-internal import beyond the modules it already imports at
+#      call time -- wx_earlylock_forward, wx_forecast_forward, wx_path_to_4k, wx_earlylock_decision
+#      -- all of which already live in the repo root),
+#   3. renames this file to `kwx-portfolio.yml` under `.github/workflows/`, and
+#   4. picks a cron cadence that does NOT stack additional load on the same feeds
+#      kwx-earlylock.yml / kwx-forecast.yml already poll politely (Kalshi, IEM, Open-Meteo) --
+#      the schedule below deliberately runs LESS often than either sibling workflow and only
+#      calls `kwx_portfolio.py snapshot`, which itself just calls those same sleeves' own
+#      snapshot() functions once each, so it adds at most one extra call per cycle, not a
+#      duplicate polling loop.
+#
+# READ-ONLY / PAPER-ONLY, same guarantees as kwx-earlylock.yml / kwx-forecast.yml: no Kalshi
+# secrets, no KWX_LIVE, never touches kwx-live.yml / KWX_SWITCH / kalshi_exec.py. This workflow's
+# `snapshot` step drives the underlying paper sleeves' own snapshot() functions (exactly as their
+# own kwx-earlylock.yml / kwx-forecast.yml workflows do), so it commits BOTH kwx_portfolio.py's
+# own ledger (kwx_portfolio_state.json) AND the same paper/settled jsonl files those sibling
+# workflows commit -- wx_earlylock_paper.jsonl / wx_earlylock_settled.jsonl / wx_forecast_paper.jsonl
+# / wx_forecast_settled.jsonl -- so rows logged by a portfolio-driven snapshot are never left
+# uncommitted while their notional/collisions are already booked into the committed ledger.
+name: kwx-portfolio
+
+on:
+  schedule:
+    # once per US afternoon (after both earlylock's rising-temp window and forecast's morning
+    # window have already run at least once that day) -- a portfolio ROLL-UP, not a new poll loop.
+    - cron: '35 21 * * *'
+    # nightly status + correlate report, safely after all that day's LST settlement windows.
+    - cron: '40 8 * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: kwx-portfolio
+  cancel-in-progress: false
+
+env:
+  BRANCH: claude/coding-bot-ab-test-results-ffmhxw
+
+jobs:
+  portfolio:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.BRANCH }}
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: install deps
+        run: for i in 1 2 3; do pip -q install numpy scipy && break; sleep 8; done
+      - name: portfolio snapshot + status + correlate, commit ledger
+        run: |
+          set -e
+          git config user.name  "kwx-portfolio-bot"
+          git config user.email "kwx-portfolio-bot@users.noreply.github.com"
+          # snapshot drives every registered PAPER sleeve's own snapshot() once, fail-soft.
+          python -u kwx_portfolio.py snapshot   || true
+          python -u kwx_portfolio.py status     || true
+          python -u kwx_portfolio.py correlate  || true
+          # force-add this workflow's own ledger PLUS the underlying paper sleeves' own logs
+          # (gitignored like the sibling paper workflows) so rows the snapshot step just appended
+          # -- already booked into kwx_portfolio_state.json's notional/collision figures -- are
+          # never left uncommitted. NOT kwx_runner_state.json / kwx_gate_status.txt /
+          # kwx_runner_plan.jsonl / .kwx_halt, which this script never writes and this workflow
+          # must never `git add`.
+          git add -f kwx_portfolio_state.json \
+                     wx_earlylock_paper.jsonl wx_earlylock_settled.jsonl \
+                     wx_forecast_paper.jsonl wx_forecast_settled.jsonl 2>/dev/null || true
+          git commit -q -m "portfolio ledger $(date -u +%FT%HZ)" || { echo "nothing to commit"; exit 0; }
+          for i in 1 2 3 4 5; do
+            git push origin "HEAD:${BRANCH}" && exit 0
+            git fetch -q origin "$BRANCH" && git rebase -q "origin/${BRANCH}" || true
+            sleep $((RANDOM % 5 + 2))
+          done
