@@ -35,6 +35,40 @@ Gap half-life ≈ 3.3 min. Captured EV: +0.187/ct if we act at the cross, +0.15�
   1-min real-time feed (Synoptic HF-ASOS, ~2–5 min latency) is needed to reach the +0.15–0.17 band. That is
   Tier-2 item 5 (in research); swap it in via `kwx_runner.set_feed(...)`.
 
+## Event-driven book watcher (fills the between-poll gap)
+
+`poll_once()` only looks at asks once per obs-poll cycle (adaptive 5s-15min). Since the gap has a
+~3.3-min half-life, a transient ask that flashes between polls is invisible to the plain loop -- and
+`kwx_near_miss.jsonl` confirms it: almost every locked rung is already back at ask=99/100 by the next
+poll. `kwx_book_watcher.py` closes that gap:
+
+- Each `poll_once()` call can hand back a **hot set** via `hot_set_out=[...]`: rungs it just found LOCKED
+  but unbuyable (ask too high / no ask), plus rungs within margin+1°F of locking (watched but never fired
+  on price alone -- lock status only changes on an obs poll). Built inline from the same rung/extreme data
+  the poll already fetched, so passing `hot_set_out` adds no extra market scans.
+- `kwx_paper_gate.py`'s leg loop (`--max-seconds` / unbounded `loop` mode, NOT `--once`) then calls
+  `kwx_book_watcher.watch(hot_set, ex, bankroll, state, deadline_ts)` for whatever time remains until the
+  next adaptive poll would have fired anyway -- so the watcher can never make a leg run longer than it
+  already did.
+- Transport: Kalshi WebSocket (`orderbook_delta` + `ticker` channels, RSA-signed the SAME way as
+  `kalshi_exec` via the shared `kalshi_exec.load_signing_creds()` / `_auth_headers()` helpers) when the
+  `websockets` package is installed AND credentials are usable; otherwise a REST burst-poll of the hot
+  set's asks (batched via `GET /markets?tickers=...`) every ~2-3s with jitter, backing off on HTTP 429.
+- **The `websockets` package is NOT currently in `kwx-live.yml`'s pip line on `main`** (`pip -q install
+  cryptography numpy scipy`). This branch does not edit `main`; add `websockets` to that pip line
+  separately if/when the WS transport should go live on the canary. Until then the runner simply always
+  uses the REST fallback -- the import is fully lazy/optional and the REST path is what this change is
+  actually verified against.
+- Every fire -- from `poll_once` or the watcher -- goes through the SAME guarded chokepoint,
+  `kwx_runner.fire_one()` (fired dedupe, fee-floor sizing, daily/per-city caps, circuit breaker, plan log,
+  near-miss update). The plan record's `"trigger"` field distinguishes `"obs-poll"` from `"book-watch"`.
+- `kwx_gate_status.txt` carries a one-line summary each settle cycle: hot-set size, transport used
+  (`ws`/`rest`/`none`), count of asks seen `<=98c`, and fires.
+- FAIL-SOFT by construction: any watcher exception (including a `cryptography` native-library panic,
+  which is a `BaseException` and not caught by a plain `except Exception`) is caught and logged as one
+  line; the leg loop falls back to sleeping until the next poll exactly as it did before this feature
+  existed. Run `python kwx_selftest.py` for the synthetic ask-drop-fires-once and guard-failure checks.
+
 ## Human steps required before ANY live capital (nothing below is automated)
 1. **Kalshi account + API credentials.** Create `.kalshi_creds` (gitignored) as
    `{"access_key_id": "...", "private_key_pem": "..."}`. Without it the exec client stays dry-run.

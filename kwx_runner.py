@@ -514,6 +514,36 @@ def nearest_strike_distance(rungs, extreme_f, kind, margin=MARGIN_F):
     return best
 
 
+def near_lock_rungs(rungs, extreme_f, kind, margin=MARGIN_F, within_f=1.0):
+    """Rungs NOT YET locked but within `within_f` degF of locking (i.e. the observed extreme is within
+    margin+within_f of the strike) -- candidates for kwx_book_watcher to pre-warm: watch their ask so
+    we're ready the instant the NEXT obs poll confirms the lock. These do NOT fire on price alone -- lock
+    status only changes on an obs update, never on a ask-price observation -- watching them is purely to
+    have fresh price data staged for the moment they DO lock.
+    -> [(ticker, side, distance_f), ...], side = the side that WOULD lock (same branch logic as
+    locked_and_misses, just evaluated before the cross instead of after)."""
+    out = []
+    for r in rungs:
+        floor, cap = r["floor"], r["cap"]
+        if kind == "max":
+            if cap is not None:
+                d, side = (cap + margin) - extreme_f, "no"
+            elif floor is not None:
+                d, side = (floor + margin) - extreme_f, "yes"
+            else:
+                continue
+        else:  # min
+            if floor is not None:
+                d, side = extreme_f - (floor - margin), "no"
+            elif cap is not None:
+                d, side = extreme_f - (cap - margin), "yes"
+            else:
+                continue
+        if 0 < d <= within_f:
+            out.append((r["ticker"], side, round(d, 2)))
+    return out
+
+
 # ---------------- state ----------------
 def _load_state():
     if os.path.exists(STATE_PATH):
@@ -545,16 +575,136 @@ def _log_near_miss(state, rec, verbose):
         pass
 
 
+def current_bankroll(exec_client=None):
+    """The SAME effective-bankroll number poll_once sizes fires against (min(BANKROLL, live balance) when
+    available, else the BANKROLL constant). Factored out so kwx_book_watcher -- which fires through the
+    same fire_one() chokepoint between obs polls -- sizes against an identical number instead of
+    re-deriving the fallback logic. Passing `exec_client` reuses its already-loaded creds instead of
+    constructing (and re-reading the RSA PEM for) a second KalshiExec."""
+    import kalshi_exec
+    _eff = getattr(kalshi_exec, "effective_bankroll", None)
+    return _eff(BANKROLL, exec_client=exec_client) if callable(_eff) else BANKROLL
+
+
+# ---------------- the single fire chokepoint (obs-poll AND book-watch both go through here) ----------------
+def fire_one(state, ex, bankroll, ticker, side, cap_c, cushion_f, station, kind, ext, plans,
+             verbose=True, trigger="obs-poll"):
+    """Apply EVERY existing guard and (dry-run or live) buy ONE locked rung. This is the single fire
+    chokepoint: poll_once's per-cycle locked-rung loop and kwx_book_watcher's between-poll ask watch BOTH
+    call this and nothing else -- so an ask-triggered fire from the book-watcher gets fired dedupe,
+    size_for_fire's fee floor, the daily + per-city deployment caps, the circuit breaker, the plan log,
+    and the near-miss update exactly like an obs-poll fire. NEVER bypass a guard by calling exec.buy_*
+    directly from anywhere else.
+
+    `ext` is the observed extreme (degF) that caused this rung to lock -- for a book-watch fire this is
+    the extreme recorded at LOCK time (unchanged since; lock status only updates on an obs poll, never on
+    a price observation), not a value re-read now.
+
+    Mutates `state` (fired/deployed/city_spent) and appends to `plans` in place. Returns a short status
+    string: "fired" | "already-fired" | "size-skip" | "daily-cap" | "city-cap" | "circuit-breaker".
+    Does NOT save state to disk -- callers save once after their batch of calls (poll_once already does;
+    kwx_book_watcher does the same after its watch window)."""
+    if ticker in state.get("fired", {}):
+        return "already-fired"
+    gap_c = 100 - cap_c   # cents of edge still open (100c payout - price we pay)
+    # bankroll-aware, quarter-Kelly; conviction fires (cushion>=2F & gap>=15c) get the raised 12% cap.
+    # size 0 = fee floor / no net edge after the Kalshi fee, or unaffordable -> skip, don't fire.
+    size = size_for_fire(bankroll, cap_c, station, cushion_f=cushion_f, gap_c=gap_c)
+    if size < 1:
+        if verbose:
+            print(f"  [size-skip] {ticker}: no net edge after fee (or unaffordable) at {cap_c}c")
+        if ticker not in state.get("missed", {}):
+            _log_near_miss(state, {"ticker": ticker, "side": side, "ask_c": cap_c,
+                                   "reason": "fee-floor", "cushion_f": round(cushion_f, 2) if cushion_f is not None else None,
+                                   "extreme_f": round(ext, 2) if ext is not None else None, "station": station,
+                                   "kind": kind}, verbose=False)   # the [size-skip] line above already narrated it
+        return "size-skip"
+    # DAILY + PER-CITY DEPLOYMENT CAPS (match the validated sim's worst-day + diversification bounds).
+    today = dt.datetime.now(tz=dt.timezone.utc).date().isoformat()
+    deployed = state.setdefault("deployed", {})
+    city_spent = state.setdefault("city_spent", {})
+    city_key = f"{today}:{station}"
+    cost = size * cap_c / 100.0
+    if deployed.get(today, 0.0) + cost > MAX_DAILY_DEPLOY_FRAC * bankroll:
+        if verbose:
+            print(f"  [daily-cap] skip {ticker}: would exceed {MAX_DAILY_DEPLOY_FRAC:.0%} of bankroll today")
+        return "daily-cap"
+    if city_spent.get(city_key, 0.0) + cost > PER_CITY_DAILY_CAP_FRAC * bankroll:
+        if verbose:
+            print(f"  [city-cap] skip {ticker}: would exceed {PER_CITY_DAILY_CAP_FRAC:.0%}/city ({station}) today")
+        return "city-cap"
+    # CIRCUIT BREAKER: a normal cycle fires a few; an abnormal burst = feed glitch -> halt for review.
+    # `plans` here is THIS caller's batch (one obs-poll cycle, or one book-watch window) -- each is
+    # independently capped, which is at least as conservative as a single shared counter would be.
+    if len(plans) >= MAX_FIRES_PER_CYCLE:
+        open(os.path.join(HERE, ".kwx_halt"), "w").write(
+            f"auto-halt: >{MAX_FIRES_PER_CYCLE} fires in one cycle (possible feed glitch); review then rm this file\n")
+        if verbose:
+            print(f"  !! CIRCUIT BREAKER tripped ({len(plans)} fires this cycle, trigger={trigger}) -> .kwx_halt written, halting")
+        try:
+            import kwx_notify
+            kwx_notify.alert(f"🛑 KWX HALT: circuit breaker tripped ({len(plans)} fires in one cycle — "
+                             f"possible feed glitch, trigger={trigger}). Trading stopped; review then rm .kwx_halt")
+        except Exception:
+            pass
+        return "circuit-breaker"
+    fn = ex.buy_yes if side == "yes" else ex.buy_no
+    res = fn(ticker, count=size, max_price_cents=cap_c)
+    # accumulate deployed capital for the caps -- ONLY if the order actually placed (a guard-BLOCKED
+    # order deployed nothing). Without this the daily/per-city caps never bind (the bug this fixes).
+    # Use the ACTUAL filled count when the live exec reconciled it (partial fills deploy less than we
+    # requested); fall back to intended size on dry-run / unknown.
+    filled = res.get("filled")
+    eff_cost = (filled * cap_c / 100.0) if isinstance(filled, int) and filled >= 0 else cost
+    if not str(res.get("status", "")).startswith("BLOCKED"):
+        deployed[today] = deployed.get(today, 0.0) + eff_cost
+        city_spent[city_key] = city_spent.get(city_key, 0.0) + eff_cost
+    try:
+        import kwx_notify
+        mode = "LIVE" if getattr(ex, "live", False) else "paper"
+        ext_disp = f"{ext:.1f}" if ext is not None else "?"
+        kwx_notify.alert(f"🌡️ KWX FIRE [{mode}/{trigger}]: buy {size} {side.upper()} {ticker} @≤{cap_c}¢ "
+                         f"(obs {kind} {ext_disp}°F cleared strike) [{res.get('status')}]")
+    except Exception:
+        pass
+    plan = {"ticker": ticker, "side": side, "cap_c": cap_c, "extreme_f": ext,
+            "station": station, "kind": kind, "status": res.get("status"), "trigger": trigger,
+            "requested": size, "filled": res.get("filled"),   # reconciliation: actual vs intended
+            "fill_vwap_c": res.get("fill_vwap_c"),   # depth_v1: actual walk-the-book avg price paid
+            "ts": int(time.time() * 1000)}
+    plans.append(plan)
+    # depth_v1 dry-run can report filled=0 (book was empty at fire time): don't mark the rung
+    # fired so it can re-fire once depth shows up. (A guard-BLOCKED order has filled=None, not
+    # 0, and still gets marked fired below as before -- it was never eligible to retry sooner.)
+    if res.get("filled") != 0:
+        state["fired"][ticker] = plan
+    with open(PLAN_LOG, "a") as f:
+        f.write(json.dumps(plan) + "\n")
+    if verbose:
+        ext_disp = f"{ext:.1f}" if ext is not None else "?"
+        print(f"  LOCK {ticker} buy {side}@<= {cap_c}c  (obs {kind} {ext_disp}F, trigger={trigger})  [{res.get('status')}]")
+    return "fired"
+
+
 # ---------------- one poll cycle ----------------
-def poll_once(exec_client=None, verbose=True):
+def poll_once(exec_client=None, verbose=True, hot_set_out=None, bankroll=None):
+    """Run one obs-poll cycle over today's active markets. `hot_set_out`, if given a list, is CLEARED and
+    populated with this cycle's HOT SET for kwx_book_watcher to watch between now and the next poll:
+    locked-but-unbuyable rungs (misses -- watch their ask, ready to fire via fire_one the instant it drops)
+    plus rungs within margin+1F of locking (near-lock -- watch only, never fire on price alone). Built
+    inline from the SAME rung/extreme data this loop already fetches, so passing hot_set_out adds no
+    extra market scans.
+
+    `bankroll`, if given, is used as-is (lets a caller that ALSO drives kwx_book_watcher this cycle compute
+    current_bankroll(ex) ONCE and share it with both, instead of doubling the live-balance read); default
+    None computes it here exactly as before."""
     import kalshi_exec
     ex = exec_client or kalshi_exec.KalshiExec()
-    # Bankroll source: prefer kalshi_exec.effective_bankroll (live-balance-aware helper, added in a separate
-    # change) when it exists; otherwise fall back to the frozen BANKROLL constant. getattr keeps the two
-    # changes independently mergeable in either order -- this line works with or without the helper.
-    _eff = getattr(kalshi_exec, "effective_bankroll", None)
-    bankroll = _eff(BANKROLL) if callable(_eff) else BANKROLL
+    if bankroll is None:
+        bankroll = current_bankroll(ex)
     state = _load_state()
+    if hot_set_out is not None:
+        hot_set_out.clear()
     # caps are PER-DAY: drop stale accumulators so a new day starts clean (state persists across the run's
     # 30s poll cycles via kwx_runner_state.json; keeping only today's keys also bounds the file size).
     _today = dt.datetime.now(tz=dt.timezone.utc).date().isoformat()
@@ -590,6 +740,18 @@ def poll_once(exec_client=None, verbose=True):
         dist = nearest_strike_distance(rungs, ext_raw, kind, margin=st_margin)
         iv = adaptive_interval_s(dist)
         min_interval = iv if min_interval is None else min(min_interval, iv)
+        # near-lock half of the HOT SET: usable even before a sustained extreme exists (ext_raw is always
+        # available here), unlike the misses half below which needs a confirmed lock. Observability-only
+        # -- wrapped so a bug here can never block the trading loop (guard test in kwx_selftest).
+        if hot_set_out is not None:
+            try:
+                for n_ticker, n_side, n_dist in near_lock_rungs(rungs, ext_raw, kind, margin=st_margin):
+                    hot_set_out.append({"ticker": n_ticker, "side": n_side, "locked": False,
+                                        "cushion_f": None, "station": station, "kind": kind,
+                                        "extreme_f": round(ext_raw, 2), "distance_f": n_dist})
+            except Exception as e:
+                if verbose:
+                    print(f"  [hot-set skip] {station} {kind} near-lock: {type(e).__name__}")
         if ext is None:
             continue
         # fire locked rungs not already fired. Ordered by DESCENDING gap (== ascending cap_c, since
@@ -604,83 +766,25 @@ def poll_once(exec_client=None, verbose=True):
                                    "reason": ("no-ask" if not m_ask else f"ask>{MAX_PAY_CENTS}"),
                                    "cushion_f": round(m_cushion, 2), "extreme_f": round(ext, 2),
                                    "station": station, "kind": kind}, verbose)
+        # locked half of the HOT SET: rungs the obs stream just locked but we couldn't buy (no ask / ask
+        # too high) -- watch their ask, ready to fire_one() the instant it drops <= MAX_PAY_CENTS.
+        if hot_set_out is not None:
+            try:
+                for m_ticker, m_side, m_ask, m_cushion in misses:
+                    if m_ticker in state["fired"]:
+                        continue
+                    hot_set_out.append({"ticker": m_ticker, "side": m_side, "locked": True,
+                                        "cushion_f": round(m_cushion, 2), "station": station, "kind": kind,
+                                        "extreme_f": round(ext, 2), "last_ask_c": m_ask})
+            except Exception as e:
+                if verbose:
+                    print(f"  [hot-set skip] {station} {kind} misses: {type(e).__name__}")
         for ticker, side, cap_c, cushion_f in locked:
-            if ticker in state["fired"]:
-                continue
-            gap_c = 100 - cap_c   # cents of edge still open (100c payout - price we pay)
-            # bankroll-aware, quarter-Kelly; conviction fires (cushion>=2F & gap>=15c) get the raised 12% cap.
-            # size 0 = fee floor / no net edge after the Kalshi fee, or unaffordable -> skip, don't fire.
-            size = size_for_fire(bankroll, cap_c, station, cushion_f=cushion_f, gap_c=gap_c)
-            if size < 1:
-                if verbose:
-                    print(f"  [size-skip] {ticker}: no net edge after fee (or unaffordable) at {cap_c}c")
-                if ticker not in state["missed"]:
-                    _log_near_miss(state, {"ticker": ticker, "side": side, "ask_c": cap_c,
-                                           "reason": "fee-floor", "cushion_f": round(cushion_f, 2),
-                                           "extreme_f": round(ext, 2), "station": station, "kind": kind},
-                                   verbose=False)   # the [size-skip] line above already narrated it
-                continue
-            # DAILY + PER-CITY DEPLOYMENT CAPS (match the validated sim's worst-day + diversification bounds).
-            today = dt.datetime.now(tz=dt.timezone.utc).date().isoformat()
-            deployed = state.setdefault("deployed", {})
-            city_spent = state.setdefault("city_spent", {})
-            city_key = f"{today}:{station}"
-            cost = size * cap_c / 100.0
-            if deployed.get(today, 0.0) + cost > MAX_DAILY_DEPLOY_FRAC * bankroll:
-                if verbose:
-                    print(f"  [daily-cap] skip {ticker}: would exceed {MAX_DAILY_DEPLOY_FRAC:.0%} of bankroll today")
-                continue
-            if city_spent.get(city_key, 0.0) + cost > PER_CITY_DAILY_CAP_FRAC * bankroll:
-                if verbose:
-                    print(f"  [city-cap] skip {ticker}: would exceed {PER_CITY_DAILY_CAP_FRAC:.0%}/city ({station}) today")
-                continue
-            # CIRCUIT BREAKER: a normal cycle fires a few; an abnormal burst = feed glitch -> halt for review
-            if len(plans) >= MAX_FIRES_PER_CYCLE:
-                open(os.path.join(HERE, ".kwx_halt"), "w").write(
-                    f"auto-halt: >{MAX_FIRES_PER_CYCLE} fires in one cycle (possible feed glitch); review then rm this file\n")
-                if verbose:
-                    print(f"  !! CIRCUIT BREAKER tripped ({len(plans)} fires this cycle) -> .kwx_halt written, halting")
-                try:
-                    import kwx_notify
-                    kwx_notify.alert(f"🛑 KWX HALT: circuit breaker tripped ({len(plans)} fires in one cycle — "
-                                     f"possible feed glitch). Trading stopped; review then rm .kwx_halt")
-                except Exception:
-                    pass
+            outcome = fire_one(state, ex, bankroll, ticker, side, cap_c, cushion_f, station, kind, ext,
+                               plans, verbose=verbose, trigger="obs-poll")
+            if outcome == "circuit-breaker":
                 _save_state(state)
                 return plans, (min_interval or 900)
-            fn = ex.buy_yes if side == "yes" else ex.buy_no
-            res = fn(ticker, count=size, max_price_cents=cap_c)
-            # accumulate deployed capital for the caps -- ONLY if the order actually placed (a guard-BLOCKED
-            # order deployed nothing). Without this the daily/per-city caps never bind (the bug this fixes).
-            # Use the ACTUAL filled count when the live exec reconciled it (partial fills deploy less than we
-            # requested); fall back to intended size on dry-run / unknown.
-            filled = res.get("filled")
-            eff_cost = (filled * cap_c / 100.0) if isinstance(filled, int) and filled >= 0 else cost
-            if not str(res.get("status", "")).startswith("BLOCKED"):
-                deployed[today] = deployed.get(today, 0.0) + eff_cost
-                city_spent[city_key] = city_spent.get(city_key, 0.0) + eff_cost
-            try:
-                import kwx_notify
-                mode = "LIVE" if getattr(ex, "live", False) else "paper"
-                kwx_notify.alert(f"🌡️ KWX FIRE [{mode}]: buy {size} {side.upper()} {ticker} @≤{cap_c}¢ "
-                                 f"(obs {kind} {ext:.1f}°F cleared strike) [{res.get('status')}]")
-            except Exception:
-                pass
-            plan = {"ticker": ticker, "side": side, "cap_c": cap_c, "extreme_f": ext,
-                    "station": station, "kind": kind, "status": res.get("status"),
-                    "requested": size, "filled": res.get("filled"),   # reconciliation: actual vs intended
-                    "fill_vwap_c": res.get("fill_vwap_c"),   # depth_v1: actual walk-the-book avg price paid
-                    "ts": int(time.time() * 1000)}
-            plans.append(plan)
-            # depth_v1 dry-run can report filled=0 (book was empty at fire time): don't mark the rung
-            # fired so it can re-fire once depth shows up. (A guard-BLOCKED order has filled=None, not
-            # 0, and still gets marked fired below as before -- it was never eligible to retry sooner.)
-            if res.get("filled") != 0:
-                state["fired"][ticker] = plan
-            with open(PLAN_LOG, "a") as f:
-                f.write(json.dumps(plan) + "\n")
-            if verbose:
-                print(f"  LOCK {ticker} buy {side}@<= {cap_c}c  (obs {kind} {ext:.1f}F)  [{res.get('status')}]")
     _save_state(state)
     if verbose:
         print(f"cycle done: {len(plans)} new locks; next adaptive interval ~{min_interval or 900}s")

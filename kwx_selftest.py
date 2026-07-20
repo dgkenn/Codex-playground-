@@ -172,6 +172,84 @@ def main():
     # each fire ~1ct@80c=$0.80; per-city cap = 17.5% * $10 = $1.75 -> ~2 fires fit, rest skipped
     check("single-city fires bounded by per-city cap (not all 8 fire)", 1 <= len(plans) < 8, f"plans={len(plans)}")
 
+    # 8) BOOK WATCHER: a locked rung's ask starts at 100 (unbuyable) and drops to 95 mid-watch -> the
+    #    watcher must fire it EXACTLY ONCE, through the SAME guarded fire_one() chokepoint, tagged
+    #    trigger="book-watch". No network: _fetch_asks is monkeypatched, time.sleep is a no-op (the
+    #    watch loop's own break-when-nothing-left-to-fire is what bounds the iteration count, not time).
+    print("\n8) book-watcher fires through the guarded path when a locked rung's ask drops:")
+    import kwx_book_watcher as W
+    import time as _time
+    _fetch_calls = {"n": 0}
+
+    def _fake_fetch(tickers, timeout=4):
+        _fetch_calls["n"] += 1
+        ask = 100 if _fetch_calls["n"] == 1 else 95   # 1st burst: still dead-on-arrival; 2nd: back in range
+        return {t: (ask, None) for t in tickers}
+
+    _orig_fetch, _orig_sleep = W._fetch_asks, W.time.sleep
+    W._fetch_asks = _fake_fetch
+    W.time.sleep = lambda s: None   # don't actually wait between synthetic bursts
+    try:
+        R.STATE_PATH = os.path.join(tmp, "state_watch.json")
+        R.PLAN_LOG = os.path.join(tmp, "plan_watch.jsonl")
+        os.path.exists(R.STATE_PATH) and os.remove(R.STATE_PATH)
+        wstate = R._load_state()
+        hot = [{"ticker": "KXHIGHDEN-26JUL19-WATCH", "side": "yes", "locked": True, "cushion_f": 3.0,
+                "station": "KDEN", "kind": "max", "extreme_f": 93.0, "last_ask_c": 100}]
+        summary = W.watch(hot, ex, 2000.0, wstate, _time.time() + 30, verbose=False)
+        check("book-watcher fires exactly once on the ask drop", summary["fired"] == 1, summary)
+        check("fetch was called (only) twice -- 100c skipped, 95c fired, then stopped",
+              _fetch_calls["n"] == 2, _fetch_calls)
+        check("fired plan is tagged trigger=book-watch",
+              bool(summary["plans"]) and summary["plans"][0].get("trigger") == "book-watch",
+              summary.get("plans"))
+        check("fired plan bought at the dropped price (95c), not the stale 100c",
+              bool(summary["plans"]) and summary["plans"][0].get("cap_c") == 95, summary.get("plans"))
+        check("ticker marked fired in state after the book-watch fire",
+              "KXHIGHDEN-26JUL19-WATCH" in wstate.get("fired", {}))
+    finally:
+        W._fetch_asks, W.time.sleep = _orig_fetch, _orig_sleep
+
+    # 9) GUARD: watcher failures must never break poll_once / the caller. Two angles:
+    #    (a) watch() itself never raises even when its internal REST path blows up -- it fails soft and
+    #        returns a summary with the error recorded.
+    #    (b) poll_once's OWN hot-set collection (which feeds the watcher) is independently guarded: a bug
+    #        there must not block the fire path it sits alongside.
+    print("\n9) guard: watcher failures never break poll_once or propagate out of watch():")
+
+    def _boom(*a, **k):
+        raise RuntimeError("synthetic watcher failure")
+
+    _orig_rest = W._rest_watch
+    W._rest_watch = _boom
+    try:
+        bogus_hot = [{"ticker": "BOGUS", "side": "yes", "locked": True, "cushion_f": 1.0,
+                      "station": "KDEN", "kind": "max", "extreme_f": 90.0, "last_ask_c": 100}]
+        try:
+            summary = W.watch(bogus_hot, ex, 10.0, {"fired": {}, "missed": {}}, _time.time() + 5, verbose=False)
+            raised = False
+        except BaseException:
+            summary, raised = None, True
+        check("watch() never raises even when its REST path blows up", not raised)
+        check("failed watch() reports the error instead of silently succeeding",
+              bool(summary) and summary.get("error") is not None, summary)
+    finally:
+        W._rest_watch = _orig_rest
+
+    # (b) hot-set collection breaking must not block poll_once's actual fire path
+    _orig_near_lock = R.near_lock_rungs
+    R.near_lock_rungs = _boom
+    try:
+        _fixture(floor=90, cap=None, yes_ask_c=80, ext=93.0)
+        os.path.exists(R.STATE_PATH) and os.remove(R.STATE_PATH)
+        hs = []
+        plans, iv = R.poll_once(exec_client=ex, verbose=False, hot_set_out=hs)
+        check("poll_once still fires normally when hot-set collection (near_lock_rungs) raises",
+              len(plans) == 1, f"got {len(plans)}")
+        check("poll_once still returns its normal (plans, interval) shape", isinstance(iv, (int, float)))
+    finally:
+        R.near_lock_rungs = _orig_near_lock
+
     print("\n" + ("ALL CHECKS PASSED -- the live fire path + guards work; 0 fills = no qualifying fires yet, not a bug."
                   if not FAILURES else f"{len(FAILURES)} CHECK(S) FAILED: {FAILURES}"))
     sys.exit(1 if FAILURES else 0)
