@@ -198,6 +198,14 @@ def main():
         return
     bound = f" (bounded to ~{max_seconds}s)" if max_seconds else ""
     print(f"K-WX paper gate running ({_startup_label()}){bound}. Status -> kwx_gate_status.txt. Ctrl-C to stop.")
+    # feed provenance in every LEG log (legs enter here, not kwx_runner.main()): the line the operator
+    # greps to verify the SYNOPTIC_TOKEN secret actually reached the runner environment. Fail-soft --
+    # a provenance print must never take down a live leg.
+    try:
+        import kwx_runner as _R
+        print(f"feed cascade: {getattr(_R._FEED, 'name', type(_R._FEED).__name__)}")
+    except Exception as e:
+        print(f"feed cascade: unavailable ({type(e).__name__})")
     # --max-seconds: wall-clock bound so a CI job leg can run the adaptive loop directly (honoring the
     # 5s/20s near-strike cadence) and still hand back control before the job-level timeout kills it.
     deadline = (time.time() + max_seconds) if max_seconds else None
