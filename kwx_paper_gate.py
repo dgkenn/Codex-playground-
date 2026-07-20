@@ -53,10 +53,31 @@ def _report_metrics():
     return {"n": n, "win": wins / n, "ev": st.mean(pnls), "t": t, "days": len(byday), "worst": min(pnls)}
 
 
+def _near_misses_today():
+    """Count today's near-misses (locks seen but unbuyable -- kwx_runner.NEAR_MISS_LOG). This is the
+    line that distinguishes 'no fires because quiet weather' from 'no fires because everything repriced
+    before the feed confirmed it' (the detection-speed question). Fail-soft: status must always write."""
+    try:
+        import kwx_runner as R
+        today = dt.datetime.now(tz=dt.timezone.utc).date().isoformat()
+        n = 0
+        with open(R.NEAR_MISS_LOG) as fh:
+            for ln in fh:
+                try:
+                    if json.loads(ln).get("date") == today:
+                        n += 1
+                except Exception:
+                    continue
+        return n
+    except Exception:
+        return 0
+
+
 def _write_status(m, last_poll_locks, next_sleep_s):
     lines = ["=== K-WX FORWARD PAPER GATE status ===",
              f"updated: {dt.datetime.now(tz=dt.timezone.utc).isoformat()}",
              f"last poll: {last_poll_locks} new paper locks; next poll in ~{int(next_sleep_s)}s",
+             f"near-misses today: {_near_misses_today()} (locked but unbuyable: repriced/empty book/fee floor)",
              f"kill-switch (.kwx_halt): {'PRESENT -> halted' if os.path.exists(os.path.join(HERE,'.kwx_halt')) else 'off'}",
              ""]
     if not m:

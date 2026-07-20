@@ -27,6 +27,11 @@ _CTX = ssl.create_default_context(cafile=_CA) if os.path.exists(_CA) else None
 KBASE = "https://api.elections.kalshi.com/trade-api/v2"
 STATE_PATH = os.path.join(HERE, "kwx_runner_state.json")
 PLAN_LOG = os.path.join(HERE, "kwx_runner_plan.jsonl")
+# Near-misses: rungs the obs stream mechanically LOCKED but we could not buy (empty book / ask above
+# MAX_PAY / fee-floor size 0). A zero-fire day reads completely differently depending on whether there
+# were zero locks (quiet weather) or N locks that had all repriced before the feed confirmed them
+# (detection too slow -> the paid-1-min-feed question). One record per ticker per day.
+NEAR_MISS_LOG = os.path.join(HERE, "kwx_near_miss.jsonl")
 
 # Kalshi weather series -> (IEM/METAR station, fixed STANDARD-time UTC offset [never DST], name).
 # Mirrors CITY_CONFIG in kalshi_weather_nowcast.py; KXLOWT* mirror uses the same stations.
@@ -460,30 +465,40 @@ def event_rungs(event_ticker):
 
 
 # ---------------- lock logic (which rung side locks, given the observed extreme) ----------------
+def locked_and_misses(rungs, extreme_f, kind, margin=MARGIN_F):
+    """Like locked_orders, but ALSO returns the locked-yet-unbuyable rungs (the near-misses: no ask at
+    all, or ask > MAX_PAY_CENTS = already repriced / dead-on-arrival).
+    -> (orders, misses): orders as in locked_orders; misses = [(ticker, side, ask_c_or_None, cushion_f)]."""
+    orders, misses = [], []
+
+    def _consider(ticker, side, ask_c, cushion_f):
+        if ask_c and ask_c <= MAX_PAY_CENTS:
+            orders.append((ticker, side, ask_c, cushion_f))
+        else:
+            misses.append((ticker, side, ask_c or None, cushion_f))
+
+    for r in rungs:
+        floor, cap = r["floor"], r["cap"]
+        if kind == "max":
+            if cap is not None and extreme_f > cap + margin:
+                _consider(r["ticker"], "no", r["no_ask_c"], extreme_f - cap)
+            elif cap is None and floor is not None and extreme_f > floor + margin:
+                _consider(r["ticker"], "yes", r["yes_ask_c"], extreme_f - floor)
+        else:  # min
+            if floor is not None and extreme_f < floor - margin:
+                _consider(r["ticker"], "no", r["no_ask_c"], floor - extreme_f)
+            elif floor is None and cap is not None and extreme_f < cap - margin:
+                _consider(r["ticker"], "yes", r["yes_ask_c"], cap - extreme_f)
+    return orders, misses
+
+
 def locked_orders(rungs, extreme_f, kind, margin=MARGIN_F):
     """Return list of (ticker, side, buy_price_cap_c, cushion_f) for rungs now mechanically locked by the
     observed extreme (with `margin`, which may be raised per-station for high-disagreement stations). HIGH/max:
     floor-only rung locks YES once max>floor+margin; any capped rung locks NO once max>cap+margin.
     LOW/min mirrors with the running min. cushion_f = |obs - the relevant strike| (degF the obs cleared the
     strike by) -> feeds the conviction upsizing; larger cushion = more headroom vs a late CLI revision."""
-    orders = []
-    for r in rungs:
-        floor, cap = r["floor"], r["cap"]
-        if kind == "max":
-            if cap is not None and extreme_f > cap + margin:
-                if r["no_ask_c"] and r["no_ask_c"] <= MAX_PAY_CENTS:
-                    orders.append((r["ticker"], "no", r["no_ask_c"], extreme_f - cap))
-            elif cap is None and floor is not None and extreme_f > floor + margin:
-                if r["yes_ask_c"] and r["yes_ask_c"] <= MAX_PAY_CENTS:
-                    orders.append((r["ticker"], "yes", r["yes_ask_c"], extreme_f - floor))
-        else:  # min
-            if floor is not None and extreme_f < floor - margin:
-                if r["no_ask_c"] and r["no_ask_c"] <= MAX_PAY_CENTS:
-                    orders.append((r["ticker"], "no", r["no_ask_c"], floor - extreme_f))
-            elif floor is None and cap is not None and extreme_f < cap - margin:
-                if r["yes_ask_c"] and r["yes_ask_c"] <= MAX_PAY_CENTS:
-                    orders.append((r["ticker"], "yes", r["yes_ask_c"], cap - extreme_f))
-    return orders
+    return locked_and_misses(rungs, extreme_f, kind, margin=margin)[0]
 
 
 def nearest_strike_distance(rungs, extreme_f, kind, margin=MARGIN_F):
@@ -513,6 +528,23 @@ def _save_state(s):
     json.dump(s, open(STATE_PATH, "w"))
 
 
+def _log_near_miss(state, rec, verbose):
+    """Append one near-miss record to NEAR_MISS_LOG and register it in state['missed'] (ticker -> date,
+    so the poll loop logs each unbuyable lock ONCE per day instead of every 5-30s cycle). Best-effort:
+    a full disk or bad record must never take down the trading loop."""
+    try:
+        today = dt.datetime.now(tz=dt.timezone.utc).date().isoformat()
+        rec = dict(rec, date=today, ts=int(time.time() * 1000))
+        state.setdefault("missed", {})[rec["ticker"]] = today
+        with open(NEAR_MISS_LOG, "a") as f:
+            f.write(json.dumps(rec) + "\n")
+        if verbose:
+            print(f"  [near-miss] {rec['ticker']} {rec['side']} locked but not buyable "
+                  f"(ask={rec.get('ask_c')}, {rec['reason']})")
+    except Exception:
+        pass
+
+
 # ---------------- one poll cycle ----------------
 def poll_once(exec_client=None, verbose=True):
     import kalshi_exec
@@ -528,6 +560,9 @@ def poll_once(exec_client=None, verbose=True):
     _today = dt.datetime.now(tz=dt.timezone.utc).date().isoformat()
     state["deployed"] = {k: v for k, v in state.get("deployed", {}).items() if k == _today}
     state["city_spent"] = {k: v for k, v in state.get("city_spent", {}).items() if k.startswith(_today + ":")}
+    # near-miss dedupe registry: one log record per ticker per day (tickers embed the date, but pruning
+    # by recorded date keeps the committed state file from growing forever)
+    state["missed"] = {k: v for k, v in state.get("missed", {}).items() if v == _today}
     min_interval = None
     plans = []
     for series, ev, station, offset, lst_date, kind in active_market_days():
@@ -560,7 +595,15 @@ def poll_once(exec_client=None, verbose=True):
         # fire locked rungs not already fired. Ordered by DESCENDING gap (== ascending cap_c, since
         # gap_c = 100 - cap_c) so that if a daily/per-city cap binds partway through this event's
         # rungs, the highest-EV rungs have already filled (see wx_rung_stacking.md).
-        locked = sorted(locked_orders(rungs, ext, kind, margin=st_margin), key=lambda t: t[2])
+        locked, misses = locked_and_misses(rungs, ext, kind, margin=st_margin)
+        locked = sorted(locked, key=lambda t: t[2])
+        for m_ticker, m_side, m_ask, m_cushion in misses:
+            if m_ticker in state["fired"] or m_ticker in state["missed"]:
+                continue
+            _log_near_miss(state, {"ticker": m_ticker, "side": m_side, "ask_c": m_ask,
+                                   "reason": ("no-ask" if not m_ask else f"ask>{MAX_PAY_CENTS}"),
+                                   "cushion_f": round(m_cushion, 2), "extreme_f": round(ext, 2),
+                                   "station": station, "kind": kind}, verbose)
         for ticker, side, cap_c, cushion_f in locked:
             if ticker in state["fired"]:
                 continue
@@ -571,6 +614,11 @@ def poll_once(exec_client=None, verbose=True):
             if size < 1:
                 if verbose:
                     print(f"  [size-skip] {ticker}: no net edge after fee (or unaffordable) at {cap_c}c")
+                if ticker not in state["missed"]:
+                    _log_near_miss(state, {"ticker": ticker, "side": side, "ask_c": cap_c,
+                                           "reason": "fee-floor", "cushion_f": round(cushion_f, 2),
+                                           "extreme_f": round(ext, 2), "station": station, "kind": kind},
+                                   verbose=False)   # the [size-skip] line above already narrated it
                 continue
             # DAILY + PER-CITY DEPLOYMENT CAPS (match the validated sim's worst-day + diversification bounds).
             today = dt.datetime.now(tz=dt.timezone.utc).date().isoformat()
