@@ -50,11 +50,17 @@ jobs:
       - name: measure (gated on SYNOPTIC_TOKEN) + report + commit log
         env:
           SYNOPTIC_TOKEN: ${{ secrets.SYNOPTIC_TOKEN }}
+          KALSHI_PRIVATE_KEY: ${{ secrets.KALSHI_PRIVATE_KEY }}   # RSA bootstrap channel only (kwx_secret_bootstrap.py decrypt)
         run: |
           set -e
           if [ -z "${SYNOPTIC_TOKEN}" ]; then
-            echo "::notice::SYNOPTIC_TOKEN not set -> inert (arm by adding the repo secret from the free trial)"
-            exit 0
+            # no repo secret: try the RSA bootstrap channel (kwx_secret_bootstrap.py on the code
+            # branch decrypts kwx_synoptic_token.enc to .synoptic_token using KALSHI_PRIVATE_KEY)
+            python kwx_secret_bootstrap.py || true
+            if [ ! -s .synoptic_token ]; then
+              echo "::notice::no SYNOPTIC_TOKEN secret and no bootstrap blob -> inert"
+              exit 0
+            fi
           fi
           git config user.name  "kwx-synoptic-trial-bot"
           git config user.email "kwx-synoptic-trial-bot@users.noreply.github.com"

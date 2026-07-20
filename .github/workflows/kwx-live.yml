@@ -98,6 +98,7 @@ jobs:
           # adaptive loop and exits cleanly at the bound; the python loop now writes .kwx_heartbeat
           # itself once per poll cycle, so the watchdog goes stale exactly when polling stops
           # (the bash beat could keep "alive" ticking around a wedged runner).
+          python kwx_secret_bootstrap.py || true   # RSA-OAEP secret delivery (no-op once SYNOPTIC_TOKEN secret exists)
           python -u kwx_paper_gate.py --max-seconds 960 || true
           # add per-file: a batched `git add a b c` aborts ENTIRELY (staging nothing) if any one
           # pathspec matches nothing, and several of these files don't exist until a fire/settle has
