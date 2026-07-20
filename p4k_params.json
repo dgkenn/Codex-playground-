@@ -190,16 +190,16 @@
   },
   "station_derate_relax": {
    "label": "per-station derate relaxation (KMIA/KLAX/KPHL/KSEA)",
-   "status": "VALIDATED by study, NOT YET applied live (a config change, not a data-accrual gate)",
-   "quality": "BACKTEST (validation) / ASSUMED (deploy timing)",
+   "status": "DEPLOYED (verified 2026-07-20: kwx_runner.py recalibration of 2026-07-18 already removed KLAX/KMIA/KPHL/KSEA derates; only KPHX retains 0.5x size mult)",
+   "quality": "BACKTEST (validation) / MEASURED (deploy state read from live kwx_runner.py STATION_SIZE_MULT)",
    "gate": {
     "metric": "manual_config_deploy",
-    "current_days_elapsed": 0,
+    "current_days_elapsed": 2,
     "threshold_days": 1,
     "accrual_per_day": 1
    },
    "size_mult_uplift": 0.08,
-   "note": "Blanket +8% aggregate size multiplier proxy for 4 of 20 stations moving off their 0.5x derate (ASSUMED aggregation, actual per-station effect varies by each station's EV share). Trivial engineering lift -- gate models it as 'ready same day it's deployed', so it is OFF only in a same-day (horizon=0) conservative read and ON once any time passes.",
+   "note": "ACTIVE in all horizons: the relaxation is live code, not a pending config change. +8% aggregate size proxy retained from the study.",
    "source": "facts.per_station_derate_relaxation / wx_perstation_derate_results.md"
   },
   "book_watch": {

@@ -6,6 +6,11 @@ that model's actual output, not a vibe. Every stage-advance gate is a bar alread
 (`kwx_paper_gate.PASS`, `wx_scaling_schedule.md`'s bankroll rungs, or a sleeve's own `gate` block in
 `p4k_params.json`) -- this doc adds no new thresholds, it only sequences the ones that exist.
 
+> **2026-07-20 evening update:** three levers this doc still models as open are now closed by
+> adversarially-verified studies, and one it models as pending is already deployed. See
+> [GOAL RECALIBRATION](#goal-recalibration-2026-07-20-evening) at the bottom — it supersedes the
+> maker/early-lock rows of the stage table and operator actions #2 and #6.
+
 ## REVISION NOTICE (post two-judge review)
 
 This document and its underlying model went through an independent two-judge review. **Verdict: REVISE.**
@@ -164,3 +169,51 @@ $4K STATUS    : NOT REACHABLE in the corrected model at ANY bankroll up to $50,0
                 increase from depth_adaptive, Polymarket, and/or fire-rate growth -- not simply more
                 bankroll or more elapsed calendar time.
 ```
+
+---
+
+## GOAL RECALIBRATION (2026-07-20 evening)
+
+Written after the overnight research program completed. Four facts change how the roadmap above
+should be read; the stage table's numbers stand, but its optionality has narrowed.
+
+**Closed levers (do not model, do not wait on):**
+1. **Maker sleeve: REFUTED** (`wx_maker_deep_study.md`, merged). The +7c/ct headline was simulated
+   limit orders that would actually have crossed the spread; genuine maker fills happen 2-3 times
+   per 65 days x 20 stations. Operator action #6 is void — the maker gate can never accrue to a
+   deployable state as specified. `p4k_params.json` now carries it at zero EV in every scenario.
+2. **Early-lock sleeve: NULL** (`wx_earlylock_deep_study.md`, merged). 5,415 matched historical
+   rows, no cell clears Bonferroni, headline cell sign-flips across sample halves. The forward
+   paper harness keeps running (costless) but gets zero capacity credit until it actually PASSES
+   against this null prior.
+3. **Directional/timing sleeve: NULL** (`WX_DIRECTIONAL.md`, merged). Eight pre-registered specs,
+   four funnel rounds, zero survivors; SPECs 2/4/5/6 decisively dead on n=815-2,109. Closed unless
+   a genuinely different signal class is proposed; specs 1/3/7 reopen only with market history
+   (see reopen calendar below).
+
+**Already deployed (stop modeling as pending):**
+4. **station_derate_relax is LIVE** — the 2026-07-18 recalibration in `kwx_runner.py` already
+   removed the KLAX/KMIA/KPHL/KSEA derates (only KPHX retains 0.5x). Operator action #2's "flip
+   the config at Rung1" is already done; `p4k_params.json` now marks the sleeve deployed.
+
+**Revised bankroll guidance:** the conservative curve is flat past ~$500 (DEPTH_CAP binding), so
+**$500-$1,000 captures essentially the entire current opportunity (~$1.0-1.3k/mo ceiling)**. Do
+not deposit beyond ~$1,000 expecting more return; incremental capital past that point earns ~$0
+under every scenario tested to $50,000.
+
+**The only remaining paths to $4k/mo, in order of evidence-weighted realism:**
+- **Fill conversion** (Stage 0's own blocking problem): all 52 recent near-misses show ask=100 at
+  first sight — diagnosis of the latency chain (obs publication vs leg coverage vs market speed)
+  is in progress; until settled fires exist, nothing else on this roadmap advances.
+- **New market families with the same mechanical-lock structure** (recon in progress → will land
+  as `WX_EXPANSION.md`): the edge is structural, not meteorological; other Kalshi families with
+  observable, irreversible deciding stats are the one axis tonight's studies did NOT close.
+- **depth_adaptive** (unchanged from Stage 3/4: needs its honest 15-distinct-day sample).
+- **Calendar reopens** (scheduled, see below): specs killed only by the market family's youth
+  (67 days, one season) get one honest re-run each when history deepens.
+
+**Reopen calendar (Routines are armed for these):**
+- ~2026-11-15 (first cool-season data): re-run directional SPECs 1/3/7 + the season-conditional
+  nowcast redesign (SPEC 4's documented weakness); weekly gate-check Routine also active.
+- ~2027-05-15 (full year of history, two warm-season starts): full directional re-run eligibility;
+  also re-check the R4-1 lead-time ceiling (only reopens if Kalshi lists markets earlier).
