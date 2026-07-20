@@ -73,10 +73,22 @@ def _near_misses_today():
         return 0
 
 
-def _write_status(m, last_poll_locks, next_sleep_s):
+def _watcher_status_line(w):
+    """One-glance summary line for the last book-watcher window (or its absence). `w` is the summary
+    dict kwx_book_watcher.watch() returns, or None when no hot set existed this cycle (plain-poll-only,
+    same as before this feature existed)."""
+    if not w:
+        return "book-watcher: idle (no hot set this cycle)"
+    err = f" error={w['error']}" if w.get("error") else ""
+    return (f"book-watcher: hot-set={w['hot_n']} (locked={w['locked_n']}) transport={w['transport']} "
+            f"asks<=98c={w['seen_le98']} fires={w['fired']}{err}")
+
+
+def _write_status(m, last_poll_locks, next_sleep_s, watch_summary=None):
     lines = ["=== K-WX FORWARD PAPER GATE status ===",
              f"updated: {dt.datetime.now(tz=dt.timezone.utc).isoformat()}",
              f"last poll: {last_poll_locks} new paper locks; next poll in ~{int(next_sleep_s)}s",
+             _watcher_status_line(watch_summary),
              f"near-misses today: {_near_misses_today()} (locked but unbuyable: repriced/empty book/fee floor)",
              f"kill-switch (.kwx_halt): {'PRESENT -> halted' if os.path.exists(os.path.join(HERE,'.kwx_halt')) else 'off'}",
              ""]
@@ -190,26 +202,50 @@ def main():
     # 5s/20s near-strike cadence) and still hand back control before the job-level timeout kills it.
     deadline = (time.time() + max_seconds) if max_seconds else None
     last_settle = 0.0
+    last_watch = None   # last book-watcher summary, carried into status writes between watcher runs
     while True:
         if deadline is not None and time.time() >= deadline:
             print(f"--max-seconds {max_seconds} reached -> exiting cleanly")
             return
         import kwx_runner as R
-        locks, sleep_s = R.poll_once(verbose=False)
+        import kalshi_exec
+        # ONE exec client (and ONE effective-bankroll read) shared between poll_once and the book-watcher
+        # this iteration -- avoids reloading creds / double-reading the live balance every cycle.
+        ex = kalshi_exec.KalshiExec()
+        bankroll = R.current_bankroll(ex)
+        hot_set = []
+        locks, sleep_s = R.poll_once(exec_client=ex, verbose=False, hot_set_out=hot_set, bankroll=bankroll)
         _beat()   # once per poll cycle, so watchdog staleness == polling actually stopped
         now = time.time()
         if now - last_settle >= SETTLE_EVERY_S:
             import kwx_forward as F
             F.settle()
             m = _report_metrics()
-            _write_status(m, len(locks), sleep_s)
+            _write_status(m, len(locks), sleep_s, last_watch)
             last_settle = now
         nap = max(3, sleep_s)
         if deadline is not None:
             # never oversleep past the deadline: clamp so we wake right at the bound and exit
             # (instead of burning up to a full 15-min far-from-strike interval past it)
             nap = max(3, min(nap, deadline - time.time()))
-        time.sleep(nap)
+        # EVENT-DRIVEN FIRE PATH: between this obs poll and the next one, watch the hot set's asks instead
+        # of just sleeping blind. Bounded to exactly `nap` wall-time -- never worse (never slower) than the
+        # plain sleep it replaces -- and completely optional: an empty hot set (the common case) or any
+        # watcher failure falls straight back to today's plain time.sleep(nap).
+        if hot_set:
+            watch_deadline = time.time() + nap
+            try:
+                import kwx_book_watcher as W
+                last_watch = W.watch(hot_set, ex, bankroll, R._load_state(), watch_deadline, verbose=False)
+            except BaseException as e:
+                print(f"[paper_gate] book-watcher raised ({type(e).__name__}: {e}); plain sleep this cycle")
+                last_watch = {"transport": "none", "hot_n": len(hot_set), "locked_n": 0,
+                              "seen_le98": 0, "fired": 0, "plans": [], "error": str(e)[:200]}
+            remaining = watch_deadline - time.time()
+            if remaining > 0:
+                time.sleep(remaining)
+        else:
+            time.sleep(nap)
 
 
 if __name__ == "__main__":

@@ -39,6 +39,70 @@ HARD_MAX_CONTRACTS = 200                        # fat-finger / bug ceiling: refu
 HARD_MAX_PRICE_CENTS = 98                       # never pay above this (no-gap / dead-on-arrival protection)
 
 
+def _rsa_sign(priv, ts_ms, method, path):
+    """RSA-PSS-SHA256 sign `ts_ms+method+path` -- Kalshi's exact request-signing scheme (salt_length =
+    digest length, matches Kalshi's SDK example). Factored out of KalshiExec._sign so any other
+    authenticated caller (e.g. kwx_book_watcher's WebSocket connection) uses the IDENTICAL signing code
+    instead of a second copy that could drift out of sync."""
+    from cryptography.hazmat.primitives import hashes
+    from cryptography.hazmat.primitives.asymmetric import padding
+    msg = f"{ts_ms}{method}{path}".encode()
+    sig = priv.sign(
+        msg,
+        padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.DIGEST_LENGTH),
+        hashes.SHA256(),
+    )
+    return base64.b64encode(sig).decode()
+
+
+def _auth_headers(key_id, priv, method, path):
+    """Build the three KALSHI-ACCESS-* headers for one authenticated request (REST or the WS handshake),
+    using the shared _rsa_sign. Same shape as KalshiExec._headers, factored out for reuse outside the class."""
+    ts = str(int(time.time() * 1000))
+    return {
+        "KALSHI-ACCESS-KEY": key_id,
+        "KALSHI-ACCESS-TIMESTAMP": ts,
+        "KALSHI-ACCESS-SIGNATURE": _rsa_sign(priv, ts, method, path),
+    }
+
+
+def load_signing_creds():
+    """Best-effort load of (key_id, private_key_obj) from the SAME credential sources KalshiExec uses --
+    env vars KALSHI_API_KEY_ID + (KALSHI_PRIVATE_KEY_PATH or KALSHI_PRIVATE_KEY), else the local
+    .kalshi_creds JSON. Factored out so any other module needing Kalshi RSA auth (the book-watcher's
+    WebSocket connection) resolves credentials identically to KalshiExec instead of re-implementing the
+    (a)/(b) precedence. Returns (None, None) on ANY failure (no creds, bad PEM, missing `cryptography`) --
+    NEVER raises, so a caller can treat that as 'no live auth available' and fall back (e.g. to REST
+    burst-polling with no auth, or staying dry-run).
+
+    Catches BaseException, not just Exception: a broken/incompatible `cryptography` native build can raise
+    a pyo3 PanicException, which subclasses BaseException directly (NOT Exception) -- an `except Exception`
+    here would let a bad local install crash a live trading process instead of degrading to dry-run/REST."""
+    try:
+        from cryptography.hazmat.primitives.serialization import load_pem_private_key
+        env_id = os.environ.get("KALSHI_API_KEY_ID")
+        env_pem_path = os.environ.get("KALSHI_PRIVATE_KEY_PATH")
+        env_pem = os.environ.get("KALSHI_PRIVATE_KEY")
+        if env_id and (env_pem_path or env_pem):
+            if env_pem_path:
+                with open(env_pem_path, "rb") as fh:
+                    pem_bytes = fh.read()
+            else:
+                pem_bytes = env_pem.encode()
+            return env_id, load_pem_private_key(pem_bytes, password=None)
+        if os.path.exists(CREDS_PATH):
+            creds = json.load(open(CREDS_PATH))
+            key_id = creds["access_key_id"]
+            pem = creds.get("private_key_pem")
+            if not pem and creds.get("private_key_path"):
+                pem = open(creds["private_key_path"]).read()
+            priv = load_pem_private_key(pem.encode() if isinstance(pem, str) else pem, password=None)
+            return key_id, priv
+    except BaseException:
+        pass
+    return None, None
+
+
 class _GuardBlocked(Exception):
     """Raised by _submit_guarded when _guard refuses an order (HALT_FILE kill-switch / size / price).
     Carries the blocked record so callers can log/return it without re-deriving the reason."""
@@ -193,43 +257,21 @@ class KalshiExec:
 
     # ---- credential loading (live path only) ----
     def _load_creds(self):
+        # Delegates to the shared load_signing_creds() (same (a)/(b) precedence, same failure handling) so
+        # this class and any other authenticated caller (kwx_book_watcher's WS connection) can never drift
+        # apart on how credentials are resolved.
         try:
-            from cryptography.hazmat.primitives.serialization import load_pem_private_key
-            env_id = os.environ.get("KALSHI_API_KEY_ID")
-            env_pem_path = os.environ.get("KALSHI_PRIVATE_KEY_PATH")
-            env_pem = os.environ.get("KALSHI_PRIVATE_KEY")   # PEM content directly (GitHub-secret style)
-            if env_id and (env_pem_path or env_pem):
-                # box-strategy-compatible: key id + PEM (from a file path OR the raw secret content)
-                self._key_id = env_id
-                if env_pem_path:
-                    with open(env_pem_path, "rb") as fh:
-                        pem_bytes = fh.read()
-                else:
-                    pem_bytes = env_pem.encode()
-                self._priv = load_pem_private_key(pem_bytes, password=None)
-            else:
-                creds = json.load(open(CREDS_PATH))
-                self._key_id = creds["access_key_id"]
-                pem = creds.get("private_key_pem")
-                if not pem and creds.get("private_key_path"):
-                    pem = open(creds["private_key_path"]).read()
-                self._priv = load_pem_private_key(pem.encode() if isinstance(pem, str) else pem, password=None)
-        except Exception as e:
+            self._key_id, self._priv = load_signing_creds()
+        except BaseException as e:   # see load_signing_creds' docstring re: pyo3 PanicException
+            self._key_id, self._priv = None, None
+            print(f"[kalshi_exec] creds load raised ({e}); staying DRY_RUN")
+        if self._key_id is None or self._priv is None:
             # Any failure -> stay in dry-run rather than risk a malformed live attempt.
-            print(f"[kalshi_exec] creds load failed ({e}); staying DRY_RUN")
+            print("[kalshi_exec] creds unavailable/unusable; staying DRY_RUN")
             self.live = False
 
     def _sign(self, ts_ms, method, path):
-        from cryptography.hazmat.primitives import hashes
-        from cryptography.hazmat.primitives.asymmetric import padding
-        msg = f"{ts_ms}{method}{path}".encode()
-        # Kalshi's scheme: RSA-PSS, MGF1-SHA256, salt_length = digest length (matches Kalshi's SDK example).
-        sig = self._priv.sign(
-            msg,
-            padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.DIGEST_LENGTH),
-            hashes.SHA256(),
-        )
-        return base64.b64encode(sig).decode()
+        return _rsa_sign(self._priv, ts_ms, method, path)
 
     def _headers(self, method, path):
         ts = str(int(time.time() * 1000))
