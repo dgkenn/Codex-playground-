@@ -119,9 +119,16 @@ def _rest_watch(hot_set, ex, bankroll, state, plans, deadline_ts, verbose, summa
                     summary["seen_le98"] += 1
                 if h.get("locked") and ask is not None and ticker not in state.get("fired", {}) \
                         and ask <= R.MAX_PAY_CENTS:
-                    R.fire_one(state, ex, bankroll, ticker, h["side"], ask, h.get("cushion_f"),
-                              h["station"], h["kind"], h.get("extreme_f"), plans,
-                              verbose=verbose, trigger="book-watch")
+                    outcome = R.fire_one(state, ex, bankroll, ticker, h["side"], ask, h.get("cushion_f"),
+                                         h["station"], h["kind"], h.get("extreme_f"), plans,
+                                         verbose=verbose, trigger="book-watch")
+                    if outcome == "circuit-breaker":
+                        # halt written -- END the watch window. Continuing would re-attempt every tick,
+                        # re-writing .kwx_halt and re-sending the HALT alert each time (alert spam in the
+                        # one scenario where the operator needs a single clear signal). poll_once stops
+                        # its cycle on this outcome for the same reason.
+                        summary["error"] = "circuit-breaker"
+                        return
         remaining = deadline_ts - time.time()
         if remaining <= 0:
             break
@@ -158,8 +165,11 @@ def _handle_ws_ticker_msg(msg, by_ticker, state, ex, bankroll, plans, verbose, s
     if ask <= 98:
         summary["seen_le98"] += 1
     if h.get("locked") and ticker not in state.get("fired", {}) and ask <= R.MAX_PAY_CENTS:
-        R.fire_one(state, ex, bankroll, ticker, h["side"], ask, h.get("cushion_f"),
-                  h["station"], h["kind"], h.get("extreme_f"), plans, verbose=verbose, trigger="book-watch")
+        outcome = R.fire_one(state, ex, bankroll, ticker, h["side"], ask, h.get("cushion_f"),
+                             h["station"], h["kind"], h.get("extreme_f"), plans, verbose=verbose,
+                             trigger="book-watch")
+        if outcome == "circuit-breaker":
+            summary["error"] = "circuit-breaker"   # _ws_watch checks this and ends the window (alert-spam guard)
 
 
 def _ws_watch(hot_set, ex, bankroll, state, plans, deadline_ts, verbose, summary):
@@ -205,6 +215,8 @@ def _ws_watch(hot_set, ex, bankroll, state, plans, deadline_ts, verbose, summary
             except Exception:
                 continue
             _handle_ws_ticker_msg(msg, by_ticker, state, ex, bankroll, plans, verbose, summary)
+            if summary.get("error") == "circuit-breaker":
+                break   # halt written -- end the window instead of re-attempting (alert-spam guard)
     return True
 
 
