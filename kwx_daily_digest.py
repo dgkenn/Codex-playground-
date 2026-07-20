@@ -245,6 +245,17 @@ def compose():
     except Exception as e:
         lines.append(f"fill-quality: check unavailable ({type(e).__name__})")
 
+    # early-lock forward-price decision (wx_earlylock_decision.py) -- optional dependency, same guarded-import
+    # pattern as drift/fill-quality above: it may not be merged onto this branch yet, and this line must never
+    # take the whole digest down because that PAPER-only sleeve's log is thin, missing, or mid-accrual.
+    try:
+        import wx_earlylock_decision as EL
+        lines.append(f"earlylock: {EL.one_line()}")
+    except ImportError:
+        lines.append("earlylock: decision layer not installed")
+    except Exception as e:
+        lines.append(f"earlylock: check unavailable ({type(e).__name__})")
+
     return "\n".join(lines)
 
 
