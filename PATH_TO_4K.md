@@ -202,9 +202,16 @@ not deposit beyond ~$1,000 expecting more return; incremental capital past that 
 under every scenario tested to $50,000.
 
 **The only remaining paths to $4k/mo, in order of evidence-weighted realism:**
-- **Fill conversion** (Stage 0's own blocking problem): all 52 recent near-misses show ask=100 at
-  first sight — diagnosis of the latency chain (obs publication vs leg coverage vs market speed)
-  is in progress; until settled fires exist, nothing else on this roadmap advances.
+- ~~**Fill conversion**~~ **CLOSED same evening** (`WX_NEARMISS_DIAGNOSIS.md`): all 52 near-misses
+  reconstructed against production feeds — the market's ask crossed 98c a median of **106 minutes
+  BEFORE** the margin+sustain lock rule confirmed (10/10 candlestick samples); 62% of logged
+  near-misses trace to a one-time 20h39m leg outage (already fixed; continuous-era detection is
+  ~8min, feed-bound). Near-misses are adverse selection, not a pipeline leak: ~0% convertible by
+  faster obs, tighter legs, or watcher tuning. `book_watch`'s assumed 7.8/day conversion is
+  refuted and zeroed in `p4k_params.json`; the watcher stays deployed only as a costless residual
+  catcher. Consequence: Stage 0's fires must come from the rare cases where the bot genuinely wins
+  the race — the 21-day kill window in the stage table is now the operative clock, and the
+  `conservative_live` scenario is the honest planning basis.
 - **New market families with the same mechanical-lock structure** (recon in progress → will land
   as `WX_EXPANSION.md`): the edge is structural, not meteorological; other Kalshi families with
   observable, irreversible deciding stats are the one axis tonight's studies did NOT close.

@@ -204,21 +204,21 @@
   },
   "book_watch": {
    "label": "book-watch transient-ask capture",
-   "status": "IN-VALIDATION, deployed but idle (0 fires attributed this cycle)",
-   "quality": "ASSUMED",
+   "status": "MEASURED NULL (2026-07-20 diagnosis, WX_NEARMISS_DIAGNOSIS.md): near-misses are not convertible opportunities",
+   "quality": "MEASURED (null)",
    "gate": {
     "metric": "n_attributed_fires",
     "current": 0,
     "threshold": 30,
-    "accrual_per_day": 7.8
+    "accrual_per_day": 0.0
    },
    "ev_bump_usd_per_ct": {
     "conservative": 0.0,
-    "base": 0.015,
-    "optimistic": 0.03
+    "base": 0.0,
+    "optimistic": 0.0
    },
-   "note": "Shifts a fire's captured EV/ct back toward the instant-action ceiling (+0.207) by catching stale-ask reprices inside the ~3.3min gap half-life. accrual_per_day=7.8 is ASSUMED (20% of the observed 39/day near-miss rate converting once tuned) -- no live fires yet, wide prior.",
-   "source": "facts.near_miss_gate_status_summary, facts.gap_half_life_pooled, levers[1]"
+   "note": "DO NOT MODEL AS A LEVER. Candlestick replay of all 52 near-misses: market no_ask crossed 98c a median 106 min BEFORE the margin+sustain lock rule confirmed (10/10 sampled) -- the capture window closes before any feasible feed can see it. 62% of logged near-misses trace to a one-time 20h39m leg outage (fixed); continuous-era detection latency is ~8min (feed-bound). Watcher stays deployed as a costless residual catcher, but its assumed 7.8/day conversion is refuted; expected attributed fires ~0. Near-miss count is a market-efficiency observation, not a pipeline leak.",
+   "source": "WX_NEARMISS_DIAGNOSIS.md (52/52 rows reconstructed against production feeds)"
   },
   "early_lock": {
    "label": "early-lock pre-positioning",
