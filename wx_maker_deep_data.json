@@ -1,0 +1,130 @@
+{
+  "study": "wx_maker_deep_study",
+  "generated_at": "2026-07-20",
+  "sample_frame": ["2026-05-15", "2026-07-18"],
+  "n_calendar_days": 65,
+  "n_stations": 20,
+  "stations_covered": ["KATL","KAUS","KBOS","KDCA","KDEN","KDFW","KHOU","KLAS","KLAX","KMDW",
+    "KMIA","KMSP","KMSY","KOKC","KPHL","KPHX","KSAT","KSEA","KSFO","NYC"],
+  "source_scratch_dir": "scratchpad/deep/maker/ (5 harvest chunks + aggregate.py/.md/.json; NOT committed, raw caches too large / superseded by this compact file)",
+
+  "fill_model_as_harvested": "canonical scout sec.3: definite fill = trade print with taker_side=='no' and yes_price_c < P after hypothetical placement; ambiguous print at yes_price_c==P gets a 50% credit haircut. $0 maker fee on all KXHIGH*/KXLOWT* series (fee_type=quadratic, verified live). CRITICAL UNVERIFIED ASSUMPTION in the harvest: every simulated bid is treated as a genuinely RESTING order regardless of the best ask at placement time -- i.e. it never checks whether the hypothetical bid price >= the prevailing ask, which is the condition under which a real limit order would cross the spread and execute immediately as a TAKER fill instead of resting. This assumption is what the verifier panel falsified (see verified_strict below).",
+
+  "naive_headline_grand_table": {
+    "note": "AS-HARVESTED table, reproduced verbatim from aggregate.json. REFUTED for the post-lock arm by the verifier panel's live candlestick/trade-tape audit -- kept here ONLY as the documented starting point the panel audited, not as a usable result. See verified_strict for the number that survives.",
+    "rows": [
+      {"arm":"post","D":null,"P":93,"n_stations":16,"bids":58,"fills":22.5,"fill_rate":0.388,"fill_rate_ci95":[0.273,0.517],"adverse_sel":0.0,"adverse_sel_ci95":[0.0,0.146],"net_ev_c_per_contract":7.00},
+      {"arm":"post","D":null,"P":95,"n_stations":16,"bids":58,"fills":23.0,"fill_rate":0.397,"fill_rate_ci95":[0.281,0.525],"adverse_sel":0.0,"adverse_sel_ci95":[0.0,0.143],"net_ev_c_per_contract":5.00},
+      {"arm":"post","D":null,"P":97,"n_stations":16,"bids":58,"fills":23.5,"fill_rate":0.405,"fill_rate_ci95":[0.289,0.534],"adverse_sel":0.0,"adverse_sel_ci95":[0.0,0.140],"net_ev_c_per_contract":3.00},
+      {"arm":"pre","D":1.0,"P":93,"n_stations":20,"bids":242,"fills":218.0,"fill_rate":0.901,"fill_rate_ci95":[0.857,0.932],"adverse_sel":0.670,"adverse_sel_ci95":[0.605,0.729],"net_ev_c_per_contract":-59.97},
+      {"arm":"pre","D":1.0,"P":95,"n_stations":20,"bids":242,"fills":219.0,"fill_rate":0.905,"fill_rate_ci95":[0.861,0.936],"adverse_sel":0.667,"adverse_sel_ci95":[0.602,0.726],"net_ev_c_per_contract":-61.67},
+      {"arm":"pre","D":1.0,"P":97,"n_stations":20,"bids":242,"fills":221.0,"fill_rate":0.913,"fill_rate_ci95":[0.870,0.942],"adverse_sel":0.661,"adverse_sel_ci95":[0.596,0.719],"net_ev_c_per_contract":-63.06},
+      {"arm":"pre","D":2.0,"P":93,"n_stations":20,"bids":374,"fills":150.0,"fill_rate":0.401,"fill_rate_ci95":[0.354,0.451],"adverse_sel":0.720,"adverse_sel_ci95":[0.643,0.786],"net_ev_c_per_contract":-65.00},
+      {"arm":"pre","D":2.0,"P":95,"n_stations":20,"bids":374,"fills":150.0,"fill_rate":0.401,"fill_rate_ci95":[0.354,0.451],"adverse_sel":0.720,"adverse_sel_ci95":[0.643,0.786],"net_ev_c_per_contract":-67.00},
+      {"arm":"pre","D":2.0,"P":97,"n_stations":20,"bids":374,"fills":151.0,"fill_rate":0.404,"fill_rate_ci95":[0.357,0.454],"adverse_sel":0.715,"adverse_sel_ci95":[0.638,0.782],"net_ev_c_per_contract":-68.52}
+    ],
+    "day_clustered_ttest_chunk4_subset_KDEN_KMDW_KPHL_NYC": [
+      {"cell":"post P=93","n_station_days":32,"mean_ev_c_per_bid_day":3.83,"t":6.22,"p":1e-06},
+      {"cell":"post P=95","n_station_days":32,"mean_ev_c_per_bid_day":2.81,"t":6.31,"p":1e-06},
+      {"cell":"post P=97","n_station_days":32,"mean_ev_c_per_bid_day":1.73,"t":6.63,"p":1e-06},
+      {"cell":"pre D=1.0 P=93","n_station_days":80,"mean_ev_c_per_bid_day":-50.08,"t":-9.14,"p":1e-06},
+      {"cell":"pre D=2.0 P=93","n_station_days":114,"mean_ev_c_per_bid_day":-9.30,"t":-3.44,"p":0.0008}
+    ],
+    "taker_baseline_comparison": {
+      "taker_edge_c_per_contract_pre_fee": 0.207,
+      "taker_edge_c_per_contract_net": 0.15,
+      "units_note": "As given by the orchestrator, units unresolved -- could be literal 0.15 cents/contract or a 15-cent (0.15 dollar) net edge. The whole-cents reading (~15c net) is more consistent with every other figure in this study and is treated as primary; either reading is moot now that the maker headline itself is refuted (see verdict)."
+    }
+  },
+
+  "panel_verdict_summary": "REFUTED on the headline. Live 1-min candlestick audit of the post-lock P=93 cell found that for the large majority of simulated 'resting maker bids', the best ask at the simulated placement time was AT OR BELOW the bid price P=93c -- meaning a real limit order at that price would have crossed the spread and executed immediately as a TAKER fill, not rested as a maker order. These are the deployed taker bot's own trade opportunities relabeled at an artificial maker price, not a distinct maker edge.",
+
+  "panel_findings": [
+    {"severity":"FATAL","id":"F1_marketability","summary":"Post-lock 'resting maker bid' premise false for ~80% of the flagship P=93 cell: live 1-min candlestick audit of all 32 chunk_4 post-lock P=93 bids found 26/32 had best ask <= 93c at placement (examples: KXHIGHDEN-26JUL08-T93 ask=47c, KXLOWTCHI-26JUL02-T73 ask=17c, KXHIGHNY-26JUL08-T83 ask=46c), plus KSFO 26JUN11 (ask 73c) and 26MAY24 (ask 89c) from chunk_3, plus KBOS's single fill printing 34s post-lock. A limit YES buy at 93c against an ask of 5-89c executes immediately as a taker order and can never rest. ~19-20 of the naive 22.5 'maker fills' are mislabeled taker trades of the already-deployed lock strategy; Section 6 of the naive aggregate compared those trades to themselves."},
+    {"severity":"FATAL","id":"F2_strict_recompute","summary":"Strict recompute (post-only, i.e. ask > P at lock, verified via live candlesticks + trade tape) on the flagship post-lock P=93 cell: restable bids ~5-8 of 58; verified genuine maker fills = 2 confirmed (KPHL KXHIGHPHIL-26JUN22-T87, ask 95c at lock, fill print 91c at +50s; KHOU KXLOWTHOU-26MAY19-T73, ask 96c at placement, fill at +199s), possibly 3 (KSFO KXHIGHTSFO-26JUL14-T81, ask 100c at lock, fill status unrecoverable from chunk_3 aggregates). Strict cell: n=2-3 fills, all wins, total gross +14 to +21 cents over the entire 65-day x 20-station frame (~$0.002/day at 1 contract). The naive 'n=22.5 fills, CI [0,15%] adverse selection, +7.00c/contract replicated at p<0.0001' does not survive."},
+    {"severity":"MAJOR","id":"M1_tautological_zero_adverse","summary":"0% adverse selection in the naive post-lock cell is near-tautological, not a market finding: every post-lock bid row has result='yes' because lock is defined by the same obs stream that determines the (monotone) daily extreme -- the outcome is already decided at placement. The day-clustered t-test (t=6.22, n=32) runs on a payout variable that cannot be negative by construction (0 or +7), so it only proves 'some fills occurred', not edge. The one real loss channel (Kalshi settlement/CLI vs ASOS-1min mismatch, breakeven failure rate ~7% at P=93) is unsampled at ~23 independent events."},
+    {"severity":"MAJOR","id":"M2_triple_counting","summary":"'0/69 post-lock fills' triple-counts the same underlying events: one definite print below 93c fills the P=93, 95, and 97 cells simultaneously (chunk_4: 17/18/18 definite fills from ~18 underlying prints). Independent fill events are ~23-24, not 69; any pooled-CI reading of 69 is invalid. Per-P CIs in the naive table are the honest ones for THAT (flawed) fill model, but even those don't survive F1/F2."},
+    {"severity":"MAJOR","id":"M3_fill_size_ignored","summary":"Fill size / book capacity ignored: the harvest credits a full 1-contract fill on any qualifying print regardless of count_fp. Two of the 18 audited chunk_4 P=93 'fills' come from dust prints of 0.01 contracts (KXLOWTCHI-26JUL02-T73) and 0.10 contracts (KXLOWTDEN-26JUN04-T51). Total post-lock taker_side='no' volume at <=93c was only 1-13 contracts on 7/18 filled events. Bankroll extrapolations in the naive report (53 contracts/bid at $50 bankroll, +$1.28/day) exceed realized market capacity on multiple contributing events."},
+    {"severity":"MAJOR","id":"M4_lookahead","summary":"Zero-latency look-ahead: bids are 'placed' at the IEM asos1min observation valid-timestamp with 0s latency; 10/18 chunk_4 P=93 fills occur <2 minutes after lock (minimum 4.4s, KXHIGHNY-26JUL08-T83). asos1min data is not available at its valid time in real time, so these fills are uncapturable even before the marketability flaw (F1) is considered."},
+    {"severity":"MAJOR","id":"M5_prelock_marketability","summary":"The same marketability flaw contaminates the pre-lock grid: a 93-97c bid placed while the rung is still 1-2F from its strike would typically cross a much lower ask, so the reported -55 to -69c/contract losses, 40-91% fill rates, and 66-72% adverse-selection rates in the naive pre-lock rows are not execution-realistic magnitudes (a crossing order fills ~100% instantly at ask, and losses are bounded by ask, not by P). The SIGN of the pre-lock result (negative EV) plausibly survives; no magnitude in that grid should be trusted or reused."},
+    {"severity":"MINOR","id":"m1_block_trades","summary":"No harvest script filters is_block_trade (block prints do not sweep the book and cannot fill a resting bid); live audit shows all 18 chunk_4 P=93 fill prints were non-block, so no realized impact in the headline cell -- but the classifier is wrong in principle and should filter is_block_trade before any reuse."},
+    {"severity":"MINOR","id":"m2_confirmed_ok","summary":"Two scout choices hold up under live re-verification: taker_side semantics (no_price_dollars = 100 - yes_price on every audited print; taker_side='no' prints are genuinely bid-side executions), and the ==P 50% ambiguous-fill haircut is barely load-bearing (1 of 17.5 chunk_4 P=93 fills was ambiguous)."},
+    {"severity":"MINOR","id":"m3_arithmetic_clean","summary":"Aggregation arithmetic itself is clean: independent re-merge of all 5 chunk JSONs reproduces every naive grand-table row exactly (2,022 bids, 1,178 fills, 168 station-cells). The defect is entirely in the fill/marketability MODEL, not the summation."}
+  ],
+
+  "verified_strict": {
+    "scope": "Flagship cell only: post-lock resting YES bid, P=93c (the naive headline's single best cell). Pre-lock cells and P=95/97 post-lock cells were NOT independently re-audited live by the panel at event level (F5 says pre-lock's sign plausibly survives but no magnitude does; no strict P=95/97 post-lock recount was reported) -- do not extrapolate this section's numbers to those cells.",
+    "method": "Live 1-min candlestick check (yes_ask.low_dollars / yes_ask.close_dollars at the placement minute) applied to every naive post-lock P=93 bid; a bid only counts as genuinely 'restable' if the best ask at placement was strictly greater than 93c (post-only condition). Restable bids were then checked against the trade tape for an actual fill print, same definite/ambiguous rule as the naive model.",
+    "restable_bids_range": [5, 8],
+    "restable_bids_denominator_note": "out of the naive model's 58 total post-lock P=93 bids across 16 stations",
+    "confirmed_genuine_maker_fills": 2,
+    "possible_additional_fill_unresolved": 1,
+    "fills": [
+      {
+        "station": "KPHL",
+        "ticker": "KXHIGHPHIL-26JUN22-T93",
+        "underlying_event_ticker_note": "panel cited KXHIGHPHIL-26JUN22-T87 as the audited settlement rung; T93 is the hypothetical 93c bid on that same rung",
+        "ask_c_at_placement": 95,
+        "restable_at_P93": true,
+        "fill_price_c": 91,
+        "fill_delay_s_after_lock": 50,
+        "result": "win",
+        "status": "confirmed_genuine_maker_fill"
+      },
+      {
+        "station": "KHOU",
+        "ticker": "KXLOWTHOU-26MAY19-T73",
+        "ask_c_at_placement": 96,
+        "restable_at_P93": true,
+        "fill_price_c": null,
+        "fill_price_c_note": "print confirmed <93c per definite-fill rule; exact price not retained in panel's summary text",
+        "fill_delay_s_after_lock": 199,
+        "result": "win",
+        "status": "confirmed_genuine_maker_fill"
+      },
+      {
+        "station": "KSFO",
+        "ticker": "KXHIGHTSFO-26JUL14-T81",
+        "ask_c_at_placement": 100,
+        "restable_at_P93": true,
+        "fill_price_c": null,
+        "fill_delay_s_after_lock": null,
+        "result": "unresolved",
+        "status": "possible_not_confirmed -- fill status not recoverable from chunk_3 aggregates"
+      }
+    ],
+    "gross_total_c_confirmed_range": [14, 21],
+    "gross_total_c_confirmed_range_note": "2 confirmed wins at P=93 payout (100-93=7c) = 14c; if the 3rd (KSFO) also confirms as a win, 21c. Over 65 days x 20 stations.",
+    "net_ev_c_per_contract_confirmed": 7.0,
+    "net_ev_c_per_contract_note": "identical +7.00c/contract payout math to the naive model when a fill IS genuine (100-P for a win, $0 maker fee) -- the panel's correction is entirely to n (how often a genuine, executable maker fill actually happens), not to the per-fill payout.",
+    "adverse_selection_confirmed": {"k_adverse": 0, "n": 2, "rate": 0.0, "wilson95_ci": [0.0, 0.658]},
+    "adverse_selection_if_3rd_counts": {"k_adverse": 0, "n": 3, "rate": 0.0, "wilson95_ci": [0.0, 0.562]},
+    "panel_reported_ci_range_note": "panel's own prose cites an approximate '[0%, 66-80%]' band for this n=2-3 regime; this file's wilson95_ci fields are this synthesis's own Wilson-score recomputation (same method used throughout the naive aggregate for consistency) and may differ slightly in the upper bound depending on exact CI method (Wilson vs Clopper-Pearson) -- both agree the true rate could plausibly be well above 0% at this sample size."
+  },
+
+  "capacity_and_execution_caveats": [
+    "M3: at least 2 of the underlying post-lock print events across the wider (unaudited) chunk_4 P=93 set were dust-sized (0.01 and 0.10 contracts) -- even a genuine resting maker bid could not have been sized to the bankroll extrapolations in the naive report on those specific events; this caveat applies to the wider naive set, not necessarily to the 2-3 confirmed genuine fills above (their contract sizes were not in the panel's summary text).",
+    "M4: real-time capture requires beating asos1min's publication latency; a 0-latency backtest is not achievable live even for genuinely restable orders.",
+    "m1: is_block_trade must be filtered in any future harvest -- confirmed not to have contaminated the 18 audited chunk_4 P=93 prints, but the classifier logic that ignores it is wrong in principle."
+  ],
+
+  "recommendation": {
+    "verdict": "DO NOT DEPLOY the post-lock resting-maker-bid strategy as studied. The naive +7.00c/contract, n=22.5-fill headline is an artifact of simulating limit orders without checking whether they would cross the spread at placement; ~80-90% of its 'maker fills' are relabeled taker fills of the strategy already live in kwx_runner.py. The strict, execution-realistic version of the same idea (genuinely resting bids that never cross) has the same per-fill payout (+7.00c/contract when it does fill, $0 maker fee) but converts so rarely (2-3 confirmed genuine fills in 65 days x 20 stations) that it cannot be distinguished from noise (adverse-selection Wilson 95% CI upper bound 56-66% at this n) and contributes an economically negligible ~$0.002-0.003/day at 1 contract size.",
+    "pre_lock_arm": "Do not deploy in any form. Naive EV is deeply negative (-55c to -69c/contract) and the panel found even those magnitudes are inflated by the same marketability flaw (a bid that would actually cross fills near-instantly at the ask, not at P) -- but the SIGN (net-negative) is judged plausible to survive, so this arm should be treated as confirmed-bad, not merely unproven.",
+    "conditions_to_reopen_this_study": [
+      "1. Fix the fill simulator to enforce ask_c_at_placement > P (post-only / marketable-order check) before crediting any hypothetical fill as a maker fill, using the same live-candlestick method the panel used, applied to the FULL 58-bid post-lock set (all 16 stations) and to the pre-lock grid, not just the 32-bid chunk_4 slice.",
+      "2. Re-run with realistic latency (>=60-90s after an asos1min observation's valid time, matching the fastest realistic real-time feed available to kwx_runner.py) rather than 0s look-ahead.",
+      "3. Cap simulated fill size at the print's actual count_fp per event (no full-contract credit on dust prints), and filter is_block_trade=true prints out of the eligible-print set entirely.",
+      "4. Only re-open a go/no-go decision once the corrected post-lock P=93 cell reaches n>=30 independently-verified genuine maker fills (current: 2-3) -- below that, any CI is too wide to act on (see kwx_runner's own paper-gate bar: 'live == tested' at n>=~30 clustered, mirrored here)."
+    ],
+    "staged_gate_if_reopened": [
+      "Stage 0 -- Simulation fix: re-harvest with items 1-3 above; report strict-only numbers, no naive table reused for sizing.",
+      "Stage 1 -- Paper: run the corrected post-only maker logic as a passive add-on inside the existing paper harness (kwx_paper_gate.py-style, NOT a code change to it in this PR) for >=4-6 weeks to accumulate the n>=30 genuine-fill bar.",
+      "Stage 2 -- Paper gate: proceed only once corrected live-paper fills replicate a positive net EV with a Wilson 95% CI on adverse-selection that excludes >30%, at n>=30 clustered by station-day.",
+      "Stage 3 -- $10 canary: identical framework to KWX_DEPLOY.md's canary stage (1 contract/fire floor), run only as a supplement layered on top of the existing deployed taker strategy, sized so its rare fills cannot materially affect daily risk budget.",
+      "No stage in this list authorizes any code change in this PR -- this PR is documentation + a read-only reproduction harness only."
+    ]
+  },
+
+  "not_reused_from_naive": "The naive per-station breakdown, bankroll_estimates_*, and taker_baseline_comparison numbers from the original harvest are preserved above under naive_headline_grand_table strictly as an audit trail of what the panel reviewed and rejected. Do not cite bankroll_estimates_single_best_cell (+$1.28/day at $50 bankroll) as an actionable number -- it is built on the refuted n=22.5 fill count."
+}
