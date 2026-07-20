@@ -283,6 +283,27 @@
    "fires_per_day_mult_if_validated": 1.5,
    "note": "accrual_per_day=null -> this gate is NOT time-accruable in the model (a real study with unknown duration must run first, not just elapsed calendar time) -- it never auto-passes in conservative/base/optimistic horizons here. Reported separately as a labeled stretch case, excluded from the headline curve.",
    "source": "facts.capacity_scan_polymarket_finding, facts.capacity_scan_q2_kalshi_null"
+  },
+  "added_markets_kalshi": {
+   "label": "added markets (Kalshi non-weather 'mechanical lock' families, WX_EXPANSION.md recon)",
+   "status": "SPECULATIVE, judge-audited recon only, no backtest/paper harness run for any family; not wired into the capacity arithmetic (never auto-passes; reported separately like added_markets_polymarket)",
+   "quality": "BACKTEST-RECON",
+   "gate": {
+    "metric": "full_backtest_and_paper_harness_complete_per_family",
+    "current": 0,
+    "threshold": 1,
+    "accrual_per_day": null
+   },
+   "note": "Six non-weather families scanned for the SAME mechanical-lock/early-settlement shape as KXHIGH/KXLOW/KXWTIMAX (WX_EXPANSION.md). Judge's adversarial re-audit corrected two look-ahead flaws in the strongest candidate (Family 2, Mentions: best-price-in-run-up entry assumed P(win)=1, and the 'ask>=98c' lock detector conditions on the answer -- 29/30 NO-resolved markets also hit ask>=98c, so only a sustained-BID>=0.90 confirmation is a real signal, q~4% false-lock rate at that gate). Judge's conservative, confirm-gated capacity by family (DEPTH_CAP=25/fire, day-clustered, same convention as the taker_mechanical sleeve): Family 2 Mentions ~+$18/mo defensible (EV +$0.05/ct confirm-gated vs the naive-hindsight +$0.316/ct claim; ~$140/mo speculative ceiling IF a live transcript feed is validated and extrapolated across ~8 sibling series); Family 4 WTI/NGAS period ladders ~+$3.5-20/mo (real mechanism, EV +$0.17/ct nominal but overstated by settle-print look-ahead, frequency fails pre-registered bar by 3-13x; ~$40/mo speculative ceiling if metal/FX siblings are added); Family 1 soccer/cricket totals ~+$16/mo nominal, ~$0 live-realistic (0s median lag -- fast bots already close the window); Family 5 altcoin MAX ladders ~+$3/mo; Family 3 earthquakes and Family 6 FDA approvals ~$0 defensible (frequency fails by 6-17x; EV reflects genuine outcome uncertainty, not lag). Sum of all six families' defensible capacity ~$20-60/mo -- noise next to the weather sleeve's path-to-$4k; every family's bottleneck is attention (already closed by fast bots) or event scarcity, not a feed-cadence gap like weather's.",
+   "capacity_usd_per_month_by_family": {
+    "2_mentions": {"defensible": 18, "speculative_ceiling": 140, "verdict": "PROMISING-WEAKENED"},
+    "4_wti_ngas_ladders": {"defensible": "3.5-20", "speculative_ceiling": 40, "verdict": "NOT (freq fail 3-13x; mechanism real)"},
+    "1_soccer_cricket_totals": {"defensible": "0 live-realistic (16 nominal)", "speculative_ceiling": null, "verdict": "NOT (0s median lag)"},
+    "5_altcoin_max_ladders": {"defensible": 3, "speculative_ceiling": null, "verdict": "NOT"},
+    "3_earthquakes": {"defensible": 0, "speculative_ceiling": null, "verdict": "NOT (freq fail ~7x)"},
+    "6_fda_approvals": {"defensible": 0, "speculative_ceiling": null, "verdict": "NOT (freq fail ~17x; no minute-resolution feed)"}
+   },
+   "source": "WX_EXPANSION.md; judge adversarial audit verdict 2026-07-20; scratchpad/expand/fam{1,2,3,4,5,6}/results.md and analysis*.json"
   }
  },
  "bankroll_rungs": [
