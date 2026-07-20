@@ -37,3 +37,4 @@
 {"ticker": "KXHIGHLAX-26JUL19-T73", "side": "no", "ask_c": 100, "reason": "ask>98", "cushion_f": 5.8, "extreme_f": 78.8, "station": "KLAX", "kind": "max", "date": "2026-07-20", "ts": 1784514450460}
 {"ticker": "KXHIGHLAX-26JUL19-B73.5", "side": "no", "ask_c": 100, "reason": "ask>98", "cushion_f": 4.8, "extreme_f": 78.8, "station": "KLAX", "kind": "max", "date": "2026-07-20", "ts": 1784514450460}
 {"ticker": "KXHIGHLAX-26JUL19-B75.5", "side": "no", "ask_c": 100, "reason": "ask>98", "cushion_f": 2.8, "extreme_f": 78.8, "station": "KLAX", "kind": "max", "date": "2026-07-20", "ts": 1784514450460}
+{"ticker": "KXLOWTDC-26JUL19-T77", "side": "no", "ask_c": 100, "reason": "ask>98", "cushion_f": 1.8, "extreme_f": 75.2, "station": "KDCA", "kind": "min", "date": "2026-07-20", "ts": 1784521675779}
