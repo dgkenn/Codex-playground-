@@ -42,6 +42,11 @@ rung is still buyable under the bot's `MAX_PAY_CENTS=98` pay cap.
 | `best_yes_bid` | int\|null | `yes_bid_levels[0][0]` (`null` when that side is empty) |
 | `best_yes_ask` | int\|null | `yes_ask_levels[0][0]` (`null` when that side is empty) |
 | `depth_at_or_below_98c` | int | sum of `yes_ask_levels` counts at price ≤ 98c — contracts a taker fire could buy right now without walking past the pay cap |
+| `running_extreme_f` | float\|null | **(v2)** observed running max/min (degF) for this station/day at capture time, via the same read-only feed `kwx_runner` uses to gate live fires (`feed_for_station(station).running_extreme(...)`) — one feed call per (station, lst_date, kind), reused across every rung of that event. `null` on feed error/outage. This is the field the maker study needs to decide "approaching lock" and place a hypothetical resting bid; without it a row is still valid FILL EVIDENCE (later-ask observations) but can never trigger a placement. |
+
+**schema_v history**: `1` (initial) → `2` (2026-07-20, adds `running_extreme_f`; the maker study was
+otherwise permanently blocked — every v1 row had it absent, so 0 hypothetical placements could ever be made
+regardless of row count). v1 rows already committed are NOT backfilled; readers must tolerate its absence.
 
 ## Guarantees & caveats
 
@@ -51,3 +56,6 @@ rung is still buyable under the bot's `MAX_PAY_CENTS=98` pay cap.
   books is itself DEPTH_CAP evidence. Transient book-fetch failures are skipped, not logged.
 - Prices are integer cents `1..99`; counts are integer contracts.
 - Read-only public data; no auth, no orders. Produced/committed by `.github/workflows/kwx-depthprobe.yml`.
+- **Retention**: `wx_capacity_probe.py --prune-days N` (default 21) rewrites this file to drop rows older
+  than N days, keeping committed-file growth bounded now that sweeps run denser during the US-afternoon
+  lock window (17:00–01:00 UTC) via `--snapshot-loop`. Both studies only need a rolling 1-2 weeks.
