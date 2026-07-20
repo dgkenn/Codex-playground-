@@ -180,6 +180,36 @@ def compose():
     else:
         lines.append("fires 24h: none")
 
+    # near-misses (locks the obs stream confirmed but we couldn't buy). THE diagnostic for zero-fire
+    # days: many near-misses = detection too slow / books dead (the paid-feed question), zero of both =
+    # genuinely quiet weather. Fail-soft like the other monitor lines.
+    try:
+        cutoff = (dt.datetime.now(tz=dt.timezone.utc) - dt.timedelta(hours=24)).timestamp() * 1000
+        misses = []
+        with open(R.NEAR_MISS_LOG) as fh:
+            for ln in fh:
+                try:
+                    rec = json.loads(ln)
+                    if rec.get("ts", 0) >= cutoff:
+                        misses.append(rec)
+                except Exception:
+                    continue
+        if misses:
+            reasons = {}
+            for r in misses:
+                reasons[r.get("reason", "?")] = reasons.get(r.get("reason", "?"), 0) + 1
+            rtxt = ", ".join(f"{k}×{v}" for k, v in sorted(reasons.items(), key=lambda kv: -kv[1]))
+            lines.append(f"near-misses 24h: {len(misses)} ({rtxt})")
+            for r in misses[:3]:
+                lines.append(f"  ◦ {r.get('ticker', '?')} {str(r.get('side', '?')).upper()} "
+                             f"ask={r.get('ask_c')}¢ cushion={r.get('cushion_f')}°F")
+        else:
+            lines.append("near-misses 24h: none")
+    except FileNotFoundError:
+        lines.append("near-misses 24h: none logged yet")
+    except Exception as e:
+        lines.append(f"near-misses: check unavailable ({type(e).__name__})")
+
     # free-feed health (a station with NO fresh free feed can't fire tomorrow either)
     try:
         bad, total = feed_health()

@@ -90,13 +90,20 @@ jobs:
           pip -q install cryptography numpy scipy || true   # scipy/numpy: MADIS hfmetar netCDF parse (free 5-min feed)
           git config user.name  "kwx-live-bot"
           git config user.email "kwx-live-bot@users.noreply.github.com"
-          END=$(( $(date +%s) + 960 ))     # ~16 min live loop
-          while [ "$(date +%s)" -lt "$END" ]; do
-            python -u kwx_paper_gate.py --once || true
-            date -u +%FT%TZ > .kwx_heartbeat   # liveness beat each cycle
-            sleep 30
+          # single ~16-min python leg (fits the 20-min job timeout with slack for pip + git push):
+          # the runner computes an adaptive 5s/20s near-strike cadence every cycle, but the old bash
+          # `--once; sleep 30` wrapper DISCARDED it (flat 30s + a full interpreter/import start per
+          # poll -- exactly when strikes are in play we polled slowest). --max-seconds runs the real
+          # adaptive loop and exits cleanly at the bound; the python loop now writes .kwx_heartbeat
+          # itself once per poll cycle, so the watchdog goes stale exactly when polling stops
+          # (the bash beat could keep "alive" ticking around a wedged runner).
+          python -u kwx_paper_gate.py --max-seconds 960 || true
+          # add per-file: a batched `git add a b c` aborts ENTIRELY (staging nothing) if any one
+          # pathspec matches nothing, and several of these files don't exist until a fire/settle has
+          # happened -- which silently dropped heartbeat + paper fires + cap state every leg.
+          for f in kwx_runner_plan.jsonl kwx_forward_settled.jsonl kwx_exec_log.jsonl kwx_near_miss.jsonl kwx_gate_status.txt kwx_runner_state.json .kwx_heartbeat; do
+            if [ -e "$f" ]; then git add -f -- "$f"; fi
           done
-          git add -f kwx_runner_plan.jsonl kwx_forward_settled.jsonl kwx_exec_log.jsonl kwx_gate_status.txt kwx_runner_state.json .kwx_heartbeat 2>/dev/null || true
           git commit -m "kwx-live $(date -u +%FT%H%MZ)" || echo "nothing to commit"
           for i in 1 2 3 4 5; do
             git push origin HEAD:${BRANCH} && break
