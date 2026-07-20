@@ -793,6 +793,9 @@ def poll_once(exec_client=None, verbose=True, hot_set_out=None, bankroll=None):
 
 def main():
     mode = sys.argv[1] if len(sys.argv) > 1 else "once"
+    # one-line feed provenance so every leg log states which cascade is live (synoptic-primary vs free);
+    # this is how the operator verifies the SYNOPTIC_TOKEN secret actually reached the runner.
+    print(f"feed cascade: {getattr(_FEED, 'name', type(_FEED).__name__)}")
     if mode == "once":
         poll_once()
     elif mode == "loop":
