@@ -101,7 +101,7 @@ jobs:
           # add per-file: a batched `git add a b c` aborts ENTIRELY (staging nothing) if any one
           # pathspec matches nothing, and several of these files don't exist until a fire/settle has
           # happened -- which silently dropped heartbeat + paper fires + cap state every leg.
-          for f in kwx_runner_plan.jsonl kwx_forward_settled.jsonl kwx_exec_log.jsonl kwx_gate_status.txt kwx_runner_state.json .kwx_heartbeat; do
+          for f in kwx_runner_plan.jsonl kwx_forward_settled.jsonl kwx_exec_log.jsonl kwx_near_miss.jsonl kwx_gate_status.txt kwx_runner_state.json .kwx_heartbeat; do
             if [ -e "$f" ]; then git add -f -- "$f"; fi
           done
           git commit -m "kwx-live $(date -u +%FT%H%MZ)" || echo "nothing to commit"
