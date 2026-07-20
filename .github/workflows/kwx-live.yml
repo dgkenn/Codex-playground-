@@ -85,6 +85,7 @@ jobs:
           KALSHI_PRIVATE_KEY: ${{ secrets.KALSHI_PRIVATE_KEY }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          SYNOPTIC_TOKEN: ${{ secrets.SYNOPTIC_TOKEN }}   # optional: arms Synoptic-primary feed (kwx_runner._synoptic_primary); absent = free-feed cascade, unchanged behavior
         run: |
           set -e
           pip -q install cryptography numpy scipy || true   # scipy/numpy: MADIS hfmetar netCDF parse (free 5-min feed)
