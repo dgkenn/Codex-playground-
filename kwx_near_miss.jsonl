@@ -147,3 +147,7 @@
 {"ticker": "KXHIGHTSATX-26JUL21-B94.5", "side": "no", "ask_c": 100, "reason": "ask>98", "cushion_f": 1.8, "extreme_f": 96.8, "station": "KSAT", "kind": "max", "date": "2026-07-21", "ts": 1784662952833}
 {"ticker": "KXHIGHPHIL-26JUL21-B85.5", "side": "no", "ask_c": 100, "reason": "ask>98", "cushion_f": 1.8, "extreme_f": 87.8, "station": "KPHL", "kind": "max", "date": "2026-07-21", "ts": 1784662954680}
 {"ticker": "KXHIGHAUS-26JUL21-B95.5", "side": "no", "ask_c": 100, "reason": "ask>98", "cushion_f": 2.6, "extreme_f": 98.6, "station": "KAUS", "kind": "max", "date": "2026-07-21", "ts": 1784663270571}
+{"ticker": "KXHIGHCHI-26JUL21-T84", "side": "no", "ask_c": 100, "reason": "ask>98", "cushion_f": 2.0, "extreme_f": 86.0, "station": "KMDW", "kind": "max", "date": "2026-07-21", "ts": 1784666881266}
+{"ticker": "KXHIGHTDAL-26JUL21-B101.5", "side": "no", "ask_c": 100, "reason": "ask>98", "cushion_f": 3.8, "extreme_f": 105.8, "station": "KDFW", "kind": "max", "date": "2026-07-21", "ts": 1784666886691}
+{"ticker": "KXHIGHTDAL-26JUL21-B103.5", "side": "no", "ask_c": 100, "reason": "ask>98", "cushion_f": 1.8, "extreme_f": 105.8, "station": "KDFW", "kind": "max", "date": "2026-07-21", "ts": 1784666886691}
+{"ticker": "KXHIGHTSATX-26JUL21-B96.5", "side": "no", "ask_c": 100, "reason": "ask>98", "cushion_f": 1.6, "extreme_f": 98.6, "station": "KSAT", "kind": "max", "date": "2026-07-21", "ts": 1784667190320}
