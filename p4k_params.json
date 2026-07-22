@@ -257,6 +257,24 @@
    "note": "DO NOT MODEL AS A LEVER. wx_maker_deep_study.md: post-lock resting bids convert ~0.03-0.05 genuine fills/day system-wide (economically negligible); pre-lock arm confirmed-negative by sign. Reopen only per the staged gate in that study (corrected post-only simulator, n>=30 genuine fills).",
    "source": "wx_maker_deep_study.md / wx_maker_deep_data.json (panel verdict REFUTED)"
   },
+  "forecast": {
+   "label": "forecast overlay (Open-Meteo forecast_prob vs Kalshi yes_ask)",
+   "status": "REFUTED by FORECAST_OVERLAY_BACKTEST.md (2026-07-21/22): both A/B backtests' agreeing +0.114-0.203c/ct (t=11-18, 178-427 days) was a shared look-ahead -- Open-Meteo's day-0 historical-forecast archive is built from intraday runs issued after the sleeve's morning decision window (archive RMSE 1.53F vs the sleeve's own live-morning RMSE 2.40F, 39 station-days). Honest no-look-ahead rerun (lead-1 previous-runs forecasts, Impl A pipeline, same 178 distinct days): EV -0.016c/ct, day-clustered t=-1.74, win 39.6% -- a null, not an edge. Also a rediscovery of the WEATHER-EDGE (2026-07-17, WX_DIRECTIONAL.md) dead axis: public forecasts vs Kalshi price is already priced by the market.",
+   "quality": "BACKTEST (refuted)",
+   "gate": {
+    "metric": "n_settled_distinct_days",
+    "current": 2,
+    "threshold": 40,
+    "accrual_per_day": 1
+   },
+   "ev_bump_usd_per_ct_on_eligible": {
+    "conservative": 0.0,
+    "base": 0.0,
+    "optimistic": 0.0
+   },
+   "note": "DO NOT MODEL AS A LEVER. wx_forecast_decision.py is the gate: accrues by DISTINCT SETTLED DAYS (not rows -- same-day fires are not independent) from wx_forecast_settled.jsonl, recomputes pnl from raw fields to bypass a known NO-side cost-basis bug in wx_forecast_forward.settle() (the same bug that inflates the raw live paper log to an unreliable +0.217/trade over only 2 calendar days), and only flips off ACCRUING at n_days>=40 with a Wilson/day-clustered bar clearly beating the verified backtest EV of -1.6c/ct. Do not auto-pass this into headline $/mo without that gate passing.",
+   "source": "FORECAST_OVERLAY_BACKTEST.md / wx_forecast_decision.py (panel verdict REFUTED, deployable=false)"
+  },
   "depth_adaptive": {
    "label": "depth-adaptive sizing (relax fixed DEPTH_CAP=25)",
    "status": "IN-VALIDATION, explicit 'do not adopt yet' in repo",
