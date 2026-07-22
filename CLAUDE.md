@@ -30,7 +30,7 @@ session. Invoke by slash command or let them auto-load:
 | `/kwx-incident` | Fleet trouble: leg outages, git races with the bot, halt states, log pollution. |
 
 New-session quickstart: `./.claude/skills/run-kwx/driver.sh smoke`, then `python
-kwx_goal_status.py`, then read `PATH_TO_4K.md`'s GOAL RECALIBRATION before proposing anything.
+kwx_goal_status.py`, then read `PATH_TO_4K.md`'s GOAL RECALIBRATION before proposing anything. Also reads RESEARCH_LEDGER.md for the full state of what's been tested.
 
 ## Research discipline (established by the 2026-07-20 program)
 
