@@ -149,3 +149,16 @@
 | "t=0.28 early-lock headline; 27 vs 36 cells" | VERIFIED: 36 nominal cells collapse to 27 effectively distinct (95c/95.3c caps byte-identical); Bonferroni bar ≈3.11; temporal sign flip +9.60c→−8.08c |
 | "Forecast 59 settled rows" | STALE: live status run now shows 164 paper rows / 112 settled; still no decision gate authored — informational only |
 | "Synoptic bootstrap ready" | VERIFIED: bootstrap committed, 14-day trial not started; decision only on measured latency uplift |
+
+---
+
+## 7. VENUE-RELAXATION TESTED — Polymarket (2026-07-22, single Sonnet agent, no live-path code)
+
+The favorite-longshot bias died on Kalshi partly on fees + spread, so the zero-fee venue was the one worth testing. **Result: Polymarket is also efficient at real tradeable prices — DEPLOYABLE: NO, $0/mo.**
+
+- Powered scan: 6,610 resolved markets fetched → **1,447 usable** binary markets (2023-01→2026-07), entry price taken 36h before resolution (or 50% of life), no look-ahead. Data via curl (urllib is 403'd by the proxy for gamma-api/clob hosts).
+- Favorite-longshot TAILS (price <0.20 or >0.80) are FLAT — no CI excludes price, no monotonic FLB pattern. The classic bias does NOT reproduce at Polymarket's tradeable prices, which means the Kalshi "bias" was substantially a last_price/mid artifact — both venues are efficient at prices you can actually trade.
+- The two nominally-significant mid bins fail persistence + day-clustering ([0.40,0.50): early t=−0.10, late t=+2.82 — late-sample artifact); low bins flip sign across the date split. Sports marginal +10.9¢ pooled but insignificant in both halves (likely a listing-order/seeding artifact).
+- Slippage (walk-the-book proxy): median 1.0¢, p75 6.2¢ — same order as any marginal edge, so even nominal findings wouldn't survive execution.
+
+**META-CONCLUSION (final, 2026-07-22):** every strategy class a retail, public-data, minutes-cadence bot can reach has now been tested on real data at tradeable prices across BOTH major prediction-market venues (Kalshi: universe→category→series, taker+maker; Polymarket: zero-fee, 1,447 markets), all adversarially verified. No deployable non-latency edge exists. The rigorous, exhaustively-mapped negative result is the deliverable. A deployable edge now requires relaxing a structural constraint the operator controls: faster/co-located execution (compete in timing games), or a domain forecasting model (different project, efficient-where-liquid), or accepting the validated mechanical sleeve (~$150/mo conservative_live) and not depositing past the canary.
