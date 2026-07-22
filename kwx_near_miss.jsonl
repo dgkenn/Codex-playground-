@@ -219,3 +219,4 @@
 {"ticker": "KXHIGHPHIL-26JUL22-B84.5", "side": "no", "ask_c": 100, "reason": "ask>98", "cushion_f": 2.8, "extreme_f": 87.8, "station": "KPHL", "kind": "max", "date": "2026-07-22", "ts": 1784738290381}
 {"ticker": "KXHIGHTBOS-26JUL22-B82.5", "side": "no", "ask_c": 100, "reason": "ask>98", "cushion_f": 1.2, "extreme_f": 84.2, "station": "KBOS", "kind": "max", "date": "2026-07-22", "ts": 1784739200215}
 {"ticker": "KXHIGHTDC-26JUL22-B87.5", "side": "no", "ask_c": 100, "reason": "ask>98", "cushion_f": 1.06, "extreme_f": 89.06, "station": "KDCA", "kind": "max", "date": "2026-07-22", "ts": 1784739880281}
+{"ticker": "KXHIGHAUS-26JUL22-T99", "side": "no", "ask_c": 100, "reason": "ask>98", "cushion_f": 1.4, "extreme_f": 100.4, "station": "KAUS", "kind": "max", "date": "2026-07-22", "ts": 1784742805698}
