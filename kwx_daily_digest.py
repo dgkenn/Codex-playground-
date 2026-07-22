@@ -256,6 +256,17 @@ def compose():
     except Exception as e:
         lines.append(f"earlylock: check unavailable ({type(e).__name__})")
 
+    # forecast-overlay backtest-bar decision (wx_forecast_decision.py) -- same guarded-import pattern: the
+    # backtest behind this sleeve was REFUTED (FORECAST_OVERLAY_BACKTEST.md), the forward paper log is thin
+    # (2 calendar days as of this writing), and this line must never take the whole digest down over it.
+    try:
+        import wx_forecast_decision as FD
+        lines.append(f"forecast: {FD.one_line()}")
+    except ImportError:
+        lines.append("forecast: decision layer not installed")
+    except Exception as e:
+        lines.append(f"forecast: check unavailable ({type(e).__name__})")
+
     # $4k/mo goal-status digest (kwx_goal_status.py) -- same guarded-import pattern as drift/fill-quality/
     # earlylock above: fails soft so a missing or broken goal-status module never takes the digest down.
     try:

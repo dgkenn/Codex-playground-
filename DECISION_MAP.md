@@ -2860,3 +2860,23 @@ config (margin1/sustain3, quarter-Kelly/5%/17.5%/60%-caps, consensus feed, glitc
 essentially all available edge on the 65-day summer sample. Only real improvement = the conviction tier (cushion>=2F &
 gap>=15c -> 12% cap, +5%). Further backtest tuning risks OVERFITTING 65 summer days; the next real lever is FORWARD DATA
 (more samples -> tighter, out-of-time tuning), not more in-sample tests. STOP over-tuning; deploy + accumulate forward.
+
+## FORECAST OVERLAY BACKTEST (2026-07-21/22) — REFUTED: agreeing A/B backtests both leaked look-ahead; rediscovers the WEATHER-EDGE wall
+Two independent implementations backtested `wx_forecast_forward.py` (Open-Meteo forecast_prob vs Kalshi yes_ask,
+|edge|>=0.15 threshold) and agreed: A +0.114-0.203c/ct (t=11.1-16.5, 178 days), B +0.142c/ct (t=18.5, 427 days), 98.7%
+side agreement on 1,585 common tickers. Fable adversarial verification found the agreement was real but uninformative:
+both fed from Open-Meteo's day-0 historical-forecast archive, which is assembled from intraday model runs issued AFTER
+the sleeve's 05:00-11:00 local decision window -- measured against the sleeve's own 39 live-logged station-days, archive
+RMSE 1.53F vs. live-morning RMSE 2.40F (archive-vs-live-morning 2.44F RMSE directly; e.g. KMDW 2026-07-20 archive 80.6F
+vs. live morning 88.6F vs. realized 82F). Honest rerun with genuinely pre-issued lead-1 forecasts (previous-runs API,
+validated unbiased proxy for live-morning: mean diff -0.04F, RMSE 1.82F), same Impl A pipeline, same 178 distinct days:
+EV -0.016c/ct, t=-1.74, win 39.6% -- a null. Also found: `wx_forecast_forward.settle()` prices NO-side trades at the
+YES price instead of the NO cost, manufacturing ~+0.08c/ct (t=7.7) of fake edge and inflating the live paper log to an
+unreliable +0.217/trade over only 2 calendar days (pseudo-replication). SIGMA_MAX=1.2 in `wx_forecast_model.py` was fit
+to the leaky archive's 1.17F residual, not the live 2.40F morning residual -- ~2x overconfident live.
+VERDICT: do NOT deploy. `capacity_usd_month=0`. Rediscovers the WEATHER-EDGE (2026-07-17) dead axis under different
+backtest machinery: public forecasts vs Kalshi price is already priced by the market. `wx_forecast_decision.py` (new)
+is the KILL/keep-accruing gate: forward paper evidence must clear a strict Wilson/day-clustered bar (n_days>=40,
+EV(conservative)>=+2.0c) to even trigger RECONSIDER, against the verified -1.6c/t=-1.74 backtest bar; `p4k_params.json`
+sleeves.forecast is REFUTED/not-a-lever, same treatment as early_lock and maker after their own refutations. See
+FORECAST_OVERLAY_BACKTEST.md for the full writeup.
