@@ -1,0 +1,4362 @@
+{
+  "range": {
+    "start": "2026-09-01",
+    "end": "2026-12-31"
+  },
+  "weeks": [
+    {
+      "week": 1,
+      "start": "2026-09-01",
+      "end": "2026-09-06",
+      "modules": {
+        "LSH1": "HEAVY",
+        "LSH2": "GOLDEN",
+        "Lahey": "NIGHTS",
+        "BMC": "STEADY"
+      },
+      "overridden": true,
+      "override_reason": "PIN1: Li forced to GOLDEN (swap w/ BMC)",
+      "lsh_midweek_transition": null
+    },
+    {
+      "week": 2,
+      "start": "2026-09-07",
+      "end": "2026-09-13",
+      "modules": {
+        "LSH1": "STEADY",
+        "LSH2": "NIGHTS",
+        "Lahey": "GOLDEN",
+        "BMC": "HEAVY"
+      },
+      "overridden": false,
+      "override_reason": null,
+      "lsh_midweek_transition": null
+    },
+    {
+      "week": 3,
+      "start": "2026-09-14",
+      "end": "2026-09-20",
+      "modules": {
+        "LSH1": "NIGHTS",
+        "LSH2": "GOLDEN",
+        "Lahey": "HEAVY",
+        "BMC": "STEADY"
+      },
+      "overridden": false,
+      "override_reason": null,
+      "lsh_midweek_transition": null
+    },
+    {
+      "week": 4,
+      "start": "2026-09-21",
+      "end": "2026-09-27",
+      "modules": {
+        "LSH1": "GOLDEN",
+        "LSH2": "HEAVY",
+        "Lahey": "STEADY",
+        "BMC": "NIGHTS"
+      },
+      "overridden": false,
+      "override_reason": null,
+      "lsh_midweek_transition": null
+    },
+    {
+      "week": 5,
+      "start": "2026-09-28",
+      "end": "2026-10-04",
+      "modules": {
+        "LSH1": "HEAVY",
+        "LSH2": "STEADY",
+        "Lahey": "NIGHTS",
+        "BMC": "GOLDEN"
+      },
+      "overridden": false,
+      "override_reason": null,
+      "lsh_midweek_transition": "Sep->Oct (Wise/Li hand off to MacNeille/Bronson starting Thu 10/1)"
+    },
+    {
+      "week": 6,
+      "start": "2026-10-05",
+      "end": "2026-10-11",
+      "modules": {
+        "LSH1": "STEADY",
+        "LSH2": "NIGHTS",
+        "Lahey": "GOLDEN",
+        "BMC": "HEAVY"
+      },
+      "overridden": false,
+      "override_reason": null,
+      "lsh_midweek_transition": null
+    },
+    {
+      "week": 7,
+      "start": "2026-10-12",
+      "end": "2026-10-18",
+      "modules": {
+        "LSH1": "GOLDEN",
+        "LSH2": "STEADY",
+        "Lahey": "HEAVY",
+        "BMC": "NIGHTS"
+      },
+      "overridden": true,
+      "override_reason": "PIN2: MacNeille forced to GOLDEN (3-cycle w/ LSH2, BMC)",
+      "lsh_midweek_transition": null
+    },
+    {
+      "week": 8,
+      "start": "2026-10-19",
+      "end": "2026-10-25",
+      "modules": {
+        "LSH1": "NIGHTS",
+        "LSH2": "HEAVY",
+        "Lahey": "STEADY",
+        "BMC": "GOLDEN"
+      },
+      "overridden": true,
+      "override_reason": "PIN3: MacNeille's Oct NIGHTS week moved here (was W7, now GOLDEN per PIN2)",
+      "lsh_midweek_transition": null
+    },
+    {
+      "week": 9,
+      "start": "2026-10-26",
+      "end": "2026-11-01",
+      "modules": {
+        "LSH1": "HEAVY",
+        "LSH2": "STEADY",
+        "Lahey": "NIGHTS",
+        "BMC": "GOLDEN"
+      },
+      "overridden": false,
+      "override_reason": null,
+      "lsh_midweek_transition": "Oct->Nov (MacNeille/Bronson hand off to Wise/Kennedy starting Sun 11/1)"
+    },
+    {
+      "week": 10,
+      "start": "2026-11-02",
+      "end": "2026-11-08",
+      "modules": {
+        "LSH1": "STEADY",
+        "LSH2": "NIGHTS",
+        "Lahey": "GOLDEN",
+        "BMC": "HEAVY"
+      },
+      "overridden": false,
+      "override_reason": null,
+      "lsh_midweek_transition": null
+    },
+    {
+      "week": 11,
+      "start": "2026-11-09",
+      "end": "2026-11-15",
+      "modules": {
+        "LSH1": "NIGHTS",
+        "LSH2": "GOLDEN",
+        "Lahey": "HEAVY",
+        "BMC": "STEADY"
+      },
+      "overridden": false,
+      "override_reason": null,
+      "lsh_midweek_transition": null
+    },
+    {
+      "week": 12,
+      "start": "2026-11-16",
+      "end": "2026-11-22",
+      "modules": {
+        "LSH1": "GOLDEN",
+        "LSH2": "HEAVY",
+        "Lahey": "STEADY",
+        "BMC": "NIGHTS"
+      },
+      "overridden": false,
+      "override_reason": null,
+      "lsh_midweek_transition": null
+    },
+    {
+      "week": 13,
+      "start": "2026-11-23",
+      "end": "2026-11-29",
+      "modules": {
+        "LSH1": "HEAVY",
+        "LSH2": "STEADY",
+        "Lahey": "NIGHTS",
+        "BMC": "GOLDEN"
+      },
+      "overridden": false,
+      "override_reason": null,
+      "lsh_midweek_transition": null
+    },
+    {
+      "week": 14,
+      "start": "2026-11-30",
+      "end": "2026-12-06",
+      "modules": {
+        "LSH1": "STEADY",
+        "LSH2": "NIGHTS",
+        "Lahey": "GOLDEN",
+        "BMC": "HEAVY"
+      },
+      "overridden": false,
+      "override_reason": null,
+      "lsh_midweek_transition": "Nov->Dec (Wise/Kennedy hand off to MacNeille/Bronson starting Tue 12/1)"
+    },
+    {
+      "week": 15,
+      "start": "2026-12-07",
+      "end": "2026-12-13",
+      "modules": {
+        "LSH1": "NIGHTS",
+        "LSH2": "GOLDEN",
+        "Lahey": "HEAVY",
+        "BMC": "STEADY"
+      },
+      "overridden": false,
+      "override_reason": null,
+      "lsh_midweek_transition": null
+    },
+    {
+      "week": 16,
+      "start": "2026-12-14",
+      "end": "2026-12-20",
+      "modules": {
+        "LSH1": "GOLDEN",
+        "LSH2": "HEAVY",
+        "Lahey": "STEADY",
+        "BMC": "NIGHTS"
+      },
+      "overridden": false,
+      "override_reason": null,
+      "lsh_midweek_transition": null
+    },
+    {
+      "week": 17,
+      "start": "2026-12-21",
+      "end": "2026-12-27",
+      "modules": {
+        "LSH1": "HEAVY",
+        "LSH2": "STEADY",
+        "Lahey": "NIGHTS",
+        "BMC": "GOLDEN"
+      },
+      "overridden": false,
+      "override_reason": null,
+      "lsh_midweek_transition": null
+    },
+    {
+      "week": 18,
+      "start": "2026-12-28",
+      "end": "2026-12-31",
+      "modules": {
+        "LSH1": "STEADY",
+        "LSH2": "NIGHTS",
+        "Lahey": "GOLDEN",
+        "BMC": "HEAVY"
+      },
+      "overridden": false,
+      "override_reason": null,
+      "lsh_midweek_transition": null
+    }
+  ],
+  "days": [
+    {
+      "date": "2026-09-01",
+      "weekday": "Tue",
+      "week": 1,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "Wise",
+          "module": "HEAVY",
+          "duty": "Day"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Li",
+          "module": "GOLDEN",
+          "duty": "Day"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Kavelidou",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "BMC",
+          "person": "Zohaib Qasun",
+          "module": "STEADY",
+          "duty": "Day"
+        }
+      ],
+      "senior": null,
+      "note_writers": 3
+    },
+    {
+      "date": "2026-09-02",
+      "weekday": "Wed",
+      "week": 1,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "Wise",
+          "module": "HEAVY",
+          "duty": "Day"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Li",
+          "module": "GOLDEN",
+          "duty": "Day"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Kavelidou",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "BMC",
+          "person": "Zohaib Qasun",
+          "module": "STEADY",
+          "duty": "Day"
+        }
+      ],
+      "senior": null,
+      "note_writers": 3
+    },
+    {
+      "date": "2026-09-03",
+      "weekday": "Thu",
+      "week": 1,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "Wise",
+          "module": "HEAVY",
+          "duty": "OFF"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Li",
+          "module": "GOLDEN",
+          "duty": "Day"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Kavelidou",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "BMC",
+          "person": "Zohaib Qasun",
+          "module": "STEADY",
+          "duty": "Day"
+        }
+      ],
+      "senior": null,
+      "note_writers": 2
+    },
+    {
+      "date": "2026-09-04",
+      "weekday": "Fri",
+      "week": 1,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "Wise",
+          "module": "HEAVY",
+          "duty": "Day"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Li",
+          "module": "GOLDEN",
+          "duty": "Day"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Kavelidou",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "BMC",
+          "person": "Zohaib Qasun",
+          "module": "STEADY",
+          "duty": "Day"
+        }
+      ],
+      "senior": null,
+      "note_writers": 3
+    },
+    {
+      "date": "2026-09-05",
+      "weekday": "Sat",
+      "week": 1,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "Wise",
+          "module": "HEAVY",
+          "duty": "Day"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Li",
+          "module": "GOLDEN",
+          "duty": "OFF"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Kavelidou",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "BMC",
+          "person": "Zohaib Qasun",
+          "module": "STEADY",
+          "duty": "Day"
+        }
+      ],
+      "senior": null,
+      "note_writers": 2
+    },
+    {
+      "date": "2026-09-06",
+      "weekday": "Sun",
+      "week": 1,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "Wise",
+          "module": "HEAVY",
+          "duty": "24H"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Li",
+          "module": "GOLDEN",
+          "duty": "OFF"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Kavelidou",
+          "module": "NIGHTS",
+          "duty": "OFF"
+        },
+        {
+          "slot": "BMC",
+          "person": "Zohaib Qasun",
+          "module": "STEADY",
+          "duty": "Day"
+        }
+      ],
+      "senior": null,
+      "note_writers": 2
+    },
+    {
+      "date": "2026-09-07",
+      "weekday": "Mon",
+      "week": 2,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "Wise",
+          "module": "STEADY",
+          "duty": "OFF"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Li",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Kavelidou",
+          "module": "GOLDEN",
+          "duty": "Day"
+        },
+        {
+          "slot": "BMC",
+          "person": "Zohaib Qasun",
+          "module": "HEAVY",
+          "duty": "Day"
+        }
+      ],
+      "senior": null,
+      "note_writers": 2
+    },
+    {
+      "date": "2026-09-08",
+      "weekday": "Tue",
+      "week": 2,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "Wise",
+          "module": "STEADY",
+          "duty": "Day"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Li",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Kavelidou",
+          "module": "GOLDEN",
+          "duty": "Day"
+        },
+        {
+          "slot": "BMC",
+          "person": "Zohaib Qasun",
+          "module": "HEAVY",
+          "duty": "Day"
+        }
+      ],
+      "senior": null,
+      "note_writers": 3
+    },
+    {
+      "date": "2026-09-09",
+      "weekday": "Wed",
+      "week": 2,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "Wise",
+          "module": "STEADY",
+          "duty": "Day"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Li",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Kavelidou",
+          "module": "GOLDEN",
+          "duty": "Day"
+        },
+        {
+          "slot": "BMC",
+          "person": "Zohaib Qasun",
+          "module": "HEAVY",
+          "duty": "Day"
+        }
+      ],
+      "senior": null,
+      "note_writers": 3
+    },
+    {
+      "date": "2026-09-10",
+      "weekday": "Thu",
+      "week": 2,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "Wise",
+          "module": "STEADY",
+          "duty": "Day"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Li",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Kavelidou",
+          "module": "GOLDEN",
+          "duty": "Day"
+        },
+        {
+          "slot": "BMC",
+          "person": "Zohaib Qasun",
+          "module": "HEAVY",
+          "duty": "OFF"
+        }
+      ],
+      "senior": null,
+      "note_writers": 2
+    },
+    {
+      "date": "2026-09-11",
+      "weekday": "Fri",
+      "week": 2,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "Wise",
+          "module": "STEADY",
+          "duty": "Day"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Li",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Kavelidou",
+          "module": "GOLDEN",
+          "duty": "Day"
+        },
+        {
+          "slot": "BMC",
+          "person": "Zohaib Qasun",
+          "module": "HEAVY",
+          "duty": "Day"
+        }
+      ],
+      "senior": null,
+      "note_writers": 3
+    },
+    {
+      "date": "2026-09-12",
+      "weekday": "Sat",
+      "week": 2,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "Wise",
+          "module": "STEADY",
+          "duty": "Day"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Li",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Kavelidou",
+          "module": "GOLDEN",
+          "duty": "OFF"
+        },
+        {
+          "slot": "BMC",
+          "person": "Zohaib Qasun",
+          "module": "HEAVY",
+          "duty": "Day"
+        }
+      ],
+      "senior": null,
+      "note_writers": 2
+    },
+    {
+      "date": "2026-09-13",
+      "weekday": "Sun",
+      "week": 2,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "Wise",
+          "module": "STEADY",
+          "duty": "Day"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Li",
+          "module": "NIGHTS",
+          "duty": "OFF"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Kavelidou",
+          "module": "GOLDEN",
+          "duty": "OFF"
+        },
+        {
+          "slot": "BMC",
+          "person": "Zohaib Qasun",
+          "module": "HEAVY",
+          "duty": "24H"
+        }
+      ],
+      "senior": null,
+      "note_writers": 2
+    },
+    {
+      "date": "2026-09-14",
+      "weekday": "Mon",
+      "week": 3,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "Wise",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Li",
+          "module": "GOLDEN",
+          "duty": "Day"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Kavelidou",
+          "module": "HEAVY",
+          "duty": "Day"
+        },
+        {
+          "slot": "BMC",
+          "person": "Metri",
+          "module": "STEADY",
+          "duty": "OFF"
+        }
+      ],
+      "senior": null,
+      "note_writers": 2
+    },
+    {
+      "date": "2026-09-15",
+      "weekday": "Tue",
+      "week": 3,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "Wise",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Li",
+          "module": "GOLDEN",
+          "duty": "Day"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Kavelidou",
+          "module": "HEAVY",
+          "duty": "Day"
+        },
+        {
+          "slot": "BMC",
+          "person": "Metri",
+          "module": "STEADY",
+          "duty": "Day"
+        }
+      ],
+      "senior": null,
+      "note_writers": 3
+    },
+    {
+      "date": "2026-09-16",
+      "weekday": "Wed",
+      "week": 3,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "Wise",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Li",
+          "module": "GOLDEN",
+          "duty": "Day"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Kavelidou",
+          "module": "HEAVY",
+          "duty": "Day"
+        },
+        {
+          "slot": "BMC",
+          "person": "Metri",
+          "module": "STEADY",
+          "duty": "Day"
+        }
+      ],
+      "senior": null,
+      "note_writers": 3
+    },
+    {
+      "date": "2026-09-17",
+      "weekday": "Thu",
+      "week": 3,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "Wise",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Li",
+          "module": "GOLDEN",
+          "duty": "Day"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Kavelidou",
+          "module": "HEAVY",
+          "duty": "OFF"
+        },
+        {
+          "slot": "BMC",
+          "person": "Metri",
+          "module": "STEADY",
+          "duty": "Day"
+        }
+      ],
+      "senior": null,
+      "note_writers": 2
+    },
+    {
+      "date": "2026-09-18",
+      "weekday": "Fri",
+      "week": 3,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "Wise",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Li",
+          "module": "GOLDEN",
+          "duty": "Day"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Kavelidou",
+          "module": "HEAVY",
+          "duty": "Day"
+        },
+        {
+          "slot": "BMC",
+          "person": "Metri",
+          "module": "STEADY",
+          "duty": "Day"
+        }
+      ],
+      "senior": null,
+      "note_writers": 3
+    },
+    {
+      "date": "2026-09-19",
+      "weekday": "Sat",
+      "week": 3,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "Wise",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Li",
+          "module": "GOLDEN",
+          "duty": "OFF"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Kavelidou",
+          "module": "HEAVY",
+          "duty": "Day"
+        },
+        {
+          "slot": "BMC",
+          "person": "Metri",
+          "module": "STEADY",
+          "duty": "Day"
+        }
+      ],
+      "senior": null,
+      "note_writers": 2
+    },
+    {
+      "date": "2026-09-20",
+      "weekday": "Sun",
+      "week": 3,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "Wise",
+          "module": "NIGHTS",
+          "duty": "OFF"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Li",
+          "module": "GOLDEN",
+          "duty": "OFF"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Kavelidou",
+          "module": "HEAVY",
+          "duty": "24H"
+        },
+        {
+          "slot": "BMC",
+          "person": "Metri",
+          "module": "STEADY",
+          "duty": "Day"
+        }
+      ],
+      "senior": null,
+      "note_writers": 2
+    },
+    {
+      "date": "2026-09-21",
+      "weekday": "Mon",
+      "week": 4,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "Wise",
+          "module": "GOLDEN",
+          "duty": "Day"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Li",
+          "module": "HEAVY",
+          "duty": "Day"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Ahluwalia",
+          "module": "STEADY",
+          "duty": "OFF"
+        },
+        {
+          "slot": "BMC",
+          "person": "Metri",
+          "module": "NIGHTS",
+          "duty": "Night"
+        }
+      ],
+      "senior": null,
+      "note_writers": 2
+    },
+    {
+      "date": "2026-09-22",
+      "weekday": "Tue",
+      "week": 4,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "Wise",
+          "module": "GOLDEN",
+          "duty": "Day"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Li",
+          "module": "HEAVY",
+          "duty": "Day"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Ahluwalia",
+          "module": "STEADY",
+          "duty": "Day"
+        },
+        {
+          "slot": "BMC",
+          "person": "Metri",
+          "module": "NIGHTS",
+          "duty": "Night"
+        }
+      ],
+      "senior": null,
+      "note_writers": 3
+    },
+    {
+      "date": "2026-09-23",
+      "weekday": "Wed",
+      "week": 4,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "Wise",
+          "module": "GOLDEN",
+          "duty": "Day"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Li",
+          "module": "HEAVY",
+          "duty": "Day"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Ahluwalia",
+          "module": "STEADY",
+          "duty": "Day"
+        },
+        {
+          "slot": "BMC",
+          "person": "Metri",
+          "module": "NIGHTS",
+          "duty": "Night"
+        }
+      ],
+      "senior": null,
+      "note_writers": 3
+    },
+    {
+      "date": "2026-09-24",
+      "weekday": "Thu",
+      "week": 4,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "Wise",
+          "module": "GOLDEN",
+          "duty": "Day"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Li",
+          "module": "HEAVY",
+          "duty": "OFF"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Ahluwalia",
+          "module": "STEADY",
+          "duty": "Day"
+        },
+        {
+          "slot": "BMC",
+          "person": "Metri",
+          "module": "NIGHTS",
+          "duty": "Night"
+        }
+      ],
+      "senior": null,
+      "note_writers": 2
+    },
+    {
+      "date": "2026-09-25",
+      "weekday": "Fri",
+      "week": 4,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "Wise",
+          "module": "GOLDEN",
+          "duty": "Day"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Li",
+          "module": "HEAVY",
+          "duty": "Day"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Ahluwalia",
+          "module": "STEADY",
+          "duty": "Day"
+        },
+        {
+          "slot": "BMC",
+          "person": "Metri",
+          "module": "NIGHTS",
+          "duty": "Night"
+        }
+      ],
+      "senior": null,
+      "note_writers": 3
+    },
+    {
+      "date": "2026-09-26",
+      "weekday": "Sat",
+      "week": 4,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "Wise",
+          "module": "GOLDEN",
+          "duty": "OFF"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Li",
+          "module": "HEAVY",
+          "duty": "Day"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Ahluwalia",
+          "module": "STEADY",
+          "duty": "Day"
+        },
+        {
+          "slot": "BMC",
+          "person": "Metri",
+          "module": "NIGHTS",
+          "duty": "Night"
+        }
+      ],
+      "senior": null,
+      "note_writers": 2
+    },
+    {
+      "date": "2026-09-27",
+      "weekday": "Sun",
+      "week": 4,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "Wise",
+          "module": "GOLDEN",
+          "duty": "OFF"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Li",
+          "module": "HEAVY",
+          "duty": "24H"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Ahluwalia",
+          "module": "STEADY",
+          "duty": "Day"
+        },
+        {
+          "slot": "BMC",
+          "person": "Metri",
+          "module": "NIGHTS",
+          "duty": "OFF"
+        }
+      ],
+      "senior": null,
+      "note_writers": 2
+    },
+    {
+      "date": "2026-09-28",
+      "weekday": "Mon",
+      "week": 5,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "Wise",
+          "module": "HEAVY",
+          "duty": "Day"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Li",
+          "module": "STEADY",
+          "duty": "OFF"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Ahluwalia",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "BMC",
+          "person": "Butt",
+          "module": "GOLDEN",
+          "duty": "Day"
+        }
+      ],
+      "senior": null,
+      "note_writers": 2
+    },
+    {
+      "date": "2026-09-29",
+      "weekday": "Tue",
+      "week": 5,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "Wise",
+          "module": "HEAVY",
+          "duty": "Day"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Li",
+          "module": "STEADY",
+          "duty": "Day"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Ahluwalia",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "BMC",
+          "person": "Butt",
+          "module": "GOLDEN",
+          "duty": "Day"
+        }
+      ],
+      "senior": null,
+      "note_writers": 3
+    },
+    {
+      "date": "2026-09-30",
+      "weekday": "Wed",
+      "week": 5,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "Wise",
+          "module": "HEAVY",
+          "duty": "Day"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Li",
+          "module": "STEADY",
+          "duty": "Day"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Ahluwalia",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "BMC",
+          "person": "Butt",
+          "module": "GOLDEN",
+          "duty": "Day"
+        }
+      ],
+      "senior": null,
+      "note_writers": 3
+    },
+    {
+      "date": "2026-10-01",
+      "weekday": "Thu",
+      "week": 5,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "MacNeille",
+          "module": "HEAVY",
+          "duty": "OFF"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Bronson",
+          "module": "STEADY",
+          "duty": "Day"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Ahluwalia",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "BMC",
+          "person": "Butt",
+          "module": "GOLDEN",
+          "duty": "Day"
+        }
+      ],
+      "senior": null,
+      "note_writers": 2
+    },
+    {
+      "date": "2026-10-02",
+      "weekday": "Fri",
+      "week": 5,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "MacNeille",
+          "module": "HEAVY",
+          "duty": "Day"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Bronson",
+          "module": "STEADY",
+          "duty": "Day"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Ahluwalia",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "BMC",
+          "person": "Butt",
+          "module": "GOLDEN",
+          "duty": "Day"
+        }
+      ],
+      "senior": null,
+      "note_writers": 3
+    },
+    {
+      "date": "2026-10-03",
+      "weekday": "Sat",
+      "week": 5,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "MacNeille",
+          "module": "HEAVY",
+          "duty": "Day"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Bronson",
+          "module": "STEADY",
+          "duty": "Day"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Ahluwalia",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "BMC",
+          "person": "Butt",
+          "module": "GOLDEN",
+          "duty": "OFF"
+        }
+      ],
+      "senior": null,
+      "note_writers": 2
+    },
+    {
+      "date": "2026-10-04",
+      "weekday": "Sun",
+      "week": 5,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "MacNeille",
+          "module": "HEAVY",
+          "duty": "24H"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Bronson",
+          "module": "STEADY",
+          "duty": "Day"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Ahluwalia",
+          "module": "NIGHTS",
+          "duty": "OFF"
+        },
+        {
+          "slot": "BMC",
+          "person": "Butt",
+          "module": "GOLDEN",
+          "duty": "OFF"
+        }
+      ],
+      "senior": null,
+      "note_writers": 2
+    },
+    {
+      "date": "2026-10-05",
+      "weekday": "Mon",
+      "week": 6,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "MacNeille",
+          "module": "STEADY",
+          "duty": "OFF"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Bronson",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Ahluwalia",
+          "module": "GOLDEN",
+          "duty": "Day"
+        },
+        {
+          "slot": "BMC",
+          "person": "Butt",
+          "module": "HEAVY",
+          "duty": "Day"
+        }
+      ],
+      "senior": null,
+      "note_writers": 2
+    },
+    {
+      "date": "2026-10-06",
+      "weekday": "Tue",
+      "week": 6,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "MacNeille",
+          "module": "STEADY",
+          "duty": "Day"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Bronson",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Ahluwalia",
+          "module": "GOLDEN",
+          "duty": "Day"
+        },
+        {
+          "slot": "BMC",
+          "person": "Butt",
+          "module": "HEAVY",
+          "duty": "Day"
+        }
+      ],
+      "senior": null,
+      "note_writers": 3
+    },
+    {
+      "date": "2026-10-07",
+      "weekday": "Wed",
+      "week": 6,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "MacNeille",
+          "module": "STEADY",
+          "duty": "Day"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Bronson",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Ahluwalia",
+          "module": "GOLDEN",
+          "duty": "Day"
+        },
+        {
+          "slot": "BMC",
+          "person": "Butt",
+          "module": "HEAVY",
+          "duty": "Day"
+        }
+      ],
+      "senior": null,
+      "note_writers": 3
+    },
+    {
+      "date": "2026-10-08",
+      "weekday": "Thu",
+      "week": 6,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "MacNeille",
+          "module": "STEADY",
+          "duty": "Day"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Bronson",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Ahluwalia",
+          "module": "GOLDEN",
+          "duty": "Day"
+        },
+        {
+          "slot": "BMC",
+          "person": "Butt",
+          "module": "HEAVY",
+          "duty": "OFF"
+        }
+      ],
+      "senior": null,
+      "note_writers": 2
+    },
+    {
+      "date": "2026-10-09",
+      "weekday": "Fri",
+      "week": 6,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "MacNeille",
+          "module": "STEADY",
+          "duty": "Day"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Bronson",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Ahluwalia",
+          "module": "GOLDEN",
+          "duty": "Day"
+        },
+        {
+          "slot": "BMC",
+          "person": "Butt",
+          "module": "HEAVY",
+          "duty": "Day"
+        }
+      ],
+      "senior": null,
+      "note_writers": 3
+    },
+    {
+      "date": "2026-10-10",
+      "weekday": "Sat",
+      "week": 6,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "MacNeille",
+          "module": "STEADY",
+          "duty": "Day"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Bronson",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Ahluwalia",
+          "module": "GOLDEN",
+          "duty": "OFF"
+        },
+        {
+          "slot": "BMC",
+          "person": "Butt",
+          "module": "HEAVY",
+          "duty": "Day"
+        }
+      ],
+      "senior": null,
+      "note_writers": 2
+    },
+    {
+      "date": "2026-10-11",
+      "weekday": "Sun",
+      "week": 6,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "MacNeille",
+          "module": "STEADY",
+          "duty": "Day"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Bronson",
+          "module": "NIGHTS",
+          "duty": "OFF"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Ahluwalia",
+          "module": "GOLDEN",
+          "duty": "OFF"
+        },
+        {
+          "slot": "BMC",
+          "person": "Butt",
+          "module": "HEAVY",
+          "duty": "24H"
+        }
+      ],
+      "senior": null,
+      "note_writers": 2
+    },
+    {
+      "date": "2026-10-12",
+      "weekday": "Mon",
+      "week": 7,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "MacNeille",
+          "module": "GOLDEN",
+          "duty": "Day"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Bronson",
+          "module": "STEADY",
+          "duty": "OFF"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Ahluwalia",
+          "module": "HEAVY",
+          "duty": "Day"
+        },
+        {
+          "slot": "BMC",
+          "person": "Mullins",
+          "module": "NIGHTS",
+          "duty": "Night"
+        }
+      ],
+      "senior": null,
+      "note_writers": 2
+    },
+    {
+      "date": "2026-10-13",
+      "weekday": "Tue",
+      "week": 7,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "MacNeille",
+          "module": "GOLDEN",
+          "duty": "Day"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Bronson",
+          "module": "STEADY",
+          "duty": "Day"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Ahluwalia",
+          "module": "HEAVY",
+          "duty": "Day"
+        },
+        {
+          "slot": "BMC",
+          "person": "Mullins",
+          "module": "NIGHTS",
+          "duty": "Night"
+        }
+      ],
+      "senior": null,
+      "note_writers": 3
+    },
+    {
+      "date": "2026-10-14",
+      "weekday": "Wed",
+      "week": 7,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "MacNeille",
+          "module": "GOLDEN",
+          "duty": "Day"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Bronson",
+          "module": "STEADY",
+          "duty": "Day"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Ahluwalia",
+          "module": "HEAVY",
+          "duty": "Day"
+        },
+        {
+          "slot": "BMC",
+          "person": "Mullins",
+          "module": "NIGHTS",
+          "duty": "Night"
+        }
+      ],
+      "senior": null,
+      "note_writers": 3
+    },
+    {
+      "date": "2026-10-15",
+      "weekday": "Thu",
+      "week": 7,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "MacNeille",
+          "module": "GOLDEN",
+          "duty": "Day"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Bronson",
+          "module": "STEADY",
+          "duty": "Day"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Ahluwalia",
+          "module": "HEAVY",
+          "duty": "OFF"
+        },
+        {
+          "slot": "BMC",
+          "person": "Mullins",
+          "module": "NIGHTS",
+          "duty": "Night"
+        }
+      ],
+      "senior": null,
+      "note_writers": 2
+    },
+    {
+      "date": "2026-10-16",
+      "weekday": "Fri",
+      "week": 7,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "MacNeille",
+          "module": "GOLDEN",
+          "duty": "Day"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Bronson",
+          "module": "STEADY",
+          "duty": "Day"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Ahluwalia",
+          "module": "HEAVY",
+          "duty": "Day"
+        },
+        {
+          "slot": "BMC",
+          "person": "Mullins",
+          "module": "NIGHTS",
+          "duty": "Night"
+        }
+      ],
+      "senior": null,
+      "note_writers": 3
+    },
+    {
+      "date": "2026-10-17",
+      "weekday": "Sat",
+      "week": 7,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "MacNeille",
+          "module": "GOLDEN",
+          "duty": "OFF"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Bronson",
+          "module": "STEADY",
+          "duty": "Day"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Ahluwalia",
+          "module": "HEAVY",
+          "duty": "Day"
+        },
+        {
+          "slot": "BMC",
+          "person": "Mullins",
+          "module": "NIGHTS",
+          "duty": "Night"
+        }
+      ],
+      "senior": null,
+      "note_writers": 2
+    },
+    {
+      "date": "2026-10-18",
+      "weekday": "Sun",
+      "week": 7,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "MacNeille",
+          "module": "GOLDEN",
+          "duty": "OFF"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Bronson",
+          "module": "STEADY",
+          "duty": "OFF"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Ahluwalia",
+          "module": "HEAVY",
+          "duty": "24H"
+        },
+        {
+          "slot": "BMC",
+          "person": "Mullins",
+          "module": "NIGHTS",
+          "duty": "OFF"
+        }
+      ],
+      "senior": "Aksoy",
+      "note_writers": 2
+    },
+    {
+      "date": "2026-10-19",
+      "weekday": "Mon",
+      "week": 8,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "MacNeille",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Bronson",
+          "module": "HEAVY",
+          "duty": "Day"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Chiasson",
+          "module": "STEADY",
+          "duty": "OFF"
+        },
+        {
+          "slot": "BMC",
+          "person": "Mullins",
+          "module": "GOLDEN",
+          "duty": "Day"
+        }
+      ],
+      "senior": null,
+      "note_writers": 2
+    },
+    {
+      "date": "2026-10-20",
+      "weekday": "Tue",
+      "week": 8,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "MacNeille",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Bronson",
+          "module": "HEAVY",
+          "duty": "Day"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Chiasson",
+          "module": "STEADY",
+          "duty": "Day"
+        },
+        {
+          "slot": "BMC",
+          "person": "Mullins",
+          "module": "GOLDEN",
+          "duty": "Day"
+        }
+      ],
+      "senior": null,
+      "note_writers": 3
+    },
+    {
+      "date": "2026-10-21",
+      "weekday": "Wed",
+      "week": 8,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "MacNeille",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Bronson",
+          "module": "HEAVY",
+          "duty": "Day"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Chiasson",
+          "module": "STEADY",
+          "duty": "Day"
+        },
+        {
+          "slot": "BMC",
+          "person": "Mullins",
+          "module": "GOLDEN",
+          "duty": "Day"
+        }
+      ],
+      "senior": null,
+      "note_writers": 3
+    },
+    {
+      "date": "2026-10-22",
+      "weekday": "Thu",
+      "week": 8,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "MacNeille",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Bronson",
+          "module": "HEAVY",
+          "duty": "OFF"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Chiasson",
+          "module": "STEADY",
+          "duty": "Day"
+        },
+        {
+          "slot": "BMC",
+          "person": "Mullins",
+          "module": "GOLDEN",
+          "duty": "Day"
+        }
+      ],
+      "senior": null,
+      "note_writers": 2
+    },
+    {
+      "date": "2026-10-23",
+      "weekday": "Fri",
+      "week": 8,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "MacNeille",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Bronson",
+          "module": "HEAVY",
+          "duty": "Day"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Chiasson",
+          "module": "STEADY",
+          "duty": "Day"
+        },
+        {
+          "slot": "BMC",
+          "person": "Mullins",
+          "module": "GOLDEN",
+          "duty": "Day"
+        }
+      ],
+      "senior": null,
+      "note_writers": 3
+    },
+    {
+      "date": "2026-10-24",
+      "weekday": "Sat",
+      "week": 8,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "MacNeille",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Bronson",
+          "module": "HEAVY",
+          "duty": "Day"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Chiasson",
+          "module": "STEADY",
+          "duty": "Day"
+        },
+        {
+          "slot": "BMC",
+          "person": "Mullins",
+          "module": "GOLDEN",
+          "duty": "OFF"
+        }
+      ],
+      "senior": null,
+      "note_writers": 2
+    },
+    {
+      "date": "2026-10-25",
+      "weekday": "Sun",
+      "week": 8,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "MacNeille",
+          "module": "NIGHTS",
+          "duty": "OFF"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Bronson",
+          "module": "HEAVY",
+          "duty": "24H"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Chiasson",
+          "module": "STEADY",
+          "duty": "OFF"
+        },
+        {
+          "slot": "BMC",
+          "person": "Mullins",
+          "module": "GOLDEN",
+          "duty": "OFF"
+        }
+      ],
+      "senior": "Aksoy",
+      "note_writers": 2
+    },
+    {
+      "date": "2026-10-26",
+      "weekday": "Mon",
+      "week": 9,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "MacNeille",
+          "module": "HEAVY",
+          "duty": "Day"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Bronson",
+          "module": "STEADY",
+          "duty": "OFF"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Chiasson",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "BMC",
+          "person": "Mullins",
+          "module": "GOLDEN",
+          "duty": "Day"
+        }
+      ],
+      "senior": null,
+      "note_writers": 2
+    },
+    {
+      "date": "2026-10-27",
+      "weekday": "Tue",
+      "week": 9,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "MacNeille",
+          "module": "HEAVY",
+          "duty": "Day"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Bronson",
+          "module": "STEADY",
+          "duty": "Day"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Chiasson",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "BMC",
+          "person": "Mullins",
+          "module": "GOLDEN",
+          "duty": "Day"
+        }
+      ],
+      "senior": null,
+      "note_writers": 3
+    },
+    {
+      "date": "2026-10-28",
+      "weekday": "Wed",
+      "week": 9,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "MacNeille",
+          "module": "HEAVY",
+          "duty": "Day"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Bronson",
+          "module": "STEADY",
+          "duty": "Day"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Chiasson",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "BMC",
+          "person": "Mullins",
+          "module": "GOLDEN",
+          "duty": "Day"
+        }
+      ],
+      "senior": null,
+      "note_writers": 3
+    },
+    {
+      "date": "2026-10-29",
+      "weekday": "Thu",
+      "week": 9,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "MacNeille",
+          "module": "HEAVY",
+          "duty": "OFF"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Bronson",
+          "module": "STEADY",
+          "duty": "Day"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Chiasson",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "BMC",
+          "person": "Mullins",
+          "module": "GOLDEN",
+          "duty": "Day"
+        }
+      ],
+      "senior": null,
+      "note_writers": 2
+    },
+    {
+      "date": "2026-10-30",
+      "weekday": "Fri",
+      "week": 9,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "MacNeille",
+          "module": "HEAVY",
+          "duty": "Day"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Bronson",
+          "module": "STEADY",
+          "duty": "Day"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Chiasson",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "BMC",
+          "person": "Mullins",
+          "module": "GOLDEN",
+          "duty": "Day"
+        }
+      ],
+      "senior": null,
+      "note_writers": 3
+    },
+    {
+      "date": "2026-10-31",
+      "weekday": "Sat",
+      "week": 9,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "MacNeille",
+          "module": "HEAVY",
+          "duty": "Day"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Bronson",
+          "module": "STEADY",
+          "duty": "Day"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Chiasson",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "BMC",
+          "person": "Mullins",
+          "module": "GOLDEN",
+          "duty": "OFF"
+        }
+      ],
+      "senior": null,
+      "note_writers": 2
+    },
+    {
+      "date": "2026-11-01",
+      "weekday": "Sun",
+      "week": 9,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "Wise",
+          "module": "HEAVY",
+          "duty": "24H"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Kennedy",
+          "module": "STEADY",
+          "duty": "OFF"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Chiasson",
+          "module": "NIGHTS",
+          "duty": "OFF"
+        },
+        {
+          "slot": "BMC",
+          "person": "Mullins",
+          "module": "GOLDEN",
+          "duty": "OFF"
+        }
+      ],
+      "senior": "Ramadan",
+      "note_writers": 2
+    },
+    {
+      "date": "2026-11-02",
+      "weekday": "Mon",
+      "week": 10,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "Wise",
+          "module": "STEADY",
+          "duty": "OFF"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Kennedy",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Chiasson",
+          "module": "GOLDEN",
+          "duty": "Day"
+        },
+        {
+          "slot": "BMC",
+          "person": "Mullins",
+          "module": "HEAVY",
+          "duty": "Day"
+        }
+      ],
+      "senior": null,
+      "note_writers": 2
+    },
+    {
+      "date": "2026-11-03",
+      "weekday": "Tue",
+      "week": 10,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "Wise",
+          "module": "STEADY",
+          "duty": "Day"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Kennedy",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Chiasson",
+          "module": "GOLDEN",
+          "duty": "Day"
+        },
+        {
+          "slot": "BMC",
+          "person": "Mullins",
+          "module": "HEAVY",
+          "duty": "Day"
+        }
+      ],
+      "senior": null,
+      "note_writers": 3
+    },
+    {
+      "date": "2026-11-04",
+      "weekday": "Wed",
+      "week": 10,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "Wise",
+          "module": "STEADY",
+          "duty": "Day"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Kennedy",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Chiasson",
+          "module": "GOLDEN",
+          "duty": "Day"
+        },
+        {
+          "slot": "BMC",
+          "person": "Mullins",
+          "module": "HEAVY",
+          "duty": "Day"
+        }
+      ],
+      "senior": null,
+      "note_writers": 3
+    },
+    {
+      "date": "2026-11-05",
+      "weekday": "Thu",
+      "week": 10,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "Wise",
+          "module": "STEADY",
+          "duty": "Day"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Kennedy",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Chiasson",
+          "module": "GOLDEN",
+          "duty": "Day"
+        },
+        {
+          "slot": "BMC",
+          "person": "Mullins",
+          "module": "HEAVY",
+          "duty": "OFF"
+        }
+      ],
+      "senior": null,
+      "note_writers": 2
+    },
+    {
+      "date": "2026-11-06",
+      "weekday": "Fri",
+      "week": 10,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "Wise",
+          "module": "STEADY",
+          "duty": "Day"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Kennedy",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Chiasson",
+          "module": "GOLDEN",
+          "duty": "Day"
+        },
+        {
+          "slot": "BMC",
+          "person": "Mullins",
+          "module": "HEAVY",
+          "duty": "Day"
+        }
+      ],
+      "senior": null,
+      "note_writers": 3
+    },
+    {
+      "date": "2026-11-07",
+      "weekday": "Sat",
+      "week": 10,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "Wise",
+          "module": "STEADY",
+          "duty": "Day"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Kennedy",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Chiasson",
+          "module": "GOLDEN",
+          "duty": "OFF"
+        },
+        {
+          "slot": "BMC",
+          "person": "Mullins",
+          "module": "HEAVY",
+          "duty": "Day"
+        }
+      ],
+      "senior": null,
+      "note_writers": 2
+    },
+    {
+      "date": "2026-11-08",
+      "weekday": "Sun",
+      "week": 10,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "Wise",
+          "module": "STEADY",
+          "duty": "OFF"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Kennedy",
+          "module": "NIGHTS",
+          "duty": "OFF"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Chiasson",
+          "module": "GOLDEN",
+          "duty": "OFF"
+        },
+        {
+          "slot": "BMC",
+          "person": "Mullins",
+          "module": "HEAVY",
+          "duty": "24H"
+        }
+      ],
+      "senior": "Ramadan",
+      "note_writers": 2
+    },
+    {
+      "date": "2026-11-09",
+      "weekday": "Mon",
+      "week": 11,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "Wise",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Kennedy",
+          "module": "GOLDEN",
+          "duty": "Day"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Chiasson",
+          "module": "HEAVY",
+          "duty": "Day"
+        },
+        {
+          "slot": "BMC",
+          "person": "Saeed",
+          "module": "STEADY",
+          "duty": "OFF"
+        }
+      ],
+      "senior": null,
+      "note_writers": 2
+    },
+    {
+      "date": "2026-11-10",
+      "weekday": "Tue",
+      "week": 11,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "Wise",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Kennedy",
+          "module": "GOLDEN",
+          "duty": "Day"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Chiasson",
+          "module": "HEAVY",
+          "duty": "Day"
+        },
+        {
+          "slot": "BMC",
+          "person": "Saeed",
+          "module": "STEADY",
+          "duty": "Day"
+        }
+      ],
+      "senior": null,
+      "note_writers": 3
+    },
+    {
+      "date": "2026-11-11",
+      "weekday": "Wed",
+      "week": 11,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "Wise",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Kennedy",
+          "module": "GOLDEN",
+          "duty": "Day"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Chiasson",
+          "module": "HEAVY",
+          "duty": "Day"
+        },
+        {
+          "slot": "BMC",
+          "person": "Saeed",
+          "module": "STEADY",
+          "duty": "Day"
+        }
+      ],
+      "senior": null,
+      "note_writers": 3
+    },
+    {
+      "date": "2026-11-12",
+      "weekday": "Thu",
+      "week": 11,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "Wise",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Kennedy",
+          "module": "GOLDEN",
+          "duty": "Day"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Chiasson",
+          "module": "HEAVY",
+          "duty": "OFF"
+        },
+        {
+          "slot": "BMC",
+          "person": "Saeed",
+          "module": "STEADY",
+          "duty": "Day"
+        }
+      ],
+      "senior": null,
+      "note_writers": 2
+    },
+    {
+      "date": "2026-11-13",
+      "weekday": "Fri",
+      "week": 11,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "Wise",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Kennedy",
+          "module": "GOLDEN",
+          "duty": "Day"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Chiasson",
+          "module": "HEAVY",
+          "duty": "Day"
+        },
+        {
+          "slot": "BMC",
+          "person": "Saeed",
+          "module": "STEADY",
+          "duty": "Day"
+        }
+      ],
+      "senior": null,
+      "note_writers": 3
+    },
+    {
+      "date": "2026-11-14",
+      "weekday": "Sat",
+      "week": 11,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "Wise",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Kennedy",
+          "module": "GOLDEN",
+          "duty": "OFF"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Chiasson",
+          "module": "HEAVY",
+          "duty": "Day"
+        },
+        {
+          "slot": "BMC",
+          "person": "Saeed",
+          "module": "STEADY",
+          "duty": "Day"
+        }
+      ],
+      "senior": null,
+      "note_writers": 2
+    },
+    {
+      "date": "2026-11-15",
+      "weekday": "Sun",
+      "week": 11,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "Wise",
+          "module": "NIGHTS",
+          "duty": "OFF"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Kennedy",
+          "module": "GOLDEN",
+          "duty": "OFF"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Chiasson",
+          "module": "HEAVY",
+          "duty": "24H"
+        },
+        {
+          "slot": "BMC",
+          "person": "Saeed",
+          "module": "STEADY",
+          "duty": "OFF"
+        }
+      ],
+      "senior": "Abouelazaem",
+      "note_writers": 2
+    },
+    {
+      "date": "2026-11-16",
+      "weekday": "Mon",
+      "week": 12,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "Wise",
+          "module": "GOLDEN",
+          "duty": "Day"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Kennedy",
+          "module": "HEAVY",
+          "duty": "Day"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Vivekanandan",
+          "module": "STEADY",
+          "duty": "OFF"
+        },
+        {
+          "slot": "BMC",
+          "person": "Saeed",
+          "module": "NIGHTS",
+          "duty": "Night"
+        }
+      ],
+      "senior": null,
+      "note_writers": 2
+    },
+    {
+      "date": "2026-11-17",
+      "weekday": "Tue",
+      "week": 12,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "Wise",
+          "module": "GOLDEN",
+          "duty": "Day"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Kennedy",
+          "module": "HEAVY",
+          "duty": "Day"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Vivekanandan",
+          "module": "STEADY",
+          "duty": "Day"
+        },
+        {
+          "slot": "BMC",
+          "person": "Saeed",
+          "module": "NIGHTS",
+          "duty": "Night"
+        }
+      ],
+      "senior": null,
+      "note_writers": 3
+    },
+    {
+      "date": "2026-11-18",
+      "weekday": "Wed",
+      "week": 12,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "Wise",
+          "module": "GOLDEN",
+          "duty": "Day"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Kennedy",
+          "module": "HEAVY",
+          "duty": "Day"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Vivekanandan",
+          "module": "STEADY",
+          "duty": "Day"
+        },
+        {
+          "slot": "BMC",
+          "person": "Saeed",
+          "module": "NIGHTS",
+          "duty": "Night"
+        }
+      ],
+      "senior": null,
+      "note_writers": 3
+    },
+    {
+      "date": "2026-11-19",
+      "weekday": "Thu",
+      "week": 12,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "Wise",
+          "module": "GOLDEN",
+          "duty": "Day"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Kennedy",
+          "module": "HEAVY",
+          "duty": "OFF"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Vivekanandan",
+          "module": "STEADY",
+          "duty": "Day"
+        },
+        {
+          "slot": "BMC",
+          "person": "Saeed",
+          "module": "NIGHTS",
+          "duty": "Night"
+        }
+      ],
+      "senior": null,
+      "note_writers": 2
+    },
+    {
+      "date": "2026-11-20",
+      "weekday": "Fri",
+      "week": 12,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "Wise",
+          "module": "GOLDEN",
+          "duty": "Day"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Kennedy",
+          "module": "HEAVY",
+          "duty": "Day"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Vivekanandan",
+          "module": "STEADY",
+          "duty": "Day"
+        },
+        {
+          "slot": "BMC",
+          "person": "Saeed",
+          "module": "NIGHTS",
+          "duty": "Night"
+        }
+      ],
+      "senior": null,
+      "note_writers": 3
+    },
+    {
+      "date": "2026-11-21",
+      "weekday": "Sat",
+      "week": 12,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "Wise",
+          "module": "GOLDEN",
+          "duty": "OFF"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Kennedy",
+          "module": "HEAVY",
+          "duty": "Day"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Vivekanandan",
+          "module": "STEADY",
+          "duty": "Day"
+        },
+        {
+          "slot": "BMC",
+          "person": "Saeed",
+          "module": "NIGHTS",
+          "duty": "Night"
+        }
+      ],
+      "senior": null,
+      "note_writers": 2
+    },
+    {
+      "date": "2026-11-22",
+      "weekday": "Sun",
+      "week": 12,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "Wise",
+          "module": "GOLDEN",
+          "duty": "OFF"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Kennedy",
+          "module": "HEAVY",
+          "duty": "24H"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Vivekanandan",
+          "module": "STEADY",
+          "duty": "OFF"
+        },
+        {
+          "slot": "BMC",
+          "person": "Saeed",
+          "module": "NIGHTS",
+          "duty": "OFF"
+        }
+      ],
+      "senior": "Abouelazaem",
+      "note_writers": 2
+    },
+    {
+      "date": "2026-11-23",
+      "weekday": "Mon",
+      "week": 13,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "Wise",
+          "module": "HEAVY",
+          "duty": "Day"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Kennedy",
+          "module": "STEADY",
+          "duty": "OFF"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Vivekanandan",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "BMC",
+          "person": "Shetty",
+          "module": "GOLDEN",
+          "duty": "Day"
+        }
+      ],
+      "senior": null,
+      "note_writers": 2
+    },
+    {
+      "date": "2026-11-24",
+      "weekday": "Tue",
+      "week": 13,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "Wise",
+          "module": "HEAVY",
+          "duty": "Day"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Kennedy",
+          "module": "STEADY",
+          "duty": "Day"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Vivekanandan",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "BMC",
+          "person": "Shetty",
+          "module": "GOLDEN",
+          "duty": "Day"
+        }
+      ],
+      "senior": null,
+      "note_writers": 3
+    },
+    {
+      "date": "2026-11-25",
+      "weekday": "Wed",
+      "week": 13,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "Wise",
+          "module": "HEAVY",
+          "duty": "Day"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Kennedy",
+          "module": "STEADY",
+          "duty": "Day"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Vivekanandan",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "BMC",
+          "person": "Shetty",
+          "module": "GOLDEN",
+          "duty": "Day"
+        }
+      ],
+      "senior": null,
+      "note_writers": 3
+    },
+    {
+      "date": "2026-11-26",
+      "weekday": "Thu",
+      "week": 13,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "Wise",
+          "module": "HEAVY",
+          "duty": "OFF"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Kennedy",
+          "module": "STEADY",
+          "duty": "Day"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Vivekanandan",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "BMC",
+          "person": "Shetty",
+          "module": "GOLDEN",
+          "duty": "Day"
+        }
+      ],
+      "senior": null,
+      "note_writers": 2
+    },
+    {
+      "date": "2026-11-27",
+      "weekday": "Fri",
+      "week": 13,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "Wise",
+          "module": "HEAVY",
+          "duty": "Day"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Kennedy",
+          "module": "STEADY",
+          "duty": "Day"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Vivekanandan",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "BMC",
+          "person": "Shetty",
+          "module": "GOLDEN",
+          "duty": "Day"
+        }
+      ],
+      "senior": null,
+      "note_writers": 3
+    },
+    {
+      "date": "2026-11-28",
+      "weekday": "Sat",
+      "week": 13,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "Wise",
+          "module": "HEAVY",
+          "duty": "Day"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Kennedy",
+          "module": "STEADY",
+          "duty": "Day"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Vivekanandan",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "BMC",
+          "person": "Shetty",
+          "module": "GOLDEN",
+          "duty": "OFF"
+        }
+      ],
+      "senior": null,
+      "note_writers": 2
+    },
+    {
+      "date": "2026-11-29",
+      "weekday": "Sun",
+      "week": 13,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "Wise",
+          "module": "HEAVY",
+          "duty": "24H"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Kennedy",
+          "module": "STEADY",
+          "duty": "OFF"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Vivekanandan",
+          "module": "NIGHTS",
+          "duty": "OFF"
+        },
+        {
+          "slot": "BMC",
+          "person": "Shetty",
+          "module": "GOLDEN",
+          "duty": "OFF"
+        }
+      ],
+      "senior": "Abouelazaem",
+      "note_writers": 2
+    },
+    {
+      "date": "2026-11-30",
+      "weekday": "Mon",
+      "week": 14,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "Wise",
+          "module": "STEADY",
+          "duty": "OFF"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Kennedy",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Vivekanandan",
+          "module": "GOLDEN",
+          "duty": "Day"
+        },
+        {
+          "slot": "BMC",
+          "person": "Shetty",
+          "module": "HEAVY",
+          "duty": "Day"
+        }
+      ],
+      "senior": null,
+      "note_writers": 2
+    },
+    {
+      "date": "2026-12-01",
+      "weekday": "Tue",
+      "week": 14,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "MacNeille",
+          "module": "STEADY",
+          "duty": "Day"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Bronson",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Vivekanandan",
+          "module": "GOLDEN",
+          "duty": "Day"
+        },
+        {
+          "slot": "BMC",
+          "person": "Shetty",
+          "module": "HEAVY",
+          "duty": "Day"
+        }
+      ],
+      "senior": null,
+      "note_writers": 3
+    },
+    {
+      "date": "2026-12-02",
+      "weekday": "Wed",
+      "week": 14,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "MacNeille",
+          "module": "STEADY",
+          "duty": "Day"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Bronson",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Vivekanandan",
+          "module": "GOLDEN",
+          "duty": "Day"
+        },
+        {
+          "slot": "BMC",
+          "person": "Shetty",
+          "module": "HEAVY",
+          "duty": "Day"
+        }
+      ],
+      "senior": null,
+      "note_writers": 3
+    },
+    {
+      "date": "2026-12-03",
+      "weekday": "Thu",
+      "week": 14,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "MacNeille",
+          "module": "STEADY",
+          "duty": "Day"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Bronson",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Vivekanandan",
+          "module": "GOLDEN",
+          "duty": "Day"
+        },
+        {
+          "slot": "BMC",
+          "person": "Shetty",
+          "module": "HEAVY",
+          "duty": "OFF"
+        }
+      ],
+      "senior": null,
+      "note_writers": 2
+    },
+    {
+      "date": "2026-12-04",
+      "weekday": "Fri",
+      "week": 14,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "MacNeille",
+          "module": "STEADY",
+          "duty": "Day"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Bronson",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Vivekanandan",
+          "module": "GOLDEN",
+          "duty": "Day"
+        },
+        {
+          "slot": "BMC",
+          "person": "Shetty",
+          "module": "HEAVY",
+          "duty": "Day"
+        }
+      ],
+      "senior": null,
+      "note_writers": 3
+    },
+    {
+      "date": "2026-12-05",
+      "weekday": "Sat",
+      "week": 14,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "MacNeille",
+          "module": "STEADY",
+          "duty": "Day"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Bronson",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Vivekanandan",
+          "module": "GOLDEN",
+          "duty": "OFF"
+        },
+        {
+          "slot": "BMC",
+          "person": "Shetty",
+          "module": "HEAVY",
+          "duty": "Day"
+        }
+      ],
+      "senior": null,
+      "note_writers": 2
+    },
+    {
+      "date": "2026-12-06",
+      "weekday": "Sun",
+      "week": 14,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "MacNeille",
+          "module": "STEADY",
+          "duty": "OFF"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Bronson",
+          "module": "NIGHTS",
+          "duty": "OFF"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Vivekanandan",
+          "module": "GOLDEN",
+          "duty": "OFF"
+        },
+        {
+          "slot": "BMC",
+          "person": "Shetty",
+          "module": "HEAVY",
+          "duty": "24H"
+        }
+      ],
+      "senior": "Abouelazaem",
+      "note_writers": 2
+    },
+    {
+      "date": "2026-12-07",
+      "weekday": "Mon",
+      "week": 15,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "MacNeille",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Bronson",
+          "module": "GOLDEN",
+          "duty": "Day"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Vivekanandan",
+          "module": "HEAVY",
+          "duty": "Day"
+        },
+        {
+          "slot": "BMC",
+          "person": "Villanueva",
+          "module": "STEADY",
+          "duty": "OFF"
+        }
+      ],
+      "senior": null,
+      "note_writers": 2
+    },
+    {
+      "date": "2026-12-08",
+      "weekday": "Tue",
+      "week": 15,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "MacNeille",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Bronson",
+          "module": "GOLDEN",
+          "duty": "Day"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Vivekanandan",
+          "module": "HEAVY",
+          "duty": "Day"
+        },
+        {
+          "slot": "BMC",
+          "person": "Villanueva",
+          "module": "STEADY",
+          "duty": "Day"
+        }
+      ],
+      "senior": null,
+      "note_writers": 3
+    },
+    {
+      "date": "2026-12-09",
+      "weekday": "Wed",
+      "week": 15,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "MacNeille",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Bronson",
+          "module": "GOLDEN",
+          "duty": "Day"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Vivekanandan",
+          "module": "HEAVY",
+          "duty": "Day"
+        },
+        {
+          "slot": "BMC",
+          "person": "Villanueva",
+          "module": "STEADY",
+          "duty": "Day"
+        }
+      ],
+      "senior": null,
+      "note_writers": 3
+    },
+    {
+      "date": "2026-12-10",
+      "weekday": "Thu",
+      "week": 15,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "MacNeille",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Bronson",
+          "module": "GOLDEN",
+          "duty": "Day"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Vivekanandan",
+          "module": "HEAVY",
+          "duty": "OFF"
+        },
+        {
+          "slot": "BMC",
+          "person": "Villanueva",
+          "module": "STEADY",
+          "duty": "Day"
+        }
+      ],
+      "senior": null,
+      "note_writers": 2
+    },
+    {
+      "date": "2026-12-11",
+      "weekday": "Fri",
+      "week": 15,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "MacNeille",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Bronson",
+          "module": "GOLDEN",
+          "duty": "Day"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Vivekanandan",
+          "module": "HEAVY",
+          "duty": "Day"
+        },
+        {
+          "slot": "BMC",
+          "person": "Villanueva",
+          "module": "STEADY",
+          "duty": "Day"
+        }
+      ],
+      "senior": null,
+      "note_writers": 3
+    },
+    {
+      "date": "2026-12-12",
+      "weekday": "Sat",
+      "week": 15,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "MacNeille",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Bronson",
+          "module": "GOLDEN",
+          "duty": "OFF"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Vivekanandan",
+          "module": "HEAVY",
+          "duty": "Day"
+        },
+        {
+          "slot": "BMC",
+          "person": "Villanueva",
+          "module": "STEADY",
+          "duty": "Day"
+        }
+      ],
+      "senior": null,
+      "note_writers": 2
+    },
+    {
+      "date": "2026-12-13",
+      "weekday": "Sun",
+      "week": 15,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "MacNeille",
+          "module": "NIGHTS",
+          "duty": "OFF"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Bronson",
+          "module": "GOLDEN",
+          "duty": "OFF"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Vivekanandan",
+          "module": "HEAVY",
+          "duty": "24H"
+        },
+        {
+          "slot": "BMC",
+          "person": "Villanueva",
+          "module": "STEADY",
+          "duty": "OFF"
+        }
+      ],
+      "senior": "Sultan",
+      "note_writers": 2
+    },
+    {
+      "date": "2026-12-14",
+      "weekday": "Mon",
+      "week": 16,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "MacNeille",
+          "module": "GOLDEN",
+          "duty": "Day"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Bronson",
+          "module": "HEAVY",
+          "duty": "Day"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Salam",
+          "module": "STEADY",
+          "duty": "OFF"
+        },
+        {
+          "slot": "BMC",
+          "person": "Villanueva",
+          "module": "NIGHTS",
+          "duty": "Night"
+        }
+      ],
+      "senior": null,
+      "note_writers": 2
+    },
+    {
+      "date": "2026-12-15",
+      "weekday": "Tue",
+      "week": 16,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "MacNeille",
+          "module": "GOLDEN",
+          "duty": "Day"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Bronson",
+          "module": "HEAVY",
+          "duty": "Day"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Salam",
+          "module": "STEADY",
+          "duty": "Day"
+        },
+        {
+          "slot": "BMC",
+          "person": "Villanueva",
+          "module": "NIGHTS",
+          "duty": "Night"
+        }
+      ],
+      "senior": null,
+      "note_writers": 3
+    },
+    {
+      "date": "2026-12-16",
+      "weekday": "Wed",
+      "week": 16,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "MacNeille",
+          "module": "GOLDEN",
+          "duty": "Day"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Bronson",
+          "module": "HEAVY",
+          "duty": "Day"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Salam",
+          "module": "STEADY",
+          "duty": "Day"
+        },
+        {
+          "slot": "BMC",
+          "person": "Villanueva",
+          "module": "NIGHTS",
+          "duty": "Night"
+        }
+      ],
+      "senior": null,
+      "note_writers": 3
+    },
+    {
+      "date": "2026-12-17",
+      "weekday": "Thu",
+      "week": 16,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "MacNeille",
+          "module": "GOLDEN",
+          "duty": "Day"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Bronson",
+          "module": "HEAVY",
+          "duty": "OFF"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Salam",
+          "module": "STEADY",
+          "duty": "Day"
+        },
+        {
+          "slot": "BMC",
+          "person": "Villanueva",
+          "module": "NIGHTS",
+          "duty": "Night"
+        }
+      ],
+      "senior": null,
+      "note_writers": 2
+    },
+    {
+      "date": "2026-12-18",
+      "weekday": "Fri",
+      "week": 16,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "MacNeille",
+          "module": "GOLDEN",
+          "duty": "Day"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Bronson",
+          "module": "HEAVY",
+          "duty": "Day"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Salam",
+          "module": "STEADY",
+          "duty": "Day"
+        },
+        {
+          "slot": "BMC",
+          "person": "Villanueva",
+          "module": "NIGHTS",
+          "duty": "Night"
+        }
+      ],
+      "senior": null,
+      "note_writers": 3
+    },
+    {
+      "date": "2026-12-19",
+      "weekday": "Sat",
+      "week": 16,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "MacNeille",
+          "module": "GOLDEN",
+          "duty": "OFF"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Bronson",
+          "module": "HEAVY",
+          "duty": "Day"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Salam",
+          "module": "STEADY",
+          "duty": "Day"
+        },
+        {
+          "slot": "BMC",
+          "person": "Villanueva",
+          "module": "NIGHTS",
+          "duty": "Night"
+        }
+      ],
+      "senior": null,
+      "note_writers": 2
+    },
+    {
+      "date": "2026-12-20",
+      "weekday": "Sun",
+      "week": 16,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "MacNeille",
+          "module": "GOLDEN",
+          "duty": "OFF"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Bronson",
+          "module": "HEAVY",
+          "duty": "24H"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Salam",
+          "module": "STEADY",
+          "duty": "OFF"
+        },
+        {
+          "slot": "BMC",
+          "person": "Villanueva",
+          "module": "NIGHTS",
+          "duty": "OFF"
+        }
+      ],
+      "senior": "Sultan",
+      "note_writers": 2
+    },
+    {
+      "date": "2026-12-21",
+      "weekday": "Mon",
+      "week": 17,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "MacNeille",
+          "module": "HEAVY",
+          "duty": "Day"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Bronson",
+          "module": "STEADY",
+          "duty": "OFF"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Salam",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "BMC",
+          "person": "Farzeela",
+          "module": "GOLDEN",
+          "duty": "Day"
+        }
+      ],
+      "senior": null,
+      "note_writers": 2
+    },
+    {
+      "date": "2026-12-22",
+      "weekday": "Tue",
+      "week": 17,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "MacNeille",
+          "module": "HEAVY",
+          "duty": "Day"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Bronson",
+          "module": "STEADY",
+          "duty": "Day"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Salam",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "BMC",
+          "person": "Farzeela",
+          "module": "GOLDEN",
+          "duty": "Day"
+        }
+      ],
+      "senior": null,
+      "note_writers": 3
+    },
+    {
+      "date": "2026-12-23",
+      "weekday": "Wed",
+      "week": 17,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "MacNeille",
+          "module": "HEAVY",
+          "duty": "Day"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Bronson",
+          "module": "STEADY",
+          "duty": "Day"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Salam",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "BMC",
+          "person": "Farzeela",
+          "module": "GOLDEN",
+          "duty": "Day"
+        }
+      ],
+      "senior": null,
+      "note_writers": 3
+    },
+    {
+      "date": "2026-12-24",
+      "weekday": "Thu",
+      "week": 17,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "MacNeille",
+          "module": "HEAVY",
+          "duty": "OFF"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Bronson",
+          "module": "STEADY",
+          "duty": "Day"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Salam",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "BMC",
+          "person": "Farzeela",
+          "module": "GOLDEN",
+          "duty": "Day"
+        }
+      ],
+      "senior": null,
+      "note_writers": 2
+    },
+    {
+      "date": "2026-12-25",
+      "weekday": "Fri",
+      "week": 17,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "MacNeille",
+          "module": "HEAVY",
+          "duty": "Day"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Bronson",
+          "module": "STEADY",
+          "duty": "Day"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Salam",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "BMC",
+          "person": "Farzeela",
+          "module": "GOLDEN",
+          "duty": "Day"
+        }
+      ],
+      "senior": null,
+      "note_writers": 3
+    },
+    {
+      "date": "2026-12-26",
+      "weekday": "Sat",
+      "week": 17,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "MacNeille",
+          "module": "HEAVY",
+          "duty": "Day"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Bronson",
+          "module": "STEADY",
+          "duty": "Day"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Salam",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "BMC",
+          "person": "Farzeela",
+          "module": "GOLDEN",
+          "duty": "OFF"
+        }
+      ],
+      "senior": null,
+      "note_writers": 2
+    },
+    {
+      "date": "2026-12-27",
+      "weekday": "Sun",
+      "week": 17,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "MacNeille",
+          "module": "HEAVY",
+          "duty": "24H"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Bronson",
+          "module": "STEADY",
+          "duty": "OFF"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Salam",
+          "module": "NIGHTS",
+          "duty": "OFF"
+        },
+        {
+          "slot": "BMC",
+          "person": "Farzeela",
+          "module": "GOLDEN",
+          "duty": "OFF"
+        }
+      ],
+      "senior": "Panchal",
+      "note_writers": 2
+    },
+    {
+      "date": "2026-12-28",
+      "weekday": "Mon",
+      "week": 18,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "MacNeille",
+          "module": "STEADY",
+          "duty": "OFF"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Bronson",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Salam",
+          "module": "GOLDEN",
+          "duty": "Day"
+        },
+        {
+          "slot": "BMC",
+          "person": "Farzeela",
+          "module": "HEAVY",
+          "duty": "Day"
+        }
+      ],
+      "senior": null,
+      "note_writers": 2
+    },
+    {
+      "date": "2026-12-29",
+      "weekday": "Tue",
+      "week": 18,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "MacNeille",
+          "module": "STEADY",
+          "duty": "Day"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Bronson",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Salam",
+          "module": "GOLDEN",
+          "duty": "Day"
+        },
+        {
+          "slot": "BMC",
+          "person": "Farzeela",
+          "module": "HEAVY",
+          "duty": "Day"
+        }
+      ],
+      "senior": null,
+      "note_writers": 3
+    },
+    {
+      "date": "2026-12-30",
+      "weekday": "Wed",
+      "week": 18,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "MacNeille",
+          "module": "STEADY",
+          "duty": "Day"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Bronson",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Salam",
+          "module": "GOLDEN",
+          "duty": "Day"
+        },
+        {
+          "slot": "BMC",
+          "person": "Farzeela",
+          "module": "HEAVY",
+          "duty": "Day"
+        }
+      ],
+      "senior": null,
+      "note_writers": 3
+    },
+    {
+      "date": "2026-12-31",
+      "weekday": "Thu",
+      "week": 18,
+      "entries": [
+        {
+          "slot": "LSH1",
+          "person": "MacNeille",
+          "module": "STEADY",
+          "duty": "Day"
+        },
+        {
+          "slot": "LSH2",
+          "person": "Bronson",
+          "module": "NIGHTS",
+          "duty": "Night"
+        },
+        {
+          "slot": "Lahey",
+          "person": "Salam",
+          "module": "GOLDEN",
+          "duty": "Day"
+        },
+        {
+          "slot": "BMC",
+          "person": "Farzeela",
+          "module": "HEAVY",
+          "duty": "OFF"
+        }
+      ],
+      "senior": null,
+      "note_writers": 2
+    }
+  ],
+  "tally": {
+    "Wise": {
+      "golden_weekends": 2,
+      "days_off": 12
+    },
+    "Li": {
+      "golden_weekends": 2,
+      "days_off": 7
+    },
+    "Kavelidou": {
+      "golden_weekends": 1,
+      "days_off": 4
+    },
+    "Zohaib Qasun": {
+      "golden_weekends": 0,
+      "days_off": 1
+    },
+    "Metri": {
+      "golden_weekends": 0,
+      "days_off": 2
+    },
+    "Ahluwalia": {
+      "golden_weekends": 1,
+      "days_off": 5
+    },
+    "Butt": {
+      "golden_weekends": 1,
+      "days_off": 3
+    },
+    "MacNeille": {
+      "golden_weekends": 2,
+      "days_off": 12
+    },
+    "Bronson": {
+      "golden_weekends": 1,
+      "days_off": 11
+    },
+    "Mullins": {
+      "golden_weekends": 2,
+      "days_off": 6
+    },
+    "Chiasson": {
+      "golden_weekends": 1,
+      "days_off": 6
+    },
+    "Kennedy": {
+      "golden_weekends": 1,
+      "days_off": 7
+    },
+    "Saeed": {
+      "golden_weekends": 0,
+      "days_off": 3
+    },
+    "Vivekanandan": {
+      "golden_weekends": 1,
+      "days_off": 6
+    },
+    "Shetty": {
+      "golden_weekends": 1,
+      "days_off": 3
+    },
+    "Villanueva": {
+      "golden_weekends": 0,
+      "days_off": 3
+    },
+    "Salam": {
+      "golden_weekends": 0,
+      "days_off": 3
+    },
+    "Farzeela": {
+      "golden_weekends": 1,
+      "days_off": 3
+    }
+  }
+}
