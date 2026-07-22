@@ -109,7 +109,7 @@ def rot_id(dt,l):
     pp=roster(dt)[l]; return (l,pp["type"],pp["start"])
 
 # ------------------------------------------------------------- DAY LIST -----
-SPAN_START=d(10,1,2026); SPAN_END=d(6,23,2027)
+SPAN_START=d(9,1,2026); SPAN_END=d(6,23,2027)
 days=[]; _t=SPAN_START
 while _t<=SPAN_END: days.append(_t); _t+=timedelta(days=1)
 

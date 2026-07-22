@@ -23,6 +23,7 @@ NAME={
  "SALAM":"Muhammed Salam","JUYAL":"Shruti Juyal","KOPP VANUZZI":"Fabio Kopp Vanuzzi",
  "PATEL":"Tirth Pareshbhai Patel","ALMADHOOB":"Mohamed Almadhoob","AHLUWALIA-S":"Saumya Ahluwalia",
  "SANCHEZ-ALMANZAR":"Daniel Sanchez-Almanzar",
+ "ZOHAIB QASUN":"Muhammad Zohaib Qasun","KAVELIDOU":"Marianthi Kavelidou",
 }
 # Bare last name (matches finalized September), with a first initial added ONLY
 # for the two surnames shared by different interns across the year.
@@ -42,7 +43,7 @@ SR=[(date(2026,10,12),date(2026,10,25),"Elif Aksoy"),(date(2026,10,26),date(2026
     (date(2027,4,26),date(2027,5,9),"Adham Ramadan"),(date(2027,5,10),date(2027,5,23),"Ahmed Abouelazaem"),
     (date(2027,5,24),date(2027,6,6),"Harika Maddisetty"),(date(2027,6,7),date(2027,6,22),"Nishanth Katukuri")]
 
-MONTHS=[(2026,10),(2026,11),(2026,12),(2027,1),(2027,2),(2027,3),(2027,4),(2027,5),(2027,6)]
+MONTHS=[(2026,9),(2026,10),(2026,11),(2026,12),(2027,1),(2027,2),(2027,3),(2027,4),(2027,5),(2027,6)]
 DAYNAME=["MONDAY","TUESDAY","WEDNESDAY","THURSDAY","FRIDAY","SATURDAY","SUNDAY"]
 thin=Side(style="thin"); border=Border(thin,thin,thin,thin)
 hdrfill=PatternFill("solid",fgColor="D9E1F2"); satfill=PatternFill("solid",fgColor="FCE4D6")
@@ -110,5 +111,5 @@ for yy,mm in MONTHS:
 wb=openpyxl.Workbook(); wb.remove(wb.active)
 for yy,mm in MONTHS:
     ws=wb.create_sheet(f"{date(yy,mm,1):%b %Y}"); build_sheet(ws,yy,mm)
-wb.save(f"{BASE}out/TYP_Intern_Schedule_Oct2026-Jun2027.xlsx")
+wb.save(f"{BASE}out/TYP_Intern_Schedule_Sep2026-Jun2027.xlsx")
 print("Exported", len(MONTHS), "monthly files + combined workbook to", BASE+"out/")
