@@ -206,3 +206,4 @@
 {"ticker": "KXLOWTAUS-26JUL22-B77.5", "side": "no", "ask_c": 100, "reason": "ask>98", "cushion_f": 1.8, "extreme_f": 75.2, "station": "KAUS", "kind": "min", "date": "2026-07-22", "ts": 1784717285157}
 {"ticker": "KXLOWTDEN-26JUL22-T70", "side": "no", "ask_c": 100, "reason": "ask>98", "cushion_f": 2.0, "extreme_f": 68.0, "station": "KDEN", "kind": "min", "date": "2026-07-22", "ts": 1784717789648}
 {"ticker": "KXLOWTSATX-26JUL22-B78.5", "side": "no", "ask_c": 100, "reason": "ask>98", "cushion_f": 2.08, "extreme_f": 75.92, "station": "KSAT", "kind": "min", "date": "2026-07-22", "ts": 1784721865748}
+{"ticker": "KXLOWTSFO-26JUL22-T66", "side": "no", "ask_c": 100, "reason": "ask>98", "cushion_f": 1.6, "extreme_f": 64.4, "station": "KSFO", "kind": "min", "date": "2026-07-22", "ts": 1784724793068}
