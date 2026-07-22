@@ -187,3 +187,4 @@
 {"ticker": "KXHIGHLAX-26JUL21-B73.5", "side": "no", "ask_c": 100, "reason": "ask>98", "cushion_f": 6.6, "extreme_f": 80.6, "station": "KLAX", "kind": "max", "date": "2026-07-22", "ts": 1784678438735}
 {"ticker": "KXHIGHLAX-26JUL21-B75.5", "side": "no", "ask_c": 100, "reason": "ask>98", "cushion_f": 4.6, "extreme_f": 80.6, "station": "KLAX", "kind": "max", "date": "2026-07-22", "ts": 1784678438736}
 {"ticker": "KXHIGHLAX-26JUL21-B77.5", "side": "no", "ask_c": 100, "reason": "ask>98", "cushion_f": 2.6, "extreme_f": 80.6, "station": "KLAX", "kind": "max", "date": "2026-07-22", "ts": 1784678438736}
+{"ticker": "KXHIGHTSEA-26JUL21-B90.5", "side": "no", "ask_c": 100, "reason": "ask>98", "cushion_f": 2.2, "extreme_f": 93.2, "station": "KSEA", "kind": "max", "date": "2026-07-22", "ts": 1784681005791}
