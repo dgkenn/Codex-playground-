@@ -275,6 +275,24 @@
    "note": "DO NOT MODEL AS A LEVER. wx_forecast_decision.py is the gate: accrues by DISTINCT SETTLED DAYS (not rows -- same-day fires are not independent) from wx_forecast_settled.jsonl, recomputes pnl from raw fields to bypass a known NO-side cost-basis bug in wx_forecast_forward.settle() (the same bug that inflates the raw live paper log to an unreliable +0.217/trade over only 2 calendar days), and only flips off ACCRUING at n_days>=40 with a Wilson/day-clustered bar clearly beating the verified backtest EV of -1.6c/ct. Do not auto-pass this into headline $/mo without that gate passing.",
    "source": "FORECAST_OVERLAY_BACKTEST.md / wx_forecast_decision.py (panel verdict REFUTED, deployable=false)"
   },
+  "favorite_longshot": {
+   "label": "favorite-longshot bias (fade overpriced longshots / buy underpriced favorites)",
+   "status": "FAIL by FAVORITE_LONGSHOT.md (2026-07-22): raw-calibration bias real (2.97M-market scan) but does not survive a realistic crossing-price entry. Spec 1 (broad longshot fade, ex-crypto ex-weather) CONFIRMED FAIL, net EV -3.41c/ct, day-clustered t=-4.87, honest capacity -$60/mo (a loser). Spec 3 (crypto isolation) CONFIRMED FAIL, structurally underpowered (40 events vs 200 floor) and point estimate itself negative (-4.17c/ct, driven entirely by one bad day). Spec 2 (favorite buy) execution-limited -- trade-tape join did not complete in budget, no P&L exists, scored deployable=NO by default.",
+   "quality": "BACKTEST (Specs 1 and 3 measured-negative; Spec 2 unmeasured/execution-limited)",
+   "gate": {
+    "metric": "n_distinct_events_realistic_entry_positive",
+    "current": 0,
+    "threshold": 200,
+    "accrual_per_day": 0.0
+   },
+   "ev_bump_usd_per_ct": {
+    "conservative": 0.0,
+    "base": 0.0,
+    "optimistic": 0.0
+   },
+   "note": "DO NOT MODEL AS A LEVER. Spec 1's own decomposition shows why: naive signal edge at last_price was only +1.70c, but the realistic crossing price cost 3.18c of slippage -- same spread-eats-the-edge death mode as the long-tail passive-spread study (DATA_BACKED_BACKTESTS.md). No sleeve (wx_favlong_*.py) was built per the repo's don't-ship-a-null-as-a-lever convention.",
+   "source": "FAVORITE_LONGSHOT.md / RESEARCH_LEDGER.md items 30-32 (panel verdict CONFIRMED FAIL x2, execution-limited x1, deployable=false all three)"
+  },
   "depth_adaptive": {
    "label": "depth-adaptive sizing (relax fixed DEPTH_CAP=25)",
    "status": "IN-VALIDATION, explicit 'do not adopt yet' in repo",
