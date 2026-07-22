@@ -195,3 +195,110 @@ four are being reported as exactly that.
 (These live under the scratch/worktree data-backtest directory used for this run, not under the
 repo root -- listed here for provenance; nothing here needs to be copied into the repo since none
 of it is a deployable sleeve.)
+
+## 7. Completion (2026-07-22): the two previously-untested specs
+
+Section 3a (`weather:settlement-mismatch`) and section 3b (`longtail:stale-resolution`) above
+were left **UNTESTED** at the end of the 2026-07-21 run -- pre-registered and coded, but never
+executed to a scored result. Both were run to completion this session, adversarially verified per
+`/kwx-study-audit`, and are now closed out. The untested-vs-killed distinction that section 4's
+table flagged as open is resolved: **all four specs from this thesis are now decisive kills.**
+Verified survivors from this thesis remain **none**; no sleeve is registered; the mechanical-lock
+live path was not touched.
+
+### 7a. `weather:settlement-mismatch` -- RAN. Verdict: **REFUTED** (CONFIRMED by adversarial review).
+
+Pre-registered (`weather_settle/PREREG.md`, frozen before outcome data was read): does fading
+near-certainty (>=97c) `KXHIGH*`/`KXLOWT*` locks in the final 30 pre-close minutes clear a
+day-clustered-t / Wilson-CI pass bar against the settlement-failure rate, entering at the
+contrarian crossing price with the Kalshi taker fee `ceil(7*q*(1-q))/100` applied at that price.
+
+- Universe: `kx_history.py` parquet extraction, 21,685 weather markets / 5.24M trades, chronological
+  Oct'24-Sep'25 FIT / Oct'25-Jan'26 VAL split (not touched until after FIT cells were scored).
+- **FIT (301 days, 1,195 near-certainty locks): 3 settlement failures = 0.251%** vs mean
+  breakeven 2.08% (price + fee) -- raw edge -1.83c/contract. Day-clustered t = -9.00 (301 days);
+  event-clustered t = -9.40 once the two same-event failures (`KXHIGHMIA-24NOV27`) are collapsed
+  to one cluster. Zero of the 18 pre-registered FIT cells (city x type x season x margin-bucket x
+  hour-bucket) cleared the Bonferroni-corrected pass bar.
+- Because 0/18 FIT cells passed, **validation was never legitimately touched** per the
+  pre-registered fit/validation gate -- reported anyway for completeness: **VAL (Oct'25-Jan'26,
+  1,705 locks): 0 failures = 0.000%** vs breakeven 2.09%, t = -140.6. Confirms rather than rescues
+  the FIT null.
+- Adversarial pass: entry price (q = 1 - p_lock off the last pre-close print) is *optimistic* for
+  the claim relative to a real 1-3c thin-book ask, yet even the Wilson-95% **upper bound** on the
+  failure rate leaves edge negative in every split (FIT -1.35c, VAL -1.86c) -- the null survives
+  its own most favorable read. All 3 FIT failures plus 3 random non-failure locks were re-pulled
+  from the official `/historical/*` API and matched the archive exactly on status, result, and
+  trade-tape tail -- no survivorship or archive artifact. No look-ahead: entries use only
+  pre-close prints.
+- **Honest capacity: $0/month.** Pre-registered bar: FAIL. 230MB trade cache deleted after use;
+  small JSON/CSV artifacts (`results.json`, `top_fit_cells.json`, `VERIFIER_RESULTS.md`) retained
+  under the scratch dir for provenance, not copied into the repo.
+
+### 7b. `longtail:stale-resolution` -- RAN. Verdict: **REFUTED** (CONFIRMED by adversarial review).
+
+Pre-registered (`lt_stale/PREREGISTRATION.md`): on obscure (median volume <=500) non-weather
+series, scan for a settled-by-record outcome that still traded away from 0/100 with real size
+>=30min before formal close (>=30-instance / >=10-day / >=8-series pass bar, plus a secondary
+causal-momentum robustness check and a >=$5/mo honest-capacity floor).
+
+- The **mechanical pattern reproduces** and the archive is genuine: `n=3,371` qualifying
+  thin-market instances (ex-`KXMVE`, at the 2-hour window), spot-checked tickers match the
+  official `/historical/*` `hist_markets`/`hist_trades` records exactly on prices, counts, and
+  timestamps.
+- But the underlying **phenomenon is refuted by the official market records themselves** for
+  every sampled category, not just underpowered:
+  - Sports props (`KXNHLPTS`/`KXNFLREC` family) have `can_close_early=true` with `close_time`
+    stamped at sub-second precision at the moment the real-world event ends (e.g.
+    `2026-01-14T03:03:48.895665Z`). The "dark pre-close window" the scan measured is the in-game,
+    **pre-decision** period -- the market closes exactly when the outcome becomes decided, so no
+    post-decision stale-quote window ever exists to exploit, even with a perfect live feed.
+  - Crypto/index-threshold markets (`KXDOGE`, `KXETHD`) resolve on the CF Benchmarks index value
+    **at** `close_time` by definition -- the outcome is decided exactly at close, structurally
+    ruling out a pre-close decided-but-mispriced state.
+  - What the scan actually found is "thin markets stop trading before their own decision
+    moment" plus hindsight selection of winners -- ordinary base-rate variance dressed as a
+    pattern, not a stale quote.
+- The tradeability guard (>=10 combined contracts across the last two ranks, meant to prove a
+  human could actually have hit the mispriced quote) is defeated on inspection: the flagship
+  example's qualifying "confirming trades" share one identical timestamp
+  (`2026-01-14T00:06:44.502039Z`) -- a single taker sweep of two adjacent book levels, not two
+  independent fills -- and a second example's two confirmations are 13 hours apart, well outside
+  any window where the "still mispriced" claim would hold. The day-clustered t=33-36 reported by
+  the mechanical pass is tautological (every instance is positive by construction of the filter)
+  and carries no information once the mechanism itself is refuted.
+- **Honest capacity: $0/month**, and hardened beyond the original "untested" null: even the
+  natural follow-up (build a public-record/live-box-score detection feed to front-run these
+  windows) cannot work, because the markets structurally close at the decision instant. No
+  research lead survives into a follow-up spec.
+- Adversarial audit artifacts (`lt_stale/adversarial_audit.py`, `adversarial_audit.json`,
+  `results.md`) retained under the scratch dir for provenance, not copied into the repo.
+
+### 7c. Updated summary -- the map is now fully closed
+
+| Label | Ran to completion? | Adversarial verdict | Cap | Real edge? |
+|---|---|---|---|---|
+| `weather:calibration-fade` | Yes | CONFIRMED FAIL | $0/mo | **No** |
+| `weather:settlement-mismatch` | **Yes (2026-07-22)** | CONFIRMED REFUTED | $0/mo | **No** |
+| `longtail:spread` | Yes | CONFIRMED FAIL | $0/mo | **No** |
+| `longtail:stale-resolution` | **Yes (2026-07-22)** | CONFIRMED REFUTED | $0/mo | **No** |
+
+All 4 labels close at cap=$0 and all 4 are now decisive, adversarially-confirmed kills -- the
+untested-vs-killed distinction carried since 2026-07-21 is resolved and there are no remaining
+open items from this thesis. **Verified survivors across the full weather-fade + long-tail
+program: none.** Per house rules, this is reported as two honest nulls, not papered over; nothing
+here changes the fund's existing capacity picture (`PATH_TO_4K.md`, `p4k_params.json`) and no new
+sleeve is registered.
+
+## 8. Reproduction artifacts (completion run)
+
+- `weather_settle/`: `PREREG.md`, `01_extract.py`, `02_analyze.py`, `03_search.py`,
+  `weather_settle.py`, `extract.log`, `results.json`, `top_fit_cells.json`,
+  `VERIFIER_RESULTS.md` -- complete, reproducible, REFUTED.
+- `lt_stale/`: `PREREGISTRATION.md`, `harvest.py`, `harvest.log`, `analyze.py`,
+  `adversarial_audit.py`, `adversarial_audit.json`, `finalize.py`, `results.json`,
+  `results.md` -- complete, reproducible, REFUTED.
+
+(These live under the scratch/worktree data-backtest directory used for this run, not under the
+repo root -- listed here for provenance; nothing here needs to be copied into the repo since
+neither result is a deployable sleeve.)
