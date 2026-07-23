@@ -127,3 +127,27 @@ can execute end-to-end in his idiom.
 3. Aim 3 hemodynamic bridge + temporal-precedence adjudication.
 4. Adversarial panel + robustness; external-validity plan.
 5. Manuscript + concept memo to Brown.
+
+## PIVOT (user steer): HEEDB = discovery, VitalDB = external validation, multi-site
+Design locked: **discover** the iatrogenic-vs-pathological burst-suppression finding in **HEEDB** (ICU cEEG/LTM,
+where drug-induced AND pathological BS coexist, with the ATC medication linkage to separate them + DateOfDeath),
+**externally validate** the drug-induced/benign arm in **VitalDB** (intraop BS is ~purely drug-induced, with logged
+propofol Ce), across a **different setting (OR vs ICU) and country** — plus HEEDB multi-site (S0001/S0002/I000x)
+cross-site replication. Spans Brown (anesthesia) + Westover (ICU).
+
+### VitalDB validation-arm pilot — pipeline PROVEN (40 propofol-TCI cases, open data)
+Burst suppression detected from RAW EEG (0.1s frames, p2p<8µV, runs≥0.5s; NOT BIS/SR — avoids same-device
+circularity). Results: BS is detectable and common in elective TIVA (85% of cases show some suppression; median
+maintenance burden 1.5%, p90 20%). In-hospital mortality ~0 (elective surgery) → confirms VitalDB's role as the
+**benign drug-induced reference** (drug-induced BS at depth carries near-zero mortality); the pathological-BS
+mortality contrast must come from HEEDB. MODELING NOTE: peak-Ce↔BS correlation weak (−0.10) at this crude level —
+BS depends on Ce *relative to age/individual sensitivity* and on Ce-at-onset, not peak Ce; the real analysis needs
+the age×Ce sensitivity model (Aim-1 machinery), not a raw Ce correlation. Cohort available: **3,344 VitalDB cases
+with EEG + propofol Ce + mortality**. Pipeline: `analysis/vitaldb_bs_pilot.py`.
+
+### GATE: HEEDB discovery arm needs explicit PII/DUA authorization (per docs/HEEDB_UNLOCK.md)
+Pulling HEEDB moves regulated credentialed data; awaiting user authorization. On authorization: compute only
+de-identified derived features + aggregate stats (no PII in outputs/commits). Decisive-first test once unlocked:
+among BS-containing EEGs, does sedative-attributable (drug-induced) BS have markedly LOWER mortality than
+non-drug (pathological) BS at matched BS burden/BSP? If yes → "BS is a marker of its cause, not intrinsically
+harmful" (the ENGAGES-debate resolution) and the design is alive.
