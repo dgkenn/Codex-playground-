@@ -263,3 +263,5 @@
 {"ticker": "KXHIGHLAX-26JUL22-T75", "side": "no", "ask_c": 100, "reason": "ask>98", "cushion_f": 2.0, "extreme_f": 77.0, "station": "KLAX", "kind": "max", "date": "2026-07-23", "ts": 1784764825681}
 {"ticker": "KXHIGHTPHX-26JUL22-T102", "side": "no", "ask_c": 100, "reason": "ask>98", "cushion_f": 3.8, "extreme_f": 105.8, "station": "KPHX", "kind": "max", "date": "2026-07-23", "ts": 1784765128098}
 {"ticker": "KXHIGHTPHX-26JUL22-B102.5", "side": "no", "ask_c": 100, "reason": "ask>98", "cushion_f": 2.8, "extreme_f": 105.8, "station": "KPHX", "kind": "max", "date": "2026-07-23", "ts": 1784765128098}
+{"ticker": "KXLOWTNOLA-26JUL22-T82", "side": "no", "ask_c": 100, "reason": "ask>98", "cushion_f": 1.04, "extreme_f": 80.96, "station": "KMSY", "kind": "min", "date": "2026-07-23", "ts": 1784775521837}
+{"ticker": "KXLOWTSFO-26JUL22-T66", "side": "no", "ask_c": 100, "reason": "ask>98", "cushion_f": 1.06, "extreme_f": 64.94, "station": "KSFO", "kind": "min", "date": "2026-07-23", "ts": 1784775556829}
