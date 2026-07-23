@@ -46,6 +46,11 @@ pmkt_settlement_basis_results.json
 wx_earlylock_paper.jsonl
 wx_earlylock_settled.jsonl
 
+# ensemble forward PAPER logs: force-added by the kwx-ens workflow (git add -f, once the operator installs
+# kwx-ens.yml.proposed on main), same pattern as the forecast/early-lock sleeves above.
+wx_ens_paper.jsonl
+wx_ens_settled.jsonl
+
 # synoptic trial detection-latency log: force-added by the kwx-synoptic-trial workflow (git add -f),
 # same pattern as the forecast/earlylock sleeves above.
 wx_synoptic_trial.jsonl

@@ -205,3 +205,41 @@ weather prices ensemble-grade uncertainty, not just a point estimate, as well or
 the best free-data reconstruction available.** See `WEATHER_ENSEMBLE.md` for full detail,
 `bt_ens/bt_ens.py` (incomplete Backtest A) and `bt_ens2/` (complete Backtest B, code + raw
 caches + report) for reproduction.
+
+## 10. TRUE 51-MEMBER ENSEMBLE: FORWARD COLLECTION STARTED (2026-07-23, `WX_ENSEMBLE_FORWARD.md`, Sonnet worker / Fable-style adversarial review)
+
+Section 9 closed the ensemble-probability *question* using a fitted-Gaussian substitute
+(Backtest B) because `WEATHER_ENSEMBLE.md`'s Backtest A -- the TRUE 51-member ECMWF ensemble --
+never produced a numeric result: Open-Meteo's `ensemble-api` historical path is all-NULL
+beyond ~92h back, a hard data-retention wall, not a code bug. That specific question --
+does the true live 51-member distribution (not a fitted stand-in) out-calibrate Kalshi's
+price -- has exactly one honest test available given that wall: log the CURRENT live
+ensemble next to the CURRENT live Kalshi price at snapshot time and settle independently,
+later. `wx_ens_forward.py` / `wx_ens_decision.py` do that now, paper-only, no orders, no live
+path touched, registered in `p4k_params.json` as sleeve `ens_forward` (quality
+`FORWARD-PAPER`, gate `n_settled_distinct_days>=30`, `accrual_per_day: null` until real fired
+days exist to measure one, so it contributes `$0` to every headline scenario until it clears
+its own gate on real data).
+
+**Pre-deploy adversarial review caught one FATAL bug before any decision was made off the
+data:** the first draft's `ensemble_prob_yes` copied `kwx_runner.locked_and_misses`'
+margin-padded LOCK convention (a different, non-boundary check) instead of Kalshi's actual
+integer-settlement, inclusive-bucket convention (`strike_type` verified live against the
+API: a `between` bucket is inclusive of both ends, `less`/`greater` rungs compare the rounded
+integer NWS CLI value against `cap`/`floor` with `<`/`>`). Measured impact on a candidate
+logged under the old code: `ensemble_P` off by up to +/-25 points on some rungs -- larger
+than the pre-registered `EDGE_THR=0.15`, meaning candidate selection itself was measuring the
+bug. Fixed (see `ensemble_prob_yes`'s docstring in `wx_ens_forward.py` for the corrected,
+kind-independent convention); the review's second finding (paper rows didn't persist
+per-member extremes, so a future convention fix couldn't re-score already-logged rows) is
+also fixed -- every row now carries `member_hist`, a rounded-integer histogram of all 51
+members. A live re-verification snapshot after both fixes logged 68 real candidates across 39
+city+kind events / 234 markets scored against the live ensemble + live Kalshi ladder;
+`kwx_selftest.py` passes unaffected (it does not touch this module).
+
+**This is NOT a result yet -- it is the start of a 30-distinct-settled-day forward collection
+window**, the only test this specific true-ensemble question allows given Open-Meteo's
+history wall. `kwx-ens.yml` ships as `.proposed` (active workflows live on `main`; this PR's
+branch is a research branch, not the deployed fleet) -- an operator must install it on `main`
+to start real accrual. Until then, `p4k_params.json`'s `ens_forward` gate stays at `current: 0`
+and the sleeve contributes nothing to capacity.
