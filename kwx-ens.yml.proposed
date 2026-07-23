@@ -1,0 +1,65 @@
+# kwx-ens -- READ-ONLY / PAPER forward logger for the 51-member ECMWF ensemble (Open-Meteo ensemble-api)
+# vs live Kalshi weather prices. No orders, no secrets, no KWX_LIVE. See WX_ENSEMBLE_FORWARD.md for the
+# pre-registered activation bar and how to read the logs. NAMED .proposed: the operator installs this on
+# main separately (drop the ".proposed" suffix and commit to .github/workflows/) once they've reviewed it --
+# this file is a draft, not wired into the live fleet.
+#
+# WHY THIS SHAPE: Open-Meteo's ensemble endpoint only retains ~92h of history server-side, so the 51-member
+# ensemble edge cannot be backtested -- only measured forward, the same way kwx-earlylock.yml measures the
+# early-lock refinement forward. Unlike early-lock (which needs to catch one narrow signal MOMENT before the
+# mechanical lock fires), the ensemble compares a full-day forecast distribution to the live ladder, so it
+# doesn't need a tight intraday cadence -- a few passes across the US afternoon (when most active-day ladders
+# are open and liquid) is enough; snapshot() is idempotent per ticker so extra runs are free, not duplicative.
+name: kwx-ens
+
+on:
+  schedule:
+    # US-afternoon eval window (mirrors kwx-earlylock.yml): a handful of passes while the day's ladders are
+    # open and liquid across the eastern (UTC-5) to western (UTC-8) cities. Each run does settle-then-snapshot.
+    - cron: '11 16,18,20,22 * * *'
+    # daily settle + decision-layer report after all LST days are safely over (07:00 UTC ~= post-midnight
+    # even for the UTC-8 cities), so any market that resolved overnight gets scored before the next day's run.
+    - cron: '25 7 * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: kwx-ens
+  cancel-in-progress: false
+
+env:
+  BRANCH: claude/coding-bot-ab-test-results-ffmhxw
+
+jobs:
+  ens:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.BRANCH }}
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: settle + snapshot (paper) + decision report + commit logs
+        run: |
+          set -e
+          git config user.name  "kwx-ens-bot"
+          git config user.email "kwx-ens-bot@users.noreply.github.com"
+          # settle candidates whose LST day has passed (public Kalshi API), take a fresh live ensemble
+          # snapshot (skips cleanly if no city has a usable ladder+ensemble pull), then print the
+          # ACCRUING/ACTIVATE/KILL verdict against the pre-registered bar.
+          python -u wx_ens_forward.py settle    || true
+          python -u wx_ens_forward.py snapshot  || true
+          python -u wx_ens_decision.py          || true
+          # force-add the paper logs (gitignored like the sibling forward sleeves) -- nothing else is written.
+          git add -f wx_ens_paper.jsonl wx_ens_settled.jsonl 2>/dev/null || true
+          git commit -q -m "ens forward paper $(date -u +%FT%HZ)" || { echo "nothing to commit"; exit 0; }
+          for i in 1 2 3 4 5; do
+            git push origin "HEAD:${BRANCH}" && exit 0
+            git fetch -q origin "$BRANCH" && git rebase -q "origin/${BRANCH}" || true
+            sleep $((RANDOM % 5 + 2))
+          done
