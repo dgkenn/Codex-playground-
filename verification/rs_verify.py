@@ -142,6 +142,76 @@ def count_sign_changes(points, prec=96, hunt_depth=3, max_hunt_depth=12,
     return total, sorted(brackets), evals, exhausted
 
 
+def is_good_gram(n, g, prec=96):
+    """Certified check that g_n is a good Gram point: (-1)^n Z(g_n) > 0."""
+    try:
+        s, _ = certified_sign(g, prec)
+    except ValueError:
+        return False
+    return (s > 0) == (n % 2 == 0)
+
+
+def required_blocks(g_p, prec=128):
+    """Ball-safe evaluation of T11 Corollary 2.3's block requirement
+    N >= 0.0031 log^2(g_p) + 0.11 log(g_p), rounded up from the enclosure's
+    upper bound."""
+    ctx.prec = prec
+    lg = arb(g_p).log()
+    rhs = arb("0.0031") * lg * lg + arb("0.11") * lg
+    upper = float(rhs.mid() + rhs.rad())
+    return max(1, math.ceil(upper - 1e-12))
+
+
+def turing_certificate(n_end, prec=96, max_blocks=64):
+    """Certify N(g_{n_end}) <= n_end + 1 via Lehman--Brent (T11 Thm 2.1 with
+    Corollary 2.3 constants; valid since our heights exceed 168*pi).
+
+    Requires g_{n_end} to be a good Gram point (caller ensures). Scans Gram
+    blocks upward from n_end until enough consecutive Rosser-conforming
+    blocks accumulate. Returns a report dict."""
+    mpmath.mp.dps = 30
+    g = lambda m: float(mpmath.grampoint(m))
+
+    if g(n_end) <= 168 * math.pi:
+        return {"certified": False,
+                "reason": "T11 Cor 2.3 constants require t1 > 168*pi"}
+
+    blocks = []
+    m = n_end
+    g_m = g(m)
+    while len(blocks) < max_blocks:
+        # find next good Gram point above m
+        j = m + 1
+        while not is_good_gram(j, g(j), prec):
+            j += 1
+            if j - m > 50:
+                return {"certified": False,
+                        "reason": f"no good Gram point in ({m}, {m+50}]"}
+        p = j - m  # block length
+        # certify exactly p sign changes in (g_m, g_j]
+        pts = [g(k) for k in range(m, j + 1)]
+        cnt, _, _, _ = count_sign_changes(pts, prec=prec, hunt_depth=3,
+                                          max_hunt_depth=12, expected=p)
+        if cnt != p:
+            return {"certified": False,
+                    "reason": f"block ({m},{j}] has {cnt} certified sign "
+                              f"changes, expected {p}"}
+        blocks.append((m, j))
+        m, g_m = j, g(j)
+        need = required_blocks(g_m)
+        if len(blocks) >= need:
+            return {
+                "certified": True,
+                "statement": f"N(g_{n_end}) <= {n_end + 1}",
+                "blocks_used": len(blocks),
+                "blocks_required_at_gp": need,
+                "g_p_index": m,
+                "g_p": g_m,
+                "basis": "T11 Thm 2.1 + Cor 2.3 (0.0031 log^2 + 0.11 log)",
+            }
+    return {"certified": False, "reason": f"exceeded {max_blocks} blocks"}
+
+
 def main():
     args = sys.argv[1:]
     T = 2000.0
@@ -161,11 +231,16 @@ def main():
             i += 1
 
     t0 = time.time()
-    # choose last Gram index with g_n <= T
+    # choose last Gram index with g_n <= T, then walk down to a good Gram
+    # point (the Turing certificate anchors there)
     mpmath.mp.dps = 30
     n_guess = int(mpmath.siegeltheta(T) / mpmath.pi) + 1
     pts = gram_points(n_guess)
     pts = [p for p in pts if p <= T]
+    n_end = len(pts) - 1  # pts[i] is Gram point g_i
+    while n_end >= 0 and not is_good_gram(n_end, pts[n_end]):
+        n_end -= 1
+        pts.pop()
     # prepend a start point below the first zero
     grid = [9.0] + pts
 
@@ -176,6 +251,9 @@ def main():
 
     changes, brackets, evals, exhausted = count_sign_changes(
         grid, expected=round(expected))
+
+    turing = turing_certificate(n_end)
+    rh_certified = bool(turing.get("certified")) and changes == n_end + 1
     # zeros below the first grid point: none (first zero at 14.13 > 9)
     report = {
         "T_endpoint": g_end,
@@ -183,12 +261,19 @@ def main():
         "theta_over_pi_plus_1": expected,
         "count_matches_main_term": changes == round(expected),
         "hunt_exhausted_while_short": exhausted,
+        "turing_certificate": turing,
+        "rh_certified_to_endpoint": rh_certified,
+        "certified_statement": (
+            f"all {changes} zeros of zeta with 0 < Im s <= {g_end:.6f} lie "
+            f"on the critical line" if rh_certified else "NOT certified"
+        ),
         "zeta_evaluations": evals,
         "elapsed_sec": round(time.time() - t0, 2),
         "rigor_note": (
-            "signs are ball-certified; completeness vs N(T) requires the "
-            "Turing certificate (docs/TURING_SPEC.md) -- prototype compares "
-            "against the main term only"
+            "signs ball-certified via Arb; completeness via Lehman-Brent / "
+            "Trudgian Cor 2.3 (docs/TURING_SPEC.md); Gram-point placement "
+            "heuristic (soundness unaffected); prototype-grade pending "
+            "independent review"
         ),
     }
 
