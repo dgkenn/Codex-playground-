@@ -21,7 +21,14 @@ import sys
 import time
 
 import mpmath
-from flint import acb, arb, ctx
+from flint import acb, arb, ctx, dirichlet_char
+
+# module-level switch: "native" uses FLINT's acb_dirichlet Hardy Z directly;
+# "construction" builds Z = exp(i theta) zeta from lgamma+zeta balls. The two
+# are independent code paths inside FLINT and agree ball-for-ball; keeping
+# both enables cross-validation runs.
+Z_IMPL = "native"
+_CHI = dirichlet_char(1, 1)
 
 
 def theta_ball(t, prec):
@@ -36,8 +43,10 @@ def theta_ball(t, prec):
 
 
 def z_ball(t, prec):
-    """Hardy Z(t) = exp(i theta(t)) * zeta(1/2 + i t) as an acb ball."""
+    """Hardy Z(t) as an acb ball (implementation per Z_IMPL)."""
     ctx.prec = prec
+    if Z_IMPL == "native":
+        return _CHI.hardy_z(acb(arb(t)))
     tt = arb(t)
     th = theta_ball(t, prec)
     return acb(0, th).exp() * acb(arb(1) / 2, tt).zeta()
