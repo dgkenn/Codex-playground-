@@ -68,11 +68,39 @@ def certified_sign(t, prec=96, max_prec=768):
     raise ValueError(f"cannot certify sign of Z({t}) up to {max_prec} bits")
 
 
+def theta_asym(t):
+    """Asymptotic Riemann-Siegel theta (float; heuristic use only)."""
+    return (t / 2 * math.log(t / (2 * math.pi)) - t / 2 - math.pi / 8
+            + 1 / (48 * t) + 7 / (5760 * t ** 3))
+
+
+def gram_point(n):
+    """Heuristic Gram point g_n by Newton iteration on the asymptotic theta
+    (placement need not be rigorous; certified signs carry all soundness)."""
+    target = n * math.pi
+    # initial guess via inversion of the leading term
+    g = max(10.0, 2 * math.pi * math.exp(1) * math.exp(
+        _lambertw_approx((target + math.pi / 8) / (math.pi * math.e))))
+    for _ in range(8):
+        step = (theta_asym(g) - target) / (0.5 * math.log(g / (2 * math.pi)))
+        g -= step
+        if abs(step) < 1e-9 * g:
+            break
+    return g
+
+
+def _lambertw_approx(x):
+    """Crude Lambert W for the Gram initial guess (x >= 0.5 in practice)."""
+    w = math.log(1 + x)
+    for _ in range(20):
+        ew = math.exp(w)
+        w -= (w * ew - x) / (ew * (w + 1))
+    return w
+
+
 def gram_points(n_max):
-    """Heuristic Gram points g_0..g_{n_max} via mpmath (placement need not be
-    rigorous)."""
-    mpmath.mp.dps = 30
-    return [float(mpmath.grampoint(n)) for n in range(n_max + 1)]
+    """Heuristic Gram points g_0..g_{n_max}."""
+    return [gram_point(n) for n in range(n_max + 1)]
 
 
 def count_sign_changes(points, prec=96, hunt_depth=3, max_hunt_depth=12,
@@ -169,8 +197,7 @@ def turing_certificate(n_end, prec=96, max_blocks=64):
     Requires g_{n_end} to be a good Gram point (caller ensures). Scans Gram
     blocks upward from n_end until enough consecutive Rosser-conforming
     blocks accumulate. Returns a report dict."""
-    mpmath.mp.dps = 30
-    g = lambda m: float(mpmath.grampoint(m))
+    g = gram_point
 
     if g(n_end) <= 168 * math.pi:
         return {"certified": False,
