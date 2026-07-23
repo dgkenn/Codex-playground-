@@ -1,0 +1,55 @@
+{
+  "windows": [
+    {
+      "T": 10000.0,
+      "W": 200.0,
+      "gram_intervals": 236,
+      "expected_zeros": 234.98900434554704,
+      "found_zeros": 236,
+      "matches_expected": false,
+      "hunt_exhausted": false,
+      "zeta_evaluations": 629,
+      "elapsed_sec": 0.9594,
+      "evals_per_zero": 2.6653,
+      "sec_per_zero": 0.004065,
+      "timed_out": false,
+      "z_impl": "native"
+    },
+    {
+      "T": 100000.0,
+      "W": 200.0,
+      "gram_intervals": 309,
+      "expected_zeros": 307.9981652458803,
+      "found_zeros": null,
+      "matches_expected": false,
+      "hunt_exhausted": true,
+      "zeta_evaluations": null,
+      "elapsed_sec": 300.3153,
+      "evals_per_zero": null,
+      "sec_per_zero": null,
+      "timed_out": true,
+      "z_impl": "native"
+    },
+    {
+      "T": 1000000.0,
+      "skipped": true,
+      "reason": "prior height exceeded 300s budget"
+    },
+    {
+      "T": 10000000.0,
+      "skipped": true,
+      "reason": "prior height exceeded 300s budget"
+    },
+    {
+      "T": 100000000.0,
+      "skipped": true,
+      "reason": "prior height exceeded 300s budget"
+    },
+    {
+      "T": 1000000000.0,
+      "skipped": true,
+      "reason": "prior height exceeded 300s budget"
+    }
+  ],
+  "loglog_fit_sec_per_zero_vs_T": null
+}
