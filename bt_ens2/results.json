@@ -1,0 +1,207 @@
+{
+  "pre_registration": {
+    "min_net_edge_c": 2.0,
+    "pass_bar": "day-clustered 95% CI of mean PnL/contract strictly > 0 for a lead, surviving Bonferroni correction for 2 leads tested (alpha=0.025 one-sided per lead)",
+    "fit_window": [
+      "2026-04-24",
+      "2026-05-31"
+    ],
+    "validation_window": [
+      "2026-06-01",
+      "2026-07-20"
+    ],
+    "cities": [
+      "KXHIGHDEN",
+      "KXHIGHMIA",
+      "KXHIGHTSEA",
+      "KXHIGHTPHX"
+    ]
+  },
+  "fit_stats": {
+    "KXHIGHDEN": {
+      "dayahead": {
+        "bias": -1.1499999999999988,
+        "sigma": 2.9770064775823992,
+        "n_fit_days": 38
+      },
+      "samemorning": {
+        "bias": -1.4157894736842096,
+        "sigma": 1.4477431300810975,
+        "n_fit_days": 38
+      }
+    },
+    "KXHIGHMIA": {
+      "dayahead": {
+        "bias": -2.4526315789473676,
+        "sigma": 1.4323929783342368,
+        "n_fit_days": 38
+      },
+      "samemorning": {
+        "bias": -1.9526315789473674,
+        "sigma": 1.1744433625972723,
+        "n_fit_days": 38
+      }
+    },
+    "KXHIGHTSEA": {
+      "dayahead": {
+        "bias": -1.0921052631578945,
+        "sigma": 1.8981330199944306,
+        "n_fit_days": 38
+      },
+      "samemorning": {
+        "bias": -1.3684210526315785,
+        "sigma": 1.0,
+        "n_fit_days": 38
+      }
+    },
+    "KXHIGHTPHX": {
+      "dayahead": {
+        "bias": -0.007894736842104066,
+        "sigma": 1.0,
+        "n_fit_days": 38
+      },
+      "samemorning": {
+        "bias": -0.3868421052631595,
+        "sigma": 1.0,
+        "n_fit_days": 38
+      }
+    }
+  },
+  "leads": {
+    "dayahead": {
+      "n_trades": 756,
+      "n_days": 50,
+      "mean_pnl_c_per_contract_day_avg": -0.5480932379454054,
+      "se_day_clustered": 1.607766971690953,
+      "t_stat": -0.34090340677228476,
+      "ci95_lo": -3.6993165024596735,
+      "ci95_hi": 2.603130026568863,
+      "win_rate": 0.43783068783068785,
+      "wilson_lo": 0.40286745065636304,
+      "wilson_hi": 0.4734225550500895,
+      "total_pnl_c": -531,
+      "mean_edge_c": 16.55486203202369,
+      "brier_score": 0.1333233297823795,
+      "n_scored_markets": 1177,
+      "reliability": [
+        {
+          "bin": [
+            0.0,
+            0.2
+          ],
+          "n": 746,
+          "mean_model_p": 0.0522046541470675,
+          "realized_freq": 0.09517426273458444
+        },
+        {
+          "bin": [
+            0.2,
+            0.4
+          ],
+          "n": 275,
+          "mean_model_p": 0.286306444334773,
+          "realized_freq": 0.2545454545454545
+        },
+        {
+          "bin": [
+            0.4,
+            0.6
+          ],
+          "n": 115,
+          "mean_model_p": 0.4707727636387106,
+          "realized_freq": 0.3391304347826087
+        },
+        {
+          "bin": [
+            0.6,
+            0.8
+          ],
+          "n": 36,
+          "mean_model_p": 0.6588658684484301,
+          "realized_freq": 0.4444444444444444
+        },
+        {
+          "bin": [
+            0.8,
+            1.0
+          ],
+          "n": 5,
+          "mean_model_p": 0.8827363916898274,
+          "realized_freq": 0.8
+        }
+      ],
+      "market_implied_brier": 0.10586338147833525,
+      "model_vs_market_brier_delta": 0.02745994830404426,
+      "trades_per_month_est": 453.59999999999997,
+      "nominal_usd_per_month_at_1_contract_per_trade": -2.4861509273203586
+    },
+    "samemorning": {
+      "n_trades": 690,
+      "n_days": 50,
+      "mean_pnl_c_per_contract_day_avg": -0.5949069410981177,
+      "se_day_clustered": 0.9700979762736986,
+      "t_stat": -0.6132441832146175,
+      "ci95_lo": -2.496298974594567,
+      "ci95_hi": 1.3064850923983315,
+      "win_rate": 0.3782608695652174,
+      "wilson_lo": 0.34284369205461634,
+      "wilson_hi": 0.415026115694011,
+      "total_pnl_c": -342,
+      "mean_edge_c": 26.05059455825907,
+      "brier_score": 0.12212316201810902,
+      "n_scored_markets": 1193,
+      "reliability": [
+        {
+          "bin": [
+            0.0,
+            0.2
+          ],
+          "n": 810,
+          "mean_model_p": 0.026835848162980052,
+          "realized_freq": 0.07160493827160494
+        },
+        {
+          "bin": [
+            0.2,
+            0.4
+          ],
+          "n": 146,
+          "mean_model_p": 0.3005625701854647,
+          "realized_freq": 0.3082191780821918
+        },
+        {
+          "bin": [
+            0.4,
+            0.6
+          ],
+          "n": 151,
+          "mean_model_p": 0.49991455285616876,
+          "realized_freq": 0.3973509933774834
+        },
+        {
+          "bin": [
+            0.6,
+            0.8
+          ],
+          "n": 76,
+          "mean_model_p": 0.649232381665935,
+          "realized_freq": 0.3684210526315789
+        },
+        {
+          "bin": [
+            0.8,
+            1.0
+          ],
+          "n": 10,
+          "mean_model_p": 0.9546743055977212,
+          "realized_freq": 0.9
+        }
+      ],
+      "market_implied_brier": 0.04877560771165161,
+      "model_vs_market_brier_delta": 0.07334755430645741,
+      "trades_per_month_est": 414.0,
+      "nominal_usd_per_month_at_1_contract_per_trade": -2.4629147361462076
+    }
+  },
+  "validation_window_days": 50
+}
