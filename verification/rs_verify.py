@@ -190,6 +190,112 @@ def required_blocks(g_p, prec=128):
     return max(1, math.ceil(upper - 1e-12))
 
 
+def required_blocks_t14_provisional(g_p, prec=128):
+    """PROVISIONAL generalization of T11 Cor 2.3 to Trudgian-II's 3-term
+    bound B3(t) = 1.792 + 0.178 loglog t + 0.046 log t (Table 1 row 1e13):
+    N >= [B3(g_p) log(g_p/2pi) + a' log 2pi] / (6 pi), valid only if the
+    Lehman--Brent proof uses the Turing bound solely as a scalar at the top
+    endpoint (algebraically exact against both published instantiations;
+    unverified against the paywalled Brent 1979 proof -- see
+    docs/TURING_SPEC.md). Requires g_p's block range above 1e5. DO NOT
+    certify with this alone: production use is max() with required_blocks."""
+    ctx.prec = prec
+    lg = arb(g_p).log()
+    b3 = arb("1.792") + arb("0.178") * lg.log() + arb("0.046") * lg
+    log2pi = (arb(2) * arb.pi()).log()
+    rhs = (b3 * (lg - log2pi) + arb("1.792") * log2pi) / (6 * arb.pi())
+    upper = float(rhs.mid() + rhs.rad())
+    return max(1, math.ceil(upper - 1e-12))
+
+
+def lehman_brent_scan(anchor, direction, prec=96, max_blocks=64):
+    """Accumulate Rosser-conforming Gram blocks adjacent to good Gram point
+    g_anchor, going up (direction=+1) or down (-1), until Lehman--Brent's
+    requirement is met.
+
+    Up: blocks union [g_anchor, g_q]; requirement evaluated at the moving top
+    g_q; conclusion N(g_anchor) <= anchor+1.
+    Down: blocks union [g_j, g_anchor]; requirement evaluated at the fixed top
+    g_anchor; conclusion N(g_anchor) >= anchor+1.
+    """
+    g = gram_point
+    if g(anchor) <= 168 * math.pi:
+        return {"certified": False,
+                "reason": "T11 Cor 2.3 constants require t1 > 168*pi"}
+    blocks = 0
+    m = anchor
+    need_fixed = required_blocks(g(anchor)) if direction < 0 else None
+    while blocks < max_blocks:
+        j = m + direction
+        while not is_good_gram(j, g(j), prec):
+            j += direction
+            if abs(j - m) > 50:
+                return {"certified": False,
+                        "reason": f"no good Gram point within 50 of {m}"}
+        p = abs(j - m)
+        lo, hi = (m, j) if direction > 0 else (j, m)
+        pts = [g(k) for k in range(lo, hi + 1)]
+        cnt, _, _, _ = count_sign_changes(pts, prec=prec, hunt_depth=3,
+                                          max_hunt_depth=12, expected=p)
+        if cnt != p:
+            return {"certified": False,
+                    "reason": f"block ({lo},{hi}] has {cnt} certified sign "
+                              f"changes, expected {p}"}
+        blocks += 1
+        m = j
+        need = need_fixed if direction < 0 else required_blocks(g(m))
+        if blocks >= need:
+            side = "<=" if direction > 0 else ">="
+            return {"certified": True,
+                    "statement": f"N(g_{anchor}) {side} {anchor + 1}",
+                    "blocks_used": blocks,
+                    "blocks_required": need,
+                    "far_index": m,
+                    "basis": "T11 Thm 2.1 + Cor 2.3"}
+    return {"certified": False, "reason": f"exceeded {max_blocks} blocks"}
+
+
+def segment_verify(T1, T2, prec=96):
+    """Certify that (g_m, g_n] (good Gram points nearest inside [T1, T2])
+    contains exactly n - m zeros of zeta, all on the critical line.
+
+    Lower certificate: N(g_m) >= m+1 (blocks below g_m).
+    Upper certificate: N(g_n) <= n+1 (blocks above g_n).
+    Interior: n - m certified sign changes in (g_m, g_n].
+    Together: N(g_n) - N(g_m) <= n - m = on-line count <= N(g_n) - N(g_m).
+    """
+    t0 = time.time()
+    mpmath.mp.dps = 30
+    m = int(mpmath.siegeltheta(T1) / mpmath.pi) + 1
+    while not is_good_gram(m, gram_point(m), prec):
+        m += 1
+    n = int(mpmath.siegeltheta(T2) / mpmath.pi) - 1
+    while not is_good_gram(n, gram_point(n), prec):
+        n -= 1
+    lower = lehman_brent_scan(m, -1, prec)
+    upper = lehman_brent_scan(n, +1, prec)
+    pts = [gram_point(k) for k in range(m, n + 1)]
+    cnt, brackets, evals, exhausted = count_sign_changes(
+        pts, prec=prec, expected=n - m)
+    ok = (lower.get("certified") and upper.get("certified")
+          and cnt == n - m and not exhausted)
+    return {
+        "segment": [gram_point(m), gram_point(n)],
+        "gram_indices": [m, n],
+        "expected_zeros": n - m,
+        "certified_sign_changes": cnt,
+        "lower_certificate": lower,
+        "upper_certificate": upper,
+        "segment_certified": bool(ok),
+        "certified_statement": (
+            f"exactly {n - m} zeros of zeta in ({gram_point(m):.6f}, "
+            f"{gram_point(n):.6f}], all on the critical line"
+            if ok else "NOT certified"),
+        "zeta_evaluations": evals,
+        "elapsed_sec": round(time.time() - t0, 2),
+    }
+
+
 def turing_certificate(n_end, prec=96, max_blocks=64):
     """Certify N(g_{n_end}) <= n_end + 1 via Lehman--Brent (T11 Thm 2.1 with
     Corollary 2.3 constants; valid since our heights exceed 168*pi).
@@ -244,7 +350,7 @@ def main():
     T = 2000.0
     odlyzko_file = None
     json_out = None
-    it = iter(range(len(args)))
+    segment = None
     i = 0
     while i < len(args):
         if args[i] == "--check-odlyzko":
@@ -253,9 +359,20 @@ def main():
         elif args[i] == "--json":
             json_out = args[i + 1]
             i += 2
+        elif args[i] == "--segment":
+            segment = (float(args[i + 1]), float(args[i + 2]))
+            i += 3
         else:
             T = float(args[i])
             i += 1
+
+    if segment:
+        report = segment_verify(*segment)
+        print(json.dumps(report, indent=2))
+        if json_out:
+            with open(json_out, "w") as f:
+                json.dump(report, f, indent=2)
+        return
 
     t0 = time.time()
     # choose last Gram index with g_n <= T, then walk down to a good Gram
