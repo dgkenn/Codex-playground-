@@ -164,3 +164,26 @@ amplitude) detected fine on the same data. **Implication (reinforces the HEEDB-p
 iatrogenic-vs-pathological BURST-SUPPRESSION lead is montage-robust → HEEDB discovery + VitalDB validation both viable;
 (2) the SPECTRAL age-alpha/sensitivity aims require HEEDB's research-grade EEG and should NOT be anchored on VitalDB.
 A weak age×Ce interaction (+0.61) appeared but is post-hoc after the main-effect null — treat as hypothesis only.
+
+## OVERNIGHT RESULTS — Aim-2 + Aim-3 on VitalDB (698 cases, 320k 30-s bins, montage-robust)
+Burst suppression is the montage-robust marker (works on VitalDB's BIS sensor, unlike spectral alpha). Both aims land.
+
+**AIM 2 — burst-suppression susceptibility (the aging-brain effect that spectral alpha couldn't show here):**
+at matched propofol Ce, P(>5% BS burden) rises with age **OR 1.060/yr [1.045–1.076]** (Ce OR 1.006 ns). Median BS
+burden 0.018 (<60) → 0.034 (60–75) → **0.074 (75+)** — ~4× in the elderly. Clean, Brown-relevant, and internally
+validates the substrate lesson (gross-amplitude BS shows the age effect; subtle spectral alpha does not on this sensor).
+
+**AIM 3 — burst suppression PRECEDES intraoperative hypotension (Brown EEG × our C8), Ce-controlled:**
+cross-lagged over 278k bin-pairs, controlling for current MBP, Ce, age —
+- FORWARD  P(MBP<65 at t+1) ~ bs_t: **OR 1.79 [1.60–2.00]**
+- REVERSE  P(BS>0.1 at t+1) ~ hypotension_t: OR 1.17 [1.13–1.22]
+Forward ≫ reverse → EEG over-sedation precedes hypotension beyond the shared propofol dose (bidirectional coupling
+exists — hypoperfusion also slows EEG — but the over-sedation→hypotension direction dominates). Case-level:
+hypotension burden ~ BS burden **+0.18 [0.07–0.29]** (Ce- and age-adjusted). Code: analysis/vitaldb_aim23.py,
+analysis/vitaldb_bridge_extract.py.
+
+**Honest caveats (to harden):** (1) coupling is bidirectional; the claim is *dominant direction*, not exclusivity;
+(2) Ce controlled as per-bin point value — residual dose-dynamics confounding possible (harden with tighter Ce strata
++ dose-change adjustment); (3) single-center VitalDB — external validation belongs in HEEDB ICU cEEG; (4) BS
+threshold + immortal-time robustness pending. This is the montage-robust LEAD result; HEEDB adds the
+iatrogenic-vs-pathological mortality contrast the OR setting can't (elective mortality ~0).
