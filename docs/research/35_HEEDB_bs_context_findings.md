@@ -240,3 +240,41 @@ Code: `analysis/icare_cohort.py`, `analysis/icare_bs_burden.py`, `analysis/icare
 | I-CARE (5 hosp) | 561 | pathological | burden→poor outcome **OR 7.25**, monotone quartile gradient |
 
 One detector, validated at ~90% against sample-level expert annotation, applied across all three.
+
+## PRE-PRESENTATION AUDIT (do not skip — read before quoting any number)
+Audited the load-bearing claims after a lag-semantics bug was found in the VitalDB arm. Findings:
+
+**A1. Mortality ascertainment is INCOMPLETE and DIFFERENTIAL.** Only **13.8%** of S0001 patients have any
+`DateOfDeath` (20.6% of the analysed adult cohort). Linkage is *differential by exposure*:
+**BS+ 37.4% vs BS− 18.8%** linked (S0002: 34.8% vs 17.8%). Therefore "no death date" ≠ "survived", and the headline
+**OR 5.03 / 5.94 is NOT a trustworthy 30-day mortality odds ratio** — its denominator mixes survivors with
+unlinked patients. **Do not quote that OR as a mortality effect size.**
+
+**A2. But the DIRECTION survives a linkage-bias-immune test.** Restricting to patients who *do* have a recorded
+death (so linkage cannot bias the comparison), burst suppression predicts markedly earlier death:
+
+| | median days EEG→death | died ≤30 d | AUC (BS→earlier death) |
+|---|---|---|---|
+| S0001 BS+ (n=1,052) | **6** | **76.7%** | **0.716** |
+| S0001 BS− (n=4,765) | 68 | 41.0% | |
+| S0002 BS+ (n=636) | **6** | **73.6%** | **0.744** |
+| S0002 BS− (n=2,320) | 89 | 33.4% | |
+
+Replicated at both hospitals. **This is the defensible way to state the HEEDB result**: among patients with
+ascertained death, burst suppression is associated with dying ~6 days after the EEG versus ~68–89 days — not as a
+mortality OR from an unreliable denominator.
+
+**A3. Label semantics are OK.** Only 0.2% of report rows have both `normal` and `abnormal` blank, so reports were
+parsed and a blank finding field can reasonably be read as "not reported". The null result for generalized slowing
+is not a parsing artifact — it is present in 77.7% of reports and simply has little discriminative power.
+
+**A4. Context result holds within the linked subset** (S0001 BS+: OR 0/29 = 0% died ≤30 d; Routine 60.9%;
+LTM 83.0%), i.e. the 0%-in-theatre finding is not a linkage artifact.
+
+### UNRESOLVED THREAT — I-CARE self-fulfilling prophecy (the biggest remaining risk)
+In post-cardiac-arrest care, EEG findings — burst suppression especially — **directly inform withdrawal of
+life-sustaining therapy (WLST)**. A patient whose EEG shows suppression is more likely to have care withdrawn and
+therefore to die. The I-CARE OR 7.25 is thus **partly circular**, and the release metadata contains no WLST flag or
+date of death, so this **cannot be resolved within this dataset**. This is a known, named limitation of the entire
+post-arrest prognostication literature (it is why the TTM trials mandated blinded prognostication), and any
+competent reviewer — certainly Brown — will raise it immediately. It must be stated up front, not buried.
