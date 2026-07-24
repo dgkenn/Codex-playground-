@@ -278,3 +278,42 @@ therefore to die. The I-CARE OR 7.25 is thus **partly circular**, and the releas
 date of death, so this **cannot be resolved within this dataset**. This is a known, named limitation of the entire
 post-arrest prognostication literature (it is why the TTM trials mandated blinded prognostication), and any
 competent reviewer — certainly Brown — will raise it immediately. It must be stated up front, not buried.
+
+## RED-TEAM + LITERATURE REVIEW → THESIS MUST BE REFRAMED (do not present the old version)
+
+### What the literature actually says (checked, not assumed)
+1. **"BS meaning depends on aetiology" is NOT novel.** Hofmeijer & van Putten established malignant post-anoxic BS
+   over ~15 years. Worse for our purposes: **Brown co-authored the BS-as-controllable-hypometabolic-state
+   framework** (Ching/Brown; closed-loop BS titration). Presenting this thesis to Brown = restating his own work
+   back to him. **This is exactly the failure mode to avoid.**
+2. **Our "anesthetic BS is benign" framing was WRONG.** Fritz et al. 2016 (intraop EEG suppression → postoperative
+   delirium) and Willingham/Avidan 2014 (suppression → postoperative mortality) show anaesthetic BS is *not*
+   benign. We had not engaged this literature; a reviewer would flag it in the first paragraph.
+3. **ENGAGES / ENGAGES-Canada:** EEG-guided anaesthesia to minimise suppression did **not** reduce delirium,
+   ICU/hospital stay, complications, or 30-day mortality (18.15% vs 18.10% delirium).
+4. **The field's dominant causal model is the REVERSE of ours:** hypotension → cerebral hypoperfusion → burst
+   suppression. There is even a randomised trial (Frontiers Syst Neurosci 2022) showing that *raising blood
+   pressure reduces* intraoperative BS. A 2026 BJA narrative review treats the direction as unsettled/dual.
+
+### The genuine open question (this is the paper)
+**Why does burst suppression robustly PREDICT harm, yet preventing it does not IMPROVE outcomes (ENGAGES null)?**
+That is the field's live paradox, and our strongest, cleanest result speaks directly to it:
+
+> Burst suppression **precedes** arterial hypotension by 30–120 s, independent of anaesthetic dose, and the
+> reverse-causation explanation (hypoperfusion flattening the EEG) is excluded by the normotensive-restricted test.
+
+If BS *precedes* the haemodynamic insult rather than following it, then BS plausibly marks a **vulnerable brain**
+(low anaesthetic reserve) rather than being the modifiable injury itself — which would explain why titrating the
+anaesthetic to abolish BS (ENGAGES) does not change outcomes, while the associated hypotension may be the actual
+mediator of harm. This *reverses an assumed causal arrow* and *explains a major null trial*. That is a real
+contribution, and it is stated in Brown's own methodological idiom (temporal ordering, dynamical coupling).
+
+### Within-HEEDB aetiology interaction test — ATTEMPTED, DATA-LIMITED (honest)
+The red-team's top recommendation was to replace the rhetorical cross-cohort contrast with a real
+aetiology×BS interaction inside HEEDB. **Blocked:** `HEEDB_ICD10_for_Neurology.csv` contains only 169 distinct
+curated neurology codes; **anoxic brain injury (G93.1) and cardiac arrest (I46) are absent** (only G93.4
+unspecified encephalopathy, n=6,177, and G93.2). Aetiology therefore cannot be assigned from HEEDB metadata.
+An OMOP layer with full `condition_*` tables exists but only for I0001–I0003 (+Merged), whereas mortality linkage
+exists only for S0001/S0002 — so the two do not currently overlap. **The interaction test remains unrun; do not
+claim it.** Partial result obtained before the aetiology split failed: among death-linked patients, BS → death
+≤30 d OR **5.00 [4.42–5.65]** (BS+ 75.5% vs BS− 38.6%).
