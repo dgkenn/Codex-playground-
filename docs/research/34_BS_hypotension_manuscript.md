@@ -229,3 +229,41 @@ analysis, cerebral oximetry, or an interventional design. Code: `analysis/vitald
 | Prove modifiability → better outcomes | **NOT ACHIEVABLE observationally**; the only RCT evidence (ENGAGES, ENGAGES-Canada) is null. |
 | Other adverse outcomes | **AKI yes** (OR 1.37, survives full adjustment). **ICU no** — confounded by ASA/emergency. |
 | Does BS-induced hypotension cause the harm (e.g. AKI)? | **NO.** Mediation fails (~1% attenuation); BS and hypotension are independent, equal-magnitude pathways. |
+
+## ★ THE RECONCILIATION — two distinct burst-suppression phenotypes (strongest result)
+
+**The apparent contradiction.** The field's dominant model is hypotension → cerebral hypoperfusion → burst
+suppression, supported by an interventional RCT (n=104) in which raising blood pressure abolished suppression.
+Our result runs the other way: BS *precedes* hypotension. Both cannot be universally true.
+
+**The resolution — found in that RCT's own protocol.** Its algorithm triggered **only when MAP was already below
+that patient's baseline**, and in 55% of those episodes (24/44) raising pressure alone resolved the suppression.
+That trial therefore studied *hypotension-first* episodes exclusively. Our normotensive-restricted analysis
+describes the population their protocol never enrolled.
+
+**Direct test.** For every case we computed that patient's **own baseline MAP** (median of the first 10 maintenance
+bins) and split burst-suppression epochs by whether MAP was at/above baseline or already below it:
+
+| Phenotype | lag +60 s | lag +120 s | n (bin-pairs) | events |
+|---|---|---|---|---|
+| **MAP ≥ own baseline** ("anaesthetic-sensitivity" phenotype) | **OR 1.94 [1.79–2.10]** * | **OR 2.06 [1.92–2.21]** * | 612,909 | 54,469 |
+| **MAP < own baseline** ("hypoperfusion" phenotype) | **OR 1.01 [0.81–1.26]** ns | **OR 1.02 [0.83–1.25]** ns | 44,340 | 9,184 |
+
+**A near-perfect dissociation.** Burst suppression arising at normal pressure predicts hypotension 1–2 minutes later
+(OR ≈ 2.0). Burst suppression arising in an already-hypotensive patient predicts **nothing** (OR 1.01) — and with
+44,340 bin-pairs and 9,184 events this is a well-powered null, not an absence of data.
+
+**Interpretation.** Intraoperative burst suppression is not one entity. There are (at least) two:
+1. **Hypoperfusion-associated BS** — a *consequence* of low pressure; resolves when pressure is restored (the RCT's
+   population and its 55% resolution rate).
+2. **Sensitivity-associated BS** — occurs at normal pressure and *heralds* a pressure fall; raising pressure would
+   not be expected to address it.
+
+**Why this matters clinically and for the ENGAGES paradox.** Trials that treat all burst suppression as one target
+pool two phenotypes requiring opposite responses (restore pressure vs. anticipate hypotension / reduce anaesthetic).
+That is a coherent mechanistic explanation for why suppression-avoidance trials have been null, and it is testable
+prospectively. It also reconciles our result with the interventional literature rather than contradicting it.
+
+**Honest limits.** Baseline MAP is defined from each patient's own early maintenance period (not a pre-induction
+value); the split is observational, not randomised; "phenotype" here is defined by haemodynamic context, not by an
+independent biological marker. Code: `analysis/vitaldb_two_phenotype.py`.
