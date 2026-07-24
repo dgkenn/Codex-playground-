@@ -151,3 +151,16 @@ de-identified derived features + aggregate stats (no PII in outputs/commits). De
 among BS-containing EEGs, does sedative-attributable (drug-induced) BS have markedly LOWER mortality than
 non-drug (pathological) BS at matched BS burden/BSP? If yes → "BS is a marker of its cause, not intrinsically
 harmful" (the ENGAGES-debate resolution) and the design is alive.
+
+## DECISIVE-FIRST RESULT (VitalDB, n=249 propofol-TCI): age→alpha does NOT replicate — informative
+Ran the Aim-1 make-or-break (Purdon-2015 age→alpha) on 249 VitalDB propofol cases (multitaper, maintenance window).
+**Age→alpha main effect is FLAT** across absolute (+0.005 dB/yr [−0.034,+0.043]), relative (−0.0002 [−0.0005,+0.0001]),
+and alpha-minus-slow (−0.012 [−0.037,+0.013]) metrics; depth-matched (Ce 2–3.5) shows only a faint non-monotonic hint
+(youngest rel-alpha 0.104 vs older ~0.08). Honoring the pre-registered stop-gate for the VitalDB SPECTRAL path.
+**Diagnosis (pipeline is sound; substrate is the issue):** alpha rises correctly with propofol Ce (+2.26 dB per
+µg/mL) → multitaper machinery validated; VitalDB provides a 2-channel proprietary BIS *sensor*, not a research 10–20
+montage, which plausibly attenuates the SUBTLE spectral age effect. Consistent with this, BURST SUPPRESSION (gross
+amplitude) detected fine on the same data. **Implication (reinforces the HEEDB-primary design):** (1) the
+iatrogenic-vs-pathological BURST-SUPPRESSION lead is montage-robust → HEEDB discovery + VitalDB validation both viable;
+(2) the SPECTRAL age-alpha/sensitivity aims require HEEDB's research-grade EEG and should NOT be anchored on VitalDB.
+A weak age×Ce interaction (+0.61) appeared but is post-hoc after the main-effect null — treat as hypothesis only.

@@ -1165,3 +1165,13 @@ cross-nationally-validated part.
   arithmetic-consequence reframe fails. Check the error structure (noise vs shift) before assuming attenuation. The
   only clean number was the KNOWN occult-hypoxemia point (SpO2 92-96 target permits 10-20% true SaO2<88; Sjoding).
   4th decisive-first kill this session; the discipline works (data in hand, one run, no wasted build).
+
+- **VitalDB's 2-channel BIS *sensor* EEG cannot replicate subtle SPECTRAL anesthesia effects (age→frontal-alpha,
+  Purdon-2015) even at n=249, though it captures GROSS phenomena (burst suppression, Ce→alpha dose-response) fine
+  (2026-07).** Multitaper age→alpha main effect flat across absolute/relative/alpha-minus-slow metrics; but alpha
+  rises correctly with propofol Ce (+2.26 dB/µg·mL⁻¹), proving the pipeline works. MECHANISM: research-grade
+  age-alpha findings use full 10–20 montages with controlled impedance; VitalDB's proprietary frontal BIS sensor
+  (2 ch, referential) attenuates the subtle spectral effect. RULE: match substrate quality to effect subtlety —
+  gross-amplitude markers (burst suppression, spectral edge) survive limited montages; fine oscillatory/coherence/
+  age markers need research EEG (→ HEEDB, not VitalDB). Validates anchoring spectral aims on HEEDB and using VitalDB
+  only for the montage-robust burst-suppression validation.
