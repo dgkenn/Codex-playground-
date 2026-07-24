@@ -89,3 +89,33 @@ warrants prospective and ICU-cohort testing.
 
 **Net:** the core antecedent (BS→hypotension) is robust and cross-anesthetic; the age-susceptibility is propofol-
 specific. Both are honest, reportable, and Brown-relevant (drug-specific EEG pharmacodynamics is his domain).
+
+## MECHANISTIC DISSOCIATION — heart rate as an internal negative control (n=174-case interim, full run pending)
+Pre-registered prediction (cortical→autonomic→pressure cascade) was **REFUTED**, and the refutation strengthens the
+paper. Lag scans on three independent instruments (EEG / ECG-derived HR / arterial line):
+- **BS → hypotension (MBP<65):** negative lags NULL (OR 0.95–1.02), positive lags rise **1.20→1.23*→1.31*→1.33***
+  — the temporal asymmetry replicates in this subsample.
+- **BS → heart-rate fall (≥5 bpm):** OR **<1 (0.44–0.63) and SYMMETRIC** across negative and positive lags.
+- **BS → bradycardia (HR<50):** OR <1 (0.52–0.73), likewise non-directional.
+
+**Interpretation.** A symmetric OR<1 is a *state* association (burst-suppression epochs are haemodynamically quiet,
+stable-HR epochs), not a *temporal* effect; only the pressure arm shows the null-negative/rising-positive asymmetry
+that marks precedence. Heart rate therefore functions as an **internal negative control**: had burst suppression
+merely indexed "generically deep anaesthesia that drifts into instability," the chronotropic arm would show the same
+asymmetry. It does not. The burst-suppression→hypotension effect is thus **specific to the vascular axis — consistent
+with a vasomotor (reduced systemic vascular resistance) rather than a chronotropic/vagal mechanism** — which also
+rules out a generic depth confound. This is a genuine mechanistic narrowing, and a stronger design element than the
+cascade we predicted. *Caveats: HR is monitor-derived (2-s numeric), not beat-to-beat, so true HRV/baroreflex
+sensitivity is untested (needs the ECG waveform); vasoactive drugs are unadjusted. Full-cohort rerun pending.*
+
+## BIS BLIND SPOT — decisive test run, proposed mechanism REFUTED (honest negative)
+Tested whether the displayed BIS index reads falsely "acceptable" during EEG-confirmed suppression because frontalis
+EMG is folded into its composite. Reference non-circular (raw-waveform suppression vs the proprietary displayed index).
+- **Prevalence is real but modest:** of EEG-confirmed deeply-suppressed bins (raw BS ≥50%), **15.6% displayed BIS ≥40**
+  (14.6% in the 40–60 clinician target range; 1.0% ≥60). Device's own SR read 0 in 3.4% of these bins.
+- **The EMG mechanism FAILS:** stratifying suppressed bins by EMG tertile gives a **non-monotonic** blind-spot rate
+  (low 18.3%, mid 27.7%, high 14.2%) — no dose-response. The pooled regression EMG coefficient is positive but
+  trivial (+0.167 BIS units per EMG unit).
+**Verdict:** killed as a flagship/device-safety claim; retained only as a modest descriptive note (BIS under-reports
+EEG-confirmed suppression ~1 in 6 epochs, mechanism unexplained — plausibly the index's own smoothing lag).
+Code: analysis/vitaldb_bis_blindspot.py, analysis/vitaldb_cascade.py.
