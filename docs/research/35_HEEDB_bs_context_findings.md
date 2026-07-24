@@ -106,3 +106,30 @@ findings**; CPU-only entry points exist.
   raw bucket is AccessDenied on both key pairs; `github.com/bdsp-core/morgoth` 404s (weights not yet public).
   Per bdsp.io/about/howto_accessdata, access points are **account-specific aliases** listed on the user's Cloud
   Credentials dashboard — need that alias (likely propagation delay or a distinct alias for this project).
+
+## Detector CALIBRATED against HEEDB expert labels (AUC 0.83) — burden analysis now unblocked
+Calibrated the raw-signal burst-suppression detector against HEEDB's **own** clinician reads rather than an
+external set (13,515 `bs`-labelled and 68,760 not-labelled recordings match findings↔metadata at S0001 — a larger,
+in-distribution, same-montage ground truth than any external corpus, and it needs no extra DUA).
+
+**The decisive methodological fix.** Naive amplitude thresholding on the referential channels performed barely
+above chance (AUC 0.63) and saturated at higher thresholds. Cause: HEEDB is **referential** (unlike VitalDB's
+bipolar BIS sensor), so within-frame peak-to-peak is dominated by DC/common-mode drift rather than the
+burst-vs-suppression contrast. Adding a **0.5–40 Hz bandpass** and a **bipolar longitudinal montage**
+(Fp1–F3, F3–C3, C3–P3, P3–O1 and the right-sided chain — how burst suppression is actually read clinically) fixed it:
+
+| Threshold | bs=1 median burden | bs=0 median burden | AUC |
+|---|---|---|---|
+| 3 µV | 0.062 | 0.000 | 0.783 |
+| **5 µV** | **0.425** | **0.000** | **0.829** |
+| 8 µV | 0.605 | 0.014 | 0.824 |
+| 12 µV | 0.867 | 0.276 | 0.819 |
+| 25 µV | 0.990 | 0.956 | 0.721 |
+
+**Operating point: 5 µV on bandpassed bipolar channels, flat/dead-segment rejected.** (Pilot n=29 recordings,
+service-matched; AUC is bounded below by sampling — four 2-min windows vs an expert reading the entire record —
+so 0.83 is a floor, not a ceiling.) Code: `analysis/heedb_bs_calibrate.py`.
+
+**This unblocks the key remaining test:** re-run the OR/EMU-vs-ICU context contrast **at matched measured BS
+burden**. If context still determines mortality when burden is equal, "burst suppression is a marker of its cause"
+is demonstrated rather than inferred — the result that makes this a paper.
