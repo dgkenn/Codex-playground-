@@ -168,3 +168,31 @@ matched-burden analysis required.
 (list, get_bucket_location, head, all regions, requester-pays). `s3control list_access_points` confirms **your
 account owns 0 access points**, so the MORGOTH one is owned by BDSP and cannot be enumerated from here. Needs
 either the alias from the BDSP Cloud Credentials dashboard, or more propagation time.
+
+## I-CARE — the pathological burst-suppression arm (COMPLETES the design)
+`ICARE_train/training/` = **607 post-cardiac-arrest comatose patients** (PhysioNet/I-CARE), each with:
+- **19-channel 10-20 EEG at 500 Hz** (WFDB `.mat`/`.hea`), serial hourly segments, plus ECG and OTHER channels
+- per-patient metadata: **Hospital (A–F → 6-site external validation built in)**, Age, Sex, ROSC, OHCA,
+  Shockable Rhythm, **TTM (33 °C / 36 °C)**, **Outcome (Good/Poor)**, **CPC 1–5**
+
+This is precisely the anoxic/pathological cohort the HEEDB ICD-10 proxy failed to isolate, and it converts the
+"same EEG state, opposite cause" claim from a *context inference* into a *directly measured contrast*.
+**Bonus quasi-experiment:** TTM assigns 33 °C vs 36 °C, and hypothermia independently deepens burst suppression —
+a temperature manipulation of the exposure that is closer to exogenous than anything else available.
+
+### The three-cohort design, one validated detector
+| Cohort | n | BS aetiology | Outcome | Result so far |
+|---|---|---|---|---|
+| **VitalDB** (OR, propofol TCI) | 1,859 / 852k bins | **iatrogenic** (anaesthetic) | in-hospital mortality ≈0 | BS *precedes hypotension*, dose-independent, vasomotor-specific |
+| **HEEDB** (S0001+S0002) | 43,022 | mixed clinical | 30-day mortality | BS OR ≈5–6 vs slowing null; **0% (OR/EMU) → 36% (ICU LTM)** |
+| **I-CARE** | 607, 6 hospitals | **pathological** (post-anoxic) | CPC / Good-Poor | *to run* |
+
+Detector validated to **~90% sample-level accuracy** against `burst-supression/` expert annotations, operating point
+3–12 µV on bandpassed bipolar channels — the same instrument applied across all three cohorts, which is what makes
+the comparison legitimate rather than a cross-study meta-comparison.
+
+**MORGOTH status: no longer blocking.** Swept 225 candidate access-point names; only `bdsp-credentialed-access-point`
+and `bdsp-restricted-access-point` are reachable, and `s3control` confirms the account owns 0 access points, so the
+MORGOTH alias must come from the BDSP dashboard. It is now redundant for the critical path: `burst-supression/`
+supplies better (sample-level) ground truth than MORGOTH would have, and MORGOTH remains only a
+nice-to-have benchmark for the discussion.
