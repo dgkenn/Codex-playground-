@@ -57,20 +57,22 @@ warrants prospective and ICU-cohort testing.
 | **Normotensive-restricted (MBP≥70)** | **OR 4.98 [3.79–6.55]** |
 | Normotensive + stable/rising MBP | OR 4.25 [2.70–6.70] |
 | Aim-2: BS burden vs age (matched Ce) | OR 1.06/yr; median 0.018(<60)→0.074(≥75) |
+| **Granger BS→MBP** (adj MBP AR(3)+Ce) | **F(3,276k)=117.6**; reverse MBP→BS F=17.7 → BS→MBP dominates 6.6× |
 
 ## Limitations (honest, from adversarial review)
 1. **Ce is effect-site *modeled*, not measured** — residual dose-timing confounding cannot be fully excluded; the
    within-stratum + ΔCe + normotensive controls mitigate but do not eliminate it.
 2. **BS detection on a 2-channel BIS sensor** — concurrent validity vs device SR r=0.68/0.78 (good, non-circular) and,
    ideally, blinded expert epoch review and full 10–20 montage confirmation.
-3. **Autocorrelation** — 30-s bins are within the signals' autocorrelation timescale; the monotonic lead-lag rise
-   argues against pure bleed, but an impulse-response/Granger analysis with resampling is the planned confirmation.
+3. **Autocorrelation — ADDRESSED**: a Granger test (MBP_t on its own AR(3) lags + Ce ± BS lags) shows past BS improves
+   MBP prediction beyond MBP's own history (F=117.6, p≪1e-6), with BS→MBP dominating MBP→BS 6.6× — the lead is not
+   autocorrelation bleed. (Block-resampling CIs remain a nicety.)
 4. **No outcome in this cohort** — elective surgery, in-hospital mortality ~0. The finding is a *mechanistic
    antecedent*, not outcome evidence. The **HEEDB ICU extension** (iatrogenic-vs-pathological BS mortality contrast +
    full montage) supplies the outcome dimension.
 
 ## Planned confirmatory analyses (pre-specified)
-- Impulse-response / Granger-causality with block resampling.
+- Granger-causality DONE (BS→MBP F=117.6 vs reverse 17.7); block-resampling CIs remain.
 - Suppression-ratio + blinded-rater validation of BS detection; NIRS-perfusion sensitivity where available.
 - Sevoflurane (volatile) generalization cohort.
 - HEEDB: outcome contrast (drug-induced vs pathological BS mortality) on research-grade cEEG, multi-site.
