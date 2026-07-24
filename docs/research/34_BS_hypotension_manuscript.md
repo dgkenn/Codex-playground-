@@ -196,3 +196,36 @@ Nothing here shows that preventing burst suppression improves outcomes. This is 
 evidence on that question (ENGAGES, ENGAGES-Canada) is **null**. Any claim of modifiability would require a
 prospective trial. State this explicitly rather than implying actionability.
 Code: `analysis/vitaldb_bs_aki_mediation.py`.
+
+## MECHANISM TEST — attempted with directly measured SVR and cardiac output: NOT SUPPORTED
+The HR-flat result suggested a vasomotor rather than chronotropic mechanism. VitalDB provides *directly measured*
+haemodynamics (EV1000/Vigileo) to test this: 705 cases overlapping the EEG cohort, **114,229 bins with SVR** and
+**325,332 bins with cardiac output**. Model: change in SVR (or CO) from t to t+k, regressed on BS burden at t,
+adjusting for the current value, MAP and Ce.
+
+| lag | ΔSVR per unit BS | ΔCO per unit BS |
+|---|---|---|
+| −120 s | **+16.22 [+7.74,+24.71]** * | −0.05 [−0.06,−0.04] * |
+| −60 s | **+11.70 [+5.16,+18.25]** * | −0.03 [−0.04,−0.02] * |
+| **+60 s** | **−2.30 [−8.91,+4.31] ns** | −0.02 [−0.03,−0.01] * |
+| **+120 s** | **+2.47 [−6.14,+11.09] ns** | −0.04 [−0.05,−0.02] * |
+
+**The vasodilation hypothesis is NOT supported.** SVR shows *no* fall at forward lags (both null); the only
+significant SVR signal is at *negative* lags (SVR was higher before). Cardiac output shows a small decline that is
+**symmetric** across lag (−0.02 to −0.05 L/min per unit BS, i.e. a concurrent state association, not a temporal
+lead) and is of trivial magnitude.
+
+**Honest conclusion: the haemodynamic mechanism linking burst suppression to the subsequent pressure fall is NOT
+established.** Neither measured vasodilation nor measured cardiac depression accounts for it at the relevant lag.
+The earlier inference of "vasomotor specificity" — which rested only on the *absence* of a temporal HR effect — is
+**not corroborated by direct SVR measurement and should not be claimed.** Caveats: EV1000/Vigileo SVR is a derived,
+noisy quantity available in only ~215 cases; a true mechanism study likely needs beat-to-beat arterial waveform
+analysis, cerebral oximetry, or an interventional design. Code: `analysis/vitaldb_mechanism_svr_co.py`.
+
+## STATUS OF THE FOUR QUESTIONS ASKED
+| Question | Answer from these data |
+|---|---|
+| Prove a mechanism | **NOT ACHIEVED.** SVR does not fall after BS; CO change is symmetric and trivial. |
+| Prove modifiability → better outcomes | **NOT ACHIEVABLE observationally**; the only RCT evidence (ENGAGES, ENGAGES-Canada) is null. |
+| Other adverse outcomes | **AKI yes** (OR 1.37, survives full adjustment). **ICU no** — confounded by ASA/emergency. |
+| Does BS-induced hypotension cause the harm (e.g. AKI)? | **NO.** Mediation fails (~1% attenuation); BS and hypotension are independent, equal-magnitude pathways. |
