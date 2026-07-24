@@ -187,3 +187,28 @@ analysis/vitaldb_bridge_extract.py.
 + dose-change adjustment); (3) single-center VitalDB — external validation belongs in HEEDB ICU cEEG; (4) BS
 threshold + immortal-time robustness pending. This is the montage-robust LEAD result; HEEDB adds the
 iatrogenic-vs-pathological mortality contrast the OR setting can't (elective mortality ~0).
+
+## AIM-3 ADVERSARIALLY HARDENED + sonnet red-team — SURVIVES (the crown-jewel result)
+Six robustness tests, all passed:
+1. Within-Ce strata (kills dose confound): BS→hypotension OR 2.16 / 1.36 / 1.59 (Ce 1–2.5 / 2.5–3.5 / 3.5+), all sig.
+2. Lag structure: BS→hypotension OR rises 1.62→1.74→1.87→1.92 at +30..+120s vs ~1.2 at negative lags → BS LEADS.
+3. Dose-change (dCe) covariate: BS OR 1.66.
+4. BS-specific: survives adding slow-wave power (slow-wave adds nothing).
+5. **Reverse-causation "fatal flaw" (red-team #1) REFUTED:** among currently-NORMOTENSIVE bins (MBP≥70), BS predicts
+   next-bin hypotension **OR 4.98 [3.79–6.55]** (≥15 mmHg drop from MBP≥75: OR 1.93) — BP is normal *at* the BS, so
+   low-perfusion can't be flattening the EEG.
+6. **Not an "already-declining MBP" artifact:** normotensive AND stable/rising MBP → BS OR **4.25 [2.70–6.70]**.
+
+**Sonnet red-team verdict:** biggest residual = Ce is effect-site-*modeled* not measured (dose-timing confound) +
+BS detection on a 2-ch BIS sensor needs suppression-ratio/blinded-rater validation + Granger/impulse-response for the
+autocorrelation concern; no outcome in VitalDB (elective mortality ~0). Realistic tier: **BJA / Anesthesia &
+Analgesia methods-physiology** (not Anesthesiology main) — and the #1 "fatal flaw" (hypoperfusion artifact) is now
+addressed by the normotensive-restricted tests. **Smallest honest claim:** *EEG-defined burst suppression temporally
+precedes hypotension beyond concentration-matched dosing — a hemodynamic-instability antecedent, pending
+perfusion-artifact and outcome validation.* Code: analysis/vitaldb_aim3_harden.py.
+
+**How the two datasets combine (the paper):** VitalDB (OR) establishes the montage-robust *mechanistic antecedent*
+(BS→hypotension, Ce-independent, artifact-controlled); HEEDB (ICU cEEG, on credential restore) adds the *outcome*
+dimension the OR lacks — iatrogenic-vs-pathological BS mortality contrast + full 10–20 montage validation. Together:
+"burst suppression is a modifiable antecedent of hemodynamic instability, and its harm depends on cause" — a
+Brown-method + Westover-data + our-C8-bridge paper.

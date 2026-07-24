@@ -1175,3 +1175,14 @@ cross-nationally-validated part.
   gross-amplitude markers (burst suppression, spectral edge) survive limited montages; fine oscillatory/coherence/
   age markers need research EEG (→ HEEDB, not VitalDB). Validates anchoring spectral aims on HEEDB and using VitalDB
   only for the montage-robust burst-suppression validation.
+
+- **A finding survives when its decisive disconfirming test is run and passes — Aim-3 (BS precedes hypotension)
+  cleared the reverse-causation "fatal flaw" (2026-07, overnight).** Unlike the session's dissolved leads, the
+  BS→hypotension result passed its make-or-break: the red-team's fatal concern (low BP flattens the 2-ch EEG →
+  mislabeled BS → spurious "precedence") was refuted by restricting to currently-NORMOTENSIVE bins (MBP≥70): BS
+  still predicts next-bin hypotension OR 4.98, and 4.25 with stable/rising MBP. Plus within-Ce-strata robustness
+  (not dose) and a clean lead-lag structure (OR rises at +30..+120s). RULE CONFIRMED: run the decisive disconfirming
+  test FIRST/EARLY; the ones that survive it (C8, this) are the keepers. Residual honest limits: Ce is effect-site-
+  MODELED (not measured) → dose-timing confound; BS from a BIS sensor needs suppression-ratio/blinded validation;
+  no outcome in VitalDB (→ HEEDB adds it). Tier: BJA/A&A methods-physiology; the OR-mechanism + ICU-outcome combo
+  (VitalDB+HEEDB) is the path up.
