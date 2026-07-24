@@ -158,3 +158,41 @@ chronotropic mechanism for the impending pressure fall, while both reflect a sha
 
 **Methodological lesson for the manuscript:** any lag analysis on irregularly-sampled physiology must index on
 absolute time, never on retained-row position, and the comparison set must be fixed across arms.
+
+## DOWNSTREAM HARM: what survives confounding, and the mediation NEGATIVE
+Tested whether burst suppression has demonstrable end-organ consequences, and whether hypotension is the pathway.
+Cohort: 1,499–1,745 propofol-TCI cases with intraoperative EEG, invasive MAP, and pre/post creatinine.
+
+**AKI (KDIGO: peak post-op creatinine ≥1.5× baseline or ≥0.3 mg/dL rise; incidence 9.7%) — SURVIVES full adjustment**
+
+| Model | OR per SD of BS burden |
+|---|---|
+| + age, Ce | 1.30 [1.13–1.48] * |
+| + ASA, emergency | 1.23 [1.07–1.42] * |
+| + baseline creatinine | 1.28 [1.12–1.48] * |
+| + case duration, department | **1.37 [1.18–1.59]** * |
+| + hypotension burden | **1.36 [1.17–1.58]** * |
+
+**ICU admission — DOES NOT survive; it was confounding by indication.** Crude BS-high 50.0% vs BS-low 32.9% looked
+striking, but the association collapses the moment ASA/emergency status enters (OR 1.12 → 1.10, ns) and stays null
+through duration/department adjustment. **Do not present the crude ICU numbers.**
+
+### The mediation test FAILS — and this reshapes the thesis
+Adding hypotension burden to the BS→AKI model changes the BS effect by ~1% (1.37 → 1.36). Hypotension burden is
+itself an independent predictor of identical magnitude (fully adjusted OR **1.36 [1.17–1.59]**).
+
+**Therefore burst suppression does NOT harm the kidney *via* hypotension.** They are two independent, roughly
+equal-magnitude risk pathways. The earlier reframed claim — "the hypotension it heralds may be the actual mediator
+of harm" — is **not supported and must be dropped.**
+
+**What this supports instead (and it is cleaner):** burst suppression carries information about end-organ risk that
+blood pressure does not capture. BS is not a proxy for hypotension; it indexes something else about the patient —
+plausibly anaesthetic sensitivity / physiological reserve. That is *more* consistent with the ENGAGES null: if BS
+marks a vulnerable patient rather than causing the injury through a pressure pathway, then titrating anaesthetic to
+abolish BS would not be expected to change outcomes — which is exactly what ENGAGES/ENGAGES-Canada found.
+
+### Modifiability — NOT demonstrated, and cannot be from these data
+Nothing here shows that preventing burst suppression improves outcomes. This is observational; the only randomised
+evidence on that question (ENGAGES, ENGAGES-Canada) is **null**. Any claim of modifiability would require a
+prospective trial. State this explicitly rather than implying actionability.
+Code: `analysis/vitaldb_bs_aki_mediation.py`.
