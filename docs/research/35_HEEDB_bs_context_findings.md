@@ -196,3 +196,47 @@ and `bdsp-restricted-access-point` are reachable, and `s3control` confirms the a
 MORGOTH alias must come from the BDSP dashboard. It is now redundant for the critical path: `burst-supression/`
 supplies better (sample-level) ground truth than MORGOTH would have, and MORGOTH remains only a
 nice-to-have benchmark for the discussion.
+
+## I-CARE RESULTS — measured BS burden predicts neurological outcome after cardiac arrest (n=561)
+Ran the validated detector (gain-corrected µV, 0.5–40 Hz bandpass, bipolar montage, 8 µV threshold) on the
+segment nearest **hour 24 post-arrest** for every patient. 561/607 yielded usable EEG.
+
+**A. Burden → poor outcome (CPC 3–5), age/sex adjusted: OR 7.25 [4.30–12.25]**, AUC 0.681.
+Clean monotone dose–response — the thing the label-based HEEDB analysis could not show:
+
+| BS-burden quartile | n | poor outcome |
+|---|---|---|
+| Q1 (0.000–0.046) | 141 | 46.1% |
+| Q2 (0.046–0.423) | 140 | 49.3% |
+| Q3 (0.423–0.793) | 140 | 69.3% |
+| Q4 (0.793–1.000) | 140 | **83.6%** |
+
+**B. TTM quasi-experiment — WEAK, report honestly.** 33 °C median burden 0.429 vs 36 °C 0.284 (AUC 0.522):
+directionally consistent with hypothermia deepening suppression, but small and underpowered (n=59 at 36 °C).
+Do **not** advertise TTM as an exogenous manipulation on this evidence.
+
+**C. Cross-hospital consistency (built-in external validation):** AUC 0.752 (A, n=255), 0.726 (D), 0.659 (F),
+0.589 (E), 0.571 (B). Direction consistent at all five sites; magnitude varies.
+
+**D. THE CONTRAST, now measured rather than inferred.** Among I-CARE patients with **BS burden ≥30%** (n=312),
+**75.0%** had poor neurological outcome. In VitalDB, comparable intraoperative burst-suppression burden — measured
+with the **same detector** — carries ~0% in-hospital mortality.
+
+### Honest limits of the contrast (must be stated in the manuscript)
+- This is a **cross-cohort** comparison, not a matched or randomised one: the populations differ in everything
+  (post-arrest coma vs elective surgery), and the endpoints differ (CPC/neurological outcome vs in-hospital
+  mortality). It demonstrates that **burst suppression alone is not sufficient to determine prognosis** — the
+  aetiology dominates — but it does not estimate a causal effect of suppression.
+- Hospitals B and E show weaker discrimination (AUC 0.57–0.59); the effect is directionally consistent but not
+  uniform.
+- Single segment per patient at ~24 h; burden is time-varying and TTM/sedation state at that hour is unmodelled.
+Code: `analysis/icare_cohort.py`, `analysis/icare_bs_burden.py`, `analysis/icare_analysis.py`.
+
+## Where the project now stands
+| Cohort | n | Aetiology | Key measured result |
+|---|---|---|---|
+| VitalDB (OR) | 1,859 / 852k bins | iatrogenic | BS **precedes** hypotension, dose-independent, vasomotor-specific (HR null = internal control) |
+| HEEDB (2 hosp) | 43,022 | mixed clinical | BS→30-day mortality OR 5.0/5.9 (slowing null); **0% OR/EMU → 36% ICU LTM** |
+| I-CARE (5 hosp) | 561 | pathological | burden→poor outcome **OR 7.25**, monotone quartile gradient |
+
+One detector, validated at ~90% against sample-level expert annotation, applied across all three.
