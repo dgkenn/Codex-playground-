@@ -317,3 +317,47 @@ An OMOP layer with full `condition_*` tables exists but only for I0001–I0003 (
 exists only for S0001/S0002 — so the two do not currently overlap. **The interaction test remains unrun; do not
 claim it.** Partial result obtained before the aetiology split failed: among death-linked patients, BS → death
 ≤30 d OR **5.00 [4.42–5.65]** (BS+ 75.5% vs BS− 38.6%).
+
+## DECISIVE: the aetiology thesis FAILS its cleanest test — and the post-arrest arm is SCOOPED
+
+### Third access point unlocked (`bdsp-credentialed-projects-ap`) → 37 further datasets
+Including `morgoth1/`, `morgoth2/` (with a `models/` dir), `morgoth-slowing/`, `baby_morgoth/`,
+`ceeg-multimodal-cardiac-arrest/`, `epileptiform-burden-outcomes/`, `icu-sleep/`, `eeg-spectrogram-atlas/`.
+
+### ⚠️ SCOOPED: `hie-eeg-prognostics-1000/` is Westover's own accepted *Neurology* paper
+> Dey RK, Yaramis A, Turley N, … Amorim E, **Westover MB**. *Prognostic Significance of EEG Patterns in
+> Post-Cardiac Arrest Coma: A Multicenter Retrospective Cohort Study of 1,000 Patients.* **Neurology (accepted).**
+
+1,000 patients, MGH/BWH/BIDMC, EEG patterns incl. burst suppression → outcome, with anaesthetic exposure by time
+window. **Our I-CARE arm (n=561) is superseded before it exists**: smaller, less well annotated, same question, and
+by Brown's own MGH colleague. **Drop the post-arrest arm as a novelty claim.**
+
+### The aetiology test, run properly on that 1,000-patient cohort — NULL
+Sedated vs unsedated is the cleanest available proxy for iatrogenic vs pathological BS, within one cohort:
+
+| stratum | n | BS+ dead | BS− dead | RR |
+|---|---|---|---|---|
+| **NOT on anaesthetic** | 324 | **90.5%** (n=21) | 63.7% | 1.42 |
+| **ON anaesthetic** | 676 | 71.8% (n=216) | 60.2% | 1.19 |
+
+Interaction model (death ~ BS × anaesthetic + age): **BS × anaesthetic OR 0.30 [0.07–1.37] — NOT significant**;
+BS main effect OR 5.47 but with a very wide CI [1.25–23.95] because only **21** unsedated BS+ patients exist.
+
+**Verdict: directionally consistent with the aetiology thesis, but statistically NULL and badly underpowered in the
+decisive cell. The thesis is not confirmed by its own best test. Do not claim it.**
+
+Incidental but notable: **background suppression <10 µV (n=521) is a stronger mortality marker (79.5% vs 48.0%)
+than burst suppression itself (73.4% vs 61.6%)** in this cohort — i.e. depth of suppression may matter more than
+the burst-suppression pattern per se.
+
+### CONSOLIDATED STATUS — what may and may not be presented
+| Claim | Status |
+|---|---|
+| BS **precedes** intraoperative hypotension (VitalDB, 1,852 cases, time-indexed lags, Granger, normotensive-restricted) | ✅ **ROBUST — the only headline-grade result** |
+| BS → AKI, independent of hypotension and full surgical/severity adjustment (OR 1.37) | ✅ **Robust, and the mediation NEGATIVE is itself informative** |
+| Haemodynamic mechanism (vasodilation) | ❌ Tested with measured SVR/CO — **not supported** |
+| Modifiability / better outcomes if BS prevented | ❌ Not demonstrable observationally; ENGAGES RCT null |
+| BS → ICU admission | ❌ Confounded by ASA/emergency |
+| "Meaning depends on aetiology" | ❌ Not novel (Hofmeijer/van Putten; Brown's own work) **and** null on its best test |
+| Post-arrest BS → outcome (I-CARE) | ❌ **Scooped** by Westover *Neurology* (n=1,000), plus unresolved WLST circularity |
+| HEEDB 30-day mortality OR 5.03/5.94 | ❌ Withdrawn — incomplete/differential ascertainment |
