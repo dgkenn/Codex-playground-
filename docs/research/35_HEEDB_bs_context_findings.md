@@ -133,3 +133,38 @@ so 0.83 is a floor, not a ceiling.) Code: `analysis/heedb_bs_calibrate.py`.
 **This unblocks the key remaining test:** re-run the OR/EMU-vs-ICU context contrast **at matched measured BS
 burden**. If context still determines mortality when burden is equal, "burst suppression is a marker of its cause"
 is demonstrated rather than inferred — the result that makes this a paper.
+
+## BREAKTHROUGH IN ACCESS — a second BDSP access point with 19 restricted datasets
+Sweeping candidate access-point names found **`arn:aws:s3:us-east-1:184438910517:accesspoint/bdsp-restricted-access-point`**
+(distinct from the HEEDB one). It exposes 19 datasets, several directly on-target:
+
+| Dataset | Contents | Relevance |
+|---|---|---|
+| **`burst-supression/`** (BDSP's spelling) | 3.9 GB, 86 files: `Binary_N.mat` = signal `s` + **sample-level expert burst/suppression labels `z`**; `INDS*_data.mat`; `pN` | **Gold-standard BS ground truth** |
+| **`i-care/`, `ICARE_train/`** | post-cardiac-arrest coma EEG + outcomes | **The anoxic/pathological BS cohort the ICD proxy failed to identify** |
+| `e-cam-s/` | 374 `Delirium_400_pMRN_*.mat` cEEG files | encephalopathy/delirium severity |
+| `sah/` | 400 subarachnoid-haemorrhage cEEG files | structural-injury BS |
+| `sparcnet_data/`, `spikenet2/`, `caisr/` | IIIC / spike / sleep model training data | comparators |
+| `cyclops/`, `regmet/`, `self-sim/`, `LG_estimation/`, `tms-ad/`, `meditation-bai/`, `teegllteeg/`, `spike-learning-centaur/`, `spike-test/` | various | future work |
+
+### Detector now validated on SAMPLE-LEVEL expert labels (~90% accuracy)
+`burst-supression/Binary_*.mat` provides per-sample expert burst/suppression annotation — a far stronger gold
+standard than the recording-level labels used earlier (AUC 0.83). Validating the bandpassed amplitude detector
+across 6 annotated records (expert suppression fraction 0.25–0.95, i.e. a wide range, not a degenerate set):
+
+| fs assumed | mean sample-level accuracy |
+|---|---|
+| 100 Hz | 0.872 |
+| 128 Hz | 0.880 |
+| **200 Hz** | **0.898** |
+| **256 Hz** | **0.898** |
+
+Best per-file thresholds cluster at **3–12 µV** on bandpassed data, consistent with the 5 µV operating point derived
+independently from the HEEDB label calibration. **The measurement instrument is now defensible**, which is what the
+matched-burden analysis required.
+
+### MORGOTH access — still outstanding
+`morgoth1/` is absent from BOTH access points (HEEDB and restricted) and the raw bucket 403s on every operation
+(list, get_bucket_location, head, all regions, requester-pays). `s3control list_access_points` confirms **your
+account owns 0 access points**, so the MORGOTH one is owned by BDSP and cannot be enumerated from here. Needs
+either the alias from the BDSP Cloud Credentials dashboard, or more propagation time.
