@@ -119,3 +119,42 @@ EMG is folded into its composite. Reference non-circular (raw-waveform suppressi
 **Verdict:** killed as a flagship/device-safety claim; retained only as a modest descriptive note (BIS under-reports
 EEG-confirmed suppression ~1 in 6 epochs, mechanism unexplained — plausibly the index's own smoothing lag).
 Code: analysis/vitaldb_bis_blindspot.py, analysis/vitaldb_cascade.py.
+
+
+## CORRECTION (full-power rerun, n=1,852) — the heart-rate "negative control" claim was WRONG as stated
+An interim analysis on 174 cases reported that burst suppression showed **no** association with heart-rate change
+(OR<1, symmetric) and concluded HR was a clean internal negative control proving vasomotor specificity.
+**That claim does not survive the full cohort and is retracted.** Two errors were found and fixed:
+
+1. **Broken lag semantics.** Sequences were indexed by *position*, then filtered by HR availability. Because the
+   HR filter removes bins, "lag −4" no longer meant "120 s earlier" — it meant "4 *retained* bins earlier." This
+   manufactured spurious negative-lag associations. Fixed by indexing on **absolute bin time**, so lag k always
+   equals exactly 30k seconds (`analysis/vitaldb_timelag.py`).
+2. **Selection effect.** Restricting to HR-available bins is not random (it tracks monitoring intensity), and in
+   that subsample the hypotension asymmetry is genuinely weaker.
+
+### Corrected results (true 30 s time lags)
+**Primary — hypotension, all cases (n≈705k bin-pairs): the flagship precedence STANDS, cleanly.**
+
+| lag | −120 s | −60 s | −30 s | +30 s | +60 s | +120 s |
+|---|---|---|---|---|---|---|
+| BS→MBP<65 OR | 0.98 | 1.02 | 1.03 | **1.50** | **1.62** | **1.71** |
+
+Negative lags null; positive lags significant and monotonically rising.
+
+**The autonomic contrast, restated correctly (same HR-available comparison set):**
+
+| Outcome | −120 s | −60 s | +60 s | +120 s | pattern |
+|---|---|---|---|---|---|
+| Hypotension (MBP<65) | 1.41 | 1.27 | 1.53 | 1.64 | **asymmetric — rises with forward lag** |
+| Bradycardia (HR<50) | 3.83 | 3.78 | 4.22 | 4.38 | **flat / symmetric — no temporal gradient** |
+
+**Correct interpretation.** Burst suppression is *strongly* associated with bradycardia (OR ≈ 4) — the earlier
+"HR is unrelated" statement was an artifact. But that association is **concurrent and non-directional**: the odds
+ratio is essentially identical 2 minutes before and 2 minutes after. Hypotension, by contrast, shows a genuine
+**temporal lead**. So the claim is not "BS spares the heart" but the sharper one: *burst suppression co-occurs with
+a bradycardic state, yet only the vascular axis shows a predictive lead* — consistent with a vasomotor rather than
+chronotropic mechanism for the impending pressure fall, while both reflect a shared depth-of-anaesthesia state.
+
+**Methodological lesson for the manuscript:** any lag analysis on irregularly-sampled physiology must index on
+absolute time, never on retained-row position, and the comparison set must be fixed across arms.

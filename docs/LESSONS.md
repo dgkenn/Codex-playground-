@@ -1186,3 +1186,17 @@ cross-nationally-validated part.
   MODELED (not measured) → dose-timing confound; BS from a BIS sensor needs suppression-ratio/blinded validation;
   no outcome in VitalDB (→ HEEDB adds it). Tier: BJA/A&A methods-physiology; the OR-mechanism + ICU-outcome combo
   (VitalDB+HEEDB) is the path up.
+
+- **Lag/precedence analyses must index on ABSOLUTE TIME, never on retained-row position — and the comparison set
+  must be identical across arms (2026-07, caught at full-power rerun).** An interim n=174 analysis concluded that
+  burst suppression had no relationship to heart rate (OR<1, symmetric) and that HR was therefore a clean internal
+  negative control proving "vasomotor specificity." At n=1,852 this REVERSED: bradycardia is strongly associated
+  with BS (OR≈4). Two bugs: (1) sequences were indexed positionally and then filtered by HR availability, so
+  "lag −4" meant "4 retained bins earlier", not 120 s earlier — this manufactured negative-lag associations;
+  (2) the HR-available subset is a selected subpopulation (tracks monitoring intensity) in which the hypotension
+  asymmetry is genuinely weaker. After fixing to true 30 s time lags, the flagship precedence stands cleanly on all
+  cases (negative lags 0.98/1.02/1.03 NULL; positive 1.50→1.71), and the real contrast is subtler and better:
+  bradycardia is associated with BS but FLAT across lag (concurrent state, OR 3.8 before ≈ 4.4 after), whereas
+  hypotension RISES with forward lag (temporal lead). RULE: when a striking dissociation appears in a subsample,
+  re-derive it at full power with time-indexed lags and a fixed comparison set before it reaches a manuscript.
+  Interim-sample dissociations are a classic artifact source.
