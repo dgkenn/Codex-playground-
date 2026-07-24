@@ -76,3 +76,16 @@ warrants prospective and ICU-cohort testing.
 - Suppression-ratio + blinded-rater validation of BS detection; NIRS-perfusion sensitivity where available.
 - Sevoflurane (volatile) generalization cohort.
 - HEEDB: outcome contrast (drug-induced vs pathological BS mortality) on research-grade cEEG, multi-site.
+
+## GENERALIZATION — sevoflurane (volatile) cohort (n=500, 227k bins) [added]
+- **Aim-3 GENERALIZES across drug class:** under sevoflurane, BS_t→hypotension_{t+1} OR **1.61 [1.17–2.21]**
+  (adj MBP, end-tidal sevo %, age) — significant, echoing propofol (1.79). The antecedent is NOT propofol-specific.
+- **Underpowered decisive test under sevo:** normotensive-restricted (MBP≥70) OR 2.05 but CI [0.77–5.42] —
+  burst suppression is rarer in normotensive volatile maintenance; directionally consistent, not significant
+  (needs more cases; the propofol cohort carries the artifact-controlled evidence).
+- **Aim-2 does NOT generalize:** age→BS susceptibility is flat under sevoflurane (OR 1.009 [0.986–1.033]) vs
+  OR 1.06/yr under propofol — a genuine drug-specific difference (propofol-specific age susceptibility; volatiles
+  are MAC-age-adjusted). Report honestly as a drug-class contrast, not a universal claim.
+
+**Net:** the core antecedent (BS→hypotension) is robust and cross-anesthetic; the age-susceptibility is propofol-
+specific. Both are honest, reportable, and Brown-relevant (drug-specific EEG pharmacodynamics is his domain).
