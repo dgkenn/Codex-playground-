@@ -70,3 +70,39 @@ where 1,859 elective propofol cases showed abundant burst suppression with ~zero
 - Add I0002/I0003/I0009 sites (no `DateOfDeath` there; use them for prevalence/context replication only).
 - Adversarial red-team of the context-as-cause inference before drafting.
 Code: `analysis/heedb_bs_mortality.py`, `analysis/heedb_bs_iatrogenic.py`.
+
+## Raw-signal infrastructure (built + validated) — closing the "burden vs label" gap
+The headline limitation above is that BS is a *binary clinician label*, so "same EEG state, different outcome"
+cannot yet be separated from "ICU patients simply have more suppression." Quantitative burden requires the raw
+signals. Built and validated this session:
+
+**`analysis/heedb_edf_range.py` — byte-range EDF reader.** ICU cEEG files are ~1 GB (up to 126,589 records);
+downloading a cohort is infeasible. EDF is fixed-layout, so we HTTP-range only the header + a bounded window and
+decode int16→µV ourselves. Verified against ground truth: `sum(nsamp)=12857 → rec_bytes=25714`, matching
+`(file_size − header)/n_rec` **exactly**, so record striding is provably aligned.
+- Recovers **19-channel 10–20 montage at 256 Hz** (research-grade, unlike VitalDB's 2-ch BIS sensor).
+- `start_frac`/`start_seconds` skip the electrode-hookup period (the first minutes are flat/artifactual — an
+  early version read them and produced a spurious identical "0.311 suppression" on every channel).
+- Sanity check across 6 recordings: normal cEEG returns **BS = 0.000** at sd 16–352 µV (correct null behaviour);
+  one genuinely low-voltage routine EEG returns 0.93.
+
+**Still to calibrate before the matched-burden analysis (do NOT skip):**
+1. **Suppression threshold**: the 8–10 µV rule was tuned on VitalDB's BIS sensor; referential research montages
+   run larger (sd 16–350 µV). Needs re-calibration, ideally against the MORGOTH `BS/` expert-labeled set.
+2. **Flat/disconnected-segment rejection**: some recordings contain true zero segments (amplifier off) that would
+   masquerade as suppression — must be excluded, not scored.
+3. **Sampling scheme**: fixed window at matched `start_frac` per recording, so OR/EMU vs ICU comparison stays fair.
+
+## MORGOTH 1.0 — assessment and access status
+Public at `bdsp.io/content/morgoth1/1.0.0/` (Sun, Karakis, Herlopian, …, Westover, Jing; *Lancet Digital Health*,
+in press). HEEDB-pretrained (14,500 patients), 19-ch/200 Hz, and **burst suppression is one of its 17 validated
+findings**; CPU-only entry points exist.
+- **Use it as a BENCHMARK, not the method.** Brown's program is explicitly anti-black-box, so a foundation model as
+  centerpiece would work against the positioning. The defensible—and strongly Brown-flavoured—use is:
+  *"a simple interpretable amplitude-based burst-suppression measure carries the full prognostic signal; the
+  foundation model adds nothing beyond it."* That argument requires MORGOTH to make.
+- Its curated `BS/` expert-labeled dataset is the natural calibration target for limitation (1) above.
+- **Access status:** project DUA signed, but `morgoth1/` still returns KeyCount=0 on the HEEDB access point and the
+  raw bucket is AccessDenied on both key pairs; `github.com/bdsp-core/morgoth` 404s (weights not yet public).
+  Per bdsp.io/about/howto_accessdata, access points are **account-specific aliases** listed on the user's Cloud
+  Credentials dashboard — need that alias (likely propagation delay or a distinct alias for this project).
