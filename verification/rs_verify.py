@@ -275,8 +275,11 @@ def segment_verify(T1, T2, prec=96):
     lower = lehman_brent_scan(m, -1, prec)
     upper = lehman_brent_scan(n, +1, prec)
     pts = [gram_point(k) for k in range(m, n + 1)]
+    # hunt capped at depth 8: escalation beyond that is runaway territory
+    # (diagnosed in bench_window); a still-short count fails the shard, which
+    # then gets diagnosed individually rather than stalling the chain
     cnt, brackets, evals, exhausted = count_sign_changes(
-        pts, prec=prec, expected=n - m)
+        pts, prec=prec, max_hunt_depth=8, expected=n - m)
     ok = (lower.get("certified") and upper.get("certified")
           and cnt == n - m and not exhausted)
     return {
