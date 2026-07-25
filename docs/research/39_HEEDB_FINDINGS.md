@@ -60,11 +60,15 @@ Among 15,318 patients with an ascertained death (3,106 with burst suppression, 1
 
 | | spread across aetiologies |
 |---|---|
-| aetiology effect in **BS-negative** patients — the honest denominator | **12.13 pp** [8.44, 15.84] |
-| **BS × aetiology interaction** | **38.51 pp** [32.84, 44.63] |
+| aetiology effect in **BS-negative** patients — the honest denominator | 12.13 pp [8.44, 15.84] |
+| **BS × aetiology interaction** | 38.51 pp [32.84, 44.63] |
+| **difference (interaction − main effect), paired bootstrap** | **+26.38 pp [+20.27, +32.68]** |
 
-The interaction is **3.2× the aetiology main effect**, so this is specific to burst suppression, not inherited
-from the diagnosis.
+The bottom row is the statistic the claim rests on. Reporting the first two rows and observing that one is
+larger would be the comparison-of-significance shortcut this project has committed four times: non-overlapping
+intervals are evidence, but they are not a test of the difference. Both spreads are computed from the same
+resample index on every replicate, so they are differenced per replicate. The difference excludes zero, so the
+heterogeneity is **specific to burst suppression** rather than inherited from the diagnosis.
 
 | aetiology | interaction term | reading |
 |---|---|---|
@@ -91,7 +95,7 @@ noise; it is aetiological composition.
 | **secondary H2, direction fixed in advance** — iatrogenic < injury | **DEMOTED** — same outcome variable, same defect. Re-test pending, see §7 |
 | **ascertainment red-team** | ✓ survives, and **larger** — 36.80 pp, see §4 |
 | **cross-site replication**, formal agreement statistic | ✓ both sites agree — see §5 |
-| **specificity** — is it burst suppression or just aetiology? | ✓ 38.51 vs 12.13 pp — see §2 |
+| **specificity** — is it burst suppression or just aetiology? | ✓ difference +26.38 pp [+20.27, +32.68] — see §2 |
 
 Three of five pre-specified tests pass. Two are demoted for a defect the red-team found in the outcome variable
 itself, and the finding now rests entirely on the ascertainment-immune design. That demotion is reported here
