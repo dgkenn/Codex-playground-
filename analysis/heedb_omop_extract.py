@@ -64,16 +64,26 @@ COLS = {
     # source value at extraction keeps the output small enough to analyse in memory.
     "measurement_conscious": ["person_id", "measurement_datetime", "measurement_concept_id",
                               "measurement_source_value", "value_as_number", "unit_source_value"],
+    # Sedatives only, for the recovery-of-consciousness arm. The existing drug_exposure.csv was extracted
+    # against the 7,323-patient burst-suppression cohort, so it has NO BS-negative comparison group -- using it
+    # for the RoC study would silently restrict the model to BS-positive patients, which is exactly the failure
+    # that produced a false "D1 FALSIFIED" in the dose-response test. This pulls the full 49,232-patient EEG
+    # cohort, and row-filters to the sedative classes the analysis names so the output stays small.
+    "drug_sedatives": ["person_id", "drug_exposure_start_datetime", "drug_exposure_end_datetime",
+                       "drug_concept_id", "drug_source_value", "quantity"],
 }
 
 # pseudo-table -> the physical OMOP table it reads
-SOURCE_TABLE = {"measurement_conscious": "measurement"}
+SOURCE_TABLE = {"measurement_conscious": "measurement", "drug_sedatives": "drug_exposure"}
 
 # pseudo-table -> (column to test, compiled regex a row must match to be kept)
 ROW_FILTER = {"measurement_conscious": ("measurement_source_value",
                                         re.compile(r"glasgow|\bgcs\b|rass|richmond|sedation scale|"
                                                    r"level of consciousness|eye opening|best motor response|"
-                                                   r"best verbal response|ramsay|arousal", re.I))}
+                                                   r"best verbal response|ramsay|arousal", re.I)),
+               "drug_sedatives": ("drug_source_value",
+                                  re.compile(r"propofol|midazolam|pentobarbital|thiopental|phenobarbital|"
+                                             r"dexmedetomidine|precedex|lorazepam|ketamine", re.I))}
 
 
 def client():
