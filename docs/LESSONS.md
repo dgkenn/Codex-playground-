@@ -1200,3 +1200,40 @@ cross-nationally-validated part.
   hypotension RISES with forward lag (temporal lead). RULE: when a striking dissociation appears in a subsample,
   re-derive it at full power with time-indexed lags and a fixed comparison set before it reaches a manuscript.
   Interim-sample dissociations are a classic artifact source.
+
+- **A negative control that "works" is the alarm, not a curiosity — chasing a 5% discrepancy overturned two of
+  three headline claims (2026-07, hardening pass).** Frontal EMG (same BIS sensor, NOT a measure of cortical
+  suppression) was run as a negative-control exposure through the published two-phenotype model and came back
+  OR 1.05 above baseline / 0.91 below — the same SIGN PATTERN as burst suppression, ~40x smaller. That should have
+  been null. Following it produced three corrections:
+  (1) **The two-phenotype dissociation was a difference-of-significance artifact.** "Significant above baseline,
+      not significant below" rested on a stratum with 14x fewer bins (611,656 vs 44,006). Tested as a formal
+      INTERACTION — ratio of the two Mantel-Haenszel ORs, both recomputed inside each case-level bootstrap
+      replicate — it is 1.08 [0.89,1.32]. RETRACTED. The sevoflurane "external validation" replicated the
+      significant/not-significant PATTERN, which any underpowered second stratum will do; it never replicated an
+      interaction, because there was none.
+  (2) **Bin-level CIs without case clustering are fiction.** ~600,000 bins from ~1,700 patients is n=1,700, not
+      600,000. Every interval in the original draft was far too narrow.
+  (3) **Scale changes masquerade as artifacts, and vice versa.** The drop from OR 2.06 to 1.18 looked like
+      regression to the mean but was ~entirely a change of contrast: 2.06 is "per FULL suppression" while 1.18 is
+      "any suppression vs none", and among suppressed bins the mean suppressed fraction is only 0.140. Isolating
+      them on identical rows: binary+linear-MAP 1.20 vs binary+exact-2mmHg-strata 1.18 — the RTM artifact is real
+      but small. The reporting SCALE was the bigger distortion. "Per full suppression" describes a contrast far
+      more extreme than the phrase conveys to a reader.
+  RULE, now mandatory for every bin-level analysis in this repo BEFORE anything is written up: (i) a
+  negative-control exposure, (ii) EXACT stratification on any variable used to define the strata (a linear
+  covariate does not remove regression to the mean when the strata are defined by that variable), (iii) case-level
+  cluster bootstrap intervals, (iv) a backward-lag control, and (v) formal interaction tests — never compare
+  significance across strata.
+
+- **Self-controlled, dose-matched designs are the honest test of "independent of anesthetic dose" — and they
+  change the answer (2026-07).** Adjusting for effect-site concentration as a linear covariate ACROSS patients
+  does not support a dose-independence claim: deep anesthesia causes both suppression and vasodilation. Matching
+  within (case x 4 mmHg current MAP x 0.5-unit dose) differences out every time-invariant patient characteristic
+  by construction. Under that design the propofol association shrinks to OR 1.08 [1.03,1.12] at +120 s, with
+  backward lags null (1.01-1.03) and a forward/backward asymmetry of 1.07 [1.02,1.12]. Small but real, and the
+  EMG negative control goes cleanly null (0.95-1.00) under exact stratification — which is the positive evidence
+  that the design is measuring physiology rather than the model.
+  COROLLARY: dichotomizing a graded outcome wastes most of the signal. Re-asking the identical question with a
+  CONTINUOUS outcome (signed dMAP in mmHg, case fixed effects) is far better powered and gives an interpretable
+  effect size in mmHg instead of an OR on an exposure scale nobody can picture.
