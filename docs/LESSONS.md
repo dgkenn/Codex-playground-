@@ -1411,3 +1411,26 @@ cross-nationally-validated part.
   in a coefficient. COROLLARY: importing a helper is not free of assumptions. The lesson "import the validated
   function, do not reimplement it" is right, but the imported function carries the cohort definition of the
   script it was written for, and that definition must be checked against the new use.
+
+- **WebFetch on PubMed silently FABRICATES paper content when the site serves a CAPTCHA (2026-07). Treat every
+  WebFetch-derived citation as unverified.** PubMed now returns "Checking your browser - reCAPTCHA" to automated
+  fetches. WebFetch's summarizer did not surface the block: it returned confident, plausible, WRONG paper
+  content, and returned DIFFERENT fabrications on repeated calls to the same PMID. This is the single most
+  dangerous failure mode encountered in this project, because a fabricated quote from a real person's paper is
+  exactly the error that destroys credibility, and it arrives looking like a clean result.
+  RULE: bibliographic facts (title, authors, journal, volume/pages, abstract text) come from the NCBI E-utilities
+  API, never from WebFetch:
+      curl "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=<PMID>&rettype=medline&retmode=text"
+  Full-text quotes come from PMC (pmc.ncbi.nlm.nih.gov/articles/PMC<id>/), grepped for the literal sentence.
+  Everything load-bearing in this project has now been re-verified this way: the Guay/Brown review really is
+  Anesthesiology 2025;143(6):1595-1618 with those six authors (PMID 41537509), the Safavynia abstract and its
+  "warrant investigation of alternative determinants of delayed RoC" sentence are genuine (PMID 42294965), and
+  Westover MB really is author 11 with Brown EN author 12.
+
+- **Never pair two independently-ordered lists and assume the order matches (2026-07).** I built a PMID-to-title
+  map by taking PMIDs from the PubMed MCP search tool and titles from a separate WebFetch of the search results
+  page, both "sorted by date", and assuming row N of one was row N of the other. Six of nine were wrong -- a
+  burst-suppression/delirium paper was actually a gamma-stimulation Alzheimer's trial, a nociception paper was
+  actually a mouse DBS study. A subagent then wasted most of a run chasing the wrong papers before catching it.
+  RULE: a citation is a single record fetched by ID, not a join between two lists that happen to be the same
+  length. If two sources must be combined, join on a key present in both, never on position.
