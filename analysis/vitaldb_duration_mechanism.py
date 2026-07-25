@@ -56,6 +56,27 @@ import numpy as np
 DATA = os.environ.get("EEG_PROBE_DIR", "/tmp/eeg_probe")
 NBOOT = int(os.environ.get("NBOOT", "300"))
 rng = np.random.default_rng(20260725)
+
+# --- physiologic range filter for arterial pressure -------------------------------------------------
+# The propofol pipeline never range-filtered MAP. bridge_bins.csv contains 4.27 % of values <= 0
+# (minimum -78 mmHg -- negative arterial pressure is impossible) and 0.62 % above 200 mmHg: transducer
+# zeroing, line flushes and disconnections. Left unfiltered they produced dMAP values up to +/-390 mmHg
+# and inflated every forward-minus-backward statistic about three-fold (-0.33 -> -0.97 mmHg). Filtering
+# implausible VALUES is the principled fix; winsorising the outcome would only mask them.
+# The filtered estimate is stable across windows [30,150], [25,160], [20,180] and [40,140]
+# (asymmetry -0.340, -0.330, -0.323, -0.333), so the exact threshold is not doing the work.
+MAP_LO = float(os.environ.get("MAP_LO", "30"))
+MAP_HI = float(os.environ.get("MAP_HI", "150"))
+
+
+def _map_ok(raw):
+    """Parse a MAP field, returning NaN unless it lies in the physiologic window."""
+    try:
+        v = float(raw) if raw not in ("", None) else float("nan")
+    except Exception:
+        return float("nan")
+    return v if (v == v and MAP_LO <= v <= MAP_HI) else float("nan")
+
 BANDS = [(1, 2, "1-2 of last 10"), (3, 4, "3-4 of last 10"), (5, 7, "5-7 of last 10"), (8, 10, "8-10 of last 10")]
 
 
@@ -82,7 +103,7 @@ def load():
                 b = BS.get((cid, t))
                 if b is None:
                     continue
-                m = float(d["mbp"]) if d["mbp"] else np.nan
+                m = _map_ok(d["mbp"])
                 ce = float(d["ce"]) if d["ce"] else np.nan
                 co = float(d["co"]) if d["co"] else np.nan
                 sv = float(d["svr"]) if d["svr"] else np.nan
