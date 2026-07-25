@@ -1,0 +1,142 @@
+{
+  "agent": "feedhunt_tokyo",
+  "date": "2026-07-23",
+  "task": "Find a FREE sub-hourly historical surface-obs feed for RJTT (Tokyo Haneda), the exact station Polymarket's Tokyo high-temp ladder settles on (per ref/pmkt_settlement_basis.md, wunderground.com/history/daily/jp/tokyo/RJTT).",
+  "verdict": "VIABLE",
+  "verdict_tier": "sub-hourly, STRONGLY-PREFERRED tier per task rubric (10-min, 144 rows/day, clears the >=100 rows/day sub-hourly proof bar)",
+  "headline": "JMA (Japan Meteorological Agency) publishes genuine 10-minute AMeDAS observations, including temperature, for the 'Haneda' (羽田) AMeDAS point at prec_no=44 / block_no=0371 -- lat 35°33.2'N, lon 139°46.8'E, elev 6m -- which sits essentially on top of Haneda Airport (RJTT: 35.5494N/139.7798E) and is the closest genuine JMA station to the Wunderground/Polymarket RJTT settlement station. Verified with real pulls for a recent day, a ~60-day-back day, and (bonus) a 1-year-back day: all three returned exactly 144 rows/day (00:10-24:00 JST, every 10 min). No API key, no account, no rate-limit gate encountered. Spot values cross-checked against IEM's independent RJTT METAR mirror at three separate hours, all within 0.1-0.3°C -- consistent with genuine station observations of the same physical site, not reanalysis or a different site. HISTORICAL availability is essentially same-day (a JST day's 144 rows become viewable as soon as that day is 'yesterday' in JST); REAL-TIME availability via this specific archive page is NOT live -- the page explicitly refuses today's (in-progress) JST day ('viewable dates are up to yesterday'), so a live deployment would need JMA's separate near-real-time AMeDAS distribution channel (not fully characterized in this run), not this historical-archive page.",
+  "station": {
+    "jma_point_name_ja": "羽田 (Haneda)",
+    "jma_point_type": "a (AMeDAS-only point: precipitation + temperature + wind measured; humidity and sunshine NOT measured at this point -- confirmed by the '///' columns and the onmouseover metadata flags '1,1,1,0,0,0')",
+    "prec_no": 44,
+    "block_no": "0371",
+    "lat": "35°33.2'N (35.553)",
+    "lon": "139°46.8'E (139.780)",
+    "elev_m": 6,
+    "icao_settlement_station": "RJTT (Tokyo Haneda Airport)",
+    "distance_note": "JMA's block_no=0371 'Haneda' AMeDAS point coordinates (35.553N/139.780E) are ~0.3km from RJTT's published aerodrome reference point (35.5494N/139.7798E) -- effectively the same site/airport, not a proxy from a different city location. JMA does not publish a separate point literally labeled 'RJTT' or an ICAO code; 'Haneda' (block_no=0371) is JMA's own AMeDAS designation for this airport site.",
+    "settlement_basis_confirmed": "matches ref/pmkt_settlement_basis.md row: Polymarket Tokyo high-temp ladder cites 'Tokyo Haneda Airport Station', wunderground.com/history/daily/jp/tokyo/RJTT -- prior study measured 14/14 (100%) agreement between IEM's RJTT METAR daily extreme and the settled Polymarket bracket, so this JMA co-located station carries the same settlement-basis soundness"
+  },
+  "candidates_checked": [
+    {
+      "name": "JMA (Japan Meteorological Agency) 10-minute AMeDAS historical viewer (data.jma.go.jp/stats/etrn)",
+      "status": "VERIFIED VIABLE -- winning candidate",
+      "cadence_verified": "10-min (144 obs/day: :00... every 10 minutes from 00:10 through 24:00 JST)",
+      "auth": "none -- fully open HTTP GET, no API key, no account, no cookies/session required",
+      "rate_limits": "none documented; informal politeness expected (this run: ~9 sequential GETs to data.jma.go.jp at roughly 1/sec with pauses, no throttling, no errors, no CAPTCHA)",
+      "licensing": "Japan's '公共データ利用規約（第1.0版）' (Public Data License v1.0) applies to JMA website content per jma.go.jp/jma/kishou/info/coment.html -- free to use/redistribute, ATTRIBUTION REQUIRED (cite '出典：気象庁ホームページ' + the page URL; if content is edited/processed, must also disclose that it was processed and must not present it as if produced by the government). No login gate, no paid tier, no explicit anti-scraping clause found; robots.txt at data.jma.go.jp returns 404 (path not present) so no machine-readable crawl restriction was found for this subdomain either.",
+      "history_depth_verified_days": "365+ (recent day 2026-07-21, ~60-day-back 2026-05-24, AND a full 1-year-back day 2026-07-23/2025-07-23 all returned complete 144-row days; not exhaustively tested further back, but the site's own '前年' (previous year) navigation link on the day page implies multi-year archive depth beyond what was pulled here)",
+      "realtime_lag_note": "Historical (backtest) availability is same-day: a completed JST calendar day's full 144-row table is retrievable via this page as soon as JMA considers that day to be 'yesterday' or earlier -- pulling the CURRENT in-progress JST day (2026-07-24, tested live) returned an explicit error page stating '閉覧可能な日は、昨日2026年7月23日までです' (\"viewable dates are up to yesterday, 2026-07-23\") -- i.e. this specific archive endpoint does NOT serve any data for the day still in progress, only fully-completed prior days. This is a historical-archive characteristic, not a live feed; the historical side (what unblocks the backtest) is effectively unblocked with near-zero lag once a day completes. Real-time/live signal generation would need a DIFFERENT JMA channel (their public AMeDAS map draws from a near-real-time JSON feed at www.jma.go.jp/bosai/amedas/... on ~10min cadence, matching the observation interval) -- NOT independently pulled/verified in this run; flagged as the next step if live deployment on this feed is pursued, per GROUNDING non-negotiable #5 (latency is part of the signal definition, note real-time separately from historical).",
+      "exact_reproducible_request": "https://www.data.jma.go.jp/stats/etrn/view/10min_a1.php?prec_no=44&block_no=0371&year=2026&month=7&day=21&view=",
+      "request_note": "This is an HTML table page (not a CSV/JSON API) -- requires simple regex/HTML-table parsing (<tr>/<td>) to extract rows; no query-string content-type switch was found to get raw CSV directly from this endpoint. Columns in order: 時分 (JST time, 10-min steps), 降水量(mm) (precip), 気温(℃) (temp), 相対湿度(%) (humidity, '///' = not measured at this point), 風向・風速 平均/最大瞬間 (avg wind dir/speed, max gust dir/speed), 日照時間(min) (sunshine, '///' = not measured at this point). Station navigation: prefecture map at select/prefecture00.php?prec_no=44 -> prefecture.php?prec_no=44&block_no=&... (station map with per-point <area> tags) -> the day/element menu at ../index.php?prec_no=44&block_no=0371&year=YYYY&month=M&day=D&view= -> the 10-min table itself at view/10min_a1.php with the same params.",
+      "cache_files": [
+        "venue_expansion/cache/tokyo/jma_haneda_10min_20260721.html (144 rows, recent day, 2 days before run date)",
+        "venue_expansion/cache/tokyo/jma_haneda_10min_20260524.html (144 rows, 60 days before run date)",
+        "venue_expansion/cache/tokyo/jma_haneda_10min_20250723.html (144 rows, 365 days before run date -- bonus depth check)",
+        "venue_expansion/cache/tokyo/jma_haneda_10min_20260723_today.html (144 rows -- 'today' JST at query time, already a completed day because JST runs 9h ahead of the UTC query clock)",
+        "venue_expansion/cache/tokyo/jma_haneda_10min_20260724_rt.html (0 rows -- the truly in-progress JST day, explicit 'not viewable yet' error page, proves the historical-vs-realtime lag boundary)",
+        "venue_expansion/cache/tokyo/jma_pref44_stations.html (Tokyo prefecture station map, used to identify block_no=0371='Haneda')",
+        "venue_expansion/cache/tokyo/jma_terms.html (public data license terms)"
+      ]
+    },
+    {
+      "name": "IEM global ASOS/METAR mirror (Iowa Environmental Mesonet, mesonet.agron.iastate.edu, network JP__ASOS) -- used as independent cross-check source only",
+      "status": "VERIFIED -- used for value cross-check, NOT the winning historical feed (only 30-min cadence, coarser than JMA's 10-min)",
+      "cadence_verified": "30-min (RJTT issues METAR/SPECI at :00 and :30 past the hour -- same half-hourly pattern found for EGLC in the London feedhunt, not the 10-min tier)",
+      "auth": "none",
+      "exact_reproducible_request": "https://mesonet.agron.iastate.edu/cgi-bin/request/asos.py?station=RJTT&data=all&year1=2026&month1=7&day1=20&year2=2026&month2=7&day2=22&tz=Etc/UTC&format=onlycomma&latlon=no&elev=no&missing=M&trace=T&direct=no&report_type=3&report_type=4",
+      "role": "used ONLY to cross-check JMA's 10-min temperature readings for plausibility -- not proposed as the primary feed since it is coarser (30-min) than the JMA 10-min AMeDAS data",
+      "cache_file": "venue_expansion/cache/tokyo/iem_rjtt_20260720_22.csv"
+    },
+    {
+      "name": "MADIS (NOAA Meteorological Assimilation Data Ingest System)",
+      "status": "NOT independently pulled -- redundant path, and JMA's own 10-min AMeDAS already beats MADIS's likely cadence for this station",
+      "reason": "MADIS's international ingest for Japan would at best mirror the same METAR (30-min) or GTS-relayed AMeDAS traffic; requires a free but registration-gated NOAA/MADIS account for bulk historical access. Since JMA's own site already gives a finer (10-min), zero-auth, directly-sourced feed for the exact station, MADIS was not separately pulled."
+    },
+    {
+      "name": "Synoptic Data free tier",
+      "status": "NOT pulled -- token-gated, unlikely to beat JMA's own 10-min direct feed for a Japanese domestic station",
+      "reason": "Requires API token signup; Synoptic's coverage of Japan would itself be sourced from JMA/METAR feeds, not a finer independent source. Not pulled given JMA's own site already clears the bar with no auth."
+    },
+    {
+      "name": "Meteostat",
+      "status": "EXCLUDED -- hourly-only aggregator",
+      "reason": "Meteostat's bulk historical downloads are hourly resolution (resampled from METAR/SYNOP). Does not clear the sub-hourly bar and would be strictly coarser than both JMA (10-min) and IEM/RJTT METAR (30-min); not pulled."
+    },
+    {
+      "name": "Open-Meteo historical archive",
+      "status": "EXCLUDED per task instruction",
+      "reason": "Open-Meteo's historical endpoint is ERA5/model reanalysis, not station observations -- explicitly excluded by the task's own rule ('reanalysis does NOT count'). Not pulled."
+    },
+    {
+      "name": "OGIMET",
+      "status": "NOT pulled -- redundant, would only mirror the same 30-min RJTT METAR already cross-checked via IEM",
+      "reason": "OGIMET's synoptic/METAR archive for RJTT would carry the same underlying half-hourly aviation report already obtained from IEM; it cannot beat JMA's 10-min AMeDAS cadence for this station, so was not separately pulled (consistent with how it was used only as a secondary cross-check, not primary feed, in the prior London feedhunt)."
+    },
+    {
+      "name": "JMA real-time AMeDAS JSON distribution (www.jma.go.jp/bosai/amedas/...)",
+      "status": "NOT independently pulled/verified this run -- flagged for a live-deployment follow-up, not needed to establish the HISTORICAL verdict",
+      "reason": "This is the channel JMA's own public AMeDAS map draws from for near-real-time (~10-min cadence) point data, distinct from the historical-archive HTML pages verified above (which explicitly refuse the in-progress day, see realtime_lag_note). Historical availability -- the blocker this feedhunt exists to unblock -- is already established via the verified archive pages; live/real-time cadence for this specific station was not characterized in this run and should be confirmed separately before any live signal design relies on it, per GROUNDING non-negotiable #5."
+    }
+  ],
+  "verification_method": {
+    "recent_day_pulled": "2026-07-21 (2 days before run date)",
+    "sixty_day_back_pulled": "2026-05-24 (60 days before run date)",
+    "bonus_depth_check_pulled": "2025-07-23 (365 days before run date)",
+    "rows_per_day_recent": 144,
+    "rows_per_day_60d_back": 144,
+    "rows_per_day_365d_back": 144,
+    "sub_hourly_threshold_note": "144 rows/day is genuine 10-min cadence, clearing the task's '>=100 rows/day proves sub-hourly' bar comfortably and landing in the 'strongly preferred' 10-min-or-better tier, not just the 'marginal' 30-min tier.",
+    "spot_value_cross_check": [
+      {
+        "jst_time": "2026-07-21 09:00",
+        "utc_time_equiv": "2026-07-21 00:00",
+        "jma_10min_tempC": 31.2,
+        "iem_rjtt_metar_tempF": 87.8,
+        "iem_rjtt_metar_tempC": 31.0,
+        "iem_raw_metar": "RJTT 210000Z 17008KT 9999 FEW015 BKN090 31/27 Q1008 NOSIG",
+        "diff_C": 0.2
+      },
+      {
+        "jst_time": "2026-07-21 18:00",
+        "utc_time_equiv": "2026-07-21 09:00",
+        "jma_10min_tempC": 31.3,
+        "iem_rjtt_metar_tempF": 87.8,
+        "iem_rjtt_metar_tempC": 31.0,
+        "iem_raw_metar": "RJTT 210900Z 20013KT 9999 FEW030 BKN/// 31/26 Q1007 NOSIG",
+        "diff_C": 0.3
+      },
+      {
+        "jst_time": "2026-07-21 21:00",
+        "utc_time_equiv": "2026-07-21 12:00",
+        "jma_10min_tempC": 29.1,
+        "iem_rjtt_metar_tempF": 84.2,
+        "iem_rjtt_metar_tempC": 29.0,
+        "iem_raw_metar": "RJTT 211200Z 19012KT 9999 FEW030 29/26 Q1008 NOSIG",
+        "diff_C": 0.1
+      }
+    ],
+    "plausibility_verdict": "All three independently-sourced spot comparisons (JMA AMeDAS 10-min vs IEM's RJTT METAR mirror, same UTC instant converted to JST) agree within 0.1-0.3°C -- well within the expected rounding/instrument/exact-minute-offset noise between a whole-METAR-report and a 10-min-interval AMeDAS reading, and consistent with the two feeds reading the same physical airport site rather than different stations or a model output.",
+    "realtime_vs_historical_lag": {
+      "historical_availability": "same-day-or-better -- once a JST calendar day is complete, its full 144-row table is retrievable via the archive page with no observed further delay (the 365-day-back, 60-day-back and 2-day-back pulls were all identical in structure/completeness)",
+      "realtime_availability": "NOT usable via this archive page -- the in-progress JST day returns an explicit 'not viewable yet, only through yesterday' error (verified live against the actual current day, 2026-07-24 JST, which had 0 rows at query time 07:41 JST). A live deployment needs JMA's separate near-real-time AMeDAS JSON channel, not characterized in this run."
+    }
+  },
+  "auth_summary": "No API key, no account, no login required for the winning feed (JMA data.jma.go.jp 10-min AMeDAS archive pages) or its cross-check source (IEM asos.py for RJTT METAR). Both are anonymous HTTP GET.",
+  "rate_limits_summary": "No documented hard rate limit found for data.jma.go.jp. This session made ~9 sequential GETs to JMA endpoints at roughly 1/sec with pauses (plus a handful to IEM), no throttling, no errors, no CAPTCHA. Continued politeness (sequential, ~1 req/sec, cache-then-reuse) recommended per GROUNDING.md non-negotiable #8.",
+  "licensing_summary": "JMA's data.jma.go.jp content falls under Japan's Public Data License v1.0 (公共データ利用規約、第1.0版) per jma.go.jp/jma/kishou/info/coment.html: free to use and redistribute, requires source attribution ('出典：気象庁ホームページ' + URL), and if processed/edited must disclose that and must not present the result as government-produced. No paid tier, no scraping prohibition found (robots.txt path returns 404). This is the same station Polymarket's own settlement page (Wunderground) displays for Tokyo -- the JMA feed is the ORIGINATING national-agency data for that airport site, one step upstream of both Wunderground and the METAR/IEM mirror.",
+  "relevance_to_grounding_blocker": "ref/GROUNDING.md and ref/pmkt_final_verdict.md's STILL-BLOCKED verdict cite 'hourly METAR... under-reports the diurnal peak by ~1h of temperature change' as the coverage blocker for the 5 non-US whitelist cities including Tokyo. This feedhunt found that RJTT/Haneda has a genuinely finer free national-agency feed (JMA 10-min AMeDAS, 144 obs/day) that is 6x denser than the 24/day the prior study's IEM report_type=3-only pull assumed, and even 3x denser than the 48/day 30-min METAR/SPECI cadence found for RJTT here and for EGLC in the prior London feedhunt. Re-running the coverage/signal-fire analysis for Tokyo with this 10-min JMA feed (not just the METAR mirror) is a natural, cheap next step flagged for a follow-up study -- not claimed as resolved here, since this run only verifies feed existence/cadence/plausibility, not coverage-rate impact.",
+  "sample_rows": [
+    {"station": "JMA block_no=0371 (Haneda)", "jst_datetime": "2026-07-21 09:00", "precip_mm": 0.0, "temp_C": 31.2, "wind_avg_ms": 4.1, "wind_avg_dir": "南南東 (SSE)", "wind_gust_ms": 5.7, "wind_gust_dir": "南 (S)"},
+    {"station": "JMA block_no=0371 (Haneda)", "jst_datetime": "2026-07-21 09:10", "precip_mm": 0.0, "temp_C": 30.6, "wind_avg_ms": 3.9, "wind_avg_dir": "南南東 (SSE)", "wind_gust_ms": 5.7, "wind_gust_dir": "南南東 (SSE)"},
+    {"station": "JMA block_no=0371 (Haneda)", "jst_datetime": "2026-07-21 18:00", "precip_mm": 0.0, "temp_C": 31.3, "wind_avg_ms": 6.5, "wind_avg_dir": "南南西 (SSW)", "wind_gust_ms": 11.3, "wind_gust_dir": "南西 (SW)"},
+    {"station": "JMA block_no=0371 (Haneda)", "jst_datetime": "2026-05-24 00:10", "precip_mm": 0.0, "temp_C": 15.1, "wind_avg_ms": 5.5, "wind_avg_dir": "北北西 (NNW)", "wind_gust_ms": 6.7, "wind_gust_dir": "北 (N)"},
+    {"station": "JMA block_no=0371 (Haneda)", "jst_datetime": "2026-05-24 24:00", "precip_mm": 0.0, "temp_C": 19.0, "wind_avg_ms": 1.6, "wind_avg_dir": "東北東 (ENE)", "wind_gust_ms": 2.1, "wind_gust_dir": "東 (E)"},
+    {"station": "JMA block_no=0371 (Haneda)", "jst_datetime": "2025-07-23 00:10", "precip_mm": 0.0, "temp_C": 27.5, "wind_avg_ms": 6.9, "wind_avg_dir": "南南西 (SSW)", "wind_gust_ms": 11.8, "wind_gust_dir": "南西 (SW)"}
+  ],
+  "non_negotiables_check": {
+    "cache_then_delete_politeness": "Sequential requests, ~1/sec with pauses, cached under venue_expansion/cache/tokyo/ (gitignored per repo convention)",
+    "no_outcome_conditioning": "This is a feed-existence/cadence verification only, no signal or trading logic touched",
+    "dry_negative_reporting": "N/A here -- result is a positive (VIABLE, strongly-preferred 10-min tier); the honest caveats (this archive page is historical-only with no live/in-progress-day access; live deployment needs a separate, unverified JMA real-time channel; only one station/city checked) are reported plainly per non-negotiable #9"
+  }
+}

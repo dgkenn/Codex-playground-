@@ -1,0 +1,811 @@
+#!/usr/bin/env python3
+"""kwx_runner.py -- the LIVE detection+decision loop for the K-WX weather-nowcast bot (item 6).
+
+Ties the pieces together: a real-time obs feed -> per-city running max/min -> ADAPTIVE poll cadence
+(poll faster the closer the temperature is to a strike, per the operator's request) -> glitch-filtered
+SUSTAINED cross detection -> the set of ladder rungs that just LOCKED -> a (dry-run by default) order via
+kalshi_exec. Because the profit gap has a ~3.3-minute half-life, detecting the cross fast is the whole game;
+this loop spends its polling budget where it matters (near a strike) and idles when the temp is far away.
+
+SAFETY: execution goes through kalshi_exec.KalshiExec, which is DRY-RUN unless KWX_LIVE=1 AND .kalshi_creds
+exist. This runner never bypasses that. It defaults to paper: every intended trade is logged, none sent.
+
+Obs feed: pluggable. Default = published METAR (aviationweather_metar) -- real-time but ~hourly, so good as
+the CONFIRMATION signal and for slow fires; swap in a true 1-min real-time feed (Synoptic HF-ASOS) via
+set_feed() once credentialed (Tier-2 item 5). The feed only needs: running_extreme(station, lst_date,
+offset, kind) -> {'extreme_f', 'obs': [(iso_ts, temp_f), ...]}.
+
+Usage:
+    python kwx_runner.py once            # one poll cycle over today's active markets (paper), prints plan
+    python kwx_runner.py loop            # continuous adaptive loop (paper) until killed
+"""
+import json, math, os, time, sys, datetime as dt, urllib.request, ssl
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+_CA = "/root/.ccr/ca-bundle.crt"
+_CTX = ssl.create_default_context(cafile=_CA) if os.path.exists(_CA) else None
+KBASE = "https://api.elections.kalshi.com/trade-api/v2"
+STATE_PATH = os.path.join(HERE, "kwx_runner_state.json")
+PLAN_LOG = os.path.join(HERE, "kwx_runner_plan.jsonl")
+# Near-misses: rungs the obs stream mechanically LOCKED but we could not buy (empty book / ask above
+# MAX_PAY / fee-floor size 0). A zero-fire day reads completely differently depending on whether there
+# were zero locks (quiet weather) or N locks that had all repriced before the feed confirmed them
+# (detection too slow -> the paid-1-min-feed question). One record per ticker per day.
+NEAR_MISS_LOG = os.path.join(HERE, "kwx_near_miss.jsonl")
+
+# Kalshi weather series -> (IEM/METAR station, fixed STANDARD-time UTC offset [never DST], name).
+# Mirrors CITY_CONFIG in kalshi_weather_nowcast.py; KXLOWT* mirror uses the same stations.
+CITY = {
+    "KXHIGHDEN": ("KDEN", -7), "KXHIGHMIA": ("KMIA", -5), "KXHIGHCHI": ("KMDW", -6),
+    "KXHIGHTBOS": ("KBOS", -5), "KXHIGHAUS": ("KAUS", -6), "KXHIGHTSEA": ("KSEA", -8),
+    "KXHIGHTSFO": ("KSFO", -8), "KXHIGHTMIN": ("KMSP", -6), "KXHIGHTDC": ("KDCA", -5),
+    "KXHIGHTATL": ("KATL", -5), "KXHIGHTDAL": ("KDFW", -6), "KXHIGHTSATX": ("KSAT", -6),
+    "KXHIGHNY": ("NYC", -5), "KXHIGHTOKC": ("KOKC", -6), "KXHIGHTLV": ("KLAS", -8),
+    "KXHIGHTPHX": ("KPHX", -7), "KXHIGHTHOU": ("KHOU", -6), "KXHIGHPHIL": ("KPHL", -5),
+    "KXHIGHTNOLA": ("KMSY", -6), "KXHIGHLAX": ("KLAX", -8),
+}
+
+# HIGH series -> its matching LOW (overnight-min) series. EXPLICIT + data-verified, because Kalshi's naming
+# is inconsistent (some HIGH series carry a 'T' -- KXHIGHTBOS -- and the LOW family does NOT double it:
+# KXLOWTBOS, not KXLOWTTBOS; and NY's low is KXLOWTNYC, not KXLOWTNY). The old series.replace("KXHIGH",
+# "KXLOWT") produced WRONG tickers for 14/20 cities (double-T / missing 'C') -> those low events silently
+# returned no rungs and never traded. This map is the authoritative HIGH->LOW correspondence (all 20 verified
+# against the KXLOWT* series present in the backtest data). LOW markets settle on the SAME LST calendar day
+# as the HIGH (the day's minimum), so they reuse the high's lst_date/offset; only kind flips to 'min'.
+CITY_LOW_SERIES = {
+    "KXHIGHDEN": "KXLOWTDEN", "KXHIGHMIA": "KXLOWTMIA", "KXHIGHCHI": "KXLOWTCHI",
+    "KXHIGHTBOS": "KXLOWTBOS", "KXHIGHAUS": "KXLOWTAUS", "KXHIGHTSEA": "KXLOWTSEA",
+    "KXHIGHTSFO": "KXLOWTSFO", "KXHIGHTMIN": "KXLOWTMIN", "KXHIGHTDC": "KXLOWTDC",
+    "KXHIGHTATL": "KXLOWTATL", "KXHIGHTDAL": "KXLOWTDAL", "KXHIGHTSATX": "KXLOWTSATX",
+    "KXHIGHNY": "KXLOWTNYC", "KXHIGHTOKC": "KXLOWTOKC", "KXHIGHTLV": "KXLOWTLV",
+    "KXHIGHTPHX": "KXLOWTPHX", "KXHIGHTHOU": "KXLOWTHOU", "KXHIGHPHIL": "KXLOWTPHIL",
+    "KXHIGHTNOLA": "KXLOWTNOLA", "KXHIGHLAX": "KXLOWTLAX",
+}
+
+# ---- frozen strategy params (from Phase-2: Track A walk-forward + Track B multi-year tail + Tier-1) ----
+MARGIN_F = 1.0          # base: observed extreme must clear strike by this many degF (Track A/Tier-1: best)
+SUSTAIN_MIN = 3         # sustained this many minutes -- glitch-robust (Tier-1 S2: sustain=3 reconfirmed;
+                        # sustain=1 turns 13.7% of fires into glitch losses vs 0.35% at sustain=3)
+SUSTAIN_MAX_GAP_MIN = 75  # max gap between adjacent obs inside a sustain window (bridges hourly METAR;
+                          # never bridges a multi-hour feed outage)
+MAX_PAY_CENTS = 98      # never pay above this (skip dead-on-arrival fires -- ~63% of raw fires have no gap)
+GLITCH_HI_F, GLITCH_LO_F = 130.0, -60.0
+
+# --- bankroll-aware sizing (kwx_sizing.py Monte-Carlo optimum for a small bankroll) ---
+# The per-fire CAP is the dominant risk lever: at a 20% cap a correlated 'heat-dome' loss day can wipe the
+# account (ruin ~10%); at 5% cap ruin ~0 with nearly the same median growth. Kelly-fraction barely matters
+# once the cap binds. So: quarter-Kelly, hard 5% per-fire cap, 17.5% per-city-day cap, min 1 contract.
+BANKROLL = 10.0         # $10 CANARY (operator-authorized 2026-07-18): shake out execution at 1 ct/fire
+KELLY_FRAC = 0.25       # fractional Kelly (quarter) -- robust to model/tail error
+PER_FIRE_CAP = 0.05     # max fraction of bankroll on ONE fire (THE risk control)
+DEPTH_CAP = 25          # never order more than the book can plausibly fill (Tier-1: books 5-100ct)
+
+# --- CONVICTION tier (kwx_conviction_optimize.py robust plateau): press the demonstrably-safe fires harder.
+# A fire is "conviction" when it has BOTH a temperature CUSHION (obs cleared the strike by >= this many degF,
+# = safety margin vs a late CLI revision) AND a price GAP still open (>= this many cents of edge left, = the
+# market hasn't repriced it yet). On those, raise the per-fire cap from 5% to CONV_CAP. The grid search's
+# risk-optimal, robust (non-knife-edge) plateau was cushion>=2F & gap>=15c & cap 12%: ~+5% median growth over
+# flat-5% while ruin stays ~0 even under a stressed non-zero conviction-loss tail. Station derate still applies
+# multiplicatively on top, so high-disagreement stations (KPHX etc.) stay tempered even when "conviction".
+CONV_CUSHION_F = 2.0    # obs must clear the strike by >= this many degF to qualify as conviction
+CONV_GAP_C = 15         # AND price gap (100 - pay_cents) must be >= this many cents
+CONV_CAP = 0.12         # per-fire bankroll cap on conviction fires (vs PER_FIRE_CAP=5% base)
+
+# --- free operational guards (only bite in anomalies; zero cost normally) ---
+STALE_MIN = 45          # ignore a feed whose newest obs is older than this (dead/frozen feed protection)
+MAX_FIRES_PER_CYCLE = 15  # circuit breaker: a normal cycle fires a few; >this = feed glitch -> HALT + review
+MAX_DAILY_DEPLOY_FRAC = 0.60  # never deploy more than this fraction of bankroll across all fires in one day
+                              # (bounds the worst-day loss; e.g. $10 canary -> max ~$6 at risk/day)
+
+
+def _kalshi_fee_c(price_c):
+    """Kalshi taker fee in CENTS per contract at price_c: the standard quadratic fee, multiplier 1,
+    ceil(0.07 * p * (1-p)) rounded UP to the whole cent -- the SAME formula as kwx_forward._kalshi_fee
+    (kept in cents here because the whole sizing block works in cents)."""
+    p = price_c / 100.0
+    return math.ceil(0.07 * p * (1 - p) * 100)
+
+
+# Minimum NET edge (cents) a fire's gross gap must clear BEYOND the fee to be worth entering:
+# skip when (100 - ask) <= fee + MIN_NET_EDGE_C. Why 0 and not more: at 0 the floor only rejects entries
+# whose winning payoff (gap - fee) is <= 0 -- trades that CANNOT profit even when they win, which is pure
+# arithmetic and needs no statistical evidence. Raising it to 1 would also exclude 98c entries (2c gross,
+# ~1c fee -> ~1c net), but the recorded data says NO: in _trackA_results_raw.json (deployed cell margin=1/
+# sustain=3) the 154 fires at 98c went 154/154 wins, aggregate pnl +$2.87 (+$1.54 under the live ceil'd
+# fee) -- EV-POSITIVE in sample, so the statistical-soundness rule (no param change without supporting
+# evidence) forbids excluding them. See wx_fee_floor_impact.py for the full numbers; revisit if live data
+# ever shows 98c losses (breakeven win rate at 98c net of fee is 99.0%; n=154 can't rule that out, rule-of-
+# three upper bound on the loss rate is ~1.95% -- but "can't rule out" is not evidence to act on).
+MIN_NET_EDGE_C = 0
+
+
+def _kelly_fraction(price_c, p=0.9965, fee_c=None):
+    """Full-Kelly fraction of bankroll to stake on a contract at `price_c` CENTS (win prob p, lose full
+    stake), NET OF THE KALSHI FEE. The old fee-blind version overstated the edge everywhere and most where
+    it matters: at 98c the gross gap is 2c but the fee is ~1c, so half the apparent edge never existed.
+    Per-contract net payoffs:  win = 100 - price_c - fee_c  (fee comes out of the 100c settlement);
+                              lose = price_c + fee_c        (we paid the price AND the fee).
+    fee_c is computed from price_c if not supplied (callers that already have it, e.g. size_for_fire's fee
+    floor, pass it through so the fee formula only runs once per fire).
+    If the net expected value is <= 0 there is no edge to size -- return 0 (caller skips the fire)."""
+    q = 1 - p
+    if fee_c is None:
+        fee_c = _kalshi_fee_c(price_c)
+    win_c = 100 - price_c - fee_c
+    lose_c = price_c + fee_c
+    if win_c <= 0:   # can't profit even on a win: never stake (p - q/b would already be <=0 here too)
+        return 0.0
+    b = win_c / lose_c
+    return max(0.0, p - q / b)
+
+
+def is_conviction(cushion_f, gap_c):
+    """A fire is CONVICTION when it clears BOTH the cushion (safety) and gap (edge) thresholds. Either being
+    None (unknown) -> not conviction (fail safe: never upsize on missing info)."""
+    return (cushion_f is not None and gap_c is not None
+            and cushion_f >= CONV_CUSHION_F and gap_c >= CONV_GAP_C)
+
+
+def size_for_fire(bankroll, price_c, station, cushion_f=None, gap_c=None):
+    """Contracts to buy for a fire at price_c (cents), given bankroll. Quarter-Kelly capped by the per-fire
+    cap (CONV_CAP on conviction fires, else 5%), per-station size derate, integer, min 1 if affordable,
+    capped by plausible depth. cushion_f/gap_c drive the conviction upsizing (default None -> base 5% cap).
+    Returns 0 (skip, do not fire) when the entry has no NET edge after the Kalshi fee."""
+    # FEE-FLOOR: gross gap must clear the fee by more than MIN_NET_EDGE_C or the fire is skipped outright
+    # (at the default 0 this only rejects entries that cannot profit even on a win -- see MIN_NET_EDGE_C).
+    # fee_c is computed once here and reused in _kelly_fraction below instead of recomputing it.
+    fee_c = _kalshi_fee_c(price_c)
+    if (100 - price_c - fee_c) <= MIN_NET_EDGE_C:
+        return 0
+    price = price_c / 100.0
+    per_fire_cap = CONV_CAP if is_conviction(cushion_f, gap_c) else PER_FIRE_CAP
+    kelly = _kelly_fraction(price_c, fee_c=fee_c)
+    if kelly <= 0.0:                  # fee-aware Kelly says the net EV is <= 0: no stake, no 1-ct floor
+        return 0
+    frac = min(KELLY_FRAC * kelly, per_fire_cap) * STATION_SIZE_MULT.get(station, 1.0)
+    n = int(frac * bankroll / price)
+    n = min(n, DEPTH_CAP)
+    if n < 1 and price <= bankroll:   # floor of 1 contract if we can afford it and intend to trade
+        n = 1
+    return n
+
+# Per-station RISK derate (Track B multi-year + Tier-1): a handful of stations disagree with the official
+# CLI far more often (obs-vs-CLI lock-failure). Raise their margin (fewer, safer fires) and/or shrink size.
+# KPHX(Phoenix) is the worst in BOTH studies (23% raw / 6.25% deployable) -> highest margin + smallest size.
+# RE-CALIBRATED 2026-07-18 (wx_perstation_derate.py): the old derates (KPHX 3F, KLAX/KMIA/KPHL/KSEA 2F) were
+# set from Track B's RAW1MIN per-station tail (KPHX 23%, others 18-21% lock-failure @ m1). But that's the
+# UNFILTERED rule; under the DEPLOYED rule (glitch + sustain=3) those collapse 18-51x -> KPHX 1.26%, KMIA
+# 0.63%, KLAX 0.60%, KPHL 0.43%, KSEA 0.35% @ margin=1 (multi-year). At margin=1 the four non-KPHX stations
+# sit MID-PACK -- below never-derated KAUS/KMSY/KDEN -- so their derate was redundant with sustain=3 and cost
+# the ~3x EV of small-cushion fires (wx_cushion_optimize). Softened: only KPHX keeps an elevated margin (2F,
+# where it's 0.10%), the rest revert to base MARGIN_F=1. Size derate likewise kept only for KPHX (mild caution).
+STATION_MARGIN = {"KPHX": 2.0}                # else MARGIN_F=1 (re-validated safe under glitch+sustain3)
+STATION_SIZE_MULT = {"KPHX": 0.5}             # else 1.0
+# HIGH-family "between" rungs carried ALL 6 deployable glitch losses (Tier-1 S1) -> extra sustain there.
+PER_CITY_DAILY_CAP_FRAC = 0.175   # cross-city daily exposure cap (Tier-1 S4: precautionary, 15-20%)
+
+
+def _get(url, to=20):
+    return json.load(urllib.request.urlopen(
+        urllib.request.Request(url, headers={"Accept": "application/json"}), timeout=to, context=_CTX))
+
+
+def _dollars(d, k):
+    v = d.get(k + "_dollars") if isinstance(d, dict) else None
+    try:
+        return float(v)
+    except (TypeError, ValueError):
+        return None
+
+
+# ---------------- obs feed abstraction ----------------
+class MetarFeed:
+    """Default feed: published METAR (real-time, ~hourly). Good as confirmation / slow-fire detector."""
+    name = "metar"
+
+    def running_extreme(self, station, lst_date, offset, kind):
+        import aviationweather_metar as M
+        r = M.running_extreme_for_lst_day(station, lst_date, offset, kind=kind)
+        if not r:
+            return None
+        obs = [(t, f) for t, f in [(o[0], o[1]) for o in r["obs"]]]
+        return {"extreme_f": r["extreme_f"], "obs": obs}
+
+
+class WeatherGovFeedWrap:
+    """FREE default feed: api.weather.gov 5-min obs (~15-20 min latency). Sufficient for a small bankroll
+    (catches ~6-7 slower-repricing fires/day at ~+0.15/ct; at $50 you're capital- not fire-limited)."""
+    name = "weathergov-free"
+
+    def running_extreme(self, station, lst_date, offset, kind):
+        import weathergov_feed as W
+        return W.WeatherGovFeed().running_extreme(station, lst_date, offset, kind)
+
+
+def _feed_is_stale(obs):
+    """True if the feed's newest obs is older than STALE_MIN minutes (dead/frozen feed). obs = [(iso,val)...]."""
+    try:
+        newest = max(dt.datetime.fromisoformat(t.replace("Z", "+00:00")) for t, _ in obs)
+        age_min = (dt.datetime.now(tz=dt.timezone.utc) - newest).total_seconds() / 60.0
+        return age_min > STALE_MIN
+    except Exception:
+        return False   # can't parse -> don't over-block; the consensus quorum still guards
+
+
+class MultiFeedConsensus:
+    """CONSERVATIVE multi-feed consensus (operator's accuracy request). Queries several feeds and only
+    reports a running extreme that a QUORUM of them agree on -- using the MIN running-max (or MAX running-
+    min) across feeds, so EVERY contributing feed must independently be at least that extreme before a rung
+    can lock. A spurious high glitch in one feed is automatically ignored (we take the lower feed).
+
+    IMPORTANT: these feeds mostly re-stream the SAME airport ASOS sensor, so this guards against feed-
+    specific faults (staleness, parsing, QC) -- NOT against the sensor itself; the CLI-agreement check is
+    the separate guard for that. quorum=len(feeds) requires unanimity; lower it to survive a feed outage."""
+    name = "consensus"
+
+    def __init__(self, feeds, quorum=None):
+        self.feeds = feeds
+        self.quorum = quorum if quorum is not None else max(1, len(feeds))  # default: unanimous
+
+    def running_extreme(self, station, lst_date, offset, kind):
+        vals, present = [], []
+        for f in self.feeds:
+            try:
+                r = f.running_extreme(station, lst_date, offset, kind)
+            except Exception:
+                r = None
+            if not r:
+                continue
+            obs = r.get("obs") or []
+            if obs and _feed_is_stale(obs):
+                continue   # dead/frozen feed -> don't trust its running-max; drop from the quorum
+            # no raw fallback: a feed with obs but no sustained window yet has NO signal this cycle
+            # (raw extreme = sustain=1 = the glitch-loss rule the tail study rejected); a feed that
+            # returns only an extreme with no obs trail (pre-filtered upstream) is trusted as-is.
+            s = sustained_extreme(obs, kind) if obs else r["extreme_f"]
+            if s is None:
+                continue
+            vals.append(s)
+            present.append(getattr(f, "name", "?"))
+        if len(vals) < self.quorum:
+            return None   # not enough feeds agree -> do NOT trade (safety over throughput)
+        cons = min(vals) if kind == "max" else max(vals)   # conservative: every feed >= this (max) / <= (min)
+        return {"extreme_f": cons, "obs": [], "feeds": present}
+
+
+class PrimaryWithFallback:
+    """Use a FAST primary feed (Synoptic 1-min HF-ASOS); if it errors or returns None (outage / station it
+    doesn't cover), fall back to a slower BACKUP. This is the correct shape for mixing a fast + slow feed:
+    the slow feed NEVER gates the fast fire (that would kill the speed edge -- a 15-min-laggy free feed in a
+    conservative-min consensus reports a lower running-max and would block the lock we detected at 1 min),
+    it only covers a gap when the primary has nothing. Glitch protection is still the sustain=3 filter, which
+    runs on whichever feed's obs are used; single-feed Synoptic is acceptable because HF-ASOS IS the ASOS
+    sensor the official CLI settles on (the free feeds merely re-stream it)."""
+    def __init__(self, primary, backup):
+        self.primary, self.backup = primary, backup
+        self.name = f"{getattr(primary, 'name', '?')}+fallback"
+
+    def running_extreme(self, station, lst_date, offset, kind):
+        try:
+            r = self.primary.running_extreme(station, lst_date, offset, kind)
+            if r:
+                return r
+        except Exception:
+            pass
+        return self.backup.running_extreme(station, lst_date, offset, kind)
+
+
+# --- feed instances (module singletons) ---
+_WGOV = WeatherGovFeedWrap()
+_METAR = MetarFeed()
+_FREE_CONSENSUS = MultiFeedConsensus([_WGOV, _METAR])   # conservative consensus of the two slow free feeds
+
+
+def _madis_primary():
+    """MADIS hfmetar (FREE, open public tier) as a fresher primary over the weather.gov/METAR consensus.
+    MEASURED: 5-min resolution at ~10-15 min latency for SPECI-reporting stations -- fresher than weather.gov
+    (~15-20 min), and validated to return the SAME sensor values (KMIA/KLAX ran identical to weather.gov). It
+    is NOT the 1-min tier (only Synoptic is), so it's a modest free baseline bump, not the 2x jump. Falls back
+    to the consensus for hourly-only stations (KDEN, KNYC) that have no hfmetar 5-min stream. Default-ON (no
+    credential needed); if MADIS/scipy is unavailable at runtime the fetch raises and PrimaryWithFallback
+    quietly uses the consensus -- so this can only ever help, never break the free default."""
+    try:
+        import madis_feed
+        return PrimaryWithFallback(madis_feed.MadisFeed(), _FREE_CONSENSUS)
+    except Exception:
+        return None
+
+
+# FREE default: MADIS primary (fresher 5-min) -> weather.gov/METAR consensus fallback.
+_FREE = _madis_primary() or _FREE_CONSENSUS
+
+
+def _synoptic_primary():
+    """Return a Synoptic-primary feed IF a .synoptic_token is present, else None. Wiring Synoptic in ~doubles
+    fire capacity AND improves EV/ct (kwx_bankroll_curve: ~$900 -> ~$2,280/mo modeled) because the 1-min feed
+    detects the lock ~14 min before the free ~15-min feed, capturing fires while the gap is still open. Kept
+    OPT-IN via token presence so the free-feed default is unchanged when uncredentialed (safe, zero-cost)."""
+    try:
+        import synoptic_feed
+        if synoptic_feed.have_token():   # env SYNOPTIC_TOKEN first, .synoptic_token file second
+            return PrimaryWithFallback(synoptic_feed.SynopticFeed(), _FREE)   # cascade: synoptic->madis->consensus
+    except Exception:
+        pass
+    return None
+
+
+# DEFAULT feed cascade: Synoptic (1-min, if credentialed) -> MADIS (free 5-min) -> weather.gov/METAR consensus.
+_FEED = _synoptic_primary() or _FREE
+
+# PER-STATION feed policy (operator's insight: some feeds are better for certain cities). Maps a station to a
+# feed object to use INSTEAD of the global default. When Synoptic is the global default it already covers the
+# sparse-on-weather.gov stations (KNYC->Synoptic 1-min via its alias), so no per-station override is needed;
+# only when running the FREE default do we special-case KNYC (sparse -> METAR/WGOV quorum=1, don't block on
+# the sparse feed). Any station NOT listed uses _FEED.
+STATION_FEED_OVERRIDE = {} if _synoptic_primary() else {
+    "NYC": MultiFeedConsensus([_METAR, _WGOV], quorum=1),   # KNYC sparse -> either feed suffices (still conservative min)
+}
+
+
+def feed_for_station(station):
+    """Return the obs feed to use for a given station (per-station override, else the global default)."""
+    return STATION_FEED_OVERRIDE.get(station, _FEED)
+
+
+def set_feed(feed):
+    """Swap the GLOBAL default feed (per-station overrides in STATION_FEED_OVERRIDE still win). Options:
+    MultiFeedConsensus([...]) [safe default], WeatherGovFeedWrap(), synoptic_feed.SynopticFeed() [paid], MetarFeed()."""
+    global _FEED
+    _FEED = feed
+
+
+# ---------------- adaptive cadence ----------------
+def adaptive_interval_s(distance_f):
+    """Seconds until next poll, as a function of how close the running extreme is to the NEAREST
+    not-yet-locked strike (degF). Closer -> faster, per the operator's request. None distance = idle."""
+    if distance_f is None:
+        return 900          # no active strike nearby -> idle 15 min
+    d = abs(distance_f)
+    if d <= 0.5:
+        return 5            # crossing imminent -> hammer it
+    if d <= 2.0:
+        return 20
+    if d <= 5.0:
+        return 90
+    return 600              # far away -> slow
+
+
+# ---------------- sustained-cross logic (glitch-robust) ----------------
+def sustained_extreme(obs, kind):
+    """Given [(iso_ts, temp_f)...] ascending, return the glitch-filtered running extreme that has been
+    SUSTAINED >= SUSTAIN_MIN minutes -- the validated Track-B "glitch_sustain3" rule
+    (phase2_trackB_tail.sustained_max_k): for a max, the largest threshold T such that some window of
+    consecutive surviving readings spanning >= SUSTAIN_MIN-1 minutes stays entirely >= T. On the study's
+    1-min data that is exactly 3 consecutive minutes; on the live 5-min/hourly feeds the smallest
+    qualifying window (two adjacent readings) spans >= 5 min, i.e. coarser feeds are strictly MORE
+    conservative than the validated rule, never less. Adjacent readings inside a window may be at most
+    SUSTAIN_MAX_GAP_MIN apart (bridges hourly METAR cadence, never a multi-hour outage).
+
+    Returns None when no window qualifies yet (single reading so far, sparse day, unparseable
+    timestamps). Callers MUST treat None as NO SIGNAL -- falling back to the raw running extreme would
+    silently reinstate sustain=1, the 13.7%-glitch-loss rule the tail study rejected."""
+    clean = []
+    prev = None
+    for ts, f in obs:
+        if f is None or f > GLITCH_HI_F or f < GLITCH_LO_F:
+            continue
+        if prev is not None and abs(f - prev) > 8.0:
+            # potential 1-min glitch: require it to persist by not trusting a single jump; skip this point
+            # (a true climb shows consecutive steps; a spike reverts). Conservative: skip the jump point.
+            prev = f
+            continue
+        prev = f
+        try:
+            t = dt.datetime.fromisoformat(str(ts).replace("Z", "+00:00"))
+        except (ValueError, TypeError):
+            continue
+        clean.append((t, f))
+    if not clean:
+        return None
+    span_need = dt.timedelta(minutes=max(0, SUSTAIN_MIN - 1))
+    max_gap = dt.timedelta(minutes=SUSTAIN_MAX_GAP_MIN)
+    sign = 1.0 if kind == "max" else -1.0
+    best = None
+    for j in range(len(clean)):
+        tj = clean[j][0]
+        wmin = sign * clean[j][1]
+        i = j
+        # grow the window leftward (gap-connected) until it spans SUSTAIN_MIN-1 minutes; the minimal
+        # qualifying window ending at j maximizes the window-min, so stop as soon as the span is met.
+        while tj - clean[i][0] < span_need and i > 0 and clean[i][0] - clean[i - 1][0] <= max_gap:
+            i -= 1
+            v = sign * clean[i][1]
+            if v < wmin:
+                wmin = v
+        if tj - clean[i][0] >= span_need and (best is None or wmin > best):
+            best = wmin
+    return None if best is None else sign * best
+
+
+# ---------------- market discovery ----------------
+def active_market_days(today_lst=None):
+    """Return list of (series, event_ticker, station, offset, lst_date, kind) for markets open today.
+    kind='max' for KXHIGH*, 'min' for KXLOWT* (mirror)."""
+    out = []
+    for series, (station, offset) in CITY.items():
+        # today's LST date for this city
+        now_utc = dt.datetime.now(tz=dt.timezone.utc)
+        lst = (now_utc + dt.timedelta(hours=offset)).date()
+        ev = f"{series}-{lst.strftime('%y%b%d').upper()}"
+        out.append((series, ev, station, offset, lst.isoformat(), "max"))
+        low = CITY_LOW_SERIES.get(series)   # explicit, data-verified HIGH->LOW map (not a fragile string sub)
+        if low:
+            evl = f"{low}-{lst.strftime('%y%b%d').upper()}"
+            out.append((low, evl, station, offset, lst.isoformat(), "min"))
+    return out
+
+
+def event_rungs(event_ticker):
+    """Fetch the ladder for an event: list of {ticker, floor, cap, yes_ask_c, no_ask_c, status}."""
+    try:
+        d = _get(f"{KBASE}/events/{event_ticker}")
+    except Exception:
+        return []
+    rungs = []
+    for m in d.get("markets", []):
+        if m.get("status") not in ("active", "open", None):
+            continue
+        rungs.append({
+            "ticker": m["ticker"],
+            "floor": m.get("floor_strike"), "cap": m.get("cap_strike"),
+            "yes_ask_c": (lambda v: int(round(v * 100)) if v else None)(_dollars(m, "yes_ask")),
+            "no_ask_c": (lambda v: int(round(v * 100)) if v else None)(_dollars(m, "no_ask")),
+        })
+    return rungs
+
+
+# ---------------- lock logic (which rung side locks, given the observed extreme) ----------------
+def locked_and_misses(rungs, extreme_f, kind, margin=MARGIN_F):
+    """Like locked_orders, but ALSO returns the locked-yet-unbuyable rungs (the near-misses: no ask at
+    all, or ask > MAX_PAY_CENTS = already repriced / dead-on-arrival).
+    -> (orders, misses): orders as in locked_orders; misses = [(ticker, side, ask_c_or_None, cushion_f)]."""
+    orders, misses = [], []
+
+    def _consider(ticker, side, ask_c, cushion_f):
+        if ask_c and ask_c <= MAX_PAY_CENTS:
+            orders.append((ticker, side, ask_c, cushion_f))
+        else:
+            misses.append((ticker, side, ask_c or None, cushion_f))
+
+    for r in rungs:
+        floor, cap = r["floor"], r["cap"]
+        if kind == "max":
+            if cap is not None and extreme_f > cap + margin:
+                _consider(r["ticker"], "no", r["no_ask_c"], extreme_f - cap)
+            elif cap is None and floor is not None and extreme_f > floor + margin:
+                _consider(r["ticker"], "yes", r["yes_ask_c"], extreme_f - floor)
+        else:  # min
+            if floor is not None and extreme_f < floor - margin:
+                _consider(r["ticker"], "no", r["no_ask_c"], floor - extreme_f)
+            elif floor is None and cap is not None and extreme_f < cap - margin:
+                _consider(r["ticker"], "yes", r["yes_ask_c"], cap - extreme_f)
+    return orders, misses
+
+
+def locked_orders(rungs, extreme_f, kind, margin=MARGIN_F):
+    """Return list of (ticker, side, buy_price_cap_c, cushion_f) for rungs now mechanically locked by the
+    observed extreme (with `margin`, which may be raised per-station for high-disagreement stations). HIGH/max:
+    floor-only rung locks YES once max>floor+margin; any capped rung locks NO once max>cap+margin.
+    LOW/min mirrors with the running min. cushion_f = |obs - the relevant strike| (degF the obs cleared the
+    strike by) -> feeds the conviction upsizing; larger cushion = more headroom vs a late CLI revision."""
+    return locked_and_misses(rungs, extreme_f, kind, margin=margin)[0]
+
+
+def nearest_strike_distance(rungs, extreme_f, kind, margin=MARGIN_F):
+    """Smallest |extreme - relevant_strike| among rungs NOT yet locked -> drives adaptive cadence."""
+    best = None
+    for r in rungs:
+        for strike in (r["floor"], r["cap"]):
+            if strike is None:
+                continue
+            d = (strike + margin) - extreme_f if kind == "max" else extreme_f - (strike - margin)
+            if d > 0 and (best is None or d < best):
+                best = d
+    return best
+
+
+def near_lock_rungs(rungs, extreme_f, kind, margin=MARGIN_F, within_f=1.0):
+    """Rungs NOT YET locked but within `within_f` degF of locking (i.e. the observed extreme is within
+    margin+within_f of the strike) -- candidates for kwx_book_watcher to pre-warm: watch their ask so
+    we're ready the instant the NEXT obs poll confirms the lock. These do NOT fire on price alone -- lock
+    status only changes on an obs update, never on a ask-price observation -- watching them is purely to
+    have fresh price data staged for the moment they DO lock.
+    -> [(ticker, side, distance_f), ...], side = the side that WOULD lock (same branch logic as
+    locked_and_misses, just evaluated before the cross instead of after)."""
+    out = []
+    for r in rungs:
+        floor, cap = r["floor"], r["cap"]
+        if kind == "max":
+            if cap is not None:
+                d, side = (cap + margin) - extreme_f, "no"
+            elif floor is not None:
+                d, side = (floor + margin) - extreme_f, "yes"
+            else:
+                continue
+        else:  # min
+            if floor is not None:
+                d, side = extreme_f - (floor - margin), "no"
+            elif cap is not None:
+                d, side = extreme_f - (cap - margin), "yes"
+            else:
+                continue
+        if 0 < d <= within_f:
+            out.append((r["ticker"], side, round(d, 2)))
+    return out
+
+
+# ---------------- state ----------------
+def _load_state():
+    if os.path.exists(STATE_PATH):
+        try:
+            return json.load(open(STATE_PATH))
+        except Exception:
+            pass
+    return {"fired": {}}   # ticker -> plan record (dedupe)
+
+
+def _save_state(s):
+    json.dump(s, open(STATE_PATH, "w"))
+
+
+def _log_near_miss(state, rec, verbose):
+    """Append one near-miss record to NEAR_MISS_LOG and register it in state['missed'] (ticker -> date,
+    so the poll loop logs each unbuyable lock ONCE per day instead of every 5-30s cycle). Best-effort:
+    a full disk or bad record must never take down the trading loop."""
+    try:
+        today = dt.datetime.now(tz=dt.timezone.utc).date().isoformat()
+        rec = dict(rec, date=today, ts=int(time.time() * 1000))
+        state.setdefault("missed", {})[rec["ticker"]] = today
+        with open(NEAR_MISS_LOG, "a") as f:
+            f.write(json.dumps(rec) + "\n")
+        if verbose:
+            print(f"  [near-miss] {rec['ticker']} {rec['side']} locked but not buyable "
+                  f"(ask={rec.get('ask_c')}, {rec['reason']})")
+    except Exception:
+        pass
+
+
+def current_bankroll(exec_client=None):
+    """The SAME effective-bankroll number poll_once sizes fires against (min(BANKROLL, live balance) when
+    available, else the BANKROLL constant). Factored out so kwx_book_watcher -- which fires through the
+    same fire_one() chokepoint between obs polls -- sizes against an identical number instead of
+    re-deriving the fallback logic. Passing `exec_client` reuses its already-loaded creds instead of
+    constructing (and re-reading the RSA PEM for) a second KalshiExec."""
+    import kalshi_exec
+    _eff = getattr(kalshi_exec, "effective_bankroll", None)
+    return _eff(BANKROLL, exec_client=exec_client) if callable(_eff) else BANKROLL
+
+
+# ---------------- the single fire chokepoint (obs-poll AND book-watch both go through here) ----------------
+def fire_one(state, ex, bankroll, ticker, side, cap_c, cushion_f, station, kind, ext, plans,
+             verbose=True, trigger="obs-poll"):
+    """Apply EVERY existing guard and (dry-run or live) buy ONE locked rung. This is the single fire
+    chokepoint: poll_once's per-cycle locked-rung loop and kwx_book_watcher's between-poll ask watch BOTH
+    call this and nothing else -- so an ask-triggered fire from the book-watcher gets fired dedupe,
+    size_for_fire's fee floor, the daily + per-city deployment caps, the circuit breaker, the plan log,
+    and the near-miss update exactly like an obs-poll fire. NEVER bypass a guard by calling exec.buy_*
+    directly from anywhere else.
+
+    `ext` is the observed extreme (degF) that caused this rung to lock -- for a book-watch fire this is
+    the extreme recorded at LOCK time (unchanged since; lock status only updates on an obs poll, never on
+    a price observation), not a value re-read now.
+
+    Mutates `state` (fired/deployed/city_spent) and appends to `plans` in place. Returns a short status
+    string: "fired" | "already-fired" | "size-skip" | "daily-cap" | "city-cap" | "circuit-breaker".
+    Does NOT save state to disk -- callers save once after their batch of calls (poll_once already does;
+    kwx_book_watcher does the same after its watch window)."""
+    if ticker in state.get("fired", {}):
+        return "already-fired"
+    gap_c = 100 - cap_c   # cents of edge still open (100c payout - price we pay)
+    # bankroll-aware, quarter-Kelly; conviction fires (cushion>=2F & gap>=15c) get the raised 12% cap.
+    # size 0 = fee floor / no net edge after the Kalshi fee, or unaffordable -> skip, don't fire.
+    size = size_for_fire(bankroll, cap_c, station, cushion_f=cushion_f, gap_c=gap_c)
+    if size < 1:
+        if verbose:
+            print(f"  [size-skip] {ticker}: no net edge after fee (or unaffordable) at {cap_c}c")
+        if ticker not in state.get("missed", {}):
+            _log_near_miss(state, {"ticker": ticker, "side": side, "ask_c": cap_c,
+                                   "reason": "fee-floor", "cushion_f": round(cushion_f, 2) if cushion_f is not None else None,
+                                   "extreme_f": round(ext, 2) if ext is not None else None, "station": station,
+                                   "kind": kind}, verbose=False)   # the [size-skip] line above already narrated it
+        return "size-skip"
+    # DAILY + PER-CITY DEPLOYMENT CAPS (match the validated sim's worst-day + diversification bounds).
+    today = dt.datetime.now(tz=dt.timezone.utc).date().isoformat()
+    deployed = state.setdefault("deployed", {})
+    city_spent = state.setdefault("city_spent", {})
+    city_key = f"{today}:{station}"
+    cost = size * cap_c / 100.0
+    if deployed.get(today, 0.0) + cost > MAX_DAILY_DEPLOY_FRAC * bankroll:
+        if verbose:
+            print(f"  [daily-cap] skip {ticker}: would exceed {MAX_DAILY_DEPLOY_FRAC:.0%} of bankroll today")
+        return "daily-cap"
+    if city_spent.get(city_key, 0.0) + cost > PER_CITY_DAILY_CAP_FRAC * bankroll:
+        if verbose:
+            print(f"  [city-cap] skip {ticker}: would exceed {PER_CITY_DAILY_CAP_FRAC:.0%}/city ({station}) today")
+        return "city-cap"
+    # CIRCUIT BREAKER: a normal cycle fires a few; an abnormal burst = feed glitch -> halt for review.
+    # `plans` here is THIS caller's batch (one obs-poll cycle, or one book-watch window) -- each is
+    # independently capped, which is at least as conservative as a single shared counter would be.
+    if len(plans) >= MAX_FIRES_PER_CYCLE:
+        open(os.path.join(HERE, ".kwx_halt"), "w").write(
+            f"auto-halt: >{MAX_FIRES_PER_CYCLE} fires in one cycle (possible feed glitch); review then rm this file\n")
+        if verbose:
+            print(f"  !! CIRCUIT BREAKER tripped ({len(plans)} fires this cycle, trigger={trigger}) -> .kwx_halt written, halting")
+        try:
+            import kwx_notify
+            kwx_notify.alert(f"🛑 KWX HALT: circuit breaker tripped ({len(plans)} fires in one cycle — "
+                             f"possible feed glitch, trigger={trigger}). Trading stopped; review then rm .kwx_halt")
+        except Exception:
+            pass
+        return "circuit-breaker"
+    fn = ex.buy_yes if side == "yes" else ex.buy_no
+    res = fn(ticker, count=size, max_price_cents=cap_c)
+    # accumulate deployed capital for the caps -- ONLY if the order actually placed (a guard-BLOCKED
+    # order deployed nothing). Without this the daily/per-city caps never bind (the bug this fixes).
+    # Use the ACTUAL filled count when the live exec reconciled it (partial fills deploy less than we
+    # requested); fall back to intended size on dry-run / unknown.
+    filled = res.get("filled")
+    eff_cost = (filled * cap_c / 100.0) if isinstance(filled, int) and filled >= 0 else cost
+    if not str(res.get("status", "")).startswith("BLOCKED"):
+        deployed[today] = deployed.get(today, 0.0) + eff_cost
+        city_spent[city_key] = city_spent.get(city_key, 0.0) + eff_cost
+    try:
+        import kwx_notify
+        mode = "LIVE" if getattr(ex, "live", False) else "paper"
+        ext_disp = f"{ext:.1f}" if ext is not None else "?"
+        kwx_notify.alert(f"🌡️ KWX FIRE [{mode}/{trigger}]: buy {size} {side.upper()} {ticker} @≤{cap_c}¢ "
+                         f"(obs {kind} {ext_disp}°F cleared strike) [{res.get('status')}]")
+    except Exception:
+        pass
+    plan = {"ticker": ticker, "side": side, "cap_c": cap_c, "extreme_f": ext,
+            "station": station, "kind": kind, "status": res.get("status"), "trigger": trigger,
+            "requested": size, "filled": res.get("filled"),   # reconciliation: actual vs intended
+            "fill_vwap_c": res.get("fill_vwap_c"),   # depth_v1: actual walk-the-book avg price paid
+            "ts": int(time.time() * 1000)}
+    plans.append(plan)
+    # depth_v1 dry-run can report filled=0 (book was empty at fire time): don't mark the rung
+    # fired so it can re-fire once depth shows up. (A guard-BLOCKED order has filled=None, not
+    # 0, and still gets marked fired below as before -- it was never eligible to retry sooner.)
+    if res.get("filled") != 0:
+        state["fired"][ticker] = plan
+    with open(PLAN_LOG, "a") as f:
+        f.write(json.dumps(plan) + "\n")
+    if verbose:
+        ext_disp = f"{ext:.1f}" if ext is not None else "?"
+        print(f"  LOCK {ticker} buy {side}@<= {cap_c}c  (obs {kind} {ext_disp}F, trigger={trigger})  [{res.get('status')}]")
+    return "fired"
+
+
+# ---------------- one poll cycle ----------------
+def poll_once(exec_client=None, verbose=True, hot_set_out=None, bankroll=None):
+    """Run one obs-poll cycle over today's active markets. `hot_set_out`, if given a list, is CLEARED and
+    populated with this cycle's HOT SET for kwx_book_watcher to watch between now and the next poll:
+    locked-but-unbuyable rungs (misses -- watch their ask, ready to fire via fire_one the instant it drops)
+    plus rungs within margin+1F of locking (near-lock -- watch only, never fire on price alone). Built
+    inline from the SAME rung/extreme data this loop already fetches, so passing hot_set_out adds no
+    extra market scans.
+
+    `bankroll`, if given, is used as-is (lets a caller that ALSO drives kwx_book_watcher this cycle compute
+    current_bankroll(ex) ONCE and share it with both, instead of doubling the live-balance read); default
+    None computes it here exactly as before."""
+    import kalshi_exec
+    ex = exec_client or kalshi_exec.KalshiExec()
+    if bankroll is None:
+        bankroll = current_bankroll(ex)
+    state = _load_state()
+    if hot_set_out is not None:
+        hot_set_out.clear()
+    # caps are PER-DAY: drop stale accumulators so a new day starts clean (state persists across the run's
+    # 30s poll cycles via kwx_runner_state.json; keeping only today's keys also bounds the file size).
+    _today = dt.datetime.now(tz=dt.timezone.utc).date().isoformat()
+    state["deployed"] = {k: v for k, v in state.get("deployed", {}).items() if k == _today}
+    state["city_spent"] = {k: v for k, v in state.get("city_spent", {}).items() if k.startswith(_today + ":")}
+    # near-miss dedupe registry: one log record per ticker per day (tickers embed the date, but pruning
+    # by recorded date keeps the committed state file from growing forever)
+    state["missed"] = {k: v for k, v in state.get("missed", {}).items() if v == _today}
+    min_interval = None
+    plans = []
+    for series, ev, station, offset, lst_date, kind in active_market_days():
+        rungs = event_rungs(ev)
+        if not rungs:
+            continue
+        try:
+            feed = feed_for_station(station).running_extreme(station, lst_date, offset, kind)
+        except Exception as e:
+            if verbose:
+                print(f"  [feed skip] {station} {kind}: {type(e).__name__}")
+            continue
+        if not feed:
+            continue
+        obs = feed.get("obs") or []
+        ext_raw = feed["extreme_f"]
+        # sustained extreme gates FIRING; consensus feeds (empty obs trail, pre-filtered per-feed
+        # upstream) are trusted as-is. None = no sustained window yet -> no fires this cycle; do NOT
+        # fall back to the raw extreme (that is sustain=1, the 13.7%-glitch-loss rule).
+        ext = sustained_extreme(obs, kind) if obs else ext_raw
+        # per-station risk derate (Track B / Tier-1): high-disagreement stations get a higher margin
+        st_margin = STATION_MARGIN.get(station, MARGIN_F)
+        # cadence signal -- use the RAW running extreme so we keep polling fast while a fresh cross
+        # awaits its sustain confirmation
+        dist = nearest_strike_distance(rungs, ext_raw, kind, margin=st_margin)
+        iv = adaptive_interval_s(dist)
+        min_interval = iv if min_interval is None else min(min_interval, iv)
+        # near-lock half of the HOT SET: usable even before a sustained extreme exists (ext_raw is always
+        # available here), unlike the misses half below which needs a confirmed lock. Observability-only
+        # -- wrapped so a bug here can never block the trading loop (guard test in kwx_selftest).
+        if hot_set_out is not None:
+            try:
+                for n_ticker, n_side, n_dist in near_lock_rungs(rungs, ext_raw, kind, margin=st_margin):
+                    hot_set_out.append({"ticker": n_ticker, "side": n_side, "locked": False,
+                                        "cushion_f": None, "station": station, "kind": kind,
+                                        "extreme_f": round(ext_raw, 2), "distance_f": n_dist})
+            except Exception as e:
+                if verbose:
+                    print(f"  [hot-set skip] {station} {kind} near-lock: {type(e).__name__}")
+        if ext is None:
+            continue
+        # fire locked rungs not already fired. Ordered by DESCENDING gap (== ascending cap_c, since
+        # gap_c = 100 - cap_c) so that if a daily/per-city cap binds partway through this event's
+        # rungs, the highest-EV rungs have already filled (see wx_rung_stacking.md).
+        locked, misses = locked_and_misses(rungs, ext, kind, margin=st_margin)
+        locked = sorted(locked, key=lambda t: t[2])
+        for m_ticker, m_side, m_ask, m_cushion in misses:
+            if m_ticker in state["fired"] or m_ticker in state["missed"]:
+                continue
+            _log_near_miss(state, {"ticker": m_ticker, "side": m_side, "ask_c": m_ask,
+                                   "reason": ("no-ask" if not m_ask else f"ask>{MAX_PAY_CENTS}"),
+                                   "cushion_f": round(m_cushion, 2), "extreme_f": round(ext, 2),
+                                   "station": station, "kind": kind}, verbose)
+        # locked half of the HOT SET: rungs the obs stream just locked but we couldn't buy (no ask / ask
+        # too high) -- watch their ask, ready to fire_one() the instant it drops <= MAX_PAY_CENTS.
+        if hot_set_out is not None:
+            try:
+                for m_ticker, m_side, m_ask, m_cushion in misses:
+                    if m_ticker in state["fired"]:
+                        continue
+                    hot_set_out.append({"ticker": m_ticker, "side": m_side, "locked": True,
+                                        "cushion_f": round(m_cushion, 2), "station": station, "kind": kind,
+                                        "extreme_f": round(ext, 2), "last_ask_c": m_ask})
+            except Exception as e:
+                if verbose:
+                    print(f"  [hot-set skip] {station} {kind} misses: {type(e).__name__}")
+        for ticker, side, cap_c, cushion_f in locked:
+            outcome = fire_one(state, ex, bankroll, ticker, side, cap_c, cushion_f, station, kind, ext,
+                               plans, verbose=verbose, trigger="obs-poll")
+            if outcome == "circuit-breaker":
+                _save_state(state)
+                return plans, (min_interval or 900)
+    _save_state(state)
+    if verbose:
+        print(f"cycle done: {len(plans)} new locks; next adaptive interval ~{min_interval or 900}s")
+    return plans, (min_interval or 900)
+
+
+def main():
+    mode = sys.argv[1] if len(sys.argv) > 1 else "once"
+    # one-line feed provenance so every leg log states which cascade is live (synoptic-primary vs free);
+    # this is how the operator verifies the SYNOPTIC_TOKEN secret actually reached the runner.
+    print(f"feed cascade: {getattr(_FEED, 'name', type(_FEED).__name__)}")
+    if mode == "once":
+        poll_once()
+    elif mode == "loop":
+        print("adaptive paper loop (Ctrl-C to stop). LIVE requires KWX_LIVE=1 + .kalshi_creds.")
+        while True:
+            _, iv = poll_once()
+            time.sleep(max(3, iv))
+    else:
+        print("usage: kwx_runner.py [once|loop]")
+
+
+if __name__ == "__main__":
+    main()

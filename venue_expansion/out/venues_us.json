@@ -1,0 +1,133 @@
+{
+  "scan_date": "2026-07-23",
+  "mission": "US-legal-venue sweep for the mechanical-lock shape (outcome confirmable from a free public feed before the venue reprices), per venue_expansion/GROUNDING.md",
+  "headline_finding": "ForecastEx (IBKR's CFTC-regulated Forecast Contract exchange) lists daily high/low-temperature threshold-ladder contracts on Weather Underground station data for 27+ cities (20 US + 7 international as of 2026-07-22), with genuinely large live volume (e.g. UHLAX 651,446 pairs, UHSFO 153,414 pairs, UHLGA 95,992 pairs on 2026-07-22 alone) and a free, unauthenticated, per-trade-timestamped public data lake (forecastex-public-data S3 bucket) updated intraday. This is a structurally new, US-legal, real candidate for the mechanical-lock shape that this repo has not previously studied. It was found and verified with live requests, not just secondary reporting. CAVEAT: ForecastEx's transaction fee is a FLAT $0.01/contract per side, independent of price -- unlike Kalshi's quadratic fee or Polymarket's 0.05*p*(1-p) fee, this does NOT shrink near p->1, so it eats a much larger fraction of the thin 1-2c gap the mechanical-lock edge targets. Needs a dedicated fee-inclusive EV study before any GO call -- not run here, this is a discovery/access sweep only.",
+  "second_finding": "Polymarket US (QCX LLC, the CFTC-regulated, US-person-legal product referenced in ref/pmkt_final_verdict.md §6) is CONFIRMED NOT to currently list the daily temperature bracket-ladder product studied on the global (geo-blocked) venue. As of this scan it is sports-first (launched Dec 2025 / relaunched May 2026), with politics/weather described in secondary press as 'coming' or 'dabbling' but not verifiable as live in the app-store listing or the exchange's own developer page, which lists no weather/temperature category. Its API additionally requires an application + approval process (sandbox, then production credentials) -- not open/public like the global venue's Gamma/CLOB APIs. This resolves the single most valuable open question in §6 of the prior verdict: NO, not yet, as of 2026-07-23.",
+  "kalshi_confirmation": {
+    "purpose": "Per task instructions, only confirming nothing NEW listed since the 2026-07-19 12k-series scan in ref/wx_new_capacity_scan.md -- not redoing that scan.",
+    "method": "Live GET https://api.elections.kalshi.com/trade-api/v2/series?limit=200, same endpoint the prior scan used.",
+    "result": "12,173 total series (up from 12,000 on 2026-07-19, organic growth). Climate and Weather category: 290 series (up from 289, i.e. +1). Spot-checked the ticker prefixes that looked unfamiliar against the prior scan's family table (KXCITIESWEATHER, KXMAXTEMP100, KXTEMPLAXH/BOSH/CHIH/DCH/MIAH/AUSH) via GET /series/{ticker}: all have last_updated_ts or product_metadata bulk-ids dated Feb/Jun 2026, i.e. they predate the 2026-07-19 scan and are the same already-excluded 'hourly, Weather-Company-sourced' family as KXTEMPNYCH (the KXTEMPNYCH exclusion already documented in wx_market_coverage.py). No genuinely new family or ticker pattern was found in this spot check.",
+    "caveat": "This is a lightweight confirmation (category counts + spot-check of unfamiliar prefixes), not a full re-run of the 07-19 scan's per-family live-book check, per task instructions not to redo that scan. The +1 series delta is consistent with normal single-listing churn, not a new capacity pool.",
+    "verdict": "No new Kalshi weather capacity since 2026-07-19."
+  },
+  "venues": [
+    {
+      "name": "ForecastEx (IBKR ForecastTrader)",
+      "operator": "ForecastEx LLC, wholly owned subsidiary of Interactive Brokers Group",
+      "regulatory_status": "CFTC-registered Designated Contract Market (DCM) + Derivatives Clearing Organization (DCO). Began operations 2024-08-01. US-legal, no geo-block for US persons -- this is IBKR's own regulated product.",
+      "products_of_interest": true,
+      "products_of_interest_detail": "‘Daily Temperature Forecast Contract’ (product code U[H/L/A][3-letter station code], filed with CFTC 2026-01-23 under Reg 40.2(a); PDF verified: https://forecastex-public-data.s3.amazonaws.com/product_filings/Daily%20Temperature%20Forecast%20Contract.pdf). Event question: 'Will the [highest/lowest/average] temperature in [region] [exceed/be below] [##] F on [date]?' -- ForecastEx lists ~9 consecutive integer strikes per city-day, which collectively form the same threshold-ladder shape as Kalshi's KXHIGH*/Polymarket's bracket ladders. Live 2026-07-22 volume pulled directly from the venue's own daily_summary CSV (see evidence): UHLAX (LA) 651,446 pairs, UHSFO (SF) 153,414, UHLGA (NYC) 95,992, UHSEA (Seattle) 33,778, UHPHX (Phoenix) 20,591, plus UHATL/UHAUS/UHBKF(Denver)/UHBNA/UHBOS/UHCLT/UHDCA/UHDFW/UHDTW/UHHOU/UHJAX/UHMDW(Chicago)/UHMIA/UHMSP/UHOKC/UHPHL/UHSAT and ~20 corresponding low-temp (ULxxx) tickers, all with nonzero same-day volume. International: SHDDF (Frankfurt), SHFPO (Paris), SHJTT (Tokyo), SHSSS (Singapore), SHSSY (Sydney), SHYHC (Vancouver), SHYYZ (Toronto) -- smaller volume (40-740 pairs) but live. Also separately: Monthly/Annual global-temperature-threshold contracts, HDD/CDD-style 'Temperature Degree Days Forecast Contract', hurricane landfall/category/count families, precipitation totals, severe weather -- not the daily-lock shape, not examined further here.",
+      "settlement_source": "Weather Underground (wunderground.com) station-history display -- the SAME third-party scrape source Polymarket's global venue uses for its NYC temperature ladder (per ref/wx_new_capacity_scan.md), so any basis-risk finding from a future Polymarket study likely transfers. Resolution Time = 'the time at which the first temperature observation for any subsequent calendar day is published by Weather Underground for the applicable station' -- i.e. formal settlement is always next-day, contract text explicitly states 'This contract is not subject to early Resolution.' This does NOT preclude the mechanical-lock TRADE (buying before the book reprices once the day's extreme looks decided intraday) -- it only means ForecastEx itself won't settle the contract early even if the outcome looks locked; the tradable inefficiency, if any, would be in the book's slowness to reprice to the locked value before formal EOD settlement, same structural shape as Kalshi/Polymarket.",
+      "public_market_data_access": true,
+      "public_market_data_access_detail": "Free, fully public, UNAUTHENTICATED S3-backed data lake at https://forecastex-public-data.s3.amazonaws.com (browsable at https://data.forecastex.com/), verified live via direct curl/S3 REST calls (no API key, no login). Three CSV families, one file per calendar day, back to 2024-08-01: (1) pairs/pairs_YYYYMMDD.csv -- every matched trade with per-contract yes/no price, quantity, and a MILLISECOND pair_time timestamp (verified: today's file, pairs_20260723.csv, already contained trades timestamped up to 16:14:59 CT as of this scan, i.e. updates intraday, not just end-of-day); (2) prices/daily_prices_YYYYMMDD.csv -- daily OHLC + settlement + VWAP per contract/subtype; (3) daily_summary/summary_YYYYMMDD.csv -- per-product total_pairs (volume) rollup. This is finer-grained (individual timestamped fills) than what either Kalshi's public trade history or Polymarket's prices-history endpoint offers for free, and is a strong candidate feed for the fill-quality / EV backtest that the mechanical-lock strategy needs. For LIVE order-book depth and order placement, access is via IBKR's TWS/Client Portal Web API (Event Contracts in the Web API, per IBKR Campus docs) -- this requires an ordinary IBKR brokerage account (the standard, non-exotic path to trade ForecastEx contracts at all), not a separate application/approval gate the way Polymarket US's institutional API is gated.",
+      "fees": "$0.01 per contract, charged to BOTH the Yes and No side at execution, independent of price/resolution/netting/settlement (verified from primary source: https://forecastex-public-data.s3.amazonaws.com/regulatory/ForecastEx_Fee_Schedule.pdf). Structural note: this is a FLAT fee that does not shrink as price approaches $1, unlike Kalshi's ceil(7*p*(1-p))/100 or Polymarket's 0.05*p*(1-p) which both -> 0 near the locked extreme. At a hypothetical ask=0.98 lock-capture entry, ForecastEx's $0.01 fee consumes half the theoretical 2c gross edge -- materially worse fee economics for THIS SPECIFIC strategy shape than either prior venue, even though the product and feed otherwise look promising. Contracts also carry a monthly 'incentive coupon' on collateral (per Rule 612(c)) -- a yield feature, not relevant to the per-trade edge calc.",
+      "mechanical_lock_shape_plausible": true,
+      "mechanical_lock_shape_caveat": "Structurally present (threshold ladder + free public near-real-time feed + third-party settlement source with same basis-risk profile as Polymarket's known-thin coverage problem + flat fee that specifically hurts this strategy). NOT validated -- no backtest, no false-lock rate, no book-repricing-speed measurement done in this scan. This is a discovery finding only; a dedicated study (structurally identical to pmkt_gap_study.py / pmkt_final_verdict.py, swapping in ForecastEx's data lake) is the clear next step.",
+      "evidence": [
+        "https://forecastex-public-data.s3.amazonaws.com/product_filings/Daily%20Temperature%20Forecast%20Contract.pdf (fetched and read in full, cached at venue_expansion/cache/fx_daily_temp.pdf)",
+        "https://forecastex-public-data.s3.amazonaws.com/regulatory/ForecastEx_Fee_Schedule.pdf (fetched and read in full, cached at venue_expansion/cache/forecastex/fee_schedule.pdf)",
+        "https://forecastex-public-data.s3.amazonaws.com/daily_summary/summary_20260722.csv (cached at venue_expansion/cache/forecastex/summary_20260722.csv)",
+        "https://forecastex-public-data.s3.amazonaws.com/prices/daily_prices_20260722.csv (cached at venue_expansion/cache/forecastex/prices_20260722.csv)",
+        "https://forecastex-public-data.s3.amazonaws.com/pairs/pairs_20260722.csv and pairs_20260723.csv (cached at venue_expansion/cache/forecastex/)",
+        "https://www.interactivebrokers.com/campus/traders-insight/ibkr-climate-energy/daily-high-temperature-markets-at-forecastex/ (secondary, corroborating: 20 US cities expanding to Madrid/Paris/Vancouver/Montreal etc.)"
+      ]
+    },
+    {
+      "name": "Polymarket US (QCX LLC d/b/a Polymarket US)",
+      "operator": "QCX LLC, acquired by Polymarket mid-2025; CFTC Amended Order of Designation 2025-11-25",
+      "regulatory_status": "CFTC-registered DCM, US-legal. DIFFERENT stack from the global geo-blocked venue studied in ref/pmkt_*.md: brokerage-intermediated, KYC, USD-denominated (not wallet/USDC/Polygon).",
+      "products_of_interest": false,
+      "products_of_interest_detail": "As of 2026-07-23: sports-first launch (App Store listed under Sports category since relaunch), with press describing politics markets now live and weather/culture/finance as 'coming soon' / 'dabbling' -- neither the exchange's own developer/product page (polymarketexchange.com) nor the app-store category listing confirms a live weather or temperature category today. This directly answers ref/pmkt_final_verdict.md §6's open question: NOT YET, as of this scan. Should be rechecked periodically -- company has stated intent to expand categories.",
+      "public_market_data_access": false,
+      "public_market_data_access_detail": "polymarketexchange.com/developers.html states API access requires an application to their support team, technical/regulatory assessment, sandbox testing, then production credentials -- i.e. an approval-gated institutional API, NOT the open/anonymous Gamma+CLOB APIs the global venue exposes (which is what all three prior pmkt_*.md studies used). No public market-data endpoint found that a retail researcher could hit today without an approved integration.",
+      "fees": "Not published/found -- gated behind the same application process as market data access.",
+      "mechanical_lock_shape_plausible": null,
+      "mechanical_lock_shape_plausible_note": "Cannot be assessed -- no weather product confirmed live and no open data access to check even if one existed.",
+      "evidence": [
+        "https://www.polymarketexchange.com/ (fetched)",
+        "https://www.polymarketexchange.com/developers.html (fetched)",
+        "https://apps.apple.com/us/app/polymarket/id6648798962 (via search)",
+        "CFTC filings ptc02092638974.pdf, PMUS - CFDVC - (2026.04.03).pdf (product-listing self-certifications; fetched, did not enumerate a weather product in extractable text)",
+        "Secondary reporting (atomicwallet.io, thelines.com, finance.yahoo.com) consistently describing sports-first rollout with weather/culture 'coming'"
+      ]
+    },
+    {
+      "name": "Kalshi",
+      "regulatory_status": "CFTC-registered DCM, the repo's existing live venue.",
+      "products_of_interest": "n/a (existing venue, not a new-capacity target of this sweep)",
+      "note": "See kalshi_confirmation block above -- only checked to confirm no new listings since the 2026-07-19 scan in ref/wx_new_capacity_scan.md. Not re-studied here."
+    },
+    {
+      "name": "Novig",
+      "regulatory_status": "CFTC-approved (approval reported 2026-06-16) sports-focused prediction/exchange platform, available 35+ states.",
+      "products_of_interest": false,
+      "products_of_interest_detail": "Explicitly and repeatedly self-described as sports-only ('without the noise of politics, weather, or culture' per company positioning). No weather/temperature or other physical-observable product found or claimed anywhere in current reporting.",
+      "public_market_data_access": "not checked (moot -- no product of interest)",
+      "fees": "not checked (moot)",
+      "mechanical_lock_shape_plausible": false,
+      "evidence": [
+        "https://www.cnbc.com/2026/06/16/novig-wins-cftc-approval-as-competition-intensifies-in-sports-prediction-markets.html",
+        "https://bellwether.market/platforms/novig/",
+        "General search corroboration across legalsportsreport.com, sbcamericas.com"
+      ]
+    },
+    {
+      "name": "ProphetX",
+      "regulatory_status": "CFTC-approved as dual-registered DCM + DCO (approval reported June 2026), 'America's Sports Prediction Exchange', launched nationwide.",
+      "products_of_interest": false,
+      "products_of_interest_detail": "Explicitly sports-only (NFL/NBA/MLB/NHL/college football/college basketball/soccer/golf/tennis/MMA moneylines/spreads/totals/props/futures). One search summary explicitly contrasts it against competitors 'that offer prediction markets in weather, finance, politics, entertainment' -- confirming ProphetX does not.",
+      "public_market_data_access": "not checked (moot -- no product of interest)",
+      "fees": "not checked (moot)",
+      "mechanical_lock_shape_plausible": false,
+      "evidence": [
+        "https://www.prophetx.co/",
+        "https://www.prnewswire.com/news-releases/prophetx-launches-nationwide-302804384.html",
+        "https://defirate.com/news/prophetx-wins-cftc-approval-sports-focused-prediction-exchange/"
+      ]
+    },
+    {
+      "name": "Sporttrade",
+      "regulatory_status": "Was seeking CFTC approval for an exchange model; DECIDED TO EXIT before obtaining it.",
+      "products_of_interest": false,
+      "products_of_interest_detail": "DEAD as of this scan. Announced closure 2026-05-15, ceased operating for new business 2026-05-25, explicitly cited as exiting online sports betting/prediction markets while awaiting CFTC decision. Sports-only in its final form regardless; now moot since the venue is shut down.",
+      "public_market_data_access": "n/a (venue closed)",
+      "fees": "n/a (venue closed)",
+      "mechanical_lock_shape_plausible": false,
+      "evidence": [
+        "https://www.covers.com/industry/sporttrade-exiting-online-sports-betting-markets",
+        "https://www.yogonet.com/international/news/2026/05/19/121042-sporttrade-to-exit-us-online-sports-betting-markets-while-awaiting-cftc-decision",
+        "https://www.ingame.com/sporttrade-shuttering-betting-exchange/"
+      ]
+    },
+    {
+      "name": "CME Group (event/weather contracts)",
+      "regulatory_status": "CFTC-registered DCM (CME itself), the incumbent institutional derivatives exchange. Weather products are exchange-listed futures/options, not retail 'event contracts.'",
+      "products_of_interest": false,
+      "products_of_interest_detail": "Lists HDD (Heating Degree Day), CDD (Cooling Degree Day), and CAT (Cumulative Average Temperature) contracts across 18 cities (13 US, 4 Europe, 1 Asia -- includes Chicago, NYC, London, Amsterdam, Tokyo, and newer additions Paris/Essen/Burbank/Houston/Philadelphia/Boston). These are MONTHLY/SEASONAL index-average products, not daily-high/low brackets: settlement is an accumulated or averaged index over the full month/season, so there is no single intraday 'mechanical lock' moment analogous to a daily-max threshold being cleared -- the whole point of the mechanical-lock edge (a same-day observable extreme that locks a same-day settlement before the book catches up) does not have a matching daily-granularity CME product. Same structural failure mode as the already-killed Rain Sleeve / monthly-accumulator family in ref/GROUNDING.md's graveyard.",
+      "public_market_data_access": "Institutional-grade only: traded via CME Direct or Trayport, accessed through CME Globex/ClearPort, requires a futures broker relationship -- not a self-serve retail app or an open public API/feed. Free public pages (cmegroup.com) give marketing-level descriptions only, not tradable data.",
+      "fees": "Not determined -- gated behind broker relationships, exchange + clearing fee schedules not retail-published in an easily comparable per-contract-cent form the way Kalshi/Polymarket/ForecastEx are.",
+      "mechanical_lock_shape_plausible": false,
+      "evidence": [
+        "https://www.cmegroup.com/markets/weather.html (fetched)",
+        "https://www.cmegroup.com/markets/weather/temperature/us-monthly-weather-heating.html (fetched)",
+        "https://www.cmegroup.com/trading/weather/files/WT-124_WeatherBrochure_r11.pdf (referenced, not fetched in full)"
+      ]
+    }
+  ],
+  "cache_files": [
+    "venue_expansion/cache/fx_daily_temp.pdf",
+    "venue_expansion/cache/DHTermsandConditions.pdf (404 -- dead link, not used)",
+    "venue_expansion/cache/forecastex_data.html",
+    "venue_expansion/cache/forecastex_dataroot.html",
+    "venue_expansion/cache/fx_regulatory_list.xml",
+    "venue_expansion/cache/fx_product_filings.xml",
+    "venue_expansion/cache/forecastex/summary_20260722.csv",
+    "venue_expansion/cache/forecastex/prices_20260722.csv",
+    "venue_expansion/cache/forecastex/pairs_20260722.csv",
+    "venue_expansion/cache/forecastex/pairs_20260723.csv",
+    "venue_expansion/cache/forecastex/fee_schedule.pdf",
+    "venue_expansion/cache/kalshi_confirm/series_20260723.json",
+    "venue_expansion/cache/kalshi_confirm/cw_tickers.txt"
+  ],
+  "recommended_next_step": "ForecastEx's Daily Temperature Forecast Contract is the one finding in this sweep that clears the bar for a real study, structurally analogous to how Polymarket cleared the bar in ref/wx_new_capacity_scan.md Q1: (1) measure false-lock rate against Weather Underground's specific station pages (same basis-risk question already flagged unmeasured for Polymarket -- may share the same answer since it's the same data source); (2) measure book-repricing speed intraday using the pairs_*.csv per-trade timestamps (already confirmed to exist at millisecond granularity, free, back to 2024-08-01); (3) run the fee-inclusive EV calc with ForecastEx's flat $0.01/contract fee explicitly, since this fee shape (unlike Kalshi/Polymarket) does NOT favor near-certainty entries -- this could kill the venue on fee economics alone even if the lock signal itself is clean, and should be checked FIRST since it's a two-line calculation, before any further data pulls. Do not build a Polymarket US study until the company confirms a live weather category (recheck periodically -- cheap)."
+}

@@ -1,0 +1,136 @@
+{
+  "agent": "feedhunt_saopaulo",
+  "date": "2026-07-23",
+  "task": "Find a FREE sub-hourly historical surface-obs feed for SBGR (Sao Paulo-Guarulhos), the exact station Polymarket's Sao Paulo high-temp ladder settles on (per ref/pmkt_settlement_basis.md row: '...Sao Paulo-Guarulhos International Airport Station...' wunderground.com/history/daily/br/guarulhos/SBGR, network BR__ASOS confirmed present, basis SOUND with 14/14 IEM-vs-settlement agreement).",
+  "verdict": "DEAD",
+  "verdict_tier": "No sub-hourly (or even reliably-finer-than-hourly) free feed found for SBGR or any station genuinely co-located with Guarulhos airport. Every candidate checked either (a) only republishes the same hourly-plus-irregular-special METAR SBGR itself issues, or (b) is a real automatic-station network with a finer nominal cadence but has NO station at/near the airport site (so it would not carry the settlement basis). This negative result is reported plainly per GROUNDING.md non-negotiable #9.",
+  "headline": "SBGR's own surface obs are METAR/SPECI, confirmed HOURLY-ONLY as the routine cadence: DECEA's own help documentation states verbatim 'Os dados das estacoes meteorologicas de superficie dos aeroportos (Metar) sao coletados de uma em uma hora ou em horarios intermediarios caso esteja ocorrendo algum evento especial' (collected hour-by-hour, or at intermediate times only if a special event is occurring). Verified with a real 51-day IEM ASOS pull (2026-06-01 to 2026-07-22): 1284 rows over 51 days = 24.2 rows/day average; 1224/1284 (95.3%) fall exactly on minute :00, and the remaining ~60 irregular-minute rows are sparse, non-periodic SPECI (weather-triggered, not a fixed sub-hourly schedule) averaging ~1.2/day -- nowhere close to the >=100 rows/day sub-hourly proof bar, and structurally different from EGLC/RJTT's clean twice-hourly :20/:50 SPECI pattern found in the prior London/Tokyo feedhunts. Checked INMET (Brazil's national met agency): automatic-station data is explicitly hourly-only per INMET's own documentation ('disponibilizados diariamente, de hora em hora'), AND INMET has no automatic station at Guarulhos airport -- the nearest is A701 Sao Paulo-Mirante, 16.4km away (a materially different site, unlike Tokyo's ~0.3km-away co-located JMA AMeDAS point), so it would fail the settlement-basis-match requirement even if it were sub-hourly. Checked REDEMET (DECEA's aviation met network/API): its only public product is METAR/SPECI messages (API-gated, requires free registration) -- same underlying hourly+special cadence as SBGR's own METAR, confirmed via DECEA's help docs describing even their 'meteograma' graphing tool as a visualization of METAR/TAF, not a separate finer-cadence source. Checked CGE-SP (Sao Paulo city's Centro de Gerenciamento de Emergencias, which does run a genuine 5-10min automatic-station network): pulled the live station list (32 stations) -- none are at Guarulhos (a separate municipality bordering, but outside, the city of Sao Paulo); nearest CGE stations are ~10+km away in Sao Paulo's eastern zone (Penha, Sao Miguel Paulista, Vila Maria/Guilherme), not co-located with SBGR. Infraero's 2013 'updated every 5 minutes' airport weather page was a UI refresh of the same METAR-derived status (green/yellow/red operational indicator), not a new observation source, and its current-availability/historical-archive status is unverified/likely defunct (2013 news article, no API found). Open-Meteo historical is model reanalysis, excluded per task rule. Meteostat's bulk historical is hourly-resampled, excluded (would not beat the METAR baseline anyway). MADIS and Synoptic Data free tier were not independently pulled (registration/token-gated in this session) but are exceptionally unlikely to beat this result: both aggregate FROM national feeds via GTS/METAR relay for a country like Brazil where no genuine sub-hourly national station feed at this airport was found to exist in the first place -- there is no finer upstream source for them to carry. OGIMET returned a bot-block page for both its SYNOP and METAR display endpoints in this session (confirmed via direct pull, same blocked-page byte size as seen in the prior London feedhunt's cache) and would in any case only mirror the same SBGR METAR already characterized via IEM.",
+  "station": {
+    "icao_settlement_station": "SBGR (Sao Paulo-Guarulhos International Airport / Cumbica)",
+    "lat_lon_elev": "-23.435 / -46.473 / 745m (per aviationweather.gov METAR metadata, cross-checked in this run)",
+    "settlement_basis_confirmed": "matches ref/pmkt_settlement_basis.md row: Polymarket Sao Paulo high-temp ladder settles on wunderground.com/history/daily/br/guarulhos/SBGR; network BR__ASOS confirmed present; prior study measured 14/14 (100%) agreement between IEM's SBGR METAR daily extreme and the settled Polymarket bracket -- SOUND basis, whole-C native precision.",
+    "nearest_real_automatic_network_stations_checked": [
+      {"network": "INMET automatic (EMA)", "station": "A701 Sao Paulo - Mirante", "distance_km_from_SBGR": 16.4, "cadence": "hourly only (per INMET's own docs)", "verdict": "too far AND too coarse"},
+      {"network": "INMET automatic (EMA)", "station": "A771 Sao Paulo - Interlagos", "distance_km_from_SBGR": 38.2, "cadence": "hourly only", "verdict": "too far AND too coarse"},
+      {"network": "CGE-SP municipal automatic stations", "station": "none within Guarulhos municipality; nearest is Penha/Sao Miguel Paulista in eastern Sao Paulo city", "distance_km_from_SBGR": "~10-15km (not precisely geocoded; outside Guarulhos municipal boundary entirely)", "cadence": "5-10min (genuine sub-hourly network, but wrong site)", "verdict": "cadence would clear the bar but station is not co-located and CGE-SP has zero stations in Guarulhos"}
+    ]
+  },
+  "candidates_checked": [
+    {
+      "name": "SBGR's own METAR/SPECI, via IEM global ASOS mirror (mesonet.agron.iastate.edu, network BR__ASOS)",
+      "status": "VERIFIED -- confirmed HOURLY-ONLY (fails sub-hourly bar); this is the ceiling free cadence for the settlement station itself",
+      "cadence_verified": "24.2 obs/day average over a real 51-day pull (2026-06-01 to 2026-07-22); 95.3% of reports fall exactly on minute :00 (strict routine hourly METAR); the remaining ~4.7% are sparse, irregular-minute SPECI (~1.2/day average), not a fixed sub-hourly schedule -- fails the >=100 rows/day sub-hourly proof bar by a wide margin",
+      "auth": "none -- open HTTP GET, no API key/account",
+      "rate_limits": "none documented; this session made sequential polite pulls, no throttling observed",
+      "licensing": "IEM/NOAA data, public domain / free reuse (US government + IEM mirror of WMO GTS traffic)",
+      "history_depth_verified_days": "51+ days confirmed present in one pull (2026-06-01 to 2026-07-22); IEM's ASOS archive for international METAR stations typically extends years back, easily clearing the >=90-day requirement for the (hourly) baseline itself, though this run only pulled the 51-day window plus two isolated single-day checks",
+      "recent_day_pulled": "2026-07-21 -> 24 rows",
+      "sixty_day_back_pulled": "2026-05-24 (via a 2-day window request) -> 27 rows for the window, consistent with ~24/day",
+      "exact_reproducible_request_recent_day": "https://mesonet.agron.iastate.edu/cgi-bin/request/asos.py?station=SBGR&data=all&year1=2026&month1=7&day1=21&year2=2026&month2=7&day2=22&tz=Etc/UTC&format=onlycomma&latlon=no&elev=no&missing=M&trace=T&direct=no&report_type=3&report_type=4",
+      "exact_reproducible_request_60d_back": "https://mesonet.agron.iastate.edu/cgi-bin/request/asos.py?station=SBGR&data=all&year1=2026&month1=5&day1=24&year2=2026&month2=5&day2=25&tz=Etc/UTC&format=onlycomma&latlon=no&elev=no&missing=M&trace=T&direct=no&report_type=3&report_type=4",
+      "cache_files": [
+        "venue_expansion/cache/saopaulo/iem_recent_20260721.csv (24 rows)",
+        "venue_expansion/cache/saopaulo/iem_60dback_20260524.csv (27 rows, 2-day window)",
+        "venue_expansion/cache/saopaulo/iem_junjul.csv (51-day pull, 1284 rows total, used to compute the 24.2/day average and the :00-minute-dominance statistic)",
+        "venue_expansion/cache/saopaulo/iem_today_20260723.csv (used for the cross-check below)"
+      ]
+    },
+    {
+      "name": "NOAA aviationweather.gov METAR API -- used as independent cross-check source only",
+      "status": "VERIFIED -- confirms IEM's SBGR feed is reading genuine, correct station data (not a broken/partial mirror); also hourly-only, same source",
+      "exact_reproducible_request": "https://aviationweather.gov/api/data/metar?ids=SBGR&format=json&hours=3",
+      "cross_check_result": "2026-07-23 22:00Z: aviationweather.gov temp=16C, raw='METAR SBGR 232200Z 17006KT 8000 OVC007 16/14 Q1020'. IEM row for the identical timestamp: tmpf=60.80F=16.0C, identical raw METAR string verbatim. Diff = 0.0C -- exact match between two independently-sourced NOAA-adjacent mirrors, confirming feed integrity.",
+      "cache_files": ["venue_expansion/cache/saopaulo/avwx_check.json", "venue_expansion/cache/saopaulo/iem_today_20260723.csv"]
+    },
+    {
+      "name": "INMET (Instituto Nacional de Meteorologia) automatic-station catalog + API (apitempo.inmet.gov.br)",
+      "status": "VERIFIED via real pull of the full 673-station national catalog -- EXCLUDED: hourly-only cadence per INMET's own documentation, AND no station co-located with SBGR",
+      "cadence": "hourly only ('disponibilizados diariamente, de hora em hora... dados observados nas estacoes meteorologicas automaticas... a cada hora', per INMET's own portal notice and independent secondary sources)",
+      "auth": "none for the station-catalog endpoint (apitempo.inmet.gov.br/estacoes/T), though this session found the bare endpoint returns a TLS-level connection reset without a browser-like User-Agent header -- adding one (Mozilla/5.0 Chrome) fixed it immediately; no API key/account needed",
+      "geographic_finding": "Nearest INMET automatic station to SBGR (-23.4356,-46.4731) is A701 'Sao Paulo - Mirante' at -23.496,-46.620, 16.4km away -- not co-located (contrast: Tokyo's JMA AMeDAS Haneda point was ~0.3km from RJTT and treated as effectively the same site in the prior Tokyo feedhunt). No INMET station named or geolocated at Guarulhos airport exists in the 673-station national catalog.",
+      "exact_reproducible_request": "https://apitempo.inmet.gov.br/estacoes/T  (requires header: User-Agent: Mozilla/5.0 ... Chrome/...)",
+      "cache_files": ["venue_expansion/cache/saopaulo/inmet_stations_T.json (673 stations, full national catalog)", "venue_expansion/cache/saopaulo/inmet_catalog.html"]
+    },
+    {
+      "name": "REDEMET (DECEA aviation met network + API)",
+      "status": "NOT independently pulled from the API (requires free 'cadastro'/API-key registration, not completed this session) -- but its scope is documented and it does not clear the bar even as a hypothesis",
+      "reason": "REDEMET's own help documentation (ajuda.decea.mil.br) confirms its only surface-obs API product is 'mensagens/metar' (METAR/SPECI messages, JSON, API-key gated, ~8760 records/request cap). DECEA's own public FAQ states verbatim that airport surface station data ('Metar') is 'coletado de uma em uma hora ou em horarios intermediarios caso esteja ocorrendo algum evento especial' -- i.e. explicitly confirms the same hourly+irregular-special cadence already measured directly via IEM. REDEMET's 'meteograma' visualization tool is described as a graphical view of METAR/TAF, not a separate finer-cadence data source. No SYNOP, AWOS-raw, or other higher-frequency surface product was found documented for REDEMET.",
+      "sources_checked": ["https://ajuda.decea.mil.br/base-de-conhecimento/api-redemet-mensagem-metar/", "https://ajuda.decea.mil.br/base-de-conhecimento/quais-informacoes-meteorologicas-estao-disponiveis-para-visualizacao-na-redemet-2/"]
+    },
+    {
+      "name": "CGE-SP (Centro de Gerenciamento de Emergencias, Sao Paulo municipal automatic weather network)",
+      "status": "VERIFIED via real pull of the live 32-station list -- EXCLUDED: genuine 5-10min cadence but zero stations in Guarulhos, wrong site entirely",
+      "cadence": "5min (automatic weather stations) / 10min (telemetric rain gauges) per CGE-SP's own public description -- would have cleared the sub-hourly bar easily IF a station existed at the settlement site",
+      "geographic_finding": "Pulled CGE-SP's live station list (cgesp.org/v3/estacoes-meteorologicas.jsp): 32 stations, all within the city of Sao Paulo proper (Penha, Perus, Pirituba, Freguesia do O, Santana/Tucuruvi, Tremembe, Sao Miguel Paulista, Itaim Paulista, Sao Mateus, Se-CGE, Butanta, Ipiranga, Santo Amaro, M Boi Mirim, Cidade Ademar, Barragem Parelheiros, Marsilac, Lapa, Campo Limpo, Capela do Socorro x2, Vila Formosa, Mooca, Itaquera, Vila Prudente, Vila Maria/Guilherme, Vila Mariana, Riacho Grande, Maua, Santana do Parnaiba, Jabaquara, Pinheiros). NONE are in Guarulhos, a distinct neighboring municipality outside Sao Paulo city limits where SBGR sits -- CGE-SP's network does not extend there. An earlier web-search AI summary had suggested a 'Guarulhos Airport station' existed in this network; the live station-list pull directly falsifies that.",
+      "exact_reproducible_request": "https://www.cgesp.org/v3/estacoes-meteorologicas.jsp",
+      "cache_files": ["venue_expansion/cache/saopaulo/cge_estacoes.html", "venue_expansion/cache/saopaulo/cge_fontes.html"]
+    },
+    {
+      "name": "Infraero airport weather status page (2013 news reference, 'updated every 5 minutes')",
+      "status": "NOT pursued further -- checked via secondary source, found to be a status-indicator refresh, not a new observation feed",
+      "reason": "The cited 'every 5 minutes' update was a UI refresh cadence for a green/yellow/red operational-status map across Infraero's 63 airports, sourced from the same METAR (2013-era news article, current live/archive availability unverified and likely defunct -- no working API or archive endpoint found)."
+    },
+    {
+      "name": "MADIS (NOAA Meteorological Assimilation Data Ingest System)",
+      "status": "NOT independently pulled -- registration-gated (free NOAA/MADIS account, not completed this session)",
+      "reason": "MADIS's international coverage for a country like Brazil would at best relay the same GTS METAR/SYNOP traffic already directly characterized via IEM/aviationweather.gov (both confirmed hourly+irregular-special). Since no genuine sub-hourly upstream Brazilian national feed for this airport was found to exist at all in this run, MADIS has no finer source to carry for SBGR specifically."
+    },
+    {
+      "name": "Synoptic Data free tier",
+      "status": "NOT pulled -- token-gated (free developer account signup not completed this session)",
+      "reason": "Synoptic aggregates from national/mesonet providers; for a Brazilian airport with no verified sub-hourly national source, Synoptic would only re-carry the same METAR-derived hourly data already verified via two independent NOAA-adjacent mirrors (IEM, aviationweather.gov)."
+    },
+    {
+      "name": "Meteostat",
+      "status": "EXCLUDED -- hourly-only aggregator per task rubric, would not beat the already-measured hourly METAR baseline"
+    },
+    {
+      "name": "Open-Meteo historical archive",
+      "status": "EXCLUDED per task instruction -- ERA5/model reanalysis, not station observations"
+    },
+    {
+      "name": "OGIMET",
+      "status": "Attempted, blocked",
+      "reason": "Both the gsynres (SYNOP) and display_metars2 (METAR) endpoints returned bot-block pages in this session (403 Forbidden on gsynres; an identically-sized 1677-byte blocked-content page on display_metars2, matching the same block signature observed in the prior London feedhunt's cached ogimet_*.html files). Redundant in any case -- OGIMET's SBGR METAR archive would only mirror the same hourly+special-only cadence already directly confirmed via IEM and aviationweather.gov.",
+      "cache_files": ["venue_expansion/cache/saopaulo/ogimet_check_20260721.html", "venue_expansion/cache/saopaulo/ogimet_metar_20260721.txt"]
+    }
+  ],
+  "verification_method": {
+    "recent_day_pulled": "2026-07-21 (2 days before run date) -> 24 rows (hourly)",
+    "sixty_day_back_pulled": "2026-05-24 (60 days before run date, via a 2-day-window request) -> 27 rows for the window, consistent with ~24/day (hourly)",
+    "extended_check": "51-day continuous pull (2026-06-01 to 2026-07-22): 1284 rows / 51 days = 24.2 rows/day average, 95.3% exactly on minute :00",
+    "rows_per_day_recent": 24,
+    "rows_per_day_60d_back_window_avg": 13.5,
+    "sub_hourly_threshold_note": "24 rows/day is strictly hourly and falls far short of the task's >=100 rows/day sub-hourly proof bar. No candidate in this run cleared it for the SBGR settlement site.",
+    "spot_value_cross_check": [
+      {
+        "utc_time": "2026-07-23 22:00",
+        "iem_sbgr_tempC": 16.0,
+        "avwx_sbgr_tempC": 16.0,
+        "iem_raw_metar": "SBGR 232200Z 17006KT 8000 OVC007 16/14 Q1020",
+        "avwx_raw_metar": "METAR SBGR 232200Z 17006KT 8000 OVC007 16/14 Q1020",
+        "diff_C": 0.0
+      }
+    ],
+    "plausibility_verdict": "Exact match between two independently-sourced NOAA-adjacent METAR mirrors (IEM, aviationweather.gov) confirms the SBGR feed itself is reading genuine, correct station data -- the hourly-only finding is a real cadence characteristic of the station's own reporting practice (confirmed independently by DECEA's own FAQ text), not a broken or partial data pull.",
+    "realtime_vs_historical_lag": {
+      "historical_availability": "Same as real-time for the hourly METAR baseline itself -- IEM/aviationweather.gov serve completed hours essentially immediately; no separate historical-archive lag was found for the (hourly, non-viable) baseline feed.",
+      "realtime_availability": "SBGR METAR is disseminated in real time (aviationweather.gov shows receiptTime within ~1-4 minutes of reportTime), but this does not change the underlying hourly+irregular-special OBSERVATION cadence -- there is no finer real-time product either."
+    }
+  },
+  "auth_summary": "The (non-viable) baseline METAR feeds (IEM, aviationweather.gov) require no auth. INMET's station catalog requires no auth but needs a browser-like User-Agent header (bare curl gets a TLS connection reset). REDEMET's API, MADIS, and Synoptic Data all require free account/token registration, not completed this session since none was expected to clear the sub-hourly bar given what was independently confirmed about the underlying station cadence.",
+  "rate_limits_summary": "No hard rate limits encountered on IEM, aviationweather.gov, INMET, or CGE-SP in this session (sequential pulls, ~1/sec with pauses). OGIMET returned bot-block pages regardless of pacing.",
+  "licensing_summary": "IEM/NOAA METAR mirrors: public domain / free US-government-adjacent reuse. INMET data: Brazilian federal open-data (INMET states its data is public/free for the automatic-station network, per its portal). CGE-SP: Sao Paulo municipal open data, publicly viewable, no explicit license text found in the pages fetched this session -- not relevant here since CGE-SP was excluded on geographic grounds, not licensing.",
+  "relevance_to_grounding_blocker": "This result CONFIRMS, with fresh real pulls, the exact blocker already named in ref/pmkt_final_verdict.md and GROUNDING.md: 'hourly METAR (only free feed for the 5 non-US cities) under-reports the diurnal peak by ~1h of temperature change' -- for Sao Paulo specifically, unlike the prior London and Tokyo feedhunts (both of which found a genuinely finer free feed: EGLC's native 30-min SPECI cadence and JMA's 10-min AMeDAS respectively), NO finer free feed exists for SBGR or any genuinely co-located station. The GROUNDING GO-path #2 ('a genuinely finer free feed for the international cities from their national met agencies') does NOT pan out for Sao Paulo: INMET (Brazil's national met agency) is itself hourly-only and geographically absent from the airport, and the one genuine sub-hourly Brazilian network found (CGE-SP, city of Sao Paulo) has no coverage of Guarulhos at all. Sao Paulo therefore remains coverage-blocked on this specific mechanism; this is a valid negative finding, not a partial result requiring more digging within the FREE-feed constraint set by this task (the remaining unexplored paths -- REDEMET API, MADIS, Synoptic -- are all gated AND structurally incapable of exceeding the cadence already directly measured at the source, per the reasoning given in each candidate's entry above).",
+  "sample_rows": [
+    {"station": "SBGR", "utc_datetime": "2026-07-21 00:00", "temp_C": 16.0, "raw_metar": "SBGR 210000Z 08003KT CAVOK 16/11 Q1018"},
+    {"station": "SBGR", "utc_datetime": "2026-07-21 19:00", "temp_C": 27.0, "raw_metar": "SBGR 211900Z 30011KT CAVOK 27/11 Q1015"},
+    {"station": "SBGR", "utc_datetime": "2026-05-24 00:00", "temp_C": null, "note": "see cache file venue_expansion/cache/saopaulo/iem_60dback_20260524.csv for full rows"},
+    {"station": "SBGR", "utc_datetime": "2026-07-23 22:00", "temp_C": 16.0, "raw_metar": "SBGR 232200Z 17006KT 8000 OVC007 16/14 Q1020", "cross_check_source": "aviationweather.gov", "cross_check_temp_C": 16.0}
+  ],
+  "non_negotiables_check": {
+    "cache_then_delete_politeness": "Sequential requests, ~1/sec with pauses, cached under venue_expansion/cache/saopaulo/ (gitignored per repo convention)",
+    "no_outcome_conditioning": "This is a feed-existence/cadence verification only, no signal or trading logic touched",
+    "dry_negative_reporting": "This IS the negative result: no sub-hourly free SBGR (or co-located-station) feed was found despite checking INMET, REDEMET, IEM/aviationweather.gov METAR mirrors, CGE-SP, Infraero, and excluding Meteostat/Open-Meteo/OGIMET per rubric or bot-block. Reported plainly per non-negotiable #9 rather than stretched into a false VIABLE."
+  }
+}

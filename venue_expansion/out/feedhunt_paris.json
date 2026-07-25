@@ -1,0 +1,145 @@
+{
+  "agent": "feedhunt_paris",
+  "date": "2026-07-23",
+  "task": "Find a FREE sub-hourly historical surface-obs feed for LFPB (Paris-Le Bourget), the exact station Polymarket's Paris high-temp ladder settles on (per ref/pmkt_settlement_basis.md, wunderground.com/history/daily/fr/bonneuil-en-france/LFPB).",
+  "verdict": "VIABLE",
+  "verdict_tier": "sub-hourly, MARGINAL tier per task rubric (30-min, not 10-min-or-better)",
+  "headline": "LFPB issues genuine half-hourly (H:00 and H:30 UTC) automated METAR/AUTO reports, 48 obs/day, not just hourly (24/day). Verified via three independent free sources (IEM global ASOS mirror, NOAA aviationweather.gov, Ogimet) with an exact-match cross-checked raw METAR string. No auth, no rate-limit gate, >=164 days of retrievable history confirmed (likely years more, not exhaustively tested). Meteo-France's OWN official open-data channels (meteo.data.gouv.fr / data.gouv.fr) were checked first per task instruction and are a DEAD END for this station/variable: their bulk 'Donnees climatologiques de base - 6 minutes' dataset is PRECIPITATION ONLY (confirmed from the dataset description), and their finest bulk TEMPERATURE archive is 'Donnees climatologiques de base - horaires' (hourly only) -- genuinely sub-hourly official temperature bulk data does not exist as an anonymous open download. This finding mirrors the sibling London (EGLC) feedhunt: same winning source (IEM asos.py with report_type=3&4), same 48/day cadence, same report_type=3-only undercount bug in the prior repo script.",
+  "station": {
+    "icao": "LFPB",
+    "name": "Paris - Le Bourget Airport",
+    "meteofrance_id": "95088001",
+    "wmo_index": "07150",
+    "meteofrance_network_pack": "RADOME (confirmed present in Meteo-France's own official station metadata list)",
+    "lat": 48.967333,
+    "lon": 2.427667,
+    "elev_m": 49,
+    "settlement_basis_confirmed": "matches ref/pmkt_settlement_basis.md row: Polymarket Paris high-temp ladder cites 'Paris-Le Bourget Airport Station', wunderground.com/history/daily/fr/bonneuil-en-france/LFPB -- same station as this feed; that same study's IEM-daily-extreme-vs-settled-bracket check found 14/14 (100%) agreement for Paris/LFPB"
+  },
+  "candidates_checked": [
+    {
+      "name": "IEM global ASOS/METAR mirror (Iowa Environmental Mesonet, mesonet.agron.iastate.edu, network FR__ASOS)",
+      "status": "VERIFIED VIABLE -- winning candidate",
+      "cadence_verified": "30-min (48 obs/day: reports at :00 and :30 past every UTC hour)",
+      "auth": "none -- fully open HTTP GET, no API key, no account",
+      "rate_limits": "none documented; informal politeness expected (this run: ~7 sequential requests, ~1/sec, no throttling or errors observed)",
+      "licensing": "IEM redistributes WMO GTS METAR traffic (public aviation weather distribution); IEM's own site states data is provided as-is for research/public use, no restrictive license found",
+      "history_depth_verified_days": 164,
+      "history_depth_note": "Verified back to 2026-02-10 (164 days before run date 2026-07-23) at full 48/day cadence. Not tested further back in this session; IEM's global mirror generally retains years of METAR history for stations like this, so >=90-day requirement is comfortably cleared.",
+      "realtime_lag_minutes_observed": "archive endpoint (asos.py) lagged >37 min at query time (22:37 UTC, most recent archived row was 22:00 UTC, the 22:30 row not yet ingested into the bulk archive); the live METAR tap (aviationweather.gov) already had the 22:30Z ob 5-7 min after issuance -- see cross-check row below. Historical (>1 day old) data has no lag concern -- this is what unblocks the backtest; live signal generation would need the faster tap (aviationweather.gov / MADIS / Synoptic), not the asos.py archive endpoint.",
+      "exact_reproducible_request": "https://mesonet.agron.iastate.edu/cgi-bin/request/asos.py?station=LFPB&data=all&year1=2026&month1=7&day1=21&year2=2026&month2=7&day2=22&tz=Etc/UTC&format=onlycomma&latlon=no&elev=no&missing=M&trace=T&direct=no&report_type=3&report_type=4",
+      "critical_parameter_note": "MUST pass report_type=3&report_type=4 (routine + special/SPECI) to get the full 48/day. report_type=3 alone (the prior repo script's convention, ref/pmkt_final_verdict.py line 243) gives only 24 rows/day -- verified directly in this session (see iem_rt3only_20260721.csv, 24 rows vs 48 for the combined query, same underlying day). This is the SAME correction already found for London (EGLC) in the sibling feedhunt_london.json, now independently reproduced for Paris -- strong evidence the report_type=3-only undercount is a systemic bug affecting the prior study's whole non-US whitelist, not a one-off.",
+      "cache_files": [
+        "venue_expansion/cache/paris/iem_recent_20260721.csv (48 rows, recent day)",
+        "venue_expansion/cache/paris/iem_60dback_20260524.csv (48 rows, ~60 days back)",
+        "venue_expansion/cache/paris/iem_far_20260210.csv (48 rows, 164 days back)",
+        "venue_expansion/cache/paris/iem_today_20260723.csv (45 rows so far today through 22:00Z, confirms near-real-time with archive-endpoint lag)",
+        "venue_expansion/cache/paris/iem_rt3only_20260721.csv (24 rows -- the OLD, undercounted routine-only pull, kept for comparison)"
+      ]
+    },
+    {
+      "name": "NOAA aviationweather.gov official METAR API (independent cross-check source)",
+      "status": "VERIFIED -- corroborates IEM cadence and values, real-time only (no historical archive endpoint used)",
+      "cadence_verified": "30-min live (obs at :00 and :30 past hour, matching IEM)",
+      "auth": "none",
+      "exact_reproducible_request": "https://aviationweather.gov/api/data/metar?ids=LFPB&format=json&hours=3",
+      "realtime_lag_observed": "receiptTime 22:32:22Z for the 22:30:00Z observation -- roughly 2 min lag, i.e. this tap is materially faster than IEM's bulk archive endpoint for the most recent obs",
+      "cache_file": "venue_expansion/cache/paris/avwx_check.json",
+      "role": "used only as an independent real-time cross-check of cadence and values, not as the historical feed (no bulk historical endpoint tested)"
+    },
+    {
+      "name": "Ogimet METAR archive (ogimet.com, display_metars2.php)",
+      "status": "VERIFIED -- corroborates IEM value with an EXACT raw-METAR-text match on a historical (2-day-back) timestamp",
+      "cadence_verified": "30-min, spot-checked one hour window (23:00-23:59 UTC, 2026-07-21): returned both the :00 and :30 reports",
+      "auth": "none for the web display endpoint used",
+      "licensing": "ogimet.com states free for non-commercial/research use; no login gate encountered",
+      "exact_reproducible_request_single_hour": "https://www.ogimet.com/display_metars2.php?lang=en&lugar=LFPB&tipo=ALL&ord=REV&nil=NO&fmt=txt&ano=2026&mes=7&day=21&hora=23&anof=2026&mesf=7&dayf=21&horaf=23&minf=59&send=send",
+      "cache_file": "venue_expansion/cache/paris/ogimet_check_20260721_23.html",
+      "role": "secondary/backup source and independent value cross-check for the historical (2026-07-21) window; IEM remains the primary recommended feed for bulk historical pulls given its clean multi-day-range CSV endpoint"
+    },
+    {
+      "name": "Meteo-France official open data (meteo.data.gouv.fr / data.gouv.fr, 'Donnees climatologiques de base' family)",
+      "status": "CHECKED THOROUGHLY per task's explicit start-here instruction -- CONFIRMED NOT VIABLE for sub-hourly temperature",
+      "reason": "Enumerated the full Meteo-France organization dataset catalog on data.gouv.fr (123 datasets). The only genuinely 6-minute ('infra-horaire') bulk-downloadable dataset is 'Donnees climatologiques de base - 6 minutes' (and its 'stations complementaires' counterpart) -- confirmed from the dataset's own description ('pour le parametre precipitation au pas temps 6 minutes') that this is PRECIPITATION ONLY, not temperature. The finest bulk TEMPERATURE dataset in the same family is 'Donnees climatologiques de base - horaires' -- hourly, does not clear the sub-hourly bar. The separate 'Donnees d'observation des principales stations meteorologiques' (SYNOP) dataset is explicitly documented as 'Frequence : 3 h' -- coarser than hourly. Confirmed LFPB/Le Bourget IS a station Meteo-France tracks (id 95088001, WMO 07150, network pack 'RADOME') via the official station metadata list, so the gap is a genuine product-availability gap, not a station-coverage gap: Meteo-France's automated RADOME sensors DO measure temperature at high internal frequency, but that finer-than-hourly temperature stream is not exposed as an anonymous open bulk download -- only the derived hourly aggregate and the raw precipitation 6-min series are. A real-time/short-retention 6-min temperature tap may exist behind the newer 'portail-api.meteofrance.fr' Observation API, but that requires free account/API-key registration (out of scope to create in this session) and, being a real-time product, was not established to have >=90 days of retrievable HISTORY even if pulled -- flagged as an unverified possible upgrade path, not relied on.",
+      "sources_checked": [
+        "https://www.data.gouv.fr/api/1/organizations/meteo-france/datasets/ (full 123-dataset catalog enumerated)",
+        "https://www.data.gouv.fr/api/1/datasets/donnees-climatologiques-de-base-6-minutes/ (confirmed precipitation-only)",
+        "https://www.data.gouv.fr/api/1/datasets/donnees-climatologiques-de-base-6-minutes-stations-complementaires/ (confirmed precipitation-only)",
+        "https://www.data.gouv.fr/api/1/datasets/donnees-d-observation-des-principales-stations-meteorologiques/ (confirmed 3-hourly SYNOP)",
+        "https://www.data.gouv.fr/fr/datasets/r/79cdea2f-55c5-43b2-82c4-4a82534bba0a (official station metadata CSV -- confirmed LE BOURGET / 95088001 / WMO 07150 / RADOME present)",
+        "https://donneespubliques.meteofrance.fr/?fond=produit&id_produit=92&id_rubrique=37 ('Donnees infra-horaires (6 minutes)' product page -- requires portal account registration, and per the data.gouv.fr dataset description this product line is precipitation-parameter-scoped)"
+      ],
+      "cache_files": [
+        "venue_expansion/cache/paris/mf_all_datasets.json",
+        "venue_expansion/cache/paris/ds_6min.json",
+        "venue_expansion/cache/paris/ds_6min_compl.json",
+        "venue_expansion/cache/paris/ds_principales.json",
+        "venue_expansion/cache/paris/liste_stations_obs.csv"
+      ]
+    },
+    {
+      "name": "MADIS (NOAA Meteorological Assimilation Data Ingest System)",
+      "status": "NOT independently pulled -- redundant with verified IEM/aviationweather.gov data",
+      "reason": "MADIS's international METAR ingest is the same underlying WMO GTS METAR stream IEM and aviationweather.gov already mirror; it requires a free NOAA/MADIS account (registration-gated) for bulk historical access. Since IEM already gives the identical station data with zero auth and a verified reproducible URL, MADIS was not separately pulled -- would not add cadence beyond 30-min for this station."
+    },
+    {
+      "name": "Synoptic Data free tier",
+      "status": "NOT pulled -- likely redundant, token-gated",
+      "reason": "Synoptic's free tier requires an API token (signup). Its international coverage for airport stations is the same METAR feed, not expected to beat 30-min for LFPB. Not pulled given IEM already clears the bar with no auth."
+    },
+    {
+      "name": "Meteostat",
+      "status": "EXCLUDED -- hourly-only aggregator",
+      "reason": "Meteostat's bulk historical downloads are hourly resolution (it aggregates the same METAR/SYNOP sources but resamples to hourly). Does not clear the sub-hourly bar; not pulled."
+    },
+    {
+      "name": "Open-Meteo historical archive",
+      "status": "EXCLUDED per task instruction",
+      "reason": "Open-Meteo's historical endpoint is ERA5/model reanalysis, not station observations -- explicitly excluded by the task's own rule ('reanalysis does NOT count'). Not pulled."
+    },
+    {
+      "name": "Infoclimat (StatIC network + Meteo-France SYNOP mirror)",
+      "status": "NOT independently pulled -- likely redundant with same underlying SYNOP/METAR feed, and its own dataset listing on data.gouv.fr describes the official-station side as the same SYNOP stream already excluded above (3-hourly / hourly)",
+      "reason": "Infoclimat's open API (per its data.gouv.fr reuse listing) covers Infoclimat's own amateur StatIC network plus a mirror of Meteo-France SYNOP; for an official RADOME/METAR-reporting station like LFPB it would not be expected to beat IEM's already-verified 30-min METAR/SPECI cadence, so not pulled given time/politeness budget."
+    }
+  ],
+  "verification_method": {
+    "recent_day_pulled": "2026-07-21 (2 days before run date)",
+    "sixty_day_back_pulled": "2026-05-24 (60 days before run date)",
+    "extra_depth_check_pulled": "2026-02-10 (164 days before run date)",
+    "rows_per_day_recent": 48,
+    "rows_per_day_60d_back": 48,
+    "rows_per_day_164d_back": 48,
+    "sub_hourly_threshold_note": "Task's '>=100 rows/day proves sub-hourly' framing is calibrated for a 10-min-or-better feed (144/day); 48 rows/day is genuine 30-min cadence, i.e. sub-hourly but explicitly the 'marginal' tier the task pre-defines, not the 'strongly preferred' tier.",
+    "spot_value_cross_check": {
+      "timestamp_utc": "2026-07-21 23:30",
+      "iem_tmpf": 64.40,
+      "iem_tmpf_as_celsius": 18.0,
+      "iem_raw_metar": "LFPB 212330Z AUTO 01008KT CAVOK 18/11 Q1026 NOSIG",
+      "ogimet_independent_raw_metar": "202607212330 METAR LFPB 212330Z AUTO 01008KT CAVOK 18/11 Q1026 NOSIG=",
+      "match": "EXACT -- same raw METAR text and derived temperature (18C/64.4F) from two independently-operated free sources (IEM/Iowa State vs Ogimet/Spain)",
+      "plausibility": "18C late-evening July Paris reading is meteorologically plausible; consistent with the day's other rows (diurnal shape sane) and with the 2026-02-10 winter sample (8-9C, drizzle, OVC006, also physically consistent)"
+    },
+    "realtime_vs_historical_lag": {
+      "historical_availability": "unlimited-lag-free -- fully retrievable for any past day tested (2 days, 60 days, 164 days back), which is what the backtest needs",
+      "realtime_availability": "IEM's bulk archive endpoint (asos.py) lagged >37 min for the most recent half-hour at query time; aviationweather.gov's live METAR API had the same observation within ~2-7 min -- so live/near-real-time signal generation should tap aviationweather.gov (or MADIS/Synoptic) rather than IEM's asos.py archive, exactly per GROUNDING.md non-negotiable #5. Out of scope for this feedhunt (historical is the blocker being unblocked) but flagged for the live-wiring stage."
+    }
+  },
+  "auth_summary": "No API key, no account, no login required for the winning feed (IEM asos.py) or its two cross-check sources (aviationweather.gov, Ogimet single-hour query). All three are anonymous HTTP GET. Meteo-France's own official open-data products (checked first, per task instruction) that would be needed for a finer-than-hourly TEMPERATURE feed are either not exposed at all as bulk anonymous downloads, or (the newer portail-api.meteofrance.fr Observation API, not established to carry sub-hourly temp or long history) require free account registration.",
+  "rate_limits_summary": "No documented hard rate limit found for any of the three sources used. This session made ~9 sequential GET requests across IEM/aviationweather.gov/Ogimet/data.gouv.fr at roughly 1/sec with pauses, no throttling, no errors, no CAPTCHA. Continued politeness (sequential, ~1 req/sec, cache-then-reuse) recommended per GROUNDING.md non-negotiable #8.",
+  "licensing_summary": "IEM: public redistribution of WMO GTS METAR traffic, no restrictive terms found on the request endpoint. Ogimet: states free for non-commercial/research use. aviationweather.gov: US government (NOAA) public data, no restriction. None of these are Meteo-France's own data product, but all three ultimately carry the same underlying LFPB-originated METAR/SPECI report -- the same station and same report family Polymarket's Wunderground settlement page itself scrapes, per ref/pmkt_settlement_basis.md's 14/14 (100%) IEM-vs-settled agreement finding for Paris. Meteo-France's own open data (Etalab open license, free, no restriction) was checked and found to lack a sub-hourly temperature product for this station -- so it is not the winning candidate here, but is noted as the highest-provenance source if a future account-gated integration (portail-api.meteofrance.fr) is worth pursuing for the 6-min RADOME sensor stream.",
+  "relevance_to_grounding_blocker": "ref/GROUNDING.md and ref/pmkt_final_verdict.md's STILL-BLOCKED verdict cite 'hourly METAR... under-reports the diurnal peak by ~1h of temperature change' as the coverage blocker for the 5 non-US whitelist cities including Paris. This feedhunt found that LFPB specifically is NOT limited to hourly cadence on this same free IEM source -- the prior script's report_type=3-only query call undercounted it, identically to the already-found London case. Re-running the coverage/signal-fire analysis for Paris with the corrected report_type=3&4 (30-min) pull is a natural, cheap next step (now proven for 2 of the 5 non-US cities: London and Paris) that could partially narrow (not necessarily close) the 74% no-signal-fired gap for these cities -- flagged for a follow-up study, not claimed as resolved here.",
+  "sample_rows": [
+    {"station": "LFPB", "valid_utc": "2026-07-21 00:00", "tmpf": 60.80, "tmpc": 16.0, "raw_metar": "LFPB 210000Z AUTO 01006KT 340V040 CAVOK 16/08 Q1024 NOSIG"},
+    {"station": "LFPB", "valid_utc": "2026-07-21 00:30", "tmpf": 60.80, "tmpc": 16.0, "raw_metar": "LFPB 210030Z AUTO 01005KT 340V050 CAVOK 16/08 Q1025 NOSIG"},
+    {"station": "LFPB", "valid_utc": "2026-07-21 23:30", "tmpf": 64.40, "tmpc": 18.0, "raw_metar": "LFPB 212330Z AUTO 01008KT CAVOK 18/11 Q1026 NOSIG"},
+    {"station": "LFPB", "valid_utc": "2026-05-24 00:00", "tmpf": 66.20, "tmpc": 19.0, "raw_metar": "LFPB 240000Z AUTO 01005KT CAVOK 19/14 Q1028 NOSIG"},
+    {"station": "LFPB", "valid_utc": "2026-05-24 01:30", "tmpf": 64.40, "tmpc": 18.0, "raw_metar": "LFPB 240130Z AUTO 36005KT CAVOK 18/14 Q1028 NOSIG"},
+    {"station": "LFPB", "valid_utc": "2026-02-10 00:00", "tmpf": 48.20, "tmpc": 9.0, "raw_metar": "LFPB 100000Z AUTO 14010KT 4400 -DZ BR OVC006/// //////TCU 09/08 Q0994 TEMPO 1200 RADZ BKN004"}
+  ],
+  "non_negotiables_check": {
+    "cache_then_delete_politeness": "Sequential requests, ~1/sec with pauses, cached under venue_expansion/cache/paris/ (gitignored per repo convention)",
+    "no_outcome_conditioning": "This is a feed-existence/cadence verification only, no signal or trading logic touched",
+    "dry_negative_reporting": "Reported plainly: Meteo-France's OWN official open data (the task's suggested starting point) is a confirmed dead end for sub-hourly temperature at this station -- the win comes from IEM's global METAR mirror instead, same as London. The 30-min (not 10-min) cadence and the not-yet-tried Meteo-France account-gated Observation API are reported plainly as the honest caveats per non-negotiable #9."
+  }
+}

@@ -1,0 +1,112 @@
+{
+  "scan_date": "2026-07-23",
+  "agent": "venue_expansion/pmkt_product_sweep",
+  "mission": "Q1: scan Polymarket's Gamma catalog for non-temperature product families with the mechanical-lock shape (fast free public feed, daily/hourly cadence). Q2: verify whether ANY historical Polymarket CLOB order-book source exists (GO-path #4, ref/pmkt_final_verdict.md §5).",
+  "methodology": "Read-only public API calls (gamma-api.polymarket.com, clob.polymarket.com), ~1 req/sec with cache-first fetches under venue_expansion/cache/pmkt_product/. No auth, no orders. For Q2, verified access with real remote-columnar sample queries (pyarrow + fsspec HTTP range reads) rather than trusting search-result summaries at face value.",
+
+  "q1_product_family_scan": {
+    "headline": "NEGATIVE / mostly-dry result, consistent with wx_new_capacity_scan.md's prior conclusion. Of 168 currently-open events under Polymarket's Weather tag (tag_id=84, live-pulled 2026-07-23), 127 are the already-known daily temperature ladders and 5 are monthly precipitation brackets that graveyard-transfer as dead. The remaining 36 are one-shot/seasonal bets (hurricane-landfall-before-2027, volcano VEI, meteor strikes, pandemics, earthquake-count windows, 'hottest year on record') with no repeating daily/hourly structure. Outside the Weather tag, targeted public-search sweeps for snow, wind, tide, flight/airport, AQI, river, flood, ozone, sea-ice, gas price, box office, CPI/inflation/unemployment, and flu turned up no additional live daily/hourly mechanical-lock families beyond two genuinely new but marginal finds (AQI, Mt. Washington wind) detailed below. No snow, tide, or flight-stat family exists on Polymarket at all right now (zero listings found by any keyword).",
+    "new_families_found": [
+      {
+        "name": "AirNow PM2.5 AQI daily threshold ladder (Chicago)",
+        "status": "REAL but INTERMITTENT — not continuously live like the temperature product",
+        "detail": "Event 'Chicago Air Quality Index below 100 by...?' (slug chicago-air-quality-index-below-100-byptptpt-20260717130414628) is structurally identical to the temperature ladder mechanism: 4 rolling 'by date X' sub-markets (July 18/19/20/21). Confirmed a REAL resting CLOB book on the live rung (July 21 YES token: 13 bid levels, best_bid 0.997, empty ask book — the same 'converged, no seller' lock state pmkt already documented for Hong Kong temperature). Settlement source: https://www.airnow.gov/state/?name=illinois (EPA AirNow network, finalized 'Daily AQI for PM2.5' figure, historical tab) — AirNow publishes near-real-time hourly PM2.5 AQI; Kalshi's own KXAQICITY family uses the SAME AirNow feed and was flagged in wx_new_capacity_scan.md as 'structurally interesting... but currently untradeable — 0 open events'. AQI is NOT a graveyard kill on Kalshi (never tested, just unavailable), so it does not need a graveyard-skip justification. CAVEAT, honestly reported: as of this 2026-07-23 snapshot the event's window (July 17-21) has already lapsed and it sits in a 2-day post-window settlement grace period per its own resolution rules; the earlier 3 sub-markets' CLOB books already 404 (removed). No successor Chicago-AQI event or any other-city AQI event was found live right now. This is real evidence the family CAN exist with a genuine book, but it is not confirmed as a standing, continuously-listed product the way the 51-city temperature ladder is — recurrence is unverified. fee_type='weather_fees', feeSchedule identical to the temperature ladders (0.05*p*(1-p), taker-only).",
+        "verdict": "Worth a periodic re-check (cheap, same script pattern as wx_new_capacity_scan.py's KXAQICITY/KXDVHIGH recheck), NOT yet a study candidate — same 'not currently tradeable enough to study' bar the prior scan applied to Kalshi's own AQI family."
+      },
+      {
+        "name": "Mt. Washington Observatory summit wind-speed monthly max (uncapped threshold ladder)",
+        "status": "REAL, live, real 2-sided book — but MONTHLY cadence, not daily/hourly",
+        "detail": "Event 'Highest Mt. Washington wind speed in July?' (7 uncapped-threshold rungs: >=85/90/95/100/105/110/115 mph). This is structurally the SAME mechanism as the CONFIRMED Kalshi mechanical-lock edge — an uncapped ('at least X') threshold whose running max is monotonic non-decreasing, so a sustained margin-cleared observation locks YES permanently, exactly like KXHIGH's one-sided threshold (NOT the 93%-wrong bracket-ladder shape that blocks the temperature study). Confirmed a REAL two-sided CLOB book on the 105mph rung: bids to 0.06 ($281 depth), asks from 0.13 ($249 depth) up through 0.99, real notional on both sides. Settlement source (per description): Mt. Washington Observatory's monthly F6 report archive (https://mountwashington.org/weather/mount-washington-weather-archives/monthly-f6/) — this is SLOW (published after month-end), which is fine for settlement but means there is no independently-fast feed named/verified here that a trader could watch to confirm the lock in real time ahead of the book. The Observatory does run a live 'current conditions' webpage (JS/data-field-driven template, implying a backend real-time obs API) — confirmed the page exists and is structured for live updates, but the underlying API endpoint and its actual update cadence were NOT pinned down within this scan's budget (the minified site JS did not yield an obvious endpoint on inspection). fee_type='weather_fees', same 0.05*p*(1-p) taker-only schedule.",
+        "verdict": "Genuinely new candidate with the right settlement-mechanism shape (uncapped threshold, not a bracket), but (a) fails the 'daily/hourly' cadence bar as strictly read — one market cycle per month, and (b) the fast-feed side of the lock-detection story is unverified, not confirmed absent. Flag for a dedicated feed-verification pass (find/confirm the live-obs API and its lag) before any study; do not treat as cleared."
+      }
+    ],
+    "graveyard_transfers_explicitly_skipped": [
+      {
+        "family": "Monthly precipitation brackets (Hong Kong, NYC, Seattle, London, Seoul — 5 cities live now, e.g. 'Precipitation in NYC in July?', NOAA-sourced, 6-rung cumulative-inches ladder settling once at month-end)",
+        "kalshi_kill_it_matches": "Rain Sleeve (96.5% DOA on the clean CLI month-to-date trigger) and Daily Rain (killed because the book reprices via retail radar access in ~1-2min, faster than detection) — RESEARCH_LEDGER.md graveyard family + wx_new_capacity_scan.md's KXRAIN* row.",
+        "material_difference_check": "None found. Same shape: a single cumulative monthly-total bracket with no repeating daily settlement moment, same NOAA-class feed, same 'accumulation runs ahead of any lock-confirmation logic' structural problem. Fee is Polymarket's usual 0.05*p*(1-p) taker-only (cheaper than Kalshi's fee, but the original kill was about signal/detection speed, not fee size, so a cheaper fee does not resurrect it). Close rules and counterparty structure (CLOB taker fill) are the same as every other Polymarket weather market already studied. Verdict: SKIP, graveyard kill transfers as-is."
+      },
+      {
+        "family": "Weekly worldwide earthquake-magnitude-count ladders (currently 2 open: >=5.5 and >=6.5, July 20-26 window, 7-rung count ladder)",
+        "kalshi_kill_it_matches": "KXEARTHQUAKECALIFORNIA / KXEARTHQUAKEJAPAN / KXBIGGESTQUAKE — wx_new_capacity_scan.md: 'USGS's auto-report is itself the fastest public feed — no lag to exploit'.",
+        "material_difference_check": "ONE real structural difference found and worth flagging even though it doesn't change the verdict: Kalshi's earthquake markets had ZERO resting book (yes_bid/yes_ask literally None on every sampled rung); Polymarket's weekly count ladder has a REAL resting book right now (e.g. the '0 earthquakes' rung: bid 0.66 / ask 0.67, real size). So liquidity is NOT the reason this is unstudiable on Polymarket, unlike Kalshi. But the KILL MECHANISM (USGS's own catalog publication is already the fastest available signal — nothing to front-run) is a fact about the feed, not about either venue's book depth, and nothing about Polymarket's fee/close-rules/counterparty structure changes that fact. Verdict: SKIP on mechanism grounds, but note the liquidity difference for the record in case a future study wants to re-examine USGS catalog latency specifically (preliminary vs. reviewed magnitude revision windows) as a separate question from this scan."
+      },
+      {
+        "family": "Weekly CDC flu hospitalization-rate ladder (currently 1 open, Week 28 2026, CDC FluView/FluSurv-NET sourced)",
+        "kalshi_kill_it_matches": "Same 'settlement bulletin IS the observable, no faster feed' shape as Kalshi's Drought Monitor kill (wx_new_capacity_scan.md: 'weekly categorical update, no resting book; the Monitor's release IS the observable, no faster feed').",
+        "material_difference_check": "Unlike Drought Monitor, this one DOES have a book (one rung shows bid 0.998/ask 0.999, volume $4.9k) — again a liquidity difference, not a mechanism difference. CDC FluView is itself a weekly aggregate release; there is no faster public feed of the same statistic to front-run it with. Verdict: SKIP, mechanism unchanged."
+      },
+      {
+        "family": "Monthly government macro prints (CPI/inflation ≈ 10+ countries, unemployment, 'how high will inflation get in 2026') — the 'official govt prints' example named in GROUNDING",
+        "kalshi_kill_it_matches": "Matches the general graveyard pattern for scheduled-release macro data: the market reprices within seconds/minutes of the release (an instant repricing event, not a slow-lag lock to front-run) — conceptually the same family as the graveyard's 'macro-surprise pass-through drift' item (N-GATE insufficient, never confirmed positive) and the broader 'settlement bulletin IS the observable' dead pattern.",
+        "material_difference_check": "Not deeply re-tested here (out of scope creep from a weather-adjacent scan into a full macro-surprise study, which the graveyard already parked as a distinct, separately-scoped question). Cadence alone (monthly, single release) disqualifies it from the 'daily/hourly' bar this Q1 sweep is scoped to. Verdict: SKIP on cadence grounds, not re-litigated on mechanism."
+      },
+      {
+        "family": "Annual/seasonal one-shots still present (hurricane-landfall-before-2027, volcano VEI, meteor strikes, pandemics, 'hottest year on record')",
+        "kalshi_kill_it_matches": "Same shape wx_new_capacity_scan.md already dismissed for Kalshi's NOAA/NHC seasonal props: annual one-shot bet, bulletin-is-the-observable, no resting book expected.",
+        "material_difference_check": "Not individually re-probed for book depth this round (spot checks in the prior scan already established the pattern and nothing about these specific instruments plausibly differs). Verdict: SKIP."
+      }
+    ],
+    "confirmed_absent": [
+      "Snow/snowfall: zero live listings found by any keyword sweep (off-season in July, matches Kalshi's KX*SNOWM off-season finding — unlike Kalshi's family this could not even be found as a dormant ticker via slug guessing within this scan's scope).",
+      "Tides: zero live listings (search hits were false positives — Dota 2 'Tidebound', NCAA 'Crimson Tide').",
+      "Flight/airport stats: zero live listings (only false positive was 'SpaceX Starship Flight Test 13', an aerospace launch market, not aviation/airline ops data).",
+      "River/flood/wildfire-specific/ozone: zero live listings beyond the already-covered AQI/precip/earthquake families."
+    ],
+    "fee_note": "Every family checked above (AQI, Mt. Washington wind, precipitation, earthquake, flu) carries the SAME feeType='weather_fees' schedule already documented for the temperature ladders — taker-only 0.05*p*(1-p), no per-cent round-up. No fee, close-rule, or counterparty divergence was found in any Weather-tag family; this Gamma tag appears to be a single uniform fee bucket regardless of underlying observable."
+  },
+
+  "q2_historical_orderbook_source": {
+    "verdict": "YES — a real, free, public, third-party historical Polymarket CLOB order-book archive exists and was verified live with a real sample query, upgrading GO-path #4 from 'not available' to 'available, with a coverage-window caveat'.",
+    "primary_source": {
+      "name": "pmxt.dev orderbook archive (archive.pmxt.dev / r2v2.pmxt.dev)",
+      "access": "Public HTTPS, no credentials required, confirmed live 2026-07-23 (docs page states this explicitly and it was verified true by direct download).",
+      "what_it_is": "Direct capture of Polymarket's CLOB websocket market channel ('We subscribe to every live asset and persist each event with its native fields'). One Parquet file per UTC hour, written ~5 min after the hour closes; empty hours are skipped.",
+      "coverage_window": "Starts 2026-04-13T19 UTC. As of 2026-07-23 this is confirmed still being actively written (verified files exist for 2026-07-22 at hours 00/06/12/18/20). This does NOT retroactively cover pmkt_final_verdict.md's own backtest sample window (2026-02-09 through 2026-07-18) for its earlier ~2 months, but DOES cover the back half of that window and everything since.",
+      "schema_verified_live": "timestamp_received, timestamp, market (condition id), event_type (e.g. 'price_change'), asset_id (the CLOB token id), bids/asks (JSON, populated on book snapshots), price, size, side, best_bid, best_ask, fee_rate_bps, transaction_hash, old/new_tick_size. This is genuine order-book/quote-level data (best_bid/best_ask on every event, full bids/asks JSON on snapshot events), not just last-trade prints — exactly the gap pmkt_final_verdict.md §3 flagged ('prices-history returns last-trade/midpoint only; no historical order-book endpoint').",
+      "license": "CC BY 4.0 (attribution required, free for commercial use).",
+      "real_sample_query_performed": "Downloaded (via pyarrow + fsspec HTTP range reads, NOT a full 470MB file pull) the hour-file for 2026-07-22T06:00 UTC (82,139,233 rows, 79 row groups). Filtered by asset_id for TWO tokens independently discovered live in this same scan's Q1 work (the Chicago AQI 'by July 21' YES token and the Mt. Washington 'at least 105mph' YES token) — BOTH were found present with real per-event best_bid/best_ask history (323 matching rows for the wind token in that single hour alone, e.g. best_bid/best_ask moving 0.17/0.27 -> 0.20/0.27 -> 0.20/0.28 across the hour with real trade sizes on BUY/SELL sides). This cross-validation (markets found live via Gamma/CLOB today, then found archived in the third-party dump) is real, not just a plausible-looking schema.",
+      "caveat": "Third-party operator (pmxt.dev) identity/operational-continuity is not vetted beyond the docs page and a working redirect at the bare domain — treat as a promising, verified-working data source for a follow-up study, not yet a permanent institutional guarantee. Recommend snapshotting/mirroring any hours a real study depends on, same 'cache-then-delete politeness' discipline as every other free feed this repo uses."
+    },
+    "secondary_academic_source": {
+      "name": "Polymarket-v1 dataset (Hugging Face: TimeSeventeen/Polymarket-v1, backing arXiv:2606.04217)",
+      "verified": "Confirmed real via HF datasets API (public, non-gated, 9,825 downloads, 16 likes, license cc-by-4.0) and the dataset's file tree (OrderFilled/, daily_aligned/, CTF/ directories + README all present).",
+      "coverage": "2022-11-21 to 2026-04-28 (41 months), transaction-level, block-timestamped, on-chain-settlement ground truth for trade direction (maker/taker).",
+      "important_distinction": "This is a TRADE TAPE (on-chain OrderFilled event log), not an order-book/ask-depth archive — it tells you what price trades executed at and who was maker/taker, not what the resting ask book looked like at a given instant. Useful as an independent, ground-truth cross-check on last-trade prices and maker/taker fee application, but it does NOT by itself remove the 'proxy, not measured ask' caveat pmkt_final_verdict.md §3 flagged — pmxt.dev's order-book capture is the piece that does that.",
+      "value_for_this_repo": "Its long back-history (starting Nov 2022) DOES cover the entirety of pmkt_final_verdict.md's Feb-July 2026 backtest window as a trade-price cross-check, complementing pmxt.dev's shorter but genuinely depth-level coverage."
+    },
+    "commercial_cluster_not_independently_verified": {
+      "names": ["polymarketdata.co", "polymarketbacktesting.com (DepthFeed)", "pmdata.dev", "polybacktest.com", "telonex.io"],
+      "note": "A cluster of near-identical-sounding commercial/SaaS sites surfaced in the same web search, several claiming similar L2-depth/tick-level Polymarket order-book products. One (polymarketdata.co) was confirmed to be a real, rendering website (HTTP 200, real page content) but was NOT further verified for actual free/paid access terms or data authenticity — out of scope once a genuinely free, verified, schema-confirmed source (pmxt.dev) was already in hand. Flagged for a future pass only if pmxt.dev's coverage window or continuity becomes a blocker."
+    },
+    "what_this_changes_for_the_repo": "GO-path #4 in pmkt_final_verdict.md §5 ('a true historical-ask source... not available today via any public endpoint found') is now OUT OF DATE as of this scan: a real, free, schema-verified historical order-book source exists for 2026-04-13 onward. A re-run of the EV study (pmkt_final_verdict.py §3) restricted to that window, using pmxt.dev's actual best_bid/best_ask-at-lock-time instead of the last-trade+half-live-spread proxy, would upgrade every post-April EV number from proxy to measured — this is now a concrete, cheap next step, not a dead end. It does not retroactively fix the pre-April portion of the existing 144-city-day sample."
+  },
+
+  "overall_read": "Both questions resolve mostly negative-with-one-real-upgrade. Q1: the temperature ladder remains the only continuously-live, daily-cadence, real-book mechanical-lock family on Polymarket; two new candidates (AQI, Mt. Washington wind) are real but each has a disqualifying caveat (AQI: not continuously listed right now; wind: monthly not daily/hourly, fast-feed side unconfirmed) and are not yet study-ready — everything else either graveyard-transfers cleanly (precipitation, earthquake-count, flu — same kill mechanism, no material Polymarket-specific structural difference) or is simply absent (snow, tide, flight stats). Q2 is a genuine positive: a real, free, verified historical order-book archive (pmxt.dev) exists from 2026-04-13 onward, cross-validated against two markets discovered independently in this same scan, and directly closes the 'no historical ask source' gap GO-path #4 was waiting on — with the honest caveat that its coverage does not reach back to the start of the existing 144-day backtest sample.",
+
+  "sources_and_cache": {
+    "gamma_api_calls": [
+      "GET /events?tag_id=84&closed=false&limit=500 (offset 0, 100)",
+      "GET /events/slug/chicago-air-quality-index-below-100-byptptpt-20260717130414628",
+      "GET /events/slug/precipitation-in-nyc-in-july-20260709144730212",
+      "GET /events/slug/highest-mtpt-washington-wind-speed-in-july-20260626193609212",
+      "GET /events/slug/flu-hospitalization-rate-week-28-2026-20260717153237039",
+      "GET /events/slug/how-many-6pt5-or-above-earthquakes-july-20-july-26-20260718184921053",
+      "GET /public-search?q=<snow|wind|tide|flight|air quality|jobless|CPI|inflation|unemployment|flu|precipitation|rain|snowfall|AQI|tides|river|flood|wildfire|sea ice|ozone|flight delay|gas price|box office|on-time|airport>&events_status=active"
+    ],
+    "clob_api_calls": [
+      "GET /book?token_id=<AQI Chicago 'by July 21' YES>",
+      "GET /book?token_id=<AQI Chicago 'by July 18' YES> (404 — book removed post-window)",
+      "GET /book?token_id=<AQI Chicago 'by July 19' NO> (404 — book removed post-window)",
+      "GET /book?token_id=<Mt. Washington 'at least 105mph' YES>"
+    ],
+    "third_party_verification": [
+      "https://archive.pmxt.dev/docs/v2-data-overview (docs, fetched + grepped raw HTML for pricing/access/coverage claims)",
+      "https://r2v2.pmxt.dev/polymarket_orderbook_2026-04-17T12.parquet (HEAD, confirmed 200/395MB)",
+      "https://r2v2.pmxt.dev/polymarket_orderbook_2026-07-22T06.parquet (real remote columnar read via pyarrow+fsspec: schema dump, full-file asset_id scan of 82.1M rows, filtered row extraction for 2 known token ids -> 323 real matching order-book events)",
+      "https://arxiv.org/abs/2606.04217 (200, real paper)",
+      "https://huggingface.co/api/datasets/TimeSeventeen/Polymarket-v1 (real, public, non-gated dataset; file tree confirmed)"
+    ],
+    "cache_dir": "venue_expansion/cache/pmkt_product/ (gitignored; Gamma/CLOB JSON responses + pmxt docs HTML cached; the two remote parquet files were NOT downloaded in full — read via HTTP range requests only, per the politeness non-negotiable)"
+  }
+}

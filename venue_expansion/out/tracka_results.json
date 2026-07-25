@@ -1,0 +1,7118 @@
+{
+ "run_utc": "2026-07-23T22:36:56.855532+00:00",
+ "sanity_hourly_reproduction": {
+  "usable": 22,
+  "never_entered": 13,
+  "coverage": 0.4090909090909091,
+  "skips": [
+   "2026-05-18: event_not_found"
+  ],
+  "exact_match_published_table": true
+ },
+ "sanity_rowcount_spotcheck": {
+  "date": "2026-07-15",
+  "hourly_rows": 24,
+  "onemin_rows": 1440,
+  "ratio": 60.0
+ },
+ "usable_city_days": 67,
+ "n_skipped": 96,
+ "skips": [
+  "chicago 2026-02-09: thin_station_data_0obs",
+  "chicago 2026-02-10: thin_station_data_0obs",
+  "chicago 2026-02-11: thin_station_data_0obs",
+  "chicago 2026-02-12: thin_station_data_0obs",
+  "chicago 2026-02-13: thin_station_data_0obs",
+  "chicago 2026-02-14: thin_station_data_0obs",
+  "chicago 2026-02-15: thin_station_data_0obs",
+  "chicago 2026-02-16: thin_station_data_0obs",
+  "chicago 2026-02-17: thin_station_data_0obs",
+  "chicago 2026-02-18: thin_station_data_0obs",
+  "chicago 2026-02-19: thin_station_data_0obs",
+  "chicago 2026-02-20: thin_station_data_0obs",
+  "chicago 2026-02-21: thin_station_data_0obs",
+  "chicago 2026-02-22: thin_station_data_0obs",
+  "chicago 2026-03-01: station_feed_gap_near_dayend",
+  "chicago 2026-03-11: station_feed_gap_near_dayend",
+  "chicago 2026-03-15: station_feed_gap_near_dayend",
+  "chicago 2026-03-16: thin_station_data_0obs",
+  "chicago 2026-03-17: thin_station_data_0obs",
+  "chicago 2026-03-18: thin_station_data_0obs",
+  "chicago 2026-03-19: thin_station_data_0obs",
+  "chicago 2026-03-20: thin_station_data_0obs",
+  "chicago 2026-03-21: thin_station_data_0obs",
+  "chicago 2026-03-22: thin_station_data_0obs",
+  "chicago 2026-03-23: thin_station_data_0obs",
+  "chicago 2026-03-24: thin_station_data_0obs",
+  "chicago 2026-03-25: thin_station_data_0obs",
+  "chicago 2026-03-26: thin_station_data_0obs",
+  "chicago 2026-03-27: thin_station_data_0obs",
+  "chicago 2026-03-28: thin_station_data_0obs",
+  "chicago 2026-03-29: thin_station_data_0obs",
+  "chicago 2026-03-30: thin_station_data_0obs",
+  "chicago 2026-03-31: event_not_found",
+  "chicago 2026-04-01: thin_station_data_0obs",
+  "chicago 2026-04-02: thin_station_data_0obs",
+  "chicago 2026-04-03: thin_station_data_0obs",
+  "chicago 2026-04-04: thin_station_data_0obs",
+  "chicago 2026-04-05: thin_station_data_0obs",
+  "chicago 2026-04-06: thin_station_data_0obs",
+  "chicago 2026-04-07: thin_station_data_0obs",
+  "chicago 2026-04-08: thin_station_data_0obs",
+  "chicago 2026-04-09: thin_station_data_0obs",
+  "chicago 2026-04-10: thin_station_data_0obs",
+  "chicago 2026-04-11: thin_station_data_0obs",
+  "chicago 2026-04-12: thin_station_data_0obs",
+  "chicago 2026-04-13: thin_station_data_0obs",
+  "chicago 2026-04-14: thin_station_data_0obs",
+  "chicago 2026-04-15: thin_station_data_0obs",
+  "chicago 2026-04-16: thin_station_data_0obs",
+  "chicago 2026-04-17: thin_station_data_0obs",
+  "chicago 2026-04-18: thin_station_data_0obs",
+  "chicago 2026-04-19: thin_station_data_0obs",
+  "chicago 2026-04-20: thin_station_data_0obs",
+  "chicago 2026-04-21: thin_station_data_0obs",
+  "chicago 2026-04-22: thin_station_data_0obs",
+  "chicago 2026-04-23: thin_station_data_0obs",
+  "chicago 2026-04-24: thin_station_data_0obs",
+  "chicago 2026-04-25: thin_station_data_0obs",
+  "chicago 2026-04-26: thin_station_data_0obs",
+  "chicago 2026-04-27: station_feed_gap_near_dayend",
+  "chicago 2026-04-28: thin_station_data_0obs",
+  "chicago 2026-04-29: thin_station_data_0obs",
+  "chicago 2026-04-30: thin_station_data_0obs",
+  "chicago 2026-05-01: thin_station_data_0obs",
+  "chicago 2026-05-02: thin_station_data_0obs",
+  "chicago 2026-05-03: thin_station_data_0obs",
+  "chicago 2026-05-04: thin_station_data_0obs",
+  "chicago 2026-05-05: thin_station_data_0obs",
+  "chicago 2026-05-06: thin_station_data_0obs",
+  "chicago 2026-05-07: thin_station_data_0obs",
+  "chicago 2026-05-08: thin_station_data_0obs",
+  "chicago 2026-05-09: thin_station_data_0obs",
+  "chicago 2026-05-10: thin_station_data_0obs",
+  "chicago 2026-05-11: station_feed_gap_near_dayend",
+  "chicago 2026-05-13: station_feed_gap_near_dayend",
+  "chicago 2026-05-15: station_feed_gap_near_dayend",
+  "chicago 2026-05-17: event_not_found",
+  "chicago 2026-05-18: event_not_found",
+  "chicago 2026-05-19: thin_station_data_0obs",
+  "chicago 2026-05-20: station_feed_gap_near_dayend",
+  "chicago 2026-05-22: station_feed_gap_near_dayend",
+  "chicago 2026-05-24: station_feed_gap_near_dayend",
+  "chicago 2026-05-26: station_feed_gap_near_dayend",
+  "chicago 2026-05-27: station_feed_gap_near_dayend",
+  "chicago 2026-05-30: station_feed_gap_near_dayend",
+  "chicago 2026-06-07: station_feed_gap_near_dayend",
+  "chicago 2026-06-12: station_feed_gap_near_dayend",
+  "chicago 2026-06-18: not_resolved_or_unparseable",
+  "chicago 2026-06-21: station_feed_gap_near_dayend",
+  "chicago 2026-06-22: station_feed_gap_near_dayend",
+  "chicago 2026-06-23: station_feed_gap_near_dayend",
+  "chicago 2026-06-24: thin_station_data_0obs",
+  "chicago 2026-06-25: station_feed_gap_near_dayend",
+  "chicago 2026-06-28: station_feed_gap_near_dayend",
+  "chicago 2026-07-09: station_feed_gap_near_dayend",
+  "chicago 2026-07-16: station_feed_gap_near_dayend"
+ ],
+ "n_winner_never_entered": 24,
+ "n_covered": 43,
+ "coverage": 0.6417910447761194,
+ "coverage_wilson_ci95": [
+  0.5221828769475225,
+  0.7460211161864552
+ ],
+ "hourly_baseline_coverage": 0.409,
+ "n_lock_records": 344,
+ "n_wrong": 0,
+ "loss_rate": 0.0,
+ "loss_rate_ci95": [
+  0.0,
+  0.011044107432808497
+ ],
+ "n_entries": 309,
+ "n_entry_wrong": 266,
+ "entry_loss_rate": 0.86084142394822,
+ "entry_loss_rate_ci95": [
+  0.8178013159811036,
+  0.8950194853445513
+ ],
+ "lock_records": [
+  {
+   "city": "chicago",
+   "date": "2026-02-23",
+   "ticker": "1407263",
+   "label": "25\u00b0F or below",
+   "side": "no",
+   "lock_utc": "2026-02-23T19:06:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-02-23",
+   "ticker": "1407264",
+   "label": "26-27\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-02-23T20:08:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-02-24",
+   "ticker": "1413733",
+   "label": "31\u00b0F or below",
+   "side": "no",
+   "lock_utc": "2026-02-24T18:37:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-02-24",
+   "ticker": "1413734",
+   "label": "32-33\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-02-24T20:45:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-02-24",
+   "ticker": "1413735",
+   "label": "34-35\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-02-24T22:51:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-02-24",
+   "ticker": "1413736",
+   "label": "36-37\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-02-25T02:17:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-02-25",
+   "ticker": "1427481",
+   "label": "29\u00b0F or below",
+   "side": "no",
+   "lock_utc": "2026-02-25T06:02:00+00:00",
+   "correct": true,
+   "cushion": 2.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-02-25",
+   "ticker": "1427482",
+   "label": "30-31\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-02-25T17:44:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-02-25",
+   "ticker": "1427483",
+   "label": "32-33\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-02-25T18:46:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-02-25",
+   "ticker": "1427484",
+   "label": "34-35\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-02-25T19:52:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-02-26",
+   "ticker": "1425394",
+   "label": "27\u00b0F or below",
+   "side": "no",
+   "lock_utc": "2026-02-26T14:48:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-02-26",
+   "ticker": "1425395",
+   "label": "28-29\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-02-26T15:16:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-02-26",
+   "ticker": "1425396",
+   "label": "30-31\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-02-26T15:47:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-02-26",
+   "ticker": "1425397",
+   "label": "32-33\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-02-26T17:26:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-02-26",
+   "ticker": "1425398",
+   "label": "34-35\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-02-26T18:21:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-02-26",
+   "ticker": "1425399",
+   "label": "36-37\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-02-26T19:10:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-02-26",
+   "ticker": "1425400",
+   "label": "38-39\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-02-26T20:40:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-02-27",
+   "ticker": "1434196",
+   "label": "53\u00b0F or below",
+   "side": "no",
+   "lock_utc": "2026-02-27T17:33:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-02-27",
+   "ticker": "1434197",
+   "label": "54-55\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-02-27T18:31:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-02-27",
+   "ticker": "1434198",
+   "label": "56-57\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-02-27T19:16:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-02-27",
+   "ticker": "1434199",
+   "label": "58-59\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-02-27T19:48:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-02-27",
+   "ticker": "1434200",
+   "label": "60-61\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-02-27T20:45:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-02-27",
+   "ticker": "1434201",
+   "label": "62-63\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-02-27T21:26:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-02-28",
+   "ticker": "1444262",
+   "label": "27\u00b0F or below",
+   "side": "no",
+   "lock_utc": "2026-02-28T06:02:00+00:00",
+   "correct": true,
+   "cushion": 17.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-02-28",
+   "ticker": "1444263",
+   "label": "28-29\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-02-28T06:02:00+00:00",
+   "correct": true,
+   "cushion": 15.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-02-28",
+   "ticker": "1444264",
+   "label": "30-31\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-02-28T06:02:00+00:00",
+   "correct": true,
+   "cushion": 13.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-02-28",
+   "ticker": "1444265",
+   "label": "32-33\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-02-28T06:02:00+00:00",
+   "correct": true,
+   "cushion": 11.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-02-28",
+   "ticker": "1444266",
+   "label": "34-35\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-02-28T06:02:00+00:00",
+   "correct": true,
+   "cushion": 9.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-02-28",
+   "ticker": "1444267",
+   "label": "36-37\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-02-28T06:02:00+00:00",
+   "correct": true,
+   "cushion": 7.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-02-28",
+   "ticker": "1444268",
+   "label": "38-39\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-02-28T06:02:00+00:00",
+   "correct": true,
+   "cushion": 5.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-02-28",
+   "ticker": "1444269",
+   "label": "40-41\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-02-28T06:02:00+00:00",
+   "correct": true,
+   "cushion": 3.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-02-28",
+   "ticker": "1444270",
+   "label": "42\u00b0F or higher",
+   "side": "yes",
+   "lock_utc": "2026-02-28T06:02:00+00:00",
+   "correct": true,
+   "cushion": 3.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-02",
+   "ticker": "1465175",
+   "label": "33\u00b0F or below",
+   "side": "no",
+   "lock_utc": "2026-03-02T15:57:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-02",
+   "ticker": "1465176",
+   "label": "34-35\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-03-02T16:37:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-02",
+   "ticker": "1465177",
+   "label": "36-37\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-03-02T17:20:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-02",
+   "ticker": "1465178",
+   "label": "38-39\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-03-02T18:25:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-03",
+   "ticker": "1475185",
+   "label": "31\u00b0F or below",
+   "side": "no",
+   "lock_utc": "2026-03-03T06:02:00+00:00",
+   "correct": true,
+   "cushion": 3.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-03",
+   "ticker": "1475186",
+   "label": "32-33\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-03-03T06:02:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-03",
+   "ticker": "1475187",
+   "label": "34-35\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-03-03T06:30:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-03",
+   "ticker": "1475188",
+   "label": "36-37\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-03-03T17:16:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-03",
+   "ticker": "1475189",
+   "label": "38-39\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-03-03T18:37:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-04",
+   "ticker": "1482552",
+   "label": "35\u00b0F or below",
+   "side": "no",
+   "lock_utc": "2026-03-04T22:12:00+00:00",
+   "correct": true,
+   "cushion": 2.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-04",
+   "ticker": "1482553",
+   "label": "36-37\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-03-04T23:37:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-04",
+   "ticker": "1482554",
+   "label": "38-39\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-03-05T00:52:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-05",
+   "ticker": "1491093",
+   "label": "37\u00b0F or below",
+   "side": "no",
+   "lock_utc": "2026-03-05T06:02:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-05",
+   "ticker": "1491094",
+   "label": "38-39\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-03-05T11:01:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-05",
+   "ticker": "1491095",
+   "label": "40-41\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-03-05T16:28:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-05",
+   "ticker": "1491096",
+   "label": "42-43\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-03-05T17:58:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-05",
+   "ticker": "1491097",
+   "label": "44-45\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-03-05T18:35:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-05",
+   "ticker": "1491098",
+   "label": "46-47\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-03-05T20:13:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-06",
+   "ticker": "1498495",
+   "label": "57\u00b0F or below",
+   "side": "no",
+   "lock_utc": "2026-03-06T18:59:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-06",
+   "ticker": "1498496",
+   "label": "58-59\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-03-06T19:29:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-06",
+   "ticker": "1498497",
+   "label": "60-61\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-03-06T19:49:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-06",
+   "ticker": "1498498",
+   "label": "62-63\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-03-06T20:05:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-07",
+   "ticker": "1506416",
+   "label": "45\u00b0F or below",
+   "side": "no",
+   "lock_utc": "2026-03-07T06:02:00+00:00",
+   "correct": true,
+   "cushion": 15.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-07",
+   "ticker": "1506417",
+   "label": "46-47\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-03-07T06:02:00+00:00",
+   "correct": true,
+   "cushion": 13.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-07",
+   "ticker": "1506418",
+   "label": "48-49\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-03-07T06:02:00+00:00",
+   "correct": true,
+   "cushion": 11.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-07",
+   "ticker": "1506419",
+   "label": "50-51\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-03-07T06:02:00+00:00",
+   "correct": true,
+   "cushion": 9.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-07",
+   "ticker": "1506420",
+   "label": "52-53\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-03-07T06:02:00+00:00",
+   "correct": true,
+   "cushion": 7.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-07",
+   "ticker": "1506421",
+   "label": "54-55\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-03-07T06:02:00+00:00",
+   "correct": true,
+   "cushion": 5.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-07",
+   "ticker": "1506422",
+   "label": "56-57\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-03-07T06:02:00+00:00",
+   "correct": true,
+   "cushion": 3.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-07",
+   "ticker": "1506423",
+   "label": "58-59\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-03-07T06:02:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-07",
+   "ticker": "1506424",
+   "label": "60\u00b0F or higher",
+   "side": "yes",
+   "lock_utc": "2026-03-07T06:02:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-08",
+   "ticker": "1514303",
+   "label": "55\u00b0F or below",
+   "side": "no",
+   "lock_utc": "2026-03-08T21:43:00+00:00",
+   "correct": true,
+   "cushion": 5.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-08",
+   "ticker": "1514304",
+   "label": "56-57\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-03-08T21:43:00+00:00",
+   "correct": true,
+   "cushion": 3.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-08",
+   "ticker": "1514305",
+   "label": "58-59\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-03-08T21:43:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-09",
+   "ticker": "1522765",
+   "label": "63\u00b0F or below",
+   "side": "no",
+   "lock_utc": "2026-03-09T17:17:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-09",
+   "ticker": "1522766",
+   "label": "64-65\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-03-09T17:47:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-09",
+   "ticker": "1522767",
+   "label": "66-67\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-03-09T18:42:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-09",
+   "ticker": "1522768",
+   "label": "68-69\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-03-09T19:20:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-09",
+   "ticker": "1522769",
+   "label": "70-71\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-03-09T20:47:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-10",
+   "ticker": "1540233",
+   "label": "55\u00b0F or below",
+   "side": "no",
+   "lock_utc": "2026-03-10T05:02:00+00:00",
+   "correct": true,
+   "cushion": 5.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-10",
+   "ticker": "1540235",
+   "label": "58-59\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-03-10T05:02:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-10",
+   "ticker": "1540234",
+   "label": "56-57\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-03-10T05:02:00+00:00",
+   "correct": true,
+   "cushion": 3.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-12",
+   "ticker": "1549897",
+   "label": "37\u00b0F or below",
+   "side": "no",
+   "lock_utc": "2026-03-12T16:14:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-12",
+   "ticker": "1549898",
+   "label": "38-39\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-03-12T16:54:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-12",
+   "ticker": "1549899",
+   "label": "40-41\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-03-12T18:45:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-12",
+   "ticker": "1549900",
+   "label": "42-43\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-03-12T20:32:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-14",
+   "ticker": "1566224",
+   "label": "31\u00b0F or below",
+   "side": "no",
+   "lock_utc": "2026-03-14T05:02:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-14",
+   "ticker": "1566225",
+   "label": "32-33\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-03-14T15:08:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-12",
+   "ticker": "2219756",
+   "label": "45\u00b0F or below",
+   "side": "no",
+   "lock_utc": "2026-05-12T12:01:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-12",
+   "ticker": "2219757",
+   "label": "46-47\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-05-12T12:33:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-12",
+   "ticker": "2219758",
+   "label": "48-49\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-05-12T13:08:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-12",
+   "ticker": "2219759",
+   "label": "50-51\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-05-12T13:41:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-12",
+   "ticker": "2219760",
+   "label": "52-53\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-05-12T13:53:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-12",
+   "ticker": "2219761",
+   "label": "54-55\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-05-12T14:23:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-12",
+   "ticker": "2219762",
+   "label": "56-57\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-05-12T14:41:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-12",
+   "ticker": "2219763",
+   "label": "58-59\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-05-12T15:03:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-12",
+   "ticker": "2219764",
+   "label": "60-61\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-05-12T15:52:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-12",
+   "ticker": "2219765",
+   "label": "62-63\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-05-12T16:26:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-12",
+   "ticker": "2219766",
+   "label": "64\u00b0F or higher",
+   "side": "yes",
+   "lock_utc": "2026-05-12T16:26:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-14",
+   "ticker": "2237417",
+   "label": "37\u00b0F or below",
+   "side": "no",
+   "lock_utc": "2026-05-14T13:20:00+00:00",
+   "correct": true,
+   "cushion": 16.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-14",
+   "ticker": "2237418",
+   "label": "38-39\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-05-14T13:20:00+00:00",
+   "correct": true,
+   "cushion": 14.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-14",
+   "ticker": "2237419",
+   "label": "40-41\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-05-14T13:20:00+00:00",
+   "correct": true,
+   "cushion": 12.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-14",
+   "ticker": "2237420",
+   "label": "42-43\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-05-14T13:20:00+00:00",
+   "correct": true,
+   "cushion": 10.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-14",
+   "ticker": "2237421",
+   "label": "44-45\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-05-14T13:20:00+00:00",
+   "correct": true,
+   "cushion": 8.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-14",
+   "ticker": "2237422",
+   "label": "46-47\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-05-14T13:20:00+00:00",
+   "correct": true,
+   "cushion": 6.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-14",
+   "ticker": "2237423",
+   "label": "48-49\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-05-14T13:20:00+00:00",
+   "correct": true,
+   "cushion": 4.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-14",
+   "ticker": "2237424",
+   "label": "50-51\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-05-14T13:20:00+00:00",
+   "correct": true,
+   "cushion": 2.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-14",
+   "ticker": "2237425",
+   "label": "52-53\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-05-14T13:26:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-14",
+   "ticker": "2237426",
+   "label": "54-55\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-05-14T13:51:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-14",
+   "ticker": "2237427",
+   "label": "56\u00b0F or higher",
+   "side": "yes",
+   "lock_utc": "2026-05-14T13:51:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-16",
+   "ticker": "2257299",
+   "label": "37\u00b0F or below",
+   "side": "no",
+   "lock_utc": "2026-05-16T05:14:00+00:00",
+   "correct": true,
+   "cushion": 28.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-16",
+   "ticker": "2257300",
+   "label": "38-39\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-05-16T05:14:00+00:00",
+   "correct": true,
+   "cushion": 26.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-16",
+   "ticker": "2257301",
+   "label": "40-41\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-05-16T05:14:00+00:00",
+   "correct": true,
+   "cushion": 24.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-16",
+   "ticker": "2257302",
+   "label": "42-43\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-05-16T05:14:00+00:00",
+   "correct": true,
+   "cushion": 22.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-16",
+   "ticker": "2257303",
+   "label": "44-45\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-05-16T05:14:00+00:00",
+   "correct": true,
+   "cushion": 20.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-16",
+   "ticker": "2257304",
+   "label": "46-47\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-05-16T05:14:00+00:00",
+   "correct": true,
+   "cushion": 18.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-16",
+   "ticker": "2257305",
+   "label": "48-49\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-05-16T05:14:00+00:00",
+   "correct": true,
+   "cushion": 16.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-16",
+   "ticker": "2257306",
+   "label": "50-51\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-05-16T05:14:00+00:00",
+   "correct": true,
+   "cushion": 14.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-16",
+   "ticker": "2257307",
+   "label": "52-53\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-05-16T05:14:00+00:00",
+   "correct": true,
+   "cushion": 12.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-16",
+   "ticker": "2257308",
+   "label": "54-55\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-05-16T05:14:00+00:00",
+   "correct": true,
+   "cushion": 10.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-16",
+   "ticker": "2257309",
+   "label": "56\u00b0F or higher",
+   "side": "yes",
+   "lock_utc": "2026-05-16T05:14:00+00:00",
+   "correct": true,
+   "cushion": 10.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-23",
+   "ticker": "2319815",
+   "label": "59\u00b0F or below",
+   "side": "no",
+   "lock_utc": "2026-05-23T21:02:00+00:00",
+   "correct": true,
+   "cushion": 9.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-23",
+   "ticker": "2319816",
+   "label": "60-61\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-05-23T21:02:00+00:00",
+   "correct": true,
+   "cushion": 7.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-23",
+   "ticker": "2319817",
+   "label": "62-63\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-05-23T21:02:00+00:00",
+   "correct": true,
+   "cushion": 5.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-23",
+   "ticker": "2319818",
+   "label": "64-65\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-05-23T21:02:00+00:00",
+   "correct": true,
+   "cushion": 3.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-23",
+   "ticker": "2319819",
+   "label": "66-67\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-05-23T21:02:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-25",
+   "ticker": "2336754",
+   "label": "53\u00b0F or below",
+   "side": "no",
+   "lock_utc": "2026-05-25T06:00:00+00:00",
+   "correct": true,
+   "cushion": 7.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-25",
+   "ticker": "2336755",
+   "label": "54-55\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-05-25T06:00:00+00:00",
+   "correct": true,
+   "cushion": 5.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-25",
+   "ticker": "2336756",
+   "label": "56-57\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-05-25T06:00:00+00:00",
+   "correct": true,
+   "cushion": 3.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-25",
+   "ticker": "2336757",
+   "label": "58-59\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-05-25T06:00:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-25",
+   "ticker": "2336758",
+   "label": "60-61\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-05-25T11:50:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-25",
+   "ticker": "2336759",
+   "label": "62-63\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-05-25T12:11:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-25",
+   "ticker": "2336760",
+   "label": "64-65\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-05-25T12:35:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-25",
+   "ticker": "2336761",
+   "label": "66-67\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-05-25T13:03:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-25",
+   "ticker": "2336762",
+   "label": "68-69\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-05-25T13:28:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-25",
+   "ticker": "2336763",
+   "label": "70-71\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-05-25T14:01:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-25",
+   "ticker": "2336764",
+   "label": "72\u00b0F or higher",
+   "side": "yes",
+   "lock_utc": "2026-05-25T14:01:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-28",
+   "ticker": "2358577",
+   "label": "65\u00b0F or below",
+   "side": "no",
+   "lock_utc": "2026-05-28T15:01:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-28",
+   "ticker": "2358578",
+   "label": "66-67\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-05-28T16:24:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-28",
+   "ticker": "2358579",
+   "label": "68-69\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-05-28T18:04:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-29",
+   "ticker": "2367333",
+   "label": "65\u00b0F or below",
+   "side": "no",
+   "lock_utc": "2026-05-29T13:36:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-29",
+   "ticker": "2367334",
+   "label": "66-67\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-05-29T13:59:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-29",
+   "ticker": "2367335",
+   "label": "68-69\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-05-29T14:26:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-29",
+   "ticker": "2367336",
+   "label": "70-71\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-05-29T14:44:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-29",
+   "ticker": "2367337",
+   "label": "72-73\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-05-29T15:29:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-29",
+   "ticker": "2367338",
+   "label": "74-75\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-05-29T16:11:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-29",
+   "ticker": "2367339",
+   "label": "76-77\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-05-29T16:58:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-29",
+   "ticker": "2367340",
+   "label": "78-79\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-05-29T17:53:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-29",
+   "ticker": "2367341",
+   "label": "80-81\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-05-29T19:19:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-29",
+   "ticker": "2367342",
+   "label": "82-83\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-05-29T21:21:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-29",
+   "ticker": "2367343",
+   "label": "84\u00b0F or higher",
+   "side": "yes",
+   "lock_utc": "2026-05-29T21:21:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-31",
+   "ticker": "2383727",
+   "label": "47\u00b0F or below",
+   "side": "no",
+   "lock_utc": "2026-05-31T05:51:00+00:00",
+   "correct": true,
+   "cushion": 5.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-31",
+   "ticker": "2383728",
+   "label": "48-49\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-05-31T05:51:00+00:00",
+   "correct": true,
+   "cushion": 3.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-31",
+   "ticker": "2383729",
+   "label": "50-51\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-05-31T05:51:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-31",
+   "ticker": "2383730",
+   "label": "52-53\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-05-31T05:54:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-31",
+   "ticker": "2383731",
+   "label": "54-55\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-05-31T07:48:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-31",
+   "ticker": "2383732",
+   "label": "56-57\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-05-31T12:01:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-31",
+   "ticker": "2383733",
+   "label": "58-59\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-05-31T12:33:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-31",
+   "ticker": "2383734",
+   "label": "60-61\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-05-31T13:33:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-31",
+   "ticker": "2383735",
+   "label": "62-63\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-05-31T13:59:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-31",
+   "ticker": "2383736",
+   "label": "64-65\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-05-31T15:20:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-31",
+   "ticker": "2383737",
+   "label": "66\u00b0F or higher",
+   "side": "yes",
+   "lock_utc": "2026-05-31T15:20:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-01",
+   "ticker": "2391280",
+   "label": "57\u00b0F or below",
+   "side": "no",
+   "lock_utc": "2026-06-01T05:02:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-01",
+   "ticker": "2391281",
+   "label": "58-59\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-01T13:00:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-01",
+   "ticker": "2391282",
+   "label": "60-61\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-01T13:28:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-01",
+   "ticker": "2391283",
+   "label": "62-63\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-01T17:23:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-01",
+   "ticker": "2391284",
+   "label": "64-65\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-01T18:21:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-01",
+   "ticker": "2391285",
+   "label": "66-67\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-01T18:36:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-01",
+   "ticker": "2391286",
+   "label": "68-69\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-01T19:25:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-02",
+   "ticker": "2399759",
+   "label": "51\u00b0F or below",
+   "side": "no",
+   "lock_utc": "2026-06-02T05:02:00+00:00",
+   "correct": true,
+   "cushion": 4.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-02",
+   "ticker": "2399760",
+   "label": "52-53\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-02T05:02:00+00:00",
+   "correct": true,
+   "cushion": 2.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-02",
+   "ticker": "2399761",
+   "label": "54-55\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-02T05:09:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-02",
+   "ticker": "2399762",
+   "label": "56-57\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-02T12:30:00+00:00",
+   "correct": true,
+   "cushion": 4.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-02",
+   "ticker": "2399763",
+   "label": "58-59\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-02T12:30:00+00:00",
+   "correct": true,
+   "cushion": 2.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-02",
+   "ticker": "2399764",
+   "label": "60-61\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-02T12:37:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-02",
+   "ticker": "2399765",
+   "label": "62-63\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-02T13:12:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-02",
+   "ticker": "2399766",
+   "label": "64-65\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-02T13:45:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-02",
+   "ticker": "2399767",
+   "label": "66-67\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-02T14:22:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-02",
+   "ticker": "2399768",
+   "label": "68-69\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-02T16:00:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-02",
+   "ticker": "2399769",
+   "label": "70\u00b0F or higher",
+   "side": "yes",
+   "lock_utc": "2026-06-02T16:00:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-03",
+   "ticker": "2407037",
+   "label": "55\u00b0F or below",
+   "side": "no",
+   "lock_utc": "2026-06-03T05:02:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-03",
+   "ticker": "2407038",
+   "label": "56-57\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-03T11:40:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-03",
+   "ticker": "2407039",
+   "label": "58-59\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-03T11:58:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-03",
+   "ticker": "2407040",
+   "label": "60-61\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-03T12:32:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-03",
+   "ticker": "2407041",
+   "label": "62-63\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-03T12:56:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-03",
+   "ticker": "2407042",
+   "label": "64-65\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-03T13:16:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-03",
+   "ticker": "2407043",
+   "label": "66-67\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-03T13:33:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-03",
+   "ticker": "2407044",
+   "label": "68-69\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-03T13:55:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-03",
+   "ticker": "2407045",
+   "label": "70-71\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-03T14:26:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-03",
+   "ticker": "2407046",
+   "label": "72-73\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-03T15:17:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-03",
+   "ticker": "2407047",
+   "label": "74\u00b0F or higher",
+   "side": "yes",
+   "lock_utc": "2026-06-03T15:17:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-04",
+   "ticker": "2416057",
+   "label": "47\u00b0F or below",
+   "side": "no",
+   "lock_utc": "2026-06-04T05:02:00+00:00",
+   "correct": true,
+   "cushion": 16.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-04",
+   "ticker": "2416058",
+   "label": "48-49\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-04T05:02:00+00:00",
+   "correct": true,
+   "cushion": 14.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-04",
+   "ticker": "2416059",
+   "label": "50-51\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-04T05:02:00+00:00",
+   "correct": true,
+   "cushion": 12.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-04",
+   "ticker": "2416060",
+   "label": "52-53\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-04T05:02:00+00:00",
+   "correct": true,
+   "cushion": 10.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-04",
+   "ticker": "2416061",
+   "label": "54-55\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-04T05:02:00+00:00",
+   "correct": true,
+   "cushion": 8.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-04",
+   "ticker": "2416062",
+   "label": "56-57\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-04T05:02:00+00:00",
+   "correct": true,
+   "cushion": 6.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-04",
+   "ticker": "2416063",
+   "label": "58-59\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-04T05:02:00+00:00",
+   "correct": true,
+   "cushion": 4.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-04",
+   "ticker": "2416064",
+   "label": "60-61\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-04T05:02:00+00:00",
+   "correct": true,
+   "cushion": 2.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-04",
+   "ticker": "2416065",
+   "label": "62-63\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-04T07:52:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-04",
+   "ticker": "2416066",
+   "label": "64-65\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-04T13:14:00+00:00",
+   "correct": true,
+   "cushion": 7.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-04",
+   "ticker": "2416067",
+   "label": "66\u00b0F or higher",
+   "side": "yes",
+   "lock_utc": "2026-06-04T13:14:00+00:00",
+   "correct": true,
+   "cushion": 7.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-05",
+   "ticker": "2424514",
+   "label": "49\u00b0F or below",
+   "side": "no",
+   "lock_utc": "2026-06-05T05:02:00+00:00",
+   "correct": true,
+   "cushion": 26.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-05",
+   "ticker": "2424515",
+   "label": "50-51\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-05T05:02:00+00:00",
+   "correct": true,
+   "cushion": 24.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-05",
+   "ticker": "2424516",
+   "label": "52-53\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-05T05:02:00+00:00",
+   "correct": true,
+   "cushion": 22.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-05",
+   "ticker": "2424517",
+   "label": "54-55\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-05T05:02:00+00:00",
+   "correct": true,
+   "cushion": 20.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-05",
+   "ticker": "2424518",
+   "label": "56-57\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-05T05:02:00+00:00",
+   "correct": true,
+   "cushion": 18.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-05",
+   "ticker": "2424519",
+   "label": "58-59\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-05T05:02:00+00:00",
+   "correct": true,
+   "cushion": 16.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-05",
+   "ticker": "2424520",
+   "label": "60-61\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-05T05:02:00+00:00",
+   "correct": true,
+   "cushion": 14.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-05",
+   "ticker": "2424521",
+   "label": "62-63\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-05T05:02:00+00:00",
+   "correct": true,
+   "cushion": 12.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-05",
+   "ticker": "2424522",
+   "label": "64-65\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-05T05:02:00+00:00",
+   "correct": true,
+   "cushion": 10.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-05",
+   "ticker": "2424523",
+   "label": "66-67\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-05T05:02:00+00:00",
+   "correct": true,
+   "cushion": 8.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-05",
+   "ticker": "2424524",
+   "label": "68\u00b0F or higher",
+   "side": "yes",
+   "lock_utc": "2026-06-05T05:02:00+00:00",
+   "correct": true,
+   "cushion": 8.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-06",
+   "ticker": "2440844",
+   "label": "71\u00b0F or below",
+   "side": "no",
+   "lock_utc": "2026-06-06T05:02:00+00:00",
+   "correct": true,
+   "cushion": 4.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-06",
+   "ticker": "2440845",
+   "label": "72-73\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-06T05:02:00+00:00",
+   "correct": true,
+   "cushion": 2.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-06",
+   "ticker": "2440846",
+   "label": "74-75\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-06T13:43:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-06",
+   "ticker": "2440847",
+   "label": "76-77\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-06T14:33:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-06",
+   "ticker": "2440848",
+   "label": "78-79\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-06T15:20:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-06",
+   "ticker": "2440849",
+   "label": "80-81\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-06T16:22:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-06",
+   "ticker": "2440850",
+   "label": "82-83\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-06T17:10:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-08",
+   "ticker": "2458936",
+   "label": "75\u00b0F or below",
+   "side": "no",
+   "lock_utc": "2026-06-08T15:20:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-08",
+   "ticker": "2458937",
+   "label": "76-77\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-08T15:59:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-08",
+   "ticker": "2458938",
+   "label": "78-79\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-08T17:31:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-08",
+   "ticker": "2458939",
+   "label": "80-81\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-08T17:49:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-09",
+   "ticker": "2466902",
+   "label": "75\u00b0F or below",
+   "side": "no",
+   "lock_utc": "2026-06-09T15:08:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-09",
+   "ticker": "2466903",
+   "label": "76-77\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-09T15:52:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-09",
+   "ticker": "2466904",
+   "label": "78-79\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-09T16:43:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-09",
+   "ticker": "2466905",
+   "label": "80-81\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-09T17:10:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-09",
+   "ticker": "2466906",
+   "label": "82-83\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-09T20:52:00+00:00",
+   "correct": true,
+   "cushion": 2.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-09",
+   "ticker": "2466907",
+   "label": "84-85\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-09T20:59:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-10",
+   "ticker": "2475316",
+   "label": "77\u00b0F or below",
+   "side": "no",
+   "lock_utc": "2026-06-10T12:10:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-10",
+   "ticker": "2475317",
+   "label": "78-79\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-10T12:52:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-10",
+   "ticker": "2475318",
+   "label": "80-81\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-10T13:41:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-10",
+   "ticker": "2475319",
+   "label": "82-83\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-10T14:46:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-10",
+   "ticker": "2475320",
+   "label": "84-85\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-10T15:39:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-10",
+   "ticker": "2475321",
+   "label": "86-87\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-10T17:29:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-10",
+   "ticker": "2475322",
+   "label": "88-89\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-10T18:38:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-11",
+   "ticker": "2487072",
+   "label": "75\u00b0F or below",
+   "side": "no",
+   "lock_utc": "2026-06-11T14:56:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-11",
+   "ticker": "2487073",
+   "label": "76-77\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-11T15:30:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-11",
+   "ticker": "2487074",
+   "label": "78-79\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-11T15:50:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-13",
+   "ticker": "2512753",
+   "label": "73\u00b0F or below",
+   "side": "no",
+   "lock_utc": "2026-06-13T13:43:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-13",
+   "ticker": "2512754",
+   "label": "74-75\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-13T14:27:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-13",
+   "ticker": "2512755",
+   "label": "76-77\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-13T15:05:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-13",
+   "ticker": "2512756",
+   "label": "78-79\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-13T16:41:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-13",
+   "ticker": "2512757",
+   "label": "80-81\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-13T17:58:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-14",
+   "ticker": "2527028",
+   "label": "59\u00b0F or below",
+   "side": "no",
+   "lock_utc": "2026-06-14T05:02:00+00:00",
+   "correct": true,
+   "cushion": 8.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-14",
+   "ticker": "2527029",
+   "label": "60-61\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-14T05:02:00+00:00",
+   "correct": true,
+   "cushion": 6.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-14",
+   "ticker": "2527030",
+   "label": "62-63\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-14T05:02:00+00:00",
+   "correct": true,
+   "cushion": 4.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-14",
+   "ticker": "2527031",
+   "label": "64-65\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-14T05:02:00+00:00",
+   "correct": true,
+   "cushion": 2.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-14",
+   "ticker": "2527032",
+   "label": "66-67\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-14T06:51:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-15",
+   "ticker": "2537896",
+   "label": "65\u00b0F or below",
+   "side": "no",
+   "lock_utc": "2026-06-15T14:34:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-15",
+   "ticker": "2537897",
+   "label": "66-67\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-15T15:12:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-15",
+   "ticker": "2537898",
+   "label": "68-69\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-15T16:18:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-15",
+   "ticker": "2537899",
+   "label": "70-71\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-15T17:52:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-15",
+   "ticker": "2537900",
+   "label": "72-73\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-15T19:14:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-15",
+   "ticker": "2537901",
+   "label": "74-75\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-15T22:28:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-16",
+   "ticker": "2548281",
+   "label": "63\u00b0F or below",
+   "side": "no",
+   "lock_utc": "2026-06-16T05:02:00+00:00",
+   "correct": true,
+   "cushion": 3.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-16",
+   "ticker": "2548282",
+   "label": "64-65\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-16T05:02:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-16",
+   "ticker": "2548283",
+   "label": "66-67\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-16T14:43:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-16",
+   "ticker": "2548284",
+   "label": "68-69\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-16T15:16:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-16",
+   "ticker": "2548285",
+   "label": "70-71\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-16T17:05:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-16",
+   "ticker": "2548286",
+   "label": "72-73\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-16T17:57:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-17",
+   "ticker": "2559467",
+   "label": "59\u00b0F or below",
+   "side": "no",
+   "lock_utc": "2026-06-17T05:02:00+00:00",
+   "correct": true,
+   "cushion": 2.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-17",
+   "ticker": "2559468",
+   "label": "60-61\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-17T20:43:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-17",
+   "ticker": "2559469",
+   "label": "62-63\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-17T21:02:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-17",
+   "ticker": "2559470",
+   "label": "64-65\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-17T21:23:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-17",
+   "ticker": "2559471",
+   "label": "66-67\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-17T21:49:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-19",
+   "ticker": "2590586",
+   "label": "67\u00b0F or below",
+   "side": "no",
+   "lock_utc": "2026-06-19T14:14:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-19",
+   "ticker": "2590587",
+   "label": "68-69\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-19T15:25:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-19",
+   "ticker": "2590588",
+   "label": "70-71\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-19T16:47:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-19",
+   "ticker": "2590589",
+   "label": "72-73\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-19T19:31:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-19",
+   "ticker": "2590590",
+   "label": "74-75\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-19T21:33:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-20",
+   "ticker": "2602340",
+   "label": "69\u00b0F or below",
+   "side": "no",
+   "lock_utc": "2026-06-20T15:31:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-20",
+   "ticker": "2602341",
+   "label": "70-71\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-20T16:38:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-20",
+   "ticker": "2602342",
+   "label": "72-73\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-20T17:35:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-20",
+   "ticker": "2602343",
+   "label": "74-75\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-20T21:03:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-27",
+   "ticker": "2687192",
+   "label": "67\u00b0F or below",
+   "side": "no",
+   "lock_utc": "2026-06-27T14:12:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-27",
+   "ticker": "2687193",
+   "label": "68-69\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-27T14:49:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-27",
+   "ticker": "2687194",
+   "label": "70-71\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-27T15:19:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-27",
+   "ticker": "2687195",
+   "label": "72-73\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-27T16:59:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-29",
+   "ticker": "2714220",
+   "label": "85\u00b0F or below",
+   "side": "no",
+   "lock_utc": "2026-06-29T16:12:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-29",
+   "ticker": "2714221",
+   "label": "86-87\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-29T16:49:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-29",
+   "ticker": "2714222",
+   "label": "88-89\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-29T18:48:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-30",
+   "ticker": "2725264",
+   "label": "87\u00b0F or below",
+   "side": "no",
+   "lock_utc": "2026-06-30T16:48:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-30",
+   "ticker": "2725265",
+   "label": "88-89\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-30T20:59:00+00:00",
+   "correct": true,
+   "cushion": 3.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-30",
+   "ticker": "2725266",
+   "label": "90-91\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-06-30T20:59:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-01",
+   "ticker": "2737676",
+   "label": "87\u00b0F or below",
+   "side": "no",
+   "lock_utc": "2026-07-01T16:05:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-01",
+   "ticker": "2737677",
+   "label": "88-89\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-07-01T16:56:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-01",
+   "ticker": "2737678",
+   "label": "90-91\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-07-01T18:04:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-01",
+   "ticker": "2737679",
+   "label": "92-93\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-07-01T20:35:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-02",
+   "ticker": "2749951",
+   "label": "87\u00b0F or below",
+   "side": "no",
+   "lock_utc": "2026-07-02T17:06:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-02",
+   "ticker": "2749952",
+   "label": "88-89\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-07-02T17:52:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-02",
+   "ticker": "2749953",
+   "label": "90-91\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-07-02T18:42:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-02",
+   "ticker": "2749954",
+   "label": "92-93\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-07-02T20:28:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-03",
+   "ticker": "2763860",
+   "label": "77\u00b0F or below",
+   "side": "no",
+   "lock_utc": "2026-07-03T13:29:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-03",
+   "ticker": "2763861",
+   "label": "78-79\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-07-03T14:16:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-03",
+   "ticker": "2763862",
+   "label": "80-81\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-07-03T14:50:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-03",
+   "ticker": "2763863",
+   "label": "82-83\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-07-03T15:44:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-03",
+   "ticker": "2763864",
+   "label": "84-85\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-07-03T16:57:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-04",
+   "ticker": "2777781",
+   "label": "75\u00b0F or below",
+   "side": "no",
+   "lock_utc": "2026-07-04T13:53:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-04",
+   "ticker": "2777782",
+   "label": "76-77\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-07-04T14:30:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-04",
+   "ticker": "2777783",
+   "label": "78-79\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-07-04T15:54:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-04",
+   "ticker": "2777784",
+   "label": "80-81\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-07-04T16:45:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-05",
+   "ticker": "2790127",
+   "label": "71\u00b0F or below",
+   "side": "no",
+   "lock_utc": "2026-07-05T20:00:00+00:00",
+   "correct": true,
+   "cushion": 3.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-05",
+   "ticker": "2790128",
+   "label": "72-73\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-07-05T20:00:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-06",
+   "ticker": "2801086",
+   "label": "71\u00b0F or below",
+   "side": "no",
+   "lock_utc": "2026-07-06T13:30:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-06",
+   "ticker": "2801087",
+   "label": "72-73\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-07-06T15:16:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-06",
+   "ticker": "2801088",
+   "label": "74-75\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-07-06T17:07:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-06",
+   "ticker": "2801089",
+   "label": "76-77\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-07-06T19:27:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-07",
+   "ticker": "2811618",
+   "label": "73\u00b0F or below",
+   "side": "no",
+   "lock_utc": "2026-07-07T13:11:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-07",
+   "ticker": "2811619",
+   "label": "74-75\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-07-07T13:42:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-07",
+   "ticker": "2811620",
+   "label": "76-77\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-07-07T14:02:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-07",
+   "ticker": "2811621",
+   "label": "78-79\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-07-07T14:45:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-07",
+   "ticker": "2811622",
+   "label": "80-81\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-07-07T16:21:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-07",
+   "ticker": "2811623",
+   "label": "82-83\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-07-07T18:35:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-08",
+   "ticker": "2824870",
+   "label": "77\u00b0F or below",
+   "side": "no",
+   "lock_utc": "2026-07-08T13:26:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-08",
+   "ticker": "2824871",
+   "label": "78-79\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-07-08T14:13:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-08",
+   "ticker": "2824872",
+   "label": "80-81\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-07-08T14:53:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-08",
+   "ticker": "2824873",
+   "label": "82-83\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-07-08T16:21:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-08",
+   "ticker": "2824874",
+   "label": "84-85\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-07-08T18:17:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-08",
+   "ticker": "2824875",
+   "label": "86-87\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-07-08T21:20:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-10",
+   "ticker": "2853373",
+   "label": "71\u00b0F or below",
+   "side": "no",
+   "lock_utc": "2026-07-10T12:59:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-10",
+   "ticker": "2853374",
+   "label": "72-73\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-07-10T13:51:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-10",
+   "ticker": "2853375",
+   "label": "74-75\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-07-10T14:30:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-10",
+   "ticker": "2853376",
+   "label": "76-77\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-07-10T15:49:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-10",
+   "ticker": "2853377",
+   "label": "78-79\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-07-10T18:15:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-11",
+   "ticker": "2865611",
+   "label": "77\u00b0F or below",
+   "side": "no",
+   "lock_utc": "2026-07-11T15:01:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-11",
+   "ticker": "2865612",
+   "label": "78-79\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-07-11T16:39:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-12",
+   "ticker": "2876647",
+   "label": "79\u00b0F or below",
+   "side": "no",
+   "lock_utc": "2026-07-12T14:23:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-12",
+   "ticker": "2876648",
+   "label": "80-81\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-07-12T15:31:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-12",
+   "ticker": "2876649",
+   "label": "82-83\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-07-12T17:00:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-13",
+   "ticker": "2887949",
+   "label": "89\u00b0F or below",
+   "side": "no",
+   "lock_utc": "2026-07-13T19:17:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-13",
+   "ticker": "2887950",
+   "label": "90-91\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-07-13T21:36:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-14",
+   "ticker": "2901211",
+   "label": "93\u00b0F or below",
+   "side": "no",
+   "lock_utc": "2026-07-14T19:24:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-15",
+   "ticker": "2916013",
+   "label": "89\u00b0F or below",
+   "side": "no",
+   "lock_utc": "2026-07-15T16:50:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-15",
+   "ticker": "2916014",
+   "label": "90-91\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-07-15T17:42:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-15",
+   "ticker": "2916015",
+   "label": "92-93\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-07-15T20:38:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-17",
+   "ticker": "2941469",
+   "label": "87\u00b0F or below",
+   "side": "no",
+   "lock_utc": "2026-07-17T16:29:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-17",
+   "ticker": "2941470",
+   "label": "88-89\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-07-17T16:55:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-18",
+   "ticker": "2954226",
+   "label": "81\u00b0F or below",
+   "side": "no",
+   "lock_utc": "2026-07-18T13:53:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-18",
+   "ticker": "2954227",
+   "label": "82-83\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-07-18T14:04:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-18",
+   "ticker": "2954228",
+   "label": "84-85\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-07-18T15:20:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-18",
+   "ticker": "2954229",
+   "label": "86-87\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-07-18T19:33:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-18",
+   "ticker": "2954230",
+   "label": "88-89\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-07-18T20:40:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-19",
+   "ticker": "2967354",
+   "label": "71\u00b0F or below",
+   "side": "no",
+   "lock_utc": "2026-07-19T13:54:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-19",
+   "ticker": "2967355",
+   "label": "72-73\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-07-19T15:27:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-19",
+   "ticker": "2967356",
+   "label": "74-75\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-07-19T16:03:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-19",
+   "ticker": "2967357",
+   "label": "76-77\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-07-19T19:16:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-20",
+   "ticker": "2979218",
+   "label": "79\u00b0F or below",
+   "side": "no",
+   "lock_utc": "2026-07-20T20:11:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-21",
+   "ticker": "2995436",
+   "label": "79\u00b0F or below",
+   "side": "no",
+   "lock_utc": "2026-07-21T14:25:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-21",
+   "ticker": "2995437",
+   "label": "80-81\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-07-21T15:26:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-21",
+   "ticker": "2995438",
+   "label": "82-83\u00b0F",
+   "side": "no",
+   "lock_utc": "2026-07-21T17:16:00+00:00",
+   "correct": true,
+   "cushion": 1.5
+  }
+ ],
+ "entry_records": [
+  {
+   "city": "chicago",
+   "date": "2026-02-23",
+   "ticker": "1407263",
+   "label": "25\u00b0F or below",
+   "entry_utc": "2026-02-23T14:30:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-02-23",
+   "ticker": "1407264",
+   "label": "26-27\u00b0F",
+   "entry_utc": "2026-02-23T19:06:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-02-23",
+   "ticker": "1407266",
+   "label": "28-29\u00b0F",
+   "entry_utc": "2026-02-23T20:08:00+00:00",
+   "correct": true
+  },
+  {
+   "city": "chicago",
+   "date": "2026-02-24",
+   "ticker": "1413733",
+   "label": "31\u00b0F or below",
+   "entry_utc": "2026-02-24T06:02:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-02-24",
+   "ticker": "1413734",
+   "label": "32-33\u00b0F",
+   "entry_utc": "2026-02-24T18:37:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-02-24",
+   "ticker": "1413735",
+   "label": "34-35\u00b0F",
+   "entry_utc": "2026-02-24T20:45:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-02-24",
+   "ticker": "1413736",
+   "label": "36-37\u00b0F",
+   "entry_utc": "2026-02-24T22:51:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-02-24",
+   "ticker": "1413737",
+   "label": "38-39\u00b0F",
+   "entry_utc": "2026-02-25T02:17:00+00:00",
+   "correct": true
+  },
+  {
+   "city": "chicago",
+   "date": "2026-02-25",
+   "ticker": "1427482",
+   "label": "30-31\u00b0F",
+   "entry_utc": "2026-02-25T06:02:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-02-25",
+   "ticker": "1427483",
+   "label": "32-33\u00b0F",
+   "entry_utc": "2026-02-25T17:44:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-02-25",
+   "ticker": "1427484",
+   "label": "34-35\u00b0F",
+   "entry_utc": "2026-02-25T18:46:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-02-25",
+   "ticker": "1427486",
+   "label": "36-37\u00b0F",
+   "entry_utc": "2026-02-25T19:52:00+00:00",
+   "correct": true
+  },
+  {
+   "city": "chicago",
+   "date": "2026-02-26",
+   "ticker": "1425394",
+   "label": "27\u00b0F or below",
+   "entry_utc": "2026-02-26T06:02:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-02-26",
+   "ticker": "1425395",
+   "label": "28-29\u00b0F",
+   "entry_utc": "2026-02-26T14:48:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-02-26",
+   "ticker": "1425396",
+   "label": "30-31\u00b0F",
+   "entry_utc": "2026-02-26T15:16:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-02-26",
+   "ticker": "1425397",
+   "label": "32-33\u00b0F",
+   "entry_utc": "2026-02-26T15:47:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-02-26",
+   "ticker": "1425398",
+   "label": "34-35\u00b0F",
+   "entry_utc": "2026-02-26T17:26:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-02-26",
+   "ticker": "1425399",
+   "label": "36-37\u00b0F",
+   "entry_utc": "2026-02-26T18:21:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-02-26",
+   "ticker": "1425400",
+   "label": "38-39\u00b0F",
+   "entry_utc": "2026-02-26T19:10:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-02-26",
+   "ticker": "1425401",
+   "label": "40-41\u00b0F",
+   "entry_utc": "2026-02-26T20:40:00+00:00",
+   "correct": true
+  },
+  {
+   "city": "chicago",
+   "date": "2026-02-27",
+   "ticker": "1434196",
+   "label": "53\u00b0F or below",
+   "entry_utc": "2026-02-27T06:02:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-02-27",
+   "ticker": "1434197",
+   "label": "54-55\u00b0F",
+   "entry_utc": "2026-02-27T17:33:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-02-27",
+   "ticker": "1434198",
+   "label": "56-57\u00b0F",
+   "entry_utc": "2026-02-27T18:31:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-02-27",
+   "ticker": "1434199",
+   "label": "58-59\u00b0F",
+   "entry_utc": "2026-02-27T19:16:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-02-27",
+   "ticker": "1434200",
+   "label": "60-61\u00b0F",
+   "entry_utc": "2026-02-27T19:48:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-02-27",
+   "ticker": "1434201",
+   "label": "62-63\u00b0F",
+   "entry_utc": "2026-02-27T20:45:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-02-27",
+   "ticker": "1434202",
+   "label": "64-65\u00b0F",
+   "entry_utc": "2026-02-27T21:26:00+00:00",
+   "correct": true
+  },
+  {
+   "city": "chicago",
+   "date": "2026-02-28",
+   "ticker": "1444270",
+   "label": "42\u00b0F or higher",
+   "entry_utc": "2026-02-28T06:02:00+00:00",
+   "correct": true
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-02",
+   "ticker": "1465175",
+   "label": "33\u00b0F or below",
+   "entry_utc": "2026-03-02T06:48:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-02",
+   "ticker": "1465176",
+   "label": "34-35\u00b0F",
+   "entry_utc": "2026-03-02T15:57:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-02",
+   "ticker": "1465177",
+   "label": "36-37\u00b0F",
+   "entry_utc": "2026-03-02T16:37:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-02",
+   "ticker": "1465178",
+   "label": "38-39\u00b0F",
+   "entry_utc": "2026-03-02T17:20:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-02",
+   "ticker": "1465179",
+   "label": "40-41\u00b0F",
+   "entry_utc": "2026-03-02T18:25:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-03",
+   "ticker": "1475187",
+   "label": "34-35\u00b0F",
+   "entry_utc": "2026-03-03T06:02:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-03",
+   "ticker": "1475188",
+   "label": "36-37\u00b0F",
+   "entry_utc": "2026-03-03T06:30:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-03",
+   "ticker": "1475189",
+   "label": "38-39\u00b0F",
+   "entry_utc": "2026-03-03T17:16:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-03",
+   "ticker": "1475190",
+   "label": "40-41\u00b0F",
+   "entry_utc": "2026-03-03T18:37:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-04",
+   "ticker": "1482552",
+   "label": "35\u00b0F or below",
+   "entry_utc": "2026-03-04T06:02:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-04",
+   "ticker": "1482553",
+   "label": "36-37\u00b0F",
+   "entry_utc": "2026-03-04T22:12:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-04",
+   "ticker": "1482554",
+   "label": "38-39\u00b0F",
+   "entry_utc": "2026-03-04T23:37:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-04",
+   "ticker": "1482555",
+   "label": "40-41\u00b0F",
+   "entry_utc": "2026-03-05T00:52:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-05",
+   "ticker": "1491094",
+   "label": "38-39\u00b0F",
+   "entry_utc": "2026-03-05T06:02:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-05",
+   "ticker": "1491095",
+   "label": "40-41\u00b0F",
+   "entry_utc": "2026-03-05T11:01:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-05",
+   "ticker": "1491096",
+   "label": "42-43\u00b0F",
+   "entry_utc": "2026-03-05T16:28:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-05",
+   "ticker": "1491097",
+   "label": "44-45\u00b0F",
+   "entry_utc": "2026-03-05T17:58:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-05",
+   "ticker": "1491098",
+   "label": "46-47\u00b0F",
+   "entry_utc": "2026-03-05T18:35:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-05",
+   "ticker": "1491099",
+   "label": "48-49\u00b0F",
+   "entry_utc": "2026-03-05T20:13:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-06",
+   "ticker": "1498495",
+   "label": "57\u00b0F or below",
+   "entry_utc": "2026-03-06T06:14:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-06",
+   "ticker": "1498496",
+   "label": "58-59\u00b0F",
+   "entry_utc": "2026-03-06T18:59:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-06",
+   "ticker": "1498497",
+   "label": "60-61\u00b0F",
+   "entry_utc": "2026-03-06T19:29:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-06",
+   "ticker": "1498498",
+   "label": "62-63\u00b0F",
+   "entry_utc": "2026-03-06T19:49:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-06",
+   "ticker": "1498499",
+   "label": "64-65\u00b0F",
+   "entry_utc": "2026-03-06T20:05:00+00:00",
+   "correct": true
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-07",
+   "ticker": "1506424",
+   "label": "60\u00b0F or higher",
+   "entry_utc": "2026-03-07T06:02:00+00:00",
+   "correct": true
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-08",
+   "ticker": "1514303",
+   "label": "55\u00b0F or below",
+   "entry_utc": "2026-03-08T06:02:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-08",
+   "ticker": "1514306",
+   "label": "60-61\u00b0F",
+   "entry_utc": "2026-03-08T21:43:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-09",
+   "ticker": "1522765",
+   "label": "63\u00b0F or below",
+   "entry_utc": "2026-03-09T05:02:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-09",
+   "ticker": "1522766",
+   "label": "64-65\u00b0F",
+   "entry_utc": "2026-03-09T17:17:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-09",
+   "ticker": "1522767",
+   "label": "66-67\u00b0F",
+   "entry_utc": "2026-03-09T17:47:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-09",
+   "ticker": "1522768",
+   "label": "68-69\u00b0F",
+   "entry_utc": "2026-03-09T18:42:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-09",
+   "ticker": "1522769",
+   "label": "70-71\u00b0F",
+   "entry_utc": "2026-03-09T19:20:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-09",
+   "ticker": "1522770",
+   "label": "72-73\u00b0F",
+   "entry_utc": "2026-03-09T20:47:00+00:00",
+   "correct": true
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-10",
+   "ticker": "1540236",
+   "label": "60-61\u00b0F",
+   "entry_utc": "2026-03-10T05:02:00+00:00",
+   "correct": true
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-12",
+   "ticker": "1549897",
+   "label": "37\u00b0F or below",
+   "entry_utc": "2026-03-12T05:37:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-12",
+   "ticker": "1549898",
+   "label": "38-39\u00b0F",
+   "entry_utc": "2026-03-12T16:14:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-12",
+   "ticker": "1549899",
+   "label": "40-41\u00b0F",
+   "entry_utc": "2026-03-12T16:54:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-12",
+   "ticker": "1549900",
+   "label": "42-43\u00b0F",
+   "entry_utc": "2026-03-12T18:45:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-12",
+   "ticker": "1549901",
+   "label": "44-45\u00b0F",
+   "entry_utc": "2026-03-12T20:32:00+00:00",
+   "correct": true
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-13",
+   "ticker": "1557713",
+   "label": "43\u00b0F or below",
+   "entry_utc": "2026-03-13T05:02:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-14",
+   "ticker": "1566225",
+   "label": "32-33\u00b0F",
+   "entry_utc": "2026-03-14T05:02:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-14",
+   "ticker": "1566226",
+   "label": "34-35\u00b0F",
+   "entry_utc": "2026-03-14T15:08:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-12",
+   "ticker": "2219756",
+   "label": "45\u00b0F or below",
+   "entry_utc": "2026-05-12T05:29:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-12",
+   "ticker": "2219757",
+   "label": "46-47\u00b0F",
+   "entry_utc": "2026-05-12T12:01:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-12",
+   "ticker": "2219758",
+   "label": "48-49\u00b0F",
+   "entry_utc": "2026-05-12T12:33:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-12",
+   "ticker": "2219759",
+   "label": "50-51\u00b0F",
+   "entry_utc": "2026-05-12T13:08:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-12",
+   "ticker": "2219760",
+   "label": "52-53\u00b0F",
+   "entry_utc": "2026-05-12T13:41:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-12",
+   "ticker": "2219761",
+   "label": "54-55\u00b0F",
+   "entry_utc": "2026-05-12T13:53:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-12",
+   "ticker": "2219762",
+   "label": "56-57\u00b0F",
+   "entry_utc": "2026-05-12T14:23:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-12",
+   "ticker": "2219763",
+   "label": "58-59\u00b0F",
+   "entry_utc": "2026-05-12T14:41:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-12",
+   "ticker": "2219764",
+   "label": "60-61\u00b0F",
+   "entry_utc": "2026-05-12T15:03:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-12",
+   "ticker": "2219765",
+   "label": "62-63\u00b0F",
+   "entry_utc": "2026-05-12T15:52:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-12",
+   "ticker": "2219766",
+   "label": "64\u00b0F or higher",
+   "entry_utc": "2026-05-12T16:26:00+00:00",
+   "correct": true
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-14",
+   "ticker": "2237425",
+   "label": "52-53\u00b0F",
+   "entry_utc": "2026-05-14T13:20:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-14",
+   "ticker": "2237426",
+   "label": "54-55\u00b0F",
+   "entry_utc": "2026-05-14T13:26:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-14",
+   "ticker": "2237427",
+   "label": "56\u00b0F or higher",
+   "entry_utc": "2026-05-14T13:51:00+00:00",
+   "correct": true
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-16",
+   "ticker": "2257309",
+   "label": "56\u00b0F or higher",
+   "entry_utc": "2026-05-16T05:14:00+00:00",
+   "correct": true
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-21",
+   "ticker": "2299424",
+   "label": "59\u00b0F or below",
+   "entry_utc": "2026-05-21T12:53:00+00:00",
+   "correct": true
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-23",
+   "ticker": "2319820",
+   "label": "68-69\u00b0F",
+   "entry_utc": "2026-05-23T21:02:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-25",
+   "ticker": "2336758",
+   "label": "60-61\u00b0F",
+   "entry_utc": "2026-05-25T06:00:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-25",
+   "ticker": "2336759",
+   "label": "62-63\u00b0F",
+   "entry_utc": "2026-05-25T11:50:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-25",
+   "ticker": "2336760",
+   "label": "64-65\u00b0F",
+   "entry_utc": "2026-05-25T12:11:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-25",
+   "ticker": "2336761",
+   "label": "66-67\u00b0F",
+   "entry_utc": "2026-05-25T12:35:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-25",
+   "ticker": "2336762",
+   "label": "68-69\u00b0F",
+   "entry_utc": "2026-05-25T13:03:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-25",
+   "ticker": "2336763",
+   "label": "70-71\u00b0F",
+   "entry_utc": "2026-05-25T13:28:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-25",
+   "ticker": "2336764",
+   "label": "72\u00b0F or higher",
+   "entry_utc": "2026-05-25T14:01:00+00:00",
+   "correct": true
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-28",
+   "ticker": "2358577",
+   "label": "65\u00b0F or below",
+   "entry_utc": "2026-05-28T13:28:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-28",
+   "ticker": "2358578",
+   "label": "66-67\u00b0F",
+   "entry_utc": "2026-05-28T15:01:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-28",
+   "ticker": "2358579",
+   "label": "68-69\u00b0F",
+   "entry_utc": "2026-05-28T16:24:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-28",
+   "ticker": "2358580",
+   "label": "70-71\u00b0F",
+   "entry_utc": "2026-05-28T18:04:00+00:00",
+   "correct": true
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-29",
+   "ticker": "2367333",
+   "label": "65\u00b0F or below",
+   "entry_utc": "2026-05-29T05:02:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-29",
+   "ticker": "2367334",
+   "label": "66-67\u00b0F",
+   "entry_utc": "2026-05-29T13:36:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-29",
+   "ticker": "2367335",
+   "label": "68-69\u00b0F",
+   "entry_utc": "2026-05-29T13:59:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-29",
+   "ticker": "2367336",
+   "label": "70-71\u00b0F",
+   "entry_utc": "2026-05-29T14:26:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-29",
+   "ticker": "2367337",
+   "label": "72-73\u00b0F",
+   "entry_utc": "2026-05-29T14:44:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-29",
+   "ticker": "2367338",
+   "label": "74-75\u00b0F",
+   "entry_utc": "2026-05-29T15:29:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-29",
+   "ticker": "2367339",
+   "label": "76-77\u00b0F",
+   "entry_utc": "2026-05-29T16:11:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-29",
+   "ticker": "2367340",
+   "label": "78-79\u00b0F",
+   "entry_utc": "2026-05-29T16:58:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-29",
+   "ticker": "2367341",
+   "label": "80-81\u00b0F",
+   "entry_utc": "2026-05-29T17:53:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-29",
+   "ticker": "2367342",
+   "label": "82-83\u00b0F",
+   "entry_utc": "2026-05-29T19:19:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-29",
+   "ticker": "2367343",
+   "label": "84\u00b0F or higher",
+   "entry_utc": "2026-05-29T21:21:00+00:00",
+   "correct": true
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-31",
+   "ticker": "2383730",
+   "label": "52-53\u00b0F",
+   "entry_utc": "2026-05-31T05:51:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-31",
+   "ticker": "2383731",
+   "label": "54-55\u00b0F",
+   "entry_utc": "2026-05-31T05:54:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-31",
+   "ticker": "2383732",
+   "label": "56-57\u00b0F",
+   "entry_utc": "2026-05-31T07:48:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-31",
+   "ticker": "2383733",
+   "label": "58-59\u00b0F",
+   "entry_utc": "2026-05-31T12:01:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-31",
+   "ticker": "2383734",
+   "label": "60-61\u00b0F",
+   "entry_utc": "2026-05-31T12:33:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-31",
+   "ticker": "2383735",
+   "label": "62-63\u00b0F",
+   "entry_utc": "2026-05-31T13:33:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-31",
+   "ticker": "2383736",
+   "label": "64-65\u00b0F",
+   "entry_utc": "2026-05-31T13:59:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-31",
+   "ticker": "2383737",
+   "label": "66\u00b0F or higher",
+   "entry_utc": "2026-05-31T15:20:00+00:00",
+   "correct": true
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-01",
+   "ticker": "2391281",
+   "label": "58-59\u00b0F",
+   "entry_utc": "2026-06-01T05:02:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-01",
+   "ticker": "2391282",
+   "label": "60-61\u00b0F",
+   "entry_utc": "2026-06-01T13:00:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-01",
+   "ticker": "2391283",
+   "label": "62-63\u00b0F",
+   "entry_utc": "2026-06-01T13:28:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-01",
+   "ticker": "2391284",
+   "label": "64-65\u00b0F",
+   "entry_utc": "2026-06-01T17:23:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-01",
+   "ticker": "2391285",
+   "label": "66-67\u00b0F",
+   "entry_utc": "2026-06-01T18:21:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-01",
+   "ticker": "2391286",
+   "label": "68-69\u00b0F",
+   "entry_utc": "2026-06-01T18:36:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-01",
+   "ticker": "2391287",
+   "label": "70-71\u00b0F",
+   "entry_utc": "2026-06-01T19:25:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-02",
+   "ticker": "2399761",
+   "label": "54-55\u00b0F",
+   "entry_utc": "2026-06-02T05:02:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-02",
+   "ticker": "2399762",
+   "label": "56-57\u00b0F",
+   "entry_utc": "2026-06-02T05:09:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-02",
+   "ticker": "2399764",
+   "label": "60-61\u00b0F",
+   "entry_utc": "2026-06-02T12:30:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-02",
+   "ticker": "2399765",
+   "label": "62-63\u00b0F",
+   "entry_utc": "2026-06-02T12:37:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-02",
+   "ticker": "2399766",
+   "label": "64-65\u00b0F",
+   "entry_utc": "2026-06-02T13:12:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-02",
+   "ticker": "2399767",
+   "label": "66-67\u00b0F",
+   "entry_utc": "2026-06-02T13:45:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-02",
+   "ticker": "2399768",
+   "label": "68-69\u00b0F",
+   "entry_utc": "2026-06-02T14:22:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-02",
+   "ticker": "2399769",
+   "label": "70\u00b0F or higher",
+   "entry_utc": "2026-06-02T16:00:00+00:00",
+   "correct": true
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-03",
+   "ticker": "2407038",
+   "label": "56-57\u00b0F",
+   "entry_utc": "2026-06-03T05:02:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-03",
+   "ticker": "2407039",
+   "label": "58-59\u00b0F",
+   "entry_utc": "2026-06-03T11:40:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-03",
+   "ticker": "2407040",
+   "label": "60-61\u00b0F",
+   "entry_utc": "2026-06-03T11:58:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-03",
+   "ticker": "2407041",
+   "label": "62-63\u00b0F",
+   "entry_utc": "2026-06-03T12:32:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-03",
+   "ticker": "2407042",
+   "label": "64-65\u00b0F",
+   "entry_utc": "2026-06-03T12:56:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-03",
+   "ticker": "2407043",
+   "label": "66-67\u00b0F",
+   "entry_utc": "2026-06-03T13:16:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-03",
+   "ticker": "2407044",
+   "label": "68-69\u00b0F",
+   "entry_utc": "2026-06-03T13:33:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-03",
+   "ticker": "2407045",
+   "label": "70-71\u00b0F",
+   "entry_utc": "2026-06-03T13:55:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-03",
+   "ticker": "2407046",
+   "label": "72-73\u00b0F",
+   "entry_utc": "2026-06-03T14:26:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-03",
+   "ticker": "2407047",
+   "label": "74\u00b0F or higher",
+   "entry_utc": "2026-06-03T15:17:00+00:00",
+   "correct": true
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-04",
+   "ticker": "2416065",
+   "label": "62-63\u00b0F",
+   "entry_utc": "2026-06-04T05:02:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-04",
+   "ticker": "2416066",
+   "label": "64-65\u00b0F",
+   "entry_utc": "2026-06-04T07:52:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-04",
+   "ticker": "2416067",
+   "label": "66\u00b0F or higher",
+   "entry_utc": "2026-06-04T13:14:00+00:00",
+   "correct": true
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-05",
+   "ticker": "2424524",
+   "label": "68\u00b0F or higher",
+   "entry_utc": "2026-06-05T05:02:00+00:00",
+   "correct": true
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-06",
+   "ticker": "2440846",
+   "label": "74-75\u00b0F",
+   "entry_utc": "2026-06-06T05:02:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-06",
+   "ticker": "2440847",
+   "label": "76-77\u00b0F",
+   "entry_utc": "2026-06-06T13:43:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-06",
+   "ticker": "2440848",
+   "label": "78-79\u00b0F",
+   "entry_utc": "2026-06-06T14:33:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-06",
+   "ticker": "2440849",
+   "label": "80-81\u00b0F",
+   "entry_utc": "2026-06-06T15:20:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-06",
+   "ticker": "2440850",
+   "label": "82-83\u00b0F",
+   "entry_utc": "2026-06-06T16:22:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-06",
+   "ticker": "2440851",
+   "label": "84-85\u00b0F",
+   "entry_utc": "2026-06-06T17:10:00+00:00",
+   "correct": true
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-08",
+   "ticker": "2458936",
+   "label": "75\u00b0F or below",
+   "entry_utc": "2026-06-08T05:46:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-08",
+   "ticker": "2458937",
+   "label": "76-77\u00b0F",
+   "entry_utc": "2026-06-08T15:20:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-08",
+   "ticker": "2458938",
+   "label": "78-79\u00b0F",
+   "entry_utc": "2026-06-08T15:59:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-08",
+   "ticker": "2458939",
+   "label": "80-81\u00b0F",
+   "entry_utc": "2026-06-08T17:31:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-08",
+   "ticker": "2458940",
+   "label": "82-83\u00b0F",
+   "entry_utc": "2026-06-08T17:49:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-09",
+   "ticker": "2466902",
+   "label": "75\u00b0F or below",
+   "entry_utc": "2026-06-09T05:02:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-09",
+   "ticker": "2466903",
+   "label": "76-77\u00b0F",
+   "entry_utc": "2026-06-09T15:08:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-09",
+   "ticker": "2466904",
+   "label": "78-79\u00b0F",
+   "entry_utc": "2026-06-09T15:52:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-09",
+   "ticker": "2466905",
+   "label": "80-81\u00b0F",
+   "entry_utc": "2026-06-09T16:43:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-09",
+   "ticker": "2466906",
+   "label": "82-83\u00b0F",
+   "entry_utc": "2026-06-09T17:10:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-09",
+   "ticker": "2466907",
+   "label": "84-85\u00b0F",
+   "entry_utc": "2026-06-09T20:52:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-09",
+   "ticker": "2466908",
+   "label": "86-87\u00b0F",
+   "entry_utc": "2026-06-09T20:59:00+00:00",
+   "correct": true
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-10",
+   "ticker": "2475316",
+   "label": "77\u00b0F or below",
+   "entry_utc": "2026-06-10T05:02:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-10",
+   "ticker": "2475317",
+   "label": "78-79\u00b0F",
+   "entry_utc": "2026-06-10T12:10:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-10",
+   "ticker": "2475318",
+   "label": "80-81\u00b0F",
+   "entry_utc": "2026-06-10T12:52:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-10",
+   "ticker": "2475319",
+   "label": "82-83\u00b0F",
+   "entry_utc": "2026-06-10T13:41:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-10",
+   "ticker": "2475320",
+   "label": "84-85\u00b0F",
+   "entry_utc": "2026-06-10T14:46:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-10",
+   "ticker": "2475321",
+   "label": "86-87\u00b0F",
+   "entry_utc": "2026-06-10T15:39:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-10",
+   "ticker": "2475322",
+   "label": "88-89\u00b0F",
+   "entry_utc": "2026-06-10T17:29:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-10",
+   "ticker": "2475323",
+   "label": "90-91\u00b0F",
+   "entry_utc": "2026-06-10T18:38:00+00:00",
+   "correct": true
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-11",
+   "ticker": "2487072",
+   "label": "75\u00b0F or below",
+   "entry_utc": "2026-06-11T05:02:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-11",
+   "ticker": "2487073",
+   "label": "76-77\u00b0F",
+   "entry_utc": "2026-06-11T14:56:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-11",
+   "ticker": "2487074",
+   "label": "78-79\u00b0F",
+   "entry_utc": "2026-06-11T15:30:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-11",
+   "ticker": "2487075",
+   "label": "80-81\u00b0F",
+   "entry_utc": "2026-06-11T15:50:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-13",
+   "ticker": "2512753",
+   "label": "73\u00b0F or below",
+   "entry_utc": "2026-06-13T05:41:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-13",
+   "ticker": "2512754",
+   "label": "74-75\u00b0F",
+   "entry_utc": "2026-06-13T13:43:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-13",
+   "ticker": "2512755",
+   "label": "76-77\u00b0F",
+   "entry_utc": "2026-06-13T14:27:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-13",
+   "ticker": "2512756",
+   "label": "78-79\u00b0F",
+   "entry_utc": "2026-06-13T15:05:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-13",
+   "ticker": "2512757",
+   "label": "80-81\u00b0F",
+   "entry_utc": "2026-06-13T16:41:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-13",
+   "ticker": "2512758",
+   "label": "82-83\u00b0F",
+   "entry_utc": "2026-06-13T17:58:00+00:00",
+   "correct": true
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-14",
+   "ticker": "2527032",
+   "label": "66-67\u00b0F",
+   "entry_utc": "2026-06-14T05:02:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-14",
+   "ticker": "2527033",
+   "label": "68-69\u00b0F",
+   "entry_utc": "2026-06-14T06:51:00+00:00",
+   "correct": true
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-15",
+   "ticker": "2537896",
+   "label": "65\u00b0F or below",
+   "entry_utc": "2026-06-15T05:02:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-15",
+   "ticker": "2537897",
+   "label": "66-67\u00b0F",
+   "entry_utc": "2026-06-15T14:34:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-15",
+   "ticker": "2537898",
+   "label": "68-69\u00b0F",
+   "entry_utc": "2026-06-15T15:12:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-15",
+   "ticker": "2537899",
+   "label": "70-71\u00b0F",
+   "entry_utc": "2026-06-15T16:18:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-15",
+   "ticker": "2537900",
+   "label": "72-73\u00b0F",
+   "entry_utc": "2026-06-15T17:52:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-15",
+   "ticker": "2537901",
+   "label": "74-75\u00b0F",
+   "entry_utc": "2026-06-15T19:14:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-15",
+   "ticker": "2537902",
+   "label": "76-77\u00b0F",
+   "entry_utc": "2026-06-15T22:28:00+00:00",
+   "correct": true
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-16",
+   "ticker": "2548283",
+   "label": "66-67\u00b0F",
+   "entry_utc": "2026-06-16T05:02:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-16",
+   "ticker": "2548284",
+   "label": "68-69\u00b0F",
+   "entry_utc": "2026-06-16T14:43:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-16",
+   "ticker": "2548285",
+   "label": "70-71\u00b0F",
+   "entry_utc": "2026-06-16T15:16:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-16",
+   "ticker": "2548286",
+   "label": "72-73\u00b0F",
+   "entry_utc": "2026-06-16T17:05:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-16",
+   "ticker": "2548287",
+   "label": "74-75\u00b0F",
+   "entry_utc": "2026-06-16T17:57:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-17",
+   "ticker": "2559468",
+   "label": "60-61\u00b0F",
+   "entry_utc": "2026-06-17T05:02:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-17",
+   "ticker": "2559469",
+   "label": "62-63\u00b0F",
+   "entry_utc": "2026-06-17T20:43:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-17",
+   "ticker": "2559470",
+   "label": "64-65\u00b0F",
+   "entry_utc": "2026-06-17T21:02:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-17",
+   "ticker": "2559471",
+   "label": "66-67\u00b0F",
+   "entry_utc": "2026-06-17T21:23:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-17",
+   "ticker": "2559472",
+   "label": "68-69\u00b0F",
+   "entry_utc": "2026-06-17T21:49:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-19",
+   "ticker": "2590586",
+   "label": "67\u00b0F or below",
+   "entry_utc": "2026-06-19T05:02:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-19",
+   "ticker": "2590587",
+   "label": "68-69\u00b0F",
+   "entry_utc": "2026-06-19T14:14:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-19",
+   "ticker": "2590588",
+   "label": "70-71\u00b0F",
+   "entry_utc": "2026-06-19T15:25:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-19",
+   "ticker": "2590589",
+   "label": "72-73\u00b0F",
+   "entry_utc": "2026-06-19T16:47:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-19",
+   "ticker": "2590590",
+   "label": "74-75\u00b0F",
+   "entry_utc": "2026-06-19T19:31:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-19",
+   "ticker": "2590591",
+   "label": "76-77\u00b0F",
+   "entry_utc": "2026-06-19T21:33:00+00:00",
+   "correct": true
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-20",
+   "ticker": "2602340",
+   "label": "69\u00b0F or below",
+   "entry_utc": "2026-06-20T05:02:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-20",
+   "ticker": "2602341",
+   "label": "70-71\u00b0F",
+   "entry_utc": "2026-06-20T15:31:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-20",
+   "ticker": "2602342",
+   "label": "72-73\u00b0F",
+   "entry_utc": "2026-06-20T16:38:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-20",
+   "ticker": "2602343",
+   "label": "74-75\u00b0F",
+   "entry_utc": "2026-06-20T17:35:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-20",
+   "ticker": "2602344",
+   "label": "76-77\u00b0F",
+   "entry_utc": "2026-06-20T21:03:00+00:00",
+   "correct": true
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-26",
+   "ticker": "2676640",
+   "label": "65\u00b0F or below",
+   "entry_utc": "2026-06-26T05:26:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-27",
+   "ticker": "2687192",
+   "label": "67\u00b0F or below",
+   "entry_utc": "2026-06-27T05:02:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-27",
+   "ticker": "2687193",
+   "label": "68-69\u00b0F",
+   "entry_utc": "2026-06-27T14:12:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-27",
+   "ticker": "2687194",
+   "label": "70-71\u00b0F",
+   "entry_utc": "2026-06-27T14:49:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-27",
+   "ticker": "2687195",
+   "label": "72-73\u00b0F",
+   "entry_utc": "2026-06-27T15:19:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-27",
+   "ticker": "2687196",
+   "label": "74-75\u00b0F",
+   "entry_utc": "2026-06-27T16:59:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-29",
+   "ticker": "2714220",
+   "label": "85\u00b0F or below",
+   "entry_utc": "2026-06-29T05:27:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-29",
+   "ticker": "2714221",
+   "label": "86-87\u00b0F",
+   "entry_utc": "2026-06-29T16:12:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-29",
+   "ticker": "2714222",
+   "label": "88-89\u00b0F",
+   "entry_utc": "2026-06-29T16:49:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-29",
+   "ticker": "2714223",
+   "label": "90-91\u00b0F",
+   "entry_utc": "2026-06-29T18:48:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-30",
+   "ticker": "2725264",
+   "label": "87\u00b0F or below",
+   "entry_utc": "2026-06-30T05:02:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-30",
+   "ticker": "2725265",
+   "label": "88-89\u00b0F",
+   "entry_utc": "2026-06-30T16:48:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-30",
+   "ticker": "2725267",
+   "label": "92-93\u00b0F",
+   "entry_utc": "2026-06-30T20:59:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-01",
+   "ticker": "2737676",
+   "label": "87\u00b0F or below",
+   "entry_utc": "2026-07-01T05:02:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-01",
+   "ticker": "2737677",
+   "label": "88-89\u00b0F",
+   "entry_utc": "2026-07-01T16:05:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-01",
+   "ticker": "2737678",
+   "label": "90-91\u00b0F",
+   "entry_utc": "2026-07-01T16:56:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-01",
+   "ticker": "2737679",
+   "label": "92-93\u00b0F",
+   "entry_utc": "2026-07-01T18:04:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-01",
+   "ticker": "2737680",
+   "label": "94-95\u00b0F",
+   "entry_utc": "2026-07-01T20:35:00+00:00",
+   "correct": true
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-02",
+   "ticker": "2749951",
+   "label": "87\u00b0F or below",
+   "entry_utc": "2026-07-02T05:02:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-02",
+   "ticker": "2749952",
+   "label": "88-89\u00b0F",
+   "entry_utc": "2026-07-02T17:06:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-02",
+   "ticker": "2749953",
+   "label": "90-91\u00b0F",
+   "entry_utc": "2026-07-02T17:52:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-02",
+   "ticker": "2749954",
+   "label": "92-93\u00b0F",
+   "entry_utc": "2026-07-02T18:42:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-02",
+   "ticker": "2749955",
+   "label": "94-95\u00b0F",
+   "entry_utc": "2026-07-02T20:28:00+00:00",
+   "correct": true
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-03",
+   "ticker": "2763860",
+   "label": "77\u00b0F or below",
+   "entry_utc": "2026-07-03T05:02:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-03",
+   "ticker": "2763861",
+   "label": "78-79\u00b0F",
+   "entry_utc": "2026-07-03T13:29:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-03",
+   "ticker": "2763862",
+   "label": "80-81\u00b0F",
+   "entry_utc": "2026-07-03T14:16:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-03",
+   "ticker": "2763863",
+   "label": "82-83\u00b0F",
+   "entry_utc": "2026-07-03T14:50:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-03",
+   "ticker": "2763864",
+   "label": "84-85\u00b0F",
+   "entry_utc": "2026-07-03T15:44:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-03",
+   "ticker": "2763865",
+   "label": "86-87\u00b0F",
+   "entry_utc": "2026-07-03T16:57:00+00:00",
+   "correct": true
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-04",
+   "ticker": "2777781",
+   "label": "75\u00b0F or below",
+   "entry_utc": "2026-07-04T05:02:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-04",
+   "ticker": "2777782",
+   "label": "76-77\u00b0F",
+   "entry_utc": "2026-07-04T13:53:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-04",
+   "ticker": "2777783",
+   "label": "78-79\u00b0F",
+   "entry_utc": "2026-07-04T14:30:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-04",
+   "ticker": "2777784",
+   "label": "80-81\u00b0F",
+   "entry_utc": "2026-07-04T15:54:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-04",
+   "ticker": "2777785",
+   "label": "82-83\u00b0F",
+   "entry_utc": "2026-07-04T16:45:00+00:00",
+   "correct": true
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-05",
+   "ticker": "2790127",
+   "label": "71\u00b0F or below",
+   "entry_utc": "2026-07-05T05:02:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-05",
+   "ticker": "2790129",
+   "label": "74-75\u00b0F",
+   "entry_utc": "2026-07-05T20:00:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-06",
+   "ticker": "2801086",
+   "label": "71\u00b0F or below",
+   "entry_utc": "2026-07-06T05:02:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-06",
+   "ticker": "2801087",
+   "label": "72-73\u00b0F",
+   "entry_utc": "2026-07-06T13:30:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-06",
+   "ticker": "2801088",
+   "label": "74-75\u00b0F",
+   "entry_utc": "2026-07-06T15:16:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-06",
+   "ticker": "2801089",
+   "label": "76-77\u00b0F",
+   "entry_utc": "2026-07-06T17:07:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-06",
+   "ticker": "2801090",
+   "label": "78-79\u00b0F",
+   "entry_utc": "2026-07-06T19:27:00+00:00",
+   "correct": true
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-07",
+   "ticker": "2811618",
+   "label": "73\u00b0F or below",
+   "entry_utc": "2026-07-07T05:02:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-07",
+   "ticker": "2811619",
+   "label": "74-75\u00b0F",
+   "entry_utc": "2026-07-07T13:11:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-07",
+   "ticker": "2811620",
+   "label": "76-77\u00b0F",
+   "entry_utc": "2026-07-07T13:42:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-07",
+   "ticker": "2811621",
+   "label": "78-79\u00b0F",
+   "entry_utc": "2026-07-07T14:02:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-07",
+   "ticker": "2811622",
+   "label": "80-81\u00b0F",
+   "entry_utc": "2026-07-07T14:45:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-07",
+   "ticker": "2811623",
+   "label": "82-83\u00b0F",
+   "entry_utc": "2026-07-07T16:21:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-07",
+   "ticker": "2811624",
+   "label": "84-85\u00b0F",
+   "entry_utc": "2026-07-07T18:35:00+00:00",
+   "correct": true
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-08",
+   "ticker": "2824870",
+   "label": "77\u00b0F or below",
+   "entry_utc": "2026-07-08T05:02:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-08",
+   "ticker": "2824871",
+   "label": "78-79\u00b0F",
+   "entry_utc": "2026-07-08T13:26:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-08",
+   "ticker": "2824872",
+   "label": "80-81\u00b0F",
+   "entry_utc": "2026-07-08T14:13:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-08",
+   "ticker": "2824873",
+   "label": "82-83\u00b0F",
+   "entry_utc": "2026-07-08T14:53:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-08",
+   "ticker": "2824874",
+   "label": "84-85\u00b0F",
+   "entry_utc": "2026-07-08T16:21:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-08",
+   "ticker": "2824875",
+   "label": "86-87\u00b0F",
+   "entry_utc": "2026-07-08T18:17:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-08",
+   "ticker": "2824876",
+   "label": "88-89\u00b0F",
+   "entry_utc": "2026-07-08T21:20:00+00:00",
+   "correct": true
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-10",
+   "ticker": "2853373",
+   "label": "71\u00b0F or below",
+   "entry_utc": "2026-07-10T06:13:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-10",
+   "ticker": "2853374",
+   "label": "72-73\u00b0F",
+   "entry_utc": "2026-07-10T12:59:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-10",
+   "ticker": "2853375",
+   "label": "74-75\u00b0F",
+   "entry_utc": "2026-07-10T13:51:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-10",
+   "ticker": "2853376",
+   "label": "76-77\u00b0F",
+   "entry_utc": "2026-07-10T14:30:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-10",
+   "ticker": "2853377",
+   "label": "78-79\u00b0F",
+   "entry_utc": "2026-07-10T15:49:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-10",
+   "ticker": "2853378",
+   "label": "80-81\u00b0F",
+   "entry_utc": "2026-07-10T18:15:00+00:00",
+   "correct": true
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-11",
+   "ticker": "2865611",
+   "label": "77\u00b0F or below",
+   "entry_utc": "2026-07-11T05:02:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-11",
+   "ticker": "2865612",
+   "label": "78-79\u00b0F",
+   "entry_utc": "2026-07-11T15:01:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-11",
+   "ticker": "2865613",
+   "label": "80-81\u00b0F",
+   "entry_utc": "2026-07-11T16:39:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-12",
+   "ticker": "2876647",
+   "label": "79\u00b0F or below",
+   "entry_utc": "2026-07-12T05:02:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-12",
+   "ticker": "2876648",
+   "label": "80-81\u00b0F",
+   "entry_utc": "2026-07-12T14:23:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-12",
+   "ticker": "2876649",
+   "label": "82-83\u00b0F",
+   "entry_utc": "2026-07-12T15:31:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-12",
+   "ticker": "2876650",
+   "label": "84-85\u00b0F",
+   "entry_utc": "2026-07-12T17:00:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-13",
+   "ticker": "2887949",
+   "label": "89\u00b0F or below",
+   "entry_utc": "2026-07-13T05:02:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-13",
+   "ticker": "2887950",
+   "label": "90-91\u00b0F",
+   "entry_utc": "2026-07-13T19:17:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-13",
+   "ticker": "2887951",
+   "label": "92-93\u00b0F",
+   "entry_utc": "2026-07-13T21:36:00+00:00",
+   "correct": true
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-14",
+   "ticker": "2901211",
+   "label": "93\u00b0F or below",
+   "entry_utc": "2026-07-14T05:02:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-14",
+   "ticker": "2901212",
+   "label": "94-95\u00b0F",
+   "entry_utc": "2026-07-14T19:24:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-15",
+   "ticker": "2916013",
+   "label": "89\u00b0F or below",
+   "entry_utc": "2026-07-15T05:02:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-15",
+   "ticker": "2916014",
+   "label": "90-91\u00b0F",
+   "entry_utc": "2026-07-15T16:50:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-15",
+   "ticker": "2916015",
+   "label": "92-93\u00b0F",
+   "entry_utc": "2026-07-15T17:42:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-15",
+   "ticker": "2916016",
+   "label": "94-95\u00b0F",
+   "entry_utc": "2026-07-15T20:38:00+00:00",
+   "correct": true
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-17",
+   "ticker": "2941469",
+   "label": "87\u00b0F or below",
+   "entry_utc": "2026-07-17T05:05:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-17",
+   "ticker": "2941470",
+   "label": "88-89\u00b0F",
+   "entry_utc": "2026-07-17T16:29:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-17",
+   "ticker": "2941471",
+   "label": "90-91\u00b0F",
+   "entry_utc": "2026-07-17T16:55:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-18",
+   "ticker": "2954226",
+   "label": "81\u00b0F or below",
+   "entry_utc": "2026-07-18T05:02:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-18",
+   "ticker": "2954227",
+   "label": "82-83\u00b0F",
+   "entry_utc": "2026-07-18T13:53:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-18",
+   "ticker": "2954228",
+   "label": "84-85\u00b0F",
+   "entry_utc": "2026-07-18T14:04:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-18",
+   "ticker": "2954229",
+   "label": "86-87\u00b0F",
+   "entry_utc": "2026-07-18T15:20:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-18",
+   "ticker": "2954230",
+   "label": "88-89\u00b0F",
+   "entry_utc": "2026-07-18T19:33:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-18",
+   "ticker": "2954231",
+   "label": "90-91\u00b0F",
+   "entry_utc": "2026-07-18T20:40:00+00:00",
+   "correct": true
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-19",
+   "ticker": "2967354",
+   "label": "71\u00b0F or below",
+   "entry_utc": "2026-07-19T05:02:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-19",
+   "ticker": "2967355",
+   "label": "72-73\u00b0F",
+   "entry_utc": "2026-07-19T13:54:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-19",
+   "ticker": "2967356",
+   "label": "74-75\u00b0F",
+   "entry_utc": "2026-07-19T15:27:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-19",
+   "ticker": "2967357",
+   "label": "76-77\u00b0F",
+   "entry_utc": "2026-07-19T16:03:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-19",
+   "ticker": "2967358",
+   "label": "78-79\u00b0F",
+   "entry_utc": "2026-07-19T19:16:00+00:00",
+   "correct": true
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-20",
+   "ticker": "2979218",
+   "label": "79\u00b0F or below",
+   "entry_utc": "2026-07-20T05:02:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-20",
+   "ticker": "2979219",
+   "label": "80-81\u00b0F",
+   "entry_utc": "2026-07-20T20:11:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-21",
+   "ticker": "2995436",
+   "label": "79\u00b0F or below",
+   "entry_utc": "2026-07-21T05:02:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-21",
+   "ticker": "2995437",
+   "label": "80-81\u00b0F",
+   "entry_utc": "2026-07-21T14:25:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-21",
+   "ticker": "2995438",
+   "label": "82-83\u00b0F",
+   "entry_utc": "2026-07-21T15:26:00+00:00",
+   "correct": false
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-21",
+   "ticker": "2995439",
+   "label": "84-85\u00b0F",
+   "entry_utc": "2026-07-21T17:16:00+00:00",
+   "correct": false
+  }
+ ],
+ "ev_fires_n": 80,
+ "ev_results": [
+  {
+   "city": "chicago",
+   "date": "2026-02-23",
+   "won": true,
+   "raw_gap_c": 19.5,
+   "ask_proxy_c": 90.5,
+   "fee_c": 0.4299,
+   "net_ev_c": 9.07
+  },
+  {
+   "city": "chicago",
+   "date": "2026-02-23",
+   "won": false,
+   "raw_gap_c": 56.5,
+   "ask_proxy_c": 53.5,
+   "fee_c": 1.2439,
+   "net_ev_c": -54.744
+  },
+  {
+   "city": "chicago",
+   "date": "2026-02-24",
+   "won": false,
+   "raw_gap_c": 33.5,
+   "ask_proxy_c": 76.5,
+   "fee_c": 0.8989,
+   "net_ev_c": -77.399
+  },
+  {
+   "city": "chicago",
+   "date": "2026-02-25",
+   "won": true,
+   "raw_gap_c": 23.0,
+   "ask_proxy_c": 87.0,
+   "fee_c": 0.5655,
+   "net_ev_c": 12.434
+  },
+  {
+   "city": "chicago",
+   "date": "2026-02-25",
+   "won": false,
+   "raw_gap_c": 59.5,
+   "ask_proxy_c": 50.5,
+   "fee_c": 1.2499,
+   "net_ev_c": -51.75
+  },
+  {
+   "city": "chicago",
+   "date": "2026-02-26",
+   "won": false,
+   "raw_gap_c": 94.15,
+   "ask_proxy_c": 15.85,
+   "fee_c": 0.6669,
+   "net_ev_c": -16.517
+  },
+  {
+   "city": "chicago",
+   "date": "2026-02-27",
+   "won": true,
+   "raw_gap_c": 54.45,
+   "ask_proxy_c": 55.55,
+   "fee_c": 1.2346,
+   "net_ev_c": 43.215
+  },
+  {
+   "city": "chicago",
+   "date": "2026-02-27",
+   "won": false,
+   "raw_gap_c": 51.5,
+   "ask_proxy_c": 58.5,
+   "fee_c": 1.2139,
+   "net_ev_c": -59.714
+  },
+  {
+   "city": "chicago",
+   "date": "2026-02-28",
+   "won": true,
+   "raw_gap_c": 5.0,
+   "ask_proxy_c": 99.9,
+   "fee_c": 0.005,
+   "net_ev_c": 0.095
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-06",
+   "won": true,
+   "raw_gap_c": 79.5,
+   "ask_proxy_c": 30.5,
+   "fee_c": 1.0599,
+   "net_ev_c": 68.44
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-06",
+   "won": false,
+   "raw_gap_c": 89.35,
+   "ask_proxy_c": 20.65,
+   "fee_c": 0.8193,
+   "net_ev_c": -21.469
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-07",
+   "won": true,
+   "raw_gap_c": 4.55,
+   "ask_proxy_c": 99.9,
+   "fee_c": 0.005,
+   "net_ev_c": 0.095
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-09",
+   "won": true,
+   "raw_gap_c": 56.0,
+   "ask_proxy_c": 54.0,
+   "fee_c": 1.242,
+   "net_ev_c": 44.758
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-09",
+   "won": false,
+   "raw_gap_c": 70.5,
+   "ask_proxy_c": 39.5,
+   "fee_c": 1.1949,
+   "net_ev_c": -40.695
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-10",
+   "won": true,
+   "raw_gap_c": 68.0,
+   "ask_proxy_c": 42.0,
+   "fee_c": 1.218,
+   "net_ev_c": 56.782
+  },
+  {
+   "city": "chicago",
+   "date": "2026-03-12",
+   "won": false,
+   "raw_gap_c": 96.2,
+   "ask_proxy_c": 13.8,
+   "fee_c": 0.5948,
+   "net_ev_c": -14.395
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-12",
+   "won": false,
+   "raw_gap_c": 99.35,
+   "ask_proxy_c": 10.65,
+   "fee_c": 0.4758,
+   "net_ev_c": -11.126
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-16",
+   "won": true,
+   "raw_gap_c": 0.15,
+   "ask_proxy_c": 99.9,
+   "fee_c": 0.005,
+   "net_ev_c": 0.095
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-21",
+   "won": true,
+   "raw_gap_c": 49.0,
+   "ask_proxy_c": 61.0,
+   "fee_c": 1.1895,
+   "net_ev_c": 37.81
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-28",
+   "won": true,
+   "raw_gap_c": 52.0,
+   "ask_proxy_c": 58.0,
+   "fee_c": 1.218,
+   "net_ev_c": 40.782
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-28",
+   "won": false,
+   "raw_gap_c": 91.0,
+   "ask_proxy_c": 19.0,
+   "fee_c": 0.7695,
+   "net_ev_c": -19.77
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-29",
+   "won": true,
+   "raw_gap_c": 0.5,
+   "ask_proxy_c": 99.9,
+   "fee_c": 0.005,
+   "net_ev_c": 0.095
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-29",
+   "won": false,
+   "raw_gap_c": 51.5,
+   "ask_proxy_c": 58.5,
+   "fee_c": 1.2139,
+   "net_ev_c": -59.714
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-31",
+   "won": true,
+   "raw_gap_c": 0.2,
+   "ask_proxy_c": 99.9,
+   "fee_c": 0.005,
+   "net_ev_c": 0.095
+  },
+  {
+   "city": "chicago",
+   "date": "2026-05-31",
+   "won": false,
+   "raw_gap_c": 99.7,
+   "ask_proxy_c": 10.3,
+   "fee_c": 0.462,
+   "net_ev_c": -10.762
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-02",
+   "won": true,
+   "raw_gap_c": 0.15,
+   "ask_proxy_c": 99.9,
+   "fee_c": 0.005,
+   "net_ev_c": 0.095
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-02",
+   "won": false,
+   "raw_gap_c": 99.45,
+   "ask_proxy_c": 10.55,
+   "fee_c": 0.4718,
+   "net_ev_c": -11.022
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-03",
+   "won": true,
+   "raw_gap_c": 0.25,
+   "ask_proxy_c": 99.9,
+   "fee_c": 0.005,
+   "net_ev_c": 0.095
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-03",
+   "won": false,
+   "raw_gap_c": 99.75,
+   "ask_proxy_c": 10.25,
+   "fee_c": 0.46,
+   "net_ev_c": -10.71
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-04",
+   "won": true,
+   "raw_gap_c": 0.05,
+   "ask_proxy_c": 99.9,
+   "fee_c": 0.005,
+   "net_ev_c": 0.095
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-04",
+   "won": false,
+   "raw_gap_c": 99.95,
+   "ask_proxy_c": 10.05,
+   "fee_c": 0.452,
+   "net_ev_c": -10.502
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-05",
+   "won": true,
+   "raw_gap_c": 0.25,
+   "ask_proxy_c": 99.9,
+   "fee_c": 0.005,
+   "net_ev_c": 0.095
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-06",
+   "won": true,
+   "raw_gap_c": 68.5,
+   "ask_proxy_c": 41.5,
+   "fee_c": 1.2139,
+   "net_ev_c": 57.286
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-06",
+   "won": false,
+   "raw_gap_c": 95.0,
+   "ask_proxy_c": 15.0,
+   "fee_c": 0.6375,
+   "net_ev_c": -15.637
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-09",
+   "won": true,
+   "raw_gap_c": 59.9,
+   "ask_proxy_c": 50.1,
+   "fee_c": 1.25,
+   "net_ev_c": 48.65
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-09",
+   "won": false,
+   "raw_gap_c": 99.95,
+   "ask_proxy_c": 10.05,
+   "fee_c": 0.452,
+   "net_ev_c": -10.502
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-10",
+   "won": true,
+   "raw_gap_c": 42.0,
+   "ask_proxy_c": 68.0,
+   "fee_c": 1.088,
+   "net_ev_c": 30.912
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-10",
+   "won": false,
+   "raw_gap_c": 77.5,
+   "ask_proxy_c": 32.5,
+   "fee_c": 1.0969,
+   "net_ev_c": -33.597
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-13",
+   "won": true,
+   "raw_gap_c": 96.5,
+   "ask_proxy_c": 13.5,
+   "fee_c": 0.5839,
+   "net_ev_c": 85.916
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-13",
+   "won": false,
+   "raw_gap_c": 99.7,
+   "ask_proxy_c": 10.3,
+   "fee_c": 0.462,
+   "net_ev_c": -10.762
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-14",
+   "won": true,
+   "raw_gap_c": 80.5,
+   "ask_proxy_c": 29.5,
+   "fee_c": 1.0399,
+   "net_ev_c": 69.46
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-14",
+   "won": false,
+   "raw_gap_c": 97.4,
+   "ask_proxy_c": 12.6,
+   "fee_c": 0.5506,
+   "net_ev_c": -13.151
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-15",
+   "won": true,
+   "raw_gap_c": 71.5,
+   "ask_proxy_c": 38.5,
+   "fee_c": 1.1839,
+   "net_ev_c": 60.316
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-15",
+   "won": false,
+   "raw_gap_c": 50.0,
+   "ask_proxy_c": 60.0,
+   "fee_c": 1.2,
+   "net_ev_c": -61.2
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-19",
+   "won": true,
+   "raw_gap_c": 55.5,
+   "ask_proxy_c": 54.5,
+   "fee_c": 1.2399,
+   "net_ev_c": 44.26
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-19",
+   "won": false,
+   "raw_gap_c": 89.5,
+   "ask_proxy_c": 20.5,
+   "fee_c": 0.8149,
+   "net_ev_c": -21.315
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-20",
+   "won": true,
+   "raw_gap_c": 16.0,
+   "ask_proxy_c": 94.0,
+   "fee_c": 0.282,
+   "net_ev_c": 5.718
+  },
+  {
+   "city": "chicago",
+   "date": "2026-06-20",
+   "won": false,
+   "raw_gap_c": 94.65,
+   "ask_proxy_c": 15.35,
+   "fee_c": 0.6497,
+   "net_ev_c": -16.0
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-01",
+   "won": true,
+   "raw_gap_c": 4.5,
+   "ask_proxy_c": 99.9,
+   "fee_c": 0.005,
+   "net_ev_c": 0.095
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-01",
+   "won": false,
+   "raw_gap_c": 85.0,
+   "ask_proxy_c": 25.0,
+   "fee_c": 0.9375,
+   "net_ev_c": -25.938
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-02",
+   "won": true,
+   "raw_gap_c": 22.5,
+   "ask_proxy_c": 87.5,
+   "fee_c": 0.5469,
+   "net_ev_c": 11.953
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-02",
+   "won": false,
+   "raw_gap_c": 83.5,
+   "ask_proxy_c": 26.5,
+   "fee_c": 0.9739,
+   "net_ev_c": -27.474
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-03",
+   "won": true,
+   "raw_gap_c": 90.5,
+   "ask_proxy_c": 19.5,
+   "fee_c": 0.7849,
+   "net_ev_c": 79.715
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-03",
+   "won": false,
+   "raw_gap_c": 95.4,
+   "ask_proxy_c": 14.6,
+   "fee_c": 0.6234,
+   "net_ev_c": -15.223
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-04",
+   "won": true,
+   "raw_gap_c": 44.0,
+   "ask_proxy_c": 66.0,
+   "fee_c": 1.122,
+   "net_ev_c": 32.878
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-04",
+   "won": false,
+   "raw_gap_c": 81.75,
+   "ask_proxy_c": 28.25,
+   "fee_c": 1.0135,
+   "net_ev_c": -29.263
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-06",
+   "won": true,
+   "raw_gap_c": 58.5,
+   "ask_proxy_c": 51.5,
+   "fee_c": 1.2489,
+   "net_ev_c": 47.251
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-06",
+   "won": false,
+   "raw_gap_c": 79.0,
+   "ask_proxy_c": 31.0,
+   "fee_c": 1.0695,
+   "net_ev_c": -32.069
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-07",
+   "won": true,
+   "raw_gap_c": 63.5,
+   "ask_proxy_c": 46.5,
+   "fee_c": 1.2439,
+   "net_ev_c": 52.256
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-07",
+   "won": false,
+   "raw_gap_c": 94.0,
+   "ask_proxy_c": 16.0,
+   "fee_c": 0.672,
+   "net_ev_c": -16.672
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-08",
+   "won": true,
+   "raw_gap_c": 7.0,
+   "ask_proxy_c": 99.9,
+   "fee_c": 0.005,
+   "net_ev_c": 0.095
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-08",
+   "won": false,
+   "raw_gap_c": 83.5,
+   "ask_proxy_c": 26.5,
+   "fee_c": 0.9739,
+   "net_ev_c": -27.474
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-10",
+   "won": true,
+   "raw_gap_c": 67.0,
+   "ask_proxy_c": 43.0,
+   "fee_c": 1.2255,
+   "net_ev_c": 55.775
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-10",
+   "won": false,
+   "raw_gap_c": 96.5,
+   "ask_proxy_c": 13.5,
+   "fee_c": 0.5839,
+   "net_ev_c": -14.084
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-13",
+   "won": true,
+   "raw_gap_c": 3.6,
+   "ask_proxy_c": 99.9,
+   "fee_c": 0.005,
+   "net_ev_c": 0.095
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-13",
+   "won": false,
+   "raw_gap_c": 94.0,
+   "ask_proxy_c": 16.0,
+   "fee_c": 0.672,
+   "net_ev_c": -16.672
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-15",
+   "won": true,
+   "raw_gap_c": 4.5,
+   "ask_proxy_c": 99.9,
+   "fee_c": 0.005,
+   "net_ev_c": 0.095
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-15",
+   "won": false,
+   "raw_gap_c": 78.85,
+   "ask_proxy_c": 31.15,
+   "fee_c": 1.0723,
+   "net_ev_c": -32.222
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-18",
+   "won": true,
+   "raw_gap_c": 40.5,
+   "ask_proxy_c": 69.5,
+   "fee_c": 1.0599,
+   "net_ev_c": 29.44
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-18",
+   "won": false,
+   "raw_gap_c": 67.0,
+   "ask_proxy_c": 43.0,
+   "fee_c": 1.2255,
+   "net_ev_c": -44.225
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-19",
+   "won": true,
+   "raw_gap_c": 22.5,
+   "ask_proxy_c": 87.5,
+   "fee_c": 0.5469,
+   "net_ev_c": 11.953
+  },
+  {
+   "city": "chicago",
+   "date": "2026-07-19",
+   "won": false,
+   "raw_gap_c": 96.45,
+   "ask_proxy_c": 13.55,
+   "fee_c": 0.5857,
+   "net_ev_c": -14.136
+  }
+ ],
+ "ev_reweighted_c_per_ct": -19.40920939385988,
+ "live_spreads_c": {
+  "chicago": 20.0
+ },
+ "per_day_log": [
+  {
+   "date": "2026-02-23",
+   "n_day_obs": 932,
+   "winner_never_entered": false,
+   "winner": "1407266"
+  },
+  {
+   "date": "2026-02-24",
+   "n_day_obs": 1440,
+   "winner_never_entered": false,
+   "winner": "1413737"
+  },
+  {
+   "date": "2026-02-25",
+   "n_day_obs": 1437,
+   "winner_never_entered": false,
+   "winner": "1427486"
+  },
+  {
+   "date": "2026-02-26",
+   "n_day_obs": 1147,
+   "winner_never_entered": false,
+   "winner": "1425401"
+  },
+  {
+   "date": "2026-02-27",
+   "n_day_obs": 1440,
+   "winner_never_entered": false,
+   "winner": "1434202"
+  },
+  {
+   "date": "2026-02-28",
+   "n_day_obs": 1242,
+   "winner_never_entered": false,
+   "winner": "1444270"
+  },
+  {
+   "date": "2026-03-02",
+   "n_day_obs": 1175,
+   "winner_never_entered": true,
+   "winner": "1465180"
+  },
+  {
+   "date": "2026-03-03",
+   "n_day_obs": 1440,
+   "winner_never_entered": true,
+   "winner": "1475191"
+  },
+  {
+   "date": "2026-03-04",
+   "n_day_obs": 720,
+   "winner_never_entered": true,
+   "winner": "1482557"
+  },
+  {
+   "date": "2026-03-05",
+   "n_day_obs": 1266,
+   "winner_never_entered": true,
+   "winner": "1491100"
+  },
+  {
+   "date": "2026-03-06",
+   "n_day_obs": 1428,
+   "winner_never_entered": false,
+   "winner": "1498499"
+  },
+  {
+   "date": "2026-03-07",
+   "n_day_obs": 1440,
+   "winner_never_entered": false,
+   "winner": "1506424"
+  },
+  {
+   "date": "2026-03-08",
+   "n_day_obs": 1140,
+   "winner_never_entered": true,
+   "winner": "1514307"
+  },
+  {
+   "date": "2026-03-09",
+   "n_day_obs": 1440,
+   "winner_never_entered": false,
+   "winner": "1522770"
+  },
+  {
+   "date": "2026-03-10",
+   "n_day_obs": 1440,
+   "winner_never_entered": false,
+   "winner": "1540236"
+  },
+  {
+   "date": "2026-03-12",
+   "n_day_obs": 1339,
+   "winner_never_entered": false,
+   "winner": "1549901"
+  },
+  {
+   "date": "2026-03-13",
+   "n_day_obs": 341,
+   "winner_never_entered": true,
+   "winner": "1557715"
+  },
+  {
+   "date": "2026-03-14",
+   "n_day_obs": 1440,
+   "winner_never_entered": true,
+   "winner": "1566227"
+  },
+  {
+   "date": "2026-05-12",
+   "n_day_obs": 1364,
+   "winner_never_entered": false,
+   "winner": "2219766"
+  },
+  {
+   "date": "2026-05-14",
+   "n_day_obs": 941,
+   "winner_never_entered": false,
+   "winner": "2237427"
+  },
+  {
+   "date": "2026-05-16",
+   "n_day_obs": 1205,
+   "winner_never_entered": false,
+   "winner": "2257309"
+  },
+  {
+   "date": "2026-05-21",
+   "n_day_obs": 969,
+   "winner_never_entered": false,
+   "winner": "2299424"
+  },
+  {
+   "date": "2026-05-23",
+   "n_day_obs": 480,
+   "winner_never_entered": true,
+   "winner": "2319821"
+  },
+  {
+   "date": "2026-05-25",
+   "n_day_obs": 1382,
+   "winner_never_entered": false,
+   "winner": "2336764"
+  },
+  {
+   "date": "2026-05-28",
+   "n_day_obs": 934,
+   "winner_never_entered": false,
+   "winner": "2358580"
+  },
+  {
+   "date": "2026-05-29",
+   "n_day_obs": 1212,
+   "winner_never_entered": false,
+   "winner": "2367343"
+  },
+  {
+   "date": "2026-05-31",
+   "n_day_obs": 1172,
+   "winner_never_entered": false,
+   "winner": "2383737"
+  },
+  {
+   "date": "2026-06-01",
+   "n_day_obs": 1440,
+   "winner_never_entered": true,
+   "winner": "2391288"
+  },
+  {
+   "date": "2026-06-02",
+   "n_day_obs": 940,
+   "winner_never_entered": false,
+   "winner": "2399769"
+  },
+  {
+   "date": "2026-06-03",
+   "n_day_obs": 1440,
+   "winner_never_entered": false,
+   "winner": "2407047"
+  },
+  {
+   "date": "2026-06-04",
+   "n_day_obs": 931,
+   "winner_never_entered": false,
+   "winner": "2416067"
+  },
+  {
+   "date": "2026-06-05",
+   "n_day_obs": 1440,
+   "winner_never_entered": false,
+   "winner": "2424524"
+  },
+  {
+   "date": "2026-06-06",
+   "n_day_obs": 1225,
+   "winner_never_entered": false,
+   "winner": "2440851"
+  },
+  {
+   "date": "2026-06-08",
+   "n_day_obs": 1396,
+   "winner_never_entered": true,
+   "winner": "2458941"
+  },
+  {
+   "date": "2026-06-09",
+   "n_day_obs": 1262,
+   "winner_never_entered": false,
+   "winner": "2466908"
+  },
+  {
+   "date": "2026-06-10",
+   "n_day_obs": 1440,
+   "winner_never_entered": false,
+   "winner": "2475323"
+  },
+  {
+   "date": "2026-06-11",
+   "n_day_obs": 1219,
+   "winner_never_entered": true,
+   "winner": "2487076"
+  },
+  {
+   "date": "2026-06-13",
+   "n_day_obs": 1401,
+   "winner_never_entered": false,
+   "winner": "2512758"
+  },
+  {
+   "date": "2026-06-14",
+   "n_day_obs": 1440,
+   "winner_never_entered": false,
+   "winner": "2527033"
+  },
+  {
+   "date": "2026-06-15",
+   "n_day_obs": 1440,
+   "winner_never_entered": false,
+   "winner": "2537902"
+  },
+  {
+   "date": "2026-06-16",
+   "n_day_obs": 1440,
+   "winner_never_entered": true,
+   "winner": "2548288"
+  },
+  {
+   "date": "2026-06-17",
+   "n_day_obs": 1440,
+   "winner_never_entered": true,
+   "winner": "2559473"
+  },
+  {
+   "date": "2026-06-19",
+   "n_day_obs": 1440,
+   "winner_never_entered": false,
+   "winner": "2590591"
+  },
+  {
+   "date": "2026-06-20",
+   "n_day_obs": 1440,
+   "winner_never_entered": false,
+   "winner": "2602344"
+  },
+  {
+   "date": "2026-06-26",
+   "n_day_obs": 1416,
+   "winner_never_entered": true,
+   "winner": "2676641"
+  },
+  {
+   "date": "2026-06-27",
+   "n_day_obs": 1432,
+   "winner_never_entered": true,
+   "winner": "2687197"
+  },
+  {
+   "date": "2026-06-29",
+   "n_day_obs": 1415,
+   "winner_never_entered": true,
+   "winner": "2714224"
+  },
+  {
+   "date": "2026-06-30",
+   "n_day_obs": 1214,
+   "winner_never_entered": true,
+   "winner": "2725268"
+  },
+  {
+   "date": "2026-07-01",
+   "n_day_obs": 1221,
+   "winner_never_entered": false,
+   "winner": "2737680"
+  },
+  {
+   "date": "2026-07-02",
+   "n_day_obs": 1440,
+   "winner_never_entered": false,
+   "winner": "2749955"
+  },
+  {
+   "date": "2026-07-03",
+   "n_day_obs": 1440,
+   "winner_never_entered": false,
+   "winner": "2763865"
+  },
+  {
+   "date": "2026-07-04",
+   "n_day_obs": 1268,
+   "winner_never_entered": false,
+   "winner": "2777785"
+  },
+  {
+   "date": "2026-07-05",
+   "n_day_obs": 1207,
+   "winner_never_entered": true,
+   "winner": "2790130"
+  },
+  {
+   "date": "2026-07-06",
+   "n_day_obs": 1335,
+   "winner_never_entered": false,
+   "winner": "2801090"
+  },
+  {
+   "date": "2026-07-07",
+   "n_day_obs": 1440,
+   "winner_never_entered": false,
+   "winner": "2811624"
+  },
+  {
+   "date": "2026-07-08",
+   "n_day_obs": 1440,
+   "winner_never_entered": false,
+   "winner": "2824876"
+  },
+  {
+   "date": "2026-07-10",
+   "n_day_obs": 1369,
+   "winner_never_entered": false,
+   "winner": "2853378"
+  },
+  {
+   "date": "2026-07-11",
+   "n_day_obs": 1440,
+   "winner_never_entered": true,
+   "winner": "2865614"
+  },
+  {
+   "date": "2026-07-12",
+   "n_day_obs": 1139,
+   "winner_never_entered": true,
+   "winner": "2876651"
+  },
+  {
+   "date": "2026-07-13",
+   "n_day_obs": 1173,
+   "winner_never_entered": false,
+   "winner": "2887951"
+  },
+  {
+   "date": "2026-07-14",
+   "n_day_obs": 1440,
+   "winner_never_entered": true,
+   "winner": "2901213"
+  },
+  {
+   "date": "2026-07-15",
+   "n_day_obs": 1440,
+   "winner_never_entered": false,
+   "winner": "2916016"
+  },
+  {
+   "date": "2026-07-17",
+   "n_day_obs": 1437,
+   "winner_never_entered": true,
+   "winner": "2941472"
+  },
+  {
+   "date": "2026-07-18",
+   "n_day_obs": 1440,
+   "winner_never_entered": false,
+   "winner": "2954231"
+  },
+  {
+   "date": "2026-07-19",
+   "n_day_obs": 1042,
+   "winner_never_entered": false,
+   "winner": "2967358"
+  },
+  {
+   "date": "2026-07-20",
+   "n_day_obs": 1201,
+   "winner_never_entered": true,
+   "winner": "2979220"
+  },
+  {
+   "date": "2026-07-21",
+   "n_day_obs": 1440,
+   "winner_never_entered": true,
+   "winner": "2995440"
+  }
+ ],
+ "verdict": "PASS",
+ "bar_a_coverage_pass": true,
+ "bar_b_falselock_pass": true
+}
