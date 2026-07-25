@@ -39,8 +39,19 @@ STATUS: this is a within-sample consistency test of a post-hoc hypothesis. It CA
 own -- the same data generated it. The genuine out-of-sample tests are the expanded sevoflurane cohort (does the
 lead reappear when restricted to ONSET bins, rescuing what is currently an unexplained null?) and I-CARE.
 
-Estimator unchanged: within-case fixed effects, MAP(t) + dose + dCe + pre-trend over [t-2k, t-k], bins holding both
+Estimator unchanged: within-case fixed effects, MAP(t) + dose + dCe + pre-trend over [t-3k, t-2k], bins holding both
 a forward and a backward neighbour, case-level cluster bootstrap.
+
+PRE-TREND WINDOW -- CORRECTED after adversarial review, and this changed a reported number.
+The pre-trend was previously MAP(t-k) - MAP(t-2k). That is not exactly collinear with the backward outcome
+MAP(t-k) - MAP(t), but it SHARES THE ENDPOINT MAP(t-k) with it. Measured on the real within-case demeaned data the
+partial correlation was 0.528 against the backward outcome and 0.023 against the forward one. The consequence was
+one-sided: adding it shrank the BACKWARD coefficient from -0.412 to -0.202 while leaving the FORWARD coefficient
+untouched at -1.278, inflating the forward-minus-backward statistic from -0.870 to -1.076, i.e. by about 24 %,
+entirely through the backward side. The pre-trend is now measured over [t-3k, t-2k], which shares NO endpoint with
+either outcome (raw correlation with the backward outcome falls from 0.389 to 0.035). Roughly half of the apparent
+benefit of pre-trend adjustment was this artefact; the corrected asymmetry is near -0.97 rather than -1.08. The
+forward coefficient is unaffected by any of this.
 """
 import csv, os, sys
 from collections import defaultdict
@@ -83,14 +94,14 @@ def build(HD, k):
             continue
         ts = sorted(t for t in bd if bd[t][2] == bd[t][2] and bd[t][2] >= 1.0)
         for t in ts[20:]:
-            tf = t + 30.0 * k; tb = t - 30.0 * k; tb2 = t - 60.0 * k
+            tf = t + 30.0 * k; tb = t - 30.0 * k; tb2 = t - 60.0 * k; tb3 = t - 90.0 * k
             tprev = t - 30.0
-            if tf not in bd or tb not in bd or tb2 not in bd or tprev not in bd:
+            if tf not in bd or tb not in bd or tb2 not in bd or tb3 not in bd or tprev not in bd:
                 continue
             bs, m, dose = bd[t]
-            mf = bd[tf][1]; mb = bd[tb][1]; mb2 = bd[tb2][1]; doseb = bd[tb][2]
+            mf = bd[tf][1]; mb = bd[tb][1]; mb2 = bd[tb2][1]; mb3 = bd[tb3][1]; doseb = bd[tb][2]
             prev_bs = bd[tprev][0]
-            if not (m == m and mf == mf and mb == mb and mb2 == mb2 and dose == dose and doseb == doseb):
+            if not (m == m and mf == mf and mb == mb and mb2 == mb2 and mb3 == mb3 and dose == dose and doseb == doseb):
                 continue
             if prev_bs != prev_bs:
                 continue
@@ -100,7 +111,7 @@ def build(HD, k):
             sustained = 1.0 if (bs > 0 and prev_bs > 0) else 0.0
             cols["case"].append(ci[c]); cols["onset"].append(onset); cols["sust"].append(sustained)
             cols["m0"].append(m); cols["dz"].append(dose)
-            cols["dce"].append(dose - doseb); cols["pre"].append(mb - mb2)
+            cols["dce"].append(dose - doseb); cols["pre"].append(mb2 - mb3)   # [t-3k, t-2k]: shares NO endpoint with db (see docstring)
             cols["df"].append(mf - m); cols["db"].append(mb - m)
             cols["burden"].append(burden[c])
     D = {a: np.asarray(b, np.float64) for a, b in cols.items()}

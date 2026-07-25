@@ -49,6 +49,17 @@ HONEST LIMITS, to be carried into any write-up:
   * Because MAP is the numerator of the SVR proxy, a fall in MAP mechanically lowers the proxy unless PP x HR
     falls at least as much. The informative comparison is therefore ACROSS the four outcomes -- which of PP, HR
     and the proxy moves, and by how much relative to MAP -- not the proxy's sign on its own.
+
+PRE-TREND WINDOW -- CORRECTED after adversarial review, and this changed a reported number.
+The pre-trend was previously MAP(t-k) - MAP(t-2k). That is not exactly collinear with the backward outcome
+MAP(t-k) - MAP(t), but it SHARES THE ENDPOINT MAP(t-k) with it. Measured on the real within-case demeaned data the
+partial correlation was 0.528 against the backward outcome and 0.023 against the forward one. The consequence was
+one-sided: adding it shrank the BACKWARD coefficient from -0.412 to -0.202 while leaving the FORWARD coefficient
+untouched at -1.278, inflating the forward-minus-backward statistic from -0.870 to -1.076, i.e. by about 24 %,
+entirely through the backward side. The pre-trend is now measured over [t-3k, t-2k], which shares NO endpoint with
+either outcome (raw correlation with the backward outcome falls from 0.389 to 0.035). Roughly half of the apparent
+benefit of pre-trend adjustment was this artefact; the corrected asymmetry is near -0.97 rather than -1.08. The
+forward coefficient is unaffected by any of this.
 """
 import csv, os, sys
 from collections import defaultdict
@@ -129,16 +140,16 @@ def build(HD, k, exposure, which, emg_cut):
         if len(ts) < 32:
             continue
         for t in ts[20:]:
-            tf = t + 30.0 * k; tb = t - 30.0 * k; tb2 = t - 60.0 * k
-            if tf not in bd or tb not in bd or tb2 not in bd:
+            tf = t + 30.0 * k; tb = t - 30.0 * k; tb2 = t - 60.0 * k; tb3 = t - 90.0 * k
+            if tf not in bd or tb not in bd or tb2 not in bd or tb3 not in bd:
                 continue
             rec = bd[t]
             bs, m, dose, emg = rec[0], rec[1], rec[2], rec[3]
             v0 = value(rec, which); vf = value(bd[tf], which); vb = value(bd[tb], which)
-            mb = bd[tb][1]; mb2 = bd[tb2][1]; doseb = bd[tb][2]
+            mb = bd[tb][1]; mb2 = bd[tb2][1]; mb3 = bd[tb3][1]; doseb = bd[tb][2]
             if not (v0 == v0 and vf == vf and vb == vb):
                 continue
-            if not (m == m and mb == mb and mb2 == mb2 and dose == dose and doseb == doseb):
+            if not (m == m and mb == mb and mb2 == mb2 and mb3 == mb3 and dose == dose and doseb == doseb):
                 continue
             if exposure == "bs":
                 x = 1.0 if bs > 0 else 0.0
@@ -150,7 +161,7 @@ def build(HD, k, exposure, which, emg_cut):
                 ci[c] = len(ci)
             case.append(ci[c]); e.append(x); m0.append(m); dz.append(dose)
             dce.append(dose - doseb)
-            pre.append(mb - mb2)          # trend over [t-2k, t-k]: collinear with NEITHER outcome
+            pre.append(mb2 - mb3)         # [t-3k, t-2k]: shares NO endpoint with db (see docstring)
             df.append(vf - v0); db.append(vb - v0)
     if not case:
         return None

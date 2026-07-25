@@ -41,8 +41,19 @@ CAVEATS THAT MUST TRAVEL WITH ANY RESULT.
     NOT at random (they are more common when the reflex is suppressed), so the BRS subcohort is selected.
   * Anaesthesia itself depresses HRV, so "baseline" here means early-maintenance, not awake, tone.
 
-Estimator unchanged: within-case fixed effects, MAP(t) + dose + dCe + pre-trend over [t-2k, t-k], bins holding both
+Estimator unchanged: within-case fixed effects, MAP(t) + dose + dCe + pre-trend over [t-3k, t-2k], bins holding both
 a forward and a backward neighbour, case-level cluster bootstrap of the between-stratum difference.
+
+PRE-TREND WINDOW -- CORRECTED after adversarial review, and this changed a reported number.
+The pre-trend was previously MAP(t-k) - MAP(t-2k). That is not exactly collinear with the backward outcome
+MAP(t-k) - MAP(t), but it SHARES THE ENDPOINT MAP(t-k) with it. Measured on the real within-case demeaned data the
+partial correlation was 0.528 against the backward outcome and 0.023 against the forward one. The consequence was
+one-sided: adding it shrank the BACKWARD coefficient from -0.412 to -0.202 while leaving the FORWARD coefficient
+untouched at -1.278, inflating the forward-minus-backward statistic from -0.870 to -1.076, i.e. by about 24 %,
+entirely through the backward side. The pre-trend is now measured over [t-3k, t-2k], which shares NO endpoint with
+either outcome (raw correlation with the backward outcome falls from 0.389 to 0.035). Roughly half of the apparent
+benefit of pre-trend adjustment was this artefact; the corrected asymmetry is near -0.97 rather than -1.08. The
+forward coefficient is unaffected by any of this.
 """
 import csv, os, sys
 from collections import defaultdict
@@ -120,12 +131,12 @@ def build(HD, tone, k):
             continue
         rm, lh, br = tone[c]
         for t in ts[20:]:
-            tf = t + 30.0 * k; tb = t - 30.0 * k; tb2 = t - 60.0 * k
-            if tf not in bd or tb not in bd or tb2 not in bd:
+            tf = t + 30.0 * k; tb = t - 30.0 * k; tb2 = t - 60.0 * k; tb3 = t - 90.0 * k
+            if tf not in bd or tb not in bd or tb2 not in bd or tb3 not in bd:
                 continue
             bs, m, dose, age = bd[t]
-            mf = bd[tf][1]; mb = bd[tb][1]; mb2 = bd[tb2][1]; doseb = bd[tb][2]
-            if not (m == m and mf == mf and mb == mb and mb2 == mb2 and dose == dose and doseb == doseb):
+            mf = bd[tf][1]; mb = bd[tb][1]; mb2 = bd[tb2][1]; mb3 = bd[tb3][1]; doseb = bd[tb][2]
+            if not (m == m and mf == mf and mb == mb and mb2 == mb2 and mb3 == mb3 and dose == dose and doseb == doseb):
                 continue
             if bs != bs:
                 continue
@@ -133,7 +144,7 @@ def build(HD, tone, k):
                 ci[c] = len(ci)
             cols["case"].append(ci[c]); cols["e"].append(1.0 if bs > 0 else 0.0)
             cols["m0"].append(m); cols["dz"].append(dose)
-            cols["dce"].append(dose - doseb); cols["pre"].append(mb - mb2)
+            cols["dce"].append(dose - doseb); cols["pre"].append(mb2 - mb3)   # [t-3k, t-2k]: shares NO endpoint with db (see docstring)
             cols["df"].append(mf - m); cols["db"].append(mb - m)
             cols["age"].append(age); cols["rmssd"].append(rm); cols["lfhf"].append(lh); cols["brs"].append(br)
     D = {a: np.asarray(b, np.float64) for a, b in cols.items()}

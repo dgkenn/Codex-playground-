@@ -39,6 +39,17 @@ asymmetry, EMG will show one too.
 
 Verdict rule fixed in advance: the precedence claim survives only if the forward-minus-backward difference stays
 clearly negative in M3 AND in the stable-dose subgroup M4, while the EMG control stays null.
+
+PRE-TREND WINDOW -- CORRECTED after adversarial review, and this changed a reported number.
+The pre-trend was previously MAP(t-k) - MAP(t-2k). That is not exactly collinear with the backward outcome
+MAP(t-k) - MAP(t), but it SHARES THE ENDPOINT MAP(t-k) with it. Measured on the real within-case demeaned data the
+partial correlation was 0.528 against the backward outcome and 0.023 against the forward one. The consequence was
+one-sided: adding it shrank the BACKWARD coefficient from -0.412 to -0.202 while leaving the FORWARD coefficient
+untouched at -1.278, inflating the forward-minus-backward statistic from -0.870 to -1.076, i.e. by about 24 %,
+entirely through the backward side. The pre-trend is now measured over [t-3k, t-2k], which shares NO endpoint with
+either outcome (raw correlation with the backward outcome falls from 0.389 to 0.035). Roughly half of the apparent
+benefit of pre-trend adjustment was this artefact; the corrected asymmetry is near -0.97 rather than -1.08. The
+forward coefficient is unaffected by any of this.
 """
 import csv, os, sys
 from collections import defaultdict
@@ -88,12 +99,12 @@ def build(HD, k, exposure, emg_cut):
         if len(ts) < 32:
             continue
         for t in ts[20:]:
-            tf = t + 30.0 * k; tb = t - 30.0 * k; tb2 = t - 60.0 * k
-            if tf not in bd or tb not in bd or tb2 not in bd:
+            tf = t + 30.0 * k; tb = t - 30.0 * k; tb2 = t - 60.0 * k; tb3 = t - 90.0 * k
+            if tf not in bd or tb not in bd or tb2 not in bd or tb3 not in bd:
                 continue
             bs, m, dose, emg = bd[t]
-            mf = bd[tf][1]; mb = bd[tb][1]; mb2 = bd[tb2][1]; doseb = bd[tb][2]
-            if m != m or mf != mf or mb != mb or mb2 != mb2 or dose != dose or doseb != doseb:
+            mf = bd[tf][1]; mb = bd[tb][1]; mb2 = bd[tb2][1]; mb3 = bd[tb3][1]; doseb = bd[tb][2]
+            if m != m or mf != mf or mb != mb or mb2 != mb2 or mb3 != mb3 or dose != dose or doseb != doseb:
                 continue
             if exposure == "bs":
                 x = bs
@@ -107,7 +118,7 @@ def build(HD, k, exposure, emg_cut):
                 ci[c] = len(ci)
             case.append(ci[c]); e.append(x); m0.append(m); dz.append(dose)
             dce.append(dose - doseb)
-            pre.append(mb - mb2)          # see COLLINEARITY TRAP in the docstring
+            pre.append(mb2 - mb3)         # [t-3k, t-2k]: shares NO endpoint with db (see docstring)
             df.append(mf - m); db.append(mb - m)
     return dict(case=np.array(case, np.int32), e=np.array(e), m0=np.array(m0), dz=np.array(dz),
                 dce=np.array(dce), pre=np.array(pre), df=np.array(df), db=np.array(db), ncase=len(ci))

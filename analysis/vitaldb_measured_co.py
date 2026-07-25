@@ -33,6 +33,17 @@ HONEST LIMITS:
     shares the arterial line with the exposure-adjacent MAP.
   * Its SVR is computed as (MAP - CVP)/CO x 80, so it inherits MAP in its numerator exactly as the proxy did. The
     genuinely independent column here is CO. Read CO first; SVR is the arithmetic complement.
+
+PRE-TREND WINDOW -- CORRECTED after adversarial review, and this changed a reported number.
+The pre-trend was previously MAP(t-k) - MAP(t-2k). That is not exactly collinear with the backward outcome
+MAP(t-k) - MAP(t), but it SHARES THE ENDPOINT MAP(t-k) with it. Measured on the real within-case demeaned data the
+partial correlation was 0.528 against the backward outcome and 0.023 against the forward one. The consequence was
+one-sided: adding it shrank the BACKWARD coefficient from -0.412 to -0.202 while leaving the FORWARD coefficient
+untouched at -1.278, inflating the forward-minus-backward statistic from -0.870 to -1.076, i.e. by about 24 %,
+entirely through the backward side. The pre-trend is now measured over [t-3k, t-2k], which shares NO endpoint with
+either outcome (raw correlation with the backward outcome falls from 0.389 to 0.035). Roughly half of the apparent
+benefit of pre-trend adjustment was this artefact; the corrected asymmetry is near -0.97 rather than -1.08. The
+forward coefficient is unaffected by any of this.
 """
 import csv, os, sys
 from collections import defaultdict
@@ -104,23 +115,23 @@ def build(HD, k, which):
         if len(ts) < 32:
             continue
         for t in ts[20:]:
-            tf = t + 30.0 * k; tb = t - 30.0 * k; tb2 = t - 60.0 * k
-            if tf not in bd or tb not in bd or tb2 not in bd:
+            tf = t + 30.0 * k; tb = t - 30.0 * k; tb2 = t - 60.0 * k; tb3 = t - 90.0 * k
+            if tf not in bd or tb not in bd or tb2 not in bd or tb3 not in bd:
                 continue
             rec = bd[t]
             bs, m, dose = rec[0], rec[1], rec[2]
             v0 = value(rec, which); vf = value(bd[tf], which); vb = value(bd[tb], which)
-            mb = bd[tb][1]; mb2 = bd[tb2][1]; doseb = bd[tb][2]
+            mb = bd[tb][1]; mb2 = bd[tb2][1]; mb3 = bd[tb3][1]; doseb = bd[tb][2]
             if not (v0 == v0 and vf == vf and vb == vb):
                 continue
-            if not (m == m and mb == mb and mb2 == mb2 and dose == dose and doseb == doseb):
+            if not (m == m and mb == mb and mb2 == mb2 and mb3 == mb3 and dose == dose and doseb == doseb):
                 continue
             if c not in ci:
                 ci[c] = len(ci)
             cols["case"].append(ci[c])
             cols["e"].append(1.0 if bs > 0 else 0.0)
             cols["m0"].append(m); cols["dz"].append(dose)
-            cols["dce"].append(dose - doseb); cols["pre"].append(mb - mb2)
+            cols["dce"].append(dose - doseb); cols["pre"].append(mb2 - mb3)   # [t-3k, t-2k]: shares NO endpoint with db (see docstring)
             cols["df"].append(vf - v0); cols["db"].append(vb - v0)
     if not cols:
         return None
