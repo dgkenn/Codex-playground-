@@ -25,6 +25,15 @@ Design is deliberately identical to `analysis/vitaldb_within_case_delta.py` so t
                (dCe and the pre-trend are carried because they were the two surviving confounds; see
                 `analysis/vitaldb_pretrend_dosekinetics.py`)
   * rows     = bins having BOTH a forward and a backward neighbour, so direction is the only thing that differs
+
+  COLLINEARITY TRAP, and why the pre-trend is measured where it is.
+  The obvious definition of a pre-existing trend is MAP(t) - MAP(t-k). For the MAP outcome that is EXACTLY the
+  negative of the backward outcome MAP(t-k) - MAP(t), so putting it in the model makes the backward regression
+  perfectly collinear: the backward coefficient is forced to zero and "forward minus backward" silently collapses
+  into "forward". It prints a clean-looking, significant, and entirely meaningless asymmetry.
+  The pre-trend is therefore measured over the window BEFORE the backward window, MAP(t-k) - MAP(t-2k). That is a
+  genuine pre-existing trajectory and it is collinear with neither direction's outcome. It costs one further bin of
+  history per row.
   * inference= CASE-level cluster bootstrap; the forward-minus-backward contrast is the reported statistic
   * control  = frontal EMG through the identical pipeline
 
@@ -120,16 +129,16 @@ def build(HD, k, exposure, which, emg_cut):
         if len(ts) < 32:
             continue
         for t in ts[20:]:
-            tf = t + 30.0 * k; tb = t - 30.0 * k
-            if tf not in bd or tb not in bd:
+            tf = t + 30.0 * k; tb = t - 30.0 * k; tb2 = t - 60.0 * k
+            if tf not in bd or tb not in bd or tb2 not in bd:
                 continue
             rec = bd[t]
             bs, m, dose, emg = rec[0], rec[1], rec[2], rec[3]
             v0 = value(rec, which); vf = value(bd[tf], which); vb = value(bd[tb], which)
-            mb = bd[tb][1]; doseb = bd[tb][2]
+            mb = bd[tb][1]; mb2 = bd[tb2][1]; doseb = bd[tb][2]
             if not (v0 == v0 and vf == vf and vb == vb):
                 continue
-            if not (m == m and mb == mb and dose == dose and doseb == doseb):
+            if not (m == m and mb == mb and mb2 == mb2 and dose == dose and doseb == doseb):
                 continue
             if exposure == "bs":
                 x = 1.0 if bs > 0 else 0.0
@@ -140,7 +149,8 @@ def build(HD, k, exposure, which, emg_cut):
             if c not in ci:
                 ci[c] = len(ci)
             case.append(ci[c]); e.append(x); m0.append(m); dz.append(dose)
-            dce.append(dose - doseb); pre.append(m - mb)
+            dce.append(dose - doseb)
+            pre.append(mb - mb2)          # trend over [t-2k, t-k]: collinear with NEITHER outcome
             df.append(vf - v0); db.append(vb - v0)
     if not case:
         return None

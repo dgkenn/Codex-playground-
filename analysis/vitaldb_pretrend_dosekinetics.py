@@ -14,9 +14,15 @@ asymmetry without any causal role for the suppression itself:
 
   CONFOUND 2 -- PRE-EXISTING PRESSURE TREND.
       If pressure is already sliding when the suppression appears, the forward window inherits the ongoing slide
-      while the backward window (which looks from t back to t-k) does not capture it symmetrically. Conditioning on
-      the immediately preceding trajectory MAP(t) - MAP(t-k) removes this by construction: the estimate then answers
-      "given that the pressure was doing THIS coming into bin t, does suppression change what it does next?"
+      while the backward window does not capture it symmetrically. Conditioning on the preceding trajectory removes
+      this: the estimate then answers "given that the pressure was doing THIS coming into bin t, does suppression
+      change what it does next?"
+
+      COLLINEARITY TRAP -- the pre-trend must NOT be MAP(t) - MAP(t-k). That quantity is exactly the negative of
+      the backward outcome MAP(t-k) - MAP(t), so including it makes the backward regression perfectly collinear:
+      the backward coefficient is forced to zero and "forward minus backward" silently degenerates into "forward",
+      printing a clean-looking and entirely meaningless asymmetry. The pre-trend is therefore measured over the
+      window BEFORE the backward window, MAP(t-k) - MAP(t-2k), which is collinear with neither outcome.
 
 Models, all with CASE FIXED EFFECTS and CASE-level cluster bootstrap, run on the identical bin set (bins that have
 both a forward and a backward neighbour, so nothing differs between the two directions except direction):
@@ -82,12 +88,12 @@ def build(HD, k, exposure, emg_cut):
         if len(ts) < 32:
             continue
         for t in ts[20:]:
-            tf = t + 30.0 * k; tb = t - 30.0 * k
-            if tf not in bd or tb not in bd:
+            tf = t + 30.0 * k; tb = t - 30.0 * k; tb2 = t - 60.0 * k
+            if tf not in bd or tb not in bd or tb2 not in bd:
                 continue
             bs, m, dose, emg = bd[t]
-            mf = bd[tf][1]; mb = bd[tb][1]; doseb = bd[tb][2]
-            if m != m or mf != mf or mb != mb or dose != dose or doseb != doseb:
+            mf = bd[tf][1]; mb = bd[tb][1]; mb2 = bd[tb2][1]; doseb = bd[tb][2]
+            if m != m or mf != mf or mb != mb or mb2 != mb2 or dose != dose or doseb != doseb:
                 continue
             if exposure == "bs":
                 x = bs
@@ -100,7 +106,8 @@ def build(HD, k, exposure, emg_cut):
             if c not in ci:
                 ci[c] = len(ci)
             case.append(ci[c]); e.append(x); m0.append(m); dz.append(dose)
-            dce.append(dose - doseb); pre.append(m - mb)
+            dce.append(dose - doseb)
+            pre.append(mb - mb2)          # see COLLINEARITY TRAP in the docstring
             df.append(mf - m); db.append(mb - m)
     return dict(case=np.array(case, np.int32), e=np.array(e), m0=np.array(m0), dz=np.array(dz),
                 dce=np.array(dce), pre=np.array(pre), df=np.array(df), db=np.array(db), ncase=len(ci))
