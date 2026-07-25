@@ -194,21 +194,35 @@ def _forward_filter(n, N, obs_mask, sigma2, x0=X0_PRIOR, sigma2_0=SIGMA2_0_PRIOR
         n_t = n[:, t]
         N_t = N[:, t]
         inv_s2p = 1.0 / s2p
-        x = xp.copy()
-        step_cap = 10.0  # damp/limit the Newton step so a bad start can't overshoot into a
-                          # flat tail of the logistic and stall/oscillate (belt-and-braces; the
-                          # step is already well-behaved because g is strictly concave, but N_t
-                          # can be a few hundred so an unclipped first step from x=x_pred can be
-                          # large when p(x_pred) is far from n_t/N_t)
+        x = np.clip(xp.copy(), -X_CLIP, X_CLIP)
+        # Newton-bisection hybrid (the classic "rtsafe" safeguard) to find the posterior mode.
+        # A NAIVE damped/step-capped Newton loop was tried first and is NOT safe here: an
+        # early version simply clipped the Newton step to +-10, and for a case where the prior
+        # x_pred sits near one clip boundary while the current bin's own MLE sits near the
+        # other, the capped step landed almost exactly at the opposite boundary every time,
+        # producing an EXACT period-2 cycle (x oscillating between +3.6 and -6.4 forever,
+        # confirmed by tracing the iteration by hand) that never satisfied the convergence
+        # tolerance and left x_filt at a value the data did not support (verified: bs=0.20 --
+        # true mode logit(0.20)=-1.39 -- was returned as x_filt=+3.6, logistic(3.6)=0.97). Since
+        # g is strictly concave (g'' < 0 everywhere), g' is monotonically decreasing, and the
+        # true mode is bracketed by [-X_CLIP, X_CLIP] for every (xp, s2p) pair we ever construct
+        # (g'(-X_CLIP) >= 0 and g'(X_CLIP) <= 0 always, since xp itself is always within
+        # [-X_CLIP, X_CLIP]). So: take the Newton step when it lands inside the current bracket
+        # (fast, usually 2-4 iterations), otherwise bisect (guaranteed to shrink the bracket by
+        # 2x) -- this cannot cycle or diverge.
+        lo = np.full(C, -X_CLIP)
+        hi = np.full(C, X_CLIP)
         for _ in range(NEWTON_MAX_ITER):
-            p = _logistic(np.clip(x, -X_CLIP, X_CLIP))
+            p = _logistic(x)
             W = N_t * p * (1.0 - p)                       # binomial curvature (information) at x
             grad = (n_t - N_t * p) - (x - xp) * inv_s2p    # g'(x)
             denom = inv_s2p + W                            # -g''(x), always > 0 (strictly concave)
-            step = grad / denom
-            step = np.clip(step, -step_cap, step_cap)
-            x_new = x + step
-            x_new = np.clip(x_new, -X_CLIP, X_CLIP)
+            x_newton = x + grad / denom
+            lo = np.where(grad > 0, np.maximum(lo, x), lo)  # root is to the right of x
+            hi = np.where(grad < 0, np.minimum(hi, x), hi)  # root is to the left of x
+            in_bracket = (x_newton >= lo) & (x_newton <= hi)
+            x_bisect = 0.5 * (lo + hi)
+            x_new = np.where(in_bracket, x_newton, x_bisect)
             x_new = np.where(mask_t, x_new, xp)
             diff = np.max(np.abs(x_new - x)) if C else 0.0
             x = x_new
@@ -502,6 +516,45 @@ def validate_degenerate_inputs():
     return ok
 
 
+def debug_em_trajectory(in_path="/tmp/eeg_probe/bridge_bins.csv", n_cases=5, max_em_iter=50,
+                         sigma2_init=0.05):
+    """Print, for a handful of REAL cases, the fraction of saturated (bs==0 / bs==1) bins and the
+    EM trajectory of sigma^2 across iterations -- direct evidence for/against the runaway
+    described in the module docstring ("IDENTIFIABILITY AT SATURATION"), not just an assertion
+    that it is fixed.
+    """
+    print(f"\n=== INSTRUMENTATION: per-case sigma^2 EM trajectory on real cases (n={n_cases}) ===")
+    cases = _read_bridge_bins(in_path)
+    cids = list(cases.keys())[:n_cases]
+    for cid in cids:
+        rows = cases[cid]
+        T = len(rows)
+        if T < 30:
+            continue
+        v = np.array([r[1] for r in rows])
+        frac0 = float(np.mean(v == 0.0))
+        frac1 = float(np.mean(v == 1.0))
+        bs2 = v.reshape(1, T)
+        N2 = np.full((1, T), float(DEFAULT_N_FRAMES))
+        n_obs = np.round(bs2 * N2)
+        obs_mask = np.isfinite(bs2) & (N2 > 0)
+        sigma2 = np.array([sigma2_init])
+        traj = []
+        for _ in range(max_em_iter):
+            x_filt, sigma2_filt, x_pred, sigma2_pred = _forward_filter(n_obs, N2, obs_mask, sigma2)
+            x_smooth, sigma2_smooth, lag1 = _rts_smooth(x_filt, sigma2_filt, x_pred, sigma2_pred)
+            sigma2_new, _ = _m_step(x_smooth, sigma2_smooth, lag1, np.array([T]))
+            sigma2_new = np.clip(sigma2_new, SIGMA2_FLOOR, SIGMA2_CAP)
+            traj.append(float(sigma2_new[0]))
+            sigma2 = sigma2_new
+        span = max(traj) - min(traj[-10:])
+        oscillating = span > 1e-4 and len(set(round(x, 3) for x in traj[-6:])) > 1
+        print(f"  case {cid}: T={T} frac(bs==0)={frac0:.3f} frac(bs==1)={frac1:.3f}")
+        print(f"    sigma^2 iters 1-8:   {[round(x, 4) for x in traj[:8]]}")
+        print(f"    sigma^2 last 6:      {[round(x, 4) for x in traj[-6:]]}  "
+              f"{'STILL OSCILLATING/NOT CONVERGED' if oscillating else '(settled)'}")
+
+
 def validate_real_data_sanity(in_path="/tmp/eeg_probe/bridge_bins.csv",
                                out_path="/tmp/eeg_probe/bsp_bins.csv", max_em_iter=50):
     print("\n=== VALIDATION 3: sanity vs. raw fraction on real data ===")
@@ -521,23 +574,34 @@ def validate_real_data_sanity(in_path="/tmp/eeg_probe/bridge_bins.csv",
     pair_valid = valid[:, 1:] & valid[:, :-1] & np.isfinite(bs_pad[:, 1:]) & np.isfinite(bs_pad[:, :-1])
     mad_bs = mean_abs_diff1(bs_pad, pair_valid)
     mad_p = mean_abs_diff1(p_smooth, pair_valid)
-    n_nonconverged = int(np.sum(~np.isfinite(res["sigma2"]) & (lengths >= 2)))
+    n_nan_sigma2 = int(np.sum(~np.isfinite(res["sigma2"]) & (lengths >= 2)))
+    s2 = res["sigma2"]
+    s2_finite = s2[np.isfinite(s2)]
+    frac_gt_half = float(np.mean(s2_finite > 0.5)) if s2_finite.size else float("nan")
     print(f"  n cases={C}  n bins={int(lengths.sum())}  n bins used in corr={int(both.sum())}")
-    print(f"  corr(BSP, raw bs fraction) = {corr:.4f}")
-    print(f"  mean |first difference|:  raw bs = {mad_bs:.5f}   BSP = {mad_p:.5f}  "
-          f"(smoother if BSP < raw: {mad_p < mad_bs})")
-    print(f"  cases with length>=2 but sigma2 non-finite (should be 0): {n_nonconverged}")
-    print(f"  sigma^2 across cases: median={np.nanmedian(res['sigma2']):.5g}  "
-          f"min={np.nanmin(res['sigma2']):.5g}  max={np.nanmax(res['sigma2']):.5g}")
+    print(f"  corr(BSP, raw bs fraction) = {corr:.4f}   (target: > 0.9)")
+    print(f"  mean |first difference|:  raw bs = {mad_bs:.5f}   BSP = {mad_p:.5f}   "
+          f"ratio BSP/raw = {mad_p / mad_bs:.3f}  (target: << 1.0; smoother iff ratio < 1)")
+    print(f"  cases with length>=2 but sigma2 NaN (should be 0): {n_nan_sigma2}")
+    print(f"  sigma^2 across cases: 5%={np.nanpercentile(s2, 5):.5g}  "
+          f"50%={np.nanpercentile(s2, 50):.5g}  95%={np.nanpercentile(s2, 95):.5g}  "
+          f"max={np.nanmax(s2):.5g}")
+    print(f"  fraction of cases with sigma^2 > 0.5 (previously-failing regime): {frac_gt_half:.1%}")
+    print(f"  EM diagnostics: cases with sigma^2 delta >= tol at stop: "
+          f"{res['diag']['n_not_converged']}/{C};  cases where sigma^2 hit the SIGMA2_CAP="
+          f"{SIGMA2_CAP} safety net: {res['diag']['n_capped']}/{C}")
     print(f"  wrote {out_path}")
-    return dict(corr=corr, mad_bs=mad_bs, mad_p=mad_p, elapsed_s=res["elapsed_s"],
-                n_cases=C, n_bins=int(lengths.sum()))
+    return dict(corr=corr, mad_bs=mad_bs, mad_p=mad_p, ratio=mad_p / mad_bs, elapsed_s=res["elapsed_s"],
+                n_cases=C, n_bins=int(lengths.sum()), sigma2_pctl=(float(np.nanpercentile(s2, 5)),
+                float(np.nanpercentile(s2, 50)), float(np.nanpercentile(s2, 95)), float(np.nanmax(s2))),
+                frac_sigma2_gt_half=frac_gt_half, diag=res["diag"])
 
 
 def main():
     t0 = time.time()
     validate_simulation_recovery()
     validate_degenerate_inputs()
+    debug_em_trajectory()
     validate_real_data_sanity()
     print(f"\n=== total validation runtime: {time.time() - t0:.1f}s ===")
 
