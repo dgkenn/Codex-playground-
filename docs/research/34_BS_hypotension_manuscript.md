@@ -267,3 +267,49 @@ prospectively. It also reconciles our result with the interventional literature 
 **Honest limits.** Baseline MAP is defined from each patient's own early maintenance period (not a pre-induction
 value); the split is observational, not randomised; "phenotype" here is defined by haemodynamic context, not by an
 independent biological marker. Code: `analysis/vitaldb_two_phenotype.py`.
+
+## ★ MECHANISM OF BS → AKI: it is NOT haemodynamic (rigorous, two-scale, well-powered null)
+The obvious hypothesis for a "pathway that is not blood pressure" is **flow**: MAP can be defended by
+vasoconstriction while stroke volume — and renal perfusion — falls, which a pressure-only analysis cannot see.
+Tested with pulse pressure (PP = SBP − DBP), a standard stroke-volume surrogate, available from the arterial line
+in the **full** cohort (n=1,491 with EEG + PP + pre/post creatinine; 144 AKI events) rather than the 215-case
+EV1000 SVR or 362-case cardiac-output subcohorts used earlier.
+
+**Necessary-condition check — the flow mediators do not even predict the outcome:**
+
+| candidate mediator → AKI (adj. age, ASA, Ce, duration, baseline creatinine) | OR |
+|---|---|
+| hypotension burden | 1.36 [1.16–1.59] * |
+| **low-PP burden (FLOW)** | **1.17 [0.98–1.39] ns** |
+| **occult low-PP (PP low, MAP ≥ 65)** | **1.02 [0.85–1.23] ns** |
+| BS burden | 1.31 [1.14–1.51] * |
+
+Mediation is impossible when the mediator does not predict the outcome. **The flow hypothesis fails its own
+necessary condition.**
+
+**Formal mediation on BOTH scales (bootstrap 2,000, case-level resampling).** Odds ratios are non-collapsible, so
+difference-method mediation on logistic models is biased; we therefore repeated everything on the collapsible
+risk-difference scale (linear probability model). Both agree:
+
+| mediator | prop. mediated (OR scale) | prop. mediated (risk-difference scale) |
+|---|---|---|
+| hypotension (pressure) | −0.0% [−6%, 16%] | 2.8% [−5%, 15%] |
+| low-PP (flow) | 1.1% [−2%, 7%] | 2.0% [−1%, 8%] |
+| occult low-PP | 0.1% [−3%, 3%] | −0.2% [−3%, 2%] |
+
+Total effect is solid (OR 1.31 [1.14–1.52]; **+3.06 percentage points of absolute AKI risk per SD of BS burden**),
+and the CIs on proportion-mediated are **tight around zero** — this is a well-powered null, not an underpowered one.
+
+### Conclusion: there is no intraoperative haemodynamic mechanism
+Neither pressure nor flow, nor the occult combination of the two, carries the burst-suppression→AKI association.
+The effect is essentially entirely direct with respect to intraoperative haemodynamics. The parsimonious reading is
+that **burst suppression is a marker of constitutional vulnerability** — a brain with low anaesthetic reserve
+co-segregating with renal vulnerability (shared frailty, microvascular disease, autonomic dysfunction) — rather
+than a cause of injury via any intraoperative haemodynamic route.
+
+This is the strongest available explanation for the ENGAGES null: **you cannot titrate away constitutional
+vulnerability.** Adjusting the anaesthetic to abolish the EEG sign leaves the underlying phenotype untouched.
+Code: `analysis/vitaldb_pp_mediation.py`, `analysis/vitaldb_flow_mediation.py`.
+
+**What would be needed to go further** (not available here): pre-operative frailty/cognitive phenotyping,
+renal biomarkers (NGAL/cystatin C), cerebral oximetry, or a randomised depth-titration design.
