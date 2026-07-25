@@ -123,18 +123,56 @@ def main():
     print(f"cohort={len(pids)}  with condition data={len(cond_seen & pids)}  with death record={len(set(death) & pids)}")
 
     # ---- CHECK 1: is ascertainment itself differential? -------------------------------------------------
+    # CHECK 1 must be computed over a universe that is NOT restricted to patients with a death record.
+    # The main condition extraction (condition_occurrence.csv) IS so restricted -- its 16,244-patient cohort
+    # was defined as "EEG patient with an ascertained death", because every downstream test here is
+    # ascertainment-immune by design and does not need the others. Measuring an ascertainment RATE inside
+    # that file returns 100 % in every stratum by construction, which is not a finding, it is the cohort
+    # definition read back. CHECK 1 therefore reads ASC_COND (the unrestricted BS-cohort extraction) and
+    # refuses to report if the universe it is given turns out to be death-restricted anyway.
     print("\n=== CHECK 1: death-record ascertainment rate BY AETIOLOGY ===")
     print("    if this varies widely, the primary analysis is compromised regardless of what CHECK 2 shows")
+    asc_path = os.environ.get("ASC_COND", f"{OMOP}/cond_BSONLY.csv")
+    aet1, seen1 = defaultdict(set), set()
+    try:
+        with open(asc_path) as fh:
+            for r in csv.DictReader(fh):
+                try:
+                    p = int(r["person_id"])
+                except Exception:
+                    continue
+                seen1.add(p)
+                c = norm(r.get("condition_source_value"))
+                for lab, pre in AETIOLOGY.items():
+                    if c and any(c.startswith(x) for x in pre):
+                        aet1[p].add(lab)
+    except FileNotFoundError:
+        seen1 = set()
+    # CHECK 1 gets its own cohort variable. CHECK 2 below runs on `base` = pids & cond_seen (the main
+    # extraction) and must NOT inherit this one, or its aetiology labels come from one file while its
+    # patient set comes from another.
+    base1 = sorted(pids & seen1)
+    frac_death = (np.mean([1.0 if p in death else 0.0 for p in base1]) if base1 else 1.0)
+    print(f"    universe: {asc_path}  ({len(base1)} cohort patients, {100*frac_death:.1f} % with a death record)")
+    if not base1:
+        print("    SKIPPED: no unrestricted condition extraction available at that path.")
+    elif frac_death > 0.99:
+        print("    SKIPPED: this universe is death-restricted, so the rate is 100 % by construction and")
+        print("             carries no information about differential ascertainment. Point ASC_COND at an")
+        print("             extraction that was NOT filtered to patients with a death record.")
+    else:
+        for lab in list(AETIOLOGY) + ["unexplained"]:
+            if lab == "unexplained":
+                grp = [p for p in base1 if not aet1.get(p)]
+            else:
+                grp = [p for p in base1 if lab in aet1.get(p, set())]
+            if len(grp) < 30:
+                continue
+            rate = np.mean([1.0 if p in death else 0.0 for p in grp])
+            print(f"   {lab:14s} n={len(grp):5d}   ascertained-death rate {100*rate:5.1f} %")
+
+    # CHECK 2 runs on the main extraction, matching the patient set to the aetiology labels in `aet`.
     base = sorted(pids & cond_seen)
-    for lab in list(AETIOLOGY) + ["unexplained"]:
-        if lab == "unexplained":
-            grp = [p for p in base if not aet.get(p)]
-        else:
-            grp = [p for p in base if lab in aet.get(p, set())]
-        if len(grp) < 30:
-            continue
-        rate = np.mean([1.0 if p in death else 0.0 for p in grp])
-        print(f"   {lab:14s} n={len(grp):5d}   ascertained-death rate {100*rate:5.1f} %")
 
     # ---- CHECK 2: linkage-bias-immune timing analysis ---------------------------------------------------
     print("\n=== CHECK 2: among patients with an ASCERTAINED death, how soon after the EEG? ===")

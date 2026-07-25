@@ -1308,3 +1308,25 @@ cross-nationally-validated part.
   effect" when the physiology says the effect scales with the tone REMAINING to be withdrawn — the derivation was
   wrong, not just the guess. Re-reading a failed prediction afterwards is worth nothing; the fix is to test the
   reinterpretation against a MEASURED moderator that did not exist when the hypothesis was formed.
+
+- **A cohort defined BY an outcome cannot be used to measure that outcome's ascertainment — and the degenerate
+  fit prints as a clean null (2026-07).** The HEEDB extraction cohort (16,244 patients) was deliberately defined
+  as "EEG patient with an ascertained death", because every surviving test is ascertainment-immune and needs no
+  survivors. Re-running the full battery against it produced two silent failures. (1) The ascertainment red-team
+  reported a death-record rate of **100.0 % in every aetiology** — not a finding, the cohort definition read
+  back; the real spread is 29.1-61.9 % and only exists in the unrestricted extraction. (2) The pre-specified
+  primary, whose outcome is "a death record exists", fit an outcome that was identically 1 and printed
+  `+0.00 pp [-0.00,+0.00] ns` for every coefficient — **visually indistinguishable from a genuine null result**,
+  and briefly read as one. RULE: before interpreting any regression, check that the outcome varies; before
+  interpreting any completeness or ascertainment statistic, check that its universe was not filtered on the very
+  thing being measured. Both scripts now refuse rather than emit. The tell that something was wrong was not the
+  statistics but an ARITHMETIC INCONSISTENCY between two runs of the same battery minutes apart (15,318 vs 3,302
+  patients "with condition data") — the same tell that caught the unfiltered-arterial-pressure bug. Cross-run
+  count reconciliation is the cheapest bug detector in this project and has now caught two of the worst errors.
+
+- **A guard patch touched a variable the next test was reading (2026-07).** Fixing the above, I rebound `base` to
+  the corrected CHECK 1 universe — but CHECK 2, forty lines below, iterated over `base` too. The result was a
+  hybrid whose patient set came from one extraction and whose aetiology labels came from another, and it silently
+  moved the analysable n from 3,216 to 3,078. Caught only because the n changed when nothing in CHECK 2 had been
+  edited. RULE: when patching a shared-scope script, grep for every later use of any name you rebind, and treat
+  an unexplained change in n as a bug until proven otherwise -- not as noise.

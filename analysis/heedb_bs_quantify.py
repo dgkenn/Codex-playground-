@@ -50,8 +50,17 @@ OUT = os.environ.get("BS_BURDEN_OUT", "/tmp/eeg_probe/heedb_bs_burden.csv")
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--limit", type=int, default=0)
-    ap.add_argument("--workers", type=int, default=3)
+    # SHARDING. The work is S3-fetch- and decode-bound, not CPU-bound, so it parallelises well across
+    # processes; run --nshards N with --shard 0..N-1. Each shard writes its OWN file rather than appending
+    # to a shared one: concurrent appends of short rows are usually atomic on Linux but "usually" is not a
+    # standard this project accepts for a file that feeds a reported number. Merge the shards on read.
+    # Resume is shard-aware -- every shard reads every existing shard file, so nothing is recomputed if the
+    # shard count changes between runs.
+    ap.add_argument("--shard", type=int, default=0)
+    ap.add_argument("--nshards", type=int, default=1)
     args = ap.parse_args()
+    if not (0 <= args.shard < args.nshards):
+        print(f"--shard must be in [0,{args.nshards}); got {args.shard}"); return 2
 
     import boto3
     from botocore.config import Config
@@ -87,15 +96,22 @@ def main():
     if args.limit:
         recs = recs[:args.limit]
 
+    import glob as _glob
+    out_path = OUT if args.nshards == 1 else OUT[:-4] + f".s{args.shard}.csv"
     done = set()
-    if os.path.exists(OUT):
-        for r in csv.DictReader(open(OUT)):
+    for p in sorted(set([OUT] + _glob.glob(OUT[:-4] + ".s*.csv"))):
+        if not os.path.exists(p):
+            continue
+        for r in csv.DictReader(open(p)):
             done.add((r["site"], r["bids"], r["session"]))
     todo = [x for x in recs if (x[0], x[2], x[4]) not in done]
-    print(f"already done {len(done)}, to do {len(todo)}")
+    if args.nshards > 1:
+        todo = todo[args.shard::args.nshards]
+    print(f"already done {len(done)}, to do {len(todo)} "
+          f"(shard {args.shard}/{args.nshards} -> {out_path})")
 
-    newf = not os.path.exists(OUT)
-    fh = open(OUT, "a", newline="")
+    newf = not os.path.exists(out_path)
+    fh = open(out_path, "a", newline="")
     w = csv.writer(fh)
     if newf:
         w.writerow(["site", "patient", "bids", "session", "n_windows_ok", "burden", "thresh_uv"])
@@ -135,7 +151,7 @@ def main():
             print(f"  [{i}/{len(todo)}] {n_ok} with burden  ({el/60:.1f} min, "
                   f"{i/max(el/60,1e-9):.1f} rec/min)", flush=True)
     fh.close()
-    print(f"DONE: {n_ok} recordings with a quantified burden -> {OUT}")
+    print(f"DONE: {n_ok} recordings with a quantified burden -> {out_path}")
 
 
 if __name__ == "__main__":

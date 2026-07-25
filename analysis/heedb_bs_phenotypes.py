@@ -192,6 +192,18 @@ def main():
     if len(expo) < 2:
         print("\ntoo few populated aetiology categories for a heterogeneity test"); return
     y = np.asarray([r["died"] for r in rows], float)
+    # The outcome here is "a death record exists". If the condition extraction feeding this script was itself
+    # restricted to patients with a death record -- which the 16,244-patient main extraction is, since every
+    # other test in this project is ascertainment-immune and needs no survivors -- then y is identically 1 and
+    # every coefficient is exactly 0.00 with a zero-width interval. That output is indistinguishable in
+    # print from a genuine null and has been mistaken for one. Refuse rather than emit it.
+    if y.min() == y.max():
+        print(f"\n*** ABORT: the outcome has no variance (every one of {n} patients has died={y[0]:.0f}).")
+        print("    This is a degenerate cohort, NOT a null result. It means the condition extraction being")
+        print("    read was filtered to patients with a death record, so 'has a death record' cannot be an")
+        print("    outcome in it. Use the ascertainment-immune timing analysis (heedb_bs_ascertainment.py")
+        print("    CHECK 2) instead, or point OMOP_OUT at an unrestricted extraction.")
+        return
     X = np.column_stack([np.ones(n)] + [np.asarray([r[k] for r in rows], float) for k in expo])
     b = lpm(X, y)
     print("\n=== PRIMARY: mortality risk difference by aetiology (LPM, vs no such label) ===")
