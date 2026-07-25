@@ -505,3 +505,65 @@ Value to THIS paper is low: the bottleneck is haemodynamic, not EEG feature extr
 burst-suppression head. The one real use is `SLOWING.pth` as an independent, foundation-model-derived slow-activity
 measure to replace the multitaper slow-delta band — since the slow-delta NULL currently carries the specificity
 claim, reproducing that null with a wholly independent feature extractor would strengthen it.
+
+---
+
+# PART VI — two attempts to raise the impact, both of which FAILED, and one of which lowers the claim
+
+Both were built as impact levers. Both were given falsification criteria in advance. Both fired.
+
+## VI.1 The ageing angle is dead — dropped, not asserted
+
+The proposal: older patients reach suppression at lower anaesthetic concentrations (Purdon/Brown), and older
+patients suffer more intraoperative hypotension; if suppression causes hypotension then it is the MECHANISM
+linking the two, which would reframe the finding as an account of why anaesthesia harms the elderly.
+
+Case-level mediation, 1,723 cases, adjusted for ASA, sex, BMI, duration and mean anaesthetic concentration:
+
+| path | estimate |
+|---|---|
+| **a-path: age -> suppression minutes** | **+15.56 min/decade** [+13.23, +17.77] * — at matched dose |
+| **total: age -> hypotensive minutes** | **+0.38 min/decade** [−1.10, +1.40] **ns** |
+
+The a-path is a clean confirmation of the Purdon/Brown result. But the TOTAL effect is null: **there is no
+age -> hypotension association in this cohort to mediate.** The double-jeopardy story does not exist here.
+Pre-stated criterion was "if age -> hypotension is not attenuated by suppression, drop the ageing angle rather
+than assert it". Dropped.
+
+(Note without duration adjustment the DIRECT path is −2.06 [−3.73, −0.73], i.e. age is associated with LESS
+hypotension once suppression is held fixed. Suppression behaves as a suppressor variable. With a null total
+effect, no proportion mediated is defined and none is reported.)
+
+## VI.2 ★ The effect does NOT translate into the outcome metric the field uses
+
+The primary result is an asymmetry of ~0.33 mmHg. In isolation that reads as trivial, so it was translated into
+the established perioperative exposure metric — MINUTES BELOW MAP 65 — by g-computation on the within-case
+estimator. The expectation was that a small sustained displacement would move a threshold-crossing quantity
+substantially.
+
+It does the opposite.
+
+| quantity | estimate |
+|---|---|
+| risk of hypotension per suppressed bin of the last 10 | **−0.126 pp** [−0.249, −0.011] |
+| attributable hypotensive minutes per case | **−0.98 min** [−1.96, −0.08] |
+| population attributable fraction of hypotensive time | **−5.8 %** [−11.5 %, −0.5 %] |
+
+**Suppression predicts LESS time below 65 mmHg, not more.**
+
+### This is consistent, not contradictory — and that is what makes it serious
+The autoregulation analysis (V.1) found the asymmetry to be **−0.678 at MAP >= 90** and **null below 70**.
+Suppression lowers pressure, but it does so FROM HIGH STARTING PRESSURES, where a sub-millimetre displacement
+never crosses the clinical threshold; and suppressed bins sit systematically higher to begin with, so their
+absolute risk of crossing 65 mmHg is lower. The two results are the same fact seen twice.
+
+### Consequences, binding
+1. **The claim that this identifies a modifiable cause of clinically-defined intraoperative hypotension is NOT
+   supported and must not be written.** The mechanism is real; its translation into the field's outcome metric
+   is absent, and by this estimator inverse.
+2. **The AKI result is now in question.** If suppression does not increase hypotensive burden, the +3.40 pp/SD
+   association with AKI is probably not running through hypotension, despite the ~40 % "mediated" figure
+   obtained on the case-level analysis. Those two results must be reconciled before either is presentable.
+3. What survives is a MECHANISTIC claim about how a specific cortical state acts on the circulation — specific
+   to suppression, graded by dwell time, vasodilatory, blockable by vasopressors, not reverse-caused. That is a
+   physiology paper, not an outcomes paper, and it should be written as one.
