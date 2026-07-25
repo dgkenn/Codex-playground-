@@ -25,18 +25,36 @@ ESTIMATION (EM)
 ----------------
 E-step -- Gaussian-approximation forward filter + fixed-interval (RTS) smoother.
   The binomial observation is not Gaussian, so at each forward step the posterior mode is found
-  by the same Newton/fixed-point iteration used in the Smith & Brown (2003) point-process filter
-  that the BSP paper builds on:
+  by Newton iteration on the (strictly concave, in x_t) log-posterior of a Gaussian prior
+  x_t|t-1 ~ N(x_t|t-1, sigma^2_t|t-1) combined with a Binomial(N_t, logistic(x_t)) likelihood:
 
-      x_t|t = x_t|t-1 + sigma^2_t|t-1 * (n_t - N_t * p_t)
-      sigma^2_t|t = 1 / (1/sigma^2_t|t-1 + N_t * p_t * (1 - p_t))
+      log g(x) = -(x - x_t|t-1)^2 / (2 sigma^2_t|t-1) + n_t*log(p) + (N_t - n_t)*log(1-p) + const,
+                 p = logistic(x)
+      g'(x)  = -(x - x_t|t-1)/sigma^2_t|t-1 + (n_t - N_t*p)
+      g''(x) = -1/sigma^2_t|t-1 - N_t*p*(1-p)
 
-  iterated on p_t = logistic(x_t|t) to convergence. This is a Newton step on the (concave, in
-  x_t) log-posterior of a Gaussian prior x_t|t-1 combined with a Binomial(N_t, logistic(x_t))
-  likelihood, linearised at the current iterate; sigma^2_t|t is the (negative inverse Hessian)
-  posterior curvature at the converged mode. Once every x_t|t, sigma^2_t|t is obtained the
-  problem is a standard linear-Gaussian local-level (random-walk) state space, so the usual RTS
-  smoother (plus its lag-one covariance recursion) applies unmodified for the backward pass.
+      Newton step:  x <- x - g'(x)/g''(x)
+                       = x + [ (n_t - N_t*p) - (x - x_t|t-1)/sigma^2_t|t-1 ]
+                             / [ 1/sigma^2_t|t-1 + N_t*p*(1-p) ]
+
+  iterated on p = logistic(x) to convergence; sigma^2_t|t = 1 / (1/sigma^2_t|t-1 + N_t*p*(1-p))
+  evaluated at the converged mode is the (negative inverse Hessian) posterior curvature there.
+
+  NOTE ON A LITERATURE PITFALL: the point-process filter this problem is modelled on (Smith &
+  Brown 2003; Chemali et al. 2013 eq. 8-9) writes the update as x_t|t = x_t|t-1 + sigma^2_t|t *
+  (n_t - N_t*p_t) with NO explicit (x - x_t|t-1)/sigma^2_t|t-1 correction term. That form's fixed
+  point coincides with the true posterior mode only in the point-process/continuous-time limit
+  (bin width dt -> 0, at most one event per bin, sigma^2_t|t-1 -> sigma^2_t|t), where the dropped
+  term vanishes. For our 30 s / N_t=300 binomial bins that limit does not hold: an early
+  implementation of exactly that formula was checked here against a numerical root-find of g'(x)
+  and does NOT return the true mode, and drove the EM to a wildly inflated sigma^2 (e.g.
+  1e5-1e6 instead of the true 0.005-0.5) on both the developer's and an independent reviewer's
+  simulation-recovery test. The full Newton step above (with the prior-deviation term, and using
+  the CURRENT-iterate p in both the numerator and the denominator, not last-iteration's) is the
+  form actually implemented and is exact for every N_t. Once every x_t|t, sigma^2_t|t is
+  obtained the problem is a standard linear-Gaussian local-level (random-walk) state space, so
+  the usual RTS smoother (plus its lag-one covariance identity) applies unmodified for the
+  backward pass.
 
 M-step -- update sigma^2 in closed form from the smoothed states and the smoothed lag-one
   covariances (Shumway & Stoffer's EM for the local-level / random-walk model):
@@ -113,10 +131,21 @@ def _forward_filter(n, N, obs_mask, sigma2, x0=X0_PRIOR, sigma2_0=SIGMA2_0_PRIOR
         mask_t = obs_mask[:, t]
         n_t = n[:, t]
         N_t = N[:, t]
+        inv_s2p = 1.0 / s2p
         x = xp.copy()
+        step_cap = 10.0  # damp/limit the Newton step so a bad start can't overshoot into a
+                          # flat tail of the logistic and stall/oscillate (belt-and-braces; the
+                          # step is already well-behaved because g is strictly concave, but N_t
+                          # can be a few hundred so an unclipped first step from x=x_pred can be
+                          # large when p(x_pred) is far from n_t/N_t)
         for _ in range(NEWTON_MAX_ITER):
             p = _logistic(np.clip(x, -X_CLIP, X_CLIP))
-            x_new = xp + s2p * (n_t - N_t * p)
+            W = N_t * p * (1.0 - p)                       # binomial curvature (information) at x
+            grad = (n_t - N_t * p) - (x - xp) * inv_s2p    # g'(x)
+            denom = inv_s2p + W                            # -g''(x), always > 0 (strictly concave)
+            step = grad / denom
+            step = np.clip(step, -step_cap, step_cap)
+            x_new = x + step
             x_new = np.clip(x_new, -X_CLIP, X_CLIP)
             x_new = np.where(mask_t, x_new, xp)
             diff = np.max(np.abs(x_new - x)) if C else 0.0
@@ -124,7 +153,7 @@ def _forward_filter(n, N, obs_mask, sigma2, x0=X0_PRIOR, sigma2_0=SIGMA2_0_PRIOR
             if diff < NEWTON_TOL:
                 break
         p = _logistic(np.clip(x, -X_CLIP, X_CLIP))
-        s2f = 1.0 / (1.0 / s2p + N_t * p * (1.0 - p))
+        s2f = 1.0 / (inv_s2p + N_t * p * (1.0 - p))
         s2f = np.where(mask_t, s2f, s2p)
         x_filt[:, t] = x
         sigma2_filt[:, t] = s2f
