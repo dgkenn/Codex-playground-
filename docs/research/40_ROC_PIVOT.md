@@ -5,10 +5,18 @@ record before any outcome is seen.
 
 ## 1. The paper, and the sentence that opens the door
 
-Safavynia SA, …, Brown EN. *Determinants of Delayed Recovery of Consciousness After Analgosedation
-Discontinuation in the ICU: Insights From Patients With COVID-19 Hypoxemic Respiratory Failure.*
-**Crit Care Med 2026**, PMID 42294965, doi:10.1097/CCM.0000000000007205. MGH / Weill Cornell / Columbia,
-784 patients.
+Safavynia SA, Barra ME, Der Nigoghossian C, Shinnick D, Waldrop G, Choi JM, Ganglberger W, Shen Q, Doyle K,
+Walline MC, **Westover MB**, **Brown EN**, Fins JJ, Victor J, Edlow BL, Claassen J, Schiff ND, Thaweethai T.
+*Determinants of Delayed Recovery of Consciousness After Analgosedation Discontinuation in the ICU: Insights
+From Patients With COVID-19 Hypoxemic Respiratory Failure.* **Crit Care Med 2026**, PMID 42294965,
+doi:10.1097/CCM.0000000000007205. MGH / Weill Cornell / Columbia, 784 patients. *(Author list verified against
+the PubMed record, not inferred from a search filter.)*
+
+**Note the eleventh and twelfth authors.** Emery Brown is on this paper, and so is M. Brandon Westover — whose
+group built HEEDB and the Brain Data Science Platform this project runs on. Wolfgang Ganglberger, also an
+author, is from the same group. So the gap identified below was named by a group that includes the people who
+built the dataset capable of closing it, and the proposal is to use their database to answer their own question.
+That is an unusually direct alignment and it is worth saying plainly rather than leaving to be noticed.
 
 What they found: **34 % of patients who recovered consciousness did not do so within pharmacologically plausible
 sedative elimination times.** Prolonged unconsciousness after ICU sedation is routinely attributed to residual
