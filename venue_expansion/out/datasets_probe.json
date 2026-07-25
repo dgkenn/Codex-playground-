@@ -1,0 +1,237 @@
+{
+ "trevor_trade_shards": {
+  "trades-0000": {
+   "rows": 10000000,
+   "min": "2021-07-01 14:54:00.422415+00:00",
+   "max": "2026-01-02 23:59:58.948976+00:00"
+  },
+  "trades-0001": {
+   "rows": 9999678,
+   "min": "2021-07-09 16:07:09.470464+00:00",
+   "max": "2026-01-09 23:59:58.984702+00:00"
+  },
+  "trades-0002": {
+   "rows": 9999999,
+   "min": "2021-08-18 17:16:18.654927+00:00",
+   "max": "2026-01-14 23:59:58.983839+00:00"
+  },
+  "trades-0003": {
+   "rows": 9999711,
+   "min": "2022-01-14 18:11:51.170882+00:00",
+   "max": "2026-01-19 23:59:58.770582+00:00"
+  },
+  "trades-0004": {
+   "rows": 9999930,
+   "min": "2022-09-03 21:35:12.249521+00:00",
+   "max": "2026-01-24 23:59:58.989040+00:00"
+  },
+  "trades-0005": {
+   "rows": 9999995,
+   "min": "2021-08-05 16:35:16.032811+00:00",
+   "max": "2026-01-28 23:59:58.993712+00:00"
+  },
+  "trades-0006": {
+   "rows": 10005682,
+   "min": "2021-06-30 20:09:14.185137+00:00",
+   "max": "2026-01-28 02:54:23.976636+00:00"
+  },
+  "trades-0007": {
+   "rows": 10000000,
+   "min": "2021-07-15 14:57:28.675984+00:00",
+   "max": "2025-11-25 19:25:12.402031+00:00"
+  },
+  "trades-0008": {
+   "rows": 10000000,
+   "min": "2021-08-18 17:12:40.080205+00:00",
+   "max": "2025-11-25 19:50:48.140501+00:00"
+  },
+  "trades-0009": {
+   "rows": 10000000,
+   "min": "2021-07-01 14:53:38.613666+00:00",
+   "max": "2025-11-25 20:37:30.960305+00:00"
+  },
+  "trades-0010": {
+   "rows": 10000000,
+   "min": "2021-07-08 23:27:38.876366+00:00",
+   "max": "2025-11-25 21:08:11.422975+00:00"
+  },
+  "trades-0011": {
+   "rows": 10000000,
+   "min": "2021-07-31 15:13:36.969931+00:00",
+   "max": "2025-11-25 21:50:09.524239+00:00"
+  }
+ },
+ "trevor_trade_shard_count": 12,
+ "trevor_trade_rows_total": 120004995,
+ "trevor_market_shards": {
+  "markets-0000": 5000000,
+  "markets-0001": 5000000,
+  "markets-0002": 5000000,
+  "markets-0003": 2464713
+ },
+ "trevor_market_rows_total": 17464713,
+ "schema_trades": [
+  [
+   "trade_id",
+   "VARCHAR"
+  ],
+  [
+   "ticker",
+   "VARCHAR"
+  ],
+  [
+   "count",
+   "BIGINT"
+  ],
+  [
+   "yes_price",
+   "BIGINT"
+  ],
+  [
+   "no_price",
+   "BIGINT"
+  ],
+  [
+   "taker_side",
+   "VARCHAR"
+  ],
+  [
+   "created_time",
+   "TIMESTAMP WITH TIME ZONE"
+  ]
+ ],
+ "schema_markets": [
+  [
+   "ticker",
+   "VARCHAR"
+  ],
+  [
+   "event_ticker",
+   "VARCHAR"
+  ],
+  [
+   "market_type",
+   "VARCHAR"
+  ],
+  [
+   "title",
+   "VARCHAR"
+  ],
+  [
+   "yes_sub_title",
+   "VARCHAR"
+  ],
+  [
+   "no_sub_title",
+   "VARCHAR"
+  ],
+  [
+   "status",
+   "VARCHAR"
+  ],
+  [
+   "yes_bid",
+   "BIGINT"
+  ],
+  [
+   "yes_ask",
+   "BIGINT"
+  ],
+  [
+   "no_bid",
+   "BIGINT"
+  ],
+  [
+   "no_ask",
+   "BIGINT"
+  ],
+  [
+   "last_price",
+   "BIGINT"
+  ],
+  [
+   "volume",
+   "BIGINT"
+  ],
+  [
+   "volume_24h",
+   "BIGINT"
+  ],
+  [
+   "open_interest",
+   "BIGINT"
+  ],
+  [
+   "result",
+   "VARCHAR"
+  ],
+  [
+   "created_time",
+   "TIMESTAMP WITH TIME ZONE"
+  ],
+  [
+   "open_time",
+   "TIMESTAMP WITH TIME ZONE"
+  ],
+  [
+   "close_time",
+   "TIMESTAMP WITH TIME ZONE"
+  ]
+ ],
+ "partition_probe": {
+  "ticker": "-23MAR-T2",
+  "per_shard_counts": [
+   37,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "scattered": false
+ },
+ "thomas_rows": [
+  2538256,
+  2538255
+ ],
+ "schema_thomas": [
+  [
+   "trade_id",
+   "VARCHAR"
+  ],
+  [
+   "ticker",
+   "VARCHAR"
+  ],
+  [
+   "count",
+   "BIGINT"
+  ],
+  [
+   "created_time",
+   "VARCHAR"
+  ],
+  [
+   "yes_price",
+   "BIGINT"
+  ],
+  [
+   "no_price",
+   "BIGINT"
+  ],
+  [
+   "taker_side",
+   "VARCHAR"
+  ],
+  [
+   "market_ticker",
+   "VARCHAR"
+  ]
+ ]
+}
