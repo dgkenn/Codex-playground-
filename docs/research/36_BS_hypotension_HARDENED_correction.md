@@ -430,3 +430,78 @@ sensitivity but not sensitivity that varies WITHIN a case over time.
 The one instrument that indexes VASOMOTOR sympathetic outflow rather than cardiac autonomic control is Mayer wave
 (~0.1 Hz) power in the arterial pressure signal. Extraction is running, at both 30 s and 120 s windows so that
 window length can be distinguished from physiology.
+
+---
+
+# PART V — the three tests that changed the picture
+
+All on the corrected pipeline (MAP filtered to [30,150], pre-trend over [t-3k, t-2k]).
+
+## V.1 ★ The cerebral-hypoperfusion rival is refuted by its own prediction
+
+The standard alternative in the literature is that low pressure causes suppression through reduced cerebral
+perfusion. Cerebral autoregulation holds perfusion roughly constant above a MAP of about 60-70 mmHg, so that
+hypothesis predicts the association should be concentrated at LOW pressure and absent at high pressure.
+
+| current MAP | forward-minus-backward asymmetry | bins |
+|---|---|---|
+| **>= 90 mmHg** | **−0.678** [−0.849, −0.518] * | 187,884 |
+| 80–90 | **−0.514** [−0.657, −0.359] * | 173,245 |
+| 70–80 | −0.105 [−0.244, +0.024] ns | 177,527 |
+| < 70 | +0.116 [−0.061, +0.300] ns | 122,645 |
+
+**The exact inverse of the rival's prediction.** The effect is largest where autoregulation fully protects
+cerebral perfusion and disappears where hypoperfusion would begin to operate. Reverse causation via cerebral
+hypoperfusion cannot generate this pattern.
+
+## V.2 ★ The vasopressor prediction passed — the first registered prediction to do so
+
+Registered before running: if suppression lowers pressure by withdrawing vasomotor tone, then supplying tone
+pharmacologically should ATTENUATE or ABOLISH the effect. This predicts an effect's DISAPPEARANCE, which is much
+harder to obtain by chance than predicting its presence.
+
+| stratum | asymmetry |
+|---|---|
+| no vasopressor running | **−0.356** [−0.448, −0.245] * |
+| interaction when a vasopressor IS running | **+0.506** [+0.027, +1.099] * |
+
+The effect is abolished. Caveat that must travel with it: vasopressors are given preferentially to hypotensive,
+sicker patients, so exposure is confounded. Within-case fixed effects compare each patient against themselves,
+which helps substantially, but do not randomise the timing of the infusion.
+
+## V.3 The pre-registered hold-out passes
+
+The sub-minute temporal claim cannot be externally validated — a full survey (MIMIC-IV/III waveform, BDSP
+HEEDB / sah / I-CARE / PSG / ECG, UCLA MLORD) found no other dataset with simultaneous high-resolution EEG and
+continuous arterial pressure, and VitalDB contains no third anaesthetic agent. That limitation is real and belongs
+in the manuscript. What COULD be tested is overfitting through the many analytic choices made here.
+
+| half | suppression asymmetry | EMG control | occupancy gradient |
+|---|---|---|---|
+| random A (899 cases) | −0.313 [−0.455, −0.192] * | +0.503 * | −0.742 [−1.048, −0.400] * |
+| random B (877 cases) | −0.366 [−0.485, −0.223] * | +0.630 * | — |
+
+Same sign, overlapping intervals, gradient intact. The result is not an artefact of the specification.
+
+## V.4 Also on the corrected pipeline
+
+* **AKI**: +3.40 percentage points of absolute risk per SD of suppressed MINUTES [+0.92, +5.83], attenuating to
+  +1.84 [−0.56, +4.15] on adjusting for hypotensive minutes — roughly 40 % mediated, imprecisely estimated (the
+  ratio's upper bound remains out of range at 145 events). Minutes outperform fraction (+3.40 vs +2.12), which the
+  bin-level dwell-time result predicted.
+* **Depth-response**: graded across four of five bands (−0.524 → −0.794 → −0.958 → −1.093), the top band noisy at
+  n = 2,472. A third exposure axis, independent of run length and occupancy.
+* **P4 opioid** (registered two-sided, NON-confirmatory): on the corrected pipeline the effect is LARGER at high
+  remifentanil (−0.504 vs −0.088, difference −0.416 [−0.660, −0.220]) — the opposite of the uncorrected result.
+  Registered as non-confirmatory in either direction, so it is not claimed.
+
+## V.5 MORGOTH access has changed
+
+`morgoth2/models/202605/morgoth/` now exposes **38 checkpoints, 1.39 GB** (IIIC, SEIZURE, SPIKES, SLOWING, NORMAL,
+PD, GPD/LPD/GRDA/LRDA, SPIKE_LOCALIZATION, SLEEP/PSG variants), plus `baby_morgoth/model/checkpoint-20260516.pth`.
+`CLAUDE.md` still records these as unavailable and should be updated.
+
+Value to THIS paper is low: the bottleneck is haemodynamic, not EEG feature extraction, and there is no
+burst-suppression head. The one real use is `SLOWING.pth` as an independent, foundation-model-derived slow-activity
+measure to replace the multitaper slow-delta band — since the slow-delta NULL currently carries the specificity
+claim, reproducing that null with a wholly independent feature extractor would strengthen it.
