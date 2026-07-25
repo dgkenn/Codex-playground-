@@ -1,0 +1,82 @@
+{
+ "0": {
+  "min": "-23MAR-T2",
+  "max": "WRECSS-26-UK",
+  "n_tickers": 331443
+ },
+ "1": {
+  "min": "AMAZONFTC-29DEC31",
+  "max": "WRECSS-26-UK",
+  "n_tickers": 306948
+ },
+ "2": {
+  "min": "AMAZONFTC-29DEC31",
+  "max": "WRECSS-26-UK",
+  "n_tickers": 363675
+ },
+ "3": {
+  "min": "AMAZONFTC-29DEC31",
+  "max": "WRECSS-26-UK",
+  "n_tickers": 400861
+ },
+ "4": {
+  "min": "AMAZONFTC-29DEC31",
+  "max": "WRECSS-26-UK",
+  "n_tickers": 308650
+ },
+ "5": {
+  "min": "AMAZONFTC-29DEC31",
+  "max": "WRECSS-26-UK",
+  "n_tickers": 411184
+ },
+ "6": {
+  "min": "538APPROVE-22NOV30-B42.4",
+  "max": "USCLIMATE-2025",
+  "n_tickers": 71566
+ },
+ "7": {
+  "min": "538APPROVE-22SEP28-B43.2",
+  "max": "KXNBAGAME-25NOV09OKCMEM-MEM",
+  "n_tickers": 282407
+ },
+ "8": {
+  "min": "538APPROVE-23JUL05-B40.4",
+  "max": "KXNCAAFGAME-25OCT18CONNBC-BC",
+  "n_tickers": 11996
+ },
+ "9": {
+  "min": "538APPROVE-23OCT04-B40.5",
+  "max": "KXNFLGAME-25OCT05NEBUF-BUF",
+  "n_tickers": 37361
+ },
+ "10": {
+  "min": "CPICORE-23JUN-T0.2",
+  "max": "KXOSCARPIC-25-EP",
+  "n_tickers": 20001
+ },
+ "11": {
+  "min": "538APPROVE-24JUN26-B38.4",
+  "max": "MCDAWNTRAIL-89",
+  "n_tickers": 49283
+ },
+ "12": {
+  "min": "538APPROVEMIN-23SEP30-T40",
+  "max": "ZYNBAN-24",
+  "n_tickers": 243285
+ },
+ "13": {
+  "min": "AAAGASW-24JUL08-US-3.491",
+  "max": "WTAX-25-DEC31",
+  "n_tickers": 265702
+ },
+ "14": {
+  "min": "ACPI-23-B7.5",
+  "max": "WTAX-25-DEC31",
+  "n_tickers": 354323
+ },
+ "15": {
+  "min": "AILEGISLATION-25-DEC31",
+  "max": "WTAX-25-DEC31",
+  "n_tickers": 189384
+ }
+}

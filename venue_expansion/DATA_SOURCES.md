@@ -53,11 +53,28 @@ Either enumerate all 16 explicitly, or switch to `hf://datasets/TrevorJS/kalshi-
 
 ### 1c. Sharding is NOT time-partitioned and NOT a clean ticker range — read this before subsampling
 
-Measured, per shard:
-- Shards 0000–0005 each span the **full ticker alphabet** (`AMAZONFTC-…` → `WRECSS-26-UK`) and reach
-  **2026-01**; shards 0007+ stop at **2025-11-25** and hold far fewer distinct tickers.
+Measured, per shard (`out/shard_ordering.json`) — **every** shard spans essentially the full ticker
+alphabet, and distinct-ticker counts vary 34× between shards:
+
+| shard | distinct tickers | ticker range |
+|---|---:|---|
+| 0000 | 331,443 | `-23MAR-T2` .. `WRECSS-26-UK` |
+| 0001–0005 | 306,948–411,184 | `AMAZONFTC-29DEC31` .. `WRECSS-26-UK` (all five identical endpoints) |
+| 0006 | 71,566 | `538APPROVE-22NOV30-B42.4` .. `USCLIMATE-2025` |
+| 0007 | 282,407 | `538APPROVE-22SEP28-B43.2` .. `KXNBAGAME-25NOV09OKCMEM-MEM` |
+| 0008 | **11,996** | `538APPROVE-23JUL05-B40.4` .. `KXNCAAFGAME-25OCT18CONNBC-BC` |
+| 0009 | 37,361 | `538APPROVE-23OCT04-B40.5` .. `KXNFLGAME-25OCT05NEBUF-BUF` |
+| 0010 | 20,001 | `CPICORE-23JUN-T0.2` .. `KXOSCARPIC-25-EP` |
+| 0011 | 49,283 | `538APPROVE-24JUN26-B38.4` .. `MCDAWNTRAIL-89` |
+| 0012–0015 | 189,384–354,323 | `538APPROVEMIN-…`/`AAAGASW-…`/`ACPI-…`/`AILEGISLATION-…` .. `ZYNBAN-24`/`WTAX-25-DEC31` |
+
+Plus:
+- Shards 0000–0006 reach **2026-01**; shards 0007+ stop at **2025-11-25**.
 - A single high-volume market's tape is **split across shards**: `KXNFLGAME-26JAN17BUFDEN-BUF` has
   4,199 trades in shard 0002 and 206,564 in shard 0003.
+
+The wildly uneven ticker counts (0008 holds 11,996; 0005 holds 411,184) mean the shards are not even
+a uniform random partition — so "some shards" is never a defensible stand-in for "the archive".
 
 **Consequence: taking K of N shards is not a time slice and not a clean market cohort — it is a
 partial, non-random sample of each market's own trade tape, with an end date that depends on which
