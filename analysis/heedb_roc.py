@@ -97,8 +97,35 @@ def lpm(X, y):
     return np.linalg.lstsq(X, y, rcond=None)[0]
 
 
+def require_complete(table, n_parts):
+    """Refuse to run on a partial extraction.
+
+    Time zero is 'a sedative administration followed by >= GAP_H with none'. That definition is only valid if
+    EVERY one of the patient's administrations is present: a missing dose manufactures a gap, and therefore a
+    false discontinuation, at a time when the patient was still being sedated. The same applies to the
+    consciousness assessments -- a missing assessment can turn 'recovered' into 'not recovered'. Partial data
+    here is not merely underpowered, it is BIASED, so this aborts rather than producing a plausible number.
+    Set ALLOW_PARTIAL=1 only to exercise the pipeline, never to read a result.
+    """
+    import json
+    path = f"{OMOP}/{table}.done.json"
+    done = len(json.load(open(path))) if os.path.exists(path) else 0
+    if done < n_parts and os.environ.get("ALLOW_PARTIAL") != "1":
+        print(f"*** ABORT: {table} extraction is {done}/{n_parts} parts complete.")
+        print("    Time zero is defined by a gap in sedative administrations, so a missing part invents")
+        print("    discontinuations that never happened, and a missing assessment can flip the outcome.")
+        print("    This is a biased-result risk, not a power problem. Wait for the extraction to finish.")
+        return False
+    if done < n_parts:
+        print(f"*** WARNING: running on a PARTIAL {table} extraction ({done}/{n_parts}) because "
+              f"ALLOW_PARTIAL=1. Results are biased and must not be reported.")
+    return True
+
+
 def main():
     rng = np.random.default_rng(20260725)
+    if not (require_complete("drug_sedatives", 375) and require_complete("measurement_conscious", 551)):
+        return 2
 
     # ---- sedative administrations -------------------------------------------------------------------
     sed = defaultdict(list)
