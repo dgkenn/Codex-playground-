@@ -136,9 +136,18 @@ and the arterial baroreflex acts over one to three heartbeats. **That claim was 
    signs. Until reconciled, neither should be presented.
 4. **The ageing story does not exist here.** Age raises suppression strongly (**+15.6 min/decade** at matched
    dose, confirming Purdon/Brown) but does **not** predict hypotensive minutes (+0.38 ns). Nothing to mediate.
-5. **The sympathetic step is inferred, not measured.** Established for propofol by microneurography, but not
-   measured by us. HRV indexes cardiac vagal control; sequence BRS was underpowered (5,839 bins, 145 cases).
-   Mayer-wave (~0.1 Hz) power is the correct instrument; extraction in progress.
+5. **The sympathetic step is inferred, not measured — now settled, after three instruments failed.**
+   Sympathetic withdrawal is established for propofol by microneurography (MSNA falls 76 +/- 5 %), but it is not
+   measured here.
+   * HRV (RMSSD/SDNN): null, and the wrong efferent limb — it indexes cardiac vagal control, not the vasomotor
+     outflow that sets resistance.
+   * Sequence-method baroreflex sensitivity: null but underpowered (5,839 bins, 145 cases).
+   * Mayer-wave (~0.1 Hz) power, the correct instrument: **null at best power**. A marginal 30 s result at
+     284 cases (−2.55 % [−5.23, −0.03]) **disappeared** when re-run at 458 cases (−1.02 % [−2.89, +0.71] ns), and
+     the 120 s window was null throughout (−0.57 % [−2.31, +1.15]). The EMG negative control fires in **both**
+     windows (+2.11 %, +3.77 %), so the criterion is not calibrated for this outcome either way.
+   Adding 60 % more data destroyed the effect, which is how noise behaves. **This is a permanent limitation of
+   this dataset, not a gap awaiting more compute.** `vitaldb_mayer_sympathetic`.
 6. **The sub-minute temporal claim cannot be externally replicated.** A full survey (MIMIC-IV/III waveform, BDSP
    HEEDB / sah / I-CARE / PSG / ECG, UCLA MLORD) found **no** dataset pairing high-resolution EEG with continuous
    arterial pressure, and VitalDB has no third agent. Replication requires prospective collection.
