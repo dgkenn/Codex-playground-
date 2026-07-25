@@ -1,7 +1,11 @@
 # Burst suppression acts on the circulation as a distinct cortical state, not as anaesthetic depth
 
-**A physiology finding from 1,859 propofol and 2,202 sevoflurane cases (VitalDB), with every claim's
-falsification test stated and run.**
+**A physiology finding from VitalDB: 1,859 propofol cases (1,770-1,778 entering the analysed models) and
+2,029 sevoflurane cases (1,645 entering the models), with every claim's falsification test stated and run.**
+
+*Case counts: the larger figure is cases extracted; the smaller is cases surviving the analysis filters
+(>= 32 maintenance bins with anaesthetic concentration >= 1.0, valid arterial pressure at every required lag).
+All estimates below are quoted at the analysed n, which is stated per result.*
 
 *Prepared for senior-advisor review. Effect sizes are small and stated plainly; two of three original headline
 claims from an earlier draft have been retracted; six pre-registered predictions failed and are listed. Read
