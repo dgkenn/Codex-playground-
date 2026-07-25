@@ -38,7 +38,7 @@ condition_occurrence 27 GB / 181). Each Parquet part is streamed, filtered to th
 discarded; only matching rows are written. Roughly 0.4 % of rows match, so the outputs are manageable. The script
 is resumable at file granularity via a manifest, because a run of this length will be interrupted.
 """
-import argparse, io, json, os, sys, time
+import argparse, io, json, os, re, sys, time
 from collections import defaultdict
 
 import boto3
@@ -58,7 +58,22 @@ COLS = {
     "measurement": ["person_id", "measurement_datetime", "measurement_concept_id",
                     "measurement_source_value", "value_as_number", "unit_source_value"],
     "death": ["person_id", "death_datetime", "cause_source_value"],
+    # Consciousness assessments, for the recovery-of-consciousness arm. Same physical table as `measurement`,
+    # but ROW-FILTERED: the merged measurement table is 66 GB / 554 parts and holds every lab and vital sign, so
+    # pulling it whole for 49k patients would produce tens of GB of mostly-irrelevant chemistry. Filtering on the
+    # source value at extraction keeps the output small enough to analyse in memory.
+    "measurement_conscious": ["person_id", "measurement_datetime", "measurement_concept_id",
+                              "measurement_source_value", "value_as_number", "unit_source_value"],
 }
+
+# pseudo-table -> the physical OMOP table it reads
+SOURCE_TABLE = {"measurement_conscious": "measurement"}
+
+# pseudo-table -> (column to test, compiled regex a row must match to be kept)
+ROW_FILTER = {"measurement_conscious": ("measurement_source_value",
+                                        re.compile(r"glasgow|\bgcs\b|rass|richmond|sedation scale|"
+                                                   r"level of consciousness|eye opening|best motor response|"
+                                                   r"best verbal response|ramsay|arousal", re.I))}
 
 
 def client():
@@ -88,7 +103,7 @@ def main():
     print(f"target patients: {len(pids)}", flush=True)
 
     s3 = client()
-    keys = list_parts(s3, args.table)
+    keys = list_parts(s3, SOURCE_TABLE.get(args.table, args.table))
     manifest_path = f"{OUT}/{args.table}.done.json"
     done = set(json.load(open(manifest_path))) if os.path.exists(manifest_path) else set()
     todo = [k for k in keys if k not in done]
@@ -115,6 +130,13 @@ def main():
             data = {c: t.column(c).to_pylist() for c in use}
             pid = data["person_id"]
             keep = [j for j, p in enumerate(pid) if p in pids]
+            rf = ROW_FILTER.get(args.table)
+            if rf:
+                col, rx = rf
+                vals = data.get(col)
+                if vals is None:
+                    raise KeyError(f"{col} absent from {key}; row filter cannot be applied safely")
+                keep = [j for j in keep if vals[j] and rx.search(str(vals[j]))]
             for j in keep:
                 w.writerow([data[c][j] if c in data else "" for c in cols])
             nrows += len(keep)
