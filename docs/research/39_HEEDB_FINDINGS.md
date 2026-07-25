@@ -190,10 +190,37 @@ limitation was substantially an artefact of incomplete extraction, not a propert
 - **Quantified burden** replacing the binary label (`heedb_bs_quantify.py`), using the detector calibrated
   against HEEDB's own expert labels at AUC 0.829. Enables a dose-response — the strongest observational evidence
   available for a real effect — and removes reader heterogeneity. Running over 51,702 recordings.
-- **H2 re-test** inside the ascertainment-immune design: drug-derived sedative exposure against the 30-day timing
-  outcome, replacing the demoted version. Gated on the `drug_exposure` extraction, which is ~60 % complete.
+- ~~H2 re-test~~ — **run, and it failed. H2 remains unresolved; see §7a.**
 - ~~Characterising the unexplained group~~ — **done, see §6a.** It is 6.6 % of the cohort, 91 % of it epilepsy
   without status epilepticus, and prognostically neutral.
+
+## 7a. The H2 re-test failed, and the negative control is why we know
+
+H2 — "iatrogenic suppression carries a better outcome than injury suppression" — was demoted in §3 for using the
+differentially-ascertained outcome. It was re-tested properly: ascertainment-immune outcome, and an exposure
+anchored to within 24 h of the EEG and restricted to agents that can actually produce the state (propofol, the
+barbiturates, high-dose midazolam). The unexposed group is then the interesting one — a cortex that suppressed
+with no pharmacological explanation. **Prediction, registered before the fit: a negative coefficient.**
+
+| | 30-day coefficient | predicted |
+|---|---|---|
+| BS-capable anaesthetic within ±24 h (61.7 %) | **+31.00 pp [+27.50, +34.67]** | negative — **falsified** |
+| dexmedetomidine, negative control (17.4 %) | **−8.13 pp [−12.70, −3.55]** | null — **also violated** |
+
+Both predictions failed, and together they diagnose the design. Dexmedetomidine sedates but does not produce
+burst suppression, so it was included to separate "given a drug that suppresses" from "sedated at all". It came
+out significantly *protective*. The coherent reading is that neither variable is measuring pharmacology: peri-EEG
+propofol marks an intubated, actively-resuscitated patient, and dexmedetomidine marks one stable enough to be
+lightly sedated and weaned. Both are **illness-severity proxies**. A corroborating detail: the anoxic coefficient
+falls from +29.45 to +20.46 pp when the drug term enters, i.e. the drug variable absorbs severity that aetiology
+had been carrying.
+
+**So H2 is unresolved, not answered.** Separating iatrogenic from injury suppression needs an exposure that is
+not a severity proxy, and administrative drug records in an ICU cohort are severity proxies by default.
+
+This is reported because it is the kind of result that does not survive contact with a reviewer: +31 pp is large,
+clean and significant, and without the pre-specified negative control it would have been written up as a finding
+in the wrong direction with a story attached.
 
 ## 8. Prediction ledger entry
 
@@ -211,6 +238,20 @@ numbers. Outcome:
 
 Four of four in the predicted direction. This is weak evidence — the two runs share most of their data, so the
 comparisons are not independent — but it is the prediction that was made, and it is recorded as made.
+
+Predictions made about *new* quantities, where the evidence is not weak, have fared worse:
+
+| prediction | registered | outcome | verdict |
+|---|---|---|---|
+| epilepsy-without-status is negative (§6a) | −ve | +2.13 pp [−3.81, +8.09] | **failed** |
+| BS-capable anaesthetic is negative (§7a) | −ve | +31.00 pp [+27.50, +34.67] | **failed, opposite sign** |
+| dexmedetomidine negative control is null (§7a) | null | −8.13 pp [−12.70, −3.55] | **failed** |
+
+Three of three registered predictions about new quantities failed. Both failures share one root cause worth
+stating plainly: I twice reasoned "this suppression is pharmacological, therefore the patient is doing better",
+when a pharmacological cause actually predicts that the EEG carries *no* information (a null), and when the drug
+record itself turned out to be measuring severity rather than pharmacology. The confirmatory result in §2–§5 does
+not rest on any of these.
 
 ## 9. Relationship to the VitalDB work
 

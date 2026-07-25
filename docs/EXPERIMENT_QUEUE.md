@@ -1,5 +1,44 @@
 # EXPERIMENT QUEUE — prioritized backlog (re-rank every cycle; pull the top item that fits compute)
 
+## ACTIVE (2026-07-25) — HEEDB burst-suppression programme. This is the current thread.
+
+**Deliverable 1 — `docs/research/39_HEEDB_FINDINGS.md`. Complete at full extraction coverage.**
+Burst suppression's prognostic meaning depends on aetiology: BS x aetiology interaction spread 38.51 pp
+[32.84,44.63] against a 12.13 pp [8.44,15.84] aetiology main effect in BS-negative patients (n=15,318). Survives
+the ascertainment red-team (36.80 pp [32.09,41.93]) and replicates across both hospital sites (difference
+-2.17 pp [-13.36,+5.38]). Answers, verbatim, the "characterize distinct burst suppression phenotypes" call in
+Guay/.../Brown, Anesthesiology 2025;143(6):1595-1618. Two of five pre-specified tests are DEMOTED (their outcome,
+"a death record exists", is differentially ascertained 40.1-61.9 % by aetiology).
+
+**Deliverable 2 — `docs/research/40_ROC_PIVOT.md`. Designed, feasibility confirmed, extraction running.**
+Safavynia/.../Brown, Crit Care Med 2026 (PMID 42294965): 34 % of ICU patients recover consciousness later than
+sedative pharmacokinetics can explain, and the paper calls for "investigation of alternative determinants of
+delayed RoC". Hypothesis: burst suppression under ordinary sedative doses is that determinant. Better outcome
+than Deliverable 1 uses -- ascertained in-hospital from RASS/GCS, on survivors too, so it does not depend on
+death-registry linkage at all.
+
+RUNNING NOW:
+- `measurement_conscious` extraction, 551 parts, ~6 h. Gates Deliverable 2 entirely.
+- Burden quantification, 49k recordings across 4 shards, ~2 h. Gates the dose-response for Deliverable 1 and
+  removes reader heterogeneity (the binary clinician label is limitation #3).
+- `heedb_bs_drugcause.py` -- H2 re-test with a time-anchored exposure and dexmedetomidine as negative control.
+
+NEXT, in order:
+1. Read the burden results into a dose-response against the aetiology interaction. If burden reproduces the
+   interaction the finding survives without the clinician label; if it does not, that is a serious negative and
+   goes in the document.
+2. Define the RoC cohort: patients with an EEG, a sedation episode, and consciousness assessments dense enough
+   around sedation cessation. Either of the last two could kill Deliverable 2 -- check before modelling.
+3. Handle the RoC trap named in the design doc: deeply suppressed patients get sedation stopped EARLIER because
+   they look over-sedated -- confounding by indication running in the hypothesis's direction.
+
+RULED OUT, do not revisit (see LESSONS):
+- External replication of the VitalDB sub-minute temporal claim. MIMIC-IV/III Waveform, I-CARE, BDSP-SAH and the
+  PSG collections were each checked; none has simultaneous high-resolution EEG and continuous arterial pressure.
+  VitalDB is the only such source and holds no ICU outcome data. This is a manuscript limitation, not a task.
+- The sympathetic-withdrawal step in VitalDB: baroreflex gain, HRV and Mayer-wave power all failed as
+  instruments. The mechanism stays inferred from prior pharmacology, not demonstrated.
+
 ## ACTIVE — Steroids-in-septic-shock responsive subphenotype (user idea; running)
 Design (defended against the naive outcome-clustering trap): **MIMIC discover → eICU + SICdb validate.**
 Cluster on BASELINE physiology at shock onset (pre-steroid, outcome/treatment excluded) → k subphenotypes;

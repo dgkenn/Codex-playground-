@@ -1354,3 +1354,20 @@ cross-nationally-validated part.
   patients are actively treated and survive the acute window), not from its suppression being drug-induced.
   RULE: when a mechanism predicts "this marker means nothing here", the registered prediction should be a NULL,
   and the analysis should be powered to say so -- not a signed effect borrowed from a superficially similar group.
+
+- **The negative control did its job by FAILING, and that is the most useful thing that happened (2026-07).**
+  H2 re-test: among burst-suppression patients who all died, exposure to a BS-capable anaesthetic (propofol,
+  barbiturate, high-dose midazolam) within 24 h of the EEG was predicted to give a NEGATIVE 30-day timing
+  coefficient -- suppression a drug explains should occur in brains that are not dying. Actual: **+31.00 pp
+  [+27.50,+34.67]**, a large effect in the OPPOSITE direction, and the pre-specified negative control
+  (dexmedetomidine, which sedates but does not produce suppression) was ALSO non-null at **-8.13 pp
+  [-12.70,-3.55]** where a null was predicted. Read together the two are diagnostic: peri-EEG propofol marks an
+  intubated, actively-resuscitated patient and dexmedetomidine marks one stable enough to be lightly sedated and
+  weaned. The exposure was measuring ILLNESS SEVERITY, not drug-caused suppression. Corroborating detail: the
+  anoxic coefficient fell from +29.45 to +20.46 pp when bs_drug entered the model, i.e. the drug term absorbed
+  severity that aetiology had been carrying. RULE: a drug-exposure variable in an ICU cohort is a severity proxy
+  by default and must be shown otherwise before it is read as pharmacology. Had the negative control been
+  omitted, +31 pp was large, clean and significant enough to have been written up as a finding.
+  DIRECT CONSEQUENCE for the recovery-of-consciousness study (docs/research/40_ROC_PIVOT.md): the same
+  confounding applies there with the same sign, which is why that design commits in advance to conditioning on
+  sedative dose and to restricting on the REASON sedation stopped.
