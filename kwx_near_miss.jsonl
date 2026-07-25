@@ -415,3 +415,4 @@
 {"ticker": "KXHIGHDEN-26JUL25-B96.5", "side": "no", "ask_c": 100, "reason": "ask>98", "cushion_f": 1.96, "extreme_f": 98.96, "station": "KDEN", "kind": "max", "date": "2026-07-25", "ts": 1785009382523}
 {"ticker": "KXHIGHTLV-26JUL25-T109", "side": "no", "ask_c": 100, "reason": "ask>98", "cushion_f": 2.2, "extreme_f": 111.2, "station": "KLAS", "kind": "max", "date": "2026-07-25", "ts": 1785009527703}
 {"ticker": "KXHIGHTLV-26JUL25-B109.5", "side": "no", "ask_c": 100, "reason": "ask>98", "cushion_f": 1.2, "extreme_f": 111.2, "station": "KLAS", "kind": "max", "date": "2026-07-25", "ts": 1785009527703}
+{"ticker": "KXHIGHTDC-26JUL25-T81", "side": "no", "ask_c": 100, "reason": "ask>98", "cushion_f": 1.4, "extreme_f": 82.4, "station": "KDCA", "kind": "max", "date": "2026-07-25", "ts": 1785011545353}
