@@ -176,3 +176,117 @@ The negative control is what caught this. A control that was expected to be null
 that 5 % discrepancy overturned two of three headline claims. **Every future bin-level analysis in this project
 ships with (i) a negative-control exposure, (ii) exact stratification on any variable used to define the strata,
 (iii) case-level cluster bootstrap intervals, and (iv) a backward-lag control — before any result is written up.**
+
+---
+
+# PART II — gap-closing results (all under the hardened estimator)
+
+Everything below uses the corrected specification throughout: within-case fixed effects, adjustment for MAP(t),
+anaesthetic dose, dose *kinetics* (dCe) and a pre-trend measured over `[t-2k, t-k]`, on bins holding both a forward
+and a backward neighbour, with case-level cluster bootstrap intervals. The reported statistic is always
+**forward minus backward** — a shared contemporaneous state is symmetric in time, a cascade is not.
+
+## II.1 SPECIFICITY — is it suppression, or just anaesthetic depth? (the make-or-break test)
+
+Brown and Purdon's central claim about the anaesthetic EEG is that it is not a one-dimensional depth axis: propofol
+produces specific oscillatory signatures (frontal alpha, slow-delta) and burst suppression is a distinct dynamical
+state rather than "more slowing". If slow-wave power carried the same lead as suppression, this whole finding would
+be about depth, the EEG would add nothing beyond the dose, and the specific claim would collapse.
+
+694,762 bins, 1,771 cases. Continuous markers dichotomised at each patient's OWN median (absolute spectral power
+varies by an order of magnitude across patients, so a cohort-wide cut would encode who the patient is and the case
+fixed effects would then absorb the exposure itself).
+
+| marker | alone | mutually adjusted | all four |
+|---|---|---|---|
+| **burst suppression** | **−0.734** [−0.914, −0.577] * | **−0.721** [−0.874, −0.571] * | **−0.729** [−0.863, −0.564] * |
+| slow-delta power | −0.224 [−0.335, −0.114] * | −0.222 [−0.346, −0.114] * | −0.242 [−0.347, −0.123] * |
+| frontal alpha | +0.119 [+0.007, +0.238] * | +0.065 [−0.042, +0.191] ns | +0.046 [−0.078, +0.163] ns |
+| frontal EMG | +0.499 [+0.279, +0.715] * | — | +0.521 [+0.300, +0.768] * |
+
+**The test passes.** Suppression's lead is *completely unattenuated* by adjusting for simultaneous slow and alpha
+power (−0.734 → −0.721 → −0.729). Depth-related spectral power and suppression are strongly correlated, so this was
+expected to be a demanding test and the coefficient was expected to shrink. It does not move at all.
+
+Three further readings, all pointing the same way:
+* **Slow-delta carries its own, smaller, independent lead** (−0.22, unattenuated by suppression). Two separate EEG
+  channels of information, not one depth axis with two noisy measurements of it.
+* **Alpha loses significance once adjusted.** Its marginal +0.119 was collinearity with the other two.
+* **The signs are physiologically coherent.** Frontal alpha marks intact thalamocortical dynamics under propofol and
+  frontal EMG marks arousal; both precede a pressure *rise*. Only suppression precedes a fall. A monotone depth
+  axis cannot produce that pattern.
+
+Code: `analysis/vitaldb_eeg_specificity.py`.
+
+## II.2 MECHANISM — vasodilation, confirmed with MEASURED cardiac output
+
+The pulse-pressure decomposition suggested vasodilation but could not quantify it (PP is a poor stroke-volume
+surrogate under vasopressor titration, and the SVR proxy carries MAP in its numerator). Re-run against EV1000
+measured cardiac output, 704 cases, 322,739 bins:
+
+| outcome | forward | forward − backward |
+|---|---|---|
+| MAP | −0.507 mmHg | −0.257 [−0.400, −0.124] * |
+| **cardiac output (log)** | −0.006 % | **+0.268 %** [+0.140, +0.421] * |
+| SVR (log) | −0.163 % | −0.340 % [−0.669, −0.029] * |
+
+**Pressure falls, resistance falls, and cardiac output does not fall — it rises slightly.** That is what dropping
+afterload does to an unloaded ventricle, and it excludes the competing mechanism outright: myocardial depression
+*requires* CO to fall. The surrogate could only say "PP is flat"; measured CO says the ventricle is doing marginally
+more work while pressure drops.
+
+Limits: CO is the independently informative column (702 cases) — EV1000 computes its SVR *from* MAP, and that column
+rests on only 214 cases with CVP. The subcohort is sicker by selection (clinicians place CO monitors on higher-risk
+operations), which is the likely reason the MAP effect is smaller here (−0.26) than in the full cohort (−1.08).
+Code: `analysis/vitaldb_measured_co.py`.
+
+## II.3 The full-cohort haemodynamic decomposition (surrogate, for comparison)
+
+1,780 cases. Same estimator, pulse pressure and heart rate as the stroke-volume and chronotropic channels:
+
+| outcome | forward | forward − backward |
+|---|---|---|
+| MAP | −1.278 mmHg | −1.076 [−1.290, −0.879] * |
+| pulse pressure | −0.028 mmHg | −0.062 [−0.142, +0.013] ns |
+| heart rate | **+0.132 bpm** | −0.013 [−0.065, +0.043] ns |
+| SVR proxy (log) | −0.756 % | −0.400 [−0.525, −0.277] * |
+
+Same pattern, and the EMG negative control is **mirror-image on every column** (MAP +0.499, SVR proxy +0.213, both
+significant). A pipeline returning opposite-signed, physiologically coherent answers for an arousal marker and a
+suppression marker is doing more work than a null control could.
+Code: `analysis/vitaldb_mechanism_decomposition.py`.
+
+## II.4 Confound falsification (corrected pre-trend)
+
+Propofol, ±60 s, any-vs-none contrast:
+
+| model | forward − backward |
+|---|---|
+| M0 MAP(t) + dose(t) | −0.779 [−0.929, −0.634] |
+| M1 + dCe over the same window | −0.829 [−0.974, −0.679] |
+| M2 + pre-existing pressure trend | −0.779 [−0.931, −0.636] |
+| M3 + both | −0.827 [−0.994, −0.666] |
+| M4 stable-infusion bins only (50 %) | −0.306 [−0.484, −0.159] |
+
+Neither the rate of change of effect-site concentration nor a pre-existing pressure trend attenuates the effect. It
+halves in the stable-infusion subgroup but its interval still excludes zero, so roughly half the association is tied
+to moments when the dose is moving and half is present at a perfectly fixed concentration.
+Code: `analysis/vitaldb_pretrend_dosekinetics.py`.
+
+## II.5 Still open
+
+* **Autonomic intermediate.** 1,850 of 1,859 cases carry 500 Hz `SNUADC/ECG_II`, so HRV and spontaneous baroreflex
+  sensitivity are measurable and the three-node chain (suppression → autonomic withdrawal → pressure fall) can be
+  tested directly. Extraction in progress.
+* **Anaesthetic-free replication.** `ICARE_train` (BDSP restricted AP): **607 post-cardiac-arrest patients, 7
+  hospitals**, 19-channel EEG at 500 Hz *plus continuous 500 Hz ECG*, with CPC outcome and TTM recorded. Burst
+  suppression is the classic post-anoxic pattern. Critically these patients receive **no anaesthetic**, so the
+  dose-confound that every VitalDB analysis has to adjust away is absent by construction. Its `_OTHER` channel is
+  **SpO2 only — no blood pressure**, so it tests EEG → autonomic, not the full chain. Confounders to handle:
+  targeted temperature management (33 °C alters both EEG and HRV), sedation, and deranged post-arrest autonomics.
+* **Sympatholysis gradient.** Prediction registered before running: the lead should be larger under high
+  remifentanil, smaller under low, and abolished while a vasopressor infusion runs. Extraction in progress.
+* **Sevoflurane at full power.** The null rests on 274 usable cases against ~2,100 available. Extraction in progress.
+* **State-space BSP.** Implementation currently FAILS simulation recovery (correlations 0.002–0.226, process-noise
+  estimates ~9.4e5 against a truth of 0.005–0.5); returned for repair. Not wired into any analysis.
+* **Not closable with these data:** direct sympathetic outflow (microneurography) and brainstem circuit involvement.
