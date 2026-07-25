@@ -77,18 +77,21 @@ def load():
                     if (cid, t) in seen or cid not in HD or t not in HD[cid]:
                         continue
                     seen.add((cid, t))
+                    # A blank vasopressor column means that track does not exist for the case, i.e. the drug was
+                    # never given -- those bins are UNEXPOSED, not unknown. Treating blank as missing (an earlier
+                    # bug here) left only 96 comparator bins, because the only press==0 rows were cases that had a
+                    # pressor track recording an explicit zero.
                     press = 0.0
-                    any_seen = False
                     for k in ("phe", "nepi", "epi", "dopa", "dobu", "vaso", "ephed"):
                         v = d.get(k, "")
-                        if v not in ("", None):
-                            any_seen = True
-                            try:
-                                if float(v) > 0:
-                                    press = 1.0
-                            except Exception:
-                                pass
-                    HD[cid][t][4] = press if any_seen else np.nan
+                        if v in ("", None):
+                            continue
+                        try:
+                            if float(v) > 0:
+                                press = 1.0
+                        except Exception:
+                            pass
+                    HD[cid][t][4] = press
                     r = d.get("remi_ce", "")
                     HD[cid][t][5] = float(r) if r not in ("", None) else np.nan
                 except Exception:
