@@ -24,6 +24,35 @@ harmonization config, embedding-correction transform, phenotype-assignment
 function) **frozen + hash-verified** before the held-out data is unlocked. Any
 breach voids confirmatory status.
 
+## SOP: model delegation and token budget (STANDING — applies to every session)
+
+Research on this repo is token-expensive and has come close to the weekly usage cap. **Opus is the orchestrator
+and the reviewer, not the labourer.** If a task is bulk reading, bulk searching, bulk editing, or mechanical
+transformation, it should not be done in the main Opus context.
+
+| task | model | why |
+|---|---|---|
+| Orchestration, experiment design, deciding what to run next, final synthesis, anything that becomes a **reported number or a committed claim** | **opus** (main) | judgment that the whole result rests on |
+| Red-teaming a document or result, code review, literature triage, drafting prose, interpreting ambiguous output | **sonnet** | needs judgment, but is checkable afterwards |
+| Mechanical and verifiable: applying a precise edit spec across files, running a script and extracting fields, counting/tabulating, grepping a large tree, log triage, boilerplate | **haiku** | cheap, and correctness is checkable by inspection |
+
+**The review rule, which is not optional.** Any subagent output that will become a reported number, a claim in a
+document, or a commit must be **verified by Opus against the raw source** before it is used. Subagents are
+useful and they are also wrong often enough to matter: in the 2026-07 red-team pass, two of six findings were
+wrong because the agent only had the log files and not the underlying data — and it was right about four,
+including a real self-contradiction and an untested comparison in the headline claim. So: delegate the work,
+never delegate the acceptance.
+
+**Practical token discipline in the main context:**
+- Never `cat` a large file. `head`/`tail`/`grep`/`sed -n 'a,bp'` to the specific lines. Reading a 1 GB CSV into
+  context is never correct — compute over it in a script and print a summary.
+- Long analyses write to `/tmp/<name>.txt`; read back only the result lines, not the whole log.
+- Background anything over ~2 minutes (`run_in_background`) and poll with a cheap `until` loop. Do not sit in
+  foreground sleeps.
+- Do not re-read a file already read this session, and do not re-read a file just edited to confirm the edit.
+- Prefer one batched shell call that prints several small things over several round-trips.
+- **Never read a subagent's raw transcript file** — it will overflow the context. Use its returned result.
+
 ## Repo map (this project)
 ```
 config.yaml            single source of truth (PHASE flag, seeds, sites, params, data.s3, TUH)
@@ -90,6 +119,7 @@ This repo runs as a 24/7, self-learning, publication-focused research loop. Befo
    the actual outcome in the ledger — that accumulating predicted-vs-actual record is how the ability
    develops. When depth on a mined seam stalls, hunt for new (mechanism + reference + driver) triples.
 Then discriminate/rank → run → red-team (sonnet) → log lessons + prediction → update queue/ledger → commit+push.
-**Delegate:** haiku for mechanical/checkable tasks, sonnet for judgment/red-team, opus (main) only for orchestration+synthesis.
+**Delegate per the SOP at the top of this file** — haiku for mechanical/checkable, sonnet for judgment/red-team,
+opus for orchestration + synthesis + verifying every number before it is reported.
 Mission bar: **ultra-high-impact, externally-validated** findings; current white space =
 first cross-site-validated EEG-foundation-model → clinical-outcome study (GPU-gated).
