@@ -362,3 +362,71 @@ The sevoflurane cohort was never filtered either, so its monotonic duration grad
 Direction is unlikely to change — the artefacts are symmetric noise that inflates magnitude rather than
 manufacturing sign — but every magnitude in Part II should be read as roughly threefold too large until the
 corrected tables replace them.
+
+---
+
+# PART IV — literature check, and a claim of mine that it retracts
+
+## IV.1 RETRACTED: "the baroreflex is at ~1 % of awake gain in every bin"
+
+I measured a heart-rate/pressure slope of −0.0115 bpm/mmHg and concluded the baroreflex was essentially abolished
+under anaesthesia, which conveniently explained why vasodilation moves pressure at all. The literature says
+otherwise: baroreflex gain under propofol is depressed **65–73 %** from awake values of 12.5–29.1 ms/mmHg
+(BJA 2005; Anesth Analg 1987), i.e. it RETAINS roughly 30 % of awake gain — about 0.22 bpm/mmHg once converted.
+My figure is ~20× lower than that.
+
+The discrepancy is my measurement, not the literature. **The arterial baroreflex acts over one to three
+heartbeats.** I regressed 30-second-averaged heart rate on 60-second pressure changes with a 60-second response
+window, which averages the fast reflex away and leaves slower, unrelated mechanisms. The number is not baroreflex
+sensitivity and must not be described as such.
+
+What that test legitimately supports is only this: **slow** heart-rate/pressure coupling does not differ between
+suppressed and unsuppressed bins (interaction +0.0001 [−0.0044, +0.0045]). It says nothing about reflex gain.
+
+Re-run with the correct instrument — sequence-method BRS from beat-to-beat intervals — the asymmetry is
++1.63 % [−2.21, +5.85] on 5,839 bins from 145 cases. Genuinely underpowered; not evidence in either direction.
+
+## IV.2 The mechanism is established pharmacology — for the DRUG, at INDUCTION
+
+Direct microneurography: propofol reduces muscle sympathetic nerve activity by **76 ± 5 %**, with a fall in
+forearm vascular resistance and hypotension (Sellgren, *Acta Anaesthesiol Scand* 1992; Ebert, *Anesthesiology*
+1992). Propofol-induced hypotension is attributed to sympathetic inhibition plus baroreflex impairment (Sellgren
+1994). So "sympathetic withdrawal → vasodilation → pressure falls" is measured physiology, not conjecture, and our
+CO-up/SVR-down finding sits inside known pharmacology rather than contradicting it.
+
+**But those are induction studies in 10–20 subjects, about the drug.** None addresses whether the burst-suppression
+STATE, as distinct from anaesthetic depth, carries haemodynamic consequence during maintenance. That is the gap
+this work occupies.
+
+## IV.3 The rival hypothesis is mainstream and must be treated as such
+
+The literature explicitly entertains the reverse direction: burst suppression "might be caused by hypotension
+resulting in a reduced cerebral circulation", and suppression co-occurs with cerebral desaturation, raising the
+possibility that desaturation causes the suppression. This is not a strawman — it is the standard alternative.
+
+Consequence for how this must be written: **the forward-minus-backward asymmetry, not the raw association, is the
+headline statistic**, because only the asymmetry distinguishes the two directions.
+
+## IV.4 The literature sharpens our strongest argument
+
+If suppression were simply a marker of high EFFECTIVE drug exposure — and our Ce is modelled, not measured — then
+slow-delta power, a graded index of propofol effect, should carry the same lead. It carries **exactly zero**
+(+0.023 [−0.047, +0.085]), as does alpha (+0.004). That null is doing more work for the state-specificity claim
+than any positive result in the analysis.
+
+Residual concern it does NOT dispose of: within-case fixed effects remove between-patient pharmacodynamic
+sensitivity but not sensitivity that varies WITHIN a case over time.
+
+## IV.5 Where the mechanism now stands
+
+| link | status |
+|---|---|
+| suppression precedes a pressure fall | measured, artefact-filtered, specific to suppression |
+| the fall is vasodilatory | measured (CO rises, SVR falls) |
+| graded by dwell time | monotonic, propofol; sevoflurane gradient did not survive filtering |
+| via sympathetic withdrawal | **established for the drug in the literature; NOT measured by us** |
+| via reduced baroreflex gain | **claim retracted** — wrong timescale; proper test underpowered |
+
+The one instrument that indexes VASOMOTOR sympathetic outflow rather than cardiac autonomic control is Mayer wave
+(~0.1 Hz) power in the arterial pressure signal. Extraction is running, at both 30 s and 120 s windows so that
+window length can be distinguished from physiology.
