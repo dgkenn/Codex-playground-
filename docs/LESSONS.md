@@ -1371,3 +1371,26 @@ cross-nationally-validated part.
   DIRECT CONSEQUENCE for the recovery-of-consciousness study (docs/research/40_ROC_PIVOT.md): the same
   confounding applies there with the same sign, which is why that design commits in advance to conditioning on
   sedative dose and to restricting on the REASON sedation stopped.
+
+- **"The immune analysis gives a BIGGER number, so the bias was diluting" is not a valid inference (2026-07).**
+  Written into a findings document and caught only by an adversarial re-read: the ascertainment-immune design
+  gave a 36.80 pp spread against the compromised primary's 22.96 pp, and I concluded differential ascertainment
+  had been diluting rather than creating the effect. The two analyses estimate DIFFERENT ESTIMANDS on DIFFERENT
+  COHORTS -- "was a death ever recorded" across all patients, versus "did death come within 30 days" among
+  decedents only -- so their magnitudes are not commensurable and their difference says nothing about the
+  direction of the bias. Worse, the same section already contained the opposite claim (that the bias
+  "manufactures a spread ... in precisely the observed direction"), so the document asserted both directions four
+  sentences apart. RULE: a bias-corrected estimate and a biased estimate are comparable only when they target the
+  same quantity; if the fix changed the estimand, the change in magnitude is uninterpretable. The demotion
+  argument never needed it -- an outcome whose recording completeness varies by exposure group is invalid in
+  principle, which the ascertainment table establishes on its own.
+
+- **Reporting two intervals and noting one is larger is the same shortcut, wearing a different hat (2026-07).**
+  The specificity claim -- interaction spread 38.51 pp [32.84,44.63] versus aetiology main effect 12.13 pp
+  [8.44,15.84], "3.2x, therefore specific to burst suppression" -- compared two separately-bootstrapped
+  quantities without ever testing their difference, in a document that criticises exactly that shortcut two
+  sections later for the cross-site comparison. Non-overlapping intervals are evidence but are not the test. The
+  fix was nearly free because both spreads were already computed from the SAME resample index on every replicate,
+  so differencing them per replicate gives a paired bootstrap directly. RULE: whenever a claim has the form "A is
+  bigger than B", the reported statistic must be A-B with its own interval -- and check whether the existing
+  bootstrap is already paired before assuming a new one is needed.

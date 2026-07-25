@@ -211,6 +211,20 @@ def main():
                else "NOT SPECIFIC -- suppression carries the same weight everywhere; the earlier result is "
                     "aetiology, not burst suppression")
     print(f"   BS x aetiology interaction spread        : {100*obs_int:.2f} pp [{100*lo:.2f},{100*hi:.2f}]")
+
+    # THE DIFFERENCE, tested directly. Reporting two spreads with two intervals and observing that one is
+    # larger is the comparison-of-significance shortcut this project has committed four times; that the
+    # intervals happen not to overlap is evidence but is not the test. bi and bm are computed from the SAME
+    # resample index on every replicate, so differencing them per replicate is a paired bootstrap and is the
+    # statistic the specificity claim actually rests on.
+    bd = [a - c for a, c in zip(bi, bm)]
+    lo_d, hi_d = np.percentile(bd, [2.5, 97.5])
+    sig = "*" if lo_d > 0 or hi_d < 0 else "ns"
+    print(f"   DIFFERENCE (interaction - main), paired   : {100*(obs_int-obs_main):+.2f} pp "
+          f"[{100*lo_d:+.2f},{100*hi_d:+.2f}] {sig}")
+    if not (lo_d > 0):
+        verdict = ("NOT ESTABLISHED -- the interaction spread is not demonstrably larger than the aetiology "
+                   "main effect, so specificity to burst suppression is not shown")
     print(f"\n   VERDICT: {verdict}")
     print("\n   If the interaction spread is null, the burst-suppression framing must be dropped and the")
     print("   finding restated as 'aetiology predicts outcome', which needs no EEG.")

@@ -11,6 +11,31 @@ attenuates toward null). §8 records the prediction against the outcome.*
 
 ---
 
+## 0. Reconciling the cohort counts, because they differ by design
+
+Several different denominators appear below and they are easy to mistake for inconsistencies. All are verified
+directly against the extracted files.
+
+| count | what it is |
+|---|---|
+| 49,231 | EEG patients with a timestamped report |
+| 7,323 | of those, with burst suppression labelled on at least one report |
+| **16,244** | the **extraction cohort**: EEG patients with a death record in the OMOP `death` table. Deliberately death-restricted — every surviving test is ascertainment-immune and needs no survivors |
+| 16,233 | of those, who also have ≥1 condition row (22,263,086 rows total; 99.9 % of the target list) |
+| **15,318** | analysable for the specificity test: condition data **and** an EEG time **and** an ascertained death (3,106 BS-positive / 12,212 BS-negative) |
+| 3,302 | burst-suppression patients present in the death-restricted condition file. Only 3,304 of the 7,323 BS patients have a death record at all, so this is the expected ceiling, **not** a sign of incomplete extraction |
+| 3,216 | of those, who also have an EEG time — the ascertainment-immune analysis cohort of §4 and §5 |
+
+One caveat for anyone re-running the code: `heedb_bs_phenotypes.py` prints a "condition extraction only 45 %
+complete" warning, triggered by a heuristic that compares condition coverage against the *whole* 7,323-patient BS
+cohort. Against a death-restricted extraction that heuristic is wrong by construction — the reachable maximum is
+3,304, not 7,323 — and the warning should be ignored for these runs. It is left in place because it is correct
+for the unrestricted extraction it was written for.
+
+The two condition extractions differ in **depth**, not just in cohort, and this matters for §6a: the unrestricted
+BS-only file holds a median of 168 condition codes per patient, the deep extraction 730. Both figures are
+computed directly from the CSVs (`person_id` value counts), not taken from a log.
+
 ## 1. The question is Brown's, stated verbatim
 
 Guay, Agrawal, Tseng, Gallo, Schreier and Brown, *Anesthesiology* 2025;143(6):1595–1618 — all three quotes
@@ -100,8 +125,14 @@ death was captured — so differential recording cannot contribute.
 | status epilepticus | −7.29 pp [−11.42, −2.94] | −5.50 pp [−10.07, −0.97] |
 | **heterogeneity spread** | **36.80 pp [32.09, 41.93]** | **30.74 pp [26.17, 35.85]** |
 
-The spread is **larger** in the immune design than in the compromised primary (36.8 vs 23.0 pp), so differential
-ascertainment was *diluting* the effect, not creating it.
+The immune design gives a larger spread than the compromised primary (36.8 vs 23.0 pp). **That comparison should
+not be read as telling us which way the bias ran**, and an earlier version of this document wrongly did so. The
+two analyses estimate different quantities on different cohorts — "was a death ever recorded", across all
+burst-suppression patients, versus "did death come within 30 days", among decedents only — so their magnitudes
+are not commensurable and their difference carries no information about the direction of ascertainment bias. The
+justification for demoting the primary is that its outcome is invalid *in principle* when recording completeness
+varies by exposure group, which is established by the table above and requires no appeal to the observed
+direction.
 
 **Note on provenance.** The ascertainment rates above must be measured on a universe that is *not* itself
 restricted to patients with a death record. The main 16,244-patient extraction **is** so restricted — the cohort
