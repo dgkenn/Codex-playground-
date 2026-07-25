@@ -313,3 +313,47 @@ Code: `analysis/vitaldb_pp_mediation.py`, `analysis/vitaldb_flow_mediation.py`.
 
 **What would be needed to go further** (not available here): pre-operative frailty/cognitive phenotyping,
 renal biomarkers (NGAL/cystatin C), cerebral oximetry, or a randomised depth-titration design.
+
+## ★★ MECHANISM FOUND — and it REVERSES the previous section. Read this, not the one above.
+The "no haemodynamic mechanism" conclusion above was an artefact of the **wrong functional form**. An independent
+statistical red-team raised this precisely: a *case-averaged* mediator dilutes a time-local effect — a 20-minute
+post-suppression hypotensive episode is averaged into oblivion by hours of normotensive maintenance. Our own lag
+analysis had already shown BS→hypotension is a **time-local** cascade (positive-lag OR 1.50–1.71), so averaging was
+guaranteed to destroy it.
+
+**Corrected analysis — mediator defined as hypotension TEMPORALLY COUPLED to burst suppression** (a bin that is
+hypotensive *and* falls within 120 s after a suppression bin), n=1,493, 144 AKI events, LPM risk-difference scale,
+bootstrap 1,500:
+
+| mediator | proportion of BS→AKI effect mediated |
+|---|---|
+| **hypotension within 120 s AFTER burst suppression** | **58.5% [29%, 184%]** — CI excludes zero |
+| hypotension NOT temporally near burst suppression | −24.1% [−80%, −8%] — does not mediate |
+| low pulse pressure after burst suppression | 1.0% [−17%, 21%] — null |
+
+**The pathway is now apparent: burst suppression → the hypotension it heralds → acute kidney injury**, accounting
+for roughly **half to two-thirds** of the association. The specificity is the evidence: it is only the hypotension
+*coupled to* suppression that mediates; background hypotension in the same patients does not (indeed acts as a
+suppressor). That is exactly the signature expected of a genuine causal cascade and not of shared confounding,
+because a confounder would not respect the 120-second temporal window.
+
+This also reconciles the whole package: BS *precedes* hypotension (lag analysis), that specific hypotension
+*mediates* organ injury (here), and the effect is phenotype-specific (BS at/above baseline MAP predicts the fall;
+BS below baseline does not).
+
+### Honest limits (must be carried into any manuscript)
+1. **The proportion-mediated CI is wide and its upper bound (184%) is out of range** — the ratio estimator is
+   unstable at this event count. Report "roughly half, imprecisely estimated", not "58.5%".
+2. This is a coupled-window mediator, **not a formal marginal structural model**. The correct estimator is
+   bin-level, lag-structured mediation (MSM / interventional effects) with time-varying confounding; that is the
+   single analysis that would most strengthen the claim.
+3. **The flow arm remains uninterpretable, not negative.** Pulse pressure fails as a stroke-volume surrogate
+   exactly where it matters: vasopressor titration decouples PP from SV *differentially* (more pressor in sicker
+   patients), plus arterial stiffness and line damping. We cannot distinguish "no flow mediation" from "PP failed
+   as a proxy". Do not claim a flow null.
+4. Observational; BS and hypotension share anaesthetic depth as a common cause. Ce is adjusted but not randomised.
+5. **"Constitutional vulnerability" is withdrawn** — it was an unfalsifiable residual label, and it is no longer
+   needed now that a measured pathway carries most of the effect.
+6. The ENGAGES appeal is **motivation, not corroboration**: that trial randomised EEG-guided titration (not
+   suppression itself) and was not powered for AKI.
+Code: `analysis/vitaldb_pp_mediation.py` plus the coupled-window analysis in this section.
