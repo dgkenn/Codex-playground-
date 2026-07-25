@@ -290,3 +290,75 @@ Code: `analysis/vitaldb_pretrend_dosekinetics.py`.
 * **State-space BSP.** Implementation currently FAILS simulation recovery (correlations 0.002–0.226, process-noise
   estimates ~9.4e5 against a truth of 0.005–0.5); returned for repair. Not wired into any analysis.
 * **Not closable with these data:** direct sympathetic outflow (microneurography) and brainstem circuit involvement.
+
+---
+
+# PART III — two further corrections, one of them large
+
+Both were found after Part II was written. Part II's numbers are superseded.
+
+## III.1 The pre-trend shared an endpoint with the backward outcome (~24 % inflation)
+
+Fixing the exact-collinearity trap in Part I introduced a partial one. `pre = MAP(t-k) - MAP(t-2k)` is not exactly
+collinear with the backward outcome `MAP(t-k) - MAP(t)`, but it SHARES THE ENDPOINT `MAP(t-k)`. On the real
+within-case demeaned data the partial correlation was **0.528** against the backward outcome and **0.023** against
+the forward one. The damage was therefore one-sided:
+
+| | backward coefficient | forward coefficient | asymmetry |
+|---|---|---|---|
+| no pre-trend | −0.412 | −1.282 | −0.870 |
+| with the flawed pre-trend | **−0.202** | −1.278 | **−1.076** |
+| with a clean pre-trend `[t-3k, t-2k]` | — | −1.278 | **−0.971** |
+
+Adding it halved the *backward* coefficient while leaving the forward one untouched, inflating the headline by
+about 24 % entirely through the backward side. The pre-trend now spans `[t-3k, t-2k]`, which shares no endpoint
+with either outcome (raw correlation with the backward outcome falls 0.389 → 0.035).
+
+## III.2 ★ Arterial pressure was never range-filtered — every number was inflated ~3×
+
+**This is the largest error in the project to date.**
+
+`bridge_bins.csv` was never filtered for physiologically possible values:
+* **4.27 % of MAP values are ≤ 0**, minimum **−78 mmHg**. Negative arterial pressure does not exist.
+* 0.62 % exceed 200 mmHg (maximum 350).
+* 7.1 % fall outside [30, 150].
+
+These are transducer zeroing, line flushes and disconnections. Unfiltered they produced ΔMAP values spanning
+**−312 to +390 mmHg**, with 2.5 % of bins showing more than 50 mmHg of change in two minutes.
+
+| MAP filter | forward | asymmetry | bins |
+|---|---|---|---|
+| **none (everything reported before this section)** | −1.270 | **−0.971** | 700,014 |
+| [30, 150] | −0.465 | **−0.340** | 661,301 |
+| [25, 160] | −0.523 | −0.330 | 666,714 |
+| [20, 180] | −0.603 | −0.323 | 674,208 |
+| [40, 140] | −0.397 | −0.333 | 652,990 |
+
+**The effect survives but is roughly one third of what was reported.** The redeeming feature is that once the
+artefacts are removed the estimate is remarkably stable across four very different windows (−0.323 to −0.340), so
+the threshold is not doing the work. That insensitivity to analytic choice is a better result than the inflated
+number was.
+
+### How it was found, and why that matters
+Two scripts disagreed — −0.971 versus −0.666 — on row sets differing by **0.9 %**. An estimate that sensitive to a
+fraction of a percent of the data is being driven by extremes. That led to the ΔMAP distribution, and from there to
+the source.
+
+**The case-level cluster bootstrap did NOT catch it.** Its interval [−1.171, −0.763] *excluded* the value obtained
+from the slightly smaller sample. Cluster bootstrapping protects against correlated observations; it does not
+protect against contaminated ones. Filtering implausible VALUES is the principled fix — winsorising the outcome
+would have masked the artefacts rather than removing them.
+
+### Standing instruction added to the project
+Every physiological signal is range-checked against physiological possibility at load, before any modelling, and
+the check is stated in the file. Any estimate whose value moves materially when a small fraction of rows is dropped
+is treated as artefact-driven until proven otherwise.
+
+## III.3 Status of everything else
+
+All Part II results were computed without the MAP filter and are therefore **provisional pending re-run**: the
+specificity test, the measured-CO mechanism, the duration-response in both cohorts, and the calibrated contrast.
+The sevoflurane cohort was never filtered either, so its monotonic duration gradient is equally provisional.
+Direction is unlikely to change — the artefacts are symmetric noise that inflates magnitude rather than
+manufacturing sign — but every magnitude in Part II should be read as roughly threefold too large until the
+corrected tables replace them.
