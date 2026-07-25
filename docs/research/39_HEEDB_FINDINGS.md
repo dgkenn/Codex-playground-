@@ -96,8 +96,9 @@ noise; it is aetiological composition.
 | **ascertainment red-team** | ✓ survives, and **larger** — 36.80 pp, see §4 |
 | **cross-site replication**, formal agreement statistic | ✓ both sites agree — see §5 |
 | **specificity** — is it burst suppression or just aetiology? | ✓ difference +26.38 pp [+20.27, +32.68] — see §2 |
+| *(added)* **dose-response on measured burden**, replacing the label | ✓ interaction 32.63 pp [25.03, 40.89]; monotone gradient to 86.6 % — see §6b |
 
-Three of five pre-specified tests pass. Two are demoted for a defect the red-team found in the outcome variable
+Three of five pre-specified tests pass, plus the added dose-response test in §6b. Two are demoted for a defect the red-team found in the outcome variable
 itself, and the finding now rests entirely on the ascertainment-immune design. That demotion is reported here
 rather than buried because the demoted analysis is the one the plan called "primary".
 
@@ -174,8 +175,8 @@ made four times and now tests against explicitly.
 2. **Indication bias is severe and unfixable.** Continuous EEG is ordered *because* clinicians are worried. This
    is a cohort of patients someone was concerned about, not a sample of ICU patients. Splitting by site does not
    address it — it applies equally at both.
-3. **Burst suppression is a clinician label** on a report, not a quantified burden. Reader heterogeneity is an
-   unmeasured error source. Being fixed — see §7.
+3. ~~Burst suppression is a clinician label~~ — **resolved, see §6b.** Measured burden reproduces the
+   interaction and yields a monotone dose-response, so reader heterogeneity cannot explain the finding.
 4. **Cross-site, not cross-system.** Both sites share a health system, region, reporting infrastructure and OMOP
    instance. This rules out single-reader and single-unit artefacts; it does not rule out something institutional.
 5. **The surviving analyses are conditioned on having died.** They compare *how soon* among decedents. This is
@@ -228,6 +229,52 @@ limitation was substantially an artefact of incomplete extraction, not a propert
 - ~~H2 re-test~~ — **run, and it failed. H2 remains unresolved; see §7a.**
 - ~~Characterising the unexplained group~~ — **done, see §6a.** It is 6.6 % of the cohort, 91 % of it epilepsy
   without status epilepticus, and prognostically neutral.
+
+## 6b. The finding survives without the clinician label, and is graded
+
+The central result rested on a binary label written by whichever neurophysiologist read the study — so a reader
+systematically liberal in post-arrest patients would produce exactly this aetiology-dependent pattern. That was a
+live alternative explanation, not a hypothetical.
+
+Burst-suppression **burden** was therefore measured directly from the raw EDF on 28,657 recordings by a detector
+calibrated in-distribution against HEEDB's own expert labels. It reproduces out-of-sample here at **AUC 0.783
+[0.769, 0.800]** (median burden 0.471 in clinician-positive patients against 0.016 in negatives). Both
+predictions below were registered and committed before the burden data existed.
+
+**D1 — the interaction reproduces without the label (n = 7,477; 32.7 % labelled, 67.3 % not).**
+
+| aetiology | burden × aetiology interaction |
+|---|---|
+| **anoxic** | **+13.15 pp** |
+| status epilepticus | +1.00 pp |
+| sepsis | −8.13 pp |
+| metabolic | −12.26 pp |
+| structural | −19.49 pp |
+| **spread** | **32.63 pp [25.03, 40.89]** |
+
+Anoxic is the largest positive term and the spread excludes zero, as predicted. The *ordering* of the middle
+terms differs from the label-based version (there: anoxic, metabolic, status, structural, sepsis) — the
+prediction was registered on anoxic's rank and the spread, not on the full ordering, and the middle terms should
+not be over-read.
+
+**D2 — a monotone dose-response, which the binary label could not test.** Within anoxic patients (n = 1,875),
+30-day death rises with measured burden at **+50.81 pp per unit burden [+45.94, +55.62]**:
+
+| burden quartile | 30-day death |
+|---|---|
+| Q1 lowest | 35.6 % |
+| Q2 | 47.6 % |
+| Q3 | 66.2 % |
+| Q4 highest | **86.6 %** |
+
+**This removes limitation #3 and adds the strongest form of observational evidence available.** Reader
+heterogeneity cannot explain a gradient in a quantity no reader produced.
+
+*A correction on the way here.* A first run of this test reported D1 as falsified. It was wrong: it imported an
+EEG-time helper that returns times only for BS-labelled patients, so the model fit inside the BS-positive group
+with the comparison group absent. The tell was the exposure distribution — median burden 0.439 in the analysable
+set against 0.053 in the population — not any coefficient. Fixed, and the script now refuses to report the
+interaction as comparable if the analysable set is more than 90 % labelled.
 
 ## 7a. The H2 re-test failed, and the negative control is why we know
 
@@ -282,7 +329,8 @@ Predictions made about *new* quantities, where the evidence is not weak, have fa
 | BS-capable anaesthetic is negative (§7a) | −ve | +31.00 pp [+27.50, +34.67] | **failed, opposite sign** |
 | dexmedetomidine negative control is null (§7a) | null | −8.13 pp [−12.70, −3.55] | **failed** |
 
-Three of three registered predictions about new quantities failed. Both failures share one root cause worth
+Three of the first three registered predictions about new quantities failed; the two most recent (D1 and D2 in
+§6b, the ones the central claim actually depends on) were **confirmed**. Both failures share one root cause worth
 stating plainly: I twice reasoned "this suppression is pharmacological, therefore the patient is doing better",
 when a pharmacological cause actually predicts that the EEG carries *no* information (a null), and when the drug
 record itself turned out to be measuring severity rather than pharmacology. The confirmatory result in §2–§5 does
