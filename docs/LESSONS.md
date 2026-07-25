@@ -1237,3 +1237,74 @@ cross-nationally-validated part.
   COROLLARY: dichotomizing a graded outcome wastes most of the signal. Re-asking the identical question with a
   CONTINUOUS outcome (signed dMAP in mmHg, case fixed effects) is far better powered and gives an interpretable
   effect size in mmHg instead of an OR on an exposure scale nobody can picture.
+
+- **Range-check every physiological signal against physiological POSSIBILITY at load, before any modelling — the
+  cluster bootstrap will not save you (2026-07, the largest error of the project).** `bridge_bins.csv` was never
+  filtered: 4.27 % of MAP values were <= 0 (minimum **-78 mmHg**; negative arterial pressure does not exist) and
+  0.62 % exceeded 200 mmHg. Unfiltered, dMAP spanned **-312 to +390 mmHg** and 2.5 % of bins showed >50 mmHg of
+  change in two minutes. **Every reported number was inflated about threefold** (asymmetry -0.97 -> -0.33).
+  HOW IT WAS CAUGHT, because the diagnostic generalises: two scripts disagreed (-0.971 vs -0.666) on row sets
+  differing by **0.9 %**. An estimate that moves 31 % when you drop a fraction of a percent of the data is being
+  driven by extremes. **RULE: any estimate materially sensitive to dropping a small fraction of rows is
+  artefact-driven until proven otherwise.**
+  AND THE PART THAT SHOULD FRIGHTEN US: the case-level cluster bootstrap did NOT catch it — its interval
+  [-1.171,-0.763] EXCLUDED the value obtained from the slightly smaller sample. Cluster bootstrapping protects
+  against CORRELATED observations, not CONTAMINATED ones. Filtering implausible VALUES is the principled fix;
+  winsorising the outcome only masks them. Consolation: after filtering, the estimate was stable across four very
+  different windows ([30,150],[25,160],[20,180],[40,140] -> -0.340,-0.330,-0.323,-0.333), which is what a real
+  effect looks like and is a better result than the inflated one was.
+
+- **A covariate that merely SHARES AN ENDPOINT with the outcome is nearly as bad as one that is collinear with it
+  (2026-07).** Fixing an exact-collinearity trap (pre-trend = MAP(t)-MAP(t-k) is exactly -1x the backward outcome)
+  introduced a PARTIAL one: MAP(t-k)-MAP(t-2k) shares the term MAP(t-k) with the backward outcome
+  MAP(t-k)-MAP(t). Partial correlation 0.528 against the backward outcome vs 0.023 against the forward one. The
+  damage was ONE-SIDED — it halved the backward coefficient (-0.412 -> -0.202) while leaving the forward one
+  untouched (-1.278), inflating the headline asymmetry ~24 %. Fixed by moving the window to [t-3k, t-2k], which
+  shares no endpoint with either outcome. RULE: for any lagged design, write out the algebra of which time points
+  each covariate and each outcome contain, and require DISJOINT sets.
+
+- **A negative control is not decoration — and one that is not null invalidates your significance criterion
+  (2026-07).** Frontal EMG (same sensor, not cortical suppression) produced a SIGNIFICANT forward-minus-backward
+  statistic under all three estimators (+0.19 to +0.57 mmHg; MH ratio 0.87 [0.81,0.94] significantly reversed).
+  So "the bootstrap interval excludes zero" was NOT a calibrated decision rule for this design — it fired on an
+  exposure that should be null. Fix: estimate exposure and control INSIDE THE SAME bootstrap replicate and report
+  their DIFFERENCE. Subtlety worth keeping: the EMG bias was OPPOSITE in sign, so subtracting it made the result
+  LARGER — a convenient correction, which deserves more scepticism than an inconvenient one, because EMG may
+  carry real arousal physiology rather than pure design bias, in which case subtracting it OVER-corrects. Report
+  raw AND contrast; treat the raw as the conservative bound on magnitude.
+
+- **Translate the effect into the field's own outcome units BEFORE claiming impact — it can reverse the sign
+  (2026-07).** A 0.33 mmHg asymmetry was translated into minutes below MAP 65, the metric the perioperative
+  literature actually uses, expecting a small sustained displacement to move a threshold-crossing quantity. It did
+  the opposite: population attributable fraction **-5.8 % [-11.5,-0.5]**, non-positive at every threshold from 55
+  to 75 mmHg. This RECONCILES with the autoregulation stratification (asymmetry -0.678 at MAP>=90, null below 70):
+  suppression lowers pressure FROM HIGH STARTING POINTS, where a sub-millimetre shift never crosses a clinical
+  threshold. RULE: a mechanism can be real, specific, graded and blockable and STILL have no effect on the
+  clinical endpoint. Check the endpoint translation before writing an impact claim, not after.
+
+- **Use a NEGATIVE-CONTROL OUTCOME to test case-level associations — something the exposure cannot possibly cause
+  (2026-07).** Cumulative suppression predicted AKI robustly (+3.44 pp/SD; +3.89 on an absolute-rise definition
+  that never divides by baseline, so NOT a KDIGO denominator artefact). But it also "predicted" **pre-operative**
+  creatinine (-0.226 mg/dL per SD), which is causally impossible — demonstrating residual patient-level
+  confounding and reducing the claim to association. Related and equally instructive: suppression predicted MORE
+  hypotensive minutes BETWEEN patients (+8.2 min/SD) and FEWER WITHIN patient (-0.98 min). Same data, opposite
+  signs; the case-level "mediation" was measuring between-patient severity confounding and calling it a pathway.
+
+- **Match the instrument's TIMESCALE to the physiology before interpreting a null (2026-07, a retraction).** I
+  measured 30-second-averaged heart rate against 60-second pressure changes, got a slope of -0.0115 bpm/mmHg, and
+  concluded the baroreflex was abolished under anaesthesia (~1 % of awake gain) — which conveniently explained why
+  vasodilation moves pressure. The literature says gain is depressed 65-73 %, i.e. it RETAINS ~30 % (~0.22
+  bpm/mmHg). My figure was ~20x low because the arterial baroreflex acts over ONE TO THREE HEARTBEATS and my
+  window averaged it away. CLAIM RETRACTED. Same lesson for the HRV null: RMSSD is predominantly vagal and indexes
+  CARDIAC autonomic control, so it cannot speak to VASOMOTOR sympathetic outflow — the right instrument is Mayer
+  wave (~0.1 Hz) power in the arterial pressure signal.
+
+- **Registered predictions are worth the embarrassment: six failed here and each one narrowed the mechanism
+  (2026-07).** Failed: larger effect in the elderly (reversed), larger at higher dose (reversed), the transition
+  rather than the state (refuted in both cohorts), suppression blunts baroreflex gain (null), suppression precedes
+  an HRV fall (null), pressure overshoots after the episode (it decays to zero instead). Between them they
+  excluded depth, cardiac, chronotropic, baroreflex and cardiac-autonomic mechanisms and left a vasodilatory one
+  that survives. COROLLARY on derivation error: P1/P2 were registered as "more sympatholytic burden -> bigger
+  effect" when the physiology says the effect scales with the tone REMAINING to be withdrawn — the derivation was
+  wrong, not just the guess. Re-reading a failed prediction afterwards is worth nothing; the fix is to test the
+  reinterpretation against a MEASURED moderator that did not exist when the hypothesis was formed.
