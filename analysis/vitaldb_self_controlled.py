@@ -74,10 +74,17 @@ def load(cohort):
     return HD
 
 
-def build(HD, lag_bins, exposure, emg_cut=None):
-    """Self-controlled strata: (case, MAP band, dose band). Returns arrays + a contiguous stratum index."""
+def build(HD, lag_bins, exposure, emg_cut=None, ci=None):
+    """Self-controlled strata: (case, MAP band, dose band). Returns arrays + a contiguous stratum index.
+
+    `ci` is the case -> integer index map. It MUST be shared across lags: the bootstrap reuses one draw for the
+    forward and backward lags so that their ratio is properly correlated, and that is only valid if index k means
+    the same patient in every lag's arrays. Building a fresh map per lag silently misaligns them whenever a case
+    contributes rows at one lag but not another.
+    """
     case = []; key = []; expo = []; out = []
-    ci = {}
+    if ci is None:
+        ci = {}
     for c, bd in HD.items():
         ts = sorted(t for t in bd if bd[t][2] == bd[t][2] and bd[t][2] >= 1.0)
         if len(ts) < 32:
@@ -99,7 +106,9 @@ def build(HD, lag_bins, exposure, emg_cut=None):
             if c not in ci:
                 ci[c] = len(ci)
             case.append(ci[c])
-            key.append((ci[c], int(np.clip(m, 30, 160) // MAP_BAND), int(np.clip(dose, 0, 20) / DOSE_BAND)))
+            key.append((ci[c],
+                        int(np.clip(m, 30, 160) // MAP_BAND),
+                        int(np.clip(dose, 0, 20) // DOSE_BAND)))
             expo.append(e); out.append(1 if m2 < 65 else 0)
     if not key:
         return None
@@ -174,16 +183,17 @@ def analyse(HD, exposure, label, cohort):
             print(f"\n=== {label}: no EMG available in this cohort, skipped ===")
             return
         emg_cut = float(np.median(vals))
-    sets = {}; ncase = 0
+    sets = {}
+    ci = {}                       # ONE case->index map shared by every lag (see build() docstring)
     for lag in (2, 4, -2, -4):
-        r = build(HD, lag, exposure, emg_cut)
+        r = build(HD, lag, exposure, emg_cut, ci)
         if r is None:
             continue
-        case, strat, expo, out, nc, ns = r
+        case, strat, expo, out, _nc, ns = r
         sets[lag] = (case, strat, expo, out, ns)
-        ncase = max(ncase, nc)
     if not sets:
         return
+    ncase = len(ci)
     print(f"\n=== {label} ===")
     print(f"{'lag':>6s}  {'MH OR':>7s}  {'95% CI (case bootstrap)':>24s}  {'bins':>8s} {'strata':>7s} {'informative':>11s}")
     boot = Boot(sets, ncase)
