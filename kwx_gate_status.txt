@@ -1,5 +1,5 @@
 === K-WX FORWARD PAPER GATE status ===
-updated: 2026-07-25T14:51:14.274282+00:00
+updated: 2026-07-25T15:07:46.276663+00:00
 last poll: 0 new paper locks; next poll in ~5s
 book-watcher: idle (no hot set this cycle)
 near-misses today: 27 (locked but unbuyable: repriced/empty book/fee floor)
