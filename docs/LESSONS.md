@@ -1394,3 +1394,20 @@ cross-nationally-validated part.
   so differencing them per replicate gives a paired bootstrap directly. RULE: whenever a claim has the form "A is
   bigger than B", the reported statistic must be A-B with its own interval -- and check whether the existing
   bootstrap is already paired before assuming a new one is needed.
+
+- **An imported helper silently redefined the cohort, and the result LOOKED like a clean falsification
+  (2026-07).** The dose-response test imported eeg_times() from heedb_bs_ascertainment to map patient -> EEG
+  time. That function skips reports whose `bs` field is empty, because it was written for the burst-suppression
+  cohort -- so it returns times ONLY for BS-labelled patients. The dose-response model was therefore fit inside
+  the BS-positive group, with the BS-negative comparison group silently absent, which makes its burden x
+  aetiology interaction non-comparable to the label-based interaction it was built to reproduce. It duly came
+  out with the wrong sign pattern and the script printed "D1 FALSIFIED" -- a confident, specific, wrong
+  conclusion that would have gone into the paper as evidence against its own central claim.
+  The tell was a distribution, not a coefficient: median burden in the analysable set was 0.439, when the
+  measured median across all patients is 0.053 and BS-NEGATIVE patients sit at 0.013. A median 8x the
+  population value means the cohort is not the cohort you think it is. RULE: after any join or filter, print
+  the exposure's distribution and the size of each comparison group, and compare them against the same
+  quantities computed on the full data -- a silently-restricted cohort shows up there long before it shows up
+  in a coefficient. COROLLARY: importing a helper is not free of assumptions. The lesson "import the validated
+  function, do not reimplement it" is right, but the imported function carries the cohort definition of the
+  script it was written for, and that definition must be checked against the new use.

@@ -45,7 +45,13 @@ import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from heedb_bs_ascertainment import AETIOLOGY, norm, dt, eeg_times
+from heedb_bs_ascertainment import AETIOLOGY, norm, dt
+# NOT heedb_bs_ascertainment.eeg_times -- that function returns times ONLY for patients carrying a
+# burst-suppression label (it skips reports whose `bs` field is empty), because it was written for the BS
+# cohort. Using it here silently restricted this model to BS-positive patients, excluding the BS-negative
+# comparison group entirely, and made the burden x aetiology interaction non-comparable to the label-based
+# one it is supposed to reproduce. all_eeg_patients() returns every EEG patient with a timestamp.
+from heedb_bs_specificity import all_eeg_patients
 
 OMOP = os.environ.get("OMOP_OUT", "/tmp/eeg_probe/heedb_omop")
 NBOOT = int(os.environ.get("NBOOT", "2000"))
@@ -103,7 +109,7 @@ def main():
             except Exception:
                 pass
 
-    et = eeg_times()
+    et, bs_label, _age, _fem = all_eeg_patients()
     keys = list(AETIOLOGY)
     rows = []
     for p in sorted(cond_seen & set(burden)):
@@ -115,14 +121,21 @@ def main():
             continue
         labs = aet.get(p, set())
         rows.append(dict(d30=1.0 if days <= 30 else 0.0, bur=float(burden[p]),
+                         labelled=1.0 if bs_label.get(p) else 0.0,
                          **{k: (1.0 if k in labs else 0.0) for k in keys}))
     n = len(rows)
     print(f"analysable (measured burden + ascertained death + EEG time + condition data): {n}")
     if n < 300:
         print("insufficient"); return 1
     bv = np.array([r["bur"] for r in rows])
+    nlab = int(sum(r["labelled"] for r in rows))
+    print(f"  clinician BS-labelled in this set: {nlab} ({100*nlab/n:.1f} %); unlabelled: {n-nlab}")
     print(f"  burden distribution: median {np.median(bv):.3f}  IQR "
           f"[{np.percentile(bv,25):.3f},{np.percentile(bv,75):.3f}]  max {bv.max():.3f}")
+    if nlab / n > 0.9:
+        print("  *** the analysable set is almost entirely BS-labelled -- the BS-negative comparison group is")
+        print("      missing, so the interaction below is NOT comparable to the label-based one. Check the")
+        print("      EEG-time source: it must cover all EEG patients, not only those carrying a bs label.")
 
     expo = [k for k in keys if sum(r[k] for r in rows) >= 30]
     y = np.asarray([r["d30"] for r in rows], float)
