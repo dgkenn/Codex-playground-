@@ -74,12 +74,13 @@ rather than buried because the demoted analysis is the one the plan called "prim
 
 ## 4. The ascertainment red-team, which the primary analysis failed
 
-Death-record completeness varies sharply by aetiology — from **29.1 %** (unexplained) to **61.9 %** (anoxic):
+Death-record completeness varies sharply across the five modelled aetiologies — from **40.1 %** to **61.9 %**, a
+**21.8 pp** differential:
 
-| | anoxic | sepsis | metabolic | structural | status | unexplained |
-|---|---|---|---|---|---|---|
-| n | 1,457 | 1,074 | 2,493 | 1,932 | 773 | 2,513 |
-| death record present | **61.9 %** | 57.4 % | 56.6 % | 51.8 % | 40.1 % | **29.1 %** |
+| | anoxic | sepsis | metabolic | structural | status |
+|---|---|---|---|---|---|
+| n | 1,457 | 1,074 | 2,493 | 1,932 | 773 |
+| death record present | **61.9 %** | 57.4 % | 56.6 % | 51.8 % | **40.1 %** |
 
 Coding "no death record" as *survived* therefore **manufactures** a spread, and in precisely the observed
 direction. The pre-specified primary and H2 both used that outcome. **Both are compromised and are demoted.**
@@ -106,9 +107,15 @@ ascertainment was *diluting* the effect, not creating it.
 restricted to patients with a death record. The main 16,244-patient extraction **is** so restricted — the cohort
 was defined as "EEG patient with an ascertained death", because every surviving test is ascertainment-immune and
 needs no survivors. Measuring an ascertainment rate inside that file returns 100 % in every stratum by
-construction; it is the cohort definition read back, not a result. The rates above therefore come from the
-unrestricted BS-cohort extraction (7,102 patients, 44.5 % with a death record). `heedb_bs_ascertainment.py` now
-refuses to report CHECK 1 if the universe it is handed is death-restricted, and `heedb_bs_phenotypes.py` aborts
+construction; it is the cohort definition read back, not a result. The rates above therefore come from the only
+unrestricted extraction available (7,102 BS patients, 44.5 % with a death record). That file is **shallower** —
+median 168 condition codes per patient against 730 in the deep extraction — so its aetiology labels are
+under-called and the measured differential is attenuated toward the cohort mean. The 21.8 pp spread is therefore
+a *lower bound* on the true differential, which is the conservative direction for the argument it is being used
+to make. For the same reason the unexplained stratum is not reported here: in a shallow extraction "no aetiology
+code" mostly means "not yet extracted", and its apparent ascertainment rate is not interpretable.
+`heedb_bs_ascertainment.py` now refuses to report CHECK 1 if the universe it is handed is death-restricted, and
+`heedb_bs_phenotypes.py` aborts
 rather than fit a model whose outcome has no variance — that degenerate fit prints as `0.00 pp ns`, which is
 indistinguishable from a genuine null and was briefly mistaken for one.
 
@@ -139,12 +146,44 @@ made four times and now tests against explicitly.
 5. **The surviving analyses are conditioned on having died.** They compare *how soon* among decedents. This is
    what buys immunity to differential ascertainment, and the price is that nothing here estimates the risk of
    death itself. The demoted primary was the analysis that would have, and it is not trustworthy.
-6. **45.7 % of the burst-suppression cohort has no aetiology label** — the group the review calls "challenging to
-   determine", and the least-ascertained one (29.1 %). It is excluded from the interaction model, not explained.
+6. **The residual unexplained group is small but is excluded rather than modelled** — 6.6 % of the analysed
+   cohort, and only 0.6 % after the refinement in §6a. Small enough not to threaten the result; still excluded.
 7. **No external replication.** VitalDB is the only public source with simultaneous high-resolution EEG and
    continuous arterial pressure, and it holds no ICU outcome data; MIMIC-IV/III Waveform, I-CARE, BDSP-SAH and
    the PSG collections were each checked and none carries the required combination. This finding is
    cross-site-replicated but not externally replicated, and no accessible dataset can currently change that.
+
+## 6a. What the "challenging to determine" group actually is *(exploratory)*
+
+The review's first quote says determining the exact aetiology "can be challenging". In the analysed cohort that
+difficulty is smaller than it first appeared, and it is not miscellaneous.
+
+**6.6 %** of burst-suppression patients (219 / 3,302) carry none of the five pre-registered aetiologies. Their
+codes are dominated by seizure disorder that does not meet the status-epilepticus definition — other/unspecified
+convulsions (42 %, 38 %) and epilepsy without status (26 %, 23 %, plus eight further variants). This is not a
+coding gap: `G40909` differs from `G40901` in exactly the digit encoding *without status epilepticus*, and the
+pre-registered dictionary matches only the with-status codes, which is what it was written to do.
+
+Adding a sixth `epilepsy-without-status` category absorbs **90.9 %** of the unexplained group, leaving **0.6 %**
+of the cohort (20 patients) genuinely unclassified.
+
+**A registered prediction that failed.** Before fitting, the prediction on record was that this group's 30-day
+coefficient would be **negative** — the reasoning being that in epilepsy without status, suppression is
+pharmacological (anti-seizure and anaesthetic infusions in a brain that is not structurally dying) and should
+therefore resemble status epilepticus (−7.48 pp) rather than anoxic injury (+29.45 pp). It came out
+**+2.13 pp [−3.81, +8.09], null** — positive-signed and indistinguishable from zero, which meets the
+pre-stated falsification criterion. The group is prognostically **neutral**: it carries neither the grave meaning
+suppression has after anoxia nor the protective-looking signal seen in status. The "pharmacological therefore
+benign" reading is not supported; "pharmacological therefore uninformative" is what the data show.
+
+*Exploratory throughout: the sixth category was defined after inspecting the codes, so it does not enter the
+confirmatory result. The prediction was committed to the repository before the model was fit.*
+
+**A correction this supersedes.** Earlier versions of this document reported that 45.7 % of the cohort had no
+aetiology label, and listed it as the study's largest limitation. That figure — and a 35.4 % revision of it —
+came from a shallower extraction (median 168 condition codes per patient against 730 in the deep one), where
+"no aetiology code" mostly meant "not yet extracted". At full per-patient depth the true figure is 6.6 %. The
+limitation was substantially an artefact of incomplete extraction, not a property of the cohort.
 
 ## 7. In flight
 
@@ -153,7 +192,8 @@ made four times and now tests against explicitly.
   available for a real effect — and removes reader heterogeneity. Running over 51,702 recordings.
 - **H2 re-test** inside the ascertainment-immune design: drug-derived sedative exposure against the 30-day timing
   outcome, replacing the demoted version. Gated on the `drug_exposure` extraction, which is ~60 % complete.
-- **Characterising the 45.7 % unexplained group** — Brown's "challenging to determine" cohort.
+- ~~Characterising the unexplained group~~ — **done, see §6a.** It is 6.6 % of the cohort, 91 % of it epilepsy
+  without status epilepticus, and prognostically neutral.
 
 ## 8. Prediction ledger entry
 

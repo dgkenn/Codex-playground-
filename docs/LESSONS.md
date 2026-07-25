@@ -1330,3 +1330,27 @@ cross-nationally-validated part.
   moved the analysable n from 3,216 to 3,078. Caught only because the n changed when nothing in CHECK 2 had been
   edited. RULE: when patching a shared-scope script, grep for every later use of any name you rebind, and treat
   an unexplained change in n as a bug until proven otherwise -- not as noise.
+
+- **"Unexplained" in an EHR cohort usually means "not yet extracted" -- check extraction DEPTH, not just patient
+  coverage (2026-07).** The headline limitation of the HEEDB study was that 45.7 % of burst-suppression patients
+  had no aetiology label -- Brown's "challenging to determine" group, and the reason the finding looked fragile.
+  It was an artefact. Two condition extractions both covered ~100 % of their target PATIENTS, but one held a
+  median 168 codes per patient and the other 730 (4.3x). On the shallow one the unexplained fraction is 35-46 %;
+  on the deep one it is 6.6 %, of which 91 % is epilepsy without status epilepticus and only 0.6 % of the cohort
+  is genuinely unclassified. RULE: patient-level coverage ("99.9 % of the target list") says nothing about
+  per-patient completeness, and a category defined by ABSENCE of a code is the one most corrupted by shallow
+  extraction. Report rows-per-patient alongside patient coverage before treating any absence-defined group as
+  real. COROLLARY: the same shallowness attenuates an ascertainment-differential toward the cohort mean, so the
+  21.8 pp differential measured there is a lower bound -- which happened to be the conservative direction for the
+  argument it supported, but that was luck, not design.
+
+- **A registered prediction failed and the failure was more informative than the guess (2026-07).** Predicted:
+  epilepsy-without-status suppression is pharmacological, so its 30-day mortality-timing coefficient should be
+  NEGATIVE like status epilepticus (-7.48 pp) and unlike anoxic injury (+29.45 pp). Actual: +2.13 pp
+  [-3.81,+8.09], null and positive-signed -- falsified by the pre-stated criterion. The error was equating
+  "pharmacological" with "benign". A pharmacological cause predicts that suppression carries NO information about
+  the brain, i.e. a coefficient of ZERO, which is exactly what was observed; it does not predict a protective
+  signal. Status epilepticus's negative coefficient must therefore come from something else (plausibly that those
+  patients are actively treated and survive the acute window), not from its suppression being drug-induced.
+  RULE: when a mechanism predicts "this marker means nothing here", the registered prediction should be a NULL,
+  and the analysis should be powered to say so -- not a signed effect borrowed from a superficially similar group.
