@@ -20,6 +20,20 @@ A secondary column reports the same model using EMG as a negative-control exposu
 on the same sensor by the same device but is not a measure of cortical suppression, so it should NOT show the
 phenotype-specific pattern. That test discriminates "suppression predicts hypotension" from "anything the BIS
 sensor records predicts hypotension".
+
+TWO CORRECTIONS applied after review (both changed reported numbers, neither changed a conclusion):
+  * EMG is standardised against ONE GLOBAL mean and SD computed over the whole cohort, not recomputed inside each
+    (lag, phenotype) subset. Standardising within subset makes "1 SD of EMG" a different absolute quantity in each
+    stratum, so the two strata's "per SD" odds ratios were not on a comparable scale -- which is precisely the
+    cross-stratum comparison this file exists to make.
+  * Confidence intervals come from a CASE-LEVEL cluster bootstrap. The model-based Wald intervals used before
+    treated ~600,000 bins from ~1,700 patients as 600,000 independent observations and were far too narrow; every
+    significance verdict in the earlier version of this file was anti-conservative.
+
+NOTE ON STATUS: this file uses MAP as a LINEAR covariate. That specification is now known to carry a regression-to-
+the-mean artefact (see `analysis/vitaldb_rtm_hardening.py`). It is retained because it is the specification under
+which the artefact was DISCOVERED -- the EMG negative control misbehaving here is what triggered the whole
+hardening pass. Do not cite its effect sizes; cite the exactly-stratified versions.
 """
 import csv, math, os, sys
 from collections import defaultdict
@@ -28,18 +42,28 @@ import numpy as np
 DATA = os.environ.get("EEG_PROBE_DIR", "/tmp/eeg_probe")
 
 
-def logit(X, y):
+def logit(X, y, w=None):
+    """Frequency-weighted logistic regression; w carries the case-bootstrap multiplicities."""
     X = np.asarray(X, float); y = np.asarray(y, float); b = np.zeros(X.shape[1])
-    W = np.ones(len(y))
+    if w is None:
+        w = np.ones(len(y))
     for _ in range(200):
         p = 1 / (1 + np.exp(-np.clip(X @ b, -30, 30)))
-        W = np.clip(p * (1 - p), 1e-9, None)
-        z = X @ b + (y - p) / W
+        v = np.clip(p * (1 - p), 1e-9, None)
+        W = v * w
+        z = X @ b + (y - p) / v
         try:
-            b = np.linalg.solve((X.T * W) @ X + 1e-6 * np.eye(X.shape[1]), (X.T * W) @ z)
+            nb = np.linalg.solve((X.T * W) @ X + 1e-6 * np.eye(X.shape[1]), (X.T * W) @ z)
         except np.linalg.LinAlgError:
-            break
-    return b, np.sqrt(np.diag(np.linalg.pinv((X.T * W) @ X)))
+            return None
+        if np.max(np.abs(nb - b)) < 1e-9:
+            return nb
+        b = nb
+    return b
+
+
+NBOOT = int(os.environ.get("NBOOT", "300"))
+rng = np.random.default_rng(20260725)
 
 
 def load():
@@ -95,12 +119,22 @@ def main():
     print(f"MONITOR-SR cohort: {len(BD)} cases with joined BIS + arterial pressure, "
           f"{len(base)} with an estimable baseline; {nsr} bins with SR>0")
 
+    # ONE global EMG mean/SD, computed once over the whole cohort, so that "per SD" denotes the same absolute
+    # quantity in every stratum and at every lag. Standardising inside each subset would make the strata's
+    # odds ratios incomparable -- and comparing across strata is the entire point of this file.
+    emg_all = np.array([BD[c][t][1] for c in BD for t in BD[c] if BD[c][t][1] == BD[c][t][1]], float)
+    emg_mu = float(emg_all.mean()); emg_sd = float(emg_all.std())
+    if not (emg_sd > 1e-9):
+        emg_sd = 1.0
+    print(f"global EMG standardisation: mean={emg_mu:.2f}, SD={emg_sd:.2f} (n={len(emg_all)} bins)")
+    print(f"confidence intervals: {NBOOT} CASE-level cluster bootstrap replicates")
+
     for expo_idx, expo_name in ((0, "monitor suppression ratio"), (1, "frontal EMG (negative control)")):
         for k in (2, 4):
             print(f"\n=== [{expo_name}] lag +{k} ({30*k}s) -> hypotension (MAP<65), split by own-baseline MAP ===")
             for lab, cond in (("MAP >= baseline (sensitivity phenotype)", lambda m, b: m >= b),
                               ("MAP <  baseline (hypoperfusion phenotype)", lambda m, b: m < b * 0.9)):
-                X = []; y = []
+                X = []; y = []; cid_rows = []
                 for c, bd in BD.items():
                     if c not in base:
                         continue
@@ -115,20 +149,38 @@ def main():
                         m2 = bd[t2][2]
                         if e != e or m != m or m2 != m2 or not cond(m, b0):
                             continue
+                        if expo_idx == 1:
+                            e = (e - emg_mu) / emg_sd
                         X.append([1, e, m, ce, age if age == age else 55])
                         y.append(1.0 if m2 < 65 else 0.0)
+                        cid_rows.append(c)
                 if len(X) < 400 or sum(y) < 25:
                     print(f"   {lab:44s} insufficient (n={len(X)}, ev={int(sum(y)) if y else 0})")
                     continue
-                Xa = np.asarray(X, float)
-                sd = Xa[:, 1].std()
-                if sd > 1e-9 and expo_idx == 1:
-                    Xa[:, 1] = (Xa[:, 1] - Xa[:, 1].mean()) / sd     # EMG has no natural 0-1 scale: report per SD
-                b, se = logit(Xa, y)
-                lo, hi = math.exp(b[1] - 1.96 * se[1]), math.exp(b[1] + 1.96 * se[1])
+                Xa = np.asarray(X, float); ya = np.asarray(y, float)
+                cids = np.asarray(cid_rows)
+                order = np.argsort(cids, kind="stable")
+                Xa = Xa[order]; ya = ya[order]; cids = cids[order]
+                uniq, first = np.unique(cids, return_index=True)
+                ncase = len(uniq)
+                span = np.diff(np.append(first, len(cids)))
+                b = logit(Xa, ya)
+                if b is None:
+                    print(f"   {lab:44s} fit failed")
+                    continue
+                boots = []
+                for _ in range(NBOOT):
+                    cnt = np.bincount(rng.integers(0, ncase, ncase), minlength=ncase).astype(float)
+                    bb = logit(Xa, ya, np.repeat(cnt, span))
+                    if bb is not None:
+                        boots.append(bb[1])
                 unit = "per SD" if expo_idx == 1 else "per full suppression"
+                if len(boots) < 50:
+                    print(f"   {lab:44s} OR={math.exp(b[1]):5.2f} (bootstrap failed) {unit}")
+                    continue
+                lo, hi = np.exp(np.percentile(boots, [2.5, 97.5]))
                 print(f"   {lab:44s} OR={math.exp(b[1]):5.2f} [{lo:.2f},{hi:.2f}] {unit:20s} "
-                      f"n={len(X):6d} ev={int(sum(y)):5d} {'*' if (lo > 1 or hi < 1) else 'ns'}")
+                      f"n={len(ya):6d} ev={int(ya.sum()):5d} cases={ncase:5d} {'*' if (lo > 1 or hi < 1) else 'ns'}")
     print("\n   [Pass criterion: the monitor SR reproduces the phenotype-specific pattern (positive at/above")
     print("    baseline, null below) while EMG does not. That separates physiology from instrumentation.]")
 

@@ -119,9 +119,17 @@ def main():
     D = build(load(), lag)
     print(f"rows={len(D['y'])}  cases={D['ncase']}  lag=+{lag} bins (+{30*lag}s)")
     exposed = D["bs"] > 0
-    mean_when_exposed = float(D["bs"][exposed].mean())
+    pooled_mwe = float(D["bs"][exposed].mean())
     print(f"suppression present in {100*exposed.mean():.1f}% of bins; among those the mean suppressed "
-          f"FRACTION of the bin is {mean_when_exposed:.3f}")
+          f"FRACTION of the bin is {pooled_mwe:.3f} (pooled over both phenotypes)")
+    # The rescaling below is applied to a coefficient fitted ONLY on the sensitivity stratum, so the exposure
+    # intensity used to rescale it must come from that same stratum. The two strata are defined by different
+    # physiology and need not share a mean suppressed fraction; using the pooled value would rescale by the
+    # wrong scalar and print a number that does not correspond to the model it is compared against.
+    sens = D["phen"] == 1
+    se_ = sens & exposed
+    mean_when_exposed = float(D["bs"][se_].mean())
+    print(f"  within the sensitivity stratum (MAP >= own baseline) that mean is {mean_when_exposed:.3f}")
     print(f"  => a 'per full suppression' OR of X corresponds to X^{mean_when_exposed:.3f} on the any-vs-none scale")
 
     # multiplicity vector machinery for case-level bootstrap
@@ -144,6 +152,9 @@ def main():
     st = D["strat"][s]; ex = (D["bs"][s] > 0).astype(np.int8); ou = D["y"][s].astype(np.int8)
 
     bA = logit_w(Xc, y, w1); bB = logit_w(Xb, y, w1); orC = mh_or(st, ex, ou, w1)
+    if bA is None or bB is None or not (orC == orC):
+        print("   point-estimate fit failed (singular design) -- cannot report CHECK 1")
+        return
     a_boot = []; b_boot = []; c_boot = []
     for _ in range(NBOOT):
         w = draw(); ws = w[s]
