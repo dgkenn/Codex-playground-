@@ -61,13 +61,28 @@ suppression ratio is computed over a trailing ~63 s window, shifting its apparen
 explanation was offered *after* seeing the result. It supports detector-independence of the association; it does
 **not** independently confirm the precedence.
 
-### Sevoflurane does not replicate the key tests
-Run identically on 1,645 cases: **no occupancy gradient**, **no depth gradient**, and the autoregulation result is
-**not significant** at MAP ≥ 90 (−0.217 [−0.582, +0.089] ns, vs propofol −0.678). Only the during-suppression
-effect survives (−0.209 [−0.335, −0.078]) and the state-over-onset ordering. **The core findings are currently
-propofol-only.** A formal pooled drug-interaction test is running; until it reports, the two agents have *not*
-been shown to differ — asserting they do would repeat the difference-of-significance error that already cost one
-retraction here.
+### Sevoflurane: the agents are NOT statistically distinguishable
+Run separately on 1,645 sevoflurane cases, several tests are individually non-significant: no occupancy gradient,
+no depth gradient, and the autoregulation result is ns at MAP ≥ 90 (−0.217 [−0.582, +0.089] vs propofol −0.678).
+It would be easy — and wrong — to call the finding propofol-only on that basis.
+
+Tested properly, by pooling both cohorts into one model with a drug-by-exposure interaction bootstrapped over
+cases (1,153,858 bins, 3,421 cases):
+
+| | estimate |
+|---|---|
+| propofol asymmetry | **−0.209** [−0.311, −0.104] * |
+| **interaction (sevoflurane − propofol)** | **−0.064** [−0.251, +0.140] — **not distinguishable** |
+| implied sevoflurane asymmetry | −0.272 |
+
+**The agents do not differ.** Sevoflurane's separate non-significances reflect lower power and a much lower
+exposure prevalence (suppression in 14.5 % of sevoflurane bins vs 42.0 % of propofol bins), not a smaller effect.
+Every drug-class contrast made earlier in this project is therefore withdrawn and replaced by the pooled estimate.
+This is the third appearance of the difference-of-significance error in this work, and the reason the interaction
+test now exists. `vitaldb_drug_interaction`.
+
+Caveat: dose is not comparable across agents (µg/mL vs %), so "adjusting for dose" means something different in
+each arm; a supplementary run z-scoring dose within cohort is included in the same script.
 
 ---
 
