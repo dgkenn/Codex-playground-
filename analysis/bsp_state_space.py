@@ -77,6 +77,61 @@ data pass finish in well under a minute instead of hours of pure per-case Python
 CONSTRAINTS: numpy only (no scipy.optimize, no pymc). Fully deterministic given inputs (the
 Newton iteration and EM are both plain fixed-point recursions -- nothing stochastic in the
 estimator; simulations in the validation section below are explicitly seeded).
+
+IDENTIFIABILITY AT SATURATION (real-data fix, read before changing X_CLIP / the M-step prior)
+------------------------------------------------------------------------------------------
+Real bs series contain long runs of bs EXACTLY 0 (median ~66% of a case's bins) and, less often,
+runs of bs EXACTLY 1. In a long run of n_t=0, the log-likelihood n_t*log(p)+(N_t-n_t)*log(1-p)
+keeps increasing as x -> -infinity (there is no finite MLE), so only the Gaussian prior stops x
+from drifting arbitrarily negative -- and it stops it less and less as sigma^2 grows, because a
+bigger sigma^2 means a weaker prior pull each step. An early implementation of this estimator
+used a numerically-motivated clip of |x|<=20 (chosen only so exp() never overflows) and NO prior
+on sigma^2. On real HEEDB/VitalDB-style bins this produced a positive feedback loop, confirmed
+by instrumenting the per-case EM trajectory: during a long 0-run x is pushed towards -20, during
+a 1-run towards +20, so a single genuine suppressed<->unsuppressed transition contributes a huge
+(~40^2=1600) squared-jump term to the M-step average; that inflates sigma^2; a bigger sigma^2
+weakens the prior even further next E-step, pushing x closer to the clip during the NEXT
+saturated run, which inflates the NEXT M-step's sigma^2 more. Measured on real cases this
+diverged from a sigma^2 EM seed of 0.05 to the 10-40 range within ~10 iterations and then
+settled into a period-2 LIMIT CYCLE (never converging to a point) once x hit the +-20 clip on
+both sides -- e.g. one real case oscillated 47.07 / 37.15 / 47.07 / 37.15 ... forever. The
+resulting BSP was 5x JUMPIER than the raw fraction it was supposed to be smoothing (mean
+|first difference| 0.193 vs 0.036) and correlated with it only 0.68 -- i.e. the "smoother" was
+amplifying noise, which is definitionally broken for a fixed-interval smoother.
+
+Two changes fix this, and BOTH are principled modelling decisions, not numerical hacks:
+
+  1. X_CLIP is now RESOLUTION-DRIVEN, not just an anti-overflow guard: with N_t=300 frames per
+     bin, no bin can report a suppressed fraction finer than 1/300, so p is not statistically
+     distinguishable from 0 or 1 beyond roughly the half-frame resolution 1/(2*N_t). We clip
+     |x| at logit(1 - 1/(2*N_t)) = ln(2*N_t - 1) (~6.4 for N_t=300, computed from
+     DEFAULT_N_FRAMES at import time) instead of 20. This bounds the worst-case single-jump
+     term at a value the data can actually support, rather than an arbitrary float64-safety
+     margin ~10x too loose for this application.
+  2. The M-step MLE update for sigma^2 is replaced by the MAP update under a weakly-informative
+     conjugate Inverse-Gamma(SIGMA2_PRIOR_A, SIGMA2_PRIOR_B) prior (the natural conjugate prior
+     for a Gaussian random walk's innovation variance):
+
+         sigma^2_MAP = (sum_t term_t + 2*SIGMA2_PRIOR_B) / (n_trans + 2*SIGMA2_PRIOR_A + 2)
+
+     with SIGMA2_PRIOR_A=3, SIGMA2_PRIOR_B=0.12, i.e. prior mode = SIGMA2_PRIOR_B/(SIGMA2_PRIOR_A+1)
+     = 0.03 (a middling value in the smooth-to-jumpy range this module's own simulation grid
+     spans, 0.001-0.5) and effective prior weight 2*SIGMA2_PRIOR_A+2 = 8 pseudo-transitions --
+     small next to a typical case's ~400 real transitions (so it is overwhelmed by real data
+     whenever there is enough of it) but large enough to damp the runaway feedback loop above
+     during early EM iterations and for short/low-transition-count cases.
+
+  Both changes are ON by default; SIGMA2_CAP (see below) is kept ONLY as a documented last-resort
+  safety net, not the primary fix -- see validate_real_data_sanity()'s printed diagnostics for
+  whether it ever actually binds (if it never binds, the two changes above are doing the work).
+
+  SENSITIVITY: tightening X_CLIP trades off the ability to represent a case that is genuinely
+  and confidently at p~0 or p~1 for many consecutive bins (its BSP will floor/ceiling at
+  logistic(+-6.4) =~0.0017/0.9983 rather than at the literal 0/1 the raw fraction can hit) against
+  breaking the sigma^2 runaway; given N_t=300 cannot statistically support finer resolution than
+  that in the first place, this is not a meaningful loss of information. The IG prior shifts
+  small-transition-count cases' sigma^2 towards 0.03; see validate_real_data_sanity() for the
+  fitted-sigma^2 distribution this produces on real cases.
 """
 import csv
 import math
@@ -91,11 +146,18 @@ BIN_S = 30.0
 DEFAULT_N_FRAMES = round(BIN_S / FRAME_S)  # 300
 
 SIGMA2_FLOOR = 1e-8
-X_CLIP = 20.0          # logistic(+-20) is ~1 +- 2e-9; nowhere near float64 overflow
+SIGMA2_CAP = 5.0        # last-resort safety net only, see "IDENTIFIABILITY AT SATURATION" above
+# resolution-driven clip: p is not distinguishable from 0/1 finer than half a frame in N_t=300
+X_CLIP = math.log(2 * DEFAULT_N_FRAMES - 1)  # ~6.395
 NEWTON_MAX_ITER = 25
 NEWTON_TOL = 1e-9
 X0_PRIOR = 0.0          # diffuse prior mean on the logit scale (p = 0.5)
 SIGMA2_0_PRIOR = 10.0    # diffuse prior variance -> first few real observations dominate
+
+# weakly-informative conjugate Inverse-Gamma(SIGMA2_PRIOR_A, SIGMA2_PRIOR_B) ridge prior on the
+# per-case process-noise variance sigma^2, used in the M-step; see docstring above.
+SIGMA2_PRIOR_A = 3.0
+SIGMA2_PRIOR_B = 0.12    # prior mode = SIGMA2_PRIOR_B / (SIGMA2_PRIOR_A + 1) = 0.03
 
 
 def _logistic(x):
@@ -198,12 +260,15 @@ def _rts_smooth(x_filt, sigma2_filt, x_pred, sigma2_pred):
     return x_smooth, sigma2_smooth, lag1_cov
 
 
-def _m_step(x_smooth, sigma2_smooth, lag1_cov, length):
-    """Closed-form sigma^2 update, masked per case to that case's real (unpadded) bins.
+def _m_step(x_smooth, sigma2_smooth, lag1_cov, length, prior_a=SIGMA2_PRIOR_A, prior_b=SIGMA2_PRIOR_B):
+    """MAP sigma^2 update under a conjugate Inverse-Gamma(prior_a, prior_b) ridge prior, masked
+    per case to that case's real (unpadded) bins.
 
     Only transitions t -> t+1 with t+1 < length[c] are real (both endpoints inside the case's
     actual bin range); padded timesteps beyond a case's length carry no information and must not
-    leak into the estimate.
+    leak into the estimate. See the module docstring ("IDENTIFIABILITY AT SATURATION") for why
+    the plain MLE (prior_a=prior_b=0) is unstable on real, saturation-heavy bs series and why the
+    IG ridge is the principled fix rather than a hack.
     """
     C, T = x_smooth.shape
     if T < 2:
@@ -215,9 +280,8 @@ def _m_step(x_smooth, sigma2_smooth, lag1_cov, length):
     term = np.where(trans_valid, term, 0.0)
     n_trans = trans_valid.sum(axis=1)
     has_trans = n_trans > 0
-    sigma2_new = np.full(C, np.nan)
-    with np.errstate(invalid="ignore", divide="ignore"):
-        sigma2_new = np.where(has_trans, term.sum(axis=1) / np.maximum(n_trans, 1), np.nan)
+    S = term.sum(axis=1)
+    sigma2_new = np.where(has_trans, (S + 2.0 * prior_b) / (n_trans + 2.0 * prior_a + 2.0), np.nan)
     return sigma2_new, has_trans
 
 
@@ -227,8 +291,13 @@ def _fit_batch(bs, N, length, max_em_iter=50, tol=1e-6, sigma2_init=0.05):
     bs, N : (C, T) arrays, NaN/0 padded past each case's own length.
     length : (C,) int array of each case's real (unpadded) number of bins.
     Returns p_smooth (C, T) [only entries t < length[c] are meaningful], sigma2 (C,) per-case
-    fitted process-noise variance (NaN where a case has < 2 real bins -- undetermined), and
-    n_iter (int) the number of EM iterations actually run (shared stopping across the batch).
+    fitted process-noise variance (NaN where a case has < 2 real bins -- undetermined), n_iter
+    (int) the number of EM iterations actually run (shared stopping across the batch), and a
+    diagnostics dict: n_not_converged (per-case sigma^2 delta still > tol at the stopping
+    iteration -- with the IG ridge prior this should be 0 or near-0; see module docstring) and
+    n_capped (per-case final sigma^2 hit SIGMA2_CAP, the last-resort safety net -- if this is
+    ever > 0 it means the primary fix, the ridge prior + resolution clip, was not sufficient by
+    itself for that case, and is reported honestly rather than hidden).
     """
     C, T = bs.shape
     n_obs = np.round(bs * N)
@@ -239,25 +308,27 @@ def _fit_batch(bs, N, length, max_em_iter=50, tol=1e-6, sigma2_init=0.05):
     sigma2 = np.full(C, sigma2_init)
     has_trans = length >= 2
     n_iter = 0
-    x_smooth = sigma2_smooth = lag1_cov = None
+    not_converged = np.zeros(C, dtype=bool)
     for it in range(max_em_iter):
         n_iter = it + 1
         x_filt, sigma2_filt, x_pred, sigma2_pred = _forward_filter(n_obs, N_eff, obs_mask, sigma2)
         x_smooth, sigma2_smooth, lag1_cov = _rts_smooth(x_filt, sigma2_filt, x_pred, sigma2_pred)
         sigma2_new, _ = _m_step(x_smooth, sigma2_smooth, lag1_cov, length)
         sigma2_new = np.where(has_trans, sigma2_new, sigma2)  # nothing to learn -> keep current
-        sigma2_new = np.maximum(sigma2_new, SIGMA2_FLOOR)
+        sigma2_new = np.clip(sigma2_new, SIGMA2_FLOOR, SIGMA2_CAP)
         delta = np.abs(sigma2_new - sigma2)
-        converged = np.all((delta < tol) | ~has_trans)
+        not_converged = (delta >= tol) & has_trans
         sigma2 = sigma2_new
-        if converged:
+        if not np.any(not_converged):
             break
+    n_capped = int(np.sum(has_trans & (sigma2 >= SIGMA2_CAP - 1e-12)))
     # one last E-step at the converged sigma^2 so the returned smoother is consistent with it
     x_filt, sigma2_filt, x_pred, sigma2_pred = _forward_filter(n_obs, N_eff, obs_mask, sigma2)
     x_smooth, sigma2_smooth, lag1_cov = _rts_smooth(x_filt, sigma2_filt, x_pred, sigma2_pred)
     p_smooth = _logistic(np.clip(x_smooth, -X_CLIP, X_CLIP))
     sigma2_report = np.where(has_trans, sigma2, np.nan)
-    return p_smooth, sigma2_report, n_iter
+    diag = dict(n_not_converged=int(np.sum(not_converged)), n_capped=n_capped)
+    return p_smooth, sigma2_report, n_iter, diag
 
 
 def bsp(bs_fractions, n_frames=None, max_em_iter=50, tol=1e-6, sigma2_init=0.05):
@@ -289,8 +360,8 @@ def bsp(bs_fractions, n_frames=None, max_em_iter=50, tol=1e-6, sigma2_init=0.05)
     bs2 = bs_fractions.reshape(1, T)
     N2 = N.reshape(1, T)
     length = np.array([T])
-    p_smooth, sigma2, _ = _fit_batch(bs2, N2, length, max_em_iter=max_em_iter, tol=tol,
-                                      sigma2_init=sigma2_init)
+    p_smooth, sigma2, _, _ = _fit_batch(bs2, N2, length, max_em_iter=max_em_iter, tol=tol,
+                                         sigma2_init=sigma2_init)
     return p_smooth[0], float(sigma2[0])
 
 
@@ -343,7 +414,7 @@ def run_from_csv(in_path="/tmp/eeg_probe/bridge_bins.csv", out_path="/tmp/eeg_pr
         bs_pad[i, :L] = [r[1] for r in rows]
         N_pad[i, :L] = n_frames
 
-    p_smooth, sigma2, n_iter = _fit_batch(bs_pad, N_pad, lengths, max_em_iter=max_em_iter)
+    p_smooth, sigma2, n_iter, diag = _fit_batch(bs_pad, N_pad, lengths, max_em_iter=max_em_iter)
 
     with open(out_path, "w", newline="") as fh:
         w = csv.writer(fh)
@@ -354,14 +425,15 @@ def run_from_csv(in_path="/tmp/eeg_probe/bridge_bins.csv", out_path="/tmp/eeg_pr
                 w.writerow([cid, bin_t_pad[i, t], f"{p_smooth[i, t]:.6f}"])
 
     elapsed = time.time() - t0
-    n_no_converge = 0  # EM ran the shared loop to convergence (checked across the whole batch);
-    # per-case non-convergence is checked separately in the caller/validation via sigma2 deltas.
     if verbose:
         print(f"[bsp_state_space] {C} cases, {int(lengths.sum())} bins, "
               f"EM iterations run: {n_iter}, elapsed {elapsed:.1f}s -> {out_path}")
+        print(f"[bsp_state_space] cases with sigma^2 delta still >= tol at stop: "
+              f"{diag['n_not_converged']}/{C}; cases where sigma^2 hit SIGMA2_CAP="
+              f"{SIGMA2_CAP}: {diag['n_capped']}/{C}")
     return dict(n_cases=C, n_bins=int(lengths.sum()), n_em_iter=n_iter, elapsed_s=elapsed,
                 out_path=out_path, cids=cids, lengths=lengths, p_smooth=p_smooth, sigma2=sigma2,
-                bs_pad=bs_pad, bin_t_pad=bin_t_pad)
+                bs_pad=bs_pad, bin_t_pad=bin_t_pad, diag=diag)
 
 
 # --------------------------------------------------------------------------------------------
