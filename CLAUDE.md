@@ -53,6 +53,24 @@ never delegate the acceptance.
 - Prefer one batched shell call that prints several small things over several round-trips.
 - **Never read a subagent's raw transcript file** — it will overflow the context. Use its returned result.
 
+## SOP: the ten-result cadence (STANDING)
+
+Results accumulate faster than interpretation does, and a mechanism is only worth proposing if it explains the
+NEGATIVES as well as the positives. So every **~10 new test results** logged to
+`docs/research/41_RESULTS_LEDGER.md`, stop generating and do a consolidation pass:
+
+1. **Re-read the whole ledger**, not the recent rows. The elimination table at its top is the working object.
+2. **Brainstorm mechanisms against the FULL constraint set** — delegate to sonnet, giving it every constraint
+   including the negatives and the surprises, and require each candidate to state which constraints it explains,
+   which it *struggles* with, and one falsifiable prediction. A candidate that only explains the positives is
+   not a candidate.
+3. **Literature check on the current leading candidates** — delegate, and require NCBI E-utilities rather than
+   WebFetch, which fabricates PubMed content when the site serves a CAPTCHA (see LESSONS).
+4. **Opus verifies** every number and citation that will be reported, then re-ranks the queue.
+
+The point of the cadence is that the constraint set does the work: each negative result narrows the space more
+than a positive one does, and the narrowing is only visible when the results are read together.
+
 ## Repo map (this project)
 ```
 config.yaml            single source of truth (PHASE flag, seeds, sites, params, data.s3, TUH)
