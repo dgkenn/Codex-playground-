@@ -84,7 +84,11 @@ def one_patient(pid, target_hour=24, thresh=8.0, s3=None):
         return dict(pid=pid, hour=np.nan, n_seg=0, bs=np.nan, bs_max=np.nan, fs=np.nan, err=type(e).__name__)
 def main(limit=None, target_hour=24, workers=8):
     coh=list(csv.DictReader(open("/tmp/eeg_probe/icare_cohort.csv")))
-    out_path="/tmp/eeg_probe/icare_bs.csv"
+    # Per-hour output, so serial measurements can be built for the same patients. The original run
+    # hardcoded a single file at hour 24; measuring the SAME cohort at several hours is what turns this
+    # into an external test of whether burden behaves as a fixed quantity (the Q2 claim) rather than only
+    # of the outcome association.
+    out_path=os.environ.get("ICARE_OUT", "/tmp/eeg_probe/icare_bs.csv")
     done=set()
     if os.path.exists(out_path):
         done={r["pid"] for r in csv.DictReader(open(out_path))}
@@ -106,4 +110,5 @@ def main(limit=None, target_hour=24, workers=8):
             if n%25==0: f.flush(); print(f"  {n}/{len(todo)}",flush=True)
     f.close(); print(f"DONE {n} -> {out_path}")
 if __name__=="__main__":
-    main(limit=int(sys.argv[1]) if len(sys.argv)>1 else None)
+    main(limit=int(sys.argv[1]) if len(sys.argv) > 1 else None,
+         target_hour=float(os.environ.get("ICARE_HOUR", "24")))
