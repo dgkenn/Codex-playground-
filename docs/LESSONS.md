@@ -1658,3 +1658,19 @@ cross-nationally-validated part.
   the burst-suppression gap is stable across reference categories (+20.41 against all lower rungs, +21.10
   against the adjacent rung, +21.31 against slowing alone), so the earlier worry that the comparator choice was
   driving it is resolved: it was noise between two cohort definitions, not composition.
+
+- **Drug-induced suppression does NOT explain the septic dilution -- mechanism B is dead (2026-07).** Three
+  registered predictions, all falsified, using a proper instrument (an infusion ACTIVE at the recording, from
+  drug start and end datetimes) after RASS proved circular.
+  I1 FALSIFIED and instructively: an infusion was running at the EEG in 74.3 % of post-anoxic burst-suppression
+  patients against 64.0 % of septic ones -- the REVERSE of the prediction. The assumption that post-arrest
+  protocols wean sedation before prognostication is simply wrong in this database, where post-arrest EEGs are
+  frequently recorded during targeted temperature management with sedation running. That is worth knowing
+  independently of this test.
+  I2 FALSIFIED: the burst-suppression effect was LARGER with a drug running in 5 of 5 aetiologies, not smaller.
+  I3 FALSIFIED: restricting to patients with no active infusion narrowed the anoxic-septic gap by 16.8 %
+  [-1.75,+8.29], below the registered 30 % threshold and covering zero.
+  So the gap is not drug dilution. Combined with the earlier eliminations, the surviving account is that WHAT
+  PATIENTS DIE OF differs by aetiology. RULE, reinforced: an assumption about clinical PROTOCOL ("sedation is
+  weaned before prognostication") is an empirical claim about the data and should be measured before a mechanism
+  is built on it -- here it was false, and measuring it took one query.
