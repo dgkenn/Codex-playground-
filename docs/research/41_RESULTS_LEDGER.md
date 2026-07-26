@@ -15,10 +15,15 @@ scripts' own. Five entries were spot-checked against their raw sources by hand b
 | reversibility (persistence to a later EEG) | real but small | 8.8 % |
 | withdrawal of care — day-7 landmark | substantial | ~55 % of the raw effect sits in week 1 |
 | withdrawal of care — DNR-code censoring | **inconclusive**, proxy too blunt (median 42 d code→death) | unmeasured |
-| burst morphology | pending | — |
+| burst morphology | differs by aetiology and predicts death, but **adds only +0.008 AUC** over burden — burst duration is burden in disguise (r=−0.745) | 1.4 % |
+| label noise (strict vs loose use of "burst suppression") | **refuted** — gap reproduces under a blinded quantitative definition at every threshold (ratio 2.04 → 1.89–2.02) | 0 % |
+| withdrawal, as an explanation of the **gap** | **refuted** — halves every aetiology but leaves the ratio at 2.14 → 2.17 | 0 % of the *gap* (≈50 % of the *level*) |
 
-Everything cheap has failed to explain it. The one candidate that took a real bite is the one we cannot yet
-measure properly, which is why the vasopressor extraction is the highest-value job outstanding.
+Everything tested has failed to explain the GAP. Withdrawal and early death inflate every aetiology by roughly
+half, leaving the anoxic:sepsis ratio untouched (2.14 → 2.17), so they are a nuisance rather than an explanation.
+The gap also survives discarding the clinician label for a blinded quantitative one. What remains live:
+competing risk (what patients die *of*), referral/selection into EEG, and generator-level biology that explains
+burst appearance without explaining mortality.
 
 ## `/tmp/FULL_spec2.txt`
 

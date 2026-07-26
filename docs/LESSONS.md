@@ -1520,3 +1520,31 @@ cross-nationally-validated part.
   IDENTICAL BS-negative 30-day mortality -- 32.8 % vs 32.7 % -- while their burst-suppression effects differ
   almost twofold (+38.3 vs +17.9 pp). Equal baselines cannot generate unequal effects through severity alone.
   Cheap, decisive, and it should have been run before any mechanism work.
+
+- **The two-fold gap is REAL: it survives a blinded quantitative definition and the withdrawal window (2026-07).**
+  Two gating tests, either of which could have reframed the whole finding, both came back in its favour.
+  LABEL NOISE, REFUTED. The worry was that "burst suppression" is applied strictly in post-arrest EEGs (where
+  prognostication protocols demand it) and loosely in sepsis, packing the septic BS+ group with milder patterns.
+  Discarding the clinician label entirely and defining suppression as measured burden above a fixed,
+  aetiology-blind threshold reproduces the gap at every threshold: anoxic:sepsis ratio 2.04 by label, and 2.00,
+  2.02, 1.99, 1.89 at burden thresholds 0.02-0.20. It only compresses at 0.50 (1.42) where n collapses.
+  WITHDRAWAL, REFUTED AS AN EXPLANATION OF THE GAP -- though not as an inflator of the absolute effect. Among
+  day-7 survivors every aetiology roughly halves (anoxic 38.30 -> 18.40 pp, sepsis 17.89 -> 8.47) but the RATIO
+  is untouched: 2.14 -> 2.17. So early death and withdrawal inflate every aetiology proportionally and do NOT
+  make anoxia special. This is the distinction the earlier pooled landmark could not make, because a pooled
+  interaction spread conflates "the effects are bigger" with "the effects differ more".
+  RULE: when a confounder is suspected of creating a DIFFERENCE between groups, test the RATIO or the contrast,
+  not the levels. A confounder that scales everything equally is a nuisance, not an explanation.
+
+- **The "independent prognostic axis" claim for burst morphology was wrong, and I had flagged the reason in
+  advance (2026-07).** Morphology alone gave AUC 0.671 and I described it to the user as an independent
+  prognostic axis. Burden was not in that model. Burst duration -- the strongest apparent predictor at
+  -12.09 pp/SD -- correlates **r = -0.745** with suppression burden, because shorter bursts mechanically mean a
+  more suppressed record. With burden included, four of five morphology features go non-significant (only burst
+  AMPLITUDE survives, +3.56 pp/SD) and the incremental AUC over aetiology+age+sex+burden is **+0.008
+  [+0.004,+0.021]** -- an interval excluding zero and an effect of no consequence. The registered expectation
+  that G1 would bite hardest was correct, which is the only reason this was caught before it was written up.
+  RULE: before calling any derived feature an INDEPENDENT axis, put the obvious parent variable in the model and
+  report the incremental discrimination, not the standalone figure. And state the effect-size threshold in
+  advance: a significance-only criterion passed here on a +0.008 AUC, exactly as it did on an 8.8 % attenuation
+  in the reversibility test.
