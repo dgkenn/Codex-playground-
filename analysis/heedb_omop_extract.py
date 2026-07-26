@@ -144,6 +144,63 @@ def client():
                                       retries={"max_attempts": 5, "mode": "standard"}))
 
 
+
+class S3RangeFile(io.RawIOBase):
+    """A seekable file over an S3 object, served by HTTP range requests.
+
+    WHY. The extractor used to do `get_object(...).read()` and hand the whole part to pyarrow. That costs the
+    full part in memory before a single row is filtered, which OOM-killed procedure_occurrence (exit 137) and
+    timed out on visit_occurrence, whose merged table is a SINGLE 9 GB parquet file. Parquet is columnar and
+    has a footer index, so with a seekable file pyarrow reads only the byte ranges for the columns and row
+    groups actually wanted -- for these extractions that is a handful of columns out of twenty, one row group
+    at a time. Memory becomes a function of the row group, not of the file.
+    """
+
+    def __init__(self, s3, bucket, key, size):
+        self._s3, self._bucket, self._key, self._size, self._pos = s3, bucket, key, size, 0
+
+    def readable(self):
+        return True
+
+    def seekable(self):
+        return True
+
+    def tell(self):
+        return self._pos
+
+    def seek(self, offset, whence=io.SEEK_SET):
+        if whence == io.SEEK_SET:
+            self._pos = offset
+        elif whence == io.SEEK_CUR:
+            self._pos += offset
+        else:
+            self._pos = self._size + offset
+        self._pos = max(0, min(self._pos, self._size))
+        return self._pos
+
+    def read(self, n=-1):
+        if n is None or n < 0:
+            n = self._size - self._pos
+        if n <= 0 or self._pos >= self._size:
+            return b""
+        end = min(self._pos + n, self._size) - 1
+        body = self._s3.get_object(Bucket=self._bucket, Key=self._key,
+                                   Range=f"bytes={self._pos}-{end}")["Body"].read()
+        self._pos += len(body)
+        return body
+
+    def readinto(self, b):
+        data = self.read(len(b))
+        b[:len(data)] = data
+        return len(data)
+
+
+def open_parquet(s3, key):
+    """Open a parquet part for streaming, without downloading it whole."""
+    size = s3.head_object(Bucket=AP, Key=key)["ContentLength"]
+    return pq.ParquetFile(io.BufferedReader(S3RangeFile(s3, AP, key, size), buffer_size=8 << 20)), size
+
+
 def list_parts(s3, table):
     pg = s3.get_paginator("list_objects_v2")
     keys = []
@@ -185,23 +242,29 @@ def main():
     t0 = time.time(); nrows = 0
     for i, key in enumerate(todo, 1):
         try:
-            body = s3.get_object(Bucket=AP, Key=key)["Body"].read()
-            have = pq.ParquetFile(io.BytesIO(body)).schema_arrow.names
+            pf, _size = open_parquet(s3, key)
+            have = pf.schema_arrow.names
             use = [c for c in cols if c in have]
-            t = pq.read_table(io.BytesIO(body), columns=use)
-            data = {c: t.column(c).to_pylist() for c in use}
-            pid = data["person_id"]
-            keep = [j for j, p in enumerate(pid) if p in pids]
+            if "person_id" not in use:
+                raise KeyError(f"person_id absent from {key}")
             rf = ROW_FILTER.get(args.table)
-            if rf:
-                col, rx = rf
-                vals = data.get(col)
-                if vals is None:
-                    raise KeyError(f"{col} absent from {key}; row filter cannot be applied safely")
-                keep = [j for j in keep if vals[j] and rx.search(str(vals[j]))]
-            for j in keep:
-                w.writerow([data[c][j] if c in data else "" for c in cols])
-            nrows += len(keep)
+            if rf and rf[0] not in have:
+                raise KeyError(f"{rf[0]} absent from {key}; row filter cannot be applied safely")
+            kept_here = 0
+            # Stream row groups. Only the projected columns are fetched, so memory tracks the row group
+            # rather than the part, and a 9 GB single-part table is as tractable as a 150 MB one.
+            for batch in pf.iter_batches(batch_size=200_000, columns=use):
+                data = {c: batch.column(c).to_pylist() for c in use}
+                keep = [j for j, p in enumerate(data["person_id"]) if p in pids]
+                if rf:
+                    col, rx = rf
+                    vals = data[col]
+                    keep = [j for j in keep if vals[j] and rx.search(str(vals[j]))]
+                for j in keep:
+                    w.writerow([data[c][j] if c in data else "" for c in cols])
+                kept_here += len(keep)
+                del data
+            nrows += kept_here
             fh.flush()
             done.add(key)
             json.dump(sorted(done), open(manifest_path, "w"))
