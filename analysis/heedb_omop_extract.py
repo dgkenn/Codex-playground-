@@ -78,11 +78,36 @@ COLS = {
     # marker of the decision. Needs drug_exposure_end_datetime, which this table carries.
     "drug_vasopressors": ["person_id", "drug_exposure_start_datetime", "drug_exposure_end_datetime",
                           "drug_concept_id", "drug_source_value", "quantity"],
+    # ---- added 2026-07-26, to close the three open questions -------------------------------------------
+    # PROCEDURES. Withdrawal-versus-refractory-shock has now defeated three instruments (DNR codes: chronic
+    # status, median 42 d to death; sedation depth: circular; vasopressor end times: stamped AT death by the
+    # charting system). All three failed the same way -- they are STATE tables, and the question is about a
+    # DECISION. A terminal extubation is a decision with a timestamp, which is what this table records.
+    "procedure_life_support": ["person_id", "procedure_datetime", "procedure_date", "procedure_concept_id",
+                               "procedure_source_value"],
+    # DISCHARGE DISPOSITION. A discharge to hospice, or an in-hospital death coded as comfort care, is an
+    # explicit statement that the goal of care changed. Unlike a drug end-time it cannot be produced by a
+    # record being closed automatically.
+    "visit_disposition": ["person_id", "visit_start_datetime", "visit_end_datetime", "visit_concept_id",
+                          "discharge_to_concept_id", "discharge_to_source_value", "visit_source_value"],
+    # CODE STATUS / GOALS OF CARE, with a datetime. The earlier DNR work used condition_occurrence codes, which
+    # document chronic status. The observation table carries the dated entries.
+    "observation_goals": ["person_id", "observation_datetime", "observation_date", "observation_concept_id",
+                          "observation_source_value", "value_as_string"],
+    # NEURON-SPECIFIC ENOLASE, for what burden is a marker OF. NSE is the guideline-endorsed serum marker of
+    # neuronal injury after cardiac arrest and sits alongside EEG in ERC-ESICM prognostication. If measured
+    # suppression burden tracks NSE, burden is reading out neuronal loss; if it does not, it is reading out
+    # something else, and either answer closes the mechanism question with an external reference rather than
+    # an argument. S100B included as the secondary astroglial marker.
+    "measurement_nse": ["person_id", "measurement_datetime", "measurement_date", "measurement_concept_id",
+                        "measurement_source_value", "value_as_number", "unit_source_value"],
 }
 
 # pseudo-table -> the physical OMOP table it reads
 SOURCE_TABLE = {"measurement_conscious": "measurement", "drug_sedatives": "drug_exposure",
-                "drug_vasopressors": "drug_exposure"}
+                "drug_vasopressors": "drug_exposure", "procedure_life_support": "procedure_occurrence",
+                "visit_disposition": "visit_occurrence", "observation_goals": "observation",
+                "measurement_nse": "measurement"}
 
 # pseudo-table -> (column to test, compiled regex a row must match to be kept)
 ROW_FILTER = {"measurement_conscious": ("measurement_source_value",
@@ -95,7 +120,22 @@ ROW_FILTER = {"measurement_conscious": ("measurement_source_value",
                "drug_vasopressors": ("drug_source_value",
                                      re.compile(r"norepinephrine|levophed|epinephrine|vasopressin|"
                                                 r"phenylephrine|neosynephrine|dopamine|dobutamine|"
-                                                r"angiotensin\s*II", re.I))}
+                                                r"angiotensin\s*II", re.I)),
+               # Airway and life-support procedures. Word boundaries on the short tokens: a bare "cpr"
+               # substring would also match unrelated free text.
+               "procedure_life_support": ("procedure_source_value",
+                                          re.compile(r"extubat|re-?intubat|\bintubat|mechanical ventilat|"
+                                                     r"invasive ventilat|ventilator|tracheostom|\bcpr\b|"
+                                                     r"cardiopulmonary resuscitat|\becmo\b|life support|"
+                                                     r"withdraw|comfort care|palliat|hospice|terminal wean",
+                                                     re.I)),
+               "observation_goals": ("observation_source_value",
+                                     re.compile(r"\bdnr\b|do not resuscitat|\bdni\b|do not intubat|"
+                                                r"code status|full code|comfort|goals of care|\bpolst\b|"
+                                                r"\bmolst\b|allow natural death|\bdnar\b|withdraw", re.I)),
+               # \bnse\b matters here: an unbounded "nse" matches "response", "nonsense", "intense".
+               "measurement_nse": ("measurement_source_value",
+                                   re.compile(r"enolase|\bnse\b|s-?100", re.I))}
 
 
 def client():

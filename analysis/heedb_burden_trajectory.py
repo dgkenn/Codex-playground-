@@ -67,6 +67,9 @@ from heedb_bs_ascertainment import AETIOLOGY, norm, dt
 
 OMOP = os.environ.get("OMOP_OUT", "/tmp/eeg_probe/heedb_omop")
 NBOOT = int(os.environ.get("NBOOT", "600"))
+# Minimum days between the index recording and its comparison. 0 reproduces the original
+# first-two-recordings behaviour (median interval 0.65 d, which cannot answer the question).
+MIN_GAP_D = float(os.environ.get("MIN_GAP_D", "2"))
 AP = "arn:aws:s3:us-east-1:184438910517:accesspoint/bdsp-credentialed-access-point"
 SERIAL = os.environ.get("SERIAL_GLOB", "/tmp/eeg_probe/heedb_serial_morph*.csv")
 
@@ -151,16 +154,24 @@ def main():
         d = death.get(p)
         if d is None:
             continue
-        order = sorted(sess)
-        t1 = stime.get((p, order[0])); t2 = stime.get((p, order[1]))
-        b1, b2 = sess[order[0]], sess[order[1]]
-        if t1 is None or t2 is None or t2 <= t1:
+        # PAIR SELECTION. The first version took a patient's first TWO recordings, which gave a median interval
+        # of 0.65 days -- two reads in the same admission, hours apart. Nothing about structural versus
+        # reversible injury can be asked over fourteen hours. Recordings are ordered by TIME and the comparison
+        # recording is the EARLIEST one at least MIN_GAP_D days after the index, so the interval is chosen to be
+        # long enough for the question rather than whatever happened to come next.
+        timed = sorted(((stime[(p, s)], s) for s in sess if (p, s) in stime), key=lambda x: x[0])
+        if len(timed) < 2:
             continue
+        t1, s1 = timed[0]
+        pick = next(((t, s) for t, s in timed[1:]
+                     if MIN_GAP_D <= (t - t1).total_seconds() / 86400.0 <= 21), None)
+        if pick is None:
+            continue                               # no recording in the usable interval window
+        t2, s2 = pick
+        b1, b2 = sess[s1], sess[s2]
         if d < t2:
-            continue                               # LANDMARK: must be alive at the second recording
+            continue                               # LANDMARK: must be alive at the comparison recording
         gap_d = (t2 - t1).total_seconds() / 86400.0
-        if gap_d > 21:
-            continue                               # a recording three weeks later is a different question
         days_from_2 = (d - t2).days
         rows.append(dict(pid=p, b1=b1, b2=b2, db=b2 - b1, gap=gap_d,
                          d30=1.0 if days_from_2 <= 30 else 0.0,
@@ -249,6 +260,73 @@ def main():
     print("\n   REVERSIBLE predicts the increment GROWS with the interval -- more time, more real change to see.")
     print("   MEASUREMENT NOISE predicts it is FLAT or largest at short gaps, where no biology has had time to")
     print("   happen. A large increment under 12 hours is not recovery.")
+
+    # ---- J2c: THE FIXED-COHORT CONTROL, which separates interval from selection ----------------------
+    # Sweeping MIN_GAP_D shows J1 decaying to nothing and the J2 increment shrinking as the interval grows.
+    # That is what measurement noise predicts and what recovery does not. But there is one alternative: a
+    # longer gap requires SURVIVING to the later recording, so the long-gap cohort is a lower-risk, more
+    # homogeneous group, and attenuation could be selection rather than interval.
+    # This control removes that entirely by holding the PATIENTS fixed. Among patients who have BOTH a
+    # short-interval and a long-interval comparison recording, the same people are measured twice, so any
+    # difference between the two is the interval and cannot be the cohort.
+    print("\n" + "=" * 92)
+    print("J2c  SAME PATIENTS, SHORT INTERVAL vs LONG INTERVAL")
+    print("=" * 92)
+    both = []
+    for p, sess in multi.items():
+        d = death.get(p)
+        if d is None:
+            continue
+        timed = sorted(((stime[(p, s)], s) for s in sess if (p, s) in stime), key=lambda x: x[0])
+        if len(timed) < 3:
+            continue
+        t1, s1 = timed[0]
+        sh = next(((t, s) for t, s in timed[1:] if (t - t1).total_seconds() / 86400.0 <= 0.5), None)
+        lg = next(((t, s) for t, s in timed[1:] if 2.0 <= (t - t1).total_seconds() / 86400.0 <= 21.0), None)
+        if sh is None or lg is None or d < lg[0]:
+            continue                                  # landmark at the LATER of the two comparison points
+        both.append(dict(b1=sess[s1], bs=sess[sh[1]], bl=sess[lg[1]],
+                         d30=1.0 if (d - lg[0]).days <= 30 else 0.0))
+    print(f"   patients with BOTH a <=12 h and a 2-21 d comparison recording: {len(both):,}")
+    if len(both) >= 100:
+        yy = np.asarray([r["d30"] for r in both], float)
+        if yy.min() < yy.max():
+            A = np.column_stack([np.ones(len(both)), np.asarray([r["b1"] for r in both], float)])
+            Bs = np.column_stack([A, np.asarray([r["bs"] - r["b1"] for r in both], float)])
+            Bl = np.column_stack([A, np.asarray([r["bl"] - r["b1"] for r in both], float)])
+            ca, cs, cl = cv_auc(A, yy, rng), cv_auc(Bs, yy, rng), cv_auc(Bl, yy, rng)
+            print(f"   index level alone                       CV AUC {ca:.3f}")
+            print(f"   + change over <=12 h (no time to heal)  CV AUC {cs:.3f}   increment {cs-ca:+.3f}")
+            print(f"   + change over 2-21 d (time to heal)     CV AUC {cl:.3f}   increment {cl-ca:+.3f}")
+            print(f"   mean |change| short {np.mean([abs(r['bs']-r['b1']) for r in both]):.3f}   "
+                  f"long {np.mean([abs(r['bl']-r['b1']) for r in both]):.3f}")
+            print("\n   CAUTION -- this comparison is NOT clean, and the direction of its unfairness is known.")
+            print("   The long-interval recording IS the landmark, so its level is contemporaneous with the")
+            print("   moment the outcome starts being counted, while the short-interval recording is days")
+            print("   stale. Recency alone favours the long row. J2d below removes that by conditioning on")
+            print("   the most recent level, which is the only recency-neutral form of the question.")
+
+            # ---- J2d: THE RECENCY-NEUTRAL TEST ---------------------------------------------------
+            # Every framing so far confounded trajectory with recency: `level + change` is `old level + new
+            # level`, so it wins whenever the newer measurement is better, which it trivially is. Condition
+            # on the MOST RECENT level instead and ask whether knowing where the patient CAME FROM adds
+            # anything. That is exactly the structural/reversible distinction with recency removed:
+            #   STRUCTURAL -- the current state is the injury; history adds nothing once you know it.
+            #   REVERSIBLE -- a cortex at burden 0.4 on the way DOWN differs from one at 0.4 on the way UP,
+            #                 so history adds beyond the current level.
+            print("\n" + "=" * 92)
+            print("J2d  DOES TRAJECTORY ADD BEYOND THE MOST RECENT LEVEL?  (recency-neutral)")
+            print("=" * 92)
+            C = np.column_stack([np.ones(len(both)), np.asarray([r["bl"] for r in both], float)])
+            D = np.column_stack([C, np.asarray([r["bl"] - r["b1"] for r in both], float)])
+            cc, cd = cv_auc(C, yy, rng), cv_auc(D, yy, rng)
+            print(f"   most recent level alone                 CV AUC {cc:.3f}")
+            print(f"   most recent level + where it came from  CV AUC {cd:.3f}   increment {cd-cc:+.3f}")
+            print("\n   STRUCTURAL predicts an increment near zero: the current state IS the injury, and the")
+            print("   path taken to reach it carries no extra information. REVERSIBLE predicts a clear")
+            print("   positive increment. This is the form of the question that recency cannot fake.")
+    else:
+        print("   too few patients have both; inconclusive at current extraction depth")
 
     # ---- J3: resolution ------------------------------------------------------------------------------
     print("\n" + "=" * 92)
