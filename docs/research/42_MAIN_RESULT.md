@@ -112,11 +112,25 @@ whom both predictors exist):
 
 | model | cross-validated AUC |
 |---|---|
-| Westhall-style category alone | 0.684 [0.646, 0.730] |
-| **category + measured burden** | **0.753 [0.721, 0.783]** |
-| | **increment +0.068** |
+| Westhall-style category alone | 0.645 |
+| **category + measured burden** | **0.745** |
+| | **increment +0.100 [+0.082, +0.118]** |
 
-Registered threshold was +0.03. The increment is more than twice that.
+Registered threshold was +0.03. **These are logistic-regression figures** (`heedb_guideline_stats.py`); the
+linear-probability version originally reported gave a smaller increment, +0.068, so the proper link function
+strengthens rather than rescues the result. Burden's log-odds coefficient is **+1.587**, an odds ratio of
+**4.89** across the full burden range.
+
+**And it is calibrated, not merely discriminating.** A score can rank patients perfectly and still be wrong
+about their absolute risk, which is what a clinician would act on:
+
+| calibration check | value | ideal |
+|---|---|---|
+| mean predicted vs observed risk | 0.308 vs 0.308 | equal |
+| calibration intercept | −0.013 | 0 |
+| calibration slope | 0.980 | 1 |
+
+Observed and predicted three-day mortality track each other across all ten deciles of predicted risk.
 
 **It replicates across hospitals.** Fitted at one site and evaluated at the other: **0.679** and **0.669** —
 close to symmetric, which is what a predictor that transfers should look like.
@@ -126,8 +140,10 @@ figures are the same, which is what a single well-behaved continuous predictor s
 
 ## 3. Burst morphology adds a further increment, and the direction is interpretable
 
-Within the highly-malignant category, five named morphology features add **+0.041 cross-validated AUC** over
-burden (0.624 → 0.665, n=604), morphology measured on the index recording like everything else. Comparing the two outcome extremes directly:
+Within the highly-malignant category, five named morphology features add **+0.047 cross-validated AUC**
+[+0.011, +0.083] over burden (0.607 → 0.654, n=604, logistic), morphology measured on the index recording like
+everything else. This increment previously carried **no confidence interval** — alone among the headline
+numbers — and it excludes zero now that it has one. Comparing the two outcome extremes directly:
 
 | | dead ≤3 days | alive >180 days |
 |---|---|---|
