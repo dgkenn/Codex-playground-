@@ -1019,3 +1019,46 @@ error, and should not be quoted as such.
 the data changed. The logistic figure is now primary; both are reported so the change is visible.
 
 **Cumulative distinct results: 315.**
+
+---
+
+## R316–R320. THE FALSIFICATION TEST: the same construct in an anaesthetic cohort (VitalDB)
+
+`44_MECHANISM_AND_PRIOR_WORK.md` predicted that if burden indexes cerebral metabolic rate, suppression must be
+**reversible when the cause is drug** and **fixed when the cause is tissue loss**. VitalDB (1,848 cases with a
+device suppression-ratio series; 967 with ≥10 bins and peak SR ≥5 %) is the population where the answer must
+invert. **No outcome variable is used** — a fixed quantity plus noise and a time-varying state are
+distinguishable from the series alone.
+
+| id | arm | VitalDB (anaesthetic) | HEEDB (post-anoxic) | verdict |
+|---|---|---|---|---|
+| R316 | **A. autocorrelation vs lag** | 0.973 at lag 1 → **0.484** at lag 40 (decay 0.488) | fixed-quantity behaviour: mean of two readings beats the most recent | **decays → time-varying state** ✔ |
+| R317 | **B. variance decomposition** | between 25.49, within 56.00, **ICC 0.313** | **ICC 0.815** | **far more within-case variance** ✔ |
+| R318 | **C. moves with effect-site concentration?** | Δ–Δ **−0.015 [−0.018, −0.012]** | — | **null — arm fails** |
+| R319 | **C2. levels and lags** | level **−0.298 [−0.310, −0.287]**, 12.4 % positive; ≈−0.28 at lags 1–10 | — | **uninterpretable (closed loop)** |
+| R320 | **D. recovery** | peak **3.99 %** → final decile **1.20 %** (**70 % resolution**) | burden does not resolve; change carries no signal | **recovers** ✔ |
+
+**R318/R319, the arm that failed, and why it is not evidence against the prediction.** The level correlation is
+*negative*: within a case, more agent goes with **less** suppression. That is pharmacologically backwards and is
+the signature of a **closed loop** — the anaesthetist watches the monitor and turns the agent down when
+suppression appears, so suppressed periods are precisely the periods of reduced drug. **The exposure is
+controlled in response to the outcome.** This is structurally the same confound as withdrawal of life-sustaining
+therapy in the post-anoxic cohort — a clinician acting on the quantity being measured — relocated from the
+outcome to the exposure. No lag or transform rescues it, because the confound is in how the data were generated.
+
+**Conclusion.** The prediction is **upheld by the three interpretable arms**, and arm D is decisive in the most
+direct form available: suppression resolves by 70 % as the anaesthetic is withdrawn, whereas post-anoxic burden
+behaves as a constant whose serial differences carry no information. **The same construct is reversible when the
+cause is drug and fixed when the cause is tissue loss**, which is what the metabolic reading requires and what
+would have falsified it had VitalDB also said "fixed".
+
+**LIMITATION carried forward.** `devsr` is a device-computed suppression ratio from a proprietary frontal-montage
+algorithm, not our 5 µV / 0.5 s bipolar burden. This tests whether **suppression** behaves reversibly under
+anaesthesia, not whether **our estimator** does. The populations also differ in far more than aetiology
+(elective surgical patients versus post-arrest ICU patients).
+
+**Predicted vs actual (calibration ledger).** Predicted 0.80 that the anaesthetic cohort would show reversible
+behaviour. Actual: upheld on 3 of 4 arms, with the failed arm failing for a nameable and instructive reason
+rather than ambiguously.
+
+**Cumulative distinct results: 320.**
