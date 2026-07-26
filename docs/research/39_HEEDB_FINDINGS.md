@@ -221,6 +221,45 @@ came from a shallower extraction (median 168 condition codes per patient against
 "no aetiology code" mostly meant "not yet extracted". At full per-patient depth the true figure is 6.6 %. The
 limitation was substantially an artefact of incomplete extraction, not a property of the cohort.
 
+## 6d. Relation to prior literature, and a novelty claim corrected
+
+An adversarial literature check (NCBI E-utilities; every citation retrieved and quoted from the MEDLINE record)
+found **no paper contradicting** any of the findings above. It found something more useful: a partial precedent
+that our novelty claim has to be narrowed against.
+
+**Fisch et al., *Neurology* 2023;100(19) (PMID 36889924)** — verified verbatim — studied induced burst
+suppression in 147 patients with refractory status epilepticus:
+
+> "Among 102 patients **without cerebral anoxia** … Multivariable analyses revealed **no associations** between
+> any burst suppression and the predefined endpoints. However, among 45 patients **with cerebral anoxia**,
+> induced burst suppression was associated with … survival (50% vs 14% p = 0.005)."
+
+That is the same qualitative result — suppression is prognostically inert without anoxia and grave with it — from
+an independent group, in a different population, four years earlier. **We are therefore not the first to report
+that burst suppression's prognostic meaning depends on aetiology, and this document must not claim to be.** What
+is new here is scale and resolution: ~15,000 ICU patients against 147, five aetiology strata against two, a
+quantified interaction with confidence intervals, a validated dose-response on measured burden, a persistence
+landmark, and the withdrawal-bias decomposition in §6c. Fisch is independent corroboration of the direction, and
+should be cited as such.
+
+Other findings are consistent with, and not duplicated by, prior work: graded suppression metrics predict outcome
+in post-anoxic coma (Ruijter, *Clin Neurophysiol* 2018, PMID 29807232); "identical bursts" are near-invariably
+associated with poor outcome after arrest (Hofmeijer 2014, PMID 24286857), though whether burst-pattern detail
+adds anything *incremental* is unsettled — Barbella 2020 (PMID 32004660) found it redundant with other
+predictors, Fong 2025 (PMID 39900751) found it independently significant. Our own 8.8 % figure for persistence
+sits squarely in that unsettled space.
+
+**On the withdrawal bias, the field has a recommended method and we should adopt it.** Elmer et al., *Crit Care
+Med* 2023 (PMID 36752628) — verified verbatim:
+
+> "Compared with traditional binary outcome prediction, **censoring outcomes after WLST-N may reduce potential
+> for bias and self-fulfilling prophecies**."
+
+Our §6c analysis is a landmark, which is cruder. The recommended approach is a time-to-event model censored at
+the withdrawal decision, and it is implementable here: the DNR/palliative codes carry `condition_start_datetime`,
+so the decision has a date. That is the next analysis, and it supersedes the day-7 landmark as the primary
+adjustment.
+
 ## 7. In flight
 
 - **Quantified burden** replacing the binary label (`heedb_bs_quantify.py`), using the detector calibrated
