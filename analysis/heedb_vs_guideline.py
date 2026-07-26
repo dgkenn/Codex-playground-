@@ -348,7 +348,11 @@ def main():
     print(f"   G3 {'CONFIRMED' if ok else 'FALSIFIED'} (both sites >= 0.55)")
 
     print("\n   Burst suppression is a guideline criterion that informs withdrawal of life-sustaining therapy,")
-    print("   and 40.6 % of these patients die within three days -- the window in which those decisions are made.")
+    # Computed, not hardcoded: this figure moved from 40.6 % to 46.0 % when the category stopped being ORed
+    # over every report the patient ever had, and a literal in a caveat silently goes stale.
+    _hm3 = [r["d3"] for r in rows if r["cat"] == 2]
+    print(f"   and {100*float(np.mean(_hm3)):.1f} % of these patients die within three days -- the window in "
+          "which those decisions are made.")
     print("   A positive result here is a statement about information present in the recording, NOT a")
     print("   recommendation to act on it; acting on it without a prospective study would be the")
     print("   self-fulfilling-prophecy mechanism the field already worries about.")
