@@ -49,6 +49,13 @@ import pyarrow.parquet as pq
 
 AP = "arn:aws:s3:us-east-1:184438910517:accesspoint/bdsp-credentialed-access-point"
 BATCH_ROWS = int(os.environ.get("BATCH_ROWS", "65536"))
+# Optional membership filter on an integer column, e.g. procedure_concept_id against a set of concept ids
+# resolved from the OMOP vocabulary. Needed because procedure_source_value and observation_source_value hold
+# numeric BILLING CODES ("36415" is a venipuncture, "99214" an office visit), so a text regex over them
+# matches nothing -- the names live in the `concept` table and must be joined through concept_id.
+ID_FILTER_COL = os.environ.get("ID_FILTER_COL", "")
+ID_FILTER_FILE = os.environ.get("ID_FILTER_FILE", "")
+ID_FILTER_IDS = None
 OUT = os.environ.get("OMOP_OUT", "/tmp/eeg_probe/heedb_omop")
 PIDS_FILE = os.environ.get("PIDS_FILE", "/tmp/heedb_bs_patients.txt")
 
@@ -104,6 +111,9 @@ COLS = {
     # an argument. S100B included as the secondary astroglial marker.
     "measurement_nse": ["person_id", "measurement_datetime", "measurement_date", "measurement_concept_id",
                         "measurement_source_value", "value_as_number", "unit_source_value"],
+    # OMOP vocabulary. No person_id, so it is not cohort-filtered.
+    "concept": ["concept_id", "concept_name", "domain_id", "vocabulary_id", "concept_class_id",
+                "standard_concept", "concept_code"],
 }
 
 # pseudo-table -> the physical OMOP table it reads
@@ -227,6 +237,12 @@ def main():
     os.makedirs(OUT, exist_ok=True)
     pids = {int(x) for x in open(PIDS_FILE).read().split() if x.strip().isdigit()}
     pid_arr = pa.array(sorted(pids), type=pa.int64())
+    global ID_FILTER_IDS
+    ID_FILTER_IDS = None
+    if ID_FILTER_COL and ID_FILTER_FILE:
+        ids = {int(x) for x in open(ID_FILTER_FILE).read().split() if x.strip().lstrip("-").isdigit()}
+        ID_FILTER_IDS = pa.array(sorted(ids), type=pa.int64())
+        print(f"id filter: {len(ids):,} values on column {ID_FILTER_COL}")
     print(f"target patients: {len(pids)}", flush=True)
 
     s3 = client()
@@ -253,11 +269,18 @@ def main():
             pf, _size = open_parquet(s3, key)
             have = pf.schema_arrow.names
             use = [c for c in cols if c in have]
-            if "person_id" not in use:
-                raise KeyError(f"person_id absent from {key}")
+            # Vocabulary tables (concept, concept_ancestor) have no person_id and are not cohort-filtered:
+            # they are reference data, and the whole point of pulling them is to translate the numeric
+            # billing codes that procedure_occurrence and observation actually store into names.
+            has_pid = "person_id" in use
             rf = ROW_FILTER.get(args.table)
             if rf and rf[0] not in have:
                 raise KeyError(f"{rf[0]} absent from {key}; row filter cannot be applied safely")
+            idf = None
+            if ID_FILTER_COL and ID_FILTER_IDS is not None:
+                if ID_FILTER_COL not in have:
+                    raise KeyError(f"{ID_FILTER_COL} absent from {key}; id filter cannot be applied safely")
+                idf = (ID_FILTER_COL, ID_FILTER_IDS)
             kept_here = 0
             # Stream row groups, and do BOTH filters inside Arrow before anything becomes a Python object.
             # The naive version converted each projected batch with to_pylist() first: procedure_occurrence
@@ -266,7 +289,11 @@ def main():
             # cohort is 49k patients -- so filtering vectorised and materialising only the survivors makes
             # memory a function of the OUTPUT rather than of the input.
             for batch in pf.iter_batches(batch_size=BATCH_ROWS, columns=use):
-                mask = pc.is_in(batch.column("person_id"), value_set=pid_arr)
+                mask = (pc.is_in(batch.column("person_id"), value_set=pid_arr) if has_pid
+                        else pa.array([True] * batch.num_rows))
+                if idf:
+                    icol, iset = idf
+                    mask = pc.and_kleene(mask, pc.is_in(batch.column(icol), value_set=iset))
                 if rf:
                     col, rx = rf
                     mask = pc.and_kleene(
