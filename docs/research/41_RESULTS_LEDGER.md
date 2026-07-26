@@ -804,3 +804,12 @@ and did not operate the way predicted. Second prediction, on burden: the look-ah
 the finding would survive with a smaller increment. **Correct** (+0.093 → +0.068, still >2× threshold).
 
 **Cumulative distinct results: 292.**
+
+### R293. Reproducibility control on the landmark script
+
+`LANDMARK_EXPOSURE=ever` reproduces the original landmark log **digit for digit** — +0.832 / +0.217 / +0.251 /
+−0.206 with identical confidence intervals and identical per-aetiology effects. Together with R292 this means
+both corrections are clean: in each script the only thing that changed between the legacy and corrected numbers
+is the exposure definition.
+
+**Cumulative distinct results: 293.**
