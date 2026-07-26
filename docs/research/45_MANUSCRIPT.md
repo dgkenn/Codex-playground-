@@ -128,8 +128,30 @@ brain-specific rather than a whole-body ischaemic dose marker (mediation through
 2.6 %; cardiac and pressor gradients are *steeper* in sepsis than after arrest), and why morphology and
 persistence add so little over burden itself.
 
-**Falsifiable prediction.** In an anaesthetic rather than anoxic cohort, burden should behave as a *reversible*
-state — serial differences carrying information the mean does not, the opposite of what is observed here.
+**The prediction was made, and then tested.** If burden indexes cerebral metabolic rate, the *same construct*
+must behave reversibly when the cause is drug. We tested this in **VitalDB** (1,848 intraoperative cases with a
+device suppression-ratio series; 967 suppressing), using **no outcome variable** — a fixed quantity plus noise
+and a time-varying state are distinguishable from the series alone:
+
+| test | anaesthetic (VitalDB) | post-anoxic (HEEDB) |
+|---|---|---|
+| autocorrelation vs lag | 0.973 → **0.484** (decays) | fixed-quantity behaviour |
+| ICC of one reading | **0.313** | **0.815** |
+| recovery over the case | peak 3.99 % → **1.20 %** (**70 % resolution**) | does not resolve; serial change carries no signal |
+
+**The prediction held where it could have died.** Had VitalDB also shown fixed-quantity behaviour, burden would
+have been a stable patient trait and the post-anoxic result would have said nothing about tissue loss.
+
+A fourth arm — whether suppression tracks effect-site concentration — **failed and is reported as failed**. The
+within-case level correlation is *negative* (−0.298 [−0.310, −0.287]), which is pharmacologically backwards and
+is the signature of a closed loop: anaesthetists turn the agent down when suppression appears, so suppressed
+periods are the periods of reduced drug. The exposure is controlled in response to the outcome — structurally
+the same confound as withdrawal in the post-anoxic cohort, moved from the outcome to the exposure. It carries no
+weight in either direction.
+
+**Limitation.** `devsr` is a device-computed ratio on a frontal montage, not our 5 µV bipolar burden, and
+elective surgical patients differ from post-arrest ICU patients in far more than aetiology. This shows
+*suppression* is reversible under anaesthesia, not that *our estimator* is.
 
 ---
 
