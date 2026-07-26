@@ -110,19 +110,34 @@ def main():
             except Exception:
                 pass
 
-    burden, morph = {}, {}
+    # SCOPE. "index" takes the exposure from the patient's EARLIEST recording, which is where the outcome clock
+    # starts. "max" takes the highest value over ALL of the patient's recordings and is the LEGACY behaviour,
+    # retained only to reproduce earlier runs -- it is look-ahead, because a patient who survives accrues extra
+    # recordings and extra chances at a high maximum while a patient who dies on day two does not.
+    # `heedb_burden_lookahead_check.py` measured the exposure: 41.0 % of patients have their maximum drawn from
+    # a later recording and 21.8 % differ by more than 0.10 burden, so the two are NOT interchangeable.
+    SCOPE = os.environ.get("BURDEN_SCOPE", "index")
+    if SCOPE not in ("index", "max"):
+        raise SystemExit("BURDEN_SCOPE must be 'index' or 'max'")
+
+    bsess, morph = defaultdict(dict), {}
     for f in sorted(glob.glob("/tmp/eeg_probe/heedb_bs_burden*.csv")):
         for r in csv.DictReader(open(f)):
             try:
-                p, v = int(r["patient"]), float(r["burden"])
+                p, s, v = int(r["patient"]), int(r["session"]), float(r["burden"])
             except Exception:
                 continue
             if v == v:
-                burden[p] = max(burden.get(p, 0.0), v)
+                bsess[p][s] = max(bsess[p].get(s, 0.0), v)
+    burden = {p: (d[min(d)] if SCOPE == "index" else max(d.values())) for p, d in bsess.items()}
     for f in sorted(glob.glob("/tmp/eeg_probe/heedb_burst_morph*.csv")):
         for r in csv.DictReader(open(f)):
             try:
                 p = int(r["patient"])
+            except Exception:
+                continue
+            try:
+                s = int(r["session"])
             except Exception:
                 continue
             d, ok = {}, True
@@ -132,13 +147,22 @@ def main():
                 except Exception:
                     ok = False
             if ok and all(v == v for v in d.values()):
-                morph[p] = d
+                # Keep the EARLIEST session, not whichever row happened to be read last. The previous
+                # `morph[p] = d` made a patient's morphology depend on file ordering, which is arbitrary and
+                # under BURDEN_SCOPE=index is also look-ahead.
+                if p not in morph or s < morph[p]["_sess"]:
+                    morph[p] = dict(d, _sess=s)
+    morph = {p: {k: v for k, v in d.items() if k != "_sess"} for p, d in morph.items()}
 
     import boto3
     from botocore.config import Config
     s3 = boto3.client("s3", region_name="us-east-1",
                       config=Config(s3={"payload_signing_enabled": False}))
-    when, F, site = {}, defaultdict(dict), {}
+    # Fidx = findings on the INDEX report only; Fall = findings ORed over every report the patient ever had.
+    # Fall carries the same look-ahead as max-burden: a patient can be graded highly malignant on the strength
+    # of a report written weeks after the outcome clock started. Under BURDEN_SCOPE=index the CATEGORY is taken
+    # from the index report too, so the comparator and the exposure are measured at the same moment.
+    when, Fidx, Fall, site = {}, defaultdict(dict), defaultdict(dict), {}
     FL = ("bs", "low voltage", "gpd", "lpd", "grda", "lrda", "seizure", "status",
           "gen slowing", "foc slowing", "pdr", "normal")
     for st in ("S0001", "S0002"):
@@ -153,10 +177,17 @@ def main():
             t = dt(r.get("EndTime(EEG)") or r.get("StartTime(EEG)") or "")
             if t is None:
                 continue
+            cur = {f: ((r.get(f) or "").strip() not in ("", "None", "nan")) for f in FL}
             if p not in when or t < when[p]:
                 when[p] = t; site[p] = st
+                Fidx[p] = dict(cur)
             for f in FL:
-                F[p][f] = F[p].get(f, False) or ((r.get(f) or "").strip() not in ("", "None", "nan"))
+                Fall[p][f] = Fall[p].get(f, False) or cur[f]
+    F = Fidx if SCOPE == "index" else Fall
+    print(f"EXPOSURE SCOPE: {SCOPE}"
+          + ("  (burden and EEG category both taken from the index recording -- the one the outcome clock "
+             "starts at)" if SCOPE == "index"
+             else "  (LEGACY look-ahead: burden maximised and findings ORed over ALL recordings)"))
 
     def westhall(f):
         """highly malignant 2 / malignant 1 / benign 0, following the published definition as closely as the

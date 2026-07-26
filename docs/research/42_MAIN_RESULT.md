@@ -6,6 +6,30 @@
 retained and still stands, but the analysis it led to is stronger and more useful than the comparison itself.
 The full record of what was tested and eliminated on the way here is `41_RESULTS_LEDGER.md`.*
 
+> ## ⚠ PROVISIONAL — the numbers below require one re-run before they are shown to anyone
+>
+> A self-audit on 2026-07-26 found **look-ahead in how the exposure was measured**. The outcome clock starts at
+> the patient's earliest recording, but `heedb_vs_guideline.py` took suppression burden as the **maximum over
+> all** of that patient's recordings, took the EEG category as the **OR over all** of their reports, and took
+> morphology from whichever row was read last. A patient who survives accrues more recordings — and more
+> chances at a high maximum — than one who dies on day two, so the exposure window was partly a function of the
+> outcome.
+>
+> **How much of the cohort this can touch, measured rather than guessed** (`heedb_burden_lookahead_check.py`,
+> n=7,577): 41.0 % of patients have a maximum drawn from a recording later than their first, 21.8 % differ by
+> more than 0.10 burden, and mean burden falls from 0.244 (max) to 0.148 (index) — a 65 % relative inflation.
+>
+> **What this does and does not put at risk.** The direction is *conservative for the gradient*: only survivors
+> can accrue extra recordings, so the contamination inflates burden among people who lived and works **against**
+> the observed stratification rather than creating it. The existence of the effect is therefore not in doubt.
+> What is not yet established is the **magnitude** and the framing of 0.741 as a bedside-prediction AUC — a
+> predictor that partly postdates the prediction cannot be described that way.
+>
+> **Status.** `heedb_vs_guideline.py` now defaults to `BURDEN_SCOPE=index`, taking burden, category and
+> morphology all from the index recording (`BURDEN_SCOPE=max` reproduces the legacy run). The re-run needs HEEDB
+> S3 credentials, which are absent this session. **Every AUC and every quintile figure below is from the legacy
+> `max` run and must be replaced by the index-only figures before use.**
+
 ---
 
 ## 1. The gap in current practice

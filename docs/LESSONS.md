@@ -1840,3 +1840,46 @@ cross-nationally-validated part.
   causes unresponsiveness); vasopressor timing fails (charting). The pattern is that **administrative tables
   record states and billing events, not decisions**, and a decision-time question asked of them will keep
   returning the shape of the record-keeping.
+
+---
+
+## 2026-07-26 — the audit that mattered more than the experiment: look-ahead in the headline exposure
+
+Context: S3 credentials were absent, so no new data could be touched. The session was spent auditing every
+number in `42_MAIN_RESULT.md` against the raw log that produced it. Every reported figure transcribed
+correctly — and the audit still found the most serious problem in the project, because **transcription was
+never the risk; the definition was.**
+
+- **Reconciling two logs found it.** Two scripts reported the same nominal cohort — "post-anoxic
+  burst-suppression patients" — as 1,410 with 40.6 % three-day death and 1,405 with 43.4 %. Chasing a 2.8 pp
+  discrepancy nobody had reported led to the cohort-construction code, where the real defect was.
+  RULE, general: **when two scripts compute the same quantity, diff their numbers even if only one is
+  published.** The unpublished one is a free replicate, and disagreement localises to a definition.
+
+- **The defect.** `heedb_vs_guideline.py` starts the outcome clock at the patient's earliest recording, but took
+  burden as `max` over ALL recordings, the Westhall category as an `or` over ALL reports, and morphology from
+  whichever CSV row was read last. Survivors accrue more recordings than people who die on day two, so the
+  exposure window was partly a function of the outcome. Measured exposure: **41.0 % of patients** have their
+  maximum from a later recording, 21.8 % differ by >0.10 burden, mean burden 0.244 → 0.148 index-only.
+
+- **Sign the bias before panicking about it.** Only survivors can accrue extra recordings, so the contamination
+  raises burden among people who LIVED — it works against the observed gradient. The effect's existence is safe;
+  its magnitude and its description as a bedside-prediction AUC are not.
+  RULE, general: **a look-ahead finding is not automatically fatal. Work out which way it pushes.** A
+  conservative bias leaves the qualitative claim standing and bounds the quantitative one.
+
+- **Three separate loaders had the same bug in three different disguises** — `max()`, `or`, and last-write-wins.
+  It was invisible because each looked like ordinary defensive aggregation.
+  RULE, general: **any per-patient aggregation over repeated measurements is a look-ahead until proven
+  otherwise.** In a survival analysis the number of measurements is itself an outcome. Ask of every `max`,
+  `any`, `or` and bare assignment over rows: *could a later row have changed this, and could the patient's fate
+  have changed whether that row exists?*
+
+- **The check cost nothing and should have run first.** `heedb_burden_lookahead_check.py` needs no S3, no model
+  and about a second of compute: count measurements per patient, compare max to index. That is a
+  ten-line question that should be asked of every repeated-measures exposure BEFORE the headline analysis, not
+  after it has been written up.
+
+- **On the value of a no-data session.** Being unable to run anything forced re-reading what had already been
+  run. That produced a more consequential result than the experiment it replaced. When an instrument is
+  unavailable, audit — do not idle, and do not invent an analysis to fill the time.

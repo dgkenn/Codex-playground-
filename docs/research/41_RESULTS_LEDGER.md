@@ -691,3 +691,33 @@ written and committed but **not yet run**: it needs per-session timestamps from 
 credentials are absent this session (403). Both resume when credentials return.
 
 **Cumulative distinct results: 284.**
+
+### R285–R288. Self-audit of `42_MAIN_RESULT.md` against raw logs
+
+| id | check | result |
+|---|---|---|
+| R285 | every §2/§3/§5 figure re-read against `/tmp/guide.txt`, `/tmp/discrim2.txt`, `/tmp/landmark.txt` | **all transcribe correctly** — quintiles 24.7/26.4/34.2/49.6/66.4, AUCs 0.648→0.741 (+0.093), cross-hospital 0.719/0.678, morphology 0.632→0.668 (+0.036, n=662), landmark +0.832/+0.217/−0.206, extremes table 0.746/0.386, 1.84/2.87, 29.7/74.9, 12.3/24.3 |
+| R286 | imprecision found | §2 describes the AUC comparison as "across all post-anoxic patients"; the run was **n=1,875** (those with a measured burden), not 2,951 |
+| R287 | cohort reconciliation between two scripts | `doomed` 1,410 @ 40.6 % vs `discrim` 1,405 @ 43.4 % — explained: `doomed` starts the clock at the earliest recording of ANY kind, `discrim` at the earliest recording SHOWING suppression. Both defensible, different questions |
+| R288 | **look-ahead in the headline exposure** (`heedb_burden_lookahead_check.py`, n=7,577) | **MATERIAL** — see below |
+
+**R288.** `heedb_vs_guideline.py` starts the outcome clock at the earliest recording but measured burden as
+`max` over all recordings, category as `or` over all reports, morphology as last-row-wins.
+
+| | n | % |
+|---|---|---|
+| patients with a measured burden | 7,577 | — |
+| more than one measurement | 5,945 | 78.5 % |
+| maximum drawn from a later recording | 3,106 | **41.0 %** |
+| ... differing by more than 0.10 burden | 1,653 | 21.8 % |
+
+Mean burden 0.244 (max) → **0.148** (index) — 65 % relative inflation. Direction is **conservative**: only
+survivors accrue extra recordings, so this inflates burden among those who lived and works against the observed
+gradient. The stratification's existence stands; its magnitude and the framing of 0.741 as a bedside-prediction
+AUC do not, pending re-run.
+
+**Fixed in code:** `heedb_vs_guideline.py` now defaults to `BURDEN_SCOPE=index` (burden, category and morphology
+all from the index recording); `BURDEN_SCOPE=max` reproduces the legacy run. Blocked on S3 credentials.
+`42_MAIN_RESULT.md` carries a PROVISIONAL banner until the re-run replaces its figures.
+
+**Cumulative distinct results: 288.**
