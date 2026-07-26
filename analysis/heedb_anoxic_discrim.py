@@ -153,7 +153,7 @@ def main():
                 except Exception:
                     age[p] = float("nan")
     for p in reps:
-        reps[p].sort()
+        reps[p].sort(key=lambda x: x[0])
 
     rows = []
     for p, v in reps.items():
