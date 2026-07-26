@@ -1630,3 +1630,31 @@ cross-nationally-validated part.
   rung (gap +2.64, near zero) merely removes the cancellation. RULE: before interpreting a change in an effect
   when the REFERENCE CATEGORY changes, compute what the reference's own aetiology gap contributes -- a shift in
   the comparator can move an estimate without anything about the exposure changing at all.
+
+- **RASS cannot measure sedation in a study of burst suppression -- the instrument is circular (2026-07).** To
+  test whether septic suppression is drug-induced I used the RASS score nearest the EEG as a sedation-depth
+  measure. RASS grades RESPONSIVENESS, and burst suppression CAUSES unresponsiveness, so "RASS <= -4" is partly
+  the exposure itself. Two symptoms showed it: post-anoxic burst-suppression patients scored MORE deeply sedated
+  (82.8 % at RASS <= -4) than septic ones (61.1 %), the reverse of the drug-dilution prediction; and restricting
+  to RASS > -4 collapsed EVERY aetiology's effect by about 80 % (anoxic +34.53 -> +6.32), because it selects the
+  peculiar subgroup labelled burst-suppressed while remaining arousable. Both results are uninterpretable.
+  The right instrument was available all along: drug_sedatives carries drug_exposure_END_datetime as well as
+  start, so an infusion can be tested for being ACTIVE at the recording -- a measure of the drug rather than of
+  the patient's response to it, which the EEG finding cannot cause. RULE: when the outcome, exposure or
+  covariate is a level of consciousness, any consciousness-derived covariate is suspect; prefer a measure of what
+  was DONE to the patient over a measure of how the patient RESPONDED.
+
+- **Mode of death differs sharply, and it is a SHAPE difference not a location one (2026-07).** Among
+  burst-suppression patients who died, 46.3 % of post-anoxic deaths fell within 96 h against 21.1 % of septic
+  ones, a difference of +25.19 pp [+21.53,+28.68] (medians 5 vs 28 days). Anoxic death after suppression is a
+  fast, clustered event; septic death is attrition spread across weeks. This was tested as a concentration
+  fraction precisely because a median shift alone does not discriminate the mechanisms -- a uniformly earlier
+  distribution and a front-loaded one have different implications and the same median ordering.
+
+- **The sign pattern is scale-robust (2026-07).** Every gap in this project is a difference of proportions, and
+  such differences can behave differently from odds ratios even away from floors and ceilings. On the log-odds
+  scale the pattern is unchanged: burst suppression +0.872 anoxic-minus-septic, generalized slowing -0.957,
+  GPDs +0.094 -- same signs and same ordering as the percentage-point versions (+20.41, -20.33, +2.64). Also,
+  the burst-suppression gap is stable across reference categories (+20.41 against all lower rungs, +21.10
+  against the adjacent rung, +21.31 against slowing alone), so the earlier worry that the comparator choice was
+  driving it is resolved: it was noise between two cohort definitions, not composition.
