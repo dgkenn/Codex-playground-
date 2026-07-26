@@ -1918,3 +1918,26 @@ never the risk; the definition was.**
 - **Fail-closed messages must probe, not infer.** The hook inferred unavailability from an unset variable rather
   than testing the thing it was reporting on, and its message was then believed for a whole session. It now
   probes `~/.aws` before announcing anything. Any bootstrap that reports capability should test the capability.
+
+- **The corrected re-run: the finding survived, and one of two predictions was wrong.** Burden measured at the
+  index recording still stratifies three-day death inside the highly-malignant category (29.5 % → 73.1 %,
+  monotone), the increment over the guideline falls +0.093 → **+0.068** but stays above twice the registered
+  +0.03, and cross-hospital replication becomes *more* symmetric (0.679 / 0.669 vs 0.719 / 0.678). The
+  look-ahead was inflating the headline number, not manufacturing the finding — which is what signing the bias
+  had predicted.
+  The landmark prediction was **wrong**. Correcting the exposure was supposed to weaken Class A; it slightly
+  strengthened it (−37 % of the day-0 gap vs −25 %). The 17–21 % misclassification was real — the script now
+  prints it, 382 of 1,827 patients at the 0-day landmark exposed by their own future — and simply did not
+  operate the way the mechanism said it would.
+  RULE, general: **sign the bias, then still measure it.** Signing is what tells you whether the finding is
+  worth re-running for; it is not a substitute for the re-run. One of the two signs here was right and one was
+  wrong, and there was no way to know which from the argument alone.
+
+- **Always keep a switch that reproduces the old behaviour, and check it digit for digit.** `BURDEN_SCOPE=max`
+  reproduced the legacy log exactly — every quintile, AUC, CI and cross-hospital figure. That control is what
+  makes "the increment fell from +0.093 to +0.068" a statement about the exposure definition rather than about
+  some unnoticed refactor that came along for the ride. A corrected number with no reproduction of the
+  uncorrected one is not a comparison.
+
+- **A result that moves under a fixed bias and survives is worth more than one never checked.** The audit trail
+  is kept in the main document rather than deleted, because the correction is part of the evidence.

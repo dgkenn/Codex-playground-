@@ -224,7 +224,11 @@ def main():
           ("0-3d", "4-7d", "8-30d", "31-90d", "91-180d", ">180d")))
     for k in ("anoxic", "sepsis"):
         for bv, nm in ((1.0, "BS+"), (0.0, "BS-")):
-            g = [r["days"] for r in rows if k in r["labs"] and r["bs"] == bv]
+            # Same exposure rule as the landmark test above, evaluated at landmark 0: a patient counts as
+            # suppressed only if a recording at or before their index EEG said so. Using the legacy
+            # "suppressed ever" flag here would describe the death-time distribution of a group partly defined
+            # by recordings taken later than the distribution being described.
+            g = [r["days"] for r in rows if k in r["labs"] and (1.0 if exposed(r, 0) else 0.0) == bv]
             if len(g) < 50:
                 continue
             d = np.array(g)

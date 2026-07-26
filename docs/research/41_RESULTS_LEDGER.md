@@ -752,3 +752,55 @@ many patients' exposure came from their own future (`ever` reproduces the legacy
 hand-built rows. Blocked on S3 for the re-run.
 
 **Cumulative distinct results: 289.**
+
+### R290–R292. The corrected re-runs — **the finding survives**
+
+Credentials were never actually absent: the container injects placeholder `AWS_ACCESS_KEY_ID` /
+`AWS_SECRET_ACCESS_KEY` that outrank profile credentials in boto3's chain, so every call authenticated as the
+agent-proxy stub and returned 403. `scripts/heedb_run.sh` neutralizes them. Both blocked re-runs then ran.
+
+**R290. `heedb_vs_guideline.py` under `BURDEN_SCOPE=index`** — burden, EEG category and morphology all taken
+from the index recording, resolved by timestamp (session-number order agreed for 99.6 % of 7,577 patients).
+
+| quantity | legacy (`max`) | **corrected (`index`)** |
+|---|---|---|
+| highly-malignant n / 3-day death | 1,442 / 40.6 % | 1,205 / **46.0 %** |
+| Q1 → Q5 three-day death | 24.7 % → 66.4 % (2.7×) | **29.5 % → 73.1 %** (2.5×) |
+| monotone across quintiles | yes | **yes** |
+| burden alone CV AUC (in-sample) | 0.682 (0.684) | **0.672 (0.671)** |
+| category alone | 0.648 [0.616, 0.676] | **0.684 [0.646, 0.730]** |
+| category + burden | 0.741 [0.703, 0.790] | **0.753 [0.721, 0.783]** |
+| **increment** | **+0.093** | **+0.068** (threshold +0.03) |
+| cross-hospital | 0.719 / 0.678 | **0.679 / 0.669** |
+| morphology increment | +0.036 (n=662) | **+0.041 (n=604)** |
+
+**R291. `heedb_landmark_class.py` under `LANDMARK_EXPOSURE=known-at-landmark`.** Exposure at each landmark
+restricted to recordings available by then. The script now measures the contamination directly:
+
+| landmark | at risk | 'ever' | 'known' | **from the future** |
+|---|---|---|---|---|
+| 0 d | 6,055 | 1,827 | 1,445 | **382 (20.9 %)** |
+| 30 d | 3,770 | 811 | 651 | 160 (19.7 %) |
+| 90 d | 3,069 | 636 | 518 | 118 (18.6 %) |
+| 180 d | 2,595 | 521 | 434 | 87 (16.7 %) |
+
+| landmark | legacy gap logOR | **corrected** |
+|---|---|---|
+| 0 d | +0.832 [+0.650, +0.990] | **+0.801 [+0.618, +0.980]** |
+| 30 d | +0.217 [−0.097, +0.544] | **+0.112 [−0.211, +0.455]** |
+| 90 d | +0.251 [−0.096, +0.569] | **+0.288 [−0.047, +0.640]** |
+| 180 d | −0.206 [−0.552, +0.129] | **−0.295 [−0.659, +0.059]** |
+| day-180 as % of day-0 | −25 % | **−37 %** |
+| verdict | Class A | **Class A** |
+
+**R292. Reproducibility control.** `BURDEN_SCOPE=max` reproduces the original legacy log **digit for digit**
+(every quintile, AUC, CI and cross-hospital figure identical), proving the only change between legacy and
+corrected is the exposure scope and not an incidental refactor.
+
+**Predicted vs actual (calibration ledger).** Predicted: correcting the landmark exposure would **weaken**
+Class A, because late-labelled patients are survivors by construction and should have diluted the exposed group
+at late landmarks. Actual: Class A **strengthened** (−37 % vs −25 %). The 17–21 % misclassification was real
+and did not operate the way predicted. Second prediction, on burden: the look-ahead would prove conservative and
+the finding would survive with a smaller increment. **Correct** (+0.093 → +0.068, still >2× threshold).
+
+**Cumulative distinct results: 292.**

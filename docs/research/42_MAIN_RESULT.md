@@ -1,4 +1,4 @@
-# A guideline category that is treated as one thing contains a 2.7-fold range of near-term risk
+# A guideline category that is treated as one thing contains a 2.5-fold range of near-term risk
 
 **HEEDB, 2,951 post-cardiac-arrest patients with EEG and an ascertained death, two hospitals.**
 
@@ -6,7 +6,26 @@
 retained and still stands, but the analysis it led to is stronger and more useful than the comparison itself.
 The full record of what was tested and eliminated on the way here is `41_RESULTS_LEDGER.md`.*
 
-> ## ⚠ PROVISIONAL — the numbers below require one re-run before they are shown to anyone
+> ## ✅ RESOLVED — the look-ahead was found, fixed, and the figures below are the corrected ones
+>
+> **The audit described below found a real defect; the corrected re-run is what this document now reports, and
+> the finding survived it.** Kept in full because the correction is part of the evidence: a result that moves
+> under a fixed bias and stays is worth more than one that was never checked.
+>
+> | | legacy (contaminated) | **corrected (index-only)** |
+> |---|---|---|
+> | Q1 → Q5 three-day death | 24.7 % → 66.4 % | **29.5 % → 73.1 %** |
+> | category alone, CV AUC | 0.648 | **0.684** |
+> | category + burden | 0.741 | **0.753** |
+> | increment | +0.093 | **+0.068** |
+> | cross-hospital | 0.719 / 0.678 | **0.679 / 0.669** |
+> | landmark gap, day 0 → day 180 | +0.832 → −0.206 (−25 %) | **+0.801 → −0.295 (−37 %)** |
+>
+> The increment fell by about a quarter and remains more than double the pre-registered +0.03. Cross-hospital
+> replication became *more* symmetric. Class A still holds. **The look-ahead was inflating the headline number,
+> not manufacturing the finding.**
+>
+> <details><summary>The defect, how it was found, and what it cost — retained in full</summary>
 >
 > A self-audit on 2026-07-26 found **look-ahead in how the exposure was measured**. The outcome clock starts at
 > the patient's earliest recording, but `heedb_vs_guideline.py` took suppression burden as the **maximum over
@@ -22,8 +41,9 @@ The full record of what was tested and eliminated on the way here is `41_RESULTS
 > **What this does and does not put at risk.** The direction is *conservative for the gradient*: only survivors
 > can accrue extra recordings, so the contamination inflates burden among people who lived and works **against**
 > the observed stratification rather than creating it. The existence of the effect is therefore not in doubt.
-> What is not yet established is the **magnitude** and the framing of 0.741 as a bedside-prediction AUC — a
-> predictor that partly postdates the prediction cannot be described that way.
+> What was left open at this point was the **magnitude**, and the framing of 0.741 as a bedside-prediction
+> AUC — a predictor that partly postdates the prediction cannot be described that way. Both are settled by the
+> corrected run at the top of this box.
 >
 > **The same defect class is in the landmark analysis in §5, and there it does not run conservatively.** A
 > codebase sweep found the pattern in **17 scripts**. The worst instance is `heedb_landmark_class.py`, which
@@ -32,15 +52,27 @@ The full record of what was tested and eliminated on the way here is `41_RESULTS
 > landmark, and this violates it: at the 180-day landmark a patient can be counted as suppressed on the strength
 > of a recording made on day 190, and even the day-0 estimate is affected. Worse, the likely direction **favours
 > the reported conclusion** — late-labelled patients are survivors by construction, so they dilute the exposed
-> group at late landmarks and make the excess look more exhausted than it is. The size of the violation is
-> unmeasured, because it needs recording timestamps.
+> group at late landmarks and make the excess look more exhausted than it is. (That reasoning turned out to be
+> wrong — see the last paragraph of this box.)
 >
 > **Status.** Both scripts are fixed and both now print the bias directly. `heedb_vs_guideline.py` defaults to
 > `BURDEN_SCOPE=index`, resolving the index recording by timestamp (`BURDEN_SCOPE=max` reproduces the legacy
 > run). `heedb_landmark_class.py` defaults to `LANDMARK_EXPOSURE=known-at-landmark` and tabulates, per landmark,
 > how many patients' exposure came from their own future (`LANDMARK_EXPOSURE=ever` reproduces the legacy run).
-> Both re-runs need HEEDB S3 credentials, which are absent this session. **Every AUC and quintile figure in §2,
-> and every landmark figure in §5, is from a legacy run and must be replaced before use.**
+> Both re-runs have now been done and §2 and §5 below carry the corrected figures.
+>
+> **The measured size of the contamination.** The landmark script now tabulates it directly: at the 0-day
+> landmark **382 of 1,827** patients counted as suppressed (20.9 %) had that exposure set by a recording from
+> their own future, and 17–21 % at every landmark. The defect was real and roughly the size feared. It did not
+> drive the conclusion.
+>
+> **A prediction that was wrong, recorded because it was wrong.** The expectation was that this contamination
+> made the excess look *more* exhausted than it is — late-labelled patients are survivors by construction — so
+> correcting it should have weakened Class A. Correcting it slightly *strengthened* Class A (−37 % of the day-0
+> gap, versus −25 % contaminated). The misclassification existed; the mechanism proposed for how it would bias
+> the result did not operate.
+>
+> </details>
 
 ---
 
@@ -64,13 +96,15 @@ raw EEG by a fixed amplitude threshold, not read off a report — stratifies nea
 
 | burden quintile | n | dead by 3 days | dead by 30 days |
 |---|---|---|---|
-| Q1 lowest | 235 | **24.7 %** | 52.3 % |
-| Q2 | 235 | 26.4 % | 55.7 % |
-| Q3 | 234 | 34.2 % | 74.8 % |
-| Q4 | 238 | 49.6 % | 80.7 % |
-| Q5 highest | 232 | **66.4 %** | **93.1 %** |
+| Q1 lowest | 193 | **29.5 %** | 59.1 % |
+| Q2 | 192 | 35.4 % | 70.3 % |
+| Q3 | 193 | 38.9 % | 79.8 % |
+| Q4 | 192 | 52.6 % | 87.0 % |
+| Q5 highest | 193 | **73.1 %** | **96.4 %** |
 
-A **2.7-fold** range in three-day mortality, and 52 % to 93 % at thirty days, inside a single guideline label.
+A **2.5-fold** range in three-day mortality, and 59 % to 96 % at thirty days, inside a single guideline label.
+Burden, the EEG category and morphology are all measured on the **index recording** — the one the outcome clock
+starts at — so nothing here uses information that postdates the prediction.
 
 **It adds to the guideline rather than restating it.** Discrimination for three-day death among the **1,875**
 post-anoxic patients who have a measured burden (not all 2,951 — the comparison has to be made on patients for
@@ -78,21 +112,22 @@ whom both predictors exist):
 
 | model | cross-validated AUC |
 |---|---|
-| Westhall-style category alone | 0.648 [0.616, 0.676] |
-| **category + measured burden** | **0.741 [0.703, 0.790]** |
-| | **increment +0.093** |
+| Westhall-style category alone | 0.684 [0.646, 0.730] |
+| **category + measured burden** | **0.753 [0.721, 0.783]** |
+| | **increment +0.068** |
 
-Registered threshold was +0.03. The increment is three times that.
+Registered threshold was +0.03. The increment is more than twice that.
 
-**It replicates across hospitals.** Fitted at one site and evaluated at the other: **0.719** and **0.678**.
+**It replicates across hospitals.** Fitted at one site and evaluated at the other: **0.679** and **0.669** —
+close to symmetric, which is what a predictor that transfers should look like.
 
-**There is no optimism to discount.** Burden alone gives in-sample 0.684 against cross-validated 0.682 — the
+**There is no optimism to discount.** Burden alone gives in-sample 0.671 against cross-validated 0.672 — the
 figures are the same, which is what a single well-behaved continuous predictor should do.
 
 ## 3. Burst morphology adds a further increment, and the direction is interpretable
 
-Within the highly-malignant category, five named morphology features add **+0.036 cross-validated AUC** over
-burden (0.632 → 0.668, n=662). Comparing the two outcome extremes directly:
+Within the highly-malignant category, five named morphology features add **+0.041 cross-validated AUC** over
+burden (0.624 → 0.665, n=604), morphology measured on the index recording like everything else. Comparing the two outcome extremes directly:
 
 | | dead ≤3 days | alive >180 days |
 |---|---|---|
@@ -113,7 +148,7 @@ anywhere in this analysis; the model can be read, checked and disagreed with.
 
 **This is a statement about information present in the recording. It is not a recommendation to act on it.**
 
-Burst suppression is a guideline criterion that informs withdrawal of life-sustaining therapy, and **40.6 % of
+Burst suppression is a guideline criterion that informs withdrawal of life-sustaining therapy, and **46.0 % of
 these patients die within three days** — precisely the window in which withdrawal decisions are made. This
 cohort cannot separate biological death from withdrawal-mediated death in that window, and this is a limit that
 was tested rather than assumed: three instruments were tried and all three failed. DNR and palliative-care codes
@@ -150,7 +185,7 @@ gap, "anoxic patients are simply sicker", a posterior-rhythm effect modifier (wi
 drug-induced suppression, information redundancy, and front-loading of anoxic death.
 
 The decisive turn was a landmark analysis: the aetiology excess is **exhausted among 30-day survivors** (gap
-+0.832 from the EEG, +0.217 at a day-30 landmark, −0.206 at day 180). That identified the effect as a fixed
++0.801 from the EEG, +0.112 at a day-30 landmark, −0.295 at day 180, with the exposure at each landmark restricted to recordings available by then). That identified the effect as a fixed
 subgroup whose outcome is largely settled at the recording — which reframed the question from *why does
 suppression mean more after anoxia* to *which of these patients is in that subgroup*, and it is the second
 question that has a usable answer.
