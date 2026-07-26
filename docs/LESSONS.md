@@ -1674,3 +1674,30 @@ cross-nationally-validated part.
   PATIENTS DIE OF differs by aetiology. RULE, reinforced: an assumption about clinical PROTOCOL ("sedation is
   weaned before prognostication") is an empirical claim about the data and should be measured before a mechanism
   is built on it -- here it was false, and measuring it took one query.
+
+- **The gap is NOT a timing artefact: the log-odds gap is FLAT from 7 days to a year (2026-07).** This is the
+  strongest positive result in the project and it was obtained by a test designed to kill the surviving
+  mechanism. If the aetiology gap existed only because post-anoxic death is front-loaded, then lengthening the
+  horizon lets septic patients accumulate their deaths and the gap must compress -- in a cohort where everyone
+  eventually dies it must approach zero by construction. The percentage-point gap does exactly that: 21.10 (7 d),
+  20.41 (30 d), 18.13 (90 d), 16.77 (180 d), 13.32 (365 d), declining monotonically as predicted.
+  But on the LOG-ODDS scale, which is not mechanically compressed as rates approach one, the gap is flat:
+  +0.736, +0.872, +0.849, +0.844, +0.732. The 30-to-180-day decline is 3.2 % [-11.6,+17.9] against a registered
+  40 % threshold. So burst suppression after anoxia confers roughly the SAME RELATIVE excess risk at every
+  horizon out to a year. Post-anoxic patients with suppression are not merely dying sooner; they are more likely
+  to die, and front-loading explains the absolute compression while explaining none of the relative effect.
+  RULE, now demonstrated twice: report both scales. A percentage-point difference and an odds ratio answer
+  different questions, and here they give opposite impressions of whether the effect decays.
+
+- **Label overlap was DILUTING the gap, not inflating it -- it doubles in single-aetiology patients (2026-07).**
+  Restricting to patients carrying exactly ONE of the five aetiologies moves the anoxic-versus-septic gap from
+  +20.41 to +42.16 pp, a 107 % change on n=4,568. The expectation was the opposite -- that dual-coded patients
+  would inflate a spurious contrast -- so this is a falsified prior in the favourable direction: patients coded
+  as both anoxic AND septic blur the comparison, and removing them sharpens it. CAUTION before this is used:
+  single-aetiology patients are a selected group (fewer comorbidities, cleaner presentations, shorter admissions
+  accumulating fewer codes) and the doubling may partly reflect that selection rather than a purer contrast. The
+  headline should stay with the full-cohort figure and report the restriction as a sensitivity analysis, not
+  the other way round.
+  Also confirmed in the same run: the gap appears at BOTH hospitals separately (+17.47 pp at S0001, +24.72 at
+  S0002), and it does not depend on how soon after the arrest the EEG was recorded (+26.08 within a day, +35.95
+  at 1-3 days, +30.22 beyond three days).
