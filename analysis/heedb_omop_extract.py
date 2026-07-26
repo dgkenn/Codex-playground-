@@ -71,10 +71,18 @@ COLS = {
     # cohort, and row-filters to the sedative classes the analysis names so the output stays small.
     "drug_sedatives": ["person_id", "drug_exposure_start_datetime", "drug_exposure_end_datetime",
                        "drug_concept_id", "drug_source_value", "quantity"],
+    # Vasopressors, for dating ACUTE withdrawal of life-sustaining therapy. The DNR/palliative codes turned out
+    # to be a blunt proxy -- median 42 days from code to death, only 5 % dying within a day -- because they
+    # document chronic care-limitation status rather than an acute decision. Stopping a vasopressor in a
+    # pressor-dependent patient is followed by death within hours, so the discontinuation TIME is a far sharper
+    # marker of the decision. Needs drug_exposure_end_datetime, which this table carries.
+    "drug_vasopressors": ["person_id", "drug_exposure_start_datetime", "drug_exposure_end_datetime",
+                          "drug_concept_id", "drug_source_value", "quantity"],
 }
 
 # pseudo-table -> the physical OMOP table it reads
-SOURCE_TABLE = {"measurement_conscious": "measurement", "drug_sedatives": "drug_exposure"}
+SOURCE_TABLE = {"measurement_conscious": "measurement", "drug_sedatives": "drug_exposure",
+                "drug_vasopressors": "drug_exposure"}
 
 # pseudo-table -> (column to test, compiled regex a row must match to be kept)
 ROW_FILTER = {"measurement_conscious": ("measurement_source_value",
@@ -83,7 +91,11 @@ ROW_FILTER = {"measurement_conscious": ("measurement_source_value",
                                                    r"best verbal response|ramsay|arousal", re.I)),
                "drug_sedatives": ("drug_source_value",
                                   re.compile(r"propofol|midazolam|pentobarbital|thiopental|phenobarbital|"
-                                             r"dexmedetomidine|precedex|lorazepam|ketamine", re.I))}
+                                             r"dexmedetomidine|precedex|lorazepam|ketamine", re.I)),
+               "drug_vasopressors": ("drug_source_value",
+                                     re.compile(r"norepinephrine|levophed|epinephrine|vasopressin|"
+                                                r"phenylephrine|neosynephrine|dopamine|dobutamine|"
+                                                r"angiotensin\s*II", re.I))}
 
 
 def client():
