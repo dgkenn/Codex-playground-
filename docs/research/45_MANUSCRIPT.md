@@ -20,8 +20,10 @@ an independent post-arrest cohort measured 12–48 h after arrest this does **no
 agreement decaying with separation, trajectory coefficient +1.081 [+0.578, +1.614]), so the claim is weakened
 to **burden containing a fixed component that is not separately identified here** — consistent with it indexing a cerebral metabolic rate that
 is low because tissue has been lost, which extends the metabolic model of burst suppression (Ching *et al.*,
-*PNAS* 2012, PMID 22323592) into the post-anoxic setting. **This is a statement about information present in
-the recording, not a recommendation to act on it**: 46 % of these patients die within three days, the window in
+*PNAS* 2012, PMID 22323592) into the post-anoxic setting. Three burst-morphology channels — spectral content, amplitude and
+stereotypy — carry outcome information **independent of burden and of each other**, replicated in I-CARE with
+our own detector (increment **+0.073 [+0.043, +0.123]**), with one channel independently reported by another
+group. **This is a statement about information present in the recording, not a recommendation to act on it**: 46 % of these patients die within three days, the window in
 which withdrawal decisions are made, and four independent instruments failed to separate withdrawal-mediated
 from biological death in this data source.
 
@@ -107,6 +109,42 @@ Five named morphology features add **+0.047 [+0.011, +0.083]** over burden withi
 Short, high-frequency bursts on a background with no slowing and no posterior rhythm mark the patients who die
 within days. Every term is a named physiological quantity with a signed coefficient; there is no learned
 representation anywhere in this analysis.
+
+**Which of these survives external replication is the subject of §4c, and the burst-duration row does not.**
+
+### 3.4b What morphology is measuring: three independent channels, externally replicated
+
+Re-measured in **I-CARE with our own detector** (n=527), three burst features carry outcome information
+**independent of suppression burden and of each other** (standardised log-odds, burden in the model):
+
+| channel | coefficient | status |
+|---|---|---|
+| intra-burst 8–30 Hz content | **+0.500 [+0.291, +0.756]** | ours, replicated externally |
+| burst amplitude | **+2.252 [+0.844, +3.985]** | precedent: Ruijter 2018, PMID 29807232 |
+| burst stereotypy (1 s) | **+1.040 [+0.457, +1.825]** | independently reported: Fong 2025, PMID 39900751 |
+| burst duration | −0.027 [−0.658, +0.200] | **withdrawn** |
+
+Morphology's increment over burden is **+0.073 [+0.043, +0.123]** in I-CARE (0.691 → 0.764), against
+**+0.047 [+0.011, +0.083]** in HEEDB.
+
+**Suppression burden measures how much is gone; burst content reports what kind of activity remains** — and the
+two are separable, which is the substantive claim. Stereotyped, high-amplitude, fast bursts describe a simple
+autonomous cortical oscillator with a single mode; slower and more variable bursts describe a network with a
+richer repertoire.
+
+**Prior work points the same way, from three independent groups.** Sekar *et al.* (*J Clin Neurophysiol* 2019,
+PMID 30422916) found a prominent intra-burst theta feature in post-arrest patients regaining consciousness and
+absent in those who did not — the same direction as our spectral-content channel. Ruijter *et al.* 2018 found
+the burst-to-suppression amplitude ratio prognostic. Fong *et al.* 2025 found burst similarity to be the only
+independent EEG predictor of mortality in 203 post-arrest patients; **that replicates here too, and does not
+displace the spectral channel** — both survive in the same model.
+
+**Interpretation, offered and not established:** burst content plausibly reports thalamocortical organisation,
+given graded selective thalamic vulnerability after global ischaemia (Muthuswamy *et al.*, PMID 12435429) and
+thalamic damage tracking suppression ratio in humans (Sohn & Kim, PMID 37731916). The *strong* form — that
+bursts require an intact thalamocortical loop — is **refuted**: deafferented cortex generates burst suppression
+unaided (Wennberg *et al.* 1997, PMID 9191587). No thalamic imaging exists in either of our cohorts, so this is
+an interpretation consistent with the data and with independent anatomy, not a measured mechanism.
 
 ### 3.5 Burden behaves as a fixed quantity (Figure F4)
 
@@ -234,6 +272,7 @@ quarter and is corrected throughout; the finding survived it.
 1. **Implement burst suppression probability** (state-space, binomial observation + Gaussian random walk) and
    re-run the headline under it.
 2. **External replication on TUH** — cross-system rather than cross-site.
-3. **Test the falsifiable prediction** in an anaesthetic cohort, where the metabolic reading requires burden to
-   be reversible.
+3. **Resolve the stereotypy window disagreement with Fong *et al.*** — they report the first 2 s superior to
+   0.5–1 s; we find 1 s survives adjustment and 2 s does not. Our bursts are considerably longer than that
+   window implies, so the two are not measuring identical quantities.
 4. **Competing-risks survival** rather than binarised horizons.
