@@ -1769,3 +1769,27 @@ cross-nationally-validated part.
   biological from withdrawal-mediated death in that window. A risk score inside a category used to justify
   withdrawal could make its own predictions come true. The result is a statement about information present in
   the recording, not a recommendation to act on it.
+
+- **Suppression burden is a BRAIN-SPECIFIC dosimeter, not a proxy for whole-body ischaemic dose (2026-07).**
+  Cardiac arrest damages kidney, liver and myocardium alongside cortex, so burden might have been a marker of
+  total ischaemic dose with the EEG as its most visible display. Three lines of evidence say no.
+  (a) Acute kidney injury runs BACKWARDS against burden in post-anoxic patients, -16.08 pp per unit
+  [-23.80,-7.79], where the global-dose account requires it to rise.
+  (b) The gradients that ARE positive are not anoxia-specific: cardiac injury +12.54 pp per unit in anoxic
+  against +27.73 in SEPSIS, and vasopressor exposure +18.55 against +24.60. Steeper in the aetiology with no
+  global ischaemic event, so they mark severity generally rather than ischaemic dose.
+  (c) Conditioning on kidney, hepatic and cardiac injury absorbs 2.6 % of burden's effect on three-day death
+  (attenuation +0.99 pp [-1.75,+3.40]) against a 25 % threshold registered in advance.
+  CAVEAT THAT LIMITS (a) AND (c), and it is a real one: 66.4 % of the highest-burden patients die within three
+  days, and organ-injury CODES TAKE TIME TO ACCRUE. So the negative AKI slope is plausibly survivorship rather
+  than biology, and the mediation null cannot fully separate "organ injury is not the pathway" from "there was
+  no time for organ injury". The SPECIFICITY failure in (b) is the cleaner evidence, because it does not depend
+  on follow-up time.
+  RULE, general: when an outcome is a diagnosis CODE and the exposure predicts early death, the code is
+  competing with death for the chance to be recorded. Any null or reversed association between them must be
+  checked against time-at-risk before it is read as biology.
+
+- **The clinical consequence is worth stating: this belongs in neuroprognostication and nowhere else.** If
+  burden had been a whole-body dose marker, a suppressed EEG after arrest would also have been a statement about
+  the kidneys, and the appropriate response would have been systemic. It is not. The EEG is reporting on the
+  organ that determines the outcome.
