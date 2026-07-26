@@ -1496,3 +1496,27 @@ cross-nationally-validated part.
   the thing it was aimed at. RULE: before reporting a null from a bias-correction, verify the proxy behaves like
   the mechanism -- here, a simple histogram of proxy-to-outcome timing showed it does not. A null from a blunt
   instrument is inconclusive, not reassuring.
+
+- **The dosimeter test: right about the ordering, wrong about the sign, and the unpredicted pattern was the
+  finding (2026-07).** Hypothesis: burden indexes INJURY after anoxia and SEDATION DEPTH elsewhere. P2 confirmed
+  -- the burden->death slope is steeper in anoxic than sepsis (+12.43 pp [+5.90,+19.32]) or metabolic (+6.72
+  [+1.19,+12.98]). P1 FALSIFIED -- I predicted the anoxic slope would be steeper WITHOUT peri-EEG anaesthetic
+  (pure injury signal, undiluted); it was shallower, -7.77 pp [-18.54,+3.84].
+  The unpredicted pattern is the informative part. In EVERY aetiology the burden slope is far steeper in patients
+  WITH peri-EEG anaesthetic: sepsis 12.11 -> 37.80, metabolic 16.60 -> 41.30, structural 10.45 -> 33.77, status
+  12.14 -> 57.02 (2.5x to 4.7x). ANOXIC IS THE EXCEPTION, at 32.70 -> 40.47, only 1.24x, because burden already
+  predicts death in unsedated anoxic patients where in every other aetiology it barely does (10-16 pp/unit).
+  So a version of the hypothesis survives, inverted from the one registered: burden is informative WITHOUT a drug
+  only after anoxia, and elsewhere it is informative mainly WHEN a drug is on board -- i.e. elsewhere it measures
+  "this cortex suppressed at a given dose", a SENSITIVITY signal, not an injury one. My P1 reasoning was about
+  dilution when it should have been about what the unsedated stratum means.
+  RULE: when a prediction fails, check whether the ordering it implied still holds before discarding the
+  hypothesis -- and read the stratum the prediction ignored, which here carried the result.
+  CAVEAT that blocks over-reading: peri-EEG anaesthetic is a severity proxy in this cohort (H2 failed exactly
+  that way), so the sedated/unsedated split is confounded and this is a lead, not a conclusion.
+
+- **The "anoxic patients are just sicker" rival is dead (2026-07).** It predicts baseline severity and effect
+  size should track together. Across aetiologies r = +0.350, weak. Decisively, anoxic and sepsis have essentially
+  IDENTICAL BS-negative 30-day mortality -- 32.8 % vs 32.7 % -- while their burst-suppression effects differ
+  almost twofold (+38.3 vs +17.9 pp). Equal baselines cannot generate unequal effects through severity alone.
+  Cheap, decisive, and it should have been run before any mechanism work.
