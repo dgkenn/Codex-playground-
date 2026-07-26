@@ -1966,3 +1966,24 @@ never the risk; the definition was.**
   incoherent — improvers died more often than stable patients, contradicting the analysis one section above it.
   That incoherence was the tell that the strata differed in baseline rather than in trajectory. An internal
   contradiction between two sections of the same output is a debugging signal, not noise to reconcile in prose.
+
+- **Predictive increment cannot identify a mechanism when the measure is noisy.** Four framings of
+  structural-vs-reversible all produced positive increments (+0.062, +0.063, +0.037) and all were satisfiable
+  with no biology: two noisy readings of a CONSTANT quantity beat one reading. The identifying move was to stop
+  asking "does adding this improve prediction" and re-express the pair as orthogonal contrasts —
+  `mean = (first+last)/2` and `diff = last−first` — then test the SIGN of the difference term. Noise cannot
+  give a correctly-signed non-zero coefficient on the difference; only real change can.
+  RULE, general: **when two measurements of the same thing are available, decompose into mean and difference
+  before interpreting either.** Increment tests conflate "better estimate of a level" with "information about
+  change"; the decomposition separates them by construction.
+
+- **The best evidence in that whole analysis required no model at all.** If a marker tracks a CHANGING state,
+  the most recent reading is the best one. If it estimates a FIXED quantity with error, the AVERAGE of two
+  readings beats the most recent. Average 0.787 vs most-recent 0.747 settles it in one comparison, with nothing
+  fitted to the trajectory. Look for the version of the question that is a direct observation before building
+  a model of it.
+
+- **Three confounds, three redesigns, opposite conclusion.** The first run printed "CONFIRMED (reversible)";
+  the answer is structural. The intermediate stages were not wasted — each one named a specific confound
+  (algebraic identity, cohort selection, recency, noise-averaging) and the final design had to survive all four.
+  A result that flips under redesign is not a reason to distrust the process; failing to redesign is.

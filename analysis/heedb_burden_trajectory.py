@@ -325,6 +325,60 @@ def main():
             print("\n   STRUCTURAL predicts an increment near zero: the current state IS the injury, and the")
             print("   path taken to reach it carries no extra information. REVERSIBLE predicts a clear")
             print("   positive increment. This is the form of the question that recency cannot fake.")
+            print("   It is still not sufficient on its own -- see J2e.")
+
+            # ---- J2e: THE DECOMPOSITION THAT ACTUALLY IDENTIFIES IT ------------------------------
+            # Even J2d is not identifying. If burden is measured with error and the underlying injury is
+            # CONSTANT, two readings estimate that constant better than one, so adding the earlier reading
+            # improves prediction with no recovery anywhere. Predictive increment therefore cannot separate
+            # "trajectory is informative" from "two measurements beat one".
+            # The sign can. Re-express the pair as two orthogonal contrasts:
+            #     mean  = (first + last) / 2   -- a better-estimated LEVEL
+            #     diff  =  last - first        -- the TRAJECTORY, and nothing else
+            # Under STRUCTURAL + measurement noise the mean carries all the signal and `diff` is pure noise,
+            # so its coefficient is ~0 and its CI covers zero. Under REVERSIBLE, `diff` carries independent
+            # information with a specific SIGN: burden rising means worse. A coefficient that is both
+            # non-zero and correctly signed is the thing noise cannot manufacture.
+            print("\n" + "=" * 92)
+            print("J2e  MEAN vs DIFFERENCE -- the contrast that noise cannot fake")
+            print("=" * 92)
+            mn = np.asarray([(r["b1"] + r["bl"]) / 2.0 for r in both], float)
+            df = np.asarray([r["bl"] - r["b1"] for r in both], float)
+            M = np.column_stack([np.ones(len(both)), mn])
+            MD = np.column_stack([M, df])
+            cm, cmd = cv_auc(M, yy, rng), cv_auc(MD, yy, rng)
+            beta = lpm(MD, yy)[2]
+            bs_beta = []
+            for _ in range(NBOOT):
+                i = rng.integers(0, len(both), len(both))
+                if yy[i].min() == yy[i].max():
+                    continue
+                try:
+                    bs_beta.append(float(lpm(MD[i], yy[i])[2]))
+                except Exception:
+                    continue
+            lo, hi = (np.percentile(bs_beta, [2.5, 97.5]) if len(bs_beta) > 100 else (float("nan"),) * 2)
+            print(f"   mean level alone                CV AUC {cm:.3f}")
+            print(f"   mean level + difference         CV AUC {cmd:.3f}   increment {cmd-cm:+.3f}")
+            print(f"   coefficient on the DIFFERENCE   {100*beta:+.2f} pp per unit burden "
+                  f"[{100*lo:+.2f},{100*hi:+.2f}]")
+            sig = (lo > 0)
+            print(f"\n   {'REVERSIBLE' if sig else 'STRUCTURAL'}: the trajectory term is "
+                  f"{'positive and excludes zero' if sig else 'not distinguishable from zero'}.")
+            if not sig:
+                print("   Two noisy readings of a constant injury reproduce everything seen in J2/J2c/J2d.")
+                print("   The apparent value of 'trajectory' is the value of measuring twice.")
+            # The sharpest single line of evidence, and it needs no model comparison: if burden tracked a
+            # CHANGING state, the newest reading would be the best one. If it estimates a CONSTANT with
+            # error, the AVERAGE of the two beats the newest. Which of those is true is directly observable.
+            print(f"\n   DIRECT CHECK -- most recent reading alone {cc:.3f} vs average of the two {cm:.3f}.")
+            if cm > cc:
+                print("   The AVERAGE wins. A marker tracking a changing state would be best measured most")
+                print("   recently; a marker estimating a fixed quantity with error is best measured twice and")
+                print("   averaged. This is the behaviour of a fixed quantity, observed without fitting")
+                print("   anything to the trajectory at all.")
+            else:
+                print("   The most recent reading wins, which is what a genuinely changing state looks like.")
     else:
         print("   too few patients have both; inconclusive at current extraction depth")
 

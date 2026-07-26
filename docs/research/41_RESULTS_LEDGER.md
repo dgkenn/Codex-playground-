@@ -868,3 +868,40 @@ what has been extracted. The prediction failed to account for repeat EEGs in thi
 rather than days apart. Revisit when the serial extraction yields enough distant pairs.
 
 **Cumulative distinct results: 298.**
+
+---
+
+## Q2 CLOSED — burden is a STRUCTURAL marker, not a reversible one (2026-07-26)
+
+Four framings of the same question, three of them confounded. The identifying one is R303.
+
+| id | test | result | reading |
+|---|---|---|---|
+| R299 | J2 — change adds over index level | +0.062 | **not identifying**: `level + change` ≡ `old level + new level` |
+| R300 | MIN_GAP_D sweep (0 / 2 / 4 d) | J1 +0.038→+0.008→+0.001; J2 increment +0.062→+0.060→+0.026 | suggestive, but longer gaps select survivors |
+| R301 | J2c — same 128 patients, short vs long interval | short +0.023, long +0.063 | **unfair**: the long recording IS the landmark, so recency favours it |
+| R302 | J2d — trajectory beyond the MOST RECENT level | 0.747 → 0.784, +0.037 | still not identifying: two noisy readings of a CONSTANT beat one |
+| R303 | **J2e — mean vs difference decomposition** | mean alone **0.787**; mean+difference **0.775** (**−0.013**); difference coefficient **+5.88 pp [−17.13, +26.58]** | **STRUCTURAL** |
+| R304 | **direct check, no model comparison** | most recent reading **0.747** vs average of the two **0.787** | **the average wins** |
+
+**Why R303 identifies where the others do not.** Re-express the pair as two orthogonal contrasts —
+`mean = (first + last)/2`, a better-estimated level, and `diff = last − first`, the trajectory and nothing else.
+Under structural injury plus measurement error the mean carries all the signal and `diff` is pure noise. Under
+reversibility `diff` carries independent, correctly-signed information. The difference coefficient's CI
+comfortably covers zero and adding it makes prediction *worse*.
+
+**R304 is the cleanest evidence and needs no model.** A marker tracking a *changing* state is best measured most
+recently. A marker estimating a *fixed* quantity with error is best measured twice and averaged. The average
+(0.787) beats the most recent reading (0.747). That is the behaviour of a fixed quantity, observed directly.
+
+**Consequence.** Suppression burden reads out how much cortex is already lost, not a depth of reversible
+metabolic or pharmacological suppression the brain is passing through. This is consistent with the earlier
+organ-injury result (burden is brain-specific, not a whole-body ischaemic dose marker) and it explains why
+persistence and morphology add so little over burden itself: there is no second, dynamic quantity to add.
+
+**Predicted vs actual (calibration ledger).** Predicted 0.55 that serial pairs would separate the two. Actual:
+they did, but only after three confounded framings were discarded — and the answer is the opposite of what the
+first run printed. Every framing that used *predictive increment* was satisfiable by measurement error; only the
+*sign of an orthogonal contrast* was not.
+
+**Cumulative distinct results: 304.**
