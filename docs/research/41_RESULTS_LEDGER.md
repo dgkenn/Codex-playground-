@@ -905,3 +905,43 @@ first run printed. Every framing that used *predictive increment* was satisfiabl
 *sign of an orthogonal contrast* was not.
 
 **Cumulative distinct results: 304.**
+
+---
+
+## Q1 CLOSED — not answerable in HEEDB/OMOP, and now demonstrably so (2026-07-26)
+
+Withdrawal versus refractory shock inside the three-day window. **Four independent instruments, four structural
+failures.** The question is not merely unanswered here; the data source cannot answer it, and the reason is the
+same each time: **administrative tables record what is BILLED or what is charted as a STATE, and withdrawal of
+life-sustaining therapy is neither.**
+
+| id | instrument | why it fails | evidence |
+|---|---|---|---|
+| R285ff | DNR / palliative **condition codes** | document chronic care-limitation status, not an acute decision | median **42 days** from code to death; 5 % die within a day |
+| R286ff | **Sedation depth** | circular — burst suppression itself causes unresponsiveness | n/a, ruled out on construct |
+| R279–R284 | **Vasopressor discontinuation time** | the medication record is **closed at death** by the charting system | 20.9 % tied to the death timestamp to the minute; **0 patients** between 1 min and 1 h before death; non-tied mass a median 100 d earlier |
+| **R305** | **Terminal extubation / comfort care (procedures)** | `procedure_occurrence` is a **billing** table; extubation is not separately billable and comfort care is not a billable ICU procedure | 31,324 rows extracted, 7,971 patients ever ventilated, **0 extubations, 0 comfort-care procedures** |
+| **R306** | **Code status (observations)** | `observation_concept_id` is **100 % zero** (unmapped); the table holds demographics and note metadata | source values are `General`, `Note`, `Imaging`, `marital_status`, `religion` |
+
+**R305 detail.** The concept set was resolved from the 6.3 M-row OMOP vocabulary and verified by inspection —
+it contains `Extubation of trachea`, `Extubation (& removal of endotracheal tube)`, `Comfort care assessment`,
+`Comfort care management` and hospice concepts. None of them occur in the data. All 64 concepts that DO occur
+are billable acts: `Intubation, endotracheal, emergency procedure` (10,297), `Tracheostomy, planned` (4,389),
+ECMO (9,796 across variants), `Cardiopulmonary resuscitation` (1,526). CPT codes intubation (31500) and has no
+extubation code, because extubation is part of ventilator management rather than a separately reimbursed act.
+
+**What this closes.** The §4 caveat in `42_MAIN_RESULT.md` — that this cohort cannot separate biological death
+from withdrawal-mediated death inside the three-day window — is now **established rather than asserted**, by
+four instruments whose failure modes are each identified and mechanistically explained. That is the strongest
+form the statement can take without a different data source.
+
+**What would answer it.** A source that timestamps the DECISION: comfort-care order activation from a clinical
+order-entry system, ventilator-termination events from respiratory-therapy flowsheets, or documented family
+meetings from notes. HEEDB's OMOP export contains none of these, and `note` / `note_nlp` were not populated with
+usable content in the merged tables inspected.
+
+**Predicted vs actual (calibration ledger).** Predicted 0.60 that a procedure-based instrument would work,
+reasoning that an extubation is an act rather than a state. The reasoning was right and the premise was wrong:
+it is an act, but an **unbilled** one, and this table only sees billed acts. Lesson generalised below.
+
+**Cumulative distinct results: 306.**

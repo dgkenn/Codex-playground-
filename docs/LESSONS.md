@@ -1987,3 +1987,24 @@ never the risk; the definition was.**
   the answer is structural. The intermediate stages were not wasted — each one named a specific confound
   (algebraic identity, cohort selection, recency, noise-averaging) and the final design had to survive all four.
   A result that flips under redesign is not a reason to distrust the process; failing to redesign is.
+
+- **`procedure_occurrence` in a claims-derived OMOP instance is a BILLING table, not a record of what was done.**
+  It contains intubation, tracheostomy, ECMO and CPR — all separately reimbursed — and contains no extubation
+  and no comfort care, because neither generates a bill. The reasoning that led there was sound ("an extubation
+  is an act with a timestamp, unlike a drug end-time") and the premise was wrong.
+  RULE, general: **before choosing an administrative table as an instrument, ask what makes a row appear in it.**
+  Billing tables see reimbursable acts; state tables see charted statuses; neither sees decisions. A clinical
+  event that is important but unbilled is systematically invisible.
+
+- **Check that a concept_id column is actually populated before building on it.** `observation_concept_id` is
+  100 % zero in this instance — every row unmapped — and the source values are `General`, `Note`,
+  `marital_status`. An extraction filtered on that column returns an empty file that is indistinguishable from
+  "this never happened". One `Counter` over 100k rows would have shown it in seconds, and should be the first
+  thing run against any table before it is designed around.
+
+- **Four instruments, one root cause, and naming it is the result.** DNR codes (chronic state), sedation depth
+  (circular), vasopressor end-times (charting artefact) and procedures (unbilled) all failed the same
+  underlying way: administrative data records what is billed or what is charted as a state, and withdrawal of
+  life-sustaining therapy is neither. A caveat backed by four identified failure mechanisms is stronger than an
+  unexamined caveat, and is itself reportable — "this cannot be determined here, and here is precisely why" is
+  a finding, not an absence of one.
