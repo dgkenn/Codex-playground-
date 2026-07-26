@@ -945,3 +945,54 @@ reasoning that an extubation is an act rather than a state. The reasoning was ri
 it is an act, but an **unbilled** one, and this table only sees billed acts. Lesson generalised below.
 
 **Cumulative distinct results: 306.**
+
+---
+
+## Q3 — what burden is a marker OF: partially closed, and honestly bounded (2026-07-26)
+
+**What IS established, from Q2 and from the organ-injury test — both without any external reference:**
+1. **Brain-specific.** Not a whole-body ischaemic dose marker: cardiac and pressor gradients are steeper in
+   sepsis than after arrest, and mediation through organ-injury codes absorbs 2.6 %.
+2. **Behaves like a FIXED quantity measured with error.** Averaging two readings predicts better (0.787) than
+   the most recent (0.747); the difference between readings carries no signal once the mean is known
+   (coefficient +5.88 pp [−17.13, +26.58]).
+
+Together: burden reads out a stable, brain-specific quantity — consistent with the amount of cortex already
+lost. **What is NOT established is the positive tissue-level identification**, because all three external
+references failed.
+
+| id | instrument | outcome |
+|---|---|---|
+| R307 | **Neuron-specific enolase** — the guideline-endorsed serum marker of neuronal death | **unavailable**: 551/551 parts of the merged `measurement` table scanned, ~2 rows. NSE is a send-out assay, not routine at these sites |
+| R308 | **Cause of death** | **unusable**: 84.9 % blank; the 535 recorded causes are death-certificate underlying causes (C349 lung cancer, F03 dementia, I251 CAD), not ICU mode of death |
+| **R309** | **Epileptogenicity** — "dead cortex cannot seize" | **non-discriminating: the premise is false** |
+
+**R309 in full.** Registered prediction: if burden counts cortex already lost, survivors with high index burden
+should show LESS seizure/status activity on a later recording; if it measures reversible suppression of living
+cortex, the same or more. Landmarked at the later recording (n=4,028; 1,063 post-anoxic).
+
+| definition | high − low burden quartile |
+|---|---|
+| wide (seizure, status, GPD, LPD) | +12.9 pp [+4.7, +19.4] |
+| **strict (seizure, status only)** | **+22.3 pp [+13.6, +29.6]** |
+| restricted to no-longer-suppressed | −9.3 pp [−19.9, +1.1] (null) |
+
+The registered reading calls a positive association "reversible". **That reading is withdrawn.** The test assumed
+severe injury means electrical silence, so that only living irritable cortex could seize. That is false after
+cardiac arrest: post-anoxic status epilepticus arises **in severely injured brains** and is detected in almost a
+third of comatose arrest survivors (De Stefano, *J Neurol* 2023, **PMID 36076090** — SE in 29–96 % across 11
+cohorts, verified from the MEDLINE record). Severe hypoxic-ischaemic injury is itself epileptogenic, so **both**
+hypotheses predict a positive association. A second unremoved confound points the same way: sicker patients are
+monitored longer, and longer recordings capture more seizures. The no-longer-suppressed arm conditions on a
+post-exposure variable (a collider) and cannot be relied on in either direction.
+
+**Interim tell that was chased and turned out to be wrong.** The wide and strict definitions were expected to
+differ because "suppression with periodic discharges" is a burst-suppression variant, so GPD/LPD should have
+inflated the association. Removing them made it *stronger* (+12.9 → +22.3), refuting that explanation.
+
+**Predicted vs actual (calibration ledger).** Predicted 0.65 that the epileptogenicity test would discriminate.
+Actual: it does not, and the failure is a domain-knowledge error rather than a statistical one — the mechanism
+was reasoned from first principles without checking what the disease actually does. The literature check that
+would have caught it took one E-utilities query and should have run BEFORE the test, not after.
+
+**Cumulative distinct results: 309.**

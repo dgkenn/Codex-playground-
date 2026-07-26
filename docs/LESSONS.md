@@ -2008,3 +2008,27 @@ never the risk; the definition was.**
   life-sustaining therapy is neither. A caveat backed by four identified failure mechanisms is stronger than an
   unexamined caveat, and is itself reportable — "this cannot be determined here, and here is precisely why" is
   a finding, not an absence of one.
+
+- **Check the disease before trusting a mechanism argued from first principles.** "Dead cortex cannot seize, so
+  structural loss predicts fewer later seizures" is sound physiology and wrong here: post-anoxic status
+  epilepticus arises in SEVERELY injured brains and is seen in almost a third of comatose arrest survivors
+  (De Stefano, J Neurol 2023, PMID 36076090). Severe hypoxic-ischaemic injury is itself epileptogenic, so both
+  competing hypotheses predicted the same sign and the test discriminated nothing.
+  RULE, general: **a mechanistic prediction is only as good as its premise about the specific disease. Run the
+  literature check BEFORE the analysis, not after it.** One E-utilities query would have killed this design in
+  minutes; instead it cost a full build-and-run cycle.
+
+- **When a fix makes the effect stronger, the diagnosis was wrong.** The positive association was attributed to
+  GPD/LPD overlapping the burst-suppression pattern, so the outcome was narrowed to seizure and status alone.
+  The association nearly doubled (+12.9 to +22.3 pp). That is a refutation of the explanation, not a
+  refinement of it, and it should be read that way rather than absorbed as noise.
+
+- **Do not "fix" a confound by conditioning on a post-exposure variable.** Restricting to patients no longer
+  suppressed at the later recording flips the estimate's sign. That restriction conditions on a collider --
+  a variable caused by the exposure -- and can manufacture exactly such a reversal. A sign flip between two
+  arms of the same test is a signal that the design, not the biology, is doing the work.
+
+- **Bound what is established, separately from what is desired.** Q3 has a real answer from two independent
+  lines -- burden is brain-specific, and behaves like a fixed quantity measured with error -- and does NOT have
+  a positive tissue-level identification, because all three external references failed for three different
+  reasons. Reporting the first without the second would be the overclaim.

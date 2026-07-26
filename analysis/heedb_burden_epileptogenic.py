@@ -22,6 +22,21 @@ candidate readings of burden make OPPOSITE predictions about what the same brain
 
 This is the rare test where the two hypotheses do not merely differ in effect size but in SIGN.
 
+OUTCOME (2026-07-26): THE PREMISE IS FALSE AND THE TEST DOES NOT DISCRIMINATE. Higher index burden predicts
+MORE later seizure/status activity (+22.3 pp [+13.6, +29.6], strict definition; +12.9 pp counting GPD/LPD). The
+registered reading would call that "reversible". It is not evidence for either side, because the assumption that
+severe injury means silence is wrong in this specific setting: post-anoxic status epilepticus arises in SEVERELY
+INJURED brains and is detected in almost a third of comatose cardiac-arrest survivors (De Stefano, J Neurol
+2023, PMID 36076090 -- SE in 29-96% across 11 cohorts). Severe hypoxic-ischaemic injury is itself epileptogenic,
+so both hypotheses predict a positive association and neither is favoured. A second confound points the same
+way: sicker patients are monitored longer, and longer recordings capture more seizures.
+
+The E2 arm (restricting to patients no longer suppressed) gives -9.3 pp [-19.9, +1.1], a null, and cannot be
+relied on regardless: it conditions on a POST-EXPOSURE variable, which is a collider.
+
+Retained because the negative is worth recording -- a mechanistically appealing test whose premise does not hold
+in the disease it was applied to.
+
 REGISTERED PREDICTIONS.
   E1  Among post-anoxic patients ALIVE at a later recording, higher index suppression burden predicts a LOWER
       probability of epileptiform activity (seizure, status, GPD, LPD) on that later recording.
@@ -199,8 +214,16 @@ def main():
         print("   E1 CONFIRMED -- STRUCTURAL. More index suppression, less epileptiform activity in the")
         print("   surviving brain days later. Cortex that is gone cannot discharge.")
     elif lo_c > 0:
-        print("   E1 REVERSED -- more index suppression predicts MORE later epileptiform activity, which is")
-        print("   what irritable but LIVING cortex emerging from suppression does.")
+        print("   E1 is POSITIVE -- more index suppression predicts MORE later seizure/status activity.")
+        print("   THIS DOES NOT DISCRIMINATE, and the registered reading of it was wrong. The test assumed")
+        print("   that severe injury means electrical silence, so that only living irritable cortex could")
+        print("   seize. That premise is false after cardiac arrest: post-anoxic status epilepticus arises")
+        print("   IN SEVERELY INJURED BRAINS and is detected in almost a third of comatose arrest survivors")
+        print("   (De Stefano, J Neurol 2023, PMID 36076090; SE reported in 29-96% across 11 cohorts).")
+        print("   So a positive association is predicted by BOTH hypotheses -- irritable living cortex, and")
+        print("   severe hypoxic-ischaemic injury which is itself epileptogenic -- and separates neither.")
+        print("   A second, unremoved confound points the same way: sicker patients are monitored longer,")
+        print("   and a longer recording has more opportunity to capture a seizure.")
     else:
         print("   E1 NULL -- no association in either direction; this instrument does not separate them.")
 
