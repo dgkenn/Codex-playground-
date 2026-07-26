@@ -1701,3 +1701,28 @@ cross-nationally-validated part.
   Also confirmed in the same run: the gap appears at BOTH hospitals separately (+17.47 pp at S0001, +24.72 at
   S0002), and it does not depend on how soon after the arrest the EEG was recorded (+26.08 within a day, +35.95
   at 1-3 days, +30.22 beyond three days).
+
+- **A FLAT CUMULATIVE ODDS RATIO IS WHAT A FIXED EARLY MASS PRODUCES -- I read it as a persistent hazard and
+  was wrong (2026-07).** The marginal log-odds gap was flat from 7 days to a year (+0.736, +0.872, +0.849,
+  +0.844, +0.732) and I concluded the excess was not a timing phenomenon: "these patients are not merely dying
+  sooner, they are more likely to die". The landmark analysis refutes that. Conditioning on survival:
+      day 0  -> 30 d window   gap +0.832 [+0.650,+0.990]
+      day 30 -> 30 d window   gap +0.217 [-0.097,+0.544]
+      day 90 -> 90 d window   gap +0.251 [-0.096,+0.569]
+      day 180-> 180 d window  gap -0.206 [-0.552,+0.129]
+  Among patients who survive 30 days there is NO aetiology-specific excess. The gap is exhausted.
+  THE ARITHMETIC I MISSED: a cumulative measure ("death BY time T from the EEG") keeps counting the doomed
+  compartment's day-2 deaths in every later numerator, so a fixed early mass produces an approximately CONSTANT
+  cumulative odds ratio. Flatness of a cumulative OR is therefore evidence about nothing -- it is compatible with
+  a persistent hazard AND with a fate sealed on day one. Only conditioning on survival distinguishes them.
+  RULE: to ask whether a hazard persists, condition on being alive at a landmark and measure forward. Never infer
+  persistence from the shape of a cumulative curve measured from a fixed origin.
+  THE SHAPE CONFIRMS IT: anoxic BS+ patients die 40.6 % within three days against 12.5 % of anoxic BS-, and
+  18.8 % survive past 180 days against 51.0 % -- a distinct early mass plus an unremarkable remainder, which is
+  the mixture signature and not a proportional shift.
+  CONSEQUENCE: the finding narrows and sharpens. Post-anoxic burst suppression identifies a subgroup whose fate
+  is largely determined at the recording; among month-one survivors it carries no aetiology-specific information
+  at all. That is more clinically actionable than "twice as lethal", and it is also a much more falsifiable claim.
+  IT ALSO KILLED TWO CANDIDATES BEFORE THEY COST ANYTHING: global ischaemic dose causing multi-organ injury, and
+  permanent disability generating complications, both predict a PERSISTENT hazard and are refuted by the same
+  result.
