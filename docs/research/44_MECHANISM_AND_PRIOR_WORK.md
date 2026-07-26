@@ -109,6 +109,35 @@ then the result should be described as holding *despite* a crude exposure, not a
 
 ---
 
+## 3b. The claim did not survive a second post-anoxic cohort, and is weakened accordingly
+
+The fixed-quantity result was tested in I-CARE using **our own detector** at hours 12, 24, 36 and 48 (552
+patients with ≥2 hours, median span 30 h). **It does not replicate.**
+
+| | HEEDB | **I-CARE** | VitalDB (anaesthetic) |
+|---|---|---|---|
+| ICC of one reading | 0.815 | **0.584** | 0.313 |
+| agreement vs separation | flat | **decays −0.370** | decays −0.488 |
+| coefficient on the difference | null (+5.88 pp [−17.13, +26.58]) | **+1.081 [+0.578, +1.614]** | — |
+
+On every arm I-CARE sits *between* the post-anoxic and anaesthetic cohorts. In the first 48 h after arrest,
+burden evolves and its trajectory is prognostically informative — though the trajectory term adds only +0.004
+cross-validated AUC, so it is significant and negligible at once.
+
+**What survives is a weaker, time-dependent claim**, offered explicitly as a post-hoc reconciliation:
+
+> Burden carries a **reversible component** — sedation, targeted temperature management, still-evolving injury —
+> that dominates in the acute window, and a **fixed structural component** that is what remains once that
+> settles. I-CARE measures the acute window; HEEDB's clinically-triggered recordings largely do not.
+
+This is consistent with all three cohorts and with the metabolic model, which predicts precisely a reversible
+contribution while patients are sedated and cooled. **It is not established.** The falsifiable test is to
+restrict I-CARE to patients off sedation and rewarmed at ≥72 h: the fixed-quantity signature should re-emerge.
+Until that is run, the honest statement is that **burden contains a fixed component which this work does not
+separately identify**.
+
+---
+
 ## 4. What is claimed, and what is not
 
 **Claimed.** Suppression burden after cardiac arrest behaves as a fixed, brain-specific quantity, consistent

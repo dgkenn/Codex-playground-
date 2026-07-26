@@ -15,8 +15,10 @@ ascertained death across two hospitals, we measured suppression **burden** direc
 patient's index recording and found that it stratifies three-day mortality **29.5 % → 73.1 %** within that
 single category. Burden adds **+0.100 [+0.082, +0.118]** cross-validated AUC over the category itself
 (pre-registered threshold +0.03), is **well calibrated** (intercept −0.013, slope 0.980), and replicates
-across hospitals (0.679 / 0.669). Serial recordings show burden behaves as a **fixed quantity measured with
-error** (ICC 0.815) rather than a reversible state — consistent with it indexing a cerebral metabolic rate that
+across hospitals (0.679 / 0.669). Serial recordings in HEEDB show burden behaving as a **fixed quantity measured with error** (ICC 0.815); in
+an independent post-arrest cohort measured 12–48 h after arrest this does **not** replicate (ICC 0.584,
+agreement decaying with separation, trajectory coefficient +1.081 [+0.578, +1.614]), so the claim is weakened
+to **burden containing a fixed component that is not separately identified here** — consistent with it indexing a cerebral metabolic rate that
 is low because tissue has been lost, which extends the metabolic model of burst suppression (Ching *et al.*,
 *PNAS* 2012, PMID 22323592) into the post-anoxic setting. **This is a statement about information present in
 the recording, not a recommendation to act on it**: 46 % of these patients die within three days, the window in

@@ -1099,3 +1099,51 @@ identical estimand. Hospital D (n=56) was below the 60-patient floor for the cro
 replicate. Actual: replicated at all three thresholds with CIs excluding zero by a wide margin.
 
 **Cumulative distinct results: 325.**
+
+---
+
+## R326–R329. THE MECHANISTIC CLAIM DOES NOT REPLICATE IN I-CARE — the strong form is refuted
+
+Q2 concluded from HEEDB that suppression burden behaves as a **fixed quantity measured with error**, and that
+conclusion licenses the metabolic reading. It had been tested in one direction only (VitalDB, where the same
+construct must be reversible under anaesthesia, and is). This tests it in a **second post-anoxic cohort**, using
+**our own detector** run on I-CARE hourly EEG at hours 12, 24, 36 and 48 — 552 patients with ≥2 distinct hours,
+median span 30 h.
+
+| id | arm | I-CARE | HEEDB | VitalDB (anaesthetic) | verdict |
+|---|---|---|---|---|---|
+| R326 | **X1** ICC of one reading | **0.584** | 0.815 | 0.313 | intermediate |
+| R327 | **X2** decay with separation | **−0.370** (0.684 → 0.491 → 0.314) | flat | −0.488 | **decays** |
+| R328 | **X3** mean vs most recent | 0.725 vs 0.720 (a tie) | 0.787 vs 0.747 | — | equivocal |
+| R329 | **X4** coefficient on the difference | **+1.081 [+0.578, +1.614]**, excludes zero — but adds only **+0.004** AUC | +5.88 pp [−17.13, +26.58], null | — | **trajectory is informative** |
+
+**Verdict: the strong form of the claim is refuted.** In the first 48 hours after arrest, burden is *not* a
+fixed quantity — it evolves, its agreement decays with separation almost as much as in the anaesthetic cohort,
+and its trajectory carries outcome information that HEEDB's did not. On every arm I-CARE sits **between** HEEDB
+and the anaesthetic cohort.
+
+**A weaker, time-dependent form survives all three cohorts, and is stated as a HYPOTHESIS rather than a save.**
+I-CARE measures hours 12–48 post-arrest — the acute phase, during which patients are typically still sedated and
+under targeted temperature management, both of which the metabolic model says produce *reversible* suppression
+in living tissue. HEEDB's recordings are clinically triggered and its serial pairs were mostly same-admission
+re-reads later in the course. So the reconcilable claim is:
+
+> Burden carries a **reversible component** (sedation, hypothermia, evolving injury) that dominates early, and a
+> **fixed structural component** that is what remains once the acute phase settles.
+
+That is consistent with every result to date, but it is a **post-hoc reconciliation and must be treated as
+one**. **The falsifiable test**: restrict I-CARE to patients off sedation and rewarmed, and to later hours
+(≥72 h); the fixed-quantity signature should re-emerge (ICC rising toward HEEDB's, decay flattening, difference
+term returning to null). Until that is run, the mechanistic reading is **weakened from "burden is a fixed
+quantity" to "burden contains a fixed component that is not separately identified here"**.
+
+**Note on magnitude.** R329's difference coefficient is statistically distinguishable from zero yet adds
++0.004 cross-validated AUC. Significant and negligible are both true, and reporting only the first would
+misrepresent it.
+
+**Predicted vs actual (calibration ledger).** Predicted 0.65 that the fixed-quantity signature would replicate.
+Actual: it did not. The prediction failed to account for I-CARE measuring the acute sedated/hypothermic window,
+where the metabolic model itself predicts a reversible contribution — an error of study-design reasoning, not of
+statistics.
+
+**Cumulative distinct results: 329.**
