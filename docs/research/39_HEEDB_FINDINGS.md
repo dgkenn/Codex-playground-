@@ -58,11 +58,27 @@ difference is large enough to explain the field's contradictory outcome literatu
 Among 15,318 patients with an ascertained death (3,106 with burst suppression, 12,212 without), death within
 30 days of the EEG:
 
-| | spread across aetiologies |
-|---|---|
-| aetiology effect in **BS-negative** patients — the honest denominator | 12.13 pp [8.44, 15.84] |
-| **BS × aetiology interaction** | 38.51 pp [32.84, 44.63] |
-| **difference (interaction − main effect), paired bootstrap** | **+26.38 pp [+20.27, +32.68]** |
+**The effect of burst suppression, computed separately within each aetiology** (30-day death, BS-positive minus
+BS-negative, unadjusted):
+
+| aetiology | BS+ | BS− | **effect of burst suppression** |
+|---|---|---|---|
+| **anoxic** (n=1,410 / 1,541) | 71.1 % | 32.8 % | **+38.3 pp** |
+| metabolic (2,234 / 7,308) | 55.8 % | 28.0 % | +27.8 pp |
+| status epilepticus (587 / 669) | 43.4 % | 20.8 % | +22.7 pp |
+| structural (1,545 / 6,227) | 47.1 % | 25.8 % | +21.3 pp |
+| **sepsis** (1,264 / 3,622) | 50.6 % | 32.7 % | **+17.9 pp** |
+| | | | **range 20.4 pp** |
+
+**Burst suppression predicts death in every aetiology.** What varies is the magnitude — roughly twofold, from
++17.9 pp in sepsis to +38.3 pp after anoxia.
+
+On the model-based statistics: the BS × aetiology interaction spread is 38.51 pp [32.84, 44.63] against a
+12.13 pp [8.44, 15.84] aetiology main effect in BS-negative patients, a paired difference of
++26.38 pp [+20.27, +32.68] which excludes zero. Those coefficients are measured *relative to a reference group*
+and are the right statistic for testing whether modification exists — it does. They are the **wrong** statistic
+for describing how large the effect is in any given aetiology, and an earlier version of this document made
+exactly that mistake (see the correction note below).
 
 The bottom row is the statistic the claim rests on. Reporting the first two rows and observing that one is
 larger would be the comparison-of-significance shortcut this project has committed four times: non-overlapping
@@ -70,22 +86,21 @@ intervals are evidence, but they are not a test of the difference. Both spreads 
 resample index on every replicate, so they are differenced per replicate. The difference excludes zero, so the
 heterogeneity is **specific to burst suppression** rather than inherited from the diagnosis.
 
-| aetiology | interaction term | reading |
-|---|---|---|
-| **anoxic** | **+23.59 pp** | suppression is a grave sign |
-| metabolic | −1.41 pp | |
-| status epilepticus | −5.84 pp | |
-| structural | −9.28 pp | |
-| **sepsis** | **−14.92 pp** | suppression carries little weight |
-
-In post-anoxic injury, burst suppression marks a brain that is dying. In sepsis it is close to uninformative —
-plausibly because there it reflects sedation rather than injury.
+> **Correction.** Earlier versions of this document reported the interaction coefficients above (anoxic +23.59,
+> metabolic −1.41, status −5.84, structural −9.28, sepsis −14.92 pp) and read the negative ones as meaning that
+> suppression "carries little weight" or is "close to uninformative" in those groups. **That was an error.** An
+> interaction coefficient is measured against a reference group; it is not the effect within a stratum. Computed
+> within sepsis, burst suppression carries a **+17.9 pp** absolute increase in 30-day death, which is large by
+> any standard. Nothing here is uninformative. The corrected claim is that aetiology modifies **how much**
+> burst suppression matters, not **whether** it matters.
 
 ### This supplies a mechanism for the heterogeneity the review describes
-A cohort dominated by post-arrest patients will find burst suppression ominous. A cohort dominated by septic
-patients will find it benign. **Both are correct about their own case mix.** Pooling them — which the outcome
-literature does — produces exactly the contradictory findings Guay and Brown point to. The heterogeneity is not
-noise; it is aetiological composition.
+A cohort dominated by post-arrest patients will measure burst suppression as roughly twice as lethal as a cohort
+dominated by septic patients will. **Both are correct about their own case mix**, and neither is wrong about the
+sign. Pooling them produces effect sizes that vary by a factor of two across studies with no methodological
+explanation — which is the kind of heterogeneity Guay and Brown describe. Note the weaker claim: this explains
+inconsistent *magnitudes*, not studies reaching opposite conclusions, because in these data no aetiology gives a
+null or reversed effect.
 
 ## 3. The five pre-specified tests
 
@@ -354,6 +369,20 @@ concentrated in the first week, where withdrawal and genuine early mortality fro
 inseparable in these data. The other half persists in patients who survived that window, which a pure-withdrawal
 explanation does not predict. **17.00 pp [11.34, 24.13] is the conservative estimate and should be quoted as
 such.**
+
+**The recommended WLST-censoring analysis was run, and it is largely uninformative here.** Following Elmer 2023,
+follow-up was censored at the first dated DNR/palliative code. The interaction was unchanged: 20.41 pp
+uncensored versus 20.64 pp censored, on the stratum-difference scale. That looks like strong evidence against a
+withdrawal explanation, and it should **not** be read that way, because the proxy is poor. Acute withdrawal is
+followed by death within hours; in these data the median gap from care-limitation code to death is **42 days**,
+and only **5 %** die within a day of the code. These codes are largely documenting chronic care-limitation
+status, not acute post-arrest withdrawal, so the test has little power to detect the bias it targets. It is
+reported as inconclusive rather than negative.
+
+The **day-7 landmark therefore remains the informative analysis**, and the timing signature above remains the
+strongest evidence that withdrawal contributes. Properly dating acute withdrawal would need the ICU treatment
+record — vasopressor and ventilator discontinuation in `drug_exposure` and `procedure_occurrence` — which is not
+extracted.
 
 **Three other threats are cleared decisively:**
 

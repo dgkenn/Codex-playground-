@@ -1469,3 +1469,30 @@ cross-nationally-validated part.
   applicable, age/sex 101 % retained) were cleared in the same run at negligible cost. Cheap threat-elimination
   should precede expensive mechanism extraction as a matter of course -- the morphology extraction was already
   running when this was ordered, which is the wrong sequence.
+
+- **An interaction coefficient is NOT the effect within a stratum, and I wrote a paper's headline claim as though
+  it were (2026-07).** The document said burst suppression "carries little weight" in sepsis and is "close to
+  uninformative", on the strength of a sepsis interaction coefficient of -14.92 pp. Computed WITHIN sepsis, the
+  effect of burst suppression on 30-day death is **+17.9 pp** (50.6 % vs 32.7 %) -- large by any standard. The
+  coefficient was negative only RELATIVE TO A REFERENCE GROUP; the stratum effect is main effect plus
+  interaction, and every aetiology came out strongly positive (+17.9 to +38.3 pp). The whole "in sepsis it is
+  benign, plausibly because it reflects sedation" story was an artefact of reading a contrast as a level, and it
+  had survived a red-team, a literature check and several rewrites.
+  RULE: whenever an interaction is interpreted substantively, PRINT THE STRATUM-SPECIFIC EFFECTS -- unadjusted
+  cell means and their differences -- next to the coefficients. Two minutes of arithmetic on raw cells would
+  have caught this at any point. It surfaced only because a Kaplan-Meier analysis parameterised the same
+  question as within-stratum differences and the numbers disagreed with the prose.
+  SUBSTANTIVE CONSEQUENCE: the finding narrows from "suppression means opposite things in different diseases" to
+  "suppression is roughly twice as lethal after anoxia as in sepsis". Still real, still worth reporting, much
+  less dramatic -- and the claim that this explains CONTRADICTORY literature weakens to explaining inconsistent
+  MAGNITUDES, since no aetiology shows a null or reversed effect.
+
+- **A bias test can return "no effect" because the proxy is blunt, not because the bias is absent (2026-07).**
+  Censoring follow-up at the first dated DNR/palliative code -- the method Elmer 2023 recommends for
+  self-fulfilling-prophecy bias -- moved the interaction from 20.41 to 20.64 pp, i.e. not at all. Reported
+  naively that is strong evidence against withdrawal bias. It is not: acute withdrawal is followed by death
+  within hours, and in these data the median gap from code to death is 42 days with only 5 % dying within a day.
+  The codes document chronic care-limitation status, not acute post-arrest withdrawal, so the test cannot see
+  the thing it was aimed at. RULE: before reporting a null from a bias-correction, verify the proxy behaves like
+  the mechanism -- here, a simple histogram of proxy-to-outcome timing showed it does not. A null from a blunt
+  instrument is inconclusive, not reassuring.
