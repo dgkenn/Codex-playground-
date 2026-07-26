@@ -43,9 +43,12 @@ from collections import defaultdict
 
 import boto3
 from botocore.config import Config
+import pyarrow as pa
+import pyarrow.compute as pc
 import pyarrow.parquet as pq
 
 AP = "arn:aws:s3:us-east-1:184438910517:accesspoint/bdsp-credentialed-access-point"
+BATCH_ROWS = int(os.environ.get("BATCH_ROWS", "65536"))
 OUT = os.environ.get("OMOP_OUT", "/tmp/eeg_probe/heedb_omop")
 PIDS_FILE = os.environ.get("PIDS_FILE", "/tmp/heedb_bs_patients.txt")
 
@@ -139,9 +142,13 @@ ROW_FILTER = {"measurement_conscious": ("measurement_source_value",
 
 
 def client():
+    # Long read timeout on purpose: visit_occurrence is a SINGLE 9 GB part holding 512 M rows, and a range
+    # request that spans a large column chunk can take well past the 60 s default. The earlier failure there
+    # was a ReadTimeoutError, not a permissions or data problem.
     return boto3.client("s3", region_name="us-east-1",
                         config=Config(s3={"payload_signing_enabled": False},
-                                      retries={"max_attempts": 5, "mode": "standard"}))
+                                      read_timeout=600, connect_timeout=30,
+                                      retries={"max_attempts": 8, "mode": "standard"}))
 
 
 
@@ -219,6 +226,7 @@ def main():
 
     os.makedirs(OUT, exist_ok=True)
     pids = {int(x) for x in open(PIDS_FILE).read().split() if x.strip().isdigit()}
+    pid_arr = pa.array(sorted(pids), type=pa.int64())
     print(f"target patients: {len(pids)}", flush=True)
 
     s3 = client()
@@ -251,19 +259,27 @@ def main():
             if rf and rf[0] not in have:
                 raise KeyError(f"{rf[0]} absent from {key}; row filter cannot be applied safely")
             kept_here = 0
-            # Stream row groups. Only the projected columns are fetched, so memory tracks the row group
-            # rather than the part, and a 9 GB single-part table is as tractable as a 150 MB one.
-            for batch in pf.iter_batches(batch_size=200_000, columns=use):
-                data = {c: batch.column(c).to_pylist() for c in use}
-                keep = [j for j, p in enumerate(data["person_id"]) if p in pids]
+            # Stream row groups, and do BOTH filters inside Arrow before anything becomes a Python object.
+            # The naive version converted each projected batch with to_pylist() first: procedure_occurrence
+            # packs 8 M rows into 2 row groups, so that allocated millions of Python objects per batch and was
+            # OOM-killed (exit 137). Almost every row is discarded -- these tables hold ~1e9 rows and the
+            # cohort is 49k patients -- so filtering vectorised and materialising only the survivors makes
+            # memory a function of the OUTPUT rather than of the input.
+            for batch in pf.iter_batches(batch_size=BATCH_ROWS, columns=use):
+                mask = pc.is_in(batch.column("person_id"), value_set=pid_arr)
                 if rf:
                     col, rx = rf
-                    vals = data[col]
-                    keep = [j for j in keep if vals[j] and rx.search(str(vals[j]))]
-                for j in keep:
+                    mask = pc.and_kleene(
+                        mask, pc.match_substring_regex(batch.column(col).cast(pa.string()),
+                                                       rx.pattern, ignore_case=bool(rx.flags & re.I)))
+                sub = batch.filter(mask.fill_null(False))
+                if sub.num_rows == 0:
+                    continue
+                data = {c: sub.column(c).to_pylist() for c in use}
+                for j in range(sub.num_rows):
                     w.writerow([data[c][j] if c in data else "" for c in cols])
-                kept_here += len(keep)
-                del data
+                kept_here += sub.num_rows
+                del data, sub
             nrows += kept_here
             fh.flush()
             done.add(key)
