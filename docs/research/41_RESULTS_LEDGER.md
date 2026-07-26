@@ -1062,3 +1062,40 @@ behaviour. Actual: upheld on 3 of 4 arms, with the failed arm failing for a name
 rather than ambiguously.
 
 **Cumulative distinct results: 320.**
+
+---
+
+## R321–R325. EXTERNAL REPLICATION in I-CARE — the core claim holds in an independent consortium
+
+**Why not TUH, which the pre-registration names as mandatory.** The TUH EEG Corpus is EEG plus de-identified
+reports and carries **no linked outcome data** — this repository's own TUH manifest schema in `config.yaml`
+lists `recording_id, patient_id, edf_path, sfreq, age, sex` and no outcome field. A burden→mortality finding
+cannot be replicated there at any effort. **G13 is therefore re-specified**, not waived: TUH can still
+externally validate the *measurement* (burden vs a clinician label at a different health system), which needs
+NEDC credentials not present in this session, and is a lesser claim.
+
+**I-CARE is the correct target and is stronger than TUH would have been for this claim**: the same population
+(comatose post-cardiac-arrest), five hospitals in a different international consortium, different equipment and
+clinicians, with a real outcome. n=561 with both outcome and a suppression measure; 62.0 % poor (CPC 3–5).
+
+| id | test | result | verdict |
+|---|---|---|---|
+| R321 | **E1** poor outcome across burden quintiles | 45.1 / 45.5 / 62.5 / 70.5 / **86.6 %**, **monotone** | ✔ |
+| R322 | **E2 — the claim that matters**: among the SUPPRESSED, does quantitative burden still stratify? | burden ≥0.05 (n=417): lowest tertile 49.3 % → highest **83.3 %**, **+34.1 pp [+23.2, +44.2]**; ≥0.10: +33.3 pp [+23.4, +44.4]; ≥0.20: +25.0 pp [+12.7, +36.4] | **✔ at every threshold** |
+| R323 | **E3** continuous burden over a binary suppression flag | +0.090 [+0.045, +0.156] (thr 0.05); +0.074 [+0.027, +0.141] (thr 0.10) | ✔ above the registered +0.03 |
+| R324 | **E4** cross-hospital (fit one site, test the others) | A 0.619, B 0.716, E 0.690, F 0.684 | ✔ consistent with primary 0.679/0.669 |
+| R325 | consistency with primary | HEEDB: within highly-malignant, 29.5 % → 73.1 % three-day death | same structure, independent cohort |
+
+**What is replicated, precisely.** Not "suppression is bad" — that is not in dispute. The claim is that **among
+patients who are already suppressed, the quantitative burden still stratifies outcome**, so a categorical label
+discards real information. That is what E2 tests and what holds.
+
+**What differs and must travel with it.** The outcome is CPC 3–5 assessed at discharge or follow-up, not
+three-day mortality; the suppression measure is I-CARE's own at hour 24 after arrest, not our 5 µV burden at an
+index clinical recording. This replicates the **structure** of the claim on an independent cohort, not the
+identical estimand. Hospital D (n=56) was below the 60-patient floor for the cross-hospital arm.
+
+**Predicted vs actual (calibration ledger).** Predicted 0.70 that the within-suppressed stratification would
+replicate. Actual: replicated at all three thresholds with CIs excluding zero by a wide margin.
+
+**Cumulative distinct results: 325.**

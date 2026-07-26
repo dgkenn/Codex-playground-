@@ -155,6 +155,36 @@ elective surgical patients differ from post-arrest ICU patients in far more than
 
 ---
 
+## 4b. External replication (I-CARE)
+
+The primary analysis is cross-**site** but within one health system. **I-CARE** — comatose post-cardiac-arrest
+patients at five hospitals in an independent international consortium, with Cerebral Performance Category
+outcomes — provides a cross-**system** test. n=561 with both outcome and a suppression measure; 62.0 % poor
+(CPC 3–5).
+
+The claim replicated is not "suppression is bad", which is not in dispute. It is that **among patients who are
+already suppressed, quantitative burden still stratifies outcome**, so the categorical label discards real
+information.
+
+| test | result |
+|---|---|
+| poor outcome across burden quintiles | 45.1 % → **86.6 %**, monotone |
+| **among the suppressed** (burden ≥0.05, n=417) | lowest tertile 49.3 % → highest **83.3 %**, **+34.1 pp [+23.2, +44.2]** |
+| same at ≥0.10 / ≥0.20 | +33.3 pp [+23.4, +44.4] / +25.0 pp [+12.7, +36.4] |
+| burden over a binary suppression flag | **+0.090 [+0.045, +0.156]** (registered threshold +0.03) |
+| cross-hospital (fit one site, test others) | 0.619, 0.716, 0.690, 0.684 |
+
+**Differences that must travel with this.** The outcome is CPC 3–5 at discharge or follow-up, not three-day
+mortality; the suppression measure is I-CARE's own at hour 24, not our 5 µV burden at an index recording. This
+replicates the *structure* of the claim on an independent cohort, not the identical estimand.
+
+**On TUH**, which the pre-registration names as mandatory: the TUH EEG Corpus carries **no linked outcome
+data** — its manifest schema has no outcome field — so a burden→mortality finding cannot be replicated there at
+any effort. TUH remains the right target for externally validating the *measurement* against a clinician label
+at a different health system, which is a different and lesser claim.
+
+---
+
 ## 5. Limitations
 
 1. **Withdrawal cannot be separated from biological death** in the three-day window. 46 % of highly-malignant

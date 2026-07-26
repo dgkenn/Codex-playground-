@@ -93,7 +93,7 @@ never estimated. It is directly estimable from the four within-recording windows
 
 | gap | state |
 |---|---|
-| **G13** | Cross-**site**, not cross-**system**: both hospitals share a health system, reporting infrastructure, and clinician pool. TUH is in the pre-registration and **unused** for this analysis |
+| **G13** | ~~Cross-**site**, not cross-**system**~~ — **CLOSED by external replication in I-CARE** (5 hospitals, independent international consortium): among the suppressed, burden stratifies poor outcome +34.1 pp [+23.2, +44.2]; cross-hospital AUC 0.619–0.716. **TUH was the wrong target**: it carries no linked outcome data (its manifest schema has no outcome field), so a burden→mortality claim cannot be replicated there at any effort. TUH remains valid for replicating the *measurement*, which needs NEDC credentials |
 | **G14** | No prospective validation — **unfixable here**, correctly disclosed |
 | **G15** | Every patient has an ascertained death; the outcome is *how soon*, not *whether* — **disclosed** |
 | **G16** | Withdrawal cannot be separated from biological death in the 3-day window — **now established by four failed instruments rather than asserted** |
