@@ -1222,3 +1222,34 @@ versus preservation of thalamocortical modulation would look like. Three feature
 for burden, in two independent cohorts, with one channel independently reported by another group.
 
 **Cumulative distinct results: 340.**
+
+### R341–R342. Index-only re-verification of the HEEDB morphology directions — amplitude inverts
+
+The morphology contrasts quoted in `45_MANUSCRIPT.md` §3.4 came from the **legacy max-over-recordings**
+extraction. Re-measured at the **index recording** (n=757 post-anoxic; 341 dead ≤3 d, 98 alive >180 d):
+
+| feature | index-only (dead / alive>180d) | legacy (as published) | direction |
+|---|---|---|---|
+| intra-burst 8–30 Hz | 0.160 / 0.101 | 0.250 / 0.120 | **preserved** |
+| stereotypy | 0.015 / 0.001 | 0.034 / 0.014 | **preserved** |
+| burst duration | 1.40 / 2.54 | 1.84 / 2.87 | preserved (already withdrawn) |
+| **burst amplitude** | **19.44 / 23.72** | **36.5 / 26.7** | **INVERTS** |
+| burst rate | 14.04 / 12.50 | 14.5 / 13.3 | preserved |
+
+**R341.** Every legacy magnitude was inflated — the look-ahead affected morphology as well as burden, which had
+not previously been checked.
+
+**R342.** **The burst-amplitude channel is withdrawn.** Measured at the index recording, early deaths have
+*lower*-amplitude bursts (19.4 vs 23.7); I-CARE gave the opposite (+2.252 [+0.844, +3.985], higher amplitude
+with poor outcome). A channel whose sign depends on cohort and exposure definition is not a finding. Ruijter
+2018's precedent concerns a burst-to-suppression amplitude *ratio*, a different quantity.
+
+**Two channels survive, and survive in both cohorts at the index recording:** intra-burst spectral content and
+stereotypy. That is the mechanism claim.
+
+**Process note.** This check existed only because the earlier self-audit found look-ahead in the burden
+exposure; extending the same suspicion to morphology caught a sign inversion in a channel that had already been
+written into the manuscript. Numbers inherited from a superseded extraction must be re-derived, not carried
+forward.
+
+**Cumulative distinct results: 342.**

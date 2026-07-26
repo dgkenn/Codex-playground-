@@ -100,11 +100,17 @@ Five named morphology features add **+0.047 [+0.011, +0.083]** over burden withi
 
 | | dead ≤3 days | alive >180 days |
 |---|---|---|
-| suppression burden | 0.746 | 0.386 |
-| intra-burst 8–30 Hz fraction | 0.250 | 0.120 |
-| burst duration | 1.84 s | 2.87 s |
+| intra-burst 8–30 Hz fraction | 0.160 | 0.101 |
+| burst stereotypy | 0.015 | 0.001 |
+| burst duration | 1.40 s | 2.54 s |
+| burst amplitude | 19.4 | 23.7 |
 | generalized slowing present | **29.7 %** | **74.9 %** |
 | posterior dominant rhythm present | 12.3 % | 24.3 % |
+
+*(n=757 post-anoxic with index-recording morphology; 341 dead ≤3 d, 98 alive >180 d. These figures are measured
+at the **index recording**. An earlier version of this table quoted the legacy max-over-recordings extraction,
+which inflated every magnitude — e.g. intra-burst 8–30 Hz as 0.250/0.120 — and **inverted the amplitude
+direction**. See §3.4b.)*
 
 Short, high-frequency bursts on a background with no slowing and no posterior rhythm mark the patients who die
 within days. Every term is a named physiological quantity with a signed coefficient; there is no learned
@@ -120,12 +126,20 @@ Re-measured in **I-CARE with our own detector** (n=527), three burst features ca
 | channel | coefficient | status |
 |---|---|---|
 | intra-burst 8–30 Hz content | **+0.500 [+0.291, +0.756]** | ours, replicated externally |
-| burst amplitude | **+2.252 [+0.844, +3.985]** | precedent: Ruijter 2018, PMID 29807232 |
+| burst amplitude | +2.252 [+0.844, +3.985] in I-CARE | **WITHDRAWN — direction is not consistent across cohorts** |
 | burst stereotypy (1 s) | **+1.040 [+0.457, +1.825]** | independently reported: Fong 2025, PMID 39900751 |
 | burst duration | −0.027 [−0.658, +0.200] | **withdrawn** |
 
 Morphology's increment over burden is **+0.073 [+0.043, +0.123]** in I-CARE (0.691 → 0.764), against
 **+0.047 [+0.011, +0.083]** in HEEDB.
+
+**Amplitude is withdrawn.** Re-measuring HEEDB at the index recording rather than the legacy
+max-over-recordings extraction **inverts** its direction (19.4 in early deaths vs 23.7 in long survivors, i.e.
+*lower* amplitude with death), while I-CARE shows the opposite. A channel whose sign depends on which cohort
+and which exposure definition is used is not a finding, and Ruijter's precedent concerns a burst-to-suppression
+amplitude *ratio*, which is not the quantity measured here. **Two channels survive: spectral content and
+stereotypy**, and both hold in HEEDB at the index recording (8–30 Hz 0.160 vs 0.101; stereotypy 0.015 vs 0.001)
+as well as in I-CARE.
 
 **Suppression burden measures how much is gone; burst content reports what kind of activity remains** — and the
 two are separable, which is the substantive claim. Stereotyped, high-amplitude, fast bursts describe a simple
