@@ -1451,3 +1451,21 @@ cross-nationally-validated part.
   EEG" carries genuine prognostic information over and above the diagnosis. It is simply not what the aetiology
   interaction is made of. Next candidate: burst MORPHOLOGY -- post-anoxic bursts are stereotyped ("identical
   bursts") where drug-induced bursts are variable, and that is measurable on raw EDF already being read.
+
+- **Test whether the finding is CLINICAL BEHAVIOUR before hunting biological mechanism (2026-07).** Two
+  mechanism tests were run (depth: ruled out; reversibility: 8.8 %) before anyone asked whether the aetiology
+  interaction needed biology at all. It partly does not. After cardiac arrest, burst suppression is a guideline
+  criterion for poor prognosis and drives WITHDRAWAL OF LIFE-SUSTAINING THERAPY; in sepsis it does not. The
+  pathway is demonstrably present in these data: anoxic BS+ patients die at a median of 5 days versus 189 days
+  for anoxic BS-, and the BS x aetiology interaction computed on ACQUIRING A DNR/PALLIATIVE CODE is 22.80 pp, so
+  the EEG is changing decisions and not only outcomes. Landmarking past the withdrawal window (day-7 survivors)
+  retains 17.00 pp [11.34,24.13] of a 37.54 pp interaction -- about HALF. So the effect is neither artefact nor
+  clean biology, and the landmark figure is the one that should be quoted. RULE: for any prognostic marker that
+  is ALSO used to make treatment-limitation decisions, self-fulfilling prophecy is a first-order threat, not a
+  discussion-section caveat, and it must be tested before mechanism work is commissioned. The cheap decisive
+  tests are the timing distribution, a care-limitation code as an alternative OUTCOME, and a landmark past the
+  decision window. All three ran in one pass on data already extracted.
+  COROLLARY on ordering: three competing threats (coexisting EEG findings 96 % retained, ceiling artefact not
+  applicable, age/sex 101 % retained) were cleared in the same run at negligible cost. Cheap threat-elimination
+  should precede expensive mechanism extraction as a matter of course -- the morphology extraction was already
+  running when this was ordered, which is the wrong sequence.

@@ -276,6 +276,59 @@ with the comparison group absent. The tell was the exposure distribution — med
 set against 0.053 in the population — not any coefficient. Fixed, and the script now refuses to report the
 interaction as comparable if the analysable set is more than 90 % labelled.
 
+## 6c. Is this biology, or is it what clinicians *do* with the EEG?
+
+The most serious objection to everything above is that it needs no biology at all. After cardiac arrest, burst
+suppression is a guideline criterion for poor neurological prognosis and directly informs **withdrawal of
+life-sustaining therapy**. In sepsis it is not — nobody withdraws care because a septic patient's EEG is
+suppressed. "Anoxic + suppression → care withdrawn → death" would reproduce the observed interaction exactly, in
+the observed direction and ordering. It would also explain why depth and reversibility both failed: we would
+have been hunting a biological mechanism behind an iatrogenic one.
+
+Four diagnostics, on the cohort of 15,850 with an ascertained death, an EEG time and condition data.
+
+**The withdrawal pathway demonstrably exists.** Anoxic burst-suppression patients die *fast* — median **5 days**
+from EEG, against **189 days** for anoxic patients without suppression and 28 days for septic patients with it.
+55 % are dead within a week.
+
+| | median days to death | dead ≤2 d | dead 3–7 d |
+|---|---|---|---|
+| anoxic BS+ | **5** | 34.1 % | 21.1 % |
+| anoxic BS− | 189 | 10.6 % | 8.3 % |
+| sepsis BS+ | 28 | 14.6 % | 14.6 % |
+| metabolic BS+ | 18 | 20.5 % | 15.9 % |
+
+And it shows up directly in care decisions: DNR/palliative codes are present in 52.6 % of the cohort, and the
+**BS × aetiology interaction on *acquiring a DNR code* is 22.80 pp**. The EEG differentially changes what
+clinicians decide, not only what happens.
+
+**But the interaction survives past the withdrawal window.** Restricting to the 13,380 patients still alive at
+day 7 — past the guideline-mandated 72 h neuroprognostication point and the bulk of withdrawal decisions:
+
+| | interaction spread |
+|---|---|
+| full cohort | 37.54 pp |
+| **day-7 survivors (landmark)** | **17.00 pp [11.34, 24.13]** — retains 45 % |
+
+So the honest reading is **not** "this is real" and **not** "this is an artefact." Roughly **half** the effect is
+concentrated in the first week, where withdrawal and genuine early mortality from the primary insult are
+inseparable in these data. The other half persists in patients who survived that window, which a pure-withdrawal
+explanation does not predict. **17.00 pp [11.34, 24.13] is the conservative estimate and should be quoted as
+such.**
+
+**Three other threats are cleared decisively:**
+
+| threat | test | interaction retained |
+|---|---|---|
+| it's the company suppression keeps (GPDs, LPDs, seizures, slowing) | adjust for coexisting findings | **96 %** |
+| it's a ceiling artefact of the linear model | no stratum is near a floor or ceiling (range 20.8–71.1 %) | not applicable |
+| it's case mix | adjust for age and sex | **101 %** |
+
+One incidental observation supports the morphology hypothesis rather than the alternatives: anoxic suppression is
+*cleaner* than septic suppression — fewer GPDs (35.6 % vs 41.1 %), far less generalized slowing (58.5 % vs
+80.5 %). The gravest suppression is not the one accompanied by the most other abnormality, which is what a
+"sicker brain shows more of everything" account would require.
+
 ## 7a. The H2 re-test failed, and the negative control is why we know
 
 H2 — "iatrogenic suppression carries a better outcome than injury suppression" — was demoted in §3 for using the
