@@ -1901,3 +1901,20 @@ never the risk; the definition was.**
   claims checked against source — including the two it labelled *lower* risk, which is where an error would
   have been most costly to miss. Spot-check the lower-risk calls, not just the alarming ones: a false alarm
   costs an hour, a missed one ships.
+
+- **A 403 that looks like expired credentials can be a credential-precedence collision.** A session began with
+  the bootstrap hook announcing "BDSP_AWS_* not set — HEEDB access unavailable", and every S3 call returned 403.
+  Both were true and the conclusion drawn from them was wrong: working keys were sitting in `~/.aws/credentials`
+  from an earlier session, and the 403 came from the container's *placeholder* `AWS_ACCESS_KEY_ID` /
+  `AWS_SECRET_ACCESS_KEY` (agent-proxy stubs), which **outrank profile credentials in boto3's resolution
+  chain**. Every script authenticated as the stub.
+  The diagnostic that settles it in one call is `sts get-caller-identity` **per credential source**: the stub
+  returns `InvalidClientTokenId`, a real key returns an ARN. `head_object` alone cannot distinguish "bad
+  credentials" from "no permission on this object".
+  RULE, general: **before concluding an access problem is expiry or permissions, enumerate which credential
+  source is actually being used.** Env vars beating a profile is silent, and the failure mode is indistinguishable
+  from expiry at the call site.
+
+- **Fail-closed messages must probe, not infer.** The hook inferred unavailability from an unset variable rather
+  than testing the thing it was reporting on, and its message was then believed for a whole session. It now
+  probes `~/.aws` before announcing anything. Any bootstrap that reports capability should test the capability.

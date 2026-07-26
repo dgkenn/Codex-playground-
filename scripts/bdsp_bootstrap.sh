@@ -15,8 +15,26 @@ KEY_ID="${BDSP_AWS_ACCESS_KEY_ID:-}"
 SECRET="${BDSP_AWS_SECRET_ACCESS_KEY:-}"
 
 if [ -z "$KEY_ID" ] || [ -z "$SECRET" ]; then
-  echo "[bdsp_bootstrap] BDSP_AWS_* not set — HEEDB access unavailable this session." >&2
-  exit 0   # non-fatal: VitalDB work continues fine
+  # BDSP_AWS_* absent does NOT mean no access. ~/.aws/credentials persists across sessions in this
+  # environment, so credentials written by an earlier session are very often still there and still valid.
+  # Announcing "unavailable" without looking cost a session's worth of work once: every script got 403 from
+  # the placeholder env keys, which reads exactly like expired credentials, while working keys sat on disk.
+  # So probe before giving up, with the placeholders neutralized the same way a real run must neutralize them.
+  if [ -f ~/.aws/credentials ] && env -u AWS_ACCESS_KEY_ID -u AWS_SECRET_ACCESS_KEY -u AWS_SESSION_TOKEN \
+       python3 -c "
+import boto3
+from botocore.config import Config
+boto3.client('s3',region_name='us-east-1',config=Config(s3={'payload_signing_enabled':False})).head_object(
+    Bucket='arn:aws:s3:us-east-1:184438910517:accesspoint/bdsp-credentialed-access-point',
+    Key='EEG/eeg-metadata/S0001_eeg_metadata_2026_04_30.csv')" 2>/dev/null; then
+    echo "[bdsp_bootstrap] BDSP_AWS_* not set, but ~/.aws/credentials from an earlier session WORKS."
+    echo "[bdsp_bootstrap] HEEDB access IS available. The container's AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY"
+    echo "[bdsp_bootstrap] are agent-proxy placeholders and outrank profiles in boto3's chain, so they must be"
+    echo "[bdsp_bootstrap] neutralized: run analyses via  scripts/heedb_run.sh python analysis/<script>.py"
+  else
+    echo "[bdsp_bootstrap] BDSP_AWS_* not set and no working ~/.aws/credentials — HEEDB unavailable." >&2
+  fi
+  exit 0   # non-fatal either way: VitalDB work continues fine
 fi
 
 mkdir -p ~/.aws
