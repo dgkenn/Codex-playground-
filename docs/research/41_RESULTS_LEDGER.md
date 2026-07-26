@@ -721,3 +721,34 @@ all from the index recording); `BURDEN_SCOPE=max` reproduces the legacy run. Blo
 `42_MAIN_RESULT.md` carries a PROVISIONAL banner until the re-run replaces its figures.
 
 **Cumulative distinct results: 288.**
+
+### R289. Codebase sweep for the same look-ahead pattern — **17 scripts affected**
+
+Delegated enumeration (haiku), then **five claims verified by Opus against source** before acceptance:
+`heedb_landmark_class.py:107`, `heedb_bs_specificity.py:98`, `heedb_anoxic_discrim.py:113`, and the two the
+agent classified as *lower* risk (`heedb_roc.py`, `heedb_bs_iatrogenic.py:69`). All five accurate.
+
+| pattern | scripts | quantity | direction of bias |
+|---|---|---|---|
+| `burden[p] = max(...)` over all recordings | anoxic_discrim, doomed_subgroup, ischaemic_dose, label_vs_quant, dosimeter, roc | suppression burden | conservative (survivors accrue extra recordings) |
+| `bs[p] = ... or ...` over all recordings | landmark_class, bs_specificity, ischaemic_dose, label_vs_quant, horizon, infusion_at_eeg, wlst_censored, dosimeter | burst-suppression flag | **depends on the analysis — must be signed case by case** |
+| `find[p][f] = ... or ...` over all reports | doomed_subgroup, gap_diff, gap_specificity, mode_of_death, eeg_ladder, ladder_v2 | EEG finding flags | as above |
+| `morph[p] = d` last-write-wins | anoxic_discrim, doomed_subgroup, morph_followup, morph_analysis | burst morphology | arbitrary — depends on CSV read order |
+| index EEG by CSV iteration order | bs_iatrogenic:69 | index recording | nondeterministic |
+
+Correct (`earliest-pinned`) and **not** defects: `when[p]` in every script; `firstdx[(p,lab)]` for OMOP
+diagnosis codes; `wlst[p]` for care-limitation dates. OMOP codes and death timestamps are **not** the same risk
+as EEG recordings, because their count is not a function of survival.
+
+**The serious one is `heedb_landmark_class.py`** — source of §5's decisive turn (+0.832 → +0.217 → −0.206). One
+per-patient "suppressed ever" flag was reused at every landmark, so exposure at the 180-day landmark could come
+from a day-190 recording, and the day-0 estimate is affected too. Unlike the burden bug the likely direction
+**favours the reported conclusion**: late-labelled patients are survivors by construction and dilute the exposed
+group at late landmarks, making the excess look more exhausted than it is. Magnitude unmeasured — needs
+recording timestamps.
+
+**Fixed:** `LANDMARK_EXPOSURE=known-at-landmark` is now the default and the script tabulates, per landmark, how
+many patients' exposure came from their own future (`ever` reproduces the legacy run). Behaviour tested on
+hand-built rows. Blocked on S3 for the re-run.
+
+**Cumulative distinct results: 289.**

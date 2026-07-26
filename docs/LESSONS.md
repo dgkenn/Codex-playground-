@@ -1883,3 +1883,21 @@ never the risk; the definition was.**
 - **On the value of a no-data session.** Being unable to run anything forced re-reading what had already been
   run. That produced a more consequential result than the experiment it replaced. When an instrument is
   unavailable, audit — do not idle, and do not invent an analysis to fill the time.
+
+- **The same bug was in 17 scripts, and the worst instance inverted the safety argument.** After finding
+  look-ahead in the headline burden, a sweep found the pattern everywhere: `max` over recordings, `or` over
+  reports, last-write-wins morphology. For burden the bias is conservative. For
+  `heedb_landmark_class.py` it is NOT: one "suppressed ever" flag reused at every landmark means late-labelled
+  patients — survivors by construction — dilute the exposed group at late landmarks, making the excess look more
+  exhausted than it is, which is the direction of the reported Class A conclusion.
+  RULE, general: **sign the bias separately for every analysis the pattern touches.** "The bias is conservative"
+  was established for one estimand and does not transfer. A shared bug does not have a shared direction.
+
+- **A landmark design's whole purpose is that the exposure was known at the landmark.** Collapsing a
+  repeated measurement to one per-patient flag silently discards that guarantee while the code still looks like
+  a landmark analysis. Keep the per-recording pairs and re-evaluate the exposure at each landmark.
+
+- **Delegate the enumeration, verify the classification.** haiku's sweep of 20 files was accurate on all five
+  claims checked against source — including the two it labelled *lower* risk, which is where an error would
+  have been most costly to miss. Spot-check the lower-risk calls, not just the alarming ones: a false alarm
+  costs an hour, a missed one ships.

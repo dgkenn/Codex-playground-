@@ -89,7 +89,12 @@ def main():
     from botocore.config import Config
     s3 = boto3.client("s3", region_name="us-east-1",
                       config=Config(s3={"payload_signing_enabled": False}))
-    when, bs = {}, {}
+    # recs[p] = every (recording time, was suppression reported) pair for the patient, kept SEPARATELY rather
+    # than collapsed to one flag. A landmark analysis is only valid if the exposure was KNOWN at the landmark,
+    # and a single per-patient `bs = any recording ever` flag can be set by a recording made after it -- at the
+    # 180-day landmark, by a recording on day 190. Keeping the pairs lets the exposure be re-evaluated at each
+    # landmark using only the recordings available by then, which is what the design requires.
+    when, bs, recs = {}, {}, defaultdict(list)
     for st in ("S0001", "S0002"):
         txt = s3.get_object(Bucket=AP,
                             Key=f"EEG/HEEDB_Metadata/{st}_EEG__reports_findings.csv"
@@ -104,7 +109,9 @@ def main():
                 continue
             if p not in when or t < when[p]:
                 when[p] = t
-            bs[p] = bs.get(p, False) or ((r.get("bs") or "").strip() not in ("", "None", "nan"))
+            has_bs = (r.get("bs") or "").strip() not in ("", "None", "nan")
+            bs[p] = bs.get(p, False) or has_bs          # LEGACY flag: any recording, ever
+            recs[p].append((t, has_bs))
 
     rows = []
     for p, t0 in when.items():
@@ -116,17 +123,47 @@ def main():
         days = (d - t0).days
         if days < -1:
             continue
-        rows.append(dict(days=float(days), bs=1.0 if bs.get(p) else 0.0, labs=aet.get(p, set())))
+        # bs_days = day (relative to t0) of each recording that REPORTED suppression, so the exposure can be
+        # re-evaluated at any landmark instead of being fixed once from the patient's whole recording history.
+        bsd = sorted((t - t0).days for t, b in recs.get(p, ()) if b)
+        rows.append(dict(days=float(days), bs=1.0 if bs.get(p) else 0.0,
+                         bs_first=(bsd[0] if bsd else None), labs=aet.get(p, set())))
     n = len(rows)
     print(f"cohort: {n:,}")
+
+    # EXPOSURE. "known-at-landmark" counts a patient as suppressed only if a recording ON OR BEFORE the landmark
+    # reported it -- the exposure the clinician would actually have had at that moment. "ever" is the LEGACY
+    # behaviour, in which one flag built from the patient's entire recording history is reused at every
+    # landmark; at the 180-day landmark that flag can be set by a recording made on day 190. Legacy is retained
+    # only so the two can be printed side by side, because the difference between them IS the bias.
+    EXPOSURE = os.environ.get("LANDMARK_EXPOSURE", "known-at-landmark")
+    if EXPOSURE not in ("known-at-landmark", "ever"):
+        raise SystemExit("LANDMARK_EXPOSURE must be 'known-at-landmark' or 'ever'")
+
+    def exposed(r, landmark):
+        if EXPOSURE == "ever":
+            return r["bs"] == 1.0
+        return r["bs_first"] is not None and r["bs_first"] <= landmark
+
+    print(f"EXPOSURE: {EXPOSURE}")
+    print("   patients counted as suppressed, by landmark -- 'ever' is the legacy flag built from the whole")
+    print("   recording history, 'known' uses only recordings on or before the landmark. The difference is the")
+    print("   number of patients whose exposure at that landmark came from their own future.")
+    print(f"   {'landmark':>10s} {'at risk':>9s} {'ever':>8s} {'known':>8s} {'from the future':>17s}")
+    for L in (0, 30, 90, 180):
+        ar = [r for r in rows if r["days"] > L and ({"anoxic", "sepsis"} & r["labs"])]
+        ev = sum(1 for r in ar if r["bs"] == 1.0)
+        kn = sum(1 for r in ar if r["bs_first"] is not None and r["bs_first"] <= L)
+        print(f"   {L:9d}d {len(ar):9d} {ev:8d} {kn:8d} {ev-kn:12d} "
+              f"({100*(ev-kn)/max(ev,1):.1f}% of 'ever')")
 
     def gap_at(R, landmark, window, scale):
         """gap among patients still alive at `landmark`, for death within the next `window` days."""
         out = {}
         for k in ("anoxic", "sepsis"):
             g = [r for r in R if k in r["labs"] and r["days"] > landmark]
-            a = [1.0 if r["days"] <= landmark + window else 0.0 for r in g if r["bs"] == 1.0]
-            b = [1.0 if r["days"] <= landmark + window else 0.0 for r in g if r["bs"] == 0.0]
+            a = [1.0 if r["days"] <= landmark + window else 0.0 for r in g if exposed(r, landmark)]
+            b = [1.0 if r["days"] <= landmark + window else 0.0 for r in g if not exposed(r, landmark)]
             if len(a) < 25 or len(b) < 25:
                 return None
             out[k] = lor(a, b) if scale == "lor" else float(np.mean(a) - np.mean(b))

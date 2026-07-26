@@ -25,10 +25,22 @@ The full record of what was tested and eliminated on the way here is `41_RESULTS
 > What is not yet established is the **magnitude** and the framing of 0.741 as a bedside-prediction AUC — a
 > predictor that partly postdates the prediction cannot be described that way.
 >
-> **Status.** `heedb_vs_guideline.py` now defaults to `BURDEN_SCOPE=index`, taking burden, category and
-> morphology all from the index recording (`BURDEN_SCOPE=max` reproduces the legacy run). The re-run needs HEEDB
-> S3 credentials, which are absent this session. **Every AUC and every quintile figure below is from the legacy
-> `max` run and must be replaced by the index-only figures before use.**
+> **The same defect class is in the landmark analysis in §5, and there it does not run conservatively.** A
+> codebase sweep found the pattern in **17 scripts**. The worst instance is `heedb_landmark_class.py`, which
+> collapsed suppression to a single per-patient flag — *suppressed on any recording, ever* — and then reused
+> that one flag at every landmark. A landmark design exists precisely to guarantee the exposure was known at the
+> landmark, and this violates it: at the 180-day landmark a patient can be counted as suppressed on the strength
+> of a recording made on day 190, and even the day-0 estimate is affected. Worse, the likely direction **favours
+> the reported conclusion** — late-labelled patients are survivors by construction, so they dilute the exposed
+> group at late landmarks and make the excess look more exhausted than it is. The size of the violation is
+> unmeasured, because it needs recording timestamps.
+>
+> **Status.** Both scripts are fixed and both now print the bias directly. `heedb_vs_guideline.py` defaults to
+> `BURDEN_SCOPE=index`, resolving the index recording by timestamp (`BURDEN_SCOPE=max` reproduces the legacy
+> run). `heedb_landmark_class.py` defaults to `LANDMARK_EXPOSURE=known-at-landmark` and tabulates, per landmark,
+> how many patients' exposure came from their own future (`LANDMARK_EXPOSURE=ever` reproduces the legacy run).
+> Both re-runs need HEEDB S3 credentials, which are absent this session. **Every AUC and quintile figure in §2,
+> and every landmark figure in §5, is from a legacy run and must be replaced before use.**
 
 ---
 
