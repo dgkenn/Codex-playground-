@@ -2032,3 +2032,23 @@ never the risk; the definition was.**
   lines -- burden is brain-specific, and behaves like a fixed quantity measured with error -- and does NOT have
   a positive tissue-level identification, because all three external references failed for three different
   reasons. Reporting the first without the second would be the overclaim.
+
+- **A validity figure living in a code comment is not a validity figure.** The exposure underpinning every
+  quantitative claim in this project carried "the calibration that achieved AUC 0.829" in a comment, with no
+  reproducible analysis behind it. Measured properly it is 0.749 — real agreement, overstated by 0.08.
+  RULE, general: **any number that justifies a measurement must exist as a runnable analysis, not as prose.**
+  Comments are not evidence and do not get re-checked when the pipeline changes.
+
+- **Switching from a linear probability model to logistic made the effect BIGGER (+0.068 to +0.100).** The
+  convenient-but-wrong model was the conservative one here. Do not assume methodological shortcuts flatter the
+  result; check, because "we used the crude method and still found it" is a much stronger sentence than the
+  alternative and it is sometimes true.
+
+- **Discrimination without calibration is half a result, and the missing half is the half clinicians use.** AUC
+  says the ranking is right; calibration says the risk is right. Reporting an intercept of -0.013 and a slope of
+  0.980 alongside the AUC costs one extra analysis and answers the first question any statistician asks.
+
+- **Know your reader's own literature before claiming novelty.** This project spent its whole life on burst
+  suppression without citing the group that built the standard estimator for it and proposed the mechanism.
+  Once read, the central result reframed itself from a statistical curiosity into an extension of an existing
+  model -- a better result, reached by reading rather than by computing.

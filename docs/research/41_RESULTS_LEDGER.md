@@ -996,3 +996,26 @@ was reasoned from first principles without checking what the disease actually do
 would have caught it took one E-utilities query and should have run BEFORE the test, not after.
 
 **Cumulative distinct results: 309.**
+
+---
+
+## Gap-closing pass against a Brown-ready standard (2026-07-26) — see `43_GAP_ANALYSIS_BROWN.md`
+
+| id | gap | result |
+|---|---|---|
+| **R310** | **G9 — exposure never validated** | burden vs clinician burst-suppression label on the same recording: **AUC 0.749 [0.747, 0.760]**, n=27,948 matched within 24 h. Mean burden 0.344 (labelled suppressed) vs 0.073 (not). **The 0.829 in a code comment is not reproducible and overstated validity by 0.08**; corrected in place |
+| **R311** | **G4 — linear probability models** | logistic refit: category alone 0.645, +burden **0.745**, increment **+0.100 [+0.082, +0.118]** (LPM gave +0.068). Burden log-odds **+1.587**, OR **4.89** across the range. The proper link function *strengthens* the result |
+| **R312** | **G5 — no calibration ever reported** | mean predicted 0.308 vs observed 0.308; intercept **−0.013** (ideal 0); slope **0.980** (ideal 1); observed tracks predicted across all ten deciles |
+| **R313** | **G8 — morphology increment had no CI** | **+0.047 [+0.011, +0.083]** (0.607 → 0.654, n=604, logistic). Excludes zero |
+| **R314** | **G7 — clustering** | moot: index-only analysis gives 2,951 rows for 2,951 distinct patients |
+| **R315** | **G10 — measurement error unestimated** | from 4,628 recordings with ≥2 window readings: between-recording variance 0.0513, within 0.0116, **ICC 0.815**, reliability of the average of two **0.898**. Q2's account now has its parameter |
+
+**R315 caveat, stated rather than glossed.** The four windows are sampled *across* each recording, so the
+within-recording variance mixes instrument noise with genuine intermittency of suppression. It measures how well
+one window estimates the recording-level quantity — which is what Q2 requires — but it is not pure measurement
+error, and should not be quoted as such.
+
+**R311 note.** The logistic and LPM increments differ (+0.100 vs +0.068) because the models differ, not because
+the data changed. The logistic figure is now primary; both are reported so the change is visible.
+
+**Cumulative distinct results: 315.**
