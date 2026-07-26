@@ -61,6 +61,13 @@ Our cohort is the second row, and the observed behaviour is exactly what that ro
 proximate mechanism, distinguished by whether the metabolic depression is imposed on living tissue or reflects
 its absence.
 
+> **⚠ Read §3b before relying on this section.** The fixed-quantity premise on which this whole reading rests
+> **failed to replicate** in a second post-anoxic cohort (I-CARE, our own detector, hours 12–48: ICC 0.584 vs
+> 0.815, agreement decaying, trajectory coefficient +1.081 [+0.578, +1.614]). The strong form below is
+> **refuted**; a weaker time-dependent form survives and is stated there as the post-hoc reconciliation it is.
+> This section is retained because the reasoning is what generated the falsifiable prediction that then failed —
+> which is how it should work.
+
 This also explains two otherwise loose results in the project:
 
 1. **Why burden is brain-specific and not a whole-body ischaemic dose marker** (the organ-injury test:
