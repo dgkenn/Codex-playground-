@@ -52,9 +52,30 @@ OMOP = os.environ.get("OMOP_OUT", "/tmp/eeg_probe/heedb_omop")
 NBOOT = int(os.environ.get("NBOOT", "600"))
 AP = "arn:aws:s3:us-east-1:184438910517:accesspoint/bdsp-credentialed-access-point"
 
-EXTUB = re.compile(r"extubat", re.I)
-COMFORT = re.compile(r"comfort care|palliat|hospice|terminal wean|withdraw", re.I)
-VENT = re.compile(r"mechanical ventilat|invasive ventilat|ventilator|intubat", re.I)
+# Classification happens on the CONCEPT NAME, not on procedure_source_value. The source value in this
+# database is a numeric billing code ("36415" is a venipuncture), so text matching against it silently
+# returns nothing -- which is how the first version of this analysis produced an empty instrument that
+# looked like a clean negative.
+CONCEPT_NAMES = os.environ.get("CONCEPT_NAMES", "/tmp/eeg_probe/concept_names_procedure.csv")
+EXTUB = re.compile(r"extubation of trachea|extubation \(|^extubation", re.I)
+COMFORT = re.compile(r"comfort care|comfort measures|palliative care|hospice care|terminal wean|"
+                     r"withdraw\w* of (life|treatment|care)", re.I)
+VENT = re.compile(r"mechanical ventilat|invasive ventilat|artificial respirat|respiratory ventilat|"
+                  r"endotracheal intubat|insertion of endotracheal|^intubation|tracheostom", re.I)
+
+
+def load_concept_names(path):
+    """concept_id -> name, for classifying the extracted procedure rows."""
+    m = {}
+    if not os.path.exists(path):
+        return m
+    with open(path) as fh:
+        for r in csv.DictReader(fh):
+            try:
+                m[int(r["concept_id"])] = (r.get("concept_name") or "")
+            except Exception:
+                continue
+    return m
 
 
 def main():
@@ -75,6 +96,11 @@ def main():
         print(f"missing {path} -- run: PIDS_FILE=/tmp/heedb_eeg_all_patients.txt python "
               "analysis/heedb_omop_extract.py procedure_life_support")
         return 1
+    cname = load_concept_names(CONCEPT_NAMES)
+    if not cname:
+        print(f"missing {CONCEPT_NAMES} -- run: python analysis/heedb_concept_select.py procedure")
+        return 1
+    print(f"concept names loaded: {len(cname):,}")
     nrow = 0
     with open(path) as fh:
         for r in csv.DictReader(fh):
@@ -83,7 +109,10 @@ def main():
             except Exception:
                 continue
             nrow += 1
-            v = (r.get("procedure_source_value") or "")
+            try:
+                v = cname.get(int(r.get("procedure_concept_id") or 0), "")
+            except Exception:
+                v = ""
             t = dt(r.get("procedure_datetime") or r.get("procedure_date") or "")
             if VENT.search(v):
                 vented.add(p)
