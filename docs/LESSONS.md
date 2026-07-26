@@ -1434,3 +1434,20 @@ cross-nationally-validated part.
   actually a mouse DBS study. A subagent then wasted most of a run chasing the wrong papers before catching it.
   RULE: a citation is a single record fetched by ID, not a join between two lists that happen to be the same
   length. If two sources must be combined, join on a key present in both, never on position.
+
+- **A falsification criterion that only tests DIRECTION will pass on a trivial effect (2026-07).** The
+  reversibility mechanism test registered M3 as "conditioning on persistence SHRINKS the aetiology interaction
+  ... FALSIFIED IF the paired difference covers zero". It passed: attenuation +2.70 pp [+1.57,+4.93], excluding
+  zero. But the spread went 30.80 -> 28.09 pp, so persistence explains **8.8 %** of the thing it was proposed to
+  explain, and 91 % of the aetiology interaction survives untouched. The prose said "attenuate SUBSTANTIALLY";
+  the operational criterion said "excludes zero". At n=1,812 those are not the same test, and only the second
+  one was written into the code. RULE: when a prediction is about a mechanism EXPLAINING something, the
+  falsification threshold must be stated as a fraction of the effect to be explained (e.g. "fails unless it
+  absorbs >= 50 % of the spread"), never as significance of the attenuation. Significance answers "is there any
+  attenuation at all", which is not the question a mechanism claim asks.
+  SUBSTANTIVE RESULT, worth keeping: reversibility is REAL but SMALL. Anoxic suppression is +16.25 pp more
+  likely to persist [+12.65,+19.59], and persistence independently predicts 30-day death at +22.94 pp
+  [+16.79,+28.94] from a landmark where every patient was alive when persistence was measured. So "repeat the
+  EEG" carries genuine prognostic information over and above the diagnosis. It is simply not what the aetiology
+  interaction is made of. Next candidate: burst MORPHOLOGY -- post-anoxic bursts are stereotyped ("identical
+  bursts") where drug-induced bursts are variable, and that is measurable on raw EDF already being read.
