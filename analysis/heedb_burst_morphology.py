@@ -180,7 +180,9 @@ def main():
                       config=Config(s3={"payload_signing_enabled": False},
                                     retries={"max_attempts": 4, "mode": "standard"}))
 
-    want = {int(x) for x in open("/tmp/heedb_bs_patients.txt").read().split() if x.strip().isdigit()}
+    want = {int(x) for x in
+            open(os.environ.get("PATIENTS_FILE", "/tmp/heedb_bs_patients.txt")).read().split()
+            if x.strip().isdigit()}
     print(f"burst-suppression patients targeted: {len(want)}")
 
     recs = []
