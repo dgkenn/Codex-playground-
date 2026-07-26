@@ -84,7 +84,23 @@ def _span(a,b):
     while t<=b: s.add(t); t+=timedelta(days=1)
     return s
 SWAP12_DAYS=_span(d(2,8,2027),d(3,5,2027))|_span(d(3,7,2027),d(4,2,2027))
+# --- Sept->Oct night-float boundary (same protection at the year's first month
+# boundary).  The march puts the 9/27-10/2 NF week on slot0 = WISE (his last LSH
+# days, block ends 9/30) then MACNEILLE (his first Oct days).  That would (a) end
+# WISE on night float and (b) start MACNEILLE on nights - which he asked to avoid.
+# AHLUWALIA (Lahey, present 9/21-10/18) is the only intern spanning the boundary,
+# so she takes the mid-week nights 9/28-10/1: WISE keeps only Sun 9/27 (3 days
+# before his 9/30 exit, so the end-on-nf rule is satisfied) and MACNEILLE's first
+# duty day 10/1 becomes a day shift.  Per-day override (a symmetric multi-day role
+# swap can't clear this particular boundary cleanly).
+SEPOCT_OVERRIDE={
+ (d(9,28,2026),0):"AHLUWALIA", (d(9,28,2026),1):"WISE",
+ (d(9,29,2026),0):"AHLUWALIA", (d(9,29,2026),1):"WISE",
+ (d(9,30,2026),0):"AHLUWALIA", (d(9,30,2026),1):"WISE",
+ (d(10,1,2026),0):"AHLUWALIA", (d(10,1,2026),1):"MACNEILLE",
+}
 def slot_person(slot,dt):
+    if (dt,slot) in SEPOCT_OVERRIDE: return SEPOCT_OVERRIDE[(dt,slot)]
     if dt in KEN_SWAP_DAYS:
         if slot==1: return "KENNEDY"       # Kennedy takes the Lahey slot
         if slot==2: return "CHIASSON"      # Chiasson takes the LSH2 slot

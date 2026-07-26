@@ -1,21 +1,17 @@
-# ============================================================
-#  SWAPS / DAYS OFF   —   one change per line, then run:
-#      python3 apply_swaps.py
-#  Lines starting with #  are ignored.  Delete the examples below
-#  and add your own.  Dates are YYYY-MM-DD (a range uses start:end).
-# ============================================================
-#
-#  swap 2026-11-14 KENNEDY WISE
-#       -> Kennedy and Wise trade whatever each is doing on 11/14.
-#
-#  swap 2026-11-08:2026-11-13 KENNEDY CHIASSON
-#       -> trade a whole block (e.g. a night-float week). Always swap
-#          the FULL week for night float or the tool will flag it.
-#
-#  off 2027-03-12 MATSUOKA
-#       -> give Matsuoka the day off; whoever is already off covers.
-#          (Only Thursdays have a free person to cover; on other
-#           weekdays use an explicit swap instead.)
-#
-#  After running, read the report (PASS or the exact rules it breaks)
-#  and open  Intern_Schedule_with_swaps.html  to see the result.
+# ================= LSH INTERN TIME-OFF ACCOMMODATIONS (production) =================
+# Applied on top of the Q4 march. Each block notes the request + its cost.
+# (Sept->Oct night-float boundary + MacNeille's no-2-night Oct start are baked
+#  structurally into gen.py, not here.)
+
+# --- Oghenesume: FIRM January wedding, needs Sat 1/30 + Sun 1/31 off ---------
+# 1/30 already off; freeing 1/31 forces ONE Q4 gap on Li (only unavoidable cost;
+# Feb runs 3 daytime interns at the Q4 minimum). Worth it for a firm wedding.
+swap 2027-01-31 OGHENESUME JUYAL
+swap 2027-02-01 JUYAL LI
+
+# --- MacNeille: weekend of 10/17-18 off -------------------------------------
+# Costs two single-day Q4 gaps, both on NON-LSH interns (Ahluwalia wind-down,
+# Chiasson first days). No LSH intern absorbs any burden.
+swap 2026-10-17 MACNEILLE AHLUWALIA
+swap 2026-10-18 AHLUWALIA BRONSON
+swap 2026-10-19 BRONSON CHIASSON

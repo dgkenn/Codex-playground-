@@ -5,8 +5,9 @@ from datetime import date, timedelta, datetime, time
 from collections import defaultdict, Counter
 _HERE=os.path.dirname(os.path.abspath(__file__))+os.sep
 spec=importlib.util.spec_from_file_location("gen",_HERE+"gen.py"); gen=importlib.util.module_from_spec(spec); spec.loader.exec_module(gen)
-A={date.fromisoformat(k):v for k,v in pickle.load(open(_HERE+"assign.pkl","rb"))["assign"].items()}
-NF={date.fromisoformat(k):v for k,v in pickle.load(open(_HERE+"assign.pkl","rb"))["nf"].items()}
+_PKL=_HERE+("assign_swapped.pkl" if os.path.exists(_HERE+"assign_swapped.pkl") else "assign.pkl")
+A={date.fromisoformat(k):v for k,v in pickle.load(open(_PKL,"rb"))["assign"].items()}
+NF={date.fromisoformat(k):v for k,v in pickle.load(open(_PKL,"rb"))["nf"].items()}
 days=sorted(A)
 DIS={"AHLUWALIA":"AHLUWALIA Sr","AHLUWALIA-S":"AHLUWALIA Sa","SAEED":"SAEED U","SAEED-S":"SAEED Sh"}
 FULL={"MACNEILLE":"Stephen MacNeille","BRONSON":"Isaac Bronson","WISE":"Julien Wise","KENNEDY":"Dean Kennedy","ZAIDI":"Humza Zaidi","OGHENESUME":"Oghenewoma Oghenesume","LI":"Anna Li","MATSUOKA":"Kazune Matsuoka","BUTT":"Aqsa Butt","MULLINS":"Haley Mullins","SAEED":"Usman Saeed","SHETTY":"Kalasha Shetty","VILLANUEVA":"Ricardo Villanueva","FARZEELA":"Fnu Farzeela","AHN":"Hyojin Ahn","RIVERA":"Angel Rivera","GABALLAH":"Bassel Gaballah","METRI":"Nicole Metri","SAEED-S":"Shirin Saeed","AHLUWALIA":"Srishti Ahluwalia","CHIASSON":"Megan Chiasson","VIVEKANANDAN":"Suja Vivekanandan","SALAM":"Muhammed Salam","JUYAL":"Shruti Juyal","KOPP VANUZZI":"Fabio Kopp Vanuzzi","PATEL":"Tirth Patel","ALMADHOOB":"Mohamed Almadhoob","AHLUWALIA-S":"Saumya Ahluwalia","SANCHEZ-ALMANZAR":"Daniel Sanchez-Almanzar"}

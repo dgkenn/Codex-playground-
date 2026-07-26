@@ -188,6 +188,15 @@ def main():
 
     render(A)
     print("\nWrote Intern_Schedule_with_swaps.html")
+    # Persist the final (swapped) schedule so yearbook.py / export.py render it.
+    import pickle
+    NFf={dt:A[dt]["NF"] for dt in A if A[dt]["NF"]}
+    SATf={dt:A[dt]["H24"] for dt in A if A[dt]["H24"]}
+    pickle.dump({"assign":{k.isoformat():v for k,v in A.items()},
+                 "nf":{k.isoformat():v for k,v in NFf.items()},
+                 "sat":{k.isoformat():v for k,v in SATf.items()}},
+                open(_HERE+"assign_swapped.pkl","wb"))
+    print("Wrote assign_swapped.pkl (final schedule for yearbook/export)")
 
 # ------------------------------------------------------------- render HTML ---
 def render(A):

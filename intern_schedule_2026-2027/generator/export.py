@@ -9,7 +9,8 @@ import openpyxl
 from openpyxl.styles import Font, Alignment, Border, Side, PatternFill
 BASE=_HERE
 spec=importlib.util.spec_from_file_location("gen",BASE+"gen.py"); gen=importlib.util.module_from_spec(spec); spec.loader.exec_module(gen)
-A={date.fromisoformat(k):v for k,v in pickle.load(open(BASE+"assign.pkl","rb"))["assign"].items()}
+_PKL=BASE+("assign_swapped.pkl" if os.path.exists(BASE+"assign_swapped.pkl") else "assign.pkl")
+A={date.fromisoformat(k):v for k,v in pickle.load(open(_PKL,"rb"))["assign"].items()}
 
 # ---- full names for footer ----
 NAME={
