@@ -138,6 +138,28 @@ def morphology(x, fs):
     if len(segs) < 4:
         return None
 
+    # STEREOTYPY at 1 s and 2 s. Fong et al. (Neurocrit Care 2025, PMID 39900751) found that in 203
+    # post-arrest patients the ONLY independent EEG predictor of mortality was the burst-to-burst
+    # correlation coefficient measured over the first 2 s, and that 2 s outperformed 0.5-1 s. Our HEEDB
+    # extractor used 1 s. Computing both lets this engage that result on its own terms instead of talking
+    # past it.
+    stereo = {}
+    for win_s, name in ((1.0, "stereotypy_1s"), (2.0, "stereotypy_2s")):
+        L = int(win_s * fs)
+        al = [s[:L] for s in segs if len(s) >= L]
+        v = float("nan")
+        if len(al) >= 4:
+            M = np.vstack(al)
+            M = M - M.mean(axis=1, keepdims=True)
+            sd = M.std(axis=1)
+            keep = sd > 1e-9
+            M, sd = M[keep], sd[keep]
+            if len(M) >= 4:
+                C = (M @ M.T) / (len(M[0]) * np.outer(sd, sd))
+                iu = np.triu_indices(len(M), k=1)
+                v = float(np.nanmean(C[iu]))
+        stereo[name] = v
+
     ab = []
     for s in segs:
         if len(s) < int(0.5 * fs):
@@ -149,6 +171,7 @@ def morphology(x, fs):
         if tot > 0:
             ab.append(float(P[hi].sum() / tot))
     return dict(n_bursts=len(segs), burst_dur=float(np.median(durs)),
+                stereotypy_1s=stereo["stereotypy_1s"], stereotypy_2s=stereo["stereotypy_2s"],
                 burst_amp=float(np.median(amps)),
                 alpha_beta=(float(np.median(ab)) if ab else float("nan")),
                 burst_rate=float(60.0 * len(segs) / max(len(x) / fs, 1e-9)),
@@ -191,8 +214,12 @@ def one_patient(pid, s3):
         if not feats:
             return None
         # median across channels, as in the HEEDB extractor
-        out = {k: float(np.median([f[k] for f in feats if f[k] == f[k]]))
-               for k in ("n_bursts", "burst_dur", "burst_amp", "alpha_beta", "burst_rate", "burden")}
+        keys = ("n_bursts", "burst_dur", "burst_amp", "alpha_beta", "burst_rate", "burden",
+                "stereotypy_1s", "stereotypy_2s")
+        out = {}
+        for k in keys:
+            vals = [f[k] for f in feats if k in f and f[k] == f[k]]
+            out[k] = float(np.median(vals)) if vals else float("nan")
         out.update(pid=pid, hour=hour, fs=fs)
         return out
     except Exception:
@@ -209,7 +236,8 @@ def main():
     newf = not os.path.exists(OUT)
     fh = open(OUT, "a", newline="")
     w = csv.writer(fh)
-    cols = ["pid", "hour", "n_bursts", "burst_dur", "burst_amp", "alpha_beta", "burst_rate", "burden", "fs"]
+    cols = ["pid", "hour", "n_bursts", "burst_dur", "burst_amp", "alpha_beta", "burst_rate", "burden",
+            "stereotypy_1s", "stereotypy_2s", "fs"]
     if newf:
         w.writerow(cols); fh.flush()
     s3 = s3c(); n = 0

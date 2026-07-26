@@ -1147,3 +1147,52 @@ where the metabolic model itself predicts a reversible contribution — an error
 statistics.
 
 **Cumulative distinct results: 329.**
+
+---
+
+## R330–R336. AN EXTERNALLY REPLICABLE MECHANISM COMPONENT — burst content, not burst duration
+
+Candidate: **thalamocortical generator integrity** (burden = how much generator capacity is gone; morphology =
+whether what remains is organised). Directions pre-registered from HEEDB before the external data was touched.
+External cohort: **I-CARE, 559 patients, five hospitals, our own detector on their raw EEG**.
+
+| id | test | I-CARE | HEEDB | verdict |
+|---|---|---|---|---|
+| R330 | burden direction | 0.559 poor vs 0.305 good | 0.746 vs 0.386 | **replicates** |
+| R331 | intra-burst 8–30 Hz direction | 0.214 vs 0.179 | 0.250 vs 0.120 | **replicates** |
+| R332 | burst duration direction | 13.58 s vs 26.00 s | 1.84 s vs 2.87 s | **n.s. — withdrawn** |
+| R333 | morphology increment over burden | **+0.055 [+0.035, +0.094]** | +0.047 [+0.011, +0.083] | **replicates** |
+| R334 | intra-burst 8–30 Hz, adjusted for burden | **+0.522 [+0.305, +0.773]** | — | **survives** |
+| R335 | burst amplitude, adjusted for burden | **+3.502 [+2.204, +5.279]** | — | **survives** |
+| R336 | burst duration / rate, adjusted | −0.051 [−0.517,+0.138] / −0.147 [−0.353,+0.061] | — | null |
+
+**The claim that survives:** spectral content and amplitude of bursts carry prognostic information
+**independent of suppression burden**, in two independent cohorts, using our own detector in both.
+
+**Burst duration is withdrawn for three independent reasons.** (a) Null in I-CARE. (b) **Not comparable across
+cohorts** — the same code yields 1.84–2.87 s in HEEDB and 13.6–26.0 s in I-CARE, because in I-CARE's long
+continuous segments "burst duration" degenerates into the inverse of burden; a feature-portability defect, not
+a finding. (c) **Fong et al., *Neurocrit Care* 2025 (PMID 39900751, n=203 post-arrest) report the opposite
+direction** — mortality with *longer* bursts — and, decisively, their duration effect did not survive their own
+adjustment either: *"the only independent EEG predictor of mortality was the burst correlation coefficient
+measured over 2 s (adjusted odds ratio 4.82 [1.21-8.42], p = 0.009)"*. Both duration findings are univariate
+artefacts of something else.
+
+**The mechanism is weakened from generation to content.** Wennberg et al. 1997 (PMID 9191587): after functional
+hemispherectomy, "burst-suppression activity appeared over isolated cortex **in all cases**" — deafferented
+cortex generates burst suppression unaided, so generation does not require the thalamocortical loop. The
+surviving claim is that burst *content* reports thalamocortical organisation, supported by graded selective
+thalamic vulnerability after global ischaemia (PMID 12435429), thalamic damage tracking suppression ratio in
+humans (PMID 37731916), and — closest of all — **Sekar et al. 2019 (PMID 30422916)**, who found a prominent
+theta feature in post-arrest patients regaining consciousness and absent in those who did not. That is the same
+direction as our replicated finding, from an independent group.
+
+**Open and running:** stereotypy at 1 s and 2 s in I-CARE. It is Fong's only independent predictor and was
+omitted from our first I-CARE extraction. If it dominates spectral content there, the mechanism must be
+restated around burst *similarity* rather than burst *content*.
+
+**Predicted vs actual (calibration ledger).** Predicted 0.55 that morphology would replicate externally.
+Actual: half of it did — the increment and the spectral direction replicated, the duration direction did not,
+and the literature explains why the duration arm was never sound.
+
+**Cumulative distinct results: 336.**
