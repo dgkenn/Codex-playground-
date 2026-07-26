@@ -1196,3 +1196,29 @@ Actual: half of it did — the increment and the spectral direction replicated, 
 and the literature explains why the duration arm was never sound.
 
 **Cumulative distinct results: 336.**
+
+### R337–R340. Stereotypy replicates too — and does not displace burst content
+
+Recomputed in I-CARE at 1 s and 2 s (n=527), engaging Fong et al. 2025 (PMID 39900751) on their own terms.
+
+| id | test | result |
+|---|---|---|
+| R337 | stereotypy direction (Fong: higher in deaths) | 1 s **0.043 vs 0.006**, 2 s **0.032 vs 0.008** — **both replicate** |
+| R338 | stereotypy 1 s adjusted for burden | **+1.040 [+0.457, +1.825]** ✔ survives |
+| R339 | stereotypy 2 s adjusted for burden | −0.114 [−0.549, +0.398] — null (**Fong found 2 s superior to 1 s; we find the reverse**) |
+| R340 | morphology increment with stereotypy included | **+0.073 [+0.043, +0.123]** (was +0.055 without); burden alone 0.691 → 0.764 |
+
+Spectral content (+0.500 [+0.291, +0.756]) and amplitude (+2.252 [+0.844, +3.985]) **still survive in the same
+model**, each adjusted for burden and for stereotypy. **The two groups' findings are independent channels, not
+rivals** — two teams measured different things and both were right.
+
+The window disagreement (Fong: 2 s superior; ours: 1 s survives, 2 s null) is real and unexplained. Our bursts
+are much longer than his analysis window implies, so the quantities are not identical. Reported as a concrete
+question for that group rather than reconciled by assertion.
+
+**Mechanism as it now stands:** stereotyped, high-amplitude, fast bursts describe a simple autonomous cortical
+oscillator with one mode; slower, more variable bursts describe a network with a richer repertoire — what loss
+versus preservation of thalamocortical modulation would look like. Three features, each surviving adjustment
+for burden, in two independent cohorts, with one channel independently reported by another group.
+
+**Cumulative distinct results: 340.**

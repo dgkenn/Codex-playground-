@@ -31,7 +31,10 @@ import numpy as np
 COHORT = os.environ.get("ICARE_COHORT", "/tmp/eeg_probe/icare_cohort.csv")
 MORPH = os.environ.get("ICARE_MORPH_OUT", "/tmp/eeg_probe/icare_morph.csv")
 NBOOT = int(os.environ.get("NBOOT", "600"))
-FEATS = ("burst_dur", "alpha_beta", "burst_amp", "burst_rate")
+# stereotypy_2s added because Fong et al. (Neurocrit Care 2025, PMID 39900751) found the burst correlation
+# coefficient over the first 2 s to be the ONLY independent EEG predictor of mortality in 203 post-arrest
+# patients -- the direct competitor to our spectral-content claim, and absent from our first extraction.
+FEATS = ("burst_dur", "alpha_beta", "burst_amp", "burst_rate", "stereotypy_1s", "stereotypy_2s")
 
 
 def logit_fit(X, y, iters=60, ridge=1e-6):
@@ -127,7 +130,10 @@ def main():
     print(f"   {'feature':16s} {'poor':>10s} {'good':>10s} {'diff':>10s} {'HEEDB direction':>18s} {'':>10s}")
     heedb = {"burst_dur": ("longer in survivors", -1), "alpha_beta": ("faster in deaths", +1),
              "burden": ("higher in deaths", +1), "burst_amp": ("(exploratory)", 0),
-             "burst_rate": ("(exploratory)", 0)}
+             "burst_rate": ("(exploratory)", 0),
+             # Fong 2025 predicts MORE similar bursts in those who die (aOR 4.82 over 2 s)
+             "stereotypy_1s": ("Fong: higher in deaths", +1),
+             "stereotypy_2s": ("Fong: higher in deaths", +1)}
     verdict = {}
     for k in ("burden",) + FEATS:
         a = np.array([r[k] for r in rows if r["y"] == 1.0])

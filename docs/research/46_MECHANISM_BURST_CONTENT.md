@@ -123,7 +123,41 @@ the data and with independent anatomy, not a measured mechanism — no thalamic 
 **Withdrawn:** the burst-duration direction, and any claim that burst generation requires thalamocortical
 integrity.
 
-**Open, and the next test:** stereotypy. It is Fong's only independent predictor and our HEEDB estimate was
+## 6. Stereotypy: the competing finding also replicates, and the two are independent
+
+Fong's only independent predictor was burst similarity, and our first I-CARE extraction omitted it. Recomputed
+at 1 s and 2 s on the same 527 patients, **his finding replicates too** — and does not displace ours.
+
+| feature, adjusted for burden (standardised log-odds) | coefficient |
+|---|---|
+| **intra-burst 8–30 Hz** | **+0.500 [+0.291, +0.756]** ✔ |
+| **burst amplitude** | **+2.252 [+0.844, +3.985]** ✔ |
+| **stereotypy (1 s)** | **+1.040 [+0.457, +1.825]** ✔ |
+| stereotypy (2 s) | −0.114 [−0.549, +0.398] |
+| burst duration | −0.027 [−0.658, +0.200] |
+| burst rate | −0.134 [−0.367, +0.064] |
+
+Direction replicates as Fong predicts: stereotypy is higher in poor outcome (1 s: 0.043 vs 0.006; 2 s: 0.032 vs
+0.008). With stereotypy included the morphology increment over burden rises to **+0.073 [+0.043, +0.123]**
+(burden alone 0.691 → 0.764).
+
+**The two findings are independent channels, not rivals.** Both spectral content and stereotypy survive in the
+*same* model, each adjusted for burden and for the other. Two groups measured different things and both were
+right.
+
+**One disagreement, reported rather than smoothed.** Fong concluded "including the first 2 s of the bursts was
+superior to limiting the analysis to 0.5-1 s". We find the reverse: stereotypy at **1 s survives adjustment and
+2 s does not**. Our bursts are also far longer than his analysis window implies, so the two are not measuring
+identical quantities; the window dependence is real and unexplained, and is a concrete point to raise with that
+group rather than a discrepancy to bury.
+
+**How this sharpens the mechanism.** Highly stereotyped, high-amplitude, fast bursts describe a *simple
+autonomous cortical oscillator* — one mode, repeated. Slower, more variable bursts describe a network with a
+richer repertoire. That is what loss versus preservation of thalamocortical modulation would look like, and it
+now rests on three features that each survive adjustment for suppression burden, in two independent cohorts,
+with the stereotypy channel independently reported by another group.
+
+**Still open:**  It is Fong's only independent predictor and our HEEDB estimate was
 weak. Recomputing it in I-CARE at 1 s and 2 s is running; if stereotypy dominates spectral content there, the
 mechanism should be restated around burst *similarity* rather than burst *content*, and this document revised
 accordingly.
