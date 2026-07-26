@@ -1605,3 +1605,28 @@ cross-nationally-validated part.
   CAUTION recorded: Lamartine Monteiro 2016 (PMID 26567031) found periodic discharges superimposed on a mildly
   slow background carried 100 % poor outcome, i.e. as bad as burst suppression, so collapsing "periodic
   discharges or seizures" into one rung below suppression is a simplification a careful reviewer can attack.
+
+- **The posterior-dominant-rhythm modifier was reverse causation, and the pre-registered confound test caught it
+  (2026-07).** Scoring both flags as "present on ANY report", a preserved posterior rhythm appeared to collapse
+  the burst-suppression effect in every aetiology -- sepsis +22.80 -> +5.58, status +37.64 -> +4.93, anoxic
+  +37.12 -> +21.37 -- with a mechanism that predicted the direction (intact thalamocortical machinery means
+  suppression is a state, not a property of the tissue). It was largely an artefact: a patient suppressed on day
+  1 who recovers a rhythm on day 6 counts as rhythm-present, so the contrast partly compared patients who
+  RECOVERED against those who did not.
+  Scoring both flags on the INDEX recording, the modification falls to +0.13 (anoxic), +3.30 (sepsis), +7.20
+  (metabolic), +5.07 (structural), +11.91 (status) -- significant in 2 of 5 and an order of magnitude smaller.
+  Among SINGLE-REPORT patients, where reverse causation is impossible by construction, it is significant in 0 of
+  4. The claim is withdrawn; at most a small residual survives in metabolic and status.
+  RULE: any "modifier" built from longitudinal flags must be scored on the SAME observation as the exposure, and
+  the single-observation subset is the cleanest test because the confound cannot exist there. The registered
+  expectation -- that attenuation was expected and the claim survives only if substantial modification remained
+  -- is what made this a clean withdrawal rather than a negotiation.
+
+- **"Conditioning on severity increases the gap" was arithmetic, not biology (2026-07).** I read the
+  burst-suppression gap rising from +20.41 (vs all lower rungs) to +23.43 (vs the adjacent rung) as evidence
+  that suppression is specifically different from the categories beside it. An adversarial brainstorm pointed out
+  the simpler reading: the pooled reference INCLUDES the slowing rung, and slowing carries an equal-and-opposite
+  aetiology gap (-20.76), so pooling partially cancels the burst-suppression gap and restricting to the adjacent
+  rung (gap +2.64, near zero) merely removes the cancellation. RULE: before interpreting a change in an effect
+  when the REFERENCE CATEGORY changes, compute what the reference's own aetiology gap contributes -- a shift in
+  the comparator can move an estimate without anything about the exposure changing at all.
