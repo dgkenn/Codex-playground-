@@ -60,8 +60,9 @@ raw EEG by a fixed amplitude threshold, not read off a report — stratifies nea
 
 A **2.7-fold** range in three-day mortality, and 52 % to 93 % at thirty days, inside a single guideline label.
 
-**It adds to the guideline rather than restating it.** Discrimination for three-day death across all post-anoxic
-patients:
+**It adds to the guideline rather than restating it.** Discrimination for three-day death among the **1,875**
+post-anoxic patients who have a measured burden (not all 2,951 — the comparison has to be made on patients for
+whom both predictors exist):
 
 | model | cross-validated AUC |
 |---|---|

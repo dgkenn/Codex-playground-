@@ -129,7 +129,32 @@ def main():
                 continue
             if v == v:
                 bsess[p][s] = max(bsess[p].get(s, 0.0), v)
-    burden = {p: (d[min(d)] if SCOPE == "index" else max(d.values())) for p, d in bsess.items()}
+    # Index session is resolved from recording TIMESTAMPS where they are available, not from the session number.
+    # Session identifiers are expected to increase with time but that is an assumption about an identifier, and
+    # the whole point of this fix is to stop relying on assumptions about which recording came first. The
+    # timestamp map is loaded below (it lives in a different metadata file from the findings), after which
+    # `resolve_burden` is called; `min(session)` is the fallback and the concordance between the two orderings
+    # is printed so the run reports whether the assumption would have held.
+    def resolve_burden(stime):
+        out, agree, total = {}, 0, 0
+        for p, d in bsess.items():
+            by_num = min(d)
+            times = {s: stime[(p, s)] for s in d if (p, s) in stime}
+            if times:
+                by_time = min(times, key=lambda s: times[s])
+                total += 1
+                agree += (by_time == by_num)
+            else:
+                by_time = by_num
+            out[p] = d[by_time] if SCOPE == "index" else max(d.values())
+        if SCOPE == "index":
+            if total:
+                print(f"   index session resolved by timestamp for {total:,} patients; session-number order "
+                      f"agreed for {100*agree/total:.1f}% of them")
+            else:
+                print("   WARNING: no recording timestamps available, so the index session fell back to the "
+                      "lowest session NUMBER for every patient. That is an assumption, not a measurement.")
+        return out
     for f in sorted(glob.glob("/tmp/eeg_probe/heedb_burst_morph*.csv")):
         for r in csv.DictReader(open(f)):
             try:
@@ -183,7 +208,27 @@ def main():
                 Fidx[p] = dict(cur)
             for f in FL:
                 Fall[p][f] = Fall[p].get(f, False) or cur[f]
+    # session -> recording time, so the index recording is identified by WHEN it happened
+    stime = {}
+    for st in ("S0001", "S0002"):
+        try:
+            txt = s3.get_object(Bucket=AP,
+                                Key=f"EEG/eeg-metadata/{st}_eeg_metadata_2026_04_30.csv"
+                                )["Body"].read().decode("utf-8", "replace")
+        except Exception as e:
+            print(f"   note: session-time metadata unavailable for {st} ({type(e).__name__})")
+            continue
+        for r in csv.DictReader(io.StringIO(txt)):
+            pp = (r.get("BDSPPatientID") or "").strip()
+            ss = (r.get("SessionID") or "").strip()
+            if not pp.isdigit() or not ss.isdigit():
+                continue
+            tt = dt(r.get("StartTime") or r.get("EndTime") or "")
+            if tt is not None:
+                stime[(int(pp), int(ss))] = tt
+
     F = Fidx if SCOPE == "index" else Fall
+    burden = resolve_burden(stime)
     print(f"EXPOSURE SCOPE: {SCOPE}"
           + ("  (burden and EEG category both taken from the index recording -- the one the outcome clock "
              "starts at)" if SCOPE == "index"
