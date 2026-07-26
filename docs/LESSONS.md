@@ -1548,3 +1548,34 @@ cross-nationally-validated part.
   report the incremental discrimination, not the standalone figure. And state the effect-size threshold in
   advance: a significance-only criterion passed here on a +0.008 AUC, exactly as it did on an 8.8 % attenuation
   in the reversibility test.
+
+- **Burst suppression is not merely the top rung of a steeper ladder -- the unification FAILED, and that is a
+  stronger result than success would have been (2026-07).** Hypothesis: burst suppression and generalized
+  slowing are two rungs of one severity ladder (none / slowing / discharges / suppression), and the ladder is
+  simply steeper after anoxia. Three registered tests, three informative outcomes.
+  L1 PARTIALLY FAILED. Rungs 1->2->3 are cleanly monotone in ALL FIVE aetiologies (anoxic 31.4 -> 32.0 -> 71.1;
+  sepsis 31.5 -> 34.9 -> 50.6; metabolic 26.6 -> 31.1 -> 55.8; structural 24.0 -> 29.0 -> 47.1; status
+  16.7 -> 22.6 -> 43.4), which validates the assumed ordering of discharges above slowing. But RUNG 0 misbehaves:
+  post-anoxic patients with NO malignant finding die at 43.3 % against 31.4 % for those with slowing (n=150).
+  A clean EEG after arrest should not be worse than a slow one; that stratum is small and probably heterogeneous
+  (technically limited records, deaths from cardiac rather than neurological causes) and needs its own look.
+  L2 FALSIFIED as specified, because I chose the wrong span. The 0->3 span difference was +4.25 pp
+  [-4.55,+12.76], covering zero -- but it inherits the broken rung 0. Measured 1->3, i.e. suppressed versus
+  merely slow, the contrast is +39.7 pp in anoxic against +19.1 pp in sepsis, a clean twofold difference that
+  reproduces the headline. RULE: when a composite statistic covers zero, check whether one component is
+  contaminated before concluding the effect is absent.
+  L3 FALSIFIED DECISIVELY, and this is the substantive finding. Conditioning on ladder position did not absorb
+  the burst-suppression gap; it INCREASED it, from +20.41 to +23.43 pp (absorbed -14.8 %). Compared against the
+  ADJACENT malignant rung rather than against everything below it, suppression's aetiology gap is larger, not
+  smaller. So burst suppression is not "the top of a ladder that is steeper after anoxia" -- it is specifically
+  different from the categories immediately beside it.
+
+- **The gap is EEG-specific, but every predictor behaves somewhat differently across the two populations
+  (2026-07).** The negative controls passed: burst suppression's anoxic-minus-septic difference of +20.41 pp
+  exceeds age (-6.62), heart failure (-8.31), malignancy (-9.51), dementia (-9.91) and chronic kidney disease
+  (-10.14), each tested by paired bootstrap against burst suppression inside the same resample. But note that
+  all five controls are NON-ZERO and all negative, so chronic-illness markers systematically predict LATER death
+  in anoxic than in septic patients -- plausibly because post-anoxic early death is dominated by acute brain
+  injury, so chronic morbidity selects the subgroup not dying that way. The right claim is therefore that burst
+  suppression's gap is roughly TWICE the largest non-EEG predictor's and opposite in sign, not that non-EEG
+  predictors show no gap at all.
