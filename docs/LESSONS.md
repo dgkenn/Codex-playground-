@@ -1579,3 +1579,29 @@ cross-nationally-validated part.
   injury, so chronic morbidity selects the subgroup not dying that way. The right claim is therefore that burst
   suppression's gap is roughly TWICE the largest non-EEG predictor's and opposite in sign, not that non-EEG
   predictors show no gap at all.
+
+- **The ladder is not novel; the aetiology-dependent SLOPE of it is. Two canonical scales already exist, one per
+  aetiology, and nobody has compared them (2026-07).** An adversarial literature check found the ordinal severity
+  ladder is long-established and partly guideline-endorsed, so presenting it as new would have been the kind of
+  error a knowledgeable reviewer names in one sentence. Verified verbatim from MEDLINE records:
+    * WESTHALL 2016, Neurology, PMID 26865516 (TTM trial, n=103 post-arrest): EEGs classified "into highly
+      malignant (suppression, suppression with periodic discharges, burst-suppression), malignant (periodic or
+      rhythmic patterns, pathological or nonreactive background), and benign EEG (absence of malignant
+      features)"; 37 % highly malignant, all with poor outcome, specificity 100 %. This is our rung ordering,
+      already published, and now embedded in ERC-ESICM prognostication guidance -- for CARDIAC ARREST ONLY.
+    * YOUNG 1992, J Clin Neurophysiol, PMID 1552002 (n=62 with positive blood cultures): EEGs classified "into
+      five groups: normal, excessive theta, predominant delta, triphasic waves, and suppression or burst
+      suppression, IN ASCENDING ORDER OF SEVERITY", which "correlated with percent mortality, even within a
+      single clinical group". An ordinal severity ladder built and mortality-validated in SEPSIS ONLY.
+    * SYNEK 1988, PMID 3416501: a five-grade coma scale, "generally applicable only to coma after diffuse brain
+      trauma and cerebral hypoxia" -- again single-aetiology by the author's own statement.
+  So the field has TWO ladders, built separately in the two aetiologies we are comparing, at n=103 and n=62, and
+  has never put them side by side. THE NOVEL CLAIM IS THE COMPARISON, not the ladder: the same severity ordering
+  has a materially different slope after anoxia than in sepsis. That is a sharper and far more defensible
+  statement than "burst suppression means different things", and it comes with its own ancestry to cite.
+  ALSO NOTED: Westhall groups suppression AND burst-suppression together in one "highly malignant" tier, which
+  is a published prior on the V3 question of whether attenuation ranks above burst suppression -- their answer is
+  that it does not, they are equivalent. Any result separating them is a claim against that grouping.
+  CAUTION recorded: Lamartine Monteiro 2016 (PMID 26567031) found periodic discharges superimposed on a mildly
+  slow background carried 100 % poor outcome, i.e. as bad as burst suppression, so collapsing "periodic
+  discharges or seizures" into one rung below suppression is a simplification a careful reviewer can attack.
