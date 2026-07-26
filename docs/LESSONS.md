@@ -1751,3 +1751,21 @@ cross-nationally-validated part.
   because a patient must survive to have a second recording -- using it there would have manufactured a powerful
   predictor out of immortal time. Only 98 patients resolved, so the estimate is imprecise, but the design is
   sound.
+
+- **Quantitative burden stratifies inside a guideline category treated as homogeneous -- the clinically usable
+  result (2026-07).** Westhall's "highly malignant" tier (suppression, suppression with periodic discharges,
+  burst-suppression), now in ERC-ESICM guidance, is categorical: every patient in it formally carries the same
+  information. Within it, measured suppression burden stratifies three-day death 24.7 / 26.4 / 34.2 / 49.6 /
+  66.4 % across quintiles (monotone) and thirty-day death 52.3 % to 93.1 %. Adding burden to the category
+  improves cross-validated AUC from 0.648 [0.616,0.676] to 0.741 [0.703,0.790], an increment of +0.093 against a
+  registered +0.03 threshold, replicating cross-hospital at 0.719 and 0.678, with no in-sample optimism
+  (0.684 vs 0.682). Morphology adds a further +0.036.
+  WHY THIS IS THE RESULT AND THE AETIOLOGY COMPARISON WAS THE ROUTE: the aetiology gap turned out to be a fixed
+  subgroup effect exhausted by day 30, which is interesting but not actionable. Asking which patients are in
+  that subgroup produced something a clinician could in principle use, and it addresses a stated limitation of
+  current guidance rather than a curiosity.
+  THE CAVEAT IS NOT OPTIONAL AND IS WRITTEN INTO THE DOCUMENT: burst suppression already informs withdrawal of
+  life-sustaining therapy, 40.6 % of these patients die within three days, and this cohort cannot separate
+  biological from withdrawal-mediated death in that window. A risk score inside a category used to justify
+  withdrawal could make its own predictions come true. The result is a statement about information present in
+  the recording, not a recommendation to act on it.

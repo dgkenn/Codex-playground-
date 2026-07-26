@@ -1,5 +1,12 @@
 # Burst suppression is not one entity: its prognostic meaning depends on aetiology
 
+> **SUPERSEDED FOR THE HEADLINE — see `42_MAIN_RESULT.md`.** The aetiology comparison below stands and its
+> numbers are current, but the work it led to is stronger. A landmark analysis showed the aetiology excess is
+> exhausted among 30-day survivors, identifying it as a fixed subgroup whose outcome is settled at the
+> recording; pursuing *which patients are in that subgroup* produced a result that stratifies risk inside a
+> guideline category currently treated as homogeneous. Read 42 first. `41_RESULTS_LEDGER.md` records every test.
+
+
 **HEEDB, 49,231 patients with inpatient/ICU EEG linked to the OMOP clinical record. 7,323 with burst suppression
 labelled across 22,057 reports. Two independent hospital sites.**
 
