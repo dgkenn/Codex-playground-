@@ -32,6 +32,11 @@ REGISTERED EXPECTATION. Burden is expected to do most of the work, because the d
 patients is already steep and monotone (3-day death should track it). The interesting outcome is the INCREMENT
 from morphology and coexisting findings over burden. Stated in advance so a small increment is not narrated
 afterwards as a success: an increment below +0.02 cross-validated AUC is not a finding.
+
+NOTE (2026-07-26): the 40.6 % / 18.8 % split quoted here comes from the LEGACY exposure, in which a
+patient counted as suppressed if ANY of their recordings said so. Measured at the index recording the
+split is 45.6 % / 15.2 % -- a sharper early mass, not a softer one. This script still carries the
+legacy aggregation (see docs/research/41_RESULTS_LEDGER.md R289) and its numbers are not corrected.
 """
 import csv, glob, io, os, sys
 from collections import defaultdict

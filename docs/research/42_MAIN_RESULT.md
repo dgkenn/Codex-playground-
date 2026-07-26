@@ -185,7 +185,9 @@ gap, "anoxic patients are simply sicker", a posterior-rhythm effect modifier (wi
 drug-induced suppression, information redundancy, and front-loading of anoxic death.
 
 The decisive turn was a landmark analysis: the aetiology excess is **exhausted among 30-day survivors** (gap
-+0.801 from the EEG, +0.112 at a day-30 landmark, −0.295 at day 180, with the exposure at each landmark restricted to recordings available by then). That identified the effect as a fixed
++0.801 from the EEG, +0.112 at a day-30 landmark, −0.295 at day 180, with the exposure at each landmark restricted to recordings available by then). The doomed compartment is visible directly as a
+distinct early mass rather than a smooth shift: **45.6 %** of post-anoxic suppressed patients die within three days
+against 11.9 % of post-anoxic patients without suppression, and only 15.2 % survive past 180 days. That identified the effect as a fixed
 subgroup whose outcome is largely settled at the recording — which reframed the question from *why does
 suppression mean more after anoxia* to *which of these patients is in that subgroup*, and it is the second
 question that has a usable answer.

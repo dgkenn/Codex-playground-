@@ -813,3 +813,25 @@ both corrections are clean: in each script the only thing that changed between t
 is the exposure definition.
 
 **Cumulative distinct results: 293.**
+
+### R294. Shape table under the corrected exposure — the early mass is sharper
+
+The descriptive death-time distribution was still using the legacy "suppressed ever" flag; it now uses the same
+landmark-0 exposure rule as the inferential test. Inferential gaps are unchanged (the fix touched only this
+table).
+
+| group | 0–3 d | 4–7 d | 8–30 d | 31–90 d | 91–180 d | >180 d |
+|---|---|---|---|---|---|---|
+| anoxic BS+ | **45.6 %** (was 40.6) | 15.6 % | 15.8 % | 4.5 % | 3.3 % | **15.2 %** (was 18.8) |
+| anoxic BS− | 11.9 % | 6.5 % | 14.3 % | 10.3 % | 6.8 % | 50.2 % |
+| sepsis BS+ | 22.9 % (was 18.2) | 12.7 % | 22.6 % | 9.6 % | 6.7 % | 25.5 % (was 30.7) |
+| sepsis BS− | 7.8 % | 5.9 % | 18.6 % | 12.8 % | 8.8 % | 46.2 % |
+
+Measuring exposure at the index recording **concentrates** the early mass rather than dispersing it, which
+strengthens the distinct-early-compartment reading. Consistency check: 45.6 % here against 46.0 % for the
+highly-malignant category in R290 — two different cohort definitions landing in the same place.
+
+Scripts still carrying the legacy aggregation (`heedb_anoxic_discrim.py`, `heedb_doomed_subgroup.py`) now
+annotate the stale 40.6 % / 18.8 % split in their docstrings rather than silently quoting it.
+
+**Cumulative distinct results: 294.**

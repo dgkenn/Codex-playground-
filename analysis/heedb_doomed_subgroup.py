@@ -38,6 +38,11 @@ WHY T3 MATTERS MORE THAN IT LOOKS. If the doomed subgroup is simply "very high b
 into the dose-response already established and the aetiology framing was a detour. If it is NOT explained by
 burden, then something distinguishes these patients that is visible on the EEG and is not depth -- which is
 where the morphology features, so far prognostically inert, get a second and much better-targeted chance.
+
+NOTE (2026-07-26): the 40.6 % / 18.8 % split quoted here comes from the LEGACY exposure, in which a
+patient counted as suppressed if ANY of their recordings said so. Measured at the index recording the
+split is 45.6 % / 15.2 % -- a sharper early mass, not a softer one. This script still carries the
+legacy aggregation (see docs/research/41_RESULTS_LEDGER.md R289) and its numbers are not corrected.
 """
 import csv, glob, io, os, sys
 from collections import defaultdict
