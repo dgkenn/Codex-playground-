@@ -422,3 +422,14 @@
 {"ticker": "KXHIGHTPHX-26JUL25-B113.5", "side": "no", "ask_c": 100, "reason": "ask>98", "cushion_f": 2.6, "extreme_f": 116.6, "station": "KPHX", "kind": "max", "date": "2026-07-25", "ts": 1785015154795}
 {"ticker": "KXHIGHTSEA-26JUL25-T71", "side": "no", "ask_c": 100, "reason": "ask>98", "cushion_f": 2.4, "extreme_f": 73.4, "station": "KSEA", "kind": "max", "date": "2026-07-25", "ts": 1785022355586}
 {"ticker": "KXHIGHTSEA-26JUL25-B71.5", "side": "no", "ask_c": 100, "reason": "ask>98", "cushion_f": 1.4, "extreme_f": 73.4, "station": "KSEA", "kind": "max", "date": "2026-07-25", "ts": 1785022355586}
+{"ticker": "KXHIGHMIA-26JUL25-T88", "side": "no", "ask_c": 100, "reason": "ask>98", "cushion_f": 1.6, "extreme_f": 89.6, "station": "KMIA", "kind": "max", "date": "2026-07-26", "ts": 1785024004119}
+{"ticker": "KXHIGHAUS-26JUL25-T95", "side": "no", "ask_c": 100, "reason": "ask>98", "cushion_f": 1.8, "extreme_f": 96.8, "station": "KAUS", "kind": "max", "date": "2026-07-26", "ts": 1785024006187}
+{"ticker": "KXHIGHTSEA-26JUL25-T71", "side": "no", "ask_c": 100, "reason": "ask>98", "cushion_f": 2.4, "extreme_f": 73.4, "station": "KSEA", "kind": "max", "date": "2026-07-26", "ts": 1785024006766}
+{"ticker": "KXHIGHTSEA-26JUL25-B71.5", "side": "no", "ask_c": 100, "reason": "ask>98", "cushion_f": 1.4, "extreme_f": 73.4, "station": "KSEA", "kind": "max", "date": "2026-07-26", "ts": 1785024006766}
+{"ticker": "KXHIGHTSFO-26JUL25-T68", "side": "no", "ask_c": 100, "reason": "ask>98", "cushion_f": 3.6, "extreme_f": 71.6, "station": "KSFO", "kind": "max", "date": "2026-07-26", "ts": 1785024007084}
+{"ticker": "KXHIGHTSFO-26JUL25-B68.5", "side": "no", "ask_c": 100, "reason": "ask>98", "cushion_f": 2.6, "extreme_f": 71.6, "station": "KSFO", "kind": "max", "date": "2026-07-26", "ts": 1785024007084}
+{"ticker": "KXHIGHTATL-26JUL25-T84", "side": "no", "ask_c": 100, "reason": "ask>98", "cushion_f": 2.0, "extreme_f": 86.0, "station": "KATL", "kind": "max", "date": "2026-07-26", "ts": 1785024008862}
+{"ticker": "KXHIGHTOKC-26JUL25-T98", "side": "no", "ask_c": 100, "reason": "ask>98", "cushion_f": 2.4, "extreme_f": 100.4, "station": "KOKC", "kind": "max", "date": "2026-07-26", "ts": 1785024011336}
+{"ticker": "KXHIGHTOKC-26JUL25-B98.5", "side": "no", "ask_c": 100, "reason": "ask>98", "cushion_f": 1.4, "extreme_f": 100.4, "station": "KOKC", "kind": "max", "date": "2026-07-26", "ts": 1785024011336}
+{"ticker": "KXHIGHTLV-26JUL25-T109", "side": "no", "ask_c": 100, "reason": "ask>98", "cushion_f": 4.0, "extreme_f": 113.0, "station": "KLAS", "kind": "max", "date": "2026-07-26", "ts": 1785024011934}
+{"ticker": "KXHIGHTLV-26JUL25-B109.5", "side": "no", "ask_c": 100, "reason": "ask>98", "cushion_f": 3.0, "extreme_f": 113.0, "station": "KLAS", "kind": "max", "date": "2026-07-26", "ts": 1785024011934}
