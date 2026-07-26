@@ -1941,3 +1941,28 @@ never the risk; the definition was.**
 
 - **A result that moves under a fixed bias and survives is worth more than one never checked.** The audit trail
   is kept in the main document rather than deleted, because the correction is part of the evidence.
+
+- **A registered threshold does not protect you if the statistic can be produced without the mechanism.** The
+  trajectory analysis pre-registered "change adds ≥+0.03 CV AUC over level ⇒ reversible". It returned +0.064 and
+  printed CONFIRMED. But `level + change` is algebraically `first level + second level`, and a second
+  measurement beats one whenever the measure is noisy — so the registered statistic was satisfiable by
+  measurement error alone. Pre-registration disciplines *when* you decide, not *whether the statistic means what
+  you think*.
+  RULE, general: **before registering a threshold, ask what else could produce the number.** If a
+  no-biology mechanism can clear the bar, the test needs a control that the mechanism cannot pass — here, the
+  increment as a function of the INTERVAL, which reversibility must grow with and noise cannot.
+
+- **Check the interval distribution before interpreting any "change over time" analysis.** The median gap
+  between a patient's first two EEGs was **0.65 days** and only 57 of 701 pairs were ≥2 days apart. The whole
+  structural-vs-reversible framing assumed days. Repeat EEGs in an ICU cohort are mostly same-admission
+  re-reads, which is a fact about clinical practice that silently redefines what "trajectory" means.
+
+- **Regression to the mean reproduces "improving beats worsening" with no recovery in the causal chain.** A
+  first reading high by noise appears to improve on remeasurement and also carries a lower true value, so those
+  patients do better. Any within-level change analysis on a noisy measure will show this. It is not evidence of
+  reversibility and must be named whenever a change score is stratified by baseline.
+
+- **Stratify change analyses by baseline, then distrust the result anyway.** Unstratified, the table was
+  incoherent — improvers died more often than stable patients, contradicting the analysis one section above it.
+  That incoherence was the tell that the strata differed in baseline rather than in trajectory. An internal
+  contradiction between two sections of the same output is a debugging signal, not noise to reconcile in prose.

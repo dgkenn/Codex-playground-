@@ -835,3 +835,36 @@ Scripts still carrying the legacy aggregation (`heedb_anoxic_discrim.py`, `heedb
 annotate the stale 40.6 % / 18.8 % split in their docstrings rather than silently quoting it.
 
 **Cumulative distinct results: 294.**
+
+### R295–R298. Structural vs reversible: the question is not answerable from the available pairs
+
+`heedb_burden_trajectory.py`, landmarked at the second recording (n=701 alive at it, recordings ≤21 d apart).
+The first run printed **J2 CONFIRMED (reversible)**. That verdict is withdrawn; two controls added afterwards
+refute it.
+
+| id | test | result | verdict |
+|---|---|---|---|
+| R295 | J1 — does burden fall more in survivors? | change died−survived **+0.038 [+0.005, +0.073]**; burden 0.448→0.423 in those dying ≤30 d, 0.299→0.236 in survivors | holds, small |
+| R296 | J2 — does change add over index level? | 0.672 → 0.736, increment **+0.064** (second level alone 0.727) | **uninterpretable alone** |
+| R297 | **J2b — the noise control** | increment **+0.065 under 12 h**, **+0.055 at 12 h–2 d**, flat and largest at the shortest gaps | **refutes reversibility** |
+| R298 | J3 — resolution beyond level, stratified | mid: improved 67.4 % vs worsened 85.0 %; high: 81.5 % vs 90.9 %; low: 66.7 % vs 71.3 % | **confounded** |
+
+**Why J2 fails.** `level + change` is algebraically `first level + second level`, so a second measurement helps
+whenever the measure is noisy — no biology required. Reversibility predicts the increment **grows** with the
+interval; it does not. It is largest under 12 hours, where no cortex can have recovered.
+
+**Why the design cannot ask the question.** Median interval between a patient's first two recordings is
+**0.65 days** (p25 0.04, p75 0.90, p90 1.69); only **57 pairs** are ≥2 days apart. These are two recordings in
+one admission, hours apart, not recovery trajectories.
+
+**Why J3 is confounded.** Unstratified it was incoherent — improvers died *more* often than stable patients,
+opposite to J1 — because the strata compared baselines, not trajectories. Stratified, improving beats worsening
+in mid and high strata, which is precisely what **regression to the mean** produces: a first reading high by
+noise appears to improve and also carries a lower true burden.
+
+**Predicted vs actual (calibration ledger).** Predicted win-likelihood 0.55 that the serial pairs would separate
+structural from reversible. Actual: **no answer** — the interval distribution makes the question unaskable with
+what has been extracted. The prediction failed to account for repeat EEGs in this cohort being same-admission
+rather than days apart. Revisit when the serial extraction yields enough distant pairs.
+
+**Cumulative distinct results: 298.**

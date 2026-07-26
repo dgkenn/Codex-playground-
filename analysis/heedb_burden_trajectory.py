@@ -26,6 +26,27 @@ REGISTERED PREDICTIONS.
       should have markedly better survival than those whose burden persists, beyond what their index level
       predicts.
 
+OUTCOME (2026-07-26): THE QUESTION IS NOT ANSWERABLE FROM THE AVAILABLE PAIRS, and the first run of this script
+said otherwise. J2 came back +0.064 and printed "CONFIRMED (reversible)". It is not. Two things kill it:
+
+  * THE INTERVAL. Median gap between a patient's first two recordings is **0.65 days**, p90 1.69 days, with only
+    57 pairs two or more days apart. These are two recordings in the same admission, hours apart -- not recovery
+    trajectories. The structural-versus-reversible question needs days, and this extraction has too few such
+    pairs to ask it.
+  * THE NOISE CONTROL (J2b, added after). `level + change` is algebraically `first level + second level`, so a
+    second measurement helps whenever the measure is noisy, biology or no biology. Reversibility predicts the
+    increment GROWS with the interval. It does not: **+0.065 under 12 hours, +0.055 at 12 h to 2 days** -- flat,
+    and largest where no cortex could have recovered. That is measurement error and recency, not reversibility.
+
+J3 fell the same way. Unstratified it was incoherent (improvers died MORE often than stable patients, opposite
+to J1) because the strata compared baselines rather than trajectories. Stratified by index level, improving does
+beat worsening in the mid and high strata -- but that is exactly what REGRESSION TO THE MEAN produces: a patient
+whose first reading was noise-high appears to improve and also has a lower true burden.
+
+So: J1 holds and is small; J2 is refuted by its own control; J3 is confounded. The verdict lines below were
+rewritten so the script can no longer print a bare "CONFIRMED (reversible)". Revisit when the serial extraction
+yields enough pairs separated by days.
+
 THE TRAP, and the design that avoids it. A patient must survive to have a second recording, so anything derived
 from that recording is unavailable to those who died first -- immortal time, and it would manufacture a powerful
 spurious predictor. EVERYTHING here is therefore landmarked at the SECOND recording: the cohort is patients
@@ -194,23 +215,72 @@ def main():
     print(f"   index level alone          CV AUC {c1:.3f}")
     print(f"   index level + change       CV AUC {c2:.3f}   increment {c2-c1:+.3f}")
     print(f"   second-recording level alone CV AUC {c3:.3f}")
-    print(f"   J2 {'CONFIRMED (reversible)' if c2 - c1 >= 0.03 else 'FALSIFIED (structural)'} "
-          f"(threshold +0.03)")
+    print(f"   J2 increment {c2-c1:+.3f} against a +0.03 threshold -- but this number CANNOT be read as")
+    print("   reversibility on its own. `level + change` is algebraically `first level + second level`, and a")
+    print("   second measurement beats one whenever the measure is noisy, with no biology involved. J2b below")
+    print("   is the control that decides it; do not quote J2 without J2b.")
+
+    # ---- J2b: THE NOISE CONTROL, without which J2 proves nothing --------------------------------------
+    # `level + change` is algebraically `b1 + b2`, and two measurements beat one whenever the measurement is
+    # noisy -- with no biology involved at all. The way to tell them apart is the INTERVAL. Over a few hours a
+    # cortex cannot meaningfully recover, so any increment at short gaps is measurement error and recency, not
+    # reversibility. Only an increment that GROWS with the interval is evidence of real change.
+    print("\n" + "=" * 92)
+    print("J2b  IS THE INCREMENT BIOLOGY, OR JUST A SECOND LOOK AT A NOISY MEASURE?")
+    print("=" * 92)
+    gaps = np.array([r["gap"] for r in rows], float)
+    print(f"   interval between recordings: median {np.median(gaps):.2f} d   "
+          f"p25 {np.percentile(gaps,25):.2f}   p75 {np.percentile(gaps,75):.2f}   "
+          f"p90 {np.percentile(gaps,90):.2f}")
+    print(f"   {'interval band':22s} {'n':>5s} {'level':>8s} {'level+change':>13s} {'increment':>10s}")
+    for lab, lo, hi in (("under 12 hours", 0.0, 0.5), ("12 h to 2 days", 0.5, 2.0),
+                        ("2 to 21 days", 2.0, 1e9)):
+        g = [r for r in rows if lo <= r["gap"] < hi]
+        if len(g) < 80:
+            print(f"   {lab:22s} {len(g):5d}   too few")
+            continue
+        yy = np.asarray([r["d30"] for r in g], float)
+        if yy.min() == yy.max():
+            continue
+        A = np.column_stack([np.ones(len(g)), np.asarray([r["b1"] for r in g], float)])
+        B = np.column_stack([A, np.asarray([r["db"] for r in g], float)])
+        ca, cb = cv_auc(A, yy, rng), cv_auc(B, yy, rng)
+        print(f"   {lab:22s} {len(g):5d} {ca:8.3f} {cb:13.3f} {cb-ca:+10.3f}")
+    print("\n   REVERSIBLE predicts the increment GROWS with the interval -- more time, more real change to see.")
+    print("   MEASUREMENT NOISE predicts it is FLAT or largest at short gaps, where no biology has had time to")
+    print("   happen. A large increment under 12 hours is not recovery.")
 
     # ---- J3: resolution ------------------------------------------------------------------------------
     print("\n" + "=" * 92)
     print("J3  DOES RESOLUTION MATTER BEYOND THE LEVEL?")
     print("=" * 92)
-    print(f"   {'trajectory':34s} {'n':>5s} {'30-day death':>13s} {'90-day death':>13s}")
-    for lab, sel in (("resolved (burden 2 < 0.05)", lambda r: r["b2"] < 0.05),
-                     ("improved but not resolved", lambda r: r["b2"] >= 0.05 and r["db"] < -0.05),
-                     ("stable (|change| <= 0.05)", lambda r: abs(r["db"]) <= 0.05),
-                     ("worsened (change > +0.05)", lambda r: r["db"] > 0.05)):
-        g = [r for r in rows if sel(r)]
-        if len(g) < 20:
-            continue
-        print(f"   {lab:34s} {len(g):5d} {100*np.mean([r['d30'] for r in g]):12.1f}% "
-              f"{100*np.mean([r['d90'] for r in g]):12.1f}%")
+    # STRATIFIED BY INDEX LEVEL, because the unstratified version is uninterpretable. Patients who "improve"
+    # are overwhelmingly patients who STARTED HIGH -- there is nowhere to improve from at a low burden -- and
+    # patients who are "stable" include everyone sitting quietly at a low burden. Comparing those groups
+    # compares baselines, not trajectories, which is why the naive table showed improvers dying MORE often than
+    # stable patients while J1 said the opposite. The question is only meaningful within a level.
+    print(f"   {'index burden':>14s} {'trajectory':26s} {'n':>5s} {'30-day death':>13s} {'90-day death':>13s}")
+    b1s = np.array([r["b1"] for r in rows], float)
+    cuts = np.percentile(b1s, [33, 67])
+    for tlab, tsel in (("low", b1s <= cuts[0]),
+                       ("mid", (b1s > cuts[0]) & (b1s <= cuts[1])),
+                       ("high", b1s > cuts[1])):
+        strat = [r for r, x in zip(rows, tsel) if x]
+        for lab, sel in (("improved (change < -0.05)", lambda r: r["db"] < -0.05),
+                         ("stable (|change| <= 0.05)", lambda r: abs(r["db"]) <= 0.05),
+                         ("worsened (change > +0.05)", lambda r: r["db"] > 0.05)):
+            g = [r for r in strat if sel(r)]
+            if len(g) < 20:
+                continue
+            print(f"   {tlab:>14s} {lab:26s} {len(g):5d} {100*np.mean([r['d30'] for r in g]):12.1f}% "
+                  f"{100*np.mean([r['d90'] for r in g]):12.1f}%")
+    print("\n   J3 is supported only if improving beats worsening WITHIN a level. Across levels the comparison")
+    print("   is between baselines, not trajectories.")
+    print("\n   AND EVEN WITHIN A LEVEL IT IS CONFOUNDED, by regression to the mean. A patient whose FIRST")
+    print("   reading was high by measurement noise will appear to 'improve' on remeasurement and also has a")
+    print("   lower true burden, so does better -- reproducing 'improving beats worsening' with no recovery")
+    print("   anywhere in the causal chain. Read together with J2b, which shows the increment is largest at")
+    print("   intervals too short for biology, that is the more parsimonious reading of this whole table.")
 
     print("\n   Everything here is landmarked at the second recording, because a patient must survive to have")
     print("   one -- using trajectory without that would manufacture a predictor out of immortal time, which is")
