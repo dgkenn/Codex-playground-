@@ -277,7 +277,13 @@ def main():
             if rf and rf[0] not in have:
                 raise KeyError(f"{rf[0]} absent from {key}; row filter cannot be applied safely")
             idf = None
+            # An explicit concept-id filter SUPERSEDES the source-value regex. Applying both would AND them,
+            # and for procedure_occurrence / observation the source value is a numeric billing code that the
+            # regex can never match -- so the combined mask was always false and the extraction returned an
+            # empty file that looked like a clean negative. The id filter is the more specific instrument;
+            # when it is supplied it is the one that should decide.
             if ID_FILTER_COL and ID_FILTER_IDS is not None:
+                rf = None
                 if ID_FILTER_COL not in have:
                     raise KeyError(f"{ID_FILTER_COL} absent from {key}; id filter cannot be applied safely")
                 idf = (ID_FILTER_COL, ID_FILTER_IDS)
