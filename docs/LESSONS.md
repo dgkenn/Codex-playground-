@@ -1726,3 +1726,28 @@ cross-nationally-validated part.
   IT ALSO KILLED TWO CANDIDATES BEFORE THEY COST ANYTHING: global ischaemic dose causing multi-organ injury, and
   permanent disability generating complications, both predict a PERSISTENT hazard and are refuted by the same
   result.
+
+- **Asked the right question, the "inert" morphology features work -- +0.038 cross-validated (2026-07).** The
+  same five burst-morphology features that explained 1.4 % of the aetiology gap and added +0.008 AUC over burden
+  when asked to explain the CROSS-AETIOLOGY contrast, add **+0.038 cross-validated AUC** when asked which
+  post-anoxic burst-suppression patients die within three days (burden alone 0.632 -> burden + morphology 0.670,
+  n=660), above the +0.02 threshold registered in advance. The features were never inert; the question was wrong.
+  RULE: before discarding a measurement as unpredictive, check that it was asked a question it could answer. A
+  feature that fails as a MEDIATOR of a group difference can still work as a DISCRIMINATOR within a group, and
+  those are different jobs.
+  The picture is coherent and every term is a named quantity: within post-anoxic suppression, three-day death is
+  predicted by high burden (0.746 vs 0.386 between the two outcome extremes), high intra-burst 8-30 Hz content
+  (+9.72 pp/SD; 0.250 vs 0.120), SHORT bursts (-7.55 pp/SD; 1.84 s vs 2.87 s), and the ABSENCE of generalized
+  slowing (29.7 % in those dead by three days against 74.9 % in those alive past six months) and of a posterior
+  dominant rhythm (12.3 % vs 24.3 %). Cross-validated AUC 0.697 for burden + age + findings; cross-hospital
+  0.755 and 0.680. Burden alone shows no optimism at all (in-sample 0.676, cross-validated 0.677).
+  NOTE the slowing result: having slowing ALONGSIDE suppression is strongly favourable, which is the same
+  mirror-image fact seen earlier at cohort level (slowing's aetiology gap was -20.76 against suppression's
+  +20.41), now reappearing as a within-patient discriminator.
+
+- **Persistence works when landmarked properly (2026-07).** Among post-anoxic burst-suppression patients alive
+  at a follow-up recording, suppression that PERSISTED carried 76.8 % 30-day death against 41.8 % where it had
+  resolved (+34.9 pp; 82.1 % vs 49.0 % at 90 days). It could not be used for the three-day outcome at all,
+  because a patient must survive to have a second recording -- using it there would have manufactured a powerful
+  predictor out of immortal time. Only 98 patients resolved, so the estimate is imprecise, but the design is
+  sound.
