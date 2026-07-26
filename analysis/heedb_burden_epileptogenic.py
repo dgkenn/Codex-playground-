@@ -57,7 +57,17 @@ MIN_GAP_D = float(os.environ.get("MIN_GAP_D", "1"))
 MAX_GAP_D = float(os.environ.get("MAX_GAP_D", "21"))
 AP = "arn:aws:s3:us-east-1:184438910517:accesspoint/bdsp-credentialed-access-point"
 
-EPI = ("seizure", "status", "gpd", "lpd")
+# STRICT by default, and the default matters. The first run counted GPD and LPD as epileptiform and found
+# that higher burden predicted MORE of it (+12.9 pp). That is an artefact of the pattern definition:
+# "suppression with periodic discharges" is a recognised burst-suppression variant, so a record that is STILL
+# SUPPRESSED scores as epileptiform. The share still suppressed climbs 31.9% -> 89.8% across burden quartiles,
+# so the association was largely measuring ongoing suppression.
+# Restricting to SEIZURE and STATUS EPILEPTICUS removes the overlap without conditioning on anything: neither
+# is part of the burst-suppression pattern, and both require organised, living, synaptically connected cortex.
+# The alternative fix -- restricting to patients no longer suppressed -- conditions on a POST-EXPOSURE
+# variable, which is a collider and can manufacture a reversal. That is why it is reported but not relied on.
+EPI_STRICT = os.environ.get("EPI_STRICT", "1") == "1"
+EPI = ("seizure", "status") if EPI_STRICT else ("seizure", "status", "gpd", "lpd")
 
 
 def lpm(X, y):
@@ -146,6 +156,7 @@ def main():
                          gap=(t1 - t0).total_seconds() / 86400.0,
                          labs=aet.get(p, set())))
     g = [r for r in rows if "anoxic" in r["labs"]]
+    print(f"epileptiform definition: {'STRICT (seizure/status only)' if EPI_STRICT else 'WIDE (incl. GPD/LPD)'}")
     print(f"patients with a later recording {MIN_GAP_D:.0f}-{MAX_GAP_D:.0f} d after the index, alive at it: "
           f"{len(rows):,}   post-anoxic: {len(g):,}")
     if len(g) < 100:
