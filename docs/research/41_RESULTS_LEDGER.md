@@ -631,3 +631,63 @@ None. All specified files were present (though morph_res.txt contained only a he
 **Total distinct test results transcribed: 147** (original) + **131** (Round 2) = **278 cumulative**
 
 **Files missing: None**
+
+---
+
+## Round 3 addendum — 2026-07-26
+
+### R279–R284. Vasopressor discontinuation as a withdrawal instrument — **RETRACTED**
+
+Registered as W1/W2/W3 in `analysis/heedb_wlst_pressor.py`: does the three-day death mass represent withdrawal
+of support or refractory shock? Ran to completion, produced an apparently decisive answer, and was retracted on
+inspection of the instrument.
+
+| id | test | raw output | status |
+|---|---|---|---|
+| R279 | W1 withdrawal signature, anoxic BS+ dying ≤3 d (n=556) | 74.1 % died ≤6 h after last pressor ended; 88.7 % ≤24 h; median 0.0 h | **void** |
+| R280 | W1 "pressor running at death", same group | 81.4 % | **void** |
+| R281 | W2 specificity vs sepsis BS+ (n=222) | 73.9 % / 87.4 % / median 0.0 h — indistinguishable from anoxic | **void** (and the tell) |
+| R282 | W3 signature by burden tertile, anoxic BS+ dying ≤3 d | 69.8 → 72.2 → 74.6 % (≤6 h): flat | **void** |
+| R283 | context: 3-day death by burden tertile, anoxic BS+ on pressors (n=1,109) | 26.2 → 35.7 → 61.4 % | *stands* (independent of the instrument; consistent with the main result) |
+| R284 | **instrument validity check** (`heedb_pressor_charting_check.py`, n=11,080) | see below | **the finding** |
+
+**R284, the interval from last vasopressor end to death, across all patients with an ascertained death:**
+
+| window before death | n | % |
+|---|---|---|
+| exactly 0 (tied to the death timestamp) | 2,320 | 20.9 % |
+| 0 to 1 minute | **0** | 0.0 % |
+| 1 minute to 1 hour | **0** | 0.0 % |
+| 1 to 6 hours | 4 | 0.0 % |
+| 6 to 24 hours | 574 | 5.2 % |
+| 1 to 7 days | 1,076 | 9.7 % |
+| more than 7 days | 7,106 | 64.1 % |
+
+Non-tied ends sit a median of 2,412 h (**100 days**) before death, IQR 14–616 days — a prior admission, not a
+terminal decision. Records extending genuinely past the death time number 576 in the whole database.
+
+**Why this voids R279–R282.** The medication record is closed at the recorded time of death, so "ended within
+6 h before death" is the tie set, i.e. an indicator of *dying in hospital on pressors*. And because an exposure
+ending exactly at death also satisfies `start ≤ death ≤ end`, the "pressor running at death" column is the
+**same event**; the two measures agreed because they were one measure. The flatness in R282 is likewise
+uninterpretable — a flat artefact says nothing about the burden gradient.
+
+**Consequence.** Withdrawal versus refractory shock remains **open**, and is now the third instrument to fail on
+it (DNR/palliative codes: median 42 d from code to death; sedation proxies: circular). The §4 caveat in
+`42_MAIN_RESULT.md` is unchanged and correct as written; it now rests on a documented failure rather than an
+assertion. Answering it requires a decision-timestamped source (comfort-care order activation, ventilator
+termination, family meeting), none of which exist in this extraction.
+
+**Predicted vs actual (calibration ledger).** Predicted win-likelihood before running: 0.45 that the instrument
+would give an interpretable answer either way. Actual: instrument invalid, no answer. The prediction was too
+high because it assumed OMOP `drug_exposure_end_datetime` records an administration event; it records a
+record-closure event.
+
+### Session note — data access
+
+Serial-burden extraction stopped at **294 patients (216 with ≥2 recordings)** of a 7,823-recording target, and
+`analysis/heedb_burden_trajectory.py` (structural-vs-reversible probe, landmarked at the second recording) is
+written and committed but **not yet run**: it needs per-session timestamps from the HEEDB metadata, and S3
+credentials are absent this session (403). Both resume when credentials return.
+
+**Cumulative distinct results: 284.**

@@ -1793,3 +1793,50 @@ cross-nationally-validated part.
   burden had been a whole-body dose marker, a suppressed EEG after arrest would also have been a statement about
   the kidneys, and the appropriate response would have been systemic. It is not. The EEG is reporting on the
   organ that determines the outcome.
+
+---
+
+## 2026-07-26 — the vasopressor withdrawal instrument, retracted before it was reported
+
+- **A result was produced, looked strong, and was thrown away.** `heedb_wlst_pressor.py` reported that 74.1 % of
+  post-anoxic burst-suppression patients dying within three days died within six hours of their last vasopressor
+  ending, with a matching 81.4 % "pressor running at death". Taken at face value that is a decisive withdrawal
+  signature and it would have changed what the main result *is*. It is an artefact.
+
+- **The tell was a number that was the same everywhere.** The median gap from last pressor to death was **0.0 h**
+  in every group: anoxic, septic, metabolic, structural, with and without burst suppression. Withdrawal practice
+  is not identical across those aetiologies — burst suppression is a withdrawal criterion after arrest and is not
+  one in sepsis — so a marker that cannot tell them apart is not measuring the decision.
+  RULE, general: **when a putative clinical marker takes the same value in groups whose clinical handling is
+  known to differ, suspect the data-generating process before believing the marker.** Uniformity across strata
+  that should differ is evidence *against* validity, not for robustness.
+
+- **The direct check settled it in one table.** `heedb_pressor_charting_check.py` histogrammed the interval:
+  20.9 % exactly tied to the death timestamp, **0 patients** between 1 minute and 1 hour, 4 between 1 and 6 hours,
+  and 64.1 % more than a week out (median 100 days — a previous admission). No clinical or biological process
+  produces a spike at exactly zero with a literal void beside it. An open infusion is closed out at the recorded
+  time of death.
+
+- **The two "independent" columns were one event.** "Ended within 6 h before death" and "start ≤ death ≤ end"
+  are both satisfied by an exposure whose end is stamped AT the death time. They agreed because they were the
+  same indicator, which is exactly why their agreement felt confirmatory.
+  RULE, general: **before reading two measures as corroborating each other, check whether one row of data can
+  satisfy both definitions simultaneously.** Interval endpoints that coincide with the outcome time make
+  "during" and "just before" the same set.
+
+- **Diagnose the instrument on the raw distribution, not on the summary.** The summary table (fractions ≤6 h,
+  ≤24 h, median) was compatible with the true story and with the artefact. Only the binned interval histogram
+  separated them, and it needed no EEG, no S3 and about a minute of compute. That check should have run *before*
+  the analysis, not after it.
+
+- **What this does and does not cost.** It costs an answer, not a result. The main finding is unchanged: the
+  caveat in `42_MAIN_RESULT.md` §4 already said this cohort cannot separate biological from withdrawal-mediated
+  death inside the three-day window, and that caveat now rests on a documented failed attempt rather than an
+  assertion. Answering it needs a source that timestamps the **decision** — a comfort-care order with an
+  activation time, a ventilator-termination event, a documented family meeting — none of which exist here.
+
+- **Third instrument to fail on the same question.** DNR/palliative codes failed (median 42 days from code to
+  death — chronic status, not an acute decision); sedation-based proxies failed (circular: burst suppression
+  causes unresponsiveness); vasopressor timing fails (charting). The pattern is that **administrative tables
+  record states and billing events, not decisions**, and a decision-time question asked of them will keep
+  returning the shape of the record-keeping.

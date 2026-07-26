@@ -78,7 +78,15 @@ anywhere in this analysis; the model can be read, checked and disagreed with.
 
 Burst suppression is a guideline criterion that informs withdrawal of life-sustaining therapy, and **40.6 % of
 these patients die within three days** — precisely the window in which withdrawal decisions are made. This
-cohort cannot separate biological death from withdrawal-mediated death in that window. A score that stratifies
+cohort cannot separate biological death from withdrawal-mediated death in that window, and this is a limit that
+was tested rather than assumed: three instruments were tried and all three failed. DNR and palliative-care codes
+document chronic care-limitation status, not an acute decision (median 42 days from code to death). Sedation
+depth is circular, because burst suppression itself causes unresponsiveness. Vasopressor discontinuation timing
+looked decisive and was retracted: the medication record is closed at the recorded time of death, so 20.9 % of
+last-pressor ends are exactly tied to it and **not one patient in the database** has one falling between a minute
+and an hour before death (`41_RESULTS_LEDGER.md` R279–R284). Answering this needs a source that timestamps the
+decision — comfort-care order activation, ventilator termination — which this extraction does not contain. A
+score that stratifies
 risk inside a category already used to justify withdrawal could make its own predictions come true, which is the
 self-fulfilling-prophecy mechanism this field already documents (Elmer, *Crit Care Med* 2023, PMID 36752628;
 Mertens, *J Med Ethics* 2022, PMID 34253620). Acting on this without a prospective study would be that

@@ -1,5 +1,45 @@
 #!/usr/bin/env python3
-"""Is the three-day death mass WITHDRAWAL or REFRACTORY SHOCK? Vasopressor discontinuation as the instrument.
+"""RETRACTED -- THE INSTRUMENT IS INVALID. Do not use this script's output. See the retraction note below.
+
+RETRACTION (2026-07-26, before any result from this script was reported). This script ran and produced a
+seemingly strong withdrawal signature: 74.1 % of post-anoxic burst-suppression patients dying within three days
+died within six hours of their last vasopressor ending. That number is an artefact and the analysis is void.
+
+The tell was that the MEDIAN GAP WAS 0.0 HOURS in every group -- anoxic, septic, metabolic, structural, with and
+without burst suppression. A quantity identical across clinically dissimilar groups is not measuring the clinic.
+`heedb_pressor_charting_check.py` measured the interval distribution directly and found it degenerate:
+
+    exactly 0 (tie)          2,320   20.9 %
+    0 to 1 minute                0    0.0 %
+    1 minute to 1 hour           0    0.0 %
+    1 to 6 hours                 4    0.0 %
+    6 to 24 hours              574    5.2 %
+    more than 7 days         7,106   64.1 %
+
+Not one patient in the whole database has a last pressor ending between one minute and one hour before death.
+That is not how withdrawal works and not how any biological process works; it is an infusion record being closed
+out at the recorded time of death. The remaining mass sits a median of 100 days before death -- a previous
+admission, not a terminal decision.
+
+Both columns of this script's main table are therefore the SAME artefact reported twice: an exposure whose end
+is stamped AT the death time satisfies "ended within 6 h before death" and "start <= death <= end" at once,
+which is why they moved together. Genuinely past-death ends -- the only unambiguous "running at death" -- number
+576 across the entire database, too few to carry any analysis.
+
+CONSEQUENCE. Withdrawal versus refractory shock is NOT answerable from vasopressor timing in this extraction. The
+question stays open, and the caveat in `docs/research/42_MAIN_RESULT.md` section 4 -- that this cohort cannot
+separate biological death from withdrawal-mediated death inside the three-day window -- stands as written, now
+with a documented failed attempt to do better rather than an untested assertion.
+
+The design reasoning below is kept because it is sound; only the instrument was bad. Answering this needs a data
+source that timestamps the DECISION (a comfort-care order with an activation time, a ventilator-termination
+event, or a documented family meeting), none of which exist in this extraction.
+
+--------------------------------------------------------------------------------------------------------------
+ORIGINAL HEADER FOLLOWS -- retained for the design, NOT for the result.
+--------------------------------------------------------------------------------------------------------------
+
+Is the three-day death mass WITHDRAWAL or REFRACTORY SHOCK? Vasopressor discontinuation as the instrument.
 
 THE QUESTION, and why it is the last major one. The entire aetiology effect lives in a fixed subgroup that dies
 early: 40.6 % of post-anoxic burst-suppression patients are dead within three days, the excess is exhausted
@@ -57,6 +97,13 @@ PRESSORS = ("norepinephrine", "levophed", "epinephrine", "vasopressin", "phenyle
 
 
 def main():
+    if os.environ.get("RUN_RETRACTED") != "1":
+        print(__doc__.split("ORIGINAL HEADER FOLLOWS")[0])
+        print("This script is RETRACTED. Its instrument is invalid and its output must not be reported.")
+        print("Run `python analysis/heedb_pressor_charting_check.py` to see why.")
+        print("Set RUN_RETRACTED=1 only to reproduce the artefact deliberately.")
+        return 2
+
     rng = np.random.default_rng(20260726)
 
     burden = {}
