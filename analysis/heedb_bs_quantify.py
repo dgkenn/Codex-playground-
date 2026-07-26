@@ -42,6 +42,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 THRESH_UV = float(os.environ.get("BS_THRESH_UV", "5.0"))
 N_WINDOWS = int(os.environ.get("N_WINDOWS", "4"))
+# Per-window burden output, for estimating the measurement error of a single reading.
+WIN_OUT = os.environ.get("WIN_OUT", "")
 WIN_SECONDS = int(os.environ.get("WIN_SECONDS", "120"))
 LEAD_IN_FRAC = float(os.environ.get("LEAD_IN_FRAC", "0.15"))
 OUT = os.environ.get("BS_BURDEN_OUT", "/tmp/eeg_probe/heedb_bs_burden.csv")
@@ -115,6 +117,16 @@ def main():
     w = csv.writer(fh)
     if newf:
         w.writerow(["site", "patient", "bids", "session", "n_windows_ok", "burden", "thresh_uv"])
+    wfh = ww = None
+    if WIN_OUT:
+        wpath = WIN_OUT if args.nshards == 1 else WIN_OUT[:-4] + f".s{args.shard}.csv"
+        wnew = not os.path.exists(wpath)
+        wfh = open(wpath, "a", newline="")
+        ww = csv.writer(wfh)
+        if wnew:
+            ww.writerow(["site", "patient", "bids", "session", "window", "burden", "thresh_uv"])
+            wfh.flush()
+        print(f"per-window output -> {wpath}", flush=True)
         fh.flush()
 
     t0 = time.time(); n_ok = 0
@@ -139,11 +151,22 @@ def main():
                 if vals:
                     burdens.append(float(np.median(vals)))
             if burdens:
-                # MAX across windows, not mean: the calibration that achieved AUC 0.829 scored presence
-                # across several windows, because suppression is intermittent and an average dilutes it
+                # MAX across windows, not mean: suppression is intermittent and an average dilutes it.
+                # NOTE (2026-07-26): this comment previously claimed the calibration "achieved AUC 0.829"
+                # against the clinician label. That number was never reproducible. Measured properly in
+                # heedb_burden_validity.py it is AUC 0.749 [0.747,0.760] on n=27,948 matched recordings.
+                # An unverified figure in a comment had been overstating the exposure's validity.
                 w.writerow([site, pid, bids, sess, len(burdens),
                             round(float(np.max(burdens)), 4), THRESH_UV])
                 fh.flush(); n_ok += 1
+                # PER-WINDOW output. The max discards the spread ACROSS windows of the same recording, and
+                # that spread is measurement error by construction -- same patient, same recording, minutes
+                # apart. It is the quantity the structural-versus-reversible conclusion depends on, and it
+                # was thrown away. Written to a separate file so existing outputs are unchanged.
+                if WIN_OUT:
+                    for wi, bv in enumerate(burdens):
+                        ww.writerow([site, pid, bids, sess, wi, round(float(bv), 4), THRESH_UV])
+                    wfh.flush()
         except Exception:
             continue
         if i % 25 == 0:
