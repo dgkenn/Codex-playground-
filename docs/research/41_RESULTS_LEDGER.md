@@ -1835,3 +1835,80 @@ measure differs from burden in **kind** — it is about change — where the fai
 they were measured**.
 
 **Cumulative distinct results: 380.**
+
+---
+
+## R381–R384 · The window-length question on real EEG: predicting forward instead of scoring against truth
+
+R373–R376 answered the question in simulation, where a true p_t exists. On real EEG none does, so agreement is
+all a comparison can show. This arm asks something that needs no ground truth and is closer to the clinical
+use: **given everything observed so far, which estimator best predicts what the EEG does next?** Binomial
+log-loss on the next window, strictly causal — σ² is fitted by EM on the first 30 % of each recording and
+frozen, and only windows entirely after that burn-in are scored, so nothing sees its own future.
+
+521 recordings (interior-gap filtered; 51 excluded), median length 3,600 s, median burden 0.338.
+
+### R381 · The trailing ratio is never the best predictor at any window length
+
+| window | ratio | cumulative | ewma tuned | ewma oracle | bsp_last | **bsp_mean** | best | corr(ratio, BSP) |
+|---|---|---|---|---|---|---|---|---|
+| 300 s | 0.3154 | 0.3255 | 0.4878 | 0.3106 | 0.5738 | **0.3146** | bsp_mean | 0.996 |
+| 120 s | 0.2864 | 0.3118 | 0.4416 | 0.2827 | 0.5184 | **0.2855** | bsp_mean | 0.995 |
+| 60 s | 0.2811 | 0.3072 | 0.4350 | 0.2727 | 0.5100 | **0.2797** | bsp_mean | 0.990 |
+| 30 s | 0.2899 | 0.3091 | 0.4335 | 0.2724 | 0.5058 | **0.2866** | bsp_mean | 0.984 |
+| 15 s | 0.3145 | 0.3061 | 0.4204 | 0.2676 | 0.4934 | **0.3030** | bsp_mean | 0.971 |
+| 8 s | 0.3505 | **0.3052** | 0.4006 | 0.2657 | 0.4764 | 0.3234 | cumulative | 0.955 |
+| 4 s | 0.4163 | **0.3046** | 0.3695 | 0.2630 | 0.4468 | 0.3491 | cumulative | 0.943 |
+| 2 s | 0.5145 | **0.3043** | 0.3245 | 0.2598 | 0.4014 | 0.3698 | cumulative | 0.932 |
+| 1 s | 0.5615 | 0.3042 | **0.2861** | 0.2542 | 0.3370 | 0.3370 | ewma | 0.930 |
+
+Paired per-recording, **bsp_mean beats the trailing ratio at every window length**, all bootstrap CIs excluding
+zero: +0.0008 [+0.0004, +0.0013] at 300 s rising to +0.2246 [+0.2032, +0.2479] at 1 s.
+
+**One qualification that matters.** At 300 s bsp_mean wins on average but on only **44.0 %** of recordings —
+the mean is carried by a minority with large gains. Win rates rise to 64.5 % at 60 s and ~74 % at ≤8 s. "Beats
+at every window" is true of the average and not of the typical recording at long windows.
+
+### R382 · An instantaneous estimate is the wrong summary for predicting an interval
+
+The two causal BSP summaries differ enormously, and reporting only one would have misstated the estimator —
+the first version of this analysis did exactly that and was corrected before anything was reported.
+`bsp_mean` averages the causal filter over the window; `bsp_last` takes its value at the final bin. At 300 s
+they score **0.3146 versus 0.5738**. `bsp_last` *loses* to the trailing ratio from 300 s down to 4 s
+(−0.2583 [−0.2927, −0.2248] at 300 s) and wins only at 2 s and 1 s.
+
+The reason is interpretable rather than a defect: in burst suppression the filtered probability at any one
+instant is often near 0 or 1, and a confident value at a single bin is a poor stand-in for the next five
+minutes, which will contain both states. **The estimator is not the summary.** At 1 s the two coincide exactly
+(0.3370 both), as they must, since a one-bin window's mean is its last bin — a useful internal check.
+
+### R383 · Where the simulation does not replicate, and where real EEG differs from it
+
+- **The practical-EWMA result does not fully carry over.** In simulation BSP beat a causally-tuned EWMA at
+  *every* window (RMSE ratios 0.513–0.903). On real EEG bsp_mean is ahead from 300 s to 8 s, ties at 4 s, and
+  **loses at 2 s and 1 s**. The simulated regimes are not bursty in the way real suppression is.
+- **The cumulative average is extremely strong and nearly flat** (0.3042–0.3255 across every window), and it
+  wins outright at ≤8 s. Over the scored horizon these recordings are close to stationary, so at short
+  horizons nothing beats "the patient's overall level so far".
+- **Agreement decays far more slowly than in simulation**: correlation stays **≥0.930 down to 1 s**, against
+  0.728 at 1 s in simulation. Real recordings are more persistent than the simulated processes. These two
+  correlations are **not directly comparable** — the simulation used the smoothed (non-causal) BSP and this
+  uses the causal filter — so the honest statement is about persistence, not a numerical contradiction.
+
+### R384 · The interior-gap exclusion changes nothing
+
+Rerun unfiltered (572 recordings, 51 glued-together recordings restored), **every verdict is identical** and
+every value moves by less than 0.007: bsp_mean best from 300 s to 15 s, cumulative at 8–2 s, ewma at 1 s, and
+bsp_mean ahead of the trailing ratio at every window with CIs excluding zero. The exclusion was the right call
+on the merits — a closed-up 1,817 s hole genuinely misrepresents a transition — but it is not load-bearing for
+this result.
+
+**Verification.** The printed table was independently recomputed from the persisted per-recording scores
+(4,613 rows, 521 recordings) and matches exactly at 300 s, 30 s and 1 s.
+
+**Predicted vs actual (calibration ledger).** Predicted that BSP would beat the trailing ratio at short
+windows and converge to it at long ones. Actual: **it beats the ratio at every window in the window-averaged
+form, and the instantaneous form loses at long windows** — the prediction had the right direction for the
+wrong object, and the object turned out to matter more than the window length.
+
+**Cumulative distinct results: 384.**
