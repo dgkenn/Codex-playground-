@@ -24,7 +24,7 @@ on top via `generator/swaps.txt`; their cost is listed honestly.
 | Intern | Request | Status | Cost |
 |---|---|---|---|
 | **MacNeille** | No night float Christmas week (12/20–25) + SC on NYE | ✅ **Bronson takes the Christmas NF week** (approved); MacNeille has no Christmas nights and short call 12/31 | 2 Q4 gaps (Bronson 12/29→31, MacNeille 12/26→28) |
-| **Kennedy** | (reverted) Kennedy⇄Chiasson November swap removed per PD | November is back to the **pure march** — Chiasson holds the 11/1–6 night float, Kennedy on his normal schedule (his own NF week is 11/8–13). Thanksgiving 11/26 still off. PD will handle Kennedy's November by hand | none |
+| **Kennedy** | Night float the first week of Nov (Sun 11/1 → Fri 11/6 night) | ✅ **NF 11/1–6**, off 11/7–8 weekend, back on days 11/9–13. Chiasson takes his 11/8–13 nights in return (unavoidable — she holds the 11/1–6 nights). Thanksgiving 11/26 off | documented KEN_SWAP month-boundary coupling only |
 | **Kennedy** | Thanksgiving Day off | ✅ off 11/26 (already); he holds the 11/28 Saturday 24h | none |
 | **Oghenesume** | April 9–12 off | ✅ **4/10–11 weekend fully off** (freed the 4/11 Sunday long call) | 2 Q4 gaps on **Rivera** (BMC, non-LSH) |
 
