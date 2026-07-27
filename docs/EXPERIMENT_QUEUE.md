@@ -31,6 +31,15 @@ its spectrum. That is a reason to rate them higher than the two that failed, not
 
 ### NEXT, in order
 
+0. **URGENT — settle whether R360's residual is an artefact of a linear burden adjustment.** This now
+   outranks everything, because B3, T3 and R378 are all built on that residual. The flag's positivity is flat
+   to 10 % burden and then collapses (92.7 % → 56.1 %); a linear term cannot absorb a step, so the non-linear
+   part survives the adjustment and looks like signal. The test attempted (R387) was **inconclusive** — R360
+   did not reproduce on an approximated cohort of 239 that also conditioned on ascertained death. Settling it
+   needs **R358–R360's actual cohort and outcome definition reconstructed exactly**, then the same flexible
+   (quintile or spline) adjustment. Either answer is valuable: an artefact retires three experiments' worth of
+   mechanism hunting, and survival makes the residual much harder to dismiss.
+
 1. **Replicate the trend result in HEEDB, where the flag actually lives.** This is now the highest-value
    experiment in the project and it closes a loop that I-CARE structurally cannot. I-CARE has no clinician
    flag, so R378 could only show that temporal evolution carries outcome information the other measures do
@@ -52,6 +61,14 @@ its spectrum. That is a reason to rate them higher than the two that failed, not
 
 ### RUNNING
 - nothing.
+
+### RULED OUT THIS CYCLE
+- **MORGOTH's labelled task sets as a fix for the slowing flag** (R385). Readable, and they join to our
+  cohort by `bdsp_mrn`, but positives-only (no specificity estimable) and carrying no contrast for
+  generalized slowing — FOCALSLOWING patients are 99.8 % gen-slowing-flagged too. They remain useful for
+  constructs where the contrast is real (FOCALSLOWING shows 5.12× enrichment; IIIC, PDR, SPIKES untested).
+- **The MORGOTH model itself** stays blocked: code and checkpoint unreleased, and this sandbox's GitHub
+  access is proxy-scoped so its status cannot be checked from here. See `docs/MORGOTH_INTEGRATION.md`.
 
 ### CLOSED THIS CYCLE, do not revisit
 - Topography as the missing dimension (T1–T4). Necessary condition failed; the hypothesis fails with it.
