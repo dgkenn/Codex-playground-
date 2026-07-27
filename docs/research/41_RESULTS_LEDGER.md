@@ -1532,3 +1532,42 @@ Actual: they share a common factor but are not redundant — a partial confirmat
 more useful finding, because it identifies where the better measurement lives.
 
 **Cumulative distinct results: 360.**
+
+---
+
+## R361–R364. Whole-record slow activity: hypothesis falsified, coverage gained, residual sharpened
+
+Tested whether background slow activity is the better measurement, as R360 implied. I-CARE, 601 patients with a
+whole-record spectrum (vs 559 with morphology — the coverage difference is itself the point).
+
+| id | arm | result | verdict |
+|---|---|---|---|
+| R361 | **B1** whole-record slow fraction higher in good outcome | good 0.784 vs poor 0.756, **+0.027 [−0.003, +0.060]** | **null** |
+| R362 | **B2** adds over burden | increment **+0.023 [−0.018, +0.048]**; coefficient adjusted for burden **−1.69 [−2.65, −0.80]** | **association yes, prediction no** |
+| R363 | **B3** adds over burden AND intra-burst content | **−0.003 [−0.020, +0.004]**; coefficient **−0.52 [−1.98, +0.71]** | **FALSIFIED** |
+| R363b | reverse: does intra-burst add over burden + background? | **+0.002 [−0.025, +0.016]** | **also null** |
+| R364 | **B4** coverage on patients morphology cannot see | 42 patients, 69.0 % poor, median burden 0.510; slow fraction alone **AUC 0.629** | **holds** |
+
+**The hypothesis is falsified and the reason is informative.** Background and intra-burst spectral content are
+**mutually redundant** — neither adds over the other. They are the same measurement taken in two places, so the
+question "which is better?" was malformed. This also confirms the pattern from N10 in a third place: a real
+association with outcome (coefficient −1.69 [−2.65, −0.80] adjusted for burden) that yields **no predictive
+increment**. Spectral content is genuinely related to outcome and genuinely weak.
+
+**The one gain is coverage, and it is structural rather than statistical.** Spectral measures are defined for
+every recording; burst morphology is not. On the 42 patients morphology is blind to — sicker, median burden
+0.510, 69 % poor outcome — the slow fraction still discriminates at AUC 0.629. That does not improve the model,
+but it removes a limitation (L1) that conditioned every morphology result on having four bursts.
+
+**The residual is now sharper, not explained.** R360's finding stands: the clinician's slowing flag carries
+**−0.752 [−1.075, −0.434]** beyond burden and intra-burst content, and whole-record slow power does **not**
+account for it. So the human reading captures something neither an intra-burst FFT nor a whole-record Welch
+periodogram does. Candidates this project has not measured: **spatial distribution** (both our measures take a
+median across channels and discard topography), **reactivity** (unavailable in this schema), **temporal
+evolution within the record**, and **specific waveform morphology** rather than band power.
+
+**Predicted vs actual (calibration ledger).** Predicted 0.60 that the background would beat the intra-burst
+measure. Actual: falsified — they are redundant. The prediction assumed the two measure different things
+because they live in different parts of the record; they do not.
+
+**Cumulative distinct results: 364.**
