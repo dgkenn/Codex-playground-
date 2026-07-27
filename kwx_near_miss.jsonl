@@ -470,3 +470,11 @@
 {"ticker": "KXHIGHTSFO-26JUL26-T67", "side": "no", "ask_c": 100, "reason": "ask>98", "cushion_f": 2.8, "extreme_f": 69.8, "station": "KSFO", "kind": "max", "date": "2026-07-26", "ts": 1785100608527}
 {"ticker": "KXHIGHTSFO-26JUL26-B67.5", "side": "no", "ask_c": 100, "reason": "ask>98", "cushion_f": 1.8, "extreme_f": 69.8, "station": "KSFO", "kind": "max", "date": "2026-07-26", "ts": 1785100608528}
 {"ticker": "KXHIGHTMIN-26JUL26-B96.5", "side": "no", "ask_c": 100, "reason": "ask>98", "cushion_f": 1.06, "extreme_f": 98.06, "station": "KMSP", "kind": "max", "date": "2026-07-26", "ts": 1785102973884}
+{"ticker": "KXHIGHTSEA-26JUL26-T70", "side": "no", "ask_c": 100, "reason": "ask>98", "cushion_f": 1.6, "extreme_f": 71.6, "station": "KSEA", "kind": "max", "date": "2026-07-27", "ts": 1785110417425}
+{"ticker": "KXHIGHTSFO-26JUL26-T67", "side": "no", "ask_c": 100, "reason": "ask>98", "cushion_f": 2.8, "extreme_f": 69.8, "station": "KSFO", "kind": "max", "date": "2026-07-27", "ts": 1785110417806}
+{"ticker": "KXHIGHTSFO-26JUL26-B67.5", "side": "no", "ask_c": 100, "reason": "ask>98", "cushion_f": 1.8, "extreme_f": 69.8, "station": "KSFO", "kind": "max", "date": "2026-07-27", "ts": 1785110417807}
+{"ticker": "KXHIGHTMIN-26JUL26-T94", "side": "no", "ask_c": 100, "reason": "ask>98", "cushion_f": 4.6, "extreme_f": 98.6, "station": "KMSP", "kind": "max", "date": "2026-07-27", "ts": 1785110418556}
+{"ticker": "KXHIGHTMIN-26JUL26-B94.5", "side": "no", "ask_c": 100, "reason": "ask>98", "cushion_f": 3.6, "extreme_f": 98.6, "station": "KMSP", "kind": "max", "date": "2026-07-27", "ts": 1785110418557}
+{"ticker": "KXHIGHTMIN-26JUL26-B96.5", "side": "no", "ask_c": 100, "reason": "ask>98", "cushion_f": 1.6, "extreme_f": 98.6, "station": "KMSP", "kind": "max", "date": "2026-07-27", "ts": 1785110418557}
+{"ticker": "KXHIGHTATL-26JUL26-T86", "side": "no", "ask_c": 100, "reason": "ask>98", "cushion_f": 3.6, "extreme_f": 89.6, "station": "KATL", "kind": "max", "date": "2026-07-27", "ts": 1785110419438}
+{"ticker": "KXHIGHTATL-26JUL26-B86.5", "side": "no", "ask_c": 100, "reason": "ask>98", "cushion_f": 2.6, "extreme_f": 89.6, "station": "KATL", "kind": "max", "date": "2026-07-27", "ts": 1785110419438}
