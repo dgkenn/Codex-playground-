@@ -1,113 +1,60 @@
-# Racial Measurement Bias in Clinical Laboratory Tests — Research Repository
+# Research documents — burst suppression and clinical EEG
 
-**A central, publication-oriented archive of a multi-cohort investigation into how
-plasma-protein / immunoglobulin differences between racial groups produce
-*systematic measurement bias* in routine clinical chemistry — and what that means
-for diagnosis, disparities epidemiology, and patient safety.**
+*Index for `docs/research/`. Current at R392, 2026-07-27. Read `../../CLAUDE.md` first.*
 
-Author working repo: `docs/research/`. Authoritative raw analysis log (every exact
-number, every review round): [`../REAL_RESULTS_SODIUM_RACE_BIAS.md`](../REAL_RESULTS_SODIUM_RACE_BIAS.md).
-All statistics in these documents are copied verbatim from that log.
+This directory holds the **live** research record for the burst-suppression and clinical-EEG programme on
+HEEDB, I-CARE and VitalDB. Documents from unrelated earlier projects were moved to `../archive/research/` on
+2026-07-27; nothing was deleted and everything is recoverable from git history.
 
 ---
 
-## The through-line (one paragraph)
+## Read in this order
 
-Higher plasma globulins / immunoglobulins in non-White populations perturb several
-routine assays *through their measurement physics*, not through any true
-physiological difference. The extra plasma solid phase makes **indirect-ISE sodium
-and chloride read falsely low** (electrolyte-exclusion / water-displacement), while
-globulin binding makes **total calcium read falsely high** (protein-bound calcium).
-A separate, pre-analytic mechanism makes **serum/chemistry potassium read falsely
-high** (pseudohyperkalemia). These are not four coincidences: three of them share
-**one mechanism** (excess plasma protein) with directions that match known
-chemistry, and each is measured at matched *true* value (blood-gas / ionized
-reference) so the bias cannot be a real physiological difference. The consequence is
-**differential diagnostic misclassification by race** — false-hyponatremia labels,
-masked hypocalcemia, false-hyperkalemia alarms — and a reframing of parts of the
-published racial dyselectrolytemia literature as *measurement artifact*.
+| # | document | what it is |
+|---|---|---|
+| 1 | **`49_HANDOFF_STATE.md`** | **Start here.** What is established, what is provisional, what is dead, what to do next. Every number verified against its raw log. |
+| 2 | **`48_RESEARCH_LANDSCAPE.md`** | What this data can and cannot settle, with feasibility counts. Where to invest next and what is structurally blocked. |
+| 3 | **`41_RESULTS_LEDGER.md`** | **The primary record.** 392 results, and the consolidated constraint table (10 positives, 15 negatives, 5 structural limits) that every mechanism candidate must satisfy. Long — read the constraint table and the most recent sections, not the whole thing. |
+| 4 | `47_BSP_TECHNICAL_NOTE.md` | Self-contained, publishable methods note on the BSP state-space estimator: independent implementation, exact-solver validation, window-length sweep, real-EEG forward prediction. |
+| 5 | `45_MANUSCRIPT.md` | The manuscript draft. **Predates R358–R392** — check every claim against the ledger before quoting. |
 
----
+## Supporting documents (this project, still relevant)
 
-## Documents in this repository
-
-| # | File | What it establishes | Evidentiary standing |
-|---|------|--------------------|----------------------|
-| — | [`README.md`](README.md) | This index + through-line + roadmap | — |
-| 01 | [`01_FLAGSHIP_calcium_and_panel.md`](01_FLAGSHIP_calcium_and_panel.md) | Total-calcium reads falsely high at matched ionized Ca (MIMIC z=+11.6); replicates across sites; corrected-calcium formula fails by race; the coordinated panel (Na↓, Cl↓, Ca↑) | **Durable / multi-site.** The wall-breaker: ionized Ca exists in eICU/SICdb, so calcium escaped the single-center ceiling that capped sodium. |
-| 02 | [`02_potassium_pseudohyperkalemia.md`](02_potassium_pseudohyperkalemia.md) | Chemistry K reads falsely high vs blood-gas K; false-hyperkalemia OR 2.36 (Black 13.5% vs White 6.3%); a *distinct* pre-analytic mechanism (opposite sign from protein) | **Durable, single-center; mechanism inferred.** ECG partially corroborates spuriousness. |
-| 03 | [`03_sodium_and_artifactual_disparities.md`](03_sodium_and_artifactual_disparities.md) | The original sodium finding (chem−bloodgas −1.18 mEq/L, z=−12.6); the single-center ceiling; **known racial electrolyte disparities are partly measurement artifact** (hypocalcemia ~90%, hyperchloremia ~100%) | **Racial axis single-center; mechanism cross-national (SICdb).** The disparities-reframe is the scientific payload. |
-| 04 | [`04_mechanism_immunoglobulins.md`](04_mechanism_immunoglobulins.md) | The upstream biology: globulin / IgG / cholesterol dose-response; cross-ethnic replication (Hispanic, Asian); literature; myeloma/paraprotein link | **Mechanism is the most robust layer** — cross-national (SICdb z=−28.6/−39.6), graded, cross-reference. |
-| 05 | [`05_consequences_outcomes_and_limits.md`](05_consequences_outcomes_and_limits.md) | Misclassification consequences (solid); ECG arbitration; the hard arrhythmia/mortality outcome chain; consolidated review history | **Consequences durable; hard-outcome chain HYPOTHESIS-GENERATING** (fragile, does not replicate in eICU). |
-| M | [`METHODS_AND_REPRODUCIBILITY.md`](METHODS_AND_REPRODUCIBILITY.md) | Data sources, cohort construction, statistical methods, script inventory | — |
-| P | [`MANUSCRIPT_OUTLINE.md`](MANUSCRIPT_OUTLINE.md) | Proposed papers, target journals, figure/table plan, what is submission-ready vs not | — |
+| document | what it is |
+|---|---|
+| `46_MECHANISM_BURST_CONTENT.md` | mechanism argument for burst content; predates the aetiology reversal |
+| `44_MECHANISM_AND_PRIOR_WORK.md` | mechanism candidates against prior literature |
+| `43_GAP_ANALYSIS_BROWN.md` | gap analysis against a publication-ready standard |
+| `42_MAIN_RESULT.md` | the headline burden result |
+| `39_HEEDB_FINDINGS.md`, `40_ROC_PIVOT.md` | earlier HEEDB deliverables |
+| `38_HEEDB_BS_PHENOTYPE_SAP.md` | statistical analysis plan |
+| `37_BROWN_SUMMARY.md`, `33_emery_brown_paper_plan.md` | positioning and paper planning |
+| `34_BS_hypotension_manuscript.md`, `36_BS_hypotension_HARDENED_correction.md` | VitalDB burst-suppression / hypotension line, including its correction |
+| `35_HEEDB_bs_context_findings.md` | HEEDB context findings |
+| `30_EEG_toptier_loop_verdict.md`, `26_eeg_iic_ncse_SAP.md` | earlier EEG scoping |
+| `figures/` | F1–F4 (burden quintiles, calibration, ROC, reliability) and the VitalDB BS figures |
 
 ---
 
-## What is durable vs what is hypothesis-generating
+## The current lead, so you do not have to hunt for it
 
-**This distinction is load-bearing. Do not blur it in any downstream write-up.**
+**The prognostic meaning of intra-burst EEG content reverses by aetiology** (R389–R392). AUC of intra-burst
+8–30 Hz content for 30-day death is **0.589 [0.545, 0.633]** in anoxic patients and **0.408 [0.364, 0.452]**
+in non-anoxic — both excluding 0.5, on opposite sides, with no model involved. It survives burden strata
+(3/3), burst-count strata (3/3), and decomposition of the non-anoxic arm (4/4 subgroups below 0.5, clustered
+within 0.028). **It retrodicts N10**, a standing negative it was not built to explain.
 
-### Durable (multi-site and/or mechanistically airtight)
-- **Total calcium is racially miscalibrated at matched ionized calcium** (MIMIC z=+11.6;
-  survives albumin correction z=+7.3; mechanism replicates SICdb z=+39.6). *(Doc 01)*
-- **The protein → indirect-ISE mechanism** — graded dose-response, monotone across
-  protein quartiles, replicated cross-nationally in SICdb (−0.843 mEq/L per g/dL,
-  z=−28.6) and against an independent osmolality reference (z=−9.3). *(Docs 03, 04)*
-- **Differential misclassification**: false-hyponatremia label (adj OR 1.68, z=+3.0);
-  masked mild hypocalcemia (26.2% vs 18.1%); false-hyperkalemia (adj OR 2.36). *(Docs 01, 02, 05)*
-- **The artifactual-disparities reframe**: ~90% of the reported Black−White hypocalcemia
-  gap and ~100% of the hyperchloremia gap disappear when the *true* (ionized / blood-gas)
-  value is used. *(Doc 03)*
-
-### Single-center (racial axis) — mechanism portable, race gap not yet multi-site
-- The **sodium racial differential** exists cleanly only in MIMIC (paired chem +
-  blood-gas + race). eICU/SICdb lack paired blood-gas sodium *with* race, so the
-  sodium *race* gap is not multi-site. Calcium (Doc 01) is what solved this. *(Doc 03)*
-
-### Hypothesis-generating (explicitly NOT confirmatory)
-- The **hard clinical-outcome chain** — masked hypocalcemia → unrecognized long QT →
-  ventricular arrhythmia / mortality — is **fragile**: tiny event counts (e.g. 26 vs 3),
-  extreme selection, unverifiable temporality, and **eICU mortality does not replicate**.
-  Red-team tempered. Report as hypothesis-generating only. *(Doc 05)*
-- The **treatment/overcorrection harm** (e.g. hypertonic saline given on a false-low
-  sodium) is underpowered (n=21, CI crosses 1). *(Docs 03, 05)*
+Its weakness is external replication: I-CARE agrees in direction only (0.511 [0.464, 0.557], which *includes*
+0.5) and, being entirely cardiac arrest, cannot test an aetiology contrast at all. Closing that gap — with a
+mixed-aetiology cohort such as TUH — is the highest-value next action.
 
 ---
 
-## Publication roadmap (short version — full detail in `MANUSCRIPT_OUTLINE.md`)
+## Conventions in this directory
 
-1. **Flagship methods/equity paper — "Corrected calcium is racially miscalibrated."**
-   The strongest standalone: a formula in every EHR (albumin-corrected calcium) omits
-   globulin and therefore over-reads calcium by race; the fix is ionized calcium or a
-   globulin-inclusive correction. Multi-site, actionable, an *inverted* analog of the
-   race-in-eGFR story (here the correction *creates* rather than removes bias).
-2. **Companion / research-letter — "Racial electrolyte disparities are partly a
-   measurement artifact"** (sodium + chloride + the disparities reframe).
-3. **Mechanism note** — the immunoglobulin dose-response tying the panel together.
-4. **Hypothesis-generating letter** — pseudohyperkalemia false-alarm burden by race,
-   framed as a safety signal requiring prospective confirmation.
-
----
-
-## Data sources (see `METHODS_AND_REPRODUCIBILITY.md` for detail)
-
-| Cohort | Role | Race? | Key paired reference |
-|--------|------|-------|----------------------|
-| **MIMIC-IV** (Boston) | Primary — racial differential | Yes | blood-gas Na/K/Cl, ionized Ca |
-| **eICU-CRD** (208 hospitals) | Multi-site — calcium racial replication; sodium mechanism | Yes | ionized Ca; osmolality-reconstructed Na |
-| **SICdb** (Salzburg, Austria) | Cross-national mechanism | No | dual-method protein dose-response |
-| **MIMIC-IV-ECG** (800,036 ECGs) | Independent physiological arbiter | via link | machine QTc / QRS / PR |
-
----
-
-## Integrity notes (do not weaken)
-
-- **No PHI / raw patient data is committed.** Raw extracts and analysis scripts live in
-  the gitignored `scratchpad/`; only these aggregate, de-identified documents and (where
-  useful) code are versioned.
-- **Every number is copied from the authoritative log**, not re-derived from memory.
-  Where the log carries two related figures (e.g. mechanism slope in two units), both
-  are preserved rather than silently reconciled.
-- **Honest caveats are mandatory.** The single-center / hypothesis-generating boundaries
-  above are part of the finding, not a disclaimer to be trimmed for impact.
+- **Numbers are quoted with their intervals.** A point estimate without one is a bug.
+- **Every analysis script carries its pre-registration in its module docstring**, committed before the result
+  existed. When reading a result, read the script's docstring first: it states the prediction, the
+  falsification condition, and the scope limit.
+- **Withdrawn claims stay visible**, marked at the point a reader would rely on them rather than only in a
+  correction at the end (catalogue rule 3).
