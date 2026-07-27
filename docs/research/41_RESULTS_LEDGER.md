@@ -1652,3 +1652,102 @@ the filtered set is conditioned on a variable related to the endpoint. The windo
 prognostic claim and reports filtered and unfiltered side by side.
 
 **Cumulative distinct results: 372.**
+
+---
+
+## R373–R376 · Where BSP stops being interchangeable with a threshold ratio
+
+`47_BSP_TECHNICAL_NOTE.md` §5.3 named this as its open question verbatim: *"r = 0.988 is specific to
+whole-recording aggregation… we have not characterised where the equivalence breaks down as window length
+falls — that is the obvious next experiment."* It has to be simulation: on real EEG there is no ground truth
+for an instantaneous probability, so real data can show only whether two estimators **agree**, never which is
+**right**. Seven regimes × 12 seeds × 1,200 one-second bins; two of the regimes are the model's own random
+walk and three are processes it does not assume. Registered before running (`964ed58`).
+
+### R373 · The boundary, which is the answer to the question asked
+
+RMSE against the true window-mean p:
+
+| window | ratio | bsp_win (like-for-like) | ewma tuned | ewma oracle | bsp_causal (online) | bsp_full (non-causal) | corr(ratio, bsp) |
+|---|---|---|---|---|---|---|---|
+| 600 s | 0.0045 | 0.0046 | 0.0104 | 0.0038 | 0.0053 | 0.0050 | — |
+| 300 s | 0.0065 | 0.0065 | 0.0140 | 0.0057 | 0.0073 | 0.0069 | 0.983 |
+| 120 s | 0.0103 | 0.0105 | 0.0219 | 0.0096 | 0.0130 | 0.0108 | 0.994 |
+| 60 s | 0.0149 | 0.0149 | 0.0274 | 0.0134 | 0.0176 | 0.0148 | 0.989 |
+| 30 s | 0.0213 | 0.0209 | 0.0319 | 0.0181 | 0.0224 | 0.0189 | 0.979 |
+| 15 s | 0.0303 | 0.0302 | 0.0356 | 0.0228 | **0.0276** | 0.0226 | 0.956 |
+| 8 s | 0.0417 | 0.0427 | 0.0382 | 0.0269 | **0.0317** | 0.0250 | 0.916 |
+| 4 s | 0.0587 | 0.0610 | 0.0401 | 0.0303 | **0.0348** | 0.0264 | 0.862 |
+| 2 s | 0.0826 | 0.0894 | 0.0414 | 0.0324 | **0.0368** | 0.0271 | 0.797 |
+| 1 s | 0.1167 | 0.1148 | 0.0423 | 0.0337 | **0.0382** | 0.0276 | 0.728 |
+
+**Interchangeable at 60 s and longer** (r ≥ 0.98 at 60, 120, 300 s); **diverging at 30 s and below**
+(0.979 → 0.956 at 15 s → 0.916 at 8 s → 0.728 at 1 s). The accuracy **crossover is between 15 and 30 s**: at
+30 s the plain ratio is still better (0.0213 vs 0.0224), at 15 s the online BSP has overtaken it (0.0276 vs
+0.0303), and by 1 s it is **3.1× more accurate** (0.0382 vs 0.1167). The r = 0.988 reported for
+whole-recording aggregation is therefore not a special case — it is the far end of a curve, and the curve
+turns at about half a minute.
+
+### R374 · The advantage is borrowed strength, not the model — and this refutes our own prediction
+
+The registered S1 said BSP's advantage should **grow** as the window shortens because it borrows strength from
+neighbouring bins. Half of that is right and the important half is wrong. Given **exactly the same data** as
+the ratio — `bsp_win`, refitted on the window alone — BSP is **never more accurate at any window length**:
+ratios to the matched baseline are 1.014, 1.007, 1.028, 1.017, 1.021, 1.047, 1.057, 1.081, 1.087 from 600 s
+down to 2 s, i.e. it gets *worse* as the window shortens. (At 1 s BSP is undefined on a single bin and
+degenerates to the ratio by construction; that 1.000 is bookkeeping.)
+
+**So the entire short-window advantage comes from data outside the window, not from the model applied to the
+data inside it.** That is not a criticism — a monitor genuinely has the preceding minutes, and `bsp_causal`
+uses no observation from the future — but it is a precise statement of what is being bought, and it is the
+opposite of what we predicted.
+
+### R375 · It beats a deployable smoother and loses to an unattainable one
+
+Beating a one-second ratio proves nothing on its own: the ratio over a single bin is an absurd baseline and
+any smoother would beat it. The state equation **is** a random walk, whose optimal filter under Gaussian noise
+is essentially an exponentially-weighted average — so the question is whether the binomial observation model
+and the logistic link earn anything over three lines of arithmetic. Two baselines bracket it:
+
+- **causally tuned EWMA** — constant picked by one-step-ahead error on the first 30 %, no truth and no future,
+  deployable by anyone. `bsp_causal` beats it at **every** window length, RMSE ratios **0.513, 0.522, 0.596,
+  0.642, 0.702, 0.775, 0.828, 0.867, 0.890, 0.903** (600 s → 1 s): between **10 % and 49 % lower error**.
+- **oracle EWMA** — handed the best constant per regime and window from the true p. A ceiling, not a method.
+  BSP loses to it everywhere (1 s: 0.0382 vs 0.0337).
+
+**BSP sits strictly between the practical smoother and the unreachable ceiling.** The state-space machinery
+earns real accuracy over what a practitioner would otherwise write, and does not exhaust what smoothing could
+in principle deliver. Median causally-tuned α was 0.05 (range 0.02–0.35).
+
+### R376 · Where the smoothing pays, and where the credible band does not cover
+
+`bsp_win / ratio` by regime (<1 = BSP better) confirms registered prediction S2 in shape: smoothing pays where
+the state is smooth and **costs** where it jumps.
+
+| regime | 600 s | 120 s | 30 s | 8 s | 2 s |
+|---|---|---|---|---|---|
+| constant 0.50 | 0.998 | 0.993 | 0.981 | 0.954 | **0.851** |
+| constant 0.90 | 0.973 | 1.035 | 0.980 | 1.215 | 1.238 |
+| random walk, slow | 1.023 | 1.004 | 0.994 | 0.986 | 0.994 |
+| random walk, fast | 1.029 | 1.009 | 1.031 | 1.069 | 1.291 |
+| **step** | **1.324** | **1.251** | **1.214** | **1.503** | **1.851** |
+| ramp | 0.967 | 0.990 | 0.984 | 0.997 | 0.944 |
+| oscillation | 0.982 | 1.038 | 1.050 | 0.982 | 1.007 |
+
+The step penalty (up to **1.851**) is the same defect the exact-solver validation found as a 0.775 pointwise
+deviation, reached by a completely different route — and it persists even at 600 s windows (1.324), so it is
+not a short-window artefact.
+
+**Coverage of the 95 % credible band, per bin:** pooled **0.979** against nominal 0.950 — the band
+**over-covers**, which is the safe direction, in six of seven regimes (0.988–0.996). The exception is the
+**fast random walk at 0.916**, which under-covers: where the state moves fastest, the interval is too narrow.
+Fitted σ² tracks the truth sensibly (0.0062 for a constant, 0.0474 for the fast walk). So the paper's claim
+that BSP supplies "a framework for statistical inference" that ratios lack survives, with the qualification
+that the interval is conservative in slow regimes and slightly anti-conservative in fast ones.
+
+**Predicted vs actual (calibration ledger).** Predicted 0.70 that BSP would beat the ratio at short windows on
+the same data. Actual: **falsified** — it never does. Predicted 0.50 that BSP would beat a tuned EWMA. Actual:
+**confirmed at every window length.** The first error is the same one as R365 and R361: assuming that a more
+elaborate estimator must extract more from a fixed sample, when what it actually does is use a larger one.
+
+**Cumulative distinct results: 376.**
