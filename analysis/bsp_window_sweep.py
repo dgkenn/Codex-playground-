@@ -64,6 +64,7 @@ SEEDS = int(os.environ.get("SWEEP_SEEDS", "12"))
 WINDOWS = [600, 300, 120, 60, 30, 15, 8, 4, 2, 1]
 MAX_WIN_FITS = int(os.environ.get("SWEEP_WIN_FITS", "8"))   # bsp_win refits per window length, capped for cost
 REGIMES = ["constant-0.50", "constant-0.90", "rw-slow", "rw-fast", "step", "ramp", "oscillation"]
+ALPHAS = [0.02, 0.05, 0.1, 0.2, 0.35, 0.5, 0.75, 1.0]   # EWMA smoothing constants; 1.0 = no smoothing
 
 
 def true_p(regime, t, rng):
@@ -86,6 +87,52 @@ def true_p(regime, t, rng):
     raise ValueError(regime)
 
 
+def ewma_grid(n, N, alphas):
+    """Causal exponentially-weighted moving average of the raw per-bin fraction, one series per alpha.
+
+    THE OBJECTION THIS ANSWERS. If BSP beats a one-second ratio, that is not yet interesting: the ratio over a
+    single bin is an absurdly noisy baseline, and ANY smoother would beat it. The state equation is a Gaussian
+    random walk, and the optimal filter for a random walk observed with Gaussian noise is essentially an
+    exponentially-weighted average -- so the question is whether the binomial observation model and the
+    logistic link earn anything at all over naive exponential smoothing of the raw fractions.
+
+    The alpha is chosen ORACLE-OPTIMALLY per regime and per window length -- that is, using the true p, which
+    no real user has. That makes this a CEILING on what exponential smoothing could achieve, and therefore the
+    most adversarial baseline available to BSP. If BSP still wins against it, the state-space machinery is
+    doing real work; if it does not, the honest conclusion is that a three-line smoother suffices.
+    """
+    f = n / N
+    out = {}
+    for a in alphas:
+        e = np.empty(len(f)); acc = f[0]
+        for t in range(len(f)):
+            acc = a * f[t] + (1 - a) * acc
+            e[t] = acc
+        out[a] = e
+    return out
+
+
+def ewma_causal_alpha(n, N, alphas, burn=0.30):
+    """Pick the EWMA constant the way a practitioner could: one-step-ahead error on the first 30 %.
+
+    The oracle alpha is a ceiling, not a method -- nobody has the true p to tune against. This picks alpha by
+    minimising one-step-ahead squared prediction error over a burn-in, which uses no truth and no future, and
+    is therefore a baseline a real user could actually deploy. Reporting BOTH bounds the answer: BSP's
+    position between the practical EWMA and the oracle EWMA is the honest statement of what it earns.
+    """
+    f = n / N
+    b = max(10, int(len(f) * burn))
+    best, ba = None, alphas[0]
+    for a in alphas:
+        acc = f[0]; err = 0.0
+        for t in range(1, b):
+            err += (acc - f[t]) ** 2          # predict bin t from everything before it
+            acc = a * f[t] + (1 - a) * acc
+        if best is None or err < best:
+            best, ba = err, a
+    return ba
+
+
 def causal_p(n, N, sigma2):
     """Forward-filtered BSP: the estimate at bin t uses no observation after t."""
     _, _, xf, _ = _filter(n, N, sigma2)
@@ -104,6 +151,8 @@ def one_series(task):
     full = bsp(n, N)
     p_full = full["p"]
     p_caus = causal_p(n, N, full["sigma2"])
+    ew = ewma_grid(n, N, ALPHAS)
+    a_causal = ewma_causal_alpha(n, N, ALPHAS)
 
     # ---- S3 coverage of the 95 % credible band, per bin ---------------------------------------------
     cover = float(np.mean((full["lo"] <= p) & (p <= full["hi"])))
@@ -142,8 +191,14 @@ def one_series(task):
             m = np.isfinite(a) & np.isfinite(b)
             return float(np.sqrt(np.mean((a[m] - b[m]) ** 2))) if m.sum() else float("nan")
 
+        # oracle-tuned EWMA: the best alpha for THIS regime and window, using the truth. A ceiling, not a
+        # method -- see ewma_grid's docstring.
+        ew_r = min((rmse(np.array([ew[a][s:s + W].mean() for s in starts]), truth), a) for a in ALPHAS)
+        ew_c = rmse(np.array([ew[a_causal][s:s + W].mean() for s in starts]), truth)
+
         rows.append(dict(
             regime=regime, seed=seed, W=W, nw=nw,
+            rmse_ewma=ew_r[0], ewma_alpha=ew_r[1], rmse_ewma_c=ew_c, ewma_alpha_c=a_causal,
             rmse_ratio=rmse(r_ratio, truth), rmse_causal=rmse(r_caus, truth),
             rmse_full=rmse(r_full, truth), rmse_win=rmse(r_win, t_win),
             rmse_ratio_sel=rmse(np.array([n[s:s + W].sum() / N[s:s + W].sum() for s in sel]), t_win),
@@ -174,22 +229,53 @@ def main():
     print("\n" + "=" * 100)
     print("S1  ACCURACY AGAINST GROUND TRUTH, BY WINDOW LENGTH  (RMSE of the estimated window-mean p)")
     print("=" * 100)
-    print(f"{'window':>8} {'ratio':>9} {'bsp_win':>9} {'bsp_causal':>11} {'bsp_full*':>10} "
-          f"{'win/ratio':>10} {'corr(ratio,':>12}")
-    print(f"{'(s)':>8} {'':>9} {'refit':>9} {'online':>11} {'non-causal':>10} "
-          f"{'':>10} {'bsp_full)':>12}")
+    print(f"{'window':>8} {'ratio':>9} {'bsp_win':>9} {'ewma':>9} {'ewma':>9} {'bsp_causal':>11} "
+          f"{'bsp_full*':>10} {'corr':>7}")
+    print(f"{'(s)':>8} {'':>9} {'refit':>9} {'tuned':>9} {'oracle':>9} {'online':>11} "
+          f"{'non-causal':>10} {'':>7}")
     print("-" * 100)
     for W in WINDOWS:
         rr = agg(rows, "rmse_ratio_sel", W); rw = agg(rows, "rmse_win", W)
         rc = agg(rows, "rmse_causal", W); rf = agg(rows, "rmse_full", W)
-        ratio_of = rw / rr if rr and rr == rr and rr > 0 else float("nan")
-        print(f"{W:>8} {agg(rows,'rmse_ratio',W):>9.4f} {rw:>9.4f} {rc:>11.4f} {rf:>10.4f} "
-              f"{ratio_of:>10.3f} {agg(rows,'corr',W):>12.3f}")
-    print("\n  NOTE the 'ratio' column is over ALL windows; 'win/ratio' is recomputed on the matched subset of")
-    print("    windows that bsp_win was refitted on, so the two are not divisible by hand.")
-    print("  * bsp_full uses observations from AFTER the window. It is not an online estimate and must not")
-    print("    be compared with the ratio as though it were. bsp_win is the like-for-like column: identical")
-    print("    data in, identical summary out, and 'win/ratio' below 1 means the model earned its keep.")
+        re_ = agg(rows, "rmse_ewma", W); rec = agg(rows, "rmse_ewma_c", W)
+        print(f"{W:>8} {agg(rows,'rmse_ratio',W):>9.4f} {rw:>9.4f} {rec:>9.4f} {re_:>9.4f} {rc:>11.4f} "
+              f"{rf:>10.4f} {agg(rows,'corr',W):>7.3f}")
+
+    print("\n  THE ADVERSARIAL COMPARISON: is BSP worth more than exponential smoothing? Two EWMA baselines")
+    print("  bracket the answer. 'tuned' picks its constant by one-step-ahead error on the first 30 % -- no")
+    print("  truth, no future, a baseline anyone could deploy. 'oracle' is handed the best constant for each")
+    print("  regime and window using the true p, which nobody has; it is a CEILING, not a method. BSP's")
+    print("  position between the two is the honest statement of what the binomial model and logistic link")
+    print("  earn over three lines of arithmetic.")
+    print(f"{'window':>8} {'bsp_causal':>11} {'ewma tuned':>11} {'ewma oracle':>12} {'bsp/tuned':>10} "
+          f" {'verdict vs the PRACTICAL baseline':>36}")
+    print("-" * 110)
+    for W in WINDOWS:
+        rc = agg(rows, "rmse_causal", W); re_ = agg(rows, "rmse_ewma", W)
+        rec = agg(rows, "rmse_ewma_c", W)
+        if not (rc == rc and rec == rec and rec > 0):
+            continue
+        q = rc / rec
+        v = ("BSP ahead" if q < 0.97 else
+             "indistinguishable" if q < 1.03 else "a causally-tuned EWMA is as good or better")
+        print(f"{W:>8} {rc:>11.4f} {rec:>11.4f} {re_:>12.4f} {q:>10.3f}  {v:>36}")
+    aa = [r["ewma_alpha_c"] for r in rows if r.get("ewma_alpha_c") is not None]
+    if aa:
+        print(f"\n  causally-tuned alpha: median {np.median(aa):.2f}, "
+              f"range {min(aa):.2f}-{max(aa):.2f}")
+    print("\n  * bsp_full uses observations from AFTER the window. It is not an online estimate and must not")
+    print("    be compared with the ratio as though it were.")
+    print("\n  THE LIKE-FOR-LIKE COLUMN IS bsp_win: identical data in, identical summary out, so any")
+    print("  difference from 'ratio' is the MODEL working rather than extra data. Its ratio to the matched")
+    print("  ratio baseline:")
+    line = "   "
+    for W in WINDOWS:
+        rr = agg(rows, "rmse_ratio_sel", W); rw = agg(rows, "rmse_win", W)
+        if rr == rr and rr > 0:
+            line += f" W={W}: {rw/rr:.3f}  "
+    print(line)
+    print("  (At W=1 BSP is undefined on a single bin and degenerates to the ratio by construction, so 1.000")
+    print("   there is bookkeeping, not a result.)")
 
     # the headline: the largest window at which the two are still interchangeable
     thresh = 0.98
