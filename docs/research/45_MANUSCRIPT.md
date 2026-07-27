@@ -21,7 +21,8 @@ agreement decaying with separation, trajectory coefficient +1.081 [+0.578, +1.61
 to **burden containing a fixed component that is not separately identified here** — consistent with it indexing a cerebral metabolic rate that
 is low because tissue has been lost, which extends the metabolic model of burst suppression (Ching *et al.*,
 *PNAS* 2012, PMID 22323592) into the post-anoxic setting. Two burst-morphology channels — spectral content and stereotypy — are associated with outcome
-**independently of burden** in I-CARE, one of them independently reported by another group; their incremental
+**independently of burden** in a second cohort (I-CARE, which shares contributing institutions with HEEDB and
+is therefore not an independent health system), one of them independently reported by another group; their incremental
 predictive value is marginal (+0.070 [+0.006, +0.121] in I-CARE, null in HEEDB). **This is a statement about information present in the recording, not a recommendation to act on it**: 46 % of these patients die within three days, the window in
 which withdrawal decisions are made, and four independent instruments failed to separate withdrawal-mediated
 from biological death in this data source.
@@ -219,14 +220,26 @@ elective surgical patients differ from post-arrest ICU patients in far more than
 
 ## 4b. External replication (I-CARE)
 
-The primary analysis is cross-**site** but within one health system. **I-CARE** — comatose post-cardiac-arrest
-patients at five hospitals in an independent international consortium, with Cerebral Performance Category
-outcomes — provides a cross-**system** test. n=561 with both outcome and a suppression measure; 62.0 % poor
+The primary analysis is cross-**site** but within one health system. **I-CARE** — comatose post-cardiac-arrest patients at five
+hospitals with Cerebral Performance Category outcomes — provides a second, independent **cohort**.
+
+> **⚠ It is NOT institutionally independent, and an earlier version of this document wrongly said it was.**
+> I-CARE's contributing institutions include **Massachusetts General Hospital, Brigham and Women's Hospital and
+> Beth Israel Deaconess Medical Center** (verified from the MEDLINE record of the cohort descriptor), and
+> HEEDB's site key maps to MGH/BWH/BIDMC/BCH. Both are hosted on the same BDSP platform. So this is a
+> **different cohort of different patients, ascertained differently and including European sites**, but it is
+> **not** the cross-health-system test the phrase "independent international consortium" implied. That phrase
+> is withdrawn. A genuinely cross-system test would need the European sites isolated, which the de-identified
+> hospital labels (A/B/D/E/F) do not permit. n=561 with both outcome and a suppression measure; 62.0 % poor
 (CPC 3–5).
 
-The claim replicated is not "suppression is bad", which is not in dispute. It is that **among patients who are
-already suppressed, quantitative burden still stratifies outcome**, so the categorical label discards real
-information.
+**What this does and does not test, stated precisely.** I-CARE carries **no clinician EEG category** — its
+tables hold demographics and CPC outcome only. So "among patients who are already suppressed" is operationalised
+with *our own* burden detector at a threshold (≥0.05/0.10/0.20), and the same continuous variable is then split
+into tertiles. That is a real and falsifiable test — it rules out a **ceiling effect**, showing burden keeps
+discriminating above the threshold where a categorical label would saturate — but it is **not** a test of
+whether a *clinician's* category discards information, because no such category exists in this cohort. Only
+HEEDB can test that. An earlier version of this document blurred the two.
 
 | test | result |
 |---|---|

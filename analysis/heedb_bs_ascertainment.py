@@ -40,7 +40,12 @@ NBOOT = int(os.environ.get("NBOOT", "2000"))
 rng = np.random.default_rng(20260725)
 
 AETIOLOGY = {
-    "anoxic": ("4275", "V1253", "34982", "G931", "I469", "I461", "I460", "P916", "7991", "42741"),
+    # CORRECTED 2026-07-27 after adversarial review verified these against the OMOP vocabulary:
+    #   34982 = "Toxic encephalopathy" -- NOT anoxic injury. Removed.
+    #   V1253 = "Personal history of sudden cardiac arrest" -- a history code, not an active
+    #           diagnosis; it admits patients whose arrest was in the past. Removed.
+    #   3481  = "Anoxic brain damage" -- the true ICD-9 code, and it was MISSING. Added.
+    "anoxic": ("4275", "3481", "G931", "I469", "I461", "I460", "P916", "7991", "42741"),
     "status": ("34561", "34571", "3453", "G4101", "G411", "G412", "G419", "G40901"),
     "metabolic": ("5722", "5728", "K7290", "K7291", "5849", "N179", "N19", "27989", "E870",
                   "2765", "7902", "E162", "27651"),
