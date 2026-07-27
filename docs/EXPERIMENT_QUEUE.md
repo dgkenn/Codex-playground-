@@ -1,5 +1,54 @@
 # EXPERIMENT QUEUE — prioritized backlog (re-rank every cycle; pull the top item that fits compute)
 
+## ACTIVE (2026-07-27) — mechanism hunt for the clinician-flag residual, and the BSP methods thread
+
+**The constraint that drives everything below.** R358–R360: the clinician's "generalized slowing" flag carries
+**−0.752 [−1.075, −0.434]** beyond suppression burden AND our intra-burst 8–30 Hz measure. A human reading the
+record sees something our numbers do not. Four candidates were named; two are now gone.
+
+| candidate | status |
+|---|---|
+| whole-record background spectrum | **eliminated** (B3, R361–R364): mutually redundant with the intra-burst measure |
+| spatial distribution / topography | **eliminated** (T3, R365–R368): +0.014 [−0.021, +0.040] over burden + background + intra-burst |
+| reactivity | **unavailable** in this schema — no stimulation annotation |
+| temporal evolution within the record | **open, and now the leading candidate** |
+| specific waveform morphology rather than band power | **open** |
+
+Both eliminations failed for the same reason, and that reason is now catalogue rule 28: a measurement taken in
+a different *place* is not thereby measuring a different *thing*. The two survivors are the ones that differ in
+**kind** rather than in location — one is about change over time, the other about waveform shape rather than
+its spectrum. That is a reason to rate them higher than the two that failed, not merely a reason they are left.
+
+### NEXT, in order
+
+1. **Temporal evolution within the record.** Every feature this project computes collapses a recording to one
+   number. A human reads a trend. Concretely: split each record into thirds and test whether the *change* in
+   burden and in intra-burst content adds over their level — the mean/difference decomposition that worked in
+   the repeated-measures analysis, applied within a single recording. The sign of the difference term is the
+   test; noise cannot produce a correctly-signed coefficient (catalogue rule 12).
+2. **Waveform shape rather than band power.** Sharpness, asymmetry, and the presence of periodic discharges are
+   what a reader names and a Welch periodogram cannot see. Stereotypy at 1 s and 2 s is already extracted and
+   is the nearest existing handle.
+3. **Test the dispersion reversal.** R365–R368 found across-channel dispersion *higher* in poor outcome,
+   opposite to the registered direction, with slow_range −0.0398 [−0.0723, −0.0090]. The post-hoc story is that
+   an injured cortex is patchy rather than uniformly slow. That story predicts dispersion should track burden;
+   it has not been tested and it is cheap.
+4. **BSP at transitions, with the exact posterior.** R376 and the exact-solver validation now agree from two
+   directions that the Gaussian approximation fails where the state jumps (step penalty up to 1.851, pointwise
+   deviation 0.775). The note's own recommendation — use the exact posterior when transitions are the question
+   — has not been demonstrated, only argued.
+
+### RUNNING
+- BSP one-step-ahead prediction on real I-CARE EEG, interior-gap filtered (521 recordings), with both EWMA
+  baselines. This is the real-data counterpart to R373–R376.
+
+### CLOSED THIS CYCLE, do not revisit
+- Topography as the missing dimension (T1–T4). Necessary condition failed; the hypothesis fails with it.
+- Whether `diff_ci` and `oob_increment` are anti-conservative (R369–R370). They are not.
+- Where BSP and a threshold ratio stop being interchangeable (R373). 60 s and longer, interchangeable;
+  below 30 s, not; crossover 15–30 s.
+
+
 ## ACTIVE (2026-07-25) — HEEDB burst-suppression programme. This is the current thread.
 
 **Deliverable 1 — `docs/research/39_HEEDB_FINDINGS.md`. Complete at full extraction coverage.**
