@@ -120,6 +120,15 @@ def morphology(x, fs):
             run = 0
     burden = float(sup.sum() / max(1, (~dead).sum()))
 
+    # BURST SUPPRESSION PROBABILITY, the principled estimator this ratio was written to replace.
+    # `sup` is the frame-level binary suppression series; bsp_features bins it to 1 s and fits the
+    # state-space model (binomial observation, Gaussian random-walk state, EM for the process variance).
+    try:
+        from bsp import bsp_features
+        bf = bsp_features(sup[~dead].astype(float), frames_per_bin=int(round(1.0 / FRAME_S)))
+    except Exception:
+        bf = None
+
     # burst segments = maximal runs of non-suppressed frames
     segs, durs, amps = [], [], []
     i = 0
@@ -170,7 +179,13 @@ def morphology(x, fs):
         tot = P[lo].sum()
         if tot > 0:
             ab.append(float(P[hi].sum() / tot))
+    out_bsp = bf or {}
     return dict(n_bursts=len(segs), burst_dur=float(np.median(durs)),
+                bsp_mean=out_bsp.get("bsp_mean", float("nan")),
+                bsp_p90=out_bsp.get("bsp_p90", float("nan")),
+                bsp_sd=out_bsp.get("bsp_sd", float("nan")),
+                bsp_sigma2=out_bsp.get("bsp_sigma2", float("nan")),
+                bsp_frac_above_50=out_bsp.get("bsp_frac_above_50", float("nan")),
                 stereotypy_1s=stereo["stereotypy_1s"], stereotypy_2s=stereo["stereotypy_2s"],
                 burst_amp=float(np.median(amps)),
                 alpha_beta=(float(np.median(ab)) if ab else float("nan")),
@@ -215,7 +230,8 @@ def one_patient(pid, s3):
             return None
         # median across channels, as in the HEEDB extractor
         keys = ("n_bursts", "burst_dur", "burst_amp", "alpha_beta", "burst_rate", "burden",
-                "stereotypy_1s", "stereotypy_2s")
+                "stereotypy_1s", "stereotypy_2s", "bsp_mean", "bsp_p90", "bsp_sd", "bsp_sigma2",
+                "bsp_frac_above_50")
         out = {}
         for k in keys:
             vals = [f[k] for f in feats if k in f and f[k] == f[k]]
@@ -237,7 +253,8 @@ def main():
     fh = open(OUT, "a", newline="")
     w = csv.writer(fh)
     cols = ["pid", "hour", "n_bursts", "burst_dur", "burst_amp", "alpha_beta", "burst_rate", "burden",
-            "stereotypy_1s", "stereotypy_2s", "fs"]
+            "stereotypy_1s", "stereotypy_2s", "bsp_mean", "bsp_p90", "bsp_sd", "bsp_sigma2",
+            "bsp_frac_above_50", "fs"]
     if newf:
         w.writerow(cols); fh.flush()
     s3 = s3c(); n = 0
