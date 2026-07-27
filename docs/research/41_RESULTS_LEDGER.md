@@ -1323,3 +1323,31 @@ oscillates. It was stable at small process variance and diverged once EM raised 
 that were silently wrong in exactly the most suppressed patients.
 
 **Cumulative distinct results: 349.**
+
+### R350. Self-red-team of the BSP implementation against an exact solver
+
+The BSP estimator was written and unit-tested by the same author, which is a conflict of interest. Validated
+against an **exact grid forward-backward** solution of the identical model (`analysis/bsp_validate_exact.py`),
+sharing no code with `bsp.py`.
+
+| case | max abs difference from exact |
+|---|---|
+| mid-range (p≈0.5) | 0.0000 |
+| extreme low / high (p≈0, p≈1) | 0.0137 |
+| sparse bins (N=2) | 0.0000 |
+| realistic noisy ramp | 0.0107 |
+| **abrupt step 0 → 1** | **0.7754** |
+
+**The Gaussian approximation is inaccurate at abrupt transitions** — max |diff| 0.775 at the step, mean 0.058
+across that series. This is a limitation of the approximation, not a coding error: the true posterior is
+sharply non-Gaussian where the state jumps.
+
+**It does not affect the conclusion drawn**, and that was checked rather than assumed. The BSP-vs-ratio
+comparison used per-recording summaries, and the pointwise error averages out — the per-recording **mean**
+differs from exact by **≤0.0009** across steady, drifting, occasionally-jumping and constantly-jumping series.
+
+**Where it would matter:** using BSP for its actual advertised purpose — an instantaneous estimate with
+per-timepoint uncertainty around abrupt changes — the Gaussian approximation should be replaced by the exact
+posterior. That is the use case BSP exists for, so the caveat is not academic and is recorded in the module.
+
+**Cumulative distinct results: 350.**
