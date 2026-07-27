@@ -10,6 +10,12 @@ THE COMPARISON, at each window length W:
     predict the suppression in window k+1 using only data up to the end of window k, with
       ratio       the pooled fraction over window k alone
       cumulative  the pooled fraction over the whole recording so far   <- the baseline that must be beaten
+      ewma        exponential smoothing of the per-bin fraction, its constant tuned by one-step-ahead error
+                  on the burn-in -- the baseline that matters, because the state equation IS a random walk
+                  and an EWMA is very nearly its optimal filter, so BSP beating a noisy trailing ratio proves
+                  nothing until it also beats three lines of arithmetic
+      ewma_oracle the same smoother handed the constant that minimises the very log-loss it is scored on: a
+                  CEILING on exponential smoothing rather than a method, reported to bound the answer
       bsp_last    the causally filtered BSP at the final bin of window k
       bsp_mean    the causally filtered BSP averaged over window k
     scored by binomial log-loss on the observed counts in window k+1 (lower is better).
@@ -45,6 +51,33 @@ WINDOWS = [300, 120, 60, 30, 15, 8, 4, 2, 1]
 BURN = 0.30
 MIN_BINS = 240          # need enough after burn-in for the long windows to have several instances
 EPS = 1e-4
+ALPHAS = [0.02, 0.05, 0.1, 0.2, 0.35, 0.5, 0.75, 1.0]
+
+
+def ewma(f, a):
+    e = np.empty(len(f)); acc = f[0]
+    for t in range(len(f)):
+        acc = a * f[t] + (1 - a) * acc
+        e[t] = acc
+    return e
+
+
+def tune_alpha(f, b):
+    """Pick the EWMA constant by one-step-ahead squared error on the burn-in -- no truth, no future.
+
+    Same objection as in the simulation: BSP beating a trailing ratio is only interesting if it also beats
+    plain exponential smoothing, since the state equation is a random walk and an EWMA is very nearly its
+    optimal filter. This is the baseline a practitioner could actually deploy.
+    """
+    best, ba = None, ALPHAS[0]
+    for a in ALPHAS:
+        acc = f[0]; err = 0.0
+        for t in range(1, b):
+            err += (acc - f[t]) ** 2
+            acc = a * f[t] + (1 - a) * acc
+        if best is None or err < best:
+            best, ba = err, a
+    return ba
 
 
 def logloss(p, n, N):
@@ -70,6 +103,10 @@ def one_recording(counts):
         return None
     _, _, xf, _ = _filter(n, N, s2)
     pf = 1.0 / (1.0 + np.exp(-np.clip(xf, -30, 30)))
+    f = n / N
+    a_c = tune_alpha(f, b)
+    ew_c = ewma(f, a_c)
+    ew_all = {a: ewma(f, a) for a in ALPHAS}
 
     out = {}
     for W in WINDOWS:
@@ -77,7 +114,8 @@ def one_recording(counts):
         starts = list(range(b, T - 2 * W + 1, W))
         if len(starts) < 3:
             continue
-        acc = {k: [] for k in ("ratio", "cumulative", "bsp_last", "bsp_mean")}
+        acc = {k: [] for k in ("ratio", "cumulative", "bsp_last", "bsp_mean", "ewma")}
+        per_alpha = {a: [] for a in ALPHAS}
         for s in starts:
             cur, nxt = slice(s, s + W), slice(s + W, s + 2 * W)
             nn, NN = n[nxt], N[nxt]
@@ -85,7 +123,14 @@ def one_recording(counts):
             acc["cumulative"].append(logloss(n[:s + W].sum() / N[:s + W].sum(), nn, NN))
             acc["bsp_last"].append(logloss(float(pf[s + W - 1]), nn, NN))
             acc["bsp_mean"].append(logloss(float(pf[cur].mean()), nn, NN))
+            acc["ewma"].append(logloss(float(ew_c[s + W - 1]), nn, NN))
+            for a in ALPHAS:
+                per_alpha[a].append(logloss(float(ew_all[a][s + W - 1]), nn, NN))
         out[W] = {k: float(np.mean(v)) for k, v in acc.items()}
+        # the ceiling: the alpha that minimises the score being reported. Not a method -- it is chosen using
+        # the very outcomes it is scored on -- but it bounds what exponential smoothing could ever achieve.
+        out[W]["ewma_oracle"] = float(min(np.mean(v) for v in per_alpha.values()))
+        out[W]["alpha"] = a_c
         out[W]["nwin"] = len(starts)
         # agreement, the real-data analogue of the simulation's correlation column
         r_ratio = np.array([n[s:s + W].sum() / N[s:s + W].sum() for s in starts])
@@ -145,27 +190,32 @@ def main():
     print("\n" + "=" * 100)
     print("ONE-STEP-AHEAD BINOMIAL LOG-LOSS (lower is better). Strictly causal: sigma^2 from the first 30 %.")
     print("=" * 100)
-    print(f"{'window':>7} {'recs':>6} {'ratio':>9} {'cumulative':>11} {'bsp_last':>9} {'bsp_mean':>9} "
-          f"{'best':>11} {'corr(ratio,':>12}")
-    print(f"{'(s)':>7} {'':>6} {'trailing':>9} {'baseline':>11} {'':>9} {'':>9} {'':>11} {'bsp)':>12}")
-    print("-" * 100)
+    print(f"{'window':>7} {'recs':>6} {'ratio':>9} {'cumul':>8} {'ewma':>8} {'ewma':>8} {'bsp_last':>9} "
+          f"{'bsp_mean':>9} {'best':>12} {'corr':>6}")
+    print(f"{'(s)':>7} {'':>6} {'trailing':>9} {'':>8} {'tuned':>8} {'oracle':>8} {'':>9} "
+          f"{'':>9} {'':>12} {'':>6}")
+    print("-" * 108)
     summary = {}
     for W in WINDOWS:
         rows = [r[W] for r in res if W in r]
         if len(rows) < 20:
             continue
         m = {k: float(np.mean([x[k] for x in rows])) for k in
-             ("ratio", "cumulative", "bsp_last", "bsp_mean")}
+             ("ratio", "cumulative", "bsp_last", "bsp_mean", "ewma", "ewma_oracle")}
         cor = float(np.nanmean([x["corr"] for x in rows]))
-        best = min(m, key=m.get)
+        # the oracle EWMA is excluded from 'best': it is a ceiling, not a candidate method
+        best = min((k for k in m if k != "ewma_oracle"), key=lambda k: m[k])
         summary[W] = (m, cor, len(rows), best)
-        print(f"{W:>7} {len(rows):>6} {m['ratio']:>9.4f} {m['cumulative']:>11.4f} {m['bsp_last']:>9.4f} "
-              f"{m['bsp_mean']:>9.4f} {best:>11} {cor:>12.3f}")
+        print(f"{W:>7} {len(rows):>6} {m['ratio']:>9.4f} {m['cumulative']:>8.4f} {m['ewma']:>8.4f} "
+              f"{m['ewma_oracle']:>8.4f} {m['bsp_last']:>9.4f} {m['bsp_mean']:>9.4f} {best:>12} {cor:>6.3f}")
+    print("\n   'ewma oracle' picks its constant using the very log-losses it is scored on. It is a CEILING")
+    print("   on exponential smoothing, not a deployable method, and is excluded from the 'best' column.")
 
     print("\n" + "=" * 100)
     print("PAIRED, PER-RECORDING: how often does BSP beat the trailing ratio on the same recording?")
     print("=" * 100)
-    print(f"{'window':>7} {'bsp_last wins':>15} {'mean improvement':>18} {'95% CI':>26}")
+    print(f"{'window':>7} {'bsp_last wins':>15} {'mean improvement':>18} {'95% CI':>26} "
+          f"{'vs tuned EWMA':>16}")
     print("-" * 100)
     rng = np.random.default_rng(20260727)
     for W in WINDOWS:
@@ -173,10 +223,14 @@ def main():
         if len(rows) < 20:
             continue
         d = np.array([x["ratio"] - x["bsp_last"] for x in rows])   # positive = BSP better
+        d2 = np.array([x["ewma"] - x["bsp_last"] for x in rows])   # vs the practical smoother
         bs = [np.mean(d[rng.integers(0, len(d), len(d))]) for _ in range(1000)]
         lo, hi = np.percentile(bs, [2.5, 97.5])
+        bs2 = [np.mean(d2[rng.integers(0, len(d2), len(d2))]) for _ in range(1000)]
+        lo2, hi2 = np.percentile(bs2, [2.5, 97.5])
+        v2 = "BSP ahead" if lo2 > 0 else ("EWMA ahead" if hi2 < 0 else "tie")
         print(f"{W:>7} {100*np.mean(d>0):>14.1f}% {np.mean(d):>+18.4f} "
-              f"[{lo:>+10.4f},{hi:>+10.4f}]{'  *' if lo > 0 else ''}")
+              f"[{lo:>+10.4f},{hi:>+10.4f}]{'  *' if lo > 0 else '   '} {v2:>16}")
     print("   * = paired bootstrap CI excludes zero, i.e. BSP is genuinely ahead at that window length.")
 
     if summary:
