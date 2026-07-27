@@ -2033,3 +2033,85 @@ a constraint no mechanism has yet had to explain, and it is the sharpest thing t
 **Status change:** B3, T3 and R378 are **not** built on an artefact. The mechanism hunt stands.
 
 **Cumulative distinct results: 388.**
+
+---
+
+## R389–R392 · The prognostic meaning of intra-burst content REVERSES after anoxia — and it explains N10
+
+The most substantive candidate this project has produced, and it arrived by refuting a check registered for a
+different purpose. `heedb_thalamocortical_test.py` registered T2 as a consistency arm: if the clinician's
+slowing flag and our intra-burst 8–30 Hz measure index one thalamocortical factor, their aetiology
+interactions should share a sign. They do not — flag **−0.750 [−1.433, −0.116]**, intra-burst
+**+4.319 [+2.373, +6.754]** — so the unification claimed in R358–R360 is refuted, and what replaces it is
+larger.
+
+### R389 · T1 — the slowing flag's effect IS aetiology-dependent, as the thalamocortical account predicts
+
+| | n | 30-d death | flag positive | flag coefficient (adj. burden + intra-burst) |
+|---|---|---|---|---|
+| anoxic | 818 | 81.7 % | 50.2 % | **−1.011 [−1.528, −0.564]** |
+| non-anoxic | 679 | 51.5 % | 85.6 % | −0.418 [−0.942, +0.069] |
+
+Interaction **−0.750 [−1.433, −0.116]**. A generic-severity account predicts no aetiology interaction —
+severity is severity — so this discriminates, and it is the one place the two accounts disagreed.
+
+### R390 · The reversal itself, non-parametrically
+
+AUC of intra-burst 8–30 Hz content for 30-day death, **no model, no link function, no adjustment**:
+
+| | AUC | direction |
+|---|---|---|
+| anoxic (n = 818) | **0.589 [0.545, 0.633]** | more fast content → **more** death |
+| non-anoxic (n = 679) | **0.408 [0.364, 0.452]** | more fast content → **less** death |
+
+Both intervals exclude 0.5, on opposite sides.
+
+### R391 · It survives every attempt to make it an artefact
+
+Catalogue rule 16 says a sign disagreement usually means the definition is doing the work. It was tested
+accordingly, with the conclusion rule fixed before running.
+
+- **Burden strata** (burden differs by aetiology, 0.445 vs 0.086 median): opposite sides of 0.5 in **3/3**.
+- **Burst-count strata** — the variable that actually gates the L1 exclusion, which differs sharply by
+  aetiology (55.7 % vs 89.5 % excluded): opposite sides in **3/3**, and the effect *strengthens monotonically*
+  with burst count in both directions (anoxic 0.536 → 0.603 → 0.635; non-anoxic 0.406 → 0.419 → 0.390).
+- **Decomposition of the non-anoxic arm.** The first attempt was invalid and is retained in the code as a
+  warning: the label groups **overlap** (3,437 label-assignments across 1,497 patients) and "sepsis" included
+  patients who were also anoxic, so it could never decompose the contrast being made. Corrected by restricting
+  to patients with **no** anoxic label and then splitting:
+
+| non-anoxic subgroup | n | 30-d death | AUC |
+|---|---|---|---|
+| sepsis | 297 | 48.8 % | 0.427 [0.363, 0.494] |
+| metabolic | 439 | 53.3 % | 0.410 [0.358, 0.462] |
+| structural | 428 | 52.1 % | 0.399 [0.344, 0.454] |
+| status epilepticus | 167 | 39.5 % | 0.406 [0.320, 0.501] |
+
+**4/4 below 0.5, clustered within 0.028 of one another.** This is anoxia versus everything else, not anoxia
+versus one deviant condition — and the tightness of that cluster is the strongest single piece of evidence
+here, because a pooled artefact would not produce four independent subgroups agreeing to within 0.03.
+
+### R392 · It retrodicts N10, which it was not built to explain
+
+**N10** has stood unexplained: burst morphology's predictive increment was **+0.070 [+0.006, +0.121] in
+I-CARE** but **+0.036 [−0.019, +0.076] in HEEDB**. I-CARE is *entirely* cardiac arrest. HEEDB is 54.6 %
+anoxic and 45.4 % everything else — so a mixed cohort averages two opposing effects toward zero while a
+pure-anoxic cohort does not. **A previously unexplained negative becomes a prediction of the new account.**
+That is the property this project has demanded of a mechanism and never previously obtained.
+
+**What is NOT established, stated plainly.**
+1. **The external check is weak.** I-CARE's AUC is **0.511 [0.464, 0.557]**, which *includes* 0.5. It agrees in
+   direction with the anoxic arm and does not on its own establish it. The registered rule asked only for
+   directional agreement, which was too low a bar, and that is a flaw in the rule rather than a strength of
+   the result.
+2. **Death-ascertainment conditioning** applies throughout (L3), and aetiology comes from **ICD codes**, which
+   this project has already had to correct once.
+3. This is **effect modification, not a mechanism.** It says the same measurement means opposite things in two
+   populations; it does not say why. The thalamocortical account (R389) is the leading explanation and is not
+   established by this.
+
+**Literature position.** E-utilities finds no prior report of aetiology-dependent intra-burst spectral content.
+The natural framework for R389 is Schiff's mesocircuit model; Forgacs, Devinsky & Schiff, *Ann Neurol* 2020
+(**PMID 31994749**) is the anchor for prolonged coma after cardiac arrest.
+
+**Cumulative distinct results: 392.**

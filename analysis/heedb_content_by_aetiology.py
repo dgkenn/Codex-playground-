@@ -149,7 +149,13 @@ def main():
     assert len(rec) >= 300, f"only {len(rec)} patients"
     print(f"cohort: {len(rec):,} patients with intra-burst content and an ascertained death")
 
-    for title, strict in (("A1  ANY label (patients may carry several)", False),
+    # A1 as first written was not a decomposition at all: the label groups OVERLAP (3,437 label
+    # assignments across 1,497 patients) and "sepsis" included patients who were ALSO anoxic, so it could
+    # never explain what the non-anoxic arm is made of. A3 below is the corrected version -- restrict to
+    # patients with NO anoxic label, then split. That is the only split that decomposes the comparison
+    # actually being made.
+    for title, strict in (("A1  ANY label -- OVERLAPPING, retained only to show why it cannot be read",
+                           False),
                           ("A2  SINGLE label only (the stricter version)", True)):
         print("\n" + "=" * 96)
         print(title)
@@ -184,6 +190,45 @@ def main():
                 print(f"   NOT confirmed -- these non-anoxic subgroups do NOT run below 0.5: {sorted(disagree)}.")
                 print("   The claim narrows to anoxia versus the subgroups that do, which is weaker than")
                 print("   'the meaning of burst content depends on aetiology'.")
+    # ---- A3: the corrected decomposition ------------------------------------------------------------
+    print("\n" + "=" * 96)
+    print("A3  CORRECTED -- among patients with NO anoxic label, split by their other labels")
+    print("=" * 96)
+    nonan = [r for r in rec if "anoxic" not in r[3]]
+    anox = [r for r in rec if "anoxic" in r[3]]
+    ya = np.array([r[1] for r in anox]); aa = np.array([r[2] for r in anox])
+    Aa = auc(ya, aa); la, ha = auc_ci(ya, aa, rng, NBOOT)
+    yn = np.array([r[1] for r in nonan]); an = np.array([r[2] for r in nonan])
+    An = auc(yn, an); ln, hn = auc_ci(yn, an, rng, NBOOT)
+    print(f"   anoxic          n={len(anox):>5}  AUC {Aa:.3f} [{la:.3f},{ha:.3f}]")
+    print(f"   NON-anoxic, all n={len(nonan):>5}  AUC {An:.3f} [{ln:.3f},{hn:.3f}]")
+    print(f"\n   {'label':>12} {'n':>6} {'30-d death':>11} {'AUC':>7} {'95% CI':>18}")
+    print("   " + "-" * 60)
+    below = tested = 0
+    for lab in [l for l in LABELS if l != "anoxic"] + ["(no label at all)"]:
+        sel = ([r for r in nonan if not r[3]] if lab.startswith("(")
+               else [r for r in nonan if lab in r[3]])
+        if len(sel) < 60:
+            print(f"   {lab:>12} {len(sel):>6}   too few")
+            continue
+        yy = np.array([r[1] for r in sel]); av = np.array([r[2] for r in sel])
+        if not (0 < yy.sum() < len(yy)):
+            continue
+        A = auc(yy, av); lo, hi = auc_ci(yy, av, rng, NBOOT)
+        tested += 1
+        if A < 0.5:
+            below += 1
+        print(f"   {lab:>12} {len(sel):>6} {100*yy.mean():>10.1f}% {A:>7.3f} [{lo:>6.3f},{hi:>6.3f}]")
+    print(f"\n   non-anoxic subgroups running below 0.5: {below}/{tested}")
+    if tested >= 3 and below == tested and Aa > 0.5:
+        print("   CONFIRMED -- inside the non-anoxic arm every subgroup runs the same way, so the contrast")
+        print("   is anoxia versus everything else rather than anoxia versus one condition.")
+    elif tested >= 2:
+        print("   PARTIAL -- the non-anoxic subgroups do not all agree. The reversal is between anoxia and")
+        print("   some of what it is being compared with, which is a narrower claim than aetiology-dependence")
+        print("   in general, and it is the claim that should be made.")
+    else:
+        print("   Too few adequately-sized non-anoxic subgroups to decompose.")
     return 0
 
 
