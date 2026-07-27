@@ -1351,3 +1351,38 @@ per-timepoint uncertainty around abrupt changes — the Gaussian approximation s
 posterior. That is the use case BSP exists for, so the caveat is not academic and is recorded in the module.
 
 **Cumulative distinct results: 350.**
+
+---
+
+## R351–R355. Red team round two: a cohort bug, and two overstatements withdrawn
+
+Delegated adversarial review of the HEADLINE and the EXTERNAL REPLICATION (round one had covered morphology
+only). Every finding verified by Opus against the OMOP vocabulary, the MEDLINE record, or the data before action.
+
+| id | finding | severity | verified |
+|---|---|---|---|
+| R351 | **Anoxic ICD list contaminated** — `34982` is "Toxic encephalopathy", `V1253` is "Personal history of sudden cardiac arrest"; `3481` "Anoxic brain damage" was **missing** | **SERIOUS (real bug)** | checked against OMOP `concept.csv` |
+| R352 | **I-CARE is not an independent health system** — its institutions include MGH, Brigham and Women's, Beth Israel Deaconess; HEEDB's site key maps to MGH/BWH/BIDMC/BCH; both on BDSP | **FATAL to the framing** | verified from the MEDLINE record of the I-CARE descriptor |
+| R353 | **I-CARE has no clinician EEG category**, so "among the already suppressed" uses our own burden threshold — it tests absence of a ceiling effect, not that a categorical label discards information | **SERIOUS (overstatement)** | `icare_cohort.csv` carries demographics + CPC only |
+| R354 | Westhall category not manufactured by lumping low-voltage with bs — only **1.5 %** of the category is low-voltage-only | NOT A PROBLEM | computed |
+| R355 | Calibration genuinely out-of-fold; hospital D's exclusion hides nothing (its own AUC **0.676**, mid-range) | NOT A PROBLEM | computed |
+
+**Effect of the R351 fix — the finding is robust, one claim is not:**
+
+| | contaminated | **corrected** |
+|---|---|---|
+| n post-anoxic | 2,951 | **2,463** |
+| increment over category | +0.064 [+0.038, +0.089] | **+0.062 [+0.032, +0.095]** |
+| calibration intercept / slope | −0.013 / 0.980 | **−0.010 / 0.979** |
+| cross-hospital | 0.679 / 0.669 | **0.682 / 0.651** |
+| quintile range | 29.5 → 73.1 % | **31.6 → 73.4 %** |
+| **monotone across quintiles** | yes | **NO** — Q2 41.2 %, Q3 40.1 % |
+
+**Monotonicity is withdrawn.** The 1.1 pp inversion sits inside sampling noise (SE ≈ 3.4 pp at n≈212), but the
+claim was about the observed data and is false on the corrected cohort. It held only on a cohort containing
+miscoded patients — which is exactly the kind of claim that should not survive a data fix.
+
+**Also:** the benign-vs-malignant ordering inversion at the bottom of the guideline scheme is **larger** on the
+corrected cohort (17.5 % vs 14.7 % three-day death).
+
+**Cumulative distinct results: 355.**

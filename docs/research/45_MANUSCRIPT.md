@@ -12,10 +12,10 @@ After cardiac arrest, ERC-ESICM prognostication classifies EEG into **highly mal
 **benign** tiers (Westhall, *Neurology* 2016, PMID 26865516). The scheme is categorical: every patient inside
 the highly-malignant tier formally carries the same information. In 2,951 post-arrest patients with EEG and an
 ascertained death across two hospitals, we measured suppression **burden** directly from the raw EEG at each
-patient's index recording and found that it stratifies three-day mortality **29.5 % → 73.1 %** within that
-single category. Burden adds **+0.064 [+0.038, +0.089]** AUC over the category itself
+patient's index recording and found that it stratifies three-day mortality **31.6 % → 73.4 %** within that
+single category. Burden adds **+0.062 [+0.032, +0.095]** AUC over the category itself
 (out-of-bag bootstrap; pre-registered threshold +0.03), is **well calibrated** (intercept −0.013, slope 0.980), and replicates
-across hospitals (0.679 / 0.669). Serial recordings in HEEDB show burden behaving as a **fixed quantity measured with error** (ICC 0.815); in
+across hospitals (0.682 / 0.651). Serial recordings in HEEDB show burden behaving as a **fixed quantity measured with error** (ICC 0.815); in
 an independent post-arrest cohort measured 12–48 h after arrest this does **not** replicate (ICC 0.584,
 agreement decaying with separation, trajectory coefficient +1.081 [+0.578, +1.614]), so the claim is weakened
 to **burden containing a fixed component that is not separately identified here** — consistent with it indexing a cerebral metabolic rate that
@@ -70,13 +70,20 @@ Cross-hospital validation fits at one site and evaluates at the other.
 
 | burden quintile | n | dead by 3 days | dead by 30 days |
 |---|---|---|---|
-| Q1 lowest | 193 | **29.5 %** | 59.1 % |
-| Q2 | 192 | 35.4 % | 70.3 % |
-| Q3 | 193 | 38.9 % | 79.8 % |
-| Q4 | 192 | 52.6 % | 87.0 % |
-| Q5 highest | 193 | **73.1 %** | **96.4 %** |
+| Q1 lowest | 212 | **31.6 %** | 61.3 % |
+| Q2 | 211 | 41.2 % | 74.4 % |
+| Q3 | 212 | 40.1 % | 82.1 % |
+| Q4 | 214 | 57.5 % | 89.7 % |
+| Q5 highest | 207 | **73.4 %** | **95.2 %** |
 
-A 2.5-fold range of three-day mortality inside one guideline label, monotone across quintiles.
+A **2.3-fold** range of three-day mortality inside one guideline label.
+
+**Monotonicity is NOT claimed, and an earlier version of this document claimed it.** Q2 (41.2 %) and Q3
+(40.1 %) invert by 1.1 pp. With ~212 per quintile the standard error of a proportion near 0.40 is about
+3.4 pp, so the inversion sits well inside sampling noise — but "monotone across quintiles" is a
+statement about the observed data and it is false here. The defensible claim is that risk is **ordered at
+the extremes and rises across the range**, with adjacent middle quintiles indistinguishable. The earlier
+monotonicity held only on a cohort contaminated by miscoded ICD entries — see Corrections.
 
 ### 3.2 It adds to the guideline rather than restating it (Figure F3)
 
@@ -84,13 +91,13 @@ A 2.5-fold range of three-day mortality inside one guideline label, monotone acr
 |---|---|
 | Westhall-style category alone | 0.645 |
 | **category + measured burden** | **0.745** |
-| **increment (out-of-bag bootstrap)** | **+0.064 [+0.038, +0.089]** |
+| **increment (out-of-bag bootstrap)** | **+0.062 [+0.032, +0.095]** |
 
-Burden's log-odds coefficient is +1.587 (OR 4.89 across the range). Cross-hospital: **0.679 / 0.669**.
+Burden's log-odds coefficient is +1.587 (OR 4.89 across the range). Cross-hospital: **0.682 / 0.651**.
 
 ### 3.3 It is calibrated, not merely discriminating (Figure F2)
 
-Mean predicted 3-day risk 0.308 vs observed 0.308; calibration intercept **−0.013** (ideal 0), slope **0.980**
+Mean predicted 3-day risk 0.357 vs observed 0.357; calibration intercept **−0.010** (ideal 0), slope **0.979**
 (ideal 1), with observed tracking predicted across all ten deciles.
 
 ### 3.4 Morphology adds a further, interpretable increment
@@ -318,3 +325,32 @@ quarter and is corrected throughout; the finding survived it.
    0.5–1 s; we find 1 s survives adjustment and 2 s does not. Our bursts are considerably longer than that
    window implies, so the two are not measuring identical quantities.
 4. **Competing-risks survival** rather than binarised horizons.
+
+
+---
+
+## Corrections
+
+**2026-07-27 — cohort definition.** Adversarial review found the anoxic ICD list contained `34982`
+("Toxic encephalopathy" per the OMOP vocabulary — not anoxic injury) and `V1253` ("Personal history of sudden
+cardiac arrest" — a history code), while `3481` ("Anoxic brain damage"), the true code, was absent. Corrected;
+the cohort falls from 2,951 to **2,463**.
+
+| | contaminated | corrected |
+|---|---|---|
+| increment over category | +0.064 [+0.038, +0.089] | **+0.062 [+0.032, +0.095]** |
+| calibration intercept / slope | −0.013 / 0.980 | **−0.010 / 0.979** |
+| cross-hospital | 0.679 / 0.669 | **0.682 / 0.651** |
+| quintile range | 29.5 → 73.1 % | **31.6 → 73.4 %** |
+| monotone across quintiles | yes | **no** (Q2 41.2 %, Q3 40.1 %) |
+
+**The finding is robust to the correction. The monotonicity claim is not, and is withdrawn.**
+
+**2026-07-27 — two framing overstatements withdrawn:** that I-CARE is an independent health *system* (it shares
+MGH/BWH/BIDMC with HEEDB), and that it replicates the "categorical label discards information" claim (it holds
+no clinician category, so what it actually shows is the absence of a ceiling effect). Both are marked at the
+point of use in §4b.
+
+**Also noted:** the "benign" tier now shows **17.5 %** three-day mortality against **14.7 %** for "malignant".
+The ordering inversion at the bottom of the guideline scheme is *larger* on the corrected cohort, and remains a
+warning that the lower tiers are heterogeneous.
