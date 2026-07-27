@@ -1,4 +1,9 @@
-# HANDOFF — continuing this project in a new (desktop) Claude Code session
+# HANDOFF — the PHENOTYPE PIPELINE, in a new (desktop) Claude Code session
+
+> **SCOPE NOTE (2026-07-27).** This document covers the **frozen-backbone phenotype discovery pipeline**,
+> which is tested and in cold storage. It is **not** the active research thread. For the state of the live
+> burst-suppression research programme — what is established, what is dead, and what to do next — read
+> **`docs/research/49_HANDOFF_STATE.md`**, and read `CLAUDE.md` before either.
 
 This documents the project state and how to take over, especially in **Claude
 Code desktop** running on your own machine — which is the right place for the
@@ -7,7 +12,8 @@ unrestricted network, so even TUH works).
 
 ## Current state
 - Branch: **`claude/heedb-eeg-phenotype-discovery-2mnwzx`** (all work pushed).
-- **126 tests green.** The stdlib-only integrity core runs with no dependencies;
+- **184 tests, 28 skipped without the scientific stack (verified 2026-07-27).** The stdlib-only integrity
+  core (31 tests) runs with no dependencies;
   the rest skip unless the scientific stack is installed.
 - The full lifecycle runs end-to-end on synthetic data: `python cli.py demo`.
 - Four data transports are wired and tested:

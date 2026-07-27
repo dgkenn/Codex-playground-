@@ -1,5 +1,8 @@
 # EXPERIMENT QUEUE — prioritized backlog (re-rank every cycle; pull the top item that fits compute)
 
+> Read `CLAUDE.md`, then **`docs/research/49_HANDOFF_STATE.md`** (what is established / dead / next) and
+> **`docs/research/48_RESEARCH_LANDSCAPE.md`** (what this data can and cannot settle) before pulling an item.
+
 ## ACTIVE (2026-07-27) — mechanism hunt for the clinician-flag residual, and the BSP methods thread
 
 **The constraint that drives everything below.** R358–R360: the clinician's "generalized slowing" flag carries

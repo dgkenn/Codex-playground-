@@ -1,139 +1,163 @@
 # CLAUDE.md — guide for Claude Code sessions in this repo
 
-## What this project is
-Implementation of a **pre-registered, two-phase, unsupervised EEG phenotype
-discovery study** on HEEDB (Harvard EEG Database) using an adapted frozen
-foundation model (**MORGOTH 1.0**, the HEEDB-pretrained clinical-EEG model;
-CBraMod/LaBraM/EEGPT/BIOT are secondary alternatives), with hospital-split
-confirmation and external replication on TUH. The canonical protocol is
-`HEEDB_rawSSL_phenotype_discovery_preregistration_v3.md`; the section→code→test
-map is `docs/SPEC_TRACEABILITY.md`.
+*Last updated 2026-07-27 at result R392. If you are a new session, read this file top to bottom before
+touching anything, then read `docs/research/49_HANDOFF_STATE.md` for where work stopped and why.*
 
-NOTE: the protocol is at **v3** (MORGOTH backbone + redundancy/novelty control +
-non-circular Phase-2 outcome). **CBraMod is the validated OPERATIONAL backbone**
-today (real weights, sha256-pinned, runs end-to-end on real HEEDB data); MORGOTH
-is the v3 target and a clean future swap — its code+weights are not yet public
-(repo 404s; paper in press). The redundancy/novelty control and the
-`model_outputs` task-output persistence are already built and tested (no-op for
-CBraMod); see `docs/MORGOTH_INTEGRATION.md` for the wire-up checklist.
+---
 
-**Binding integrity principle (do not weaken):** Phase 1 (discovery) uses **no
-outcome label**. Phase 2 tests **one** pre-registered outcome on a **held-out
-hospital never touched in Phase 1**, with four objects (model checkpoint,
-harmonization config, embedding-correction transform, phenotype-assignment
-function) **frozen + hash-verified** before the held-out data is unlocked. Any
-breach voids confirmatory status.
+## START HERE: what this project actually is, versus what it says it is
+
+**Read this section carefully — the repo's name and its oldest documents will mislead you.**
+
+The repo was created for a *pre-registered, two-phase, unsupervised EEG phenotype discovery study* on HEEDB
+using a frozen foundation model. **That pipeline exists, is tested, and is not what the work has been about
+for some time.** It runs (`python cli.py demo`), the full suite passes, and the firewall/hashing integrity
+core is sound. Treat it as a working asset in cold storage, not the active thread. Its protocol is
+`HEEDB_rawSSL_phenotype_discovery_preregistration_v3.md`; its binding integrity principle (Phase 1 uses no
+outcome label; Phase 2 tests one pre-registered outcome on a held-out hospital with four frozen,
+hash-verified objects) still stands **if that pipeline is ever resumed**.
+
+**The active research programme is a burst-suppression and clinical-EEG research loop on HEEDB, I-CARE and
+VitalDB.** It has produced **392 logged results** and one substantive lead (below). Everything of scientific
+value lives in `docs/research/41_RESULTS_LEDGER.md`, `docs/LESSONS.md`, and `docs/EXPERIMENT_QUEUE.md`.
+
+There is also a large amount of **legacy documentation from unrelated earlier projects** — electrolytes,
+MIMIC, arterial-line tooling, occult hypoxaemia. `docs/` holds 156 files and `docs/research/` holds 56; most
+predate this work and are not live. The files that are live are listed under "Which documents are current".
+
+### The current lead, in one paragraph
+
+**The prognostic meaning of intra-burst EEG content reverses by aetiology.** AUC of intra-burst 8–30 Hz
+content for 30-day death is **0.589 [0.545, 0.633]** in anoxic patients and **0.408 [0.364, 0.452]** in
+non-anoxic — both intervals excluding 0.5, on opposite sides, with no model involved. It survives burden
+strata (3/3), burst-count strata (3/3 — the variable gating the exclusion), and decomposition of the
+non-anoxic arm (**4/4 subgroups below 0.5, clustered within 0.028**). It **retrodicts N10**, a standing
+negative it was not built to explain. Its weakness is external replication: I-CARE agrees in direction only
+(AUC 0.511 [0.464, 0.557], which *includes* 0.5) and, being entirely cardiac arrest, is structurally
+incapable of testing an aetiology contrast at all. See R389–R392 in the ledger and
+`docs/research/48_RESEARCH_LANDSCAPE.md` for what it needs next.
+
+---
+
+## THE MOST IMPORTANT OPERATIONAL FACT: the data cache is ephemeral
+
+Hours of extraction live in **`/tmp/eeg_probe/`** and **it does not survive container reclamation.** A new
+session will probably find it empty. Nothing there is in git and nothing should be — it is credentialed
+patient-derived data.
+
+| cached table | rows | cost to rebuild |
+|---|---|---|
+| `heedb_bs_burden_win.s0-3.csv` | 4 shards, ~4,800 patients each | hours (S3 + DSP over ~49k recordings) |
+| `heedb_burst_morph.s0-3.csv` | 4 disjoint shards, 2,473 patients total | hours |
+| `heedb_aetiology_full.csv` | 26,350 label rows | ~3 min (scans a 1 GB OMOP table) |
+| `icare_cohort.csv` | 607 | minutes |
+| `icare_morph2.csv` | 559 | ~40 min |
+| `icare_background.csv` | 601 | ~50 min |
+| `icare_topo.csv` + `icare_suppseq.csv` | 602 | ~60 min (one pass produces both) |
+| `icare_seq_keep.csv` | 529 | ~2 min (WFDB headers only) |
+
+**Rebuild order:** aetiology cache first (cheap, unblocks all HEEDB work), then `analysis/icare_topography.py`
+(one S3 pass, produces topography *and* the per-second suppression series), then the rest as needed. Every
+extraction script is **resumable** — each reads what is already in its output file and fetches only the
+remainder. The HEEDB burden/morphology shards are the expensive ones; treat them as precious.
+
+---
+
+## Credentials, and the trap that will cost you an hour
+
+Real HEEDB/TUH/I-CARE access is credentialed and supplied at runtime. **Never commit credentials.**
+
+**The sandbox injects placeholder `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY` for its proxy. Static env
+credentials outrank profile credentials in boto3's resolution chain, so every script silently authenticates
+as the stub and gets 403 — which reads exactly like expired credentials and is not.** Always run through:
+
+```bash
+scripts/heedb_run.sh python analysis/<script>.py
+```
+
+It unsets the two stub variables and leaves `AWS_CA_BUNDLE`/`HTTPS_PROXY` alone. Diagnose credential problems
+with `sts get-caller-identity` **per credential source**, not globally (catalogue rule 8).
+
+- HEEDB clinical: access point `.../bdsp-credentialed-access-point`, key prefix `EEG/HEEDB_Metadata/`
+- I-CARE: `.../bdsp-restricted-access-point`, prefix `ICARE_train/training/`
+- MORGOTH label sets: `.../bdsp-credentialed-projects-ap`, prefix `morgoth1/data/internal_dataset/`
+- AWS profile: `physionet`
+
+---
 
 ## SOP: model delegation and token budget (STANDING — applies to every session)
 
-Research on this repo is token-expensive and has come close to the weekly usage cap. **Opus is the orchestrator
-and the reviewer, not the labourer.** If a task is bulk reading, bulk searching, bulk editing, or mechanical
-transformation, it should not be done in the main Opus context.
+Research on this repo is token-expensive and has come close to the weekly usage cap. **Opus is the
+orchestrator and the reviewer, not the labourer.** Bulk reading, searching, editing and mechanical
+transformation should not happen in the main Opus context.
 
 | task | model | why |
 |---|---|---|
-| Orchestration, experiment design, deciding what to run next, final synthesis, anything that becomes a **reported number or a committed claim** | **opus** (main) | judgment that the whole result rests on |
+| Orchestration, experiment design, deciding what to run next, final synthesis, anything that becomes a **reported number or a committed claim** | **opus** (main) | judgment the whole result rests on |
 | Red-teaming a document or result, code review, literature triage, drafting prose, interpreting ambiguous output | **sonnet** | needs judgment, but is checkable afterwards |
 | Mechanical and verifiable: applying a precise edit spec across files, running a script and extracting fields, counting/tabulating, grepping a large tree, log triage, boilerplate | **haiku** | cheap, and correctness is checkable by inspection |
 
-**The review rule, which is not optional.** Any subagent output that will become a reported number, a claim in a
-document, or a commit must be **verified by Opus against the raw source** before it is used. Subagents are
-useful and they are also wrong often enough to matter: in the 2026-07 red-team pass, two of six findings were
-wrong because the agent only had the log files and not the underlying data — and it was right about four,
-including a real self-contradiction and an untested comparison in the headline claim. So: delegate the work,
-never delegate the acceptance.
+**The review rule, which is not optional.** Any subagent output that will become a reported number, a claim in
+a document, or a commit must be **verified by Opus against the raw source** before use. Subagents are useful
+and also wrong often enough to matter. Delegate the work, never delegate the acceptance.
 
-**Practical token discipline in the main context:**
-- Never `cat` a large file. `head`/`tail`/`grep`/`sed -n 'a,bp'` to the specific lines. Reading a 1 GB CSV into
-  context is never correct — compute over it in a script and print a summary.
-- Long analyses write to `/tmp/<name>.txt`; read back only the result lines, not the whole log.
-- Background anything over ~2 minutes (`run_in_background`) and poll with a cheap `until` loop. Do not sit in
-  foreground sleeps.
-- Do not re-read a file already read this session, and do not re-read a file just edited to confirm the edit.
-- Prefer one batched shell call that prints several small things over several round-trips.
-- **Never read a subagent's raw transcript file** — it will overflow the context. Use its returned result.
+**Practical token discipline:** never `cat` a large file — `head`/`tail`/`grep`/`sed -n 'a,bp'` to specific
+lines. Long analyses write to a log; read back result lines only. Background anything over ~2 minutes and poll
+with a cheap `until` loop rather than foreground sleeps. Do not re-read a file already read this session, and
+do not re-read a file just edited. Never read a subagent's raw transcript — it will overflow the context.
+
+---
 
 ## SOP: the error catalogue (STANDING — read before designing any analysis)
 
-Every rule below was paid for with a wrong result in this project. They are ordered by how often the mistake
-recurred, not by how clever they sound.
+Every rule below was paid for with a wrong result in this project.
 
-### A. Correction discipline — the mistakes that repeated most
+### A. Correction discipline
 
-1. **A correction propagates to everything downstream, not just the number that prompted it.** The ICD-code fix
-   changed the cohort from 2,951 to 2,463; the headline was re-run immediately, but the landmark analysis, the
-   morphology directions and the figures stayed contaminated until someone went back for them. **When a
-   definition changes, list every claim that depends on it before re-running anything.**
-2. **Numbers inherited from a superseded extraction must be re-derived, never carried forward.** Happened
-   twice: morphology contrasts quoted from the legacy max-over-recordings run (every magnitude inflated, one
-   sign inverted), and the manuscript quoting pre-correction quintiles.
-3. **Stale claims survive in earlier sections.** Corrections were appended as new sections while §2 still read
-   as current. Put the withdrawal at the point a reader would rely on the claim, not only at the end.
-4. **Hardcoded literals in captions, titles and prose go stale silently.** A figure title said "2.5-fold"
-   through a correction that made it 2.3; a caveat hardcoded 40.6 % after the value moved to 46.0 %. **Compute
-   every number that appears in output, including in labels.**
+1. **A correction propagates to everything downstream, not just the number that prompted it.** When a
+   definition changes, list every claim that depends on it before re-running anything.
+2. **Numbers inherited from a superseded extraction must be re-derived, never carried forward.**
+3. **Stale claims survive in earlier sections.** Put the withdrawal where a reader would rely on the claim,
+   not only at the end.
+4. **Hardcoded literals in captions, titles and prose go stale silently.** Compute every number that appears
+   in output, including in labels.
 
-### B. Silent failure — wrong answers that arrive looking like nothing
+### B. Silent failure
 
-5. **Empty is not evidence of absence until the filter has been shown capable of matching something.** Three
-   separate times an error surfaced as an empty file: a text regex ANDed with a concept-id filter, an unmapped
-   `concept_id` column, and a CSV predating the columns being read. **Assert non-empty, or assert the filter
-   matches a known positive.**
+5. **Empty is not evidence of absence until the filter has been shown capable of matching something.**
+   Assert non-empty, or assert the filter matches a known positive.
 6. **Check that a `concept_id` column is populated before designing around it.** `observation_concept_id` was
-   100 % zero. One `Counter` over 100k rows would have shown it in seconds.
+   100 % zero; one `Counter` over 100k rows would have shown it in seconds.
 7. **Before choosing an administrative table as an instrument, ask what makes a row appear in it.** Billing
    tables see reimbursable acts; state tables see charted statuses; **neither sees decisions**.
    `procedure_occurrence` contains zero extubations because extubation is not separately billable.
-8. **An access failure may be credential *precedence*, not expiry.** A 403 came from placeholder env
-   credentials outranking a valid profile. Diagnose with `sts get-caller-identity` **per credential source**.
+8. **An access failure may be credential *precedence*, not expiry.** Diagnose per credential source.
 
 ### C. Statistical rules
 
 9. **Bootstrap AUC increments out-of-bag.** Train on the resample, evaluate on the patients *not* drawn.
-   Bootstrapping fixed out-of-fold predictions ignores refit variance and gave a falsely narrow +0.100
-   [+0.082, +0.118]; refitting *and* evaluating on the same resample puts patients in train and test and
-   produced a point estimate outside its own interval. **Both were used here and both were wrong.**
+   Bootstrapping fixed out-of-fold predictions ignores refit variance; refitting *and* evaluating on the same
+   resample puts patients in train and test. Both were used here and both were wrong.
 10. **Any per-patient aggregation over repeated measurements is look-ahead until proven otherwise.** `max()`,
-    `or`, and bare assignment across rows all leaked; in a survival analysis the *number* of measurements is
-    itself an outcome. The pattern was in 17 scripts.
-11. **Sign the bias separately for every analysis a shared bug touches.** "Conservative" was established for
-    one estimand and did not transfer — the same defect ran the *other* way in the landmark analysis.
+    `or` and bare assignment across rows all leaked. The pattern was in 17 scripts.
+11. **Sign the bias separately for every analysis a shared bug touches.** "Conservative" established for one
+    estimand did not transfer.
 12. **Predictive increment cannot identify a mechanism when the measure is noisy.** Two readings of a
-    *constant* beat one reading. Decompose into `mean` and `difference` and test the **sign** of the difference
-    term; noise cannot produce a correctly-signed non-zero coefficient.
-13. **Never "fix" a confound by conditioning on a post-exposure variable.** That is a collider and can
-    manufacture a sign reversal.
-14. **Report exclusions and check whether they are outcome-related.** Burst morphology is undefined below four
-    bursts, which happens at near-total suppression — 13.2 % of patients excluded, at 80 % vs 60 % poor outcome.
+    *constant* beat one. Decompose into `mean` and `difference` and test the **sign** of the difference term.
+13. **Never "fix" a confound by conditioning on a post-exposure variable.** That is a collider.
+14. **Report exclusions and check whether they are outcome-related.** Both major exclusions in this project
+    turned out to be.
 15. **Discrimination without calibration is half a result**, and the missing half is the half clinicians use.
 
 ### D. Reading the evidence
 
 16. **When two arms of the same test disagree in SIGN, the definition is doing the work, not the biology.**
-17. **When a fix makes the effect stronger, the diagnosis was wrong** — that is a refutation of the
-    explanation, not a refinement of it.
-18. **Uniformity across strata whose clinical handling is known to differ is evidence AGAINST validity**, not
-    for robustness. A median of 0.0 h in every aetiology exposed a charting artefact.
+17. **When a fix makes the effect stronger, the diagnosis was wrong** — a refutation, not a refinement.
+18. **Uniformity across strata whose clinical handling is known to differ is evidence AGAINST validity.**
 19. **Before two measures can corroborate each other, check whether one row can satisfy both definitions.**
-20. **When two scripts compute the same quantity, diff them even if only one is published.** The unpublished
-    one is a free replicate, and disagreement localises to a definition.
-21. **Run the literature check BEFORE the analysis when the prediction rests on a premise about a specific
-    disease.** "Dead cortex cannot seize" is sound physiology and false after cardiac arrest; one E-utilities
-    query would have killed the design before it was built.
-
-26. **Smoke-test an analysis on PERMUTED labels, never real ones.** It exercises every code path on real
-    feature distributions while revealing nothing about the association, so a pre-registration stays clean --
-    and repeated a few hundred times the same harness measures the procedure's false-positive rate directly.
-    That is how `diff_ci` (0.045/0.065/0.065 vs nominal 0.05) and `oob_increment` (0/60 vs nominal 0.025) came
-    to be audited at all.
-27. **A mask that compresses out bad samples glues time together.** Dropping frames and binning the remainder
-    is right for any order-free summary and wrong for anything modelling transitions; one recording in 24 had
-    a 1,817 s hole closed up, invisible in the output because the burden was unaffected. Before feeding a
-    series to a model of temporal evolution, verify the time axis is uniform.
-28. **Two measurements separated in space or time are not thereby measuring different things.** Predicted
-    twice that they would be -- background vs intra-burst spectrum, topography vs median-across-channels --
-    and both were redundant. Separation is not evidence of a distinct factor; a case where one moves and the
-    other does not is.
+20. **When two scripts compute the same quantity, diff them even if only one is published.**
+21. **Run the literature check BEFORE the analysis when the prediction rests on a premise about a disease.**
+    "Dead cortex cannot seize" is sound physiology and false after cardiac arrest.
 
 ### E. Verification
 
@@ -141,99 +165,125 @@ recurred, not by how clever they sound.
     reproducible; measured properly it is 0.749.
 23. **Self-written code plus self-written tests share blind spots.** Validate against an *independent*
     implementation — an exact solver caught a 0.775 deviation that seven unit tests missed.
-24. **Delegate the enumeration, verify the classification — and spot-check the calls the agent rated LOW
-    risk.** That is where a miss is most costly.
-25. **Verify every citation from the MEDLINE record via E-utilities.** WebFetch fabricates PubMed content under
-    CAPTCHA; it cost this project six wrong citations once. Verifying a "contradicting" paper myself revealed
-    its own headline effect failed its own adjustment — which changed the conclusion.
+24. **Delegate the enumeration, verify the classification — and spot-check the calls rated LOW risk.**
+25. **Verify every citation from the MEDLINE record via E-utilities.** WebFetch fabricates PubMed content
+    under CAPTCHA; it cost this project six wrong citations once.
+
+### F. Added 2026-07-27
+
+26. **Smoke-test an analysis on PERMUTED labels, never real ones.** It exercises every code path on real
+    feature distributions while revealing nothing about the association, so a pre-registration stays clean —
+    and repeated a few hundred times the same harness measures the procedure's false-positive rate directly.
+    That is how `diff_ci` and `oob_increment` came to be audited at all.
+27. **A mask that compresses out bad samples glues time together.** Right for any order-free summary, wrong
+    for anything modelling transitions. One recording in 24 had a 1,817 s hole closed up, invisible in the
+    output because the burden was unaffected. Verify the time axis before modelling temporal evolution.
+28. **Two measurements separated in space or time are not thereby measuring different things.** Predicted
+    twice — background vs intra-burst spectrum, topography vs median-across-channels — and both were redundant.
+29. **Overlapping category labels cannot decompose a contrast between two of them.** When the comparison is
+    A versus not-A, the decomposition must happen **inside not-A**.
+30. **Write the conclusion rule before the run, then check the rule itself for holes.** Pre-registration stops
+    the bar moving afterwards; it does not stop it being set too low, and that failure is harder to notice
+    because the paperwork looks correct.
+31. **When a replication fails its own gate, the downstream verdict is absent, not negative.** Scripts must
+    refuse to emit a decisive verdict when their own precondition failed — the sentence outlives the caveat.
 
 ---
 
 ## SOP: the ten-result cadence (STANDING)
 
-Results accumulate faster than interpretation does, and a mechanism is only worth proposing if it explains the
-NEGATIVES as well as the positives. So every **~10 new test results** logged to
-`docs/research/41_RESULTS_LEDGER.md`, stop generating and do a consolidation pass:
+Every **~10 new results** logged to `docs/research/41_RESULTS_LEDGER.md`, stop generating and consolidate:
 
-1. **Re-read the whole ledger**, not the recent rows. The elimination table at its top is the working object.
-2. **Brainstorm mechanisms against the FULL constraint set** — delegate to sonnet, giving it every constraint
-   including the negatives and the surprises, and require each candidate to state which constraints it explains,
-   which it *struggles* with, and one falsifiable prediction. A candidate that only explains the positives is
-   not a candidate.
-3. **Literature check on the current leading candidates** — delegate, and require NCBI E-utilities rather than
-   WebFetch, which fabricates PubMed content when the site serves a CAPTCHA (see LESSONS).
+1. **Re-read the whole ledger**, not the recent rows. The constraint table is the working object.
+2. **Brainstorm mechanisms against the FULL constraint set** — every candidate must state which constraints
+   it explains, which it *struggles* with, and one falsifiable prediction. A candidate that only explains the
+   positives is not a candidate.
+3. **Literature check on the leading candidates** — NCBI E-utilities, never WebFetch.
 4. **Opus verifies** every number and citation that will be reported, then re-ranks the queue.
 
-The point of the cadence is that the constraint set does the work: each negative result narrows the space more
-than a positive one does, and the narrowing is only visible when the results are read together.
+**A finding that retrodicts a standing negative is worth more than one that adds a positive.** The aetiology
+reversal explains N10, which it was not built to explain; that is the property to look for. Record predicted
+win-likelihood next to actual outcome in the ledger — the accumulating calibration record is how the
+discrimination develops. To date this project has over-predicted three redundant measures and under-predicted
+one real effect, all for the same reason (rule 28).
 
-## Repo map (this project)
+---
+
+## Which documents are current
+
+| document | status |
+|---|---|
+| `docs/research/41_RESULTS_LEDGER.md` | **live** — 392 results, the constraint table, the primary record |
+| `docs/LESSONS.md` | **live** — accumulated memory; append after every experiment, negatives included |
+| `docs/EXPERIMENT_QUEUE.md` | **live** — prioritised backlog, re-ranked 2026-07-27 |
+| `docs/research/48_RESEARCH_LANDSCAPE.md` | **live** — what this data can and cannot settle, with feasibility counts |
+| `docs/research/49_HANDOFF_STATE.md` | **live** — where work stopped, what is verified, what is open |
+| `docs/research/47_BSP_TECHNICAL_NOTE.md` | **live** — self-contained, publishable methods note |
+| `docs/research/45_MANUSCRIPT.md` | **live but predates R358–R392** — check against the ledger before quoting |
+| `docs/MORGOTH_INTEGRATION.md` | live — wire-up checklist; the model remains unobtainable |
+| `docs/RUNBOOK.md`, `docs/HEEDB_UNLOCK.md`, `docs/HANDOFF.md` | live — real-data procedure and pipeline handoff |
+| everything else in `docs/` | **legacy from unrelated projects — ignore unless specifically directed** |
+
+---
+
+## Repo map
+
 ```
-config.yaml            single source of truth (PHASE flag, seeds, sites, params, data.s3, TUH)
-cli.py                 entry point: validate | preflight | pass1 | phase1 | freeze | phase2 | tuh-test | demo
-common/                hashing, config validation, audit log   (stdlib only)
-guards/heldout_guard.py the firewall (blocks held-out while phase==1; hash-stamped unlock)
-pipeline/              Pass 1: stream_fetch (BDSPS3Client / TUHRsyncClient / LocalEDFClient),
-                       harmonize, embed (CBraMod), features (DSP), writer, run_pass1
-analysis/              correct_sites, site_probe (gate), cluster, phenotype_bar, characterize,
-                       audits, run_phase1 (orchestrator)
-phase2/                freeze (4 objects) -> run_phase2 (unlock -> cross-site -> single run-once test)
-demo/synthetic.py      full synthetic lifecycle (no creds/model) -> `python cli.py demo`
-tests/                 test_integrity (stdlib) + analysis/e2e/DSP/transport (skip w/o sci stack)
-docs/                  SPEC_TRACEABILITY, RUNBOOK (real data), GO_LIVE, HANDOFF
-scripts/setup_cloud.sh setup script for the cloud env
+config.yaml            single source of truth for the phenotype pipeline (PHASE flag, seeds, sites, params)
+cli.py                 phenotype pipeline: validate | preflight | pass1 | phase1 | freeze | phase2 | demo
+common/ guards/        hashing, config validation, audit log, the held-out firewall  (stdlib only)
+pipeline/ phase2/      the frozen-backbone phenotype pipeline (cold storage: tested, not the active thread)
+
+analysis/              THE ACTIVE WORK. ~110 scripts. Naming: heedb_* | icare_* | vitaldb_* | bsp_*
+  bsp.py                          BSP state-space estimator (damped Newton; the damping is load-bearing)
+  bsp_validate_exact.py           independent exact grid forward-backward — catches what unit tests cannot
+  bsp_window_sweep.py             simulation sweep: where BSP stops being a threshold ratio
+  bsp_window_real.py              the same question on real EEG, scored by forward prediction
+  heedb_flag_burden_nonlinear.py  R388 — the slowing-flag residual is not a functional-form artefact
+  heedb_thalamocortical_test.py   R389 — the aetiology fork
+  heedb_content_sign_flip.py      R390-R391 — the reversal and its red-team
+  heedb_content_by_aetiology.py   R392 — the corrected decomposition (read A3, not A1)
+  heedb_flag_vs_expert.py         R385 — why MORGOTH's labels cannot validate the slowing flag
+  icare_topography.py             one S3 pass -> topography + per-second suppression series
+  icare_seq_gap_check.py          finds glued-together dropouts
+  icare_seq_exclusions.py         builds the keep-list from WFDB headers, checks outcome-relatedness
+  icare_multiday_trend.py         R378 — across-days trend, the surviving mechanism candidate
+  icare_inference_calibration.py  negative control for diff_ci and oob_increment
+scripts/heedb_run.sh   REQUIRED wrapper for anything touching S3 (see Credentials above)
+tests/                 integrity core (stdlib) + analysis/e2e/DSP/transport (skip without the sci stack)
 ```
 
-## NOT part of this project (leftover playground; do not touch)
-`health_check.py`, the `test` stub file, and the trading workflows under
-`.github/workflows/` (`collect/live/health/kalshi-*/sports-clv/etf-paper/
-strategy-*/wallet-track`). Only `.github/workflows/eeg-phenotype-tests.yml` is ours.
+**NOT part of this project:** `health_check.py`, the `test` stub, and the trading workflows under
+`.github/workflows/` (`collect/live/health/kalshi-*/sports-clv/etf-paper/strategy-*/wallet-track`). Only
+`.github/workflows/eeg-phenotype-tests.yml` is ours.
+
+---
 
 ## Conventions
-- **Heavy deps are lazy.** numpy/scipy/sklearn/mne/torch/boto3 import *inside*
-  functions so the integrity core + guards import and test with the stdlib only.
-- **Everything is content-hashed.** Use `common/hashing` (canonical JSON,
+
+- **Heavy deps are lazy.** numpy/scipy/sklearn/mne/torch/boto3 import *inside* functions so the integrity core
+  imports and tests with the stdlib only.
+- **Everything is content-hashed** in the phenotype pipeline. Use `common/hashing` (canonical JSON,
   `allow_nan=False`). "Frozen" means the hash is recorded and re-verified.
-- **Config-driven + deterministic.** All params/seeds in `config.yaml`; nothing
-  that can change a result lives in code. `TO-CONFIRM` = must be pinned before
-  the relevant stage (checkpoint sha256, primary phenotype, BDSP catalog schema).
-- **The firewall is load-bearing.** Route every site label through
-  `HeldoutGuard.check_site_access`; never add an outcome-bearing column to a
-  Phase-1 loader (`assert_no_outcome_in_loader_fields` enforces this).
+- **Config-driven and deterministic.** Never use `hash()` for seeding — Python salts string hashes per
+  process, which silently breaks reproducibility and only for the randomised paths.
+- **Analysis scripts carry their pre-registration in the module docstring**, written before the run and
+  committed before the result exists. Predictions, the falsification condition, and the scope limit are all
+  stated up front. **This is the project's core integrity practice — keep doing it.**
+- **Preprocessing:** mne reads EDF in **volts**; models expect **µV** (×1e6). Never z-norm amplitude away.
+- **The firewall is load-bearing** in the phenotype pipeline. Route every site label through
+  `HeldoutGuard.check_site_access`; never add an outcome-bearing column to a Phase-1 loader.
 
 ## Commands
+
 ```bash
-make test-integrity      # stdlib-only firewall/hashing/guard tests (fast, no deps)
-make test                # full suite (needs numpy/scipy/sklearn/statsmodels/mne)
-python cli.py demo       # full synthetic lifecycle end-to-end
-python cli.py preflight  # check creds/network/deps before a live run
+make test-integrity                      # stdlib-only firewall/hashing/guard tests, fast, no deps
+make test                                # full suite (needs numpy/scipy/sklearn/statsmodels/mne)
+python cli.py demo                       # phenotype pipeline lifecycle on synthetic data
+python cli.py preflight                  # check creds/network/deps before a live run
+scripts/heedb_run.sh python analysis/X   # anything touching real credentialed data
 ```
-106 tests green. Branch: `claude/heedb-eeg-phenotype-discovery-2mnwzx`.
 
-## Running on real data
-See `docs/RUNBOOK.md` (full procedure) and `docs/HANDOFF.md` (continuing in a new
-desktop session). Real HEEDB/TUH access is credentialed (the user's own AWS keys
-/ NEDC SSH key) and is supplied at runtime — never committed. The CBraMod
-forward pass **is now validated on real weights + real HEEDB EEG** (see
-`docs/HEEDB_UNLOCK.md`): weights sha256-match the pin, load with 0 missing keys,
-and embed a real EDF end-to-end. Preprocessing lesson: mne reads EDF in **volts**;
-CBraMod expects **µV** (×1e6) — never z-norm the amplitude away.
-
-## Autonomous research machine (READ THIS FIRST every session)
-This repo runs as a 24/7, self-learning, publication-focused research loop. Before doing any work:
-1. Read **`docs/RESEARCH_MACHINE.md`** — the operating protocol (mission, self-learning loop, impact bar,
-   guardrails, and the model-delegation policy).
-2. Read **`docs/LESSONS.md`** — accumulated memory (what we know / what's ruled out). Never repeat a dead
-   end. **Append a new lesson (with mechanism) after every experiment — negative results included.**
-3. Read **`docs/EXPERIMENT_QUEUE.md`** — the prioritized backlog. Pull the top item that fits compute.
-4. Read **`docs/IDEA_GATE.md`** — the idea DISCRIMINATOR (from ~40 run ideas). Not a hard filter: **score &
-   RANK candidates by win-likelihood and flag the obviously-bad before spending compute; then use judgment.**
-   Strongest signals = a ground-truth reference in the data + a named direction-predicting mechanism + a
-   sharp falsifiable quantitative prediction. **Calibrate:** record your predicted win-likelihood next to
-   the actual outcome in the ledger — that accumulating predicted-vs-actual record is how the ability
-   develops. When depth on a mined seam stalls, hunt for new (mechanism + reference + driver) triples.
-Then discriminate/rank → run → red-team (sonnet) → log lessons + prediction → update queue/ledger → commit+push.
-**Delegate per the SOP at the top of this file** — haiku for mechanical/checkable, sonnet for judgment/red-team,
-opus for orchestration + synthesis + verifying every number before it is reported.
-Mission bar: **ultra-high-impact, externally-validated** findings; current white space =
-first cross-site-validated EEG-foundation-model → clinical-outcome study (GPU-gated).
+Branch: **`claude/heedb-eeg-phenotype-discovery-2mnwzx`** — develop, commit and push here.
+Run `git config user.email noreply@anthropic.com && git config user.name Claude` or commits show as
+unverified on GitHub.
