@@ -1411,3 +1411,20 @@ calibration, cross-hospital, landmark, morphology directions) have been re-run, 
 pre-correction and marked as such rather than silently carried forward.
 
 **Cumulative distinct results: 356.**
+
+### R357. Morphology directions unchanged by the cohort correction
+
+Last claim-bearing HEEDB number still computed on contaminated data. Re-derived at the index recording on the
+corrected cohort (n=746 post-anoxic with morphology; 344 dead ≤3 d, 93 alive >180 d):
+
+| feature | previous index-only | **corrected** | verdict |
+|---|---|---|---|
+| intra-burst 8–30 Hz | 0.160 / 0.101 | **0.160 / 0.101** | **identical** |
+| stereotypy | 0.015 / 0.001 | **0.015 / 0.001** | **identical** |
+| burst duration | 1.400 / 2.537 | 1.431 / 2.450 | unchanged in direction (already withdrawn) |
+| burst amplitude | 19.44 / 23.72 | 19.66 / 23.74 | still inverted vs legacy (already withdrawn) |
+
+**The two surviving mechanism channels are unaffected by the cohort correction** — the miscoded patients were
+not driving them. Every claim-bearing HEEDB figure has now been re-derived on the corrected cohort.
+
+**Cumulative distinct results: 357.**
