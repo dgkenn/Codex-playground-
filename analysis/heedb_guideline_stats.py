@@ -33,6 +33,9 @@ from heedb_bs_ascertainment import AETIOLOGY, norm, dt
 
 OMOP = os.environ.get("OMOP_OUT", "/tmp/eeg_probe/heedb_omop")
 NBOOT = int(os.environ.get("NBOOT", "500"))
+# Bootstrap replicates that REFIT the model each time. Fewer than NBOOT because each one runs a full
+# cross-validation, but this is the interval that is actually valid.
+BOOT_REFIT = int(os.environ.get("BOOT_REFIT", "200"))
 AP = "arn:aws:s3:us-east-1:184438910517:accesspoint/bdsp-credentialed-access-point"
 FEATS = ("stereotypy", "alpha_beta", "burst_amp", "burst_dur", "burst_rate")
 
@@ -86,6 +89,21 @@ def cv_pred(X, y, rng, folds=5, reps=5):
     out = np.full(len(y), np.nan)
     out[ok] = acc[ok] / cnt[ok]
     return out, ok
+
+
+def cv_auc_refit(X, y, rng, folds=5):
+    """Single-repeat CV AUC, refit from scratch -- the unit used inside each bootstrap replicate."""
+    out = []
+    idx = rng.permutation(len(y))
+    for f in range(folds):
+        te = idx[f::folds]; tr = np.setdiff1d(idx, te)
+        if y[tr].sum() < 5 or (len(tr) - y[tr].sum()) < 5 or y[te].sum() < 2:
+            continue
+        try:
+            out.append(auc(y[te], predict(X[te], logit_fit(X[tr], y[tr]))))
+        except Exception:
+            continue
+    return float(np.nanmean(out)) if out else float("nan")
 
 
 def main():
@@ -223,14 +241,22 @@ def main():
     pcb, ok2 = cv_pred(Xcb, y, rng)
     ok = ok1 & ok2
     ac, acb = auc(y[ok], pc[ok]), auc(y[ok], pcb[ok])
+    # REFIT INSIDE THE BOOTSTRAP. The previous version computed out-of-fold predictions ONCE and then
+    # resampled those fixed scores, which captures only evaluation-sample variance and ignores model-refit and
+    # fold-assignment variance -- so the interval came out too narrow. The I-CARE analysis already refits per
+    # replicate; the headline number was using the weaker method, which is the wrong way round.
     d = []
-    for _ in range(NBOOT):
+    for _ in range(BOOT_REFIT):
         i = rng.integers(0, n, n)
-        if 0 < y[i].sum() < n:
-            try:
-                d.append(auc(y[i], pcb[i]) - auc(y[i], pc[i]))
-            except Exception:
-                pass
+        if y[i].sum() < 10 or (n - y[i].sum()) < 10:
+            continue
+        try:
+            a1 = cv_auc_refit(Xc[i], y[i], rng)
+            a2 = cv_auc_refit(Xcb[i], y[i], rng)
+            if a1 == a1 and a2 == a2:
+                d.append(a2 - a1)
+        except Exception:
+            pass
     lo, hi = np.percentile(d, [2.5, 97.5]) if len(d) > 100 else (float("nan"),) * 2
     print(f"   category alone            CV AUC {ac:.3f}")
     print(f"   category + burden         CV AUC {acb:.3f}")
@@ -274,13 +300,17 @@ def main():
         o = oka & okb
         aa, ab = auc(yh[o], pa[o]), auc(yh[o], pb[o])
         dd = []
-        for _ in range(NBOOT):
+        for _ in range(BOOT_REFIT):
             i = rng.integers(0, len(hm), len(hm))
-            if 0 < yh[i].sum() < len(i):
-                try:
-                    dd.append(auc(yh[i], pb[i]) - auc(yh[i], pa[i]))
-                except Exception:
-                    pass
+            if yh[i].sum() < 8 or (len(i) - yh[i].sum()) < 8:
+                continue
+            try:
+                q1 = cv_auc_refit(A[i], yh[i], rng)
+                q2 = cv_auc_refit(B[i], yh[i], rng)
+                if q1 == q1 and q2 == q2:
+                    dd.append(q2 - q1)
+            except Exception:
+                pass
         l2, h2 = np.percentile(dd, [2.5, 97.5]) if len(dd) > 100 else (float("nan"),) * 2
         print(f"   within highly malignant, n={len(hm):,}")
         print(f"   burden alone              CV AUC {aa:.3f}")

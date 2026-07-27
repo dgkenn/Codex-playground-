@@ -29,7 +29,11 @@ import csv, os, sys
 import numpy as np
 
 COHORT = os.environ.get("ICARE_COHORT", "/tmp/eeg_probe/icare_cohort.csv")
-MORPH = os.environ.get("ICARE_MORPH_OUT", "/tmp/eeg_probe/icare_morph.csv")
+# Default points at the extraction that actually carries the stereotypy columns. The earlier default
+# (icare_morph.csv) predates them, and because the row loop swallows KeyError it would have silently filtered
+# every row and reported "extraction still running or too sparse" instead of failing -- a silent-empty trap of
+# exactly the kind that has already cost this project once.
+MORPH = os.environ.get("ICARE_MORPH_OUT", "/tmp/eeg_probe/icare_morph2.csv")
 NBOOT = int(os.environ.get("NBOOT", "600"))
 # stereotypy_2s added because Fong et al. (Neurocrit Care 2025, PMID 39900751) found the burst correlation
 # coefficient over the first 2 s to be the ONLY independent EEG predictor of mortality in 203 post-arrest
@@ -101,6 +105,7 @@ def main():
             coh[pid] = 1.0 if cpc >= 3 else 0.0
 
     rows = []
+    n_bad = n_nan = 0
     for r in csv.DictReader(open(MORPH)):
         pid = (r.get("pid") or "").strip()
         if pid not in coh:
@@ -109,14 +114,27 @@ def main():
             d = {k: float(r[k]) for k in FEATS}
             d["burden"] = float(r["burden"])
             d["nb"] = float(r["n_bursts"])
+        except KeyError as e:
+            raise SystemExit(f"{MORPH} lacks column {e}; it predates the stereotypy/BSP extraction. "
+                             f"Set ICARE_MORPH_OUT to a file produced by the current "
+                             f"analysis/icare_burst_morphology.py") from None
         except Exception:
+            n_bad += 1
             continue
         if any(v != v for v in d.values()):
+            n_nan += 1
             continue
         d["y"] = coh[pid]; d["pid"] = pid
         rows.append(d)
     n = len(rows)
     print(f"I-CARE patients with burst morphology and an outcome: {n:,}")
+    # Report the exclusions rather than letting them pass silently: they are NOT outcome-neutral. Morphology
+    # is undefined below four bursts, which happens exactly when suppression is near-total, so the excluded
+    # patients sit at the top of the burden axis and have far worse outcomes.
+    print(f"   EXCLUDED: {n_nan} with a non-computable feature, {n_bad} unparsable. Morphology cannot be")
+    print(f"   measured in a record with almost no bursts, so these are not missing at random -- in I-CARE the")
+    print(f"   excluded are ~80% poor outcome against ~60% retained. Every morphology result below is")
+    print(f"   conditioned on the EEG containing at least four identifiable bursts.")
     if n < 120:
         print("*** extraction still running or too sparse; rerun when it completes")
         return 1

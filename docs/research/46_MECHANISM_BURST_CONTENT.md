@@ -42,11 +42,11 @@ HEEDB. Burden alone 0.713 → burden + morphology 0.768.
 | feature | coefficient |
 |---|---|
 | **intra-burst 8–30 Hz** | **+0.522 [+0.305, +0.773]** ✔ |
-| **burst amplitude** | **+3.502 [+2.204, +5.279]** ✔ |
+| ~~burst amplitude~~ | +3.502 [+2.204, +5.279] | **WITHDRAWN — see §7** |
 | burst duration | −0.051 [−0.517, +0.138] |
 | burst rate | −0.147 [−0.353, +0.061] |
 
-So **spectral content and amplitude of the bursts carry outcome information that suppression burden does not**,
+So **spectral content of the bursts carries outcome information that suppression burden does not**,
 in two independent cohorts. That is the externally replicable mechanism component.
 
 ---
@@ -110,7 +110,7 @@ postanoxic coma".
 ## 5. What is now claimed
 
 **Claimed, and externally replicated in two cohorts with our own detector:** within burst suppression after
-cardiac arrest, the **spectral content and amplitude of the bursts** carry prognostic information independent
+cardiac arrest, the **spectral content and stereotypy of the bursts** carry prognostic information independent
 of how suppressed the record is. Suppression burden measures *how much* is gone; burst content reports
 *what kind of activity remains*. A prior independent study reports the same direction for spectral content
 (PMID 30422916).
@@ -131,7 +131,7 @@ at 1 s and 2 s on the same 527 patients, **his finding replicates too** — and 
 | feature, adjusted for burden (standardised log-odds) | coefficient |
 |---|---|
 | **intra-burst 8–30 Hz** | **+0.500 [+0.291, +0.756]** ✔ |
-| **burst amplitude** | **+2.252 [+0.844, +3.985]** ✔ |
+| ~~burst amplitude~~ | +2.252 [+0.844, +3.985] | **WITHDRAWN — see §7** |
 | **stereotypy (1 s)** | **+1.040 [+0.457, +1.825]** ✔ |
 | stereotypy (2 s) | −0.114 [−0.549, +0.398] |
 | burst duration | −0.027 [−0.658, +0.200] |
@@ -161,3 +161,27 @@ with the stereotypy channel independently reported by another group.
 weak. Recomputing it in I-CARE at 1 s and 2 s is running; if stereotypy dominates spectral content there, the
 mechanism should be restated around burst *similarity* rather than burst *content*, and this document revised
 accordingly.
+
+
+---
+
+## 7. CORRECTIONS after adversarial review (2026-07-27)
+
+**Amplitude is withdrawn.** §2 and §6 above were written before the HEEDB morphology directions were
+re-derived at the index recording. That re-derivation **inverts** amplitude's sign (early deaths 19.4 vs long
+survivors 23.7, i.e. *lower* amplitude with death, where the legacy max-over-recordings extraction said
+36.5 vs 26.7), and I-CARE gives the opposite sign again. A channel whose direction depends on the exposure
+definition is not a finding. The tables above are struck through rather than deleted so the correction is
+visible. **The mechanism rests on two channels: intra-burst spectral content and stereotypy.**
+
+**The morphology analysis is conditioned on having measurable bursts, and that is not neutral.** Burst
+morphology is undefined when a record contains fewer than four bursts — which happens precisely when
+suppression is near-total. Measured in I-CARE: **80 of 607 patients (13.2 %) are excluded**, and they are
+**80.0 % poor outcome against 60.3 % among those retained**; the NaN-dropped subgroup has median burden
+**0.967** and **96.9 %** poor outcome. The same pattern holds in HEEDB.
+
+This is intrinsic, not a coding defect: *you cannot measure the shape of bursts in a brain that has almost
+none*. The consequence is a real limit on the claim and on any clinical reading of it — **burst morphology can
+only add information in the middle of the burden range, because at the top of that range it does not exist.**
+Every morphology statement in this document should be read as conditioned on "among patients whose EEG contains
+at least four identifiable bursts". The burden findings are unaffected; they use all patients.
