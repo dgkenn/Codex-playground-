@@ -2172,3 +2172,18 @@ never the risk; the definition was.**
   0.511 [0.464, 0.557] — an interval containing 0.5. The rule passed on evidence that establishes almost
   nothing. Pre-registration protects against moving the bar afterwards; it does not protect against setting it
   too low, and the second failure is easier to miss because the paperwork looks correct.
+
+- **Check the ledger before recommending a resource, not after.** Four documents — CLAUDE.md, the handoff
+  state, the research landscape and the queue — were written recommending TUH as the gating external
+  replication for the aetiology reversal. TUH carries **no linked outcome data and no diagnosis field**, so
+  it cannot replicate any outcome association at all, and this project had already established that at R321
+  and recorded the same gate independently in LESSONS. The recommendation survived four documents and a
+  handoff prompt because nobody re-read the record. The ledger exists precisely so that a resource is not
+  re-evaluated from memory, and it only works if it is consulted before the claim, not after someone
+  questions it.
+
+- **Push after every step, because the container can roll the repository back.** A restart returned the
+  working tree and local git to a commit from before the entire session — 33 commits and every analysis
+  script gone locally. All of it was recoverable in one `git reset --hard origin/<branch>` because each step
+  had been pushed as it completed. Had work been batched into one commit at the end, the session would have
+  been lost. Treat `origin` as the only durable store, and the local tree as scratch.

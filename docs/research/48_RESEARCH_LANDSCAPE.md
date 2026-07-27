@@ -119,6 +119,8 @@ uniformly. B supplies the mechanism — thalamocortical integrity, measured by a
 is what differs. Each is weak alone: A without a mechanism is a curiosity, B without the clinical contrast is
 a physiology note. Together they are a claim with a reason.
 
-**The single biggest threat to both is external replication.** I-CARE cannot help, being single-aetiology.
-**TUH is mixed-aetiology and is already in the protocol** — that is the gating resource, and it should be
-brought online before more internal analyses are added.
+**The single biggest threat to both is external replication**, and it has no easy answer. I-CARE cannot
+help, being single-aetiology. **TUH cannot help either — corrected 2026-07-27:** it carries no outcome data
+and no diagnosis (ledger R321), so it can validate a measurement but never an outcome association. No known
+cohort has EEG + outcome + mixed aetiology other than HEEDB itself. The strongest available substitute is the
+**HEEDB hospital split (S0001 vs S0002)**, and it should be stated as the internal validation it is.

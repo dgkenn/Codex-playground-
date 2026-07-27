@@ -65,7 +65,17 @@ remainder. The HEEDB burden/morphology shards are the expensive ones; treat them
 
 ## Credentials, and the trap that will cost you an hour
 
-Real HEEDB/TUH/I-CARE access is credentialed and supplied at runtime. **Never commit credentials.**
+Real HEEDB/I-CARE/MORGOTH access is credentialed. **Never commit credentials.**
+**Durable storage: set `BDSP_AWS_ACCESS_KEY_ID` / `BDSP_AWS_SECRET_ACCESS_KEY` in the Claude Code web
+environment's environment-variable settings** — they are attached to the environment, not the session, so
+every future session gets them. `scripts/bdsp_bootstrap.sh` materializes `~/.aws/credentials` at session
+start and probes it. Full detail in **`docs/CREDENTIALS.md`**.
+
+**TUH is not a usable replication target — do not plan around it.** The TUH EEG Corpus carries **no linked
+outcome data** (manifest: `recording_id, patient_id, edf_path, sfreq, age, sex`) and no diagnosis, so it
+cannot replicate any outcome association, and certainly not an aetiology contrast. Established at ledger
+**R321**. It can validate a *measurement* against a clinician label elsewhere, which is a lesser claim. This
+container also has no `rsync`/`ssh` and apt cannot reach the mirrors.
 
 **The sandbox injects placeholder `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY` for its proxy. Static env
 credentials outrank profile credentials in boto3's resolution chain, so every script silently authenticates

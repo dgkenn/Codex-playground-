@@ -43,8 +43,11 @@ was not built to explain. This is the most substantive candidate the project has
 
 **What it needs before it is a paper, in order:**
 
-A. **A real external replication — now the only open item, and BLOCKED in the cloud sandbox.** TUH has no
-   `rsync` binary and no NEDC key here; run it from a machine that has them. I-CARE agrees in direction only — 0.511 [0.464, 0.557], which includes
+A. **A real external replication — the only open item.** **CORRECTED 2026-07-27: TUH cannot serve this.**
+   It carries no outcome data and no diagnosis (ledger R321), so it cannot replicate an outcome association,
+   let alone an aetiology contrast. No known cohort has EEG + outcome + mixed aetiology other than HEEDB.
+   The strongest available substitute is the **HEEDB hospital split (S0001 vs S0002)**; anything beyond that
+   needs new data access, not more analysis. I-CARE agrees in direction only — 0.511 [0.464, 0.557], which includes
    0.5. That is the single biggest weakness. I-CARE is all-anoxic so it cannot test the *contrast* at all;
    it can only test one arm. **A cohort with mixed aetiology and EEG is what this needs.** TUH is the obvious
    candidate and is already in the protocol.

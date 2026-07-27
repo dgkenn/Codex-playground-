@@ -110,10 +110,18 @@ outcome-related, −17.6 pp [−25.5, −9.1]).
 ## 5. What to do next, in order
 
 **0. Replicate the aetiology reversal in a mixed-aetiology cohort. This is the gate on everything else, and
-   it is now the ONLY open weakness.** TUH is in the protocol and is the obvious candidate. **It is
-   unreachable from the cloud sandbox — no `rsync` binary and no NEDC key — so this needs a machine that has
-   them.** I-CARE cannot help: being entirely cardiac arrest it cannot test an aetiology contrast at all.
-   Until this exists the lead is a single-cohort finding.
+   it is now the ONLY open weakness.**
+
+   **CORRECTION (2026-07-27): TUH is NOT the answer, and an earlier version of this document wrongly said it
+   was.** The TUH EEG Corpus carries **no linked outcome data** — its manifest is `recording_id, patient_id,
+   edf_path, sfreq, age, sex` — and no diagnosis field either. It cannot replicate an outcome association at
+   any effort, let alone an aetiology contrast. **This was already established in this ledger at R321** and
+   should have been checked before TUH was recommended.
+
+   **There is no known cohort with EEG + outcome + mixed aetiology other than HEEDB.** LESSONS records the
+   same gate independently: "no external dataset with EEG + hard-outcome + a 2nd site". So the strongest
+   available test is the **hospital split inside HEEDB** (S0001 vs S0002) — weaker than a true external
+   cohort, and honest about being so. Anything stronger requires a data-access change, not an analysis.
 
 **~~1. Remove the death-ascertainment conditioning.~~ DONE — R393, survived.**
 
