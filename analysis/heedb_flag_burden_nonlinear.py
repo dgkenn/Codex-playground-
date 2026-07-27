@@ -170,7 +170,15 @@ def main():
     lo1, hi1 = boot_coef(Xlin, y, 3, rng, NBOOT)
     print(f"   flag coefficient {blin[3]:+.3f} [{lo1:+.3f},{hi1:+.3f}]   "
           f"(burden {blin[1]:+.3f}, intra-burst {blin[2]:+.3f})")
-    print(f"   {'residual reproduces' if lo1 * hi1 > 0 else 'residual does NOT reproduce in this cohort'}")
+    reproduced = lo1 == lo1 and lo1 * hi1 > 0
+    print(f"   {'residual reproduces' if reproduced else 'residual does NOT reproduce in this cohort'}")
+    if not reproduced:
+        print("\n   *** N1 HAS FAILED ITS GATE. R360 was estimated on a different and larger cohort")
+        print(f"   (n = 818); this join yields n = {n:,} and additionally conditions on an ASCERTAINED DEATH")
+        print("   record, which this project has already shown is differentially ascertained by aetiology.")
+        print("   N2 below is therefore reported for completeness and is NOT interpretable: with a linear")
+        print("   coefficient whose interval already spans zero, a flexible adjustment cannot distinguish")
+        print("   'the residual collapsed' from 'the residual was never present in this subsample'.")
 
     print("\n" + "=" * 96)
     print("N2  DECISIVE -- the same model with a FLEXIBLE burden adjustment (quintile indicators)")
@@ -184,7 +192,10 @@ def main():
     print(f"   flag coefficient {bflex[-1]:+.3f} [{lo2:+.3f},{hi2:+.3f}]")
     shrink = (1 - abs(bflex[-1]) / abs(blin[3])) * 100 if blin[3] else float("nan")
     print(f"   change from the linear specification: {shrink:+.1f}% in magnitude")
-    if lo2 * hi2 > 0:
+    if not reproduced:
+        print("   N2: NO VERDICT -- see the gate failure above. Neither 'survives' nor 'collapses' can be")
+        print("   read off a comparison whose baseline never reached significance.")
+    elif lo2 * hi2 > 0:
         print("   N2: the residual SURVIVES a flexible burden adjustment. The linear-form explanation is")
         print("   excluded, and the residual is harder to dismiss than it was before this test.")
     else:

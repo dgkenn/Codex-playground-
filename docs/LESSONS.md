@@ -2131,3 +2131,25 @@ never the risk; the definition was.**
   everywhere, and on real EEG loses to the tuned one at 1–2 s. One baseline would have licensed either "the
   state-space model earns its keep" or "three lines of arithmetic suffice", both defensible and both
   incomplete. Two baselines that bound the answer from opposite sides say what is actually true.
+
+- **Near-perfect agreement between two instruments is a reason to run a negative control, not to celebrate.**
+  The report-text slowing flag agreed with MORGOTH's expert annotation in 99.8 % of overlapping patients. That
+  is not achievable between genuinely independent reads of a subjective EEG feature, and it was not what it
+  looked like: patients annotated for *focal* slowing were also 99.8 % generalized-slowing-flagged. The number
+  measured the population, not the concordance. The control cost one extra query and reversed the conclusion.
+
+- **Ask what makes a row appear in an annotation corpus before joining to it.** MORGOTH's GENSLOWING set is
+  positives-only — assembled to train a detector, not to survey a cohort — so absence from it carries no
+  information at all. The same question applied to a billing table once cost this project an instrument;
+  applied here it saved one.
+
+- **A linear adjustment cannot absorb a step, and the leftover looks exactly like signal.** The slowing flag's
+  positivity is flat to 10 % suppression burden and then collapses (92.7 % to 56.1 %). Adjusting for burden
+  linearly therefore leaves the non-linear part of that relationship in the residual — a mechanism for the
+  project's biggest open constraint that requires no biology. Whenever an adjustment variable and an exposure
+  are related non-monotonically, check the functional form before interpreting what survives it.
+
+- **When a replication fails its own gate, the downstream verdict is not "negative" — it is absent.** The
+  flexible-adjustment test printed "the residual COLLAPSES" on a cohort where the baseline residual had never
+  reproduced. Both readings were unsupported. Analysis scripts should refuse to emit a decisive verdict when
+  their own precondition failed, because the sentence gets quoted long after the caveat is forgotten.

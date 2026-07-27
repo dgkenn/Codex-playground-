@@ -1912,3 +1912,70 @@ form, and the instantaneous form loses at long windows** — the prediction had 
 wrong object, and the object turned out to matter more than the window length.
 
 **Cumulative distinct results: 384.**
+
+---
+
+## R385–R387 · MORGOTH's labels cannot fix the slowing flag — but looking at them found a threat to R360
+
+Prompted by the suggestion to use MORGOTH to get the labels right. The **model** remains unobtainable (code
+and checkpoint unreleased; the sandbox's GitHub access is proxy-scoped so its status cannot be verified from
+here). The **labelled task sets are readable in S3**, keyed by `bdsp_mrn` in our own identifier space, and
+include GENSLOWING (5,396 patients), BS, FOCALSLOWING, IIIC, PDR and others. Overlap with our HEEDB burden
+cohort is real: ~800 patients per shard.
+
+### R385 · The label sets cannot validate the flag, and a negative control is what showed it
+
+**They are positives-only.** All 5,396 GENSLOWING rows carry the label "generalized slowing"; there are no
+annotated negatives. The corpus was assembled to train a detector, not to survey a cohort, so absence from it
+is not evidence of absence — specificity is not estimable and any join treating "not in GENSLOWING" as a
+negative would be the error rule 5 exists to prevent.
+
+Among the 4,870 overlapping patients the report-text flag is set in **99.8 % [99.7, 99.9]**. That looked like
+near-perfect concordance and it is not: **FOCALSLOWING patients are also 99.8 % gen-slowing-flagged**, against
+a base rate of 76.5 % over 49,232 patients with a report. A construct-specific agreement would have put
+FOCALSLOWING patients near the base rate. The label sets *are* specific where they should be — FOCALSLOWING
+patients are 98.6 % focal-slowing-flagged, a 5.12× enrichment, against 29.8 % in GENSLOWING — so the
+instrument works; it is generalized slowing that carries almost no contrast in any MORGOTH-annotated
+subpopulation. **The 99.8 % measures the population, not the agreement.**
+
+### R386 · The flag is strongly burden-dependent, which nobody had checked
+
+From the full burden cohort (n = 4,813; no conditioning on death ascertainment):
+
+| suppression burden | n | gen-slowing flag positive |
+|---|---|---|
+| < 1 % | 2,535 | **92.7 %** |
+| 1–10 % | 874 | 92.9 % |
+| 10–50 % | 851 | 84.1 % |
+| > 50 % | 553 | **56.1 %** |
+
+Flat to 10 %, then falling off a cliff. The natural reading is that a reader looking at a near-suppressed
+record calls it *suppressed*, not *slow* — so "flag absent" does not mean "no slow activity"; at high burden
+it substantially means "too suppressed for anything to be called slow". This is a property of the project's
+most-used label and it had never been examined.
+
+### R387 · A threat to R360 that is now open, and a test that came out INCONCLUSIVE
+
+R360 — the largest open constraint, and the thing B3, T3 and R378 were all chasing — adjusted the flag for
+burden **linearly**. The relationship above is a step, and **a linear term cannot absorb a step**, so the
+non-linear part of the burden information the flag carries would survive that adjustment and appear as a
+residual. That is a mechanism for the **−0.752 [−1.075, −0.434]** requiring no biology at all.
+
+**The test did not settle it.** On the cohort that could be assembled here — flag + burden + intra-burst +
+ascertained death, n = 239 — R360's residual **did not reproduce**: flag coefficient **−0.523 [−1.338, +0.180]**
+under the linear specification. With a flexible quintile adjustment it is **−0.601 [−1.547, +0.152]**, 15 %
+larger in magnitude, but that comparison is uninterpretable: a baseline whose interval already spans zero
+cannot distinguish "the residual collapsed" from "the residual was never present in this subsample". The
+script's own gate now refuses to print a verdict in that case; the first version printed "COLLAPSES", which
+would have been a false headline.
+
+**Why it failed to reproduce is itself informative:** R358–R360 used n = 818, while this join additionally
+conditions on an **ascertained death record** — the exact conditioning this project already demoted two tests
+for, since death ascertainment runs 40.1–61.9 % by aetiology.
+
+**Status: R360's residual is neither confirmed nor refuted, and now carries an unexcluded statistical
+explanation.** Settling it requires reconstructing R358–R360's actual cohort and outcome definition rather
+than an approximation of it. Until then, B3, T3 and R378 rest on a constraint with a live alternative
+explanation — which is worth knowing before any of it is written up.
+
+**Cumulative distinct results: 387.**
