@@ -1491,3 +1491,44 @@ its quantity** (P5) though not usefully so for prediction (N10), and whose **abs
 survival marker than its own magnitude (P6).
 
 **Cumulative distinct results: 357.**
+
+---
+
+## R358–R360. MECHANISM ROUND: P5 and P6 share a common factor, and the background measures it better
+
+Prompted by consolidating the constraint table, which made **P6 the largest untapped signal in the project** —
+generalized slowing *present* marks survival 74.9 % vs 29.7 %, a larger contrast than burden's own effect, and
+never previously the focus. Read against **N9** (deafferented cortex generates bursts unaided) it suggests
+burst *generation* is cortical while *slow-rhythm* generation is thalamocortical — so P5 (intra-burst spectral
+content) and P6 (background slowing) may be one mechanism seen by two instruments.
+
+| id | test | result |
+|---|---|---|
+| **R358** | convergent validity: do the clinician's slowing flag and our intra-burst 8–30 Hz agree? (n=818) | slowing present **0.125** vs absent **0.246**, difference **−0.121 [−0.145, −0.097]** |
+| **R359** | **is it just burden?** convergence within burden tertiles | low **−0.101 [−0.145, −0.059]**, mid **−0.134 [−0.175, −0.091]**, high **−0.103 [−0.147, −0.056]** — **survives in all three** |
+| **R360** | are they the same construct? clinician flag adjusted for burden **and** our measure | **−0.752 [−1.075, −0.434]** — **the flag still adds** |
+
+**What this establishes.** Two instruments sharing no method — a human reading the whole record, and an FFT on
+burst segments over 8 sampled minutes — agree strongly, and the agreement is **not** an artefact of suppression
+depth. That is convergent validity for a common underlying factor, consistent with thalamocortical
+slow-rhythm capacity.
+
+**What it refutes.** The strong unification. They are **not** the same construct: the flag carries substantial
+outcome information *after* adjusting for burden and for our spectral measure. The whole-record read sees
+something an intra-burst measure does not — which is unsurprising in hindsight, since slow activity lives
+largely in the **background between bursts**, and our measure looks only *inside* bursts.
+
+**Why this matters for the paper.** It explains **N10** — morphology's predictive increment was marginal and
+inconsistent because intra-burst spectral content is a **weak proxy** for the real signal. The stronger measure
+is the background, and the project has only ever had it as a binary clinician flag.
+
+**The obvious next experiment, now well-motivated rather than speculative:** quantify slow-wave activity across
+the **whole record** (not just within bursts) in both cohorts, and test it against burden and against the
+morphology channels. Prediction: it beats intra-burst spectral content, and may beat burden itself for the
+outcome contrast in P6. This is directly runnable with the existing extraction pipeline.
+
+**Predicted vs actual (calibration ledger).** Predicted 0.60 that P5 and P6 would prove to be one construct.
+Actual: they share a common factor but are not redundant — a partial confirmation whose *failure* half is the
+more useful finding, because it identifies where the better measurement lives.
+
+**Cumulative distinct results: 360.**
