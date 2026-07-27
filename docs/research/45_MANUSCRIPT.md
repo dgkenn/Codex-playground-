@@ -258,7 +258,14 @@ at a different health system, which is a different and lesser claim.
    **zero** extubations, since extubation is not separately reimbursable). Acting on this score without a
    prospective study would be the self-fulfilling-prophecy mechanism the field already documents (Elmer,
    *Crit Care Med* 2023, PMID 36752628).
-2. **The exposure is a crude estimator.** Thresholding-and-segmentation over 8 sampled minutes is the method
+2. **The exposure is a crude estimator — but this was tested, and it costs nothing.** Burst suppression
+   probability (Chemali *et al.*, PMID 24018288) is now implemented (`analysis/bsp.py`, unit-tested) and applied
+   to I-CARE: the per-recording BSP mean correlates with the crude ratio at **r = 0.988** and does not improve
+   discrimination (out-of-bag increment **−0.010 [−0.021, +0.004]**). BSP's advantages are time resolution and
+   per-timepoint uncertainty, which a per-recording summary does not exploit; for this analysis the two are
+   equivalent. Original wording retained below.
+
+   **The exposure is a crude estimator.** Thresholding-and-segmentation over 8 sampled minutes is the method
    burst suppression probability was introduced to replace (Chemali *et al.*, *J Neural Eng* 2013,
    PMID 24018288). It agrees with the clinician label at AUC 0.749 [0.747, 0.760] (n=27,948), and its noise
    *attenuates* associations — so the reported effects are, if anything, underestimates.

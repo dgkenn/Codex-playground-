@@ -1290,3 +1290,36 @@ caught only because it was self-evidently absurd; a subtly-too-narrow interval w
 argument for adversarial rather than confirmatory review.
 
 **Cumulative distinct results: 346.**
+
+---
+
+## R347–R349. BSP implemented — and it does not beat the ratio it was written to replace
+
+`analysis/bsp.py` implements burst suppression probability from the published specification (binomial
+observation, logistic link, Gaussian random-walk state; nonlinear filter, RTS smoother, EM for the process
+variance), unit-tested against seven cases with known answers. Applied to I-CARE (385 patients with BSP and an
+outcome).
+
+| id | test | result |
+|---|---|---|
+| R347 | correlation of per-recording BSP mean with the crude ratio | **0.988** |
+| R348 | discrimination: crude ratio / BSP mean / full BSP set | 0.704 / 0.698 / 0.693 |
+| R349 | out-of-bag increment of BSP over the ratio | **−0.010 [−0.021, +0.004]**; full set **−0.018 [−0.064, +0.016]** |
+
+**Summarised per recording, BSP is equivalent to the ratio** — r = 0.988, and no gain in discrimination.
+
+**This is not a failure of BSP and it should not be reported as one.** BSP's stated advantages are an
+*instantaneous* estimate and *per-timepoint uncertainty*, neither of which a single per-recording summary
+exploits. What the result establishes is narrower and useful: **for a per-recording exposure, the crude
+thresholding ratio costs nothing.** That defuses the standing methodological criticism of this project's
+estimator — the finding does not depend on having used a weak measure, because the principled measure gives the
+same answer at this level of aggregation.
+
+**A numerical note worth keeping.** The unit tests caught a real bug during implementation: when a bin is fully
+suppressed or fully bursting — the regime burst suppression lives in — the binomial curvature vanishes, the
+Hessian degenerates to the prior term, and an undamped Newton step overshoots by hundreds of log-odds and
+oscillates. It was stable at small process variance and diverged once EM raised it, returning 0.001 for a clean
+0→100 % step. Damped with backtracking. An undetected version would have produced plausible-looking BSP values
+that were silently wrong in exactly the most suppressed patients.
+
+**Cumulative distinct results: 349.**

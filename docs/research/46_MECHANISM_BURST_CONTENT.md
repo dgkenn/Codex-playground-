@@ -5,6 +5,12 @@ convenient part of it.** This records what survived, what was withdrawn, and wha
 about both. All citations were fetched from the MEDLINE record via NCBI E-utilities and the two load-bearing
 ones were re-verified by hand before being used.
 
+> **⚠ READ §7 AND §8 FIRST.** Two claims in the sections below have since been withdrawn: **burst amplitude**
+> (its sign inverts under corrected exposure) and the **predictive increment** from morphology (it is
+> significant in one cohort and not the other under a valid out-of-bag bootstrap). What survives is the
+> *association* of spectral content and stereotypy with outcome, independent of burden, in I-CARE. The
+> superseded text is retained with strike-throughs so the corrections are visible rather than silent.
+
 ---
 
 ## 1. The candidate, and what it had to survive
@@ -33,8 +39,10 @@ External cohort: **I-CARE, 559 patients**, five hospitals, our own detector run 
 | burst duration | 13.58 s | 26.00 s | longer in survivors | **n.s.** |
 | burst amplitude | 27.26 | 13.73 | (exploratory) | large |
 
-**Increment over burden replicates**: +0.055 [+0.035, +0.094] in I-CARE against **+0.047 [+0.011, +0.083]** in
-HEEDB. Burden alone 0.713 → burden + morphology 0.768.
+**Increment over burden** — *these figures are SUPERSEDED; see §8. Under a valid out-of-bag bootstrap the
+increment is +0.070 [+0.006, +0.121] in I-CARE and +0.036 [−0.019, +0.076] in HEEDB, i.e. significant in one
+cohort and not the other, and the predictive claim is withdrawn.* As originally computed: +0.055 [+0.035,
++0.094] in I-CARE against +0.047 [+0.011, +0.083] in HEEDB.
 
 **And it survives adjustment for burden** — the arm that decides whether quality is separable from quantity
 (standardised log-odds, burden in the model):
@@ -42,12 +50,13 @@ HEEDB. Burden alone 0.713 → burden + morphology 0.768.
 | feature | coefficient |
 |---|---|
 | **intra-burst 8–30 Hz** | **+0.522 [+0.305, +0.773]** ✔ |
-| ~~burst amplitude~~ | +3.502 [+2.204, +5.279] | **WITHDRAWN — see §7** |
+| ~~burst amplitude~~ *(WITHDRAWN, §7)* | +3.502 [+2.204, +5.279] |
 | burst duration | −0.051 [−0.517, +0.138] |
 | burst rate | −0.147 [−0.353, +0.061] |
 
-So **spectral content of the bursts carries outcome information that suppression burden does not**,
-in two independent cohorts. That is the externally replicable mechanism component.
+So **spectral content of the bursts is associated with outcome independently of suppression burden**. Note the
+wording: an *association* independent of burden, not a demonstrated gain in predictive accuracy — §8 withdraws
+the latter.
 
 ---
 
