@@ -19,16 +19,28 @@ a different *place* is not thereby measuring a different *thing*. The two surviv
 **kind** rather than in location — one is about change over time, the other about waveform shape rather than
 its spectrum. That is a reason to rate them higher than the two that failed, not merely a reason they are left.
 
+### STATUS AFTER 2026-07-27 (R365–R384)
+
+| candidate for the flag residual | status |
+|---|---|
+| whole-record background spectrum | **eliminated** (B3) |
+| spatial distribution / topography | **eliminated** (T3) |
+| reactivity | **unavailable** in this schema |
+| temporal evolution | **CONFIRMED across days** (R378): +1.061 [+0.233, +2.057] adjusted for burden, background and intra-burst content — the first to survive. **Falsified within one hour** (R377). No predictive increment; estimand restricted to patients measured twice. |
+| waveform shape rather than band power | **open**, and now the only untested candidate |
+
 ### NEXT, in order
 
-1. **Temporal evolution within the record.** Every feature this project computes collapses a recording to one
-   number. A human reads a trend. Concretely: split each record into thirds and test whether the *change* in
-   burden and in intra-burst content adds over their level — the mean/difference decomposition that worked in
-   the repeated-measures analysis, applied within a single recording. The sign of the difference term is the
-   test; noise cannot produce a correctly-signed coefficient (catalogue rule 12).
-2. **Waveform shape rather than band power.** Sharpness, asymmetry, and the presence of periodic discharges are
-   what a reader names and a Welch periodogram cannot see. Stereotypy at 1 s and 2 s is already extracted and
-   is the nearest existing handle.
+1. **Replicate the trend result in HEEDB, where the flag actually lives.** This is now the highest-value
+   experiment in the project and it closes a loop that I-CARE structurally cannot. I-CARE has no clinician
+   flag, so R378 could only show that temporal evolution carries outcome information the other measures do
+   not — a necessary condition. HEEDB has **both** serial recordings and the "generalized slowing" flag, so it
+   can test the actual hypothesis: **does the trend account for the −0.752 [−1.075, −0.434] residual?** Same
+   mean/difference sign test, same survivorship check, and the index-only exposure discipline already built
+   into `heedb_vs_guideline.py`.
+2. **Waveform shape rather than band power** — the last untested candidate. Sharpness, asymmetry, and periodic
+   discharges are what a reader names and a Welch periodogram cannot see. Stereotypy at 1 s and 2 s is already
+   extracted and is the nearest existing handle.
 3. **Test the dispersion reversal.** R365–R368 found across-channel dispersion *higher* in poor outcome,
    opposite to the registered direction, with slow_range −0.0398 [−0.0723, −0.0090]. The post-hoc story is that
    an injured cortex is patchy rather than uniformly slow. That story predicts dispersion should track burden;
@@ -39,14 +51,24 @@ its spectrum. That is a reason to rate them higher than the two that failed, not
    — has not been demonstrated, only argued.
 
 ### RUNNING
-- BSP one-step-ahead prediction on real I-CARE EEG, interior-gap filtered (521 recordings), with both EWMA
-  baselines. This is the real-data counterpart to R373–R376.
+- nothing.
 
 ### CLOSED THIS CYCLE, do not revisit
 - Topography as the missing dimension (T1–T4). Necessary condition failed; the hypothesis fails with it.
 - Whether `diff_ci` and `oob_increment` are anti-conservative (R369–R370). They are not.
-- Where BSP and a threshold ratio stop being interchangeable (R373). 60 s and longer, interchangeable;
-  below 30 s, not; crossover 15–30 s.
+- Where BSP and a threshold ratio stop being interchangeable (R373, R381–R384). Simulation: interchangeable
+  at ≥60 s, crossover 15–30 s. Real EEG: the trailing ratio is never the best predictor at any window, and
+  the window-averaged causal BSP beats it at all of them. Both arms written into
+  `docs/research/47_BSP_TECHNICAL_NOTE.md` §3b–§3c; its §5.3 limitation is retired.
+- The within-hour trend (R377). Falsified. The across-days version is what carries the signal.
+
+### STILL OPEN, lower priority
+- The dispersion reversal's own prediction: R365–R368 found across-channel dispersion *higher* in poor
+  outcome, opposite to the registered direction. The post-hoc story — an injured cortex is patchy rather than
+  uniformly slow — predicts dispersion should track burden. Untested and cheap.
+- BSP at transitions with the exact posterior. Two independent routes now agree the Gaussian approximation
+  fails there (0.775 pointwise deviation; step penalty 1.851 persisting even at 600 s windows). The note
+  recommends the exact posterior for transition questions but has not demonstrated it.
 
 
 ## ACTIVE (2026-07-25) — HEEDB burst-suppression programme. This is the current thread.

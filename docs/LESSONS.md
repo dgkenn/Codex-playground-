@@ -2111,3 +2111,23 @@ never the risk; the definition was.**
   same file for several targets, so 15.4 % of h12/h24 "pairs" were one recording differenced against itself —
   a change of exactly zero by construction. Left in, they would have diluted a real effect toward the null and
   produced a negative result indistinguishable from biology. One line of counting found it.
+
+- **The summary you take from an estimator can matter more than the estimator.** On real EEG the causal BSP
+  filter *averaged over a window* scores 0.3146 at 300 s; the same filter *read at the window's last bin*
+  scores 0.5738 and loses to a crude threshold ratio. The instantaneous estimate is the thing BSP uniquely
+  provides, and it is the worst predictor of an interval — a value near 0 or 1 at one bin cannot represent
+  five minutes containing both states. The first version of that analysis reported only the point estimate and
+  would have understated the method badly. When an estimator can be summarised more than one way, report both;
+  the gap between them is a finding, not a nuisance.
+
+- **A more elaborate estimator does not extract more from a fixed sample — it uses a larger one.** Given
+  exactly the same data as a threshold ratio, BSP was never more accurate at any window length, and got worse
+  as windows shortened (1.007 to 1.087). Everything it gains at short windows it gains from data outside them.
+  This is the third time this project has predicted that sophistication would beat simplicity on identical
+  inputs and been wrong; the useful question is not "is the model better" but "does it get to see more".
+
+- **Bracket a claim with two baselines, not one.** Asking whether BSP beats exponential smoothing has no
+  single answer: it beats a causally-tuned EWMA in simulation at every window, loses to an oracle-tuned one
+  everywhere, and on real EEG loses to the tuned one at 1–2 s. One baseline would have licensed either "the
+  state-space model earns its keep" or "three lines of arithmetic suffice", both defensible and both
+  incomplete. Two baselines that bound the answer from opposite sides say what is actually true.
