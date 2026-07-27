@@ -91,19 +91,40 @@ def cv_pred(X, y, rng, folds=5, reps=5):
     return out, ok
 
 
-def cv_auc_refit(X, y, rng, folds=5):
-    """Single-repeat CV AUC, refit from scratch -- the unit used inside each bootstrap replicate."""
+def oob_increment(Xa, Xb, y, rng, reps):
+    """Out-of-bag bootstrap for the AUC increment of model B over model A.
+
+    Each replicate draws n patients WITH replacement as the training set and evaluates on the patients NOT
+    drawn. That is the correct construction here, and the two obvious alternatives are both wrong:
+      * bootstrapping FIXED out-of-fold predictions captures only evaluation-sample variance and ignores
+        refit and fold-assignment variance, giving intervals that are too narrow;
+      * refitting on a resampled set and evaluating on that SAME resampled set puts the same patient in
+        train and test, which inflates AUC.
+    Point estimate and interval both come from this one distribution, so they cannot disagree -- an earlier
+    version reported a point estimate that fell outside its own interval because the two were computed by
+    different estimators.
+    """
+    n = len(y)
     out = []
-    idx = rng.permutation(len(y))
-    for f in range(folds):
-        te = idx[f::folds]; tr = np.setdiff1d(idx, te)
-        if y[tr].sum() < 5 or (len(tr) - y[tr].sum()) < 5 or y[te].sum() < 2:
+    for _ in range(reps):
+        tr = rng.integers(0, n, n)
+        oob = np.setdiff1d(np.arange(n), np.unique(tr))
+        if len(oob) < 30 or y[tr].sum() < 10 or (n - y[tr].sum()) < 10:
+            continue
+        if y[oob].sum() < 5 or (len(oob) - y[oob].sum()) < 5:
             continue
         try:
-            out.append(auc(y[te], predict(X[te], logit_fit(X[tr], y[tr]))))
+            aa = auc(y[oob], predict(Xa[oob], logit_fit(Xa[tr], y[tr])))
+            ab = auc(y[oob], predict(Xb[oob], logit_fit(Xb[tr], y[tr])))
+            if aa == aa and ab == ab:
+                out.append(ab - aa)
         except Exception:
             continue
-    return float(np.nanmean(out)) if out else float("nan")
+    if len(out) < 30:
+        return float("nan"), float("nan"), float("nan"), 0
+    a = np.asarray(out, float)
+    lo, hi = np.percentile(a, [2.5, 97.5])
+    return float(a.mean()), float(lo), float(hi), len(a)
 
 
 def main():
@@ -245,22 +266,11 @@ def main():
     # resampled those fixed scores, which captures only evaluation-sample variance and ignores model-refit and
     # fold-assignment variance -- so the interval came out too narrow. The I-CARE analysis already refits per
     # replicate; the headline number was using the weaker method, which is the wrong way round.
-    d = []
-    for _ in range(BOOT_REFIT):
-        i = rng.integers(0, n, n)
-        if y[i].sum() < 10 or (n - y[i].sum()) < 10:
-            continue
-        try:
-            a1 = cv_auc_refit(Xc[i], y[i], rng)
-            a2 = cv_auc_refit(Xcb[i], y[i], rng)
-            if a1 == a1 and a2 == a2:
-                d.append(a2 - a1)
-        except Exception:
-            pass
-    lo, hi = np.percentile(d, [2.5, 97.5]) if len(d) > 100 else (float("nan"),) * 2
+    inc, lo, hi, nrep = oob_increment(Xc, Xcb, y, rng, BOOT_REFIT)
     print(f"   category alone            CV AUC {ac:.3f}")
-    print(f"   category + burden         CV AUC {acb:.3f}")
-    print(f"   increment {acb-ac:+.3f} [{lo:+.3f},{hi:+.3f}]   (LPM gave +0.068; registered threshold +0.03)")
+    print(f"   category + burden         CV AUC {acb:.3f}   (5x5 repeated CV, for reference)")
+    print(f"   INCREMENT, out-of-bag bootstrap ({nrep} replicates): {inc:+.3f} [{lo:+.3f},{hi:+.3f}]")
+    print(f"   registered threshold +0.03; the LPM version of this analysis gave +0.068")
     b_full = logit_fit(Xcb, y)
     print(f"   burden log-odds coefficient {b_full[3]:+.3f}  -> odds ratio {np.exp(b_full[3]):.2f} "
           "per unit burden (0 to 1)")
@@ -299,24 +309,14 @@ def main():
         pb, okb = cv_pred(B, yh, rng)
         o = oka & okb
         aa, ab = auc(yh[o], pa[o]), auc(yh[o], pb[o])
-        dd = []
-        for _ in range(BOOT_REFIT):
-            i = rng.integers(0, len(hm), len(hm))
-            if yh[i].sum() < 8 or (len(i) - yh[i].sum()) < 8:
-                continue
-            try:
-                q1 = cv_auc_refit(A[i], yh[i], rng)
-                q2 = cv_auc_refit(B[i], yh[i], rng)
-                if q1 == q1 and q2 == q2:
-                    dd.append(q2 - q1)
-            except Exception:
-                pass
-        l2, h2 = np.percentile(dd, [2.5, 97.5]) if len(dd) > 100 else (float("nan"),) * 2
+        inc2, l2, h2, nr2 = oob_increment(A, B, yh, rng, BOOT_REFIT)
         print(f"   within highly malignant, n={len(hm):,}")
         print(f"   burden alone              CV AUC {aa:.3f}")
-        print(f"   burden + morphology       CV AUC {ab:.3f}")
-        print(f"   increment {ab-aa:+.3f} [{l2:+.3f},{h2:+.3f}]   "
-              f"{'EXCLUDES ZERO' if l2 > 0 else 'INCLUDES ZERO -- weaker than previously reported'}")
+        print(f"   burden + morphology       CV AUC {ab:.3f}   (5x5 repeated CV, for reference)")
+        print(f"   INCREMENT, out-of-bag bootstrap ({nr2} replicates): {inc2:+.3f} [{l2:+.3f},{h2:+.3f}]   "
+              f"{'EXCLUDES ZERO' if l2 > 0 else 'INCLUDES ZERO'}")
+        print("   NOTE: morphology is undefined below four bursts, which happens at near-total suppression,")
+        print("   so this estimate is conditioned on the EEG containing measurable bursts.")
     else:
         print(f"   only {len(hm)} with morphology; skipped")
 

@@ -185,3 +185,27 @@ none*. The consequence is a real limit on the claim and on any clinical reading 
 only add information in the middle of the burden range, because at the top of that range it does not exist.**
 Every morphology statement in this document should be read as conditioned on "among patients whose EEG contains
 at least four identifiable bursts". The burden findings are unaffected; they use all patients.
+
+---
+
+## 8. Downgrade after a valid bootstrap (2026-07-27)
+
+The increments quoted throughout this document used a bootstrap that either resampled **fixed** out-of-fold
+predictions (ignoring refit variance) or refit and evaluated on the **same** resample (putting patients in train
+and test). Both are wrong. Recomputed with an **out-of-bag** bootstrap — train on the resample, evaluate on the
+patients not drawn:
+
+| increment over burden | as reported | out-of-bag |
+|---|---|---|
+| I-CARE | +0.073 [+0.043, +0.123] | **+0.070 [+0.006, +0.121]** |
+| HEEDB | +0.047 [+0.011, +0.083] | **+0.036 [−0.019, +0.076]** |
+
+**The morphology increment is significant in one cohort and not the other**, and where it holds the lower bound
+is +0.006. The claim "morphology adds predictive value" is therefore **not supported consistently** and is
+withdrawn as a predictive claim.
+
+**What survives is narrower and still worth stating.** The adjusted *associations* in I-CARE are robust —
+spectral content +0.500 [+0.311, +0.755] and stereotypy +1.040 [+0.413, +1.894], each controlling for burden
+and for the other. Association independent of burden is a mechanistic statement; incremental AUC is a clinical
+utility statement. **This work supports the first and not the second**, and conflating them would be the
+overclaim.

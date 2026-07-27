@@ -88,6 +88,34 @@ def cv_auc(X, y, rng, folds=5, reps=5):
     return float(np.nanmean(out)) if out else float("nan")
 
 
+def oob_increment(Xa, Xb, y, rng, reps=300):
+    """Out-of-bag bootstrap for the AUC increment: train on the resampled patients, evaluate on those NOT
+    drawn. Refitting on a resample and evaluating on that same resample puts a patient in train and test and
+    inflates AUC; bootstrapping fixed out-of-fold predictions ignores refit variance. Both were used earlier
+    in this project and both were wrong."""
+    n = len(y)
+    out = []
+    for _ in range(reps):
+        tr = rng.integers(0, n, n)
+        oob = np.setdiff1d(np.arange(n), np.unique(tr))
+        if len(oob) < 30 or y[tr].sum() < 10 or (n - y[tr].sum()) < 10:
+            continue
+        if y[oob].sum() < 5 or (len(oob) - y[oob].sum()) < 5:
+            continue
+        try:
+            aa = auc(y[oob], predict(Xa[oob], logit_fit(Xa[tr], y[tr])))
+            ab = auc(y[oob], predict(Xb[oob], logit_fit(Xb[tr], y[tr])))
+            if aa == aa and ab == ab:
+                out.append(ab - aa)
+        except Exception:
+            continue
+    if len(out) < 30:
+        return float("nan"), float("nan"), float("nan"), 0
+    a = np.asarray(out, float)
+    lo, hi = np.percentile(a, [2.5, 97.5])
+    return float(a.mean()), float(lo), float(hi), len(a)
+
+
 def main():
     rng = np.random.default_rng(20260726)
     if not os.path.exists(MORPH):
@@ -186,24 +214,12 @@ def main():
     A = np.column_stack([one, bur])
     B = np.column_stack([A, M])
     ca, cb = cv_auc(A, y, rng), cv_auc(B, y, rng)
-    pa, pb = np.zeros(n), np.zeros(n)
-    d = []
-    for _ in range(200):
-        i = rng.integers(0, n, n)
-        if y[i].sum() < 10 or (n - y[i].sum()) < 10:
-            continue
-        try:
-            a1 = cv_auc(A[i], y[i], rng, folds=5, reps=1)
-            a2 = cv_auc(B[i], y[i], rng, folds=5, reps=1)
-            if a1 == a1 and a2 == a2:
-                d.append(a2 - a1)
-        except Exception:
-            continue
-    lo, hi = np.percentile(d, [2.5, 97.5]) if len(d) > 50 else (float("nan"),) * 2
-    print(f"   burden alone            CV AUC {ca:.3f}")
+    inc, lo, hi, nrep = oob_increment(A, B, y, rng)
+    print(f"   burden alone            CV AUC {ca:.3f}   (5x5 repeated CV, for reference)")
     print(f"   burden + morphology     CV AUC {cb:.3f}")
-    print(f"   increment {cb-ca:+.3f} [{lo:+.3f},{hi:+.3f}]   (HEEDB gave +0.047 [+0.011, +0.083])")
-    print(f"   M2 {'REPLICATES' if lo > 0 else 'does not reach significance'}")
+    print(f"   INCREMENT, out-of-bag bootstrap ({nrep} replicates): {inc:+.3f} [{lo:+.3f},{hi:+.3f}]")
+    print(f"   HEEDB under the same estimator: +0.036 [-0.019, +0.076] -- includes zero")
+    print(f"   M2 {'REPLICATES' if lo > 0 else 'DOES NOT REACH SIGNIFICANCE'}")
 
     print("\n   M3  coefficients WITH burden in the model (standardised, log-odds):")
     bfull = logit_fit(B, y)

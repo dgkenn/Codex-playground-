@@ -13,17 +13,16 @@ After cardiac arrest, ERC-ESICM prognostication classifies EEG into **highly mal
 the highly-malignant tier formally carries the same information. In 2,951 post-arrest patients with EEG and an
 ascertained death across two hospitals, we measured suppression **burden** directly from the raw EEG at each
 patient's index recording and found that it stratifies three-day mortality **29.5 % → 73.1 %** within that
-single category. Burden adds **+0.100 [+0.082, +0.118]** cross-validated AUC over the category itself
-(pre-registered threshold +0.03), is **well calibrated** (intercept −0.013, slope 0.980), and replicates
+single category. Burden adds **+0.064 [+0.038, +0.089]** AUC over the category itself
+(out-of-bag bootstrap; pre-registered threshold +0.03), is **well calibrated** (intercept −0.013, slope 0.980), and replicates
 across hospitals (0.679 / 0.669). Serial recordings in HEEDB show burden behaving as a **fixed quantity measured with error** (ICC 0.815); in
 an independent post-arrest cohort measured 12–48 h after arrest this does **not** replicate (ICC 0.584,
 agreement decaying with separation, trajectory coefficient +1.081 [+0.578, +1.614]), so the claim is weakened
 to **burden containing a fixed component that is not separately identified here** — consistent with it indexing a cerebral metabolic rate that
 is low because tissue has been lost, which extends the metabolic model of burst suppression (Ching *et al.*,
-*PNAS* 2012, PMID 22323592) into the post-anoxic setting. Three burst-morphology channels — spectral content, amplitude and
-stereotypy — carry outcome information **independent of burden and of each other**, replicated in I-CARE with
-our own detector (increment **+0.073 [+0.043, +0.123]**), with one channel independently reported by another
-group. **This is a statement about information present in the recording, not a recommendation to act on it**: 46 % of these patients die within three days, the window in
+*PNAS* 2012, PMID 22323592) into the post-anoxic setting. Two burst-morphology channels — spectral content and stereotypy — are associated with outcome
+**independently of burden** in I-CARE, one of them independently reported by another group; their incremental
+predictive value is marginal (+0.070 [+0.006, +0.121] in I-CARE, null in HEEDB). **This is a statement about information present in the recording, not a recommendation to act on it**: 46 % of these patients die within three days, the window in
 which withdrawal decisions are made, and four independent instruments failed to separate withdrawal-mediated
 from biological death in this data source.
 
@@ -84,7 +83,7 @@ A 2.5-fold range of three-day mortality inside one guideline label, monotone acr
 |---|---|
 | Westhall-style category alone | 0.645 |
 | **category + measured burden** | **0.745** |
-| **increment** | **+0.100 [+0.082, +0.118]** |
+| **increment (out-of-bag bootstrap)** | **+0.064 [+0.038, +0.089]** |
 
 Burden's log-odds coefficient is +1.587 (OR 4.89 across the range). Cross-hospital: **0.679 / 0.669**.
 
@@ -130,8 +129,17 @@ Re-measured in **I-CARE with our own detector** (n=527), three burst features ca
 | burst stereotypy (1 s) | **+1.040 [+0.457, +1.825]** | independently reported: Fong 2025, PMID 39900751 |
 | burst duration | −0.027 [−0.658, +0.200] | **withdrawn** |
 
-Morphology's increment over burden is **+0.073 [+0.043, +0.123]** in I-CARE (0.691 → 0.764), against
-**+0.047 [+0.011, +0.083]** in HEEDB.
+**The predictive increment from morphology is weak and inconsistent, and that must be separated from the
+association claim.** Under the same out-of-bag bootstrap:
+
+| | increment over burden |
+|---|---|
+| I-CARE | **+0.070 [+0.006, +0.121]** — excludes zero, but barely |
+| HEEDB | **+0.036 [−0.019, +0.076]** — **includes zero** |
+
+So morphology does *not* reliably improve prediction across cohorts. What does hold is the **association**: in
+I-CARE the individual coefficients remain robust when adjusted for burden and for each other. Those are
+different claims and the paper should not trade on the stronger-sounding one.
 
 **Amplitude is withdrawn.** Re-measuring HEEDB at the index recording rather than the legacy
 max-over-recordings extraction **inverts** its direction (19.4 in early deaths vs 23.7 in long survivors, i.e.

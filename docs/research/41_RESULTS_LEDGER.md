@@ -1253,3 +1253,40 @@ written into the manuscript. Numbers inherited from a superseded extraction must
 forward.
 
 **Cumulative distinct results: 342.**
+
+---
+
+## R343–R346. Red team, and a valid bootstrap downgrades two claims
+
+Adversarial review (delegated, then every finding verified against the data by Opus) found three real problems.
+
+| id | finding | verified | action |
+|---|---|---|---|
+| R343 | **Outcome-related selection in the morphology analysis** | **80 of 607 I-CARE patients (13.2 %) excluded; 80.0 % poor outcome vs 60.3 % retained. NaN-dropped subgroup: median burden 0.967, 96.9 % poor.** Same pattern in HEEDB | disclosed; morphology results now explicitly conditioned |
+| R344 | **Invalid bootstrap on the headline increment** — fixed out-of-fold predictions resampled | confirmed in code | replaced with out-of-bag bootstrap |
+| R345 | **Cross-document contradiction** — mechanism doc still asserted amplitude after the manuscript withdrew it | confirmed | struck through with a corrections section |
+| R346 | Silent-empty trap — default morphology path predated the stereotypy columns, `KeyError` swallowed | confirmed | now raises |
+
+**R343 is intrinsic, not a bug.** Burst morphology is undefined below four bursts, which happens precisely at
+near-total suppression. **You cannot measure the shape of bursts in a brain that has almost none.** So
+morphology can only add information in the middle of the burden range. Burden findings are unaffected.
+
+**R344's consequences — two claims downgraded:**
+
+| increment | as reported | **out-of-bag (valid)** |
+|---|---|---|
+| burden over guideline category (HEEDB) | +0.100 [+0.082, +0.118] | **+0.064 [+0.038, +0.089]** — survives, above the +0.03 threshold |
+| morphology over burden (HEEDB) | +0.047 [+0.011, +0.083] | **+0.036 [−0.019, +0.076]** — **includes zero** |
+| morphology over burden (I-CARE) | +0.073 [+0.043, +0.123] | **+0.070 [+0.006, +0.121]** — excludes zero, barely |
+
+**The morphology PREDICTIVE claim is withdrawn** (inconsistent across cohorts). **The morphology ASSOCIATION
+claim survives** in I-CARE: spectral content +0.500 [+0.311, +0.755], stereotypy +1.040 [+0.413, +1.894],
+each adjusted for burden and for the other. Association independent of burden is mechanistic; incremental AUC
+is clinical utility. This work supports the first, not the second.
+
+**Process note.** Fixing R344 introduced a *fourth* error — a refit bootstrap that resampled train and test
+together, returning a point estimate (+0.094) that fell **outside its own interval** [+0.057, +0.089]. It was
+caught only because it was self-evidently absurd; a subtly-too-narrow interval would have passed. That is the
+argument for adversarial rather than confirmatory review.
+
+**Cumulative distinct results: 346.**

@@ -120,14 +120,10 @@ def morphology(x, fs):
             run = 0
     burden = float(sup.sum() / max(1, (~dead).sum()))
 
-    # BURST SUPPRESSION PROBABILITY, the principled estimator this ratio was written to replace.
-    # `sup` is the frame-level binary suppression series; bsp_features bins it to 1 s and fits the
-    # state-space model (binomial observation, Gaussian random-walk state, EM for the process variance).
-    try:
-        from bsp import bsp_features
-        bf = bsp_features(sup[~dead].astype(float), frames_per_bin=int(round(1.0 / FRAME_S)))
-    except Exception:
-        bf = None
+    # The frame-level suppression series is returned for a SINGLE pooled BSP fit per recording (see
+    # one_patient). Fitting BSP separately on each of the 8 channels was ~30x the work for a worse model:
+    # BSP's observation process is binomial, so the natural pooling is n_t = suppressed (channel, frame)
+    # pairs in bin t out of N_t total pairs, which uses every channel in one state-space fit.
 
     # burst segments = maximal runs of non-suppressed frames
     segs, durs, amps = [], [], []
@@ -179,13 +175,8 @@ def morphology(x, fs):
         tot = P[lo].sum()
         if tot > 0:
             ab.append(float(P[hi].sum() / tot))
-    out_bsp = bf or {}
     return dict(n_bursts=len(segs), burst_dur=float(np.median(durs)),
-                bsp_mean=out_bsp.get("bsp_mean", float("nan")),
-                bsp_p90=out_bsp.get("bsp_p90", float("nan")),
-                bsp_sd=out_bsp.get("bsp_sd", float("nan")),
-                bsp_sigma2=out_bsp.get("bsp_sigma2", float("nan")),
-                bsp_frac_above_50=out_bsp.get("bsp_frac_above_50", float("nan")),
+                _sup=sup[~dead].astype(np.uint8),
                 stereotypy_1s=stereo["stereotypy_1s"], stereotypy_2s=stereo["stereotypy_2s"],
                 burst_amp=float(np.median(amps)),
                 alpha_beta=(float(np.median(ab)) if ab else float("nan")),
@@ -230,12 +221,34 @@ def one_patient(pid, s3):
             return None
         # median across channels, as in the HEEDB extractor
         keys = ("n_bursts", "burst_dur", "burst_amp", "alpha_beta", "burst_rate", "burden",
-                "stereotypy_1s", "stereotypy_2s", "bsp_mean", "bsp_p90", "bsp_sd", "bsp_sigma2",
-                "bsp_frac_above_50")
+                "stereotypy_1s", "stereotypy_2s")
         out = {}
         for k in keys:
             vals = [f[k] for f in feats if k in f and f[k] == f[k]]
             out[k] = float(np.median(vals)) if vals else float("nan")
+        # ONE pooled BSP fit per recording: bin the per-channel suppression series to 1 s and count
+        # suppressed (channel, frame) pairs, which is exactly the binomial observation the model assumes.
+        for k in ("bsp_mean", "bsp_p90", "bsp_sd", "bsp_sigma2", "bsp_frac_above_50"):
+            out[k] = float("nan")
+        try:
+            from bsp import bsp
+            series = [f["_sup"] for f in feats if "_sup" in f and len(f["_sup"]) > 0]
+            if series:
+                L = min(len(x) for x in series)
+                fpb = int(round(1.0 / FRAME_S))
+                nb = L // fpb
+                if nb >= 8:
+                    stack = np.vstack([x[:nb * fpb].reshape(nb, fpb) for x in series])
+                    stack = stack.reshape(len(series), nb, fpb)
+                    cnt = stack.sum(axis=(0, 2)).astype(float)
+                    tot = np.full(nb, float(len(series) * fpb))
+                    r = bsp(cnt, tot, em_iters=12)
+                    pp = r["p"]
+                    out.update(bsp_mean=float(np.mean(pp)), bsp_p90=float(np.percentile(pp, 90)),
+                               bsp_sd=float(np.std(pp)), bsp_sigma2=float(r["sigma2"]),
+                               bsp_frac_above_50=float(np.mean(pp > 0.5)))
+        except Exception:
+            pass
         out.update(pid=pid, hour=hour, fs=fs)
         return out
     except Exception:
