@@ -34,6 +34,12 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from bsp import bsp, _filter
 
 SEQ = os.environ.get("ICARE_SEQ_OUT", "/tmp/eeg_probe/icare_suppseq.csv")
+# Recordings whose frames were glued together across an interior dropout are excluded: see
+# analysis/icare_seq_gap_check.py, which found one recording in 24 with a 1,817 s hole closed up, and
+# analysis/icare_seq_exclusions.py, which identifies them from the WFDB headers. A closed-up hole is
+# invisible in a burden and looks to BSP like an abrupt jump that never happened. Set ICARE_KEEP=none to
+# reproduce the unfiltered run as a sensitivity comparison.
+KEEP = os.environ.get("ICARE_KEEP", "/tmp/eeg_probe/icare_seq_keep.csv")
 NFRAMES = 10
 WINDOWS = [300, 120, 60, 30, 15, 8, 4, 2, 1]
 BURN = 0.30
@@ -93,15 +99,31 @@ def main():
     if not os.path.exists(SEQ):
         print(f"*** {SEQ} not found -- run analysis/icare_topography.py first")
         return 1
-    recs = []
+    keep = None
+    if KEEP != "none":
+        if not os.path.exists(KEEP):
+            print(f"*** {KEEP} not found -- run analysis/icare_seq_exclusions.py first, or set "
+                  f"ICARE_KEEP=none to run unfiltered")
+            return 1
+        keep = {r["pid"].strip() for r in csv.DictReader(open(KEEP))}
+        assert keep, f"{KEEP} is empty -- the exclusion step failed rather than passed"
+
+    recs, dropped = [], 0
     for r in csv.DictReader(open(SEQ)):
+        pid = (r.get("pid") or "").strip()
         c = (r.get("counts_per_second") or "").split()
-        if len(c) >= MIN_BINS:
-            try:
-                recs.append([int(v) for v in c])
-            except ValueError:
-                continue
+        if len(c) < MIN_BINS:
+            continue
+        if keep is not None and pid not in keep:
+            dropped += 1
+            continue
+        try:
+            recs.append([int(v) for v in c])
+        except ValueError:
+            continue
     assert recs, f"{SEQ} yielded no recording with >= {MIN_BINS} bins -- check the extraction"
+    print("interior-gap filter: " + ("DISABLED (sensitivity run)" if keep is None else
+          f"{dropped:,} recordings excluded for glued-together dropouts"))
     print(f"recordings with at least {MIN_BINS} s of usable signal: {len(recs):,}")
     lens = [len(c) for c in recs]
     print(f"   length: median {np.median(lens):.0f} s, IQR {np.percentile(lens,25):.0f}-"
