@@ -2115,3 +2115,60 @@ The natural framework for R389 is Schiff's mesocircuit model; Forgacs, Devinsky 
 (**PMID 31994749**) is the anchor for prolonged coma after cardiac arrest.
 
 **Cumulative distinct results: 392.**
+
+---
+
+## R393–R394 · The aetiology reversal survives both of its testable internal weaknesses
+
+Three weaknesses were recorded with R389–R392. **External replication remains open and is blocked here** —
+it needs a mixed-aetiology cohort, and TUH is unreachable from this sandbox (no `rsync` binary, no NEDC key),
+so it waits for a machine that has them. The other two were testable and are now tested, registered before
+running (`analysis/heedb_reversal_robustness.py`).
+
+### R393 · Removing the death-ascertainment conditioning (limit L3)
+
+Every prior estimate required an ascertained death record, so **every patient in the cohort had died** and
+the outcome was "died within 30 days" versus "died later". Rebuilt on the full cohort with a measurable burst
+morphology (**n = 2,451**), treating an absent death record as alive:
+
+| | n | 30-day death | AUC |
+|---|---|---|---|
+| anoxic | 818 | 81.7 % | **0.589 [0.545, 0.633]** |
+| non-anoxic | 1,633 | 21.4 % | **0.432 [0.397, 0.465]** |
+
+Both intervals exclude 0.5, on opposite sides. The original conditioning gave 0.589 [0.541, 0.632] and
+0.408 [0.367, 0.452]. **The two analyses have opposite ascertainment biases and agree**, which is the point —
+neither is clean on its own, and a result appearing in both is not an artefact of either.
+
+**An important qualification the run exposed.** Death-record ascertainment is **100.0 % in anoxic patients
+versus 41.6 % in non-anoxic**. Every anoxic patient with a measurable morphology already had a death record,
+so the anoxic arm is *identical* under both analyses (n = 818 either way). **W1 therefore tests the
+non-anoxic arm only** — it expands that arm from 679 decedents to 1,633 including survivors and the
+association still runs below 0.5. That is a real gain, and it is narrower than "the reversal is unaffected by
+ascertainment".
+
+### R394 · Two independent routes to "anoxic"
+
+The `anoxic` code list mixes codes for the **arrest event** (4275, 42741, I460, I461, I469) with codes for
+the **resulting encephalopathy** (3481, G931, 7991, P916). They overlap but are not the same patients: 745
+arrest-coded, 594 encephalopathy-coded, 521 both. Each compared against patients carrying **neither** family
+(catalogue rule 29 — a contrast between A and not-A must be decomposed inside not-A):
+
+| definition | n | 30-day death | AUC |
+|---|---|---|---|
+| arrest codes only | 745 | 83.6 % | **0.592 [0.545, 0.639]** |
+| encephalopathy codes only | 594 | 84.0 % | **0.608 [0.554, 0.659]** |
+| neither family | 1,633 | 21.4 % | **0.432 [0.397, 0.465]** |
+
+Both routes confirm. The finding does not rest on one code family, which matters because this project has
+already had to correct its ICD definitions once and the entire result is an aetiology contrast.
+
+### Status of the lead after R393–R394
+
+**Strengthened.** The reversal now survives: no model at all; burden strata 3/3; burst-count strata 3/3;
+decomposition of the non-anoxic arm 4/4 within 0.028; removal of the death-ascertainment conditioning; and
+two independent aetiology definitions. **The one remaining weakness is external replication**, and it is the
+one that matters most — every result above is HEEDB. I-CARE agrees in direction only (0.511 [0.464, 0.557])
+and, being entirely cardiac arrest, is structurally incapable of testing an aetiology contrast at all.
+
+**Cumulative distinct results: 394.**
