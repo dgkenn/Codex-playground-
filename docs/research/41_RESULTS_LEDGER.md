@@ -1386,3 +1386,28 @@ miscoded patients — which is exactly the kind of claim that should not survive
 corrected cohort (17.5 % vs 14.7 % three-day death).
 
 **Cumulative distinct results: 355.**
+
+### R356. Class A survives the cohort correction
+
+The landmark analysis — §5's decisive turn, and the result that reframed the whole project — was computed on the
+contaminated cohort. Re-run after removing the miscoded ICD entries:
+
+| landmark | contaminated | **corrected** |
+|---|---|---|
+| day 0 | +0.801 [+0.618, +0.980] | **+0.681 [+0.469, +0.893]** |
+| day 30 | +0.112 [−0.211, +0.455] | **+0.054 [−0.292, +0.448]** |
+| day 90 | +0.288 [−0.047, +0.640] | **+0.263 [−0.141, +0.689]** |
+| day 180 | −0.295 [−0.659, +0.059] | **−0.259 [−0.656, +0.133]** |
+| day-180 as % of day-0 | −37 % | **−38 %** |
+
+**CLASS A remains SUPPORTED.** The miscoded patients were inflating the day-0 gap (they were low-burden,
+low-mortality and mostly not post-arrest at all), but the *pattern* is unchanged and the summary statistic is
+within one point of the original.
+
+**Process note that generalises.** The ICD fix was initially treated as a *headline* correction and only the
+headline was re-run. A correction propagates to everything computed downstream of it, not to the number that
+prompted it. Roughly 355 logged results predate this fix; the ones carrying claims (headline, quintiles,
+calibration, cross-hospital, landmark, morphology directions) have been re-run, and the remainder are
+pre-correction and marked as such rather than silently carried forward.
+
+**Cumulative distinct results: 356.**

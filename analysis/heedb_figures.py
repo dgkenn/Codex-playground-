@@ -199,8 +199,11 @@ def main():
     ax.set_xticks(x); ax.set_xticklabels([f"{l}\nn={n}" for l, n in zip(labs, ns)])
     ax.set_xlabel("quintile of measured suppression burden (index recording)")
     ax.set_ylabel("mortality (%)")
-    ax.set_title("Inside ONE guideline category (“highly malignant”),\nmeasured burden spans a 2.5-fold range "
-                 "of three-day risk", fontsize=11)
+    # Computed, never hardcoded: this figure previously carried a literal "2.5-fold" that survived a cohort
+    # correction which moved the true value to 2.3. A number written into a title goes stale in silence.
+    fold = m3[-1] / m3[0] if m3 and m3[0] > 0 else float("nan")
+    ax.set_title("Inside ONE guideline category (\u201chighly malignant\u201d),\n"
+                 f"measured burden spans a {fold:.1f}-fold range of three-day risk", fontsize=11)
     ax.set_ylim(0, 112); ax.grid(alpha=.3)
     # upper left: the only quadrant both series stay out of, since both rise left-to-right
     ax.legend(frameon=False, loc="upper left")
