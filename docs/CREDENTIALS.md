@@ -65,7 +65,27 @@ It exits 0 in every path: missing credentials are non-fatal, because cached-data
 
 ---
 
-## Scope warning on TUH, so nobody spends a session on it by mistake
+## TUH: access approved 2026-07-27, and what that does and does not unlock
+
+The NEDC application was **approved**. The registered key is
+`SHA256:rBwGl4h45Em0QYRxAKdF/P3ResO2nk3SZkdeUtHT9Qw` (ed25519, comment `dgkenn@bu.edu`). The **private** half
+must never leave the user's own machine and must never be pasted into a session; only
+`NEDC_SSH_KEY_B64` in the environment settings, which the bootstrap materializes.
+
+**TUH CANNOT BE PULLED FROM THE CLOUD SANDBOX. This was measured, not assumed:**
+
+| check | result |
+|---|---|
+| `rsync` / `ssh` binaries | **absent**, and `apt-get` 404s on the Ubuntu mirrors from here |
+| `paramiko` (pure-Python SSH, an rsync alternative) | installs fine — so the missing binaries are *not* the blocker |
+| TCP to `www.isip.piconepress.com:22` | **BLOCKED — connection times out** |
+| TCP to `www.isip.piconepress.com:443` | open |
+
+The environment's network policy permits HTTPS and not SSH, so **no SSH client of any kind can reach NEDC
+from here.** TUH transport must run from a machine with unrestricted outbound network — the user's own
+desktop — or the environment's network policy must be changed when the environment is created.
+
+## Scope warning on TUH: access does not change what TUH can answer
 
 **The TUH EEG Corpus carries no linked outcome data.** Its manifest schema — in this repository's own
 `config.yaml` — is `recording_id, patient_id, edf_path, sfreq, age, sex`. There is no outcome field and no
@@ -77,8 +97,12 @@ Consequences, established in the ledger at **R321** and easy to forget:
   finding and the aetiology reversal (R389–R396), which additionally needs a diagnosis TUH does not carry.
 - TUH can validate a **measurement** — a quantitative feature against a clinician label at a different health
   system. That is a real but lesser claim.
-- Separately, this container has **no `rsync` and no `ssh`**, and `apt-get` cannot reach the package mirrors
-  from here, so TUH transport needs a host that already has them regardless of credentials.
+- **Approval does not change any of this.** The constraint is the dataset's contents, not permission to read
+  it. What TUH *can* do is validate a **measurement** — e.g. our quantitative suppression burden or slowing
+  measure against a clinician label recorded at a different health system. That is a genuine, publishable
+  but lesser claim, and it is the right use of the access.
+- Once connected from a capable host, **enumerate the corpus before planning** rather than assuming which
+  sub-corpora exist and what labels they carry.
 
 ## Access points currently in use
 
