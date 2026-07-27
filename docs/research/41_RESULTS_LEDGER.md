@@ -1428,3 +1428,66 @@ corrected cohort (n=746 post-anoxic with morphology; 344 dead ≤3 d, 93 alive >
 not driving them. Every claim-bearing HEEDB figure has now been re-derived on the corrected cohort.
 
 **Cumulative distinct results: 357.**
+
+---
+---
+
+# CONSOLIDATION — the full constraint set as of 2026-07-27 (357 results)
+
+**Read this table before proposing any mechanism.** A candidate that explains only the positives is not a
+candidate. All figures are post-correction (index-recording exposure, corrected ICD cohort, out-of-bag
+bootstrap) unless marked.
+
+## Positives — what any mechanism must produce
+
+| id | constraint | figure |
+|---|---|---|
+| **P1** | Burden stratifies 3-day death **within** the guideline's highly-malignant tier | 31.6 % → 73.4 % across quintiles (not monotone: Q2 41.2, Q3 40.1) |
+| **P2** | Burden adds over the category, calibrated | +0.062 [+0.032, +0.095]; intercept −0.010, slope 0.979 |
+| **P3** | Holds across hospitals | 0.682 / 0.651 |
+| **P4** | Holds in a second cohort | I-CARE +34.1 pp [+23.2, +44.2] among the already-suppressed |
+| **P5** | Two burst-content channels associated with outcome **independently of burden** | 8–30 Hz +0.500 [+0.311, +0.755]; stereotypy(1 s) +1.040 [+0.413, +1.894] |
+| **P6** | Generalized slowing **present** marks survival, strongly | 74.9 % of >180-d survivors vs 29.7 % of ≤3-d deaths |
+| **P7** | Aetiology gap: suppression means more after anoxia than sepsis | log-odds +0.801 at the EEG |
+| **P8** | Class A — the aetiology excess is **exhausted** among 30-day survivors | −38 % of the day-0 gap by day 180 |
+| **P9** | The doomed compartment is a **distinct early mass**, not a smooth shift | 45.6 % of anoxic BS+ dead ≤3 d vs 11.9 % BS− |
+| **P10** | Suppression is **reversible under anaesthesia** | VitalDB ICC 0.313, autocorrelation decays −0.488, 70 % resolution |
+
+## Negatives — what any mechanism must ALSO survive
+
+| id | ruled out | evidence |
+|---|---|---|
+| **N1** | Whole-body ischaemic dose | mediation 2.6 %; cardiac/pressor gradients *steeper* in sepsis |
+| **N2** | Depth, age, sex, coexisting findings, ceiling/scale artefact | all cleared |
+| **N3** | Label noise | gap reproduces under a blinded quantitative definition at every threshold |
+| **N4** | Withdrawal as explanation of the aetiology gap | halves both aetiologies; ratio 2.14 → 2.17 |
+| **N5** | Drug-induced suppression | infusion commoner in anoxic; effect *larger* with drug present |
+| **N6** | "Anoxic patients are simply sicker" | BS-negative mortality 32.8 % vs 32.7 % |
+| **N7** | Burden is a **fixed** quantity in the acute window | I-CARE ICC 0.584, decay −0.370, trajectory coefficient +1.081 [+0.578, +1.614] |
+| **N8** | "Silence equals severity" | post-anoxic status epilepticus arises in **severely** injured brains (PMID 36076090) |
+| **N9** | Bursts require an intact thalamocortical loop | deafferented cortex produces burst suppression **in all cases** (PMID 9191587) |
+| **N10** | Morphology **predicts** better than burden | +0.070 [+0.006, +0.121] I-CARE vs +0.036 [−0.019, +0.076] HEEDB — inconsistent |
+| **N11** | Burst duration / amplitude as markers | duration not portable + opposite in Fong; amplitude sign **inverts** |
+| **N12** | BSP beats the ratio at recording level | r = 0.988, increment −0.010 [−0.021, +0.004] |
+| **N13** | Guideline tiers mis-ordered at the bottom | benign vs malignant +2.8 pp, **p = 0.171** — within noise |
+| **N14** | Withdrawal separable from biological death | **four** instruments failed; one root cause |
+| **N15** | Positive tissue-level identification | NSE absent (2 rows/551 parts); cause of death 84.9 % blank |
+
+## Structural limits — not mechanisms, but they bound every claim
+
+| id | limit |
+|---|---|
+| **L1** | Burst morphology is **undefined** below four bursts — i.e. exactly at maximal burden. 13.2 % excluded, 80 % vs 60 % poor outcome. Morphology can only inform the *middle* of the burden range |
+| **L2** | 46 % die within 3 days — the withdrawal window — and it cannot be separated |
+| **L3** | Every patient has an ascertained death; the outcome is *how soon*, not *whether* |
+| **L4** | I-CARE shares MGH/BWH/BIDMC with HEEDB — a second cohort, **not** a second health system |
+| **L5** | Reactivity unavailable, so the guideline category is reproduced without its nonreactive arm |
+
+## The shape of the answer any candidate must have
+
+Burden indexes something **brain-specific** (N1), **not fixed acutely** (N7) but **fixed enough by the time
+clinical EEGs are done** (P1–P4), **reversible when the cause is drug** (P10), whose **quality is separable from
+its quantity** (P5) though not usefully so for prediction (N10), and whose **absence of slowing** is a stronger
+survival marker than its own magnitude (P6).
+
+**Cumulative distinct results: 357.**
