@@ -29,6 +29,28 @@ its spectrum. That is a reason to rate them higher than the two that failed, not
 | temporal evolution | **CONFIRMED across days** (R378): +1.061 [+0.233, +2.057] adjusted for burden, background and intra-burst content — the first to survive. **Falsified within one hour** (R377). No predictive increment; estimand restricted to patients measured twice. |
 | waveform shape rather than band power | **open**, and now the only untested candidate |
 
+### THE LEAD (2026-07-27, R389–R392) — anoxia reverses what intra-burst content means
+
+AUC of intra-burst 8–30 Hz for 30-day death is **0.589 [0.545, 0.633]** after anoxia and **0.408 [0.364,
+0.452]** after everything else. It survives burden strata (3/3), burst-count strata (3/3), and decomposition
+of the non-anoxic arm (**4/4 subgroups below 0.5, clustered within 0.028**). It retrodicts **N10**, which it
+was not built to explain. This is the most substantive candidate the project has produced.
+
+**What it needs before it is a paper, in order:**
+
+A. **A real external replication.** I-CARE agrees in direction only — 0.511 [0.464, 0.557], which includes
+   0.5. That is the single biggest weakness. I-CARE is all-anoxic so it cannot test the *contrast* at all;
+   it can only test one arm. **A cohort with mixed aetiology and EEG is what this needs.** TUH is the obvious
+   candidate and is already in the protocol.
+B. **Remove the death-ascertainment conditioning (L3).** Every estimate here requires an ascertained death
+   record. Re-run against an outcome that does not, or show the reversal is unchanged when the conditioning
+   is relaxed.
+C. **Re-derive aetiology without ICD codes if possible.** This project has already had to correct its ICD
+   definitions once, and the whole finding is an aetiology contrast.
+D. **Explain it.** Effect modification is not a mechanism. The thalamocortical account (R389: the slowing
+   flag's effect is genuinely larger after anoxia, interaction −0.750 [−1.433, −0.116]) is the leading
+   explanation and connects to Schiff's mesocircuit framework (PMID 31994749).
+
 ### NEXT, in order
 
 0. **URGENT — settle whether R360's residual is an artefact of a linear burden adjustment.** This now

@@ -2153,3 +2153,22 @@ never the risk; the definition was.**
   flexible-adjustment test printed "the residual COLLAPSES" on a cohort where the baseline residual had never
   reproduced. Both readings were unsupported. Analysis scripts should refuse to emit a decisive verdict when
   their own precondition failed, because the sentence gets quoted long after the caveat is forgotten.
+
+- **Overlapping category labels cannot decompose a contrast between two of them.** Splitting the cohort by
+  aetiology produced 3,437 label-assignments across 1,497 patients, and the "sepsis" group contained patients
+  who were also anoxic — so comparing it against the anoxic group compared two overlapping sets and answered
+  nothing. The corrected split (restrict to patients with NO anoxic label, then subdivide) gave a completely
+  different and interpretable answer: 4/4 subgroups agreeing to within 0.03. Whenever a comparison is A versus
+  not-A, the decomposition has to happen INSIDE not-A.
+
+- **A finding that retrodicts a standing negative is worth more than one that adds a positive.** The aetiology
+  reversal explains N10 — morphology's increment was +0.070 in all-anoxic I-CARE and +0.036 n.s. in mixed
+  HEEDB, exactly what averaging two opposing effects produces. N10 had sat unexplained for months and was not
+  used to build the account. That is the property this project had been demanding of a mechanism and never got
+  from a candidate constructed to fit the positives.
+
+- **Write the conclusion rule before the run, then check the rule itself for holes.** The registered rule for
+  the reversal required external "agreement in direction", and I-CARE agreed in direction with an AUC of
+  0.511 [0.464, 0.557] — an interval containing 0.5. The rule passed on evidence that establishes almost
+  nothing. Pre-registration protects against moving the bar afterwards; it does not protect against setting it
+  too low, and the second failure is easier to miss because the paperwork looks correct.
