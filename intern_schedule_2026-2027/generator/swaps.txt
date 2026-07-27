@@ -1,17 +1,26 @@
 # ================= LSH INTERN TIME-OFF ACCOMMODATIONS (production) =================
-# Applied on top of the Q4 march. Each block notes the request + its cost.
-# (Sept->Oct night-float boundary + MacNeille's no-2-night Oct start are baked
-#  structurally into gen.py, not here.)
 
-# --- Oghenesume: FIRM January wedding, needs Sat 1/30 + Sun 1/31 off ---------
-# 1/30 already off; freeing 1/31 forces ONE Q4 gap on Li (only unavoidable cost;
-# Feb runs 3 daytime interns at the Q4 minimum). Worth it for a firm wedding.
+# --- Oghenesume: FIRM January wedding, Sat 1/30 + Sun 1/31 off (1 Q4 gap on Li) ---
 swap 2027-01-31 OGHENESUME JUYAL
 swap 2027-02-01 JUYAL LI
 
-# --- MacNeille: weekend of 10/17-18 off -------------------------------------
-# Costs two single-day Q4 gaps, both on NON-LSH interns (Ahluwalia wind-down,
-# Chiasson first days). No LSH intern absorbs any burden.
+# --- MacNeille: weekend 10/17-18 off (2 Q4 gaps, both non-LSH) ---
 swap 2026-10-17 MACNEILLE AHLUWALIA
 swap 2026-10-18 AHLUWALIA BRONSON
 swap 2026-10-19 BRONSON CHIASSON
+
+# --- MacNeille: NO night float Christmas week -> BRONSON takes it (approved); SC on NYE ---
+swap 2026-12-01:2026-12-04 MACNEILLE BRONSON
+swap 2026-12-06:2026-12-12 MACNEILLE BRONSON
+swap 2026-12-14:2026-12-18 MACNEILLE BRONSON
+swap 2026-12-20:2026-12-26 MACNEILLE BRONSON
+swap 2026-12-31 MACNEILLE BRONSON
+
+# --- Kennedy: full weekend 11/6-8 off (KEN_SWAP in gen.py gives NF 11/1-6 + off 11/7-8);
+#     this hands his Fri 11/6 night to Chiasson so he does a light short call and travels ---
+swap 2026-11-06 KENNEDY CHIASSON
+swap 2026-11-06 KENNEDY MULLINS
+
+# --- Oghenesume: April 10-11 weekend off (free the 4/11 Sunday long call; 4/9 & 4/12
+#     stay short call - can't be full days off under the Thursday-only rule) ---
+swap 2027-04-11 OGHENESUME RIVERA

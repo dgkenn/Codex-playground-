@@ -19,20 +19,21 @@ on top via `generator/swaps.txt`; their cost is listed honestly.
 | **Wise** | (rule) not end September on nights | ✅ ends on day shifts | none (structural boundary fix) |
 | **Matsuoka** | none | — | — |
 
-## ⚠️ Needs your decision (NOT applied — would burden a Shattuck intern, or a soft ask with a cost)
+## ✅ Second-round accommodations (now applied)
 
-- **MacNeille — no night float Christmas week (12/20–25) + short call on NYE.**
-  The Christmas NF week can **only** move to **Bronson** (another LSH intern) —
-  no non-LSH intern is present all six days (Salam is on the adjacent NF week).
-  So granting it gives **Bronson the Christmas nights** (he'd swap his 12/6–11
-  week for 12/20–25), plus two Q4 gaps. Not applied, because it puts a holiday
-  night-float week on another Shattuck intern. **Do you want to give Bronson the
-  Christmas NF week?**
+| Intern | Request | Status | Cost |
+|---|---|---|---|
+| **MacNeille** | No night float Christmas week (12/20–25) + SC on NYE | ✅ **Bronson takes the Christmas NF week** (approved); MacNeille has no Christmas nights and short call 12/31 | 2 Q4 gaps (Bronson 12/29→31, MacNeille 12/26→28) |
+| **Kennedy** | Weekend of 11/6–7 off (move nights) | ✅ nights moved to **11/1–5**; **Sat 11/7 + Sun 11/8 fully off**; Fri 11/6 is a light **short call** (free by ~3:30pm to travel) | Fri handoff to Chiasson ripples onto **Mullins** (BMC, non-LSH): 2 Q4 gaps + a documented night-float split |
+| **Kennedy** | Thanksgiving Day off | ✅ off 11/26 (already); he holds the 11/28 Saturday 24h | none |
+| **Oghenesume** | April 9–12 off | ✅ **4/10–11 weekend fully off** (freed the 4/11 Sunday long call) | 2 Q4 gaps on **Rivera** (BMC, non-LSH) |
 
-- **Oghenesume — April 9–12 off (soft "would love").** Only **4/11 (Sun)** can be
-  freed (via Rivera, non-LSH), at a cost of 2 Q4 gaps. **4/9 and 4/12 cannot be
-  days off** — weekday days-off are Thursday-only (hard rule). Apply the partial
-  4/11, or leave as-is?
+**Note on Kennedy's Friday 11/6 and Oghenesume's 4/9 / 4/12:** these are weekdays,
+and the rules only allow a *full* day off on Thursdays. So the best possible is a
+**short call** (light day, done ~3:30pm) — which is what they now have. Fully
+freeing them, or putting Oghenesume on night float to free those days, would
+cascade badly (it pushed another intern to *end* April on nights), so I left it
+at the clean weekend-off.
 
 ## ❌ Conflicts (can't accommodate within the rules)
 
