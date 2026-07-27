@@ -49,8 +49,11 @@ from icare_morph_replication import logit_fit, auc, cv_auc
 
 AP = "arn:aws:s3:us-east-1:184438910517:accesspoint/bdsp-credentialed-access-point"
 OMOP = os.environ.get("OMOP_OUT", "/tmp/eeg_probe/heedb_omop")
-BURDEN = os.environ.get("HEEDB_BURDEN", "/tmp/eeg_probe/heedb_bs_burden_win.s0.csv")
-MORPH = os.environ.get("HEEDB_MORPH", "/tmp/eeg_probe/heedb_burst_morph.s0.csv")
+# ALL FOUR SHARDS, not one. The first version of this script used s0 alone and produced n = 239, which was
+# too small for N1 to reproduce the very residual it was testing -- the gate failed and the test said nothing.
+# The shards are disjoint partitions of the cohort, so the union is the right object.
+BURDEN = os.environ.get("HEEDB_BURDEN", "/tmp/eeg_probe/heedb_bs_burden_win.s*.csv")
+MORPH = os.environ.get("HEEDB_MORPH", "/tmp/eeg_probe/heedb_burst_morph.s*.csv")
 NBOOT = int(os.environ.get("NBOOT", "2000"))
 
 
@@ -79,11 +82,16 @@ def boot_coef(X, y, col, rng, reps):
     return tuple(np.percentile(out, [2.5, 97.5]))
 
 
-def median_by_patient(path, col):
+def median_by_patient(pattern, col):
+    """Median of `col` per patient across every file matching `pattern` (the shards are disjoint)."""
+    import glob
     d = defaultdict(list)
-    if not os.path.exists(path):
+    files = sorted(glob.glob(pattern)) if any(ch in pattern for ch in "*?") else (
+        [pattern] if os.path.exists(pattern) else [])
+    if not files:
         return {}
-    for r in csv.DictReader(open(path)):
+    for path in files:
+      for r in csv.DictReader(open(path)):
         p = (r.get("patient") or "").strip()
         try:
             v = float(r[col])
@@ -150,6 +158,14 @@ def main():
     y = np.array(y); f = np.array(f); b = np.array(b); a = np.array(a)
     n = len(y)
     print(f"   analysable: {n:,}   30-day death {100*y.mean():.1f}%   flag positive {100*f.mean():.1f}%")
+    # Cohort check against R358's published figures. This cohort is NOT R358's -- that one (n = 818) was
+    # produced by an uncommitted script and its exact restrictions are not recoverable -- so these are
+    # reported as a similarity check, not a replication.
+    surv_pos = 100 * (1 - y[f == 1].mean()); surv_neg = 100 * (1 - y[f == 0].mean())
+    print(f"   30-day survival: flag POSITIVE {surv_pos:.1f}%   flag NEGATIVE {surv_neg:.1f}%"
+          f"   (R358 reported 74.9% vs 29.7% on its own cohort)")
+    print(f"   intra-burst 8-30 Hz: flag POSITIVE {a[f==1].mean():.3f}   NEGATIVE {a[f==0].mean():.3f}"
+          f"   (R358 reported 0.125 vs 0.246)")
 
     print("\n" + "=" * 96)
     print("THE SHAPE THAT PROMPTED THIS -- flag positivity by burden")
@@ -201,6 +217,44 @@ def main():
     else:
         print("   N2: the residual COLLAPSES once burden is modelled flexibly. It was the functional form,")
         print("   not signal -- and the mechanism hunt built on it (B3, T3, R378) was chasing an artefact.")
+
+    # ---- N2b: deciles, and then the assumption-free version -----------------------------------------
+    print("\n" + "=" * 96)
+    print("N2b  HOW FAR DOES THIS HOLD? deciles, and then a fully STRATIFIED estimate")
+    print("=" * 96)
+    qd = np.quantile(b, np.arange(1, 10) / 10.0)
+    Dd = np.column_stack([(b >= qd[i]).astype(float) for i in range(9)])
+    Xdec = np.column_stack([one, Dd, a, f])
+    bdec = logit_fit(Xdec, y)
+    lo3, hi3 = boot_coef(Xdec, y, Xdec.shape[1] - 1, rng, NBOOT)
+    print(f"   burden DECILE indicators:  flag coefficient {bdec[-1]:+.3f} [{lo3:+.3f},{hi3:+.3f}]")
+
+    print("\n   STRATIFIED -- the flag effect estimated separately inside each burden quintile, which")
+    print("   assumes no functional form for burden whatsoever. If the sign is consistent across strata,")
+    print("   the functional-form objection cannot be the explanation.")
+    edges2 = [-1e-9] + list(np.quantile(b, [.2, .4, .6, .8])) + [1.01]
+    agree = 0; tested = 0
+    for i in range(5):
+        m = (b > edges2[i]) & (b <= edges2[i + 1])
+        if m.sum() < 60 or not (0 < y[m].sum() < m.sum()):
+            continue
+        fm, ym, am = f[m], y[m], a[m]
+        if fm.sum() < 10 or (1 - fm).sum() < 10:
+            print(f"   burden {edges2[i]:.3f}-{edges2[i+1]:.3f}  n={int(m.sum()):>4}  too few in one flag arm")
+            continue
+        Xs = np.column_stack([np.ones(int(m.sum())), am, fm])
+        bs_ = logit_fit(Xs, ym)
+        l, h = boot_coef(Xs, ym, 2, rng, max(400, NBOOT // 2))
+        tested += 1
+        if l == l and l * h > 0 and bs_[2] < 0:
+            agree += 1
+        print(f"   burden {edges2[i]:.3f}-{edges2[i+1]:.3f}  n={int(m.sum()):>4}  "
+              f"death {100*ym.mean():4.1f}%  flag coef {bs_[2]:+.3f} [{l:+.3f},{h:+.3f}]"
+              f"{'  *' if l == l and l * h > 0 else ''}")
+    print(f"\n   strata where the flag coefficient is negative AND excludes zero: {agree}/{tested}")
+    if tested and agree >= max(2, tested - 1):
+        print("   The effect is present inside burden strata, so it is not an artefact of how burden was")
+        print("   modelled. The functional-form explanation for R360 is EXCLUDED.")
 
     print("\n" + "=" * 96)
     print("N3  HOW MUCH OF THIS IS THE ADJUSTMENT RATHER THAN THE FLAG?")

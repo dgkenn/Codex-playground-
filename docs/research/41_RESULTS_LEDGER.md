@@ -1979,3 +1979,57 @@ than an approximation of it. Until then, B3, T3 and R378 rest on a constraint wi
 explanation — which is worth knowing before any of it is written up.
 
 **Cumulative distinct results: 387.**
+
+---
+
+## R388 · R360's residual is NOT an artefact of the burden adjustment — the threat is excluded
+
+R387 raised a live alternative explanation for the project's largest open constraint: the flag's positivity is
+flat to 10 % suppression burden then collapses, R360 adjusted for burden **linearly**, and a linear term
+cannot absorb a step, so the leftover would look like signal. Three experiments (B3, T3, R378) rest on that
+residual being real. The R387 test was inconclusive because it used one shard (n = 239) and its own gate
+failed. This is the properly powered version, on all four shards.
+
+**A reproducibility problem found on the way, and worth recording:** commit `dcc3700`, which introduced
+R358–R360, **changed only the ledger — no script was committed.** The exact cohort (n = 818) is therefore not
+recoverable. This analysis defines its cohort explicitly instead and is committed with it.
+
+**Cohort:** flag + burden + intra-burst + ascertained death, all four shards, n = 1,497, 30-day death 68.0 %,
+flag positive 66.3 %. It is **not** R358's cohort and is not presented as a replication — conditioning on an
+ascertained death record selects a sicker population (30-day survival 41.9 % flag-positive vs 12.5 %
+flag-negative, against R358's 74.9 % vs 29.7 %). The intra-burst contrast does track closely: **0.131 vs
+0.243** here against **0.125 vs 0.246** reported.
+
+**The burden dependence reproduces** in this cohort: flag positive in 84.5 % below 1 % burden, 75.4 % at
+10–25 %, **39.7 % above 50 %**.
+
+**Four specifications, increasingly free of assumptions:**
+
+| burden adjustment | flag coefficient |
+|---|---|
+| linear (as R360 specified) | **−0.985 [−1.332, −0.665]** |
+| quintile indicators | **−1.030 [−1.386, −0.705]** |
+| decile indicators | **−0.993 [−1.360, −0.675]** |
+| **fully stratified** (separate fit inside each burden quintile) | **5 of 5 strata negative and excluding zero** |
+
+| burden stratum | n | 30-day death | flag coefficient |
+|---|---|---|---|
+| 0.000–0.023 | 302 | 39.7 % | −0.966 [−1.646, −0.309] |
+| 0.023–0.145 | 298 | 52.3 % | −0.870 [−1.758, −0.127] |
+| 0.145–0.383 | 298 | 70.5 % | −0.639 [−1.273, −0.061] |
+| 0.383–0.745 | 299 | 84.3 % | −1.381 [−2.520, −0.682] |
+| 0.745–1.010 | 300 | 93.3 % | −1.899 [−3.370, −0.884] |
+
+**The functional-form explanation is excluded.** The stratified estimate assumes nothing about how burden
+relates to outcome, and the effect is present in every stratum. Moving from linear to deciles changes the
+coefficient by under 5 %.
+
+**An additional observation the stratification exposes.** The flag's effect is **largest where suppression is
+deepest** — −1.381 and −1.899 in the top two strata against −0.639 in the middle — which is precisely where
+the flag is least often positive (39.7 %). Among the most suppressed patients, a reader still calling the
+background "slow" is saying something that carries more information than anywhere else in the range. That is
+a constraint no mechanism has yet had to explain, and it is the sharpest thing to come out of this line.
+
+**Status change:** B3, T3 and R378 are **not** built on an artefact. The mechanism hunt stands.
+
+**Cumulative distinct results: 388.**
