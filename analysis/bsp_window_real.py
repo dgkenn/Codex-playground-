@@ -211,27 +211,49 @@ def main():
     print("\n   'ewma oracle' picks its constant using the very log-losses it is scored on. It is a CEILING")
     print("   on exponential smoothing, not a deployable method, and is excluded from the 'best' column.")
 
-    print("\n" + "=" * 100)
-    print("PAIRED, PER-RECORDING: how often does BSP beat the trailing ratio on the same recording?")
-    print("=" * 100)
-    print(f"{'window':>7} {'bsp_last wins':>15} {'mean improvement':>18} {'95% CI':>26} "
-          f"{'vs tuned EWMA':>16}")
-    print("-" * 100)
+    print("\n" + "=" * 108)
+    print("PAIRED, PER-RECORDING. Both BSP summaries are reported, because they differ enormously and")
+    print("reporting only one would misstate the estimator. bsp_mean averages the causal filter over the")
+    print("window; bsp_last takes its value at the final bin. Both are strictly causal.")
+    print("=" * 108)
     rng = np.random.default_rng(20260727)
-    for W in WINDOWS:
-        rows = [r[W] for r in res if W in r]
-        if len(rows) < 20:
-            continue
-        d = np.array([x["ratio"] - x["bsp_last"] for x in rows])   # positive = BSP better
-        d2 = np.array([x["ewma"] - x["bsp_last"] for x in rows])   # vs the practical smoother
+
+    def paired(rows, a, b):
+        """Bootstrap the per-recording difference a - b (positive = b better)."""
+        d = np.array([x[a] - x[b] for x in rows])
         bs = [np.mean(d[rng.integers(0, len(d), len(d))]) for _ in range(1000)]
         lo, hi = np.percentile(bs, [2.5, 97.5])
-        bs2 = [np.mean(d2[rng.integers(0, len(d2), len(d2))]) for _ in range(1000)]
-        lo2, hi2 = np.percentile(bs2, [2.5, 97.5])
-        v2 = "BSP ahead" if lo2 > 0 else ("EWMA ahead" if hi2 < 0 else "tie")
-        print(f"{W:>7} {100*np.mean(d>0):>14.1f}% {np.mean(d):>+18.4f} "
-              f"[{lo:>+10.4f},{hi:>+10.4f}]{'  *' if lo > 0 else '   '} {v2:>16}")
-    print("   * = paired bootstrap CI excludes zero, i.e. BSP is genuinely ahead at that window length.")
+        return float(np.mean(d)), lo, hi, float(np.mean(d > 0))
+
+    for variant in ("bsp_mean", "bsp_last"):
+        print(f"\n   --- {variant} ---")
+        print(f"{'window':>7} {'wins vs ratio':>15} {'improvement vs ratio':>22} {'95% CI':>26} "
+              f"{'vs tuned EWMA':>16} {'vs cumulative':>16}")
+        print("   " + "-" * 105)
+        for W in WINDOWS:
+            rows = [r[W] for r in res if W in r]
+            if len(rows) < 20:
+                continue
+            m, lo, hi, frac = paired(rows, "ratio", variant)
+            _, l2, h2, _ = paired(rows, "ewma", variant)
+            _, l3, h3, _ = paired(rows, "cumulative", variant)
+            v2 = "BSP ahead" if l2 > 0 else ("EWMA ahead" if h2 < 0 else "tie")
+            v3 = "BSP ahead" if l3 > 0 else ("cumul ahead" if h3 < 0 else "tie")
+            print(f"{W:>7} {100*frac:>14.1f}% {m:>+22.4f} "
+                  f"[{lo:>+10.4f},{hi:>+10.4f}]{'  *' if lo > 0 else '   '} {v2:>16} {v3:>16}")
+    print("\n   * = paired bootstrap CI excludes zero, i.e. BSP is genuinely ahead of the trailing ratio.")
+
+    # persist per-recording scores so a follow-up comparison never needs another 20-minute refit
+    out = os.environ.get("BSP_REAL_ROWS", "/tmp/eeg_probe/bsp_real_rows.csv")
+    with open(out, "w", newline="") as f:
+        w = csv.writer(f)
+        cols = ["ratio", "cumulative", "ewma", "ewma_oracle", "bsp_last", "bsp_mean", "corr", "alpha", "nwin"]
+        w.writerow(["rec", "W"] + cols)
+        for i, r in enumerate(res):
+            for W in WINDOWS:
+                if W in r:
+                    w.writerow([i, W] + [r[W].get(c, "") for c in cols])
+    print(f"\n   per-recording scores written to {out}")
 
     if summary:
         beaten = sorted(W for W, (m, c, k, b) in summary.items() if b != "ratio")
