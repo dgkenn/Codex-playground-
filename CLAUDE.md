@@ -53,6 +53,88 @@ never delegate the acceptance.
 - Prefer one batched shell call that prints several small things over several round-trips.
 - **Never read a subagent's raw transcript file** — it will overflow the context. Use its returned result.
 
+## SOP: the error catalogue (STANDING — read before designing any analysis)
+
+Every rule below was paid for with a wrong result in this project. They are ordered by how often the mistake
+recurred, not by how clever they sound.
+
+### A. Correction discipline — the mistakes that repeated most
+
+1. **A correction propagates to everything downstream, not just the number that prompted it.** The ICD-code fix
+   changed the cohort from 2,951 to 2,463; the headline was re-run immediately, but the landmark analysis, the
+   morphology directions and the figures stayed contaminated until someone went back for them. **When a
+   definition changes, list every claim that depends on it before re-running anything.**
+2. **Numbers inherited from a superseded extraction must be re-derived, never carried forward.** Happened
+   twice: morphology contrasts quoted from the legacy max-over-recordings run (every magnitude inflated, one
+   sign inverted), and the manuscript quoting pre-correction quintiles.
+3. **Stale claims survive in earlier sections.** Corrections were appended as new sections while §2 still read
+   as current. Put the withdrawal at the point a reader would rely on the claim, not only at the end.
+4. **Hardcoded literals in captions, titles and prose go stale silently.** A figure title said "2.5-fold"
+   through a correction that made it 2.3; a caveat hardcoded 40.6 % after the value moved to 46.0 %. **Compute
+   every number that appears in output, including in labels.**
+
+### B. Silent failure — wrong answers that arrive looking like nothing
+
+5. **Empty is not evidence of absence until the filter has been shown capable of matching something.** Three
+   separate times an error surfaced as an empty file: a text regex ANDed with a concept-id filter, an unmapped
+   `concept_id` column, and a CSV predating the columns being read. **Assert non-empty, or assert the filter
+   matches a known positive.**
+6. **Check that a `concept_id` column is populated before designing around it.** `observation_concept_id` was
+   100 % zero. One `Counter` over 100k rows would have shown it in seconds.
+7. **Before choosing an administrative table as an instrument, ask what makes a row appear in it.** Billing
+   tables see reimbursable acts; state tables see charted statuses; **neither sees decisions**.
+   `procedure_occurrence` contains zero extubations because extubation is not separately billable.
+8. **An access failure may be credential *precedence*, not expiry.** A 403 came from placeholder env
+   credentials outranking a valid profile. Diagnose with `sts get-caller-identity` **per credential source**.
+
+### C. Statistical rules
+
+9. **Bootstrap AUC increments out-of-bag.** Train on the resample, evaluate on the patients *not* drawn.
+   Bootstrapping fixed out-of-fold predictions ignores refit variance and gave a falsely narrow +0.100
+   [+0.082, +0.118]; refitting *and* evaluating on the same resample puts patients in train and test and
+   produced a point estimate outside its own interval. **Both were used here and both were wrong.**
+10. **Any per-patient aggregation over repeated measurements is look-ahead until proven otherwise.** `max()`,
+    `or`, and bare assignment across rows all leaked; in a survival analysis the *number* of measurements is
+    itself an outcome. The pattern was in 17 scripts.
+11. **Sign the bias separately for every analysis a shared bug touches.** "Conservative" was established for
+    one estimand and did not transfer — the same defect ran the *other* way in the landmark analysis.
+12. **Predictive increment cannot identify a mechanism when the measure is noisy.** Two readings of a
+    *constant* beat one reading. Decompose into `mean` and `difference` and test the **sign** of the difference
+    term; noise cannot produce a correctly-signed non-zero coefficient.
+13. **Never "fix" a confound by conditioning on a post-exposure variable.** That is a collider and can
+    manufacture a sign reversal.
+14. **Report exclusions and check whether they are outcome-related.** Burst morphology is undefined below four
+    bursts, which happens at near-total suppression — 13.2 % of patients excluded, at 80 % vs 60 % poor outcome.
+15. **Discrimination without calibration is half a result**, and the missing half is the half clinicians use.
+
+### D. Reading the evidence
+
+16. **When two arms of the same test disagree in SIGN, the definition is doing the work, not the biology.**
+17. **When a fix makes the effect stronger, the diagnosis was wrong** — that is a refutation of the
+    explanation, not a refinement of it.
+18. **Uniformity across strata whose clinical handling is known to differ is evidence AGAINST validity**, not
+    for robustness. A median of 0.0 h in every aetiology exposed a charting artefact.
+19. **Before two measures can corroborate each other, check whether one row can satisfy both definitions.**
+20. **When two scripts compute the same quantity, diff them even if only one is published.** The unpublished
+    one is a free replicate, and disagreement localises to a definition.
+21. **Run the literature check BEFORE the analysis when the prediction rests on a premise about a specific
+    disease.** "Dead cortex cannot seize" is sound physiology and false after cardiac arrest; one E-utilities
+    query would have killed the design before it was built.
+
+### E. Verification
+
+22. **A validity figure living in a code comment is not a validity figure.** "AUC 0.829" in a comment was not
+    reproducible; measured properly it is 0.749.
+23. **Self-written code plus self-written tests share blind spots.** Validate against an *independent*
+    implementation — an exact solver caught a 0.775 deviation that seven unit tests missed.
+24. **Delegate the enumeration, verify the classification — and spot-check the calls the agent rated LOW
+    risk.** That is where a miss is most costly.
+25. **Verify every citation from the MEDLINE record via E-utilities.** WebFetch fabricates PubMed content under
+    CAPTCHA; it cost this project six wrong citations once. Verifying a "contradicting" paper myself revealed
+    its own headline effect failed its own adjustment — which changed the conclusion.
+
+---
+
 ## SOP: the ten-result cadence (STANDING)
 
 Results accumulate faster than interpretation does, and a mechanism is only worth proposing if it explains the
