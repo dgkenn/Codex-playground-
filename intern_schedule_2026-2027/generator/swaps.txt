@@ -16,10 +16,9 @@ swap 2026-12-14:2026-12-18 MACNEILLE BRONSON
 swap 2026-12-20:2026-12-26 MACNEILLE BRONSON
 swap 2026-12-31 MACNEILLE BRONSON
 
-# --- Kennedy: full weekend 11/6-8 off (KEN_SWAP in gen.py gives NF 11/1-6 + off 11/7-8);
-#     this hands his Fri 11/6 night to Chiasson so he does a light short call and travels ---
-swap 2026-11-06 KENNEDY CHIASSON
-swap 2026-11-06 KENNEDY MULLINS
+# --- Kennedy: night shifts the whole first week of November (KEN_SWAP in gen.py
+#     gives him NF 11/1-6 + off the 11/7-8 weekend). PD will arrange the Fri-11/6
+#     travel swap by hand from here. ---
 
 # --- Oghenesume: April 10-11 weekend off (free the 4/11 Sunday long call; 4/9 & 4/12
 #     stay short call - can't be full days off under the Thursday-only rule) ---
