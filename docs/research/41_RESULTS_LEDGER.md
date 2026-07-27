@@ -1571,3 +1571,84 @@ measure. Actual: falsified — they are redundant. The prediction assumed the tw
 because they live in different parts of the record; they do not.
 
 **Cumulative distinct results: 364.**
+
+---
+
+## R365–R372 · Topography eliminated; the inference machinery audited; a time-axis defect caught
+
+### R365–R368 · Spatial distribution is not the missing dimension (I-CARE, n = 602)
+
+The residual left by R358–R360 is that the clinician's "generalized slowing" flag carries
+**−0.752 [−1.075, −0.434]** beyond suppression burden and our intra-burst 8–30 Hz measure, and B3 showed the
+whole-record background spectrum does not explain it either. Four candidates were named. **Spatial
+distribution was the only one this schema can measure** — every spectral feature in this project takes a
+median across channels and discards topography by construction, while a human reading a record does not.
+Extraction and predictions were committed before any result existed (`964ed58`).
+
+| arm | prediction | result | verdict |
+|---|---|---|---|
+| **T1** primary | antero-posterior slow gradient steeper in good outcome | good −0.0378, poor −0.0609, **+0.0231 [−0.0022, +0.0526]**, AUC 0.528 | **null** (direction as predicted, CI includes zero) |
+| **T2** secondary | across-channel dispersion **lower** in poor outcome | slow_sd good 0.0738, poor 0.0860, **−0.0122 [−0.0243, +0.0004]** | **direction REVERSED** |
+| **T3** decisive | topographic block adds over burden + background + intra-burst | CV AUC 0.706 → 0.720, out-of-bag **+0.014 [−0.021, +0.040]** (n = 559) | **FALSIFIED** |
+| **T4** coverage | works where morphology is blind | 43 patients, 69.8 % poor, median burden 0.541; AUC 0.523–0.569 | weak |
+
+The full secondary family, reported whole rather than best-of: slow_sd −0.0122 [−0.0243, +0.0004]; sef_sd
+−0.3034 [−0.6566, +0.0338]; slow_range **−0.0398 [−0.0723, −0.0090]**; lr_asym +0.0071 [−0.0050, +0.0198];
+ap_sef_grad **+1.2596 [+0.4143, +2.2391]**. Two of five exclude zero. Over **burden alone** the block adds
++0.037 [−0.014, +0.072], also n.s.
+
+**What this eliminates.** Spatial information carries weak marginal association and **no incremental
+information** beyond burden plus the two spectral measures. Since a positive here was only a *necessary*
+condition for topography explaining the flag residual, the negative is decisive against it. Of the four named
+candidates, one is now eliminated, one (**reactivity**) is unavailable in this schema, and two remain:
+**temporal evolution within the record** and **specific waveform morphology** rather than band power.
+
+**The reversal is the interesting part.** Dispersion is *higher* in poor outcome, not lower — slow_range
+−0.0398 [−0.0723, −0.0090] excludes zero in the direction opposite to the registered prediction. The
+prediction assumed diffuse injury slows the cortex uniformly. A post-hoc reading, labelled post-hoc: a
+preserved background is globally organised and therefore spatially uniform, whereas a badly injured cortex is
+patchy — parts electrically silent, parts not — so across-channel variance *rises* with injury. This is a
+story, not a result, and it predicts that dispersion should track burden; that is testable and untested.
+
+**Predicted vs actual (calibration ledger).** Predicted 0.45 that T3 would confirm. Actual: falsified. The
+running record of predicted-vs-actual now covers spatial (0.45 → falsified) and background-spectral
+(0.60 → falsified) mechanisms; both over-predicted, and both for the same reason — assuming that a measure
+taken in a different *place* must capture a different *thing*.
+
+### R369–R370 · The two inference procedures behind every reported interval are calibrated
+
+Shaking out the topography analysis on permuted labels — where every association is destroyed by construction
+— the primary arm returned a 95 % interval excluding zero. One event in six tests is unremarkable, and
+*assuming* so is what rule 23 exists to prevent. So the false-positive rate was measured, on the real feature
+distributions with only the outcome link broken.
+
+- **R369 · `diff_ci`** (percentile bootstrap for a group-mean difference), 400 permutations × 600 draws,
+  n = 602: rejection rates **0.045, 0.065, 0.065** against nominal 0.050, Monte-Carlo SE 0.011. All within
+  3 SE. **Calibrated.**
+- **R370 · `oob_increment`** (the procedure behind the headline **+0.062 [+0.032, +0.095]**), 60 permutations
+  × 200 out-of-bag reps, n = 559: mean increment under the null **−0.0005** — no positive bias. Lower bound
+  above zero in **0/60**, upper bound below zero in **0/60**, against nominal 0.025 each, MC SE 0.020.
+
+**Read this precisely.** 0/60 is consistent with nominal 0.025 and also with anything below roughly 0.05, so
+the check establishes **absence of anti-conservatism** — the direction that matters, because an
+anti-conservative interval would mean the headline increment is reported too narrow — and has little power to
+detect mild conservatism. The permuted-label rejection that prompted the check was an ordinary false positive.
+
+### R371–R372 · A time-axis defect in our own extraction, found by reading the code
+
+**R371.** The usable-frame mask drops dead-channel frames and then forms one-second bins from the survivors,
+gluing them together. Harmless for a burden — an average over frames is order-free — and **not** harmless for
+BSP, whose entire content is a model of how the state moves between adjacent bins: a closed-up hole presents
+as an abrupt jump that never happened. Re-reading 24 random recordings with a rule fixed beforehand: median
+interior-dropped fraction **0.000 %**, but one recording had **50.5 %** of its frames removed from the middle,
+a **1,817 s** hole. Median duration 3,600 s. The rule fired.
+
+**R372.** Affected recordings are identified from the WFDB headers alone rather than a second signal pass:
+`dropped = 1 − n_bins·10 / floor(samples/frame)`. Across 602 recordings the median dropped fraction is
+0.011 %, p90 3.178 %, max 100 %; **73 exceed 1 %** and 50 exceed 20 %. **The exclusion is outcome-related**:
+75.3 % poor outcome among the 73 excluded versus 61.2 % among the 529 kept, **−14.1 pp [−24.6, −2.9]**. This
+is the same pattern as L1 — sicker patients give worse recordings — and it means any *prognostic* estimate on
+the filtered set is conditioned on a variable related to the endpoint. The window-length analysis makes no
+prognostic claim and reports filtered and unfiltered side by side.
+
+**Cumulative distinct results: 372.**

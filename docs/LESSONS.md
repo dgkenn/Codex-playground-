@@ -2052,3 +2052,36 @@ never the risk; the definition was.**
   suppression without citing the group that built the standard estimator for it and proposed the mechanism.
   Once read, the central result reframed itself from a statistical curiosity into an extension of an existing
   model -- a better result, reached by reading rather than by computing.
+
+- **A measure taken in a different *place* is not a different *thing*.** Predicted 0.60 that the whole-record
+  background would beat the intra-burst measure, on the reasoning that slow activity lives between bursts and
+  our measure looked only inside them. Falsified: mutually redundant. Predicted 0.45 that topography would add,
+  on the reasoning that every feature we compute takes a median across channels and a human reader does not.
+  Falsified: out-of-bag increment +0.014 [-0.021, +0.040] over burden + background + intra-burst. Two
+  over-predictions, one error: **spatial or temporal separation of two measurements is not evidence that they
+  load on different factors.** What would be evidence is a case where one moves and the other does not.
+
+- **Test the necessary condition when the sufficient one is out of reach, and take the negative seriously.**
+  The clinician's slowing flag lives in HEEDB; I-CARE has no equivalent, so no I-CARE analysis can show that
+  topography explains the flag residual. It can show whether spatial information carries outcome signal the
+  non-spatial measures do not -- which the hypothesis *requires*. That failed, so the hypothesis fails with it.
+  A negative on a necessary condition is decisive in a way a positive never is.
+
+- **Smoke-test an analysis on PERMUTED labels rather than real ones.** It exercises every code path -- joins,
+  missing columns, degenerate subgroups, plotting -- on real feature distributions while revealing nothing
+  about the association, so the registration stays clean. It also does something a normal smoke test cannot:
+  run it a few hundred times and it becomes a direct measurement of the false-positive rate. Doing exactly
+  this surfaced a 95 % interval excluding zero on data with no signal, which is how the calibration audit of
+  `diff_ci` and `oob_increment` came to be run at all.
+
+- **A mask that compresses out bad samples silently glues time together.** Dropping dead-channel frames and
+  then binning what remains is correct for any order-free summary and wrong for anything that models
+  transitions. One recording in 24 had a 1,817 s hole closed up, which a state-space estimator reads as an
+  abrupt jump that never happened. The defect was invisible in the output -- burden was unaffected and every
+  number looked plausible. It was found by reading the extraction code, not its results.
+
+- **Deriving an exclusion is half the work; checking whether it is outcome-related is the other half.**
+  Excluding the 73 glued recordings removes patients at 75.3 % poor outcome versus 61.2 % retained,
+  -14.1 pp [-24.6, -2.9]. The same shape as the burst-morphology exclusion. Neither exclusion was chosen with
+  outcome in view and both are related to it, because sicker patients produce worse recordings -- which means
+  the check has to be run every time rather than reasoned about.

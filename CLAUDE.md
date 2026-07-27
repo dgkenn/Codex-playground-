@@ -121,6 +121,20 @@ recurred, not by how clever they sound.
     disease.** "Dead cortex cannot seize" is sound physiology and false after cardiac arrest; one E-utilities
     query would have killed the design before it was built.
 
+26. **Smoke-test an analysis on PERMUTED labels, never real ones.** It exercises every code path on real
+    feature distributions while revealing nothing about the association, so a pre-registration stays clean --
+    and repeated a few hundred times the same harness measures the procedure's false-positive rate directly.
+    That is how `diff_ci` (0.045/0.065/0.065 vs nominal 0.05) and `oob_increment` (0/60 vs nominal 0.025) came
+    to be audited at all.
+27. **A mask that compresses out bad samples glues time together.** Dropping frames and binning the remainder
+    is right for any order-free summary and wrong for anything modelling transitions; one recording in 24 had
+    a 1,817 s hole closed up, invisible in the output because the burden was unaffected. Before feeding a
+    series to a model of temporal evolution, verify the time axis is uniform.
+28. **Two measurements separated in space or time are not thereby measuring different things.** Predicted
+    twice that they would be -- background vs intra-burst spectrum, topography vs median-across-channels --
+    and both were redundant. Separation is not evidence of a distinct factor; a case where one moves and the
+    other does not is.
+
 ### E. Verification
 
 22. **A validity figure living in a code comment is not a validity figure.** "AUC 0.829" in a comment was not
