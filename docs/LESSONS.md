@@ -2085,3 +2085,29 @@ never the risk; the definition was.**
   -14.1 pp [-24.6, -2.9]. The same shape as the burst-morphology exclusion. Neither exclusion was chosen with
   outcome in view and both are related to it, because sicker patients produce worse recordings -- which means
   the check has to be run every time rather than reasoned about.
+
+- **A measure that differs in KIND survives where measures that differ only in LOCATION did not.** Three
+  candidates for the clinician-flag residual were tested the same way. The whole-record background spectrum
+  and the spatial topography were each predicted to add and each turned out redundant; the across-days trend
+  in burden was predicted *not* to add and did (+1.061 [+0.233, +2.057] adjusted for burden, background and
+  intra-burst content). The first two differed from what we already had only in *where* they were measured.
+  The third differs in *what kind of thing* it is — a rate of change rather than a level. That distinction is
+  now the first thing to ask of any new candidate, and it is worth more than a plausibility argument.
+
+- **Test the sign, not the increment, whenever a decomposition could gain accuracy by averaging noise.** Both
+  trend arms confirmed on the coefficient's sign while **every** out-of-bag increment included zero. Had the
+  increment been the test, a real and correctly-directed association would have been recorded as nothing. Had
+  the increment been the *headline*, a finding with no discrimination gain would have been oversold. Reporting
+  both, and declaring in advance which one decides, is what keeps those two errors from trading places.
+
+- **When selecting on "has a second measurement", find out who is missing before interpreting anything.**
+  Patients with a usable late recording are 56.5 % poor against 74.1 % among those without, −17.6 pp
+  [−25.5, −9.1]. A late recording exists only for someone who lived to be recorded, so the estimand silently
+  became "the trend among patients who survived to be measured twice" — a real question, but not the one the
+  hypothesis was about, and the sickest patients are outside it.
+
+- **Check that the two things you are differencing are actually two things.** The cached burden files record
+  the ACTUAL hour of the recording nearest each target, not the target. Patients with few recordings get the
+  same file for several targets, so 15.4 % of h12/h24 "pairs" were one recording differenced against itself —
+  a change of exactly zero by construction. Left in, they would have diluted a real effect toward the null and
+  produced a negative result indistinguishable from biology. One line of counting found it.

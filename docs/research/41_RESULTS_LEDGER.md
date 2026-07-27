@@ -1751,3 +1751,87 @@ the same data. Actual: **falsified** — it never does. Predicted 0.50 that BSP 
 elaborate estimator must extract more from a fixed sample, when what it actually does is use a larger one.
 
 **Cumulative distinct results: 376.**
+
+---
+
+## R377–R380 · Temporal evolution: null within an hour, real across days
+
+The clinician-flag residual (R358–R360, **−0.752 [−1.075, −0.434]** beyond burden and intra-burst content) had
+four candidate explanations. Two were eliminated — the whole-record background spectrum (B3) and spatial
+topography (T3) — and both failed the same way, now catalogue rule 28. Reactivity is unmeasurable in this
+schema. **Temporal evolution was the leading survivor**, and this is its test. Registered before running
+(`icare_temporal_evolution.py`, `icare_multiday_trend.py`, committed before any result existed).
+
+Both arms use a **mean/difference decomposition and test the SIGN**, not the increment, for the reason in
+catalogue rule 12: two noisy measurements of a constant level average to a better estimate than one, so an
+increment alone cannot distinguish trend information from noise reduction. A correctly-signed non-zero
+coefficient cannot be produced by averaging. Conditioning on the **mean of the two** measurements rather than
+on the baseline is also what keeps regression to the mean out of a change-score analysis.
+
+### R377 · Within one recording — FALSIFIED
+
+505 recordings (39 excluded for interior gaps), median length 3,600 s, 62.4 % poor. Trend coefficient adjusted
+for the level **−0.478 [−1.645, +0.748]**; out-of-bag increment **−0.002 [−0.030, +0.009]**; adjusted for
+background and intra-burst content as well, **−0.671 [−2.122, +0.486]**. Trend alone AUC 0.553 against 0.688
+for the level.
+
+The scope was stated in advance rather than after: one hour at roughly hour 24 cannot show the trend a
+clinician reads. **This falsifies the within-hour trend, not temporal evolution.**
+
+### R378 · Across days — CONFIRMED, and it is the first candidate to survive
+
+Burden is already cached at four target hours. **A trap had to be designed around first**: those files record
+the *actual* hour of the recording nearest each target, not the target, so a patient with few recordings gets
+the *same file* for several targets — **15.4 % of h12/h24 pairs are the identical recording**, whose change is
+zero by construction. Including them would have loaded the sample with structural zeros and produced a false
+negative that looked like biology. Pairs are required to be genuinely separated.
+
+| | **primary** h12 → h48 | **secondary** h12 → h24 |
+|---|---|---|
+| usable pairs (genuine separation) | 368 of 515 | 365 of 519 |
+| median actual gap | 36 h | 12 h |
+| poor outcome | 56.5 % | 57.8 % |
+| change per 24 h, good vs poor | −0.2212 vs −0.1885 | −0.3197 vs −0.1539 |
+| M1 unadjusted difference | +0.0328 [−0.0270, +0.0925] — null | **+0.1658 [+0.0197, +0.3146]** |
+| **M2 trend coefficient, adjusted for level** | **+1.098 [+0.316, +2.015]** | **+0.367 [+0.079, +0.719]** |
+| trend adjusted for level **+ background + intra-burst** | **+1.061 [+0.233, +2.057]** (n=350) | **+0.497 [+0.170, +0.891]** (n=348) |
+| out-of-bag increment over level | +0.005 [−0.060, +0.029] | +0.003 [−0.045, +0.031] |
+| out-of-bag increment over all three | −0.001 [−0.059, +0.022] | +0.013 [−0.032, +0.040] |
+
+**Burden falls in both groups; it falls FASTER in good outcome.** Slower resolution of suppression marks poor
+outcome, independently of how much suppression there is. This is the first candidate to survive the exact
+adjustment that eliminated the background spectrum and topography.
+
+### R379 · What it is not — no predictive increment, and a restricted estimand
+
+**Every out-of-bag increment includes zero.** This is a genuine association with **no discrimination gain** —
+the same shape as B2, where intra-burst content carried −1.69 [−2.65, −0.80] adjusted for burden and added
+nothing predictively. Trend alone reaches AUC 0.530 (primary) and 0.574 (secondary) against 0.693 and 0.668
+for the level. Anyone reading this as a prognostic advance would be reading it wrong.
+
+**Availability is outcome-related**, checked rather than assumed: patients with a usable late recording are
+**56.5 % poor versus 74.1 % among those without**, a difference of **−17.6 pp [−25.5, −9.1]** (secondary arm
+−10.4 pp [−20.2, −1.5]). A late recording exists only for a patient who lived to be recorded. So the estimand
+is *the trend among patients who survived to be measured twice*, which is a real but restricted question, and
+the sickest patients are outside it.
+
+**Direction of the residual biases.** Regression to the mean would push the trend coefficient **negative**
+(poor-outcome patients start higher, so they have more room to fall), and the observed coefficient is
+**positive** — RTM works against this finding rather than for it. Conditioning on the mean of the pair rather
+than on baseline is the standard guard, and it was chosen in advance.
+
+### R380 · Robustness — the scaling is not doing the work
+
+Expressing the change per 24 h divides by the elapsed gap, which amplifies noise for the shortest pairs. Rerun
+on the **raw** late-minus-early difference, every verdict holds: primary **+0.967 [+0.370, +1.681]**, secondary
+**+0.858 [+0.220, +1.597]**, and adjusted for background and intra-burst **+0.943 [+0.319, +1.728]** and
+**+1.093 [+0.384, +1.903]**. Permuted-label controls for both scripts were null throughout.
+
+**Predicted vs actual (calibration ledger).** Predicted 0.35 that temporal evolution would survive the
+adjustment that killed the other two. Actual: **confirmed across days, falsified within an hour.** This is the
+first under-prediction in the run; the previous three were all over-predictions of measures that turned out
+redundant. The distinguishing feature, visible only in hindsight and worth carrying forward, is that this
+measure differs from burden in **kind** — it is about change — where the failed ones differed only in **where
+they were measured**.
+
+**Cumulative distinct results: 380.**

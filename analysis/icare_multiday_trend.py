@@ -122,7 +122,11 @@ def arm(name, early, late, min_gap, coh, rng):
     he = np.array([early[p][0] for p in ok]); hl = np.array([late[p][0] for p in ok])
     be = np.array([early[p][1] for p in ok]); bl = np.array([late[p][1] for p in ok])
     gap = hl - he
-    rate = (bl - be) / gap * 24.0            # change in burden per 24 h, using ACTUAL elapsed time
+    # Change per 24 h using ACTUAL elapsed time. Dividing by the gap amplifies noise for the shortest
+    # gaps (a 6 h pair is scaled by 4), so TREND_RAW=1 reruns everything on the raw late-minus-early
+    # difference instead. If the verdict depends on which of the two is used, the scaling is doing the work
+    # rather than the biology.
+    rate = (bl - be) if os.environ.get("TREND_RAW") == "1" else (bl - be) / gap * 24.0
     mean2 = (be + bl) / 2.0
     n = len(y)
     print(f"   poor outcome {100*y.mean():.1f}%   median actual gap {np.median(gap):.0f} h   "
@@ -152,8 +156,38 @@ def arm(name, early, late, min_gap, coh, rng):
         print("       M2 FALSIFIED -- the trend carries no outcome information beyond the level")
 
     inc, l3, h3, k3 = oob_increment(Xm, Xmd, y, rng)
-    print(f"\n   M3  level alone CV AUC {cv_auc(Xm, y, rng):.3f}   + trend {cv_auc(Xmd, y, rng):.3f}   "
+    print(f"\n       level alone CV AUC {cv_auc(Xm, y, rng):.3f}   + trend {cv_auc(Xmd, y, rng):.3f}   "
           f"out-of-bag {inc:+.3f} [{l3:+.3f},{h3:+.3f}] ({k3} reps)")
+
+    # ---- is the trend redundant with the measures already in hand? --------------------------------
+    # This is the arm that killed the background spectrum (B3) and topography (T3). Both were eliminated
+    # for adding nothing once burden and the other spectral measure were in the model, so the trend has to
+    # face the same test rather than a gentler one.
+    bg, morph = {}, {}
+    for r in csv.DictReader(open(f"{D}/icare_background.csv")):
+        try:
+            bg[r["pid"].strip()] = float(r["w_slow_frac"])
+        except (KeyError, TypeError, ValueError):
+            continue
+    for r in csv.DictReader(open(f"{D}/icare_morph2.csv")):
+        try:
+            morph[r["pid"].strip()] = float(r["alpha_beta"])
+        except (KeyError, TypeError, ValueError):
+            continue
+    keep = [i for i, p in enumerate(ok) if p in bg and p in morph]
+    print(f"\n       vs the measures already in hand: {len(keep):,} patients with all of them")
+    if len(keep) >= 150:
+        j = np.array(keep); yy = y[j]; o = np.ones(len(j))
+        Xa = np.column_stack([o, mean2[j],
+                              np.array([bg[ok[i]] for i in keep]),
+                              np.array([morph[ok[i]] for i in keep])])
+        Xb = np.column_stack([Xa, rate[j]])
+        c1, c2 = boot_coef(Xb, yy, 4, rng, NBOOT)
+        i2, l4, h4, _ = oob_increment(Xa, Xb, yy, rng)
+        print(f"       trend coefficient adjusted for burden + background + intra-burst: "
+              f"{logit_fit(Xb, yy)[4]:+.3f} [{c1:+.3f},{c2:+.3f}]")
+        print(f"       out-of-bag increment {i2:+.3f} [{l4:+.3f},{h4:+.3f}]")
+        print(f"       {'SURVIVES -- the trend is not redundant with what we already measure' if c1 == c1 and c1 * c2 > 0 else 'REDUNDANT -- the same verdict B3 and T3 reached'}")
 
 
 def main():
