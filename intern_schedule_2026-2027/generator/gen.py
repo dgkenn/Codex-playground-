@@ -66,7 +66,7 @@ def _blk(blocks,dt):
 # Set to the Nov 1-13 range to apply Kennedy's 7-8-weekend accommodation; left
 # empty here so the document is the clean, fully-auditable pure-march baseline
 # (November personal tweaks are handled on the back end).
-KEN_SWAP_DAYS={d(11,x,2026) for x in range(1,14)}   # ENABLED: Kennedy off 11/7-8 weekend (see Fri-11/6 tweak in swaps.txt)
+KEN_SWAP_DAYS=set()   # disabled — no Kennedy<->Chiasson role swap (pure march in November)
 # --- Month-end night-float protection (Feb & Mar 2027) -----------------------
 # NOBODY whose block ends with the month may hold the month-end night float.
 # The march puts the final NF week of Feb and Mar on an LSH slot, i.e. on an
