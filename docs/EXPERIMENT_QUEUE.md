@@ -39,17 +39,19 @@ AUC of intra-burst 8–30 Hz for 30-day death is **0.589 [0.545, 0.633]** after 
 of the non-anoxic arm (**4/4 subgroups below 0.5, clustered within 0.028**). It retrodicts **N10**, which it
 was not built to explain. This is the most substantive candidate the project has produced.
 
+**Status at R393–R394: B and C below are DONE and survived. Only A remains.**
+
 **What it needs before it is a paper, in order:**
 
-A. **A real external replication.** I-CARE agrees in direction only — 0.511 [0.464, 0.557], which includes
+A. **A real external replication — now the only open item, and BLOCKED in the cloud sandbox.** TUH has no
+   `rsync` binary and no NEDC key here; run it from a machine that has them. I-CARE agrees in direction only — 0.511 [0.464, 0.557], which includes
    0.5. That is the single biggest weakness. I-CARE is all-anoxic so it cannot test the *contrast* at all;
    it can only test one arm. **A cohort with mixed aetiology and EEG is what this needs.** TUH is the obvious
    candidate and is already in the protocol.
-B. **Remove the death-ascertainment conditioning (L3).** Every estimate here requires an ascertained death
-   record. Re-run against an outcome that does not, or show the reversal is unchanged when the conditioning
-   is relaxed.
-C. **Re-derive aetiology without ICD codes if possible.** This project has already had to correct its ICD
-   definitions once, and the whole finding is an aetiology contrast.
+B. ~~Remove the death-ascertainment conditioning.~~ **DONE (R393)** — survives on the full 2,451-patient
+   cohort with survivors included, 0.589 [0.545, 0.633] vs 0.432 [0.397, 0.465].
+C. ~~Re-derive aetiology against a second definition.~~ **DONE (R394)** — arrest codes 0.592 [0.545, 0.639]
+   and encephalopathy codes 0.608 [0.554, 0.659] both confirm.
 D. **Explain it.** Effect modification is not a mechanism. The thalamocortical account (R389: the slowing
    flag's effect is genuinely larger after anoxia, interaction −0.750 [−1.433, −0.116]) is the leading
    explanation and connects to Schiff's mesocircuit framework (PMID 31994749).
