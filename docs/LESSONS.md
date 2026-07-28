@@ -2201,3 +2201,17 @@ never the risk; the definition was.**
   the expensive morphology shards intact while deleting the three-minute aetiology cache derived from them.
   Scripts that depend on a derived cache should rebuild it themselves when it is missing rather than assert
   and exit — the next session should not have to work out which of thirty files evaporated.
+
+- **Check whether a "structural limitation" is actually an extraction choice.** L3 — "every patient has an
+  ascertained death; the outcome is how soon, not whether" — sat at the top of the limits table for months and
+  bounded every aetiology analysis in the project. It was an artefact of which patient list a prior OMOP
+  extraction had been run against: the source table on S3 covers the whole database, and re-extracting took
+  sixteen minutes and gave 953 previously unlabelled survivors a measured aetiology. A limit that has been
+  written down long enough starts being reasoned around rather than re-tested. Before accepting one, ask what
+  produced it.
+
+- **An assumption that turns out wrong, with the conclusion surviving, is stronger evidence than an assumption
+  that turns out right.** R393 assumed patients with no diagnosis data were non-anoxic; 38.7 % of them were
+  anoxic, so ~369 sat in the wrong arm. Correcting them moved the aetiology gap from +0.157 to +0.151. Had the
+  assumption been correct, agreement between the assumed and measured analyses would have demonstrated almost
+  nothing — the finding is instead shown robust to a misclassification easily large enough to have broken it.

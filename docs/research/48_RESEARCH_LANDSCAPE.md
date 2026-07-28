@@ -104,6 +104,12 @@ failure mode that has defeated this project four separate times (N14 — four in
 we have no instrument for treatment assignment. Attempting it without one would produce a confidently wrong
 answer.
 
+**G′. NOTE (R398): one structural limit turned out to be self-inflicted.** L3 — every patient having an
+ascertained death — bounded every aetiology analysis here and was an artefact of which patient list a prior
+OMOP extraction targeted, not a property of HEEDB. Re-extracting took sixteen minutes and added 953
+survivors. **Before treating any limit in this document as structural, check whether it is an extraction
+choice.** The remaining limits below have been checked and are not.
+
 **G. Anything requiring separation of withdrawal from biological death.** **L2**: 46 % die inside the
 withdrawal window. This is a design limitation, not a sample-size one.
 

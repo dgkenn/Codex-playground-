@@ -1,4 +1,4 @@
-# HANDOFF — project state at R396 (2026-07-27)
+# HANDOFF — project state at R399 (2026-07-27)
 
 *Read `CLAUDE.md` first. This document is the scientific state: what is established, what is provisional,
 what is dead, and exactly what to do next. Every number here was verified against its raw log before being
@@ -9,7 +9,7 @@ written down.*
 ## 1. The one-paragraph state
 
 The project is a burst-suppression and clinical-EEG research programme on HEEDB (49,232 patients with
-reports), I-CARE (607 post-cardiac-arrest) and VitalDB (intraoperative). It has **396 logged results**. The
+reports), I-CARE (607 post-cardiac-arrest) and VitalDB (intraoperative). It has **399 logged results**. The
 core prognostic claim — suppression burden stratifies outcome within the guideline's worst tier, adds over
 the category, calibrates, and holds across hospitals and cohorts — is **solid and externally replicated**.
 The mechanism work has eliminated most candidates and produced **one substantive lead at R389–R392: the
@@ -73,7 +73,14 @@ verified from MEDLINE).
    **structurally incapable** of testing an aetiology contrast; it can only ever test one arm.
 2. **The registered rule was too weak.** It required only directional external agreement, and passed on
    evidence that establishes almost nothing. Catalogue rule 30 exists because of this.
-3. ~~**Death-ascertainment conditioning (L3)** applies to every estimate.~~ **CLOSED (R393).** Rebuilt on the
+3. ~~**Death-ascertainment conditioning (L3)** applies to every estimate.~~ **CLOSED PROPERLY (R398–R399),
+   after R393's version turned out to rest on a wrong assumption.** The decedents-only restriction was an
+   extraction artefact: re-extracting `condition_occurrence` against all 2,473 morphology patients gave 953
+   of the 954 survivors an aetiology they had never had. They are **38.7 % anoxic**, so R393 had ~369
+   patients in the wrong arm. On measured labels the reversal holds — anoxic n=1,187 **0.577 [0.547, 0.608]**
+   versus non-anoxic n=1,262 **0.426 [0.392, 0.461]** — and correcting the misassignment moved the gap only
+   from +0.157 to +0.151. **L3 is lifted for aetiology, not for outcome ascertainment.** Superseded text
+   follows for the record: **(R393).** Rebuilt on the
    full 2,451-patient cohort treating an absent death record as alive: anoxic 0.589 [0.545, 0.633] versus
    non-anoxic 0.432 [0.397, 0.465]. The two analyses have opposite ascertainment biases and agree.
    *Qualification:* ascertainment is 100 % in anoxic and 41.6 % in non-anoxic, so the anoxic arm is identical
