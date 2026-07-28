@@ -152,8 +152,15 @@ def main():
                 except (KeyError, TypeError, ValueError):
                     pass
 
+    # Prefer the full re-extract (R398, decedents AND survivors). Fall back to the original
+    # decedents-only extract if /tmp has been wiped -- the container reclaims it without warning, and an
+    # answer on the smaller cohort beats no answer. The cohort actually used is printed.
+    src = f"{OMOP_NEW}/condition_occurrence.csv"
+    if not os.path.exists(src):
+        src = f"{OMOP_OLD}/condition_occurrence.csv"
+        print(f"   [v2 extract absent — falling back to {src} (decedents only)]")
     anox = {}
-    with open(f"{OMOP_NEW}/condition_occurrence.csv") as fh:
+    with open(src) as fh:
         for r in csv.DictReader(fh):
             try:
                 p = int(r["person_id"])
@@ -163,7 +170,8 @@ def main():
             c = norm(r.get("condition_source_value"))
             if c and any(c.startswith(x) for x in AETIOLOGY["anoxic"]):
                 anox[p] = True
-    assert anox, f"{OMOP_NEW}/condition_occurrence.csv missing — run the re-extraction first"
+    assert anox, "no condition_occurrence extract found — run analysis/heedb_omop_extract.py"
+    print(f"   aetiology source: {src}  ({len(anox):,} patients)")
 
     ab = defaultdict(list)
     for path in sorted(glob.glob(MORPH)):

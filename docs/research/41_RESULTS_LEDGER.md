@@ -2340,3 +2340,74 @@ for *aetiology*, not for outcome ascertainment. And none of this touches the lea
 replication in a mixed-aetiology cohort, which does not exist among the data available here.
 
 **Cumulative distinct results: 399.**
+
+---
+
+## R400–R402 · Is the reversal a self-fulfilling prophecy? One arm says clearly no; the other is unresolved
+
+**The field's central methodological problem.** Every EEG neuroprognostication study after cardiac arrest is
+contaminated by self-fulfilling prophecy: the clinician reads the EEG, it looks malignant, care is withdrawn,
+and the EEG is recorded as having predicted the death it helped cause. This project hit the same wall — **L2**
+(46 % die inside the withdrawal window) and **N14** (four instruments failed to separate withdrawal from
+biological death).
+
+**Why this measure is unusual.** Intra-burst 8–30 Hz content requires an FFT inside segmented bursts. It
+appears in no clinical report and no clinician reads it, so **it cannot enter a withdrawal decision** — and a
+self-fulfilling prophecy requires the predictor to be visible to the decision-maker. The reversal sharpens
+that: a behavioural mechanism would have to act on an invisible feature in *opposite directions by aetiology*.
+
+**Cohort caveat, stated first because it bounds R401.** `/tmp` was wiped mid-session and the R398 full
+extract was lost, so this ran on the fallback **decedents-only** aetiology extract (n = 1,496).
+
+### R400 · W1 — the reversal survives adjustment for what the clinician recorded — CONFIRMED
+
+Adjusting for the two flags the treating team actually documented (burst suppression, generalized slowing):
+
+| | n | intra-burst coefficient, adjusted for the visible flags |
+|---|---|---|
+| anoxic | 818 | **+1.671 [+0.606, +2.941]** |
+| non-anoxic | 678 | **−2.271 [−4.164, −0.855]** |
+
+**Interaction +4.287 [+2.535, +6.560].** Both arms individually exclude zero, in opposite directions, *after*
+controlling for what the decision process had in front of it. The reversal is not a proxy for the recorded
+features.
+
+### R401 · W2 — the day-3 landmark — NOT confirmed on the strict criterion
+
+Restricting to patients alive at day 3 (985 of 1,496; 34.2 % died inside the window):
+
+| | n | event rate | AUC |
+|---|---|---|---|
+| anoxic | 431 | 65.2 % | **0.549 [0.496, 0.606]** — includes 0.5 |
+| non-anoxic | 554 | 40.6 % | **0.409 [0.359, 0.456]** — excludes 0.5 |
+
+Gap +0.141, directionally intact, but **the anoxic arm loses significance** and the registered criterion
+required both intervals to exclude 0.5. Two readings, and this cohort cannot separate them: power (n falls
+818 → 431) or a genuinely early-death-weighted anoxic association.
+
+**A second limitation makes R401 weaker than it looks, and it is the fallback cohort's fault.** On a
+decedents-only cohort, "alive at day 3" does not mean *survived* — everyone in it eventually died. The
+landmark therefore contrasts *died 4–30 days* against *died later*, not survival against death, which is not
+the estimand the withdrawal argument needs. **R401 must be re-run on the full cohort with survivors included
+before it means anything**, and that re-extraction is running.
+
+### R402 · W3 — the invisible measure discriminates better than the visible ones
+
+AUC for 30-day death, same cohort:
+
+| feature | visible to clinician? | anoxic | non-anoxic |
+|---|---|---|---|
+| burst suppression flag | **yes** | 0.525 | 0.511 |
+| generalized slowing flag | **yes** | 0.325 | 0.466 |
+| intra-burst 8–30 Hz | **no** | **0.589** | **0.407** |
+
+The documented burst-suppression flag is close to uninformative in both arms (0.525 / 0.511). The invisible
+measure discriminates better in both, **and is the only one of the three that reverses**. The slowing flag's
+0.325 in anoxic is the P6 effect — its presence marks survival — and it does not reverse.
+
+**What can and cannot be claimed.** Nothing observational proves the absence of a self-fulfilling prophecy
+without a withdrawal variable, and N14 records four failed attempts to build one. What R400 supports is
+narrower and still worth having: **the association does not depend on the features the treating team recorded
+and acted on.** The landmark argument (R401) is not yet established and may not survive.
+
+**Cumulative distinct results: 402.**
