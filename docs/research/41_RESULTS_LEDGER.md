@@ -2288,3 +2288,55 @@ The anoxic arm is unaffected either way: all 818 anoxic patients have death reco
 both conventions — which R393 already noted.
 
 **Cumulative distinct results: 397.**
+
+---
+
+## R398–R399 · L3 was an extraction artefact for aetiology, and the reversal survives measured labels
+
+R397 established that the extracted `condition_occurrence` table contained **only patients with a death
+record**, which made R393's expanded non-anoxic arm an assumption rather than a measurement. Investigating
+*why* produced something better than a caveat: **zero of the 954 survivors appeared in the extract while the
+source table on S3 covers the whole database**, so the restriction came from which patient list a prior
+extraction was run against — not from HEEDB.
+
+### R398 · Re-extraction: the survivors were never missing from the data
+
+`condition_occurrence` re-extracted against all 2,473 morphology patients, decedents and survivors alike:
+**3,592,798 rows over 2,471 distinct patients**, 179 parquet parts at ~11.4 parts/min (16 minutes).
+
+| | aetiology known | of the 954 survivors |
+|---|---|---|
+| old extract | 1,496 | **0** |
+| new extract | **2,449** | **953** |
+
+**The newly labelled survivors are 38.7 % anoxic**, against 54.7 % among decedents. So R393's assumption —
+that unlabelled patients were non-anoxic — was **materially wrong**: roughly 369 of those 953 are anoxic and
+had been assigned to the wrong arm.
+
+**L3 is lifted for the aetiology analyses.** "Every patient has an ascertained death; the outcome is how soon,
+not whether" has bounded this project throughout, and for aetiology it was never a property of HEEDB.
+
+### R399 · The reversal on measured labels — three cohorts, identical code
+
+| cohort | anoxic | non-anoxic | gap |
+|---|---|---|---|
+| **(a)** decedents only, measured *(the R390 cohort)* | n=818, **0.589 [0.545, 0.633]** | n=678, **0.407 [0.364, 0.450]** | +0.182 |
+| **(b)** all patients, aetiology **assumed** *(the R393 cohort)* | n=818, **0.589 [0.544, 0.632]** | n=1,633, **0.432 [0.397, 0.467]** | +0.157 |
+| **(c)** all patients, aetiology **measured** *(corrected)* | n=**1,187**, **0.577 [0.547, 0.608]** | n=**1,262**, **0.426 [0.392, 0.461]** | +0.151 |
+
+**All three show the reversal with every interval excluding 0.5.** Cohort (c) supersedes both: the anoxic arm
+grows 818 → 1,187 by adding the misassigned anoxic survivors, the non-anoxic arm is measured rather than
+assumed, 30-day death falls from 81.7 % to 56.3 % (anoxic) and 51.5 % to 27.7 % (non-anoxic) because real
+survivors are now present, and **the anoxic interval tightens to [0.547, 0.608]**.
+
+**The most informative part is that R393's assumption was wrong and the conclusion held anyway.** Had the
+assumption been correct, (b) and (c) agreeing would say little. Instead ~369 patients were in the wrong arm,
+correcting them moved the gap by only 0.006, and the reversal is therefore robust to a misclassification large
+enough to have broken it.
+
+**What is still not fixed.** Survivors are defined as "no death record", which conflates alive with
+unascertained, so they contribute 953 guaranteed non-events (V4: they cannot be scored alone). L3 is lifted
+for *aetiology*, not for outcome ascertainment. And none of this touches the lead's open weakness — external
+replication in a mixed-aetiology cohort, which does not exist among the data available here.
+
+**Cumulative distinct results: 399.**
