@@ -2522,3 +2522,48 @@ shows the same dependence and cannot be so confounded. **Any manuscript must pre
 result and the behavioural explanation together**, not the former alone.
 
 **Cumulative distinct results: 406.**
+
+---
+
+## R407 · Burst suppression loses most of its aetiology-dependence past the withdrawal window; the invisible measure does not
+
+R404–R406 left two readings of the guideline result — aetiology-dependent **biology**, or guideline-driven
+**behaviour** — and could not separate them. They differ in *when* the deaths occur: withdrawal is
+concentrated in the first days. So each predictor's aetiology interaction was estimated twice on identical
+code, in the full cohort and restricted to patients alive at day 3 (n = 9,302; 12.8 % died inside the window).
+
+| predictor | read by clinicians? | full cohort | alive at day 3 | retained |
+|---|---|---|---|---|
+| **burst suppression** | **yes** | **+0.42 [+0.21, +0.64]** | **+0.15 [−0.09, +0.41]** | **37 %** |
+| LPD | yes | −0.53 [−0.82, −0.23] | −0.28 [−0.62, +0.05] | 53 % |
+| generalized slowing | yes | −1.22 [−1.50, −0.96] | −0.90 [−1.23, −0.58] | 73 % |
+| seizure | yes | −0.60 [−0.81, −0.40] | −0.45 [−0.69, −0.21] | 74 % |
+| focal slowing | yes | −0.78 [−1.08, −0.45] | −0.74 [−1.17, −0.35] | 95 % |
+| GPD | yes | −0.16 [−0.38, +0.06] | +0.31 [+0.04, +0.56] | *unstable* |
+| **intra-burst 8–30 Hz** | **no** | **+4.65 [+3.15, +6.47]** | **+4.31 [+2.41, +6.47]** | **93 %** |
+
+### The verdict, stated more narrowly than the script's own summary
+
+**The script's pooled median (63 %) is contaminated and should not be quoted.** GPD's full-cohort interaction
+is −0.16 [−0.38, +0.06] — not distinguishable from zero — so dividing by it yields a meaningless ratio
+(−195 %). Excluding it, the five interpretable visible flags retain 37 %, 53 %, 73 %, 74 %, 95 %, median
+**73 %**, against **93 %** for the invisible measure. **The ranges overlap**: focal slowing retains 95 %,
+above the invisible measure. So the general claim "visible findings attenuate more than invisible ones" is
+true only on the median and is not strongly supported.
+
+**What IS strongly supported is narrower and more interesting.** **Burst suppression — the single finding the
+guidelines explicitly name as a malignant pattern and a withdrawal trigger after cardiac arrest, and nowhere
+else — retains only 37 %, and its day-3 interaction no longer excludes zero (+0.15 [−0.09, +0.41]).** The
+invisible measure, over the same landmark, retains 93 % and still excludes zero.
+
+That is exactly the pattern the behavioural account predicts **for the specific finding guidelines act on**,
+and it is not a generic property of being clinician-visible: focal slowing, which no guideline names as a
+withdrawal trigger, barely attenuates at all. The gradient across the visible flags tracks how strongly each
+is guideline-actioned, which is a stronger form of the argument than the pooled comparison.
+
+**Limits.** Withdrawal is unmeasured (N14) — this is an argument from timing, not proof. The invisible
+measure is estimated on 2,449 patients rather than 9,302, so its interval is wider and its retained fraction
+less precisely estimated. And R403 already showed the invisible measure's own anoxic arm attenuates, so it is
+not a zero-attenuation reference; the comparison is relative throughout.
+
+**Cumulative distinct results: 407.**
