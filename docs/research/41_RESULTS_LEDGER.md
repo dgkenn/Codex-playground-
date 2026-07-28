@@ -2232,3 +2232,59 @@ the withdrawal window, and this remains effect modification. Nor does it address
 weakness, external replication, which needs a mixed-aetiology cohort.
 
 **Cumulative distinct results: 396.**
+
+---
+
+## R397 · The reversal holds at BOTH hospitals independently — and a correction to R393
+
+External replication is unavailable for reasons now fully documented: **I-CARE is entirely cardiac arrest** so
+it cannot test a contrast *between* aetiologies at all, and **TUH — access approved 2026-07-27 — carries no
+outcome field and no diagnosis field**, so permission changed and contents did not. No known cohort has EEG +
+outcome + mixed aetiology besides HEEDB. The strongest available test is therefore the hospital split, and it
+is **internal validation, not external replication**.
+
+### R397 · Hospital split
+
+| site | n | anoxic | 30-d death | anoxic AUC | non-anoxic AUC | gap |
+|---|---|---|---|---|---|---|
+| **S0001** | 928 | 55.7 % | 66.6 % | **0.570 [0.515, 0.624]** | **0.429 [0.375, 0.487]** | **+0.141** |
+| **S0002** | 568 | 53.0 % | 70.2 % | **0.617 [0.532, 0.698]** | **0.375 [0.310, 0.446]** | **+0.242** |
+
+**Present at both hospitals independently, with all four intervals excluding 0.5.** S0001 contributes roughly
+twice the recordings of S0002, so a finding carried by the larger site alone was a live possibility; it is not
+what happened.
+
+**Heterogeneity tested rather than eyeballed** (comparing two intervals by eye is the
+comparison-of-significance error this project has committed before): bootstrapped between-site difference in
+the aetiology gap is **−0.099 [−0.227, +0.035]** — contains zero, so the sites do not differ detectably.
+
+**What this is worth.** HEEDB's two sites differ in equipment, technologists and reading clinicians, so
+agreement across them is not nothing. They are also hospitals in one regional academic network — **limitation
+L4, the same one recorded for I-CARE.** This is the best available evidence and it is not a second health
+system, and it should be reported in those words.
+
+### CORRECTION to R393 — the "unconditioned" arm was partly an assumption
+
+The site-split run reported **100.0 % death-record ascertainment at both sites**, and its unconditioned and
+decedents-only arms came out byte-identical. That is a tell, and checking it exposed a structural property of
+the data nobody had established:
+
+**The OMOP `condition_occurrence` table contains only decedents — all 16,233 patients in it have a death
+record.** Therefore *any* analysis requiring an aetiology label is automatically restricted to patients who
+died. A genuinely aetiology-labelled, death-unconditioned analysis **is not possible in this dataset.**
+
+R393 claimed the reversal survives removing the death-ascertainment conditioning, expanding the non-anoxic arm
+from 679 to 1,633. Those 954 additional patients had **no condition data at all** and were classified
+non-anoxic by a code default (`split.get(p, (False, False))`) rather than by measurement. **That is an
+assumption, and R393 presented it as a measurement.**
+
+**The assumption is defensible and should be argued rather than assumed:** the condition table is
+decedents-only, anoxic patients in this cohort die at 81.7 %, so patients with no death record are very
+unlikely to be anoxic. The expanded arm's AUC of 0.432 [0.397, 0.465] is therefore probably a fair estimate.
+But **R393's status changes from "closed" to "closed under a stated assumption"**, and the honest summary of
+the death-conditioning weakness is that it cannot be fully removed with this data.
+
+The anoxic arm is unaffected either way: all 818 anoxic patients have death records, so it is identical under
+both conventions — which R393 already noted.
+
+**Cumulative distinct results: 397.**

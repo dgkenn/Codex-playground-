@@ -2187,3 +2187,17 @@ never the risk; the definition was.**
   script gone locally. All of it was recoverable in one `git reset --hard origin/<branch>` because each step
   had been pushed as it completed. Had work been batched into one commit at the end, the session would have
   been lost. Treat `origin` as the only durable store, and the local tree as scratch.
+
+- **The container can roll the git repository back to an arbitrary earlier commit, twice in one session.**
+  Both times the working tree and local HEAD reverted to a commit predating hours of work while `/tmp` partly
+  survived, so the failure looks like nothing happened rather than like an error. Everything was recoverable
+  because each step had been pushed. **Two operational consequences.** First, `origin` is the only durable
+  store — push after every commit, never batch. Second, **after any container restart, check `git log -1`
+  before doing anything else**: work committed onto a rolled-back base lands on a stale tree, and an append to
+  a stale ledger will silently drop every result logged in between. That happened here and was caught only
+  because the push was rejected as non-fast-forward.
+
+- **Caches in `/tmp` disappear independently of each other.** A restart left the 1 GB OMOP source table and
+  the expensive morphology shards intact while deleting the three-minute aetiology cache derived from them.
+  Scripts that depend on a derived cache should rebuild it themselves when it is missing rather than assert
+  and exit — the next session should not have to work out which of thirty files evaporated.
