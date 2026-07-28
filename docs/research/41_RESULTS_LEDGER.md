@@ -2820,3 +2820,54 @@ the arrest-to-EEG lag is unmeasured. Smearing degrades a true spike, so this nul
 (B) — it is decisive only against the claim that we have *evidence for* (B).
 
 **Cumulative distinct results: 410.**
+
+---
+
+## R411 · R403 and R409 both stand. The reversal survives the landmark; the anoxic arm genuinely does not
+
+R403 warned that the lead's anoxic arm does not survive the withdrawal window. R409 found the aetiology
+interaction retains 93 % across the same landmark, inside its matched null. The registered hypothesis here
+was that **R403 was a power artefact** — split a cohort, require each half to clear its own null, and false
+negatives follow. **That hypothesis is refuted.** Both results are correct, about different quantities.
+
+### W1 · Both estimands, one cohort (n = 2,449), identical code
+
+| | n | deaths | **interaction** | anoxic arm AUC | non-anoxic arm AUC |
+|---|---|---|---|---|---|
+| full cohort | 2,449 | 41.5 % | **+4.646 [+3.092, +6.547]** | 0.577 [0.546, 0.610] | 0.426 [0.390, 0.461] |
+| alive at day 3 | 1,938 | 26.1 % | **+4.313 [+2.335, +6.481]** | **0.535 [0.491, 0.578]** ← includes 0.5 | 0.428 [0.388, 0.471] |
+
+### W2 · The matched null applied to the arm-wise statistic — which R403 never did
+
+Subsamples of the **full** anoxic arm at the landmark's size (800) and event rate (35.1 %), no landmark:
+
+| arm | matched subsamples, median AUC | % whose interval includes 0.5 | actual day-3 subsample |
+|---|---|---|---|
+| **anoxic** | 0.579 | **1 %** | **0.535 [0.488, 0.577]** |
+| non-anoxic | 0.427 | **0 %** | 0.428 [0.386, 0.470] |
+
+**R403 STANDS.** Only 1 % of same-size, same-event-rate subsamples fail the test that the day-3 subsample
+fails, so the anoxic arm's drop from 0.577 to 0.535 is **not** explained by having fewer patients. It is
+explained by *which* patients were removed.
+
+### The reconciliation, and it is not a compromise
+
+Both are true because they measure different things. **The interaction is a contrast**, and it survives
+(93 % retained, still excluding zero) because the **non-anoxic arm is completely unmoved** — 0.426 → 0.428,
+with 0 % of matched subsamples failing. The reversal therefore survives the withdrawal window. **The anoxic
+arm's prognostic information is genuinely concentrated in patients who die early**, beyond anything power
+explains.
+
+**So the handoff's §3 warning stands and is now better evidenced than when it was written** — it rested on a
+CI that included 0.5, which is weak; it now rests on a matched null that puts that failure at the 1st
+percentile. R410 remains the reason the *cause* is undetermined: front-loaded hypoxic-ischaemic mortality and
+withdrawal predict the same concentration, and there is no timing fingerprint to separate them.
+
+### What the paper should claim
+
+The estimand was fixed before the numbers: the claim is that the **direction** of association differs by
+aetiology, so **the interaction is the test** (+4.646 [+3.092, +6.547] full, +4.313 [+2.335, +6.481] past the
+landmark) and the arm-wise AUCs are descriptive. The anoxic arm's early-death concentration belongs in the
+abstract, not the limitations — R403's original instruction, now with a control behind it.
+
+**Cumulative distinct results: 411.**
