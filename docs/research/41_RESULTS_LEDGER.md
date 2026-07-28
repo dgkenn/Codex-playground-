@@ -2411,3 +2411,49 @@ narrower and still worth having: **the association does not depend on the featur
 and acted on.** The landmark argument (R401) is not yet established and may not survive.
 
 **Cumulative distinct results: 402.**
+
+---
+
+## R403 · W2 re-run on the full cohort — the ANOXIC arm does NOT survive the withdrawal window
+
+R401 was flagged as uninterpretable because `/tmp` had been wiped and it ran on a decedents-only fallback,
+where "alive at day 3" does not mean *survived*. The re-extraction is complete (2,449 patients with measured
+aetiology, survivors included) and this is the proper version. **It does not confirm, and with more power than
+before.**
+
+Restricting to patients alive at day 3 — **1,938 of 2,449**, so 20.9 % died inside the withdrawal window:
+
+| | n | died by day 30 | AUC |
+|---|---|---|---|
+| anoxic | 800 | 35.1 % | **0.535 [0.492, 0.580]** — includes 0.5 |
+| non-anoxic | 1,138 | 19.8 % | **0.428 [0.388, 0.471]** — excludes 0.5 |
+
+Gap +0.106, directional only. The anoxic arm is now estimated on **800** patients rather than the 431 of the
+fallback run, so this is not a power failure of the kind R401 left open.
+
+### What this does to the lead, stated plainly
+
+**The two arms of the reversal are not equally robust to the withdrawal window.**
+
+- **The non-anoxic (protective) direction survives it**: 0.407 in the full cohort → **0.428 [0.388, 0.471]**
+  among day-3 survivors, interval still excluding 0.5.
+- **The anoxic (harmful) direction does not**: 0.589 in the full cohort → **0.535 [0.492, 0.580]** among
+  day-3 survivors. Its association is **concentrated in early deaths — precisely the window in which
+  withdrawal of care dominates.**
+
+That is the pattern a partial self-fulfilling prophecy would produce *in the anoxic arm specifically*, and
+anoxic patients are exactly the population in which EEG-guided withdrawal is most aggressive. It is also
+consistent with the biology genuinely being about early mortality after anoxia. **This design cannot separate
+those two**, which is N14 restated.
+
+**It does not overturn the reversal.** The full-cohort result stands with every robustness check it passed
+(burden strata 3/3, burst-count strata 3/3, non-anoxic decomposition 4/4, both hospitals, two aetiology
+definitions, measured labels). W1 also stands: adjusted for the flags clinicians actually recorded, the
+interaction is **+4.287 [+2.535, +6.560]**, so the reversal is not a proxy for what the decision process saw.
+
+**But the honest headline changes.** The claim is no longer "an aetiology reversal robust to the withdrawal
+problem". It is: *a reversal whose protective arm is robust to the withdrawal window and whose harmful arm is
+not distinguishable from withdrawal-driven early mortality.* Any manuscript must say that in the abstract,
+not the limitations.
+
+**Cumulative distinct results: 403.**
