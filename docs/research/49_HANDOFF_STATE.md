@@ -1,4 +1,4 @@
-# HANDOFF — project state at R406 (2026-07-27)
+# HANDOFF — project state at R407 (2026-07-27)
 
 *Read `CLAUDE.md` first. This document is the scientific state: what is established, what is provisional,
 what is dead, and exactly what to do next. Every number here was verified against its raw log before being
@@ -9,7 +9,7 @@ written down.*
 ## 1. The one-paragraph state
 
 The project is a burst-suppression and clinical-EEG research programme on HEEDB (49,232 patients with
-reports), I-CARE (607 post-cardiac-arrest) and VitalDB (intraoperative). It has **406 logged results**. The
+reports), I-CARE (607 post-cardiac-arrest) and VitalDB (intraoperative). It has **407 logged results**. The
 core prognostic claim — suppression burden stratifies outcome within the guideline's worst tier, adds over
 the category, calibrates, and holds across hospitals and cohorts — is **solid and externally replicated**.
 The mechanism work has eliminated most candidates and produced **one substantive lead at R389–R392: the
@@ -115,6 +115,13 @@ Five of six ACNS findings behave differently by aetiology, four surviving adjust
 Pre-specified primary: **burst suppression predicts death after anoxia (+0.47 [+0.29, +0.66]) and carries
 essentially nothing otherwise (+0.05 [−0.06, +0.16])**, interaction +0.42 [+0.20, +0.64]. **LPD reverses
 sign** (−0.25 anoxic vs +0.28 [+0.16, +0.41] non-anoxic).
+
+**R407 sharpens this.** Estimating each interaction again among patients alive at day 3: **burst suppression
+retains only 37 %** and its interaction no longer excludes zero (+0.15 [−0.09, +0.41]), while the **invisible
+intra-burst measure retains 93 %** and still does. Burst suppression is the one finding guidelines name as a
+withdrawal trigger after cardiac arrest; focal slowing, which no guideline actions, retains 95 %. The gradient
+tracks how strongly each finding is guideline-actioned. *(The pooled visible-vs-invisible comparison is weak —
+ranges overlap — so quote the per-finding gradient, not an average.)*
 
 **Do not report this without its second reading.** These are the flags clinicians read, and guidelines tell
 them to act on burst suppression after cardiac arrest and not otherwise — so "predicts death only after

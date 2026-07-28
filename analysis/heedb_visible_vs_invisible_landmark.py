@@ -183,10 +183,16 @@ def main():
         a0 = inter(v, everyone, f); a1 = inter(v, alive3, f)
         if not (a0 and a1) or abs(a0[0]) < 1e-9:
             continue
+        # The retained fraction is meaningless when the full-cohort interaction is itself
+        # indistinguishable from zero -- dividing by ~0 produced -195 % for GPD on the first run and
+        # contaminated the pooled median. Such predictors are shown but excluded from any summary.
+        stable = a0[1] * a0[2] > 0
         frac = a1[0] / a0[0]
-        ret[f] = frac
+        if stable:
+            ret[f] = frac
         print(f"{f:>22} {'YES':>5} {f'{a0[0]:+.2f} [{a0[1]:+.2f},{a0[2]:+.2f}]':>24} "
-              f"{f'{a1[0]:+.2f} [{a1[1]:+.2f},{a1[2]:+.2f}]':>24} {100*frac:>9.0f}%")
+              f"{f'{a1[0]:+.2f} [{a1[1]:+.2f},{a1[2]:+.2f}]':>24} "
+              f"{(f'{100*frac:>8.0f}%' if stable else '  unstable'):>10}")
     # invisible measure, on the subset that has it, both windows
     b0 = inter(abv, has_ab, "intra-burst")
     b1 = inter(abv, has_ab & alive3, "intra-burst")
@@ -202,16 +208,22 @@ def main():
     print("\n" + "=" * 104)
     print("VERDICT")
     print("=" * 104)
-    vis = [ret[f] for f in FLAGS if f in ret]
+    vis = [ret[f] for f in FLAGS if f in ret]   # only predictors with a stable denominator
+    print("   (predictors whose full-cohort interaction spans zero are excluded — their retained")
+    print("    fraction divides by ~0 and is not a quantity.)")
     inv = ret.get("intra-burst 8-30 Hz")
     if vis and inv is not None:
         print(f"   visible flags retained: {', '.join(f'{100*x:.0f}%' for x in vis)}   "
               f"(median {100*np.median(vis):.0f}%)")
         print(f"   invisible measure retained: {100*inv:.0f}%")
-        if np.median(vis) < inv - 0.15:
-            print("   X2 CONFIRMED — the visible findings lose more of their aetiology-dependence past the")
-            print("   withdrawal window than the invisible one does. Consistent with part of the visible")
-            print("   effect being guideline-driven rather than biological.")
+        overlap = max(vis) >= inv
+        if np.median(vis) < inv - 0.15 and not overlap:
+            print("   X2 CONFIRMED — every visible finding loses more than the invisible one.")
+        elif np.median(vis) < inv - 0.15:
+            print("   X2 PARTIAL — the median visible finding attenuates more, but the RANGES OVERLAP")
+            print(f"   (max visible {100*max(vis):.0f}% vs invisible {100*inv:.0f}%), so the general claim is")
+            print("   weak. Read the per-finding gradient instead: the findings guidelines actually name as")
+            print("   withdrawal triggers should attenuate most, and that is the testable pattern.")
         elif abs(np.median(vis) - inv) <= 0.15:
             print("   X2 FALSIFIED — visible and invisible attenuate similarly, so the landmark removes signal")
             print("   from all predictors alike and this test provides NO evidence for the behavioural")
