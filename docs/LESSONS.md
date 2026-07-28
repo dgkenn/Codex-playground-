@@ -2215,3 +2215,18 @@ never the risk; the definition was.**
   anoxic, so ~369 sat in the wrong arm. Correcting them moved the aetiology gap from +0.157 to +0.151. Had the
   assumption been correct, agreement between the assumed and measured analyses would have demonstrated almost
   nothing — the finding is instead shown robust to a misclassification easily large enough to have broken it.
+
+- **When a variable is one clinicians act on, "it predicts outcome differently in group X" may be a fact about
+  the guidelines, not the biology.** Burst suppression predicts death after anoxia and carries essentially
+  nothing otherwise (+0.47 versus +0.05). That is a clean, actionable-looking result — and it is exactly what
+  guideline-driven withdrawal would manufacture, because guidelines name burst suppression as malignant after
+  cardiac arrest and nowhere else. The finding cannot distinguish the two in this design. What made the
+  question answerable at all was having a second measure that **no clinician reads**, whose aetiology
+  dependence cannot be behavioural. **Before reporting effect modification on a clinically actionable
+  variable, ask whether the modifier also modifies clinician behaviour.**
+
+- **An invisible predictor is a methodological asset, not just a curiosity.** The whole reason the
+  self-fulfilling prophecy is unfalsifiable in this literature is that the predictors are the things
+  clinicians see. A predictor requiring an FFT inside segmented bursts is immune by construction, and that
+  property turned out to be worth more than any individual association it produced — it is the only reason
+  the guideline result above can be interpreted at all.

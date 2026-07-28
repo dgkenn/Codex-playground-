@@ -1,4 +1,4 @@
-# HANDOFF — project state at R403 (2026-07-27)
+# HANDOFF — project state at R406 (2026-07-27)
 
 *Read `CLAUDE.md` first. This document is the scientific state: what is established, what is provisional,
 what is dead, and exactly what to do next. Every number here was verified against its raw log before being
@@ -9,7 +9,7 @@ written down.*
 ## 1. The one-paragraph state
 
 The project is a burst-suppression and clinical-EEG research programme on HEEDB (49,232 patients with
-reports), I-CARE (607 post-cardiac-arrest) and VitalDB (intraoperative). It has **403 logged results**. The
+reports), I-CARE (607 post-cardiac-arrest) and VitalDB (intraoperative). It has **406 logged results**. The
 core prognostic claim — suppression burden stratifies outcome within the guideline's worst tier, adds over
 the category, calibrates, and holds across hospitals and cohorts — is **solid and externally replicated**.
 The mechanism work has eliminated most candidates and produced **one substantive lead at R389–R392: the
@@ -106,6 +106,21 @@ verified from MEDLINE).
    so the finding does not rest on one code list.
 5. **It is effect modification, not a mechanism.** It says the same measurement means opposite things in two
    populations; it does not say why.
+
+---
+
+## 3b. THE SECOND FINDING (R404–R406) — guideline transfer, n = 9,302
+
+Five of six ACNS findings behave differently by aetiology, four surviving adjustment for measured burden.
+Pre-specified primary: **burst suppression predicts death after anoxia (+0.47 [+0.29, +0.66]) and carries
+essentially nothing otherwise (+0.05 [−0.06, +0.16])**, interaction +0.42 [+0.20, +0.64]. **LPD reverses
+sign** (−0.25 anoxic vs +0.28 [+0.16, +0.41] non-anoxic).
+
+**Do not report this without its second reading.** These are the flags clinicians read, and guidelines tell
+them to act on burst suppression after cardiac arrest and not otherwise — so "predicts death only after
+anoxia" is exactly what guideline-driven withdrawal would manufacture. The tie-breaker is that the
+**invisible** intra-burst measure shows the same dependence and cannot be behavioural (+4.287 [+2.535,
++6.560] adjusted for these flags, R400). The two must be presented together.
 
 ---
 
