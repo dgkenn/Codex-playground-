@@ -3,19 +3,39 @@
 > Read `CLAUDE.md`, then **`docs/research/49_HANDOFF_STATE.md`** (what is established / dead / next) and
 > **`docs/research/48_RESEARCH_LANDSCAPE.md`** (what this data can and cannot settle) before pulling an item.
 
-## ACTIVE (2026-07-27) — mechanism hunt for the clinician-flag residual, and the BSP methods thread
+## ACTIVE (2026-07-28) — re-ranked after the R400–R411 cadence
 
-**The constraint that drives everything below.** R358–R360: the clinician's "generalized slowing" flag carries
-**−0.752 [−1.075, −0.434]** beyond suppression burden AND our intra-burst 8–30 Hz measure. A human reading the
-record sees something our numbers do not. Four candidates were named; two are now gone.
+**The withdrawal / self-fulfilling-prophecy thread is CLOSED.** R409 falsified the visible-versus-invisible
+contrast on paired patients, R410 found no 72-hour timing fingerprint, and withdrawal itself has now failed
+six proxies. See `49_HANDOFF_STATE.md` §3.0 before touching anything in that area — the elimination is the
+result, and re-running any part of it is wasted compute.
 
-| candidate | status |
+**What R411 settled, because it changes what the paper claims.** The lead's estimand is the **interaction**
+(the claim is that the *direction* differs by aetiology): **+4.646 [+3.092, +6.547]** full cohort,
+**+4.313 [+2.335, +6.481]** past the day-3 landmark — it survives. The anoxic arm separately does not
+(0.577 → 0.535), and a matched null puts that failure at the **1st percentile**, so it is real and not a
+power artefact. Both sentences go in the abstract.
+
+| # | item | status / why it ranks here |
+|---|---|---|
+| **1** | **Waveform shape rather than band power** | The only item with a live constraint behind it. The slowing flag carries **−0.752 [−1.075, −0.434]** beyond burden *and* intra-burst content (R358–R360); its two rival explanations are eliminated. Stereotypy at 1 s and 2 s is already extracted, so it is also the cheapest thing on this list. Apply catalogue rule 28. |
+| **2** | **Time dose-response in the anoxic arm** | R411 showed the early-death concentration is real. Open: does the arm's AUC decline smoothly with landmark day or step? The R408 matched null makes it interpretable for the first time. All data local. |
+| **3** | **Aetiology reversal by hospital, with a matched null** | S0001 vs S0002 is the strongest external check that exists — no cohort anywhere has EEG + outcome + mixed aetiology. R397 ran it without a matched null. |
+| **4** | **Spindles beyond depth** | Mostly done (R395–R396). Open piece: the interaction goes marginal (−0.252 [−0.507, +0.001]) under the aggressive `awake` adjustment. |
+
+## DO NOT RE-OPEN
+
+| dead end | killed by |
 |---|---|
-| whole-record background spectrum | **eliminated** (B3, R361–R364): mutually redundant with the intra-burst measure |
-| spatial distribution / topography | **eliminated** (T3, R365–R368): +0.014 [−0.021, +0.040] over burden + background + intra-burst |
-| reactivity | **unavailable** in this schema — no stimulation annotation |
-| temporal evolution within the record | **open, and now the leading candidate** |
-| specific waveform morphology rather than band power | **open** |
+| any withdrawal / WLST proxy | six failures — N14's four, `procedure_occurrence` (extubation is not billable), `visit_disposition.discharge_to_source_value` (100 % empty, 38,893 rows, 715 patients) |
+| TUH as an outcome-replication cohort | R321 — no outcome data and no diagnosis field; manifest is `recording_id, patient_id, edf_path, sfreq, age, sex` |
+| clinician-visible vs clinician-invisible contrasts | R409 — burst-suppression prevalence is 100.0 % in the subcohort carrying the invisible measure, so it was never a comparison of two predictors |
+| 72-hour / guideline-timing fingerprints | R410 — local excess 1.00 / 1.05 / 1.09 at days 2–4; largest anywhere 1.36 at day 10, [0.76, 2.33] |
+| whole-record background spectrum as the flag residual | B3, R361–R364 — mutually redundant with the intra-burst measure |
+| spatial distribution / topography as the flag residual | T3, R365–R368 — +0.014 [−0.021, +0.040] over burden + background + intra-burst |
+| reactivity as the flag residual | unavailable in this schema — no stimulation annotation |
+
+---
 
 Both eliminations failed for the same reason, and that reason is now catalogue rule 28: a measurement taken in
 a different *place* is not thereby measuring a different *thing*. The two survivors are the ones that differ in

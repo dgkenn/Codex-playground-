@@ -65,15 +65,31 @@ produced the matched-null machinery that makes any future landmark claim in this
 
 ## 3. The LEAD (R389–R403) — internally robust, externally weak, and ONE ARM IS WITHDRAWAL-VULNERABLE
 
-> **READ THIS BEFORE QUOTING THE LEAD (R403).** The two arms of the reversal are not equally robust to the
-> self-fulfilling-prophecy problem. Among patients **alive at day 3** — past the window in which most
-> withdrawal of care happens — the **non-anoxic (protective) arm survives** at 0.428 [0.388, 0.471], while
-> the **anoxic (harmful) arm does not**: 0.535 [0.492, 0.580], interval including 0.5, on 800 patients. The
-> anoxic association is concentrated in early deaths, which is both what a partial self-fulfilling prophecy
-> would produce and what genuine early post-anoxic mortality would produce — and this design cannot separate
-> them (N14). **The honest headline is a reversal whose protective arm is robust to the withdrawal window and
-> whose harmful arm is not distinguishable from withdrawal-driven early mortality.** That belongs in an
-> abstract, not a limitations paragraph.
+> **READ THIS BEFORE QUOTING THE LEAD (R403, strengthened by R411).** The two arms of the reversal are not
+> equally robust to the self-fulfilling-prophecy problem. Among patients **alive at day 3** — past the window
+> in which most withdrawal of care happens — the **non-anoxic (protective) arm survives** at 0.428 [0.388,
+> 0.471], while the **anoxic (harmful) arm does not**: 0.535 [0.492, 0.580], interval including 0.5, on 800
+> patients.
+>
+> **R411 tested whether that was merely a power artefact of splitting the cohort, and it is not.** Drawing
+> subsamples of the *full* anoxic arm at the landmark's size (800) and event rate (35.1 %), with no landmark
+> applied, only **1 %** have an AUC interval including 0.5 — and the non-anoxic arm's figure is **0 %**. The
+> drop from 0.577 to 0.535 is about *which* patients were removed, not how many. **This caveat is now better
+> evidenced than when it was first written; do not soften it.**
+>
+> **R411 also resolves the apparent conflict with R409.** The interaction — which is the lead's actual
+> estimand, since the claim is that the *direction* differs — retains 93 % and still excludes zero
+> (+4.646 [+3.092, +6.547] full; +4.313 [+2.335, +6.481] past the landmark). It survives because the
+> non-anoxic arm is unmoved (0.426 → 0.428). **So: the reversal survives the withdrawal window, and the
+> anoxic arm's information is genuinely concentrated in early deaths.** Both sentences, together.
+>
+> That concentration in early deaths is both what a partial self-fulfilling prophecy would produce and what
+> genuine early post-anoxic mortality would produce, and this design cannot separate them (N14). **R410
+> attempted the separation via a timing fingerprint and failed to find one** — no local hazard discontinuity
+> at 72 h or anywhere else — so with no timing signature and no measurable withdrawal variable, **front-loaded
+> hypoxic-ischaemic mortality is the parsimonious reading and should be stated first.** The honest headline is
+> a reversal whose protective arm is robust to the withdrawal window and whose harmful arm is carried by early
+> deaths that this design cannot attribute. That belongs in an abstract, not a limitations paragraph.
 >
 > What still stands: the full-cohort reversal with all its robustness checks, and W1 — adjusted for the flags
 > clinicians actually recorded, the interaction is **+4.287 [+2.535, +6.560]**, so it is not a proxy for what
@@ -216,6 +232,23 @@ outcome-related, −17.6 pp [−25.5, −9.1]).
 
 **4. Waveform shape rather than band power** — the last untested candidate for the flag residual. Stereotypy
    at 1 s and 2 s is already extracted and is the nearest existing handle.
+
+---
+
+## 5b. RE-RANKED after the R400–R411 cadence (2026-07-28) — read this instead of the list above
+
+The withdrawal thread is **closed** (§3.0): three tests, no support, and the elimination is the deliverable.
+That frees the queue. Ranked by (mechanism named + reference in the data + sharp falsifiable prediction):
+
+| # | item | why it ranks here |
+|---|---|---|
+| **1** | **Waveform shape rather than band power** — the flag residual's last untested candidate | Only item with a live constraint behind it: the slowing flag carries **−0.752 [−1.075, −0.434]** beyond burden *and* intra-burst content (R358–R360), and the two rival candidates are both eliminated. Stereotypy at 1 s and 2 s is already extracted, so it is also the cheapest. Apply catalogue rule 28 — do not let a within-burst measure stand in for a whole-record one. |
+| **2** | **Does the anoxic arm's early-death concentration have a dose-response in TIME?** | R411 established the concentration is real and not power. The untested follow-up: does the arm's AUC decline smoothly with landmark day, or step? A step at a clinically meaningful day is the one remaining handle on cause, and the matched-null machinery (R408) now makes it interpretable. Cheap — all data local. |
+| **3** | **Aetiology reversal, hospital split, with the matched null** | S0001 vs S0002 is the strongest external check that exists (no cohort anywhere has EEG + outcome + mixed aetiology — §5 item 0). R397 ran it without a matched null; re-running with one would say whether any site difference exceeds what site-size differences produce. |
+| **4** | Spindles beyond depth (item 4 above) | Done in part at R395–R396; the aggressive-`awake`-adjustment caveat is the open piece. |
+
+**Do not re-open:** withdrawal proxies (six failures now), TUH as an outcome cohort (no outcome data — R321),
+visible-versus-invisible contrasts (R409), 72-hour timing fingerprints (R410).
 
 ---
 
