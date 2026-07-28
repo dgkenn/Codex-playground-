@@ -37,6 +37,9 @@ from collections import defaultdict
 from datetime import datetime
 
 import numpy as np
+# The sandbox exports placeholder AWS_* env vars that shadow the real profile -- common/awsenv.py.
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from common.awsenv import sanitize as _aws_sanitize; _aws_sanitize()
 
 OMOP = os.environ.get("OMOP_OUT", "/tmp/eeg_probe/heedb_omop")
 NBOOT = int(os.environ.get("NBOOT", "1500"))

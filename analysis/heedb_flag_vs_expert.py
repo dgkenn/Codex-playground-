@@ -46,6 +46,9 @@ from collections import defaultdict
 import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+# The sandbox exports placeholder AWS_* env vars that shadow the real profile -- common/awsenv.py.
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from common.awsenv import sanitize as _aws_sanitize; _aws_sanitize()
 
 AP = "arn:aws:s3:us-east-1:184438910517:accesspoint/bdsp-credentialed-access-point"
 MORGOTH_AP = "arn:aws:s3:us-east-1:184438910517:accesspoint/bdsp-credentialed-projects-ap"

@@ -18,6 +18,10 @@ import numpy as np
 from scipy.signal import butter, filtfilt
 sys.path.insert(0, __file__.rsplit("/", 1)[0])
 from heedb_edf_range import read_edf_window, AP
+import os
+# The sandbox exports placeholder AWS_* env vars that shadow the real profile -- common/awsenv.py.
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from common.awsenv import sanitize as _aws_sanitize; _aws_sanitize()
 S3 = boto3.client("s3", region_name="us-east-1", config=Config(s3={'payload_signing_enabled': False}))
 FIND = {"S0001": "EEG/HEEDB_Metadata/S0001_EEG__reports_findings.csv"}
 META = {"S0001": "EEG/eeg-metadata/S0001_eeg_metadata_2026_04_30.csv"}

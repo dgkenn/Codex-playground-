@@ -48,6 +48,9 @@ from collections import defaultdict
 import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+# The sandbox exports placeholder AWS_* env vars that shadow the real profile -- common/awsenv.py.
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from common.awsenv import sanitize as _aws_sanitize; _aws_sanitize()
 
 THRESH_UV = float(os.environ.get("BS_THRESH_UV", "5.0"))
 N_WINDOWS = int(os.environ.get("N_WINDOWS", "4"))

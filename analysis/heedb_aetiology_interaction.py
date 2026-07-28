@@ -17,6 +17,10 @@ import boto3, io, csv, math, sys
 from datetime import datetime
 from botocore.config import Config
 import numpy as np
+import os
+# The sandbox exports placeholder AWS_* env vars that shadow the real profile -- common/awsenv.py.
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from common.awsenv import sanitize as _aws_sanitize; _aws_sanitize()
 AP="arn:aws:s3:us-east-1:184438910517:accesspoint/bdsp-credentialed-access-point"
 S3=boto3.client("s3",region_name="us-east-1",config=Config(s3={'payload_signing_enabled':False}))
 FIND={"S0001":"EEG/HEEDB_Metadata/S0001_EEG__reports_findings.csv",

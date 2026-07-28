@@ -8,6 +8,10 @@ SAME window length from every recording keeps the OR/EMU vs ICU comparison fair.
 EDF layout: 256-byte main header | ns*256-byte signal headers | data records (int16 LE, per-signal blocks).
 """
 import io, struct, numpy as np
+import os
+# The sandbox exports placeholder AWS_* env vars that shadow the real profile -- common/awsenv.py.
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from common.awsenv import sanitize as _aws_sanitize; _aws_sanitize()
 def _s3():
     import boto3
     from botocore.config import Config

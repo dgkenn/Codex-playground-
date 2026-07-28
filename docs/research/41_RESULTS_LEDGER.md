@@ -2567,3 +2567,75 @@ less precisely estimated. And R403 already showed the invisible measure's own an
 not a zero-attenuation reference; the comparison is relative throughout.
 
 **Cumulative distinct results: 407.**
+
+---
+
+## R408 · The day-3 attenuation is a curve, not a cut point — and a matched null shows it is not power loss
+
+R407 split the cohort once, at day 3. Two objections were open: **one landmark is one choice**, and
+**restricting to survivors removes patients and events**, which attenuates a noisy interaction term on its
+own. R408 registers a sweep over landmarks {0, 1, 2, 3, 5, 7, 10, 14} plus the control that makes the sweep
+readable — at each landmark, a subsample of the **full** cohort matched on n, on 30-day death rate and on
+anoxic fraction, with **no landmark applied** (150 draws, 5–95 % reported).
+
+### The control works, and that is the first result
+
+**The matched null sits at ~100 % at every landmark for every predictor** — bs 98–103 %, generalized slowing
+100–102 %, invisible 103–119 %. Discarding 28 % of the cohort and more than two thirds of the events does
+**not**, by itself, attenuate these interactions. So every departure below is a property of *who* was removed,
+not of *how many*.
+
+### Retained fraction by landmark day (observed; ▼ = below the null's 5th percentile)
+
+| landmark | n | death % | **burst suppression** | **intra-burst 8–30 Hz (invisible)** | gen slowing | seizure | LPD | foc slowing |
+|---|---|---|---|---|---|---|---|---|
+| day 0 | 8,843 | 31.6 % | 84 % ▼ | 105 % | 92 % ▼ | 88 % ▼ | 66 % ▼ | 98 % |
+| day 1 | 8,588 | 29.5 % | 77 % ▼ | 110 % | 89 % ▼ | 84 % ▼ | 55 % ▼ | 91 % |
+| day 2 | 8,359 | 27.6 % | 63 % ▼ | 99 % | 80 % ▼ | 78 % ▼ | 46 % ▼ | 86 % |
+| day 3 | 8,108 | 25.4 % | **37 % ▼** | **93 %** | 73 % ▼ | 74 % ▼ | 53 % ▼ | 95 % |
+| day 5 | 7,746 | 21.9 % | −3 % ▼ | 71 % ▼ | 57 % ▼ | 79 % | 54 % ▼ | 91 % |
+| day 7 | 7,467 | 19.0 % | −1 % ▼ | 48 % ▼ | 59 % ▼ | 79 % | 80 % | 108 % |
+| day 10 | 7,081 | 14.5 % | −44 % ▼ | 27 % ▼ | 44 % ▼ | 80 % | 104 % | 90 % |
+| day 14 | 6,742 | 10.2 % | −16 % ▼ | 39 % ▼ | 51 % ▼ | 113 % | 63 % | 52 % |
+
+GPD is omitted: its full-cohort interaction is −0.16 and spans zero, so the ratio is not a quantity (R407).
+
+**Free replication.** This script shares no code path with R407's and reproduces its two headline cells
+exactly — burst suppression **37 %** and the invisible measure **93 %** at day 3.
+
+### The pre-registered verdict is PARTIAL, and the registered shape prediction FAILED for both
+
+Y2 asked whether burst suppression falls below its matched null where the invisible measure does not. **Both
+fall below at some landmark** — bs at 8 of 8, the invisible measure at 4 of 8 — so the script returns
+**PARTIAL** and the claim "excess attenuation is specific to visible findings" is **not** supported. Y3's
+shape prediction (guideline-driven decays then flattens; biological tracks its null throughout) fails too:
+Spearman ρ of (observed − null) against landmark day is **−0.95 for burst suppression and −0.95 for the
+invisible measure**, identical.
+
+### What the table shows that the registered criterion did not ask about — read as a reading, not a test
+
+The two curves have the same slope and **different onsets**. Burst suppression is already below its null at
+**day 0** and has lost two thirds of its interaction by day 3. The invisible measure is **at or above its
+null at days 0, 1, 2 and 3** (105 %, 110 %, 99 %, 93 %) and only departs from day 5 onward. The withdrawal
+window is days 0–3. Inside it the visible flagship moves and the invisible measure does not; outside it both
+decay, which is what an acute-injury marker losing prognostic relevance looks like and is also what the
+registered estimand drift produces.
+
+**This is a cut chosen after seeing the curve.** It is consistent with the rationale registered in R407 (that
+withdrawal is concentrated in the first days), but the 4/4-versus-0/4 split inside the window was not a
+pre-specified test and is reported as description.
+
+### The visible flags do not behave as one class
+
+Burst suppression (ρ = −0.95, below null 8/8) and generalized slowing (ρ = −0.98, below null 8/8) decay.
+Seizure (ρ = +0.02), LPD (ρ = +0.55) and focal slowing (ρ = −0.24) do not. **Being clinician-visible does not
+predict attenuation; being the finding guidelines act on does** — which is the R407 reading, now with a curve
+behind it instead of a single split.
+
+### The limitation that R409 must close
+
+Burst suppression is estimated on 9,302 patients and the invisible measure on the 2,449 that have burst
+morphology. **The two curves are not from the same patients**, so part of the onset difference could be
+cohort rather than predictor. The comparison has to be redone paired, on the patients who have both.
+
+**Cumulative distinct results: 408.**

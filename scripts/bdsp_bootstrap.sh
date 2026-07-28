@@ -48,6 +48,39 @@ boto3.client('s3', region_name='us-east-1',
 PY
 }
 
+# The same probe with the environment left exactly as an ordinary script would see it.
+probe_aws_ambient() {
+  python3 - <<'PY' 2>/dev/null
+import boto3
+from botocore.config import Config
+boto3.client('s3', region_name='us-east-1',
+             config=Config(s3={'payload_signing_enabled': False})).list_objects_v2(
+    Bucket='arn:aws:s3:us-east-1:184438910517:accesspoint/bdsp-credentialed-access-point',
+    Prefix='EEG/HEEDB_Metadata/', MaxKeys=1)
+PY
+}
+
+# Every shell this session opens is sourced from the login profile, so an unset written there is
+# the only fix that survives past the current command. Guarded by a marker so it is written once
+# and is trivially reversible; it only ever removes variables that were just shown NOT to work.
+neutralize_placeholder_aws_env() {
+  local rc="$HOME/.bashrc" marker="# >>> bdsp: drop non-working placeholder AWS_* >>>"
+  if [ -f "$rc" ] && grep -qF "$marker" "$rc"; then
+    say "AWS: placeholder unset already installed in ~/.bashrc (open a new shell to pick it up)."
+    return 0
+  fi
+  {
+    printf '\n%s\n' "$marker"
+    printf '%s\n' "# Written by scripts/bdsp_bootstrap.sh. The container ships short placeholder AWS keys"
+    printf '%s\n' "# that outrank ~/.aws/credentials in boto3's resolution chain and fail with"
+    printf '%s\n' "# InvalidAccessKeyId. Remove this block if you ever set real credentials under the"
+    printf '%s\n' "# standard names. Real BDSP credentials belong in BDSP_AWS_* instead."
+    printf '%s\n' 'unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN'
+    printf '%s\n' "# <<< bdsp <<<"
+  } >> "$rc"
+  say "AWS: unset the placeholders in ~/.bashrc — new shells will use the working profile."
+}
+
 if [ -n "$KEY_ID" ] && [ -n "$SECRET" ]; then
   mkdir -p ~/.aws; umask 077
   cat > ~/.aws/credentials <<EOF
@@ -81,6 +114,16 @@ else
   if [ -f ~/.aws/credentials ] && probe_aws; then
     say "AWS: BDSP_AWS_* not set, but ~/.aws/credentials from an earlier session WORKS."
     say "AWS: set BDSP_AWS_* in the environment settings to make this durable."
+    # probe_aws deliberately clears the ambient AWS_* placeholders, so "WORKS" here means the
+    # PROFILE works — it says nothing about what an ordinary script sees. On 2026-07-28 that gap
+    # cost a run: the bootstrap reported WORKS and the analysis then died with InvalidAccessKeyId,
+    # because the container's placeholder AWS_ACCESS_KEY_ID outranks the profile in boto3's
+    # resolution chain. So probe the AMBIENT environment too, and if only the cleared one works,
+    # neutralize the placeholders for every future shell in this session.
+    if ! probe_aws_ambient; then
+      say "AWS: the ambient AWS_ACCESS_KEY_ID shadows that profile and does NOT work."
+      neutralize_placeholder_aws_env
+    fi
   else
     say "AWS: no working credentials — HEEDB/I-CARE/MORGOTH unavailable. Set BDSP_AWS_* in the" >&2
     say "AWS: Claude Code web environment's environment-variable settings." >&2

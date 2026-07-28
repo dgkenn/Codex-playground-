@@ -46,6 +46,9 @@ from botocore.config import Config
 import pyarrow as pa
 import pyarrow.compute as pc
 import pyarrow.parquet as pq
+# The sandbox exports placeholder AWS_* env vars that shadow the real profile -- common/awsenv.py.
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from common.awsenv import sanitize as _aws_sanitize; _aws_sanitize()
 
 AP = "arn:aws:s3:us-east-1:184438910517:accesspoint/bdsp-credentialed-access-point"
 BATCH_ROWS = int(os.environ.get("BATCH_ROWS", "65536"))
