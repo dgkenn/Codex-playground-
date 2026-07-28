@@ -2632,10 +2632,27 @@ Seizure (ρ = +0.02), LPD (ρ = +0.55) and focal slowing (ρ = −0.24) do not. 
 predict attenuation; being the finding guidelines act on does** — which is the R407 reading, now with a curve
 behind it instead of a single split.
 
-### The limitation that R409 must close
+### The limitation — and it is worse, and more interesting, than it first looked
 
 Burst suppression is estimated on 9,302 patients and the invisible measure on the 2,449 that have burst
 morphology. **The two curves are not from the same patients**, so part of the onset difference could be
-cohort rather than predictor. The comparison has to be redone paired, on the patients who have both.
+cohort rather than predictor.
+
+**CORRECTION, added immediately after R408 was written (see R409).** The obvious repair — redo the
+comparison paired, on patients who have both — **is impossible by construction.** Burst-suppression flag
+prevalence in the burst-morphology subcohort is **100.0 % (2,473 of 2,473)**, against 14.9 % in the full
+findings cohort, because burst morphology can only be extracted from a recording that has bursts. Within the
+patients who carry the invisible measure, the burst-suppression flag **has no variance**, so its interaction
+is undefined there and no paired estimate exists at any sample size.
+
+Two consequences, and both matter for how R407–R408 may be read:
+
+1. **The onset contrast in the table above is confounded with cohort and must not be quoted as a
+   like-for-like comparison of two predictors.** It compares a flag estimated across all patients with a
+   graded measure estimated inside the flag-positive stratum.
+2. **The right framing is better than the one that was lost.** The invisible measure is not a competitor to
+   burst suppression; it is a **grading of what is inside it**. Every patient carrying it already triggers
+   the guideline's flagship malignant pattern. R409 tests the paired question that *is* answerable — the
+   invisible measure against the visible flags that actually vary in that same stratum.
 
 **Cumulative distinct results: 408.**
