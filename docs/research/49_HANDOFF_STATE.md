@@ -1,4 +1,4 @@
-# HANDOFF — project state at R407 (2026-07-27)
+# HANDOFF — project state at R410 (2026-07-28)
 
 *Read `CLAUDE.md` first. This document is the scientific state: what is established, what is provisional,
 what is dead, and exactly what to do next. Every number here was verified against its raw log before being
@@ -9,12 +9,16 @@ written down.*
 ## 1. The one-paragraph state
 
 The project is a burst-suppression and clinical-EEG research programme on HEEDB (49,232 patients with
-reports), I-CARE (607 post-cardiac-arrest) and VitalDB (intraoperative). It has **407 logged results**. The
+reports), I-CARE (607 post-cardiac-arrest) and VitalDB (intraoperative). It has **410 logged results**. The
 core prognostic claim — suppression burden stratifies outcome within the guideline's worst tier, adds over
 the category, calibrates, and holds across hospitals and cohorts — is **solid and externally replicated**.
 The mechanism work has eliminated most candidates and produced **one substantive lead at R389–R392: the
 prognostic meaning of intra-burst EEG content reverses by aetiology.** That lead is internally robust and
 externally under-supported, and closing that gap is the single most valuable next action.
+
+**R404–R410 built a second story on top of that lead and then dismantled it. Read §3.0 before you touch
+anything in that area** — three sessions of work now says the self-fulfilling-prophecy interpretation is
+*not supported*, and the value of R404–R410 is the elimination, not a positive finding.
 
 ---
 
@@ -31,6 +35,31 @@ externally under-supported, and closing that gap is the single most valuable nex
 | BSP is interchangeable with a threshold ratio at ≥60 s windows, diverges below 30 s | r ≥ 0.98 at 60/120/300 s; crossover 15–30 s; 3.1× more accurate at 1 s |
 | BSP's short-window advantage is **borrowed strength, not the model** | given identical data, `bsp_win`/ratio is 1.007–1.087 — never better, and worse as windows shorten |
 | On real EEG a trailing ratio is **never** the best forward predictor | window-averaged causal BSP beats it at every window length, all paired CIs excluding zero |
+
+---
+
+## 3.0 STOP — the withdrawal/self-fulfilling-prophecy story was tested three ways and is NOT SUPPORTED (R409–R410)
+
+Between R404 and R408 an attractive story was assembled: that the guideline EEG findings' aetiology-dependence
+is partly manufactured by guideline-driven withdrawal of care, and that a clinician-**invisible** measure was
+immune to it. **Do not present any of that.** It was tested directly and it failed.
+
+| test | what it asked | result |
+|---|---|---|
+| **R409** paired landmark sweep | do visible flags attenuate more than the invisible measure, on *identical* patients? | **FALSIFIED.** Inside the withdrawal window no predictor of either kind falls below its matched null. Paired bootstrap P(invisible retains more at day 3) = 55 %, 44 %, 37 %, 36 %, 0 % — at or below chance against every flag. |
+| **R409** structural check | can the comparison even be made? | **No.** Burst-suppression flag prevalence in the burst-morphology subcohort is **100.0 %** (2,473/2,473) vs 14.9 % overall — the invisible measure exists only *inside* the flag, so R407/R408's contrast compared two cohorts, not two predictors. |
+| **R410** 72-hour hazard fingerprint | is there a decision-rule discontinuity where ERC-ESICM says to prognosticate? | **No.** Local excess 1.00 / 1.05 / 1.09 at days 2–4; largest anywhere in the cell 1.36 at **day 10**, [0.76, 2.33]. The primary bump statistic fired equally at a placebo cut, so it measured decay steepness, not timing. |
+| direct measurement | is withdrawal in the data at all? | **Five failed proxies** — N14's four, plus `visit_disposition.discharge_to_source_value`, **100 % empty across 38,893 rows, 715 patients**. |
+
+**What survives, and it is a single descriptive sentence:** burst suppression's aetiology interaction is
+expressed inside days 0–4 and is spent by day 5 (retained 84 / 77 / 63 / **37** % at days 0–3, below its
+size/event/aetiology-matched null at all eight landmarks), and the matched null sitting at ~100 % everywhere
+shows that discarding 28 % of patients does not do this on its own. **Front-loaded hypoxic-ischaemic
+mortality is now the parsimonious explanation and should be stated as the primary reading.**
+
+**Why R404–R410 was still worth doing.** It closed the most obvious reviewer objection to the lead — "isn't
+this just self-fulfilling prophecy?" — by showing the data cannot support that reading either, and it
+produced the matched-null machinery that makes any future landmark claim in this project interpretable.
 
 ---
 

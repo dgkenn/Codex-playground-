@@ -2561,6 +2561,25 @@ and it is not a generic property of being clinician-visible: focal slowing, whic
 withdrawal trigger, barely attenuates at all. The gradient across the visible flags tracks how strongly each
 is guideline-actioned, which is a stronger form of the argument than the pooled comparison.
 
+> ### ⚠ WITHDRAWN — do not quote the paragraph above. Corrected by R409 and R410.
+>
+> **The comparison in this section is invalid.** Burst-suppression flag prevalence in the subcohort that
+> carries the invisible measure is **100.0 %** (R409), so the two columns are not two predictors on
+> comparable patients — the invisible measure exists only *inside* the flag. The visible-versus-invisible
+> contrast was then tested directly, on identical patients, and **failed**: inside the withdrawal window no
+> predictor of either kind falls below its matched null, and a paired bootstrap puts P(invisible retains
+> more at day 3) at 55 %, 44 %, 37 %, 36 % and 0 % against the five visible flags — all at or below chance.
+> Generalized slowing makes the error concrete: below its null at 8/8 landmarks in the full cohort, **0/8**
+> in the paired stratum. **The attenuation was a property of the population, not of clinician visibility.**
+>
+> **R410 then removed the behavioural interpretation's last independent support**: there is no local hazard
+> discontinuity at 72 h or anywhere else (local excess 1.00, 1.05, 1.09 at days 2–4; largest in the cell
+> 1.36 at day 10, [0.76, 2.33]), and the primary bump statistic fired equally at a placebo cut.
+>
+> **What survives from R407 is one sentence:** burst suppression's aetiology interaction retains 37 % past a
+> day-3 landmark and no longer excludes zero (+0.15 [−0.09, +0.41]) — a fact about one finding, with
+> front-loaded hypoxic-ischaemic mortality now the parsimonious explanation.
+
 **Limits.** Withdrawal is unmeasured (N14) — this is an argument from timing, not proof. The invisible
 measure is estimated on 2,449 patients rather than 9,302, so its interval is wider and its retained fraction
 less precisely estimated. And R403 already showed the invisible measure's own anoxic arm attenuates, so it is

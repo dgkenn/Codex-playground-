@@ -199,6 +199,29 @@ Every rule below was paid for with a wrong result in this project.
     because the paperwork looks correct.
 31. **When a replication fails its own gate, the downstream verdict is absent, not negative.** Scripts must
     refuse to emit a decisive verdict when their own precondition failed — the sentence outlives the caveat.
+32. **Before comparing two predictors, check that both VARY in the stratum you will compare them in.** The
+    intra-burst measure was contrasted against burst suppression across two whole ledger entries before
+    anyone checked that the flag is present in **100.0 %** of the patients who carry the measure. It was not
+    a comparison of two predictors; it was a comparison of two cohorts. **A measurement's availability
+    defines a stratum, and that stratum is selected on exactly the thing that makes the measurement
+    possible.** One `Counter` over the analysis cohort, before the design, would have caught it.
+33. **A ratio of adjacent windows does not test locality.** The hypothesis was a *discontinuity* at 72 h; the
+    statistic was `mean h(days 2-4) / mean h(days 5-7)`, which any steeply-decaying hazard wins with no
+    discontinuity anywhere. If the claim is "a bump at day X", the statistic must be a **second difference**
+    — `h[d]` against its own neighbours — not a contrast of two blocks. **Write down what shape the null
+    produces before choosing the statistic.**
+34. **A placebo cut is worth more than the primary test, and it must GATE the verdict, not sit beside it.**
+    R410's primary passed on every pairwise comparison and was meaningless, because the same statistic fired
+    at an arbitrary day where no guideline acts. A test with no placebo is a test with no denominator.
+35. **When a subsetting analysis attenuates something, resample a matched subset that is NOT subset on the
+    variable of interest.** Matching n, event rate and covariate composition, with no landmark applied, put
+    the null at ~100 % everywhere — which is what made every departure readable as "who was removed" rather
+    than "how many". This control is cheap and it should be standard for any landmark or restriction claim.
+36. **Credential precedence, third occurrence.** The sandbox exports `AWS_ACCESS_KEY_ID` as a 14-character
+    `prox…` proxy token that outranks `~/.aws/credentials`, and the failure reads as `InvalidAccessKeyId` —
+    indistinguishable from expiry. `common/awsenv.py` now drops it (only when it provably is not an AWS key
+    id and a shared credentials file exists) and the 53 S3 scripts call it. **An `unset` in `~/.bashrc` does
+    nothing here** — the tool's shells are non-interactive and never source it. That was tried first.
 
 ---
 

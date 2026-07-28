@@ -2230,3 +2230,42 @@ never the risk; the definition was.**
   clinicians see. A predictor requiring an FFT inside segmented bursts is immune by construction, and that
   property turned out to be worth more than any individual association it produced — it is the only reason
   the guideline result above can be interpreted at all.
+
+- **⚠ CORRECTION to the two lessons immediately above (R409–R410, 2026-07-28).** The claim that an
+  *invisible* predictor made the guideline question answerable is **wrong, and it was wrong for a reason
+  worth remembering.** Burst-suppression flag prevalence among the patients who carry the invisible measure
+  is **100.0 %** (2,473 of 2,473) against 14.9 % overall, because intra-burst content can only be measured
+  on a recording that has bursts. The "visible versus invisible" comparison was therefore never between two
+  predictors — it was between two cohorts. Tested properly, on identical patients, it fails: inside the
+  withdrawal window neither kind of predictor falls below its matched null, and a paired bootstrap puts
+  P(invisible retains more) at 55 / 44 / 37 / 36 / 0 % against the five visible flags, all at or below
+  chance. **A measurement's availability defines a stratum, and that stratum is selected on precisely the
+  thing that makes the measurement possible.** Check prevalence inside the analysis cohort before building a
+  contrast on it — one `Counter` would have saved two ledger entries.
+
+- **When you cannot measure the confounder, look for its FINGERPRINT in a variable it must distort — and
+  make sure the statistic can actually see a fingerprint.** Withdrawal is unmeasurable in HEEDB (five failed
+  proxies now). But a decision *rule* has a clock: ERC-ESICM forbids prognostication before 72 h, so
+  guideline-driven withdrawal should leave a **local** hazard bump at a round-numbered hour, which
+  pathophysiology has no reason to produce. Good idea, badly executed the first time: the statistic chosen
+  was `mean h(days 2-4) / mean h(days 5-7)`, which **any steeply-decaying hazard wins** with no discontinuity
+  anywhere — and it duly "confirmed", then fired identically at a placebo cut. The locality statistic
+  (`h[d]` against the mean of its neighbours) shows no interior peak at all: 1.00, 1.05, 1.09 at days 2–4,
+  largest in the cell 1.36 at **day 10**, [0.76, 2.33]. **Ask what shape the null produces before choosing
+  the statistic, and let the placebo gate the verdict rather than sit beside it.**
+
+- **A story that survives three sessions of construction can die in one afternoon, and that is the machine
+  working.** R404–R408 assembled a genuinely attractive account — guideline-driven withdrawal manufactures
+  the aetiology-dependence of the EEG findings — and R409/R410 removed every independent support it had.
+  What remains is a single descriptive fact (burst suppression's aetiology interaction is expressed inside
+  days 0–4 and spent by day 5, beyond what power loss explains) with **front-loaded hypoxic-ischaemic
+  mortality as the parsimonious reading**. The elimination is the deliverable: it closes the most obvious
+  reviewer objection to the real lead by showing the data cannot support that objection's mechanism either.
+  **Log the retrenchment at the point a reader would rely on the claim, not as an appendix** — the ledger's
+  R407 entry now carries the withdrawal inline.
+
+- **The matched-resampling null is now standard equipment for any restriction claim in this project.** When a
+  landmark or filter attenuates an estimate, resample a subset matched on n, event rate and covariate
+  composition **without** applying the restriction. Here it sat at ~100 % at every landmark for every
+  predictor, which is what let "who was removed" be separated from "how many". Without it, the entire R408
+  sweep would have been unreadable.
