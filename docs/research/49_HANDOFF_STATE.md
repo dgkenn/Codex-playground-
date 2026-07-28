@@ -1,4 +1,4 @@
-# HANDOFF — project state at R399 (2026-07-27)
+# HANDOFF — project state at R403 (2026-07-27)
 
 *Read `CLAUDE.md` first. This document is the scientific state: what is established, what is provisional,
 what is dead, and exactly what to do next. Every number here was verified against its raw log before being
@@ -9,7 +9,7 @@ written down.*
 ## 1. The one-paragraph state
 
 The project is a burst-suppression and clinical-EEG research programme on HEEDB (49,232 patients with
-reports), I-CARE (607 post-cardiac-arrest) and VitalDB (intraoperative). It has **399 logged results**. The
+reports), I-CARE (607 post-cardiac-arrest) and VitalDB (intraoperative). It has **403 logged results**. The
 core prognostic claim — suppression burden stratifies outcome within the guideline's worst tier, adds over
 the category, calibrates, and holds across hospitals and cohorts — is **solid and externally replicated**.
 The mechanism work has eliminated most candidates and produced **one substantive lead at R389–R392: the
@@ -34,7 +34,23 @@ externally under-supported, and closing that gap is the single most valuable nex
 
 ---
 
-## 3. The LEAD (R389–R392) — internally robust, externally weak
+## 3. The LEAD (R389–R403) — internally robust, externally weak, and ONE ARM IS WITHDRAWAL-VULNERABLE
+
+> **READ THIS BEFORE QUOTING THE LEAD (R403).** The two arms of the reversal are not equally robust to the
+> self-fulfilling-prophecy problem. Among patients **alive at day 3** — past the window in which most
+> withdrawal of care happens — the **non-anoxic (protective) arm survives** at 0.428 [0.388, 0.471], while
+> the **anoxic (harmful) arm does not**: 0.535 [0.492, 0.580], interval including 0.5, on 800 patients. The
+> anoxic association is concentrated in early deaths, which is both what a partial self-fulfilling prophecy
+> would produce and what genuine early post-anoxic mortality would produce — and this design cannot separate
+> them (N14). **The honest headline is a reversal whose protective arm is robust to the withdrawal window and
+> whose harmful arm is not distinguishable from withdrawal-driven early mortality.** That belongs in an
+> abstract, not a limitations paragraph.
+>
+> What still stands: the full-cohort reversal with all its robustness checks, and W1 — adjusted for the flags
+> clinicians actually recorded, the interaction is **+4.287 [+2.535, +6.560]**, so it is not a proxy for what
+> the decision process saw.
+
+### The original statement of the lead
 
 **Intra-burst 8–30 Hz content ranks 30-day death in opposite directions by aetiology.**
 
