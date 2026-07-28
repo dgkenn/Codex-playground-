@@ -1,4 +1,4 @@
-# HANDOFF — project state at R410 (2026-07-28)
+# HANDOFF — project state at R412 (2026-07-28)
 
 *Read `CLAUDE.md` first. This document is the scientific state: what is established, what is provisional,
 what is dead, and exactly what to do next. Every number here was verified against its raw log before being
@@ -9,7 +9,7 @@ written down.*
 ## 1. The one-paragraph state
 
 The project is a burst-suppression and clinical-EEG research programme on HEEDB (49,232 patients with
-reports), I-CARE (607 post-cardiac-arrest) and VitalDB (intraoperative). It has **410 logged results**. The
+reports), I-CARE (607 post-cardiac-arrest) and VitalDB (intraoperative). It has **412 logged results**. The
 core prognostic claim — suppression burden stratifies outcome within the guideline's worst tier, adds over
 the category, calibrates, and holds across hospitals and cohorts — is **solid and externally replicated**.
 The mechanism work has eliminated most candidates and produced **one substantive lead at R389–R392: the
@@ -242,10 +242,24 @@ That frees the queue. Ranked by (mechanism named + reference in the data + sharp
 
 | # | item | why it ranks here |
 |---|---|---|
-| ~~1~~ | ~~Waveform shape~~ — **DONE, R412** | Stereotypy contributes **+0.0088**; **burst amplitude** contributes **+0.0783** of a **+0.1186 [+0.0501, +0.1998]** total, outside a permutation placebo and not a site gain artefact. Amplitude is a scale parameter, not shape, so the named candidate is eliminated and **89 % of the residual survives**. The flag residual is now a **standing negative with no named candidate left** — see §5c. |
+| ~~1~~ | ~~Waveform shape~~ — **DONE, R412** | Stereotypy contributes **+0.0088**; **burst amplitude** contributes **+0.0783** of a **+0.1186 [+0.0501, +0.1998]** total, outside a permutation placebo and not a site gain artefact. Amplitude is a scale parameter, not shape, so the named candidate is eliminated and **89 % of the residual survives**. The flag residual is now a **standing negative with no named candidate left** — see the box under this table. |
 | **2** | **Does the anoxic arm's early-death concentration have a dose-response in TIME?** | R411 established the concentration is real and not power. The untested follow-up: does the arm's AUC decline smoothly with landmark day, or step? A step at a clinically meaningful day is the one remaining handle on cause, and the matched-null machinery (R408) now makes it interpretable. Cheap — all data local. |
 | **3** | **Aetiology reversal, hospital split, with the matched null** | S0001 vs S0002 is the strongest external check that exists (no cohort anywhere has EEG + outcome + mixed aetiology — §5 item 0). R397 ran it without a matched null; re-running with one would say whether any site difference exceeds what site-size differences produce. |
 | **4** | Spindles beyond depth (item 4 above) | Done in part at R395–R396; the aggressive-`awake`-adjustment caveat is the open piece. |
+
+> ### The flag residual is now a STANDING NEGATIVE, and that makes it the most valuable target here
+>
+> All four named candidates are closed: background spectrum (B3, R361–R364), topography (T3, R365–R368),
+> **waveform shape/stereotypy (R412 — contributes +0.0088)**, and reactivity (unavailable in this schema).
+> R412's only positive is **burst amplitude**, worth **+0.0783** of a **+0.1186 [+0.0501, +0.1998]** total
+> attenuation — real, outside a permutation placebo, not a site gain artefact, and **leaving 89 % of the
+> residual standing**.
+>
+> The clue worth working from: amplitude is **near-orthogonal** to everything already adjusted for
+> (r = −0.0001 with burden, −0.023 with intra-burst content). Whatever the clinician is reading is not a
+> re-expression of burden or of spectral content, and is at least partly about **signal scale**. A fifth
+> candidate should be sought in that direction. Per the ten-result cadence, **a finding that retrodicts this
+> negative is worth more than one that adds a positive.**
 
 **Do not re-open:** withdrawal proxies (six failures now), TUH as an outcome cohort (no outcome data — R321),
 visible-versus-invisible contrasts (R409), 72-hour timing fingerprints (R410).
