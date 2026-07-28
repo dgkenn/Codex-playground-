@@ -4,10 +4,8 @@
 swap 2027-01-31 OGHENESUME JUYAL
 swap 2027-02-01 JUYAL LI
 
-# --- MacNeille: weekend 10/17-18 off (2 Q4 gaps, both non-LSH) ---
-swap 2026-10-17 MACNEILLE AHLUWALIA
-swap 2026-10-18 AHLUWALIA BRONSON
-swap 2026-10-19 BRONSON CHIASSON
+# --- MacNeille: weekend 10/17-18 off — now AUTOMATIC (his single NF week is
+#     10/11-16, so 10/17-18 is his post-nights weekend). No swap needed. ---
 
 # --- MacNeille: NO night float Christmas week -> BRONSON takes it (approved); SC on NYE ---
 swap 2026-12-01:2026-12-04 MACNEILLE BRONSON

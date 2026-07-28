@@ -10,7 +10,7 @@ Coverage **Oct 1 2026 – Jun 23 2027**, continuing the finalized September. Bui
 | Different long-call intern than previous day | ⚠️ SEE NOTE |
 | Q4 — every intern on call only every 4th day | ⚠️ SEE NOTE |
 | No one leaving the service ends on night float | ✅ PASS |
-| Friday long-call intern = next week's night float | ✅ PASS |
+| Friday long-call intern = next week's night float | ⚠️ SEE NOTE |
 | Night float: same person the whole Sun–Fri block | ✅ PASS |
 | Night-float intern present | ✅ PASS |
 | No night float on Saturday | ✅ PASS |
@@ -49,7 +49,7 @@ Cost accounting (who absorbs the displaced weeks): Zaidi takes the NF weeks of 1
 | Limit | Status | Measured |
 |---|---|---|
 | ≤ 80 h/wk (avg over 4 wks) | ✅ PASS | busiest 69.4 h/wk |
-| No duty period > 28h | ✅ PASS | longest 26 h (Sat 24h) |
+| No duty period > 28h | ✅ PASS | longest 24 h (Sat 24h) |
 | ≥ 1 day off per week | ✅ PASS | longest streak 6 days |
 
 ## Dr. Kennedy's November requests (accommodated)

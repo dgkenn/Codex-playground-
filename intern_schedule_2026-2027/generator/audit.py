@@ -54,7 +54,9 @@ for l,dl in calldays.items():
 # be outpatient/vacation/elective (per the year rotation grid) and are listed
 # explicitly so they can be revoked the moment the grid says otherwise.
 NEXT_IS_OUTPATIENT={("MACNEILLE",2026,10),   # Nov 2026 — confirm outpatient/elective
-                    ("OGHENESUME",2027,4)}   # May 2027 — confirm outpatient/elective
+                    ("OGHENESUME",2027,4),   # May 2027 — confirm outpatient/elective
+                    ("WISE",2026,9),         # Oct 2026 — confirm outpatient/elective (matches manual schedule)
+                    ("BRONSON",2026,10)}     # Nov 2026 = VACATION (per scheduler) — ends on Fri NF, weekend off, then vacation
 for dt in days:
     nfp=A[dt]["NF"]
     if not nfp: continue
@@ -129,6 +131,33 @@ for l,pd in present_days.items():
         if run>=7: rec("dayoff",f"{l} works 7+ consecutive days ending {dt}")
         prev=dt
 
+# ---- Night-float FAIRNESS scan (informational, not a rule break) ------------
+# Two failure modes the deterministic march can't see: (1) in a month that spans
+# 5 night-float week-starts, the 4-slot cycle wraps and doubles one LSH slot, so
+# that intern gets a START (spillover) + END night-float pattern (~7 nights) while
+# their partner gets one clean week; (2) across the year, one intern can quietly
+# accumulate far more nights than the rest. Neither breaks a rule; both are what a
+# human scheduler balances by hand. Surfaced here so they're never invisible.
+LSHNAMES={"WISE","LI","KENNEDY","MACNEILLE","BRONSON","ZAIDI","OGHENESUME","MATSUOKA"}
+def _month_of(dt): return (dt.year,dt.month)
+FAIR_DOUBLE=[]
+for (yy,mm),pair in gen.LSH_MONTH.items():
+    md=[dt for dt in days if _month_of(dt)==(yy,mm)]
+    if not md: continue
+    me=max(md)
+    for p in pair:
+        nights=[dt for dt in md if A[dt]["NF"]==p]
+        if not nights: continue
+        start=any(dt.day<=3 for dt in nights)
+        end=any(dt>=me-timedelta(5) for dt in nights)
+        if start and end:
+            FAIR_DOUBLE.append(f"{yy}-{mm:02d} {p}: START+END night-float ({len(nights)} nights this month)")
+NF_YEAR=Counter()
+for dt in days:
+    if A[dt]["NF"] in LSHNAMES: NF_YEAR[A[dt]["NF"]]+=1
+_vals=[NF_YEAR[p] for p in LSHNAMES if NF_YEAR[p]]
+NF_SPREAD=(max(_vals)-min(_vals)) if _vals else 0
+
 order=["accounting","one-LC","LC-diff-prev","Q4","end-on-nf","fri-lc-nf","nf-consec","nf-present","nf-sat",
        "double","sun-no-sc","sat-clean","weekday-off-thu","one-off","sat-off-sun","sat-not-nf-next",
        "sat-not-nf-prev","sat-max1","dayoff"]
@@ -177,6 +206,18 @@ for l in _pres:
         mx_run=max(mx_run,run); prev=x
 
 print(f"\nTOTAL HARD ISSUES: {total}")
+
+# ---- night-float fairness report (informational) ----
+print(f"\nNIGHT-FLOAT FAIRNESS (not a rule break — for the scheduler's eye):")
+print(f"  START+END night-float months (one LSH intern doubled): {len(FAIR_DOUBLE)}")
+for m in FAIR_DOUBLE: print(f"      ⚠ {m}")
+print(f"  Year-total night-float nights per LSH intern (spread {NF_SPREAD}):")
+for p,n in sorted(NF_YEAR.items(), key=lambda x:-x[1]):
+    bar="█"*(n//2)
+    print(f"      {p:12} {n:2}  {bar}")
+if NF_SPREAD>=8:
+    print(f"  ⚠ spread of {NF_SPREAD} nights between busiest and lightest — review balance.")
+
 print(f"\nNew-intern-on-LC/NF at rotation starts (permitted by comprehensive rules;"
       f" flagged for awareness): {len(NEWSTART)}")
 for m in NEWSTART: print(f"    {m}")

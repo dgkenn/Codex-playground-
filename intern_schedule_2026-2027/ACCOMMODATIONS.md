@@ -35,6 +35,34 @@ freeing them, or putting Oghenesume on night float to free those days, would
 cascade badly (it pushed another intern to *end* April on nights), so I left it
 at the clean weekend-off.
 
+## 🔧 Night-float balance fixes (from the scheduler's review)
+
+Root cause found: in a month spanning **5 night-float week-starts**, the 4-slot
+cycle wraps and doubles one LSH slot, so that intern gets a **start-spillover +
+end-of-month** night pattern (~7–8 nights) while their partner gets one clean
+week. The generator had no balancing logic and no cross-month memory.
+
+- **October — fixed.** Swapped the LSH pair to `[Bronson, MacNeille]` so Bronson
+  (whose Nov is vacation) absorbs the start+end double and MacNeille gets one
+  clean mid-month week (10/11–16) — matching the scheduler's manual exactly and
+  honoring MacNeille's "one week, not starting on nights" request. His 10/17–18
+  weekend off is now automatic (post-nights), so the earlier swap for it was
+  removed.
+- **New audit check.** `audit.py` now prints a **night-float fairness** report:
+  every start+end double per month, plus the year-total nights per intern with a
+  spread flag. This surfaces the imbalance automatically going forward.
+- **January — can't safely rebalance.** Structurally forced: January has 3 LSH
+  night-float weeks (odd, can't split evenly), and Oghenesume's firm wedding
+  forces the 1/31 week onto Zaidi (he continues into Feb; Oghenesume must be off).
+  Swapping the pair would put Oghenesume on nights during his wedding. Left as-is
+  (the imbalance is only 1 night within January).
+- **Zaidi's year total (24 nights) — needs a scheduler decision.** He's well
+  above everyone else, driven mostly by **February (11 nights)** — the month-end
+  protection has him cover two boundary weeks so departing interns don't finish
+  on nights. Reducing it means relaxing that protection or offloading a February
+  week, both judgment calls for the scheduler (February is a "perfect storm" where
+  everyone present in late Feb except one Lahey rotator is leaving).
+
 ## ❌ Conflicts (can't accommodate within the rules)
 
 - **Anna Li — 9/5 (her wedding Saturday).** 9/4 short call + 9/6 off are granted,
