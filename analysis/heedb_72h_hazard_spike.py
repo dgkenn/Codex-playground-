@@ -37,6 +37,17 @@ REGISTERED, before the data was looked at.
 
   V4  PLACEBO CUT. Repeat V2 with the bump window moved to days 6-8 over days 9-11. A guideline account
       predicts nothing there. If a "bump" appears at an arbitrary cut too, the statistic is not specific.
+      **V4 GATES V2.** No positive verdict may be announced for V2 while the placebo is also firing; the
+      first version of this script printed "V2 CONFIRMED" with V4 lit, which is error-catalogue rule 31.
+
+  V5  LOCALITY, added after the first run because V2 and V4 disagreed and the disagreement exposed a real
+      defect in V2's design. **An adjacent-window ratio does not test locality at all** — a cell that simply
+      decays more steeply scores high on it with no discontinuity anywhere, which is what happened. A spike
+      is a LOCAL phenomenon, so the right statistic is the second difference: h[d] divided by the mean of
+      h[d-1] and h[d+1]. Under a decision rule the peak sits at the guideline's day; under front-loaded
+      biology every day scores ~1 because a monotone decay has no interior peak.
+      **This is a descriptive amendment, not a confirmatory test.** It was specified after seeing V1's
+      hazard rows and is reported as such.
 
 THE ANCHORING LIMITATION, STATED BEFORE THE RESULT. Death day is measured from the FIRST EEG, not from the
 arrest, because HEEDB carries no arrest time (`visit_disposition` is 100 % empty and covers 715 patients —
@@ -214,17 +225,67 @@ def main():
             print(f"      vs {k:>20}: {pt[tgt]/pt[k] if np.isfinite(pt[k]) and pt[k]>0 else float('nan'):>6.2f}x "
                   f"[{lo:.2f}, {hi:.2f}]{'   EXCLUDES 1' if ok else ''}")
             beats.append(ok)
-        if primary:
-            if all(beats):
-                print("\n   V2 CONFIRMED — the anoxic burst-suppressed cell shows a hazard bump at the")
-                print("   guideline's hour that the other three cells do not.")
-            else:
-                print("\n   V2 FALSIFIED — no guideline-timed discontinuity specific to that cell.")
-                print("   Reading (A), front-loaded biology, is preferred over reading (B).")
-        return pt
+        return pt, all(beats), boots
 
-    report(BUMP, REF, "V2  PRIMARY — hazard on days 2-4 relative to days 5-7 (the 72 h mark)", True)
-    report(PBUMP, PREF, "V4  PLACEBO CUT — days 6-8 over days 9-11, where no guideline acts", False)
+    v2, v2_beats, _ = report(BUMP, REF,
+                             "V2  PRIMARY — hazard on days 2-4 relative to days 5-7 (the 72 h mark)", True)
+    v4, v4_beats, v4_boots = report(PBUMP, PREF,
+                                    "V4  PLACEBO CUT — days 6-8 over days 9-11, where no guideline acts",
+                                    False)
+
+    # V4 gates V2. The placebo fires if the target cell's own excess at an arbitrary cut also excludes 1.
+    pv = np.array([x for x in v4_boots["anoxic + BS"] if np.isfinite(x)], float)
+    placebo_fires = len(pv) >= NBOOT // 4 and float(np.percentile(pv, 2.5)) > 1.0
+    print("\n" + "=" * 100)
+    print("V2 VERDICT, GATED BY V4")
+    print("=" * 100)
+    if not v2_beats:
+        print("   V2 FALSIFIED — the anoxic burst-suppressed cell does not exceed all three others.")
+    elif placebo_fires:
+        print(f"   V2 NOT INTERPRETABLE — its criterion passed, but the PLACEBO CUT also fires in the same")
+        print(f"   cell ({v4['anoxic + BS']:.2f}, 2.5th pct {np.percentile(pv, 2.5):.2f} > 1). A statistic that")
+        print("   finds a 'bump' at an arbitrary day is measuring how steeply the hazard decays, not when.")
+        print("   No claim about guideline timing may be made from V2.")
+    else:
+        print("   V2 CONFIRMED and the placebo is silent — a discontinuity specific to the guideline's day.")
+
+    # ---- V5 locality ------------------------------------------------------------------------------
+    print("\n" + "=" * 100)
+    print("V5  LOCALITY (descriptive amendment) — h[d] / mean(h[d-1], h[d+1]); a spike scores > 1 at ONE day")
+    print("=" * 100)
+
+    def local(h):
+        out = np.full(DMAX, np.nan)
+        for t in range(1, DMAX - 1):
+            nb = np.nanmean([h[t - 1], h[t + 1]])
+            if np.isfinite(h[t]) and np.isfinite(nb) and nb > 0:
+                out[t] = h[t] / nb
+        return out
+
+    print(f"   {'cell':>20} " + " ".join(f"{'d'+str(t):>5}" for t in range(1, DMAX - 1)))
+    for k in cells:
+        L = local(H[k])
+        print(f"   {k:>20} " + " ".join(
+            (f"{v:>5.2f}" if np.isfinite(v) else "    .") for v in L[1:DMAX - 1]))
+    LT = local(H["anoxic + BS"])
+    fin = [(t, LT[t]) for t in range(1, DMAX - 1) if np.isfinite(LT[t])]
+    if fin:
+        t_max, v_max = max(fin, key=lambda x: x[1])
+        boots = []
+        for _ in range(NBOOT):
+            i = rng.integers(0, n, n)
+            idx = np.flatnonzero(cells["anoxic + BS"][i])
+            if len(idx) < 100:
+                continue
+            lv = local(hazard(dd[i], idx))
+            if np.isfinite(lv[t_max]):
+                boots.append(lv[t_max])
+        b = np.array(boots, float); b = b[np.isfinite(b)]
+        ci = (f"[{np.percentile(b,2.5):.2f}, {np.percentile(b,97.5):.2f}]"
+              if len(b) >= NBOOT // 4 else "(not estimable)")
+        print(f"\n   anoxic + BS: largest local excess is {v_max:.2f} at day {t_max}, bootstrap {ci}")
+        print(f"   a monotone decay scores ~1 at every interior day and has no peak; a decision rule puts")
+        print(f"   the peak at the guideline's day (day 2-4 here, given the arrest-to-EEG lag).")
 
     # ---- V3 -------------------------------------------------------------------------------------
     print("\n" + "=" * 100)

@@ -2733,3 +2733,71 @@ attempts, and R409 adds a fifth — `visit_disposition` carries `discharge_to_so
 across all 38,893 rows and covers only 715 patients.
 
 **Cumulative distinct results: 409.**
+
+---
+
+## R410 · No 72-hour fingerprint. The behavioural explanation for R408 loses its last independent support
+
+The landmark cannot separate front-loaded biology from guideline-timed withdrawal, because both attenuate an
+interaction across the same window. A clock can: ERC-ESICM forbids prognostication before **72 hours** and
+names burst suppression a malignant pattern, so a decision rule should leave a **local** hazard bump at a
+round-numbered hour in the one cell the guideline addresses. Injury severity does not consult a calendar.
+
+### V1 · Discrete daily hazard, % (deaths on day d / alive at the start of day d), n = 9,302
+
+| cell | n | d0 | d1 | d2 | d3 | d4 | d5 | d6 | d7 | d8 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| **anoxic + BS** | 1,598 | 15.1 | 8.1 | 7.9 | 7.8 | 6.9 | 4.9 | 3.4 | 3.5 | 4.0 |
+| anoxic, no BS | 617 | 9.2 | 4.6 | 3.9 | 2.9 | 2.6 | 3.5 | 2.6 | 4.2 | 2.7 |
+| non-anoxic + BS | 2,047 | 2.6 | 2.2 | 1.9 | 2.4 | 1.7 | 1.7 | 1.7 | 1.5 | 1.1 |
+| non-anoxic, no BS | 5,040 | 2.1 | 1.5 | 1.5 | 2.1 | 1.8 | 1.4 | 1.4 | 1.4 | 1.9 |
+
+### V2 passed its criterion — and V4 shows the criterion was the wrong one
+
+| cell | days 2–4 over 5–7 | bootstrap | **placebo: days 6–8 over 9–11** | bootstrap |
+|---|---|---|---|---|
+| **anoxic + BS** | **1.91** | [1.56, 2.40] | **1.57** | **[1.15, 2.21]** |
+| anoxic, no BS | 0.92 | [0.64, 1.38] | 1.41 | [0.90, 2.31] |
+| non-anoxic + BS | 1.21 | [0.93, 1.58] | 0.96 | [0.68, 1.29] |
+| non-anoxic, no BS | 1.28 | [1.06, 1.54] | 1.13 | [0.92, 1.41] |
+
+The anoxic burst-suppressed cell beat all three others at the 72 h cut (2.07×, 1.58×, 1.49×, every interval
+excluding 1) — **and it does the same thing at an arbitrary cut where no guideline acts.** An adjacent-window
+ratio never tested locality; it rewards any cell whose hazard decays more steeply. **V2 is therefore NOT
+INTERPRETABLE and no claim about guideline timing follows from it.** The first version of this script printed
+"V2 CONFIRMED" while its own placebo was lit — the same defect as R387, and the gate is now wired so a lit
+placebo blocks the verdict (error catalogue rule 31).
+
+### V5 · The locality test, and it is unambiguous
+
+h[d] divided by the mean of h[d−1] and h[d+1]. A monotone decay scores ~1 at every interior day; a decision
+rule puts a peak at the guideline's day.
+
+| cell | d2 | d3 | d4 | d5 | d6 |
+|---|---|---|---|---|---|
+| **anoxic + BS** | **1.00** | **1.05** | **1.09** | 0.94 | 0.81 |
+
+**There is no interior peak.** The largest local excess anywhere in that cell is 1.36 at **day 10**, bootstrap
+**[0.76, 2.33]** — noise, and not at any guideline-relevant hour. What V1 actually shows is a *plateau*:
+8.1, 7.9, 7.8, 6.9 across days 1–4, then a fall from day 5. A sustained high hazard that then stops is what
+severe hypoxic-ischaemic injury looks like; it is not a clock signature.
+
+### What this does to the arc R404 → R408
+
+**The behavioural (self-fulfilling-prophecy) explanation of burst suppression's aetiology-dependence now has
+no independent support.** Three attempts, three failures: the visible-versus-invisible contrast is falsified
+on paired patients (R409); withdrawal itself is unmeasurable here (five failed proxies, N14 plus R409); and
+there is no timing discontinuity (R410). **What survives is the descriptive fact — burst suppression's
+aetiology interaction is expressed inside days 0–4 and is spent by day 5, beyond what power loss explains —
+and that fact is equally consistent with front-loaded hypoxic-ischaemic mortality.** Reading (A) is now the
+parsimonious one and should be stated as the primary interpretation.
+
+**This does not touch the aetiology reversal itself** (R389–R399), which survived no-model, burden strata
+3/3, burst-count strata 3/3, non-anoxic decomposition 4/4, both hospitals, two aetiology definitions and
+measured labels. That remains the durable finding; the withdrawal story does not.
+
+**The caveat that keeps this a null rather than a refutation.** Day 0 is the first EEG, not the arrest, and
+the arrest-to-EEG lag is unmeasured. Smearing degrades a true spike, so this null is weak evidence against
+(B) — it is decisive only against the claim that we have *evidence for* (B).
+
+**Cumulative distinct results: 410.**
