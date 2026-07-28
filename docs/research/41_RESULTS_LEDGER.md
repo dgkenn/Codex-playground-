@@ -2457,3 +2457,68 @@ not distinguishable from withdrawal-driven early mortality.* Any manuscript must
 not the limitations.
 
 **Cumulative distinct results: 403.**
+
+---
+
+## R404–R406 · Guideline EEG findings do not transfer across aetiologies — and the reason may be the guidelines
+
+The clinically actionable question this cohort is uniquely able to ask. ACNS terminology and ERC-ESICM
+prognostication are built overwhelmingly on cardiac-arrest cohorts and applied to comatose patients generally.
+**n = 9,302** with report findings, measured aetiology and outcome (34.9 % 30-day death, 23.8 % anoxic).
+
+### R404 · Five of six findings behave differently by aetiology
+
+Coefficient for 30-day death, within each aetiology, and their interaction:
+
+| finding | prevalence | anoxic | non-anoxic | interaction |
+|---|---|---|---|---|
+| **burst suppression** *(primary)* | 39.2 % | **+0.47 [+0.29, +0.66]** | **+0.05 [−0.06, +0.16]** | **+0.42 [+0.20, +0.64]** |
+| GPD | 24.2 % | +0.36 [+0.18, +0.55] | +0.52 [+0.40, +0.63] | −0.16 [−0.38, +0.06] |
+| LPD | 18.8 % | **−0.25 [−0.52, +0.02]** | **+0.28 [+0.16, +0.41]** | **−0.53 [−0.84, −0.23]** |
+| seizure | 48.0 % | −0.68 [−0.86, −0.50] | −0.07 [−0.17, +0.03] | **−0.60 [−0.80, −0.40]** |
+| generalized slowing | 85.1 % | −1.34 [−1.53, −1.16] | −0.11 [−0.29, +0.07] | **−1.22 [−1.48, −0.97]** |
+| focal slowing | 26.7 % | −1.28 [−1.60, −0.99] | −0.50 [−0.61, −0.39] | **−0.78 [−1.09, −0.47]** |
+
+**Five of six interactions exclude zero.** Six tests were run and burst suppression was pre-specified as the
+single primary; five hits is far beyond what multiplicity produces, so this is systematic rather than a
+lucky member of a family.
+
+**The headline is the primary test.** The guideline's central malignant pattern — burst suppression —
+predicts death after anoxia (**+0.47**) and carries **essentially no prognostic information otherwise**
+(**+0.05 [−0.06, +0.16]**).
+
+### R405 · Weakening versus reversing, and burden adjustment
+
+**LPD reverses sign**: −0.25 in anoxic against **+0.28 [+0.16, +0.41]** in non-anoxic, interaction excluding
+zero. The rest weaken rather than flip. A reversal is the qualitatively stronger claim and only LPD makes it.
+
+Re-estimated adjusting for **measured** suppression burden (n = 8,349), **five of six interactions survive** —
+bs +0.28 [+0.03, +0.52], lpd −0.58 [−0.89, −0.25], seizure −0.56 [−0.81, −0.32], gen slowing
+−1.16 [−1.53, −0.86], foc slowing −0.76 [−1.13, −0.41]. Only **GPD** vanishes (−0.18 [−0.43, +0.09]) and was
+therefore a burden effect wearing a flag's clothes.
+
+### R406 · The interpretation that matters, and it cuts against the obvious one
+
+The easy reading is "EEG findings mean different things in different aetiologies, so guidelines derived from
+cardiac arrest should not be applied uniformly". That is actionable and probably true in part. **But there is
+a second reading, and for these particular variables it is at least as plausible.**
+
+**These are the flags clinicians read, and the guidelines tell them to act on them differently by aetiology.**
+After cardiac arrest, burst suppression is a documented malignant pattern and a recognised trigger for
+withdrawal discussions. Outside anoxic injury there is no such rule. So the observation that burst suppression
+predicts death **only** after anoxia is exactly what guideline-driven behaviour would manufacture. **The
+aetiology-dependence of the visible findings may be evidence of guideline-driven self-fulfilling prophecy
+rather than of aetiology-dependent biology.** R403 sharpens the worry: the anoxic arm is precisely where the
+withdrawal window dominates.
+
+**What breaks the tie is the invisible measure.** Intra-burst 8–30 Hz content shows the same
+aetiology-dependence (R389–R399) and **cannot be driven by clinician behaviour**, because it appears in no
+report and no clinician reads it — and adjusted for these very flags its interaction is
+**+4.287 [+2.535, +6.560]** (R400). So at least part of the aetiology-dependence is not behavioural.
+
+**The defensible combined claim:** guideline EEG findings are aetiology-dependent; for the visible ones this
+is confounded with guideline-driven practice and cannot be separated here; an invisible quantitative measure
+shows the same dependence and cannot be so confounded. **Any manuscript must present the visible-finding
+result and the behavioural explanation together**, not the former alone.
+
+**Cumulative distinct results: 406.**
