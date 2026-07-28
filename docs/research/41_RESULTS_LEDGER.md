@@ -2871,3 +2871,80 @@ landmark) and the arm-wise AUCs are descriptive. The anoxic arm's early-death co
 abstract, not the limitations — R403's original instruction, now with a control behind it.
 
 **Cumulative distinct results: 411.**
+
+---
+
+## R412 · The flag residual: waveform SHAPE explains nothing, burst AMPLITUDE explains a little
+
+The last of the four named candidates for R358–R360's residual — the generalized-slowing flag carries
+**−0.752 [−1.075, −0.434]** beyond suppression burden and intra-burst 8–30 Hz content, and R388 showed that
+is not an artefact of adjusting for burden linearly. Background spectrum (B3) and topography (T3) are
+eliminated; reactivity is unavailable in this schema. Shape was rated above the two failures because it
+differs in **kind** from a band-power ratio rather than merely in location (catalogue rule 28).
+
+Cohort: n = 1,386 with flag + burden + intra-burst + shape + ascertained death; 67.5 % 30-day death, 67.5 %
+flag-positive (**a coincidence, not a bug — verified: the vectors are distinct, r = −0.291, cross-tab
+543/393/392/58**).
+
+### S0 precondition, and its honest reading
+
+Out-of-bag AUC increment of the shape block over burden + intra-burst: **+0.0141 [−0.0059, +0.0271] —
+includes zero.** The block passed the precondition on its *coefficients* (burst_amp **+0.629** standardized),
+not on predictive increment. This is the project's familiar pattern — genuine association, no discrimination
+gain (cf. R362, R379) — and the precondition should be read as "informative enough to interpret an
+attenuation", not as "predictive".
+
+### S1–S3 primary and placebo
+
+| | flag coefficient |
+|---|---|
+| burden (quintiles) + intra-burst | **−1.0370** |
+| + the four-variable shape block | **−0.9184** |
+| paired change | **+0.1186 [+0.0501, +0.1998]** — excludes zero |
+| **placebo: same four covariates permuted across patients** | median **−0.0024**, 95 % of 400 draws in **[−0.0228, +0.0136]** |
+
+The observed change is far outside the placebo interval, so this is not what four informationless covariates
+do to a coefficient. **S2 confirmed on its pre-registered criterion.**
+
+### What it actually is — and the queue item's premise was wrong
+
+Drop-one decomposition (descriptive, run after the primary):
+
+| variable added alone | flag coefficient | change |
+|---|---|---|
+| **burst_amp** | −0.9587 | **+0.0783** (66 % of the total) |
+| burst_dur | −1.0239 | +0.0131 |
+| **stereotypy** | −1.0282 | **+0.0088** |
+| supp_cv | −1.0401 | −0.0031 |
+
+**Stereotypy — the measure the queue named as the shape handle — contributes essentially nothing.** The
+effect is carried by burst **amplitude**, which is a scale parameter, not a morphology one. So the named
+candidate "waveform shape rather than band power" is **largely eliminated**; what survived is a different
+quantity that happened to be in the same block. Amplitude is close to orthogonal to what was already
+adjusted for: r = **−0.0001** with burden and **−0.023** with intra-burst content, so it is genuinely new
+information rather than a re-expression.
+
+### The gain-artefact threat, tested because amplitude is the measure most exposed to it
+
+| site | n | burst_amp median [IQR] | flag coef → with shape (change) | burst_amp alone |
+|---|---|---|---|---|
+| S0001 | 849 | 24.71 [18.05, 34.86] | −0.7537 → −0.6195 (**+0.1342**) | +0.0838 |
+| S0002 | 537 | 25.06 [16.18, 37.03] | −1.3119 → −1.2478 (**+0.0641**) | +0.0689 |
+
+Amplitude distributions are near-identical across hospitals, the attenuation replicates **within both** in
+the same direction, and re-running with amplitude **z-scored within site** — which removes any per-site gain
+offset by construction — gives **+0.1165** against the pooled **+0.1186**. **Not a between-site scale
+artefact.**
+
+### The verdict, stated at the size it actually is
+
+**89 % of the flag residual survives.** The flag still carries **−0.918** after the shape block is added.
+This is the first positive on the residual after two eliminations, and it is a *small* one that identifies
+burst amplitude — not shape — as a real but partial contributor. The residual remains overwhelmingly
+unexplained, and with stereotypy, background spectrum and topography all eliminated and reactivity
+unavailable, **there is no named candidate left that accounts for the bulk of it.**
+
+**Scope:** morphology requires bursts, so this is the residual within burst-suppressed patients — the same
+stratum R360 was estimated in, so like-for-like, but not a claim about all patients (R409, rule 32).
+
+**Cumulative distinct results: 412.**
