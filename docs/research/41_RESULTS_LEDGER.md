@@ -2656,3 +2656,80 @@ Two consequences, and both matter for how R407–R408 may be read:
    invisible measure against the visible flags that actually vary in that same stratum.
 
 **Cumulative distinct results: 408.**
+
+---
+
+## R409 · The paired test FALSIFIES the visible-versus-invisible contrast. What survives is a claim about burst suppression alone
+
+R408 promised a paired repair. Checking the premise first killed the design and replaced it with a better one.
+
+### Z0 · Why the obvious paired test does not exist
+
+| flag | prevalence, full findings cohort (n = 49,232) | prevalence, burst-morphology subcohort (n = 2,473) |
+|---|---|---|
+| **burst suppression** | 14.9 % | **100.0 %** |
+| generalized slowing | 76.5 % | 71.6 % |
+| seizure | 30.2 % | 49.4 % |
+| GPD | 7.7 % | 31.6 % |
+| focal slowing | 19.3 % | 18.8 % |
+| LPD | 6.6 % | 19.9 % |
+
+Burst morphology can only be extracted from a recording that has bursts, so **every patient carrying the
+invisible measure carries the flag**. Its interaction is undefined in that stratum at any sample size. The
+invisible measure was never a competitor to burst suppression — **it grades what is inside it.**
+
+### Z1/Z2 · Paired landmark sweep, identical patients (n = 2,449; 41.5 % 30-day death, 48.5 % anoxic)
+
+Retained fraction against each predictor's own matched null (▼ = below the null's 5th percentile):
+
+| landmark | **invisible** | GPD | seizure | gen slowing | foc slowing | LPD |
+|---|---|---|---|---|---|---|
+| day 0 | 105 % | 160 % | 97 % | 91 % | 88 % | 77 % |
+| day 1 | 110 % | 170 % | 90 % | 95 % | 85 % | 72 % |
+| day 2 | 99 % | 192 % | 94 % | 107 % | 86 % | 77 % |
+| day 3 | 93 % | 205 % | 103 % | 101 % | 101 % | 87 % |
+| day 5 | 71 % ▼ | 188 % | 113 % | 116 % | 88 % | 110 % |
+| day 7 | 48 % ▼ | 182 % | 108 % | 96 % | 128 % | 166 % |
+| day 10 | 27 % ▼ | 128 % | 118 % | 50 % | 148 % | 175 % |
+| day 14 | 39 % ▼ | 102 % | 122 % | 55 % | 54 % | 133 % |
+
+**Z2 FALSIFIED on its own criterion.** Inside the withdrawal window (days 0–3) **not one predictor —
+visible or invisible — falls below its matched null.** The invisible measure holds, but so does every visible
+flag in these patients, so there is no contrast to attribute to visibility.
+
+### Z3 · Paired bootstrap at day 3 — the invisible measure does not win
+
+Fraction of 800 paired resamples in which the invisible measure retains more of its interaction than the
+visible flag, **on the same resampled patients**:
+
+| versus | LPD | focal slowing | generalized slowing | seizure | GPD |
+|---|---|---|---|---|---|
+| P(invisible retains more) | 55 % | 44 % | 37 % | 36 % | 0 % |
+
+**Every value is at or below chance.** The invisible measure is not more landmark-stable than the visible
+findings when they are compared on identical patients.
+
+### What this does to R407 and R408 — the claim narrows, and the narrower claim is the one to publish
+
+**Withdrawn:** "clinician-invisible measures hold their aetiology-dependence past the withdrawal window while
+clinician-visible ones lose theirs." R409 tests exactly that on identical patients and it does not hold.
+Generalized slowing illustrates the problem directly: it fell below its null at **8 of 8** landmarks in the
+full cohort (R408) and at **0 of 8** here. The attenuation was a property of the population, not the flag.
+
+**Survives, and is now the whole claim:** **burst suppression's aetiology interaction collapses across the
+withdrawal window — 84 %, 77 %, 63 %, 37 % at days 0–3, below its size/event/aetiology-matched null at all
+eight landmarks, crossing zero by day 5 — and the matched null shows discarding patients and events does not
+do this on its own.** That is a claim about the single finding the guidelines name as a withdrawal trigger
+after cardiac arrest. It no longer rests on any comparison with the invisible measure.
+
+### The honest caveat that the behavioural account cannot escape
+
+Within a burst-suppressed stratum every patient is equally exposed to the guideline trigger, so a behavioural
+account *predicts* the null R409 found — which makes this particular test unable to discriminate rather than
+evidence for either side. Say that plainly. And the surviving burst-suppression result still admits a benign
+reading: hypoxic-ischaemic mortality is genuinely front-loaded, and a landmark cannot separate "care was
+withdrawn" from "the patient died of the injury." Withdrawal remains unmeasured; N14 records four failed
+attempts, and R409 adds a fifth — `visit_disposition` carries `discharge_to_source_value` **100 % empty**
+across all 38,893 rows and covers only 715 patients.
+
+**Cumulative distinct results: 409.**
