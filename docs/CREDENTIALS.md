@@ -23,6 +23,23 @@ In the Claude Code web environment settings, under environment variables:
 | `BDSP_AWS_SECRET_ACCESS_KEY` | the 40-character secret | ” |
 | `NEDC_SSH_KEY_B64` | base64 of the NEDC-registered private key | TUH transport — **optional, see the scope warning below** |
 | `NEDC_SSH_USER` | `nedc-tuh-eeg` | optional; this is the default |
+| `PHYSIONET_USER` | your physionet.org login | **HiRID** (and any other PhysioNet DUA-gated project) over HTTPS |
+| `PHYSIONET_PASSWORD` | that account's password | ” |
+
+### PhysioNet is a SEPARATE credential from `BDSP_AWS_*` — this was measured, not assumed
+
+The BDSP keys authenticate to S3 access points. They do **not** authenticate to `physionet.org`, and
+PhysioNet's open S3 mirror does not carry DUA-gated projects. Measured 2026-07-28:
+
+| probe | result |
+|---|---|
+| `GET physionet.org/content/hirid/1.1.1/` (landing page) | **200** — network path and proxy are fine |
+| `GET physionet.org/files/hirid/1.1.1/…` (any file, no auth) | **403** |
+| `s3://physionet-open/hirid/` with the BDSP keys | reachable bucket, **no `hirid/` prefix** — credentialed projects are not mirrored there |
+
+So a HiRID DUA approval is necessary but not sufficient: without `PHYSIONET_USER` / `PHYSIONET_PASSWORD`
+in the environment settings, this sandbox cannot fetch a single byte. The bootstrap writes `~/.netrc` from
+them, which is what the `wget --netrc` commands in `docs/archive/scripts/hirid_run.py` expect.
 
 Produce the base64 on your own machine:
 

@@ -15,6 +15,13 @@
 #     BDSP_AWS_SECRET_ACCESS_KEY   <40-char secret>
 #     NEDC_SSH_KEY_B64             <base64 of the private key>   (TUH, optional — see below)
 #     NEDC_SSH_USER                nedc-tuh-eeg         (optional; defaults to this)
+#     PHYSIONET_USER               <physionet.org login>          (HiRID and any DUA-gated project)
+#     PHYSIONET_PASSWORD           <that account's password>
+#
+# PhysioNet is a SEPARATE credential from BDSP_AWS_*: those authenticate to S3 access points and do
+# nothing for physionet.org. Measured 2026-07-28 — the HiRID landing page is 200 unauthenticated,
+# every file under /files/ is 403, and s3://physionet-open/ carries no hirid/ prefix because
+# credentialed projects are not mirrored there. A DUA approval alone fetches nothing from here.
 #
 # To produce NEDC_SSH_KEY_B64 on your own machine:
 #     base64 -w0 ~/.ssh/id_ed25519      # macOS: base64 -i ~/.ssh/id_ed25519 | tr -d '\n'
@@ -60,26 +67,6 @@ boto3.client('s3', region_name='us-east-1',
 PY
 }
 
-# Every shell this session opens is sourced from the login profile, so an unset written there is
-# the only fix that survives past the current command. Guarded by a marker so it is written once
-# and is trivially reversible; it only ever removes variables that were just shown NOT to work.
-neutralize_placeholder_aws_env() {
-  local rc="$HOME/.bashrc" marker="# >>> bdsp: drop non-working placeholder AWS_* >>>"
-  if [ -f "$rc" ] && grep -qF "$marker" "$rc"; then
-    say "AWS: placeholder unset already installed in ~/.bashrc (open a new shell to pick it up)."
-    return 0
-  fi
-  {
-    printf '\n%s\n' "$marker"
-    printf '%s\n' "# Written by scripts/bdsp_bootstrap.sh. The container ships short placeholder AWS keys"
-    printf '%s\n' "# that outrank ~/.aws/credentials in boto3's resolution chain and fail with"
-    printf '%s\n' "# InvalidAccessKeyId. Remove this block if you ever set real credentials under the"
-    printf '%s\n' "# standard names. Real BDSP credentials belong in BDSP_AWS_* instead."
-    printf '%s\n' 'unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN'
-    printf '%s\n' "# <<< bdsp <<<"
-  } >> "$rc"
-  say "AWS: unset the placeholders in ~/.bashrc — new shells will use the working profile."
-}
 
 if [ -n "$KEY_ID" ] && [ -n "$SECRET" ]; then
   mkdir -p ~/.aws; umask 077
@@ -121,8 +108,9 @@ else
     # resolution chain. So probe the AMBIENT environment too, and if only the cleared one works,
     # neutralize the placeholders for every future shell in this session.
     if ! probe_aws_ambient; then
-      say "AWS: the ambient AWS_ACCESS_KEY_ID shadows that profile and does NOT work."
-      neutralize_placeholder_aws_env
+      say "AWS: the ambient AWS_ACCESS_KEY_ID shadows that profile and does NOT work — this is the"
+      say "AWS: InvalidAccessKeyId that reads exactly like expiry (error catalogue rule 36)."
+      say "AWS: handled in Python by common/awsenv.py, which every S3 script calls. Nothing to do."
     fi
   else
     say "AWS: no working credentials — HEEDB/I-CARE/MORGOTH unavailable. Set BDSP_AWS_* in the" >&2
@@ -159,6 +147,33 @@ if [ -f ~/.ssh/id_ed25519 ]; then
   else
     say "NEDC: key present and rsync/ssh available — TUH transport is possible."
   fi
+fi
+
+# ---------------------------------------------------------------------------- PhysioNet ----
+# HiRID and every other DUA-gated PhysioNet project are fetched over HTTPS with ~/.netrc, NOT with the
+# BDSP AWS keys. Measured 2026-07-28: the project landing page returns 200 unauthenticated while every
+# file under /files/ returns 403, and the open S3 mirror (s3://physionet-open/) carries no hirid/ prefix.
+# So a DUA approval alone changes nothing here without these two variables.
+if [ -n "${PHYSIONET_USER:-}" ] && [ -n "${PHYSIONET_PASSWORD:-}" ]; then
+  umask 077
+  printf 'machine physionet.org login %s password %s\n' \
+    "$PHYSIONET_USER" "$PHYSIONET_PASSWORD" > ~/.netrc
+  chmod 600 ~/.netrc
+  code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 45 --netrc \
+         https://physionet.org/files/hirid/1.1.1/ 2>/dev/null || echo 000)
+  case "$code" in
+    200) say "PhysioNet: ~/.netrc written and HiRID v1.1.1 is READABLE (HTTP 200)." ;;
+    403) say "PhysioNet: ~/.netrc written but HiRID returns 403 — credentials work only if the DUA is" >&2
+         say "PhysioNet: approved for THIS account; check physionet.org/settings/credentialing/." >&2 ;;
+    401) say "PhysioNet: ~/.netrc written but HiRID returns 401 — wrong username or password." >&2 ;;
+    *)   say "PhysioNet: ~/.netrc written; probe returned HTTP $code (network or proxy issue)." >&2 ;;
+  esac
+elif [ -f ~/.netrc ] && grep -q physionet.org ~/.netrc 2>/dev/null; then
+  say "PhysioNet: PHYSIONET_USER/PASSWORD not set, but ~/.netrc from an earlier session exists."
+  say "PhysioNet: set them in the environment settings to make this durable."
+else
+  say "PhysioNet: no credentials — HiRID/SICdb/AmsterdamUMCdb unavailable. Set PHYSIONET_USER and"
+  say "PhysioNet: PHYSIONET_PASSWORD in the environment settings (see docs/CREDENTIALS.md)."
 fi
 
 exit 0   # never fatal: VitalDB and any cached-data work continues regardless
