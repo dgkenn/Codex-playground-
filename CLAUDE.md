@@ -261,6 +261,16 @@ Every rule below was paid for with a wrong result in this project.
     variable of interest.** Matching n, event rate and covariate composition, with no landmark applied, put
     the null at ~100 % everywhere — which is what made every departure readable as "who was removed" rather
     than "how many". This control is cheap and it should be standard for any landmark or restriction claim.
+37. **A permissive comparison operator quietly converts a null into a pass — check the VERDICT code as
+    carefully as the analysis code.** Two consecutive results shipped a wrong printed verdict. R415 evaluated
+    the placebo *before* the primary, so a clean refutation printed as "not interpretable". R416's `sign()`
+    counted a CI spanning 0.5 as satisfying "protective" (`s in (-1, 0)`), and its placebo check asked
+    whether the placebo attenuated *a lot* instead of whether it attenuated *more than the variable of
+    interest*. Both bugs made a failing test print as passing. **Rules that fall out of this:** a cell that
+    spans the null is neither direction and must not satisfy a directional criterion; a placebo gate is a
+    COMPARISON against the real effect, never an absolute threshold; and the primary is evaluated before any
+    gate, because a gate can only invalidate a pass, never rescue a null. Write the verdict branch to state
+    the failing case first.
 36. **Credential precedence, third occurrence.** The sandbox exports `AWS_ACCESS_KEY_ID` as a 14-character
     `prox…` proxy token that outranks `~/.aws/credentials`, and the failure reads as `InvalidAccessKeyId` —
     indistinguishable from expiry. `common/awsenv.py` now drops it (only when it provably is not an AWS key
