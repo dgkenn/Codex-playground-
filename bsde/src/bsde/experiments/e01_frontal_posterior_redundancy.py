@@ -38,8 +38,8 @@ import numpy as np
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.abspath(os.path.join(HERE, "..", "..")))
 
-from uce.features.aperiodic import welch_psd, fit_aperiodic          # noqa: E402
-from uce.models.uce_v1 import regional_exponents, uce_v1_with_baseline  # noqa: E402
+from bsde.features.aperiodic import welch_psd, fit_aperiodic          # noqa: E402
+from bsde.candidates.uce_v1 import regional_exponents, uce_v1_with_baseline  # noqa: E402
 
 DATA = os.environ.get("FIGSHARE_DOC", "/tmp/uce_data/figshare_doc")
 FIT_LO, FIT_HI = 1.0, 40.0

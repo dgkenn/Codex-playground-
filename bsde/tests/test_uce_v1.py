@@ -11,7 +11,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 import numpy as np
 import pytest
 
-from uce.models.uce_v1 import (W_FRONTAL, W_POSTERIOR, UCE_V1_VERSION, group_indices,
+from bsde.candidates.uce_v1 import (W_FRONTAL, W_POSTERIOR, UCE_V1_VERSION, group_indices,
                                regional_exponents, uce_v1_from_z, uce_v1_with_baseline)
 
 

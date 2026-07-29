@@ -16,8 +16,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 import numpy as np
 import pytest
 
-from uce.synth import simulate_channel
-from uce.features.aperiodic import welch_psd, fit_aperiodic
+from bsde.synth import simulate_channel
+from bsde.features.aperiodic import welch_psd, fit_aperiodic
 
 SF = 250.0
 DUR = 120.0
