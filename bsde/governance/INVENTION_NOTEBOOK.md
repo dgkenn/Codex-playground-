@@ -293,3 +293,31 @@ near-redundancy threshold" while the measured |r| was 1.0000 — a false stateme
 being compared against itself. The claim P3 makes was unchanged and was satisfied under both versions, so
 the amendment cannot have rescued a failing prediction. P1 and P2, which carry the finding, were untouched.
 The amendment is written into the experiment's own docstring.
+
+### 2026-07-29 — Entry 9. Investigator decision: I-CARE's NonCommercial licence is accepted, not worked around
+
+**Decision, by the investigator, recorded verbatim in substance:** the CC BY-NC-SA 4.0 licence on I-CARE is
+"totally fine. We can always solve that later down the road."
+
+**What this changes.** Entry 7 removed I-CARE from the path to any commercial artefact pending counsel on the
+ShareAlike "Adapted Material" question. That restriction is **lifted for research purposes**: I-CARE is used
+as a full scientific validation dataset — site probes, drug probes, severity probes, longitudinal recovery
+trajectories, domain transfer — with no scope reduction and no workaround.
+
+**What this does not change, and must not be read as changing.** The licence terms themselves are unaltered
+facts, and they are still recorded in `data_registry/LICENSE_TABLE.csv` as verified:
+
+* NonCommercial still prohibits commercial use of the data.
+* ShareAlike still raises the unresolved question of whether a model trained on I-CARE is "Adapted
+  Material", which would propagate the licence to the model.
+
+The decision is to **defer** those questions, not to conclude they are answered. If a commercial artefact is
+ever built, the question returns and must be answered before, not after. The practical consequence for now
+is a discipline that costs nothing: **keep the scientific validation corpus and any future commercial
+training corpus separately labelled from the start**, so that a later licence determination can be acted on
+by excluding data rather than by retraining from scratch. That separation is cheap today and expensive to
+retrofit.
+
+**Why this is recorded rather than simply acted on.** A deferred legal question that is not written down
+becomes a resolved one by attrition. This entry exists so that "we decided it was fine for research" cannot
+later be misremembered as "we determined the licence permitted it".
