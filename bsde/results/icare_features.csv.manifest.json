@@ -1,0 +1,30 @@
+{
+  "definitions": {
+    "lempel_ziv": "114da337762fe077:ac3865d20ecb1a6c",
+    "relative_alpha_power": "39c1b3941cfb99cf:ac3865d20ecb1a6c",
+    "relative_delta_power": "3d9b91d5a615f80c:ac3865d20ecb1a6c",
+    "spectral_edge_95": "08d3e3889c7f93ba:ac3865d20ecb1a6c",
+    "spectral_entropy": "9fe3676d9333c7be:ac3865d20ecb1a6c",
+    "uce_v1": "fe342a557be8b8fa:ac3865d20ecb1a6c",
+    "whole_head_exponent": "75e6a2b0b5c70683:ac3865d20ecb1a6c",
+    "wpli_alpha": "8ddebb740c943a76:ac3865d20ecb1a6c"
+  },
+  "fields": [
+    "recording_id",
+    "dataset",
+    "subject",
+    "status",
+    "error",
+    "n_channels",
+    "sfreq",
+    "n_samples",
+    "lempel_ziv",
+    "relative_alpha_power",
+    "relative_delta_power",
+    "spectral_edge_95",
+    "spectral_entropy",
+    "uce_v1",
+    "whole_head_exponent",
+    "wpli_alpha"
+  ]
+}

@@ -289,3 +289,55 @@ def test_meta_columns_participate_in_the_resume_schema_guard(tmp_path):
     stream_features(FakeAdapter(n=3), _cands(), out, log=lambda *_: None, meta_keys=["task"])
     with pytest.raises(ValueError, match="different column set"):
         stream_features(FakeAdapter(n=3), _cands(), out, log=lambda *_: None, meta_keys=["task", "acq"])
+
+
+# --- definition drift ---------------------------------------------------------------------------------
+
+def test_resuming_after_a_feature_definition_changed_is_refused(tmp_path, monkeypatch):
+    """The bug this exists for: `f_lziv` was changed to resample to a common rate -- a correctness fix --
+    while a stream was mid-flight. The column set stayed byte-identical, so the schema guard was silent, and
+    resuming would have appended new-definition rows beside old-definition ones under the same heading."""
+    import bsde.ingestion.runner as R
+    out = str(tmp_path / "f.csv")
+    stream_features(FakeAdapter(n=3), _cands(), out, log=lambda *_: None)
+
+    real = R.definition_fingerprint
+    monkeypatch.setattr(R, "definition_fingerprint",
+                        lambda cands: {k: v + "-CHANGED" for k, v in real(cands).items()})
+    with pytest.raises(ValueError, match="CODE defining these candidates changed"):
+        R.stream_features(FakeAdapter(n=6), _cands(), out, log=lambda *_: None)
+
+
+def test_definition_drift_can_be_accepted_deliberately(tmp_path, monkeypatch):
+    """Escape hatch, but it must be explicit and it must warn -- silence here is the failure mode."""
+    import bsde.ingestion.runner as R
+    out = str(tmp_path / "f.csv")
+    stream_features(FakeAdapter(n=3), _cands(), out, log=lambda *_: None)
+    real = R.definition_fingerprint
+    monkeypatch.setattr(R, "definition_fingerprint",
+                        lambda cands: {k: v + "-CHANGED" for k, v in real(cands).items()})
+    msgs = []
+    R.stream_features(FakeAdapter(n=6), _cands(), out, log=msgs.append, allow_definition_drift=True)
+    assert len(_read(out)) == 6
+    assert any("definition drift accepted" in m for m in msgs), msgs
+
+
+def test_an_unchanged_definition_resumes_normally(tmp_path):
+    """The guard must not fire on an ordinary resume, or it would make resumption unusable."""
+    out = str(tmp_path / "f.csv")
+    stream_features(FakeAdapter(n=8), _cands(), out, limit=3, log=lambda *_: None)
+    stats = stream_features(FakeAdapter(n=8), _cands(), out, log=lambda *_: None)
+    assert stats["n_already_done"] == 3
+    assert len(_read(out)) == 8
+
+
+def test_a_manifest_is_written_next_to_the_table(tmp_path):
+    import json as _json
+    out = str(tmp_path / "f.csv")
+    stream_features(FakeAdapter(n=2), _cands(), out, log=lambda *_: None)
+    m = _json.load(open(out + ".manifest.json"))
+    assert set(m["definitions"]) == {c.name for c in _cands()}
+    assert "recording_id" in m["fields"]
+    # the fingerprint must combine the declared claim with a code hash, not just one of them
+    for v in m["definitions"].values():
+        assert ":" in v and len(v.split(":")) == 2

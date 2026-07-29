@@ -26,6 +26,9 @@ with no coordination and no shared state. Shards are disjoint and complete by co
 from __future__ import annotations
 
 import csv
+import hashlib
+import inspect
+import json
 import os
 import sys
 from typing import Any, Dict, List, Sequence
@@ -38,6 +41,42 @@ if __name__ == "__main__" and not __package__:
 import numpy as np
 
 from bsde.ingestion.base import Adapter, RecordingRef, shard_of
+
+
+
+def definition_fingerprint(candidates: Sequence) -> Dict[str, str]:
+    """Per-candidate fingerprint of the CODE that produces its values, not just its declared claim.
+
+    WHY THIS IS SEPARATE FROM `declaration_hash`. A candidate's declaration hash deliberately EXCLUDES the
+    callable, so that refactoring an implementation does not invalidate a pre-registered claim. That is right
+    for the registry and wrong here: resuming a stream after a feature's implementation changed silently
+    mixes two definitions in one column, and nothing about the file's shape reveals it.
+
+    Not hypothetical. `f_lziv` was changed to resample to a common rate -- a correctness fix, because LZ76
+    normalised by n/log2(n) is not comparable across sampling rates -- while an I-CARE stream was mid-flight.
+    The already-written rows carried the old definition, the column set was byte-identical, and the existing
+    guard would have appended new-definition rows beside them without complaint. The table would have parsed
+    cleanly and mixed two measures under one heading.
+
+    The fingerprint hashes the SOURCE FILE of each candidate's function. That is coarse -- any edit to
+    `seed.py` invalidates every resume against it -- and coarse in the safe direction, because module-level
+    constants such as `LZIV_TARGET_HZ` are part of a feature's definition and a function-only hash misses
+    them.
+    """
+    out = {}
+    for c in candidates:
+        try:
+            src = inspect.getsourcefile(c.fn)
+            blob = open(src, "rb").read() if src else b""
+        except Exception:
+            blob = b""
+        h = hashlib.sha256(blob).hexdigest()[:16] if blob else "unknown"
+        out[c.name] = f"{c.declaration_hash()}:{h}"
+    return out
+
+
+def _manifest_path(out_csv: str) -> str:
+    return out_csv + ".manifest.json"
 
 
 def _row_for(ref: RecordingRef, candidates: Sequence, fields: Sequence[str],
@@ -78,7 +117,8 @@ def _row_for(ref: RecordingRef, candidates: Sequence, fields: Sequence[str],
 
 def stream_features(adapter: Adapter, candidates: Sequence, out_csv: str,
                     shard: int = 0, n_shards: int = 1, limit: int | None = None,
-                    log=print, meta_keys: Sequence[str] = ()) -> Dict[str, int]:
+                    log=print, meta_keys: Sequence[str] = (),
+                    allow_definition_drift: bool = False) -> Dict[str, int]:
     """Extract features for every recording in this shard, appending to `out_csv`. Resumable.
 
     Returns counts. Raises if `out_csv` exists with a different column set — see the module docstring.
@@ -86,6 +126,7 @@ def stream_features(adapter: Adapter, candidates: Sequence, out_csv: str,
     fields = (["recording_id", "dataset", "subject", "status", "error",
                "n_channels", "sfreq", "n_samples"]
               + [f"meta_{k}" for k in meta_keys] + [c.name for c in candidates])
+    fp = definition_fingerprint(candidates)
 
     done: set = set()
     if os.path.exists(out_csv) and os.path.getsize(out_csv) > 0:
@@ -99,6 +140,20 @@ def stream_features(adapter: Adapter, candidates: Sequence, out_csv: str,
                     f"{fields}\nUse a new output path, or delete the old one deliberately.")
             done = {r["recording_id"] for r in rd}
         log(f"   resuming: {len(done)} rows already present in {out_csv}")
+        mp = _manifest_path(out_csv)
+        if os.path.exists(mp):
+            prev = json.load(open(mp)).get("definitions", {})
+            drift = {k: (prev.get(k), fp[k]) for k in fp if k in prev and prev[k] != fp[k]}
+            if drift and not allow_definition_drift:
+                raise ValueError(
+                    "the CODE defining these candidates changed since the existing rows were written, so "
+                    "resuming would mix two definitions of the same column in one table:\n"
+                    + "\n".join(f"    {k}: {a} -> {b}" for k, (a, b) in sorted(drift.items()))
+                    + f"\nDelete {out_csv} and re-run, or pass allow_definition_drift=True if you have "
+                      "verified the change cannot affect the already-written values.")
+            if drift:
+                log(f"   WARNING: definition drift accepted for {sorted(drift)} -- this table now mixes "
+                    "definitions and any cross-row comparison of those columns is invalid.")
 
     refs = [r for r in adapter.list_recordings() if shard_of(r.recording_id, n_shards) == shard]
     todo = [r for r in refs if r.recording_id not in done]
@@ -115,6 +170,8 @@ def stream_features(adapter: Adapter, candidates: Sequence, out_csv: str,
             w.writeheader()
             fh.flush()
             os.fsync(fh.fileno())
+            with open(_manifest_path(out_csv), "w") as mf:
+                json.dump({"definitions": fp, "fields": list(fields)}, mf, indent=2, sort_keys=True)
         for i, ref in enumerate(todo, 1):
             row = _row_for(ref, candidates, fields, meta_keys=meta_keys)
             w.writerow(row)
@@ -144,6 +201,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     ap.add_argument("--records", default="", help="wfdb only: file with one record name per line")
     ap.add_argument("--suffix", default="_eeg.edf", help="openneuro only: key suffix to select")
     ap.add_argument("--window-s", type=float, default=300.0, dest="window_s")
+    ap.add_argument("--allow-definition-drift", action="store_true",
+                    dest="allow_definition_drift",
+                    help="resume even though a feature's implementation changed; the table will then mix definitions")
     ap.add_argument("--meta-keys", default="", dest="meta_keys",
                     help="comma-separated ref.meta keys to persist as meta_<key> columns, e.g. 'task,acq,run'")
     ap.add_argument("--channel-regex", default="", dest="channel_regex",
@@ -188,7 +248,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     print(f"   candidates: {[c.name for c in cands]}")
     mk = [k.strip() for k in a.meta_keys.split(',') if k.strip()]
     stats = stream_features(adapter, cands, a.out, shard=a.shard, n_shards=a.n_shards, limit=a.limit,
-                            meta_keys=mk)
+                            meta_keys=mk, allow_definition_drift=a.allow_definition_drift)
     print(f"   {stats}")
     return 0
 
