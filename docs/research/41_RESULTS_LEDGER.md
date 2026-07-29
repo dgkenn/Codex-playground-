@@ -3023,3 +3023,79 @@ column of the morphology table (computed on the same recording as the morphology
 comparison needs, but it is not the burden variable R412 used.
 
 **Cumulative distinct results: 413.**
+
+---
+
+## R414 · The reversal is NOT a propofol artefact — and it is STRONGEST where no sedative was running
+
+The largest untested objection to the lead. Intra-burst **8–30 Hz** is close to what GABAergic anaesthetics
+manufacture — propofol produces frontal alpha and beta — and sedation practice differs systematically by
+aetiology (post-arrest patients are sedated on protocol for targeted temperature management). Sedation had
+been checked against **burden** and against the **clinician-flag residual**, but both checks predate R389, so
+the reversal itself had never been through it.
+
+Cohort n = 1,450 (morphology ∩ aetiology ∩ **drug data** ∩ ascertained death); 69.0 % 30-day death, 55.3 %
+anoxic, **80.3 % actively sedated at the EEG**. Patients with no drug record are excluded, not assumed
+unsedated (rule 5). "Active" reuses `heedb_infusion_at_eeg.py`'s validated definition: a BS-capable agent
+(propofol, midazolam, pentobarbital, thiopental, phenobarbital) whose interval spans the EEG or began within
+4 h.
+
+### D0/D1 · The confounding pathway is weak on its own terms
+
+| | sedated | not sedated | death % sedated | death % unsedated |
+|---|---|---|---|---|
+| anoxic | 679 | **123** | 83.7 % | 74.0 % |
+| non-anoxic | 485 | **163** | 57.3 % | 38.7 % |
+
+Sedation prevalence differs by only **9.8 pp** between arms (84.7 % vs 74.8 %), and sedation shifts the
+measure by only **0.097 SD**. A drug confound needs both to be substantial; neither is.
+
+### D2/D5 · The reversal by sedation stratum
+
+| stratum | n | aetiology × content interaction |
+|---|---|---|
+| full drug-documented cohort | 1,450 | +4.644 [+2.796, +6.886] |
+| **NOT actively sedated (primary)** | **286** | **+12.582 [+7.789, +19.664]** |
+| actively sedated (mirror) | 1,164 | +3.491 [+1.506, +5.886] |
+
+**D2 survives.** The reversal is present, same-signed, and excludes zero where **no BS-capable sedative was
+running**. The drug explanation predicted the opposite.
+
+### D3 · The matched null makes the small stratum interpretable
+
+Subsamples of the full drug-documented cohort matched on n (286), death rate (53.8 %) and anoxic fraction
+(43.0 %), **with no sedation restriction**, fail to exclude zero **25 % of the time** (74/300). So a stratum
+this size fails by chance in a quarter of draws — and the actual unsedated stratum did not merely pass, it
+produced the largest interaction in the table.
+
+### D4 · Direction, model-free — and this is the sound basis for "stronger"
+
+| stratum | anoxic AUC | non-anoxic AUC | gap |
+|---|---|---|---|
+| **not sedated** | **0.647 [0.553, 0.746]** ✳ | **0.339 [0.259, 0.432]** ✳ | **0.308** |
+| actively sedated | 0.577 [0.518, 0.626] ✳ | 0.426 [0.379, 0.478] ✳ | 0.151 |
+
+✳ = excludes 0.5. Both strata show the reversal — opposite sides of 0.5, all four intervals excluding it —
+and the unsedated gap is **roughly twice** the sedated one.
+
+**Why the AUC comparison and not the coefficients.** Logistic coefficients are **not comparable across
+subgroups with different outcome variance** (non-collapsibility), and the unsedated stratum has a much larger
+aetiology main effect (74.0 % vs 38.7 % death). So +12.6 versus +3.5 must **not** be read as "3.6× stronger".
+AUC is scale-free and is the honest basis for the comparison; on it, the reversal is about twice as wide
+without sedation.
+
+### What this means, and it is more than a control passing
+
+**Catalogue rule 17 applies in the best possible way: the fix made the effect stronger, so the diagnosis was
+wrong — a refutation of the drug explanation, not a refinement of it.** And the surviving stratum has a
+clinical identity: burst suppression *without* a sedative running is **pathological rather than iatrogenic**
+suppression. **The reversal is strongest exactly where the suppression is not drug-induced**, which is a
+positive mechanistic statement and converges with this project's older iatrogenic-versus-pathological thread.
+
+**Limits.** The precondition passed narrowly — the anoxic unsedated cell is **123** against a pre-set minimum
+of 120. OMOP records administrations, not infusion rates or plasma levels, so residual drug from earlier
+dosing is invisible and "not actively sedated" is a weaker statement than "drug-free". The stratum
+comparison was not a pre-registered three-way test; the non-overlap of the two intervals is reported as
+description.
+
+**Cumulative distinct results: 414.**
