@@ -1,4 +1,4 @@
-# HANDOFF — project state at R415 (2026-07-29)
+# HANDOFF — project state at R418 (2026-07-29)
 
 *Read `CLAUDE.md` first. This document is the scientific state: what is established, what is provisional,
 what is dead, and exactly what to do next. Every number here was verified against its raw log before being
@@ -9,7 +9,7 @@ written down.*
 ## 1. The one-paragraph state
 
 The project is a burst-suppression and clinical-EEG research programme on HEEDB (49,232 patients with
-reports), I-CARE (607 post-cardiac-arrest) and VitalDB (intraoperative). It has **415 logged results**. The
+reports), I-CARE (607 post-cardiac-arrest) and VitalDB (intraoperative). It has **418 logged results**. The
 core prognostic claim — suppression burden stratifies outcome within the guideline's worst tier, adds over
 the category, calibrates, and holds across hospitals and cohorts — is **solid and externally replicated**.
 The mechanism work has eliminated most candidates and produced **one substantive lead at R389–R392: the
@@ -113,6 +113,28 @@ produced the matched-null machinery that makes any future landmark claim in this
 > so passing it is meaningful. **Quote the AUC gap, not the coefficients** (+12.6 vs +3.5) — logistic
 > coefficients are not comparable across strata with different outcome variance. The clinical reading:
 > the reversal is strongest where suppression is **pathological rather than iatrogenic**.
+
+> ### ⚠ R417/R418 — THE LEAD'S DESCRIPTION WAS WRONG AND IS CORRECTED HERE
+>
+> Everything above and below describes the measure as "intra-burst 8–30 Hz **content**", which reads as *how
+> much fast activity there is*. The decisive sub-band re-extraction (n = 2,473, reproduction gate r = 1.0000)
+> shows that is not what reverses.
+>
+> | measure | anoxic AUC | non-anoxic AUC | reverses? |
+> |---|---|---|---|
+> | ratio (`alpha_beta`) | 0.577 | 0.426 | **YES** |
+> | **absolute fast power** | **0.390** | **0.403** | **no — protective in both** |
+> | **absolute slow power** | **0.371** | **0.445** | **no — protective in both** |
+>
+> **More absolute power of either band is protective regardless of aetiology.** Only the *balance* reverses,
+> and it is orthogonal to amount: r = +0.002 with absolute fast power, and the interaction **retains 117 %**
+> after adjusting for both absolute powers and their interactions (R418 U2). Alpha and beta each carry it
+> independently and equally (+0.343 / +0.340, summing to the composite +0.690 — additive to within 1 %), so it
+> is not an alpha phenomenon.
+>
+> **Describe the lead as: the prognostic meaning of intra-burst SPECTRAL BALANCE reverses by aetiology, and
+> this is not a statement about signal amount.** The AUCs quoted throughout this document are correct; the
+> word "content" is what misleads.
 
 ### The original statement of the lead
 

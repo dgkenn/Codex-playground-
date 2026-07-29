@@ -1,6 +1,6 @@
 # CLAUDE.md — guide for Claude Code sessions in this repo
 
-*Last updated 2026-07-29 at result R415. If you are a new session, read this file top to bottom before
+*Last updated 2026-07-29 at result R418. If you are a new session, read this file top to bottom before
 touching anything, then read `docs/research/49_HANDOFF_STATE.md` for where work stopped and why.*
 
 ---
@@ -18,7 +18,7 @@ outcome label; Phase 2 tests one pre-registered outcome on a held-out hospital w
 hash-verified objects) still stands **if that pipeline is ever resumed**.
 
 **The active research programme is a burst-suppression and clinical-EEG research loop on HEEDB, I-CARE and
-VitalDB.** It has produced **415 logged results** and one substantive lead (below). Everything of scientific
+VitalDB.** It has produced **418 logged results** and one substantive lead (below). Everything of scientific
 value lives in `docs/research/41_RESULTS_LEDGER.md`, `docs/LESSONS.md`, and `docs/EXPERIMENT_QUEUE.md`.
 
 There is also a large amount of **legacy documentation from unrelated earlier projects** — electrolytes,
@@ -44,7 +44,20 @@ concentrated in early deaths** — a matched null puts that at the 1st percentil
 artefact. Both sentences belong in an abstract. (2) **R409-R410:** the self-fulfilling-prophecy *explanation*
 built on top of this in R404-R408 was tested three ways and is **not supported**; front-loaded
 hypoxic-ischaemic mortality is the parsimonious reading. Do not present the withdrawal story. See
-`49_HANDOFF_STATE.md` §3.0. (3) **R414:** the reversal is **not a sedation artefact** — it survives where no burst-suppression-capable agent was running (n = 286, interaction +12.6 [+7.8, +19.7]) and is about **twice as wide on AUC** there (gap 0.308 vs 0.151), i.e. strongest where the suppression is pathological rather than drug-induced.
+`49_HANDOFF_STATE.md` §3.0.
+
+**(0) READ THIS BEFORE DESCRIBING THE LEAD AT ALL — R417/R418 corrected what it is a claim ABOUT.** The
+paragraph above says "intra-burst EEG content", which reads as *how much fast activity there is*. That is
+**wrong**, and the correction is not cosmetic. **Absolute band power does not reverse** — more absolute fast
+power, and more absolute slow power, are each **protective in BOTH aetiologies** (fast: anoxic AUC 0.390 /
+non-anoxic 0.403; slow: 0.371 / 0.445, all four excluding 0.5). What reverses is the **RATIO** — the
+*balance* between fast and slow — which correlates **+0.002** with absolute fast power and retains **117 %**
+of its interaction after adjustment for both absolute powers *and* their interactions. **State the lead as a
+reversal in SPECTRAL BALANCE, orthogonal to signal amount. Never as "more fast activity kills after
+anoxia".** Alpha and beta each carry it independently and equally (+0.343 / +0.340, summing to the
+composite's +0.690 — additive to within 1 %), so do not describe it as an alpha phenomenon either.
+
+(3) **R414:** the reversal is **not a sedation artefact** — it survives where no burst-suppression-capable agent was running (n = 286, interaction +12.6 [+7.8, +19.7]) and is about **twice as wide on AUC** there (gap 0.308 vs 0.151), i.e. strongest where the suppression is pathological rather than drug-induced.
 
 ---
 
