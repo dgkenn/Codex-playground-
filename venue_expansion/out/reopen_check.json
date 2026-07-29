@@ -1,0 +1,62 @@
+{
+ "KXFEDMENTION": {
+  "kill_entry": "#22 illiquid r1s1",
+  "kill_achieved": "1 retrievable event (live API)",
+  "kill_needed": "n>=30 / >=8 event-days",
+  "archive_markets": 305,
+  "archive_settled": 264,
+  "archive_events": 9,
+  "first_day": "2025-01-30",
+  "last_day": "2026-01-28"
+ },
+ "KXHANNITYMENTION": {
+  "kill_entry": "#22 illiquid r1s1",
+  "kill_achieved": "2 retrievable events (live API)",
+  "kill_needed": "n>=30 / >=8 event-days",
+  "archive_markets": 0,
+  "archive_settled": 0,
+  "archive_events": 0,
+  "first_day": "None",
+  "last_day": "None"
+ },
+ "KXJOBLESSCLAIMS": {
+  "kill_entry": "#24 / #26",
+  "kill_achieved": "10 servable Thursdays / 10 of 28 weeks",
+  "kill_needed": ">=15 Thursdays / >=60 weeks",
+  "archive_markets": 212,
+  "archive_settled": 192,
+  "archive_events": 24,
+  "first_day": "2025-06-12",
+  "last_day": "2026-02-05"
+ },
+ "KXHIGH": {
+  "kill_entry": "#3/#5/#9 directional",
+  "kill_achieved": "n=17 / n=84 entries",
+  "kill_needed": "n>=200 / n>=300",
+  "archive_markets": 19661,
+  "archive_settled": 19355,
+  "archive_events": 3279,
+  "first_day": "2024-10-25",
+  "last_day": "2027-01-31"
+ },
+ "KXCPI": {
+  "kill_entry": "#29 macro-surprise",
+  "kill_achieved": "~31 TEST events",
+  "kill_needed": ">=40 events, >=3 families",
+  "archive_markets": 724,
+  "archive_settled": 590,
+  "archive_events": 104,
+  "first_day": "2024-11-13",
+  "last_day": "2026-03-11"
+ },
+ "KXPAYROLL": {
+  "kill_entry": "#29 macro-surprise",
+  "kill_achieved": "~31 TEST events",
+  "kill_needed": ">=40 events, >=3 families",
+  "archive_markets": 259,
+  "archive_settled": 88,
+  "archive_events": 26,
+  "first_day": "2024-12-06",
+  "last_day": "2026-12-04"
+ }
+}
