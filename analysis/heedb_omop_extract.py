@@ -77,6 +77,10 @@ COLS = {
     # source value at extraction keeps the output small enough to analyse in memory.
     "measurement_conscious": ["person_id", "measurement_datetime", "measurement_concept_id",
                               "measurement_source_value", "value_as_number", "unit_source_value"],
+    # Body temperature, for the targeted-temperature-management confound (candidate F4). Same physical
+    # table as `measurement`, row-filtered at extraction so the output stays small.
+    "measurement_temp": ["person_id", "measurement_datetime", "measurement_concept_id",
+                         "measurement_source_value", "value_as_number", "unit_source_value"],
     # Sedatives only, for the recovery-of-consciousness arm. The existing drug_exposure.csv was extracted
     # against the 7,323-patient burst-suppression cohort, so it has NO BS-negative comparison group -- using it
     # for the RoC study would silently restrict the model to BS-positive patients, which is exactly the failure
@@ -123,10 +127,17 @@ COLS = {
 SOURCE_TABLE = {"measurement_conscious": "measurement", "drug_sedatives": "drug_exposure",
                 "drug_vasopressors": "drug_exposure", "procedure_life_support": "procedure_occurrence",
                 "visit_disposition": "visit_occurrence", "observation_goals": "observation",
-                "measurement_nse": "measurement"}
+                "measurement_nse": "measurement",
+                "measurement_temp": "measurement"}
 
 # pseudo-table -> (column to test, compiled regex a row must match to be kept)
-ROW_FILTER = {"measurement_conscious": ("measurement_source_value",
+ROW_FILTER = {# \btemp\b deliberately does NOT match "temporal" (as in temporal lobe) -- the boundary
+              # after "temp" fails on "temporal". Verified before use rather than assumed.
+              "measurement_temp": ("measurement_source_value",
+                                   re.compile(r"\btemp\b|\btemps\b|\btemperature\b|core temp|"
+                                              r"body temp|tympanic|esophageal temp|rectal temp|"
+                                              r"bladder temp|axillary temp", re.I)),
+              "measurement_conscious": ("measurement_source_value",
                                         re.compile(r"glasgow|\bgcs\b|rass|richmond|sedation scale|"
                                                    r"level of consciousness|eye opening|best motor response|"
                                                    r"best verbal response|ramsay|arousal", re.I)),
