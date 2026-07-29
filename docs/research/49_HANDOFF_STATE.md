@@ -1,4 +1,4 @@
-# HANDOFF — project state at R413 (2026-07-29)
+# HANDOFF — project state at R414 (2026-07-29)
 
 *Read `CLAUDE.md` first. This document is the scientific state: what is established, what is provisional,
 what is dead, and exactly what to do next. Every number here was verified against its raw log before being
@@ -9,7 +9,7 @@ written down.*
 ## 1. The one-paragraph state
 
 The project is a burst-suppression and clinical-EEG research programme on HEEDB (49,232 patients with
-reports), I-CARE (607 post-cardiac-arrest) and VitalDB (intraoperative). It has **413 logged results**. The
+reports), I-CARE (607 post-cardiac-arrest) and VitalDB (intraoperative). It has **414 logged results**. The
 core prognostic claim — suppression burden stratifies outcome within the guideline's worst tier, adds over
 the category, calibrates, and holds across hospitals and cohorts — is **solid and externally replicated**.
 The mechanism work has eliminated most candidates and produced **one substantive lead at R389–R392: the
@@ -103,6 +103,16 @@ produced the matched-null machinery that makes any future landmark claim in this
 > an artefact of one computed number, and points a mechanism toward frequency content rather than signal
 > scale. **It is a failure to replicate, not a demonstrated absence** — the upper bound is 87 % of the
 > reference effect.
+
+> **R414 — the pharmacological objection is retired, and the result went the other way.** Intra-burst
+> 8–30 Hz sits where propofol works, so the obvious reviewer question is whether the reversal is a drug
+> signature. It is not. Sedation prevalence differs between arms by only 9.8 pp and shifts the measure by
+> 0.097 SD, and **where no BS-capable agent was running the reversal is present and wider**: anoxic AUC
+> **0.647 [0.553, 0.746]** vs non-anoxic **0.339 [0.259, 0.432]**, a gap of **0.308** against **0.151** in
+> the sedated stratum. A matched null shows a stratum this size (n = 286) fails by chance 25 % of the time,
+> so passing it is meaningful. **Quote the AUC gap, not the coefficients** (+12.6 vs +3.5) — logistic
+> coefficients are not comparable across strata with different outcome variance. The clinical reading:
+> the reversal is strongest where suppression is **pathological rather than iatrogenic**.
 
 ### The original statement of the lead
 
