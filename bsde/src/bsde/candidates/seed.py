@@ -132,6 +132,7 @@ def f_spectral_entropy(data, ch_names, sfreq, meta=None) -> float:
 
 
 LZIV_WINDOW_S = 10.0
+LZIV_TARGET_HZ = 100.0   # every dataset is decimated to this before LZ -- see f_lziv's docstring
 
 
 def f_lziv(data, ch_names, sfreq, meta=None) -> float:
@@ -152,7 +153,18 @@ def f_lziv(data, ch_names, sfreq, meta=None) -> float:
     """
     from bsde.features.complexity import lziv
     d = np.asarray(data, float)
-    w = int(round(LZIV_WINDOW_S * float(sfreq)))
+    sf = float(sfreq)
+    if sf > LZIV_TARGET_HZ * 1.01:
+        from math import gcd
+        up, down = int(round(LZIV_TARGET_HZ)), int(round(sf))
+        g = gcd(up, down)
+        try:
+            from scipy.signal import resample_poly
+            d = resample_poly(d, up // g, down // g, axis=1)
+        except Exception:
+            return float("nan")   # refuse rather than compare an undecimated value against decimated ones
+        sf = LZIV_TARGET_HZ
+    w = int(round(LZIV_WINDOW_S * sf))
     if w < 256 or d.shape[1] < w:
         return float("nan")     # too short to yield a comparable value; say so rather than improvise
     n_win = d.shape[1] // w
