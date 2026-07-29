@@ -74,12 +74,14 @@ from marathon_engine.physiology import (
     TrainingPaces, ZoneModel, efficiency_factor, five_zone_model, hr_max_estimate,
     hr_at_reserve_fraction, pace_to_speed, reserve_fraction_at_hr, riegel_predict,
     speed_to_pace, training_paces, vdot_from_race, vo2_at_velocity, fmt_pace,
-    RIEGEL_NOVICE_EXPONENT,
+    RIEGEL_NOVICE_EXPONENT, TANAKA_SEE_BPM,
 )
 
 __all__ = [
     "RampStage", "RampTest", "StrengthScreen", "TimeTrial", "FitnessProfile",
     "RAMP_STAGE_MIN", "RAMP_STOP_HRR", "RAMP_STOP_RPE", "CALF_RAISE_TARGET",
+    "HrMaxCandidate", "HR_MAX_SUSTAIN_S", "HR_MAX_MIN_ELAPSED_S", "HR_MAX_CADENCE_MARGIN",
+    "HR_MAX_STEP_UNCONFIRMED", "HR_MAX_TOTAL_UNCONFIRMED",
     "fit_hr_speed", "speed_at_hr", "hr_at_speed", "estimate_hr_max_from_ramp",
     "lt_speed_from_talk_test", "seed_vdot_from_ramp", "profile_from_ramp",
     "profile_from_time_trial", "update_hr_max", "compare_ramps", "ramp_protocol",
@@ -588,32 +590,132 @@ def profile_from_time_trial(tt: TimeTrial, previous: FitnessProfile) -> FitnessP
     )
 
 
-def update_hr_max(profile: FitnessProfile, observed_peak_hr: float,
-                  *, context: str = "hard session") -> Tuple[FitnessProfile, Optional[str]]:
-    """Adopt a higher observed HRmax when a hard session reveals one.
+#: HRmax capture guards. See :func:`update_hr_max` for why each exists.
+HR_MAX_SUSTAIN_S = 15.0          # must hold within +/-3 bpm for this long
+HR_MAX_MIN_ELAPSED_S = 300.0     # past the optical sensor's unreliable early window
+HR_MAX_CADENCE_MARGIN = 5.0      # must be this far from cadence and cadence/2
+HR_MAX_STEP_UNCONFIRMED = 5.0    # max raise per event without chest-strap confirmation
+HR_MAX_TOTAL_UNCONFIRMED = 15.0  # max cumulative raise without chest-strap confirmation
 
-    Returns the (possibly unchanged) profile and a message when it changed. An HR above the
-    current assumed max during a genuinely hard effort is not an artifact to be clipped -- it is
-    the measurement we were waiting for. Artifacts are caught upstream in
-    :mod:`marathon_engine.signal_quality`; anything reaching here has already passed the
-    plausibility and slew-rate gates.
+
+@dataclass
+class HrMaxCandidate:
+    """Evidence for a new maximum heart rate, so the guards can be checked rather than assumed."""
+    observed_hr: float
+    sustained_s: float
+    elapsed_in_session_s: float
+    fraction_through_effort: float          # 0..1; 1.0 = at the very end
+    cadence_spm: Optional[float] = None
+    hr_status: str = "ok"                   # from signal_quality.HrGate
+    chest_strap_confirmed: bool = False
+
+
+def update_hr_max(profile: FitnessProfile, candidate: HrMaxCandidate,
+                  *, context: str = "hard session",
+                  total_unconfirmed_raise: float = 0.0
+                  ) -> Tuple[FitnessProfile, Optional[str], List[str]]:
+    """Adopt a higher observed HRmax **only** when every guard passes.
+
+    Returns ``(profile, message, rejections)``.
+
+    An earlier version of this function accepted any observed peak above the current maximum, on the
+    reasoning that an observed heart rate is data and a population regression is not. That reasoning
+    is right and the implementation was still wrong, because on an *optical armband* the highest
+    number in a session is very often not a heart rate at all. A single cadence-lock spike would have
+    been adopted as the new maximum, and since every zone boundary is derived from HRmax, one artifact
+    would silently shift the entire zone model upward -- turning every prescribed "easy" run into a
+    tempo run for weeks, with no visible error anywhere.
+
+    So all of these must hold:
+
+    1. **Sustained** for :data:`HR_MAX_SUSTAIN_S` within a few bpm. A true maximum is held briefly at
+       the end of a hard effort; an artifact is a spike.
+    2. **Past** :data:`HR_MAX_MIN_ELAPSED_S` into the session. Optical signal quality is at its worst
+       in the first minutes, before the sensor and skin have settled.
+    3. **Not near cadence or half cadence**, by :data:`HR_MAX_CADENCE_MARGIN`. This is the specific
+       artifact being guarded against, so it gets an explicit check rather than relying on the
+       upstream gate alone.
+    4. **Plausible**: within three standard errors of the age prediction. The Tanaka SEE is ~7 bpm, so
+       ~21 bpm of headroom -- generous enough for a genuine outlier, tight enough to reject nonsense.
+    5. **In the final quarter of a hard effort.** A maximum reached in the middle of a steady run is
+       not a maximum; it is a sensor problem or a different kind of problem.
+    6. **Sensor state is clean** -- not dropout, frozen, cadence-locked or warming up.
+
+    And even when all six pass, an **unconfirmed** capture may raise HRmax by at most
+    :data:`HR_MAX_STEP_UNCONFIRMED` per event and :data:`HR_MAX_TOTAL_UNCONFIRMED` in total. Only a
+    simultaneous chest-strap recording -- a different sensing modality, without this failure mode --
+    allows the full observed value to be adopted. The asymmetry is deliberate: too low an HRmax makes
+    the plan slightly conservative, while too high a one makes every easy day a hard day.
+
+    **Caller responsibility:** changing HRmax invalidates every historical TRIMP value, because
+    Banister TRIMP is a function of heart-rate reserve. Recompute the load history under a new version
+    id and keep the old series -- do not silently rewrite it.
     """
-    if observed_peak_hr <= profile.hr_max:
-        return profile, None
-    new_max = observed_peak_hr
+    rejections: List[str] = []
+    obs = candidate.observed_hr
+
+    if obs <= profile.hr_max:
+        return profile, None, ["not higher than the current maximum"]
+    if candidate.hr_status != "ok":
+        rejections.append(f"sensor state was '{candidate.hr_status}', not clean")
+    if candidate.sustained_s < HR_MAX_SUSTAIN_S:
+        rejections.append(f"held for only {candidate.sustained_s:.0f} s "
+                          f"(need {HR_MAX_SUSTAIN_S:.0f} s) -- looks like a spike, not a maximum")
+    if candidate.elapsed_in_session_s < HR_MAX_MIN_ELAPSED_S:
+        rejections.append(f"occurred {candidate.elapsed_in_session_s:.0f} s into the session, "
+                          f"inside the {HR_MAX_MIN_ELAPSED_S:.0f} s window where optical signal "
+                          "quality is least reliable")
+    if candidate.cadence_spm:
+        for label, ref in (("cadence", candidate.cadence_spm),
+                           ("half cadence", candidate.cadence_spm / 2.0)):
+            if abs(obs - ref) <= HR_MAX_CADENCE_MARGIN:
+                rejections.append(f"within {HR_MAX_CADENCE_MARGIN:.0f} bpm of {label} "
+                                  f"({ref:.0f}) -- the classic lock-on artifact")
+    ceiling = hr_max_estimate(profile.age) + 3 * TANAKA_SEE_BPM
+    if obs > ceiling:
+        rejections.append(f"{obs:.0f} bpm exceeds the plausibility ceiling of {ceiling:.0f} "
+                          "(age prediction plus three standard errors)")
+    if candidate.fraction_through_effort < 0.75:
+        rejections.append(f"occurred {candidate.fraction_through_effort*100:.0f}% through the effort; "
+                          "a genuine maximum comes at the end")
+
+    if rejections:
+        return profile, None, rejections
+
+    # Guards passed. Cap the adopted value unless a chest strap corroborates it.
+    if candidate.chest_strap_confirmed:
+        new_max = obs
+        provenance = "observed_confirmed"
+        note = "Confirmed by a simultaneous chest-strap recording, so the full value is adopted."
+    else:
+        headroom = max(0.0, HR_MAX_TOTAL_UNCONFIRMED - total_unconfirmed_raise)
+        step = min(HR_MAX_STEP_UNCONFIRMED, headroom)
+        if step <= 0:
+            return profile, None, [
+                f"all guards passed, but the cumulative unconfirmed raise is already at the "
+                f"{HR_MAX_TOTAL_UNCONFIRMED:.0f} bpm limit. Confirm with a chest strap to go further "
+                "-- optical peaks alone should not keep pushing the zone model upward."]
+        new_max = min(obs, profile.hr_max + step)
+        provenance = "observed_capped"
+        note = (f"Raised by {new_max - profile.hr_max:.0f} bpm rather than straight to {obs:.0f}: "
+                "unconfirmed optical peaks move HRmax in small steps, because one artifact adopted "
+                "as a maximum would shift every zone boundary upward.")
     zones = five_zone_model(new_max, profile.hr_rest, lthr=profile.lthr)
-    msg = (f"New maximum heart rate observed: {new_max:.0f} bpm during {context} "
-           f"(was {profile.hr_max:.0f}, {profile.hr_max_source}). All HR zones have shifted up.")
+    msg = (f"New maximum heart rate: {new_max:.0f} bpm during {context} "
+           f"(was {profile.hr_max:.0f}, {profile.hr_max_source}). All HR zones have shifted up. "
+           f"{note} Every historical training-load value needs recomputing, because TRIMP is a "
+           "function of heart-rate reserve.")
     updated = FitnessProfile(
         as_of=profile.as_of, age=profile.age, hr_rest=profile.hr_rest, hr_max=new_max,
-        hr_max_source="observed", vdot=profile.vdot, vdot_source=profile.vdot_source,
+        hr_max_source=provenance, vdot=profile.vdot, vdot_source=profile.vdot_source,
         zones=zones, paces=profile.paces, lthr=profile.lthr,
         threshold_speed_kmh=profile.threshold_speed_kmh,
         cadence_by_speed=dict(profile.cadence_by_speed), ef_baseline=profile.ef_baseline,
         ramp_fit=profile.ramp_fit, strength_findings=profile.strength_findings,
         predictions=profile.predictions, caveats=profile.caveats,
+        prescription_basis=profile.prescription_basis, hr_paces=dict(profile.hr_paces),
     )
-    return updated, msg
+    return updated, msg, []
 
 
 def compare_ramps(old: RampTest, new: RampTest) -> Dict[str, object]:

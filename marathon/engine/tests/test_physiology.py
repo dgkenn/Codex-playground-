@@ -278,3 +278,30 @@ def test_decoupling_ignores_invalid_samples():
 def test_decoupling_raises_when_a_half_is_all_invalid():
     with pytest.raises(ValueError):
         decoupling([(0.0, 0.0)], [(3.0, 150.0)])
+
+
+# ---- the Interval/Repetition prescription floor -------------------------------------------
+
+def test_ir_not_prescribable_below_the_floor():
+    """Daniels publishes no I or R pace below VDOT 35; a calculator value there is extrapolation."""
+    from marathon_engine.physiology import VDOT_IR_FLOOR
+    assert not training_paces(VDOT_IR_FLOOR - 1).ir_prescribable
+    assert training_paces(VDOT_IR_FLOOR).ir_prescribable
+
+
+def test_emt_remain_prescribable_below_the_floor():
+    """E/M/T are published into the low 30s, so a sub-floor athlete still gets a full easy,
+    marathon and threshold prescription -- which is the correct training for them anyway."""
+    p = training_paces(31.0)
+    assert set(p.prescribable_types) == {"easy", "marathon", "threshold"}
+
+
+def test_ir_appear_above_the_floor():
+    p = training_paces(45.0)
+    assert "interval" in p.prescribable_types and "repetition" in p.prescribable_types
+
+
+def test_ir_values_still_computed_for_diagnostics():
+    """The numbers exist so they can be inspected; they are simply not prescribable."""
+    p = training_paces(28.0)
+    assert p.interval > 0 and p.repetition > 0

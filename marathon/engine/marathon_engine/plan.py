@@ -68,7 +68,7 @@ from typing import Dict, List, Optional, Sequence, Tuple
 
 from marathon_engine.assessment import FitnessProfile
 from marathon_engine.load import MAX_WEEKLY_RAMP
-from marathon_engine.physiology import TrainingPaces, fmt_pace
+from marathon_engine.physiology import VDOT_IR_FLOOR, TrainingPaces, fmt_pace
 
 __all__ = [
     "Phase", "SessionType", "Session", "PlannedWeek", "PlanConfig", "Gate", "GateReport",
@@ -976,16 +976,29 @@ def generate_week(profile: FitnessProfile, phase: Phase, week_in_phase: int, *,
                             "on three runs a week -- the long run is already a hard session."]
 
     elif phase in (Phase.HALF_BUILD, Phase.MARATHON_BASE, Phase.MARATHON_PEAK):
+        substitution_note: Optional[str] = None
         lr_km, lr_min, lr_notes = long_run_progression(phase, week_in_phase, km, paces,
                                                        config=cfg, is_cutback=is_cutback)
         # Alternate threshold and VO2max work; threshold dominates because it is the more
         # marathon-specific adaptation and the cheaper one to recover from.
-        do_intervals = (week_in_phase % 3 == 0) and phase != Phase.MARATHON_PEAK
+        # Never schedule VO2max intervals when the athlete's VDOT is below the floor where Daniels
+        # publishes an Interval pace. There is no defensible target to run them at, and an
+        # extrapolated one is both unachievable and an injury risk for someone whose aerobic base
+        # cannot yet support the work. Threshold substitutes, which is the right session anyway.
+        do_intervals = ((week_in_phase % 3 == 0) and phase != Phase.MARATHON_PEAK
+                        and paces.ir_prescribable)
         if do_intervals:
             sessions.append(_intervals(d_a, paces, reps=5, rep_m=800))
         else:
             reps = 3 + min(2, (week_in_phase - 1) // 4)
             sessions.append(_threshold(d_a, paces, reps, 8.0 if phase == Phase.HALF_BUILD else 10.0, 2.0))
+            if (week_in_phase % 3 == 0) and phase != Phase.MARATHON_PEAK and not paces.ir_prescribable:
+                substitution_note = (
+                    f"This week would normally be VO2max intervals, but your VDOT ({paces.vdot:.0f}) "
+                    f"is below {int(VDOT_IR_FLOOR)}, where Daniels stops publishing an Interval pace. "
+                    "There is no honest target to run them at, so threshold work substitutes. "
+                    "Intervals appear automatically once a race result lifts VDOT past the floor -- "
+                    "and threshold is the more useful session for you until then anyway.")
         # Distribute the volume the long run and quality session do not cover across the remaining
         # easy run(s), instead of hardcoding a duration. A fixed 40 min made the session list
         # silently inconsistent with the week's stated volume target -- the plan said 50 km and the
@@ -1016,6 +1029,8 @@ def generate_week(profile: FitnessProfile, phase: Phase, week_in_phase: int, *,
         else:
             sessions.append(_long_run(d_long, lr_km, lr_min, paces, phase, lr_notes))
         notes = list(lr_notes)
+        if substitution_note:
+            notes.append(substitution_note)
         if cfg.offer_fourth_run and phase in (Phase.MARATHON_BASE, Phase.MARATHON_PEAK):
             # Put it on a day that has nothing else on it. Landing it on a strength day (which the
             # old `(d_b + 1) % 7` did) produces a schedule that reads as two sessions stacked on one

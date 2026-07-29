@@ -63,7 +63,8 @@ from typing import Dict, List, Optional, Sequence, Tuple
 
 __all__ = [
     "ScreeningAnswers", "ScreeningResult", "screen_participant",
-    "BoneLoadState", "bone_load", "single_run_progression",
+    "BoneLoadState", "bone_load", "single_run_progression", "clamp_single_run",
+    "SPIKE_DEFAULT_CLAMP", "SPIKE_CLAMP_IN_BONE_WINDOW", "bone_window_increment_factor",
     "hydration_plan", "MEDICATION_WARNINGS", "SUPPLEMENT_CHECKS",
     "RED_FLAG_SYMPTOMS", "return_to_run",
     "BONE_ADAPTATION_WEEKS", "BONE_LOAD_SPIKE_RATIO", "NEW_RUNNER_BONE_WINDOW_WEEKS",
@@ -289,6 +290,11 @@ def bone_load(weekly_km_history: Sequence[float], *, weeks_running: Optional[int
     guidance: List[str] = []
     if in_window:
         guidance.append(
+            "While this window is armed the weekly increment cap is halved and single-run "
+            "progression is disabled -- the plan grows more slowly than the numbers alone would "
+            "justify, on purpose.")
+    if in_window:
+        guidance.append(
             f"You are {weeks} weeks into running, inside the ~{NEW_RUNNER_BONE_WINDOW_WEEKS}-week "
             "window where bone stress injuries cluster in new runners. Nothing in your heart-rate, "
             "HRV or load numbers can see bone -- it remodels over months, while your fitness "
@@ -307,7 +313,15 @@ def bone_load(weekly_km_history: Sequence[float], *, weeks_running: Optional[int
                          in_high_risk_window=in_window, band=band, guidance=guidance)
 
 
-def single_run_progression(planned_km: float, longest_run_last_30d: Optional[float]
+#: Default clamp applied when a single run is flagged. A graded warning that the athlete can simply
+#: dismiss is a warning that gets dismissed, so the planner clamps by default and says it did.
+SPIKE_DEFAULT_CLAMP = 1.05
+#: While the bone-vulnerable window is armed, no single-run progression at all.
+SPIKE_CLAMP_IN_BONE_WINDOW = 1.00
+
+
+def single_run_progression(planned_km: float, longest_run_last_30d: Optional[float],
+                           *, in_bone_window: bool = False
                            ) -> Tuple[str, float, str]:
     """Grade a single run against the longest run of the previous 30 days.
 
@@ -346,6 +360,44 @@ def single_run_progression(planned_km: float, longest_run_last_30d: Optional[flo
             f"{pct:.0f}% longer than your longest run in the last month. This is the single-session "
             "spike pattern most strongly associated with injury in the RUNSAFE cohort. Split it, or "
             "cap it nearer your recent longest, and come back to this distance next week.")
+
+
+def clamp_single_run(planned_km: float, longest_run_last_30d: Optional[float],
+                     *, in_bone_window: bool = False,
+                     allow_override: bool = False) -> Dict[str, object]:
+    """Apply the spike guard as an actual limit, not just a warning.
+
+    A graded caution the athlete can wave away is a caution that gets waved away, usually on the
+    morning they feel good -- which is exactly the wrong day to allow a step up. So the planner
+    clamps by default and reports that it did, with the original figure shown so nothing is hidden.
+
+    ``allow_override`` lets a *caution*-band run through at its planned distance if the athlete
+    explicitly insists. It deliberately does **not** apply in the ``high`` band or inside the
+    bone-vulnerable window, because those are the two cases where the cost of being wrong is a
+    stress injury rather than a hard week.
+    """
+    band, ratio, message = single_run_progression(planned_km, longest_run_last_30d,
+                                                  in_bone_window=in_bone_window)
+    if not longest_run_last_30d or longest_run_last_30d <= 0 or band == "ok":
+        return {"band": band, "ratio": round(ratio, 3), "planned_km": round(planned_km, 1),
+                "allowed_km": round(planned_km, 1), "clamped": False, "message": message}
+
+    limit_ratio = SPIKE_CLAMP_IN_BONE_WINDOW if in_bone_window else SPIKE_DEFAULT_CLAMP
+    allowed = longest_run_last_30d * limit_ratio
+    if band == "caution" and allow_override and not in_bone_window:
+        return {"band": band, "ratio": round(ratio, 3), "planned_km": round(planned_km, 1),
+                "allowed_km": round(planned_km, 1), "clamped": False,
+                "message": message + " Running it as planned at your explicit request."}
+    if allowed >= planned_km:
+        return {"band": band, "ratio": round(ratio, 3), "planned_km": round(planned_km, 1),
+                "allowed_km": round(planned_km, 1), "clamped": False, "message": message}
+    why = ("no single-run progression at all while the bone-vulnerable window is armed"
+           if in_bone_window else
+           f"capped at {limit_ratio:.2f}x your recent longest run")
+    return {"band": band, "ratio": round(ratio, 3), "planned_km": round(planned_km, 1),
+            "allowed_km": round(allowed, 1), "clamped": True,
+            "message": (f"{message} Shortened from {planned_km:.1f} km to {allowed:.1f} km -- "
+                        f"{why}. The distance is not lost; it comes back next week off a higher base.")}
 
 
 # ----------------------------------------------------------------------------------------
@@ -512,3 +564,19 @@ def return_to_run(days_off: int, reason: str, *, pain_free: bool = True,
         "rule": ("Two consecutive pain-free weeks before any quality session returns."
                  if days_off > 21 else "Reintroduce one quality session per week, not two."),
     }
+
+
+def bone_window_increment_factor(state: BoneLoadState) -> float:
+    """Multiplier applied to the weekly volume increment while the bone window is armed.
+
+    Halving the ramp for the first months is the one intervention that directly targets the injury
+    the whole plan is most worried about, and it is cheap: the cost is a few weeks of slower
+    progression, against a stress fracture that costs three to four months.
+
+    An honest limit on the model: bone resorption runs for roughly 2-4 weeks after a new loading
+    stimulus and formation takes 3-4 months, while recruit stress-fracture incidence peaks around
+    weeks 3-6. So the window is a **simplification, and real vulnerability may extend past it** --
+    which is exactly why absolute weekly increment caps stay in force for the entire build rather
+    than only inside the window.
+    """
+    return 0.5 if state.in_high_risk_window else 1.0

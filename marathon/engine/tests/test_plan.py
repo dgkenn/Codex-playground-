@@ -459,3 +459,44 @@ def test_week_sessions_are_coherent_with_the_stated_volume(profile):
             assert total == pytest.approx(w.volume_target_km, rel=0.16), (
                 f"{phase} wk{wk}: sessions total {total:.1f} km vs stated "
                 f"{w.volume_target_km:.1f} km")
+
+
+def test_intervals_are_not_scheduled_below_the_vdot_ir_floor(profile):
+    """Daniels publishes no Interval pace below VDOT 35, so any target is a calculator
+    extrapolation -- unachievable for someone whose base cannot support VO2max work, and an
+    injury risk. Threshold substitutes."""
+    from marathon_engine.physiology import VDOT_IR_FLOOR, training_paces
+    from marathon_engine.assessment import FitnessProfile
+    low = FitnessProfile(
+        as_of=profile.as_of, age=profile.age, hr_rest=profile.hr_rest, hr_max=profile.hr_max,
+        hr_max_source=profile.hr_max_source, vdot=30.0, vdot_source="test",
+        zones=profile.zones, paces=training_paces(30.0), lthr=profile.lthr)
+    assert not low.paces.ir_prescribable
+    for wk in range(1, 10):
+        w = generate_week(low, Phase.HALF_BUILD, wk)
+        assert not any(s.type == SessionType.INTERVALS for s in w.sessions), \
+            f"week {wk} scheduled intervals at VDOT 30"
+
+
+def test_interval_substitution_is_explained(profile):
+    from marathon_engine.physiology import training_paces
+    from marathon_engine.assessment import FitnessProfile
+    low = FitnessProfile(
+        as_of=profile.as_of, age=profile.age, hr_rest=profile.hr_rest, hr_max=profile.hr_max,
+        hr_max_source=profile.hr_max_source, vdot=30.0, vdot_source="test",
+        zones=profile.zones, paces=training_paces(30.0), lthr=profile.lthr)
+    w = generate_week(low, Phase.HALF_BUILD, 3)      # would normally be an interval week
+    assert any("VDOT" in n and "Interval" in n for n in w.notes)
+
+
+def test_intervals_return_above_the_floor(profile):
+    from marathon_engine.physiology import training_paces
+    from marathon_engine.assessment import FitnessProfile
+    high = FitnessProfile(
+        as_of=profile.as_of, age=profile.age, hr_rest=profile.hr_rest, hr_max=profile.hr_max,
+        hr_max_source=profile.hr_max_source, vdot=42.0, vdot_source="test",
+        zones=profile.zones, paces=training_paces(42.0), lthr=profile.lthr)
+    assert high.paces.ir_prescribable
+    found = any(any(s.type == SessionType.INTERVALS for s in generate_week(high, Phase.HALF_BUILD, wk).sessions)
+                for wk in range(1, 10))
+    assert found

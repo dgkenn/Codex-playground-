@@ -278,3 +278,200 @@ def test_all_returns_are_serialisable():
     import json
     for days in (3, 10, 30, 90):
         json.dumps(return_to_run(days, "work", last_weekly_km=25.0))
+
+
+# ---- HRmax capture guards --------------------------------------------------------------------
+
+def _profile(hr_max=187.0, age=30.0):
+    from datetime import date as _d
+    from marathon_engine.assessment import FitnessProfile
+    from marathon_engine.physiology import five_zone_model, training_paces
+    return FitnessProfile(as_of=_d(2026, 8, 1), age=age, hr_rest=55.0, hr_max=hr_max,
+                          hr_max_source="age_formula", vdot=35.0, vdot_source="test",
+                          zones=five_zone_model(hr_max, 55.0), paces=training_paces(35.0))
+
+
+def _good_candidate(hr=195.0):
+    from marathon_engine.assessment import HrMaxCandidate
+    return HrMaxCandidate(observed_hr=hr, sustained_s=20.0, elapsed_in_session_s=1800.0,
+                          fraction_through_effort=0.95, cadence_spm=170.0, hr_status="ok")
+
+
+def test_value_above_the_plausibility_ceiling_is_rejected_before_capping():
+    """Ordering check: the ceiling guard must fire before the capping logic, so an absurd reading is
+    rejected outright rather than quietly becoming a +5 bpm raise."""
+    from marathon_engine.assessment import update_hr_max
+    _, msg, rej = update_hr_max(_profile(), _good_candidate(215.0))
+    assert msg is None
+    assert any("plausibility ceiling" in r for r in rej)
+
+
+def test_valid_candidate_raises_hrmax_but_only_in_a_small_step():
+    """Unconfirmed optical peaks move HRmax in capped steps: one artifact adopted as a maximum would
+    shift every zone boundary upward and silently turn easy runs into tempo runs."""
+    from marathon_engine.assessment import HR_MAX_STEP_UNCONFIRMED, update_hr_max
+    p = _profile()
+    updated, msg, rej = update_hr_max(p, _good_candidate(205.0))
+    assert not rej and msg
+    assert updated.hr_max == pytest.approx(p.hr_max + HR_MAX_STEP_UNCONFIRMED)
+    assert updated.hr_max_source == "observed_capped"
+
+
+def test_chest_strap_confirmation_adopts_the_full_value():
+    from marathon_engine.assessment import update_hr_max
+    p = _profile()
+    c = _good_candidate(198.0)
+    c.chest_strap_confirmed = True
+    updated, msg, rej = update_hr_max(p, c)
+    assert not rej
+    assert updated.hr_max == pytest.approx(198.0)
+    assert updated.hr_max_source == "observed_confirmed"
+
+
+def test_brief_spike_is_rejected():
+    from marathon_engine.assessment import update_hr_max
+    c = _good_candidate(); c.sustained_s = 3.0
+    _, msg, rej = update_hr_max(_profile(), c)
+    assert msg is None
+    assert any("spike" in r for r in rej)
+
+
+def test_early_session_peak_is_rejected():
+    from marathon_engine.assessment import update_hr_max
+    c = _good_candidate(); c.elapsed_in_session_s = 60.0
+    _, msg, rej = update_hr_max(_profile(), c)
+    assert msg is None
+    assert any("optical signal quality" in r for r in rej)
+
+
+def test_peak_near_cadence_is_rejected():
+    """The specific artifact this guard exists for."""
+    from marathon_engine.assessment import update_hr_max
+    c = _good_candidate(hr=172.0); c.cadence_spm = 170.0
+    _, msg, rej = update_hr_max(_profile(hr_max=165.0), c)
+    assert msg is None
+    assert any("lock-on" in r for r in rej)
+
+
+def test_peak_near_half_cadence_is_rejected():
+    from marathon_engine.assessment import update_hr_max
+    c = _good_candidate(hr=190.0); c.cadence_spm = 380.0
+    _, msg, rej = update_hr_max(_profile(), c)
+    assert msg is None
+    assert any("half cadence" in r for r in rej)
+
+
+def test_implausible_value_is_rejected():
+    from marathon_engine.assessment import update_hr_max
+    _, msg, rej = update_hr_max(_profile(), _good_candidate(hr=245.0))
+    assert msg is None
+    assert any("plausibility ceiling" in r for r in rej)
+
+
+def test_peak_mid_effort_is_rejected():
+    from marathon_engine.assessment import update_hr_max
+    c = _good_candidate(); c.fraction_through_effort = 0.3
+    _, msg, rej = update_hr_max(_profile(), c)
+    assert msg is None
+    assert any("through the effort" in r for r in rej)
+
+
+def test_degraded_sensor_state_is_rejected():
+    from marathon_engine.assessment import update_hr_max
+    for state in ("frozen", "cadence_lock", "dropout", "warmup"):
+        c = _good_candidate(); c.hr_status = state
+        _, msg, rej = update_hr_max(_profile(), c)
+        assert msg is None, f"{state} must not yield a new HRmax"
+
+
+def test_cumulative_unconfirmed_raise_is_capped():
+    from marathon_engine.assessment import HR_MAX_TOTAL_UNCONFIRMED, update_hr_max
+    _, msg, rej = update_hr_max(_profile(), _good_candidate(205.0),
+                                total_unconfirmed_raise=HR_MAX_TOTAL_UNCONFIRMED)
+    assert msg is None
+    assert any("chest strap" in r for r in rej)
+
+
+def test_lower_observation_changes_nothing():
+    from marathon_engine.assessment import update_hr_max
+    p = _profile()
+    updated, msg, rej = update_hr_max(p, _good_candidate(hr=170.0))
+    assert updated is p and msg is None
+
+
+def test_message_warns_that_load_history_needs_recomputing():
+    """Banister TRIMP is a function of HR reserve, so a revised HRmax rewrites every historical
+    load value. That must not happen silently."""
+    from marathon_engine.assessment import update_hr_max
+    _, msg, _ = update_hr_max(_profile(), _good_candidate(195.0))
+    assert "recomputing" in msg or "recompute" in msg
+
+
+# ---- spike clamping (the guard as a limit, not a suggestion) ---------------------------------
+
+def test_clamp_leaves_a_normal_run_alone():
+    from marathon_engine.safety import clamp_single_run
+    r = clamp_single_run(10.0, 12.0)
+    assert not r["clamped"]
+    assert r["allowed_km"] == pytest.approx(10.0)
+
+
+def test_clamp_shortens_a_caution_run_by_default():
+    """A warning the athlete can dismiss is a warning that gets dismissed, usually on the morning
+    they feel good -- which is the wrong day to allow a step up."""
+    from marathon_engine.safety import SPIKE_DEFAULT_CLAMP, clamp_single_run
+    r = clamp_single_run(14.0, 10.0)
+    assert r["clamped"]
+    assert r["allowed_km"] == pytest.approx(10.0 * SPIKE_DEFAULT_CLAMP)
+    assert "not lost" in r["message"]
+
+
+def test_caution_can_be_overridden_explicitly():
+    from marathon_engine.safety import clamp_single_run
+    r = clamp_single_run(12.0, 10.0, allow_override=True)
+    assert not r["clamped"]
+    assert "explicit request" in r["message"]
+
+
+def test_high_band_cannot_be_overridden():
+    from marathon_engine.safety import clamp_single_run
+    r = clamp_single_run(25.0, 10.0, allow_override=True)
+    assert r["clamped"], "the high band is where the cost of being wrong is a stress injury"
+
+
+def test_bone_window_disables_progression_entirely():
+    from marathon_engine.safety import clamp_single_run
+    r = clamp_single_run(12.0, 10.0, in_bone_window=True)
+    assert r["clamped"]
+    assert r["allowed_km"] == pytest.approx(10.0)
+    assert "bone-vulnerable" in r["message"]
+
+
+def test_bone_window_override_is_ignored():
+    from marathon_engine.safety import clamp_single_run
+    r = clamp_single_run(12.0, 10.0, in_bone_window=True, allow_override=True)
+    assert r["clamped"]
+
+
+def test_no_history_is_not_clamped():
+    from marathon_engine.safety import clamp_single_run
+    r = clamp_single_run(8.0, None)
+    assert not r["clamped"]
+
+
+def test_bone_window_halves_the_increment_cap():
+    from marathon_engine.safety import bone_window_increment_factor
+    assert bone_window_increment_factor(bone_load([10.0] * 4)) == 0.5
+    assert bone_window_increment_factor(bone_load([30.0] * 30)) == 1.0
+
+
+def test_bone_window_states_that_it_slows_the_plan_on_purpose():
+    s = bone_load([10.0] * 4)
+    assert any("on purpose" in g for g in s.guidance)
+
+
+def test_bone_model_admits_its_own_limits():
+    """The window is a simplification and real vulnerability may extend past it."""
+    from marathon_engine.safety import bone_window_increment_factor
+    doc = bone_window_increment_factor.__doc__
+    assert "simplification" in doc and "extend past it" in doc

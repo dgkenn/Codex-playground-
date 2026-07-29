@@ -43,6 +43,7 @@ __all__ = [
     "decoupling", "efficiency_factor", "heat_pace_factor", "wbgt_estimate",
     "pace_to_speed", "speed_to_pace", "fmt_pace", "parse_pace",
     "TANAKA_SEE_BPM", "RIEGEL_EXPONENT", "RIEGEL_NOVICE_EXPONENT", "DECOUPLING_OK",
+    "VDOT_IR_FLOOR",
 ]
 
 # ----------------------------------------------------------------------------------------
@@ -315,6 +316,16 @@ _PACE_FAMILIES: Dict[str, Tuple[float, float, float]] = {
 }
 
 
+#: Below this VDOT, Daniels publishes no Interval or Repetition paces at all, and any value a
+#: calculator returns for them is a pure extrapolation of the Gilbert quadratic beyond its fitted
+#: range. Prescribing them anyway is worse than useless for a beginner: it invents a VO2max-interval
+#: pace for someone whose aerobic base cannot yet support VO2max work, which is both unachievable and
+#: an injury risk. Below the floor, ``interval`` and ``repetition`` are still computed (so the numbers
+#: exist for diagnostics) but :attr:`TrainingPaces.ir_prescribable` is False and the planner must not
+#: schedule those session types.
+VDOT_IR_FLOOR = 35.0
+
+
 @dataclass(frozen=True)
 class TrainingPaces:
     """Prescribed paces in seconds per kilometre, plus the VDOT they came from."""
@@ -326,6 +337,21 @@ class TrainingPaces:
     repetition: float
     easy_range: Tuple[float, float]
 
+    @property
+    def ir_prescribable(self) -> bool:
+        """Whether Interval and Repetition paces may be prescribed at all.
+
+        False below :data:`VDOT_IR_FLOOR`. The E/M/T paces remain valid there -- those Daniels does
+        publish down into the low 30s -- so a sub-floor athlete trains easy, marathon and threshold
+        only, which is the correct prescription for them regardless.
+        """
+        return self.vdot >= VDOT_IR_FLOOR
+
+    @property
+    def prescribable_types(self) -> Tuple[str, ...]:
+        base = ("easy", "marathon", "threshold")
+        return base + (("interval", "repetition") if self.ir_prescribable else ())
+
     def to_dict(self) -> dict:
         return {
             "vdot": round(self.vdot, 1),
@@ -335,6 +361,8 @@ class TrainingPaces:
             "threshold_sec_km": round(self.threshold),
             "interval_sec_km": round(self.interval),
             "repetition_sec_km": round(self.repetition),
+            "ir_prescribable": self.ir_prescribable,
+            "prescribable_types": list(self.prescribable_types),
             "display": {k: fmt_pace(v) for k, v in (
                 ("easy", self.easy), ("marathon", self.marathon), ("threshold", self.threshold),
                 ("interval", self.interval), ("repetition", self.repetition))},
