@@ -61,6 +61,39 @@ composite's +0.690 — additive to within 1 %), so do not describe it as an alph
 
 ---
 
+## THE ACTIVE PROJECT AS OF 2026-07-29: bsde/ — Brain-State Discovery Engine
+
+**As of 2026-07-29 the investigator's stated priority is a third project, `bsde/`, not the burst-suppression
+programme above.** BSDE (Brain-State Discovery Engine) is an autonomous discovery-and-validation system aimed
+at separating arousal, cognitive-processing capacity, command-following and behavioral output in EEG — not
+another consciousness classifier, and explicitly not an attempt to own "an AI model for EEG." Its proprietary
+asset is meant to be the **verifier** (a multi-layer proof-checker EEG measures do not otherwise have), not
+any single biomarker, including its first candidate, UCE. Two applications sit on top of it in deliberately
+different roles: the **wedge** is anaesthesia/perioperative EEG (commercially tractable now); the **flagship**
+is covert consciousness / cognitive motor dissociation (the highest-value, highest-stakes target, not yet
+reachable with public data).
+
+**THE plan for this project is `/home/user/Codex-playground-/bsde/docs/MASTER_PLAN.md`.** Read it before
+touching `bsde/`. It reconciles the three investigator-supplied briefs below with what has actually been
+verified in the repo, and it is revised as results come in — unlike the briefs, which never are.
+
+The three immutable investigator briefs — **never edit these, regardless of what analysis later finds**:
+- `/home/user/Codex-playground-/bsde/docs/RESEARCH_PROGRAM_BRIEF.md` (Brief 01 — the scientific question)
+- `/home/user/Codex-playground-/bsde/docs/BRIEF_02_DATASET_STRATEGY.md` (Brief 02 — which datasets, and why)
+- `/home/user/Codex-playground-/bsde/docs/BRIEF_03_AI_DISCOVERY_LAB.md` (Brief 03 — how the AI research loop works)
+
+**Standing rule for this project: the verifier is built before the search.** Candidate representations (UCE
+or anything after it) are only worth reporting once they have cleared the verifier's layers — do not let a
+biomarker result outrun the machinery that checks it.
+
+**The burst-suppression programme above continues and is not being wound down** — R418 and everything in
+`docs/research/` remains live and correct. `bsde/` is now a **second active thread alongside it, not a
+replacement for it.** Check which project a task belongs to before applying either project's conventions —
+the two have separate docs, separate ledgers, and separate error catalogues; do not cross-apply findings or
+SOPs between them without checking they actually transfer.
+
+---
+
 ## THE MOST IMPORTANT OPERATIONAL FACT: the data cache is ephemeral
 
 Hours of extraction live in **`/tmp/eeg_probe/`** and **it does not survive container reclamation.** A new
@@ -174,6 +207,14 @@ and also wrong often enough to matter. Delegate the work, never delegate the acc
 lines. Long analyses write to a log; read back result lines only. Background anything over ~2 minutes and poll
 with a cheap `until` loop rather than foreground sleeps. Do not re-read a file already read this session, and
 do not re-read a file just edited. Never read a subagent's raw transcript — it will overflow the context.
+
+### Delegation SOP for `bsde/`
+
+The delegation table and the review rule above apply to `bsde/` exactly as written — no separate SOP for this
+project. In particular: designing or interpreting a verifier layer, ranking candidates, and anything that
+becomes a claim in `MASTER_PLAN.md` or `RESEARCH_STRATEGY.md` is **opus** work, and any subagent output feeding
+one of those documents is **verified by Opus against the raw source** before it lands there — a verifier that
+has not itself been checked is not a verifier.
 
 ---
 
@@ -325,6 +366,11 @@ one real effect, all for the same reason (rule 28).
 | `docs/MORGOTH_INTEGRATION.md` | live — wire-up checklist; the model remains unobtainable |
 | `docs/RUNBOOK.md`, `docs/HEEDB_UNLOCK.md`, `docs/HANDOFF.md` | live — real-data procedure and pipeline handoff |
 | everything else in `docs/` | **legacy from unrelated projects — ignore unless specifically directed** |
+| `bsde/docs/MASTER_PLAN.md` | **live — THE plan for the BSDE project**, reconciles the briefs with what's verified |
+| `bsde/docs/RESEARCH_STRATEGY.md` | live — BSDE's detailed strategy, documented departures from the briefs |
+| `bsde/docs/ANALYSIS_PLAN.md` | live — BSDE's analysis backlog |
+| `bsde/docs/LITERATURE_MAP.md` | live — BSDE's prior-art / literature tracking |
+| `bsde/docs/RESEARCH_PROGRAM_BRIEF.md`, `BRIEF_02_DATASET_STRATEGY.md`, `BRIEF_03_AI_DISCOVERY_LAB.md` | **live, immutable** — investigator-supplied verbatim, never edit |
 
 ---
 
