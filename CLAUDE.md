@@ -79,11 +79,26 @@ PIDS_FILE=/tmp/heedb_quant_patients.txt OMOP_OUT=/tmp/eeg_probe/heedb_omop_quant
 where the PID file is the union of patient ids in the two `*_EEG__reports_findings.csv` objects (morph and
 burden patients are all inside that set — verified 2026-07-29).
 
-**The container REAPS large files in `/tmp` mid-session — observed twice on 2026-07-29**, both times taking
-the 3.3 GB `heedb_omop_quant/` while every smaller cache survived. Do not depend on a multi-gigabyte
-intermediate. `analysis/heedb_aetiology_compact.py` reduces that table to the ~1 MB
-`heedb_aetiology_compact.csv` (one row per patient, one column per aetiology group) and rebuilds itself from
-the big table on first use; prefer `load_anoxic()` from it over parsing `condition_occurrence.csv` directly.
+### The container RESTORES FROM A SNAPSHOT on restart — this is the single most disruptive fact about working here
+
+**Diagnosed 2026-07-29 after it happened five times in one session.** `/tmp` and the repo working tree are
+both rolled back to a snapshot (that day: `/tmp/eeg_probe` at Jul 27 01:45, `.git` at Jul 27 14:18). It is
+**not** a size-based reaper — a 1 MB file created this session vanished alongside a 3.3 GB one, while Jul
+25–26 files of every size survived. Age relative to the snapshot is what matters.
+
+Three consequences, all of which cost time before the mechanism was understood:
+
+1. **Any cache built this session will disappear**, so budget for rebuilding rather than assuming
+   persistence. There is no durable local store — a gitignored path in the repo is rolled back too.
+2. **`git` gets rolled back with it.** A push that fails as non-fast-forward usually means this, not a real
+   divergence. **The remote is the source of truth.** Recover with
+   `git fetch origin <branch> && git rebase origin/<branch>` — do NOT reset away the remote's commits.
+   Committing and pushing after every result is what makes this survivable; it has cost nothing but a rebase
+   each time.
+3. **Prefer small derived caches.** `analysis/heedb_aetiology_compact.py` reduces the 3.3 GB condition table
+   to a ~1 MB per-patient table (one column per aetiology group) and rebuilds itself from the big table on
+   first use; prefer `load_anoxic()` from it over parsing `condition_occurrence.csv` directly. It still
+   vanishes on restart, but rebuilding it from a surviving big table is seconds rather than 22 minutes.
 
 **Rebuild order:** aetiology cache first (cheap, unblocks all HEEDB work), then `analysis/icare_topography.py`
 (one S3 pass, produces topography *and* the per-second suppression series), then the rest as needed. Every
