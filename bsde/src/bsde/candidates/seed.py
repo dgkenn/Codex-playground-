@@ -39,7 +39,14 @@ from bsde.candidates.uce_v1 import regional_exponents, uce_v1_from_z, W_FRONTAL,
 
 # Contrast names used across the project. A candidate earns nothing for a contrast it does not name.
 CONTRASTS = (
-    "unconscious_vs_awake",        # anaesthetic LOC, or sleep N3 vs wake
+    # WARNING (added 2026-07-29 after adversarial review; see docs/MASTER_PLAN.md §9.3). This contrast MERGES
+    # anaesthetic loss of consciousness with sleep N3-vs-wake, and those are exactly the two states that H4 --
+    # "the marker is an arousal index" -- predicts should behave alike. A cross-domain PASS spanning only
+    # sleep and anaesthesia is therefore NEUTRAL between H4 and the capacity hypothesis, not evidence for
+    # either, and must never be reported as "cross-domain validated". The informative domains are the ones
+    # that dissociate arousal from experience: ds005620 (unresponsive with vs without later reported
+    # experience), ketamine, and locked-in syndrome.
+    "unconscious_vs_awake",        # anaesthetic LOC, or sleep N3 vs wake -- see warning above
     "anaesthetic_drug_identity",   # propofol vs sevoflurane vs ketamine -- SHOULD be unchanged
     "mcs_vs_uws",                  # behavioural DoC category, an imperfect reference standard
     "command_following",           # the CMD endpoint; a failed task is indeterminate, never negative

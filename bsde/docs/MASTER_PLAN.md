@@ -28,7 +28,8 @@ presented as more certain than that.
 In Brief 03's own framing, this is **"an autonomous discovery-and-validation system that identifies compact,
 physiologically grounded, cross-domain brain-state representations and converts them into prospective control
 products"** — explicitly *not* an attempt to own "an AI model for EEG," a category the brief itself says is
-already crowded. The proprietary asset is the verifier (the "hard proof-checker" EEG does not otherwise have),
+already crowded. The proprietary asset is the verifier — Brief 03's point being that "EEG does not have a perfect equivalent of a Lean proof
+checker" and that building one is the opportunity,
 not any single biomarker, including UCE. Two applications sit on top of that engine and they are deliberately
 different in kind: the **wedge** is anaesthesia/perioperative EEG — domain credibility, prospective access,
 existing drug/infusion and monitor (BIS/PSI) comparators, and a controllable perturbation, all of which make
@@ -48,8 +49,8 @@ mode this plan is most organised against (§1, §6, `RESEARCH_STRATEGY.md` §8 i
 |---|---|---|---|---|
 | 1 | UCE v1's frontal/posterior split is a discovered two-region construct; "the underlying two-feature PCA reportedly explained approximately 96.8% of variance" (Brief 01 §4); weights 0.696/0.718 are presented as the construct itself | Brief 01 §4 | **E01** (96 real recordings, VERIFIED): r(frontal, posterior exponent) = 0.9326; corr(UCE v1, z(mean exponent)) = 0.9952. For two standardised variables PC1 loadings are *always* (1/√2, 1/√2) regardless of r — the 0.696/0.718 asymmetry is arithmetic, not physiology (`RESEARCH_STRATEGY.md` §0). **E02** (VERIFIED, `governance/SEARCH_LOG.jsonl`): the engine independently REJECTed `uce_v1` for `redundancy_with_simpler_measure` at \|Spearman r\| = 0.9896 against `whole_head_exponent`. | UCE v1 stays **frozen** exactly as specified (Brief 01 §4 forbids redefinition) and is still evaluated as one candidate among eight — but every description of it in this project must call it what the algebra and the data show: **an approximately one-feature whole-head aperiodic-exponent marker.** "96.8% of variance explained" is retired as evidence (`RESEARCH_STRATEGY.md` R-04) and H4 ("UCE is an arousal marker, not a capacity marker") is the *default* hypothesis, not an alternative (R-02). |
 | 2 | Figshare 10.6084/m9.figshare.23552964 "contains 59 patients with disorders of consciousness [and] 32 healthy controls" with an "associated clinical study enrolled patients evaluated using resting EEG and behavioral diagnosis" — listed as the **primary resting-state UWS/MCS benchmarking dataset** | Brief 02, dataset #2 | Exhaustive inspection of every file in the download (96 `.dat`, 98 `.vhdr`, 98 `.vmrk`, 1 `meta.json`) plus a fresh Figshare API pull (VERIFIED, re-checked 2026-07-29): **no participants file, no diagnosis field in any header or marker, no decodable patient/control naming convention across all 98 filenames.** `DATASET_REGISTRY.csv` records this as a direct disagreement with Brief 02. | Figshare is downgraded from "primary UWS/MCS benchmarking set" to an **unlabeled EEG corpus.** It remains usable for label-free measurement-property work — which is exactly what E01/E02 already did with it — and for domain-shift or aperiodic-exponent analysis, but the UWS-vs-MCS diagnostic-benchmarking role Brief 02 assigns it **cannot be executed as written** unless an external label source is located (not yet searched for). |
-| 3 | I-CARE is listed as a plain Tier-1/MVP-stack PhysioNet resource ("approximately 23.7 GB") alongside openly reusable datasets, with no field-of-use caveat, feeding into Brief 03's proprietary "harmonized multi-domain data architecture" asset | Brief 02, dataset #4; Brief 03 "proprietary layers" list | I-CARE's licence is **CC BY-NC-SA 4.0 — commercially blocked** (VERIFIED against the PhysioNet view-license page). Actual size is **1.5 TB uncompressed, not 23.7 GB** (VERIFIED against the PhysioNet content page — the brief's figure is wrong by two orders of magnitude and the dataset cannot be fully downloaded in this environment, 19 GB free). Whether a model *trained on* I-CARE features counts as ShareAlike "Adapted Material" is an open question this project has explicitly deferred to counsel, not resolved. | I-CARE is used exactly as Brief 02 itself later cautions (§ "critical conceptual warning") — external validation, domain shift, confounder resistance, **never** a trained artefact offered commercially — and this project's governance record (`LICENSE_TABLE_NOTES.md` §2–3) treats it, `vitaldb`, and every dataset with an unverified licence as **blocked by default** for any commercial claim until a lawyer signs off. Brief 03's "proprietary data architecture" cannot include I-CARE-derived weights as a shippable asset under current terms. |
-| 4 | The aperiodic/1/f exponent and UCE built from it are presented as the investigator's own construct and a candidate piece of novel IP (Brief 01 §4; Brief 03's "discovered representations" as a proprietary layer) | Brief 01 §4; Brief 03 "proprietary advantage" | **Colombo et al., PMID 30639334, is prior art** (UNVERIFIED beyond the citation itself — not re-pulled via E-utilities this session, flagged for the next literature-map refresh) for the resting-state spectral (aperiodic) exponent as a marker of the *presence* of consciousness, tested across propofol/xenon/ketamine, n=5/group. | UCE's scientific contribution is **validation at scale of an existing marker**, not discovery of a new one. Any IP claim (`governance/INVENTION_NOTEBOOK.md`) must be built on what is actually novel here — the verifier architecture, the redundancy/confound-probe machinery, any genuinely new invariant the engine discovers later — not on "aperiodic exponent predicts unconsciousness," which Colombo anticipates. This is exactly the kind of prior-art check Brief 01 §11 asks for and it must land in `LITERATURE_MAP.md`, not only here. |
+| 3 | I-CARE is listed as a plain Tier-1/MVP-stack PhysioNet resource ("approximately 23.7 GB") alongside openly reusable datasets, with no field-of-use caveat, feeding into Brief 03's proprietary "harmonized multi-domain data architecture" asset | Brief 02, dataset #4; Brief 03 "proprietary layers" list | I-CARE's licence is **CC BY-NC-SA 4.0 — commercially blocked** (VERIFIED against the PhysioNet view-license page). Actual size is **1.5 TB uncompressed, not 23.7 GB** (VERIFIED against the PhysioNet content page — the brief's figure is low by a factor of roughly 63 and the dataset cannot be fully downloaded in this environment, 19 GB free). Whether a model *trained on* I-CARE features counts as ShareAlike "Adapted Material" is an open question this project has explicitly deferred to counsel, not resolved. | I-CARE is used exactly as Brief 02 itself later cautions (§ "critical conceptual warning") — external validation, domain shift, confounder resistance, **never** a trained artefact offered commercially — and this project's governance record (`LICENSE_TABLE_NOTES.md` §2–3) treats it, `vitaldb`, and every dataset with an unverified licence as **blocked by default** for any commercial claim until a lawyer signs off. Brief 03's "proprietary data architecture" cannot include I-CARE-derived weights as a shippable asset under current terms. |
+| 4 | The aperiodic/1/f exponent and UCE built from it are presented as the investigator's own construct and a candidate piece of novel IP (Brief 01 §4; Brief 03's "discovered representations" as a proprietary layer) | Brief 01 §4; Brief 03 "proprietary advantage" | **Colombo et al., PMID 30639334, is prior art** (VERIFIED — `LITERATURE_MAP.md` §0 records an NCBI E-utilities retrieval of this record on 2026-07-29 with the abstract read in full; that file uses E-utilities rather than WebFetch precisely because WebFetch has fabricated PubMed content in this project before) for the resting-state spectral (aperiodic) exponent as a marker of the *presence* of consciousness, tested across propofol/xenon/ketamine, n=5/group. | UCE's scientific contribution is **validation at scale of an existing marker**, not discovery of a new one. Any IP claim (`governance/INVENTION_NOTEBOOK.md`) must be built on what is actually novel here — the verifier architecture, the redundancy/confound-probe machinery, any genuinely new invariant the engine discovers later — not on "aperiodic exponent predicts unconsciousness," which Colombo anticipates. This is exactly the kind of prior-art check Brief 01 §11 asks for and it must land in `LITERATURE_MAP.md`, not only here. |
 | 5 | BNCI/BCI-Competition-IV 2a/2b are listed as freely reusable method-development datasets (Brief 02, Tier 4, item 13) with no licence caveat | Brief 02, dataset #13 | Licence is **CC BY-ND 4.0** (VERIFIED, `LICENSE_TABLE.csv`) — explicitly "You do not have permission... to Share Adapted Material." A trained decoder or feature representation built on 2a/2b could plausibly count as Adapted Material. | Usable for internal method development (decoder benchmarking, false-positive calibration) exactly as Brief 02 intends, but **no derived model, weight set, or representation trained on 2a/2b may be published or shipped** without a legal read of the No-Derivatives clause — flagged in `LICENSE_TABLE.csv` row `bnci_bciciv_2a2b`, not yet resolved. |
 
 ---
@@ -211,7 +212,8 @@ inherited from a prior agent's report without re-verification (see §8, item 1, 
    CSV. *Unblocks:* a clean, complete label-free feature table for Figshare.
 2. **Ingest I-CARE via `physionet_wfdb.py` (streamed, no download of the 1.5 TB whole).** *Why now:* it is the
    only Tier-1 dataset that is simultaneously (a) verified fully open, (b) already has a working adapter, and
-   (c) supplies real outcome/severity variables that Figshare cannot. *Unblocks:* claim component 4 (§3.2),
+   (c) supplies real outcome/severity variables that Figshare cannot. *Unblocks:* a **discriminant-validity
+   control** for claim component 4 — **not** confirmation of it, see §9.1 —
    the first real cross-domain pair for layer 4, and the temporal layer's first candidate substrate (§2 layer
    5, §4 program 6).
 3. **Ingest Sleep-EDF Expanded via the existing streaming path.** *Why now:* fully open (ODC-BY 1.0), small,
@@ -221,7 +223,90 @@ inherited from a prior agent's report without re-verification (see §8, item 1, 
 4. **File the Bath access request.** *Why now:* it is the only path to the command-following evidence tier
    (Challenge B, §5) and access review takes real calendar time independent of any engineering here — starting
    it does not compete with items 2–3. *Unblocks:* Challenge B eventually; nothing else does.
-5. **Run the Colombo PMID 30639334 prior-art check through NCBI E-utilities (not WebFetch), and update
-   `LITERATURE_MAP.md`.** *Why now:* §1 row 4 currently rests on a citation that was not independently re-
-   verified this session — the sibling project's error-catalogue rule 25 exists because WebFetch fabricates
-   PubMed content under CAPTCHA. *Unblocks:* a defensible IP posture for anything claimed as "discovered" here.
+5. ~~Run the Colombo PMID 30639334 prior-art check through NCBI E-utilities.~~ **ALREADY DONE** —
+   `LITERATURE_MAP.md` §0 records the E-utilities retrieval on 2026-07-29 with the abstract read in full. An
+   earlier draft of this document listed it as outstanding; that was wrong, and §1 row 4 is corrected.
+   *Kept as a live warning rather than deleted:* the reason that file uses E-utilities at all is that WebFetch
+   fabricated PubMed content in the sibling project (error-catalogue rule 25) — **and it did so again during
+   the work that produced this document**, inventing "435 files" and "91 subject datasets" for the Figshare
+   record. That was caught only because the same URL was re-pulled with `curl` and compared byte-for-byte.
+   Never accept a WebFetch summary of a bibliographic or manifest record.
+6. **Wire `brier()` and `calibration()` into `layer_statistical`.** They exist in `verifier/stats.py` and are
+   called from nowhere. Discrimination without calibration is half a result, and the missing half is the half
+   clinicians use.
+
+---
+
+## 9. Known reasoning risks in this plan
+
+*Recorded, not repaired. Each was found by adversarial review of an earlier draft of this document; §9.1 and
+§9.2 were missed by the orchestrator and caught by an independent reviewer. They are written here rather than
+quietly fixed because a risk that has been silently patched cannot be re-examined.*
+
+### 9.1 I-CARE cannot confirm claim component 4 — it can only fail to refute it
+
+An earlier draft of §8 said ingesting I-CARE "unblocks claim component 4" (*the representation is not merely
+prognosis or injury severity*). That is backwards. **I-CARE's only ground truth is CPC outcome, which is
+prognosis.** Brief 02 says so itself: *"I-CARE does not provide direct evidence of contemporaneous awareness.
+CPC outcome is prognostic, not a consciousness label. Do not train a 'consciousness classifier' using
+good-versus-poor CPC."* A dataset whose sole label is prognosis cannot supply evidence that a marker is
+something other than prognosis.
+
+Its correct role there is **discriminant validity — a negative control.** If a candidate predicts CPC as well
+as it predicts consciousness-relevant contrasts elsewhere, that is evidence **against** the candidate. A
+strong CPC result in I-CARE is neutral-to-negative for claim component 4, never progress on it.
+
+The failure mode is specific and it flatters the result, which is what makes it dangerous: I-CARE gets
+ingested, a candidate discriminates CPC well, and it gets logged as progress on the very claim it undercuts.
+I-CARE's genuine contributions are elsewhere and are substantial — site probes, drug probes, severity probes,
+longitudinal recovery physiology, domain transfer, abstention behaviour.
+
+### 9.2 Gate B adjusts for arousal as a confound — but arousal may be a mediator
+
+The project's termination criterion (`RESEARCH_STRATEGY.md` §7; `ANALYSIS_PLAN.md` §11) is: if every candidate
+is indistinguishable from an arousal marker after adjustment for arousal, stop and report negative. That
+treats "survives adjustment for arousal" as a clean test of whether a marker is more than arousal.
+
+**It may not be one.** If preserved capacity can only manifest *through* arousal — a patient must be aroused
+enough to express anything at all — then arousal lies on the causal pathway, and adjusting for it removes real
+signal rather than removing a confound. This is exactly the limitation already documented in
+`verifier/engine.py::residual_auc` for the EMG case — *"if the nuisance is itself part of the state being
+measured … then residualising removes real signal and this check will fire on a valid marker"* — now applied
+to the single nuisance the entire termination criterion rests on.
+
+The consequence is a false negative produced by the safeguard against false positives: a genuine capacity
+marker fails Gate B for structural reasons and triggers a pre-committed "stop and report negative". The
+criterion was deliberately written down so that it *could not be renegotiated after seeing a result*, which is
+correct discipline and also means an unexamined flaw here is hard to correct once it fires.
+
+**Mitigation, not resolution.** Any Gate B NO-GO must be reported together with (a) the unadjusted estimate,
+and (b) an explicit statement that an arousal-*mediated* capacity marker produces the same result as a pure
+arousal marker under this test. It may not be described as "the marker is only arousal" without that
+sentence. No statistical adjustment settles this; only a design that dissociates arousal from experience
+does — which is precisely why ds005620 is action #1.
+
+### 9.3 `unconscious_vs_awake` merges the two states H4 predicts behave alike
+
+`candidates/seed.py::CONTRASTS` defines `unconscious_vs_awake` as *"anaesthetic LOC, or sleep N3 vs wake"*.
+Sleep N3 and anaesthetic unresponsiveness are precisely the two states the arousal hypothesis (H4) predicts
+should move together. A `layer_cross_domain` PASS spanning only sleep and anaesthesia is therefore **neutral
+between H4 and the capacity hypothesis** — it is what a pure arousal index produces — yet the engine reports a
+bare PASS with no annotation saying so.
+
+A warning to this effect now sits at the contrast definition in the code. The informative domains are the ones
+that dissociate arousal from experience: ds005620 (unresponsive with vs without reported experience),
+ketamine, locked-in syndrome. **"Cross-domain validated" must never be written of a sleep-plus-anaesthesia
+PASS.** This also downgrades Sleep-EDF from "the cheapest way to make leave-one-dataset-out real" to "a cheap
+way to exercise the machinery, informative about robustness and uninformative about the central question".
+
+### 9.4 The redundancy finding's denominator travels with it
+
+E02's |ρ| = 0.9896 is load-bearing: it retires "96.8 % of variance explained", redescribes UCE v1
+project-wide, and demotes it from discovery to validation. It was produced against a **hand-picked
+eight-candidate seed set with `analytic_dof = 1`** — fit range, reference and window length all held fixed.
+
+Two things are true at once and both belong next to the number. It is **not** a search hit:
+`RESEARCH_STRATEGY.md` §0 predicted it algebraically *before any data existed*, so the multiplicity concern
+that applies to a discovery does not apply here in the usual way. And the denominator must still travel with
+the claim wherever it appears, because anti-p-hacking constraint #6 (§6) admits no exceptions — and because a
+reader cannot verify the first point without being handed the second.
