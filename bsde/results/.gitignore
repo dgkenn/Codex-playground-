@@ -1,4 +1,17 @@
-# In-progress streaming feature tables are not committed. A partially-written table parses cleanly and
-# looks complete, which is precisely how a truncated extraction gets mistaken for a whole dataset. A
-# finished table is committed deliberately, with its row count stated in the commit message.
-*.csv
+# POLICY CHANGED 2026-07-29 after two container rollbacks destroyed hours of streaming.
+#
+# Previously this ignored *.csv so a half-written table could never be committed looking complete. That
+# reasoning was sound and the cost turned out to be higher: the rollbacks took every in-progress table with
+# them, while the tables that had been committed on completion survived untouched.
+#
+# Feature tables are now committed freely, INCLUDING partial ones, because incompleteness is already
+# machine-checkable without a naming convention: every table has a sidecar <table>.manifest.json, and the
+# runner reports n_in_shard against the row count. A reader can tell. A destroyed table cannot be read at all.
+#
+# Still never committed: raw EEG, credentials, anything patient-identifying.
+*.edf
+*.eeg
+*.vhdr
+*.vmrk
+*.mat
+*.dat

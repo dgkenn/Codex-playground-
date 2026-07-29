@@ -318,10 +318,15 @@ def layer_statistical(cand: Candidate, coh: Cohort, rng) -> list:
     ev.append(Evidence(
         "label_leakage", "statistical", FAIL if (np.isfinite(a) and a >= LEAKAGE_AUC) else PASS,
         (f"AUC {a:.3f} >= {LEAKAGE_AUC}. A single resting-EEG scalar separating this outcome essentially "
-         "perfectly is not a plausible physiological result; the likeliest explanations are label leakage, "
-         "a circular derivation, or the outcome having been used to define the feature. This is a "
-         "heuristic and it would also fire on a genuinely perfect biomarker — which is the correct default "
-         "for EEG, where none exists.") if (np.isfinite(a) and a >= LEAKAGE_AUC) else
+         "perfectly is not a plausible physiological result. THREE DISTINGUISHABLE CAUSES, identical in "
+         "consequence: (1) data leakage -- the outcome influenced how the feature was computed; "
+         "(2) DEFINITIONAL CIRCULARITY -- the label is itself scored FROM the signal, so predicting it is "
+         "close to tautological. This is the real cause on sleep data: N3 is defined by the proportion of "
+         "slow-wave activity in the epoch, so a steep spectral exponent predicting N3 restates the scoring "
+         "rule (MASTER_PLAN §9.6). Such a result shows CRITERION RECOVERY, never detection; "
+         "(3) a genuinely near-perfect biomarker, which for EEG is the least likely of the three and is "
+         "the reason this check errs toward firing. Determining WHICH cause applies is not something the "
+         "engine can do -- it requires knowing how the label was produced.") if (np.isfinite(a) and a >= LEAKAGE_AUC) else
         f"AUC {a:.3f} is below the implausibility threshold {LEAKAGE_AUC}",
         {"auc": a, "threshold": LEAKAGE_AUC}, fatal=True, item="confound_probes"))
     return ev

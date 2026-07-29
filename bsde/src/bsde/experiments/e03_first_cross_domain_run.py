@@ -10,7 +10,9 @@ at all about transfer.
 THE CONTRAST. `unconscious_vs_awake`, declared in `candidates/seed.py` for six of the eight seeded candidates.
 
     sleep_edfx_staged   within-subject, natural sleep:   Sleep stage W  vs  N3 (R&K stages 3+4)
-    ds005620            within-subject, pharmacological: task-awake     vs  task-sed / task-sed2
+    ds005620            within-subject, pharmacological: task-awake     vs  task-sed
+                        (task-sed2 is EXCLUDED -- it is the minute before an awakening, not steady-state
+                         sedation; see the UNCONSCIOUS map below and E04)
 
 WHAT A PASS HERE DOES AND DOES NOT MEAN — read this before reading any output.
 
@@ -73,9 +75,18 @@ NOW = os.environ.get("BSDE_NOW", "2026-07-29T00:00:00Z")
 CONTRAST = "unconscious_vs_awake"
 
 # Which meta/label value counts as "unconscious" (y = 1) per dataset. Declared here, not inferred.
+# CORRECTED 2026-07-29 after reading the ds005620 deposit's own README, which defines:
+#     awake : Wakefulness
+#     sed   : Sedation condition
+#     sed2  : One-minute resting EEG recorded just before an awakening
+# The first version of this experiment pooled `sed` and `sed2` as one "unconscious" class. That was wrong.
+# `sed2` is specifically the minute BEFORE an arousal, so pooling it with ordinary sedation mixes a state
+# with a state-transition precursor -- and it biases the "unconscious" class toward whatever the brain does
+# on the way out of sedation, which is the opposite of what a steady-state contrast should contain.
+# `sed2` is excluded here and analysed on its own terms in E04 (transition proximity).
 UNCONSCIOUS = {
     "sleep_edfx_staged": {"N3"},
-    "ds005620": {"sed", "sed2"},
+    "ds005620": {"sed"},
 }
 AWAKE = {
     "sleep_edfx_staged": {"W"},
