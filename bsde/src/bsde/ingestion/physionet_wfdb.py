@@ -35,7 +35,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 
-from bsde.ingestion.base import Adapter, RecordingRef, to_microvolts
+from bsde.ingestion.base import (Adapter, RecordingRef, to_microvolts, DIMENSIONLESS_UNITS)
 from bsde.ingestion.http_edf import _http_get_range, _urlopen  # shared range/SSL plumbing, not duplicated
 
 _SIGNAL_LINE_RE = re.compile(r"^(\d+)")
@@ -100,7 +100,15 @@ def _fetch_whole(url: str, timeout: float = 120.0) -> bytes:
 
 
 def _wfdb_unit_to_source(u: str) -> str:
+    """Map a WFDB unit string to a `to_microvolts` source unit, or to a DIMENSIONLESS marker.
+
+    I-CARE declares `/nu` -- WFDB "normalized units" -- with a different gain per channel. Applying the
+    gains still matters (it makes channels mutually comparable within a recording), but the result carries
+    no absolute voltage scale, so it is returned as-is and flagged rather than converted or rejected.
+    """
     key = u.strip().lower()
+    if key in DIMENSIONLESS_UNITS:
+        return key
     aliases = {"uv": "microvolts", "µv": "microvolts", "mv": "millivolts", "v": "volts", "nv": "nanovolts"}
     if key in aliases:
         return aliases[key]
@@ -147,7 +155,14 @@ def read_wfdb_window_http(base_url: str, record_name: str, window_s: float = 300
     fs = hdr["fs"]
     nsig = hdr["nsig"]
     gains, bases, units, names = hdr["gains"], hdr["bases"], hdr["units"], hdr["names"]
-    sig_url = f"{base}/{sig_file}"
+
+    # The signal filename in a .hea is bare -- WFDB resolves it RELATIVE TO THE HEADER'S DIRECTORY, not to
+    # the collection root. Joining it to `base` instead produced a 404 on every I-CARE record, because
+    # `training/0284/0284_010_012_EEG.hea` names `0284_010_012_EEG.mat`, which lives beside it rather than
+    # at `.../i-care/2.1/`. Only visible on a dataset whose records sit in per-patient subdirectories: a
+    # flat collection would have masked this indefinitely.
+    rec_dir = record_name.rsplit("/", 1)[0] if "/" in record_name else ""
+    sig_url = f"{base}/{rec_dir}/{sig_file}" if rec_dir else f"{base}/{sig_file}"
 
     if sig_file.lower().endswith(".mat"):
         import scipy.io as sio  # heavy dep: imported lazily, per project convention
@@ -192,9 +207,22 @@ def read_wfdb_window_http(base_url: str, record_name: str, window_s: float = 300
                     got_samples=physical.shape[1])
 
     out = np.empty_like(physical)
+    srcs = []
     for i in range(nsig):
-        out[i] = to_microvolts(physical[i], _wfdb_unit_to_source(units[i]))
-    meta["source_units"] = "microvolts"
+        src = _wfdb_unit_to_source(units[i])
+        out[i] = to_microvolts(physical[i], src, allow_dimensionless=True)
+        srcs.append(src)
+    # Do NOT claim microvolts when the header did not. A recording whose channels are declared in `nu` has
+    # no absolute voltage scale, and `absolute_amplitude_valid` is what stops a downstream absolute-amplitude
+    # feature from being computed on it as though it did.
+    dimensionless = [u for u in srcs if u in DIMENSIONLESS_UNITS]
+    if dimensionless and len(dimensionless) != len(srcs):
+        raise ValueError(
+            f"record mixes dimensionless and physical units across channels ({sorted(set(srcs))}); "
+            "refusing to return one array whose channels are not on a common scale.")
+    meta["source_units"] = srcs[0] if dimensionless else "microvolts"
+    meta["absolute_amplitude_valid"] = not bool(dimensionless)
+    meta["per_channel_units"] = srcs
     return out, list(names), float(fs), meta
 
 

@@ -206,9 +206,28 @@ def test_units_are_declared_not_guessed():
     assert to_microvolts(np.array([1.0]), "mV")[0] == pytest.approx(1e3)
     assert to_microvolts(np.array([5.0]), "microvolts")[0] == pytest.approx(5.0)
     with pytest.raises(ValueError, match="unknown source units"):
-        to_microvolts(np.array([1.0]), "arbitrary")
+        to_microvolts(np.array([1.0]), "not_a_unit")
     with pytest.raises(ValueError, match="unknown source units"):
         to_microvolts(np.array([1.0]), "")
+
+
+def test_dimensionless_units_raise_unless_explicitly_accepted():
+    """I-CARE declares `/nu` -- WFDB normalized units. There is no conversion to microvolts, so the default
+    must refuse; accepting it has to be a deliberate act that also carries the validity flag."""
+    for u in ("nu", "normalized", "arbitrary", "au"):
+        with pytest.raises(ValueError, match="DIMENSIONLESS"):
+            to_microvolts(np.array([1.0]), u)
+        assert to_microvolts(np.array([2.5]), u, allow_dimensionless=True)[0] == pytest.approx(2.5), \
+            "dimensionless values must pass through UNSCALED -- any factor would be invented"
+
+
+def test_a_dimensionless_recording_is_flagged_not_relabelled_as_microvolts():
+    """The flag is the whole mechanism: an absolute-amplitude feature must be able to see that it cannot
+    run. Silently labelling `nu` as microvolts is the failure this prevents."""
+    from bsde.ingestion.base import DIMENSIONLESS_UNITS
+    assert "nu" in DIMENSIONLESS_UNITS
+    assert "microvolts" not in DIMENSIONLESS_UNITS
+    assert "uv" not in DIMENSIONLESS_UNITS
 
 
 def test_a_recording_ref_needs_an_id():
