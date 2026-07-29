@@ -303,19 +303,29 @@ def main():
     print("\n" + "=" * 100)
     print("VERDICT")
     print("=" * 100)
+    # ORDER MATTERS, and the first version of this script got it wrong. The placebo can only
+    # invalidate a primary that would otherwise be declared a SUCCESS. If the primary is null in its
+    # own right, the finding is "the prediction failed" -- reporting "not interpretable" instead would
+    # hide a clean refutation behind a caveat. So the primary is evaluated first.
     if not ok or e1 is None:
         print("   NO VERDICT — a precondition failed (E0); nothing below is interpretable.")
+    elif not (e1[1] * e1[2] > 0 and e1[0] > 0):
+        print(f"   E1 FAILS — the interaction is {e1[0]:+.3f} [{e1[1]:+.3f}, {e1[2]:+.3f}], so intra-burst")
+        print("   content is NOT more strongly tied to epileptiform activity in anoxic patients.")
+        print("   Candidate C loses its only concrete handle in this dataset and is DEMOTED, not kept")
+        print("   alive on plausibility.")
+        if e2 is not None and e2[1] * e2[2] > 0:
+            print(f"\n   (The placebo also fired, {e2[0]:+.3f} [{e2[1]:+.3f}, {e2[2]:+.3f}]. That does not")
+            print("   rescue E1 — it independently shows this family of statistics responds to non-")
+            print("   epileptiform findings too, so a positive E1 would have been unreadable anyway.)")
     elif e2 is not None and e2[1] * e2[2] > 0 and (e1[0] * e2[0] > 0):
         print("   E1 NOT INTERPRETABLE — the PLACEBO fired in the same direction, so the statistic is")
         print("   tracking how much abnormality the reader described, not epileptogenicity specifically.")
         print(f"   (epileptiform {e1[0]:+.3f}, focal slowing {e2[0]:+.3f})")
-    elif e1[1] * e1[2] > 0 and e1[0] > 0:
+    elif True:
         print(f"   E1 SUPPORTS CANDIDATE C — intra-burst content is more strongly tied to epileptiform")
         print(f"   activity in anoxic patients ({e1[0]:+.3f} [{e1[1]:+.3f}, {e1[2]:+.3f}]), and the placebo")
         print(f"   is silent. A mechanism predicted a second, independent association and got it.")
-    else:
-        print(f"   E1 FAILS — {e1[0]:+.3f} [{e1[1]:+.3f}, {e1[2]:+.3f}]. Candidate C loses its only concrete")
-        print("   handle in this dataset and should be DEMOTED, not kept alive on plausibility.")
     print("\n   This cannot show causation or interneuron loss specifically — epileptiform activity is a")
     print("   downstream marker compatible with several accounts.")
     return 0

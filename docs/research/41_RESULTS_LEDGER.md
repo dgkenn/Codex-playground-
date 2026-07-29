@@ -3099,3 +3099,75 @@ comparison was not a pre-registered three-way test; the non-overlap of the two i
 description.
 
 **Cumulative distinct results: 414.**
+
+---
+
+## R415 · The interneuron/epileptogenicity mechanism is REFUTED — and refuted directionally, not merely unsupported
+
+Candidate **C** from the 2026-07-29 cadence brainstorm: fast-spiking inhibitory interneurons are selectively
+vulnerable to hypoxia-ischaemia, so surviving 8–30 Hz activity after anoxia is **disinhibited, epileptogenic**
+cortex (bad), while in non-anoxic coma it is **preserved** cortex (good). It was the only candidate that
+explains the *sign reversal* directly rather than predicting a weakening, and R413 had sharpened it by showing
+the reversal lives in spectral content and in none of five other morphology measures.
+
+It was testable against a **new outcome** — clinician-marked epileptiform findings — rather than by
+re-slicing death. Cohort n = 2,449, 48.5 % anoxic.
+
+### E0 · Preconditions pass
+
+| arm | n | epileptiform | focal slowing | content mean (sd) |
+|---|---|---|---|---|
+| anoxic | 1,187 | 54.4 % | 7.2 % | 0.1787 (0.1738) |
+| non-anoxic | 1,262 | 74.5 % | 29.4 % | 0.1348 (0.1056) |
+
+### E1 · The prediction fails
+
+| outcome | aetiology × content interaction | |
+|---|---|---|
+| **epileptiform (GPD/LPD/seizure) — PRIMARY** | **−0.032 [−0.237, +0.154]** | **includes zero** |
+| focal slowing — PLACEBO | −0.243 [−0.482, −0.035] | excludes zero |
+
+**C predicted a positive interaction and the data give a null.** Candidate C is **demoted**, not kept alive
+on plausibility.
+
+### The refutation is directional, which is stronger than a null
+
+Model-free, the AUC of intra-burst content for an epileptiform finding is **0.410 [0.378, 0.444]** in anoxic
+and **0.457 [0.424, 0.493]** in non-anoxic — **both below 0.5, both excluding it**. More intra-burst fast
+content means **less** epileptiform activity, in *both* arms. C predicted the opposite in the anoxic arm.
+E4 agrees: corr(content, epileptiform) is **−0.157** anoxic and **−0.080** non-anoxic.
+
+E3 (exploratory, conditions on a post-exposure variable — rule 13) points the same way. Within anoxic
+patients, content→death is **not** weaker without epileptiform activity: AUC **0.604 [0.540, 0.670]** with no
+epileptiform finding versus **0.566 [0.506, 0.627]** with one. The mediation story requires the reverse.
+
+### Two methodological notes worth carrying forward
+
+**The placebo fired** (focal slowing, −0.243 [−0.482, −0.035]). It does not rescue E1 — E1 is null in its own
+right — but it independently shows this family of statistics responds to non-epileptiform findings too, so a
+*positive* E1 would have been unreadable anyway. **The placebo earned its place before the primary was
+known.**
+
+**The script's first verdict was wrong and was fixed.** It evaluated the placebo *before* the primary and
+printed "E1 NOT INTERPRETABLE", hiding a clean refutation behind a caveat. A placebo can only invalidate a
+primary that would otherwise be declared a success; a primary that is null in its own right is a *failed
+prediction*. Order matters, and the corrected logic is now in the script.
+
+### Where this leaves the mechanism hunt
+
+| candidate | status |
+|---|---|
+| A · GABAergic drug signature | **dead** (R414 — reversal is *wider* without sedation) |
+| B · Thalamocortical / mesocircuit | open, partly tested (R395–R396) |
+| **C · Interneuron loss / epileptogenicity** | **DEMOTED — R415, refuted directionally** |
+| D · Time-from-injury confounding | weak, and the interval is unmeasurable here (R410) |
+| E · Guideline-driven withdrawal | dead (R409–R410) |
+
+**Four of five candidates are now closed and the reversal is more robust than any explanation of it.** It has
+survived: no model, burden strata 3/3, burst-count strata 3/3, non-anoxic decomposition 4/4, two hospitals,
+two aetiology definitions, measured labels, the withdrawal landmark (R411), an independent instrument
+(R413 — specificity), and sedation (R414 — strengthened). **B is the last candidate standing**, and the
+useful new constraint from R415 is that whatever the mechanism is, it makes fast content coincide with
+*fewer* epileptiform findings in both aetiologies.
+
+**Cumulative distinct results: 415.**
