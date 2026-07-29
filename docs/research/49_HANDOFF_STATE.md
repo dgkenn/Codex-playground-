@@ -1,4 +1,4 @@
-# HANDOFF — project state at R412 (2026-07-28)
+# HANDOFF — project state at R413 (2026-07-29)
 
 *Read `CLAUDE.md` first. This document is the scientific state: what is established, what is provisional,
 what is dead, and exactly what to do next. Every number here was verified against its raw log before being
@@ -9,7 +9,7 @@ written down.*
 ## 1. The one-paragraph state
 
 The project is a burst-suppression and clinical-EEG research programme on HEEDB (49,232 patients with
-reports), I-CARE (607 post-cardiac-arrest) and VitalDB (intraoperative). It has **412 logged results**. The
+reports), I-CARE (607 post-cardiac-arrest) and VitalDB (intraoperative). It has **413 logged results**. The
 core prognostic claim — suppression burden stratifies outcome within the guideline's worst tier, adds over
 the category, calibrates, and holds across hospitals and cohorts — is **solid and externally replicated**.
 The mechanism work has eliminated most candidates and produced **one substantive lead at R389–R392: the
@@ -94,6 +94,15 @@ produced the matched-null machinery that makes any future landmark claim in this
 > What still stands: the full-cohort reversal with all its robustness checks, and W1 — adjusted for the flags
 > clinicians actually recorded, the interaction is **+4.287 [+2.535, +6.560]**, so it is not a proxy for what
 > the decision process saw.
+
+> **R413 — a specificity check the lead now carries.** Tested on an independent instrument (burst
+> amplitude, r = −0.023 with intra-burst content), the reversal **does not reproduce**: +0.256
+> [−0.494, +0.796] against the reference +0.913 [+0.574, +1.336] on the same cohort and adjustment.
+> Model-free, intra-burst content is the **only one of six morphology measures** whose two aetiology arms
+> sit on opposite sides of 0.5 with both intervals excluding it. This removes the worry that the reversal is
+> an artefact of one computed number, and points a mechanism toward frequency content rather than signal
+> scale. **It is a failure to replicate, not a demonstrated absence** — the upper bound is 87 % of the
+> reference effect.
 
 ### The original statement of the lead
 

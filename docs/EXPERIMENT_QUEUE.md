@@ -23,6 +23,7 @@ power artefact. Both sentences go in the abstract.
 | **2** | **Time dose-response in the anoxic arm** | R411 showed the early-death concentration is real. Open: does the arm's AUC decline smoothly with landmark day or step? The R408 matched null makes it interpretable for the first time. All data local. |
 | **3** | **Aetiology reversal by hospital, with a matched null** | S0001 vs S0002 is the strongest external check that exists — no cohort anywhere has EEG + outcome + mixed aetiology. R397 ran it without a matched null. |
 | **4** | **Spindles beyond depth** | Mostly done (R395–R396). Open piece: the interaction goes marginal (−0.252 [−0.507, +0.001]) under the aggressive `awake` adjustment. |
+| **5** | **Why frequency content and not amplitude?** — new, from R413 | The reversal appears in intra-burst 8–30 Hz content and in **none** of five other morphology measures from the same bursts in the same patients. That is a real asymmetry and nothing in the mechanism candidates explains it. A candidate that predicts *content reverses, vigour does not* would be worth more than another robustness check. |
 
 ## DO NOT RE-OPEN
 
