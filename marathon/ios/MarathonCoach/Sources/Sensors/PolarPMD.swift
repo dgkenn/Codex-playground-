@@ -117,6 +117,26 @@ public let pmdDefaultAccSettings: [(PmdSetting, [Int])] = [
     (.range, [8]), (.sampleRate, [52]), (.resolution, [16]),
 ]
 
+/// Gyroscope: 52 Hz, ±2000 deg/s, 16-bit.
+///
+/// Worth streaming during a *calibration* recording and not during ordinary runs. Arm-swing rotation
+/// is a cleaner periodic signal than acceleration magnitude, so cadence and stride-to-stride
+/// variability come out less noisy — but it is a third concurrent stream, and battery and BLE
+/// throughput are finite over a three-hour long run. Cadence from ACC alone is good enough for
+/// real-time use; gyro earns its place when the goal is measurement rather than coaching.
+public let pmdDefaultGyroSettings: [(PmdSetting, [Int])] = [
+    (.range, [2000]), (.sampleRate, [52]), (.resolution, [16]),
+]
+
+/// Magnetometer: 50 Hz, ±50 Gauss, 16-bit.
+///
+/// Not used by the coaching engine. Included for completeness because the SDK exposes it, and noted
+/// here so the omission is a decision rather than an oversight: heading adds nothing to pace, effort
+/// or gait, and CoreLocation already supplies a better heading when one is wanted.
+public let pmdDefaultMagSettings: [(PmdSetting, [Int])] = [
+    (.range, [50]), (.sampleRate, [50]), (.resolution, [16]),
+]
+
 // MARK: - Plausibility windows and warm-up timings
 
 /// 240 bpm … 24 bpm. Identical to the SleepController's window so HRV figures from the two systems
@@ -319,6 +339,15 @@ public enum PmdCodec {
     /// channels per sample, and are cumulative against the running reference.
     public static func parseAccFrame(_ data: Data) throws -> (timestampNs: UInt64, samples: [AccSample]) {
         let (ts, frameType, payload) = try splitFrame(data, expecting: .acc)
+        let raw = try decodeTriaxial(payload: payload, frameType: frameType)
+        return (ts, raw.map { AccSample(x: $0.0, y: $0.1, z: $0.2) })
+    }
+
+    /// Shared triaxial decoder for ACC and GYRO, which use identical framing.
+    ///
+    /// Delta layout: `[reference: 3 × int16 LE][ (deltaBits:u8, sampleCount:u8) then packed signed
+    /// deltas ]*`, deltas cumulative against the running reference.
+    static func decodeTriaxial(payload: [UInt8], frameType: UInt8) throws -> [(Int, Int, Int)] {
         let compressed = frameType & pmdFrameTypeCompressedBit != 0
 
         if !compressed {
@@ -330,20 +359,19 @@ public enum PmdCodec {
                     "unsupported uncompressed ACC layout 0x%02X (only 16-bit is implemented)", frameType))
             }
             guard payload.count % 6 == 0 else {
-                throw PmdError.parse("uncompressed ACC payload not a multiple of 6 bytes")
+                throw PmdError.parse("uncompressed payload not a multiple of 6 bytes")
             }
-            var out: [AccSample] = []
+            var out: [(Int, Int, Int)] = []
             for off in stride(from: 0, to: payload.count, by: 6) {
-                out.append(AccSample(x: int16LE(payload, off),
-                                     y: int16LE(payload, off + 2),
-                                     z: int16LE(payload, off + 4)))
+                out.append((int16LE(payload, off), int16LE(payload, off + 2),
+                            int16LE(payload, off + 4)))
             }
-            return (ts, out)
+            return out
         }
 
-        guard payload.count >= 6 else { throw PmdError.parse("delta ACC frame missing reference sample") }
+        guard payload.count >= 6 else { throw PmdError.parse("delta frame missing reference sample") }
         var ref = [int16LE(payload, 0), int16LE(payload, 2), int16LE(payload, 4)]
-        var out: [AccSample] = [AccSample(x: ref[0], y: ref[1], z: ref[2])]
+        var out: [(Int, Int, Int)] = [(ref[0], ref[1], ref[2])]
         var i = 6
         while i + 2 <= payload.count {
             let deltaBits = Int(payload[i])
@@ -363,11 +391,11 @@ public enum PmdCodec {
                     bitOffset += deltaBits
                     ref[ch] += signExtend(raw, bits: deltaBits)
                 }
-                out.append(AccSample(x: ref[0], y: ref[1], z: ref[2]))
+                out.append((ref[0], ref[1], ref[2]))
             }
             i += totalBytes
         }
-        return (ts, out)
+        return out
     }
 
     // MARK: - Bit helpers
@@ -391,6 +419,42 @@ public enum PmdCodec {
         guard bits > 0, bits < 64 else { return value }
         let signBit = 1 << (bits - 1)
         return (value & signBit) != 0 ? value - (1 << bits) : value
+    }
+
+    // MARK: Gyroscope
+
+    public struct GyroSample {
+        /// deg/s per axis.
+        public let x: Double
+        public let y: Double
+        public let z: Double
+
+        public var magnitude: Double { (x * x + y * y + z * z).squareRoot() }
+    }
+
+    /// Parse a gyroscope frame. Same framing and delta-compression scheme as ACC, so the raw decode is
+    /// shared; only the scaling differs.
+    public static func parseGyroFrame(_ data: Data,
+                                      rangeDps: Int = 2000,
+                                      resolutionBits: Int = 16) throws -> (timestampNs: UInt64,
+                                                                           samples: [GyroSample]) {
+        let (ts, frameType, payload) = try splitFrame(data, expecting: .gyro)
+        let raw = try decodeTriaxial(payload: payload, frameType: frameType)
+        let scale = Double(rangeDps) / Double(1 << (resolutionBits - 1))
+        return (ts, raw.map { GyroSample(x: Double($0.0) * scale,
+                                         y: Double($0.1) * scale,
+                                         z: Double($0.2) * scale) })
+    }
+
+    /// Peak-to-peak gyroscope magnitude over a window, in deg/s — an arm-swing amplitude proxy.
+    ///
+    /// Tracked because a *falling* swing amplitude through a long run is a genuine fatigue signature.
+    /// It is not a gait measurement: from the upper arm this describes arm mechanics, not what the
+    /// foot is doing, and ground contact time or vertical oscillation cannot be inferred from it.
+    public static func gyroPeakToPeak(_ samples: [GyroSample]) -> Double? {
+        guard samples.count >= 2 else { return nil }
+        let mags = samples.map(\.magnitude)
+        return (mags.max() ?? 0) - (mags.min() ?? 0)
     }
 
     // MARK: - Actigraphy

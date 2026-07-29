@@ -5,15 +5,29 @@ heart rate. An arm-worn PPG sensor during running produces three failure modes t
 plausible data if you do not test for them, and each one corrupts a *different* decision:
 
 1. **Motion artifact / dropout.** Isolated implausible values and step changes. Cheap to reject.
-2. **Cadence lock-on.** The single most dangerous failure: the PPG algorithm latches onto the
-   step frequency instead of the pulse, and reports a rock-steady, physiologically plausible HR
-   that happens to equal cadence (or half/double it). It looks *better* than real data -- lower
-   variance -- so variance-based quality checks actively prefer it. The only reliable detector is
-   comparing HR against cadence, which we have because the Verity streams its own accelerometer.
-   Polar's own documentation and the optical-HR validation literature both flag this for
-   wrist/arm sensors during running.
-3. **Warm-up / poor contact.** The first ~30 s after starting a stream, cold skin, or a loose
+2. **Cadence lock-on.** The PPG algorithm latches onto the step frequency instead of the pulse, and
+   reports a rock-steady, physiologically plausible HR that happens to equal cadence (or half/double
+   it). It looks *better* than real data -- lower variance -- so variance-based quality checks
+   actively prefer it. The only reliable detector is comparing HR against cadence, which we have
+   because the Verity streams its own accelerometer.
+3. **Frozen heart rate.** Polar's own Verity Sense documentation states it plainly: *"If movement is
+   detected, the heart rate is fixed to the last reliable value."* This is a distinct failure from
+   lock-on and arguably worse, because the device deliberately outputs a **stale but perfectly
+   plausible** number rather than admitting it has lost the signal. A frozen HR looks like an
+   immaculate signal -- zero noise, physiologically sensible value, no dropout -- and every
+   smoothness heuristic loves it. :func:`frozen_hr_suspicion` detects it by looking for a run of
+   *identical* values over a period where a real heart rate could not plausibly have stayed
+   bit-identical, and it requires evidence of movement before firing, since a genuinely resting HR
+   can legitimately repeat.
+4. **Warm-up / poor contact.** The first ~30 s after starting a stream, cold skin, or a loose
    strap. The Verity needs the band snug on the *upper* arm; forearm placement is materially worse.
+
+**Skin contact is not usable on this device.** Polar documents that skin-contact detection is "very
+unreliable" on the Verity Sense and that it "might be possible for the device to output a heart rate
+that is not 0 even when the device is not worn" -- a limitation of this generation of optical sensor.
+So the skin-contact bit is parsed and stored for diagnostics but is **never** used as a gate. Not-worn
+is inferred instead from the conjunction of accelerometer stillness and a frozen HR
+(:func:`not_worn_suspicion`), which is the only signal combination that actually distinguishes it.
 
 Design stance: **reject, never interpolate silently.** A rejected sample is reported as rejected
 and the consumer decides (hold last good value, widen its deadband, or refuse to make a decision).
@@ -43,8 +57,10 @@ from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 __all__ = [
     "PPI_MIN_MS", "PPI_MAX_MS", "MALIK_FRACTION", "MAX_ARTIFACT_FRACTION",
     "HR_MIN_BPM", "HR_MAX_BPM", "MAX_HR_SLEW_BPM_S", "DROPOUT_TIMEOUT_S",
-    "CADENCE_LOCK_TOLERANCE", "CADENCE_LOCK_MIN_SAMPLES", "PPG_WARMUP_S",
+    "CADENCE_LOCK_TOLERANCE", "CADENCE_LOCK_MIN_SAMPLES", "CADENCE_LOCK_MIN_CV", "PPG_WARMUP_S",
     "clean_intervals", "rmssd", "ln_rmssd", "HrSample", "HrGate", "cadence_lock_suspicion",
+    "frozen_hr_suspicion", "not_worn_suspicion", "FROZEN_HR_WINDOW_S", "FROZEN_HR_MIN_SAMPLES",
+    "FROZEN_HR_MOVEMENT_SPM", "NOT_WORN_STILLNESS_G",
 ]
 
 # ---- plausibility windows ---------------------------------------------------------------
@@ -75,6 +91,26 @@ DROPOUT_TIMEOUT_S = 5.0
 #: Cadence lock-on: HR within this fraction of cadence (or half/double it) is suspicious.
 CADENCE_LOCK_TOLERANCE = 0.04
 CADENCE_LOCK_MIN_SAMPLES = 20
+
+#: Minimum coefficient of variation in cadence for a confident lock-on call. Below this, step rate is
+#: effectively constant and a heart rate sitting near it is statistically indistinguishable from a
+#: locked one -- so the detector reports suspicion without acting on it.
+CADENCE_LOCK_MIN_CV = 0.003
+
+#: Frozen-HR detection. A real heart rate wanders beat to beat even at steady effort, so an
+#: *exactly* repeated value over this many seconds means the device is holding its last reliable
+#: value rather than measuring. 12 s is comfortably longer than any plausible genuine plateau at 1 Hz
+#: sampling while still catching the fault well inside a single interval rep.
+FROZEN_HR_WINDOW_S = 12.0
+FROZEN_HR_MIN_SAMPLES = 8
+
+#: Movement threshold above which a frozen HR is definitely a fault rather than a resting plateau.
+#: Cadence over 100 spm means running; that is the state Polar says triggers the freeze.
+FROZEN_HR_MOVEMENT_SPM = 100.0
+
+#: Not-worn inference: accelerometer essentially still AND a frozen HR. Neither alone is enough --
+#: sitting still legitimately produces low motion, and a frozen HR alone happens during running.
+NOT_WORN_STILLNESS_G = 0.02
 
 #: PPG needs time to settle after a stream starts. Polar documents ~25 s before the first PPI
 #: batch; we distrust HR for the first 30 s of a stream regardless.
@@ -151,6 +187,9 @@ class HrSample:
     t_s: float                       # monotonic seconds since stream start
     hr_bpm: float
     cadence_spm: Optional[float] = None   # steps per minute, from the Verity's own ACC
+    #: Standard deviation of ACC magnitude over the last second, in g. Used only to infer not-worn;
+    #: the device's own skin-contact bit is documented as unreliable and is never trusted.
+    accel_sd_g: Optional[float] = None
 
 
 @dataclass
@@ -164,9 +203,14 @@ class HrGate:
     * ``rejected``      -- this sample was implausible; ``value`` holds the last good one
     * ``dropout``       -- nothing fresh for :data:`DROPOUT_TIMEOUT_S`; there is no usable HR
     * ``cadence_lock``  -- HR is tracking step rate; the number is probably not a heart rate
+    * ``frozen``        -- the device is holding its last reliable value (Polar's documented
+                           behaviour when it detects movement); the number is stale, not wrong
+    * ``not_worn``      -- still *and* frozen: the band is probably off your arm
 
-    The controller must treat ``dropout`` and ``cadence_lock`` as "HR is unavailable" and fall
-    back to pace/RPE guidance rather than acting on the number.
+    The controller must treat ``dropout``, ``cadence_lock``, ``frozen`` and ``not_worn`` as
+    "HR is unavailable" and fall back to pace/RPE guidance rather than acting on the number.
+    ``frozen`` is the most insidious of the four, because the value it reports is entirely plausible
+    and perfectly smooth.
     """
     value: Optional[float] = None
     status: str = "dropout"
@@ -199,6 +243,10 @@ class HrGate:
 
         if sample.t_s < PPG_WARMUP_S:
             self.status = "warmup"
+        elif not_worn_suspicion(self._hist) >= 0.7:
+            self.status = "not_worn"
+        elif frozen_hr_suspicion(self._hist) >= 0.8:
+            self.status = "frozen"
         elif cadence_lock_suspicion(self._hist) >= 0.8:
             self.status = "cadence_lock"
         else:
@@ -242,6 +290,19 @@ def cadence_lock_suspicion(history: Sequence[HrSample]) -> float:
     if len(pts) < CADENCE_LOCK_MIN_SAMPLES:
         return 0.0
 
+    # Lock-on can only be *distinguished* from coincidence when cadence moves. If step rate is
+    # essentially constant across the window, a heart rate that happens to sit near it produces
+    # exactly the same statistics as a locked one, and there is no evidence either way. That is not a
+    # hypothetical: a runner at a steady 168 spm with a heart rate around 165 hits this precisely, and
+    # flagging it would discard a perfectly good signal at the top of a ramp test.
+    #
+    # So a near-constant cadence caps the score below the action threshold rather than firing. The
+    # discriminating evidence is HR *following* cadence, and that requires cadence to lead.
+    cadences = [c for _, c in pts]
+    cad_mean = statistics.fmean(cadences)
+    cad_cv = (statistics.pstdev(cadences) / cad_mean) if cad_mean > 0 else 0.0
+    cadence_varies = cad_cv >= CADENCE_LOCK_MIN_CV
+
     near = 0
     ratios: List[float] = []
     for hr, cad in pts:
@@ -255,4 +316,83 @@ def cadence_lock_suspicion(history: Sequence[HrSample]) -> float:
     # A locked ratio is essentially constant. 0.01 is tight; real HR/cadence ratio SD over a
     # minute of running is typically several times that even at steady effort.
     lock_tight = 1.0 if ratio_sd < 0.01 else max(0.0, 1.0 - (ratio_sd - 0.01) / 0.03)
-    return round(min(1.0, 0.5 * frac_near + 0.5 * lock_tight * frac_near), 3)
+    score = min(1.0, 0.5 * frac_near + 0.5 * lock_tight * frac_near)
+    if not cadence_varies:
+        # Report the suspicion but keep it below the gate's 0.8 action threshold: worth surfacing in a
+        # diagnostic, not worth discarding the heart rate over.
+        score = min(score, 0.5)
+    return round(score, 3)
+
+
+def frozen_hr_suspicion(history: Sequence[HrSample]) -> float:
+    """Score (0..1) that the device has frozen HR at its last reliable value.
+
+    Polar's Verity Sense documentation: *"If movement is detected, the heart rate is fixed to the
+    last reliable value."* The device does not signal this -- it simply keeps emitting a stale number,
+    which is why it has to be inferred.
+
+    The detector looks for a trailing run of **bit-identical** heart-rate values spanning at least
+    :data:`FROZEN_HR_WINDOW_S`. Identity, not low variance, is the key: a real heart rate at steady
+    effort still varies by a beat or two from second to second, and a run of exactly equal values is
+    a plateau no physiology produces.
+
+    Movement gating matters in both directions. With cadence above
+    :data:`FROZEN_HR_MOVEMENT_SPM` this is unambiguous -- running is exactly the condition Polar says
+    triggers the freeze -- and the score goes to 1.0. Without movement evidence the same pattern is a
+    weaker signal, because a genuinely resting heart rate really can repeat, so it is capped at 0.6:
+    enough to distrust the value for control, not enough to claim a fault.
+    """
+    if len(history) < FROZEN_HR_MIN_SAMPLES:
+        return 0.0
+    last = history[-1].hr_bpm
+    run: List[HrSample] = []
+    for s in reversed(history):
+        if s.hr_bpm != last:
+            break
+        run.append(s)
+    if len(run) < FROZEN_HR_MIN_SAMPLES:
+        return 0.0
+    span = run[0].t_s - run[-1].t_s
+    if span < FROZEN_HR_WINDOW_S:
+        return 0.0
+
+    cadences = [s.cadence_spm for s in run if s.cadence_spm is not None]
+    moving = bool(cadences) and statistics.fmean(cadences) >= FROZEN_HR_MOVEMENT_SPM
+    if moving:
+        # Unambiguous. Running with a bit-identical heart rate for 12 seconds is precisely the
+        # condition Polar documents, and no physiology produces it. Report full confidence
+        # immediately rather than ramping: a ramp would leave the controller acting on stale data
+        # for another 7 seconds while the score climbed, which is most of an interval rep.
+        return 1.0
+    # Without movement evidence a repeated value is weaker -- a genuinely resting heart rate really
+    # can repeat -- so scale with how long it has held and cap below the gate's action threshold.
+    return round(min(0.6, span / (FROZEN_HR_WINDOW_S * 2)), 3)
+
+
+def not_worn_suspicion(history: Sequence[HrSample]) -> float:
+    """Score (0..1) that the armband is not actually on an arm.
+
+    This exists because the device's own skin-contact bit cannot be used. Polar documents that
+    Verity Sense skin-contact detection is "very unreliable" and that the device "might output a heart
+    rate that is not 0 even when not worn" -- so a plausible heart rate is not evidence of being worn,
+    and the contact flag is not evidence of anything.
+
+    The only combination that actually distinguishes not-worn from resting is **stillness plus a
+    frozen value**: a band sitting on a desk produces near-zero accelerometer variance *and* a heart
+    rate that never changes. A person sitting still produces the stillness but not the frozen value,
+    because their heart rate keeps varying.
+
+    Requires accelerometer data. Without it, this returns 0.0 rather than guessing -- which is the
+    correct failure mode, since the consequence of a false positive is discarding a real run.
+    """
+    if len(history) < FROZEN_HR_MIN_SAMPLES:
+        return 0.0
+    sds = [s.accel_sd_g for s in history if s.accel_sd_g is not None]
+    if not sds:
+        return 0.0
+    still = statistics.fmean(sds) < NOT_WORN_STILLNESS_G
+    if not still:
+        return 0.0
+    frozen = frozen_hr_suspicion(history)
+    # Frozen-while-still is the signature. Both conditions must hold.
+    return round(min(1.0, frozen * 1.4), 3) if frozen > 0 else 0.0

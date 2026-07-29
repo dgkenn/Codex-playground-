@@ -189,11 +189,11 @@ Your schedule is **3 runs + 2 strength sessions**, with the long run on Sun. Ses
 | Day | Session | Target |
 |---|---|---|
 | Mon | **Strength (running-specific)** | 45 min |
-| Tue | **Run-walk 1/2 x 8** | 34 min · Z1-2 · run 1/walk 2 x8 |
-| Wed | **Rest** |  |
-| Thu | **Run-walk 1/2 x 8** | 34 min · Z1-2 · run 1/walk 2 x8 |
-| Fri | **Strength (running-specific)** | 45 min |
-| Sat | **Rest** |  |
+| Tue | **Rest** |  |
+| Wed | **Run-walk 1/2 x 8** | 34 min · Z1-2 · run 1/walk 2 x8 |
+| Thu | **Strength (running-specific)** | 45 min |
+| Fri | **Rest** |  |
+| Sat | **Run-walk 1/2 x 8** | 34 min · Z1-2 · run 1/walk 2 x8 |
 | Sun | **Run-walk 1/2 x 8** | 34 min · Z1-2 · run 1/walk 2 x8 |
 
 **Strength (running-specific)**
@@ -219,11 +219,11 @@ Your schedule is **3 runs + 2 strength sessions**, with the long run on Sun. Ses
 | Day | Session | Target |
 |---|---|---|
 | Mon | **Strength (running-specific)** | 45 min |
-| Tue | **Run-walk 2/2 x 7** | 38 min · Z1-2 · run 2/walk 2 x7 |
-| Wed | Rest | — |
-| Thu | **Run-walk 2/2 x 7** | 38 min · Z1-2 · run 2/walk 2 x7 |
-| Fri | **Strength (running-specific)** | 45 min |
-| Sat | Rest | — |
+| Tue | Rest | — |
+| Wed | **Run-walk 2/2 x 7** | 38 min · Z1-2 · run 2/walk 2 x7 |
+| Thu | **Strength (running-specific)** | 45 min |
+| Fri | Rest | — |
+| Sat | **Run-walk 2/2 x 7** | 38 min · Z1-2 · run 2/walk 2 x7 |
 | Sun | **Run-walk 2/2 x 7** | 38 min · Z1-2 · run 2/walk 2 x7 |
 
 - Run-walk ladder rung 2 of 8: 2 min running / 2 min walking x 7 (14 min of running per session, 42 min across the week).
@@ -234,11 +234,11 @@ Your schedule is **3 runs + 2 strength sessions**, with the long run on Sun. Ses
 | Day | Session | Target |
 |---|---|---|
 | Mon | **Strength (running-specific)** | 45 min |
-| Tue | **Run-walk 3/2 x 6** | 40 min · Z1-2 · run 3/walk 2 x6 |
-| Wed | Rest | — |
-| Thu | **Run-walk 3/2 x 6** | 40 min · Z1-2 · run 3/walk 2 x6 |
-| Fri | **Strength (running-specific)** | 45 min |
-| Sat | Rest | — |
+| Tue | Rest | — |
+| Wed | **Run-walk 3/2 x 6** | 40 min · Z1-2 · run 3/walk 2 x6 |
+| Thu | **Strength (running-specific)** | 45 min |
+| Fri | Rest | — |
+| Sat | **Run-walk 3/2 x 6** | 40 min · Z1-2 · run 3/walk 2 x6 |
 | Sun | **Run-walk 3/2 x 6** | 40 min · Z1-2 · run 3/walk 2 x6 |
 
 - Run-walk ladder rung 3 of 8: 3 min running / 2 min walking x 6 (18 min of running per session, 54 min across the week).
@@ -249,11 +249,11 @@ Your schedule is **3 runs + 2 strength sessions**, with the long run on Sun. Ses
 | Day | Session | Target |
 |---|---|---|
 | Mon | **Strength (running-specific)** | 45 min |
-| Tue | **Run-walk 3/2 x 6** | 40 min · Z1-2 · run 3/walk 2 x6 |
-| Wed | Rest | — |
-| Thu | **Run-walk 3/2 x 6** | 40 min · Z1-2 · run 3/walk 2 x6 |
-| Fri | **Strength (running-specific)** | 45 min |
-| Sat | Rest | — |
+| Tue | Rest | — |
+| Wed | **Run-walk 3/2 x 6** | 40 min · Z1-2 · run 3/walk 2 x6 |
+| Thu | **Strength (running-specific)** | 45 min |
+| Fri | Rest | — |
+| Sat | **Run-walk 3/2 x 6** | 40 min · Z1-2 · run 3/walk 2 x6 |
 | Sun | **Run-walk 3/2 x 6** | 40 min · Z1-2 · run 3/walk 2 x6 |
 
 - Run-walk ladder rung 3 of 8: 3 min running / 2 min walking x 6 (18 min of running per session, 54 min across the week).
@@ -266,11 +266,11 @@ Your schedule is **3 runs + 2 strength sessions**, with the long run on Sun. Ses
 | Day | Session | Target |
 |---|---|---|
 | Mon | **Strength (running-specific)** | 45 min |
-| Tue | **Run-walk 12/2 x 2** | 38 min · Z1-2 · run 12/walk 2 x2 |
-| Wed | Rest | — |
-| Thu | **Run-walk 12/2 x 2** | 38 min · Z1-2 · run 12/walk 2 x2 |
-| Fri | **Strength (running-specific)** | 45 min |
-| Sat | Rest | — |
+| Tue | Rest | — |
+| Wed | **Run-walk 12/2 x 2** | 38 min · Z1-2 · run 12/walk 2 x2 |
+| Thu | **Strength (running-specific)** | 45 min |
+| Fri | Rest | — |
+| Sat | **Run-walk 12/2 x 2** | 38 min · Z1-2 · run 12/walk 2 x2 |
 | Sun | **Run-walk 12/2 x 2** | 38 min · Z1-2 · run 12/walk 2 x2 |
 
 - Run-walk ladder rung 6 of 8: 12 min running / 2 min walking x 2 (24 min of running per session, 72 min across the week).
@@ -295,11 +295,11 @@ Your schedule is **3 runs + 2 strength sessions**, with the long run on Sun. Ses
 | Day | Session | Target |
 |---|---|---|
 | Mon | **Strength (running-specific)** | 45 min |
-| Tue | **Easy run** | 40 min · Z1-2 · 8:43/km |
-| Wed | **Rest** |  |
-| Thu | **Easy run + strides** | 40 min · Z1-2 · 8:43/km |
-| Fri | **Strength (running-specific)** | 45 min |
-| Sat | **Rest** |  |
+| Tue | **Rest** |  |
+| Wed | **Easy run** | 40 min · Z1-2 · 8:43/km |
+| Thu | **Strength (running-specific)** | 45 min |
+| Fri | **Rest** |  |
+| Sat | **Easy run + strides** | 40 min · Z1-2 · 8:43/km |
 | Sun | **Long run** | 43 min · 4.9 km · Z1-2 · 8:43/km |
 
 **Strength (running-specific)**
@@ -334,11 +334,11 @@ Your schedule is **3 runs + 2 strength sessions**, with the long run on Sun. Ses
 | Day | Session | Target |
 |---|---|---|
 | Mon | **Strength (running-specific)** | 45 min |
-| Tue | **Easy run** | 43 min · Z1-2 · 8:43/km |
-| Wed | Rest | — |
-| Thu | **Easy run + strides** | 43 min · Z1-2 · 8:43/km |
-| Fri | **Strength (running-specific)** | 45 min |
-| Sat | Rest | — |
+| Tue | Rest | — |
+| Wed | **Easy run** | 43 min · Z1-2 · 8:43/km |
+| Thu | **Strength (running-specific)** | 45 min |
+| Fri | Rest | — |
+| Sat | **Easy run + strides** | 43 min · Z1-2 · 8:43/km |
 | Sun | **Long run** | 50 min · 5.7 km · Z1-2 · 8:43/km |
 
 - Daniels would cap the long run at 30% of weekly volume at this level; this one is 37%. Three runs a week leaves no other way to build a marathon long run, so this is a real and accepted trade-off rather than an oversight -- and the time cap is what keeps it bounded.
@@ -349,11 +349,11 @@ Your schedule is **3 runs + 2 strength sessions**, with the long run on Sun. Ses
 | Day | Session | Target |
 |---|---|---|
 | Mon | **Strength (running-specific)** | 45 min |
-| Tue | **Easy run** | 46 min · Z1-2 · 8:43/km |
-| Wed | Rest | — |
-| Thu | **Easy run + strides** | 46 min · Z1-2 · 8:43/km |
-| Fri | **Strength (running-specific)** | 45 min |
-| Sat | Rest | — |
+| Tue | Rest | — |
+| Wed | **Easy run** | 46 min · Z1-2 · 8:43/km |
+| Thu | **Strength (running-specific)** | 45 min |
+| Fri | Rest | — |
+| Sat | **Easy run + strides** | 46 min · Z1-2 · 8:43/km |
 | Sun | **Long run** | 58 min · 6.7 km · Z1-2 · 8:43/km |
 
 - Daniels would cap the long run at 30% of weekly volume at this level; this one is 39%. Three runs a week leaves no other way to build a marathon long run, so this is a real and accepted trade-off rather than an oversight -- and the time cap is what keeps it bounded.
@@ -364,11 +364,11 @@ Your schedule is **3 runs + 2 strength sessions**, with the long run on Sun. Ses
 | Day | Session | Target |
 |---|---|---|
 | Mon | **Strength (running-specific)** | 45 min |
-| Tue | **Easy run** | 39 min · Z1-2 · 8:43/km |
-| Wed | Rest | — |
-| Thu | **Easy run + strides** | 39 min · Z1-2 · 8:43/km |
-| Fri | **Strength (running-specific)** | 45 min |
-| Sat | Rest | — |
+| Tue | Rest | — |
+| Wed | **Easy run** | 39 min · Z1-2 · 8:43/km |
+| Thu | **Strength (running-specific)** | 45 min |
+| Fri | Rest | — |
+| Sat | **Easy run + strides** | 39 min · Z1-2 · 8:43/km |
 | Sun | **Long run** | 38 min · 4.4 km · Z1-2 · 8:43/km |
 
 - Daniels would cap the long run at 30% of weekly volume at this level; this one is 41%. Three runs a week leaves no other way to build a marathon long run, so this is a real and accepted trade-off rather than an oversight -- and the time cap is what keeps it bounded.
@@ -381,11 +381,11 @@ Your schedule is **3 runs + 2 strength sessions**, with the long run on Sun. Ses
 | Day | Session | Target |
 |---|---|---|
 | Mon | **Strength (running-specific)** | 45 min |
-| Tue | **Easy run** | 48 min · Z1-2 · 8:43/km |
-| Wed | Rest | — |
-| Thu | **Easy run + strides** | 48 min · Z1-2 · 8:43/km |
-| Fri | **Strength (running-specific)** | 45 min |
-| Sat | Rest | — |
+| Tue | Rest | — |
+| Wed | **Easy run** | 48 min · Z1-2 · 8:43/km |
+| Thu | **Strength (running-specific)** | 45 min |
+| Fri | Rest | — |
+| Sat | **Easy run + strides** | 48 min · Z1-2 · 8:43/km |
 | Sun | **Long run** | 62 min · 7.1 km · Z1-2 · 8:43/km |
 
 - Daniels would cap the long run at 30% of weekly volume at this level; this one is 49%. Three runs a week leaves no other way to build a marathon long run, so this is a real and accepted trade-off rather than an oversight -- and the time cap is what keeps it bounded.
@@ -413,11 +413,11 @@ Your schedule is **3 runs + 2 strength sessions**, with the long run on Sun. Ses
 | Day | Session | Target |
 |---|---|---|
 | Mon | **Strength (running-specific)** | 45 min |
-| Tue | **Threshold 2 x 6 min** | 46 min · Z4 · 5:48/km |
-| Wed | **Rest** |  |
-| Thu | **Easy run** | 134 min · Z1-2 · 7:55/km |
-| Fri | **Strength (running-specific)** | 45 min |
-| Sat | **Rest** |  |
+| Tue | **Rest** |  |
+| Wed | **Threshold 2 x 6 min** | 46 min · Z4 · 5:48/km |
+| Thu | **Strength (running-specific)** | 45 min |
+| Fri | **Rest** |  |
+| Sat | **Easy run** | 134 min · Z1-2 · 7:55/km |
 | Sun | **Long run** | 72 min · 9.1 km · Z1-2 · 7:55/km |
 
 **Strength (running-specific)**
@@ -452,11 +452,11 @@ Your schedule is **3 runs + 2 strength sessions**, with the long run on Sun. Ses
 | Day | Session | Target |
 |---|---|---|
 | Mon | **Strength (running-specific)** | 45 min |
-| Tue | **Threshold 2 x 6 min** | 46 min · Z4 · 5:48/km |
-| Wed | Rest | — |
-| Thu | **Easy run** | 139 min · Z1-2 · 7:55/km |
-| Fri | **Strength (running-specific)** | 45 min |
-| Sat | Rest | — |
+| Tue | Rest | — |
+| Wed | **Threshold 2 x 6 min** | 46 min · Z4 · 5:48/km |
+| Thu | **Strength (running-specific)** | 45 min |
+| Fri | Rest | — |
+| Sat | **Easy run** | 139 min · Z1-2 · 7:55/km |
 | Sun | **Long run** | 81 min · 10.2 km · Z1-2 · 7:55/km |
 
 - Daniels would cap the long run at 30% of weekly volume at this level; this one is 37%. Three runs a week leaves no other way to build a marathon long run, so this is a real and accepted trade-off rather than an oversight -- and the time cap is what keeps it bounded.
@@ -467,11 +467,11 @@ Your schedule is **3 runs + 2 strength sessions**, with the long run on Sun. Ses
 | Day | Session | Target |
 |---|---|---|
 | Mon | **Strength (running-specific)** | 45 min |
-| Tue | **Threshold 3 x 8 min** | 60 min · Z4 · 5:48/km |
-| Wed | Rest | — |
-| Thu | **Easy run** | 128 min · Z1-2 · 7:55/km |
-| Fri | **Strength (running-specific)** | 45 min |
-| Sat | Rest | — |
+| Tue | Rest | — |
+| Wed | **Threshold 3 x 8 min** | 60 min · Z4 · 5:48/km |
+| Thu | **Strength (running-specific)** | 45 min |
+| Fri | Rest | — |
+| Sat | **Easy run** | 128 min · Z1-2 · 7:55/km |
 | Sun | **Long run** | 83 min · 10.4 km · Z1-2 · 7:55/km |
 
 - Daniels would cap the long run at 30% of weekly volume at this level; this one is 49%. Three runs a week leaves no other way to build a marathon long run, so this is a real and accepted trade-off rather than an oversight -- and the time cap is what keeps it bounded.
@@ -498,11 +498,11 @@ Your schedule is **3 runs + 2 strength sessions**, with the long run on Sun. Ses
 | Day | Session | Target |
 |---|---|---|
 | Mon | **Strength (running-specific)** | 45 min |
-| Tue | **Threshold 3 x 8 min** | 60 min · Z4 · 5:18/km |
-| Wed | **Rest** |  |
-| Thu | **Easy run** | 80 min · Z1-2 · 7:16/km |
-| Fri | **Strength (running-specific)** | 45 min |
-| Sat | **Rest** |  |
+| Tue | **Rest** |  |
+| Wed | **Threshold 3 x 8 min** | 60 min · Z4 · 5:18/km |
+| Thu | **Strength (running-specific)** | 45 min |
+| Fri | **Rest** |  |
+| Sat | **Easy run** | 80 min · Z1-2 · 7:16/km |
 | Sun | **Long run** | 97 min · 13.3 km · Z1-2 · 7:16/km |
 
 **Strength (running-specific)**
@@ -536,11 +536,11 @@ Your schedule is **3 runs + 2 strength sessions**, with the long run on Sun. Ses
 | Day | Session | Target |
 |---|---|---|
 | Mon | **Strength (running-specific)** | 45 min |
-| Tue | **Threshold 3 x 8 min** | 60 min · Z4 · 5:18/km |
-| Wed | Rest | — |
-| Thu | **Easy run** | 80 min · Z1-2 · 7:16/km |
-| Fri | **Strength (running-specific)** | 45 min |
-| Sat | Rest | — |
+| Tue | Rest | — |
+| Wed | **Threshold 3 x 8 min** | 60 min · Z4 · 5:18/km |
+| Thu | **Strength (running-specific)** | 45 min |
+| Fri | Rest | — |
+| Sat | **Easy run** | 80 min · Z1-2 · 7:16/km |
 | Sun | **Long run** | 105 min · 14.5 km · Z1-2 · 7:16/km |
 
 - Daniels would cap the long run at 30% of weekly volume at this level; this one is 37%. Three runs a week leaves no other way to build a marathon long run, so this is a real and accepted trade-off rather than an oversight -- and the time cap is what keeps it bounded.
@@ -550,11 +550,11 @@ Your schedule is **3 runs + 2 strength sessions**, with the long run on Sun. Ses
 | Day | Session | Target |
 |---|---|---|
 | Mon | **Strength (running-specific)** | 45 min |
-| Tue | **Threshold 5 x 8 min** | 80 min · Z4 · 5:18/km |
-| Wed | Rest | — |
-| Thu | **Easy run** | 68 min · Z1-2 · 7:16/km |
-| Fri | **Strength (running-specific)** | 45 min |
-| Sat | Rest | — |
+| Tue | Rest | — |
+| Wed | **Threshold 5 x 8 min** | 80 min · Z4 · 5:18/km |
+| Thu | **Strength (running-specific)** | 45 min |
+| Fri | Rest | — |
+| Sat | **Easy run** | 68 min · Z1-2 · 7:16/km |
 | Sun | **Long run** | 147 min · 20.2 km · Z1-2 · 7:16/km |
 
 - Daniels would cap the long run at 25% of weekly volume at this level; this one is 50%. Three runs a week leaves no other way to build a marathon long run, so this is a real and accepted trade-off rather than an oversight -- and the time cap is what keeps it bounded.
@@ -579,11 +579,11 @@ Your schedule is **3 runs + 2 strength sessions**, with the long run on Sun. Ses
 | Day | Session | Target |
 |---|---|---|
 | Mon | **Strength (running-specific)** | 45 min |
-| Tue | **Threshold 3 x 10 min** | 66 min · Z4 · 5:00/km |
-| Wed | **Optional 4th easy run (30 min)** *(optional)* | 30 min · Z1-2 · 6:51/km |
-| Thu | **Easy run** | 80 min · Z1-2 · 6:51/km |
-| Fri | **Strength (running-specific)** | 45 min |
-| Sat | Rest | — |
+| Tue | **Optional 4th easy run (30 min)** *(optional)* | 30 min · Z1-2 · 6:51/km |
+| Wed | **Threshold 3 x 10 min** | 66 min · Z4 · 5:00/km |
+| Thu | **Strength (running-specific)** | 45 min |
+| Fri | Rest | — |
+| Sat | **Easy run** | 80 min · Z1-2 · 6:51/km |
 | Sun | **Long run** | 110 min · 16.1 km · Z1-2 · 6:51/km |
 
 - Daniels would cap the long run at 25% of weekly volume at this level; this one is 35%. Three runs a week leaves no other way to build a marathon long run, so this is a real and accepted trade-off rather than an oversight -- and the time cap is what keeps it bounded.
@@ -594,11 +594,11 @@ Your schedule is **3 runs + 2 strength sessions**, with the long run on Sun. Ses
 | Day | Session | Target |
 |---|---|---|
 | Mon | **Strength (running-specific)** | 45 min |
-| Tue | **Threshold 3 x 10 min** | 66 min · Z4 · 5:00/km |
-| Wed | **Optional 4th easy run (30 min)** *(optional)* | 30 min · Z1-2 · 6:51/km |
-| Thu | **Easy run** | 80 min · Z1-2 · 6:51/km |
-| Fri | **Strength (running-specific)** | 45 min |
-| Sat | Rest | — |
+| Tue | **Optional 4th easy run (30 min)** *(optional)* | 30 min · Z1-2 · 6:51/km |
+| Wed | **Threshold 3 x 10 min** | 66 min · Z4 · 5:00/km |
+| Thu | **Strength (running-specific)** | 45 min |
+| Fri | Rest | — |
+| Sat | **Easy run** | 80 min · Z1-2 · 6:51/km |
 | Sun | **Long run** | 117 min · 17.0 km · Z1-2 · 6:51/km |
 
 - Daniels would cap the long run at 25% of weekly volume at this level; this one is 37%. Three runs a week leaves no other way to build a marathon long run, so this is a real and accepted trade-off rather than an oversight -- and the time cap is what keeps it bounded.
@@ -609,11 +609,11 @@ Your schedule is **3 runs + 2 strength sessions**, with the long run on Sun. Ses
 | Day | Session | Target |
 |---|---|---|
 | Mon | **Strength (running-specific)** | 45 min |
-| Tue | **Threshold 5 x 10 min** | 90 min · Z4 · 5:00/km |
-| Wed | **Optional 4th easy run (30 min)** *(optional)* | 30 min · Z1-2 · 6:51/km |
-| Thu | **Easy run** | 76 min · Z1-2 · 6:51/km |
-| Fri | **Strength (running-specific)** | 45 min |
-| Sat | Rest | — |
+| Tue | **Optional 4th easy run (30 min)** *(optional)* | 30 min · Z1-2 · 6:51/km |
+| Wed | **Threshold 5 x 10 min** | 90 min · Z4 · 5:00/km |
+| Thu | **Strength (running-specific)** | 45 min |
+| Fri | Rest | — |
+| Sat | **Easy run** | 76 min · Z1-2 · 6:51/km |
 | Sun | **Long run** | 150 min · 21.9 km · Z1-2 · 6:51/km |
 
 - Daniels would cap the long run at 25% of weekly volume at this level; this one is 50%. Three runs a week leaves no other way to build a marathon long run, so this is a real and accepted trade-off rather than an oversight -- and the time cap is what keeps it bounded.
@@ -639,11 +639,11 @@ Your schedule is **3 runs + 2 strength sessions**, with the long run on Sun. Ses
 | Day | Session | Target |
 |---|---|---|
 | Mon | **Strength (running-specific)** | 45 min |
-| Tue | **Threshold 3 x 10 min** | 66 min · Z4 · 4:48/km |
-| Wed | **Optional 4th easy run (30 min)** *(optional)* | 30 min · Z1-2 · 6:36/km |
-| Thu | **Easy run** | 80 min · Z1-2 · 6:36/km |
-| Fri | **Strength (running-specific)** | 45 min |
-| Sat | **Rest** |  |
+| Tue | **Optional 4th easy run (30 min)** *(optional)* | 30 min · Z1-2 · 6:36/km |
+| Wed | **Threshold 3 x 10 min** | 66 min · Z4 · 4:48/km |
+| Thu | **Strength (running-specific)** | 45 min |
+| Fri | **Rest** |  |
+| Sat | **Easy run** | 80 min · Z1-2 · 6:36/km |
 | Sun | **Long run with marathon-pace finish** | 120 min · 18.2 km · Z2-3 · 5:18/km |
 
 **Strength (running-specific)**
@@ -678,11 +678,11 @@ Your schedule is **3 runs + 2 strength sessions**, with the long run on Sun. Ses
 | Day | Session | Target |
 |---|---|---|
 | Mon | **Strength (running-specific)** | 45 min |
-| Tue | **Threshold 3 x 10 min** | 66 min · Z4 · 4:48/km |
-| Wed | **Optional 4th easy run (30 min)** *(optional)* | 30 min · Z1-2 · 6:36/km |
-| Thu | **Easy run** | 80 min · Z1-2 · 6:36/km |
-| Fri | **Strength (running-specific)** | 45 min |
-| Sat | Rest | — |
+| Tue | **Optional 4th easy run (30 min)** *(optional)* | 30 min · Z1-2 · 6:36/km |
+| Wed | **Threshold 3 x 10 min** | 66 min · Z4 · 4:48/km |
+| Thu | **Strength (running-specific)** | 45 min |
+| Fri | Rest | — |
+| Sat | **Easy run** | 80 min · Z1-2 · 6:36/km |
 | Sun | **Long run** | 127 min · 19.2 km · Z1-2 · 6:36/km |
 
 - Daniels would cap the long run at 25% of weekly volume at this level; this one is 37%. Three runs a week leaves no other way to build a marathon long run, so this is a real and accepted trade-off rather than an oversight -- and the time cap is what keeps it bounded.
@@ -693,11 +693,11 @@ Your schedule is **3 runs + 2 strength sessions**, with the long run on Sun. Ses
 | Day | Session | Target |
 |---|---|---|
 | Mon | **Strength (running-specific)** | 45 min |
-| Tue | **Threshold 4 x 10 min** | 78 min · Z4 · 4:48/km |
-| Wed | **Optional 4th easy run (30 min)** *(optional)* | 30 min · Z1-2 · 6:36/km |
-| Thu | **Easy run** | 80 min · Z1-2 · 6:36/km |
-| Fri | **Strength (running-specific)** | 45 min |
-| Sat | Rest | — |
+| Tue | **Optional 4th easy run (30 min)** *(optional)* | 30 min · Z1-2 · 6:36/km |
+| Wed | **Threshold 4 x 10 min** | 78 min · Z4 · 4:48/km |
+| Thu | **Strength (running-specific)** | 45 min |
+| Fri | Rest | — |
+| Sat | **Easy run** | 80 min · Z1-2 · 6:36/km |
 | Sun | **Long run** | 155 min · 23.4 km · Z1-2 · 6:36/km |
 
 - Daniels would cap the long run at 25% of weekly volume at this level; this one is 45%. Three runs a week leaves no other way to build a marathon long run, so this is a real and accepted trade-off rather than an oversight -- and the time cap is what keeps it bounded.
@@ -714,11 +714,11 @@ Your schedule is **3 runs + 2 strength sessions**, with the long run on Sun. Ses
 | Day | Session | Target |
 |---|---|---|
 | Mon | **Strength (running-specific)** | 45 min |
-| Tue | **Threshold 3 x 6 min** | 54 min · Z4 · 4:48/km |
-| Wed | **Rest** |  |
-| Thu | **Easy run** | 30 min · Z1-2 · 6:36/km |
-| Fri | **Strength (running-specific)** | 45 min |
-| Sat | **Rest** |  |
+| Tue | **Rest** |  |
+| Wed | **Threshold 3 x 6 min** | 54 min · Z4 · 4:48/km |
+| Thu | **Strength (running-specific)** | 45 min |
+| Fri | **Rest** |  |
+| Sat | **Easy run** | 30 min · Z1-2 · 6:36/km |
 | Sun | **Long run** | 77 min · 11.6 km · Z1-2 · 6:36/km |
 
 **Strength (running-specific)**
@@ -753,11 +753,11 @@ Your schedule is **3 runs + 2 strength sessions**, with the long run on Sun. Ses
 | Day | Session | Target |
 |---|---|---|
 | Mon | **Strength (running-specific)** | 45 min |
-| Tue | **Threshold 3 x 6 min** | 54 min · Z4 · 4:48/km |
-| Wed | Rest | — |
-| Thu | **Easy run** | 30 min · Z1-2 · 6:36/km |
-| Fri | **Strength (running-specific)** | 45 min |
-| Sat | Rest | — |
+| Tue | Rest | — |
+| Wed | **Threshold 3 x 6 min** | 54 min · Z4 · 4:48/km |
+| Thu | **Strength (running-specific)** | 45 min |
+| Fri | Rest | — |
+| Sat | **Easy run** | 30 min · Z1-2 · 6:36/km |
 | Sun | **Long run** | 24 min · 3.7 km · Z1-2 · 6:36/km |
 
 - Bosquet 2007 meta-analysis: a 2-week taper with a 41-60% volume reduction, holding intensity and frequency, produced the largest performance gain. Cutting intensity instead of volume is what makes people feel flat on race day.

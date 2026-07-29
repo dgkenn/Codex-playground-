@@ -15,7 +15,8 @@ import pytest
 from marathon_engine.signal_quality import (
     CADENCE_LOCK_MIN_SAMPLES, DROPOUT_TIMEOUT_S, HR_MAX_BPM, HR_MIN_BPM, MALIK_FRACTION,
     MAX_HR_SLEW_BPM_S, PPG_WARMUP_S, PPI_MAX_MS, PPI_MIN_MS, HrGate, HrSample,
-    cadence_lock_suspicion, clean_intervals, ln_rmssd, rmssd,
+    cadence_lock_suspicion, clean_intervals, frozen_hr_suspicion, ln_rmssd, not_worn_suspicion,
+    rmssd,
 )
 
 
@@ -225,3 +226,125 @@ def test_walking_cadence_is_ignored():
     """Cadence under 100 spm is walking; the lock heuristic does not apply."""
     hist = [HrSample(t_s=float(i), hr_bpm=90.0, cadence_spm=90.0) for i in range(60)]
     assert cadence_lock_suspicion(hist) == 0.0
+
+
+# ---- frozen HR (Polar's documented "fixed to last reliable value") --------------------------
+
+def test_frozen_hr_detected_while_running():
+    """Polar: 'If movement is detected, the heart rate is fixed to the last reliable value.'
+
+    A frozen HR is the most dangerous of the failure modes because the value is entirely plausible
+    and perfectly smooth -- every variance-based quality check prefers it to real data.
+    """
+    hist = [HrSample(t_s=float(i), hr_bpm=152.0, cadence_spm=168.0) for i in range(20)]
+    assert frozen_hr_suspicion(hist) >= 0.8
+
+
+def test_frozen_hr_needs_a_long_enough_run():
+    hist = [HrSample(t_s=float(i), hr_bpm=152.0, cadence_spm=168.0) for i in range(4)]
+    assert frozen_hr_suspicion(hist) == 0.0
+
+
+def test_frozen_hr_needs_the_span_not_just_the_count():
+    """Eight samples inside two seconds is not a 12-second freeze."""
+    hist = [HrSample(t_s=i * 0.25, hr_bpm=152.0, cadence_spm=168.0) for i in range(10)]
+    assert frozen_hr_suspicion(hist) == 0.0
+
+
+def test_real_hr_with_normal_variation_is_not_frozen():
+    """The discriminator is IDENTITY, not low variance -- a real HR wanders a beat or two."""
+    hist = [HrSample(t_s=float(i), hr_bpm=150.0 + (i % 3), cadence_spm=168.0) for i in range(30)]
+    assert frozen_hr_suspicion(hist) == 0.0
+
+
+def test_frozen_hr_at_rest_is_only_weakly_suspicious():
+    """A genuinely resting HR can legitimately repeat, so without movement evidence this is capped."""
+    hist = [HrSample(t_s=float(i), hr_bpm=56.0, cadence_spm=0.0) for i in range(30)]
+    score = frozen_hr_suspicion(hist)
+    assert 0 < score <= 0.6
+
+
+def test_frozen_hr_without_cadence_data_is_capped():
+    hist = [HrSample(t_s=float(i), hr_bpm=152.0) for i in range(30)]
+    assert 0 < frozen_hr_suspicion(hist) <= 0.6
+
+
+def test_gate_flags_frozen_status():
+    g = HrGate()
+    t0 = PPG_WARMUP_S + 1
+    for i in range(30):
+        g.update(HrSample(t_s=t0 + i, hr_bpm=152.0, cadence_spm=170.0))
+    assert g.status == "frozen"
+    assert not g.usable_for_control, "a stale value must never drive the controller"
+
+
+def test_frozen_then_recovering_returns_to_ok():
+    g = HrGate()
+    t0 = PPG_WARMUP_S + 1
+    for i in range(30):
+        g.update(HrSample(t_s=t0 + i, hr_bpm=152.0, cadence_spm=170.0))
+    assert g.status == "frozen"
+    for i in range(30, 60):
+        g.update(HrSample(t_s=t0 + i, hr_bpm=150.0 + (i % 4), cadence_spm=170.0))
+    assert g.status == "ok"
+
+
+# ---- not worn (because the skin-contact bit is unusable on this device) ----------------------
+
+def test_not_worn_requires_both_stillness_and_a_frozen_value():
+    """Polar documents that Verity Sense skin contact is 'very unreliable' and that it may report a
+    non-zero HR when not worn -- so not-worn has to be inferred from motion plus a frozen value."""
+    hist = [HrSample(t_s=float(i), hr_bpm=72.0, cadence_spm=0.0, accel_sd_g=0.001)
+            for i in range(30)]
+    assert not_worn_suspicion(hist) >= 0.7
+
+
+def test_person_sitting_still_is_not_flagged_as_not_worn():
+    """Stillness alone is not enough: a resting person's HR still varies."""
+    hist = [HrSample(t_s=float(i), hr_bpm=60.0 + (i % 4), cadence_spm=0.0, accel_sd_g=0.001)
+            for i in range(30)]
+    assert not_worn_suspicion(hist) == 0.0
+
+
+def test_running_with_frozen_hr_is_not_flagged_as_not_worn():
+    """Frozen alone is not enough either -- that is the freeze fault, not a removed band."""
+    hist = [HrSample(t_s=float(i), hr_bpm=152.0, cadence_spm=170.0, accel_sd_g=0.4)
+            for i in range(30)]
+    assert not_worn_suspicion(hist) == 0.0
+
+
+def test_not_worn_returns_zero_without_accelerometer_data():
+    """Refuse to guess: a false positive here discards a real run."""
+    hist = [HrSample(t_s=float(i), hr_bpm=72.0, cadence_spm=0.0) for i in range(30)]
+    assert not_worn_suspicion(hist) == 0.0
+
+
+def test_gate_flags_not_worn():
+    g = HrGate()
+    t0 = PPG_WARMUP_S + 1
+    for i in range(30):
+        g.update(HrSample(t_s=t0 + i, hr_bpm=72.0, cadence_spm=0.0, accel_sd_g=0.001))
+    assert g.status == "not_worn"
+    assert not g.usable_for_control
+
+
+def test_constant_cadence_cannot_confirm_a_lock():
+    """A real case that used to false-positive: steady 168 spm with a heart rate around 165.
+
+    With cadence essentially constant there is no evidence either way — a coincidentally-near heart
+    rate produces identical statistics to a locked one. The detector must report suspicion without
+    discarding a good signal, because the discriminating evidence is HR *following* cadence, and that
+    requires cadence to lead.
+    """
+    hist = [HrSample(t_s=float(i), hr_bpm=165.0 + (i % 3), cadence_spm=168.0) for i in range(60)]
+    score = cadence_lock_suspicion(hist)
+    assert score < 0.8, "must not act on an indistinguishable case"
+
+
+def test_varying_cadence_still_confirms_a_real_lock():
+    """The guard must not disarm the detector: when cadence moves and HR follows it, that is a lock."""
+    hist = []
+    for i in range(60):
+        cad = 150.0 + 20.0 * math.sin(i / 10.0)      # cadence genuinely varies
+        hist.append(HrSample(t_s=float(i), hr_bpm=cad, cadence_spm=cad))
+    assert cadence_lock_suspicion(hist) >= 0.8

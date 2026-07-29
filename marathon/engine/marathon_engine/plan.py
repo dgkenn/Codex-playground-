@@ -249,10 +249,21 @@ class PlanConfig:
     """The athlete's constraints. Defaults are this user's answers."""
     run_days_per_week: int = 3
     strength_days_per_week: int = 2
-    #: Preferred weekdays, Mon=0. Long run defaults to Sunday, the two other runs midweek.
+    #: Preferred weekdays, Mon=0. These are this athlete's actual days: Wednesday, Saturday, Sunday.
+    #:
+    #: The Saturday/Sunday pair is worth a note, because it looks like a scheduling compromise and is
+    #: actually an advantage. Running the long run on Sunday off an easy Saturday means it starts on
+    #: mildly pre-fatigued legs, which is a *marathon-specific* stimulus -- the same reasoning behind
+    #: back-to-back long runs in ultra training, at a much gentler dose. The cost is that Saturday
+    #: must stay genuinely easy; if Saturday creeps up in effort, Sunday stops being a long run and
+    #: becomes the second half of a two-day hard block.
+    #:
+    #: Quality therefore goes on Wednesday, three days clear of the long run in both directions. That
+    #: is the widest spacing this three-day pattern allows, and it is why Wednesday gets the workout
+    #: rather than Saturday.
     long_run_day: int = 6
-    run_days: Tuple[int, ...] = (1, 3, 6)        # Tue, Thu, Sun
-    strength_days: Tuple[int, ...] = (0, 4)      # Mon, Fri
+    run_days: Tuple[int, ...] = (2, 5, 6)        # Wed, Sat, Sun
+    strength_days: Tuple[int, ...] = (0, 3)      # Mon, Thu -- clear of Wed quality and Sun long
     already_lifting: bool = True
     offer_fourth_run: bool = True
     metric: bool = True
@@ -987,7 +998,15 @@ def generate_week(profile: FitnessProfile, phase: Phase, week_in_phase: int, *,
         easy_min = max(30.0, min(80.0, easy_min))
         if is_cutback:
             easy_min = max(25.0, easy_min * 0.75)
-        sessions.append(_easy_run(d_b, easy_min, paces))
+        sat_before_long = (d_b + 1) % 7 == d_long
+        easy = _easy_run(d_b, easy_min, paces)
+        if sat_before_long:
+            easy.cues = list(easy.cues) + [
+                "This one sits the day before your long run, which is deliberate -- it makes tomorrow "
+                "start on slightly tired legs, and that is a marathon-specific stimulus. It only "
+                "works if today stays genuinely easy. If you push this, tomorrow stops being a long "
+                "run and becomes the second half of a two-day hard block."]
+        sessions.append(easy)
         # Marathon-pace long runs every third week in MARATHON_BASE, every other week in PEAK.
         mp_week = (phase == Phase.MARATHON_BASE and week_in_phase % 3 == 0) or \
                   (phase == Phase.MARATHON_PEAK and week_in_phase % 2 == 1)
