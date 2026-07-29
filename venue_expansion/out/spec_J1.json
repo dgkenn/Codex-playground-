@@ -1,0 +1,1809 @@
+{
+ "spec_id": "J1",
+ "verdict": "INSUFFICIENT",
+ "n": 0,
+ "reason": "FIT theta selection undefined: Thursday-clustered t has <2 populated clusters at every grid theta, so no cell yields a computable t; the frozen 'highest FIT t' rule cannot be applied and no substitute was improvised",
+ "fit_results": {
+  "0.15": {
+   "n_entries": 1,
+   "n_thursdays": 1,
+   "mean_net": 0.53,
+   "t": null
+  },
+  "0.25": {
+   "n_entries": 1,
+   "n_thursdays": 1,
+   "mean_net": 0.53,
+   "t": null
+  },
+  "0.35": {
+   "n_entries": 1,
+   "n_thursdays": 1,
+   "mean_net": 0.53,
+   "t": null
+  }
+ },
+ "n_events_archive": 24,
+ "disagreements": [],
+ "skip_ledger_n": 263,
+ "skip_ledger": [
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25JUN12-100000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25JUN12-150000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25JUN12-200000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25JUN12-250000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25JUN12-300000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25JUN26-275000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25JUN26-250000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25JUN26-225000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25JUN26-200000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25JUL03-225000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25JUL03-230000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25JUL03-235000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25JUL03-240000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25JUL03-245000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25JUL03-250000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25JUL10-255000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25JUL10-250000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25JUL10-245000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25JUL10-240000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25JUL10-235000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25JUL10-230000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25JUL17-225000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25JUL17-230000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25JUL17-220000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25JUL17-235000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25JUL17-240000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25JUL17-245000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25JUL17-250000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25JUL24-220000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25JUL24-225000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25JUL24-230000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25JUL24-235000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25JUL24-240000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25JUL24-245000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25JUL24-250000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25JUL31-240000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25JUL31-220000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25JUL31-225000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25JUL31-230000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25JUL31-235000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25JUL31-245000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25JUL31-250000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25AUG07-250000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25AUG07-245000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25AUG07-240000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25AUG07-235000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25AUG07-230000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25AUG07-225000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25AUG07-200000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25AUG07-210000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25AUG07-215000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25AUG07-220000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25AUG14-200000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25AUG14-210000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25AUG14-215000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25AUG14-220000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25AUG14-225000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25AUG14-230000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25AUG14-235000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25AUG14-240000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25AUG14-245000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25AUG14-250000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25AUG21-200000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25AUG21-210000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25AUG21-215000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25AUG21-220000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25AUG21-225000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25AUG21-230000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25AUG21-235000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25AUG21-240000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25AUG21-245000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25AUG21-250000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25AUG28-200000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25AUG28-210000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25AUG28-215000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25AUG28-220000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25AUG28-225000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25AUG28-230000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25AUG28-235000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25AUG28-240000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25AUG28-245000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25AUG28-250000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25SEP04-250000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25SEP04-245000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25SEP04-240000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25SEP04-235000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25SEP04-230000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25SEP04-225000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25SEP04-220000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25SEP04-215000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25SEP04-210000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25SEP04-200000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25SEP11-250000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25SEP11-245000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25SEP11-240000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25SEP11-235000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25SEP11-230000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25SEP11-225000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25SEP11-220000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25SEP11-215000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25SEP11-210000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25SEP11-200000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25SEP18-200000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25SEP18-270000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25SEP18-260000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25SEP18-250000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25SEP18-240000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25SEP18-230000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25SEP18-225000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25SEP18-220000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25SEP18-215000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25SEP18-210000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25SEP25-215000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25SEP25-210000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25SEP25-200000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25SEP25-270000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25SEP25-260000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25SEP25-250000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25SEP25-240000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25SEP25-230000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25SEP25-225000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25SEP25-220000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25OCT02-200000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25OCT02-210000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25OCT02-215000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25OCT02-220000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25OCT02-225000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25OCT02-230000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25OCT02-240000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25OCT02-250000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25OCT02-260000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25OCT02-270000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25DEC18-270000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25DEC18-250000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25DEC18-220000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25DEC18-240000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25DEC18-215000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25DEC18-210000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25DEC18-225000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25DEC18-200000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25DEC18-260000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25DEC18-230000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25DEC24-270000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25DEC24-215000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25DEC24-225000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25DEC24-260000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25DEC24-210000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25DEC24-240000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25DEC24-250000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25DEC24-230000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25DEC24-220000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25DEC24-200000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25DEC31-225000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25DEC31-220000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25DEC31-215000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25DEC31-240000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25DEC31-210000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25DEC31-250000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25DEC31-270000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25DEC31-230000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25DEC31-260000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-25DEC31-200000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-26JAN08-220000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-26JAN08-225000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-26JAN08-230000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-26JAN08-240000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-26JAN08-250000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-26JAN08-260000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-26JAN08-270000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-26JAN08-200000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-26JAN08-210000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-26JAN08-215000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-26JAN15-200000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-26JAN15-210000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-26JAN15-215000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-26JAN15-220000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-26JAN15-225000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-26JAN15-230000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-26JAN15-240000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-26JAN15-250000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-26JAN15-260000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-26JAN15-270000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-26JAN22-220000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-26JAN22-215000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-26JAN22-210000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-26JAN22-200000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-26JAN22-250000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-26JAN22-240000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-26JAN22-230000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-26JAN22-225000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-26JAN22-270000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-26JAN22-260000",
+   "reason": "live reconciliation unavailable, fell back to archive result",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found"
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-26JAN29-220000",
+   "reason": "result unavailable (neither live nor archive settled)",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found",
+    "archive_result": null
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-26JAN29-210000",
+   "reason": "result unavailable (neither live nor archive settled)",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found",
+    "archive_result": null
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-26JAN29-200000",
+   "reason": "result unavailable (neither live nor archive settled)",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found",
+    "archive_result": null
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-26JAN29-270000",
+   "reason": "result unavailable (neither live nor archive settled)",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found",
+    "archive_result": null
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-26JAN29-260000",
+   "reason": "result unavailable (neither live nor archive settled)",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found",
+    "archive_result": null
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-26JAN29-250000",
+   "reason": "result unavailable (neither live nor archive settled)",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found",
+    "archive_result": null
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-26JAN29-240000",
+   "reason": "result unavailable (neither live nor archive settled)",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found",
+    "archive_result": null
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-26JAN29-230000",
+   "reason": "result unavailable (neither live nor archive settled)",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found",
+    "archive_result": null
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-26JAN29-225000",
+   "reason": "result unavailable (neither live nor archive settled)",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found",
+    "archive_result": null
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-26JAN29-215000",
+   "reason": "result unavailable (neither live nor archive settled)",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found",
+    "archive_result": null
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-26FEB05-270000",
+   "reason": "result unavailable (neither live nor archive settled)",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found",
+    "archive_result": null
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-26FEB05-200000",
+   "reason": "result unavailable (neither live nor archive settled)",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found",
+    "archive_result": null
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-26FEB05-210000",
+   "reason": "result unavailable (neither live nor archive settled)",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found",
+    "archive_result": null
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-26FEB05-215000",
+   "reason": "result unavailable (neither live nor archive settled)",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found",
+    "archive_result": null
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-26FEB05-220000",
+   "reason": "result unavailable (neither live nor archive settled)",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found",
+    "archive_result": null
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-26FEB05-225000",
+   "reason": "result unavailable (neither live nor archive settled)",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found",
+    "archive_result": null
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-26FEB05-230000",
+   "reason": "result unavailable (neither live nor archive settled)",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found",
+    "archive_result": null
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-26FEB05-240000",
+   "reason": "result unavailable (neither live nor archive settled)",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found",
+    "archive_result": null
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-26FEB05-250000",
+   "reason": "result unavailable (neither live nor archive settled)",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found",
+    "archive_result": null
+   }
+  },
+  {
+   "scope": "result:KXJOBLESSCLAIMS-26FEB05-260000",
+   "reason": "result unavailable (neither live nor archive settled)",
+   "extra": {
+    "live_status": "ERR HTTPError: HTTP Error 404: Not Found",
+    "archive_result": null
+   }
+  },
+  {
+   "scope": "2025-06-12:KXJOBLESSCLAIMS-25JUN12-100000",
+   "reason": "no prior KXJOBLESSCLAIMS event in archive to anchor on"
+  },
+  {
+   "scope": "2025-06-12:KXJOBLESSCLAIMS-25JUN12-150000",
+   "reason": "no prior KXJOBLESSCLAIMS event in archive to anchor on"
+  },
+  {
+   "scope": "2025-06-12:KXJOBLESSCLAIMS-25JUN12-200000",
+   "reason": "no prior KXJOBLESSCLAIMS event in archive to anchor on"
+  },
+  {
+   "scope": "2025-06-12:KXJOBLESSCLAIMS-25JUN12-250000",
+   "reason": "no prior KXJOBLESSCLAIMS event in archive to anchor on"
+  },
+  {
+   "scope": "2025-06-12:KXJOBLESSCLAIMS-25JUN12-300000",
+   "reason": "no prior KXJOBLESSCLAIMS event in archive to anchor on"
+  },
+  {
+   "scope": "2025-06-26:KXJOBLESSCLAIMS-25JUN26-275000",
+   "reason": "no print within 6h of open"
+  },
+  {
+   "scope": "2025-06-26:KXJOBLESSCLAIMS-25JUN26-250000",
+   "reason": "no print within 6h of open"
+  },
+  {
+   "scope": "2025-06-26:KXJOBLESSCLAIMS-25JUN26-225000",
+   "reason": "anchor ambiguous: strike falls inside prior week's unresolved band",
+   "extra": {
+    "strike": 225000,
+    "A_lo": 200000,
+    "A_hi": 250000
+   }
+  },
+  {
+   "scope": "2025-06-26:KXJOBLESSCLAIMS-25JUN26-200000",
+   "reason": "anchor ambiguous: strike falls inside prior week's unresolved band",
+   "extra": {
+    "strike": 200000,
+    "A_lo": 200000,
+    "A_hi": 250000
+   }
+  },
+  {
+   "scope": "2025-07-03:KXJOBLESSCLAIMS-25JUL03-225000",
+   "reason": "anchor ambiguous: strike falls inside prior week's unresolved band",
+   "extra": {
+    "strike": 225000,
+    "A_lo": 225000,
+    "A_hi": 250000
+   }
+  },
+  {
+   "scope": "2025-07-03:KXJOBLESSCLAIMS-25JUL03-230000",
+   "reason": "anchor ambiguous: strike falls inside prior week's unresolved band",
+   "extra": {
+    "strike": 230000,
+    "A_lo": 225000,
+    "A_hi": 250000
+   }
+  },
+  {
+   "scope": "2025-07-03:KXJOBLESSCLAIMS-25JUL03-235000",
+   "reason": "anchor ambiguous: strike falls inside prior week's unresolved band",
+   "extra": {
+    "strike": 235000,
+    "A_lo": 225000,
+    "A_hi": 250000
+   }
+  },
+  {
+   "scope": "2025-07-03:KXJOBLESSCLAIMS-25JUL03-240000",
+   "reason": "anchor ambiguous: strike falls inside prior week's unresolved band",
+   "extra": {
+    "strike": 240000,
+    "A_lo": 225000,
+    "A_hi": 250000
+   }
+  },
+  {
+   "scope": "2025-07-03:KXJOBLESSCLAIMS-25JUL03-245000",
+   "reason": "anchor ambiguous: strike falls inside prior week's unresolved band",
+   "extra": {
+    "strike": 245000,
+    "A_lo": 225000,
+    "A_hi": 250000
+   }
+  },
+  {
+   "scope": "2025-07-03:KXJOBLESSCLAIMS-25JUL03-250000",
+   "reason": "no print within 6h of open"
+  },
+  {
+   "scope": "2025-07-10:KXJOBLESSCLAIMS-25JUL10-255000",
+   "reason": "no print within 6h of open"
+  },
+  {
+   "scope": "2025-07-10:KXJOBLESSCLAIMS-25JUL10-250000",
+   "reason": "no print within 6h of open"
+  },
+  {
+   "scope": "2025-07-10:KXJOBLESSCLAIMS-25JUL10-245000",
+   "reason": "no print within 6h of open"
+  },
+  {
+   "scope": "2025-07-10:KXJOBLESSCLAIMS-25JUL10-235000",
+   "reason": "no print within 6h of open"
+  },
+  {
+   "scope": "2025-07-10:KXJOBLESSCLAIMS-25JUL10-230000",
+   "reason": "anchor ambiguous: strike falls inside prior week's unresolved band",
+   "extra": {
+    "strike": 230000,
+    "A_lo": 230000,
+    "A_hi": 235000
+   }
+  },
+  {
+   "scope": "2025-07-17:KXJOBLESSCLAIMS-25JUL17-225000",
+   "reason": "anchor ambiguous: strike falls inside prior week's unresolved band",
+   "extra": {
+    "strike": 225000,
+    "A_lo": null,
+    "A_hi": 230000
+   }
+  },
+  {
+   "scope": "2025-07-17:KXJOBLESSCLAIMS-25JUL17-230000",
+   "reason": "no print within 6h of open"
+  },
+  {
+   "scope": "2025-07-17:KXJOBLESSCLAIMS-25JUL17-220000",
+   "reason": "anchor ambiguous: strike falls inside prior week's unresolved band",
+   "extra": {
+    "strike": 220000,
+    "A_lo": null,
+    "A_hi": 230000
+   }
+  },
+  {
+   "scope": "2025-07-17:KXJOBLESSCLAIMS-25JUL17-235000",
+   "reason": "no print within 6h of open"
+  },
+  {
+   "scope": "2025-07-17:KXJOBLESSCLAIMS-25JUL17-240000",
+   "reason": "no print within 6h of open"
+  },
+  {
+   "scope": "2025-07-17:KXJOBLESSCLAIMS-25JUL17-245000",
+   "reason": "no print within 6h of open"
+  },
+  {
+   "scope": "2025-07-17:KXJOBLESSCLAIMS-25JUL17-250000",
+   "reason": "no print within 6h of open"
+  },
+  {
+   "scope": "2025-07-24:KXJOBLESSCLAIMS-25JUL24-220000",
+   "reason": "anchor ambiguous: strike falls inside prior week's unresolved band",
+   "extra": {
+    "strike": 220000,
+    "A_lo": 220000,
+    "A_hi": 225000
+   }
+  },
+  {
+   "scope": "2025-07-24:KXJOBLESSCLAIMS-25JUL24-225000",
+   "reason": "no print within 6h of open"
+  },
+  {
+   "scope": "2025-07-24:KXJOBLESSCLAIMS-25JUL24-230000",
+   "reason": "no print within 6h of open"
+  },
+  {
+   "scope": "2025-07-24:KXJOBLESSCLAIMS-25JUL24-235000",
+   "reason": "no print within 6h of open"
+  },
+  {
+   "scope": "2025-07-24:KXJOBLESSCLAIMS-25JUL24-240000",
+   "reason": "no print within 6h of open"
+  },
+  {
+   "scope": "2025-07-24:KXJOBLESSCLAIMS-25JUL24-245000",
+   "reason": "no print within 6h of open"
+  },
+  {
+   "scope": "2025-07-24:KXJOBLESSCLAIMS-25JUL24-250000",
+   "reason": "no print within 6h of open"
+  },
+  {
+   "scope": "2025-07-31:KXJOBLESSCLAIMS-25JUL31-240000",
+   "reason": "no print within 6h of open"
+  },
+  {
+   "scope": "2025-07-31:KXJOBLESSCLAIMS-25JUL31-220000",
+   "reason": "no print within 6h of open"
+  },
+  {
+   "scope": "2025-07-31:KXJOBLESSCLAIMS-25JUL31-225000",
+   "reason": "no print within 6h of open"
+  },
+  {
+   "scope": "2025-07-31:KXJOBLESSCLAIMS-25JUL31-230000",
+   "reason": "no print within 6h of open"
+  },
+  {
+   "scope": "2025-07-31:KXJOBLESSCLAIMS-25JUL31-235000",
+   "reason": "no print within 6h of open"
+  },
+  {
+   "scope": "2025-07-31:KXJOBLESSCLAIMS-25JUL31-245000",
+   "reason": "no print within 6h of open"
+  },
+  {
+   "scope": "2025-07-31:KXJOBLESSCLAIMS-25JUL31-250000",
+   "reason": "no print within 6h of open"
+  },
+  {
+   "scope": "2025-08-07:KXJOBLESSCLAIMS-25AUG07-250000",
+   "reason": "no print within 6h of open"
+  },
+  {
+   "scope": "2025-08-07:KXJOBLESSCLAIMS-25AUG07-245000",
+   "reason": "no print within 6h of open"
+  },
+  {
+   "scope": "2025-08-07:KXJOBLESSCLAIMS-25AUG07-240000",
+   "reason": "no print within 6h of open"
+  },
+  {
+   "scope": "2025-08-07:KXJOBLESSCLAIMS-25AUG07-235000",
+   "reason": "no print within 6h of open"
+  },
+  {
+   "scope": "2025-08-07:KXJOBLESSCLAIMS-25AUG07-230000",
+   "reason": "no print within 6h of open"
+  },
+  {
+   "scope": "2025-08-07:KXJOBLESSCLAIMS-25AUG07-225000",
+   "reason": "no print within 6h of open"
+  },
+  {
+   "scope": "2025-08-07:KXJOBLESSCLAIMS-25AUG07-200000",
+   "reason": "anchor ambiguous: strike falls inside prior week's unresolved band",
+   "extra": {
+    "strike": 200000,
+    "A_lo": null,
+    "A_hi": 220000
+   }
+  },
+  {
+   "scope": "2025-08-07:KXJOBLESSCLAIMS-25AUG07-210000",
+   "reason": "anchor ambiguous: strike falls inside prior week's unresolved band",
+   "extra": {
+    "strike": 210000,
+    "A_lo": null,
+    "A_hi": 220000
+   }
+  },
+  {
+   "scope": "2025-08-07:KXJOBLESSCLAIMS-25AUG07-215000",
+   "reason": "anchor ambiguous: strike falls inside prior week's unresolved band",
+   "extra": {
+    "strike": 215000,
+    "A_lo": null,
+    "A_hi": 220000
+   }
+  },
+  {
+   "scope": "2025-08-07:KXJOBLESSCLAIMS-25AUG07-220000",
+   "reason": "no print within 6h of open"
+  }
+ ]
+}

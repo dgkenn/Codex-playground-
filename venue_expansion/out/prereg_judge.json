@@ -1,0 +1,55 @@
+{
+  "role": "Fable pre-registration judge",
+  "frozen_at": "2026-07-29",
+  "branch": "claude/calci-trading-bot-strategy-mgyxti",
+  "status": "FROZEN - no bar in this file may move after this timestamp",
+  "measurements_made_before_freezing": {
+    "note": "All counts below are universe/coverage counts. None involves an EV, a price-vs-outcome comparison, or any hypothesis statistic. They were measured so the pass bars could be literal numbers rather than promises.",
+    "markets_table": {
+      "total_markets": 17464713,
+      "event_ticker_null": 0,
+      "event_ticker_without_dash": 3832,
+      "ticker_not_prefixed_by_event_ticker": 2474,
+      "distinct_series_keys_split_part_event_ticker": 6361
+    },
+    "u1_screen_units": {
+      "rule": "(series_key, rung_class) with >=300 settled markets AND >=40 distinct settlement calendar days AND >=100000 total contracts volume",
+      "units_ge300_settled": 895,
+      "units_ge300_and_40days": 687,
+      "ELIGIBLE_UNITS_m_units": 473,
+      "settled_markets_in_eligible_units": 13351313,
+      "contract_volume_in_eligible_units": 5176348025
+    },
+    "kxhigh_coverage": {
+      "core_city_series": ["KXHIGHNY","KXHIGHCHI","KXHIGHAUS","KXHIGHMIA","KXHIGHDEN","KXHIGHPHIL","KXHIGHLAX","KXHIGHHOU"],
+      "event_days_per_series": {"KXHIGHNY":464,"KXHIGHCHI":464,"KXHIGHAUS":464,"KXHIGHMIA":464,"KXHIGHDEN":437,"KXHIGHPHIL":437,"KXHIGHLAX":391,"KXHIGHHOU":70},
+      "window": "2024-10-25 .. 2026-01-31 close_time; trade tape truncates 2026-01-28",
+      "median_open_to_close_hours": "37-40 (confirms the 39-42h listing ceiling; R4-1 stays dead)",
+      "excluded_non_temperature_kxhigh_prefixes": ["KXHIGHMOVKH","KXHIGHMOVDJT","KXHIGHINFLATION"]
+    },
+    "macro_families_exact_series_keys": {
+      "CPI":        {"series": ["CPI","CPICORE","CPIYOY","CPICOREYOY","KXCPI","KXCPICORE","KXCPIYOY","KXCPICOREYOY"], "release_events_in_archive": "41+29+24+23+16+17+16+16 markets-events; ~36 distinct release dates inside the M1 window", "hawkish_sign": 1},
+      "EMPLOYMENT": {"series": ["PAYROLLS","KXPAYROLLS","KXU3"], "release_events_in_archive": "9+25+15 -> ~23 distinct release dates in window", "hawkish_sign": "payrolls +1, KXU3 -1"},
+      "JOBLESS":    {"series": ["JOBLESS","KXJOBLESSCLAIMS"], "release_events_in_archive": "69 (2021-22) + 24 (2025-26) -> ~22 in window", "hawkish_sign": -1},
+      "PCE":        {"series": ["PCECORE","KXPCECORE"], "release_events_in_archive": "3+25 -> ~13 in window", "hawkish_sign": 1},
+      "GDP":        {"series": ["GDP","KXGDP"], "release_events_in_archive": "14+9 -> ~15 in window", "hawkish_sign": 1},
+      "ISM":        {"series": ["KXISMPMI"], "release_events_in_archive": "7", "hawkish_sign": 1}
+    },
+    "prefix_conflation_correction": "REOPENABLE.md's 'KXCPI 104 events / 590 settled' and 'KXPAYROLL 26 events / 88 settled' were computed with ticker LIKE 'KXCPI%' / 'KXPAYROLL%'. Exact-series counts are KXCPI 16 events / 86 settled and KXPAYROLLS 25 events / 88 settled. The LIKE prefix swept in KXCPICORE/KXCPIYOY/KXCPICOREYOY/KXCPIGAS/KXCPIFOOD/KXCPISHELTER/KXCPIAPPAREL/KXCPIUSEDCAR. This is the same prefix-conflation class the judge is charged with preventing; M1 is specified on exact series keys, and the multi-series-per-release structure is handled by the family map above, not by a prefix.",
+    "feddecision_instrument": {
+      "series": ["FEDDECISION","KXFEDDECISION"],
+      "events": 40, "settled_events": 22,
+      "first_open": "2023-04-07", "archive_trade_end": "2026-01-28",
+      "volume_examples": {"KXFEDDECISION-25SEP": 91819656, "KXFEDDECISION-25JUL": 48053671, "KXFEDDECISION-25MAY": 41343139, "FEDDECISION-23MAY": 332257}
+    },
+    "jobless_events": {"total_events": 24, "settled_in_archive": 22, "unsettled_in_archive_snapshot": ["KXJOBLESSCLAIMS-26JAN29","KXJOBLESSCLAIMS-26FEB05"], "window": "2025-06-12 .. 2026-02-05", "shutdown_gap": "no events between 2025-10-02 and 2025-12-18"}
+  },
+  "feasibility_measured": {
+    "parquet_layout": "trades-0000: 10,000,000 rows / 1,000 row groups of 10,000 rows. parquet_metadata shows stats_min = stats_max = NULL for path_in_schema='ticker'.",
+    "CONSEQUENCE": "There are NO row-group statistics on ticker, so a ticker predicate CANNOT skip row groups. Predicate pushdown on ticker is NOT cheap in the sense DATA_SOURCES.md implies: it reduces bytes for the other columns but still forces a full read of the ticker column of every shard. Any plan that re-scans the tape once per series is infeasible.",
+    "timed": {"ticker_column_scan_shard0_cold": "94.1s", "second_predicate_same_shard_warm": "43.3s", "third_predicate_same_shard_warm": "8.0s"},
+    "full_16_shard_ticker_only_pass": "~25 min",
+    "full_16_shard_6_column_pass": "estimated 45-120 min",
+    "MANDATED_PLAN": "ONE shared pass over all 16 trade shards, shard-at-a-time, each shard's output written to venue_expansion/cache/prereg/tape/ before the next shard starts. That single pass emits (a) the U1 per-(unit, calendar-day, side, price-decile) aggregate and (b) raw filtered trades for the M1/D1/J1 ticker universes. Every spec then reads local parquet. No spec may re-scan the remote tape."
+  }
+}

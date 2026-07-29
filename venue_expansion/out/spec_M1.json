@@ -1,0 +1,786 @@
+{
+ "spec_id": "M1",
+ "run_ts": "2026-07-29T15:01:11.098255+00:00",
+ "window": [
+  "2023-04-07",
+  "2026-01-28"
+ ],
+ "fit_end": "2025-01-01",
+ "shards_read": "all 16 (tape cached locally after a single shared filtered pass over all 16 HF trade shards)",
+ "n_trades_local_tape": 895660,
+ "n_tickers_local_tape": 2213,
+ "tape_span": [
+  "2021-07-01 14:53:38.613666+00:00",
+  "2026-01-28 23:59:36.702572+00:00"
+ ],
+ "fit_events_total": 40,
+ "val_events_total": 72,
+ "fit_u_sample_sizes": {
+  "CPI": 3,
+  "EMPLOYMENT": 2,
+  "JOBLESS": 0,
+  "PCE": 0,
+  "GDP": 4,
+  "ISM": 0
+ },
+ "sigma_family": {
+  "CPI": 0.05189100000000004,
+  "EMPLOYMENT": 68866.76999999999,
+  "JOBLESS": null,
+  "PCE": null,
+  "GDP": 0.24388770000000012,
+  "ISM": null
+ },
+ "sigma_undefined_families": [
+  [
+   "JOBLESS",
+   "zero or one FIT observation",
+   0
+  ],
+  [
+   "PCE",
+   "zero or one FIT observation",
+   0
+  ],
+  [
+   "ISM",
+   "zero or one FIT observation",
+   0
+  ]
+ ],
+ "fit_theta_grid": {
+  "0.5": {
+   "n_trades": 2,
+   "n_clusters": 2,
+   "mean_net_c": -3,
+   "t": -3.0,
+   "trades": [
+    {
+     "family": "GDP",
+     "release_date": "2023-07-27",
+     "t0": "2023-07-27 12:25:00+00:00",
+     "x": 0.742144847813155,
+     "theta_used": 0.5,
+     "used_ladders": [
+      "GDP-23JUL27"
+     ],
+     "target_fed_event": "FEDDECISION-23SEP",
+     "target_ticker": "FEDDECISION-23SEP-H25",
+     "rung_sign": 1,
+     "pre_vol": 2146,
+     "side": "yes",
+     "entry_price_c": 26,
+     "entry_count": 50,
+     "entry_time": "2023-07-27T12:37:01.297897+00:00",
+     "exit_price_c": 26,
+     "no_exit": true,
+     "fee_entry_c": 2,
+     "fee_exit_c": 2,
+     "net_c": -4
+    },
+    {
+     "family": "EMPLOYMENT",
+     "release_date": "2024-11-01",
+     "t0": "2024-11-01 12:25:00+00:00",
+     "x": -1.443366662905782,
+     "theta_used": 0.5,
+     "used_ladders": [
+      "PAYROLLS-24OCT"
+     ],
+     "target_fed_event": "FEDDECISION-24NOV",
+     "target_ticker": "FEDDECISION-24NOV-C26",
+     "rung_sign": -1,
+     "pre_vol": 21934,
+     "side": "yes",
+     "entry_price_c": 3,
+     "entry_count": 123,
+     "entry_time": "2024-11-01T12:31:30.367513+00:00",
+     "exit_price_c": 3,
+     "no_exit": true,
+     "fee_entry_c": 1,
+     "fee_exit_c": 1,
+     "net_c": -2
+    }
+   ]
+  },
+  "1.0": {
+   "n_trades": 1,
+   "n_clusters": 1,
+   "mean_net_c": -2,
+   "t": null,
+   "trades": [
+    {
+     "family": "EMPLOYMENT",
+     "release_date": "2024-11-01",
+     "t0": "2024-11-01 12:25:00+00:00",
+     "x": -1.443366662905782,
+     "theta_used": 1.0,
+     "used_ladders": [
+      "PAYROLLS-24OCT"
+     ],
+     "target_fed_event": "FEDDECISION-24NOV",
+     "target_ticker": "FEDDECISION-24NOV-C26",
+     "rung_sign": -1,
+     "pre_vol": 21934,
+     "side": "yes",
+     "entry_price_c": 3,
+     "entry_count": 123,
+     "entry_time": "2024-11-01T12:31:30.367513+00:00",
+     "exit_price_c": 3,
+     "no_exit": true,
+     "fee_entry_c": 1,
+     "fee_exit_c": 1,
+     "net_c": -2
+    }
+   ]
+  },
+  "1.5": {
+   "n_trades": 0,
+   "n_clusters": 0,
+   "mean_net_c": null,
+   "t": null,
+   "trades": []
+  },
+  "2.0": {
+   "n_trades": 0,
+   "n_clusters": 0,
+   "mean_net_c": null,
+   "t": null,
+   "trades": []
+  }
+ },
+ "self_kill_no_signal": true,
+ "fit_skip_ledger_exploratory": [
+  {
+   "event": "ladder:JOBLESS-22APR02",
+   "reason": "ladder strikes unparseable",
+   "extra": {
+    "event_ticker": "JOBLESS-22APR02",
+    "n_bad": 1,
+    "n_total": 1
+   }
+  },
+  {
+   "event": "ladder:JOBLESS-22JUL23",
+   "reason": "ladder strikes unparseable",
+   "extra": {
+    "event_ticker": "JOBLESS-22JUL23",
+    "n_bad": 1,
+    "n_total": 1
+   }
+  },
+  {
+   "event": "ladder:JOBLESS-22SEP10",
+   "reason": "ladder strikes unparseable",
+   "extra": {
+    "event_ticker": "JOBLESS-22SEP10",
+    "n_bad": 1,
+    "n_total": 1
+   }
+  },
+  {
+   "event": "ladder:KXGDP-26JAN30",
+   "reason": "ladder strikes unparseable",
+   "extra": {
+    "event_ticker": "KXGDP-26JAN30",
+    "n_bad": 1,
+    "n_total": 16
+   }
+  },
+  {
+   "event": "CPI:2023-04-12",
+   "reason": "no executable entry print in [t0+5m,t0+20m]",
+   "extra": {
+    "target": "FEDDECISION-23MAY-H25",
+    "side": "no"
+   }
+  },
+  {
+   "event": "CPI:2023-05-10",
+   "reason": "no usable ladder (CPI-23APR:no pre-t0 ladder print; CPIYOY-23APR:no pre-t0 ladder print; CPICORE-23APR:no pre-t0 ladder print; CPICOREYOY-23APR:no pre-t0 ladder print)"
+  },
+  {
+   "event": "CPI:2023-06-13",
+   "reason": "no usable ladder (CPI-23MAY:no pre-t0 ladder print; CPIYOY-23MAY:no pre-t0 ladder print; CPICORE-23MAY:no pre-t0 ladder print; CPICOREYOY-23MAY:no pre-t0 ladder print)"
+  },
+  {
+   "event": "CPI:2023-07-12",
+   "reason": "no usable ladder (CPI-23JUN:no pre-t0 ladder print; CPIYOY-23JUN:no pre-t0 ladder print; CPICORE-23JUN:no pre-t0 ladder print; CPICOREYOY-23JUN:no pre-t0 ladder print)"
+  },
+  {
+   "event": "GDP:2023-07-27",
+   "reason": "no exit print in [t0+60m,t0+120m]",
+   "extra": {
+    "target": "FEDDECISION-23SEP-H25",
+    "side": "yes"
+   }
+  },
+  {
+   "event": "CPI:2023-08-10",
+   "reason": "no usable ladder (CPI-23JUL:no pre-t0 ladder print; CPIYOY-23JUL:no pre-t0 ladder print; CPICORE-23JUL:no pre-t0 ladder print; CPICOREYOY-23JUL:no pre-t0 ladder print)"
+  },
+  {
+   "event": "CPI:2023-09-13",
+   "reason": "no executable entry print in [t0+5m,t0+20m]",
+   "extra": {
+    "target": "FEDDECISION-23SEP-H25",
+    "side": "no"
+   }
+  },
+  {
+   "event": "CPI:2023-10-12",
+   "reason": "no usable ladder (CPI-23SEP:no pre-t0 ladder print; CPIYOY-23SEP:no pre-t0 ladder print; CPICORE-23SEP:no pre-t0 ladder print; CPICOREYOY-23SEP:no pre-t0 ladder print)"
+  },
+  {
+   "event": "GDP:2023-10-26",
+   "reason": "no executable entry print in [t0+5m,t0+20m]",
+   "extra": {
+    "target": "FEDDECISION-23NOV-H25",
+    "side": "yes"
+   }
+  },
+  {
+   "event": "PCE:2023-10-27",
+   "reason": "no usable ladder (PCECORE-23SEP:no pre-t0 ladder print)"
+  },
+  {
+   "event": "CPI:2023-11-14",
+   "reason": "no usable ladder (CPI-23OCT:no pre-t0 ladder print; CPIYOY-23OCT:no pre-t0 ladder print; CPICORE-23OCT:no pre-t0 ladder print; CPICOREYOY-23OCT:no pre-t0 ladder print)"
+  },
+  {
+   "event": "CPI:2023-12-12",
+   "reason": "no usable ladder (CPI-23NOV:no pre-t0 ladder print; CPIYOY-23NOV:no pre-t0 ladder print; CPICORE-23NOV:no pre-t0 ladder print; CPICOREYOY-23NOV:no pre-t0 ladder print)"
+  },
+  {
+   "event": "CPI:2024-01-11",
+   "reason": "no usable ladder (CPI-23DEC:no pre-t0 ladder print; CPICORE-23DEC:no pre-t0 ladder print; CPIYOY-23DEC:no pre-t0 ladder print; CPICOREYOY-23DEC:no pre-t0 ladder print)"
+  },
+  {
+   "event": "GDP:2024-01-25",
+   "reason": "no usable ladder (GDP-24JAN26:no pre-t0 ladder print)"
+  },
+  {
+   "event": "CPI:2024-02-13",
+   "reason": "no usable ladder (CPI-24JAN:no pre-t0 ladder print; CPICORE-24JAN:no pre-t0 ladder print; CPIYOY-24JAN:no pre-t0 ladder print; CPICOREYOY-24JAN:no pre-t0 ladder print)"
+  },
+  {
+   "event": "EMPLOYMENT:2024-03-08",
+   "reason": "no usable ladder (PAYROLLS-24FEB:no pre-t0 ladder print)"
+  },
+  {
+   "event": "CPI:2024-03-12",
+   "reason": "no usable ladder (CPI-24FEB:no pre-t0 ladder print; CPIYOY-24FEB:no pre-t0 ladder print; CPICORE-24FEB:no pre-t0 ladder print; CPICOREYOY-24FEB:no pre-t0 ladder print)"
+  },
+  {
+   "event": "EMPLOYMENT:2024-04-05",
+   "reason": "no usable ladder (PAYROLLS-24MAR:no pre-t0 ladder print)"
+  },
+  {
+   "event": "CPI:2024-04-10",
+   "reason": "no usable ladder (CPI-24MAR:no pre-t0 ladder print; CPICORE-24MAR:no pre-t0 ladder print; CPIYOY-24MAR:no pre-t0 ladder print; CPICOREYOY-24MAR:no pre-t0 ladder print)"
+  },
+  {
+   "event": "GDP:2024-04-25",
+   "reason": "no usable ladder (GDP-24APR25:no pre-t0 ladder print)"
+  },
+  {
+   "event": "EMPLOYMENT:2024-05-03",
+   "reason": "no usable ladder (PAYROLLS-24APR:no pre-t0 ladder print)"
+  },
+  {
+   "event": "CPI:2024-05-15",
+   "reason": "no usable ladder (CPIYOY-24APR:no pre-t0 ladder print; CPICOREYOY-24APR:no pre-t0 ladder print; CPI-24APR:no pre-t0 ladder print; CPICORE-24APR:no pre-t0 ladder print)"
+  },
+  {
+   "event": "EMPLOYMENT:2024-06-07",
+   "reason": "no usable ladder (PAYROLLS-24MAY:no pre-t0 ladder print)"
+  },
+  {
+   "event": "CPI:2024-06-12",
+   "reason": "no usable ladder (CPIYOY-24MAY:no pre-t0 ladder print; CPICOREYOY-24MAY:no pre-t0 ladder print; CPI-24MAY:no pre-t0 ladder print; CPICORE-24MAY:no pre-t0 ladder print)"
+  },
+  {
+   "event": "EMPLOYMENT:2024-07-05",
+   "reason": "no usable ladder (PAYROLLS-24JUN:no pre-t0 ladder print)"
+  },
+  {
+   "event": "CPI:2024-07-11",
+   "reason": "no usable ladder (CPIYOY-24JUN:no pre-t0 ladder print; CPICOREYOY-24JUN:no pre-t0 ladder print; CPI-24JUN:no pre-t0 ladder print; CPICORE-24JUN:no pre-t0 ladder print)"
+  },
+  {
+   "event": "GDP:2024-07-25",
+   "reason": "no usable ladder (GDP-24JUL25:no pre-t0 ladder print)"
+  },
+  {
+   "event": "EMPLOYMENT:2024-08-02",
+   "reason": "no usable ladder (PAYROLLS-24JUL:no pre-t0 ladder print)"
+  },
+  {
+   "event": "CPI:2024-08-14",
+   "reason": "no usable ladder (CPIYOY-24JUL:no pre-t0 ladder print; CPICOREYOY-24JUL:no pre-t0 ladder print; CPI-24JUL:no pre-t0 ladder print; CPICORE-24JUL:no pre-t0 ladder print)"
+  },
+  {
+   "event": "EMPLOYMENT:2024-09-06",
+   "reason": "no usable ladder (PAYROLLS-24AUG:no pre-t0 ladder print)"
+  },
+  {
+   "event": "CPI:2024-09-11",
+   "reason": "no usable ladder (CPIYOY-24AUG:no pre-t0 ladder print; CPICOREYOY-24AUG:no pre-t0 ladder print; CPI-24AUG:no pre-t0 ladder print; CPICORE-24AUG:no pre-t0 ladder print)"
+  },
+  {
+   "event": "EMPLOYMENT:2024-10-04",
+   "reason": "no usable ladder (PAYROLLS-24SEP:no pre-t0 ladder print)"
+  },
+  {
+   "event": "CPI:2024-10-10",
+   "reason": "no usable ladder (CPIYOY-24SEP:no pre-t0 ladder print; CPICOREYOY-24SEP:no pre-t0 ladder print; CPI-24SEP:no pre-t0 ladder print; CPICORE-24SEP:no pre-t0 ladder print)"
+  },
+  {
+   "event": "GDP:2024-10-30",
+   "reason": "no executable entry print in [t0+5m,t0+20m]",
+   "extra": {
+    "target": "FEDDECISION-24NOV-C26",
+    "side": "yes"
+   }
+  },
+  {
+   "event": "EMPLOYMENT:2024-11-01",
+   "reason": "no exit print in [t0+60m,t0+120m]",
+   "extra": {
+    "target": "FEDDECISION-24NOV-C26",
+    "side": "yes"
+   }
+  },
+  {
+   "event": "CPI:2024-11-13",
+   "reason": "no usable ladder (CPIYOY-24OCT:no pre-t0 ladder print; CPICOREYOY-24OCT:no pre-t0 ladder print; CPI-24OCT:no pre-t0 ladder print; CPICORE-24OCT:no pre-t0 ladder print)"
+  },
+  {
+   "event": "PCE:2024-12-20",
+   "reason": "no usable ladder (KXPCECORE-24NOV:no pre-t0 ladder print)"
+  },
+  {
+   "event": "CPI:2023-04-12",
+   "reason": "no executable entry print in [t0+5m,t0+20m]",
+   "extra": {
+    "target": "FEDDECISION-23MAY-H25",
+    "side": "no"
+   }
+  },
+  {
+   "event": "CPI:2023-05-10",
+   "reason": "no usable ladder (CPI-23APR:no pre-t0 ladder print; CPIYOY-23APR:no pre-t0 ladder print; CPICORE-23APR:no pre-t0 ladder print; CPICOREYOY-23APR:no pre-t0 ladder print)"
+  },
+  {
+   "event": "CPI:2023-06-13",
+   "reason": "no usable ladder (CPI-23MAY:no pre-t0 ladder print; CPIYOY-23MAY:no pre-t0 ladder print; CPICORE-23MAY:no pre-t0 ladder print; CPICOREYOY-23MAY:no pre-t0 ladder print)"
+  },
+  {
+   "event": "CPI:2023-07-12",
+   "reason": "no usable ladder (CPI-23JUN:no pre-t0 ladder print; CPIYOY-23JUN:no pre-t0 ladder print; CPICORE-23JUN:no pre-t0 ladder print; CPICOREYOY-23JUN:no pre-t0 ladder print)"
+  },
+  {
+   "event": "CPI:2023-08-10",
+   "reason": "no usable ladder (CPI-23JUL:no pre-t0 ladder print; CPIYOY-23JUL:no pre-t0 ladder print; CPICORE-23JUL:no pre-t0 ladder print; CPICOREYOY-23JUL:no pre-t0 ladder print)"
+  },
+  {
+   "event": "CPI:2023-10-12",
+   "reason": "no usable ladder (CPI-23SEP:no pre-t0 ladder print; CPIYOY-23SEP:no pre-t0 ladder print; CPICORE-23SEP:no pre-t0 ladder print; CPICOREYOY-23SEP:no pre-t0 ladder print)"
+  },
+  {
+   "event": "GDP:2023-10-26",
+   "reason": "no executable entry print in [t0+5m,t0+20m]",
+   "extra": {
+    "target": "FEDDECISION-23NOV-H25",
+    "side": "yes"
+   }
+  },
+  {
+   "event": "PCE:2023-10-27",
+   "reason": "no usable ladder (PCECORE-23SEP:no pre-t0 ladder print)"
+  },
+  {
+   "event": "CPI:2023-11-14",
+   "reason": "no usable ladder (CPI-23OCT:no pre-t0 ladder print; CPIYOY-23OCT:no pre-t0 ladder print; CPICORE-23OCT:no pre-t0 ladder print; CPICOREYOY-23OCT:no pre-t0 ladder print)"
+  },
+  {
+   "event": "CPI:2023-12-12",
+   "reason": "no usable ladder (CPI-23NOV:no pre-t0 ladder print; CPIYOY-23NOV:no pre-t0 ladder print; CPICORE-23NOV:no pre-t0 ladder print; CPICOREYOY-23NOV:no pre-t0 ladder print)"
+  },
+  {
+   "event": "CPI:2024-01-11",
+   "reason": "no usable ladder (CPI-23DEC:no pre-t0 ladder print; CPICORE-23DEC:no pre-t0 ladder print; CPIYOY-23DEC:no pre-t0 ladder print; CPICOREYOY-23DEC:no pre-t0 ladder print)"
+  },
+  {
+   "event": "GDP:2024-01-25",
+   "reason": "no usable ladder (GDP-24JAN26:no pre-t0 ladder print)"
+  },
+  {
+   "event": "CPI:2024-02-13",
+   "reason": "no usable ladder (CPI-24JAN:no pre-t0 ladder print; CPICORE-24JAN:no pre-t0 ladder print; CPIYOY-24JAN:no pre-t0 ladder print; CPICOREYOY-24JAN:no pre-t0 ladder print)"
+  },
+  {
+   "event": "EMPLOYMENT:2024-03-08",
+   "reason": "no usable ladder (PAYROLLS-24FEB:no pre-t0 ladder print)"
+  },
+  {
+   "event": "CPI:2024-03-12",
+   "reason": "no usable ladder (CPI-24FEB:no pre-t0 ladder print; CPIYOY-24FEB:no pre-t0 ladder print; CPICORE-24FEB:no pre-t0 ladder print; CPICOREYOY-24FEB:no pre-t0 ladder print)"
+  },
+  {
+   "event": "EMPLOYMENT:2024-04-05",
+   "reason": "no usable ladder (PAYROLLS-24MAR:no pre-t0 ladder print)"
+  },
+  {
+   "event": "CPI:2024-04-10",
+   "reason": "no usable ladder (CPI-24MAR:no pre-t0 ladder print; CPICORE-24MAR:no pre-t0 ladder print; CPIYOY-24MAR:no pre-t0 ladder print; CPICOREYOY-24MAR:no pre-t0 ladder print)"
+  },
+  {
+   "event": "GDP:2024-04-25",
+   "reason": "no usable ladder (GDP-24APR25:no pre-t0 ladder print)"
+  },
+  {
+   "event": "EMPLOYMENT:2024-05-03",
+   "reason": "no usable ladder (PAYROLLS-24APR:no pre-t0 ladder print)"
+  },
+  {
+   "event": "CPI:2024-05-15",
+   "reason": "no usable ladder (CPIYOY-24APR:no pre-t0 ladder print; CPICOREYOY-24APR:no pre-t0 ladder print; CPI-24APR:no pre-t0 ladder print; CPICORE-24APR:no pre-t0 ladder print)"
+  },
+  {
+   "event": "EMPLOYMENT:2024-06-07",
+   "reason": "no usable ladder (PAYROLLS-24MAY:no pre-t0 ladder print)"
+  },
+  {
+   "event": "CPI:2024-06-12",
+   "reason": "no usable ladder (CPIYOY-24MAY:no pre-t0 ladder print; CPICOREYOY-24MAY:no pre-t0 ladder print; CPI-24MAY:no pre-t0 ladder print; CPICORE-24MAY:no pre-t0 ladder print)"
+  },
+  {
+   "event": "EMPLOYMENT:2024-07-05",
+   "reason": "no usable ladder (PAYROLLS-24JUN:no pre-t0 ladder print)"
+  },
+  {
+   "event": "CPI:2024-07-11",
+   "reason": "no usable ladder (CPIYOY-24JUN:no pre-t0 ladder print; CPICOREYOY-24JUN:no pre-t0 ladder print; CPI-24JUN:no pre-t0 ladder print; CPICORE-24JUN:no pre-t0 ladder print)"
+  },
+  {
+   "event": "GDP:2024-07-25",
+   "reason": "no usable ladder (GDP-24JUL25:no pre-t0 ladder print)"
+  },
+  {
+   "event": "EMPLOYMENT:2024-08-02",
+   "reason": "no usable ladder (PAYROLLS-24JUL:no pre-t0 ladder print)"
+  },
+  {
+   "event": "CPI:2024-08-14",
+   "reason": "no usable ladder (CPIYOY-24JUL:no pre-t0 ladder print; CPICOREYOY-24JUL:no pre-t0 ladder print; CPI-24JUL:no pre-t0 ladder print; CPICORE-24JUL:no pre-t0 ladder print)"
+  },
+  {
+   "event": "EMPLOYMENT:2024-09-06",
+   "reason": "no usable ladder (PAYROLLS-24AUG:no pre-t0 ladder print)"
+  },
+  {
+   "event": "CPI:2024-09-11",
+   "reason": "no usable ladder (CPIYOY-24AUG:no pre-t0 ladder print; CPICOREYOY-24AUG:no pre-t0 ladder print; CPI-24AUG:no pre-t0 ladder print; CPICORE-24AUG:no pre-t0 ladder print)"
+  },
+  {
+   "event": "EMPLOYMENT:2024-10-04",
+   "reason": "no usable ladder (PAYROLLS-24SEP:no pre-t0 ladder print)"
+  },
+  {
+   "event": "CPI:2024-10-10",
+   "reason": "no usable ladder (CPIYOY-24SEP:no pre-t0 ladder print; CPICOREYOY-24SEP:no pre-t0 ladder print; CPI-24SEP:no pre-t0 ladder print; CPICORE-24SEP:no pre-t0 ladder print)"
+  },
+  {
+   "event": "GDP:2024-10-30",
+   "reason": "no executable entry print in [t0+5m,t0+20m]",
+   "extra": {
+    "target": "FEDDECISION-24NOV-C26",
+    "side": "yes"
+   }
+  },
+  {
+   "event": "EMPLOYMENT:2024-11-01",
+   "reason": "no exit print in [t0+60m,t0+120m]",
+   "extra": {
+    "target": "FEDDECISION-24NOV-C26",
+    "side": "yes"
+   }
+  },
+  {
+   "event": "CPI:2024-11-13",
+   "reason": "no usable ladder (CPIYOY-24OCT:no pre-t0 ladder print; CPICOREYOY-24OCT:no pre-t0 ladder print; CPI-24OCT:no pre-t0 ladder print; CPICORE-24OCT:no pre-t0 ladder print)"
+  },
+  {
+   "event": "PCE:2024-12-20",
+   "reason": "no usable ladder (KXPCECORE-24NOV:no pre-t0 ladder print)"
+  },
+  {
+   "event": "CPI:2023-04-12",
+   "reason": "no executable entry print in [t0+5m,t0+20m]",
+   "extra": {
+    "target": "FEDDECISION-23MAY-H25",
+    "side": "no"
+   }
+  },
+  {
+   "event": "CPI:2023-05-10",
+   "reason": "no usable ladder (CPI-23APR:no pre-t0 ladder print; CPIYOY-23APR:no pre-t0 ladder print; CPICORE-23APR:no pre-t0 ladder print; CPICOREYOY-23APR:no pre-t0 ladder print)"
+  },
+  {
+   "event": "CPI:2023-06-13",
+   "reason": "no usable ladder (CPI-23MAY:no pre-t0 ladder print; CPIYOY-23MAY:no pre-t0 ladder print; CPICORE-23MAY:no pre-t0 ladder print; CPICOREYOY-23MAY:no pre-t0 ladder print)"
+  },
+  {
+   "event": "CPI:2023-07-12",
+   "reason": "no usable ladder (CPI-23JUN:no pre-t0 ladder print; CPIYOY-23JUN:no pre-t0 ladder print; CPICORE-23JUN:no pre-t0 ladder print; CPICOREYOY-23JUN:no pre-t0 ladder print)"
+  },
+  {
+   "event": "CPI:2023-08-10",
+   "reason": "no usable ladder (CPI-23JUL:no pre-t0 ladder print; CPIYOY-23JUL:no pre-t0 ladder print; CPICORE-23JUL:no pre-t0 ladder print; CPICOREYOY-23JUL:no pre-t0 ladder print)"
+  },
+  {
+   "event": "CPI:2023-10-12",
+   "reason": "no usable ladder (CPI-23SEP:no pre-t0 ladder print; CPIYOY-23SEP:no pre-t0 ladder print; CPICORE-23SEP:no pre-t0 ladder print; CPICOREYOY-23SEP:no pre-t0 ladder print)"
+  },
+  {
+   "event": "PCE:2023-10-27",
+   "reason": "no usable ladder (PCECORE-23SEP:no pre-t0 ladder print)"
+  },
+  {
+   "event": "CPI:2023-11-14",
+   "reason": "no usable ladder (CPI-23OCT:no pre-t0 ladder print; CPIYOY-23OCT:no pre-t0 ladder print; CPICORE-23OCT:no pre-t0 ladder print; CPICOREYOY-23OCT:no pre-t0 ladder print)"
+  },
+  {
+   "event": "CPI:2023-12-12",
+   "reason": "no usable ladder (CPI-23NOV:no pre-t0 ladder print; CPIYOY-23NOV:no pre-t0 ladder print; CPICORE-23NOV:no pre-t0 ladder print; CPICOREYOY-23NOV:no pre-t0 ladder print)"
+  },
+  {
+   "event": "CPI:2024-01-11",
+   "reason": "no usable ladder (CPI-23DEC:no pre-t0 ladder print; CPICORE-23DEC:no pre-t0 ladder print; CPIYOY-23DEC:no pre-t0 ladder print; CPICOREYOY-23DEC:no pre-t0 ladder print)"
+  },
+  {
+   "event": "GDP:2024-01-25",
+   "reason": "no usable ladder (GDP-24JAN26:no pre-t0 ladder print)"
+  },
+  {
+   "event": "CPI:2024-02-13",
+   "reason": "no usable ladder (CPI-24JAN:no pre-t0 ladder print; CPICORE-24JAN:no pre-t0 ladder print; CPIYOY-24JAN:no pre-t0 ladder print; CPICOREYOY-24JAN:no pre-t0 ladder print)"
+  },
+  {
+   "event": "EMPLOYMENT:2024-03-08",
+   "reason": "no usable ladder (PAYROLLS-24FEB:no pre-t0 ladder print)"
+  },
+  {
+   "event": "CPI:2024-03-12",
+   "reason": "no usable ladder (CPI-24FEB:no pre-t0 ladder print; CPIYOY-24FEB:no pre-t0 ladder print; CPICORE-24FEB:no pre-t0 ladder print; CPICOREYOY-24FEB:no pre-t0 ladder print)"
+  },
+  {
+   "event": "EMPLOYMENT:2024-04-05",
+   "reason": "no usable ladder (PAYROLLS-24MAR:no pre-t0 ladder print)"
+  },
+  {
+   "event": "CPI:2024-04-10",
+   "reason": "no usable ladder (CPI-24MAR:no pre-t0 ladder print; CPICORE-24MAR:no pre-t0 ladder print; CPIYOY-24MAR:no pre-t0 ladder print; CPICOREYOY-24MAR:no pre-t0 ladder print)"
+  },
+  {
+   "event": "GDP:2024-04-25",
+   "reason": "no usable ladder (GDP-24APR25:no pre-t0 ladder print)"
+  },
+  {
+   "event": "EMPLOYMENT:2024-05-03",
+   "reason": "no usable ladder (PAYROLLS-24APR:no pre-t0 ladder print)"
+  },
+  {
+   "event": "CPI:2024-05-15",
+   "reason": "no usable ladder (CPIYOY-24APR:no pre-t0 ladder print; CPICOREYOY-24APR:no pre-t0 ladder print; CPI-24APR:no pre-t0 ladder print; CPICORE-24APR:no pre-t0 ladder print)"
+  },
+  {
+   "event": "EMPLOYMENT:2024-06-07",
+   "reason": "no usable ladder (PAYROLLS-24MAY:no pre-t0 ladder print)"
+  },
+  {
+   "event": "CPI:2024-06-12",
+   "reason": "no usable ladder (CPIYOY-24MAY:no pre-t0 ladder print; CPICOREYOY-24MAY:no pre-t0 ladder print; CPI-24MAY:no pre-t0 ladder print; CPICORE-24MAY:no pre-t0 ladder print)"
+  },
+  {
+   "event": "EMPLOYMENT:2024-07-05",
+   "reason": "no usable ladder (PAYROLLS-24JUN:no pre-t0 ladder print)"
+  },
+  {
+   "event": "CPI:2024-07-11",
+   "reason": "no usable ladder (CPIYOY-24JUN:no pre-t0 ladder print; CPICOREYOY-24JUN:no pre-t0 ladder print; CPI-24JUN:no pre-t0 ladder print; CPICORE-24JUN:no pre-t0 ladder print)"
+  },
+  {
+   "event": "GDP:2024-07-25",
+   "reason": "no usable ladder (GDP-24JUL25:no pre-t0 ladder print)"
+  },
+  {
+   "event": "EMPLOYMENT:2024-08-02",
+   "reason": "no usable ladder (PAYROLLS-24JUL:no pre-t0 ladder print)"
+  },
+  {
+   "event": "CPI:2024-08-14",
+   "reason": "no usable ladder (CPIYOY-24JUL:no pre-t0 ladder print; CPICOREYOY-24JUL:no pre-t0 ladder print; CPI-24JUL:no pre-t0 ladder print; CPICORE-24JUL:no pre-t0 ladder print)"
+  },
+  {
+   "event": "EMPLOYMENT:2024-09-06",
+   "reason": "no usable ladder (PAYROLLS-24AUG:no pre-t0 ladder print)"
+  },
+  {
+   "event": "CPI:2024-09-11",
+   "reason": "no usable ladder (CPIYOY-24AUG:no pre-t0 ladder print; CPICOREYOY-24AUG:no pre-t0 ladder print; CPI-24AUG:no pre-t0 ladder print; CPICORE-24AUG:no pre-t0 ladder print)"
+  },
+  {
+   "event": "EMPLOYMENT:2024-10-04",
+   "reason": "no usable ladder (PAYROLLS-24SEP:no pre-t0 ladder print)"
+  },
+  {
+   "event": "CPI:2024-10-10",
+   "reason": "no usable ladder (CPIYOY-24SEP:no pre-t0 ladder print; CPICOREYOY-24SEP:no pre-t0 ladder print; CPI-24SEP:no pre-t0 ladder print; CPICORE-24SEP:no pre-t0 ladder print)"
+  },
+  {
+   "event": "CPI:2024-11-13",
+   "reason": "no usable ladder (CPIYOY-24OCT:no pre-t0 ladder print; CPICOREYOY-24OCT:no pre-t0 ladder print; CPI-24OCT:no pre-t0 ladder print; CPICORE-24OCT:no pre-t0 ladder print)"
+  },
+  {
+   "event": "PCE:2024-12-20",
+   "reason": "no usable ladder (KXPCECORE-24NOV:no pre-t0 ladder print)"
+  },
+  {
+   "event": "CPI:2023-04-12",
+   "reason": "no executable entry print in [t0+5m,t0+20m]",
+   "extra": {
+    "target": "FEDDECISION-23MAY-H25",
+    "side": "no"
+   }
+  },
+  {
+   "event": "CPI:2023-05-10",
+   "reason": "no usable ladder (CPI-23APR:no pre-t0 ladder print; CPIYOY-23APR:no pre-t0 ladder print; CPICORE-23APR:no pre-t0 ladder print; CPICOREYOY-23APR:no pre-t0 ladder print)"
+  },
+  {
+   "event": "CPI:2023-06-13",
+   "reason": "no usable ladder (CPI-23MAY:no pre-t0 ladder print; CPIYOY-23MAY:no pre-t0 ladder print; CPICORE-23MAY:no pre-t0 ladder print; CPICOREYOY-23MAY:no pre-t0 ladder print)"
+  },
+  {
+   "event": "CPI:2023-07-12",
+   "reason": "no usable ladder (CPI-23JUN:no pre-t0 ladder print; CPIYOY-23JUN:no pre-t0 ladder print; CPICORE-23JUN:no pre-t0 ladder print; CPICOREYOY-23JUN:no pre-t0 ladder print)"
+  },
+  {
+   "event": "CPI:2023-08-10",
+   "reason": "no usable ladder (CPI-23JUL:no pre-t0 ladder print; CPIYOY-23JUL:no pre-t0 ladder print; CPICORE-23JUL:no pre-t0 ladder print; CPICOREYOY-23JUL:no pre-t0 ladder print)"
+  },
+  {
+   "event": "CPI:2023-10-12",
+   "reason": "no usable ladder (CPI-23SEP:no pre-t0 ladder print; CPIYOY-23SEP:no pre-t0 ladder print; CPICORE-23SEP:no pre-t0 ladder print; CPICOREYOY-23SEP:no pre-t0 ladder print)"
+  },
+  {
+   "event": "PCE:2023-10-27",
+   "reason": "no usable ladder (PCECORE-23SEP:no pre-t0 ladder print)"
+  },
+  {
+   "event": "CPI:2023-11-14",
+   "reason": "no usable ladder (CPI-23OCT:no pre-t0 ladder print; CPIYOY-23OCT:no pre-t0 ladder print; CPICORE-23OCT:no pre-t0 ladder print; CPICOREYOY-23OCT:no pre-t0 ladder print)"
+  },
+  {
+   "event": "CPI:2023-12-12",
+   "reason": "no usable ladder (CPI-23NOV:no pre-t0 ladder print; CPIYOY-23NOV:no pre-t0 ladder print; CPICORE-23NOV:no pre-t0 ladder print; CPICOREYOY-23NOV:no pre-t0 ladder print)"
+  },
+  {
+   "event": "CPI:2024-01-11",
+   "reason": "no usable ladder (CPI-23DEC:no pre-t0 ladder print; CPICORE-23DEC:no pre-t0 ladder print; CPIYOY-23DEC:no pre-t0 ladder print; CPICOREYOY-23DEC:no pre-t0 ladder print)"
+  },
+  {
+   "event": "GDP:2024-01-25",
+   "reason": "no usable ladder (GDP-24JAN26:no pre-t0 ladder print)"
+  },
+  {
+   "event": "CPI:2024-02-13",
+   "reason": "no usable ladder (CPI-24JAN:no pre-t0 ladder print; CPICORE-24JAN:no pre-t0 ladder print; CPIYOY-24JAN:no pre-t0 ladder print; CPICOREYOY-24JAN:no pre-t0 ladder print)"
+  },
+  {
+   "event": "EMPLOYMENT:2024-03-08",
+   "reason": "no usable ladder (PAYROLLS-24FEB:no pre-t0 ladder print)"
+  },
+  {
+   "event": "CPI:2024-03-12",
+   "reason": "no usable ladder (CPI-24FEB:no pre-t0 ladder print; CPIYOY-24FEB:no pre-t0 ladder print; CPICORE-24FEB:no pre-t0 ladder print; CPICOREYOY-24FEB:no pre-t0 ladder print)"
+  },
+  {
+   "event": "EMPLOYMENT:2024-04-05",
+   "reason": "no usable ladder (PAYROLLS-24MAR:no pre-t0 ladder print)"
+  },
+  {
+   "event": "CPI:2024-04-10",
+   "reason": "no usable ladder (CPI-24MAR:no pre-t0 ladder print; CPICORE-24MAR:no pre-t0 ladder print; CPIYOY-24MAR:no pre-t0 ladder print; CPICOREYOY-24MAR:no pre-t0 ladder print)"
+  },
+  {
+   "event": "GDP:2024-04-25",
+   "reason": "no usable ladder (GDP-24APR25:no pre-t0 ladder print)"
+  },
+  {
+   "event": "EMPLOYMENT:2024-05-03",
+   "reason": "no usable ladder (PAYROLLS-24APR:no pre-t0 ladder print)"
+  },
+  {
+   "event": "CPI:2024-05-15",
+   "reason": "no usable ladder (CPIYOY-24APR:no pre-t0 ladder print; CPICOREYOY-24APR:no pre-t0 ladder print; CPI-24APR:no pre-t0 ladder print; CPICORE-24APR:no pre-t0 ladder print)"
+  },
+  {
+   "event": "EMPLOYMENT:2024-06-07",
+   "reason": "no usable ladder (PAYROLLS-24MAY:no pre-t0 ladder print)"
+  },
+  {
+   "event": "CPI:2024-06-12",
+   "reason": "no usable ladder (CPIYOY-24MAY:no pre-t0 ladder print; CPICOREYOY-24MAY:no pre-t0 ladder print; CPI-24MAY:no pre-t0 ladder print; CPICORE-24MAY:no pre-t0 ladder print)"
+  },
+  {
+   "event": "EMPLOYMENT:2024-07-05",
+   "reason": "no usable ladder (PAYROLLS-24JUN:no pre-t0 ladder print)"
+  },
+  {
+   "event": "CPI:2024-07-11",
+   "reason": "no usable ladder (CPIYOY-24JUN:no pre-t0 ladder print; CPICOREYOY-24JUN:no pre-t0 ladder print; CPI-24JUN:no pre-t0 ladder print; CPICORE-24JUN:no pre-t0 ladder print)"
+  },
+  {
+   "event": "GDP:2024-07-25",
+   "reason": "no usable ladder (GDP-24JUL25:no pre-t0 ladder print)"
+  },
+  {
+   "event": "EMPLOYMENT:2024-08-02",
+   "reason": "no usable ladder (PAYROLLS-24JUL:no pre-t0 ladder print)"
+  },
+  {
+   "event": "CPI:2024-08-14",
+   "reason": "no usable ladder (CPIYOY-24JUL:no pre-t0 ladder print; CPICOREYOY-24JUL:no pre-t0 ladder print; CPI-24JUL:no pre-t0 ladder print; CPICORE-24JUL:no pre-t0 ladder print)"
+  },
+  {
+   "event": "EMPLOYMENT:2024-09-06",
+   "reason": "no usable ladder (PAYROLLS-24AUG:no pre-t0 ladder print)"
+  },
+  {
+   "event": "CPI:2024-09-11",
+   "reason": "no usable ladder (CPIYOY-24AUG:no pre-t0 ladder print; CPICOREYOY-24AUG:no pre-t0 ladder print; CPI-24AUG:no pre-t0 ladder print; CPICORE-24AUG:no pre-t0 ladder print)"
+  },
+  {
+   "event": "EMPLOYMENT:2024-10-04",
+   "reason": "no usable ladder (PAYROLLS-24SEP:no pre-t0 ladder print)"
+  },
+  {
+   "event": "CPI:2024-10-10",
+   "reason": "no usable ladder (CPIYOY-24SEP:no pre-t0 ladder print; CPICOREYOY-24SEP:no pre-t0 ladder print; CPI-24SEP:no pre-t0 ladder print; CPICORE-24SEP:no pre-t0 ladder print)"
+  },
+  {
+   "event": "CPI:2024-11-13",
+   "reason": "no usable ladder (CPIYOY-24OCT:no pre-t0 ladder print; CPICOREYOY-24OCT:no pre-t0 ladder print; CPI-24OCT:no pre-t0 ladder print; CPICORE-24OCT:no pre-t0 ladder print)"
+  },
+  {
+   "event": "PCE:2024-12-20",
+   "reason": "no usable ladder (KXPCECORE-24NOV:no pre-t0 ladder print)"
+  }
+ ],
+ "verdict": "NULL",
+ "verdict_reason": "all FIT theta cells have day-clustered t <= 0 (self-kill); validation not opened.",
+ "val_trades": []
+}

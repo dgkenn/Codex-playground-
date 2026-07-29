@@ -1,0 +1,163 @@
+{
+ "phase_reached": "tripwire_incomplete",
+ "guard": {
+  "LAX": {
+   "icao": "KLAX",
+   "n_days_window": 160,
+   "n_days_ge_min_obs": 144,
+   "fraction_days_ge_min_obs": 0.9,
+   "passed": true,
+   "median_obs_per_day": 981.5,
+   "total_obs": 144604
+  },
+  "LAS": {
+   "icao": "KLAS",
+   "n_days_window": 160,
+   "n_days_ge_min_obs": 155,
+   "fraction_days_ge_min_obs": 0.9688,
+   "passed": true,
+   "median_obs_per_day": 1200.0,
+   "total_obs": 177200
+  },
+  "LGA": {
+   "icao": "KLGA",
+   "n_days_window": 160,
+   "n_days_ge_min_obs": 150,
+   "fraction_days_ge_min_obs": 0.9375,
+   "passed": true,
+   "median_obs_per_day": 909.0,
+   "total_obs": 141033
+  },
+  "SEA": {
+   "icao": "KSEA",
+   "n_days_window": 160,
+   "n_days_ge_min_obs": 157,
+   "fraction_days_ge_min_obs": 0.9812,
+   "passed": true,
+   "median_obs_per_day": 1294.5,
+   "total_obs": 195319
+  },
+  "SFO": {
+   "icao": "KSFO",
+   "n_days_window": 160,
+   "n_days_ge_min_obs": 155,
+   "fraction_days_ge_min_obs": 0.9688,
+   "passed": true,
+   "median_obs_per_day": 1211.0,
+   "total_obs": 183504
+  },
+  "MIA": {
+   "icao": "KMIA",
+   "n_days_window": 160,
+   "n_days_ge_min_obs": 145,
+   "fraction_days_ge_min_obs": 0.9062,
+   "passed": true,
+   "median_obs_per_day": 1210.0,
+   "total_obs": 170147
+  },
+  "PHX": {
+   "icao": "KPHX",
+   "n_days_window": 160,
+   "n_days_ge_min_obs": 150,
+   "fraction_days_ge_min_obs": 0.9375,
+   "passed": true,
+   "median_obs_per_day": 1056.0,
+   "total_obs": 146898
+  },
+  "MDW": {
+   "icao": "KMDW",
+   "n_days_window": 160,
+   "n_days_ge_min_obs": 158,
+   "fraction_days_ge_min_obs": 0.9875,
+   "passed": true,
+   "median_obs_per_day": 1440.0,
+   "total_obs": 220849
+  },
+  "AUS": {
+   "icao": "KAUS",
+   "n_days_window": 160,
+   "n_days_ge_min_obs": 127,
+   "fraction_days_ge_min_obs": 0.7937,
+   "passed": true,
+   "median_obs_per_day": 1017.0,
+   "total_obs": 141444
+  },
+  "BKF": {
+   "icao": "KBKF",
+   "n_days_window": 160,
+   "n_days_ge_min_obs": 0,
+   "fraction_days_ge_min_obs": 0.0,
+   "passed": false,
+   "median_obs_per_day": 0.0,
+   "total_obs": 0
+  }
+ },
+ "surviving_stations": [
+  "LAX",
+  "LAS",
+  "LGA",
+  "SEA",
+  "SFO",
+  "MIA",
+  "PHX",
+  "MDW",
+  "AUS"
+ ],
+ "window_start": "2026-02-17",
+ "window_end": "2026-07-26",
+ "station_universe": {
+  "LAX": {
+   "icao": "KLAX",
+   "tz": "America/Los_Angeles",
+   "wu_name": "Los Angeles Intl Airport Station"
+  },
+  "LAS": {
+   "icao": "KLAS",
+   "tz": "America/Los_Angeles",
+   "wu_name": "Harry Reid Intl Airport Station"
+  },
+  "LGA": {
+   "icao": "KLGA",
+   "tz": "America/New_York",
+   "wu_name": "LaGuardia Airport Station"
+  },
+  "SEA": {
+   "icao": "KSEA",
+   "tz": "America/Los_Angeles",
+   "wu_name": "Seattle-Tacoma Intl Airport Station"
+  },
+  "SFO": {
+   "icao": "KSFO",
+   "tz": "America/Los_Angeles",
+   "wu_name": "San Francisco Intl Airport Station"
+  },
+  "MIA": {
+   "icao": "KMIA",
+   "tz": "America/New_York",
+   "wu_name": "Miami Intl Airport Station"
+  },
+  "PHX": {
+   "icao": "KPHX",
+   "tz": "America/Phoenix",
+   "wu_name": "Phoenix Sky Harbor Intl Airport Station"
+  },
+  "MDW": {
+   "icao": "KMDW",
+   "tz": "America/Chicago",
+   "wu_name": "Chicago Midway Intl Airport Station"
+  },
+  "AUS": {
+   "icao": "KAUS",
+   "tz": "America/Chicago",
+   "wu_name": "Austin Bergstrom Intl Airport Station"
+  },
+  "BKF": {
+   "icao": "KBKF",
+   "tz": "America/Denver",
+   "wu_name": "Buckley Space Force Base Station"
+  }
+ },
+ "records": [],
+ "note": "Phase 2 (tripwire) started but did not finish before session time budget ended; phases 3-4 never started. See out/spec_S3_A.md for full disclosure. n_locks/n_priced are 0 because the computation did not run to completion, not because of a measured null result.",
+ "verdict": "THIN"
+}

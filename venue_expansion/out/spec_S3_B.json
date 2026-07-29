@@ -1,0 +1,745 @@
+{
+ "run_utc": "2026-07-29T15:07:33.224116+00:00",
+ "window_start": "2026-02-17",
+ "window_end": "2026-07-26",
+ "station_mapping": [
+  {
+   "station": "LAX",
+   "found": true,
+   "bare": "LAX",
+   "icao": "KLAX",
+   "city_name": "Los Angeles",
+   "wu_url": "https://www.wunderground.com/weather/KLAX",
+   "tz": "America/Los_Angeles",
+   "product_hi": "UHLAX",
+   "product_lo": "ULLAX"
+  },
+  {
+   "station": "LAS",
+   "found": true,
+   "bare": "LAS",
+   "icao": "KLAS",
+   "city_name": "Las Vegas",
+   "wu_url": "https://www.wunderground.com/weather/KLAS",
+   "tz": "America/Los_Angeles",
+   "product_hi": "UHLAS",
+   "product_lo": "ULLAS"
+  },
+  {
+   "station": "LGA",
+   "found": true,
+   "bare": "LGA",
+   "icao": "KLGA",
+   "city_name": "New York City",
+   "wu_url": "https://www.wunderground.com/weather/KLGA",
+   "tz": "America/New_York",
+   "product_hi": "UHLGA",
+   "product_lo": "ULLGA"
+  },
+  {
+   "station": "SEA",
+   "found": true,
+   "bare": "SEA",
+   "icao": "KSEA",
+   "city_name": "Seattle",
+   "wu_url": "https://www.wunderground.com/weather/KSEA",
+   "tz": "America/Los_Angeles",
+   "product_hi": "UHSEA",
+   "product_lo": "ULSEA"
+  },
+  {
+   "station": "SFO",
+   "found": true,
+   "bare": "SFO",
+   "icao": "KSFO",
+   "city_name": "San Francisco",
+   "wu_url": "https://www.wunderground.com/weather/KSFO",
+   "tz": "America/Los_Angeles",
+   "product_hi": "UHSFO",
+   "product_lo": "ULSFO"
+  },
+  {
+   "station": "MIA",
+   "found": true,
+   "bare": "MIA",
+   "icao": "KMIA",
+   "city_name": "Miami",
+   "wu_url": "https://www.wunderground.com/weather/KMIA",
+   "tz": "America/New_York",
+   "product_hi": "UHMIA",
+   "product_lo": "ULMIA"
+  },
+  {
+   "station": "PHX",
+   "found": true,
+   "bare": "PHX",
+   "icao": "KPHX",
+   "city_name": "Phoenix",
+   "wu_url": "https://www.wunderground.com/weather/KPHX",
+   "tz": "America/Phoenix",
+   "product_hi": "UHPHX",
+   "product_lo": "ULPHX"
+  },
+  {
+   "station": "MDW",
+   "found": true,
+   "bare": "MDW",
+   "icao": "KMDW",
+   "city_name": "Chicago",
+   "wu_url": "https://www.wunderground.com/weather/KMDW",
+   "tz": "America/Chicago",
+   "product_hi": "UHMDW",
+   "product_lo": "ULMDW"
+  },
+  {
+   "station": "AUS",
+   "found": true,
+   "bare": "AUS",
+   "icao": "KAUS",
+   "city_name": "Austin",
+   "wu_url": "https://www.wunderground.com/weather/KAUS",
+   "tz": "America/Chicago",
+   "product_hi": "UHAUS",
+   "product_lo": "ULAUS"
+  },
+  {
+   "station": "BKF",
+   "found": true,
+   "bare": "BKF",
+   "icao": "KBKF",
+   "city_name": "Denver",
+   "wu_url": "https://www.wunderground.com/weather/KBKF",
+   "tz": "America/Denver",
+   "product_hi": "UHBKF",
+   "product_lo": "ULBKF"
+  }
+ ],
+ "station_mapping_source": "ForecastEx live product-catalog API (https://forecastex.com/api/products), field `description`, regex-parsed for 'Station (KXXX)'. See module docstring for why this supersedes the generic CFTC filing PDF.",
+ "inclusion_guard": {
+  "LAX": {
+   "icao": "KLAX",
+   "n_days_total": 160,
+   "n_days_ok": 144,
+   "frac_days_ok": 0.9,
+   "n_obs_total": 155687,
+   "pass": true
+  },
+  "LAS": {
+   "icao": "KLAS",
+   "n_days_total": 160,
+   "n_days_ok": 155,
+   "frac_days_ok": 0.9688,
+   "n_obs_total": 177200,
+   "pass": true
+  },
+  "LGA": {
+   "icao": "KLGA",
+   "n_days_total": 160,
+   "n_days_ok": 150,
+   "frac_days_ok": 0.9375,
+   "n_obs_total": 154805,
+   "pass": true
+  },
+  "SEA": {
+   "icao": "KSEA",
+   "n_days_total": 160,
+   "n_days_ok": 157,
+   "frac_days_ok": 0.9812,
+   "n_obs_total": 195319,
+   "pass": true
+  },
+  "SFO": {
+   "icao": "KSFO",
+   "n_days_total": 160,
+   "n_days_ok": 155,
+   "frac_days_ok": 0.9688,
+   "n_obs_total": 202470,
+   "pass": true
+  },
+  "MIA": {
+   "icao": "KMIA",
+   "n_days_total": 160,
+   "n_days_ok": 145,
+   "frac_days_ok": 0.9062,
+   "n_obs_total": 170147,
+   "pass": true
+  },
+  "PHX": {
+   "icao": "KPHX",
+   "n_days_total": 160,
+   "n_days_ok": 150,
+   "frac_days_ok": 0.9375,
+   "n_obs_total": 146898,
+   "pass": true
+  },
+  "MDW": {
+   "icao": "KMDW",
+   "n_days_total": 160,
+   "n_days_ok": 158,
+   "frac_days_ok": 0.9875,
+   "n_obs_total": 246169,
+   "pass": true
+  },
+  "AUS": {
+   "icao": "KAUS",
+   "n_days_total": 160,
+   "n_days_ok": 127,
+   "frac_days_ok": 0.7937,
+   "n_obs_total": 141444,
+   "pass": true
+  },
+  "BKF": {
+   "icao": "KBKF",
+   "n_days_total": 160,
+   "n_days_ok": 0,
+   "frac_days_ok": 0.0,
+   "n_obs_total": 0,
+   "pass": false
+  }
+ },
+ "surviving_stations": [
+  "LAX",
+  "LAS",
+  "LGA",
+  "SEA",
+  "SFO",
+  "MIA",
+  "PHX",
+  "MDW",
+  "AUS"
+ ],
+ "tripwire": {
+  "n_locks": 795,
+  "n_tradeable": 478,
+  "median_first_fill_price_c": 96.0
+ },
+ "n_missing_settlement": 29,
+ "skips": [
+  {
+   "station": "LAX",
+   "date": "2026-02-20",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "LAX",
+   "date": "2026-02-21",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "LAX",
+   "date": "2026-02-22",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "LAX",
+   "date": "2026-02-24",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "LAX",
+   "date": "2026-02-25",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "LAX",
+   "date": "2026-03-02",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "LAX",
+   "date": "2026-03-30",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "LAX",
+   "date": "2026-04-09",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "LAX",
+   "date": "2026-04-10",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "LAX",
+   "date": "2026-04-27",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "LAX",
+   "date": "2026-05-03",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "LAX",
+   "date": "2026-06-02",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "LAX",
+   "date": "2026-07-01",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "LAX",
+   "date": "2026-07-02",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "LAX",
+   "date": "2026-07-18",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "LAX",
+   "date": "2026-07-23",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "LAS",
+   "date": "2026-02-20",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "LAS",
+   "date": "2026-02-21",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "LAS",
+   "date": "2026-02-22",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "LAS",
+   "date": "2026-06-22",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "LAS",
+   "date": "2026-06-23",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "LGA",
+   "date": "2026-02-20",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "LGA",
+   "date": "2026-02-21",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "LGA",
+   "date": "2026-02-22",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "LGA",
+   "date": "2026-02-26",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "LGA",
+   "date": "2026-03-15",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "LGA",
+   "date": "2026-05-18",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "LGA",
+   "date": "2026-06-09",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "LGA",
+   "date": "2026-06-24",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "LGA",
+   "date": "2026-07-12",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "LGA",
+   "date": "2026-07-15",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "SEA",
+   "date": "2026-02-20",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "SEA",
+   "date": "2026-02-21",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "SEA",
+   "date": "2026-02-22",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "SFO",
+   "date": "2026-02-21",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "SFO",
+   "date": "2026-02-22",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "SFO",
+   "date": "2026-05-13",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "SFO",
+   "date": "2026-05-14",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "SFO",
+   "date": "2026-06-24",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "MIA",
+   "date": "2026-02-21",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "MIA",
+   "date": "2026-02-22",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "MIA",
+   "date": "2026-04-14",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "MIA",
+   "date": "2026-04-15",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "MIA",
+   "date": "2026-04-16",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "MIA",
+   "date": "2026-04-17",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "MIA",
+   "date": "2026-04-18",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "MIA",
+   "date": "2026-04-19",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "MIA",
+   "date": "2026-04-20",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "MIA",
+   "date": "2026-04-21",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "MIA",
+   "date": "2026-04-22",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "MIA",
+   "date": "2026-04-23",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "MIA",
+   "date": "2026-04-24",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "MIA",
+   "date": "2026-06-24",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "MIA",
+   "date": "2026-06-27",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "PHX",
+   "date": "2026-02-20",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "PHX",
+   "date": "2026-02-21",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "PHX",
+   "date": "2026-02-22",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "PHX",
+   "date": "2026-02-26",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "PHX",
+   "date": "2026-03-03",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "PHX",
+   "date": "2026-03-10",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "PHX",
+   "date": "2026-03-28",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "PHX",
+   "date": "2026-04-11",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "PHX",
+   "date": "2026-05-13",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "PHX",
+   "date": "2026-07-18",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "MDW",
+   "date": "2026-05-21",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "MDW",
+   "date": "2026-05-25",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "AUS",
+   "date": "2026-03-08",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "AUS",
+   "date": "2026-03-31",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "AUS",
+   "date": "2026-04-01",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "AUS",
+   "date": "2026-04-02",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "AUS",
+   "date": "2026-04-03",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "AUS",
+   "date": "2026-04-04",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "AUS",
+   "date": "2026-04-05",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "AUS",
+   "date": "2026-04-06",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "AUS",
+   "date": "2026-04-07",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "AUS",
+   "date": "2026-04-08",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "AUS",
+   "date": "2026-04-09",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "AUS",
+   "date": "2026-04-10",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "AUS",
+   "date": "2026-04-11",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "AUS",
+   "date": "2026-04-12",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "AUS",
+   "date": "2026-04-13",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "AUS",
+   "date": "2026-04-14",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "AUS",
+   "date": "2026-04-15",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "AUS",
+   "date": "2026-04-16",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "AUS",
+   "date": "2026-04-17",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "AUS",
+   "date": "2026-04-18",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "AUS",
+   "date": "2026-04-19",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "AUS",
+   "date": "2026-04-20",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "AUS",
+   "date": "2026-04-21",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "AUS",
+   "date": "2026-04-22",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "AUS",
+   "date": "2026-04-23",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "AUS",
+   "date": "2026-05-21",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "AUS",
+   "date": "2026-05-25",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "AUS",
+   "date": "2026-07-21",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "AUS",
+   "date": "2026-07-22",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "AUS",
+   "date": "2026-07-23",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "AUS",
+   "date": "2026-07-24",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "AUS",
+   "date": "2026-07-25",
+   "reason": "thin_station_data"
+  },
+  {
+   "station": "AUS",
+   "date": "2026-07-26",
+   "reason": "thin_station_data"
+  }
+ ],
+ "false_lock": {
+  "n_locks": 8646,
+  "n_false": 190,
+  "false_rate": 0.021975479990747167,
+  "wilson_upper_98_33": 0.025589279581555793,
+  "z": 2.128,
+  "n_missing_settlement_excluded": 29
+ },
+ "n_untradeable": 5792,
+ "untradeable_pct": 66.991,
+ "ev": {
+  "n_priced": 2854,
+  "n_station_day_clusters": 1028,
+  "n_stations": 9,
+  "stationday_clustered": {
+   "mean": 9.196916608269095,
+   "se": 0.5965680296043917,
+   "t": 15.416375252907772,
+   "n_clusters": 1028,
+   "n": 2854
+  },
+  "calendarday_clustered_sensitivity": {
+   "mean": 9.196916608269095,
+   "se": 0.551518925768454,
+   "t": 16.67561379775799,
+   "n_clusters": 158,
+   "n": 2854
+  }
+ },
+ "verdict": "KILL",
+ "kill_reason": ">4 false locks (190) -- basis to WU settlement unsound, stop pricing"
+}
