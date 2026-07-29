@@ -77,15 +77,24 @@ finding the engine must produce automatically rather than by hand.
 ```
 docs/           RESEARCH_PROGRAM_BRIEF.md (immutable) | RESEARCH_STRATEGY.md | LITERATURE_MAP.md
                 ANALYSIS_PLAN.md
-data_registry/  DATASET_REGISTRY.csv | LICENSE_TABLE.csv
+data_registry/  DATASET_REGISTRY.csv | LICENSE_TABLE.csv | LICENSE_TABLE_NOTES.md
 governance/     INVENTION_NOTEBOOK.md | SEARCH_LOG.jsonl
 src/bsde/
-  candidates/   registry.py (declaration format) | uce_v1.py (frozen) | spectral.py | complexity.py
-  features/     aperiodic.py
-  ingestion/    streaming adapters -- raw EEG never hits disk
-  verifier/     layers 1-4 and the report
-  experiments/  e01_frontal_posterior_redundancy.py
-tests/          synthetic ground-truth tests + planted-confound acceptance tests
+  candidates/   registry.py (the declaration format) | seed.py (8 declarations) | uce_v1.py (frozen)
+  features/     aperiodic.py | spectral.py | complexity.py | connectivity.py
+  ingestion/    base.py (adapter protocol) | runner.py (resumable, shardable) | local_brainvision.py
+  verifier/     engine.py (the checks) | report.py (evidence + verdict) | stats.py
+  governance/   search_log.py
+  experiments/  e01_frontal_posterior_redundancy.py | e02_engine_regression.py
+tests/          synthetic ground-truth tests, planted-confound acceptance tests, runner guarantees
 ```
 
 Run the suite: `cd bsde && python -m pytest tests/ -q`
+
+Stream a dataset into a feature table (raw EEG never lands on disk; resumable and shardable):
+
+```bash
+python src/bsde/ingestion/runner.py --adapter brainvision \
+    --path /path/to/dataset --dataset my_dataset --out results/features.csv
+# shard across N processes with --shard k --of N; re-run the same command to resume
+```

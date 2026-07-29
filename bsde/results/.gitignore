@@ -1,0 +1,4 @@
+# In-progress streaming feature tables are not committed. A partially-written table parses cleanly and
+# looks complete, which is precisely how a truncated extraction gets mistaken for a whole dataset. A
+# finished table is committed deliberately, with its row count stated in the commit message.
+*.csv

@@ -23,8 +23,13 @@ def lempel_ziv_complexity(binary_seq) -> int:
       '0000'                -> 2   (parses as 0 . 000, i.e. the single symbol then its own repeat)
       '0001101001000101'    -> 6   (parses as 0 . 001 . 10 . 100 . 1000 . 101 -- the Lempel & Ziv 1976 example)
     """
-    s = np.asarray(binary_seq).astype(int)
-    n = int(s.size)
+    # A PYTHON LIST, not the ndarray. The algorithm below indexes element-by-element in a Python loop, and
+    # every `arr[i]` on an ndarray allocates a numpy scalar. On a 30,000-sample channel that overhead
+    # dominated everything else in the pipeline -- the seed set took ~10 s per channel, i.e. ~17 hours for
+    # one 98-recording dataset. Converting once up front is a pure constant-factor change: the algorithm,
+    # and therefore the hand-verified ground truth below, is untouched.
+    s = [int(v) for v in np.asarray(binary_seq).ravel()]
+    n = len(s)
     if n == 0:
         return 0
     if n == 1:

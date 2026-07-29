@@ -124,10 +124,37 @@ def f_spectral_entropy(data, ch_names, sfreq, meta=None) -> float:
     return float(spectral_entropy(f, p))
 
 
+LZIV_WINDOW_S = 10.0
+
+
 def f_lziv(data, ch_names, sfreq, meta=None) -> float:
+    """Mean normalised LZ76 over fixed-length windows, then over channels.
+
+    WHY FIXED WINDOWS RATHER THAN THE WHOLE RECORDING. LZ76 complexity normalised by n/log2(n) is only
+    asymptotically length-invariant; at finite n the normalised value still drifts with n. Computing it on
+    whole recordings would therefore make the measure partly a function of RECORDING DURATION, and duration
+    is outcome-related in every clinical EEG cohort this project touches -- sicker patients are monitored
+    longer. That is a confound built into the feature definition, where no probe can see it.
+
+    A fixed 10 s window makes every recording contribute values on the same scale regardless of its length.
+    It also happens to be far cheaper: LZ76 is quadratic in n, so windowing turned ~250 s per 62-channel
+    recording into a few seconds. The scientific reason is the governing one; the speed is a side effect.
+
+    Windows are non-overlapping and any trailing partial window is dropped, so every value averaged here
+    comes from exactly the same number of samples.
+    """
     from bsde.features.complexity import lziv
-    vals = [lziv(ch) for ch in np.asarray(data, float)]
-    vals = [v for v in vals if np.isfinite(v)]
+    d = np.asarray(data, float)
+    w = int(round(LZIV_WINDOW_S * float(sfreq)))
+    if w < 256 or d.shape[1] < w:
+        return float("nan")     # too short to yield a comparable value; say so rather than improvise
+    n_win = d.shape[1] // w
+    vals = []
+    for ch in d:
+        for k in range(n_win):
+            v = lziv(ch[k * w:(k + 1) * w])
+            if np.isfinite(v):
+                vals.append(v)
     return float(np.mean(vals)) if vals else float("nan")
 
 
