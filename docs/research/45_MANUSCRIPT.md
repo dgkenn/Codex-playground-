@@ -6,6 +6,32 @@ and the mechanistic argument is `44_MECHANISM_AND_PRIOR_WORK.md`.*
 
 ---
 
+> ## ⚠ CORRECTION BANNER — READ BEFORE SENDING THIS TO ANYONE (added 2026-07-29, R417/R418)
+>
+> **This document predates R358–R419 and describes the burst-morphology channel as "spectral content", which
+> invites the reading *how much fast activity there is*. That reading is wrong, and the decisive re-extraction
+> (n = 2,473 recordings, reproduction gate r = 1.0000) shows why.**
+>
+> | measure | anoxic AUC | non-anoxic AUC | reverses by aetiology? |
+> |---|---|---|---|
+> | ratio, P[8–30]/P[1–30] | 0.577 | 0.426 | **YES** |
+> | **absolute fast power** | **0.390** | **0.403** | **no — protective in BOTH** |
+> | **absolute slow power** | **0.371** | **0.445** | **no — protective in BOTH** |
+>
+> More absolute power of *either* band is protective regardless of aetiology (all four intervals exclude 0.5).
+> **Only the balance reverses**, it correlates **+0.002** with absolute fast power, and its aetiology
+> interaction **retains 117 %** after adjustment for both absolute powers and their interactions. Alpha and
+> beta carry it independently and equally (+0.343 / +0.340, summing to the composite's +0.690 — additive to
+> within 1 %), so it is not an alpha phenomenon either.
+>
+> **The numeric values quoted in this document are fractions and are therefore correct.** What needs rewriting
+> is the prose: say **spectral BALANCE**, and state explicitly that the finding is *orthogonal to signal
+> amount*. Two further things this document does not yet carry: the **aetiology reversal** itself (R389–R399,
+> the project's actual lead) and the fact that **six mechanism candidates are now closed** — see
+> `49_HANDOFF_STATE.md` and `41_RESULTS_LEDGER.md`.
+
+---
+
 ## Abstract
 
 After cardiac arrest, ERC-ESICM prognostication classifies EEG into **highly malignant**, **malignant** and
@@ -157,7 +183,7 @@ amplitude *ratio*, which is not the quantity measured here. **Two channels survi
 stereotypy**, and both hold in HEEDB at the index recording (8–30 Hz 0.160 vs 0.101; stereotypy 0.015 vs 0.001)
 as well as in I-CARE.
 
-**Suppression burden measures how much is gone; burst content reports what kind of activity remains** — and the
+**Suppression burden measures how much is gone; intra-burst spectral BALANCE reports what kind of activity remains** (not how much of it — R417/R418) — and the
 two are separable, which is the substantive claim. Stereotyped, high-amplitude, fast bursts describe a simple
 autonomous cortical oscillator with a single mode; slower and more variable bursts describe a network with a
 richer repertoire.
@@ -169,7 +195,7 @@ the burst-to-suppression amplitude ratio prognostic. Fong *et al.* 2025 found bu
 independent EEG predictor of mortality in 203 post-arrest patients; **that replicates here too, and does not
 displace the spectral channel** — both survive in the same model.
 
-**Interpretation, offered and not established:** burst content plausibly reports thalamocortical organisation,
+**Interpretation, offered and not established:** intra-burst spectral balance plausibly reports thalamocortical organisation — the one mechanism candidate still open after six were closed (R414–R418) —
 given graded selective thalamic vulnerability after global ischaemia (Muthuswamy *et al.*, PMID 12435429) and
 thalamic damage tracking suppression ratio in humans (Sohn & Kim, PMID 37731916). The *strong* form — that
 bursts require an intact thalamocortical loop — is **refuted**: deafferented cortex generates burst suppression
