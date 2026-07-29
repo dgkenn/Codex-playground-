@@ -34,7 +34,11 @@ WHAT WOULD MAKE A POSITIVE RESULT UNINTERESTING ANYWAY, stated before running:
     window differs between classes, any length-sensitive feature separates them for a trivial reason. The
     same 20 s window is therefore used for both, and `n_samples` is carried as a nuisance and probed.
   * `sed2` is `acq-rest` only. If `sed` includes other acquisition types, acquisition would proxy the label.
-    The cohort is therefore restricted to `acq-rest` on BOTH sides, and the restriction is reported.
+    The PRIMARY contrast is therefore restricted to `acq-rest` on both sides, which is achievable because
+    both `sed` and `sed2` were recorded that way. The REFERENCE contrast cannot be matched: `awake` was
+    never recorded at `acq-rest` at all (only `acq-EC`, `acq-EO`, `acq-tms`), so acquisition and state are
+    structurally entangled there. See `build()`. That is why P3 treats the reference purely as an
+    upper-bound sanity check and never as a result.
   * Awakenings were not randomly timed; anaesthetists awaken subjects when it is safe and convenient, which
     may correlate with drug level. A positive result may therefore reflect lighter sedation rather than an
     impending transition, and those two are NOT separable in this dataset. This is stated as a limitation
@@ -83,7 +87,6 @@ from bsde.verifier.stats import directional_auc, cluster_bootstrap_ci, permutati
 RESULTS = os.path.abspath(os.path.join(HERE, "..", "..", "..", "results"))
 NOW = os.environ.get("BSDE_NOW", "2026-07-29T00:00:00Z")
 CONTRAST = "emergence_within_subject"   # declared in seed.py's CONTRASTS
-ACQ_KEEP = "rest"                       # both classes restricted to this, see the docstring
 
 
 def _f(v):
@@ -100,15 +103,35 @@ def load(path):
         return [r for r in csv.DictReader(fh) if r.get("status") == "ok"]
 
 
-def build(rows, cand_name, pos_tasks, neg_tasks):
-    """y = 1 for pos_tasks. Restricted to ACQ_KEEP on both sides so acquisition cannot proxy the label."""
+def build(rows, cand_name, pos_tasks, neg_tasks, acq_by_task=None):
+    """y = 1 for pos_tasks. `acq_by_task` maps a task value to the acquisition codes allowed for it.
+
+    WHY THIS IS PER-TASK RATHER THAN ONE GLOBAL RESTRICTION. In ds005620 the acquisition code is not
+    independent of the task:
+
+        awake : acq-EC (eyes closed), acq-EO (eyes open), acq-tms
+        sed   : acq-rest, acq-tms
+        sed2  : acq-rest
+
+    A single global `acq == "rest"` filter -- which this function originally applied -- silently empties the
+    awake class, because awake was never recorded under `acq-rest`. The primary contrast (sed vs sed2) is
+    genuinely comparable at `acq-rest`. The reference contrast (sed vs awake) cannot be, and pretending
+    otherwise would have produced an unevaluable reference reported as a missing prediction rather than as a
+    structural property of the dataset.
+
+    The awake class is restricted to `acq-EC`. Eyes-open recordings are excluded because eyes-open versus
+    eyes-closed alone shifts the aperiodic exponent and alpha power, so pooling EO into "awake" would inflate
+    any awake-vs-sedated separation for a reason unrelated to consciousness.
+    """
+    acq_by_task = acq_by_task or {}
     vals, ys, subs, nsamp = [], [], [], []
     dropped = Counter()
     for r in rows:
         task = (r.get("meta_task") or "").strip()
         acq = (r.get("meta_acq") or "").strip()
-        if acq != ACQ_KEEP:
-            dropped[f"acq={acq or '<blank>'}"] += 1
+        allowed = acq_by_task.get(task)
+        if allowed is not None and acq not in allowed:
+            dropped[f"{task}:acq={acq or '<blank>'}"] += 1
             continue
         if task in pos_tasks:
             y = 1.0
@@ -134,7 +157,9 @@ def main() -> int:
     seed_registry()
     rows = load(os.path.join(RESULTS, "ds005620_features.csv"))
     print("E04 — transition proximity: sedated vs sedated-one-minute-before-awakening")
-    print(f"   ds005620 usable rows: {len(rows)}   acq restricted to {ACQ_KEEP!r} on both sides")
+    print(f"   ds005620 usable rows: {len(rows)}")
+    print(f"   PRIMARY   sed2(acq-rest) vs sed(acq-rest)  -- acquisition matched")
+    print(f"   REFERENCE sed(acq-rest)  vs awake(acq-EC)  -- acquisition CANNOT be matched (see build())")
     if not rows:
         print("   *** no ds005620 feature table yet. Nothing is reported.")
         return 2
@@ -145,9 +170,16 @@ def main() -> int:
     out, logged = {}, 0
     for cand in REGISTRY.all():
         # PRIMARY: sed2 (pre-awakening, y=1) vs sed (steady sedation, y=0)
-        coh, info = build(rows, cand.name, {"sed2"}, {"sed"})
+        coh, info = build(rows, cand.name, {"sed2"}, {"sed"},
+                          acq_by_task={"sed2": {"rest"}, "sed": {"rest"}})
         # REFERENCE for P3, same subjects: sed (y=1) vs awake (y=0)
-        ref, ref_info = build(rows, cand.name, {"sed"}, {"awake"})
+        # Reference: sed (acq-rest) vs awake (acq-EC only -- eyes closed, the closest match to a sedated
+        # subject; acq-EO and acq-tms excluded). Acquisition still differs between the classes here and
+        # CANNOT be equalised, because the dataset never recorded awake at acq-rest. That is a structural
+        # confound in this reference, stated rather than hidden, and it is why P3 uses it only as an
+        # upper-bound sanity check and never as a result in its own right.
+        ref, ref_info = build(rows, cand.name, {"sed"}, {"awake"},
+                              acq_by_task={"sed": {"rest"}, "awake": {"EC"}})
         if coh is None:
             print(f"\n-- {cand.name}: primary contrast NOT EVALUABLE -> {info}")
             out[cand.name] = {"verdict": "NOT_EVALUABLE", "primary": info, "reference": ref_info}
@@ -205,7 +237,11 @@ def main() -> int:
     print("   separable in this dataset.")
 
     dst = os.path.join(RESULTS, "e04_transition_proximity.json")
-    json.dump({"experiment": "E04", "contrast": CONTRAST, "acq_restriction": ACQ_KEEP,
+    json.dump({"experiment": "E04", "contrast": CONTRAST,
+               "acq_restriction": {"primary": {"sed2": ["rest"], "sed": ["rest"]},
+                                   "reference": {"sed": ["rest"], "awake": ["EC"]},
+                                   "note": "awake was never recorded at acq-rest, so the reference contrast "
+                                           "cannot match acquisition; see build()"},
                "search_space_size": n_space, "analytic_dof": 1, "n_logged": logged,
                "summary": out}, open(dst, "w"), indent=2, default=str)
     print(f"\n   machine-readable result -> {dst}")

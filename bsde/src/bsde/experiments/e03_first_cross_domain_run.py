@@ -92,6 +92,19 @@ AWAKE = {
     "sleep_edfx_staged": {"W"},
     "ds005620": {"awake"},
 }
+# ds005620's acquisition code is not independent of its task label: awake was recorded at acq-EC (eyes
+# closed), acq-EO (eyes open) and acq-tms, while sedation was recorded at acq-rest and acq-tms. Two
+# consequences, both handled by restricting rather than ignored.
+#   1. Pooling acq-EO into "awake" inflates the separation, because eyes-open versus eyes-closed alone
+#      shifts the aperiodic exponent and alpha power. Eyes-open recordings are therefore excluded.
+#   2. acq-tms segments contain TMS pulses and their artefacts, which have nothing to do with the state
+#      contrast. Excluded from both classes.
+# What CANNOT be fixed: awake was never recorded at acq-rest, so acquisition still differs between the
+# classes. That residual confound is reported with the result, not adjusted away.
+ACQ_ALLOWED = {
+    "ds005620": {"awake": {"EC"}, "sed": {"rest"}, "sed2": {"rest"}},
+    "sleep_edfx_staged": None,      # single acquisition protocol throughout
+}
 
 
 def _read(path):
@@ -127,8 +140,15 @@ def build_cohort(path, dataset, candidate_name, nuisance_cols=("n_samples", "sfr
         return None, {"reason": f"no usable rows in {os.path.basename(path)}"}
     vals, ys, subs, nuis = [], [], [], {c: [] for c in nuisance_cols}
     dropped = Counter()
+    allowed_map = ACQ_ALLOWED.get(dataset)
     for r in rows:
         lab = _label_of(r, dataset)
+        if allowed_map:
+            allowed = allowed_map.get(lab)
+            acq = (r.get("meta_acq") or "").strip()
+            if allowed is not None and acq not in allowed:
+                dropped[f"{lab}:acq={acq or '<blank>'}"] += 1
+                continue
         if lab in UNCONSCIOUS[dataset]:
             y = 1.0
         elif lab in AWAKE[dataset]:
