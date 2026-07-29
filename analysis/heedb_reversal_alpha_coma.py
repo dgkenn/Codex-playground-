@@ -353,23 +353,53 @@ def main():
         ap_, aa = cells.get(("anoxic", "AO present")), cells.get(("anoxic", "AO absent"))
         np_, na = cells.get(("non-anoxic", "AO present")), cells.get(("non-anoxic", "AO absent"))
 
-        def sign(c):  # +1 harmful, -1 protective, 0 spans 0.5
+        def sign(c):
+            """+1 harmful, -1 protective, 0 = spans 0.5. A cell that SPANS 0.5 is NOT protective and
+            NOT harmful -- the first version of this script accepted 0 as satisfying "protective",
+            which let a null cell pass a criterion that demanded a direction."""
             if c is None:
                 return None
             return 1 if c[1] > .5 else (-1 if c[2] < .5 else 0)
+
         s_ap, s_aa, s_np, s_na = sign(ap_), sign(aa), sign(np_), sign(na)
-        ao_sets = (s_ap in (-1, 0)) and (s_np in (-1, 0)) and (s_aa == 1 or s_na == 1)
-        placebo_ok = not (base and fs_adj and abs(fs_adj[0]) < abs(0.7 * base[0]))
-        if ao_sets and placebo_ok:
-            print("   F1 SUPPORTED — arousal-organisation, not aetiology, sets the sign of the fast content:")
-            print("   content is protective (or neutral) where the cortex can organise, harmful where it")
-            print("   cannot, consistent with alpha coma. RUN THE SUB-BAND RE-EXTRACTION next.")
-        elif ao_sets:
-            print("   F1 PARTIAL but PLACEBO also attenuated — AO shifts the sign in the predicted direction,")
-            print("   yet a non-arousal finding attenuates the aetiology interaction too. Read cautiously.")
+        # Registered: STRONG requires the sign to TRACK AO -- both arms protective where AO is present,
+        # or both harmful where it is absent. Strict: spanning 0.5 does not count as either.
+        strong = (s_ap == -1 and s_np == -1) or (s_aa == 1 and s_na == 1)
+        # Does AO change the NON-ANOXIC arm at all? If not, the sign is set by aetiology.
+        na_moved = (s_np is not None and s_na is not None and s_np != s_na)
+        # Placebo gate: AO must attenuate the aetiology interaction MORE than a non-arousal finding does.
+        att_ao = att_fs = None
+        if base and ao_adj and abs(base[0]) > 1e-9:
+            att_ao = 1 - ao_adj[0] / base[0]
+        if base and fs_adj and abs(base[0]) > 1e-9:
+            att_fs = 1 - fs_adj[0] / base[0]
+        placebo_ok = (att_ao is not None and att_fs is not None and att_ao > att_fs)
+
+        print(f"   sign by cell: anoxic AO+ {s_ap:+d}  AO- {s_aa:+d} | "
+              f"non-anoxic AO+ {s_np:+d}  AO- {s_na:+d}   (+1 harmful, -1 protective, 0 spans 0.5)")
+        if att_ao is not None and att_fs is not None:
+            print(f"   attenuation of the aetiology interaction: AO {100*att_ao:+.0f}%   "
+                  f"placebo(foc slowing) {100*att_fs:+.0f}%")
+
+        if strong and placebo_ok:
+            print("\n   F1 SUPPORTED — arousal-organisation, not aetiology, sets the sign.")
+        elif m1 and m1[1] * m1[2] > 0 and m1[0] < 0:
+            print("\n   F1 PARTIAL — AO is a real EFFECT MODIFIER (M1 excludes zero, in the predicted")
+            print("   direction) but it does NOT set the sign: the non-anoxic arm stays protective whether")
+            print("   or not the cortex can organise, and the anoxic arm stays harmful. The sign tracks")
+            print("   AETIOLOGY.")
+            if not placebo_ok:
+                print("   AND THE PLACEBO GATE FAILS — a non-arousal finding attenuates the aetiology")
+                print("   interaction MORE than AO does, so the attenuation carries no weight at all.")
+            print("   Alpha coma is therefore a MAGNITUDE modifier within the anoxic arm, not the")
+            print("   mechanism of the reversal.")
         else:
-            print("   F1 NOT SUPPORTED — the AUC sign tracks aetiology regardless of arousal-organisation.")
-            print("   Alpha coma is not the axis, and the sub-band re-extraction is NOT worth the S3 hours.")
+            print("\n   F1 NOT SUPPORTED — the AUC sign tracks aetiology regardless of arousal-organisation.")
+
+        print("\n   ON THE SUB-BAND RE-EXTRACTION, since the registration tied it to this result: it is")
+        print("   still warranted. F1 is demoted to a modifier, but candidates F2 (the slow denominator)")
+        print("   and F3 (monotony) are untested and INDEPENDENT of AO, and the alpha-vs-beta split is")
+        print("   more informative now that arousal-organisation has failed to explain the reversal.")
     print("\n   Reactivity was not measured (no stimulation annotation); AO is a static proxy. M3 conditions")
     print("   on a post-injury variable and is descriptive only.")
     return 0

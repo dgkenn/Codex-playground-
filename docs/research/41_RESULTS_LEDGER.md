@@ -3171,3 +3171,88 @@ useful new constraint from R415 is that whatever the mechanism is, it makes fast
 *fewer* epileptiform findings in both aetiologies.
 
 **Cumulative distinct results: 415.**
+
+---
+
+## R416 · Alpha coma is a MAGNITUDE MODIFIER, not the mechanism — the sign still tracks aetiology
+
+Candidate **F1**, the top pick of the exhaustive brainstorm and the only candidate that explains a *sign*
+reversal through a named clinical entity: after anoxia, monotonous non-reactive alpha ("alpha coma") is
+malignant; elsewhere alpha means arousal and is benign. If that is the mechanism, the true modifier is not
+aetiology but whether the cortex can **organise state** — and aetiology is merely a proxy for "is this alpha
+coma".
+
+Tested with an arousal-organisation composite **AO** = any of `pdr`, `awake`, `spindles`, `n1`, `n2`,
+`vertex wave`, `k_complexes`, `posts`, built from findings columns already present — no re-extraction.
+`diffuse Beta` was deliberately excluded from AO (it is itself fast content; including it would be circular).
+Cohort n = 2,449; 41.5 % 30-day death; 48.5 % anoxic; AO present 67.4 %; median age 60 [42–71].
+
+### M0 · AO varies in both arms, and is itself a strong death marker
+
+| cell | n | 30-day death | median age |
+|---|---|---|---|
+| anoxic, AO present | 671 | 42.0 % | 56 |
+| anoxic, AO absent | 516 | **74.8 %** | 59 |
+| non-anoxic, AO present | 979 | 22.0 % | 61 |
+| non-anoxic, AO absent | 283 | **47.3 %** | 62 |
+
+AO prevalence: anoxic **56.5 %**, non-anoxic **77.6 %**. Losing arousal-organisation roughly **doubles**
+mortality in both arms — a large main effect, independent of anything about the reversal.
+
+### M1/M2 · AO modifies the magnitude, but does not set the sign
+
+AO × content interaction (age-adjusted): **−0.208 [−0.400, −0.035]**, excludes zero and in the predicted
+direction — where the cortex can organise, fast content is more protective.
+
+But the model-free 2×2 is decisive against F1's actual claim:
+
+| cell | n | AUC of content → 30-day death |
+|---|---|---|
+| anoxic, AO present | 671 | 0.548 [0.500, 0.596] |
+| anoxic, AO absent | 516 | **0.608 [0.556, 0.655]** ✳ |
+| non-anoxic, AO present | 979 | **0.436 [0.394, 0.481]** ✳ |
+| non-anoxic, AO absent | 283 | **0.424 [0.349, 0.491]** ✳ |
+
+✳ = excludes 0.5. **The non-anoxic arm is protective whether or not the cortex can organise (0.436 vs
+0.424 — essentially identical), and the anoxic arm is harmful either way.** The registered STRONG criterion
+required both arms protective within AO-present *or* both harmful within AO-absent; **neither holds**. The
+sign tracks **aetiology**, not arousal-organisation. What AO does is sharpen the anoxic arm (0.608 without
+organisation vs 0.548 with) — exactly what alpha coma would do as a *modifier*.
+
+### M3/M4 · The placebo gate fails outright
+
+| model | aetiology × content | attenuation vs base |
+|---|---|---|
+| base (age-adjusted) | +0.690 [+0.448, +0.969] | — |
+| + AO × content | +0.650 [+0.424, +0.926] | **+6 %** |
+| **placebo: + focal-slowing × content** | +0.602 [+0.378, +0.888] | **+13 %** |
+
+**A non-arousal finding attenuates the aetiology interaction more than twice as much as AO does.** The
+attenuation therefore carries no weight, exactly as the pre-registered gate specified.
+
+### M5 · The diffuse-beta probe is unusable
+
+`diffuse Beta` prevalence is **1.9 %** (anoxic) and **5.4 %** (non-anoxic) — 23 and 68 patients, both below
+the analysis floor. Reported as not estimable rather than as a null.
+
+### Verdict, and a second verdict-logic bug caught
+
+**F1 PARTIAL.** Arousal-organisation is a real effect modifier and a powerful independent prognostic marker,
+but it is **not the mechanism of the reversal**.
+
+**The script's first verdict said "F1 SUPPORTED" and was wrong**, for two reasons now fixed in the code:
+its `sign()` helper treated a cell *spanning* 0.5 as satisfying "protective", letting a null cell clear a
+criterion that demanded a direction; and its placebo check asked whether the placebo attenuated a lot in
+absolute terms rather than **whether it attenuated more than AO**. This is the second verdict-logic defect in
+two results (cf. R415's ordering bug) — **the pattern is that permissive comparison operators quietly convert
+a null into a pass.**
+
+### Why the sub-band re-extraction still runs
+
+The registration tied the expensive S3 pass to this result. F1 is demoted to a modifier rather than
+eliminated, and candidates **F2** (the slow denominator — `alpha_beta` is a ratio, so the reversal may live
+in 1–8 Hz) and **F3** (monotony/dispersion) are untested and **independent of AO**. The alpha-vs-beta split
+is *more* informative now that arousal-organisation has failed to explain the sign. Stated here rather than
+silently departing from the registration.
+
+**Cumulative distinct results: 416.**
