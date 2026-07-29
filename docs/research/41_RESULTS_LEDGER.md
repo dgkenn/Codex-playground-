@@ -3316,3 +3316,62 @@ materially different and more precise claim than the one the project has been ca
 stated this way in any manuscript.
 
 **Cumulative distinct results: 417.**
+
+---
+
+## R418 · Mutual adjustment: monotony CLOSES, orthogonality to power is ESTABLISHED, and the decomposition is additive
+
+R417 reported four marginal reversals and refused to call any of them independent. This settles it. Every
+measure is entered **with its own aetiology interaction** — never as a bare main effect, which is the standard
+way to make an interaction look robust when it is not. n = 2,449.
+
+| model | interaction reported | value | retains |
+|---|---|---|---|
+| marginals | alpha_beta | +0.690 [+0.448, +0.974] | — |
+| | ab_iqr | +0.373 [+0.173, +0.605] | — |
+| | alpha_frac | +0.467 [+0.276, +0.675] | — |
+| | beta_frac | +0.593 [+0.337, +0.991] | — |
+| **U1** | **ab_iqr \| + alpha_beta** | **−0.099 [−0.418, +0.209]** | **includes zero** |
+| U1 | alpha_beta \| + ab_iqr | +0.755 [+0.398, +1.203] | 109 % |
+| **U2** | **alpha_beta \| + abs fast + abs slow** | **+0.807 [+0.355, +1.333]** | **117 %** |
+| U3 | alpha_frac \| + beta_frac | +0.343 [+0.078, +0.599] | 73 % |
+| U3 | beta_frac \| + alpha_frac | +0.340 [+0.054, +0.703] | 57 % |
+
+### U1 · Candidate F3 (monotony) is CLOSED
+
+`ab_iqr`'s marginal reversal vanishes once level is adjusted for (−0.099, includes zero), while `alpha_beta`
+is *unaffected* by adjusting for dispersion (109 %). **Within-patient variability of the ratio is level in
+disguise.** F3 is closed — the fifth candidate to fall.
+
+### U2 · "Balance, not amount" is now a FITTED result
+
+The aetiology × `alpha_beta` interaction adjusted for **both** absolute band powers *and* their own
+interactions is **+0.807 [+0.355, +1.333]** — not merely preserved but slightly strengthened (117 %). R417
+inferred orthogonality from a correlation of +0.002; it is now established in a model that gives absolute
+power every chance to absorb the effect and it does not.
+
+### U3 · Both sub-bands carry it, and the decomposition is ADDITIVE
+
+Head-to-head, **both survive**: alpha +0.343 [+0.078, +0.599] and beta +0.340 [+0.054, +0.703], at
+essentially equal strength, correlating only +0.394 with modest CI inflation (×1.30 / ×0.99). This refines
+R417's "not localised": it is not that the split buys nothing — it is that **alpha and beta each carry the
+reversal independently and equally.**
+
+**And the numbers cohere in a way that validates the whole decomposition:** the two adjusted sub-band
+interactions sum to **+0.683**, against the composite `alpha_beta` marginal of **+0.690**. The
+decomposition is additive to within 1 %, which is what it should be if the sub-bands are measuring parts of
+one coherent quantity rather than three separate noisy things.
+
+### Where the mechanism hunt now stands — six candidates closed
+
+| candidate | status |
+|---|---|
+| A · GABAergic drug signature | dead (R414) |
+| B · Thalamocortical / mesocircuit | open, partly tested (R395–R396) |
+| C · Interneuron loss / epileptogenicity | demoted (R415) |
+| **F1 · Alpha coma** | **closed** — modifier only (R416), and not frequency-localised (R417/R418) |
+| **F2 · Slow denominator** | **rejected** — neither absolute power reverses (R417), orthogonality fitted (R418) |
+| **F3 · Monotony** | **CLOSED — R418** |
+| E · Guideline-driven withdrawal | dead (R409–R410) |
+
+**Cumulative distinct results: 418.**
