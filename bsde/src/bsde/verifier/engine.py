@@ -389,6 +389,76 @@ def layer_adversarial(cand: Candidate, coh: Cohort, rng) -> list:
     return ev
 
 
+REDUNDANT_R = 0.98      # at or above this, two measures are the same measurement under two names
+NEAR_REDUNDANT_R = 0.90
+
+
+def check_redundancy(cand: Candidate, values: np.ndarray, baseline: np.ndarray,
+                     baseline_name: str, baseline_complexity: int = 2) -> Evidence:
+    """LABEL-FREE. Is this candidate a re-parameterisation of a simpler one?
+
+    This check needs no outcome, no diagnosis and no cohort structure, which makes it the only part of the
+    engine that can run on a dataset shipping nothing but EEG — and there are many such datasets. It is also
+    the check that settles the question E01 was built to answer.
+
+    It is FATAL above `REDUNDANT_R`, and only when the candidate is the more complex of the two. The
+    reasoning: a candidate that correlates with a simpler measure at 0.98+ is not a distinct construct that
+    happens to agree; it is the same number. If the candidate's declared interpretation claims to capture
+    something the simpler measure does not — as UCE v1's claim to be a two-dimensional anteroposterior
+    construct does — then that specific claim is refuted, whatever the candidate's predictive performance
+    turns out to be. Performance and identity are separate questions and this check is about identity.
+
+    Between NEAR_REDUNDANT_R and REDUNDANT_R the check fails non-fatally: the candidate may still be earning
+    its extra complexity, but it must now do so explicitly against the baseline.
+
+    Spearman rather than Pearson, so a monotone re-scaling of the same quantity is caught. That matters here
+    because a weighted mean of two standardised variables is exactly such a re-scaling.
+    """
+    r = spearman(values, baseline)
+    ar = abs(r) if np.isfinite(r) else float("nan")
+    n = int((np.isfinite(np.asarray(values, float)) & np.isfinite(np.asarray(baseline, float))).sum())
+    if not np.isfinite(ar):
+        return Evidence("redundancy_with_simpler_measure", "adversarial", NOT_RUN,
+                        "the rank correlation with the baseline could not be computed",
+                        {"n": n}, item="complexity_interpretability")
+    simpler = baseline_complexity < cand.complexity
+    if ar >= REDUNDANT_R and simpler:
+        return Evidence(
+            "redundancy_with_simpler_measure", "adversarial", FAIL,
+            f"|Spearman r| with {baseline_name} is {ar:.4f} across n={n} recordings, at or above the {REDUNDANT_R} "
+            f"identity threshold, and the candidate is the more complex of the two "
+            f"(complexity {cand.complexity} vs {baseline_complexity}). These are not two measures that "
+            f"agree; they are one measure under two names. The candidate's declared interpretation — "
+            f"\"{cand.interpretation[:120]}...\" — claims structure that this correlation shows is absent.",
+            {"abs_spearman": ar, "n": n, "complexity": cand.complexity,
+             "baseline_complexity": baseline_complexity, "threshold": REDUNDANT_R},
+            fatal=True, item="complexity_interpretability")
+    if not simpler:
+        # No simpler alternative was offered, so redundancy is not even askable. Saying "below the
+        # threshold" here would be a false statement whenever r is high -- and for the trivial baseline
+        # compared against itself, r is exactly 1.
+        return Evidence(
+            "redundancy_with_simpler_measure", "adversarial", NOT_APPLICABLE,
+            f"no simpler alternative was offered for comparison (candidate complexity {cand.complexity}, "
+            f"comparator {baseline_name} at {baseline_complexity}), so there is nothing this candidate "
+            f"could be a redundant re-parameterisation OF. The measured |Spearman r| of {ar:.4f} across "
+            f"n={n} recordings is reported for the record and carries no verdict.",
+            {"abs_spearman": ar, "n": n, "complexity": cand.complexity,
+             "baseline_complexity": baseline_complexity},
+            item="complexity_interpretability")
+    status = FAIL if ar >= NEAR_REDUNDANT_R else PASS
+    return Evidence(
+        "redundancy_with_simpler_measure", "adversarial", status,
+        f"|Spearman r| with {baseline_name} is {ar:.4f} across n={n} recordings"
+        + (f", above the {NEAR_REDUNDANT_R} near-redundancy threshold; the extra complexity "
+           f"({cand.complexity} vs {baseline_complexity}) must now be justified by a measured increment"
+           if status == FAIL else
+           ", below the near-redundancy threshold — the candidate is measuring something distinguishable"),
+        {"abs_spearman": ar, "n": n, "complexity": cand.complexity,
+         "baseline_complexity": baseline_complexity},
+        item="complexity_interpretability")
+
+
 def layer_cross_domain(cand: Candidate, cohorts: Sequence[Cohort], rng) -> list:
     """Layer 4. Leave-one-dataset-out: the direction must hold in every held-out dataset separately.
 

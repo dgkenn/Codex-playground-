@@ -282,3 +282,59 @@ def test_continuous_nuisances_stratify_by_tertile():
 def test_categorical_nuisances_stratify_by_level():
     v = np.array(["A", "B", "A", "C"])
     assert set(np.unique(_strata_of(v))) == {"A", "B", "C"}
+
+
+# ------------------------------------------------------------------------------------------------------
+# the label-free redundancy check -- the only layer that runs on a dataset with no labels
+# ------------------------------------------------------------------------------------------------------
+
+def test_a_near_perfect_copy_of_a_simpler_measure_is_refuted():
+    """The E01 situation in miniature: a complex candidate that is a monotone rescaling of a simple one."""
+    from bsde.verifier.engine import check_redundancy
+    rng = np.random.default_rng(21)
+    base = rng.normal(size=200)
+    cand_vals = 3.7 * base + 0.4                      # a pure affine rescaling -- identical information
+    e = check_redundancy(_cand(complexity=4), cand_vals, base, "z(mean exponent)", baseline_complexity=2)
+    assert e.status == FAIL and e.fatal
+    assert e.values["abs_spearman"] > 0.99
+
+
+def test_redundancy_is_judged_on_ranks_so_a_monotone_transform_does_not_hide_it():
+    """Pearson would be misled by a strong nonlinearity; Spearman is not, and a weighted mean of two
+    standardised variables is exactly the kind of monotone rescaling that must be caught."""
+    from bsde.verifier.engine import check_redundancy
+    rng = np.random.default_rng(22)
+    base = rng.uniform(0.1, 3.0, size=300)
+    cand_vals = np.exp(base * 2.0)                    # wildly nonlinear, perfectly rank-preserving
+    e = check_redundancy(_cand(complexity=4), cand_vals, base, "baseline", baseline_complexity=2)
+    assert e.values["abs_spearman"] == pytest.approx(1.0, abs=1e-9)
+    assert e.status == FAIL and e.fatal
+
+
+def test_a_distinguishable_measure_passes_redundancy():
+    from bsde.verifier.engine import check_redundancy
+    rng = np.random.default_rng(23)
+    base = rng.normal(size=300)
+    cand_vals = 0.5 * base + rng.normal(size=300)     # shares variance but is not the same number
+    e = check_redundancy(_cand(complexity=4), cand_vals, base, "baseline", baseline_complexity=2)
+    assert e.status == PASS
+    assert e.values["abs_spearman"] < 0.9
+
+
+def test_redundancy_is_not_applicable_when_no_simpler_alternative_exists():
+    """Two identical measures where the candidate is no more complex than the alternative: there is nothing
+    to demote. Firing here would reject the trivial baseline for being redundant with itself.
+
+    The status must be NOT_APPLICABLE rather than PASS. A PASS would carry the prose "below the
+    near-redundancy threshold", which is a FALSE statement when r is 1.0 -- and that is exactly the line
+    E02 printed for whole_head_exponent before this was fixed. A check that cannot be asked must say so.
+    """
+    from bsde.verifier.engine import check_redundancy
+    from bsde.verifier.report import NOT_APPLICABLE
+    rng = np.random.default_rng(24)
+    base = rng.normal(size=200)
+    e = check_redundancy(_cand(complexity=2), base.copy(), base, "an equally simple measure",
+                         baseline_complexity=2)
+    assert e.status == NOT_APPLICABLE and not e.fatal
+    assert e.values["abs_spearman"] == pytest.approx(1.0, abs=1e-9)
+    assert "below the" not in e.reason, "must not claim a threshold was cleared when r is 1.0"

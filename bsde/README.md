@@ -40,9 +40,18 @@ confirms a known-good measure but that **planted confounds are rejected with the
 | Aperiodic exponent/offset estimator | done, **validated against known ground truth** |
 | Frozen UCE v1 + its mandatory one-feature baseline | done, tested |
 | **E01 on 96 real recordings** | **done — UCE v1's two-region structure is redundant** |
-| Candidate registry | done — `src/bsde/candidates/registry.py` |
-| Verifier layers 1–4 | in progress |
-| Streaming data layer | in progress |
+| Candidate registry + 8 seeded candidates | done — `src/bsde/candidates/` |
+| Verifier layers 1–4 + planted-confound acceptance tests | done — `src/bsde/verifier/` |
+| **E02: the engine reproduced E01 and REJECTed UCE v1 unprompted** | **done** |
+| Governance: licence table, invention notebook, search log | done — `governance/`, `data_registry/` |
+| Streaming data layer | next |
+
+### E02, the engine's known-answer regression
+
+Required to reproduce E01 automatically, with predictions registered before the run, the engine returned
+**REJECT** for `uce_v1` citing `redundancy_with_simpler_measure` at |Spearman r| = **0.9896** against the
+whole-head baseline. All three registered predictions were met. It demoted the project's own flagship
+construct without being told to, which is the only evidence that matters for a verifier.
 
 ### E01, the first real result
 
@@ -58,7 +67,9 @@ finding the engine must produce automatically rather than by hand.
   rewritten after seeing a test result.
 * A failed active task is **indeterminate**, never "not conscious". The system must be permitted to abstain.
 * **"Nothing survived" is a valid and reportable outcome.**
-* No result is reported from a dataset whose licence and access terms are unverified.
+* No result is reported, and no candidate promoted, from a dataset whose licence and access terms are
+  unverified. **I-CARE is CC BY-NC-SA 4.0 (verified against PhysioNet) — scientifically usable, commercially
+  blocked**, and whether a model trained on it counts as ShareAlike "Adapted Material" is a counsel question.
 * No protected patient data in this repository.
 
 ## Layout
