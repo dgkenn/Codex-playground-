@@ -3375,3 +3375,58 @@ one coherent quantity rather than three separate noisy things.
 | E · Guideline-driven withdrawal | dead (R409–R410) |
 
 **Cumulative distinct results: 418.**
+
+---
+
+## R419 · The reversal is not a targeted-temperature-management artefact — the last named confound is retired
+
+The final named reviewer objection: post-arrest patients are cooled on protocol, cooling shifts EEG spectral
+balance, and R417/R418 established the reversal to be exactly a spectral-balance phenomenon. Temperature was
+extracted for the full findings cohort (551 parquet parts; 18,657,227 numeric measurement rows).
+
+### G0 · The units gate passed
+
+Median per-patient **minimum** temperature within ±48 h of the EEG: **36.17 °C** across **26,107** patients —
+below normal but physiological, as per-patient minima should be. A silent Fahrenheit/Celsius mix would have
+put half the cohort near "98.6 °C" and made every hypothermia flag nonsense; the conversion keyed on both the
+unit string and physiological impossibility.
+
+### G1 · The confound has a real mechanism — which is why the test was worth running
+
+| arm | hypothermic (<35 °C) | never <35 °C | median min T |
+|---|---|---|---|
+| anoxic | 656 | 323 | **33.11 °C** |
+| non-anoxic | 135 | 851 | **36.00 °C** |
+
+**Hypothermia prevalence differs by 53.3 pp between arms (67.0 % vs 13.7 %)** and median minimum temperature
+differs by ~3 °C. This is the strongest aetiology-linked confound the project has measured — far larger than
+the 9.8 pp sedation gap in R414. The objection was well founded.
+
+### G2/G3 · And the reversal survives it anyway
+
+| stratum | n | aetiology × content interaction |
+|---|---|---|
+| full temperature-documented cohort | 1,965 | +0.671 [+0.400, +1.007] |
+| **never below 35 °C (PRIMARY)** | **1,174** | **+0.479 [+0.211, +0.847]** — excludes zero |
+| ever below 35 °C (mirror) | 791 | +0.570 [−0.301, +1.467] — includes zero |
+
+Matched subsamples of the full cohort at n = 1,174 with **no** temperature restriction fail to exclude zero
+**0 % of the time (0/300)**, so the primary stratum's success is not a size artefact — and the mirror
+stratum's failure is a power result (n = 791), not evidence for a thermal account.
+
+### G5 · The dose test agrees
+
+Temperature × content interaction: **−0.134 [−0.281, +0.004]**, includes zero. A thermal account predicts
+minimum temperature should itself modify the content→death association. It does not.
+
+### Status of the confound list
+
+**Every named confound has now been tested and none accounts for the reversal:** sedation (R414 — the
+reversal is *wider* without it), absolute signal power (R418 — retains 117 %), arousal-organisation (R416 —
+a modifier, not the sign), epileptogenicity (R415 — refuted directionally), guideline-driven withdrawal
+(R409–R410), and temperature (R419). The finding is now better defended than any explanation offered for it.
+
+**Limits.** OMOP records charted temperatures, not a TTM protocol flag; "never recorded below 35 °C" is
+weaker than "never cooled". Patients with no temperature record were excluded, not assumed normothermic.
+
+**Cumulative distinct results: 419.**
