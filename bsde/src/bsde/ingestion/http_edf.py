@@ -150,15 +150,30 @@ def _dimension_to_source_units(dim: str) -> str:
 
 
 def decode_edf_window(main_header: bytes, signal_headers: bytes, data_bytes: bytes,
-                       skip_records: int) -> Tuple[np.ndarray, List[str], float, Dict[str, Any]]:
+                       skip_records: int,
+                       select: "Sequence[int] | None" = None
+                       ) -> Tuple[np.ndarray, List[str], float, Dict[str, Any]]:
     """Decode a byte-range window of EDF data records into (data[n_ch, n_samp] in microvolts, ch_names,
     sfreq, meta). `data_bytes` must start at a record boundary `skip_records` records into the file --
     the caller is responsible for having fetched the right span; this function only decodes it.
 
-    All channels are required to declare the SAME recognised physical dimension (EDF allows differing
-    units per channel; mixed-unit files are rejected rather than silently converted per-channel-wrong, but
-    per-channel conversion IS applied correctly when dimensions differ, since `to_microvolts` is invoked
-    per channel below).
+    `select` restricts decoding to those channel indices. Units are validated and sample rates are checked
+    for the SELECTED channels only, which is what makes polysomnography readable at all.
+
+    TWO THINGS THIS REFUSES TO DO, both learned from Sleep-EDF (SC4001E0-PSG.edf).
+
+    1. **It will not guess a unit.** That file declares `uV` for its two EEG channels and its EOG/EMG, but
+       `DegC` for a rectal thermistor and an EMPTY dimension for `Resp oro-nasal` and `Event marker`. A
+       blank dimension raises, because the alternative -- assuming microvolts -- would put a respiration
+       trace into an EEG feature as though it were a voltage.
+
+    2. **It will not mix sampling rates into one array.** EDF permits a different samples-per-record per
+       channel, and that file uses 3000/record for EEG (100 Hz) against 30/record for the slow channels
+       (1 Hz). The previous implementation took `min(len(v))` across channels and `vstack`ed, which
+       silently truncated the 100 Hz EEG to one hundredth of its samples while still reporting
+       `sfreq = 100` -- a wrong array and a wrong rate, with no error. Mixed rates among the selected
+       channels now raise and name the offending channels, and the fix is to pass a `select`/`channel_regex`
+       that picks one rate.
     """
     meta = parse_edf_header(main_header, signal_headers)
     ns = meta["n_signals"]
@@ -177,30 +192,64 @@ def decode_edf_window(main_header: bytes, signal_headers: bytes, data_bytes: byt
     dmin, dmax = meta["dig_min"], meta["dig_max"]
     rec_dur = meta["record_duration"] or 1.0
 
-    out = []
-    fs_per_ch = []
+    keep = list(range(ns)) if select is None else [int(i) for i in select]
+    if not keep:
+        raise ValueError("no channels selected")
+    bad = [i for i in keep if i < 0 or i >= ns]
+    if bad:
+        raise ValueError(f"channel indices out of range for a {ns}-signal file: {bad}")
+
+    # Refuse mixed sampling rates among the SELECTED channels rather than truncating to the shortest.
+    rates = {i: nsamp[i] / rec_dur for i in keep}
+    if len(set(rates.values())) > 1:
+        detail = ", ".join(f"{labels[i]!r}={rates[i]:g} Hz" for i in keep)
+        raise ValueError(
+            "selected EDF channels have different sampling rates and cannot form one array: "
+            f"{detail}. Pass a channel_regex/select that picks a single rate (for polysomnography, "
+            "'^EEG ' selects the EEG channels).")
+
+    offsets = {}
     idx = 0
     for i in range(ns):
+        offsets[i] = idx
+        idx += nsamp[i]
+
+    out = []
+    for i in keep:
         n = nsamp[i]
-        block = arr[:, idx: idx + n].astype(np.float64).ravel()
-        idx += n
+        block = arr[:, offsets[i]: offsets[i] + n].astype(np.float64).ravel()
         span_d = (dmax[i] - dmin[i]) or 1.0
         gain = (pmax[i] - pmin[i]) / span_d
         physical = (block - dmin[i]) * gain + pmin[i]
-        source_units = _dimension_to_source_units(phys_dim[i])
-        out.append(to_microvolts(physical, source_units))
-        fs_per_ch.append(n / rec_dur)
+        out.append(to_microvolts(physical, _dimension_to_source_units(phys_dim[i])))
 
-    n_min = min(len(v) for v in out)
-    data = np.vstack([v[:n_min] for v in out])
-    sfreq = fs_per_ch[0] if fs_per_ch else 0.0
+    data = np.vstack(out)
+    sfreq = nsamp[keep[0]] / rec_dur
     meta_out = dict(meta)
-    meta_out.update(source_units="microvolts", skip_records=skip_records, got_records=got_records)
-    return data, list(labels), float(sfreq), meta_out
+    meta_out.update(source_units="microvolts", skip_records=skip_records, got_records=got_records,
+                    selected_indices=keep, selected_labels=[labels[i] for i in keep])
+    return data, [labels[i] for i in keep], float(sfreq), meta_out
+
+
+def select_channels(labels: "Sequence[str]", channel_regex: "str | None") -> "List[int] | None":
+    """Indices of labels matching `channel_regex` (case-insensitive search). None regex -> None (all).
+
+    Raises when the pattern matches nothing, rather than silently falling back to every channel: a typo in
+    a regex would otherwise quietly reintroduce the thermistor.
+    """
+    if not channel_regex:
+        return None
+    import re as _re
+    rx = _re.compile(channel_regex, _re.I)
+    idx = [i for i, lab in enumerate(labels) if rx.search(str(lab))]
+    if not idx:
+        raise ValueError(f"channel_regex {channel_regex!r} matched none of {list(labels)}")
+    return idx
 
 
 def read_edf_window_http(url: str, window_s: float = 300.0, start_seconds: float = 0.0,
-                          timeout: float = 60.0) -> Tuple[np.ndarray, List[str], float, Dict[str, Any]]:
+                          timeout: float = 60.0, channel_regex: "str | None" = None
+                          ) -> Tuple[np.ndarray, List[str], float, Dict[str, Any]]:
     """Fetch just the header plus the requested window of an EDF file served over HTTPS, and decode it.
 
     Two requests total: one Range GET for the fixed-size headers (whose combined length is not known
@@ -224,7 +273,8 @@ def read_edf_window_http(url: str, window_s: float = 300.0, start_seconds: float
 
     data_off = meta["data_offset"] + skip * meta["record_bytes"]
     data_bytes = _http_get_range(url, data_off, want_records * meta["record_bytes"], timeout=timeout)
-    return decode_edf_window(main_header, signal_headers, data_bytes, skip_records=skip)
+    sel = select_channels(meta["labels"], channel_regex)
+    return decode_edf_window(main_header, signal_headers, data_bytes, skip_records=skip, select=sel)
 
 
 class HttpEDFAdapter(Adapter):
@@ -238,7 +288,8 @@ class HttpEDFAdapter(Adapter):
     units = "microvolts"
 
     def __init__(self, urls: Sequence[str], dataset: str, window_s: float = 300.0,
-                 start_seconds: float = 0.0, subject_from_url=None) -> None:
+                 start_seconds: float = 0.0, subject_from_url=None,
+                 channel_regex: "str | None" = None) -> None:
         self.urls = list(urls)
         self.dataset = dataset
         self.name = f"http_edf:{dataset}"
@@ -247,6 +298,9 @@ class HttpEDFAdapter(Adapter):
         # A dataset with several recordings per subject MUST pass this, or subject-level splitting
         # silently degrades to recording-level splitting (see base.py's RecordingRef.__post_init__).
         self._subject_from_url = subject_from_url
+        # Polysomnography files mix EEG with EOG/EMG/thermistor/respiration channels at different sampling
+        # rates and units; pass e.g. '^EEG ' to select one coherent set. See decode_edf_window's docstring.
+        self.channel_regex = channel_regex
 
     def list_recordings(self) -> List[RecordingRef]:
         out = []
@@ -263,6 +317,7 @@ class HttpEDFAdapter(Adapter):
     def _make_loader(self, url: str):
         def load():
             data, ch_names, sfreq, meta = read_edf_window_http(
-                url, window_s=self.window_s, start_seconds=self.start_seconds)
+                url, window_s=self.window_s, start_seconds=self.start_seconds,
+                channel_regex=self.channel_regex)
             return data, ch_names, sfreq, meta
         return load

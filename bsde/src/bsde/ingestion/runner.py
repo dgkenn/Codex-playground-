@@ -126,8 +126,16 @@ def main(argv: Sequence[str] | None = None) -> int:
     from bsde.candidates.registry import REGISTRY
 
     ap = argparse.ArgumentParser(description="Stream a dataset into a feature table. Raw EEG never lands.")
-    ap.add_argument("--adapter", required=True, choices=["brainvision"])
-    ap.add_argument("--path", required=True)
+    ap.add_argument("--adapter", required=True,
+                    choices=["brainvision", "openneuro", "http_edf", "wfdb", "openneuro_brainvision"])
+    ap.add_argument("--path", required=True,
+                    help="brainvision: local dir | openneuro*: accession | http_edf: file with one URL per "
+                         "line | wfdb: base URL (record names come from --records)")
+    ap.add_argument("--records", default="", help="wfdb only: file with one record name per line")
+    ap.add_argument("--suffix", default="_eeg.edf", help="openneuro only: key suffix to select")
+    ap.add_argument("--window-s", type=float, default=300.0, dest="window_s")
+    ap.add_argument("--channel-regex", default="", dest="channel_regex",
+                    help="http_edf only: select channels by label regex, e.g. '^EEG ' for polysomnography")
     ap.add_argument("--out", required=True)
     ap.add_argument("--dataset", default="")
     ap.add_argument("--shard", type=int, default=0)
@@ -140,8 +148,29 @@ def main(argv: Sequence[str] | None = None) -> int:
     cands = (REGISTRY.all() if not a.candidates
              else [REGISTRY.get(n.strip()) for n in a.candidates.split(",") if n.strip()])
 
-    from bsde.ingestion.local_brainvision import BrainVisionAdapter
-    adapter = BrainVisionAdapter(a.path, dataset=a.dataset or os.path.basename(a.path.rstrip("/")))
+    ds = a.dataset or os.path.basename(a.path.rstrip("/"))
+    if a.adapter == "brainvision":
+        from bsde.ingestion.local_brainvision import BrainVisionAdapter
+        adapter = BrainVisionAdapter(a.path, dataset=ds)
+    elif a.adapter == "openneuro":
+        from bsde.ingestion.openneuro_s3 import OpenNeuroS3Adapter
+        adapter = OpenNeuroS3Adapter(a.path, dataset=ds, suffix=a.suffix, window_s=a.window_s)
+    elif a.adapter == "openneuro_brainvision":
+        from bsde.ingestion.openneuro_brainvision import OpenNeuroBrainVisionAdapter
+        adapter = OpenNeuroBrainVisionAdapter(a.path, dataset=ds, window_s=a.window_s)
+    elif a.adapter == "http_edf":
+        from bsde.ingestion.http_edf import HttpEDFAdapter
+        urls = [ln.strip() for ln in open(a.path) if ln.strip() and not ln.startswith("#")]
+        adapter = HttpEDFAdapter(urls, dataset=ds, window_s=a.window_s,
+                                 channel_regex=a.channel_regex or None)
+    elif a.adapter == "wfdb":
+        from bsde.ingestion.physionet_wfdb import PhysioNetWFDBAdapter
+        if not a.records:
+            raise SystemExit("--records is required for --adapter wfdb")
+        recs = [ln.strip() for ln in open(a.records) if ln.strip() and not ln.startswith("#")]
+        adapter = PhysioNetWFDBAdapter(a.path, recs, dataset=ds, window_s=a.window_s)
+    else:
+        raise SystemExit(f"unhandled adapter {a.adapter}")
 
     print(f"streaming {adapter.name} -> {a.out}")
     print(f"   candidates: {[c.name for c in cands]}")
