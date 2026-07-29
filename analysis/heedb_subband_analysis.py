@@ -209,6 +209,7 @@ def main():
         print(f"   {m:>12} " + " ".join(f"{np.corrcoef(V[:, i], V[:, j])[0, 1]:>11.3f}"
                                         for j in range(len(MEASURES))))
     ab_i, sf_i = MEASURES.index("alpha_beta"), MEASURES.index("slow_frac")
+    corr_ab_fast = float(np.corrcoef(V[:, ab_i], V[:, MEASURES.index("log_fast_pw")])[0, 1])
     print(f"\n   alpha_beta vs slow_frac: r = {np.corrcoef(V[:, ab_i], V[:, sf_i])[0,1]:+.4f}"
           f"  — slow_frac = 1 - alpha_beta EXACTLY, so it cannot be an independent finding.")
 
@@ -259,9 +260,10 @@ def main():
     print("\n" + "=" * 100)
     print("V3  DIRECTION, model-free — per-aetiology AUC (a reversal = opposite sides of 0.5)")
     print("=" * 100)
+    revd, aucs = {}, {}
     print(f"   {'measure':>12} {'anoxic AUC':>26} {'non-anoxic AUC':>26} {'reversal?':>11}")
     for i, m in enumerate(MEASURES):
-        line, sides = f"   {m:>12}", []
+        line, sides, pt = f"   {m:>12}", [], []
         for am in (ax == 1, ax == 0):
             idx = np.flatnonzero(am)
             a0 = auc(V[idx, i], y[idx])
@@ -274,8 +276,10 @@ def main():
             lo, hi = np.percentile(bs, [2.5, 97.5])
             star = "*" if (lo - .5) * (hi - .5) > 0 else " "
             sides.append(1 if lo > .5 else (-1 if hi < .5 else 0))
+            pt.append(a0)
             line += f"   {a0:.3f} [{lo:.3f}, {hi:.3f}]{star}"
         rev = "YES" if (sides[0] * sides[1] == -1) else "no"
+        revd[m] = (sides[0] * sides[1] == -1); aucs[m] = pt
         print(line + f" {rev:>11}")
     print("   * = excludes 0.5")
 
@@ -300,16 +304,33 @@ def main():
             print("   8-30 Hz phenomenon and no alpha-specific account is needed.")
         else:
             print("   NEITHER SUB-BAND clears zero alone — the split costs power and localises nothing.")
-        if sig("log_slow_pw") and not sig("log_fast_pw"):
-            print("   F2 SUPPORTED — ABSOLUTE SLOW power carries the reversal and absolute fast does not.")
-            print("   The finding is a slow-content reversal seen through a denominator, and the paper's")
-            print("   central description would need rewriting.")
-        elif sig("log_fast_pw") and not sig("log_slow_pw"):
-            print("   F2 REJECTED — absolute FAST power carries it; the measure means what it says.")
+        # F2 is about whether an ABSOLUTE power REVERSES, which is a question about the two arms sitting
+        # on opposite sides of 0.5 -- not merely about an interaction coefficient clearing zero. The first
+        # version tested only the coefficient and so called a definite answer "unresolved".
+        abs_rev = [m for m in ("log_fast_pw", "log_slow_pw") if revd.get(m)]
+        if not abs_rev:
+            print("   F2 ANSWERED, and it is the sharpest result here — NEITHER absolute power reverses.")
+            print(f"      absolute fast: anoxic {aucs['log_fast_pw'][0]:.3f} / non-anoxic "
+                  f"{aucs['log_fast_pw'][1]:.3f}   (same side of 0.5)")
+            print(f"      absolute slow: anoxic {aucs['log_slow_pw'][0]:.3f} / non-anoxic "
+                  f"{aucs['log_slow_pw'][1]:.3f}   (same side of 0.5)")
+            print("   More absolute power of EITHER band is protective in BOTH aetiologies. The reversal")
+            print("   exists only in the RATIO -- i.e. in SPECTRAL BALANCE -- and `alpha_beta` correlates")
+            print(f"   {corr_ab_fast:+.3f} with absolute fast power, so the reversing quantity is essentially")
+            print("   ORTHOGONAL to how much signal there is. F2 as posed (slow carries it) is REJECTED,")
+            print("   and so is the mirror-image claim for fast.")
+        elif len(abs_rev) == 1:
+            print(f"   F2: {abs_rev[0]} reverses and the other does not — the reversal is attributable to")
+            print("   that absolute band, not to the ratio.")
         else:
-            print("   F2 UNRESOLVED on absolute powers (both or neither clear zero).")
-        print("   F3 monotony: " + ("ab_iqr carries an independent reversal." if sig("ab_iqr")
-                                    else "ab_iqr does NOT carry the reversal — level, not variability."))
+            print("   F2: both absolute powers reverse — unexpected; treat with suspicion.")
+        if sig("ab_iqr"):
+            corr_iqr = float(np.corrcoef(V[:, MEASURES.index("ab_iqr")], V[:, ab_i])[0, 1])
+            print(f"   F3 monotony: ab_iqr shows a MARGINAL reversal — but it correlates {corr_iqr:+.3f}")
+            print("   with alpha_beta, so INDEPENDENCE IS NOT ESTABLISHED HERE. Whether dispersion adds")
+            print("   anything beyond level requires mutual adjustment, which this script does not do.")
+        else:
+            print("   F3 monotony: ab_iqr does NOT carry the reversal — level, not variability.")
     print("\n   slow_frac is 1 - alpha_beta exactly; any 'result' for it is arithmetic (V4).")
     print("   Localising a signal in frequency constrains mechanisms; it does not identify one.")
     return 0

@@ -3256,3 +3256,63 @@ is *more* informative now that arousal-organisation has failed to explain the si
 silently departing from the registration.
 
 **Cumulative distinct results: 416.**
+
+---
+
+## R417 · The reversal is BROADBAND and lives entirely in spectral BALANCE — absolute power does not reverse at all
+
+The decisive S3 re-extraction: `alpha_beta` decomposed on the SAME bursts into alpha vs beta, absolute band
+powers, and within-patient dispersion. n = 2,473 recordings extracted (100 % success), analysis cohort 2,449.
+
+### V0 · The reproduction gate, and it caught a real bug before it caught a result
+
+**First run FAILED**: Pearson r = **0.7229** against the cached `alpha_beta`, only 6 % reproducing exactly,
+mean signed difference −0.0098 (no shift — the signature of scoring *different windows*, not computing a
+different quantity). Cause: the extraction imported `heedb_burst_morphology`'s **constants** but
+re-implemented its **acceptance rules**, omitting the finite-sample filter, the 20 s minimum, the
+`dead.mean() > 0.5` rejection and the **≥ 4-burst requirement** — so it scored windows the parent discards.
+After copying every rule line-for-line: **r = 1.0000, mean difference −0.0000, 2,473/2,473 (100 %)
+reproducing to 1e-4.** The gate is what stood between a subtle segmentation difference and a published
+sub-band claim.
+
+### V2/V3 · Every ratio-based measure reverses; neither absolute power does
+
+| measure | aetiology × measure interaction | anoxic AUC | non-anoxic AUC | reversal? |
+|---|---|---|---|---|
+| **alpha_beta** (reference) | **+0.690 [+0.448, +0.974]** | 0.577 ✳ | 0.426 ✳ | **YES** |
+| alpha_frac (8–13) | +0.467 [+0.279, +0.686] | 0.534 ✳ | 0.420 ✳ | **YES** |
+| beta_frac (13–30) | +0.593 [+0.326, +0.970] | 0.576 ✳ | 0.428 ✳ | **YES** |
+| ab_iqr (dispersion) | +0.373 [+0.162, +0.604] | 0.553 ✳ | 0.443 ✳ | **YES** |
+| **log_fast_pw** (absolute) | +0.111 [−0.087, +0.303] | **0.390** ✳ | **0.403** ✳ | **no** |
+| **log_slow_pw** (absolute) | −0.172 [−0.365, +0.028] | **0.371** ✳ | **0.445** ✳ | **no** |
+
+✳ = excludes 0.5. `slow_frac` is omitted as a finding: it correlates **−1.0000** with `alpha_beta` by
+construction (V4), so its mirror-image result is arithmetic.
+
+### The three candidates, answered
+
+**F1 (alpha coma) — CLOSED.** The reversal is **not localised in frequency**. Both sub-bands carry it, and
+beta (+0.593; AUC 0.576/0.428) carries it at least as strongly as alpha (+0.467; 0.534/0.420). No
+alpha-specific account is needed. With R416 having demoted F1 to a magnitude modifier, this closes it.
+
+**F2 — ANSWERED, and it is the sharpest result of the session.** **Neither absolute power reverses.** More
+absolute power of *either* band is protective in *both* aetiologies (fast 0.390/0.403; slow 0.371/0.445 —
+same side of 0.5, all four intervals excluding it). The reversal exists **only in the ratio**. And
+`alpha_beta` correlates **+0.002** with absolute fast power — **the reversing quantity is essentially
+orthogonal to how much signal there is.** So F2 as posed (slow carries it) is rejected, and so is its
+mirror image for fast.
+
+**F3 (monotony) — marginal, and independence NOT established.** `ab_iqr` reverses (+0.373; 0.553/0.443) but
+correlates **+0.628** with `alpha_beta`. Whether dispersion adds anything beyond level needs mutual
+adjustment, which this script deliberately does not do; the verdict was corrected to say so rather than
+claim an "independent" reversal.
+
+### What this changes about how the lead should be described
+
+**The finding is not "more fast activity predicts death after anoxia".** Absolute fast activity is
+*protective in both groups*. The finding is that the **balance** between fast and slow content — a
+normalised quantity orthogonal to total power — reverses its prognostic meaning by aetiology. That is a
+materially different and more precise claim than the one the project has been carrying, and it should be
+stated this way in any manuscript.
+
+**Cumulative distinct results: 417.**
