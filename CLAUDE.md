@@ -331,6 +331,32 @@ Every rule below was paid for with a wrong result in this project.
     id and a shared credentials file exists) and the 53 S3 scripts call it. **An `unset` in `~/.bashrc` does
     nothing here** — the tool's shells are non-interactive and never source it. That was tried first.
 
+### G. Added 2026-07-29
+
+38. **Before declaring work lost to a container rollback, `git fetch` and compare HEAD against the remote.
+    The rollback restores an OLD COMMIT, not an empty tree — so anything pushed is intact and the local
+    worktree merely looks catastrophic.** A snapshot-restore reset this worktree to an R412-era commit,
+    `bsde/` vanished, `/tmp` was empty, and the workflow journal *and* its script were gone. That much was
+    real. But the conclusion drawn from it — that a 227-line `MASTER_PLAN.md`, a 14-row registry expansion and
+    a `CLAUDE.md` edit had all been destroyed — was **wrong**, and a plan to rewrite them from scratch was
+    written and approved before anyone checked. `git fetch` plus `git merge-base --is-ancestor HEAD
+    origin/<branch>` showed the local HEAD was simply 37 commits behind; `git reset --hard origin/<branch>`
+    restored everything. Only genuinely uncommitted edits were lost, and there were three of them.
+    **Diagnostic order, always:** (1) `git fetch origin <branch>`; (2) `git merge-base --is-ancestor HEAD
+    origin/<branch>` — if it PASSES the local branch is behind and `reset --hard` discards nothing; if it
+    FAILS **stop**, because the reset would destroy real work; (3) `git log --oneline HEAD..origin/<branch>`
+    to size the recovery; (4) only now enumerate what is actually missing. The corollary is the cheap habit
+    that made recovery possible at all: **commit and push at every artifact boundary, not at the end of a
+    work item.** An artifact that has not been pushed does not exist.
+39. **WebFetch fabricated a file manifest, not just a citation — rule 25 extends to ANY record, not only
+    bibliographic ones.** Asked to summarise the Figshare API record for the DoC dataset, WebFetch's
+    summariser invented "435 files" and "91 subject datasets" — numbers that would have exactly corroborated
+    the investigator's brief and would therefore have been believed. It was caught only because the same URL
+    was re-pulled with `curl` and compared byte-for-byte against the local `meta.json`: they were identical,
+    and neither contained anything resembling those figures. Third occurrence of this failure mode here.
+    **Use `curl` plus a parser for any manifest, index, file listing or bibliographic record — never a
+    WebFetch summary of one.** Fabrications that agree with your hypothesis are the ones that survive review.
+
 ---
 
 ## SOP: the ten-result cadence (STANDING)
