@@ -172,7 +172,7 @@ def cluster_bootstrap_ci(stat_fn: Callable[[np.ndarray], float], subject: Sequen
 
 def permutation_null(stat_fn: Callable[[np.ndarray], float], y: Sequence, subject: Sequence, rng,
                      reps: int = 1000) -> dict:
-    """Null distribution from permuting the outcome ACROSS SUBJECTS, keeping each subject's rows together.
+    """Null distribution from permuting the outcome, using the scheme the design actually calls for.
 
     Permuting rows would break the within-subject dependence and produce a null that is too narrow, which
     makes everything look significant. `stat_fn(y_permuted)` returns the statistic under that relabelling.
@@ -185,23 +185,51 @@ def permutation_null(stat_fn: Callable[[np.ndarray], float], y: Sequence, subjec
     y = np.asarray(y, float)
     subject = np.asarray(subject)
     uniq = np.unique(subject)
-    subj_y = np.array([y[subject == u][0] for u in uniq])
     pos = {u: np.flatnonzero(subject == u) for u in uniq}
+
+    # WITHIN-SUBJECT vs BETWEEN-SUBJECT designs need different nulls, and using the wrong one does not
+    # produce a slightly-off null -- it produces no null at all, or a badly wrong one.
+    #
+    # The bug this replaces: the old code took ONE label per subject (`y[subject == u][0]`) and assigned it
+    # to every row of that subject. On the Sleep-EDF wake-vs-N3 cohort each subject contributes exactly two
+    # rows, and because `@N3` sorts before `@W` the first row of all 145 subjects was N3 -- so the
+    # per-subject label vector was the constant 1, every "permutation" of it was still all-ones, every
+    # permuted AUC was NaN for want of a negative class, and the null came back with n_perm = 0. The
+    # machinery gate then correctly refused to issue a verdict (error-catalogue rule 31), which is how this
+    # was found rather than silently believed.
+    #
+    # So: if any subject carries more than one distinct label, this is a within-subject (paired) design and
+    # the labels are shuffled WITHIN each subject, which is the null that asks "is the direction consistent
+    # inside subjects, or could this arise from arbitrary relabelling of each subject's own conditions?".
+    # Otherwise there is one label per subject and whole subjects are permuted, which keeps each subject's
+    # rows together and preserves the between-subject dependence.
+    varying = [u for u in uniq if len(np.unique(y[pos[u]][np.isfinite(y[pos[u]])])) > 1]
+    within_subject = len(varying) > 0
+
     vals = []
     for _ in range(reps):
-        perm = rng.permutation(subj_y)
-        yp = np.empty_like(y)
-        for u, val in zip(uniq, perm):
-            yp[pos[u]] = val
+        yp = y.copy()
+        if within_subject:
+            for u in uniq:
+                idx = pos[u]
+                if idx.size > 1:
+                    yp[idx] = rng.permutation(y[idx])
+        else:
+            subj_y = np.array([y[pos[u]][0] for u in uniq])
+            perm = rng.permutation(subj_y)
+            for u, val in zip(uniq, perm):
+                yp[pos[u]] = val
         v = stat_fn(yp)
         if np.isfinite(v):
             vals.append(v)
     if not vals:
         return {"mean": float("nan"), "q025": float("nan"), "q975": float("nan"),
-                "n": 0, "null_centered": False}
+                "n": 0, "scheme": "within_subject" if within_subject else "between_subject",
+                "null_centered": False}
     v = np.sort(np.asarray(vals, float))
     return {"mean": float(v.mean()), "q025": float(np.quantile(v, 0.025)),
             "q975": float(np.quantile(v, 0.975)), "n": int(len(v)),
+            "scheme": "within_subject" if within_subject else "between_subject",
             "null_centered": bool(abs(v.mean() - 0.5) < 0.05)}
 
 def cv_predict_proba(x: Sequence, y: Sequence, subject: Sequence, rng, folds: int = 5) -> np.ndarray:

@@ -1,0 +1,251 @@
+{
+  "experiment": "E03",
+  "contrast": "unconscious_vs_awake",
+  "search_space_size": 8,
+  "analytic_dof": 1,
+  "n_logged": 8,
+  "summary": {
+    "lempel_ziv": {
+      "verdict": "INCOMPLETE",
+      "datasets": [
+        "ds005620",
+        "sleep_edfx_staged"
+      ],
+      "per_dataset": {
+        "sleep_edfx_staged": {
+          "n": 290,
+          "n_pos": 145,
+          "n_neg": 145,
+          "n_subjects": 145,
+          "dropped": {}
+        },
+        "ds005620": {
+          "n": 94,
+          "n_pos": 64,
+          "n_neg": 30,
+          "n_subjects": 12,
+          "dropped": {}
+        }
+      },
+      "failed": [
+        "directional_discrimination",
+        "beats_trivial_baseline",
+        "complexity_is_earned",
+        "leave_one_dataset_out"
+      ]
+    },
+    "relative_alpha_power": {
+      "verdict": "INCOMPLETE",
+      "datasets": [
+        "ds005620",
+        "sleep_edfx_staged"
+      ],
+      "per_dataset": {
+        "sleep_edfx_staged": {
+          "n": 290,
+          "n_pos": 145,
+          "n_neg": 145,
+          "n_subjects": 145,
+          "dropped": {}
+        },
+        "ds005620": {
+          "n": 94,
+          "n_pos": 64,
+          "n_neg": 30,
+          "n_subjects": 12,
+          "dropped": {}
+        }
+      },
+      "failed": [
+        "directional_discrimination",
+        "beats_trivial_baseline",
+        "calibration",
+        "beats_trivial_baseline",
+        "leave_one_dataset_out"
+      ]
+    },
+    "relative_delta_power": {
+      "verdict": "REJECT",
+      "datasets": [
+        "ds005620",
+        "sleep_edfx_staged"
+      ],
+      "per_dataset": {
+        "sleep_edfx_staged": {
+          "n": 290,
+          "n_pos": 145,
+          "n_neg": 145,
+          "n_subjects": 145,
+          "dropped": {}
+        },
+        "ds005620": {
+          "n": 94,
+          "n_pos": 64,
+          "n_neg": 30,
+          "n_subjects": 12,
+          "dropped": {}
+        }
+      },
+      "failed": [
+        "beats_trivial_baseline",
+        "directional_discrimination",
+        "probe:n_channels",
+        "beats_trivial_baseline",
+        "leave_one_dataset_out"
+      ]
+    },
+    "spectral_edge_95": {
+      "verdict": "REJECT",
+      "datasets": [
+        "ds005620",
+        "sleep_edfx_staged"
+      ],
+      "per_dataset": {
+        "sleep_edfx_staged": {
+          "n": 290,
+          "n_pos": 145,
+          "n_neg": 145,
+          "n_subjects": 145,
+          "dropped": {}
+        },
+        "ds005620": {
+          "n": 95,
+          "n_pos": 64,
+          "n_neg": 31,
+          "n_subjects": 12,
+          "dropped": {}
+        }
+      },
+      "failed": [
+        "directional_discrimination",
+        "calibration",
+        "probe:n_channels"
+      ]
+    },
+    "spectral_entropy": {
+      "verdict": "REJECT",
+      "datasets": [
+        "ds005620",
+        "sleep_edfx_staged"
+      ],
+      "per_dataset": {
+        "sleep_edfx_staged": {
+          "n": 290,
+          "n_pos": 145,
+          "n_neg": 145,
+          "n_subjects": 145,
+          "dropped": {}
+        },
+        "ds005620": {
+          "n": 95,
+          "n_pos": 64,
+          "n_neg": 31,
+          "n_subjects": 12,
+          "dropped": {}
+        }
+      },
+      "failed": [
+        "directional_discrimination",
+        "probe:n_channels",
+        "beats_trivial_baseline",
+        "leave_one_dataset_out"
+      ]
+    },
+    "uce_v1": {
+      "verdict": "INCOMPLETE",
+      "datasets": [
+        "ds005620"
+      ],
+      "per_dataset": {
+        "sleep_edfx_staged": {
+          "n": 0,
+          "n_pos": 0,
+          "n_neg": 0,
+          "n_subjects": 0,
+          "dropped": {
+            "N3:non-finite-uce_v1": 145,
+            "W:non-finite-uce_v1": 145
+          }
+        },
+        "ds005620": {
+          "n": 95,
+          "n_pos": 64,
+          "n_neg": 31,
+          "n_subjects": 12,
+          "dropped": {}
+        }
+      },
+      "failed": [
+        "beats_trivial_baseline",
+        "complexity_is_earned"
+      ]
+    },
+    "whole_head_exponent": {
+      "verdict": "REJECT",
+      "datasets": [
+        "ds005620",
+        "sleep_edfx_staged"
+      ],
+      "per_dataset": {
+        "sleep_edfx_staged": {
+          "n": 290,
+          "n_pos": 145,
+          "n_neg": 145,
+          "n_subjects": 145,
+          "dropped": {}
+        },
+        "ds005620": {
+          "n": 95,
+          "n_pos": 64,
+          "n_neg": 31,
+          "n_subjects": 12,
+          "dropped": {}
+        }
+      },
+      "failed": [
+        "label_leakage"
+      ]
+    },
+    "wpli_alpha": {
+      "verdict": "REJECT",
+      "datasets": [
+        "ds005620",
+        "sleep_edfx_staged"
+      ],
+      "per_dataset": {
+        "sleep_edfx_staged": {
+          "n": 289,
+          "n_pos": 145,
+          "n_neg": 144,
+          "n_subjects": 145,
+          "dropped": {
+            "W:non-finite-wpli_alpha": 1
+          }
+        },
+        "ds005620": {
+          "n": 96,
+          "n_pos": 64,
+          "n_neg": 32,
+          "n_subjects": 12,
+          "dropped": {}
+        }
+      },
+      "failed": [
+        "directional_discrimination",
+        "directional_discrimination",
+        "calibration",
+        "probe:n_channels",
+        "beats_trivial_baseline",
+        "complexity_is_earned",
+        "leave_one_dataset_out"
+      ]
+    }
+  },
+  "inverting_candidates": [
+    "lempel_ziv",
+    "relative_alpha_power",
+    "relative_delta_power",
+    "spectral_entropy",
+    "wpli_alpha"
+  ]
+}

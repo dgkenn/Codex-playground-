@@ -194,6 +194,12 @@ def _probe_strength(x: np.ndarray, v: np.ndarray) -> tuple:
     """
     x = np.asarray(x, float)
     v = np.asarray(v)
+    finite = v[~_isnan_like(v)]
+    if finite.size and len(np.unique(finite)) == 1:
+        # A nuisance that never varies cannot explain anything that does. Reporting this as "could not
+        # evaluate (strongest level '')" was true but unreadable; within a single dataset sfreq and
+        # n_channels are routinely constant, so this is the common case, not an edge case.
+        return float("nan"), f"constant within this dataset (every row = {finite[0]!r})", float("nan")
     if v.dtype.kind in "USOb" or len(np.unique(v[~_isnan_like(v)])) <= 8:
         levels = [lv for lv in np.unique(v.astype(str)) if lv not in ("nan", "None", "")]
         best, which = float("nan"), ""
@@ -259,8 +265,12 @@ def layer_statistical(cand: Candidate, coh: Cohort, rng) -> list:
     ev.append(Evidence(
         "permutation_null_is_centred", "statistical",
         PASS if null["null_centered"] else FAIL,
-        f"label-permuted null mean {null['mean']:.4f} (must sit at chance, 0.5 +/- 0.05)",
-        {"null_mean": null["mean"], "null_q975": null["q975"], "n_perm": null["n"]},
+        f"label-permuted null mean {null['mean']:.4f} over {null['n']} usable permutations, scheme="
+        f"{null.get('scheme')} (must sit at chance, 0.5 +/- 0.05). "
+        + ("" if null["n"] else "ZERO usable permutations -- every relabelling produced a single-class "
+                                "outcome, so no null exists and nothing downstream is interpretable."),
+        {"null_mean": null["mean"], "null_q975": null["q975"], "n_perm": null["n"],
+         "scheme": null.get("scheme")},
         machinery_gate=True, item="confound_probes"))
 
     # A directional claim is NOT satisfied by an interval spanning the null (rule 37).
@@ -386,6 +396,24 @@ def layer_adversarial(cand: Candidate, coh: Cohort, rng) -> list:
         ev.append(Evidence("beats_trivial_baseline", "adversarial", NOT_RUN,
                            "baseline comparison needs a signed prediction and an evaluable cohort",
                            item="baseline_comparison"))
+    elif np.allclose(np.nan_to_num(coh.values), np.nan_to_num(coh.baseline), equal_nan=True):
+        # The trivial baseline IS one of the registered candidates, so it inevitably gets compared against
+        # itself: increment exactly 0, interval [0, 0], rank correlation 1.000, reported as a FAILURE. That
+        # is arithmetically true and completely uninformative, and it made the baseline look refuted in
+        # E03's first run. A candidate cannot fail to beat itself; there is nothing to test.
+        ev.append(Evidence(
+            "beats_trivial_baseline", "adversarial", NOT_APPLICABLE,
+            f"this candidate IS the comparison baseline ({coh.baseline_name}) -- the two value vectors are "
+            "identical, so the increment is exactly zero by construction and carries no information. "
+            "Nothing is being withheld: the baseline's own worth is judged by its discrimination and "
+            "calibration, not by beating itself.",
+            {"r_with_baseline": 1.0, "complexity": cand.complexity},
+            item="baseline_comparison"))
+        ev.append(Evidence(
+            "complexity_is_earned", "adversarial", NOT_APPLICABLE,
+            f"complexity {cand.complexity} is the reference point other candidates are measured against, "
+            "so there is no simpler alternative for it to earn its keep over.",
+            {"complexity": cand.complexity}, item="complexity_interpretability"))
     else:
         a_c = directional_auc(coh.y, coh.values, predicted)
         a_b = directional_auc(coh.y, coh.baseline, predicted)

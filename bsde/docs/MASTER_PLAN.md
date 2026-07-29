@@ -343,3 +343,36 @@ out to contain contemporaneous behavioural data, (b) direct contact with the ds0
 for the withheld behavioural variables, or (c) prospective acquisition — Brief 02's own Paper 3. Options (b)
 and (c) are the honest routes and both are calendar time, not engineering. Until one lands, every candidate's
 `unconscious_vs_awake` result is **compatible with H4 and must be reported that way.**
+
+### 9.6 Sleep-stage labels are scored FROM the EEG, so predicting them is substantially circular
+
+E03's first real run produced an AUC of **0.992 [0.978, 1.000]** for the whole-head aperiodic exponent
+discriminating Wake from N3 on Sleep-EDF, with a centred permutation null and good calibration (Brier skill
++0.954, slope 0.953). The engine's `label_leakage` check fired, because a single resting-EEG scalar separating
+an outcome that nearly perfectly is not a plausible physiological result.
+
+**The check was right and its stated reason was wrong.** This is not data leakage. It is that **sleep stages
+are scored by human raters reading the EEG**, and N3 is *defined* by the proportion of slow-wave activity in
+the epoch. The label is a deterministic-ish function of the very signal the candidate is computed from. So a
+steep aperiodic exponent predicting N3 is close to tautological: both are ways of saying "this epoch is
+dominated by slow activity".
+
+**Consequence for the whole sleep tier of Brief 02 (datasets 9, 10, 11 — Sleep-EDF, SHHS, MESA).** Sleep data
+cannot show that a marker *detects unconsciousness*. It can show only that the marker **recovers the scoring
+criteria**, which is a statement about agreement with a rating rule, not about brain state. That is still
+worth something — it is a real measurement-validity check, and a marker that *failed* it would be suspect —
+but it is a much weaker claim than the dataset's presence in a "levels of consciousness" project implies, and
+Brief 02's own caution that "sleep stages are not levels of consciousness" turns out to understate the
+problem: the issue is not just that the mapping is imperfect, it is that the label is derived from the
+predictor's own input.
+
+**How this is handled going forward, decided now rather than after seeing more results.** Any sleep-based
+result is reported as *criterion recovery*, never as detection, and never counted toward claim component 3.
+The `label_leakage` check keeps its FAIL here — the number genuinely should not be believed as a detection
+result — and its reason text should be broadened to name definitional circularity alongside data leakage,
+since they are distinguishable in cause and identical in consequence.
+
+**What it does not undermine.** The same candidate's ds005620 result — AUC 0.646 [0.544, 0.750] for awake vs
+propofol sedation, null centred at 0.4871, interval excluding 0.5 — is *not* circular, because responsiveness
+there was determined by the experimental protocol rather than read off the EEG. That is the more honest of the
+two numbers, and it is far smaller.
