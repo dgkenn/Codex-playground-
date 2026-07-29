@@ -18,10 +18,17 @@ the cached median alone:
 
 One S3 pass answers all three, so they are extracted together rather than in three passes.
 
-WHAT IS HELD FIXED. The burst segmentation is imported unchanged from `heedb_burst_morphology` --
+WHAT IS HELD FIXED, and a correction. The burst segmentation comes from `heedb_burst_morphology` --
 `suppression_mask`, `runs_of` and the FRAME_S / MIN_RUN_S / MIN_BURST_S constants -- so these features are
-measured on EXACTLY the bursts the validated extraction found. Nothing about burst detection is re-implemented
-here, because a re-implementation would confound "different band" with "different bursts".
+measured on the bursts the validated extraction found; a re-implementation would confound "different band"
+with "different bursts".
+
+**The first version of this file imported the constants but re-implemented the ACCEPTANCE RULES, and that
+is the same mistake in a smaller place.** It omitted the finite-sample filter, the 20 s minimum, the
+`dead.mean() > 0.5` rejection and the >= 4-burst requirement, so it scored windows the parent discards. The
+reproduction gate caught it -- r = 0.72 against the cached table, only 6 % reproducing exactly -- and the
+extraction was re-run. The lesson generalises: **an acceptance rule IS part of the measurement definition,
+not scaffolding around it.**
 
 THE BUILT-IN CORRECTNESS CHECK, and it is the reason `alpha_beta` is recomputed rather than joined. This
 script re-derives the SAME quantity the cached table holds. If the new `alpha_beta` does not reproduce the
@@ -50,7 +57,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from common.awsenv import sanitize as _aws_sanitize; _aws_sanitize()
 
 from heedb_burst_morphology import (suppression_mask, runs_of, THRESH_UV, N_WINDOWS,
-                                    WIN_SECONDS, LEAD_IN_FRAC, MIN_BURST_S)
+                                    WIN_SECONDS, LEAD_IN_FRAC, MIN_BURST_S, FRAME_S)
 
 OUT = os.environ.get("SUBBAND_OUT", "/tmp/eeg_probe/heedb_burst_subband.csv")
 COLS = ["site", "patient", "bids", "session", "n_bursts", "alpha_beta", "alpha_frac",
@@ -58,17 +65,35 @@ COLS = ["site", "patient", "bids", "session", "n_bursts", "alpha_beta", "alpha_f
 
 
 def subband(x, fs, thresh):
-    """Per-window sub-band features on the SAME bursts heedb_burst_morphology would find."""
-    supp, _ = suppression_mask(x, fs, thresh)
-    if supp is None:
+    """Sub-band features on EXACTLY the bursts heedb_burst_morphology.morphology() would accept.
+
+    THE ACCEPTANCE RULES ARE PART OF THE SEGMENTATION, and the first version of this function got that
+    wrong. It imported the CONSTANTS but re-implemented the gating, so it accepted windows the parent
+    rejects: no finite-sample filter, no minimum length, no `dead` check, and no >=4-burst requirement.
+    The reproduction gate caught it (r = 0.72 against the cached table, 6 % exact). Every rule below is
+    copied from morphology() line for line -- if that function changes, this must change with it.
+    """
+    x = np.asarray(x, float)
+    x = x[np.isfinite(x)]
+    if len(x) < fs * 20:
         return None
-    fr = max(1, int(0.1 * fs))
+    supp, dead = suppression_mask(x, fs, thresh)
+    if supp is None or dead.mean() > 0.5:
+        return None
+    fr = max(1, int(FRAME_S * fs))
+    bursts = [(a, b) for a, b in runs_of(supp, False)
+              if (b - a) * FRAME_S >= MIN_BURST_S]
+    if len(bursts) < 4:
+        return None
     segs = []
-    for a, b in runs_of(supp, False):                 # bursts = the non-suppressed runs
-        if (b - a) * fr / fs >= MIN_BURST_S:
-            segs.append(x[a * fr:b * fr])
-    if not segs:
+    for a, b in bursts:
+        w = x[a * fr:b * fr]
+        if len(w) < int(0.2 * fs):
+            continue
+        segs.append(w)
+    if len(segs) < 4:
         return None
+
     ab, al, be, sl, fastp, slowp = [], [], [], [], [], []
     for s in segs:
         if len(s) < int(0.5 * fs):
