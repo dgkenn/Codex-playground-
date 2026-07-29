@@ -1,0 +1,5324 @@
+# spec_D1 -- directional SPECs 1/3/7 re-run at archive n
+
+Run: 2026-07-29T15:42:50.751104+00:00
+
+## Data
+- Series (exact series_key match, NOT a `KXHIGH%` prefix): ['KXHIGHNY', 'KXHIGHCHI', 'KXHIGHAUS', 'KXHIGHMIA', 'KXHIGHDEN', 'KXHIGHPHIL', 'KXHIGHLAX', 'KXHIGHHOU']
+- Window: close_time in [2024-10-25, 2026-01-31]; trade archive is separately truncated at 2026-01-28 (verified archive coverage ceiling) -- signals whose H falls after that date, or whose [H-30m,H+15m] windows run past it, show up as legitimate print-not-found skips below, not as a silent gap.
+- Shards read: **all 16 trade shards + all 4 markets shards** (16 trade shards is the full archive per DATA_SOURCES.md; the repo's kx_history.py N_TRADE_SHARDS=9 bug was NOT used here).
+- Local cached tape: 5817335 trades, 18230 distinct tickers, span 2024-10-24 12:05:04.902879+00:00 .. 2026-01-28 23:59:55.550767+00:00
+- Rungs parsed: 19088 (12726 bracket 'B', 6362 threshold 'T'; 0 unparseable ticker suffixes, logged).
+- Outcomes: Kalshi's own `result` field in the archived markets table -- Kalshi's official settled outcome (GROUNDING.md, DATA_SOURCES.md). No bracket/threshold outcome was re-derived; settlement is read, never computed, per PAPER_TRADER_AUDIT.md's off-by-one finding. Live reconciliation via GET /trade-api/v2/markets/{ticker} was not attempted for archived-era tickers -- M1's run already established that every archived-era ticker 404s on the live endpoint (the live/historical retention wall), so it would add nothing; noted here for the record rather than silently skipped.
+- Executable prices: yes-equivalent ASK from a `taker_side='yes'` print (`yes_price/100`, the price a YES buyer actually paid); yes-equivalent BID from a `taker_side='no'` print (`(100-no_price)/100`, since buying NO at `no_price` is the mechanical complement of selling YES). Entry price for OUR OWN side is always that print's own transacted price -- `no_price/100` when we buy NO, `yes_price/100` when we buy YES -- never a mid, never best-in-window.
+- TRAIN/TEST split: chronological first 60% / last 40% of distinct SETTLED settlement dates, computed INDEPENDENTLY PER CITY (their date ranges differ; KXHIGHHOU has only 70 settled dates total vs ~459 for the four earliest cities).
+
+| city | settled dates | TRAIN | TEST |
+|---|---:|---:|---:|
+| KXHIGHNY | 459 | 275 | 184 |
+| KXHIGHCHI | 459 | 275 | 184 |
+| KXHIGHAUS | 459 | 275 | 184 |
+| KXHIGHMIA | 459 | 275 | 184 |
+| KXHIGHDEN | 432 | 259 | 173 |
+| KXHIGHPHIL | 432 | 259 | 173 |
+| KXHIGHLAX | 386 | 232 | 154 |
+| KXHIGHHOU | 70 | 42 | 28 |
+
+D1 splits its funnel share alpha=0.0125 three ways internally: alpha_per_leg = 0.0125/3 = 0.0041667 two-sided, exact t quantile at each leg's own day-clustered df (never the z-normal limit).
+
+## Interpretive constructions required by the frozen spec text (documented, not bar-moving)
+1. **SPEC 1 is single-legged, as literally written.** SPEC 1's entry_rule states one trigger condition (`p_ask>=0.85` AND miscalibration `>=0.02`), which only fades an overpriced high ask by buying NO. The entry_rule's 'symmetric low leg buys YES' sentence appears directly after SPEC 3's own explicit two-sided trigger (`p_ask>=0.85` OR `bid<=0.15`) and is read here as describing SPEC 3's mechanics, not as adding an unstated low-side trigger to SPEC 1 -- inventing one would itself be substituting a new spec for the original text (an AUTO-REFUTE condition).
+2. **Isotonic map is pooled across all 8 cities**, fit once on all TRAIN B-rung (p_ask, outcome) pairs (not per-city) -- the spec names one calibration map per horizon H, not eight.
+3. **Effective-spread bid print uses the ±30-minute window verbatim** and picks the print *nearest in time to H* among taker='no' prints in that window (not 'last before H', since the re-specification text explicitly says 'within ±30 minutes', a window centered on H, distinct from p_ask's own '[H-30m,H]' lookback-only window).
+4. **SPEC 7's 'executable yes-equivalent price'** is defined as the yes-equivalent price of the single most recent transacted print (either side) at or before H, inside [H-30m,H] -- reusing the same 30-minute lookback convention as SPEC 1/3's ask window, and always an actual crossing print, never a mid. SPEC 7's own H is the same close_time-2h convention as SPEC 1/3 (the spec's preamble states the signal timestamp is always a market-structure clock time, and gives no different definition for SPEC 7).
+5. **SPEC 7's 5 price bins** are the natural equal-width quintile split of [0,1]: [0,.2) [.2,.4) [.4,.6) [.6,.8) [.8,1.0] -- the spec names 'the original 5 price bins' without giving boundaries; this is the only unstated numeric choice in the whole spec and is recorded here explicitly.
+6. **SPEC 7's TRAIN self-kill gate is reproduced deliberately.** The hypothesis text says the original SPEC 7 'TRAIN self-kill[ed], only 2 of 5 price bins reached the 20-sample floor.' This run checks the identical eligibility rule (>=3 of 5 bins with >=20 in EACH (bin,salience) cell) on TRAIN before opening TEST -- consistent with non-negotiable 1 (never read test data if the fit-stage bar already fails) and mirroring spec_M1's own self-kill pattern in this program.
+7. **Clause 3 (fee-inclusive breakeven) formula**, unspecified in the pass_bar text, follows spec_M1's precedent: breakeven_win_rate = mean(entry_price) + mean(entry_fee), both dollars/ct.
+
+## SPEC 1 -- horizon-conditional calibration fade (H=2h, rung_class=B)
+**VERDICT: INSUFFICIENT**
+Reason: min_n gate failed: n=5 (need >=200), n_dates=5 (need >=40).
+
+- Isotonic FIT sample (TRAIN, pooled 8 cities): n=565
+- TEST qualifying entries: n=5, distinct settlement-date clusters=5
+
+## SPEC 3 -- thin-book longshot fade (H=2h, rung_class=B)
+**VERDICT: INSUFFICIENT**
+Reason: min_n gate failed: n=12 (need >=300).
+
+- TEST qualifying entries: n=12, distinct settlement-date clusters=11
+
+## SPEC 7 -- salient-threshold anchoring bias (rung_class=T, not a t-test)
+**VERDICT: INSUFFICIENT**
+Reason: TRAIN self-kill: only 0/5 price bins reached MIN_GROUP_N=20 per (bin,salience) cell on TRAIN -- reproduces the original kill mode. TEST not opened (kill_conditions / non-negotiable 1: never open validation after a self-kill).
+
+- TRAIN: n_obs=260, drops={'no print in [H-30m,H] (SPEC7 price)': 3524, 'result unavailable': 0}, eligible_bins=[]
+- TRAIN bin detail: {0: {'n_salient': 17, 'n_nonsalient': 159, 'eligible': False, 'gap': None}, 1: {'n_salient': 1, 'n_nonsalient': 2, 'eligible': False, 'gap': None}, 2: {'n_salient': 0, 'n_nonsalient': 1, 'eligible': False, 'gap': None}, 3: {'n_salient': 0, 'n_nonsalient': 1, 'eligible': False, 'gap': None}, 4: {'n_salient': 6, 'n_nonsalient': 73, 'eligible': False, 'gap': None}}
+
+## D1 OVERALL VERDICT: INSUFFICIENT
+(D1 as a whole is a PASS only if a leg passes; legs do not pool, per the frozen pass_bar text.)
+
+## Skip ledger (mandatory -- every dropped rung/bin, with reason)
+### SPEC1: 5029 skip entries
+By reason: {'result unavailable': 112, 'no ask print in [H-30m,H]': 4188, 'no bid print for the effective-spread check': 706, 'effective spread > 0.10': 22, 'no matching-side print within 15min of signal': 1}
+
+<details><summary>full skip ledger</summary>
+
+```
+{"key": "KXHIGHNY-25NOV23-B47.5", "reason": "result unavailable"}
+{"key": "KXHIGHNY-25NOV23-B49.5", "reason": "result unavailable"}
+{"key": "KXHIGHNY-25NOV23-B51.5", "reason": "result unavailable"}
+{"key": "KXHIGHNY-25NOV23-B53.5", "reason": "result unavailable"}
+{"key": "KXHIGHAUS-25NOV23-B71.5", "reason": "result unavailable"}
+{"key": "KXHIGHAUS-25NOV23-B73.5", "reason": "result unavailable"}
+{"key": "KXHIGHAUS-25NOV23-B75.5", "reason": "result unavailable"}
+{"key": "KXHIGHAUS-25NOV23-B77.5", "reason": "result unavailable"}
+{"key": "KXHIGHCHI-25NOV23-B51.5", "reason": "result unavailable"}
+{"key": "KXHIGHCHI-25NOV23-B53.5", "reason": "result unavailable"}
+{"key": "KXHIGHCHI-25NOV23-B55.5", "reason": "result unavailable"}
+{"key": "KXHIGHCHI-25NOV23-B57.5", "reason": "result unavailable"}
+{"key": "KXHIGHLAX-25NOV23-B69.5", "reason": "result unavailable"}
+{"key": "KXHIGHLAX-25NOV23-B67.5", "reason": "result unavailable"}
+{"key": "KXHIGHLAX-25NOV23-B65.5", "reason": "result unavailable"}
+{"key": "KXHIGHLAX-25NOV23-B63.5", "reason": "result unavailable"}
+{"key": "KXHIGHPHIL-25NOV23-B51.5", "reason": "result unavailable"}
+{"key": "KXHIGHPHIL-25NOV23-B53.5", "reason": "result unavailable"}
+{"key": "KXHIGHPHIL-25NOV23-B55.5", "reason": "result unavailable"}
+{"key": "KXHIGHPHIL-25NOV23-B57.5", "reason": "result unavailable"}
+{"key": "KXHIGHMIA-25NOV23-B79.5", "reason": "result unavailable"}
+{"key": "KXHIGHMIA-25NOV23-B81.5", "reason": "result unavailable"}
+{"key": "KXHIGHMIA-25NOV23-B83.5", "reason": "result unavailable"}
+{"key": "KXHIGHMIA-25NOV23-B85.5", "reason": "result unavailable"}
+{"key": "KXHIGHDEN-25NOV23-B50.5", "reason": "result unavailable"}
+{"key": "KXHIGHDEN-25NOV23-B52.5", "reason": "result unavailable"}
+{"key": "KXHIGHDEN-25NOV23-B54.5", "reason": "result unavailable"}
+{"key": "KXHIGHDEN-25NOV23-B56.5", "reason": "result unavailable"}
+{"key": "KXHIGHNY-25NOV24-B49.5", "reason": "result unavailable"}
+{"key": "KXHIGHNY-25NOV24-B51.5", "reason": "result unavailable"}
+{"key": "KXHIGHNY-25NOV24-B53.5", "reason": "result unavailable"}
+{"key": "KXHIGHNY-25NOV24-B55.5", "reason": "result unavailable"}
+{"key": "KXHIGHAUS-25NOV24-B77.5", "reason": "result unavailable"}
+{"key": "KXHIGHAUS-25NOV24-B79.5", "reason": "result unavailable"}
+{"key": "KXHIGHAUS-25NOV24-B81.5", "reason": "result unavailable"}
+{"key": "KXHIGHAUS-25NOV24-B83.5", "reason": "result unavailable"}
+{"key": "KXHIGHDEN-25NOV24-B54.5", "reason": "result unavailable"}
+{"key": "KXHIGHDEN-25NOV24-B56.5", "reason": "result unavailable"}
+{"key": "KXHIGHDEN-25NOV24-B58.5", "reason": "result unavailable"}
+{"key": "KXHIGHDEN-25NOV24-B60.5", "reason": "result unavailable"}
+{"key": "KXHIGHCHI-25NOV24-B47.5", "reason": "result unavailable"}
+{"key": "KXHIGHCHI-25NOV24-B49.5", "reason": "result unavailable"}
+{"key": "KXHIGHCHI-25NOV24-B51.5", "reason": "result unavailable"}
+{"key": "KXHIGHCHI-25NOV24-B53.5", "reason": "result unavailable"}
+{"key": "KXHIGHPHIL-25NOV24-B49.5", "reason": "result unavailable"}
+{"key": "KXHIGHPHIL-25NOV24-B51.5", "reason": "result unavailable"}
+{"key": "KXHIGHPHIL-25NOV24-B53.5", "reason": "result unavailable"}
+{"key": "KXHIGHPHIL-25NOV24-B55.5", "reason": "result unavailable"}
+{"key": "KXHIGHMIA-25NOV24-B82.5", "reason": "result unavailable"}
+{"key": "KXHIGHMIA-25NOV24-B84.5", "reason": "result unavailable"}
+{"key": "KXHIGHMIA-25NOV24-B80.5", "reason": "result unavailable"}
+{"key": "KXHIGHMIA-25NOV24-B78.5", "reason": "result unavailable"}
+{"key": "KXHIGHLAX-25NOV24-B60.5", "reason": "result unavailable"}
+{"key": "KXHIGHLAX-25NOV24-B62.5", "reason": "result unavailable"}
+{"key": "KXHIGHLAX-25NOV24-B64.5", "reason": "result unavailable"}
+{"key": "KXHIGHLAX-25NOV24-B66.5", "reason": "result unavailable"}
+{"key": "KXHIGHAUS-26JAN28-B58.5", "reason": "result unavailable"}
+{"key": "KXHIGHAUS-26JAN28-B56.5", "reason": "result unavailable"}
+{"key": "KXHIGHAUS-26JAN28-B54.5", "reason": "result unavailable"}
+{"key": "KXHIGHAUS-26JAN28-B52.5", "reason": "result unavailable"}
+{"key": "KXHIGHPHIL-26JAN28-B22.5", "reason": "result unavailable"}
+{"key": "KXHIGHPHIL-26JAN28-B24.5", "reason": "result unavailable"}
+{"key": "KXHIGHPHIL-26JAN28-B20.5", "reason": "result unavailable"}
+{"key": "KXHIGHPHIL-26JAN28-B18.5", "reason": "result unavailable"}
+{"key": "KXHIGHMIA-26JAN28-B72.5", "reason": "result unavailable"}
+{"key": "KXHIGHMIA-26JAN28-B70.5", "reason": "result unavailable"}
+{"key": "KXHIGHMIA-26JAN28-B68.5", "reason": "result unavailable"}
+{"key": "KXHIGHMIA-26JAN28-B66.5", "reason": "result unavailable"}
+{"key": "KXHIGHNY-26JAN28-B19.5", "reason": "result unavailable"}
+{"key": "KXHIGHNY-26JAN28-B21.5", "reason": "result unavailable"}
+{"key": "KXHIGHNY-26JAN28-B23.5", "reason": "result unavailable"}
+{"key": "KXHIGHNY-26JAN28-B25.5", "reason": "result unavailable"}
+{"key": "KXHIGHCHI-26JAN28-B13.5", "reason": "result unavailable"}
+{"key": "KXHIGHCHI-26JAN28-B17.5", "reason": "result unavailable"}
+{"key": "KXHIGHCHI-26JAN28-B15.5", "reason": "result unavailable"}
+{"key": "KXHIGHCHI-26JAN28-B19.5", "reason": "result unavailable"}
+{"key": "KXHIGHDEN-26JAN28-B53.5", "reason": "result unavailable"}
+{"key": "KXHIGHDEN-26JAN28-B49.5", "reason": "result unavailable"}
+{"key": "KXHIGHDEN-26JAN28-B51.5", "reason": "result unavailable"}
+{"key": "KXHIGHDEN-26JAN28-B55.5", "reason": "result unavailable"}
+{"key": "KXHIGHLAX-26JAN28-B71.5", "reason": "result unavailable"}
+{"key": "KXHIGHLAX-26JAN28-B69.5", "reason": "result unavailable"}
+{"key": "KXHIGHLAX-26JAN28-B67.5", "reason": "result unavailable"}
+{"key": "KXHIGHLAX-26JAN28-B65.5", "reason": "result unavailable"}
+{"key": "KXHIGHCHI-26JAN29-B14.5", "reason": "result unavailable"}
+{"key": "KXHIGHCHI-26JAN29-B12.5", "reason": "result unavailable"}
+{"key": "KXHIGHCHI-26JAN29-B16.5", "reason": "result unavailable"}
+{"key": "KXHIGHCHI-26JAN29-B18.5", "reason": "result unavailable"}
+{"key": "KXHIGHAUS-26JAN29-B63.5", "reason": "result unavailable"}
+{"key": "KXHIGHAUS-26JAN29-B69.5", "reason": "result unavailable"}
+{"key": "KXHIGHAUS-26JAN29-B67.5", "reason": "result unavailable"}
+{"key": "KXHIGHAUS-26JAN29-B65.5", "reason": "result unavailable"}
+{"key": "KXHIGHPHIL-26JAN29-B23.5", "reason": "result unavailable"}
+{"key": "KXHIGHPHIL-26JAN29-B21.5", "reason": "result unavailable"}
+{"key": "KXHIGHPHIL-26JAN29-B19.5", "reason": "result unavailable"}
+{"key": "KXHIGHPHIL-26JAN29-B17.5", "reason": "result unavailable"}
+{"key": "KXHIGHLAX-26JAN29-B81.5", "reason": "result unavailable"}
+{"key": "KXHIGHLAX-26JAN29-B79.5", "reason": "result unavailable"}
+{"key": "KXHIGHLAX-26JAN29-B77.5", "reason": "result unavailable"}
+{"key": "KXHIGHLAX-26JAN29-B75.5", "reason": "result unavailable"}
+{"key": "KXHIGHDEN-26JAN29-B45.5", "reason": "result unavailable"}
+{"key": "KXHIGHDEN-26JAN29-B51.5", "reason": "result unavailable"}
+{"key": "KXHIGHDEN-26JAN29-B49.5", "reason": "result unavailable"}
+{"key": "KXHIGHDEN-26JAN29-B47.5", "reason": "result unavailable"}
+{"key": "KXHIGHNY-26JAN29-B25.5", "reason": "result unavailable"}
+{"key": "KXHIGHNY-26JAN29-B23.5", "reason": "result unavailable"}
+{"key": "KXHIGHNY-26JAN29-B21.5", "reason": "result unavailable"}
+{"key": "KXHIGHNY-26JAN29-B19.5", "reason": "result unavailable"}
+{"key": "KXHIGHMIA-26JAN29-B72.5", "reason": "result unavailable"}
+{"key": "KXHIGHMIA-26JAN29-B70.5", "reason": "result unavailable"}
+{"key": "KXHIGHMIA-26JAN29-B68.5", "reason": "result unavailable"}
+{"key": "KXHIGHMIA-26JAN29-B74.5", "reason": "result unavailable"}
+{"key": "KXHIGHHOU-25JAN01-B63.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN01-B61.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN01-B59.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN01-B57.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN02-B63.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN02-B61.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN02-B59.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN02-B57.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN03-B67.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN03-B65.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN03-B63.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN03-B69.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN04-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN04-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN04-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN04-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN05-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN05-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN05-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN05-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN06-B40.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN06-B42.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN06-B44.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN06-B46.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN07-B43.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN07-B45.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN07-B47.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN07-B49.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN08-B39.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN08-B41.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN08-B43.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN09-B47.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN09-B45.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN09-B43.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHHOU-25JAN09-B41.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHHOU-25JAN10-B39.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN10-B41.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN10-B43.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN10-B45.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN11-B47.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN11-B53.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN11-B51.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN11-B49.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN12-B55.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN12-B53.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHHOU-25JAN12-B51.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN12-B49.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN13-B51.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN13-B53.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN13-B55.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN13-B57.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN14-B50.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHHOU-25JAN14-B52.5", "reason": "effective spread > 0.10", "extra": {"spread": 0.12}}
+{"key": "KXHIGHHOU-25JAN14-B56.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN15-B50.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN15-B48.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN15-B52.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHHOU-25JAN16-B58.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN16-B60.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN16-B62.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN16-B64.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN17-B69.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN17-B67.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN17-B65.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHHOU-25JAN17-B63.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN18-B67.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN18-B65.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN18-B63.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN18-B61.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN19-B46.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN19-B44.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN19-B42.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN19-B40.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN20-B35.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN20-B41.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN20-B39.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN20-B37.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHHOU-25JAN21-B36.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHHOU-25JAN21-B34.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHHOU-25JAN21-B32.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN21-B30.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN22-B35.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN22-B37.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN22-B39.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN22-B41.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN23-B45.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN23-B47.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN23-B49.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN23-B51.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN24-B47.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN24-B49.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN24-B51.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN24-B53.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN25-B63.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN25-B61.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN25-B59.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN25-B57.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN26-B67.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHHOU-25JAN26-B65.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHHOU-25JAN26-B63.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHHOU-25JAN27-B58.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHHOU-25JAN28-B57.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHHOU-25JAN28-B61.5", "reason": "effective spread > 0.10", "extra": {"spread": 0.10999999999999999}}
+{"key": "KXHIGHHOU-25JAN28-B63.5", "reason": "effective spread > 0.10", "extra": {"spread": 0.10999999999999999}}
+{"key": "KXHIGHMIA-25JUL26-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25JUL26-B94.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25JUL26-B92.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25JUL26-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25JUL26-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25JUL26-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25JUL26-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25JUL26-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25JUL26-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25JUL26-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25JUL26-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25JUL26-B92.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25JUL26-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25JUL26-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25JUL26-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25JUL26-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25JUL27-B92.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25JUL27-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25JUL27-B96.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25JUL27-B94.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25JUL27-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25JUL27-B93.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25JUL27-B91.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25JUL27-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25JUL27-B94.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25JUL27-B92.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25JUL27-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25JUL27-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25JUL27-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25JUL27-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25JUL27-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25JUL27-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25JUL28-B95.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25JUL28-B93.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25JUL28-B99.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25JUL28-B97.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25JUL28-B93.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25JUL28-B91.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25JUL28-B97.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25JUL28-B95.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25JUL28-B93.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25JUL28-B91.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25JUL28-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25JUL28-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25JUL28-B96.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25JUL28-B94.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25JUL28-B92.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25JUL28-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25JUL29-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25JUL29-B92.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25JUL29-B94.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-25JUL29-B96.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25JUL29-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25JUL29-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25JUL29-B91.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25JUL29-B93.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25JUL29-B93.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25JUL29-B95.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25JUL29-B97.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25JUL29-B99.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25JUL29-B100.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25JUL29-B96.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25JUL29-B98.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25JUL29-B102.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25JUL30-B101.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25JUL30-B103.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25JUL30-B97.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25JUL30-B99.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25JUL30-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25JUL30-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25JUL30-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25JUL30-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25JUL30-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25JUL30-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25JUL30-B91.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25JUL30-B93.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25JUL30-B93.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25JUL30-B95.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25JUL30-B97.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25JUL30-B99.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25JUL31-B101.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25JUL31-B103.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25JUL31-B97.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25JUL31-B99.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25JUL31-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25JUL31-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25JUL31-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25JUL31-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25JUL31-B94.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25JUL31-B92.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25JUL31-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25JUL31-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25JUL31-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25JUL31-B82.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-25JUL31-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25JUL31-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG01-B69.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG01-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG01-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG01-B71.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-25AUG01-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG01-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG01-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG01-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG01-B94.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG01-B92.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG01-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG01-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG01-B96.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG01-B100.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG01-B98.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG01-B102.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG02-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG02-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG02-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG02-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG02-B101.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG02-B95.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG02-B97.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG02-B99.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG02-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG02-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG02-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG02-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG02-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG02-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG02-B92.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG02-B94.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG03-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG03-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG03-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG03-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG03-B100.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG03-B102.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG03-B96.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG03-B98.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG03-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG03-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG03-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG03-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG03-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG03-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG03-B91.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG03-B93.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG04-B92.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG04-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG04-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG04-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG04-B97.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG04-B95.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG04-B93.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG04-B91.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG04-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG04-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG04-B83.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-25AUG04-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG04-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG04-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG04-B93.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG04-B91.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG05-B91.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG05-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG05-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG05-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG05-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG05-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG05-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG05-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG05-B98.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG05-B96.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG05-B94.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG05-B92.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG05-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG05-B94.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG05-B92.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG05-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG06-B93.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG06-B99.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG06-B97.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG06-B95.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG06-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG06-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG06-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG06-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG06-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG06-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG06-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG06-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG06-B94.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG06-B92.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG06-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG06-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG06-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG06-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG06-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG06-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG06-B93.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG06-B91.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG06-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG06-B95.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG07-B97.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG07-B95.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG07-B99.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG07-B101.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG07-B97.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG07-B95.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG07-B99.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG07-B101.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG07-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG07-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG07-B92.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG07-B94.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG07-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG07-B91.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG07-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG07-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG07-B78.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-25AUG07-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG07-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG07-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG07-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG07-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG07-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG07-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG08-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG08-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG08-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG08-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG08-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG08-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG08-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG08-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG08-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG08-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG08-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG08-B92.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG08-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG08-B91.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG08-B93.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG08-B95.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHDEN-25AUG08-B93.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG08-B95.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG08-B97.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG08-B99.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG08-B100.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG08-B102.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG08-B96.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG08-B98.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG09-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG09-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG09-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG09-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG09-B100.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG09-B94.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG09-B96.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG09-B98.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG09-B91.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG09-B93.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG09-B95.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG09-B97.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG09-B89.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-25AUG09-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG09-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG09-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG09-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG09-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG09-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG09-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG09-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG09-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG09-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG09-B91.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG10-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG10-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG10-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG10-B91.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG10-B93.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG10-B95.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG10-B97.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG10-B99.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG10-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG10-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG10-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG10-B92.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG10-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG10-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG10-B92.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG10-B94.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG10-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG10-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG10-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG10-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG10-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG10-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG10-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG10-B92.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG11-B92.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG11-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG11-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG11-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG11-B92.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG11-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG11-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG11-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG11-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG11-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG11-B92.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG11-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG11-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG11-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG11-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG11-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG11-B93.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG11-B91.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG11-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG11-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG11-B99.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG11-B97.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG11-B95.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-25AUG11-B93.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG12-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG12-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG12-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG12-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG12-B92.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG12-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG12-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG12-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG12-B98.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG12-B96.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG12-B94.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG12-B92.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG12-B93.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG12-B91.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG12-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG12-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG12-B94.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG12-B92.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG12-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG12-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG12-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG12-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG12-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG12-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG13-B92.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG13-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG13-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG13-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG13-B96.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG13-B94.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG13-B92.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG13-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG13-B99.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG13-B97.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG13-B95.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG13-B93.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG13-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG13-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG13-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG13-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG13-B93.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG13-B91.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG13-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG13-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG13-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG13-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG13-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG13-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG14-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG14-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG14-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG14-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG14-B92.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG14-B94.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG14-B96.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG14-B98.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG14-B93.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG14-B95.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG14-B97.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG14-B99.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG14-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG14-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG14-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG14-B90.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-25AUG14-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG14-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG14-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG14-B91.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG14-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG14-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG14-B91.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG14-B93.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG15-B93.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG15-B91.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG15-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG15-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG15-B98.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG15-B96.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG15-B94.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG15-B100.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG15-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG15-B87.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-25AUG15-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG15-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG15-B92.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG15-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG15-B96.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG15-B94.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG15-B94.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG15-B92.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG15-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG15-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG15-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG15-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG15-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG15-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG16-B93.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG16-B95.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG16-B97.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG16-B99.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG16-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG16-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG16-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG16-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG16-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG16-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG16-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG16-B91.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG16-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG16-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG16-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG16-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG16-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG16-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG16-B91.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG16-B93.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG16-B91.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG16-B93.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG16-B95.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG16-B97.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG17-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG17-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG17-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG17-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG17-B101.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG17-B103.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG17-B97.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG17-B99.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG17-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG17-B92.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG17-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG17-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG17-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG17-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG17-B92.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG17-B94.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25AUG17-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG17-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG17-B92.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG17-B94.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG17-B94.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG17-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG17-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG17-B92.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-25AUG18-B101.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG18-B95.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG18-B97.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG18-B99.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG18-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG18-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG18-B91.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG18-B93.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG18-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG18-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG18-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG18-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG18-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG18-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG18-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG18-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG18-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG18-B91.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG18-B93.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG18-B95.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG18-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG18-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG18-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG18-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG19-B95.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG19-B93.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG19-B91.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG19-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG19-B95.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG19-B93.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG19-B91.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG19-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG19-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG19-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG19-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG19-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG19-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG19-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG19-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG19-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG19-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG19-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG19-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG19-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG19-B98.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG19-B96.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG19-B94.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG19-B100.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG20-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG20-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG20-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG20-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG20-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG20-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG20-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG20-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG20-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG20-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG20-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG20-B99.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG20-B97.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG20-B103.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG20-B101.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG20-B97.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG20-B95.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG20-B93.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG20-B91.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG20-B97.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG20-B95.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG20-B93.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG20-B91.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG21-B100.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG21-B94.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG21-B96.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG21-B98.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG21-B100.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG21-B94.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG21-B96.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG21-B98.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG21-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG21-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG21-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG21-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG21-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG21-B72.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-25AUG21-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG21-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG21-B69.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG21-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG21-B73.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-25AUG21-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG21-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG21-B92.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG21-B94.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG21-B96.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG22-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG22-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG22-B85.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHDEN-25AUG22-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG22-B95.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG22-B93.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG22-B91.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG22-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG22-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG22-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG22-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG22-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG22-B93.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG22-B91.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG22-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG22-B95.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG22-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG22-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG22-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG22-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG22-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG22-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG22-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG22-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG23-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG23-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG23-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG23-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG23-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG23-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG23-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG23-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG23-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG23-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG23-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG23-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG23-B94.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG23-B92.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG23-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG23-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG23-B91.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG23-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG23-B95.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG23-B93.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG23-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG23-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG23-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG23-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG24-B94.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG24-B92.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG24-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG24-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG24-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG24-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG24-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG24-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG24-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG24-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG24-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG24-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG24-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG24-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG24-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG24-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG24-B99.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG24-B97.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-25AUG24-B95.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG24-B93.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG24-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG24-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG24-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG24-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG25-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG25-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG25-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG25-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG25-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG25-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG25-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG25-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25AUG25-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25AUG25-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25AUG25-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25AUG25-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG25-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG25-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG25-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG25-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG25-B94.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG25-B96.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG25-B98.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG25-B100.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG25-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG25-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG25-B91.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG25-B93.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG25-B67.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG25-B69.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG25-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG25-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG26-B94.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG26-B100.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG26-B96.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG26-B98.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG26-B94.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG26-B92.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG26-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG26-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG26-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG26-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG26-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG26-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG26-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG26-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG26-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG26-B81.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25AUG26-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25AUG26-B77.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25AUG26-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25AUG26-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG26-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG26-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG26-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG26-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG26-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG26-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG26-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG26-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG27-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG27-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG27-B92.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG27-B94.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG27-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG27-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG27-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG27-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG27-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG27-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG27-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG27-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG27-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG27-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG27-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG27-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25AUG27-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25AUG27-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25AUG27-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25AUG27-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG27-B92.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG27-B94.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG27-B96.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG27-B98.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG27-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG27-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG27-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG27-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG28-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG28-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG28-B91.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG28-B93.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG28-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG28-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG28-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG28-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG28-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG28-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG28-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG28-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG28-B101.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG28-B95.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG28-B97.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG28-B99.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG28-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG28-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG28-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG28-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG28-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG28-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG28-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG28-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25AUG28-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25AUG28-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25AUG28-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25AUG28-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG29-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG29-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG29-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG29-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG29-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG29-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG29-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG29-B92.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG29-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG29-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG29-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG29-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG29-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG29-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG29-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG29-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG29-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG29-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG29-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG29-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG29-B96.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG29-B100.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-25AUG29-B102.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG29-B98.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25AUG29-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25AUG29-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25AUG29-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25AUG29-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG30-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG30-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG30-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG30-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25AUG30-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25AUG30-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25AUG30-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25AUG30-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG30-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG30-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG30-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG30-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG30-B99.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG30-B97.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG30-B95.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG30-B93.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG30-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG30-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG30-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG30-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG30-B92.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG30-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG30-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG30-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG30-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG30-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG30-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG30-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG31-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG31-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG31-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25AUG31-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG31-B93.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG31-B91.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG31-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25AUG31-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25AUG31-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25AUG31-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25AUG31-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25AUG31-B81.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-25AUG31-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG31-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG31-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25AUG31-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG31-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG31-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG31-B92.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25AUG31-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG31-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG31-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG31-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25AUG31-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG31-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG31-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG31-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25AUG31-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP01-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP01-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP01-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP01-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP01-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP01-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP01-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP01-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP01-B92.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP01-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP01-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP01-B86.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHDEN-25SEP01-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP01-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP01-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP01-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP01-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP01-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP01-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP01-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP01-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP01-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP01-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP01-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP01-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP01-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP01-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP01-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP02-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP02-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP02-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP02-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP02-B74.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-25SEP02-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP02-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP02-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP02-B81.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25SEP02-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP02-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP02-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP02-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP02-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP02-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP02-B92.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP02-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP02-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP02-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP02-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP02-B92.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP02-B94.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP02-B96.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP02-B98.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP02-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP02-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP02-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP02-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP03-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP03-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP03-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP03-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP03-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP03-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP03-B80.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-25SEP03-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP03-B100.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP03-B94.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP03-B96.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-25SEP03-B98.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP03-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP03-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP03-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP03-B91.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP03-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP03-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP03-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP03-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP03-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP03-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP03-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP03-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP03-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP03-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP03-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP03-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP04-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP04-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP04-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP04-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP04-B100.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP04-B102.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP04-B104.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-25SEP04-B98.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP04-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP04-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP04-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP04-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP04-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP04-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP04-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP04-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP04-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP04-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP04-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP04-B91.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP04-B65.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP04-B67.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP04-B69.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP04-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP04-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP04-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP04-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP04-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP05-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP05-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP05-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP05-B84.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25SEP05-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP05-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP05-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP05-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP05-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP05-B69.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP05-B67.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP05-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP05-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP05-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP05-B64.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP05-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP05-B98.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-25SEP05-B104.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP05-B102.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP05-B100.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP05-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP05-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP05-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP05-B83.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-25SEP05-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP05-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP05-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP05-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP06-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP06-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP06-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP06-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP06-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP06-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP06-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP06-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP06-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP06-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP06-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP06-B91.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-25SEP06-B63.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP06-B65.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP06-B67.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP06-B69.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP06-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP06-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP06-B91.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP06-B93.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25SEP06-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP06-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP06-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP06-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP06-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP06-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP06-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP06-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP07-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP07-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP07-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP07-B91.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP07-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP07-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP07-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP07-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP07-B69.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP07-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP07-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP07-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP07-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP07-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP07-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP07-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP07-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP07-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP07-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP07-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP07-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP07-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP07-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP07-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP07-B69.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP07-B71.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-25SEP07-B73.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-25SEP07-B75.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHDEN-25SEP08-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP08-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP08-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP08-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP08-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP08-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP08-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP08-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP08-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP08-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP08-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP08-B92.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP08-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP08-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP08-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP08-B91.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP08-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP08-B74.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-25SEP08-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP08-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP08-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP08-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP08-B75.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-25SEP08-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP08-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP08-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP08-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP08-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP09-B91.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP09-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP09-B95.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP09-B93.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP09-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP09-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP09-B91.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP09-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP09-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP09-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP09-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP09-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP09-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP09-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP09-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP09-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP09-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP09-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP09-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP09-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP09-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP09-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP09-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP09-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP09-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP09-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP09-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP09-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP10-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP10-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP10-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP10-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP10-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP10-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP10-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP10-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP10-B92.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-25SEP10-B94.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-25SEP10-B96.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP10-B98.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP10-B67.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP10-B69.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP10-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP10-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP10-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP10-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP10-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP10-B92.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP10-B77.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-25SEP10-B79.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-25SEP10-B81.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-25SEP10-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP10-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP10-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP10-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP10-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP11-B93.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP11-B95.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP11-B97.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP11-B99.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP11-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP11-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP11-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP11-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP11-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP11-B87.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25SEP11-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP11-B91.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP11-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP11-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP11-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP11-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP11-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP11-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP11-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP11-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP11-B69.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP11-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP11-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP11-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP11-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP11-B80.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-25SEP11-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP11-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP12-B93.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP12-B95.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP12-B97.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP12-B99.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP12-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP12-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP12-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP12-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP12-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP12-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP12-B79.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-25SEP12-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP12-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP12-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP12-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP12-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP12-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP12-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP12-B74.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25SEP12-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP12-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP12-B86.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25SEP12-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP12-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP12-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP12-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP12-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP12-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP13-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP13-B73.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25SEP13-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP13-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP13-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP13-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP13-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP13-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP13-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP13-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP13-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP13-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP13-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP13-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP13-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP13-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP13-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP13-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP13-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP13-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP13-B100.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP13-B94.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP13-B96.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP13-B98.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP13-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP13-B84.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25SEP13-B86.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25SEP13-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP14-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP14-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP14-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP14-B81.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-25SEP14-B98.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP14-B96.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP14-B94.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-25SEP14-B92.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-25SEP14-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP14-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP14-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP14-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP14-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP14-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP14-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP14-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP14-B76.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25SEP14-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP14-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP14-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP14-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP14-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP14-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP14-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP14-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP14-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP14-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP14-B69.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP15-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP15-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP15-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP15-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP15-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP15-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP15-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP15-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP15-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP15-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP15-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP15-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP15-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP15-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP15-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP15-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP15-B81.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-25SEP15-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP15-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP15-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP15-B98.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP15-B96.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP15-B94.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP15-B92.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-25SEP15-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP15-B77.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-25SEP15-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP15-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP16-B91.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP16-B93.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP16-B95.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP16-B97.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP16-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP16-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP16-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP16-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP16-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP16-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP16-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP16-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP16-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP16-B86.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25SEP16-B88.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25SEP16-B90.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25SEP16-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP16-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP16-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP16-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP16-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP16-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP16-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP16-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP16-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP16-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP16-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP16-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP17-B98.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP17-B96.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP17-B94.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP17-B92.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP17-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP17-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP17-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP17-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP17-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP17-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP17-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP17-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP17-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP17-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP17-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP17-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP17-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP17-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP17-B69.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP17-B67.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP17-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP17-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP17-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP17-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP17-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP17-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP17-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP17-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP18-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP18-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP18-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP18-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP18-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP18-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP18-B85.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25SEP18-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP18-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP18-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP18-B80.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-25SEP18-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP18-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP18-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP18-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP18-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP18-B92.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP18-B94.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP18-B96.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-25SEP18-B98.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP18-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP18-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP18-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP18-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP18-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP18-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP18-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP18-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP19-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP19-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP19-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP19-B90.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25SEP19-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP19-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP19-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP19-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP19-B92.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP19-B94.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP19-B96.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP19-B98.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP19-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP19-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP19-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP19-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP19-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP19-B82.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-25SEP19-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP19-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP19-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP19-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP19-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP19-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP19-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP19-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP19-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP19-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP20-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP20-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP20-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP20-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP20-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP20-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP20-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP20-B91.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP20-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP20-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP20-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP20-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP20-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP20-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP20-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP20-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP20-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP20-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP20-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP20-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP20-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP20-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP20-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP20-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP20-B92.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP20-B94.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP20-B96.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-25SEP20-B98.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP21-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP21-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP21-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP21-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP21-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP21-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP21-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP21-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP21-B92.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP21-B94.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP21-B96.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP21-B98.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP21-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP21-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP21-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP21-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP21-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP21-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP21-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP21-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP21-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP21-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP21-B81.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHDEN-25SEP21-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP21-B67.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP21-B69.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP21-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP21-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP22-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP22-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP22-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP22-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP22-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP22-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP22-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP22-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP22-B98.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP22-B96.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP22-B94.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP22-B100.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25SEP22-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP22-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP22-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP22-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP22-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP22-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP22-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP22-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP22-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP22-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP22-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP22-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP22-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP22-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP22-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP22-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP23-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP23-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP23-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP23-B74.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHDEN-25SEP23-B61.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP23-B59.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP23-B57.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP23-B55.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP23-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP23-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP23-B83.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-25SEP23-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP23-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP23-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP23-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP23-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP23-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP23-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP23-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP23-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP23-B91.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP23-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP23-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP23-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP23-B99.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP23-B97.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP23-B95.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP23-B101.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP24-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP24-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP24-B76.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25SEP24-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP24-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP24-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP24-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP24-B91.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-25SEP24-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP24-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP24-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP24-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP24-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP24-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP24-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP24-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP24-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP24-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP24-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP24-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP24-B64.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP24-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP24-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP24-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP24-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP24-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP24-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP24-B91.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP25-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP25-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP25-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP25-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP25-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP25-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP25-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP25-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP25-B93.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP25-B91.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP25-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP25-B87.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25SEP25-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP25-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP25-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP25-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP25-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP25-B79.5", "reason": "effective spread > 0.10", "extra": {"spread": 0.10999999999999999}}
+{"key": "KXHIGHNY-25SEP25-B77.5", "reason": "no matching-side print within 15min of signal", "extra": {"side": "no"}}
+{"key": "KXHIGHNY-25SEP25-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP25-B91.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP25-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP25-B87.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25SEP25-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP25-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP25-B80.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-25SEP25-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP25-B76.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-25SEP26-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP26-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP26-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP26-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP26-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP26-B91.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP26-B93.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP26-B95.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP26-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP26-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP26-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP26-B91.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP26-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP26-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP26-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP26-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP26-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP26-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP26-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP26-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP26-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP26-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP26-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP26-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP26-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP26-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP26-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP26-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP27-B96.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP27-B94.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-25SEP27-B92.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP27-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP27-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP27-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP27-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP27-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP27-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP27-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP27-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP27-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP27-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP27-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP27-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP27-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP27-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP27-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP27-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP27-B69.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP27-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP27-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP27-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP27-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP27-B91.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP27-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP27-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP27-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP28-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP28-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP28-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP28-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP28-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP28-B86.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25SEP28-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP28-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP28-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP28-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP28-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP28-B83.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-25SEP28-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP28-B81.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-25SEP28-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP28-B85.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHDEN-25SEP28-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP28-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP28-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP28-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP28-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP28-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP28-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP28-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP28-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP28-B91.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP28-B93.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP28-B95.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP29-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP29-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP29-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP29-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP29-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP29-B91.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-25SEP29-B93.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-25SEP29-B95.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP29-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP29-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP29-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP29-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP29-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP29-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP29-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP29-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP29-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP29-B88.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25SEP29-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP29-B92.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP29-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP29-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP29-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP29-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP29-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP29-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP29-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP29-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP30-B67.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP30-B69.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP30-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25SEP30-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP30-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP30-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP30-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25SEP30-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP30-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP30-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP30-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25SEP30-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP30-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP30-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP30-B91.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25SEP30-B93.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP30-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP30-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP30-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25SEP30-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP30-B91.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP30-B93.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-25SEP30-B95.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25SEP30-B97.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-25SEP30-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP30-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP30-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25SEP30-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT01-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT01-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT01-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT01-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT01-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT01-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT01-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT01-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT01-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT01-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT01-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT01-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT01-B91.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT01-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT01-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT01-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT01-B99.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT01-B97.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT01-B95.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT01-B93.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT01-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT01-B69.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT01-B67.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT01-B65.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT01-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT01-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT01-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT01-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT02-B65.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT02-B67.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT02-B69.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-25OCT02-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT02-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT02-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT02-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT02-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT02-B92.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT02-B94.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT02-B96.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT02-B98.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT02-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT02-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT02-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT02-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT02-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT02-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT02-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT02-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT02-B69.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT02-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT02-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT02-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT02-B62.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT02-B64.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT02-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT02-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT03-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT03-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT03-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT03-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT03-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT03-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT03-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT03-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT03-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT03-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT03-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT03-B91.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT03-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT03-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT03-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT03-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT03-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT03-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT03-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT03-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT03-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT03-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT03-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT03-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT03-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT03-B92.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT03-B94.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT03-B96.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT04-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT04-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT04-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT04-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT04-B69.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT04-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT04-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT04-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT04-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT04-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT04-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT04-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT04-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT04-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT04-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT04-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT04-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT04-B91.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT04-B93.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT04-B95.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT04-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT04-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT04-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT04-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT04-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT04-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT04-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT04-B92.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT05-B65.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT05-B67.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT05-B69.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT05-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT05-B69.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT05-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT05-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT05-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT05-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT05-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT05-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT05-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT05-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT05-B92.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT05-B94.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT05-B96.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT05-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT05-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT05-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT05-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT05-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT05-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT05-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT05-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT05-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT05-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT05-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT05-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT06-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT06-B92.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT06-B94.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT06-B96.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT06-B83.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-25OCT06-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT06-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT06-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT06-B67.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT06-B69.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT06-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT06-B73.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHDEN-25OCT06-B55.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT06-B57.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT06-B59.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT06-B61.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT06-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT06-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT06-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT06-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT06-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT06-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT06-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT06-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT06-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT06-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT06-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT06-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT07-B91.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT07-B93.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT07-B95.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT07-B97.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT07-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT07-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT07-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT07-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT07-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT07-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT07-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT07-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT07-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT07-B84.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25OCT07-B86.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25OCT07-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT07-B60.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT07-B62.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT07-B64.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT07-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT07-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT07-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT07-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT07-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT07-B67.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT07-B69.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT07-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT07-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT08-B60.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT08-B62.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT08-B64.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT08-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT08-B68.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-25OCT08-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT08-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT08-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT08-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT08-B91.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT08-B93.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT08-B95.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT08-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT08-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT08-B85.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25OCT08-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT08-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT08-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT08-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT08-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT08-B69.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT08-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT08-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT08-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT08-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT08-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT08-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT08-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT09-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT09-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT09-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT09-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT09-B84.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHDEN-25OCT09-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT09-B80.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHDEN-25OCT09-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT09-B65.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT09-B63.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT09-B61.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT09-B59.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT09-B69.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT09-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT09-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT09-B75.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-25OCT09-B58.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT09-B60.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT09-B62.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT09-B64.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT09-B62.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT09-B64.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT09-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT09-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT09-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT09-B92.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT09-B94.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT09-B96.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT10-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT10-B64.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT10-B62.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT10-B60.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT10-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT10-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT10-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT10-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT10-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT10-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT10-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT10-B72.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25OCT10-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT10-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT10-B82.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25OCT10-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT10-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT10-B69.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-25OCT10-B67.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT10-B65.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT10-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT10-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT10-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT10-B64.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT10-B94.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-25OCT10-B92.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT10-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT10-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT11-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT11-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT11-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT11-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT11-B63.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT11-B65.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT11-B67.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT11-B69.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT11-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT11-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT11-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT11-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT11-B64.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT11-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT11-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT11-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT11-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT11-B91.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-25OCT11-B93.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT11-B95.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT11-B69.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT11-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT11-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT11-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT11-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT11-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT11-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT11-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT12-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT12-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT12-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT12-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT12-B61.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT12-B63.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT12-B65.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT12-B67.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT12-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT12-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT12-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT12-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT12-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT12-B92.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT12-B94.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-25OCT12-B96.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT12-B61.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT12-B63.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT12-B65.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT12-B67.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT12-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT12-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT12-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT12-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT12-B69.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT12-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT12-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT12-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT13-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT13-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT13-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT13-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT13-B94.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT13-B92.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT13-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT13-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT13-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT13-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT13-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT13-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT13-B58.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT13-B60.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-25OCT13-B62.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-25OCT13-B64.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT13-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT13-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT13-B64.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT13-B62.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT13-B64.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT13-B58.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT13-B60.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT13-B62.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT13-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT13-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT13-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT13-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT14-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT14-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT14-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT14-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT14-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT14-B84.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25OCT14-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT14-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT14-B65.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT14-B67.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT14-B69.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT14-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT14-B64.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT14-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT14-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT14-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT14-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT14-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT14-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT14-B91.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT14-B93.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT14-B95.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT14-B64.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT14-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT14-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT14-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT15-B63.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT15-B65.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT15-B67.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT15-B69.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT15-B63.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT15-B65.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-25OCT15-B67.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT15-B69.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT15-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT15-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT15-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT15-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT15-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT15-B91.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT15-B93.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT15-B95.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT15-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT15-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT15-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT15-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT15-B60.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT15-B62.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT15-B64.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT15-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT15-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT15-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT15-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT15-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT16-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT16-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT16-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT16-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT16-B59.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT16-B61.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT16-B63.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT16-B65.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT16-B59.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT16-B61.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT16-B63.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT16-B65.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT16-B67.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT16-B69.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT16-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT16-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT16-B56.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT16-B58.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT16-B60.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT16-B62.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT16-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT16-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT16-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT16-B92.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT16-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT16-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT16-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT16-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT17-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT17-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT17-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT17-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT17-B59.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-25OCT17-B61.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT17-B63.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT17-B65.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT17-B62.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT17-B64.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT17-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT17-B68.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25OCT17-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT17-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT17-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT17-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT17-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT17-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT17-B92.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT17-B94.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT17-B61.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT17-B63.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT17-B65.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT17-B67.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT17-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT17-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT17-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT17-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT18-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT18-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT18-B64.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT18-B62.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT18-B98.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT18-B96.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT18-B94.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT18-B92.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT18-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT18-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT18-B82.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25OCT18-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT18-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT18-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT18-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT18-B72.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-25OCT18-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT18-B70.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-25OCT18-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT18-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT18-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT18-B64.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT18-B62.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT18-B60.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT18-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT18-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT18-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT18-B69.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT19-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT19-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT19-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT19-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT19-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT19-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT19-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT19-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT19-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT19-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT19-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT19-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT19-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT19-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT19-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT19-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT19-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT19-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT19-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT19-B79.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-25OCT19-B61.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT19-B63.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-25OCT19-B65.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT19-B67.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT19-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT19-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT19-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT19-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT20-B64.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT20-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT20-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT20-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT20-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT20-B92.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT20-B94.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT20-B96.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT20-B69.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT20-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT20-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT20-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT20-B59.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT20-B61.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT20-B63.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT20-B65.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT20-B64.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT20-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT20-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT20-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT20-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT20-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT20-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT20-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT20-B62.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-25OCT20-B64.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT20-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT20-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT21-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT21-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT21-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT21-B91.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT21-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT21-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT21-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT21-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT21-B65.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT21-B63.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT21-B69.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-25OCT21-B67.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT21-B60.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT21-B54.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT21-B56.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT21-B58.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT21-B69.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT21-B67.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25OCT21-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT21-B71.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-25OCT21-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT21-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT21-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT21-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT21-B69.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT21-B67.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT21-B65.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT21-B63.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT22-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT22-B68.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25OCT22-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT22-B64.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT22-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT22-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT22-B86.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-25OCT22-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT22-B67.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT22-B65.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT22-B63.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT22-B61.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT22-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT22-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT22-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT22-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT22-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT22-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT22-B64.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT22-B62.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT22-B56.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT22-B54.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT22-B52.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT22-B50.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT22-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT22-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT22-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT22-B64.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT23-B51.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT23-B53.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT23-B55.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT23-B57.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT23-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT23-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT23-B92.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT23-B94.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT23-B61.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT23-B63.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT23-B65.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT23-B67.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT23-B82.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25OCT23-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT23-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT23-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT23-B58.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-25OCT23-B60.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT23-B62.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT23-B64.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT23-B58.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT23-B60.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT23-B62.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT23-B64.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT23-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT23-B68.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25OCT23-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT23-B72.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-25OCT24-B59.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT24-B57.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT24-B63.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT24-B61.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT24-B60.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT24-B58.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT24-B64.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT24-B62.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT24-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT24-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT24-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT24-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT24-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT24-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT24-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT24-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT24-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT24-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT24-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT24-B69.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT24-B51.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-25OCT24-B53.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT24-B57.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT24-B55.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT24-B61.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT24-B59.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT24-B57.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT24-B63.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT25-B57.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT25-B59.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT25-B61.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT25-B63.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT25-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT25-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT25-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT25-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT25-B82.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25OCT25-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT25-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT25-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT25-B65.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT25-B67.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT25-B69.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT25-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT25-B52.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT25-B54.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT25-B56.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT25-B58.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT25-B55.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT25-B57.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT25-B59.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT25-B61.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT25-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT25-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT25-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT25-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT26-B80.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-25OCT26-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT26-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT26-B86.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25OCT26-B65.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT26-B67.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT26-B69.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT26-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT26-B54.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT26-B56.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT26-B58.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT26-B60.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT26-B57.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT26-B59.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-25OCT26-B61.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-25OCT26-B63.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT26-B57.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT26-B59.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT26-B61.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT26-B63.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT26-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT26-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT26-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT26-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT26-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT26-B68.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHDEN-25OCT26-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT26-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT27-B54.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT27-B56.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT27-B58.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT27-B60.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT27-B62.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT27-B64.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT27-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT27-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT27-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT27-B85.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-25OCT27-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT27-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT27-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT27-B84.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25OCT27-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT27-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT27-B52.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT27-B54.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT27-B56.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-25OCT27-B58.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT27-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT27-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT27-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT27-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT27-B54.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-25OCT27-B56.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT27-B58.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-25OCT27-B60.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT28-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT28-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT28-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT28-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT28-B54.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT28-B56.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT28-B58.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT28-B60.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT28-B45.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT28-B47.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT28-B49.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT28-B51.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT28-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT28-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT28-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT28-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT28-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT28-B86.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25OCT28-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT28-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT28-B56.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT28-B58.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT28-B60.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT28-B62.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT28-B54.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT28-B56.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT28-B58.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT28-B60.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT29-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT29-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT29-B83.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25OCT29-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT29-B60.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT29-B58.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT29-B56.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT29-B54.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT29-B58.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT29-B56.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT29-B54.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-25OCT29-B52.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT29-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT29-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT29-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT29-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT29-B58.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-25OCT29-B56.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT29-B54.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT29-B52.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT29-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT29-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT29-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT29-B66.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHDEN-25OCT29-B59.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT29-B57.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT29-B55.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT29-B53.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT30-B61.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT30-B63.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT30-B65.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT30-B67.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT30-B53.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-25OCT30-B57.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT30-B59.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT30-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT30-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT30-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT30-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT30-B69.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT30-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT30-B73.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-25OCT30-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT30-B52.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT30-B54.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHDEN-25OCT30-B56.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT30-B58.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT30-B77.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25OCT30-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT30-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT30-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT30-B58.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT30-B60.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-25OCT31-B58.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT31-B60.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT31-B62.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25OCT31-B64.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT31-B69.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT31-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25OCT31-B73.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25OCT31-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT31-B48.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT31-B50.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT31-B52.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25OCT31-B54.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT31-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT31-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT31-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25OCT31-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT31-B53.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT31-B55.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT31-B57.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25OCT31-B59.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT31-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT31-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT31-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25OCT31-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT31-B52.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT31-B54.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT31-B56.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25OCT31-B58.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV01-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV01-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV01-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV01-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV01-B59.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV01-B57.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV01-B55.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV01-B53.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV01-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV01-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV01-B70.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25NOV01-B68.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25NOV01-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV01-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV01-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV01-B78.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-25NOV01-B60.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV01-B58.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV01-B56.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV01-B62.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV01-B58.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV01-B62.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV01-B60.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV01-B64.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV01-B50.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV01-B48.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV01-B52.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV01-B54.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV02-B55.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV02-B57.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV02-B59.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV02-B61.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV02-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV02-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV02-B78.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHDEN-25NOV02-B80.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-25NOV02-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV02-B72.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-25NOV02-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV02-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV02-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV02-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV02-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV02-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV02-B58.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV02-B60.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV02-B62.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV02-B64.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-25NOV02-B52.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV02-B54.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV02-B56.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV02-B58.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV02-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV02-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV02-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV02-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV03-B65.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV03-B61.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV03-B59.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV03-B63.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV03-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV03-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV03-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV03-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV03-B61.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV03-B57.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV03-B59.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV03-B63.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV03-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV03-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV03-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV03-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV03-B56.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV03-B58.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV03-B60.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV03-B62.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV03-B72.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25NOV03-B70.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25NOV03-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV03-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV03-B62.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV03-B58.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV03-B60.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV03-B64.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV04-B58.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV04-B60.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV04-B62.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV04-B64.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV04-B59.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV04-B57.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV04-B61.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV04-B63.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV04-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV04-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV04-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV04-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV04-B65.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25NOV04-B67.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25NOV04-B69.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV04-B71.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-25NOV04-B65.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-25NOV04-B63.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV04-B61.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-25NOV04-B59.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV04-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV04-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV04-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV04-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV04-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV04-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV04-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV04-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV05-B60.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV05-B62.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV05-B64.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV05-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV05-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV05-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV05-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV05-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV05-B58.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV05-B60.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV05-B62.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV05-B64.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV05-B64.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV05-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV05-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV05-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV05-B79.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25NOV05-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV05-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV05-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV05-B64.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV05-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV05-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV05-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV05-B65.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV05-B67.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25NOV05-B69.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV05-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV06-B65.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV06-B67.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV06-B69.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV06-B71.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-25NOV06-B53.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV06-B55.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-25NOV06-B57.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV06-B59.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV06-B55.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV06-B57.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV06-B59.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV06-B61.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV06-B55.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV06-B57.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV06-B59.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV06-B61.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV06-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV06-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV06-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV06-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV06-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV06-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV06-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV06-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV06-B65.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV06-B67.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV06-B69.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV06-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV07-B67.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV07-B63.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV07-B65.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV07-B61.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV07-B55.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV07-B57.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV07-B61.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV07-B59.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV07-B59.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV07-B61.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV07-B63.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV07-B65.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-25NOV07-B91.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV07-B93.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV07-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV07-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV07-B73.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25NOV07-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV07-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV07-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV07-B59.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV07-B61.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV07-B63.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV07-B65.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV07-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV07-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV07-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV07-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV08-B62.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV08-B64.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV08-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV08-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV08-B64.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV08-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV08-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV08-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV08-B54.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV08-B52.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-25NOV08-B50.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV08-B48.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV08-B74.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25NOV08-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV08-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV08-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV08-B51.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV08-B53.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV08-B55.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV08-B57.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV08-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV08-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV08-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV08-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV08-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV08-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV08-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV08-B83.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-25NOV09-B59.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV09-B61.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV09-B63.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV09-B65.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV09-B44.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV09-B46.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV09-B48.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV09-B50.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV09-B38.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV09-B40.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV09-B42.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV09-B44.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV09-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV09-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV09-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV09-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV09-B65.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV09-B67.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV09-B69.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV09-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV09-B60.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV09-B62.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV09-B64.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV09-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV09-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV09-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV09-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV09-B88.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-25NOV10-B55.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV10-B57.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV10-B59.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV10-B61.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV10-B65.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV10-B67.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV10-B69.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV10-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV10-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV10-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV10-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV10-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV10-B58.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV10-B60.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV10-B62.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV10-B64.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV10-B36.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-25NOV10-B38.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV10-B40.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV10-B34.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV10-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV10-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV10-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV10-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV10-B53.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-25NOV10-B55.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV10-B57.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV10-B59.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV11-B43.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV11-B41.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV11-B47.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV11-B45.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV11-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV11-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV11-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV11-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV11-B42.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV11-B48.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV11-B46.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-25NOV11-B44.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV11-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV11-B67.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV11-B65.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV11-B69.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV11-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV11-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV11-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV11-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV11-B40.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV11-B38.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV11-B44.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV11-B42.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV11-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV11-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV11-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV11-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV12-B47.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-25NOV12-B49.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV12-B51.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV12-B53.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV12-B47.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV12-B49.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV12-B51.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV12-B53.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV12-B64.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV12-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV12-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV12-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV12-B73.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25NOV12-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV12-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV12-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV12-B65.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV12-B67.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV12-B69.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV12-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV12-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV12-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV12-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV12-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV12-B50.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV12-B52.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV12-B54.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-25NOV12-B56.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV13-B50.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV13-B48.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV13-B52.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV13-B54.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV13-B66.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25NOV13-B64.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV13-B62.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25NOV13-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV13-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV13-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV13-B71.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHDEN-25NOV13-B69.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV13-B56.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV13-B54.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV13-B52.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV13-B50.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV13-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV13-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV13-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV13-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV13-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV13-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV13-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV13-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV13-B51.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV13-B53.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV13-B57.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV13-B55.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV14-B51.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV14-B49.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV14-B47.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV14-B45.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV14-B62.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV14-B60.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV14-B58.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV14-B64.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV14-B55.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV14-B53.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV14-B51.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV14-B49.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV14-B62.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV14-B60.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV14-B64.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV14-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV14-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV14-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV14-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV14-B78.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-25NOV14-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV14-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV14-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV14-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV14-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV14-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV14-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV14-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV15-B64.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV15-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV15-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV15-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV15-B55.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV15-B60.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25NOV15-B62.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25NOV15-B64.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV15-B66.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25NOV15-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV15-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV15-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV15-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV15-B54.5", "reason": "effective spread > 0.10", "extra": {"spread": 0.19}}
+{"key": "KXHIGHPHIL-25NOV15-B56.5", "reason": "effective spread > 0.10", "extra": {"spread": 0.36000000000000004}}
+{"key": "KXHIGHPHIL-25NOV15-B58.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV15-B60.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV15-B67.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV15-B69.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV15-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV15-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV15-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV15-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV15-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV15-B89.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV16-B52.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV16-B54.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV16-B56.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV16-B58.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV16-B48.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-25NOV16-B50.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV16-B52.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV16-B46.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV16-B56.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV16-B58.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV16-B60.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV16-B62.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV16-B84.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-25NOV16-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV16-B88.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-25NOV16-B90.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHDEN-25NOV16-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV16-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV16-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV16-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV16-B60.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV16-B62.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV16-B64.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV16-B58.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV16-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV16-B80.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25NOV16-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV16-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV17-B41.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV17-B43.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV17-B45.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-25NOV17-B47.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV17-B58.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV17-B60.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV17-B62.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV17-B64.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV17-B45.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV17-B47.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV17-B49.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV17-B51.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV17-B46.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV17-B48.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV17-B50.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV17-B52.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV17-B56.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV17-B58.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV17-B60.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV17-B62.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV17-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV17-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV17-B80.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25NOV17-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV17-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV17-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV17-B89.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-25NOV17-B91.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV18-B43.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV18-B45.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV18-B47.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV18-B49.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV18-B79.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25NOV18-B81.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25NOV18-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV18-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV18-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV18-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV18-B88.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-25NOV18-B90.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV18-B60.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV18-B62.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV18-B58.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV18-B56.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV18-B46.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV18-B48.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV18-B50.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV18-B52.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV18-B41.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV18-B47.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV18-B62.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV18-B56.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV18-B58.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV18-B60.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV19-B45.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV19-B47.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV19-B49.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV19-B51.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV19-B57.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25NOV19-B59.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25NOV19-B61.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV19-B63.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-25NOV19-B43.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV19-B45.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV19-B47.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-25NOV19-B49.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-25NOV19-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV19-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV19-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV19-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV19-B60.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV19-B62.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV19-B64.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV19-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV19-B47.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV19-B49.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV19-B51.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV19-B53.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV19-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV19-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV19-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV19-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV20-B51.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV20-B49.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV20-B47.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV20-B45.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV20-B57.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV20-B55.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV20-B53.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV20-B51.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV20-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV20-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV20-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV20-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV20-B58.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV20-B62.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV20-B60.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25NOV20-B56.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV20-B53.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV20-B49.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV20-B55.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV20-B51.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV20-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV20-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV20-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV20-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV20-B52.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV20-B50.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV20-B48.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV20-B54.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV21-B56.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV21-B54.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV21-B52.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV21-B50.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25NOV21-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV21-B69.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV21-B67.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25NOV21-B65.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV21-B53.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV21-B51.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV21-B49.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV21-B55.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV21-B44.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV21-B46.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV21-B42.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV21-B48.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV21-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV21-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV21-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV21-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV21-B60.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV21-B58.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-25NOV21-B56.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV21-B54.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV21-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV21-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV21-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV21-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV22-B49.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-25NOV22-B51.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV22-B53.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-25NOV22-B55.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV22-B48.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV22-B50.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV22-B52.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV22-B54.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV22-B55.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV22-B57.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV22-B59.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV22-B61.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV22-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV22-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV22-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV22-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV22-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV22-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV22-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV22-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV22-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV22-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV22-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV22-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV22-B49.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV22-B51.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV22-B53.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV22-B55.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV25-B56.5", "reason": "effective spread > 0.10", "extra": {"spread": 0.19000000000000006}}
+{"key": "KXHIGHNY-25NOV25-B52.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV25-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV25-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV25-B59.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV25-B57.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV25-B55.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV25-B45.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV25-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV25-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV25-B74.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25NOV25-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV25-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV25-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV25-B53.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV25-B51.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV26-B62.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV26-B64.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV26-B60.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-25NOV26-B58.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV26-B44.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV26-B46.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV26-B48.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV26-B50.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV26-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV26-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV26-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV26-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV26-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV26-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV26-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV26-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV26-B50.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV26-B52.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV26-B54.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV26-B56.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV26-B69.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV26-B67.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV26-B65.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV26-B63.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV26-B61.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV26-B63.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV26-B65.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV26-B67.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV27-B31.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV27-B33.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV27-B35.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV27-B37.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV27-B53.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV27-B51.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV27-B49.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV27-B47.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV27-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV27-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV27-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV27-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV27-B48.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV27-B50.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV27-B52.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHDEN-25NOV27-B54.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV27-B73.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25NOV27-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV27-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV27-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV27-B49.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV27-B47.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV27-B45.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-25NOV27-B43.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV27-B62.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV27-B64.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV27-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV27-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV28-B61.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV28-B59.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV28-B65.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV28-B63.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV28-B39.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV28-B41.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-25NOV28-B43.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV28-B45.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25NOV28-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV28-B69.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25NOV28-B67.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25NOV28-B65.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV28-B42.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV28-B46.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV28-B44.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV28-B40.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV28-B34.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV28-B36.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV28-B32.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV28-B30.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV28-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV28-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV28-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV28-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV28-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV28-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV28-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV28-B64.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV29-B43.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-25NOV29-B39.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV29-B45.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV29-B41.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV29-B67.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV29-B65.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV29-B63.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV29-B69.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-25NOV29-B46.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV29-B44.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV29-B42.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV29-B40.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV29-B35.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV29-B37.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV29-B39.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV29-B41.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV29-B30.5", "reason": "effective spread > 0.10", "extra": {"spread": 0.47000000000000003}}
+{"key": "KXHIGHCHI-25NOV29-B32.5", "reason": "effective spread > 0.10", "extra": {"spread": 0.17000000000000004}}
+{"key": "KXHIGHCHI-25NOV29-B36.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25NOV29-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV29-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV29-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV29-B81.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-25NOV29-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV29-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV29-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV29-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV30-B50.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV30-B48.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV30-B46.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25NOV30-B52.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV30-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV30-B64.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25NOV30-B62.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25NOV30-B60.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV30-B45.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV30-B49.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV30-B47.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25NOV30-B51.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV30-B31.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV30-B33.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25NOV30-B35.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-25NOV30-B37.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV30-B27.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV30-B29.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV30-B31.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25NOV30-B33.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV30-B55.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV30-B57.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-25NOV30-B59.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25NOV30-B61.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25NOV30-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV30-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV30-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25NOV30-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC01-B35.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC01-B37.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC01-B39.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC01-B41.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25DEC01-B64.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25DEC01-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25DEC01-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25DEC01-B66.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-25DEC01-B46.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25DEC01-B44.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25DEC01-B42.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25DEC01-B40.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC01-B52.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC01-B54.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-25DEC01-B50.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC01-B48.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC01-B31.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-25DEC01-B27.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC01-B29.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC01-B33.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC01-B47.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC01-B43.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC01-B45.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC01-B41.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC01-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC01-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC01-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC01-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25DEC02-B64.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25DEC02-B62.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25DEC02-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25DEC02-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC02-B43.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC02-B41.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC02-B39.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC02-B37.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC02-B23.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC02-B25.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC02-B27.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC02-B29.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25DEC02-B39.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25DEC02-B45.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25DEC02-B41.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25DEC02-B43.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC02-B43.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC02-B45.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC02-B47.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC02-B49.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC02-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC02-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC02-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC02-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC02-B59.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC02-B61.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC02-B57.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC02-B55.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25DEC03-B63.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25DEC03-B65.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25DEC03-B67.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25DEC03-B69.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-25DEC03-B33.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC03-B35.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC03-B37.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25DEC03-B43.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25DEC03-B41.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25DEC03-B39.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25DEC03-B37.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC03-B28.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC03-B30.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC03-B32.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC03-B34.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC03-B63.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC03-B65.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC03-B67.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC03-B69.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC03-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC03-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC03-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC03-B79.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-25DEC03-B44.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC03-B42.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-25DEC03-B40.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC03-B38.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25DEC04-B43.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25DEC04-B41.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25DEC04-B39.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25DEC04-B37.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC04-B16.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC04-B18.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC04-B20.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC04-B22.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25DEC04-B71.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25DEC04-B69.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25DEC04-B67.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25DEC04-B65.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC04-B34.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC04-B36.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC04-B38.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC04-B40.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC04-B59.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC04-B61.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC04-B57.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC04-B55.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC04-B37.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC04-B39.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-25DEC04-B41.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-25DEC04-B43.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC04-B84.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25DEC04-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC04-B80.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25DEC04-B78.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHDEN-25DEC05-B37.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC05-B39.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC05-B41.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC05-B43.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC05-B26.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC05-B32.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC05-B30.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-25DEC05-B28.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC05-B35.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC05-B33.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC05-B31.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-25DEC05-B29.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25DEC05-B36.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25DEC05-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC05-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC05-B81.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25DEC05-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC05-B50.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-25DEC05-B52.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC05-B54.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-25DEC05-B56.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25DEC05-B66.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25DEC05-B70.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25DEC05-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25DEC05-B64.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-25DEC06-B39.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-25DEC06-B45.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25DEC06-B43.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25DEC06-B41.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC06-B30.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-25DEC06-B28.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-25DEC06-B76.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-25DEC06-B70.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-25DEC06-B72.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-25DEC06-B74.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-25DEC06-B46.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC06-B44.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC06-B42.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC06-B40.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25DEC06-B61.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25DEC06-B63.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25DEC06-B65.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25DEC06-B67.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC06-B45.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC06-B43.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC06-B47.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC06-B49.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25DEC06-B86.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25DEC06-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC06-B82.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25DEC06-B80.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-25DEC07-B43.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25DEC07-B41.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-25DEC07-B39.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-25DEC07-B37.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC07-B42.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC07-B46.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC07-B44.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC07-B40.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC07-B39.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC07-B41.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC07-B43.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC07-B45.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC07-B27.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-25DEC07-B29.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC07-B31.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC07-B33.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25DEC07-B67.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25DEC07-B71.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25DEC07-B69.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25DEC07-B65.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC07-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC07-B82.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25DEC07-B80.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25DEC07-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC07-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC07-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC07-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC07-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC08-B28.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-25DEC08-B26.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC08-B24.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-25DEC08-B22.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-25DEC08-B39.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-25DEC08-B35.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-25DEC08-B33.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-25DEC08-B37.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC08-B51.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHDEN-25DEC08-B49.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC08-B47.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC08-B53.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC08-B33.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-25DEC08-B31.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-25DEC08-B35.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-25DEC08-B37.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC08-B59.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC08-B61.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-25DEC08-B63.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-25DEC08-B65.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25DEC08-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25DEC08-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25DEC08-B72.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25DEC08-B74.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25DEC08-B87.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC08-B81.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25DEC08-B83.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25DEC08-B85.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-25DEC09-B38.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-25DEC09-B36.5", "reason": "effective spread > 0.10", "extra": {"spread": 0.14}}
+{"key": "KXHIGHNY-25DEC09-B34.5", "reason": "effective spread > 0.10", "extra": {"spread": 0.16000000000000003}}
+{"key": "KXHIGHNY-25DEC09-B32.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25DEC09-B79.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25DEC09-B77.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25DEC09-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25DEC09-B73.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHDEN-25DEC09-B54.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC09-B56.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC09-B58.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC09-B60.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC09-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC09-B76.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25DEC09-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC09-B72.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-25DEC09-B67.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-25DEC09-B71.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-25DEC09-B69.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC09-B65.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-25DEC09-B36.5", "reason": "effective spread > 0.10", "extra": {"spread": 0.52}}
+{"key": "KXHIGHPHIL-25DEC09-B32.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-25DEC09-B35.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-25DEC09-B39.5", "reason": "effective spread > 0.10", "extra": {"spread": 0.15000000000000002}}
+{"key": "KXHIGHNY-25DEC10-B46.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25DEC10-B44.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25DEC10-B42.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25DEC10-B40.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-25DEC10-B36.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC10-B38.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-25DEC10-B40.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC10-B42.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC10-B55.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHDEN-25DEC10-B57.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC10-B59.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHDEN-25DEC10-B61.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25DEC10-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25DEC10-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25DEC10-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25DEC10-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC10-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC10-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC10-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC10-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC10-B41.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC10-B43.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC10-B45.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC10-B47.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC10-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC10-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC10-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC10-B71.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-25DEC11-B22.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC11-B24.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC11-B26.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC11-B28.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC11-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC11-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC11-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC11-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC11-B67.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC11-B69.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC11-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC11-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC11-B39.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-25DEC11-B37.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC11-B43.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC11-B41.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25DEC11-B38.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25DEC11-B40.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25DEC11-B42.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25DEC11-B44.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25DEC11-B69.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25DEC11-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25DEC11-B73.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25DEC11-B75.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHDEN-25DEC11-B59.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC11-B61.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC11-B63.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC11-B65.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25DEC12-B67.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25DEC12-B73.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25DEC12-B71.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25DEC12-B69.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25DEC12-B38.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-25DEC12-B36.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25DEC12-B34.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25DEC12-B32.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-25DEC12-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC12-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC12-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC12-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC12-B35.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC12-B37.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC12-B39.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC12-B41.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC12-B28.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC12-B34.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC12-B32.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC12-B30.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC12-B80.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25DEC12-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC12-B76.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25DEC12-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC12-B55.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC12-B57.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC12-B59.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHDEN-25DEC12-B61.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC13-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC13-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC13-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC13-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC13-B42.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC13-B46.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC13-B44.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC13-B40.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25DEC13-B36.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25DEC13-B38.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-25DEC13-B40.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25DEC13-B42.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25DEC13-B65.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25DEC13-B67.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25DEC13-B69.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25DEC13-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC13-B18.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-25DEC13-B20.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-25DEC13-B22.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-25DEC13-B24.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHDEN-25DEC13-B61.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC13-B59.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC13-B63.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC13-B57.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC13-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC13-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC13-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC13-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC14-B62.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC14-B64.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC14-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC14-B60.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC14-B35.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC14-B33.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC14-B37.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC14-B39.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25DEC14-B69.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25DEC14-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25DEC14-B67.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25DEC14-B65.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC14-B58.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC14-B60.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC14-B62.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC14-B64.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC14-B10.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC14-B12.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC14-B14.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC14-B16.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25DEC14-B34.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25DEC14-B36.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25DEC14-B38.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25DEC14-B40.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC14-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC14-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC14-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC14-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC15-B25.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC15-B27.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC15-B29.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25DEC15-B28.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25DEC15-B30.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25DEC15-B26.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25DEC15-B32.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC15-B60.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC15-B62.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC15-B64.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC15-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC15-B33.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC15-B27.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC15-B31.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC15-B29.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25DEC15-B65.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25DEC15-B67.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25DEC15-B69.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25DEC15-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC15-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC15-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC15-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC15-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC15-B57.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC15-B55.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC15-B59.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC15-B53.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25DEC16-B34.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-25DEC16-B32.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25DEC16-B30.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25DEC16-B28.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC16-B35.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC16-B29.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC16-B31.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC16-B33.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC16-B59.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC16-B61.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC16-B63.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC16-B65.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25DEC16-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC16-B72.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25DEC16-B74.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25DEC16-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25DEC16-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25DEC16-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25DEC16-B71.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25DEC16-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC16-B35.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC16-B37.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-25DEC16-B39.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC16-B41.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC16-B60.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-25DEC16-B64.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC16-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC16-B62.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC17-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC17-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC17-B72.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-25DEC17-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC17-B62.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC17-B68.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHDEN-25DEC17-B66.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHDEN-25DEC17-B64.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25DEC17-B81.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25DEC17-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC17-B77.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25DEC17-B75.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25DEC17-B70.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-25DEC17-B36.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC17-B40.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-25DEC17-B38.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC17-B34.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25DEC17-B49.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25DEC17-B47.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25DEC17-B45.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-25DEC17-B43.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC17-B42.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC17-B40.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC17-B46.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC17-B44.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-25DEC18-B74.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-25DEC18-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC18-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC18-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25DEC18-B56.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25DEC18-B54.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25DEC18-B78.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25DEC18-B74.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25DEC18-B76.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-25DEC18-B52.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC18-B54.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC18-B48.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC18-B50.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC18-B47.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC18-B51.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC18-B49.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC18-B53.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC18-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC18-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC18-B80.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25DEC18-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC18-B46.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHDEN-25DEC18-B48.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHDEN-25DEC18-B50.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC18-B52.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC19-B61.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC19-B55.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC19-B57.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC19-B59.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC19-B24.5", "reason": "effective spread > 0.10", "extra": {"spread": 0.37}}
+{"key": "KXHIGHCHI-25DEC19-B28.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-25DEC19-B30.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-25DEC19-B65.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC19-B67.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-25DEC19-B69.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC19-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC19-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC19-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC19-B70.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHDEN-25DEC19-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25DEC19-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25DEC19-B73.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25DEC19-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25DEC19-B69.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-25DEC19-B54.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-25DEC19-B56.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-25DEC19-B58.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25DEC19-B60.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25DEC19-B87.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25DEC19-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC19-B83.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25DEC19-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25DEC20-B36.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-25DEC20-B42.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC20-B75.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-25DEC20-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC20-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC20-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC20-B39.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC20-B41.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC20-B43.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC20-B45.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC20-B42.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC20-B40.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC20-B38.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC20-B36.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC20-B54.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC20-B56.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC20-B58.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC20-B60.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25DEC20-B67.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25DEC20-B65.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25DEC20-B61.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25DEC20-B63.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC20-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC20-B80.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25DEC20-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC20-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC21-B27.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC21-B29.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC21-B31.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC21-B33.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25DEC21-B44.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25DEC21-B40.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25DEC21-B42.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25DEC21-B46.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC21-B42.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC21-B44.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC21-B46.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC21-B48.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC21-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC21-B80.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25DEC21-B78.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25DEC21-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25DEC21-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25DEC21-B64.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25DEC21-B68.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25DEC21-B62.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-25DEC21-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC21-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC21-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC21-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC21-B55.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC21-B57.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC21-B59.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC21-B61.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC22-B40.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-25DEC22-B42.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-25DEC22-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC22-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC22-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC22-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25DEC22-B38.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25DEC22-B36.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-25DEC22-B42.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC22-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC22-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC22-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC22-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC22-B82.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25DEC22-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC22-B78.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25DEC22-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC22-B41.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC22-B39.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-25DEC22-B37.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC22-B43.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25DEC22-B64.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25DEC22-B68.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25DEC22-B62.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25DEC22-B66.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-25DEC23-B45.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC23-B47.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC23-B49.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC23-B51.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC23-B78.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-25DEC23-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC23-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC23-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25DEC23-B38.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-25DEC23-B44.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHDEN-25DEC23-B61.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC23-B63.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC23-B65.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC23-B67.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-25DEC23-B45.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC23-B47.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25DEC23-B76.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25DEC23-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC23-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC23-B82.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25DEC23-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25DEC23-B60.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25DEC23-B62.5", "reason": "effective spread > 0.10", "extra": {"spread": 0.25}}
+{"key": "KXHIGHLAX-25DEC23-B64.5", "reason": "effective spread > 0.10", "extra": {"spread": 0.16}}
+{"key": "KXHIGHNY-25DEC24-B40.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-25DEC24-B42.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25DEC24-B44.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-25DEC24-B46.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC24-B43.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-25DEC24-B45.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-25DEC24-B47.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC24-B49.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHDEN-25DEC24-B63.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC24-B69.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC24-B67.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC24-B65.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC24-B80.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25DEC24-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC24-B76.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25DEC24-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC24-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC24-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC24-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC24-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25DEC24-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25DEC24-B62.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25DEC24-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC24-B44.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC24-B46.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC24-B40.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC24-B42.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25DEC25-B60.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25DEC25-B62.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25DEC25-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25DEC25-B64.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-25DEC25-B40.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-25DEC25-B42.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC25-B44.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC25-B46.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC25-B48.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC25-B50.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25DEC25-B41.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25DEC25-B43.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25DEC25-B45.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25DEC25-B47.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25DEC25-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC25-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC25-B79.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25DEC25-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC25-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC25-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC25-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC25-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC25-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC25-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC25-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC25-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC26-B51.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC26-B53.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC26-B49.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC26-B55.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC26-B76.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25DEC26-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC26-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC26-B82.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25DEC26-B64.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25DEC26-B58.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25DEC26-B62.5", "reason": "effective spread > 0.10", "extra": {"spread": 0.9299999999999999}}
+{"key": "KXHIGHLAX-25DEC26-B60.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-25DEC26-B80.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-25DEC26-B86.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC26-B82.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-25DEC26-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25DEC26-B27.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-25DEC26-B34.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC26-B30.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC26-B36.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC26-B60.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC26-B64.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC26-B62.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC26-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC27-B35.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC27-B37.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC27-B31.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC27-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC27-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC27-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC27-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25DEC27-B29.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-25DEC27-B31.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25DEC27-B33.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25DEC27-B35.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25DEC27-B56.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25DEC27-B58.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25DEC27-B60.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25DEC27-B62.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC27-B51.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC27-B55.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHDEN-25DEC27-B57.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC27-B59.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC27-B61.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC27-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC27-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC27-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC27-B82.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-25DEC28-B77.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-25DEC28-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC28-B81.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-25DEC28-B83.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-25DEC28-B43.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC28-B57.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-25DEC28-B59.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC28-B61.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-25DEC28-B63.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25DEC28-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC28-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC28-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC28-B80.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25DEC28-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25DEC28-B60.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25DEC28-B62.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25DEC28-B64.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC28-B31.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC28-B33.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC28-B35.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC28-B37.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC28-B43.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC28-B41.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC28-B37.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-25DEC28-B39.5", "reason": "effective spread > 0.10", "extra": {"spread": 0.2}}
+{"key": "KXHIGHAUS-25DEC29-B57.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC29-B59.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC29-B53.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC29-B55.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC29-B24.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC29-B26.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC29-B28.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC29-B30.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25DEC29-B72.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25DEC29-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25DEC29-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25DEC29-B70.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25DEC29-B77.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25DEC29-B79.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-25DEC29-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC29-B83.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-25DEC29-B53.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-25DEC29-B55.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC29-B57.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC29-B59.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC29-B41.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHDEN-25DEC29-B43.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHDEN-25DEC29-B45.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHDEN-25DEC29-B47.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-25DEC29-B46.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-25DEC29-B48.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25DEC29-B50.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25DEC29-B52.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-25DEC30-B55.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC30-B57.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC30-B59.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-25DEC30-B61.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25DEC30-B30.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-25DEC30-B34.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25DEC30-B36.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC30-B50.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC30-B52.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHDEN-25DEC30-B54.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC30-B56.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC30-B32.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC30-B31.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC30-B37.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC30-B35.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC30-B33.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC30-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC30-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC30-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25DEC30-B68.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25DEC30-B70.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25DEC30-B74.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-25DEC31-B30.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-25DEC31-B32.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC31-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC31-B64.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC31-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-25DEC31-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC31-B63.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC31-B59.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC31-B57.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-25DEC31-B61.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25DEC31-B37.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-25DEC31-B33.5", "reason": "effective spread > 0.10", "extra": {"spread": 0.19999999999999996}}
+{"key": "KXHIGHLAX-25DEC31-B63.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25DEC31-B65.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-25DEC31-B67.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-25DEC31-B69.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC31-B33.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC31-B39.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-25DEC31-B37.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC31-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC31-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC31-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-25DEC31-B72.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-26JAN01-B33.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-26JAN01-B37.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-26JAN01-B35.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-26JAN01-B31.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-26JAN01-B61.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-26JAN01-B63.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-26JAN01-B65.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-26JAN01-B67.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-26JAN01-B30.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-26JAN01-B34.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-26JAN01-B32.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-26JAN01-B36.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN01-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN01-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN01-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN01-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-26JAN01-B24.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-26JAN01-B26.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN01-B55.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN01-B57.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN01-B59.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN01-B61.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-26JAN01-B67.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-26JAN01-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-26JAN01-B69.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-26JAN01-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN02-B57.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN02-B59.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN02-B61.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN02-B63.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-26JAN02-B30.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-26JAN02-B34.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-26JAN02-B32.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-26JAN02-B28.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-26JAN02-B33.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-26JAN02-B35.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-26JAN02-B37.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-26JAN02-B39.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN02-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN02-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN02-B90.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-26JAN02-B86.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-26JAN02-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-26JAN02-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-26JAN02-B69.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-26JAN02-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-26JAN02-B62.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-26JAN02-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-26JAN02-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-26JAN02-B64.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-26JAN02-B24.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-26JAN02-B26.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-26JAN02-B28.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-26JAN02-B30.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-26JAN03-B27.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-26JAN03-B29.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-26JAN03-B31.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-26JAN03-B33.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-26JAN03-B73.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-26JAN03-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN03-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN03-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN03-B61.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN03-B59.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN03-B57.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN03-B63.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-26JAN03-B37.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-26JAN03-B31.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-26JAN03-B35.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-26JAN03-B33.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-26JAN03-B31.5", "reason": "effective spread > 0.10", "extra": {"spread": 0.11}}
+{"key": "KXHIGHNY-26JAN03-B33.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-26JAN03-B35.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-26JAN03-B63.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-26JAN03-B61.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-26JAN03-B67.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-26JAN03-B65.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-26JAN03-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-26JAN03-B76.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-26JAN03-B74.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-26JAN03-B72.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-26JAN04-B62.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-26JAN04-B60.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-26JAN04-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-26JAN04-B64.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-26JAN04-B29.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-26JAN04-B31.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-26JAN04-B35.5", "reason": "effective spread > 0.10", "extra": {"spread": 0.11}}
+{"key": "KXHIGHMIA-26JAN04-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-26JAN04-B78.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-26JAN04-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-26JAN04-B82.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-26JAN04-B31.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-26JAN04-B33.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-26JAN04-B35.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-26JAN04-B37.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN04-B70.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-26JAN04-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN04-B74.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-26JAN04-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN04-B65.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN04-B63.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN04-B69.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHDEN-26JAN04-B67.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-26JAN04-B34.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-26JAN04-B36.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-26JAN04-B40.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN05-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN05-B75.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-26JAN05-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN05-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-26JAN05-B39.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-26JAN05-B41.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-26JAN05-B43.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-26JAN05-B45.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-26JAN05-B35.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-26JAN05-B33.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-26JAN05-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-26JAN05-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-26JAN05-B81.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-26JAN05-B77.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-26JAN05-B65.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-26JAN05-B63.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-26JAN05-B61.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-26JAN05-B59.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-26JAN05-B35.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-26JAN05-B37.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-26JAN05-B39.5", "reason": "effective spread > 0.10", "extra": {"spread": 0.13}}
+{"key": "KXHIGHDEN-26JAN05-B58.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN05-B60.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN05-B62.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN05-B64.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN06-B82.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-26JAN06-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN06-B86.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-26JAN06-B88.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-26JAN06-B75.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-26JAN06-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-26JAN06-B79.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-26JAN06-B77.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-26JAN06-B41.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-26JAN06-B43.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-26JAN06-B45.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-26JAN06-B47.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-26JAN06-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-26JAN06-B66.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-26JAN06-B64.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-26JAN06-B62.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHDEN-26JAN06-B55.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHDEN-26JAN06-B57.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN06-B59.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHDEN-26JAN06-B61.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-26JAN06-B39.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-26JAN06-B41.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-26JAN06-B45.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-26JAN06-B43.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-26JAN06-B48.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-26JAN06-B46.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-26JAN06-B50.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-26JAN06-B44.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-26JAN07-B45.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-26JAN07-B47.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-26JAN07-B49.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-26JAN07-B51.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-26JAN07-B42.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-26JAN07-B46.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-26JAN07-B48.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN07-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN07-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN07-B83.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-26JAN07-B85.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-26JAN07-B61.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-26JAN07-B67.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHDEN-26JAN07-B53.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN07-B55.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN07-B57.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN07-B59.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-26JAN07-B49.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-26JAN07-B51.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-26JAN07-B53.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-26JAN07-B55.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-26JAN07-B76.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-26JAN07-B78.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-26JAN07-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-26JAN07-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN08-B78.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-26JAN08-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN08-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN08-B84.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-26JAN08-B46.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-26JAN08-B48.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-26JAN08-B50.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-26JAN08-B52.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-26JAN08-B59.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-26JAN08-B61.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-26JAN08-B65.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-26JAN08-B53.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-26JAN08-B55.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-26JAN08-B57.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-26JAN08-B77.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-26JAN08-B79.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-26JAN08-B81.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-26JAN08-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-26JAN08-B48.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-26JAN08-B50.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-26JAN08-B52.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-26JAN08-B54.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN08-B40.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN08-B42.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHDEN-26JAN08-B36.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHDEN-26JAN08-B38.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-26JAN09-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-26JAN09-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-26JAN09-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-26JAN09-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN09-B31.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN09-B33.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHDEN-26JAN09-B35.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHDEN-26JAN09-B37.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-26JAN09-B60.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-26JAN09-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN09-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN09-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN09-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN09-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-26JAN09-B49.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-26JAN09-B51.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-26JAN09-B56.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-26JAN09-B58.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-26JAN09-B60.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-26JAN09-B62.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-26JAN09-B59.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN10-B57.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-26JAN10-B59.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN10-B61.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-26JAN10-B63.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-26JAN10-B52.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-26JAN10-B54.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-26JAN10-B56.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-26JAN10-B58.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-26JAN10-B64.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-26JAN10-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-26JAN10-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-26JAN10-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-26JAN10-B35.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-26JAN10-B37.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-26JAN10-B39.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-26JAN10-B41.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-26JAN10-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-26JAN10-B79.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-26JAN10-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-26JAN10-B83.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-26JAN10-B52.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-26JAN10-B54.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-26JAN10-B56.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-26JAN10-B58.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN10-B41.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN10-B43.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN10-B45.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN10-B47.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-26JAN11-B77.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-26JAN11-B79.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-26JAN11-B81.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-26JAN11-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-26JAN11-B32.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-26JAN11-B34.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-26JAN11-B36.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-26JAN11-B38.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-26JAN11-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-26JAN11-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-26JAN11-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-26JAN11-B72.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-26JAN11-B60.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN11-B62.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN11-B64.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-26JAN11-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN11-B47.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN11-B49.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHDEN-26JAN11-B51.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN11-B53.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-26JAN11-B42.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-26JAN11-B44.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-26JAN11-B46.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-26JAN11-B48.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-26JAN11-B42.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-26JAN11-B44.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-26JAN11-B46.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-26JAN11-B48.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-26JAN12-B39.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-26JAN12-B41.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-26JAN12-B43.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-26JAN12-B45.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-26JAN12-B39.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-26JAN12-B41.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-26JAN12-B43.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-26JAN12-B45.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHDEN-26JAN12-B49.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN12-B51.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN12-B53.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN12-B55.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-26JAN12-B70.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-26JAN12-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-26JAN12-B74.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-26JAN12-B76.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-26JAN12-B72.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-26JAN12-B74.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-26JAN12-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-26JAN12-B78.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-26JAN12-B41.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-26JAN12-B43.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-26JAN12-B45.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-26JAN12-B47.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN12-B59.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN12-B61.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN12-B63.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN12-B65.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-26JAN13-B43.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-26JAN13-B45.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-26JAN13-B47.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-26JAN13-B49.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-26JAN13-B74.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-26JAN13-B76.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-26JAN13-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-26JAN13-B80.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-26JAN13-B48.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-26JAN13-B50.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-26JAN13-B52.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-26JAN13-B54.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN13-B60.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN13-B62.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN13-B64.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-26JAN13-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-26JAN13-B75.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-26JAN13-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-26JAN13-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-26JAN13-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN13-B57.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN13-B59.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN13-B61.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN13-B63.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-26JAN13-B45.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-26JAN13-B47.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-26JAN13-B49.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-26JAN13-B51.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-26JAN14-B80.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-26JAN14-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-26JAN14-B78.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-26JAN14-B82.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-26JAN14-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-26JAN14-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-26JAN14-B77.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-26JAN14-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-26JAN14-B51.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-26JAN14-B49.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-26JAN14-B47.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-26JAN14-B45.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-26JAN14-B38.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-26JAN14-B42.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-26JAN14-B40.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-26JAN14-B44.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN14-B52.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN14-B54.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN14-B56.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN14-B58.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-26JAN14-B48.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-26JAN14-B50.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-26JAN14-B52.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-26JAN14-B54.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN14-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN14-B67.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-26JAN14-B69.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN14-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN15-B57.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN15-B59.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN15-B61.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHDEN-26JAN15-B63.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN15-B62.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN15-B64.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-26JAN15-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN15-B68.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-26JAN15-B41.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-26JAN15-B43.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-26JAN15-B45.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-26JAN15-B47.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-26JAN15-B29.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-26JAN15-B31.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-26JAN15-B75.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-26JAN15-B77.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-26JAN15-B79.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-26JAN15-B81.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-26JAN15-B41.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-26JAN15-B43.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-26JAN15-B45.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-26JAN15-B47.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-26JAN15-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-26JAN15-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-26JAN15-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-26JAN15-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-26JAN16-B80.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-26JAN16-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-26JAN16-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-26JAN16-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-26JAN16-B33.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-26JAN16-B37.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-26JAN16-B39.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-26JAN16-B35.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-26JAN16-B37.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-26JAN16-B39.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-26JAN16-B41.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-26JAN16-B37.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-26JAN16-B39.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN16-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN16-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN16-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN16-B77.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-26JAN16-B67.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-26JAN16-B65.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-26JAN16-B69.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-26JAN16-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN16-B42.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN16-B44.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN16-B46.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN16-B48.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-26JAN17-B74.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-26JAN17-B78.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-26JAN17-B80.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-26JAN17-B52.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN17-B54.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-26JAN17-B56.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN17-B58.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-26JAN17-B40.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-26JAN17-B42.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-26JAN17-B44.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-26JAN17-B46.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-26JAN17-B36.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-26JAN17-B40.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-26JAN17-B42.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-26JAN17-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-26JAN17-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-26JAN17-B76.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-26JAN17-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN17-B36.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN17-B38.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN17-B40.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN17-B42.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-26JAN17-B23.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-26JAN17-B25.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-26JAN17-B27.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-26JAN17-B29.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-26JAN18-B23.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-26JAN18-B25.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-26JAN18-B76.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-26JAN18-B78.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-26JAN18-B80.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-26JAN18-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN18-B61.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-26JAN18-B59.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-26JAN18-B63.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN18-B65.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHDEN-26JAN18-B50.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN18-B52.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN18-B56.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-26JAN18-B39.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-26JAN18-B33.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-26JAN18-B69.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-26JAN18-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-26JAN18-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-26JAN18-B75.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-26JAN18-B32.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-26JAN18-B34.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-26JAN18-B36.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-26JAN18-B38.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN19-B62.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN19-B64.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN19-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN19-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-26JAN19-B16.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-26JAN19-B18.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-26JAN19-B20.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-26JAN19-B22.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-26JAN19-B32.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-26JAN19-B34.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-26JAN19-B36.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-26JAN19-B38.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN19-B38.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN19-B40.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHDEN-26JAN19-B42.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHDEN-26JAN19-B44.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-26JAN19-B69.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-26JAN19-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-26JAN19-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-26JAN19-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-26JAN19-B66.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-26JAN19-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-26JAN19-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-26JAN19-B72.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-26JAN19-B28.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-26JAN19-B30.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-26JAN19-B32.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-26JAN19-B34.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-26JAN20-B20.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-26JAN20-B22.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHDEN-26JAN20-B49.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHDEN-26JAN20-B51.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN20-B53.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN20-B55.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-26JAN20-B22.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-26JAN20-B24.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-26JAN20-B26.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-26JAN20-B28.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-26JAN20-B71.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-26JAN20-B73.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-26JAN20-B75.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-26JAN20-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-26JAN20-B21.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-26JAN20-B23.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-26JAN20-B25.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-26JAN20-B27.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-26JAN20-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-26JAN20-B72.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-26JAN20-B74.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-26JAN20-B76.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-26JAN20-B56.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN20-B58.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-26JAN20-B60.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN20-B62.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN21-B51.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHDEN-26JAN21-B47.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN21-B53.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHDEN-26JAN21-B49.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-26JAN21-B30.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-26JAN21-B28.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-26JAN21-B35.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-26JAN21-B33.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-26JAN21-B69.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-26JAN21-B71.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-26JAN21-B67.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-26JAN21-B73.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-26JAN21-B78.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-26JAN21-B76.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-26JAN21-B74.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-26JAN21-B36.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-26JAN21-B34.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-26JAN21-B38.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-26JAN21-B64.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-26JAN21-B68.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-26JAN21-B66.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-26JAN21-B70.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-26JAN22-B28.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-26JAN22-B26.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-26JAN22-B24.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-26JAN22-B22.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-26JAN22-B64.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-26JAN22-B62.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-26JAN22-B66.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-26JAN22-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-26JAN22-B43.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-26JAN22-B45.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-26JAN22-B47.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-26JAN22-B49.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-26JAN22-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN22-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN22-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN22-B68.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-26JAN22-B76.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-26JAN22-B78.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-26JAN22-B80.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-26JAN22-B82.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHDEN-26JAN22-B37.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN22-B33.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN22-B35.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN22-B39.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-26JAN22-B46.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-26JAN22-B40.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-26JAN22-B42.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-26JAN22-B44.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-26JAN23-B38.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-26JAN23-B32.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-26JAN23-B34.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-26JAN23-B36.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-26JAN23-B11.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-26JAN23-B5.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-26JAN23-B7.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-26JAN23-B9.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-26JAN23-B36.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-26JAN23-B38.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-26JAN23-B40.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-26JAN23-B42.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-26JAN23-B59.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-26JAN23-B61.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-26JAN23-B63.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-26JAN23-B65.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN23-B65.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN23-B67.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN23-B69.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN23-B71.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN23-B15.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN23-B17.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN23-B19.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN23-B21.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-26JAN23-B77.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-26JAN23-B79.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-26JAN23-B81.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-26JAN23-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-26JAN24-B20.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-26JAN24-B22.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-26JAN24-B59.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-26JAN24-B61.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-26JAN24-B65.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-26JAN24-B13.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-26JAN24-B15.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-26JAN24-B18.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-26JAN24-B22.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-26JAN24-B24.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN24-B20.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHDEN-26JAN24-B22.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN24-B24.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN24-B26.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-26JAN24-B77.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-26JAN24-B79.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-26JAN24-B81.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-26JAN24-B83.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN24-B55.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN24-B57.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN24-B59.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN24-B61.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-26JAN25-B78.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-26JAN25-B80.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-26JAN25-B82.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-26JAN25-B84.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-26JAN25-B64.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-26JAN25-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-26JAN25-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-26JAN25-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-26JAN25-B30.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-26JAN25-B32.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-26JAN25-B20.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-26JAN25-B18.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-26JAN25-B16.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-26JAN25-B22.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN25-B20.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN25-B22.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN25-B24.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN25-B26.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN25-B26.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN25-B28.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN25-B30.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN25-B32.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-26JAN26-B27.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-26JAN26-B29.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-26JAN26-B31.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-26JAN26-B33.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-26JAN26-B26.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-26JAN26-B28.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-26JAN26-B30.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-26JAN26-B32.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-26JAN26-B13.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-26JAN26-B7.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-26JAN26-B31.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN26-B33.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN26-B35.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-26JAN26-B37.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-26JAN26-B68.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-26JAN26-B70.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHLAX-26JAN26-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-26JAN26-B74.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN26-B43.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN26-B45.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN26-B47.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHDEN-26JAN26-B49.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-26JAN26-B79.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-26JAN26-B81.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-26JAN26-B83.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-26JAN26-B85.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-26JAN27-B16.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-26JAN27-B18.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHNY-26JAN27-B20.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHNY-26JAN27-B22.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN27-B50.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN27-B44.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN27-B46.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHDEN-26JAN27-B48.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-26JAN27-B66.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-26JAN27-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHMIA-26JAN27-B70.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHMIA-26JAN27-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-26JAN27-B68.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-26JAN27-B70.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-26JAN27-B72.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHLAX-26JAN27-B74.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-26JAN27-B19.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHPHIL-26JAN27-B21.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHPHIL-26JAN27-B23.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHAUS-26JAN27-B45.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN27-B49.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN27-B43.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHAUS-26JAN27-B47.5", "reason": "no bid print for the effective-spread check"}
+{"key": "KXHIGHCHI-26JAN27-B13.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-26JAN27-B17.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-26JAN27-B19.5", "reason": "no ask print in [H-30m,H]"}
+{"key": "KXHIGHCHI-26JAN27-B15.5", "reason": "no ask print in [H-30m,H]"}
+```
+</details>
+
+### SPEC3: 115 skip entries
+By reason: {'result unavailable': 112, 'no matching-side print within 15min of signal': 3}
+
+<details><summary>full skip ledger</summary>
+
+```
+{"key": "KXHIGHNY-25NOV23-B47.5", "reason": "result unavailable"}
+{"key": "KXHIGHNY-25NOV23-B49.5", "reason": "result unavailable"}
+{"key": "KXHIGHNY-25NOV23-B51.5", "reason": "result unavailable"}
+{"key": "KXHIGHNY-25NOV23-B53.5", "reason": "result unavailable"}
+{"key": "KXHIGHAUS-25NOV23-B71.5", "reason": "result unavailable"}
+{"key": "KXHIGHAUS-25NOV23-B73.5", "reason": "result unavailable"}
+{"key": "KXHIGHAUS-25NOV23-B75.5", "reason": "result unavailable"}
+{"key": "KXHIGHAUS-25NOV23-B77.5", "reason": "result unavailable"}
+{"key": "KXHIGHCHI-25NOV23-B51.5", "reason": "result unavailable"}
+{"key": "KXHIGHCHI-25NOV23-B53.5", "reason": "result unavailable"}
+{"key": "KXHIGHCHI-25NOV23-B55.5", "reason": "result unavailable"}
+{"key": "KXHIGHCHI-25NOV23-B57.5", "reason": "result unavailable"}
+{"key": "KXHIGHLAX-25NOV23-B69.5", "reason": "result unavailable"}
+{"key": "KXHIGHLAX-25NOV23-B67.5", "reason": "result unavailable"}
+{"key": "KXHIGHLAX-25NOV23-B65.5", "reason": "result unavailable"}
+{"key": "KXHIGHLAX-25NOV23-B63.5", "reason": "result unavailable"}
+{"key": "KXHIGHPHIL-25NOV23-B51.5", "reason": "result unavailable"}
+{"key": "KXHIGHPHIL-25NOV23-B53.5", "reason": "result unavailable"}
+{"key": "KXHIGHPHIL-25NOV23-B55.5", "reason": "result unavailable"}
+{"key": "KXHIGHPHIL-25NOV23-B57.5", "reason": "result unavailable"}
+{"key": "KXHIGHMIA-25NOV23-B79.5", "reason": "result unavailable"}
+{"key": "KXHIGHMIA-25NOV23-B81.5", "reason": "result unavailable"}
+{"key": "KXHIGHMIA-25NOV23-B83.5", "reason": "result unavailable"}
+{"key": "KXHIGHMIA-25NOV23-B85.5", "reason": "result unavailable"}
+{"key": "KXHIGHDEN-25NOV23-B50.5", "reason": "result unavailable"}
+{"key": "KXHIGHDEN-25NOV23-B52.5", "reason": "result unavailable"}
+{"key": "KXHIGHDEN-25NOV23-B54.5", "reason": "result unavailable"}
+{"key": "KXHIGHDEN-25NOV23-B56.5", "reason": "result unavailable"}
+{"key": "KXHIGHNY-25NOV24-B49.5", "reason": "result unavailable"}
+{"key": "KXHIGHNY-25NOV24-B51.5", "reason": "result unavailable"}
+{"key": "KXHIGHNY-25NOV24-B53.5", "reason": "result unavailable"}
+{"key": "KXHIGHNY-25NOV24-B55.5", "reason": "result unavailable"}
+{"key": "KXHIGHAUS-25NOV24-B77.5", "reason": "result unavailable"}
+{"key": "KXHIGHAUS-25NOV24-B79.5", "reason": "result unavailable"}
+{"key": "KXHIGHAUS-25NOV24-B81.5", "reason": "result unavailable"}
+{"key": "KXHIGHAUS-25NOV24-B83.5", "reason": "result unavailable"}
+{"key": "KXHIGHDEN-25NOV24-B54.5", "reason": "result unavailable"}
+{"key": "KXHIGHDEN-25NOV24-B56.5", "reason": "result unavailable"}
+{"key": "KXHIGHDEN-25NOV24-B58.5", "reason": "result unavailable"}
+{"key": "KXHIGHDEN-25NOV24-B60.5", "reason": "result unavailable"}
+{"key": "KXHIGHCHI-25NOV24-B47.5", "reason": "result unavailable"}
+{"key": "KXHIGHCHI-25NOV24-B49.5", "reason": "result unavailable"}
+{"key": "KXHIGHCHI-25NOV24-B51.5", "reason": "result unavailable"}
+{"key": "KXHIGHCHI-25NOV24-B53.5", "reason": "result unavailable"}
+{"key": "KXHIGHPHIL-25NOV24-B49.5", "reason": "result unavailable"}
+{"key": "KXHIGHPHIL-25NOV24-B51.5", "reason": "result unavailable"}
+{"key": "KXHIGHPHIL-25NOV24-B53.5", "reason": "result unavailable"}
+{"key": "KXHIGHPHIL-25NOV24-B55.5", "reason": "result unavailable"}
+{"key": "KXHIGHMIA-25NOV24-B82.5", "reason": "result unavailable"}
+{"key": "KXHIGHMIA-25NOV24-B84.5", "reason": "result unavailable"}
+{"key": "KXHIGHMIA-25NOV24-B80.5", "reason": "result unavailable"}
+{"key": "KXHIGHMIA-25NOV24-B78.5", "reason": "result unavailable"}
+{"key": "KXHIGHLAX-25NOV24-B60.5", "reason": "result unavailable"}
+{"key": "KXHIGHLAX-25NOV24-B62.5", "reason": "result unavailable"}
+{"key": "KXHIGHLAX-25NOV24-B64.5", "reason": "result unavailable"}
+{"key": "KXHIGHLAX-25NOV24-B66.5", "reason": "result unavailable"}
+{"key": "KXHIGHAUS-26JAN28-B58.5", "reason": "result unavailable"}
+{"key": "KXHIGHAUS-26JAN28-B56.5", "reason": "result unavailable"}
+{"key": "KXHIGHAUS-26JAN28-B54.5", "reason": "result unavailable"}
+{"key": "KXHIGHAUS-26JAN28-B52.5", "reason": "result unavailable"}
+{"key": "KXHIGHPHIL-26JAN28-B22.5", "reason": "result unavailable"}
+{"key": "KXHIGHPHIL-26JAN28-B24.5", "reason": "result unavailable"}
+{"key": "KXHIGHPHIL-26JAN28-B20.5", "reason": "result unavailable"}
+{"key": "KXHIGHPHIL-26JAN28-B18.5", "reason": "result unavailable"}
+{"key": "KXHIGHMIA-26JAN28-B72.5", "reason": "result unavailable"}
+{"key": "KXHIGHMIA-26JAN28-B70.5", "reason": "result unavailable"}
+{"key": "KXHIGHMIA-26JAN28-B68.5", "reason": "result unavailable"}
+{"key": "KXHIGHMIA-26JAN28-B66.5", "reason": "result unavailable"}
+{"key": "KXHIGHNY-26JAN28-B19.5", "reason": "result unavailable"}
+{"key": "KXHIGHNY-26JAN28-B21.5", "reason": "result unavailable"}
+{"key": "KXHIGHNY-26JAN28-B23.5", "reason": "result unavailable"}
+{"key": "KXHIGHNY-26JAN28-B25.5", "reason": "result unavailable"}
+{"key": "KXHIGHCHI-26JAN28-B13.5", "reason": "result unavailable"}
+{"key": "KXHIGHCHI-26JAN28-B17.5", "reason": "result unavailable"}
+{"key": "KXHIGHCHI-26JAN28-B15.5", "reason": "result unavailable"}
+{"key": "KXHIGHCHI-26JAN28-B19.5", "reason": "result unavailable"}
+{"key": "KXHIGHDEN-26JAN28-B53.5", "reason": "result unavailable"}
+{"key": "KXHIGHDEN-26JAN28-B49.5", "reason": "result unavailable"}
+{"key": "KXHIGHDEN-26JAN28-B51.5", "reason": "result unavailable"}
+{"key": "KXHIGHDEN-26JAN28-B55.5", "reason": "result unavailable"}
+{"key": "KXHIGHLAX-26JAN28-B71.5", "reason": "result unavailable"}
+{"key": "KXHIGHLAX-26JAN28-B69.5", "reason": "result unavailable"}
+{"key": "KXHIGHLAX-26JAN28-B67.5", "reason": "result unavailable"}
+{"key": "KXHIGHLAX-26JAN28-B65.5", "reason": "result unavailable"}
+{"key": "KXHIGHCHI-26JAN29-B14.5", "reason": "result unavailable"}
+{"key": "KXHIGHCHI-26JAN29-B12.5", "reason": "result unavailable"}
+{"key": "KXHIGHCHI-26JAN29-B16.5", "reason": "result unavailable"}
+{"key": "KXHIGHCHI-26JAN29-B18.5", "reason": "result unavailable"}
+{"key": "KXHIGHAUS-26JAN29-B63.5", "reason": "result unavailable"}
+{"key": "KXHIGHAUS-26JAN29-B69.5", "reason": "result unavailable"}
+{"key": "KXHIGHAUS-26JAN29-B67.5", "reason": "result unavailable"}
+{"key": "KXHIGHAUS-26JAN29-B65.5", "reason": "result unavailable"}
+{"key": "KXHIGHPHIL-26JAN29-B23.5", "reason": "result unavailable"}
+{"key": "KXHIGHPHIL-26JAN29-B21.5", "reason": "result unavailable"}
+{"key": "KXHIGHPHIL-26JAN29-B19.5", "reason": "result unavailable"}
+{"key": "KXHIGHPHIL-26JAN29-B17.5", "reason": "result unavailable"}
+{"key": "KXHIGHLAX-26JAN29-B81.5", "reason": "result unavailable"}
+{"key": "KXHIGHLAX-26JAN29-B79.5", "reason": "result unavailable"}
+{"key": "KXHIGHLAX-26JAN29-B77.5", "reason": "result unavailable"}
+{"key": "KXHIGHLAX-26JAN29-B75.5", "reason": "result unavailable"}
+{"key": "KXHIGHDEN-26JAN29-B45.5", "reason": "result unavailable"}
+{"key": "KXHIGHDEN-26JAN29-B51.5", "reason": "result unavailable"}
+{"key": "KXHIGHDEN-26JAN29-B49.5", "reason": "result unavailable"}
+{"key": "KXHIGHDEN-26JAN29-B47.5", "reason": "result unavailable"}
+{"key": "KXHIGHNY-26JAN29-B25.5", "reason": "result unavailable"}
+{"key": "KXHIGHNY-26JAN29-B23.5", "reason": "result unavailable"}
+{"key": "KXHIGHNY-26JAN29-B21.5", "reason": "result unavailable"}
+{"key": "KXHIGHNY-26JAN29-B19.5", "reason": "result unavailable"}
+{"key": "KXHIGHMIA-26JAN29-B72.5", "reason": "result unavailable"}
+{"key": "KXHIGHMIA-26JAN29-B70.5", "reason": "result unavailable"}
+{"key": "KXHIGHMIA-26JAN29-B68.5", "reason": "result unavailable"}
+{"key": "KXHIGHMIA-26JAN29-B74.5", "reason": "result unavailable"}
+{"key": "KXHIGHCHI-25DEC09-B41.5", "reason": "no matching-side print within 15min of signal", "extra": {"side": "yes"}}
+{"key": "KXHIGHCHI-25DEC22-B46.5", "reason": "no matching-side print within 15min of signal", "extra": {"side": "yes"}}
+{"key": "KXHIGHPHIL-26JAN21-B40.5", "reason": "no matching-side print within 15min of signal", "extra": {"side": "yes"}}
+```
+</details>
+
+### SPEC7: 56 skip entries
+By reason: {'result unavailable': 56}
+
+<details><summary>full skip ledger</summary>
+
+```
+{"key": "KXHIGHNY-25NOV23-T47", "reason": "result unavailable"}
+{"key": "KXHIGHNY-25NOV23-T54", "reason": "result unavailable"}
+{"key": "KXHIGHAUS-25NOV23-T71", "reason": "result unavailable"}
+{"key": "KXHIGHAUS-25NOV23-T78", "reason": "result unavailable"}
+{"key": "KXHIGHCHI-25NOV23-T51", "reason": "result unavailable"}
+{"key": "KXHIGHCHI-25NOV23-T58", "reason": "result unavailable"}
+{"key": "KXHIGHLAX-25NOV23-T63", "reason": "result unavailable"}
+{"key": "KXHIGHLAX-25NOV23-T70", "reason": "result unavailable"}
+{"key": "KXHIGHPHIL-25NOV23-T58", "reason": "result unavailable"}
+{"key": "KXHIGHPHIL-25NOV23-T51", "reason": "result unavailable"}
+{"key": "KXHIGHMIA-25NOV23-T79", "reason": "result unavailable"}
+{"key": "KXHIGHMIA-25NOV23-T86", "reason": "result unavailable"}
+{"key": "KXHIGHDEN-25NOV23-T57", "reason": "result unavailable"}
+{"key": "KXHIGHDEN-25NOV23-T50", "reason": "result unavailable"}
+{"key": "KXHIGHNY-25NOV24-T49", "reason": "result unavailable"}
+{"key": "KXHIGHNY-25NOV24-T56", "reason": "result unavailable"}
+{"key": "KXHIGHAUS-25NOV24-T77", "reason": "result unavailable"}
+{"key": "KXHIGHAUS-25NOV24-T84", "reason": "result unavailable"}
+{"key": "KXHIGHDEN-25NOV24-T54", "reason": "result unavailable"}
+{"key": "KXHIGHDEN-25NOV24-T61", "reason": "result unavailable"}
+{"key": "KXHIGHCHI-25NOV24-T47", "reason": "result unavailable"}
+{"key": "KXHIGHCHI-25NOV24-T54", "reason": "result unavailable"}
+{"key": "KXHIGHPHIL-25NOV24-T49", "reason": "result unavailable"}
+{"key": "KXHIGHPHIL-25NOV24-T56", "reason": "result unavailable"}
+{"key": "KXHIGHMIA-25NOV24-T78", "reason": "result unavailable"}
+{"key": "KXHIGHMIA-25NOV24-T85", "reason": "result unavailable"}
+{"key": "KXHIGHLAX-25NOV24-T67", "reason": "result unavailable"}
+{"key": "KXHIGHLAX-25NOV24-T60", "reason": "result unavailable"}
+{"key": "KXHIGHAUS-26JAN28-T59", "reason": "result unavailable"}
+{"key": "KXHIGHAUS-26JAN28-T52", "reason": "result unavailable"}
+{"key": "KXHIGHPHIL-26JAN28-T25", "reason": "result unavailable"}
+{"key": "KXHIGHPHIL-26JAN28-T18", "reason": "result unavailable"}
+{"key": "KXHIGHMIA-26JAN28-T66", "reason": "result unavailable"}
+{"key": "KXHIGHMIA-26JAN28-T73", "reason": "result unavailable"}
+{"key": "KXHIGHNY-26JAN28-T26", "reason": "result unavailable"}
+{"key": "KXHIGHNY-26JAN28-T19", "reason": "result unavailable"}
+{"key": "KXHIGHCHI-26JAN28-T13", "reason": "result unavailable"}
+{"key": "KXHIGHCHI-26JAN28-T20", "reason": "result unavailable"}
+{"key": "KXHIGHDEN-26JAN28-T56", "reason": "result unavailable"}
+{"key": "KXHIGHDEN-26JAN28-T49", "reason": "result unavailable"}
+{"key": "KXHIGHLAX-26JAN28-T72", "reason": "result unavailable"}
+{"key": "KXHIGHLAX-26JAN28-T65", "reason": "result unavailable"}
+{"key": "KXHIGHCHI-26JAN29-T19", "reason": "result unavailable"}
+{"key": "KXHIGHCHI-26JAN29-T12", "reason": "result unavailable"}
+{"key": "KXHIGHAUS-26JAN29-T70", "reason": "result unavailable"}
+{"key": "KXHIGHAUS-26JAN29-T63", "reason": "result unavailable"}
+{"key": "KXHIGHPHIL-26JAN29-T24", "reason": "result unavailable"}
+{"key": "KXHIGHPHIL-26JAN29-T17", "reason": "result unavailable"}
+{"key": "KXHIGHLAX-26JAN29-T82", "reason": "result unavailable"}
+{"key": "KXHIGHLAX-26JAN29-T75", "reason": "result unavailable"}
+{"key": "KXHIGHDEN-26JAN29-T52", "reason": "result unavailable"}
+{"key": "KXHIGHDEN-26JAN29-T45", "reason": "result unavailable"}
+{"key": "KXHIGHNY-26JAN29-T26", "reason": "result unavailable"}
+{"key": "KXHIGHNY-26JAN29-T19", "reason": "result unavailable"}
+{"key": "KXHIGHMIA-26JAN29-T75", "reason": "result unavailable"}
+{"key": "KXHIGHMIA-26JAN29-T68", "reason": "result unavailable"}
+```
+</details>
+
+## Run log
+```
+markets_universe: 19088 rows loaded (8 series, window 2024-10-25..2026-01-31)
+parsed rungs: 19088  (unparseable tickers dropped: 0)
+  KXHIGHNY     settled_dates= 459  TRAIN= 275  TEST= 184
+  KXHIGHCHI    settled_dates= 459  TRAIN= 275  TEST= 184
+  KXHIGHAUS    settled_dates= 459  TRAIN= 275  TEST= 184
+  KXHIGHMIA    settled_dates= 459  TRAIN= 275  TEST= 184
+  KXHIGHDEN    settled_dates= 432  TRAIN= 259  TEST= 173
+  KXHIGHPHIL   settled_dates= 432  TRAIN= 259  TEST= 173
+  KXHIGHLAX    settled_dates= 386  TRAIN= 232  TEST= 154
+  KXHIGHHOU    settled_dates=  70  TRAIN=  42  TEST=  28
+events with no settlement at all (excluded from TRAIN/TEST entirely, logged): 28
+local tape (ALL 16 shards): 5817335 trades, 18230 distinct tickers, 2024-10-24 12:05:04.902879+00:00 .. 2026-01-28 23:59:55.550767+00:00
+
+computing bulk signal quantities (ASOF joins over full local tape)...
+signal quantities computed: p_ask=2049 p_bid=1303 spread_bid=1841 last_any=3029 entry_no=816 entry_yes=1377 vol24=12726
+
+=== SPEC 1 ===
+SPEC1 isotonic FIT sample: 565 TRAIN (p_ask,outcome) pairs (7003 TRAIN B-rungs had no ask print in [H-30m,H], excluded from the fit)
+SPEC1 TEST qualifying trades (triggered + entry executed): 5
+
+=== SPEC 3 ===
+SPEC3 bottom-tercile rung count (across all B ladders, TRAIN+TEST): 3180
+SPEC3 TEST qualifying trades (triggered + entry executed): 12
+
+=== SPEC 7 ===
+SPEC7 TRAIN: n_obs=260 drop={'no print in [H-30m,H] (SPEC7 price)': 3524, 'result unavailable': 0} eligible_bins=[] detail={0: {'n_salient': 17, 'n_nonsalient': 159, 'eligible': False, 'gap': None}, 1: {'n_salient': 1, 'n_nonsalient': 2, 'eligible': False, 'gap': None}, 2: {'n_salient': 0, 'n_nonsalient': 1, 'eligible': False, 'gap': None}, 3: {'n_salient': 0, 'n_nonsalient': 1, 'eligible': False, 'gap': None}, 4: {'n_salient': 6, 'n_nonsalient': 73, 'eligible': False, 'gap': None}}
+SPEC7 SELF-KILL on TRAIN. TEST not opened.
+```
+
+## Reproduce
+```
+python venue_expansion/cache/D1/d1_markets_pull.py   # -> cache/D1/markets_universe.json
+python venue_expansion/cache/D1/d1_tape_pull.py      # -> cache/D1/tape/shard-*.parquet (all 16)
+python venue_expansion/spec_D1.py                    # -> out/spec_D1.json, out/spec_D1.md
+```

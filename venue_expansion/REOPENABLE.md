@@ -1,5 +1,21 @@
 # Can the collected data yield a winner? — what's actually reopenable (2026-07-27)
 
+> **CORRECTION 2026-07-29 — the central premise of this document is wrong. Read `REOPEN_FUNNEL.md`.**
+>
+> This analysis counted **events and settled markets** and compared them against kill bars stated in
+> **entries** (signal-qualifying, tradeable instances). Those are not the same unit, and the gap
+> between them is enormous.
+>
+> Measured when the specs actually ran: D1 spanned **~50× the original SPEC 1 window and produced
+> FEWER entries — 5 vs 17, and 12 vs 84.** The original specs triggered on *quotes*; executable-price
+> discipline requires a *transacted crossing print*, and **83% of bracket rungs and 93% of threshold
+> rungs have no print at all in the entry window.** Executable-price rigour and sample size are in
+> direct tension on KXHIGH ladders, roughly **20:1**.
+>
+> So the "~100× more data" premise below is true of *coverage* and false of *usable sample*. All
+> three "reopenable" entries came back **INSUFFICIENT — still not tested**, not disproved. The table
+> below is retained as a record of the reasoning and its error; its conclusions do not stand.
+
 Short answer: **no strategy in the collected data IS a winner today.** But 8 of the 37 graveyard
 entries were never disproved — they ran out of sample against a *live-API retention wall* — and the
 archive does not have that wall. This measures which of those 8 the collected data genuinely
