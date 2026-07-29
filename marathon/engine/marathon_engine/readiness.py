@@ -11,20 +11,43 @@ Design decisions that matter
 "recovery score".** That is the exact machinery the HRV-guided training RCTs used, and the
 comparison that has actually beaten a fixed plan in a trial:
 
-* Vesterinen et al. 2016, *Scand J Med Sci Sports* 26:881 — HRV-guided endurance training in
-  recreational runners improved 3000 m performance more than a predefined programme.
-* Javaloyes et al. 2019, *Int J Sports Physiol Perform* 14:1274 (cyclists) and Javaloyes et al.
-  2020, *J Strength Cond Res* — HRV-guided training vs traditional periodisation, using the
-  rolling-mean-vs-SWC decision rule implemented here.
-* Nuuttila et al. 2017, *Int J Sports Med* — individualised HRV-guided training in runners.
+* Vesterinen et al. 2016, *Med Sci Sports Exerc* 48(7):1347-1354 — HRV-guided training in
+  recreational runners: 13.2 vs 17.7 hard sessions and a 2.1% vs 1.1% 3000 m improvement, i.e.
+  *better* results from *fewer* hard sessions, which is the entire argument for this module.
+* Javaloyes et al. 2019, *Int J Sports Physiol Perform* 14(1):23-32 — HRV-guided vs **traditional**
+  periodisation in well-trained cyclists. Javaloyes et al. 2020, *J Strength Cond Res* 34(6) is the
+  separate block-periodisation comparison; the two are routinely conflated and are different papers.
+* Nuuttila et al. 2017 — individualised HRV-guided training in runners.
 * Plews et al. 2013, *Eur J Appl Physiol* 113:1509 — why a **7-day rolling mean** beats any single
   morning value, and why the *trend* is the signal.
 
-**The band logic.** Let ``M7`` be the 7-day rolling mean of lnRMSSD and ``B`` the baseline mean
-with between-day SD ``SD_b``, both from a rolling reference window. The smallest worthwhile change
-is ``SWC = 0.5 * SD_b`` (Hopkins' 0.5x within-subject SD). Then:
+  Note on what is *not* claimed: Kiviniemi et al. 2007 is often cited as the origin of this decision
+  rule, but it used high-frequency R-R power with a mean-minus-1-SD reference, not lnRMSSD with a
+  symmetric band. The rule implemented here is the Vesterinen/Javaloyes/Nuuttila one.
 
-* ``M7 > B + SWC``  -> **primed**: green light for the week's hardest session.
+**The band logic.** Let ``M7`` be the 7-day rolling mean of lnRMSSD and ``B`` the baseline mean
+with between-day SD ``SD_b``, both from a rolling reference window. The band half-width is
+``0.5 * SD_b``. Then:
+
+*On the 0.5 multiplier.* This is **not** Hopkins' smallest worthwhile change, and citing him for it
+is a common error: Hopkins' SWC is 0.2 x *between-subject* SD. The 0.5 x *within-individual* SD
+figure comes from the Plews/Buchheit HRV practice, and it is a different quantity with a different
+justification. The constant is named :data:`SWC_MULTIPLIER` for continuity with that literature,
+and the docstring says what it actually is.
+
+*Why the band is applied to the 7-day MEAN and not to a single day.* This matters and is easy to get
+wrong. Under normality only ~38% of individual daily values fall inside mean +/- 0.5 SD, so a band
+that narrow applied to *today's reading* would flag roughly 3 days in 5 -- useless as a gate. The
+standard error of a 7-day mean is ``SD/sqrt(7) ~= 0.38 SD``, so the same +/-0.5 SD band around the
+rolling mean is +/-1.3 standard errors and contains about 80% of observations. That is the behaviour
+we want: a fifth of days flagged, driven by trend rather than by one bad night. Applying this band to
+a single morning value would be a statistical error, and the implementation deliberately does not.
+
+* ``M7 > B + SWC``  -> **primed**: proceed with the week's hardest session as planned. Note that
+  this is *the same prescription as ``normal``* -- in Vesterinen and Javaloyes, hard work was
+  prescribed when HRV was within **or** above the band, and there is no third "add extra load"
+  band anywhere in that literature. We keep ``primed`` as a distinct *label* because it is
+  informative to see, but it must never authorise load the plan did not already call for.
 * ``B - SWC <= M7 <= B + SWC`` -> **normal**: run the plan as written.
 * ``M7 < B - SWC``  -> **suppressed**: replace intensity with easy aerobic work.
 * ``M7 < B - 2*SWC`` for >=2 consecutive days -> **strained**: rest or 20 min walk, and if it
@@ -60,7 +83,10 @@ __all__ = [
     "SLEEP_FLOOR_MIN", "SLEEP_TARGET_MIN", "BAND_ACTIONS",
 ]
 
-SWC_MULTIPLIER = 0.5          # Hopkins: smallest worthwhile change = 0.5 x within-subject SD
+#: Band half-width as a multiple of the within-individual between-day SD of lnRMSSD. From the
+#: Plews/Buchheit HRV practice -- NOT Hopkins' smallest worthwhile change, which is 0.2 x
+#: between-subject SD. See the module docstring for why this is applied to the 7-day mean.
+SWC_MULTIPLIER = 0.5
 ROLLING_DAYS = 7              # Plews: the 7-day rolling mean is the signal
 BASELINE_DAYS = 60            # reference window for the baseline mean and between-day SD
 MIN_BASELINE_NIGHTS = 14      # below this, we do not pretend to have a baseline
@@ -68,9 +94,16 @@ MIN_BASELINE_NIGHTS = 14      # below this, we do not pretend to have a baseline
 SLEEP_FLOOR_MIN = 6 * 60      # below this, quality work is vetoed outright
 SLEEP_TARGET_MIN = 7.5 * 60   # the "no deficit" target
 
+#: Maximum fraction of rejected beats for a night's HRV to be usable. RMSSD is the most
+#: artifact-sensitive HRV index; accepted practice is <5%.
+MAX_ARTIFACT_FRACTION = 0.05
+
 #: What each band does to today's planned session. The planner reads this; the app displays it.
 BAND_ACTIONS: Dict[str, str] = {
-    "primed": "proceed_or_upgrade",
+    # Deliberately the same action as "normal": above-band and within-band both simply run the
+    # plan. An "upgrade" band would be an unvalidated intensity-escalation path invented for a
+    # beginner, which is the last person who needs one.
+    "primed": "proceed",
     "normal": "proceed",
     "suppressed": "downgrade_to_easy",
     "strained": "rest_or_walk",
@@ -87,12 +120,34 @@ class NightSummary:
     """
     day: date                       # the morning this night belongs to
     hrv_ms: Optional[float] = None
+    #: Which metric ``hrv_ms`` is, and where it came from. This is NOT bookkeeping -- it is a
+    #: correctness requirement. Device, posture (supine vs standing) and window length each shift
+    #: lnRMSSD by MORE than the band we are trying to detect, so a series that mixes sources
+    #: generates a spurious flag on every source switch. :func:`hrv_baseline` therefore refuses to
+    #: build a baseline from mixed sources and keeps one series per source.
+    #:
+    #: Two specific traps this guards against:
+    #:  * **HealthKit exposes only SDNN** (``heartRateVariabilitySDNN``). There is no RMSSD type and
+    #:    no beat-interval type. SDNN and RMSSD are different quantities and one cannot be converted
+    #:    to the other, so anything arriving via Apple Health must be tagged ``healthkit_sdnn`` and
+    #:    kept in its own series with its own baseline.
+    #:  * **The Eight Sleep pod is under-mattress ballistocardiography, not PPG**, and its HRV output
+    #:    is not independently validated. Where the SleepController computes RMSSD from Polar
+    #:    RR/PPI intervals, that is a Polar-derived number and should be tagged as such.
+    hrv_source: str = "polar_ppi_rmssd"
+    #: Posture matters as much as device; a standing measurement is not comparable to a supine one.
+    hrv_posture: str = "sleep"      # sleep | supine | standing
     resting_hr: Optional[float] = None
     total_sleep_min: Optional[float] = None
     wake_events: Optional[int] = None
     sleep_efficiency: Optional[float] = None
     clean_interval_count: Optional[int] = None
+    #: Fraction of beats rejected by :func:`~marathon_engine.signal_quality.clean_intervals`.
+    artifact_fraction: Optional[float] = None
     sleep_debt_min: Optional[float] = None   # cumulative, from the controller's own accounting
+    #: True when this night followed or contained a night shift or call. Shift nights make sleep
+    #: duration bimodal, so they get their own baseline rather than polluting the normal one.
+    shift_night: bool = False
 
     #: Optional morning subjective input (Hooper-style 1-7 scales; lower is better for all three).
     soreness_1_7: Optional[int] = None
@@ -122,6 +177,12 @@ class NightSummary:
         if self.ln_hrv is None:
             return False
         if self.clean_interval_count is not None and self.clean_interval_count < 240:
+            return False
+        if self.artifact_fraction is not None and self.artifact_fraction > MAX_ARTIFACT_FRACTION:
+            # RMSSD is the most artifact-sensitive time-domain HRV index there is: a few percent of
+            # missed or extra beats inflates it severalfold, and interpolating them deflates it.
+            # Accepted practice is <5% artifacts. Accepting a noisier window while trying to detect
+            # a 0.5-SD shift means the artifact noise exceeds the signal.
             return False
         return True
 
@@ -173,6 +234,16 @@ def hrv_baseline(nights: Sequence[NightSummary], *, as_of: Optional[date] = None
     end = as_of or max(n.day for n in nights)
     start = end - timedelta(days=window_days)
     usable = [n for n in nights if start <= n.day <= end and n.usable_hrv]
+
+    # Never build one baseline from mixed measurement sources or postures. A device or posture
+    # change shifts lnRMSSD by more than the band being detected, so a mixed series would flag a
+    # spurious "suppressed" on the day the source changed and keep flagging until the window rolled
+    # over. Keep the dominant source and drop the rest rather than silently averaging them.
+    if usable:
+        keys = [(n.hrv_source, n.hrv_posture) for n in usable]
+        dominant = max(set(keys), key=keys.count)
+        usable = [n for n in usable if (n.hrv_source, n.hrv_posture) == dominant]
+
     if len(usable) < MIN_BASELINE_NIGHTS:
         return None
     lns = [n.ln_hrv for n in usable if n.ln_hrv is not None]

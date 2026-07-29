@@ -74,7 +74,8 @@ __all__ = [
     "Phase", "SessionType", "Session", "PlannedWeek", "PlanConfig", "Gate", "GateReport",
     "PHASE_ORDER", "PHASE_MIN_WEEKS", "PHASE_STALL_WEEKS", "PHASE_GATES", "PHASE_GOALS",
     "LONG_RUN_MAX_MIN", "LONG_RUN_MAX_SHARE", "CUTBACK_EVERY", "CUTBACK_FACTOR",
-    "TAPER_VOLUME_CUT", "TAPER_WEEKS", "generate_week", "evaluate_gates", "taper_weeks",
+    "TAPER_VOLUME_CUT", "TAPER_WEEKS", "LONG_RUN_PEAK_MAX_MIN", "LONG_RUN_MAX_KM",
+    "generate_week", "evaluate_gates", "taper_weeks",
     "long_run_progression", "weekly_volume_target", "phase_overview",
 ]
 
@@ -149,11 +150,21 @@ class SessionType(str, Enum):
     RAMP_TEST = "ramp_test"
 
 
-#: Long run ceilings. The time cap is the operative one for a novice: 3 hours is where
-#: musculoskeletal damage, glycogen depletion and the recovery cost all turn sharply nonlinear,
-#: and most marathon plans cap the longest run near it for exactly that reason. A 6:30/km runner
-#: reaches 3 h at ~27 km, which is a perfectly adequate longest run for a first marathon.
-LONG_RUN_MAX_MIN = 180.0
+#: Long run ceilings. The time cap is the operative one for a novice.
+#:
+#: **150 minutes, not 180.** Daniels' actual rule is that the long run should be no more than the
+#: LESSER of 25% of weekly mileage or **150 minutes** (30% for runners under 40 mpw). An earlier
+#: version of this file used 180 min on the strength of the widely-repeated "3 hour" convention,
+#: which exceeds Daniels' own limit by 20% -- and it did so in exactly the population least able to
+#: absorb it. Past about two and a half hours the musculoskeletal damage, glycogen depletion and
+#: recovery cost all turn sharply nonlinear, and for a first marathon the extra half hour buys very
+#: little that the preceding two hours have not already bought.
+LONG_RUN_MAX_MIN = 150.0
+
+#: The one place a longer run is allowed: the two or three biggest runs of the peak phase, where
+#: rehearsing the back half of the race has specific value that no shorter run provides. Still
+#: capped well short of race duration -- nobody needs to run a marathon in training.
+LONG_RUN_PEAK_MAX_MIN = 165.0
 LONG_RUN_MAX_KM = 32.0
 #: On three runs a week the long run genuinely cannot stay at the textbook 30-35% of weekly volume.
 #: We allow up to 50% and treat that as the explicit cost of the 3-day schedule.
@@ -318,6 +329,13 @@ _CONSISTENCY_GATE = Gate("sessions_completed_pct_4wk", ">=", 0.80,
 
 PHASE_GATES: Dict[Phase, Tuple[Gate, ...]] = {
     Phase.ASSESS: (
+        Gate("medical_screen_cleared", "true", True, "Pre-participation screening cleared",
+             "The ACSM screening algorithm, applied once before anything else. It exists to catch "
+             "the small number of people who need clearance -- exertional chest discomfort, unusual "
+             "breathlessness, exertional dizziness, or known cardiovascular/metabolic/renal "
+             "disease -- not to put a barrier in front of exercise. Nothing else in this plan runs "
+             "until it passes, because the plan eventually asks for a maximal effort.",
+             safety=True),
         Gate("ramp_test_done", "true", True, "Graded ramp test completed",
              "Everything downstream -- zones, paces, the efficiency baseline -- is derived from it."),
         Gate("strength_screen_done", "true", True, "Structural screen completed",
@@ -549,8 +567,24 @@ def long_run_progression(phase: Phase, week_in_phase: int, weekly_km: Optional[f
     if weekly_km is None:
         return None, 0.0, notes
 
+    # Daniels' share rule tightens as volume rises: 30% under 40 km/week, 25% at or above it. Our
+    # 3-run schedule cannot always honour that (see LONG_RUN_MAX_SHARE), but the ceiling should at
+    # least move in the right direction rather than staying loose at high volume.
+    daniels_share = 0.30 if weekly_km < 40.0 else 0.25
+
+    # The time cap is 150 min everywhere except the peak phase's biggest runs.
+    time_cap = cfg.max_long_run_min
+    if phase == Phase.MARATHON_PEAK:
+        time_cap = max(time_cap, LONG_RUN_PEAK_MAX_MIN)
+
     share = 0.35 + min(0.15, 0.02 * (week_in_phase - 1))
     share = min(share, LONG_RUN_MAX_SHARE)
+    if share > daniels_share:
+        notes.append(f"Daniels would cap the long run at {daniels_share*100:.0f}% of weekly volume "
+                     f"at this level; this one is {share*100:.0f}%. Three runs a week leaves no "
+                     "other way to build a marathon long run, so this is a real and accepted "
+                     "trade-off rather than an oversight -- and the time cap is what keeps it "
+                     "bounded.")
     km = weekly_km * share
     if is_cutback:
         km *= 0.80
@@ -559,12 +593,13 @@ def long_run_progression(phase: Phase, week_in_phase: int, weekly_km: Optional[f
     easy_pace = paces.easy
     minutes = km * easy_pace / 60.0
 
-    if minutes > cfg.max_long_run_min:
-        km = cfg.max_long_run_min * 60.0 / easy_pace
-        minutes = cfg.max_long_run_min
-        notes.append(f"Capped at {cfg.max_long_run_min:.0f} min ({km:.1f} km at your easy pace). "
-                     "Time on feet is the adaptation that matters, and past three hours the "
-                     "damage and recovery cost climb faster than the benefit.")
+    if minutes > time_cap:
+        km = time_cap * 60.0 / easy_pace
+        minutes = time_cap
+        notes.append(f"Capped at {time_cap:.0f} min ({km:.1f} km at your easy pace). This is "
+                     "Daniels' own long-run time limit; time on feet is the adaptation that "
+                     "matters, and past roughly two and a half hours the damage and recovery cost "
+                     "climb faster than the benefit does.")
     if km > LONG_RUN_MAX_KM:
         km = LONG_RUN_MAX_KM
         minutes = km * easy_pace / 60.0
@@ -818,9 +853,16 @@ def generate_week(profile: FitnessProfile, phase: Phase, week_in_phase: int, *,
     if phase == Phase.ASSESS:
         sessions = [
             Session(day_offset=0, type=SessionType.REST,
-                    title="Baseline day -- no running",
-                    intent="Orthostatic test on waking (5 min supine, 2 min standing) and start "
-                           "the overnight HRV series. Nothing else."),
+                    title="Screening + baseline day -- no running",
+                    intent="Two things, in this order. First the pre-participation screening "
+                           "questionnaire -- it takes two minutes and gates everything else. Then "
+                           "the orthostatic test on waking (5 min supine, 2 min standing) and the "
+                           "start of the overnight HRV series. No running today.",
+                    cues=["The screening is not a formality: exertional chest discomfort, unusual "
+                          "breathlessness and exertional dizziness are the three answers that stop "
+                          "the plan, and they stop it whether or not you feel like they should.",
+                          "Wear the armband tonight in resting mode so the HRV baseline starts "
+                          "building immediately -- it needs 14 nights before it means anything."]),
             Session(day_offset=1, type=SessionType.STRENGTH, title="Structural screen",
                     duration_min=30,
                     structure="Single-leg calf raises to failure per side; 30 s sit-to-stand; "
@@ -922,7 +964,19 @@ def generate_week(profile: FitnessProfile, phase: Phase, week_in_phase: int, *,
         else:
             reps = 3 + min(2, (week_in_phase - 1) // 4)
             sessions.append(_threshold(d_a, paces, reps, 8.0 if phase == Phase.HALF_BUILD else 10.0, 2.0))
-        sessions.append(_easy_run(d_b, 40.0 if not is_cutback else 30.0, paces))
+        # Distribute the volume the long run and quality session do not cover across the remaining
+        # easy run(s), instead of hardcoding a duration. A fixed 40 min made the session list
+        # silently inconsistent with the week's stated volume target -- the plan said 50 km and the
+        # sessions added up to 30.
+        quality_km = ((sessions[-1].duration_min or 0.0) * 60.0 / paces.easy) if sessions else 0.0
+        remaining = max(0.0, (km or 0.0) - (lr_km or 0.0) - quality_km)
+        easy_min = remaining * paces.easy / 60.0
+        # Bounded: a midweek run below 30 min is not worth changing for, and above 80 min it stops
+        # being a midweek run for someone working shifts.
+        easy_min = max(30.0, min(80.0, easy_min))
+        if is_cutback:
+            easy_min = max(25.0, easy_min * 0.75)
+        sessions.append(_easy_run(d_b, easy_min, paces))
         # Marathon-pace long runs every third week in MARATHON_BASE, every other week in PEAK.
         mp_week = (phase == Phase.MARATHON_BASE and week_in_phase % 3 == 0) or \
                   (phase == Phase.MARATHON_PEAK and week_in_phase % 2 == 1)
@@ -933,8 +987,15 @@ def generate_week(profile: FitnessProfile, phase: Phase, week_in_phase: int, *,
             sessions.append(_long_run(d_long, lr_km, lr_min, paces, phase, lr_notes))
         notes = list(lr_notes)
         if cfg.offer_fourth_run and phase in (Phase.MARATHON_BASE, Phase.MARATHON_PEAK):
+            # Put it on a day that has nothing else on it. Landing it on a strength day (which the
+            # old `(d_b + 1) % 7` did) produces a schedule that reads as two sessions stacked on one
+            # day, which is the opposite of what an optional easy run is for.
+            busy = {x.day_offset for x in sessions} | set(cfg.strength_days) | {d_long}
+            free = [x for x in range(7) if x not in busy
+                    and x != (d_long - 1) % 7]          # not the day before the long run either
+            optional_day = free[0] if free else (d_b + 1) % 7
             sessions.append(Session(
-                day_offset=(d_b + 1) % 7, type=SessionType.EASY,
+                day_offset=optional_day, type=SessionType.EASY,
                 title="Optional 4th easy run (30 min)", duration_min=30, zones=(1, 2),
                 pace_target_sec_km=paces.easy, optional=True,
                 intent="Purely optional aerobic volume. If a time goal ever replaces 'finish "
@@ -1002,6 +1063,29 @@ def generate_week(profile: FitnessProfile, phase: Phase, week_in_phase: int, *,
         notes.append(f"Cutback week: volume x{CUTBACK_FACTOR:.2f}. Every {CUTBACK_EVERY}th week "
                      "drops volume so the slow tissues catch up with the fast ones. [Convention "
                      "rather than trial-tested, but the mechanism is sound and the cost is low.]")
+
+    # Coherence check: does the week actually add up to its own target? If not, say so rather than
+    # printing a target the sessions cannot reach. At a beginner's easy pace, three runs plus a
+    # 150-minute long-run cap has a hard ceiling of roughly 30-35 km/week, and that ceiling rises
+    # only as the easy pace itself gets quicker.
+    if km:
+        planned_km = 0.0
+        for s in sessions:
+            if s.type in (SessionType.REST, SessionType.STRENGTH, SessionType.CROSS) or s.optional:
+                continue
+            if s.distance_km:
+                planned_km += s.distance_km
+            elif s.duration_min:
+                ref = s.pace_target_sec_km or paces.easy
+                planned_km += s.duration_min * 60.0 / ref
+        if planned_km < km * 0.85:
+            notes.append(
+                f"Honest note: this week's sessions come to about {planned_km:.0f} km, short of the "
+                f"{km:.0f} km corridor target. Three runs a week plus a "
+                f"{LONG_RUN_MAX_MIN:.0f}-minute long-run cap has a real ceiling at your current "
+                "easy pace, and the ceiling rises as your pace does rather than by being wished "
+                "away. If the gap matters to you, the fourth easy run is the fix.")
+        km = round(planned_km, 1)
 
     return PlannedWeek(week_index=week_index, phase=phase, week_in_phase=week_in_phase,
                        sessions=sessions, volume_target_km=km, volume_target_min=minutes,

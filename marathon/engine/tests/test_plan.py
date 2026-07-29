@@ -16,6 +16,7 @@ from marathon_engine.load import MAX_WEEKLY_RAMP
 from marathon_engine.physiology import training_paces
 from marathon_engine.plan import (
     CUTBACK_EVERY, CUTBACK_FACTOR, LONG_RUN_MAX_KM, LONG_RUN_MAX_MIN, LONG_RUN_MAX_SHARE,
+    LONG_RUN_PEAK_MAX_MIN,
     PHASE_GATES, PHASE_MIN_WEEKS, PHASE_ORDER, PHASE_STALL_WEEKS, TAPER_VOLUME_CUT, Gate, Phase,
     PlanConfig, SessionType, evaluate_gates, generate_week, long_run_progression, phase_overview,
     taper_weeks, weekly_volume_target,
@@ -183,10 +184,31 @@ def test_long_run_share_is_capped(profile):
 
 
 def test_long_run_time_cap_binds_for_a_slow_runner(profile):
-    """A beginner at ~8:00/km hits the 3-hour cap well before 32 km -- and the cap must win."""
-    km, mins, notes = long_run_progression(Phase.MARATHON_PEAK, 12, 90.0, profile.paces)
-    assert mins <= LONG_RUN_MAX_MIN + 1e-6
+    """A beginner at ~8:00/km hits the time cap long before 32 km -- and the cap must win.
+
+    The cap is 150 min (Daniels' actual rule) everywhere except the peak phase, which is allowed
+    165 min for its biggest rehearsal runs.
+    """
+    km, mins, notes = long_run_progression(Phase.MARATHON_BASE, 12, 90.0, profile.paces)
+    assert mins <= LONG_RUN_MAX_MIN + 1e-6, "base phases must respect the 150 min cap"
     assert any("min" in n for n in notes)
+
+    km, mins, notes = long_run_progression(Phase.MARATHON_PEAK, 12, 90.0, profile.paces)
+    assert mins <= LONG_RUN_PEAK_MAX_MIN + 1e-6
+    assert mins > LONG_RUN_MAX_MIN, "the peak phase gets its documented allowance"
+
+
+def test_long_run_cap_is_not_the_three_hour_convention():
+    """Regression guard. An earlier version used the widely-repeated '3 hours', which exceeds
+    Daniels' own 150-minute limit by 20% -- in the population least able to absorb it."""
+    assert LONG_RUN_MAX_MIN == 150.0
+    assert LONG_RUN_PEAK_MAX_MIN < 180.0
+
+
+def test_daniels_share_tightening_is_disclosed(profile):
+    """Above 40 km/week Daniels' share limit drops to 25%; we exceed it and must say so."""
+    km, mins, notes = long_run_progression(Phase.MARATHON_BASE, 10, 50.0, profile.paces)
+    assert any("Daniels" in n for n in notes)
 
 
 def test_long_run_distance_cap_binds_for_a_fast_runner():
@@ -372,3 +394,43 @@ def test_phase_overview_is_complete_and_serialisable():
     assert "foundation" in names and "marathon_peak" in names
     for o in ov:
         assert o["goal"]
+
+
+def test_optional_run_does_not_collide_with_another_session(profile):
+    """Regression guard: the optional 4th run used to land on a strength day, which reads as two
+    sessions stacked on one day -- the opposite of what an optional easy run is for."""
+    for phase in (Phase.MARATHON_BASE, Phase.MARATHON_PEAK):
+        for wk in range(1, 7):
+            w = generate_week(profile, phase, wk)
+            opt = [s for s in w.sessions if s.optional]
+            for o in opt:
+                same_day = [s for s in w.sessions
+                            if s.day_offset == o.day_offset and s is not o
+                            and s.type != SessionType.REST]
+                assert not same_day, (
+                    f"{phase} wk{wk}: optional run collides with "
+                    f"{[s.title for s in same_day]}")
+
+
+def test_week_sessions_are_coherent_with_the_stated_volume(profile):
+    """The stated weekly volume must match what the sessions actually add up to.
+
+    A hardcoded midweek duration made these silently disagree -- the plan said 50 km while the
+    sessions came to 30.
+    """
+    for phase in (Phase.BASE_1, Phase.BASE_2, Phase.HALF_BUILD, Phase.MARATHON_BASE):
+        for wk in (1, 4, 8):
+            w = generate_week(profile, phase, wk)
+            if not w.volume_target_km:
+                continue
+            total = 0.0
+            for s in w.running_sessions:
+                if s.optional:
+                    continue
+                if s.distance_km:
+                    total += s.distance_km
+                elif s.duration_min:
+                    total += s.duration_min * 60.0 / (s.pace_target_sec_km or profile.paces.easy)
+            assert total == pytest.approx(w.volume_target_km, rel=0.16), (
+                f"{phase} wk{wk}: sessions total {total:.1f} km vs stated "
+                f"{w.volume_target_km:.1f} km")

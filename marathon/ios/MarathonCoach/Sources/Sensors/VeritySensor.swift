@@ -4,6 +4,27 @@
 //
 //  What this class does that a naive BLE manager does not:
 //
+//  • **Two modes, because PPI and real-time control are mutually exclusive.** This is the single
+//    most important design decision in this file. Polar documents that *with PPI enabled, heart rate
+//    updates only every ~5 seconds* — and the SleepController's own `polar_pmd.py` records the same
+//    thing (`PPI_HR_UPDATE_S = 5.0`). A 5-second-stale heart rate is fine for overnight HRV and
+//    useless for a 1 Hz controller doing lead compensation over a 30-second slope. So:
+//
+//      - `.run`  — subscribe to the standard HR service (0x180D) for ~1 Hz heart rate, plus ACC for
+//                  cadence. **PPI is NOT started.** No beat-to-beat HRV during a run, which we do
+//                  not need: in-run decisions use heart rate, pace, cadence and drift.
+//      - `.rest` — start PPI (and ACC), for the overnight and orthostatic HRV that feeds readiness.
+//                  Here the 5-second HR update and the 25-second warm-up cost nothing.
+//
+//    Getting this wrong is subtle and expensive: the app would appear to work, while every
+//    real-time decision was made on heart-rate data five seconds out of date, which is a
+//    meaningful fraction of the HR time constant the controller is built around.
+//
+//    A related hardware fact worth knowing: unlike the H10 chest strap, the **Verity Sense does not
+//    report RR intervals in the standard Heart Rate Measurement characteristic**. Beat intervals are
+//    available only through PMD/PPI. So `.run` mode genuinely has no beat-interval source on this
+//    device, and that is a property of the hardware rather than a limitation of this code.
+//
 //  • **Streams the accelerometer, not just heart rate.** This is not a nice-to-have. Cadence from
 //    the armband's own ACC is the only reliable way to detect PPG *cadence lock-on*, where the
 //    optical algorithm latches onto step frequency and reports a rock-steady, plausible-looking
@@ -85,6 +106,18 @@ public enum VerityStatus: Equatable {
 
 public final class VeritySensor: NSObject, ObservableObject {
 
+    /// What the sensor is being used for right now. See the file header: PPI and 1 Hz heart rate are
+    /// mutually exclusive on this hardware, so this is not a preference — it is a hard choice.
+    public enum Mode: String {
+        /// Real-time coaching: 1 Hz HR from 0x180D + ACC cadence. No PPI, no beat intervals.
+        case run
+        /// Overnight / orthostatic HRV: PPI + ACC. HR updates every ~5 s, which is irrelevant here.
+        case rest
+
+        var usesPpi: Bool { self == .rest }
+    }
+
+    @Published public private(set) var mode: Mode = .run
     @Published public private(set) var status: VerityStatus = .disconnected(willRetry: false)
     @Published public private(set) var latest: VerityReading?
     @Published public private(set) var batteryPercent: Int?
@@ -121,7 +154,18 @@ public final class VeritySensor: NSObject, ObservableObject {
         ])
     }
 
-    public func start() {
+    /// Switch mode. Safe to call while connected: the streams are stopped and restarted.
+    public func setMode(_ newMode: Mode) {
+        guard newMode != mode else { return }
+        mode = newMode
+        guard let p = peripheral, let control = controlChar else { return }
+        p.writeValue(PmdCodec.buildStopCommand(.ppi), for: control, type: .withResponse)
+        p.writeValue(PmdCodec.buildStopCommand(.acc), for: control, type: .withResponse)
+        startPmdStreams(p)
+    }
+
+    public func start(mode requested: Mode = .run) {
+        mode = requested
         wantsReconnect = true
         guard central.state == .poweredOn else { return }
         // Prefer a known peripheral: background scanning for new devices is unreliable, so a run
@@ -261,7 +305,7 @@ extension VeritySensor: CBCentralManagerDelegate {
 
     public func centralManagerDidUpdateState(_ c: CBCentralManager) {
         switch c.state {
-        case .poweredOn: if wantsReconnect { start() }
+        case .poweredOn: if wantsReconnect { start(mode: mode) }
         case .poweredOff: status = .bluetoothOff
         case .unauthorized: status = .unauthorized
         default: status = .disconnected(willRetry: false)
@@ -287,7 +331,7 @@ extension VeritySensor: CBCentralManagerDelegate {
     public func centralManager(_ c: CBCentralManager, didFailToConnect p: CBPeripheral,
                                error: Error?) {
         status = .disconnected(willRetry: wantsReconnect)
-        if wantsReconnect { start() }
+        if wantsReconnect { start(mode: mode) }
     }
 
     public func centralManager(_ c: CBCentralManager, didDisconnectPeripheral p: CBPeripheral,
@@ -345,11 +389,22 @@ extension VeritySensor: CBPeripheralDelegate {
     private func startPmdStreams(_ p: CBPeripheral) {
         guard let control = controlChar else { return }
         do {
-            // PPI takes NO settings — passing any is an error the device will reject.
-            p.writeValue(try PmdCodec.buildStartCommand(.ppi), for: control, type: .withResponse)
+            // ACC always: it is the cadence source, and cadence is the only way to detect the
+            // optical sensor locking onto step rate.
             p.writeValue(try PmdCodec.buildStartCommand(.acc, settings: pmdDefaultAccSettings),
                          for: control, type: .withResponse)
-            beginWarmupSupervision()
+
+            if mode.usesPpi {
+                // PPI takes NO settings — passing any is an error the device will reject.
+                p.writeValue(try PmdCodec.buildStartCommand(.ppi), for: control, type: .withResponse)
+                beginWarmupSupervision()
+            } else {
+                // .run mode: deliberately no PPI, so heart rate keeps arriving at ~1 Hz from the
+                // standard Heart Rate Measurement characteristic instead of being throttled to
+                // every 5 seconds. There is no PPI warm-up to wait for either, so a run can start
+                // immediately rather than 25 seconds later.
+                status = .streaming
+            }
         } catch {
             status = .stalled(reason: "could not build PMD start command: \(error)")
         }
@@ -389,10 +444,12 @@ extension VeritySensor: CBPeripheralDelegate {
 
         case CBUUID(string: PMD.heartRateMeasurementUUID).uuidString.uppercased():
             guard let m = try? PmdCodec.parseHeartRateMeasurement(data) else { return }
-            // Only use this path when PMD/PPI is not delivering: PPI carries per-beat quality flags
-            // that the plain HR service does not, and mixing the two sources would produce an HRV
-            // series with inconsistent filtering.
-            if latest?.source != .pmdPpi || !status.isUsable {
+            // In .run mode this characteristic is the AUTHORITATIVE heart-rate source, not a
+            // fallback — PPI is deliberately not running. In .rest mode it is the fallback, used
+            // only when PPI is not delivering: PPI carries per-beat quality flags that the plain HR
+            // service does not, and mixing the two would produce an HRV series with inconsistent
+            // filtering and a step change in lnRMSSD on every switch.
+            if mode == .run || latest?.source != .pmdPpi || !status.isUsable {
                 emit(hr: m.bpm, intervalsMs: m.rrIntervalsMs, skinContact: m.sensorContact,
                      source: .heartRateService)
             }
