@@ -203,3 +203,36 @@ def permutation_null(stat_fn: Callable[[np.ndarray], float], y: Sequence, subjec
     return {"mean": float(v.mean()), "q025": float(np.quantile(v, 0.025)),
             "q975": float(np.quantile(v, 0.975)), "n": int(len(v)),
             "null_centered": bool(abs(v.mean() - 0.5) < 0.05)}
+
+def cv_predict_proba(x: Sequence, y: Sequence, subject: Sequence, rng, folds: int = 5) -> np.ndarray:
+    """OUT-OF-FOLD probabilities from a univariate logistic on `x`, with SUBJECT-level folds.
+
+    Why out-of-fold and why subject-level. In-sample calibration is meaningless -- a logistic fit on the
+    same rows it is scored on is calibrated by construction, so reporting its intercept and slope would
+    always look perfect and would say nothing. And folds must split on subject, because a subject
+    contributing rows to both train and test leaks that subject's level, which for a within-subject contrast
+    is most of the signal.
+
+    Returns NaN for any row whose fold could not be fitted (a fold with one outcome class). Those rows are
+    excluded downstream rather than imputed.
+    """
+    x = np.asarray(x, float)
+    y = np.asarray(y, float)
+    subject = np.asarray(subject)
+    out = np.full(len(x), np.nan)
+    uniq = np.unique(subject)
+    if len(uniq) < folds:
+        folds = max(2, len(uniq))
+    order = rng.permutation(len(uniq))
+    assign = {uniq[order[i]]: i % folds for i in range(len(uniq))}
+    fold_of = np.array([assign[s] for s in subject])
+    for k in range(folds):
+        te = fold_of == k
+        tr = ~te & np.isfinite(x) & np.isfinite(y)
+        if te.sum() == 0 or tr.sum() < 8 or len(np.unique(y[tr])) < 2:
+            continue
+        X = np.column_stack([np.ones(int(tr.sum())), x[tr]])
+        b = logit_fit(X, y[tr])
+        m = te & np.isfinite(x)
+        out[m] = predict_proba(np.column_stack([np.ones(int(m.sum())), x[m]]), b)
+    return out

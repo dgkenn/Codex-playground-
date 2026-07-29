@@ -40,7 +40,7 @@ from bsde.candidates.registry import Candidate
 from bsde.verifier.report import (Evidence, VerifierReport, decide,
                                   PASS, FAIL, NOT_RUN, NOT_APPLICABLE)
 from bsde.verifier.stats import (auc, auc_abs, directional_auc, cluster_bootstrap_ci,
-                                 permutation_null, spearman)
+                                 permutation_null, spearman, brier, calibration, cv_predict_proba)
 
 # --- thresholds, all pre-specified here rather than chosen per-candidate -----------------------------
 LEAKAGE_AUC = 0.98        # discrimination above this from a resting EEG scalar is implausible
@@ -275,6 +275,35 @@ def layer_statistical(cand: Candidate, coh: Cohort, rng) -> list:
            ("interval spans 0.5" if not excludes_half else "does not exceed the permutation null")),
         {"auc": a, "ci_lo": lo, "ci_hi": hi, "null_q975": null["q975"], "n": coh.n},
         item="cross_dataset_performance"))
+
+    # --- calibration -------------------------------------------------------------------------------
+    # Discrimination without calibration is half a result, and the missing half is the half clinicians use.
+    p_oof = cv_predict_proba(coh.values, coh.y, coh.subject, rng, folds=5)
+    ok_p = np.isfinite(p_oof) & np.isfinite(coh.y)
+    if ok_p.sum() < MIN_SUBJECTS:
+        ev.append(Evidence("calibration", "statistical", NOT_RUN,
+                           f"only {int(ok_p.sum())} rows received an out-of-fold probability; "
+                           f"minimum is {MIN_SUBJECTS}",
+                           item="cross_dataset_performance"))
+    else:
+        cal = calibration(coh.y[ok_p], p_oof[ok_p])
+        bs = brier(coh.y[ok_p], p_oof[ok_p])
+        prev = float(coh.y[ok_p].mean())
+        bs_ref = brier(coh.y[ok_p], np.full(int(ok_p.sum()), prev))   # prevalence-only baseline
+        skill = 1.0 - bs / bs_ref if bs_ref > 0 else float("nan")
+        slope_ok = np.isfinite(cal["slope"]) and 0.5 <= cal["slope"] <= 2.0
+        beats_prev = np.isfinite(skill) and skill > 0.0
+        ev.append(Evidence(
+            "calibration", "statistical", PASS if (slope_ok and beats_prev) else FAIL,
+            f"out-of-fold Brier {bs:.4f} vs prevalence-only {bs_ref:.4f} (skill {skill:+.3f}); "
+            f"calibration intercept {cal['intercept']:+.3f}, slope {cal['slope']:.3f} "
+            f"(perfect is 0 and 1; slope < 1 means over-confident). "
+            + ("calibrated and better than predicting the prevalence" if (slope_ok and beats_prev) else
+               ("does not beat a prevalence-only prediction" if not beats_prev else
+                "slope is outside [0.5, 2.0], so the probabilities are materially miscalibrated")),
+            {"brier": bs, "brier_prevalence": bs_ref, "brier_skill": skill,
+             "cal_intercept": cal["intercept"], "cal_slope": cal["slope"], "n": int(ok_p.sum())},
+            item="cross_dataset_performance"))
 
     ev.append(Evidence(
         "label_leakage", "statistical", FAIL if (np.isfinite(a) and a >= LEAKAGE_AUC) else PASS,

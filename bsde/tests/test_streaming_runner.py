@@ -250,3 +250,42 @@ def test_subject_column_is_carried_into_the_feature_table(tmp_path):
     rows = _read(out)
     subs = {r["subject"] for r in rows}
     assert len(subs) == 6 and len(rows) == 12, "12 recordings across 6 subjects must be visible as such"
+
+
+# --- meta columns carry the state label --------------------------------------------------------------
+
+def test_declared_meta_keys_become_columns_so_the_label_survives(tmp_path):
+    """Without this the extraction has no outcome column. An adapter can parse `task-sed` out of a BIDS
+    path into ref.meta, but if the row does not carry it the feature table is unlabelled and the whole
+    stream has to be redone or reverse-engineered from the recording id."""
+    class Tagged(FakeAdapter):
+        def list_recordings(self):
+            refs = super().list_recordings()
+            for i, r in enumerate(refs):
+                r.meta = {"task": "sed" if i % 2 else "awake", "acq": "rest"}
+            return refs
+
+    out = str(tmp_path / "f.csv")
+    stream_features(Tagged(n=6), _cands(), out, log=lambda *_: None, meta_keys=["task", "acq"])
+    rows = _read(out)
+    assert "meta_task" in rows[0] and "meta_acq" in rows[0]
+    assert {r["meta_task"] for r in rows} == {"awake", "sed"}
+    assert all(r["meta_acq"] == "rest" for r in rows)
+
+
+def test_a_missing_meta_key_is_blank_not_absent(tmp_path):
+    """A blank cell is inspectable; a missing column silently changes the schema between datasets."""
+    out = str(tmp_path / "f.csv")
+    stream_features(FakeAdapter(n=3), _cands(), out, log=lambda *_: None, meta_keys=["task"])
+    rows = _read(out)
+    assert "meta_task" in rows[0]
+    assert all(r["meta_task"] == "" for r in rows)
+
+
+def test_meta_columns_participate_in_the_resume_schema_guard(tmp_path):
+    """Adding a meta key changes the column set, so resuming must refuse rather than append a
+    differently-shaped row."""
+    out = str(tmp_path / "f.csv")
+    stream_features(FakeAdapter(n=3), _cands(), out, log=lambda *_: None, meta_keys=["task"])
+    with pytest.raises(ValueError, match="different column set"):
+        stream_features(FakeAdapter(n=3), _cands(), out, log=lambda *_: None, meta_keys=["task", "acq"])

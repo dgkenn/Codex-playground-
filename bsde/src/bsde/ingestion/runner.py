@@ -40,10 +40,16 @@ import numpy as np
 from bsde.ingestion.base import Adapter, RecordingRef, shard_of
 
 
-def _row_for(ref: RecordingRef, candidates: Sequence, fields: Sequence[str]) -> Dict[str, Any]:
+def _row_for(ref: RecordingRef, candidates: Sequence, fields: Sequence[str],
+             meta_keys: Sequence[str] = ()) -> Dict[str, Any]:
     """Compute one feature row. The raw arrays go out of scope when this function returns."""
     row = {"recording_id": ref.recording_id, "dataset": ref.dataset, "subject": ref.subject,
            "status": "ok", "error": "", "n_channels": "", "sfreq": "", "n_samples": ""}
+    # Persist declared metadata keys. Without this the STATE LABEL is lost: an adapter can parse
+    # `task-sed` out of a BIDS path into ref.meta, but if the row does not carry it the feature table has
+    # no outcome column and the whole extraction has to be redone or reverse-engineered from the id.
+    for k in meta_keys:
+        row[f"meta_{k}"] = "" if ref.meta.get(k) is None else str(ref.meta.get(k))
     try:
         data, ch_names, sfreq, meta = ref.load()
         data = np.asarray(data, float)
@@ -52,6 +58,9 @@ def _row_for(ref: RecordingRef, candidates: Sequence, fields: Sequence[str]) -> 
         row["sfreq"] = f"{float(sfreq):.6g}"
         merged = dict(ref.meta)
         merged.update(meta or {})
+        for k in meta_keys:
+            if row.get(f"meta_{k}", "") == "" and merged.get(k) is not None:
+                row[f"meta_{k}"] = str(merged.get(k))
         for c in candidates:
             try:
                 v = c.fn(data, ch_names, sfreq, merged)
@@ -69,13 +78,14 @@ def _row_for(ref: RecordingRef, candidates: Sequence, fields: Sequence[str]) -> 
 
 def stream_features(adapter: Adapter, candidates: Sequence, out_csv: str,
                     shard: int = 0, n_shards: int = 1, limit: int | None = None,
-                    log=print) -> Dict[str, int]:
+                    log=print, meta_keys: Sequence[str] = ()) -> Dict[str, int]:
     """Extract features for every recording in this shard, appending to `out_csv`. Resumable.
 
     Returns counts. Raises if `out_csv` exists with a different column set — see the module docstring.
     """
     fields = (["recording_id", "dataset", "subject", "status", "error",
-               "n_channels", "sfreq", "n_samples"] + [c.name for c in candidates])
+               "n_channels", "sfreq", "n_samples"]
+              + [f"meta_{k}" for k in meta_keys] + [c.name for c in candidates])
 
     done: set = set()
     if os.path.exists(out_csv) and os.path.getsize(out_csv) > 0:
@@ -106,7 +116,7 @@ def stream_features(adapter: Adapter, candidates: Sequence, out_csv: str,
             fh.flush()
             os.fsync(fh.fileno())
         for i, ref in enumerate(todo, 1):
-            row = _row_for(ref, candidates, fields)
+            row = _row_for(ref, candidates, fields, meta_keys=meta_keys)
             w.writerow(row)
             fh.flush()
             os.fsync(fh.fileno())          # a row on disk is a row that survives SIGKILL
@@ -134,6 +144,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     ap.add_argument("--records", default="", help="wfdb only: file with one record name per line")
     ap.add_argument("--suffix", default="_eeg.edf", help="openneuro only: key suffix to select")
     ap.add_argument("--window-s", type=float, default=300.0, dest="window_s")
+    ap.add_argument("--meta-keys", default="", dest="meta_keys",
+                    help="comma-separated ref.meta keys to persist as meta_<key> columns, e.g. 'task,acq,run'")
     ap.add_argument("--channel-regex", default="", dest="channel_regex",
                     help="http_edf only: select channels by label regex, e.g. '^EEG ' for polysomnography")
     ap.add_argument("--out", required=True)
@@ -174,7 +186,9 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     print(f"streaming {adapter.name} -> {a.out}")
     print(f"   candidates: {[c.name for c in cands]}")
-    stats = stream_features(adapter, cands, a.out, shard=a.shard, n_shards=a.n_shards, limit=a.limit)
+    mk = [k.strip() for k in a.meta_keys.split(',') if k.strip()]
+    stats = stream_features(adapter, cands, a.out, shard=a.shard, n_shards=a.n_shards, limit=a.limit,
+                            meta_keys=mk)
     print(f"   {stats}")
     return 0
 
