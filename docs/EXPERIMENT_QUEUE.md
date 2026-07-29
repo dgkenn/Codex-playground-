@@ -25,6 +25,27 @@ power artefact. Both sentences go in the abstract.
 | **4** | **Spindles beyond depth** | Mostly done (R395–R396). Open piece: the interaction goes marginal (−0.252 [−0.507, +0.001]) under the aggressive `awake` adjustment. |
 | **5** | **Why frequency content and not amplitude?** — new, from R413 | The reversal appears in intra-burst 8–30 Hz content and in **none** of five other morphology measures from the same bursts in the same patients. That is a real asymmetry and nothing in the mechanism candidates explains it. A candidate that predicts *content reverses, vigour does not* would be worth more than another robustness check. |
 
+## BRAINSTORM 2026-07-29 (cadence after R404–R413) — candidates weighed against the full constraint set
+
+Each candidate must say what it explains, what it *struggles* with, and one falsifiable prediction. A
+candidate that only explains the positives is not a candidate.
+
+| # | candidate | explains | struggles with | falsifiable prediction | verdict |
+|---|---|---|---|---|---|
+| **A** | **The reversal is a GABAergic drug signature** — intra-burst 8–30 Hz is close to what propofol/barbiturates manufacture, and sedation practice differs by aetiology (TTM protocols after arrest) | The reversal's *existence*, its band, and why it is specific to spectral content and not to amplitude, duration or rate (**R413**) — a drug acts on the spectrum | Would have to survive R400's adjustment for recorded flags; and R412 showed amplitude is orthogonal, which a pure depth effect would not predict | The reversal should **vanish where no BS-capable agent was running at the EEG** | **RUNNING — R414. Ranked first: it is the largest untested objection and it is cheap.** |
+| **B** | **Thalamocortical (Schiff mesocircuit)** — intra-burst fast content indexes surviving thalamocortical drive | The band specificity (R413: content, not vigour); converges with the spindle result (R395–R396) | Does not explain why the *direction reverses* rather than merely weakening; needs an extra assumption about anoxia | Anoxic and non-anoxic should differ in a **thalamic-specific** marker (spindles) in the same direction as the reversal | open — partly tested, R395–R396 |
+| **C** | **Selective interneuron vulnerability after anoxia** — fast-spiking interneurons die first, so residual fast activity after anoxia is disinhibited pathology, while in non-anoxic coma it is preserved cortex | The **sign reversal** directly, and why it is aetiology-specific rather than severity-specific; consistent with R413's content-not-scale finding | Not directly measurable in this data; risks being unfalsifiable here | Fast content should track **epileptiform** features in the anoxic arm but not the non-anoxic one | open — the best mechanistic story, needs a testable handle |
+| **D** | **Residual confounding by time-from-injury** — EEG timing relative to insult differs by aetiology | Some attenuation patterns | Cannot produce an opposite-signed AUC on either side of 0.5; R411 showed the non-anoxic arm is completely unmoved by landmarking | Adjusting for EEG-to-injury interval should collapse the interaction | weak — but the interval is unmeasured (no arrest time, R410) |
+| **E** | ~~Guideline-driven withdrawal~~ | — | — | — | **DEAD — R409/R410, see handoff §3.0** |
+
+**Why A was run first.** It is the one candidate that is cheap, decisive in both directions, and currently
+unaddressed: sedation was checked against *burden* and against the *flag residual*, but both checks predate
+R389, so the reversal itself has never been through it. If A survives, the lead's largest pharmacological
+objection retires; if it fails, the project is saved from publishing a drug artefact. Neither outcome is a
+robustness check — both change what can be claimed.
+
+---
+
 ## DO NOT RE-OPEN
 
 | dead end | killed by |
