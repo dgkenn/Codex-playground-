@@ -891,7 +891,13 @@ def generate_week(profile: FitnessProfile, phase: Phase, week_in_phase: int, *,
         ]
 
     elif phase == Phase.FOUNDATION:
-        rung = _RUN_WALK_LADDER[min(week_in_phase - 1, len(_RUN_WALK_LADDER) - 1)]
+        # A cutback week REPEATS the previous rung rather than advancing. Advancing the ladder while
+        # cutting the stated volume was incoherent: the sessions got harder in the week that is
+        # supposed to be easier.
+        rung_index = min(week_in_phase - 1, len(_RUN_WALK_LADDER) - 1)
+        if is_cutback and rung_index > 0:
+            rung_index -= 1
+        rung = _RUN_WALK_LADDER[rung_index]
         run_min, walk_min, reps = rung
         continuous = walk_min == 0
         session_total = reps * (run_min + walk_min)
@@ -914,11 +920,16 @@ def generate_week(profile: FitnessProfile, phase: Phase, week_in_phase: int, *,
                           "unnecessary.",
                           "Do not skip the walk breaks because you feel good. The breaks are why "
                           "you feel good."]))
-        notes = [f"Run-walk ladder rung {min(week_in_phase, len(_RUN_WALK_LADDER))} of "
-                 f"{len(_RUN_WALK_LADDER)}: {run_min:g} min running / {walk_min:g} min walking "
-                 f"x {reps}.",
+        # The honest weekly figure for this phase is what the ladder actually prescribes, not a
+        # separate corridor that happens to disagree with it.
+        minutes = round(run_min * reps * 3, 1)
+        notes = [f"Run-walk ladder rung {rung_index + 1} of {len(_RUN_WALK_LADDER)}: "
+                 f"{run_min:g} min running / {walk_min:g} min walking x {reps} "
+                 f"({run_min * reps:g} min of running per session, {minutes:g} min across the week).",
                  "Repeat a rung rather than advancing if the previous week felt hard, hurt, or "
                  "was interrupted. There is no deadline."]
+        if is_cutback:
+            notes.append("The ladder holds at the previous rung this week rather than advancing.")
 
     elif phase == Phase.BASE_1:
         lr_km, lr_min, lr_notes = long_run_progression(phase, week_in_phase, km, paces,

@@ -159,7 +159,12 @@ Your schedule is **3 runs + 2 strength sessions**, with the long run on Sun. Ses
 | Sat | **Rest** |  |
 | Sun | **Rest** |  |
 
-**Structural screen** — Single-leg calf raises to failure per side; 30 s sit-to-stand; single-leg balance; step-down quality; plank hold.
+**Structural screen**
+- Single-leg calf raises to failure per side
+- 30 s sit-to-stand
+- single-leg balance
+- step-down quality
+- plank hold.
 > *Why:* Find the weak link before load finds it.
 
 **Graded ramp test** — 5 min walk warm-up, then 4 min stages at 5, 6, 7, 8, 9 km/h. Record heart rate over the final 60 s of each stage, plus Borg 6-20 and the talk test. Stop at 85% of heart-rate reserve, RPE 15/20, or when speech becomes impossible.
@@ -179,7 +184,7 @@ Your schedule is **3 runs + 2 strength sessions**, with the long run on Sun. Ses
 - **No pain above 2/10 for two weeks** 🛑 — The pain-monitoring model treats 0-2/10 as acceptable, 3-5/10 as a warning to hold volume, and anything above 5/10 as a stop. Two clean weeks means the tissue is tolerating the current load, which is the precondition for adding more.
 - **80% of planned sessions completed over 4 weeks** — Consistency is the variable that actually predicts progress. Advancing a phase on the strength of a good fortnight inside a patchy block just moves the problem forward.
 
-#### Week 1 of foundation — target **45 min of running**
+#### Week 1 of foundation — target **24 min of running**
 
 | Day | Session | Target |
 |---|---|---|
@@ -191,7 +196,12 @@ Your schedule is **3 runs + 2 strength sessions**, with the long run on Sun. Ses
 | Sat | **Rest** |  |
 | Sun | **Run-walk 1/2 x 8** | 34 min · Z1-2 · run 1/walk 2 x8 |
 
-**Strength (running-specific)** — Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.
+**Strength (running-specific)**
+- Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.
+- Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.
+- Hip abduction: side-lying or cable, 3 x 15 per side.
+- Posterior chain: Romanian deadlift or hip thrust, 3 x 8.
+- Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.
 > *Why:* Injury prevention and running economy. Strength training substantially reduces overuse injury (Lauersen 2014/2018) and improves running economy without unwanted mass (Blagrove 2018). You already lift -- fold these in rather than adding a separate session.
 > - Keep heavy lower-body work at least 24 h away from a quality run and 48 h from the long run.
 > - Do not chase soreness. The goal is stiffness and strength, not a session that compromises the running.
@@ -201,25 +211,10 @@ Your schedule is **3 runs + 2 strength sessions**, with the long run on Sun. Ses
 > - Run the running portions slowly enough that the walk break feels almost unnecessary.
 > - Do not skip the walk breaks because you feel good. The breaks are why you feel good.
 
-**Run-walk 1/2 x 8** — 5 min walk warm-up, then 8 x (1 min easy running + 2 min walking), 5 min walk cool-down.
-> *Why:* Build running-specific tissue tolerance in doses the tissue can actually absorb. The walk break is not a concession -- it is what keeps the running portions aerobic and the total load survivable.
-> - Run the running portions slowly enough that the walk break feels almost unnecessary.
-> - Do not skip the walk breaks because you feel good. The breaks are why you feel good.
-
-**Strength (running-specific)** — Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.
-> *Why:* Injury prevention and running economy. Strength training substantially reduces overuse injury (Lauersen 2014/2018) and improves running economy without unwanted mass (Blagrove 2018). You already lift -- fold these in rather than adding a separate session.
-> - Keep heavy lower-body work at least 24 h away from a quality run and 48 h from the long run.
-> - Do not chase soreness. The goal is stiffness and strength, not a session that compromises the running.
-
-**Run-walk 1/2 x 8** — 5 min walk warm-up, then 8 x (1 min easy running + 2 min walking), 5 min walk cool-down.
-> *Why:* Build running-specific tissue tolerance in doses the tissue can actually absorb. The walk break is not a concession -- it is what keeps the running portions aerobic and the total load survivable.
-> - Run the running portions slowly enough that the walk break feels almost unnecessary.
-> - Do not skip the walk breaks because you feel good. The breaks are why you feel good.
-
-- Run-walk ladder rung 1 of 8: 1 min running / 2 min walking x 8.
+- Run-walk ladder rung 1 of 8: 1 min running / 2 min walking x 8 (8 min of running per session, 24 min across the week).
 - Repeat a rung rather than advancing if the previous week felt hard, hurt, or was interrupted. There is no deadline.
 
-#### Week 2 of foundation — target **57 min of running**
+#### Week 2 of foundation — target **42 min of running**
 
 | Day | Session | Target |
 |---|---|---|
@@ -231,10 +226,10 @@ Your schedule is **3 runs + 2 strength sessions**, with the long run on Sun. Ses
 | Sat | Rest | — |
 | Sun | **Run-walk 2/2 x 7** | 38 min · Z1-2 · run 2/walk 2 x7 |
 
-- Run-walk ladder rung 2 of 8: 2 min running / 2 min walking x 7.
+- Run-walk ladder rung 2 of 8: 2 min running / 2 min walking x 7 (14 min of running per session, 42 min across the week).
 - Repeat a rung rather than advancing if the previous week felt hard, hurt, or was interrupted. There is no deadline.
 
-#### Week 3 of foundation — target **69 min of running**
+#### Week 3 of foundation — target **54 min of running**
 
 | Day | Session | Target |
 |---|---|---|
@@ -246,26 +241,27 @@ Your schedule is **3 runs + 2 strength sessions**, with the long run on Sun. Ses
 | Sat | Rest | — |
 | Sun | **Run-walk 3/2 x 6** | 40 min · Z1-2 · run 3/walk 2 x6 |
 
-- Run-walk ladder rung 3 of 8: 3 min running / 2 min walking x 6.
+- Run-walk ladder rung 3 of 8: 3 min running / 2 min walking x 6 (18 min of running per session, 54 min across the week).
 - Repeat a rung rather than advancing if the previous week felt hard, hurt, or was interrupted. There is no deadline.
 
-#### Week 4 of foundation — target **57 min of running** · *cutback week*
+#### Week 4 of foundation — target **54 min of running** · *cutback week*
 
 | Day | Session | Target |
 |---|---|---|
 | Mon | **Strength (running-specific)** | 45 min |
-| Tue | **Run-walk 5/2 x 5** | 45 min · Z1-2 · run 5/walk 2 x5 |
+| Tue | **Run-walk 3/2 x 6** | 40 min · Z1-2 · run 3/walk 2 x6 |
 | Wed | Rest | — |
-| Thu | **Run-walk 5/2 x 5** | 45 min · Z1-2 · run 5/walk 2 x5 |
+| Thu | **Run-walk 3/2 x 6** | 40 min · Z1-2 · run 3/walk 2 x6 |
 | Fri | **Strength (running-specific)** | 45 min |
 | Sat | Rest | — |
-| Sun | **Run-walk 5/2 x 5** | 45 min · Z1-2 · run 5/walk 2 x5 |
+| Sun | **Run-walk 3/2 x 6** | 40 min · Z1-2 · run 3/walk 2 x6 |
 
-- Run-walk ladder rung 4 of 8: 5 min running / 2 min walking x 5.
+- Run-walk ladder rung 3 of 8: 3 min running / 2 min walking x 6 (18 min of running per session, 54 min across the week).
 - Repeat a rung rather than advancing if the previous week felt hard, hurt, or was interrupted. There is no deadline.
+- The ladder holds at the previous rung this week rather than advancing.
 - Cutback week: volume x0.70. Every 4th week drops volume so the slow tissues catch up with the fast ones. [Convention rather than trial-tested, but the mechanism is sound and the cost is low.]
 
-#### Week 6 of foundation — target **105 min of running**
+#### Week 6 of foundation — target **72 min of running**
 
 | Day | Session | Target |
 |---|---|---|
@@ -277,10 +273,10 @@ Your schedule is **3 runs + 2 strength sessions**, with the long run on Sun. Ses
 | Sat | Rest | — |
 | Sun | **Run-walk 12/2 x 2** | 38 min · Z1-2 · run 12/walk 2 x2 |
 
-- Run-walk ladder rung 6 of 8: 12 min running / 2 min walking x 2.
+- Run-walk ladder rung 6 of 8: 12 min running / 2 min walking x 2 (24 min of running per session, 72 min across the week).
 - Repeat a rung rather than advancing if the previous week felt hard, hurt, or was interrupted. There is no deadline.
 
-*(Weeks 5–5 follow the same shape, progressing between the volumes shown.)*
+*(Week 5 follow the same shape, progressing between the volumes shown.)*
 
 ### Base 1
 
@@ -306,7 +302,14 @@ Your schedule is **3 runs + 2 strength sessions**, with the long run on Sun. Ses
 | Sat | **Rest** |  |
 | Sun | **Long run** | 43 min · 4.9 km · Z1-2 · 8:43/km |
 
-**Strength (running-specific)** — Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run.
+**Strength (running-specific)**
+- Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.
+- Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.
+- Hip abduction: side-lying or cable, 3 x 15 per side.
+- Posterior chain: Romanian deadlift or hip thrust, 3 x 8.
+- Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.
+- Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018)
+- introduce only once the calf-raise gate is met, and never within 48 h of a long run.
 > *Why:* Injury prevention and running economy. Strength training substantially reduces overuse injury (Lauersen 2014/2018) and improves running economy without unwanted mass (Blagrove 2018). You already lift -- fold these in rather than adding a separate session.
 > - Keep heavy lower-body work at least 24 h away from a quality run and 48 h from the long run.
 > - Do not chase soreness. The goal is stiffness and strength, not a session that compromises the running.
@@ -316,11 +319,6 @@ Your schedule is **3 runs + 2 strength sessions**, with the long run on Sun. Ses
 > - If you cannot hold a conversation, you are going too fast -- slow down, do not shorten it.
 > - Heart rate is the referee, not pace. On a hot day or a bad-sleep day the same effort is a slower pace, and that is correct, not a setback.
 > - Strides should feel fast and easy, never strained. Stop the set if form degrades.
-
-**Strength (running-specific)** — Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run.
-> *Why:* Injury prevention and running economy. Strength training substantially reduces overuse injury (Lauersen 2014/2018) and improves running economy without unwanted mass (Blagrove 2018). You already lift -- fold these in rather than adding a separate session.
-> - Keep heavy lower-body work at least 24 h away from a quality run and 48 h from the long run.
-> - Do not chase soreness. The goal is stiffness and strength, not a session that compromises the running.
 
 **Long run** — Steady and easy throughout.
 > *Why:* Time on feet. This is the session the marathon is actually built from -- mitochondrial and capillary density, fat oxidation, tendon and bone tolerance, and the confidence that comes from having been out there.
@@ -422,7 +420,14 @@ Your schedule is **3 runs + 2 strength sessions**, with the long run on Sun. Ses
 | Sat | **Rest** |  |
 | Sun | **Long run** | 72 min · 9.1 km · Z1-2 · 7:55/km |
 
-**Strength (running-specific)** — Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run.
+**Strength (running-specific)**
+- Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.
+- Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.
+- Hip abduction: side-lying or cable, 3 x 15 per side.
+- Posterior chain: Romanian deadlift or hip thrust, 3 x 8.
+- Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.
+- Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018)
+- introduce only once the calf-raise gate is met, and never within 48 h of a long run.
 > *Why:* Injury prevention and running economy. Strength training substantially reduces overuse injury (Lauersen 2014/2018) and improves running economy without unwanted mass (Blagrove 2018). You already lift -- fold these in rather than adding a separate session.
 > - Keep heavy lower-body work at least 24 h away from a quality run and 48 h from the long run.
 > - Do not chase soreness. The goal is stiffness and strength, not a session that compromises the running.
@@ -431,11 +436,6 @@ Your schedule is **3 runs + 2 strength sessions**, with the long run on Sun. Ses
 > *Why:* Raise the pace you can hold for an hour. Cruise intervals rather than one long tempo because broken threshold work accumulates more time at the intensity for less fatigue -- Daniels' own argument for the format.
 > - Threshold is 'comfortably hard' -- about the pace you could hold for an hour in a race. If rep 1 feels hard, it is too fast.
 > - Heart rate lags: expect it to reach the zone about 90 seconds into each rep. Do not chase the number at the start of the rep.
-
-**Strength (running-specific)** — Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run.
-> *Why:* Injury prevention and running economy. Strength training substantially reduces overuse injury (Lauersen 2014/2018) and improves running economy without unwanted mass (Blagrove 2018). You already lift -- fold these in rather than adding a separate session.
-> - Keep heavy lower-body work at least 24 h away from a quality run and 48 h from the long run.
-> - Do not chase soreness. The goal is stiffness and strength, not a session that compromises the running.
 
 **Long run** — Steady and easy throughout.
 > *Why:* Time on feet. This is the session the marathon is actually built from -- mitochondrial and capillary density, fat oxidation, tendon and bone tolerance, and the confidence that comes from having been out there.
@@ -505,7 +505,14 @@ Your schedule is **3 runs + 2 strength sessions**, with the long run on Sun. Ses
 | Sat | **Rest** |  |
 | Sun | **Long run** | 97 min · 13.3 km · Z1-2 · 7:16/km |
 
-**Strength (running-specific)** — Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run.
+**Strength (running-specific)**
+- Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.
+- Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.
+- Hip abduction: side-lying or cable, 3 x 15 per side.
+- Posterior chain: Romanian deadlift or hip thrust, 3 x 8.
+- Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.
+- Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018)
+- introduce only once the calf-raise gate is met, and never within 48 h of a long run.
 > *Why:* Injury prevention and running economy. Strength training substantially reduces overuse injury (Lauersen 2014/2018) and improves running economy without unwanted mass (Blagrove 2018). You already lift -- fold these in rather than adding a separate session.
 > - Keep heavy lower-body work at least 24 h away from a quality run and 48 h from the long run.
 > - Do not chase soreness. The goal is stiffness and strength, not a session that compromises the running.
@@ -514,11 +521,6 @@ Your schedule is **3 runs + 2 strength sessions**, with the long run on Sun. Ses
 > *Why:* Raise the pace you can hold for an hour. Cruise intervals rather than one long tempo because broken threshold work accumulates more time at the intensity for less fatigue -- Daniels' own argument for the format.
 > - Threshold is 'comfortably hard' -- about the pace you could hold for an hour in a race. If rep 1 feels hard, it is too fast.
 > - Heart rate lags: expect it to reach the zone about 90 seconds into each rep. Do not chase the number at the start of the rep.
-
-**Strength (running-specific)** — Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run.
-> *Why:* Injury prevention and running economy. Strength training substantially reduces overuse injury (Lauersen 2014/2018) and improves running economy without unwanted mass (Blagrove 2018). You already lift -- fold these in rather than adding a separate session.
-> - Keep heavy lower-body work at least 24 h away from a quality run and 48 h from the long run.
-> - Do not chase soreness. The goal is stiffness and strength, not a session that compromises the running.
 
 **Long run** — Steady and easy throughout.
 > *Why:* Time on feet. This is the session the marathon is actually built from -- mitochondrial and capillary density, fat oxidation, tendon and bone tolerance, and the confidence that comes from having been out there.
@@ -644,7 +646,14 @@ Your schedule is **3 runs + 2 strength sessions**, with the long run on Sun. Ses
 | Sat | **Rest** |  |
 | Sun | **Long run with marathon-pace finish** | 120 min · 18.2 km · Z2-3 · 5:18/km |
 
-**Strength (running-specific)** — Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run.
+**Strength (running-specific)**
+- Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.
+- Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.
+- Hip abduction: side-lying or cable, 3 x 15 per side.
+- Posterior chain: Romanian deadlift or hip thrust, 3 x 8.
+- Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.
+- Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018)
+- introduce only once the calf-raise gate is met, and never within 48 h of a long run.
 > *Why:* Injury prevention and running economy. Strength training substantially reduces overuse injury (Lauersen 2014/2018) and improves running economy without unwanted mass (Blagrove 2018). You already lift -- fold these in rather than adding a separate session.
 > - Keep heavy lower-body work at least 24 h away from a quality run and 48 h from the long run.
 > - Do not chase soreness. The goal is stiffness and strength, not a session that compromises the running.
@@ -653,11 +662,6 @@ Your schedule is **3 runs + 2 strength sessions**, with the long run on Sun. Ses
 > *Why:* Raise the pace you can hold for an hour. Cruise intervals rather than one long tempo because broken threshold work accumulates more time at the intensity for less fatigue -- Daniels' own argument for the format.
 > - Threshold is 'comfortably hard' -- about the pace you could hold for an hour in a race. If rep 1 feels hard, it is too fast.
 > - Heart rate lags: expect it to reach the zone about 90 seconds into each rep. Do not chase the number at the start of the rep.
-
-**Strength (running-specific)** — Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run.
-> *Why:* Injury prevention and running economy. Strength training substantially reduces overuse injury (Lauersen 2014/2018) and improves running economy without unwanted mass (Blagrove 2018). You already lift -- fold these in rather than adding a separate session.
-> - Keep heavy lower-body work at least 24 h away from a quality run and 48 h from the long run.
-> - Do not chase soreness. The goal is stiffness and strength, not a session that compromises the running.
 
 **Long run with marathon-pace finish** — Easy at 6:36/km, then the final 20 min at marathon pace (5:18/km). Do not start the fast section early.
 > *Why:* Marathon pace on pre-fatigued legs -- the closest safe rehearsal of the second half of the race, and the honest test of whether the goal pace is real.
@@ -717,7 +721,14 @@ Your schedule is **3 runs + 2 strength sessions**, with the long run on Sun. Ses
 | Sat | **Rest** |  |
 | Sun | **Long run** | 77 min · 11.6 km · Z1-2 · 6:36/km |
 
-**Strength (running-specific)** — Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run.
+**Strength (running-specific)**
+- Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.
+- Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.
+- Hip abduction: side-lying or cable, 3 x 15 per side.
+- Posterior chain: Romanian deadlift or hip thrust, 3 x 8.
+- Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.
+- Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018)
+- introduce only once the calf-raise gate is met, and never within 48 h of a long run.
 > *Why:* Injury prevention and running economy. Strength training substantially reduces overuse injury (Lauersen 2014/2018) and improves running economy without unwanted mass (Blagrove 2018). You already lift -- fold these in rather than adding a separate session.
 > - Keep heavy lower-body work at least 24 h away from a quality run and 48 h from the long run.
 > - Do not chase soreness. The goal is stiffness and strength, not a session that compromises the running.
@@ -726,11 +737,6 @@ Your schedule is **3 runs + 2 strength sessions**, with the long run on Sun. Ses
 > *Why:* Raise the pace you can hold for an hour. Cruise intervals rather than one long tempo because broken threshold work accumulates more time at the intensity for less fatigue -- Daniels' own argument for the format.
 > - Threshold is 'comfortably hard' -- about the pace you could hold for an hour in a race. If rep 1 feels hard, it is too fast.
 > - Heart rate lags: expect it to reach the zone about 90 seconds into each rep. Do not chase the number at the start of the rep.
-
-**Strength (running-specific)** — Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run.
-> *Why:* Injury prevention and running economy. Strength training substantially reduces overuse injury (Lauersen 2014/2018) and improves running economy without unwanted mass (Blagrove 2018). You already lift -- fold these in rather than adding a separate session.
-> - Keep heavy lower-body work at least 24 h away from a quality run and 48 h from the long run.
-> - Do not chase soreness. The goal is stiffness and strength, not a session that compromises the running.
 
 **Long run** — Steady easy running; see the marathon-pace weeks for segment work.
 > *Why:* Time on feet. This is the session the marathon is actually built from -- mitochondrial and capillary density, fat oxidation, tendon and bone tolerance, and the confidence that comes from having been out there.

@@ -93,10 +93,21 @@ def render_week(week, *, show_detail: bool = False) -> str:
             out.append(render_session_line(s))
     out.append("")
     if show_detail:
+        # Dedupe by title: a week with three identical run-walk sessions should explain the session
+        # once, not three times. Repeating it verbatim buries the parts that differ.
+        seen_titles: set = set()
         for s in sorted(week.sessions, key=lambda x: x.day_offset):
             if s.type == SessionType.REST or not s.structure:
                 continue
-            out.append(f"**{s.title}** — {s.structure}")
+            if s.title in seen_titles:
+                continue
+            seen_titles.add(s.title)
+            if s.type == SessionType.STRENGTH and "; " in s.structure:
+                out.append(f"**{s.title}**")
+                for item in s.structure.split("; "):
+                    out.append(f"- {item}")
+            else:
+                out.append(f"**{s.title}** — {s.structure}")
             out.append(f"> *Why:* {s.intent}")
             if s.fuelling:
                 out.append(f"> *Fuelling:* {s.fuelling}")
@@ -337,9 +348,11 @@ def render(profile: Optional[FitnessProfile] = None,
             L.append(render_week(week, show_detail=(phase, wk) in detail_weeks))
             if week.volume_target_km:
                 prev_vol = week.volume_target_km
-        if n_weeks > len(weeks_to_show):
-            L.append(f"*(Weeks {show+1}–{n_weeks-1} follow the same shape, progressing between the "
-                     "volumes shown.)*\n")
+        skipped = [w for w in range(show + 1, n_weeks) if w not in weeks_to_show]
+        if skipped:
+            span = (f"Week {skipped[0]}" if len(skipped) == 1
+                    else f"Weeks {skipped[0]}–{skipped[-1]}")
+            L.append(f"*({span} follow the same shape, progressing between the volumes shown.)*\n")
 
     # ---- Long run and taper ----------------------------------------------------------
     L.append("## The long run, and its ceilings\n")

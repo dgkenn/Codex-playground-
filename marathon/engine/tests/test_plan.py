@@ -274,9 +274,34 @@ def test_assess_week_has_no_hard_running(profile):
 def test_foundation_uses_run_walk_and_ends_continuous(profile):
     w1 = generate_week(profile, Phase.FOUNDATION, 1)
     assert any(s.type == SessionType.RUN_WALK for s in w1.sessions)
-    w8 = generate_week(profile, Phase.FOUNDATION, 8)
-    assert any(s.type == SessionType.EASY for s in w8.sessions)
-    assert not any(s.type == SessionType.RUN_WALK for s in w8.sessions)
+    # Week 9, not week 8: week 8 is a cutback week, and a cutback week deliberately HOLDS the ladder
+    # at the previous rung rather than advancing to continuous running.
+    w9 = generate_week(profile, Phase.FOUNDATION, 9)
+    assert any(s.type == SessionType.EASY for s in w9.sessions)
+    assert not any(s.type == SessionType.RUN_WALK for s in w9.sessions)
+
+
+def test_foundation_cutback_holds_the_ladder_rather_than_advancing(profile):
+    """Advancing the run-walk ladder on a cutback week made the sessions HARDER in the week that is
+    meant to be easier -- incoherent, and the opposite of the point."""
+    w3 = generate_week(profile, Phase.FOUNDATION, 3)
+    w4 = generate_week(profile, Phase.FOUNDATION, 4)      # cutback
+    assert w4.is_cutback
+    rw3 = next(s.run_walk for s in w3.sessions if s.run_walk)
+    rw4 = next(s.run_walk for s in w4.sessions if s.run_walk)
+    assert rw4 == rw3, "a cutback week must repeat the previous rung"
+
+
+def test_foundation_volume_matches_the_ladder(profile):
+    """The stated weekly minutes must be what the ladder actually prescribes."""
+    for wk in (1, 2, 3, 5, 6, 7):
+        w = generate_week(profile, Phase.FOUNDATION, wk)
+        rw = next((s.run_walk for s in w.sessions if s.run_walk), None)
+        if rw is None:
+            continue
+        run_min, _, reps = rw
+        assert w.volume_target_min == pytest.approx(run_min * reps * 3, rel=0.01), (
+            f"week {wk}: stated {w.volume_target_min} min vs ladder {run_min * reps * 3} min")
 
 
 def test_foundation_ladder_does_not_overrun(profile):
