@@ -1,6 +1,6 @@
 # CLAUDE.md — guide for Claude Code sessions in this repo
 
-*Last updated 2026-07-27 at result R392. If you are a new session, read this file top to bottom before
+*Last updated 2026-07-29 at result R412. If you are a new session, read this file top to bottom before
 touching anything, then read `docs/research/49_HANDOFF_STATE.md` for where work stopped and why.*
 
 ---
@@ -18,7 +18,7 @@ outcome label; Phase 2 tests one pre-registered outcome on a held-out hospital w
 hash-verified objects) still stands **if that pipeline is ever resumed**.
 
 **The active research programme is a burst-suppression and clinical-EEG research loop on HEEDB, I-CARE and
-VitalDB.** It has produced **392 logged results** and one substantive lead (below). Everything of scientific
+VitalDB.** It has produced **412 logged results** and one substantive lead (below). Everything of scientific
 value lives in `docs/research/41_RESULTS_LEDGER.md`, `docs/LESSONS.md`, and `docs/EXPERIMENT_QUEUE.md`.
 
 There is also a large amount of **legacy documentation from unrelated earlier projects** — electrolytes,
@@ -37,6 +37,15 @@ negative it was not built to explain. Its weakness is external replication: I-CA
 incapable of testing an aetiology contrast at all. See R389–R392 in the ledger and
 `docs/research/48_RESEARCH_LANDSCAPE.md` for what it needs next.
 
+**Two qualifications a new session must carry with that paragraph, both established after it was written.**
+(1) **R411:** the reversal survives the day-3 withdrawal landmark as an *interaction* (+4.646 [+3.092, +6.547]
+full, +4.313 [+2.335, +6.481] past the landmark), but the **anoxic arm's own information is genuinely
+concentrated in early deaths** — a matched null puts that at the 1st percentile, so it is not a power
+artefact. Both sentences belong in an abstract. (2) **R409-R410:** the self-fulfilling-prophecy *explanation*
+built on top of this in R404-R408 was tested three ways and is **not supported**; front-loaded
+hypoxic-ischaemic mortality is the parsimonious reading. Do not present the withdrawal story. See
+`49_HANDOFF_STATE.md` §3.0.
+
 ---
 
 ## THE MOST IMPORTANT OPERATIONAL FACT: the data cache is ephemeral
@@ -50,11 +59,25 @@ patient-derived data.
 | `heedb_bs_burden_win.s0-3.csv` | 4 shards, ~4,800 patients each | hours (S3 + DSP over ~49k recordings) |
 | `heedb_burst_morph.s0-3.csv` | 4 disjoint shards, 2,473 patients total | hours |
 | `heedb_aetiology_full.csv` | 26,350 label rows | ~3 min (scans a 1 GB OMOP table) |
+| `heedb_omop_quant/condition_occurrence.csv` | ~3.6 M rows, 49,232 patients | ~20 min (streams 181 parquet parts / 27 GB); **resumable** |
 | `icare_cohort.csv` | 607 | minutes |
 | `icare_morph2.csv` | 559 | ~40 min |
 | `icare_background.csv` | 601 | ~50 min |
 | `icare_topo.csv` + `icare_suppseq.csv` | 602 | ~60 min (one pass produces both) |
 | `icare_seq_keep.csv` | 529 | ~2 min (WFDB headers only) |
+
+**`heedb_omop_quant` is NOT the same as `heedb_omop`, and using the wrong one is a scientific error.**
+`heedb_omop/` was extracted for burst-suppression patients *with an ascertained death* — that is limitation
+L3, which R393 lifted. `heedb_omop_quant/` is the same table re-extracted for the **full 49,232-patient
+findings cohort including survivors**, and every aetiology analysis from R398 onward reads it. Rebuild with:
+
+```bash
+PIDS_FILE=/tmp/heedb_quant_patients.txt OMOP_OUT=/tmp/eeg_probe/heedb_omop_quant \
+  python analysis/heedb_omop_extract.py condition_occurrence
+```
+
+where the PID file is the union of patient ids in the two `*_EEG__reports_findings.csv` objects (morph and
+burden patients are all inside that set — verified 2026-07-29).
 
 **Rebuild order:** aetiology cache first (cheap, unblocks all HEEDB work), then `analysis/icare_topography.py`
 (one S3 pass, produces topography *and* the per-second suppression series), then the rest as needed. Every
