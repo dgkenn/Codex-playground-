@@ -68,6 +68,107 @@ it is *not* — and it may be the honest place to stop mechanism-hunting.
 
 ---
 
+## EXHAUSTIVE MECHANISM BRAINSTORM 2026-07-29 (Fable, after R415) — the reversal has outlived 4 of 5 candidates
+
+**The reversal is now more robust than any explanation of it.** Any surviving candidate must clear SEVEN
+constraints the ledger has already nailed down. This is the working checklist; a candidate that fails one is
+dead on arrival.
+
+| # | constraint | source |
+|---|---|---|
+| C1 | must produce a **sign reversal**, not a weakening | R389, rule 16 |
+| C2 | lives in **8–30 Hz spectral content**, not amplitude/duration/rate/CV | R413 |
+| C3 | **stronger without sedation** — a native/pathological rhythm, not a drug effect | R414 |
+| C4 | more fast content ↔ **fewer** epileptiform findings, in BOTH arms | R415 |
+| C5 | robust across burden 3/3, burst-count 3/3, hospitals, 2 aetiology defs | R386–R399 |
+| C6 | anoxic arm's information **concentrated in early deaths** | R411 |
+| C7 | **retrodicts N10** (morphology's predictive increment is marginal) | R358–R360 |
+
+**A KEY FACT re-established this session:** `alpha_beta` = P[8–30] / P[1–30] — a **ratio**. High values mean
+*little* 1–8 Hz (delta/theta) content as much as they mean abundant fast content. Several candidates below
+turn on which half of that ratio is doing the work. And the findings table carries columns not yet exploited:
+**`pdr`** (posterior dominant rhythm — the classic marker of a reactive, organised background), **`diffuse
+Beta`**, **`awake`**, **`spindles`**, **`low voltage`**, and full sleep-stage flags.
+
+### The candidates, by family
+
+**FAMILY 1 — the measure captures a NAMED entity that means opposite things by aetiology.**
+
+- **F1 · ALPHA COMA / paradoxical alpha (TOP PICK).** After anoxia, monotonous non-reactive widespread alpha
+  ("alpha coma") is a classic *malignant* pattern — alpha-frequency content that signifies death. In
+  non-anoxic coma, alpha content reflects preserved/recovering arousal (real PDR) = good. The same 8–30
+  measure captures both; the sign flips because alpha coma is an anoxia-specific entity.
+  Clears **all seven**: C1 ✓ (a named sign-reversal entity), C2 ✓, C3 ✓ (alpha coma is non-drug — drug beta
+  would blur it, matching "stronger without sedation"), C4 ✓ (alpha coma is monotonous, NOT epileptiform),
+  C6 ✓ (a very-early death marker). **Predictions:** (a) reversal carried by the **alpha** sub-band (8–13)
+  more than beta (13–30); (b) the malignant anoxic fast content **lacks** PDR/arousal markers while the
+  protective non-anoxic fast content **co-occurs** with `pdr`/`awake`/`spindles`; (c) conditioning on an
+  arousal-organisation composite **attenuates** the aetiology×content interaction — aetiology was a proxy for
+  "is this alpha coma."
+  **CHEAP TEST available now (no re-extraction): R416**, using the `pdr`/`awake`/`spindles`/`diffuse Beta`
+  columns. **DECISIVE TEST: one S3 re-extraction pass** for the alpha vs beta sub-band split.
+
+**FAMILY 2 — the SLOW half of the ratio, read in reverse.**
+
+- **F2 · Delta/theta content is the real signal.** Because `alpha_beta` is a ratio, high values = sparse slow
+  activity. Abundant delta after anoxia may reflect surviving synaptic drive (protective), while after
+  non-anoxic coma delta is the injury. The "reversal in fast content" could be a reversal in **slow** content
+  seen through the denominator. **Test:** re-extract absolute slow (1–8) and fast (8–30) power separately and
+  ask which carries the interaction. **Same re-extraction pass as F1's decisive test** — do them together.
+
+**FAMILY 3 — reactivity / monotony is the true variable (F1's mechanism, isolated).**
+
+- **F3 · Non-reactivity.** Alpha coma's defining feature is monotony, not the alpha per se. The flip may be:
+  fast content that is **invariant** across the recording is malignant; fast content that **fluctuates** is
+  benign; anoxic patients have more monotonous fast content. **Test:** within-patient **dispersion** of
+  `alpha_beta` across bursts (the extraction computes per-burst values but caches only the median — add the
+  IQR in one light re-extraction). Pairs with F1: F1 says WHAT (alpha), F3 says WHY it kills (non-reactive).
+
+**FAMILY 4 — confounding by an aetiology-linked treatment/state.**
+
+- **F4 · Temperature / TTM (reviewers WILL ask).** Anoxic (arrest) patients get targeted temperature
+  management; hypothermia and rewarming shift the EEG spectrum and burst morphology. Fast content during
+  cooling ≠ at normothermia. **Partial counter already on file:** R414 shows the reversal is *strongest*
+  without sedation, and cooled patients are heavily sedated, which argues against a pure thermal artefact —
+  but that is indirect. **Test:** extract body temperature from the measurement table (66 GB, a real
+  extraction) and stratify/adjust. HIGH reviewer value; MEDIUM cost.
+- **F5 · Age.** `AgeAtVisit` is in the findings table. Arrest demographics differ; age modifies spectrum and
+  outcome. Unlikely to *produce* a clean sign reversal, but a mandatory robustness check. **TRIVIAL** —
+  fold into R416.
+
+**FAMILY 5 — ongoing pathological process present only after anoxia.**
+
+- **F6 · Reperfusion excitotoxicity (subclinical).** Preserved fast rhythms after anoxia index active
+  glutamatergic excitotoxicity / incomplete energy failure (bad); in non-anoxic coma they index intact
+  circuitry (good). R415 refuted the *seizure* version, but C4 (fast content ↔ **fewer** epileptiform
+  findings) is actually *consistent* with excitotoxicity that stops short of organised discharges. **No
+  direct handle in HEEDB** (NSE was extracted but the cache is ~empty). Mark as the honest
+  "unfalsifiable-here" residual.
+
+**FAMILY 6 — measurement artefact differing by group.**
+
+- **F7 · EMG / myogenic beta.** Beta-range power can be muscle. But the band caps at 30 Hz, and R414 shows the
+  reversal is stronger *without* sedation (where EMG is higher) yet still tracks death not arousal — so EMG is
+  an unlikely driver. **One-line check:** does the reversal survive excluding `low voltage` / restrict by
+  amplitude. LOW priority.
+
+### Ranked plan
+
+1. **R416 — the alpha-coma / arousal-organisation test (RUN NOW, cheap).** Uses `pdr`/`awake`/`spindles`/
+   `diffuse Beta` already in the findings table. Tests F1's prediction (b)/(c) and folds in F5 (age) as a
+   covariate. No re-extraction.
+2. **One S3 re-extraction pass** → alpha (8–13) vs beta (13–30) sub-bands + absolute slow (1–8) + within-
+   patient dispersion. This single pass is the DECISIVE test of F1, F2 and F3 at once. Expensive (hours) and
+   will be wiped by the snapshot, so run it and consume it in the same session.
+3. **F4 temperature** if R416 and the sub-band pass keep F1 alive — the remaining reviewer objection.
+
+**And the honest alternative, stated plainly:** if R416 and the sub-band pass do NOT localise the reversal to
+alpha / arousal-organisation, the finding may simply have no mechanism this dataset can reach. Five candidates
+closed, a sixth (F1) then failing, would make "a robust, model-free, aetiology-dependent reversal with a
+documented list of what it is NOT" the honest paper — see §5c note.
+
+---
+
 ## DO NOT RE-OPEN
 
 | dead end | killed by |
