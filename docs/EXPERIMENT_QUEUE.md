@@ -105,24 +105,20 @@ Beta`**, **`awake`**, **`spindles`**, **`low voltage`**, and full sleep-stage fl
   protective non-anoxic fast content **co-occurs** with `pdr`/`awake`/`spindles`; (c) conditioning on an
   arousal-organisation composite **attenuates** the aetiology×content interaction — aetiology was a proxy for
   "is this alpha coma."
-  **CHEAP TEST available now (no re-extraction): R416**, using the `pdr`/`awake`/`spindles`/`diffuse Beta`
-  columns. **DECISIVE TEST: one S3 re-extraction pass** for the alpha vs beta sub-band split.
+  **CLOSED — R416/R417/R418.** R416: AO is a real effect modifier (−0.208 [−0.400, −0.035]) and losing arousal-organisation doubles mortality in both arms, but it does NOT set the sign and its placebo gate failed (foc slowing attenuated 13 % vs AO's 6 %). R417/R418: the reversal is not frequency-localised — alpha and beta each carry it independently and equally (+0.343 / +0.340). No alpha-specific account is needed.
 
 **FAMILY 2 — the SLOW half of the ratio, read in reverse.**
 
 - **F2 · Delta/theta content is the real signal.** Because `alpha_beta` is a ratio, high values = sparse slow
   activity. Abundant delta after anoxia may reflect surviving synaptic drive (protective), while after
   non-anoxic coma delta is the injury. The "reversal in fast content" could be a reversal in **slow** content
-  seen through the denominator. **Test:** re-extract absolute slow (1–8) and fast (8–30) power separately and
-  ask which carries the interaction. **Same re-extraction pass as F1's decisive test** — do them together.
+  seen through the denominator. **REJECTED — R417/R418.** NEITHER absolute power reverses: more absolute fast (anoxic AUC 0.390 / non-anoxic 0.403) and more absolute slow (0.371 / 0.445) are each protective in BOTH arms, all four excluding 0.5. The reversal exists only in the ratio, correlates +0.002 with absolute fast power, and retains 117 % of its interaction after adjusting for both absolute powers and their interactions. **This rewrote the lead's description: balance, not amount.**
 
 **FAMILY 3 — reactivity / monotony is the true variable (F1's mechanism, isolated).**
 
 - **F3 · Non-reactivity.** Alpha coma's defining feature is monotony, not the alpha per se. The flip may be:
   fast content that is **invariant** across the recording is malignant; fast content that **fluctuates** is
-  benign; anoxic patients have more monotonous fast content. **Test:** within-patient **dispersion** of
-  `alpha_beta` across bursts (the extraction computes per-burst values but caches only the median — add the
-  IQR in one light re-extraction). Pairs with F1: F1 says WHAT (alpha), F3 says WHY it kills (non-reactive).
+  benign; anoxic patients have more monotonous fast content. **CLOSED — R418.** `ab_iqr` reverses marginally (+0.373) but the interaction vanishes once level is adjusted for (−0.099 [−0.418, +0.209]), while `alpha_beta` is untouched by adjusting for dispersion (retains 109 %). Within-patient variability is level in disguise.
 
 **FAMILY 4 — confounding by an aetiology-linked treatment/state.**
 
@@ -152,20 +148,26 @@ Beta`**, **`awake`**, **`spindles`**, **`low voltage`**, and full sleep-stage fl
   an unlikely driver. **One-line check:** does the reversal survive excluding `low voltage` / restrict by
   amplitude. LOW priority.
 
-### Ranked plan
+### Ranked plan — UPDATED 2026-07-29 after R416–R418
 
-1. **R416 — the alpha-coma / arousal-organisation test (RUN NOW, cheap).** Uses `pdr`/`awake`/`spindles`/
-   `diffuse Beta` already in the findings table. Tests F1's prediction (b)/(c) and folds in F5 (age) as a
-   covariate. No re-extraction.
-2. **One S3 re-extraction pass** → alpha (8–13) vs beta (13–30) sub-bands + absolute slow (1–8) + within-
-   patient dispersion. This single pass is the DECISIVE test of F1, F2 and F3 at once. Expensive (hours) and
-   will be wiped by the snapshot, so run it and consume it in the same session.
-3. **F4 temperature** if R416 and the sub-band pass keep F1 alive — the remaining reviewer objection.
+1. ~~R416 alpha-coma test~~ **DONE — F1 closed as a mechanism, retained as a modifier.**
+2. ~~Sub-band re-extraction~~ **DONE — R417/R418.** F1 not localised, F2 rejected, F3 closed. The pass also
+   rewrote how the lead must be described (balance, not amount) and validated its own decomposition:
+   the two adjusted sub-band interactions sum to +0.683 against the composite's +0.690.
+3. **F4 temperature / TTM — RUNNING.** The last named reviewer objection. `measurement_temp` extraction
+   launched 2026-07-29 (551 parquet parts). R414 argues against it indirectly and R418 rules out the
+   amount-based version, but neither addresses spectral balance directly.
+4. **F7 EMG / myogenic beta** — cheap, low prior. R418's finding that alpha and beta carry the reversal
+   *equally* argues against an EMG account, which would load on beta alone.
+5. **B · thalamocortical / mesocircuit** — now the ONLY substantive candidate still open.
 
-**And the honest alternative, stated plainly:** if R416 and the sub-band pass do NOT localise the reversal to
-alpha / arousal-organisation, the finding may simply have no mechanism this dataset can reach. Five candidates
-closed, a sixth (F1) then failing, would make "a robust, model-free, aetiology-dependent reversal with a
-documented list of what it is NOT" the honest paper — see §5c note.
+**And the honest alternative, now the leading one.** R416–R418 did not localise the reversal to alpha, to
+arousal-organisation, to either absolute band power, or to variability. **Six candidates are closed and one
+(B) remains.** What the work HAS produced is a much sharper characterisation of the finding itself — a
+reversal in spectral *balance*, orthogonal to signal amount, carried equally by alpha and beta, additive
+across sub-bands, surviving sedation, the withdrawal landmark, and a matched-null landmark sweep. **That is a
+publishable paper on its own terms**, and the accumulated list of what the finding is NOT is a substantial
+part of its value. Mechanism-hunting past candidate B has diminishing returns in this dataset.
 
 ---
 
