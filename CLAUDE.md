@@ -1,6 +1,6 @@
 # CLAUDE.md — guide for Claude Code sessions in this repo
 
-*Last updated 2026-07-29 at result R414. If you are a new session, read this file top to bottom before
+*Last updated 2026-07-29 at result R415. If you are a new session, read this file top to bottom before
 touching anything, then read `docs/research/49_HANDOFF_STATE.md` for where work stopped and why.*
 
 ---
@@ -18,7 +18,7 @@ outcome label; Phase 2 tests one pre-registered outcome on a held-out hospital w
 hash-verified objects) still stands **if that pipeline is ever resumed**.
 
 **The active research programme is a burst-suppression and clinical-EEG research loop on HEEDB, I-CARE and
-VitalDB.** It has produced **414 logged results** and one substantive lead (below). Everything of scientific
+VitalDB.** It has produced **415 logged results** and one substantive lead (below). Everything of scientific
 value lives in `docs/research/41_RESULTS_LEDGER.md`, `docs/LESSONS.md`, and `docs/EXPERIMENT_QUEUE.md`.
 
 There is also a large amount of **legacy documentation from unrelated earlier projects** — electrolytes,

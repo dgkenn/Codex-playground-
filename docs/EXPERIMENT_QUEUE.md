@@ -34,7 +34,7 @@ candidate that only explains the positives is not a candidate.
 |---|---|---|---|---|---|
 | **A** | **The reversal is a GABAergic drug signature** — intra-burst 8–30 Hz is close to what propofol/barbiturates manufacture, and sedation practice differs by aetiology (TTM protocols after arrest) | The reversal's *existence*, its band, and why it is specific to spectral content and not to amplitude, duration or rate (**R413**) — a drug acts on the spectrum | Would have to survive R400's adjustment for recorded flags; and R412 showed amplitude is orthogonal, which a pure depth effect would not predict | The reversal should **vanish where no BS-capable agent was running at the EEG** | **DEAD — R414. Refuted, and in the direction that strengthens the lead: the reversal is WIDER without sedation (AUC gap 0.308 vs 0.151).** |
 | **B** | **Thalamocortical (Schiff mesocircuit)** — intra-burst fast content indexes surviving thalamocortical drive | The band specificity (R413: content, not vigour); converges with the spindle result (R395–R396) | Does not explain why the *direction reverses* rather than merely weakening; needs an extra assumption about anoxia | Anoxic and non-anoxic should differ in a **thalamic-specific** marker (spindles) in the same direction as the reversal | open — partly tested, R395–R396 |
-| **C** | **Selective interneuron vulnerability after anoxia** — fast-spiking interneurons die first, so residual fast activity after anoxia is disinhibited pathology, while in non-anoxic coma it is preserved cortex | The **sign reversal** directly, and why it is aetiology-specific rather than severity-specific; consistent with R413's content-not-scale finding | Not directly measurable in this data; risks being unfalsifiable here | Fast content should track **epileptiform** features in the anoxic arm but not the non-anoxic one | open — the best mechanistic story, needs a testable handle |
+| **C** | **Selective interneuron vulnerability after anoxia** — fast-spiking interneurons die first, so residual fast activity after anoxia is disinhibited pathology, while in non-anoxic coma it is preserved cortex | The **sign reversal** directly, and why it is aetiology-specific rather than severity-specific; consistent with R413's content-not-scale finding | Not directly measurable in this data; risks being unfalsifiable here | Fast content should track **epileptiform** features in the anoxic arm but not the non-anoxic one | **DEMOTED — R415.** Refuted directionally: content predicts FEWER epileptiform findings in both arms (AUC 0.410 anoxic, 0.457 non-anoxic, both excluding 0.5), and the aetiology interaction is −0.032 [−0.237, +0.154]. |
 | **D** | **Residual confounding by time-from-injury** — EEG timing relative to insult differs by aetiology | Some attenuation patterns | Cannot produce an opposite-signed AUC on either side of 0.5; R411 showed the non-anoxic arm is completely unmoved by landmarking | Adjusting for EEG-to-injury interval should collapse the interaction | weak — but the interval is unmeasured (no arrest time, R410) |
 | **E** | ~~Guideline-driven withdrawal~~ | — | — | — | **DEAD — R409/R410, see handoff §3.0** |
 
@@ -43,6 +43,28 @@ unaddressed: sedation was checked against *burden* and against the *flag residua
 R389, so the reversal itself has never been through it. If A survives, the lead's largest pharmacological
 objection retires; if it fails, the project is saved from publishing a drug artefact. Neither outcome is a
 robustness check — both change what can be claimed.
+
+---
+
+### Where the mechanism hunt stands after R415
+
+**Four of five candidates are closed and the reversal is more robust than any explanation of it.** It has
+survived no-model, burden strata 3/3, burst-count strata 3/3, non-anoxic decomposition 4/4, two hospitals,
+two aetiology definitions, measured labels, the withdrawal landmark (R411), an independent instrument
+(R413), and sedation (R414 — which *strengthened* it).
+
+**B (thalamocortical / mesocircuit) is the last candidate standing** and is the top mechanism item. R395–R396
+did most of it; the open piece is that the spindle interaction goes marginal (−0.252 [−0.507, +0.001]) under
+the aggressive `awake` adjustment.
+
+**The new constraint R415 hands any future candidate:** whatever the mechanism is, more intra-burst fast
+content coincides with **fewer** epileptiform findings — in *both* aetiologies (AUC 0.410 and 0.457, both
+excluding 0.5). A candidate that predicts the opposite is already refuted.
+
+**A genuine possibility worth stating plainly:** the reversal may have no mechanism this dataset can reach.
+Five candidates, five outcomes, and the finding keeps surviving while its explanations do not. That is worth
+a paper on its own terms — a robust, model-free, aetiology-dependent reversal with a documented list of what
+it is *not* — and it may be the honest place to stop mechanism-hunting.
 
 ---
 
