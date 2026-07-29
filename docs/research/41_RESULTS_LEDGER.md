@@ -2948,3 +2948,78 @@ unavailable, **there is no named candidate left that accounts for the bulk of it
 stratum R360 was estimated in, so like-for-like, but not a claim about all patients (R409, rule 32).
 
 **Cumulative distinct results: 412.**
+
+---
+
+## R413 · The reversal does NOT reproduce on an independent instrument — it is a property of spectral content, not of burst vigour
+
+No cohort anywhere has EEG + outcome + mixed aetiology, so the lead cannot be replicated externally at any
+effort. When an external replicate is structurally unavailable the strongest remaining check is a **second
+instrument measuring something else** (catalogue rule 23). R412 produced one: burst amplitude carries
+independent information and is near-orthogonal to everything the lead is adjusted for.
+
+Cohort n = 1,385 (morphology ∩ burden ∩ aetiology ∩ ascertained death); 67.5 % 30-day death, 53.9 % anoxic.
+
+### T0 · The orthogonality premise holds, re-checked here rather than inherited
+
+`burst_amp` vs `alpha_beta` **r = −0.023**; vs burden **r = −0.058**. It is not the same measure twice.
+(For contrast, `burst_dur` vs burden is **−0.745** and `supp_cv` vs burden **+0.627** — those two are largely
+burden in disguise, which is why they are exploratory only.)
+
+### T1/T2 · Aetiology interaction by measure (standardized, burden quintiles adjusted)
+
+| measure | role | interaction | |
+|---|---|---|---|
+| **alpha_beta** (intra-burst 8–30 Hz) | **reference — the lead** | **+0.913 [+0.574, +1.336]** | excludes zero |
+| **burst_amp** | **PRIMARY, pre-specified** | **+0.256 [−0.494, +0.796]** | **includes zero** |
+| stereotypy | exploratory | +0.317 [+0.040, +0.645] | excludes zero |
+| burst_rate | exploratory | +0.209 [−0.053, +0.459] | ns |
+| burst_dur | exploratory | −0.179 [−0.431, +0.064] | ns |
+| supp_cv | exploratory | +0.060 [−0.181, +0.320] | ns |
+
+**Scale note, to prevent a false comparison:** +0.913 is *per standard deviation* and burden-adjusted, so it
+is **not** comparable to R411's +4.646, which was on the raw measure with no burden term. The reference arm
+was re-estimated here precisely so the comparison within this table is like-for-like.
+
+### T4 · Direction, which needs no model and is the stronger evidence
+
+| measure | anoxic AUC | non-anoxic AUC |
+|---|---|---|
+| **alpha_beta** | **0.600 [0.553, 0.645]** ✳ | **0.398 [0.354, 0.441]** ✳ |
+| burst_amp | 0.461 [0.417, 0.501] | 0.493 [0.452, 0.539] |
+| stereotypy | 0.567 [0.515, 0.619] ✳ | 0.478 [0.433, 0.527] |
+| burst_dur | 0.337 [0.287, 0.383] ✳ | 0.424 [0.379, 0.468] ✳ |
+| burst_rate | 0.552 [0.506, 0.601] ✳ | 0.547 [0.508, 0.592] ✳ |
+| supp_cv | 0.571 [0.521, 0.621] ✳ | 0.544 [0.501, 0.586] ✳ |
+
+✳ = excludes 0.5. **Intra-burst content is the only measure of the six whose two arms sit on OPPOSITE sides
+of 0.5 with both intervals excluding it.** Burst amplitude's arms sit on the *same* side and neither excludes
+0.5. Burst duration, rate and suppression variability are all same-direction in both arms — they carry
+outcome information without reversing.
+
+### Verdict, stated with the caveat that limits it
+
+**The reversal does not reproduce on burst amplitude.** But this is a **failure to replicate, not a
+demonstrated absence**: the interaction's upper bound (+0.796) is **87 % of the reference effect**, so an
+amplitude interaction of similar size is not excluded by these data. The model-free T4 evidence is stronger
+than the interaction test and points the same way — no reversal is in evidence for amplitude.
+
+**What it is worth.** It removes a real and separate worry — that the reversal is an artefact of how one
+number was computed — by showing five other morphology measures from the *same bursts in the same patients*
+do not behave that way, while the lead's own measure does. And it points a mechanism toward **frequency
+content rather than signal scale**, as a direction to test rather than a constraint established.
+
+**Exploratory caution.** Stereotypy's interaction excludes zero (+0.317 [+0.040, +0.645]) — but it is one of
+four exploratory tests, which is roughly what chance produces at 5 %, and its non-anoxic arm does **not**
+exclude 0.5 (0.478 [0.433, 0.527]), so it is not a second reversal. **No claim may rest on it without its own
+registration.**
+
+**Not external replication.** Same patients, same hospital network, same recordings — only the measurement
+differs.
+
+**One deviation from house practice, recorded because it is a real difference.** Burden here is the `burden`
+column of the morphology table (computed on the same recording as the morphology) rather than the usual
+`heedb_bs_burden_win` cache. It is internally consistent across all six measures, which is what the
+comparison needs, but it is not the burden variable R412 used.
+
+**Cumulative distinct results: 413.**

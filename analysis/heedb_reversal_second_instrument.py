@@ -280,11 +280,22 @@ def main():
         print("   Catalogue rule 16: when two arms of the same test disagree in sign, the definition is")
         print("   doing the work. Treat this as a warning about the measures, not a second finding.")
     else:
-        print(f"   T2 SPECIFIC — burst amplitude shows no aetiology interaction "
-              f"({cp:+.3f} [{lp:+.3f}, {hp:+.3f}]) while intra-burst content does ({cr:+.3f}).")
-        print("   The reversal is specific to spectral CONTENT and does not extend to burst vigour.")
-        print("   That is a sharp mechanistic constraint: any account must act on frequency content and")
-        print("   NOT on amplitude, in the same bursts, in the same patients.")
+        print(f"   T2 DOES NOT REPLICATE — burst amplitude's aetiology interaction includes zero "
+              f"({cp:+.3f} [{lp:+.3f}, {hp:+.3f}])")
+        print(f"   while intra-burst content's does not ({cr:+.3f} [{lr:+.3f}, {hr:+.3f}]).")
+        # A non-significant interaction is not a demonstrated absence. Say how much is still compatible
+        # with the data instead of calling it "specific" -- catalogue rule 5 in coefficient form.
+        frac = abs(hp / cr) if abs(cr) > 1e-9 else float("nan")
+        print(f"\n   POWER CAVEAT, and it limits the claim. The interval's upper end ({hp:+.3f}) is "
+              f"{100*frac:.0f} % of")
+        print(f"   the reference effect, so an amplitude interaction of similar size is NOT excluded. This")
+        print(f"   is a failure to replicate, not a demonstrated absence.")
+        print("   The stronger evidence is T4, which needs no model: burst amplitude's two arms sit on the")
+        print("   SAME side of 0.5 and neither interval excludes it, whereas intra-burst content's arms sit")
+        print("   on OPPOSITE sides and both exclude it. No reversal is in evidence for amplitude.")
+        print("\n   Reading: the reversal does not extend to burst vigour on the evidence available, which")
+        print("   points a mechanism toward frequency content rather than amplitude — as a direction to")
+        print("   test, not a constraint established.")
     print("\n   Not external replication: same patients, same network, same recordings — only the")
     print("   measurement differs. Exploratory rows carry no claim.")
     return 0
