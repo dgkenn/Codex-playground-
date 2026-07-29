@@ -79,6 +79,12 @@ PIDS_FILE=/tmp/heedb_quant_patients.txt OMOP_OUT=/tmp/eeg_probe/heedb_omop_quant
 where the PID file is the union of patient ids in the two `*_EEG__reports_findings.csv` objects (morph and
 burden patients are all inside that set — verified 2026-07-29).
 
+**The container REAPS large files in `/tmp` mid-session — observed twice on 2026-07-29**, both times taking
+the 3.3 GB `heedb_omop_quant/` while every smaller cache survived. Do not depend on a multi-gigabyte
+intermediate. `analysis/heedb_aetiology_compact.py` reduces that table to the ~1 MB
+`heedb_aetiology_compact.csv` (one row per patient, one column per aetiology group) and rebuilds itself from
+the big table on first use; prefer `load_anoxic()` from it over parsing `condition_occurrence.csv` directly.
+
 **Rebuild order:** aetiology cache first (cheap, unblocks all HEEDB work), then `analysis/icare_topography.py`
 (one S3 pass, produces topography *and* the per-second suppression series), then the rest as needed. Every
 extraction script is **resumable** — each reads what is already in its output file and fetches only the

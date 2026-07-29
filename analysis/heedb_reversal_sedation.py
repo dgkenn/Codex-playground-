@@ -66,7 +66,6 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from common.awsenv import sanitize as _aws_sanitize; _aws_sanitize()
 from icare_morph_replication import logit_fit
-from heedb_bs_ascertainment import AETIOLOGY, norm
 
 AP = "arn:aws:s3:us-east-1:184438910517:accesspoint/bdsp-credentialed-access-point"
 OMOP = os.environ.get("OMOP_OUT", "/tmp/eeg_probe/heedb_omop")
@@ -125,19 +124,11 @@ def main():
                     death[int(r["person_id"])] = d
                 except (KeyError, TypeError, ValueError):
                     pass
-    src = f"{OMOP_Q}/condition_occurrence.csv"
-    assert os.path.exists(src), f"{src} missing -- see CLAUDE.md for the rebuild command"
-    anox = {}
-    with open(src) as fh:
-        for r in csv.DictReader(fh):
-            try:
-                p = int(r["person_id"])
-            except (KeyError, TypeError, ValueError):
-                continue
-            anox.setdefault(p, False)
-            c = norm(r.get("condition_source_value"))
-            if c and any(c.startswith(x) for x in AETIOLOGY["anoxic"]):
-                anox[p] = True
+    # Aetiology via the compact derived table (~1 MB) rather than the 3.3 GB condition table. Identical
+    # reduction, same AETIOLOGY prefixes and same norm(), and it builds itself from the big table on first
+    # use. The big file has been reaped by the container twice in one session; this makes that cheap.
+    from heedb_aetiology_compact import load_anoxic
+    anox = load_anoxic()
 
     # --- sedation, reusing heedb_infusion_at_eeg.py's validated ACTIVE definition -------------------
     sed_path = f"{OMOP}/drug_sedatives.csv"
