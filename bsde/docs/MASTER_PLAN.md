@@ -58,6 +58,11 @@ mode this plan is most organised against (§1, §6, `RESEARCH_STRATEGY.md` §8 i
 
 ## 2. The verifier stack: Brief 03's seven layers vs what is built
 
+> **STALE AS OF 2026-07-30 — see §9.22 for the verified current status.** Layers 5 and 7 are now
+> BUILT and wired into `verify()`; layer 2's calibration primitives now run end-to-end; layer 4 is now
+> exercisable on three labelled deposits. The table below is kept for the reasoning it records, not for
+> its status column.
+
 | # | layer (Brief 03) | what it asks | status | module / test | what's needed to complete it |
 |---|---|---|---|---|---|
 | 1 | **Computational** | Correct implementation; unit tests; synthetic-signal recovery; reproduction of known effects | **BUILT** | `features/aperiodic.py`, `synth.py`; `tests/test_aperiodic_recovery.py` (7), `test_complexity_features.py` (14), `test_connectivity_features.py` (6), `test_spectral_features.py` (11) | Nothing blocking; extend ground-truth cases as new candidates are added |
@@ -146,6 +151,10 @@ validation — stands. Nothing found this session changes that.
 ---
 
 ## 5. The three discovery challenges
+
+> **PARTLY STALE — see §9.22.** Challenge C's blocker was the temporal layer, which now exists; C is now
+> blocked on DATA alone. Challenge A's blocker is sharper than the table says: two anaesthetic deposits
+> are now ingested and BOTH ARE PROPOFOL, so the across-drugs requirement is still unmet.
 
 | challenge | measurable endpoint | datasets required | negative controls (must gate the verdict) | currently runnable? |
 |---|---|---|---|---|
@@ -1183,3 +1192,33 @@ deposits, survives muscle residualisation on both, and is not explained by the b
 originally motivated it. It is still not a consciousness marker (§9.16 — neither cohort reaches
 unconsciousness), its 20–40 Hz band was still chosen after looking (E12 still blocked), and layer 7 says that
 at 5 % prevalence a positive reading would be right 8.7 % of the time (§9.19).
+
+### 9.22 Verified status of the seven layers and the three challenges, 2026-07-30
+
+Supersedes the status columns of §2 and §5. Every row below was checked against the code or the results
+directory, not recalled.
+
+**The verifier stack.**
+
+| # | layer | status now | what changed / what still blocks |
+|---|---|---|---|
+| 1 | Computational | **BUILT** | extended with `test_exponent_gamma.py` — the synthetic proof that a 20 Hz peak inflates a 20–40 Hz fit fivefold with the aperiodic exponent fixed |
+| 2 | Statistical | **BUILT for one candidate at a time** | calibration primitives now run end-to-end inside `layer_statistical`. **Still missing: multiple-comparison control ACROSS candidates.** `search_space_size` is reported everywhere but nothing corrects for it |
+| 3 | Adversarial | **PARTIAL** | confound/redundancy machinery is complete and is the project's primary acceptance test. **`preprocessing_sensitivity` is still an unpopulated report row** — E09 computed 72 variants and E12 registered 108 more, but no `Evidence` carries that item, so every report still prints `NOT_RUN` |
+| 4 | Cross-domain | **BUILT and now EXERCISABLE** | was blocked on having only one labelled deposit. There are now **three** — Chennu (propofol), Sleep-EDF (sleep, two tables), ds005620 (propofol) — and E03/E11/E15 have used them |
+| 5 | Temporal | **BUILT** (`verifier/temporal.py`, wired into `verify()`) | within-state stability, single-window penalty, ICC/effective-n. **Temporal PRECEDENCE — does the measure move before the label — is still not built**, and needs densely-sampled transitions with a verified time axis (rule 27) |
+| 6 | Mechanistic | **NOT BUILT** | unchanged, and gated on DATA not code: needs a dissociation deposit (ketamine, locked-in, neuromuscular blockade). None ingested |
+| 7 | Clinical | **PARTLY BUILT** (`verifier/clinical.py`, wired) | §2 said "not reachable with public data". That is right about *outcomes* and wrong about *decisions*: PPV at declared prevalence, operating points, net benefit and minimum detectable change are all computable now and were run in §9.19. What remains unreachable is whether using it **improves an outcome**, which needs a prospective protocol |
+
+**Test count, verified by running the suite: 289 passed, 6 skipped** (was 134 when §2 was written).
+
+**The three discovery challenges.**
+
+| challenge | status | the blocker, precisely |
+|---|---|---|
+| **A** — simplest representation predicting loss/recovery across multiple drugs, minimising drug-identity information | **STILL BLOCKED, for a sharper reason than §5 states** | §5 said "needs at least Chennu and VitalDB ingested". Chennu is ingested and so is ds005620 — **but both are PROPOFOL.** The challenge is specifically *across anaesthetic drugs*, and a second drug is not merely un-ingested, it is unidentified. VitalDB (sevoflurane) remains the candidate and is not ingested |
+| **B** — spontaneous EEG features associated with command-following in DoC | **BLOCKED, unchanged** | Bath access is request-only and not granted. Even granted, no task-trial candidate and no within-subject-null layer exist |
+| **C** — trajectory feature predicting a transition ahead of a conventional monitor | **BLOCKER PARTLY REMOVED** | §5's blocker was "the temporal layer does not exist". It exists now. C is blocked on DATA alone: serial per-patient EEG with a monitor comparator (VitalDB's BIS subset, or I-CARE), neither ingested into `bsde/`. Note the temporal layer's *precedence* half — the half C actually needs — is the part still unbuilt |
+
+**The honest one-line summary: the engine got substantially more real today and the science did not move closer
+to any of the three challenges, because all three are blocked on data acquisition rather than on code.**
