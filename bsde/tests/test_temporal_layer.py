@@ -167,3 +167,85 @@ def test_a_candidate_requiring_the_temporal_layer_is_still_blocked_by_verify():
     cand = REGISTRY.get("critical_slowing_ar1")
     assert "temporal" in cand.requires, (
         "if this ever stops being true, the layer's blocking behaviour is no longer being exercised")
+
+
+# --- the wiring: layers 5 and 7 must actually RUN inside verify(), not just exist -------------------
+
+def _cand(requires):
+    from bsde.candidates.registry import Candidate
+    return Candidate(
+        name="probe", version="1.0", fn=lambda *a, **k: 0.0,
+        interpretation="a throwaway candidate used only to exercise the engine's layer wiring",
+        predictions={"unconscious_vs_awake": "higher"},
+        failure_conditions=["it fails any required layer"],
+        requires=tuple(requires), complexity=1)
+
+
+def test_verify_runs_the_temporal_layer_when_repeated_windows_are_supplied():
+    """The wiring test. Before layers 5 and 7 were connected, `verify()` emitted a hardcoded NOT_RUN stub for
+    'temporal' regardless of the data, so a table WITH repeated windows would still have been treated as
+    unmeasured. This asserts the real checks appear."""
+    from bsde.verifier.engine import Cohort, verify
+    # gap/scatter chosen so the pooled AUC is ~0.93, BELOW the engine's 0.98 leakage threshold. The first
+    # version used gap 10 with scatter 0.5, which separates the classes perfectly; `label_leakage` fired and
+    # the verdict was REJECT before completeness was ever reached. The engine was right and the fixture was
+    # unrealistic -- a synthetic panel has to look like data the engine would accept, or it tests the wrong
+    # branch.
+    vals, subj, state, y = _panel(n_subj=30, n_win=4, state_gap=3.5, within_sd=0.5, seed=20)
+    coh = Cohort(values=vals, y=y, subject=subj, state=state, contrast="unconscious_vs_awake",
+                 dataset="synthetic")
+    rep = verify(_cand(("computational", "temporal")), [coh], np.random.default_rng(0))
+    checks = {e.check: e for e in rep.evidence if e.layer == "temporal"}
+    assert "temporal_snr" in checks, sorted(checks)
+    assert checks["temporal_snr"].status == PASS, checks["temporal_snr"].values
+    assert "temporal_layer" not in checks, "the hardcoded stub must be gone when the layer can run"
+
+
+def test_verify_still_blocks_a_temporal_candidate_on_a_one_window_table():
+    """The behaviour that must NOT change. Every table built before E14 has one window per state, and a
+    candidate declaring `requires: temporal` has to stay unreportable on those — otherwise wiring the layer
+    in would have converted a blocked candidate into a surviving one, which is the opposite of the point."""
+    from bsde.verifier.engine import Cohort, verify
+    from bsde.verifier.report import INCOMPLETE, SURVIVE
+    vals, subj, state, y = _panel(n_subj=30, n_win=1, state_gap=3.0, within_sd=0.5, seed=21)
+    coh = Cohort(values=vals, y=y, subject=subj, state=state, contrast="unconscious_vs_awake",
+                 dataset="synthetic")
+    rep = verify(_cand(("computational", "temporal")), [coh], np.random.default_rng(0))
+    assert rep.verdict != SURVIVE
+    assert rep.verdict == INCOMPLETE, (rep.verdict, rep.verdict_reasons)
+    assert any("temporal_snr" in r for r in rep.verdict_reasons), rep.verdict_reasons
+
+
+def test_verify_blocks_a_clinical_candidate_until_a_prevalence_is_declared():
+    """Layer 7 refuses to invent a prevalence, so a candidate requiring it stays INCOMPLETE until the caller
+    supplies one. That is the discipline, not an oversight."""
+    from bsde.verifier.engine import Cohort, verify
+    from bsde.verifier.report import INCOMPLETE
+    vals, subj, state, y = _panel(n_subj=30, n_win=1, state_gap=3.0, within_sd=0.5, seed=22)
+    bare = Cohort(values=vals, y=y, subject=subj, contrast="unconscious_vs_awake", dataset="synthetic")
+    rep = verify(_cand(("computational", "clinical")), [bare], np.random.default_rng(0))
+    assert rep.verdict == INCOMPLETE
+    assert any("prevalence_sensitivity" in r for r in rep.verdict_reasons), rep.verdict_reasons
+
+
+def test_declaring_a_prevalence_lets_the_clinical_layer_run():
+    from bsde.verifier.engine import Cohort, verify
+    vals, subj, state, y = _panel(n_subj=30, n_win=1, state_gap=3.0, within_sd=0.5, seed=23)
+    coh = Cohort(values=vals, y=y, subject=subj, contrast="unconscious_vs_awake", dataset="synthetic",
+                 prevalences=(0.2, 0.05))
+    rep = verify(_cand(("computational", "clinical")), [coh], np.random.default_rng(0))
+    checks = {e.check: e for e in rep.evidence if e.layer == "clinical"}
+    assert checks["prevalence_sensitivity"].status != NOT_RUN, checks["prevalence_sensitivity"].reason
+    assert "by_prevalence" in checks["prevalence_sensitivity"].values
+
+
+def test_the_mechanistic_stub_survives_and_says_it_is_gated_on_data():
+    """Layer 6 is genuinely unimplemented and must keep blocking — but its message should say it needs a
+    dissociation DATASET, not more code, because that determines what someone does about it."""
+    from bsde.verifier.engine import Cohort, verify
+    vals, subj, state, y = _panel(n_subj=30, n_win=1, state_gap=3.0, within_sd=0.5, seed=24)
+    coh = Cohort(values=vals, y=y, subject=subj, contrast="unconscious_vs_awake", dataset="synthetic")
+    rep = verify(_cand(("computational", "mechanistic")), [coh], np.random.default_rng(0))
+    stub = [e for e in rep.evidence if e.layer == "mechanistic"]
+    assert stub and stub[0].status == NOT_RUN
+    assert "dataset" in stub[0].reason.lower() and "ketamine" in stub[0].reason.lower()

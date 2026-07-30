@@ -62,6 +62,14 @@ class Cohort:
     baseline: np.ndarray | None = None              # the trivial baseline the candidate must beat
     baseline_name: str = "trivial baseline"
     dataset: str = "unnamed"
+    state: np.ndarray | None = None
+    """Row-level state label, for tables with REPEATED WINDOWS per (subject, state). Optional because every
+    table this project built before E14 has exactly one window per state, in which case layer 5's
+    within-state checks correctly report NOT_RUN. Supplying it is what lets the temporal layer run at all."""
+    prevalences: tuple = ()
+    """Declared prevalences for layer 7. Empty means the clinical layer refuses to compute a PPV rather than
+    silently using the sample's, which in every cohort here is ~0.5 BY DESIGN and describes no real
+    population."""
 
     def __post_init__(self) -> None:
         self.values = np.asarray(self.values, float)
@@ -73,6 +81,10 @@ class Cohort:
         for k, v in self.nuisance.items():
             if len(v) != n:
                 raise ValueError(f"nuisance {k!r} has length {len(v)}, expected {n}")
+        if self.state is not None:
+            self.state = np.asarray(self.state)
+            if len(self.state) != n:
+                raise ValueError("state must be the same length as values")
         if self.baseline is not None:
             self.baseline = np.asarray(self.baseline, float)
             if len(self.baseline) != n:
@@ -583,11 +595,32 @@ def verify(cand: Candidate, cohorts: Sequence[Cohort], rng, search_space_size: i
             rep.add(e)
     for e in layer_cross_domain(cand, cohorts, rng):
         rep.add(e)
-    for layer in ("temporal", "mechanistic", "clinical"):
-        if layer in cand.requires:
-            rep.add(Evidence(f"{layer}_layer", layer, NOT_RUN,
-                             f"the candidate's declaration requires the {layer} layer, which this engine "
-                             "version does not implement. The candidate therefore cannot be reported as "
-                             "surviving.",
-                             item="temporal_transition" if layer == "temporal" else ""))
+    # Layers 5 and 7 are implemented and are called here; layer 6 is not, and keeps the stub.
+    #
+    # Blocking is preserved BY CONSTRUCTION rather than by intention: both layers emit NOT_RUN checks when
+    # their preconditions are absent, and `decide()` turns any NOT_RUN inside a REQUIRED layer into
+    # INCOMPLETE. So a candidate declaring `requires: temporal` is still unreportable on a table with one
+    # window per state -- which is every table built before E14 -- and one declaring `requires: clinical`
+    # stays unreportable until someone declares a prevalence.
+    from bsde.verifier.clinical import layer_clinical
+    from bsde.verifier.temporal import layer_temporal
+
+    for coh in cohorts:
+        state = coh.state if coh.state is not None else coh.y
+        for e in layer_temporal(cand, coh.values, coh.subject, state, coh.y, rng, dataset=coh.dataset):
+            rep.add(e)
+        try:
+            p_oof = cv_predict_proba(coh.values, coh.y, coh.subject, rng)
+        except Exception:
+            p_oof = np.full(coh.n, np.nan)
+        for e in layer_clinical(cand, coh.y, p_oof, rng, prevalences=coh.prevalences,
+                                dataset=coh.dataset):
+            rep.add(e)
+
+    if "mechanistic" in cand.requires:
+        rep.add(Evidence("mechanistic_layer", "mechanistic", NOT_RUN,
+                         "the candidate's declaration requires the mechanistic layer, which this engine "
+                         "version does not implement. It is gated on DATA rather than on code -- it needs a "
+                         "dissociation dataset (ketamine, locked-in, neuromuscular blockade) and none has "
+                         "been ingested. The candidate cannot be reported as surviving."))
     return decide(rep)
