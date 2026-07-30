@@ -85,8 +85,16 @@ def blocks_from_events(events: np.ndarray, sfreq: float) -> Dict[str, List[tuple
     marks.sort()
     out: Dict[str, List[tuple]] = {"open": [], "closed": []}
     for i, (t0, kind) in enumerate(marks):
-        t1 = marks[i + 1][0] if i + 1 < len(marks) else None
-        out[kind].append((t0, t1))
+        if i + 1 >= len(marks):
+            # THE FINAL BLOCK IS DROPPED, AND THIS IS THE BUG THIS FUNCTION WAS FIXED FOR.
+            # Returning it as open-ended let the caller close it at the recording end, which made it the
+            # LONGEST block of its condition in every single recording -- the resting run ends on an
+            # eyes-open instruction, so ~35 s of post-protocol recording became every subject's "eyes
+            # open" window. It is not an instructed condition at all: the run is over, the participant
+            # moves, the experimenter talks. Two independent gates sat at chance (46.3 % and 63.0 %)
+            # until this was found, which is what gates are for.
+            break
+        out[kind].append((t0, marks[i + 1][0]))
     return out
 
 
@@ -97,10 +105,12 @@ class HBNRestingAdapter(Adapter):
     """DELIBERATELY NOT "microvolts". The scale factor is unknown and is not invented; see the module
     docstring. Any consumer that needs absolute amplitude must refuse this deposit rather than guess."""
 
-    def __init__(self, release: str = "R1", window_s: float = 20.0, limit: Optional[int] = None,
-                 conditions: tuple = CONDITIONS, dataset: str = "hbn_resting") -> None:
+    def __init__(self, release: str = "R1", window_s: float = 16.0, limit: Optional[int] = None,
+                 conditions: tuple = CONDITIONS, dataset: str = "hbn_resting",
+                 lead_in_s: float = 2.0) -> None:
         self.release = release
         self.window_s = window_s
+        self.lead_in_s = lead_in_s
         self.limit = limit
         self.conditions = conditions
         self.dataset = dataset
@@ -153,12 +163,15 @@ class HBNRestingAdapter(Adapter):
 
             blocks = blocks_from_events(m["event"], sfreq)
             cand = [(t0, (t1 if t1 is not None else total)) for t0, t1 in blocks.get(cond, [])]
-            cand = [(a, b) for a, b in cand if b - a >= self.window_s]
+            cand = [(a, b) for a, b in cand if b - a >= self.window_s + self.lead_in_s]
             if not cand:
                 raise ValueError(f"no {cond}-eyes block of at least {self.window_s:g}s")
             t0, t1 = max(cand, key=lambda ab: ab[1] - ab[0])          # the longest such block
-            mid = (t0 + t1) / 2.0
-            s0 = int(round(max(t0, mid - self.window_s / 2.0) * sfreq))
+            # LEAD-IN, APPLIED IDENTICALLY TO BOTH CONDITIONS. Eyes-open blocks are exactly 20 s, so a 20 s
+            # window would have to include the instruction transient -- a participant does not open their
+            # eyes instantaneously. Skipping `lead_in_s` and taking 16 s leaves the transient out. Applied
+            # symmetrically so the closed condition is not handed a cleaner window than the open one.
+            s0 = int(round((t0 + self.lead_in_s) * sfreq))
             seg = data[:, s0:s0 + int(round(self.window_s * sfreq))]
 
             # Per-channel DC removal, and flat channels dropped rather than left to poison a feature.

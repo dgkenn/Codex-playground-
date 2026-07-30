@@ -9,7 +9,23 @@ looked at**, and P2/P3/P4 below are carried over verbatim and remain unexamined.
 E16 IS LEFT IN PLACE, UNEDITED, AS THE RECORD OF THE FAILURE. Editing it until it passed would have erased
 the most useful thing that happened.
 
-WHAT FAILED, AND WHY IT WAS THE GATE RATHER THAN THE PIPELINE.
+*** CORRECTION, ADDED 2026-07-30 AFTER THE GATE WAS REGISTERED AND BEFORE IT WAS RUN. ***
+The developmental account below is NOT established and was asserted too confidently. The band-free gate
+registered here came out at **46.3 %** on a partial table -- chance, and WORSE than the band-dependent gate
+it replaced (63.0 % on the same subjects). Two gates near chance pointed at the windows rather than at any
+feature, and the adapter was wrong: HBN's resting run ends on an eyes-open instruction, `blocks_from_events`
+returned that final block unbounded, and "the longest block" therefore selected ~35 s of POST-PROTOCOL
+recording as every subject's eyes-open window. Fixed (trailing block dropped; 2 s lead-in; 16 s window),
+regression-tested, and the table re-streamed.
+
+**What this means for the reasoning below: the age gradient in alpha blocking (42 % -> 74 %) was computed
+from invalid eyes-open windows and cannot be interpreted until re-run.** My claim that "a broken pipeline
+does not produce a monotone age gradient" was wrong -- a broken pipeline CAN, if the breakage interacts with
+age, and older children plausibly move less in the minutes after a protocol ends. The developmental
+explanation may still be right; it is simply not evidenced yet. The gate itself is unchanged, and the
+one-attempt commitment stands.
+
+WHAT FAILED, AND WHY IT WAS THE GATE RATHER THAN THE PIPELINE (SUPERSEDED -- see the correction above).
 E16 gated on alpha blocking: `relative_alpha_power` higher with eyes closed than eyes open, in at least 80 %
 of subjects. Measured: **57.1 %**. But the failure is monotone in age, which a broken pipeline does not
 produce:
