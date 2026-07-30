@@ -63,6 +63,53 @@ proxy; the features are the depositors' and cannot be audited from the CSV; `SOC
 call, so a lead time is measured against a human's stopwatch; propofol-only procedural sedation at one site,
 two fronto-temporal channels at 125 Hz. **No claim from this file may say "ahead of BIS" - only "ahead of
 SEF95".**
+
+--------------------------------------------------------------------------------------------------------
+OUTCOME: EVERY GATE RAN. **P1 and P3a PASSED; P3b, P4 and P5 FAILED. The primary is WITHDRAWN by its own
+placebo, and Challenge C is NOT MET on this deposit.**
+
+    P1   coverage 129 recordings / 79,429 windows; base rate 31.2 %; **position-AUC 0.376** (E33: 1.000)
+    P2   incumbent SEF95 **AUC 0.610 [0.571, 0.650]** — alive, and E33's "dead incumbent" was an artefact
+         of E33's own sampling rather than a property of SEF95
+    P3a  PE31 alone **AUC 0.623 [0.587, 0.659]** — above chance. PASSED
+    P3b  PE31 added to SEF95: increment **+0.0178 [-0.0226, +0.0474]** — interval spans zero. FAILED
+    P4   **REFUTED, and not marginally.** Ostertag predicts SEF95 UP and PE DOWN approaching loss of
+         responsiveness. Measured over 105 recordings: SEF95 **-1.0248**, PE31 **-0.0481**. Both fall.
+    P5   placebo increment **+0.0244** against the real **+0.0178** — **the fake landmark scores HIGHER
+         than the true one.** FAILED, and the primary is withdrawn.
+
+**THE PLACEBO IS THE WHOLE RESULT.** A landmark placed at a random position in each recording buys more
+increment than the actual moment the clinician called loss of consciousness. Whatever PE31's +0.0178 was
+measuring, it was not the transition. That is exactly what a placebo gate exists to find, and it found it
+after the sampling fix had already removed the *obvious* version of the problem — E34's label is not the
+clock (position-AUC 0.376), and the increment is still not about the event.
+
+**P3a PASSING IS NOT A CONSOLATION AND MUST NOT BE REPORTED AS ONE.** PE31 reaching 0.623 against chance
+means only that conscious windows near a loss differ from conscious windows far from one. The placebo shows
+that difference is not specific to the loss. **"Above chance" and "about the thing" are different claims**,
+which is the entire reason P3a and P3b were separated in this registration rather than reported as one
+number.
+
+**P4 IS AN INDEPENDENT NEGATIVE AND IS WORTH MORE THAN P3b.** Ostertag 2025 (PMID 38412114) is the reason
+permutation entropy was named as the primary before the run. On DOSE-I the published direction does not
+replicate: **SEF95 falls approaching the loss rather than rising**, at twenty times the magnitude of PE31's
+own change. Either the paradoxical-excitation window is narrower than the 120 s examined here, or it does
+not appear in propofol procedural sedation, or the depositors' SEF95 differs from the published one. **This
+file cannot distinguish those**, and the failure is recorded as a failure to replicate a published direction
+rather than as evidence against the paper.
+
+**THE MUSCLE PROBLEM, WHICH THE HEADER DECLARED IN ADVANCE AND WHICH NOW HAS TEETH.** `rel_gamma` — the
+EMG-sensitive proxy — scored **0.632 [0.594, 0.666]**, *above* the primary's 0.623. DOSE-I ships no muscle
+channel, so the strong form of the check that killed E22 cannot be run. **A muscle explanation for anything
+in this table cannot be excluded on this deposit**, and would not have been excludable whichever way the
+placebo went.
+
+**AND THE CONTEXT TABLE CONTAINS A LARGER NUMBER THAN THE PRIMARY, WHICH IS NOT PROMOTED.** `WSMF30` reached
+**0.680 [0.650, 0.712]**, the highest in the table and comfortably above PE31. It is one cell of fifteen, it
+was not pre-declared, it has not faced the placebo that just withdrew the pre-declared primary, and the
+placebo is the gate that matters here. **It is recorded and not claimed.** A successor wishing to test it
+must register it first and put it through the same placebo — and should expect the same answer, since the
+placebo's failure was about the landmark and not about the feature.
 """
 from __future__ import annotations
 
