@@ -894,3 +894,76 @@ registered control proved weak (`relative_delta_power` raw 0.320, |AUC−0.5| = 
 **Still open, and stated in the script's own docstring:** the 20–40 Hz band was itself chosen *after* seeing
 1–20 and 1–40 behave differently. E09 swept only `fit_lo ∈ {1,2,3}`; **no sweep of the high band has ever been
 run.** That needs its own extraction pass and its own pre-registration.
+
+### 9.16 CORRECTION, and it is the largest one in this project: Chennu never reaches unconsciousness
+
+**Every candidate in this project is scored against `predicted("unconscious_vs_awake")`. The Chennu contrast
+that produced E08's 0.863 is not that contrast, and I never checked.**
+
+Chennu ships the behavioural data needed to check, in columns this project has been loading since E05:
+
+| level | plasma propofol µg/L (median, range) | n_correct / 40 (median, range) | subjects < 20/40 | subjects with no responses at all |
+|---|---|---|---|---|
+| 1 baseline | 0 (0–0) | 39 (30–40) | 0/20 | 0/20 |
+| 2 mild | 438 (144–878) | 37.5 (5–40) | 2/20 | 0/20 |
+| **3 moderate** | **803 (433–1521)** | **35 (0–40)** | **6/20** | **2/20** |
+| 4 recovery | 276 (148–483) | 38 (33–40) | 0/20 | 0/20 |
+
+**At level 3 the median subject gets 35 of 40 correct and 14 of 20 subjects score at or above 20/40.** Two
+subjects out of twenty stop responding entirely. The primary contrast used in E05, E07, E08, E09 and E10 —
+level 1 versus level 3 — is therefore **fully awake versus mostly still awake**. It is a model of mild-to-
+moderate sedation. It is not a model of unconsciousness, and the outcome it is scored against is named
+`unconscious_vs_awake`.
+
+**This is not a small mislabelling; it reorganises the whole result set.** It explains the pattern that has
+been visible in every table and never questioned: on Chennu, *nearly every candidate scores below 0.5*.
+`exponent_low` 0.168, `lempel_ziv` 0.223, `spectral_entropy` 0.292, `relative_delta_power` 0.320,
+`whole_head_exponent` 0.393. Their declared directions were calibrated against unconsciousness, and moderate
+sedation moves the EEG somewhere else, so they read as refuted when they were merely being asked the wrong
+question. E11's Sleep-EDF table shows the same measures at 0.99+ in the declared direction on a contrast that
+does reach N3.
+
+**And it sharpens the case against the project's best number rather than defending it.** `exponent_high` is
+the one candidate that goes the declared way under moderate sedation — which is exactly what a measure of
+propofol's sedative-dose beta activation would do.
+
+> Xi C, et al. PLoS One. 2018;13(6):e0199120. **PMID 29920532** — "During moderate sedation … propofol …
+> increased the global spindle/beta/gamma power."
+>
+> Purdon PL, Pierce ET, Mukamel EA, … Brown EN. *Electroencephalogram signatures of loss and recovery of
+> consciousness from propofol.* Proc Natl Acad Sci U S A. 2013;110(12):E1142-51. **PMID 23487781** — "Loss of
+> consciousness was marked simultaneously by an increase in low-frequency EEG power (<1 Hz), the loss of
+> spatially coherent occipital alpha oscillations (8–12 Hz), and the appearance of spatially coherent frontal
+> alpha oscillations."
+>
+> Both verified from the MEDLINE record via E-utilities (rule 25).
+
+The signature of *actual* loss of consciousness under propofol is a low-frequency and alpha phenomenon.
+**The 20–40 Hz band where `exponent_high` lives is where propofol's sedative-dose effect lives, and is not
+where the loss-of-consciousness signature lives.** That is a sourced statement about band position, and it is
+deliberately weaker than "beta disappears at deeper levels" — Xi et al. report beta power still elevated at
+*deep* sedation, so that stronger claim is not supported and is not made.
+
+**What must be restated, per rule 1 (a correction propagates to everything downstream, not just the number
+that prompted it).** No number is withdrawn — every value was computed as described. What changes is what
+each one is a measurement *of*:
+
+- **E05, E07, E08, E09, E10 report on MILD-TO-MODERATE SEDATION IN RESPONSIVE VOLUNTEERS, not on
+  unconsciousness.** Any sentence in this project pairing a Chennu number with the word "unconscious" is
+  wrong and must be rewritten to say "moderately sedated".
+- **E08's 0.863 is a sedation-depth discrimination, not a consciousness discrimination.** It may still be a
+  fine anaesthesia-monitoring result — Brief 01's commercial wedge is depth-of-anaesthesia — but it is not
+  evidence about consciousness, and the flagship claim cannot rest on it.
+- **The "candidates mostly fail on Chennu" finding is largely an artefact of the mismatch.** The failures are
+  real as *sedation* results and are not evidence against those measures as *unconsciousness* markers.
+- **`unconscious_vs_awake` is the wrong outcome key for every Chennu cohort.** The registry should carry a
+  distinct outcome (`sedated_vs_awake`), so that a candidate's direction is scored against the state actually
+  present. Until that exists, every Chennu direction test is comparing against a declaration written for a
+  different question.
+
+**How this was missed, which is the part worth keeping.** The behavioural columns were loaded, printed in
+table headers, and passed through five experiments without once being turned into the question "is this
+cohort unconscious?". Error-catalogue rule 32 says a measurement's availability defines a stratum and that
+stratum is selected on the thing that makes the measurement possible; the sibling failure here is simpler and
+worse — **the outcome's NAME was taken as a description of the data instead of as a claim to be checked, and
+one `median()` over a column already in the table would have caught it at E05.**
