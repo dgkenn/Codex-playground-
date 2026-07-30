@@ -1,0 +1,300 @@
+{
+  "experiment": "E10",
+  "gate_passed": true,
+  "search_space_size": 17,
+  "analytic_dof_lower_bound": 72,
+  "n_rows": 40,
+  "n_subjects": 20,
+  "spearman_with_nuisance": {
+    "emg_beta_gamma_fraction": 0.44840525328330205,
+    "emg_index": -0.15947467166979362,
+    "emg_kurtosis": -0.3118198874296435
+  },
+  "nuisance_outcome_auc": {
+    "emg_beta_gamma_fraction": {
+      "auc": 0.2925,
+      "ci": [
+        0.16749999999999998,
+        0.42000000000000004
+      ],
+      "declared": "lower"
+    },
+    "emg_index": {
+      "auc": 0.585,
+      "ci": [
+        0.41500000000000004,
+        0.7525
+      ],
+      "declared": "lower"
+    },
+    "emg_kurtosis": {
+      "auc": 0.6825,
+      "ci": [
+        0.5174375000000001,
+        0.8475
+      ],
+      "declared": "lower"
+    }
+  },
+  "emg_declared_direction": "lower",
+  "sign_conflict_among_proxies": true,
+  "valid_muscle_instruments": [
+    "emg_kurtosis"
+  ],
+  "clause_a": false,
+  "residualised": {
+    "exponent_high": {
+      "declared": "higher",
+      "raw_auc": 0.8625,
+      "raw_ci": [
+        0.78,
+        0.945
+      ],
+      "had_raw_signal": true,
+      "by_nuisance": {
+        "emg_beta_gamma_fraction": {
+          "auc": 0.8175,
+          "ci": [
+            0.695,
+            0.9125
+          ],
+          "delta": -0.04500000000000004,
+          "survives": true,
+          "valid_instrument": false
+        },
+        "emg_index": {
+          "auc": 0.8525,
+          "ci": [
+            0.7125,
+            0.935
+          ],
+          "delta": -0.010000000000000009,
+          "survives": true,
+          "valid_instrument": false
+        },
+        "emg_kurtosis": {
+          "auc": 0.8125,
+          "ci": [
+            0.68,
+            0.9325
+          ],
+          "delta": -0.050000000000000044,
+          "survives": true,
+          "valid_instrument": true
+        }
+      }
+    },
+    "relative_delta_power": {
+      "declared": "higher",
+      "raw_auc": 0.32,
+      "raw_ci": [
+        0.165,
+        0.4725
+      ],
+      "had_raw_signal": false,
+      "by_nuisance": {
+        "emg_beta_gamma_fraction": {
+          "auc": 0.3475,
+          "ci": [
+            0.195,
+            0.5125624999999996
+          ],
+          "delta": 0.02749999999999997,
+          "survives": false,
+          "valid_instrument": false
+        },
+        "emg_index": {
+          "auc": 0.315,
+          "ci": [
+            0.1825,
+            0.495
+          ],
+          "delta": -0.0050000000000000044,
+          "survives": false,
+          "valid_instrument": false
+        },
+        "emg_kurtosis": {
+          "auc": 0.3575,
+          "ci": [
+            0.21,
+            0.5575
+          ],
+          "delta": 0.03749999999999998,
+          "survives": false,
+          "valid_instrument": true
+        }
+      }
+    },
+    "whole_head_exponent": {
+      "declared": "higher",
+      "raw_auc": 0.3925,
+      "raw_ci": [
+        0.265,
+        0.5125
+      ],
+      "had_raw_signal": false,
+      "by_nuisance": {
+        "emg_beta_gamma_fraction": {
+          "auc": 0.58,
+          "ci": [
+            0.4375,
+            0.735
+          ],
+          "delta": 0.18749999999999994,
+          "survives": false,
+          "valid_instrument": false
+        },
+        "emg_index": {
+          "auc": 0.345,
+          "ci": [
+            0.2325,
+            0.51
+          ],
+          "delta": -0.04750000000000004,
+          "survives": false,
+          "valid_instrument": false
+        },
+        "emg_kurtosis": {
+          "auc": 0.3875,
+          "ci": [
+            0.2525,
+            0.55
+          ],
+          "delta": -0.0050000000000000044,
+          "survives": false,
+          "valid_instrument": true
+        }
+      }
+    },
+    "exponent_low": {
+      "declared": "higher",
+      "raw_auc": 0.1675,
+      "raw_ci": [
+        0.07,
+        0.25
+      ],
+      "had_raw_signal": false,
+      "by_nuisance": {
+        "emg_beta_gamma_fraction": {
+          "auc": 0.2575,
+          "ci": [
+            0.1275,
+            0.39
+          ],
+          "delta": 0.09,
+          "survives": false,
+          "valid_instrument": false
+        },
+        "emg_index": {
+          "auc": 0.1575,
+          "ci": [
+            0.0575,
+            0.295
+          ],
+          "delta": -0.010000000000000009,
+          "survives": false,
+          "valid_instrument": false
+        },
+        "emg_kurtosis": {
+          "auc": 0.19,
+          "ci": [
+            0.0675,
+            0.3275
+          ],
+          "delta": 0.022499999999999992,
+          "survives": false,
+          "valid_instrument": true
+        }
+      }
+    },
+    "lempel_ziv": {
+      "declared": "lower",
+      "raw_auc": 0.22250000000000003,
+      "raw_ci": [
+        0.10250000000000004,
+        0.33506249999999965
+      ],
+      "had_raw_signal": false,
+      "by_nuisance": {
+        "emg_beta_gamma_fraction": {
+          "auc": 0.3125,
+          "ci": [
+            0.15493750000000003,
+            0.4575
+          ],
+          "delta": 0.08999999999999997,
+          "survives": false,
+          "valid_instrument": false
+        },
+        "emg_index": {
+          "auc": 0.16749999999999998,
+          "ci": [
+            0.06000000000000005,
+            0.31999999999999995
+          ],
+          "delta": -0.05500000000000005,
+          "survives": false,
+          "valid_instrument": false
+        },
+        "emg_kurtosis": {
+          "auc": 0.22750000000000004,
+          "ci": [
+            0.08999999999999997,
+            0.36250000000000004
+          ],
+          "delta": 0.0050000000000000044,
+          "survives": false,
+          "valid_instrument": true
+        }
+      }
+    },
+    "spectral_entropy": {
+      "declared": "lower",
+      "raw_auc": 0.2925,
+      "raw_ci": [
+        0.18000000000000005,
+        0.38749999999999996
+      ],
+      "had_raw_signal": false,
+      "by_nuisance": {
+        "emg_beta_gamma_fraction": {
+          "auc": 0.405,
+          "ci": [
+            0.27,
+            0.5375
+          ],
+          "delta": 0.11250000000000004,
+          "survives": false,
+          "valid_instrument": false
+        },
+        "emg_index": {
+          "auc": 0.23250000000000004,
+          "ci": [
+            0.14,
+            0.33999999999999997
+          ],
+          "delta": -0.05999999999999994,
+          "survives": false,
+          "valid_instrument": false
+        },
+        "emg_kurtosis": {
+          "auc": 0.25249999999999995,
+          "ci": [
+            0.14493750000000002,
+            0.37250000000000005
+          ],
+          "delta": -0.040000000000000036,
+          "survives": false,
+          "valid_instrument": true
+        }
+      }
+    }
+  },
+  "predictions": {
+    "P1": false,
+    "P2": true,
+    "P3": true,
+    "P4": true
+  },
+  "verdict": "SURVIVES_WEAKLY"
+}

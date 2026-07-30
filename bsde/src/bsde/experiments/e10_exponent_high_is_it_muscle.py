@@ -230,6 +230,27 @@ def main() -> int:
     print(f"\n   clause (a) — a nuisance tracks the outcome AT LEAST AS WELL as the candidate: "
           f"{'YES' if clause_a else 'NO'}")
 
+    # ---- RULE 16: do the muscle proxies agree with each other in SIGN? ----------------------------------
+    # "When two arms of the same test disagree in SIGN, the definition is doing the work, not the biology."
+    # Added AFTER the first run, because the first run produced exactly this and the script had no check for
+    # it: one proxy's CI sat entirely above 0.5 and another's entirely below. A composite built by averaging
+    # proxies that disagree in sign is averaging two different phenomena and cannot be interpreted at all.
+    up = [n for n, e in emg_auc.items() if e["ci"][0] > 0.5]
+    down = [n for n, e in emg_auc.items() if e["ci"][1] < 0.5]
+    sign_conflict = bool(up and down)
+    print("\n   RULE 16 — sign agreement among the muscle proxies:")
+    print(f"      CI entirely in the declared ({EMG_DIRECTION}) direction : {up or 'none'}")
+    print(f"      CI entirely OPPOSITE to declared                        : {down or 'none'}")
+    if sign_conflict:
+        print("      *** SIGN CONFLICT. The proxies are not measuring one thing. Any proxy that RISES with")
+        print("      sedation is not tracking muscle, because muscle tone falls under propofol — it is")
+        print("      tracking something else that lives in the same band. Residualising on it removes that")
+        print("      other thing, so a survival there says nothing about muscle. Only proxies in the")
+        print("      declared direction are valid instruments below, and the composite emg_index is")
+        print("      averaging two opposing phenomena and is discarded.")
+    valid_nuis = [n for n in NUISANCES if n in up] or []
+    print(f"      valid muscle instruments on this deposit: {valid_nuis or 'NONE'}")
+
     # ============================ P2/P3 — clause (b), residualisation ================================
     print("\n" + "=" * 100)
     print("CLAUSE (b) — does the association survive holding the muscle proxy constant?")
@@ -243,7 +264,11 @@ def main() -> int:
         if d not in ("higher", "lower") or not np.isfinite(x).any():
             continue
         raw = scored(y, x, None, d)
-        resid[cname] = {"declared": d, "raw_auc": float(raw), "by_nuisance": {}}
+        raw_lo, raw_hi = cluster_bootstrap_ci(
+            lambda i: scored(y[i], x[i], None, d), subj, rng, reps=2000)[:2]
+        had_raw_signal = raw_lo > 0.5
+        resid[cname] = {"declared": d, "raw_auc": float(raw), "raw_ci": [float(raw_lo), float(raw_hi)],
+                        "had_raw_signal": bool(had_raw_signal), "by_nuisance": {}}
         for nm in NUISANCES:
             v = col(rows, nm)
             a = scored(y, x, v, d)
@@ -251,8 +276,21 @@ def main() -> int:
                 lambda i: scored(y[i], x[i], v[i], d), subj, rng, reps=2000)[:2]
             survives = lo > 0.5
             resid[cname]["by_nuisance"][nm] = {"auc": float(a), "ci": [float(lo), float(hi)],
-                                               "delta": float(a - raw), "survives": bool(survives)}
-            mark = "" if survives else "   *** no longer excludes 0.5"
+                                               "delta": float(a - raw), "survives": bool(survives),
+                                               "valid_instrument": nm in valid_nuis}
+            # The marker must fire only on a LOST association. The first version printed it whenever the
+            # residual CI spanned 0.5, which included every candidate whose RAW signed AUC was already below
+            # 0.5 -- i.e. most of them, since most registered candidates are refuted. A reader would have
+            # seen "no longer excludes 0.5" beside candidates that never excluded it, which is the kind of
+            # stale-label error rule 4 is about.
+            if had_raw_signal and not survives:
+                mark = "   *** ASSOCIATION LOST"
+            elif not had_raw_signal:
+                mark = "   (raw already spans 0.5 -- nothing to lose)"
+            else:
+                mark = ""
+            if nm not in valid_nuis:
+                mark += "  [not a valid muscle instrument here]"
             print(f"   {cname:28s} {nm:26s} {raw:7.3f} {a:8.3f} [{lo:.3f}, {hi:.3f}] "
                   f"{a - raw:+7.3f}{mark}")
 
@@ -260,6 +298,27 @@ def main() -> int:
     ctl_worst = min(resid[CONTROL]["by_nuisance"].values(), key=lambda e: e["auc"])
     p2 = (abs(tgt_worst["delta"]) > ATTENUATION_THRESHOLD) and tgt_worst["survives"]
     p3 = abs(ctl_worst["delta"]) <= ATTENUATION_THRESHOLD
+
+    # The target's result restricted to instruments that actually behave like muscle here. This is the
+    # number the verdict is built on; `tgt_worst` above spans all three proxies and is kept only because P2
+    # was registered against it and must be scored as registered.
+    tgt_valid = {n: e for n, e in resid[TARGET]["by_nuisance"].items() if e["valid_instrument"]}
+    tgt_valid_worst = min(tgt_valid.values(), key=lambda e: e["auc"]) if tgt_valid else None
+
+    # HOW GOOD IS THE CONTROL, REALLY. Registered as relative_delta_power and scored as registered, but its
+    # raw signed AUC turned out to be far enough BELOW 0.5 that "was it attenuated" is a question about a
+    # candidate with no association in its declared direction. `exponent_low` is the stronger control on the
+    # same logic -- 1-20 Hz, three octaves below the EMG band, and a much larger |AUC - 0.5| -- so it is
+    # reported beside the registered one rather than substituted for it.
+    print("\n   CONTROL QUALITY (how much association was there to destroy?):")
+    for cname in (CONTROL, "exponent_low"):
+        if cname not in resid:
+            continue
+        e = resid[cname]
+        deltas = [abs(b["delta"]) for b in e["by_nuisance"].values()]
+        print(f"      {cname:24s} raw {e['raw_auc']:.3f} [{e['raw_ci'][0]:.3f}, {e['raw_ci'][1]:.3f}]  "
+              f"|AUC-0.5| = {abs(e['raw_auc'] - 0.5):.3f}   max |delta| under residualisation "
+              f"{max(deltas):.3f}")
 
     # ============================ verdict ============================================================
     print("\n" + "=" * 100); print("REGISTERED PREDICTIONS"); print("=" * 100)
@@ -273,7 +332,17 @@ def main() -> int:
     print(f"   P4 machinery gate                                           : MET")
 
     print("\n" + "=" * 100); print("VERDICT"); print("=" * 100)
-    if not p3:
+    if not valid_nuis:
+        verdict = "NO_VALID_MUSCLE_INSTRUMENT"
+        print("   NO MUSCLE INSTRUMENT SURVIVED ITS OWN SIGN CHECK on this deposit, so the muscle question")
+        print("   was not tested. Every available proxy either spans 0.5 or moves the wrong way for muscle.")
+        print("   This is rule 31: the downstream verdict is ABSENT, not negative. exponent_high is neither")
+        print("   cleared nor refuted here, and it must not be reported as either.")
+    elif tgt_valid_worst is not None and not tgt_valid_worst["survives"]:
+        verdict = "REFUTED_AS_MUSCLE_ON_VALID_INSTRUMENT"
+        print("   exponent_high does NOT survive residualisation on a proxy that behaves like muscle.")
+        print("   The best result this project has is a muscle artefact and is withdrawn as a lead.")
+    elif not p3:
         verdict = "UNINTERPRETABLE"
         print("   The CONTROL was attenuated too. Residualising the EMG proxy removes sedation itself, not")
         print("   muscle, so nothing here distinguishes a muscle artefact from a real marker. No claim is")
@@ -292,12 +361,37 @@ def main() -> int:
         print("   this is the case residual_auc's own docstring warns about. Flagged, not concluded.")
     else:
         verdict = "SURVIVES_WEAKLY"
-        print("   exponent_high survives residualisation on every muscle proxy available, and the 1-4 Hz")
-        print("   control behaves as it should. THIS CLEARS IT ONLY WEAKLY. The deposit is filtered")
-        print("   0.5-45 Hz and the EMG proxy measured here is a degraded instrument (§9.11); a negative")
-        print("   from a degraded instrument is weak evidence of no muscle, not evidence of no muscle.")
-        print("   Clearing this properly needs a deposit with unfiltered high frequencies.")
+        print(f"   exponent_high survives residualisation on the muscle instrument(s) that passed the sign")
+        print(f"   check ({', '.join(valid_nuis)}), and the control behaves as it should.")
+        print("   THIS CLEARS IT ONLY WEAKLY, for two compounding reasons:")
+        print("     - the deposit is filtered 0.5-45 Hz, so the muscle proxy is a degraded instrument")
+        print("       (§9.11); a negative from a degraded instrument is weak evidence of no muscle, not")
+        print("       evidence of no muscle;")
+        print("     - and clause (a) failed, so the two-clause rule was never in a position to fire.")
     print(f"\n   verdict: {verdict}")
+
+    # ---- the alternative explanation this experiment GENERATED and cannot test ------------------------
+    if sign_conflict:
+        print("\n" + "=" * 100)
+        print("A NEW ALTERNATIVE EXPLANATION, GENERATED BY THIS RESULT AND THEREFORE UNTESTED BY IT")
+        print("=" * 100)
+        print("   The proxy that rose with sedation is a 20-45 Hz RELATIVE POWER measure, and propofol at")
+        print("   moderate sedation is known to INCREASE global beta/gamma power: Xi et al., PLoS One 2018;")
+        print("   13(6):e0199120, PMID 29920532 -- 'During moderate sedation ... propofol decreased the")
+        print("   alpha power in the occipital area and increased the global spindle/beta/gamma power.'")
+        print("   (verified from the MEDLINE record via E-utilities, per rule 25.)")
+        print("")
+        print("   That reading survives the sign that refuted the muscle interpretation, and it explains")
+        print("   the positive rho with exponent_high too: a propofol beta hump near the LOW EDGE of a")
+        print("   20-40 Hz fit window raises the band's power AND steepens the slope fitted across it, so")
+        print("   one mechanism produces both observations.")
+        print("")
+        print("   If that is what exponent_high is, it is a real DRUG effect and not a consciousness")
+        print("   marker -- a worse problem for this project than muscle would have been, because Brief 01")
+        print("   is specifically about separating drug from state. THIS EXPERIMENT CANNOT TEST IT: the")
+        print("   hypothesis was generated by looking at this result, so testing it here would be exactly")
+        print("   the rewrite-after-seeing that the anti-p-hacking constraints forbid. It goes to the queue")
+        print("   as a pre-registered test on data this result did not touch.")
     print(f"\n   Denominators for every number above: {n_space} registered candidates, analytic dof >= 72.")
     print("   NOT CLOSED BY THIS EXPERIMENT: the 20-40 Hz band was itself chosen after seeing 1-20 and")
     print("   1-40 behave differently, and no sweep of the HIGH band has been run.")
@@ -306,6 +400,9 @@ def main() -> int:
     json.dump({"experiment": "E10", "gate_passed": True, "search_space_size": n_space,
                "analytic_dof_lower_bound": 72, "n_rows": len(rows), "n_subjects": len(set(subj)),
                "spearman_with_nuisance": rho, "nuisance_outcome_auc": emg_auc,
+               "emg_declared_direction": EMG_DIRECTION,
+               "sign_conflict_among_proxies": bool(sign_conflict),
+               "valid_muscle_instruments": valid_nuis,
                "clause_a": bool(clause_a), "residualised": resid,
                "predictions": {"P1": bool(p1), "P2": bool(p2), "P3": bool(p3), "P4": True},
                "verdict": verdict}, open(dst, "w"), indent=2, default=str)
