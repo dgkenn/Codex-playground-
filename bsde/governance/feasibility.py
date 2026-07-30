@@ -147,6 +147,33 @@ def base_rate(label: np.ndarray, band=(0.05, 0.95)) -> dict:
                         else f"BASE RATE {r:.1%} IS OUTSIDE {band} — an AUC here is unstable")}
 
 
+def label_collinear_with_position(label: np.ndarray, group: np.ndarray) -> dict:
+    """Is the label a function of WHERE IN THE RECORD a row sits rather than of anything measured?
+
+    E33's defect. It sampled the 121 s before each loss of consciousness and asked "is LOC within 60 s",
+    so the base rate was 61/121 = 50.4 % **by construction** and the outcome was near-deterministic in
+    position. Any feature drifting monotonically through two minutes predicts that, and what is predicted is
+    the clock. The base-rate check passed it, because a base rate inside a band says an AUC is interpretable
+    and says nothing about the label being collinear with the row index.
+
+    Reports the AUC of position-within-group for the label. **Near 1.0 or 0.0 means the design is measuring
+    time, whatever else it is also measuring.**
+    """
+    from bsde.verifier.stats import auc as _auc
+    pos = np.concatenate([np.arange((group == g).sum(), dtype=float) / max(1, (group == g).sum() - 1)
+                          for g in dict.fromkeys(group.tolist())])
+    m = np.isfinite(label)
+    if len(np.unique(label[m])) < 2:
+        return {"verdict": "label is constant"}
+    a = float(_auc(label[m], pos[m]))
+    return {"auc_of_position": a, "distance_from_chance": abs(a - 0.5),
+            "verdict": ("LABEL IS COLLINEAR WITH POSITION — this design predicts the clock"
+                        if abs(a - 0.5) > 0.35 else
+                        "position carries some information about the label; check the placebo carefully"
+                        if abs(a - 0.5) > 0.15 else
+                        "label is not strongly explained by position in the record")}
+
+
 def probe(csv_path: str, label_col: str, exposure_col: Optional[str] = None,
           artefact_col: Optional[str] = None, subject_col: str = "subject",
           candidate_cols: Sequence[str] = (), status_ok: str = "ok") -> dict:

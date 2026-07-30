@@ -82,6 +82,44 @@ SCOPE AND LIMITS.
   * **Procedural sedation for endoscopy, propofol only.** Nothing here transfers to surgical anaesthesia,
     to volatiles, or to a population that is not otherwise well.
   * 171 recordings, one site, two fronto-temporal channels at 125 Hz.
+
+--------------------------------------------------------------------------------------------------------
+OUTCOME: P1 FAILED ON (c), AND THE RUN EXPOSED A STRUCTURAL FLAW IN THE SAMPLING THAT (c) DID NOT TEST.
+
+    recordings with a usable LOC landmark : 85 (floor 50)          PASSED
+    eligible windows                      : 10,285
+    base rate                             : 50.4 %                 PASSED, and see below
+    **INCUMBENT ALIVE?  SEF95 alone AUC 0.453 [0.406, 0.501]**     FAILED — the interval includes 0.5
+
+**The gate did what it was built for.** It was added because E26 had no way to tell "our feature beat the
+monitor" from "the monitor was not doing anything". Here the monitor is not doing anything: out-of-fold,
+SEF95 cannot predict loss of consciousness within 60 s at all. Nothing downstream was computed.
+
+**Two readings, and the second one is a defect in this file rather than in the deposit.**
+
+**(1) The gate may be mis-specified, and that is a question for a successor, not a reinterpretation here.**
+Challenge C asks for a feature that predicts *ahead of a conventional monitor*. If the monitor is at chance
+and a feature is not, that IS the challenge's answer — so a gate that stops on a dead incumbent can suppress
+a real positive. But the gate is registered as written and is applied as written. **The fix is a successor
+whose comparison is against chance AND against the incumbent separately, rather than an increment over a
+model that carries no signal.**
+
+**(2) THE SAMPLING IS BROKEN, AND THIS IS THE MORE SERIOUS PROBLEM.** Every recording contributes exactly
+the 121 seconds before its LOC, and the outcome is "within 60 s of LOC" — so **the base rate is 50.4 %
+because it is 61/121 by construction**, and the outcome is a near-deterministic function of position within
+the window. Any feature that drifts monotonically through two minutes will "predict" it, and the thing being
+predicted is the clock, not the transition.
+
+The placebo (P5) exists precisely to catch that, and it never ran because P1 stopped first. **But a design
+whose base rate is fixed by its own window length should not have reached a placebo to be caught by.** The
+feasibility probe reported the base rate as "inside the band" and passed it — the band checks that an AUC is
+interpretable, and it cannot see that the label is collinear with position. **That is a gap in
+`governance/feasibility.py`, not just in this file**, and it is recorded as one.
+
+**WHAT A SUCCESSOR MUST CHANGE — the instrument, not the threshold.** Sample windows from the WHOLE
+conscious phase of each recording rather than only the two minutes before the loss, so that "within 60 s of
+LOC" is a genuine minority class and position-in-recording is no longer a proxy for the outcome. That
+changes what is being asked, which is what makes it a legitimate successor rather than a retune.
 """
 from __future__ import annotations
 
