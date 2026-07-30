@@ -336,7 +336,8 @@ class VitalDBGridAdapter(Adapter):
                  max_windows: int = 40, tail_s: float = 300.0, dataset: str = "vitaldb_grid",
                  require_monitor: bool = True,
                  monitor_tracks: Sequence[str] = ("BIS/BIS", "BIS/SQI", "BIS/SR", "BIS/EMG"),
-                 skip_cases: Sequence[str] = ()) -> None:
+                 skip_cases: Sequence[str] = (),
+                 case_shard: int = 0, n_case_shards: int = 1) -> None:
         self.n_cases = n_cases
         self.window_s = window_s
         self.grid_s = grid_s
@@ -346,7 +347,17 @@ class VitalDBGridAdapter(Adapter):
         self.require_monitor = require_monitor
         self.monitor_tracks = tuple(monitor_tracks)
         self.skip_cases = set(str(c) for c in skip_cases)
-        self.name = f"vitaldb-grid:{grid_s:.0f}s"
+        # SHARDING IS BY CASE, NEVER BY WINDOW, and the distinction is the whole point. `shard_of` in the
+        # runner hashes the recording id, which would scatter one case's forty windows across every shard
+        # and make each shard re-download that case's 9.4 MB waveform track. Splitting the CASE LIST instead
+        # keeps the per-case fetch cache intact, so four shards cost four times the bandwidth of one shard,
+        # not four times the bandwidth of the whole job.
+        if n_case_shards < 1 or not (0 <= case_shard < n_case_shards):
+            raise ValueError(f"bad shard {case_shard}/{n_case_shards}")
+        self.case_shard = case_shard
+        self.n_case_shards = n_case_shards
+        self.name = (f"vitaldb-grid:{grid_s:.0f}s"
+                     + (f":case-shard{case_shard}of{n_case_shards}" if n_case_shards > 1 else ""))
         self._cache_tid: Optional[str] = None
         self._cache_val: Optional[np.ndarray] = None
         self._num: Dict[str, np.ndarray] = {}
@@ -371,7 +382,11 @@ class VitalDBGridAdapter(Adapter):
                 continue
             eligible.append(cid)
         eligible.sort(key=lambda x: int(x))          # deterministic; never a random or "best" subset
-        chosen = eligible[: self.n_cases]
+        # `n_cases` is applied BEFORE sharding, so the union of all shards is exactly the same case set a
+        # single unsharded run would produce. Applying it after would give each shard its own `n_cases`
+        # cases and quietly multiply the cohort by the shard count.
+        chosen = [c for i, c in enumerate(eligible[: self.n_cases])
+                  if i % self.n_case_shards == self.case_shard]
 
         refs: List[RecordingRef] = []
         for cid in chosen:
