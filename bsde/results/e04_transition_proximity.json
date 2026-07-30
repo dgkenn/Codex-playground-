@@ -26,280 +26,280 @@
   "summary": {
     "lempel_ziv": {
       "verdict": "INCOMPLETE",
-      "auc_sed2_lower": 0.6089795918367347,
+      "auc_sed2_lower": 0.5915032679738562,
       "ci": [
-        0.5120719621506034,
-        0.7116365131578948
+        0.50656346841062,
+        0.6844873090745732
       ],
-      "null_mean": 0.49307102040816325,
+      "null_mean": 0.4840925925925926,
       "null_scheme": "within_subject",
       "n_perm": 1000,
-      "reference_auc_sed_vs_awake": 0.8647619047619047,
+      "reference_auc_sed_vs_awake": 0.8165784832451499,
       "primary": {
-        "n": 70,
-        "n_pos": 35,
-        "n_neg": 35,
-        "n_subjects": 14,
+        "n": 105,
+        "n_pos": 51,
+        "n_neg": 54,
+        "n_subjects": 20,
         "dropped": {
-          "task=awake": 41,
-          "sed:acq=tms": 22
+          "task=awake": 59,
+          "sed:acq=tms": 38
         }
       },
       "reference": {
-        "n": 50,
-        "n_pos": 35,
-        "n_neg": 15,
-        "n_subjects": 15,
+        "n": 75,
+        "n_pos": 54,
+        "n_neg": 21,
+        "n_subjects": 21,
         "dropped": {
-          "awake:acq=EO": 15,
-          "task=sed2": 35,
-          "awake:acq=tms": 11,
-          "sed:acq=tms": 22
+          "awake:acq=EO": 21,
+          "task=sed2": 51,
+          "awake:acq=tms": 17,
+          "sed:acq=tms": 38
         }
       },
       "failed": []
     },
     "relative_alpha_power": {
       "verdict": "INCOMPLETE",
-      "auc_sed2_lower": 0.5828571428571429,
+      "auc_sed2_lower": 0.5617283950617284,
       "ci": [
-        0.4873460850880205,
-        0.6935401546982429
+        0.48683869196840895,
+        0.641865622192273
       ],
-      "null_mean": 0.49146448979591834,
+      "null_mean": 0.4870236020334059,
       "null_scheme": "within_subject",
       "n_perm": 1000,
-      "reference_auc_sed_vs_awake": 0.5104761904761905,
+      "reference_auc_sed_vs_awake": 0.48236331569664903,
       "primary": {
-        "n": 70,
-        "n_pos": 35,
-        "n_neg": 35,
-        "n_subjects": 14,
+        "n": 105,
+        "n_pos": 51,
+        "n_neg": 54,
+        "n_subjects": 20,
         "dropped": {
-          "task=awake": 41,
-          "sed:acq=tms": 22
+          "task=awake": 59,
+          "sed:acq=tms": 38
         }
       },
       "reference": {
-        "n": 50,
-        "n_pos": 35,
-        "n_neg": 15,
-        "n_subjects": 15,
+        "n": 75,
+        "n_pos": 54,
+        "n_neg": 21,
+        "n_subjects": 21,
         "dropped": {
-          "awake:acq=EO": 15,
-          "task=sed2": 35,
-          "awake:acq=tms": 11,
-          "sed:acq=tms": 22
+          "awake:acq=EO": 21,
+          "task=sed2": 51,
+          "awake:acq=tms": 17,
+          "sed:acq=tms": 38
         }
       },
       "failed": []
     },
     "relative_delta_power": {
       "verdict": "INCOMPLETE",
-      "auc_sed2_lower": 0.38040816326530613,
+      "auc_sed2_lower": 0.4045025417574437,
       "ci": [
-        0.27289776662049864,
-        0.46493498149671053
+        0.32667047951255973,
+        0.47101924102974524
       ],
-      "null_mean": 0.5044326530612245,
+      "null_mean": 0.515285403050109,
       "null_scheme": "within_subject",
       "n_perm": 1000,
-      "reference_auc_sed_vs_awake": 0.4419047619047619,
+      "reference_auc_sed_vs_awake": 0.48236331569664903,
       "primary": {
-        "n": 70,
-        "n_pos": 35,
-        "n_neg": 35,
-        "n_subjects": 14,
+        "n": 105,
+        "n_pos": 51,
+        "n_neg": 54,
+        "n_subjects": 20,
         "dropped": {
-          "task=awake": 41,
-          "sed:acq=tms": 22
+          "task=awake": 59,
+          "sed:acq=tms": 38
         }
       },
       "reference": {
-        "n": 50,
-        "n_pos": 35,
-        "n_neg": 15,
-        "n_subjects": 15,
+        "n": 75,
+        "n_pos": 54,
+        "n_neg": 21,
+        "n_subjects": 21,
         "dropped": {
-          "awake:acq=EO": 15,
-          "task=sed2": 35,
-          "awake:acq=tms": 11,
-          "sed:acq=tms": 22
+          "awake:acq=EO": 21,
+          "task=sed2": 51,
+          "awake:acq=tms": 17,
+          "sed:acq=tms": 38
         }
       },
       "failed": []
     },
     "spectral_edge_95": {
       "verdict": "INCOMPLETE",
-      "auc_sed2_lower": 0.6016326530612245,
+      "auc_sed2_lower": 0.5646332607116921,
       "ci": [
-        0.5126459293394777,
-        0.7094151453684922
+        0.48874137161647513,
+        0.6546392631126524
       ],
-      "null_mean": 0.5051648979591837,
+      "null_mean": 0.48828286129266524,
       "null_scheme": "within_subject",
       "n_perm": 1000,
-      "reference_auc_sed_vs_awake": 0.17333333333333334,
+      "reference_auc_sed_vs_awake": 0.11904761904761904,
       "primary": {
-        "n": 70,
-        "n_pos": 35,
-        "n_neg": 35,
-        "n_subjects": 14,
+        "n": 105,
+        "n_pos": 51,
+        "n_neg": 54,
+        "n_subjects": 20,
         "dropped": {
-          "task=awake": 41,
-          "sed:acq=tms": 22
+          "task=awake": 59,
+          "sed:acq=tms": 38
         }
       },
       "reference": {
-        "n": 50,
-        "n_pos": 35,
-        "n_neg": 15,
-        "n_subjects": 15,
+        "n": 75,
+        "n_pos": 54,
+        "n_neg": 21,
+        "n_subjects": 21,
         "dropped": {
-          "awake:acq=EO": 15,
-          "task=sed2": 35,
-          "awake:acq=tms": 11,
-          "sed:acq=tms": 22
+          "awake:acq=EO": 21,
+          "task=sed2": 51,
+          "awake:acq=tms": 17,
+          "sed:acq=tms": 38
         }
       },
       "failed": []
     },
     "spectral_entropy": {
       "verdict": "INCOMPLETE",
-      "auc_sed2_lower": 0.6155102040816327,
+      "auc_sed2_lower": 0.5849673202614378,
       "ci": [
-        0.5272452098191891,
-        0.7202307723643474
+        0.504773748137483,
+        0.6733004385964912
       ],
-      "null_mean": 0.4975861224489796,
+      "null_mean": 0.48536891793754533,
       "null_scheme": "within_subject",
       "n_perm": 1000,
-      "reference_auc_sed_vs_awake": 0.4685714285714286,
+      "reference_auc_sed_vs_awake": 0.43915343915343913,
       "primary": {
-        "n": 70,
-        "n_pos": 35,
-        "n_neg": 35,
-        "n_subjects": 14,
+        "n": 105,
+        "n_pos": 51,
+        "n_neg": 54,
+        "n_subjects": 20,
         "dropped": {
-          "task=awake": 41,
-          "sed:acq=tms": 22
+          "task=awake": 59,
+          "sed:acq=tms": 38
         }
       },
       "reference": {
-        "n": 50,
-        "n_pos": 35,
-        "n_neg": 15,
-        "n_subjects": 15,
+        "n": 75,
+        "n_pos": 54,
+        "n_neg": 21,
+        "n_subjects": 21,
         "dropped": {
-          "awake:acq=EO": 15,
-          "task=sed2": 35,
-          "awake:acq=tms": 11,
-          "sed:acq=tms": 22
+          "awake:acq=EO": 21,
+          "task=sed2": 51,
+          "awake:acq=tms": 17,
+          "sed:acq=tms": 38
         }
       },
       "failed": []
     },
     "uce_v1": {
       "verdict": "INCOMPLETE",
-      "auc_sed2_lower": 0.3542857142857143,
+      "auc_sed2_lower": 0.3758169934640523,
       "ci": [
-        0.2558656058656058,
-        0.4324591637091637
+        0.2706796033900801,
+        0.4694119843944837
       ],
-      "null_mean": 0.4997412244897959,
+      "null_mean": 0.5124538852578069,
       "null_scheme": "within_subject",
       "n_perm": 1000,
-      "reference_auc_sed_vs_awake": 0.9295238095238095,
+      "reference_auc_sed_vs_awake": 0.9435626102292769,
       "primary": {
-        "n": 70,
-        "n_pos": 35,
-        "n_neg": 35,
-        "n_subjects": 14,
+        "n": 105,
+        "n_pos": 51,
+        "n_neg": 54,
+        "n_subjects": 20,
         "dropped": {
-          "task=awake": 41,
-          "sed:acq=tms": 22
+          "task=awake": 59,
+          "sed:acq=tms": 38
         }
       },
       "reference": {
-        "n": 50,
-        "n_pos": 35,
-        "n_neg": 15,
-        "n_subjects": 15,
+        "n": 75,
+        "n_pos": 54,
+        "n_neg": 21,
+        "n_subjects": 21,
         "dropped": {
-          "awake:acq=EO": 15,
-          "task=sed2": 35,
-          "awake:acq=tms": 11,
-          "sed:acq=tms": 22
+          "awake:acq=EO": 21,
+          "task=sed2": 51,
+          "awake:acq=tms": 17,
+          "sed:acq=tms": 38
         }
       },
       "failed": []
     },
     "whole_head_exponent": {
       "verdict": "INCOMPLETE",
-      "auc_sed2_lower": 0.3665306122448979,
+      "auc_sed2_lower": 0.38453159041394336,
       "ci": [
-        0.264280303030303,
-        0.4467797017797018
+        0.278787762103126,
+        0.4762169018550816
       ],
-      "null_mean": 0.5021983673469388,
+      "null_mean": 0.5131267247639797,
       "null_scheme": "within_subject",
       "n_perm": 1000,
-      "reference_auc_sed_vs_awake": 0.9314285714285714,
+      "reference_auc_sed_vs_awake": 0.9470899470899471,
       "primary": {
-        "n": 70,
-        "n_pos": 35,
-        "n_neg": 35,
-        "n_subjects": 14,
+        "n": 105,
+        "n_pos": 51,
+        "n_neg": 54,
+        "n_subjects": 20,
         "dropped": {
-          "task=awake": 41,
-          "sed:acq=tms": 22
+          "task=awake": 59,
+          "sed:acq=tms": 38
         }
       },
       "reference": {
-        "n": 50,
-        "n_pos": 35,
-        "n_neg": 15,
-        "n_subjects": 15,
+        "n": 75,
+        "n_pos": 54,
+        "n_neg": 21,
+        "n_subjects": 21,
         "dropped": {
-          "awake:acq=EO": 15,
-          "task=sed2": 35,
-          "awake:acq=tms": 11,
-          "sed:acq=tms": 22
+          "awake:acq=EO": 21,
+          "task=sed2": 51,
+          "awake:acq=tms": 17,
+          "sed:acq=tms": 38
         }
       },
       "failed": []
     },
     "wpli_alpha": {
       "verdict": "INCOMPLETE",
-      "auc_sed2_lower": 0.37306122448979595,
+      "auc_sed2_lower": 0.4270152505446623,
       "ci": [
-        0.2497786189744715,
-        0.4910394485394485
+        0.31328751911392577,
+        0.5357460220438552
       ],
-      "null_mean": 0.48443183673469387,
+      "null_mean": 0.5052374727668845,
       "null_scheme": "within_subject",
       "n_perm": 1000,
-      "reference_auc_sed_vs_awake": 0.4895238095238095,
+      "reference_auc_sed_vs_awake": 0.5608465608465608,
       "primary": {
-        "n": 70,
-        "n_pos": 35,
-        "n_neg": 35,
-        "n_subjects": 14,
+        "n": 105,
+        "n_pos": 51,
+        "n_neg": 54,
+        "n_subjects": 20,
         "dropped": {
-          "task=awake": 41,
-          "sed:acq=tms": 22
+          "task=awake": 59,
+          "sed:acq=tms": 38
         }
       },
       "reference": {
-        "n": 50,
-        "n_pos": 35,
-        "n_neg": 15,
-        "n_subjects": 15,
+        "n": 75,
+        "n_pos": 54,
+        "n_neg": 21,
+        "n_subjects": 21,
         "dropped": {
-          "awake:acq=EO": 15,
-          "task=sed2": 35,
-          "awake:acq=tms": 11,
-          "sed:acq=tms": 22
+          "awake:acq=EO": 21,
+          "task=sed2": 51,
+          "awake:acq=tms": 17,
+          "sed:acq=tms": 38
         }
       },
       "failed": []

@@ -383,15 +383,24 @@ two numbers, and it is far smaller.
 across 15 subjects, and a centred within-subject permutation null for every candidate: **all seven candidates
 that separate `sed2` from `sed` at all say the pre-awakening minute is MORE sedated, not less.**
 
-| candidate | AUC scored as "sed2 lower" | reading |
-|---|---|---|
-| whole_head_exponent | 0.367 [0.264, 0.447] | sed2 exponent **higher** → deeper |
-| uce_v1 | 0.354 [0.256, 0.432] | deeper |
-| relative_delta_power | 0.380 [0.273, 0.465] | sed2 delta **higher** → deeper |
-| wpli_alpha | 0.373 [0.250, 0.491] | deeper |
-| spectral_entropy | 0.616 [0.527, 0.720] | sed2 entropy **lower** → deeper |
-| lempel_ziv | 0.609 [0.512, 0.712] | sed2 complexity **lower** → deeper |
-| spectral_edge_95 | 0.602 [0.513, 0.709] | sed2 edge **lower** → deeper |
+**FINAL, on the complete 202-recording table** (105 rows in the primary contrast, 20 subjects). The
+interim numbers below it came from a 133-row partial table and were slightly optimistic, which is the
+expected direction when adding data.
+
+| candidate | AUC scored as "sed2 lower" | reading | interim (partial) |
+|---|---|---|---|
+| whole_head_exponent | **0.385 [0.279, 0.476]** | sed2 exponent **higher** → deeper | 0.367 |
+| uce_v1 | **0.376 [0.271, 0.469]** | deeper | 0.354 |
+| relative_delta_power | **0.405 [0.327, 0.471]** | sed2 delta **higher** → deeper | 0.380 |
+| spectral_entropy | **0.585 [0.505, 0.673]** | sed2 entropy **lower** → deeper | 0.616 |
+| lempel_ziv | **0.592 [0.507, 0.684]** | sed2 complexity **lower** → deeper | 0.609 |
+| spectral_edge_95 | 0.565 [0.489, 0.655] | *interval now spans 0.5* | 0.602 |
+| relative_alpha_power | 0.562 [0.487, 0.642] | *interval now spans 0.5* | 0.583 |
+| wpli_alpha | 0.427 [0.313, 0.536] | *interval now spans 0.5* | 0.373 |
+
+**Five of eight retain intervals excluding 0.5 on the full data, and all five point the same way. Three
+became non-significant. NONE reversed to indicate lightening.** The unanimity is what carries the result:
+zero candidates out of eight support a pre-awakening lightening, at any effect size.
 
 Seven measures, four of them moving in numerically opposite directions, all agreeing on the physiology. That
 unanimity is what makes this a result rather than noise.
@@ -426,7 +435,8 @@ should have been gated on the reference being non-null in the first place.
 
 **Rule 17 fired on me.** I predicted that restricting the awake class to `acq-EC` — dropping eyes-open and TMS
 — would *reduce* the ds005620 awake-vs-sedated AUC, since eyes-open inflates apparent separation. It went
-from **0.646 to 0.934 [0.853, 0.988]**. The pooled acquisitions were *diluting* the effect through
+from 0.646 to **0.947 [0.885, 0.987]** on the complete table (0.934 on the partial). The pooled acquisitions
+were *diluting* the effect through
 heterogeneity, not inflating it. Error-catalogue rule 17 says that when a fix makes the effect stronger the
 diagnosis was wrong, and it was: I had the mechanism backwards. The 0.934 is the acquisition-matched number
 and supersedes the 0.646 I reported earlier — while remaining an upper bound, because awake was never
