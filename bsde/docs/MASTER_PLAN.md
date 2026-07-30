@@ -497,3 +497,82 @@ arousal need not be adjusted away blindly.
 undersells it: the measured plasma concentrations and behavioural scores make it the only reachable dataset
 that can separate drug from state. It moves to the top of the ingestion queue, and the `.set`/`.fdt` remote-zip
 adapter needed to read it is worth building for that reason alone.
+
+### 9.9 E05: the drug-vs-state question is undetermined at n=20 — but the aperiodic exponent does not track dose
+
+**The primary result is a registered negative.** Of eight candidates, seven have subject-level S intervals
+spanning 0, so the design does not determine whether they follow drug or state at n = 20. Only
+`relative_delta_power` is determined — **S = −0.280 [−0.515, −0.039], following the DRUG**, with its placebo
+gate passing (−0.078 ≥ −0.280) and its permutation null centred at +0.004. That is the honest outcome E05
+registered as its falsification condition: this design cannot separate drug from state at this n for almost
+everything tested, and Discovery Challenge A is not answered by public data.
+
+**P4 failed for both exponent candidates, so their primaries are WITHHELD, not reported.** For
+`whole_head_exponent` the placebo S (recovery vs *moderate*) came in marginally below the primary S (recovery
+vs *mild*), which is the condition under which the plasma ordering cannot be said to drive the statistic. The
+gate ran before the primary was interpreted (rules 34, 37) and the primary was suppressed. `uce_v1` failed the
+same way. This is the placebo gate doing precisely the job it was built for, on the project's own flagship.
+
+**THE INCIDENTAL FINDING IS MORE IMPORTANT THAN THE PRIMARY.** P2 asked whether each candidate rises
+monotonically with *measured plasma propofol* across baseline → mild → moderate, within subject:
+
+| candidate | subjects monotone in plasma |
+|---|---|
+| **lempel_ziv** | **90 %** |
+| **spectral_entropy** | **80 %** |
+| spectral_edge_95 | 65 % |
+| uce_v1 | 50 % |
+| relative_alpha_power | 45 % |
+| **whole_head_exponent** | **45 %** |
+| relative_delta_power | 40 % |
+| wpli_alpha | 30 % |
+
+**The aperiodic exponent is monotone in plasma concentration in 45 % of subjects — below chance — while
+Lempel-Ziv reaches 90 % and spectral entropy 80 %.** P2 was registered as *gating* P3's interpretability, and
+it failed, so P3 is not interpretable for the exponent by the experiment's own pre-committed logic.
+
+This is the first evidence in this project that **the complexity measures track a drug's dose better than the
+aperiodic exponent does**, and it runs against the premise the whole programme inherited from Brief 01. It is
+also not contradicted by ds005620's AUC 0.947 for awake-vs-sedated (§9.7): separating two well-separated states
+and ordering three dose levels within a subject are different questions, and a marker can do the first while
+failing the second.
+
+**Two alternative explanations that must be tested before the finding is believed.**
+
+1. **Preprocessing.** The Chennu deposit is filtered **0.5–45 Hz** and average-referenced. The project's
+   aperiodic fit runs 1–40 Hz, whose upper edge sits inside the filter's roll-off, and average referencing
+   changes the exponent. A slope estimated across a filter shoulder can be distorted in a dose-independent
+   way that destroys monotonicity without saying anything about physiology. **This is exactly what
+   `preprocessing_sensitivity` — the required report item that nothing currently computes (§2, layer 3) —
+   exists to settle, and it is now the highest-priority unbuilt check.**
+2. **Three points is a fragile monotonicity test.** With three levels there are only 6 orderings, so chance
+   agreement is not 50 % in the naive sense and the comparison against "chance" above is loose. The ranking
+   *between* candidates is the defensible part; the absolute percentages are not.
+
+Until (1) is settled, the correct statement is: **on this deposit, as preprocessed, the aperiodic exponent does
+not order propofol dose within subject, and two complexity measures do.** Whether that is a fact about the
+marker or about the filtering is unresolved.
+
+### 9.10 Correction: UCE v1 IS computable on Chennu — I fabricated the channel list
+
+I reported that Chennu's montage is EGI-numbered (E2…E92), that UCE v1's frontal/posterior grouping therefore
+matches zero channels, and that this made a **third** montage on which the frozen construct cannot be computed.
+**That was wrong.**
+
+Chennu's 91 channels are a **hybrid**: mostly EGI numbering, but with the 10-20 landmark positions labelled
+conventionally — `Fp1, Fp2, Fz, F3, F4, F7, F8, C3, C4, Cz, T3, T4, T5, T6, P3, P4, Pz, O1, O2, Oz`. UCE v1
+matches **7 frontal and 8 posterior** channels and computed successfully on all 80 recordings.
+
+**How the error happened, because the mechanism matters more than the fact.** I read the first five channel
+names from a real load (`E2 … E6`), generalised "all EGI" from that prefix, and then *verified* the claim by
+running `group_indices` against a channel list **I had generated myself** — `['E'+str(i) for i in range(2,93)]`
+— rather than against the names the data actually carries. The check confirmed my assumption because it was
+executed on my assumption. A synthetic stand-in for real metadata is not a verification of anything, and it is
+indistinguishable from a real check in the transcript.
+
+The engine caught it immediately and without being asked: the stream reported `uce_v1 non-empty: 80` where I
+had predicted 0, which is why the error survived for one commit rather than entering the record.
+
+**What stands after the correction.** Sleep-EDF's 2-channel montage remains the only case so far where UCE v1
+is genuinely not computable, so the montage-fragility claim is *weaker* than I stated — one montage, not three.
+Its redundancy with the whole-head exponent (§1 row 1) is unaffected, since that rests on E01/E02.

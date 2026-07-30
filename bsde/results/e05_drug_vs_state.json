@@ -1,0 +1,160 @@
+{
+  "experiment": "E05",
+  "n_subjects_complete": 20,
+  "search_space_size": 8,
+  "analytic_dof": 1,
+  "summary": {
+    "lempel_ziv": {
+      "S": 0.018611110221087454,
+      "ci": [
+        -0.17172829335471565,
+        0.20618694566248857
+      ],
+      "n_subjects": 20,
+      "follows": "undetermined",
+      "placebo_S": 0.1448153688241979,
+      "placebo_gate": true,
+      "null": {
+        "mean": 0.0004998213597734218,
+        "q025": -0.1771194089211009,
+        "q975": 0.17338522149399174,
+        "n": 2000
+      },
+      "monotone_fraction_levels_1_3": 0.9,
+      "verdict": "undetermined"
+    },
+    "relative_alpha_power": {
+      "S": -0.16137136447252343,
+      "ci": [
+        -0.3424642247940932,
+        0.06031159243732343
+      ],
+      "n_subjects": 20,
+      "follows": "undetermined",
+      "placebo_S": 0.12504339753114474,
+      "placebo_gate": true,
+      "null": {
+        "mean": -0.002808016009851418,
+        "q025": -0.22471700363567343,
+        "q975": 0.2282652458252469,
+        "n": 2000
+      },
+      "monotone_fraction_levels_1_3": 0.45,
+      "verdict": "undetermined"
+    },
+    "relative_delta_power": {
+      "S": -0.28040837701296206,
+      "ci": [
+        -0.515367361139994,
+        -0.03896141065716542
+      ],
+      "n_subjects": 20,
+      "follows": "DRUG",
+      "placebo_S": -0.07797358776629387,
+      "placebo_gate": true,
+      "null": {
+        "mean": 0.003762251072342664,
+        "q025": -0.2171892649666981,
+        "q975": 0.2395387768895533,
+        "n": 2000
+      },
+      "monotone_fraction_levels_1_3": 0.4,
+      "verdict": "DRUG"
+    },
+    "spectral_edge_95": {
+      "S": -0.004686033308673179,
+      "ci": [
+        -0.18588571541155635,
+        0.18054061641128524
+      ],
+      "n_subjects": 20,
+      "follows": "undetermined",
+      "placebo_S": 0.1504386139870174,
+      "placebo_gate": true,
+      "null": {
+        "mean": 0.0006120917873300934,
+        "q025": -0.20204519649305522,
+        "q975": 0.1910724094375916,
+        "n": 2000
+      },
+      "monotone_fraction_levels_1_3": 0.65,
+      "verdict": "undetermined"
+    },
+    "spectral_entropy": {
+      "S": -0.0776294698389883,
+      "ci": [
+        -0.28432478499194813,
+        0.13246986308275566
+      ],
+      "n_subjects": 20,
+      "follows": "undetermined",
+      "placebo_S": 0.19574098089576947,
+      "placebo_gate": true,
+      "null": {
+        "mean": -0.0057140061597004705,
+        "q025": -0.2558935853056827,
+        "q975": 0.22328828529711595,
+        "n": 2000
+      },
+      "monotone_fraction_levels_1_3": 0.8,
+      "verdict": "undetermined"
+    },
+    "uce_v1": {
+      "S": 0.1795467545869179,
+      "ci": [
+        -0.013915429720760356,
+        0.3824299929501548
+      ],
+      "n_subjects": 20,
+      "follows": "undetermined",
+      "placebo_S": 0.09021281701136055,
+      "placebo_gate": false,
+      "null": {
+        "mean": 0.0007862961018835609,
+        "q025": -0.20784209253748562,
+        "q975": 0.20933145514620718,
+        "n": 2000
+      },
+      "monotone_fraction_levels_1_3": 0.5,
+      "verdict": "INDETERMINATE"
+    },
+    "whole_head_exponent": {
+      "S": 0.060472100591532865,
+      "ci": [
+        -0.14784019661957237,
+        0.27282916237749505
+      ],
+      "n_subjects": 20,
+      "follows": "undetermined",
+      "placebo_S": 0.05986216115961516,
+      "placebo_gate": false,
+      "null": {
+        "mean": 0.0019283200090898184,
+        "q025": -0.1956216375642894,
+        "q975": 0.193120287421469,
+        "n": 2000
+      },
+      "monotone_fraction_levels_1_3": 0.45,
+      "verdict": "INDETERMINATE"
+    },
+    "wpli_alpha": {
+      "S": -0.13835819771466004,
+      "ci": [
+        -0.38961823600782414,
+        0.1073136816794287
+      ],
+      "n_subjects": 20,
+      "follows": "undetermined",
+      "placebo_S": 0.16083564259784508,
+      "placebo_gate": true,
+      "null": {
+        "mean": 0.0011374598155482066,
+        "q025": -0.22270571409252146,
+        "q975": 0.23133887304972034,
+        "n": 2000
+      },
+      "monotone_fraction_levels_1_3": 0.3,
+      "verdict": "undetermined"
+    }
+  }
+}
