@@ -8,10 +8,17 @@ Artifacts: `bench_signing.py/.json`, `bench_transport.py/.json`, `bench_feeds.py
 `out/orderpath_research.json`, `out/bench_verify.json`.
 
 **Bottom line: "HFT hedge-fund tier" is achievable — and turns out to be barely necessary.** The
-MM1 viability curve is nearly flat from R=1s to R=300s, so the economics demand seconds, not
-microseconds. The stack below delivers a **~1.4–2.7ms** compute+wire reaction floor (excluding
-unmeasured engine-side ack), roughly **400× inside** the 1-second cell that already clears the
-economic bar. Speed is not the moat; being *persistent, warm, and settlement-native* is.
+stack below delivers a **~1.4–2.7ms** compute+wire reaction floor (excluding unmeasured engine-side
+ack), roughly 400× inside the 1-second reaction speeds the economics pointed at. Speed is not the
+moat; being *persistent, warm, and settlement-native* is.
+
+**⚠ Economic overlay — final status (2026-07-30, `MAKER_VIABILITY.md`): the maker strategy this
+stack was scoped for FAILED its registered validation (MM2-FAIL → permanent kill).** The maker pool
+is real (+0.76 to +1.25c/ct, front-of-queue optimistic bound) but temporally unstable (0/20 cells
+pass in both sample halves; the two assets' good halves are opposite halves) and the achievable
+listing-window population has negative point-estimate EV. **This document therefore stands as
+verified engineering reference, not as a build plan.** No infrastructure spend is justified by any
+currently-validated strategy.
 
 ---
 
