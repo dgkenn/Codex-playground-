@@ -55,6 +55,38 @@ untouched, and the stream is resumable so the 2,776 windows already extracted ar
 
 **The gate did its job.** A version of this experiment that reported P2-P6 from 17 patients at the second
 threshold would have looked complete and been thin exactly where the design said both thresholds mattered.
+
+--------------------------------------------------------------------------------------------------------
+OUTCOME AFTER THE PLAN WAS WIDENED: P1 STILL FAILS, NOW ON BASE RATE, AND THE REASON IS STRUCTURAL.
+
+    (a) comparator-is-not-muscle  PASSED. Spearman EMG vs SR -0.181; P(SR>0) by EMG decile
+        56 38 39 37 36 31 29 39 20 20 % — falling with muscle, as at 300 s.
+    (b) SR > 0     PASSED FULLY.  84 patients, 1,351 eligible windows, base rate 17.0 %.
+    (c) SR >= 10   FAILED on BASE RATE at **4.0 %**, against a floor of 5 %. Coverage passed this time
+                   (36 patients against 25) — the widened plan fixed what the first run failed on.
+
+**THE FAILURE IS ARITHMETIC, NOT BIOLOGY, AND IT EXPOSES A TRADE-OFF THE RETEST COULD NOT ESCAPE.** Refining
+the grid from 300 s to 60 s multiplies the number of eligible pre-onset windows by about five, while a
+horizon of three windows shrinks from 900 s to 180 s. The positive class therefore shrinks relative to the
+eligible set by construction. **There is no horizon that preserves both the question and the base rate:**
+holding the window count fixed (as this file did, deliberately, and said so in its header) drops the base
+rate; holding the seconds fixed would have preserved the base rate while silently changing the question
+from "three windows ahead" to "fifteen windows ahead". Both were available and neither is free.
+
+**WHAT IS NOT DONE.** The SR > 0 arm passed every part of the gate and would have been reportable on its
+own. It is not reported. The registration required both thresholds, precisely so that a threshold could not
+be chosen after the fact, and honouring that when it costs something is the only thing that makes the rule
+worth having. **E27's verdict is ABSENT.**
+
+**A FREE REPRODUCIBILITY CHECK, WORTH RECORDING.** The plan grew from 81 to 94 cases between runs, and
+`case_shard` splits an index into the sorted case list — so cases moved between shards and 2,296 windows
+were computed twice by two independent processes. **All 2,296 agree exactly on `exponent_high`.** That was
+not designed as a test and it is a real one (rule 20): the same window, two processes, identical values.
+
+**WHAT A SUCCESSOR WOULD HAVE TO DECIDE, IN ADVANCE.** Either accept the coarse grid — where E26 already
+answered NO with every gate passing — or register a single threshold with a horizon fixed in seconds and
+state that choice before running. There is no third option that keeps the co-primary design at this
+resolution, and that is a property of the deposit's suppression rate, not of the analysis.
 """
 from __future__ import annotations
 
