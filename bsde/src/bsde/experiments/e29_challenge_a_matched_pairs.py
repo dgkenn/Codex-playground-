@@ -70,6 +70,55 @@ SCOPE AND LIMITS.
     concentrated in exactly these pairs. P5 controls the clock, not the stimulus, and no covariate in this
     deposit measures the stimulus directly. **This is the residual confound and it is not solved here.**
   * One site, one monitor, two frontal channels, 128 Hz; maintenance only.
+
+--------------------------------------------------------------------------------------------------------
+OUTCOME, ADDED AFTER THE RUN. **P1 FAILED on all three parts, and the design is abandoned rather than
+retuned.** Nothing about any candidate was computed.
+
+    (a) COVERAGE      volatile 79 patients / 494 pairs; propofol **15** patients, against a floor of 20.
+    (b) PAIRING HOLDS volatile ratio **104.3 %**, propofol **267.6 %**, against a ceiling of 70 %. Within
+                      pairs, remifentanil moves as much as it does between arbitrary same-patient windows.
+    (c) BOTH WAYS     the higher-dose window is the later one in 42 % of volatile pairs (inside the band)
+                      and **21 %** of propofol pairs (outside it).
+
+**A BUG IN THIS FILE'S OWN GATE, FOUND BY THE FIRST RUN AND FIXED BEFORE THE SECOND.** Check (c) originally
+asked what fraction of pairs had the higher dose second — but `_pairs` ORIENTS every pair that way, so the
+answer was 100.0 % by construction and **the check could not fail.** Same class of defect as E22's
+`meta_epoch`: a gate measuring something that is not what it is named. It now asks whether the higher-dose
+window is the later one, which is the question that was meant — does dose move in both directions along the
+clock, or is the contrast really dose-versus-time? Fixing it did not rescue anything: the propofol arm fails
+(c) too, and (a) and (b) were already failing.
+
+**WHY THE DESIGN CANNOT BE SAVED BY CHOOSING BETTER SETTINGS, MEASURED RATHER THAN ASSERTED.** The pairing
+was swept over its two free parameters, using the clinical columns only and no candidate value:
+
+    max|Δt|   min|ΔMAC|   patients   pairs   median |Δremi| in pairs / anywhere   ratio
+      300        0.10        22        90            0.36 / 0.59                  61.4 %
+      300        0.20        18        51            0.46 / 0.59                  76.8 %
+      300        0.30        15        37            0.45 / 0.59                  75.1 %
+      600        0.10        61       429            0.50 / 0.59                  85.0 %
+      600        0.20        51       225            0.68 / 0.59                 114.7 %
+      900        0.20        56       315            0.71 / 0.59                 120.3 %
+      900        0.30        51       220            0.81 / 0.59                 136.9 %
+
+**Exactly one cell clears the 70 % ceiling — 300 s and 0.10 MAC — and it does so by shrinking the dose
+contrast to half the registered threshold, on 22 patients and 90 pairs.** Running the primary in that cell,
+having seen this table, would be choosing the one setting that passes after looking at all nine. **It is not
+done.** The registered parameters were 600 s and 0.20 MAC, they failed, and the experiment closes there.
+
+**WHAT THIS ESTABLISHES, WHICH IS MORE USEFUL THAN A FOURTH NULL.** Remifentanil and the hypnotic are
+co-titrated in this deposit at every timescale a 300 s grid can express. **VitalDB cannot separate hypnotic
+depth from opioid co-administration**, so Challenge A is not answerable here by correlation (E25), by
+pairing (E29), or by any reweighting of the same windows. That is a property of routine surgical practice —
+the two drugs are adjusted together, because that is how anaesthesia is delivered — and no amount of
+analysis recovers a contrast the data does not contain.
+
+**THE BLOCKER IS NOW SHARP, WHERE IT USED TO BE VAGUE.** §9.22 recorded Challenge A as needing "at least two
+identified drugs". It has three. What it actually needs is **a deposit with a graded hypnotic dose axis and
+no co-titrated opioid** — which means a volunteer study rather than a surgical one. Chennu is exactly that
+shape and is unreachable from this sandbox (TLS, §9.17); ds004541 has the graded ladder but records no agent
+at all and its montage is unreadable (§9.30). **That is the specific acquisition target, and it is a
+different sentence from the one the plan has been carrying.**
 """
 from __future__ import annotations
 
@@ -250,8 +299,13 @@ def main(argv=None) -> int:
         anyp = np.array(anyp, float)
         ratio = (float(np.median(dr)) / float(np.median(anyp))
                  if dr.size and anyp.size and np.median(anyp) > 0 else float("nan"))
-        # both directions of dose change present, so the statistic is not one-sided drift
-        ups = float(np.mean([dose[key][j] > dose[key][i] for i, j in flat]))
+        # BOTH DIRECTIONS IN TIME, not in dose. The first version of this check asked what fraction of
+        # pairs had the higher dose second -- but `_pairs` ORIENTS every pair that way, so the answer was
+        # 100.0 % by construction and the check could not fail. Same class of defect as E22's `meta_epoch`:
+        # a gate measuring a quantity that is not what it is named. The question it was meant to ask is
+        # whether dose changes in both directions ALONG THE CLOCK: if the higher-dose window is always the
+        # earlier one, the contrast is dose-versus-time and not dose at all.
+        ups = float(np.mean([t[j] > t[i] for i, j in flat]))
         c_ok = len(pats) >= MIN_PATIENTS
         h_ok = np.isfinite(ratio) and ratio <= RFTN_RATIO_MAX
         d_ok = MIN_DIRECTION_FRACTION <= ups <= 1 - MIN_DIRECTION_FRACTION
@@ -260,12 +314,13 @@ def main(argv=None) -> int:
                       "median_dt": float(np.median(dts)), "median_ddose": float(np.median(dzs)),
                       "median_dremi_in_pairs": float(np.median(dr)) if dr.size else float("nan"),
                       "median_dremi_any": float(np.median(anyp)) if anyp.size else float("nan"),
-                      "ratio": ratio, "frac_dose_up": ups}
+                      "ratio": ratio, "frac_higher_dose_later": ups}
         print(f"   {arm:12s} {len(pats):6d} {len(flat):7d} {np.median(dts):9.0f} "
               f"{np.median(dzs):12.2f} {np.median(dr) if dr.size else float('nan'):21.2f} "
               f"{np.median(anyp) if anyp.size else float('nan'):12.2f} {ratio:7.1%}")
-        print(f"   {'':12s} dose rises in {ups:.0%} of pairs "
-              f"(needs {MIN_DIRECTION_FRACTION:.0%}-{1 - MIN_DIRECTION_FRACTION:.0%})")
+        print(f"   {'':12s} the higher-dose window is the LATER one in {ups:.0%} of pairs "
+              f"(needs {MIN_DIRECTION_FRACTION:.0%}-{1 - MIN_DIRECTION_FRACTION:.0%}, so dose moves both "
+              "ways along the clock)")
     p1 = bool(all(cov_ok) and all(hold_ok) and all(dir_ok))
     print(f"\n   coverage {all(cov_ok)}   pairing-holds-remifentanil {all(hold_ok)}   "
           f"both-directions {all(dir_ok)}   ->   P1 {'PASSED' if p1 else '*** FAILED'}")
