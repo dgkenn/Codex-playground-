@@ -699,3 +699,5 @@
 {"ticker": "KXHIGHLAX-26JUL30-T76", "side": "no", "ask_c": 100, "reason": "ask>98", "cushion_f": 2.8, "extreme_f": 78.8, "station": "KLAX", "kind": "max", "date": "2026-07-30", "ts": 1785438999501}
 {"ticker": "KXHIGHLAX-26JUL30-B76.5", "side": "no", "ask_c": 100, "reason": "ask>98", "cushion_f": 1.8, "extreme_f": 78.8, "station": "KLAX", "kind": "max", "date": "2026-07-30", "ts": 1785438999501}
 {"ticker": "KXHIGHTOKC-26JUL30-T99", "side": "no", "ask_c": 100, "reason": "ask>98", "cushion_f": 1.4, "extreme_f": 100.4, "station": "KOKC", "kind": "max", "date": "2026-07-30", "ts": 1785439337232}
+{"ticker": "KXHIGHDEN-26JUL30-T89", "side": "no", "ask_c": 100, "reason": "ask>98", "cushion_f": 2.04, "extreme_f": 91.04, "station": "KDEN", "kind": "max", "date": "2026-07-30", "ts": 1785441372717}
+{"ticker": "KXHIGHDEN-26JUL30-B89.5", "side": "no", "ask_c": 100, "reason": "ask>98", "cushion_f": 1.04, "extreme_f": 91.04, "station": "KDEN", "kind": "max", "date": "2026-07-30", "ts": 1785441372718}
