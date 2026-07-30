@@ -782,3 +782,46 @@ the prediction that anaesthesia increases spatial redundancy.
 **Next, in order:** close the caveat-3 gap by sweeping `exponent_high`'s own fit band; then test it on
 ds005620 and Sleep-EDF, where it has never been computed. A 20–40 Hz result that holds across three deposits
 with different filtering would be the first finding in this project worth calling a lead.
+
+### 9.14 E09: the exponent is stably WRONG, not unstable — and the fit-edge gradient independently confirms §9.13
+
+**My P1 was wrong, and the falsification branch fired.** I predicted the exponent's signed AUC would be
+sign-unstable across preprocessing variants. It is not: **0 of 72 variants above 0.5, 72 of 72 below.** Every
+defensible combination of fit range (1–3 to 20–45 Hz), estimator (OLS or robust) and Welch window (2/4/8 s)
+puts the exponent *opposite* to its declared direction. It is not noisy — it is consistently wrong.
+
+**But the gradient is the finding.** Median signed AUC by upper fit edge:
+
+| fit_hi | median signed AUC |
+|---|---|
+| 20 Hz | 0.070 |
+| 30 Hz | 0.129 |
+| 40 Hz | 0.247 |
+| 45 Hz | 0.344 |
+
+**Monotone: the more high-frequency content the fit includes, the closer it moves to 0.5 and beyond.** E08
+completes the line — a fit that *starts* at 20 Hz and excludes the low band entirely reaches **0.863**. E09 was
+designed and committed before E08's result existed, so this is an independent reproduction of the same
+mechanism: the low band and high band carry opposite dose responses, and any fit spanning both is a weighted
+average whose sign is set by whichever dominates.
+
+**§9.9's explanation is dead in its stated form and alive in another.** The filter-roll-off account is
+refuted — extending the fit *into* the roll-off (45 Hz) makes the result *better*, not worse, which is the
+opposite of contamination. What survives is the band-composition account of §9.13.
+
+**P4, the control, passed and therefore licenses the above.** `relative_delta_power` — a band integral rather
+than a slope fit — has an IQR of **0.018** across the same 72 variants against the exponent's **0.196**, an
+eleven-fold difference. The instability is specific to the slope estimator, not a property of the cohort or the
+outcome. Had the control been equally unstable, none of this would have been interpretable.
+
+**`analytic_dof` has been misreported in every SEARCH_LOG entry.** The measured lower bound is **72 for the
+aperiodic exponent alone**, against the `1` declared throughout. A lower bound because reference scheme cannot
+be varied here — the deposit arrives average-referenced and the original reference is unrecoverable, and
+reference choice is known to change the exponent.
+
+**The correction is to the denominators, not to the results.** No experiment is invalidated: the numbers were
+computed as described and the code is unchanged. What was wrong is the claim about how many analyses *could*
+have been reported. Every previously logged `effective_search_space` is too small — E02 through E08 recorded
+8–17 when the exponent alone contributes 72 analytic variants. Re-running is not the remedy; restating is.
+Going forward, `analytic_dof` must be the number of analysis variants that were *available and defensible*, not
+the number executed, and a value of 1 is only honest when the analysis genuinely admits no choices.
