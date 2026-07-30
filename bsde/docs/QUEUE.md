@@ -119,3 +119,60 @@ roughly a minute per subject. E28 needs 60 subjects with both. **No action beyon
 * **Bath prolonged-DoC** — access requested, not granted. Nothing to do but wait.
 * **A finer-grid Challenge C retest on VitalDB** — E27 established that resolution cannot preserve both the
   question and the base rate at this suppression rate (rule 44). DOSE-I supersedes it.
+
+
+---
+
+## Q1 RESULT — DOSE-I acquired and probed. It clears blockers on BOTH A and C.
+
+*Loop iteration 1, 2026-07-30. Metadata and static tables read via the Zenodo API and `zipfile`; **no signal
+data downloaded**, and the 724 MB `data.zip` remains untouched. This is step 2.5 doing its job: the design
+is assessed before the archive is fetched.*
+
+**Feasibility probe, on 171 recordings, reading no EEG at all:**
+
+| check | result |
+|---|---|
+| SOC transitions | **1,129 total**, median 6 per recording, **all 171** have ≥ 2 |
+| MOAA/S assessments | **7,328 total**, median 39 per recording |
+| distinct MOAA/S levels per recording | **median 5**; **171 of 171** span ≥ 3 |
+| EEG ch1 completeness | median **99.5 %**; all 171 above 80 % |
+| propofol dose (`PROP_sum`) | 40–540 mg, **zero-fraction 0.0 %** |
+| **usable for a transition design** | **171 of 171** |
+
+**Compare the exposure to VitalDB's, which is the deposit four Challenge A designs ran on:** MAC there was
+**53 % exactly zero** with a low-tercile median of 0.00, and that defect went unnoticed through four
+correlational designs (rule 43). DOSE-I's dose column has **no off-state at all**.
+
+**THE FINDING THAT MATTERS MOST: THIS DEPOSIT HAS NO CO-TITRATED OPIOID.** `drugs_opioids`,
+`drugs_benzodiazepines` and the rest sit in the **static/baseline** table alongside comorbidities — they are
+chronic home medications, not procedural drugs. **The only procedural drug event recorded is `PROP_sum`.**
+156 of 171 subjects are not on chronic opioids either, and **not one** is on benzodiazepines.
+
+E29 closed with a named acquisition target: *"a deposit with a graded hypnotic dose axis and no co-titrated
+opioid — a volunteer study, not a surgical one."* DOSE-I is a procedural-sedation deposit that satisfies it,
+at **n = 171 against Chennu's 20**, and it is open CC-BY-4.0 with no credentialing wait.
+
+**AND MOAA/S IS NOT A DOSE PROXY — IT IS RESPONSIVENESS, MEASURED.** The Modified Observer's Assessment of
+Alertness/Sedation is a graded *behavioural* scale scored by a clinician at the bedside. Challenge A asks
+for a representation *"predicting loss and recovery of responsiveness"*. Every previous attempt in this
+project substituted something for responsiveness — a charted time (E21), a depth index that turned out to be
+muscle (E22), administered dose (E25, E29, E30). **DOSE-I supplies the actual construct, repeatedly, within
+subject, in 171 people.**
+
+**What must still be checked before registering** — and it is not optional:
+
+1. **Is the propofol time course available, or only the cumulative total?** `PROP_sum` is per-recording.
+   A within-subject dose-response needs administration events over time; the readme's "Drug-related Events"
+   section implies they exist in `data.zip` but this has not been verified.
+2. **Is MOAA/S timestamped against the EEG clock?** A graded label is useless if it cannot be aligned to a
+   window. 7,328 assessments across 171 recordings implies timestamps, but implication is not verification.
+3. **What artefact channel exists?** The EMG confound that killed E22 was only detectable because VitalDB
+   ships `BIS/EMG`. DOSE-I lists `Intellivue/EEG_1` and `EEG_2` and a `pEEG` feature set — **if there is no
+   muscle channel, the E22 check cannot be run here and that limitation must be declared, not assumed away.**
+4. **No branded depth index.** Any "ahead of the monitor" claim is about a proxy we compute, as Q1 already
+   states. That is a real weakening and belongs in the registration.
+
+**Queue consequence:** Q1 is not finished — it is now three sub-items (verify the drug time course, verify
+MOAA/S alignment, identify an artefact channel), and only then a registration. **No experiment is registered
+on DOSE-I yet**, and the next loop iteration does those three checks rather than writing predictions.
