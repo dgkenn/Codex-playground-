@@ -664,3 +664,62 @@ a cortical-complexity result.
 referencing is a spatial operation that mixes all 91 channels into every one of them. A "single channel" here
 is one channel *of an average-referenced montage*, so these are an **upper bound** on true single-electrode
 performance. Answering the deployment question properly needs a raw or single-referenced deposit.
+
+### 9.12 E07: the Lempel-Ziv result is not muscle and not alpha — but it is in the WRONG DIRECTION, which I failed to check for three experiments
+
+**P1 gate FAILED, so E07 issues no confirmatory verdict.** The composite `emg_index` is monotone in plasma in
+only 35 % of subjects, below the 50 % the gate required, so by E07's own pre-committed logic it cannot
+adjudicate. Everything below is therefore **exploratory**. P4 (shuffled-EMG conditioning) passed — largest loss
+0.038 — so the partialling procedure is sound and the numbers are at least meaningful.
+
+**My P2 prediction was wrong, and the reason is cleaner than the statistic.** I predicted Lempel-Ziv's dose
+association would not survive conditioning on EMG. It survives essentially untouched: raw within-subject
+partial ρ = **+0.693** against plasma order, becoming +0.737 conditioned on `emg_index`, +0.710 on
+`emg_beta_gamma_fraction`, +0.679 on `emg_kurtosis`. It also survives conditioning on relative alpha power
+(+0.664, 96 % retained), which was my second candidate explanation.
+
+The direction argument is what settles it, and it is stronger than any partial correlation:
+
+| level | lempel_ziv | emg_kurtosis | emg_beta_gamma |
+|---|---|---|---|
+| baseline | 0.740 | 0.401 | 0.0795 |
+| mild | 0.770 | 0.228 | 0.1159 |
+| moderate | 0.819 | 0.221 | 0.1173 |
+| recovery | 0.737 | 0.348 | 0.0983 |
+
+**Kurtosis — the muscle-specific proxy — FALLS with dose and returns at recovery, exactly as muscle relaxation
+predicts. Lempel-Ziv RISES. The two move in opposite directions, so muscle relaxation cannot produce the LZ
+effect.** And `emg_beta_gamma_fraction` *rises* with dose (0.0795 → 0.1173); if it were measuring muscle it
+would fall, so in this dataset that proxy is tracking propofol's known beta activity rather than muscle —
+resolving, by direction, the ambiguity `features/emg.py` flagged as unresolvable by magnitude.
+
+**THE ERROR THAT MATTERS: I reported Lempel-Ziv as the best-performing candidate across three experiments
+without once checking its sign against its own registered prediction.**
+
+`seed.py` declares `lempel_ziv` as `unconscious_vs_awake: lower` — complexity should FALL under anaesthesia,
+which is the entire basis of the complexity-and-consciousness literature (Casali PCI, Sarasso). **It rises.**
+E05 reported "90 % monotone in plasma", E06 reported "0.900 on all channels, 0.800 at the median single
+electrode", and E11's ranking put it top — all of which measured the *strength* of an association whose *sign*
+was never compared with the declaration. Under the project's own rules a candidate firing opposite to its
+declared direction is **refuted, not confirmed**.
+
+The engine said so the moment the contrast was put through `layer_statistical` properly:
+`FAIL directional_discrimination — AUC 0.223 [0.110, 0.335] in the declared direction (lower)`. It took running
+the candidate through the machinery rather than a bespoke monotonicity score to surface it.
+
+**This is E04's P2 defect repeating.** There I recorded that scoring every candidate as "lower" conflated two
+hypotheses because "lower" means *deeper* for complexity measures and *lighter* for the exponent. I wrote that
+"a direction must be declared per measure, not per experiment" and then, in E05 and E06, used an unsigned
+monotonicity fraction that discards direction entirely. The lesson was recorded and not applied.
+
+**What now stands.** There is a robust, within-subject, dose-ordered association between binarised broadband
+complexity and measured plasma propofol, surviving muscle and alpha controls, at ρ ≈ +0.69 across 20 subjects.
+**It is not evidence for `lempel_ziv` as a consciousness marker; it refutes its registered direction.** What
+physiological account produces rising binarised complexity with deepening propofol sedation is open, and any
+such account has to explain why it contradicts the perturbational-complexity literature. Until there is one,
+this is an anomaly, not a marker.
+
+**Standing rule added.** No candidate may be described as performing well on any unsigned statistic —
+monotonicity fraction, |ρ|, direction-free AUC — without its signed comparison against its declared direction
+reported alongside. The unsigned versions exist for nuisance probes, where sign is meaningless, and they must
+not leak into candidate evaluation.
