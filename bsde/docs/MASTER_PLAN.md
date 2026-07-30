@@ -1384,3 +1384,54 @@ here.** VitalDB (sevoflurane) is not an EEG deposit of this kind and remains the
 
 `participants.tsv` carries no age, sex, weight or height — every field is `n/a` — so no demographic
 covariate is available and none will be claimed.
+
+### 9.26 VitalDB unblocks Challenges A and C — the survey's real result
+
+PhysioNet (427 projects) and BDSP (10) were enumerated and scanned the same way as OpenNeuro, with the
+parse verified against a known positive before any conclusion was drawn.
+
+| repository | outcome |
+|---|---|
+| PhysioNet, 427 projects | `vitaldb` **(open, and the answer)**; `eeg-gaba-anesthesia` (MGH, credentialed **plus per-study contributor review**); `eeg-power-anesthesia` (derived spectra only); `propofol-anesthesia-dynamics`; `inspire`; `i-care` (already known) |
+| BDSP, 10 projects | no anaesthesia at all. Mostly epilepsy, critical care and sleep. **LENS** — "Lifespan and Sleep-Stage-Resolved Normative EEG Background" — is a genuine normative reference for the age question in E16/E17, and is credentialed |
+| `meagmohit/EEG-Datasets` | nothing relevant |
+
+**VitalDB: 6,388 surgical cases, CC-BY 4.0, no credentials.** Verified against the API, not the paper:
+
+| track | cases | why it matters |
+|---|---|---|
+| `BIS/EEG1_WAV`, `BIS/EEG2_WAV` | **5,871** | **raw EEG**, 128 Hz, microvolts — verified by download (Δt = 0.0078125 s, sd ≈ 34 µV) |
+| `BIS/BIS` | 5,867 | **the conventional monitor Challenge C must beat** |
+| `BIS/SR` | 5,569 | suppression ratio — burst suppression, scored by the device |
+| `BIS/EMG` | 5,577 | **a real muscle channel**, not a spectral proxy |
+| `Orchestra/PPF20_CE` | **3,511** | propofol, effect-site concentration |
+| `Primus/INSP_SEVO` | **3,687** | **sevoflurane** |
+| `Primus/INSP_DES` | **2,046** | **desflurane** |
+
+**Challenge A was blocked because there was no second identified drug. There are now three**, in thousands of
+cases, on one monitor at one site — and the drug-identity probe the challenge requires is not a proxy but the
+agent's own concentration track. **Challenge C was blocked because no deposit carried both EEG and a monitor
+to be ahead of.** VitalDB carries both, plus `anestart`/`aneend`, and real covariates (age, sex, BMI, ASA,
+emergency status) where ds004541's `participants.tsv` is entirely `n/a`.
+
+**A muscle probe better than anything this project has had.** `intraop_rocu` and `intraop_vecu` record
+neuromuscular-blocker dose. A paralysed patient cannot generate EMG, so a candidate whose value tracks NMB
+dose at fixed anaesthetic depth is reading muscle — tested against an administered drug rather than against
+the spectral proxies §9.15 found two of disagreeing in sign.
+
+**THREE LIMITS, EACH MEASURED RATHER THAN ASSUMED.**
+
+1. **Induction is not in the recording.** `anestart` is negative in **91.8 %** of cases: the BIS sensor goes
+   on after the patient is already asleep. **The transition VitalDB contains is EMERGENCE, not induction** —
+   `aneend` sits at a median 9,770 s into the record. The adapter anchors on `aneend` for that reason, and
+   **ds004541 remains the only deposit that can speak to loss of consciousness.**
+2. **128 Hz means Nyquist 64**, so `exponent_gamma` (50–90 Hz) is NaN here by design — the same graceful
+   degradation it shows on Sleep-EDF. `exponent_high` (20–40 Hz) is unaffected.
+3. **Two frontal channels only** (a BIS sensor strip), so `uce_v1`, which needs frontal *and* posterior 10-20
+   names, is unavailable.
+
+**Two adapter bugs caught by checking rather than by trusting the format.** The `cases` endpoint begins with
+a **BOM**, which silently renames the first column to `﻿caseid` and makes every `caseid` lookup a
+KeyError. And **`subjectid` is not `caseid`**: 237 of 6,388 cases share a patient with another case and one
+patient has eight, so clustering on the case would have treated repeat surgeries as independent and narrowed
+every interval. The adapter clusters on the patient.
