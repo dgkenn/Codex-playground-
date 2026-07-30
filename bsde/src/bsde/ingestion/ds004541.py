@@ -113,6 +113,17 @@ class DS004541Adapter(Adapter):
             plan: List[tuple] = []
             if ev.get("baseline") is not None:
                 plan.append(("baseline", ev["baseline"], 0.0, "baseline"))
+            # AWAKE REFERENCE, ANCHORED ON `start` RATHER THAN ON `loc`, and the distinction is not cosmetic.
+            # `start` is drug onset and ALL SEVEN subjects have it; only three have `baseline`. More
+            # importantly the interval from `start` to `loc` ranges from 133 s to 511 s across subjects, so
+            # a window at a fixed offset BEFORE `loc` sits in a different pharmacological phase for each
+            # patient -- for sub-03, loc-300 s falls before the infusion had even begun. Offsets relative to
+            # `loc` therefore cannot define a common awake reference, and E19's gate failed on exactly that.
+            if t_start is not None:
+                for off in (-180.0, -120.0, -60.0):
+                    t0 = t_start + off
+                    if t0 >= 0:
+                        plan.append((f"start{off:+.0f}", t0, off, "awake_pre_drug"))
             if loc is not None:
                 for off in self.offsets:
                     t0 = loc + off - (self.window_s if off < 0 else 0.0)
