@@ -134,6 +134,40 @@ SCOPE AND LIMITS, none of which a larger n repairs.
     BMI, ASA and emergency status are carried in the table and are **not** adjusted for here. P3 and P4 are
     comparisons of a marker's behaviour, not causal claims about drugs.
   * Cases are taken in ascending case id, never selected by result.
+
+--------------------------------------------------------------------------------------------------------
+OUTCOME, ADDED AFTER THE RUN. **P1(b) FAILED: among the 108 patients supplying both arms, the responsive
+windows occurred later in the case in 40, i.e. 37.0 %, against a registered floor of 70 %.** P1(a) passed
+(propofol 22 and sevoflurane 31 both-arm patients; desflurane 5). P2-P6 were never computed. **E22 is CLOSED
+at its gate and its predictions are not revised.**
+
+The gate was right, and the reason is better than the one it tested. `scripts/diagnose_bis_high_windows.py`
+measured what a BIS >= 80 window inside this deposit actually is:
+
+  * Of 168 such windows with the sensor attached, **164 sit INSIDE the anaesthetic record**, between
+    `anestart` and `aneend`. Four sit after `aneend`. None sits before `anestart`. They are not awake windows
+    at either end of the case.
+  * Split by the monitor's own EMG channel, inside the anaesthetic, P(BIS >= 80) is **0.0 % in EMG deciles 1
+    through 8, 0.5 % in decile 9, and 27.6 % in decile 10.** Every high-BIS window is in the top EMG decile.
+  * Median EMG is 49 in the responsive arm against 27 in the unresponsive one; median SQI is 70 against 93.
+  * Filtering the responsive arm to EMG <= 35 leaves **5 rows across 4 patients**; adding SQI >= 90 leaves
+    **2 rows in 1 patient**.
+
+**The responsive arm was, in substance, defined by facial muscle activity.** This is the documented BIS
+failure mode — frontalis EMG at 70-110 Hz inflates the index — demonstrated here on the device's own muscle
+channel rather than argued from a spectral proxy, which is the evidence §9.15 wished it had.
+
+**A claim in `ingestion/vitaldb.py`'s header is refuted by this and has been corrected there.** It asserted
+"the transition available here is EMERGENCE, not induction", reasoning from `aneend` sitting comfortably
+inside every EEG track. The reasoning omitted the monitor: the EEG runs past `aneend` and the BIS strip does
+not. With four post-`aneend` high-BIS windows in 250 cases, **emergence is not labelled in this deposit
+either.** VitalDB captures maintenance, and only maintenance.
+
+**What this does and does not license.** It does not license relabelling the arms until one passes; the
+depth axis for a further attempt has to come from OUTSIDE the EEG and outside a monitor computed from it,
+and the obvious such axis — administered agent concentration — is a different design and belongs to a new
+registration. It also does not say `exponent_high` failed: it was never computed here. Absent, not negative
+(rule 31).
 """
 from __future__ import annotations
 

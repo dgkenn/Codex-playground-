@@ -1,27 +1,30 @@
 {
   "experiment": "E22",
-  "table": "vg_partial.csv",
-  "n_rows": 2723,
-  "n_patients": 106,
+  "table": "vitaldb_grid.csv",
+  "n_rows": 6439,
+  "n_patients": 250,
   "arms": {
     "unresponsive_max_bis": 60.0,
     "responsive_min_bis": 80.0
   },
   "exclusions": {
-    "sensor_off": 256,
-    "indeterminate": 165,
-    "bis_missing": 187
+    "sensor_off": 594,
+    "indeterminate": 468,
+    "bis_missing": 0
   },
   "p1": {
-    "both_arms_patients": 35,
+    "both_arms_patients": 108,
     "per_group": {
-      "propofol": 8,
-      "sevoflurane": 12,
-      "desflurane": 0
+      "propofol": 22,
+      "sevoflurane": 31,
+      "desflurane": 5
     },
-    "groups_with_coverage": [],
-    "direction_fraction": 0.4857142857142857,
-    "n_direction": 35,
+    "groups_with_coverage": [
+      "propofol",
+      "sevoflurane"
+    ],
+    "direction_fraction": 0.37037037037037035,
+    "n_direction": 108,
     "passed": false
   }
 }

@@ -82,6 +82,24 @@ SCOPE AND LIMITS, none of which a larger n repairs.
     forecaster. It is nonetheless the thing on the screen, which is what the challenge names.
   * One site, one monitor, two frontal channels, 128 Hz — `exponent_gamma` is above Nyquist and `uce_v1`
     needs a posterior region this montage does not have.
+
+--------------------------------------------------------------------------------------------------------
+BLOCKED BEFORE RUNNING, AND NOT RUN. E22's machinery gate failed, and the diagnosis
+(`scripts/diagnose_bis_high_windows.py`) reaches this file too: **every BIS >= 80 window inside this deposit
+is a facial-EMG artefact.** P(BIS >= 80) is 0.0 % in EMG deciles 1-8 and 27.6 % in decile 10; filtering to
+EMG <= 35 leaves 5 rows across 4 patients.
+
+This experiment's emergence landmark is the FIRST BIS >= 80 window, so the landmark is the first large
+EMG burst rather than emergence. P1 would very likely have PASSED on count -- 108 patients have such a
+window -- which is the dangerous case: a gate that passes on a quantity that is not what it is named.
+Only four windows in 250 cases sit after `aneend`, so the transition Challenge C needs is not labelled
+in this deposit at all.
+
+Running it anyway would produce numbers, and they would be about muscle. **The verdict here is ABSENT, not
+negative** (rule 31): nothing about any candidate is claimed from this file. The predictions are left
+exactly as registered. A depth axis that does not come from the EEG or from a monitor computed from it —
+administered agent concentration is the obvious one — is a different design and belongs to a new
+registration, not to an edit of this one.
 """
 from __future__ import annotations
 

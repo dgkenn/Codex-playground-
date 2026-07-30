@@ -53,10 +53,23 @@ so this deposit captures the middle of an anaesthetic well and both of its edges
 WHICH TRANSITION THIS DEPOSIT ACTUALLY CONTAINS, measured rather than assumed. `anestart` is NEGATIVE in
 **91.8 %** of cases -- the BIS sensor is applied after the patient is already induced, so **induction and
 loss of consciousness are simply not in the recording** and no amount of windowing will recover them.
-`aneend` sits at a median of 9,770 s (2.7 h) into the record, comfortably inside every track. **The
-transition available here is EMERGENCE, not induction**, which is why `anchor` defaults to `aneend`. That
-suits Challenge C, whose wording is about predicting delayed emergence ahead of a conventional monitor, and
-it means ds004541 -- with its explicit `loc` marker -- remains the only deposit that can speak to induction.
+`aneend` sits at a median of 9,770 s (2.7 h) into the record, comfortably inside every track.
+
+    **CORRECTION, 2026-07-30. This paragraph used to end "the transition available here is EMERGENCE, not
+    induction", and that was WRONG.** The reasoning ran from `aneend` sitting inside every EEG track, and it
+    omitted the monitor: the EEG runs past `aneend` and the BIS strip does not. Measured over 250 cases on
+    the whole-case grid, **four** windows in the entire deposit sit after `aneend` at BIS >= 80. Worse, of
+    the 168 windows at BIS >= 80 with the sensor attached, 164 are INSIDE the anaesthetic record and every
+    one of them falls in the top EMG decile -- P(BIS >= 80) is 0.0 % in EMG deciles 1-8 and 27.6 % in decile
+    10, and filtering to EMG <= 35 leaves 5 rows across 4 patients. Those are not light patients; they are
+    the documented BIS artefact in which frontalis EMG at 70-110 Hz inflates the index, shown here on the
+    device's own muscle channel. See `scripts/diagnose_bis_high_windows.py`, which reproduces all of it.
+
+**So neither edge of the anaesthetic is labelled here: induction is before the sensor goes on and emergence
+is after it comes off. This deposit captures MAINTENANCE, and only maintenance.** ds004541 -- with its
+explicit `loc` marker -- remains the only deposit that can speak to induction. A depth axis for VitalDB has
+to come from something that is neither the EEG nor computed from it, and the agent-concentration tracks
+(`Orchestra/PPF20_CE`, `Primus/INSP_SEVO`, `Primus/INSP_DES`) are the candidate.
 
 COST. One EEG track is ~9.4 MB and spans about three hours. Tracks are fetched whole and cached one at a
 time, because the API serves a track as a single CSV; there is no range request for a segment.
