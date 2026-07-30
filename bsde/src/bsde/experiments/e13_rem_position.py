@@ -183,9 +183,25 @@ def main() -> int:
             rhos.append(spearman(v, [DEPTH_RANK[st] for st in DEPTH_LADDER]))
     rhos = [r for r in rhos if np.isfinite(r)]
     med_rho = float(np.median(rhos)) if rhos else float("nan")
-    p1 = np.isfinite(med_rho) and med_rho >= GATE_MIN_RHO
+    # TOLERANCE, AND WHY IT IS NOT A MOVED GOALPOST. The registered rule is "median rho >= 0.80" and the
+    # measured median IS 0.80 -- it arrives as 0.7999999999999998, short by one unit in the last place. A
+    # bare `>=` failed the gate on floating-point representation alone.
+    #
+    # The real defect is mine and it is worth more than the epsilon. A FOUR-point ladder makes Spearman
+    # QUANTISED: the only attainable values are 0, +-0.2, +-0.4, +-0.6, +-0.8, +-1.0. Setting the threshold
+    # at exactly 0.80 put it on an atom that 34.8 % of subjects sit on, so which side the median falls is
+    # decided by representation rather than by data. The distribution is printed below so that marginality
+    # is visible instead of being hidden behind a pass/fail, which is the durable fix; the tolerance only
+    # makes the code agree with the rule that was registered.
+    p1 = np.isfinite(med_rho) and med_rho >= GATE_MIN_RHO - 1e-9
     print(f"   median per-subject Spearman(delta power, depth rank) = {med_rho:+.3f} over {len(rhos)} "
           f"subjects   {'GATE PASSED' if p1 else '*** GATE FAILED'}")
+    from collections import Counter as _C
+    dist = sorted(_C(np.round(rhos, 4)).items())
+    print(f"   mean rho {float(np.mean(rhos)):+.3f}; {float(np.mean(np.array(rhos) > 0)):.1%} of subjects "
+          f"order the ladder in the right direction")
+    print("   per-subject rho is quantised on a 4-point ladder: "
+          + "  ".join(f"{v:+.1f}x{n}" for v, n in dist))
     if not p1:
         print("   N3 is defined by slow-wave activity. A delta measure that cannot recover the depth ladder")
         print("   means the staging, the windowing or the pipeline is broken. Nothing else is reported.")
@@ -279,12 +295,36 @@ def main() -> int:
     near_n3 = {n: v for n, v in vals.items() if v < 0.5}
     p3 = len(near_n3) > 0
 
+    # RULE 37, APPLIED AFTER THE REGISTERED PREDICTIONS AND NOT INSTEAD OF THEM. P3 as registered tests the
+    # POINT ESTIMATE against 0.5, and a point estimate whose interval spans the boundary is neither
+    # direction. The registered result stands as registered; this is the stronger reading beside it, and
+    # where they disagree the weaker claim is the one that survives.
+    near_n3_ci = {n: idx[n][use_anchor]["ci"] for n in near_n3
+                  if idx[n][use_anchor]["ci"][1] < 0.5}
+
+    # ANCHOR RANK AGREEMENT. P4 asked whether the anchors agree in VALUE and they do not. Whether they agree
+    # in ORDER is a different and weaker question, and it is the one the spread claim actually rests on --
+    # so it is measured rather than assumed either way.
+    both = [n for n, d in idx.items() if d.get("W") and d.get("N1")]
+    rank_rho = (spearman([idx[n]["W"]["median"] for n in both],
+                         [idx[n]["N1"]["median"] for n in both]) if len(both) > 4 else float("nan"))
+    low_w = sorted(both, key=lambda n: idx[n]["W"]["median"])[:3]
+    low_n1 = sorted(both, key=lambda n: idx[n]["N1"]["median"])[:3]
+    print("\n   ANCHOR ROBUSTNESS (P4 asked about values; this asks about ORDER):")
+    print(f"      Spearman(W-order, N1-order) = {rank_rho:+.3f} over {len(both)} candidates")
+    print(f"      nearest N3, W-anchored : {low_w}")
+    print(f"      nearest N3, N1-anchored: {low_n1}")
+    agree_low = [n for n in low_w[:1] if n in low_n1[:1]]
+    print(f"      same candidate is closest to N3 under BOTH anchors: {agree_low or 'no'}")
+
     print("\n" + "=" * 100); print("REGISTERED PREDICTIONS"); print("=" * 100)
     print(f"   P1 GATE: delta recovers the depth ladder                : MET (rho {med_rho:+.3f})")
     print(f"   P2 index SPREADS across candidates by more than {SPREAD_MIN}    : "
           f"{'MET' if p2 else 'NOT MET'} (spread {spread:.3f} over {len(vals)} candidates)")
     print(f"   P3 at least one candidate places REM nearer N3 (< 0.5)  : "
           f"{'MET' if p3 else 'NOT MET'} ({sorted(near_n3) or 'none'})")
+    print(f"      ... and with the CI ENTIRELY below 0.5 (rule 37)     : "
+          f"{sorted(near_n3_ci) or 'NONE — every one spans the boundary'}")
     print(f"   P4 the two anchors agree                                : {'MET' if p4 else 'NOT MET'}")
 
     print("\n" + "=" * 100); print("VERDICT"); print("=" * 100)
@@ -301,6 +341,24 @@ def main() -> int:
         print("   this registry tracks behavioural unresponsiveness as distinct from EEG desynchronisation,")
         print("   which is the separation Brief 01 requires. The spread is real and is in the wrong")
         print("   dimension to help.")
+    elif not near_n3_ci:
+        verdict = "WEAK_DIFFERENTIATION_SPANS_THE_BOUNDARY"
+        print(f"   Candidates spread by {spread:.3f}, just past the registered {SPREAD_MIN}, and the only")
+        print(f"   candidate placing REM nearer N3 is {sorted(near_n3)} — whose interval SPANS 0.5")
+        print(f"   ({idx[sorted(near_n3)[0]][use_anchor]['ci']}). By rule 37 a cell that spans the null is")
+        print("   neither direction, so this does NOT establish that any candidate tracks behavioural")
+        print("   state rather than EEG activation. What it does establish is weaker and still worth")
+        print("   having: the candidate set is NOT one measurement wearing fourteen names, because the")
+        print("   spread exceeds what a single construct would produce.")
+        print("")
+        print(f"   The same candidate is closest to N3 under BOTH anchors, and its W-anchored interval does")
+        print("   exclude 0.5 — but P4 failed, and the registration says the W anchor is the contaminated")
+        print("   one. Reading the result off the anchor that was pre-declared unreliable, because it gives")
+        print("   the cleaner answer, is exactly the move the pre-registration exists to prevent.")
+        print(f"   Anchor rank agreement is only {rank_rho:+.3f}, so even the ORDERING is not solid.")
+        print("")
+        print("   WHAT WOULD SETTLE IT: more subjects, or an anchor that is neither daytime wake nor a")
+        print("   180-second transitional stage. Both are extraction work, not analysis work.")
     else:
         verdict = "DIFFERENTIATION_FOUND"
         print(f"   Candidates spread by {spread:.3f}, and {len(near_n3)} of {len(vals)} place REM nearer N3")
@@ -319,6 +377,8 @@ def main() -> int:
                "n_complete_ladders": len(complete), "median_depth_rho": med_rho,
                "state_profile": profile, "rem_index": idx, "anchor_diffs": diffs,
                "anchor_used": use_anchor, "spread": spread, "near_n3": sorted(near_n3),
+               "near_n3_ci_excludes_half": sorted(near_n3_ci), "anchor_rank_spearman": rank_rho,
+               "nearest_n3_by_anchor": {"W": low_w, "N1": low_n1},
                "predictions": {"P1": True, "P2": bool(p2), "P3": bool(p3), "P4": bool(p4)},
                "verdict": verdict}, open(dst, "w"), indent=2, default=str)
     print(f"\n   machine-readable result -> {dst}")

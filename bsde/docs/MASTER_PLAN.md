@@ -1082,3 +1082,57 @@ actually asked: not "do these two populations differ" but "did this patient move
 state scatter), compared against the between-state difference. It cannot be computed from any table this
 project currently holds, because all of them carry one window per subject per state — which is precisely why
 E14's multi-window extraction exists.
+
+### 9.20 E13: the candidate set is not one measurement — but the directional claim spans the boundary
+
+**The first contrast this project has reached that pulls two constructs apart.** REM is at least as
+behaviourally unresponsive as N3 (motor atonia, high arousal threshold) while its EEG is wake-like — which is
+part of its scoring definition. So "where does a candidate place REM?" asks whether it tracks BEHAVIOURAL
+STATE or EEG ACTIVATION. 141 recordings with a complete W/N1/N2/N3/REM ladder, 120 s windows.
+
+**REM position index** = (v[REM] − v[N3]) / (v[anchor] − v[N3]); 1.0 puts REM at the light pole, 0.0 at N3.
+
+| candidate | W-anchored | N1-anchored |
+|---|---|---|
+| `relative_alpha_power` | 1.345 [1.100, 1.724] | 0.789 [0.696, 0.846] |
+| `wpli_alpha` | 0.839 [0.766, 0.929] | 0.990 [0.920, 1.015] |
+| `lempel_ziv` | 0.638 [0.609, 0.700] | 0.824 [0.756, 0.906] |
+| `whole_head_exponent` | 0.522 [0.505, 0.540] | 0.864 [0.824, 0.929] |
+| `emg_beta_gamma_fraction` | 0.274 [0.225, 0.295] | 0.605 [0.516, 0.722] |
+| **`exponent_high`** | **−0.189 [−0.305, −0.104]** | **0.453 [0.331, 0.639]** |
+
+**What is established.** P2 met: the spread across candidates is **0.537**, past the registered 0.50. The
+registry is **not one measurement wearing fourteen names** — and because the circularity of sleep staging
+acts on every candidate equally, it cannot manufacture disagreement between them. That was the registered
+falsification and it did not fire.
+
+**What is NOT established, and the distinction is the whole result.** P3 met *as registered* — one candidate,
+`exponent_high`, places REM nearer N3 — but the registered rule tests the **point estimate**, and its interval
+is **[0.331, 0.639]**, which spans 0.5. **Error-catalogue rule 37: a cell that spans the null is neither
+direction and must not satisfy a directional criterion.** So this does not show that any candidate tracks
+behavioural state rather than EEG activation. The registered prediction is reported as met; the stronger
+reading beside it is reported as not met; where they disagree the weaker claim survives.
+
+**The temptation this result creates, named so it can be refused.** `exponent_high`'s *W-anchored* interval
+[−0.305, −0.104] excludes 0.5 decisively — it places REM **beyond** N3. But **P4 failed** (anchors agree for
+only 7 of 14 candidates), and the registration declared *in advance* that the W anchor is the contaminated
+one: Sleep-EDF's wake is overwhelmingly daytime wake, one hypnogram carrying a single contiguous 30,630 s
+wake block, drawn with eyes open and moving. **Reading the result off the anchor pre-declared unreliable,
+because it gives the cleaner answer, is exactly the move the pre-registration exists to prevent.**
+
+**Anchor robustness, measured rather than assumed.** P4 asked whether the anchors agree in *value*; they do
+not. Whether they agree in *order* is the weaker question the spread claim actually rests on, so it was
+measured: **Spearman +0.578** — moderate. `exponent_high` is the candidate closest to N3 under **both**
+anchors, which is the one anchor-robust fact here, but the ordering as a whole is not solid.
+
+**A machinery-gate defect worth more than the epsilon that exposed it.** P1's median Spearman came out as
+0.7999999999999998 against a registered threshold of ≥ 0.80 — one unit in the last place short, so the gate
+failed on floating-point representation while the registered rule was met. The tolerance fixes the code to
+agree with the rule. The real error is that **a four-point ladder makes Spearman quantised** — attainable
+values are 0, ±0.2, ±0.4, ±0.6, ±0.8, ±1.0 — and putting the threshold on the atom that 34.8 % of subjects
+sit on means the verdict is decided by representation rather than by data. The durable fix is that the
+distribution is now printed (24.1 % at +1.0, 34.8 % at +0.8, 33.3 % at +0.4, mean +0.650, **95.7 % of
+subjects ordering the ladder correctly**), so marginality is visible instead of hidden behind a pass/fail.
+
+**What would settle it:** more subjects, or an anchor that is neither daytime wake nor a 180-second
+transitional stage. Both are extraction work, not analysis work.
