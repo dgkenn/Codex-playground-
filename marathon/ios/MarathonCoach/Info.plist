@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDisplayName</key>
+	<string>Marathon Coach</string>
+	<key>CFBundleIdentifier</key>
+	<string>coach.marathon.app</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<!-- Keeps the armband connected while the screen is locked for a three-hour long run.
+		     Note: iOS will not reliably scan for NEW peripherals in the background, so the band must
+		     be connected before the run starts. -->
+		<string>bluetooth-central</string>
+		<!-- Distance and pace must keep accumulating with the phone in a belt. -->
+		<string>location</string>
+		<!-- Spoken cues while another app owns the screen. -->
+		<string>audio</string>
+	</array>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>Connects to your Polar Verity Sense to read heart rate and movement during runs.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Measures your pace, distance and the gradient you are running on.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Keeps measuring pace and distance when your phone is locked during a long run.</string>
+	<key>NSMotionUsageDescription</key>
+	<string>Used as a backup step-rate source when the armband is unavailable.</string>
+	<key>NSHealthShareUsageDescription</key>
+	<string>Reads your sleep and resting heart rate to judge how recovered you are. Heart-rate variability from Apple Health is SDNN, which is kept separate from the RMSSD your Polar sensor provides because the two are different measurements.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>Saves your runs to Apple Health so they appear in Fitness alongside everything else.</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<!-- A narrow exception for the local SleepController only. NSAllowsArbitraryLoads is
+		     deliberately NOT used: it would disable transport security for every request the app
+		     makes, to fix one LAN host. -->
+		<key>NSExceptionDomains</key>
+		<dict>
+			<key>local</key>
+			<dict>
+				<key>NSIncludesSubdomains</key>
+				<true/>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+			</dict>
+		</dict>
+	</dict>
+	<key>UILaunchScreen</key>
+	<dict/>
+</dict>
+</plist>

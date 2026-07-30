@@ -260,11 +260,16 @@ def test_controller_does_not_oscillate():
             cue_count += 1
             if d.speed_correction_m_s:
                 speed = max(1.5, speed + d.speed_correction_m_s)
-        # First-order HR response toward the HR implied by the current speed.
-        hr_target = target_mid + (speed - 2.4) * 12.0 / 3.6 * 3.6      # 12 bpm per km/h
+        # First-order HR response toward the HR implied by the current speed. The slope is 12 bpm per
+        # KM/H, so the m/s delta has to be converted -- an earlier version multiplied the m/s delta
+        # directly, which made the simulated runner start almost in-zone and left this test passing
+        # without ever exercising the controller.
+        hr_target = target_mid + (speed - 2.4) * 3.6 * 12.0
         hr += (hr_target - hr) / TAU_HR
-    assert cue_count <= 6, f"controller oscillated: {cue_count} cues in 20 minutes"
+    assert cue_count >= 1, "the controller must actually intervene on a runner starting 25 bpm hot"
+    assert cue_count <= 8, f"controller oscillated: {cue_count} cues in 20 minutes"
     assert abs(hr - target_mid) < 15, f"controller failed to converge: HR ended at {hr:.0f}"
+    assert 2.0 < speed < 2.9, f"speed should settle near the in-zone value, got {speed:.2f} m/s"
 
 
 def test_drift_on_long_run_explains_once_and_widens_the_band():

@@ -161,22 +161,68 @@ Advisory software. Not a medical device, and it cannot detect a cardiac event.
 
 ## Status
 
-**The Python engine is complete and tested** — 359 tests, all passing, runnable now.
+**The Python engine is complete and tested** — 464 tests, all passing.
 
-**The iOS app is written but not compiled.** There is no Swift toolchain in this environment, so
-`PolarPMD.swift`, `VeritySensor.swift`, `Physiology.swift`, `InRunController.swift` and `RunView.swift`
-have not been built or run. Expect to fix compile errors on first open in Xcode. The protocol codec is
-a faithful port of hardware-tested Python and carries its regression tests, but "faithful port" is a
-claim verified by review, not by execution.
+**The iOS app is complete but has never been compiled.** There is no Swift toolchain in the
+environment it was written in, so every `.swift` file here is unverified by execution. Expect to fix
+compile errors on first build. What has been done instead:
 
-Still to build: HealthKit workout writing, CoreLocation pace fusion with `speedAccuracy` gating,
-persistence, the SleepController bridge client, and the non-run screens.
+- The portable logic is isolated in a SwiftPM library target with no UIKit/SwiftUI/CoreBluetooth/
+  HealthKit/CoreLocation imports, so `swift test` exercises it without a simulator.
+- `PortParityTests.swift` asserts the Swift port agrees with the Python engine against a shared
+  golden-vector file, including a full closed-loop controller trace. Python is authoritative.
+- Every file was read for the compile errors that are findable by reading. Four were found and fixed
+  that way: SwiftPM forbidding resources outside a target directory, Swift declining to convert
+  `[(Double, Double)]` to `[(speed: Double, hr: Double)]`, a top-level `Optional` handed to
+  `JSONEncoder`, and `MarathonCoachApp.swift` sitting in the portable target while importing SwiftUI.
+
+To build:
+
+```bash
+cd marathon/engine
+python -m marathon_engine.export ../ios/MarathonCoach/Resources   # required first
+cd ../ios/MarathonCoach
+swift test                     # the portable logic + parity against the engine
+xcodegen generate && open MarathonCoach.xcodeproj   # the app
+```
+
+### What exists
+
+| Layer | Files | State |
+|---|---|---|
+| Science core | `engine/marathon_engine/*.py` (13 modules) | tested, 464 tests |
+| Plan export | `export.py` → `plan.json`, `golden_vectors.json`, `protocols.json` | tested |
+| PMD protocol | `PolarPMD.swift` | ported from hardware-tested Python, XCTests written |
+| BLE driver | `VeritySensor.swift` | written, needs hardware |
+| GPS pace | `LocationPace.swift` | written; Kalman filter keyed on `speedAccuracy` |
+| Audio | `AudioCoach.swift` | written; ducks Apple Music rather than stopping it |
+| Controller | `InRunController.swift`, `SignalQuality.swift`, `Physiology.swift` | ported, parity-tested |
+| Orchestrator | `RunSession.swift` | written; fixed 1 Hz loop over three async streams |
+| Persistence | `Store.swift`, `PlanStore.swift` | written, XCTests |
+| Integrations | `HealthKitBridge.swift`, `SleepControllerClient.swift` | written |
+| UI | `TodayView`, `RunView`, `ScreeningView`, `SettingsView`, `PlanBrowserView` | written |
+
+### Known gaps
+
+- **Never compiled.** See above.
+- **The 2000 m time trial is not in the plan yet.** The research synthesis makes a good case for it as
+  the VDOT-seeding test around week 9 (11–12 min sits inside both Riegel's valid window and Daniels'
+  well-behaved range) instead of relying on the 5K. Adopting it restructures the `BASE_1` gates, so it
+  is deliberately not bolted on.
+- **The between-rep recovery gate is at 75% of HR reserve.** The synthesis argued for 60%. Left as-is
+  because the change is *stricter* and would abort interval sets that were going fine; if it turns out
+  never to fire, hysteresis is the better fix than lowering the threshold.
+- **Weekly re-planning is not wired into the UI.** `adapt.replan_week` exists and is tested; nothing
+  calls it on a schedule yet.
+- **Treadmill stride calibration is manual.** `LocationPace.calibratedStrideM` has to be set from a
+  measured outdoor run; nothing derives it automatically yet.
 
 ## Running the engine
 
 ```bash
 cd marathon/engine
 python3 -m pip install -e '.[dev]'
-python3 -m pytest -q                              # 359 tests
-python3 -m marathon_engine.report > ../docs/PLAN.md
+python3 -m pytest -q                                          # 464 tests
+python3 -m marathon_engine.report > ../docs/PLAN.md            # regenerate the plan document
+python3 -m marathon_engine.export ../ios/MarathonCoach/Resources   # regenerate app resources
 ```

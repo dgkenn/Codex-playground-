@@ -1,0 +1,188 @@
+{
+ "export_version": 1,
+ "ramp": {
+  "warmup": "5 min easy walk at 4.5 km/h, then start stage 1 without stopping.",
+  "stages": [
+   {
+    "stage": 1,
+    "speed_kmh": 5.0,
+    "pace_per_km": "12:00",
+    "duration_min": 4.0,
+    "mode": "walk"
+   },
+   {
+    "stage": 2,
+    "speed_kmh": 6.0,
+    "pace_per_km": "10:00",
+    "duration_min": 4.0,
+    "mode": "walk"
+   },
+   {
+    "stage": 3,
+    "speed_kmh": 7.0,
+    "pace_per_km": "8:34",
+    "duration_min": 4.0,
+    "mode": "jog"
+   },
+   {
+    "stage": 4,
+    "speed_kmh": 8.0,
+    "pace_per_km": "7:30",
+    "duration_min": 4.0,
+    "mode": "jog"
+   },
+   {
+    "stage": 5,
+    "speed_kmh": 9.0,
+    "pace_per_km": "6:40",
+    "duration_min": 4.0,
+    "mode": "jog"
+   }
+  ],
+  "at_each_stage_end": [
+   "Record the mean HR over the FINAL 60 seconds (HR needs 2-3 min to plateau).",
+   "Rate effort on the Borg 6-20 scale.",
+   "Talk test: say a full sentence out loud and rate it comfortable / effortful / impossible."
+  ],
+  "stop_when_any": [
+   "HR reaches 167 bpm (85% of heart-rate reserve)",
+   "RPE reaches 15/20",
+   "Speech becomes impossible",
+   "Any chest pain, light-headedness, or a sense that something is wrong -- stop immediately"
+  ],
+  "cooldown": "5 min walk, then stand still for 60 s and record HR (recovery marker).",
+  "estimated_hr_max_used": 187.0,
+  "stop_hr": 167.2,
+  "why_submaximal": "A maximal test in week 1 risks injury on untrained tissue and measures discomfort tolerance as much as fitness. Three good submaximal stages give us the HR-speed relationship, which is all the planner needs to start."
+ },
+ "calibration": {
+  "total_min": 54.0,
+  "device_setup": [
+   "Charge the armband fully. Wear it on the UPPER arm, snug -- one notch tighter than feels necessary. Forearm placement is materially worse on this device.",
+   "Warm your skin up first: five minutes indoors. Cold skin is a common cause of poor optical signal at the start of a run.",
+   "Start an offline recording with ACC, GYRO and PPG enabled. Do NOT enable PPI: it throttles heart rate to one update every five seconds and aborts any ongoing training, which makes the moving part of the session useless for this purpose.",
+   "Record the resting PPI block SEPARATELY, before you start moving (see below)."
+  ],
+  "resting_block": {
+   "when": "First, before any movement.",
+   "what": "5 minutes lying supine, then 2 minutes standing still.",
+   "streams": "PPI only (this is the one time PPI is the right stream).",
+   "why": "Yields resting heart rate, supine RMSSD, and the orthostatic rise -- the anchors the nightly HRV baseline is compared against. It has to be a separate recording because PPI and useful moving data are mutually exclusive on this device."
+  },
+  "warmup": "5 minutes easy walking at 4.5 km/h.",
+  "stages": [
+   {
+    "label": "stage_1",
+    "speed_kmh": 5.0,
+    "pace_per_km": "12:00",
+    "duration_min": 4,
+    "mode": "walk"
+   },
+   {
+    "label": "stage_2",
+    "speed_kmh": 6.0,
+    "pace_per_km": "10:00",
+    "duration_min": 4,
+    "mode": "walk"
+   },
+   {
+    "label": "stage_3",
+    "speed_kmh": 7.0,
+    "pace_per_km": "8:34",
+    "duration_min": 4,
+    "mode": "jog"
+   },
+   {
+    "label": "stage_4",
+    "speed_kmh": 8.0,
+    "pace_per_km": "7:30",
+    "duration_min": 4,
+    "mode": "jog"
+   },
+   {
+    "label": "stage_5",
+    "speed_kmh": 9.0,
+    "pace_per_km": "6:40",
+    "duration_min": 4,
+    "mode": "jog"
+   },
+   {
+    "label": "stage_6",
+    "speed_kmh": 10.0,
+    "pace_per_km": "6:00",
+    "duration_min": 4,
+    "mode": "jog"
+   }
+  ],
+  "at_each_stage": [
+   "Keep the speed constant for the full 4 minutes -- the last minute is the only part that gets used, because heart rate needs 2-3 minutes to plateau.",
+   "At the end of each stage, say a full sentence aloud and note whether it was comfortable, effortful, or impossible. Write it down; the recording cannot capture it, and it is the single most informative number in the whole session.",
+   "Note your Borg 6-20 effort rating too."
+  ],
+  "stop_when_any": [
+   "Heart rate reaches 167 bpm (85% of heart-rate reserve)",
+   "Effort reaches 15/20",
+   "Speech becomes impossible",
+   "Anything feels wrong -- stop immediately"
+  ],
+  "steady_block": {
+   "when": "After a 5-minute walk recovery from the last stage.",
+   "what": "20 minutes at the fastest speed where you were still COMFORTABLE talking. Label this block 'steady'.",
+   "why": "This is the most valuable single block in the session. It yields aerobic decoupling (does heart rate drift at constant pace?), the efficiency-factor baseline that every future re-test is compared against, and a real-world check on whether the pace the stages suggested is actually sustainable."
+  },
+  "cooldown": "5 minutes walking, then stand still for 60 seconds and note your heart rate.",
+  "afterwards": [
+   "Stop the recording and put the device in sensor mode (the heart symbol, blue side LED). File transfer is blocked while it is in recording or swimming mode -- it will return a SYSTEM_BUSY error, which is the device protecting you from syncing a session that is still running.",
+   "Fetch the recording, export it as JSON, and hand it over with your talk-test and effort notes."
+  ],
+  "notes": [
+   "Also record the temperature and whether it was a treadmill or road. Heat moves submaximal heart rate by several beats on its own, and a re-test in different conditions is not comparable.",
+   "If you can only do part of this, the stages matter most and the steady block second. Three good stages are enough to derive zones."
+  ]
+ },
+ "red_flags": {
+  "chest_pain": "Chest pain, pressure, or tightness on exertion. Stop and get assessed today.",
+  "dyspnoea": "Breathlessness out of proportion to the effort. Stop.",
+  "dizziness": "Light-headedness, feeling faint, or greying vision. Stop and sit down.",
+  "palpitations": "A racing or irregular heartbeat that does not settle when you stop.",
+  "focal_bone_pain": "A specific POINT of bone pain that worsens with each step -- the classic presentation of a stress fracture. Stop running; do not run again until it has been assessed.",
+  "calf_swelling": "A swollen, painful calf, especially if it hurts at rest. Needs assessment.",
+  "confusion": "Confusion, disorientation, or a headache with nausea late in a long run or race -- consider both heat illness and hyponatraemia. Stop; do not drink large volumes of plain water."
+ },
+ "supplements": [
+  {
+   "item": "ferritin",
+   "why": "Low iron stores are common, silent, and directly cap aerobic adaptation -- you feel flat and the plan looks like it has stalled. Worth checking before concluding that training is not working, and particularly worth checking in a shift worker whose eating is irregular.",
+   "when": "If a phase stalls, or if easy pace at a given heart rate stops improving."
+  },
+  {
+   "item": "vitamin D",
+   "why": "Relevant to bone stress injury risk, and low status is common in anyone who works indoors on shifts. This is the one micronutrient with a plausible direct link to the specific injury this plan is most worried about.",
+   "when": "Once, early, especially entering winter."
+  },
+  {
+   "item": "energy availability",
+   "why": "Under-fuelling relative to training load looks exactly like 'not adapting', and it is the most common invisible cause of a stalled block. It also directly impairs bone health. A resident skipping meals on a long shift and then adding a marathon block is a realistic setup for it.",
+   "when": "Any time a gate stalls, or if weight is drifting down unintentionally."
+  }
+ ],
+ "hydration_long": {
+  "primary_rule": "Drink to thirst. Thirst is a good regulator and beating it is the actual risk here.",
+  "do_not": [
+   "Do not drink to a schedule or to a fixed millilitres-per-hour target.",
+   "Do not drink at every aid station out of habit if you are not thirsty.",
+   "Do not take NSAIDs before or during a long run or race."
+  ],
+  "warning_signs": [
+   "Weight GAIN over a long run or race -- the clearest sign of over-drinking.",
+   "Headache with nausea, puffiness in hands or face, or confusion late in a long effort.",
+   "Feeling worse the more you drink."
+  ],
+  "notes": [
+   "Past about two and a half hours, use a sodium-containing sports drink rather than plain water for most of your intake. Slow first-time marathoners who drink large volumes of plain water are the classic hyponatraemia presentation, and this is the single most useful change.",
+   "If you can, weigh yourself before and after two long runs to learn your own sweat rate. Losing 1-2% of body mass is normal and fine; *gaining* weight means you drank too much.",
+   "Carry fluid rather than relying on fountains, and practise drinking while running -- it is a skill.",
+   "Caffeine, if you use it: 3-6 mg/kg is the well-evidenced range, so roughly 240-480 mg 30-60 min before the start. Rehearse it on a long run first; it is also a diuretic-adjacent GI risk for some people."
+  ]
+ }
+}

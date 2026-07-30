@@ -131,15 +131,19 @@ public struct SessionIntent {
     public let targetZones: [Int]
     public let targetPaceSecKm: Double?
     public let paceTolerance: Double
+    /// Planned duration in seconds, when the session declares one. Used to split a run into halves for
+    /// the decoupling calculation, and to know how far through an effort a heart-rate peak occurred.
+    public let plannedDurationS: Double?
     /// Easy and long runs are *ceiling*-controlled: too slow is fine, too fast is not.
     public let ceilingOnly: Bool
 
     public init(kind: String, targetZones: [Int], targetPaceSecKm: Double? = nil,
-                paceTolerance: Double = 0.06) {
+                paceTolerance: Double = 0.06, plannedDurationS: Double? = nil) {
         self.kind = kind
         self.targetZones = targetZones
         self.targetPaceSecKm = targetPaceSecKm
         self.paceTolerance = paceTolerance
+        self.plannedDurationS = plannedDurationS
         self.ceilingOnly = ["easy", "long", "run_walk", "recovery"].contains(kind)
     }
 }

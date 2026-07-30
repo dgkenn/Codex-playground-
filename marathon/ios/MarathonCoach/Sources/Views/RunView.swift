@@ -27,113 +27,28 @@
 
 import SwiftUI
 
-// MARK: - View model
-
-@MainActor
-public final class RunSessionViewModel: ObservableObject {
-    @Published public private(set) var elapsed: TimeInterval = 0
-    @Published public private(set) var distanceM: Double = 0
-    @Published public private(set) var hr: Double?
-    @Published public private(set) var hrStatus: String = "dropout"
-    @Published public private(set) var paceSecKm: Double?
-    @Published public private(set) var cadence: Double?
-    @Published public private(set) var zoneState: ZoneState = .unknown
-    @Published public private(set) var lastCue: Cue?
-    @Published public private(set) var targetBand: (low: Double, high: Double)?
-    @Published public private(set) var aborted = false
-    @Published public var showPainSheet = false
-
-    public enum ZoneState {
-        case inZone, tooHard, tooEasy, unknown
-
-        var label: String {
-            switch self {
-            case .inZone: return "On target"
-            case .tooHard: return "Too hard"
-            case .tooEasy: return "Room to lift"
-            case .unknown: return "No heart rate"
-            }
-        }
-        /// Redundant with colour, deliberately — see the header note on colour vision.
-        var symbol: String {
-            switch self {
-            case .inZone: return "checkmark.circle.fill"
-            case .tooHard: return "arrow.down.circle.fill"
-            case .tooEasy: return "arrow.up.circle.fill"
-            case .unknown: return "questionmark.circle.fill"
-            }
-        }
-        var tint: Color {
-            switch self {
-            case .inZone: return Color(red: 0.13, green: 0.45, blue: 0.28)
-            case .tooHard: return Color(red: 0.62, green: 0.20, blue: 0.16)
-            case .tooEasy: return Color(red: 0.18, green: 0.33, blue: 0.55)
-            case .unknown: return Color(white: 0.28)
-            }
-        }
-    }
-
-    private let controller: InRunController
-    private let intent: SessionIntent
-
-    public init(controller: InRunController, intent: SessionIntent) {
-        self.controller = controller
-        self.intent = intent
-    }
-
-    /// Feed one tick. Called at 1 Hz from the sensor/location pipeline.
-    public func ingest(_ tick: RunTick) {
-        elapsed = tick.tS
-        distanceM = tick.distanceM
-        hr = tick.hrBpm
-        hrStatus = tick.hrStatus
-        cadence = tick.cadenceSpm
-        if let sp = tick.speedMPerS, sp > 0.3 {
-            paceSecKm = Physiology.speedToPace(mPerS: sp)
-        } else {
-            paceSecKm = nil
-        }
-
-        let d = controller.update(tick)
-        targetBand = d.targetBand
-        aborted = d.abort
-        if let cue = d.cue { lastCue = cue }
-
-        switch (d.inTarget, d.mode) {
-        case (_, .effortOnly): zoneState = .unknown
-        case (nil, _): zoneState = .unknown
-        case (true?, _): zoneState = .inZone
-        case (false?, _):
-            // Which side of the band are we on? Ceiling-controlled sessions can only be "too hard".
-            if let ss = d.hrSteadyState, let b = d.targetBand {
-                zoneState = ss > b.high ? .tooHard : (intent.ceilingOnly ? .inZone : .tooEasy)
-            } else {
-                zoneState = .tooHard
-            }
-        }
-    }
-
-    public func logPain(site: String, level: Int, focal: Bool) {
-        // Persisted by the store; a level above the stop threshold reaches the controller on the
-        // next tick via RunTick.pain0to10, which is what triggers the safety abort.
-        showPainSheet = false
-    }
-}
+// MARK: - Note on where the state comes from
+//
+// This view observes `RunSession` directly. An earlier version had its own `RunSessionViewModel` with
+// its own `InRunController`, which meant two controllers existed: the one in `RunSession` that actually
+// received sensor ticks, and the view's, which never did. The screen showed a permanently-unknown zone
+// state while the real controller ran invisibly behind it. One controller, one source of display state.
 
 // MARK: - The screen
 
 public struct RunView: View {
-    @ObservedObject var vm: RunSessionViewModel
+    @ObservedObject var session: RunSession
     @ObservedObject var sensor: VeritySensor
     let sessionTitle: String
+    @State private var showPainSheet = false
 
-    public init(vm: RunSessionViewModel, sensor: VeritySensor, sessionTitle: String) {
-        self.vm = vm; self.sensor = sensor; self.sessionTitle = sessionTitle
+    public init(session: RunSession, sensor: VeritySensor, sessionTitle: String) {
+        self.session = session; self.sensor = sensor; self.sessionTitle = sessionTitle
     }
 
     public var body: some View {
         ZStack {
-            vm.zoneState.tint.ignoresSafeArea()
+            tint(for: session.zoneState).ignoresSafeArea()
             VStack(spacing: 0) {
                 sensorBar
                 Spacer(minLength: 8)
@@ -150,7 +65,22 @@ public struct RunView: View {
         // likely in a belt where a wake gesture is awkward.
         .onAppear { UIApplication.shared.isIdleTimerDisabled = true }
         .onDisappear { UIApplication.shared.isIdleTimerDisabled = false }
-        .sheet(isPresented: $vm.showPainSheet) { PainSheet(vm: vm) }
+        .sheet(isPresented: $showPainSheet) { PainSheet(session: session, isPresented: $showPainSheet) }
+    }
+
+    /// Colour lives here rather than on `RunSession.ZoneState`, because `Color` is a SwiftUI type and
+    /// the session must stay free of UI imports so it can be exercised without a view.
+    ///
+    /// These are deliberately desaturated rather than pure red/green: on a phone in direct sunlight,
+    /// saturated colour washes out to near-indistinguishable, and the state is also carried by the icon
+    /// and the words for the same reason.
+    private func tint(for state: RunSession.ZoneState) -> Color {
+        switch state {
+        case .inZone: return Color(red: 0.13, green: 0.45, blue: 0.28)
+        case .tooHard: return Color(red: 0.62, green: 0.20, blue: 0.16)
+        case .tooEasy: return Color(red: 0.18, green: 0.33, blue: 0.55)
+        case .unknown: return Color(white: 0.28)
+        }
     }
 
     // MARK: Sensor state — always visible, never hidden in a menu
@@ -174,7 +104,7 @@ public struct RunView: View {
     }
 
     private var sensorLabel: String {
-        switch vm.hrStatus {
+        switch session.hrStatus {
         case "cadence_lock":
             return "Heart rate locked to step rate — guiding by pace"
         case "dropout":
@@ -190,47 +120,47 @@ public struct RunView: View {
 
     private var dominantMetric: some View {
         VStack(spacing: 2) {
-            if let hr = vm.hr, vm.hrStatus == "ok" {
+            if let hr = session.hr, session.hrStatus == "ok" {
                 Text("\(Int(hr))")
                     .font(.system(size: 132, weight: .bold, design: .rounded))
                     .monospacedDigit()
                     .minimumScaleFactor(0.5)
                     .lineLimit(1)
                 Text("bpm").font(.system(size: 20, weight: .medium, design: .rounded)).opacity(0.85)
-                if let b = vm.targetBand {
+                if let b = session.targetBand {
                     Text("target \(Int(b.low))–\(Int(b.high))")
                         .font(.system(size: 17, design: .rounded)).opacity(0.8)
                 }
             } else {
                 // No trustworthy HR: promote pace to the dominant slot rather than showing a
                 // placeholder where a number should be.
-                Text(vm.paceSecKm.map { Physiology.formatPace($0) } ?? "--:--")
+                Text(session.paceSecKm.map { Physiology.formatPace($0) } ?? "--:--")
                     .font(.system(size: 108, weight: .bold, design: .rounded))
                     .monospacedDigit().minimumScaleFactor(0.5).lineLimit(1)
                 Text("min/km").font(.system(size: 20, weight: .medium, design: .rounded)).opacity(0.85)
             }
 
             HStack(spacing: 8) {
-                Image(systemName: vm.zoneState.symbol)
-                Text(vm.zoneState.label)
+                Image(systemName: session.zoneState.symbol)
+                Text(session.zoneState.label)
             }
             .font(.system(size: 22, weight: .semibold, design: .rounded))
             .padding(.top, 10)
             // Announce state changes to VoiceOver rather than relying on the colour change.
-            .accessibilityLabel(vm.zoneState.label)
+            .accessibilityLabel(session.zoneState.label)
         }
     }
 
     private var secondaryMetrics: some View {
         HStack {
-            metric("time", formatDuration(vm.elapsed))
+            metric("time", formatDuration(session.elapsed))
             Divider().background(.white.opacity(0.4)).frame(height: 34)
-            metric("distance", String(format: "%.2f km", vm.distanceM / 1000))
+            metric("distance", String(format: "%.2f km", session.distanceM / 1000))
             Divider().background(.white.opacity(0.4)).frame(height: 34)
-            if vm.hr != nil, vm.hrStatus == "ok" {
-                metric("pace", vm.paceSecKm.map { Physiology.formatPace($0) } ?? "--:--")
+            if session.hr != nil, session.hrStatus == "ok" {
+                metric("pace", session.paceSecKm.map { Physiology.formatPace($0) } ?? "--:--")
             } else {
-                metric("cadence", vm.cadence.map { "\(Int($0))" } ?? "--")
+                metric("cadence", session.cadence.map { "\(Int($0))" } ?? "--")
             }
         }
         .padding(.vertical, 14)
@@ -252,7 +182,7 @@ public struct RunView: View {
     /// check what it said is worse than not having it.
     private var cuePanel: some View {
         Group {
-            if let cue = vm.lastCue {
+            if let cue = session.lastCue {
                 HStack(alignment: .top, spacing: 10) {
                     Image(systemName: cue.level == .safety ? "exclamationmark.triangle.fill"
                                                            : "speaker.wave.2.fill")
@@ -273,7 +203,7 @@ public struct RunView: View {
 
     /// One tap, always reachable. This is the highest-value data the app collects.
     private var painButton: some View {
-        Button { vm.showPainSheet = true } label: {
+        Button { showPainSheet = true } label: {
             Label("Something hurts", systemImage: "bandage.fill")
                 .font(.system(size: 17, weight: .semibold, design: .rounded))
                 .frame(maxWidth: .infinity)
@@ -295,7 +225,8 @@ public struct RunView: View {
 // MARK: - Pain entry
 
 struct PainSheet: View {
-    @ObservedObject var vm: RunSessionViewModel
+    @ObservedObject var session: RunSession
+    @Binding var isPresented: Bool
     @State private var site = "left_calf"
     @State private var level = 3
     @State private var focal = false
@@ -342,10 +273,20 @@ struct PainSheet: View {
             .navigationTitle("Log pain")
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") { vm.logPain(site: site, level: level, focal: focal) }
+                    Button("Save") {
+                        // Goes to the controller on the next tick, which is where the safety abort
+                        // lives -- so a report above the stop threshold ends the run rather than
+                        // merely being filed.
+                        if focal {
+                            session.reportSymptom("focal_bone_pain")
+                        } else {
+                            session.reportPain(level)
+                        }
+                        isPresented = false
+                    }
                 }
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { vm.showPainSheet = false }
+                    Button("Cancel") { isPresented = false }
                 }
             }
         }
