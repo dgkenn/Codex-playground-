@@ -576,3 +576,74 @@ had predicted 0, which is why the error survived for one commit rather than ente
 **What stands after the correction.** Sleep-EDF's 2-channel montage remains the only case so far where UCE v1
 is genuinely not computable, so the montage-fragility claim is *weaker* than I stated — one montage, not three.
 Its redundancy with the whole-head exponent (§1 row 1) is unaffected, since that rests on E01/E02.
+
+### 9.11 E06: one channel is nearly as good as 91 — and the frontal gradient makes EMG a live explanation
+
+**The direct answer to "how few channels?" — all four predictions met.** Monotonicity with measured plasma
+propofol, within subject, across 91 electrodes swept individually:
+
+| candidate | all 91 | 10-20 subset (19) | **median single** | single range |
+|---|---|---|---|---|
+| **lempel_ziv** | 0.900 | 0.900 | **0.800** | [0.35, 1.00] |
+| spectral_entropy | 0.800 | 0.800 | 0.700 | [0.40, 1.00] |
+| spectral_edge_95 | 0.650 | 0.550 | 0.650 | [0.20, 0.90] |
+| whole_head_exponent | 0.450 | 0.550 | 0.400 | [0.05, 0.80] |
+| relative_alpha_power | 0.450 | 0.400 | 0.400 | [0.15, 0.70] |
+| relative_delta_power | 0.400 | 0.400 | 0.250 | [0.00, 0.80] |
+| uce_v1 | 0.500 | 0.500 | **NOT COMPUTABLE** | — |
+| wpli_alpha | 0.300 | 0.400 | **NOT COMPUTABLE** | — |
+
+**Channel count barely matters.** For Lempel-Ziv the 19-channel 10-20 subset scores *identically* to all 91
+(0.900), and the median single electrode retains 0.800 — about 89 % of the full montage. `spectral_edge_95`'s
+median single equals its all-channel value exactly. **None of these measures is exploiting spatial structure**,
+which is a deflating result for any construct whose premise is spatial organisation, and an encouraging one for
+deployment on a frontal strip or a wearable.
+
+Two candidates are *structurally* impossible on one channel and the pipeline says so rather than substituting:
+wPLI needs a pair, and UCE v1 needs an electrode that is simultaneously frontal and posterior. That check
+exists because §9.10 records me making exactly that substitution error by hand.
+
+**The best single electrode reached 1.00 — perfect monotonicity in all 20 subjects — and it is reported as an
+anecdote, not a result.** Four electrodes (E15, E16, E23, E26) hit 1.00. Quoting any of them as "a
+single-channel biomarker with 100 % consistency" would be a search over 91 with a denominator of 1. The median
+is the result.
+
+**THE FINDING THAT MATTERS MORE THAN THE HEADLINE — a frontal gradient.** Breaking the 91 single-channel
+scores down by scalp position for `lempel_ziv`:
+
+| region | n | median | range |
+|---|---|---|---|
+| frontal 10-20 | 7 | **0.950** | [0.80, 0.95] |
+| EGI-numbered (mixed) | 71 | 0.800 | [0.35, 1.00] |
+| posterior 10-20 | 8 | **0.700** | [0.45, 0.85] |
+| central 10-20 | 5 | 0.632 | [0.50, 0.85] |
+
+Every frontal electrode sits at or above the overall median; the four perfect electrodes are all
+low-numbered, i.e. anterior in an EGI net. P4 passed only at its boundary (+0.15 exactly), and **the direction
+of the miss is the one P4 was written to detect.**
+
+**This gives E05's headline a mundane alternative explanation that the project cannot currently rule out.**
+E05 found Lempel-Ziv ordering propofol dose in 90 % of subjects while the aperiodic exponent managed 45 %.
+Facial and scalp muscle is frontally dominant; EMG adds broadband high-frequency content, which *raises*
+binarised complexity; and propofol *relaxes muscle*. So "frontally-dominant broadband complexity falls with
+increasing propofol dose" is exactly what progressive facial-muscle relaxation would produce, with no cortical
+content whatsoever.
+
+Real physiology predicts frontal dominance too — propofol's frontal alpha and anterior-dominant slowing are
+well established — so the gradient does not settle it either way. What settles it is a measurement the project
+does not yet make.
+
+**`ANALYSIS_PLAN.md` §3 already anticipated this and named the remedy**: *"EMG index is a predictor of
+interest, not only a nuisance. If it predicts the outcome as well as the aperiodic exponent does, the exponent
+result is an EMG result."* **No EMG index is implemented.** It now joins `preprocessing_sensitivity` (§9.9) as
+a required-but-absent check, and between the two it is the more urgent, because it bears on the one positive
+finding this project has rather than on a negative one.
+
+**Standing consequence.** Until an EMG index exists, the E05/E06 complexity finding is reported as
+*"frontally-dominant broadband complexity tracks propofol dose, with muscle relaxation unexcluded"* — never as
+a cortical-complexity result.
+
+**Scope, restated because it bounds the deployment claim.** The deposit is average-referenced, and average
+referencing is a spatial operation that mixes all 91 channels into every one of them. A "single channel" here
+is one channel *of an average-referenced montage*, so these are an **upper bound** on true single-electrode
+performance. Answering the deployment question properly needs a raw or single-referenced deposit.
