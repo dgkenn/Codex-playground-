@@ -44,3 +44,17 @@ valid and the merge de-duplicates on `recording_id`, so including it costs nothi
 
 **E22 reads only the merged `vitaldb_grid.csv` and refuses to report below 1,500 rows**, so a partial merge
 cannot be mistaken for a result.
+
+## Currently in flight: `vitaldb_agents.csv` (started 2026-07-30)
+
+The administered-dose join for E25 — MAC, inspired sevo/des, propofol Ce and remifentanil Ce, meaned over
+the same 30 s windows the features used, keyed by `recording_id`. No EEG is re-read; this only adds columns
+alongside `vitaldb_grid.csv`.
+
+    python bsde/scripts/join_vitaldb_agents.py        # resumable: refetches only the cases not present
+
+**E25 refuses to report below 240 joined CASES**, and that floor is on cases rather than rows for a reason
+recorded in E25 itself: a row floor copied from E22 let it run at 60 of 250 cases and print a spurious gate
+failure, because the join produces ~27 rows per case. A part-finished join therefore cannot be mistaken for
+a result — but note that the stale `e25_challenge_a_dose.json` from that partial run WAS deleted rather than
+committed, since a JSON on disk outlives the console output that would have explained it.
