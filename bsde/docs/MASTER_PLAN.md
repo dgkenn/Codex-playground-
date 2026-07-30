@@ -723,3 +723,62 @@ this is an anomaly, not a marker.
 monotonicity fraction, |ρ|, direction-free AUC — without its signed comparison against its declared direction
 reported alongside. The unsigned versions exist for nuisance probes, where sign is meaningless, and they must
 not leak into candidate evaluation.
+
+### 9.13 E08: the exponent's failure was a BAND-AVERAGING artefact — and Colombo's split finds it
+
+**One candidate out of fourteen supports its own declared direction.** That candidate is `exponent_high`, the
+aperiodic exponent fitted over **20–40 Hz only**:
+
+| fit band | signed AUC, baseline vs moderate (declared `higher`) | verdict |
+|---|---|---|
+| **20–40 Hz** (`exponent_high`) | **0.863 [0.790, 0.948]** | **SUPPORTS** |
+| 1–40 Hz (`whole_head_exponent`) | 0.393 [0.273, 0.513] | spans 0.5 |
+| 1–20 Hz (`exponent_low`) | 0.168 [0.070, 0.242] | **OPPOSITE — refuted** |
+
+**The two sub-bands point in opposite directions, and the whole-band fit averages them to nothing.** That is
+the resolution of the puzzle E05 opened: the exponent appeared to order propofol dose in only 45 % of subjects
+and to be beaten by complexity measures, and the reason is that a single 1–40 Hz slope is the average of two
+regimes with *opposing* dose responses. Nothing was wrong with the estimator; the analysis band was wrong.
+
+**§9.9's preprocessing explanation was right in spirit and wrong in mechanism.** I attributed the failure to the
+deposit's 45 Hz filter roll-off contaminating a 40 Hz fit edge. The actual cause is that the spectrum has two
+regimes and the project fitted across both. Fit range mattered enormously — just not for the reason given.
+
+**This is Colombo's own decomposition, and it delivered.** `LITERATURE_MAP.md` §0 records that Colombo et al.
+(PMID 30639334) fit 1–20 and 20–40 Hz separately and locate the drug dissociation specifically in 20–40 Hz.
+That is why `exponent_low`/`exponent_high` were registered, with `higher` declared for both from Colombo's
+sign convention, **before** anything was computed. The prediction was inherited from the literature rather
+than found in the data.
+
+**The redundancy gate killed nothing, and refuted my own P1.** I predicted `exponent_low` would duplicate the
+1–40 Hz exponent at |ρ| ≥ 0.90, since most spectral power sits below 20 Hz. Measured |ρ| = **0.579** — and its
+*closest* incumbent is not the exponent at all but `lempel_ziv` at 0.835. The band split is real, not a
+re-parameterisation, which is exactly what makes the result above meaningful rather than circular.
+
+`spatial_participation_ratio` also survived redundancy (max |ρ| = 0.742 against `spectral_entropy`), confirming
+P2: **it reads something the per-channel measures do not.** But its direction is *refuted* (0.375 [0.243,
+0.495], declared `lower`, observed higher). So spatial structure does carry information here — E06's "one
+channel ≈ 91" is a fact about the feature set, not about the brain — and that information points opposite to
+the prediction that anaesthesia increases spatial redundancy.
+
+**FIVE CAVEATS, none of which the headline should be quoted without.**
+
+1. **One hit in fourteen, against a denominator of 17 registered candidates.** The mitigating fact is that this
+   was a *pre-registered directional prediction taken from prior art*, not a search hit — but the denominator
+   travels with it regardless (constraint 6).
+2. **`analytic_dof = 1` is known false** (§9.14, E09 in flight). The real denominator is larger than 17 and
+   nobody yet knows by how much.
+3. **40 Hz sits near the deposit's 45 Hz filter edge**, and E09's sweep varies `fit_hi` only for fits starting
+   at 1–3 Hz. **It therefore does not test 20–40 Hz stability at all.** That is a gap in the sensitivity
+   analysis, created by writing E09 before this result existed, and it must be closed before the number is
+   relied on.
+4. **Baseline vs moderate is a two-point contrast in 20 healthy volunteers on one drug at one site.** It says
+   nothing about consciousness; the outcome is a measured drug concentration.
+5. **The seed set is otherwise a graveyard.** Six of fourteen candidates are refuted outright, including
+   `lempel_ziv` (0.223, confirming §9.12), `spectral_entropy`, `relative_delta_power` and three of the six
+   exotic features. Five more span 0.5. A field in which one measure works and thirteen do not should raise
+   the prior that the one is also an artefact until it replicates elsewhere.
+
+**Next, in order:** close the caveat-3 gap by sweeping `exponent_high`'s own fit band; then test it on
+ds005620 and Sleep-EDF, where it has never been computed. A 20–40 Hz result that holds across three deposits
+with different filtering would be the first finding in this project worth calling a lead.
