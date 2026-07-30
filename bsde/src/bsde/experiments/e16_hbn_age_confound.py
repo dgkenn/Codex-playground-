@@ -168,11 +168,41 @@ def main() -> int:
     print(f"   {PRIMARY} finite in {frac_finite:.1%} of rows; need {GATE_MIN_FINITE:.0%}   "
           f"{'PASS' if p_finite else '*** FAIL'}")
     if not p1:
-        print("\n   *** GATE FAILED. Alpha blocking is the most robust phenomenon in EEG; if it is not")
-        print("   recoverable here then the conditions, the montage, the DC handling or the feature path")
-        print("   is wrong, and nothing else is reported (rule 31: absent, not negative).")
+        print("\n   *** GATE FAILED. Nothing about exponent_high is reported: the script exits BEFORE")
+        print("   computing any age association, so P2/P3/P4 remain genuinely unexamined and a future")
+        print("   experiment with a correctly specified gate can still test them cleanly.")
+
+        # WHY IT FAILED, DIAGNOSED RATHER THAN EXCUSED. A pipeline fault would not be monotone in age.
+        band = []
+        for lo_a, hi_a in ((5, 8), (8, 10), (10, 13), (13, 30)):
+            hits = tot = 0
+            for s in np.unique(subj):
+                m_age = age[subj == s]
+                if not m_age.size or not np.isfinite(m_age[0]) or not (lo_a <= m_age[0] < hi_a):
+                    continue
+                c = a[(subj == s) & (cond == "closed")]
+                o = a[(subj == s) & (cond == "open")]
+                if c.size and o.size and np.isfinite(c[0]) and np.isfinite(o[0]):
+                    tot += 1
+                    hits += int(c[0] > o[0])
+            if tot:
+                band.append({"age_lo": lo_a, "age_hi": hi_a, "fraction": hits / tot, "n": tot})
+        print("\n   ALPHA BLOCKING BY AGE BAND:")
+        for b in band:
+            print(f"      age {b['age_lo']:2d}-{b['age_hi']:2d}: {b['fraction']:5.1%}  (n={b['n']})")
+        print("\n   If this gradient is MONOTONE IN AGE, a broken pipeline is not the explanation: the")
+        print("   posterior dominant rhythm is slower in young children, so a fixed adult 8-12 Hz band")
+        print("   misses it, and this cohort's median age is under 10. THE FEATURE IS ADULT-CALIBRATED")
+        print("   AND THIS DEPOSIT IS NOT ADULT -- a finding about the registry rather than only about")
+        print("   this gate, since `relative_alpha_power` carries the same fixed band everywhere.")
+        print("")
+        print("   NOT DONE, DELIBERATELY: an 8-subject probe of posterior-only channels and a wider")
+        print("   6-13 Hz band gave 5/8 to 7/8 across four variants -- indistinguishable at that n. The")
+        print("   best-looking variant is NOT adopted. Re-specifying the gate needs its own registration")
+        print("   and must be labelled a re-specification after a failure, not a pre-registration.")
         json.dump({"experiment": "E16", "gate_passed": False, "alpha_fraction": frac,
-                   "n_pairs": n_pairs, "primary_finite_frac": frac_finite},
+                   "n_pairs": n_pairs, "primary_finite_frac": frac_finite,
+                   "alpha_blocking_by_age_band": band, "primary_never_computed": True},
                   open(os.path.join(RESULTS, "e16_hbn_age.json"), "w"), indent=2)
         return 1
     print("\n   GATE PASSED")
