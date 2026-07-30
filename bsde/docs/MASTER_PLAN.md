@@ -1314,3 +1314,73 @@ access request the highest-value external action available to this project.
 lists **0 objects** through the anonymous REST endpoint, consistent with the console showing only
 `LICENSE.txt` and `SHA256SUMS.txt` at 2.5 KB total. The signal there is access-gated too, and nothing is
 downloadable without a request.
+
+### 9.25 Exhaustive survey of public EEG repositories — one dataset found, and it fixes §9.16
+
+**Method, because the answer is a negative and a negative is only worth as much as the search behind it.**
+OpenNeuro's GraphQL `search` field returns null and its `advancedSearch` `keywords` filter returned **zero
+hits for "propofol"** — a filter that cannot find ds005620, which this project already holds, is a filter
+that proves nothing (rule 5). So all **447** OpenNeuro EEG datasets were enumerated by pagination instead,
+verified by confirming the known positive appears, and then every dataset's `README`,
+`dataset_description.json` and `participants.json` was fetched and scanned for anaesthetic and
+disorders-of-consciousness terms.
+
+| source | result |
+|---|---|
+| `meagmohit/EEG-Datasets` (curated list) | **nothing relevant.** Overwhelmingly BCI, motor-imagery and emotion. Zero anaesthesia, zero DoC |
+| OpenNeuro, 447 EEG datasets, full text scan | **5 mention an anaesthetic or DoC term; 1 is usable and new** |
+
+* **ds005620** — already ingested (propofol).
+* **ds003380** — 11 juvenile **pigs**, isoflurane/fentanyl/propofol plus gradual ischaemia. A genuine
+  multi-drug design and the wrong species for any human claim.
+* **ds004940** — a **false positive**. "Disorders of consciousness" appears in its abstract as motivation;
+  `participants.tsv` is 22 neurotypical adolescents aged 12–17 doing an N400/P600 listening task. Caught by
+  reading the participants file rather than trusting the keyword.
+* **ds004840** — music therapy in sedated adults, n = 9; not pursued.
+* **ds004541 — the find.**
+
+### ds004541: the first reachable deposit where consciousness is documented as actually lost
+
+> *Multimodal EEG-fNIRS data from patients undergoing general anesthesia.* n = 8 patients, **CC0**, EDF,
+> 1000 Hz, 58–62 EEG channels on an extended 10-20 montage.
+
+Its `events.tsv` carries, per subject, an explicit responsiveness ladder and two markers this project has
+never had:
+
+```
+baseline → start → verbal/soft → verbal/strong → motor → tetanic/1 → LOC → end → tetanic/2 → ROC
+```
+
+**`loc` and `roc` — loss and recovery of consciousness.** §9.16 established that the Chennu cohort never
+reaches unconsciousness at any level, which reduced every Chennu result to a statement about moderate
+sedation in responsive volunteers. This deposit is the correction: consciousness is lost, it is marked, and
+the marking is anchored to a graded stimulation protocol rather than to a plasma concentration.
+
+The amplitude signature is visible at the markers on a first read (median channel SD, 30 s windows,
+sub-02): **baseline 1404 → pre-LOC 2513 → post-LOC 827 → post-ROC 1509**.
+
+**What it unblocks beyond §9.16:**
+
+* **Temporal precedence** — verifier layer 5's unbuilt half, and what Challenge C needs the *method* for.
+  Windows are emitted at symmetric fixed offsets around `loc` (±30 to ±300 s) so "did the measure move
+  before the clinician marked it" is answerable rather than assertable.
+* **`emergence_within_subject`** — a contrast declared in `CONTRASTS` since the registry was written and
+  never once tested. `loc → roc` is exactly it.
+* **`uce_v1` is computable here.** It selects frontal and posterior regions by 10-20 name and returns NaN on
+  HBN's EGI caps; this montage is extended 10-20.
+* **Dedicated EMG and EKG channels.** Every muscle-confound argument in this project has rested on spectral
+  proxies computed from EEG (§9.15 found two of them disagreeing in sign). This deposit has an actual muscle
+  recording — far better evidence than a proxy.
+
+**What it does NOT unblock, and the limit is load-bearing. THE DRUG IS NOT RECORDED ANYWHERE IN THE
+DEPOSIT** — not in `dataset_description.json`, not in the README (boilerplate, "in preparation"), not in
+`participants.json`. **So it cannot serve Challenge A**, which needs two identified and different agents, and
+it must not be assumed to be propofol merely because the project's other two anaesthesia deposits are.
+Recorded as unknown pending the authors or a publication.
+
+**Challenge A therefore remains blocked, and the survey establishes that it is blocked in a stronger sense
+than before: there is no second identified anaesthetic drug in any public EEG repository reachable from
+here.** VitalDB (sevoflurane) is not an EEG deposit of this kind and remains the outstanding candidate.
+
+`participants.tsv` carries no age, sex, weight or height — every field is `n/a` — so no demographic
+covariate is available and none will be claimed.
