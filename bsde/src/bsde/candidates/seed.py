@@ -46,7 +46,26 @@ CONTRASTS = (
     # either, and must never be reported as "cross-domain validated". The informative domains are the ones
     # that dissociate arousal from experience: ds005620 (unresponsive with vs without later reported
     # experience), ketamine, and locked-in syndrome.
-    "unconscious_vs_awake",        # anaesthetic LOC, or sleep N3 vs wake -- see warning above
+    # SECOND WARNING, ADDED 2026-07-30 (MASTER_PLAN §9.16) AND MORE DAMAGING THAN THE FIRST. Every Chennu
+    # experiment in this project scores candidates against this contrast, and THE CHENNU COHORT IS NOT
+    # UNCONSCIOUS AT ANY LEVEL. At level 3 ("moderate sedation", plasma 803 ug/L) the median subject gets 35
+    # of 40 correct on the behavioural task, 14 of 20 score at or above 20/40, and only 2 of 20 stop
+    # responding at all. Level 1 vs level 3 is fully awake versus mostly still awake.
+    #
+    # Consequences, which are about INTERPRETATION and not about any computed value:
+    #   - E05, E07, E08, E09 and E10 measure MILD-TO-MODERATE SEDATION IN RESPONSIVE VOLUNTEERS.
+    #   - The recurring finding that "most candidates score below 0.5 on Chennu" is largely this mismatch:
+    #     their directions were declared for unconsciousness and the cohort is not unconscious. The same
+    #     measures reach 0.99+ in their declared direction on Sleep-EDF W vs N3 (E11), which does reach it.
+    #   - `exponent_high`'s 0.863 is a SEDATION-DEPTH discrimination. Possibly a good one; not evidence
+    #     about consciousness.
+    #
+    # THE FIX IS A SEPARATE `sedated_vs_awake` CONTRAST, and it is deliberately NOT added here yet, because
+    # every direction I could write for it would be contaminated: the Chennu results have already been seen,
+    # so a declaration written now cannot be a pre-registration. When it is added, each direction must cite
+    # the literature it came from, must be flagged as declared post-exposure, and can only be tested cleanly
+    # on a DIFFERENT sedation dataset. See the queue entry.
+    "unconscious_vs_awake",        # anaesthetic LOC, or sleep N3 vs wake -- see BOTH warnings above
     "anaesthetic_drug_identity",   # propofol vs sevoflurane vs ketamine -- SHOULD be unchanged
     "mcs_vs_uws",                  # behavioural DoC category, an imperfect reference standard
     "command_following",           # the CMD endpoint; a failed task is indeterminate, never negative

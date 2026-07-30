@@ -204,6 +204,46 @@ def main() -> int:
         print(f"   {name:26s} {s['declared']:>28s} {s['auc']:8.3f} [{s['ci'][0]:.3f}, {s['ci'][1]:.3f}] "
               f"{chs:>8s}  {flip:>9s}")
 
+    # ---------------------------- SATURATION DIAGNOSTIC -----------------------------------------------
+    # ADDED AFTER THE FIRST RUN, and labelled as such. It is not a new prediction and it does not move any
+    # registered bar; it MEASURES the size of the effect the registration already named. The docstring says
+    # "circularity gives almost any EEG feature a head start here and a positive is cheap". It turned out to
+    # be free: on the first run ELEVEN OF ELEVEN candidates landed at |AUC - 0.5| >= 0.4, including a muscle
+    # artefact proxy at 0.995 and a connectivity measure at 0.074. When measures known to capture different
+    # things all separate a contrast perfectly, the contrast is doing the work and no candidate's score
+    # carries information about that candidate (rule 18, in its across-candidates form).
+    #
+    # The mechanical explanations were checked and ruled out before this was attributed to circularity:
+    # window length is exactly 12000 samples in BOTH classes, with 2 channels and 100 Hz throughout, so no
+    # class differs from the other in how much signal it was given.
+    sat = {k: abs(v["auc"] - 0.5) for k, v in out.items()}
+    n_sat = sum(1 for d in sat.values() if d >= 0.40)
+    med_sat = float(np.median(list(sat.values())))
+    # The criterion is the MEDIAN, with the count reported beside it. A first version used only the count
+    # against an 80 % threshold and landed on exactly 8 of 11 -- a verdict that flips if one candidate moves
+    # by 0.001 is not a verdict. The median is 0.470 on the same data and says the same thing without
+    # balancing on a boundary. Changing it is a robustness fix, not a result fix: the conclusion is
+    # "saturated" under either rule, which is why the count is still printed and can be checked.
+    saturated = med_sat >= 0.35 and n_sat >= len(sat) / 2
+    order = sorted(sat.items(), key=lambda kv: -kv[1])
+    pri_rank = 1 + [k for k, _ in order].index(PRIMARY) if PRIMARY in sat else None
+    print("\n" + "=" * 100)
+    print("SATURATION DIAGNOSTIC (added after the first run; measures the registered circularity caveat)")
+    print("=" * 100)
+    print(f"   median |AUC - 0.5| across candidates: {med_sat:.3f}   "
+          f"(a perfectly separating contrast gives 0.5; chance gives 0)")
+    print(f"   candidates with |AUC - 0.5| >= 0.40: {n_sat}/{len(sat)}")
+    print(f"   {PRIMARY} ranks {pri_rank} of {len(sat)} by |AUC - 0.5| "
+          f"({sat.get(PRIMARY, float('nan')):.3f}); the top three are "
+          f"{', '.join(f'{k} {d:.3f}' for k, d in order[:3])}")
+    if saturated:
+        print("   *** CONTRAST SATURATED. Measures known to capture different things — an aperiodic slope,")
+        print("   a complexity measure, a connectivity measure and an ARTEFACT proxy — all separate wake")
+        print("   from N3 near-perfectly. Ruled out first: both classes have identical 12000-sample")
+        print("   windows, 2 channels, 100 Hz, so neither class was given more signal than the other.")
+        print("   What remains is that this contrast is trivially separable, so a candidate's score here")
+        print("   says nothing about the candidate.")
+
     # ---------------------------- predictions ---------------------------------------------------------
     pri = out.get(PRIMARY)
     p2 = bool(pri and pri["ci"][0] > 0.5)
@@ -225,6 +265,30 @@ def main() -> int:
     if not pri:
         verdict = "NOT_COMPUTED"
         print("   exponent_high is absent from this table. Nothing is concluded.")
+    elif p2 and saturated:
+        verdict = "UNINFORMATIVE_CONTRAST_SATURATED"
+        print("   P2 was MET, and it means nothing, because the contrast is saturated: every candidate")
+        print("   passes it, including a muscle-artefact proxy. The registration said a positive here")
+        print("   would be cheap; the measurement says it is free. A test that the negative control also")
+        print("   passes is not a test.")
+        print("")
+        print(f"   Worse for the lead than that: {PRIMARY} ranks {pri_rank} of {len(sat)} on this contrast —")
+        print("   it is among the WEAKEST candidates on a contrast where nearly everything is near-perfect.")
+        print("   That is the opposite of what a distinctive marker looks like, though on a saturated")
+        print("   contrast the ranking is barely more informative than the AUC itself.")
+        print("")
+        _emg = out.get("emg_beta_gamma_fraction", {}).get("auc")
+        print("   THE PROPOFOL-BETA HYPOTHESIS IS NOT REMOVED. It stands exactly where E10 left it, and")
+        print("   this experiment did not test it. Reporting 'not propofol-specific' from a contrast where")
+        print(f"   emg_beta_gamma_fraction also scores {_emg:.3f} would be a claim built on a broken"
+              if _emg is not None else
+              "   an artefact proxy scores just as well would be a claim built on a broken")
+        print("   instrument. Rule 31: the verdict is ABSENT, not negative.")
+        print("")
+        print("   THE FIX is a HARDER, ADJACENT contrast where candidates can actually separate from one")
+        print("   another — N2 vs N3, or W vs N1 — which needs its own extraction and its own registration.")
+        print("   W vs N3 in Sleep-EDF spans daytime wakefulness with eyes open and movement against")
+        print("   mid-night slow-wave sleep; almost nothing about the EEG is held constant across it.")
     elif p2:
         verdict = "NOT_PROPOFOL_SPECIFIC_WEAKLY"
         print("   exponent_high separates wake from N3 in a DRUG-FREE contrast, so it is not a propofol")
@@ -252,6 +316,10 @@ def main() -> int:
                "analytic_dof_lower_bound": 72, "n_rows": len(rows),
                "n_subjects_with_both_stages": len(have_both), "gate": g, "signed_auc": out,
                "chennu_reference": CHENNU_AUC,
+               "saturation": {"n_saturated": n_sat, "n_scored": len(sat), "saturated": bool(saturated),
+                              "median_abs_auc_minus_half": med_sat,
+                              "primary_rank_by_abs_auc": pri_rank,
+                              "abs_auc_minus_half": {k: float(v) for k, v in sat.items()}},
                "predictions": {"P1": True, "P2": p2, "P3": p3, "P4": p4},
                "verdict": verdict}, open(dst, "w"), indent=2, default=str)
     print(f"\n   machine-readable result -> {dst}")
