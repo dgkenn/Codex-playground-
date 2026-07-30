@@ -1,0 +1,1 @@
+{"ticker": "KXLOWTSEA-26JUL29-T57", "side": "no", "cap_c": 52, "extreme_f": 55.94, "station": "KSEA", "kind": "min", "status": "live_error", "trigger": "obs-poll", "requested": 1, "filled": null, "fill_vwap_c": null, "ts": 1785398323197, "result": "no", "won": true, "entry": 0.52, "fee": 0.02, "pnl": 0.45999999999999996}
