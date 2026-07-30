@@ -1222,3 +1222,45 @@ directory, not recalled.
 
 **The honest one-line summary: the engine got substantially more real today and the science did not move closer
 to any of the three challenges, because all three are blocked on data acquisition rather than on code.**
+
+### 9.23 E14: discrimination survives one window — and the ICC check reported the opposite of the truth
+
+Layer 5's first run on real data. 60 recordings x 4 states (W/N2/N3/REM) x 3 consecutive 120 s windows = 720
+rows, drawn from the central 360 s of each stage block so all three sit away from stage boundaries.
+
+**P2 was a registered PREDICTION OF FAILURE and it did not happen — the good outcome.** I predicted at least
+one strongly-discriminating candidate would have temporal SNR below 1.0, meaning group AUC would not transfer
+to a single window. **None does.** The worst is `pac_slow_alpha` at 3.11; `exponent_high` is at 10.76,
+`emg_beta_gamma_fraction` at 41.7. On this data, group-level discrimination transfers to the single window a
+clinician actually has. That is a genuine positive for the candidate set and I was wrong in the pessimistic
+direction.
+
+**P4 REPORTED THE EXACT OPPOSITE OF THE TRUTH, and the check's whole purpose is the thing it got backwards.**
+`effective_sample_size` exists to warn that repeated windows are not independent, so row-level resampling
+overstates precision. The first run grouped by SUBJECT alone, pooling four sleep stages into one group — so
+the enormous between-STATE variance landed inside the "within-group" term and pushed the ICC down:
+
+| candidate | ICC grouped by subject | ICC grouped by (subject, state) |
+|---|---|---|
+| `exponent_high` | 0.159 | **0.927** |
+| `relative_delta_power` | 0.101 | **0.917** |
+| `lempel_ziv` | 0.089 | **0.971** |
+| `whole_head_exponent` | 0.000 | **0.984** |
+| `wpli_alpha` | 0.294 | **0.921** |
+
+Regrouped correctly the median ICC is **0.932**, so P4 flips from NOT MET to MET and the substantive warning
+is real: **n_eff ≈ n_rows / 2.9**, and any interval computed over rows rather than subjects is roughly 1.7×
+too narrow. The grouping is now `(subject, state)` in `intraclass_correlation` itself, with a regression test
+that reproduces the failure.
+
+**P3 IS UNDETERMINED, NOT MET, AND THE SCRIPT NOW SAYS SO.** The registered rule was "Spearman between
+|AUC−0.5| and temporal SNR below +0.70", and the measured value is **0.69999999999999984** — below the
+threshold by **1.1 × 10⁻¹⁶**. Spearman over eleven candidates is quantised and this landed exactly on an
+attainable value. A verdict decided by floating-point representation is not a verdict. **So layer 5's own
+justification — that temporal SNR is not AUC wearing a different name — is NOT established by this run**, and
+the layer is retained provisionally rather than vindicated.
+
+**That is the third boundary case today** (E11's saturation count at exactly 8/11, E13's gate one ULP short,
+now this). The pattern is mine, not the data's: I keep choosing thresholds that sit on attainable values of
+quantised statistics. **A threshold on a quantised statistic must be placed BETWEEN attainable values, and
+where it cannot be, the boundary must be reported rather than resolved.**

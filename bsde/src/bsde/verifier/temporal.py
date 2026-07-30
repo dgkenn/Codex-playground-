@@ -169,14 +169,26 @@ def single_window_penalty(values: np.ndarray, subject: np.ndarray, y: np.ndarray
             "n_cells": len(subs)}
 
 
-def intraclass_correlation(values: np.ndarray, subject: np.ndarray) -> dict:
+def intraclass_correlation(values: np.ndarray, subject: np.ndarray,
+                           state: np.ndarray | None = None) -> dict:
     """One-way ICC and the effective sample size it implies for row-level (rather than subject-level) tests.
 
-    n_eff = n_rows / (1 + (m - 1) * ICC), with m the mean windows per subject — the standard design-effect
+    n_eff = n_rows / (1 + (m - 1) * ICC), with m the mean windows per group — the standard design-effect
     correction. Reported so that an interval computed over rows is visibly, quantitatively wrong.
+
+    **THE GROUP IS THE (SUBJECT, STATE) CELL WHEN `state` IS SUPPLIED, AND GETTING THIS WRONG INVERTS THE
+    ANSWER.** E14's first run grouped by SUBJECT alone, pooling four sleep stages into one group, so the
+    enormous between-STATE variance landed inside the "within-group" term and pushed the ICC down to
+    0.069-0.294. Regrouped by cell the same data gives **0.917-0.984**. The question this check exists to
+    answer — are repeated windows independent enough to resample at row level? — is about windows within one
+    state of one subject, and the first grouping reported the exact opposite of the truth for a check whose
+    entire purpose is to warn that row-level resampling misleads.
     """
     values = np.asarray(values, float)
     subject = np.asarray(subject)
+    if state is not None:
+        state = np.asarray(state)
+        subject = np.array([f"{s}|{t}" for s, t in zip(subject, state)])
     ok = np.isfinite(values)
     values, subject = values[ok], subject[ok]
     groups = [values[subject == s] for s in np.unique(subject)]
@@ -258,7 +270,7 @@ def layer_temporal(cand, values: np.ndarray, subject: np.ndarray, state: np.ndar
         out.append(Evidence("single_window_auc_penalty", "temporal", NOT_RUN,
                             "no outcome supplied for this table", values={"dataset": dataset}))
 
-    icc = intraclass_correlation(values, subject)
+    icc = intraclass_correlation(values, subject, state)
     out.append(Evidence(
         "effective_sample_size", "temporal",
         NOT_RUN if not np.isfinite(icc.get("icc", float("nan"))) else NOT_APPLICABLE,

@@ -249,3 +249,32 @@ def test_the_mechanistic_stub_survives_and_says_it_is_gated_on_data():
     stub = [e for e in rep.evidence if e.layer == "mechanistic"]
     assert stub and stub[0].status == NOT_RUN
     assert "dataset" in stub[0].reason.lower() and "ketamine" in stub[0].reason.lower()
+
+
+def test_icc_groups_by_cell_not_by_subject_when_state_is_supplied():
+    """The regression for E14's inverted result. Repeated windows inside ONE state are near-identical; a
+    subject's windows ACROSS states are not. Grouping by subject alone buries the first fact under the
+    second and reports near-independence for data that is anything but."""
+    rng = np.random.default_rng(30)
+    vals, subj, state = [], [], []
+    for s in range(20):
+        level = rng.normal(0, 1.0)
+        for st, shift in (("A", 0.0), ("B", 50.0)):        # a huge between-state gap
+            base = level + shift
+            for _ in range(3):
+                vals.append(base + rng.normal(0, 0.05))    # windows within a state are near-identical
+                subj.append(f"s{s}")
+                state.append(st)
+    vals, subj, state = np.array(vals), np.array(subj), np.array(state)
+    by_subject = intraclass_correlation(vals, subj)["icc"]
+    by_cell = intraclass_correlation(vals, subj, state)["icc"]
+    assert by_cell > 0.95, by_cell
+    assert by_subject < by_cell - 0.3, (
+        f"grouping by subject ({by_subject:.3f}) must understate the true within-cell dependence "
+        f"({by_cell:.3f}); if it does not, this test no longer reproduces E14's failure")
+
+
+def test_layer_temporal_passes_state_through_to_the_icc():
+    vals, subj, state, y = _panel(n_subj=30, n_win=4, state_gap=3.5, within_sd=0.05, seed=31)
+    ev = {e.check: e for e in layer_temporal(None, vals, subj, state, y, np.random.default_rng(0))}
+    assert ev["effective_sample_size"].values["icc"] > 0.5, ev["effective_sample_size"].values

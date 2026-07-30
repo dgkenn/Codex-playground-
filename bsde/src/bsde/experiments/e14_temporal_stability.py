@@ -206,7 +206,9 @@ def main() -> int:
         if not np.isfinite(v).any():
             continue
         s = temporal_snr(v, subj, stage)
-        i = intraclass_correlation(v, subj)
+        # The cell, not the subject: see intraclass_correlation's docstring for what grouping by subject
+        # alone did to this number on the first run.
+        i = intraclass_correlation(v, subj, stage)
         pen = single_window_penalty(v[keep], subj[keep], y_all[keep], rng, state=stage[keep])
         a = e11.get(name, float("nan"))
         res[name] = {"snr": s, "icc": i, "penalty": pen, "e11_abs_auc": float(a)}
@@ -234,8 +236,19 @@ def main() -> int:
     print(f"   P1 GATE {GATE} SNR > {GATE_MIN_SNR}                   : MET ({g['snr']:.2f})")
     print(f"   P2 a strongly-discriminating candidate has SNR < {SNR_UNUSABLE}    : "
           f"{'MET' if p2 else 'NOT MET'} ({ {k: round(v, 2) for k, v in unusable.items()} or 'none'})")
+    # BOUNDARY FLAG. Spearman over a dozen candidates is quantised, and rho landed on the threshold to
+    # within one unit in the last place. A verdict decided by floating-point representation is not a
+    # verdict, and printing "MET" without saying so would be the third time today a knife-edge threshold
+    # was reported as a finding.
+    on_boundary = np.isfinite(rho) and abs(rho - RANK_CORR_MAX) < 1e-9
     print(f"   P3 SNR ranking differs from AUC ranking (rho < {RANK_CORR_MAX})  : "
-          f"{'MET' if p3 else 'NOT MET'} (rho {rho:+.3f} over {len(pairs)} candidates)")
+          f"{'MET' if p3 else 'NOT MET'} (rho {rho:+.17g} over {len(pairs)} candidates)")
+    if on_boundary:
+        print(f"      *** ON THE BOUNDARY: rho differs from {RANK_CORR_MAX} by "
+              f"{abs(rho - RANK_CORR_MAX):.1e}. This 'MET' is a coin flip on floating-point")
+        print("      representation, not evidence. TREAT P3 AS UNDETERMINED: the layer's own")
+        print("      justification -- that temporal SNR is not AUC wearing a different name -- is")
+        print("      NOT established by this run, and the layer is retained provisionally.")
     print(f"   P4 median ICC > 0.5, so row-level resampling misleads    : "
           f"{'MET' if p4 else 'NOT MET'} (median ICC {med_icc:.3f})")
 
@@ -264,6 +277,7 @@ def main() -> int:
     json.dump({"experiment": "E14", "gate_passed": True, "gate": g, "n_rows": len(rows),
                "n_recordings": len(set(subj)), "by_candidate": res, "auc_vs_snr_spearman": rho,
                "median_icc": med_icc, "unusable_but_discriminating": unusable,
+               "p3_on_boundary": bool(on_boundary), "icc_grouping": "(subject, state) cell",
                "predictions": {"P1": True, "P2": bool(p2), "P3": bool(p3), "P4": bool(p4)},
                "verdict": verdict}, open(dst, "w"), indent=2, default=str)
     print(f"\n   machine-readable result -> {dst}")
