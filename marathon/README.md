@@ -25,7 +25,7 @@ year of one person's sleep data, and nothing has to be dumbed down for onboardin
 
 ```
 marathon/
-├── engine/                  Python. The science, tested. 359 tests.
+├── engine/                  Python. The science, tested. 464 tests.
 │   └── marathon_engine/
 │       ├── physiology.py    HR zones, VDOT/Daniels paces, Riegel, Minetti grade, WBGT, decoupling
 │       ├── load.py          TRIMP, session-RPE, hrTSS, EWMA ACWR, monotony/strain, ramp caps
@@ -37,19 +37,23 @@ marathon/
 │       ├── realtime.py      The in-run controller
 │       ├── safety.py        Screening, bone loading, hydration, return-to-run
 │       ├── progress.py      Pain trends, training status, anti-streak consistency
-│       └── report.py        Generates docs/PLAN.md
+│       ├── calibration.py   Full-data recording analysis + the calibration protocol
+│       ├── report.py        Generates docs/PLAN.md
+│       └── export.py        Generates the app's bundled JSON resources
 └── ios/MarathonCoach/
-    ├── Sources/Sensors/     PolarPMD.swift (protocol codec), VeritySensor.swift (CoreBluetooth)
-    ├── Sources/Engine/      Physiology.swift, InRunController.swift — ports of the Python
-    ├── Sources/Views/       RunView.swift and the rest of the UI
-    └── Tests/               PolarPMDTests.swift
+    ├── Sources/Sensors/     PolarPMD, VeritySensor (BLE), LocationPace (GPS), AudioCoach
+    ├── Sources/Engine/      Physiology, SignalQuality, InRunController, RunSession
+    ├── Sources/Store/       Store, PlanStore, HealthKitBridge, SleepControllerClient
+    ├── Sources/Views/       Today, Run, Screening, Settings, PlanBrowser
+    ├── Resources/           plan.json, golden_vectors.json, protocols.json (generated)
+    └── Tests/               PolarPMDTests, PortParityTests, StoreTests
 ```
 
 ### Why the science lives in Python
 
 The decisions that matter — what pace to prescribe, when to add volume, when to say stop — are
 arithmetic over published formulas. Arithmetic can be tested; a SwiftUI view cannot be tested on a
-Linux box. So the arithmetic lives in `engine/` with 359 tests against published worked examples, and
+Linux box. So the arithmetic lives in `engine/` with 464 tests against published worked examples, and
 the iOS app ports only what has to run on the phone.
 
 That split earns its keep. The tests caught, among others:
