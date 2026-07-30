@@ -66,9 +66,18 @@ def _load() -> List[dict]:
     return out
 
 
+ROOT = os.path.abspath(os.path.join(HERE, "..", ".."))
+
+
 def _git(*args) -> str:
+    """Always run from the REPO ROOT, never from this file's directory.
+
+    The first version used `cwd=HERE`, i.e. `bsde/governance/`. Git resolves a relative pathspec against the
+    working directory, so every `bsde/src/...` path matched nothing and every registering SHA came back
+    empty. `verify` caught it on its first run, which is what `verify` is for.
+    """
     try:
-        return subprocess.run(["git", *args], cwd=HERE, capture_output=True,
+        return subprocess.run(["git", *args], cwd=ROOT, capture_output=True,
                               text=True, timeout=30).stdout.strip()
     except Exception:                                                     # noqa: BLE001
         return ""
@@ -151,17 +160,15 @@ def verify() -> int:
     """Every row must name a file that exists and a SHA that git knows. Cheap, and it catches drift."""
     rows = _load()
     bad = 0
-    root = os.path.abspath(os.path.join(HERE, "..", ".."))
     for r in rows:
-        path = os.path.join(root, r.get("file", ""))
+        path = os.path.join(ROOT, r.get("file", ""))
         if not os.path.exists(path):
             print(f"   {r['id']}: file missing -> {r.get('file')}")
             bad += 1
         sha = r.get("registered_sha", "")
-        if not sha or not _git("cat-file", "-e", f"{sha}^{{commit}}") == "":
-            if _git("rev-parse", "--quiet", "--verify", f"{sha}^{{commit}}") == "":
-                print(f"   {r['id']}: registering SHA not found in this repo -> {sha}")
-                bad += 1
+        if not sha or not _git("rev-parse", "--quiet", "--verify", f"{sha}^{{commit}}"):
+            print(f"   {r['id']}: registering SHA missing or unknown to git -> {sha!r}")
+            bad += 1
     print(f"   {len(rows)} rows checked, {bad} problems")
     return 0 if bad == 0 else 1
 
