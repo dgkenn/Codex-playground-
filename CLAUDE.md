@@ -357,6 +357,43 @@ Every rule below was paid for with a wrong result in this project.
     **Use `curl` plus a parser for any manifest, index, file listing or bibliographic record — never a
     WebFetch summary of one.** Fabrications that agree with your hypothesis are the ones that survive review.
 
+### H. Added 2026-07-30 (BSDE, from thirteen registered designs of which eight died on machinery)
+
+40. **A GATE THAT CANNOT FAIL IS NOT A GATE, and this project shipped two.** E22 selected epochs by
+    `meta_epoch`, a column its adapter never emitted, so every test matched the empty string and the gate
+    saw 0 of 0 cases. E29 checked that pairs spanned "both directions of dose" while its own pair
+    constructor ORIENTED every pair higher-dose-second, so the answer was 100.0 % by construction. Both
+    printed confidently. **Before trusting a gate, construct the input that should fail it and check that
+    it does** — `tests/test_e28_paths.py` does this for a placebo, and it is the pattern to copy.
+41. **RUN THE FEASIBILITY PROBE BEFORE REGISTERING, NOT AFTER FAILING.** Eight of thirteen designs died on
+    coverage, sentinels, artefact-tracking or exposure shape — and every one was computable in advance from
+    the label, exposure, artefact channels and clinical record, with **no candidate column touched**.
+    `bsde/governance/feasibility.py` runs the six checks; it reproduces E21's sentinel (one value holding
+    49.1 % of a continuous column), E22's artefact gradient (label rising 0.30 -> 0.74 across EMG deciles)
+    and E32's exposure shape (53 % zeros) in seconds. The probe reports numbers and never chooses
+    thresholds, and it must be run **before** the registration so the floors are set knowing the coverage —
+    a probe run after a gate fails, used to find the setting that would have passed, is the move
+    `DISCOVERY_LOOP.md` §2 forbids.
+42. **A QUOTATION SUPPORTS ONLY WHAT IT LITERALLY SAYS.** E31 and E32 cited Gugino 2001 as fixing the
+    direction of their prediction. The abstract says beta RISES in light sedation and delta/theta rise
+    further at loss of consciousness; it never says beta falls. "The fast end is overtaken" was an
+    inference about relative power presented as the source's content. **Label an inference as one**, and
+    when a claim is load-bearing, quote the sentence next to it so a reader can check the gap.
+43. **A CORRELATION NEVER LOOKS AT WHERE ITS EXPOSURE SITS; A STRATIFIED ANALYSIS HAS TO.** Four
+    experiments correlated a candidate against MAC before one split the axis and found the bottom tercile
+    had a median of 0.00 — half the "volatile arm" was vaporiser-off. A correlation spans an off-state
+    perfectly happily. **Quantile the exposure before designing on it** (rule 41's probe does this).
+44. **REFINING RESOLUTION CANNOT PRESERVE BOTH THE QUESTION AND THE BASE RATE — DECLARE WHICH.** E27 went
+    from a 300 s to a 60 s grid holding the horizon at three windows, which is the same question and
+    mechanically drops the base rate (it failed at 4.0 % against a 5 % floor). Holding the horizon in
+    seconds instead would have preserved the base rate while silently changing "three windows ahead" to
+    "fifteen windows ahead". Both were available, neither is free, and the choice must be stated in the
+    registration rather than discovered in the result.
+45. **A REGISTRATION MUST NAME ITS INCUMBENT.** A marker reported without the thing it has to beat is not a
+    result. E26 named BIS and found the incumbent scored AUC 0.583, which is what made its own null
+    meaningful; E28 named Blankertz 2010. E30 named none, and its +0.710 therefore has no bar beside it.
+    The ledger now carries an `incumbent` field and an empty one is a defect.
+
 ---
 
 ## SOP: the ten-result cadence (STANDING)

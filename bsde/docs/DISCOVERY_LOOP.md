@@ -37,7 +37,8 @@ behaviour, not a fault.**
 |---|---|---|---|
 | 1 | **Literature → blocker** | yes | What does the field already know, and what does that make the *specific* blocker? Verified via NCBI E-utilities with `curl`, never WebFetch (rules 25, 39). |
 | 2 | **Acquire** | yes | Find and ingest data addressing the named blocker. No inferential risk. |
-| 3 | **Register** | **no — judgement** | Predictions, gates, placebo, falsification condition. Written to a file and **committed before the data exists**. Append a row to the ledger in the same commit. |
+| 2.5 | **Probe feasibility** | yes | `governance/feasibility.py`. Sentinels, artefact-tracking, exposure shape, within-subject variation, coverage, base rate — **from the label, exposure, artefact channels and clinical record only, never a candidate column**. Output pasted into the registration. See §2.5. |
+| 3 | **Register** | **no — judgement** | Predictions, gates, placebo, falsification condition, **and the incumbent it must beat**. Written to a file and **committed before the data exists**. Append a row to the ledger in the same commit. |
 | 4 | **Run once** | yes | Gates first. A failed gate ends the iteration. |
 | 5 | **Record** | yes | Write the outcome into the experiment file *and* the ledger, including failures. Commit. |
 | 6 | **Diagnose** | **no — the dangerous step** | See §2. |
@@ -72,9 +73,40 @@ ledger as an empty field.** That is the audit.
 
 ---
 
+## 2.5. The feasibility probe, and why it is not cheating
+
+**Eight of the first thirteen designs died on machinery or coverage rather than on their hypothesis** — four
+`gate_failed`, two `absent`, two `blocked`. Every one was computable in advance without touching a candidate
+column:
+
+| design | what killed it | how it was detectable in advance |
+|---|---|---|
+| E21 | `BIS/BIS` writes 0.0 with the sensor detached | one exact value held **49.1 %** of a continuous column |
+| E22 | every BIS ≥ 80 window is facial EMG | P(label) rose **0.30 → 0.74** across artefact deciles |
+| E27 | base rate 4.0 % against a 5 % floor | arithmetic on the label alone |
+| E29 | within-pair opioid change is 104 % of chance | a median on two clinical columns |
+| E31 | 19 patients against a floor of 20 | a count |
+| E32 | low MAC tercile has median 0.00 | **53 %** of the exposure is exactly zero |
+
+`feasibility.py` reproduces the first, second and sixth of those in seconds, on the real tables.
+
+**Why this does not compromise the registration.** The probe reads the label, the exposure, artefact
+channels and the clinical record. It never reads a candidate. That is the same class of information which
+licensed E22's P4 amendment — counts and distributions computable with no result in hand — and the module
+raises if a caller passes a candidate column as the label, exposure or artefact.
+
+**The one rule that keeps it honest: the probe runs BEFORE the registration and its output is pasted into
+it.** A probe run after a gate fails, used to find the setting that would have passed, is the move §2
+forbids; E29's nine-cell sweep is the worked refusal. Floors are set knowing the coverage, which is the
+opposite of choosing coverage knowing the floors.
+
+---
+
 ## 3. What the loop must emit, every iteration
 
-1. A ledger row, written at step 3 — **before** the data exists, with the registering commit SHA.
+1. A ledger row, written at step 3 — **before** the data exists, with the registering commit SHA, the
+   named incumbent, and the feasibility probe's headline numbers. **Eight of the first thirteen designs
+   named no incumbent at all**, which is why the field exists and why an empty one is a defect (rule 45).
 2. An outcome on that row at step 5, from the vocabulary in `registry_ledger.py`: `gate_failed`, `absent`,
    `blocked`, `withdrawn`, `negative`, `positive`, `closed`. The distinctions carry meaning — `absent` is
    not `negative` (rule 31), and `withdrawn` is not `negative` either.
