@@ -1,0 +1,139 @@
+{
+  "component": "THE STACK AS A PRODUCT -- non-trading revenue from productizing the verified engineering/research assets, NOT statistical edge and NOT counterparty trading",
+  "generated_utc": "2026-07-30",
+  "context": "42/42 pre-registered statistical-edge studies killed (venue_expansion/MAKER_VIABILITY.md line 69: 'Running total: 42 tested, 42 dead'). This file asks a different question from the sibling rev_kalshi_programs.json (contractual venue-paid yield): can the program's ENGINEERING ASSETS THEMSELVES -- kx_history.py (16-shard trade-archive query layer), the candlestick bid/ask harvester, settlement-truth reconciliation tooling (verify_settlement_truth.py), BRTI-reconstruction design notes, 42 adversarially-verified kill reports, and the sub-3ms us-east-2 execution stack (ENGINEERING_STACK.md) -- be sold as a product/service to third parties. None of the opportunities below require placing an order, so none of them are priced against MAKER_VIABILITY.md's quoting-obligation cost bounds (+0.76 to +1.25c/ct front-of-queue optimistic, listing-window NEGATIVE) -- that is the point: this is revenue with zero fill risk and zero counterparty exposure, structurally different from the killed maker strategy.",
+  "method_note": "5 WebFetch pulls (kalshidata.com, kingsets.com, pmxt.dev x2, polymarketanalytics.com -- 2 of 5 returned HTTP 403 and were triangulated via WebSearch) + 5 WebSearch queries for pages that blocked direct fetch or needed pricing-page-specific results. Repo evidence: venue_expansion/DATA_SOURCES.md, ENGINEERING_STACK.md, MAKER_VIABILITY.md, GROUNDING.md, ref/RESEARCH_LEDGER.md, paper/kx_history.py read directly off disk, not re-derived.",
+
+  "comparables": [
+    {
+      "name": "kalshidata.com",
+      "product": "Kalshi 'Data and Analytics' dashboard + a 'Time Machine' section",
+      "pricing": "UNKNOWN -- landing page carries no visible pricing, tier, or signup content on either direct WebFetch or WebSearch; DATA_SOURCES.md (this repo, 2026-07-25) independently logged it as 'reachable (307 redirect)... Aggregates only -- no tape' and explicitly flagged coverage as unverified beyond an HTTP check.",
+      "differentiator_vs_us": "Dashboards/aggregates only, no raw tape access advertised -- does not compete with a trade-level or bid/ask product.",
+      "confidence": "low (pricing page not locatable; DOCUMENTED only that it exists and is reachable)",
+      "citation": "https://kalshidata.com (WebFetch 2026-07-30); venue_expansion/DATA_SOURCES.md sec 4"
+    },
+    {
+      "name": "kingsets.com",
+      "product": "Kalshi + Polymarket historical data: CSV download + queryable BigQuery tables (series/events/markets/trades)",
+      "pricing": "Free tier only found: 'Last 30 days of data available for free,' 'No sign-up required,' site marked 'Currently in beta.' No paid tier text present anywhere on the fetched page.",
+      "differentiator_vs_us": "Kalshi ingest is 'reportedly partial' per this repo's prior check (DATA_SOURCES.md); no settlement reconciliation, no bid/ask candlesticks, 30-day window only.",
+      "confidence": "medium (page fetched directly)",
+      "citation": "https://kingsets.com (WebFetch 2026-07-30); venue_expansion/DATA_SOURCES.md sec 4"
+    },
+    {
+      "name": "pmxt.dev",
+      "product": "Multi-venue (10+ prediction markets incl. Kalshi, Polymarket, Limitless) unified trading/data SDK + metered Data API + a separate historical archive at archive.pmxt.dev",
+      "pricing": "Free: $0/mo, 25,000 credits/mo, 60 req/min, 5 WS streams. Starter: $29.99/mo, 250,000 credits/mo, 300 req/min, 20 WS streams. Pro: $99.99/mo, 1,000,000 credits/mo, 1,000 req/min, 100 WS streams. 1 REST call = 1 credit, 1 WS message = 0.1 credit. Annual = 20% off. Hosted plans 'restricted to personal use'; enterprise is contact-sales. Separately, an MIT-licensed self-hosted SDK is free.",
+      "correction_to_orchestrator_premise": "The task brief assumed pmxt.dev is 'free/CC-BY -- donation/sponsor model.' That is wrong for the live metered API: it is a real 3-tier SaaS priced $0/$29.99/$99.99. It is CC-BY/free only for the underlying archive dataset (consistent with the prior venue_expansion finding that pmxt.dev's Polymarket order-book PARQUET archive is free, credential-free, CC-BY-4.0). The structural lesson: the RAW DATA is free, the METERED/CONVENIENCE LAYER around it is a real paying business -- directly relevant to which layer of our own stack is sellable (see gap analysis).",
+      "traction_caveat": "The pricing page's own usage-stat widget (downloads / GitHub stars / markets covered / years of data) displayed literal '0' for all four on this pull -- read as placeholder/template values, i.e. no independently verifiable evidence of real customer traction was found. Treat the pricing tiers as a real rate card, not as proof anyone is paying it.",
+      "confidence": "medium-high on pricing text (fetched twice, consistent); low on traction",
+      "citation": "https://pmxt.dev and https://pmxt.dev/pricing (WebFetch 2026-07-30); venue_expansion/FINDINGS.md sec 5 (prior pmxt.dev finding)"
+    },
+    {
+      "name": "polymarketanalytics.com",
+      "product": "Polymarket-only on-chain wallet/trader/market analytics dashboard (favorites, saved views, leaderboards, portfolio tracking)",
+      "pricing": "Free: $0/forever, 7 favorite markets/traders/tags/creators, full market analytics, trader leaderboards. Premium: $20/mo, 1,000+ favorites/saved views, priority data refresh, advanced portfolio tracking, early access. Elite: 1 ETH lifetime ('coming soon'), everything in Premium + private Telegram + lifetime access.",
+      "differentiator_vs_us": "Polymarket only (not Kalshi), on-chain wallet/trader analytics -- a different product category from a trade-tape/backtest dataset; not a direct competitor to our archive-and-settlement-reconciliation angle.",
+      "confidence": "medium (pricing page itself 403'd; figures triangulated from two independent WebSearch result summaries that agree)",
+      "citation": "https://polymarketanalytics.com/pricing (WebSearch triangulation 2026-07-30, direct fetch 403)"
+    },
+    {
+      "name": "kalshibacktest.com",
+      "product": "Kalshi CRYPTO-ONLY (BTC/ETH/SOL/DOGE/XRP) order-book backtesting API, polls the live book at 100ms resolution so backtests can walk the book and compute slippage, not just last-trade",
+      "pricing": "Free: 1 req/s, 60 req/min, newest 50 markets per market type, no credit card. Pro: $19.90/mo, 10 req/s, 300 req/min, 31 days of history.",
+      "differentiator_vs_us": "This is the closest direct comparable to a 'sell the tape' product and it is CHEAP ($19.90/mo) with a real free tier and only 31 days of paid history -- a low price ceiling set by an existing, live competitor. It does NOT advertise settlement-outcome reconciliation or a bid/ask candlestick archive spanning full market history back to 2021.",
+      "confidence": "medium (figures from WebSearch summary of the vendor's own pages, consistent across two separate queries)",
+      "citation": "https://kalshibacktest.com/ and https://docs.kalshibacktest.com/ (WebSearch 2026-07-30)"
+    },
+    {
+      "name": "lycheedata.com",
+      "product": "Kalshi + Polymarket historical data platform, markets itself as a 36GB+ full-history dataset ('every trade since launch'), no-code queries, CSV/XLSX/JSON export, tiered Basic/Pro/Elite",
+      "pricing": "UNKNOWN dollar amounts -- pricing page exists but neither direct WebFetch nor two WebSearch passes could surface the actual tier prices; only tier NAMES and vague scope descriptions ('smaller pulls' / 'larger research exports' / 'high-volume... bulk datasets') were found.",
+      "differentiator_vs_us": "Marketed scope (full history, both venues) is the most direct overlap with a hypothetical 'sell the archive' product from this stack. Opaque pricing is itself informative -- likely sales-gated/negotiated, which is a signal this is a thin, low-volume market, not a self-serve mass product.",
+      "confidence": "low on price, medium on positioning",
+      "citation": "https://lycheedata.com/kalshi-historical-data (WebFetch 2026-07-30, pricing section not in rendered content); WebSearch 2026-07-30"
+    }
+  ],
+
+  "market_read": "Six live comparables were found, three of them charging real, published, low prices for materially the same 'Kalshi/Polymarket historical tape, queryable' product our raw kx_history.py archive access would be: kalshibacktest.com Pro at $19.90/mo (Kalshi crypto order-book, 31-day paid window), pmxt.dev Starter/Pro at $29.99/$99.99/mo (multi-venue metered API), kingsets.com free-only (30-day CSV/BigQuery). The underlying trade archive itself (TrevorJS/kalshi-trades, HuggingFace, CC-BY-4.0, verified in this repo's DATA_SOURCES.md) is FREE and already publicly downloadable with no signup. That means the raw-data layer is a commodity with a price ceiling near $0-20/mo set by live competitors and one genuinely free incumbent -- selling raw tape access head-on is a bad business per the orchestrator's own kill rule. The sellable layer, if any, is validated correctness and reconciliation, not access.",
+
+  "gaps_identified": [
+    {
+      "gap": "Settlement-truth reconciliation as a discrete, citable service",
+      "evidence_none_of_the_comparables_serve_it": "None of the six comparables' public pages mention validating trade/backtest outcomes against Kalshi's official settlement `result` field. This repo has direct, embarrassing proof of why that matters: PAPER_TRADER_AUDIT.md found 14.2% of a prior sleeve's SELF-SCORED outcomes were wrong when checked against `GET /trade-api/v2/markets/{ticker}` -> `result` (cited in DATA_SOURCES.md sec 3). verify_settlement_truth.py and out/settlement_truth.json already exist as the tooling that catches this class of bug.",
+      "who_would_pay": "Third-party quant researchers / backtest-framework builders who compute their own market outcomes (from price thresholds, brackets, etc.) instead of pulling Kalshi's official settlement field -- exactly the mistake this program already made and caught internally."
+    },
+    {
+      "gap": "Full-fidelity (16/16 shard) + bid/ask (not last-trade-only) + archive-to-live-bridged research dataset",
+      "evidence_none_of_the_comparables_serve_it": "kalshibacktest.com Pro caps paid history at 31 days; kingsets.com caps free access at 30 days; the free CC-BY HuggingFace archive itself was, until this repo's own bugfix (DATA_SOURCES.md sec 1a), silently missing 7 of 16 trade shards (44% of the tape) in the naive reading every downstream consumer would plausibly reproduce -- and even fixed, the archive is frozen at 2026-01-28 with a ~6-month hole vs. today that only the candlestick-bid/ask bridge (already built, used in PAPER_TRADER_AUDIT.md) fills.",
+      "who_would_pay": "Same audience as above -- a narrow, technically sophisticated slice of independent Kalshi quant researchers, likely dozens to low hundreds of people total, not a mass market."
+    },
+    {
+      "gap": "The 42-study graveyard as a published, adversarially-verified negative-results research record",
+      "evidence_none_of_the_comparables_serve_it": "All six comparables sell DATA ACCESS. None publish RESEARCH FINDINGS (what does/doesn't work, and why, with the kill mechanism named). This program has a genuinely unusual asset: 42 pre-registered strategies, each independently re-run/re-verified (2 blind builds + adversarial Fable review gate per MAKER_VIABILITY.md), all killed and documented with the specific statistical mechanism (nonstationarity, achievability, stale-print artifact, etc.). This is closer to a sell-side quant research product (which normally costs five or six figures/yr, e.g. institutional research subscriptions) than to a data feed, and nothing comparable exists in the public Kalshi/Polymarket tooling space found in this search.",
+      "who_would_pay": "Prospective Kalshi algo-traders (individuals or small funds) deciding whether to spend months rediscovering that maker/resting-bid capture, favorite-longshot fade, and latency racing on crypto up/down are all dead ends on this venue -- a real but small and price-sensitive audience."
+    }
+  ],
+
+  "opportunities_ranked": [
+    {
+      "rank": 1,
+      "name": "The Graveyard: a published research record (42 killed strategies, adversarially verified)",
+      "type": "CONTENT/PUBLICATION -- zero fill risk, zero quoting obligation, ships from files already on disk",
+      "mechanics": "Publish the existing kill reports (MAKER_VIABILITY.md, ref/RESEARCH_LEDGER.md graveyard table, and the underlying methodology write-ups) as a structured, citable research record -- e.g. a static site or newsletter, one entry per killed strategy with the specific mechanism, the pre-registered bar, and the verification chain (2 blind builds + adversarial review). Free-to-read by default (matches the CC-BY norm the space already runs on -- pmxt.dev's raw archive, TrevorJS's HF dataset), monetized the way pmxt.dev's REAL business is monetized: a thin paid layer on top (e.g. early access to new kill reports, a searchable/queryable version, or a paid consulting add-on -- 'we'll pre-register and adversarially test your specific idea against this venue's history for a fee').",
+      "revenue_estimate": {
+        "value": "$0-300/mo passive (ESTIMATE) if run as a free-read + small-paid-tier newsletter; consulting add-on ('test my strategy idea against the graveyard methodology') could add $200-800 per bounded engagement (ESTIMATE, no comparable price found -- there is no market precedent for this exact service, so treat as speculative, not anchored)",
+        "basis": "Anchored low deliberately: polymarketanalytics.com's own $20/mo premium tier, on a much larger and more mainstream product (Polymarket wallet/trader analytics with a public leaderboard funnel), is the most comparable 'small paid tier on a free base' precedent found. A single-operator, Kalshi-only, methodology-heavy research record has a smaller and more specialized audience than a general Polymarket dashboard, so pricing at or below that tier and expecting low absolute subscriber counts (tens, not hundreds) is the honest read."
+      },
+      "cost_estimate": {
+        "value": "Near-$0 to publish the 42 existing reports (already written, on disk, just need a presentation layer). Ongoing: ~2-5h/mo (ESTIMATE) if new kill reports continue to be added at the program's historical cadence; $0 hosting-class cost (static site).",
+        "basis": "Computed from the fact that all source material (MAKER_VIABILITY.md, RESEARCH_LEDGER.md, individual study .md/.json files) already exists in venue_expansion/ and venue_expansion/ref/ -- this is a repackaging cost, not a research cost."
+      },
+      "eligibility": "US-person: no issue -- this is publishing analysis of public settlement data, not trading. No geo-block (unlike global Polymarket). Compliance note: none of the underlying data is proprietary to Kalshi in a way that would block republishing ANALYSIS (as opposed to redistributing their raw feeds) -- this is commentary/research, the lowest-compliance-risk category in this whole file.",
+      "capital_required": "$0 (existing content); optional ~$5-10/mo for a domain/static host if not using a free platform like Substack/GitHub Pages",
+      "confidence": "medium",
+      "citation": "venue_expansion/MAKER_VIABILITY.md line 69 ('42 tested, 42 dead'); venue_expansion/ref/RESEARCH_LEDGER.md sec 3 (graveyard table); https://polymarketanalytics.com/pricing (WebSearch 2026-07-30, comparable pricing anchor)"
+    },
+    {
+      "rank": 2,
+      "name": "Settlement-truth audit -- bounded, one-off engagements (not a subscription)",
+      "type": "SERVICE/CONSULTING -- zero fill risk, zero quoting obligation, bounded scope per engagement (deliberately not open-ended support, to respect the >20h/mo kill rule)",
+      "mechanics": "Offer a fixed-scope audit: a third party's self-scored backtest outcomes get reconciled against Kalshi's official `result` field using verify_settlement_truth.py, with a written report of the discrepancy rate (this program's own prior finding was 14.2% wrong -- a credible, concrete example of the value delivered). Sold as a bounded deliverable (e.g. 'reconcile up to N tickers, one report'), not a subscription -- avoids ongoing support burden.",
+      "revenue_estimate": {
+        "value": "$150-500 per engagement (ESTIMATE), realistically 0-2 engagements/month given the audience size",
+        "basis": "No direct market comparable exists for this specific micro-service (none of the six comparables offer it), so this is priced by analogy to a few hours of specialized contractor time, not to a published competitor rate -- flagged as the weakest-evidenced number in this file."
+      },
+      "cost_estimate": {
+        "value": "~2-6h per engagement (ESTIMATE) using existing verify_settlement_truth.py tooling; well under the 20h/mo ceiling even at 2 engagements/month",
+        "basis": "Tool already exists and was exercised once already (out/settlement_truth.json) -- marginal cost per engagement is mostly the client's own ticker list plus report-writing, not new tooling."
+      },
+      "eligibility": "US-person: no issue, service business. Compliance: none identified beyond ordinary business/tax registration (out of scope here) -- reads Kalshi's own public official API, does not redistribute Kalshi's data wholesale, lower compliance surface than a data-resale product.",
+      "capital_required": "$0 (tooling exists); the $5-20/mo us-east-2 VPS is already costed in ENGINEERING_STACK.md for the (killed) trading use case and is not incremental here",
+      "confidence": "low",
+      "citation": "venue_expansion/DATA_SOURCES.md sec 3 (14.2% self-scored-outcome error, PAPER_TRADER_AUDIT.md); venue_expansion/verify_settlement_truth.py and out/settlement_truth.json (tooling exists on disk)"
+    }
+  ],
+
+  "dead_ends": [
+    {
+      "idea": "Sell raw/bulk access to the 16-shard Kalshi trade archive (kx_history.py) as a subscription data product",
+      "why_killed": "Competes head-on with a free incumbent by the orchestrator's own rule: the underlying TrevorJS/kalshi-trades archive is CC-BY-4.0, free, no signup, directly downloadable from HuggingFace (verified, DATA_SOURCES.md sec 1). It is also underpriced by two live competitors doing materially the same thing: kalshibacktest.com Pro at $19.90/mo and kingsets.com free-only. Our only real edge (the 9-vs-16 shard bugfix) fixes a bug in reading a FREE dataset -- it is a documentation/correctness contribution to the commons, not a moat; anyone else who reads the archive's own file listing finds the same 16 shards.",
+      "citation": "venue_expansion/DATA_SOURCES.md sec 1, 1a; https://kalshibacktest.com/ (WebSearch 2026-07-30); https://kingsets.com (WebFetch 2026-07-30)"
+    },
+    {
+      "idea": "BRTI-reconstruction as a paid always-on reference-price WS feed for other Kalshi crypto traders",
+      "why_killed": "Fails the >20h/mo maintenance ceiling on inspection: ENGINEERING_STACK.md sec 4 documents that CF Benchmarks' BRTI methodology is 'a living spec... changed twice in the 10 weeks before measurement' and requires 'a version-tracking chore, not a one-time build,' on top of the uptime/support burden of running a paid always-on feed (monitoring, incident response, customer SLA) for a tiny, technical, low-volume customer base. The underlying constituent feeds (Coinbase, Kraken, Bitstamp, Gemini) are themselves free and directly usable by any sophisticated customer, further compressing willingness to pay.",
+      "citation": "venue_expansion/ENGINEERING_STACK.md sec 4"
+    },
+    {
+      "idea": "Sell the sub-3ms execution stack itself (colocation-equivalent placement, warm-process pattern, queue-position tooling) as white-label infrastructure/SaaS for other Kalshi bot builders",
+      "why_killed": "The stack was built and measured specifically to serve a maker strategy that failed its own registered kill gates (MAKER_VIABILITY.md) -- selling 'the infrastructure for a strategy we ourselves killed' to third parties is an integrity problem before it is a business-viability problem (we would be marketing infra whose own economic overlay says 'no infrastructure spend is justified by any currently-validated strategy,' ENGINEERING_STACK.md line 20-21). Even setting that aside, this is bespoke devops consulting per customer, not a productized SKU -- high variable cost, small addressable market, does not meet 'minimum compliance cost' scoped by this task.",
+      "citation": "venue_expansion/ENGINEERING_STACK.md line 15-21; venue_expansion/MAKER_VIABILITY.md (permanent kill)"
+    }
+  ],
+
+  "us_person_note": "Every opportunity in this file is a US-legal content/service business built on Kalshi's own public official API and a CC-BY-licensed public dataset -- no geo-blocking issue exists (that is specifically a global-Polymarket problem noted elsewhere in this repo, e.g. FINDINGS.md). No trading, no order placement, no quoting obligation, and therefore none of these opportunities are priced against MAKER_VIABILITY.md's maker-fill cost bounds -- that cost model does not apply because nothing here takes a fill.",
+
+  "bottom_line": "Six live public comparables (kalshidata.com, kingsets.com, pmxt.dev, polymarketanalytics.com, kalshibacktest.com, lycheedata.com) already sell materially the same 'Kalshi/Polymarket historical data, queryable' product this stack could offer, at prices from free to $99.99/mo, on top of an underlying archive that is itself free and CC-BY-licensed. That collapses the obvious 'sell the archive' idea into a dead end. The two things genuinely not served by any comparable found -- a citable record of 42 adversarially-verified negative results, and bounded settlement-truth audits using tooling that already caught a real 14.2% error rate in this program's own prior work -- are real gaps, but both are small-audience, low-absolute-revenue plays (ESTIMATE: low hundreds of $/mo combined, not a business), not a pivot that replaces the trading program. Their appeal is asymmetric: near-zero build cost (content and tooling already exist), near-zero maintenance, and zero quoting/fill risk -- consistent with the task's 'minimum compliance cost' framing, but the ceiling should be stated honestly rather than dressed up."
+}

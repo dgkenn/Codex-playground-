@@ -1,0 +1,139 @@
+{
+  "component": "CROSS-VENUE CONTRACTUAL/STRUCTURAL REVENUE (rebates, liquidity-mining pools, coupons) -- NOT statistical edge",
+  "generated_utc": "2026-07-30T00:00:00Z",
+  "context": "Companion to venue_expansion/out/rev_kalshi_programs.json, same task frame: 42/42 pre-registered statistical-edge studies killed (MAKER_VIABILITY.md permanent kill, 2026-07-30: pool-average maker EV +0.76 to +1.25c/ct is a front-of-queue optimistic bound, temporally unstable (0/20 cells pass both sample halves), achievable listing-window population NEGATIVE, BTC -0.99c/ct, ETH -8.81c/ct). This file enumerates money paid by documented program TERMS across the non-Kalshi venues this repo has already touched (Polymarket global, ForecastEx/IBKR, plus a fresh US-legal sweep: Crypto.com, Novig, ProphetX), and applies MAKER_VIABILITY's bounds as the cost model wherever a program requires actual fills, per orchestrator instruction. US-person deployability is checked and stated plainly for every item, not soft-pedaled.",
+  "method_note": "Grounded first in on-disk citations (venue_expansion/ref/pmkt_final_verdict.md's live-pulled feeSchedule; venue_expansion/out/venues_us.json's venue sweep; venue_expansion/S3_FORECASTEX.md; venue_expansion/FINDINGS.md; venue_expansion/cache/fx_rulebook.pdf -- ForecastEx's own CFTC-filed rulebook, parsed directly with pypdf in this task, not previously mined for Rule 416/612 text). Live WebFetch against docs.polymarket.com, crypto.com/us/prediction, novig.us; WebSearch triangulation where direct fetch 403'd (prophetx.info, prophethelp Zendesk, ibkrguides.com all returned 403 to this container -- flagged per-item, not silently treated as fetched).",
+
+  "opportunities_ranked": [
+
+    {
+      "rank": 1,
+      "name": "ForecastEx (IBKR) Incentive Coupon -- Rule 612, collateral yield",
+      "venue": "ForecastEx LLC (CFTC-registered DCM+DCO, wholly owned IBKR subsidiary)",
+      "type": "CONTRACTUAL YIELD -- zero quoting obligation, zero fill risk",
+      "us_person_status": "US-LEGAL, no geo-block. This is IBKR's own regulated US product; an ordinary IBKR brokerage account is the only prerequisite (same conclusion venue_expansion/out/venues_us.json already reached for market access generally).",
+      "mechanics": {
+        "primary_source": "venue_expansion/cache/fx_rulebook.pdf, ForecastEx LLC Rulebook Rule 612 'Investment of Member Funds', p.54 -- parsed directly with pypdf in this task (not previously mined for this rule; S3_FORECASTEX.md and FINDINGS.md only referenced the coupon qualitatively).",
+        "exact_formula_DOCUMENTED": "Rule 612(c)(3): 'Coupon Rate = (EFFR - 50 basis points) / 2', where EFFR is the Effective Federal Funds Rate published by the Federal Reserve Bank of New York. Rule 612(c)(5): the minimum monthly coupon accruing to Customers 'can never be less than zero' -- a floor, not a ceiling; Rule 612(c)(2) states the Clearinghouse-to-FCM coupon is 'equal to or greater than' this floor, i.e. FCM Members (IBKR) may pass through more than the formula's minimum at their discretion.",
+        "accrual_base": "Rule 612(c)(1): 'Customer positions in Customer Collateral Accounts will accrue monthly coupons based on the daily settlement value of each Customer's positions' -- i.e. paid on held collateral backing open positions (and, per secondary IBKR marketing pages, cash collateral generally), same accrual-on-holdings shape as Kalshi's APY program (rev_kalshi_programs.json rank 1).",
+        "payment_frequency": "Accrues daily, paid monthly (Rule 612(c) header language + corroborated by every secondary IBKR source found).",
+        "current_EFFR": "3.63% as of 2026-07-27 (Federal Reserve H.15 release / NY Fed EFFR series, via WebSearch -- DOCUMENTED, dated).",
+        "computed_minimum_coupon": "(3.63% - 0.50%) / 2 = 1.565% APY -- this is the RULEBOOK FLOOR, an ESTIMATE computed from a DOCUMENTED formula plus a DOCUMENTED current EFFR, not itself a quoted rate.",
+        "reported_actual_rate_UNVERIFIED": "Secondary sources (WebSearch, no single page fetched cleanly -- ibkrguides.com 403'd this container) report inconsistent current figures: 3.13% APY ('IBKR US platform'), 3.80% APY (pm.wiki), 4.83% APR (an ibkrguides.com page summary). These likely reflect different snapshot dates as EFFR has moved, and/or IBKR passing through more than the Rule 612 floor per its (c)(2) discretion -- none independently confirmed live in this task (the two direct-fetch attempts at ibkrguides.com and interactivebrokers.com/campus both returned HTTP 403 to this container). Treat 1.565% as the defensible DOCUMENTED-formula floor and ~3-4% as a plausible but UNVERIFIED actual-paid range; before sizing, pull the rate directly from an authenticated IBKR account view.",
+        "comparison_to_kalshi": "ForecastEx's rulebook FLOOR (1.565% at today's EFFR) is materially below Kalshi's documented actual 3.25% (rev_kalshi_programs.json rank 1). If the UNVERIFIED ~3.13-3.80% actual-paid figures hold up, ForecastEx is roughly at parity with Kalshi; this needs live confirmation before choosing where to park idle/margin capital across the two venues."
+      },
+      "cost_model": {
+        "compliance_cost": "$0 incremental -- same reasoning as Kalshi's APY: no quoting obligation, capital is collateral the bot holds onsite regardless if trading ForecastEx contracts at all. MAKER_VIABILITY.md's fill-cost bounds do not apply here (no fills involved).",
+        "arithmetic_at_rulebook_floor_1.565pct": [
+          {"capital_usd": 10000, "annual_usd": 156.50, "monthly_usd": 13.04},
+          {"capital_usd": 25000, "annual_usd": 391.25, "monthly_usd": 32.60},
+          {"capital_usd": 50000, "annual_usd": 782.50, "monthly_usd": 65.21},
+          {"capital_usd": 100000, "annual_usd": 1565.00, "monthly_usd": 130.42}
+        ],
+        "arithmetic_at_reported_actual_range_3.13_to_3.80pct_UNVERIFIED": [
+          {"capital_usd": 25000, "annual_usd_low": 782.50, "annual_usd_high": 950.00},
+          {"capital_usd": 100000, "annual_usd_low": 3130.00, "annual_usd_high": 3800.00}
+        ]
+      },
+      "minimum_viable_scale": "Any nonzero collateral balance -- no published minimum in Rule 612 (unlike Kalshi's $250 APY floor). Immediately capturable on whatever margin the program keeps at ForecastEx for other trading, no build required.",
+      "verdict": "Real, DOCUMENTED-formula, zero-cost, US-legal. Confirm the actual paid rate live (Rule 612 gives only a floor) before comparing sizing against Kalshi's APY -- that is the one open item, and it is a five-minute account-view check, not a research gap.",
+      "confidence": "high (formula and floor); medium (actual paid rate, pending live confirmation)"
+    },
+
+    {
+      "rank": 2,
+      "name": "ProphetX Liquidity Rewards Program",
+      "venue": "ProphetX (CFTC dual-registered DCM+DCO, 'America's Sports Prediction Exchange')",
+      "type": "CONTRACTUAL INCENTIVE POOL -- quoting/market-making-activity weighted",
+      "us_person_status": "US-LEGAL, launched nationwide (venue_expansion/out/venues_us.json already confirmed CFTC approval, June 2026). SPORTS-ONLY -- explicitly excludes weather/politics/finance per that same sweep, so this cannot be reached via the mechanical-lock research thread; it is a pure quoting-presence revenue line, independent of that killed mechanism.",
+      "mechanics": {
+        "citations": "https://www.prophetx.info/ (leaderboard page) and https://prophethelp.zendesk.com/hc/en-us/articles/26975305056145-Understanding-Liquidity -- BOTH returned HTTP 403 to this container on direct WebFetch; content below is WebSearch-indexed triangulation of these two pages, same confidence tier as Kalshi's referral-program citation in rev_kalshi_programs.json (secondary-sourced, not primary-fetched).",
+        "structure": "Reward pools split by category, each category's pool paying 33.33% of a stated per-category dollar figure per day; two categories found: 'NBA First Half, Game Props, and Alt Player Props' and 'NHL Player Props and Game Props', each cited at 33.33%/$2,000/day -- implying category pools on the order of $6,000/day total observed (only these categories surfaced by search; the full category list and total program size are UNVERIFIED without a direct page fetch).",
+        "scoring": "'Rewards weighted by market-making activity' via a daily leaderboard with 'payout snapshots across eligible categories' -- exact scoring formula (presence-weighted like Kalshi LIP/Polymarket Liquidity Rewards, vs. fill-volume-weighted like a maker rebate) is NOT resolved from available text. This is the single biggest open item for sizing -- it determines whether MAKER_VIABILITY's fill-cost bounds apply at all.",
+        "exclusions": "Self-matched trades and participant-against-participant volume are explicitly excluded (anti-wash-trading control); ProphetX reserves the right to disqualify or suspend abusive/manipulative participants."
+      },
+      "cost_model": {
+        "instruction": "Same MAKER_VIABILITY.md bounds per orchestrator instruction: pool-average 0 to +1.25c/ct optimistic, -0.99 to -8.81c/ct listing-window pessimistic -- flagged CROSS-VENUE-TRANSFERRED, not re-measured: these numbers come from Kalshi crypto-hourly maker fills, a different asset class and matching engine. Applying them to a sports-exchange P2P model is a directional sanity check only, not a calibrated estimate.",
+        "key_unknown": "Whether reward eligibility requires a RESTING order (Kalshi LIP/Polymarket Liquidity Rewards shape -- no fill-cost exposure) or a FILLED maker order (a maker-rebate shape -- full fill-cost exposure applies). 'Weighted by market-making activity' reads closer to the latter but is not conclusive from available text.",
+        "worked_example_if_presence_only": "If eligibility is pure resting-order presence (best case): a small automated quoter capturing even 1% of a $2,000/day category pool = $20/day = ~$600/month, zero fill-cost exposure -- structurally the same shape as Kalshi's rank-2 LIP finding.",
+        "worked_example_if_fill_weighted": "If eligibility requires fills (worse case, matching Kalshi rank-2's worked-example-B logic): the same $20/day gross could be erased by a single adverse fill at any meaningfully-sized sports-prop position, since sports-prop books are typically thinner than the crypto-hourly Kalshi books MAKER_VIABILITY measured -- plausibly WORSE adverse-selection exposure than the already-negative Kalshi listing-window bound, not better."
+      },
+      "minimum_viable_scale": "Not computable without resolving the presence-vs-fill question above -- do not size capital against this until a direct (non-403'd) fetch of prophethelp's own liquidity-scoring page, or an account-level view, clarifies the mechanic.",
+      "verdict": "Real, US-legal, a genuine dollar pool exists ($2k/day-scale per category, likely $6k+/day program-wide) -- but the scoring mechanism (the one fact that determines whether this is free money or fill-cost-exposed) is unresolved from what this task could fetch. Cheapest next step: a direct browser/authenticated fetch of the two 403'd pages, not further WebSearch triangulation.",
+      "confidence": "medium (program's existence and rough pool size); low (economics, pending the scoring-mechanism unknown)"
+    },
+
+    {
+      "rank": 3,
+      "name": "Polymarket Maker Rebates Program (rebateRate 0.25 on Weather)",
+      "venue": "Polymarket GLOBAL (gamma-api.polymarket.com / clob.polymarket.com, wallet+USDC+pUSD, the geo-blocked product every prior pmkt_*.md study measured)",
+      "type": "CONTRACTUAL INCENTIVE, funded from taker fees -- requires actual maker fills",
+      "us_person_status": "NON-DEPLOYABLE FOR THIS OPERATOR. Stated plainly, no hedging: Polymarket's global venue is geo-blocked to US persons per its 2022 CFTC settlement (ref/pmkt_final_verdict.md section 6, reconfirmed there as of 2026-07-19). The Maker Rebates program runs on this exact venue's fee/CLOB infrastructure -- it pays out in 'pUSD', the global venue's own settlement currency, per docs.polymarket.com, which is not a Polymarket US (QCX) concept anywhere found. venues_us.json (2026-07-23) separately confirmed Polymarket US does not list weather markets at all and gates its API behind an institutional application process -- so even if this rebate program had a Polymarket US analog (not established), the weather category it was asked about specifically would not exist there. This is a dead end on access grounds alone; the mechanics below are documented for completeness, not because they are actionable.",
+      "mechanics": {
+        "citation_rebateRate_live_value": "venue_expansion/ref/pmkt_final_verdict.md line 132 (this repo's own live-pulled data, 2026-07-19): every sampled Weather-category market's `feeSchedule` field reads `{\"exponent\": 1, \"rate\": 0.05, \"takerOnly\": true, \"rebateRate\": 0.25}` -- DOCUMENTED, first-party, already on disk.",
+        "citation_program_pages": "https://docs.polymarket.com/programs/maker-rebates.md and https://docs.polymarket.com/llms.txt index (live WebFetch, 2026-07-30) -- confirms this is a DISTINCT program from Liquidity Rewards (rank 4 below), paying in 'pUSD'.",
+        "what_rebateRate_0.25_means": "25% of the TAKER FEES collected in a given category (here: Weather) are pooled and redistributed daily to that day's makers, pro-rata by each maker's fee-equivalent contribution: rebate = (your_fee_equivalent / total_fee_equivalent_that_day_in_category) x rebate_pool, where fee_equivalent for a fill = C x feeRate x p x (1-p) (the same taker-fee formula pmkt_final_verdict.md already used, feeRate=0.05 for weather). It is NOT a fixed rebate per contract -- it is a share of a pool sized by how much taker fee volume the whole category generated that day, so a maker's payout depends on category-wide taker activity, not just the maker's own volume.",
+        "per_category_rates_cross-checked": "WebSearch-synthesized secondary read of docs.polymarket.com content: Crypto 20%, Sports 15%, Finance/Politics/Economics/Culture/Weather/Tech/Mentions/Other 25% each, Geopolitics fee-free (no rebate pool exists there). Weather's 25% matches the live-pulled 0.25 in pmkt_final_verdict.md exactly -- corroborated two ways.",
+        "payout_mechanics": "Distributed daily; minimum $1 pUSD threshold to trigger a payout (sub-$1 days do not pay and do not appear to roll over, per docs), same shape as the separate Liquidity Rewards program's $1 floor."
+      },
+      "cost_model": {
+        "instruction": "This requires GETTING FILLED as a maker, so MAKER_VIABILITY.md's bounds are the applicable cost model per orchestrator instruction -- but this is now moot given the access verdict above; not worked further.",
+        "moot_reason": "Zero achievable revenue for a US-person operator regardless of the fill-cost arithmetic, because the venue itself cannot be reached."
+      },
+      "minimum_viable_scale": "N/A -- non-deployable.",
+      "verdict": "DEAD END on access, not economics. Documented mechanics only for completeness and to correct the record on what 'rebateRate: 0.25' actually pays (a pooled, category-wide, taker-fee-funded daily rebate share -- not a fixed per-contract maker payment). Do not build against this for a US-person-operated bot.",
+      "confidence": "high (mechanics documented via two independent corroborating sources); high (dead-end verdict, reusing this repo's own already-established geo-block finding)"
+    },
+
+    {
+      "rank": 4,
+      "name": "Polymarket Liquidity Rewards Program",
+      "venue": "Polymarket GLOBAL (same geo-blocked venue as rank 3, same non-deployability verdict, restated per-item as instructed, not soft-pedaled)",
+      "type": "CONTRACTUAL INCENTIVE POOL -- quoting-PRESENCE weighted, no fill required (the Polymarket analog of Kalshi's LIP, rev_kalshi_programs.json rank 2)",
+      "us_person_status": "NON-DEPLOYABLE FOR THIS OPERATOR -- identical reasoning to rank 3: this is the global venue's program (docs.polymarket.com/market-makers/liquidity-rewards), geo-blocked to US persons; Polymarket US does not list weather and gates its API. Stated plainly.",
+      "mechanics": {
+        "citation": "https://docs.polymarket.com/market-makers/liquidity-rewards (live WebFetch, 2026-07-30, DOCUMENTED) + corroborating WebSearch triangulation (help.polymarket.com, startpolymarket.com, bravadotrade.com).",
+        "scoring_formula": "S(v,s) = ((v-s)/v)^2 x b, where v = the market's maximum qualifying spread and s = the order's actual spread from the 'size-cutoff-adjusted midpoint' -- a quadratic decay that 'heavily penalizes' resting orders away from the midpoint, order SIZE multiplies this score, and per-maker scores are aggregated per side then normalized against the sum of all makers' scores that epoch: your_share = your_Q_epoch / sum(all_makers_Q_epoch), reward = your_share x market's_reward_allocation.",
+        "two_sided_requirement": "When the midpoint sits in [0.10, 0.90], quoting only one side divides your score by 3.0 (a real but survivable penalty); outside that range liquidity must be double-sided to score at all.",
+        "eligibility": "Automatic for any resting limit order in an incentivized market -- no application/approval gate (matches Kalshi LIP's shape, unlike the Kalshi/ForecastEx MM-agreement programs). Each incentivized market separately configures its own minimum qualifying order size, maximum qualifying spread, and reward allocation.",
+        "payout": "Daily at midnight UTC, $1 minimum threshold (sub-$1 days do not pay).",
+        "why_this_stack_would_fit_if_deployable": "This is structurally the SAME match this repo already identified for Kalshi's LIP (rev_kalshi_programs.json rank 2): it pays for verified resting-order presence and proximity, not fill P&L -- exactly the axis ENGINEERING_STACK.md's warm-path/persistent-WS/queue-position tooling is built for, and explicitly does NOT require winning fills the way the killed statistical-edge studies needed to."
+      },
+      "cost_model": {
+        "instruction": "No quoting-obligation fill-cost applies to the SCORE itself (resting orders that never fill still earn reward share) -- the only fill-cost exposure is incidental, from orders placed close enough to the midpoint to score well also being more likely to get run over. This is the one line item in the whole cross-venue sweep that would have used MAKER_VIABILITY's bounds as a genuine incidental-fill-risk overlay rather than a core cost, exactly like Kalshi LIP -- but it is moot here for the same access reason as rank 3."
+      },
+      "minimum_viable_scale": "N/A -- non-deployable.",
+      "verdict": "The single best-matched payout mechanism to the verified engineering stack found anywhere in this entire cross-venue sweep (presence-rewarded, not fill-rewarded, no relationship gate) -- and it is completely inaccessible to a US-person operator. This is the sharpest illustration in the file of the geo-block cost: the one program that would have been a near-frictionless fit for the built infrastructure is the one program this operator cannot legally touch on this venue.",
+      "confidence": "high (mechanics); high (dead-end verdict)"
+    },
+
+    {
+      "rank": 5,
+      "name": "ForecastEx Market Maker Program -- Rule 416",
+      "venue": "ForecastEx LLC",
+      "type": "DISCRETIONARY CONTRACTUAL INCENTIVE -- gated behind an application, same shape as Kalshi's MM Agreement/DLP dead end",
+      "us_person_status": "US-legal in principle, but access-gated, not open -- see verdict.",
+      "mechanics": {
+        "citation": "venue_expansion/cache/fx_rulebook.pdf, Rule 416 'Market Maker Program', pp.39-41 -- parsed directly with pypdf in this task, first time this repo has read this rule.",
+        "text": "Rule 416(a): 'ForecastEx may institute a Market Maker program at its discretion. There may be more than one market maker program in place at any given time.' Rule 416(b): 'ForecastEx has sole discretion on whether to allow a given Market Participant to become a Market Maker.' Rule 416(c): a Market Maker program 'may reward Market Maker participants with advantages (\"Program Benefits\") including financial incentives, higher position limit and/or position accountability levels, and alternative collateral rules' -- no dollar figures, percentages, or formula published in the rulebook itself; 'All benefits will be described in the Market Maker program' (a separate, non-public document per participant/program).",
+        "obligation": "Rule 416(d): must execute a Market Maker agreement, then 'maintain Bids on both the Yes and No Contracts of a given Event Market for a certain percentage of the time, with Bids of a minimum size, and with a maximum spread' -- exact percentages/sizes unpublished, monitored via monthly ForecastEx reviews (416(e)), with 'forfeiture of incentives and/or termination' for non-compliance.",
+        "search_of_regulatory_S3_prefix": "venue_expansion/cache/fx_regulatory_list.xml (269 keys, already cached from a prior session) contains exactly one incentive/fee-adjacent document: ForecastEx_Fee_Schedule.pdf (flat $0.01/ct, no rebate tier -- already fully characterized in venue_expansion/S3_FORECASTEX.md). No separate published Market Maker incentive schedule exists in the public S3 regulatory prefix; grepped this task for 'liquidity provider', 'rebate', 'incentive program' across the rulebook text -- zero hits outside Rule 416's own generic language above."
+      },
+      "cost_model": "Not computable -- no dollar figures published anywhere found (rulebook, regulatory S3 prefix, or NTM notices -- all 14 cached ForecastEx NTM PDFs grepped in this task for 'market maker'/'coupon'/'rebate'/'liquidity', zero hits).",
+      "minimum_viable_scale": "N/A -- gated behind a discretionary approval this program has no documented path to clear (identical structural dead end to Kalshi's MM Agreement, rev_kalshi_programs.json rank 3/4).",
+      "verdict": "DEAD END for the same reason as Kalshi's DLP/MM Agreement: a discretionary relationship gate with no numeric bar a bot can satisfy by code alone, and (per S3_FORECASTEX.md) this operator's own mechanical-lock study on this exact venue was already killed on settlement-basis grounds -- there is no trading track record here to bring to an application even if pursued.",
+      "confidence": "high"
+    }
+  ],
+
+  "dead_ends": [
+    "Polymarket Maker Rebates (rank 3) and Liquidity Rewards (rank 4): both real, documented, well-matched programs -- both run on the GLOBAL Polymarket venue, which is geo-blocked to US persons per its 2022 CFTC settlement (ref/pmkt_final_verdict.md section 6). Stated plainly: not deployable by this operator, full stop. Polymarket US (QCX) does not list weather (venues_us.json, 2026-07-23) and its API is application-gated, so there is no confirmed workaround via the US-legal product either.",
+    "ForecastEx Market Maker Program (rank 5): discretionary application gate, no published dollar figures anywhere in the rulebook, S3 regulatory prefix, or NTM notices -- same dead-end shape as Kalshi's MM Agreement/DLP program in rev_kalshi_programs.json.",
+    "Crypto.com Prediction (Crypto.com | Derivatives North America, CDNA): NEWLY CONFIRMED live and US-available in this task (crypto.com/us/prediction, live WebFetch 2026-07-30, CFTC-regulated) -- not present in venues_us.json's 2026-07-23 sweep, so this is fresh information worth folding into that file on a future pass. Categories found: Politics, Financials, Culture, Economics, Sports -- NO weather category, and no maker rebate, liquidity provider, or liquidity-mining program mentioned anywhere on its public marketing page. Dead end for this task on both the product-match and the program-existence axes; flagged as a venue to revisit if it adds weather or announces a liquidity program, not as a current opportunity.",
+    "Novig: 'Novig Cash' is a real, 1:1-USD-redeemable currency (confirmed via WebSearch triangulation: 20 Novig Cash minimum, Venmo/Trustly instant withdrawal, 1099 above $600/yr) -- but it is earned through a sweepstakes/points structure ('1 Point for every 1 Novig Cash played') tied to gameplay and promotional credit, not a published contractual maker-rebate or liquidity-mining formula the way Kalshi/Polymarket/ProphetX have. novig.us's own FAQ page (live WebFetch, 2026-07-30) explicitly states no maker rebate or liquidity incentive program exists; Novig's stated revenue model is a market-making spread (1-4%) it KEEPS in illiquid markets, the inverse of a rebate. Same dead-end shape as Kalshi's referral/sign-up-bonus line (rev_kalshi_programs.json rank 5): real dollars in principle, not a repeatable program-terms revenue line to build infrastructure against. Also sports-only (venues_us.json)."
+  ],
+
+  "top_recommendation": {
+    "summary": "One clean, immediately-capturable item and one promising-but-unresolved item survive from this cross-venue sweep; two well-matched programs are confirmed dead on access grounds and should be crossed off decisively rather than revisited. (1) ForecastEx's Rule 612 incentive coupon is the cross-venue twin of Kalshi's APY finding: DOCUMENTED formula (Coupon Rate = (EFFR-50bps)/2, floor zero), computes to a 1.565% APY rulebook MINIMUM at today's 3.63% EFFR, with UNVERIFIED secondary reports of ~3.13-3.80% actually being paid -- zero quoting obligation, capturable on whatever collateral the program already holds at ForecastEx, confirm the live rate in 5 minutes via account view before finalizing sizing alongside Kalshi's 3.25%. (2) ProphetX's Liquidity Rewards Program is a real $2k/day-scale-per-category, US-legal, sports-only pool, but this task could not resolve (both source pages 403'd) whether it rewards resting presence (free, like Kalshi LIP / Polymarket Liquidity Rewards) or filled maker volume (fill-cost-exposed, like a rebate) -- that single fact determines whether it belongs next to item (1) or gets killed by the same adverse-selection logic that killed the Kalshi maker study; resolve with one direct account-authenticated page view before any capital commitment. On the access side: Polymarket's Maker Rebates (rebateRate 0.25 on Weather = 25% of category taker fees, pooled and distributed pro-rata daily) and its separate Liquidity Rewards program (a presence-weighted quadratic-spread-scoring pool, the single best structural match to this program's engineering stack found anywhere in the sweep) are BOTH confirmed non-deployable -- Polymarket's global venue remains geo-blocked to US persons, and Polymarket US does not list weather and gates its API. State this plainly: the operator cannot reach either Polymarket program, and no amount of engineering changes that. ForecastEx's own Market Maker Program (Rule 416) is a discretionary dead end with no published economics, structurally identical to Kalshi's MM Agreement. Crypto.com's new US prediction product has no weather category and no liquidity program; Novig's Cash system is real money but not a program-terms revenue line."
+  }
+}

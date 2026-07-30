@@ -1,0 +1,167 @@
+{
+  "component": "KALSHI CONTRACTUAL/STRUCTURAL REVENUE (incentive pools, rebates, yield) -- NOT statistical edge",
+  "generated_utc": "2026-07-30T18:36:11Z",
+  "context": "42/42 pre-registered statistical-edge studies killed (MAKER_VIABILITY.md, 2026-07-30 permanent kill: pool-average maker EV +0.76 to +1.25c/ct is a front-of-queue optimistic bound, temporally unstable (0/20 cells pass both sample halves), and the achievable listing-window population has NEGATIVE point-estimate EV, BTC -0.99c/ct, ETH -8.81c/ct). This file enumerates money Kalshi pays by documented program TERMS rather than money won from a counterparty, and prices the quoting-obligation cost of collecting it using MAKER_VIABILITY's measured bounds as the cost model per orchestrator instruction.",
+  "method_note": "Desk research: venue_expansion/out/orderpath_research.json (already-verified citations) + 5 live WebFetch pulls against help.kalshi.com pages + 3 WebSearch queries for pages that repeatedly 429'd on direct fetch (kalshi.com/docs and kalshi.com/regulatory, both CloudFront-fronted and rate-limiting this container -- their content below is triangulated from indexed secondary sources, labeled accordingly, not first-party WebFetch).",
+  "us_person_filter": "Kalshi is a CFTC-regulated US exchange; every program below is itself US-person-gated (Liquidity Incentive Program explicitly excludes non-U.S. users; referral/APY programs require US residency + KYC). No geo-block issue for a US-person-operated bot -- this is the opposite of the Polymarket case. Flagging per instruction: nothing here is reachable from outside the US, and non-US operation would be excluded entirely, not merely disadvantaged.",
+
+  "opportunities_ranked": [
+
+    {
+      "rank": 1,
+      "name": "APY on Kalshi (interest on cash + open-position value)",
+      "type": "CONTRACTUAL YIELD -- zero quoting obligation, zero fill risk, zero counterparty exposure",
+      "mechanics": {
+        "current_rate": "3.25% APY, variable, 'applies to all eligible accounts'",
+        "rate_citation": "https://help.kalshi.com/en/articles/13823847-apy-on-kalshi (live WebFetch 2026-07-30) -- DOCUMENTED, current",
+        "historical_rate_note": "Kalshi's own 2024 launch announcement (news.kalshi.com/p/interest-cash-open-positions) advertised 4.05%; the rate is explicitly variable and tracks Fed policy. The 3.25% figure is the one live on the help-center page today (2026-07-30) and is the number to use going forward -- DOCUMENTED, supersedes the 4.05% historical figure.",
+        "accrual_base": "'the net value of the portfolio at 12am ET each day' = available cash + end-of-day mark of open positions (last traded prices). Pays on BOTH idle cash AND open positions, not just uninvested balance.",
+        "minimum_balance": "$250 or more to qualify",
+        "payment_frequency": "monthly, 'normally within the first week of the following month but can take up to 10 business days to process'",
+        "eligibility": "US and its territories only; SSN required on file to receive interest payments above $10/year (same KYC infra a US-person trading account already has)",
+        "quoting_obligation": "NONE -- this is pure balance-sheet yield on capital the bot already has to hold onsite as margin/collateral to trade at all. No resting orders, no fills, no MM agreement required."
+      },
+      "cost_model": {
+        "compliance_cost": "$0 incremental -- no quoting obligation exists to trigger MAKER_VIABILITY's fill-cost bounds. The only 'cost' is the opportunity cost of holding capital at Kalshi's 3.25% instead of an external money-market/T-bill sweep (which may run higher in a >4% short-rate environment) -- but that capital is not idle-elsewhere money, it is trading collateral the bot must keep onsite regardless, so the comparison that matters is 3.25% vs 0% (uninvested Kalshi cash), not 3.25% vs external yield.",
+        "arithmetic": [
+          {"capital_usd": 10000, "annual_usd": 325.00, "monthly_usd": 27.08, "daily_usd": 0.89},
+          {"capital_usd": 25000, "annual_usd": 812.50, "monthly_usd": 67.71, "daily_usd": 2.23},
+          {"capital_usd": 50000, "annual_usd": 1625.00, "monthly_usd": 135.42, "daily_usd": 4.45},
+          {"capital_usd": 100000, "annual_usd": 3250.00, "monthly_usd": 270.83, "daily_usd": 8.90}
+        ],
+        "formula": "annual = capital * 0.0325; monthly = annual/12; daily = annual/365 (simple, ignores intra-day compounding which Kalshi does not appear to offer beyond the daily 12am ET snapshot)."
+      },
+      "verdict": "Highest-confidence, lowest-cost item in this file. Not large in absolute dollars unless capital deployed is large, and it does not require the engineering stack (ENGINEERING_STACK.md's warm-path/WS/queue-position tooling buys nothing here) -- it is a capital-allocation decision, not an infrastructure one. Include as a standing background yield on whatever margin balance the program keeps at Kalshi for other purposes; do not build anything to capture it.",
+      "confidence": "high"
+    },
+
+    {
+      "rank": 2,
+      "name": "Liquidity Incentive Program (retail/prosumer tier)",
+      "type": "CONTRACTUAL INCENTIVE POOL -- quoting-presence obligation, real fill risk",
+      "mechanics": {
+        "program_window": "2025-09-15 to 2026-09-01 (subject to Kalshi modification/termination at any time)",
+        "citation": "https://help.kalshi.com/en/articles/13823851-liquidity-incentive-program (live WebFetch 2026-07-30, DOCUMENTED)",
+        "pool_size": "$10-$1,000 per day, in periods of up to 31 days each",
+        "pool_scope_UNVERIFIED": "the help-center text does not state whether the $10-$1,000/day pool is exchange-wide, per-series, or per-market. This is the single biggest sizing unknown in this whole file and is NOT resolvable without either an authenticated account view of an active incentive period or a direct answer from Kalshi -- treat any per-participant dollar estimate below as ESTIMATE with wide uncertainty bands until this is confirmed live.",
+        "scoring_formula": {
+          "snapshot_method": "'Kalshi takes random snapshots every second during trading hours'",
+          "score": "score per snapshot = Order Size x Distance Multiplier",
+          "distance_multiplier": "orders AT best bid/ask get full credit (1.0x); orders further away get reduced credit via an undocumented 'Discount Factor' -- exact curve/formula not published anywhere found. UNVERIFIED.",
+          "payout": "your_reward = (your_score / sum_of_all_participants_scores) x reward_pool, minimum payout $1.00 (rounded down to nearest cent)",
+          "target_size": "'Target Size: 100-20,000 contracts' -- stated as a minimum liquidity threshold; ambiguous whether this describes (a) an individual order's eligible size band or (b) the market's aggregate depth threshold to be program-eligible at all. UNVERIFIED which."
+        },
+        "eligibility_exclusions": [
+          "Kalshi affiliates and employees",
+          "Market makers with existing (MM) agreements -- i.e. this program and the Liquidity Provider/DLP program (rank 3 below) are mutually exclusive tiers",
+          "Introducing Brokers, FCMs, and their customers",
+          "International, non-U.S. users"
+        ],
+        "payment_mechanics": "reward credits; SSN on file required to receive reward credits above annual IRS reporting thresholds. Payout cadence within a period not stated beyond the $1.00 minimum-payout floor.",
+        "application_process": "not stated as requiring application -- reads as automatic/open to 'most regular U.S. Kalshi members' who rest qualifying orders; no discretionary approval gate unlike the MM Agreement (rank 4)."
+      },
+      "why_this_stack_specifically_fits": "The program pays for QUOTING PRESENCE (order size x proximity, sampled every second), not for P&L skill -- exactly the axis MAKER_VIABILITY.md never tested and ENGINEERING_STACK.md verified is strong (sub-3ms warm-process hot path, persistent WS book state, queue-position tooling to hold/manage many resting orders cheaply). The 42-study kill was about whether resting orders make money on FILLS; this program pays for the resting itself. It is the one place in the whole research program where the built infrastructure is a direct match for the payout mechanism rather than orthogonal to it.",
+      "cost_model": {
+        "instruction": "MAKER_VIABILITY.md bounds: pool-average ~0 to +1.25c/ct (unstable, do not rely on positive), 0c/ct as the expected/base case per orchestrator instruction, listing-window negative (-0.99c/ct BTC, -8.81c/ct ETH) as the pessimistic bound.",
+        "key_dynamic": "the Distance Multiplier creates a direct tradeoff Kalshi does not publish the shape of: resting AT the touch maximizes score (1.0x) but also maximizes fill probability and therefore MAKER_VIABILITY's adverse-selection exposure; resting away from the touch cuts fill risk but also cuts score by the undocumented Discount Factor. A rational strategy sits as far from the touch as the (unknown) Discount Factor allows while still earning nontrivial score -- this cannot be optimized without empirically mapping the Discount Factor first (a cheap, low-risk empirical task: rest orders at several depths, log snapshot-implied score attribution if visible, before committing capital to the trade-facing version).",
+        "worked_example_A_optimistic_pool_share": {
+          "assumption": "reward pool $500/day (midpoint of $10-$1,000 range), participant score share 2% (small automated quoter among 'most regular US members', excluding the professional MM-agreement cohort who are excluded from this program)",
+          "gross_daily_reward": "0.02 * 500 = $10.00/day = ~$300/month",
+          "fill_cost_base_case_0c": "$0 (per instruction's 0c/ct expected baseline) -> Net ~= $10.00/day = ~$300/month",
+          "label": "ESTIMATE -- pool scope unverified (could be exchange-wide, diluting share far below 2%), score-share of 2% is an assumption with no measured basis"
+        },
+        "worked_example_B_pessimistic_fill_cost_dominates": {
+          "assumption": "same $10/day gross reward from example A, but a subset of resting size close enough to the touch to earn meaningful score also earns fills at the listing-window pessimistic bound; 1,000 contracts filled that day at -8.81c/ct (ETH listing-window bound, the worst measured cell)",
+          "fill_cost": "1,000 ct * -8.81c/ct = -$88.10",
+          "net": "$10.00 - $88.10 = -$78.10/day",
+          "conclusion": "a single day's incentive pool ($10-$1,000, realistically well below the $1,000 ceiling for a small non-professional quoter) is dominated by ONE adverse-selection-heavy fill event at MAKER_VIABILITY's measured pessimistic bound. The incentive pool is small relative to plausible fill losses unless the bot can reliably rest away from the touch (low fill probability) while still capturing nontrivial score -- which requires knowing the undocumented Discount Factor. Do not size a live deployment on the optimistic worked example A without first bounding the Discount Factor and the realized fill rate at whatever depth is chosen."
+        },
+        "net_formula": "Net = (score_share x reward_pool) + (fill_volume_contracts x fill_EV_per_contract), where fill_EV_per_contract in [-8.81c, +1.25c] per MAKER_VIABILITY.md and fill_volume_contracts is a function of how close to the touch resting orders sit (unknown mapping, program-specific, not measured in this repo)."
+      },
+      "gaps_requiring_live_verification": [
+        "pool scope: exchange-wide vs per-series vs per-market (materially changes achievable score-share)",
+        "Discount Factor curve for off-touch resting orders (the whole cost/reward tradeoff hinges on this)",
+        "whether 'Target Size: 100-20,000 contracts' gates individual orders or aggregate market depth",
+        "current list of which series/markets are actively in-program right now (not published on the help page fetched; would require an authenticated account view or a Kalshi-side program-status API/page not found in this research)"
+      ],
+      "verdict": "Real, documented, structurally matched to the verified engineering stack -- but sizing is currently unresolvable without live data on pool scope and the Discount Factor. Recommend a $0-capital reconnaissance step (observe program status/eligible series via an authenticated but non-trading account view, if one exists) before committing any quoting capital, given worked example B shows the incentive can be erased by a single adverse fill at the already-measured pessimistic bound.",
+      "confidence": "medium (mechanics documented; economics unresolved pending 2 material unknowns)"
+    },
+
+    {
+      "rank": 3,
+      "name": "Liquidity Provider Program (per-series Designated Liquidity Provider, reverse auction)",
+      "type": "CONTRACTUAL INCENTIVE, gated behind discretionary MM Agreement approval",
+      "mechanics": {
+        "citation": "https://help.kalshi.com/en/articles/15410219-liquidity-provider-program (live WebFetch 2026-07-30, DOCUMENTED)",
+        "eligibility_gate": "requires an already-executed Market Maker Agreement (rank 4) -- discretionary Kalshi approval, 'granted following a thorough review of financial resources, trading experience, and business reputation.' No numeric bar published (no min AUM/volume) -- it is a relationship/vetting gate, not a mechanical qualification a bot can satisfy by code alone.",
+        "auction_mechanism": "reverse auction -- applicants bid 'the minimum amount you're willing to receive as an Incentive Period Reward' to meet a series' stated Incentive Period Requirements; Kalshi selects the Designated Liquidity Provider(s) per series (lowest acceptable bid wins the subsidy, i.e. providers compete DOWN the price of the subsidy Kalshi pays).",
+        "active_auctions_at_fetch_time": "1 active auction listed, closing 2026-07-31 (i.e. the day after this research's run date -- effectively closed by the time any bot could react)",
+        "active_incentivized_series_sample": ["NYC Hourly Weather (2 providers)", "WTI/KXWTI (2 providers)", "Crypto 15min markets (1 provider)", "Election Margin of Victory / KXMIDTERMMOV (1 provider)"],
+        "program_end_date": "8/31/26 termination date on all currently listed series",
+        "requirements_and_reward_amounts": "NOT published on the help page -- 'Incentive Period Requirements' and reward dollar figures are per-series and not itemized publicly; page directs inquiries to a program contact email.",
+        "recurrence_after_2026-08-31": "not stated whether new auctions will open after the program's stated termination date -- UNVERIFIED, and moot given the eligibility gate below."
+      },
+      "cost_model": "not computable -- neither the per-series reward amount nor the Incentive Period Requirements (quoting obligations) are published, and the program is inaccessible without an MM Agreement in the first place.",
+      "verdict": "DEAD END for this program as currently constituted. A small automated quoter with no institutional track record, no prior relationship with Kalshi, and (per this repo's own history) 42/42 killed statistical-edge studies has nothing in hand that clears 'thorough review of financial resources, trading experience, and business reputation' for a discretionary MM Agreement. Do not pursue unless/until the program operator independently decides to apply for an MM Agreement on non-trading-edge grounds (e.g. as an infrastructure-capability pitch) -- out of scope for a bot-only capture strategy.",
+      "confidence": "high (dead end is well-supported; underlying reward economics are simply unpublished)"
+    },
+
+    {
+      "rank": 4,
+      "name": "Market Maker Agreement (base program)",
+      "type": "FEE REDUCTION + position-limit adjustment -- NOT a cash payment",
+      "mechanics": {
+        "citation": "https://help.kalshi.com/en/articles/13823819-how-to-become-a-market-maker-on-kalshi (live WebFetch 2026-07-30, DOCUMENTED); cross-checked against venue_expansion/out/orderpath_research.json section 3_market_maker_program",
+        "compensation": "'reduced fees' (no percentage/dollar figure published) and 'certain adjusted position limits' (no figures published). No cash payment, rebate, or API/rate-limit-tier benefit is documented anywhere found -- orderpath_research.json independently confirmed no rate-limit or FIX benefit from MM-agreement status alone (that runs purely through trading-volume thresholds, section 6 of that file).",
+        "obligation": "'defined quoting and volume requirements' per market; example cited standard is 98% uptime of each 1-hour increment for covered products. Exact spread width / size requirements not published.",
+        "eligibility": "same discretionary review gate as rank 3 (same underlying agreement)."
+      },
+      "cost_model": "N/A as a revenue line -- this is a cost-avoidance mechanism (lower fees on your own flow), not contractual money paid to you. Its value only exists in combination with actual trading volume, which this program's 42 killed studies established has no measured positive edge to generate that volume from in the first place.",
+      "verdict": "Not a revenue opportunity under this task's definition (money paid by program terms). Excluded from ranking on that basis; also gated behind the same discretionary approval as rank 3.",
+      "confidence": "high"
+    },
+
+    {
+      "rank": 5,
+      "name": "Referral program + sign-up bonus",
+      "type": "ONE-TIME PROMOTIONAL CASH, not a recurring/scalable program-terms revenue stream",
+      "mechanics": {
+        "citation_primary": "https://help.kalshi.com/en/articles/13823783-kalshi-referral-program-faq (not directly WebFetched -- 429/blocked; content below triangulated from WebSearch-indexed secondary sources, so figures are UNVERIFIED against Kalshi's own page and should be treated as lower-confidence than the rank 1-4 items which were live-fetched from help.kalshi.com directly)",
+        "referral_reward_reported": "up to $40 per referred friend in some secondary sources, $25-per-side in others (referrer and referee each get $25 after the referee completes 100 trades within 30 days) -- figures are inconsistent across secondary sources; DO NOT rely on either number without a direct help.kalshi.com confirmation.",
+        "unlock_requirement": "referrer must trade 100 shares before a personal referral link is unlocked",
+        "sign_up_bonus_reported": "new-user promo codes (several third-party-tracked codes) advertise up to $500 in bonuses gated behind trading $25-$100 within 7 days; a baseline '$10 after $100 traded' figure also reported -- again cross-source-inconsistent, secondary sources only.",
+        "kyc_gate": "both users must be US residents (ex-Nevada per one source), 18+, KYC-verified before trading -- consistent with every other program in this file's US-person gating."
+      },
+      "cost_model": "not meaningfully computable as a repeatable revenue line: (a) it is a fixed one-time credit per distinct human referred, not a per-dollar or per-contract mechanic; (b) self-referral or multi-account farming to repeat it would violate Kalshi's KYC/one-account-per-person terms and is explicitly out of scope for a legitimate program; (c) even taken at face value the largest reported figures ($25-$40/referral, up to $500 one-time sign-up) are immaterial next to the APY and LIP lines above at any realistic referral count a trading program would organically generate.",
+      "verdict": "DEAD END for programmatic/repeatable capture. Not zero in principle (if the program naturally refers a handful of real colleagues) but not a structural revenue line to build anything around, and the underlying dollar figures are unverified against a primary source.",
+      "confidence": "low (secondary-sourced figures) but high confidence in the DEAD END verdict regardless of the exact numbers"
+    },
+
+    {
+      "rank": 6,
+      "name": "Volume-based fee tiers (maker/taker bps schedule)",
+      "type": "COST REDUCTION, not contractual revenue -- included for completeness of the cost model only",
+      "mechanics": {
+        "citation": "kalshi.com/docs/kalshi-fee-schedule.pdf title 'Fee Schedule for July 2026 - 7.7.26 Update' -- direct WebFetch 429'd twice (CloudFront rate-limit on this container, consistent with orderpath_research.json's note that kalshi.com/regulatory also 429'd there); figures below are WebSearch-indexed secondary-source triangulation, UNVERIFIED against the primary PDF.",
+        "taker_fee_formula_documented_elsewhere": "round_up(0.07 x C x P x (1-P)) per contract, ceiling 1.75c/contract at P=$0.50 -- this specific formula IS independently corroborated by MAKER_VIABILITY.md's fee-treatment verification (crypto maker fee = $0, triple-verified) and is consistent across multiple secondary sources.",
+        "reported_tier_table": "taker: Tier0 12.0bps -> Tier10 (>=$3B trailing volume) 2.6bps; maker: Tier0 5.0bps -> lower at higher tiers, reported as 25% of the corresponding taker rate throughout. No tier reported as negative (i.e. no maker rebate/payment exists at any published tier) -- consistent with MM Agreement (rank 4) offering only 'reduced fees,' never a cash rebate.",
+        "crypto_specific": "maker fee = $0 on crypto markets specifically (MAKER_VIABILITY.md, triple-verified, this repo's own measurement) -- better than any volume-tier discount on the general schedule; this is category-specific, not volume-earned."
+      },
+      "cost_model": "Marginal to the fill-cost side of the rank-2 arithmetic: since MAKER_VIABILITY.md's crypto-maker-fills-are-already-$0-fee finding is already baked into its +0.76 to +1.25c/ct and -0.99/-8.81c/ct numbers, this fee schedule adds nothing new to the LIP cost model above for crypto series. It would matter for a LIP position on a non-crypto series (e.g. weather, WTI, election-margin -- all appear in the rank-3 DLP sample list), where maker fee is ~1/4 of taker and volume tiers reduce it further, shaving a fixed small bps amount off whatever fill-cost bound applies -- not large enough to flip the sign of worked example B above.",
+      "verdict": "Not a revenue line under this task's definition. No maker rebate exists at any documented Kalshi fee tier (confirms the earlier MAKER_VIABILITY finding that this venue does not pay makers via the fee schedule the way some crypto-perp venues do) -- include only as a minor adjustment to fill-cost bounds on non-crypto LIP series.",
+      "confidence": "medium (secondary-sourced numbers, but the qualitative 'no negative/rebate tier exists' conclusion is corroborated by two independent primary-ish sources: the MM Agreement page's 'reduced fees' language and MAKER_VIABILITY.md's own crypto-maker-fee finding)"
+    }
+  ],
+
+  "dead_ends": [
+    "Liquidity Provider / DLP reverse auction (rank 3): gated behind a discretionary Market Maker Agreement this program has no documented path to qualify for; the one active auction found closes the day after this research ran.",
+    "Market Maker Agreement itself (rank 4): pays no cash, only fee reduction + position limits, and is the same discretionary gate as rank 3.",
+    "Referral program / sign-up bonus (rank 5): one-time per-human promotional credit, not a repeatable program-terms revenue line; farming it would violate KYC/one-account terms.",
+    "Fee-tier rebates (rank 6): no negative/rebate maker tier exists anywhere in Kalshi's published schedule -- this venue's fee structure is cost-reduction-only, confirming MAKER_VIABILITY.md's earlier finding from a different angle."
+  ],
+
+  "top_recommendation": {
+    "summary": "Two items survive as genuine contractual/structural revenue for a US-person-operated bot: (1) APY on Kalshi -- 3.25% DOCUMENTED yield on cash + open positions, zero quoting obligation, zero fill risk, immediately capturable on whatever margin balance the program already holds onsite, no infrastructure required. (2) Liquidity Incentive Program -- a real $10-$1,000/day pool that pays for quoting PRESENCE (order size x proximity, sampled every second) rather than fill P&L, which is the one payout mechanism in Kalshi's entire program suite that the verified engineering stack (sub-3ms warm path, persistent WS, queue-position tooling) is actually built for -- but its economics are currently unresolvable without live confirmation of (a) pool scope (exchange-wide vs per-series) and (b) the undocumented Discount Factor for off-touch resting orders, and worked-example arithmetic above shows a single adverse fill at MAKER_VIABILITY's already-measured pessimistic bound (-8.81c/ct) can exceed a full day's realistic pool share. Recommend capturing (1) immediately at zero cost, and treating (2) as requiring a cheap reconnaissance step (map the Discount Factor and confirm pool scope) before any capital-at-risk deployment -- not a build-now item."
+  }
+}
