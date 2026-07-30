@@ -1474,3 +1474,38 @@ and **times of day are preserved**, which matters for any circadian or time-of-d
 **What this does NOT unblock: Challenge A.** Nothing in BDSP is anaesthesia with an identified agent, so
 VitalDB remains the only route to a multi-drug contrast. What it does unblock is Challenge C, and it supplies
 a genuinely unresponsive clinical population while the Bath request is pending.
+
+### 9.28 HBN is closed: two gates failed, and the pre-commitment is honoured
+
+**E16's gate** required alpha blocking — `relative_alpha_power` higher eyes-closed — in ≥ 80 % of subjects.
+Measured **57.1 %**. **E17's gate**, band-free by design so it could not inherit the adult-band defect,
+required `spectral_entropy` lower eyes-closed in ≥ 80 %. Measured **56.6 %** on the complete 272-row table.
+
+**E17 registered one attempt and that commitment is now spent.** No third gate is tried. A sequence of gates
+tried until one passes is a search over gates, and it would make any eventual pass meaningless.
+
+**So nothing about `exponent_high` is reported from HBN, and P2/P3/P4 were never computed** — the scripts
+exit before touching any age association. That is not a technicality: the age question remains genuinely
+open and untainted, testable on a different cohort by a clean pre-registration rather than by a fourth
+framing of this one.
+
+**What was learned along the way, and it is not nothing:**
+
+* **A real adapter bug**, found by two gates rather than by inspection. HBN's resting run ends on an
+  eyes-open instruction; `blocks_from_events` returned that final block unbounded, and "the longest block"
+  therefore selected ~35 s of **post-protocol recording** as every subject's eyes-open window. Fixing it
+  moved the band-free gate from 46.3 % to 56.6 % — a real improvement that still does not reach the bar.
+  The general lesson is regression-tested: **"take the longest block" silently prefers whichever block is
+  least well defined**, because an unbounded interval is always the longest.
+* **A finding about the registry rather than about HBN.** `relative_alpha_power` carries a fixed adult
+  8–12 Hz band everywhere it is used, and a young child's posterior dominant rhythm is slower than that. The
+  cohort's median age is 9.7.
+* **A correction to my own reasoning, recorded in E17's header.** I wrote that the monotone age gradient in
+  alpha blocking could not come from a broken pipeline. That was wrong — a broken pipeline can produce an
+  age-monotone artefact if the breakage interacts with age, and older children plausibly move less after a
+  protocol ends. That gradient came from the invalid windows and was withdrawn.
+
+**Where the age question goes instead.** It needs a cohort whose alpha sits where an adult band expects it,
+or a per-subject individualised band. **Neurotech (§9.27) is NOT the answer** — 4,915 subjects but modal age
+8–14, so it inherits the identical defect. **LENS on BDSP — "Lifespan and Sleep-Stage-Resolved Normative EEG
+Background" — is the right shape**, being lifespan rather than paediatric, and is the deposit to pursue.
