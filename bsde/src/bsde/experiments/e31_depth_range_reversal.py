@@ -96,6 +96,44 @@ all 110 patients, needs no second variable, and is a more direct test of the Gug
 suppression proxy. That it also solves the coverage problem is a consequence, not the reason - and the
 ordering is recorded here so a reader can judge that for themselves. It is registered separately as E32,
 with its direction fixed before it runs, rather than smuggled into this file.
+
+--------------------------------------------------------------------------------------------------------
+CORRECTION TO THIS FILE'S OWN PREMISE, 2026-07-30, AND IT WEAKENS THE JUSTIFICATION RATHER THAN A RESULT.
+
+This file said Gugino 2001 "fixes the predicted shape" and that the abstract shows "the EEG's response to a
+hypnotic is not monotone in dose - the fast end rises through light sedation and is overtaken by slowing".
+**That is an inference, and it was presented as a quotation's content.** The abstract says, verbatim:
+
+    "Light sedation was accompanied by decreased posterior alpha and increased frontal/central beta power.
+     Frontal power predominance increased with deeper sedation, involving alpha and, to a lesser extent,
+     delta and theta power. With loss of consciousness, delta and theta power increased further in anterior
+     regions and also spread to posterior regions."
+
+Beta is reported to RISE in light sedation. **It is never reported to fall.** What rises later is delta and
+theta. "Fast content is overtaken" is a statement about relative power that the abstract does not make, and
+a full sign reversal in a fast-band measure is not documented there at all.
+
+A dedicated literature search for the sign reversal E30 observed found **no primary source documenting it**.
+The nearest published phenomena are different in kind and all were verified via E-utilities:
+
+  * **Saturation, not reversal.** Ni Mhuircheartaigh 2013, Sci Transl Med, PMID 24154602: slow-wave activity
+    "rose to saturation and then remained constant despite increasing drug concentrations". Warnaby 2017,
+    Anesthesiology, PMID 28665814, extends saturation across anaesthetics.
+  * **Transient paradoxical excitation, not a range-wide flip.** Ostertag 2025, Anesth Analg, PMID 38412114:
+    spectral edge frequency and spectral entropy rise paradoxically right at loss of responsiveness while
+    permutation entropy and beta ratio fall monotonically through the same transition.
+
+**CONSEQUENCE, AND IT CUTS BOTH WAYS.** E30's cross-deposit sign reversal is NOT explained by established
+pharmacology, as this file asserted. It is either an artefact of the two deposits differing in montage,
+sampling rate and population - the other two explanations E30 named - or it is an observation original to
+this project. **Original raises the burden of proof rather than lowering it**, and nothing here has met it.
+E31 and E32 were ABSENT on coverage in any case, so no result is withdrawn; what is withdrawn is the claim
+that the literature had already predicted the direction they were testing.
+
+This correction came from a subagent literature review whose output was checked against the primary record
+before use. The programme's standing rule is that delegated work is verified and never accepted - here the
+verification caught an over-reading in the orchestrator's own file, which is the direction that rule is
+least often expected to work in.
 """
 from __future__ import annotations
 
