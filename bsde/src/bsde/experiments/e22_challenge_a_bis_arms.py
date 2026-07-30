@@ -98,6 +98,13 @@ of it exists, and a failed gate means the downstream verdict is ABSENT, not nega
         rather than a state difference, and P2 is withdrawn.** R410 is the reason this is a gate and not a
         remark: a primary that passed every pairwise comparison was meaningless because the same statistic
         fired at an arbitrary cut where nothing happens.
+            **This placebo is deliberately conservative and the direction of its bias is stated now, before
+        it runs.** Anaesthetic depth is not constant through a case — it commonly lightens toward the end —
+        so late-deep windows may be genuinely lighter than early-deep ones even inside the BIS <= 60 band.
+        A candidate that truly tracks depth would then separate them, and P5 would withdraw a P2 that was
+        real. That failure mode costs a true positive, never buys a false one, which is the direction a gate
+        should err in. If P5 fails, the correct reading is "this design cannot separate state from
+        time-in-case", not "the candidate is worthless".
 
     P6  THE MUSCLE CONTROL, reported and not gating. VitalDB carries `BIS/EMG`, a real muscle channel rather
         than the spectral proxies that §9.15 found two of disagreeing in sign. Reported: the arms' EMG
