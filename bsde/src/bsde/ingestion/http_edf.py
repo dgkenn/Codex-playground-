@@ -268,6 +268,13 @@ def read_edf_window_http(url: str, window_s: float = 300.0, start_seconds: float
     n_rec = meta["n_records"]
     total = n_rec if n_rec > 0 else 10 ** 9
     want_records = min(total, max(1, int(round(window_s / rec_dur))))
+    # START IS FLOORED TO THE RECORD BOUNDARY, and callers epoching short trials must know it. EDF stores
+    # data in fixed-duration records (1 s in most deposits here), and there is no way to begin mid-record
+    # without decoding the one before it. For the 30-300 s windows this project usually asks for, a shift
+    # of up to one record is immaterial. **For a 3 s trial epoch it is a third of the epoch**, and it
+    # silently moved every motor-imagery trial in the first version of `build_eegmmidb_bci_label.py`,
+    # changing one subject's decoding AUC from 0.603 to 0.690. Read the whole run once and slice in memory
+    # when the epochs are short.
     skip = int(start_seconds / rec_dur)
     skip = max(0, min(skip, max(0, total - want_records)))
 

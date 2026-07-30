@@ -44,8 +44,8 @@ import numpy as np
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, "..", "src"))
 
-from bsde.ingestion.eegmmidb import (IMAGERY_LR_RUNS, events, read_window,   # noqa: E402
-                                     record_duration_s, subjects)
+from bsde.ingestion.eegmmidb import (EXECUTED_LR_RUNS, IMAGERY_LR_RUNS,     # noqa: E402
+                                     events, read_window, record_duration_s, subjects)
 from bsde.verifier.stats import auc, logit_fit, predict_proba              # noqa: E402
 
 BANDS = (("mu", 8.0, 13.0), ("beta", 13.0, 30.0))
@@ -93,7 +93,7 @@ def _cv_auc(X: np.ndarray, y: np.ndarray, rng, folds: int = FOLDS) -> float:
     return auc(y[ok], pred[ok]) if ok.sum() > 4 else float("nan")
 
 
-def subject_label(sub: str, rng) -> dict:
+def subject_label(sub: str, rng, runs=IMAGERY_LR_RUNS) -> dict:
     """One HTTP read PER RUN, not per trial, and the trials are sliced from the array in memory.
 
     The first version fetched a window per trial -- 45 EDF reads per subject over HTTPS -- and did not
@@ -102,7 +102,7 @@ def subject_label(sub: str, rng) -> dict:
     are guaranteed to come from one consistent decode.
     """
     ch_idx, X, y = None, [], []
-    for run in IMAGERY_LR_RUNS:
+    for run in runs:
         try:
             ev = events(sub, run)
             full, names, sf, _ = read_window(sub, run, 0.0, record_duration_s(sub, run))
@@ -145,7 +145,12 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--out", default=os.path.join(HERE, "..", "results", "eegmmidb_bci.csv"))
     ap.add_argument("--limit", type=int, default=None)
+    ap.add_argument("--task", choices=["imagery", "executed"], default="imagery",
+                    help="imagery = the label (covert command-following); executed = E28's PLACEBO, real "
+                         "movement, which is decodable from signal quality and motor-cortex accessibility "
+                         "rather than from covert compliance")
     a = ap.parse_args(argv)
+    runs = IMAGERY_LR_RUNS if a.task == "imagery" else EXECUTED_LR_RUNS
     out = os.path.abspath(a.out)
     fields = ["subject", "status", "error", "imagery_auc", "perm_p", "perm_null_mean",
               "n_trials", "n_left", "n_right", "n_perm"]
@@ -166,7 +171,7 @@ def main(argv=None) -> int:
         if new:
             w.writeheader()
         for i, sub in enumerate(todo, 1):
-            row = subject_label(sub, rng)
+            row = subject_label(sub, rng, runs)
             w.writerow({k: row.get(k, "") for k in fields})
             fh.flush()
             print(f"   [{i}/{len(todo)}] {sub} {row.get('status')} "
