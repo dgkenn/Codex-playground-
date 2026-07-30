@@ -54,9 +54,10 @@ sys.path.insert(0, os.path.join(HERE, "..", "src"))
 
 BANDS = (("delta", 1.0, 4.0), ("alpha", 8.0, 13.0))
 
-PLAUSIBLE_SD_UV = (5.0, 150.0)
-"""Declared, not fitted. See the module docstring: a channel outside this band is implausible for scalp
-EEG, which is a weaker statement than proven dead, so nothing is dropped on the strength of it here."""
+"""The plausible-channel test now lives in `bsde.features.quality` and is imported rather than repeated, so
+that the number this script reports and the number any future filter acts on cannot drift apart. It was
+inline here first, and duplicating a threshold is how two scripts computing the same quantity come to
+disagree (rule 20)."""
 
 
 def _psd(ch, sfreq):
@@ -93,8 +94,8 @@ def spread_report(label: str, data, ch_names, sfreq: float) -> dict:
     P = np.vstack(psds)
     mean_p = P.mean(axis=0)
     med_p = np.median(P, axis=0)
-    lo_uv, hi_uv = PLAUSIBLE_SD_UV
-    plausible = np.isfinite(sd) & (sd >= lo_uv) & (sd <= hi_uv)
+    from bsde.features.quality import channel_quality
+    plausible = np.asarray(channel_quality(x, ch_names, units="microvolts")["keep"], bool)
     plaus_p = P[plausible[:len(P)]].mean(axis=0) if plausible[:len(P)].any() else None
 
     out = {"label": label, "n_channels": int(x.shape[0]), "sfreq": float(sfreq),
