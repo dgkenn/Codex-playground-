@@ -1,3 +1,4 @@
 # local Claude Code harness state (settings, worktree admin) -- not project content
 .claude/
 venue_expansion/cache/
+__pycache__/
