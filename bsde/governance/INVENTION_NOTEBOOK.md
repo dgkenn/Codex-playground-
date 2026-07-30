@@ -365,3 +365,42 @@ probably where this lands, but it is not established: the band was chosen after 
 test it is blocked, and one deposit of twenty responsive volunteers is not a product. **Relabelling a result
 to fit the market it would suit is the same move as rewriting a hypothesis after seeing the test, and it must
 not be made without E12.**
+
+---
+
+## Entry 11 — 2026-07-30 (later). The verifier caught its own author six times in one day
+
+**What changed in the engine.** Three of Brief 03's seven layers were unbuilt this morning. Two are now built
+and *wired into `verify()`* — temporal (layer 5) and clinical (layer 7) — and three mandatory report rows that
+**no code populated** now have producers. Layer 6 remains gated on data, not code. Tests went 134 → 301.
+
+**What changed in the science.** `exponent_high` replicated on a second propofol deposit (0.762 [0.648,
+0.885], acquisition-matched) — the project's first independent replication. Against that, three things were
+withdrawn or downgraded: §9.13's band-split mechanism did not replicate (+0.017 [−0.082, +0.103]); the
+beta-hump question is undetermined rather than refuted; and layer 7 showed that at 5 % prevalence a positive
+reading would be right **8.7 %** of the time.
+
+**The part worth showing a reviewer is the error log, not the result log.** Six defects today, all found by
+the machinery or by checking rather than by luck, and **five were in my own work from earlier the same day**:
+
+| defect | how it would have read if unfound |
+|---|---|
+| `critical_slowing` lag in samples, and my first fix skipped 100 Hz | Sleep-EDF vs Chennu differences that were acquisition rate |
+| `single_window_penalty` assumed between-subject design | NaN on every within-subject table |
+| ICC grouped by subject, not (subject, state) | "repeated windows are independent" — the exact opposite of the truth, on the check whose only job is that warning |
+| E15 verdict said "REFUTED by data" on a gap whose CI includes zero | a refutation the data does not support |
+| E11/E13/E14 thresholds landing on attainable values of quantised statistics | three verdicts decided by floating-point representation |
+| a one-letter loop variable shadowing the AUC in an enclosing scope | an empty array compared sixty lines away; 16 tests fired |
+
+**One pattern is mine and is now written down as a rule:** a threshold on a *quantised* statistic must sit
+between attainable values, and where it cannot, the boundary must be reported rather than resolved. Three
+verdicts today hung on 1×10⁻¹⁶.
+
+**The asset claim, restated after a day of evidence.** Any group can produce an AUC of 0.86 on one sedation
+deposit. What is hard to copy is a system that, unprompted, took that number apart: found the cohort was never
+unconscious, found the band-split story didn't replicate, found the muscle instrument was measuring drug-
+induced beta rather than muscle, and reported what a positive reading would be worth at real prevalence.
+**That is the verifier, and today it was exercised against its own author more than against anything else.**
+
+**Standing counsel items unchanged**, and the disclosure one is more pressing rather than less: the repository
+is public, so every commit above — including every correction — is a public disclosure.
