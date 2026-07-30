@@ -90,6 +90,45 @@ SCOPE AND LIMITS, none of which a larger n repairs.
   * One site, one monitor, two frontal channels, 128 Hz; `exponent_gamma` is above Nyquist and `uce_v1`
     needs a posterior region this montage lacks.
   * Cases are taken in ascending case id, never selected by result.
+
+--------------------------------------------------------------------------------------------------------
+OUTCOME, ADDED AFTER THE RUN. **Challenge C is NOT MET on this deposit. P3 failed at both thresholds and
+this is a genuine negative, not a blocked or absent one** — every gate passed and every section executed.
+
+    P1  PASSED. Spearman EMG vs SR = **-0.197** over 5,798 live windows, with P(SR > 0) by EMG decile at
+        41 % 25 % 15 % 15 % 16 % 11 % 11 % 17 % 11 % 6 %. The comparator falls with muscle where BIS rose,
+        so the artefact that closed E22 is absent here. Coverage: 81 patients with an onset at SR > 0 (597
+        eligible windows, base rate 26.1 %) and 33 at SR >= 10 (213 windows, 14.6 %).
+    P2  The incumbent's bar: BIS alone reaches **AUC 0.583 [0.519, 0.645]** at SR > 0 and **0.449
+        [0.321, 0.577]** at SR >= 10. Note the second interval spans 0.5 — over a 15-minute horizon the
+        monitor's own index barely predicts substantial suppression either.
+    P3  **FAILED.** `exponent_high` increments **-0.0021 [-0.1069, +0.0431]** at SR > 0 and **-0.0387
+        [-0.3057, +0.1656]** at SR >= 10. Both intervals span zero and both point estimates are negative.
+    P4  PASSED — the placebo incremented -0.0331 against the real -0.0021, so the machinery discriminates
+        as designed. It is reported even though P3 failed, because a placebo that had FAILED here would
+        have meant the harness was broken rather than the candidate silent.
+    P6  The harder baseline agrees: over BIS + MAC the increment is -0.0069 [-0.0632, +0.0238] and
+        -0.0187 [-0.2050, +0.1058].
+
+**THE RESULT IS NOT ABOUT ONE CANDIDATE.** All ten reported candidates have negative point estimates at both
+thresholds, and every interval spans zero. The one positive point estimate anywhere in the table is
+`lempel_ziv` at +0.0278 [-0.0780, +0.1026] at SR > 0, which spans zero, does not survive at SR >= 10, and is
+one cell of twenty — exactly the kind of look the header's multiplicity note exists to refuse. No claim is
+made from it.
+
+WHAT THIS DOES AND DOES NOT SAY.
+  * It says that on 250 VitalDB cases, over a 15-minute horizon and a 300 s grid, **none of these
+    representations sees burst suppression coming before the BIS monitor does.** For the anaesthesia wedge
+    that is the commercially relevant question and the answer is no, on this deposit, at this resolution.
+  * It does NOT say the information is absent from the EEG. A 300 s grid cannot express a warning that
+    arrives 60 s ahead, and the horizon, the grid and the 30 s window were all fixed before the run rather
+    than searched. **A finer grid is the obvious next test and it is a re-extraction, not a re-analysis.**
+  * It does NOT generalise past this deposit. One site, one monitor, two frontal channels, and the label is
+    a proprietary algorithm's own scoring.
+  * The negative is the STRONG direction here, as the scope note said in advance: because the label is
+    computed from the same electrodes as the candidates, the task is easier than the real one, and a
+    candidate that cannot beat the monitor on the monitor's own definition is unlikely to beat it on
+    ground truth.
 """
 from __future__ import annotations
 
