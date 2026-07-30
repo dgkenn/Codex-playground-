@@ -272,6 +272,72 @@ def layer_statistical(cand: Candidate, coh: Cohort, rng) -> list:
         lambda idx: directional_auc(coh.y[idx], coh.values[idx], predicted),
         coh.subject, rng, reps=BOOT_REPS)
 
+    # --- within-subject state response -----------------------------------------------------------
+    # A mandatory report row (Brief 03) that NOTHING populated until now, caught by the standing guard in
+    # tests/test_sweep_evidence.py rather than by inspection.
+    #
+    # This is NOT the AUC in another form. AUC pools comparisons ACROSS subjects, so a measure can separate
+    # two populations while moving the wrong way inside most individuals -- between-subject variation does
+    # the work and nobody sees it. The question a monitor is asked is whether the measure moves in THIS
+    # person when THIS person's state changes, which is a paired quantity and needs subjects contributing
+    # both classes.
+    paired, subs_p = [], []
+    for u in np.unique(coh.subject):
+        m = (coh.subject == u) & np.isfinite(coh.values) & np.isfinite(coh.y)
+        # v1/v0 rather than a/b: `a` is the AUC in this function's enclosing scope, and the first version of
+        # this block shadowed it, leaking an empty array into `a > null["q975"]` sixty lines later. Sixteen
+        # tests caught it, which is the system working -- but a one-letter loop variable inside a long
+        # function is how it happened.
+        v1, v0 = coh.values[m & (coh.y == 1)], coh.values[m & (coh.y == 0)]
+        if v1.size and v0.size:
+            d = float(v1.mean() - v0.mean())
+            paired.append(d if predicted == "higher" else -d)
+            subs_p.append(u)
+    if not paired:
+        # NOT_APPLICABLE, NOT NOT_RUN, and the difference decides whether the candidate can ever survive.
+        # NO subject contributes both classes, so this is a BETWEEN-subject design and a within-subject
+        # response is not a missing measurement -- it does not exist to be measured. Calling it NOT_RUN
+        # would make a property of the study design into a permanent INCOMPLETE for every between-subject
+        # cohort, which is not what an unpopulated report row means.
+        ev.append(Evidence(
+            "within_subject_state_response", "statistical", NOT_APPLICABLE,
+            "no subject contributes both outcome classes: this is a BETWEEN-subject design and the paired "
+            "quantity does not exist. That is a limitation of the design and it is worth stating plainly -- "
+            "a between-subject AUC pools across people, so it can be driven entirely by between-person "
+            "variation, and nothing here shows the measure moves when one person's state changes.",
+            values={"n_paired": 0}, item="within_subject_state_response"))
+    elif len(paired) < 10:
+        # Some subjects ARE paired, so the quantity exists and there are simply too few to estimate it.
+        # That is a genuine NOT_RUN and it should block.
+        ev.append(Evidence(
+            "within_subject_state_response", "statistical", NOT_RUN,
+            f"only {len(paired)} subjects contribute both classes -- the paired quantity exists here but "
+            "cannot be estimated from that many. This blocks, unlike the between-subject case, because the "
+            "data could supply it and does not.",
+            values={"n_paired": len(paired)}, item="within_subject_state_response"))
+    else:
+        arr, sarr = np.asarray(paired, float), np.asarray(subs_p)
+        frac = float(np.mean(arr > 0))
+        f_lo, f_hi = cluster_bootstrap_ci(lambda i: float(np.mean(arr[i] > 0)), sarr, rng,
+                                          reps=BOOT_REPS)[:2]
+        moves_right = f_lo > 0.5
+        moves_wrong = f_hi < 0.5
+        ev.append(Evidence(
+            "within_subject_state_response", "statistical",
+            PASS if moves_right else (FAIL if moves_wrong else NOT_APPLICABLE),
+            f"{frac:.1%} [{f_lo:.1%}, {f_hi:.1%}] of {len(paired)} subjects move in the DECLARED direction "
+            f"({predicted}) when their own state changes. "
+            + ("Consistent within individuals, not only across the group."
+               if moves_right else
+               ("The majority move OPPOSITE to the declaration inside their own recordings, so any "
+                "group-level separation is driven by between-subject variation."
+                if moves_wrong else
+                "The interval spans 50 %, so the within-subject direction is undetermined -- which a "
+                "group-level AUC would have hidden entirely.")),
+            values={"fraction_declared_direction": frac, "ci": [f_lo, f_hi], "n_paired": len(paired),
+                    "median_signed_change": float(np.median(arr))},
+            item="within_subject_state_response", fatal=moves_wrong))
+
     null = permutation_null(lambda yp: directional_auc(yp, coh.values, predicted),
                             coh.y, coh.subject, rng, reps=PERM_REPS)
     ev.append(Evidence(
