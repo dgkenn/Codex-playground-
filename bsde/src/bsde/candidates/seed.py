@@ -209,6 +209,24 @@ def _f_subband(key):
     return fn
 
 
+def f_exponent_gamma(data, ch_names, sfreq, meta=None) -> float:
+    """Aperiodic exponent over 50-90 Hz — ABOVE the propofol beta hump, and reachable on almost nothing.
+
+    Deliberately identical machinery to `_exponents`, differing only in the band, so any difference from
+    `exponent_high` reflects the spectrum and not the estimator (the same discipline `subband_exponents`
+    states for the 1-20/20-40 split).
+
+    Returns NaN wherever the band is unreachable, which is most of this project's data: Sleep-EDF is sampled
+    at 100 Hz (Nyquist 50) and Chennu arrives filtered 0.5-45 Hz. `fit_aperiodic` already returns NaN when it
+    finds no usable points in the requested band, so that degradation is graceful and silent by design rather
+    than by exception handling. That scarcity is the point of the candidate: ds005620 at 5 kHz is one of the
+    few reachable deposits where this band exists at all.
+    """
+    v = _exponents(data, sfreq, lo=50.0, hi=90.0)
+    v = v[np.isfinite(v)]
+    return float(np.mean(v)) if v.size else float("nan")
+
+
 def f_critical_ar1(data, ch_names, sfreq, meta=None) -> float:
     from bsde.features.exotic import critical_slowing
     import numpy as _np
@@ -531,6 +549,32 @@ def seed_registry() -> Sequence[Candidate]:
               "unconsciousness rather than of wakefulness. Verified on synthetic signals: a 1 Hz-modulated "
               "10 Hz oscillation gives 0.079 while a constant-envelope 10 Hz oscillation alongside an "
               "independent 1 Hz oscillation gives 0.0000.")
+
+    register(
+        name="exponent_gamma", version="1.0", fn=f_exponent_gamma,
+        interpretation="Aperiodic exponent fitted over 50-90 Hz only, positive for a falling spectrum. The "
+                       "band sits ABOVE the propofol beta hump, which is the entire reason it exists: if "
+                       "`exponent_high` (20-40 Hz) is tracking a spectral PEAK near the low edge of its own "
+                       "fit window rather than a broadband aperiodic change, then a fit placed well above "
+                       "that peak must NOT show the same effect.",
+        predictions={"unconscious_vs_awake": "higher",
+                     "anaesthetic_drug_identity": "unchanged"},
+        failure_conditions=[
+            "it is redundant with `exponent_high`, which would mean the 20-40 Hz result was never specific "
+            "to that band and the beta-hump explanation is dead for a different reason",
+            "it tracks an EMG proxy, which is the standing risk for ANY high-frequency measure and is more "
+            "acute here than anywhere else in this registry: 50-90 Hz is squarely where surface motor-unit "
+            "activity lives, so an EMG result here makes this candidate an EMG measure",
+        ],
+        requires=("computational", "statistical", "adversarial", "cross_domain"), complexity=2,
+        prior_art="Colombo et al., PMID 30639334, for the band-splitting logic. The specific 50-90 Hz "
+                  "placement is this project's, motivated by Xi et al. (PMID 29920532) reporting propofol "
+                  "beta/gamma power increases at moderate sedation, and is not taken from a source.",
+        notes="DECLARED BEFORE ANY VALUE EXISTED for it on any deposit. Direction HIGHER is inherited from "
+              "the exponent family's convention rather than independently motivated, and that is stated "
+              "rather than dressed up: the informative comparison is not this candidate's own direction but "
+              "whether it AGREES with `exponent_high`. NaN on Sleep-EDF (Nyquist 50) and on Chennu "
+              "(filtered to 45 Hz) by construction -- ds005620 at 5 kHz is the reachable test.")
 
     for key, direction in (("exponent_low", "higher"), ("exponent_high", "higher")):
         band = "1-20 Hz" if key == "exponent_low" else "20-40 Hz"
