@@ -825,3 +825,72 @@ have been reported. Every previously logged `effective_search_space` is too smal
 8–17 when the exponent alone contributes 72 analytic variants. Re-running is not the remedy; restating is.
 Going forward, `analytic_dof` must be the number of analysis variants that were *available and defensible*, not
 the number executed, and a value of 1 is only honest when the analysis genuinely admits no choices.
+
+### 9.15 E10: the muscle test refuted its own instrument — and named a worse explanation than muscle
+
+**Why the test existed.** `exponent_high` fits **20–40 Hz**. `EMG_BAND` is **(20, 45)**. E08's best candidate
+by a wide margin reads the same frequencies as this project's own muscle proxy, and the confound comes with
+the right sign for free: propofol reduces muscle tone → less high-band power → steeper 20–40 Hz slope →
+*higher* exponent, which is exactly what `exponent_high` declares for unconsciousness. Rule 28 is why this got
+a whole experiment rather than a footnote: three times this project has assumed two differently-measured
+things must measure different things. Here they are not even differently measured.
+
+**Every number below was verified against an independent implementation before acceptance** (rule 23):
+brute-force pairwise Mann–Whitney AUC and `scipy.stats.rankdata`, not the project's own midrank module. All
+agreed to three decimals.
+
+**The instruments disagree in sign, which is rule 16 firing on the test itself.**
+
+| muscle proxy | signed AUC, declared `lower` | reading |
+|---|---|---|
+| `emg_kurtosis` | **0.682 [0.517, 0.848]** | spikiness falls with sedation — consistent with muscle |
+| `emg_beta_gamma_fraction` | **0.292 [0.167, 0.420]** | 20–45 Hz power *rises* — cannot be muscle |
+| `emg_index` (composite) | 0.585 [0.415, 0.752] | averages two opposing phenomena; **discarded** |
+
+The EMG direction was declared **a priori from physiology**, not read off the data. The first draft scored
+both orientations and took the maximum, which picks the sign from the sample and then asks whether it beats
+0.5 — a question already forced to *yes*, since the two AUCs sum to 1. The bootstrap lower bound inherits that
+bias and clause (a) would have fired on noise. Caught and fixed before the run.
+
+**A 20–45 Hz relative-power measure under propofol is not reading muscle. It is reading propofol beta.**
+
+> Xi C, Sun S, Pan C, Ji F, Cui X, Li T. *Different effects of propofol and dexmedetomidine sedation on
+> electroencephalogram patterns: wakefulness, moderate sedation, deep sedation and recovery.*
+> PLoS One. 2018;13(6):e0199120. **PMID 29920532.** — "During moderate sedation … propofol decreased the alpha
+> power in the occipital area and **increased the global spindle/beta/gamma power**."
+>
+> Verified from the MEDLINE record via E-utilities (rule 25). Not WebFetch, which fabricated six citations for
+> this project once.
+
+**On the one instrument that survives its own sign check, `exponent_high` survives: 0.863 → 0.812 [0.680,
+0.932]** after residualising on `emg_kurtosis`. Clause (a) failed — no proxy tracks sedation as well as the
+candidate does — so the two-clause confound rule never had standing to fire.
+
+**The clearance is weak, and doubly so.** The deposit is filtered 0.5–45 Hz and the suite already measured
+that a 45 Hz low-pass substantially degrades detection of realistically-peaked muscle (§9.11). A negative from
+a degraded instrument is *weak evidence of no muscle*, not *evidence of no muscle*. Clearing it properly needs
+a deposit with unfiltered high frequencies.
+
+**P1 failed and my reasoning was backwards.** I predicted `rho ≤ −0.5` against the muscle proxy and got
+**+0.448**. A steeper slope means less high-band power only for a *between*-band ratio; `exponent_high` is a
+*within*-band slope and no such relation holds. The positive sign has a single coherent explanation: a
+propofol beta hump near the **low edge** of a 20–40 Hz fit window raises the band's total power *and* steepens
+the slope fitted across it. One mechanism, both observations — and it is the propofol-beta reading again,
+arriving by a second route.
+
+**The alternative explanation this generated is worse for the project than muscle would have been.** If
+`exponent_high` is propofol beta, it is a real *drug* effect and not a consciousness marker, and Brief 01 is
+specifically about separating drug from state. It cannot be tested on Chennu, where every contrast moves drug
+and state together, and it cannot be tested by E10, which generated it — testing it there would be exactly the
+rewrite-after-seeing the anti-p-hacking constraints forbid. **E11 registers it on Sleep-EDF (drug-free, wake
+vs N3), committed before any Sleep-EDF feature value was read.**
+
+**Three presentation/logic defects fixed, none touching the registered predictions:** no rule-16 sign check
+existed (added, and it now *gates* the verdict); `*** no longer excludes 0.5` printed beside candidates whose
+raw AUC never excluded it — most of them, since most registered candidates are refuted (rule 4); and the
+registered control proved weak (`relative_delta_power` raw 0.320, |AUC−0.5| = 0.180), so `exponent_low`
+(0.333) is reported *beside* it as the stronger control rather than substituted for it after the fact.
+
+**Still open, and stated in the script's own docstring:** the 20–40 Hz band was itself chosen *after* seeing
+1–20 and 1–40 behave differently. E09 swept only `fit_lo ∈ {1,2,3}`; **no sweep of the high band has ever been
+run.** That needs its own extraction pass and its own pre-registration.
