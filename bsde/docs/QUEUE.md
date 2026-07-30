@@ -176,3 +176,31 @@ subject, in 171 people.**
 **Queue consequence:** Q1 is not finished — it is now three sub-items (verify the drug time course, verify
 MOAA/S alignment, identify an artefact channel), and only then a registration. **No experiment is registered
 on DOSE-I yet**, and the next loop iteration does those three checks rather than writing predictions.
+
+
+### Q1 VERIFICATIONS — all four answered from `pEEG.zip` (28 MB). `data.zip` still untouched.
+
+Each recording ships a `*_pEEG.csv`: **1-second resolution**, 171 recordings, median 26 min, 49 columns.
+
+| open question | answer |
+|---|---|
+| propofol time course, or only a cumulative total? | **Per-second `Propofol` column, non-empty in 40,800 of 40,800 rows scanned.** |
+| is MOAA/S aligned to the EEG clock? | **Yes — per-second, all five levels present** (1: 24,992 · 5: 5,785 · 3: 4,039 · 4: 3,760 · 2: 2,224) |
+| is there an artefact channel? | **No dedicated EMG.** `abs_gamma`/`rel_gamma` are the EMG-sensitive bands and are a proxy, not a channel. **The check that killed E22 cannot be run here in its strong form, and that is a declared limitation.** |
+| is there a monitor to be ahead of? | **Better than assumed.** The deposit ships **SEF95, MF (median frequency), WSMF variants and permutation entropy (PE31/PE32/PE61)**, non-empty in 86 % of rows. |
+
+**The "no branded monitor" caveat is smaller than Q1 claimed and is corrected here.** SEF95 and median
+frequency are the published algorithms commercial depth monitors are built on, and permutation entropy is an
+established depth index in its own right. The incumbent is therefore **a published depth measure, not a
+proxy invented for this project** — a materially stronger comparator than Q1 anticipated. It is still not a
+branded device output, and any claim must say "ahead of SEF95/PE", never "ahead of BIS".
+
+**A detail that makes this deposit unusually well-suited to the question.** Ostertag 2025 (PMID 38412114)
+found that **SEF95 and spectral entropy move the WRONG way at loss of responsiveness while permutation
+entropy tracks it correctly.** DOSE-I ships both families pre-computed. The incumbent comparison therefore
+has a published expectation attached to it before anything is run.
+
+`SOC` is binary and populated: 25,540 unconscious against 15,260 conscious in the 25 recordings scanned — a
+base rate around 37 %, comfortably inside any sane band, unlike E27's 4.0 %.
+
+**Q1 is CLOSED as an acquisition item.** What follows is a registration, not more verification.
