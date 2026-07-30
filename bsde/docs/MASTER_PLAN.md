@@ -1633,3 +1633,91 @@ bill and the column must preserve the difference.
 
 **What is NOT deferred.** ds004541 is unreadable by this pipeline today, and §9.30 already says no
 experiment should be registered on it until the migration lands. That stands.
+
+### 9.32 E26: Challenge C answered, and the answer is NO — a clean, fully-gated negative
+
+**The first experiment on this deposit to run every section.** E24's emergence landmark was dead (§9.33), so
+Challenge C was re-registered on a transition that happens *inside* maintenance: **onset of burst
+suppression**, with the device's own `BIS/SR` as both label and incumbent.
+
+**The comparator was verified clean before the design was written**, which is the whole reason to trust it.
+P(SR > 0) by EMG decile runs 41 / 25 / 15 / 15 / 16 / 11 / 11 / 17 / 11 / 6 % — **falling** with muscle,
+where P(BIS >= 80) rose from 0 % to 27.6 %. Spearman EMG vs SR is **−0.197**. That is the physiologically
+correct direction: deep anaesthesia produces both suppression and low muscle tone. The check is re-run as
+P1(a), a gate evaluated first.
+
+| | SR > 0 | SR ≥ 10 |
+|---|---|---|
+| patients with an onset | 81 | 33 |
+| eligible windows / base rate | 597 / 26.1 % | 213 / 14.6 % |
+| **BIS alone (the incumbent)** | AUC 0.583 [0.519, 0.645] | 0.449 [0.321, 0.577] |
+| **`exponent_high` increment** | **−0.0021 [−0.1069, +0.0431]** | **−0.0387 [−0.3057, +0.1656]** |
+| increment over BIS + MAC | −0.0069 [−0.0632, +0.0238] | −0.0187 [−0.2050, +0.1058] |
+
+**P3 failed at both thresholds. P4 (placebo) PASSED**, so the harness discriminates as designed — reported
+despite the failure, because a placebo failing here would have meant broken machinery rather than a silent
+candidate.
+
+**It is not about one candidate.** All ten reported have negative point estimates at both thresholds and
+every interval spans zero. The single positive cell in twenty is `lempel_ziv` at +0.0278 [−0.0780, +0.1026],
+which spans zero and does not survive the second threshold — the exact look the multiplicity note refuses.
+
+**What it does not say:** a 300 s grid cannot express a warning arriving 60 s ahead, and the horizon, grid
+and window were fixed before the run rather than searched. **A finer grid is the obvious next test and it is
+a re-extraction, not a re-analysis.** The negative is the strong direction, as the scope note said in
+advance: the label is computed from the same electrodes as the candidates, so this task is *easier* than the
+real one.
+
+### 9.33 E25: Challenge A reached its acceptance condition and passed it — then the placebo withdrew it
+
+Third attempt at Challenge A, on an axis the EEG cannot contaminate: **the anaesthetic that was
+administered.** `Primus/MAC` puts sevoflurane and desflurane on one scale with no fitting on our part;
+propofol runs on effect-site concentration in a separate, never-pooled arm.
+
+| prediction | result |
+|---|---|
+| P1 gate — dose varies, both arms, muscle filter applied | **PASSED** (volatile 110 patients of 203; propofol 44 of 44) |
+| P2 — within-subject rho with dose | volatile **−0.126 [−0.174, −0.078]**, propofol **−0.082 [−0.156, −0.005]** |
+| P3 — same sign, ratio ≥ 50 % | **PASSED**, 65.2 % |
+| P4 — **the acceptance condition**: sevo vs des at matched MAC | **PASSED** — drug probe \|AUC−0.5\| **0.006** against depth **0.063** |
+| P5 — placebo: remifentanil must correlate < 50 % as strongly | **FAILED** — 87.7 % volatile, **168.7 %** propofol |
+
+**P2 is withdrawn and Challenge A is not met.** Remifentanil is titrated alongside the hypnotic, so a
+measure correlating equally with each has not been shown to track hypnotic depth specifically.
+
+**Three things this record must keep straight.**
+
+1. **The placebo did what its own text warned in advance it might do.** P5's registration says remifentanil
+   is not EEG-silent, so the gate is conservative and can withdraw a real effect. The defensible statement
+   is about the design — *it cannot separate hypnotic dose from case phase* — not about the candidate.
+2. **P6 points the same way and is not allowed to rescue P2.** Within remifentanil terciles the volatile
+   correlation is **−0.200** and **−0.203**, stronger than the marginal −0.126. Rule 17 says a control that
+   strengthens an effect means the diagnosis was wrong, which suggests co-titration rather than a fake
+   primary. That is a hypothesis for a new registration — one that must state its adjustment strategy first
+   and find a case-phase control that is not itself a co-titrated drug. Reinstating a withdrawn primary from
+   a non-gating section computed afterwards is the move the constraints forbid.
+3. **P4 passing is worth keeping even though the experiment failed.** At matched MAC the agent is an order
+   of magnitude less legible than the depth (0.006 against 0.063). That is the first time Challenge A's
+   actual acceptance condition has been *testable* in this project, and it is testable only because MAC
+   supplies a common depth axis. Whatever tracks depth here, it is not a pharmacology detector.
+
+**The context table is recorded as not-a-result, with reasons.** `critical_slowing_ar1` (+0.452 / +0.060),
+`exponent_low` (+0.388 / +0.031), `multiscale_entropy_slope` (+0.334 / −0.049) and `spectral_edge_95`
+(−0.328 / +0.074) all beat the primary in the volatile arm and **all four disagree in sign between the
+arms** — rule 16, the definition doing the work. `lempel_ziv` (−0.264 / −0.259) and `relative_alpha_power`
+(−0.339 / −0.147) are sign-consistent and larger than the primary, and remain unadjusted, unplaced against
+their own placebos, and eleven deep in one look at a family.
+
+### 9.34 Where the three challenges stand after this session
+
+| challenge | status | the blocker, precisely |
+|---|---|---|
+| **A** — one representation across drugs, minimising drug identity | **TESTED AND NOT MET.** Its acceptance condition (P4) passed for the first time; the primary was withdrawn by its own placebo | Needs a case-phase control that is not a co-titrated drug. The data exists; the design does not |
+| **B** — command-following in DoC | **BLOCKED, unchanged** | Bath access requested, not granted. The figshare DoC table (96 recordings) carries no command-following label, so it cannot substitute |
+| **C** — trajectory feature ahead of a conventional monitor | **TESTED AND NOT MET** on burst-suppression onset, at a 300 s grid | A finer grid is a re-extraction and is the obvious next test. Emergence remains untestable here: the strip comes off before the patient wakes |
+
+**Two of three challenges moved from BLOCKED to TESTED this session, and both answers were negative.** That
+is the intended behaviour of a programme built verifier-first: four experiments (E21, E22, E24 blocked, E26)
+returned nothing about any candidate because their machinery gates refused, and the two that reported
+(E25, E26) did so with every gate and placebo executed. **No positive claim has been made about any
+candidate on this deposit, and that is the accurate state of the science, not a gap in it.**
