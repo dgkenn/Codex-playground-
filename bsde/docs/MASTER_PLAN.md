@@ -1025,3 +1025,60 @@ existed before the work started.
    cleanly on a different sedation deposit. ds005620 is streaming and is the natural candidate.
 3. **A harder sleep contrast (N2 vs N3, or W vs N1)** so that a drug-free test can actually discriminate
    between candidates instead of passing all of them.
+
+### 9.19 Verifier layers 5 and 7 built — and layer 7 says the 0.863 would not be usable
+
+**Three of the seven layers did not exist. Two now do.** Layer 6 (mechanistic) remains gated on data this
+project cannot reach — it needs ketamine, locked-in or neuromuscular-blockade dissociations — not on code.
+
+**Layer 5 (temporal)** asks whether a measure holds still long enough to be read from one window. Layers 2–4
+all collapse a recording to a single number before they start, so none of them can see a measure whose
+window-to-window scatter inside a state exceeds the gap between states. `temporal_snr` is fatal below 1.0.
+The test that justifies the layer plants a measure with **group AUC 1.0** that layers 2–4 wave through and
+that fails here. `critical_slowing_ar1` has declared `requires: temporal` since it was registered, and E08's
+P4 has been standing guard over the gap ever since.
+
+**Layer 7 (clinical)** asks whether *using* the measure would help. Its whole premise is one sentence:
+**AUC is prevalence-free and threshold-free, and clinical use is neither.** Layer 2 already checks
+calibration, which is necessary and not sufficient — a perfectly calibrated measure can still be worse than
+treating everyone.
+
+**Applied to the project's best result, `exponent_high` on Chennu (n = 40, 20 subjects):**
+
+| quantity | value |
+|---|---|
+| raw feature AUC (E08's headline) | **0.863** |
+| AUC of cross-validated fitted probabilities | 0.820 |
+| specificity at the threshold reaching 90 % sensitivity | **0.500** |
+| sensitivity at the threshold reaching 90 % specificity | 0.600 |
+| PPV at prevalence 0.50 (the sample's own, a design choice) | 0.643 |
+| PPV at prevalence 0.20 | 0.310 |
+| PPV at prevalence 0.05 | **0.087** |
+| net benefit vs treat-all / treat-none | PASSES at threshold probabilities 0.2–0.3 |
+| minimum detectable change | NOT_RUN — needs layer 5 inputs (E14's stream) |
+
+**The two numbers are not the same quantity and the difference must not be reported as a correction.** 0.863
+is the AUC of the raw feature and involves no fitting, so it does not overfit in the usual sense. 0.820 is
+the AUC of *probabilities* from a logistic fit with an intercept and slope estimated per fold on 40 rows; the
+gap is fold-fitting noise at small n, not evidence that 0.863 was inflated.
+
+**What layer 7 adds is the rest of the table, and it is unflattering.** At an operating point any clinician
+would want — 90 % sensitivity — the measure's specificity is **a coin flip**. And the sample prevalence of
+0.50 is not a fact about the world; it is a design artefact of contributing one baseline and one sedated
+window per subject. Every cohort in this project is near 50/50 by construction, so any PPV quoted from one
+describes a world in which half of all patients are sedated. **At 5 % prevalence a positive reading is
+correct 8.7 % of the time.**
+
+The layer refuses to guess the prevalence, the harm ratio or the target sensitivity — those are clinical and
+product facts, and each check returns NOT_RUN with the reason rather than substituting the sample's. A
+NOT_RUN is not a pass.
+
+**The one encouraging number is the decision curve**, which is also the check most likely to be skipped
+elsewhere: acting on the measure does beat both treating everyone and treating no one, at threshold
+probabilities between 0.2 and 0.3. That is a genuine, if narrow, window of usefulness.
+
+**`minimum_detectable_change` is where the two new layers compose**, and it is the question a monitor is
+actually asked: not "do these two populations differ" but "did this patient move". MDC95 = 1.96·√2·(within-
+state scatter), compared against the between-state difference. It cannot be computed from any table this
+project currently holds, because all of them carry one window per subject per state — which is precisely why
+E14's multi-window extraction exists.
