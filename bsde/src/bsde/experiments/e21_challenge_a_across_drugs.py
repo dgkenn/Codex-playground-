@@ -76,6 +76,39 @@ SCOPE AND LIMITS, none of which a larger n repairs.
   * Surgical populations differ by agent — desflurane and sevoflurane are not randomly assigned. Age, sex,
     BMI, ASA and emergency status are carried in the table for a later adjusted analysis and are **not**
     adjusted for here; P3 and P4 are comparisons of a marker's behaviour, not causal claims about drugs.
+
+--------------------------------------------------------------------------------------------------------
+OUTCOME, ADDED AFTER THE RUN. **P1 FAILED: BIS rose from the unresponsive block to the responsive block in
+1 of 22 cases (4.5 %), against a registered floor of 80 %.** P2, P3 and P4 were therefore never computed,
+which is rule 31 working as intended — a downstream verdict on a failed precondition is absent, not negative.
+**This experiment is CLOSED at its gate and its result is not revised.** What follows is the diagnosis, kept
+here because the failure is the informative part.
+
+The gate failed for two reasons, both defects in the design above and neither in any candidate:
+
+  1. `BIS/BIS` writes a literal `0.0` while the sensor is detached, and 0 is inside the index's valid range,
+     so it reads as "isoelectric" — the deepest possible state. 171 of 348 decoded windows carried it, and
+     the proportion climbs from 11 % at `aneend−1200` to 92 % at `aneend+300`, because the strip comes off
+     with the anaesthetic. The responsive block therefore scored as *more* suppressed than maintenance and
+     the gate inverted. `BIS/SQI` reads exactly 0 over precisely those spans and is a positive test for the
+     off-state; it was available and was not streamed.
+  2. **`aneend` lags emergence rather than marking it.** Measured on four cases: BIS is already 68–86 at
+     `aneend−300`/`−120` while deep maintenance sits at 24–46. `aneend` is charted when the anaesthetic
+     record is closed, after the patient is responding. The registered offsets thus put the "responsive"
+     block after the monitor was unplugged — which is also why those offsets carried most of the decode
+     errors, a signal the scope note above noticed and misread as short recordings alone.
+
+Neither defect can be repaired by moving the offsets, because both say the same thing: **a window's arm must
+be defined by the depth index, not by its sign relative to a charted time.** That is a different design, so
+it is a different experiment — E22 — registered fresh against a re-extracted table (`VitalDBGridAdapter`,
+`bsde/scripts/stream_vitaldb_grid.py`), with the arms defined by BIS under published clinical thresholds and
+a different machinery gate. Editing this file's predictions to match what the data turned out to support is
+exactly the move the programme's constraints forbid, and it is not taken.
+
+An earlier bug in this file is recorded for completeness: the first version selected epochs by `meta_epoch`,
+a column the VitalDB adapter does not emit (ds004541's does, and the two were conflated). Every test matched
+the empty string and the gate saw 0 of 0 cases. It FAILED rather than passing vacuously, which is the
+behaviour rule 5 asks for — a silently-empty filter that defaulted to "pass" would have been invisible.
 """
 from __future__ import annotations
 
@@ -98,8 +131,13 @@ RESULTS = os.path.abspath(os.path.join(HERE, "..", "..", "..", "results"))
 TABLE = os.path.join(RESULTS, "vitaldb_challenge_a.csv")
 
 ARMS = ("propofol", "sevoflurane", "desflurane")
-UNRESPONSIVE = ("ane-1200", "ane-600")
-RESPONSIVE = ("ane+180", "ane+300")
+# Selected by NUMERIC OFFSET, not by an epoch label. The first version keyed on `meta_epoch`, which the
+# VitalDB adapter does not emit -- ds004541's does, and the two were conflated. Every epoch test then matched
+# the empty string, the gate saw 0 of 0 cases, and it FAILED rather than passing vacuously. That is the gate
+# behaving correctly: 0/0 is visibly wrong, where a silently-empty filter that defaulted to "pass" would not
+# have been (rule 5).
+UNRESPONSIVE_OFF = (-1200.0, -600.0)
+RESPONSIVE_OFF = (180.0, 300.0)
 PRIMARY = "exponent_high"
 GATE_MIN_FRACTION = 0.80
 INVARIANCE_TOL = 0.15
@@ -134,13 +172,16 @@ def main() -> int:
 
     rows = [r for r in csv.DictReader(open(TABLE, newline="")) if r.get("status") == "ok"]
     arm_of = {r["recording_id"]: r.get("meta_requested_agent", "") for r in rows}
-    ep = np.array([r.get("meta_epoch", "") for r in rows])
+    if not any(np.isfinite(_f(r.get("meta_offset_s"))) for r in rows):
+        print("   *** the table carries no meta_offset_s; the epoch filter cannot be applied.")
+        return 1
+    ep = np.array([_f(r.get("meta_offset_s")) for r in rows])
     subj = np.array([r.get("subject", "") for r in rows])
     arm = np.array([arm_of.get(r["recording_id"], "") for r in rows])
     col = lambda k: np.array([_f(r.get(k, "")) for r in rows], float)     # noqa: E731
     rng = np.random.default_rng(20260730)
-    keep = np.isin(ep, UNRESPONSIVE + RESPONSIVE)
-    y = np.isin(ep, RESPONSIVE).astype(float)
+    keep = np.isin(ep, UNRESPONSIVE_OFF + RESPONSIVE_OFF)
+    y = np.isin(ep, RESPONSIVE_OFF).astype(float)
     print(f"   rows {len(rows)}   patients {len(set(subj))}   "
           + "  ".join(f"{a}={len({s for s, x in zip(subj, arm) if x == a})}" for a in ARMS))
 
@@ -151,8 +192,8 @@ def main() -> int:
     bis = col("meta_bis") if "meta_bis" in (rows[0] if rows else {}) else col("bis_mean")
     hits = n = 0
     for s in np.unique(subj):
-        u = bis[(subj == s) & np.isin(ep, UNRESPONSIVE)]
-        r_ = bis[(subj == s) & np.isin(ep, RESPONSIVE)]
+        u = bis[(subj == s) & np.isin(ep, UNRESPONSIVE_OFF)]
+        r_ = bis[(subj == s) & np.isin(ep, RESPONSIVE_OFF)]
         u, r_ = u[np.isfinite(u)], r_[np.isfinite(r_)]
         if u.size and r_.size:
             n += 1
@@ -199,7 +240,7 @@ def main() -> int:
     print("\n" + "=" * 100)
     print(f"P4 — DRUG-IDENTITY PROBE: {PROBE_PAIR[0]} vs {PROBE_PAIR[1]}, UNRESPONSIVE BLOCK ONLY")
     print("=" * 100)
-    pm = np.isin(ep, UNRESPONSIVE) & np.isin(arm, PROBE_PAIR) & np.isfinite(x)
+    pm = np.isin(ep, UNRESPONSIVE_OFF) & np.isin(arm, PROBE_PAIR) & np.isfinite(x)
     probe = {}
     if len(set(subj[pm])) >= 2 * MIN_PER_ARM:
         yd = (arm[pm] == PROBE_PAIR[1]).astype(float)
