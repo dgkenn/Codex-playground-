@@ -1,4 +1,13 @@
-"""VitalDB — raw intraoperative EEG with the anaesthetic agent identified per case. Open, CC-BY 4.0.
+"""VitalDB — raw intraoperative EEG with the anaesthetic agent identified per case.
+
+LICENCE, CORRECTED. This header said "Open, CC-BY 4.0", which is the PhysioNet mirror's grant and not the
+one that applies to these files. `data_registry/LICENSE_TABLE.csv` records both, read verbatim from each
+source on 2026-07-30: vitaldb.net's Registration Agreement names **CC BY-NC-SA 4.0, R&D only**, while
+PhysioNet distributes the same data under CC BY 4.0. **This module fetches from `api.vitaldb.net`, so the
+stricter grant is the one covering what is on disk.** Both permit research use, which is why the work
+proceeds; the difference is material only at commercialisation, and a commercial artefact wanting the CC BY
+grant would have to be built from the PhysioNet distribution, re-fetched. Deferred deliberately, not
+resolved here.
 
 WHY THIS DEPOSIT CHANGES WHAT THE PROJECT CAN ATTEMPT. Two of the three discovery challenges have been
 blocked on data since they were written (§5, §9.22):

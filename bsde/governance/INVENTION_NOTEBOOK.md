@@ -441,3 +441,36 @@ VitalDB — the one NC-SA deposit — is not yet streamed.
    Bath request declares current non-commercial research, which this decision confirms is accurate.
 
 **Standing counsel questions unchanged**, with the disclosure item now the only urgent one.
+
+---
+
+## Entry 13 — 2026-07-30. VitalDB is streamed, and the licence position it lands on is the stricter one
+
+**Correction to Entry 12.** That entry recorded "VitalDB — the one NC-SA deposit — is not yet streamed."
+It is now streamed, and the accompanying source header was wrong in a way worth fixing rather than leaving:
+`ingestion/vitaldb.py` described the deposit as "Open, CC-BY 4.0". That is the **PhysioNet mirror's** grant.
+`data_registry/LICENSE_TABLE.csv` already recorded the conflict correctly, read verbatim from both sources
+on 2026-07-30:
+
+* **vitaldb.net Registration Agreement** — CC BY-NC-SA 4.0, R&D only.
+* **PhysioNet** — CC BY 4.0, same data.
+
+**The adapter fetches from `api.vitaldb.net`, so the stricter grant covers the bytes on disk.** Both permit
+research use, which is why the work proceeds under the standing position (make the discovery on whatever is
+reachable; rebuild any commercial artefact on a clean corpus). The difference bites only at
+commercialisation, and the remedy is mechanical and known: **re-fetch the same cases from the PhysioNet
+distribution.** No result changes; the provenance does.
+
+**Why this is recorded rather than fixed silently.** The header and the registry disagreed, and the header
+was the thing a reader would have relied on. Two sources computing the same quantity have to be diffed even
+when only one is published — and here the *unpublished* one was right.
+
+**Practical consequence for the artefact plan.** VitalDB is now the deposit the anaesthesia wedge rests on:
+raw frontal EEG, a validated depth index, device-scored burst suppression, a real muscle channel, and drug
+identity per case. It is also the one deposit in use whose grant is share-alike. So the clean-rebuild path
+for anything commercial runs through the PhysioNet mirror, and that should be settled **before** any weights
+are trained on these files rather than after — ShareAlike propagating into a derived artefact is the item in
+Entry 12 that a later retraining does not cure.
+
+**Disclosure clock unchanged and still the most time-critical standing item.** This repository is public;
+every commit above is dated disclosure.

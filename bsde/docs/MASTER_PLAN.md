@@ -1509,3 +1509,95 @@ framing of this one.
 or a per-subject individualised band. **Neurotech (§9.27) is NOT the answer** — 4,915 subjects but modal age
 8–14, so it inherits the identical defect. **LENS on BDSP — "Lifespan and Sleep-Stage-Resolved Normative EEG
 Background" — is the right shape**, being lifespan rather than paediatric, and is the deposit to pursue.
+
+### 9.29 E21's gate fired at 4.5 % and it was right: BIS 0.0 is the sensor's off-state
+
+**E21 is closed at its gate.** It required BIS to rise from the unresponsive block to the responsive block
+in ≥ 80 % of cases and got **1 of 22 (4.5 %)**. P2–P4 were never computed. The gate did what a gate is for,
+and the failure was in the extraction, not in any candidate.
+
+* **`BIS/BIS` writes a literal `0.0` while the strip is detached, and 0 is inside the index's valid range.**
+  171 of 348 decoded windows carried it, rising from 11 % at `aneend−1200` to 92 % at `aneend+300` because
+  the sensor comes off with the anaesthetic. Read as a measurement it says *isoelectric* — the deepest
+  possible state — so the emerging arm scored as more suppressed than maintenance and the comparison
+  inverted. `BIS/SQI` reads exactly 0 over precisely those spans (verified on cases 30 and 35) and is a
+  positive test for the off-state; it was available and was not streamed. **Error-catalogue rule 6 in a new
+  dress: the column was populated, and that is not the same as valid.**
+* **`aneend` lags emergence rather than marking it.** BIS is already 68–86 at `aneend−300`/`−120` while deep
+  maintenance sits at 24–46. It is charted when the anaesthetic record is closed, after the patient is
+  responding. The registered positive offsets therefore landed after the monitor was unplugged — which is
+  also why they carried most of the decode errors, a signal E21's own scope note saw and misread as short
+  recordings alone.
+* **A bug in E21 that behaved correctly.** Its first version selected epochs by `meta_epoch`, a column the
+  VitalDB adapter does not emit — ds004541's does, and the two were conflated. Every test matched the empty
+  string and the gate saw 0 of 0 cases. It **failed** rather than passing vacuously, which is what rule 5
+  asks for.
+
+**What replaced it.** `VitalDBGridAdapter` samples the whole case on a fixed grid and carries `BIS/BIS`,
+`BIS/SQI`, `BIS/SR` and `BIS/EMG` with every window, voiding all four when SQI shows the sensor off. It is
+nearly free: the expensive operation is fetching a case's 9.4 MB waveform track, which is per case and not
+per window, and the offset design left ~97 % of each fetched track unused. Sharding is by **case**, never by
+window — the runner's own `--shard` hashes the recording id and would make each shard re-download every
+case's track. Four case-shards: 9.5 h → 2.4 h.
+
+**E22 is registered against that table and committed before it existed** (at 261 of ~6,700 rows, with its
+own row-count floor refusing to report). Arms come from published clinical thresholds — BIS ≤ 60
+unresponsive, ≥ 80 responsive, 60–80 excluded and counted — so nothing about the split is chosen from the
+distribution. Its machinery gate uses **no EEG and no candidate**: coverage in ≥ 2 drug groups, plus
+responsive windows occurring later in the case in ≥ 70 % of patients, which tests that the arms are not
+*inverted* without asserting a precision the charted times do not have. Its headline limitation is stated as
+one: BIS is computed from the same two frontal electrodes as the candidates, so P2 asks whether a candidate
+agrees with the BIS algorithm. **P4 (the drug probe) and P5 (a placebo that gates the verdict) carry the
+weight, and neither is damaged by that circularity.**
+
+### 9.30 E20 withdrawn, and the defect behind it: 39 of 62 ds004541 channels are not EEG
+
+E20's gate failed at 5 of 7 and the experiment stopped, as registered. **That verdict is now withdrawn as
+uninterpretable — not overturned, and not replaced by a positive one.**
+
+In one 30 s awake window of sub-02, **23 of 62 channels sit in a physiological 5–150 µV band and 39 do not**,
+running from 1,600 up to 153,000 µV. `_mean_psd` averages power across all of them, and **the pipeline had
+no channel-quality rejection of any kind.** In that window:
+
+| | all 62 channels | the 23 plausible ones |
+|---|---|---|
+| relative delta | 0.799 | 0.456 |
+| relative alpha | 0.021 | 0.092 |
+
+An awake human with 2 % alpha has not been recorded. The whole table shows it — median relative alpha of
+0.01 in **both** arms, against 0.42 on Chennu — and that flatness is why the gate had nothing to detect.
+
+**The first diagnosis was wrong, and that is the more useful half.** The hypothesis was that one enormous
+channel dominated the power sum, and the fix would be a robust aggregator: a per-frequency median across
+channels. It moved relative delta by **0.007**, because on this deposit *the median channel is bad too*.
+Robust aggregation defends against a minority of outliers; it cannot defend against a majority. High-pass
+filtering does not touch it either (median-channel delta 0.687 → 0.651 at 1 Hz), so it is not drift leaking
+into the 1–4 Hz bin. **Only rejecting channels helps.**
+
+**Exposure, measured one window per deposit** (`scripts/diagnose_channel_spread.py`):
+
+| deposit | plausible channels | verdict |
+|---|---|---|
+| ds005620 | 65/65 | unexposed — the `exponent_high` replication stands |
+| vitaldb | 1/1 | unexposed — **E22 is safe**, it is one frontal channel |
+| ds007554 | 29/33 | moderate: delta 0.819 → 0.729, alpha 0.018 → 0.028 |
+| ds004541 | 23/62 | severe |
+| chennu | **not probed** | the Cambridge host fails TLS from this sandbox (the E12 blocker). **Unmeasured, not clean.** |
+
+**`features/quality.py`** is the first half of the repair: three tests, first-match-wins — `nonfinite`
+(> 10 % of samples), `flat` (zero variance), `amplitude` (sd outside 5–150 µV). The band is **absolute
+rather than relative and that is forced**: a scale-free "reject channels more than 10× the montage median"
+needs no units and fails on exactly the case that motivated it. Anchoring to physiology means anchoring to
+volts, so the test is only meaningful when the data really are in microvolts — and HBN declares
+`"uncalibrated"`. `channel_quality` therefore **refuses to judge amplitude** when the units are not
+microvolts, returning every channel kept with `units_judged=False`, so a caller can tell *every channel
+passed* from *amplitude was never tested*. The flat test is unit-free and runs regardless.
+
+**Nothing in the feature path calls it yet.** Turning it on changes the definition fingerprint of five
+candidates and invalidates that column in every table already extracted — including Chennu's, which cannot
+be re-extracted from this sandbox at all. That sequencing decision is open, and it is the next one to make.
+
+**What this does not license, stated because the temptation runs the other way.** It is not grounds to
+re-run E20 and keep whatever comes out; the one-attempt commitment was spent, and what a repaired pipeline
+produces on ds004541 belongs to a new registration written *before* the repair runs. Nor is it evidence for
+`exponent_high` — the deposit is untested on that question. Absent, not negative.
