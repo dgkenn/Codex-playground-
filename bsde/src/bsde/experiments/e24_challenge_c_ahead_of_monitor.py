@@ -56,6 +56,14 @@ negative (rule 31).
         result and not a clinical one**, and rule 15's sibling applies: discrimination without a usable
         horizon is half a result, and the missing half is the half an anaesthetist would use.
 
+    NOTE ON THE OTHER CANDIDATES IN THE TABLES BELOW, added at registration and before any value
+    was read. The primary is ONE pre-declared candidate, so the headline is one test. Every other
+    candidate is printed for CONTEXT and its interval is UNADJUSTED — reading a claim out of the
+    best of them is a look at the whole family, and `verifier/multiplicity.py` (layer 2's
+    correction: Holm, Benjamini-Hochberg, and a Westfall-Young max-T that uses the observed
+    correlation between candidates rather than assuming independence) is what such a claim would
+    have to go through first. None is made here.
+
     FALSIFICATION: P3's interval includes zero, or P4 fails. Either is a negative answer to Challenge C on
     this deposit, and a negative answer is a result.
 

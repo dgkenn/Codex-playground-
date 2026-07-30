@@ -48,6 +48,14 @@ negative (rule 31).
         separates unresponsive from responsive is a suppression detector**, whatever P3 says, because P3
         can survive on the residual while the measure's dominant sensitivity lies elsewhere.
 
+    NOTE ON THE OTHER CANDIDATES IN THE TABLES BELOW, added at registration and before any value
+    was read. The primary is ONE pre-declared candidate, so the headline is one test. Every other
+    candidate is printed for CONTEXT and its interval is UNADJUSTED — reading a claim out of the
+    best of them is a look at the whole family, and `verifier/multiplicity.py` (layer 2's
+    correction: Holm, Benjamini-Hochberg, and a Westfall-Young max-T that uses the observed
+    correlation between candidates rather than assuming independence) is what such a claim would
+    have to go through first. None is made here.
+
     FALSIFICATION: P3 not met. Then E22's headline, if E22 has one, is a statement about burst suppression
     and must be written as one.
 
