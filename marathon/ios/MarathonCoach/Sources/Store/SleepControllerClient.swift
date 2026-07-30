@@ -31,6 +31,12 @@
 //
 
 import Foundation
+// On Linux, URLSession and friends live in a separate module rather than in Foundation. Importing it
+// conditionally is what lets this file build in the portable target, which is what makes `swift test`
+// able to verify the logic without a simulator.
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 // Explicit rather than relying on Foundation to re-export it: the Keychain calls below are in Security,
 // and a transitive re-export is not something to depend on.
 #if canImport(Security)
@@ -91,7 +97,13 @@ public final class SleepControllerClient {
         self.token = token
         let c = URLSessionConfiguration.ephemeral
         c.timeoutIntervalForRequest = config?.timeout ?? 6
-        c.waitsForConnectivity = false      // fail fast; this is a LAN server, not the internet
+        // `waitsForConnectivity` is read-only in swift-corelibs-foundation, so it is set only where it
+        // exists. It defaults to false anyway; the point of setting it explicitly is to state the
+        // intent -- this is a LAN server, so a request should fail fast rather than wait for the
+        // network to come back.
+        #if canImport(Darwin)
+        c.waitsForConnectivity = false
+        #endif
         session = URLSession(configuration: c)
     }
 

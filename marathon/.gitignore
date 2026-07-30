@@ -1,0 +1,10 @@
+# SwiftPM build products
+.build/
+
+# XcodeGen output
+*.xcodeproj/
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/

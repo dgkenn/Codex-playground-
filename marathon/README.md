@@ -167,18 +167,29 @@ Advisory software. Not a medical device, and it cannot detect a cardiac event.
 
 **The Python engine is complete and tested** — 477 tests, all passing.
 
-**The iOS app is complete but has never been compiled.** There is no Swift toolchain in the
-environment it was written in, so every `.swift` file here is unverified by execution. Expect to fix
-compile errors on first build. What has been done instead:
+**The portable Swift target compiles and its tests pass** — 76 tests, all passing, under Swift 6.1.2
+on Linux. That is what makes the parity claim below a measured result rather than a review opinion:
+the controller's cue sequence, the signal-quality detector scores, the zone boundaries, the Minetti
+gradient factors, the weekly replan decisions and the ACWR bands were all executed and compared
+against the Python engine's golden vectors.
 
-- The portable logic is isolated in a SwiftPM library target with no UIKit/SwiftUI/CoreBluetooth/
-  HealthKit/CoreLocation imports, so `swift test` exercises it without a simulator.
+- The portable logic is isolated in a SwiftPM library target (`MarathonCoachCore`) with no
+  UIKit/SwiftUI/CoreBluetooth/HealthKit/CoreLocation imports, so `swift test` exercises it without a
+  simulator. That target is the one that has been built and tested.
 - `PortParityTests.swift` asserts the Swift port agrees with the Python engine against a shared
   golden-vector file, including a full closed-loop controller trace. Python is authoritative.
-- Every file was read for the compile errors that are findable by reading. Four were found and fixed
-  that way: SwiftPM forbidding resources outside a target directory, Swift declining to convert
-  `[(Double, Double)]` to `[(speed: Double, hr: Double)]`, a top-level `Optional` handed to
-  `JSONEncoder`, and `MarathonCoachApp.swift` sitting in the portable target while importing SwiftUI.
+- Compiling found three errors that reading had not: `URLSession` living in `FoundationNetworking`
+  rather than `Foundation` off-Darwin, `waitsForConnectivity` being get-only in
+  swift-corelibs-foundation, and `PolarPMDTests.swift` importing the app's module name instead of the
+  library's. Reading had already found four others — SwiftPM forbidding resources outside a target
+  directory, Swift declining to convert `[(Double, Double)]` to `[(speed: Double, hr: Double)]`, a
+  top-level `Optional` handed to `JSONEncoder`, and `MarathonCoachApp.swift` sitting in the portable
+  target while importing SwiftUI.
+
+**The app target has still never been compiled.** `VeritySensor`, `LocationPace`, `AudioCoach`,
+`HealthKitBridge`, `RunSession` and every view import Apple frameworks that do not exist on Linux, so
+they need Xcode. Expect to fix compile errors in those files on your first build. Nothing about them
+is verified by execution here — only by reading.
 
 To build:
 
@@ -186,9 +197,12 @@ To build:
 cd marathon/engine
 python -m marathon_engine.export ../ios/MarathonCoach/Resources   # required first
 cd ../ios/MarathonCoach
-swift test                     # the portable logic + parity against the engine
-xcodegen generate && open MarathonCoach.xcodeproj   # the app
+swift test                     # the portable logic + parity against the engine -- 76 tests
+xcodegen generate && open MarathonCoach.xcodeproj   # the app; needs Xcode
 ```
+
+`swift test` needs no Apple SDKs and works on Linux with an open-source toolchain, which is how the 76
+tests above were run. The `xcodegen` step is the one that requires a Mac.
 
 ### What exists
 
@@ -196,20 +210,22 @@ xcodegen generate && open MarathonCoach.xcodeproj   # the app
 |---|---|---|
 | Science core | `engine/marathon_engine/*.py` (15 modules) | tested, 477 tests |
 | Plan export | `export.py` → `plan.json`, `golden_vectors.json`, `protocols.json` | tested |
-| PMD protocol | `PolarPMD.swift` | ported from hardware-tested Python, XCTests written |
-| BLE driver | `VeritySensor.swift` | written, needs hardware |
-| GPS pace | `LocationPace.swift` | written; Kalman filter keyed on `speedAccuracy` |
-| Audio | `AudioCoach.swift` | written; ducks Apple Music rather than stopping it |
-| Controller | `InRunController.swift`, `SignalQuality.swift`, `Physiology.swift` | ported, parity-tested |
-| Orchestrator | `RunSession.swift` | written; fixed 1 Hz loop over three async streams |
-| Weekly review | `WeeklyReview.swift`, `WeeklyReviewService.swift` | ported, parity-tested |
-| Persistence | `Store.swift`, `PlanStore.swift` | written, XCTests |
-| Integrations | `HealthKitBridge.swift`, `SleepControllerClient.swift` | written |
-| UI | `TodayView`, `RunView`, `ScreeningView`, `SettingsView`, `PlanBrowserView` | written |
+| PMD protocol | `PolarPMD.swift` | ported from hardware-tested Python; **37 tests passing** |
+| BLE driver | `VeritySensor.swift` | written, uncompiled, needs hardware |
+| GPS pace | `LocationPace.swift` | written, uncompiled; Kalman filter keyed on `speedAccuracy` |
+| Audio | `AudioCoach.swift` | written, uncompiled; ducks Apple Music rather than stopping it |
+| Controller | `InRunController.swift`, `SignalQuality.swift`, `Physiology.swift` | ported; **parity verified by execution** |
+| Orchestrator | `RunSession.swift` | written, uncompiled; fixed 1 Hz loop over three async streams |
+| Weekly review | `WeeklyReview.swift`, `WeeklyReviewService.swift` | ported; **parity verified by execution** |
+| Persistence | `Store.swift`, `PlanStore.swift` | **11 tests passing** |
+| Integrations | `HealthKitBridge.swift` (uncompiled), `SleepControllerClient.swift` (compiles) | written |
+| UI | `TodayView`, `RunView`, `ScreeningView`, `SettingsView`, `WeeklyReviewView` | written, uncompiled |
 
 ### Known gaps
 
-- **Never compiled.** See above. This is the only substantive one left.
+- **The app target has never been compiled.** See above. The portable core has been; the SwiftUI,
+  CoreBluetooth, HealthKit and CoreLocation files have not, because those frameworks require Xcode.
+  This is the only substantive gap left.
 - **The 2000 m trial's placement is a judgement call.** Week 5 of `BASE_1` is four weeks after
   continuous running starts. If you reach it and it still feels too early, repeating a base week before
   it is a legitimate choice — the gate does not care when you do it, only that you have.

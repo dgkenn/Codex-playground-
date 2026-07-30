@@ -17,7 +17,7 @@
 //
 
 import XCTest
-@testable import MarathonCoach
+@testable import MarathonCoachCore
 
 final class PolarPMDTests: XCTestCase {
 
