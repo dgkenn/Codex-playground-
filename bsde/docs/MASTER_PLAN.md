@@ -633,6 +633,23 @@ Real physiology predicts frontal dominance too — propofol's frontal alpha and 
 well established — so the gradient does not settle it either way. What settles it is a measurement the project
 does not yet make.
 
+**CORRECTION, 2026-07-30 — my caveat about the retained band was too strong.** I wrote that the Chennu
+deposit's 0.5–45 Hz filter had "already removed" the high-frequency evidence needed to settle the muscle
+question. Building the EMG index and testing it against planted muscle showed otherwise, and the test that
+found it was written to fail loudly if the caveat was wrong:
+
+* With the project's own synthetic EMG — **flat 20–90 Hz noise** — a 45 Hz low-pass barely reduces
+  detectability at all (separation 0.923 filtered against 0.914 unfiltered). About 36 % of flat 20–90 Hz power
+  lies in 20–45 Hz, and that residue is still overwhelming at large amplitudes.
+* With **realistically peaked EMG** (a broad hump at ~70 Hz, where surface motor-unit activity actually lives),
+  the same low-pass *does* substantially reduce detectability.
+
+So the calibrated statement is: **muscle contributes to 20–45 Hz as well as above it, so the retained band is
+not devoid of muscle information — but how much sensitivity survives depends on the true EMG spectrum, which
+cannot be observed in a deposit that removed it.** A null EMG result on Chennu is therefore **weak evidence of
+no muscle, not no evidence**. That is a materially different claim from the one I made, and it makes the proxy
+more useful than I said, not less.
+
 **`ANALYSIS_PLAN.md` §3 already anticipated this and named the remedy**: *"EMG index is a predictor of
 interest, not only a nuisance. If it predicts the outcome as well as the aperiodic exponent does, the exponent
 result is an EMG result."* **No EMG index is implemented.** It now joins `preprocessing_sensitivity` (§9.9) as

@@ -131,6 +131,22 @@ def f_spectral_entropy(data, ch_names, sfreq, meta=None) -> float:
     return float(spectral_entropy(f, p))
 
 
+def f_emg_index(data, ch_names, sfreq, meta=None) -> float:
+    """Composite EMG-contamination proxy. NOT a brain-state marker -- see features/emg.py."""
+    from bsde.features.emg import emg_index
+    return float(emg_index(data, sfreq))
+
+
+def f_emg_beta_gamma(data, ch_names, sfreq, meta=None) -> float:
+    from bsde.features.emg import emg_beta_gamma_fraction
+    return float(emg_beta_gamma_fraction(data, sfreq))
+
+
+def f_emg_kurtosis(data, ch_names, sfreq, meta=None) -> float:
+    from bsde.features.emg import emg_kurtosis
+    return float(emg_kurtosis(data, sfreq))
+
+
 LZIV_WINDOW_S = 10.0
 LZIV_TARGET_HZ = 100.0   # every dataset is decimated to this before LZ -- see f_lziv's docstring
 
@@ -333,4 +349,36 @@ def seed_registry() -> Sequence[Candidate]:
         notes="By construction wPLI is near zero for zero and pi phase lags. That is the point of the "
               "measure and it is verified in tests/test_connectivity_features.py.")
 
+    # --- EMG proxies. Registered so they are streamed, versioned, hashed and probed like anything else, and
+    # --- so the reported search space includes them. They are declared as ARTEFACT measures: the
+    # --- interpretation says so, and nothing may cite them as evidence about brain state.
+    for nm, fn, interp in (
+        ("emg_index", f_emg_index,
+         "Composite muscle-contamination proxy: mean of a 20-45 Hz power fraction and a squashed excess "
+         "kurtosis. An ARTEFACT measure, not a brain-state marker. Exists to be probed against other "
+         "candidates, per ANALYSIS_PLAN.md section 3."),
+        ("emg_beta_gamma_fraction", f_emg_beta_gamma,
+         "Share of 1-45 Hz power in 20-45 Hz. Rises with muscle AND with genuine cortical beta/gamma, so it "
+         "is an UPPER BOUND on possible muscle contribution rather than a measurement of muscle. An artefact "
+         "measure."),
+        ("emg_kurtosis", f_emg_kurtosis,
+         "Median excess kurtosis of the time series across channels. Motor-unit firing is spiky and "
+         "non-Gaussian, and that spikiness survives a 45 Hz low-pass better than the spectral signature, so "
+         "this is the more band-independent of the two proxies. An artefact measure."),
+    ):
+        register(
+            name=nm, version="1.0", fn=fn, interpretation=interp,
+            predictions={"unconscious_vs_awake": "lower"},
+            failure_conditions=[
+                "it tracks the state contrast as well as any brain-state candidate does, in which case that "
+                "candidate's result is an EMG result and must be reported that way",
+                "it is uninformative because the recording was low-passed below the muscle band, in which "
+                "case a NEGATIVE says nothing and must not be read as clearing anything",
+            ],
+            requires=("computational", "statistical"), complexity=2,
+            prior_art="Muscle contamination of EEG spectra is long established; the standard 65-95 Hz index "
+                      "is NOT computable on a deposit filtered to 45 Hz.",
+            notes="Predicted LOWER under anaesthesia because neuromuscular tone falls with GABAergic agents. "
+                  "That is the same direction a real complexity marker moves, which is precisely why the two "
+                  "must be separated by conditioning rather than by comparing directions.")
     return REGISTRY.all()
