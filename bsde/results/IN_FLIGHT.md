@@ -74,3 +74,15 @@ Four extractions, all resumable, all committed part-finished per the convention 
 **E27 refuses below 75 joined cases and E28 below 60 subjects with both a resting row and a label**, so no
 part-finished state here can be mistaken for a result. The eegmmidb label builders take roughly a minute per
 subject and shard by subject (`--shard k --of n`), because their cost is the per-run HTTPS fetch.
+
+### FLAG SET 2026-07-30 — clear it before reporting any of these
+
+`--assume-unchanged` is currently SET on the seven tables listed above. It was set because four streams
+write to them continuously, so `git status` reported the tree dirty every few seconds and each commit was
+immediately stale. **The flag is hidden state and this heading exists so it is not forgotten.** Clear it and
+verify before committing a finished table or reporting a result from one:
+
+    for f in $(git ls-files -v bsde/results/ | grep '^[a-z]' | cut -d' ' -f2); do
+        git update-index --no-assume-unchanged "$f"
+    done
+    git ls-files -v bsde/results/ | grep '^[a-z]'      # must print NOTHING when the flag is clear
