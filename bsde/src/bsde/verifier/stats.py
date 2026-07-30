@@ -264,3 +264,51 @@ def cv_predict_proba(x: Sequence, y: Sequence, subject: Sequence, rng, folds: in
         m = te & np.isfinite(x)
         out[m] = predict_proba(np.column_stack([np.ones(int(m.sum())), x[m]]), b)
     return out
+
+
+def within_subject_auc(y: Sequence, score: Sequence, subject: Sequence, predicted: str,
+                       min_per_class: int = 1) -> float:
+    """Mean over subjects of that subject's own directional AUC. NaN if no subject is evaluable.
+
+    WHY THIS AND NOT THE POOLED AUC. E14 measured an intraclass correlation above 0.9 for these candidates
+    across windows of the same person, which means a pooled AUC over rows is mostly answering "are these two
+    people different?" rather than "did this person change?". A design whose contrast is a state change
+    WITHIN a patient has to be scored within the patient; pooling silently swaps the question.
+
+    Each subject contributes ONE number regardless of how many windows they supply, so a patient with forty
+    windows does not outvote a patient with four. Subjects lacking either class are skipped, which is why the
+    caller must report how many were evaluable -- the mean is over those, and if that set is selected on
+    something outcome-related the statistic inherits it (rule 14).
+
+    Deliberately unweighted: weighting by window count would reintroduce exactly the imbalance the
+    per-subject reduction removes.
+    """
+    y = np.asarray(y, float)
+    score = np.asarray(score, float)
+    subject = np.asarray(subject)
+    vals = []
+    for u in np.unique(subject):
+        m = subject == u
+        ok = m & np.isfinite(score)
+        yy, ss = y[ok], score[ok]
+        if (yy == 1).sum() < min_per_class or (yy == 0).sum() < min_per_class:
+            continue
+        a = directional_auc(yy, ss, predicted)
+        if np.isfinite(a):
+            vals.append(a)
+    return float(np.mean(vals)) if vals else float("nan")
+
+
+def n_evaluable_subjects(y: Sequence, score: Sequence, subject: Sequence,
+                         min_per_class: int = 1) -> int:
+    """How many subjects `within_subject_auc` actually averaged over. Reported, never assumed."""
+    y = np.asarray(y, float)
+    score = np.asarray(score, float)
+    subject = np.asarray(subject)
+    n = 0
+    for u in np.unique(subject):
+        ok = (subject == u) & np.isfinite(score)
+        yy = y[ok]
+        if (yy == 1).sum() >= min_per_class and (yy == 0).sum() >= min_per_class:
+            n += 1
+    return n
