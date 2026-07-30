@@ -204,3 +204,80 @@ has a published expectation attached to it before anything is run.
 base rate around 37 %, comfortably inside any sane band, unlike E27's 4.0 %.
 
 **Q1 is CLOSED as an acquisition item.** What follows is a registration, not more verification.
+
+
+---
+
+## Q7 — Chennu 2014's DoC cohort: the only public dataset found with a real command-following label
+
+**Verified by the orchestrator, not taken from the review.** `efetch` on PMC4199497 returns Table 1 with the
+column headers, verbatim:
+
+    Patient | Post-ictal Interval | Gender | Age at Assessment | Etiology | Diagnosis | CRS-R |
+    **Command Following (CRS-R)** | **Command Following (fMRI)**
+
+**Two independent command-following labels per patient**, one behavioural and one imaging. And the table
+contains the phenomenon Challenge B exists for: **P3 is a VS patient scoring `No` on CRS-R and `Yes` on
+fMRI — a cognitive motor dissociation case, in the published table.**
+
+* Chennu S et al., 2014, *PLoS Comput Biol*, **PMID 25329398**, open access (CC BY).
+* **32 DoC patients**, 10 minutes of **128-channel resting-state EEG**, 250 Hz, eyes open. Genuinely
+  task-free — which is exactly what Challenge B asks about.
+* **This is a different cohort from the Chennu propofol-sedation data already in this repo.** Same group,
+  different study. `ingestion/chennu.py` does not read it.
+
+**Access route:** raw EEG is not open. From the paper's own data-availability statement: *"data are
+available by request to either the study authors or the Wolfson Brain Imaging Centre's data protection
+officer (enquiries@wbic.cam.ac.uk) for researchers who can meet the requisite ethical criteria... subject to
+case-by-case review."* A defined committee route, not a de novo ethics application.
+
+**Why this outranks everything else for Challenge B.** The review confirmed, via each repository's own API,
+that OpenNeuro and Dryad hold **no** DoC EEG dataset at all, and that CRS-R subscale data is essentially
+absent from public repositories. The 237-patient Della Bella cohort (**PMID 40796934**, verified) publishes
+only CRS-R *totals* and requires an author request for signal. **Chennu's is the only command-following
+label located anywhere.**
+
+**Action: request it.** Until then Challenge B has no ground truth and E28's healthy-BCI substitution
+remains an unvalidated analogy — the review confirmed **no published work tests transfer from healthy or
+sedated populations to DoC**, in either direction.
+
+---
+
+## Q8 — Krause/Banks: dexmedetomidine, propofol AND natural sleep in one cohort
+
+**The second drug Challenge A has been blocked on, and it instruments the sleep-control idea in the same
+deposit.** Verified against the Zenodo API and PubMed directly.
+
+* Krause BM et al., 2026, *Br J Anaesth*, **PMID 41203472**: *"Dexmedetomidine produces more sleep-like
+  brain activity compared with propofol in human participants."*
+* Zenodo **10.5281/zenodo.15497531** — `DexProSleepPackage.zip`, **2.1 GB, open**. Code BSD-3-Clause,
+  **data CC-BY-SA 4.0**.
+* **10 dexmedetomidine · 19 propofol · 24 natural overnight sleep**, intracranial EEG, 34 epilepsy-surgery
+  patients. Responsiveness by **OAA/S**, block-level three-class (wake / sedated / unresponsive). Sleep
+  staged separately at 30 s.
+* **Dexmedetomidine is an alpha-2 agonist, not GABAergic** — the pharmacologically furthest reachable agent
+  from propofol, and PMID 25187999 / 29920532 document it producing opposite-signed EEG effects at matched
+  sedation depth. That is exactly the adversarial case Challenge A's drug-identity probe needs.
+
+**Three limitations that are not small and must be carried into any registration:**
+
+1. **Intracranial, not scalp.** DOSE-I and Chennu are scalp. A cross-drug test spanning them is also
+   cross-modality, and that confound cannot be absorbed silently into "drug generalisation".
+2. **Block-level OAA/S**, not DOSE-I's per-second MOAA/S. Either bin DOSE-I down to match or state the
+   resolution mismatch as a limitation — do not paper over it.
+3. **Epilepsy-surgery population** with patient-specific electrode coverage.
+4. **CC-BY-SA on the data** — ShareAlike, which is the propagation risk Invention Notebook entry 12 tracks.
+   Raw continuous iEEG additionally needs a University of Iowa DUA; only derived features are open now.
+
+**Two things the review flagged that I am carrying as corrections rather than support:**
+
+* **Lendner 2020 (PMID 32720644) may be cited as precedent for validating a marker across sleep and
+  anaesthesia — NOT for "sleep proves the absence of drug-identity information".** That is a stronger and
+  different claim than the paper makes, and the distinction must be stated wherever the sleep-control
+  argument is used.
+* **Sleep stage is not a graded elicited responsiveness score.** Nobody tests command-following during
+  sleep, because testing would end it. Sleep is defensible as an arousal-level analogue and is a stretch if
+  the acceptance criterion needs behavioural responsiveness.
+* **No published precedent exists for a drug-identity adversarial probe in this domain**, under any phrasing
+  tried. If this programme gates on one, that is original methodology requiring its own validation, not a
+  field-standard practice to cite.
