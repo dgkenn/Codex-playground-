@@ -1,0 +1,116 @@
+{
+  "experiment": "E06",
+  "summary": {
+    "lempel_ziv": {
+      "mono_all": NaN,
+      "mono_ten_twenty": NaN,
+      "mono_single_median": null,
+      "mono_single_min": null,
+      "mono_single_max": null,
+      "n_single_channels_computable": 0,
+      "best_single_channel": null,
+      "best_single_mono": NaN,
+      "auc_all": NaN,
+      "auc_ten_twenty": NaN,
+      "auc_single_median": null
+    },
+    "relative_alpha_power": {
+      "mono_all": NaN,
+      "mono_ten_twenty": NaN,
+      "mono_single_median": null,
+      "mono_single_min": null,
+      "mono_single_max": null,
+      "n_single_channels_computable": 0,
+      "best_single_channel": null,
+      "best_single_mono": NaN,
+      "auc_all": NaN,
+      "auc_ten_twenty": NaN,
+      "auc_single_median": null
+    },
+    "relative_delta_power": {
+      "mono_all": NaN,
+      "mono_ten_twenty": NaN,
+      "mono_single_median": null,
+      "mono_single_min": null,
+      "mono_single_max": null,
+      "n_single_channels_computable": 0,
+      "best_single_channel": null,
+      "best_single_mono": NaN,
+      "auc_all": NaN,
+      "auc_ten_twenty": NaN,
+      "auc_single_median": null
+    },
+    "spectral_edge_95": {
+      "mono_all": NaN,
+      "mono_ten_twenty": NaN,
+      "mono_single_median": null,
+      "mono_single_min": null,
+      "mono_single_max": null,
+      "n_single_channels_computable": 0,
+      "best_single_channel": null,
+      "best_single_mono": NaN,
+      "auc_all": NaN,
+      "auc_ten_twenty": NaN,
+      "auc_single_median": null
+    },
+    "spectral_entropy": {
+      "mono_all": NaN,
+      "mono_ten_twenty": NaN,
+      "mono_single_median": null,
+      "mono_single_min": null,
+      "mono_single_max": null,
+      "n_single_channels_computable": 0,
+      "best_single_channel": null,
+      "best_single_mono": NaN,
+      "auc_all": NaN,
+      "auc_ten_twenty": NaN,
+      "auc_single_median": null
+    },
+    "uce_v1": {
+      "mono_all": NaN,
+      "mono_ten_twenty": NaN,
+      "mono_single_median": null,
+      "mono_single_min": null,
+      "mono_single_max": null,
+      "n_single_channels_computable": 0,
+      "best_single_channel": null,
+      "best_single_mono": NaN,
+      "auc_all": NaN,
+      "auc_ten_twenty": NaN,
+      "auc_single_median": null
+    },
+    "whole_head_exponent": {
+      "mono_all": NaN,
+      "mono_ten_twenty": NaN,
+      "mono_single_median": null,
+      "mono_single_min": null,
+      "mono_single_max": null,
+      "n_single_channels_computable": 0,
+      "best_single_channel": null,
+      "best_single_mono": NaN,
+      "auc_all": NaN,
+      "auc_ten_twenty": NaN,
+      "auc_single_median": null
+    },
+    "wpli_alpha": {
+      "mono_all": NaN,
+      "mono_ten_twenty": NaN,
+      "mono_single_median": null,
+      "mono_single_min": null,
+      "mono_single_max": null,
+      "n_single_channels_computable": 0,
+      "best_single_channel": null,
+      "best_single_mono": NaN,
+      "auc_all": NaN,
+      "auc_ten_twenty": NaN,
+      "auc_single_median": null
+    }
+  },
+  "predictions": {
+    "P1": false,
+    "P2": false,
+    "P3": true,
+    "P4": false
+  },
+  "frontal_single_median_mono_lempel_ziv": NaN
+}
