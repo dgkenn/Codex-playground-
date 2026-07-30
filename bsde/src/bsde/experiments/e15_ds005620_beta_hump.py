@@ -91,13 +91,14 @@ from bsde.verifier.engine import residual_auc                                   
 from bsde.verifier.stats import directional_auc, cluster_bootstrap_ci                   # noqa: E402
 
 RESULTS = os.path.abspath(os.path.join(HERE, "..", "..", "..", "results"))
-TABLE = os.path.join(RESULTS, "ds005620_features_v2.csv")
+TABLE = os.path.join(RESULTS, "ds005620_tms.csv")
 
 PRIMARY, DISCRIMINATOR = "exponent_high", "exponent_gamma"
 EMG_PROXIES = ("emg_beta_gamma_fraction", "emg_kurtosis", "emg_index")
 MATCHED_ACQ = "tms"
 AWAKE, SEDATED = {"awake"}, {"sed"}
 GATE_MIN_FINITE = 0.80
+GATE_MIN_ROWS = 24        # below this the finite-fraction is a statement about noise, not availability
 DISCRIMINATOR_GAP = 0.15
 ALSO = ("exponent_low", "whole_head_exponent", "relative_delta_power", "relative_alpha_power",
         "lempel_ziv", "spectral_entropy", "spectral_edge_95", "uce_v1", "wpli_alpha")
@@ -139,24 +140,47 @@ def main() -> int:
     # ------------------------------- P1 gate --------------------------------------------------------
     g = np.array([_f(r.get(DISCRIMINATOR, "")) for r in allrows], float)
     frac = float(np.isfinite(g).mean()) if g.size else 0.0
-    p1 = frac >= GATE_MIN_FINITE
+    # A fraction over a handful of rows is not a gate. Added after a smoke-test on a 1-row partial table
+    # reported "GATE PASSED (100.0%)" -- true, and worthless. A gate that can pass on one row is decoration.
+    enough = g.size >= GATE_MIN_ROWS
+    p1 = enough and frac >= GATE_MIN_FINITE
     print("\n" + "=" * 100)
     print(f"P1 — MACHINERY GATE: {DISCRIMINATOR} finite in >= {GATE_MIN_FINITE:.0%} of rows")
     print("=" * 100)
-    print(f"   finite in {np.isfinite(g).sum()}/{g.size} rows ({frac:.1%})   "
-          f"{'GATE PASSED' if p1 else '*** GATE FAILED'}")
+    print(f"   finite in {np.isfinite(g).sum()}/{g.size} rows ({frac:.1%}); need >= {GATE_MIN_ROWS} rows   "
+          f"{'GATE PASSED' if p1 else ('*** TOO FEW ROWS YET' if not enough else '*** GATE FAILED')}")
     if not p1:
-        print("   The 50-90 Hz band is unavailable even here. The candidate is untestable on any reachable")
-        print("   deposit and nothing else is reported.")
-        json.dump({"experiment": "E15", "gate_passed": False, "finite_frac": frac},
+        # Two different failures, two different messages. The first version printed the band-unavailable
+        # text for BOTH, so a table that was merely still streaming reported as evidence that the candidate
+        # is untestable everywhere -- a much stronger and quite wrong claim. Rule 37: write the verdict
+        # branch to state the failing case, not a case.
+        if not enough:
+            print(f"   The table has {g.size} rows and is still being extracted. This is NOT a statement")
+            print("   about the candidate: re-run when the stream completes.")
+        else:
+            print("   The 50-90 Hz band is unavailable even here. The candidate is untestable on any")
+            print("   reachable deposit and nothing else is reported.")
+        json.dump({"experiment": "E15", "gate_passed": False, "finite_frac": frac,
+                   "n_rows": int(g.size), "gate_failure": "too_few_rows" if not enough else "band_absent"},
                   open(os.path.join(RESULTS, "e15_beta_hump.json"), "w"), indent=2)
         return 1
 
     # ------------------------------- the two contrasts ----------------------------------------------
     rng = np.random.default_rng(20260730)
     out = {}
-    for label, sel in (("acq-MATCHED (tms only)", lambda r: r.get("meta_acq") == MATCHED_ACQ),
-                       ("FULL (task and acq collinear)", lambda r: True)):
+    # The table may contain ONLY the matched stratum: streaming all 202 recordings at 5 kHz takes about
+    # twenty hours, so the acq=tms stratum -- the registered primary, and the only one holding both classes
+    # -- is extracted first. When that is what is on disk, the "FULL" contrast must NOT be reported, because
+    # it would be the same rows under a different name and a reader would take it for a second, independent
+    # comparison. That is the stale-label failure rule 4 records, and it is cheap to prevent by checking.
+    acqs = {r.get("meta_acq") for r in allrows}
+    contrasts = [("acq-MATCHED (tms only)", lambda r: r.get("meta_acq") == MATCHED_ACQ)]
+    if acqs - {MATCHED_ACQ}:
+        contrasts.append(("FULL (task and acq collinear)", lambda r: True))
+    else:
+        print(f"\n   NOTE: the table contains only acq={sorted(acqs)}. The FULL contrast is NOT reported —")
+        print("   it would be the identical rows under a different heading.")
+    for label, sel in contrasts:
         rows = [r for r in allrows
                 if (r.get("meta_task") in AWAKE or r.get("meta_task") in SEDATED) and sel(r)]
         if len(rows) < 12:
