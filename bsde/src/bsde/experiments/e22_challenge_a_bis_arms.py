@@ -226,7 +226,25 @@ def main(argv=None) -> int:
         _registered_order()
         return 2
 
-    rows = [r for r in csv.DictReader(open(table, newline="")) if r.get("status") == "ok"]
+    all_rows = list(csv.DictReader(open(table, newline="")))
+    rows = [r for r in all_rows if r.get("status") == "ok"]
+    # DECODE FAILURES ARE AN EXCLUSION AND ARE NOT INDEPENDENT OF THE ARM (rule 14). Two thirds of them are
+    # "runs past the record" and the rest are "entirely NaN (device disconnected)", and both cluster at the
+    # END of the case -- which is where the responsive arm lives. So the responsive arm is systematically
+    # the thinner one, for a reason that has nothing to do with any candidate. Counted here, and their
+    # position relative to `aneend` is reported, rather than being filtered out in silence.
+    failed = [r for r in all_rows if r.get("status") != "ok"]
+    if failed:
+        rel = np.array([_f(r.get("meta_rel_aneend_s", "")) for r in failed], float)
+        rel_ok = np.array([_f(r.get("meta_rel_aneend_s", "")) for r in rows], float)
+        rel, rel_ok = rel[np.isfinite(rel)], rel_ok[np.isfinite(rel_ok)]
+        print(f"\n   decode failures: {len(failed)} of {len(all_rows)} windows "
+              f"({len(failed) / max(1, len(all_rows)):.1%})")
+        if rel.size and rel_ok.size:
+            print(f"      median time relative to aneend — failed {np.median(rel):+8.0f} s   "
+                  f"decoded {np.median(rel_ok):+8.0f} s")
+            print("      (failures sit later in the case, so the responsive arm is the thinner one; "
+                  "this is an outcome-related exclusion and is reported as one)")
     if len(rows) < GATE_MIN_ROWS and not permute:
         print(f"\n   *** {os.path.basename(table)} holds {len(rows)} usable rows, below the registered "
               f"floor of {GATE_MIN_ROWS}. The stream is still running; nothing is reported.")
