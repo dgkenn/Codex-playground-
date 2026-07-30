@@ -376,3 +376,58 @@ since they are distinguishable in cause and identical in consequence.
 propofol sedation, null centred at 0.4871, interval excluding 0.5 — is *not* circular, because responsiveness
 there was determined by the experimental protocol rather than read off the EEG. That is the more honest of the
 two numbers, and it is far smaller.
+
+### 9.7 E04: the minute before waking looks DEEPER, not lighter — and two of my own predictions were mis-built
+
+**The result.** On ds005620, with acquisition matched (`acq-rest` on both sides), 34–35 recordings per class
+across 15 subjects, and a centred within-subject permutation null for every candidate: **all seven candidates
+that separate `sed2` from `sed` at all say the pre-awakening minute is MORE sedated, not less.**
+
+| candidate | AUC scored as "sed2 lower" | reading |
+|---|---|---|
+| whole_head_exponent | 0.367 [0.264, 0.447] | sed2 exponent **higher** → deeper |
+| uce_v1 | 0.354 [0.256, 0.432] | deeper |
+| relative_delta_power | 0.380 [0.273, 0.465] | sed2 delta **higher** → deeper |
+| wpli_alpha | 0.373 [0.250, 0.491] | deeper |
+| spectral_entropy | 0.616 [0.527, 0.720] | sed2 entropy **lower** → deeper |
+| lempel_ziv | 0.609 [0.512, 0.712] | sed2 complexity **lower** → deeper |
+| spectral_edge_95 | 0.602 [0.513, 0.709] | sed2 edge **lower** → deeper |
+
+Seven measures, four of them moving in numerically opposite directions, all agreeing on the physiology. That
+unanimity is what makes this a result rather than noise.
+
+**This refutes the transition-precursor hypothesis on this dataset.** E04 registered the falsification
+condition in advance and it is met in the strongest available form: not "no signal", but a *consistent signal
+in the wrong direction*. There is no detectable lightening in the minute before an awakening at 20 s
+resolution in these features.
+
+The reading I registered in advance now applies: awakenings were not randomly timed. The most economical
+explanation is that the awakening **stimulus** is what lightens the subject, so the minute preceding it
+carries no precursor at all — and that minute may systematically sit at the end of a stable deep-sedation
+period. For Brief 03's Program 3 and Discovery Challenge C this is informative and discouraging: it says a
+forecastable emergence precursor is not present in this protocol, and that a dataset where awakening is
+externally triggered may be structurally incapable of showing one. Spontaneous emergence data would be needed.
+
+**Two flaws in my own predictions, stated rather than rescored.**
+
+*P2 was mis-operationalised.* It reads "`sed2` shows a LOWER aperiodic exponent" — a claim about one measure —
+but the code scored **every** candidate as "lower". For complexity measures, lower means *more* sedated, so
+scoring them that way tests the opposite of what P2 asserts. The printed "P2 MET for lempel_ziv,
+spectral_edge_95, spectral_entropy" is therefore misleading: those three moving "lower" supports the *reverse*
+of P2's claim. The substantive finding is unanimous; the scoring conflated two hypotheses under one sign
+convention. **The recorded verdict stands as printed and is not retroactively re-scored** — the fix belongs in
+a future experiment's design, and a direction must be declared per measure, not per experiment.
+
+*P3 is undefined when the reference effect is absent.* P3 compares |primary − 0.5| against |reference − 0.5|.
+For `relative_alpha_power` (ref 0.510), `spectral_entropy` (0.469) and `wpli_alpha` (0.490) the reference is
+indistinguishable from chance, so any primary effect exceeds it trivially. P3's NOT MET is driven entirely by
+those three. It is **not** evidence that "the labelling or windowing is doing the work"; it is a test that
+should have been gated on the reference being non-null in the first place.
+
+**Rule 17 fired on me.** I predicted that restricting the awake class to `acq-EC` — dropping eyes-open and TMS
+— would *reduce* the ds005620 awake-vs-sedated AUC, since eyes-open inflates apparent separation. It went
+from **0.646 to 0.934 [0.853, 0.988]**. The pooled acquisitions were *diluting* the effect through
+heterogeneity, not inflating it. Error-catalogue rule 17 says that when a fix makes the effect stronger the
+diagnosis was wrong, and it was: I had the mechanism backwards. The 0.934 is the acquisition-matched number
+and supersedes the 0.646 I reported earlier — while remaining an upper bound, because awake was never
+recorded at `acq-rest` and that residual mismatch cannot be removed (§9.7 predecessor, commit 4378270).
