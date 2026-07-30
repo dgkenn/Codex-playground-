@@ -69,12 +69,27 @@ of it exists, and a failed gate means the downstream verdict is ABSENT, not nega
         what Challenge A asks for.
 
     P4  THE DRUG-IDENTITY PROBE — THE ACCEPTANCE CONDITION. **Held at constant state: the unresponsive
-        windows only, so a state difference cannot leak into the probe.** Can the candidate tell sevoflurane
-        from desflurane? Its |AUC - 0.5| must be BELOW the responsiveness |AUC - 0.5|. If the drug is more
-        legible than the state, the representation encodes pharmacology and **Challenge A is failed however
-        good P2 looks.** This probe is between-subject by construction — one patient has one agent — so it
-        is scored pooled with a subject-clustered CI, and that asymmetry with P2 is a real limitation of the
-        comparison rather than a choice: the two AUCs are not computed by the same estimator.
+        windows only, so a state difference cannot leak into the probe.** Can the candidate tell one agent
+        from another? Its |AUC - 0.5| must be BELOW the responsiveness |AUC - 0.5|, **for EVERY drug pair
+        with adequate coverage**. If the drug is more legible than the state, the representation encodes
+        pharmacology and **Challenge A is failed however good P2 looks.** This probe is between-subject by
+        construction — one patient has one agent — so it is scored pooled with a subject-clustered CI, and
+        that asymmetry with P2 is a real limitation of the comparison rather than a choice: the two AUCs are
+        not computed by the same estimator.
+
+        AMENDMENT, MADE BEFORE ANY CANDIDATE VALUE WAS READ AND RECORDED HERE RATHER THAN APPLIED SILENTLY.
+        As first registered, P4 named one pair: sevoflurane versus desflurane. A **permuted** smoke run
+        (`--permute-within-subject`, rule 26) over the part-streamed table then measured the coverage: of
+        106 cases, 63 were single-agent, and of those only **4 were desflurane**. Projected to the full
+        stream that is roughly 10 patients, against a registered floor of 15 — so the acceptance condition
+        would have come back UNTESTED for want of one drug, which is a null result about the paperwork
+        rather than about the marker.
+            The amendment removes the choice instead of re-making it: **every pair with adequate coverage is
+        probed, and P4 requires all of them to pass.** That is strictly harder than naming one pair, it
+        cannot be steered, and it needs no judgement at the time of reading. What licenses it is the timing
+        and the source: the counts come from the clinical table and are computable with no candidate value
+        in hand, and none had been read — the permuted run reports nothing else. Had a single AUC been seen
+        first, this change would not be available and the pair would have stood.
 
     P5  PLACEBO, AND IT GATES THE VERDICT (rule 34). Same candidate, same estimator, arms replaced by
         early-deep versus late-deep — both drawn from BIS <= 60 windows only, split at each patient's own
@@ -137,7 +152,11 @@ OUT = os.path.join(RESULTS, "e22_challenge_a_bis_arms.json")
 BIS_UNRESPONSIVE_MAX = 60.0
 BIS_RESPONSIVE_MIN = 80.0
 ARMS = ("propofol", "sevoflurane", "desflurane")
-PROBE_PAIR = ("sevoflurane", "desflurane")
+PROBE_PAIRS = (("propofol", "sevoflurane"), ("propofol", "desflurane"),
+               ("sevoflurane", "desflurane"))
+"""Every pair, not one chosen pair — see the P4 amendment in the module docstring. A pair without adequate
+coverage is reported as ABSENT and does not silently pass."""
+MIN_PROBE_PATIENTS = 15
 PRIMARY = "exponent_high"
 MIN_PATIENTS_PER_ARM = 15
 MIN_ARMS_WITH_COVERAGE = 2
@@ -174,25 +193,42 @@ def _registered_order() -> None:
           f">= {GATE_DIRECTION_MIN:.0%} of them")
     print(f"     P2       {PRIMARY} separates the arms WITHIN subject, CI excluding 0.5, in each arm")
     print(f"     P3       |AUC-0.5| differs by <= {INVARIANCE_TOL} between best and worst arm")
-    print(f"     P4       drug probe ({PROBE_PAIR[0]} vs {PROBE_PAIR[1]}, UNRESPONSIVE windows only) must "
-          "NOT out-predict responsiveness -- the acceptance condition")
+    print("     P4       drug probe on EVERY covered pair (UNRESPONSIVE windows only) must NOT out-predict "
+          "responsiveness -- the acceptance condition")
     print(f"     P5 GATE  placebo (early-deep vs late-deep, state held constant) |AUC-0.5| must be below "
           f"{PLACEBO_MAX_RATIO:.0%} of P2's")
     print("     P6       EMG control, reported, not gating")
 
 
-def main() -> int:
+def main(argv=None) -> int:
+    # SMOKE-TESTING IS DONE ON PERMUTED LABELS, NEVER REAL ONES (rule 26). `--permute-within-subject`
+    # shuffles the BIS column inside each patient before the arms are derived, so every code path below runs
+    # on real feature distributions while revealing nothing about the association. That keeps the
+    # registration clean while the table is still streaming. Two things should happen under permutation and
+    # both are checks on the harness rather than on the data: P1's direction gate should FAIL, because a
+    # shuffled BIS has no reason to put light windows late in the case, and any AUC that is reported should
+    # sit at chance.
+    args = list(sys.argv[1:] if argv is None else argv)
+    permute = "--permute-within-subject" in args
+    table = TABLE
+    if "--table" in args:                 # only ever used to point a PERMUTED smoke run at a partial merge
+        table = os.path.abspath(args[args.index("--table") + 1])
     seed_registry()
+    if permute:
+        print("=" * 100)
+        print("PERMUTED RUN — BIS is shuffled within each patient. NOTHING BELOW IS A RESULT.")
+        print("It exercises the code paths and measures the harness, not the data (rule 26).")
+        print("=" * 100)
     print("E22 — Challenge A with arms defined by BIS, on the whole-case VitalDB grid")
     print(f"   search space {REGISTRY.search_space_size()} candidates; analytic dof >= 72")
-    if not os.path.exists(TABLE):
-        print(f"\n   *** {os.path.basename(TABLE)} absent — the VitalDB grid stream has not produced it.")
+    if not os.path.exists(table):
+        print(f"\n   *** {os.path.basename(table)} absent — the VitalDB grid stream has not produced it.")
         _registered_order()
         return 2
 
-    rows = [r for r in csv.DictReader(open(TABLE, newline="")) if r.get("status") == "ok"]
-    if len(rows) < GATE_MIN_ROWS:
-        print(f"\n   *** {os.path.basename(TABLE)} holds {len(rows)} usable rows, below the registered "
+    rows = [r for r in csv.DictReader(open(table, newline="")) if r.get("status") == "ok"]
+    if len(rows) < GATE_MIN_ROWS and not permute:
+        print(f"\n   *** {os.path.basename(table)} holds {len(rows)} usable rows, below the registered "
               f"floor of {GATE_MIN_ROWS}. The stream is still running; nothing is reported.")
         _registered_order()
         return 2
@@ -203,6 +239,14 @@ def main() -> int:
     bis = col("meta_bis")
     emg = col("meta_emg")
     sensor_off = np.array([str(r.get("meta_sensor_off", "")).strip().lower() == "true" for r in rows])
+    if permute:
+        # Shuffled WITHIN subject, so each patient keeps their own BIS distribution and only its pairing
+        # with time and with the EEG is destroyed. Shuffling across patients would additionally destroy the
+        # between-patient composition and would make the permuted run easier than the real one.
+        prng = np.random.default_rng(11071963)
+        for s in np.unique(subj):
+            k = np.flatnonzero(subj == s)
+            bis[k] = prng.permutation(bis[k])
     agents = np.array([r.get("meta_agents_present", "") for r in rows])
     single = np.isin(agents, ARMS)                # exactly one agent named; "a|b" and "" both fail this
     arm = np.where(single, agents, "")
@@ -213,7 +257,7 @@ def main() -> int:
     keep = unresp | resp
     y = resp.astype(float)                        # 1 = responsive, 0 = unresponsive
 
-    print(f"\n   table {os.path.basename(TABLE)}: {len(rows)} usable rows, "
+    print(f"\n   table {os.path.basename(table)}: {len(rows)} usable rows, "
           f"{len(set(subj))} patients, {len({r.get('meta_caseid', '') for r in rows})} cases")
     print(f"   sensor off (SQI = 0, all monitor values void) : {int(sensor_off.sum()):5d} rows  EXCLUDED")
     print(f"   BIS missing for another reason                : "
@@ -260,7 +304,7 @@ def main() -> int:
     print(f"   (b) direction: responsive windows later in the case in {later}/{n_dir} "
           f"({frac_later:.1%})   {'PASSED' if dir_ok else '*** FAILED'}")
 
-    state = {"experiment": "E22", "table": os.path.basename(TABLE), "n_rows": len(rows),
+    state = {"experiment": "E22", "table": os.path.basename(table), "n_rows": len(rows),
              "n_patients": len(set(subj)), "arms": {"unresponsive_max_bis": BIS_UNRESPONSIVE_MAX,
                                                     "responsive_min_bis": BIS_RESPONSIVE_MIN},
              "exclusions": {"sensor_off": int(sensor_off.sum()), "indeterminate": int(indet.sum()),
@@ -329,38 +373,49 @@ def main() -> int:
 
     # ------------------------------------------------------------------ P4
     print("\n" + "=" * 100)
-    print(f"P4 — DRUG-IDENTITY PROBE ({PROBE_PAIR[0]} vs {PROBE_PAIR[1]}), STATE HELD CONSTANT")
+    print("P4 — DRUG-IDENTITY PROBE, EVERY PAIR WITH COVERAGE, STATE HELD CONSTANT")
     print("=" * 100)
     print("   Unresponsive windows only, so no state difference can leak into the probe. Between-subject")
     print("   by construction — one patient, one agent — so this AUC is pooled with a subject-clustered CI,")
     print("   while P2's is within-subject. The two are NOT computed by the same estimator, and that")
     print("   asymmetry is a real limit on the comparison rather than a choice.")
-    probe_m = unresp & np.isin(arm, PROBE_PAIR) & np.isfinite(x)
-    probe_y = (arm[probe_m] == PROBE_PAIR[1]).astype(float)
-    probe_s = subj[probe_m]
-    n_a = len(set(probe_s[probe_y == 0]))
-    n_b = len(set(probe_s[probe_y == 1]))
-    print(f"\n   {PROBE_PAIR[0]} patients {n_a}   {PROBE_PAIR[1]} patients {n_b}   "
-          f"rows {int(probe_m.sum())}")
-    if min(n_a, n_b) < MIN_PATIENTS_PER_ARM:
-        print(f"   fewer than {MIN_PATIENTS_PER_ARM} patients on one side — the probe is ABSENT, not "
-              "passed (rule 31). Challenge A's acceptance condition is therefore UNTESTED.")
-        state["p4"] = {"passed": None, "reason": "probe underpowered",
-                       "n": {PROBE_PAIR[0]: n_a, PROBE_PAIR[1]: n_b}}
+    print("   Every pair is probed and ALL must pass; see the P4 amendment in this file's header for why")
+    print("   that replaced a single named pair, and for the timing that licenses the change.")
+    probes, verdicts = {}, []
+    print(f"\n   {'pair':28s} {'pats':>9s} {'rows':>6s} {'drug |AUC-.5|':>14s} {'state |AUC-.5|':>15s} "
+          f"{'verdict':>9s}")
+    for pa, pb in PROBE_PAIRS:
+        m = unresp & np.isin(arm, (pa, pb)) & np.isfinite(x)
+        yy = (arm[m] == pb).astype(float)
+        ss = subj[m]
+        n_a, n_b = len(set(ss[yy == 0])), len(set(ss[yy == 1]))
+        label = f"{pa} vs {pb}"
+        if min(n_a, n_b) < MIN_PROBE_PATIENTS:
+            probes[label] = {"passed": None, "reason": "underpowered", "n": {pa: n_a, pb: n_b}}
+            print(f"   {label:28s} {f'{n_a}/{n_b}':>9s} {int(m.sum()):6d} "
+                  f"{'—':>14s} {'—':>15s} {'ABSENT':>9s}")
+            continue
+        xp = x[m]
+        probe = auc_abs(yy, xp)                   # direction-free: which drug is "higher" is meaningless
+        plo, phi, _ = _ci(lambda i: auc_abs(yy[i], xp[i]), ss, rng)
+        probe_abs = abs(probe - 0.5)
+        # The LARGER of the two arms' state effects, which is the harder bar for the probe to clear.
+        state_abs = max((per_arm[a]["abs"] for a in (pa, pb) if a in per_arm), default=float("nan"))
+        ok = bool(np.isfinite(state_abs) and probe_abs < state_abs)
+        probes[label] = {"probe_auc": float(probe), "probe_ci": [plo, phi],
+                         "probe_abs": float(probe_abs), "state_abs": float(state_abs),
+                         "n": {pa: n_a, pb: n_b}, "passed": ok}
+        verdicts.append(ok)
+        print(f"   {label:28s} {f'{n_a}/{n_b}':>9s} {int(m.sum()):6d} {probe_abs:14.3f} "
+              f"{state_abs:15.3f} {'PASSED' if ok else '*** FAILED':>9s}")
+    if not verdicts:
+        print(f"\n   No pair reached {MIN_PROBE_PATIENTS} patients on both sides. Challenge A's acceptance")
+        print("   condition is UNTESTED — absent, not passed (rule 31).")
         p4 = None
     else:
-        xp = x[probe_m]
-        probe = auc_abs(probe_y, xp)              # direction-free: which drug is "higher" is meaningless
-        plo, phi, _ = _ci(lambda i: auc_abs(probe_y[i], xp[i]), probe_s, rng)
-        probe_abs = abs(probe - 0.5)
-        state_abs = max((per_arm[a]["abs"] for a in PROBE_PAIR if a in per_arm), default=float("nan"))
-        p4 = bool(np.isfinite(state_abs) and probe_abs < state_abs)
-        print(f"   drug probe |AUC-0.5| = {probe_abs:.3f}   (AUC {probe:.3f}, CI [{plo:.3f}, {phi:.3f}])")
-        print(f"   state      |AUC-0.5| = {state_abs:.3f}   (the larger of the two probed arms, which is "
-              "the harder test for the probe to beat)")
-        print(f"\n   P4 {'PASSED — the state is more legible than the drug' if p4 else '*** FAILED — the drug is more legible than the state; Challenge A is FAILED'}")
-        state["p4"] = {"probe_auc": float(probe), "probe_ci": [plo, phi], "probe_abs": float(probe_abs),
-                       "state_abs": float(state_abs), "passed": p4}
+        p4 = all(verdicts)
+        print(f"\n   P4 {'PASSED on every covered pair — the state is more legible than the drug' if p4 else '*** FAILED on at least one pair — the drug is more legible than the state; Challenge A is FAILED'}")
+    state["p4"] = {"pairs": probes, "passed": p4}
 
     # ------------------------------------------------------------------ P5
     print("\n" + "=" * 100)
