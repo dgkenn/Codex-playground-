@@ -130,3 +130,151 @@ Abstract retrieved and read in full. What it reports:
 | **H5 (UCE adds nothing over a single whole-head exponent)** | Colombo used a **single broadband exponent**, not a frontal/posterior combination — consistent with strategy §0 that the two-region structure is unnecessary. |
 | **H1 (resting predicts command-following)** | Casarotto 2024 (38440949) documents dissociations between spontaneous features and PCI, which is a warning that resting features may *not* track behaviour-independent evidence. |
 | **H2 (multidimensionality)** | Pérez 2024 (39011546) supports it directly. |
+
+
+---
+
+# ROUND 2 — 2026-07-30. Three parallel reviews, one per challenge.
+
+*Dispatched as three sonnet subagents with one binding method constraint: **no WebFetch for any bibliographic
+record or dataset manifest**, only `curl` against NCBI E-utilities with the relied-upon sentence quoted.
+**Every PMID below was then re-verified by the orchestrator against the live esummary record** — 47 records,
+checked on first author, year, journal and title. Zero mismatches. Delegate the work, never the acceptance.*
+
+*The review's most valuable output was a correction to this project's own writing: see "What the review
+overturned" at the end.*
+
+## Challenge A — a representation predicting responsiveness across drugs, minimising drug identity
+
+**The prior art that matters most, and it is 24 years old.**
+
+* **PMID 11517126** — Gugino LD et al., 2001, *Br J Anaesth*. Propofol **and** sevoflurane, volunteers,
+  graded steps. Its stated goal: *"to identify those changes that were sensitive to alterations in the state
+  of consciousness but independent of anaesthetic protocol."* **That is Challenge A, published in 2001.**
+  Findings: *"Light sedation was accompanied by decreased posterior alpha and increased frontal/central beta
+  power... With loss of consciousness, delta and theta power increased further in anterior regions and also
+  spread to posterior regions."*
+* **PMID 23946194** — Casali AG et al., 2013, *Sci Transl Med*. PCI, tested across **midazolam, xenon,
+  propofol** plus sleep/wake/DoC — the strongest published claim of a drug-invariant marker. Note it targets
+  *consciousness*, not behavioural responsiveness.
+* **PMID 25233374** — Akeju O et al., 2014, *Anesthesiology*: sevoflurane and propofol share coherent frontal
+  alpha and slow oscillations, but sevoflurane *"also exhibited a distinct theta coherence signature"* —
+  **partial invariance only**.
+* **PMID 37467269** — Adam E et al., 2023, *PNAS*. A modulation index tracking state transitions continuously
+  under **both propofol and sevoflurane**. Closest published thing to "the answer", but targets the
+  burst-suppression transition, deeper than the responsiveness threshold Challenge A cares about.
+
+**Documented failures of drug invariance — the adversarial cases any candidate must survive.**
+
+| PMID | drug | what breaks |
+|---|---|---|
+| 27178861 | ketamine | a *"gamma burst"* pattern with **decreased** alpha/beta — the opposite direction from GABAergic agents |
+| 26118489 | nitrous oxide | sevoflurane alpha *"dissipated within 3-12 min"*, replaced by coherent slow-delta |
+| 25187999 | dexmedetomidine | spindles peaking ~13 Hz vs propofol's ~11 Hz frontal alpha; *"different brain states"* |
+| 29920532 | dexmedetomidine | at **matched sedation depth**, propofol and dexmedetomidine move alpha/beta/gamma in **opposite directions** |
+| 26752078 | ketamine | Sarasso 2015: unresponsive but *"long, vivid dreams"* — responsiveness and consciousness are decoupled |
+
+**The direct consequence for this project:** a candidate built on alpha or beta band power is *structurally*
+a drug detector (PMID 29920532), and ketamine is the adversarial case that must be run, not avoided.
+
+## Challenge B — resting EEG predicting command-following in DoC
+
+**The canonical CMD literature is all TASK EEG, not resting.**
+
+* **PMID 16959998** Owen 2006 *Science* (fMRI, single case) · **PMID 22078855** Cruse 2011 *Lancet*: *"Three
+  (19%) of 16 patients could repeatedly and reliably generate appropriate EEG responses to two distinct
+  commands"* · **PMID 31242361** Claassen 2019 *NEJM*: *"16 of 104 unresponsive patients (15%) had brain
+  activation detected by EEG"* · **PMID 35841909** Egbebike 2022 *Lancet Neurol*: n=193, CMD in 14%.
+* **PMID 39141852** Bodien YG et al., 2024, *NEJM* — the current consensus review.
+
+**THE LOAD-BEARING NEGATIVE FINDING.** There is **no published study predicting command-following
+specifically from purely resting, task-free EEG.** The literature predicts *diagnosis* (UWS vs MCS) or
+*outcome*, not command-following. Nearest exceptions:
+
+* **PMID 38761713** — Secci S et al., 2024, *Clin Neurophysiol*. 57 MCS patients, 30 min resting closed-eyes
+  EEG, α-band connectivity, **79 % cross-validated accuracy** for MCS+/MCS−. **This is the number to beat.**
+* **PMID 25329398** — Chennu S et al., 2014, *PLoS Comput Biol*. Descriptive: vegetative patients with covert
+  awareness *"had alpha networks that were remarkably well preserved."* Small subgroup, not a designed test.
+
+**A correction this project owes its own E28.** **PMID 21674197** — Bruno MA et al., 2011, *J Neurol*:
+*"MCS+ describes high-level behavioural responses (i.e., command following, intelligible verbalizations or
+non-functional communication)."* **MCS+ is therefore NOT a pure command-following label** — it also fires on
+verbalization and communication. Any MCS+/− label is a noisy proxy; where CRS-R subscale items exist, the
+command-following item must be extracted directly.
+
+**Scope note that a reviewer would catch:** PCI (PMID 23946194, 27717082) is computed from **TMS-evoked**
+potentials, not spontaneous EEG. It is routinely listed alongside "resting" measures and is not one.
+
+**On the healthy-BCI substitution E28 rests on.** The effect is real and independently replicated —
+**PMID 20303409** Blankertz 2010 (*r* = 0.53, n = 80), **PMID 36359646** Wang 2022 (n = 105),
+**PMID 24979726** Bamdadian 2014 (n = 17). **But no published work bridges the two literatures.** The
+substitution is a defensible analogy that has never been validated in a brain-injured population, and E28
+must present it as an assumption under test.
+
+## Challenge C — a trajectory feature ahead of a conventional monitor
+
+**The incumbent's measured weaknesses — better numbers than the folklore.**
+
+* **PMID 16508396** — Pilge S et al., 2006, *Anesthesiology*: *"Time delays between 14 and 155 s were found
+  for all indices"* (BIS, Narcotrend, Cerebral State Index), and the delays are **direction-dependent**.
+  **Cite this, not a generic "20-30 s".**
+* **PMID 32040794** — Zanner R et al., 2021: qCON delays of 21 ± 5 s and 26 ± 5 s around the transition,
+  *"similar to other monitoring systems such as bispectral index"*; AUC 0.61-0.90 for detecting LOR/ROR.
+* **EMG contamination, which independently confirms what this project measured.** **PMID 37756246**
+  Lichtenfeld 2024: *"The indices of all neuromonitoring systems significantly increased when the EEG was
+  superimposed with the contraction EMG."* **PMID 22315331** Dahaba 2012: reversing neuromuscular blockade
+  alone raised BIS from ~50 to ~62-64 **with no change in hypnotic depth**.
+* Ketamine (**PMID 15591328**, BIS rose 33→46 *while anaesthesia deepened*) and N₂O (**PMID 29867405**).
+
+**Burst-suppression onset prediction: no published comparator was found.** The literature covers *tracking*
+existing suppression (**PMID 24018288**, Chemali's BSP state-space estimator) and closed-loop *control*
+(**PMID 23770601** Ching 2013; **PMID 24204231** Shanechi 2013), both rodent for the control work. Nearest
+forecasting analogue is **PMID 39470955** (Tu 2025), which forecasts BIS itself with deep sequence models.
+**E26's null therefore has no published bar to beat and appears to fill a genuine gap** — which is a weaker
+claim than it sounds, and must be checked against Tu 2025's full text before any novelty is asserted.
+
+**The negative precedent that should temper any early-warning-signal work.** **PMID 31575122** — Wilkat T
+et al., 2019, *Chaos*: *"we found no evidence for critical slowing down prior to 105 epileptic seizures"*
+(28 subjects, surrogate-based evaluation). Critical slowing down failed rigorously in the closest analogous
+brain-transition setting. No equivalent test exists for anaesthetic transitions.
+
+**Delirium/suppression thresholds — a caveat this project must respect.** **PMID 26418126** (Fritz 2016) and
+**PMID 25928189** (Soehle 2015) both link suppression to postoperative delirium, but **neither abstract
+states a numeric SR % cutoff** — they use cumulative duration or continuous BSR. E26's "SR ≥ 10" was
+presented as a literature convention; **that attribution is not verified** and must be softened or
+full-texted. And **PMID 30721296** (Wildes 2019, ENGAGES): EEG-guided titration to avoid suppression **did
+not reduce delirium** — a caveat any clinical framing has to carry.
+
+---
+
+## What the review overturned in this project's own writing
+
+**E31 and E32 cited Gugino 2001 as fixing the direction of their prediction. It does not.** The abstract
+reports beta *rising* in light sedation and delta/theta *rising further* at loss of consciousness; **it never
+reports beta falling.** "The fast end is overtaken" was an inference about relative power presented as the
+source's content (error-catalogue rule 42, added because of this).
+
+A dedicated search found **no primary source documenting the sedation-to-surgical sign reversal E30
+observed.** The nearest published phenomena are different in kind: **saturation-then-plateau** (**PMID
+24154602** Ní Mhuircheartaigh 2013: SWA *"rose to saturation and then remained constant despite increasing
+drug concentrations"*; **PMID 28665814** Warnaby 2017) and **transient paradoxical excitation** at LOC
+(**PMID 38412114** Ostertag 2025, where spectral edge and spectral entropy move the *wrong* way while
+permutation entropy tracks correctly through the same transition).
+
+**E30's reversal is therefore either a deposit artefact or original to this project — and original raises
+the burden of proof rather than lowering it.**
+
+## Datasets located, with access route
+
+| dataset | source | n | why it matters | access |
+|---|---|---|---|---|
+| **DOSE-I** | Zenodo 18483292 | 171 recordings, 281 procedures | **1,129 annotated LOC/ROC transitions**, 125 Hz EEG, MOAA/S depth labels. The induction-and-emergence deposit Challenge C has lacked. No branded index — a monitor proxy must be computed and declared. | **Open, CC-BY-4.0** |
+| ketamine sub-anaesthetic | Dryad `10.5061/dryad.j9kd51c9q` | 10 | Free adversarial control for Challenge A's drug-identity probe. Sub-anaesthetic, no LOC. | **Open, CC0** |
+| `eeg-gaba-anesthesia` | PhysioNet `10.13026/dx44-kw30` | 4 | Only deposit found with continuous graded dose for **two** drugs (propofol + sevoflurane). Tiny n. | credentialed |
+| `eeg-power-anesthesia` | PhysioNet `10.13026/m792-h077` | 10 volunteers + 44 OR | Propofol and sevoflurane, behavioural LOC/ROC in the volunteer arm | credentialed |
+| propofol spectrograms | Figshare 24777990 | 14 | LOC-aligned, no DUA | **Open, CC BY 4.0** |
+
+**Flagged UNVERIFIED and not to be cited until checked:** opioid co-administration status for the OR cases in
+both PhysioNet deposits (not in metadata); exact SR % thresholds in Fritz/Soehle (not in abstracts);
+Rampil 1998 (PMID 9778016) has no abstract in PubMed, so its biphasic-curve content is unquotable from the
+record; "Curley WT" could not be located in PubMed at all.
