@@ -149,7 +149,15 @@ PRIMARY = "exponent_high"
 CROSS_ARM_MIN_RATIO = 0.50
 PLACEBO_MAX_RATIO = 0.50
 PROBE_DECILES = 10
-GATE_MIN_ROWS = 1500
+GATE_MIN_CASES = 240
+"""A floor on JOINED CASES, not on rows, and it is corrected from a row floor after the correction was
+needed. E25 was first written with `GATE_MIN_ROWS = 1500`, copied from E22. The agent join produces roughly
+27 rows per case, so 60 of the 250 cases already cleared 1,500 rows and the experiment ran on a quarter of
+the cohort and printed `P1 *** FAILED` -- the propofol arm had 17 evaluable patients against a floor of 20,
+for no reason except that the join had not reached them yet. **A coverage gate must be floored on the
+quantity it is counting.** Nothing was contaminated: P1 reads no candidate value and that partial run
+reported nothing but patient counts, which is the same class of information the E22 amendment was licensed
+on. It is recorded here rather than quietly overwritten."""
 REPORT = ("exponent_high", "exponent_low", "whole_head_exponent", "relative_delta_power",
           "relative_alpha_power", "lempel_ziv", "spectral_entropy", "spectral_edge_95",
           "multiscale_entropy_slope", "pac_slow_alpha", "critical_slowing_ar1")
@@ -192,9 +200,10 @@ def main(argv=None) -> int:
     dose_by_rid = {r["recording_id"]: r for r in csv.DictReader(open(agents, newline=""))}
     rows = [r for r in csv.DictReader(open(grid, newline=""))
             if r.get("status") == "ok" and r["recording_id"] in dose_by_rid]
-    if len(rows) < GATE_MIN_ROWS:
-        print(f"\n   *** {len(rows)} joined rows, below the registered floor of {GATE_MIN_ROWS}. "
-              "The join is still running; nothing is reported.")
+    n_cases = len({r.get("meta_caseid", "") for r in rows})
+    if n_cases < GATE_MIN_CASES:
+        print(f"\n   *** {n_cases} joined cases ({len(rows)} rows), below the registered floor of "
+              f"{GATE_MIN_CASES} cases. The join is still running; nothing is reported.")
         _registered_order()
         return 2
 
