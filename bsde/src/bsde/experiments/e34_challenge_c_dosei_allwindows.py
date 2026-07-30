@@ -110,6 +110,32 @@ was not pre-declared, it has not faced the placebo that just withdrew the pre-de
 placebo is the gate that matters here. **It is recorded and not claimed.** A successor wishing to test it
 must register it first and put it through the same placebo — and should expect the same answer, since the
 placebo's failure was about the landmark and not about the feature.
+
+--------------------------------------------------------------------------------------------------------
+CORRECTION TO THIS FILE'S OWN OUTCOME NOTE, made on re-reading the intervals rather than the point estimates.
+
+The note above says "the fake landmark scores HIGHER than the true one" and calls the placebo "the whole
+result". **That over-dramatises a comparison between two estimates that both span zero:**
+
+    real increment     +0.0178  [-0.0226, +0.0474]
+    placebo increment  +0.0244  [-0.0440, +0.0935]
+
+**Neither interval excludes zero.** The honest statement is therefore not "the placebo beat the real
+landmark" but **"PE31 adds nothing measurable to SEF95 for any landmark, real or fake"** — and the ordering
+of two point estimates inside overlapping noise carries no information. Error-catalogue rule 37 in its own
+words: a cell that spans the null is neither direction, and may not satisfy a directional reading. Applying
+that to someone else's result and not to my own would be the double standard the rule exists to prevent.
+
+**The verdict does not change.** P3b failed on its own terms — the increment's interval spans zero — so the
+primary does not beat the incumbent and Challenge C is not met on this deposit. What changes is the reason
+stated: **it is a plain null, not a placebo catching a false positive.** The placebo gate did not have a
+positive to catch.
+
+**A check that PASSED and belongs on the record.** A worry about this design was that loss of consciousness
+in procedural sedation is a pharmacology event, so any EEG feature "predicting" it might merely be tracking
+drug arrival. Measured on the clinical columns only, across 60 recordings and 31,313 conscious windows:
+**cumulative propofol alone gives AUC 0.506 for "LOC within 60 s".** The drug column does not predict the
+transition, so that explanation is excluded — one of the few things in this experiment that came out clean.
 """
 from __future__ import annotations
 
