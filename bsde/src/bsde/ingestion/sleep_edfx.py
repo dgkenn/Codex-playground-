@@ -52,6 +52,18 @@ Annotation = Tuple[float, float, str]
 WAKE = frozenset({"Sleep stage W"})
 N3 = frozenset({"Sleep stage 3", "Sleep stage 4"})
 
+# ADDED 2026-07-30 for E13. The three remaining R&K stages, verified present in a real hypnogram before being
+# declared rather than assumed from the standard (rule 5: empty is not evidence of absence until the filter
+# has been shown capable of matching something). On SC4001E0 the longest contiguous blocks were: stage 1
+# 180 s, stage 2 990 s, stage R 990 s -- all above the 120 s minimum the work-list builder requires.
+N1 = frozenset({"Sleep stage 1"})
+N2 = frozenset({"Sleep stage 2"})
+REM = frozenset({"Sleep stage R"})
+
+STAGE_SETS = {"W": WAKE, "N1": N1, "N2": N2, "N3": N3, "REM": REM}
+"""The full R&K ladder, keyed by the short label used in `recording_id` suffixes. Deliberately excludes
+"Movement time" (artefact, not a described state) and "Sleep stage ?" (unscored), consistent with WAKE/N3."""
+
 _HREF_EDF_RE = re.compile(r'href="([^"?/]+\.edf)"', re.I)
 
 
