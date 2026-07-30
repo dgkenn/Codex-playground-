@@ -360,3 +360,46 @@ def oob_auc_increment(Xa: np.ndarray, Xb: np.ndarray, y: Sequence, subject: Sequ
         return float("nan"), float("nan"), float("nan"), len(diffs)
     d = np.asarray(diffs, float)
     return (float(d.mean()), float(np.quantile(d, 0.025)), float(np.quantile(d, 0.975)), len(d))
+
+
+def within_subject_spearman(x: Sequence, z: Sequence, subject: Sequence,
+                            min_points: int = 4, min_distinct: int = 3) -> float:
+    """Mean over subjects of that subject's own rank correlation between `x` and `z`.
+
+    The continuous-axis sibling of `within_subject_auc`, and it exists for the same reason: with an ICC
+    above 0.9 across windows of one person, a pooled correlation mostly answers "do these two people
+    differ?" rather than "did this person's measure follow their own dose?".
+
+    `min_distinct` is not decoration. A patient held at one steady concentration for the whole case has no
+    within-subject dose variation, and their rank correlation over ties is either undefined or driven by
+    numerical noise in the ranking — including them would dilute the mean toward zero with subjects who
+    could not have contributed. Requiring at least three distinct values of `z` states that exclusion rather
+    than letting a tie-handling convention decide it silently, and the caller must report how many subjects
+    survived it (rule 14).
+    """
+    x = np.asarray(x, float)
+    z = np.asarray(z, float)
+    subject = np.asarray(subject)
+    vals = []
+    for u in np.unique(subject):
+        m = (subject == u) & np.isfinite(x) & np.isfinite(z)
+        if m.sum() < min_points or np.unique(z[m]).size < min_distinct:
+            continue
+        r = spearman(x[m], z[m])
+        if np.isfinite(r):
+            vals.append(r)
+    return float(np.mean(vals)) if vals else float("nan")
+
+
+def n_evaluable_spearman(x: Sequence, z: Sequence, subject: Sequence,
+                         min_points: int = 4, min_distinct: int = 3) -> int:
+    """How many subjects `within_subject_spearman` averaged over. Reported, never assumed."""
+    x = np.asarray(x, float)
+    z = np.asarray(z, float)
+    subject = np.asarray(subject)
+    n = 0
+    for u in np.unique(subject):
+        m = (subject == u) & np.isfinite(x) & np.isfinite(z)
+        if m.sum() >= min_points and np.unique(z[m]).size >= min_distinct:
+            n += 1
+    return n
