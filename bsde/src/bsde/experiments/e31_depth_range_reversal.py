@@ -70,6 +70,32 @@ SCOPE AND LIMITS.
     comparison is not within-patient across strata unless a patient supplies both, and the count that do is
     reported.
   * Dose is not consciousness; carried over from E25, E29 and E30.
+
+--------------------------------------------------------------------------------------------------------
+OUTCOME: P1 FAILED ON COVERAGE, BY ONE PATIENT, AND THE FLOOR IS NOT LOWERED.
+
+    light (SR == 0)   3,659 rows   **106** patients with varying MAC   median BIS 43.3
+    deep  (SR > 0)      709 rows    **19** patients with varying MAC   median BIS 35.8
+    patients contributing to both strata: 105
+
+The depth check PASSED - median BIS is 35.8 in the suppressed stratum against 43.3 in the unsuppressed one,
+so these are strata of depth. The coverage check failed at 19 against a registered floor of 20.
+
+**One short is the exact situation in which a floor gets quietly moved, so it is worth being explicit: it is
+not moved.** Nothing downstream was computed and the verdict is ABSENT, not negative.
+
+**THE THINNESS IS ITSELF THE FINDING.** Only 19 of 110 volatile patients both suppress and have a varying
+MAC. Surgical anaesthesia mostly does not reach burst suppression, and where it does, the vaporiser is
+usually not being moved. **`BIS/SR` is a good depth marker and a poor stratifying variable in this deposit**,
+and that is a fact about routine practice rather than about the analysis.
+
+**A BETTER INSTRUMENT EXISTS AND IT IS NOT A LOWERED BAR - IT IS THE STANDARD ONE.** The question is whether
+the dose-response is non-linear, and the textbook way to test that is to stratify on **the exposure itself**
+and ask whether the slope depends on where you are along it. Stratifying by within-patient MAC level uses
+all 110 patients, needs no second variable, and is a more direct test of the Gugino shape than a
+suppression proxy. That it also solves the coverage problem is a consequence, not the reason - and the
+ordering is recorded here so a reader can judge that for themselves. It is registered separately as E32,
+with its direction fixed before it runs, rather than smuggled into this file.
 """
 from __future__ import annotations
 

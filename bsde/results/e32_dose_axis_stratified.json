@@ -1,0 +1,15 @@
+{
+  "experiment": "E32",
+  "p1": {
+    "counts": {
+      "low MAC tercile": 0,
+      "high MAC tercile": 89
+    },
+    "median_bis": {
+      "low MAC tercile": 41.27333333333333,
+      "high MAC tercile": 41.806666666666665
+    },
+    "n_both": 10,
+    "passed": false
+  }
+}
