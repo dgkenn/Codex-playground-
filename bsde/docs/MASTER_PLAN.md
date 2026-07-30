@@ -441,3 +441,59 @@ heterogeneity, not inflating it. Error-catalogue rule 17 says that when a fix ma
 diagnosis was wrong, and it was: I had the mechanism backwards. The 0.934 is the acquisition-matched number
 and supersedes the 0.646 I reported earlier — while remaining an upper bound, because awake was never
 recorded at `acq-rest` and that residual mismatch cannot be removed (§9.7 predecessor, commit 4378270).
+
+### 9.8 Chennu is the best labelled dataset the project has, and it contains a drug-vs-state dissociation
+
+**Accessed 2026-07-30 with no authentication and no download.** The deposit's 3.69 GB zip
+(`api.repository.cam.ac.uk/server/api/core/bitstreams/e94a6722-.../content`, reached through a 302 from the
+`www` host) serves HTTP range requests. Reading the End-of-Central-Directory record from the tail and then the
+central directory gives a full index — 166 members, **80 `.set` + 80 `.fdt` EEGLAB pairs** (20 subjects × 4
+conditions) plus `datainfo.mat` — after transferring about 85 kB of a 3.69 GB archive. `datainfo.mat` was
+inflated in memory and parsed. Nothing was written to disk and no credential was used.
+
+**`datainfo.mat` carries four labels, and the deposit documents all five columns explicitly:** dataset name;
+sedation level (1 baseline, 2 mild, 3 moderate, 4 recovery); **propofol concentration MEASURED IN BLOOD
+PLASMA** (µg/L); mean reaction time in a speeded two-choice task (ms); and correct responses out of 40.
+
+**None of these is scored from the EEG.** That is the property Sleep-EDF lacks (§9.6) and it makes Chennu the
+first dataset here with a labelled, non-circular, within-subject contrast *and* complete labels actually
+present in the deposit — the third dataset checked and the first to pass (§9.5).
+
+| level | n | plasma median (µg/L) | RT median (ms) | correct median /40 |
+|---|---|---|---|---|
+| 1 baseline | 20 | 0.0 | 996.0 | 39.0 |
+| 2 mild | 20 | 438.0 | 893.5 | 37.5 |
+| 3 moderate | 20 | 803.0 | *missing* | 35.0 |
+| 4 recovery | 20 | **276.5** | 819.0 | 38.0 |
+
+**THE DESIGN THIS UNLOCKS — a within-subject dissociation of drug level from behavioural state.** At
+*recovery*, plasma propofol is **276.5 µg/L — not zero, and above baseline** — while behaviour is almost fully
+restored (38/40 against baseline's 39/40). So level 4 has *drug present with responsiveness recovered*, in the
+same subjects. A candidate can therefore be asked which of the two it follows:
+
+* if its recovery value resembles **baseline**, it tracks behavioural state;
+* if its recovery value resembles **mild sedation** (the comparable plasma level), it tracks the drug.
+
+That is Discovery Challenge A — "predicts loss and recovery of responsiveness across anaesthetics while
+minimising drug-identification information" — in its testable form, and it is runnable now on 20 subjects.
+It also directly attacks §9.2's mediator problem: drug level and behaviour are here measured *separately*, so
+arousal need not be adjusted away blindly.
+
+**Three caveats found in the label table itself, before any analysis.**
+
+1. **Reaction time is contaminated by practice order.** RT *falls* monotonically across the session
+   (996 → 893 → 819 ms) including from baseline to mild sedation, which is the wrong direction for a
+   sedative. Level order is fixed (baseline → mild → moderate → recovery), so RT carries a learning effect
+   confounded with drug exposure. **RT must not be used as a responsiveness measure without accounting for
+   order**, and correct-response count (39 → 37.5 → 35 → 38) is the better behavioural label because it moves
+   in the expected direction and returns at recovery.
+2. **Reaction time is missing at moderate sedation.** That missingness is almost certainly outcome-related —
+   a subject too sedated to respond produces no RT — so it must be reported as informative, not imputed
+   (`ANALYSIS_PLAN.md` §9).
+3. **Recovery is not a drug-free state.** Calling level 4 "recovery" invites treating it as a second
+   baseline. Its plasma concentration says otherwise, and that is precisely what makes it useful.
+
+**Consequence for the plan.** Brief 02 rates Chennu a "controlled pharmacologic perturbation dataset", which
+undersells it: the measured plasma concentrations and behavioural scores make it the only reachable dataset
+that can separate drug from state. It moves to the top of the ingestion queue, and the `.set`/`.fdt` remote-zip
+adapter needed to read it is worth building for that reason alone.
