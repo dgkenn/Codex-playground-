@@ -58,6 +58,37 @@ anywhere in the deposit**, so nothing here bears on Challenge A. `participants.t
 covariate adjustment is possible. LOC is scored behaviourally, so an arousal index (§9.3's H4) predicts the
 same result a consciousness marker would. Sign counts, not intervals: on 7 clusters a bootstrap interval is
 theatre, and 6/7 is one-sided p = 0.06 with 7/7 at p = 0.008.
+
+--------------------------------------------------------------------------------------------------------
+OUTCOME, AND THEN ITS WITHDRAWAL, ADDED AFTER THE RUN.
+
+**P1 failed at 5 of 7 and the experiment stopped there, as registered.** That verdict is now WITHDRAWN as
+UNINTERPRETABLE — not overturned, and not replaced by a positive one. The gate was computed on a feature
+this deposit cannot currently support.
+
+`scripts/diagnose_channel_spread.py` measured the input: in one 30 s awake window of sub-02, **23 of 62
+channels sit in a physiological 5-150 microvolt band and 39 do not**, running from 1,600 up to 153,000
+microvolts. `_mean_psd` averages power across all of them, and the pipeline has no channel-quality rejection
+of any kind. The consequence, in the same window:
+
+    relative delta   all 62 channels 0.799      the 23 plausible channels 0.456
+    relative alpha   all 62 channels 0.021      the 23 plausible channels 0.092
+
+An awake human with 1 % alpha has not been recorded; a mostly-dead montage has. The whole table shows it —
+median relative alpha of 0.01 in BOTH arms, against 0.42 on Chennu — and the flatness of that comparison is
+why the gate had nothing to detect. The same diagnostic found ds005620 unexposed (65 of 65 channels
+plausible, all three aggregations agreeing to 0.005), so this is a property of ds004541, not of the feature.
+
+TWO THINGS THIS DOES NOT LICENSE, stated because the temptation runs the other way.
+  * It is **not** grounds to re-run E20 and keep whatever comes out. The one-attempt commitment was spent;
+    what a repaired pipeline produces on this deposit belongs to a new registration, and that registration
+    has to be written before the repair is run.
+  * It is **not** evidence that `exponent_high` marks loss of consciousness. The deposit remains untested on
+    that question. Absent, not negative (rule 31).
+
+The prerequisite is a channel-quality filter that exists, is validated on a deposit where the answer is
+already known, and is applied identically to every deposit — including the ones whose results are already
+reported. Until then ds004541 is unreadable by this pipeline and no experiment should be registered on it.
 """
 from __future__ import annotations
 
