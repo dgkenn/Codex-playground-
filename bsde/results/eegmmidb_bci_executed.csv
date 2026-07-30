@@ -1,0 +1,2 @@
+subject,status,error,imagery_auc,perm_p,perm_null_mean,n_trials,n_left,n_right,n_perm
+S001,ok,,0.6067193675889329,0.15422885572139303,0.46916007905138346,45,23,22,200

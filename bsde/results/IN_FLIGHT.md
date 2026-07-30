@@ -58,3 +58,19 @@ recorded in E25 itself: a row floor copied from E22 let it run at 60 of 250 case
 failure, because the join produces ~27 rows per case. A part-finished join therefore cannot be mistaken for
 a result — but note that the stale `e25_challenge_a_dose.json` from that partial run WAS deleted rather than
 committed, since a JSON on disk outlives the console output that would have explained it.
+
+## Currently in flight: the eegmmidb tables and `vitaldb_fine.s0-3.csv` (2026-07-30)
+
+Four extractions, all resumable, all committed part-finished per the convention above.
+
+    bsde/results/vitaldb_fine.s0-3.csv      Challenge C's 60 s retest (E27). The plan was WIDENED after
+                                            E27's first gate failure -- it now covers both SR thresholds'
+                                            onsets per case, 94 cases / 3,595 windows -- so these shards
+                                            are being extended, not rebuilt.
+    bsde/results/eegmmidb_rest.csv          spontaneous features, baseline runs R01/R02 only (E28)
+    bsde/results/eegmmidb_bci.csv           E28's LABEL: per-subject motor-imagery decoding AUC
+    bsde/results/eegmmidb_bci_executed.csv  E28's PLACEBO: the same for EXECUTED movement
+
+**E27 refuses below 75 joined cases and E28 below 60 subjects with both a resting row and a label**, so no
+part-finished state here can be mistaken for a result. The eegmmidb label builders take roughly a minute per
+subject and shard by subject (`--shard k --of n`), because their cost is the per-run HTTPS fetch.
