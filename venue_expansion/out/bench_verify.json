@@ -1,0 +1,570 @@
+{
+  "component": "MECHANICAL RE-BENCH VERIFICATION",
+  "role": "Sonnet mechanical re-bencher -- facts only, no verdict",
+  "generated_utc": "2026-07-30T17:52:31.263633+00:00",
+  "inputs": [
+    "venue_expansion/bench_signing.py",
+    "venue_expansion/bench_transport.py",
+    "venue_expansion/bench_feeds.py",
+    "venue_expansion/out/bench_signing.json (re-run, overwritten in place by re-running the committed script)",
+    "venue_expansion/out/bench_transport.json (NOT overwritten -- only one section re-run into a separate file)",
+    "venue_expansion/out/bench_feeds.json (not re-run -- long-duration multi-exchange WS capture, re-running all 9 probes was out of scope for a spot-check; reviewed only)",
+    "venue_expansion/out/orderpath_research.json"
+  ],
+  "task1_rebench": {
+    "bench_signing_py": {
+      "command": "python3 venue_expansion/bench_signing.py",
+      "note": "Script re-run end to end, no modifications. It overwrites out/bench_signing.json in place, so the ORIGINAL numbers below were captured by reading the file before re-running.",
+      "machine_note": "nproc=4 (unchanged from original run's stated '4 vCPU'), container shared/noisy-neighbor CPU -- see cross_run_variance_finding below.",
+      "median_ms_comparison": [
+        {
+          "metric": "1_warm_process_sign (cryptography RSA-PSS-SHA256 sign, warm process, n=2000)",
+          "orig_median_ms": 0.3746,
+          "rerun_median_ms": 0.6829,
+          "ratio": 1.823,
+          "within_2x": true
+        },
+        {
+          "metric": "2_subprocess_per_call.full_process_wall (naive cron leg, n=30)",
+          "orig_median_ms": 255.0346,
+          "rerun_median_ms": 354.1034,
+          "ratio": 1.388,
+          "within_2x": true
+        },
+        {
+          "metric": "2_subprocess_per_call.rsa_2048_keygen_cost",
+          "orig_median_ms": 211.6281,
+          "rerun_median_ms": 282.7739,
+          "ratio": 1.336,
+          "within_2x": true
+        },
+        {
+          "metric": "2_subprocess_per_call.sign_op_cost_within_subprocess",
+          "orig_median_ms": 1.5769,
+          "rerun_median_ms": 2.2783,
+          "ratio": 1.445,
+          "within_2x": true
+        },
+        {
+          "metric": "2_subprocess_per_call.cryptography_import_cost",
+          "orig_median_ms": 15.3007,
+          "rerun_median_ms": 18.4429,
+          "ratio": 1.205,
+          "within_2x": true
+        },
+        {
+          "metric": "3_full_request_assembly.create_order_stdlib_json",
+          "orig_median_ms": 0.3943,
+          "rerun_median_ms": 0.7186,
+          "ratio": 1.822,
+          "within_2x": true
+        },
+        {
+          "metric": "3_full_request_assembly.batch_cancel_stdlib_json",
+          "orig_median_ms": 0.3913,
+          "rerun_median_ms": 0.7018,
+          "ratio": 1.794,
+          "within_2x": true
+        },
+        {
+          "metric": "4a_native_rust_crate (RustCrypto rsa 0.9.10, pure-software modexp)",
+          "orig_median_ms": 1.2775,
+          "rerun_median_ms": 1.8667,
+          "ratio": 1.461,
+          "within_2x": true
+        },
+        {
+          "metric": "4b_openssl_cli_per_process.full_process_wall (fresh openssl(1) process per sign)",
+          "orig_median_ms": 5.4934,
+          "rerun_median_ms": 8.3153,
+          "ratio": 1.514,
+          "within_2x": true
+        },
+        {
+          "metric": "4c_openssl_speed_native_floor.sign_ms (openssl speed rsa2048, warm process, accelerated bignum)",
+          "orig_median_ms": 0.347,
+          "rerun_median_ms": 0.67,
+          "ratio": 1.931,
+          "within_2x": true,
+          "note": "closest to the 2x reproducibility threshold of any CPU metric checked"
+        },
+        {
+          "metric": "5_json_serialization.stdlib_json_create_order",
+          "orig_median_ms": 0.0023,
+          "rerun_median_ms": 0.0033,
+          "ratio": 1.435,
+          "within_2x": true
+        },
+        {
+          "metric": "5_json_serialization.orjson_create_order",
+          "orig_median_ms": 0.0002,
+          "rerun_median_ms": 0.0003,
+          "ratio": 1.5,
+          "within_2x": true,
+          "note": "sub-microsecond timings at n~5000 -- high relative noise expected at this magnitude regardless of machine load"
+        }
+      ],
+      "all_within_2x": true,
+      "cross_run_variance_finding": "Every single CPU-bound metric in the rerun is slower than originally reported, by a fairly uniform 1.2x-1.93x, with openssl_speed_native_floor.sign_ms (0.347ms->0.67ms, 1.93x) and sign_ops_per_sec (2878->1492, almost exactly half) showing the largest shift. A uniform across-the-board slowdown (rather than one metric moving and others not) is consistent with container-level CPU contention/throttling between runs (shared vCPU, noisy neighbor, or frequency scaling) rather than a bug in any individual benchmark -- ALL reproduce within the task's 2x bar, and the RELATIVE gaps the docstring calls load-bearing held up: ratio_warm_python_vs_native_openssl_floor was 1.1 in the original run and 1.0 in the rerun (near-parity between the `cryptography` library and the openssl(1) CLI's native engine, since `cryptography` itself is an OpenSSL binding) -- both runs agree that Python's binding overhead over bare OpenSSL is ~0-10%, not the multi-x gap the naive-cron-vs-warm-process comparison shows (492.8x-646.8x, also stable in relative terms across both runs).",
+      "ratio_stability_check": [
+        {
+          "ratio_name": "ratio_naive_cron_vs_warm_python",
+          "orig": 646.8,
+          "rerun": 492.8,
+          "note": "same order of magnitude both runs; both >>1, confirms naive-cron-per-request signing is a 2-3 order of magnitude tax vs a warm process regardless of absolute CPU speed that day"
+        },
+        {
+          "ratio_name": "ratio_warm_python_vs_native_openssl_floor",
+          "orig": 1.1,
+          "rerun": 1.0,
+          "note": "stable near-parity both runs -- the load-bearing claim that `cryptography`'s Python binding overhead over raw OpenSSL is small (not the dominant cost) reproduces"
+        }
+      ],
+      "rerun_output_file": "venue_expansion/out/bench_signing.json (overwritten by the rerun; original numbers preserved only in this bench_verify.json comparison table and in the orchestrator's prior read)"
+    },
+    "bench_transport_py_one_section_rerun": {
+      "command": "python3 -c \"import bench_transport as bt; bt.bench_keepalive(bt.RETAIL_HOST, n=30, http2=False)\" (via a small wrapper script, functions imported unmodified from the committed bench_transport.py)",
+      "section_chosen": "keepalive_delta_http1 (HTTP/1.1, 30 sequential GETs on one held-open connection to api.elections.kalshi.com/trade-api/v2/exchange/status) -- chosen because it is the single most citation-relevant transport number (reconnect_penalty feeds the production_latency_budget table) and is a light, polite load (30 GETs to a public status endpoint).",
+      "note": "This is a PROXY-INCLUSIVE, absolute-network-latency metric per the script's own top-level caveat -- NOT subject to the '2x CPU reproducibility' bar, reported here as a raw comparison only.",
+      "comparison": [
+        {
+          "metric": "req1_ms (cold connection, first request)",
+          "orig": 571.81,
+          "rerun": 781.952,
+          "ratio": 1.368
+        },
+        {
+          "metric": "req2_30_median_ms (steady-state, kept-alive)",
+          "orig": 65.176,
+          "rerun": 127.012,
+          "ratio": 1.949
+        },
+        {
+          "metric": "reconnect_penalty_ms (req1 - median(req2..30))",
+          "orig": 506.634,
+          "rerun": 654.94,
+          "ratio": 1.293
+        }
+      ],
+      "finding": "Absolute network numbers roughly doubled between runs (steady-state median 65ms->127ms), consistent with the documented proxy-inclusive/upper-bound caveat -- this is exactly the kind of run-to-run absolute-latency instability the original script's caveat warns about, and it is why the script frames reconnect_penalty as a DELTA (which stayed within the same order of magnitude, 507ms vs 655ms) rather than treating the raw req1_ms/req2_30_median_ms as stable production estimates. Neither number should be read as 'the' Kalshi RTT from any real deployment.",
+      "rerun_output_file": "venue_expansion/out/bench_verify_transport_rerun.json (new file, does NOT overwrite bench_transport.json)"
+    }
+  },
+  "task2_proxy_discipline_sweep": {
+    "method": "grepped all three bench JSONs for any key containing 'clean', and manually reviewed every absolute-timing field for a proxy-inclusive/upper-bound caveat, at whatever granularity (field, section, or document level) the caveat actually appears at.",
+    "part_a_fields_labeled_clean_that_crossed_the_network": {
+      "finding": "bench_signing.json and bench_transport.json contain ZERO fields with 'clean' in the key name. bench_feeds.json contains 32 such fields (3 per exchange probe x 8 probes: coinbase_trade, coinbase_book, kraken_trade, kraken_book, bitstamp_trade, bitstamp_book, gemini_combined_trade, gemini_combined_book) plus binance_trade_marketdata_vision (cadence/size/bandwidth also present but the 'est_bandwidth_bps_clean' key is present there too, so effectively 9 probes x up to 3 keys). EVERY one of these DID cross the network -- each is computed from messages received over a live WSS connection to a public exchange, which transits the outbound agent proxy.",
+      "fields": [
+        "cadence_clean_proxy_invariant",
+        "message_size_bytes_clean",
+        "est_bandwidth_bps_clean",
+        "message_size_bytes_filtered_channel (gemini only, same justification as message_size_bytes_clean)"
+      ],
+      "justification_as_stated_in_script": "bench_feeds.py's own PROXY_CAVEAT (top of file and echoed in bench_feeds.json.proxy_caveat) argues these are legitimately clean DESPITE crossing the network: (1) cadence/inter-arrival intervals are computed from LOCAL recv timestamps only (time.monotonic() deltas between consecutive messages on an already-established TCP/TLS stream) -- the proxy is a persistent relay hop that shifts absolute arrival time uniformly but does not materially distort SPACING between consecutive messages; (2) message sizes are exact byte counts of payloads as received -- the proxy does not alter payload content; (3) est_bandwidth_bps_clean = 8*sum(sizes)/(local_monotonic_duration), i.e. also built from a LOCAL start/end timestamp difference over a ~30s span, not a round-trip time, so a roughly-constant relay hop does not bias it materially. This is a stated methodological argument, not blind labeling -- verified by reading the actual computation in bench_feeds.py's measure_ws().",
+      "verdict_scope_note": "Per orchestrator instructions this section reports facts (which numbers are labeled clean and did cross the network, and the stated justification), not a verdict on whether the justification is sound."
+    },
+    "part_b_absolute_network_latencies_missing_a_proxy_inclusive_label": {
+      "finding": "No field was found in any of the three bench JSONs reporting an absolute network-crossing latency number with ZERO proxy-inclusive caveat anywhere in the document. Every file carries a document-level (bench_transport.json: top-level 'caveat' key; bench_feeds.json: top-level 'proxy_caveat' key) or section-level caveat that explicitly covers its absolute timing fields. bench_signing.json is CPU-only and correctly carries no network caveat at all.",
+      "per_file": [
+        {
+          "file": "bench_transport.json",
+          "fields_without_an_inline_per_field_label": [
+            "keepalive_delta_http1.req1_ms / req2_30_median_ms / req2_30_mean_ms / req2_30_min_ms / req2_30_max_ms / raw[].ms",
+            "keepalive_delta_http2 (same field set)",
+            "route_delta.A_retail_cloudfront_median_ms / B_origin_direct_median_ms / interleaved_raw[].ms",
+            "websocket.retail_cloudfront_summary / origin_direct_summary / raw[].connect_reject_ms"
+          ],
+          "covered_by": "document top-level 'caveat' field, quoted in full: \"This container's outbound HTTPS transits a mandatory agent proxy ... Every absolute network-timing number below is an UPPER BOUND / proxy-inclusive figure...\" -- present once at the document root, not restated per-field. Technically satisfies the requirement (a reader of the whole file sees the caveat) but a reader who extracts a single field (e.g. route_delta.A_retail_cloudfront_median_ms) out of context, without the document root, loses the caveat.",
+          "exception_correctly_labeled_inline": "production_latency_budget.rows_ms[2] (TCP+TLS handshake row) explicitly restates 'PROXY-POLLUTED upper bound' inline -- the one place in the file that does carry a per-field label, precisely because that row is the one place proxy-polluted and clean numbers are combined side by side in the same table (rows_ms mixes clean CPU rows with a proxy-polluted network row and a cited-not-measured row) -- inline labeling matters most exactly there, and it is present there."
+        },
+        {
+          "file": "bench_feeds.json",
+          "fields_without_an_inline_per_field_label": [
+            "duration_s_actual (per probe) -- a local wall-clock span, not a round-trip network latency, so arguably doesn't need the proxy label at all; listed for completeness"
+          ],
+          "covered_by": "document top-level 'proxy_caveat' field, present once."
+        },
+        {
+          "file": "orderpath_research.json",
+          "note": "Contains no measured latency NUMBERS at all -- the 3 live_checks entries report only HTTP status codes and response bodies; the accompanying 'network_caveat' text explicitly states curl time_total values were captured but deliberately NOT included/used in any conclusion. No violation possible because no timing number is present to mislabel."
+        }
+      ]
+    },
+    "part_c_additional_fact_noted_in_passing": {
+      "location": "bench_transport.json.route_delta",
+      "fact": "route_delta's own 'variance_note' field states A(CloudFront/retail) stdev=223.233ms vs B(origin/direct) stdev=81.152ms despite near-identical medians (546.884 vs 547.804ms), and attributes this to 'CloudFront PoP/edge selection or proxy path jitter dominating over the true route difference.' This is a caveat the script itself already carries (not a missing label), flagged here only because it bears on how much weight the 'delta cancels the constant proxy term' framing in the document's top-level caveat can carry for THIS specific delta: if the proxy term (or CDN edge selection) is not actually constant/symmetric between the two hostnames, the route_delta_median_ms_A_minus_B = -0.92ms headline number is a smaller and noisier signal than a simple before/after-proxy-term-cancellation framing implies. Facts only, no verdict on whether -0.92ms is meaningful."
+    }
+  },
+  "task3_citation_check": {
+    "method": "Each cited URL fetched live in this session (WebFetch for HTML docs; curl-saved PDF + local pypdf extraction for the two CF Benchmarks PDFs, replicating the original research's own stated method). VERIFIED = fetched source text directly supports the claim as stated. UNVERIFIED = source unreachable in this session, or claim not found in the fetched text (does not mean claim is false, only that this pass could not confirm it).",
+    "rate_limit_tiers": {
+      "url": "https://docs.kalshi.com/getting_started/rate_limits",
+      "claims_checked": [
+        {
+          "claim": "7-tier ladder tokens/sec: basic 200/100, advanced 300/300, expert 600/600, premier 1000/1000, paragon 2000/2000, prime 4000/4000, prestige 6000/8000",
+          "status": "VERIFIED",
+          "detail": "Fetched table matches exactly, including Prestige's asymmetric 6000 read / 8000 write."
+        },
+        {
+          "claim": "Qualification: expert 0.075%/0.05%, premier 0.125%/0.10%, paragon 0.25%/0.20%, prime 0.50%/0.40%, prestige 1.00%/0.80% (earn/keep)",
+          "status": "VERIFIED",
+          "detail": "Exact match in fetched table."
+        },
+        {
+          "claim": "Default cost 10 tokens/request",
+          "status": "VERIFIED"
+        },
+        {
+          "claim": "Batch cancel = 2 tokens/order",
+          "status": "VERIFIED",
+          "detail": "Fetched summary states this explicitly as the one named non-default cost."
+        },
+        {
+          "claim": "Burst = up to 2x per-second rate; Basic write and higher-tier read hold only 1x",
+          "status": "VERIFIED",
+          "detail": "Fetched text: 'Write buckets above Basic tier hold up to 2 seconds of budget... Basic tier write buckets and higher-tier read buckets hold only 1 second' -- matches orderpath's phrasing closely."
+        },
+        {
+          "claim": "Volume formula = trailing-30-day volume / (prior month's total exchange volume x 2)",
+          "status": "VERIFIED",
+          "detail": "Fetched: 'Your volume share is your trailing 30-day volume divided by twice the previous calendar month's total exchange volume.'"
+        }
+      ]
+    },
+    "fix_access": {
+      "urls": [
+        "https://docs.kalshi.com/fix",
+        "https://docs.kalshi.com/fix/connectivity",
+        "https://docs.kalshi.com/fix/order-entry"
+      ],
+      "claims_checked": [
+        {
+          "claim": "FIXT.1.1 transport + FIX50SP2 application dictionary",
+          "status": "VERIFIED",
+          "url": "https://docs.kalshi.com/fix"
+        },
+        {
+          "claim": "Premier tier and above get FIX access by default; below Premier must email institutional@kalshi.com",
+          "status": "VERIFIED",
+          "url": "https://docs.kalshi.com/fix",
+          "detail": "Fetched text near-verbatim: 'Members on the Premier tier or above have FIX access by default. For all other tiers, contact institutional@kalshi.com to inquire about access.'"
+        },
+        {
+          "claim": "Session ports: KalshiNR 8228, KalshiRT 8230, KalshiDC 8229, KalshiPT 8231, KalshiRFQ 8232, KalshiMD 8233",
+          "status": "VERIFIED",
+          "url": "https://docs.kalshi.com/fix/connectivity",
+          "detail": "Exact match, including the two ports (8229 DC / 8230 RT) that are easy to transpose -- confirmed not transposed in orderpath_research.json."
+        },
+        {
+          "claim": "Only one FIX connection allowed per API key",
+          "status": "VERIFIED",
+          "url": "https://docs.kalshi.com/fix/connectivity"
+        },
+        {
+          "claim": "Transport TLS 1.2+",
+          "status": "VERIFIED",
+          "url": "https://docs.kalshi.com/fix/connectivity",
+          "detail": "Fetched: 'TLS 1.2 or higher (not plain TCP)'."
+        },
+        {
+          "claim": "'FIX application messages use the same token model, token costs, and Read/Write buckets as the equivalent REST API operations' (i.e. FIX does NOT bypass REST rate limits)",
+          "status": "VERIFIED",
+          "url": "https://docs.kalshi.com/fix/connectivity",
+          "detail": "Fetched text quotes this sentence verbatim -- exact match to orderpath_research.json's central claim in section 2."
+        },
+        {
+          "claim": "MassCancelRequest (35=q) throttled to 1 request/second",
+          "status": "VERIFIED",
+          "url": "https://docs.kalshi.com/fix/connectivity",
+          "detail": "Fetched: 'Mass Cancel Requests are capped at 1 request per second.' NOTE: orderpath_research.json cites this fact generically under 'fix/order-entry' context; the /fix/order-entry page itself, fetched separately, does NOT state the throttle (order-entry page only lists message types) -- the correct supporting citation is /fix/connectivity, not /fix/order-entry. Minor citation-placement issue, not a factual error."
+        },
+        {
+          "claim": "NewOrderSingle 35=D, OrderCancelRequest 35=F, OrderCancelReplaceRequest 35=G, MassCancelRequest 35=q",
+          "status": "VERIFIED",
+          "url": "https://docs.kalshi.com/fix/order-entry"
+        },
+        {
+          "claim": "FIX time-in-force: Day(0) expires 11:59:59.999pm ET, GTC(1), IOC(3), FOK(4), GTD(6) requires ExpireTime",
+          "status": "VERIFIED",
+          "url": "https://docs.kalshi.com/fix/order-entry",
+          "detail": "Exact match including the precise Day-TIF expiry timestamp string."
+        },
+        {
+          "claim": "Whether MassCancelRequest itself consumes write tokens in addition to its 1/sec cap -- flagged UNVERIFIED in orderpath_research.json",
+          "status": "STILL UNVERIFIED",
+          "detail": "Neither /fix/connectivity nor /fix/order-entry states this either way in the fetched text; orderpath_research.json's own 'gaps_requiring_live_authenticated_verification' list correctly carries this forward as an open item -- this pass could not close it either (would need an authenticated live test)."
+        }
+      ]
+    },
+    "market_maker_program": {
+      "urls": [
+        "https://help.kalshi.com/en/articles/13823819-how-to-become-a-market-maker-on-kalshi",
+        "https://kalshi.com/regulatory/liquidity-provider-program",
+        "https://help.kalshi.com/en/articles/15410219-liquidity-provider-program",
+        "https://help.kalshi.com/en/articles/13823851-liquidity-incentive-program"
+      ],
+      "claims_checked": [
+        {
+          "claim": "MM Program eligibility = discretionary review of financial resources/trading experience/business reputation, no published numeric bar",
+          "status": "VERIFIED",
+          "url": "https://help.kalshi.com/en/articles/13823819-how-to-become-a-market-maker-on-kalshi"
+        },
+        {
+          "claim": "Example quote-uptime standard: 98% of each 1-hour increment",
+          "status": "VERIFIED",
+          "url": "https://help.kalshi.com/en/articles/13823819-how-to-become-a-market-maker-on-kalshi",
+          "detail": "Fetched: '98% of each 1h increment' -- exact figure match."
+        },
+        {
+          "claim": "Documented MM benefits = reduced fees + adjusted position limits; API rate-limit tier / FIX access NOT documented as an MM-program benefit anywhere",
+          "status": "VERIFIED",
+          "url": "https://help.kalshi.com/en/articles/13823819-how-to-become-a-market-maker-on-kalshi",
+          "detail": "Fetched summary explicitly confirms no mention of API/FIX benefits in this article -- absence-of-claim verified, matching orderpath_research.json's 'benefits_NOT_documented_anywhere_found' finding."
+        },
+        {
+          "claim": "kalshi.com/regulatory/liquidity-provider-program -- HTTP 429 twice during original research, not fetched",
+          "status": "UNVERIFIED (source unreachable)",
+          "detail": "This session ALSO received HTTP 429 on this exact URL on retry -- reproduces the original researcher's own access failure. Cannot confirm or deny content; the original research already labeled its own citation to this URL as 'fetched via search-cache' rather than a direct fetch, i.e. it did NOT claim to have read this page directly either."
+        },
+        {
+          "claim": "Liquidity Provider Program (per-series) requires an executed Market Maker Agreement; reverse-auction Incentive Period Reward mechanism; one active auction closing 2026-07-31; ~20 series with 2026-08-31 program end date",
+          "status": "VERIFIED",
+          "url": "https://help.kalshi.com/en/articles/15410219-liquidity-provider-program",
+          "detail": "Fetched text confirms MM-Agreement prerequisite, the reverse-auction/minimum-reward-bid mechanism, auction close date July 31, and program series end date August 31 2026 -- all match."
+        },
+        {
+          "claim": "Liquidity Incentive Program window 2025-09-15 to 2026-09-01; excludes existing MM-agreement holders, Kalshi affiliates/employees, IBs/FCMs and customers, non-US users; reward pool $10-$1,000/day; $1.00 minimum payout; snapshot-based scoring",
+          "status": "VERIFIED",
+          "url": "https://help.kalshi.com/en/articles/13823851-liquidity-incentive-program",
+          "detail": "Fetched dates (Sept 15 2025 - Sept 1 2026), exclusion list, and reward-pool figures all match exactly."
+        },
+        {
+          "claim": "Overall conclusion: Kalshi's MM/liquidity programs are fee/cash-rebate mechanisms, not API-tier mechanisms -- no page cross-references MM status to a rate-limit tier or FIX",
+          "status": "VERIFIED (as an absence claim, across all 3 successfully-fetched pages)",
+          "detail": "None of the 3 reachable MM/liquidity pages mentions API rate limits or FIX in this pass either -- consistent with the original finding. Note this is necessarily a negative/absence finding and the 4th page (kalshi.com/regulatory/liquidity-provider-program) remains unread by anyone in this research thread."
+        }
+      ]
+    },
+    "brti_constituents_and_methodology": {
+      "urls": [
+        "https://docs.cfbenchmarks.com/CME%20CF%20Constituent%20Exchanges.pdf (v13.5, 2026-06-08)",
+        "https://docs.cfbenchmarks.com/CME%20CF%20Real%20Time%20Indices%20Methodology.pdf (v16.8, 2026-06-29)"
+      ],
+      "method_detail": "WebFetch cannot parse these PDFs directly (returns raw compressed stream data, unreadable) -- same finding the original research reported. Worked around identically: fetched the raw PDF bytes (WebFetch's saved-binary side effect) and parsed locally with pypdf 6.14.2, exactly replicating the original research's stated 'WebFetch (proxied) -> saved PDF -> parsed with pypdf locally' method.",
+      "claims_checked": [
+        {
+          "claim": "Constituent Exchanges List document version 13.5, dated 2026-06-08",
+          "status": "VERIFIED",
+          "detail": "Cover page text extracted verbatim: 'Version: 13.5 Version Date: 08 June 2026'."
+        },
+        {
+          "claim": "BRTI active constituents (8): Bitstamp 2016-11-14, Coinbase 2016-11-14, itBit 2016-11-14, Kraken 2016-11-14, Gemini 2019-08-30, Bullish Exchange 2024-12-30, Crypto.com 2025-03-31, LMAX Digital 2021-05-03",
+          "status": "VERIFIED",
+          "detail": "Extracted BRTI constituent table exactly matches every name and add-date to the day: 'Bitstamp 14-Nov-16 / Coinbase 14-Nov-16 / itBit 14-Nov-16 / Kraken 14-Nov-16 / OKCoin.com (HK) 14-Nov-16 / Gemini 30-Aug-19 / Bullish Exchange 30-Dec-24 / Crypto.com 31-Mar-25 / LMAX Digital 03-May-21' (Bitfinex also 14-Nov-16)."
+        },
+        {
+          "claim": "Suspended: Bitfinex (2016-11-14, suspended 2017-04), OKCoin.com HK (2016-11-14, suspended 2017-04)",
+          "status": "VERIFIED",
+          "detail": "Table shows 'Bitfinex 14-Nov-16 Apr-17' and 'OKCoin.com (HK) 14-Nov-16 Apr-17' under the Suspended column -- exact match."
+        },
+        {
+          "claim": "itBit briefly suspended 2019-01-25 to 2019-02-01 (BRR only), active on BRTI throughout",
+          "status": "VERIFIED",
+          "detail": "Table row: 'itBit 14-Nov-16 / 25-Jan-19 (BRR only) / 01-Feb-19' -- matches exactly, including the '(BRR only)' qualifier meaning BRTI itself was unaffected."
+        },
+        {
+          "claim": "count_active = 8",
+          "status": "VERIFIED",
+          "detail": "8 non-suspended rows counted directly from the extracted table (Bitstamp, Coinbase, itBit, Kraken, Gemini, Bullish Exchange, Crypto.com, LMAX Digital)."
+        },
+        {
+          "claim": "Methodology Guide version 16.8, dated 2026-06-29",
+          "status": "VERIFIED",
+          "detail": "Cover page: 'Version: 16.8 Version Date: 29 June 2026'."
+        },
+        {
+          "claim": "v16.8 (2026-06-29) added an order-book uncrossing step, applied across all indices",
+          "status": "VERIFIED",
+          "detail": "Version history row 16.8 text: 'Amendment of the Sections 4.1 Methodology and 4.2 Note of Properties introduce an orderbook uncrossing step to the methodology. Proposed changes apply across all the CME CF Cryptocurrency Real Time Indices.' Section 4.1 body text separately confirms the uncrossing algorithm itself (remove lesser of crossed bid/ask sizes from both sides)."
+        },
+        {
+          "claim": "v16.6 (2026-05-18) changed Effective Time and Retrieval Lag Threshold for BRTI (among ETHUSD_RTI/SOLUSD_RTI/XRPUSD_RTI)",
+          "status": "VERIFIED",
+          "detail": "Version history row 16.6 text: '18 May 2026 ... Effective Time (T)* and Retrieval Lag Threshold updated for the following Real Time Indices: CME CF Bitcoin Real Time Index (BRTI) ...' -- exact match, exact date."
+        },
+        {
+          "claim": "BRTI current parameters: spacing dynamic, D (deviation from mid) = 0.5%, potentially-erroneous-data parameter = 5%, order size cap dynamic, Effective Time every 200ms, Retrieval Lag Threshold 10 seconds",
+          "status": "VERIFIED",
+          "detail": "Section 6.2 table row for 'CME CF Bitcoin Real Time Index': 'Dynamic | 0.5% | 5% | Dynamic | Every 200 milliseconds | 10 seconds' -- every field matches exactly."
+        },
+        {
+          "claim": "Lambda = 10.3/v_T (exponential weighting parameter)",
+          "status": "VERIFIED",
+          "detail": "Section 6.1 Constants: 'Lambda (\u03bb) = 10.3/v_T' -- exact match."
+        },
+        {
+          "claim": "Order size cap C_T = trimmed_mean + 5*winsorized_stdev",
+          "status": "VERIFIED (formula structure)",
+          "detail": "Section 4.1.3 defines trimmed mean, winsorized sample set, and winsorized stdev, then 'the dynamic order size cap is derived as follows' -- the extracted text confirms the same variable set (trimmed mean, winsorized stdev) orderpath_research.json's formula uses; the exact numeric coefficient (5x) was in the immediately-following equation not fully captured by this pass's text extraction (garbled math-symbol OCR), so the STRUCTURE is verified but the literal '5*' coefficient was not independently re-confirmed character-for-character -- flag as high-confidence but not pixel-perfect."
+        },
+        {
+          "claim": "Reinstated once deviation < 2.5% (BRTI)",
+          "status": "VERIFIED (derived, not a literal string match)",
+          "detail": "Section 5.3 states the disregard persists 'until the absolute deviation ... is less than 50% of the Potentially Erroneous Data Parameter' -- 50% of BRTI's 5% parameter = 2.5%, so orderpath_research.json's '2.5%' is a correct arithmetic derivation from the actual rule text, not a literal quoted figure in the source (the source never writes '2.5%' directly for BRTI)."
+        },
+        {
+          "claim": "Dissemination cadence: standard ~every second (top-of-second), maximum ~every 200ms upon request",
+          "status": "VERIFIED",
+          "detail": "Section 7 BRTI row: 'Dissemination Time Standard: Approximately every second (top-of-second) ... Maximum: Approximately every 200 milliseconds (upon request)' -- exact match."
+        }
+      ]
+    },
+    "overall_citation_check_summary": {
+      "total_distinct_claims_checked": 30,
+      "verified": 27,
+      "unverified_source_unreachable": 2,
+      "unverified_gap_correctly_carried_forward": 1,
+      "notes": "The single citation-placement nit found (MassCancelRequest 1/sec throttle correctly sourced to /fix/connectivity, not /fix/order-entry as loosely implied by orderpath_research.json's grouping) does not affect the correctness of the underlying claim, which reproduced verbatim from the correct page."
+    }
+  },
+  "task4_recomputed_arithmetic": {
+    "method": "Independently recomputed from the tier table verified in task3 (not copied from orderpath_research.json's own worked-example table), using the documented formula: sustained requotes/sec = tier_write_tokens_per_sec / 10 (default write-token cost), requotes/min = that x 60.",
+    "requotes_per_min_capacity_by_tier": {
+      "formula": "write_tokens_per_sec / 10 * 60",
+      "recomputed": {
+        "basic": 600,
+        "advanced": 1800,
+        "expert": 3600,
+        "premier": 6000,
+        "paragon": 12000,
+        "prime": 24000,
+        "prestige": 48000
+      },
+      "matches_orderpath_research_json": true,
+      "note": "All 7 values reproduce exactly against orderpath_research.json's capacity_by_tier_requotes_per_min table."
+    },
+    "M_x_U_worked_examples_recomputed": {
+      "formula": "MxU = M(markets) x U(updates/min/market); min_tier_that_fits = cheapest tier whose write-token/min capacity >= MxU",
+      "table": [
+        {
+          "M": 10,
+          "U": 60,
+          "MxU": 600,
+          "min_tier_that_fits": "basic",
+          "utilization_pct": 100.0,
+          "orderpath_claim": "basic (exactly at ceiling)",
+          "match": true
+        },
+        {
+          "M": 10,
+          "U": 120,
+          "MxU": 1200,
+          "min_tier_that_fits": "advanced",
+          "utilization_pct": 66.7,
+          "orderpath_claim": "advanced (67% utilized)",
+          "match": true
+        },
+        {
+          "M": 25,
+          "U": 60,
+          "MxU": 1500,
+          "min_tier_that_fits": "advanced",
+          "utilization_pct": 83.3,
+          "orderpath_claim": "advanced (83% utilized)",
+          "match": true
+        },
+        {
+          "M": 50,
+          "U": 60,
+          "MxU": 3000,
+          "min_tier_that_fits": "expert",
+          "utilization_pct": 83.3,
+          "orderpath_claim": "expert (advanced insufficient)",
+          "match": true
+        },
+        {
+          "M": 50,
+          "U": 120,
+          "MxU": 6000,
+          "min_tier_that_fits": "premier",
+          "utilization_pct": 100.0,
+          "orderpath_claim": "premier (exactly at ceiling)",
+          "match": true
+        },
+        {
+          "M": 100,
+          "U": 60,
+          "MxU": 6000,
+          "min_tier_that_fits": "premier",
+          "utilization_pct": 100.0,
+          "orderpath_claim": "premier (exactly at ceiling)",
+          "match": true
+        },
+        {
+          "M": 100,
+          "U": 120,
+          "MxU": 12000,
+          "min_tier_that_fits": "paragon",
+          "utilization_pct": 100.0,
+          "orderpath_claim": "paragon (exactly at ceiling)",
+          "match": true
+        },
+        {
+          "M": 200,
+          "U": 60,
+          "MxU": 12000,
+          "min_tier_that_fits": "paragon",
+          "utilization_pct": 100.0,
+          "orderpath_claim": "paragon (exactly at ceiling)",
+          "match": true
+        },
+        {
+          "M": 200,
+          "U": 120,
+          "MxU": 24000,
+          "min_tier_that_fits": "prime",
+          "utilization_pct": 100.0,
+          "orderpath_claim": "prime (exactly at ceiling)",
+          "match": true
+        }
+      ],
+      "all_9_rows_match": true
+    },
+    "queue_position_read_bucket_ceiling_recomputed": {
+      "formula": "2 x M(markets) x 10(default read tokens) <= tier_read_tokens_per_sec  =>  M <= read_tokens_per_sec / 20",
+      "recomputed": {
+        "basic (read=200)": "M <= 10 (2*10*10=200, exactly at ceiling)",
+        "premier (read=1000)": "M <= 50",
+        "prime (read=4000)": "M <= 200"
+      },
+      "matches_orderpath_research_json": true,
+      "notation_flag": "orderpath_research.json's prose describes this as 'consumes 2M x 10 = 20M read tokens/sec' -- read literally this parses as '20 million', which is wrong by many orders of magnitude for realistic M (e.g. M=50 -> 2*50*10=1000, not 20,000,000). In context 'M' is being used as the algebraic market-count variable throughout the same document (worked-example table uses M=10..200), so '20M' almost certainly means the algebraic product 20*M tokens/sec, not literal millions -- and the worked capacity_2M_orders sub-table immediately below it (M<=10 / M<=50 / M<=200) is numerically consistent with the 20*M reading and inconsistent with a literal-20-million reading. Flagging as an ambiguous notation choice in the source document, not a computational error -- the actual downstream numbers in orderpath_research.json are correct either way, confirmed by this independent recomputation."
+    },
+    "latency_budget_recomputed": {
+      "inputs_used_original": {
+        "rsa2048_sign_median_ms": 0.37944,
+        "json_serialize_median_ms": 0.00241,
+        "cross_az_rtt_assumed_ms": 1.5,
+        "source": "bench_transport.json's own cpu_signing section (separate n=500 measurement from bench_signing.json)"
+      },
+      "recomputed_floor_ms": 1.8819,
+      "reported_floor_ms": 1.882,
+      "match": true,
+      "sensitivity_using_this_sessions_rerun": {
+        "note": "Substituting this session's bench_signing.py RERUN warm-sign/serialize medians (same machine, later timestamp, see task1) for the original inputs, holding the cited 1.5ms network assumption fixed, to show how much the CPU-load variance documented in task1 moves the final headline floor number.",
+        "rsa2048_rerun_ms": 0.6829,
+        "ser_rerun_ms": 0.0033,
+        "recomputed_floor_ms": 2.1862,
+        "delta_vs_original_ms": 0.3043,
+        "interpretation": "The ~1.83x CPU slowdown observed between the two bench_signing.py runs (task1) moves the headline same-region reaction floor by about +0.3ms (1.88ms -> 2.19ms) -- a ~16% shift on the floor number, small in absolute terms only because the floor is dominated by the 1.5ms cited (not measured) network-RTT assumption, not by the compute legs. The compute legs (signing+serialize) are consistently <1ms even under the slower-CPU rerun."
+      },
+      "sensitivity_using_full_cited_rtt_range": {
+        "note": "The cited_aws_inter_region_rtt table gives cross-AZ RTT as a range (~1-2ms), not a point estimate; production_latency_budget collapses this to a single 1.5ms midpoint with no stated justification for using the midpoint specifically.",
+        "floor_at_low_1.0ms": 1.3819,
+        "floor_at_high_2.0ms": 2.3819,
+        "reported_point_estimate": 1.882,
+        "observation": "The reported single point estimate (1.882ms) sits almost exactly at the arithmetic midpoint of the low/high band (1.382-2.382ms), consistent with it being (rsa+ser) + 1.5ms where 1.5 = (1.0+2.0)/2 -- i.e. the 'floor' is really a ~1.0-2.4ms band once both the CPU-load sensitivity above and the cited RTT range are combined, not a single hard number."
+      }
+    }
+  }
+}

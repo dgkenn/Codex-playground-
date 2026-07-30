@@ -1,0 +1,166 @@
+{
+  "generated_at_utc": "2026-07-30T17:46:52.141258+00:00",
+  "note": "MECHANICAL RE-BENCH: re-run of bench_transport.py's keepalive_delta_http1 section only, using the committed bench_keepalive/summarize_keepalive functions unmodified, against RETAIL_HOST. For comparison against the originally reported keepalive_delta_http1 in bench_transport.json.",
+  "keepalive_delta_http1_rerun": {
+    "n": 30,
+    "req1_ms": 781.952,
+    "req2_30_median_ms": 127.012,
+    "req2_30_mean_ms": 153.781,
+    "req2_30_stdev_ms": 60.712,
+    "req2_30_min_ms": 124.693,
+    "req2_30_max_ms": 404.124,
+    "reconnect_penalty_ms": 654.94,
+    "raw": [
+      {
+        "i": 1,
+        "ms": 781.952,
+        "status": 200
+      },
+      {
+        "i": 2,
+        "ms": 127.012,
+        "status": 200
+      },
+      {
+        "i": 3,
+        "ms": 125.266,
+        "status": 200
+      },
+      {
+        "i": 4,
+        "ms": 228.454,
+        "status": 200
+      },
+      {
+        "i": 5,
+        "ms": 134.517,
+        "status": 200
+      },
+      {
+        "i": 6,
+        "ms": 125.931,
+        "status": 200
+      },
+      {
+        "i": 7,
+        "ms": 126.363,
+        "status": 200
+      },
+      {
+        "i": 8,
+        "ms": 128.238,
+        "status": 200
+      },
+      {
+        "i": 9,
+        "ms": 126.381,
+        "status": 200
+      },
+      {
+        "i": 10,
+        "ms": 125.558,
+        "status": 200
+      },
+      {
+        "i": 11,
+        "ms": 223.354,
+        "status": 200
+      },
+      {
+        "i": 12,
+        "ms": 132.344,
+        "status": 200
+      },
+      {
+        "i": 13,
+        "ms": 125.065,
+        "status": 200
+      },
+      {
+        "i": 14,
+        "ms": 127.684,
+        "status": 200
+      },
+      {
+        "i": 15,
+        "ms": 128.249,
+        "status": 200
+      },
+      {
+        "i": 16,
+        "ms": 127.246,
+        "status": 200
+      },
+      {
+        "i": 17,
+        "ms": 227.859,
+        "status": 200
+      },
+      {
+        "i": 18,
+        "ms": 404.124,
+        "status": 200
+      },
+      {
+        "i": 19,
+        "ms": 126.464,
+        "status": 200
+      },
+      {
+        "i": 20,
+        "ms": 125.121,
+        "status": 200
+      },
+      {
+        "i": 21,
+        "ms": 127.32,
+        "status": 200
+      },
+      {
+        "i": 22,
+        "ms": 124.776,
+        "status": 200
+      },
+      {
+        "i": 23,
+        "ms": 241.324,
+        "status": 200
+      },
+      {
+        "i": 24,
+        "ms": 126.728,
+        "status": 200
+      },
+      {
+        "i": 25,
+        "ms": 124.711,
+        "status": 200
+      },
+      {
+        "i": 26,
+        "ms": 125.156,
+        "status": 200
+      },
+      {
+        "i": 27,
+        "ms": 127.775,
+        "status": 200
+      },
+      {
+        "i": 28,
+        "ms": 125.772,
+        "status": 200
+      },
+      {
+        "i": 29,
+        "ms": 124.693,
+        "status": 200
+      },
+      {
+        "i": 30,
+        "ms": 216.16,
+        "status": 200
+      }
+    ]
+  }
+}
