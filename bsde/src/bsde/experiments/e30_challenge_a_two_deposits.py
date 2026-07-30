@@ -73,6 +73,62 @@ SCOPE AND LIMITS.
     channels, opioid co-titrated, and its own placebo already failed in E25. It is here as the second drug,
     not as independent support.
   * Cross-deposit: two montages, two rates, two populations. Sign only.
+
+--------------------------------------------------------------------------------------------------------
+OUTCOME, ADDED AFTER THE RUN. **P2, P4 and P5 PASSED. P3 FAILED: the two arms disagree in SIGN.**
+
+    propofol (Chennu, no opioid)   rho **+0.710 [+0.614, +0.820]**   20 volunteers, 80 rows
+    volatile (VitalDB, MAC)        rho **-0.126 [-0.175, -0.076]**   110 patients, 4,379 rows
+    P4  the propofol arm stands on its own, in a study where **no opioid was given**
+    P5  reaction time reaches only **33.1 %** of the drug association, so the arm distinguishes the drug
+        from drowsiness
+
+**THE FIRST SURVIVING POSITIVE IN THIS PROJECT'S CHALLENGE A WORK, AND IT IS ONE ARM, NOT THE CHALLENGE.**
+E25's dose association was withdrawn by an opioid it could not separate from; E29 showed no pairing could
+separate them. **Chennu has no opioid at all**, and there `exponent_high` tracks measured plasma propofol at
++0.710 within subject, clearing a behavioural placebo. That is the claim E25 could not defend, defended.
+
+**AND IT IS NOT A CROSS-DRUG RESULT, because the arms point opposite ways.** Error-catalogue rule 16 is
+explicit: when two arms of the same test disagree in sign, the definition is doing the work, not the
+biology. Challenge A asks for ONE representation across drugs. This is two behaviours wearing one name.
+
+**THE CONTEXT TABLE SAYS THE REVERSAL IS NOT ABOUT THIS CANDIDATE, WHICH IS THE MORE USEFUL FINDING.**
+
+    candidate                 propofol    volatile
+    exponent_high               +0.710      -0.126
+    lempel_ziv                  +0.520      -0.264
+    spectral_entropy            +0.380      -0.262
+    spectral_edge_95            +0.160      -0.328
+    relative_delta_power        -0.260      +0.250
+    whole_head_exponent         -0.130      +0.223
+    relative_alpha_power        -0.220      -0.339   <- the one that does NOT flip
+
+**Six of seven comparable candidates flip sign between the deposits, in both directions.** A reversal that
+near-universal is a property of the two DEPOSITS, not of any feature — a feature-level explanation would
+have to flip six unrelated measures the same way by coincidence. Three deposit-level explanations, none
+tested here and all testable:
+
+  1. **Dose range, and this is the one standard pharmacology predicts.** Propofol's EEG effect is
+     non-monotonic: fast activity rises into sedation, then falls as delta and suppression take over.
+     Chennu is sedation — §9.16 measured the median subject getting 35 of 40 targets correct at the deepest
+     level — and VitalDB is surgical maintenance. A positive slope in the light range and a negative one in
+     the deep range is what the textbook curve does, and would mean **both arms are right**.
+  2. **Montage.** 91 channels averaged over the whole head against 2 frontal ones. Frontal beta behaves
+     differently from posterior beta under propofol; §9.11 already found a frontal gradient here.
+  3. **Sampling rate.** 250 Hz against 128 Hz. `exponent_high` fits 20-40 Hz, and VitalDB's Nyquist is
+     64 Hz, so its fit window sits close to where the anti-alias roll-off begins.
+
+**Explanation 1 is a real, pre-specifiable prediction and belongs to a new registration, not to this file.**
+If dose-range non-monotonicity is the cause, the sign must depend on depth *within* each arm in a stated
+direction — and that is falsifiable, unlike "the deposits differ". Explanations 2 and 3 are addressable by
+recomputing the Chennu arm on frontal channels only and at a decimated rate, which changes no label and
+answers whether the montage or the Nyquist edge carries the flip.
+
+**WHAT MAY AND MAY NOT BE SAID FROM THIS FILE.** May: a spontaneous EEG measure tracks measured plasma
+propofol concentration, within subject, in opioid-free volunteers, at rho +0.710, surviving a behavioural
+placebo. May not: that it tracks anaesthetic depth across drugs — P3 failed, and that failure is the
+challenge's own criterion. **And neither arm says anything about consciousness**; Chennu's subjects were
+responsive throughout.
 """
 from __future__ import annotations
 
