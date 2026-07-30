@@ -529,3 +529,65 @@ class VitalDBGridAdapter(Adapter):
             meta.update(self._monitor_window(cid, mon, start_seconds))
             return seg[None, :], ["BIS_EEG1"], SFREQ, meta
         return load
+
+
+class VitalDBTargetedAdapter(VitalDBGridAdapter):
+    """The grid adapter, but sampling times supplied per case instead of a uniform grid.
+
+    WHY IT EXISTS. E26 answered Challenge C in the negative at a 300 s grid and named that grid as its
+    binding limitation **in its scope note, before the run** — a warning arriving 60 s ahead of burst
+    suppression is invisible at 300 s resolution. Re-testing a limitation that was declared in advance is
+    legitimate; searching for a resolution at which the answer changes would not be, which is why the
+    follow-up re-registers with the SAME statistic and gates and varies only the sampling.
+
+    Sampling every case densely for its whole duration would multiply the DSP by 5 and the transfer by
+    nothing, since the transfer is per case — but it would also multiply the table by 5 for windows nowhere
+    near the transition of interest. This takes a per-case list of times instead, so density goes where the
+    question is.
+
+    `time_plan` maps caseid -> sequence of window start times in seconds. Cases absent from it are skipped
+    entirely, so the case list is the plan's keys and `n_cases` does not apply.
+    """
+
+    def __init__(self, time_plan: Dict[str, Sequence[float]], **kw) -> None:
+        super().__init__(**kw)
+        self.time_plan = {str(k): [float(t) for t in v] for k, v in time_plan.items()}
+        self.name = f"vitaldb-targeted:{self.window_s:.0f}s"
+
+    def list_recordings(self) -> List[RecordingRef]:
+        by_case: Dict[str, Dict[str, str]] = {}
+        for r in tracks():
+            by_case.setdefault(r["caseid"], {})[r["tname"]] = r["tid"]
+        info = cases()
+
+        chosen = sorted((c for c in self.time_plan if c in by_case and EEG_TRACK in by_case[c]),
+                        key=lambda x: int(x))
+        chosen = [c for i, c in enumerate(chosen) if i % self.n_case_shards == self.case_shard]
+
+        refs: List[RecordingRef] = []
+        for cid in chosen:
+            c, tmap = info.get(cid), by_case[cid]
+            if not c:
+                continue
+            present = [a for a, t in AGENT_TRACKS.items() if t in tmap]
+            mon = {n: tmap[n] for n in self.monitor_tracks if n in tmap}
+            for t in sorted(self.time_plan[cid]):
+                if t < 0:
+                    continue
+                refs.append(RecordingRef(
+                    recording_id=f"case{cid}@t{t:.0f}", dataset=self.dataset, subject=subject_of(c),
+                    load=self._loader(tmap[EEG_TRACK], t, mon, cid),
+                    meta={"caseid": cid, "t_s": t,
+                          "rel_anestart_s": t - _f(c.get("anestart")),
+                          "rel_aneend_s": t - _f(c.get("aneend")),
+                          "anestart_s": _f(c.get("anestart")), "aneend_s": _f(c.get("aneend")),
+                          "opstart_s": _f(c.get("opstart")), "opend_s": _f(c.get("opend")),
+                          "agents_present": "|".join(sorted(present)),
+                          "age": c.get("age", ""), "sex": c.get("sex", ""), "asa": c.get("asa", ""),
+                          "bmi": c.get("bmi", ""), "emop": c.get("emop", ""),
+                          "intraop_ppf": c.get("intraop_ppf", ""),
+                          "intraop_mdz": c.get("intraop_mdz", ""),
+                          "intraop_rocu": c.get("intraop_rocu", ""),
+                          "intraop_vecu": c.get("intraop_vecu", ""),
+                          "subjectid": c.get("subjectid", "")}))
+        return refs
