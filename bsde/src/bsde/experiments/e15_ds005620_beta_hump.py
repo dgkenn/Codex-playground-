@@ -251,6 +251,51 @@ def main() -> int:
     gap = sc[PRIMARY]["abs"] - sc[DISCRIMINATOR]["abs"]
     p3 = gap >= DISCRIMINATOR_GAP
 
+    # A PAIRED INTERVAL ON THE GAP, added after the first run and reported BESIDE the registered P3 rather
+    # than instead of it. P3 as registered compares two POINT ESTIMATES and has no way to say whether the
+    # difference is real. Both AUCs come from the same rows, so the difference can be bootstrapped over
+    # subjects directly -- and if that interval includes 0 the two bands are not distinguishable, which
+    # makes the question UNDETERMINED rather than answered in either direction (rule 31: absent, not
+    # negative). This is the third time in this project that a point estimate has been asked to carry a
+    # directional claim its interval will not support.
+    hx, gx = sc[PRIMARY]["_x"], sc[DISCRIMINATOR]["_x"]
+    dh = REGISTRY.get(PRIMARY).predicted("unconscious_vs_awake") or "higher"
+    dg = REGISTRY.get(DISCRIMINATOR).predicted("unconscious_vs_awake") or "higher"
+
+    def _gap(i):
+        return (abs(directional_auc(y[i], hx[i], dh) - 0.5)
+                - abs(directional_auc(y[i], gx[i], dg) - 0.5))
+    gap_lo, gap_hi = cluster_bootstrap_ci(_gap, subj, rng, reps=4000)[:2]
+    bands_differ = bool(gap_lo > 0 or gap_hi < 0)
+    disc_established = bool(sc[DISCRIMINATOR]["ci"][0] > 0.5 or sc[DISCRIMINATOR]["ci"][1] < 0.5)
+
+    # Does the BAND SPLIT itself add anything here? On Chennu it was the whole point of §9.13.
+    split_txt = ""
+    if "whole_head_exponent" in sc:
+        wx = sc["whole_head_exponent"]["_x"]
+        dw = REGISTRY.get("whole_head_exponent").predicted("unconscious_vs_awake") or "higher"
+
+        def _split(i):
+            return (abs(directional_auc(y[i], hx[i], dh) - 0.5)
+                    - abs(directional_auc(y[i], wx[i], dw) - 0.5))
+        s_lo, s_hi = cluster_bootstrap_ci(_split, subj, rng, reps=4000)[:2]
+        split_txt = (f"{_split(np.arange(len(rows))):+.3f} [{s_lo:+.3f}, {s_hi:+.3f}]")
+
+    print("\n" + "=" * 100)
+    print("PAIRED INTERVALS (added after the first run; both AUCs come from the same rows)")
+    print("=" * 100)
+    print(f"   {PRIMARY} minus {DISCRIMINATOR}, on |AUC-0.5|: "
+          f"{gap:+.3f} [{gap_lo:+.3f}, {gap_hi:+.3f}]")
+    print(f"      the two bands are distinguishable: {'YES' if bands_differ else 'NO — the CI includes 0'}")
+    print(f"   {DISCRIMINATOR} has an association of its own at all: "
+          f"{'YES' if disc_established else 'NO — its CI spans 0.5'} "
+          f"({sc[DISCRIMINATOR]['auc']:.3f} [{sc[DISCRIMINATOR]['ci'][0]:.3f}, "
+          f"{sc[DISCRIMINATOR]['ci'][1]:.3f}])")
+    if split_txt:
+        print(f"   {PRIMARY} minus whole_head_exponent (does the 20-40 SPLIT add anything?): {split_txt}")
+        print("      On Chennu the split was decisive: the 1-40 Hz exponent pointed the WRONG WAY (0.393)")
+        print("      and only the 20-40 Hz fit worked (0.863). Here they agree and are equally strong.")
+
     print("\n" + "=" * 100); print("REGISTERED PREDICTIONS"); print("=" * 100)
     print(f"   P1 {DISCRIMINATOR} computable here                     : MET ({frac:.1%} finite)")
     print(f"   P2 {PRIMARY} replicates (CI excludes 0.5), matched  : {'MET' if p2 else 'NOT MET'} "
@@ -276,12 +321,31 @@ def main() -> int:
         print("   fivefold with no change in the aperiodic component, E08's result is best read as a")
         print("   SPECTRAL PEAK artefact, not an aperiodic finding. It should be reported as a measure of")
         print("   propofol beta, which is a real drug effect and not a consciousness marker.")
+    elif not bands_differ:
+        verdict = "UNDETERMINED_BANDS_NOT_DISTINGUISHABLE"
+        print("   P3 is NOT MET as registered, and that must NOT be read as refuting the beta-hump")
+        print(f"   explanation. The paired interval on the gap is [{gap_lo:+.3f}, {gap_hi:+.3f}] and")
+        print("   INCLUDES ZERO: the two bands are not distinguishable at this sample size. Worse for a")
+        print("   refutation, the discriminator has no established association of its own — "
+              f"{sc[DISCRIMINATOR]['auc']:.3f} "
+              f"[{sc[DISCRIMINATOR]['ci'][0]:.3f}, {sc[DISCRIMINATOR]['ci'][1]:.3f}] spans 0.5 — so")
+        print("   'both bands respond' is not what the data says. Rule 31: absent, not negative.")
+        print("")
+        print("   What DID happen is the replication, and it is the more important half: exponent_high")
+        print(f"   reaches {sc[PRIMARY]['auc']:.3f} [{sc[PRIMARY]['ci'][0]:.3f}, "
+              f"{sc[PRIMARY]['ci'][1]:.3f}] on a SECOND propofol deposit, in the one stratum where")
+        print("   acquisition condition is matched. E08's finding is not Chennu-specific.")
+        if split_txt:
+            print("")
+            print("   And one thing that did NOT replicate: the BAND SPLIT. On Chennu the 1-40 Hz exponent")
+            print("   pointed the wrong way and only the 20-40 Hz fit worked, which is the whole of §9.13.")
+            print(f"   Here the split adds {split_txt} — nothing. Whatever §9.13 described, it is a")
+            print("   property of the Chennu recordings and not of propofol.")
     else:
         verdict = "BROADBAND_BETA_HUMP_REFUTED"
-        print("   Both bands respond and the gap is below the registered threshold. The effect spans the")
-        print("   spectrum rather than sitting in the beta peak, so the beta-hump explanation is REFUTED")
-        print("   by data rather than by argument — the first time it has been tested at all. exponent_high")
-        print("   survives as an aperiodic finding, still on the sedation-depth reading of §9.16.")
+        print("   Both bands respond, the gap is below the registered threshold AND its paired interval")
+        print("   excludes zero, so the effect demonstrably spans the spectrum rather than sitting in the")
+        print("   beta peak. The beta-hump explanation is refuted by data rather than by argument.")
     print(f"\n   verdict: {verdict}")
     print("\n   The absolute AUCs in the FULL contrast are confounded with acquisition condition and are")
     print("   printed for completeness only. P2 and P3 are computed in the matched stratum.")
@@ -292,6 +356,9 @@ def main() -> int:
                "contrasts": {k: {kk: vv for kk, vv in v.items() if not kk.startswith("_")}
                              for k, v in out.items()},
                "emg_gate_failures": emg_fires, "gap": float(gap),
+               "gap_ci": [float(gap_lo), float(gap_hi)], "bands_distinguishable": bands_differ,
+               "discriminator_association_established": disc_established,
+               "split_vs_wholehead": split_txt,
                "predictions": {"P1": True, "P2": bool(p2), "P3": bool(p3), "P4": bool(p4)},
                "verdict": verdict}, open(dst, "w"), indent=2, default=str)
     print(f"\n   machine-readable result -> {dst}")

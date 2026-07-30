@@ -1136,3 +1136,50 @@ subjects ordering the ladder correctly**), so marginality is visible instead of 
 
 **What would settle it:** more subjects, or an anchor that is neither daytime wake nor a 180-second
 transitional stage. Both are extraction work, not analysis work.
+
+### 9.21 E15: the exponent REPLICATES on a second propofol deposit — and §9.13's band split does not
+
+**First independent replication in this project.** `exponent_high` on ds005620, in the `acq=tms` stratum —
+the only one where acquisition condition is matched between awake and sedated (17 vs 38 recordings, 17
+subjects):
+
+| candidate | signed AUC, awake vs sed |
+|---|---|
+| **`exponent_high`** | **0.762 [0.648, 0.885]** |
+| `whole_head_exponent` (1–40 Hz) | 0.745 [0.669, 0.841] |
+| `uce_v1` | 0.732 [0.630, 0.845] |
+| `relative_alpha_power` | 0.718 [0.572, 0.852] |
+| `exponent_gamma` (50–90 Hz) | 0.636 [0.474, 0.776] |
+| `exponent_low` (1–20 Hz) | 0.432 [0.255, 0.628] |
+| `lempel_ziv` | 0.241 [0.127, 0.379] — wrong direction, as on Chennu |
+
+**P2 met. E08's finding is not Chennu-specific.** That is the durable half of this result.
+
+**THE BAND SPLIT DID NOT REPLICATE, AND THAT IS §9.13'S CORE CLAIM.** On Chennu the whole-band 1–40 Hz
+exponent pointed the *wrong way* (0.393) while only the 20–40 Hz fit worked (0.863) — the band-averaging
+story. Here the two are indistinguishable: the paired gap is **+0.017 [−0.082, +0.103]**. Whatever §9.13
+described is a property of the Chennu recordings, not of propofol. **§9.13 should no longer be cited as a
+general mechanism.**
+
+**P3 was NOT MET, and that must not be read as refuting the beta-hump explanation.** My registered P3
+compared two point estimates and had no way to say whether the difference was real. Bootstrapped over
+subjects — both AUCs come from the same rows — the gap is **+0.125 [−0.035, +0.309]**, which **includes
+zero**. And `exponent_gamma`'s own CI **spans 0.5**, so it has no established association either way. "Both
+bands respond" is not what the data says. **The question is UNDETERMINED at n = 17 subjects, not answered**
+(rule 31: absent, not negative). This is the third time today a point estimate has been asked to carry a
+directional claim its interval will not support.
+
+**The EMG gate passed**, which matters more here than anywhere else: unlike Chennu, ds005620 retains the
+frequencies where surface muscle actually lives, so its EMG proxies are good instruments rather than degraded
+ones. `exponent_gamma` survives residualisation on all three.
+
+**What the beta-hump question still needs:** E12's band sweep on Chennu (blocked, §9.17), or more subjects
+with a 50–90 Hz band. The synthetic ground truth in `tests/test_exponent_gamma.py` still stands — a 20 Hz
+peak drives a 20–40 Hz fit from 1.983 to 9.872 with the aperiodic exponent fixed at 2.0 — so the mechanism
+remains real, sufficient, and untested on real data.
+
+**Where the lead now stands.** `exponent_high` discriminates sedation depth on two independent propofol
+deposits, survives muscle residualisation on both, and is not explained by the band-split story that
+originally motivated it. It is still not a consciousness marker (§9.16 — neither cohort reaches
+unconsciousness), its 20–40 Hz band was still chosen after looking (E12 still blocked), and layer 7 says that
+at 5 % prevalence a positive reading would be right 8.7 % of the time (§9.19).
