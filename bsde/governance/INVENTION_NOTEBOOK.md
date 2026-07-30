@@ -321,3 +321,47 @@ retrofit.
 **Why this is recorded rather than simply acted on.** A deferred legal question that is not written down
 becomes a resolved one by attrition. This entry exists so that "we decided it was fine for research" cannot
 later be misremembered as "we determined the licence permitted it".
+
+---
+
+## Entry 10 — 2026-07-30. The headline number survives arithmetic and loses its meaning
+
+**What was claimed before today.** `exponent_high`, the aperiodic slope fitted over 20–40 Hz, discriminates
+unconsciousness at AUC 0.863 [0.790, 0.948] and is the project's best candidate by a wide margin.
+
+**What is claimed after today.** The 0.863 is arithmetically correct — re-derived from a brute-force pairwise
+Mann–Whitney computation and `scipy.stats.rankdata`, independent of the project's own midrank module, to
+three decimals. What it is a measurement *of* has changed three times in one day:
+
+1. **It is not a consciousness measurement.** At Chennu level 3 the median subject scores 35 of 40 on the
+   behavioural task, 14 of 20 score at or above 20/40, and 2 of 20 stop responding. The contrast is fully
+   awake versus mostly still awake. Every candidate in the registry is scored against a contrast named
+   `unconscious_vs_awake` and the cohort never reaches it. Five experiments (E05, E07, E08, E09, E10) inherit
+   this. Recorded as MASTER_PLAN §9.16.
+2. **It is probably not muscle**, but only weakly so. The two muscle proxies disagreed in sign, which by
+   rule 16 means the definition was doing the work; a 20–45 Hz power measure under propofol reads drug-induced
+   beta, not muscle (Xi 2018, PMID 29920532, verified from the MEDLINE record). On the one proxy that passed
+   its own sign check the result survives, 0.863 → 0.812 [0.680, 0.932].
+3. **It may be propofol beta**, and that remains untested. E11's drug-free contrast turned out saturated —
+   median |AUC−0.5| = 0.470 across eleven candidates including an artefact proxy at 0.989 — so it tested
+   nothing. E12 would test it and the deposit host is currently unreachable.
+
+**Why this belongs in an invention notebook rather than only in a lab log.** The value of this project to a
+partner or an acquirer is not a feature that scored 0.863; dozens of groups have features that score 0.863 on
+one sedation deposit. **The asset is the verifier that took 0.863 apart in a day, and the record showing it
+did so unprompted.** Today it caught a wrong-signed instrument, a saturated contrast, a cohort that does not
+contain the state it was labelled with, a stale hardcoded literal in its own output, a knife-edge decision
+rule in its own diagnostic, and a rate-dependence bug in a feature that would have made two deposits
+incomparable. Five of those six were errors in *my own* work from earlier the same day.
+
+**The standing counsel questions are unchanged and one is now more urgent.** The repository is public, so
+every commit above is a public disclosure, including the negative results and the corrections. Nothing here
+is a patentable claim yet, which is precisely why the disclosure timeline question needs an answer before
+something is.
+
+**A caution to whoever reads this next.** The temptation after §9.16 is to relabel the Chennu work as
+depth-of-anaesthesia and carry on, since depth-of-anaesthesia is the commercial wedge in Brief 01. That is
+probably where this lands, but it is not established: the band was chosen after looking, the sweep that would
+test it is blocked, and one deposit of twenty responsive volunteers is not a product. **Relabelling a result
+to fit the market it would suit is the same move as rewriting a hypothesis after seeing the test, and it must
+not be made without E12.**
