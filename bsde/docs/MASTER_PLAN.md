@@ -1264,3 +1264,53 @@ the layer is retained provisionally rather than vindicated.
 now this). The pattern is mine, not the data's: I keep choosing thresholds that sit on attainable values of
 quantised statistics. **A threshold on a quantised statistic must be placed BETWEEN attainable values, and
 where it cannot be, the boundary must be reported rather than resolved.**
+
+### 9.24 The Bath dataset, located precisely — and it is a "mixed access regime", not a closed door
+
+**Two Bath records get confused and only one is ours.** `researchdata.bath.ac.uk/899` (DOI 10.15125/BATH-00899)
+is *"An empirical evaluation of methodologies used for emotion recognition via EEG signals"* — Hinvest et al.
+2022, healthy participants viewing SEED/NimStim/ADFES-BIV stimuli. **It has no DoC patients and no
+command-following.** Right archive, wrong dataset, and its 1.6 GB zip downloads anonymously, which makes the
+confusion easy and expensive.
+
+**Ours is DOI 10.15125/BATH-01632 → https://researchdata.bath.ac.uk/1632/**
+
+> *Motor-imagery brain-computer interface electroencephalography and behavioural assessment datasets in
+> prolonged disorders of consciousness.* Coyle D., Du Bois N., Korik A., 2026. ClinicalTrials.gov
+> **NCT03827187**.
+
+| property | value, read from the record |
+|---|---|
+| cohort | **N = 42** — UWS **14**, MCS **17**, **LIS 11** — plus **2 able-bodied benchmark** participants on the same protocol |
+| task | structured motor-imagery BCI to auditory cues, event triggers marking task onset/offset, multiple sessions per participant |
+| linked measures | concurrent behavioural assessment scores (session-level) |
+| paradigms | **Assessment, Training, Feedback, Q&A** |
+| access | **restricted, "mixed access regime"** — granted on reasonable request, subject to custodian review |
+
+**What a request must contain, quoted from the record**: "a brief description of the proposed research use,
+evidence of relevant ethical approval, and agreement to data use conditions that prohibit data redistribution
+or use beyond the approved scope." **The ethical-approval requirement is the real gate** and it is not
+something this project can satisfy by asking politely — it needs an institutional sponsor.
+
+**THE PART THAT IS ALREADY OPEN, AND IT IS NOT NOTHING.** Two files download without any request:
+
+* `/1632/22/coyle_supporting_information_ncm.docx` (10.9 MB) — the protocol supporting information
+* `/1632/23/coyle_SI_supplementaryData_ncm.xlsx` (217 KB) — **per-session, per-subject decoding accuracies**
+  with `subject_ID`, `run_ID`, `session_ID` and a reference/chance accuracy column, plus group-level results
+  by region (frontal, parietal, left/right temporal, sensorimotor, occipital) for UWS/MCS/LIS/AB, with
+  effect sizes and post-hoc comparisons that run **LIS > MCS** and **LIS > UWS**.
+
+That is enough to write the analysis, the montage handling and the pre-registration **before** access is
+granted — and it means any prediction registered afterwards must declare that the published group-level
+direction was already known. It is *not* enough to develop or test an EEG feature: it contains derived
+accuracies, not signal.
+
+**LIS n = 11 matters beyond Challenge B.** Locked-in syndrome is one of the named dissociations for verifier
+**layer 6 (mechanistic)** — fully conscious, no motor output — which §9.22 recorded as gated on data rather
+than code. **This one deposit would bear on Challenge B and on layer 6 at the same time**, which makes the
+access request the highest-value external action available to this project.
+
+**Separately, the BDSP Neurotech BIDS path is empty of data.** `s3://bdsp-opendata-repository/EEG/bids/Neurotech/`
+lists **0 objects** through the anonymous REST endpoint, consistent with the console showing only
+`LICENSE.txt` and `SHA256SUMS.txt` at 2.5 KB total. The signal there is access-gated too, and nothing is
+downloadable without a request.
