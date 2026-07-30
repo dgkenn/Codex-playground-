@@ -34,6 +34,13 @@ generate EMG. So a candidate whose value depends on NMB dose, with anaesthetic d
 reading muscle -- a direct test, against an administered drug, rather than against a spectral proxy of the
 kind §9.15 found two of disagreeing in sign.
 
+HOW MUCH POST-EMERGENCE RECORDING THERE IS, measured on six cases rather than assumed: the EEG track ends a
+median of **+544 s** after `aneend`, and in one of six it ended **860 s BEFORE** it. Post-emergence EEG
+exists, but it is short and not guaranteed — the monitor comes off soon after the anaesthetic does. Offsets
+past +300 s overran roughly half the records in a first run, so the positive grid stops there. This is the
+mirror of the induction problem below: **the sensor goes on after induction and comes off around emergence,
+so this deposit captures the middle of an anaesthetic well and both of its edges poorly.**
+
 WHICH TRANSITION THIS DEPOSIT ACTUALLY CONTAINS, measured rather than assumed. `anestart` is NEGATIVE in
 **91.8 %** of cases -- the BIS sensor is applied after the patient is already induced, so **induction and
 loss of consciousness are simply not in the recording** and no amount of windowing will recover them.
@@ -136,7 +143,7 @@ class VitalDBAdapter(Adapter):
     units = "microvolts"
 
     def __init__(self, agent: Optional[str] = None, n_cases: int = 40, window_s: float = 30.0,
-                 offsets: Sequence[float] = (-1200.0, -600.0, -300.0, -120.0, 120.0, 300.0, 600.0),
+                 offsets: Sequence[float] = (-1200.0, -600.0, -300.0, -120.0, 60.0, 180.0, 300.0),
                  dataset: str = "vitaldb", require_monitor: bool = True,
                  anchor: str = "aneend") -> None:
         if agent is not None and agent not in AGENT_TRACKS:
@@ -153,6 +160,8 @@ class VitalDBAdapter(Adapter):
         self.name = f"vitaldb:{agent or 'any'}:{anchor}"
         self._cache_tid: Optional[str] = None
         self._cache_val: Optional[np.ndarray] = None
+        self._bis_tid: Optional[str] = None
+        self._bis_val: Optional[np.ndarray] = None
 
     def list_recordings(self) -> List[RecordingRef]:
         trk = tracks()
@@ -190,7 +199,7 @@ class VitalDBAdapter(Adapter):
                 refs.append(RecordingRef(
                     recording_id=f"case{cid}@ane{off:+.0f}", dataset=self.dataset,
                     subject=subject_of(c),
-                    load=self._loader(tmap[EEG_TRACK], t0),
+                    load=self._loader(tmap[EEG_TRACK], t0, tmap.get("BIS/BIS")),
                     meta={"caseid": cid, "offset_s": off,
                           "phase": f"pre_{self.anchor}" if off < 0 else f"post_{self.anchor}",
                           "anchor": self.anchor,
@@ -214,7 +223,32 @@ class VitalDBAdapter(Adapter):
         self._cache_tid, self._cache_val = tid, arr
         return arr
 
-    def _loader(self, tid: str, start_seconds: float):
+    def _bis_window(self, bis_tid: Optional[str], t0: float) -> float:
+        """Mean BIS over the same window. A NUMERIC track: its rows carry real timestamps, unlike the
+        waveform tracks whose Time column is sparse, so it is read as (time, value) pairs and NOT
+        positionally. Using the waveform reader here would misalign it by hours."""
+        if not bis_tid:
+            return float("nan")
+        if self._bis_tid != bis_tid:
+            pairs = []
+            for line in _fetch(f"{API}/{bis_tid}").splitlines()[1:]:
+                a, _, b = line.partition(",")
+                if a and b:
+                    try:
+                        pairs.append((float(a), float(b)))
+                    except ValueError:
+                        pass
+            self._bis_tid = bis_tid
+            self._bis_val = np.asarray(pairs, float) if pairs else np.zeros((0, 2))
+        arr = self._bis_val
+        if arr is None or not arr.size:
+            return float("nan")
+        m = (arr[:, 0] >= t0) & (arr[:, 0] < t0 + self.window_s)
+        v = arr[m, 1]
+        v = v[np.isfinite(v)]
+        return float(v.mean()) if v.size else float("nan")
+
+    def _loader(self, tid: str, start_seconds: float, bis_tid: Optional[str] = None):
         def load():
             arr = self._series(tid)
             i0 = int(round(start_seconds * SFREQ))
@@ -232,6 +266,7 @@ class VitalDBAdapter(Adapter):
                 if ok.mean() < 0.5:
                     raise ValueError(f"window at {start_seconds:.0f}s is {100 * (1 - ok.mean()):.0f}% NaN")
                 seg = np.interp(np.arange(seg.size), np.flatnonzero(ok), seg[ok])
-            return seg[None, :], ["BIS_EEG1"], SFREQ, {"tid": tid, "start_s": start_seconds,
-                                                       "nan_fraction": float(1 - ok.mean())}
+            return seg[None, :], ["BIS_EEG1"], SFREQ, {
+                "tid": tid, "start_s": start_seconds, "nan_fraction": float(1 - ok.mean()),
+                "bis": self._bis_window(bis_tid, start_seconds)}
         return load

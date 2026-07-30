@@ -23,7 +23,14 @@ cases — the BIS sensor goes on after the patient is already asleep, so inducti
 maintenance against post-emergence, anchored on `aneend`.
 
     unresponsive   aneend − 1200 s, − 600 s     deep in maintenance
-    responsive     aneend + 300 s, + 600 s      after the agents are off
+    responsive     aneend + 180 s, + 300 s      after the agents are off
+
+The positive offsets stop at +300 s because they must: the EEG track ends a median of only +544 s after
+`aneend`, and in one of six cases sampled it ended 860 s BEFORE it. A first run at +300/+600 s errored on
+roughly half the positive windows with "runs past the record". **This deposit records the middle of an
+anaesthetic well and both of its edges poorly** — the sensor goes on after induction and comes off around
+emergence — and the responsive block is therefore short, close to the transition, and the least reliable
+part of the design.
 
 **That second block is a PROXY and is labelled as one.** VitalDB marks no return of consciousness; `aneend`
 is when the anaesthetic stops, and responsiveness returns some minutes later. Individual patients will be
@@ -58,6 +65,14 @@ SCOPE AND LIMITS, none of which a larger n repairs.
   * One site, one monitor, one country. A frontal two-channel BIS strip, so `uce_v1` is unavailable, and
     128 Hz sampling puts `exponent_gamma` (50–90 Hz) above Nyquist — NaN by design.
   * Cases are selected deterministically by ascending case id within each arm, never by result.
+  * **AN EXCLUSION THAT IS NOT RANDOM, ADDED AFTER THE FIRST STREAM AND BEFORE ANY RESULT WAS READ.** A
+    substantial fraction of cases have no usable window at `aneend + 180/+300 s` — the record simply ends —
+    and those rows arrive as errors rather than data. **A case therefore enters the responsive block only if
+    its monitoring continued past emergence, which is not independent of the case**: longer monitoring goes
+    with longer, larger operations and with slower wake-ups. Error-catalogue rule 14 requires exclusions to
+    be reported and checked for outcome-relatedness, so the surviving fraction is reported per arm, and any
+    arm-to-arm difference in it is a confound for P3 rather than a nuisance. If the fractions differ
+    materially between arms, P3 is comparing different populations and must be read that way.
   * Surgical populations differ by agent — desflurane and sevoflurane are not randomly assigned. Age, sex,
     BMI, ASA and emergency status are carried in the table for a later adjusted analysis and are **not**
     adjusted for here; P3 and P4 are comparisons of a marker's behaviour, not causal claims about drugs.
@@ -84,7 +99,7 @@ TABLE = os.path.join(RESULTS, "vitaldb_challenge_a.csv")
 
 ARMS = ("propofol", "sevoflurane", "desflurane")
 UNRESPONSIVE = ("ane-1200", "ane-600")
-RESPONSIVE = ("ane+300", "ane+600")
+RESPONSIVE = ("ane+180", "ane+300")
 PRIMARY = "exponent_high"
 GATE_MIN_FRACTION = 0.80
 INVARIANCE_TOL = 0.15
