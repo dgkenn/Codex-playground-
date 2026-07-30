@@ -252,16 +252,40 @@ def test_critical_slowing_is_invariant_to_sampling_rate():
     exactly across deposits with different rates, so it would have compared sampling rates rather than
     dynamics.
 
-    Same class as Lempel-Ziv's window-in-seconds and multiscale entropy's series length. Fixed the same way:
-    resample to a common rate before measuring.
+    Same class as Lempel-Ziv's window-in-seconds and multiscale entropy's series length — but NOT fixed the
+    same way, and the first attempt here got that wrong. Resampling to a common rate repairs only the rates
+    ABOVE the target; 100 Hz would have had to be UPSAMPLED to 250 Hz, which manufactures a 4 ms correlation
+    the recording never observed and reports the interpolator's smoothness as the brain's. The lag is
+    therefore defined in SECONDS (CS_LAG_S), and the resample is kept only for filter conditioning and only
+    downward.
+
+    100 Hz IS IN THIS LIST DELIBERATELY. It is Sleep-EDF's rate, it is the lowest this project reads, and it
+    is the case the first fix silently skipped. Measured pre-fix spread across 100-5000 Hz was 0.237
+    (100 Hz -> 0.709, everything else -> 0.946 on identical dynamics); post-fix it is 0.018.
     """
     from scipy.signal import resample_poly
     from bsde.features.exotic import critical_slowing
     base = np.random.default_rng(5).normal(size=250 * 60)
-    vals = [critical_slowing(x, sf)["ar1"] for sf, x in
-            ((250.0, base), (500.0, resample_poly(base, 2, 1)), (5000.0, resample_poly(base, 20, 1)))]
+    cases = ((100.0, resample_poly(base, 2, 5)), (250.0, base),
+             (500.0, resample_poly(base, 2, 1)), (5000.0, resample_poly(base, 20, 1)))
+    vals = [critical_slowing(x, sf)["ar1"] for sf, x in cases]
     assert all(np.isfinite(v) for v in vals), vals
-    assert max(vals) - min(vals) < 0.02, f"ar1 still depends on sampling rate: {vals}"
+    assert max(vals) - min(vals) < 0.03, f"ar1 still depends on sampling rate: {list(zip([c[0] for c in cases], vals))}"
+
+
+def test_critical_slowing_lag_is_a_duration_not_a_sample_offset():
+    """Pins the DEFINITION rather than a consequence of it, so that reverting the lag to one sample fails here
+    even if the invariance test above were to pass by luck on some particular signal.
+
+    A pure sinusoid at f has envelope-free autocorrelation cos(2*pi*f*lag) at lag seconds. Feed the raw
+    sinusoid's own autocorrelation structure: at a FIXED 20 ms lag, a 12.5 Hz sine gives cos(0.25*2*pi) ~ 0
+    regardless of sampling rate, whereas a lag of one SAMPLE gives cos(2*pi*12.5/sfreq), which tends to 1 as
+    the rate rises. The two definitions therefore disagree by construction, not by chance.
+    """
+    from bsde.features.exotic import CS_LAG_S, CS_MAX_HZ
+    assert CS_LAG_S >= 0.01, "the lag must be resolvable at 100 Hz (>= 1 sample), so >= 10 ms"
+    assert CS_LAG_S * 100.0 >= 2.0, "20 ms at Sleep-EDF's 100 Hz must be at least 2 samples"
+    assert CS_MAX_HZ >= 100.0, "the conditioning bound must never force an UPSAMPLE of a 100 Hz deposit"
 
 
 def test_critical_slowing_does_not_overflow_at_high_sampling_rates():

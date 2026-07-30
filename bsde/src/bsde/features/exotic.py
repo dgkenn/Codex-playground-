@@ -301,8 +301,16 @@ def subband_exponents(x: np.ndarray, sfreq: float) -> Dict[str, float]:
 # 5. Critical slowing down
 # =========================================================================================================
 
-CS_TARGET_HZ = 250.0
-"""Common rate every recording is resampled to before the envelope is computed. See `critical_slowing`."""
+CS_MAX_HZ = 250.0
+"""Rate above which a recording is DECIMATED before the envelope is computed. Purely a numerical-conditioning
+bound -- a 1-45 Hz Butterworth at 5 kHz is ill-conditioned. Recordings at or below this rate are left alone;
+nothing is ever upsampled. See `critical_slowing`."""
+
+CS_LAG_S = 0.02
+"""The autocorrelation lag, in SECONDS. This is the part of the definition that makes the measure comparable
+across deposits, and it is 20 ms rather than something shorter because 20 ms must be RESOLVABLE at the lowest
+sampling rate this project reads: 2 samples at Sleep-EDF's 100 Hz, 5 at Chennu's 250 Hz, 100 at ds005620's
+5 kHz (before decimation). A shorter lag would round to zero samples at 100 Hz and return a trivial 1.0."""
 
 
 def critical_slowing(x: np.ndarray, sfreq: float, env_band: tuple = (1.0, 45.0),
@@ -313,7 +321,10 @@ def critical_slowing(x: np.ndarray, sfreq: float, env_band: tuple = (1.0, 45.0),
     autocorrelation and its variance rise.
 
     Bandpass to `env_band`, take the Hilbert envelope, split into non-overlapping `window_s`-long windows,
-    compute lag-1 autocorrelation and variance PER WINDOW, then return the mean of each across windows.
+    compute the autocorrelation at a lag of CS_LAG_S SECONDS -- not one sample -- and the variance PER
+    WINDOW, then return the mean of each across windows. The lag is in seconds because the whole point of a
+    cross-deposit comparison is that the same physical dynamics give the same number; see the block comment
+    in the body for what happened when it was in samples.
     Per-window rather than one autocorrelation over the whole series so the result reflects LOCAL dynamics
     (what the early-warning-signal literature actually tracks) rather than one number dominated by whatever
     slow drift happens to span the longest stretch.
@@ -325,34 +336,40 @@ def critical_slowing(x: np.ndarray, sfreq: float, env_band: tuple = (1.0, 45.0),
     x = np.asarray(x, float)
     x = x[np.isfinite(x)]
 
-    # RESAMPLE TO A COMMON RATE FIRST. Two defects, one remedy, and this is the THIRD time this project has
-    # hit the same class of bug (Lempel-Ziv's window in seconds, multiscale entropy's series length, now
-    # this).
+    # TWO SEPARATE RATE DEFECTS, TWO SEPARATE REMEDIES. This is the THIRD time this project has hit the same
+    # bug class (Lempel-Ziv's window in seconds, multiscale entropy's series length, now this), and the first
+    # attempt at fixing it conflated the two problems into one resample, which fixed only half.
     #
-    # 1. `ar1` is lag-1 in SAMPLES, so it measures a different time interval at every sampling rate: 0.2 ms
-    #    at ds005620's 5 kHz against 10 ms at Sleep-EDF's 100 Hz. The envelope of ordinary EEG is almost
-    #    perfectly autocorrelated at 0.2 ms and only moderately so at 10 ms, so the SAME signal returns
-    #    ~0.9999 at one rate and something far lower at another. Comparing that across deposits, which is
-    #    exactly what layer_cross_domain does, would compare sampling rates rather than dynamics.
-    # 2. A 1-45 Hz Butterworth at 5 kHz has its passband at 0.0004-0.018 of Nyquist, where the filter is
-    #    numerically ill-conditioned; on real ds005620 data it overflowed to ~1e37 envelope variance. That
-    #    is not a subtle bias, it is a broken filter, and it was invisible at Chennu's 250 Hz.
+    # DEFECT 1 -- the lag was lag-1 in SAMPLES, so it measured a different physical interval at every rate:
+    #   0.2 ms at ds005620's 5 kHz against 10 ms at Sleep-EDF's 100 Hz. The envelope of ordinary EEG is
+    #   almost perfectly autocorrelated at 0.2 ms and only moderately so at 10 ms, so the SAME signal
+    #   returns ~0.9999 at one rate and far less at another. `layer_cross_domain` compares deposits, so this
+    #   would have compared acquisition systems and called the difference biology.
+    #   REMEDY: the lag is CS_LAG_S SECONDS, converted to samples per recording. Not a resample -- a
+    #   definition. Resampling to a common rate would have fixed this only for rates ABOVE the target and
+    #   would have had to UPSAMPLE 100 Hz to 250 Hz, manufacturing a 4 ms correlation that the recording
+    #   never observed. Interpolation cannot supply information the sampler did not capture, and an
+    #   interpolated autocorrelation reports the interpolator's smoothness, not the brain's.
     #
-    # Resampling to CS_TARGET_HZ fixes both: the lag becomes a fixed 4 ms everywhere, and the filter is
-    # well-conditioned. The measure is now defined at that rate rather than at whatever the deposit used.
-    if sfreq > CS_TARGET_HZ * 1.01:
+    # DEFECT 2 -- a 1-45 Hz Butterworth at 5 kHz sits at 0.0004-0.018 of Nyquist, where the filter is
+    #   numerically ill-conditioned; on real ds005620 data the envelope variance overflowed to ~1e37. Not a
+    #   subtle bias, a broken filter, and invisible at Chennu's 250 Hz.
+    #   REMEDY: decimate to CS_MAX_HZ, and ONLY downward. This is about conditioning, nothing else, and it
+    #   discards no envelope information: a 1-45 Hz signal's envelope is bandlimited well inside 250 Hz.
+    if sfreq > CS_MAX_HZ * 1.01:
         from math import gcd
-        up, down = int(round(CS_TARGET_HZ)), int(round(sfreq))
+        up, down = int(round(CS_MAX_HZ)), int(round(sfreq))
         g = gcd(up, down)
         try:
             from scipy.signal import resample_poly
             x = resample_poly(x, up // g, down // g)
         except Exception:
             return {"ar1": float("nan"), "envelope_variance": float("nan")}
-        sfreq = CS_TARGET_HZ
+        sfreq = CS_MAX_HZ
 
+    lag = int(round(CS_LAG_S * sfreq))
     nper = int(round(window_s * sfreq))
-    if nper < 4 or x.size < nper * 2 or x.std() <= 0:
+    if lag < 1 or nper < lag * 4 or x.size < nper * 2 or x.std() <= 0:
         return {"ar1": float("nan"), "envelope_variance": float("nan")}
     try:
         filt = _bandpass_filtfilt(x, sfreq, env_band[0], env_band[1])
@@ -370,8 +387,8 @@ def critical_slowing(x: np.ndarray, sfreq: float, env_band: tuple = (1.0, 45.0),
         w = env[i * nper:(i + 1) * nper]
         v = float(w.var())
         variances.append(v)
-        w0 = w[:-1] - w[:-1].mean()
-        w1 = w[1:] - w[1:].mean()
+        w0 = w[:-lag] - w[:-lag].mean()
+        w1 = w[lag:] - w[lag:].mean()
         denom = np.sqrt((w0 ** 2).sum() * (w1 ** 2).sum())
         if denom > 1e-20:
             ar1s.append(float((w0 * w1).sum() / denom))
