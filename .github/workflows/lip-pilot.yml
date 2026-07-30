@@ -1,0 +1,145 @@
+# LIP_PILOT -- pre-registered 2-week de minimis pilot of Kalshi's Liquidity Incentive Program.
+# See venue_expansion/LIP_PILOT_REGISTRATION.md (frozen spec) and LIP_PILOT_README.md (operator
+# checklist). Modeled directly on kwx-live.yml's self-chain/pre-chain/singleton/heartbeat shape,
+# with LIP's own gates: LIP_SWITCH must read 'on' AND .lip_halt must be absent for anything to run.
+#
+# SELF-HEALING (identical pattern to kwx-live.yml):
+#   - PRE-CHAIN: each run dispatches its successor at the START (parked pending in the singleton
+#     group) so the next leg starts the instant this one ends even if this leg is cancelled/times out.
+#   - SELF-CHAIN: each run also dispatches the next run at the end (belt-and-suspenders).
+#   - CRON BACKUP: commented out below -- scheduled (cron) triggers only fire for workflow files
+#     that exist on the repository's DEFAULT branch. This file lives on a feature branch until
+#     merged; until then, continuity runs entirely on workflow_dispatch self-chaining (pre-chain +
+#     self-chain), which works from any branch via `ref: <this branch>` in the dispatch payload.
+#     Uncomment the `schedule:` block below (and confirm the ref target) once this file is merged
+#     to the default branch.
+#   - HEARTBEAT: each run commits .lip_heartbeat (UTC ts, written by lip_quoter.py's own loop --
+#     not a bash wrapper -- so staleness reflects the real polling loop, not a shell "I'm alive" tick).
+#   - singleton concurrency -> never two LIP legs at once (would double up on caps checking against
+#     stale local state between two concurrent processes).
+#
+#   ON/OFF: LIP_SWITCH file (on|off). HALT: `.lip_halt` (created automatically by a kill path, or
+#   manually: `printf halt > .lip_halt && git add -f .lip_halt && git commit ... && git push`).
+#   SAFE BY DEFAULT: missing Kalshi secrets, OR switch != on, OR .lip_halt present => nothing runs,
+#   enforced BOTH by this workflow's gate steps AND independently inside lip_quoter.py itself.
+name: lip-pilot
+
+on:
+  # schedule:
+  #   - cron: '*/20 * * * *'      # BACKUP restart -- ONLY takes effect once this file is on the
+  #                                 default branch (GitHub only evaluates `schedule:` triggers from
+  #                                 the workflow file version committed to the repo's default
+  #                                 branch). Until merged, pre-chain + self-chain below are the
+  #                                 entire continuity mechanism.
+  workflow_dispatch: {}
+
+permissions:
+  contents: write               # persist lip_pilot_log.jsonl + .lip_heartbeat
+  actions: write                # pre-chain/self-chain: dispatch the next run
+
+concurrency:
+  group: lip-pilot-singleton
+  cancel-in-progress: false
+
+env:
+  BRANCH: claude/calci-trading-bot-strategy-mgyxti
+
+jobs:
+  quote:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.BRANCH }}
+          fetch-depth: 1
+
+      - name: gate on LIP_SWITCH + .lip_halt (fail-closed)
+        id: gate
+        run: |
+          sw=$(tr -d '[:space:]' < LIP_SWITCH 2>/dev/null || echo off)
+          [ -f ".lip_halt" ] && sw=off
+          echo "switch=$sw" >> "$GITHUB_OUTPUT"; echo "LIP switch = $sw"
+
+      - name: gate on secrets present
+        id: sec
+        run: |
+          if [ -n "${{ secrets.KALSHI_API_KEY_ID }}" ] && [ -n "${{ secrets.KALSHI_PRIVATE_KEY }}" ]; then
+            echo "have=yes" >> "$GITHUB_OUTPUT"
+          else
+            echo "have=no" >> "$GITHUB_OUTPUT"; echo "::notice::KALSHI secrets not set -> inert"
+          fi
+
+      - name: pre-chain successor (parks in the concurrency queue -> starts the instant this leg ends)
+        # Same coverage fix as kwx-live.yml: dispatching HERE parks the successor as PENDING in the
+        # lip-pilot-singleton group (cancel-in-progress:false serializes it), so it starts the
+        # moment this job ends EVEN IF this job dies -- shrinking the inter-leg gap to setup time
+        # (~60-90s). The successor re-reads LIP_SWITCH + .lip_halt in its own gate, so an OFF/halt
+        # during this leg still stops the chain. End-of-run self-chain kept too (belt-and-suspenders).
+        if: steps.gate.outputs.switch == 'on' && steps.sec.outputs.have == 'yes'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for i in 1 2 3; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' -X POST \
+              -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/${{ github.repository }}/actions/workflows/lip-pilot.yml/dispatches" \
+              -d "{\"ref\":\"${BRANCH}\"}")
+            [ "$code" = "204" ] && { echo "successor parked in concurrency queue"; break; }
+            echo "pre-dispatch -> HTTP $code"; sleep $((2 ** i))
+          done
+
+      - uses: actions/setup-python@v5
+        if: steps.gate.outputs.switch == 'on' && steps.sec.outputs.have == 'yes'
+        with:
+          python-version: '3.12'
+
+      - name: run LIP quoter (~15 min leg), commit log + heartbeat
+        if: steps.gate.outputs.switch == 'on' && steps.sec.outputs.have == 'yes'
+        env:
+          LIP_LIVE: ${{ vars.LIP_LIVE }}   # operator sets this repo VARIABLE to "1" to arm real orders;
+                                            # unset/anything else -> lip_quoter.py stays dry-run (logs
+                                            # intended actions, posts nothing). See LIP_PILOT_README.md.
+          KALSHI_API_KEY_ID: ${{ secrets.KALSHI_API_KEY_ID }}
+          KALSHI_PRIVATE_KEY: ${{ secrets.KALSHI_PRIVATE_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          set -e
+          pip -q install cryptography || true
+          git config user.name  "lip-pilot-bot"
+          git config user.email "lip-pilot-bot@users.noreply.github.com"
+          # single warm ~15-min python leg, matches kwx_paper_gate.py's --max-seconds pattern (one
+          # persistent process, RSA key held in memory -- see ENGINEERING_STACK.md section 2/3 for
+          # why a fresh subprocess or cold connection per poll is the tax this avoids).
+          python -u lip_quoter.py --max-seconds 900 || true
+          for f in lip_pilot_log.jsonl .lip_heartbeat .lip_halt .lip_stop_today; do
+            if [ -e "$f" ]; then git add -f -- "$f"; fi
+          done
+          git commit -m "lip-pilot $(date -u +%FT%H%MZ)" || echo "nothing to commit"
+          for i in 1 2 3 4 5; do
+            git push origin HEAD:${BRANCH} && break
+            git fetch origin ${BRANCH} && git rebase origin/${BRANCH} || true
+            sleep $((RANDOM % 6 + 2))
+          done
+
+      - name: self-chain (dispatch next run while switch on) -- self-healing continuity
+        if: steps.gate.outputs.switch == 'on' && steps.sec.outputs.have == 'yes'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          sw=$(tr -d '[:space:]' < LIP_SWITCH 2>/dev/null || echo off)
+          [ -f ".lip_halt" ] && sw=off
+          if [ "$sw" = "on" ]; then
+            for i in 1 2 3 4 5; do
+              code=$(curl -s -o /dev/null -w '%{http_code}' -X POST \
+                -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
+                "https://api.github.com/repos/${{ github.repository }}/actions/workflows/lip-pilot.yml/dispatches" \
+                -d "{\"ref\":\"${BRANCH}\"}")
+              echo "self-chain dispatch -> HTTP $code"
+              [ "$code" = "204" ] && break
+              sleep $((2 ** i))
+            done
+          else
+            echo "switch off / halted -> not chaining"
+          fi
