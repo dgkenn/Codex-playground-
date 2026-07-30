@@ -301,6 +301,10 @@ def subband_exponents(x: np.ndarray, sfreq: float) -> Dict[str, float]:
 # 5. Critical slowing down
 # =========================================================================================================
 
+CS_TARGET_HZ = 250.0
+"""Common rate every recording is resampled to before the envelope is computed. See `critical_slowing`."""
+
+
 def critical_slowing(x: np.ndarray, sfreq: float, env_band: tuple = (1.0, 45.0),
                      window_s: float = 2.0) -> Dict[str, float]:
     """Lag-1 autocorrelation and variance of the broadband amplitude envelope, the two canonical
@@ -320,6 +324,33 @@ def critical_slowing(x: np.ndarray, sfreq: float, env_band: tuple = (1.0, 45.0),
     from scipy.signal import hilbert
     x = np.asarray(x, float)
     x = x[np.isfinite(x)]
+
+    # RESAMPLE TO A COMMON RATE FIRST. Two defects, one remedy, and this is the THIRD time this project has
+    # hit the same class of bug (Lempel-Ziv's window in seconds, multiscale entropy's series length, now
+    # this).
+    #
+    # 1. `ar1` is lag-1 in SAMPLES, so it measures a different time interval at every sampling rate: 0.2 ms
+    #    at ds005620's 5 kHz against 10 ms at Sleep-EDF's 100 Hz. The envelope of ordinary EEG is almost
+    #    perfectly autocorrelated at 0.2 ms and only moderately so at 10 ms, so the SAME signal returns
+    #    ~0.9999 at one rate and something far lower at another. Comparing that across deposits, which is
+    #    exactly what layer_cross_domain does, would compare sampling rates rather than dynamics.
+    # 2. A 1-45 Hz Butterworth at 5 kHz has its passband at 0.0004-0.018 of Nyquist, where the filter is
+    #    numerically ill-conditioned; on real ds005620 data it overflowed to ~1e37 envelope variance. That
+    #    is not a subtle bias, it is a broken filter, and it was invisible at Chennu's 250 Hz.
+    #
+    # Resampling to CS_TARGET_HZ fixes both: the lag becomes a fixed 4 ms everywhere, and the filter is
+    # well-conditioned. The measure is now defined at that rate rather than at whatever the deposit used.
+    if sfreq > CS_TARGET_HZ * 1.01:
+        from math import gcd
+        up, down = int(round(CS_TARGET_HZ)), int(round(sfreq))
+        g = gcd(up, down)
+        try:
+            from scipy.signal import resample_poly
+            x = resample_poly(x, up // g, down // g)
+        except Exception:
+            return {"ar1": float("nan"), "envelope_variance": float("nan")}
+        sfreq = CS_TARGET_HZ
+
     nper = int(round(window_s * sfreq))
     if nper < 4 or x.size < nper * 2 or x.std() <= 0:
         return {"ar1": float("nan"), "envelope_variance": float("nan")}

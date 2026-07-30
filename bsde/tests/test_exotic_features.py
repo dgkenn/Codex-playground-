@@ -239,3 +239,45 @@ def test_critical_slowing_flat_and_too_short_are_nan():
     too_short = np.random.default_rng(41).normal(size=50)
     out2 = critical_slowing(too_short, SF)
     assert np.isnan(out2["ar1"]) and np.isnan(out2["envelope_variance"])
+
+
+# --- rate invariance: the same bug class, third occurrence ---------------------------------------------
+
+def test_critical_slowing_is_invariant_to_sampling_rate():
+    """THE REGRESSION THAT MATTERS, and the third instance of one bug class in this project.
+
+    `ar1` was lag-1 in SAMPLES, so it measured 0.2 ms at ds005620's 5 kHz and 10 ms at Sleep-EDF's 100 Hz.
+    An EEG envelope is almost perfectly autocorrelated at 0.2 ms and only moderately so at 10 ms, so the
+    SAME signal returned wildly different values at different rates — and `layer_cross_domain` compares
+    exactly across deposits with different rates, so it would have compared sampling rates rather than
+    dynamics.
+
+    Same class as Lempel-Ziv's window-in-seconds and multiscale entropy's series length. Fixed the same way:
+    resample to a common rate before measuring.
+    """
+    from scipy.signal import resample_poly
+    from bsde.features.exotic import critical_slowing
+    base = np.random.default_rng(5).normal(size=250 * 60)
+    vals = [critical_slowing(x, sf)["ar1"] for sf, x in
+            ((250.0, base), (500.0, resample_poly(base, 2, 1)), (5000.0, resample_poly(base, 20, 1)))]
+    assert all(np.isfinite(v) for v in vals), vals
+    assert max(vals) - min(vals) < 0.02, f"ar1 still depends on sampling rate: {vals}"
+
+
+def test_critical_slowing_does_not_overflow_at_high_sampling_rates():
+    """A 1-45 Hz Butterworth at 5 kHz sits at 0.0004-0.018 of Nyquist, where the filter is numerically
+    ill-conditioned; on real ds005620 data it overflowed to ~1e37 envelope variance. Invisible at Chennu's
+    250 Hz, which is why no existing test caught it."""
+    from bsde.features.exotic import critical_slowing
+    x = np.random.default_rng(0).normal(size=5000 * 20)
+    r = critical_slowing(x, 5000.0)
+    assert np.isfinite(r["envelope_variance"]) and r["envelope_variance"] < 1e3, r
+    assert -1.0 <= r["ar1"] <= 1.0
+
+
+def test_critical_slowing_still_ranks_a_slow_signal_above_noise_after_the_fix():
+    from bsde.features.exotic import critical_slowing
+    rng = np.random.default_rng(5)
+    white = rng.normal(size=250 * 60)
+    slow = np.cumsum(rng.normal(size=250 * 60))
+    assert critical_slowing(slow, 250.0)["ar1"] > critical_slowing(white, 250.0)["ar1"]
