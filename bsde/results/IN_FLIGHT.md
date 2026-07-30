@@ -25,3 +25,22 @@ re-extraction, and the cost of committing it is a few hundred kilobytes.
 Nothing, without a row-count gate. Every experiment that consumes one of these refuses to report until its
 own minimum is met, and says so in words that name the table rather than the candidate — see E15's
 `GATE_MIN_ROWS`, which was added after a smoke test reported "GATE PASSED (100.0%)" from a single row.
+
+## Currently in flight: `vitaldb_grid.s0-3.csv` (started 2026-07-30)
+
+Four **case-sharded** streams of the VitalDB whole-case grid, 250 cases, ~6,679 windows total. They are
+committed part-finished on purpose (see above): each is resumable, and the container's disk does not survive
+reclamation.
+
+    for k in 0 1 2 3; do
+      python bsde/scripts/stream_vitaldb_grid.py --n-cases 250 --case-shard $k --of 4 \
+             --out bsde/results/vitaldb_grid.s$k.csv &
+    done; wait
+    python bsde/scripts/stream_vitaldb_grid.py --merge bsde/results/vitaldb_grid.csv \
+           bsde/results/vitaldb_grid.seed.csv bsde/results/vitaldb_grid.s?.csv
+
+`vitaldb_grid.seed.csv` is the first ~11 cases, streamed unsharded before sharding existed. Its rows are
+valid and the merge de-duplicates on `recording_id`, so including it costs nothing and saves a re-fetch.
+
+**E22 reads only the merged `vitaldb_grid.csv` and refuses to report below 1,500 rows**, so a partial merge
+cannot be mistaken for a result.
