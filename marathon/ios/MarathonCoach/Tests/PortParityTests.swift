@@ -293,3 +293,184 @@ final class PortParityTests: XCTestCase {
         }
     }
 }
+
+// MARK: - Weekly review parity
+//
+// `WeeklyReview` is ported to Swift because it has to run on device every Monday with no server. That
+// makes it exactly as much of a divergence risk as the controller, so it gets the same treatment.
+
+final class WeeklyReviewParityTests: XCTestCase {
+
+    private struct Vectors: Decodable {
+        struct ReplanCase: Decodable {
+            let `case`: String
+            let daily_loads: [Double]?
+            let planned_volume: Double?
+            let achieved_volume: Double
+            let sessions_planned: Int
+            let sessions_completed: Int
+            let readiness_bands: [String]
+            let max_pain: Int
+            let weeks_since_cutback: Int
+            let expected_action: String
+            let expected_next_volume: Double?
+        }
+        struct AcwrCase: Decodable {
+            let `case`: String
+            let daily_loads: [Double]
+            let acute: Double
+            let chronic: Double
+            let ratio: Double
+            let band: String
+        }
+        let replan: [ReplanCase]
+        let acwr: [AcwrCase]
+    }
+
+    private static var vectors: Vectors!
+
+    override class func setUp() {
+        super.setUp()
+        guard let url = Bundle.module.url(forResource: "golden_vectors", withExtension: "json"),
+              let data = try? Data(contentsOf: url) else {
+            XCTFail("golden_vectors.json missing from the test bundle")
+            return
+        }
+        do { vectors = try JSONDecoder().decode(Vectors.self, from: data) }
+        catch { XCTFail("vectors did not decode: \(error)") }
+    }
+
+    private var v: Vectors { Self.vectors }
+
+    func testAcwrMatchesPython() {
+        for c in v.acwr {
+            let got = WeeklyReview.acwr(c.daily_loads)
+            XCTAssertEqual(got.acute, c.acute, accuracy: 1e-6, "acute differs for '\(c.case)'")
+            XCTAssertEqual(got.chronic, c.chronic, accuracy: 1e-6, "chronic differs for '\(c.case)'")
+            XCTAssertEqual(got.ratio, c.ratio, accuracy: 1e-6, "ratio differs for '\(c.case)'")
+            XCTAssertEqual(got.band, c.band, "band differs for '\(c.case)'")
+        }
+    }
+
+    /// The guard that stops a beginner's exploding ratio from vetoing their first weeks of training.
+    func testBeginnerRatioIsReportedAsInsufficientHistory() {
+        let c = v.acwr.first { $0.case == "beginner_insufficient_history" }!
+        let got = WeeklyReview.acwr(c.daily_loads)
+        XCTAssertEqual(got.band, "insufficient_history")
+        XCTAssertGreaterThan(got.ratio, ReviewConstants.acwrHardCap,
+                             "the ratio really is above the cap — which is exactly why the band, not "
+                             + "the number, must gate the decision")
+    }
+
+    func testReplanDecisionsMatchPython() {
+        for c in v.replan {
+            let ratio = c.daily_loads.map { WeeklyReview.acwr($0) }
+            let d = WeeklyReview.replan(
+                plannedVolumeKm: c.planned_volume,
+                achievedVolumeKm: c.achieved_volume,
+                sessionsPlanned: c.sessions_planned,
+                sessionsCompleted: c.sessions_completed,
+                acwrResult: ratio,
+                readinessBands: c.readiness_bands,
+                maxPain: c.max_pain,
+                weeksSinceCutback: c.weeks_since_cutback)
+            XCTAssertEqual(d.action.rawValue, c.expected_action,
+                           "action differs for '\(c.case)'")
+            if let expected = c.expected_next_volume {
+                XCTAssertEqual(d.nextVolumeKm ?? -1, expected, accuracy: 0.15,
+                               "next volume differs for '\(c.case)'")
+            }
+        }
+    }
+
+    /// The rule that stops a disrupted week becoming next week's spike, asserted independently of the
+    /// recorded vectors.
+    func testMissedVolumeIsNeverCarriedForward() {
+        for (planned, achieved, done) in [(40.0, 10.0, 1), (40.0, 20.0, 2), (60.0, 0.0, 0)] {
+            let d = WeeklyReview.replan(plannedVolumeKm: planned, achievedVolumeKm: achieved,
+                                        sessionsPlanned: 3, sessionsCompleted: done)
+            XCTAssertEqual(d.carryForward, "none")
+            XCTAssertLessThanOrEqual(d.nextVolumeKm ?? 0, planned,
+                                     "the deficit must not be added to next week")
+        }
+    }
+
+    func testZeroVolumeWeekComesBackAtHalfNotAtFullPlan() {
+        // Using the planned figure as the base here would emit the largest jump the engine can produce,
+        // in the situation calling for the smallest.
+        let d = WeeklyReview.replan(plannedVolumeKm: 40, achievedVolumeKm: 0,
+                                    sessionsPlanned: 3, sessionsCompleted: 0)
+        XCTAssertEqual(d.action, .rebuild)
+        XCTAssertEqual(d.nextVolumeKm ?? 0, 20, accuracy: 0.1)
+    }
+
+    func testPainTakesPrecedenceOverEverything() {
+        let d = WeeklyReview.replan(plannedVolumeKm: 40, achievedVolumeKm: 40,
+                                    sessionsPlanned: 3, sessionsCompleted: 3,
+                                    maxPain: 5, weeksSinceCutback: 3)
+        XCTAssertEqual(d.action, .hold, "pain must outrank a due cutback")
+    }
+
+    func testGateEvaluationRequiresBothGatesAndMinimumWeeks() throws {
+        let plans = try PlanStore(bundle: .module)
+        let phase = plans.phase("foundation")!
+        let allMet: [String: Double?] = [
+            "continuous_run_min": 35, "continuous_run_in_z2": 1,
+            "max_pain_2wk": 0, "sessions_completed_pct_4wk": 0.9,
+        ]
+        let early = WeeklyReview.evaluateGates(phase: phase, weeksInPhase: 2,
+                                              evidence: allMet, nextPhase: "base_1")
+        XCTAssertFalse(early.canAdvance, "bone adapts on its own clock; good numbers cannot shortcut it")
+        XCTAssertFalse(early.minWeeksSatisfied)
+
+        let served = WeeklyReview.evaluateGates(phase: phase, weeksInPhase: phase.min_weeks,
+                                               evidence: allMet, nextPhase: "base_1")
+        XCTAssertTrue(served.canAdvance)
+        XCTAssertEqual(served.nextPhase, "base_1")
+    }
+
+    func testUnknownEvidenceIsReportedSeparatelyFromFailure() throws {
+        let plans = try PlanStore(bundle: .module)
+        let phase = plans.phase("foundation")!
+        // Deliberately omit one gate entirely rather than supplying a failing value.
+        let partial: [String: Double?] = ["continuous_run_min": 35, "max_pain_2wk": 0]
+        let e = WeeklyReview.evaluateGates(phase: phase, weeksInPhase: 12,
+                                          evidence: partial, nextPhase: "base_1")
+        XCTAssertFalse(e.canAdvance)
+        XCTAssertFalse(e.unknown.isEmpty, "'not measured' must not be conflated with 'failed'")
+        XCTAssertTrue(e.guidance.lowercased().contains("missing"))
+    }
+
+    func testSafetyGateFlagSurvivesIntoTheEvaluation() throws {
+        let plans = try PlanStore(bundle: .module)
+        let phase = plans.phase("base_1")!
+        let e = WeeklyReview.evaluateGates(
+            phase: phase, weeksInPhase: 12,
+            evidence: ["max_pain_2wk": 7], nextPhase: "base_2")
+        let pain = (e.unmet + e.met).first { $0.key == "max_pain_2wk" }
+        XCTAssertNotNil(pain)
+        XCTAssertTrue(pain!.safety, "a safety gate that loses its flag is one the app will let you waive")
+    }
+
+    func testStallProducesDiagnosticsIncludingFuelling() throws {
+        let plans = try PlanStore(bundle: .module)
+        let phase = plans.phase("foundation")!
+        let e = WeeklyReview.evaluateGates(
+            phase: phase, weeksInPhase: (phase.stall_review_weeks ?? 14) + 1,
+            evidence: ["continuous_run_min": 12, "continuous_run_in_z2": 0,
+                       "max_pain_2wk": 0, "sessions_completed_pct_4wk": 0.9],
+            nextPhase: "base_1")
+        XCTAssertTrue(e.stalled)
+        XCTAssertTrue(e.diagnostics.contains { $0.lowercased().contains("fuel") },
+                      "under-fuelling looks exactly like 'not adapting' and must be considered")
+    }
+
+    func testGateThresholdsDecodeForBothNumbersAndBooleans() throws {
+        let plans = try PlanStore(bundle: .module)
+        let gates = plans.gates(phase: "base_1")
+        let numeric = gates.first { $0.key == "weekly_km_3wk_min" }
+        let boolean = gates.first { $0.key == "time_trial_2000m_done" }
+        XCTAssertEqual(numeric?.valueNumber, 20)
+        XCTAssertEqual(boolean?.valueBool, true)
+    }
+}

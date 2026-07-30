@@ -25,7 +25,7 @@ year of one person's sleep data, and nothing has to be dumbed down for onboardin
 
 ```
 marathon/
-├── engine/                  Python. The science, tested. 464 tests.
+├── engine/                  Python. The science, tested. 477 tests.
 │   └── marathon_engine/
 │       ├── physiology.py    HR zones, VDOT/Daniels paces, Riegel, Minetti grade, WBGT, decoupling
 │       ├── load.py          TRIMP, session-RPE, hrTSS, EWMA ACWR, monotony/strain, ramp caps
@@ -53,7 +53,7 @@ marathon/
 
 The decisions that matter — what pace to prescribe, when to add volume, when to say stop — are
 arithmetic over published formulas. Arithmetic can be tested; a SwiftUI view cannot be tested on a
-Linux box. So the arithmetic lives in `engine/` with 464 tests against published worked examples, and
+Linux box. So the arithmetic lives in `engine/` with 477 tests against published worked examples, and
 the iOS app ports only what has to run on the phone.
 
 That split earns its keep. The tests caught, among others:
@@ -165,7 +165,7 @@ Advisory software. Not a medical device, and it cannot detect a cardiac event.
 
 ## Status
 
-**The Python engine is complete and tested** — 464 tests, all passing.
+**The Python engine is complete and tested** — 477 tests, all passing.
 
 **The iOS app is complete but has never been compiled.** There is no Swift toolchain in the
 environment it was written in, so every `.swift` file here is unverified by execution. Expect to fix
@@ -194,7 +194,7 @@ xcodegen generate && open MarathonCoach.xcodeproj   # the app
 
 | Layer | Files | State |
 |---|---|---|
-| Science core | `engine/marathon_engine/*.py` (13 modules) | tested, 464 tests |
+| Science core | `engine/marathon_engine/*.py` (15 modules) | tested, 477 tests |
 | Plan export | `export.py` → `plan.json`, `golden_vectors.json`, `protocols.json` | tested |
 | PMD protocol | `PolarPMD.swift` | ported from hardware-tested Python, XCTests written |
 | BLE driver | `VeritySensor.swift` | written, needs hardware |
@@ -202,31 +202,33 @@ xcodegen generate && open MarathonCoach.xcodeproj   # the app
 | Audio | `AudioCoach.swift` | written; ducks Apple Music rather than stopping it |
 | Controller | `InRunController.swift`, `SignalQuality.swift`, `Physiology.swift` | ported, parity-tested |
 | Orchestrator | `RunSession.swift` | written; fixed 1 Hz loop over three async streams |
+| Weekly review | `WeeklyReview.swift`, `WeeklyReviewService.swift` | ported, parity-tested |
 | Persistence | `Store.swift`, `PlanStore.swift` | written, XCTests |
 | Integrations | `HealthKitBridge.swift`, `SleepControllerClient.swift` | written |
 | UI | `TodayView`, `RunView`, `ScreeningView`, `SettingsView`, `PlanBrowserView` | written |
 
 ### Known gaps
 
-- **Never compiled.** See above.
-- **The 2000 m time trial is not in the plan yet.** The research synthesis makes a good case for it as
-  the VDOT-seeding test around week 9 (11–12 min sits inside both Riegel's valid window and Daniels'
-  well-behaved range) instead of relying on the 5K. Adopting it restructures the `BASE_1` gates, so it
-  is deliberately not bolted on.
-- **The between-rep recovery gate is at 75% of HR reserve.** The synthesis argued for 60%. Left as-is
-  because the change is *stricter* and would abort interval sets that were going fine; if it turns out
-  never to fire, hysteresis is the better fix than lowering the threshold.
-- **Weekly re-planning is not wired into the UI.** `adapt.replan_week` exists and is tested; nothing
-  calls it on a schedule yet.
-- **Treadmill stride calibration is manual.** `LocationPace.calibratedStrideM` has to be set from a
-  measured outdoor run; nothing derives it automatically yet.
+- **Never compiled.** See above. This is the only substantive one left.
+- **The 2000 m trial's placement is a judgement call.** Week 5 of `BASE_1` is four weeks after
+  continuous running starts. If you reach it and it still feels too early, repeating a base week before
+  it is a legitimate choice — the gate does not care when you do it, only that you have.
+
+### Previously listed as gaps, now closed
+
+| Was | Now |
+|---|---|
+| 5K was the first VDOT-seeding test | **2000 m trial** in `BASE_1` week 5. ~11–12 min sits inside both Riegel's validated 3.5–230 min window and the range where Daniels' sustainable-%VO2max curve behaves. The checkpoints now ascend: 2000 m → 5K → 10K → half, one per phase, and VDOT is re-derived from the best available result by `TT_PRECEDENCE` — never averaged across distances |
+| Recovery gate "never fires" | Kept at 75% of reserve and given **hysteresis**: two *consecutive* poor recoveries cut the set, one is noise. Lowering it to 60% as suggested would have cut sets on a beginner's perfectly normal jog recovery — the right fix for "it never fires" is to require the signal to repeat, not to make one reading easier to trip |
+| Weekly re-planning not wired up | `WeeklyReview` ported to Swift with its own golden vectors, and `WeeklyReviewService` runs it on the first launch of a new ISO week, idempotently. Volume changes apply automatically (small, capped, usually downward); **phase advancement requires a tap** and shows the gate evidence with observed values beside the thresholds |
+| Treadmill stride length manual | Derived automatically from any outdoor run over 2 km where GPS was genuinely good for ≥80% of ticks, kept as a running average, and rejected outside 0.85–1.75 m because anything else is a measurement fault rather than a person |
 
 ## Running the engine
 
 ```bash
 cd marathon/engine
 python3 -m pip install -e '.[dev]'
-python3 -m pytest -q                                          # 464 tests
+python3 -m pytest -q                                          # 477 tests
 python3 -m marathon_engine.report > ../docs/PLAN.md            # regenerate the plan document
 python3 -m marathon_engine.export ../ios/MarathonCoach/Resources   # regenerate app resources
 ```

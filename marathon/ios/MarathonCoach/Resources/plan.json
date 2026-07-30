@@ -139,11 +139,11 @@
      "safety": false
     },
     {
-     "key": "five_k_completed",
+     "key": "time_trial_2000m_done",
      "op": "true",
      "value": true,
-     "label": "5K completed continuously",
-     "rationale": "The first honest performance measurement -- it replaces the conservative submaximal seed VDOT with a real one.",
+     "label": "2000 m time trial completed",
+     "rationale": "The first honest performance measurement, and 2000 m rather than 5K on purpose. It takes a beginner roughly 11-12 minutes, which sits comfortably inside Riegel's validated 3.5-230 minute window AND inside the range where Daniels' sustainable-%VO2max curve is well behaved. A 5K at this stage is a longer maximal effort on less prepared tissue for a *worse* VDOT estimate. The 5K becomes the next checkpoint, not the first one.",
      "safety": false
     },
     {
@@ -200,11 +200,11 @@
      "safety": false
     },
     {
-     "key": "ten_k_completed",
+     "key": "five_k_completed",
      "op": "true",
      "value": true,
-     "label": "10K completed",
-     "rationale": "Recalibrates VDOT at a duration where aerobic endurance actually shows up.",
+     "label": "5K completed continuously",
+     "rationale": "Recalibrates VDOT over a duration where aerobic endurance starts to show, and the first race-distance checkpoint.",
      "safety": false
     },
     {
@@ -250,6 +250,14 @@
      "value": 42,
      "label": "42+ km/week for three consecutive weeks",
      "rationale": "The base a marathon block is built on. Going into marathon-specific work below this is the single most common reason first marathons go badly.",
+     "safety": false
+    },
+    {
+     "key": "ten_k_completed",
+     "op": "true",
+     "value": true,
+     "label": "10K completed",
+     "rationale": "The first legitimate Riegel input. Below 10K the extrapolation to marathon distance spans too large a distance ratio to mean much, which is why no marathon prediction appears before this.",
      "safety": false
     },
     {
@@ -3530,11 +3538,11 @@
      "safety": false
     },
     {
-     "key": "five_k_completed",
+     "key": "time_trial_2000m_done",
      "op": "true",
      "value": true,
-     "label": "5K completed continuously",
-     "rationale": "The first honest performance measurement -- it replaces the conservative submaximal seed VDOT with a real one.",
+     "label": "2000 m time trial completed",
+     "rationale": "The first honest performance measurement, and 2000 m rather than 5K on purpose. It takes a beginner roughly 11-12 minutes, which sits comfortably inside Riegel's validated 3.5-230 minute window AND inside the range where Daniels' sustainable-%VO2max curve is well behaved. A 5K at this stage is a longer maximal effort on less prepared tissue for a *worse* VDOT estimate. The 5K becomes the next checkpoint, not the first one.",
      "safety": false
     },
     {
@@ -4133,12 +4141,14 @@
      "phase": "base_1",
      "week_in_phase": 5,
      "is_cutback": false,
-     "volume_target_km": 14.9,
+     "volume_target_km": 12.7,
      "volume_target_min": null,
      "focus": "Make running a habit and finish a 5K. Volume, not speed.",
      "notes": [
       "Daniels would cap the long run at 30% of weekly volume at this level; this one is 43%. Three runs a week leaves no other way to build a marathon long run, so this is a real and accepted trade-off rather than an oversight -- and the time cap is what keeps it bounded.",
-      "No threshold work yet. Volume and consistency first -- threshold work on a thin base produces fatigue without much adaptation."
+      "No threshold work yet. Volume and consistency first -- threshold work on a thin base produces fatigue without much adaptation.",
+      "Time-trial week. Everything downstream -- your zones, every prescribed pace, the controller's targets -- is currently derived from a deliberately conservative submaximal estimate. This is the run that replaces it with a real measurement, so expect your paces to get quicker afterwards.",
+      "Honest note: this week's sessions come to about 13 km, short of the 15 km corridor target. Three runs a week plus a 150-minute long-run cap has a real ceiling at your current easy pace, and the ceiling rises as your pace does rather than by being wished away. If the gap matters to you, the fourth easy run is the fix."
      ],
      "sessions": [
       {
@@ -4170,25 +4180,22 @@
       },
       {
        "day_offset": 2,
-       "type": "easy",
-       "title": "Easy run",
-       "duration_min": 46,
-       "distance_km": null,
+       "type": "time_trial",
+       "title": "2000 m time trial",
+       "duration_min": 45,
+       "distance_km": 2.0,
        "zones": [
-        1,
-        2
+        4,
+        5
        ],
-       "structure": "",
-       "intent": "Aerobic development with minimal cost. This is the session most often ruined by running it too fast.",
+       "structure": "10 min easy warm-up plus 4 x 30 s strides. Then 2000 m (5 laps of a track, or a measured flat 2 km) as fast as you can hold evenly. 10 min walk/jog cool-down.",
+       "intent": "Replace the conservative submaximal estimate with a real performance. Everything downstream -- zones, every prescribed pace, the in-run targets -- is derived from this number, which is why it is worth doing properly.",
        "optional": false,
        "cues": [
-        "If you cannot hold a conversation, you are going too fast -- slow down, do not shorten it.",
-        "Heart rate is the referee, not pace. On a hot day or a bad-sleep day the same effort is a slower pace, and that is correct, not a setback."
-       ],
-       "pace_target": "10:48",
-       "pace_range": [
-        "10:22",
-        "11:04"
+        "Even effort beats a fast start. If the second half is much slower than the first, the number underestimates you and you will have to do it again.",
+        "Go alone, on a flat measured course, and not into a headwind.",
+        "Stop immediately for chest discomfort, light-headedness, or anything that feels wrong. A time trial is never worth that.",
+        "Record your peak heart rate: if this is a genuinely maximal effort it is the first legitimate chance to observe your actual maximum."
        ]
       },
       {
@@ -4274,7 +4281,7 @@
      "phase": "base_1",
      "week_in_phase": 6,
      "is_cutback": false,
-     "volume_target_km": 16.5,
+     "volume_target_km": 14.1,
      "volume_target_min": null,
      "focus": "Make running a habit and finish a 5K. Volume, not speed.",
      "notes": [
@@ -4313,7 +4320,7 @@
        "day_offset": 2,
        "type": "easy",
        "title": "Easy run",
-       "duration_min": 49,
+       "duration_min": 42,
        "distance_km": null,
        "zones": [
         1,
@@ -4363,7 +4370,7 @@
        "day_offset": 5,
        "type": "strides",
        "title": "Easy run + strides",
-       "duration_min": 49,
+       "duration_min": 42,
        "distance_km": null,
        "zones": [
         1,
@@ -4387,8 +4394,8 @@
        "day_offset": 6,
        "type": "long",
        "title": "Long run",
-       "duration_min": 80,
-       "distance_km": 7.4,
+       "duration_min": 68,
+       "distance_km": 6.3,
        "zones": [
         1,
         2
@@ -4415,7 +4422,7 @@
      "phase": "base_1",
      "week_in_phase": 7,
      "is_cutback": false,
-     "volume_target_km": 18.2,
+     "volume_target_km": 15.4,
      "volume_target_min": null,
      "focus": "Make running a habit and finish a 5K. Volume, not speed.",
      "notes": [
@@ -4454,7 +4461,7 @@
        "day_offset": 2,
        "type": "easy",
        "title": "Easy run",
-       "duration_min": 52,
+       "duration_min": 44,
        "distance_km": null,
        "zones": [
         1,
@@ -4504,7 +4511,7 @@
        "day_offset": 5,
        "type": "strides",
        "title": "Easy run + strides",
-       "duration_min": 52,
+       "duration_min": 44,
        "distance_km": null,
        "zones": [
         1,
@@ -4528,8 +4535,8 @@
        "day_offset": 6,
        "type": "long",
        "title": "Long run",
-       "duration_min": 92,
-       "distance_km": 8.6,
+       "duration_min": 79,
+       "distance_km": 7.3,
        "zones": [
         1,
         2
@@ -4547,7 +4554,7 @@
         "10:22",
         "11:04"
        ],
-       "fuelling": "Take 30-60 g of carbohydrate per hour after the first hour, and drink to thirst. Above ~2.5 h aim toward 60-90 g/h using a glucose+fructose mix -- the gut is trainable and this is the training (ACSM/ISSN guidance; the high end needs practice, so build up to it rather than trying it on race day)."
+       "fuelling": "Water is enough, but practise carrying it. Start rehearsing a gel late in the run."
       }
      ]
     },
@@ -5870,11 +5877,11 @@
      "safety": false
     },
     {
-     "key": "ten_k_completed",
+     "key": "five_k_completed",
      "op": "true",
      "value": true,
-     "label": "10K completed",
-     "rationale": "Recalibrates VDOT at a duration where aerobic endurance actually shows up.",
+     "label": "5K completed continuously",
+     "rationale": "Recalibrates VDOT over a duration where aerobic endurance starts to show, and the first race-distance checkpoint.",
      "safety": false
     },
     {
@@ -8121,6 +8128,14 @@
      "value": 42,
      "label": "42+ km/week for three consecutive weeks",
      "rationale": "The base a marathon block is built on. Going into marathon-specific work below this is the single most common reason first marathons go badly.",
+     "safety": false
+    },
+    {
+     "key": "ten_k_completed",
+     "op": "true",
+     "value": true,
+     "label": "10K completed",
+     "rationale": "The first legitimate Riegel input. Below 10K the extrapolation to marathon distance spans too large a distance ratio to mean much, which is why no marathon prediction appears before this.",
      "safety": false
     },
     {

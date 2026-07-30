@@ -33,6 +33,9 @@ final class AppModel: ObservableObject {
     @Published var readiness: ReadinessView?
     @Published var startupError: String?
     @Published var dataWarnings: [String] = []
+    /// Set when a week has elapsed and the review has run. Surfaced as a sheet rather than applied
+    /// invisibly, because a plan that reorganises itself without explanation is one you stop trusting.
+    @Published var pendingReview: WeeklyReviewService.Outcome?
 
     let sensor = VeritySensor()
     let location = LocationPace()
@@ -41,6 +44,7 @@ final class AppModel: ObservableObject {
 
     private(set) var store: Store?
     private(set) var plans: PlanStore?
+    private(set) var reviewService: WeeklyReviewService?
 
     /// The locally-computed readiness view. Deliberately separate from the SleepController's own
     /// readiness: that one is tuned for clinical alertness, this one for training load, and they answer
@@ -68,6 +72,25 @@ final class AppModel: ObservableObject {
         } catch {
             startupError = (startupError.map { $0 + "\n" } ?? "") + "\(error)"
         }
+        if let store, let plans {
+            reviewService = WeeklyReviewService(store: store, plans: plans)
+        }
+    }
+
+    /// Run the weekly review if a week has elapsed. Idempotent: opening the app five times on a Monday
+    /// runs it once.
+    func runWeeklyReviewIfDue() {
+        guard let svc = reviewService, planState != nil else { return }
+        if let outcome = svc.runIfDue() {
+            pendingReview = outcome
+            planState = store?.loadPlanState()
+        }
+    }
+
+    func advancePhase(to next: String) {
+        reviewService?.advancePhase(to: next)
+        planState = store?.loadPlanState()
+        pendingReview = nil
     }
 
     var needsScreening: Bool { !(profile?.screeningCleared ?? false) }
@@ -146,7 +169,14 @@ struct RootView: View {
                 TodayView()
             }
         }
-        .task { await app.refreshNights() }
+        .task {
+            await app.refreshNights()
+            // After the nights are in, so readiness bands for the reviewed week are available.
+            app.runWeeklyReviewIfDue()
+        }
+        .sheet(item: $app.pendingReview) { outcome in
+            WeeklyReviewView(outcome: outcome).environmentObject(app)
+        }
     }
 }
 

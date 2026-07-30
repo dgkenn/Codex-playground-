@@ -384,13 +384,38 @@ def test_rep_set_not_cut_for_a_small_fade():
     assert c.record_rep(2, 244.0, 172.0, 400.0) is None
 
 
-def test_rep_set_cut_when_hr_fails_to_recover():
+def test_rep_set_cut_after_two_consecutive_poor_recoveries():
+    """HR at the END OF THE RECOVERY still high is the "not recovering" signal -- but one reading is
+    noise (a hill on the recovery jog, a badly timed sample), so it takes two in a row.
+
+    This is the deliberate alternative to lowering the threshold from 75% to 60% of reserve: a
+    beginner on a jog recovery often will not reach 60% even when fine, so a lower gate would cut
+    sets on physiology that is behaving normally.
+    """
     c = controller(SessionIntent(kind="intervals", target_zones=(5,)))
-    c.record_rep(1, 240.0, 170.0, 100.0)
-    # HR at the END OF THE RECOVERY is still at 90% of reserve -- that is the "not recovering"
-    # signal. It must be passed as hr_after_recovery, not as the rep-end HR.
-    cue = c.record_rep(2, 241.0, 175.0, 400.0, hr_after_recovery=55 + 0.90 * 132)
-    assert cue and "not coming down" in cue.text.lower()
+    bad = 55 + 0.90 * 132
+    c.record_rep(1, 240.0, 175.0, 100.0, hr_after_recovery=bad)
+    assert c.record_rep(2, 241.0, 175.0, 400.0, hr_after_recovery=bad) is None, \
+        "one poor recovery is noise, not a pattern"
+    cue = c.record_rep(3, 242.0, 175.0, 700.0, hr_after_recovery=bad)
+    assert cue and "last two reps" in cue.text.lower()
+
+
+def test_a_good_recovery_clears_the_failure_count():
+    """The rule is two CONSECUTIVE failures -- one good recovery in between resets it."""
+    c = controller(SessionIntent(kind="intervals", target_zones=(5,)))
+    bad, good = 55 + 0.90 * 132, 55 + 0.60 * 132
+    c.record_rep(1, 240.0, 175.0, 100.0, hr_after_recovery=bad)
+    c.record_rep(2, 241.0, 175.0, 400.0, hr_after_recovery=good)
+    assert c.record_rep(3, 242.0, 175.0, 700.0, hr_after_recovery=bad) is None
+    assert c.record_rep(4, 243.0, 175.0, 1000.0, hr_after_recovery=bad) is not None
+
+
+def test_recovery_threshold_stays_at_seventy_five_percent():
+    """Regression guard for a deliberate decision, so the reasoning is not quietly reversed."""
+    from marathon_engine.realtime import RECOVERY_FAILURES_TO_CUT, RECOVERY_HR_FRACTION
+    assert RECOVERY_HR_FRACTION == 0.75
+    assert RECOVERY_FAILURES_TO_CUT == 2
 
 
 def test_high_hr_at_rep_end_alone_never_cuts_the_set():

@@ -48,6 +48,43 @@ public struct GateDTO: Codable {
     public let label: String
     public let rationale: String
     public let safety: Bool
+
+    /// The threshold, which arrives as either a number or a bool depending on the operator. Decoded
+    /// into both slots so the comparison in `WeeklyReview.evaluateGates` has one path.
+    public let valueNumber: Double?
+    public let valueBool: Bool?
+
+    private enum CodingKeys: String, CodingKey {
+        case key, op, label, rationale, safety, value
+    }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        key = try c.decode(String.self, forKey: .key)
+        op = try c.decode(String.self, forKey: .op)
+        label = try c.decode(String.self, forKey: .label)
+        rationale = try c.decode(String.self, forKey: .rationale)
+        safety = try c.decode(Bool.self, forKey: .safety)
+        // Order matters: Bool must be tried first, because JSONDecoder will happily decode `true`
+        // as... nothing, but a numeric 1 would decode as Bool on some paths. Trying Bool first and
+        // Double second keeps `true`/`false` and `20`/`0.08` unambiguous.
+        if let b = try? c.decode(Bool.self, forKey: .value) {
+            valueBool = b; valueNumber = nil
+        } else if let d = try? c.decode(Double.self, forKey: .value) {
+            valueNumber = d; valueBool = nil
+        } else {
+            valueNumber = nil; valueBool = nil
+        }
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(key, forKey: .key); try c.encode(op, forKey: .op)
+        try c.encode(label, forKey: .label); try c.encode(rationale, forKey: .rationale)
+        try c.encode(safety, forKey: .safety)
+        if let b = valueBool { try c.encode(b, forKey: .value) }
+        else if let d = valueNumber { try c.encode(d, forKey: .value) }
+    }
 }
 
 public struct PhaseDTO: Codable {

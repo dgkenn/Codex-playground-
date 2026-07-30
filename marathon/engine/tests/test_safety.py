@@ -475,3 +475,59 @@ def test_bone_model_admits_its_own_limits():
     from marathon_engine.safety import bone_window_increment_factor
     doc = bone_window_increment_factor.__doc__
     assert "simplification" in doc and "extend past it" in doc
+
+
+# ---- time-trial precedence -------------------------------------------------------------------
+
+def _tt(distance_m, seconds, days_ago=0, walked=False):
+    from datetime import date, timedelta
+    from marathon_engine.assessment import TimeTrial
+    return TimeTrial(day=date(2026, 8, 1) - timedelta(days=days_ago),
+                     distance_m=distance_m, seconds=seconds, walked=walked)
+
+
+def test_longest_distance_wins():
+    """VDOT comes from the best available result by distance, never averaged across distances: a
+    2000 m trial systematically over-estimates long-distance ability in someone without mileage."""
+    from marathon_engine.assessment import best_time_trial
+    best = best_time_trial([_tt(2000, 700), _tt(10000, 3600), _tt(5000, 1700)])
+    assert best.distance_m == 10000
+
+
+def test_most_recent_wins_within_a_distance():
+    from marathon_engine.assessment import best_time_trial
+    best = best_time_trial([_tt(5000, 1800, days_ago=90), _tt(5000, 1700, days_ago=5)])
+    assert best.seconds == 1700
+
+
+def test_stale_results_are_dropped_before_precedence_applies():
+    """A six-month-old half marathon describes a different athlete, so it must not outrank a fresh
+    5K on distance alone."""
+    from marathon_engine.assessment import best_time_trial
+    best = best_time_trial([_tt(21097.5, 9000, days_ago=400), _tt(5000, 1700, days_ago=3)])
+    assert best.distance_m == 5000
+
+
+def test_walked_trials_are_excluded():
+    """A run with walk breaks is not a valid maximal continuous performance."""
+    from marathon_engine.assessment import best_time_trial
+    best = best_time_trial([_tt(10000, 4000, walked=True), _tt(5000, 1700)])
+    assert best.distance_m == 5000
+
+
+def test_no_usable_trials_returns_none():
+    from marathon_engine.assessment import best_time_trial
+    assert best_time_trial([]) is None
+    assert best_time_trial([_tt(5000, 1700, walked=True)]) is None
+
+
+def test_unrecognised_distance_still_beats_nothing():
+    from marathon_engine.assessment import best_time_trial
+    best = best_time_trial([_tt(3000, 900)])
+    assert best is not None and best.distance_m == 3000
+
+
+def test_precedence_order_is_longest_first():
+    from marathon_engine.assessment import TT_PRECEDENCE
+    assert list(TT_PRECEDENCE) == sorted(TT_PRECEDENCE, reverse=True)
+    assert TT_PRECEDENCE[0] == pytest.approx(42195.0)

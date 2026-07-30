@@ -170,6 +170,10 @@ LONG_RUN_MAX_KM = 32.0
 #: We allow up to 50% and treat that as the explicit cost of the 3-day schedule.
 LONG_RUN_MAX_SHARE = 0.50
 
+#: Which week of BASE_1 carries the 2000 m time trial. Four weeks of continuous running first: a
+#: maximal effort is reasonable once the tissue has adapted to running at all, and not before.
+_TIME_TRIAL_WEEK = 5
+
 CUTBACK_EVERY = 4           # every 4th week is a cutback [convention, not trial-tested]
 CUTBACK_FACTOR = 0.70       # volume x0.70 on a cutback week
 
@@ -366,9 +370,13 @@ PHASE_GATES: Dict[Phase, Tuple[Gate, ...]] = {
     Phase.BASE_1: (
         Gate("weekly_km_3wk_min", ">=", 20, "20+ km/week for three consecutive weeks",
              "A stable floor of aerobic volume, held long enough to be real rather than a spike."),
-        Gate("five_k_completed", "true", True, "5K completed continuously",
-             "The first honest performance measurement -- it replaces the conservative submaximal "
-             "seed VDOT with a real one."),
+        Gate("time_trial_2000m_done", "true", True, "2000 m time trial completed",
+             "The first honest performance measurement, and 2000 m rather than 5K on purpose. It "
+             "takes a beginner roughly 11-12 minutes, which sits comfortably inside Riegel's "
+             "validated 3.5-230 minute window AND inside the range where Daniels' sustainable-"
+             "%VO2max curve is well behaved. A 5K at this stage is a longer maximal effort on less "
+             "prepared tissue for a *worse* VDOT estimate. The 5K becomes the next checkpoint, not "
+             "the first one."),
         Gate("calf_raises_min", ">=", 20, "20+ single-leg calf raises per side",
              "Calf-Achilles endurance is the most common structural limiter in new runners and the "
              "one most likely to fail as volume climbs.", safety=True),
@@ -380,8 +388,9 @@ PHASE_GATES: Dict[Phase, Tuple[Gate, ...]] = {
              "The volume floor that makes threshold work productive instead of merely tiring."),
         Gate("long_run_km", ">=", 14, "A 14 km long run completed",
              "Roughly a third of the marathon distance -- the checkpoint before half-marathon work."),
-        Gate("ten_k_completed", "true", True, "10K completed",
-             "Recalibrates VDOT at a duration where aerobic endurance actually shows up."),
+        Gate("five_k_completed", "true", True, "5K completed continuously",
+             "Recalibrates VDOT over a duration where aerobic endurance starts to show, and the "
+             "first race-distance checkpoint."),
         Gate("long_run_decoupling", "<=", 0.08, "Long-run decoupling under 8%",
              "Heart rate drifting hard relative to pace on a long run means the aerobic base is "
              "still thin, whatever the 10K time says. Under 5% is the target; 8% is the gate."),
@@ -392,6 +401,10 @@ PHASE_GATES: Dict[Phase, Tuple[Gate, ...]] = {
         Gate("weekly_km_3wk_min", ">=", 42, "42+ km/week for three consecutive weeks",
              "The base a marathon block is built on. Going into marathon-specific work below this "
              "is the single most common reason first marathons go badly."),
+        Gate("ten_k_completed", "true", True, "10K completed",
+             "The first legitimate Riegel input. Below 10K the extrapolation to marathon distance "
+             "spans too large a distance ratio to mean much, which is why no marathon prediction "
+             "appears before this."),
         Gate("long_run_km", ">=", 20, "A 20 km long run completed", "Half-marathon readiness."),
         Gate("half_completed", "true", True, "Half marathon completed",
              "The best available predictor of marathon readiness, and a rehearsal of fuelling, "
@@ -823,6 +836,31 @@ def _strength(day: int, phase: Phase, *, include_plyo: bool) -> Session:
     )
 
 
+def _time_trial_2000m(day: int, paces: TrainingPaces) -> Session:
+    """The 2000 m trial that seeds a real VDOT.
+
+    Distance chosen for the duration it produces, not for tidiness: ~11-12 minutes for a beginner
+    lands inside Riegel's validated 3.5-230 min window and inside the range where Daniels'
+    sustainable-%VO2max curve behaves. A 5K here would be a longer maximal effort on less prepared
+    tissue and would yield a *worse* estimate, not a better one.
+    """
+    return Session(
+        day_offset=day, type=SessionType.TIME_TRIAL, title="2000 m time trial",
+        duration_min=45, distance_km=2.0, zones=(4, 5),
+        structure="10 min easy warm-up plus 4 x 30 s strides. Then 2000 m (5 laps of a track, or a "
+                  "measured flat 2 km) as fast as you can hold evenly. 10 min walk/jog cool-down.",
+        intent="Replace the conservative submaximal estimate with a real performance. Everything "
+               "downstream -- zones, every prescribed pace, the in-run targets -- is derived from "
+               "this number, which is why it is worth doing properly.",
+        cues=["Even effort beats a fast start. If the second half is much slower than the first, the "
+              "number underestimates you and you will have to do it again.",
+              "Go alone, on a flat measured course, and not into a headwind.",
+              "Stop immediately for chest discomfort, light-headedness, or anything that feels "
+              "wrong. A time trial is never worth that.",
+              "Record your peak heart rate: if this is a genuinely maximal effort it is the first "
+              "legitimate chance to observe your actual maximum."])
+
+
 def _rest(day: int, note: str = "") -> Session:
     return Session(day_offset=day, type=SessionType.REST, title="Rest",
                    intent=note or "Adaptation happens now, not during the session.")
@@ -947,7 +985,13 @@ def generate_week(profile: FitnessProfile, phase: Phase, week_in_phase: int, *,
                                                        config=cfg, is_cutback=is_cutback)
         easy_km = max(0.0, (km or 0.0) - (lr_km or 0.0))
         per_easy_min = easy_km / 2.0 * paces.easy / 60.0 if easy_km else 30.0
-        sessions.append(_easy_run(d_a, per_easy_min, paces))
+        # The 2000 m trial replaces the first easy run once there is enough base to make a maximal
+        # effort reasonable. Week 5 rather than week 1: four weeks of continuous running is the
+        # minimum before asking for a maximal effort on tissue that has only just stopped walking.
+        if week_in_phase == _TIME_TRIAL_WEEK:
+            sessions.append(_time_trial_2000m(d_a, paces))
+        else:
+            sessions.append(_easy_run(d_a, per_easy_min, paces))
         strides = _easy_run(d_b, per_easy_min, paces, title="Easy run + strides")
         strides.structure = ("Easy running, then 6 x 20 s strides at a relaxed fast pace with full "
                              "walk-back recovery. Strides are not a workout -- they are form and "
@@ -959,6 +1003,12 @@ def generate_week(profile: FitnessProfile, phase: Phase, week_in_phase: int, *,
         sessions.append(_long_run(d_long, lr_km, lr_min, paces, phase, lr_notes))
         notes = lr_notes + ["No threshold work yet. Volume and consistency first -- threshold work "
                             "on a thin base produces fatigue without much adaptation."]
+        if week_in_phase == _TIME_TRIAL_WEEK:
+            notes.append(
+                "Time-trial week. Everything downstream -- your zones, every prescribed pace, the "
+                "controller's targets -- is currently derived from a deliberately conservative "
+                "submaximal estimate. This is the run that replaces it with a real measurement, so "
+                "expect your paces to get quicker afterwards.")
 
     elif phase == Phase.BASE_2:
         lr_km, lr_min, lr_notes = long_run_progression(phase, week_in_phase, km, paces,

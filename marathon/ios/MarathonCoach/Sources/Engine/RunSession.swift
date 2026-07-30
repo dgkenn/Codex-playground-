@@ -105,6 +105,10 @@ public final class RunSession: ObservableObject {
     private var usableHrTicks = 0
     private var frozenTicks = 0
     private var cadenceSamples: [Double] = []
+    // Pace-quality tallies, so stride calibration can require that GPS was genuinely good rather than
+    // merely present.
+    private var paceTicks = 0
+    private var goodPaceTicks = 0
     // Labelled tuples, because Swift will not implicitly convert [(Double, Double)] into
     // [(speed: Double, hr: Double)] at the decoupling call site.
     private var firstHalf: [(speed: Double, hr: Double)] = []
@@ -235,6 +239,10 @@ public final class RunSession: ObservableObject {
         if lastHrStatus == "frozen" { frozenTicks += 1 }
         if let hr = hrValue, lastHrStatus == "ok" { hrSamples.append((now, hr)) }
         if let c = cadValue { cadenceSamples.append(c) }
+        if let q = pace?.quality {
+            paceTicks += 1
+            if q == .good { goodPaceTicks += 1 }
+        }
 
         let pace = lastPace
         let speed = pace?.speedMPerS
@@ -341,6 +349,30 @@ public final class RunSession: ObservableObject {
         if let mean = meanHr, coverage >= 0.8 {
             let dhr = max(0, min(1.3, (mean - profile.hrRest) / (profile.hrMax - profile.hrRest)))
             trimp = durationMin * dhr * 0.64 * exp(1.92 * dhr)
+        }
+
+        // Treadmill stride calibration, derived rather than asked for.
+        //
+        // Stride length is distance divided by steps taken. It is only trustworthy from a run where GPS
+        // was actually good, so the quality gate matters more than the arithmetic: calibrating from a
+        // run under tree cover would bake a GPS error into every future treadmill session. Kept as a
+        // running average over calibrations rather than overwritten, because stride varies with pace and
+        // one run at one pace is a narrow sample.
+        if location.mode == .outdoor, let cad = meanCad, cad > 100,
+           distanceKm > 2.0, goodPaceTicks >= Int(0.8 * Double(max(1, paceTicks))) {
+            let steps = cad * durationMin
+            let stride = (distanceKm * 1000) / steps
+            // Adult running stride is roughly 0.9-1.6 m; anything outside that is a measurement fault,
+            // not a person.
+            if stride > 0.85, stride < 1.75 {
+                var p = profile
+                if let existing = p.calibratedStrideM {
+                    p.calibratedStrideM = existing * 0.7 + stride * 0.3
+                } else {
+                    p.calibratedStrideM = stride
+                }
+                try? store.save(profile: p)
+            }
         }
 
         var record = SessionRecord(

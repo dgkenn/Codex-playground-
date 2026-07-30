@@ -500,3 +500,44 @@ def test_intervals_return_above_the_floor(profile):
     found = any(any(s.type == SessionType.INTERVALS for s in generate_week(high, Phase.HALF_BUILD, wk).sessions)
                 for wk in range(1, 10))
     assert found
+
+
+# ---- the race-checkpoint chain ---------------------------------------------------------------
+
+def test_time_trial_is_scheduled_in_base_1(profile):
+    """The 2000 m trial must actually appear as a session, not merely as a gate."""
+    found = [wk for wk in range(1, 9)
+             if any(s.type == SessionType.TIME_TRIAL
+                    for s in generate_week(profile, Phase.BASE_1, wk).sessions)]
+    assert found, "no time trial scheduled in BASE_1"
+    assert min(found) >= 4, "a maximal effort needs a few weeks of continuous running first"
+
+
+def test_time_trial_week_explains_what_it_replaces(profile):
+    w = next(generate_week(profile, Phase.BASE_1, wk) for wk in range(1, 9)
+             if any(s.type == SessionType.TIME_TRIAL
+                    for s in generate_week(profile, Phase.BASE_1, wk).sessions))
+    assert any("submaximal" in n.lower() for n in w.notes)
+
+
+def test_time_trial_carries_a_safety_cue(profile):
+    w = next(generate_week(profile, Phase.BASE_1, wk) for wk in range(1, 9)
+             if any(s.type == SessionType.TIME_TRIAL
+                    for s in generate_week(profile, Phase.BASE_1, wk).sessions))
+    tt = next(s for s in w.sessions if s.type == SessionType.TIME_TRIAL)
+    assert any("chest" in c.lower() for c in tt.cues)
+    assert any("peak heart rate" in c.lower() for c in tt.cues)
+
+
+def test_race_checkpoints_ascend_by_distance_across_phases():
+    """2000 m seeds VDOT, then 5K, then 10K, then the half. Each phase asks for one step further --
+    asking for a 10K before a 5K would be a maximal effort at an untested distance."""
+    def keys(p):
+        return {g.key for g in PHASE_GATES[p]}
+    assert "time_trial_2000m_done" in keys(Phase.BASE_1)
+    assert "five_k_completed" in keys(Phase.BASE_2)
+    assert "ten_k_completed" in keys(Phase.HALF_BUILD)
+    assert "half_completed" in keys(Phase.HALF_BUILD)
+    # And no phase asks for a distance before the one below it.
+    assert "five_k_completed" not in keys(Phase.BASE_1)
+    assert "ten_k_completed" not in keys(Phase.BASE_2)

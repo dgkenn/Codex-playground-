@@ -11,8 +11,12 @@ training plan assumes a recent race time, and the two classic field tests are bo
 So week 1 uses a **submaximal graded walk-jog ramp** instead, which is safe, repeatable, and yields
 everything the planner needs: the HR-speed relationship, a ventilatory-threshold estimate from the
 talk test, a seed VDOT, cadence at each speed, and an efficiency-factor baseline to re-test against.
-The maximal tests arrive later, when the tissue can take them: a 1 km / 1 mile trial around week 4,
-a 5K around week 8-10.
+The maximal tests arrive later, when the tissue can take them, and in ascending order of what they
+tell you: a **2000 m trial** around week 5 of the base phase, then a 5K, then a 10K, then a half. The
+2000 m distance is chosen for the *duration* it produces -- roughly 11-12 minutes for a beginner, which
+sits inside both Riegel's validated 3.5-230 minute window and the range where Daniels' sustainable-
+%VO2max curve is well behaved. A 5K at that stage would be a longer maximal effort on less prepared
+tissue for a worse estimate.
 
 Protocol and evidence
 ---------------------
@@ -51,9 +55,10 @@ explains an early Achilles or calf problem in a new runner; healthy adults shoul
 roughly 20-25 unilateral raises through full range, and being well under that is a specific,
 fixable finding rather than a vague "get stronger".
 
-**A6/A7 -- Progressive time trials.** ~Week 4: 1 km (or 1 mile) trial once continuous running is
-established -> first genuine VDOT. ~Week 8-10: 5K -> VDOT recalibration and the first real race
-checkpoint. Then 10K and a half as the block progresses.
+**A6 -- Progressive time trials**, gated by phase rather than by date: 2000 m (seeds the first genuine
+VDOT), 5K, 10K (the first legitimate Riegel input), half marathon (sets marathon goal pace). VDOT is
+re-derived from the **best available** result by the precedence in :data:`TT_PRECEDENCE` and is never
+averaged across distances -- see :func:`best_time_trial`.
 
 **Re-testing.** A2 repeats every 4 weeks on the same route at the same time of day. The tracked
 outputs are HR at each fixed speed (should fall), efficiency factor (should rise), and the
@@ -85,6 +90,7 @@ __all__ = [
     "fit_hr_speed", "speed_at_hr", "hr_at_speed", "estimate_hr_max_from_ramp",
     "lt_speed_from_talk_test", "seed_vdot_from_ramp", "profile_from_ramp",
     "profile_from_time_trial", "update_hr_max", "compare_ramps", "ramp_protocol",
+    "best_time_trial", "TT_PRECEDENCE",
 ]
 
 RAMP_STAGE_MIN = 4.0
@@ -809,3 +815,38 @@ def ramp_protocol(age: float, hr_rest: float, *, start_kmh: float = 5.0,
             "tolerance as much as fitness. Three good submaximal stages give us the HR-speed "
             "relationship, which is all the planner needs to start."),
     }
+
+
+#: Race distances in order of how much they tell you about marathon readiness, longest first.
+#: VDOT is re-derived from the **best available** result by this precedence and is **never averaged
+#: across distances**. Averaging a 2000 m trial with a half marathon produces a number that describes
+#: neither: the shorter effort systematically over-estimates long-distance ability in someone without
+#: endurance mileage, and blending the two just hides that.
+TT_PRECEDENCE: Tuple[float, ...] = (42195.0, 21097.5, 10000.0, 5000.0, 2000.0, 1609.34)
+
+
+def best_time_trial(trials: Sequence[TimeTrial], *,
+                    max_age_days: int = 180) -> Optional[TimeTrial]:
+    """Pick the trial VDOT should be derived from: longest distance first, most recent within that.
+
+    ``max_age_days`` exists because a six-month-old result describes a different athlete. A stale
+    long-distance result does not outrank a fresh shorter one -- so anything older than the window is
+    dropped before precedence is applied, rather than winning on distance alone.
+
+    Walked trials are excluded from selection entirely: a run with walk breaks is not a valid maximal
+    continuous performance, and :func:`profile_from_time_trial` already treats its VDOT as a floor
+    rather than a measurement.
+    """
+    if not trials:
+        return None
+    newest = max(t.day for t in trials)
+    fresh = [t for t in trials
+             if (newest - t.day).days <= max_age_days and not t.walked]
+    if not fresh:
+        return None
+    for distance in TT_PRECEDENCE:
+        at_distance = [t for t in fresh if abs(t.distance_m - distance) / distance < 0.05]
+        if at_distance:
+            return max(at_distance, key=lambda t: t.day)
+    # An unrecognised distance still beats nothing; take the longest, then the most recent.
+    return max(fresh, key=lambda t: (t.distance_m, t.day))

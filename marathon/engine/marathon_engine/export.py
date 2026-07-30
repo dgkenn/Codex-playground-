@@ -39,6 +39,8 @@ from marathon_engine.realtime import (
     ControlMode, InRunController, RunTick, SessionIntent, classify_hr_rise,
     predict_steady_state_hr, speed_correction,
 )
+from marathon_engine.adapt import replan_week
+from marathon_engine.load import acwr, ewma_load
 from marathon_engine.safety import RED_FLAG_SYMPTOMS, SUPPLEMENT_CHECKS, hydration_plan
 from marathon_engine.signal_quality import (
     HrGate, HrSample, cadence_lock_suspicion, frozen_hr_suspicion, not_worn_suspicion,
@@ -214,6 +216,70 @@ def export_golden_vectors() -> Dict[str, Any]:
         # vacuous -- which is exactly what happened the first time.
         hr_target = 142.0 + (speed - 2.4) * 3.6 * 12.0
         hr += (hr_target - hr) / 45.0
+    # Weekly-review decisions. Ported to Swift because they must run on device every Monday with no
+    # server, so they need the same parity treatment as the controller. Each case is chosen to exercise
+    # one branch of the precedence order, including the ones that only differ by which rule fires first.
+    replan_cases = []
+    for name, kwargs in (
+        ("good_week", dict(planned_volume=33.0, achieved_volume=30.0,
+                           sessions_planned=3, sessions_completed=3)),
+        ("pain_holds", dict(planned_volume=33.0, achieved_volume=30.0,
+                            sessions_planned=3, sessions_completed=3, max_pain=4)),
+        ("two_bad_readiness_days", dict(planned_volume=33.0, achieved_volume=30.0,
+                                        sessions_planned=3, sessions_completed=3,
+                                        readiness_bands=["normal", "suppressed", "strained"])),
+        ("disrupted_week", dict(planned_volume=40.0, achieved_volume=12.0,
+                                sessions_planned=3, sessions_completed=1)),
+        ("zero_volume_week", dict(planned_volume=40.0, achieved_volume=0.0,
+                                  sessions_planned=3, sessions_completed=0)),
+        ("cutback_due", dict(planned_volume=40.0, achieved_volume=40.0,
+                             sessions_planned=3, sessions_completed=3, weeks_since_cutback=3)),
+        ("pain_beats_cutback", dict(planned_volume=40.0, achieved_volume=40.0,
+                                    sessions_planned=3, sessions_completed=3,
+                                    weeks_since_cutback=3, max_pain=5)),
+        ("advance_capped_off_achieved", dict(planned_volume=40.0, achieved_volume=20.0,
+                                             sessions_planned=3, sessions_completed=3)),
+    ):
+        d = replan_week(**kwargs)
+        replan_cases.append({"case": name,
+                             "planned_volume": kwargs.get("planned_volume"),
+                             "achieved_volume": kwargs["achieved_volume"],
+                             "sessions_planned": kwargs["sessions_planned"],
+                             "sessions_completed": kwargs["sessions_completed"],
+                             "readiness_bands": kwargs.get("readiness_bands", []),
+                             "max_pain": kwargs.get("max_pain", 0),
+                             "weeks_since_cutback": kwargs.get("weeks_since_cutback", 0),
+                             "expected_action": d.action,
+                             "expected_next_volume": d.next_volume})
+
+    # The ACWR-cut case separately, because it needs a load series rather than scalars.
+    spike_series = [20.0] * 28 + [200.0] * 7
+    spike = acwr(spike_series)
+    spike_decision = replan_week(50.0, 50.0, 3, 3, acwr_result=spike)
+    replan_cases.append({"case": "acwr_above_hard_cap",
+                         "daily_loads": spike_series,
+                         "planned_volume": 50.0, "achieved_volume": 50.0,
+                         "sessions_planned": 3, "sessions_completed": 3,
+                         "readiness_bands": [], "max_pain": 0, "weeks_since_cutback": 0,
+                         "expected_ratio": round(spike.ratio, 9),
+                         "expected_band": spike.band,
+                         "expected_action": spike_decision.action,
+                         "expected_next_volume": spike_decision.next_volume})
+    v["replan"] = replan_cases
+
+    # EWMA and the insufficient-history guard, which is what stops a beginner's exploding ratio from
+    # vetoing their first four weeks of training.
+    v["acwr"] = []
+    for name, series in (("steady", [50.0] * 40),
+                         ("spike", [30.0] * 30 + [120.0] * 7),
+                         ("detraining", [80.0] * 30 + [10.0] * 7),
+                         ("beginner_insufficient_history", [0.0] * 6 + [40.0]),
+                         ("all_zero", [0.0] * 40)):
+        r = acwr(series)
+        v["acwr"].append({"case": name, "daily_loads": series,
+                          "acute": round(r.acute, 9), "chronic": round(r.chronic, 9),
+                          "ratio": round(r.ratio, 9), "band": r.band})
+
     v["controller_trace"] = {
         "description": ("Obedient runner with a first-order HR response. The Swift port must produce "
                         "the same cue sequence; a divergence means the lead compensation, deadband or "

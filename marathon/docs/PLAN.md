@@ -285,7 +285,7 @@ Your schedule is **3 runs + 2 strength sessions**, with the long run on Sun. Ses
 **To leave this phase** (all of these, plus at least 8 weeks):
 
 - **20+ km/week for three consecutive weeks** — A stable floor of aerobic volume, held long enough to be real rather than a spike.
-- **5K completed continuously** — The first honest performance measurement -- it replaces the conservative submaximal seed VDOT with a real one.
+- **2000 m time trial completed** — The first honest performance measurement, and 2000 m rather than 5K on purpose. It takes a beginner roughly 11-12 minutes, which sits comfortably inside Riegel's validated 3.5-230 minute window AND inside the range where Daniels' sustainable-%VO2max curve is well behaved. A 5K at this stage is a longer maximal effort on less prepared tissue for a *worse* VDOT estimate. The 5K becomes the next checkpoint, not the first one.
 - **20+ single-leg calf raises per side** 🛑 — Calf-Achilles endurance is the most common structural limiter in new runners and the one most likely to fail as volume climbs.
 - **No pain above 2/10 for two weeks** 🛑 — The pain-monitoring model treats 0-2/10 as acceptable, 3-5/10 as a warning to hold volume, and anything above 5/10 as a stop. Two clean weeks means the tissue is tolerating the current load, which is the precondition for adding more.
 - **80% of planned sessions completed over 4 weeks** — Consistency is the variable that actually predicts progress. Advancing a phase on the strength of a good fortnight inside a patchy block just moves the problem forward.
@@ -403,7 +403,7 @@ Your schedule is **3 runs + 2 strength sessions**, with the long run on Sun. Ses
 
 - **32+ km/week for three consecutive weeks** — The volume floor that makes threshold work productive instead of merely tiring.
 - **A 14 km long run completed** — Roughly a third of the marathon distance -- the checkpoint before half-marathon work.
-- **10K completed** — Recalibrates VDOT at a duration where aerobic endurance actually shows up.
+- **5K completed continuously** — Recalibrates VDOT over a duration where aerobic endurance starts to show, and the first race-distance checkpoint.
 - **Long-run decoupling under 8%** — Heart rate drifting hard relative to pace on a long run means the aerobic base is still thin, whatever the 10K time says. Under 5% is the target; 8% is the gate.
 - **No pain above 2/10 for two weeks** 🛑 — The pain-monitoring model treats 0-2/10 as acceptable, 3-5/10 as a warning to hold volume, and anything above 5/10 as a stop. Two clean weeks means the tissue is tolerating the current load, which is the precondition for adding more.
 - **80% of planned sessions completed over 4 weeks** — Consistency is the variable that actually predicts progress. Advancing a phase on the strength of a good fortnight inside a patchy block just moves the problem forward.
@@ -488,6 +488,7 @@ Your schedule is **3 runs + 2 strength sessions**, with the long run on Sun. Ses
 **To leave this phase** (all of these, plus at least 10 weeks):
 
 - **42+ km/week for three consecutive weeks** — The base a marathon block is built on. Going into marathon-specific work below this is the single most common reason first marathons go badly.
+- **10K completed** — The first legitimate Riegel input. Below 10K the extrapolation to marathon distance spans too large a distance ratio to mean much, which is why no marathon prediction appears before this.
 - **A 20 km long run completed** — Half-marathon readiness.
 - **Half marathon completed** — The best available predictor of marathon readiness, and a rehearsal of fuelling, pacing and kit at a distance where mistakes are survivable.
 - **No pain above 2/10 for two weeks** 🛑 — The pain-monitoring model treats 0-2/10 as acceptable, 3-5/10 as a warning to hold volume, and anything above 5/10 as a stop. Two clean weeks means the tissue is tolerating the current load, which is the precondition for adding more.

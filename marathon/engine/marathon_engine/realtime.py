@@ -72,7 +72,8 @@ __all__ = [
     "TAU_HR", "DEAD_TIME_S", "CONFIRM_S", "HR_DEADBAND_BPM", "PACE_CUE_MIN_GAP_S",
     "DRIFT_MAX_BPM_PER_MIN", "STEP_MIN_BPM_PER_MIN", "PACE_STEADY_CV",
     "ABORT_HR_FRACTION", "ABORT_HR_SUSTAIN_S", "PAIN_STOP", "PAIN_WARN",
-    "REP_FADE_ABORT_PCT", "RECOVERY_HR_FRACTION", "DECOUPLE_CONVERT",
+    "REP_FADE_ABORT_PCT", "RECOVERY_HR_FRACTION", "RECOVERY_FAILURES_TO_CUT",
+    "DECOUPLE_CONVERT",
     "CueLevel", "Cue", "CueScheduler", "ControlMode", "RunState", "SessionIntent",
     "RunTick", "ControlDecision", "predict_steady_state_hr", "speed_correction",
     "classify_hr_rise", "safety_check", "InRunController",
@@ -127,8 +128,20 @@ PAIN_STOP = 5
 #: Continuing past this point accumulates fatigue without the intended stimulus.
 REP_FADE_ABORT_PCT = 0.08
 
-#: Recovery between reps must bring HR below this fraction of reserve, or the set is cut.
+#: Recovery between reps must bring HR below this fraction of reserve.
+#:
+#: Kept at 0.75 rather than the 0.60 a later review proposed. The argument for lowering it was that
+#: 0.75 rarely fires and is therefore not a real gate; the argument against is stronger. A beginner on
+#: a two-to-three minute jog recovery frequently will not drop to 60% of reserve even when everything
+#: is fine, so a 0.60 gate would cut sets on physiology that is behaving normally -- and wrongly
+#: aborting a workout has a real cost. The gate is made meaningful instead by
+#: :data:`RECOVERY_FAILURES_TO_CUT`, which is the correct fix for "it never fires": require the signal
+#: to repeat rather than making a single reading easier to trip.
 RECOVERY_HR_FRACTION = 0.75
+
+#: Consecutive poor recoveries required before the set is cut. One high reading is noise; two in a row
+#: is a pattern.
+RECOVERY_FAILURES_TO_CUT = 2
 
 #: Mid-run decoupling above this converts the remainder of a long run to easy/walk.
 DECOUPLE_CONVERT = 0.10
@@ -441,6 +454,7 @@ class InRunController:
     _drift_announced: bool = False
     _band_widened_bpm: float = 0.0
     _rep_paces: List[float] = field(default_factory=list, repr=False)
+    _recovery_failures: int = 0
     _aborted: bool = False
 
     # ---- helpers ----------------------------------------------------------------------
@@ -660,10 +674,24 @@ class InRunController:
         if hr_after_recovery is not None:
             frac = reserve_fraction_at_hr(hr_after_recovery, self.zones.hr_max, self.zones.hr_rest)
             if frac > RECOVERY_HR_FRACTION:
-                return Cue(CueLevel.SESSION,
-                           "Your heart rate is not coming down between reps. Finish the set here "
-                           "and jog easy -- that is the honest read on today.",
-                           key="set_cut_recovery")
+                self._recovery_failures += 1
+                # Hysteresis: require TWO consecutive poor recoveries before cutting the set.
+                #
+                # This is the deliberate answer to a suggestion that the threshold be lowered from 75%
+                # to 60% of reserve on the grounds that 75% rarely fires. Lowering it would make the
+                # gate stricter in the wrong way -- a beginner on a jog recovery often will not reach
+                # 60% of reserve within two or three minutes even when perfectly fine, so the set
+                # would be cut on physiology that is working as expected. One high reading is noise
+                # (a hill on the recovery jog, a badly timed sample, a moment of impatience); two in a
+                # row is a pattern. Hysteresis keeps the gate meaningful without making it trigger-happy.
+                if self._recovery_failures >= RECOVERY_FAILURES_TO_CUT:
+                    return Cue(CueLevel.SESSION,
+                               "Your heart rate has not come down between the last two reps. Finish "
+                               "the set here and jog easy -- that is the honest read on today.",
+                               key="set_cut_recovery")
+            else:
+                # A good recovery clears the count: the rule is two *consecutive* failures.
+                self._recovery_failures = 0
         return None
 
     def check_long_run_decoupling(self, decouple: float, now_s: float,
