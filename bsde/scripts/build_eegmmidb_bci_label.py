@@ -145,6 +145,11 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--out", default=os.path.join(HERE, "..", "results", "eegmmidb_bci.csv"))
     ap.add_argument("--limit", type=int, default=None)
+    ap.add_argument("--shard", type=int, default=0)
+    ap.add_argument("--of", type=int, default=1, dest="n_shards",
+                    help="split the SUBJECT list, not the trial list: the cost here is the per-run HTTPS "
+                         "fetch, which is per subject, so sharding by subject parallelises the bottleneck "
+                         "and sharding any other way would not")
     ap.add_argument("--task", choices=["imagery", "executed"], default="imagery",
                     help="imagery = the label (covert command-following); executed = E28's PLACEBO, real "
                          "movement, which is decodable from signal quality and motor-cortex accessibility "
@@ -163,7 +168,7 @@ def main(argv=None) -> int:
                 return 1
             done = {r["subject"] for r in rd}
         print(f"   resuming: {len(done)} subjects present", flush=True)
-    todo = [s for s in subjects() if s not in done][: a.limit]
+    todo = [s for i, s in enumerate(subjects()) if i % a.n_shards == a.shard and s not in done][: a.limit]
     rng = np.random.default_rng(20260730)
     new = not os.path.exists(out) or os.path.getsize(out) == 0
     with open(out, "a", newline="") as fh:
