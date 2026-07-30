@@ -114,6 +114,54 @@ SCOPE AND LIMITS, none of which a larger n repairs.
   * One site, one monitor, two frontal channels, 128 Hz: `exponent_gamma` is above Nyquist, `uce_v1` needs
     a posterior region this montage lacks.
   * Cases are taken in ascending case id, never selected by result.
+
+--------------------------------------------------------------------------------------------------------
+OUTCOME, ADDED AFTER THE RUN. **P2, P3 and P4 all PASSED. P5 — the placebo — FAILED, and P2 is therefore
+WITHDRAWN.** The registered gate is applied as registered.
+
+    P1  PASSED. Volatile arm: 203 patients, 115 with varying MAC, 110 surviving the muscle filter.
+        Propofol arm: 44 patients, all 44 with varying Ce and all 44 surviving. The rule-32 column matters
+        — 88 volatile patients were held at effectively constant MAC and are excluded rather than averaged
+        in as zeros.
+    P2  Within-subject Spearman of `exponent_high` with administered dose: volatile **-0.126
+        [-0.174, -0.078]** over 110 patients, propofol **-0.082 [-0.156, -0.005]** over 44. Both intervals
+        exclude zero.
+    P3  PASSED. Same sign in both arms, magnitude ratio 65.2 % against a floor of 50 %.
+    P4  PASSED, and this is the acceptance condition Challenge A actually turns on. At matched MAC decile,
+        sevoflurane versus desflurane gives a drug probe of **|AUC - 0.5| = 0.006** against a depth
+        legibility of 0.063 — the agent is an order of magnitude less legible than the depth. 95 sevoflurane
+        and 35 desflurane patients, 2,097 rows.
+    P5  **FAILED.** Remifentanil effect-site concentration correlates **-0.111** in the volatile arm, 87.7 %
+        of the hypnotic's -0.126, and **-0.139** in the propofol arm, **168.7 %** of the hypnotic's -0.082 —
+        the placebo is STRONGER than the primary there.
+
+**WHAT THIS MEANS, AND THE CARE IT NEEDS.** The candidate's dose association is not separable, in this
+design, from the phase of the operation. Remifentanil is titrated alongside the hypnotic, so both rise and
+fall together, and a measure correlating equally with each has not been shown to track hypnotic depth
+specifically. **P2 is withdrawn. Challenge A is not met here.**
+
+**The placebo did exactly what it was warned in advance it might do**, and that warning is above P5's own
+text: remifentanil is not EEG-silent, so the gate is conservative and can withdraw a real effect. The
+honest statement is therefore about the DESIGN, not the candidate: *this design cannot separate hypnotic
+dose from case phase.* It is not evidence that the association is spurious.
+
+**P6 POINTS THE SAME WAY AND IS NOT ALLOWED TO RESCUE P2.** Within remifentanil terciles the volatile arm's
+correlation is **-0.200** and **-0.203**, noticeably STRONGER than the marginal -0.126. Error-catalogue rule
+17 says that when a control makes an effect stronger the diagnosis was wrong — which here suggests the
+placebo failure is co-titration rather than a fake primary. **That reading is a hypothesis, not a result,
+and it does not reinstate P2.** Reinstating a withdrawn primary on the strength of a non-gating section
+computed afterwards is precisely the move the programme's constraints forbid. It belongs to a new
+registration, which must state its adjustment strategy before it runs and must find a control for case phase
+that is not itself a co-titrated drug.
+
+**THE CONTEXT TABLE IS NOT A RESULT AND SEVERAL OF ITS ROWS WOULD LOOK LIKE ONE.** `critical_slowing_ar1`
+(+0.452 / +0.060), `exponent_low` (+0.388 / +0.031), `multiscale_entropy_slope` (+0.334 / -0.049) and
+`spectral_edge_95` (-0.328 / +0.074) all carry larger volatile-arm magnitudes than the primary, and all four
+**disagree in sign between the arms** — rule 16 says that is the definition doing the work, not the biology.
+`lempel_ziv` (-0.264 / -0.259) and `relative_alpha_power` (-0.339 / -0.147) are sign-consistent and larger
+than the primary, and they are still context: unadjusted, unplaced against their own placebos, and eleven
+candidates deep in a table the header already declared to be one look at a family. Nothing is claimed from
+any of them.
 """
 from __future__ import annotations
 
