@@ -194,7 +194,8 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     ap = argparse.ArgumentParser(description="Stream a dataset into a feature table. Raw EEG never lands.")
     ap.add_argument("--adapter", required=True,
-                    choices=["brainvision", "openneuro", "http_edf", "wfdb", "openneuro_brainvision"])
+                    choices=["brainvision", "openneuro", "http_edf", "wfdb", "openneuro_brainvision",
+                             "chennu"])
     ap.add_argument("--path", required=True,
                     help="brainvision: local dir | openneuro*: accession | http_edf: file with one URL per "
                          "line | wfdb: base URL (record names come from --records)")
@@ -230,6 +231,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     elif a.adapter == "openneuro_brainvision":
         from bsde.ingestion.openneuro_brainvision import OpenNeuroBrainVisionAdapter
         adapter = OpenNeuroBrainVisionAdapter(a.path, dataset=ds, window_s=a.window_s)
+    elif a.adapter == "chennu":
+        from bsde.ingestion.chennu import ChennuRemoteZipAdapter
+        adapter = ChennuRemoteZipAdapter(n_epochs=max(1, int(a.window_s // 10)), dataset=ds)
     elif a.adapter == "http_edf":
         from bsde.ingestion.http_edf import HttpEDFAdapter
         urls = [ln.strip() for ln in open(a.path) if ln.strip() and not ln.startswith("#")]
