@@ -32,6 +32,29 @@ Everything below — P1's muscle gate on the comparator, the two SR thresholds, 
 any candidate, the out-of-bag increment, the matched fake landmark, the lead time and the BIS + MAC
 baseline — is E26's, unchanged. Its scope and limits apply here in full, with one removed: the grid is no
 longer 300 s.
+
+--------------------------------------------------------------------------------------------------------
+FIRST RUN: P1 FAILED ON COVERAGE, AND THE CAUSE WAS THE EXTRACTION PLAN RATHER THAN THE DATA. Recorded here
+rather than overwritten, because a gate that failed and was then made to pass has to show its working.
+
+    (a) comparator-is-not-muscle  PASSED. Spearman EMG vs SR -0.100; P(SR>0) by EMG decile
+        28 26 28 27 29 17 23 25 14 11 % — still falling with muscle at this resolution.
+    (b) SR > 0     PASSED.  78 patients with an onset, 1,298 eligible windows, base rate 16.6 %.
+    (b) SR >= 10   FAILED.  **17 patients**, against a registered floor of 25.
+
+Seventeen, where the 300 s table had thirty-three. The reason is mine: `vitaldb_fine_plan.json` sampled
+each case densely from 1,800 s before its first **`SR > 0`** window to 300 s after it, and a patient whose
+suppression only reaches 10 % later than that was simply never sampled there. **The plan was anchored on
+one of the two registered thresholds and silently under-covered the other.**
+
+That is a coverage defect in an extraction, not a property of the deposit and not a fact about any
+candidate, so the fix is to extend the plan and re-stream — not to drop a threshold, which would be exactly
+the "vary the design until it passes" move this file's header forbids. The plan now covers **both**
+thresholds' onsets per case (94 cases, 3,595 windows against 81 and 2,796), the registered predictions are
+untouched, and the stream is resumable so the 2,776 windows already extracted are kept.
+
+**The gate did its job.** A version of this experiment that reported P2-P6 from 17 patients at the second
+threshold would have looked complete and been thin exactly where the design said both thresholds mattered.
 """
 from __future__ import annotations
 
