@@ -1435,3 +1435,42 @@ a **BOM**, which silently renames the first column to `﻿caseid` and makes ever
 KeyError. And **`subjectid` is not `caseid`**: 237 of 6,388 cases share a patient with another case and one
 patient has eight, so clustering on the case would have treated repeat surgeries as independent and narrowed
 every interval. The adapter clusters on the patient.
+
+### 9.27 BDSP credentials verified, and what they actually reach
+
+**Working, and rule 36 reproduced exactly.** `sts get-caller-identity` through the `physionet` profile returns
+`arn:aws:iam::281627750420:root`. The same call with the sandbox's injected `AWS_ACCESS_KEY_ID` in place
+returns `InvalidClientTokenId` — a failure indistinguishable from expiry, which is why anything touching
+these must drop the two stub variables first. `scripts/heedb_run.sh` exists for exactly that and should be
+used rather than reimplemented.
+
+**The three endpoints are ACCESS POINTS, not buckets** (account `184438910517`), so the full ARN goes in the
+`Bucket` parameter; using the bare name returns `NoSuchBucket` and reads like a permissions problem.
+
+| access point | 64 top-level prefixes in total |
+|---|---|
+| credentialed | `EEG/` (`HEEDB_Metadata/`, **`bids/` holding 12 datasets**, `eeg-metadata/`), `PSG/`, `EHR/`, `OMOP/`, `ECG/`, `Imaging/`, `NAX/` |
+| restricted | **`i-care/`**, **`burst-supression/`** (86 `.mat`), `caisr/`, `sparcnet/`, `sah/`, `e-cam-s/`, `cyclops/`, +12 |
+| projects | 37, including `ceeg-multimodal-cardiac-arrest/`, `hie-eeg-prognostics-1000/`, `icu-sleep/`, `sleepFM/`, `morgoth1/`, `eeg-spectrogram-atlas/` |
+
+**I-CARE is the Challenge C route, and it is the first thing reachable that fits the requirement.** Files are
+per-patient hourly segments — `0284_001_004_EEG.mat` at ~60 MB, with matching `_ECG` and `_OTHER` — giving
+**serial per-patient EEG across days in comatose post-cardiac-arrest patients**. §5 blocked Challenge C on
+exactly this ("serial per-patient EEG with a monitor comparator") and §9.22 narrowed the blocker to data
+alone once layer 5 was built. **48.6 GB across only 15 patient directories sampled**, so the corpus is large
+and any use of it needs a bounded, resumable subset rather than a bulk pull.
+
+**`EEG/bids/Neurotech/` is the path that shows only a LICENSE file anonymously.** With credentials it is
+**4,915 subjects**, EDF+ at 256 Hz on a 10-20 montage, with Natus/Xltek annotations and a `phenotype/`
+directory. Licence **CC BY-NC 4.0**; authors include Westover and Goldenholz. Dates are shifted per patient
+and **times of day are preserved**, which matters for any circadian or time-of-day analysis.
+
+    TWO LIMITS, MEASURED FROM participants.tsv RATHER THAN ASSUMED. `age` is present for **2,691 of 4,915**
+    subjects and `sex` for **2,213** — roughly half the cohort has no demographics at all. And the age
+    distribution is paediatric (modal ~8–14), so it overlaps HBN and would **inherit the same
+    adult-calibrated-band problem** that failed E16's gate: a fixed 8–12 Hz alpha band does not contain a
+    young child's posterior dominant rhythm.
+
+**What this does NOT unblock: Challenge A.** Nothing in BDSP is anaesthesia with an identified agent, so
+VitalDB remains the only route to a multi-drug contrast. What it does unblock is Challenge C, and it supplies
+a genuinely unresponsive clinical population while the Bath request is pending.
