@@ -1,0 +1,617 @@
+{
+  "component": "information_feeds",
+  "generated_at_utc": "2026-07-30T16:56:16.553362+00:00",
+  "task": "Measure the maker's cancel-trigger information feed: BRTI methodology + constituent-exchange WS reachability/cadence + Kalshi's own WS market-data surface, and assess single-VPS feasibility for reconstructing a BRTI-relevant signal.",
+  "proxy_caveat": "This container's outbound HTTPS/WSS is routed through an agent proxy. Absolute latency/arrival-time numbers are proxy-inclusive upper bounds and NOT representative of a colocated VPS. Cadence (inter-arrival intervals) and message sizes are clean/proxy-invariant measurements: the proxy is a persistent relay on an already-open TCP stream, so it shifts arrival time but does not materially distort spacing between consecutive messages, and it does not alter payload bytes.",
+  "brti_methodology": {
+    "component": "information_feeds",
+    "subsection": "brti_methodology",
+    "source_documents": [
+      {
+        "title": "CME CF Cryptocurrency Real Time Indices Methodology Guide",
+        "version": "16.8",
+        "version_date": "2026-06-29",
+        "url": "https://docs.cfbenchmarks.com/CME%20CF%20Real%20Time%20Indices%20Methodology.pdf",
+        "fetched_via": "WebFetch (proxied) -> saved PDF -> parsed with pypdf locally"
+      },
+      {
+        "title": "CME CF Cryptocurrency Pricing Products - Constituent Exchanges List",
+        "version": "13.5",
+        "version_date": "2026-06-08",
+        "url": "https://docs.cfbenchmarks.com/CME%20CF%20Constituent%20Exchanges.pdf",
+        "fetched_via": "WebFetch (proxied) -> saved PDF -> parsed with pypdf locally"
+      }
+    ],
+    "brti_constituent_exchanges_current": {
+      "as_of_document_version": "13.5 (2026-06-08)",
+      "active": [
+        {
+          "name": "Bitstamp",
+          "added": "2016-11-14"
+        },
+        {
+          "name": "Coinbase",
+          "added": "2016-11-14"
+        },
+        {
+          "name": "itBit",
+          "added": "2016-11-14",
+          "note": "briefly suspended 2019-01-25 (BRR only) to 2019-02-01; active on BRTI throughout per the table (suspension column marked BRR-only)"
+        },
+        {
+          "name": "Kraken",
+          "added": "2016-11-14"
+        },
+        {
+          "name": "Gemini",
+          "added": "2019-08-30"
+        },
+        {
+          "name": "Bullish Exchange",
+          "added": "2024-12-30"
+        },
+        {
+          "name": "Crypto.com",
+          "added": "2025-03-31"
+        },
+        {
+          "name": "LMAX Digital",
+          "added": "2021-05-03"
+        }
+      ],
+      "suspended_not_active": [
+        {
+          "name": "Bitfinex",
+          "added": "2016-11-14",
+          "suspended": "2017-04"
+        },
+        {
+          "name": "OKCoin.com (HK)",
+          "added": "2016-11-14",
+          "suspended": "2017-04"
+        }
+      ],
+      "count_active": 8,
+      "quote": "Cryptocurrency trading venues are verified against the CME CF Constituent Exchange Criteria by the Administrator under the oversight of the CME CF Cryptocurrency Pricing Products Oversight Committee to serve as pricing sources for the calculation of a CME CF Cryptocurrency Reference Rate or CME CF Cryptocurrency Real Time Index (Methodology Guide v16.8, Section 3, Definitions)."
+    },
+    "aggregation_method": {
+      "update_cadence": "Effective Time (T) every 200 milliseconds; standard dissemination approximately every second (top-of-second), maximum approximately every 200ms upon request. Retrieval Lag Threshold: 10 seconds (Methodology Guide v16.8 Section 6.2, amended from 1s/30s in v16.6, 18 May 2026).",
+      "spacing_parameter": "Dynamic (as of v16.7, 08 June 2026; previously static per-index)",
+      "deviation_from_mid_D": "0.5% for BRTI (Section 6.2 table)",
+      "potentially_erroneous_data_parameter": "5% for BRTI (a constituent's mid-price deviating >5% from the cross-exchange median mid is disregarded; reinstated once deviation < 2.5%)",
+      "order_size_cap": "Dynamic, recomputed every Calculation Time from a trimmed/winsorized mean and stdev of order sizes across the top ~50 price levels each side (Eq. 4a-5, Section 4.1.3): C_T = trimmed_mean + 5*winsorized_stdev",
+      "calculation_steps_qualitative": [
+        "1. At Effective Time T, pull the Relevant Order Book (aggregated-by-price limit orders) from every non-disregarded Constituent Exchange.",
+        "2. Merge into one consolidated order book; any price level's size is capped at the dynamic Order Size Cap C_T.",
+        "2a. NEW in v16.8 (2026-06-29): the consolidated book is UNCROSSED first -- while best bid >= best ask, the lesser of the two sizes is removed from both sides (an orderbook-uncrossing step added across all CME CF crypto Real Time Indices).",
+        "3. Build cumulative bid/ask/mid/mid-spread price-volume curves from the consolidated book at the (dynamic) spacing granularity.",
+        "4. Utilized depth v_T = maximum cumulative volume for which the mid-spread-volume curve stays within D (0.5% for BRTI) of the mid price.",
+        "5. Weight the mid price-volume curve, out to v_T, by the normalized PDF of an exponential distribution (lambda = 10.3/v_T) -- heavier weight near best bid/ask, decaying weight further into the book.",
+        "6. BRTI = sum of the weighted mid price-volume curve (Eq. 3)."
+      ],
+      "contingency_rules_summary": [
+        "Delayed data: a constituent whose Retrieval Time lags the Calculation Time by more than the Retrieval Lag Threshold (10s for BRTI) is dropped for that tick; if ALL constituents are stale, no index value is published for that tick (calculation failure).",
+        "Erroneous books: unparseable, one-sided, or crossed order books are dropped for that tick.",
+        "Erroneous prices: non-numeric/non-positive price or size entries are dropped.",
+        "Potentially erroneous data: a constituent whose mid deviates >5% (BRTI) from the cross-exchange median mid is dropped until it recovers to <2.5% deviation; flagged to the Oversight Committee.",
+        "Calculation is a Markov process / martingale by construction -- it uses only current order-book state, no trailing trade history -- so (per the methodology doc) the current index value is itself the best predictor of the next tick."
+      ],
+      "key_implication_for_reconstruction": "BRTI is computed from ORDER BOOK depth (aggregated bid/ask price-volume curves, exponentially weighted, out to a ~0.5%-from-mid utilized depth with a dynamic per-tick size cap), not from trade prints. A trade-tape-only feed (e.g. Binance trade stream) is a proxy for direction/momentum but structurally cannot reconstruct BRTI's actual print -- you need L2/L3 book depth from the constituent exchanges, not just their trades."
+    },
+    "licensing_caveat": "CF Benchmarks' Notice and Disclaimer (Methodology Guide v16.8, final page) states: 'Any use of or access to products, services or information of CF Benchmarks Ltd requires a license from CF Benchmarks Ltd,' and separately: distribution/derivative use of the Information requires prior written consent; the Information may not be used 'to create indices, databases, risk models, analytics, software... utilizing or based on, linked to, tracking or otherwise derived from the Information.' A maker bot that reconstructs a BRTI-*like* estimate from the same public constituent order books (not from CF Benchmarks' own disseminated index value) is computing its own derived signal from public exchange data, not redistributing CF Benchmarks' Information -- but this is a licensing/legal judgment call, not an engineering one, and should be checked against counsel/CF Benchmarks' terms before production use. Consuming CF Benchmarks' actual BRTI print via Kalshi's own 'cfbenchmarks_value' WS channel (see kalshi_ws_docs) sidesteps needing a CF Benchmarks license directly, since Kalshi is presumably licensed as the redistributor -- but that arrangement's terms for algorithmic consumption were not verified here."
+  },
+  "brti_constituent_coverage": [
+    {
+      "constituent": "Bitstamp",
+      "added": "2016-11-14",
+      "measured_here": true,
+      "probe_keys": [
+        "bitstamp_trade",
+        "bitstamp_book"
+      ]
+    },
+    {
+      "constituent": "Coinbase",
+      "added": "2016-11-14",
+      "measured_here": true,
+      "probe_keys": [
+        "coinbase_trade",
+        "coinbase_book"
+      ]
+    },
+    {
+      "constituent": "itBit",
+      "added": "2016-11-14",
+      "measured_here": false,
+      "note": "Rebranded/operated under Bakkt infrastructure; a quick reachability probe against a guessed legacy endpoint (api.itbit.com) failed on an EXPIRED TLS certificate (SSLCertVerificationError, cert expired) -- itself a signal this is not a maintained public integration path. No current public WS market-data endpoint was located in this pass; needs a direct Bakkt/itBit API docs lookup, not attempted here."
+    },
+    {
+      "constituent": "Kraken",
+      "added": "2016-11-14",
+      "measured_here": true,
+      "probe_keys": [
+        "kraken_trade",
+        "kraken_book"
+      ]
+    },
+    {
+      "constituent": "Gemini",
+      "added": "2019-08-30",
+      "measured_here": true,
+      "probe_keys": [
+        "gemini_combined_trade",
+        "gemini_combined_book"
+      ]
+    },
+    {
+      "constituent": "Bullish Exchange",
+      "added": "2024-12-30",
+      "measured_here": false,
+      "note": "Guessed REST-style WS path against api.exchange.bullish.com timed out (no response in 6s). Bullish does publish public market-data docs; the correct WS path was not identified in this pass -- needs a docs lookup, not attempted here."
+    },
+    {
+      "constituent": "Crypto.com",
+      "added": "2025-03-31",
+      "measured_here": false,
+      "note": "wss://stream.crypto.com/exchange/v1/market IS reachable and responded with an immediate heartbeat method call, confirming connectivity -- but Crypto.com's public market feed requires an explicit subscribe request/response call (unlike Coinbase/Kraken/Bitstamp/Gemini which accept a fire-and-forget subscribe frame or no message at all), which the quick reachability probe did not perform. Confirmed reachable; NOT part of the mandated 30s cadence measurement set (task specified Coinbase/Kraken/Bitstamp/Gemini)."
+    },
+    {
+      "constituent": "LMAX Digital",
+      "added": "2021-05-03",
+      "measured_here": false,
+      "note": "LMAX Digital is an institutional venue (FIX/binary protocols, credentialed access); a guessed public WS URL 404'd. No free public retail WebSocket market-data feed is known to exist for LMAX Digital -- likely requires a paid/credentialed market-data subscription. Treat as NOT reconstructible from a free feed."
+    }
+  ],
+  "kalshi_ws_docs": {
+    "component": "information_feeds",
+    "subsection": "kalshi_ws_docs",
+    "source": {
+      "asyncapi_spec_url": "https://docs.kalshi.com/asyncapi.yaml",
+      "fetched_via": "curl (bypassed WebFetch's 404 on the human-readable overview page; asyncapi.yaml is the machine-readable, presumably-authoritative source and matched WebSearch summaries of the human docs)",
+      "quick_start_url": "https://docs.kalshi.com/getting_started/quick_start_websockets",
+      "spec_version": "asyncapi: 3.0.0, info.version: 2.0.0, title: Kalshi Market Data WebSocket API"
+    },
+    "connection": {
+      "production_url": "wss://external-api-ws.kalshi.com/trade-api/ws/v2",
+      "demo_url": "wss://external-api-ws.demo.kalshi.co/trade-api/ws/v2",
+      "auth_required_for_connection": true,
+      "auth_note": "Per the spec: 'Authentication is required to establish the connection; include API key headers during the WebSocket handshake. Some channels carry only public market data, but the connection itself still requires authentication.' -- i.e. there is NO anonymous/public WS access, even to the public ticker/trade channels.",
+      "auth_headers": [
+        "KALSHI-ACCESS-KEY",
+        "KALSHI-ACCESS-SIGNATURE",
+        "KALSHI-ACCESS-TIMESTAMP"
+      ],
+      "signing": "RSA-PSS with SHA-256 over the string `timestamp + \"GET\" + \"/trade-api/ws/v2\"`, base64-encoded, same pattern as REST request signing (per quick_start_websockets doc).",
+      "keepalive": "Server sends WS Ping control frame (opcode 0x9, body 'heartbeat') every 10 seconds; client must Pong (0xA) or the server closes the connection. websockets (Python) auto-Pongs.",
+      "order_entry_over_ws": "NOT AVAILABLE. grep of the full asyncapi spec (4385 lines) for place/create/cancel/amend/batch order operations found zero matches -- every WS operation is either a subscription-management command (subscribe/unsubscribe/update_subscription/list_subscriptions) or a control frame (ping/pong). Order entry, cancellation, and the previously-verified GetOrderQueuePosition / decrease endpoints are REST-only."
+    },
+    "channels": [
+      {
+        "name": "orderbook_delta",
+        "auth": "required (private channel per spec, though data is public market data -- privacy is in per-user enrichment e.g. client_order_id)",
+        "market_filter": "market_ticker / market_tickers only (no market_id)",
+        "behavior": "sends orderbook_snapshot first, then incremental orderbook_delta; supports update_subscription add_markets/delete_markets/get_snapshot",
+        "use_case": "maintain a live Kalshi order book -- this is the queue-position / adverse-selection side of the maker problem, separate from the BRTI info-feed side"
+      },
+      {
+        "name": "ticker",
+        "auth": "connection-level only (no extra channel auth)",
+        "market_filter": "optional; market_ticker(s) or market_id(s), omit for all markets",
+        "behavior": "price/volume/open-interest updates whenever any ticker field changes"
+      },
+      {
+        "name": "trade",
+        "auth": "connection-level only",
+        "market_filter": "optional, omit for all trades",
+        "behavior": "public trade notification immediately after execution"
+      },
+      {
+        "name": "fill",
+        "auth": "required (private, your fills)",
+        "market_filter": "optional market_ticker(s)"
+      },
+      {
+        "name": "market_positions",
+        "auth": "required (private)",
+        "market_filter": "market_ticker(s) only"
+      },
+      {
+        "name": "market_lifecycle_v2",
+        "auth": "connection-level only",
+        "market_filter": "not supported (all markets)",
+        "behavior": "creation, (de)activation, close-date changes, determination, settlement, price-level structure changes, metadata updates -- also emits eventLifecycle and eventFeeUpdate messages"
+      },
+      {
+        "name": "multivariate_market_lifecycle",
+        "auth": "connection-level only",
+        "note": "MVE-specific lifecycle variant"
+      },
+      {
+        "name": "multivariate",
+        "auth": "unclear from truncated read, public-market-data tag"
+      },
+      {
+        "name": "communications",
+        "auth": "required (private)"
+      },
+      {
+        "name": "order_group_updates",
+        "auth": "required (private)",
+        "behavior": "order-group creation/trigger/reset/delete/limit-update events"
+      },
+      {
+        "name": "user_orders",
+        "auth": "required (private)",
+        "market_filter": "optional market_tickers",
+        "behavior": "your resting-order created/filled/canceled/updated events in real time"
+      },
+      {
+        "name": "cfbenchmarks_value",
+        "auth": "required (private in the sense of requiring auth, data itself is index-level, not account-scoped)",
+        "market_filter": "not market-based; index_ids array (e.g. [\"BRTI\",\"ETHUSD_RTI\"]), or [\"all\"]",
+        "behavior": "*** KEY FINDING: Kalshi redistributes the CF Benchmarks index value directly over WS ***. Each tick carries the raw upstream BRTI print PLUS a trailing 60-second windowed average (avg_60s_data) AND, only in the final minute before each quarter-hour close (:00/:15/:30/:45), a second-indexed 'last_60s_windowed_average_15min' field that mirrors the settlement-window averaging Kalshi's crypto markets actually settle on. Ticks emitted roughly once per second (matches BRTI's standard 1Hz dissemination cadence per the CF Benchmarks methodology doc -- Kalshi is evidently not paying for the 200ms max-rate tier, or is throttling to 1Hz on redistribution). Duplicate/out-of-order upstream source timestamps are dropped.",
+        "implication": "This channel is a much lower-effort path to a settlement-relevant signal than reconstructing BRTI from 8 constituent order books: no licensing exposure (Kalshi is presumably the licensed redistributor), no need to replicate CF Benchmarks' order-size-cap / exponential-weighting / uncrossing math, and it literally includes the quarter-hour settlement-window average field. The tradeoff is an extra hop (constituent exchange -> CF Benchmarks calc engine -> Kalshi -> your WS) versus reconstructing from constituent order books directly, and the ~1Hz cadence caps how early a self-reconstructed signal could plausibly lead it. Recommended design: subscribe to cfbenchmarks_value as the authoritative baseline / sanity check, and treat direct constituent-exchange order-book deltas as the leading indicator for the cancel trigger, cross-validated against the ~1s BRTI prints."
+      },
+      {
+        "name": "pyth_value",
+        "auth": "required",
+        "market_filter": "underlying_tickers array or [\"all\"]",
+        "behavior": "Real-time Pyth Network price updates for configured underlyings -- a second, independent oracle feed Kalshi exposes; relevant if any Kalshi markets settle to Pyth rather than CF Benchmarks (not established here; out of scope for BRTI-specific crypto markets but worth checking per-market settlement source before assuming BRTI applies)."
+      }
+    ],
+    "error_codes_of_interest": {
+      "9": "Authentication required (channel requires authenticated connection)",
+      "24": "Index IDs required (cfbenchmarks_value subscribe_indices/unsubscribe_indices without index_ids)",
+      "27": "Too many requests -- the subscription exceeded its command rate limit",
+      "terminal_errors": "Codes 10 (Channel error) and 17 (Internal error) are terminal -- client must resubscribe, i.e. these are not per-message soft errors."
+    }
+  },
+  "ws_cadence_measurements": {
+    "duration_s_per_probe_requested": 30.0,
+    "results": {
+      "binance_trade_canonical_stream_binance_com": {
+        "name": "binance_trade_canonical_stream_binance_com",
+        "url": "wss://stream.binance.com:9443/ws/btcusdt@trade",
+        "reachable": false,
+        "error": "ConnectionResetError: [Errno 104] Connection reset by peer",
+        "measured_at_utc": "2026-07-30T16:56:16.553774+00:00",
+        "duration_s_requested": 8.0
+      },
+      "coinbase_trade": {
+        "name": "Coinbase Exchange - matches (trade) channel, BTC-USD",
+        "url": "wss://ws-feed.exchange.coinbase.com",
+        "reachable": true,
+        "error": null,
+        "measured_at_utc": "2026-07-30T16:56:22.814350+00:00",
+        "duration_s_requested": 30.0,
+        "duration_s_actual": 30.437,
+        "n_messages_total_raw": 91,
+        "n_messages_counted": 91,
+        "cadence_clean_proxy_invariant": {
+          "msgs_per_sec": 3.003,
+          "inter_arrival_ms_p50": 43.645,
+          "inter_arrival_ms_p90": 1118.4491,
+          "inter_arrival_ms_p99": 2585.671,
+          "inter_arrival_ms_min": 0.0068,
+          "inter_arrival_ms_max": 3203.2758,
+          "inter_arrival_ms_mean": 336.7431
+        },
+        "message_size_bytes_clean": {
+          "n_all_messages": 91,
+          "mean": 284.1,
+          "median": 286,
+          "min": 101,
+          "max": 292,
+          "total_bytes_all_messages": 25852
+        },
+        "est_bandwidth_bps_clean": 6794.9,
+        "est_steady_state_bps_excl_snapshot_burst": 6718.1,
+        "one_time_snapshot_burst_bytes": 0
+      },
+      "coinbase_book": {
+        "name": "Coinbase Exchange - level2_batch (L2 diff) channel, BTC-USD",
+        "url": "wss://ws-feed.exchange.coinbase.com",
+        "reachable": true,
+        "error": null,
+        "measured_at_utc": "2026-07-30T16:56:54.839028+00:00",
+        "duration_s_requested": 30.0,
+        "duration_s_actual": 30.078,
+        "n_messages_total_raw": 486,
+        "n_messages_counted": 486,
+        "cadence_clean_proxy_invariant": {
+          "msgs_per_sec": 16.227,
+          "inter_arrival_ms_p50": 59.1213,
+          "inter_arrival_ms_p90": 76.7522,
+          "inter_arrival_ms_p99": 165.0021,
+          "inter_arrival_ms_min": 0.0056,
+          "inter_arrival_ms_max": 314.7463,
+          "inter_arrival_ms_mean": 61.7524
+        },
+        "message_size_bytes_clean": {
+          "n_all_messages": 486,
+          "mean": 2796.4,
+          "median": 285.0,
+          "min": 103,
+          "max": 1175792,
+          "total_bytes_all_messages": 1359030
+        },
+        "est_bandwidth_bps_clean": 361462.3,
+        "est_steady_state_bps_excl_snapshot_burst": 48736.8,
+        "one_time_snapshot_burst_bytes": 1175792
+      },
+      "kraken_trade": {
+        "name": "Kraken - trade channel, XBT/USD",
+        "url": "wss://ws.kraken.com",
+        "reachable": true,
+        "error": null,
+        "measured_at_utc": "2026-07-30T16:57:26.367138+00:00",
+        "duration_s_requested": 30.0,
+        "duration_s_actual": 30.485,
+        "n_messages_total_raw": 45,
+        "n_messages_counted": 45,
+        "cadence_clean_proxy_invariant": {
+          "msgs_per_sec": 1.483,
+          "inter_arrival_ms_p50": 995.9556,
+          "inter_arrival_ms_p90": 1001.9166,
+          "inter_arrival_ms_p99": 1005.8719,
+          "inter_arrival_ms_min": 8.3585,
+          "inter_arrival_ms_max": 1005.8719,
+          "inter_arrival_ms_mean": 689.5068
+        },
+        "message_size_bytes_clean": {
+          "n_all_messages": 45,
+          "mean": 64.1,
+          "median": 21,
+          "min": 21,
+          "max": 271,
+          "total_bytes_all_messages": 2883
+        },
+        "est_bandwidth_bps_clean": 756.6,
+        "est_steady_state_bps_excl_snapshot_burst": 685.5,
+        "one_time_snapshot_burst_bytes": 0
+      },
+      "kraken_book": {
+        "name": "Kraken - book-10 (L2 diff, depth 10) channel, XBT/USD",
+        "url": "wss://ws.kraken.com",
+        "reachable": true,
+        "error": null,
+        "measured_at_utc": "2026-07-30T16:58:00.381631+00:00",
+        "duration_s_requested": 30.0,
+        "duration_s_actual": 30.246,
+        "n_messages_total_raw": 902,
+        "n_messages_counted": 902,
+        "cadence_clean_proxy_invariant": {
+          "msgs_per_sec": 29.968,
+          "inter_arrival_ms_p50": 2.0993,
+          "inter_arrival_ms_p90": 104.7113,
+          "inter_arrival_ms_p99": 405.0908,
+          "inter_arrival_ms_min": 0.0049,
+          "inter_arrival_ms_max": 995.601,
+          "inter_arrival_ms_mean": 33.4061
+        },
+        "message_size_bytes_clean": {
+          "n_all_messages": 902,
+          "mean": 122.9,
+          "median": 105.0,
+          "min": 21,
+          "max": 1027,
+          "total_bytes_all_messages": 110817
+        },
+        "est_bandwidth_bps_clean": 29310.0,
+        "est_steady_state_bps_excl_snapshot_burst": 29039.2,
+        "one_time_snapshot_burst_bytes": 0
+      },
+      "bitstamp_trade": {
+        "name": "Bitstamp - live_trades_btcusd channel",
+        "url": "wss://ws.bitstamp.net",
+        "reachable": true,
+        "error": null,
+        "measured_at_utc": "2026-07-30T16:58:33.144131+00:00",
+        "duration_s_requested": 30.0,
+        "duration_s_actual": 31.141,
+        "n_messages_total_raw": 19,
+        "n_messages_counted": 19,
+        "cadence_clean_proxy_invariant": {
+          "msgs_per_sec": 0.698,
+          "inter_arrival_ms_p50": 102.9814,
+          "inter_arrival_ms_p90": 5877.8574,
+          "inter_arrival_ms_p99": 8886.9673,
+          "inter_arrival_ms_min": 0.0105,
+          "inter_arrival_ms_max": 8886.9673,
+          "inter_arrival_ms_mean": 1511.8617
+        },
+        "message_size_bytes_clean": {
+          "n_all_messages": 19,
+          "mean": 280.8,
+          "median": 292,
+          "min": 79,
+          "max": 293,
+          "total_bytes_all_messages": 5336
+        },
+        "est_bandwidth_bps_clean": 1370.8,
+        "est_steady_state_bps_excl_snapshot_burst": 1295.5,
+        "one_time_snapshot_burst_bytes": 0
+      },
+      "bitstamp_book": {
+        "name": "Bitstamp - diff_order_book_btcusd channel",
+        "url": "wss://ws.bitstamp.net",
+        "reachable": true,
+        "error": null,
+        "measured_at_utc": "2026-07-30T16:59:06.176088+00:00",
+        "duration_s_requested": 30.0,
+        "duration_s_actual": 30.336,
+        "n_messages_total_raw": 95,
+        "n_messages_counted": 95,
+        "cadence_clean_proxy_invariant": {
+          "msgs_per_sec": 3.16,
+          "inter_arrival_ms_p50": 319.449,
+          "inter_arrival_ms_p90": 333.857,
+          "inter_arrival_ms_p99": 370.6795,
+          "inter_arrival_ms_min": 57.0306,
+          "inter_arrival_ms_max": 628.832,
+          "inter_arrival_ms_mean": 319.8466
+        },
+        "message_size_bytes_clean": {
+          "n_all_messages": 95,
+          "mean": 534.7,
+          "median": 451,
+          "min": 83,
+          "max": 1595,
+          "total_bytes_all_messages": 50801
+        },
+        "est_bandwidth_bps_clean": 13396.8,
+        "est_steady_state_bps_excl_snapshot_burst": 12976.3,
+        "one_time_snapshot_burst_bytes": 0
+      },
+      "gemini_combined_trade": {
+        "name": "Gemini - v1 marketdata/BTCUSD, trade events only (shared socket also carries book changes)",
+        "url": "wss://api.gemini.com/v1/marketdata/BTCUSD",
+        "reachable": true,
+        "error": null,
+        "measured_at_utc": "2026-07-30T16:59:38.602535+00:00",
+        "duration_s_requested": 30.0,
+        "duration_s_actual": 31.093,
+        "n_messages_total_raw": 2647,
+        "n_messages_counted": 5,
+        "cadence_clean_proxy_invariant": {
+          "msgs_per_sec": 0.261,
+          "inter_arrival_ms_p50": 4940.7919,
+          "inter_arrival_ms_p90": 10687.8279,
+          "inter_arrival_ms_p99": 10687.8279,
+          "inter_arrival_ms_min": 57.9982,
+          "inter_arrival_ms_max": 10687.8279,
+          "inter_arrival_ms_mean": 4785.5962
+        },
+        "message_size_bytes_clean": {
+          "n_all_messages": 2647,
+          "mean": 444.1,
+          "median": 236,
+          "min": 225,
+          "max": 553266,
+          "total_bytes_all_messages": 1175535
+        },
+        "est_bandwidth_bps_clean": 302448.4,
+        "message_size_bytes_filtered_channel": {
+          "n_filtered_messages": 5,
+          "mean": 226.8,
+          "total_bytes_filtered": 1134
+        },
+        "est_steady_state_bps_excl_snapshot_burst": 160105.2,
+        "one_time_snapshot_burst_bytes": 553266
+      },
+      "gemini_combined_book": {
+        "name": "Gemini - v1 marketdata/BTCUSD, book change events only (same socket as trade)",
+        "url": "wss://api.gemini.com/v1/marketdata/BTCUSD",
+        "reachable": true,
+        "error": null,
+        "measured_at_utc": "2026-07-30T17:00:11.208471+00:00",
+        "duration_s_requested": 30.0,
+        "duration_s_actual": 40.011,
+        "n_messages_total_raw": 1951,
+        "n_messages_counted": 1947,
+        "cadence_clean_proxy_invariant": {
+          "msgs_per_sec": 65.288,
+          "inter_arrival_ms_p50": 0.9582,
+          "inter_arrival_ms_p90": 41.2802,
+          "inter_arrival_ms_p99": 161.0122,
+          "inter_arrival_ms_min": 0.0092,
+          "inter_arrival_ms_max": 1064.7426,
+          "inter_arrival_ms_mean": 15.3247
+        },
+        "message_size_bytes_clean": {
+          "n_all_messages": 1951,
+          "mean": 519.5,
+          "median": 237,
+          "min": 224,
+          "max": 553310,
+          "total_bytes_all_messages": 1013463
+        },
+        "est_bandwidth_bps_clean": 202627.2,
+        "message_size_bytes_filtered_channel": {
+          "n_filtered_messages": 1947,
+          "mean": 520.1,
+          "total_bytes_filtered": 1012556
+        },
+        "est_steady_state_bps_excl_snapshot_burst": 92005.3,
+        "one_time_snapshot_burst_bytes": 553310
+      },
+      "binance_trade_marketdata_vision": {
+        "name": "Binance - btcusdt@trade via data-stream.binance.vision (main stream.binance.com WAS UNREACHABLE: HTTP 451 geo-restriction from this egress; see note)",
+        "url": "wss://data-stream.binance.vision/ws/btcusdt@trade",
+        "reachable": true,
+        "error": null,
+        "measured_at_utc": "2026-07-30T17:00:52.706222+00:00",
+        "duration_s_requested": 30.0,
+        "duration_s_actual": 35.539,
+        "n_messages_total_raw": 659,
+        "n_messages_counted": 659,
+        "cadence_clean_proxy_invariant": {
+          "msgs_per_sec": 24.03,
+          "inter_arrival_ms_p50": 0.0056,
+          "inter_arrival_ms_p90": 0.0301,
+          "inter_arrival_ms_p99": 1181.4634,
+          "inter_arrival_ms_min": 0.0044,
+          "inter_arrival_ms_max": 4685.8092,
+          "inter_arrival_ms_mean": 41.6775
+        },
+        "message_size_bytes_clean": {
+          "n_all_messages": 659,
+          "mean": 134.7,
+          "median": 135,
+          "min": 134,
+          "max": 135,
+          "total_bytes_all_messages": 88782
+        },
+        "est_bandwidth_bps_clean": 19984.7,
+        "est_steady_state_bps_excl_snapshot_burst": 19954.9,
+        "one_time_snapshot_burst_bytes": 0
+      }
+    }
+  },
+  "bandwidth_and_vps_assessment": {
+    "caveat": "Steady-state numbers below are 'clean' in the sense that message SIZE is exact (proxy does not alter payload bytes) and duration is a monotonic wall-clock measurement (proxy adds a roughly-constant relay hop that does not distort a 30s span materially). They are NOT clean in the sense of representing a colocated VPS's raw socket bandwidth to each exchange -- TLS/WS framing overhead and TCP overhead are excluded (these are the JSON payload bytes as received by the Python websockets library, not wire bytes); add roughly 5-10% for TLS record + WS frame + TCP/IP header overhead on top of the payload-byte figures below for a wire-bandwidth estimate.",
+    "measured_book_channel_steady_state_bps": {
+      "coinbase_book": 48736.8,
+      "kraken_book": 29039.2,
+      "bitstamp_book": 12976.3,
+      "gemini_combined_book": 92005.3
+    },
+    "measured_trade_channel_steady_state_bps": {
+      "coinbase_trade": 6718.1,
+      "kraken_trade": 685.5,
+      "bitstamp_trade": 1295.5,
+      "gemini_combined_trade": 160105.2
+    },
+    "median_measured_book_channel_bps": 48736.8,
+    "n_active_brti_constituents": 8,
+    "n_measured_here": 4,
+    "n_unmeasured_proxy_estimated": 4,
+    "sum_measured_4_constituents_book_bps": 182757.6,
+    "proxy_estimate_remaining_4_constituents_bps": 194947.2,
+    "total_8_constituent_book_bandwidth_estimate_bps": 377704.8,
+    "total_8_constituent_book_bandwidth_estimate_kbps": 377.7,
+    "kalshi_ws_bandwidth": "NOT measured (Kalshi WS requires an authenticated, signed connection -- no API key available in this environment). Rough guess only: orderbook_delta for a handful of concurrently-open KXBTC hourly markets plus cfbenchmarks_value at ~1 msg/s is small JSON (order of a few hundred bytes/msg at maybe 1-50 msgs/s during active trading) -- almost certainly under 50 kbps sustained, i.e. two orders of magnitude below the constituent order-book aggregate. Needs a real measurement once API credentials exist.",
+    "one_time_snapshot_reconnect_burst_bytes": {
+      "coinbase_book": 1175792,
+      "gemini_combined_book": 553310
+    },
+    "vps_feasibility_verdict": "YES, comfortably, on any bandwidth tier that would be considered for this at all. Full 8-constituent BRTI-replication order-book bandwidth estimates at roughly 378 kbps steady state (measured 4 + proxy-estimated 4), plus Kalshi orderbook_delta/cfbenchmarks_value at an estimated <50 kbps -- call it under 500 kbps sustained even with generous overhead margin, i.e. well under 1 Mbps. This is 2-3 orders of magnitude below a typical 1 Gbps VPS NIC and does not stress even a 100 Mbps link. The real constraints for holding N constituent sockets + Kalshi WS simultaneously on one VPS are NOT bandwidth but: (1) per-connection CPU cost of JSON-parsing + order-book maintenance at the measured message RATES (Kraken book-10 hit 30 msgs/s and Gemini's combined feed hit 65 msgs/s in a 30s sample -- a full-depth Coinbase level2 feed or a busier trading period could be substantially higher), and (2) reconnect/backfill logic for each socket's large initial snapshot (coinbase_book and gemini both sent a >0.5MB one-time snapshot on connect -- see one_time_snapshot_reconnect_burst_bytes -- so a reconnect storm across 8 sockets could transiently spike to several MB, which is still trivial for any VPS NIC but worth not doing on every heartbeat miss). Single off-the-shelf VPS (e.g. a us-east-2-colocated instance near Kalshi's matching engine) is architecturally fine for this; no need to shard constituent connections across multiple hosts on bandwidth grounds."
+  },
+  "architecture_recommendation": {
+    "sockets_to_hold_open": [
+      "Kalshi trade-api WS (wss://external-api-ws.kalshi.com/trade-api/ws/v2), authenticated: orderbook_delta for the specific KXBTC hourly market(s) currently open (adverse-selection / queue-position side), plus cfbenchmarks_value subscribed to index_ids=['BRTI'] as the authoritative settlement-relevant baseline (cancel-trigger side).",
+      "Coinbase Exchange WS (wss://ws-feed.exchange.coinbase.com), level2_batch, BTC-USD -- measured reachable, ~486 msgs/30s incl. one large snapshot.",
+      "Kraken WS (wss://ws.kraken.com), book-10, XBT/USD -- measured reachable, highest raw update rate of the 4 measured venues (~30 msgs/s).",
+      "Bitstamp WS (wss://ws.bitstamp.net), diff_order_book_btcusd -- measured reachable, lowest rate of the 4 (~3 msgs/s).",
+      "Gemini WS (wss://api.gemini.com/v1/marketdata/BTCUSD) -- measured reachable; NOTE this is a single combined trade+book-change socket, not two channels; highest measured raw cadence (~65 msgs/s book-relevant events).",
+      "itBit, Bullish Exchange, Crypto.com, LMAX Digital -- the remaining 4 active BRTI constituents. Crypto.com confirmed reachable (needs a proper subscribe call, not attempted here). itBit's guessed endpoint has an EXPIRED TLS cert. Bullish's guessed endpoint timed out. LMAX Digital is institutional-only (no free public WS known). None of these four were cadence-measured -- see brti_constituent_coverage for per-venue notes and follow-up needed."
+    ],
+    "brti_replication_approach": "Two-tier design, not a single choice: (1) PRIMARY / low-effort / low-legal-risk: subscribe to Kalshi's own cfbenchmarks_value WS channel (index_ids=['BRTI']) -- it delivers the actual CF Benchmarks print at ~1Hz plus a trailing-60s average and, critically, the exact quarter-hour final-minute settlement-window average field, with presumably-cleared licensing since Kalshi is the redistributor. Use this as the authoritative cancel-trigger input and correctness baseline. (2) SECONDARY / leading indicator: reconstruct an approximate BRTI in-house from the 4-8 constituent order books using the exact published methodology (order-size-cap-then-uncross-then-cumulative-curves-then-exponential-weight-to-a-0.5%-utilized-depth, Methodology Guide v16.8 Section 4.1) to get a signal that leads the ~1Hz Kalshi-redistributed print by however long the CF Benchmarks calc-engine hop takes (not measured here -- would need simultaneous capture of constituent book changes and the matching cfbenchmarks_value tick to bound this delta). The in-house reconstruction does NOT need to be bit-exact with BRTI to be useful as a cancel trigger -- a fast, roughly-correlated leading signal that gets cross-checked/corrected against the authoritative (1)-channel every ~1s is enough, and avoids betting the whole strategy on exactly replicating a documented-but-fiddly dynamic-order-size-cap/exponential-weighting formula.",
+    "licensing_accuracy_caveats": [
+      "CF Benchmarks' Methodology Guide explicitly prohibits using 'the Information' (i.e. their published index values/methodology docs) to build derived indices, analytics, or software without a license -- this plausibly does NOT prohibit computing your own similar aggregate from PUBLIC constituent-exchange order book data (that data belongs to the exchanges, not CF Benchmarks), but it is a legal judgment call, not verified here; get counsel or a CF Benchmarks license before shipping this in production.",
+      "Consuming BRTI via Kalshi's cfbenchmarks_value channel is almost certainly the licensing-safe path (Kalshi is the paying redistributor) but the terms of using that feed algorithmically (vs. just displaying it) were not checked here.",
+      "Accuracy: an in-house reconstruction will NOT exactly match BRTI even with correct order-book snapshots, because (a) BRTI's dynamic order-size cap and exponential-weighting parameters (lambda = 10.3/v_T) require exact top-of-book sampling timed to CF Benchmarks' own ~200ms internal cadence, which a self-hosted poller cannot perfectly replicate without also matching their Retrieval Time semantics and contingency/outlier-exclusion rules; and (b) the methodology changed materially on 2026-06-29 (v16.8, added an order-book uncrossing step) and on 2026-05-18 (v16.6, changed Effective Time / Retrieval Lag Threshold) -- i.e. this is a living spec that has moved twice in the last ~10 weeks as of this measurement, so any hand-rolled reconstruction needs a process for tracking CF Benchmarks methodology-guide version changes, not a one-time implementation."
+    ]
+  },
+  "summary_for_ev_study": "Binance -- the info clock the parallel EV study uses -- is geo-blocked from this US-region egress at the WS layer (stream.binance.com returned HTTP 451 'restricted location'); a colocated us-east-2 VPS would likely hit the same block on the canonical endpoint, forcing use of a lower-guarantee mirror (data-stream.binance.vision, which is documented as market-data-only/no-trading and showed burstier inter-arrival behavior in this sample) or Binance.US (different, thinner order book) or a non-US proxy hop -- itself a latency cost. More fundamentally: Binance is not a BRTI constituent at all (confirmed against the current, 2026-06-08 official constituent list), so it was never going to be more than a directional proxy for the settlement-relevant price; Kalshi crypto markets settle to BRTI, computed from an 8-exchange order-book aggregate that does NOT include Binance. A production maker's cancel trigger should be built on the two-tier approach above (Kalshi's own cfbenchmarks_value channel + constituent order-book reconstruction), not a Binance trade tape, both for settlement accuracy and because Binance's own access from a US-based venue is not even guaranteed reachable at the WS layer."
+}

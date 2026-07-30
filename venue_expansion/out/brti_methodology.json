@@ -1,0 +1,64 @@
+{
+  "component": "information_feeds",
+  "subsection": "brti_methodology",
+  "source_documents": [
+    {
+      "title": "CME CF Cryptocurrency Real Time Indices Methodology Guide",
+      "version": "16.8",
+      "version_date": "2026-06-29",
+      "url": "https://docs.cfbenchmarks.com/CME%20CF%20Real%20Time%20Indices%20Methodology.pdf",
+      "fetched_via": "WebFetch (proxied) -> saved PDF -> parsed with pypdf locally"
+    },
+    {
+      "title": "CME CF Cryptocurrency Pricing Products - Constituent Exchanges List",
+      "version": "13.5",
+      "version_date": "2026-06-08",
+      "url": "https://docs.cfbenchmarks.com/CME%20CF%20Constituent%20Exchanges.pdf",
+      "fetched_via": "WebFetch (proxied) -> saved PDF -> parsed with pypdf locally"
+    }
+  ],
+  "brti_constituent_exchanges_current": {
+    "as_of_document_version": "13.5 (2026-06-08)",
+    "active": [
+      {"name": "Bitstamp", "added": "2016-11-14"},
+      {"name": "Coinbase", "added": "2016-11-14"},
+      {"name": "itBit", "added": "2016-11-14", "note": "briefly suspended 2019-01-25 (BRR only) to 2019-02-01; active on BRTI throughout per the table (suspension column marked BRR-only)"},
+      {"name": "Kraken", "added": "2016-11-14"},
+      {"name": "Gemini", "added": "2019-08-30"},
+      {"name": "Bullish Exchange", "added": "2024-12-30"},
+      {"name": "Crypto.com", "added": "2025-03-31"},
+      {"name": "LMAX Digital", "added": "2021-05-03"}
+    ],
+    "suspended_not_active": [
+      {"name": "Bitfinex", "added": "2016-11-14", "suspended": "2017-04"},
+      {"name": "OKCoin.com (HK)", "added": "2016-11-14", "suspended": "2017-04"}
+    ],
+    "count_active": 8,
+    "quote": "Cryptocurrency trading venues are verified against the CME CF Constituent Exchange Criteria by the Administrator under the oversight of the CME CF Cryptocurrency Pricing Products Oversight Committee to serve as pricing sources for the calculation of a CME CF Cryptocurrency Reference Rate or CME CF Cryptocurrency Real Time Index (Methodology Guide v16.8, Section 3, Definitions)."
+  },
+  "aggregation_method": {
+    "update_cadence": "Effective Time (T) every 200 milliseconds; standard dissemination approximately every second (top-of-second), maximum approximately every 200ms upon request. Retrieval Lag Threshold: 10 seconds (Methodology Guide v16.8 Section 6.2, amended from 1s/30s in v16.6, 18 May 2026).",
+    "spacing_parameter": "Dynamic (as of v16.7, 08 June 2026; previously static per-index)",
+    "deviation_from_mid_D": "0.5% for BRTI (Section 6.2 table)",
+    "potentially_erroneous_data_parameter": "5% for BRTI (a constituent's mid-price deviating >5% from the cross-exchange median mid is disregarded; reinstated once deviation < 2.5%)",
+    "order_size_cap": "Dynamic, recomputed every Calculation Time from a trimmed/winsorized mean and stdev of order sizes across the top ~50 price levels each side (Eq. 4a-5, Section 4.1.3): C_T = trimmed_mean + 5*winsorized_stdev",
+    "calculation_steps_qualitative": [
+      "1. At Effective Time T, pull the Relevant Order Book (aggregated-by-price limit orders) from every non-disregarded Constituent Exchange.",
+      "2. Merge into one consolidated order book; any price level's size is capped at the dynamic Order Size Cap C_T.",
+      "2a. NEW in v16.8 (2026-06-29): the consolidated book is UNCROSSED first -- while best bid >= best ask, the lesser of the two sizes is removed from both sides (an orderbook-uncrossing step added across all CME CF crypto Real Time Indices).",
+      "3. Build cumulative bid/ask/mid/mid-spread price-volume curves from the consolidated book at the (dynamic) spacing granularity.",
+      "4. Utilized depth v_T = maximum cumulative volume for which the mid-spread-volume curve stays within D (0.5% for BRTI) of the mid price.",
+      "5. Weight the mid price-volume curve, out to v_T, by the normalized PDF of an exponential distribution (lambda = 10.3/v_T) -- heavier weight near best bid/ask, decaying weight further into the book.",
+      "6. BRTI = sum of the weighted mid price-volume curve (Eq. 3)."
+    ],
+    "contingency_rules_summary": [
+      "Delayed data: a constituent whose Retrieval Time lags the Calculation Time by more than the Retrieval Lag Threshold (10s for BRTI) is dropped for that tick; if ALL constituents are stale, no index value is published for that tick (calculation failure).",
+      "Erroneous books: unparseable, one-sided, or crossed order books are dropped for that tick.",
+      "Erroneous prices: non-numeric/non-positive price or size entries are dropped.",
+      "Potentially erroneous data: a constituent whose mid deviates >5% (BRTI) from the cross-exchange median mid is dropped until it recovers to <2.5% deviation; flagged to the Oversight Committee.",
+      "Calculation is a Markov process / martingale by construction -- it uses only current order-book state, no trailing trade history -- so (per the methodology doc) the current index value is itself the best predictor of the next tick."
+    ],
+    "key_implication_for_reconstruction": "BRTI is computed from ORDER BOOK depth (aggregated bid/ask price-volume curves, exponentially weighted, out to a ~0.5%-from-mid utilized depth with a dynamic per-tick size cap), not from trade prints. A trade-tape-only feed (e.g. Binance trade stream) is a proxy for direction/momentum but structurally cannot reconstruct BRTI's actual print -- you need L2/L3 book depth from the constituent exchanges, not just their trades."
+  },
+  "licensing_caveat": "CF Benchmarks' Notice and Disclaimer (Methodology Guide v16.8, final page) states: 'Any use of or access to products, services or information of CF Benchmarks Ltd requires a license from CF Benchmarks Ltd,' and separately: distribution/derivative use of the Information requires prior written consent; the Information may not be used 'to create indices, databases, risk models, analytics, software... utilizing or based on, linked to, tracking or otherwise derived from the Information.' A maker bot that reconstructs a BRTI-*like* estimate from the same public constituent order books (not from CF Benchmarks' own disseminated index value) is computing its own derived signal from public exchange data, not redistributing CF Benchmarks' Information -- but this is a licensing/legal judgment call, not an engineering one, and should be checked against counsel/CF Benchmarks' terms before production use. Consuming CF Benchmarks' actual BRTI print via Kalshi's own 'cfbenchmarks_value' WS channel (see kalshi_ws_docs) sidesteps needing a CF Benchmarks license directly, since Kalshi is presumably licensed as the redistributor -- but that arrangement's terms for algorithmic consumption were not verified here."
+}

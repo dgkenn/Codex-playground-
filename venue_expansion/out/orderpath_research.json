@@ -1,0 +1,284 @@
+{
+  "component": "ORDER PATH + RATE LIMITS + FIX",
+  "generated_utc": "2026-07-30T16:58:15Z",
+  "method_note": "Desk research against docs.kalshi.com / help.kalshi.com / kalshi.com/regulatory via WebFetch+WebSearch, cross-checked where possible against 3 live unauthenticated GETs from this container (proxy-fronted; see caveat below). No authenticated order-path calls were made (no API keys in this environment) -- claims about token cost of specific endpoints beyond what docs.kalshi.com states explicitly are flagged UNVERIFIED and require a live authenticated GET /account/endpoint_costs call in production.",
+  "network_caveat": "This container's outbound HTTPS goes through an agent proxy. The 3 raw curl calls below are reachability/existence checks only (HTTP status codes), NOT latency measurements -- their time_total values are proxy-polluted upper bounds and are reported only for completeness, not used in any conclusion.",
+  "live_checks": [
+    {
+      "call": "GET https://api.elections.kalshi.com/trade-api/v2/exchange/status (unauthenticated)",
+      "result": "HTTP 200",
+      "body": "{\"exchange_active\":true,\"exchange_index_statuses\":[{\"exchange_index\":0,\"trading_active\":true,...},{\"exchange_index\":1,\"trading_active\":false,...}],\"trading_active\":true}",
+      "finding": "Live-confirms the exchange_index field referenced in create/decrease/amend order schemas is real and currently exposes 2 indices: index 0 actively trading (main prediction-market venue), index 1 present but trading_active=false (plausibly the perps venue -- the rate-limit docs separately mention distinct 'Perps Read buckets' -- or a second matching shard not yet live). Not something docs.kalshi.com states in prose anywhere found; this is an original live observation, label as proxy-clean (status-code/body check, not a latency measurement).",
+      "caveat": "proxy-inclusive transport, but result is a JSON body/status check, not a timing measurement -- clean"
+    },
+    {
+      "call": "GET https://api.elections.kalshi.com/trade-api/v2/portfolio/orders/nonexistent-id-123/queue_position (unauthenticated)",
+      "result": "HTTP 401 {\"error\":{\"code\":\"token_authentication_failure\"}}",
+      "finding": "Confirms GetOrderQueuePosition is a live, real endpoint at the documented path and requires RSA-signed auth even for a lookup on a bogus order_id (i.e. auth is checked before order-existence, so you cannot probe order_ids unauthenticated). Consistent with docs.",
+      "caveat": "proxy-inclusive transport, status-code check only -- clean"
+    },
+    {
+      "call": "GET https://trading-api.kalshi.com/trade-api/v2/exchange/status (unauthenticated, the direct/institutional us-east-2 host per orchestrator's prior verification, vs the CloudFront-fronted retail host above)",
+      "result": "HTTP 401",
+      "finding": "Unlike the retail host, the institutional/direct host returned 401 (auth required) on the SAME nominally-public status endpoint that was 200 on the retail host. This suggests the institutional gateway enforces auth at the edge for all routes rather than allow-listing public endpoints the way the retail/CloudFront path does -- relevant for a maker bot's connection design (cannot health-check the low-latency host without credentials). Not documented in prose anywhere found; original live observation.",
+      "caveat": "proxy-inclusive transport, status-code check only -- clean; NOT used for any latency claim"
+    }
+  ],
+
+  "1_rest_order_endpoints": {
+    "create_order": {
+      "endpoint": "POST /portfolio/orders (v1) / POST /portfolio/orders (v2 request shape via docs 'Create Order (V2)')",
+      "citation": "https://docs.kalshi.com/api-reference/orders/create-order-v2",
+      "time_in_force": {
+        "fill_or_kill": "fill instantly in full or cancel (FOK)",
+        "immediate_or_cancel": "fill whatever is immediately available, cancel the remainder (IOC); cannot be combined with expiration_time",
+        "good_till_canceled": "rests until canceled or an optional expiration_time; with no expiration_time it is a true GTC. There is no separate 'GTD' enum value on REST -- GTD is expressed as good_till_canceled + expiration_time.",
+        "citation": "https://docs.kalshi.com/api-reference/orders/create-order-v2"
+      },
+      "post_only": {
+        "field_exists": true,
+        "type": "boolean, optional",
+        "behavior_documented": false,
+        "note": "The REST v2 schema has a `post_only` boolean field but docs.kalshi.com does not define its runtime behavior (reject-if-would-cross vs convert-to-IOC vs something else) in any page found. FLAG: verify empirically in a sandbox/demo account (https://demo-api.kalshi.co) before relying on it for a maker bot -- do not assume standard reject-on-cross semantics without a live test.",
+        "citation": "https://docs.kalshi.com/api-reference/orders/create-order-v2"
+      },
+      "self_trade_prevention_type": {
+        "taker_at_cross": "the incoming (taker) order is canceled if it would trade against your own resting order; any fills that already matched before the cross are kept.",
+        "maker": "the resting maker order is canceled instead and the incoming order continues to match against other counterparties.",
+        "citation": "https://docs.kalshi.com/api-reference/orders/create-order-v2"
+      },
+      "max_size": "no documented upper bound on `count` found; min granularity 0.01 contracts (fixed-point 2-decimal string)."
+    },
+    "batch_create_orders": {
+      "endpoint": "POST /portfolio/orders/batched (v2: 'Batch Create Orders (V2)')",
+      "citation": "https://docs.kalshi.com/api-reference/orders/batch-create-orders-v2",
+      "max_batch_size": "NOT a fixed number. Docs state explicitly: 'the maximum batch size scales with your tier's write budget -- see Rate Limits and Tiers.' No numeric cap (e.g. old-style '20 orders') found anywhere in current docs or SDKs searched.",
+      "token_cost": "10 tokens per order in the batch (documented default cost), i.e. an N-order batch costs N x 10 write tokens -- same total cost as N individual create-order calls, but 1 HTTP round-trip instead of N.",
+      "practical_max_batch_at_tier": "bounded by the write bucket's burst capacity (see section 6), e.g. Premier write burst = 2000 tokens -> a single batch-create burst can fit ~200 orders before the bucket empties and the request 429s."
+    },
+    "cancel_order": {
+      "endpoint": "DELETE /portfolio/orders/{order_id}",
+      "citation": "https://docs.kalshi.com/api-reference/portfolio/cancel-order"
+    },
+    "batch_cancel_orders": {
+      "endpoint": "POST /portfolio/orders/batch_cancel (v1/v2 'Batch Cancel Orders')",
+      "citation": "https://docs.kalshi.com/api-reference/orders/batch-cancel-orders (search-cached; direct WebFetch 404'd at time of research, content triangulated via docs.kalshi.com search index and rate-limits page)",
+      "max_batch_size": "same as batch-create -- scales with tier write budget, no fixed numeric cap found.",
+      "token_cost": "2 tokens per order canceled (documented on the rate-limits page as an explicit non-default cost) -- 5x cheaper per-unit than create/batch-create's 10 tokens."
+    },
+    "decrease_order": {
+      "endpoint": "POST /portfolio/orders/{order_id}/decrease (v2 shape: DecreaseOrderV2Request)",
+      "citation": "https://docs.kalshi.com/api-reference/orders/decrease-order-v2",
+      "semantics": "the ONLY kind of edit available on order quantity in the downward direction; canceling an order is equivalent to decreasing it to zero. Exactly one of `reduce_by` or `reduce_to` must be provided.",
+      "queue_priority_on_decrease": {
+        "status": "RESOLVED (was 'undocumented, assumed preserve' per orchestrator's prior context) -- now documented, on the sibling Amend Order (V2) page, not on decrease-order-v2's own page.",
+        "documented_rule": "'Amending a resting order preserves queue position only when the amendment decreases size. All other amendments (price changes, size increases) forfeit queue position and place the order at the back of the queue.'",
+        "citation": "https://docs.kalshi.com/api-reference/orders/amend-order-v2",
+        "inference": "decrease-order is functionally the size-decrease-only special case of amend, so this documented rule directly implies decrease-order preserves queue position. decrease-order-v2's own page does not restate this explicitly -- STILL RECOMMEND a live confirmation test (rest an order, decrease it, poll GetOrderQueuePosition before/after) before depending on it in production, since the two endpoints could in principle diverge in implementation even though the docs strongly imply they don't.",
+        "confidence": "high but not 100% -- documented on an adjacent, clearly-related endpoint page, not the endpoint itself."
+      },
+      "token_cost": "not documented explicitly; presumed default 10 tokens (write) absent an override in the (unfetchable-without-auth) /account/endpoint_costs table. UNVERIFIED."
+    },
+    "amend_order": {
+      "endpoint": "POST /portfolio/events/orders/{order_id}/amend (v2 shape: AmendOrderV2Request; also a v1 'Amend Order' endpoint)",
+      "citation": "https://docs.kalshi.com/api-reference/orders/amend-order-v2",
+      "fields": "updates price and/or total fillable count (count = already-filled + desired new resting remainder) for an existing order in one call.",
+      "queue_priority_rule": "decrease-only amendments preserve queue position; price changes or size increases forfeit it and re-queue at the back -- see decrease_order.queue_priority_on_decrease above for full citation.",
+      "practical_implication_for_a_quoting_bot": "a maker that only ever shrinks its resting size (e.g. trimming exposure) can do so via amend/decrease for free in priority terms. A maker that re-prices every update (the normal MM case, chasing the touch) ALWAYS loses queue priority on that update regardless of whether it uses amend, cancel+create, or cancel+batch-create -- there is no priority-preserving reprice on Kalshi. This matters directly for the R (reaction-speed) study: fast requoting buys you a fresh place in a NEW queue, not protection of an old one."
+    }
+  },
+
+  "2_fix_api": {
+    "exists": true,
+    "citation": "https://docs.kalshi.com/fix, https://docs.kalshi.com/fix/order-entry, https://docs.kalshi.com/fix/connectivity",
+    "spec": "FIXT.1.1 transport with FIX50SP2 application-level dictionary (matches the orchestrator's prior note 'FIX 5.0 SP2'). Kalshi publishes a custom FIX data dictionary (XML) for import into engines such as QuickFIX/J, QuickFIX/N, quickfix-go.",
+    "access_requirements": {
+      "automatic": "Premier tier (and above) accounts get FIX access by default.",
+      "manual": "accounts below Premier must email institutional@kalshi.com to request access.",
+      "how_to_reach_premier": "see section 3 (rate-limit tier volume thresholds) -- Premier is earned via 30-day trailing volume >= 0.125% of the previous month's total exchange volume (and kept at >=0.10%), OR can presumably be granted directly to institutional applicants via the same institutional@kalshi.com contact (not stated explicitly, but the manual-access clause implies Kalshi can grant FIX to sub-Premier accounts case-by-case).",
+      "citation": "https://docs.kalshi.com/fix, https://docs.kalshi.com/getting_started/rate_limits"
+    },
+    "order_types_supported_via_fix": {
+      "NewOrderSingle": "35=D -- submit new orders",
+      "OrderCancelRequest": "35=F -- cancel remaining quantity",
+      "OrderCancelReplaceRequest": "35=G -- modify price/quantity (the FIX analogue of REST amend)",
+      "MassCancelRequest": "35=q -- cancel all orders on the session; explicitly throttled to 1 request/second regardless of tier",
+      "time_in_force_via_fix": {
+        "Day (0)": "expires 11:59:59.999pm ET",
+        "GTC (1)": "good-till-canceled",
+        "IOC (3)": "immediate-or-cancel",
+        "FOK (4)": "fill-or-kill",
+        "GTD (6)": "good-till-date, requires ExpireTime tag -- FIX exposes an explicit GTD enum value where REST only exposes GTC+expiration_time for the same effect"
+      },
+      "citation": "https://docs.kalshi.com/fix/order-entry"
+    },
+    "sessions_and_ports": {
+      "KalshiNR": "8228 -- order entry, no retransmission",
+      "KalshiRT": "8230 -- order entry, with retransmission",
+      "KalshiDC": "8229 -- drop copy",
+      "KalshiPT": "8231 -- post trade",
+      "KalshiRFQ": "8232 -- request-for-quote",
+      "KalshiMD": "8233 -- market data (so FIX offers a market-data feed distinct from the WS market-data channels -- not evaluated for latency here, out of scope for this component)",
+      "connection_limit": "only ONE FIX connection allowed per API key; concurrent connections require separate API keys.",
+      "transport": "TLS 1.2+",
+      "citation": "https://docs.kalshi.com/fix/connectivity"
+    },
+    "does_fix_bypass_rest_rate_limits": {
+      "answer": "NO -- this is the single most important correction to the orchestrator's framing ('this is the HFT-tier path' implied FIX might have its own throughput). Docs state explicitly: 'FIX application messages use the same token model, token costs, and Read/Write buckets as the equivalent REST API operations.' Order-entry and RFQ messages consume the same Write bucket, at the same tier-based token costs, as REST.",
+      "citation": "https://docs.kalshi.com/fix/connectivity",
+      "what_fix_actually_buys_you": [
+        "a persistent binary/tag-value session instead of per-request HTTPS handshake + RSA-PSS signing overhead per order (see bench_signing.py / bench_transport.py in this repo for the CPU-bound signing-cost delta, which is real and FIX-relevant even though the token bucket is identical)",
+        "OrderCancelReplaceRequest as a single message type for reprice (same semantics/priority-forfeit rule as REST amend -- FIX does not get a priority-preserving reprice either, docs give no indication otherwise)",
+        "MassCancelRequest (35=q) as a dedicated fast kill-switch, throttled independently to 1 msg/sec -- this throttle is ADDITIONAL to (not instead of) the write-token cost of whatever it cancels? Not stated whether MassCancelRequest itself consumes write tokens on top of its 1/sec cap -- UNVERIFIED, flag for live test.",
+        "drop-copy and post-trade sessions for out-of-band fill/execution confirmation without competing with the order-entry session's own message flow",
+        "a market-data session (KalshiMD) -- whether this has materially lower fan-out latency than the WS market-data channels is UNMEASURED here (out of scope for this component; would be an ORDER PATH vs MARKET DATA PATH cross-component question)"
+      ],
+      "conclusion_for_R_study": "FIX is a protocol-efficiency and signing-overhead win, NOT a rate-limit-ceiling win. Any maker-EV model that assumed FIX raises the throughput ceiling above REST for the same tier is wrong -- the ceiling in section 6 applies identically to REST and FIX users at a given tier. FIX is still worth having (removes per-request handshake/signing latency, gives MassCancel and drop-copy), but it does not change the M*U arithmetic in section 6."
+    }
+  },
+
+  "3_market_maker_program": {
+    "programs_found": [
+      {
+        "name": "Market Maker Program / Market Maker Agreement",
+        "citation": "https://help.kalshi.com/en/articles/13823819-how-to-become-a-market-maker-on-kalshi, https://kalshi.com/regulatory/liquidity-provider-program (fetched via search-cache; direct WebFetch hit HTTP 429 twice, be polite -- did not retry further)",
+        "eligibility": "'granted following a thorough review of financial resources, trading experience, and business reputation' -- discretionary/bespoke approval, no published numeric bar (e.g. no stated min AUM or min volume to apply). Selective by design.",
+        "obligations": "'defined quoting and volume requirements' per market; for covered products, quote uptime of 98% of each 1-hour increment is cited as an example standard. Fee reductions/benefits are conditional on maintaining that liquidity and orderly markets on an ongoing basis.",
+        "benefits_documented": [
+          "reduced fees ('may receive reduced fees')",
+          "'certain adjusted position limits'",
+          "general 'enhanced access' (not itemized)"
+        ],
+        "benefits_NOT_documented_anywhere_found": [
+          "API rate-limit tier upgrade -- no page states that signing a Market Maker Agreement grants a specific rate-limit tier (Premier/Paragon/etc). The rate-limit tier ladder (section 6) is described ONLY in volume-threshold terms on the separate rate_limits doc; the two programs are never cross-referenced in any page fetched.",
+          "FIX access -- same gap; FIX access is stated purely in terms of the rate-limit tier (Premier+) elsewhere, never in terms of MM-agreement status.",
+          "IMPLICATION: a designated market maker is NOT guaranteed FIX or a high rate-limit tier by virtue of the MM agreement alone in anything documented -- they would separately need to clear the Premier+ volume bar (which an active MM almost certainly would, by volume, but this is inference, not a documented guarantee)."
+        ]
+      },
+      {
+        "name": "Liquidity Provider Program (per-series Designated Liquidity Provider / Incentivized Series)",
+        "citation": "https://help.kalshi.com/en/articles/15410219-liquidity-provider-program",
+        "eligibility": "must already have an executed Market Maker Agreement; then selected/auctioned per Incentivized Series.",
+        "mechanism": "reverse-auction-like: applicants state the minimum Incentive Period Reward they'd accept to meet that series' Incentive Period Requirements; Kalshi selects Designated Liquidity Providers per series.",
+        "benefit": "a cash 'Incentive Period Reward' upon meeting the series' requirements -- a direct subsidy, not a fee/rate-limit change.",
+        "status_at_fetch_time": "one active auction was listed as closing 2026-07-31 (i.e. tomorrow relative to this research's 2026-07-30 run date); ~20 series listed with an 8/31/26 program end date."
+      },
+      {
+        "name": "Liquidity Incentive Program (broad, non-MM-agreement)",
+        "citation": "https://help.kalshi.com/en/articles/13823851-liquidity-incentive-program",
+        "eligibility": "open to 'most regular U.S. Kalshi members' -- explicitly EXCLUDES existing market makers with MM agreements, Kalshi affiliates/employees, IBs/FCMs and their customers, and non-U.S. users. This is the retail/prosumer-tier liquidity rebate, separate from and mutually exclusive with the formal MM program.",
+        "mechanism": "snapshot-based scoring of resting-order contribution to liquidity; reward = (your score / sum of all participants' scores) x a daily reward pool of $10-$1,000/day, $1.00 minimum payout, in up to 31-day periods.",
+        "program_window": "2025-09-15 through 2026-09-01 (stated as subject to modification/termination by Kalshi at any time).",
+        "api_or_fix_benefit": "none documented."
+      }
+    ],
+    "overall_conclusion": "Kalshi's MM/liquidity programs are FEE and CASH-REBATE mechanisms, not API-tier mechanisms. The API rate-limit/FIX upgrade path (section 6) runs entirely through trading VOLUME, independent of whether you're a designated market maker. A maker-bot business case should size the volume bar for Premier/FIX access on its own economics, not assume MM-program acceptance buys faster infrastructure."
+  },
+
+  "4_ws_order_entry": {
+    "exists": false,
+    "finding": "No WebSocket order-entry capability found anywhere in docs.kalshi.com. Order placement/cancel/amend/decrease are REST- or FIX-only. The authenticated WebSocket is read-only from the trader's perspective: market data (orderbook_delta, ticker, trade, market_lifecycle_v2) and private account push channels (fill, market_positions, user_orders for order-state changes).",
+    "citation": "https://docs.kalshi.com/websockets/user-orders.md (confirms user_orders is a push-notification channel with no request/command direction), https://docs.kalshi.com/getting_started/quick_start_websockets, general docs.kalshi.com/websockets index",
+    "implication": "a maker bot's write path (quote placement/repricing) has exactly two options -- REST or FIX -- both metered by the identical token bucket (section 2). WS is purely for reducing READ-side latency/cost (book state, fills, order-state changes) and does not touch the Write bucket at all."
+  },
+
+  "5_order_semantics": {
+    "self_trade_prevention": {
+      "taker_at_cross": "incoming taker order canceled on self-cross; prior fills in the same order stand.",
+      "maker": "resting maker order canceled on self-cross; incoming order continues matching against others.",
+      "citation": "https://docs.kalshi.com/api-reference/orders/create-order-v2",
+      "default": "not explicitly stated as a default in any page fetched -- UNVERIFIED which type applies if the field is omitted; treat as required-effectively for a maker bot running multiple correlated strategies that might cross itself."
+    },
+    "post_only": {
+      "exists_as_a_field": true,
+      "documented_behavior": "NOT documented in any page fetched (see 1_rest_order_endpoints.create_order.post_only above). This is a real gap in Kalshi's public docs, not a null result from insufficient searching -- multiple direct WebFetches of the create-order-v2 schema page returned the field with no description string attached.",
+      "action_item": "confirm empirically against the demo environment (https://demo-api.kalshi.co) before depending on it."
+    },
+    "time_in_force": {
+      "rest": ["fill_or_kill (FOK)", "immediate_or_cancel (IOC)", "good_till_canceled (GTC, optionally + expiration_time for GTD-equivalent)"],
+      "fix": ["Day (0)", "GTC (1)", "IOC (3)", "FOK (4)", "GTD (6) -- explicit enum, unlike REST"],
+      "citation": "https://docs.kalshi.com/api-reference/orders/create-order-v2, https://docs.kalshi.com/fix/order-entry"
+    }
+  },
+
+  "6_queue_position_endpoint_and_rate_arithmetic": {
+    "get_order_queue_position": {
+      "endpoint": "GET /portfolio/orders/{order_id}/queue_position",
+      "citation": "https://docs.kalshi.com/api-reference/orders/get-order-queue-position",
+      "response": "{ \"queue_position_fp\": \"<contracts>\" } -- number of preceding SHARES/contracts ahead of this order in the book, not a rank/index.",
+      "batch_variant": "GET /portfolio/orders/queue_positions (Get Queue Positions for Orders) exists for checking multiple orders in one call -- cheaper per-order than polling GetOrderQueuePosition N times, by analogy with the batch-create/batch-cancel discount pattern, but the exact per-order token cost of the batch variant was NOT found documented. UNVERIFIED, but its existence alone is a real finding: use it instead of N serial single-order polls.",
+      "citation_batch": "https://docs.kalshi.com/api-reference/orders/get-queue-positions-for-orders",
+      "rate_limit_cost": "NOT documented explicitly on the endpoint's own page or found in a fetchable static endpoint-cost table (GET /account/endpoint_costs is a live authenticated call this environment cannot make). Presumed default 10 READ tokens absent an override. UNVERIFIED -- get the real number from an authenticated GET /account/endpoint_costs call before sizing a polling loop.",
+      "pushed_over_websocket": {
+        "answer": "NO. Confirmed directly: the user_orders WS channel schema (fields: order_id, status, side, fill_count_fp, remaining_count_fp, timestamps, self_trade_prevention_type, etc.) contains no queue-position, priority-timestamp, or rank field of any kind.",
+        "citation": "https://docs.kalshi.com/websockets/user-orders.md",
+        "implication": "queue position is REST-poll-only. A maker that wants live queue-position awareness (e.g. to decide whether to hold or requote-to-front) must burn Read-bucket tokens polling, competing with any other REST read traffic on the same key/tier. This is a real architectural constraint, not folklore."
+      }
+    },
+
+    "rate_limit_tiers_table": {
+      "citation": "https://docs.kalshi.com/getting_started/rate_limits",
+      "model": "independent per-key token buckets for Read and Write; default cost 10 tokens/request; non-default costs published at GET /account/endpoint_costs (batch-cancel confirmed at 2 tokens/order there); burst = up to 2x the per-second rate held in the bucket (Basic write and Advanced-tier read hold only 1x).",
+      "tiers_tokens_per_sec": {
+        "basic":     {"read": 200,  "write": 100,  "qualification": "automatic on signup"},
+        "advanced":  {"read": 300,  "write": 300,  "qualification": "self-serve: call the Upgrade Account API Usage Level endpoint"},
+        "expert":    {"read": 600,  "write": 600,  "qualification": "volume-earned: 30-day trailing volume >= 0.075% of prior month's total exchange volume; kept above >=0.05%"},
+        "premier":   {"read": 1000, "write": 1000, "qualification": "volume-earned: >=0.125% to earn / >=0.10% to keep; ALSO the tier at which FIX access becomes automatic"},
+        "paragon":   {"read": 2000, "write": 2000, "qualification": "volume-earned: >=0.25% to earn / >=0.20% to keep"},
+        "prime":     {"read": 4000, "write": 4000, "qualification": "volume-earned: >=0.50% to earn / >=0.40% to keep"},
+        "prestige":  {"read": 6000, "write": 8000, "qualification": "volume-earned: >=1.00% to earn / >=0.80% to keep (highest published tier; note read/write are asymmetric here, uniquely)"}
+      },
+      "volume_formula": "your trailing-30-day traded volume / (previous calendar month's total exchange volume x 2); grants renew daily while qualifying and lapse when the 30-day grant expires -- i.e. tier is NOT sticky, a maker must sustain the volume share to keep the tier.",
+      "throttle_response": "HTTP 429 {\"error\":\"too many requests\"}, no penalty/backoff timer -- next request succeeds as soon as the bucket balance covers its cost."
+    },
+
+    "throughput_ceiling_arithmetic": {
+      "assumptions_flagged": [
+        "assumes a per-update reprice costs 10 write tokens (the documented DEFAULT cost) via a single amend call, since amend's own token cost was not found documented -- UNVERIFIED, get from /account/endpoint_costs live",
+        "assumes GetOrderQueuePosition polling costs 10 read tokens/call (same default-cost assumption, same caveat)",
+        "ignores WS traffic entirely since WS does not touch the token bucket (section 4) -- book/fill awareness should come from WS, not REST, in any real design"
+      ],
+      "formula": "sustained requotes/sec (single-order amend calls) = tier_write_tokens_per_sec / 10. Sustained requotes/min = that x 60.",
+      "capacity_by_tier_requotes_per_min": {
+        "basic": 600,
+        "advanced": 1800,
+        "expert": 3600,
+        "premier": 6000,
+        "paragon": 12000,
+        "prime": 24000,
+        "prestige": 48000
+      },
+      "worked_examples_M_markets_x_U_updates_per_min_per_market": [
+        {"M": 10, "U": 60,  "MxU": 600,   "min_tier_that_fits": "basic (exactly at ceiling -- no headroom, will 429 on any burst)"},
+        {"M": 10, "U": 120, "MxU": 1200,  "min_tier_that_fits": "advanced (1800 cap, 67% utilized)"},
+        {"M": 25, "U": 60,  "MxU": 1500,  "min_tier_that_fits": "advanced (1800 cap, 83% utilized -- thin headroom)"},
+        {"M": 50, "U": 60,  "MxU": 3000,  "min_tier_that_fits": "expert (3600 cap) -- advanced (1800) insufficient"},
+        {"M": 50, "U": 120, "MxU": 6000,  "min_tier_that_fits": "premier (6000, exactly at ceiling) or paragon for headroom"},
+        {"M": 100,"U": 60,  "MxU": 6000,  "min_tier_that_fits": "premier (exactly at ceiling)"},
+        {"M": 100,"U": 120, "MxU": 12000, "min_tier_that_fits": "paragon (12000, exactly at ceiling) or prime for headroom"},
+        {"M": 200,"U": 60,  "MxU": 12000, "min_tier_that_fits": "paragon (exactly at ceiling)"},
+        {"M": 200,"U": 120, "MxU": 24000, "min_tier_that_fits": "prime (24000, exactly at ceiling)"}
+      ],
+      "queue_position_polling_add_on": {
+        "note": "if the maker also polls GetOrderQueuePosition once per second per resting order (2 sides x M markets = 2M orders), that consumes 2M x 10 = 20M read tokens/sec against the READ bucket -- separate from the write arithmetic above, but still a real ceiling.",
+        "capacity_2M_orders_polled_1x_per_sec": {
+          "basic_read_200": "M <= 10 markets (20 orders polled/sec = 200 read tokens/sec, exactly at ceiling)",
+          "premier_read_1000": "M <= 50 markets",
+          "prime_read_4000": "M <= 200 markets"
+        },
+        "mitigation": "use the batch Get Queue Positions for Orders endpoint (section 6, get_order_queue_position.batch_variant) instead of N serial polls -- if it shares batch-cancel's ~5x-cheaper-than-default economics, the ceiling above could be materially higher. UNVERIFIED cost -- must confirm live before sizing."
+      },
+      "bottom_line_for_the_R_study": "the write-token ceiling, not raw network latency, is what caps QUOTE FREQUENCY at scale. A maker running M=50-100 markets wanting sub-second (U>=60/min) requoting needs Premier tier at minimum, which also happens to be the FIX-eligibility tier -- so the practical upgrade path is: trade enough volume to earn Premier (>=0.125% of prior month's exchange volume) which simultaneously (a) 10x's the write ceiling over Basic, (b) unlocks FIX (protocol/signing-overhead win, NOT a token-bucket win per section 2), and (c) is a volume bar Kalshi computes off THEIR total exchange volume, meaning it gets HARDER in absolute $ terms as the exchange grows -- this is a moving target, not a fixed sign-up threshold, and should be re-measured against current published Kalshi exchange volume before committing to a tier-upgrade plan."
+    }
+  },
+
+  "gaps_requiring_live_authenticated_verification": [
+    "exact token cost of: CreateOrder, DecreaseOrder, AmendOrder, GetOrderQueuePosition, GetQueuePositionsForOrders (this research assumed default 10, batch-cancel's 2 is the only non-default cost confirmed from static docs) -- pull GET /account/endpoint_costs with real keys",
+    "post_only field's actual runtime behavior on create-order-v2 (undocumented in prose)",
+    "default self_trade_prevention_type when the field is omitted",
+    "whether decrease-order-v2 (not just its sibling amend-v2) actually preserves queue position in the live matching engine -- rest an order, decrease it, poll queue position before/after",
+    "whether FIX MassCancelRequest (35=q) consumes write tokens in addition to its independent 1 req/sec throttle",
+    "whether Market Maker Agreement status confers any rate-limit-tier or FIX benefit beyond what pure trading volume already grants (no doc found either way)",
+    "max practical batch size in practice for batch-create/batch-cancel at each tier (docs give the formula -- tokens/10 or /2 -- but no worked example or hard cap was published)"
+  ]
+}

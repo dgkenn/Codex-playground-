@@ -1,0 +1,52 @@
+{
+  "component": "information_feeds",
+  "subsection": "kalshi_ws_docs",
+  "source": {
+    "asyncapi_spec_url": "https://docs.kalshi.com/asyncapi.yaml",
+    "fetched_via": "curl (bypassed WebFetch's 404 on the human-readable overview page; asyncapi.yaml is the machine-readable, presumably-authoritative source and matched WebSearch summaries of the human docs)",
+    "quick_start_url": "https://docs.kalshi.com/getting_started/quick_start_websockets",
+    "spec_version": "asyncapi: 3.0.0, info.version: 2.0.0, title: Kalshi Market Data WebSocket API"
+  },
+  "connection": {
+    "production_url": "wss://external-api-ws.kalshi.com/trade-api/ws/v2",
+    "demo_url": "wss://external-api-ws.demo.kalshi.co/trade-api/ws/v2",
+    "auth_required_for_connection": true,
+    "auth_note": "Per the spec: 'Authentication is required to establish the connection; include API key headers during the WebSocket handshake. Some channels carry only public market data, but the connection itself still requires authentication.' -- i.e. there is NO anonymous/public WS access, even to the public ticker/trade channels.",
+    "auth_headers": ["KALSHI-ACCESS-KEY", "KALSHI-ACCESS-SIGNATURE", "KALSHI-ACCESS-TIMESTAMP"],
+    "signing": "RSA-PSS with SHA-256 over the string `timestamp + \"GET\" + \"/trade-api/ws/v2\"`, base64-encoded, same pattern as REST request signing (per quick_start_websockets doc).",
+    "keepalive": "Server sends WS Ping control frame (opcode 0x9, body 'heartbeat') every 10 seconds; client must Pong (0xA) or the server closes the connection. websockets (Python) auto-Pongs.",
+    "order_entry_over_ws": "NOT AVAILABLE. grep of the full asyncapi spec (4385 lines) for place/create/cancel/amend/batch order operations found zero matches -- every WS operation is either a subscription-management command (subscribe/unsubscribe/update_subscription/list_subscriptions) or a control frame (ping/pong). Order entry, cancellation, and the previously-verified GetOrderQueuePosition / decrease endpoints are REST-only."
+  },
+  "channels": [
+    {"name": "orderbook_delta", "auth": "required (private channel per spec, though data is public market data -- privacy is in per-user enrichment e.g. client_order_id)", "market_filter": "market_ticker / market_tickers only (no market_id)", "behavior": "sends orderbook_snapshot first, then incremental orderbook_delta; supports update_subscription add_markets/delete_markets/get_snapshot", "use_case": "maintain a live Kalshi order book -- this is the queue-position / adverse-selection side of the maker problem, separate from the BRTI info-feed side"},
+    {"name": "ticker", "auth": "connection-level only (no extra channel auth)", "market_filter": "optional; market_ticker(s) or market_id(s), omit for all markets", "behavior": "price/volume/open-interest updates whenever any ticker field changes"},
+    {"name": "trade", "auth": "connection-level only", "market_filter": "optional, omit for all trades", "behavior": "public trade notification immediately after execution"},
+    {"name": "fill", "auth": "required (private, your fills)", "market_filter": "optional market_ticker(s)"},
+    {"name": "market_positions", "auth": "required (private)", "market_filter": "market_ticker(s) only"},
+    {"name": "market_lifecycle_v2", "auth": "connection-level only", "market_filter": "not supported (all markets)", "behavior": "creation, (de)activation, close-date changes, determination, settlement, price-level structure changes, metadata updates -- also emits eventLifecycle and eventFeeUpdate messages"},
+    {"name": "multivariate_market_lifecycle", "auth": "connection-level only", "note": "MVE-specific lifecycle variant"},
+    {"name": "multivariate", "auth": "unclear from truncated read, public-market-data tag"},
+    {"name": "communications", "auth": "required (private)"},
+    {"name": "order_group_updates", "auth": "required (private)", "behavior": "order-group creation/trigger/reset/delete/limit-update events"},
+    {"name": "user_orders", "auth": "required (private)", "market_filter": "optional market_tickers", "behavior": "your resting-order created/filled/canceled/updated events in real time"},
+    {
+      "name": "cfbenchmarks_value",
+      "auth": "required (private in the sense of requiring auth, data itself is index-level, not account-scoped)",
+      "market_filter": "not market-based; index_ids array (e.g. [\"BRTI\",\"ETHUSD_RTI\"]), or [\"all\"]",
+      "behavior": "*** KEY FINDING: Kalshi redistributes the CF Benchmarks index value directly over WS ***. Each tick carries the raw upstream BRTI print PLUS a trailing 60-second windowed average (avg_60s_data) AND, only in the final minute before each quarter-hour close (:00/:15/:30/:45), a second-indexed 'last_60s_windowed_average_15min' field that mirrors the settlement-window averaging Kalshi's crypto markets actually settle on. Ticks emitted roughly once per second (matches BRTI's standard 1Hz dissemination cadence per the CF Benchmarks methodology doc -- Kalshi is evidently not paying for the 200ms max-rate tier, or is throttling to 1Hz on redistribution). Duplicate/out-of-order upstream source timestamps are dropped.",
+      "implication": "This channel is a much lower-effort path to a settlement-relevant signal than reconstructing BRTI from 8 constituent order books: no licensing exposure (Kalshi is presumably the licensed redistributor), no need to replicate CF Benchmarks' order-size-cap / exponential-weighting / uncrossing math, and it literally includes the quarter-hour settlement-window average field. The tradeoff is an extra hop (constituent exchange -> CF Benchmarks calc engine -> Kalshi -> your WS) versus reconstructing from constituent order books directly, and the ~1Hz cadence caps how early a self-reconstructed signal could plausibly lead it. Recommended design: subscribe to cfbenchmarks_value as the authoritative baseline / sanity check, and treat direct constituent-exchange order-book deltas as the leading indicator for the cancel trigger, cross-validated against the ~1s BRTI prints."
+    },
+    {
+      "name": "pyth_value",
+      "auth": "required",
+      "market_filter": "underlying_tickers array or [\"all\"]",
+      "behavior": "Real-time Pyth Network price updates for configured underlyings -- a second, independent oracle feed Kalshi exposes; relevant if any Kalshi markets settle to Pyth rather than CF Benchmarks (not established here; out of scope for BRTI-specific crypto markets but worth checking per-market settlement source before assuming BRTI applies)."
+    }
+  ],
+  "error_codes_of_interest": {
+    "9": "Authentication required (channel requires authenticated connection)",
+    "24": "Index IDs required (cfbenchmarks_value subscribe_indices/unsubscribe_indices without index_ids)",
+    "27": "Too many requests -- the subscription exceeded its command rate limit",
+    "terminal_errors": "Codes 10 (Channel error) and 17 (Internal error) are terminal -- client must resubscribe, i.e. these are not per-message soft errors."
+  }
+}

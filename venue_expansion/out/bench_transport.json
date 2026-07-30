@@ -1,0 +1,902 @@
+{
+  "generated_at_utc": "2026-07-30T16:50:44.646422+00:00",
+  "caveat": "This container's outbound HTTPS transits a mandatory agent proxy (CCR_AGENT_PROXY_ENABLED=1, CLAUDE_CODE_PROXY_RESOLVES_HOSTS=true). Every absolute network-timing number below is an UPPER BOUND / proxy-inclusive figure, not a clean measurement of the direct client<->Kalshi path. Deltas computed the same way on both sides of a comparison (reconnect penalty, route delta) are valid because the proxy term is roughly constant per request and cancels in the subtraction. Raw UDP DNS queries (port 53) do not transit the HTTPS proxy and are clean. CPU-only benchmarks (signing, serialization) never touch the network and are clean.",
+  "hosts": {
+    "retail_cloudfront": "api.elections.kalshi.com",
+    "origin_direct": "trading-api.kalshi.com"
+  },
+  "keepalive_delta_http1": {
+    "n": 30,
+    "req1_ms": 571.81,
+    "req2_30_median_ms": 65.176,
+    "req2_30_mean_ms": 68.979,
+    "req2_30_stdev_ms": 13.679,
+    "req2_30_min_ms": 54.987,
+    "req2_30_max_ms": 116.97,
+    "reconnect_penalty_ms": 506.634,
+    "raw": [
+      {
+        "i": 1,
+        "ms": 571.81,
+        "status": 200
+      },
+      {
+        "i": 2,
+        "ms": 69.002,
+        "status": 200
+      },
+      {
+        "i": 3,
+        "ms": 59.859,
+        "status": 200
+      },
+      {
+        "i": 4,
+        "ms": 62.833,
+        "status": 200
+      },
+      {
+        "i": 5,
+        "ms": 72.269,
+        "status": 200
+      },
+      {
+        "i": 6,
+        "ms": 61.388,
+        "status": 200
+      },
+      {
+        "i": 7,
+        "ms": 58.823,
+        "status": 200
+      },
+      {
+        "i": 8,
+        "ms": 57.975,
+        "status": 200
+      },
+      {
+        "i": 9,
+        "ms": 67.161,
+        "status": 200
+      },
+      {
+        "i": 10,
+        "ms": 65.553,
+        "status": 200
+      },
+      {
+        "i": 11,
+        "ms": 57.812,
+        "status": 200
+      },
+      {
+        "i": 12,
+        "ms": 99.149,
+        "status": 200
+      },
+      {
+        "i": 13,
+        "ms": 79.046,
+        "status": 200
+      },
+      {
+        "i": 14,
+        "ms": 82.917,
+        "status": 200
+      },
+      {
+        "i": 15,
+        "ms": 78.124,
+        "status": 200
+      },
+      {
+        "i": 16,
+        "ms": 65.176,
+        "status": 200
+      },
+      {
+        "i": 17,
+        "ms": 66.898,
+        "status": 200
+      },
+      {
+        "i": 18,
+        "ms": 59.567,
+        "status": 200
+      },
+      {
+        "i": 19,
+        "ms": 61.101,
+        "status": 200
+      },
+      {
+        "i": 20,
+        "ms": 60.378,
+        "status": 200
+      },
+      {
+        "i": 21,
+        "ms": 65.678,
+        "status": 200
+      },
+      {
+        "i": 22,
+        "ms": 57.906,
+        "status": 200
+      },
+      {
+        "i": 23,
+        "ms": 57.936,
+        "status": 200
+      },
+      {
+        "i": 24,
+        "ms": 63.438,
+        "status": 200
+      },
+      {
+        "i": 25,
+        "ms": 54.987,
+        "status": 200
+      },
+      {
+        "i": 26,
+        "ms": 63.668,
+        "status": 200
+      },
+      {
+        "i": 27,
+        "ms": 76.77,
+        "status": 200
+      },
+      {
+        "i": 28,
+        "ms": 116.97,
+        "status": 200
+      },
+      {
+        "i": 29,
+        "ms": 90.515,
+        "status": 200
+      },
+      {
+        "i": 30,
+        "ms": 67.492,
+        "status": 200
+      }
+    ]
+  },
+  "keepalive_delta_http2": {
+    "n": 30,
+    "req1_ms": 434.612,
+    "req2_30_median_ms": 56.273,
+    "req2_30_mean_ms": 58.266,
+    "req2_30_stdev_ms": 4.143,
+    "req2_30_min_ms": 55.039,
+    "req2_30_max_ms": 69.382,
+    "reconnect_penalty_ms": 378.339,
+    "raw": [
+      {
+        "i": 1,
+        "ms": 434.612,
+        "status": 200
+      },
+      {
+        "i": 2,
+        "ms": 55.039,
+        "status": 200
+      },
+      {
+        "i": 3,
+        "ms": 57.183,
+        "status": 200
+      },
+      {
+        "i": 4,
+        "ms": 55.828,
+        "status": 200
+      },
+      {
+        "i": 5,
+        "ms": 65.716,
+        "status": 200
+      },
+      {
+        "i": 6,
+        "ms": 55.717,
+        "status": 200
+      },
+      {
+        "i": 7,
+        "ms": 56.199,
+        "status": 200
+      },
+      {
+        "i": 8,
+        "ms": 61.264,
+        "status": 200
+      },
+      {
+        "i": 9,
+        "ms": 55.391,
+        "status": 200
+      },
+      {
+        "i": 10,
+        "ms": 56.888,
+        "status": 200
+      },
+      {
+        "i": 11,
+        "ms": 55.71,
+        "status": 200
+      },
+      {
+        "i": 12,
+        "ms": 56.273,
+        "status": 200
+      },
+      {
+        "i": 13,
+        "ms": 55.928,
+        "status": 200
+      },
+      {
+        "i": 14,
+        "ms": 69.382,
+        "status": 200
+      },
+      {
+        "i": 15,
+        "ms": 56.71,
+        "status": 200
+      },
+      {
+        "i": 16,
+        "ms": 57.551,
+        "status": 200
+      },
+      {
+        "i": 17,
+        "ms": 55.892,
+        "status": 200
+      },
+      {
+        "i": 18,
+        "ms": 55.275,
+        "status": 200
+      },
+      {
+        "i": 19,
+        "ms": 57.623,
+        "status": 200
+      },
+      {
+        "i": 20,
+        "ms": 58.17,
+        "status": 200
+      },
+      {
+        "i": 21,
+        "ms": 65.528,
+        "status": 200
+      },
+      {
+        "i": 22,
+        "ms": 67.548,
+        "status": 200
+      },
+      {
+        "i": 23,
+        "ms": 55.123,
+        "status": 200
+      },
+      {
+        "i": 24,
+        "ms": 55.82,
+        "status": 200
+      },
+      {
+        "i": 25,
+        "ms": 56.22,
+        "status": 200
+      },
+      {
+        "i": 26,
+        "ms": 57.643,
+        "status": 200
+      },
+      {
+        "i": 27,
+        "ms": 66.036,
+        "status": 200
+      },
+      {
+        "i": 28,
+        "ms": 57.266,
+        "status": 200
+      },
+      {
+        "i": 29,
+        "ms": 55.66,
+        "status": 200
+      },
+      {
+        "i": 30,
+        "ms": 55.141,
+        "status": 200
+      }
+    ]
+  },
+  "route_delta": {
+    "rounds": 15,
+    "note": "Fresh TCP+TLS connection per request on both sides (full path incl. handshake), interleaved A,B,A,B so proxy/network drift cancels in the delta.",
+    "A_retail_cloudfront_median_ms": 546.884,
+    "B_origin_direct_median_ms": 547.804,
+    "route_delta_median_ms_A_minus_B": -0.92,
+    "A_retail_cloudfront_mean_ms": 670.288,
+    "B_origin_direct_mean_ms": 576.07,
+    "A_status_note": "200 (retail/CloudFront serves this endpoint)",
+    "B_status_note": "origin returns HTTP 401 (auth-gated at origin) but the full network+TLS+server round trip is still measured",
+    "interleaved_raw": [
+      {
+        "round": 1,
+        "side": "A_retail_cloudfront",
+        "ms": 469.299,
+        "status": 200
+      },
+      {
+        "round": 1,
+        "side": "B_origin_direct",
+        "ms": 510.435,
+        "status": 401
+      },
+      {
+        "round": 2,
+        "side": "A_retail_cloudfront",
+        "ms": 530.728,
+        "status": 200
+      },
+      {
+        "round": 2,
+        "side": "B_origin_direct",
+        "ms": 547.387,
+        "status": 401
+      },
+      {
+        "round": 3,
+        "side": "A_retail_cloudfront",
+        "ms": 546.884,
+        "status": 200
+      },
+      {
+        "round": 3,
+        "side": "B_origin_direct",
+        "ms": 735.824,
+        "status": 401
+      },
+      {
+        "round": 4,
+        "side": "A_retail_cloudfront",
+        "ms": 659.076,
+        "status": 200
+      },
+      {
+        "round": 4,
+        "side": "B_origin_direct",
+        "ms": 547.804,
+        "status": 401
+      },
+      {
+        "round": 5,
+        "side": "A_retail_cloudfront",
+        "ms": 1042.271,
+        "status": 200
+      },
+      {
+        "round": 5,
+        "side": "B_origin_direct",
+        "ms": 495.892,
+        "status": 401
+      },
+      {
+        "round": 6,
+        "side": "A_retail_cloudfront",
+        "ms": 1214.786,
+        "status": 200
+      },
+      {
+        "round": 6,
+        "side": "B_origin_direct",
+        "ms": 558.718,
+        "status": 401
+      },
+      {
+        "round": 7,
+        "side": "A_retail_cloudfront",
+        "ms": 475.676,
+        "status": 200
+      },
+      {
+        "round": 7,
+        "side": "B_origin_direct",
+        "ms": 800.87,
+        "status": 401
+      },
+      {
+        "round": 8,
+        "side": "A_retail_cloudfront",
+        "ms": 777.058,
+        "status": 200
+      },
+      {
+        "round": 8,
+        "side": "B_origin_direct",
+        "ms": 571.891,
+        "status": 401
+      },
+      {
+        "round": 9,
+        "side": "A_retail_cloudfront",
+        "ms": 444.805,
+        "status": 200
+      },
+      {
+        "round": 9,
+        "side": "B_origin_direct",
+        "ms": 524.401,
+        "status": 401
+      },
+      {
+        "round": 10,
+        "side": "A_retail_cloudfront",
+        "ms": 831.506,
+        "status": 200
+      },
+      {
+        "round": 10,
+        "side": "B_origin_direct",
+        "ms": 541.641,
+        "status": 401
+      },
+      {
+        "round": 11,
+        "side": "A_retail_cloudfront",
+        "ms": 865.45,
+        "status": 200
+      },
+      {
+        "round": 11,
+        "side": "B_origin_direct",
+        "ms": 604.653,
+        "status": 401
+      },
+      {
+        "round": 12,
+        "side": "A_retail_cloudfront",
+        "ms": 650.426,
+        "status": 200
+      },
+      {
+        "round": 12,
+        "side": "B_origin_direct",
+        "ms": 528.006,
+        "status": 401
+      },
+      {
+        "round": 13,
+        "side": "A_retail_cloudfront",
+        "ms": 539.9,
+        "status": 200
+      },
+      {
+        "round": 13,
+        "side": "B_origin_direct",
+        "ms": 520.835,
+        "status": 401
+      },
+      {
+        "round": 14,
+        "side": "A_retail_cloudfront",
+        "ms": 501.749,
+        "status": 200
+      },
+      {
+        "round": 14,
+        "side": "B_origin_direct",
+        "ms": 573.327,
+        "status": 401
+      },
+      {
+        "round": 15,
+        "side": "A_retail_cloudfront",
+        "ms": 504.701,
+        "status": 200
+      },
+      {
+        "round": 15,
+        "side": "B_origin_direct",
+        "ms": 579.367,
+        "status": 401
+      }
+    ],
+    "A_retail_cloudfront_stdev_ms": 223.233,
+    "B_origin_direct_stdev_ms": 81.152,
+    "variance_note": "A (CloudFront) shows materially higher round-to-round variance than B (origin) despite near-identical medians -- consistent with CloudFront PoP/edge selection or proxy path jitter dominating over the true route difference; medians (robust to outliers) are the primary delta, means are reported for transparency."
+  },
+  "dns": {
+    "method": "raw UDP DNS query on port 53, direct to public resolvers -- does NOT transit the HTTPS agent proxy, clean timing.",
+    "resolvers": [
+      "8.8.8.8 (Google)",
+      "1.1.1.1 (Cloudflare)"
+    ],
+    "rounds": [
+      {
+        "round": 1,
+        "queries": [
+          {
+            "host": "api.elections.kalshi.com",
+            "resolver": "8.8.8.8",
+            "resolve_ms": 30.982,
+            "answers": [
+              {
+                "ip": "108.156.91.11",
+                "ttl_s": 60
+              },
+              {
+                "ip": "108.156.91.92",
+                "ttl_s": 60
+              },
+              {
+                "ip": "108.156.91.126",
+                "ttl_s": 60
+              },
+              {
+                "ip": "108.156.91.115",
+                "ttl_s": 60
+              }
+            ]
+          },
+          {
+            "host": "api.elections.kalshi.com",
+            "resolver": "1.1.1.1",
+            "resolve_ms": 44.065,
+            "answers": [
+              {
+                "ip": "108.156.91.115",
+                "ttl_s": 60
+              },
+              {
+                "ip": "108.156.91.126",
+                "ttl_s": 60
+              },
+              {
+                "ip": "108.156.91.92",
+                "ttl_s": 60
+              },
+              {
+                "ip": "108.156.91.11",
+                "ttl_s": 60
+              }
+            ]
+          },
+          {
+            "host": "trading-api.kalshi.com",
+            "resolver": "8.8.8.8",
+            "resolve_ms": 32.642,
+            "answers": [
+              {
+                "ip": "3.137.133.121",
+                "ttl_s": 60
+              },
+              {
+                "ip": "3.138.233.55",
+                "ttl_s": 60
+              }
+            ]
+          },
+          {
+            "host": "trading-api.kalshi.com",
+            "resolver": "1.1.1.1",
+            "resolve_ms": 16.359,
+            "answers": [
+              {
+                "ip": "3.137.133.121",
+                "ttl_s": 60
+              },
+              {
+                "ip": "3.138.233.55",
+                "ttl_s": 60
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "round": 2,
+        "queries": [
+          {
+            "host": "api.elections.kalshi.com",
+            "resolver": "8.8.8.8",
+            "resolve_ms": 3.882,
+            "answers": [
+              {
+                "ip": "108.156.91.115",
+                "ttl_s": 55
+              },
+              {
+                "ip": "108.156.91.92",
+                "ttl_s": 55
+              },
+              {
+                "ip": "108.156.91.11",
+                "ttl_s": 55
+              },
+              {
+                "ip": "108.156.91.126",
+                "ttl_s": 55
+              }
+            ]
+          },
+          {
+            "host": "api.elections.kalshi.com",
+            "resolver": "1.1.1.1",
+            "resolve_ms": 15.973,
+            "answers": [
+              {
+                "ip": "3.167.163.17",
+                "ttl_s": 60
+              },
+              {
+                "ip": "3.167.163.6",
+                "ttl_s": 60
+              },
+              {
+                "ip": "3.167.163.62",
+                "ttl_s": 60
+              },
+              {
+                "ip": "3.167.163.85",
+                "ttl_s": 60
+              }
+            ]
+          },
+          {
+            "host": "trading-api.kalshi.com",
+            "resolver": "8.8.8.8",
+            "resolve_ms": 32.564,
+            "answers": [
+              {
+                "ip": "3.137.133.121",
+                "ttl_s": 60
+              },
+              {
+                "ip": "3.138.233.55",
+                "ttl_s": 60
+              }
+            ]
+          },
+          {
+            "host": "trading-api.kalshi.com",
+            "resolver": "1.1.1.1",
+            "resolve_ms": 14.568,
+            "answers": [
+              {
+                "ip": "3.138.233.55",
+                "ttl_s": 60
+              },
+              {
+                "ip": "3.137.133.121",
+                "ttl_s": 60
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "websocket": {
+    "market_ticker_used": "KXBTC-26JUL3013-B64850",
+    "channel_attempted": "ticker (docs list this as not requiring auth for retail hostname)",
+    "empirical_finding": "Both wss://api.elections.kalshi.com/trade-api/ws/v2 and wss://external-api-ws.kalshi.com/trade-api/ws/v2 reject the WebSocket upgrade itself with HTTP 401 token_authentication_failure before any channel subscribe is processed -- i.e. auth is required at the CONNECTION level for this account, contradicting the naive reading of the docs that 'ticker'/'trade' are open channels (they may be open once authenticated, but an anonymous client cannot reach them). Message inter-arrival cadence could NOT be measured as a result -- documented per the task's fallback instruction: 'if all channels need auth, document that and measure connect+upgrade time only.'",
+    "retail_cloudfront_summary": {
+      "median_ms": 412.592,
+      "mean_ms": 493.65,
+      "min_ms": 240.89,
+      "max_ms": 1052.539,
+      "n": 8
+    },
+    "origin_direct_summary": {
+      "median_ms": 302.942,
+      "mean_ms": 320.441,
+      "min_ms": 282.87,
+      "max_ms": 456.69,
+      "n": 8
+    },
+    "raw": [
+      {
+        "url": "wss://api.elections.kalshi.com/trade-api/ws/v2",
+        "connect_reject_ms": 1052.539,
+        "http_status": 401,
+        "body": "{\"code\":\"token_authentication_failure\",\"message\":\"token authentication failure\"}",
+        "round": 1
+      },
+      {
+        "url": "wss://external-api-ws.kalshi.com/trade-api/ws/v2",
+        "connect_reject_ms": 313.39,
+        "http_status": 401,
+        "body": "{\"code\":\"token_authentication_failure\",\"message\":\"token authentication failure\"}",
+        "round": 1
+      },
+      {
+        "url": "wss://api.elections.kalshi.com/trade-api/ws/v2",
+        "connect_reject_ms": 581.845,
+        "http_status": 401,
+        "body": "{\"code\":\"token_authentication_failure\",\"message\":\"token authentication failure\"}",
+        "round": 2
+      },
+      {
+        "url": "wss://external-api-ws.kalshi.com/trade-api/ws/v2",
+        "connect_reject_ms": 329.442,
+        "http_status": 401,
+        "body": "{\"code\":\"token_authentication_failure\",\"message\":\"token authentication failure\"}",
+        "round": 2
+      },
+      {
+        "url": "wss://api.elections.kalshi.com/trade-api/ws/v2",
+        "connect_reject_ms": 243.339,
+        "http_status": 401,
+        "body": "{\"code\":\"token_authentication_failure\",\"message\":\"token authentication failure\"}",
+        "round": 3
+      },
+      {
+        "url": "wss://external-api-ws.kalshi.com/trade-api/ws/v2",
+        "connect_reject_ms": 285.255,
+        "http_status": 401,
+        "body": "{\"code\":\"token_authentication_failure\",\"message\":\"token authentication failure\"}",
+        "round": 3
+      },
+      {
+        "url": "wss://api.elections.kalshi.com/trade-api/ws/v2",
+        "connect_reject_ms": 242.605,
+        "http_status": 401,
+        "body": "{\"code\":\"token_authentication_failure\",\"message\":\"token authentication failure\"}",
+        "round": 4
+      },
+      {
+        "url": "wss://external-api-ws.kalshi.com/trade-api/ws/v2",
+        "connect_reject_ms": 294.263,
+        "http_status": 401,
+        "body": "{\"code\":\"token_authentication_failure\",\"message\":\"token authentication failure\"}",
+        "round": 4
+      },
+      {
+        "url": "wss://api.elections.kalshi.com/trade-api/ws/v2",
+        "connect_reject_ms": 241.101,
+        "http_status": 401,
+        "body": "{\"code\":\"token_authentication_failure\",\"message\":\"token authentication failure\"}",
+        "round": 5
+      },
+      {
+        "url": "wss://external-api-ws.kalshi.com/trade-api/ws/v2",
+        "connect_reject_ms": 289.995,
+        "http_status": 401,
+        "body": "{\"code\":\"token_authentication_failure\",\"message\":\"token authentication failure\"}",
+        "round": 5
+      },
+      {
+        "url": "wss://api.elections.kalshi.com/trade-api/ws/v2",
+        "connect_reject_ms": 676.391,
+        "http_status": 401,
+        "body": "{\"code\":\"token_authentication_failure\",\"message\":\"token authentication failure\"}",
+        "round": 6
+      },
+      {
+        "url": "wss://external-api-ws.kalshi.com/trade-api/ws/v2",
+        "connect_reject_ms": 311.622,
+        "http_status": 401,
+        "body": "{\"code\":\"token_authentication_failure\",\"message\":\"token authentication failure\"}",
+        "round": 6
+      },
+      {
+        "url": "wss://api.elections.kalshi.com/trade-api/ws/v2",
+        "connect_reject_ms": 670.489,
+        "http_status": 401,
+        "body": "{\"code\":\"token_authentication_failure\",\"message\":\"token authentication failure\"}",
+        "round": 7
+      },
+      {
+        "url": "wss://external-api-ws.kalshi.com/trade-api/ws/v2",
+        "connect_reject_ms": 282.87,
+        "http_status": 401,
+        "body": "{\"code\":\"token_authentication_failure\",\"message\":\"token authentication failure\"}",
+        "round": 7
+      },
+      {
+        "url": "wss://api.elections.kalshi.com/trade-api/ws/v2",
+        "connect_reject_ms": 240.89,
+        "http_status": 401,
+        "body": "{\"code\":\"token_authentication_failure\",\"message\":\"token authentication failure\"}",
+        "round": 8
+      },
+      {
+        "url": "wss://external-api-ws.kalshi.com/trade-api/ws/v2",
+        "connect_reject_ms": 456.69,
+        "http_status": 401,
+        "body": "{\"code\":\"token_authentication_failure\",\"message\":\"token authentication failure\"}",
+        "round": 8
+      }
+    ]
+  },
+  "cpu_signing": {
+    "n_iterations": 500,
+    "by_key_size": {
+      "rsa_2048": {
+        "median_us": 379.44,
+        "mean_us": 397.51,
+        "p99_us": 725.73,
+        "min_us": 341.95,
+        "max_us": 1207.19
+      },
+      "rsa_3072": {
+        "median_us": 1382.1,
+        "mean_us": 1346.94,
+        "p99_us": 2137.34,
+        "min_us": 1005.73,
+        "max_us": 2718.96
+      }
+    },
+    "json_serialize_order_payload_us": {
+      "median": 2.41,
+      "mean": 2.685,
+      "p99": 7.869
+    }
+  },
+  "cited_aws_inter_region_rtt": {
+    "source": "cloudping.co (AWS Global Latency & Bandwidth), accessed 2026-07-30",
+    "note": "These are published third-party measured figures, NOT measured by this script. They characterize a plausible production deployment's network leg; this container's own network numbers are proxy-polluted and unsuitable for that purpose (see caveat).",
+    "from_region": "us-east-2 (Ohio) -- where Kalshi's matching engine EC2 instances live per orchestrator's verified DNS/IP-range finding",
+    "rtt_ms": {
+      "us-east-2_intra_region_same_az": "~0.3-0.7 (typical same-AZ RTT within any AWS region; cloudping does not publish a us-east-2-to-itself figure, this is the standard order-of-magnitude cited across AWS re:Invent networking talks and community benchmarks, not cloudping)",
+      "us-east-2_intra_region_cross_az": "~1-2 (typical cross-AZ same-region RTT, same caveat as above)",
+      "us-east-1_(N._Virginia)": 13.75,
+      "us-west-2_(Oregon)": 52.91,
+      "eu-west-1_(Ireland)": 82.12,
+      "typical_residential_broadband_to_nearest_AWS_edge": "20-40 (rule-of-thumb for last-mile + ISP backbone + peering to reach an AWS edge/region from US residential broadband; highly variable by ISP and geography, cite: general internet measurement literature (e.g. M-Lab / Ookla aggregate figures), NOT a single authoritative source -- flagged as the least certain figure in this table)"
+    }
+  },
+  "production_latency_budget": {
+    "note": "Budget for one reaction (signal -> order hits Kalshi's matching engine), for a bot co-located in AWS us-east-2 (same region as Kalshi's matching engine). Network leg uses the CITED same-region AWS figure (not measured here, see CITED_AWS_RTT); compute legs use THIS container's clean local CPU benchmarks. TLS handshake amortizes to ~0 on a kept-alive connection (see reconnect_penalty); figure included as a one-time cost for a cold connection only.",
+    "rows_ms": [
+      {
+        "component": "RSA-PSS-SHA256 request signing (2048-bit key, Kalshi's scheme)",
+        "ms": 0.3794,
+        "source": "measured, clean (local CPU)"
+      },
+      {
+        "component": "JSON serialize order payload",
+        "ms": 0.0024,
+        "source": "measured, clean (local CPU)"
+      },
+      {
+        "component": "same-region (us-east-2 intra-region) network RTT, cross-AZ",
+        "ms_low": 1.0,
+        "ms_high": 2.0,
+        "source": "cited, cloudping.co order-of-magnitude, NOT measured here"
+      },
+      {
+        "component": "TCP+TLS1.3 handshake, cold connection (one-time, amortized to ~0 if connection held open)",
+        "ms": "see reconnect_penalty_ms in keepalive_delta section (proxy-inclusive, upper bound)",
+        "source": "measured in this container, PROXY-POLLUTED upper bound"
+      },
+      {
+        "component": "server-side matching-engine processing",
+        "ms": "not measurable from outside; not estimated here",
+        "source": "unknown -- flagged in unknowns"
+      }
+    ],
+    "same_region_reaction_floor_estimate_ms": 1.882,
+    "caveat": "This floor excludes server-side processing time (unknown) and assumes a warm/kept-alive connection. It is a compute+network-transit floor only, built from one clean local measurement plus one cited (not measured) network figure -- it is NOT validated against a real co-located deployment."
+  }
+}

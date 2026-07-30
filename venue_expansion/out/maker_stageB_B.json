@@ -1,0 +1,1135 @@
+{
+ "assets": {
+  "BTC": {
+   "all_fills": {
+    "n_prints": 729181,
+    "contracts": 122111931,
+    "n_days": 457,
+    "ev_w_c_per_ct": 1.2539433022314586,
+    "se": 0.3479138189977374,
+    "t": 3.6041779134953345,
+    "df": 456
+   },
+   "decisive_kill_all_fills_le_0": false,
+   "any_cell_pass": false,
+   "no_business_kill": false,
+   "sanity_anchor_b_clock_check": {
+    "explained_ev_c": 0.4695920512456146,
+    "unexplained_ev_c": 1.5563858206469907,
+    "condition": "explained<0 AND explained < unexplained-1.0",
+    "pass": false
+   },
+   "anchor_b_holds": false,
+   "asset_verdict": "INSUFFICIENT",
+   "asset_reason": "sanity anchor (b) clock check failed for this asset -- all 10 cells forced INSUFFICIENT pending fix per frozen spec; no PASS can be read off this asset (pre-override cell verdicts retained in each cell's verdict_preoverride for audit)"
+  },
+  "ETH": {
+   "all_fills": {
+    "n_prints": 138309,
+    "contracts": 24539845,
+    "n_days": 447,
+    "ev_w_c_per_ct": 0.6940645305624383,
+    "se": 0.3892737143821332,
+    "t": 1.7829730210889738,
+    "df": 446
+   },
+   "decisive_kill_all_fills_le_0": false,
+   "any_cell_pass": false,
+   "no_business_kill": false,
+   "sanity_anchor_b_clock_check": {
+    "explained_ev_c": 0.017711783808143762,
+    "unexplained_ev_c": 1.2579238258830359,
+    "condition": "explained<0 AND explained < unexplained-1.0",
+    "pass": false
+   },
+   "anchor_b_holds": false,
+   "asset_verdict": "INSUFFICIENT",
+   "asset_reason": "sanity anchor (b) clock check failed for this asset -- all 10 cells forced INSUFFICIENT pending fix per frozen spec; no PASS can be read off this asset (pre-override cell verdicts retained in each cell's verdict_preoverride for audit)"
+  }
+ },
+ "cells": [
+  {
+   "asset": "BTC",
+   "R_s": 1,
+   "theta": "5bp",
+   "explained": {
+    "n_prints": 13228,
+    "contracts": 2692987,
+    "n_days": 380,
+    "ev_w_c_per_ct": -0.3876899517153258,
+    "se": 1.2333500135878708,
+    "t": -0.31433895280668805,
+    "df": 379
+   },
+   "unexplained": {
+    "n_prints": 715953,
+    "contracts": 119418944,
+    "n_days": 457,
+    "ev_w_c_per_ct": 1.2909633667502536,
+    "se": 0.3519342036864988,
+    "t": 3.6681952286178956,
+    "df": 456
+   },
+   "unjoinable_n": 0,
+   "unjoinable_contracts": 0,
+   "unjoinable_share_of_admitted": 0.0,
+   "surviving_volume_share": 0.9779465693651179,
+   "t_bar": 3.040236025416335,
+   "min_n_ok": true,
+   "clause_ev_ge_0p5c": true,
+   "clause_signed_t_ge_bar": true,
+   "clause_surviving_vol_ge_20pct": true,
+   "insufficient_reasons": [
+    "sanity anchor (b) clock check failed for this asset -- ALL cells forced INSUFFICIENT pending fix per frozen spec, verdict_preoverride retained for audit"
+   ],
+   "verdict": "INSUFFICIENT",
+   "verdict_preoverride": "PASS"
+  },
+  {
+   "asset": "BTC",
+   "R_s": 1,
+   "theta": "10bp",
+   "explained": {
+    "n_prints": 3491,
+    "contracts": 789698,
+    "n_days": 253,
+    "ev_w_c_per_ct": -2.1797003411430698,
+    "se": 2.461055099956358,
+    "t": -0.8856771801581048,
+    "df": 252
+   },
+   "unexplained": {
+    "n_prints": 725690,
+    "contracts": 121322233,
+    "n_days": 457,
+    "ev_w_c_per_ct": 1.2762932165945216,
+    "se": 0.34719831100087467,
+    "t": 3.6759776074812365,
+    "df": 456
+   },
+   "unjoinable_n": 0,
+   "unjoinable_contracts": 0,
+   "unjoinable_share_of_admitted": 0.0,
+   "surviving_volume_share": 0.9935329988353063,
+   "t_bar": 3.040236025416335,
+   "min_n_ok": true,
+   "clause_ev_ge_0p5c": true,
+   "clause_signed_t_ge_bar": true,
+   "clause_surviving_vol_ge_20pct": true,
+   "insufficient_reasons": [
+    "sanity anchor (b) clock check failed for this asset -- ALL cells forced INSUFFICIENT pending fix per frozen spec, verdict_preoverride retained for audit"
+   ],
+   "verdict": "INSUFFICIENT",
+   "verdict_preoverride": "PASS"
+  },
+  {
+   "asset": "BTC",
+   "R_s": 5,
+   "theta": "5bp",
+   "explained": {
+    "n_prints": 68727,
+    "contracts": 14243446,
+    "n_days": 434,
+    "ev_w_c_per_ct": -0.11902477813304449,
+    "se": 0.5589313347114185,
+    "t": -0.21295062692181696,
+    "df": 433
+   },
+   "unexplained": {
+    "n_prints": 660454,
+    "contracts": 107868485,
+    "n_days": 457,
+    "ev_w_c_per_ct": 1.4352362601551325,
+    "se": 0.3639740452358441,
+    "t": 3.9432379284768593,
+    "df": 456
+   },
+   "unjoinable_n": 0,
+   "unjoinable_contracts": 0,
+   "unjoinable_share_of_admitted": 0.0,
+   "surviving_volume_share": 0.8833574583305869,
+   "t_bar": 3.040236025416335,
+   "min_n_ok": true,
+   "clause_ev_ge_0p5c": true,
+   "clause_signed_t_ge_bar": true,
+   "clause_surviving_vol_ge_20pct": true,
+   "insufficient_reasons": [
+    "sanity anchor (b) clock check failed for this asset -- ALL cells forced INSUFFICIENT pending fix per frozen spec, verdict_preoverride retained for audit"
+   ],
+   "verdict": "INSUFFICIENT",
+   "verdict_preoverride": "PASS"
+  },
+  {
+   "asset": "BTC",
+   "R_s": 5,
+   "theta": "10bp",
+   "explained": {
+    "n_prints": 17104,
+    "contracts": 3646914,
+    "n_days": 351,
+    "ev_w_c_per_ct": -1.7534863723136878,
+    "se": 1.1717080843217236,
+    "t": -1.496521527654,
+    "df": 350
+   },
+   "unexplained": {
+    "n_prints": 712077,
+    "contracts": 118465017,
+    "n_days": 457,
+    "ev_w_c_per_ct": 1.3465262238556046,
+    "se": 0.350635983814697,
+    "t": 3.8402396958984464,
+    "df": 456
+   },
+   "unjoinable_n": 0,
+   "unjoinable_contracts": 0,
+   "unjoinable_share_of_admitted": 0.0,
+   "surviving_volume_share": 0.9701346627628057,
+   "t_bar": 3.040236025416335,
+   "min_n_ok": true,
+   "clause_ev_ge_0p5c": true,
+   "clause_signed_t_ge_bar": true,
+   "clause_surviving_vol_ge_20pct": true,
+   "insufficient_reasons": [
+    "sanity anchor (b) clock check failed for this asset -- ALL cells forced INSUFFICIENT pending fix per frozen spec, verdict_preoverride retained for audit"
+   ],
+   "verdict": "INSUFFICIENT",
+   "verdict_preoverride": "PASS"
+  },
+  {
+   "asset": "BTC",
+   "R_s": 15,
+   "theta": "5bp",
+   "explained": {
+    "n_prints": 165854,
+    "contracts": 33221901,
+    "n_days": 446,
+    "ev_w_c_per_ct": -0.010068298018225988,
+    "se": 0.4086544910461692,
+    "t": -0.024637678622962903,
+    "df": 445
+   },
+   "unexplained": {
+    "n_prints": 563327,
+    "contracts": 88890030,
+    "n_days": 457,
+    "ev_w_c_per_ct": 1.7263570053919433,
+    "se": 0.3796035002433673,
+    "t": 4.547790007956091,
+    "df": 456
+   },
+   "unjoinable_n": 0,
+   "unjoinable_contracts": 0,
+   "unjoinable_share_of_admitted": 0.0,
+   "surviving_volume_share": 0.727938943165185,
+   "t_bar": 3.040236025416335,
+   "min_n_ok": true,
+   "clause_ev_ge_0p5c": true,
+   "clause_signed_t_ge_bar": true,
+   "clause_surviving_vol_ge_20pct": true,
+   "insufficient_reasons": [
+    "sanity anchor (b) clock check failed for this asset -- ALL cells forced INSUFFICIENT pending fix per frozen spec, verdict_preoverride retained for audit"
+   ],
+   "verdict": "INSUFFICIENT",
+   "verdict_preoverride": "PASS"
+  },
+  {
+   "asset": "BTC",
+   "R_s": 15,
+   "theta": "10bp",
+   "explained": {
+    "n_prints": 51499,
+    "contracts": 10651737,
+    "n_days": 403,
+    "ev_w_c_per_ct": -0.8013548400603582,
+    "se": 0.552673681360754,
+    "t": -1.4499601972855285,
+    "df": 402
+   },
+   "unexplained": {
+    "n_prints": 677682,
+    "contracts": 111460194,
+    "n_days": 457,
+    "ev_w_c_per_ct": 1.4503586724422892,
+    "se": 0.3718738349190163,
+    "t": 3.900136380281061,
+    "df": 456
+   },
+   "unjoinable_n": 0,
+   "unjoinable_contracts": 0,
+   "unjoinable_share_of_admitted": 0.0,
+   "surviving_volume_share": 0.9127707103411541,
+   "t_bar": 3.040236025416335,
+   "min_n_ok": true,
+   "clause_ev_ge_0p5c": true,
+   "clause_signed_t_ge_bar": true,
+   "clause_surviving_vol_ge_20pct": true,
+   "insufficient_reasons": [
+    "sanity anchor (b) clock check failed for this asset -- ALL cells forced INSUFFICIENT pending fix per frozen spec, verdict_preoverride retained for audit"
+   ],
+   "verdict": "INSUFFICIENT",
+   "verdict_preoverride": "PASS"
+  },
+  {
+   "asset": "BTC",
+   "R_s": 60,
+   "theta": "5bp",
+   "explained": {
+    "n_prints": 338317,
+    "contracts": 63641314,
+    "n_days": 456,
+    "ev_w_c_per_ct": 0.8726728363905245,
+    "se": 0.2931153651673287,
+    "t": 2.977233335728913,
+    "df": 455
+   },
+   "unexplained": {
+    "n_prints": 390864,
+    "contracts": 58470617,
+    "n_days": 457,
+    "ev_w_c_per_ct": 1.6689304304758747,
+    "se": 0.49596557261027435,
+    "t": 3.365012659431719,
+    "df": 456
+   },
+   "unjoinable_n": 0,
+   "unjoinable_contracts": 0,
+   "unjoinable_share_of_admitted": 0.0,
+   "surviving_volume_share": 0.4788280434284509,
+   "t_bar": 3.040236025416335,
+   "min_n_ok": true,
+   "clause_ev_ge_0p5c": true,
+   "clause_signed_t_ge_bar": true,
+   "clause_surviving_vol_ge_20pct": true,
+   "insufficient_reasons": [
+    "sanity anchor (b) clock check failed for this asset -- ALL cells forced INSUFFICIENT pending fix per frozen spec, verdict_preoverride retained for audit"
+   ],
+   "verdict": "INSUFFICIENT",
+   "verdict_preoverride": "PASS"
+  },
+  {
+   "asset": "BTC",
+   "R_s": 60,
+   "theta": "10bp",
+   "explained": {
+    "n_prints": 170702,
+    "contracts": 33982381,
+    "n_days": 439,
+    "ev_w_c_per_ct": 0.4695920512456146,
+    "se": 0.35728009574470043,
+    "t": 1.314352679700266,
+    "df": 438
+   },
+   "unexplained": {
+    "n_prints": 558479,
+    "contracts": 88129550,
+    "n_days": 457,
+    "ev_w_c_per_ct": 1.5563858206469907,
+    "se": 0.40814198796081913,
+    "t": 3.813344048288413,
+    "df": 456
+   },
+   "unjoinable_n": 0,
+   "unjoinable_contracts": 0,
+   "unjoinable_share_of_admitted": 0.0,
+   "surviving_volume_share": 0.7217112142792992,
+   "t_bar": 3.040236025416335,
+   "min_n_ok": true,
+   "clause_ev_ge_0p5c": true,
+   "clause_signed_t_ge_bar": true,
+   "clause_surviving_vol_ge_20pct": true,
+   "insufficient_reasons": [
+    "sanity anchor (b) clock check failed for this asset -- ALL cells forced INSUFFICIENT pending fix per frozen spec, verdict_preoverride retained for audit"
+   ],
+   "verdict": "INSUFFICIENT",
+   "verdict_preoverride": "PASS"
+  },
+  {
+   "asset": "BTC",
+   "R_s": 300,
+   "theta": "5bp",
+   "explained": {
+    "n_prints": 519505,
+    "contracts": 92683183,
+    "n_days": 457,
+    "ev_w_c_per_ct": 0.8887746334736907,
+    "se": 0.366420664192686,
+    "t": 2.4255581639531103,
+    "df": 456
+   },
+   "unexplained": {
+    "n_prints": 209676,
+    "contracts": 29428748,
+    "n_days": 457,
+    "ev_w_c_per_ct": 2.404009032256486,
+    "se": 0.4776253021176403,
+    "t": 5.033253099443992,
+    "df": 456
+   },
+   "unjoinable_n": 0,
+   "unjoinable_contracts": 0,
+   "unjoinable_share_of_admitted": 0.0,
+   "surviving_volume_share": 0.240998138011592,
+   "t_bar": 3.040236025416335,
+   "min_n_ok": true,
+   "clause_ev_ge_0p5c": true,
+   "clause_signed_t_ge_bar": true,
+   "clause_surviving_vol_ge_20pct": true,
+   "insufficient_reasons": [
+    "sanity anchor (b) clock check failed for this asset -- ALL cells forced INSUFFICIENT pending fix per frozen spec, verdict_preoverride retained for audit"
+   ],
+   "verdict": "INSUFFICIENT",
+   "verdict_preoverride": "PASS"
+  },
+  {
+   "asset": "BTC",
+   "R_s": 300,
+   "theta": "10bp",
+   "explained": {
+    "n_prints": 371558,
+    "contracts": 69682656,
+    "n_days": 456,
+    "ev_w_c_per_ct": 0.6975424846033423,
+    "se": 0.3387169322232023,
+    "t": 2.0593670355507556,
+    "df": 455
+   },
+   "unexplained": {
+    "n_prints": 357623,
+    "contracts": 52429275,
+    "n_days": 457,
+    "ev_w_c_per_ct": 1.9934440253083796,
+    "se": 0.48474076775952474,
+    "t": 4.112391937905475,
+    "df": 456
+   },
+   "unjoinable_n": 0,
+   "unjoinable_contracts": 0,
+   "unjoinable_share_of_admitted": 0.0,
+   "surviving_volume_share": 0.42935423730216826,
+   "t_bar": 3.040236025416335,
+   "min_n_ok": true,
+   "clause_ev_ge_0p5c": true,
+   "clause_signed_t_ge_bar": true,
+   "clause_surviving_vol_ge_20pct": true,
+   "insufficient_reasons": [
+    "sanity anchor (b) clock check failed for this asset -- ALL cells forced INSUFFICIENT pending fix per frozen spec, verdict_preoverride retained for audit"
+   ],
+   "verdict": "INSUFFICIENT",
+   "verdict_preoverride": "PASS"
+  },
+  {
+   "asset": "ETH",
+   "R_s": 1,
+   "theta": "5bp",
+   "explained": {
+    "n_prints": 8511,
+    "contracts": 1850741,
+    "n_days": 374,
+    "ev_w_c_per_ct": -0.3647874013705862,
+    "se": 0.940684885392019,
+    "t": -0.3877891598296123,
+    "df": 373
+   },
+   "unexplained": {
+    "n_prints": 129798,
+    "contracts": 22689104,
+    "n_days": 447,
+    "ev_w_c_per_ct": 0.7804346526861528,
+    "se": 0.41110835540379886,
+    "t": 1.8983672854802336,
+    "df": 446
+   },
+   "unjoinable_n": 0,
+   "unjoinable_contracts": 0,
+   "unjoinable_share_of_admitted": 0.0,
+   "surviving_volume_share": 0.9245822049813273,
+   "t_bar": 3.0406168119621215,
+   "min_n_ok": true,
+   "clause_ev_ge_0p5c": true,
+   "clause_signed_t_ge_bar": false,
+   "clause_surviving_vol_ge_20pct": true,
+   "insufficient_reasons": [
+    "sanity anchor (b) clock check failed for this asset -- ALL cells forced INSUFFICIENT pending fix per frozen spec, verdict_preoverride retained for audit"
+   ],
+   "verdict": "INSUFFICIENT",
+   "verdict_preoverride": "KILL_OR_NO_PASS"
+  },
+  {
+   "asset": "ETH",
+   "R_s": 1,
+   "theta": "10bp",
+   "explained": {
+    "n_prints": 2734,
+    "contracts": 597644,
+    "n_days": 289,
+    "ev_w_c_per_ct": -1.2867124910481826,
+    "se": 1.6902500799530407,
+    "t": -0.7612556900952376,
+    "df": 288
+   },
+   "unexplained": {
+    "n_prints": 135575,
+    "contracts": 23942201,
+    "n_days": 447,
+    "ev_w_c_per_ct": 0.7435085855306285,
+    "se": 0.39110505884647273,
+    "t": 1.9010456876306754,
+    "df": 446
+   },
+   "unjoinable_n": 0,
+   "unjoinable_contracts": 0,
+   "unjoinable_share_of_admitted": 0.0,
+   "surviving_volume_share": 0.9756459749440145,
+   "t_bar": 3.0406168119621215,
+   "min_n_ok": true,
+   "clause_ev_ge_0p5c": true,
+   "clause_signed_t_ge_bar": false,
+   "clause_surviving_vol_ge_20pct": true,
+   "insufficient_reasons": [
+    "sanity anchor (b) clock check failed for this asset -- ALL cells forced INSUFFICIENT pending fix per frozen spec, verdict_preoverride retained for audit"
+   ],
+   "verdict": "INSUFFICIENT",
+   "verdict_preoverride": "KILL_OR_NO_PASS"
+  },
+  {
+   "asset": "ETH",
+   "R_s": 5,
+   "theta": "5bp",
+   "explained": {
+    "n_prints": 30423,
+    "contracts": 6293146,
+    "n_days": 406,
+    "ev_w_c_per_ct": -1.0809247076104702,
+    "se": 0.5797407091106623,
+    "t": -1.8644968183597759,
+    "df": 405
+   },
+   "unexplained": {
+    "n_prints": 107886,
+    "contracts": 18246699,
+    "n_days": 447,
+    "ev_w_c_per_ct": 1.3062446527999394,
+    "se": 0.48799196671083017,
+    "t": 2.6767749100549887,
+    "df": 446
+   },
+   "unjoinable_n": 0,
+   "unjoinable_contracts": 0,
+   "unjoinable_share_of_admitted": 0.0,
+   "surviving_volume_share": 0.7435539629529038,
+   "t_bar": 3.0406168119621215,
+   "min_n_ok": true,
+   "clause_ev_ge_0p5c": true,
+   "clause_signed_t_ge_bar": false,
+   "clause_surviving_vol_ge_20pct": true,
+   "insufficient_reasons": [
+    "sanity anchor (b) clock check failed for this asset -- ALL cells forced INSUFFICIENT pending fix per frozen spec, verdict_preoverride retained for audit"
+   ],
+   "verdict": "INSUFFICIENT",
+   "verdict_preoverride": "KILL_OR_NO_PASS"
+  },
+  {
+   "asset": "ETH",
+   "R_s": 5,
+   "theta": "10bp",
+   "explained": {
+    "n_prints": 11463,
+    "contracts": 2497731,
+    "n_days": 369,
+    "ev_w_c_per_ct": -1.7819829277051853,
+    "se": 0.7956300754371496,
+    "t": -2.239712880041765,
+    "df": 368
+   },
+   "unexplained": {
+    "n_prints": 126846,
+    "contracts": 22042114,
+    "n_days": 447,
+    "ev_w_c_per_ct": 0.9746410893256428,
+    "se": 0.4260687596353794,
+    "t": 2.287520657838702,
+    "df": 446
+   },
+   "unjoinable_n": 0,
+   "unjoinable_contracts": 0,
+   "unjoinable_share_of_admitted": 0.0,
+   "surviving_volume_share": 0.8982173277785577,
+   "t_bar": 3.0406168119621215,
+   "min_n_ok": true,
+   "clause_ev_ge_0p5c": true,
+   "clause_signed_t_ge_bar": false,
+   "clause_surviving_vol_ge_20pct": true,
+   "insufficient_reasons": [
+    "sanity anchor (b) clock check failed for this asset -- ALL cells forced INSUFFICIENT pending fix per frozen spec, verdict_preoverride retained for audit"
+   ],
+   "verdict": "INSUFFICIENT",
+   "verdict_preoverride": "KILL_OR_NO_PASS"
+  },
+  {
+   "asset": "ETH",
+   "R_s": 15,
+   "theta": "5bp",
+   "explained": {
+    "n_prints": 55105,
+    "contracts": 10810769,
+    "n_days": 430,
+    "ev_w_c_per_ct": 0.0898274674077302,
+    "se": 0.49958769903668665,
+    "t": 0.1798032008813208,
+    "df": 429
+   },
+   "unexplained": {
+    "n_prints": 83204,
+    "contracts": 13729076,
+    "n_days": 446,
+    "ev_w_c_per_ct": 1.1698625603063164,
+    "se": 0.554814439213937,
+    "t": 2.108565454719927,
+    "df": 445
+   },
+   "unjoinable_n": 0,
+   "unjoinable_contracts": 0,
+   "unjoinable_share_of_admitted": 0.0,
+   "surviving_volume_share": 0.5594605833899929,
+   "t_bar": 3.0406558368221304,
+   "min_n_ok": true,
+   "clause_ev_ge_0p5c": true,
+   "clause_signed_t_ge_bar": false,
+   "clause_surviving_vol_ge_20pct": true,
+   "insufficient_reasons": [
+    "sanity anchor (b) clock check failed for this asset -- ALL cells forced INSUFFICIENT pending fix per frozen spec, verdict_preoverride retained for audit"
+   ],
+   "verdict": "INSUFFICIENT",
+   "verdict_preoverride": "KILL_OR_NO_PASS"
+  },
+  {
+   "asset": "ETH",
+   "R_s": 15,
+   "theta": "10bp",
+   "explained": {
+    "n_prints": 25617,
+    "contracts": 5340005,
+    "n_days": 391,
+    "ev_w_c_per_ct": -0.9808580703576121,
+    "se": 0.6892199216895182,
+    "t": -1.4231423664498657,
+    "df": 390
+   },
+   "unexplained": {
+    "n_prints": 112692,
+    "contracts": 19199840,
+    "n_days": 447,
+    "ev_w_c_per_ct": 1.1599066971391427,
+    "se": 0.4643020966649708,
+    "t": 2.4981724301281876,
+    "df": 446
+   },
+   "unjoinable_n": 0,
+   "unjoinable_contracts": 0,
+   "unjoinable_share_of_admitted": 0.0,
+   "surviving_volume_share": 0.7823945098267736,
+   "t_bar": 3.0406168119621215,
+   "min_n_ok": true,
+   "clause_ev_ge_0p5c": true,
+   "clause_signed_t_ge_bar": false,
+   "clause_surviving_vol_ge_20pct": true,
+   "insufficient_reasons": [
+    "sanity anchor (b) clock check failed for this asset -- ALL cells forced INSUFFICIENT pending fix per frozen spec, verdict_preoverride retained for audit"
+   ],
+   "verdict": "INSUFFICIENT",
+   "verdict_preoverride": "KILL_OR_NO_PASS"
+  },
+  {
+   "asset": "ETH",
+   "R_s": 60,
+   "theta": "5bp",
+   "explained": {
+    "n_prints": 86619,
+    "contracts": 16478354,
+    "n_days": 438,
+    "ev_w_c_per_ct": 0.1696574184533237,
+    "se": 0.4537758666090868,
+    "t": 0.37387933325127237,
+    "df": 437
+   },
+   "unexplained": {
+    "n_prints": 51690,
+    "contracts": 8061491,
+    "n_days": 442,
+    "ev_w_c_per_ct": 1.7659960173620488,
+    "se": 0.6382058420579356,
+    "t": 2.767126060249592,
+    "df": 441
+   },
+   "unjoinable_n": 0,
+   "unjoinable_contracts": 0,
+   "unjoinable_share_of_admitted": 0.0,
+   "surviving_volume_share": 0.32850619064627345,
+   "t_bar": 3.0408137154610047,
+   "min_n_ok": true,
+   "clause_ev_ge_0p5c": true,
+   "clause_signed_t_ge_bar": false,
+   "clause_surviving_vol_ge_20pct": true,
+   "insufficient_reasons": [
+    "sanity anchor (b) clock check failed for this asset -- ALL cells forced INSUFFICIENT pending fix per frozen spec, verdict_preoverride retained for audit"
+   ],
+   "verdict": "INSUFFICIENT",
+   "verdict_preoverride": "KILL_OR_NO_PASS"
+  },
+  {
+   "asset": "ETH",
+   "R_s": 60,
+   "theta": "10bp",
+   "explained": {
+    "n_prints": 55948,
+    "contracts": 11156979,
+    "n_days": 424,
+    "ev_w_c_per_ct": 0.017711783808143762,
+    "se": 0.504171610612274,
+    "t": 0.035130466363693685,
+    "df": 423
+   },
+   "unexplained": {
+    "n_prints": 82361,
+    "contracts": 13382866,
+    "n_days": 445,
+    "ev_w_c_per_ct": 1.2579238258830359,
+    "se": 0.5065281904198213,
+    "t": 2.483423133548484,
+    "df": 444
+   },
+   "unjoinable_n": 0,
+   "unjoinable_contracts": 0,
+   "unjoinable_share_of_admitted": 0.0,
+   "surviving_volume_share": 0.5453525073202378,
+   "t_bar": 3.040695038393553,
+   "min_n_ok": true,
+   "clause_ev_ge_0p5c": true,
+   "clause_signed_t_ge_bar": false,
+   "clause_surviving_vol_ge_20pct": true,
+   "insufficient_reasons": [
+    "sanity anchor (b) clock check failed for this asset -- ALL cells forced INSUFFICIENT pending fix per frozen spec, verdict_preoverride retained for audit"
+   ],
+   "verdict": "INSUFFICIENT",
+   "verdict_preoverride": "KILL_OR_NO_PASS"
+  },
+  {
+   "asset": "ETH",
+   "R_s": 300,
+   "theta": "5bp",
+   "explained": {
+    "n_prints": 112659,
+    "contracts": 20546617,
+    "n_days": 443,
+    "ev_w_c_per_ct": 0.7608099182459088,
+    "se": 0.3792975847386555,
+    "t": 2.0058390795452175,
+    "df": 442
+   },
+   "unexplained": {
+    "n_prints": 25650,
+    "contracts": 3993228,
+    "n_days": 435,
+    "ev_w_c_per_ct": 0.3506351252670772,
+    "se": 1.1092233809972063,
+    "t": 0.316108667806706,
+    "df": 434
+   },
+   "unjoinable_n": 0,
+   "unjoinable_contracts": 0,
+   "unjoinable_share_of_admitted": 0.0,
+   "surviving_volume_share": 0.1627242551858009,
+   "t_bar": 3.041097043410156,
+   "min_n_ok": true,
+   "clause_ev_ge_0p5c": false,
+   "clause_signed_t_ge_bar": false,
+   "clause_surviving_vol_ge_20pct": false,
+   "insufficient_reasons": [
+    "sanity anchor (b) clock check failed for this asset -- ALL cells forced INSUFFICIENT pending fix per frozen spec, verdict_preoverride retained for audit"
+   ],
+   "verdict": "INSUFFICIENT",
+   "verdict_preoverride": "KILL_OR_NO_PASS"
+  },
+  {
+   "asset": "ETH",
+   "R_s": 300,
+   "theta": "10bp",
+   "explained": {
+    "n_prints": 91200,
+    "contracts": 17099230,
+    "n_days": 437,
+    "ev_w_c_per_ct": 0.6987444463873519,
+    "se": 0.39397653423638357,
+    "t": 1.773568691703119,
+    "df": 436
+   },
+   "unexplained": {
+    "n_prints": 47109,
+    "contracts": 7440615,
+    "n_days": 441,
+    "ev_w_c_per_ct": 0.6833096457752484,
+    "se": 0.7401782768542615,
+    "t": 0.9231690082547366,
+    "df": 440
+   },
+   "unjoinable_n": 0,
+   "unjoinable_contracts": 0,
+   "unjoinable_share_of_admitted": 0.0,
+   "surviving_volume_share": 0.30320546034418716,
+   "t_bar": 3.040853636018006,
+   "min_n_ok": true,
+   "clause_ev_ge_0p5c": true,
+   "clause_signed_t_ge_bar": false,
+   "clause_surviving_vol_ge_20pct": true,
+   "insufficient_reasons": [
+    "sanity anchor (b) clock check failed for this asset -- ALL cells forced INSUFFICIENT pending fix per frozen spec, verdict_preoverride retained for audit"
+   ],
+   "verdict": "INSUFFICIENT",
+   "verdict_preoverride": "KILL_OR_NO_PASS"
+  }
+ ],
+ "skip_ledger_notes": [],
+ "anchor_a": {
+  "method": "GROSS=NET+FEE reduction; fee computed identically (deterministic fn of price) on both sides so GROSS comparison reduces to NET comparison. See docstring.",
+  "tolerance_c": 0.05,
+  "max_abs_diff_gross_c": 4.440892098500626e-16,
+  "all_pass": true,
+  "rows": [
+   {
+    "unit": "KXBTC|B",
+    "side": "yes",
+    "B_contracts": 22462722,
+    "U1_contracts": 22462722.0,
+    "B_maker_gross_mean_c": 2.1821973757232094,
+    "U1_taker_gross_mean_est_c": -2.1821973757232094,
+    "anchor_target_c": 2.1821973757232094,
+    "diff_gross_c": 0.0,
+    "B_net_mean_c": -3.521945648439223,
+    "U1_net_mean_c": -3.521945648439223,
+    "diff_net_c": 0.0,
+    "pass_0p05c": true
+   },
+   {
+    "unit": "KXBTC|B",
+    "side": "no",
+    "B_contracts": 14430502,
+    "U1_contracts": 14430502.0,
+    "B_maker_gross_mean_c": -1.3238618448616688,
+    "U1_taker_gross_mean_est_c": 1.3238618448616686,
+    "anchor_target_c": -1.3238618448616686,
+    "diff_gross_c": -2.220446049250313e-16,
+    "B_net_mean_c": 0.04432195082333241,
+    "U1_net_mean_c": 0.04432195082333241,
+    "diff_net_c": 0.0,
+    "pass_0p05c": true
+   },
+   {
+    "unit": "KXETHD|T",
+    "side": "yes",
+    "B_contracts": 8650498,
+    "U1_contracts": 8650498.0,
+    "B_maker_gross_mean_c": 2.560480564240348,
+    "U1_taker_gross_mean_est_c": -2.560480564240348,
+    "anchor_target_c": 2.560480564240348,
+    "diff_gross_c": 0.0,
+    "B_net_mean_c": -4.188210551577493,
+    "U1_net_mean_c": -4.188210551577493,
+    "diff_net_c": 0.0,
+    "pass_0p05c": true
+   },
+   {
+    "unit": "KXETH|B",
+    "side": "yes",
+    "B_contracts": 4863276,
+    "U1_contracts": 4863276.0,
+    "B_maker_gross_mean_c": -0.7741353770585918,
+    "U1_taker_gross_mean_est_c": 0.7741353770585918,
+    "anchor_target_c": -0.7741353770585918,
+    "diff_gross_c": 0.0,
+    "B_net_mean_c": -0.932135046417271,
+    "U1_net_mean_c": -0.932135046417271,
+    "diff_net_c": 0.0,
+    "pass_0p05c": true
+   },
+   {
+    "unit": "KXETHD|T",
+    "side": "no",
+    "B_contracts": 6902028,
+    "U1_contracts": 6902028.0,
+    "B_maker_gross_mean_c": 0.07038626907917499,
+    "U1_taker_gross_mean_est_c": -0.070386269079175,
+    "anchor_target_c": 0.070386269079175,
+    "diff_gross_c": -1.3877787807814457e-17,
+    "B_net_mean_c": -1.7282782683582274,
+    "U1_net_mean_c": -1.7282782683582274,
+    "diff_net_c": 0.0,
+    "pass_0p05c": true
+   },
+   {
+    "unit": "KXETH|B",
+    "side": "no",
+    "B_contracts": 4124043,
+    "U1_contracts": 4124043.0,
+    "B_maker_gross_mean_c": -0.44572037682439297,
+    "U1_taker_gross_mean_est_c": 0.4457203768243929,
+    "anchor_target_c": -0.4457203768243929,
+    "diff_gross_c": -5.551115123125783e-17,
+    "B_net_mean_c": -1.1688006162884335,
+    "U1_net_mean_c": -1.1688006162884335,
+    "diff_net_c": 0.0,
+    "pass_0p05c": true
+   },
+   {
+    "unit": "KXBTCD|T",
+    "side": "yes",
+    "B_contracts": 45209106,
+    "U1_contracts": 45209106.0,
+    "B_maker_gross_mean_c": 3.5779784497397493,
+    "U1_taker_gross_mean_est_c": -3.577978449739749,
+    "anchor_target_c": 3.577978449739749,
+    "diff_gross_c": 4.440892098500626e-16,
+    "B_net_mean_c": -5.2678575417969995,
+    "U1_net_mean_c": -5.2678575417969995,
+    "diff_net_c": 0.0,
+    "pass_0p05c": true
+   },
+   {
+    "unit": "KXBTCD|T",
+    "side": "no",
+    "B_contracts": 40009601,
+    "U1_contracts": 40009601.0,
+    "B_maker_gross_mean_c": -0.9635155071903866,
+    "U1_taker_gross_mean_est_c": 0.9635155071903866,
+    "anchor_target_c": -0.9635155071903866,
+    "diff_gross_c": 0.0,
+    "B_net_mean_c": -0.7155529743973202,
+    "U1_net_mean_c": -0.7155529743973202,
+    "diff_net_c": 0.0,
+    "pass_0p05c": true
+   }
+  ]
+ },
+ "anchors_hold": false,
+ "anchor_notes": [
+  "anchor (b) clock check FAILED for BTC: {'explained_ev_c': 0.4695920512456146, 'unexplained_ev_c': 1.5563858206469907, 'condition': 'explained<0 AND explained < unexplained-1.0', 'pass': False}",
+  "anchor (b) clock check FAILED for ETH: {'explained_ev_c': 0.017711783808143762, 'unexplained_ev_c': 1.2579238258830359, 'condition': 'explained<0 AND explained < unexplained-1.0', 'pass': False}"
+ ],
+ "study_verdict": "INSUFFICIENT",
+ "study_reason": "sanity anchor(s) failed: anchor (b) clock check FAILED for BTC: {'explained_ev_c': 0.4695920512456146, 'unexplained_ev_c': 1.5563858206469907, 'condition': 'explained<0 AND explained < unexplained-1.0', 'pass': False}; anchor (b) clock check FAILED for ETH: {'explained_ev_c': 0.017711783808143762, 'unexplained_ev_c': 1.2579238258830359, 'condition': 'explained<0 AND explained < unexplained-1.0', 'pass': False}",
+ "frozen_bars": {
+  "alpha_two_sided_per_cell": 0.0025,
+  "min_ev_c": 0.5,
+  "min_surviving_vol": 0.2,
+  "min_days": 150,
+  "min_prints": 2000,
+  "min_contracts": 200000,
+  "unjoinable_max_share": 0.05
+ },
+ "per_series_sensitivity_unbarred": {
+  "KXBTC": {
+   "n_prints": 220555,
+   "contracts": 36893224,
+   "n_days": 454,
+   "ev_w_c_per_ct": 0.8108291647268344,
+   "t": 1.9272656412816322,
+   "df": 453
+  },
+  "KXBTCD": {
+   "n_prints": 508626,
+   "contracts": 85218707,
+   "n_days": 457,
+   "ev_w_c_per_ct": 1.4457780496481836,
+   "t": 3.644800001780967,
+   "df": 456
+  },
+  "KXETH": {
+   "n_prints": 49934,
+   "contracts": 8987319,
+   "n_days": 438,
+   "ev_w_c_per_ct": -0.623434419096507,
+   "t": -0.8247741607980634,
+   "df": 437
+  },
+  "KXETHD": {
+   "n_prints": 88375,
+   "contracts": 15552526,
+   "n_days": 435,
+   "ev_w_c_per_ct": 1.4554060221471419,
+   "t": 2.9625767873998097,
+   "df": 434
+  }
+ },
+ "anchor_a_detail": {
+  "method": "GROSS=NET+FEE reduction; fee computed identically (deterministic fn of price) on both sides so GROSS comparison reduces to NET comparison. See docstring.",
+  "tolerance_c": 0.05,
+  "max_abs_diff_gross_c": 4.440892098500626e-16,
+  "all_pass": true,
+  "rows": [
+   {
+    "unit": "KXBTC|B",
+    "side": "yes",
+    "B_contracts": 22462722,
+    "U1_contracts": 22462722.0,
+    "B_maker_gross_mean_c": 2.1821973757232094,
+    "U1_taker_gross_mean_est_c": -2.1821973757232094,
+    "anchor_target_c": 2.1821973757232094,
+    "diff_gross_c": 0.0,
+    "B_net_mean_c": -3.521945648439223,
+    "U1_net_mean_c": -3.521945648439223,
+    "diff_net_c": 0.0,
+    "pass_0p05c": true
+   },
+   {
+    "unit": "KXBTC|B",
+    "side": "no",
+    "B_contracts": 14430502,
+    "U1_contracts": 14430502.0,
+    "B_maker_gross_mean_c": -1.3238618448616688,
+    "U1_taker_gross_mean_est_c": 1.3238618448616686,
+    "anchor_target_c": -1.3238618448616686,
+    "diff_gross_c": -2.220446049250313e-16,
+    "B_net_mean_c": 0.04432195082333241,
+    "U1_net_mean_c": 0.04432195082333241,
+    "diff_net_c": 0.0,
+    "pass_0p05c": true
+   },
+   {
+    "unit": "KXETHD|T",
+    "side": "yes",
+    "B_contracts": 8650498,
+    "U1_contracts": 8650498.0,
+    "B_maker_gross_mean_c": 2.560480564240348,
+    "U1_taker_gross_mean_est_c": -2.560480564240348,
+    "anchor_target_c": 2.560480564240348,
+    "diff_gross_c": 0.0,
+    "B_net_mean_c": -4.188210551577493,
+    "U1_net_mean_c": -4.188210551577493,
+    "diff_net_c": 0.0,
+    "pass_0p05c": true
+   },
+   {
+    "unit": "KXETH|B",
+    "side": "yes",
+    "B_contracts": 4863276,
+    "U1_contracts": 4863276.0,
+    "B_maker_gross_mean_c": -0.7741353770585918,
+    "U1_taker_gross_mean_est_c": 0.7741353770585918,
+    "anchor_target_c": -0.7741353770585918,
+    "diff_gross_c": 0.0,
+    "B_net_mean_c": -0.932135046417271,
+    "U1_net_mean_c": -0.932135046417271,
+    "diff_net_c": 0.0,
+    "pass_0p05c": true
+   },
+   {
+    "unit": "KXETHD|T",
+    "side": "no",
+    "B_contracts": 6902028,
+    "U1_contracts": 6902028.0,
+    "B_maker_gross_mean_c": 0.07038626907917499,
+    "U1_taker_gross_mean_est_c": -0.070386269079175,
+    "anchor_target_c": 0.070386269079175,
+    "diff_gross_c": -1.3877787807814457e-17,
+    "B_net_mean_c": -1.7282782683582274,
+    "U1_net_mean_c": -1.7282782683582274,
+    "diff_net_c": 0.0,
+    "pass_0p05c": true
+   },
+   {
+    "unit": "KXETH|B",
+    "side": "no",
+    "B_contracts": 4124043,
+    "U1_contracts": 4124043.0,
+    "B_maker_gross_mean_c": -0.44572037682439297,
+    "U1_taker_gross_mean_est_c": 0.4457203768243929,
+    "anchor_target_c": -0.4457203768243929,
+    "diff_gross_c": -5.551115123125783e-17,
+    "B_net_mean_c": -1.1688006162884335,
+    "U1_net_mean_c": -1.1688006162884335,
+    "diff_net_c": 0.0,
+    "pass_0p05c": true
+   },
+   {
+    "unit": "KXBTCD|T",
+    "side": "yes",
+    "B_contracts": 45209106,
+    "U1_contracts": 45209106.0,
+    "B_maker_gross_mean_c": 3.5779784497397493,
+    "U1_taker_gross_mean_est_c": -3.577978449739749,
+    "anchor_target_c": 3.577978449739749,
+    "diff_gross_c": 4.440892098500626e-16,
+    "B_net_mean_c": -5.2678575417969995,
+    "U1_net_mean_c": -5.2678575417969995,
+    "diff_net_c": 0.0,
+    "pass_0p05c": true
+   },
+   {
+    "unit": "KXBTCD|T",
+    "side": "no",
+    "B_contracts": 40009601,
+    "U1_contracts": 40009601.0,
+    "B_maker_gross_mean_c": -0.9635155071903866,
+    "U1_taker_gross_mean_est_c": 0.9635155071903866,
+    "anchor_target_c": -0.9635155071903866,
+    "diff_gross_c": 0.0,
+    "B_net_mean_c": -0.7155529743973202,
+    "U1_net_mean_c": -0.7155529743973202,
+    "diff_net_c": 0.0,
+    "pass_0p05c": true
+   }
+  ]
+ },
+ "skip_ledger": {
+  "shard_join_series_rung_settled_timeband_daterange_matched_pre_priceband": 929399,
+  "shard_join_dropped_outside_maker_price_band_3_97": 61909,
+  "final_admitted_rows": 867490,
+  "final_admitted_contracts": 146651776,
+  "by_series_rung": [
+   {
+    "series_key": "KXBTC",
+    "rung_class": "B",
+    "n": 220555,
+    "contracts": 36893224
+   },
+   {
+    "series_key": "KXBTCD",
+    "rung_class": "T",
+    "n": 508626,
+    "contracts": 85218707
+   },
+   {
+    "series_key": "KXETH",
+    "rung_class": "B",
+    "n": 49934,
+    "contracts": 8987319
+   },
+   {
+    "series_key": "KXETHD",
+    "rung_class": "T",
+    "n": 88375,
+    "contracts": 15552526
+   }
+  ],
+  "n_days_admitted": 457,
+  "classification_binance_day_missing": 0,
+  "classification_head_missing": 0,
+  "classification_base_missing_any_R": 0,
+  "classification_no_fills_for_asset_day_combos": 10,
+  "binance_fetch_failures": 0,
+  "binance_fetch_total_day_asset_files": 924,
+  "dedupe_check_note": "17135/867490 rows share a coarse (ticker,created_time,contracts,taker_side) key; verified NOT a join fan-out (ticker_dim has 0 duplicate tickers) -- distinct trade_ids sharing a coarse key (simultaneous partial fills). No rows dropped for this."
+ },
+ "divergences_found": [
+  {
+   "id": "admission_rule_ambiguity",
+   "severity": "resolved_via_structural_argument_not_preference",
+   "description": "Frozen universe prose omits U1's 60-min timeband and rung_class pairing; literal reading gave 9.1M admitted rows vs the spec's own ~870K expectation (itself sourced from U1's timeband-restricted density). Resolved by sanity anchor (a)'s own requirement -- GROSS reconciliation to 0.05c/ct is only possible if Stage B's population equals U1's population on the overlapping unit-sides -- so U1's full admission funnel (price band + 60-min timeband + rung_class pairing) is applied. See maker_stageB_B.md section 2."
+  },
+  {
+   "id": "binance_timestamp_unit_migration_bug",
+   "severity": "bug_found_and_fixed",
+   "description": "Binance 1s-kline open_time switched from milliseconds to microseconds on 2025-01-01. Blanket //1000 conversion left 478,804/867,490 fills (55%) with missing HEAD close on every day 2025-01-01..2026-01-28 (100% of that day's fills, both assets). Fixed via per-file magnitude auto-detection; all 786 affected binance files and 773 affected classified files were deleted and rebuilt. Post-fix: 0 missing joins across the full 867,490-row population. See maker_stageB_B.md section 3."
+  }
+ ]
+}

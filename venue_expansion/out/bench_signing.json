@@ -1,0 +1,169 @@
+{
+  "caveat": "Local CPU-bound benchmark, no network path involved -- NOT subject to the agent-proxy pollution caveat. Absolute ms are specific to this container's hardware (4 vCPU Intel Xeon @ 2.10GHz); relative gaps are the portable result.",
+  "machine": {
+    "cpu": "Intel(R) Xeon(R) Processor @ 2.10GHz, 4 vCPU (container)",
+    "python": "3.11.15 (main, Mar  3 2026, 09:26:23) [GCC 13.3.0]",
+    "cryptography_version": "41.0.7",
+    "openssl_runtime": "OpenSSL 3.0.13 30 Jan 2024 (Library: OpenSSL 3.0.13 30 Jan 2024)"
+  },
+  "generated_at_utc": "2026-07-30T16:50:02Z",
+  "1_warm_process_sign": {
+    "n": 2000,
+    "median_ms": 0.3746,
+    "mean_ms": 0.3935,
+    "p99_ms": 0.6954,
+    "min_ms": 0.3445,
+    "max_ms": 0.9684
+  },
+  "2_subprocess_per_call_vs_warm": {
+    "note": "Naive cron pattern = fresh `python3 -c ...` process per signed request (fresh interpreter, fresh `cryptography` import, key already held fixed cost excluded from 'per-call' framing below by isolating sign_s alone). wall_s = full observed process wall time including exec/fork.",
+    "full_process_wall": {
+      "n": 30,
+      "median_ms": 255.0346,
+      "mean_ms": 275.1245,
+      "p99_ms": 506.4102,
+      "min_ms": 131.7646,
+      "max_ms": 506.4102
+    },
+    "bare_interpreter_spawn_baseline": {
+      "n": 30,
+      "median_ms": 11.3438,
+      "mean_ms": 11.495,
+      "p99_ms": 13.8949,
+      "min_ms": 10.4435,
+      "max_ms": 13.8949
+    },
+    "cryptography_import_cost": {
+      "n": 30,
+      "median_ms": 15.3007,
+      "mean_ms": 15.4542,
+      "p99_ms": 18.8152,
+      "min_ms": 13.3656,
+      "max_ms": 18.8152
+    },
+    "rsa_2048_keygen_cost": {
+      "n": 30,
+      "median_ms": 211.6281,
+      "mean_ms": 231.6884,
+      "p99_ms": 462.6833,
+      "min_ms": 92.3396,
+      "max_ms": 462.6833
+    },
+    "sign_op_cost_within_subprocess": {
+      "n": 30,
+      "median_ms": 1.5769,
+      "mean_ms": 1.6596,
+      "p99_ms": 3.6169,
+      "min_ms": 1.3991,
+      "max_ms": 3.6169
+    }
+  },
+  "3_full_request_assembly": {
+    "create_order_stdlib_json": {
+      "n": 1000,
+      "median_ms": 0.3943,
+      "mean_ms": 0.4121,
+      "p99_ms": 0.7075,
+      "min_ms": 0.3568,
+      "max_ms": 0.7616
+    },
+    "batch_cancel_stdlib_json": {
+      "n": 1000,
+      "median_ms": 0.3913,
+      "mean_ms": 0.4106,
+      "p99_ms": 0.7258,
+      "min_ms": 0.3563,
+      "max_ms": 0.9212
+    }
+  },
+  "4a_native_rust_crate": {
+    "available": true,
+    "implementation": "pure-Rust `rsa` crate v0.9.10 + `sha2` v0.10, RustCrypto stack, NO OpenSSL/ASM bignum backend",
+    "n": 2000,
+    "median_ms": 1.2775,
+    "p99_ms": 1.9745,
+    "mean_ms": 1.3071,
+    "caveat": "The RustCrypto `rsa` crate uses a portable/constant-time software bignum implementation with NO hardware/ASM modexp acceleration -- it is measurably SLOWER here than OpenSSL's native RSA engine (see openssl_speed_native below). Do not read this as 'native language floor'; it is 'safe pure-language floor'. For a true native floor use an OpenSSL-linked binding (e.g. openssl-sys) or the openssl CLI/`openssl speed` numbers, which do use the accelerated bignum path."
+  },
+  "4b_openssl_cli_per_process": {
+    "available": true,
+    "n": 30,
+    "note": "Each call = fresh `openssl` process: fork/exec + libssl/libcrypto init + PEM key parse from disk + PSS sign + write signature to disk. process_spawn_overhead isolated via a no-op `openssl version` baseline run the same n times on the same machine in the same loop.",
+    "full_process_wall": {
+      "n": 30,
+      "median_ms": 5.4934,
+      "mean_ms": 5.5292,
+      "p99_ms": 6.7152,
+      "min_ms": 5.056,
+      "max_ms": 6.7152
+    },
+    "process_spawn_baseline_noop": {
+      "n": 30,
+      "median_ms": 2.6593,
+      "mean_ms": 2.7335,
+      "p99_ms": 3.463,
+      "min_ms": 2.4495,
+      "max_ms": 3.463
+    },
+    "estimated_sign_plus_keyio_delta_median_ms": 2.8341
+  },
+  "4c_openssl_speed_native_floor": {
+    "available": true,
+    "note": "OpenSSL 3.0.13 native engine, single warm process, PKCS1 private-key op timing (RSA-PSS sign cost is dominated by this modexp; PSS padding overhead itself is sub-microsecond). This is the true native-floor comparator.",
+    "sign_ms": 0.347,
+    "sign_ops_per_sec": 2878.0
+  },
+  "5_json_serialization": {
+    "stdlib_json_create_order": {
+      "n": 5000,
+      "median_ms": 0.0023,
+      "mean_ms": 0.0025,
+      "p99_ms": 0.0068,
+      "min_ms": 0.0021,
+      "max_ms": 0.0449
+    },
+    "stdlib_json_batch_cancel": {
+      "n": 5000,
+      "median_ms": 0.0024,
+      "mean_ms": 0.0027,
+      "p99_ms": 0.0068,
+      "min_ms": 0.0023,
+      "max_ms": 0.067
+    },
+    "orjson_create_order": {
+      "n": 5000,
+      "median_ms": 0.0002,
+      "mean_ms": 0.0002,
+      "p99_ms": 0.0003,
+      "min_ms": 0.0002,
+      "max_ms": 0.0163
+    },
+    "orjson_batch_cancel": {
+      "n": 5000,
+      "median_ms": 0.0002,
+      "mean_ms": 0.0002,
+      "p99_ms": 0.0003,
+      "min_ms": 0.0002,
+      "max_ms": 0.0191
+    },
+    "orjson_version": "3.11.9"
+  },
+  "summary_cpu_budget_table_ms": {
+    "note": "Per-request CPU budget for the sign+assemble hot path, median ms, this machine. 'naive_python_cron_leg' = worst case, fresh interpreter per request, key freshly generated each time (upper bound -- a real cron leg would load a persisted key, not regenerate it; keygen_only_ms broken out separately so that cost can be subtracted for a load-existing-key variant).",
+    "naive_python_cron_leg_full_wall_ms": 255.0346,
+    "naive_python_cron_leg_breakdown": {
+      "interpreter_startup_plus_misc_ms": 26.5289,
+      "cryptography_import_ms": 15.3007,
+      "rsa_2048_keygen_ms": 211.6281,
+      "sign_ms": 1.5769
+    },
+    "naive_python_cron_leg_with_persisted_key_estimate_ms": 43.4065,
+    "warm_asyncio_python_sign_only_ms": 0.3746,
+    "warm_asyncio_python_full_assembly_create_order_ms": 0.3943,
+    "warm_asyncio_python_full_assembly_batch_cancel_ms": 0.3913,
+    "native_pure_rust_crate_sign_only_ms": 1.2775,
+    "native_openssl_engine_sign_only_ms_true_floor": 0.347,
+    "ratio_naive_cron_vs_warm_python": 646.8,
+    "ratio_warm_python_vs_native_openssl_floor": 1.1
+  }
+}
