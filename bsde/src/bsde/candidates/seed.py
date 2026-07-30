@@ -131,6 +131,73 @@ def f_spectral_entropy(data, ch_names, sfreq, meta=None) -> float:
     return float(spectral_entropy(f, p))
 
 
+
+# ---------------------------------------------------------------------------------------------------
+# Exotic features borrowed from other fields (features/exotic.py). Each declares a SIGNED direction,
+# reasoned per measure -- the standing rule added after `lempel_ziv` was reported as the best candidate
+# across three experiments while pointing opposite to its own declaration (MASTER_PLAN section 9.12).
+# ---------------------------------------------------------------------------------------------------
+
+EXPENSIVE_CHANNEL_CAP = 8
+"""Channel budget for the quadratic exotic features.
+
+JUSTIFIED BY MEASUREMENT, not convenience. E06 swept all 91 electrodes individually and found channel count
+barely matters for these measures: the 19-channel 10-20 subset scored identically to all 91 for Lempel-Ziv
+(0.900 both), and the MEDIAN single electrode retained about 89 %. So averaging over a declared handful loses
+very little, while multiscale entropy at 91 channels costs roughly 42 minutes per recording.
+
+The subset is the FIRST `EXPENSIVE_CHANNEL_CAP` channels in the recording's own order, which is deterministic
+and adapter-defined rather than chosen by looking at results. It is deliberately NOT the best-performing
+electrodes from E06 -- selecting those would import that search's winners into a new feature's definition.
+"""
+
+
+def _subset(data):
+    import numpy as _np
+    d = _np.asarray(data, float)
+    return d[:EXPENSIVE_CHANNEL_CAP] if d.shape[0] > EXPENSIVE_CHANNEL_CAP else d
+
+
+def f_spatial_pr(data, ch_names, sfreq, meta=None) -> float:
+    from bsde.features.exotic import spatial_participation_ratio
+    return float(spatial_participation_ratio(data))
+
+
+def f_mse_slope(data, ch_names, sfreq, meta=None) -> float:
+    from bsde.features.exotic import multiscale_entropy_slope
+    import numpy as _np
+    v = [multiscale_entropy_slope(ch, sfreq) for ch in _subset(data)]
+    v = [x for x in v if _np.isfinite(x)]
+    return float(_np.mean(v)) if v else float("nan")
+
+
+def f_pac_slow_alpha(data, ch_names, sfreq, meta=None) -> float:
+    from bsde.features.exotic import phase_amplitude_coupling
+    import numpy as _np
+    v = [phase_amplitude_coupling(ch, sfreq) for ch in _subset(data)]
+    v = [x for x in v if _np.isfinite(x)]
+    return float(_np.mean(v)) if v else float("nan")
+
+
+def _f_subband(key):
+    def fn(data, ch_names, sfreq, meta=None) -> float:
+        from bsde.features.exotic import subband_exponents
+        import numpy as _np
+        v = [subband_exponents(ch, sfreq).get(key, float("nan")) for ch in _np.asarray(data, float)]
+        v = [x for x in v if _np.isfinite(x)]
+        return float(_np.mean(v)) if v else float("nan")
+    fn.__name__ = f"f_{key}"
+    return fn
+
+
+def f_critical_ar1(data, ch_names, sfreq, meta=None) -> float:
+    from bsde.features.exotic import critical_slowing
+    import numpy as _np
+    v = [critical_slowing(ch, sfreq).get("ar1", float("nan")) for ch in _np.asarray(data, float)]
+    v = [x for x in v if _np.isfinite(x)]
+    return float(_np.mean(v)) if v else float("nan")
+
+
 def f_emg_index(data, ch_names, sfreq, meta=None) -> float:
     """Composite EMG-contamination proxy. NOT a brain-state marker -- see features/emg.py."""
     from bsde.features.emg import emg_index
@@ -381,4 +448,113 @@ def seed_registry() -> Sequence[Candidate]:
             notes="Predicted LOWER under anaesthesia because neuromuscular tone falls with GABAergic agents. "
                   "That is the same direction a real complexity marker moves, which is precisely why the two "
                   "must be separated by conditioning rather than by comparing directions.")
+    # --- exotic candidates, each with a signed direction and the reasoning for that sign ------------
+    register(
+        name="spatial_participation_ratio", version="1.0", fn=f_spatial_pr,
+        interpretation="Effective dimensionality of the multichannel state: (sum of covariance eigenvalues)^2 "
+                       "/ sum of their squares, normalised by channel count. 1/n means every channel carries "
+                       "the same signal; 1 means they are independent. Borrowed from dimensionality analysis "
+                       "in systems neuroscience.",
+        predictions={"unconscious_vs_awake": "lower"},
+        failure_conditions=[
+            "it is redundant with any per-channel measure, which would mean it is not reading spatial "
+            "structure at all",
+            "it is not computable on the reduced montages the project must support",
+        ],
+        requires=("computational", "statistical", "adversarial", "cross_domain"),
+        complexity=3, min_channels=4,
+        prior_art="Participation ratio is standard in population-activity analysis; its application to "
+                  "anaesthetic depth is not something this project has verified in the literature.",
+        notes="Direction LOWER because anaesthetic slow-wave activity is spatially coherent, so channels "
+              "should become more redundant and effective dimensionality should fall. THIS IS THE ONLY "
+              "CANDIDATE THAT READS BETWEEN CHANNELS -- every other one is a per-channel summary averaged "
+              "across channels, and a channel sweep found one electrode nearly as good as 91. If spatial "
+              "information matters at all, this is where it shows up; if this is redundant with the "
+              "per-channel measures, that is itself the answer.")
+
+    register(
+        name="multiscale_entropy_slope", version="1.0", fn=f_mse_slope,
+        interpretation="Slope of sample entropy against log2(coarse-graining scale), scales 1-16, with the "
+                       "tolerance r held fixed at 0.2 x the original standard deviation across all scales "
+                       "(the Costa convention). Positive means entropy is retained or gained at coarser "
+                       "timescales. Borrowed from heart-rate-variability analysis.",
+        predictions={"unconscious_vs_awake": "higher"},
+        failure_conditions=[
+            "it is redundant with single-scale Lempel-Ziv or permutation entropy, which would mean the "
+            "multiscale structure adds nothing",
+            "it fails to distinguish white noise from 1/f, which would mean the implementation is broken",
+        ],
+        requires=("computational", "statistical", "adversarial", "cross_domain"), complexity=4,
+        min_duration_s=60.0,
+        prior_art="Costa, Goldberger & Peng multiscale entropy; widely used in physiology.",
+        notes="Direction HIGHER because anaesthesia shifts power to slow activity, and slow structure "
+              "survives coarse-graining, so entropy should hold up better at coarse scales. Verified on "
+              "synthetic signals: white noise gives -0.326 and 1/f gives +0.123, so the measure separates "
+              "them decisively and in the expected order. EXISTS TO INTERROGATE THE LEMPEL-ZIV ANOMALY: LZ "
+              "rises with propofol dose at a single timescale, and this says at WHICH timescale.")
+
+    register(
+        name="pac_slow_alpha", version="1.0", fn=f_pac_slow_alpha,
+        interpretation="Tort modulation index coupling 0.5-2 Hz phase to 8-13 Hz amplitude, normalised to "
+                       "[0,1]. A genuinely cross-frequency quantity that no band power or spectral slope can "
+                       "express. Borrowed from hippocampal memory research.",
+        predictions={"unconscious_vs_awake": "higher"},
+        failure_conditions=[
+            "it is redundant with alpha power, which would mean it is measuring amount rather than coupling",
+            "it does not exceed its own surrogate null built by phase-randomising the amplitude series",
+        ],
+        requires=("computational", "statistical", "adversarial", "cross_domain"), complexity=5,
+        min_duration_s=60.0,
+        prior_art="Tort et al. modulation index. Slow-wave-to-alpha phase-amplitude coupling is a documented "
+                  "propofol signature (Purdon and colleagues), which makes this the best literature-grounded "
+                  "candidate in the seed set for the anaesthesia application.",
+        notes="Direction HIGHER because strong slow-alpha coupling is a hallmark of propofol-induced "
+              "unconsciousness rather than of wakefulness. Verified on synthetic signals: a 1 Hz-modulated "
+              "10 Hz oscillation gives 0.079 while a constant-envelope 10 Hz oscillation alongside an "
+              "independent 1 Hz oscillation gives 0.0000.")
+
+    for key, direction in (("exponent_low", "higher"), ("exponent_high", "higher")):
+        band = "1-20 Hz" if key == "exponent_low" else "20-40 Hz"
+        register(
+            name=key, version="1.0", fn=_f_subband(key),
+            interpretation=f"Aperiodic exponent fitted over {band} only, positive for a falling spectrum. "
+                           "Colombo et al. fit these two bands separately and locate the drug dissociation "
+                           "specifically in 20-40 Hz; this project's single 1-40 Hz fit averages that away.",
+            predictions={"unconscious_vs_awake": direction,
+                         "anaesthetic_drug_identity": "unchanged"},
+            failure_conditions=[
+                "it is redundant with the 1-40 Hz whole-band exponent, which would mean the band split adds "
+                "nothing",
+                "the two sub-band exponents are redundant with EACH OTHER, which would mean the spectrum is "
+                "a single power law and splitting it is meaningless",
+            ],
+            requires=("computational", "statistical", "adversarial", "cross_domain"), complexity=2,
+            prior_art="Colombo et al., PMID 30639334, verified via E-utilities (LITERATURE_MAP section 0).",
+            notes="Direction HIGHER (steeper) under unconsciousness, inheriting this project's sign "
+                  "convention. Verified on a synthetic two-slope signal built to be 1/f^1 below 20 Hz and "
+                  "1/f^3 above: recovered 1.011 and 2.942. Control: a single-slope 1/f^2 signal returns "
+                  "2.018 and 1.942, i.e. the bands agree when the spectrum really is one power law, which is "
+                  "what rules out a spurious split.")
+
+    register(
+        name="critical_slowing_ar1", version="1.0", fn=f_critical_ar1,
+        interpretation="Lag-1 autocorrelation of the 1-45 Hz amplitude envelope, averaged over 2 s windows "
+                       "and channels. Rising lag-1 autocorrelation is the canonical early-warning signal for "
+                       "an approaching tipping point. Borrowed from ecology and climate-system science.",
+        predictions={"unconscious_vs_awake": "higher"},
+        failure_conditions=[
+            "it is redundant with delta power or the aperiodic exponent, both of which already encode how "
+            "slow the signal is",
+            "it shows no change approaching a state transition, which is the only claim it is really for",
+        ],
+        requires=("computational", "statistical", "adversarial", "cross_domain", "temporal"), complexity=3,
+        min_duration_s=60.0,
+        prior_art="Critical-slowing-down early-warning indicators (Scheffer and colleagues). Their "
+                  "application to anaesthetic state transitions is not something this project has verified.",
+        notes="Direction HIGHER because anaesthetic EEG is dominated by slow rhythms, giving a more "
+              "autocorrelated envelope. IT REQUIRES THE TEMPORAL LAYER, which is not built, so it cannot be "
+              "reported as surviving -- deliberately, because its real claim is about transitions and a "
+              "state-contrast result would not test that. E04 found no pre-awakening precursor using "
+              "conventional features; this is the measure that field would actually use.")
+
     return REGISTRY.all()
