@@ -1601,3 +1601,35 @@ be re-extracted from this sandbox at all. That sequencing decision is open, and 
 re-run E20 and keep whatever comes out; the one-attempt commitment was spent, and what a repaired pipeline
 produces on ds004541 belongs to a new registration written *before* the repair runs. Nor is it evidence for
 `exponent_high` — the deposit is untested on that question. Absent, not negative.
+
+### 9.31 The sequencing decision on the channel filter, made explicitly rather than by default
+
+`features/quality.py` exists and is tested. **Nothing calls it in the feature path, and that is a decision,
+not an oversight.** Wiring it in has three costs that have to be paid deliberately:
+
+1. **Definition drift on five candidates.** `relative_delta_power`, `relative_alpha_power`,
+   `spectral_edge_95`, `spectral_entropy` and anything else routed through `_mean_psd` would change value.
+   `stream_features` records a `definition_fingerprint` and refuses to resume a table across such a change,
+   which is the guard working — but it means every affected table becomes v1 and needs re-extraction to
+   become v2.
+2. **One deposit cannot be re-extracted at all.** Chennu's host fails TLS hostname verification from this
+   sandbox (§9.17). Results resting on it would be frozen at v1 with no way to check them against v2 until
+   that host is reachable, and they must be labelled that way rather than quietly carried forward.
+3. **Adding columns to the runner's field list breaks resumption of an in-flight table**, because
+   `stream_features` refuses to append to a file whose column set differs. The VitalDB grid stream is
+   running; changing the schema now would strand it.
+
+**The decision: finish E22 on the current table first, then migrate.** The justification is measured, not
+assumed — the channel-spread diagnostic found VitalDB **unexposed** (one frontal channel, 1 of 1 plausible),
+so E22's input is not affected by the defect and running it now costs nothing in correctness. ds005620 is
+likewise unexposed at 65 of 65, so the `exponent_high` replication does not move either.
+
+**What the migration will be, when it happens.** Filter inside the runner, before candidates are called, so
+every candidate sees the same channel set; record `n_channels_kept` and `frac_channels_kept` per row so the
+exclusion is visible at analysis time rather than implicit; re-extract every reachable deposit; and mark
+Chennu-derived numbers as v1-only. **`channel_quality` refuses to judge amplitude on non-microvolt data**,
+so HBN passes through untouched and its rows will say so — `units_judged=False` is not the same as a clean
+bill and the column must preserve the difference.
+
+**What is NOT deferred.** ds004541 is unreadable by this pipeline today, and §9.30 already says no
+experiment should be registered on it until the migration lands. That stands.
