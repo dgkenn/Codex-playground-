@@ -70,6 +70,67 @@ SCOPE AND LIMITS.
   * **Between-subject by construction** — a patient receives one drug — so the probe cannot be run within
     subject and every drug comparison carries the full weight of between-patient variation.
   * **CC-BY-SA 4.0**: ShareAlike propagates to derived artefacts (Invention Notebook entry 12).
+
+--------------------------------------------------------------------------------------------------------
+OUTCOME. **P1 PASSED. P4 PASSED AS REGISTERED — and the registered bar was the permissive one, which is
+error-catalogue rule 37 committed by this file and caught by re-reading its own verdict code.**
+
+    P1   19 propofol patients, 10 dexmedetomidine. 12 of 13 features separate wake from unresponsive
+         within propofol by >= 0.05 (`AvgGamma` did not, at 0.010, and was excluded from P4 as registered).
+    P4   **0 of 12 features leak drug identity** under the registered comparison.
+
+**RULE 37, AND IT IS MINE.** P4 was coded as `bar = max(state_propofol, state_dex)` — a feature passes if
+its drug legibility is below the *better* of its two state effects. **That is the permissive choice of two
+defensible ones.** Challenge A asks for a representation that predicts responsiveness *across* drugs, so its
+weakest link is the *worse* arm: if drug legibility exceeds the MINIMUM state legibility, then in the weaker
+arm the feature knows the drug better than it knows the state. Both readings are reported:
+
+    feature        state|prop  state|dex  min(state)   drug   registered(max)   stricter(min)
+    EffDim              0.423      0.177       0.177  0.331        ok              **LEAK**
+    NmlzCmplx           0.480      0.268       0.268  0.368        ok              **LEAK**
+    AvgDelta            0.235      0.334       0.235  0.269        ok              **LEAK**
+    AvgAlpha            0.345      0.031       0.031  0.229        ok              **LEAK**
+    frontalAlpha        0.425      0.213       0.213  0.279        ok              **LEAK**
+    allEnvCorr          0.446      0.392       0.392  0.271        ok                ok
+    frontalDelta        0.286      0.320       0.286  0.217        ok                ok
+    frontwPLI           0.402      0.371       0.371  0.066        ok                ok
+    backwPLI            0.221      0.181       0.181  0.109        ok                ok
+    longwPLI            0.365      0.315       0.315  0.128        ok                ok
+    allwPLI             0.357      0.304       0.304  0.119        ok                ok
+    frontBias           0.398      0.239       0.239  0.055        ok                ok
+
+    **0 of 12 leak under the registered bar. 5 of 12 leak under the stricter one.**
+
+**The registered verdict stands as registered** — moving it now would be exactly the retrospective
+goalpost-shift the ledger exists to expose. But a reader must be told both, because "the acceptance
+condition holds" is materially weaker when a third of the tested features fail its stricter form.
+`AvgAlpha` is the sharpest case: it tracks state at **0.345** under propofol, at **0.031** under
+dexmedetomidine — barely at all — and carries **0.229** of drug information. Under the registered bar it
+passes. It should not be described as drug-invariant by anyone.
+
+**THE FINDING WORTH MORE THAN THE VERDICT: CONNECTIVITY IS DRUG-BLIND WHERE POWER AND COMPLEXITY ARE NOT.**
+Every wPLI variant plus `frontBias` passes BOTH bars with room to spare — `frontwPLI` tracks state at
+0.37-0.40 while carrying **0.066** of drug information, `longwPLI` 0.32-0.37 against **0.128**,
+`allwPLI` 0.30-0.36 against **0.119**, `frontBias` 0.24-0.40 against **0.055**. Every one of the five that
+fails the stricter bar is a **power or complexity** measure. **The split is by measure family, not by
+individual feature**, which is harder to explain as chance than any single cell would be.
+
+**It is still context and is not claimed.** Thirteen features, no multiplicity correction applied, one
+deposit, intracranial, 10 dexmedetomidine patients. A successor wanting to claim the connectivity result
+must pre-register it and put it through `verifier/multiplicity.py` — that is the whole reason the module
+exists.
+
+**P5 REPRODUCED THE DEPOSIT'S OWN HEADLINE, WHICH IS A PIPELINE VALIDATION AND WAS NOT DESIGNED AS ONE.**
+Krause et al.'s title claims dexmedetomidine produces more sleep-like activity than propofol. Independently,
+from the derived table: **dexmedetomidine-unresponsive is nearly indistinguishable from N2 sleep** on the
+power and complexity measures (0.001-0.069) while **propofol-unresponsive is clearly distinguishable**
+(0.239-0.392). Arriving at a published paper's central claim through a different route is a check on this
+pipeline that no synthetic test provides.
+
+And the connectivity measures do **not** show that asymmetry — they separate both drugs from N2 by similar
+amounts (0.178-0.226). So the coherent reading across P4 and P5 is that **connectivity tracks something
+common to drug-induced unresponsiveness irrespective of agent, and distinct from natural sleep**, while
+power and complexity track the agent. That is a hypothesis generated here, not a result established here.
 """
 from __future__ import annotations
 
