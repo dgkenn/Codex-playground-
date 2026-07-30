@@ -967,3 +967,61 @@ cohort unconscious?". Error-catalogue rule 32 says a measurement's availability 
 stratum is selected on the thing that makes the measurement possible; the sibling failure here is simpler and
 worse — **the outcome's NAME was taken as a description of the data instead of as a claim to be checked, and
 one `median()` over a column already in the table would have caught it at E05.**
+
+### 9.17 E12 is registered and BLOCKED: the Chennu host's certificate no longer covers its own name
+
+E12's pre-registration is committed (`e12_high_band_sweep.py`, 108 variants) and its extraction **cannot
+run**. Diagnosis, recorded so the next session does not repeat it:
+
+```
+api.repository.cam.ac.uk   TLS fails — the certificate presented has
+                           subject CN = repository.cam.ac.uk
+                           SAN       = DNS:repository.cam.ac.uk   (only)
+                           so the SAN does not cover the host being requested
+repository.cam.ac.uk       502 on CONNECT at the egress gateway
+```
+
+The certificate is a genuine University of Cambridge certificate, so this is an **upstream server
+misconfiguration**, not a proxy trust problem — pointing at the proxy CA bundle changes nothing, because the
+failure is hostname coverage rather than chain validation. The same host served this project successfully
+earlier the same day (the `chennu_features_v3` extraction completed at 13:51), so it is a change on
+Cambridge's side and may well be transient. Three retries over a minute all failed identically, so it is not
+a single bad edge node.
+
+**Not worked around.** Disabling certificate verification would make every future Chennu fetch
+unauthenticated, and the standing instruction is explicit that TLS verification is never disabled and egress
+denials are reported rather than routed around. `E12_LIMIT` and the resume logic mean the sweep can be
+restarted from zero cost as soon as the host is fixed: `python src/bsde/experiments/e12_high_band_sweep.py`.
+
+**What this blocks.** The 20–40 Hz band remains **unswept**, so E08's 0.863 still has an unknown denominator.
+That is the single most important open item, because §9.16 has already reduced what the number means (a
+sedation-depth discrimination, not a consciousness one) and E12 decides whether it survives as even that.
+
+### 9.18 Where the project actually stands after E10, E11 and correction 9.16
+
+**The headline number has not been withdrawn, but almost everything about what it means has changed.**
+
+| claim | status after this session |
+|---|---|
+| `exponent_high` AUC 0.863 on Chennu | **stands as computed**, verified against an independent implementation |
+| …as a *consciousness* marker | **withdrawn.** §9.16: the cohort is not unconscious at any level |
+| …as a *sedation-depth* marker | plausible, unswept band, one deposit, n = 20 |
+| muscle artefact explanation | **weakly disfavoured** — survives residualisation on the one proxy that passes its own sign check (0.863 → 0.812 [0.680, 0.932]), on a deposit whose filtering degrades the instrument |
+| propofol-beta explanation | **live and untested.** E11 could not test it; E12 would, and is blocked |
+| band choice (20–40 Hz) | **never swept.** Chosen after seeing 1–20 and 1–40 behave differently |
+| Sleep-EDF replication | **uninformative** — contrast saturated, median \|AUC−0.5\| = 0.470 across candidates |
+
+**Nothing here is presentable as a finding yet, and the reason is worth stating plainly rather than softening.
+The strongest result in this project is a measurement of what a sedative dose of propofol does to a
+frequency band, in twenty responsive volunteers, at a band position that was chosen after looking.** Each of
+those three qualifiers came from a check this session ran on itself, and each was preventable by a check that
+existed before the work started.
+
+**The next three things, in order:**
+1. **E12 when Cambridge's host is fixed** — decides whether 0.863 is a peak or a plateau. Everything else is
+   downstream of that answer.
+2. **A `sedated_vs_awake` contrast in the registry**, with directions cited from the literature and flagged
+   as *declared post-exposure* — the Chennu results have been seen, so those directions can only be tested
+   cleanly on a different sedation deposit. ds005620 is streaming and is the natural candidate.
+3. **A harder sleep contrast (N2 vs N3, or W vs N1)** so that a drug-free test can actually discriminate
+   between candidates instead of passing all of them.
