@@ -404,3 +404,40 @@ induced beta rather than muscle, and reported what a positive reading would be w
 
 **Standing counsel items unchanged**, and the disclosure one is more pressing rather than less: the repository
 is public, so every commit above — including every correction — is a public disclosure.
+
+---
+
+## Entry 12 — 2026-07-30. Research-phase position, decided and dated
+
+**Decision by the investigator, recorded because a deferred question that is not written down becomes a
+resolved one by attrition.** This programme is scientific research now. Commercial application is years away
+and behind prospective testing. **All reachable datasets are in scope for the discovery phase, irrespective
+of their commercial-use terms**, because research use is what every one of these licences actually grants.
+
+**This is not a licence question being waived; it is a licence question being correctly scoped.** The
+distinction that makes it sound: **a discovery is not copyrightable.** Learning that a feature tracks
+emergence carries no licence with it. Only the data, and artefacts *derived* from the data, do. A later
+commercial artefact re-derives a known fact on clean inputs.
+
+**What the audit says the position costs today: almost nothing.** `bsde.provenance` joins every result
+table's `dataset` column to the verified licence registry. Across every table in the project:
+
+    commercial blockers (commercial_use = NO): none
+    unverified (terms not read end-to-end)   : hbn
+
+Everything in use is CC0 or CC BY. HBN carries a **per-participant `commercial_use` consent flag**, already
+streamed as `meta_commercial_use`, so a commercially-clean subset is a filter rather than a re-collection.
+VitalDB — the one NC-SA deposit — is not yet streamed.
+
+**Three things that remain live regardless of this decision**, none of which the decision touches:
+
+1. **ShareAlike propagating into a derived artefact.** Retraining later works only if the new artefact is
+   genuinely independent — not initialised from restricted-data weights, not architecture-selected on them.
+2. **Public disclosure.** The repository is public; every commit is dated disclosure. That is a patent
+   clock, not a licence one, and it is unaffected by any of this. It remains the most time-critical standing
+   item.
+3. **DUAs are contracts, not licences.** Bath, the MGH GABA dataset, I-CARE and BDSP gate on *access*, not
+   terms — a granted request is required before any bytes exist, so "legally fine" does not reach them. The
+   Bath request declares current non-commercial research, which this decision confirms is accurate.
+
+**Standing counsel questions unchanged**, with the disclosure item now the only urgent one.
