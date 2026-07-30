@@ -312,3 +312,51 @@ def n_evaluable_subjects(y: Sequence, score: Sequence, subject: Sequence,
         if (yy == 1).sum() >= min_per_class and (yy == 0).sum() >= min_per_class:
             n += 1
     return n
+
+
+def oob_auc_increment(Xa: np.ndarray, Xb: np.ndarray, y: Sequence, subject: Sequence, rng,
+                      reps: int = 400, min_oob_subjects: int = 5) -> tuple:
+    """Out-of-bag bootstrap for the AUC increment of model B over model A, clustered on SUBJECT.
+
+    Each rep draws SUBJECTS with replacement, fits both models on the drawn subjects' rows, and evaluates
+    both on the rows of the subjects NOT drawn. The returned interval is over those differences.
+
+    WHY THIS SHAPE, and it is error-catalogue rule 9 restated. Refitting on a resample and evaluating on the
+    same resample puts a subject in train and test and inflates the AUC. Bootstrapping FIXED out-of-fold
+    predictions ignores refit variance and gives an interval that is too narrow. Both were used in the
+    sibling project and both were wrong; this is the corrected form, adapted from
+    `analysis/icare_morph_replication.py` with the resampling unit changed from the row to the subject,
+    because here a subject contributes many windows and row resampling would leak that subject's level
+    across the train/test split.
+
+    `Xa` and `Xb` must already include an intercept column. Returns (mean, lo, hi, n_reps_used); a run with
+    fewer than 30 usable reps returns NaNs rather than an interval computed from a handful of draws.
+    """
+    y = np.asarray(y, float)
+    subject = np.asarray(subject)
+    uniq = np.unique(subject)
+    idx_by_subj = {u: np.flatnonzero(subject == u) for u in uniq}
+    diffs = []
+    for _ in range(reps):
+        drawn = rng.choice(uniq, size=len(uniq), replace=True)
+        drawn_set = set(drawn.tolist())
+        oob_subj = [u for u in uniq if u not in drawn_set]
+        if len(oob_subj) < min_oob_subjects:
+            continue
+        tr = np.concatenate([idx_by_subj[u] for u in drawn])
+        te = np.concatenate([idx_by_subj[u] for u in oob_subj])
+        if len(np.unique(y[tr])) < 2 or len(np.unique(y[te])) < 2:
+            continue
+        try:
+            ba = logit_fit(Xa[tr], y[tr])
+            bb = logit_fit(Xb[tr], y[tr])
+            aa = auc(y[te], predict_proba(Xa[te], ba))
+            ab = auc(y[te], predict_proba(Xb[te], bb))
+        except Exception:                                     # noqa: BLE001
+            continue
+        if np.isfinite(aa) and np.isfinite(ab):
+            diffs.append(ab - aa)
+    if len(diffs) < 30:
+        return float("nan"), float("nan"), float("nan"), len(diffs)
+    d = np.asarray(diffs, float)
+    return (float(d.mean()), float(np.quantile(d, 0.025)), float(np.quantile(d, 0.975)), len(d))
