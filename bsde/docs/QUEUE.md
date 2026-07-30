@@ -281,3 +281,53 @@ deposit.** Verified against the Zenodo API and PubMed directly.
 * **No published precedent exists for a drug-identity adversarial probe in this domain**, under any phrasing
   tried. If this programme gates on one, that is original methodology requiring its own validation, not a
   field-standard practice to cite.
+
+
+---
+
+## Q8 RESULT — Krause package downloaded and probed. It gives Challenge A its acceptance-condition test.
+
+*2.1 GB pulled from Zenodo 15497531. The 2.3 GB `AllMatData` is NOT needed: `allData.csv` inside the package
+carries per-patient, per-state derived features and is 1.9 MB. Extracted to
+`results/krause_dexprosleep_allData.csv`.*
+
+**Structure, verified by parsing rather than from the paper:** 12,313 rows, **34 patients**, 27 columns.
+
+| arm | labels | rows |
+|---|---|---|
+| propofol | `WA` 119 · `S` 77 · `U` 129 | wake / sedated / unresponsive |
+| **dexmedetomidine** | `WA_dex` 49 · `S_dex` 111 · `U_dex` 66 | same three-level OAA/S ladder |
+| natural sleep | `WS` 4,456 · `N1` 713 · `N2` 4,519 · `N3` 645 · `R` 1,429 | staged PSG |
+
+**Patients by arm combination:** 13 propofol+sleep · 6 propofol only · 6 dex+sleep · 5 sleep only · 4 dex
+only. So **19 propofol, 10 dexmedetomidine, 24 sleep**, matching the paper.
+
+**Features shipped:** `EffDim` (effective dimensionality), `NmlzCmplx` (normalised complexity),
+`allEnvCorr`, `AvgDelta`/`AvgAlpha`/`AvgGamma`, regional deltas, `frontalAlpha`, five wPLI variants, and
+`frontBias`.
+
+**WHY THIS IS THE TEST CHALLENGE A HAS BEEN MISSING.** Its acceptance condition is that a drug-identity
+probe must not out-predict the state model. Every previous attempt could only probe GABAergic agents against
+each other — E25's probe compared sevoflurane against desflurane, two volatiles. **Here the comparison is
+propofol against dexmedetomidine at MATCHED unresponsiveness** (`U` against `U_dex`, 129 rows / 19 patients
+against 66 / 10), and dexmedetomidine is an alpha-2 agonist with documented opposite-signed EEG effects at
+matched sedation depth (PMID 25187999, 29920532). **This is the adversarial case, not another instance of
+the same case.**
+
+**And sleep supplies a no-drug arm in the same patients** — 13 propofol and 6 dex patients also have staged
+sleep, so a within-patient comparison of drug-unresponsiveness against N2 is available without crossing
+cohorts.
+
+**Four limitations carried from Q8 and now sharpened by the parse:**
+
+1. **Block-level, not per-second.** These are ~6–7 min blocks. DOSE-I's MOAA/S is per-second. Any joint
+   analysis bins DOSE-I down or states the mismatch; it does not average over it silently.
+2. **Small drug arms.** 10 dexmedetomidine patients. A probe on 10 versus 19 patients is a real test but a
+   thin one, and the interval will say so.
+3. **Intracranial and epilepsy-surgery.** Not scalp, patient-specific coverage, abnormal networks possible.
+   A cross-deposit claim against DOSE-I or Chennu is also cross-modality.
+4. **CC-BY-SA on the data** — ShareAlike, the propagation risk Invention Notebook entry 12 tracks. Recorded
+   in the licence registry before anything derived from it is published.
+
+**Next: register the drug-identity probe.** Not the state model — the probe. It is the half of Challenge A
+that E25 passed on GABAergic agents alone, and it is the half this deposit can break.
