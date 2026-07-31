@@ -136,11 +136,19 @@ broadband number. `subband_exponents` already exists in this registry for the Co
 3. **Register the band comparison** before it is claimed anywhere. It is currently exploratory.
 4. **The Q16 regression is unchanged** and remains the step that kills or sizes the whole idea; it should
    now be run on `exponent_low` as well as the broadband exponent, since they may have different
-   covariate structure.
+   covariate structure. **Updated 2026-07-31: run it on `lempel_ziv` separately too, and never pooled —
+   PMID 42294963 shows aperiodic-corrected measures can come out age-independent (r = 0.000), which is
+   R² ≈ 0 and therefore zero Challenge B gain. See `EXISTING_NORMATIVE_MODELS.md` §3(b).**
 5. **Cite the field properly.** We are applying a mature method to an untouched application, not inventing
    normative modelling. PMID 42312085 for the review, PMID 32848689 for the decades-validated
    implementation, PMID 40946930 for multi-site harmonisation, PMID 38537603 for an age-conditional
    precedent. **Claiming novelty for the method would be both wrong and easy to check.**
+6. **The question "should we just use an existing normative model?" has now been answered separately and
+   in full** — `EXISTING_NORMATIVE_MODELS.md`. Short version: the validated ones are commercial, the
+   academic ones are request-gated, and **none of the six carries an aperiodic measure**. HarMNqEEG is the
+   right methodological template and a plausible external validation set (open cross-spectra on Synapse,
+   free account required); OpenNeuro `ds005385` (608 subjects, 20–70, 376 F / 232 M, two sessions five
+   years apart) needs no credentials at all and should be pulled.
 
 **The honest one-line position:** normative EEG is mature and well validated; nobody has used it for
 anaesthetic state or for disorders of consciousness; the reference population, the medication

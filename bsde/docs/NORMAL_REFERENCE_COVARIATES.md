@@ -37,6 +37,9 @@ including however much sleep the patient happened to have", which is not a norma
 Excluding sleep-containing recordings would take the cohort from 4,944 to **202** and select hard for short,
 alert, probably anxious patients. That is not viable.
 
+> **See also the §7 correction: eye state (d = −0.761 on the exponent) is the second largest term and is
+> recovered by this same in-signal pass. Build one detector, not two.**
+>
 > **Consequence: vigilance must be resolved WITHIN the recording, not between recordings.** The reference
 > is built from awake segments detected in-signal, and the recording-level `awake`/`n1`/`n2` flags are
 > useful only as a coarse check on that detection — they mark what the recording *contains*, not when.
@@ -143,9 +146,18 @@ point.
 
 ## 7. Known unknowns — not available here, and they should be said out loud
 
-Not in HEEDB metadata, plausibly material, and therefore limitations rather than omissions:
+Not in HEEDB metadata, plausibly material, and therefore limitations rather than omissions.
 
-* **eyes open vs closed** — changes alpha directly, and alpha sits inside a 0.5–45 Hz fit;
+> **CORRECTION 2026-07-31 — eyes open vs closed has been PROMOTED OUT of this list and it is now the second
+> largest term in the design.** It was written here as a vague "changes alpha directly". It is measured:
+> **Cohen's d = −0.761 on the aperiodic exponent itself** (PMID 42395346), not merely on alpha. That is
+> larger than any comorbidity effect we should expect and it is bigger than the medication effect §2 is
+> built around. HEEDB does not record eye state, so **it must be resolved in-signal alongside vigilance —
+> the wake detector and the eye-state detector are one frozen object, not two** — or declared as the
+> reference's principal limitation. See `EXISTING_NORMATIVE_MODELS.md` §3(a). The ordering in §8 below is
+> unchanged only because eye state is detected by the same pass as §1.
+
+* ~~eyes open vs closed~~ — **superseded by the correction above; no longer a known unknown**;
 * **time of day / circadian phase**, and time since waking;
 * **skull thickness, BMI, head size** — the skull is a low-pass filter, so this bears on the slope
   specifically and not merely on amplitude;
@@ -159,8 +171,10 @@ Not in HEEDB metadata, plausibly material, and therefore limitations rather than
 
 ## 8. The order to do this in, and where it can die cheaply
 
-1. **Build the wake detector and freeze it.** Everything else is downstream of §1, and it is the largest
-   effect on the list.
+1. **Build the wake detector and freeze it — and the eye-state detector with it, in the same object.**
+   Everything else is downstream of §1, and vigilance is the largest effect on the list. **Eye state is the
+   second largest (d = −0.761 on the exponent, §7 correction) and it is recovered by the same in-signal
+   pass, so building them separately would be doing the same work twice.**
 2. **Read every EDF header first** — `sfreq`, filters, montage, duration — and decide restrict-versus-
    stratify from the measured distribution rather than from an assumption. Cheap, and it prevents the
    most likely spurious result.

@@ -838,3 +838,43 @@ rather than preference.**
 used to separate ketamine from seizure; here the same decomposition solves an artefact problem. Two
 independent reasons to carry both bands rather than one broadband number, and `subband_exponents` already
 exists in the registry.
+
+---
+
+## Q18 — the existing-normative-model question, answered; three items fall out of it
+
+*Added 2026-07-31. Full record and verification trail: `bsde/docs/EXISTING_NORMATIVE_MODELS.md`.*
+
+**Answer: six validated normative EEG systems exist and none is usable as our reference.** The best-validated
+are commercial (NeuroGuide, Neurometrics, BrainDx, SKIL, qEEG-Pro — the last FDA-approved); the two best
+academic ones (ISB-NormDB n=1,289 with explicit sex-differentiated models, Taiwan n=260) release data on
+request only; and **not one of the six models an aperiodic measure.** The PubMed intersection of
+normative-modelling terms with aperiodic/spectral-exponent returns **13 hits, all of which use "normative"
+descriptively rather than as a resource.**
+
+**Q18a — decide on HarMNqEEG (needs an investigator decision, cannot be done unilaterally).** PMID 35398285:
+1,564 subjects, 9 countries, 12 devices, 14 studies; open **cross-spectral tensors** on Synapse
+`syn26712693` (verified live: `ShareRawData` → 14 named study folders → per-subject `.mat`). Anonymous
+download returns HTTP 403 — a **free Synapse account** is required. Worth it because PMID 42040156 already
+estimated **aperiodic components on 1,965 HarMNqEEG subjects aged 5–100**, so the deposit demonstrably
+supports our measure. It would be the external validation set for a HEEDB-derived reference.
+*Unverified and must be checked before relying on it: whether **sex** is a term in HarMNqEEG's
+mixed-effects equations. The abstract names age only and the paper is not open access.*
+
+**Q18b — pull OpenNeuro `ds005385` (no gate, do it).** Dortmund Vital Study, verified through the OpenNeuro
+GraphQL API: **608 subjects, age 20–70 (137/111/111/140/95/14 by decade), 376 F / 232 M**, handedness, two
+sessions **~5 years apart**, 17,541 files, 79.5 GB, no credentials. Gives an independent adult age+sex
+reference *and* lets us reproduce the exponent's five-year ICC on our own estimator instead of citing it.
+Limits: healthy volunteers (so it does not substitute for HEEDB's acquisition-matching argument) and it
+stops at 70 where HEEDB reaches 90.
+
+**Q18c — two numbers that change Q16 and must be carried into it.**
+1. **Eyes open/closed moves the exponent by d = −0.761** (PMID 42395346). That is larger than any
+   comorbidity effect and larger than the medication effect Q16 is built around; HEEDB does not record it.
+   **Promoted out of "known unknowns" — the wake detector and the eye-state detector are now one frozen
+   object.** Five-year ICC of the exponent is 0.668 (trait ceiling ≈ 0.82, well above anything we are
+   chasing), and 2–3 minute recordings suffice (PMID 38820994, PMID 32425762) — so the reference does not
+   need long segments.
+2. **Aperiodic correction can produce age-independence** — corrected theta/alpha scored r = 0.000 against
+   age in 587 adults (PMID 42294963). R² ≈ 0 means **zero** Challenge B gain via 1/sqrt(1−R²).
+   **Q16 step 4 must therefore be run separately for `exponent_low` and `lempel_ziv`, never pooled.**

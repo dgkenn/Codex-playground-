@@ -140,10 +140,19 @@ before being relied on**, not cited.
 **(c) The covariates explain nothing.** Q16 step 4 kills the idea for the price of one regression, and that
 is the outcome to want early.
 
-**(d) The wake detector becomes part of the frozen object.** 94.8 % of strict-normal recordings contain
-sleep, so vigilance must be resolved in-signal. Whatever detector does that is permanently baked into the
-reference and must be versioned, hashed and validated like a candidate — including against the
-recording-level `awake`/`n1`/`n2` flags as a coarse check.
+> **Sharpened 2026-07-31, and the risk is now specific rather than generic.** PMID 42294963 reports that a
+> theta/alpha ratio corrected for the aperiodic component is **age-independent (r = 0.000)** in a normative
+> cohort of 587 adults. R² ≈ 0 means gain ≈ 1, i.e. **no Challenge B benefit at all** for any measure
+> engineered that way. Our two carried measures may sit on opposite sides of this — the raw exponent is
+> strongly age-dependent, `lempel_ziv` is uncharacterised. **Run the step-4 regression separately for
+> `exponent_low` and `lempel_ziv` and do not pool them**, or a pooled R² will hide the case where the gain
+> is real for one and zero for the other. See `EXISTING_NORMATIVE_MODELS.md` §3(b).
+
+**(d) The wake AND eye-state detector becomes part of the frozen object.** 94.8 % of strict-normal
+recordings contain sleep, so vigilance must be resolved in-signal — **and eye state with it, since it moves
+the exponent by d = −0.761 (PMID 42395346) and HEEDB does not record it.** Whatever detector does that is
+permanently baked into the reference and must be versioned, hashed and validated like a candidate —
+including against the recording-level `awake`/`n1`/`n2` flags as a coarse check.
 
 ---
 
