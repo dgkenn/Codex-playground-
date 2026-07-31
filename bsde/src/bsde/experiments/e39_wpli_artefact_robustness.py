@@ -113,6 +113,56 @@ VERDICT RULE, written before the run.
 SCOPE. Two small scalp cohorts, one phase feature, EMG as the artefact channel, propofol in both. Nothing
 here speaks to electrode type (the channel E36 actually tested), to intracranial recordings, or to any
 artefact other than muscle. A negative about EMG robustness is not a general negative about wPLI.
+
+--------------------------------------------------------------------------------------------------------
+OUTCOME. **NO EVIDENCE either way, which is the outcome this file registered in advance as the most likely
+one. It supports NEITHER explanation, and in particular it does NOT vindicate E36's post-hoc defence.**
+
+    G1/G2  Both cohorts passed. `ds004541`: 7 of 8 subjects evaluable for both contrasts, best EMG
+           legibility 0.148 and best state legibility 0.325 against a 0.10 floor. `chennu`: 20 of 20
+           evaluable, 0.175 and 0.400. So there was a real artefact contrast and a real state contrast to
+           compare against — G2 is the check that would have made the primary meaningless, and it held.
+
+    P1     `ds004541`   Contrast **+0.0113 [-0.1750, +0.1966]**
+    P2     `chennu`     Contrast **+0.0417 [-0.1935, +0.2674]**
+
+    P4     NOT INFORMATIVE, correctly. Rule 48 fired as designed: with the primary's interval spanning
+           zero there is no effect for a second EMG proxy to fail to reproduce, and the branch said so
+           instead of printing a pass.
+
+**THE ONE THING NOT TO SAY.** Both point estimates lean positive — the direction of the deflationary
+explanation — and both cohorts "agree in sign". **That is not evidence and must not be reported as a
+lean.** Two estimates of +0.011 and +0.042 carrying intervals of roughly +/-0.2 are two coin flips landing
+the same way; the agreement check exists to *withhold* a claim when the cohorts disagree, not to manufacture
+one when they happen to match. The honest summary is that this design cannot see an effect of the size at
+issue, which is what the pre-registered power note said before the numbers existed.
+
+**WHAT THE PER-FEATURE TABLE SHOWS, AND IT IS WORTH MORE THAN THE PRIMARY.** `wpli_alpha` sits in the middle
+of the pack on artefact legibility in both cohorts — EMG legibility 0.045 in `ds004541` and 0.100 in
+`chennu`, against a spread of 0.006-0.148 and 0.050-0.175 across the six amplitude and complexity measures.
+It is neither conspicuously robust nor conspicuously fragile. **The strong version of the deflationary
+story — "wPLI barely responds to artefact, which is why it barely responds to anything" — is not what these
+tables look like**, in either cohort, with our own implementation. That is a weaker statement than a
+significant Contrast would have been and it is the one the data supports.
+
+**WHAT THIS MEANS FOR E35/E36, STATED WITHOUT SPIN.** Their status is unchanged: still unclaimed, still
+carrying E36's post-hoc within-arm defence as a *hypothesis a successor should pre-register*, and now
+carrying a pre-registered successor that **could not resolve it either way**. The right conclusion is that
+the deflationary explanation remains live and untested at adequate power, not that it has been dismissed.
+The external corroboration from Kallionpaa 2020 and Akeju 2014 remains the strongest thing supporting the
+underlying observation, and it is independent of this question entirely.
+
+**WHY THE DESIGN COULD NOT DELIVER, RECORDED FOR THE NEXT ATTEMPT.** Three reasons, all structural and all
+knowable in advance — the first two were stated in the header before the run, the third was not:
+  1. **One phase feature.** A single measure cannot carry a family mean, so the comparison had no way to
+     average down its own noise on the side that mattered.
+  2. **8 and 20 subjects**, against a difference of two within-subject legibilities each estimated from a
+     handful of rows per person.
+  3. **`chennu` supplies four rows per subject**, so its EMG split is 2-versus-2 and its state contrast is
+     1-versus-1. Its interval is the widest in the file and it was never going to be otherwise. Reported
+     rather than dropped, because a cohort that cannot contribute is a fact about the deposit.
+     **A future attempt needs a cohort with many windows per subject and more than one phase measure, and
+     should compute the required n from these intervals rather than hoping.**
 """
 
 from __future__ import annotations
