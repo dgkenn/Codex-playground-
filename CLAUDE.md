@@ -622,3 +622,14 @@ unverified on GitHub.
     median **SQI 5.1 of 100** — the monitor reporting a value it simultaneously declares unreliable. The
     column was in the same table from the start and no experiment had used it. Before modelling a region
     where a reference behaves strangely, **check whether the reference says so itself.**
+53. **A CONTRAST BETWEEN TWO FAMILIES REQUIRES THAT AT LEAST ONE FAMILY SHOW THE EFFECT — CHECK THAT THE
+    PHENOMENON EXISTS IN THIS COHORT BEFORE ASKING WHO HAS LESS OF IT.** Rule 45 says a registration must
+    name its incumbent. This is the version for contrast designs, and the gate already existed in this
+    project: **E33** wrote "THE INCUMBENT MUST BE ALIVE — if the incumbent cannot predict the transition at
+    all, beating it is not a result." **E61** did not carry it across. It gated on capability and on state
+    discrimination, returned NO SPLIT, and only a post-hoc permutation null revealed that **not one of nine
+    candidates leaked agent identity above its own null** — the amplitude family's observed 0.0903 sat
+    *below* its null mean of 0.0960. The verdict was correct and the interpretation "phase does not leak
+    less" would have been wrong: there was nothing in either family to leak. **The check costs one extra
+    loop over code already written** — permute the label, recompute the same statistic per candidate, and
+    confirm the reference family clears its own null before the comparison is read as meaningful.

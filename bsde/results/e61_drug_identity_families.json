@@ -1,0 +1,94 @@
+{
+  "gate_m1": true,
+  "gate_m2_state": true,
+  "capability": {
+    "bis_sfs": {
+      "finite_fraction": 1.0,
+      "sd": 1.2643247699222153,
+      "usable": true
+    },
+    "pac_slow_alpha": {
+      "finite_fraction": 1.0,
+      "sd": 0.00424791282874748,
+      "usable": true
+    },
+    "exponent_low": {
+      "finite_fraction": 1.0,
+      "sd": 0.37551115264365,
+      "usable": true
+    },
+    "exponent_high": {
+      "finite_fraction": 1.0,
+      "sd": 1.5244617870334103,
+      "usable": true
+    },
+    "whole_head_exponent": {
+      "finite_fraction": 1.0,
+      "sd": 0.37305548490718665,
+      "usable": true
+    },
+    "relative_alpha_power": {
+      "finite_fraction": 1.0,
+      "sd": 0.11536192581054594,
+      "usable": true
+    },
+    "relative_delta_power": {
+      "finite_fraction": 1.0,
+      "sd": 0.13459318435832154,
+      "usable": true
+    },
+    "spectral_edge_95": {
+      "finite_fraction": 1.0,
+      "sd": 4.558759099498915,
+      "usable": true
+    },
+    "bis_rbr": {
+      "finite_fraction": 1.0,
+      "sd": 1.1287148838088144,
+      "usable": true
+    }
+  },
+  "n_windows": 1306,
+  "n_cases": 109,
+  "leak_abs_auc": {
+    "bis_sfs": 0.040640566758992525,
+    "pac_slow_alpha": 0.11678161101984347,
+    "exponent_low": 0.08815266303183256,
+    "exponent_high": 0.06141784983955412,
+    "whole_head_exponent": 0.143786259057324,
+    "relative_alpha_power": 0.07601274043739703,
+    "relative_delta_power": 0.13132094738485062,
+    "spectral_edge_95": 0.024593329788444196,
+    "bis_rbr": 0.10695909356655531
+  },
+  "state_abs_auc": {
+    "bis_sfs": 0.0911508583709838,
+    "pac_slow_alpha": 0.00436652133556259,
+    "exponent_low": 0.16948398185752478,
+    "exponent_high": 0.02349796058198811,
+    "whole_head_exponent": 0.08641393304618483,
+    "relative_alpha_power": 0.10870625060391959,
+    "relative_delta_power": 0.13836419057212046,
+    "spectral_edge_95": 0.12861656306091318,
+    "bis_rbr": 0.010269560405131217
+  },
+  "family_means": {
+    "phase_leak": 0.078711088889418,
+    "amplitude_leak": 0.09032041187227968,
+    "phase_state": 0.047758689853273195,
+    "amplitude_state": 0.09505034858968317
+  },
+  "primary": {
+    "obs": -0.011609322982861686,
+    "lo": -0.058881016189697946,
+    "hi": 0.12733995414316562,
+    "reps": 200
+  },
+  "placebo_permuted_agent": 0.012807327371022994,
+  "partition_rank": {
+    "rank": 14,
+    "n": 36,
+    "p": 0.3888888888888889
+  },
+  "verdict": "NO SPLIT -- the interval includes zero. On this deposit the two families are not distinguishable by how much agent identity they carry."
+}

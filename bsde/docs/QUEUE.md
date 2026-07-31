@@ -1304,3 +1304,48 @@ a footnote.
 | [40,60) | one-stage | **3.47** | usable; beats Lee et al.'s 4.1 on their own development data |
 | [60,80) | — | 8.75 | **refuse** — 35 % facial-EMG artefact |
 | [80,100) | — | 29.84 | **refuse** — 98.2 % facial-EMG artefact |
+
+---
+
+## Q24 — Challenge A: propofol and sevoflurane are not legible at matched depth, so VitalDB cannot test E36's split (E61, 2026-07-31)
+
+E36 found phase-based coupling measures leak far less anaesthetic identity than power/complexity ones
+(|AUC−0.5| 0.000–0.128 vs 0.217–0.368), as the unique maximum of 495 same-size partitions. `bis_sfs` — the
+bispectrum built for Q22 and validated in E59 — made a **within-channel** version of that test possible on
+VitalDB, where E36's inter-channel wPLI is NaN.
+
+**VERDICT: NO SPLIT.** Phase minus amplitude = **−0.0116 [−0.0589, +0.1273]**; the real 2-vs-7 partition
+ranks **14 of 36** (p = 0.389) against E36's p = 0.002. Both gates passed.
+
+### The diagnostic that changes what the null means
+
+A permutation null run afterwards — agent label shuffled across cases, 60 draws, same statistic — shows
+**not one of the nine candidates leaks above its own null**:
+
+| | observed \|AUC−0.5\| | null mean | p(≥obs) |
+|---|---|---|---|
+| phase family | 0.0787 | 0.1011 | 0.800 |
+| **amplitude family** | **0.0903** | **0.0960** | **0.583** |
+| largest single (whole_head_exponent) | 0.1438 | 0.0989 | 0.233 |
+
+**The amplitude family sits below its own null mean.** So the substantive finding is not about families:
+**at matched BIS, propofol and sevoflurane are not legible from any of these nine frontal measures**,
+out-of-fold with cases held out whole. That is a clean negative, mildly *favourable* to Challenge A — and it
+means this cohort cannot test E36's split, because a contrast needs at least one family to show the effect.
+**Error catalogue rule 53**, and the gate already existed here: E33's "the incumbent must be alive".
+
+### Why no VitalDB pairing escapes it
+
+E36's leak was propofol vs **dexmedetomidine**, an α2 agonist producing a pharmacologically distinct
+sleep-like state. This is propofol vs sevoflurane — both GABAergic. The remaining pairs are
+desflurane/propofol and sevoflurane/desflurane: same class, or volatile against volatile. **Challenge A's
+family question needs a pharmacologically distinct agent, and this deposit has none.**
+
+That raises the priority of two items already in the queue and lowers the value of further VitalDB work on
+Challenge A:
+
+* **Q2 — the Dryad ketamine set.** Ketamine is the dissociation this project has been hunting: unresponsive
+  with preserved experience, and NMDA rather than GABA.
+* **The Turku/Kallionpää cohort** (47 volunteers, dexmedetomidine *or* propofol, **within-subject** loss and
+  return at constant dosing). `DATA_REQUEST_TURKU_KALLIONPAA.md` is drafted and **unsent** — this result is
+  the argument for sending it.

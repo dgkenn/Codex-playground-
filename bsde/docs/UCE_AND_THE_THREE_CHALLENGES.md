@@ -122,10 +122,27 @@ slope is comparatively unaffected. **That is a specific, falsifiable claim about
 BIS**, and this project has EMG proxies registered (`emg_index`, `emg_beta_gamma_fraction`,
 `emg_kurtosis`) and `vitaldb_grid.csv` carries `meta_bis`, `meta_emg` and `meta_sqi` on 250 cases.
 
-**Verdict: untested here, and the single most testable opportunity of the three.** The registration writes
-itself — does the BIS/UCE discordance concentrate where the EMG proxies are elevated, and does the
-concordance return when they fall? A confirmed EMG mechanism would make the 3.4 % discordance a finding
-about BIS rather than a disagreement between two imperfect measures.
+**Verdict as first written: "untested here, and the single most testable opportunity of the three."
+THAT IS NOW STALE IN BOTH HALVES, and both corrections point the same way.**
+
+**The EMG mechanism was tested, and REFUTED in the opposite direction (E43).** At matched conditioning,
+`partial(BIS, EMG | spectral state) = +0.165` against `partial(spectral state, EMG | BIS) = −0.262` —
+asymmetry **−0.0967 [−0.1798, −0.0100]**, with an independent EMG estimate agreeing at **−0.2120
+[−0.2889, −0.1286]**. **The broadband spectral measure is MORE muscle-associated than BIS**, not less,
+which is physically sensible: an aperiodic exponent is fitted straight through the 20–45 Hz band where
+surface EMG lives, while BIS carries explicit EMG-suppression processing. The temporal half failed too —
+EMG *falls* slightly across maintenance (Spearman −0.081) against a claim of 63 % clustering in the final
+third. So the proposed mechanism for the discordance is not supported here. The discordance itself is
+untouched; only the explanation is.
+
+**The comparator problem, which was the real content of this section, is now solved.** Q22 built a
+computable BIS-like index and E58/E60 measured it: median absolute error **3.47** in [40,60) — better than
+Lee et al.'s 4.1 on their own development data — and **~4.8** in [20,40) with a two-stage fit. It is
+**refused** above BIS 60 and below BIS 20, on evidence rather than caution: 98.2 % of the [80,100) windows
+are facial-EMG artefact and the [0,20) windows carry median SQI **5.1 of 100**. See
+`BIS_FAITHFUL_OR_BRAIN_FAITHFUL.md`. So Challenge C's negatives can now be re-asked against a BIS-like
+comparator instead of the SEF95 proxy they settled for — **within that validated band, and not outside
+it.**
 
 ---
 
