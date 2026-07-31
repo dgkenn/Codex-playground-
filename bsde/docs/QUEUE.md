@@ -425,3 +425,48 @@ Challenge C negative is therefore stronger than it looked, not weaker.
    information the incumbent lacks" would be worth more than a sixth feature.
 3. **Nothing further on DOSE-I with a new feature.** Three instruments have now failed in the same place.
    A fourth feature is the least informative thing this queue could spend a run on.
+
+---
+
+## Q11 — ds005620's awakening reports: the dissociation label exists, and it is not in the deposit
+
+**Status: OPEN, and the cheapest unblocked action in the queue. A data request, not an experiment.**
+
+`DATASET_REGISTRY.csv` already flagged ds005620 as a "CRITICAL dissociation test: unresponsive WITH reported
+experience", with the events column marked `REQUIRES VERIFICATION`. It has now been verified, by listing the
+deposit from S3 rather than by any fetch-tool summary (rules 25 and 39), and the answer is **the reports are
+absent**.
+
+What the deposit actually contains, from `README.txt` and a full prefix listing of one subject (78 keys):
+
+* the design is a **repeated-awakening study during propofol sedation**, up to 3 awakenings per subject;
+* **`task-sed2` is "One-minute resting EEG recorded just before an awakening"** — so every awakening has a
+  matched, clean, pre-awakening minute of resting EEG, which is precisely the window a dissociation test
+  needs, and it is already downloaded (`ds005620_features.csv`, 202 recordings, 21 subjects);
+* `participants.tsv` gives an `awakenings` **count** per subject (0–3) and nothing about what was reported;
+* `events.tsv` for a rest run contains a single `New Segment` row. There is no `_beh` file, no phenotype
+  directory, and the deposit's top level holds six files in total.
+
+**So the EEG for the dissociation is public and the label is not.** That is a different blocker from
+Challenge B's — not "no such dataset exists" but "this dataset's outcome column was not uploaded".
+
+**Why it is worth asking for.** A subject who is behaviourally unresponsive under propofol and afterwards
+reports an experience is the anaesthesia analogue of covert consciousness, and it separates *arousal* from
+*cognitive processing* in the same person, which is Brief 01's actual question. It is closer to the flagship
+than E28's healthy-BCI substitution is, because the dissociation is real rather than analogical. It also
+bears on verifier layer 6.
+
+**Why it is cheap.** The deposit is CC0/CC-BY (see the licence note — it declares both), from a group that
+publishes openly, and the README lists author contacts directly: Imad J. Bajwa (`imadjb@uio.no`) and
+Bjørn E. Juel (`Bjorneju@gmail.com`). The ask is one table: per subject, per awakening, whether an
+experience was reported and ideally its content class. No raw data transfer, no patient identifiers, no
+ethics obstacle of the kind Chennu's DoC cohort raises — these are healthy volunteers.
+
+**Draft ask, to be sent by the investigator:** request the per-awakening report labels corresponding to the
+`task-sed2` / `task-sed run-1..3` recordings already public on OpenNeuro; state that the intended use is
+methodological (testing whether resting EEG measures separate unresponsiveness-with-experience from
+unresponsiveness-without), offer co-authorship or acknowledgement as they prefer, and offer to share the
+analysis code and any derived table back.
+
+**What this does NOT unblock.** ds005620 is propofol only, so it does nothing for Q9's two-agent problem;
+and it is healthy volunteers, so nothing from it transfers to a DoC claim without saying so.
