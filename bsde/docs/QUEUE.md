@@ -1450,3 +1450,44 @@ clearing its own null (E61 + E64).
 A now needs a pharmacologically distinct agent, and the two routes are already written: **Q2 (Dryad
 ketamine)** and the **Turku/Kallionpää dexmedetomidine cohort**, whose request is drafted and *still unsent*.
 Sending it is the highest-value Challenge A action available.
+
+---
+
+## Q27 — the ketamine deposit is worth MORE than Q2 claimed, and it cannot be fetched from this sandbox
+
+**Q2 undersold it.** The Dryad record (`10.5061/dryad.j9kd51c9q`, CC0, 0.934 GB, one zip) was read through the
+Dryad v2 API with `curl` and parsed from JSON (rules 25, 39). It is **Farnes et al., PLOS ONE** — *"Increased
+signal diversity/complexity of spontaneous EEG, but not evoked EEG responses, in ketamine-induced psychedelic
+state in humans"* — and the design is far better than "n = 10, sub-anaesthetic" suggests:
+
+* **high-density 62-channel EEG** — so inter-channel wPLI and coherence are properly computable, which is
+  exactly what VitalDB's two-electrode strip could not support (Q26);
+* **within-subject, open-label, before AND during** ketamine in the same 10 volunteers — removing every
+  between-subject confound that closed Challenge A on VitalDB;
+* spontaneous EEG recorded **eyes open AND eyes closed**, so E44's first-order eye-state effect is a
+  controlled variable rather than a lurking one;
+* TMS-evoked responses with PCI alongside.
+
+### The design it would unlock, and it does not need a second drug
+
+Challenge A's acceptance condition needs a measure that follows STATE and not DRUG. This deposit supplies
+**two contrasts in the same subjects and session**: the ketamine effect (drug) and the eyes-open/closed
+effect (a non-drug arousal change). **The ratio of drug-response to state-response, per measure family, is
+Challenge A's acceptance condition made testable without ever needing two drugs** — and E36's family split
+becomes testable on a montage that can actually carry it.
+
+### The blocker, and it is environmental
+
+**`datadryad.org` is behind Anubis**, a proof-of-work anti-scraping challenge. The v2 API download endpoint
+returns **401**, `/downloads/file_stream/…` returns an **HTML interstitial** whose own text says it exists
+*"to protect the server against the scourge of AI companies aggressively scraping websites"*. That is a
+deliberate access control by the data host, and **defeating it is not on the table** regardless of the CC0
+licence on the content.
+
+This is the same *shape* as Q20 (chennu, TLS) — an environment blocker, not a design problem — and it has a
+cheap fix that only the investigator can apply.
+
+**INVESTIGATOR ACTION, ~2 minutes:** open `https://datadryad.org/dataset/doi:10.5061/dryad.j9kd51c9q` in a
+browser, download `Farnes_et_al_PLOS_ONE_Dryad.zip` (934 MB), and drop it anywhere readable by the session.
+Nothing else in the queue is blocked on it, and it is the highest-value single unblock available for
+Challenge A.
