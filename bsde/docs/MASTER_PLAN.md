@@ -1842,3 +1842,44 @@ exists to make the denominator visible. Detail for every result below is in `QUE
 * **Neither is a claim about consciousness, and neither is a claim about a candidate beating an incumbent.**
   E65 stands: the fitted BIS-like index does not track a clinician (+0.04 against PE31's +0.48), and Q22's
   licence to use it on monitor-free deposits remains withdrawn.
+
+### 9.37 Consolidation after E73–E85, superseding §9.36
+
+*Written to the ten-result cadence (`CLAUDE.md`): twelve results this session, so stop generating and
+consolidate. `registry_ledger.py report` is the source for every count below.*
+
+**THE DENOMINATOR: 66 designs registered, 27 reached a reportable verdict.** Disposition: negative 14,
+positive 13, gate_failed 13, absent 6, registered-not-yet-run 3, blocked 2, closed 2, withdrawn 1. **Thirteen
+gate failures against twenty-seven verdicts is the number to quote when this programme is described** — it
+is the machinery refusing to report, and it is the asset the briefs say the verifier is meant to be.
+
+`registry_ledger.py verify` reports **4 problems, all pre-dating this session**: `e42` and `e63` carry an
+empty `registered_sha`, and `e50`/`e51` have no file because they were run inline. Recorded rather than
+repaired: `registered_sha` is one of the fields the ledger refuses to rewrite, and quietly backfilling it
+would destroy the property that makes the field worth having.
+
+| challenge | status now | what actually blocks it |
+|---|---|---|
+| **A** | E75's cross-arm sign aggregate is a **null**, and its SPLIT verdict is withdrawn. Two within-subject designs are registered and awaiting one extraction: **E80** (hysteresis — at matched MOAA/S the drug level differs between descent and emergence, so a drug-reading measure must show a gap) and **E81** (stimulus invariance — the deposit's unused `Endoscopy` marker as a *causal* handle on artefact) | The structural blocker named in §9.35 — drug arm, electrode type and data quality nested inside patient identity — is what both designs are built to sidestep. Whether they do is the open question |
+| **B** | **E73 is Challenge B's first interpretable null**, and its primary turned out to be mean connectivity restated on a **ten-channel** graph. **ds007554 is CLOSED** for covert-versus-passive by E85's own stopping rule after three instruments. The 62-channel instrument is in flight | Nothing structural on Stieger. On the flagship paradigm: a volition contrast needs a condition *without* movement — active-versus-passive is a poor probe because passive movement produces its own ERD (PMID 31425038) |
+| **C** | **The comparator problem is solved.** E76 (declared preprocessing explains the gap), E78 (`bis_rbr` and our PE tie on held-out data), E79 (the residual is window length; at matched support the two independent implementations AGREE). **E84 is registered: Challenge C's central question against a validated incumbent for the first time** — E26/E34/E37 all ran against SEF95, which E79 measured at ρ +0.1799 where PE31 reaches +0.4355 | Not a data blocker. Three prior nulls were run against the easier bar and that is now fixable rather than merely noted |
+
+**Three things this session established that are not results about any candidate**, and they are the ones
+most likely to matter later:
+
+1. **A portable depth comparator now exists.** Permutation entropy with the deposit's declared recipe
+   (0.5–45 Hz, 0.5 µV ties) at a **30 s window** — the window is worth +0.042 in clinician tracking across
+   8→30 s, more than the entire disputed difference between two implementations. Q34's "PE31 is the
+   comparator" no longer binds Challenge C to deposits that ship a PE31 column.
+2. **`uce_v1` is uncomputable on the wedge deposit.** 0 of 11,000+ VitalDB rows (one channel), 0 of 2,200+
+   Sleep-EDFx rows (bipolar derivations), 0 of 272 HBN rows (EGI naming — the one case that is a parsing
+   gap). See Q39; the fix is a separately named `uce_v1_bipolar`, never written into a column called
+   `uce_v1`.
+3. **Two of E58's four BIS subparameters false-positive.** `bis_bsr` fires in 61.3 % of REM windows and
+   52.8 % of N1 — the low-amplitude stages — with one wake window at BSR 1.000. Small magnitudes, systematic
+   pattern, and a property of the implementation rather than of sleep.
+
+**Rules earned this session:** rule 37's fifth occurrence (compare against the placebo's *distribution*,
+never its mean — E75's branch was dead code) and **rule 60** (a measure chosen for belonging to a different
+family must be *shown* to differ from it, before registration). Rule 60 has since prevented one repeat
+(E82) rather than only diagnosing one.
