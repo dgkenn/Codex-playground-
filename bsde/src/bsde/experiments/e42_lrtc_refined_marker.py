@@ -80,6 +80,64 @@ VERDICT RULE, written before the run and stating the failing case first.
 
 SCOPE, INHERITED AND UNCHANGED. Not a disorders-of-consciousness result. Healthy adults; motor imagery is
 command-following that produces no movement, which is the right form and not the right population.
+
+--------------------------------------------------------------------------------------------------------
+OUTCOME. **Every registered condition passed. It does not survive multiplicity. Both sentences belong in
+any account of this, and the order above is the honest one.**
+
+    G1   104 subjects; E38's ceiling 0.5402 carried forward.
+
+    G2   **Spearman(lrtc_alpha, relative_alpha_power) = +0.2426** against a 0.90 ceiling. The two share
+         about 6 % of their variance, so the refinement's premise — that alpha's temporal structure is a
+         different quantity from its magnitude — holds in this cohort rather than being assumed.
+
+    P1   `relative_alpha_power` **+0.2018 [+0.0050, +0.3857]**, against E41's +0.2018 on the v1 table.
+         **Identical to four decimal places on an independently re-extracted feature set.** That was not
+         guaranteed and it validates the re-extraction (rule 20's spirit: two computations of the same
+         quantity, diffed rather than assumed).
+
+    P2   **`lrtc_alpha` +0.2446 [+0.0638, +0.4126]**, two-sided, interval excluding zero, exceeding the
+         incumbent. PASSED as registered.
+
+         **But the margin over the incumbent is not meaningful and must not be presented as one.** 0.2446
+         against 0.2018 is a difference of 0.043 on 104 subjects where the standard error of a correlation
+         is about 0.10, between two measures that are themselves correlated at +0.24. **"Beats the
+         incumbent" is true as registered and is a coin-flip as evidence.** What the registration bought
+         was that the comparison could not be skipped, not that a small margin means something.
+
+    P3   **PASSED, and this is the strongest result in the file.** Imagery **+0.2446** against executed
+         movement **−0.0748 [−0.2813, +0.1334]** — a separation of 0.32, with the placebo sitting on the
+         wrong side of zero. Executed movement is decodable from motor-cortex legibility in people who
+         cannot imagine at all, so a feature that predicted both equally would be tracking how legible a
+         subject's cortex is. **This one does not.** That dissociation is what Challenge B's substitute
+         question actually needs, and it is a stronger claim than the correlation itself.
+
+    P4   **Nothing survives FWER 0.05.** `lrtc_alpha` raw p 0.0145, **adjusted p 0.1299**;
+         `relative_alpha_power` raw 0.0385, adjusted 0.3293. `effective_tests` 12.80 of 16.
+         **This is a second look at a cohort where fourteen candidates were already scored, so the
+         adjusted number is the relevant one and it does not clear.**
+
+    P5   Redundancy with `critical_slowing_ar1` = **+0.0553**. The candidate's second registered failure
+         condition — both summarise an amplitude envelope — is cleared decisively. DFA across timescales
+         and lag-1 autocorrelation at one timescale are not the same measurement, which is what the
+         registration claimed and what rule 28 says to check rather than assume.
+
+**WHAT MAY BE SAID.** *"In 104 healthy subjects, the long-range temporal correlation of the resting alpha
+envelope correlated ρ = +0.245 [+0.064, +0.413] with motor-imagery decoding ability, exceeding alpha power
+(+0.202) and dissociating from executed-movement decoding (−0.075). It does not survive correction across
+the sixteen candidates examined in this cohort (adjusted p = 0.130)."* Every clause of that is required.
+
+**WHAT MAY NOT BE SAID:** that LRTC beats alpha power (the margin is noise), that anything here is
+established (nothing survives multiplicity), or that any of it bears on disorders of consciousness (E28's
+scope limit stands and is inherited unchanged).
+
+**WHY IT IS STILL WORTH SOMETHING.** This is the first candidate in this programme to clear a
+pre-registered primary, a redundancy gate and a placebo on Challenge B's substitute question, with a
+direction it was not allowed to choose and a literature precedent that named the pattern in advance
+(PMID 34618375: alpha power not associated, alpha LRTC associated). **The correct status is promising and
+unclaimed, and the correct next step is independent replication rather than another test here** — which is
+what Q14's Stieger deposit exists for: 62 subjects, 450 trials per session against this deposit's 45 in
+total, and the age/sex/handedness that eegmmidb lacks entirely.
 """
 
 from __future__ import annotations

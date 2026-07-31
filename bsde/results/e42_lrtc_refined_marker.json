@@ -1,0 +1,230 @@
+{
+  "experiment": "E42",
+  "ceiling": 0.5402267989997764,
+  "n_subjects": 104,
+  "g1": true,
+  "g2": {
+    "redundancy_with_incumbent": 0.2426010882321562,
+    "passed": true
+  },
+  "p1": {
+    "rho": 0.20180471435711952,
+    "ci": [
+      0.004989697203132968,
+      0.3856909687123339
+    ],
+    "n": 104,
+    "excludes_zero": true
+  },
+  "p2": {
+    "rho": 0.24459399279055566,
+    "ci": [
+      0.06378853476964104,
+      0.41258592044360165
+    ],
+    "n": 104,
+    "excludes_zero": true,
+    "beats_incumbent": true,
+    "passed": true
+  },
+  "p3": {
+    "rho": -0.07481381907246386,
+    "ci": [
+      -0.2812876114039784,
+      0.13342095651330027
+    ],
+    "n": 104,
+    "excludes_zero": false,
+    "passed": true
+  },
+  "p5": {
+    "per_candidate": {
+      "exponent_high": {
+        "rho": 0.07607219928447816,
+        "ci": [
+          -0.09997106537851616,
+          0.2627359765445341
+        ],
+        "n": 104,
+        "excludes_zero": false
+      },
+      "exponent_low": {
+        "rho": -0.07803001815806887,
+        "ci": [
+          -0.2665530851133368,
+          0.10995461973350784
+        ],
+        "n": 104,
+        "excludes_zero": false
+      },
+      "whole_head_exponent": {
+        "rho": 0.04904149565373126,
+        "ci": [
+          -0.12956373246261144,
+          0.24262514748301056
+        ],
+        "n": 104,
+        "excludes_zero": false
+      },
+      "relative_delta_power": {
+        "rho": -0.07095626386275204,
+        "ci": [
+          -0.2642778360243871,
+          0.13139927572327728
+        ],
+        "n": 104,
+        "excludes_zero": false
+      },
+      "relative_alpha_power": {
+        "rho": 0.20180471435711952,
+        "ci": [
+          0.020758979377819856,
+          0.39043616668538245
+        ],
+        "n": 104,
+        "excludes_zero": true
+      },
+      "lempel_ziv": {
+        "rho": 0.08788846305832944,
+        "ci": [
+          -0.09614519182900792,
+          0.2751143009863737
+        ],
+        "n": 104,
+        "excludes_zero": false
+      },
+      "spectral_entropy": {
+        "rho": -0.06557359562446041,
+        "ci": [
+          -0.25086175112128106,
+          0.12104149457178187
+        ],
+        "n": 104,
+        "excludes_zero": false
+      },
+      "spectral_edge_95": {
+        "rho": -0.10785074705009082,
+        "ci": [
+          -0.2916280849706481,
+          0.0733528826385356
+        ],
+        "n": 104,
+        "excludes_zero": false
+      },
+      "multiscale_entropy_slope": {
+        "rho": -0.08599999471704575,
+        "ci": [
+          -0.2840029386750444,
+          0.11479575080619277
+        ],
+        "n": 104,
+        "excludes_zero": false
+      },
+      "pac_slow_alpha": {
+        "rho": 0.03781737873265537,
+        "ci": [
+          -0.15821851637836254,
+          0.22739481915731888
+        ],
+        "n": 104,
+        "excludes_zero": false
+      },
+      "critical_slowing_ar1": {
+        "rho": 0.10327894657415829,
+        "ci": [
+          -0.09671358184057588,
+          0.29365361654414585
+        ],
+        "n": 104,
+        "excludes_zero": false
+      },
+      "wpli_alpha": {
+        "rho": 0.08936616286210225,
+        "ci": [
+          -0.10526707981446658,
+          0.27481258889777876
+        ],
+        "n": 104,
+        "excludes_zero": false
+      },
+      "spatial_participation_ratio": {
+        "rho": 0.07257799938747021,
+        "ci": [
+          -0.14450718327310938,
+          0.26121585565800526
+        ],
+        "n": 104,
+        "excludes_zero": false
+      },
+      "uce_v1": {
+        "rho": 0.08533316267563203,
+        "ci": [
+          -0.09786411741518637,
+          0.28620684490852133
+        ],
+        "n": 104,
+        "excludes_zero": false
+      },
+      "lrtc_alpha": {
+        "rho": 0.24459399279055566,
+        "ci": [
+          0.07128287195347073,
+          0.428940641843378
+        ],
+        "n": 104,
+        "excludes_zero": true
+      },
+      "icoh_alpha": {
+        "rho": 0.13363847575564253,
+        "ci": [
+          -0.07272695024684847,
+          0.3230430341723556
+        ],
+        "n": 104,
+        "excludes_zero": false
+      }
+    },
+    "redundancy_with_critical_slowing": 0.055307798997119385
+  },
+  "p4": {
+    "effective_tests": 12.8,
+    "adjusted": {
+      "exponent_high": 0.9705147426286856,
+      "exponent_low": 0.9705147426286856,
+      "whole_head_exponent": 0.9705147426286856,
+      "relative_delta_power": 0.9705147426286856,
+      "relative_alpha_power": 0.3293353323338331,
+      "lempel_ziv": 0.9705147426286856,
+      "spectral_entropy": 0.9705147426286856,
+      "spectral_edge_95": 0.9265367316341829,
+      "multiscale_entropy_slope": 0.9705147426286856,
+      "pac_slow_alpha": 0.9705147426286856,
+      "critical_slowing_ar1": 0.9390304847576212,
+      "wpli_alpha": 0.9705147426286856,
+      "spatial_participation_ratio": 0.9705147426286856,
+      "uce_v1": 0.9705147426286856,
+      "lrtc_alpha": 0.12993503248375812,
+      "icoh_alpha": 0.8060969515242379
+    },
+    "raw": {
+      "exponent_high": 0.456271864067966,
+      "exponent_low": 0.4362818590704648,
+      "whole_head_exponent": 0.6516741629185407,
+      "relative_delta_power": 0.4707646176911544,
+      "relative_alpha_power": 0.0384807596201899,
+      "lempel_ziv": 0.3778110944527736,
+      "spectral_entropy": 0.5037481259370314,
+      "spectral_edge_95": 0.2818590704647676,
+      "multiscale_entropy_slope": 0.4017991004497751,
+      "pac_slow_alpha": 0.6856571714142928,
+      "critical_slowing_ar1": 0.31284357821089454,
+      "wpli_alpha": 0.37031484257871067,
+      "spatial_participation_ratio": 0.4662668665667166,
+      "uce_v1": 0.3953023488255872,
+      "lrtc_alpha": 0.014492753623188406,
+      "icoh_alpha": 0.1874062968515742
+    },
+    "survivors": []
+  },
+  "verdict": "refined"
+}
