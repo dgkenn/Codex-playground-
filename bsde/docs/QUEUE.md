@@ -2265,3 +2265,58 @@ ds007554 work owes that check first.
 * **Rule 26 was broken and the remedy applied rather than argued away.** The ds007554 ERD extractor was
   smoke-tested on real labels for `sub-001`, printing the anchor direction. `sub-001` is excluded from E83
   and E85 and named in the code as the burned subject.
+
+---
+
+## 2026-07-31 — the perturbational line opens, and three rules are earned
+
+### Challenge A stops being validation-shaped
+
+The reorientation was explicit: *"we're fundamentally looking to discover something new about
+consciousness and how it presents on EEG."* Every Challenge A experiment before this asked "is measure X
+confounded?", whose best outcome is a licence. The session's results add up to a claim worth attacking
+instead — **everything measured so far is a single arousal axis**: `uce_v1` is the whole-head exponent
+restated, E92 found no two-region decoupling, E73/E86's network measures reduce to mean connectivity, and
+E93/E95/E100 all order states on arousal with REM's placement twice measured to be muscle.
+
+So the question became: **is there a second axis?** Perturbational complexity is the best-established
+candidate, and ds005620 carries an entirely unused TMS arm with `task-awake` and `task-sed` within subject.
+
+### The deposit's markers are wrong, and five diagnostics were needed to say so
+
+`results/tms_feasibility_note.md` has the full table. The short version: the pulse artefact is present and
+~1,800× above background, the data is **not** artefact-removed, and **both shipped marker formats are
+temporally wrong while agreeing with each other to 0.2 ms**. Marker windows sit at percentile 49.5 of
+randomly chosen windows, 0 of 15 above the 95th. Pulses are now detected from the signal in every
+recording identically. → **rule 65**.
+
+### E103 → E104: the positive control did its job
+
+E103 ran and returned **ABSENT at G4**. Its perturbational gates passed — a response *was* measured
+(real-minus-sham evoked RMS +4.1139 [+0.0910, +9.4649]) and detection parity held on all three statistics
+— but `spont_exponent` failed to separate the states (d_z −0.4765, right direction, Gaussian 95th 0.5982).
+
+The cause was mine and is identifiable without reference to any outcome: the extractor concatenated ~46
+pre-pulse segments of 0.4 s and then Welched with a **1.0 s window**. The same subjects' non-TMS
+recordings separate at d_z −0.9909. → **rule 66**. E104 re-runs E103's analysis *as the same object in
+memory* on the fixed extraction.
+
+### E101: a null that nothing could satisfy
+
+E101 tested whether averaging sessions raises E86's D1 by the amount E97's ICC predicts. Its registered
+rule required `d_signal = r(3) − r(1)` to exclude zero — **and that is satisfied by construction for any
+imperfectly reliable measure**, since three independent noise columns give r(3) = √3·r(1) exactly. The
+`__gauss__` control went +0.1127 → +0.1441 and would have passed that limb. Verdict withdrawn before it
+was logged (`results/e101_first_pass_note.md`); the comparison was replaced by the two competing models the
+same theory already implied, and the noise control was wired to a real gate with a 200-draw calibration.
+Rule 33, recurring.
+
+### Still in flight
+
+* `vitaldb_emergence.s?.csv` — dense peri-emergence pass (250 cases, 8,509 windows) for **E102**, the
+  validity question E90 explicitly deferred. The old grid had exactly ONE case with ≥3 windows in both
+  cells, so the contrast would have been between monitors.
+* **E80** (hysteresis) and **E84** (increment over a validated incumbent) on the DOSE-I held-out table.
+  **E81 is ABSENT** — its heart-rate positive control could not be classified, which is no power rather
+  than invariance, and the anaesthesia-side muscle test E77's scope limit asked for is therefore not
+  delivered.
