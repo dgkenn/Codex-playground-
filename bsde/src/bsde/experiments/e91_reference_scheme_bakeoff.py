@@ -109,6 +109,9 @@ RESULTS = os.path.abspath(os.path.join(HERE, "..", "..", "..", "results"))
 sys.path.insert(0, os.path.abspath(os.path.join(HERE, "..", "..")))
 
 from bsde.candidates.uce_v1 import W_FRONTAL, W_POSTERIOR                    # noqa: E402
+from bsde.experiments.e92_two_region_information_v2 import (state_ds004541,   # noqa: E402
+                                                            state_ds005620)
+PARSERS = {"ds004541": state_ds004541, "ds005620": state_ds005620}
 
 OUT = os.path.join(RESULTS, "e91_reference_scheme_bakeoff.json")
 
@@ -125,11 +128,14 @@ AWAKE_COHORTS = {
                  "awake": ("awake", "eyesclosed", "rest"), "adult": True},
     "hbn": {"table": "hbn_regional_aperiodic.csv", "awake": None, "adult": False},
 }
+# rule 61, THIRD occurrence and this one is mine twice over: the same substring tokens were fixed in
+# AWAKE_COHORTS above and left standing in this sibling dict, so ds004541 dropped out of the both-state
+# arm and G2 refused the run. Both deposits now use E92's PARSERS -- one implementation, not two token
+# lists that can drift apart (rule 20).
 STATE_DEPOSITS = {
-    "ds004541": {"table": "ds004541_regional_aperiodic.csv", "awake": ("baseline",),
-                 "anaes": ("post-loc", "postloc", "loc"), "exclude_subjects": {"sub-02"}},
-    "ds005620": {"table": "ds005620_regional_aperiodic.csv",
-                 "awake": ("awake", "eyesclosed", "rest"), "anaes": ("sed", "propofol", "anes")},
+    "ds004541": {"table": "ds004541_regional_aperiodic.csv", "parser": "ds004541",
+                 "exclude_subjects": {"sub-02"}},
+    "ds005620": {"table": "ds005620_regional_aperiodic_w20.csv", "parser": "ds005620"},
 }
 AUTONOMOUS = ("S1_z_mean_sd", "S2_z_median_iqr", "S3_rank", "S4_pooled", "S6_raw", "S7_contrast")
 MIN_RECORDINGS, MIN_CHANNELS, MIN_PER_STATE = 20, 5, 5
@@ -240,8 +246,9 @@ def main() -> int:
         rows = load(spec)
         if rows is None:
             continue
-        a = pairs(select(rows, spec["awake"]))
-        b = pairs(select(rows, spec["anaes"]))
+        fn = PARSERS[spec["parser"]]
+        a = pairs([r for r in rows if fn(r["recording_id"]) == "awake"])
+        b = pairs([r for r in rows if fn(r["recording_id"]) == "anaesthetised"])
         if a[0].size >= MIN_PER_STATE and b[0].size >= MIN_PER_STATE:
             states[name] = {"awake": a, "anaes": b}
     res["gates"].update({"G2_state_deposits": sorted(states), "G2_pass": len(states) >= 2})
