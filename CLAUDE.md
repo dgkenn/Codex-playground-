@@ -346,6 +346,22 @@ Every rule below was paid for with a wrong result in this project.
     null" and "supports the hypothesis" are different questions and a confidence interval only answers the
     first. Three prior entries were not enough to prevent it; write the sign into the branch, not the
     prose.
+49. **A RULE-40 TEST THAT ONLY COVERS THE AUXILIARY GATES IS NOT A RULE-40 TEST — THE PRIMARY IS WHERE THE
+    CLAIM LIVES.** E46 shipped with a six-test file written explicitly to check that its gates could fail.
+    Every one of those tests covered the capability gate or the case-count gate. **None asked whether the
+    PRIMARY could fail, and it could not.** The design selected its artefact windows by `BIS >= 80` and
+    then compared `|delta_BIS|` against each candidate — but selecting on BIS mechanically forces
+    `delta_BIS >= (80 - mean_ref)/sd_ref`, a per-case mean of **4.584** against an observed **5.813**,
+    while every candidate is unconstrained and must land beneath it. Six candidates out of six returned
+    ROBUST. **The uniformity was the only warning** (rule 18), and it is a weak one — six passes reads as
+    a strong result until you ask what a failure would have looked like.
+    **The check that catches this costs one calculation: before running a comparison, compute what the
+    statistic is FORCED to be by the selection rule alone, and compare it to the observed value.** If they
+    are close, the comparison is measuring its own selection rule. The corrected arm moved the selection
+    onto a variable the incumbent played no part in (EMG's top decile) and immediately produced a
+    failure — `spectral_edge_95`, CI [-0.378, +1.079]. **A test that nothing fails is not evidence that
+    everything passed.** Corollary, and it generalises past selection bias: **never select rows on the
+    incumbent you intend to beat.**
 36. **Credential precedence, third occurrence.** The sandbox exports `AWS_ACCESS_KEY_ID` as a 14-character
     `prox…` proxy token that outranks `~/.aws/credentials`, and the failure reads as `InvalidAccessKeyId` —
     indistinguishable from expiry. `common/awsenv.py` now drops it (only when it provably is not an AWS key

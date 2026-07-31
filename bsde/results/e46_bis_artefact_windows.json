@@ -1,0 +1,108 @@
+{
+  "n_windows": 5829,
+  "n_artefact_bis": 164,
+  "n_cases_armB": 213,
+  "absent_columns": [
+    "uce_v1"
+  ],
+  "armA_non_interpretable": {
+    "bis_delta_abs": 5.813218362964375,
+    "mechanical_lower_bound": 4.5837003038080795,
+    "reason": "artefact set defined by BIS crossing a threshold, so delta_BIS is forced large and no candidate could fail"
+  },
+  "armB_emg_cut": 32.2568,
+  "bis_delta_abs": 3.922386838450949,
+  "bis_placebo": 0.6573774887694138,
+  "capability": {
+    "meta_bis": 1.9088834925213063,
+    "exponent_low": 1.1765496132673856,
+    "exponent_high": 2.0502125083331335,
+    "whole_head_exponent": 1.6045883512870582,
+    "lempel_ziv": 1.0184977255039227,
+    "relative_alpha_power": 0.9305600817977328,
+    "spectral_edge_95": 1.8841189784646641
+  },
+  "results": {
+    "exponent_low": {
+      "delta_abs": 2.0967360800099613,
+      "placebo": 0.6504945388944344,
+      "diff_vs_bis": 1.8256507584409878,
+      "ci": [
+        1.3428332066478974,
+        2.328925839588873
+      ],
+      "p_wrong_side": 0.0,
+      "var_ratio": 1.1765496132673856,
+      "verdict": "ROBUST (steadier than BIS at the artefact windows)",
+      "n_boot_ok": 20000
+    },
+    "exponent_high": {
+      "delta_abs": 2.994629706140797,
+      "placebo": 0.6721345667890789,
+      "diff_vs_bis": 0.9277571323101519,
+      "ci": [
+        0.454761856954527,
+        1.4136156801791686
+      ],
+      "p_wrong_side": 0.0,
+      "var_ratio": 2.0502125083331335,
+      "verdict": "ROBUST (steadier than BIS at the artefact windows)",
+      "n_boot_ok": 20000
+    },
+    "whole_head_exponent": {
+      "delta_abs": 3.1091063248596766,
+      "placebo": 0.6665613141658525,
+      "diff_vs_bis": 0.8132805135912724,
+      "ci": [
+        0.2586701812348407,
+        1.3639994490802205
+      ],
+      "p_wrong_side": 0.003,
+      "var_ratio": 1.6045883512870582,
+      "verdict": "ROBUST (steadier than BIS at the artefact windows)",
+      "n_boot_ok": 20000
+    },
+    "lempel_ziv": {
+      "delta_abs": 1.5758654605180042,
+      "placebo": 0.6594102980309557,
+      "diff_vs_bis": 2.3465213779329446,
+      "ci": [
+        1.8810142324842252,
+        2.828973791436887
+      ],
+      "p_wrong_side": 0.0,
+      "var_ratio": 1.0184977255039227,
+      "verdict": "ROBUST (steadier than BIS at the artefact windows)",
+      "n_boot_ok": 20000
+    },
+    "relative_alpha_power": {
+      "delta_abs": 1.8062546108450162,
+      "placebo": 0.6669347200664906,
+      "diff_vs_bis": 2.1161322276059327,
+      "ci": [
+        1.6563755095466315,
+        2.6018891285114876
+      ],
+      "p_wrong_side": 0.0,
+      "var_ratio": 0.9305600817977328,
+      "verdict": "ROBUST (steadier than BIS at the artefact windows)",
+      "n_boot_ok": 20000
+    },
+    "spectral_edge_95": {
+      "delta_abs": 3.562824241857188,
+      "placebo": 0.6694527197024434,
+      "diff_vs_bis": 0.359562596593761,
+      "ci": [
+        -0.37766772162512385,
+        1.0787509034034228
+      ],
+      "p_wrong_side": 0.1664,
+      "var_ratio": 1.8841189784646641,
+      "verdict": "REFUTED (interval includes zero: no evidence it is steadier than BIS)",
+      "n_boot_ok": 20000
+    }
+  },
+  "reps": 20000,
+  "seed": 20260731,
+  "bis_awake_threshold": 80.0
+}
