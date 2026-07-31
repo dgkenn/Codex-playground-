@@ -143,6 +143,100 @@ and Delta is the margin over it.
 SCOPE LIMIT. Intracranial recordings from epilepsy-surgery patients; block-level features at ~6-7 min
 resolution; 19 propofol and 10 dexmedetomidine patients; features as shipped by the depositors, not
 recomputed here. Nothing in this file transfers to scalp EEG without being re-measured there.
+
+--------------------------------------------------------------------------------------------------------
+OUTCOME. **SURVIVES — but the primary passes at its boundary and the placebo passes decisively, and those
+two facts have to be reported in that order, because the weaker one is the one carrying the verdict word.**
+
+    G1   PASSED. PHASE has 4 of 4 features with pooled state legibility >= 0.15 (0.209-0.392); AMPLITUDE
+         has 6 of 8 (AvgGamma 0.099 and AvgAlpha 0.261 -- AvgGamma is the one below the floor). Both
+         families are capable measures, so the comparison is not a measure against a non-measure.
+
+    P0   Nuisance floor **0.196**, set by `Subdural`; `pctGoodSamples` gives 0.130. The floor lands exactly
+         between the two families: **all 8 AMPLITUDE features leak the drug at 0.217-0.368, above the
+         floor; all 4 PHASE features at 0.000-0.066, below it.** No per-feature drug claim is made, and
+         this is why.
+
+    P1   **PASSED AT THE BOUNDARY, and the honest number is the p, not the interval.**
+         Delta = **+0.2750 [+0.0013, +0.3358]**, one-sided bootstrap p = 0.0242 at 20,000 patient
+         resamples. The registered 2,000 resamples put the 2.5th percentile within Monte Carlo error of
+         zero: re-run at five seeds, four give a 2.5th percentile of +0.0019 to +0.0074 and one (seed 2024)
+         gives **-0.0058**, i.e. the registered verdict is not stable to the RNG seed at the registered
+         replicate count. That is reported, not smoothed over; it produced error-catalogue rule 46.
+
+         The decomposition is more informative than Delta itself:
+             D  (drug gap)   **+0.2576 [+0.0203, +0.2880]**, p = 0.016 -- excludes zero
+             S  (state gap)  **-0.0174 [-0.1070, +0.0812]** -- centred on zero, not merely non-significant
+         So the incumbent explanation, *"phase-coupling features leak less drug because they measure
+         less"*, is excluded to within +/-0.10 legibility units, across families whose members span
+         0.099-0.416 in state legibility. Delta is marginal because D is noisy with 10 dexmedetomidine
+         patients, **not** because S is uncertain. If one sentence survives from this file it is that one.
+
+    P2   **PASSED DECISIVELY, and it is the strongest result here.** Over all 495 exhaustive 4/8 splits the
+         real, physically-defined split is the **unique maximum** -- 1 of 495, p = 0.002, against a
+         registered bar of the 97.5th percentile (+0.1843). Verified by an independent re-enumeration from
+         the saved per-feature table, and it remains the argmax under **all four** leave-one-out reductions
+         of PHASE (dropping frontwPLI +0.2657, backwPLI +0.3105, longwPLI +0.2590, allwPLI +0.2646, each
+         still rank 1 of 165). The four runners-up all contain three of the four wPLI features, which is
+         what the family hypothesis predicts the top of that distribution should look like.
+
+         **What P2 does and does not establish.** It establishes that the split is extreme among all
+         splits. It does NOT establish that the split was chosen blind, because it was not: the families
+         were assigned after E35 had already reported the per-feature drug numbers. Three things stop that
+         from making this circular, and none of them is the placebo. (a) The partition is a property of the
+         measures -- phase versus amplitude -- not an arbitrary grouping chosen to maximise anything.
+         (b) `allEnvCorr`, the one feature that discriminates "connectivity vs the rest" from "phase vs
+         amplitude", was assigned to AMPLITUDE *against* the connectivity story, and behaves like AMPLITUDE
+         (drug 0.271). (c) S was not knowable from E35 at all: E35 reported state per agent and had to pick
+         between `max` and `min` of the two, and the pooled quantity that S is built on did not exist until
+         this file.
+
+    P3   effective_tests **9.84 of 12** -- these features are far less redundant than E01's pair (rho
+         0.9952), so the search space here is close to its nominal size. Only **EffDim (adj p 0.036)** and
+         **NmlzCmplx (adj p 0.012)** survive FWER 0.05; allEnvCorr, AvgGamma, frontalAlpha and AvgDelta
+         have raw p 0.006-0.031 and adjusted p 0.125. The PHASE features run the other way: raw p 0.62,
+         0.89, 0.94 and **0.9995**, i.e. their observed leak sits at the *low* extreme of the permutation
+         null rather than merely failing to reach its top. Given that |AUC-0.5| is folded and so biased
+         upward under the null, longwPLI's 0.000 is a genuinely unusual observation.
+
+    P4   **The registered wording was wrong and the correction belongs here rather than in the
+         registration.** The docstring calls this "the quality band where the two arms actually overlap".
+         The code takes deciles 2-7 of `pctGoodSamples` pooled, which is not the same thing, and the arms
+         are *not* rebalanced by it: the dexmedetomidine fraction of unresponsive rows goes 0.338 -> 0.336.
+         What P4 actually shows is that Delta is unchanged when the top and bottom 20 % of rows by quality
+         are dropped (+0.2920 in band against +0.2750 overall, 235 of 363 rows). That is a stability check
+         against low-quality rows. It is not a control for the quality confound, and it was never capable
+         of being one -- see the structural limit below.
+
+    STRUCTURAL LIMIT, WHICH NO ANALYSIS OF THIS DEPOSIT CAN GET AROUND. The two arms share **0 patients of
+    29**, and both nuisance channels are patient-constant (0 of 29 patients vary in `Subdural`). Drug arm,
+    electrode type and data quality are therefore nested inside patient identity and cannot be separated
+    from one another here by any method. This is the single strongest argument for why an independent
+    two-agent cohort is needed, and it is a stronger argument than any of the sample-size caveats.
+
+    POST-HOC DIAGNOSTIC, NOT REGISTERED, AND THE MOST INTERESTING THING IN THE RUN. Given P0's floor, the
+    leading mundane explanation is that **wPLI is designed to be insensitive to amplitude and volume
+    conduction, so phase measures simply leak less about electrode coverage and data quality, and the
+    "family split" is that and nothing more.** It is testable within one drug arm, where drug identity is
+    held constant, and it fails:
+
+                          legibility of Subdural        legibility of quality
+        propofol U rows   PHASE 0.243  AMPLITUDE 0.202   PHASE 0.142  AMPLITUDE 0.081
+        dex U rows        PHASE 0.344  AMPLITUDE 0.288   PHASE 0.023  AMPLITUDE 0.054
+
+    Phase measures are **more** legible of electrode type than amplitude measures in both arms, not less,
+    and quality shows no consistent family split at all. So phase coupling is not a generically insensitive
+    or generically artefact-robust family -- it tracks electrode montage, and it tracks behavioural state
+    (0.209-0.392), and it is specifically the *agent* it does not track. That is the observation worth
+    taking to independent data, and because it is post hoc it is a hypothesis for a successor to
+    pre-register, not a result of this file.
+
+    WHAT MAY BE SAID. *"Within this deposit, the measure-family split in drug legibility is not explained
+    by post-hoc partitioning (p = 0.002 against all 495 alternative splits), and is not explained by
+    phase-coupling measures being weaker instruments (the capability gap is -0.017 [-0.107, +0.081])."*
+    WHAT MAY NOT BE SAID: that phase coupling is agent-invariant, or that connectivity tracks
+    consciousness. Same rows as E35; one deposit; 10 dexmedetomidine patients; intracranial electrodes in
+    epilepsy-surgery patients; drug arm perfectly nested in patient identity.
 """
 
 from __future__ import annotations
