@@ -278,3 +278,71 @@ the burden of proof rather than lowering it.**
 both PhysioNet deposits (not in metadata); exact SR % thresholds in Fritz/Soehle (not in abstracts);
 Rampil 1998 (PMID 9778016) has no abstract in PubMed, so its biphasic-curve content is unquotable from the
 record; "Curley WT" could not be located in PubMed at all.
+
+---
+
+## Prior art on E35/E36's measure-family split — found AFTER both experiments ran, and it changes their status
+
+All three records below were pulled through NCBI E-utilities and their abstracts read in full, not
+summarised by a fetch tool (rules 25 and 39). They are quoted rather than paraphrased where the quotation is
+load-bearing (rule 42).
+
+### The finding is not novel, and that is better news than novelty would have been
+
+**Kallionpää RE, Valli K, Scheinin A, Långsjö J, Maksimow A, et al. "Alpha band frontal connectivity is a
+state-specific electroencephalographic correlate of unresponsiveness during exposure to dexmedetomidine and
+propofol." *Br J Anaesth* 2020;125(4):518-528. PMID 32773216. NCT01889004.**
+
+Forty-seven healthy males, **dexmedetomidine (n = 23) or propofol (n = 24)**, 64-channel EEG, alpha-band
+connectivity measured by coherence, **wPLI** and directed PLI. The abstract states:
+
+> "At ROR, prefrontal-frontal connectivity reversed to the level observed before LOR, indicating that
+> **connectivity changes were related to unresponsiveness rather than drug concentration**." … "Local
+> prefrontal-frontal EEG-based connectivity reflects unresponsiveness induced by propofol **or**
+> dexmedetomidine, suggesting its utility in monitoring the anaesthetised state with these agents."
+
+That is E35 and E36's phase-family result, in the same drug pair, with the same measure class, in a larger
+and better-designed cohort — healthy volunteers, scalp, and **within-subject LOR/ROR at constant dosing**,
+which separates state from concentration in a way the Krause deposit structurally cannot.
+
+**Akeju O, Pavone KJ, Westover MB, Vazquez R, Prerau MJ, et al. "A comparison of propofol- and
+dexmedetomidine-induced electroencephalogram dynamics using spectral and coherence analysis."
+*Anesthesiology* 2014;121(5):978-89. PMID 25187999.**
+
+The other half. Dexmedetomidine spindles peak near 13 Hz, propofol frontal alpha near 11 Hz, and the
+conclusion is that the two agents "place patients into **different brain states**". Spectral power is
+agent-specific; this was already known and E35 cited this paper as its own justification for expecting
+opposite-signed effects, without noticing that it also supplies the amplitude half of the family split.
+
+**Hudetz AG, Mashour GA. "Disconnecting Consciousness: Is There a Common Anesthetic End Point?"
+*Anesth Analg* 2016;123(5):1228-1240. PMID 27331780.** The review that frames the question, and which asks
+for exactly the design this project could not build: "a systematic delineation of connectivity changes with
+multiple anesthetics using the same experimental design, and the same analytical method".
+
+### What this does to E35 and E36
+
+**Deflates the novelty and strengthens the evidence, and the second matters more.** E36's binding limitation
+was that it ran on E35's own rows and could not replicate externally — "the claim stays unclaimed until an
+independent two-agent cohort exists, and none does". Kallionpää 2020 is that external agreement, arrived at
+independently, in scalp EEG rather than intracranial, in healthy volunteers rather than epilepsy-surgery
+patients, with a within-subject design that removes the nesting of drug arm inside patient identity that
+E36 named as its structural limit.
+
+**What E35/E36 still contribute is methodological, and should be stated as that and nothing more:** the two
+families are tested *against each other* with a single statistic (Δ, a difference of differences that
+separates agent-invariance from insensitivity), against an exhaustive enumeration of all 495 alternative
+partitions, with multiplicity control and a nuisance floor. No published version of this comparison sets a
+capability control beside the drug-leak measurement.
+
+**One discrepancy, recorded rather than smoothed.** Kallionpää report that "anterior-posterior connectivity
+in the alpha band did not differentiate LOR and ROR", while `longwPLI` in the Krause deposit carries state
+legibility of 0.315-0.365 and passes both of E35's bars. These may not conflict — LOR-versus-ROR at constant
+dosing is not the same contrast as wake-versus-unresponsive — but the difference is real and a successor
+should not assume the long-range result transfers.
+
+### The corollary for Q9
+
+Q9 records that no public deposit has two mechanistically distinct agents in patients who share arms.
+Kallionpää's cohort has the design; whether the data can be obtained is unknown and untested. **The Turku
+group (NCT01889004) is a data-request target on the same footing as WBIC and ds005620**, and a better one
+than either for Challenge A specifically.
