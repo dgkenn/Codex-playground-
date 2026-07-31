@@ -55,12 +55,25 @@ from bsde.ingestion.openneuro_s3 import list_all_keys                       # no
 
 BUCKET_URL = "https://s3.amazonaws.com/openneuro.org/"
 OUT = os.path.join(HERE, "..", "results", "ds007554_erd.csv")
+TC_OUT = os.path.join(HERE, "..", "results", "ds007554_erd_timecourse.csv")
 TASKS = ("motorimagery", "passivemotor", "activemotor")
 SENSORIMOTOR = ("C1", "C2", "C3", "C4", "CZ", "FC3", "FC4", "CP1", "CP2")
 PRE, POST = (-2.0, -0.5), (0.5, 2.5)
 ALPHA = (8.0, 13.0)
 FIELDS = ["subject", "session", "task", "n_trials", "n_sm_channels", "n_channels",
           "erd_sm", "erd_wholehead", "sfreq"]
+
+# --- time course, added 2026-07-31 for E85 -------------------------------------------------------------
+# E83's anchor failed and the literature says why: PMID 31425038 shows passive haptic movement elicits mu
+# and beta ERD of its own, and PMID 27529874 finds that under volition "ERDs began EARLIER". A fixed
+# [+0.5, +2.5] s average cannot see a latency difference. These bins make the time course available so a
+# successor can use an EARLY window and a latency estimate instead of one late average. The two columns
+# above are unchanged and the existing table is not rewritten.
+BIN_S = 0.25
+TC_FROM, TC_TO = -2.0, 4.0
+N_BINS = int(round((TC_TO - TC_FROM) / BIN_S))
+TC_FIELDS = (["subject", "session", "task", "n_trials", "n_sm_channels"]
+             + [f"b{i:02d}" for i in range(N_BINS)])
 
 KEY = re.compile(r"ds007554/(sub-\d+)/(ses-\d+)/eeg/\1_\2_task-([a-z]+)_eeg\.edf$")
 
@@ -136,15 +149,36 @@ def run_erd(edf_bytes, onsets, labels):
                 vals.append(np.log10(post / pre))
         return (float(np.mean(vals)) if vals else float("nan")), len(vals)
 
+    def timecourse(idx):
+        """Mean over trials of log10(bin alpha power / that trial's own pre-cue baseline), per bin."""
+        acc = [[] for _ in range(N_BINS)]
+        for t in onsets:
+            a0, a1 = int((t + PRE[0]) * sf), int((t + PRE[1]) * sf)
+            if a0 < 0 or int((t + TC_TO) * sf) > n:
+                continue
+            base = np.nanmean([band_power(data[c, a0:a1], sf, *ALPHA) for c in idx])
+            if not np.isfinite(base) or base <= 0:
+                continue
+            for b in range(N_BINS):
+                s0 = int((t + TC_FROM + b * BIN_S) * sf)
+                s1 = int((t + TC_FROM + (b + 1) * BIN_S) * sf)
+                v = np.nanmean([band_power(data[c, s0:s1], sf, *ALPHA) for c in idx])
+                if np.isfinite(v) and v > 0:
+                    acc[b].append(np.log10(v / base))
+        return [float(np.mean(a)) if a else float("nan") for a in acc]
+
     e_sm, n_tr = erd_over(sm) if sm else (float("nan"), 0)
     e_wh, _ = erd_over(list(range(data.shape[0])))
+    tc = timecourse(sm) if sm else [float("nan")] * N_BINS
     return {"erd_sm": e_sm, "erd_wholehead": e_wh, "n_trials": n_tr,
-            "n_sm_channels": len(sm), "n_channels": data.shape[0], "sfreq": sf}
+            "n_sm_channels": len(sm), "n_channels": data.shape[0], "sfreq": sf,
+            "_tc": tc}
 
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--out", default=OUT)
+    ap.add_argument("--tc-out", default=TC_OUT, dest="tc_out")
     ap.add_argument("--limit", type=int, default=None)
     a = ap.parse_args(argv)
 
@@ -162,7 +196,20 @@ def main(argv=None) -> int:
     todo = [t for t in want if (t[0], t[1], t[2]) not in done]
     print(f"{len(want)} runs across {len(TASKS)} tasks, {len(done)} done, {len(todo)} to go", flush=True)
 
+    tc_path = os.path.abspath(a.tc_out)
+    tc_done = set()
+    if os.path.exists(tc_path) and os.path.getsize(tc_path) > 0:
+        with open(tc_path, newline="") as fh:
+            tc_done = {(r["subject"], r["session"], r["task"]) for r in csv.DictReader(fh)}
+    todo = [t for t in want if (t[0], t[1], t[2]) not in done or (t[0], t[1], t[2]) not in tc_done]
+    print(f"   {len(todo)} runs to (re)compute once the time course is included", flush=True)
+
     new = not os.path.exists(out_path) or os.path.getsize(out_path) == 0
+    tc_new = not os.path.exists(tc_path) or os.path.getsize(tc_path) == 0
+    tcfh = open(tc_path, "a", newline="")
+    tcw = csv.DictWriter(tcfh, fieldnames=TC_FIELDS)
+    if tc_new:
+        tcw.writeheader()
     with open(out_path, "a", newline="") as fh:
         w = csv.DictWriter(fh, fieldnames=FIELDS)
         if new:
@@ -180,11 +227,19 @@ def main(argv=None) -> int:
                 print(f"   [{i}/{len(todo)}] {sub} {ses} {task}: FAIL {type(e).__name__}: {e}", flush=True)
                 continue
             row.update({"subject": sub, "session": ses, "task": task})
-            w.writerow({k: row.get(k, "") for k in FIELDS})
-            fh.flush()
+            if (sub, ses, task) not in done:
+                w.writerow({k: row.get(k, "") for k in FIELDS})
+                fh.flush()
+            if (sub, ses, task) not in tc_done:
+                tr = {"subject": sub, "session": ses, "task": task,
+                      "n_trials": row["n_trials"], "n_sm_channels": row["n_sm_channels"]}
+                tr.update({f"b{i:02d}": f"{v:.6g}" for i, v in enumerate(row["_tc"])})
+                tcw.writerow(tr)
+                tcfh.flush()
             print(f"   [{i}/{len(todo)}] {sub} {ses} {task}: {row['n_trials']} trials, "
                   f"{row['n_sm_channels']} SM ch, erd_sm {row['erd_sm']:+.4f}", flush=True)
-    print(f"   wrote -> {out_path}")
+    tcfh.close()
+    print(f"   wrote -> {out_path} and {tc_path}")
     return 0
 
 
