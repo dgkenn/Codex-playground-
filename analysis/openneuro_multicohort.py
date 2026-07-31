@@ -86,13 +86,38 @@ aperiodic exponent's steepest age dependence is in childhood -- an adult-only re
 into the range where the curve is most non-linear."""
 
 
-def _get(url, timeout=120, nbytes=None):
-    """Fetch a URL, optionally only its first `nbytes` via an HTTP Range request."""
-    req = urllib.request.Request(url)
-    if nbytes:
-        req.add_header("Range", f"bytes=0-{nbytes - 1}")
-    with urllib.request.urlopen(req, timeout=timeout) as r:
-        return r.read()
+def _get(url, timeout=120, nbytes=None, retries=3):
+    """Fetch a URL, optionally only its first `nbytes` via an HTTP Range request.
+
+    THE LENGTH CHECK IS NOT DEFENSIVE PROGRAMMING; A SHORT READ HERE IS SILENT AND CORRUPTING. `read()`
+    returns what arrived, not what was promised, so a dropped connection yields a truncated buffer with no
+    exception. On ds004902 that produced an EEGLAB `.fdt` holding 6,951,331 of 9,150,000 samples, and it was
+    caught only because the sibling `.set` declares the expected count -- a single-file format would have
+    been parsed happily and analysed as if it were a shorter recording.
+
+    So: compare what arrived against `Content-Length` and retry, rather than trusting the read. Raises after
+    `retries` attempts instead of returning a short buffer, because a partial recording that reaches the
+    feature extractor is worse than a failed one (rule 5 -- empty is not evidence of absence, and neither is
+    truncated evidence of a short recording).
+    """
+    last = None
+    for attempt in range(retries):
+        req = urllib.request.Request(url)
+        if nbytes:
+            req.add_header("Range", f"bytes=0-{nbytes - 1}")
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as r:
+                want = r.headers.get("Content-Length")
+                blob = r.read()
+            if want is not None and len(blob) != int(want):
+                last = IOError(f"short read: {len(blob)} of {want} bytes from {url}")
+                time.sleep(2 ** attempt)
+                continue
+            return blob
+        except Exception as e:                                          # noqa: BLE001
+            last = e
+            time.sleep(2 ** attempt)
+    raise IOError(f"failed to fetch {url} after {retries} attempts: {last}")
 
 
 def _prefix_bytes(vhdr_path):
