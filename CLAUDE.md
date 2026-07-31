@@ -667,3 +667,17 @@ unverified on GitHub.
     relaunching or resuming any background job, confirm it is dead** — `ps -eo args | grep -c <pattern>`,
     not the task message. And any resumable extractor should **de-duplicate on its key when it loads**,
     rather than trusting that it was the only writer.
+57. **A POSITIVE CONTROL IS AN INSTRUMENT AND NEEDS ITS OWN VALIDATION — AND AN AMPLITUDE IN ARBITRARY
+    UNITS IS NOT A MAGNITUDE.** **E71** built a muscle-attribution audit around a positive control,
+    `emg_index`, which **E69 had already shown fails to detect REM atonia**. Measured against the real
+    submental channel it correlates at **ρ = +0.20 pooled, +0.30 within subject** — a weak proxy pressed
+    into service as ground truth, so its failure to rank first said nothing about the method. Building the
+    gate was right; building it on a proxy already known to be broken was not.
+    **The second half is subtler and cost more.** A synthetic control — a feature constructed to BE the
+    muscle channel plus noise — returned d_z = **+0.062** for wake versus N3, on a channel whose medians
+    are **3.063 against 1.104**. The effect is enormous and the standardised effect is nil, because
+    submental EMG amplitude carries a subject-specific gain: one subject moves 10→3 and another 1→0.3, so
+    the paired differences have huge between-subject variance. **Any EMG amplitude used as a covariate or
+    an effect size must be log-transformed or within-subject standardised first**; raw units are usable
+    only where a within-subject regression absorbs the scale into its slope, which is why E70's
+    residualisation and its rank-position evidence survive this while E71's magnitudes do not.

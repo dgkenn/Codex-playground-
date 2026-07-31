@@ -200,8 +200,14 @@ def main() -> int:
                 vals = rp.permutation([M[st][i] for st in STAGES])
                 for k, st in enumerate(STAGES):
                     Mp[st][i] = vals[k]
-            p.append(_dz(_resid(E, Mp, subs)["N3"] - _resid(E, Mp, subs)["W"]))
-        d2 = float(np.nanmean(np.abs(p)))
+            Rp = _resid(E, Mp, subs)
+            p.append(_dz(Rp["N3"] - Rp["W"]))
+        # FOLD ONCE, AT THE END, EXACTLY AS d1 IS FOLDED. The first version took mean(|d_z|) across
+        # permutations and differenced that against a singly-folded |d1|. A folded statistic is biased
+        # upward under noise (rule 46: it may only be differenced against itself on the same rows), so the
+        # placebo sat systematically above the real adjustment and the attribution was garbage for every
+        # feature with a negative d0. The POSITIVE CONTROL caught it: emg_index ranked 7 of 12.
+        d2 = abs(float(np.nanmean(p)))
         A = (d2 - abs(d1)) / abs(d0)
         res[f] = {"testable": True, "d0": d0, "d1": d1, "d2": d2, "attribution": A,
                   "hi_fraction": HI_FRACTION[f]}
