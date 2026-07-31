@@ -50,6 +50,32 @@ LOR/ROR at constant dosing), which is already a drafted request.
 displacement difference would we accept as "the same"? Declaring that in advance is the whole discipline,
 and it is free to do now.
 
+> ### DONE, AND THE ANSWER IS NEGATIVE — E49, 2026-07-31
+>
+> The bound was derived from data containing **no drug contrast at all**: two independent studies of the
+> *same* agent have a drug difference of exactly zero, so their disagreement is the floor any two-drug
+> comparison must clear. chennu and ds005620 are both propofol.
+>
+> **Zero of eight features are resolvable.** The two propofol studies disagree about the awake→sedated
+> displacement by as much as the displacement itself, so a cross-deposit two-drug comparison cannot
+> separate drug from deposit **at any sample size**. Worse than a power problem: the sign FLIPS between
+> the two studies for `whole_head_exponent` (−0.351 vs +1.005), `relative_alpha_power` (−0.433 vs +0.994),
+> `uce_v1` (−0.221 vs +0.996), `spectral_edge_95` and `wpli_alpha`. Only `lempel_ziv` agrees in sign
+> across all three deposits.
+>
+> **So the paragraph above is answered and the optimism in it is withdrawn.** The equivalence framing is
+> still the right one — it is the only design that can *succeed* rather than merely fail to fail — but it
+> **cannot be run on disjoint deposits**. It requires two agents inside one study. That is exactly the
+> Turku/Kallionpää request (within-subject LOR/ROR at constant dosing), which is now the single blocking
+> dependency for Challenge A rather than one option among several.
+>
+> **A partial reprieve, registered but not yet tested (E50).** The sign flips may be an artefact of the
+> broadband fit rather than genuine study disagreement: on chennu's dose–response, `exponent_low` tracks
+> plasma propofol at ρ = −0.810 and `exponent_high` at ρ = +0.710, while the 1–45 Hz mixture of the two
+> retains ρ = −0.130. If E49 is re-run on the sub-bands and they agree in sign where broadband flipped,
+> the floor shrinks and part of this verdict is recoverable. **Do not assume that outcome** — the
+> prediction is registered precisely so it can fail.
+
 ## 2. Challenge B — the reference raises the correlation by a factor we can compute in advance
 
 **The blocker as recorded:** E38 measured the label's reliability at r_sb = 0.2918, capping any predictor

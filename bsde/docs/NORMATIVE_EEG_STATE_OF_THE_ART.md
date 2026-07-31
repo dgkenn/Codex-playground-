@@ -132,7 +132,26 @@ broadband number. `subband_exponents` already exists in this registry for the Co
 
 1. **The normative scale should carry `exponent_low` (1–20 Hz), not the broadband exponent.** Measured,
    not assumed, and it reverses the default choice.
+
+   > **CONFIRMED TWICE AND QUALIFIED ONCE, 2026-07-31.** *Confirmed:* E46 reproduced the ordering by a
+   > completely different statistic — under matched muscle exposure `exponent_high` moves 0.898 more than
+   > `exponent_low`. E50 went further and showed **the broadband fit is two opposite dose effects that
+   > cancel**: against measured plasma propofol, `exponent_low` tracks at ρ = −0.810 ± 0.051 and
+   > `exponent_high` at ρ = +0.710 ± 0.076, while the 1–45 Hz mixture retains ρ = −0.130 ± 0.129, an
+   > interval including zero. **Abandoning the broadband exponent is now supported by three independent
+   > lines rather than one.**
+   >
+   > *Qualified:* `exponent_low` is **not a clean aperiodic measure**. The alpha peak occupies a far larger
+   > share of a 1–20 Hz fit window than of a 1–45 Hz one, so the sub-band chosen for EMG-robustness is
+   > **more oscillation-contaminated** than the broadband fit it replaces — seen directly in ds005385
+   > (`exponent_low` 0.265 eyes-closed vs 1.773 eyes-open while `rel_alpha` went 0.276 → 0.054). Its
+   > propofol dose-tracking is therefore partly "the alpha peak grew", not only "the slope changed".
+   > **Carry the peak-suppressed `exponent_low_robust` alongside it and report both**; the shared feature
+   > path emits it and the older per-deposit extractions do not.
 2. **Carry `lempel_ziv` alongside it** — most EMG-robust of the six tested, and a different construct.
+   **Strengthened 2026-07-31:** it is also the only one of eight features whose state displacement agrees
+   in sign across all three anaesthesia deposits (E49), and it tracks plasma propofol at ρ = +0.520 ± 0.090
+   (E50). Of everything tested this session it is the most consistently behaved measure in the registry.
 3. **Register the band comparison** before it is claimed anywhere. It is currently exploratory.
 4. **The Q16 regression is unchanged** and remains the step that kills or sizes the whole idea; it should
    now be run on `exponent_low` as well as the broadband exponent, since they may have different
@@ -154,3 +173,51 @@ broadband number. `subband_exponents` already exists in this registry for the Co
 anaesthetic state or for disorders of consciousness; the reference population, the medication
 conditioning, and the state-rather-than-trait framing are each defensible improvements; and the measure
 that should go on the scale is not the one this project would have chosen a day ago.
+
+---
+
+## 6. What the multi-cohort build actually established (2026-07-31)
+
+Five free cohorts were extracted through one shared feature path. Two experiments ran on them and a third
+tested the second's weakness. The results do not all point the same way and the disagreement is the useful
+part.
+
+**E47 — the pipeline is calibrated.** `alpha_peak_hz ~ age` slope **−0.01131 Hz/yr [−0.01898, −0.00390]**,
+reproducing the published adult decline, and replicating on two independent rigs (ds003775 −0.01984
+[−0.03252, −0.00586]; ds005385 −0.01160 [−0.02129, −0.00214]). Different amplifiers, different references,
+same slope. This is what the bridge design was for: there is no published aperiodic norm to check against,
+so the check runs on a quantity that *does* have external truth and the exponent norms inherit it.
+
+**E48 — aperiodic correction harmonises, but the incumbent does most of the work.** Self-normalised
+between-cohort disagreement, raw / gain-removed / aperiodic-corrected / sham:
+
+| band | raw | gain-removed | corrected | sham | corrected − gain |
+|---|---|---|---|---|---|
+| delta | 5.55 | 1.29 | **0.41** | 2.49 | −0.872 [−1.200, −0.635] |
+| theta | 5.21 | 0.43 | **0.09** | 2.43 | −0.338 [−0.455, −0.101] |
+| alpha | 5.04 | 0.73 | **0.61** | 2.52 | −0.122 [−0.219, −0.037] |
+| beta | 5.11 | 1.21 | **0.36** | 2.61 | −0.848 [−1.185, −0.571] |
+
+All four beat plain scalar gain removal with intervals excluding zero, and the cross-cohort sham is far
+worse than either — so the correction genuinely uses cohort-specific background information. **But the
+honest headline is 1.29 → 0.41 in delta and 0.73 → 0.61 in alpha, not 5.5 → 0.4.** Most of the
+harmonisation is removing an amplifier gain, which any normalisation achieves.
+
+**E51 — and it costs signal.** In beta, gain removal retains a significant age slope (+0.00738
+[+0.00061, +0.01413]) and aperiodic correction destroys it (+0.00003 [−0.00674, +0.00697]). On the only
+external criterion available — separating ds004504's 59 dementia patients from its 29 controls — the two
+methods are **indistinguishable**: every bootstrapped difference includes zero, despite point estimates
+favouring gain removal in 3 of 4 bands.
+
+> **Consequence for the plan, stated plainly: the choice between aperiodic correction and plain gain
+> removal for a FROZEN reference is not settled.** The correction wins on the harmonisation metric it was
+> designed for, loses real age signal in one band, and ties on the only clinical criterion we can compute.
+> Freezing either one now would be premature, and the deciding test needs far more abnormal data than 88
+> recordings — from a population closer to the three challenges than dementia.
+
+**Three metric definitions were tried and the first two were gameable**, which is worth recording because
+the failure is generic. A per-arm denominator is gamed by *adding noise*; a fixed denominator is gamed by
+*shrinking everything* (the correction cuts within-cohort spread to 11.6–23.4 % of uncorrected, and the
+first run reported 40–400× reductions on that basis). Self-normalisation is invariant to multiplicative
+shrinkage; the capability gate and cross-cohort sham cover the rest. **Any harmonisation metric should be
+attacked from both directions before it is believed.**
