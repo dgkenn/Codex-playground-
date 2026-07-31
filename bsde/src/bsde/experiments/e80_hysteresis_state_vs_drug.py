@@ -106,7 +106,12 @@ TABLE = os.path.join(RESULTS, "dosei_holdout_features.csv")
 OUT = os.path.join(RESULTS, "e80_hysteresis_state_vs_drug.json")
 USED_TABLES = ("dosei_features.csv", "dosei_pe_check.csv", "dosei_pe_variants.csv")
 
-SKIP = {"recording", "t_s", "soc", "moaas", "propofol", "n_finite"}
+# `endoscopy` added 2026-07-31, BEFORE this file was run and before any value in its table existed.
+# The DOSE-I pEEG tables carry a binary Endoscopy stimulus marker (1 in 65,565 of 93,225 seconds
+# across the first 60 recordings) which the extractor did not previously emit. It is METADATA, not
+# a candidate: excluding it here keeps it out of the feature list. No threshold, cohort, contrast,
+# gate or margin of this registration changes.
+SKIP = {"recording", "t_s", "soc", "moaas", "propofol", "endoscopy", "n_finite"}
 CTRL_POS, CTRL_NEG = "_CTRL_time", "_CTRL_noise"
 MIN_PER_SIDE = 5
 MIN_RECORDINGS, MIN_CELLS = 20, 30

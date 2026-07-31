@@ -57,7 +57,8 @@ TRANSPORTABLE = ["critical_slowing_ar1", "emg_beta_gamma_fraction", "emg_index",
 CONN = ["coherence_delta", "coherence_theta", "coherence_alpha", "coherence_beta",
         "wpli_delta", "wpli_theta", "wpli_alpha_2ch", "wpli_beta"]
 BANDS = {"delta": (1.0, 4.0), "theta": (4.0, 8.0), "alpha": (8.0, 13.0), "beta": (13.0, 30.0)}
-FIELDS = (["recording", "t_s", "soc", "moaas", "propofol", "their_sef95", "their_pe31", "n_finite"]
+FIELDS = (["recording", "t_s", "soc", "moaas", "propofol", "endoscopy", "their_sef95",
+           "their_pe31", "n_finite"]
           + TRANSPORTABLE + CONN)
 
 
@@ -169,6 +170,7 @@ def main(argv=None) -> int:
                 src = peeg[ts_abs]
                 row = {"recording": rec, "t_s": f"{t:.0f}", "soc": src.get("SOC", ""),
                        "moaas": src.get("MOAAS", ""), "propofol": src.get("Propofol", ""),
+                       "endoscopy": src.get("Endoscopy", ""),
                        "their_sef95": src.get("SEF95", ""), "their_pe31": src.get("PE31", ""),
                        "n_finite": f"{ok.mean():.4f}"}
                 data = s1[None, :]
