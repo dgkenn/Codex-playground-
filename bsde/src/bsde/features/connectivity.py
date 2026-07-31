@@ -182,3 +182,39 @@ def imag_coherence(x: np.ndarray, y: np.ndarray, sfreq: float, lo_hz: float, hi_
     if sxx <= 1e-30 or syy <= 1e-30:
         return float("nan")
     return float(abs(np.imag(sxy / np.sqrt(sxx * syy))))
+
+
+def coherence(x: np.ndarray, y: np.ndarray, sfreq: float, lo_hz: float, hi_hz: float,
+              window_s: float = 2.0, overlap: float = 0.5) -> float:
+    """Magnitude-squared coherence between `x` and `y`, averaged over `[lo_hz, hi_hz]`.
+
+    WHY THIS EXISTS ALONGSIDE `wpli`, WHEN THIS MODULE ALREADY REFUSES VOLUME-CONDUCTION-PRONE MEASURES
+    EVERYWHERE ELSE. Ordinary coherence IS contaminated by volume conduction and by amplitude covariation --
+    that is exactly why `wpli`, `dpli` and `imag_coherence` are the estimators used for every claim in this
+    project. It is added because a specific published finding is stated in this quantity and must be tested
+    in it: Akeju et al., *Anesthesiology* 2014 (PMID 25233374) separate sevoflurane from propofol at matched
+    depth by a theta coherence signature (peak 4.9 +/- 0.6 Hz, coherence 0.58 +/- 0.1) while reporting alpha
+    coherence as effectively identical between the drugs (0.73 vs 0.71). Reimplementing their claim with a
+    different estimator would not be a test of it.
+
+    **So this function is for REPLICATION, and any result from it must be reported beside the wPLI value on
+    the same segments.** The pair is the informative object: coherence high with wPLI low means amplitude or
+    a common reference, not phase coupling (rule 28, and the concrete precedent is `bis_sfs`, whose relation
+    to BIS halves once a spectral edge is partialled out).
+
+        C(f) = |E[X conj(Y)]|^2 / (E[|X|^2] E[|Y|^2])
+
+    The expectation runs over segments per frequency bin, then bins are averaged across the band -- NOT the
+    other way round, which would let one loud bin dominate. Shares `_cross_spectra` with every other
+    estimator here so the segmentation cannot drift between them (rule 20).
+    """
+    got = _cross_spectra(x, y, sfreq, lo_hz, hi_hz, window_s, overlap)
+    if got is None:
+        return float("nan")
+    Xs, Ys = got
+    num = np.abs(np.mean(Xs * np.conj(Ys), axis=0)) ** 2
+    den = np.mean(np.abs(Xs) ** 2, axis=0) * np.mean(np.abs(Ys) ** 2, axis=0)
+    ok = den > 0
+    if not ok.any():
+        return float("nan")
+    return float(np.mean(num[ok] / den[ok]))
