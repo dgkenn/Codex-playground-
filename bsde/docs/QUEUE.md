@@ -1793,3 +1793,59 @@ measures-brain. **E65 says that choice bought a measure of BIS, not of brain.**
 * **PE31 is the comparator to use.** It is published, computable, shipped by the deposit, and it tracks a
   clinician at +0.48 where our fitted index tracks at +0.04. E26/E34/E37 scoped themselves "ahead of SEF95";
   the honest incumbent is permutation entropy, and it is stronger than SEF95 here too.
+
+---
+
+## Q35 — the composite failed, its INGREDIENTS did not, and Q34's recommendation is amended
+
+*EXPLORATORY. A 29-feature scan run post-hoc on the data E65 had already used. It is recorded because it
+changes what E65 means, and a registered replication is owed before any of it is quoted as a result.*
+
+E65 found the fitted BIS-like index reaches ρ **+0.04** against a clinician's MOAA/S. The natural reading —
+*our features carry no depth information* — is **wrong**. Scanning each feature individually on the same
+39 recordings:
+
+| feature | median ρ vs MOAA/S |
+|---|---|
+| **`bis_rbr`** | **+0.5258** |
+| *DOSE-I's own PE31* | *+0.4813* |
+| `relative_alpha_power` | −0.4270 |
+| `whole_head_exponent` | −0.4218 |
+| `exponent_high` | −0.3984 |
+| `emg_index` | +0.3877 |
+| *DOSE-I's own SEF95* | *+0.2507* |
+
+**Nine of our features exceed |ρ| = 0.3 against a human's judgement, and the best of them beats both
+published measures the deposit ships.** So the diagnosis is sharper than E65 could state: **fitting to
+device BIS destroyed information that the ingredients individually carry.** The ridge weighted features by
+their VitalDB-BIS relationship, and those weights are wrong for depth — wrong enough to cancel.
+
+### The muscle check, and why it does not explain it
+
+Three of the top eight are muscle proxies and `bis_rbr`'s numerator band (30–47 Hz) is where surface EMG
+lives, so this was the obvious objection. Partialling each scalp proxy out:
+
+| | raw | \| `emg_index` | \| `emg_kurtosis` | \| `emg_beta_gamma_fraction` |
+|---|---|---|---|---|
+| `bis_rbr` | 0.5258 | 0.3153 | 0.4364 | 0.3561 |
+| PE31 | 0.4813 | 0.3310 | 0.4168 | 0.2819 |
+
+**`bis_rbr` and PE31 attenuate by the same proportion**, so the edge is not a muscle artefact. And the
+adjustment is an over-adjustment in the first place: muscle tone is *part of* the sedation response, not a
+pre-exposure confound, so conditioning on it removes real signal (rule 13).
+
+### What this changes
+
+* **Q34's "PE31 is the comparator to use" is amended.** `bis_rbr` — implemented here from Rampil's published
+  description — matches or beats it on this deposit under every adjustment tried. Neither should be adopted
+  on a post-hoc scan.
+* **E65's verdict stands and its interpretation narrows.** The composite does not track a clinician; that is
+  a fact about the *fit*, not about the feature set.
+* **The lesson for the deliverable:** a comparator should be fitted to the reference it will be judged
+  against, or not fitted at all. Fitting to a proprietary index and hoping depth comes along did not work.
+
+### Owed before this is used
+
+A registered test on a deposit or a partition not used here, with `bis_rbr` and PE31 pre-declared, and the
+29-feature multiplicity handled rather than noted. DOSE-I ships no EMG channel, so the muscle question
+cannot be settled on it — Sleep-EDFx can (E70's submental channel), and `bis_rbr` was never computed there.
