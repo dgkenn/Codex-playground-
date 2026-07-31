@@ -414,6 +414,18 @@ Every rule below was paid for with a wrong result in this project.
     against the favoured story** and still behaved as assigned; and the denominator statistic did not exist
     in the parent experiment, so it could not have been peeked at. Write those three down at registration
     or the placebo is decoration.
+48. **A PLACEBO CANNOT VALIDATE A NULL — when the real effect is zero, the gate must declare itself NOT
+    INFORMATIVE rather than PASSED.** E37's primary increment was +0.0007 [-0.0539, +0.0295] and its
+    placebo landmark scored -0.0042, so the file printed "P5 PASSED" directly beneath a failed primary. The
+    arithmetic is correct and the sentence is misleading: a placebo asks whether a real effect survives a
+    fake landmark, and there was no real effect for the fake landmark to fail to reproduce. Left in a
+    write-up it reads as though something survived. **The placebo branch must test the primary's interval
+    first and emit NOT INFORMATIVE when it includes the null** — the same discipline as rule 34 (a placebo
+    is a comparison, never an absolute threshold) applied to the degenerate case. Related, and from the
+    same run: **a sensitivity arm that cannot execute must be reported, not silently dropped.** E37's 30 s
+    arm required 30 adjacent sample pairs from a 30-sample window, which contains 29 — the rule-40 shape
+    inverted, a check that cannot fire rather than a gate that cannot fail. It produced no output and would
+    have vanished unremarked.
 
 ---
 
