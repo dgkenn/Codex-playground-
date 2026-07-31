@@ -97,10 +97,18 @@ complexity of ongoing EEG and the word "perturbational" is decoration. Reported 
 =========================================================================================================
 EXCLUSIONS, STATED BEFORE THE RUN
 =========================================================================================================
-**sub-1016 is excluded entirely.** It was the subject used in all five feasibility diagnostics and in the
-extractor's smoke test, so its feature values were seen alongside its task labels before this design
-existed. Rule 26: smoke-test on permuted labels, never real ones -- the exclusion is the remedy for having
-broken it, and it is named here rather than quietly applied.
+**sub-1016 and sub-1074 are excluded entirely.** sub-1016 was the subject used in all five feasibility
+diagnostics and in the extractor's smoke test; sub-1074's rows were the last lines of the extraction logs
+and were read while checking the run had finished. In both cases feature values were seen alongside task
+labels before this design was registered. Rule 26: smoke-test on permuted labels, never real ones -- the
+exclusions are the remedy for having broken it, and they are named here rather than quietly applied. This
+leaves 14 subjects contributing both conditions, above G1's 12; the exclusion was decided on the burn-in
+ground alone and not after checking what it did to the count.
+
+**EXCLUSION-RELATEDNESS IS REPORTED, NOT ASSUMED AWAY (rule 14).** Two of 55 recordings returned
+`too_few_pulses`, and the design cannot pretend that is neutral: if detection fails preferentially in one
+arm, the analysed set is selected on a proxy for state. The status breakdown BY TASK is printed before the
+primary and any imbalance is named in the verdict.
 
 =========================================================================================================
 SCOPE
@@ -127,7 +135,7 @@ RESULTS = os.path.abspath(os.path.join(HERE, "..", "..", "..", "results"))
 TABLE = os.path.join(RESULTS, "ds005620_perturbation.csv")
 OUT = os.path.join(RESULTS, "e103_second_axis_perturbational.json")
 
-EXCLUDE_SUBJECTS = {"1016"}            # feasibility + smoke burn-in, rule 26
+EXCLUDE_SUBJECTS = {"1016", "1074"}    # feasibility + smoke + log-tail burn-in, rule 26
 MIN_SUBJECTS = 12
 REPS = 4000
 PLACEBO_DRAWS = 500
@@ -181,10 +189,18 @@ def main() -> int:
     if not os.path.exists(TABLE):
         print(f"ABSENT: {TABLE} -- extraction has not landed")
         return 2
-    rows = [r for r in csv.DictReader(open(TABLE, newline=""))
+    allrows = list(csv.DictReader(open(TABLE, newline="")))
+    drop = defaultdict(lambda: defaultdict(int))
+    for r in allrows:
+        drop[r.get("task", "?")][r.get("status", "?")] += 1
+    print("extraction status by arm (rule 14 -- exclusions are reported, not assumed neutral):")
+    for t in sorted(drop):
+        print(f"   {t:<6s} " + "  ".join(f"{k}={v}" for k, v in sorted(drop[t].items())))
+    rows = [r for r in allrows
             if r.get("status") == "ok" and r.get("subject") not in EXCLUDE_SUBJECTS
             and r.get("task") in ("awake", "sed")]
-    res = {"n_rows": len(rows), "excluded_subjects": sorted(EXCLUDE_SUBJECTS), "gates": {}}
+    res = {"n_rows": len(rows), "excluded_subjects": sorted(EXCLUDE_SUBJECTS),
+           "status_by_arm": {t: dict(v) for t, v in drop.items()}, "gates": {}}
 
     subj = [r["subject"] for r in rows]
     task = [r["task"] for r in rows]
