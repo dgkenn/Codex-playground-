@@ -2125,3 +2125,58 @@ NO-EFFECT-TO-ATTRIBUTE rather than null.
 
 **Consequence:** `bis_bsr` and `bis_quazi` are two of the four subparameters feeding E58's BIS-like index.
 Any deposit where low-amplitude EEG is common will carry spurious suppression in them. Open item.
+
+---
+
+## Q41 — E73: Challenge B's first REAL null, and the primary was not the network measure it was chosen to be
+
+*E73, registered blind while its extraction ran. 185 sessions, 62 subjects, both gates passed.*
+
+| | D1 between-subject | D2 within-subject change |
+|---|---|---|
+| **`wpli_alpha_global_efficiency`** *(pre-declared primary)* | **−0.086 [−0.329, +0.166]** | **+0.093 [−0.077, +0.252]** |
+| `relative_alpha_power` *(named incumbent)* | +0.181 [−0.067, +0.407] | +0.020 [−0.172, +0.200] |
+
+**VERDICT: NO PREDICTION.** And unlike E41 this is interpretable. E41's null on eegmmidb was capped at
+**0.5402** by that deposit's 0.2918 label reliability — no effect could have appeared. E68 measured *this*
+deposit at **0.9652** within session and **0.8087** for a stable-ability design, so there was room. Power
+was stated in advance: at 62 subjects a true 0.53 (Blankertz) attenuates to ~0.43 and is detectable; a true
+0.25 attenuates below detection. **The null excludes a large effect and does not exclude a modest one, and
+Challenge B's difficulty is not the label.**
+
+### The methodological result is bigger than the null
+
+Across the 62 subject means:
+
+    wpli_alpha_global_efficiency  vs  wpli_alpha_mean_degree     rho +0.9962
+    wpli_alpha_global_efficiency  vs  wpli_alpha (mean strength) rho +0.8639
+    wpli_alpha_global_efficiency  vs  wpli_alpha_clustering      rho -0.0758
+
+**On an unthresholded weighted graph, shortest paths are dominated by direct edges, so global efficiency is
+mean connectivity strength restated.** The primary was chosen precisely because it is a *different kind* of
+quantity from the amplitude summaries every previous Challenge B candidate used — and on this
+implementation it is not one. This is rule 28 in reverse: that rule warns against assuming two
+measurements differ; here a measure was assumed to differ from the family it was meant to escape.
+
+**Binding on any successor: sparsify or threshold the graph before calling a measure a network measure, or
+the test is a re-run of `wpli_alpha`.**
+
+### The family survivor is a hypothesis, and the registration said so before it existed
+
+`wpli_alpha_clustering`: D1 **+0.396 [+0.163, +0.591]**, BH **q = 0.0398** over 17 features, and **0 of 400**
+accuracy permutations reach it. It is also nearly orthogonal to the primary (−0.076), so it is genuinely a
+different test rather than the same one relabelled.
+
+**It is not promoted, for three reasons decided in advance or by its own behaviour.** It was not
+pre-declared. The registration states "a measure that wins only here has not won". And **it reverses sign in
+D2** (−0.129 [−0.287, +0.036]) on the same subjects — which is the signature of a stable between-subject
+confound and the opposite of what E45's state-like predictors do. It is a candidate for a successor to
+pre-register on a partition, not a finding.
+
+### A registered arm was missing and is now run
+
+P3 — accuracy permuted across subjects, primary recomputed — was named in the registration and **existed
+only in the docstring**; the first run of the file never computed it. Implemented rather than dropped (rule
+48's second half). Against the null primary it correctly returns **NOT INFORMATIVE** — a placebo cannot
+validate a null — instead of printing a pass beneath a failed primary, which is the exact defect rule 48
+was written for.
