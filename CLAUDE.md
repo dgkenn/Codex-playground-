@@ -491,6 +491,21 @@ Every rule below was paid for with a wrong result in this project.
     jitter never coincide, and nothing short of that control distinguishes "no response" from "wrong
     index". Related to rule 27: the time axis is the thing least often verified and most often broken.
 
+66. **RULE 27 APPLIES TO THE FREQUENCY DOMAIN TOO: CONCATENATING SHORT SEGMENTS BEFORE A SPECTRAL
+    ESTIMATE GLUES TIME TOGETHER.** Rule 27 was written about modelling transitions and it says an
+    order-free summary is safe. **A power spectrum is not an order-free summary of the samples handed to
+    it.** The perturbational extractor concatenated ~46 pre-pulse segments of 0.4 s and then ran Welch
+    with a 1.0 s window, so every window straddled ~2.5 segment boundaries and each boundary injected a
+    broadband step. The aperiodic slope it produced failed to separate awake from sedated (d_z −0.4765,
+    right direction, not clearing its Gaussian control at n = 14) while **the same deposit, the same
+    subjects and whole recordings gave d_z −0.9909, clearing comfortably**. The fix is to transform each
+    contiguous stretch on its own samples and average only the resulting POWER SPECTRA — never the time
+    series. Two lessons travel with this. First, **any window longer than the segment it is cut from is a
+    bug, and the check is one comparison of two numbers**. Second, this was caught only because E103
+    carried a positive control that failed; without it the experiment would have reported a clean-looking
+    ABSENT and the bug would have survived into every successor. A design whose known effect is not
+    tested cannot tell a null apart from a broken instrument.
+
 36. **Credential precedence, third occurrence.** The sandbox exports `AWS_ACCESS_KEY_ID` as a 14-character
     `prox…` proxy token that outranks `~/.aws/credentials`, and the failure reads as `InvalidAccessKeyId` —
     indistinguishable from expiry. `common/awsenv.py` now drops it (only when it provably is not an AWS key
