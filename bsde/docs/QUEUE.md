@@ -701,3 +701,38 @@ One session file was downloaded and read directly. Its structure, verified rathe
 task-free segment exists — a pre-cue baseline, an inter-trial interval, or a separate baseline run — is a
 feasibility check on `BCI.time` and `TrialData`, and it must be answered **before** E42 is registered, not
 after it fails. Rule 41.
+
+---
+
+## Q15 — the deposit shape E40 asked for may already be held, and it is ds005620
+
+E40 closed the information-horizon question on DOSE-I and named what would reopen it: *"a deposit where
+inductions occur at varied positions within a recording, or where control periods are interleaved with
+inductions rather than trailing them."* DOSE-I fails because procedural sedation cases end awake, so "far
+from a loss" and "after the last loss" are the same windows.
+
+**ds005620 has that shape by design.** It is a repeated-awakening propofol study: each subject is sedated,
+woken, re-sedated, up to three times (`task-sed run-1..3`, with `task-sed2` documented in the deposit's own
+README as *"One-minute resting EEG recorded just before an awakening"*). Transitions therefore occur at
+several positions inside a session, with responsive and unresponsive periods interleaved rather than one
+trailing the other — which is exactly the control-class structure E40's position gate rejected DOSE-I for.
+
+**Three things to check before this becomes a registration, and the order matters (rule 41).**
+
+1. **The transitions are AWAKENINGS, not inductions.** That is return of responsiveness, not loss of it, so
+   this is E24's question ("EEG ahead of the monitor at emergence", currently `blocked`) rather than E40's.
+   Whether the information-horizon framing transfers across the two directions is an assumption and must be
+   stated, not assumed — hysteresis between induction and emergence is the central claim of the
+   Steyn-Ross model E37 tested, so the two directions are explicitly *not* interchangeable there.
+2. **Are the transition times actually recoverable?** `task-sed2` ends at an awakening by construction, so
+   the landmark is the run boundary rather than an annotation. `events.tsv` for a rest run holds a single
+   `New Segment` row (verified in Q11), so there is no within-run marker. Whether run-boundary timing is
+   precise enough for a lead-time analysis is the first thing to measure.
+3. **There is no per-second responsiveness label**, so the "control" class would be defined by run identity
+   rather than by a behavioural scale. DOSE-I's `SOC` agrees with `MOAAS > 1` on 98 % of samples; nothing
+   comparable exists here, and a run-identity label is a coarser and more confoundable thing.
+
+**Not queued as immediate work.** It rests on a deposit whose outcome column is already the subject of an
+unsent request (Q11), it answers E24's question rather than E40's, and its landmark precision is unmeasured.
+Recorded because E40's data-shape requirement generated it, and a requirement that generates a candidate is
+worth more than one that only rules things out.
