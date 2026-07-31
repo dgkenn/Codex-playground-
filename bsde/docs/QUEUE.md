@@ -1688,3 +1688,54 @@ Challenge B deposit could not.
 **One thing to capture in that pass that the label pass did not:** `TrialData.triallength`. A binary
 hit/miss throws away most of a trial's information; time-to-target is continuous and would raise the
 label's precision further at no extra download.
+
+---
+
+## Q33 — the two feature pipelines DISAGREE on identical recordings, and the disagreement is per-feature
+
+*Measured 2026-07-31, rule 20 applied properly: when two scripts compute the same quantity, diff them.*
+
+E53 established a cross-deposit floor and attributed part of it to the pipeline. **This measures the
+pipeline difference directly**, by extracting ds005620 through `analysis/openneuro_multicohort.py` and
+comparing against the committed `results/ds005620_features.csv` (bsde runner + seed registry) on the
+**same eight recordings**.
+
+| feature | multicohort | bsde | relative \|diff\| | rank ρ |
+|---|---|---|---|---|
+| `whole_head_exponent` | 1.5574 | 1.3481 | **3.1 %** | 0.762 |
+| `sef95` / `spectral_edge_95` | 18.96 | 23.25 | 9.0 % | 0.857 |
+| `rel_delta` / `relative_delta_power` | 0.6797 | 0.5711 | 19.8 % | 0.905 |
+| `rel_alpha` / `relative_alpha_power` | 0.0813 | 0.1121 | 53.2 % | 0.857 |
+| **`lempel_ziv`** | **0.0694** | **0.3479** | **83.8 %** | 0.762 |
+
+**Rank correlations are 0.76–0.91, so the pipelines ORDER recordings similarly and their VALUES are not
+interchangeable.** `lempel_ziv` differs five-fold. **Name-mapping features across these two pipelines is
+invalid for everything except `whole_head_exponent`.**
+
+### What this does and does not do to Challenge A
+
+E74's corrected four-arm table mixes pipelines, so this had to be checked before the finding is quoted:
+
+| arm | pipeline |
+|---|---|
+| natural N3 sleep (E67) | **bsde** |
+| propofol, ds005620 (E67) | **bsde** |
+| general anaesthesia, ds004541 (E67) | **bsde** |
+| sleep deprivation, ds004902 (E74) | *multicohort* |
+
+**The `lempel_ziv` sign reversal rests on three within-pipeline arms** — natural sleep **−2.281** against
+propofol **+1.551** and GA **+0.947**, all bsde-path. The multicohort deprivation arm (−0.324) merely
+*agrees in sign* and is corroborative, not load-bearing. **The finding survives.**
+
+And `whole_head_exponent`, whose four-arm consistency makes it Challenge A's current best candidate, is the
+feature the two pipelines agree on most closely (3.1 %) — so its cross-pipeline arm is the most trustworthy
+one available.
+
+Two further consequences:
+
+* **Any future cross-pipeline comparison must be of within-subject CHANGES, never levels**, and even then
+  only for features whose definitions have been diffed. A constant per-subject offset cancels in a paired
+  difference; a different binarisation threshold in `lempel_ziv` does not.
+* **Extending Challenge A's both-arms feature set requires re-extracting ds004902 through the bsde path**,
+  not name-mapping. The S3 adapter is EDF-only and ds004902 is EEGLAB `.set` + `.fdt`, so that needs a
+  loader — which is the concrete next task for this challenge.
