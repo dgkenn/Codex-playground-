@@ -422,6 +422,19 @@ Every rule below was paid for with a wrong result in this project.
     only one that behaved differently — which is the pattern to expect and the reason the check is worth
     its cost.
 
+61. **SUBSTRING-MATCHING A STRUCTURED IDENTIFIER IS NOT PARSING IT, AND IT MISLABELS STATE SILENTLY.**
+    E87 assigned each recording to `awake` or `anaesthetised` by testing whether a token appeared anywhere
+    in the recording id. Both deposits were mislabelled and neither raised anything. On **ds004541**, whose
+    ids are offsets around loss of consciousness (`@start-180`, `@loc-300`, `@loc+30`), the anaesthetised
+    token `loc` matched `@loc-300` — **300 seconds BEFORE** the event — so the anaesthetised set contained
+    pre-LOC recordings. On **ds005620**, whose ids are BIDS (`task-sed2_acq-rest_run-1`), the awake token
+    `rest` matched `acq-rest` **inside a sedated recording**, so the awake set contained sedated ones. The
+    two failures have one cause: a BIDS filename or an offset label is a STRUCTURED string with fields,
+    and `token in name` reads across the field boundaries. **Parse the entity (`task-`, the sign of the
+    offset) and match the parsed value; never substring-match the whole identifier.** Both errors were
+    caught only because an unrelated gate refused the run — nothing in the state assignment itself could
+    fail, which is rule 40 in the labelling step rather than in the verdict.
+
 36. **Credential precedence, third occurrence.** The sandbox exports `AWS_ACCESS_KEY_ID` as a 14-character
     `prox…` proxy token that outranks `~/.aws/credentials`, and the failure reads as `InvalidAccessKeyId` —
     indistinguishable from expiry. `common/awsenv.py` now drops it (only when it provably is not an AWS key
