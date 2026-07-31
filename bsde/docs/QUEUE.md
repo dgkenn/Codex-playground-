@@ -1399,3 +1399,54 @@ quoted. A filtered refit is a one-line successor and has not been run.
 | [40,60) | one-stage (E58) | **3.47** | 97.0 % SQI-clean, 4.6 % artefact; beats Lee et al.'s 4.1 |
 | [60,80) | — | **refuse** | 35.0 % facial-EMG artefact |
 | [80,100) | — | **refuse** | 98.2 % facial-EMG artefact |
+
+---
+
+## Q26 — Challenge A is CLOSED on VitalDB, measured from three directions (E64, 2026-07-31)
+
+The consolidation round's rank-1 item was the two-channel test of E36's family split against Akeju. It was
+built, probed, narrowed, registered and run in that order — and the answer is that **this deposit cannot
+answer the question at all.**
+
+### The probe killed the family comparison before registration (rule 41)
+
+Over 4,220 usable windows on the newly extracted `vitaldb_conn.csv`:
+
+| | median | sd | IQR | ρ vs BIS |
+|---|---|---|---|---|
+| `coherence_theta` | 0.6445 | 0.1655 | 0.5396…0.7337 | −0.0860 |
+| `coherence_alpha` | 0.6606 | 0.1612 | 0.5527…0.7481 | −0.0633 |
+| `wpli_theta` | **0.0106** | 0.1508 | **−0.0052…0.0549** | −0.0166 |
+| `wpli_alpha` | **0.0235** | 0.1339 | **−0.0021…0.0913** | −0.0364 |
+
+**wPLI is a noise distribution in every band** — centred on zero, symmetric, |ρ| with the monitor never
+above 0.05. Two electrodes ~2 cm apart on a shared reference have no consistent phase lag, which is exactly
+what wPLI measures. Coherence varies but sits at 0.60–0.66 in *every* band with no band structure: a shared
+reference, not frontal network coupling. **E36's split is permanently untestable here.**
+
+### What was registered instead, and what happened
+
+Akeju's claim is a band **differential** with its own control — sevoflurane shows a theta signature propofol
+lacks, while alpha is effectively identical (0.73 vs 0.71). A differential is the one statistic a
+reference-dominated coherence can support, since the shared contribution cancels.
+
+**M1 fired first: `coherence_theta` scored \|AUC−0.5\| = 0.0275 against its own permutation null (mean
+0.1170, p95 0.1893), p = 0.967 — below chance.** No differential was computed. `coherence_alpha` (0.1144),
+`wpli_theta` (0.1417) and `wpli_alpha` (0.1406) are all at or inside the same null.
+
+### Three independent reasons, all measured
+
+1. **Disjoint patients** — 0 of 247 cases carry more than one agent.
+2. **Both drugs are GABAergic**, and Akeju *reports* alpha power and coherence as essentially identical
+   between them with no significant slow-oscillation difference. The published expectation is that most
+   measures should not separate them.
+3. **The montage is a two-electrode strip**, supporting neither wPLI nor band-specific coherence.
+
+Thirteen measures across five families — amplitude, complexity, within-channel phase, inter-channel
+coherence, inter-channel wPLI — have now failed to separate propofol from sevoflurane at matched BIS, none
+clearing its own null (E61 + E64).
+
+**This is a property of the deposit, not a failure of any measure, and not evidence against E36.** Challenge
+A now needs a pharmacologically distinct agent, and the two routes are already written: **Q2 (Dryad
+ketamine)** and the **Turku/Kallionpää dexmedetomidine cohort**, whose request is drafted and *still unsent*.
+Sending it is the highest-value Challenge A action available.

@@ -1,0 +1,13 @@
+{
+  "n_windows": 1304,
+  "n_cases": 109,
+  "abs_auc": {
+    "coherence_theta": 0.027526694118676476,
+    "coherence_alpha": 0.11442476726334572,
+    "wpli_theta": 0.14174862054976495,
+    "wpli_alpha": 0.14057665129672298
+  },
+  "m1_theta_p": 0.9666666666666667,
+  "gate_m1": false,
+  "verdict": "NOT INFORMATIVE -- coherence_theta does not clear its own permutation null (p = 0.967), so it carries no agent information for the differential to be about. A theta-minus-alpha difference would be a difference of two nulls. Rule 53, and this is what a two-electrode strip on a shared reference can resolve."
+}
