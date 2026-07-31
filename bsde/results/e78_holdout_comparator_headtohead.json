@@ -1,0 +1,21 @@
+{
+  "gates": {
+    "G1_overlap": [],
+    "G1_pass": true,
+    "G4_tie_frac": 0.169598,
+    "G4_band_rel_delta": 0.185215,
+    "G4_pass": true,
+    "G2_recordings": 15,
+    "G3_dropped_no_variation": 0,
+    "G2_pass": false
+  },
+  "primary": {},
+  "descriptive": {
+    "median_rho_bis_rbr": 0.529138188013399,
+    "median_rho_pe_declared": 0.5737657667886714,
+    "median_rho_their_pe31": 0.49248408436310115,
+    "median_rho_their_sef95": 0.19465914842173312
+  },
+  "placebo": {},
+  "verdict": "GATE-FAILED"
+}
