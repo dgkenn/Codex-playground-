@@ -610,6 +610,26 @@ Every rule below was paid for with a wrong result in this project.
 
 ---
 
+## SOP: bugs are fixed and re-run, not narrated (STANDING — investigator instruction, 2026-07-31)
+
+**Do not spend a chat turn announcing a bug. Fix it, re-run, and keep going.** The investigator asked for
+this directly. It changes where the record lives, not whether it exists.
+
+**Still recorded, always, and in the repo rather than in conversation:**
+- the commit message names what was wrong and what changed;
+- the ledger row's `outcome_detail` carries it if a registered result was affected;
+- a genuinely new failure mode is appended to the error catalogue above — that catalogue is the project's
+  single most valuable asset and nothing here reduces it;
+- a withdrawn verdict still gets its `results/e<NN>_first_pass_note.md`, because a correction that is not
+  auditable is not a correction.
+
+**The one case that MUST still be raised in conversation: a bug that changes a number already reported to
+the investigator.** Silently correcting a figure someone is already reasoning with is not brevity, it is a
+false record. Say it in one sentence, give the corrected number, and move on — no post-mortem.
+
+Everything else — a gate that could not fire, a mis-parsed identifier, a Welch window longer than its
+segment — is fixed in place, re-run, committed, and mentioned only if the investigator asks.
+
 ## SOP: the ten-result cadence (STANDING)
 
 Every **~10 new results** logged to `docs/research/41_RESULTS_LEDGER.md`, stop generating and consolidate:
