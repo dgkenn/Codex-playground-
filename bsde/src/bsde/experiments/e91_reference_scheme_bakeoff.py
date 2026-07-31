@@ -115,8 +115,12 @@ OUT = os.path.join(RESULTS, "e91_reference_scheme_bakeoff.json")
 AWAKE_COHORTS = {
     "lemon":    {"table": "lemon_regional_aperiodic.csv", "awake": None, "adult": True},
     "eegmmidb": {"table": "eegmmidb_regional_aperiodic.csv", "awake": None, "adult": True},
-    "ds004541": {"table": "ds004541_regional_aperiodic.csv", "awake": ("baseline",), "adult": True,
-                 "exclude_subjects": {"sub-02"}},
+    # rule 61: ds004541's awake recordings are `@baseline`, `@start-N` and `@loc-N` (N seconds BEFORE
+    # loss of consciousness). Matching the substring `baseline` alone found 2 of ~59 and E88 inherited
+    # that defect. Fixed here BEFORE this experiment runs, which is correcting a known cohort-selection
+    # bug, not revising a gate after a failure.
+    "ds004541": {"table": "ds004541_regional_aperiodic.csv", "awake": ("@baseline", "@start-", "@loc-"),
+                 "adult": True, "exclude_subjects": {"sub-02"}},
     "ds005620": {"table": "ds005620_regional_aperiodic.csv",
                  "awake": ("awake", "eyesclosed", "rest"), "adult": True},
     "hbn": {"table": "hbn_regional_aperiodic.csv", "awake": None, "adult": False},
