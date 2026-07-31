@@ -1,0 +1,52 @@
+{
+  "gates": {
+    "G2_cases": 247,
+    "G2_positive": 977,
+    "G2_pass": true,
+    "G1_baseline_oob_auc": 0.7848146649494787,
+    "G1_pass": true,
+    "G3_pass": true
+  },
+  "arms": {
+    "A1 PRIMARY": {
+      "increment": -0.03062615121757904,
+      "lo": -0.052432233284828426,
+      "hi": -0.01010731396561822,
+      "verdict": "HURTS",
+      "n_windows": 5798,
+      "n_cases": 247,
+      "n_positive": 977
+    },
+    "A2 ARTEFACT": {
+      "increment": -0.03789235066856273,
+      "lo": -0.06326051532568926,
+      "hi": -0.012658591249280789,
+      "verdict": "HURTS",
+      "n_windows": 4944,
+      "n_cases": 247,
+      "n_positive": 932
+    },
+    "A3 MUSCLE": {
+      "increment": -0.002713218763879501,
+      "lo": -0.013160027687396176,
+      "hi": 0.0008473121800523257,
+      "verdict": "NO INCREMENT",
+      "n_windows": 5798,
+      "n_cases": 247,
+      "n_positive": 977
+    },
+    "A4 NEGATIVE": {
+      "increment": -0.0021883464960261558,
+      "lo": -0.011501334834667394,
+      "hi": 0.0003207100388704526,
+      "verdict": "NO INCREMENT",
+      "n_windows": 5798,
+      "n_cases": 247,
+      "n_positive": 977
+    }
+  },
+  "label": {
+    "definition": "meta_sr > 0 (any device-detected suppression)"
+  },
+  "verdict": "HURTS"
+}
