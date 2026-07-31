@@ -325,6 +325,15 @@ Every rule below was paid for with a wrong result in this project.
     COMPARISON against the real effect, never an absolute threshold; and the primary is evaluated before any
     gate, because a gate can only invalidate a pass, never rescue a null. Write the verdict branch to state
     the failing case first.
+    **THIRD OCCURRENCE, 2026-07-31, and this time it was the PLACEBO's own null test that was one-sided.**
+    E40 asked per band whether an AUC interval excluded chance and wrote it as `lo > 0.5`. Its placebo then
+    printed "at chance" in every band while the incumbent scored **0.237 [0.115, 0.418]** against a *fake*
+    landmark — an interval lying entirely **below** 0.5, which is discriminable, not null. Two-sided, the
+    placebo fired in 5 of 7 gated bands, and the design turned out to have a second fatal flaw that the
+    operator had hidden. **A placebo can fire in EITHER direction, because whatever confound it exposes has
+    no reason to share the real effect's sign** — E40's position confound separated its classes in reverse,
+    which is precisely what a position confound does. So: `excludes_null` is always two-sided, `above_null`
+    is a separate and narrower question, and one name must never do both jobs.
 36. **Credential precedence, third occurrence.** The sandbox exports `AWS_ACCESS_KEY_ID` as a 14-character
     `prox…` proxy token that outranks `~/.aws/credentials`, and the failure reads as `InvalidAccessKeyId` —
     indistinguishable from expiry. `common/awsenv.py` now drops it (only when it provably is not an AWS key
