@@ -363,12 +363,17 @@ status, not a stalled task.
 1. **A crossover or within-patient two-agent design is the whole ask.** Worth one targeted search of trial
    registries rather than data repositories: a registered crossover study with an EEG endpoint may have
    deposited data under a title no repository search would surface.
-2. **Recompute the features rather than inheriting them.** Every number in E35 and E36 comes from the
-   depositors' feature pipeline. `verifier/` has an independent wPLI (`wpli_alpha`, definition fingerprint
-   `8ddebb740c943a76`) already used on four scalp cohorts. If the Krause raw traces are obtainable, the
-   family split should be re-measured with our own implementation before it is taken anywhere — rule 23,
-   self-written code and self-written tests share blind spots, and here we have neither: we have someone
-   else's code and no tests at all.
+2. **~~Recompute the features rather than inheriting them.~~ CLOSED 2026-07-31 — NOT ACHIEVABLE ON THIS
+   DEPOSIT.** The intent was a rule-23 check: every number in E35 and E36 comes from the depositors'
+   feature pipeline, and `verifier/` has an independent wPLI (`wpli_alpha`, fingerprint `8ddebb740c943a76`)
+   that could have re-measured the family split. **The Krause deposit ships no raw traces.** Its 215
+   entries were enumerated without downloading the 2.1 GB package, by an HTTP range request for the ZIP
+   central directory: no EDF, no iEEG, no continuous recordings — one 2.3 GB `.mat` of derived
+   per-electrode data, figures, and MATLAB/R code. So the features cannot be recomputed from signals here
+   by anyone, and the check is unavailable rather than pending. It would become available only with a data
+   request to Krause/Banks for the traces, which is a separate ask from the Turku one below and a larger
+   one. **Recorded as a closed item rather than deleted, because "we never checked" and "we checked and it
+   cannot be done" are different states.**
 3. **Nothing about this belongs in a scalp claim yet.** Intracranial coverage in epilepsy-surgery patients
    is the scope limit, and the Chennu and ds004541 cohorts cannot substitute because neither has a second
    agent.

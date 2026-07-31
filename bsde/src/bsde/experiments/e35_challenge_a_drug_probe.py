@@ -70,6 +70,7 @@ SCOPE AND LIMITS.
   * **Between-subject by construction** — a patient receives one drug — so the probe cannot be run within
     subject and every drug comparison carries the full weight of between-patient variation.
   * **CC-BY-SA 4.0**: ShareAlike propagates to derived artefacts (Invention Notebook entry 12).
+    **[WRONG — see the LICENCE CORRECTION in the OUTCOME below before relying on this line.]**
 
 --------------------------------------------------------------------------------------------------------
 OUTCOME. **P1 PASSED. P4 PASSED AS REGISTERED — and the registered bar was the permissive one, which is
@@ -147,6 +148,31 @@ power and complexity track the agent. That is a hypothesis generated here, not a
     within-subject LOR/ROR design at constant dosing that removes exactly the drug-arm-nested-in-patient
     limit named above. What remains this file's own contribution is methodological and should be claimed as
     nothing more. Detail and one recorded discrepancy in `bsde/docs/LITERATURE_MAP.md`.
+
+    LICENCE CORRECTION (2026-07-31). **Two statements above are wrong and are corrected here rather than
+    edited away.** This file's header calls the deposit "CC-BY-SA 4.0" and its limitations list flags
+    ShareAlike propagation against Invention Notebook entry 12. Verified from the deposit itself:
+
+      * Zenodo's record metadata gives `bsd-3-clause`, not CC-BY-SA. **There is no ShareAlike clause
+        anywhere in this deposit**, so the propagation risk recorded above does not exist.
+      * Invention Notebook entry 12 concerns **I-CARE** (CC BY-NC-SA 4.0), a different deposit. The
+        cross-reference was wrong as well as the licence.
+      * The deposit's own `code/LICENSE.txt` opens "This license applies to the original code distributed
+        with this license." **So a SOFTWARE licence has been applied at record level to a record that is
+        overwhelmingly DATA, and the data terms are UNSTATED rather than permissive.** That is a different
+        concern from ShareAlike and, for any commercial path, a worse one. It does not affect research use.
+
+    How it was checked, because the method matters more than this one deposit: the Zenodo REST record was
+    read with `curl`, and `code/LICENSE.txt` was extracted **without downloading the 2.1 GB package** — an
+    HTTP range request for the ZIP's central directory (215 entries), then a second range request for that
+    entry's 843 compressed bytes, then a zlib inflate. No fetch-tool summary anywhere (rules 25 and 39).
+
+    The same manifest answers a queue item: **the deposit contains NO raw EEG traces.** 215 entries, no
+    EDF, no iEEG, no continuous recordings — one 2.3 GB `.mat` of derived per-electrode data, figures, and
+    MATLAB/R code. So the features used by E35 and E36 **cannot be independently recomputed from signals
+    here**, and the rule-23 check QUEUE.md Q9 item 2 asks for is not achievable on this deposit at all.
+    Both deposits now have rows in `data_registry/` — they never did, which is why none of this surfaced
+    when it should have.
 """
 from __future__ import annotations
 
