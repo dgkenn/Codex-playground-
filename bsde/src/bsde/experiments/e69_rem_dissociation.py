@@ -135,7 +135,7 @@ def main() -> int:
     rng = np.random.default_rng(SEED)
     subs = [s for s, d in per.items() if all(st in d for st in STAGES)]
     print(f"{len(subs)} subjects with all five stages\n")
-    res, agree_w, agree_n3, untestable = {}, [], [], []
+    res, agree_w, agree_n3, untestable, ambiguous = {}, [], [], [], []
 
     print(f"{'feature':<26s} {'W-N3 d_z':>9s} {'G1':>5s} {'frac REM~W':>11s} {'95% CI':>18s} "
           f"{'REM pos':>8s} {'monotone':>9s}")
@@ -165,12 +165,18 @@ def main() -> int:
         stage_med = [float(np.nanmedian([per[s][st][f] for s in subs])) for st in ("W", "N1", "N2", "N3")]
         mono = all(x <= y for x, y in zip(stage_med, stage_med[1:])) or \
                all(x >= y for x, y in zip(stage_med, stage_med[1:]))
+        # A cell whose interval SPANS 0.5 is neither direction and must not satisfy a directional
+        # criterion (rule 37). The first version of this branch used `frac > 0.5` alone and filed
+        # pac_slow_alpha -- 0.426 [0.348, 0.511] -- as "REM with deep sleep" on a point estimate whose
+        # interval includes chance.
         if not alive:
             untestable.append(f)
-        elif frac > 0.5:
+        elif flo > 0.5:
             agree_w.append(f)
-        else:
+        elif fhi < 0.5:
             agree_n3.append(f)
+        else:
+            ambiguous.append(f)
         res[f] = {"testable": bool(alive), "w_n3_dz": dz, "frac_rem_near_w": frac,
                   "lo": flo, "hi": fhi, "median_position": medpos,
                   "n_used_for_position": int(use.sum()), "stage_medians": stage_med,
@@ -180,7 +186,7 @@ def main() -> int:
 
     # P1 placebo: permute stage labels WITHIN subject.
     rp = np.random.default_rng(SEED + 2)
-    testable = agree_w + agree_n3
+    testable = agree_w + agree_n3 + ambiguous
     plac = []
     for _ in range(200):
         fr = []
@@ -201,6 +207,8 @@ def main() -> int:
     print(f"P1 PLACEBO  stage labels permuted within subject = {plac_mean:.3f} (200 draws)")
     if untestable:
         print(f"G1 removed: {untestable}")
+    if ambiguous:
+        print(f"AMBIGUOUS (interval spans 0.5, filed neither way): {ambiguous}")
 
     if not testable:
         verdict = "NONE TESTABLE -- G1 removed every feature; no measure separates W from N3 here."
@@ -224,7 +232,7 @@ def main() -> int:
           "measures how a feature ORDERS three scorer-defined states, and is not a consciousness detector.")
 
     json.dump({"n_subjects": len(subs), "features": res, "rem_with_wake": agree_w,
-               "rem_with_n3": agree_n3, "untestable": untestable,
+               "rem_with_n3": agree_n3, "untestable": untestable, "ambiguous": ambiguous,
                "primary_mean_frac": real, "placebo_mean_frac": plac_mean,
                "verdict": verdict}, open(OUT, "w"), indent=2)
     print(f"wrote {OUT}")
