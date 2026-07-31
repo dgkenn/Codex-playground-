@@ -164,6 +164,73 @@ VERDICT RULE, written before the run and stating the failing case first.
 SCOPE LIMIT. DOSE-I, procedural sedation with propofol, single-site derived pEEG at 1 Hz; `SOC` is the
 deposit's own consciousness flag and this file inherits whatever defines it; the incumbent is SEF95, not a
 commercial depth index. Claim scope is "ahead of SEF95", never "ahead of BIS" — E34's wording, kept.
+
+--------------------------------------------------------------------------------------------------------
+OUTCOME. **NOT MET at P3b, and the informative part is that it failed there rather than at P3a. Critical
+slowing IS detectable before loss of consciousness, in the direction the theory predicts, and it carries
+nothing the incumbent's own level does not already have.**
+
+    G1   PASSED after the estimator correction. 70 recordings (floor 50), 38,684 conscious windows with an
+         EWS estimate, base rate 21.7 %, position-AUC 0.360 (distance 0.140, ceiling 0.20). The added
+         gate (f) is the one worth reading: **43.4 % of conscious windows still lack an EWS estimate**
+         because SEF95's missingness is scattered, and the exclusion-vs-label AUC is **0.548** (distance
+         0.048, ceiling 0.10). So the exclusion is not appreciably outcome-related — but it is large, and a
+         reader is entitled to both numbers rather than only the reassuring one.
+
+    P2   SEF95's own out-of-fold AUC is **0.645 [0.584, 0.706]** here against **0.610 [0.571, 0.650]** in
+         E34. The intervals overlap, and the difference has an explanation that matters for reading P3b:
+         the EWS estimator needs 360 s of prior history, so this cohort is 70 recordings where E34's was
+         129, and **the sub-cohort is one where the incumbent does slightly better**. The bar P3b had to
+         clear is therefore a little higher than E34's was, not lower.
+
+    P3a  **PASSED. `ar1_sef95` scores 0.582 [0.524, 0.635] out-of-fold in the DECLARED direction**, with a
+         Westfall-Young adjusted p of 0.0010 against a circular-shift null (effective_tests 3.00 of 3 —
+         these three candidates are genuinely near-independent, unlike E01's pair). Lag-1 autocorrelation
+         of the incumbent's own detrended trajectory rises before loss of consciousness, as PMID 14525001
+         and PMID 30011536 predict. **That is a real signal and it is the first thing in five Challenge C
+         designs to clear chance in a pre-signed direction.**
+
+    P3b  ***FAILED, and this is the verdict.*** The out-of-bag increment of `ar1_sef95` over SEF95's level
+         is **+0.0007 [-0.0539, +0.0295]** across 300 resamples. Not small — zero, with an interval
+         centred on it. Everything AR1 knows about the approaching transition, the level already knew.
+
+    P4   **The sign test is weaker than it looks and the honest reading is "under-powered", not "2 of 3".**
+         `ar1_sef95` +0.00987 [-0.12083, +0.11241] and `var_sef95` +0.72247 [-15.28163, +11.30220] both
+         rise, and both spreads are an order of magnitude wider than the medians. `sync_alpha` **falls**
+         (-0.00392 [-0.09287, +0.07701]), against the coherence increase John et al. 2001 reported and
+         Steyn-Ross cited. Counting 2 of 3 as support would be reading three coin flips; what the sign test
+         actually returns here is no usable evidence in either direction, and the design should have used
+         a within-recording paired statistic rather than a median over pooled losses.
+
+    P5   **PASSED, and it should be disregarded.** The placebo increment is -0.0042 against a real
+         increment of +0.0007. A placebo gate asks whether a real effect survives a fake landmark; when the
+         real effect is indistinguishable from zero there is nothing for the fake landmark to fail to
+         reproduce, and "P5 PASSED" printed under a failed primary invites a reader to think something
+         survived. The gate should have declared itself NOT INFORMATIVE. That produced error-catalogue
+         rule 48.
+
+    P6   Reported because its registered precondition (P3a and P5) was met, and descriptive only given
+         P3b. Directional AUC by horizon: 30 s 0.561, 60 s 0.558, 120 s 0.536, 180 s 0.497, 300 s 0.534.
+         **Whatever AR1 carries is short-lived — it is at chance by 180 s.** That is consistent with a
+         signal that arrives just before the transition, which is exactly where the incumbent is also
+         strongest, and is a plausible reason the two are redundant.
+
+    A SENSITIVITY ARM COULD NOT RUN, AND THE REASON IS A CONSTANT THIS FILE SET. `SENSITIVITY_W` declares
+    30, 60 and 120 s. The 30 s arm produced no recordings, because `MIN_PAIRS = 30` exceeds the **29**
+    adjacent pairs a 30-sample window can contain — it is unsatisfiable by arithmetic. Same shape as
+    error-catalogue rule 40, in the opposite direction: not a gate that cannot fail, but a check that
+    cannot fire. Reported rather than quietly dropped; the 120 s arm gives 0.564 against the primary's
+    0.582, so the primary is not perched on its window length.
+
+    WHAT THIS ADDS TO CHALLENGE C, WHICH IS THE POINT OF LOGGING A THIRD NEGATIVE. Three designs have now
+    reached a reportable verdict with three different instruments — a spectral level on a 300 s grid (E26),
+    permutation entropy per window (E34), and the second-order statistics of the incumbent's trajectory
+    (E37) — and **all three fail in the same place: above chance, not above the incumbent.** E34's PE31
+    added +0.0178 [-0.0226, +0.0474]; E37's AR1 adds +0.0007 [-0.0539, +0.0295]. The constraint that
+    falls out is sharper than any of the individual negatives: on this deposit, information about an
+    imminent loss of consciousness appears not to exist outside what SEF95's level already carries, and a
+    successor should stop looking for a better feature and start asking whether the incumbent is near a
+    ceiling set by the label itself — `SOC` is a charted flag, and a charted flag has its own latency.
 """
 
 from __future__ import annotations
