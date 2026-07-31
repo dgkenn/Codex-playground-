@@ -39,6 +39,7 @@ behaviour, not a fault.**
 | 2 | **Acquire** | yes | Find and ingest data addressing the named blocker. No inferential risk. |
 | 2.5 | **Probe feasibility** | yes | `governance/feasibility.py`. Sentinels, artefact-tracking, exposure shape, within-subject variation, coverage, base rate — **from the label, exposure, artefact channels and clinical record only, never a candidate column**. Output pasted into the registration. See §2.5. |
 | 3 | **Register** | **no — judgement** | Predictions, gates, placebo, falsification condition, **and the incumbent it must beat**. Written to a file and **committed before the data exists**. Append a row to the ledger in the same commit. |
+| 3.5 | **Prove each gate can fail** | yes | For every gate in the registration, construct the input that *should* fail it and check that it does. `tests/test_new_gates_can_fail.py` is the pattern. See §2.6. |
 | 4 | **Run once** | yes | Gates first. A failed gate ends the iteration. |
 | 5 | **Record** | yes | Write the outcome into the experiment file *and* the ledger, including failures. Commit. |
 | 6 | **Diagnose** | **no — the dangerous step** | See §2. |
@@ -99,6 +100,40 @@ raises if a caller passes a candidate column as the label, exposure or artefact.
 it.** A probe run after a gate fails, used to find the setting that would have passed, is the move §2
 forbids; E29's nine-cell sweep is the worked refusal. Floors are set knowing the coverage, which is the
 opposite of choosing coverage knowing the floors.
+
+
+---
+
+## 2.6. Step 3.5 — a gate is not a gate until it has been seen to fail
+
+**This project shipped two gates that could not fail, and both printed confidently.** E22 selected epochs by
+`meta_epoch`, a column its adapter never emitted, so every test matched the empty string and the gate saw 0
+of 0 cases. E29 checked that its pairs spanned "both directions of dose" while its own pair constructor
+oriented every pair higher-dose-second, so the answer was 100.0 % by construction. That is error-catalogue
+rule 40, and it is the reason this step exists as a step rather than as good intentions.
+
+**The check is cheap and mechanical.** For each gate, build a synthetic input designed to fail it and assert
+that it does; then build one designed to pass and assert that too, because **a gate that always fails is a
+wall, not a gate**. Both directions, always. The fixtures are synthetic and carry no claim about any
+candidate — the assertions are about control flow.
+
+**A suite that passes on the first run is a reason for suspicion, not comfort.** Mutate the code under test
+and confirm the test notices. Two examples, from the run that established this step: removing E36's
+per-family capability floor made its gate stop failing on an input built to fail it (return code 1 → 0, and
+the failure message vanished); disabling E37's both-present pair mask produced 281 finite autocorrelations
+where the test demands zero. Both mutations were detected, which is what licensed trusting the tests.
+
+**Where this sits relative to the other rules.** Rule 40's inverse is just as real and belongs in the same
+step: E37 registered a 30 s sensitivity arm requiring 30 adjacent pairs from a 30-sample window, which
+contains 29 — **a check that cannot fire**, which produced no output and would have vanished unremarked
+(rule 48). And E38 shipped a gate whose floor sat *above its own estimator's reproducibility ceiling*, so it
+could not have passed on any input; that was caught only because a smoke run failed and the rival
+explanation was measured before anything was changed. Three failure shapes, one step: **cannot fail, cannot
+fire, cannot pass.**
+
+**When the gate is one line inside `main`**, test the statistic directly rather than the plumbing. The point
+is that the line can fire, not that the file runs — `test_e37_g1f_fires_when_the_exclusion_is_outcome_related`
+does this in four lines.
 
 ---
 
