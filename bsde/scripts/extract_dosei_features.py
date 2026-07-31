@@ -93,6 +93,10 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--n-recordings", type=int, default=60, dest="n_rec")
     ap.add_argument("--out", default=OUT)
+    ap.add_argument("--exclude-used", action="store_true", dest="exclude_used",
+                    help="skip every recording this project has already computed a DOSE-I number on, so "
+                         "the output is a genuine held-out partition. Default OFF: the flag changes "
+                         "nothing about the existing table or how it was produced.")
     a = ap.parse_args(argv)
 
     seed_registry()
@@ -104,7 +108,23 @@ def main(argv=None) -> int:
     have = {n.split("/")[-1].replace("_pEEG.csv", "") for n in pz.namelist() if n.endswith("_pEEG.csv")}
     rz = RemoteZip(DATA_URL)
     recs = [m["name"].split("/")[-1][:-4] for m in rz.index() if m["name"].endswith(".csv")]
-    recs = [r for r in recs if r in have][:a.n_rec]
+    recs = [r for r in recs if r in have]
+    if a.exclude_used:
+        used = set()
+        for name in ("dosei_features.csv", "dosei_pe_check.csv", "dosei_pe_variants.csv"):
+            q = os.path.join(HERE, "..", "results", name)
+            if not os.path.exists(q):
+                continue
+            with open(q, newline="") as fh:
+                rd = csv.DictReader(fh)
+                key = "recording" if "recording" in (rd.fieldnames or []) else "recording_id"
+                for r in rd:
+                    if r.get(key):
+                        used.add(r[key].split("@")[0])
+        before = len(recs)
+        recs = [r for r in recs if r not in used]
+        print(f"--exclude-used: {before} -> {len(recs)} recordings ({len(used)} already used)", flush=True)
+    recs = recs[:a.n_rec]
 
     out_path = os.path.abspath(a.out)
     done = set()
