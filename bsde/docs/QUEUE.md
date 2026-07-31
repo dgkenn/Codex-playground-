@@ -1009,3 +1009,77 @@ recordings are flagged BOTH `awake` and `pdr`**, and 956 carry no `pdr` at all. 
 must find PDR-bearing awake segments in the first group at a far higher rate than in the second. That is a
 labelled validation set for the detector, obtained from metadata already held, at zero extraction cost —
 and a detector that cannot separate those two groups should not be frozen into anything.
+
+---
+
+## Q22 — BIS IS NOW COMPUTABLE, AND IT REMOVES CHALLENGE C's LARGEST STRUCTURAL LIMIT
+
+*Added 2026-07-31 on the investigator's prompt. Every record below pulled through E-utilities and
+Europe PMC with `curl` and read, never a fetch-tool summary (rules 25, 39).*
+
+**Why this matters more than any other open item for Challenge C.** E26, E34 and E37 all scoped themselves
+*"never ahead of BIS"* and used **SEF95 as a proxy** — not by preference but because **BIS exists only on
+VitalDB**, where a monitor recorded it. E46 and E55 are the only experiments that ever compared against
+real BIS, and both are confined to 250 VitalDB cases, two frontal channels, maintenance only. **If BIS can
+be computed from arbitrary EEG, it becomes a universal comparator and every one of those constraints
+lifts.**
+
+### Two independent routes, both verified to exist
+
+1. **Connor CW, "Open Reimplementation of the BIS Algorithms for Depth of Anesthesia", *Anesth Analg*
+   2022 — PMID 35767469, PMC9481655.** In the author's words: *"the algorithms used by such monitors
+   remain proprietary. **We do not actually know what we are measuring**… an A-2000 BIS monitor was
+   forensically disassembled and its algorithms (the BIS Engine) retrieved as machine code. Development of
+   an emulator allowed **BIS scores to be calculated from arbitrary EEG data for the first time**."*
+   The authoritative route. **Code availability is NOT established here** — the article is in PMC but not
+   open access and Europe PMC returned no full text, so obtaining the emulator is an unresolved step.
+
+2. **Lee HC, Ryu HG, … Jung CW, "Data Driven Investigation of Bispectral Index Algorithm", *Sci Rep*
+   2019 — PMID 31551487, PMC6760206, OPEN ACCESS.** 5,427 patients; decision tree plus range-specific
+   regression models; **median absolute error 4.1 BIS units**. **These authors are the VitalDB team**, so
+   the models were derived on data of exactly the kind this project already holds.
+
+### What BIS is actually made of, which is most of what we already emit
+
+*"BIS values are known to be calculated from four EEG subparameters, burst suppression ratio (BSR), QUAZI
+suppression index, relative beta ratio (RBR), and SyncFastSlow (SFS)"* — and Lee et al.'s own tree uses
+**BSR, EMG power, SEF95 and relative beta ratio**.
+
+| subparameter | status in this repo |
+|---|---|
+| burst suppression ratio | the sibling burst-suppression programme is built on exactly this machinery |
+| 95 % spectral edge | already emitted as `sef95` |
+| relative beta ratio | trivial from the existing PSD |
+| EMG power | already emitted — `emg_index`, `emg_beta_gamma_fraction`, `emg_kurtosis` |
+| SyncFastSlow | bispectral, needs implementing |
+| QUAZI suppression index | suppression-related, partly available |
+
+### The plan, and it has a validation step that is free
+
+1. Implement a BIS-like index from the published subparameters.
+2. **VALIDATE IT AGAINST THE REAL THING ON OUR OWN DATA — this is the part that makes the whole idea
+   safe.** `vitaldb_grid.csv` holds **5,845 windows with paired EEG and DEVICE BIS**. Agreement can be
+   measured directly, in BIS units, against a hardware ground truth. No other deposit is needed and no new
+   access is required.
+3. Only if agreement is adequate, apply it to the deposits that have no BIS at all: chennu, ds005620,
+   ds004541, HEEDB (0–90), ds005385 (608 subjects with known eye state).
+
+### What it would unlock, concretely
+
+* **E55 on a real age range.** E55 found that at matched BIS the EEG state differs by age, on 240 VitalDB
+  cases. HEEDB spans **0–90 with age SD 24.1 years** and E57 measured age+sex R² there at **0.2547**
+  against 0.0877 in the open adult cohorts — roughly three times the age signal. The age-neutrality claim
+  would get a far stronger test.
+* **E26/E34/E37 redone against the intended comparator** rather than the SEF95 proxy they settled for.
+* **A verifier target rather than a black box.** Connor's own framing — *"we do not actually know what we
+  are measuring"* — is precisely the gap this project's verifier exists to close.
+
+### Three caveats that must ride with it
+
+* **A reimplementation is not BIS.** Lee et al. report median absolute error 4.1 on their own development
+  data; ours would be worse. Any result must state the measured fidelity, not assume it.
+* **Provenance.** Route 1 derives from forensic disassembly of a commercial device. That is what the
+  published work did and it is citable, but it needs care in anything intended for publication.
+* **Fidelity is not uniform.** Lee et al. fit *range-specific* models, so agreement almost certainly varies
+  with depth — and the deep and light extremes are exactly where a depth monitor's disagreements matter.
+  Fidelity must be reported per BIS range, not pooled.
