@@ -86,3 +86,22 @@ verify before committing a finished table or reporting a result from one:
         git update-index --no-assume-unchanged "$f"
     done
     git ls-files -v bsde/results/ | grep '^[a-z]'      # must print NOTHING when the flag is clear
+
+## Currently in flight: `eegmmidb_trials.{imagery,executed}.s0-3.csv` (started 2026-07-31)
+
+Eight subject-sharded streams caching the **per-trial** band powers behind E28's label — the vectors
+`build_eegmmidb_bci_label.py` computed and threw away. Roughly 104 subjects x 2 tasks x 45 trials x 6
+features, so a few hundred kilobytes in total and safe to commit part-finished.
+
+    for t in imagery executed; do for k in 0 1 2 3; do
+      python bsde/scripts/dump_eegmmidb_trials.py --task $t --shard $k --of 4 \
+             --out bsde/results/eegmmidb_trials.$t.s$k.csv &
+    done; done; wait
+
+**E38 reads whatever shards exist and refuses below 60 subjects** at both G1 and the reliability estimator,
+so a part-finished cache cannot be mistaken for a result. The dumper imports `_band_power`, `CHANNELS`,
+`BANDS` and `EPOCH` from the label builder rather than reimplementing them, so the cache is the same
+quantity the label was built from — and E38's G1 checks it against the stored per-subject AUC anyway.
+
+**The flag is NOT set on these.** They are small and written once per subject rather than continuously, so
+the `--assume-unchanged` dance that the VitalDB tables needed is not worth its hidden state here.
