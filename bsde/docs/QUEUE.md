@@ -932,3 +932,39 @@ cannot be closed the direct way here.
 2. **Re-extract ds004541 through the shared path** (OpenNeuro, reachable) to add a third deposit to E49's
    sub-band re-run. It cannot fix the chennu asymmetry and its agent is unrecorded, so it anchors the
    state scale only — but it is the only way to get past two deposits with current access.
+
+---
+
+## Q21 — the HEEDB vigilance metadata cannot replace an in-signal detector, but it supplies its validation set
+
+*Probe run 2026-07-31 before committing to the reference build (rule 41). No shortcut found; a validation
+set found instead.*
+
+**The hope.** HEEDB's findings table carries `pdr` — posterior dominant rhythm, i.e. the alpha rhythm that
+appears specifically when a subject is **awake with eyes closed**. E44 has just measured eye state at
+d_z = −1.214 on `exponent_low`, making it a first-order term the reference must control. If `pdr` selected
+awake-eyes-closed recordings from metadata alone, the reference build would skip building a detector.
+
+**Measured on all 4,944 strict-normal recordings:**
+
+| flag | n | % |
+|---|---|---|
+| `n1` | 4,487 | 90.8 % |
+| `awake` | 4,270 | 86.4 % |
+| `pdr` | 3,988 | 80.7 % |
+| `awake` **and** `pdr` | 3,699 | 74.8 % |
+| `n2` | 3,156 | 63.8 % |
+| **`pdr` and NO sleep marker** | **186** | **3.8 %** |
+
+**The shortcut fails.** Requiring PDR present and no sleep marker leaves 186 recordings — essentially the
+202 found earlier by a different route. The flags are **recording-level**: they record that a recording
+*contains* PDR and *contains* N2, not *when*. 90.8 % contain N1. **The in-signal detector is unavoidable**,
+which is what §1 of `NORMAL_REFERENCE_COVARIATES.md` concluded and this probe now confirms by measurement
+rather than by inference.
+
+**What the probe did buy, and it is not nothing.** §1 assigned the recording-level flags the role of *"a
+coarse check on that detection"* without saying what the check would be. Now it is concrete: **3,699
+recordings are flagged BOTH `awake` and `pdr`**, and 956 carry no `pdr` at all. A wake/eyes-closed detector
+must find PDR-bearing awake segments in the first group at a far higher rate than in the second. That is a
+labelled validation set for the detector, obtained from metadata already held, at zero extraction cost —
+and a detector that cannot separate those two groups should not be frozen into anything.
