@@ -26,6 +26,7 @@ on top via `generator/swaps.txt`; their cost is listed honestly.
 | **MacNeille** | No night float Christmas week (12/20–25) + SC on NYE | ✅ **Bronson takes the Christmas NF week** (approved); MacNeille has no Christmas nights and short call 12/31 | 2 Q4 gaps (Bronson 12/29→31, MacNeille 12/26→28) |
 | **Kennedy** | Night float the first week of Nov (Sun 11/1 → Fri 11/6 night) | ✅ **NF 11/1–6**, off 11/7–8 weekend, back on days 11/9–13. Chiasson takes his 11/8–13 nights in return (unavoidable — she holds the 11/1–6 nights). Thanksgiving 11/26 off | documented KEN_SWAP month-boundary coupling only |
 | **Kennedy** | Thanksgiving Day off | ✅ off 11/26 (already); he holds the 11/28 Saturday 24h | none |
+| **Kennedy** | *(equity check on the above)* | ✅ **verified cost-free** — see below | none in workload |
 | **Oghenesume** | April 9–12 off | ✅ **4/10–11 weekend fully off** (freed the 4/11 Sunday long call) | 2 Q4 gaps on **Rivera** (BMC, non-LSH) |
 
 **Note on Kennedy's Friday 11/6 and Oghenesume's 4/9 / 4/12:** these are weekdays,
@@ -34,6 +35,55 @@ and the rules only allow a *full* day off on Thursdays. So the best possible is 
 freeing them, or putting Oghenesume on night float to free those days, would
 cascade badly (it pushed another intern to *end* April on nights), so I left it
 at the clean weekend-off.
+
+## ⚖️ Equity check on the November (Kennedy ⇄ Chiasson) accommodation
+
+Re-ran November **with and without** the swap and compared every intern.
+
+**1. Nobody's workload changes — at all.** November totals are identical in both
+versions for all seven interns present: nights, long calls, Saturday 24h, short
+calls, days off, and total hours. The swap moves *which week* Kennedy and
+Chiasson hold night float; it does not move any work between them.
+
+| Nov 2026 | NF | LC | 24h | SC | OFF | hrs |
+|---|---|---|---|---|---|---|
+| Wise | 6 | 7 | 1 | 9 | 7 | 262 |
+| Kennedy | 6 | 6 | 1 | 10 | 7 | 259 |
+| Chiasson | 6 | 3 | 0 | 3 | 3 | 142 |
+| Saeed | 6 | 2 | 0 | 3 | 3 | 132 |
+| Vivekanandan | 2 | 3 | 1 | 6 | 3 | 136 |
+
+*(unchanged by the accommodation — every figure is the same either way)*
+
+**2. Chiasson does not lose a free weekend.** Hers *moves*, 11/7–8 → 10/31–11/1.
+She has exactly one fully-free weekend in her Lahey block (10/19–11/15) in both
+versions, plus her single Saturday 24h on 10/24 either way. An earlier
+November-only count appeared to show 1 → 0; that was a calendar artifact —
+the Saturday of her free weekend simply lands in October.
+
+**3. Nobody outside the pair is touched.** Wise, Saeed, Mullins, Vivekanandan and
+Shetty have byte-identical schedules in both versions.
+
+**4. Kennedy is not getting a lighter year.** Normalised per day on LSH (some
+interns do 3 LSH months, some 2), he carries the **most** nights of anyone:
+
+| intern | LSH days | nights | nights/30d | Sat 24h |
+|---|---|---|---|---|
+| **Kennedy** | 61 | 15 | **7.4** | 2 |
+| Oghenesume | 84 | 20 | 7.1 | 2 |
+| Wise | 60 | 14 | 7.0 | 2 |
+| Bronson | 93 | 20 | 6.5 | 3 |
+| Zaidi | 89 | 19 | 6.4 | 3 |
+| Li | 89 | 18 | 6.1 | 4 |
+| MacNeille | 62 | 12 | 5.8 | 3 |
+| Matsuoka | 54 | 10 | 5.6 | 2 |
+
+**The one real cost** is the audit's single `fri-lc-nf` flag: Chiasson is Friday
+long call 10/30 but Kennedy takes the 11/1 Sunday nights, so the *Friday-LC →
+next-week's-nights* chain breaks once at the month boundary. In the pure march
+Chiasson would have gone 10/30 long call straight into nights 11/1–6; instead she
+gets the free weekend and starts nights 11/8. That is the only structural
+consequence, and it lands as a benefit rather than a burden.
 
 ## 🔧 Night-float balance fixes (from the scheduler's review)
 
