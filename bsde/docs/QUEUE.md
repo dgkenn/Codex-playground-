@@ -1253,3 +1253,54 @@ Under DOSE-I's convention unconsciousness lowers both, so under this repo's reci
 `bis_sfs` — the direction its declaration committed to. **That agreement is NOT a passed test.** The number
 was seen before any prediction about this deposit could be registered, so `bis_sfs`'s direction stays
 **untested**, and must be tested on a deposit nobody has looked at.
+
+---
+
+## Q22 CLOSED (E60, 2026-07-31) — the range-specific model works, and finding out cost two lessons
+
+Q22's last open technical item was a two-stage model selecting its range from a first-pass PREDICTION rather
+than from the true BIS (which would be leakage). **E60 ran it. VERDICT: GAIN.**
+
+Median |err| on true BIS ∈ [0,40), two-stage minus one-stage: **−0.635 [−1.035, −0.203]** over 400 out-of-bag
+draws with both models refitted per draw. Point estimates **5.482 → 4.764**. The placebo — a random partition
+of identical sizes, same sub-model count, same parameter budget, no range information — returns
+**+0.020 [−0.167, +0.248]**, flat. So it is range specificity, not extra parameters.
+
+**The target band moved twice before this ran and the registration says so rather than drifting:** Q22 aimed
+it at [80,100); the BIS-faithfulness decision redirected it to [60,80) at most; E60 redirected once more to
+[0,40), because [60,80) is itself 35 % artefact and the decision's own rule leaves only the two clean bands.
+[0,40) is where the global fit did worst among them, on 2,330 windows, and is where a separate relationship
+is expected physiologically — burst suppression exists there and nowhere else.
+
+### It is a reallocation, not a free improvement
+
+Descriptive slicing after the run: [20,30) 9.69 → 8.88, [30,35) 6.15 → 5.14, [35,40) 3.37 → 2.82 — the gain
+is spread across the band rather than sitting at its boundary. **But [40,60) goes 3.47 → 3.91, worse by 0.44
+on 2,879 windows.** The registration fixed the falsification condition to [0,40) "and nowhere else", which
+correctly stopped the bar moving — and equally stopped the experiment from seeing what it gave up. **Error
+catalogue rule 52.** The deliverable therefore uses the one-stage fit in [40,60) and the two-stage fit below
+it; quoting one model for both bands would misreport one of them.
+
+### The finding that is not about the model at all
+
+**[0,20) carries median |err| 39.96 under BOTH models** — neither touches it — on 90 windows from 68 cases.
+Its median **SQI is 5.1 out of 100**. The device is reporting a BIS value it simultaneously flags as almost
+entirely unreliable, with EMG elevated at 38.2.
+
+This is the **mirror image of the [80,100) finding at the other end of the scale**: not a deep-anaesthesia
+population the index fails on, but a population where the *reference* has collapsed. E58's inclusion
+criterion was BIS present and sensor not off; **`meta_sqi` shipped in the same table from the start and no
+experiment had used it.** E58's and E60's verdicts stand as registered and their errors are, if anything,
+pessimistic in those bands — but the deliverable index's error bars should be quoted from an SQI-filtered
+cohort, registered separately, because changing inclusion after seeing results is a change of cohort and not
+a footnote.
+
+### Where Q22 finishes
+
+| band | model | fidelity | status |
+|---|---|---|---|
+| [0,20) | either | 39.96 | **refuse** — median SQI 5.1; the monitor disowns its own reading |
+| [20,40) | two-stage | ~4.8 | usable |
+| [40,60) | one-stage | **3.47** | usable; beats Lee et al.'s 4.1 on their own development data |
+| [60,80) | — | 8.75 | **refuse** — 35 % facial-EMG artefact |
+| [80,100) | — | 29.84 | **refuse** — 98.2 % facial-EMG artefact |

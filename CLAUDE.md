@@ -607,3 +607,18 @@ unverified on GitHub.
     check to run before registering: name the way the measure is expected to fail, then ask whether the
     primary statistic would move if that failure got twice as bad.** If it would not, the primary is
     measuring somewhere else.
+52. **A BAND-RESTRICTED PRIMARY CANNOT TELL AN IMPROVEMENT FROM A REALLOCATION.** Rule 51 says the primary
+    must be sensitive to the failure mode you care about. Its sibling: a primary *restricted* to a subset
+    is blind to what the change costs outside that subset, and a model that moves error from one region to
+    another looks identical, from inside the restriction, to one that removes it. **E60** registered its
+    primary as median |err| on BIS ∈ [0,40) and "nowhere else" — which correctly stopped the bar moving
+    afterwards, and equally stopped the experiment from seeing that the same fit made the *target* band
+    worse (3.47 → 3.91 on 2,879 windows) while improving the deep band (5.48 → 4.76 on 2,330). The verdict
+    stands; the description "improvement" does not. **Whenever the primary is restricted, report the
+    unrestricted effect beside it** — not as a second verdict, but because "better here" and "better" are
+    different claims and only one of them was tested.
+    **Corollary, from the same run and cheaper than any of this: use the quality flag the deposit already
+    ships.** E60's worst sub-band, [0,20) at median |err| 39.96 under both models, turned out to have
+    median **SQI 5.1 of 100** — the monitor reporting a value it simultaneously declares unreliable. The
+    column was in the same table from the start and no experiment had used it. Before modelling a region
+    where a reference behaves strangely, **check whether the reference says so itself.**

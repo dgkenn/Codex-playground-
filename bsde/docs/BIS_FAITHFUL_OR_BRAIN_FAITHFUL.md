@@ -53,14 +53,24 @@ made faithful to BIS's artefact behaviour, at any price.**
 
 Concretely, and these are binding on every downstream use:
 
-1. **Report in [40,60) with ±3.47, and in [0,40) with ±5.48.** Both bands are >94 % clean by the EMG
-   criterion and both fidelities are measured, not assumed.
+1. **Report in [40,60) with ±3.47, and in [0,40) with ±4.76.** Both bands are >94 % clean by the EMG
+   criterion and both fidelities are measured, not assumed. *(The [0,40) figure was 5.48 when this document
+   was written; E60's two-stage model improved it to 4.76 — and made [40,60) worse, 3.47 → 3.91, which is
+   why the deliverable uses the one-stage fit in the target band and the two-stage fit below it. Quoting a
+   single model for both bands would misreport one of them.)*
+   **Exclude windows the monitor itself flags.** E60 found the [0,20) sub-band carries median |err| 39.96
+   under both models and median **SQI 5.1 of 100** — the device reporting a value it declares unreliable.
+   `meta_sqi` shipped in the same table from the start and no experiment had used it.
 2. **Refuse above 60.** [60,80) is 35 % contaminated and [80,100) is 98.2 %. A predicted value landing there
    is returned as *out of validated range*, not as a number with a wide error bar — a wide error bar invites
    use, and the failure there is not noise but a different signal being measured.
 3. **Do not train toward the top of the scale.** Any fit that improves agreement at BIS ≥ 80 is, on this
-   evidence, fitting facial EMG. That includes the two-stage range-specific model Q22 left open: it should
-   be aimed at [60,80) at most, and its gain there has to be shown not to come from the artefact fraction.
+   evidence, fitting facial EMG. *(This clause originally aimed Q22's open two-stage model at [60,80) "at
+   most". **E60 redirected it again, to [0,40), and ran it there** — [60,80) is itself 35 % contaminated,
+   and the rule in this document, applied consistently, leaves only the two clean bands. E60 found a real
+   gain in [0,40), −0.635 [−1.035, −0.203], against a flat random-partition placebo. Its [60,101)
+   improvement of 11.50 → 9.50 is descriptive and **is not claimed**, for exactly the reason in this
+   clause.)*
 4. **Where a light-end reading is genuinely needed, BIS is not the reference.** VitalDB structurally contains
    no awake-under-monitor windows — the strip goes on after induction and comes off around emergence — so
    this is not a sampling shortfall that more VitalDB cases would fix.
