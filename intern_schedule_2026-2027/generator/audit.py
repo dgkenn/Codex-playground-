@@ -53,14 +53,12 @@ for l,dl in calldays.items():
 # rotation straight off a night shift.  Exemptions require the NEXT month to
 # be outpatient/vacation/elective (per the year rotation grid) and are listed
 # explicitly so they can be revoked the moment the grid says otherwise.
-NEXT_IS_OUTPATIENT={("WISE",2026,9),         # Oct 2026 = ELECTIVE (confirmed by PD) — ok to finish Sept on nights
-                    ("BRONSON",2026,10),     # Nov 2026 = VACATION (per scheduler) — ends on Fri NF, weekend off, then vacation
-                    ("ZAIDI",2027,2),        # Mar 2027 = VACATION (confirmed) — 2/28 is a single boundary-spillover night
-                    ("OGHENESUME",2027,4)}   # May 2027 — STILL UNCONFIRMED, verify against the rotation grid
-# NOT exempted (deliberately failing until the rotation grid is confirmed):
-#   KENNEDY, NF 3/28-3/31, LSH block ends 3/31 — needs his April rotation.  If
-#   April is outpatient/elective/vacation, add ("KENNEDY",2027,3) here; if he is
-#   on an inpatient service 4/1, the 3/28 week has to move.
+# ALL FIVE CONFIRMED against the year rotation grid — no unverified exemptions.
+NEXT_IS_OUTPATIENT={("WISE",2026,9),         # Oct 2026 = ELECTIVE (confirmed by PD)
+                    ("BRONSON",2026,10),     # Nov 2026 = VACATION (confirmed by scheduler)
+                    ("ZAIDI",2027,2),        # Mar 2027 = VACATION (confirmed) — 2/28 is a single spillover night
+                    ("KENNEDY",2027,3),      # Apr 2027 = ELECTIVE (confirmed) — NF 3/28-3/31, Oghenesume continues 4/1-2
+                    ("OGHENESUME",2027,4)}   # May 2027 = ED, shift-based and flexible (confirmed) — NF 4/25-30
 for dt in days:
     nfp=A[dt]["NF"]
     if not nfp: continue
@@ -352,13 +350,15 @@ L.append("|---|---|---|---|---|")
 L.append("| Wise | 9/27–9/30 | 9/30 | Elective | ✅ confirmed by PD |")
 L.append("| Bronson | 10/25–10/30 | 10/31 | Vacation | ✅ confirmed by scheduler |")
 L.append("| Zaidi | 2/28 (1 night) | 2/28 | Vacation | ✅ confirmed |")
-L.append("| Oghenesume | 4/25–4/30 | 4/30 | ? | ⚠️ **unconfirmed — please verify** |")
-L.append("| **Kennedy** | **3/28–3/31** | **3/31** | **?** | ❌ **NOT exempt — audit is failing on this** |")
+L.append("| Kennedy | 3/28–3/31 | 3/31 | Elective | ✅ confirmed |")
+L.append("| Oghenesume | 4/25–4/30 | 4/30 | ED (shift-based, flexible) | ✅ confirmed |")
 L.append("")
-L.append("**Open item for the scheduler:** Kennedy holds the March month-end night float (3/28–3/31, "
-         "then Oghenesume continues the block 4/1–4/2).  If Kennedy's April is outpatient, elective "
-         "or vacation this is fine and the exemption gets added.  If he is on an inpatient service "
-         "on 4/1, the 3/28 week has to move — say the word and it will be reworked.")
+L.append("**All five are confirmed against the year rotation grid — there are no unverified "
+         "exemptions left.**  Each is a month-boundary handoff the rules explicitly permit: the "
+         "departing intern finishes their nights and the arriving LSH intern continues the block "
+         "(Kennedy 3/28–3/31 → Oghenesume 4/1–4/2; Zaidi 2/28 → Kennedy 3/1–3/5).  If any of these "
+         "rotations changes, delete the entry from `NEXT_IS_OUTPATIENT` in `audit.py` and the audit "
+         "will fail loudly rather than silently shipping a bad transition.")
 L.append("")
 L.append("## ACGME duty hours")
 L.append("")

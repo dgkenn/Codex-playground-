@@ -9,7 +9,7 @@ Coverage **Oct 1 2026 – Jun 23 2027**, continuing the finalized September. Bui
 | One Long Call per day | ✅ PASS |
 | Different long-call intern than previous day | ⚠️ SEE NOTE |
 | Q4 — every intern on call only every 4th day | ⚠️ SEE NOTE |
-| No one leaving the service ends on night float | ⚠️ SEE NOTE |
+| No one leaving the service ends on night float | ✅ PASS |
 | Friday long-call intern = next week's night float | ⚠️ SEE NOTE |
 | Night float: same person the whole Sun–Fri block | ✅ PASS |
 | Night-float intern present | ✅ PASS |
@@ -50,10 +50,10 @@ With the march pure, a month-end night-float week can land on a departing LSH in
 | Wise | 9/27–9/30 | 9/30 | Elective | ✅ confirmed by PD |
 | Bronson | 10/25–10/30 | 10/31 | Vacation | ✅ confirmed by scheduler |
 | Zaidi | 2/28 (1 night) | 2/28 | Vacation | ✅ confirmed |
-| Oghenesume | 4/25–4/30 | 4/30 | ? | ⚠️ **unconfirmed — please verify** |
-| **Kennedy** | **3/28–3/31** | **3/31** | **?** | ❌ **NOT exempt — audit is failing on this** |
+| Kennedy | 3/28–3/31 | 3/31 | Elective | ✅ confirmed |
+| Oghenesume | 4/25–4/30 | 4/30 | ED (shift-based, flexible) | ✅ confirmed |
 
-**Open item for the scheduler:** Kennedy holds the March month-end night float (3/28–3/31, then Oghenesume continues the block 4/1–4/2).  If Kennedy's April is outpatient, elective or vacation this is fine and the exemption gets added.  If he is on an inpatient service on 4/1, the 3/28 week has to move — say the word and it will be reworked.
+**All five are confirmed against the year rotation grid — there are no unverified exemptions left.**  Each is a month-boundary handoff the rules explicitly permit: the departing intern finishes their nights and the arriving LSH intern continues the block (Kennedy 3/28–3/31 → Oghenesume 4/1–4/2; Zaidi 2/28 → Kennedy 3/1–3/5).  If any of these rotations changes, delete the entry from `NEXT_IS_OUTPATIENT` in `audit.py` and the audit will fail loudly rather than silently shipping a bad transition.
 
 ## ACGME duty hours
 

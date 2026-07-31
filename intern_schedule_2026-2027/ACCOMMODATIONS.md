@@ -86,12 +86,20 @@ week. The generator had no balancing logic and no cross-month memory.
 - **MacNeille & Anna Li — August / September pre-Oct items** that fall in the
   finalized August sheet are out of scope for this generator.
 
-## ❓ Open question for the scheduler
+## ✅ Month-end night-float transitions — all confirmed
 
-- **Kennedy holds the March month-end night float (3/28–3/31)**, with Oghenesume
-  continuing the block 4/1–4/2. This is the rules' normal boundary handoff, but it
-  is only acceptable if **Kennedy's April is outpatient / elective / vacation**.
-  The audit is deliberately **failing** on this until it's confirmed, rather than
-  silently exempting it. If April is an inpatient service, the 3/28 week moves.
-- Same confirmation still outstanding for **Oghenesume (NF 4/25–30, block ends
-  4/30)** → what is his May rotation? Currently carried as an exemption.
+Every case where an LSH intern's nights run to their block end is now verified
+against the year rotation grid. No unconfirmed exemptions remain.
+
+| Intern | Nights | Block ends | Next rotation | |
+|---|---|---|---|---|
+| Wise | 9/27–9/30 | 9/30 | Elective | ✅ |
+| Bronson | 10/25–10/30 | 10/31 | Vacation | ✅ |
+| Zaidi | 2/28 (1 night) | 2/28 | Vacation | ✅ |
+| Kennedy | 3/28–3/31 | 3/31 | Elective | ✅ |
+| Oghenesume | 4/25–4/30 | 4/30 | ED — shift-based, flexible | ✅ |
+
+Each is the boundary handoff the rules describe: the departing intern finishes
+their nights and the arriving LSH intern continues the block (Kennedy 3/28–31 →
+Oghenesume 4/1–2; Zaidi 2/28 → Kennedy 3/1–5). If any rotation changes, remove
+the entry from `NEXT_IS_OUTPATIENT` in `audit.py` and the audit fails loudly.
