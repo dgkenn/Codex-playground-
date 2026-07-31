@@ -29,10 +29,23 @@ prevalence anyway, so a random sample carries ample medication variance without 
 RESTRICT TO `Routine` SERVICE, per `NORMAL_REFERENCE_COVARIATES.md` §3 -- LTM and EMU are an
 epilepsy-workup population with different acquisition. 4,192 of 4,944 qualify.
 
-THE 180 s WINDOW STARTS AT 300 s. HEEDB recordings run 1,344-3,989 s, so a byte-range prefix of the EDF
-gives roughly a 20x transfer reduction -- but the FIRST minutes of a routine EEG are calibration, electrode
-settling and instructions, not resting state. Starting at 300 s skips that. **This is a fixed, declared,
-arbitrary choice and it is NOT a substitute for the vigilance detector**: 94.8 % of these recordings
+THE 180 s WINDOW IS SEARCHED FOR, NOT FIXED -- and the first version got this wrong. HEEDB recordings run 1,344-3,989 s, so a byte-range prefix of the EDF
+gives roughly a 20x transfer reduction (measured: 2.2 MB against 48.3 MB, 21.7x). The first version took
+a fixed window at 300 s, on the reasoning that the opening minutes are calibration and electrode settling.
+**That failed on 100 % of recordings and the failure was in the DATA, not the code.** A HEEDB routine EEG
+contains long DISCONNECTED stretches: on the first cohort recording, every channel is railed at the
+physical minimum and perfectly constant at t = 300 s, 600 s and 1200 s, while carrying real EEG at t = 0 s
+(std 462/310/254 uV) and t = 2400 s (std 34/24/107 uV). The record-size arithmetic was correct throughout
+-- 12,114 bytes, matching the file size exactly -- so nothing about the prefix fetch was at fault.
+
+So the window is now SEARCHED: candidate offsets are tried in order and the first whose median channel
+amplitude falls in a plausible EEG range is kept. **This is a quality gate and it is declared as one.** It
+is applied blind to every covariate, and the offset actually used is emitted as a column (`window_start_s`)
+so that any relationship between artefact burden and medication or comorbidity is CHECKABLE rather than
+hidden -- which matters, because sicker patients plausibly have more artefact, and that would be a
+confound running in exactly the direction of the hypothesis under test.
+
+**It is NOT a substitute for the vigilance detector**: 94.8 % of these recordings
 contain sleep and Q21 established the metadata cannot locate it. What makes the choice tolerable HERE and
 nowhere else is that this experiment compares covariate blocks AGAINST EACH OTHER within the same noisy
 data, and vigilance noise inflates the residual for every block alike. It would not be tolerable for
@@ -67,6 +80,13 @@ AP = "arn:aws:s3:us-east-1:184438910517:accesspoint/bdsp-credentialed-access-poi
 MED = "EEG/HEEDB_Metadata/HEEDB_Medication_ATC.csv"
 COHORT = "/tmp/eeg_probe/heedb_normal_reference.csv"
 START_S = 300.0
+SEARCH_OFFSETS_S = (300.0, 600.0, 900.0, 1200.0, 1800.0, 2400.0, 3000.0, 60.0)
+"""Offsets tried in order. 60 s is LAST rather than first: the opening minute is calibration and electrode
+settling, so it is the fallback only when nothing later is usable."""
+AMP_LO_UV, AMP_HI_UV = 3.0, 300.0
+"""Median across the montage of per-channel SD, in microvolts. Below 3 is a disconnected or railed
+segment; above 300 is movement, electrode pop or calibration. Both bounds are conventional rather than
+tuned, and they are applied identically to every recording."""
 SEED = 20260731
 
 
@@ -96,9 +116,14 @@ def _edf_prefix(cl, key, out_path, start_s=START_S, span_s=None):
     rec_dur = float(head[244:252].decode().strip())
     ns = int(head[252:256].decode().strip())
     full = cl.get_object(Bucket=AP, Key=key, Range=f"bytes=0-{hdr_bytes - 1}")["Body"].read()
-    # samples-per-record for each signal sit in the last ns*8 bytes of the header
-    spr = [int(full[hdr_bytes - ns * 8 + i * 8: hdr_bytes - ns * 8 + (i + 1) * 8].decode().strip())
-           for i in range(ns)]
+    # SAMPLES-PER-RECORD IS THE SECOND-TO-LAST HEADER FIELD, NOT THE LAST. After the fixed 256-byte
+    # header EDF stores, per signal: label 16, transducer 80, physical dimension 8, physical min 8,
+    # physical max 8, digital min 8, digital max 8, prefiltering 80 -> 216 bytes, THEN samples-per-record
+    # 8, THEN reserved 32. Total 256 + ns*256, which is why `hdr_bytes - ns*8` looks right and is not:
+    # it lands inside the trailing ns*32 reserved block, which is blank, and every parse raised
+    # int('') on an empty string. Caught by the smoke test failing on 100 % of recordings.
+    off = 256 + ns * 216
+    spr = [int(full[off + i * 8: off + (i + 1) * 8].decode().strip()) for i in range(ns)]
     rec_size = sum(spr) * 2
     if rec_dur <= 0 or rec_size <= 0:
         raise RuntimeError("unusable EDF header")
@@ -118,6 +143,33 @@ def _edf_prefix(cl, key, out_path, start_s=START_S, span_s=None):
         fh.write(bytes(patched))
         fh.write(body[:got * rec_size])
     return got * rec_dur
+
+
+def _first_usable_window(cl, key, out_path):
+    """Try each offset in `SEARCH_OFFSETS_S` and keep the first with plausible EEG amplitude.
+
+    Returns the offset used. Raises if none qualifies, so an all-artefact recording becomes a counted
+    FAIL rather than a row of noise (rule 5)."""
+    import mne
+    import numpy as np
+    from eeg_features_common import MONTAGE
+    last = None
+    for start in SEARCH_OFFSETS_S:
+        try:
+            _edf_prefix(cl, key, out_path, start_s=start)
+            raw = mne.io.read_raw_edf(out_path, preload=True, verbose="ERROR")
+            want = {c.lower() for c in MONTAGE}
+            keep = [c for c in raw.ch_names if c.lower() in want]
+            if not keep:
+                raise RuntimeError(f"none of {MONTAGE} present")
+            raw.pick(keep)
+            sd = float(np.median(np.std(raw.get_data() * 1e6, axis=1)))
+            last = sd
+            if AMP_LO_UV <= sd <= AMP_HI_UV:
+                return start
+        except Exception:                                                    # noqa: BLE001
+            continue
+    raise RuntimeError(f"no window with plausible amplitude (last median SD {last})")
 
 
 def main(argv=None) -> int:
@@ -168,7 +220,7 @@ def main(argv=None) -> int:
             key = sorted(edfs)[0]
             tmp = tempfile.NamedTemporaryFile(suffix=".edf", delete=False)
             tmp.close()
-            _edf_prefix(cl, key, tmp.name)
+            used = _first_usable_window(cl, key, tmp.name)
             feats = features_from_file(tmp.name)
         except Exception as exc:                                             # noqa: BLE001
             n_fail += 1
@@ -182,7 +234,8 @@ def main(argv=None) -> int:
         m = med.get(r["patient_id"], {})
         row = {"site": r["site"], "patient_id": r["patient_id"], "session_id": r["session_id"],
                "age": r["age_at_visit"], "sex": r["sex"],
-               "n_icd_chapters": r["n_icd_chapters"], "edf_key": key.split("/")[-1]}
+               "n_icd_chapters": r["n_icd_chapters"], "edf_key": key.split("/")[-1],
+               "window_start_s": used}
         for c in med_cols:
             row["atc_" + c.split()[0].lower().strip(",")] = 1 if (m.get(c) or "").strip() else 0
         for c in r:
