@@ -1757,6 +1757,20 @@ E36 then tried to kill that split on its own data, which is all a same-cohort su
   where phase measures are *more* legible of electrode type than amplitude measures, not less. That test was
   post hoc and is a hypothesis for a successor to pre-register, not a result.
 
+**PRIOR ART, FOUND AFTER BOTH EXPERIMENTS RAN AND RECORDED RATHER THAN ABSORBED.** Kallionpaa et al.,
+*Br J Anaesth* 2020;125(4):518-528 (**PMID 32773216**, NCT01889004) already report alpha-band frontal
+**wPLI** as a state-specific correlate of unresponsiveness across **dexmedetomidine (n = 23) and propofol
+(n = 24)** in 47 healthy volunteers, concluding that "connectivity changes were related to unresponsiveness
+rather than drug concentration"; Akeju et al., *Anesthesiology* 2014;121(5):978-89 (**PMID 25187999**)
+supply the amplitude half, that the two agents "place patients into different brain states". **The
+phenomenon is therefore not novel, and that is better news than novelty would have been** — E36's binding
+limitation was the absence of external replication, and this is external agreement in scalp rather than
+intracranial EEG, in healthy volunteers, with a within-subject LOR/ROR design at constant dosing that
+removes the drug-arm-nested-in-patient limit described below. What remains this project's own contribution
+is methodological: the two families tested against each other with one statistic, against all 495
+alternative partitions, with multiplicity control and a capability control beside the drug-leak
+measurement. Detail and one recorded discrepancy in `LITERATURE_MAP.md`.
+
 **Nothing here is claimed as agent-invariance.** One deposit, 10 dexmedetomidine patients, intracranial
 electrodes in epilepsy-surgery patients, and **0 of 29 patients shared between the arms** — so drug arm,
 electrode type and data quality are nested inside patient identity and no method separates them there. That

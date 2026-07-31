@@ -131,6 +131,22 @@ And the connectivity measures do **not** show that asymmetry — they separate b
 amounts (0.178-0.226). So the coherent reading across P4 and P5 is that **connectivity tracks something
 common to drug-induced unresponsiveness irrespective of agent, and distinct from natural sleep**, while
 power and complexity track the agent. That is a hypothesis generated here, not a result established here.
+
+    PRIOR ART, FOUND AFTER THIS FILE RAN, AND RECORDED HERE BECAUSE THIS IS WHERE A READER RELIES ON THE
+    CLAIM (rule 3). **Kallionpaa et al., Br J Anaesth 2020;125(4):518-528 (PMID 32773216, NCT01889004)**
+    already report alpha-band frontal **wPLI** as a state-specific correlate of unresponsiveness across
+    **dexmedetomidine (n = 23) and propofol (n = 24)** in 47 healthy volunteers: "connectivity changes were
+    related to unresponsiveness rather than drug concentration". **Akeju et al., Anesthesiology
+    2014;121(5):978-89 (PMID 25187999)** supply the amplitude half -- the two agents "place patients into
+    different brain states" spectrally -- and this file cited that paper for its own premise without
+    noticing it also carried half the split. Records pulled through E-utilities and read in full.
+
+    **So the phenomenon is not novel, and that is better news than novelty.** The binding limitation
+    recorded above is the absence of external replication; Kallionpaa is external agreement, in scalp rather
+    than intracranial EEG, in healthy volunteers rather than epilepsy-surgery patients, and with a
+    within-subject LOR/ROR design at constant dosing that removes exactly the drug-arm-nested-in-patient
+    limit named above. What remains this file's own contribution is methodological and should be claimed as
+    nothing more. Detail and one recorded discrepancy in `bsde/docs/LITERATURE_MAP.md`.
 """
 from __future__ import annotations
 

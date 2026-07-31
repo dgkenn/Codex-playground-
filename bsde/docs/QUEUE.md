@@ -524,3 +524,24 @@ Chennu 2014 DoC cohort is out. Q11's ds005620 request — the awakening reports 
 outcome column was never uploaded — is drafted and not sent, and is the cheaper of the two asks. E28's
 substitution was always an analogy under test and its scope limit stands whatever E38 returns: **no sentence
 from either file may be written as a claim about disorders of consciousness.**
+
+---
+
+## Q9 addendum (2026-07-31) — the cohort Q9 says does not exist has been published on
+
+Q9 states that no public deposit pairs raw EEG with two mechanistically distinct anaesthetics in patients
+who share arms. That remains true of *deposits*. It is not true of *cohorts*: **Kallionpää et al.,
+Br J Anaesth 2020 (PMID 32773216, NCT01889004)** recorded 64-channel EEG in 47 healthy volunteers on
+dexmedetomidine (n = 23) or propofol (n = 24), with **within-subject loss and return of responsiveness at
+constant dosing** — the design that separates state from drug concentration, and precisely the thing E36
+identified as structurally impossible in the Krause deposit.
+
+**So the Turku/Scheinin group is a data-request target**, on the same footing as WBIC (Q10 of the Challenge
+B thread) and ds005620 (Q11), and a better one than either for Challenge A specifically. Whether the data
+can be obtained is unknown and untested; nothing here should be read as saying it is available.
+
+Two things this does not change. The arms in that study are still **between-subject** for drug (each
+volunteer received one agent), so it does not by itself supply a within-patient two-agent contrast — what it
+supplies is a within-subject *state* contrast at fixed concentration, which is the more important half.
+And E35/E36's own claim status is unchanged: still unclaimed, now with external corroboration rather than
+none.
