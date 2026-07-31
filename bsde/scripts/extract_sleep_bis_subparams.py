@@ -22,7 +22,7 @@ THE WINDOWS ARE NOT RECOMPUTED. `sleep_edfx_five_stage_worklist.json` is the com
 which (subject, stage, start_seconds, window_s) the EEG table came from, so this reads the same list and
 joins on `recording_id`. Re-deriving the windows would risk a silent mismatch that a join could not detect.
 
-    python bsde/scripts/extract_sleep_emg.py
+    python bsde/scripts/extract_sleep_bis_subparams.py
 """
 from __future__ import annotations
 

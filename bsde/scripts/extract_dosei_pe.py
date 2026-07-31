@@ -1,5 +1,23 @@
 """Compute THIS repo's `permutation_entropy` on DOSE-I raw EEG, beside the depositors' own PE31.
 
+CORRECTION, 2026-07-31, added AFTER this script ran. **The "WHY" paragraph below was copied from
+`extract_dosei_sfs.py` and describes SynchFastSlow, not permutation entropy.** It is left in place rather
+than rewritten, because a pre-registration docstring that gets quietly edited after its run is worth less
+than an honest one with a correction on top. What the paragraph gets right and what it gets wrong:
+
+  * RIGHT, and it is the reason this script exists: rule 23 -- self-written code plus self-written tests
+    share blind spots, and DOSE-I ships an independent implementation to check ours against.
+  * WRONG: the columns quoted (33 SynchFastSlow, 35 PowerFastSlow) are not the ones this script reads.
+    It reads column 30, named `PE31` in the deposit's CSVs: "Permutation Entropy (PE) according to
+    Olofsen et al. (2008), band: 0.5-45 Hz, n=3, tau=1, tie=0.5 uV", and column 31, named `PE32`, which is
+    the same at tau=2. Our call is order 3, delay 1, so `PE31` is the matching parameterisation and `PE32`
+    is carried only as a contrast.
+  * The reciprocal-sign argument below is about SFS and has no bearing on PE, whose two implementations are
+    expected to agree POSITIVELY.
+
+The ALIGNMENT paragraph, the fetch strategy and the causal windowing below are this script's own and are
+accurate. What was measured with it is QUEUE.md Q36; what it left unexplained is registered as E76.
+
 WHY. `bsde/src/bsde/features/bis_subparams.py` added the first genuinely bispectral quantity in this repo,
 and it has only self-written tests. Rule 23: self-written code plus self-written tests share blind spots,
 and an independent implementation catches what unit tests cannot. **DOSE-I ships one.** Its
@@ -26,7 +44,7 @@ could be tuned into agreement. The depositors' series is 1 Hz. This computes `sy
 `STRIDE_S`-th second. No lag search is performed anywhere, and E59's placebo tests alignment directly by
 shifting the window and checking the agreement collapses.
 
-    python bsde/scripts/extract_dosei_sfs.py --n-recordings 40
+    python bsde/scripts/extract_dosei_pe.py --n-recordings 40
 """
 from __future__ import annotations
 
