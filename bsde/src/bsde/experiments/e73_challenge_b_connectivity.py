@@ -248,6 +248,45 @@ def main() -> int:
             print(f"   {f:<34s} rho {r:+.3f}  q = {qq:.4f}{'  *' if qq < 0.05 else ''}")
         res["family_bh"] = {f: {"rho": r, "q": float(qq)} for (f, r, _), qq in zip(fam, q)}
 
+    # ---- P3 PLACEBO, registered in the docstring and ABSENT from the first run of this file.
+    # It is implemented here rather than dropped: a registered arm that never executed must be reported,
+    # not quietly omitted (rule 48's second half, from E37's 30 s arm). Nothing else changes -- the
+    # permutation is exactly the one the registration names, and rule 48's FIRST half applies to the
+    # result: a placebo cannot validate a null, so when the primary's interval includes zero this arm is
+    # NOT INFORMATIVE by construction and says so instead of printing a pass.
+    def _placebo(x, y, groups, seed, reps=400):
+        rg = np.random.default_rng(seed)
+        out = []
+        for _ in range(reps):
+            out.append(spearman(x, rg.permutation(y)))
+        v = np.asarray([q for q in out if np.isfinite(q)])
+        return (float(np.nanmedian(v)), float(np.quantile(v, .025)), float(np.quantile(v, .975)),
+                float(np.mean(np.abs(v) >= abs(spearman(x, y))))) if v.size else (float("nan"),) * 4
+
+    plac = {}
+    for label, feat in (("primary", PRIMARY), ("family_bh_survivor", None)):
+        if feat is None:
+            surv = [f for f, d in res.get("family_bh", {}).items() if d["q"] < 0.05]
+            if not surv:
+                continue
+            feat = surv[0]
+        xa = np.array([np.nanmean([_f(v.get(feat, "")) for v in by[s].values()]) for s in subs])
+        oka = np.isfinite(xa) & np.isfinite(acc1)
+        pm, plo, phi, pfrac = _placebo(xa[oka], acc1[oka], None, SEED + 7)
+        real = d1.get(feat, {}).get("rho", float("nan"))
+        null_primary = not (np.isfinite(d1.get(feat, {}).get("lo", np.nan))
+                            and (d1[feat]["lo"] > 0 or d1[feat]["hi"] < 0))
+        plac[label] = {"feature": feat, "real_D1_rho": real, "placebo_median": pm,
+                       "placebo_ci": [plo, phi], "frac_placebo_at_least_as_extreme": pfrac,
+                       "informative": bool(not null_primary)}
+        print(f"\nP3 PLACEBO ({label}: {feat}) accuracy permuted across subjects, D1")
+        print(f"    real rho {real:+.3f}   placebo median {pm:+.3f} [{plo:+.3f}, {phi:+.3f}]   "
+              f"fraction of permutations at least as extreme = {pfrac:.4f}")
+        if null_primary:
+            print("    NOT INFORMATIVE -- the real effect's interval includes zero, so there is nothing "
+                  "for a permutation to fail to reproduce (rule 48).")
+    res["placebo_P3"] = plac
+
     res["verdict"] = verdict
     json.dump(res, open(OUT, "w"), indent=2)
     print(f"\nwrote {OUT}")
