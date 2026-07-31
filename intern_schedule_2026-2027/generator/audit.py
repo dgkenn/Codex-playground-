@@ -55,7 +55,7 @@ for l,dl in calldays.items():
 # explicitly so they can be revoked the moment the grid says otherwise.
 NEXT_IS_OUTPATIENT={("MACNEILLE",2026,10),   # Nov 2026 — confirm outpatient/elective
                     ("OGHENESUME",2027,4),   # May 2027 — confirm outpatient/elective
-                    ("WISE",2026,9),         # Oct 2026 — confirm outpatient/elective (matches manual schedule)
+                    ("WISE",2026,9),         # Oct 2026 = ELECTIVE (confirmed by PD) — ok to finish Sept on nights
                     ("BRONSON",2026,10)}     # Nov 2026 = VACATION (per scheduler) — ends on Fri NF, weekend off, then vacation
 for dt in days:
     nfp=A[dt]["NF"]
