@@ -602,3 +602,42 @@ E39 is the entry that earns that extension.
 eegmmidb trial cache, and Challenge A's larger blocker is the one Q9 records — every reachable deposit has
 its two agents in disjoint patients. A better-powered artefact test sharpens a defence of a finding that is
 already externally corroborated by Kallionpää 2020 and Akeju 2014; it does not unblock the challenge.
+
+---
+
+## Q10 item 2 — CLOSED 2026-07-31. The information-horizon question cannot be asked on DOSE-I at all.
+
+Q10 named this as the one thing worth more than a sixth feature: *"A design that could separate 'no
+information earlier' from 'no information the incumbent lacks'."* E40 built it — disjoint bands instead of
+E37's nested horizons, the position check promoted from report to gate, the raw out-of-fold AUC instead of a
+folded one. **All eight bands were refused by their own gates**, seven on position at 0.026-0.060 against a
+0.20 ceiling.
+
+**A feasibility probe run before registering any successor shows no successor can be built.** Position-matched
+controls do not exist at the lead times that matter:
+
+| band | band windows with a within-record control within 0.10 position | recordings contributing |
+|---|---|---|
+| [0, 30) s | 1,045 of 14,220 | 38 |
+| [60, 120) s | 485 of 11,450 | 15 |
+| [180, 240) s | 60 of 3,369 | 1 |
+| [300, 420) s | **0 of 2,131** | **0** |
+
+**The reason is structural.** In DOSE-I, "far from a loss" means "after the last loss", because procedural
+sedation cases end awake — the control class is 26,489 no-loss-after windows at median position 0.90 against
+819 genuinely-far windows, while band windows sit at 0.26-0.35. There is no population of early-in-record
+windows far from any loss, because every case's early portion leads into an induction. **Closed as
+checked-and-impossible, like Q9 item 2, rather than left pending.**
+
+**And a second, independent flaw that this project's own verdict code was hiding.** E40's band test was
+one-sided (`lo > 0.5`), so its placebo printed "at chance" in every band while SEF95 scored **0.237 [0.115,
+0.418]** under a *fake* landmark — an interval lying entirely *below* chance, which is discriminable, not
+null. Two-sided, the placebo is discriminable in **5 of 7** gated bands and the curve is not flat. Rule 37,
+third occurrence. Had the position gate passed, E40 would have reported a horizon while printing "placebo
+curve flat at chance: True" beneath it.
+
+**What would answer the question, if anything.** A deposit where inductions occur at varied positions within
+a recording, or where control periods are interleaved with inductions rather than trailing them — I-CARE's
+serial per-patient recordings across days are the nearest shape held, and they carry no induction at all.
+**This is a data-shape requirement, not an analysis problem, and it should be checked against any future
+deposit before that deposit is acquired for Challenge C.**
