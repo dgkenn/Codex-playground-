@@ -218,3 +218,56 @@ def coherence(x: np.ndarray, y: np.ndarray, sfreq: float, lo_hz: float, hi_hz: f
     if not ok.any():
         return float("nan")
     return float(np.mean(num[ok] / den[ok]))
+
+
+def wpli_matrix(X: np.ndarray, sfreq: float, lo_hz: float, hi_hz: float,
+                window_s: float = 2.0, overlap: float = 0.5, debias: bool = True) -> np.ndarray:
+    """The full channel x channel (debiased) wPLI matrix from ONE segmentation.
+
+    `X` is (n_channels, n_samples). Same segmentation, window, band and estimator as `wpli`, computed for
+    every pair at once instead of pair by pair -- which is what makes a 62-channel graph affordable
+    (1,891 pairs against 45 for a 10-channel montage). **`tests/test_wpli_matrix.py` asserts this
+    reproduces `wpli` exactly, pair by pair, on real-shaped input** (rule 23: a fast reimplementation that
+    silently disagrees with the tested one is a failure this project has already paid for).
+
+    The diagonal is set to 0 rather than 1: a node's phase lag with itself is not connectivity, and
+    leaving 1s on the diagonal would inflate every strength and clustering coefficient computed from it.
+    """
+    X = np.asarray(X, float)
+    if X.ndim != 2:
+        raise ValueError("X must be (n_channels, n_samples)")
+    C, n = X.shape
+    nper = int(round(window_s * sfreq))
+    if nper < 8 or n < nper:
+        return np.full((C, C), np.nan)
+    step = max(1, int(nper * (1.0 - overlap)))
+    starts = list(range(0, n - nper + 1, step))
+    if len(starts) < 2:
+        return np.full((C, C), np.nan)
+    win = np.hanning(nper)
+    freqs = np.fft.rfftfreq(nper, 1.0 / sfreq)
+    band = (freqs >= lo_hz) & (freqs <= hi_hz)
+    if band.sum() < 1:
+        return np.full((C, C), np.nan)
+
+    segs = np.stack([X[:, st:st + nper] for st in starts], axis=0)      # (T, C, nper)
+    segs = (segs - segs.mean(axis=2, keepdims=True)) * win
+    S = np.fft.rfft(segs, axis=2)[:, :, band]                            # (T, C, F)
+
+    # Im(S_i conj(S_j)) = Im_i Re_j - Re_i Im_j, for every ordered pair, at every (segment, bin)
+    R, I = S.real, S.imag
+    Im = (I[:, :, None, :] * R[:, None, :, :]) - (R[:, :, None, :] * I[:, None, :, :])   # (T, C, C, F)
+    s1 = Im.sum(axis=(0, 3))
+    s2 = (Im ** 2).sum(axis=(0, 3))
+    sa = np.abs(Im).sum(axis=(0, 3))
+    with np.errstate(divide="ignore", invalid="ignore"):
+        if debias:
+            num = s1 ** 2 - s2
+            den = sa ** 2 - s2
+        else:
+            num = np.abs(s1)
+            den = sa
+        M = np.where(den > 0, num / den, np.nan)
+    M = np.asarray(M, float)
+    np.fill_diagonal(M, 0.0)
+    return M
