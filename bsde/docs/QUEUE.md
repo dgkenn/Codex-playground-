@@ -470,3 +470,57 @@ analysis code and any derived table back.
 
 **What this does NOT unblock.** ds005620 is propofol only, so it does nothing for Q9's two-agent problem;
 and it is healthy volunteers, so nothing from it transfers to a DoC claim without saying so.
+
+---
+
+## Q12 — Challenge B: what E28's gate failure actually established, and why the successor asks about the label
+
+**Status: E38 registered and running. E28 stands as ABSENT and its floor is not being moved.**
+
+E28 was Challenge B's healthy-BCI substitution — motor imagery is command-following that produces no
+movement, so it has the right *form* even though a healthy subject who cannot drive a BCI is not
+unconscious. Its machinery gate refused before any resting feature was read:
+
+* **17 of 104 subjects (16.3 %)** beat their own permutation null at p < 0.05, against a registered floor of
+  20 %. Median imagery AUC 0.531 against a median per-subject null of 0.461.
+* The label **varies** (IQR 0.212, floor 0.10) and **coverage passed** (104 subjects, floor 60).
+
+**The machinery is not broken, and the placebo arm is what shows it.** Executed movement — real fist
+movement, necessarily easier to decode than imagined — scores a median AUC of 0.545 with **24.0 %** beating
+their own null. The ordering executed > imagery is right in both statistics, and 17 of 104 past p < 0.05
+where 5 are expected by chance is real signal. **So the label carries signal at the level of the cohort and
+almost none at the level of the subject**, and it is the second that Challenge B's substitution needs.
+
+**The cause is arithmetic, not biology.** `eegmmidb`'s imagery left/right protocol is runs R04, R08 and R12
+— **45 trials per subject, about 22 per class, and that is the entire deposit**. A per-subject permutation
+test at that size reaches p < 0.05 only for a large true effect.
+
+**The gate asked for the wrong quantity, and saying so changes nothing.** Its 20 % floor was a lenient
+reading of the BCI-illiteracy literature's 70-85 %, which is a **prevalence** measured over hundreds of
+trials; the gate applied it to a **detection rate** at n = 45. That is rule 30 exactly — pre-registration
+stops a bar moving afterwards, it does not stop it being set badly, and the paperwork looks correct either
+way. Lowering it now would be indistinguishable from moving it, whatever the justification, so E28 stands.
+
+### E38, the successor, and why it is worth more than E28's verdict would have been
+
+The instrument changes from a significance rate to **reliability**: split each subject's trials in half,
+decode each half independently, and correlate the two per-subject estimates across subjects. Spearman-Brown
+gives the reliability of the full-length label, and its square root is the **attenuation ceiling** — the
+largest correlation any resting-state feature could have with this label, however good the feature is.
+
+That number bounds every future experiment on this deposit rather than settling one candidate, and it can
+**kill the healthy-BCI substitution honestly**, which is what Challenge B most needs and what no
+candidate-scoring experiment can deliver. E38 reads no resting-state candidate at all.
+
+Its P2 arm is registered rather than added later because it discriminates two diagnoses with different
+consequences: **executed reliable and imagery not** means the deposit supports per-subject labels and
+imagery specifically is too weak here; **neither reliable** means 45 trials is too few for any per-subject
+label in this deposit, and the same verdict follows for any task in it.
+
+### Challenge B's standing position, unchanged by any of this
+
+No public deposit pairs task-free EEG with a per-patient command-following label. The WBIC request for the
+Chennu 2014 DoC cohort is out. Q11's ds005620 request — the awakening reports whose EEG is public and whose
+outcome column was never uploaded — is drafted and not sent, and is the cheaper of the two asks. E28's
+substitution was always an analogy under test and its scope limit stands whatever E38 returns: **no sentence
+from either file may be written as a claim about disorders of consciousness.**
