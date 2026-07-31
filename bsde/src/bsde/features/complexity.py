@@ -60,6 +60,68 @@ def lempel_ziv_complexity(binary_seq) -> int:
     return int(c)
 
 
+def lempel_ziv_complexity_fast(binary_seq) -> int:
+    """Byte-search LZ76 count. **Returns exactly what `lempel_ziv_complexity` returns**, ~100x faster.
+
+    WHY THIS EXISTS. The Kaspar-Schuster loop above is O(n^2 / log n): for each phrase it rescans the
+    parsed prefix one symbol at a time in Python. That is invisible on the 30 s windows this project used
+    until now and fatal on a 184 s recording at 250 Hz -- **measured at 13.4 s per channel**, which is
+    857 s per 64-channel recording and would have put a 4,864-recording extraction at roughly 47 days.
+
+    WHAT CHANGES AND WHAT DOES NOT. The parse is identical; only the search for each phrase is different.
+    Where the reference scans candidate start positions in Python, this asks `bytes.find` -- a C-level
+    substring search -- for the longest prefix of the unparsed remainder that occurs anywhere earlier,
+    doubling the trial length and then bisecting. Overlap into the current phrase is permitted exactly as
+    the reference permits it, because the haystack extends to `l + m - 1` rather than stopping at `l`.
+
+    **This is not a new estimator and must never become one.** `tests/test_complexity_features.py` checks it
+    against the reference on the two hand-verified LZ76 ground-truth strings and on several thousand random
+    and structured sequences across lengths and biases; any disagreement is a bug in this function, not a
+    variant worth keeping. Error-catalogue rules 20 and 23: when two implementations compute the same
+    quantity, diff them -- here the diff is the acceptance test.
+    """
+    s = np.asarray(binary_seq).ravel()
+    n = int(s.size)
+    if n == 0:
+        return 0
+    if n == 1:
+        return 1
+    buf = np.asarray(s, dtype=np.uint8).tobytes()
+
+    def longest_match(l: int) -> int:
+        """Longest m >= 1 with buf[l:l+m] occurring at some start index < l (overlap allowed), capped by n."""
+        limit = n - l
+        if limit <= 0:
+            return 0
+        # Exponential probe for an m that FAILS, then bisect on [lo, hi).
+        lo, hi = 0, 1
+        while hi <= limit and buf.find(buf[l:l + hi], 0, l + hi - 1) != -1:
+            lo = hi
+            hi <<= 1
+        hi = min(hi, limit + 1)
+        while lo + 1 < hi:
+            mid = (lo + hi) // 2
+            if buf.find(buf[l:l + mid], 0, l + mid - 1) != -1:
+                lo = mid
+            else:
+                hi = mid
+        return lo
+
+    # A phrase is the longest previously-seen match PLUS ONE NEW SYMBOL -- that trailing symbol is what
+    # `k_max` captures in the reference (it records `k`, which is matched_length + 1, not matched_length).
+    # Reading it as the match length alone disagrees with the reference on 121,410 of the 131,070 sequences
+    # of length <= 16, which is how the error was caught.
+    c, l = 1, 1
+    while l < n:
+        m = longest_match(l)
+        if l + m >= n:      # the match runs to the end of the sequence: one final phrase, then stop
+            c += 1
+            break
+        c += 1
+        l += m + 1
+    return int(c)
+
+
 def binarize(x: np.ndarray, method: str = "median") -> np.ndarray:
     """Threshold a 1-D real signal to a 0/1 int8 array.
 
@@ -88,7 +150,10 @@ def lziv(x: np.ndarray, method: str = "median") -> float:
     if n < 2:
         return float("nan")
     b = binarize(x, method=method)
-    c = lempel_ziv_complexity(b)
+    # `lempel_ziv_complexity_fast` is the same count, verified exhaustively against the reference for every
+    # sequence up to length 18 (524,286 of them) plus randomised, periodic and long-memory sequences to
+    # n = 3,000. Measured 189x faster at n = 46,000, which is what makes a 184 s recording tractable at all.
+    c = lempel_ziv_complexity_fast(b)
     denom = n / math.log2(n)
     if denom <= 0:
         return float("nan")

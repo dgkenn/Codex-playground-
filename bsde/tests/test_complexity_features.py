@@ -135,3 +135,60 @@ def test_permutation_entropy_unnormalized_matches_normalized_times_log2_factoria
     raw = permutation_entropy(x, order=3, delay=1, normalize=False)
     norm = permutation_entropy(x, order=3, delay=1, normalize=True)
     assert raw == pytest.approx(norm * math.log2(math.factorial(3)), rel=1e-9)
+
+
+# =========================================================================================================
+# lempel_ziv_complexity_fast must be BIT-IDENTICAL to the reference, not merely close.
+#
+# Added 2026-07-31. The fast path exists because the reference is O(n^2/log n) and costs ~4-13 s on a
+# 184 s / 250 Hz channel, which put a 4,864-recording extraction out of reach. A faster estimator that
+# returned slightly different numbers would silently break comparability with every LZ result already in
+# the ledger, so the acceptance test is exact equality, and the first version of the fast path FAILED it
+# on 121,410 of 131,070 sequences (it read a phrase as the longest match rather than the longest match
+# plus one new symbol). Error-catalogue rules 20 and 23.
+# =========================================================================================================
+
+def test_fast_lz_matches_reference_on_ground_truth():
+    from bsde.features.complexity import lempel_ziv_complexity_fast as fast
+    assert fast([0, 0, 0, 0]) == 2
+    assert fast([int(c) for c in "0001101001000101"]) == 6
+
+
+def test_fast_lz_matches_reference_exhaustively_to_length_14():
+    from bsde.features.complexity import (lempel_ziv_complexity as ref,
+                                          lempel_ziv_complexity_fast as fast)
+    for n in range(1, 15):
+        for v in range(1 << n):
+            b = [(v >> i) & 1 for i in range(n)]
+            assert ref(b) == fast(b), (n, v, ref(b), fast(b))
+
+
+def test_fast_lz_matches_reference_on_structured_and_random_sequences():
+    import numpy as np
+    from bsde.features.complexity import (lempel_ziv_complexity as ref,
+                                          lempel_ziv_complexity_fast as fast)
+    rng = np.random.default_rng(7)
+    for t in range(60):
+        n = int(rng.integers(2, 2000))
+        p = float(rng.uniform(0.05, 0.95))
+        b = (rng.random(n) < p).astype(np.int8)
+        if t % 4 == 1:                              # periodic: the low-complexity extreme
+            b = np.tile(b[:max(1, n // 10)], 10)[:n]
+        if t % 4 == 2:                              # long-memory random walk sign
+            b = (np.cumsum(rng.standard_normal(n)) > 0).astype(np.int8)
+        if t % 4 == 3:                              # constant: the degenerate case
+            b = np.zeros(n, dtype=np.int8)
+        assert ref(b) == fast(b), (n, p, t)
+
+
+def test_fast_lz_is_actually_faster_on_a_realistic_channel():
+    """A guard against the fast path silently regressing to the reference's complexity class."""
+    import time
+    import numpy as np
+    from bsde.features.complexity import (lempel_ziv_complexity as ref,
+                                          lempel_ziv_complexity_fast as fast, binarize)
+    b = binarize(np.cumsum(np.random.default_rng(0).standard_normal(20000)))
+    t0 = time.time(); cf = fast(b); tf = time.time() - t0
+    t0 = time.time(); cr = ref(b);  tr = time.time() - t0
+    assert cr == cf
+    assert tf * 10 < tr, f"fast path only {tr / max(tf, 1e-9):.1f}x faster; expected >10x"
