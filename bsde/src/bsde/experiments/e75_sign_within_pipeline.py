@@ -210,9 +210,18 @@ def main() -> int:
         hits.append(c / max(1, len(testable)))
     plac = float(np.mean(hits))
     real = len(agree) / max(1, len(testable))
+    # CORRECTION 2026-07-31, after the first run. The branch below originally compared |real - 0.5|
+    # against |plac - 0.5|, and that gate COULD NOT FAIL: `plac` is a mean over 300 draws and sits at
+    # ~0.500 by construction, while `real` with an ODD number of testable features can never equal 0.500.
+    # So NOT INFORMATIVE was structurally unreachable -- rule 40 in the verdict code, which rule 37 has
+    # already caught four times. The comparison is now against the placebo DISTRIBUTION, one-sided, which
+    # is what "the placebo reproduces the agreement rate" has to mean. This makes the test STRICTER after
+    # seeing a pass, never looser, and it changes no threshold, cohort, contrast or gate.
+    plac_p = float(np.mean(np.asarray(hits) >= real))
     print(f"\nPRIMARY  {len(agree)} AGREE, {len(reverse)} REVERSE of {len(testable)} testable "
           f"(rate {real:.3f})")
-    print(f"P1 PLACEBO  state labels permuted within subject: {plac:.3f} ({PLACEBO_DRAWS} draws)")
+    print(f"P1 PLACEBO  state labels permuted within subject: mean {plac:.3f} ({PLACEBO_DRAWS} draws); "
+          f"fraction of draws reaching the real rate = {plac_p:.3f}")
     if blocked:
         print(f"BLOCKED by G1/G2: {blocked}")
 
@@ -221,8 +230,12 @@ def main() -> int:
     elif not agree:
         verdict = ("ALL REVERSE -- every surviving feature moves the opposite way with and without a drug. "
                    "Everything measured here reads pharmacology rather than state.")
-    elif abs(real - 0.5) <= abs(plac - 0.5):
-        verdict = ("NOT INFORMATIVE -- permuting the state label reproduces the agreement rate.")
+    elif plac_p > 0.05:
+        verdict = (f"NOT INFORMATIVE -- permuting the state label reproduces the agreement rate: "
+                   f"{plac_p:.3f} of placebo draws reach {real:.3f} or better. The per-feature signs "
+                   f"below are each determined by their own G1 interval and are reported as DESCRIPTIVE, "
+                   f"but the SET shows no more structure than chance and must not be presented as a "
+                   f"class of measures.")
     elif not reverse:
         verdict = (f"ALL AGREE -- all {len(agree)} surviving features agree in sign. WEAKER than it looks: "
                    f"a test nothing fails does not discriminate between candidates (rule 49).")
@@ -233,7 +246,8 @@ def main() -> int:
                    f"sufficient.")
     print(f"\nVERDICT: {verdict}")
     json.dump({"n_features": len(feats), "features": res, "agree": agree, "reverse": reverse,
-               "blocked": blocked, "agreement_rate": real, "placebo_rate": plac,
+               "blocked": blocked, "agreement_rate": real, "placebo_rate": plac, "placebo_p": plac_p,
+               "placebo_hits": hits,
                "verdict": verdict}, open(OUT, "w"), indent=2)
     print(f"wrote {OUT}")
     return 0
