@@ -694,3 +694,16 @@ unverified on GitHub.
     **The discipline: one repair per run, with the reason written down, and if the gate fails again the
     run is over and the failure is the result.** A gate revised twice is no longer independent of the
     answer, whatever the intent behind each change.
+59. **WHEN YOU IMPORT RESULTS FROM A PRIOR EXPERIMENT, IMPORT THE WHOLE ROW — A SELECTIVE IMPORT IS A
+    SILENT COHORT CHOICE.** **E74** compared each feature's drug-free response against its drug response,
+    and populated its `DRUG_DZ` table by hand from **E67**, taking the two drug columns and leaving E67's
+    **no-drug column behind**. E67's no-drug arm was natural N3 sleep, where `whole_head_exponent` moves at
+    d_z **+4.008** — more than under either anaesthetic. E74 saw only the sleep-deprivation arm (+0.034),
+    concluded the feature "moves for drugs and not without one", and labelled it PHARMACOLOGY. **The
+    opposite is true**: it responds to every genuine loss of consciousness, drug or natural, and its silence
+    under sleep deprivation reflects a far smaller state change. The reversing feature was `lempel_ziv` all
+    along (−2.281 natural, +1.551 drug), and the conclusion was exactly inverted.
+    **The mechanics of the error matter more than the instance: hand-copying a subset of a prior result's
+    columns into a new file's constants is a cohort decision disguised as bookkeeping.** Load the prior
+    result's JSON and select from it in code, so the columns you did not use are visible in the diff — or,
+    at minimum, transcribe every arm and drop the unused ones explicitly.
