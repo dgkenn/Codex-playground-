@@ -1593,3 +1593,46 @@ cross-deposit floor applies to any magnitude claim; only the within-subject *cha
 then the ranking is the claim rather than the ratio's value. ds004541 is n = 8, which will dominate the
 uncertainty. And sleep deprivation is a *mild* arousal change — if no measure moves detectably in the
 no-drug arm, the ratio is undefined and rule 53 applies before anything is compared.
+
+---
+
+## Q30 — the transportability audit is the right question and this project cannot yet answer it (E66, 2026-07-31)
+
+E65's accidental discovery — `exponent_gamma` reading **−2.675** on VitalDB and **+29.651** on DOSE-I —
+prompted a systematic audit: which of our features survive a change of deposit? E66 registered
+R = (IQR of per-deposit medians) / (median within-deposit between-subject IQR), with the mechanistic
+hypothesis that R should rank with how close a feature's band sits to the acquisition Nyquist.
+
+**H1 ABSENT: Spearman(R, band_hi / lowest Nyquist) = +0.3669 [−0.3504, +0.8661].** So `exponent_gamma`,
+which literally fits 50–90 Hz above a 62.5 Hz Nyquist, is a **special case** rather than the extreme of a
+gradient. The anti-alias account does not generalise, and that verdict stands as registered.
+
+### The R table does not measure transportability, and that is my error
+
+G1 admitted exactly four deposits per feature: **chennu** (sedated volunteers), **eegmmidb** (awake adults),
+**hbn** (awake **children**, 5–20) and **vitaldb** (**anaesthetised** surgical patients). `lempel_ziv`
+medians: hbn 0.228, vitaldb 0.441, eegmmidb 0.623, chennu 0.749. The paediatric value is low because they
+are children; the surgical value is low because they are unconscious. **Those differences are the features
+working**, and R cannot separate them from transport failure.
+
+The registration named population as a confound, cited rule 50 while doing so, and then computed the
+statistic anyway. **Error catalogue rule 54.**
+
+### What a correct audit needs, and why it cannot run today
+
+State- and condition-matched cohorts — eyes-closed resting adults — which means chennu at level 1,
+eegmmidb eyes-closed, HBN restricted to its oldest subjects, ds005620 awake, and **vitaldb excluded
+entirely** since it holds no awake window at all. That leaves **three** deposits at the full 13-feature
+core and about five at the 6-feature intersection, with eye state unlabelled on several of them (E44: eye
+state is first-order, so mixing conditions reintroduces a large confound).
+
+**The cohort that would answer this was extracted and then lost.** `multicohort_features.csv` — ds003775,
+ds004504, ds004148, ds005385, all eyes-closed resting adults, exactly the matched set required — lived
+under `/tmp/eeg_probe` per the "derived subject-level tables are not committed" convention, and went with
+a container rollback. That convention exists to keep **credentialed patient data** out of git and it is
+right for HEEDB and I-CARE; **applying it to open OpenNeuro deposits cost a table that has to be rebuilt
+from scratch.**
+
+**Next step, and it is cheap:** re-extract the four normative cohorts once the current three jobs finish,
+and commit that table — it is CC0/open and there is no reason it should be ephemeral. E67 is the
+state-matched audit, to be registered against it.

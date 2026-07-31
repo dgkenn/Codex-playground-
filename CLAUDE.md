@@ -633,3 +633,16 @@ unverified on GitHub.
     less" would have been wrong: there was nothing in either family to leak. **The check costs one extra
     loop over code already written** — permute the label, recompute the same statistic per candidate, and
     confirm the reference family clears its own null before the comparison is read as meaningful.
+54. **A CONFOUND NAMED IN THE REGISTRATION IS NOT THEREBY CONTROLLED — WRITING THE CAVEAT CREATES THE
+    FEELING OF HAVING HANDLED IT.** Rule 50 says get the baseline before naming a mechanism. This is the
+    failure one step earlier: **E66** registered a cross-deposit transportability statistic, wrote in its
+    own docstring that between-deposit spread "confounds device, montage, reference, sampling rate,
+    pipeline AND population", cited rule 50 while writing it — and then computed the statistic across
+    **anaesthetised surgical patients, awake children, awake adults and sedated volunteers.** The
+    `lempel_ziv` medians it produced (HBN 0.228, VitalDB 0.441, eegmmidb 0.623, chennu 0.749) are low in
+    the children because they are children and low in the surgical patients because they are unconscious.
+    **Those differences are the features WORKING**, and the statistic could not tell them from failure.
+    The registration's own caveat was word-perfect and changed nothing about the computation.
+    **The check: for every confound the registration names, point at the LINE OF CODE that handles it.**
+    If there isn't one, either restrict the cohort or delete the claim — a named confound with no
+    corresponding filter, covariate or matched control is an unnamed confound wearing a disclaimer.
