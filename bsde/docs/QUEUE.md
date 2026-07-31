@@ -1491,3 +1491,53 @@ cheap fix that only the investigator can apply.
 browser, download `Farnes_et_al_PLOS_ONE_Dryad.zip` (934 MB), and drop it anywhere readable by the session.
 Nothing else in the queue is blocked on it, and it is the highest-value single unblock available for
 Challenge A.
+
+---
+
+## Q28 — Challenge B has been asked BETWEEN subjects with a WITHIN-subject marker, and E45 says so
+
+*Brainstormed 2026-07-31 against the full constraint set. Recorded as a ranked idea, **not registered** —
+Q14's own sequencing says the ceiling (E63) is measured before any correlation, and jumping that would be
+the move `DISCOVERY_LOOP.md` forbids.*
+
+Every Challenge B test in this project has been **between subjects**: E28, E41 and E56 all correlate one
+resting-EEG number per subject against that subject's decoding ability. E38's reliability ceiling
+(r_sb = 0.2918, cap ρ ≈ 0.5402) is a property of that design.
+
+**But E45 measured five-year test-retest stability on our own estimator and found `lempel_ziv` is a STATE
+measure, not a trait.** A state measure is precisely what a between-subject design cannot use and what a
+within-subject design wants. **That retrodicts E41's null** — it correlated state-like quantities against a
+trait-like label across people — and a finding that retrodicts a standing negative is worth more than one
+that adds a positive.
+
+### What Stieger makes possible that eegmmidb never could
+
+**41 subjects have 11 sessions each and 21 have 7** — and the deposit exists to study *learning*, so
+session-to-session accuracy variation is largely real rather than noise. That supports a design nobody here
+has proposed:
+
+> **Does a subject's session-to-session CHANGE in resting EEG track their session-to-session CHANGE in
+> decoding accuracy?**
+
+Its properties are different from, and in places better than, the between-subject question:
+
+* **Immune to every stable between-subject confound** — age, skull thickness, electrode impedance, hair,
+  baseline alpha amplitude — because each subject is their own control.
+* **Not capped by E38's ceiling**, which bounds how well a subject's *stable* ability can be estimated. This
+  asks about change, and the relevant reliability is a different quantity.
+* **It is the design a state measure can win**, which is the one this project's own stability work says our
+  measures are.
+
+### What it would cost, and the honest caveats
+
+* A second Stieger pass computing features on the **2 s pre-cue baselines** (450 per session × 186 sessions).
+  The label pass is already running; the feature pass is a separate and much heavier job.
+* **A change score is noisier than a level** — the difference of two noisy measurements. This is not a free
+  lunch, and the design must carry its own reliability estimate rather than inherit E63's.
+* **`lrtc_alpha` still cannot be tested** (Q14): the deposit is trial-epoched and `lrtc_envelope` now
+  refuses rather than shrinking its scales. This would be a test of spectral and connectivity measures.
+* Stieger's baseline is a **cued 2 s inter-trial window, not rest** — inherited from Q14 and unchanged.
+
+**Rank: 2, behind E63.** The ceiling comes first because it is cheap, already registered, and because if the
+label turns out to be highly reliable then the between-subject design is worth re-running on 62 subjects
+before anything more elaborate is built.
