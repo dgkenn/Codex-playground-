@@ -112,6 +112,54 @@ SCOPE AND LIMITS.
   * **Four subjects are excluded by name** (S088, S089, S092, S100), documented by PhysioNet as damaged.
     Named rather than discovered (rule 14).
   * 64 channels at 160 Hz: `exponent_gamma` (50-90 Hz) is above Nyquist and NaN by design.
+
+--------------------------------------------------------------------------------------------------------
+OUTCOME. **P1(a) FAILED at 16.3 % against a registered floor of 20 %. Nothing downstream was computed and
+no resting feature was ever touched. The verdict is ABSENT, not negative (rule 31) — and the floor is NOT
+being lowered, because the diagnosis below is a reason to distrust the gate's SPECIFICATION, which is not
+the same thing as a reason to pass it.**
+
+    (a) 17 of 104 subjects (16.3 %) beat their own permutation null at p < 0.05, against a floor of 20 %.
+        Median imagery AUC 0.531 against a median per-subject null of 0.461.        *** FAILED
+    (b) imagery AUC IQR 0.212, floor 0.10.                                              PASSED
+    (c) 104 subjects with both a resting row and a label, floor 60.                      PASSED
+
+**THE MACHINERY IS BEHAVING, AND THE ONE CHECK THAT SAYS SO IS THE PLACEBO ARM.** Executed movement — real
+fist movement, which must be easier to decode than imagined fist movement — scores a median AUC of 0.545
+and **24.0 %** beating their own null, against imagery's 0.531 and 16.3 %. The ordering is right in both
+statistics. A decoder that was simply broken would not have produced it, and a label that was pure noise
+would not have put 17 of 104 subjects past p < 0.05 where 5 are expected by chance. **So the label carries
+real signal at the level of the COHORT and almost none at the level of the SUBJECT**, and the second of
+those is what Challenge B's substitution needs.
+
+**WHY, AND IT IS ARITHMETIC RATHER THAN BIOLOGY.** `eegmmidb`'s imagery left/right protocol is runs R04,
+R08 and R12, roughly fifteen cued trials each — **45 trials per subject, about 22 per class, and that is
+the entire deposit.** A per-subject permutation test at that size can only reach p < 0.05 for a fairly
+large true effect, so the fraction reaching significance is a statement about detection power at n = 45,
+not about how many of these people can drive a BCI.
+
+**THE GATE ASKED FOR THE WRONG QUANTITY, AND SAYING SO CHANGES NOTHING ABOUT THIS RESULT.** The header
+argues from the BCI-illiteracy literature that 15-30 % of healthy people cannot drive a motor-imagery BCI,
+so 70-85 % can; `MIN_DECODERS_FRACTION = 0.20` was set as a lenient version of that. But the literature's
+figure is a **prevalence**, measured over hundreds of trials, and the gate applied it to a **detection
+rate** over 45. Those are different quantities and the floor was never the right instrument for the
+question. That is error-catalogue rule 30 exactly: pre-registration stops a bar moving afterwards, it does
+not stop it being set badly, and the failure is harder to see because the paperwork looks correct.
+
+**What follows from that is a successor, not a re-run.** Lowering the floor now would be indistinguishable
+from moving it, whatever the justification, and the whole point of writing the rule down is that the
+justification always feels good at the time. E28 stands as ABSENT.
+
+**WHAT THE SUCCESSOR MUST CHANGE, AND IT IS THE INSTRUMENT.** The question a noisy label has to answer
+before it can be a regression target is not "how many subjects reach significance" but **"how much of the
+between-subject variance in this label is real"** — that is, its RELIABILITY. It is directly measurable
+from the trials already extracted: split each subject's trials in half, decode each half separately, and
+correlate the two per-subject AUC estimates across subjects. A label whose split-half reliability is near
+zero cannot correlate with any resting feature no matter how good the feature is, and the observed
+ceiling on any such correlation is bounded by the square root of that reliability. **That number is worth
+more than E28's verdict would have been**, because it settles whether the healthy-BCI substitution is
+viable at all rather than whether one candidate beat one incumbent — and it can kill the substitution
+honestly, which is what Challenge B most needs.
 """
 from __future__ import annotations
 
