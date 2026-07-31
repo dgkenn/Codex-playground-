@@ -1849,3 +1849,47 @@ pre-exposure confound, so conditioning on it removes real signal (rule 13).
 A registered test on a deposit or a partition not used here, with `bis_rbr` and PE31 pre-declared, and the
 29-feature multiplicity handled rather than noted. DOSE-I ships no EMG channel, so the muscle question
 cannot be settled on it — Sleep-EDFx can (E70's submental channel), and `bis_rbr` was never computed there.
+
+---
+
+## Q36 — our permutation entropy is a good but not faithful PE31, and the shortfall is where the claim lives
+
+*Rule-23 validation, run because Q34 named PE31 the Challenge C comparator and Q35 amended that to `bis_rbr`.
+Neither is usable off DOSE-I unless we can compute it ourselves.*
+
+`bsde/scripts/extract_dosei_pe.py` computed this repo's `permutation_entropy(order=3, delay=1)` on **10,927
+windows across 39 DOSE-I recordings**, in a 30 s window ENDING at each pEEG timestamp (causal, no lag search),
+beside the deposit's own `PE31` column. Verified against the raw CSV rather than the run log:
+
+| | median within-recording ρ | IQR |
+|---|---|---|
+| **agreement** ρ(ours, PE31) | **+0.7239** | [+0.2885, +0.8183] |
+| placebo: our series circularly shifted within recording | **−0.1238** | [−0.3854, +0.1997] |
+| ours vs the deposit's clinician-rated MOAA/S | **+0.3545** | [+0.1816, +0.6581] |
+| **PE31** vs the same MOAA/S | **+0.4944** | [+0.3444, +0.6532] |
+
+**The parameters are nominally identical.** The deposit's `pEEG_parameter_description.txt` says of the column
+it names `PE31`: *"Permutation Entropy (PE) according to Olofsen et al. (2008), band: 0.5-45 Hz, n=3, tau=1,
+tie=0.5 uV"*. Our call is order 3, delay 1. The column-name/description alignment was checked two ways —
+description column 31 is n=3 **tau=2** and the CSV's next column is named `PE32`, so the mapping is not
+off by one and we are compared against the matching parameterisation.
+
+**So the finding is a shortfall, not a validation.** Agreement is strong and the placebo is flat, which
+establishes that we compute *a* permutation entropy correctly. But on the quantity Challenge C actually needs
+— tracking a human's judgement — ours reaches +0.3545 where theirs reaches +0.4944 **on the same recordings,
+the same windows and the same label**. A 0.14 gap in ρ is not rounding.
+
+**The deposit names exactly two steps we do not perform: the 0.5–45 Hz band limit and the 0.5 µV tie
+threshold.** `permutation_entropy` now takes `tie_threshold` (default 0.0, leaving the existing code path
+bit-identical, with 10 tests that each construct the input that must make it behave one way), and **E76 is
+registered** to ask whether those two steps close the gap — with an arbitrary-wrong-band placebo (0.5–20 Hz)
+fixed before any number existed, because a low-pass that helps regardless of which low-pass it is would
+show band sensitivity rather than mis-specification.
+
+**Why it is worth the pass.** Q34's "PE31 is the comparator to use" is only usable on deposits that ship
+PE31 — i.e. this one. If the declared recipe reproduces it, the comparator becomes portable; if it does not,
+something undeclared separates the two implementations and Q34's recommendation is deposit-bound, which is a
+constraint on Challenge C rather than an inconvenience.
+
+**What this does NOT say.** Nothing here ranks permutation entropy against `bis_rbr`, and nothing licenses
+either as a measure of consciousness. Q35's owed registered replication is still owed.
