@@ -1726,9 +1726,10 @@ candidate on this deposit, and that is the accurate state of the science, not a 
 
 §9.34 was written at E25 and its per-challenge table is stale in every row. Twelve designs have been
 registered since; `bsde/governance/ledger.jsonl` is the authoritative per-experiment record and
-`registry_ledger.py report` prints the denominator. **19 designs registered, 6 reached a reportable
-verdict** — the rest were refused by their own gates (6), blocked (2), withdrawn (1), absent (2) or closed
-by a pre-commitment (1), and every one of those is part of the search space rather than a gap in the log.
+`registry_ledger.py report` prints the denominator. **18 designs registered, 6 reached a reportable
+verdict** — the rest were refused by their own gates (5), blocked (2), withdrawn (1), absent (2) or closed
+by a pre-commitment (1), with 1 registered and not yet run, and every one of those is part of the search
+space rather than a gap in the log.
 
 | challenge | status now | what actually blocks it |
 |---|---|---|
