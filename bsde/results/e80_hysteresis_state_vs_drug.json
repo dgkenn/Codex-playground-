@@ -1,0 +1,290 @@
+{
+  "gates": {
+    "G1_overlap": [],
+    "G1_pass": true,
+    "G2_recordings": 20,
+    "G2_cells": 32,
+    "G2_pass": true,
+    "G3_pass": true
+  },
+  "features": {
+    "their_sef95": {
+      "gap": -0.8782542567718797,
+      "lo": -1.3522689561808632,
+      "hi": -0.4620340890905605,
+      "n_rec": 20,
+      "class": "DRUG-LIKE",
+      "placebo_lo": -0.6535504239734944,
+      "placebo_hi": -0.3810899362909963
+    },
+    "their_pe31": {
+      "gap": 0.3047886565064335,
+      "lo": -0.007276665411711849,
+      "hi": 0.6153460021149519,
+      "n_rec": 20,
+      "class": "UNDETERMINED",
+      "placebo_lo": 0.06619058009953366,
+      "placebo_hi": 0.324742047554069
+    },
+    "critical_slowing_ar1": {
+      "gap": 0.6801477304758413,
+      "lo": 0.20516355783224619,
+      "hi": 1.13558724807339,
+      "n_rec": 20,
+      "class": "DRUG-LIKE",
+      "placebo_lo": 0.0843885648060894,
+      "placebo_hi": 0.3897976232370291
+    },
+    "emg_beta_gamma_fraction": {
+      "gap": -0.6179798171701172,
+      "lo": -1.0595408025052817,
+      "hi": -0.16288436782582663,
+      "n_rec": 20,
+      "class": "DRUG-LIKE",
+      "placebo_lo": -0.45534884785170304,
+      "placebo_hi": -0.1878781036378001
+    },
+    "emg_index": {
+      "gap": -0.04106895651274966,
+      "lo": -0.2799664061104478,
+      "hi": 0.24903637917534846,
+      "n_rec": 20,
+      "class": "UNDETERMINED",
+      "placebo_lo": -0.11396964478092711,
+      "placebo_hi": 0.11498848475306567
+    },
+    "emg_kurtosis": {
+      "gap": -0.06985206655051651,
+      "lo": -0.40091773569454114,
+      "hi": 0.30430617052075215,
+      "n_rec": 20,
+      "class": "UNDETERMINED",
+      "placebo_lo": -0.1789255171395746,
+      "placebo_hi": 0.05160021739331518
+    },
+    "exponent_gamma": {
+      "gap": -0.10457650171172006,
+      "lo": -0.6029112501443562,
+      "hi": 0.4002305922121037,
+      "n_rec": 20,
+      "class": "UNDETERMINED",
+      "placebo_lo": -0.14384245509938157,
+      "placebo_hi": 0.09046246960769007
+    },
+    "exponent_high": {
+      "gap": -0.6167539863565935,
+      "lo": -0.9299693621517852,
+      "hi": -0.28206900222031206,
+      "n_rec": 20,
+      "class": "DRUG-LIKE",
+      "placebo_lo": -0.5162700129091615,
+      "placebo_hi": -0.18690824425407876
+    },
+    "exponent_low": {
+      "gap": 1.1338117626566144,
+      "lo": 0.65383427787213,
+      "hi": 1.6086337890637359,
+      "n_rec": 20,
+      "class": "DRUG-LIKE",
+      "placebo_lo": 0.45653520372267276,
+      "placebo_hi": 0.7386182604578364
+    },
+    "lempel_ziv": {
+      "gap": -1.038292937843064,
+      "lo": -1.492022823179507,
+      "hi": -0.5589651058816417,
+      "n_rec": 20,
+      "class": "DRUG-LIKE",
+      "placebo_lo": -0.6747946278778155,
+      "placebo_hi": -0.38216180333074995
+    },
+    "multiscale_entropy_slope": {
+      "gap": 0.9263304017229185,
+      "lo": 0.472917018216984,
+      "hi": 1.3410485201889002,
+      "n_rec": 20,
+      "class": "DRUG-LIKE",
+      "placebo_lo": 0.41557739376914316,
+      "placebo_hi": 0.6921295734455714
+    },
+    "pac_slow_alpha": {
+      "gap": 0.5776292894327286,
+      "lo": 0.15495471660481877,
+      "hi": 1.0263763468343878,
+      "n_rec": 20,
+      "class": "DRUG-LIKE",
+      "placebo_lo": 0.1046909042327076,
+      "placebo_hi": 0.30025882595941517
+    },
+    "relative_alpha_power": {
+      "gap": -0.6921015988414524,
+      "lo": -1.0772164905025448,
+      "hi": -0.3274793063716003,
+      "n_rec": 20,
+      "class": "DRUG-LIKE",
+      "placebo_lo": -0.6724860445758059,
+      "placebo_hi": -0.39914469229605265
+    },
+    "relative_delta_power": {
+      "gap": 0.7930731243085964,
+      "lo": 0.2836356849523471,
+      "hi": 1.3277577584032147,
+      "n_rec": 20,
+      "class": "DRUG-LIKE",
+      "placebo_lo": 0.37432598145819684,
+      "placebo_hi": 0.6528924929164347
+    },
+    "spectral_edge_95": {
+      "gap": -0.5442276590244621,
+      "lo": -1.0200802882022342,
+      "hi": -0.10273190449692926,
+      "n_rec": 20,
+      "class": "DRUG-LIKE",
+      "placebo_lo": -0.43735709029985564,
+      "placebo_hi": -0.15633663626703
+    },
+    "spectral_entropy": {
+      "gap": -0.7508680534357641,
+      "lo": -1.2722335056021452,
+      "hi": -0.251675266737142,
+      "n_rec": 20,
+      "class": "DRUG-LIKE",
+      "placebo_lo": -0.5639636211271165,
+      "placebo_hi": -0.3231989331115709
+    },
+    "whole_head_exponent": {
+      "gap": 0.5878869700908969,
+      "lo": 0.07123373469892849,
+      "hi": 1.1430817119838443,
+      "n_rec": 20,
+      "class": "DRUG-LIKE",
+      "placebo_lo": 0.13633804406273617,
+      "placebo_hi": 0.42238121309092996
+    },
+    "bis_rbr": {
+      "gap": 0.5374895941256103,
+      "lo": 0.2003799341321636,
+      "hi": 0.8598301320097881,
+      "n_rec": 20,
+      "class": "DRUG-LIKE",
+      "placebo_lo": 0.15296333890694774,
+      "placebo_hi": 0.47814609047029205
+    },
+    "bis_bsr": {
+      "gap": NaN,
+      "lo": NaN,
+      "hi": NaN,
+      "n_rec": 0,
+      "class": "NOT-COMPUTABLE",
+      "placebo_lo": -0.036931146331635994,
+      "placebo_hi": 0.18971533225626377
+    },
+    "bis_quazi": {
+      "gap": 0.23895511833063784,
+      "lo": -0.4069382425793318,
+      "hi": 0.8379871135223168,
+      "n_rec": 15,
+      "class": "UNDETERMINED",
+      "placebo_lo": -0.01785878132947667,
+      "placebo_hi": 0.226917629255617
+    },
+    "bis_sfs": {
+      "gap": 0.15533861265698073,
+      "lo": -0.1312183143119284,
+      "hi": 0.44657047615150813,
+      "n_rec": 20,
+      "class": "UNDETERMINED",
+      "placebo_lo": -0.07951437057115164,
+      "placebo_hi": 0.19537186266110723
+    },
+    "coherence_delta": {
+      "gap": -0.22099932866025873,
+      "lo": -0.684065186021912,
+      "hi": 0.25915592050656083,
+      "n_rec": 20,
+      "class": "UNDETERMINED",
+      "placebo_lo": -0.22196893533793177,
+      "placebo_hi": 0.062326303008957
+    },
+    "coherence_theta": {
+      "gap": -0.4090827133730762,
+      "lo": -0.8397816311421734,
+      "hi": 0.02698048959678893,
+      "n_rec": 20,
+      "class": "UNDETERMINED",
+      "placebo_lo": -0.25196135712537987,
+      "placebo_hi": 0.011099543102262025
+    },
+    "coherence_alpha": {
+      "gap": -0.3715304399319838,
+      "lo": -0.860424327576518,
+      "hi": 0.07796832912626667,
+      "n_rec": 20,
+      "class": "UNDETERMINED",
+      "placebo_lo": -0.3008702164151671,
+      "placebo_hi": -0.0700690847372522
+    },
+    "coherence_beta": {
+      "gap": -0.48872053365372026,
+      "lo": -0.9519244236588176,
+      "hi": -0.04261167852512327,
+      "n_rec": 20,
+      "class": "DRUG-LIKE",
+      "placebo_lo": -0.37752122010877476,
+      "placebo_hi": -0.09292281466766471
+    },
+    "wpli_delta": {
+      "gap": -0.0064602465965306775,
+      "lo": -0.32997233895462885,
+      "hi": 0.3225377513387453,
+      "n_rec": 20,
+      "class": "UNDETERMINED",
+      "placebo_lo": -0.08987576246552018,
+      "placebo_hi": 0.14799776451219326
+    },
+    "wpli_theta": {
+      "gap": 0.5551871383833332,
+      "lo": 0.0900602387171307,
+      "hi": 1.1827812297960498,
+      "n_rec": 20,
+      "class": "DRUG-LIKE",
+      "placebo_lo": 0.10268687565804833,
+      "placebo_hi": 0.30567202377177194
+    },
+    "wpli_alpha_2ch": {
+      "gap": 0.04091247644576364,
+      "lo": -0.27790327861575015,
+      "hi": 0.375169146788829,
+      "n_rec": 20,
+      "class": "UNDETERMINED",
+      "placebo_lo": -0.015223639110451345,
+      "placebo_hi": 0.18410599568477376
+    },
+    "wpli_beta": {
+      "gap": -0.06100498934830344,
+      "lo": -0.46030696999651183,
+      "hi": 0.2519432545565284,
+      "n_rec": 20,
+      "class": "UNDETERMINED",
+      "placebo_lo": -0.0917344891152254,
+      "placebo_hi": 0.10682589336075785
+    }
+  },
+  "controls": {
+    "_CTRL_time": {
+      "gap": -2.379068812104949,
+      "lo": -2.645014941370894,
+      "hi": -2.0985849002114723,
+      "n_rec": 20,
+      "class": "DRUG-LIKE"
+    },
+    "_CTRL_noise": {
+      "gap": -0.05981157083336425,
+      "lo": -0.23247944220760042,
+      "hi": 0.12591188158053357,
+      "n_rec": 20,
+      "class": "STATE-LIKE"
+    }
+  },
+  "verdict": "STATE-LIKE []; DRUG-LIKE ['their_sef95', 'critical_slowing_ar1', 'emg_beta_gamma_fraction', 'exponent_high', 'exponent_low', 'lempel_ziv', 'multiscale_entropy_slope', 'pac_slow_alpha', 'relative_alpha_power', 'relative_delta_power', 'spectral_edge_95', 'spectral_entropy', 'whole_head_exponent', 'bis_rbr', 'coherence_beta', 'wpli_theta']; UNDETERMINED 12 features. A STATE-LIKE call is a NECESSARY condition passed at an equivalence margin of +-0.25 within-recording SD, not a sufficient one, and UNDETERMINED is not evidence of either."
+}
