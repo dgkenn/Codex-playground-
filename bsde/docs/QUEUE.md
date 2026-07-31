@@ -641,3 +641,63 @@ a recording, or where control periods are interleaved with inductions rather tha
 serial per-patient recordings across days are the nearest shape held, and they carry no induction at all.
 **This is a data-shape requirement, not an analysis problem, and it should be checked against any future
 deposit before that deposit is acquired for Challenge C.**
+
+---
+
+## Q14 — Stieger 2021 is the deposit Challenge B needs, and E38's ceiling is what identifies it
+
+**Status: OPEN, feasibility-probed, and the highest-value unblocked item in the queue.**
+
+E41 left Challenge B with an arithmetic problem, not a scientific one: the primary was an underpowered null
+(|rho| = 0.076 against a minimum detectable 0.272), and E38's reliability interval permits a true value low
+enough that **n = 239** would be needed. eegmmidb has 109 subjects and cannot supply more.
+
+**The instinct — find a deposit with more subjects — is wrong, and E38 is what shows it.** Reliability, not
+n, is the binding constraint: the ceiling `sqrt(r_sb) = 0.5402` attenuates every association before the
+sample size is even considered. **More trials per subject buys more than more subjects.**
+
+### The deposit
+
+Stieger JR et al., "Continuous sensorimotor rhythm based brain computer interface learning in a large
+population," *Sci Data* 2021. **PMID 33795705**, DOI 10.1038/s41597-021-00883-1. Data: figshare
+**10.6084/m9.figshare.13123148**, **CC BY 4.0**, 599 files, **376.9 GB** — all verified through the figshare
+REST API with `curl`, never a fetch-tool summary (rules 25, 39).
+
+**62 healthy adults, up to 11 sessions each, 598 recording sessions, over 250,000 trials, 600+ hours.**
+
+One session file was downloaded and read directly. Its structure, verified rather than assumed:
+
+* `BCI.data` — **450 trials**, each **62 channels x ~8.4 s at 1000 Hz**
+* `BCI.TrialData` — per trial: `tasknumber`, `runnumber`, `trialnumber`, `targetnumber`, `triallength`,
+  `targethitnumber`, `resultind`, **`result`**, `forcedresult`, **`artifact`**
+* S1 session 1: 214 hits / 122 misses, **accuracy 0.637**; `forcedresult` 0.631; **0 artifact-flagged trials**
+* `BCI.metadata` — **`age`, `gender`, `handedness`, `meditationpractice`, `athlete`, `instrument`, `date`,
+  `day`**
+
+### It fixes three of E28/E41's weaknesses at once
+
+1. **Label precision.** 450 trials per session against eegmmidb's **45 in total**. Reliability should
+   approach 1, lifting the ceiling from 0.54 toward 1 and removing the attenuation that made E41
+   underpowered. At n = 62, an incumbent-strength predictor (Blankertz r = 0.53) is detectable at 2.3-4.5
+   SE across reliabilities from 0.3 to 1.0, against a minimum detectable r of 0.349. **Fewer subjects,
+   decisively better power** — which is the whole point E38 established.
+2. **Demographics.** E28 names its largest weakness plainly: *"`eegmmidb` ships no demographics at all, so
+   none can be adjusted for."* Age, sex and handedness are in every session's metadata here.
+3. **Longitudinal structure.** Up to 11 sessions per subject supports genuine **test-retest** reliability
+   rather than the split-half estimate E38 had to use, and lets learning be separated from ability.
+
+### What has to be built, and the order
+
+1. **A Stieger adapter.** MATLAB v7 `.mat`, `scipy.io.loadmat` reads it (not HDF5 — h5py fails on the file
+   signature). Process-and-discard: one 600 MB file at a time, so peak disk is one file against ~21 GB free.
+2. **E42 — measure the reliability FIRST, exactly as E38 did for eegmmidb**, and with test-retest across
+   sessions rather than split-half. **Do not run the correlation until the ceiling is known.** That
+   sequencing is the single most useful thing E38 established and it should now be standard.
+3. **E43 — the correlation**, with the measured ceiling in its header (rule 45 and E38's verdict), the
+   incumbent named, and demographics available as covariates for the first time in this challenge.
+
+**The resting-state question to settle before registering E42:** Blankertz's predictor is computed from a
+*"relax with eyes open"* recording, and Stieger's sessions are task trials throughout. Whether a usable
+task-free segment exists — a pre-cue baseline, an inter-trial interval, or a separate baseline run — is a
+feasibility check on `BCI.time` and `TrialData`, and it must be answered **before** E42 is registered, not
+after it fails. Rule 41.
