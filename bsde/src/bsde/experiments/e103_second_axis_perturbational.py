@@ -302,24 +302,38 @@ def main() -> int:
           f"   <- if this matches P, 'perturbational' is decoration")
 
     # ---- PLACEBO: labels flipped within subject, whole procedure refit -----------------------------
-    pl = []
+    pl, pl_sham = [], []
     for _ in range(PLACEBO_DRAWS):
         flip = {s: bool(rng.integers(0, 2)) for s in both}
-        lab = [("sed" if flip[subj[i]] and task[i] == "awake" else
-                "awake" if flip[subj[i]] and task[i] == "sed" else task[i])
+        # rows from subjects outside `both` never enter `paired`, but they are still indexed here
+        lab = [("sed" if flip.get(subj[i], False) and task[i] == "awake" else
+                "awake" if flip.get(subj[i], False) and task[i] == "sed" else task[i])
                for i in range(len(rows))]
         r2, ok2 = residualise(pert, spont)       # regression does not use labels, but refit for symmetry
         v = dz(paired(both, r2, lab))
         if np.isfinite(v):
             pl.append(v)
+        vs = dz(paired(both, sham_res, lab))
+        if np.isfinite(vs):
+            pl_sham.append(vs)
     p_lo, p_hi = ci(pl)
     inside = bool(np.isfinite(p_lo) and p_lo <= point <= p_hi)
     res["placebo_label_flip"] = {"lo": p_lo, "hi": p_hi, "n_draws": len(pl), "inside": inside}
+    ps_lo, ps_hi = ci(pl_sham)
+    sham_inside = bool(np.isfinite(ps_lo) and ps_lo <= sh_dz <= ps_hi)
+    res["placebo_sham_alone"]["placebo"] = {"lo": ps_lo, "hi": ps_hi, "inside": sham_inside}
     print(f"\nPLACEBO label flip within subject: [{p_lo:+.4f}, {p_hi:+.4f}]   "
           f"real {'INSIDE -- WITHDRAWN' if inside else 'outside'}")
+    print(f"   same placebo for the SHAM arm:   [{ps_lo:+.4f}, {ps_hi:+.4f}]   "
+          f"sham {'INSIDE -- withdrawn' if sham_inside else 'outside -- survives'}")
 
     excl = not (lo <= 0.0 <= hi)
-    if inside:
+    if not excl:
+        v = ("NO SECOND AXIS DETECTED -- the perturbational response carries no state information beyond "
+             "the spontaneous exponent on this deposit. Consistent with the single-axis reading that "
+             "every other Challenge A result this session supports. The label-flip placebo is NOT "
+             "informative here: there was no effect for it to fail to reproduce (rule 48).")
+    elif inside:
         v = ("WITHDRAWN BY PLACEBO -- flipping the labels at random reproduces the effect; there is no "
              "state information in the residual")
     elif not g3:
@@ -329,10 +343,6 @@ def main() -> int:
         v = ("INVERTED -- sedation raises perturbational complexity after the spontaneous axis is "
              "removed. This is a measure running backwards, most likely residual artefact; it is NOT a "
              "second axis and must not be reported as an effect")
-    elif not excl:
-        v = ("NO SECOND AXIS DETECTED -- the perturbational response carries no state information beyond "
-             "the spontaneous exponent on this deposit. Consistent with the single-axis reading that "
-             "every other Challenge A result this session supports")
     elif np.isfinite(sh_lo) and not (sh_lo <= 0.0 <= sh_hi) and abs(sh_dz) >= abs(point):
         v = ("NOT PERTURBATIONAL -- the effect survives label flipping but the SHAM alone matches or beats "
              "it, so what separates the states is the complexity of ongoing EEG, not the response to "
