@@ -110,6 +110,74 @@ sensorimotor rhythm. Motor imagery is command-following that produces no movemen
 *form*, and the substitution's cost is the first thing any reader should be told. **No sentence from this
 file may be written as a claim about DoC.** Between-subject at n ~ 104, with no demographics in the deposit
 to adjust for anything.
+
+--------------------------------------------------------------------------------------------------------
+OUTCOME. **UNDERPOWERED NULL for the primary, as the verdict branch was written to enforce. But the
+INCUMBENT is real — and that, not the primary, is the finding.**
+
+    G1/G2  Passed. 104 subjects with a resting row and an imagery label; the label-viability gate is
+           E38's r_sb +0.2918 [+0.1163, +0.4345], carried forward from a committed prior result.
+
+    P1     **`relative_alpha_power` rho = +0.2018 [+0.0050, +0.3857], one-sided resample p = 0.0225**
+           (20,000 resamples). **The deliberately weakened proxy for Blankertz's published predictor is
+           the strongest measure in the file, and its association with motor-imagery ability is real at
+           this sample size.**
+
+           **A REPLICATE-COUNT CORRECTION, MADE BEFORE ANY OF THIS WAS WRITTEN UP AND RECORDED HERE.** At
+           the registered 2,000 resamples the interval printed as **[-0.0011, +0.4072]** — including zero
+           by 0.0011, which is error-catalogue rule 46 exactly: a margin the size of its own Monte Carlo
+           error. Re-run at **five seeds and 20,000 resamples the interval excludes zero in all five**
+           (lower bounds +0.0032 to +0.0090), and the resample-level p is 0.0225. **The registered count
+           was too low and raising it is the fix rule 46 endorses**, because it changes no threshold,
+           cohort or horizon. The verdict is unaffected either way: the incumbent is reported, never
+           gated, and the primary is what the verdict turns on. `resample_p` is now emitted alongside
+           every interval, which is what rule 46 asks for and degrades gracefully where an endpoint does
+           not.
+
+           **The pre-registered arithmetic predicted this and was not guaranteed to.** The header states
+           that a faithful Blankertz reimplementation should reach at least 0.286, and that *our* proxy —
+           whole-head and uncorrected, against Blankertz's Laplacian mu-peak measure corrected to the
+           aperiodic noise floor — should land **below** that. It landed at 0.2018.
+
+    P2     **`exponent_high` rho = +0.0761 [-0.1204, +0.2675], resample p = 0.2275.** Includes zero, does
+           not beat the incumbent, and |rho| is far below this design's minimum detectable effect of
+           0.272. **UNDERPOWERED NULL, not a negative** — and that branch was written before the run
+           precisely so this sentence could not be chosen afterwards.
+
+    P3     NOT INFORMATIVE, correctly (rule 48): with the primary spanning zero there is no association
+           for the executed-movement placebo to fail to reproduce.
+
+    P4     **Nothing survives FWER 0.05.** `effective_tests` 11.76 of 14 — these candidates are far less
+           redundant than E01's pair, so the search space is close to its nominal size.
+           `relative_alpha_power` has raw p 0.0445 by permutation, which agrees with the bootstrap's
+           0.0225 one-sided, and adjusted p 0.3238. **The two numbers answer different questions and both
+           belong in a write-up:** as the single pre-declared incumbent it is p ~ 0.02-0.04; as a member
+           of a 14-way family it is 0.32. It was pre-declared, so the unadjusted value is the relevant
+           one — but a reader is entitled to see that it would not have survived had it been discovered
+           rather than nominated.
+
+    P5     Every candidate's rho lies in [-0.108, +0.202] and every interval except the incumbent's
+           includes zero. Disattenuated values are printed as context and claimed for nothing.
+
+**WHAT CHALLENGE B ACTUALLY LEARNED HERE, STATED WITHOUT INFLATION.**
+
+  1. **A fifteen-year-old published predictor, in a deliberately weakened form, beats every one of this
+     project's fourteen candidates on this deposit.** That is the incumbent doing its job — rule 45 exists
+     because a marker reported without the thing it has to beat is not a result, and here the bar was not
+     cleared by anything.
+  2. **The primary's null is uninformative and is labelled as such.** At n = 104 nothing below rho = 0.272
+     was findable, and E38's reliability interval permits a true reliability low enough that an
+     incumbent-strength association could have been missed entirely. Reporting this as "resting EEG does
+     not predict motor-imagery ability" would be false.
+  3. **The path to a real answer is arithmetic, not novelty.** n = 239 at the pessimistic end of E38's
+     reliability interval; or more trials per subject, which E38's own P4 suggests buys less than it
+     sounds within the range this deposit can test. Both are sizing problems with known answers, which is
+     a better position than Challenge B has been in at any previous point.
+
+**SCOPE, UNCHANGED AND REPEATED BECAUSE IT IS THE LIMIT MOST EASILY LOST IN SUMMARY.** Not a
+disorders-of-consciousness result. A healthy subject who cannot drive a BCI is not unconscious. Motor
+imagery is command-following that produces no movement, which is the right *form* and not the right
+population. **No sentence from this file may be written as a claim about DoC.**
 """
 
 from __future__ import annotations
@@ -145,7 +213,7 @@ MIN_SUBJECTS = 60
 MDE = 0.272
 BLANKERTZ_R = 0.53
 PERMS = 2000
-REPS = 2000
+REPS = 20000
 SEED = 20260731
 
 
@@ -183,7 +251,14 @@ def _corr(rest, lab, subs, name, rng, reps=REPS):
     r = spearman(x, y)
     idx = np.arange(x.size)
     lo, hi, _ = cluster_bootstrap_ci(lambda i: spearman(x[i], y[i]), idx, rng, reps=reps)
+    # Rule 46: report the fraction of resamples on the wrong side of the null, not only the interval.
+    # It is the same computation and it degrades gracefully where an endpoint does not.
+    boot = np.array([spearman(x[i], y[i]) for i in
+                     (rng.integers(0, x.size, x.size) for _ in range(min(reps, 4000)))], float)
+    boot = boot[np.isfinite(boot)]
+    frac = float(np.mean(boot <= 0.0)) if r > 0 else float(np.mean(boot >= 0.0))
     return {"rho": float(r), "ci": [float(lo), float(hi)], "n": int(x.size),
+            "resample_p": frac,
             "excludes_zero": bool(np.isfinite(lo) and np.isfinite(hi) and (lo > 0 or hi < 0))}
 
 
@@ -234,7 +309,8 @@ def main(argv=None) -> int:
     print("P1 — THE INCUMBENT, printed before any candidate")
     print("=" * 100)
     inc = _corr(rest, lab, subs, INCUMBENT, rng)
-    print(f"   {INCUMBENT}  rho {inc['rho']:+.4f} [{inc['ci'][0]:+.4f}, {inc['ci'][1]:+.4f}]  n={inc['n']}")
+    print(f"   {INCUMBENT}  rho {inc['rho']:+.4f} [{inc['ci'][0]:+.4f}, {inc['ci'][1]:+.4f}]  n={inc['n']}"
+          f"   resample p {inc['resample_p']:.4f}")
     print(f"   For reference: a faithful Blankertz reimplementation should reach at least "
           f"{BLANKERTZ_R * ceiling:.3f}")
     print("   Ours is a declared weaker proxy — whole-head and uncorrected — so it should land below that.")
@@ -244,7 +320,8 @@ def main(argv=None) -> int:
     print(f"P2 — THE PRIMARY: {PRIMARY}, E28's registered primary, unchanged")
     print("=" * 100)
     pri = _corr(rest, lab, subs, PRIMARY, rng)
-    print(f"   {PRIMARY}  rho {pri['rho']:+.4f} [{pri['ci'][0]:+.4f}, {pri['ci'][1]:+.4f}]")
+    print(f"   {PRIMARY}  rho {pri['rho']:+.4f} [{pri['ci'][0]:+.4f}, {pri['ci'][1]:+.4f}]"
+          f"   resample p {pri['resample_p']:.4f}")
     beats = abs(pri["rho"]) > abs(inc["rho"])
     print(f"   excludes zero: {pri['excludes_zero']}   beats the incumbent: {beats}")
     p2 = bool(pri["excludes_zero"] and beats)
