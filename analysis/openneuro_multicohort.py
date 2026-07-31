@@ -46,6 +46,7 @@ import argparse
 import csv
 import io
 import os
+import math
 import re
 import sys
 import shutil
@@ -55,7 +56,7 @@ import urllib.parse
 import urllib.request
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from eeg_features_common import features_from_file                          # noqa: E402
+from eeg_features_common import features_from_file, ANALYSIS_S                          # noqa: E402
 
 S3 = "https://s3.amazonaws.com/openneuro.org"
 
@@ -78,9 +79,56 @@ aperiodic exponent's steepest age dependence is in childhood -- an adult-only re
 into the range where the curve is most non-linear."""
 
 
-def _get(url, timeout=120):
-    with urllib.request.urlopen(url, timeout=timeout) as r:
+def _get(url, timeout=120, nbytes=None):
+    """Fetch a URL, optionally only its first `nbytes` via an HTTP Range request."""
+    req = urllib.request.Request(url)
+    if nbytes:
+        req.add_header("Range", f"bytes=0-{nbytes - 1}")
+    with urllib.request.urlopen(req, timeout=timeout) as r:
         return r.read()
+
+
+def _prefix_bytes(vhdr_path):
+    """How many bytes of a BrainVision `.eeg` cover `ANALYSIS_S` seconds -- or None if unsafe.
+
+    WHY THIS IS SOUND HERE AND NOT IN GENERAL. Two properties of these files make a byte prefix a valid
+    TIME prefix, and both are checked rather than assumed. `DataOrientation=MULTIPLEXED` means samples are
+    interleaved channel-by-channel per time point, so truncating at a whole sample frame yields a shorter
+    but otherwise identical recording. And these headers carry NO `DataPoints` field, so mne infers the
+    length from the `.eeg` file size and reads a truncated file cleanly instead of erroring or padding.
+    If either property is absent the function returns None and the full file is fetched.
+
+    The saving is the difference between running this cohort and not: ds005620 is 65 channels at 5000 Hz,
+    so a 600 s recording is 780 MB of which the analysis uses 180 s. Across its 202 recordings the full
+    deposit is roughly 80 GB.
+    """
+    try:
+        txt = open(vhdr_path, "r", errors="replace").read()
+    except OSError:
+        return None
+    def field(name):
+        m = re.search(rf"^{name}=(.+)$", txt, re.M)
+        return m.group(1).strip() if m else None
+    if (field("DataFormat") or "").upper() != "BINARY":
+        return None
+    if (field("DataOrientation") or "").upper() != "MULTIPLEXED":
+        return None
+    if field("DataPoints"):
+        return None                     # length is declared; truncating would contradict the header
+    width = {"IEEE_FLOAT_32": 4, "INT_16": 2, "UINT_16": 2, "INT_32": 4}.get(
+        (field("BinaryFormat") or "").upper())
+    nch = field("NumberOfChannels")
+    si = field("SamplingInterval")
+    if not (width and nch and si):
+        return None
+    try:
+        nch = int(nch); sf = 1e6 / float(si)
+    except ValueError:
+        return None
+    if not (nch > 0 and sf > 0):
+        return None
+    frames = int(math.ceil((ANALYSIS_S + 2.0) * sf))     # +2 s margin against off-by-one at the edge
+    return frames * nch * width
 
 
 def _participants(ds):
@@ -231,9 +279,10 @@ def main(argv=None) -> int:
                 # ALWAYS needs .eeg and .vmrk and references them by name from inside the header.
                 stem, ext = os.path.splitext(key)
                 for sib in {".set": (".fdt",), ".vhdr": (".eeg", ".vmrk")}.get(ext, ()):
+                    dest = os.path.join(tmpdir, os.path.basename(stem) + sib)
                     try:
-                        open(os.path.join(tmpdir, os.path.basename(stem) + sib), "wb").write(
-                            _get(f"{S3}/{stem}{sib}", timeout=300))
+                        nbytes = _prefix_bytes(local) if (ext == ".vhdr" and sib == ".eeg") else None
+                        open(dest, "wb").write(_get(f"{S3}/{stem}{sib}", timeout=600, nbytes=nbytes))
                     except Exception:                                        # noqa: BLE001
                         pass                        # .fdt is optional; a missing .eeg fails loudly below
                 feats = features_from_file(local)
