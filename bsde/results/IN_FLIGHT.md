@@ -105,3 +105,21 @@ quantity the label was built from — and E38's G1 checks it against the stored 
 
 **The flag is NOT set on these.** They are small and written once per subject rather than continuously, so
 the `--assume-unchanged` dance that the VitalDB tables needed is not worth its hidden state here.
+
+## Currently in flight: `eegmmidb_rest_v2.s0-3.csv` (started 2026-07-31)
+
+Four recording-sharded streams re-extracting the eegmmidb **baseline** runs with the full 20-candidate
+registry, which now includes `lrtc_alpha` and `icoh_alpha`. A **new path**, not an append: `stream_features`
+rightly refuses to append to a table whose column set differs, and `eegmmidb_rest.csv` was written with 14.
+
+    for k in 0 1 2 3; do
+      python bsde/scripts/stream_eegmmidb_rest.py --shard $k --of 4 \
+             --out bsde/results/eegmmidb_rest_v2.s$k.csv &
+    done; wait
+
+**E42 reads the shards directly and refuses below 60 subjects**, so a part-finished set cannot be mistaken
+for a result. Committed part-finished on purpose — the container's disk does not survive reclamation, the
+streams are resumable, and this table is a few tens of kilobytes.
+
+**Task runs are never touched here.** The separation is the whole point: Challenge B's label is built from
+the imagery runs, and this table must contain nothing from them or the association is circular.
