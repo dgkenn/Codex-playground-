@@ -449,6 +449,20 @@ Every rule below was paid for with a wrong result in this project.
     TO MEASURE**, not over the state you happen to call normal: an anaesthesia index needs anaesthetised
     recordings in its reference or it has no dynamic range exactly where it must work.
 
+63. **A GATE THRESHOLD PICKED AS A ROUND NUMBER MEASURES THE ROUND NUMBER — DERIVE IT FROM WHAT THE
+    MACHINERY CAN ACHIEVE.** Twice in one session a registered gate refused a run for a threshold chosen
+    by habit rather than by arithmetic. **E92's G3a** required a recomputed score to match a stored one to
+    `1e-9`; double-precision accumulation over a 20 s window at 5 kHz sits right at that scale, and the
+    two deposits came in at **9.98e-10 and 1.05e-9** — either side by a few percent, so one passed and one
+    was refused on float noise. **E95's G2** required the extreme-percentile fraction below `0.05`; three
+    successively deeper references produced **0.5168 → 0.2028 → 0.0705**, every step halving saturation
+    and improving transport, and the last was refused by 2 points of a criterion with nothing behind it.
+    In both cases the *trend* was unambiguous and the *gate* was arbitrary. **Before registering a
+    numerical gate, compute what value the machinery can actually reach** — the float precision of the
+    arithmetic, the tail mass of the test distribution against a finite reference — and set the threshold
+    from that, or state explicitly that it is a convention and cannot distinguish success from its own
+    resolution. A gate is only worth its refusal if the refusal means something.
+
 36. **Credential precedence, third occurrence.** The sandbox exports `AWS_ACCESS_KEY_ID` as a 14-character
     `prox…` proxy token that outranks `~/.aws/credentials`, and the failure reads as `InvalidAccessKeyId` —
     indistinguishable from expiry. `common/awsenv.py` now drops it (only when it provably is not an AWS key
