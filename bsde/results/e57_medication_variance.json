@@ -1,0 +1,152 @@
+{
+  "n_rows": 295,
+  "g1_artefact": {
+    "AGE_SEX": -0.034838736421324956,
+    "MEDICATION": -0.07291910075715324,
+    "COMORBIDITY": -0.10070284815503294
+  },
+  "confounded": false,
+  "results": {
+    "exponent_low": {
+      "AGE_SEX": 0.21506447749279545,
+      "MEDICATION": -0.10534840161979364,
+      "COMORBIDITY": -0.04614689229033697,
+      "ALL": 0.0822014938170923,
+      "n": 295,
+      "best_block": "AGE_SEX"
+    },
+    "exponent_low_robust": {
+      "AGE_SEX": 0.14649805460913579,
+      "MEDICATION": -0.21316415177028847,
+      "COMORBIDITY": -0.05921632030379831,
+      "ALL": -0.089265918957115,
+      "n": 295,
+      "best_block": "AGE_SEX"
+    },
+    "whole_head_exponent": {
+      "AGE_SEX": 0.03474184565989846,
+      "MEDICATION": -0.1231032289108065,
+      "COMORBIDITY": -0.08660121192252612,
+      "ALL": -0.20831692481936082,
+      "n": 295,
+      "best_block": "AGE_SEX"
+    },
+    "exponent_high": {
+      "AGE_SEX": 0.02269930780187779,
+      "MEDICATION": -0.10797713376882956,
+      "COMORBIDITY": -0.020502466922603046,
+      "ALL": -0.11061453094547224,
+      "n": 295,
+      "best_block": "AGE_SEX"
+    },
+    "lempel_ziv": {
+      "AGE_SEX": 0.030249695562579726,
+      "MEDICATION": -0.11195653862799015,
+      "COMORBIDITY": -0.15766280426537738,
+      "ALL": -0.18141280987918584,
+      "n": 295,
+      "best_block": "AGE_SEX"
+    },
+    "lrtc_alpha": {
+      "AGE_SEX": -0.02970111036660139,
+      "MEDICATION": -0.1118174983921536,
+      "COMORBIDITY": -0.15530443895910473,
+      "ALL": -0.32098093810141726,
+      "n": 295,
+      "best_block": "AGE_SEX"
+    },
+    "rel_alpha": {
+      "AGE_SEX": 0.07484566807641291,
+      "MEDICATION": -0.0417827207481416,
+      "COMORBIDITY": -0.13819040476749667,
+      "ALL": -0.09337746497594002,
+      "n": 295,
+      "best_block": "AGE_SEX"
+    },
+    "alpha_peak_hz": {
+      "AGE_SEX": 0.028038297413451874,
+      "MEDICATION": -0.05109388596605258,
+      "COMORBIDITY": -0.13411904355237803,
+      "ALL": -0.19095020704815502,
+      "n": 293,
+      "best_block": "AGE_SEX"
+    },
+    "sef95": {
+      "AGE_SEX": 0.034567695959695,
+      "MEDICATION": -0.14312691771381525,
+      "COMORBIDITY": -0.1086745281306698,
+      "ALL": -0.2422263520683443,
+      "n": 295,
+      "best_block": "AGE_SEX"
+    }
+  },
+  "margins": {
+    "exponent_low": {
+      "margin": -0.2612113697831324,
+      "ci": [
+        -0.2973114306035943,
+        -0.077438558815211
+      ]
+    },
+    "exponent_low_robust": {
+      "margin": -0.2057143749129341,
+      "ci": [
+        -0.2585886191672657,
+        -0.030465109073209692
+      ]
+    },
+    "whole_head_exponent": {
+      "margin": -0.12134305758242458,
+      "ci": [
+        -0.12007763296061419,
+        0.04779118911875199
+      ]
+    },
+    "exponent_high": {
+      "margin": -0.043201774724480835,
+      "ci": [
+        -0.07251394624382546,
+        0.10150461651666423
+      ]
+    },
+    "lempel_ziv": {
+      "margin": -0.14220623419056988,
+      "ci": [
+        -0.19418213823322017,
+        -0.005084413094202962
+      ]
+    },
+    "lrtc_alpha": {
+      "margin": -0.08211638802555221,
+      "ci": [
+        -0.075858837529246,
+        0.1315037090385484
+      ]
+    },
+    "rel_alpha": {
+      "margin": -0.11662838882455451,
+      "ci": [
+        -0.16410935833914728,
+        0.07455207562908822
+      ]
+    },
+    "alpha_peak_hz": {
+      "margin": -0.07913218337950445,
+      "ci": [
+        -0.14477325779635336,
+        0.060223046079997435
+      ]
+    },
+    "sef95": {
+      "margin": -0.1432422240903648,
+      "ci": [
+        -0.13671287557408363,
+        0.042803421920079014
+      ]
+    }
+  },
+  "verdict": "HYPOTHESIS REFUTED -- medication and comorbidity do not out-explain age and sex for any measure with an interval excluding zero. Combined with REFERENCE_VALUE_MEASURED's finding that the general argument is worth single-digit percent, **the full HEEDB reference build is not justified by any evidence now available.**",
+  "n_atc": 14,
+  "n_icd": 18,
+  "seed": 20260731
+}
