@@ -1,0 +1,19 @@
+{
+  "experiment": "E38",
+  "trial_files": [
+    "eegmmidb_trials.executed.s0.csv",
+    "eegmmidb_trials.executed.s1.csv",
+    "eegmmidb_trials.executed.s2.csv",
+    "eegmmidb_trials.executed.s3.csv",
+    "eegmmidb_trials.imagery.s0.csv",
+    "eegmmidb_trials.imagery.s1.csv",
+    "eegmmidb_trials.imagery.s2.csv",
+    "eegmmidb_trials.imagery.s3.csv"
+  ],
+  "g1": {
+    "n": 35,
+    "agreement": 0.8358898948850602,
+    "median_diff": 0.04365079365079366,
+    "passed": false
+  }
+}
