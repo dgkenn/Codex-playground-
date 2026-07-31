@@ -435,6 +435,20 @@ Every rule below was paid for with a wrong result in this project.
     caught only because an unrelated gate refused the run — nothing in the state assignment itself could
     fail, which is rule 40 in the labelling step rather than in the verdict.
 
+62. **A PERCENTILE IS ONLY INFORMATIVE INSIDE THE SUPPORT OF ITS REFERENCE — AN AWAKE-ONLY REFERENCE HAS
+    NO RESOLUTION BELOW WAKEFULNESS.** E91 ran a seven-scheme bake-off for population referencing and rank
+    (percentile) referencing won both axes: worst transport 0.298 against the z-scheme's 1.212, and the
+    BEST discrimination of any autonomous scheme. E93 then placed twenty state strata on that coordinate
+    and the sleep staircase collapsed: W +0.4674, N1 −0.2837, **N2 −0.5000, N3 −0.5000** — both pinned at
+    the floor, along with VitalDB's BIS [20,60) bands and ds004541's whole anaesthetised arm. Everything
+    below the awake reference's range maps to the 0th percentile and becomes indistinguishable.
+    **E91 could not have seen this**, because it scored discrimination on a BINARY awake-versus-suppressed
+    contrast, where saturation is free. The cost only appears against a GRADED outcome. **Two rules follow.
+    A bake-off scored on a binary contrast cannot rank schemes that will be deployed against a graded one —
+    match the outcome's granularity to the intended use. And build the reference over the RANGE YOU INTEND
+    TO MEASURE**, not over the state you happen to call normal: an anaesthesia index needs anaesthetised
+    recordings in its reference or it has no dynamic range exactly where it must work.
+
 36. **Credential precedence, third occurrence.** The sandbox exports `AWS_ACCESS_KEY_ID` as a 14-character
     `prox…` proxy token that outranks `~/.aws/credentials`, and the failure reads as `InvalidAccessKeyId` —
     indistinguishable from expiry. `common/awsenv.py` now drops it (only when it provably is not an AWS key
