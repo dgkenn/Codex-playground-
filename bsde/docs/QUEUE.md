@@ -801,3 +801,40 @@ fell asleep in the department.
    or age bands, declared before the fit.
 3. **Only then** freeze `(expected_exponent | covariates, residual_SD)` and re-express existing results on
    it, starting with one where the within-cohort normalisation is currently doing hidden work.
+
+---
+
+## Q17 — the band finding, and what it changes about Q16
+
+**Status: EXPLORATORY, must be registered before it is claimed anywhere.**
+
+E43 refuted the claim that a broadband spectral slope is EMG-robust — asymmetry **−0.0967 [−0.1886,
+−0.0058]**, meaning it is *less* robust than BIS. The immediate question is what should go on a normative
+scale instead. Same machinery, same 5,845 rows, case-clustered:
+
+| measure | asymmetry (positive = more EMG-robust than BIS) |
+|---|---|
+| `exponent_high` (20–40 Hz) | **−0.1335 [−0.2317, −0.0524]** |
+| `whole_head_exponent` (1–45 Hz) | **−0.0967 [−0.1886, −0.0058]** |
+| `relative_alpha_power` | +0.0478 [−0.0409, +0.1335] |
+| **`exponent_low` (1–20 Hz)** | **+0.1591 [+0.0714, +0.2384]** |
+| **`lempel_ziv`** | **+0.1894 [+0.1109, +0.2662]** |
+
+**The broadband exponent inherits its whole EMG vulnerability from the 20–40 Hz half.** Restricting the fit
+to 1–20 Hz flips the sign.
+
+**Why it is worth acting on while still exploratory:** two measures agree in sign with intervals excluding
+zero; the ordering is monotone in how much of the EMG band the fit spans; and the mechanism is transparent
+— surface EMG lives at 20–45 Hz, so a fit crossing it absorbs it. **Why it must still be registered:** it
+is a post-hoc extension of E43 on the same rows, prompted by E43's own outcome, and six measures were
+compared.
+
+**Changes to Q16.** The normative scale should carry **`exponent_low`**, not the broadband exponent, and
+`lempel_ziv` alongside it. The step-4 regression should be run on both, since they may have different
+covariate structure. **This reverses the measure this project would have chosen a day ago, on measurement
+rather than preference.**
+
+**And it lands on an idea the prior work already had.** Its dual-slope decomposition (1–20 vs 20–45 Hz) was
+used to separate ketamine from seizure; here the same decomposition solves an artefact problem. Two
+independent reasons to carry both bands rather than one broadband number, and `subband_exponents` already
+exists in the registry.
