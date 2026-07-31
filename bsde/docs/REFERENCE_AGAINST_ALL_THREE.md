@@ -100,6 +100,22 @@ correlation without recruiting anyone.
 | 0.3 | **0.342** | **3.58** |
 | 0.4 | **0.369** | **3.89** |
 
+> ### MEASURED 2026-07-31 (E54, 745 healthy adults) — AND THE GAIN FOR CHALLENGE B IS ZERO
+>
+> **`lrtc_alpha`, which IS Challenge B's marker, has R² = 0.0003 [0.0003, 0.0121] on age and sex.
+> Gain = 1.000.** The table below forecast 1.05–1.29 from R² of 0.1–0.4; the measured value is three
+> orders of magnitude below the bottom of that range. **The conditional reference buys Challenge B
+> nothing**, and this section's mechanism is refuted by the very regression it nominated for the job.
+>
+> The reference is not useless — it is useless *here*. For the normative scale itself the best candidate,
+> `exponent_low_robust`, reaches R² = 0.147 (gain 1.083) and also carries the highest five-year ICC
+> (0.841, E45), so it remains the right measure to build on. But the Challenge B argument below should be
+> read as withdrawn rather than pending.
+>
+> Two caveats that do not rescue it: these deposits carry no comorbidity or medication, so a HEEDB
+> reference could explain more; and the gain was always conditional on the covariate variance being
+> unrelated to the outcome, which no cohort here can test.
+
 **And that R² is exactly what Q16's step-4 regression measures.** So the reference work forecasts the
 Challenge B gain *before* a single new subject is recruited — the same regression that can kill the
 reference idea also sizes its benefit. That is an unusually efficient dependency and it should be exploited.
