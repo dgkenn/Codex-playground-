@@ -1,0 +1,107 @@
+{
+  "n_vitaldb": 4930,
+  "n_dosei": 10898,
+  "nyquist_excluded": [
+    "exponent_gamma"
+  ],
+  "transport_shift": {
+    "critical_slowing_ar1": 0.15364721821671687,
+    "emg_beta_gamma_fraction": 0.8477524264038893,
+    "emg_index": 0.9817575690553997,
+    "emg_kurtosis": 0.46783444433793836,
+    "exponent_high": 1.1215327879102968,
+    "exponent_low": 0.6233807148331532,
+    "lempel_ziv": 1.2033898311267928,
+    "multiscale_entropy_slope": 1.574427934645613,
+    "pac_slow_alpha": 0.2612042839411416,
+    "relative_alpha_power": 0.6523803219687075,
+    "relative_delta_power": 0.1536235274321135,
+    "spectral_edge_95": 0.8471608824121795,
+    "spectral_entropy": 0.17337069515364154,
+    "whole_head_exponent": 1.2876964713114811,
+    "bis_rbr": 0.9641795157245078,
+    "bis_bsr": Infinity,
+    "bis_quazi": Infinity,
+    "bis_sfs": 1.7295192319295547
+  },
+  "safe_features": [
+    "critical_slowing_ar1",
+    "emg_beta_gamma_fraction",
+    "emg_index",
+    "emg_kurtosis",
+    "exponent_low",
+    "pac_slow_alpha",
+    "relative_alpha_power",
+    "relative_delta_power",
+    "spectral_edge_95",
+    "spectral_entropy",
+    "bis_rbr"
+  ],
+  "drift_features": [
+    "exponent_high",
+    "lempel_ziv",
+    "multiscale_entropy_slope",
+    "whole_head_exponent",
+    "bis_bsr",
+    "bis_quazi",
+    "bis_sfs"
+  ],
+  "arms": {
+    "FULL": {
+      "n_features": 18,
+      "n_kept": 5038,
+      "frac_kept": 0.4622866581024041,
+      "n_recordings": 38,
+      "n_moaas_levels": 5,
+      "gate_m2": true,
+      "primary": {
+        "median_rho": 0.037466326390342586,
+        "lo": -0.15007358183242273,
+        "hi": 0.2892768473723539,
+        "n_recordings": 38
+      },
+      "their_sef95": {
+        "median_rho": -0.019650349659132628,
+        "lo": -0.11548442607829722,
+        "hi": 0.1108743355881872,
+        "n_recordings": 36
+      },
+      "their_pe31": {
+        "median_rho": 0.39736520101944905,
+        "lo": 0.3097505108554252,
+        "hi": 0.4636245570715422,
+        "n_recordings": 36
+      },
+      "placebo": -0.021277511655025345,
+      "verdict": "NO TRACKING -- the interval includes zero."
+    },
+    "SAFE": {
+      "n_features": 11,
+      "n_kept": 10897,
+      "frac_kept": 0.9999082400440448,
+      "n_recordings": 39,
+      "n_moaas_levels": 5,
+      "gate_m2": true,
+      "primary": {
+        "median_rho": 0.04173397694468075,
+        "lo": -0.1755519166082744,
+        "hi": 0.14241408034725386,
+        "n_recordings": 39
+      },
+      "their_sef95": {
+        "median_rho": 0.2507027393713878,
+        "lo": 0.07620543931397411,
+        "hi": 0.3833198342016361,
+        "n_recordings": 39
+      },
+      "their_pe31": {
+        "median_rho": 0.48126909663429746,
+        "lo": 0.40934209539405503,
+        "hi": 0.6332348973554567,
+        "n_recordings": 39
+      },
+      "placebo": 0.00764296396130063,
+      "verdict": "NO TRACKING -- the interval includes zero."
+    }
+  }
+}

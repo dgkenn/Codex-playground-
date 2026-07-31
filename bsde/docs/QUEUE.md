@@ -1739,3 +1739,57 @@ Two further consequences:
 * **Extending Challenge A's both-arms feature set requires re-extracting ds004902 through the bsde path**,
   not name-mapping. The S3 adapter is EDF-only and ds004902 is EEGLAB `.set` + `.fdt`, so that needs a
   loader — which is the concrete next task for this challenge.
+
+---
+
+## Q34 — the BIS-like index does NOT track a clinician's judgement, and Q22's licence is withdrawn (E65)
+
+Q22 built a computable BIS-like index, E58/E60/E62 measured it against device BIS at median |err| **3.47**
+in [40,60), and the deliverable was: use it on monitor-free deposits inside [20,60) with ±3.47 attached.
+**That licence rested entirely on agreement with device BIS, measured on the recordings the index was
+fitted to.** E65 is the first external test, against a human rather than a machine.
+
+| measure, same 39 DOSE-I recordings | FULL arm | SAFE arm |
+|---|---|---|
+| **our BIS-like index** | **+0.0375** [−0.1501, +0.2893] | **+0.0417** [−0.1756, +0.1424] |
+| DOSE-I's own **PE31** | +0.3974 [+0.3098, +0.4636] | **+0.4813** [+0.4093, +0.6332] |
+| DOSE-I's own SEF95 | −0.0197 [−0.1155, +0.1109] | +0.2507 [+0.0762, +0.3833] |
+
+**Depth information is present in this EEG and is recoverable** — permutation entropy, the incumbent E33
+named from Ostertag et al., reaches **+0.48** on the same windows. Our index reaches **+0.04**.
+
+### It is not a flat-model artefact, and not transport drift
+
+Predictions vary on DOSE-I at sd 12.02 (FULL) and 5.04 (SAFE) against sd 5.48 on the VitalDB fit set. The
+model moves; it moves independently of the clinician. And the SAFE arm drops all seven drifting features
+(`bis_bsr` and `bis_quazi` at infinite shift, `bis_sfs` 1.730, `multiscale_entropy_slope` 1.574,
+`whole_head_exponent` 1.288, `lempel_ziv` 1.203, `exponent_high` 1.122) — **the answer does not change.**
+
+One diagnostic is worth keeping: the SAFE model's entire predicted range (30.8–50.1) sits inside the
+licensed band, so 100 % of windows "pass" the refusal rule. **A model whose output cannot leave the band it
+was fitted in is not being restrained by the rule; it has regressed to its training mean.**
+
+### The reading, and the caveat that cannot be settled here
+
+The parsimonious conclusion is that **the index learned to reproduce the BIS algorithm on one device and
+population, not anaesthetic depth.** Reproducing a proprietary index is not the same as measuring what the
+index claims to measure.
+
+The caveat: the index was fitted to predict *device BIS*, and MOAA/S is a different target. If BIS itself
+tracked MOAA/S poorly, a BIS-faithful index would too — and DOSE-I has no BIS while VitalDB has no MOAA/S,
+so the two references cannot be compared directly with data in hand. Published sedation work puts
+BIS-vs-MOAA/S in the moderate-to-strong range, which makes +0.04 hard to explain that way, but this
+experiment does not measure it.
+
+**Either reading has the same practical consequence, so the licence goes:** the index cannot serve as a
+depth comparator on monitor-free deposits, which was Q22's entire purpose. `BIS_FAITHFUL_OR_BRAIN_FAITHFUL.md`
+asked whether the comparator should be BIS-faithful or brain-faithful and chose BIS-faithful-where-BIS-
+measures-brain. **E65 says that choice bought a measure of BIS, not of brain.**
+
+### What survives, and what to do instead
+
+* The **per-band fidelity work (E58/E60/E62) stands** — it accurately describes agreement with device BIS,
+  which is what it measured.
+* **PE31 is the comparator to use.** It is published, computable, shipped by the deposit, and it tracks a
+  clinician at +0.48 where our fitted index tracks at +0.04. E26/E34/E37 scoped themselves "ahead of SEF95";
+  the honest incumbent is permutation entropy, and it is stronger than SEF95 here too.
