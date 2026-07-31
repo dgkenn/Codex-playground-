@@ -1,0 +1,58 @@
+{
+  "n_subjects": 104,
+  "rho_full": 0.2918,
+  "results": {
+    "12": {
+      "rho_k": 0.09899747247714202,
+      "pred_ratio": 0.5824644308023488,
+      "r_marker": 0.08141470180305131,
+      "r_incumbent": -0.012109249973327643,
+      "n": 104,
+      "obs_ratio": 0.40196900791705664,
+      "ci": [
+        -1.2189807133957433,
+        1.8019167475658058
+      ]
+    },
+    "20": {
+      "rho_k": 0.15478053308579764,
+      "pred_ratio": 0.7283087459945197,
+      "r_marker": 0.18503147338098794,
+      "r_incumbent": -0.10540915395284327,
+      "n": 104,
+      "obs_ratio": 0.9135563496665593,
+      "ci": [
+        0.09991605322436216,
+        1.9967159729799013
+      ]
+    },
+    "30": {
+      "rho_k": 0.21549368584299539,
+      "pred_ratio": 0.8593590025600468,
+      "r_marker": 0.26653152672570146,
+      "r_incumbent": -0.09173156940147231,
+      "n": 104,
+      "obs_ratio": 1.3159467639606748,
+      "ci": [
+        0.9044415868419148,
+        3.33001953372792
+      ]
+    },
+    "45": {
+      "rho_k": 0.29179999999999995,
+      "pred_ratio": 0.9999999999999999,
+      "r_marker": 0.202539748586415,
+      "r_incumbent": -0.09881601092537798,
+      "n": 104,
+      "obs_ratio": 1.0,
+      "ci": [
+        1.0,
+        1.0
+      ]
+    }
+  },
+  "verdict": "REFUTED -- the smallest-k correlation is not detectably below the full-k one. The correlation does NOT respond to label precision, so the attenuation reading is wrong: the marker is weak rather than attenuated, and better labels will not rescue Challenge B.",
+  "n_draws": 12,
+  "reps": 8000,
+  "seed": 20260731
+}
