@@ -1940,7 +1940,18 @@ steps, implement the band.**
 Q34 concluded "PE31 is the comparator to use", which bound Challenge C to deposits that ship a PE31 column —
 i.e. DOSE-I alone. **That constraint is lifted.** With the declared recipe our own PE reaches +0.5304 against
 MOAA/S where the shipped column reaches +0.4944. *That comparison is descriptive: no interval comparison was
-performed and no superiority is claimed.* What is claimed is portability.
+performed and no superiority is claimed.*
+
+**And the likely reason for the margin is named rather than left as generic caution (rule 50).** The
+deposit's parameter description gives an explicit window length for every spectral measure — `T=8 s` for
+columns 26–29 and 36, `T=16 s` for 37–41 — and **states none for any of the three PE columns.** Ours is
+computed over 30 s. A longer window is a smoother estimate, and a smoother estimate tracks a slowly-varying
+behavioural scale better *for reasons that have nothing to do with the measure*. So "+0.5304 beats +0.4944"
+may be a statement about window length. **This does not touch either registered primary**, which compares
+`pe_declared` against `pe_raw` at the same 30 s window, so the window cancels; it touches only the
+descriptive cross-comparison, and the control is cheap — recompute `pe_declared` at 8 s and 16 s on the same
+recordings and see whether the advantage tracks the window. Registered as owed before the cross-comparison
+is quoted anywhere. What is claimed is portability.
 
 ### The first evaluation refused, and the record of it is kept
 
