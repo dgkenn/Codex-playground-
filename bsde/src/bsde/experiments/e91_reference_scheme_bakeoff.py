@@ -113,6 +113,7 @@ from bsde.candidates.uce_v1 import W_FRONTAL, W_POSTERIOR                    # n
 OUT = os.path.join(RESULTS, "e91_reference_scheme_bakeoff.json")
 
 AWAKE_COHORTS = {
+    "lemon":    {"table": "lemon_regional_aperiodic.csv", "awake": None, "adult": True},
     "eegmmidb": {"table": "eegmmidb_regional_aperiodic.csv", "awake": None, "adult": True},
     "ds004541": {"table": "ds004541_regional_aperiodic.csv", "awake": ("baseline",), "adult": True,
                  "exclude_subjects": {"sub-02"}},

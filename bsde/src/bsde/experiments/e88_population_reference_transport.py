@@ -99,6 +99,7 @@ OUT = os.path.join(RESULTS, "e88_population_reference_transport.json")
 
 # awake-only selectors, declared here rather than inferred at run time
 COHORTS = {
+    "lemon":    {"table": "lemon_regional_aperiodic.csv", "awake": None, "adult": True},
     "eegmmidb":  {"table": "eegmmidb_regional_aperiodic.csv", "awake": None, "adult": True},
     "ds004541":  {"table": "ds004541_regional_aperiodic.csv", "awake": ("baseline",), "adult": True,
                   "exclude_subjects": {"sub-02"}},
