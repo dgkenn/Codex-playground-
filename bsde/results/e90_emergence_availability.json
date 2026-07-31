@@ -1,0 +1,25 @@
+{
+  "gates": {
+    "G1_cases": 134,
+    "G1_pass": true,
+    "G2_sd": 0.2770878291894282,
+    "G2_pass": true
+  },
+  "descriptive": {
+    "gap_emergence": 0.45087064676616917,
+    "gap_elsewhere": 0.08302485862438239
+  },
+  "placebo": {
+    "lo": -0.061208472637415016,
+    "hi": 0.02138555837112051,
+    "n_draws": 200,
+    "inside": false
+  },
+  "primary": {
+    "DiD": 0.3678457881417868,
+    "lo": 0.32149596246343426,
+    "hi": 0.41521746681192584,
+    "n_cases": 134
+  },
+  "verdict": "AVAILABLE AT EMERGENCE -- the availability gap is specific to the peri-emergence period. This is a fact about DEVICE BEHAVIOUR, not about the brain, and availability is not validity: the windows where a monitor withdraws its index are the windows where artefact is most likely, which is a reason for caution."
+}
