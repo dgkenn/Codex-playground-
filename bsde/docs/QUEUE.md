@@ -1199,3 +1199,57 @@ the statistic least sensitive to a tail, and the tail was the whole finding.
   comparator that reproduces BIS *including* its artefacts is not obviously more useful for Challenge C
   than one that tracks BIS in the band where BIS is measuring brain. Worth deciding explicitly before the
   index is used anywhere, rather than defaulting to "closer to BIS is better".
+
+---
+
+## Q23 — SyncFastSlow validated against an independent implementation (E59, 2026-07-31), and what it revealed about BIS
+
+`sync_fast_slow` was the only genuinely new machinery E58 introduced, and its 18 tests were all mine — rule
+23's exact hazard. **DOSE-I ships an independent implementation**, and its `pEEG_parameter_description.txt`
+fixes the sign before any data is touched: their SynchFastSlow is the quotient **40-47 Hz over 1-47 Hz**, the
+reciprocal of the Rampil form implemented here, so the two must run opposite ways.
+
+**VERDICT: AGREE.** Median within-recording Spearman(ours, theirs) = **−0.5875 [−0.6466, −0.5309]** over 38
+recordings and 12,469 windows. The placebo — our series circularly shifted 600 s inside its own recording,
+preserving every marginal and every autocorrelation — gives **+0.0339 [−0.0248, +0.1363]**, flat. This clears
+the **computational** verifier layer for `bis_sfs`, which is the only layer its declaration requires, and
+nothing else.
+
+### The finding worth more than the verdict
+
+DOSE-I also ships **PowerFastSlow**: a pure power ratio over the *identical bands*. Partialling it out takes
+the agreement from −0.5875 to **−0.2706 [−0.3496, −0.2327]** — reduced by more than half, and **still
+decisively excluding zero**.
+
+So: a real bispectrum-specific component exists, and it is smaller than the component shared with plain
+power. **This is the first empirical statement in this project about how much of SyncFastSlow is bispectral
+rather than spectral — the distinction BIS's name rests on.** It also explains E58's null without appeal to
+anything else: adding `bis_sfs` to a feature set already rich in spectral measures buys little precisely
+because most of what it carries is spectral.
+
+*(The experiment's printed NOTE says the two "may be tracking power rather than phase coupling". That is the
+harsher of the two readings the numbers allow and they do not require it — the partial correlation excludes
+zero. The accurate statement is the one above.)*
+
+### Exclusions, reported (rule 14)
+
+**21 of 60** attempted recordings were refused by the extractor's uniform-time-axis check. Two were examined
+directly: `10-011` carries an **82.8 s** hole among 4 gaps; `10-030` carries 13 gaps totalling **15.7 s**.
+The gaps are real and the refusal is correct — a uniform axis would have misaligned every window after the
+hole against the depositors' 1 Hz series (rule 27). The criterion reads only the raw file's timestamps and
+cannot see either SFS series, so it cannot be related to the agreement statistic. **A gap-aware extractor
+would recover roughly a third more recordings** and is the obvious next improvement.
+
+### A probe was run that spent the directional question on this deposit
+
+Before E59 was registered, a feasibility probe read the depositors' SFS and PFS against per-second SOC across
+all 171 recordings. Reported as a **probe, descriptive, not a registered test**:
+
+* within-recording Spearman(SFS, PFS) median **+0.737** (IQR +0.592…+0.845), pooled +0.797 — consistent with
+  what E59 then measured against our own implementation;
+* SFS median **−3.027** conscious vs **−3.898** unconscious; PFS **−1.514** vs **−2.045**.
+
+Under DOSE-I's convention unconsciousness lowers both, so under this repo's reciprocal convention it raises
+`bis_sfs` — the direction its declaration committed to. **That agreement is NOT a passed test.** The number
+was seen before any prediction about this deposit could be registered, so `bis_sfs`'s direction stays
+**untested**, and must be tested on a deposit nobody has looked at.
