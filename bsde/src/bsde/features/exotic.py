@@ -460,6 +460,12 @@ def dfa_exponent(x: np.ndarray, scales: np.ndarray | None = None,
     return float(slope)
 
 
+MAX_SCALE_SHRINK = 2.0
+"""How far `lrtc_envelope` may shrink its top scale before it refuses. A DFA exponent computed over a
+materially different scale range is a different quantity; beyond a factor of 2 the function returns NaN
+rather than a non-comparable number."""
+
+
 def lrtc_envelope(x: np.ndarray, sfreq: float, band: tuple = (8.0, 13.0),
                   min_scale_s: float = 1.0, max_scale_s: float = 20.0) -> float:
     """Long-range temporal correlation of a band's AMPLITUDE ENVELOPE — DFA on the Hilbert envelope.
@@ -484,8 +490,19 @@ def lrtc_envelope(x: np.ndarray, sfreq: float, band: tuple = (8.0, 13.0),
     is too short to supply four scales.
     """
     x = np.asarray(x, float)
+    # THIS GUARD USED TO DEGRADE SILENTLY AND IT IS NOW A REFUSAL. When a segment is too short for the
+    # requested scale range it shrank `max_scale_s` and returned a number anyway -- computed over a
+    # different scale range from every other lrtc_alpha in the project, and therefore NOT COMPARABLE to
+    # them, with nothing in the output saying so. Found while scoping Stieger 2021, whose 2 s pre-cue
+    # epochs would have auto-shrunk 20.0 s to 4.0 s, a 5x smaller range, and produced a plausible-looking
+    # value that could not be compared with E42's. A number that is wrong-but-plausible is worse than a
+    # failure. Recordings long enough for the requested range are unaffected: the branch never fires for
+    # them, so no existing result changes.
     if x.size < int(4 * max_scale_s * sfreq):
-        max_scale_s = max(min_scale_s * 4.0, x.size / (4.0 * sfreq))
+        shrunk = max(min_scale_s * 4.0, x.size / (4.0 * sfreq))
+        if shrunk < max_scale_s / MAX_SCALE_SHRINK:
+            return float("nan")
+        max_scale_s = shrunk
     filt = _bandpass_filtfilt(x, sfreq, band[0], band[1])
     if not np.all(np.isfinite(filt)):
         return float("nan")

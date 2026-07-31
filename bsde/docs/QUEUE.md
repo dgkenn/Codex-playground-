@@ -719,6 +719,25 @@ after it fails. Rule 41.
 > **So the label needs no signal at all** — `TrialData.result` gives per-session accuracy directly, which
 > means Q14's step 2 (measure the reliability BEFORE the correlation) can run on metadata alone.
 >
+> ### A SECOND CHECK, AND IT NARROWS WHAT Q14 CAN DELIVER
+>
+> **Stieger CANNOT test `lrtc_alpha`, which is E42's marker and the one E56 studied.** The deposit is
+> trial-epoched: 450 separate 11.04 s epochs (2.00 s pre-cue + 9.04 s task), with no continuous recording.
+> `lrtc_envelope` needs scales to 20 s and had a guard that silently SHRANK its top scale to fit the
+> segment — on a 2 s epoch, to 4.0 s. **It would have run, returned a plausible number, and that number
+> would not have been comparable to any other `lrtc_alpha` in the project, with nothing in the output
+> saying so.** Caught before the extractor was built.
+>
+> The guard is now a **refusal**: `lrtc_envelope` returns NaN when the required shrink exceeds a factor of
+> 2 (`MAX_SCALE_SHRINK`). Recordings long enough for the requested range are unaffected — the branch never
+> fires for them — so no existing result changes. Verified: 2 s → NaN, 11 s → NaN, 40 s → 0.532,
+> 180 s → 0.463.
+>
+> **So Q14 delivers a better LABEL for SPECTRAL markers, not a successor to E42.** That is still worth
+> having — E41's incumbent was spectral and E56 showed Challenge B is underpowered rather than answered —
+> but it is a different experiment from the one Q14 was written to enable, and the write-up must not
+> present it as a replication of E42 on better data.
+>
 > **One caveat that must ride with any use of the baseline.** A 2 s pre-cue window inside a task block is
 > not the same object as Blankertz's *"relax with eyes open"* recording: the subject is cued, engaged and
 > between trials, not at rest. It is a legitimate task-free segment and it is NOT a resting-state
