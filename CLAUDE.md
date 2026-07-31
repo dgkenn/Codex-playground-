@@ -404,6 +404,24 @@ Every rule below was paid for with a wrong result in this project.
     failure — `spectral_edge_95`, CI [-0.378, +1.079]. **A test that nothing fails is not evidence that
     everything passed.** Corollary, and it generalises past selection bias: **never select rows on the
     incumbent you intend to beat.**
+60. **A MEASURE CHOSEN FOR BELONGING TO A DIFFERENT FAMILY MUST BE SHOWN TO DIFFER FROM THAT FAMILY —
+    RULE 28 RUN IN REVERSE.** Rule 28 warns against assuming two measurements are measuring different
+    things. This is the mirror error and it is easier to make, because the whole point of the design is
+    that the new measure is *different in kind*. **E73** existed because every Challenge B candidate this
+    project had run was an amplitude summary, and its pre-declared primary was
+    `wpli_alpha_global_efficiency` — a graph measure, chosen precisely to escape that family. Across the
+    62 subject means it correlates with `wpli_alpha_mean_degree` at **+0.9962** and with plain
+    `wpli_alpha` at **+0.8639**. On an unthresholded weighted graph shortest paths are dominated by direct
+    edges, so global efficiency is mean connectivity strength restated, and the "network" test was a re-run
+    of the connectivity test. The null it returned is real and it is *not* a null about network topology.
+    **The check costs one correlation matrix and must run BEFORE the registration: correlate the new
+    measure against the family it is supposed to escape, on the same units the design will use.** If it
+    lands above ~0.9 on anything already tested, the design has not changed its instrument (see rule 58's
+    successor requirement) and the registration should say so or pick something else. The one measure in
+    E73's family that WAS nearly orthogonal to the primary (`wpli_alpha_clustering`, −0.076) is also the
+    only one that behaved differently — which is the pattern to expect and the reason the check is worth
+    its cost.
+
 36. **Credential precedence, third occurrence.** The sandbox exports `AWS_ACCESS_KEY_ID` as a 14-character
     `prox…` proxy token that outranks `~/.aws/credentials`, and the failure reads as `InvalidAccessKeyId` —
     indistinguishable from expiry. `common/awsenv.py` now drops it (only when it provably is not an AWS key
