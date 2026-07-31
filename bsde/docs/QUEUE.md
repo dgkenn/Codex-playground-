@@ -736,3 +736,68 @@ trailing the other — which is exactly the control-class structure E40's positi
 unsent request (Q11), it answers E24's question rather than E40's, and its landmark precision is unmeasured.
 Recorded because E40's data-shape requirement generated it, and a requirement that generates a candidate is
 worth more than one that only rules things out.
+
+---
+
+## Q16 — the covariate-adjusted normal reference, built from HEEDB negative reads
+
+**Status: COHORT BUILT. The signal pass and the experiment that can kill the idea cheaply are next.**
+
+`UCE_AND_THE_THREE_CHALLENGES.md` identified the frozen population reference as the one method the prior
+work has that this project lacks, and the reason our results do not compose across deposits — every
+experiment here normalises **within cohort**, which is why E39 could not combine `ds004541` and `chennu`
+into one estimate and why E36's legibilities cannot be carried anywhere.
+
+The investigator's proposal improves on the prior work's own reference in two ways, and both matter:
+
+1. **A better population.** The prior reference was 1,170 BDSP **sleep-study** patients — people referred
+   for suspected sleep pathology, not healthy people. HEEDB negative reads are routine clinical EEGs that
+   an expert neurophysiologist read as **normal**.
+2. **Conditional rather than pooled.** Adjusting for age, sex and comorbidity replaces one global centroid
+   with an expected value **given the patient**. That is the principled version of "use the patient's own
+   awake baseline", and it has the property that matters clinically: **it works where no baseline
+   recording exists** — ICU, emergency, disorders of consciousness — which is exactly where the flagship
+   applications are. The prior work's operating point moved from −0.30 to −2.09 across individuals; a
+   conditional reference is the direct attack on that.
+
+### What was built
+
+`analysis/heedb_normal_reference_cohort.py`, metadata only, no signal read:
+
+| | |
+|---|---|
+| recordings in the findings tables (S0001 + S0002) | 129,831 |
+| `normal` flagged | 36,109 |
+| **STRICT normal** (`normal` set **and** every abnormality column empty) | **4,944** |
+| unique patients | **4,558** |
+| joined to `HEEDB_ICD10_for_Neurology.csv` | **100 %** |
+| with a `BidsFolder` (reachable in the BIDS store) | **99.6 %** |
+| age | median 41, IQR 23–61, range **0–90** |
+| sex | 2,472 F / 2,446 M |
+| comorbidity | median 3 ICD chapters; **474 patients with none** |
+
+**The strict definition is primary and the gap it opens is not a rounding detail.** A report can be
+summarised "normal" while an annotation records focal slowing or a breach rhythm; 36,109 → 4,944 is what
+that costs. A centroid built from recordings carrying documented abnormalities is not a normal reference,
+and the only value this object has is that it can be trusted. The loose set is emitted by `--loose` as the
+sensitivity arm.
+
+Normal **variants** are deliberately kept — spindles, vertex waves, K-complexes, POSTS, PDR, wicket, BETS.
+A normal EEG containing sleep spindles is still normal, and excluding them would select against anyone who
+fell asleep in the department.
+
+### Next, in order, and the second item can kill the idea for the price of one signal pass
+
+1. **Signal pass**: aperiodic exponent (and the rest of the registry) over the 4,944 recordings, sharded,
+   process-and-discard. Nothing patient-derived enters the repository — the cohort table already lives
+   under `/tmp/eeg_probe/` and is gitignored.
+2. **The experiment that decides whether any of this helps.** Fit `exponent ~ age + sex + comorbidity` on
+   the reference cohort and ask **how much of the between-subject variance the covariates actually
+   explain.** No outcome, no candidate, no label — a pure measurement-model question, and the same
+   discipline E38 applied to E28's label: *characterise the instrument before claiming anything with it.*
+   **If R² is trivial, a conditional reference is no better than a pooled one and the idea dies for the
+   cost of one regression.** If it is substantial, the adjusted reference is worth freezing.
+   Age must enter non-linearly — the aperiodic exponent's age dependence is well documented — so a spline
+   or age bands, declared before the fit.
+3. **Only then** freeze `(expected_exponent | covariates, residual_SD)` and re-express existing results on
+   it, starting with one where the within-cohort normalisation is currently doing hidden work.
