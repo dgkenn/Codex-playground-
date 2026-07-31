@@ -148,6 +148,17 @@ point.
 
 Not in HEEDB metadata, plausibly material, and therefore limitations rather than omissions.
 
+> **CONFIRMED BY MEASUREMENT 2026-07-31 (E44, n = 607 paired subjects). The promotion below was correct and
+> the effect is LARGER on our own estimator than the citation that prompted it.** `exponent_low` moves
+> **d_z = −1.214 [−1.377, −1.069]** between eyes-closed and eyes-open — against the −0.761 from
+> PMID 42395346. It clears the registered FIRST-ORDER threshold of 0.5 by more than double, and it beats
+> its own placebo (a two-hour cognitive battery) 1.214 to 0.248. **Eye state must be resolved in-signal and
+> frozen into the reference alongside the wake detector.** Two further facts from the same run: the
+> broadband `whole_head_exponent` moves only 0.202, so the sub-band chosen for EMG-robustness is **six
+> times more eye-state sensitive** than the measure it replaced; and peak suppression removes almost none
+> of it (−1.195), so this is **not** simply the alpha peak inside a narrow fit window, contrary to what was
+> written here earlier.
+>
 > **CORRECTION 2026-07-31 — eyes open vs closed has been PROMOTED OUT of this list and it is now the second
 > largest term in the design.** It was written here as a vague "changes alpha directly". It is measured:
 > **Cohen's d = −0.761 on the aperiodic exponent itself** (PMID 42395346), not merely on alpha. That is

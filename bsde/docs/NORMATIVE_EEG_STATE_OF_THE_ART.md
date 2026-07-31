@@ -148,10 +148,23 @@ broadband number. `subband_exponents` already exists in this registry for the Co
    > propofol dose-tracking is therefore partly "the alpha peak grew", not only "the slope changed".
    > **Carry the peak-suppressed `exponent_low_robust` alongside it and report both**; the shared feature
    > path emits it and the older per-deposit extractions do not.
-2. **Carry `lempel_ziv` alongside it** — most EMG-robust of the six tested, and a different construct.
-   **Strengthened 2026-07-31:** it is also the only one of eight features whose state displacement agrees
-   in sign across all three anaesthesia deposits (E49), and it tracks plasma propofol at ρ = +0.520 ± 0.090
-   (E50). Of everything tested this session it is the most consistently behaved measure in the registry.
+2. ~~**Carry `lempel_ziv` alongside it**~~ — **SUPERSEDED, and the reversal is the most useful thing this
+   section learned. E45 measured its five-year ICC at 0.193 [0.040, 0.332]**, by far the lowest of ten
+   measures, capping any trait correlation at √0.193 = 0.44. **A normative reference is a trait-like
+   anchor, so `lempel_ziv` must not go on one.**
+
+   > This does not contradict anything else it has done — it explains it. `lempel_ziv` is the steadiest
+   > measure under muscle (E46), the only one of eight whose state displacement agrees in sign across three
+   > anaesthesia deposits (E49), tracks plasma propofol at ρ = +0.520 (E50), and is moved *more* by two
+   > hours of cognitive work than by opening the eyes (E44, placebo 0.934 vs primary 0.477).
+   > **A measure that tracks state well should have poor trait stability.** `lempel_ziv` is an excellent
+   > state measure and a bad reference measure, and this document was conflating the two roles.
+   > **Carry it as a STATE candidate; keep it off the normative scale.**
+
+   **What replaces it: `exponent_low_robust`.** Five-year ICC **0.841 [0.787, 0.882]** against
+   `exponent_low`'s 0.756, while E44 shows peak suppression costs only **1.6 %** of its eye-state
+   sensitivity (−1.214 → −1.195). Same sensitivity, higher reliability — it strictly dominates the OLS
+   sub-band for this purpose.
 3. **Register the band comparison** before it is claimed anywhere. It is currently exploratory.
 4. **The Q16 regression is unchanged** and remains the step that kills or sizes the whole idea; it should
    now be run on `exponent_low` as well as the broadband exponent, since they may have different
