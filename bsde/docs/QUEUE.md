@@ -2029,3 +2029,21 @@ manufacturer's or the deposit's own documentation and parsed, not recalled.
 
 Registered as an open item rather than done here, because it needs a verified source and because it changes
 what a frozen candidate can be evaluated on.
+
+### Priority, on reflection, is the opposite of the list order
+
+**HBN is the fixable one and the least worth fixing.** It is resting state in a developmental cohort with no
+arousal manipulation, so unlocking `uce_v1` there advances none of the three challenges; rule 54 also warns
+against pooling it with adult deposits. A verified fix is available in principle — MNE ships both
+`GSN-HydroCel-128` and `standard_1020` with 3D coordinates, so the mapping can be *derived geometrically*
+(nearest standard position within a tolerance) rather than recalled, which is what rules 25 and 39 require.
+Worth doing when something needs HBN; not worth doing now.
+
+**Sleep-EDFx is the one that costs something, and it has a concrete option.** The exponent of a bipolar
+derivation is a perfectly real quantity — it is just not the same quantity as a monopolar channel's, so it
+must never be pooled with, or compared against, monopolar `uce_v1` values. But E75's question needs only the
+SIGN of each arm's own within-subject effect, with each arm standardised inside itself, and a bipolar-basis
+UCE is admissible for exactly that. **The proposal is a separately named candidate `uce_v1_bipolar`,
+registered on its own, never written into a column called `uce_v1`** — so that no table can silently mix two
+measurement bases. That it would not change E75's verdict (already NOT INFORMATIVE on its aggregate) is a
+reason to register it properly rather than bolt it on.
