@@ -1541,3 +1541,55 @@ Its properties are different from, and in places better than, the between-subjec
 **Rank: 2, behind E63.** The ceiling comes first because it is cheap, already registered, and because if the
 label turns out to be highly reliable then the between-subject design is worth re-running on 62 subjects
 before anything more elaborate is built.
+
+---
+
+## Q29 — Challenge A's missing DENOMINATOR is acquired: arousal changed without a drug (ds004902)
+
+**Challenge A closed on VitalDB (Q26) and its unblock was assumed to be a second drug** — Q27's ketamine
+set, now behind an anti-scraping wall, or the unsent Turku request. That framing was incomplete.
+
+Challenge A's acceptance condition is *"tracks STATE while carrying little DRUG identity."* Testing it needs
+two quantities per measure: **how much it moves for a drug**, and **how much it moves for a state change
+that involves no drug at all**. This project has never had the second. Every state cohort it holds — VitalDB,
+DOSE-I, ds005620, ds004541, chennu — changes arousal *with* an anaesthetic.
+
+### What was found, verified through the OpenNeuro GraphQL API and S3 mirror
+
+All 447 OpenNeuro EEG datasets were indexed and filtered. **`ds004902` — "A Resting-state EEG Dataset for
+Sleep Deprivation", CC0, 8.9 GB:**
+
+* **71 participants × 2 sessions** — normal sleep (NS) vs sleep deprivation (SD), and `SessionOrder` is
+  **counterbalanced and recorded per subject**, so session is not confounded with time;
+* **both `eyesclosed` and `eyesopen`**, so E44's first-order eye-state effect is a controlled variable
+  rather than a lurking one;
+* **PVT vigilance and KSS/SSS sleepiness scores per session** in `participants.tsv` — a behavioural and a
+  subjective arousal anchor, not just a group label;
+* EEGLAB `.set` + `.fdt`, on the open S3 mirror. **No access wall** — unlike Dryad (Q27) or the WBIC
+  Chennu host (Q20).
+
+**Smoke-tested and extracting.** The existing `openneuro_multicohort.py` took it with a one-line cohort
+entry: 218 matching recordings, 10-channel shared montage, 180 s, 250 Hz, with `(subject, session, file)`
+keyed so the two sessions and two tasks stay distinct. It is written to its own table — it is a STATE cohort
+and must not contaminate the eyes-closed normative reference.
+
+### The design it enables, and it needs no second drug
+
+Both arms are **within-subject changes**, which is the structurally matched form E53 established:
+
+| arm | contrast | deposit |
+|---|---|---|
+| drug | awake → anaesthetised, same patients | ds004541 (n=8, 2 sessions) or ds005620 |
+| **no drug** | rested → sleep-deprived, same subjects | **ds004902 (n=71, 2 sessions)** |
+
+Per measure, the **ratio of drug-response to drug-free-arousal-response** is Challenge A's acceptance
+condition made computable. A measure that responds to both is tracking state; one that responds far more to
+the drug arm is a pharmacology detector. The informative object is the *ranking across measures*, not any
+absolute — anaesthesia is a much larger state change than one night of deprivation, so every measure will
+move more in the drug arm and only the ratio pattern is interpretable.
+
+**Caveats, recorded now rather than discovered later.** The two arms are different deposits, so E53's
+cross-deposit floor applies to any magnitude claim; only the within-subject *change* is comparable, and even
+then the ranking is the claim rather than the ratio's value. ds004541 is n = 8, which will dominate the
+uncertainty. And sleep deprivation is a *mild* arousal change — if no measure moves detectably in the
+no-drug arm, the ratio is undefined and rule 53 applies before anything is compared.

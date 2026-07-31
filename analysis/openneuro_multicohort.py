@@ -71,6 +71,13 @@ COHORTS = {
     # whole_head_exponent flipped). They are BrainVision.
     "ds005620": (("awake", "sed"), (".vhdr",), "repeated-awakening PROPOFOL sedation; task-awake/sed"),
     "ds004148": (("eyesclosed",), (".vhdr",), "test-retest young adults 18-28, eyes closed"),
+    # AROUSAL WITHOUT A DRUG, and it is the contrast Challenge A has never had. 71 subjects, TWO sessions
+    # (normal sleep vs sleep deprivation, order counterbalanced and recorded per subject), BOTH eyes-closed
+    # and eyes-open, plus PVT vigilance and KSS/SSS sleepiness scores per session. Every other state cohort
+    # here changes arousal with a drug; this one changes it with none, which is what makes a
+    # drug-response / state-response ratio computable at all. EEGLAB .set + .fdt, CC0.
+    # NOT part of the normative reference: it is a STATE cohort and must be extracted to its own table.
+    "ds004902": (("eyesclosed", "eyesopen"), (".set",), "sleep deprivation vs normal sleep, 71 subj x 2 ses"),
 }
 """ds005514 (Healthy Brain Network, 295 subjects, ages 5-20, 198.7 GB) is the paediatric anchor and is
 deliberately NOT in the default set: at ~670 MB per subject it would dominate the transfer budget. It is
