@@ -681,3 +681,16 @@ unverified on GitHub.
     an effect size must be log-transformed or within-subject standardised first**; raw units are usable
     only where a within-subject regression absorbs the scale into its slope, which is why E70's
     residualisation and its rank-position evidence survive this while E71's magnitudes do not.
+58. **REVISING A GATE AFTER IT FAILS IS GOALPOST-MOVING EVEN WHEN EACH INDIVIDUAL FIX IS DEFENSIBLE — FIX
+    ONCE, WITH A STATED REASON, THEN REPORT.** **E72** revised its bracket gate twice in one sitting. Both
+    fixes were correct in isolation: pure noise as a negative control cannot pass an aliveness gate (rule
+    40), so it was replaced with a stage-driven EMG-independent synthetic; and a RANK requirement
+    ("bottom three") cannot be met by a null control when many real features are also null, since the
+    control lands inside the null cluster by construction. **Each repair was right and the sequence was
+    wrong.** By the second revision I was tuning the apparatus until it returned a verdict rather than
+    learning from the verdict it returned. The registered outcome stands as METHOD FAILS, and the
+    substantive numbers — synthetic muscle 0.810 against synthetic null 0.022, with no real feature above
+    0.171 — are reported as UNLICENSED BY IT.
+    **The discipline: one repair per run, with the reason written down, and if the gate fails again the
+    run is over and the failure is the result.** A gate revised twice is no longer independent of the
+    answer, whatever the intent behind each change.

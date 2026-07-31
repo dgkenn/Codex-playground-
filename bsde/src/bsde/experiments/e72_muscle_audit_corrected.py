@@ -134,7 +134,12 @@ def main() -> int:
     sd = float(np.std(np.concatenate([M[st] for st in STAGES])))
     E_all = {f: {st: np.array([per[s][st][f] for s in subs]) for st in STAGES} for f in HI_FRACTION}
     E_all[POS] = {st: M[st] + 0.5 * sd * rng.normal(size=len(subs)) for st in STAGES}
-    E_all[NEG] = {st: rng.normal(size=len(subs)) for st in STAGES}
+    # NEGATIVE CONTROL, CORRECTED. The first version used pure noise -- which has NO wake-vs-N3 effect by
+    # construction, so G1 removed it before it could be ranked and the bracket gate could never close. A
+    # control that cannot participate is not a control (rule 40). This version has a STRONG stage effect
+    # and is independent of EMG by construction: a fixed monotone stage score plus per-subject noise.
+    _stage_score = {"W": 0.0, "N1": 1.0, "N2": 2.0, "N3": 3.0, "REM": 1.0}
+    E_all[NEG] = {st: _stage_score[st] + rng.normal(size=len(subs)) for st in STAGES}
     band = dict(HI_FRACTION)
 
     rows, res = [], {}
