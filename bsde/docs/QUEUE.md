@@ -331,3 +331,44 @@ cohorts.
 
 **Next: register the drug-identity probe.** Not the state model — the probe. It is the half of Challenge A
 that E25 passed on GABAergic agents alone, and it is the half this deposit can break.
+
+---
+
+## Q9 — the successor E36 earns, and the one it cannot run here
+
+**Status: OPEN. Blocker named and it is not solvable inside any deposit currently held.**
+
+E36 established two things on the Krause deposit and refuted one alternative explanation:
+
+* the phase/amplitude split in drug legibility is the unique maximum of all 495 exhaustive 4/8 splits
+  (p = 0.002), so it is not a line drawn through noise after the fact;
+* the capability gap between the families is **-0.017 [-0.107, +0.081]** — centred on zero — so "phase
+  measures leak less because they measure less" is excluded to within ±0.10 legibility units;
+* and, **post hoc and therefore only a hypothesis**, the mundane methodological explanation fails: within a
+  single drug arm phase measures are *more* legible of electrode type than amplitude measures (0.243 vs
+  0.202 propofol, 0.344 vs 0.288 dex), so they are not a generically artefact-robust family.
+
+**What Q9 must do.** Pre-register the within-arm nuisance comparison that E36 could only run post hoc, and
+run the whole thing on a cohort where **the arms share patients**. E36's structural limit is that its two
+arms share 0 patients of 29 and both nuisance channels are patient-constant, so drug arm, electrode type and
+data quality are nested inside patient identity and no method separates them there.
+
+**Blocker.** No public deposit located pairs raw EEG with two mechanistically distinct anaesthetics in the
+same patients. The searches behind that statement are Q8's, across PubMed, OpenNeuro, Dryad, Zenodo, OSF,
+Figshare and PhysioNet. Until one exists, the E35/E36 observation stays unclaimed — which is its recorded
+status, not a stalled task.
+
+**What is worth doing in the meantime, in order.**
+
+1. **A crossover or within-patient two-agent design is the whole ask.** Worth one targeted search of trial
+   registries rather than data repositories: a registered crossover study with an EEG endpoint may have
+   deposited data under a title no repository search would surface.
+2. **Recompute the features rather than inheriting them.** Every number in E35 and E36 comes from the
+   depositors' feature pipeline. `verifier/` has an independent wPLI (`wpli_alpha`, definition fingerprint
+   `8ddebb740c943a76`) already used on four scalp cohorts. If the Krause raw traces are obtainable, the
+   family split should be re-measured with our own implementation before it is taken anywhere — rule 23,
+   self-written code and self-written tests share blind spots, and here we have neither: we have someone
+   else's code and no tests at all.
+3. **Nothing about this belongs in a scalp claim yet.** Intracranial coverage in epilepsy-surgery patients
+   is the scope limit, and the Chennu and ds004541 cohorts cannot substitute because neither has a second
+   agent.

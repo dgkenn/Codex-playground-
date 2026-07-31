@@ -393,6 +393,27 @@ Every rule below was paid for with a wrong result in this project.
     result. E26 named BIS and found the incumbent scored AUC 0.583, which is what made its own null
     meaningful; E28 named Blankertz 2010. E30 named none, and its +0.710 therefore has no bar beside it.
     The ledger now carries an `incumbent` field and an empty one is a defect.
+46. **WHEN A BOOTSTRAP VERDICT'S MARGIN IS THE SIZE OF ITS MONTE CARLO ERROR, THE BINARY IS NOISE — REPORT
+    THE RESAMPLE-LEVEL p AND THE SEED STABILITY.** E36's registered primary was "the 95 % CI excludes 0".
+    At the registered 2,000 resamples it did, by 0.0013. Re-run at five seeds, **one of the five straddled
+    zero**: the printed verdict was a property of the RNG seed, not of the data. Twenty thousand resamples
+    put the one-sided p at 0.0242 — a real but weak pass, and a number that says so, unlike PASSED. Two
+    habits fall out and both are cheap. **Report the fraction of resamples on the wrong side of the null,
+    not only the interval** — it is the same computation and it degrades gracefully where an interval
+    endpoint does not. And **re-run any boundary verdict at three or more seeds before writing it up**; if
+    it moves, the replicate count was too low for the claim, and raising it is a legitimate fix precisely
+    because it changes no threshold, cohort or horizon. The related trap: a folded statistic like
+    `|AUC-0.5|` is biased upward under the null, so it must only ever be *differenced against itself* on
+    the same rows — never reported as a single feature's effect size.
+47. **A PLACEBO SHOWS A CHOICE IS EXTREME; IT CANNOT SHOW THE CHOICE WAS MADE BLIND.** E36 enumerated all
+    495 alternative partitions of its feature set and its real one was the unique maximum, p = 0.002. That
+    is a strong result and it is *not* an answer to "you drew the line after seeing the numbers", because
+    the line genuinely was drawn afterwards. What answers that charge is structural, and has to be built in
+    at registration: the partition is a property of the instruments (phase versus amplitude) rather than an
+    arbitrary grouping; **the one feature that discriminates the two competing readings was assigned
+    against the favoured story** and still behaved as assigned; and the denominator statistic did not exist
+    in the parent experiment, so it could not have been peeked at. Write those three down at registration
+    or the placebo is decoration.
 
 ---
 
