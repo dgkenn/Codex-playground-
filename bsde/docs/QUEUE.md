@@ -2047,3 +2047,70 @@ UCE is admissible for exactly that. **The proposal is a separately named candida
 registered on its own, never written into a column called `uce_v1`** — so that no table can silently mix two
 measurement bases. That it would not change E75's verdict (already NOT INFORMATIVE on its aggregate) is a
 reason to register it properly rather than bolt it on.
+
+---
+
+## Q40 — E77: the muscle objection to `bis_rbr` is real, measured, and small — and our BSR fires in sleep
+
+*E77, registered while its extraction was still running, on a real submental EMG channel rather than a
+scalp proxy. All gates passed.*
+
+Q35 found `bis_rbr` tracks a clinician's MOAA/S at ρ **+0.5258** on DOSE-I, beating PE31 (+0.4813) and
+SEF95 (+0.2507) — with its numerator band at 30–47 Hz, where surface EMG lives. Q35's own check used scalp
+proxies, and E69/E71 had already shown those cannot see REM atonia. Sleep-EDFx's submental channel can.
+
+    G0  local attribution reproduces E72's exactly                                        PASS
+    G1  separation: synthetic muscle +0.772, synthetic null +0.181, gap +0.591 (floor 0.40) PASS
+    G3  141 subjects with all five stages in both tables                                   PASS
+
+| feature | d_z (W vs N3) | after real EMG | after shuffled EMG | **A** |
+|---|---|---|---|---|
+| **`bis_rbr`** | **−2.743 [−3.418, −2.228]** | 1.440 | 1.720 | **+0.102 [+0.027, +0.191]** |
+| `bis_sfs` | +2.845 [+1.975, +4.185] | 1.661 | 1.830 | +0.059 [−0.009, +0.132] |
+| *anchor* `exponent_high` | +1.136 [+0.824, +1.588] | 0.702 | 0.874 | +0.151 [+0.028, +0.302] |
+| *anchor* `relative_alpha_power` | −0.500 [−0.758, −0.412] | 0.571 | 0.417 | −0.307 [−0.619, −0.007] |
+
+**Rule 46 was applied and it mattered.** The first run's BH p for `bis_rbr` was 0.0200 against a threshold
+of 0.0250 — a margin inside the Monte Carlo granularity of its own 200 resamples. Re-run at **three seeds
+and 600 resamples**, both verdicts are stable: `bis_rbr` MUSCLE-ATTRIBUTED at p 0.0100–0.0167, `bis_sfs`
+NOT-ATTRIBUTED at p 0.100–0.113.
+
+### The verdict is MUSCLE-ATTRIBUTED and it defends Q35
+
+`bis_rbr`'s wake-versus-deep-sleep effect is **d_z = −2.743, the largest of any feature measured on this
+table**, and after adjusting for real submental EMG it is **still 1.440**. About a tenth of it is muscle.
+
+**Both readings of the scale are reported, because A is normalised by |d₀| and that flatters a large
+effect.** *Relative:* `bis_rbr` (0.102) loses less of itself to muscle than `exponent_high` (0.151).
+*Absolute:* `bis_rbr`'s shrinkage |d₂|−|d₁| is **0.280** against `exponent_high`'s **0.172**, so it loses
+more d_z units. Both are true; the registered statistic is the relative one, and quoting only it would
+overstate the case.
+
+**Scope, and it is the sentence most likely to be dropped when this is quoted.** Wake-versus-deep-sleep in
+*physiological sleep*. Q35's +0.5258 is a MOAA/S contrast under *anaesthesia*, where muscle tone is a
+different quantity — neuromuscular blockade, and E22's finding that every VitalDB window at BIS ≥ 80 is
+facial EMG, both say so. **This removes one specific objection in one setting. It does not clear `bis_rbr`
+on DOSE-I, and Q35's owed registered replication is owed either way.**
+
+### A registered prediction was wrong, and the way it was wrong is a finding
+
+`bis_bsr` and `bis_quazi` were predicted "identically zero in physiological sleep, because there is no
+burst suppression there". **They are not.**
+
+| stage | `bis_bsr` nonzero | `bis_quazi` nonzero |
+|---|---|---|
+| REM | **61.3 %** | **75.4 %** |
+| N1 | **52.8 %** | **75.4 %** |
+| N2 | 29.1 % | 57.4 % |
+| W | 19.7 % | 26.8 % |
+| N3 | 10.6 % | 28.9 % |
+
+**Highest in the low-amplitude stages, which is the signature of an amplitude-threshold suppression
+detector false-positiving** — and one W window carries `bis_bsr` = **1.000**, i.e. 100 % suppression in
+wakefulness, which cannot be physiological. Medians are ~0 and p90s run 0.001–0.06, so the magnitudes are
+small; the *pattern* is systematic and it is a property of our implementation, not of sleep. `bis_bsr`'s
+own contrast is d_z = −0.133 [−0.253, −0.098]; `bis_quazi` failed G2 and is reported
+NO-EFFECT-TO-ATTRIBUTE rather than null.
+
+**Consequence:** `bis_bsr` and `bis_quazi` are two of the four subparameters feeding E58's BIS-like index.
+Any deposit where low-amplitude EEG is common will carry spurious suppression in them. Open item.
