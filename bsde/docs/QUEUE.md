@@ -702,6 +702,28 @@ task-free segment exists — a pre-cue baseline, an inter-trial interval, or a s
 feasibility check on `BCI.time` and `TrialData`, and it must be answered **before** E42 is registered, not
 after it fails. Rule 41.
 
+> ### ANSWERED 2026-07-31, AND THE ANSWER IS YES — Q14 IS UNBLOCKED
+>
+> One session (`S39_Session_3.mat`, 480 MB, downloaded in 18 s through the figshare REST API) was read
+> directly with `scipy.io.loadmat`. Verified, not inferred:
+>
+> * **`BCI.time` runs −2000 … +9040 ms at 1000 Hz**, i.e. **2.00 s of PRE-CUE BASELINE before every
+>   trial**. At 450 trials that is **900 s = 15 minutes of task-free data per session**, which is more
+>   resting EEG per session than most dedicated resting deposits carry per subject.
+> * `BCI.data` — 450 trials × **62 channels** × 11,041 samples; channel labels are standard 10-10
+>   (`FP1 FPZ FP2 AF3 AF4 F7 F5 F3 F1 FZ …`), so the project's 10-channel montage is present.
+> * `BCI.TrialData` — `result` populated on 437 of 450 trials, mean 0.883; **0 artifact-flagged**.
+> * `BCI.metadata` — `age` 21, `gender` F, `handedness` R, plus `meditationpractice`, `athlete`,
+>   `instrument`. Demographics are per session as claimed.
+>
+> **So the label needs no signal at all** — `TrialData.result` gives per-session accuracy directly, which
+> means Q14's step 2 (measure the reliability BEFORE the correlation) can run on metadata alone.
+>
+> **One caveat that must ride with any use of the baseline.** A 2 s pre-cue window inside a task block is
+> not the same object as Blankertz's *"relax with eyes open"* recording: the subject is cued, engaged and
+> between trials, not at rest. It is a legitimate task-free segment and it is NOT a resting-state
+> recording, and any comparison to Blankertz's incumbent inherits that difference.
+
 ---
 
 ## Q15 — the deposit shape E40 asked for may already be held, and it is ds005620
