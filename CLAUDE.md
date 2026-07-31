@@ -646,3 +646,15 @@ unverified on GitHub.
     **The check: for every confound the registration names, point at the LINE OF CODE that handles it.**
     If there isn't one, either restrict the cohort or delete the claim — a named confound with no
     corresponding filter, covariate or matched control is an unnamed confound wearing a disclaimer.
+55. **A PLACEBO MUST BE ABLE TO CHANGE THE STATISTIC IT IS A PLACEBO FOR — CHECK THE MATHEMATICS, NOT THE
+    NARRATIVE.** Rule 40 says a gate that cannot fail is not a gate. This is its quietest form: a placebo
+    that is *conceptually* the right destruction but is **provably insensitive to the statistic in
+    question**. **E67** compared the SIGN of a within-subject effect between two arms and placebo-tested it
+    by breaking the within-subject pairing. Breaking pairing changes the variance of a paired difference,
+    and therefore d_z's magnitude — but a group mean difference keeps its direction whether subject i's N3
+    is paired with their own W or with subject j's. **The sign is mathematically untouched.** The placebo
+    returned 0.500 against a real 0.500 by construction, and the verdict branch fired on an identity.
+    **The check costs one line of algebra: write down what the placebo alters, and confirm the primary
+    statistic is a function of it.** Shuffling pairing tests paired structure; shuffling the STATE LABEL
+    tests direction. Match the destruction to the estimand, or the gate is decoration that also looks
+    rigorous.
