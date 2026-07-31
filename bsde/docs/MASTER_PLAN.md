@@ -1721,3 +1721,59 @@ is the intended behaviour of a programme built verifier-first: four experiments 
 returned nothing about any candidate because their machinery gates refused, and the two that reported
 (E25, E26) did so with every gate and placebo executed. **No positive claim has been made about any
 candidate on this deposit, and that is the accurate state of the science, not a gap in it.**
+
+### 9.35 Status after E26–E37, superseding §9.34's table
+
+§9.34 was written at E25 and its per-challenge table is stale in every row. Twelve designs have been
+registered since; `bsde/governance/ledger.jsonl` is the authoritative per-experiment record and
+`registry_ledger.py report` prints the denominator. **19 designs registered, 6 reached a reportable
+verdict** — the rest were refused by their own gates (6), blocked (2), withdrawn (1), absent (2) or closed
+by a pre-commitment (1), and every one of those is part of the search space rather than a gap in the log.
+
+| challenge | status now | what actually blocks it |
+|---|---|---|
+| **A** | **The acceptance condition has been tested against a non-GABAergic agent and holds — and the finding is a split between measure FAMILIES, not a candidate** | Every deposit with two agents has them in *disjoint patients*. Q9 |
+| **B** | **BLOCKED, unchanged since §9.34** | No public deposit pairs task-free EEG with a per-patient command-following label. The WBIC request is out; E28 is the healthy-BCI substitution and is an analogy under test, not a DoC claim |
+| **C** | **TESTED AND NOT MET, three times, with three different instruments** | Not a data blocker. Nothing yet tested carries information the incumbent's level does not already have. Q10 |
+
+**Challenge A — what E35 and E36 established, and what they explicitly did not.** E35 ran Challenge A's
+acceptance condition adversarially for the first time: propofol against **dexmedetomidine**, an alpha-2
+agonist, at matched unresponsiveness (19 against 10 patients, Krause deposit, intracranial). Every previous
+attempt could only compare GABAergic agents with each other. The condition passed as registered — and
+re-reading its own verdict code showed the registered bar was the permissive one, which is rule 37 committed
+by this project. Under the strict bar 5 of 12 features leak drug identity, and **every one of the five is a
+power or complexity measure**.
+
+E36 then tried to kill that split on its own data, which is all a same-cohort successor can honestly do:
+
+* the phase/amplitude partition is the **unique maximum of all 495 exhaustive 4/8 splits** (p = 0.002), and
+  stays the argmax under every leave-one-out of the phase family;
+* the capability gap between families is **−0.017 [−0.107, +0.081]**, centred on zero, so "phase measures
+  leak less because they measure less" is excluded to within ±0.10 legibility units;
+* the primary itself passes only at its boundary (one-sided bootstrap p 0.0242) and is **not stable to the
+  RNG seed at the registered replicate count** — that is reported, and produced rule 46;
+* and the mundane explanation — wPLI is artefact-robust by design — **fails within a single drug arm**,
+  where phase measures are *more* legible of electrode type than amplitude measures, not less. That test was
+  post hoc and is a hypothesis for a successor to pre-register, not a result.
+
+**Nothing here is claimed as agent-invariance.** One deposit, 10 dexmedetomidine patients, intracranial
+electrodes in epilepsy-surgery patients, and **0 of 29 patients shared between the arms** — so drug arm,
+electrode type and data quality are nested inside patient identity and no method separates them there. That
+structural limit, not sample size, is Challenge A's real blocker.
+
+**Challenge C — the negative is now the result.** E34 (permutation entropy) and E37 (lag-1 autocorrelation
+of the incumbent's own detrended trajectory, direction signed in advance by Steyn-Ross, PMID 14525001) both
+clear chance and both fail to clear SEF95's level: **+0.0178 [−0.0226, +0.0474]** and **+0.0007 [−0.0539,
++0.0295]**. E37's primary fired in the predicted direction at an adjusted p of 0.0010 and still added
+nothing. A fourth instrument on this deposit is the least informative run available.
+
+The obvious deflation was checked and does not apply: `SOC` is not a monitor-derived label. It agrees with
+`MOAAS > 1` on 95.6 % of samples on average and 98.0 % at the median, so it is a behavioural scale recorded
+twice — which also kills the successor that would have contrasted them (rule 19) and makes the negative
+stronger rather than weaker. Detail in QUEUE.md Q10.
+
+**What has NOT changed since §9.34, and should not be read as having changed.** No positive claim has been
+made about any candidate representation on any deposit. E35 and E36 are claims about how a *family* of
+measures behaves, which is a claim about the search space rather than about a biomarker, and the verifier
+layers they exercised — multiplicity, exhaustive placebo, nuisance floor, capability control — are the
+asset the programme is meant to be building.
