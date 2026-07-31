@@ -140,35 +140,17 @@ import urllib.request
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                                 "bsde", "src"))
+from eeg_features_common import features_from_file, MONTAGE, TARGET_SFREQ   # noqa: E402
 
 S3 = "https://s3.amazonaws.com/openneuro.org/ds005385"
 PARTICIPANTS = S3 + "/participants.tsv"
 
-TARGET_SFREQ = 250.0
-"""Resample rate. 250 Hz keeps the anti-alias corner near 125 Hz -- more than 2.5x above the 45 Hz top of
-the widest fit -- so no filter rolloff enters any exponent estimate."""
 
 # (session, acquisition) in the order that unblocks the most analysis soonest. See ORDERED BY WHAT UNBLOCKS
 # WHAT above. Each entry is expanded over both eye states.
 PASSES = (("1", "pre"), ("2", "pre"), ("1", "post"), ("2", "post"))
 TASKS = ("EyesClosed", "EyesOpen")
 
-MONTAGE = ("Fp1", "Fp2", "F3", "F4", "C3", "C4", "P3", "P4", "O1", "O2")
-"""The ten channels every feature is computed on, DECLARED BEFORE THE RUN and applied identically to all of
-them.
-
-Three reasons, and only the third is about speed. (1) It is the classic 10-20 subset, so a reference built
-on it transfers to a clinical montage -- `REFERENCE_AGAINST_ALL_THREE.md` §4(b) names montage transfer as
-the second-biggest risk to the whole idea, and picking a portable montage now is cheaper than modelling the
-mismatch later. (2) Using ONE channel set for every measure avoids a subtle trap: a row whose spectral
-columns came from 64 channels and whose complexity columns came from 10 would not be internally comparable,
-and nothing in the output would show it. (3) 64 channels of DFA and LZ is about 6x the compute for
-information the delocalization result says is largely redundant (91 % of it recoverable from a single
-electrode).
-
-Channels are matched CASE-INSENSITIVELY and a recording missing any of them is still processed on whatever
-subset it has -- `n_<feature>` records how many contributed, so a shortfall is visible in the output rather
-than silent (rule 5)."""
 
 
 def _participants():
@@ -182,80 +164,19 @@ def _url(sub, ses, task, acq):
 
 
 def _features(path):
-    """Per-channel features reduced by median. Returns a dict, or raises."""
-    import numpy as np
-    import mne
-    from bsde.features.aperiodic import welch_psd, fit_aperiodic
-    from bsde.features.spectral import relative_band_power, spectral_edge, median_frequency
-    from bsde.features.complexity import lziv, permutation_entropy
-    from bsde.features.exotic import subband_exponents, dfa_exponent, lrtc_envelope
-    from bsde.features.emg import emg_index, emg_beta_gamma_fraction, emg_kurtosis
+    """Delegates to the SINGLE shared feature path. See `analysis/eeg_features_common.py`.
 
-    raw = mne.io.read_raw_edf(path, preload=True, verbose="ERROR")
-    raw.pick("eeg")
-    want = {c.lower() for c in MONTAGE}
-    keep = [ch for ch in raw.ch_names if ch.lower() in want]
-    if not keep:
-        raise RuntimeError(f"none of {MONTAGE} present; channels are {raw.ch_names[:8]}...")
-    raw.pick(keep)
-    if raw.info["sfreq"] > TARGET_SFREQ:
-        raw.resample(TARGET_SFREQ, verbose="ERROR")
-    sf = float(raw.info["sfreq"])
-    data = raw.get_data() * 1e6                      # volts -> microvolts (repo convention)
-    n_ch, n_s = data.shape
+    This used to be a local copy. It was moved out when the multi-cohort reference work began, because a
+    normative curve fitted in one deposit and compared against the same curve in another is uninterpretable
+    if the two were computed by even slightly different code -- the difference could be the population, the
+    hardware or the pipeline and nothing in the output would say which. Rule 20, applied before the fact:
+    there is now only one implementation, so there is nothing to diff.
 
-    per = {k: [] for k in ("exponent_low", "exponent_high", "whole_head_exponent",
-                           "exponent_low_robust", "whole_head_robust",
-                           "lempel_ziv", "perm_entropy", "dfa_exponent", "lrtc_alpha",
-                           "rel_delta", "rel_theta", "rel_alpha", "rel_beta",
-                           "sef95", "median_freq")}
-    for ci in range(n_ch):
-        x = data[ci]
-        if not np.isfinite(x).all() or float(np.std(x)) < 1e-9:
-            continue                                  # flat or broken channel: contributes nothing
-        sb = subband_exponents(x, sf)
-        per["exponent_low"].append(sb["exponent_low"])
-        per["exponent_high"].append(sb["exponent_high"])
-        freqs, psd = welch_psd(x, sf)
-        per["whole_head_exponent"].append(
-            fit_aperiodic(freqs, psd, fit_lo_hz=1.0, fit_hi_hz=45.0)["exponent"])
-        # PEAK-SUPPRESSED COMPANIONS, added after the smoke run and before any analysis run.
-        # sub-001's eyes-closed `exponent_low` came out at 0.265 against 1.773 with eyes open, alongside
-        # rel_alpha 0.276 -> 0.054. A 1.5-unit swing is not an aperiodic change; the alpha peak occupies a
-        # far larger share of a 1-20 Hz fit window than of a 1-45 Hz one, so the narrower band E43 selected
-        # is MORE oscillation-contaminated even though it is LESS EMG-contaminated. Both are emitted so
-        # E44 can separate "the slope moved" from "alpha moved and dragged the fit"; neither replaces the
-        # other and the OLS columns remain the ones comparable to E43.
-        per["exponent_low_robust"].append(
-            fit_aperiodic(freqs, psd, fit_lo_hz=1.0, fit_hi_hz=20.0, mode="loglog_robust")["exponent"])
-        per["whole_head_robust"].append(
-            fit_aperiodic(freqs, psd, fit_lo_hz=1.0, fit_hi_hz=45.0, mode="loglog_robust")["exponent"])
-        per["rel_delta"].append(relative_band_power(freqs, psd, 1.0, 4.0))
-        per["rel_theta"].append(relative_band_power(freqs, psd, 4.0, 8.0))
-        per["rel_alpha"].append(relative_band_power(freqs, psd, 8.0, 13.0))
-        per["rel_beta"].append(relative_band_power(freqs, psd, 13.0, 30.0))
-        per["sef95"].append(spectral_edge(freqs, psd))
-        per["median_freq"].append(median_frequency(freqs, psd))
-        per["lempel_ziv"].append(lziv(x))
-        per["perm_entropy"].append(permutation_entropy(x))
-        # dfa_exponent takes SAMPLE scales, not a rate; lrtc_envelope takes the rate and returns a float.
-        per["dfa_exponent"].append(dfa_exponent(x, min_scale=int(round(0.1 * sf)),
-                                                max_scale=int(round(10.0 * sf))))
-        per["lrtc_alpha"].append(lrtc_envelope(x, sf))
-
-    out = {}
-    for k, v in per.items():
-        vv = [z for z in v if np.isfinite(z)]
-        out[k] = float(np.median(vv)) if vv else float("nan")
-        out["n_" + k] = len(vv)
-    # EMG proxies are emitted as COLUMNS, never used to gate here -- gating is a separate registration.
-    out["emg_index"] = float(emg_index(data, sf))
-    out["emg_beta_gamma_fraction"] = float(emg_beta_gamma_fraction(data, sf))
-    out["emg_kurtosis"] = float(emg_kurtosis(data, sf))
-    out["n_channels"] = n_ch
-    out["duration_s"] = round(n_s / sf, 2)
-    out["sfreq"] = sf
-    return out
+    The shared path is a strict SUPERSET of what this script emitted before: it adds absolute band powers,
+    the aperiodic offset and r2, the aperiodic-corrected (residual) band powers, and the alpha peak
+    frequency. Every column E44 and E45 were registered on is unchanged and computed identically.
+    """
+    return features_from_file(path)
 
 
 def main(argv=None) -> int:
