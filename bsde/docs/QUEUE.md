@@ -372,3 +372,56 @@ status, not a stalled task.
 3. **Nothing about this belongs in a scalp claim yet.** Intracranial coverage in epilepsy-surgery patients
    is the scope limit, and the Chennu and ds004541 cohorts cannot substitute because neither has a second
    agent.
+
+---
+
+## Q10 — Challenge C's consolidated position, and the successor that was designed and then abandoned before it ran
+
+**Status: the negative is now the result. No sixth design is queued, and that is a conclusion rather than a
+stall.**
+
+Five Challenge C designs, three reportable verdicts, and they converge on one shape:
+
+| design | instrument | against chance | against the incumbent |
+|---|---|---|---|
+| E26 | spectral level, 300 s grid | — | negative, every gate passed |
+| E33 | spectral level, run-up sampling | gate-failed, position-AUC 1.000 | — |
+| E27 | spectral level, 60 s grid | absent (base rate 4.0 % at SR ≥ 10) | — |
+| E34 | permutation entropy per window | 0.623 [0.587, 0.659] | **+0.0178 [-0.0226, +0.0474]** |
+| E37 | lag-1 autocorrelation of the incumbent's own trajectory | **0.582 [0.524, 0.635]**, adj p 0.0010 | **+0.0007 [-0.0539, +0.0295]** |
+
+Three different instruments — a spectral level, an ordinal-pattern complexity, and a second-order dynamical
+statistic derived from published phase-transition theory — and every one of them **clears chance and fails
+to clear SEF95's own level.** E37 is the sharpest case: its primary was signed in advance by Steyn-Ross
+(PMID 14525001), it fired in the predicted direction with an adjusted p of 0.0010, and it added nothing.
+
+### The successor that was designed and then killed by a five-minute feasibility check
+
+E37's write-up named the obvious next question: is SEF95's dominance a property of the brain, or of the
+label? `SOC` is a charted flag, and a charted flag has its own latency — if it were derived from or charted
+alongside the depth monitor, the incumbent would be partly predicting its own shadow. DOSE-I ships
+**`MOAAS` per second in all 171 files**, so the design was to re-run the incumbent against a MOAA/S-derived
+landmark and compare.
+
+**It cannot be run, and the check that killed it is error-catalogue rule 19 — before two measures can
+corroborate each other, ask whether one row can satisfy both definitions.** `SOC == 1` and `MOAAS > 1` agree
+on **95.6 % of samples on average and 98.0 % at the median**. They are not two labels; they are one label
+recorded twice. No contrast between them can separate label provenance from brain signal.
+
+**The check pays for itself in the other direction, and this is the part worth keeping.** Because `SOC`
+tracks a *behavioural* scale almost exactly, the incumbent is **not** winning by predicting a
+monitor-derived label. The circularity that would have deflated E26, E34 and E37 is ruled out, and the
+Challenge C negative is therefore stronger than it looked, not weaker.
+
+### What would actually move Challenge C, in order
+
+1. **The spatial half of the theory, which nothing here has tested.** Steyn-Ross's own primary prediction is
+   that EEG correlation *length* grows on approach to induction. DOSE-I is single-site, so E37 tested the
+   temporal half only and said so. `ds004541` has raw multichannel recordings with LOC and ROC landmarks —
+   and **8 subjects**, which is why it is listed as a direction rather than a queued design.
+2. **Ask whether the ceiling is the transition's own sharpness.** E37's lead-time curve decays from 0.561 at
+   30 s to 0.497 by 180 s: whatever information exists arrives just before the loss, which is exactly where
+   the incumbent is also strongest. A design that could separate "no information earlier" from "no
+   information the incumbent lacks" would be worth more than a sixth feature.
+3. **Nothing further on DOSE-I with a new feature.** Three instruments have now failed in the same place.
+   A fourth feature is the least informative thing this queue could spend a run on.
