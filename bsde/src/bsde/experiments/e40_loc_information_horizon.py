@@ -98,6 +98,71 @@ samples at the median), so the horizon measured here is against a behaviourally 
 than against the monitor's own opinion. The incumbent is SEF95, not a commercial depth index: claim scope
 is "ahead of SEF95", never "ahead of BIS". A horizon measured here bounds this deposit and this montage,
 and nothing else.
+
+--------------------------------------------------------------------------------------------------------
+OUTCOME. **NOT INTERPRETABLE. Every band was refused by its own gate, a feasibility probe then showed no
+successor can be built on this deposit, and re-reading the placebo output found a bug in this file's own
+verdict code that was hiding a SECOND, independent fatal flaw.**
+
+    G1     PASSED. 129 recordings, 79,429 conscious windows, 27,308 control windows.
+
+    G2     **All eight bands refused.** Seven failed the position gate with position-AUC of 0.026-0.060 —
+           a distance from chance of 0.44-0.47 against a 0.20 ceiling — and the eighth failed on coverage
+           (10 patients). No band statistic was computed, so no candidate was ever scored.
+
+           **The gate fired exactly where its registration said it would.** The header states: "That is
+           exactly the construction that gave E33 a position-AUC of 1.000 ... So the position check is a
+           per-band GATE here, not a summary statistic." It was promoted from report to gate for this
+           reason and it earned the promotion.
+
+    THE FEASIBILITY PROBE THAT PREVENTED A SUCCESSOR. Before registering any fix, the obvious one —
+    position-matched controls — was probed. It does not exist in this deposit:
+
+        control class      26,489 windows with NO LOSS AFTER them, median position **0.90**
+                              819 windows >= 900 s before a loss, median position 0.43
+        band windows       median position **0.26-0.35** in every band
+
+        within-recording controls within 0.10 of a band window's position:
+            [  0, 30) s   1,045 of 14,220 band windows,  38 recordings
+            [ 60,120) s     485 of 11,450,               15 recordings
+            [180,240) s      60 of  3,369,                1 recording
+            [300,420) s       **0 of  2,131,               0 recordings**
+
+    **The confound is structural, not a defect of this design.** In DOSE-I, "far from a loss" means "after
+    the last loss", because procedural sedation cases end awake. There is no population of early-in-record
+    windows that are far from any loss, because every case's early portion leads into an induction. **So
+    the information-horizon question cannot be asked on this deposit by any design**, and QUEUE.md Q10
+    item 2 closes the way Q9 item 2 did — checked and impossible, rather than pending.
+
+    P3, AND THE BUG. **Rule 37, third occurrence in this project, committed by this file.** The band
+    verdict was `excludes_chance = lo_ > 0.5`, a one-sided test, and the placebo run printed "at chance"
+    for every band. Re-reading the numbers rather than the labels showed what that was hiding: SEF95 scored
+    **0.237 [0.115, 0.418]** under a *fake* landmark — an interval lying **entirely below** chance, which
+    is discriminable, not null. Corrected to a two-sided test, the placebo is discriminable in **5 of 7**
+    gated bands and the curve is **not flat**:
+
+        [  0, 30) 0.237 [0.115, 0.418]      [120,180) 0.312 [0.187, 0.507]  at chance
+        [ 30, 60) 0.295 [0.169, 0.472]      [240,300) 0.314 [0.172, 0.525]  at chance
+        [ 60,120) 0.254 [0.159, 0.431]      [300,420) 0.283 [0.187, 0.454]
+        [180,240) 0.267 [0.131, 0.478]
+
+    **So the design had two independent fatal flaws and the one-sided operator hid the second.** Had the
+    position gate passed, this file would have reported a horizon while its own placebo was manufacturing
+    discrimination — and would have printed "placebo curve flat at chance in every gated band: True"
+    underneath it. The lesson is the one rule 37 already states and this file failed to apply to itself:
+    **a cell that spans the null is neither direction, and a comparison operator that can only see one
+    direction will convert the other into a pass.** Verdict code deserves the same scrutiny as analysis
+    code, and it is now two-sided here.
+
+    WHY THE PLACEBO IS DISCRIMINABLE, since the number is interesting even though the design is dead. A
+    fake landmark drawn uniformly in the middle of each recording puts its "band" windows near the middle
+    and its controls at the end, so SEF95 separates them — in the *opposite* direction to a real induction,
+    which is why the AUCs sit below 0.5 rather than above. That is the same position confound as G2's,
+    seen from the other side, and it confirms the diagnosis rather than adding a new one.
+
+    WHAT SURVIVES. Nothing about Challenge C changes. Its three reportable verdicts stand, and the question
+    of whether the ceiling is the transition's own sharpness remains **open and unanswerable here** — which
+    is a more useful statement than an answer built on a control class that cannot support it.
 """
 
 from __future__ import annotations
@@ -222,8 +287,15 @@ def _banded(recs, ttl, grp, pos, cols, lo, hi, control, rng, features):
         p = cv_predict_proba(x[m], y[m], g[m], rng)
         a = float(auc(y[m], p))
         lo_, hi_, _ = cluster_bootstrap_ci(lambda i: auc(y[m][i], p[i]), g[m], rng, reps=REPS)
+        # TWO-SIDED. `lo_ > 0.5` alone is rule 37 exactly — a permissive comparison that reads an
+        # interval lying ENTIRELY BELOW chance as "at chance". The placebo run caught this: SEF95 scored
+        # 0.237 [0.115, 0.418] under a fake landmark, which excludes 0.5 on the low side and is therefore
+        # discriminable, and the one-sided test printed it as flat. A band is at chance only if its
+        # interval CONTAINS 0.5.
         rep["features"][name] = {"auc": a, "ci": [float(lo_), float(hi_)],
-                                 "excludes_chance": bool(np.isfinite(lo_) and lo_ > 0.5)}
+                                 "excludes_chance": bool(np.isfinite(lo_) and np.isfinite(hi_)
+                                                         and (lo_ > 0.5 or hi_ < 0.5)),
+                                 "above_chance": bool(np.isfinite(lo_) and lo_ > 0.5)}
     return rep
 
 
@@ -275,10 +347,10 @@ def main(argv=None) -> int:
             continue
         f = rep["features"].get(INCUMBENT)
         extra = [n for n in CANDIDATES
-                 if rep["features"].get(n, {}).get("excludes_chance")]
+                 if rep["features"].get(n, {}).get("above_chance")]
         print(f"{head}   pos-AUC {rep['position_auc']:.3f}   "
               f"{INCUMBENT} {f['auc']:.3f} [{f['ci'][0]:.3f}, {f['ci'][1]:.3f}]"
-              f"   {'ABOVE chance' if f['excludes_chance'] else 'at chance'}")
+              f"   {'ABOVE chance' if f['above_chance'] else ('BELOW chance' if f['excludes_chance'] else 'at chance')}")
         if extra:
             print(f"                candidates also above chance here: {extra}")
     st["bands"] = bands
@@ -286,13 +358,13 @@ def main(argv=None) -> int:
     passed = [b for b in bands if b["gate"] == "passed" and INCUMBENT in b.get("features", {})]
     horizon = None
     for b in passed:
-        if not b["features"][INCUMBENT]["excludes_chance"]:
+        if not b["features"][INCUMBENT]["above_chance"]:
             horizon = b["lo"]
             break
     st["horizon_s"] = horizon
     reach = {}
     for n in ALL_FEATURES:
-        far = [b["lo"] for b in passed if b["features"].get(n, {}).get("excludes_chance")]
+        far = [b["lo"] for b in passed if b["features"].get(n, {}).get("above_chance")]
         reach[n] = max(far) if far else None
     st["furthest_band_above_chance"] = reach
 
@@ -320,10 +392,12 @@ def main(argv=None) -> int:
             continue
         bad = f["excludes_chance"]
         flat = flat and not bad
+        tag = ("*** DISCRIMINABLE (interval excludes chance"
+               + (", ABOVE)" if f["above_chance"] else ", BELOW)")) if bad else "at chance"
         print(f"   [{lo:4d},{hi:4d}) s   {INCUMBENT} {f['auc']:.3f} "
-              f"[{f['ci'][0]:.3f}, {f['ci'][1]:.3f}]   {'*** ABOVE CHANCE' if bad else 'at chance'}")
+              f"[{f['ci'][0]:.3f}, {f['ci'][1]:.3f}]   {tag}")
     st["p3"] = {"flat": bool(flat), "bands": p3rows}
-    nearest_null = bool(passed and not passed[0]["features"][INCUMBENT]["excludes_chance"])
+    nearest_null = bool(passed and not passed[0]["features"][INCUMBENT]["above_chance"])
     if nearest_null:
         print("\n   NOT INFORMATIVE: the incumbent's nearest band already includes chance, so there is")
         print("   no horizon for a fake landmark to fail to reproduce (rule 48).")
