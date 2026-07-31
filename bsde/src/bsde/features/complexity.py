@@ -160,7 +160,8 @@ def lziv(x: np.ndarray, method: str = "median") -> float:
     return float(c / denom)
 
 
-def permutation_entropy(x: np.ndarray, order: int = 3, delay: int = 1, normalize: bool = True) -> float:
+def permutation_entropy(x: np.ndarray, order: int = 3, delay: int = 1, normalize: bool = True,
+                        tie_threshold: float = 0.0) -> float:
     """Bandt-Pompe permutation entropy.
 
     Every length-`order` window (stepped by `delay` within the window, one sample at a time across the
@@ -168,19 +169,42 @@ def permutation_entropy(x: np.ndarray, order: int = 3, delay: int = 1, normalize
     pattern distribution, optionally normalised by log2(order!) so the result lies in [0, 1]: ~1 for a
     signal whose amplitude ordering is unpredictable (white noise), ~0 for a signal whose ordinal pattern
     never changes (e.g. a monotonic ramp).
+
+    `tie_threshold` (in the units of `x`, so microvolts for EEG) implements the "amplitude differences
+    below this are not ordering information" rule that published EEG permutation entropies apply --
+    DOSE-I's shipped PE31/PE32 declare `tie=0.5 uV`, and Olofsen et al. (2008) motivate it by the ADC step
+    of clinical EEG, where genuinely equal samples are common and `argsort` would resolve them by array
+    position, manufacturing structure out of quantisation. At `0.0` (the default) this function is exactly
+    the Bandt-Pompe definition and the code path is unchanged.
+
+    The tie rule used here is `rank_i = #{j : x_j < x_i - tie_threshold}`, with any samples left sharing a
+    rank ordered by their position in the window. **This is a definition of tie handling, not a claim to
+    reproduce any particular publication's**: the papers state a threshold and not the tie-breaking rule,
+    so agreement with a shipped series is a measurement (see `e76_pe_declared_preprocessing`) rather than
+    something to assert.
     """
     x = np.asarray(x, float)
     n = x.size
     if order < 2:
         raise ValueError("order must be >= 2")
+    if tie_threshold < 0:
+        raise ValueError("tie_threshold must be >= 0")
     n_windows = n - delay * (order - 1)
     if n_windows < 1:
         return float("nan")
     counts: dict = {}
-    for i in range(n_windows):
-        window = x[i:i + delay * order:delay]
-        pattern = tuple(np.argsort(window, kind="quicksort"))
-        counts[pattern] = counts.get(pattern, 0) + 1
+    if tie_threshold == 0.0:
+        for i in range(n_windows):
+            window = x[i:i + delay * order:delay]
+            pattern = tuple(np.argsort(window, kind="quicksort"))
+            counts[pattern] = counts.get(pattern, 0) + 1
+    else:
+        for i in range(n_windows):
+            window = x[i:i + delay * order:delay]
+            # rank by strict dominance outside the dead zone; positions left level keep window order
+            lower = (window[None, :] < window[:, None] - tie_threshold).sum(axis=1)
+            pattern = tuple(np.argsort(lower, kind="stable"))
+            counts[pattern] = counts.get(pattern, 0) + 1
     total = float(sum(counts.values()))
     p = np.array([v / total for v in counts.values()])
     pe = float(-np.sum(p * np.log2(p)))
@@ -188,3 +212,24 @@ def permutation_entropy(x: np.ndarray, order: int = 3, delay: int = 1, normalize
         max_ent = math.log2(math.factorial(order))
         pe = pe / max_ent if max_ent > 0 else float("nan")
     return pe
+
+
+def permutation_tie_fraction(x: np.ndarray, order: int = 3, delay: int = 1,
+                             tie_threshold: float = 0.0) -> float:
+    """Fraction of embedded windows containing at least one within-`tie_threshold` pair.
+
+    A gate, not a feature (rule 40): if this is ~0 the tie threshold is a no-op and any arm built on it
+    must report itself as such rather than as "the tie rule made no difference".
+    """
+    x = np.asarray(x, float)
+    n_windows = x.size - delay * (order - 1)
+    if n_windows < 1 or tie_threshold <= 0:
+        return 0.0
+    tied = 0
+    iu = np.triu_indices(order, k=1)
+    for i in range(n_windows):
+        w = x[i:i + delay * order:delay]
+        d = np.abs(w[None, :] - w[:, None])[iu]
+        if np.any(d <= tie_threshold):
+            tied += 1
+    return float(tied) / float(n_windows)

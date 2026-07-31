@@ -11,7 +11,7 @@ import numpy as np
 import pytest
 
 from bsde.features.complexity import (
-    lempel_ziv_complexity, lziv, permutation_entropy, binarize,
+    lempel_ziv_complexity, lziv, permutation_entropy, permutation_tie_fraction, binarize,
 )
 
 
@@ -135,6 +135,77 @@ def test_permutation_entropy_unnormalized_matches_normalized_times_log2_factoria
     raw = permutation_entropy(x, order=3, delay=1, normalize=False)
     norm = permutation_entropy(x, order=3, delay=1, normalize=True)
     assert raw == pytest.approx(norm * math.log2(math.factorial(3)), rel=1e-9)
+
+
+
+# ---------------------------------------------------------------------------
+# permutation_entropy tie_threshold  (added for E76 -- the declared-preprocessing arm)
+#
+# Every test below is written so that it CAN fail (rule 40): each constructs the input for which the
+# feature must behave one specific way, and the pair (no-tie / tie) is compared on the SAME array so a
+# no-op implementation would show up as an equality where an inequality is asserted.
+# ---------------------------------------------------------------------------
+
+def test_pe_tie_zero_is_bit_identical_to_the_untied_path():
+    """The default must not move. Any change here silently rewrites every PE already computed."""
+    rng = np.random.default_rng(11)
+    x = rng.normal(size=3000)
+    assert permutation_entropy(x, 3, 1, tie_threshold=0.0) == permutation_entropy(x, 3, 1)
+
+
+def test_pe_tie_larger_than_the_signal_range_collapses_to_one_pattern():
+    rng = np.random.default_rng(12)
+    x = rng.normal(size=2000)
+    got = permutation_entropy(x, 3, 1, tie_threshold=100.0)
+    assert got == pytest.approx(0.0, abs=1e-12), f"got {got}"
+
+
+def test_pe_tie_below_the_step_of_a_ramp_changes_nothing():
+    # steps of 1.0, dead zone 0.5: no pair is ever within tolerance, so the tied path must reproduce
+    # the untied one exactly rather than approximately.
+    x = np.arange(500, dtype=float)
+    assert permutation_entropy(x, 3, 1, tie_threshold=0.5) == permutation_entropy(x, 3, 1)
+
+
+def test_pe_tie_above_the_step_of_a_ramp_flattens_it():
+    # the same ramp scaled so consecutive samples differ by 0.1 -- now every pair in a length-3 window is
+    # inside a 0.5 dead zone, so the pattern is constant and entropy is 0.  The untied value is also ~0
+    # for a ramp, so this test would pass vacuously; the discriminating case is the noise test above.
+    x = np.arange(500, dtype=float) * 0.1
+    assert permutation_entropy(x, 3, 1, tie_threshold=0.5) == pytest.approx(0.0, abs=1e-12)
+
+
+def test_pe_tie_on_quantised_noise_is_strictly_lower_than_untied():
+    """The case the threshold exists for: ADC-quantised EEG, where argsort invents order from position."""
+    rng = np.random.default_rng(13)
+    x = np.round(rng.normal(scale=1.0, size=4000) * 2) / 2.0     # 0.5 uV steps
+    untied = permutation_entropy(x, 3, 1)
+    tied = permutation_entropy(x, 3, 1, tie_threshold=0.5)
+    assert tied < untied - 0.05, f"tied {tied} vs untied {untied}"
+
+
+def test_pe_negative_tie_threshold_is_rejected():
+    with pytest.raises(ValueError):
+        permutation_entropy(np.arange(100, dtype=float), 3, 1, tie_threshold=-0.1)
+
+
+def test_pe_tie_fraction_is_zero_when_the_threshold_is_zero():
+    assert permutation_tie_fraction(np.zeros(100), 3, 1, tie_threshold=0.0) == 0.0
+
+
+def test_pe_tie_fraction_is_one_on_a_constant_signal():
+    assert permutation_tie_fraction(np.zeros(100), 3, 1, tie_threshold=0.5) == pytest.approx(1.0)
+
+
+def test_pe_tie_fraction_is_zero_on_a_ramp_that_outruns_the_threshold():
+    assert permutation_tie_fraction(np.arange(100, dtype=float), 3, 1, tie_threshold=0.5) == 0.0
+
+
+def test_pe_tie_fraction_is_between_zero_and_one_on_quantised_noise():
+    rng = np.random.default_rng(14)
+    x = np.round(rng.normal(scale=1.0, size=2000) * 2) / 2.0
+    f = permutation_tie_fraction(x, 3, 1, tie_threshold=0.5)
+    assert 0.0 < f < 1.0, f"got {f}"
 
 
 # =========================================================================================================
