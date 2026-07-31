@@ -91,6 +91,43 @@ GATES (rule 40):
     G4  THE PREDICTIONS MUST DIFFER: |r(1)*sqrt(rho_3/rho_1) - r(1)| >= 0.02. Same reason as G3, stated on
         the quantity that actually has to be resolved.
 
+=========================================================================================================
+AMENDMENT, WRITTEN AFTER THE FIRST PASS AND BEFORE THE SECOND -- see `results/e101_first_pass_note.md`
+=========================================================================================================
+The first pass ran and its verdict was WITHDRAWN. The registered rule required `d_signal = r(3) - r(1)`
+to exclude zero, and **that condition is satisfied by construction for any measure with imperfect
+reliability, including pure noise**: for three independent noise columns, r(3) = sqrt(3) * r(1) exactly,
+so d_signal = 0.73 * r(1) is non-zero whenever r(1) is. The `__gauss__` control demonstrated it in the
+first pass, going +0.1127 -> +0.1441, and would have passed that limb itself. Rule 33, recurring:
+**write down what shape the null produces before choosing the statistic.**
+
+Two further faults of the same family, both mine: the C- noise control was stated in this docstring as
+"must come back at ~0" and never wired to a gate (the E87 pattern, second occurrence), and a SINGLE
+Gaussian realisation cannot calibrate a procedure whose Spearman standard error at n = 61 is about 0.13.
+
+THE CORRECTION, which is not a moved goalpost. The theory that produced the registered prediction produces
+a second one for free, and it was available before the run: if the sessions carried no stable subject
+signal at all, the gain would be exactly sqrt(k). So the comparison becomes two competing MODELS, both
+computable, neither of them "no change":
+
+        H_error :  gain = sqrt(rho_3 / rho_1),  rho_1 measured on this subset   -> 1.267 for ge_norm
+        H_noise :  gain = sqrt(k) = sqrt(3)                                     -> 1.732
+
+    P   r(3) against both, via d_error = r(3) - r(1)*gain_error and d_noise = r(3) - r(1)*sqrt(3).
+
+The wrong-direction branch, the UNDETERMINED branch, the cohort, the estimator and G1-G4 are all
+unchanged. What changed is that an uninformative comparison was replaced by an informative one derived
+from the same theory. `d_signal` is still computed and printed, marked as uninformative, because deleting
+it would hide the correction.
+
+C- IS NOW A REAL GATE, and a calibration rather than a single draw: 200 independent Gaussian features are
+run through the entire procedure and the rate at which each limb of the verdict fires on noise is
+MEASURED (rule 26). G5 requires that the H_error limb fire on noise at no more than 10 %.
+
+COMPUTE NOTE, stated because it is a deliberate accuracy trade: the point estimates use 500 subset draws,
+the outer bootstrap uses 100 per replicate and the calibration arm 60. Subset-draw noise averages out
+across bootstrap replicates; it does not average out of a point estimate, which is why they differ.
+
 SCOPE. Stieger BCI only. `ge_norm` here is the null-normalised global efficiency of E86, not a general
 network measure, and accuracy is BCI control accuracy, not a clinical outcome. Nothing about
 consciousness is claimed or tested.
@@ -120,7 +157,11 @@ MIN_SUBJECTS = 30
 MIN_R1 = 0.05
 MIN_PRED_GAP = 0.02
 DRAWS = 500
+BOOT_DRAWS = 100
+CAL_DRAWS = 60
 REPS = 4000
+CAL_REPS = 600
+N_CALIB = 200
 SEED = 20260731
 
 
@@ -193,7 +234,7 @@ def r_at_k(F, acc, k, rng, draws=DRAWS):
     return float(np.mean(vals)) if vals else float("nan")
 
 
-def procedure(F, acc, rng):
+def procedure(F, acc, rng, draws=DRAWS, with_r2=True):
     """r(1), r(3), rho_1, rho_3, and both prediction residuals -- everything recomputed together.
 
     Returned as a dict so the bootstrap can resample subjects and re-run this whole function, which is
@@ -202,12 +243,16 @@ def procedure(F, acc, rng):
     """
     rho1 = icc21([F[i] for i in range(F.shape[0])])
     rho3 = sb(rho1, N_SESSIONS)
-    r1 = r_at_k(F, acc, 1, rng)
-    r3 = r_at_k(F, acc, N_SESSIONS, rng)
+    r1 = r_at_k(F, acc, 1, rng, draws)
+    r3 = r_at_k(F, acc, N_SESSIONS, rng, draws)
     gain = float(np.sqrt(rho3 / rho1)) if np.isfinite(rho1) and rho1 > 0 else float("nan")
-    return {"rho1": rho1, "rho3": rho3, "r1": r1, "r2": r_at_k(F, acc, 2, rng), "r3": r3,
-            "gain": gain, "pred_error": r1 * gain, "pred_signal": r1,
-            "d_error": r3 - r1 * gain, "d_signal": r3 - r1}
+    gain_noise = float(np.sqrt(N_SESSIONS))          # the ICC-equals-zero model, available before the run
+    return {"rho1": rho1, "rho3": rho3, "r1": r1,
+            "r2": r_at_k(F, acc, 2, rng, draws) if with_r2 else float("nan"), "r3": r3,
+            "gain": gain, "gain_noise": gain_noise,
+            "pred_error": r1 * gain, "pred_noise": r1 * gain_noise, "pred_signal": r1,
+            "d_error": r3 - r1 * gain, "d_noise": r3 - r1 * gain_noise,
+            "d_signal": r3 - r1}
 
 
 def ci(vals):
@@ -254,15 +299,16 @@ def main() -> int:
         return np.array([[_f(by[s][k][0].get(feat, "")) for k in sorted(by[s])] for s in subs])
 
     feats = [PRIMARY, TRAIT_CTRL, NOISE_CTRL] + ALSO
-    print(f"\n{'feature':<14s} {'ICC':>7s} {'rho_3':>7s} {'gain':>6s} "
-          f"{'r(1)':>7s} {'r(2)':>7s} {'r(3)':>7s} {'pred_err':>9s} {'d_error':>8s} {'d_signal':>9s}")
+    print(f"\n{'feature':<14s} {'ICC':>7s} {'gain_e':>7s} {'r(1)':>7s} {'r(3)':>7s} "
+          f"{'pred_err':>9s} {'pred_noi':>9s} {'d_error':>9s} {'d_noise':>9s} {'[d_signal]':>11s}")
     for f in feats:
         F = matrix(f)
         pt = procedure(F, acc, np.random.default_rng(SEED + 1))
         res["features"][f] = pt
-        print(f"{f:<14s} {pt['rho1']:7.4f} {pt['rho3']:7.4f} {pt['gain']:6.3f} "
-              f"{pt['r1']:+7.4f} {pt['r2']:+7.4f} {pt['r3']:+7.4f} {pt['pred_error']:+9.4f} "
-              f"{pt['d_error']:+8.4f} {pt['d_signal']:+9.4f}")
+        print(f"{f:<14s} {pt['rho1']:7.4f} {pt['gain']:7.3f} {pt['r1']:+7.4f} {pt['r3']:+7.4f} "
+              f"{pt['pred_error']:+9.4f} {pt['pred_noise']:+9.4f} {pt['d_error']:+9.4f} "
+              f"{pt['d_noise']:+9.4f} {pt['d_signal']:+11.4f}")
+    print("   [d_signal] is printed but UNINFORMATIVE by construction -- see the amendment")
 
     p = res["features"][PRIMARY]
     g2 = bool(np.isfinite(p["rho1"]) and 0.0 < p["rho1"] < 1.0)
@@ -286,40 +332,78 @@ def main() -> int:
     # ---- subject bootstrap, whole procedure inside each rep -------------------------------------
     Fp = matrix(PRIMARY)
     brng = np.random.default_rng(SEED + 2)
-    de, ds, r3s = [], [], []
+    de, dn, ds, r3s = [], [], [], []
     for _ in range(REPS):
         idx = brng.integers(0, len(subs), len(subs))
-        out = procedure(Fp[idx], acc[idx], brng)
-        de.append(out["d_error"]); ds.append(out["d_signal"]); r3s.append(out["r3"])
+        out = procedure(Fp[idx], acc[idx], brng, draws=BOOT_DRAWS, with_r2=False)
+        de.append(out["d_error"]); dn.append(out["d_noise"])
+        ds.append(out["d_signal"]); r3s.append(out["r3"])
     de_lo, de_hi = ci(de)
+    dn_lo, dn_hi = ci(dn)
     ds_lo, ds_hi = ci(ds)
     r3_lo, r3_hi = ci(r3s)
-    res["bootstrap"] = {"d_error": [de_lo, de_hi], "d_signal": [ds_lo, ds_hi],
-                        "r3": [r3_lo, r3_hi], "reps": REPS, "draws": DRAWS}
-    print(f"\nBOOTSTRAP ({REPS} subject resamples, procedure refit inside each)")
+    res["bootstrap"] = {"d_error": [de_lo, de_hi], "d_noise": [dn_lo, dn_hi],
+                        "d_signal": [ds_lo, ds_hi], "r3": [r3_lo, r3_hi],
+                        "reps": REPS, "draws": DRAWS, "boot_draws": BOOT_DRAWS}
+    print(f"\nBOOTSTRAP ({REPS} subject resamples, procedure refit inside each, "
+          f"{BOOT_DRAWS} subset draws per replicate)")
     print(f"  r(3)      {p['r3']:+.4f}  [{r3_lo:+.4f}, {r3_hi:+.4f}]")
     print(f"  d_error   {p['d_error']:+.4f}  [{de_lo:+.4f}, {de_hi:+.4f}]   "
-          f"(0 => consistent with measurement error on a trait)")
-    print(f"  d_signal  {p['d_signal']:+.4f}  [{ds_lo:+.4f}, {ds_hi:+.4f}]   "
-          f"(0 => averaging does not help)")
+          f"(0 => r(3) matches the ICC-implied gain {p['gain']:.3f})")
+    print(f"  d_noise   {p['d_noise']:+.4f}  [{dn_lo:+.4f}, {dn_hi:+.4f}]   "
+          f"(0 => r(3) matches the ICC=0 gain sqrt(3)={p['gain_noise']:.3f})")
+    print(f"  [d_signal]{p['d_signal']:+.4f}  [{ds_lo:+.4f}, {ds_hi:+.4f}]   UNINFORMATIVE, see amendment")
 
-    err_excl = not (de_lo <= 0.0 <= de_hi)
-    sig_excl = not (ds_lo <= 0.0 <= ds_hi)
-    if sig_excl and p["d_signal"] < 0:
+    # ---- G5 CALIBRATION: how often does each limb fire on pure noise? ----------------------------
+    crng = np.random.default_rng(SEED + 3)
+    fires_e, fires_n, r1s = 0, 0, []
+    for _ in range(N_CALIB):
+        Z = crng.normal(size=(len(subs), N_SESSIONS))
+        pz = procedure(Z, acc, crng, draws=CAL_DRAWS, with_r2=False)
+        r1s.append(pz["r1"])
+        bd_e, bd_n = [], []
+        for _ in range(CAL_REPS):
+            j = crng.integers(0, len(subs), len(subs))
+            o = procedure(Z[j], acc[j], crng, draws=CAL_DRAWS, with_r2=False)
+            bd_e.append(o["d_error"]); bd_n.append(o["d_noise"])
+        el, eh = ci(bd_e); nl, nh = ci(bd_n)
+        # the H_error limb "fires" when the ICC prediction is accepted and the noise model rejected
+        if np.isfinite(el) and (el <= 0.0 <= eh) and np.isfinite(nl) and not (nl <= 0.0 <= nh):
+            fires_e += 1
+        if np.isfinite(nl) and (nl <= 0.0 <= nh) and np.isfinite(el) and not (el <= 0.0 <= eh):
+            fires_n += 1
+    rate_e = fires_e / float(N_CALIB)
+    g5 = bool(rate_e <= 0.10)
+    res["gates"].update({"G5_calibration_H_error_rate": rate_e,
+                         "G5_calibration_H_noise_rate": fires_n / float(N_CALIB),
+                         "G5_calibration_median_abs_r1": float(np.median(np.abs(r1s))),
+                         "G5_pass": g5, "G5_n": N_CALIB})
+    print(f"\nG5 CALIBRATION on {N_CALIB} independent Gaussian features "
+          f"(median |r(1)| {np.median(np.abs(r1s)):.4f})")
+    print(f"   H_error limb fires on noise {rate_e*100:.1f} %   "
+          f"H_noise limb fires {fires_n/N_CALIB*100:.1f} %   {'PASS' if g5 else 'FAIL'} (<= 10 %)")
+
+    err_ok = de_lo <= 0.0 <= de_hi
+    noi_ok = dn_lo <= 0.0 <= dn_hi
+    if not g5:
+        v = (f"NOT-INTERPRETABLE -- the H_error limb fires on pure noise {rate_e*100:.1f} % of the time, "
+             "so accepting it here would say nothing about ge_norm (rule 26)")
+    elif p["d_signal"] < 0 and not (ds_lo <= 0.0 <= ds_hi):
         v = ("AVERAGING HURTS -- the between-session variation carries the association; E97's trait "
              "reading fails in the direction that matters and E86 qualification 3 RETURNS")
-    elif (not sig_excl) and err_excl:
-        v = ("NO GAIN -- averaging does not raise D1 by the predicted amount; E97's ICC stands as a "
-             "description and fails as an explanation of D2's null")
-    elif (not sig_excl) and (not err_excl):
-        v = ("UNDETERMINED -- both predictions lie inside the interval; this is NOT support for either "
-             "reading and was named as the likely outcome before the run")
-    elif err_excl and sig_excl:
-        v = ("INCONSISTENT WITH BOTH -- r(3) departs from r(1) and from the Spearman-Brown prediction; "
-             "the measurement-error model does not describe this feature at all")
+    elif err_ok and not noi_ok:
+        v = ("CONSISTENT WITH MEASUREMENT ERROR -- r(3) matches the gain the measured ICC implies and is "
+             "incompatible with the ICC=0 model; E86 qualification 3 stays dissolved")
+    elif noi_ok and not err_ok:
+        v = ("CONSISTENT WITH NO STABLE SUBJECT SIGNAL -- r(3) matches the sqrt(k) gain of pure noise and "
+             "not the ICC-implied one; E97's trait reading fails and E86 qualification 3 RETURNS")
+    elif err_ok and noi_ok:
+        v = ("UNDETERMINED -- both models lie inside the interval; 61 subjects cannot separate a gain of "
+             f"{p['gain']:.3f} from {p['gain_noise']:.3f}. NOT support for either reading, and named as "
+             "the likely outcome before the first pass")
     else:
-        v = ("CONSISTENT WITH MEASUREMENT ERROR -- the predicted gain is inside the interval and the "
-             "no-gain value is not; E86 qualification 3 stays dissolved")
+        v = ("INCONSISTENT WITH BOTH -- r(3) departs from the ICC-implied gain AND from the sqrt(k) gain; "
+             "the measurement-error family does not describe this feature at all")
     res["verdict"] = v
     print(f"\nVERDICT: {v}")
 
