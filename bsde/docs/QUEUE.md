@@ -1074,6 +1074,37 @@ suppression index, relative beta ratio (RBR), and SyncFastSlow (SFS)"* — and L
 * **A verifier target rather than a black box.** Connor's own framing — *"we do not actually know what we
   are measuring"* — is precisely the gap this project's verifier exists to close.
 
+### FEASIBILITY PROBED 2026-07-31 (rule 41) — a reimplementation is worth building
+
+Before writing any BIS reimplementation, the cheap question: **how much fidelity is reachable from
+subparameters this repo ALREADY computes?** 5,828 maintenance windows with device BIS, sensor attached,
+247 cases. **Case-grouped 5-fold CV** — windows within a case are highly correlated, so ungrouped folds
+would leak and inflate every number below.
+
+| arm | median \|err\| (BIS units) | mean \|err\| | R² |
+|---|---|---|---|
+| **OURS — every feature computed by us from raw EEG** | **5.01** | 7.55 | 0.274 |
+| OURS + device BSR (`meta_sr`) | 4.92 | 7.02 | 0.380 |
+| **DEVICE subparameters only (`meta_sr`, `meta_emg`)** | **6.15** | 7.94 | 0.350 |
+| OURS + device BSR + device EMG | 4.56 | 6.38 | 0.496 |
+
+**Lee et al. report median absolute error 4.1 on their own development data.** Our features reach **5.01**
+— and they were never designed for this, are computed on two frontal channels at 128 Hz, and are **missing
+three of the four real BIS ingredients** (SyncFastSlow, QUAZI, relative beta ratio).
+
+**The surprise: our independently computed features predict device BIS BETTER than the device's own
+reported subparameters do** — 5.01 against 6.15. Whatever `meta_sr` and `meta_emg` are, they are not a
+sufficient basis for the index the same monitor reports.
+
+**Verdict: build it.** Adding the three missing ingredients should close most of the remaining gap, and a
+range-specific model (as Lee used) rather than one linear fit should close more.
+
+**What this probe does NOT establish, and it is the caveat that matters most.** These windows are
+maintenance only: device BIS has median 42.1 and IQR 36.1–49.6. **So 5.01 is fidelity INSIDE the target
+band, across a range of about 14 BIS units.** Fidelity at the light and deep extremes is untested here and
+cannot be tested on this deposit — which is exactly the per-range reporting the third caveat below demands.
+Mean error 7.55 against median 5.01 also shows a tail of poor predictions that a headline median hides.
+
 ### Three caveats that must ride with it
 
 * **A reimplementation is not BIS.** Lee et al. report median absolute error 4.1 on their own development
