@@ -2180,3 +2180,88 @@ only in the docstring**; the first run of the file never computed it. Implemente
 48's second half). Against the null primary it correctly returns **NOT INFORMATIVE** — a placebo cannot
 validate a null — instead of printing a pass beneath a failed primary, which is the exact defect rule 48
 was written for.
+
+---
+
+## Q42 — Challenge B this session: one real null, three gate failures, and a deposit closed by its own rule
+
+*E73, E82, E83, E85. Two separate lines of attack; both ended, and the reasons are different and both worth
+keeping.*
+
+### Line 1 — BCI aptitude on Stieger: a real null, then the instrument turned out to be the wrong one
+
+**E73** returned Challenge B's first *interpretable* null. `wpli_alpha_global_efficiency`: D1 −0.086
+[−0.329, +0.166] between subjects, D2 +0.093 [−0.077, +0.252] on consecutive-session change, both gates
+passed, 185 sessions, 62 subjects. Interpretable because **E68 measured the label ceiling** (0.9652 within
+session, 0.8087 for stable ability) where E41's eegmmidb null was capped at 0.5402 by the label alone.
+
+Then two findings that reframe it, in order of discovery:
+
+1. Across subject means the primary correlates with `wpli_alpha_mean_degree` at **+0.9962** and plain
+   `wpli_alpha` at **+0.8639**. Global efficiency on an unthresholded weighted graph is mean connectivity
+   strength restated. → **rule 60**.
+2. **The mechanism is worse than a bad statistic: the extractor uses a TEN-channel montage.**
+   `n_channels_used` is 10 in all 185 rows, while E73's own registration cited "Stieger's 62 channels carry
+   inter-channel phase" as the reason the design could finally be run. On a near-complete 10-node graph
+   nearly every shortest path is the direct edge.
+
+**In flight:** `wpli_matrix` (vectorised, 8 tests asserting it reproduces the tested pairwise `wpli` to
+6e-16) and `extract_stieger_graph62.py` — all 62 channels, plus measures that escape mean strength *by
+construction* (ratios against weight-shuffled nulls, Newman modularity, strength CV) and a different family
+entirely (individual alpha frequency, and its prominence above the aperiodic fit). **Rule 60's
+orthogonality check runs on that table before anything is registered.**
+
+### Line 2 — the flagship paradigm on ds007554: three instruments, one closure
+
+ds007554 carries the covert-command-following paradigm rather than a proxy: `passivemotor` and
+`motorimagery` differ in whether the subject is volitionally attempting, sharing limb, session, montage and
+sensory context, with `activemotor` as an overt anchor. Zero prior ledger use.
+
+**All three attempts failed the same gate — the overt anchor — and never reached the covert question.**
+
+| | instrument | anchor `activemotor − passivemotor` |
+|---|---|---|
+| E82 | whole-run median over 33 channels | d_z **+0.393** [−0.028, +0.934] |
+| E83 | cue-locked, sensorimotor, late window [+0.5, +2.5] s | d_z **+0.271** [−0.190, +0.565] |
+| E85 | cue-locked, sensorimotor, early window [0, 0.75] s | d_z **−0.089** [−0.685, +0.322] |
+
+**Sharpening the instrument moved the estimate monotonically toward the ERD direction and never made it
+detectable.** That is what a small-or-absent effect measured better looks like, and it is why E85's
+registered stopping rule fired instead of a fourth statistic. **ds007554 is CLOSED for the
+covert-versus-passive contrast.**
+
+**The rule-21 check that should have run first, and did not until after the second failure** (E-utilities,
+records verified, not summarised):
+
+* **PMID 31425038** — passive forearm oscillations delivered by a haptic device *elicit mu and beta ERD*,
+  tested as proportional to passive movement speed.
+* **PMID 27529874** — in a volition × robot-assistance 2×2, "statistically significant ERDs began **earlier**
+  in conditions requiring subject's volitional contribution".
+
+ds007554 ships Biodex dynamometer recordings, so its `passivemotor` is of exactly that robot-assisted kind.
+**If passive movement desynchronises about as much and about as early, active-minus-passive is a poor
+volition probe regardless of statistic.** E85's premise gate tested that directly and it failed: the
+anchor's early contrast (|−0.089|) is *smaller* than its late one (|+0.296|).
+
+### What the closure implies, and the one thing not excluded
+
+**A volition contrast needs a condition WITHOUT movement, not a condition with movement the subject did not
+initiate.** ds007554 has three: `mentalarithmetic`, `nback`, `nbackarithmetic`. Mental arithmetic is one of
+the two standard bedside covert-command-following tasks. **That is a different construct and a different
+anchor (frontal midline theta load effects), not a fourth attempt at the closed contrast** — and it is
+queued rather than launched, because three failures in one session is the point at which to finish the line
+already in flight instead of opening another.
+
+**Not excluded, and not glossed:** the deposit's events are `trial_type=target`, duration 0.5 s, 19 per
+run. Whether they mark movement onset or a preparatory cue was never established. If they are preparatory
+cues, every window in all three experiments was misaligned by an unknown lag. Any future event-locked
+ds007554 work owes that check first.
+
+### Two rules earned
+
+* **Rule 60** (`CLAUDE.md`) — a measure chosen for belonging to a different family must be *shown* to
+  differ from it, before registration, on the units the design will use. It has since been run in advance
+  once (E82) and it changed that design before any contrast was computed.
+* **Rule 26 was broken and the remedy applied rather than argued away.** The ds007554 ERD extractor was
+  smoke-tested on real labels for `sub-001`, printing the anchor direction. `sub-001` is excluded from E83
+  and E85 and named in the code as the burned subject.
