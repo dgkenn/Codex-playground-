@@ -308,6 +308,20 @@ def f_lrtc_alpha(data, ch_names, sfreq, meta=None) -> float:
     return float(np.mean(vals)) if vals else float("nan")
 
 
+def f_icoh_alpha(data, ch_names, sfreq, meta=None) -> float:
+    """Mean imaginary coherence over channel pairs in 8-13 Hz. Same pair cap and sampling as wpli_alpha."""
+    from bsde.features.connectivity import imag_coherence
+    d = np.asarray(data, float)
+    n = len(d)
+    pairs = [(i, j) for i in range(n) for j in range(i + 1, n)]
+    if len(pairs) > 300:
+        step = len(pairs) / 300.0
+        pairs = [pairs[int(k * step)] for k in range(300)]
+    vals = [imag_coherence(d[i], d[j], sfreq, 8.0, 13.0) for i, j in pairs]
+    vals = [v for v in vals if np.isfinite(v)]
+    return float(np.mean(vals)) if vals else float("nan")
+
+
 def f_wpli_alpha(data, ch_names, sfreq, meta=None) -> float:
     """Mean debiased wPLI over channel pairs in 8-13 Hz. Capped at 300 pairs, sampled deterministically."""
     from bsde.features.connectivity import wpli
@@ -474,6 +488,29 @@ def seed_registry() -> Sequence[Candidate]:
               "refinement worth trying is a DIFFERENT PROPERTY OF THE SAME RHYTHM rather than another "
               "spectral summary. The prediction for unconscious_vs_awake is signed from PMID 29885482 and "
               "is the falsifiable half: if LRTC does not rise, that paper does not transfer here.")
+
+    register(
+        name="icoh_alpha", version="1.0", fn=f_icoh_alpha,
+        interpretation="Mean magnitude of the imaginary part of coherency across channel pairs in "
+                       "8-13 Hz. Like wPLI it is blind to zero-lag volume conduction, but unlike wPLI it "
+                       "scales with coupling MAGNITUDE rather than being a ratio of imaginary parts.",
+        predictions={"unconscious_vs_awake": "lower",
+                     "command_following": "higher"},
+        failure_conditions=[
+            "it correlates above 0.9 with wpli_alpha across recordings -- then it is a second name for a "
+            "measure already present and adds nothing to a phase family (rule 28)",
+            "it tracks total alpha power rather than coupling, which relative_alpha_power will expose",
+        ],
+        requires=_CORE, complexity=4, min_channels=8, min_duration_s=120.0,
+        prior_art="Nolte et al. (imaginary coherency) is the origin; Kallionpaa 2020 (PMID 32773216) uses "
+                  "coherence, wPLI and dPLI side by side across dexmedetomidine and propofol and reports "
+                  "them of similar capability, which is the comparison this candidate makes testable here.",
+        notes="Registered because E39's first-named deficit was that wpli_alpha is the ONLY phase measure "
+              "in the registry, so its statistic was 'wPLI against the rest' rather than a family mean. "
+              "Chosen to differ from wPLI by CONSTRUCTION (auto-spectrum normalisation) rather than by "
+              "name; tests/test_phase_connectivity_family.py asserts that difference rather than assuming "
+              "it. dPLI is implemented alongside but NOT registered: it is signed, so an average over an "
+              "unordered pair set is meaningless, and it needs a declared channel orientation first.")
 
     register(
         name="wpli_alpha", version="1.0", fn=f_wpli_alpha,

@@ -4,6 +4,9 @@ The separation is the point: the label for Challenge B's alternative (E28) is bu
 `build_eegmmidb_bci_label.py`, and this table must contain nothing from them, or the association is circular.
 
     python bsde/scripts/stream_eegmmidb_rest.py --out bsde/results/eegmmidb_rest.csv
+
+Shardable by recording (`--shard k --of n`), because the cost here is the per-run HTTPS fetch and nothing
+else -- the same reasoning that made `build_eegmmidb_bci_label.py` shard by subject.
 """
 from __future__ import annotations
 
@@ -27,11 +30,13 @@ def main(argv=None) -> int:
     ap.add_argument("--out", default=os.path.join(HERE, "..", "results", "eegmmidb_rest.csv"))
     ap.add_argument("--window-s", type=float, default=55.0, dest="window_s")
     ap.add_argument("--limit", type=int, default=None)
+    ap.add_argument("--shard", type=int, default=0)
+    ap.add_argument("--of", type=int, default=1, dest="n_shards")
     a = ap.parse_args(argv)
     seed_registry()
     adapter = EEGMMIDBRestAdapter(window_s=a.window_s)
     print(f"streaming {adapter.name} -> {a.out}", flush=True)
-    print(f"   {stream_features(adapter, REGISTRY.all(), os.path.abspath(a.out), limit=a.limit, meta_keys=META_KEYS)}")
+    print(f"   {stream_features(adapter, REGISTRY.all(), os.path.abspath(a.out), limit=a.limit, shard=a.shard, n_shards=a.n_shards, meta_keys=META_KEYS)}")
     return 0
 
 
