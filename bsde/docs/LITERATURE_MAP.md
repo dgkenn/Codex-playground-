@@ -301,9 +301,15 @@ connectivity measured by coherence, **wPLI** and directed PLI. The abstract stat
 > prefrontal-frontal EEG-based connectivity reflects unresponsiveness induced by propofol **or**
 > dexmedetomidine, suggesting its utility in monitoring the anaesthetised state with these agents."
 
-That is E35 and E36's phase-family result, in the same drug pair, with the same measure class, in a larger
+**That is not literally E35's probe, and the difference has to be stated or this note commits rule 42
+against itself.** Kallionpaa tested whether connectivity tracks *state rather than concentration* within a
+drug, and whether it does so *under either agent*. E35 tested something adjacent: whether a feature can tell
+the two agents apart *at matched unresponsiveness*. The two are close and they are not the same statistic.
+What Kallionpaa establishes is that the phase-family measure behaves the same way in both drugs, in a larger
 and better-designed cohort — healthy volunteers, scalp, and **within-subject LOR/ROR at constant dosing**,
-which separates state from concentration in a way the Krause deposit structurally cannot.
+which separates state from concentration in a way the Krause deposit structurally cannot. Combined with
+Akeju's spectral result below, the two papers imply the family split; **neither one tests it**, and no
+published work sets a capability control beside a drug-leak measurement the way E36 does.
 
 **Akeju O, Pavone KJ, Westover MB, Vazquez R, Prerau MJ, et al. "A comparison of propofol- and
 dexmedetomidine-induced electroencephalogram dynamics using spectral and coherence analysis."
