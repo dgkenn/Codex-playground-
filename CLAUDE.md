@@ -346,6 +346,22 @@ Every rule below was paid for with a wrong result in this project.
     null" and "supports the hypothesis" are different questions and a confidence interval only answers the
     first. Three prior entries were not enough to prevent it; write the sign into the branch, not the
     prose.
+    **FIFTH OCCURRENCE, 2026-07-31 — the gate was unreachable because of the STATISTIC'S GRANULARITY, and
+    the fix is to compare against the placebo's DISTRIBUTION rather than its mean.** E75's registered
+    branch (c) was "NOT INFORMATIVE — the label-permutation placebo reproduces the agreement rate", coded
+    as `abs(real - 0.5) <= abs(placebo_mean - 0.5)`. Both halves fail. `placebo_mean` is an average over
+    300 draws and sits at ~0.500 *by construction*, so the right-hand side is ~0; and `real` is a fraction
+    over an **odd** number of testable features, so it can never equal 0.500 either. **The branch could not
+    fire for any data.** It printed SPLIT — "Challenge A's candidate list" — over 4 agreements in 7
+    features, which is exactly the median of a Binomial(7, 0.5); against the placebo *distribution*,
+    **0.487 of draws reach that rate or better**. A pure null had been about to be written up as the
+    informative outcome. **Rules that fall out: a placebo comparison is against the placebo's
+    DISTRIBUTION, never its mean — a mean placebo is a point with no width and every real value differs
+    from it. And before trusting any verdict branch, ask what VALUES the statistic can actually take:
+    a rate over 7 items takes 8 values, none of them 0.5, so any branch keyed to 0.5 is dead code.**
+    Fixing this made the test stricter after seeing a pass, which is the safe direction and the only one
+    that does not need permission; a fix that loosens a gate after a failure is the move
+    `DISCOVERY_LOOP.md` §2 forbids.
 50. **MEASURING A DIFFERENCE IS NOT MEASURING ITS CAUSE — GET THE BASELINE BEFORE YOU NAME THE MECHANISM.**
     Three corrections in one day, all the same shape: an effect was measured and a *cause* was asserted
     without the control that would separate causes.
