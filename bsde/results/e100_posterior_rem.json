@@ -1,0 +1,97 @@
+{
+  "gates": {
+    "G1_subjects": 140,
+    "G1_pass": true,
+    "G2_dropped": 1,
+    "G3_frac_delta_increases": {
+      "frontal": 0.9214285714285714,
+      "posterior": 0.9785714285714285
+    },
+    "G3_control": 0.5285714285714286,
+    "G3_pass": true
+  },
+  "excluded": [
+    "SC4001E0-PSG"
+  ],
+  "positions": {
+    "posterior_delta": {
+      "median": 0.4402187677299678,
+      "iqr": [
+        0.25457827367285457,
+        0.5559833534614668
+      ],
+      "n": 140
+    },
+    "frontal_delta": {
+      "median": -0.2764184131188309,
+      "iqr": [
+        -1.3551723336209898,
+        0.2933738568430849
+      ],
+      "n": 140
+    },
+    "posterior_low": {
+      "median": 0.4077807064595129,
+      "iqr": [
+        0.2196807023630083,
+        0.5844199823446934
+      ],
+      "n": 140
+    },
+    "frontal_low": {
+      "median": 0.19172767427687187,
+      "iqr": [
+        -0.46217284108012757,
+        0.7557915786373666
+      ],
+      "n": 140
+    },
+    "whole_head_exponent": {
+      "median": 0.47871658485964924,
+      "iqr": [
+        0.39271761324745375,
+        0.5555758410759951
+      ],
+      "n": 140
+    },
+    "emg": {
+      "median": 1.0935542954627357,
+      "iqr": [
+        0.7813643069175189,
+        1.6621029568174546
+      ],
+      "n": 140
+    }
+  },
+  "P1 primary": {
+    "a": "posterior_delta",
+    "b": "whole_head_exponent",
+    "d_z": -0.25706531709051544,
+    "lo": -0.3672437098160912,
+    "hi": -0.1587799983457386,
+    "median_diff": -0.0523430178674828
+  },
+  "P2 locality": {
+    "a": "posterior_delta",
+    "b": "frontal_delta",
+    "d_z": 0.010660790289305125,
+    "lo": -0.11764699008811676,
+    "hi": 0.366728096371881,
+    "median_diff": 0.6312951710155303
+  },
+  "S1 secondary": {
+    "a": "posterior_low",
+    "b": "whole_head_exponent",
+    "d_z": 0.08584155724249262,
+    "lo": -0.12345384979197932,
+    "hi": 0.18370972320505152,
+    "median_diff": -0.07295307382326752
+  },
+  "G4_muscle_adjusted_P1": {
+    "d_z": -1.4961097407313116e-16,
+    "lo": -0.1340496413726106,
+    "hi": 0.24505832146252177,
+    "n": 140
+  },
+  "verdict": "IMPROVES -- posterior low-frequency places REM closer to wake, but P2 does not show posterior specificity, so this is about low-frequency power in general rather than about locality; **it does NOT survive adjustment for submental EMG and is therefore muscle**."
+}
