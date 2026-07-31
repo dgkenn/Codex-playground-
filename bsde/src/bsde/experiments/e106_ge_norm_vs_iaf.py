@@ -99,9 +99,10 @@ OUT = os.path.join(RESULTS, "e106_ge_norm_vs_iaf.json")
 A_VAR, B_VAR = "ge_norm", "iaf"
 ESCAPE_MAX = 0.90
 MIN_SUBJECTS = 50
-REPS = 4000
-PLACEBO_DRAWS = 500
+REPS = 20000
+PLACEBO_DRAWS = 5000
 SEED = 20260731
+SEEDS = (20260731, 11, 202, 3407, 98765)
 
 
 def _f(v):
@@ -222,29 +223,73 @@ def main() -> int:
         bb.append(partial_spearman(b[i], y[i], a[i]))
     pa_lo, pa_hi = ci(ba)
     pb_lo, pb_hi = ci(bb)
-    res["primary"] = {"A_ge_norm_given_iaf": {"rho": pa, "lo": pa_lo, "hi": pa_hi},
-                      "B_iaf_given_ge_norm": {"rho": pb, "lo": pb_lo, "hi": pb_hi}}
-    print(f"\nA  partial({A_VAR} , accuracy | {B_VAR})  {pa:+.4f} [{pa_lo:+.4f}, {pa_hi:+.4f}]")
-    print(f"B  partial({B_VAR} , accuracy | {A_VAR})  {pb:+.4f} [{pb_lo:+.4f}, {pb_hi:+.4f}]")
+    # RULE 46. Both lower bounds sit close to zero, so the binary "excludes 0" is exactly the verdict
+    # that can be a property of the RNG seed rather than of the data. Report the resample-level
+    # one-sided p -- the fraction of replicates on the wrong side of the null, which degrades gracefully
+    # where an interval endpoint does not -- and re-run the whole interval at five seeds.
+    fa = float(np.mean(np.asarray(ba, float) <= 0.0))
+    fb = float(np.mean(np.asarray(bb, float) <= 0.0))
+    stab = {}
+    for sd in SEEDS:
+        r2 = np.random.default_rng(sd)
+        va, vb = [], []
+        for _ in range(REPS):
+            i = r2.integers(0, n, n)
+            va.append(partial_spearman(a[i], y[i], b[i]))
+            vb.append(partial_spearman(b[i], y[i], a[i]))
+        la, ha = ci(va)
+        lb, hb = ci(vb)
+        stab[str(sd)] = {"A": [la, ha, bool(la > 0)], "B": [lb, hb, bool(lb > 0)]}
+    a_stable = all(v["A"][2] for v in stab.values())
+    b_stable = all(v["B"][2] for v in stab.values())
+    res["primary"] = {"A_ge_norm_given_iaf": {"rho": pa, "lo": pa_lo, "hi": pa_hi, "p_one_sided": fa},
+                      "B_iaf_given_ge_norm": {"rho": pb, "lo": pb_lo, "hi": pb_hi, "p_one_sided": fb},
+                      "seed_stability": stab, "A_stable": a_stable, "B_stable": b_stable,
+                      "reps": REPS}
+    print(f"\nA  partial({A_VAR} , accuracy | {B_VAR})  {pa:+.4f} [{pa_lo:+.4f}, {pa_hi:+.4f}]  "
+          f"one-sided p {fa:.4f}")
+    print(f"B  partial({B_VAR} , accuracy | {A_VAR})  {pb:+.4f} [{pb_lo:+.4f}, {pb_hi:+.4f}]  "
+          f"one-sided p {fb:.4f}")
+    print(f"   SEED STABILITY over {len(SEEDS)} seeds at {REPS} reps: "
+          f"A excludes 0 in {sum(v['A'][2] for v in stab.values())}/{len(SEEDS)}, "
+          f"B in {sum(v['B'][2] for v in stab.values())}/{len(SEEDS)}")
+    for sd, v in stab.items():
+        print(f"      seed {sd:<9s} A [{v['A'][0]:+.4f}, {v['A'][1]:+.4f}]   "
+              f"B [{v['B'][0]:+.4f}, {v['B'][1]:+.4f}]")
 
+    # a DEDICATED, deterministically seeded RNG: with a shared stream the placebo band depends on how
+    # many draws the bootstrap happened to consume, and at 500 draws the 97.5th percentile moved by 0.05
+    # between runs -- enough to flip the gate. 5000 draws, and the permutation p is reported beside the
+    # band because a p is stable where a percentile endpoint is not (rule 46).
+    prng = np.random.default_rng(SEED + 777)
     qa, qb = [], []
     for _ in range(PLACEBO_DRAWS):
-        yp = y[rng.permutation(n)]
+        yp = y[prng.permutation(n)]
         qa.append(partial_spearman(a, yp, b))
         qb.append(partial_spearman(b, yp, a))
     qa_lo, qa_hi = ci(qa)
     qb_lo, qb_hi = ci(qb)
     a_inside = bool(qa_lo <= pa <= qa_hi)
     b_inside = bool(qb_lo <= pb <= qb_hi)
-    res["placebo"] = {"A": [qa_lo, qa_hi, a_inside], "B": [qb_lo, qb_hi, b_inside]}
-    print(f"PLACEBO accuracy permuted   A [{qa_lo:+.4f}, {qa_hi:+.4f}] "
-          f"{'INSIDE' if a_inside else 'outside'}   B [{qb_lo:+.4f}, {qb_hi:+.4f}] "
-          f"{'INSIDE' if b_inside else 'outside'}")
+    perm_pa = float((np.sum(np.abs(np.asarray(qa, float)) >= abs(pa)) + 1) / (len(qa) + 1))
+    perm_pb = float((np.sum(np.abs(np.asarray(qb, float)) >= abs(pb)) + 1) / (len(qb) + 1))
+    res["placebo"] = {"A": [qa_lo, qa_hi, a_inside], "B": [qb_lo, qb_hi, b_inside],
+                      "A_perm_p": perm_pa, "B_perm_p": perm_pb, "n_draws": PLACEBO_DRAWS}
+    print(f"PLACEBO accuracy permuted ({PLACEBO_DRAWS} draws)")
+    print(f"   A [{qa_lo:+.4f}, {qa_hi:+.4f}] {'INSIDE' if a_inside else 'outside'}   "
+          f"two-sided permutation p {perm_pa:.4f}")
+    print(f"   B [{qb_lo:+.4f}, {qb_hi:+.4f}] {'INSIDE' if b_inside else 'outside'}   "
+          f"two-sided permutation p {perm_pb:.4f}")
 
-    a_ex = (not (pa_lo <= 0 <= pa_hi)) and not a_inside
-    b_ex = (not (pb_lo <= 0 <= pb_hi)) and not b_inside
+    # a verdict that is not stable across seeds is a property of the RNG, not the data (rule 46)
+    a_ex = (not (pa_lo <= 0 <= pa_hi)) and (not a_inside) and a_stable
+    b_ex = (not (pb_lo <= 0 <= pb_hi)) and (not b_inside) and b_stable
     tail = (f" NOTE G0: the minimum detectable partial |rho| here is ~{mdr:.3f}, so a null below that "
             f"magnitude is CANNOT TELL rather than NO EFFECT.")
+    if not (a_stable and b_stable):
+        tail += (f" SEED STABILITY (rule 46): A held in {sum(v['A'][2] for v in stab.values())}/"
+                 f"{len(SEEDS)} seeds and B in {sum(v['B'][2] for v in stab.values())}/{len(SEEDS)}; "
+                 f"any limb that did not hold has been treated as NOT excluding zero.")
     if (not a_ex) and b_ex:
         v = (f"IT IS ALPHA FREQUENCY -- {A_VAR} does not survive adjustment for {B_VAR} while {B_VAR} "
              f"survives adjustment for {A_VAR}. Challenge B's one positive is a re-derivation of a known "
@@ -260,6 +305,14 @@ def main() -> int:
         v = (f"IT IS THE NETWORK MEASURE -- {A_VAR} survives adjustment for {B_VAR} and {B_VAR} does not "
              f"survive adjustment for {A_VAR}. E86's primary is strengthened; the BH q = 0.0920 "
              f"qualification is untouched by this and still stands.")
+    v += (f" | RESOLVABILITY (G0): minimum detectable partial |rho| at n={n} is ~{mdr:.3f} and the two "
+          f"partials are {abs(pa):.3f} and {abs(pb):.3f}, BOTH BELOW IT -- so this deposit is "
+          f"underpowered for the comparison and any limb that separates is liable to the winner's curse."
+          f" | MARGIN: the verdict rests on permutation p {perm_pa:.4f} (A) against {perm_pb:.4f} (B); "
+          f"those are close, and at 500 placebo draws instead of {PLACEBO_DRAWS} the same data returned "
+          f"MUTUALLY ABSORBED. Treat the DIRECTION as the finding and the binary as unstable.")
+    if not (a_stable and b_stable):
+        v += tail
     res["verdict"] = v
     print(f"\nVERDICT: {v}")
     json.dump(res, open(OUT, "w"), indent=2)

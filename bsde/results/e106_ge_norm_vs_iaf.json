@@ -1,0 +1,115 @@
+{
+  "n_subjects": 62,
+  "gates": {
+    "G0_min_detectable_partial_rho": 0.3645289507463068,
+    "G1_rho_ge_norm_iaf": 0.07813955830878094,
+    "G1_pass": true,
+    "G2_pass": true,
+    "G3_raw_a": [
+      0.29339477726574503,
+      0.03301352270151847,
+      0.5198811412454988
+    ],
+    "G3_raw_b": [
+      0.2538087683513384,
+      0.004152501825690617,
+      0.46010047593865666
+    ],
+    "G3_pass": true
+  },
+  "primary": {
+    "A_ge_norm_given_iaf": {
+      "rho": 0.2836908967442186,
+      "lo": 0.0046442380534510545,
+      "hi": 0.5213282374804086,
+      "p_one_sided": 0.02325
+    },
+    "B_iaf_given_ge_norm": {
+      "rho": 0.2422523285137051,
+      "lo": 0.00922519562582173,
+      "hi": 0.4426430350785443,
+      "p_one_sided": 0.02045
+    },
+    "seed_stability": {
+      "20260731": {
+        "A": [
+          0.0069000333794860215,
+          0.5160941527583609,
+          true
+        ],
+        "B": [
+          0.009515364281421888,
+          0.4383226870646629,
+          true
+        ]
+      },
+      "11": {
+        "A": [
+          0.012608159642994983,
+          0.5188242446914153,
+          true
+        ],
+        "B": [
+          0.00843399744220531,
+          0.43977878975598994,
+          true
+        ]
+      },
+      "202": {
+        "A": [
+          0.006364325220462766,
+          0.5166352111724364,
+          true
+        ],
+        "B": [
+          0.007172938272942099,
+          0.43905296660770976,
+          true
+        ]
+      },
+      "3407": {
+        "A": [
+          0.007170688841146682,
+          0.5174503086798079,
+          true
+        ],
+        "B": [
+          0.007000894490406218,
+          0.4387149424009657,
+          true
+        ]
+      },
+      "98765": {
+        "A": [
+          0.008216139153898799,
+          0.5175977421297031,
+          true
+        ],
+        "B": [
+          0.008936219916108521,
+          0.4388984007166683,
+          true
+        ]
+      }
+    },
+    "A_stable": true,
+    "B_stable": true,
+    "reps": 20000
+  },
+  "placebo": {
+    "A": [
+      -0.2584914071167103,
+      0.24871994003950057,
+      false
+    ],
+    "B": [
+      -0.2472059272985721,
+      0.2590498672566712,
+      true
+    ],
+    "A_perm_p": 0.028794241151769647,
+    "B_perm_p": 0.0609878024395121,
+    "n_draws": 5000
+  },
+  "verdict": "IT IS THE NETWORK MEASURE -- ge_norm survives adjustment for iaf and iaf does not survive adjustment for ge_norm. E86's primary is strengthened; the BH q = 0.0920 qualification is untouched by this and still stands. | RESOLVABILITY (G0): minimum detectable partial |rho| at n=62 is ~0.365 and the two partials are 0.284 and 0.242, BOTH BELOW IT -- so this deposit is underpowered for the comparison and any limb that separates is liable to the winner's curse. | MARGIN: the verdict rests on permutation p 0.0288 (A) against 0.0610 (B); those are close, and at 500 placebo draws instead of 5000 the same data returned MUTUALLY ABSORBED. Treat the DIRECTION as the finding and the binary as unstable."
+}
