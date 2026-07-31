@@ -1,6 +1,114 @@
 {
-  "gate": "G0_failed",
-  "counts": {
-    "ds005385": 167
-  }
+  "n_rows": 357,
+  "n_adults": 356,
+  "cohorts": {
+    "ds003775": 109,
+    "ds004504": 29,
+    "ds005385": 218
+  },
+  "usable": [
+    "ds003775",
+    "ds004504",
+    "ds005385"
+  ],
+  "e47": {
+    "alpha_peak_slope": -0.013010224477420685,
+    "ci": [
+      -0.020516292345593774,
+      -0.005223218221109382
+    ],
+    "n": 356,
+    "verdict": "PASS (slope negative, interval excludes zero -- reproduces MIDUS/LEISURE direction)",
+    "exponent_slope_secondary": -0.005660508610778445,
+    "exponent_ci": [
+      -0.007600449093810021,
+      -0.00381845958174991
+    ],
+    "per_cohort": {
+      "ds003775": {
+        "slope": -0.019840274288377823,
+        "ci": [
+          -0.03252341865065329,
+          -0.005864882202928746
+        ],
+        "n": 109
+      },
+      "ds004504": {
+        "slope": NaN,
+        "ci": [
+          NaN,
+          NaN
+        ],
+        "n": 29
+      },
+      "ds005385": {
+        "slope": -0.010896783814254947,
+        "ci": [
+          -0.02040283687271378,
+          -0.0014597925799776045
+        ],
+        "n": 217
+      }
+    }
+  },
+  "e48": {
+    "delta": {
+      "batch_abs": 5.5545872723010445,
+      "batch_rel": 1.4454346765049053,
+      "batch_resid": 0.4143134667180282,
+      "batch_sham": 2.4882048755065593,
+      "batch_gain_removed": 1.2866611451218952,
+      "within_retained_vs_abs": 0.19526859035029998,
+      "diff_vs_gain": -0.8723476784038671,
+      "ci": [
+        -1.2003143824064708,
+        -0.6350523553222881
+      ],
+      "verdict": "BEATS GAIN REMOVAL"
+    },
+    "theta": {
+      "batch_abs": 5.214874701944236,
+      "batch_rel": 0.2502781630327944,
+      "batch_resid": 0.09387913987104428,
+      "batch_sham": 2.4332018860317652,
+      "batch_gain_removed": 0.43147808953897615,
+      "within_retained_vs_abs": 0.12372746319169367,
+      "diff_vs_gain": -0.33759894966793186,
+      "ci": [
+        -0.45489534372284113,
+        -0.10118016336535823
+      ],
+      "verdict": "BEATS GAIN REMOVAL"
+    },
+    "alpha": {
+      "batch_abs": 5.04467014673132,
+      "batch_rel": 0.6243820315781912,
+      "batch_resid": 0.6078222779191982,
+      "batch_sham": 2.5156246517679604,
+      "batch_gain_removed": 0.7301687074811597,
+      "within_retained_vs_abs": 0.23353596975159197,
+      "diff_vs_gain": -0.12234642956196151,
+      "ci": [
+        -0.2189476093828716,
+        -0.03655320278731479
+      ],
+      "verdict": "BEATS GAIN REMOVAL"
+    },
+    "beta": {
+      "batch_abs": 5.110986894172072,
+      "batch_rel": 1.0794044332954653,
+      "batch_resid": 0.3646487331261742,
+      "batch_sham": 2.6063772151652804,
+      "batch_gain_removed": 1.212103575270984,
+      "within_retained_vs_abs": 0.11911548197980397,
+      "diff_vs_gain": -0.8474548421448097,
+      "ci": [
+        -1.1853714392557573,
+        -0.5706509198875592
+      ],
+      "verdict": "BEATS GAIN REMOVAL"
+    }
+  },
+  "seed": 20260731,
+  "reps": 8000
 }

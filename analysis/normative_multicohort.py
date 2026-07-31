@@ -394,9 +394,11 @@ def main(argv=None) -> int:
 
     rng = np.random.default_rng(SEED)
     e48 = {}
-    print(f"\n   {'band':7s} {'batch(abs)':>11s} {'batch(rel)':>11s} {'batch(resid)':>13s} "
-          f"{'batch(sham)':>12s}   verdict")
-    print("   " + "-" * 92)
+    print(f"\n   {'band':7s} {'batch(abs)':>11s} {'batch(rel)':>11s} {'batch(gain)':>12s} "
+          f"{'batch(resid)':>13s} {'batch(sham)':>12s}   verdict")
+    print("   INCUMBENT is batch(gain) -- scalar gain removal, no aperiodic model. The primary is")
+    print("   batch(resid) - batch(gain), NOT the comparison against raw power.")
+    print("   " + "-" * 110)
     for b in BANDS:
         abs_v = np.array([_f(r.get("abs_" + b)) for r in adults], float)
         rel_v = np.array([_f(r.get("rel_" + b)) for r in adults], float)
@@ -415,12 +417,31 @@ def main(argv=None) -> int:
                 perm[idx] = rng.choice(other, size=idx.size, replace=True)
         sham_v = _corrected(adults, b, sham_perm=perm)
 
-        # ONE denominator per family, from the uncorrected measure, so no arm can win by adding noise.
+        # INCUMBENT (rule 45), and E48 shipped without one until the numbers forced the issue: plain GAIN
+        # REMOVAL -- subtract each recording's mean log power across the four bands. It removes a scalar
+        # amplifier/reference gain and contains NO aperiodic model at all. If the correction cannot beat
+        # it, then the harmonisation is gain removal and the exponent contributes nothing.
+        gain_v = abs_v - np.nanmean(np.vstack([np.array([_f(r.get("abs_" + x)) for r in adults], float)
+                                               for x in BANDS]), axis=0)
+
+        # SELF-NORMALISED batch index: between-cohort SD over the SAME ARM's within-cohort SD.
+        #
+        # Both alternatives are wrong and each was tried. A per-arm denominator is gamed by ADDING NOISE
+        # (inflate within, shrink the ratio) -- that is how the first within-cohort sham beat the real
+        # correction. A FIXED denominator is gamed by SHRINKING EVERYTHING: the correction reduces
+        # within-cohort spread to 11-22 % of the uncorrected measure, so a fixed denominator hands it a
+        # free win for destroying signal. Self-normalisation is invariant to pure multiplicative
+        # shrinkage, which kills the second failure, and the cross-cohort sham plus the capability gate
+        # below cover the first.
+        ba = _batch_index(adults, abs_v, usable)
+        br = _batch_index(adults, rel_v, usable)
+        bs = _batch_index(adults, res_v, usable)
+        bh = _batch_index(adults, sham_v, usable)
+        bg = _batch_index(adults, gain_v, usable)
+        # CAPABILITY (rule 32, and E46's lesson): an arm that has destroyed its own between-subject
+        # signal is not harmonised, it is empty. Report the retained spread so a collapse is visible.
         den_abs = _within_spread(adults, abs_v, usable)
-        ba = _batch_index(adults, abs_v, usable, denom=den_abs)
-        br = _batch_index(adults, rel_v, usable)          # different units: reported, not compared
-        bs = _batch_index(adults, res_v, usable, denom=den_abs)
-        bh = _batch_index(adults, sham_v, usable, denom=den_abs)
+        retain = _within_spread(adults, res_v, usable) / den_abs if den_abs else float("nan")
 
         # bootstrap the DIFFERENCE batch(resid) - batch(abs) over subjects
         n = len(adults)
@@ -429,32 +450,40 @@ def main(argv=None) -> int:
         for _ in range(min(a.reps, 4000)):
             idx = r2.integers(0, n, n)
             sub = [adults[i] for i in idx]
-            v1 = _batch_index(sub, abs_v[idx], usable, denom=den_abs)
-            v2 = _batch_index(sub, res_v[idx], usable, denom=den_abs)
+            v1 = _batch_index(sub, gain_v[idx], usable)      # vs the INCUMBENT, not vs raw power
+            v2 = _batch_index(sub, res_v[idx], usable)
             if math.isfinite(v1) and math.isfinite(v2):
                 draws.append(v2 - v1)
         if draws:
             d = np.sort(np.array(draws))
             dlo, dhi = float(np.quantile(d, 0.025)), float(np.quantile(d, 0.975))
-            point = bs - ba
+            # MUST match what the bootstrap resamples (resid vs the GAIN-REMOVAL incumbent). This read
+            # `bs - ba` after the incumbent changed, and printed -4.9553 beside its own CI of
+            # [-1.1882, -0.6272] -- a point estimate four times its interval, from comparing against raw
+            # power while the interval compared against gain removal.
+            point = bs - bg
         else:
             dlo = dhi = point = float("nan")
 
         sham_ok = math.isfinite(bh) and math.isfinite(bs) and bs < bh
         if not math.isfinite(dlo):
             v = "NOT INFORMATIVE (bootstrap degenerate)"
+        elif not (math.isfinite(retain) and retain >= 0.10):
+            v = "NOT INFORMATIVE (correction destroyed the within-cohort signal)"
         elif dlo <= 0 <= dhi:
-            v = "REFUTED (interval includes zero)"
+            v = "REFUTED (no better than plain gain removal)"
         elif dlo > 0:
-            v = "REFUTED IN THE OPPOSITE DIRECTION (correction made cohorts MORE different)"
+            v = "REFUTED IN THE OPPOSITE DIRECTION (WORSE than plain gain removal)"
         elif not sham_ok:
-            v = "NOT INFORMATIVE (sham gate: a random subject's fit harmonises as well)"
+            v = "NOT INFORMATIVE (sham gate: a foreign cohort's fit harmonises as well)"
         else:
-            v = "HARMONISES"
+            v = "BEATS GAIN REMOVAL"
         e48[b] = {"batch_abs": ba, "batch_rel": br, "batch_resid": bs, "batch_sham": bh,
-                  "diff": point, "ci": [dlo, dhi], "verdict": v}
-        print(f"   {b:7s} {ba:11.4f} {br:11.4f} {bs:13.4f} {bh:12.4f}   {v}")
-        print(f"   {'':7s} diff(resid-abs) {point:+.4f}  [{dlo:+.4f}, {dhi:+.4f}]")
+                  "batch_gain_removed": bg, "within_retained_vs_abs": retain,
+                  "diff_vs_gain": point, "ci": [dlo, dhi], "verdict": v}
+        print(f"   {b:7s} {ba:11.4f} {br:11.4f} {bg:12.4f} {bs:13.4f} {bh:12.4f}   {v}")
+        print(f"   {'':7s} diff(resid - gain-removed) {point:+.4f}  [{dlo:+.4f}, {dhi:+.4f}]"
+              f"   within-spread retained {retain:.3f}")
 
     payload = {"n_rows": len(rows), "n_adults": len(adults), "cohorts": counts, "usable": usable,
                "e47": {"alpha_peak_slope": pt, "ci": [lo, hi], "n": n, "verdict": e47,
