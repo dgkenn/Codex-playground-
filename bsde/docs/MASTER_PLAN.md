@@ -1801,3 +1801,44 @@ made about any candidate representation on any deposit. E35 and E36 are claims a
 measures behaves, which is a claim about the search space rather than about a biomarker, and the verifier
 layers they exercised — multiplicity, exhaustive placebo, nuisance floor, capability control — are the
 asset the programme is meant to be building.
+
+### 9.36 Status after E58–E77, superseding §9.35's table
+
+`bsde/governance/REGISTRATION_LEDGER.jsonl` remains the authoritative per-experiment record; two rows
+(E73, E75) were found missing this session and added, which is a defect in exactly the instrument that
+exists to make the denominator visible. Detail for every result below is in `QUEUE.md` Q22–Q40.
+
+| challenge | status now | what actually blocks it |
+|---|---|---|
+| **A** | **The four-arm sign comparison's AGGREGATE is a NULL** (E75): 4 of 7 features agree in sign, which is the median of Binomial(7, 0.5), and 0.487 of placebo draws reach it. The earlier SPLIT verdict is withdrawn. Per-feature signs stand as descriptive and reproduce E74 exactly | Still the structural one from §9.35 — plus a new one: **`uce_v1` cannot be computed on the only drug-free deposit** (Sleep-EDFx is two bipolar derivations), so the flagship candidate never entered the arm |
+| **B** | **Unblocked on machinery, not yet answered.** E68 measured the Stieger deposit's label ceiling at **0.9652** within session, lifting the 0.5402 cap that made E41's null uninterpretable. E73 is registered and awaiting its extraction | Nothing structural. The extraction is the gate |
+| **C** | **The comparator problem is solved; the negative from §9.35 is untouched.** E76 shows the deposit's declared preprocessing accounts for the whole gap between our permutation entropy and the shipped PE31, so a clinician-tracking comparator is now computable **anywhere** rather than only where a deposit ships one | Not a data blocker, unchanged. What is removed is the excuse that no portable incumbent existed |
+
+**Two structural facts that belong here rather than in a footnote.**
+
+1. **`uce_v1` is uncomputable on VitalDB — the deposit named as the commercial wedge.** 0 of 11,000+ rows,
+   because a BIS strip is one channel and UCE v1 is a frontal-versus-posterior contrast.
+   `regional_exponents` returns NaN rather than substituting, which is correct behaviour and a real scope
+   limit: **every VitalDB result this project has is about other measures.** Also 0 of 2,200+ Sleep-EDFx
+   rows (bipolar derivations) and 0 of 272 HBN rows (EGI `E<n>` naming, the one case that is a parsing gap
+   rather than a montage limit). `QUEUE.md` Q39 has the diagnosis, the priority ordering and the one
+   concrete option — a separately named `uce_v1_bipolar`, never written into a column called `uce_v1`.
+2. **The BIS-like index built in E58 rests partly on two subparameters that false-positive.** E77 predicted
+   `bis_bsr` and `bis_quazi` would be identically zero in physiological sleep and they are not: both fire
+   most in the **low-amplitude** stages (BSR nonzero in 61.3 % of REM and 52.8 % of N1 windows), with one
+   wake window at BSR = 1.000. Magnitudes are small; the pattern is systematic and is a property of the
+   implementation.
+
+**What the session's positives actually are, stated so they are not over-read.**
+
+* **E76 (Challenge C machinery).** Applying the deposit's declared 0.5–45 Hz band and 0.5 µV tie threshold
+  raises agreement with PE31 by **+0.2457 [+0.1468, +0.3601]** and clinician tracking by **+0.1609
+  [+0.0764, +0.2613]**, while an arbitrary wrong band (0.5–20 Hz) makes both *worse*. The band does
+  essentially all of it. G4 reproduced the prior extraction on all 10,927 shared rows at max |diff| = 0.
+* **E77 (Challenge C candidate).** `bis_rbr`'s wake/sleep effect is **d_z = −2.743**, the largest measured
+  on that table, and **1.440 survives adjustment for real submental EMG**; attribution to muscle is
+  **+0.102 [+0.027, +0.191]**, stable across three seeds. That defends Q35 — *in sleep*. Q35's claim is
+  under anaesthesia and its owed registered replication is still owed.
+* **Neither is a claim about consciousness, and neither is a claim about a candidate beating an incumbent.**
+  E65 stands: the fitted BIS-like index does not track a clinician (+0.04 against PE31's +0.48), and Q22's
+  licence to use it on monitor-free deposits remains withdrawn.
