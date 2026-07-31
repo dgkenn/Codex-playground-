@@ -101,10 +101,25 @@ exactly what makes LOC values less variable than baselines, which is the 0.7× r
 **As stated, −0.81 is consistent with no predictive relationship at all.** This is Oldham's problem and a
 reviewer will find it.
 
-**The fix is straightforward and the claim may well survive it:** regress the **LOC value** on the
-baseline rather than the change, or correlate the change against the **average** of baseline and LOC
-(Oldham's method), or report the partial correlation adjusting for baseline. Any of those has a null of
-zero. Do this before the meeting, not after.
+**The fix, and a correction to my own first version of it.** I initially recommended Oldham's method —
+correlate the change against the *average* of baseline and LOC — and asserted its null was zero. **It is
+not.** Under the null,
+
+    corr( (a+b)/2 , a-b )  =  (var(a) - var(b)) / (var(a) + var(b))
+
+which is zero **only when the two variances match**. Verified to three decimals: at a 0.6 spread ratio the
+null is **-0.470**, at 1.6 it is **+0.438**. In exactly the situation that motivates this — an intervention
+compressing between-subject variance — Oldham is still biased, just less so.
+
+**Report `corr(baseline, LOC value)` instead. It is zero at every spread.** That is the statistic the
+question was really asking anyway: *do patients with steeper awake baselines reach a different slope at
+LOC?* `bsde/src/bsde/verifier/change_scores.py` computes all three side by side, each against its own
+analytic null, with `tests/test_change_scores.py` checking those nulls against simulation. Run your own
+baseline/LOC pairs through it — **I could not, because VitalDB's EEG strip goes on after induction and my
+extraction contains no pre-induction windows at all** (0 of 6,439). If your baseline came from VitalDB,
+that is worth confirming independently.
+
+Do this before the meeting, not after.
 
 ### (b) The IFT alignment is precision the data cannot carry
 
