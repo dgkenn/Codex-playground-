@@ -658,3 +658,12 @@ unverified on GitHub.
     statistic is a function of it.** Shuffling pairing tests paired structure; shuffling the STATE LABEL
     tests direction. Match the destruction to the estimand, or the gate is decoration that also looks
     rigorous.
+56. **A BACKGROUND-TASK "COMPLETED" NOTIFICATION REPORTS THE LAUNCHING SHELL EXITING, NOT THE DETACHED
+    CHILD FINISHING — CHECK THE PROCESS, NOT THE MESSAGE.** Launching with `setsid nohup … & disown`
+    deliberately outlives its shell, so the harness reports completion the moment the wrapper returns while
+    the extractor keeps writing. Acting on that notification and starting a second copy put **two
+    concurrent writers on one CSV**: 931 rows where 710 were expected, **419 duplicated `recording_id`s**,
+    and a real risk of torn lines that only survived because appends were flushed per row. **Before
+    relaunching or resuming any background job, confirm it is dead** — `ps -eo args | grep -c <pattern>`,
+    not the task message. And any resumable extractor should **de-duplicate on its key when it loads**,
+    rather than trusting that it was the only writer.
