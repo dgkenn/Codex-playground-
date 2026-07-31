@@ -1,5 +1,20 @@
 # RESEARCH_STRATEGY.md — Artifact 1
 
+> **STATUS NOTE, 2026-07-31 — READ THIS BEFORE TREATING ANYTHING BELOW AS CURRENT.**
+> This is a **pre-specification artefact written on 2026-07-29, before any dataset was downloaded or any EEG
+> processed**, and it is preserved in that state deliberately: its value is that it was written before the
+> results existed, so revising it to match them would destroy the only thing it is for.
+>
+> **It is not a status report and it is not the plan.** Nineteen designs have since been registered and the
+> work went where the available data allowed rather than where this document anticipated. For what is
+> actually true now, read in this order: `bsde/governance/ledger.jsonl` (the authoritative per-experiment
+> record — `python bsde/governance/registry_ledger.py report` prints the denominator), then
+> `MASTER_PLAN.md` §9.35, then `QUEUE.md`.
+>
+> Where this document and MASTER_PLAN §9.35 disagree about what has been established, **§9.35 is correct and
+> this one is a record of what was planned.**
+
+
 *Source of authority: `RESEARCH_PROGRAM_BRIEF.md` (investigator-supplied, immutable). This document is the
 project's own strategy and may be revised; the brief may not. Every departure from the brief is recorded in
 §9 with its reason, per brief §25.*
