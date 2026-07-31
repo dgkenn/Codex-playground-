@@ -63,11 +63,47 @@ PREPROCESSING, FIXED HERE. Both constants are declared before the run and neithe
                       computed. Sixty seconds is the horizon, so the estimator and the question share a
                       timescale rather than being tuned against each other.
 
-A window is scored only if the full trailing DETREND_S + EWS_W samples exist, are finite, and are
+A window is scored only if enough of the trailing DETREND_S + EWS_W samples are present and the samples are
 **contiguous in time**. That last clause is error-catalogue rule 27 and it is the reason the EWS series is
 built on the WHOLE recording and only afterwards restricted to conscious windows: masking to `SOC == 1`
 first would glue unconscious stretches together and manufacture autocorrelation across a discontinuity.
 G1(d) checks 1 Hz contiguity in every contributing file rather than assuming it.
+
+--------------------------------------------------------------------------------------------------------
+FIRST RUN: G1 FAILED ON COVERAGE AT 28 RECORDINGS AGAINST A FLOOR OF 50, AND THE CAUSE WAS THIS FILE'S
+ESTIMATOR RATHER THAN THE DEPOSIT. Recorded here rather than overwritten (rule 3), and note what was and
+was not known when the fix was made: **the gate failed before any candidate was scored**, so no
+candidate-outcome relationship had been observed when the estimator was changed. That is the only
+circumstance in which changing it is not a goalpost move, and it is why gates are evaluated first.
+
+    (a) 28 recordings, floor 50.     (b) base rate 20.2 %, inside the band.
+    (c) position-AUC 0.324, distance 0.176 against a ceiling of 0.20 — passed, but not by much.
+    (d) 0 files rejected as non-1 Hz — the deposit is strictly 1 Hz throughout, as sampled.
+    (e) all three statistics varied; 28 recordings with >= 10 distinct values, against a floor of 40.
+
+Diagnosis, run on the label and missingness channels only: **SEF95 is NaN in 13.2 % of samples, scattered
+rather than blocked.** The first version required all 360 trailing samples (300 s detrend + 60 s window) to
+be finite, and that requirement removed **84 % of conscious windows — 45,304 down to 7,427**. `sync_alpha`
+contributed nothing to the loss (0 additional windows).
+
+**The requirement was wrong, and wrong in the direction of rule 27 rather than against it.** What rule 27
+forbids is computing autocorrelation ACROSS a discontinuity. Requiring every sample to be present is a
+blunt way of avoiding that, and it discards a window because of a hole that a correct estimator can simply
+skip. The corrected estimator computes the lag-1 term from **adjacent pairs that are both present**, so a
+pair straddling a hole is never formed, and requires a declared minimum coverage instead of totality:
+
+    MIN_COVER  = 0.80   of both the detrend window and the EWS window must be present
+    MIN_PAIRS  = 30     adjacent both-present pairs before a lag-1 estimate is issued
+
+Nothing else moves. The label, horizon, directions, primary, incumbent, landmark, placebo and every numeric
+floor in G1 are unchanged, and the two new constants are declared here before the re-run.
+
+**AND A GATE IS ADDED RATHER THAN RELAXED.** Dropping 13 % of samples raises a question the first version
+never asked: is SEF95 missing MORE OFTEN near a loss of consciousness? If so the exclusion is
+outcome-related and the surviving windows are a biased sample of the question (rule 14). G1(f) now tests it
+directly — the AUC of the "this window has insufficient EWS coverage" indicator against the label, over all
+conscious windows, must sit within MAX_EXCLUSION_AUC_DIST of chance. This check makes the design harder to
+pass than it was on the run that failed.
 
 SEARCH SPACE. **Three candidates** — `ar1_sef95`, `var_sef95`, `sync_alpha` — one primary (`ar1_sef95`,
 because correlation time is the quantity the phrase "critical slowing down" names), two co-reported. Three
@@ -82,6 +118,9 @@ REGISTERED BEFORE ANY DOSE-I ROW IS READ BY THIS FILE. Evaluated in this order, 
       (c) position-AUC of the label within MAX_POSITION_AUC_DIST of chance — the check E33 failed at 1.000
           and the reason E34 exists;
       (d) every contributing file is strictly 1 Hz contiguous (rule 27);
+      (f) **the EWS coverage exclusion is not outcome-related** — AUC of "insufficient coverage" against
+          the label, over all conscious windows, within MAX_EXCLUSION_AUC_DIST of chance (rule 14). Added
+          after the first run's estimator correction and before the re-run; see the note above.
       (e) **the EWS statistics VARY** — interquartile range above zero for both, and at least
           MIN_EWS_SUBJECTS recordings in which the primary takes at least 10 distinct values. Rule 32: two
           whole ledger entries were spent comparing a measure against a flag that was present in 100.0 % of
@@ -167,6 +206,9 @@ MIN_CONSCIOUS_S = 200
 MIN_EWS_SUBJECTS = 40
 BASE_RATE_BAND = (0.05, 0.95)
 MAX_POSITION_AUC_DIST = 0.20
+MIN_COVER = 0.80
+MIN_PAIRS = 30
+MAX_EXCLUSION_AUC_DIST = 0.10
 APPROACH_S = 120
 SEED = 20260731
 
@@ -178,35 +220,76 @@ def _f(v):
         return float("nan")
 
 
-def _trailing_mean(x, w):
-    """Mean of the trailing `w` samples ending at each index; NaN until the window is full or if any
-    sample in it is missing. Deliberately not `nanmean` — a window with a hole has not been measured."""
+def _trailing_mean(x, w, min_cover=None):
+    """Mean of the trailing `w` samples ending at each index, over the samples that are PRESENT.
+
+    NaN until at least `min_cover * w` of them exist. The time axis is verified 1 Hz contiguous by G1(d),
+    so a missing sample is a hole in the measurement rather than a jump in time, and averaging over the
+    present samples is the right thing; what would be wrong is forming a lag-1 pair across the hole, and
+    that is `_ews`'s job rather than this one's.
+    """
+    need = w if min_cover is None else int(np.ceil(min_cover * w))
     n = x.size
-    c = np.concatenate(([0.0], np.cumsum(np.nan_to_num(x, nan=0.0))))
-    ok = np.concatenate(([0], np.cumsum(np.isfinite(x).astype(int))))
+    fin = np.isfinite(x)
+    c = np.concatenate(([0.0], np.cumsum(np.where(fin, x, 0.0))))
+    k = np.concatenate(([0], np.cumsum(fin.astype(int))))
     out = np.full(n, np.nan)
     idx = np.arange(w - 1, n)
-    full = (ok[idx + 1] - ok[idx + 1 - w]) == w
-    vals = (c[idx + 1] - c[idx + 1 - w]) / w
-    out[idx[full]] = vals[full]
+    cnt = k[idx + 1] - k[idx + 1 - w]
+    ok = cnt >= need
+    out[idx[ok]] = (c[idx + 1] - c[idx + 1 - w])[ok] / cnt[ok]
     return out
 
 
-def _ews(resid, w):
-    """Trailing-window variance and lag-1 autocorrelation of `resid`. NaN wherever the window is not full."""
+def _ews(resid, w, min_cover, min_pairs):
+    """Trailing-window variance and lag-1 autocorrelation of `resid`, tolerant of scattered holes.
+
+    Variance is taken over the present samples. The lag-1 term is accumulated ONLY over adjacent pairs in
+    which both members are present, so a pair straddling a hole is never formed — which is what rule 27
+    actually forbids. Requiring every sample instead cost 84 % of the conscious windows on the first run
+    and bought no additional correctness; see the header.
+    """
     n = resid.size
+    fin = np.isfinite(resid)
+    x = np.where(fin, resid, 0.0)
+    k = np.concatenate(([0], np.cumsum(fin.astype(int))))
+    s1 = np.concatenate(([0.0], np.cumsum(x)))
+    s2 = np.concatenate(([0.0], np.cumsum(x * x)))
+    pair = fin[:-1] & fin[1:]
+    pk = np.concatenate(([0], np.cumsum(pair.astype(int))))
+    pxy = np.concatenate(([0.0], np.cumsum(np.where(pair, x[:-1] * x[1:], 0.0))))
+    px = np.concatenate(([0.0], np.cumsum(np.where(pair, x[:-1], 0.0))))
+    py = np.concatenate(([0.0], np.cumsum(np.where(pair, x[1:], 0.0))))
+    pxx = np.concatenate(([0.0], np.cumsum(np.where(pair, x[:-1] * x[:-1], 0.0))))
+    pyy = np.concatenate(([0.0], np.cumsum(np.where(pair, x[1:] * x[1:], 0.0))))
+
     var = np.full(n, np.nan)
     ar1 = np.full(n, np.nan)
+    need = int(np.ceil(min_cover * w))
     for i in range(w - 1, n):
-        seg = resid[i - w + 1:i + 1]
-        if not np.all(np.isfinite(seg)):
+        a, b = i + 1 - w, i + 1
+        cnt = k[b] - k[a]
+        if cnt < need:
             continue
-        s = seg - seg.mean()
-        d = float(np.dot(s, s))
-        if d <= 0:
+        m = (s1[b] - s1[a]) / cnt
+        v = (s2[b] - s2[a]) / cnt - m * m
+        if v <= 0:
             continue
-        var[i] = d / w
-        ar1[i] = float(np.dot(s[:-1], s[1:]) / d)
+        var[i] = v
+        # pair indices a..b-2 correspond to pairs (a,a+1) .. (b-2,b-1)
+        np_ = pk[b - 1] - pk[a]
+        if np_ < min_pairs:
+            continue
+        sxy = pxy[b - 1] - pxy[a]
+        sx = px[b - 1] - px[a]
+        sy = py[b - 1] - py[a]
+        sxx = pxx[b - 1] - pxx[a]
+        syy = pyy[b - 1] - pyy[a]
+        cx = sxx - sx * sx / np_
+        cy = syy - sy * sy / np_
+        if cx <= 0 or cy <= 0:
+            continue
+        ar1[i] = float((sxy - sx * sy / np_) / np.sqrt(cx * cy))
     return var, ar1
 
 
@@ -232,16 +315,25 @@ def _load(zip_path, ews_w=EWS_W):
         soc = np.array([_f(r.get("SOC", "")) for r in rows])
         base = np.array([_f(r.get(BASE, "")) for r in rows])
         sync = np.array([_f(r.get("sync_alpha", "")) for r in rows])
-        trend = _trailing_mean(base, DETREND_S)
+        trend = _trailing_mean(base, DETREND_S, MIN_COVER)
         resid = base - trend
-        var, ar1 = _ews(resid, ews_w)
+        var, ar1 = _ews(resid, ews_w, MIN_COVER, MIN_PAIRS)
         losses = np.flatnonzero((soc[:-1] == 1) & (soc[1:] == 0))
         if losses.size == 0:
             continue
-        usable = (soc == 1) & np.isfinite(ar1) & np.isfinite(var) & np.isfinite(sync) & np.isfinite(base)
+        has_ews = np.isfinite(ar1) & np.isfinite(var) & np.isfinite(sync) & np.isfinite(base)
+        usable = (soc == 1) & has_ews
         conscious = np.flatnonzero(usable)
         if conscious.size < MIN_CONSCIOUS_S:
             continue
+        # G1(f) channel: every conscious window, whether or not it has an EWS estimate, with the label it
+        # would have carried. Built here so the exclusion can be tested for outcome-relatedness (rule 14).
+        all_c = np.flatnonzero(soc == 1)
+        ttl_all = np.full(all_c.size, np.inf)
+        for k, c in enumerate(all_c):
+            nxt = losses[losses >= c]
+            if nxt.size:
+                ttl_all[k] = float(nxt[0] - c)
         ttl = np.full(conscious.size, np.inf)
         for k, c in enumerate(conscious):
             nxt = losses[losses >= c]
@@ -251,7 +343,9 @@ def _load(zip_path, ews_w=EWS_W):
                      "cols": {"ar1_sef95": ar1[conscious], "var_sef95": var[conscious],
                               "sync_alpha": sync[conscious], INCUMBENT: base[conscious]},
                      "full": {"ar1_sef95": ar1, "var_sef95": var, "sync_alpha": sync},
-                     "ttl": ttl, "y": (ttl <= HORIZON_S).astype(float)})
+                     "ttl": ttl, "y": (ttl <= HORIZON_S).astype(float),
+                     "excl_y": (ttl_all <= HORIZON_S).astype(float),
+                     "excl_flag": (~has_ews[all_c]).astype(float)})
     return recs, noncontig
 
 
@@ -292,6 +386,15 @@ def main(argv=None) -> int:
     print(f"   (c) position-AUC for the label  : {col['auc_of_position']:.3f}  "
           f"(distance {col['distance_from_chance']:.3f}, ceiling {MAX_POSITION_AUC_DIST})")
     print(f"   (d) files rejected as non-1 Hz  : {len(noncontig)}   {noncontig[:5]}")
+    ex_y = np.concatenate([r["excl_y"] for r in recs])
+    ex_f = np.concatenate([r["excl_flag"] for r in recs])
+    ex_auc = float(auc(ex_y, ex_f)) if np.unique(ex_y).size > 1 else float("nan")
+    ex_dist = abs(ex_auc - 0.5) if np.isfinite(ex_auc) else float("inf")
+    print(f"   (f) exclusion-vs-label AUC      : {ex_auc:.3f}  (distance {ex_dist:.3f}, "
+          f"ceiling {MAX_EXCLUSION_AUC_DIST})")
+    print(f"       {int(ex_f.sum())} of {len(ex_f)} conscious windows lack an EWS estimate "
+          f"({ex_f.mean():.1%})")
+    f_ok = ex_dist <= MAX_EXCLUSION_AUC_DIST
     varies = {}
     for c in CANDIDATES:
         v, _, g = _stack(recs, c)
@@ -305,10 +408,13 @@ def main(argv=None) -> int:
     g1 = bool(len(recs) >= MIN_RECORDINGS
               and BASE_RATE_BAND[0] <= base_rate <= BASE_RATE_BAND[1]
               and col["distance_from_chance"] <= MAX_POSITION_AUC_DIST
-              and e_ok)
+              and f_ok and e_ok)
     print(f"\n   G1 {'PASSED' if g1 else '*** FAILED'}")
     st["g1"] = {"base_rate": base_rate, "position_auc": col["auc_of_position"],
-                "position_distance": col["distance_from_chance"], "varies": varies, "passed": g1}
+                "position_distance": col["distance_from_chance"],
+                "exclusion_auc": ex_auc, "exclusion_distance": ex_dist,
+                "n_excluded": int(ex_f.sum()), "n_conscious": int(len(ex_f)),
+                "varies": varies, "passed": g1}
     if not g1:
         print("   Nothing downstream is reported: ABSENT, not negative (rule 31).")
         json.dump(st, open(OUT, "w"), indent=2, default=float)
