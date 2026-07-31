@@ -463,6 +463,20 @@ Every rule below was paid for with a wrong result in this project.
     from that, or state explicitly that it is a convention and cannot distinguish success from its own
     resolution. A gate is only worth its refusal if the refusal means something.
 
+64. **A CONTRAST SPLIT AT AN EXTREMUM IS A TIME SPLIT IN DISGUISE, AND ONLY A RANDOM-SPLIT PLACEBO SHOWS
+    IT.** E98 asked whether measures differ between descent and emergence at matched BIS, splitting each
+    case at its own BIS minimum. **Seven of eighteen features returned a gap whose interval excluded zero
+    — and all seven were withdrawn by the placebo**, including the aperiodic exponent itself at
+    −0.159 [−0.247, −0.069]. The reason is arithmetic, not physiological: an extremum sits near the middle
+    of a recording, so "before versus after the minimum" is very nearly "first half versus second half",
+    and **any feature with a within-case time trend produces a gap that has nothing to do with the
+    landmark**. Electrode drift, temperature, fluid shifts and cumulative artefact all supply one.
+    **The placebo that reveals it re-splits at a RANDOM index while preserving the group sizes and every
+    stratification** — destroying the landmark and nothing else. Without it this experiment would have
+    reported seven direction-dependent measures. Applies to any before/after design keyed to a maximum, a
+    minimum, a threshold crossing or an onset; rule 35's matched-subset control is the same idea for
+    restriction designs.
+
 36. **Credential precedence, third occurrence.** The sandbox exports `AWS_ACCESS_KEY_ID` as a 14-character
     `prox…` proxy token that outranks `~/.aws/credentials`, and the failure reads as `InvalidAccessKeyId` —
     indistinguishable from expiry. `common/awsenv.py` now drops it (only when it provably is not an AWS key
