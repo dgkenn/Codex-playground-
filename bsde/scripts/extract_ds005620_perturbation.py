@@ -60,9 +60,12 @@ the analysis window that removes, so no experiment can quietly treat a blanked e
                                   (responding channels x 10 ms bins), normalised -- the PCI-family
                                   construction, computed here on a fixed threshold rather than on a
                                   bootstrap significance map, which is a simplification and is named as one
-  spont_exponent                  aperiodic exponent of the PRE-PULSE segments -- the spontaneous axis the
-                                  perturbational measure must be shown to decouple from, measured on the
-                                  same bytes so no cross-recording alignment is needed
+  spont_exponent                  aperiodic exponent of the INTER-PULSE stretches. **v2**: each interval
+                                  is transformed on its own contiguous samples and only the POWER SPECTRA
+                                  are averaged. v1 concatenated 0.4 s pre-pulse segments and then Welched
+                                  with a 1.0 s window, so every window straddled ~2.5 discontinuities --
+                                  rule 27, and it cost E103 its positive control. `n_spont_seg` records how
+                                  many intervals contributed
 
 SCOPE. This script extracts. It computes no contrast, fits no model, and reads no state label beyond the
 BIDS `task-` entity that names the file. Nothing here tests or claims anything about consciousness.
@@ -95,7 +98,7 @@ from bsde.ingestion.openneuro_brainvision import (parse_vhdr, decode_brainvision
 
 BASE = "https://s3.amazonaws.com/openneuro.org/"
 DATASET = "ds005620"
-OUT = os.path.abspath(os.path.join(HERE, "..", "results", "ds005620_perturbation.csv"))
+OUT = os.path.abspath(os.path.join(HERE, "..", "results", "ds005620_perturbation_v2.csv"))
 
 PRE_S, POST_S = 0.500, 0.500
 BASE_LO, BASE_HI = -0.500, -0.100
@@ -107,7 +110,7 @@ SEED = 20260731
 
 FIELDS = ["recording_id", "subject", "task", "run", "status", "error", "sfreq", "n_channels",
           "block_start_s", "block_s", "n_pulses", "iti_median", "iti_iqr", "det_separation",
-          "blank_frac", "spont_exponent",
+          "blank_frac", "spont_exponent", "n_spont_seg",
           "real_evoked_rms", "real_baseline_rms", "real_response_duration_ms",
           "real_n_channels_responding", "real_evoked_lz",
           "sham_evoked_rms", "sham_baseline_rms", "sham_response_duration_ms",
@@ -289,17 +292,37 @@ def process(key, block_s, rng):
         for k, v in evoked_features(eps, sf).items():
             row[f"{arm}_{k}"] = v
 
-    # spontaneous exponent on the pre-pulse stretches, concatenated per channel
-    b0, b1 = int(round((BASE_LO + PRE_S) * sf)), int(round((BASE_HI + PRE_S) * sf))
-    if real:
-        pre = np.concatenate([e[:, b0:b1] for e in real], axis=1)
+    # ---- spontaneous exponent: PSDs averaged ACROSS inter-pulse intervals, never concatenated ------
+    # v1 concatenated ~46 segments of 0.4 s and then ran Welch with a 1.0 s window, so every window
+    # straddled ~2.5 segment boundaries. That is rule 27 -- a mask that compresses out bad samples glues
+    # time together -- and it corrupted the slope. Here each inter-pulse interval is transformed on its
+    # OWN, contiguous samples and only the resulting POWER SPECTRA are averaged. No window ever spans a
+    # discontinuity, and `n_spont_seg` records how many contributed so the estimate cannot look denser
+    # than it is.
+    guard = int(round(0.5 * sf))                 # keep clear of the pulse on both sides
+    segs = []
+    for i in range(len(peaks) - 1):
+        a, b = peaks[i] + guard, peaks[i + 1] - guard
+        if b - a >= int(round(1.0 * sf)):
+            segs.append((a, b))
+    row["n_spont_seg"] = len(segs)
+    if segs:
         exps = []
-        for c in range(pre.shape[0]):
-            x = pre[c][np.isfinite(pre[c])]
-            if x.size < int(4 * sf):
+        for c in range(d.shape[0]):
+            acc_f, acc_p = None, []
+            for a, b in segs:
+                x = d[c, a:b]
+                x = x[np.isfinite(x)]
+                if x.size < int(round(1.0 * sf)):
+                    continue
+                f, pw = welch_psd(x, sf, window_s=1.0)
+                if acc_f is None:
+                    acc_f = f
+                if acc_f is not None and f.shape == acc_f.shape:
+                    acc_p.append(pw)
+            if acc_f is None or not acc_p:
                 continue
-            f, p = welch_psd(x, sf, window_s=1.0)
-            fit = fit_aperiodic(f, p, fit_lo_hz=1.0, fit_hi_hz=40.0)
+            fit = fit_aperiodic(acc_f, np.mean(acc_p, axis=0), fit_lo_hz=1.0, fit_hi_hz=40.0)
             e = fit.get("exponent", float("nan"))
             if np.isfinite(e):
                 exps.append(e)
