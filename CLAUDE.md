@@ -361,7 +361,13 @@ Every rule below was paid for with a wrong result in this project.
     * **E50** claimed a mechanism that `MASTER_PLAN.md` §9.13 had already established, because the
       project's own record was never searched.
     **The habit that prevents all three costs one extra measurement: before attributing a difference to
-    X, measure the difference when X is held constant.** Same-pipeline retest, same-selection placebo,
+    X, measure the difference when X is held constant — AND MATCH THE BASELINE'S STATISTICAL STRUCTURE TO
+    THE EFFECT'S.** The E53 correction above was itself retracted within the hour because it compared a
+    *cohort-mean* difference (0.898, same subjects, so sampling noise cancels) against a *per-subject*
+    mean absolute change (0.667, where it does not), and multiplied the wrong quantity by √2. The
+    structurally matched control — a cohort-mean shift between sessions on the same subjects — is
+    **0.242**, and E53's original attribution to pipeline was right all along. **A baseline of the wrong
+    shape is worse than no baseline, because it carries the authority of a measurement.** Same-pipeline retest, same-selection placebo,
     same-drug floor. If the baseline reproduces the effect, the attribution is wrong no matter how
     plausible the mechanism sounds — and the plausible mechanism is exactly what stops you checking.
     **Corollary for search:** an internal record is a source like any other, and rules 25 and 39 apply to
