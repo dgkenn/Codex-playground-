@@ -46,11 +46,12 @@ averaged — the reported reliability is the mean over splits, not one draw of i
 REGISTERED BEFORE THE TRIAL CACHE IS READ. Evaluated in this order; the failing branch is written first.
 
   G1  RULE-20 GATE, and no reliability number is computed until it passes. Recompute each subject's
-      full-trial AUC from the cache with the builder's own 5-fold estimator, and compare against the
-      `imagery_auc` already stored in `eegmmidb_bci.csv`. The two differ only by the RNG fold assignment, so
-      the requirement is a Spearman correlation of at least `MIN_AGREEMENT` across subjects **and** a median
-      absolute difference below `MAX_MEDIAN_DIFF`. If either fails, the cache is not the same quantity the
-      label was built from and nothing below it means anything: ABSENT, not negative (rule 31).
+      full-trial AUC from the cache with the builder's own 5-fold estimator, averaged over `N_G1_DRAWS`
+      independent fold assignments (see the correction below for why averaged), and compare against the
+      `imagery_auc` already stored in `eegmmidb_bci.csv`. The requirement is a Spearman correlation of at
+      least `MIN_AGREEMENT` across subjects **and** a median absolute difference below `MAX_MEDIAN_DIFF`.
+      If either fails, the cache is not the same quantity the label was built from and nothing below it
+      means anything: ABSENT, not negative (rule 31).
 
   P1  THE PRIMARY, and it is descriptive rather than pass/fail. `r_half`, `r_sb` and `ceiling` for the
       IMAGERY label, with a subject-level bootstrap CI. **Registered reading, fixed now so it cannot be
@@ -91,6 +92,41 @@ beta, logistic regression) — the same decoder E28's label used, because the qu
 and not about the best achievable decoding. A different decoder would have a different reliability, and
 nothing here bounds what a better one could reach. **No sentence from this file may be written as a claim
 about disorders of consciousness**, which is E28's standing scope limit and survives its gate failure.
+
+--------------------------------------------------------------------------------------------------------
+CORRECTION BEFORE THE FULL RUN: G1's FLOOR WAS ABOVE WHAT THE ESTIMATOR CAN REACH, WHICH IS ERROR-CATALOGUE
+RULE 40 COMMITTED BY THIS FILE — a gate that cannot pass, registered on the same day E37's inverse (a check
+that cannot fire) was catalogued as rule 48.
+
+A smoke run on the part-finished cache (35 subjects) put the cache-vs-stored Spearman at **0.836**, under
+the 0.90 floor. Before touching anything, the obvious rival explanation was measured: **how well does the
+estimator agree with ITSELF?** The builder's `_cv_auc` assigns folds from an RNG, so two runs on identical
+data give different numbers. Three independent seeds on the same cached trials:
+
+    seed1 vs seed2   Spearman 0.8489        seed1 vs stored   0.8436
+    seed1 vs seed3   Spearman 0.8785        seed2 vs stored   0.8671
+    seed2 vs seed3   Spearman 0.8447        seed3 vs stored   0.8873
+
+**The cache reproduces the stored label exactly as well as the estimator reproduces itself** — the two
+columns occupy the same range. There is no discrepancy attributable to the cache, and a single-draw
+comparison could not have shown one, because a floor of 0.90 sits above the estimator's own single-draw
+reproducibility of ~0.85. Note that the left-hand column involves no comparison to the stored label at all,
+so this diagnosis was obtained without observing anything about the cache's fidelity.
+
+**The floor does not move. The estimator's precision does.** G1 now averages `N_G1_DRAWS` independent fold
+assignments before comparing, which is the standard fix for Monte-Carlo noise and changes no threshold,
+cohort or horizon — the same reasoning rule 46 gives for raising a resample count, and the same shape as
+E37's estimator correction, which was likewise made after a gate failed and before any primary was
+computed. Averaging three draws already lifts the agreement to **0.9033**.
+
+**A ceiling worth stating, because it makes G1 a demanding gate rather than a formality.** Averaging helps
+only my side of the comparison; the stored value remains a single draw. With single-draw reliability around
+0.85, the correlation between a perfectly measured value and one draw is bounded near sqrt(0.85) ~ 0.92.
+**So the 0.90 floor sits about 0.02 below the theoretical maximum**, and passing it is close to the best
+any recomputation could do.
+
+P1's reliability question is untouched by all of this: it had not been computed when the correction was
+made, and it is not what any number above measures.
 """
 
 from __future__ import annotations
@@ -120,6 +156,7 @@ N_SPLITS = 200
 MIN_TRIALS_PER_CLASS_HALF = 6
 MIN_SUBJECTS = 60
 MIN_AGREEMENT = 0.90
+N_G1_DRAWS = 9
 MAX_MEDIAN_DIFF = 0.05
 FOLDS = 5
 SEED = 20260731
@@ -293,9 +330,10 @@ def main(argv=None) -> int:
     re_, st_ = [], []
     for s in subs:
         X, y = data[(s, "imagery")]
-        v = _auc_folds(X, y, rng)
-        if np.isfinite(v):
-            re_.append(v)
+        draws = [_auc_folds(X, y, rng) for _ in range(N_G1_DRAWS)]
+        draws = [d for d in draws if np.isfinite(d)]
+        if draws:
+            re_.append(float(np.mean(draws)))
             st_.append(stored[s])
     re_, st_ = np.asarray(re_), np.asarray(st_)
     agree = spearman(re_, st_) if re_.size > 5 else float("nan")
@@ -303,7 +341,7 @@ def main(argv=None) -> int:
     print(f"   subjects in both the cache and the label table : {re_.size}   (floor {MIN_SUBJECTS})")
     print(f"   Spearman(recomputed, stored)                   : {agree:.4f}   (floor {MIN_AGREEMENT})")
     print(f"   median |recomputed - stored|                   : {mdiff:.4f}   (ceiling {MAX_MEDIAN_DIFF})")
-    print("   The two differ only by the RNG fold assignment; they are not expected to be identical.")
+    print(f"   Recomputed value is the mean of {N_G1_DRAWS} independent fold draws; the stored value is one\n   draw, so ~0.92 is the theoretical ceiling for this comparison. See the header correction.")
     g1 = bool(re_.size >= MIN_SUBJECTS and np.isfinite(agree)
               and agree >= MIN_AGREEMENT and mdiff <= MAX_MEDIAN_DIFF)
     print(f"\n   G1 {'PASSED' if g1 else '*** FAILED'}")
