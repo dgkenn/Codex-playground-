@@ -127,6 +127,70 @@ any recomputation could do.
 
 P1's reliability question is untouched by all of this: it had not been computed when the correction was
 made, and it is not what any number above measures.
+
+--------------------------------------------------------------------------------------------------------
+OUTCOME. **LABEL VIABLE. The imagery label carries real between-subject variance, its reliability is
+0.29, and the attenuation ceiling it imposes is 0.54 — which turns E28 from "gate-failed" into "runnable
+and sizeable".**
+
+    G1   PASSED at **0.9283** across all 104 subjects, median |difference| 0.0348. The corrected 9-draw
+         estimator clears the unchanged 0.90 floor, exactly as the pre-run diagnosis predicted (three
+         draws already reached 0.9033 on a third of the data). The cache is the quantity the label was
+         built from.
+
+    P1   **r_half +0.1709, r_sb +0.2918 [+0.1163, +0.4345]** over 200 of 200 splits, 105 subjects. The
+         interval excludes zero, so the label is a usable per-subject target. **ceiling = sqrt(r_sb) =
+         0.5402** — no resting-state feature, however good, can correlate with this label above ~0.54.
+
+    P2   Executed movement **r_sb +0.3034 [+0.1334, +0.4347]**, ceiling 0.5508 — statistically
+         indistinguishable from imagery. **The registered discriminating question is answered, and neither
+         of the two branches the header anticipated is the one that fired**: it is not that imagery is
+         specifically weak, and it is not that 45 trials supports nothing. Both arms carry the same modest
+         reliability, so the deposit *does* support per-subject labels and the limit is precision rather
+         than the task.
+
+    P3   Permuted-label **r_sb +0.0218 [-0.1061, +0.1387]** against a real +0.2918. PASSED — the estimator
+         is not manufacturing agreement out of shared subject-level feature scale or anything else.
+
+**WHAT THIS DOES TO E28, WHICH IS THE WHOLE POINT.** E28 gate-failed on a significance rate that asked the
+wrong quantity. The right quantity now has a value, and it makes the original question answerable:
+
+    Blankertz 2010 (PMID 20303409, verified through E-utilities) reports **r = 0.53, N = 80** between a
+    resting-EEG predictor and BCI feedback performance. Their label's own reliability is at most 1, so the
+    *true* correlation between that predictor and latent ability is **at least 0.53**. On this deposit the
+    observable correlation is therefore **at least 0.53 x 0.5402 = 0.286**.
+
+    At n = 104 the Fisher-z standard error is 0.0995, so:
+
+        r = 0.286 (the lower bound)      2.96 SE, two-sided p = 0.0031      detectable
+        r = 0.540 (the ceiling itself)   6.07 SE                            comfortably detectable
+        r = 0.181 (pessimistic end of the reliability CI)   1.84 SE, p = 0.066   NOT detectable
+
+    **Minimum detectable correlation at n = 104, 80 % power, two-sided 0.05: r = 0.272.** So E28's cohort
+    is adequately powered for an incumbent-strength predictor and has **almost no margin** — 0.286 against
+    0.272. If the true reliability sits at the low end of its interval, n = 239 would be needed.
+
+**Three caveats on that arithmetic, none of which is optional.** Blankertz's label is BBCI *feedback*
+performance over a full session, not a 45-trial offline left/right decode, so transferring the effect size
+assumes the same underlying ability drives both. This project's incumbent is a declared weaker proxy —
+whole-head relative alpha rather than Blankertz's Laplacian mu-peak-corrected measure — so **our** incumbent
+should sit below 0.286, not at it. And 0.286 is a *lower* bound on what a faithful reimplementation would
+show, which is the direction that helps.
+
+**A DEFECT IN P4, REPORTED RATHER THAN PRESENTED AS A CURVE.** The sensitivity arm was registered at caps of
+8, 11, 15 and 22 trials per class per half. Subjects have a **median of 22 trials per class in total**, so
+the maximum reachable cap is **11 per half** — the 15 and 22 arms silently fall back to the same data as
+the 11 arm and differ only by the RNG draw (r_sb 0.2258, 0.3138, 0.2793, and whatever 22 returns). **The
+curve has two real points, not four**, and the apparent non-monotonicity between them is that repetition,
+not a finding. Same family as rule 40's inverse — arms that cannot vary — and the arithmetic was checkable
+before the run from the trial counts alone. **The one thing P4 does establish is that reliability at 8
+trials per class per half (0.226) is not much below reliability at 11 (0.314), so "collect more trials" is
+a weaker fix than it sounds within the range this deposit can test.**
+
+**WHAT IS NOT CLAIMED.** No sentence here is about disorders of consciousness — E28's scope limit survives
+its gate failure and applies to this file unchanged. A healthy subject who cannot drive a BCI is not
+unconscious, and the reliability of a motor-imagery label says nothing about the reliability of a
+command-following label in a patient who cannot move.
 """
 
 from __future__ import annotations
