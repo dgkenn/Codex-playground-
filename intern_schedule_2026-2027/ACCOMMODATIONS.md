@@ -55,11 +55,34 @@ Chiasson hold night float; it does not move any work between them.
 
 *(unchanged by the accommodation — every figure is the same either way)*
 
-**2. Chiasson does not lose a free weekend.** Hers *moves*, 11/7–8 → 10/31–11/1.
-She has exactly one fully-free weekend in her Lahey block (10/19–11/15) in both
-versions, plus her single Saturday 24h on 10/24 either way. An earlier
-November-only count appeared to show 1 → 0; that was a calendar artifact —
-the Saturday of her free weekend simply lands in October.
+**2. But the totals hid a real cost to Chiasson — now fixed.** Counting shifts
+said "no change"; the thing that actually mattered was *adjacency*. Moving her
+night-float week to 11/8–13 put it directly against her final Sunday:
+
+| | Chiasson's last two weeks |
+|---|---|
+| Pure march | nights 11/1–6 → **Sat + Sun 11/7–8 off** (full recovery) → back Mon 11/9 → LC Sun 11/15, a week later |
+| Accommodation, as first written | nights 11/8–13 → Sat 11/14 off → **LC Sun 11/15, 7am–6pm, her final day** |
+
+She would have come off the Friday night at 9:30am Saturday and worked an
+11-hour long call on Sunday as her last act of the rotation. The rest gap is
+~45h so no duty-hour rule fires, and all 20 checks passed — which is exactly why
+it went unnoticed. A year-wide scan found this pattern **once in 296 days**, and
+it was her: the pure march never does it to anybody.
+
+**Fixed:** `swaps.txt` now hands Sun 11/15 to **Kennedy**. Chiasson gets Sat 11/14
+*and* Sun 11/15 off and finishes her block on a clean post-nights weekend. It was
+structurally forced that Kennedy be the one — on 11/15 the only people present are
+Wise (post-24h, must be off), Saeed (on nights), Kennedy and Chiasson.
+
+Cost, all of it on the intern who benefits from the accommodation: Kennedy is
+long call **Sun 11/15 + Mon 11/16 back-to-back** (2 audit flags), and his longest
+worked streak in November goes 5 → 6 days. Duty hours stay clean — 58.5h that
+week against the 80h cap, streak at the 6-day limit, not over.
+
+A new permanent audit check, **`post-nf-weekend`**, now fails any schedule that
+puts an intern on long call or a Saturday 24h on the weekend closing their
+Friday night block.
 
 **3. Nobody outside the pair is touched.** Wise, Saeed, Mullins, Vivekanandan and
 Shetty have byte-identical schedules in both versions.

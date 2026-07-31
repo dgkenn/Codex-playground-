@@ -88,6 +88,23 @@ for dt in days:
     if A[mon]["LC"]!=p:
         rec("nf-to-mon-lc",f"{p} ends nights Fri {dt} but Mon {mon} LC={A[mon]['LC']} (owed to {p})")
 
+# POST-NIGHT-FLOAT RECOVERY WEEKEND.
+# Coming off the Friday night (which ends ~9:30am Saturday), an intern is meant
+# to have that weekend: Saturday morning out, Sunday off, back Monday on long
+# call.  Being put on the Sunday long call instead is legal on paper — the rest
+# gap is ~45h, so no duty-hour rule fires, and every other check passes — but it
+# is exactly the thing a rotator complains about, and nothing here saw it.  Add
+# it: no LC or Saturday 24h on the weekend that closes a Friday night block.
+for dt in days:
+    if dt.weekday()!=4 or not NF.get(dt): continue
+    p=NF[dt]
+    for off,lab in ((1,"Sat 24h"),(2,"Sun LC")):
+        x=dt+timedelta(off)
+        if x not in A or p not in gen.roster(x): continue
+        if A[x]["H24"]==p or (off==2 and A[x]["LC"]==p):
+            fin=" — and it is the FINAL day of their block" if gen.roster(x)[p]["end"]==x else ""
+            rec("post-nf-weekend",f"{p} ends nights Fri {dt} then works {lab} {x}{fin}")
+
 # Friday LC -> next Sunday NF
 for dt in days:
     if dt.weekday()==4 and A[dt]["LC"]:
@@ -179,7 +196,7 @@ for dt in days:
 _vals=[NF_YEAR[p] for p in LSHNAMES if NF_YEAR[p]]
 NF_SPREAD=(max(_vals)-min(_vals)) if _vals else 0
 
-order=["accounting","one-LC","LC-diff-prev","Q4","end-on-nf","fri-lc-nf","nf-to-mon-lc","nf-consec","nf-present","nf-sat",
+order=["accounting","one-LC","LC-diff-prev","Q4","end-on-nf","fri-lc-nf","nf-to-mon-lc","post-nf-weekend","nf-consec","nf-present","nf-sat",
        "double","sun-no-sc","sat-clean","weekday-off-thu","one-off","sat-off-sun","sat-not-nf-next",
        "sat-not-nf-prev","sat-max1","dayoff"]
 print("="*70); print("COMPLIANCE AUDIT — comprehensive rules"); print("="*70)
