@@ -477,6 +477,20 @@ Every rule below was paid for with a wrong result in this project.
     minimum, a threshold crossing or an onset; rule 35's matched-subset control is the same idea for
     restriction designs.
 
+65. **TWO EVENT FILES THAT AGREE WITH EACH OTHER CAN BOTH BE WRONG ABOUT THE SAMPLES — VALIDATE A MARKER
+    AGAINST THE SIGNAL, NEVER AGAINST ANOTHER MARKER FILE.** ds005620's TMS recordings ship markers twice:
+    the BIDS `events.tsv` and the native BrainVision `.vmrk`. **They agree to 0.2 ms**, which reads as
+    corroboration and is not — they are two serialisations of the same upstream table, so agreement
+    between them tests the export, not the timing. Measured against the waveform, **the marker windows sit
+    at percentile 49.5 of randomly chosen windows, 0 of 15 above the 95th**, while the actual pulses are
+    ~1,800× larger and stand 23,408 µV/sample above a 10.5 µV/sample background. The markers point
+    somewhere else entirely. This cost four diagnostics because each earlier one had an innocent
+    explanation available — an inflated baseline, a loose detector, an off-by-one — and only the
+    random-window control (rule 5) settled it. **The check is one line: compare the statistic at the
+    markers against the same statistic at random times.** Two independent ~2 s trains with different
+    jitter never coincide, and nothing short of that control distinguishes "no response" from "wrong
+    index". Related to rule 27: the time axis is the thing least often verified and most often broken.
+
 36. **Credential precedence, third occurrence.** The sandbox exports `AWS_ACCESS_KEY_ID` as a 14-character
     `prox…` proxy token that outranks `~/.aws/credentials`, and the failure reads as `InvalidAccessKeyId` —
     indistinguishable from expiry. `common/awsenv.py` now drops it (only when it provably is not an AWS key
