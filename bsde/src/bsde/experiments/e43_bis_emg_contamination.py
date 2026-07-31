@@ -82,6 +82,65 @@ SCOPE. VitalDB surgical cases, 250 with a decoded EEG grid; BIS is the Covidien/
 only; `meta_emg` is that monitor's own EMG estimate. **Maintenance only** — the strip goes on after
 induction, established earlier in this project (0 pre-induction windows of 6,439). No claim about induction
 or emergence follows from this file.
+
+--------------------------------------------------------------------------------------------------------
+OUTCOME. **THE MECHANISM IS REFUTED, DECISIVELY AND IN THE OPPOSITE DIRECTION — and the first version of
+this file's verdict code called it CONTAMINATION. That is error-catalogue rule 37, fourth occurrence in
+this project, committed here.**
+
+    P1   partial(BIS, EMG | spectral state)  = **+0.1648**
+         partial(spectral state, EMG | BIS)  = **-0.2615**
+         **ASYMMETRY = -0.0967 [-0.1798, -0.0100]**
+
+    **The interval excludes zero on the NEGATIVE side. At matched conditioning, the SPECTRAL MEASURE is
+    more muscle-associated than BIS is** — the reverse of the hypothesis.
+
+    P3   **Confirmed by an independent EMG estimate.** Our own `emg_index`, computed from the waveform by
+         code in this repository, gives an asymmetry of **-0.2120 [-0.2889, -0.1286]** — same sign, larger
+         magnitude, also excluding zero. Two independent estimates of muscle activity agree, which is what
+         P3 was registered for and is worth more than either alone.
+
+    P2   NOT INFORMATIVE. There is no effect in the hypothesised direction for a general artefact channel
+         to fail to reproduce.
+
+    P4   **The temporal half of the claim fails too.** The prior work reports discordance clustering 63 %
+         in the final third of maintenance. Here EMG *falls* slightly across the maintenance fraction
+         (Spearman -0.0810) and the thirds are flat — median EMG 27.37, 26.63, 26.86. Nothing accumulates
+         late.
+
+**WHY THIS IS PHYSICALLY SENSIBLE, WHICH MAKES IT HARDER TO DISMISS.** The aperiodic exponent is fitted
+across a band that *includes* 20-45 Hz, which is exactly where surface EMG lives. Muscle activity flattens
+the high-frequency end and therefore flattens the exponent directly. BIS, whatever else is wrong with it,
+carries explicit EMG-suppression processing. **A broadband slope fitted through the EMG band is close to
+the worst possible choice if EMG robustness is what you want**, and the prior claim — *"the equation is
+unaffected because the broadband spectral slope is more robust to narrowband EMG contamination than
+band-power ratios"* — has the physics backwards.
+
+**RULE 37, FOURTH OCCURRENCE, AND THE MOST EXPENSIVE ONE YET.** The registered verdict rule said *"NO
+ASYMMETRY: P1's interval includes zero"* and *"CONTAMINATION: P1 excludes zero and exceeds its placebo"*.
+**It never contemplated the interval excluding zero on the wrong side**, so the code tested
+`lo > 0 or hi < 0` and printed CONTAMINATION over a result that refutes the hypothesis. The placebo then
+compounded it: with both asymmetries negative, `asym > q` was satisfied by being *less* negative, and
+printed "the effect is muscle-specific".
+
+**Caught by reading the numbers rather than the label** — +0.1648 against -0.2615 cannot be "BIS is more
+contaminated". Both branches are now sign-aware and a wrong-direction exclusion prints REFUTED. The
+generalisable lesson is already in the catalogue three times and was still not enough: **a verdict rule
+must enumerate the wrong-direction case explicitly, because "excludes the null" and "supports the
+hypothesis" are different questions and only one of them is what a CI answers.**
+
+**WHAT THIS MEANS FOR THE PROGRAMME.**
+
+* **Challenge C's EMG mechanism is refuted on this deposit.** The prior work's explanation for its BIS
+  discordance is not supported here and is contradicted with an interval excluding zero.
+* **It does not touch the discordance itself** — only the proposed mechanism. Whether the 3.4 % of
+  maintenance where the two disagree matters clinically is a separate question this file does not address.
+* **It strengthens the case for phase-based measures.** E36's family split found phase-coupling measures
+  carrying almost no drug identity; they are also not fitted through the EMG band. A measure that avoids
+  20-45 Hz amplitude entirely avoids this failure mode by construction, which is an argument for
+  `wpli_alpha` and `icoh_alpha` that has nothing to do with drug invariance.
+* **And it is a direct hit on the UCE construct's robustness claim**, which matters because that claim was
+  load-bearing for the intraoperative application.
 """
 
 from __future__ import annotations
@@ -209,8 +268,17 @@ def main(argv=None) -> int:
     print(f"   partial(BIS,   EMG | {STATE}) = {p_bis:+.4f}")
     print(f"   partial({STATE}, EMG | BIS)  = {p_state:+.4f}")
     print(f"   ASYMMETRY |a| - |b|          = {asym:+.4f}  [{lo:+.4f}, {hi:+.4f}]")
-    p1 = bool(np.isfinite(lo) and np.isfinite(hi) and (lo > 0 or hi < 0))
-    print(f"   P1 {'PASSED' if p1 else '*** FAILED — the interval includes zero'}")
+    # RULE 37, FOURTH OCCURRENCE, COMMITTED BY THIS FILE AND CAUGHT BY READING THE NUMBERS RATHER THAN
+    # THE LABEL. The first version tested only `lo > 0 or hi < 0` — "excludes zero" — and then printed
+    # CONTAMINATION. But the hypothesis requires the asymmetry to be POSITIVE: BIS more muscle-associated
+    # than the spectral measure. An interval excluding zero on the NEGATIVE side is the hypothesis being
+    # refuted, not confirmed, and the permissive operator read it as a pass.
+    excludes = bool(np.isfinite(lo) and np.isfinite(hi) and (lo > 0 or hi < 0))
+    p1 = bool(excludes and lo > 0)
+    if excludes and hi < 0:
+        print("   *** THE ASYMMETRY IS NEGATIVE AND EXCLUDES ZERO: the SPECTRAL measure is MORE")
+        print("       muscle-associated than BIS. That REFUTES the mechanism, decisively.")
+    print(f"   P1 {'PASSED' if p1 else ('*** REFUTED (wrong sign)' if excludes else '*** FAILED — spans zero')}")
     st["p1"] = {"partial_bis": p_bis, "partial_state": p_state, "asymmetry": asym,
                 "ci": [float(lo), float(hi)], "passed": p1}
 
@@ -218,7 +286,10 @@ def main(argv=None) -> int:
     print("P2 — PLACEBO: the same asymmetry with SQI, a general signal-quality channel")
     print("=" * 100)
     if not p1:
-        print("   NOT INFORMATIVE: the primary's interval includes zero (rule 48).")
+        why = ("was REFUTED in the opposite direction" if (excludes and hi < 0)
+               else "spans zero")
+        print(f"   NOT INFORMATIVE: the primary {why}, so there is no effect for a general")
+        print("   artefact channel to fail to reproduce (rule 48).")
         st["p2"] = {"status": "not_informative"}
         p2 = None
     else:
@@ -227,8 +298,11 @@ def main(argv=None) -> int:
         q = abs(q_bis) - abs(q_state)
         print(f"   partial(BIS, SQI | state) = {q_bis:+.4f}   partial(state, SQI | BIS) = {q_state:+.4f}")
         print(f"   SQI asymmetry {q:+.4f}   vs EMG asymmetry {asym:+.4f}")
-        p2 = bool(asym > q)
-        print(f"   P2 {'PASSED — the effect is muscle-specific' if p2 else '*** FAILED — general artefact'}")
+        # Same trap: with both asymmetries negative, `asym > q` is satisfied by being LESS negative,
+        # which is not muscle-specificity. The placebo comparison is only meaningful on magnitudes in the
+        # hypothesised direction, and it is NOT INFORMATIVE when the primary was refuted.
+        p2 = bool(asym > 0 and q < asym)
+        print(f"   P2 {'PASSED — muscle-specific' if p2 else '*** NOT INFORMATIVE / FAILED'}")
         st["p2"] = {"sqi_asymmetry": q, "passed": p2}
 
     print("\n" + "=" * 100)
@@ -274,7 +348,13 @@ def main(argv=None) -> int:
     print("\n" + "=" * 100)
     print("VERDICT")
     print("=" * 100)
-    if not p1:
+    if excludes and hi < 0:
+        verdict = "refuted_wrong_direction"
+        print("   REFUTED, AND IN THE OPPOSITE DIRECTION. At matched BIS, the spectral measure is MORE")
+        print("   associated with muscle than BIS is at matched spectral state. The claim that a")
+        print("   broadband slope is more EMG-robust than a band-power index is not supported here —")
+        print("   it is contradicted, with an interval excluding zero on the wrong side.")
+    elif not p1:
         verdict = "no_asymmetry"
         print("   NO ASYMMETRY: BIS and the spectral measure respond to muscle alike here.")
     elif p2 is False:

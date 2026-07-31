@@ -334,6 +334,18 @@ Every rule below was paid for with a wrong result in this project.
     no reason to share the real effect's sign** — E40's position confound separated its classes in reverse,
     which is precisely what a position confound does. So: `excludes_null` is always two-sided, `above_null`
     is a separate and narrower question, and one name must never do both jobs.
+    **FOURTH OCCURRENCE, 2026-07-31, and the most expensive yet — a REFUTATION printed as a CONFIRMATION.**
+    E43 tested whether BIS is more muscle-contaminated than a spectral slope, as an asymmetry of two
+    partial correlations. Its registered verdict rule enumerated "interval includes zero" and "excludes
+    zero and beats the placebo" — **and never contemplated excluding zero on the WRONG side.** The code
+    tested `lo > 0 or hi < 0` and printed CONTAMINATION over `partial(BIS,EMG|state) = +0.165` against
+    `partial(state,EMG|BIS) = -0.262`, an asymmetry of **-0.0967 [-0.1798, -0.0100]** that refutes the
+    hypothesis. The placebo compounded it: with both asymmetries negative, `asym > q` was satisfied by
+    being *less* negative and printed "muscle-specific". Caught by reading the numbers rather than the
+    label. **A verdict rule must ENUMERATE THE WRONG-DIRECTION CASE EXPLICITLY**, because "excludes the
+    null" and "supports the hypothesis" are different questions and a confidence interval only answers the
+    first. Three prior entries were not enough to prevent it; write the sign into the branch, not the
+    prose.
 36. **Credential precedence, third occurrence.** The sandbox exports `AWS_ACCESS_KEY_ID` as a 14-character
     `prox…` proxy token that outranks `~/.aws/credentials`, and the failure reads as `InvalidAccessKeyId` —
     indistinguishable from expiry. `common/awsenv.py` now drops it (only when it provably is not an AWS key
