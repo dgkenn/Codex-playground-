@@ -27,6 +27,31 @@ multinational deposit.**
 
 ---
 
+## 0. CORRECTION — this document searched the literature and not the project's own record
+
+**Added 2026-07-31, after the fact.** Everything below came from PubMed and public deposit APIs. It should
+have started with `MASTER_PLAN.md`, which **already named a normative reference** and which I did not check:
+
+> §9.28: *"**LENS on BDSP — 'Lifespan and Sleep-Stage-Resolved Normative EEG Background' — is the right
+> shape**, being lifespan rather than paediatric, and is the deposit to pursue."*
+> §3.1: *"**LENS** … is a genuine normative reference for the age question in E16/E17, and is credentialed."*
+
+So the project had already identified a candidate, on **the same BDSP platform that serves HEEDB**, and the
+answer given to the investigator was assembled entirely from external sources.
+
+**Access status, probed rather than assumed (2026-07-31):** LENS is **NOT reachable with current
+credentials.** It appears at none of the three access points —
+`bdsp-credentialed-access-point` (8 prefixes: ECG, EEG, EHR, Imaging, NAX, OMOP, PSG, PatientMergeHistory),
+`bdsp-credentialed-projects-ap` (37 project prefixes), `bdsp-restricted-access-point` (19) — and not inside
+`EEG/` (HEEDB_Metadata, bids, eeg-metadata) or `PSG/` either. **It requires a separate BDSP access request,
+which is an investigator action, not something this session can do.**
+
+That does not change §1's conclusions — none of the six public systems models an aperiodic measure, and
+LENS's own contents are unverified here, so whether it would either is unknown. But it changes the *order*
+the question should have been answered in, and LENS belongs at the top of any access-request list.
+
+---
+
 ## 1. What exists, verified
 
 | resource | n | ages | sex modelled? | data access | models the exponent? |

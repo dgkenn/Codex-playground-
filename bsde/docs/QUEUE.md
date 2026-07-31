@@ -878,3 +878,25 @@ stops at 70 where HEEDB reaches 90.
 2. **Aperiodic correction can produce age-independence** — corrected theta/alpha scored r = 0.000 against
    age in 587 adults (PMID 42294963). R² ≈ 0 means **zero** Challenge B gain via 1/sqrt(1−R²).
    **Q16 step 4 must therefore be run separately for `exponent_low` and `lempel_ziv`, never pooled.**
+
+---
+
+## Q19 — REQUEST BDSP ACCESS TO LENS (investigator action; nothing else here is blocked on it)
+
+*Added 2026-07-31 after a prior-art audit found the project had already named this deposit and the search
+that answered "is there an existing normative model?" never checked internally.*
+
+**LENS — "Lifespan and Sleep-Stage-Resolved Normative EEG Background"**, on BDSP, named in
+`MASTER_PLAN.md` §3.1 and §9.28 as *"a genuine normative reference"* and *"the deposit to pursue"*, lifespan
+rather than paediatric.
+
+**Probed 2026-07-31 and it is NOT reachable with current credentials** — absent from
+`bdsp-credentialed-access-point`, `bdsp-credentialed-projects-ap` and `bdsp-restricted-access-point`, and
+absent from `EEG/` and `PSG/` one level down. A separate access request is required.
+
+**Why it matters and what it does not settle.** It is on the same platform as HEEDB, so a granted request
+costs no new infrastructure, and it is lifespan-scoped, which is exactly what the adult-only open cohorts
+are not. **What is unknown is whether it carries an aperiodic measure** — no public normative database does
+(§1 of `EXISTING_NORMATIVE_MODELS.md`), and LENS's contents are unverified here. So it may be a reference
+for band power that still leaves the exponent unnormed, which is the situation the whole multi-cohort build
+exists to address. Request it, but do not plan around it.
