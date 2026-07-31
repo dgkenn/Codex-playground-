@@ -1,0 +1,14 @@
+{
+  "gates": {
+    "G2_cases": 247,
+    "G2_positive": 173,
+    "G2_pass": false,
+    "G1_baseline_oob_auc": 0.8093930900590134,
+    "G1_pass": true
+  },
+  "arms": {},
+  "label": {
+    "definition": "|rel_aneend_s| <= 600.0"
+  },
+  "verdict": "GATE-FAILED"
+}
