@@ -1983,3 +1983,49 @@ is necessary, not sufficient" looks like when it bites.
 project's flagship candidate, is **empty in all 710 rows** of the Sleep-EDFx five-stage table and could not
 enter the no-drug arm at all. `exponent_high` — the feature E69, E70 and E77 all concern — **failed the
 depth-monotonicity gate**, so its cross-arm sign is uninterpretable.
+
+---
+
+## Q39 — the flagship candidate is uncomputable on the wedge deposit, and one third of that is a parsing gap
+
+*Found while diagnosing why `uce_v1` was blank in E75's no-drug arm. Surveyed across every result table in
+`bsde/results/` that carries a `uce_v1` column.*
+
+| deposit | finite `uce_v1` | why |
+|---|---|---|
+| ds005620, ds004541, ds007554, Chennu, eegmmidb, figshare | all rows | 10–20 names, both regions present |
+| **VitalDB** (`vitaldb_grid`, `vitaldb_fine`, `vitaldb_challenge_a`) | **0 of 11,000+** | **1 channel.** A BIS strip has no posterior electrode |
+| **Sleep-EDFx** (five-stage, multiwindow, staged) | **0 of 2,200+** | **2 bipolar derivations**, `EEG Fpz-Cz` / `EEG Pz-Oz`, matched by neither region set |
+| **HBN** (`hbn_r1_resting`) | **0 of 272** | **125–128 channels**, EGI `E<n>` naming, matched by neither region set |
+
+**These are three different problems and only one is a bug.**
+
+1. **VitalDB is a real montage limit and is not fixable.** UCE v1 is a frontal-versus-posterior contrast and
+   VitalDB's EEG is one channel. `regional_exponents` returns NaN rather than substituting, which its own
+   docstring says is deliberate — *"silently substituting would make UCE v1 computable on montages that
+   cannot support it"*. It is right. **But the consequence is that the project's flagship candidate cannot
+   be computed on the deposit named as its commercial wedge**, and every VitalDB result to date has
+   therefore been about other measures. That is a scope fact, not a defect, and it belongs in
+   `MASTER_PLAN.md` rather than in a footnote.
+2. **Sleep-EDFx is a judgement, not a parse.** `Fpz-Cz` spans frontal to central and `Pz-Oz` parietal to
+   occipital; calling the first "frontal" and the second "posterior" is an assignment someone has to make
+   and defend, and a bipolar derivation's aperiodic exponent is not the same quantity as a monopolar
+   channel's. Left NaN, deliberately. **Consequence: the only drug-free arousal deposit this project has
+   structurally excludes UCE**, which is why E75's no-drug arm could not test it.
+3. **HBN is a genuine parsing gap and 272 large-montage recordings are being dropped for it.** `E22`, `E70`
+   and the rest are EGI net positions with a documented 10–20 correspondence; `group_indices` does exact
+   matching against a 10–20 name set and matches none of them. This is rule 5 — empty was read as absence
+   without checking the filter could match anything.
+
+### What to do, and what NOT to do
+
+**Do not hardcode an EGI-to-10-20 table from memory.** Rules 25 and 39 exist because this project has had a
+citation and a file manifest fabricated by a summariser; electrode numbers are exactly the kind of specific,
+plausible, checkable detail that gets invented. The fix requires the mapping pulled from the net
+manufacturer's or the deposit's own documentation and parsed, not recalled.
+
+**Do not change the frozen equation.** `uce_v1` is `version="1.0-frozen"`. Widening which montages are
+*admissible* is a separate change from what the measure *computes*, and only the first is on the table.
+
+Registered as an open item rather than done here, because it needs a verified source and because it changes
+what a frozen candidate can be evaluated on.
