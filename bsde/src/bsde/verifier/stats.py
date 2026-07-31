@@ -403,3 +403,108 @@ def n_evaluable_spearman(x: Sequence, z: Sequence, subject: Sequence,
         if m.sum() >= min_points and np.unique(z[m]).size >= min_distinct:
             n += 1
     return n
+
+
+def ridge_fit(X: np.ndarray, y: np.ndarray, lam: float = 1.0) -> np.ndarray:
+    """Ridge coefficients for a design that ALREADY carries an intercept column in position 0.
+
+    The intercept is not penalised. Standardisation is the caller's job and must be done on TRAINING rows
+    only — standardising before the split leaks the test fold's scale into the fit.
+    """
+    X = np.asarray(X, float)
+    y = np.asarray(y, float)
+    p = X.shape[1]
+    P = np.eye(p) * float(lam)
+    P[0, 0] = 0.0
+    return np.linalg.solve(X.T @ X + P, X.T @ y)
+
+
+def _standardise(Xtr: np.ndarray, Xte: np.ndarray):
+    """Centre/scale by TRAINING statistics, prepend an intercept, and NaN-fill with the training mean.
+
+    Constant training columns get scale 1 so they collapse to zero rather than exploding.
+    """
+    mu = np.nanmean(Xtr, axis=0)
+    mu = np.where(np.isfinite(mu), mu, 0.0)
+    sd = np.nanstd(Xtr, axis=0)
+    sd = np.where(np.isfinite(sd) & (sd > 1e-12), sd, 1.0)
+
+    def prep(X):
+        Z = np.where(np.isfinite(X), X, mu)
+        Z = (Z - mu) / sd
+        return np.column_stack([np.ones(len(Z)), Z])
+
+    return prep(Xtr), prep(Xte)
+
+
+def grouped_cv_predict(X: np.ndarray, y: Sequence, subject: Sequence, rng, folds: int = 5,
+                       lam: float = 1.0) -> np.ndarray:
+    """Out-of-fold ridge predictions with SUBJECTS held out whole.
+
+    Windows within one case are highly correlated, so ungrouped folds would put the same case on both sides
+    and inflate every fidelity number computed from the result.
+    """
+    X = np.asarray(X, float)
+    y = np.asarray(y, float)
+    subject = np.asarray(subject)
+    uniq = np.unique(subject)
+    order = rng.permutation(len(uniq))
+    assign = {uniq[order[i]]: i % folds for i in range(len(uniq))}
+    fold_of = np.array([assign[s] for s in subject])
+    pred = np.full(len(y), np.nan)
+    for k in range(folds):
+        te = np.flatnonzero(fold_of == k)
+        tr = np.flatnonzero(fold_of != k)
+        if te.size == 0 or tr.size < X.shape[1] + 2:
+            continue
+        Ztr, Zte = _standardise(X[tr], X[te])
+        pred[te] = Zte @ ridge_fit(Ztr, y[tr], lam)
+    return pred
+
+
+def oob_regression_increment(Xa: np.ndarray, Xb: np.ndarray, y: Sequence, subject: Sequence, rng,
+                             stat=None, reps: int = 400, min_oob_subjects: int = 5,
+                             lam: float = 1.0) -> tuple:
+    """Out-of-bag bootstrap for the change in a REGRESSION error statistic from model A to model B.
+
+    The regression twin of `oob_auc_increment`, and it exists for the same reason (rule 9): bootstrapping
+    fixed out-of-fold predictions ignores refit variance and gives an interval that is too narrow, while
+    refitting and evaluating on the same resample puts a subject in train and test. Each rep fits both
+    models on the drawn subjects and scores both on the subjects NOT drawn.
+
+    `stat(y_true, y_pred) -> float` defaults to median absolute error. The returned difference is
+    **B minus A**, so for an error statistic a NEGATIVE value means B is BETTER. That sign convention is
+    the opposite of `oob_auc_increment`'s and is stated here because reading it backwards would invert a
+    verdict.
+    """
+    if stat is None:
+        def stat(t, p):
+            return float(np.median(np.abs(np.asarray(t, float) - np.asarray(p, float))))
+    Xa = np.asarray(Xa, float)
+    Xb = np.asarray(Xb, float)
+    y = np.asarray(y, float)
+    subject = np.asarray(subject)
+    uniq = np.unique(subject)
+    idx_by_subj = {u: np.flatnonzero(subject == u) for u in uniq}
+    diffs = []
+    for _ in range(reps):
+        drawn = rng.choice(uniq, size=len(uniq), replace=True)
+        drawn_set = set(drawn.tolist())
+        oob_subj = [u for u in uniq if u not in drawn_set]
+        if len(oob_subj) < min_oob_subjects:
+            continue
+        tr = np.concatenate([idx_by_subj[u] for u in drawn])
+        te = np.concatenate([idx_by_subj[u] for u in oob_subj])
+        try:
+            Atr, Ate = _standardise(Xa[tr], Xa[te])
+            Btr, Bte = _standardise(Xb[tr], Xb[te])
+            ea = stat(y[te], Ate @ ridge_fit(Atr, y[tr], lam))
+            eb = stat(y[te], Bte @ ridge_fit(Btr, y[tr], lam))
+        except Exception:                                     # noqa: BLE001
+            continue
+        if np.isfinite(ea) and np.isfinite(eb):
+            diffs.append(eb - ea)
+    if len(diffs) < 30:
+        return float("nan"), float("nan"), float("nan"), len(diffs)
+    d = np.asarray(diffs, float)
+    return (float(d.mean()), float(np.quantile(d, 0.025)), float(np.quantile(d, 0.975)), len(d))
