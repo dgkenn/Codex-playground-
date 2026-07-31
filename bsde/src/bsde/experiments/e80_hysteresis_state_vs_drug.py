@@ -110,8 +110,11 @@ USED_TABLES = ("dosei_features.csv", "dosei_pe_check.csv", "dosei_pe_variants.cs
 # The DOSE-I pEEG tables carry a binary Endoscopy stimulus marker (1 in 65,565 of 93,225 seconds
 # across the first 60 recordings) which the extractor did not previously emit. It is METADATA, not
 # a candidate: excluding it here keeps it out of the feature list. No threshold, cohort, contrast,
-# gate or margin of this registration changes.
-SKIP = {"recording", "t_s", "soc", "moaas", "propofol", "endoscopy", "n_finite"}
+# gate or margin of this registration changes. `ecg_hr` (the deposit's Intellivue heart rate)
+# was added in the same edit and for the same reason: it is a non-EEG physiological channel,
+# it is METADATA here, and it exists so E81 has a positive control that does not beg its own
+# question. Neither column is a candidate in this experiment.
+SKIP = {"recording", "t_s", "soc", "moaas", "propofol", "endoscopy", "ecg_hr", "n_finite"}
 CTRL_POS, CTRL_NEG = "_CTRL_time", "_CTRL_noise"
 MIN_PER_SIDE = 5
 MIN_RECORDINGS, MIN_CELLS = 20, 30
