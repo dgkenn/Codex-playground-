@@ -50,3 +50,27 @@ accident. It is **not a legal opinion**, was not prepared by an attorney, and do
 for jurisdiction, IRB/human-subjects terms layered atop the license, or whether trained model
 weights count as a "derivative" of training data. Every BLOCKED/UNVERIFIED row, and every row's
 clinical-use and model-weight column, needs real legal sign-off before commercial shipping.
+
+## Correction 2026-07-31 — openneuro_ds005620 states TWO different licences inside the same deposit
+
+`LICENSE_TABLE.csv` records `CC0 1.0`, verified on 2026-07-29 by reading the deposit's own
+`dataset_description.json` from the OpenNeuroDatasets GitHub mirror. That reading is correct and the file
+does say `"License": "CC0"`. **But `README.txt` in the same deposit says "This dataset is licensed under
+CC-BY-4.0."** Both were fetched directly from `s3.amazonaws.com/openneuro.org/ds005620/` with `curl` and
+read in full — not summarised by a fetch tool (rules 25 and 39).
+
+The verification note in `LICENSE_TABLE.csv` claims the licence was "read directly from the dataset's own
+BIDS metadata, not inferred". That remains true, and it is now also incomplete: **one file in the deposit
+was read and the other was not, and they disagree.** The row is left as it is rather than rewritten, because
+the evidence it cites is real; this note is where a reader relying on the claim will find the rest of it
+(rule 3).
+
+**Operational consequence: treat ds005620 as CC-BY-4.0, the stricter of the two.** Attribution satisfies
+CC-BY and is permitted (though not required) under CC0, so honouring the stricter reading is compatible with
+either being the true licence and costs nothing. Do not rely on the CC0 public-domain dedication for
+anything — in particular not for any claim that attribution can be dropped from a derived artefact.
+
+**The general lesson, which belongs in every licence verification from here on: read every file in a deposit
+that could carry a licence statement, not the first one that answers the question.** `dataset_description.json`
+looked authoritative because it is machine-readable and BIDS-canonical, and that is exactly why the README
+was never opened.
