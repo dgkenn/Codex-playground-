@@ -16,14 +16,21 @@ def d(m,day,y): return date(y,m,day)
 
 # ---------------------------------------------------------------- ROSTER ----
 # LSH: (slot0 person, slot2 person) per calendar month.  Two LSH interns/month.
-# The ORDER of each pair is a real scheduling decision: the march assigns night
-# float by SLOT, and in Jan/Feb/Mar 2027 the final week's night float lands on
-# slot2.  January: Zaidi (who continues at LSH in Feb) holds slot2, so the
-# 1/31-2/5 NF week belongs to someone who isn't leaving.  Feb/Mar: no LSH
-# intern continues across those boundaries, so the month-end NF week is handed
-# to the boundary-spanning Lahey rotator via SWAP12_DAYS (below); the slot2
-# intern instead takes the previous NF week, ending their nights 2+ days
-# before transition.  Nobody leaving the service ends on night float.
+#
+# The ORDER of each pair is THE lever for the month-end night-float problem, and
+# it is the ONLY correct one: it is roster data (who sits in which slot), not an
+# algorithm change.  The march hands the month-end NF week to slot2, so flipping
+# a pair simply chooses which of the two LSH interns absorbs it.  Current choices
+# and what flipping each would cost:
+#   Sep  [WISE, LI]              slot2 Wise 9/29-30   -> Oct is ELECTIVE. Flip = Li instead.
+#   Oct  [BRONSON, MACNEILLE]    slot2 Bronson 10/30  -> Nov is VACATION. Matches the manual sheet.
+#   Jan  [OGHENESUME, ZAIDI]     slot2 Zaidi          -> continues at LSH in Feb, so NO month-end case
+#                                                        at all.  Flipping creates one (Oghenesume 1/31).
+#   Feb  [LI, ZAIDI]             slot2 Zaidi 2/28     -> Mar is VACATION.  Flip = Li, who goes to LAHEY. Worse.
+#   Mar  [MATSUOKA, KENNEDY]     slot2 Kennedy 3/30-31-> April UNCONFIRMED.  Flip = Matsuoka, who goes
+#                                                        to LAHEY.  Worse.  Needs Kennedy's April rotation.
+#   Apr  [ZAIDI, OGHENESUME]     slot2 Oghenesume     -> May UNCONFIRMED.  Flip = Zaidi.
+# Change the order here; never reach into the march itself (see the note below).
 LSH_MONTH = {
  (2026,9):["WISE","LI"],
  (2026,10):["BRONSON","MACNEILLE"], (2026,11):["WISE","KENNEDY"],

@@ -71,6 +71,25 @@ for dt in days:
     if (nfp,dt.year,dt.month) in NEXT_IS_OUTPATIENT: continue
     rec("end-on-nf",f"{dt} {nfp} on NF with block ending {info['end']} (leaves the service)")
 
+# MARCH INTEGRITY — the other half of the night-float chain.
+# PRINCIPLES.md rule 3: "After the last (Friday) night, that intern RETURNS TO
+# MONDAY LONG CALL and resumes the Q4 march."  There was no check for this, and
+# that is exactly how the SWAP12_DAYS role-swap bug survived: it took Zaidi's
+# Mon 2/8 long call (owed to him after his 2/1-5 nights) and gave it to the Lahey
+# rotator, then handed Zaidi a second night-float week.  Every rule still passed
+# because a rotated march is internally consistent — only this check sees it.
+# Skipped when the person's block ends over the weekend (they aren't there Monday)
+# or when the Monday is their rotation's first day.
+for dt in days:
+    if dt.weekday()!=4 or NF.get(dt) is None: continue
+    p=NF[dt]; mon=dt+timedelta(days=3)
+    if mon not in A: continue
+    info=gen.roster(dt).get(p)
+    if not info or info["end"]<mon: continue          # gone by Monday
+    if p not in gen.roster(mon): continue
+    if A[mon]["LC"]!=p:
+        rec("nf-to-mon-lc",f"{p} ends nights Fri {dt} but Mon {mon} LC={A[mon]['LC']} (owed to {p})")
+
 # Friday LC -> next Sunday NF
 for dt in days:
     if dt.weekday()==4 and A[dt]["LC"]:
@@ -162,7 +181,7 @@ for dt in days:
 _vals=[NF_YEAR[p] for p in LSHNAMES if NF_YEAR[p]]
 NF_SPREAD=(max(_vals)-min(_vals)) if _vals else 0
 
-order=["accounting","one-LC","LC-diff-prev","Q4","end-on-nf","fri-lc-nf","nf-consec","nf-present","nf-sat",
+order=["accounting","one-LC","LC-diff-prev","Q4","end-on-nf","fri-lc-nf","nf-to-mon-lc","nf-consec","nf-present","nf-sat",
        "double","sun-no-sc","sat-clean","weekday-off-thu","one-off","sat-off-sun","sat-not-nf-next",
        "sat-not-nf-prev","sat-max1","dayoff"]
 print("="*70); print("COMPLIANCE AUDIT — comprehensive rules"); print("="*70)
