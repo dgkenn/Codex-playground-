@@ -41,6 +41,27 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(
 
 TARGET_SFREQ = 250.0
 
+ANALYSIS_S = 180.0
+"""Every recording is truncated to its FIRST 180 seconds, in every cohort.
+
+**Duration is a batch effect, and it is one we would have manufactured ourselves.** The reachable cohorts
+run 184 s (ds005385), 240 s (ds003775) and 307-793 s in ds004504 -- which is not only longer but VARIABLE
+WITHIN the cohort. Several measures here are length-dependent: `lziv`'s n/log2(n) normalisation is only
+asymptotically length-invariant, and DFA and the LRTC envelope depend directly on the range of scales the
+record affords. Left alone, a cohort would differ from another partly because its recordings are longer,
+and E48's batch index would score that as hardware.
+
+180 s is the largest round value that fits inside the shortest cohort. It is also comfortably above what
+the literature says is needed: PMID 38820994 reports 2-3 minutes sufficient for stable aperiodic estimates
+(ICC 0.77-0.88) and PMID 32425762 gets stable FOOOF parameters from 2 minutes. So this costs nothing in
+estimate quality and removes a confound.
+
+Recordings shorter than `MIN_DURATION_S` are REJECTED rather than analysed short, because a handful of
+truncated-to-90 s rows would reintroduce exactly the dependence this removes. They surface as extraction
+failures, which are counted and printed, rather than as quietly shorter rows (rule 5)."""
+
+MIN_DURATION_S = 150.0
+
 MONTAGE = ("Fp1", "Fp2", "F3", "F4", "C3", "C4", "P3", "P4", "O1", "O2")
 """The ten channels every feature is computed on, in every cohort.
 
@@ -137,10 +158,18 @@ def features_from_raw(raw):
     if not keep:
         raise RuntimeError(f"none of {MONTAGE} present; channels are {raw.ch_names[:8]}...")
     raw.pick(keep)
+    dur = raw.n_times / float(raw.info["sfreq"])
+    if dur < MIN_DURATION_S:
+        raise RuntimeError(f"recording is {dur:.1f} s, below the {MIN_DURATION_S:.0f} s floor; "
+                           "rejected rather than analysed short (see ANALYSIS_S)")
     if raw.info["sfreq"] > TARGET_SFREQ:
         raw.resample(TARGET_SFREQ, verbose="ERROR")
     sf = float(raw.info["sfreq"])
     data = raw.get_data() * 1e6
+    # Common analysis window, applied identically everywhere, so duration cannot enter as a batch effect.
+    n_keep = int(round(ANALYSIS_S * sf))
+    if data.shape[1] > n_keep:
+        data = data[:, :n_keep]
     n_ch, n_s = data.shape
 
     per = {k: [] for k in FEATURE_KEYS}

@@ -155,6 +155,34 @@ def _targets(ds):
     return sorted(out)
 
 
+def _check_schema(path, fields):
+    """Abort if an existing output file's header does not match the columns we are about to write.
+
+    **This is a data-integrity guard, not a nicety.** A resumed run after a schema change appended 65-column
+    rows underneath a 53-column header, and every value in those rows was shifted: `sfreq` read 10 (the
+    channel count), `duration_s` read 1.13, `lempel_ziv` read 2.415 -- a value the statistic cannot produce,
+    which is the only reason it was noticed. Nothing else in the pipeline would have rejected them.
+
+    The autonomous loop restarts these extractors, so this path is exercised routinely and must fail loudly
+    rather than corrupt the table. Rule 5: a silent mismatch is not evidence of a match.
+    """
+    if not (os.path.exists(path) and os.path.getsize(path) > 0):
+        return
+    with open(path) as fh:
+        existing = next(csv.reader(fh), None)
+    if existing and list(existing) != list(fields):
+        only_new = [c for c in fields if c not in (existing or [])]
+        only_old = [c for c in (existing or []) if c not in fields]
+        raise SystemExit(
+            f"\nSCHEMA MISMATCH in {path}\n"
+            f"   existing header : {len(existing)} columns\n"
+            f"   this run writes : {len(fields)} columns\n"
+            f"   new columns     : {only_new}\n"
+            f"   dropped columns : {only_old}\n"
+            "Appending would shift every value in the new rows. Delete the file to re-extract, or move it "
+            "aside and merge deliberately. Refusing to continue.")
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--out", default="/tmp/eeg_probe/multicohort_features.csv")
@@ -219,6 +247,7 @@ def main(argv=None) -> int:
                    "age": p["age"], "sex": p["sex"], "group": p["group"]}
             row.update(feats)
             if w is None:
+                _check_schema(a.out, list(row.keys()))
                 write_header = not os.path.exists(a.out) or os.path.getsize(a.out) == 0
                 fh = open(a.out, "a", newline="")
                 w = csv.DictWriter(fh, fieldnames=list(row.keys()))
