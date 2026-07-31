@@ -91,14 +91,15 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, "..", "src"))
 
 from bsde.features.aperiodic import fit_aperiodic, welch_psd                      # noqa: E402
-from bsde.features.complexity import lempel_ziv_complexity_fast                   # noqa: E402
+from bsde.features.complexity import (lempel_ziv_complexity_fast, lziv,             # noqa: E402
+                                      permutation_entropy)
 from bsde.ingestion.openneuro_brainvision import (parse_vhdr, decode_brainvision_window,  # noqa: E402
                                                   _http_get_range,
                                                   _check_format_and_orientation)
 
 BASE = "https://s3.amazonaws.com/openneuro.org/"
 DATASET = "ds005620"
-OUT = os.path.abspath(os.path.join(HERE, "..", "results", "ds005620_perturbation_v2.csv"))
+OUT = os.path.abspath(os.path.join(HERE, "..", "results", "ds005620_perturbation_v3.csv"))
 
 PRE_S, POST_S = 0.500, 0.500
 BASE_LO, BASE_HI = -0.500, -0.100
@@ -111,6 +112,7 @@ SEED = 20260731
 FIELDS = ["recording_id", "subject", "task", "run", "status", "error", "sfreq", "n_channels",
           "block_start_s", "block_s", "n_pulses", "iti_median", "iti_iqr", "det_separation",
           "blank_frac", "spont_exponent", "n_spont_seg",
+          "spont_lziv", "spont_perm_entropy", "spont_spectral_entropy",
           "real_evoked_rms", "real_baseline_rms", "real_response_duration_ms",
           "real_n_channels_responding", "real_evoked_lz",
           "sham_evoked_rms", "sham_baseline_rms", "sham_response_duration_ms",
@@ -329,6 +331,40 @@ def process(key, block_s, rng):
         row["spont_exponent"] = float(np.median(exps)) if exps else float("nan")
     else:
         row["spont_exponent"] = float("nan")
+
+    # ---- v3: the SPONTANEOUS COMPLEXITY FAMILY, on the same inter-pulse intervals ------------------
+    # E104's sham arm separated the states beyond the exponent while the perturbational contrast did not.
+    # Before that can be called a second axis, rule 60 requires showing it differs from the family it is
+    # supposed to escape -- so the family has to be measured on the SAME segments, the same channels and
+    # the same code path. Each interval is treated on its own contiguous samples (rule 66); per-channel
+    # values are averaged within interval, then medianed across channels.
+    if segs:
+        lz_v, pe_v, se_v = [], [], []
+        for c in range(d.shape[0]):
+            lz_c, pe_c, se_c = [], [], []
+            for a, b in segs:
+                x = d[c, a:b]
+                x = x[np.isfinite(x)]
+                if x.size < int(round(1.0 * sf)):
+                    continue
+                lz_c.append(lziv(x))
+                pe_c.append(permutation_entropy(x[::5], order=3))     # 1 kHz effective, Bandt-Pompe
+                f2, p2 = welch_psd(x, sf, window_s=1.0)
+                m = (f2 >= 1.0) & (f2 <= 40.0)
+                pn = p2[m] / p2[m].sum() if p2[m].sum() > 0 else None
+                if pn is not None and pn.size > 1:
+                    se_c.append(float(-np.sum(pn * np.log2(pn)) / math.log2(pn.size)))
+            if lz_c:
+                lz_v.append(float(np.mean(lz_c)))
+            if pe_c:
+                pe_v.append(float(np.mean(pe_c)))
+            if se_c:
+                se_v.append(float(np.mean(se_c)))
+        row["spont_lziv"] = float(np.median(lz_v)) if lz_v else float("nan")
+        row["spont_perm_entropy"] = float(np.median(pe_v)) if pe_v else float("nan")
+        row["spont_spectral_entropy"] = float(np.median(se_v)) if se_v else float("nan")
+    else:
+        row["spont_lziv"] = row["spont_perm_entropy"] = row["spont_spectral_entropy"] = float("nan")
     return row
 
 
