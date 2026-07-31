@@ -48,6 +48,7 @@ import io
 import os
 import re
 import sys
+import shutil
 import tempfile
 import time
 import urllib.parse
@@ -64,6 +65,11 @@ COHORTS = {
     "ds004504": (("eyesclosed",), (".set",), "AD/FTD/control, 19ch 10-20, linked ears"),
     "ds004148": (("eyesclosed", "EC"), (".edf", ".set", ".bdf"), "test-retest young adults"),
     "ds005385": (("EyesClosed",), (".edf",), "Dortmund Vital, eyes-closed blocks only"),
+    # STATE cohorts -- these carry an anaesthetic contrast in the filename and exist to test E50's
+    # registered prediction (that exponent_low and exponent_high AGREE in sign across deposits where
+    # whole_head_exponent flipped). They are BrainVision.
+    "ds005620": (("awake", "sed"), (".vhdr",), "repeated-awakening PROPOFOL sedation; task-awake/sed"),
+    "ds004148": (("eyesclosed",), (".vhdr",), "test-retest young adults 18-28, eyes closed"),
 }
 """ds005514 (Healthy Brain Network, 295 subjects, ages 5-20, 198.7 GB) is the paediatric anchor and is
 deliberately NOT in the default set: at ~670 MB per subject it would dominate the transfer budget. It is
@@ -212,38 +218,35 @@ def main(argv=None) -> int:
             if (ds, sub, ses, base) in done:
                 continue
             p = parts.get(sub, {"age": "", "sex": "", "group": ""})
-            tmp = tempfile.NamedTemporaryFile(suffix=os.path.splitext(base)[1], delete=False)
-            tmp.close()
-            extra = []
+            tmpdir = tempfile.mkdtemp(prefix="mc_")
+            local = os.path.join(tmpdir, base)          # ORIGINAL basename: BrainVision needs it
             try:
-                with urllib.request.urlopen(f"{S3}/{key}", timeout=300) as r, open(tmp.name, "wb") as dl:
+                with urllib.request.urlopen(f"{S3}/{key}", timeout=300) as r, open(local, "wb") as dl:
                     while True:
                         chunk = r.read(1 << 20)
                         if not chunk:
                             break
                         dl.write(chunk)
-                # EEGLAB .set files may keep their data in a sibling .fdt; fetch it if referenced.
-                if base.endswith(".set"):
-                    fdt = key[:-4] + ".fdt"
+                # Multi-file formats: EEGLAB .set may keep data in a sibling .fdt; BrainVision .vhdr
+                # ALWAYS needs .eeg and .vmrk and references them by name from inside the header.
+                stem, ext = os.path.splitext(key)
+                for sib in {".set": (".fdt",), ".vhdr": (".eeg", ".vmrk")}.get(ext, ()):
                     try:
-                        blob = _get(f"{S3}/{fdt}", timeout=300)
-                        side = tmp.name[:-4] + ".fdt"
-                        open(side, "wb").write(blob)
-                        extra.append(side)
+                        open(os.path.join(tmpdir, os.path.basename(stem) + sib), "wb").write(
+                            _get(f"{S3}/{stem}{sib}", timeout=300))
                     except Exception:                                        # noqa: BLE001
-                        pass                                                 # single-file .set: fine
-                feats = features_from_file(tmp.name)
+                        pass                        # .fdt is optional; a missing .eeg fails loudly below
+                feats = features_from_file(local)
             except Exception as exc:                                         # noqa: BLE001
                 n_fail += 1
                 print(f"   FAIL {ds} {sub} {ses}: {type(exc).__name__}: {exc}", flush=True)
                 continue
             finally:
-                for pth in [tmp.name] + extra:
-                    try:
-                        os.unlink(pth)
-                    except OSError:
-                        pass
+                shutil.rmtree(tmpdir, ignore_errors=True)
+            mt = re.search(r"_task-([A-Za-z0-9]+)", base)
+            ma = re.search(r"_acq-([A-Za-z0-9]+)", base)
             row = {"cohort": ds, "subject": sub, "session": ses, "file": base,
+                   "task": mt.group(1) if mt else "", "acq": ma.group(1) if ma else "",
                    "age": p["age"], "sex": p["sex"], "group": p["group"]}
             row.update(feats)
             if w is None:

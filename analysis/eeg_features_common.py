@@ -223,7 +223,13 @@ def features_from_file(path):
     """Read one EEG file (.edf / .set / .bdf / .fif) and compute the shared feature set."""
     import mne
     ext = os.path.splitext(path)[1].lower()
-    if ext == ".set":
+    if ext == ".vhdr":
+        # BrainVision is THREE files -- .vhdr (header), .eeg (data), .vmrk (markers) -- and the header
+        # references the other two BY FILENAME. A download to a randomly-named temp file therefore reads
+        # as a valid header pointing at files that do not exist. The caller must place all three in one
+        # directory under their ORIGINAL basenames; see `_fetch_bundle` in openneuro_multicohort.py.
+        raw = mne.io.read_raw_brainvision(path, preload=True, verbose="ERROR")
+    elif ext == ".set":
         raw = mne.io.read_raw_eeglab(path, preload=True, verbose="ERROR")
     elif ext == ".bdf":
         raw = mne.io.read_raw_bdf(path, preload=True, verbose="ERROR")
