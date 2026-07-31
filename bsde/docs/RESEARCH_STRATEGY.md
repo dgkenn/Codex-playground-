@@ -71,6 +71,53 @@ median-across-channels, both predicted to be independent and both redundant). Fr
 aperiodic exponent is the third instance. Treating it as such at the outset is the single most useful thing
 this document can do.
 
+### §0 ADDENDUM, 2026-07-31 — the algebraic prediction is now confirmed on real data, in three cohorts
+
+§0's operational consequence was binding and scheduled first: *"The frozen UCE v1 must be evaluated against
+`z(mean aperiodic exponent across all available channels)` as a mandatory baseline... If UCE v1 does not
+measurably beat that single-feature baseline, the frontal/posterior structure is decorative and must be
+dropped from all descriptions of the construct."*
+
+**It does not beat it, and the evidence needs no outcome label at all.** Correlation between `uce_v1` and
+`whole_head_exponent`, computed on recordings already extracted:
+
+| cohort | n rows | Pearson | Spearman |
+|---|---|---|---|
+| eegmmidb resting | 210 | **+0.980** | +0.973 |
+| ds004541 | 124 | **+0.882** | +0.899 |
+| chennu propofol | 80 | **+0.962** | +0.957 |
+
+§0 predicted, from arithmetic alone, that UCE v1 is *"to a very good approximation the mean of two z-scored,
+94 %-correlated quantities — i.e. a whole-head aperiodic exponent."* Three independent cohorts, two of them
+anaesthesia and one healthy resting, put the realised correlation at 0.88 to 0.98. **The prediction was
+right and it was made before any of this data was downloaded.**
+
+**Two measures correlating at 0.98 cannot differ meaningfully in what they predict**, so the mandatory
+baseline test is settled by the redundancy alone; no label is required and none was consulted for the table
+above. E41's Challenge B table is consistent and adds nothing decisive — `uce_v1` +0.0853 [-0.1066, +0.2651]
+against `whole_head_exponent` +0.0490 [-0.1322, +0.2430], both spanning zero, a difference of 0.036 that
+E41's own minimum detectable effect of 0.272 could never have resolved. **The redundancy is the evidence;
+the label comparison is not.**
+
+**Binding consequence, now discharged: the frontal/posterior structure is decorative and must be dropped
+from every description of the construct.** UCE v1 should be described as *a whole-head aperiodic exponent*,
+the 0.696/0.718 weights should not be quoted as a finding about frontal versus posterior cortex, and
+"96.8 % of variance explained" should be reported as what §0 showed it to be — a restatement of
+r(frontal, posterior) = 0.936, i.e. evidence that the two inputs are nearly the same measurement.
+
+**And the consequence for marker refinement, which is what makes this more than bookkeeping.** If the
+weights carry no information and the two inputs are one measurement, then **re-weighting cannot refine this
+marker** — there is nothing in the weights to tune. A refinement has to change the *property being
+measured*, not its spatial decomposition. That is precisely why `lrtc_alpha` (E42) is a temporal-dynamics
+measure rather than a fifteenth spectral summary, and it is the same conclusion E41 reached from the
+opposite direction when the incumbent beat all fourteen candidates.
+
+**Fourth instance of error-catalogue rule 28.** §0 called frontal-versus-posterior the third instance of
+"two measurements taken in different places turning out to be the same thing", after background versus
+intra-burst spectrum and topography versus median-across-channels. It is now confirmed rather than
+predicted, which makes it the fourth entry in that pattern and the first one caught *before* an experiment
+was designed on top of it.
+
 ---
 
 ## 1. Precise problem definition
