@@ -20,6 +20,28 @@ two-dimensional discovery.
 
 `uce_v1_with_baseline()` returns the score TOGETHER WITH the single-feature baseline it must beat, so the
 comparison mandated by RESEARCH_STRATEGY.md R-01 cannot be quietly omitted.
+
+------------------------------------------------------------------------------------------------------------
+CONFIRMED ON REAL DATA, 2026-07-31 — the algebraic prediction above held in three independent cohorts.
+
+    r(uce_v1, whole_head_exponent)     eegmmidb resting  n=210   Pearson +0.980   Spearman +0.973
+                                       ds004541          n=124           +0.882            +0.899
+                                       chennu propofol   n= 80           +0.962            +0.957
+
+**No outcome label was consulted for that table, and none is needed.** Two measures correlating at 0.98
+cannot differ meaningfully in what they predict, so RESEARCH_STRATEGY.md §0's binding consequence is
+discharged by the redundancy alone: **the frontal/posterior structure is decorative.** Describe this score
+as a whole-head aperiodic exponent; do not quote 0.696/0.718 as a finding about frontal versus posterior
+cortex; report "96.8 % of variance" as the restatement of r = 0.936 that it is.
+
+E41's Challenge B numbers are consistent and decide nothing on their own — `uce_v1` +0.0853 [-0.1066,
++0.2651] against `whole_head_exponent` +0.0490 [-0.1322, +0.2430], a gap of 0.036 against that experiment's
+own minimum detectable effect of 0.272. **The redundancy is the evidence; the label comparison is not.**
+
+**Consequence for anyone trying to improve this marker: re-weighting cannot do it.** If the weights are
+forced by symmetry and the two inputs are one measurement, there is nothing in the weights to tune, and a
+refinement must change the PROPERTY being measured rather than its spatial decomposition. The constants
+below stay frozen not only because the brief says so, but because moving them could not help.
 """
 from __future__ import annotations
 
