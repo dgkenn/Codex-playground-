@@ -1636,3 +1636,55 @@ from scratch.**
 **Next step, and it is cheap:** re-extract the four normative cohorts once the current three jobs finish,
 and commit that table — it is CC0/open and there is no reason it should be ephemeral. E67 is the
 state-matched audit, to be registered against it.
+
+---
+
+## Q31 — Challenge B's ceiling is measured and it is 0.98, not 0.54 (E68, 2026-07-31)
+
+**E41's Challenge B null was never interpretable.** `uce_v1` reached ρ = +0.0853 [−0.1066, +0.2651] against
+a minimum detectable 0.272, and E38 had measured eegmmidb's label reliability at r_sb = **0.2918**
+[0.1163, 0.4345] — capping any predictor at **0.5402** by attenuation alone. Q14 made the sequencing a
+standing rule: measure the ceiling before running the correlation.
+
+**Measured, on 185 sessions from 62 subjects, labels only, no EEG touched:**
+
+| | value | 95 % CI | ceiling |
+|---|---|---|---|
+| **R1 within-session** (binomial-corrected) | **0.9652** | [0.9568, 0.9706] | **0.9825** |
+| R2 across-session (k vs k+1, 122 pairs) | 0.6539 | [0.5282, 0.7361] | 0.8087 |
+| **change score** (consecutive-session Δ) | **0.8983** | — | **0.9478** |
+| *eegmmidb, for reference (E38)* | *0.2918* | *[0.1163, 0.4345]* | *0.5402* |
+
+No overlap of any kind with eegmmidb. Observed between-session variance 0.018676 against binomial trial
+noise 0.000649 — a factor of 29.
+
+### E38's recommendation is confirmed rather than assumed
+
+E38 argued reliability, not n, was the binding constraint, and that **more trials per subject buys more
+than more subjects**. 450 trials per session against eegmmidb's 45 in total gives 0.965 against 0.292 — on
+**fewer** subjects (62 vs 109). That was a prediction and it held.
+
+### A caveat I wrote into Q28 is retracted by measurement
+
+Q28 warned that "a change score is noisier than a level — this is not a free lunch." **On this deposit it
+very nearly is.** The consecutive-session change has variance 0.012706 against 0.001292 of doubled binomial
+noise, giving a change-score reliability of **0.8983**. With ~356 scored trials per session, differencing
+two near-noiseless measurements costs almost nothing. **Q28's within-subject design is fully viable and its
+stated weakness does not apply here.** Mean change is +0.0386 — real learning — and 28.6 % of session
+variance is within-subject, which is what a change design has to work with.
+
+### What this does and does not establish
+
+It does **not** show a predictor exists. It establishes that a null measured on this deposit would be a
+**real null** rather than an attenuation artefact — which is exactly the condition Q14 required before the
+correlation is run, and it is now met.
+
+**Next: the Stieger feature pass over the 2 s pre-cue baselines** (450 per session), then both designs —
+between-subject against `relative_alpha_power` as the named incumbent, and Q28's within-subject change
+version. The literature (Q-round: PMID 26529439, 37759889, 38986469) says the predictors that work are
+connectivity/network/microstate measures, and Stieger's **62 channels** can carry them where every previous
+Challenge B deposit could not.
+
+**One thing to capture in that pass that the label pass did not:** `TrialData.triallength`. A binary
+hit/miss throws away most of a trial's information; time-to-target is continuous and would raise the
+label's precision further at no extra download.
