@@ -550,3 +550,55 @@ volunteer received one agent), so it does not by itself supply a within-patient 
 supplies is a within-subject *state* contrast at fixed concentration, which is the more important half.
 And E35/E36's own claim status is unchanged: still unclaimed, now with external corroboration rather than
 none.
+
+---
+
+## Q13 — E39 and the sizing problem it exposed
+
+**Status: E39 ran and returned NO EVIDENCE. The deflationary explanation for E35/E36 is live and untested at
+adequate power, and this entry records what adequate power would take.**
+
+E36's defence of the measure-family split — that phase measures are not generically artefact-robust — was
+post hoc, unregistered, and ran on the same intracranial rows as the finding it defended. E39 pre-registered
+it on two independent scalp cohorts with **our own** wPLI implementation, using EMG as the artefact channel
+and registering the direction that would **weaken** E35/E36. Result:
+
+    ds004541   Contrast +0.0113 [-0.1750, +0.1966]        (8 subjects, 124 rows)
+    chennu     Contrast +0.0417 [-0.1935, +0.2674]        (20 subjects, 80 rows)
+
+Both gates passed in both cohorts, so the null is about power rather than machinery. **Both point estimates
+lean toward the deflationary explanation and that is not evidence** — two estimates of +0.011 and +0.042
+with intervals near ±0.2 agreeing in sign are two coin flips landing the same way.
+
+The per-feature table is worth more than the primary: **our wPLI sits mid-pack on EMG legibility in both
+cohorts** (0.045 and 0.100, against spreads of 0.006-0.148 and 0.050-0.175 across six amplitude and
+complexity measures). The *strong* version of the deflationary story — wPLI barely responds to artefact — is
+not what these tables look like. That is a weaker claim than a significant contrast, and it is the one the
+data supports.
+
+### What a properly-powered attempt needs, and what it would cost
+
+Three deficits, in order of how much each cost:
+
+1. **More than one phase measure.** `wpli_alpha` is the only phase feature in the registry, so E39's
+   statistic was "wPLI against the rest" rather than a family mean, and had no way to average down noise on
+   the side that mattered. E36's Delta averaged four. **Adding phase measures — dPLI, imaginary coherence,
+   a front/back wPLI contrast — is a registry change plus a re-extraction, not a new deposit.**
+2. **More subjects with the artefact channel.** `emg_index` exists only in `ds004541` and `chennu`, because
+   only those two were processed with the fuller feature set. `ds005620` (21 subjects) and `ds007554` (15
+   subjects) have `wpli_alpha` and **no EMG columns**. Re-extracting those two with the full feature set
+   would roughly triple the subject count to ~64 — one S3 pass over ~445 recordings, hours, and no new
+   access.
+3. **Many windows per subject.** `chennu` ships four rows per subject, which makes its within-subject EMG
+   split 2-versus-2 and its state contrast 1-versus-1; it was never going to contribute a usable interval.
+   `ds004541` at ~15 rows per subject is the shape to aim for.
+
+**Do the arithmetic before the run, not after.** E39's intervals are the input: a design that cannot detect
+a Contrast of ~0.05 is not worth executing, and these intervals say what n would be needed to see one.
+Error-catalogue rule 41 — run the feasibility probe before registering — extends naturally to power, and
+E39 is the entry that earns that extension.
+
+**Not queued as an immediate action.** The two re-extractions compete for the same S3 bandwidth as the
+eegmmidb trial cache, and Challenge A's larger blocker is the one Q9 records — every reachable deposit has
+its two agents in disjoint patients. A better-powered artefact test sharpens a defence of a finding that is
+already externally corroborated by Kallionpää 2020 and Akeju 2014; it does not unblock the challenge.

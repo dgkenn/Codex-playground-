@@ -1771,6 +1771,15 @@ is methodological: the two families tested against each other with one statistic
 alternative partitions, with multiplicity control and a capability control beside the drug-leak
 measurement. Detail and one recorded discrepancy in `LITERATURE_MAP.md`.
 
+**E39 tried to settle the deflationary explanation and could not.** Registered with the direction that
+would *weaken* this project's own result, on two independent scalp cohorts with **our own** wPLI
+implementation and EMG as the artefact channel: `ds004541` Contrast **+0.0113 [-0.1750, +0.1966]**, `chennu`
+**+0.0417 [-0.1935, +0.2674]**. Both gates passed, so the null is about power, not machinery. Both point
+estimates lean deflationary and **that is not evidence** — intervals of ±0.2 agreeing in sign are two coin
+flips. What the per-feature table does show is that our wPLI sits **mid-pack** on artefact legibility in
+both cohorts, so the strong form of the deflationary story is not what the data looks like. QUEUE.md Q13
+records what a properly-powered attempt would need.
+
 **Nothing here is claimed as agent-invariance.** One deposit, 10 dexmedetomidine patients, intracranial
 electrodes in epilepsy-surgery patients, and **0 of 29 patients shared between the arms** — so drug arm,
 electrode type and data quality are nested inside patient identity and no method separates them there. That
