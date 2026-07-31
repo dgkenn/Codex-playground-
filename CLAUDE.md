@@ -346,6 +346,26 @@ Every rule below was paid for with a wrong result in this project.
     null" and "supports the hypothesis" are different questions and a confidence interval only answers the
     first. Three prior entries were not enough to prevent it; write the sign into the branch, not the
     prose.
+50. **MEASURING A DIFFERENCE IS NOT MEASURING ITS CAUSE — GET THE BASELINE BEFORE YOU NAME THE MECHANISM.**
+    Three corrections in one day, all the same shape: an effect was measured and a *cause* was asserted
+    without the control that would separate causes.
+    * **E46** compared candidates against BIS on rows selected by BIS, and called the gap robustness. The
+      selection rule alone forced it (rule 49).
+    * **E53** compared one deposit under two pipelines, measured a floor of **0.898**, and called it a
+      *pipeline effect*. The same-pipeline baseline — 60 subjects × 3 sessions through identical code —
+      puts single-measurement retest noise at **0.667**, so a displacement's noise is
+      √2 × 0.667 = **0.943**. Ordinary noise accounts for the whole thing and **nothing is left for
+      pipeline**. The wrong attribution pointed at an expensive and useless remedy (re-extract every
+      deposit through one path) instead of the real one (**more subjects, or more data per subject —
+      harmonisation cannot shrink a noise floor**).
+    * **E50** claimed a mechanism that `MASTER_PLAN.md` §9.13 had already established, because the
+      project's own record was never searched.
+    **The habit that prevents all three costs one extra measurement: before attributing a difference to
+    X, measure the difference when X is held constant.** Same-pipeline retest, same-selection placebo,
+    same-drug floor. If the baseline reproduces the effect, the attribution is wrong no matter how
+    plausible the mechanism sounds — and the plausible mechanism is exactly what stops you checking.
+    **Corollary for search:** an internal record is a source like any other, and rules 25 and 39 apply to
+    it. Grep the ledger and the plan before claiming a finding is new.
 49. **A RULE-40 TEST THAT ONLY COVERS THE AUXILIARY GATES IS NOT A RULE-40 TEST — THE PRIMARY IS WHERE THE
     CLAIM LIVES.** E46 shipped with a six-test file written explicitly to check that its gates could fail.
     Every one of those tests covered the capability gate or the case-count gate. **None asked whether the
