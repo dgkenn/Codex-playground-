@@ -48,6 +48,19 @@ suppression has an operating range and those windows are outside it.
 
 ## The decision
 
+> ### WITHDRAWN 2026-07-31 BY E65 — READ THIS BEFORE THE DECISION BELOW
+>
+> The decision that follows was made on the best evidence then available: agreement with device BIS,
+> measured on the recordings the index was fitted to. **E65 tested it externally for the first time, against
+> a clinician's MOAA/S on DOSE-I, and it fails.** Our index reaches rho **+0.04**; the deposit's own
+> permutation entropy reaches **+0.48** on the same 39 recordings. It is not a flat model (prediction
+> sd 5.04–12.02) and not transport drift (dropping all seven drifting features changes nothing).
+>
+> **The reading: this choice bought a measure of BIS, not a measure of brain.** The per-band fidelity work
+> below is accurate about what it measured — agreement with a device — and that is now known to be a
+> different thing from depth. **The licence to use the index on monitor-free deposits is withdrawn.** See
+> `QUEUE.md` Q34. The decision text is kept intact below because the reasoning is what E65 tested.
+
 **The comparator is BIS-faithful where BIS is measuring brain, and explicitly refuses elsewhere. It is not
 made faithful to BIS's artefact behaviour, at any price.**
 
