@@ -1349,3 +1349,53 @@ Challenge A:
 * **The Turku/Kallionpää cohort** (47 volunteers, dexmedetomidine *or* propofol, **within-subject** loss and
   return at constant dosing). `DATA_REQUEST_TURKU_KALLIONPAA.md` is drafted and **unsent** — this result is
   the argument for sending it.
+
+---
+
+## Q25 — Challenge C's two failure modes are different, and both are now measured (E62, 2026-07-31)
+
+E60 found the BIS-like index scores median |err| 39.96 below BIS 20 under both models, with median
+**SQI 5.1 of 100**. E62 asked whether that is the index's failure or the reference's, with a differential
+prediction: under *reference collapse*, filtering on the monitor's own quality flag should strip the deep
+band's error and leave [40,60) alone; under *index failure*, it should change little anywhere.
+
+**The survival gate answered it before the primary could run.**
+
+| band | windows at SQI ≥ 50 | cases | median SQI |
+|---|---|---|---|
+| **[0,20)** | 90 → **14 (15.6 %)** | 10 | **5.1** |
+| [20,40) | 2,240 → 2,138 (95.4 %) | 228 | 91.7 |
+| [40,60) | 2,879 → 2,792 (97.0 %) | 240 | 93.7 |
+| [60,80) | 468 → 448 (95.7 %) | 183 | 91.6 |
+| [80,100) | 168 → 133 (79.2 %) | 93 | 69.9 |
+
+**VERDICT: BAND EMPTIED.** 84.4 % of the [0,20) windows fail the device's own flag, against 3–5 % in every
+band from 20 to 80. The gate required 30 windows and 15 cases and got 14 and 10, so **no fidelity was
+computed on the remnant and none may be quoted.** That refusal is the result, and it is stronger than a
+number would have been: E60's 39.96 was the index being scored against readings the monitor declares
+unreliable.
+
+### The completed picture, with a different measured criterion at each end
+
+* **Bottom fails on SIGNAL QUALITY** — 84.4 % of [0,20) below SQI 50.
+* **Top fails on MUSCLE** — 98.2 % of [80,100) and 35.0 % of [60,80) above E46's EMG threshold, while both
+  bands retain 79–96 % of their windows under the SQI filter. **Their failure is not a quality-flag
+  failure**, so the two diagnoses do not substitute for one another and both had to be measured.
+* **Middle, [20,60), is clean on both** — 95–97 % SQI survival, 4.6–5.6 % artefact.
+
+### What was deliberately not done
+
+Filtered fidelities for the usable bands were **not** computed: the registered gate stopped the experiment,
+and continuing past a fired gate is what the gate exists to prevent. The retention figures mean E58's and
+E60's published numbers already rest on a cohort that is ≥ 95 % SQI-clean in [20,60), so they stand as
+quoted. A filtered refit is a one-line successor and has not been run.
+
+### The deliverable, final
+
+| band | model | fidelity | why |
+|---|---|---|---|
+| [0,20) | — | **refuse** | 84.4 % of windows fail the monitor's own SQI flag |
+| [20,40) | two-stage (E60) | ~4.8 | 95.4 % SQI-clean, 5.6 % artefact |
+| [40,60) | one-stage (E58) | **3.47** | 97.0 % SQI-clean, 4.6 % artefact; beats Lee et al.'s 4.1 |
+| [60,80) | — | **refuse** | 35.0 % facial-EMG artefact |
+| [80,100) | — | **refuse** | 98.2 % facial-EMG artefact |
