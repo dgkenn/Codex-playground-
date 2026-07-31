@@ -594,3 +594,16 @@ scripts/heedb_run.sh python analysis/X   # anything touching real credentialed d
 Branch: **`claude/heedb-eeg-phenotype-discovery-2mnwzx`** — develop, commit and push here.
 Run `git config user.email noreply@anthropic.com && git config user.name Claude` or commits show as
 unverified on GitHub.
+51. **THE PRIMARY STATISTIC MUST BE SENSITIVE TO THE FAILURE MODE THE EXPERIMENT EXISTS TO FIND.** Rule 30
+    says a rule set before the run can still be set too low. This is the sibling error: a rule set before
+    the run, correctly followed, that measures the wrong part of the distribution. **E58** registered
+    *median* absolute error as its primary, then produced a per-band table showing fidelity of 3.47 BIS
+    units inside the clinical target band and **29.84 at BIS ≥ 80**. Median error is the statistic least
+    sensitive to a tail, and the tail was the entire finding — which the primary could not see at all.
+    (What the tail *meant* took a second correction: those windows are 98.2 % facial-EMG artefact, so the
+    row measures failure to reproduce an artefact-driven reference, not failure to detect wakefulness.
+    That correction changes the interpretation and not this rule.) The verdict stands as registered (NO GAIN, increment −0.195 [−0.424, +0.035]) and
+    the same fit improves visibly on mean |err| and R², which were descriptive and stay descriptive. **The
+    check to run before registering: name the way the measure is expected to fail, then ask whether the
+    primary statistic would move if that failure got twice as bad.** If it would not, the primary is
+    measuring somewhere else.

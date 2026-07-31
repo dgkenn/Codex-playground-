@@ -1114,3 +1114,88 @@ Mean error 7.55 against median 5.01 also shows a tail of poor predictions that a
 * **Fidelity is not uniform.** Lee et al. fit *range-specific* models, so agreement almost certainly varies
   with depth — and the deep and light extremes are exactly where a depth monitor's disagreements matter.
   Fidelity must be reported per BIS range, not pooled.
+
+### E58 BUILT IT AND MEASURED IT, 2026-07-31 — the answer is "yes inside the target band, no outside it"
+
+`vitaldb_bis.csv` now exists: the four subparameters (`bis_rbr`, `bis_bsr`, `bis_quazi`, `bis_sfs`) computed
+on the **same 6,679-window grid** `vitaldb_grid.csv` covers, joined at **100.0 %** with **zero** `meta_bis`
+disagreements. Analysis set 5,845 windows, 247 cases. `bsde/src/bsde/features/bis_subparams.py` implements
+them from the published descriptions; SyncFastSlow is the first genuinely bispectral quantity in this repo.
+
+**The registered primary said NO GAIN, and it was close.** Out-of-bag median |err| increment for
+ours+subparams over ours alone: **−0.195 BIS units [−0.424, +0.035]** across 400 refit draws. The point
+estimate favours the subparameters; the interval does not exclude zero; the rule was written first and is
+not being moved (rule 30). The within-case placebo returned **+0.004 [−0.079, +0.085]**, a tight null, so
+the −0.195 is genuine window-level tracking rather than four extra columns of case-level information —
+an *underpowered positive*, not a flat nothing.
+
+| arm | median \|err\| | mean \|err\| | R² |
+|---|---|---|---|
+| A ours (15 live features of 18; 3 are all-NaN on one channel) | 4.81 | 7.18 | 0.343 |
+| B the four subparameters alone | 6.80 | 9.21 | 0.142 |
+| **C ours + subparameters** | **4.60** | **6.86** | **0.407** |
+| D device's own SR + EMG | 6.28 | 8.46 | 0.246 |
+| E everything | 4.52 | 6.57 | 0.450 |
+
+The probe's central surprise survives at higher precision: **features computed independently from raw EEG
+predict device BIS better than the device's own reported subparameters** — 4.81 against 6.28.
+
+**THE PER-BAND TABLE IS THE RESULT, NOT THE PRIMARY.** Arm C, evaluation-stratified by device BIS:
+
+| device BIS | n | median \|err\| | mean \|err\| |
+|---|---|---|---|
+| [0,40) | 2,330 | 5.48 | 7.64 |
+| **[40,60) target band** | 2,879 | **3.47** | 4.38 |
+| [60,80) | 468 | 8.75 | 9.96 |
+| **[80,100)** | **168** | **29.84** | 29.76 |
+
+Inside the clinical target band the reimplementation beats Lee et al.'s 4.1 on their own development data.
+Q22's third caveat predicted non-uniformity; this is far worse than non-uniform.
+
+**WHAT THE [80,100) ROW MEANS, AND THE FIRST READING OF IT WAS WRONG.** The obvious sentence — "at BIS ≥ 80
+the index is worthless, in exactly the band where a monitor exists to warn that a patient is awake" — was
+written here and is **withdrawn**, because **E22 closed at its gate on precisely this population: every
+BIS ≥ 80 window in VitalDB is a facial-EMG artefact.** Re-measured independently inside E58's own analysis
+set rather than taken from E22: **98.2 %** of those 168 windows exceed E46's artefact threshold
+(`meta_emg` ≥ 32.3), median EMG **48.6** against ~26.8 in the target band, and median SQI falls to **69.9**
+from 93.7. So that row does not measure failure to detect wakefulness. It measures **failure to reproduce a
+device reading that is itself being driven by muscle** — and a from-scratch index computed from EEG has no
+mechanism to reproduce it, which is a property of the reference, not a defect of the index. Giving the model
+the device's own EMG channel (arm E) recovers **5.1** of the ~30 units and no more, so EMG is part of the
+story and a single global linear fit does not capture the rest.
+
+The correction makes the deposit's limit sharper rather than softer: **VitalDB contains no genuine
+awake-under-monitor windows at all.** The strip goes on after induction and comes off around emergence, so
+fidelity at the light end is not merely undermeasured here — it is untestable here, and 168 more windows of
+the same kind would not help.
+
+**WHAT THIS LICENCES.** Computing the index on monitor-free deposits (chennu, ds005620, ds004541, HEEDB,
+ds005385) **only for windows whose predicted value lands in [40,60), and always with ±3.47 attached.** Any
+use at the light end is unsupported by measurement and must not be made. That is a narrower licence than
+step 3 of the plan above assumed, and it is the honest one.
+
+**M2 fired the way the registration expected without failing.** `bis_bsr` passed the variance gate but only
+**7.44 %** of maintenance windows carry any suppression at all — the stratum is nearly degenerate for the
+predicted reason (rule 32). Two declared failure conditions were tested and not met: `bis_bsr` agrees in
+direction with the device's own BIS/SR track (Spearman **0.410**, n=5,798), and `bis_quazi` is not a second
+copy of `bis_bsr` (Pearson **0.050**) — the increment definition did its job (rule 28).
+
+**Registering median |err| as the primary was the wrong choice and is now error-catalogue rule 51.** It is
+the statistic least sensitive to a tail, and the tail was the whole finding.
+
+#### What is still open
+
+* **A range-specific model selected from a first-pass PREDICTION, not from the true BIS.** E58 deliberately
+  refused to fit range-specific models because the range is defined by the regression target and choosing
+  the model from the target's true value is leakage. A two-stage version — predict, then refit within
+  predicted range — is legitimate and untried. It would attack the [60,80) band, where median |err| is 8.75
+  on 468 windows with 35 % artefact contamination. It should **not** be aimed at [80,100): chasing a target
+  that is 98.2 % muscle would fit the artefact, not the index.
+* **A light-anaesthesia deposit.** VitalDB structurally contains no awake-under-monitor windows, so fidelity
+  above BIS 80 is untestable here — not undermeasured, untestable. This is the same wall E22 hit and it is
+  now blocking two experiments, which raises the value of any deposit carrying EEG plus a depth monitor
+  through induction or emergence.
+* **Whether the index needs to be BIS-faithful at all.** The reference at the light end is muscle. A
+  comparator that reproduces BIS *including* its artefacts is not obviously more useful for Challenge C
+  than one that tracks BIS in the band where BIS is measuring brain. Worth deciding explicitly before the
+  index is used anywhere, rather than defaulting to "closer to BIS is better".
