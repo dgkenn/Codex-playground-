@@ -1893,3 +1893,93 @@ constraint on Challenge C rather than an inconvenience.
 
 **What this does NOT say.** Nothing here ranks permutation entropy against `bis_rbr`, and nothing licenses
 either as a measure of consciousness. Q35's owed registered replication is still owed.
+
+---
+
+## Q37 — E76: the declared preprocessing explains the gap, and Challenge C's comparator becomes portable
+
+*Registered before its data existed (E76, ledger SHA `c97227e6`); both co-primaries PASS.*
+
+Q36 left our permutation entropy agreeing with DOSE-I's shipped `PE31` at ρ **+0.7239** while tracking the
+deposit's clinician-rated MOAA/S at **+0.3545** against `PE31`'s **+0.4944**, at nominally identical n=3,
+τ=1. The deposit declares two steps we did not perform. **Both were applied and the gap closes.**
+
+On 43 recordings and 12,170 windows:
+
+| arm | median ρ vs PE31 | median ρ vs MOAA/S |
+|---|---|---|
+| `pe_raw` (as-is) | +0.7241 | +0.3638 |
+| `pe_band` (0.5–45 Hz) | +0.8246 | +0.5264 |
+| `pe_tie` (0.5 µV ties) | +0.7270 | +0.3700 |
+| **`pe_declared`** (both) | **+0.8288** | **+0.5304** |
+| `pe_placebo20` (wrong band, 0.5–20 Hz) | +0.4267 | +0.2563 |
+| *the deposit's own `PE31`* | — | *+0.4944* |
+
+    P1 agreement   D = +0.2457 [+0.1468, +0.3601]   placebo -0.1466   contrast +0.3923 [+0.3385, +0.4469]
+    P2 clinician   D = +0.1609 [+0.0764, +0.2613]   placebo -0.1097   contrast +0.2706 [+0.1822, +0.3646]
+
+0 of 20,000 resamples on the wrong side in either, identical verdicts at three seeds.
+
+**The placebo does not merely fail to help — it hurts.** An arbitrary 0.5–20 Hz band makes agreement *worse*
+than doing nothing. So the gain is specific to the band the deposit declares, not to low-passing in general,
+which is the only reading that supports "our implementation was mis-specified" over "permutation entropy is
+band-sensitive".
+
+**The decomposition is one-sided and it is the useful part** (descriptive, not gated): the band does
+essentially all of it — **+0.2383 of P1's +0.2457** and **+0.1620 of P2's +0.1609** — while the 0.5 µV tie
+threshold contributes **+0.0234 [+0.0089, +0.0414]** on agreement and **+0.0077 [−0.0021, +0.0188]** on
+MOAA/S, the second spanning zero. The tie rule was *active* (16–17 % of embedded windows carry a tied pair,
+gate G2), so that is a measured near-null rather than an inapplicable arm. **If you implement one of the two
+steps, implement the band.**
+
+**G4 is the machinery result worth keeping.** `pe_raw` reproduced the earlier pass's `mine_pe` on all
+**10,927 shared rows with max |diff| = 0** — exact, through a completely rewritten vectorised inner loop.
+
+### What this changes for Challenge C
+
+Q34 concluded "PE31 is the comparator to use", which bound Challenge C to deposits that ship a PE31 column —
+i.e. DOSE-I alone. **That constraint is lifted.** With the declared recipe our own PE reaches +0.5304 against
+MOAA/S where the shipped column reaches +0.4944. *That comparison is descriptive: no interval comparison was
+performed and no superiority is claimed.* What is claimed is portability.
+
+### The first evaluation refused, and the record of it is kept
+
+At 26 recordings the coverage gate G5 (registered floor 30) refused and printed `GATE FAILED`, correctly.
+The shortfall was the launch argument, not the design — `--n-recordings 40` stops at `10-060` and 14 of those
+40 fail the shared non-uniform-time-axis rule. `results/e76_first_pass_note.md` records the full descriptive
+table that was visible before the extraction was extended, so a reader can judge that decision rather than
+take it on trust.
+
+---
+
+## Q38 — E75: the aggregate is a NULL, and the verdict code was what hid it
+
+*E75 first printed `SPLIT — AGREE [...]; REVERSE [...]`, described in its own registration as "the
+informative outcome" and "Challenge A's candidate list". **That verdict is withdrawn.***
+
+E75's registered branch (c) was "NOT INFORMATIVE — the label-permutation placebo reproduces the agreement
+rate", coded as `abs(real - 0.5) <= abs(placebo_mean - 0.5)`. **It could not fire for any data.** The placebo
+mean is an average over 300 draws and sits at ~0.500 by construction; the real rate is a fraction over an
+**odd** number of testable features and can never equal 0.500 either. Compared against the placebo's
+*distribution* — which is what the registered sentence actually means — **0.487 of draws reach the observed
+0.571 or better**, and 4 of 7 is precisely the median of a Binomial(7, 0.5). Fifth occurrence of rule 37's
+family; now in `CLAUDE.md`.
+
+**Per-feature signs stand as descriptive** (each is determined by its own G1 interval), and they reproduce
+E74 exactly:
+
+| same sign, drug and no-drug | reversing |
+|---|---|
+| `critical_slowing_ar1` +3.256 / +0.515 | `exponent_low` +3.157 / −1.238 |
+| `emg_beta_gamma_fraction` −1.906 / −0.900 | `lempel_ziv` −2.281 / +1.505 *(reverses on drug-B too)* |
+| `spectral_edge_95` −2.868 / −0.772 | `multiscale_entropy_slope` +3.612 / −1.372 |
+| `whole_head_exponent` +4.008 / +1.120 *(agrees on drug-B too)* | |
+
+**What must not be said:** that the left column is a class of measures. The set carries no more structure
+than chance, and the presence of `emg_beta_gamma_fraction` — a muscle measure — in it is what "sign agreement
+is necessary, not sufficient" looks like when it bites.
+
+**Two machinery facts the design was not built to find and which are not softened.** `uce_v1`, this
+project's flagship candidate, is **empty in all 710 rows** of the Sleep-EDFx five-stage table and could not
+enter the no-drug arm at all. `exponent_high` — the feature E69, E70 and E77 all concern — **failed the
+depth-monotonicity gate**, so its cross-arm sign is uninterpretable.
