@@ -297,6 +297,17 @@ def f_lziv(data, ch_names, sfreq, meta=None) -> float:
     return float(np.mean(vals)) if vals else float("nan")
 
 
+def f_lrtc_alpha(data, ch_names, sfreq, meta=None) -> float:
+    """Mean DFA exponent of the 8-13 Hz amplitude envelope across channels — the LRTC of alpha."""
+    from bsde.features.exotic import lrtc_envelope
+    vals = []
+    for ch in _subset(data):
+        v = lrtc_envelope(np.asarray(ch, float), sfreq, band=(8.0, 13.0))
+        if np.isfinite(v):
+            vals.append(v)
+    return float(np.mean(vals)) if vals else float("nan")
+
+
 def f_wpli_alpha(data, ch_names, sfreq, meta=None) -> float:
     """Mean debiased wPLI over channel pairs in 8-13 Hz. Capped at 300 pairs, sampled deterministically."""
     from bsde.features.connectivity import wpli
@@ -434,6 +445,35 @@ def seed_registry() -> Sequence[Candidate]:
         prior_art="Casali et al. PCI, PMID 23946194 (perturbational); Sarasso et al., PMID 26752078.",
         notes="Declares four predictions, the most in the seed set, and is therefore the candidate with the "
               "most ways to be wrong. That is a feature of the declaration, not a liability.")
+
+    register(
+        name="lrtc_alpha", version="1.0", fn=f_lrtc_alpha,
+        interpretation="DFA exponent of the 8-13 Hz amplitude envelope, averaged across channels. "
+                       "Long-range temporal correlation: how far the persistence of an alpha burst "
+                       "reaches across timescales, as opposed to how large the bursts are.",
+        predictions={"unconscious_vs_awake": "higher",
+                     "command_following": "higher"},
+        failure_conditions=[
+            "it is redundant with critical_slowing_ar1 -- both summarise an amplitude envelope, and if "
+            "they correlate above 0.9 across recordings this candidate adds nothing (rule 28, which this "
+            "project has already paid for three times)",
+            "it is redundant with relative_alpha_power -- the whole claim is that the TEMPORAL STRUCTURE "
+            "of alpha carries what its MAGNITUDE does not, and a high correlation with power refutes that",
+            "it depends on recording length rather than on the subject, which a duration-stratified check "
+            "must expose: DFA scales are anchored in seconds precisely so this can be tested",
+        ],
+        requires=_CORE, complexity=4, min_channels=1, min_duration_s=120.0,
+        prior_art="Ruiz-Rizzo et al., Eur J Neurosci 2021 (PMID 34618375) report that resting ALPHA POWER "
+                  "was NOT associated with an individual behavioural ability while resting ALPHA LRTC WAS "
+                  "-- the exact shape Challenge B needs. Thul et al., NeuroImage 2018 (PMID 29885482) "
+                  "report LRTC in beta amplitude rising under sevoflurane unconsciousness, with beta LRTC "
+                  "plus alpha amplitude classifying state above 80%. Both verified through E-utilities.",
+        notes="Imported from statistical physics rather than from EEG research: scale-free temporal "
+              "structure, the machinery behind self-organised criticality. Registered because E41 found "
+              "the incumbent (relative_alpha_power) beating all fourteen existing candidates, so the "
+              "refinement worth trying is a DIFFERENT PROPERTY OF THE SAME RHYTHM rather than another "
+              "spectral summary. The prediction for unconscious_vs_awake is signed from PMID 29885482 and "
+              "is the falsifiable half: if LRTC does not rise, that paper does not transfer here.")
 
     register(
         name="wpli_alpha", version="1.0", fn=f_wpli_alpha,

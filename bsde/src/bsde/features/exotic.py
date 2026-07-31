@@ -395,3 +395,104 @@ def critical_slowing(x: np.ndarray, sfreq: float, env_band: tuple = (1.0, 45.0),
     if not ar1s:
         return {"ar1": float("nan"), "envelope_variance": float("nan")}
     return {"ar1": float(np.mean(ar1s)), "envelope_variance": float(np.mean(variances))}
+
+
+def dfa_exponent(x: np.ndarray, scales: np.ndarray | None = None,
+                 min_scale: int = 16, max_scale: int | None = None, order: int = 1) -> float:
+    """Detrended fluctuation analysis exponent of a 1-D series — the long-range-temporal-correlation measure.
+
+    Integrate the mean-removed series into a profile, split the profile into non-overlapping windows of
+    length `s`, fit and remove a polynomial of `order` within each window, take the root-mean-square of the
+    residual, and regress `log F(s)` on `log s`. The slope is the DFA exponent `alpha`.
+
+    **The exponent has known values, which is what makes this testable rather than merely implemented:**
+
+        alpha = 0.5   uncorrelated (white) noise
+        alpha > 0.5   persistent — a large value tends to be followed by a large one
+        alpha = 1.0   1/f, "pink", scale-free
+        alpha = 1.5   Brownian motion (the integral of white noise)
+
+    `tests/test_dfa_lrtc.py` checks all four against series whose exponent is known analytically, which is
+    an INDEPENDENT check in the sense error-catalogue rule 23 demands — the ground truth comes from the
+    mathematics, not from this implementation.
+
+    Scales are log-spaced from `min_scale` to `max_scale` (default `n // 4`, so at least four windows
+    contribute at the largest scale). Returns NaN if fewer than four usable scales exist.
+    """
+    x = np.asarray(x, float)
+    x = x[np.isfinite(x)]
+    n = x.size
+    if n < 64:
+        return float("nan")
+    if max_scale is None:
+        max_scale = n // 4
+    if max_scale <= min_scale:
+        return float("nan")
+    if scales is None:
+        scales = np.unique(np.round(np.geomspace(min_scale, max_scale, 20)).astype(int))
+    scales = np.asarray([s for s in scales if 4 <= s <= n // 2], int)
+    if scales.size < 4:
+        return float("nan")
+
+    prof = np.cumsum(x - x.mean())
+    f = []
+    keep = []
+    for s in scales:
+        nwin = n // s
+        if nwin < 4:
+            continue
+        seg = prof[:nwin * s].reshape(nwin, s)
+        t = np.arange(s, dtype=float)
+        # polyfit over all windows at once: design matrix is shared, so one lstsq does every window
+        V = np.vander(t, order + 1)
+        coef, *_ = np.linalg.lstsq(V, seg.T, rcond=None)
+        resid = seg.T - V @ coef
+        f.append(np.sqrt(np.mean(resid ** 2)))
+        keep.append(s)
+    if len(keep) < 4:
+        return float("nan")
+    f = np.asarray(f, float)
+    keep = np.asarray(keep, float)
+    ok = np.isfinite(f) & (f > 0)
+    if ok.sum() < 4:
+        return float("nan")
+    slope = np.polyfit(np.log(keep[ok]), np.log(f[ok]), 1)[0]
+    return float(slope)
+
+
+def lrtc_envelope(x: np.ndarray, sfreq: float, band: tuple = (8.0, 13.0),
+                  min_scale_s: float = 1.0, max_scale_s: float = 20.0) -> float:
+    """Long-range temporal correlation of a band's AMPLITUDE ENVELOPE — DFA on the Hilbert envelope.
+
+    **Why this measure and not another spectral one.** Ruiz-Rizzo et al., *Eur J Neurosci* 2021
+    (**PMID 34618375**) report, in an individual-differences design and in these words: *"alpha power alone
+    (magnitude) at rest was not associated with flexibility. However, we found that the participants'
+    ability to manipulate VWM representations was correlated with alpha LRTC."* That is the exact shape
+    Challenge B needs — **a temporal-dynamics property of a rhythm predicting an individual ability where
+    the amplitude of the same rhythm does not.** Thul et al., *NeuroImage* 2018 (**PMID 29885482**) report
+    the complementary state result: LRTC in beta amplitude rises under sevoflurane-induced unconsciousness,
+    and beta LRTC combined with alpha amplitude classifies state above 80 %. Both records were pulled
+    through NCBI E-utilities and read in full, not summarised by a fetch tool (rules 25, 39).
+
+    So this is a genuine import from statistical physics — scale-free temporal structure, the same
+    machinery used for self-organised criticality — and it is **not** a relabelling of `critical_slowing`,
+    which measures lag-1 autocorrelation at ONE timescale. DFA measures how correlation decays ACROSS
+    timescales, and the two can move in opposite directions.
+
+    Scales span `min_scale_s` to `max_scale_s` in seconds, so the estimate is anchored to physiological
+    time rather than to sample count and is comparable across sampling rates. Returns NaN if the recording
+    is too short to supply four scales.
+    """
+    x = np.asarray(x, float)
+    if x.size < int(4 * max_scale_s * sfreq):
+        max_scale_s = max(min_scale_s * 4.0, x.size / (4.0 * sfreq))
+    filt = _bandpass_filtfilt(x, sfreq, band[0], band[1])
+    if not np.all(np.isfinite(filt)):
+        return float("nan")
+    from scipy.signal import hilbert
+    env = np.abs(hilbert(filt))
+    lo = max(4, int(round(min_scale_s * sfreq)))
+    hi = int(round(max_scale_s * sfreq))
+    if hi <= lo:
+        return float("nan")
+    return dfa_exponent(env, min_scale=lo, max_scale=hi)
