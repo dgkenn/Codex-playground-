@@ -900,3 +900,35 @@ are not. **What is unknown is whether it carries an aperiodic measure** — no p
 (§1 of `EXISTING_NORMATIVE_MODELS.md`), and LENS's contents are unverified here. So it may be a reference
 for band power that still leaves the exponent unnormed, which is the situation the whole multi-cohort build
 exists to address. Request it, but do not plan around it.
+
+---
+
+## Q20 — chennu CANNOT be re-extracted from this sandbox (environment blocker, not a design problem)
+
+*Added 2026-07-31. The script is written, correct and committed; the host is unreachable.*
+
+E52 confirmed E50's prediction but carries one asymmetry: chennu's sub-bands come from the older
+per-deposit extraction and ds005620's from `analysis/eeg_features_common.py`. The estimator is identical
+(`subband_exponents`) but the montage, the 180 s window and the 250 Hz resample are not. `exponent_high`
+agreed to **0.006** across that difference — either strong evidence it is immaterial, or luck at n = 20.
+
+`analysis/chennu_shared_extract.py` removes the ambiguity and **cannot run here.**
+`api.repository.cam.ac.uk` fails TLS with *"Hostname mismatch, certificate is not valid for
+api.repository.cam.ac.uk"* under both `curl --cacert /root/.ccr/ca-bundle.crt` and Python with
+`SSL_CERT_FILE`/`REQUESTS_CA_BUNDLE` set. It is **host-specific, not a proxy misconfiguration**: measured
+the same minute, `s3.amazonaws.com` returns 307 and `eutils.ncbi.nlm.nih.gov` returns 301, while both
+`api.repository.cam.ac.uk` and `repository.cam.ac.uk` return 000. Disabling TLS verification or unsetting
+`HTTPS_PROXY` is forbidden by the environment rules and was not attempted.
+
+**So the existing `chennu_features_v3.csv` cannot be regenerated in this sandbox** and E52's asymmetry
+cannot be closed the direct way here.
+
+**Two things that CAN be done instead, in order of value:**
+
+1. **Measure the asymmetry rather than eliminate it.** Process ds005620 through the shared path *and*
+   through a chennu-matched configuration (average reference, the deposit's epoching, 0.5–45 Hz), and
+   report how far the sub-band displacements move. If they move far less than the 0.006 agreement, the
+   asymmetry is immaterial and E52 stands without chennu being touched. This needs no new access.
+2. **Re-extract ds004541 through the shared path** (OpenNeuro, reachable) to add a third deposit to E49's
+   sub-band re-run. It cannot fix the chennu asymmetry and its agent is unrecorded, so it anchors the
+   state scale only — but it is the only way to get past two deposits with current access.

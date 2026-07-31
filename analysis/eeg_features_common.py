@@ -219,6 +219,22 @@ def features_from_raw(raw):
     return out
 
 
+def features_from_array(data_uv, sfreq, ch_names):
+    """Shared feature set from an in-memory array already in MICROVOLTS.
+
+    Deliberately builds an `mne.RawArray` and defers to `features_from_raw` rather than reimplementing the
+    montage pick, the resample and the 180 s truncation. A second implementation would be a second thing to
+    keep in step, and the whole point of this module is that there is exactly one (rule 20). The 1e-6 is
+    because `features_from_raw` converts volts to microvolts on the way in; float64 makes the round-trip
+    exact to well below any measurement precision.
+    """
+    import mne
+    import numpy as np
+    info = mne.create_info(list(ch_names), float(sfreq), ch_types="eeg", verbose="ERROR")
+    raw = mne.io.RawArray(np.asarray(data_uv, float) * 1e-6, info, verbose="ERROR")
+    return features_from_raw(raw)
+
+
 def features_from_file(path):
     """Read one EEG file (.edf / .set / .bdf / .fif) and compute the shared feature set."""
     import mne
