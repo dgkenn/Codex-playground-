@@ -51,17 +51,20 @@ week. The generator had no balancing logic and no cross-month memory.
 - **New audit check.** `audit.py` now prints a **night-float fairness** report:
   every start+end double per month, plus the year-total nights per intern with a
   spread flag. This surfaces the imbalance automatically going forward.
-- **January — can't safely rebalance.** Structurally forced: January has 3 LSH
-  night-float weeks (odd, can't split evenly), and Oghenesume's firm wedding
-  forces the 1/31 week onto Zaidi (he continues into Feb; Oghenesume must be off).
-  Swapping the pair would put Oghenesume on nights during his wedding. Left as-is
-  (the imbalance is only 1 night within January).
-- **Zaidi's year total (24 nights) — needs a scheduler decision.** He's well
-  above everyone else, driven mostly by **February (11 nights)** — the month-end
-  protection has him cover two boundary weeks so departing interns don't finish
-  on nights. Reducing it means relaxing that protection or offloading a February
-  week, both judgment calls for the scheduler (February is a "perfect storm" where
-  everyone present in late Feb except one Lahey rotator is leaving).
+- **February — FIXED (scheduler correction).** Zaidi's 24-night year total was
+  **not** a fairness problem, it was a **bug**. A role-swap window (`SWAP12_DAYS`,
+  2/8–3/5 and 3/7–4/2) had the LSH2 and Lahey slots trading places to keep the
+  month-end night float off a departing intern. That broke the march two ways:
+  (1) Zaidi finished nights Fri 2/5 and by the core rule *night float returns to
+  Monday long call* owns **LC on Mon 2/8** — the swap handed it to Kopp Vanuzzi
+  and pushed Zaidi onto the Lahey slot, which then gave him a **second NF week
+  (2/21–26)**; (2) Kopp Vanuzzi takes over **Juyal's** position in the march on
+  2/8 and should simply continue it — the swap stopped him marching with Juyal
+  at all. **Both windows are removed; the march is now pure for all 296 days.**
+  Zaidi: February 11 → **6 nights**, year 24 → **19**, in line with everyone else.
+- **January — nothing to fix.** With the march pure, January is a clean cycle
+  (Zaidi 1/3–8, Ahn 1/10–15, Oghenesume 1/17–22, Juyal 1/24–29, Zaidi 1/31
+  spillover). Oghenesume's wedding weekend is untouched.
 
 ## ❌ Conflicts (can't accommodate within the rules)
 
@@ -82,3 +85,13 @@ week. The generator had no balancing logic and no cross-month memory.
 
 - **MacNeille & Anna Li — August / September pre-Oct items** that fall in the
   finalized August sheet are out of scope for this generator.
+
+## ❓ Open question for the scheduler
+
+- **Kennedy holds the March month-end night float (3/28–3/31)**, with Oghenesume
+  continuing the block 4/1–4/2. This is the rules' normal boundary handoff, but it
+  is only acceptable if **Kennedy's April is outpatient / elective / vacation**.
+  The audit is deliberately **failing** on this until it's confirmed, rather than
+  silently exempting it. If April is an inpatient service, the 3/28 week moves.
+- Same confirmation still outstanding for **Oghenesume (NF 4/25–30, block ends
+  4/30)** → what is his May rotation? Currently carried as an exemption.

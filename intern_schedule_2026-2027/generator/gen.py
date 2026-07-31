@@ -67,23 +67,25 @@ def _blk(blocks,dt):
 # empty here so the document is the clean, fully-auditable pure-march baseline
 # (November personal tweaks are handled on the back end).
 KEN_SWAP_DAYS={d(11,x,2026) for x in range(1,14)}   # Kennedy on NF 11/1-6 (Chiasson takes his 11/8-13 week in return)
-# --- Month-end night-float protection (Feb & Mar 2027) -----------------------
-# NOBODY whose block ends with the month may hold the month-end night float.
-# The march puts the final NF week of Feb and Mar on an LSH slot, i.e. on an
-# intern leaving the service the next morning.  The only person present whose
-# rotation SPANS each boundary is the Lahey rotator (Kopp Vanuzzi to 3/7,
-# Almadhoob to 4/18), so for a window ending at each boundary the LSH2 slot
-# and the Lahey slot trade ROLES (same mechanism as the Kennedy/Chiasson
-# November accommodation).  Each window opens at the start of a march week,
-# three weeks out, so the Fri-LC -> Sun-NF chain stays intact, Q4 spacing
-# holds, and no one collects a second Saturday 24h in the month.  (Feb's
-# window opens Mon 2/8 rather than Sun 2/7 so Juyal keeps his final-Sunday
-# day call and Zaidi is not called the day after his 2/1-5 night-float week.)
-def _span(a,b):
-    s=set(); t=a
-    while t<=b: s.add(t); t+=timedelta(days=1)
-    return s
-SWAP12_DAYS=_span(d(2,8,2027),d(3,5,2027))|_span(d(3,7,2027),d(4,2,2027))
+# --- Slot integrity: NO month-end role swaps (scheduler correction, Jul 2027) --
+# An earlier version carried a SWAP12_DAYS window (Feb 8 - Mar 5 and Mar 7 -
+# Apr 2) in which the LSH2 and Lahey slots traded ROLES, intended to keep a
+# month-end night-float week off a departing LSH intern.  The scheduler flagged
+# this as wrong, and it was: a role swap breaks the march for BOTH slots.
+#   * Zaidi (LSH2) finished nights Fri 2/5 and, per the core rule "night float
+#     returns to Monday long call", owns LC on Mon 2/8 - but the swap handed that
+#     long call to Kopp Vanuzzi and pushed Zaidi onto the Lahey slot, which then
+#     gave him a SECOND night-float week (2/21-26).  That single override is what
+#     drove his year total to 24 nights.
+#   * The Lahey SLOT is continuous across a rotator handoff: Kopp Vanuzzi takes
+#     over Juyal's position in the march on 2/8 and simply continues it.  The
+#     swap prevented that, so Kopp never marched with Juyal's schedule.
+# The march is now pure: the four slots [LSH1, Lahey, LSH2, BMC] cycle without
+# exception, and each arriving rotator inherits their slot's march position from
+# the person they replace.  Month-boundary night-float spillover is handled the
+# way the rules describe (departing intern finishes a few nights, arriving intern
+# continues the block) and is checked by the audit's `end-on-nf` rule.
+SWAP12_DAYS=set()
 # --- Sept->Oct night-float boundary.  October's LSH pair is ordered
 # [BRONSON, MACNEILLE] (Bronson=slot0) so Bronson absorbs the calendar "double"
 # (the 9/27-10/2 spillover start + the 10/25-30 end week) and MacNeille gets a

@@ -9,7 +9,7 @@ Coverage **Oct 1 2026 – Jun 23 2027**, continuing the finalized September. Bui
 | One Long Call per day | ✅ PASS |
 | Different long-call intern than previous day | ⚠️ SEE NOTE |
 | Q4 — every intern on call only every 4th day | ⚠️ SEE NOTE |
-| No one leaving the service ends on night float | ✅ PASS |
+| No one leaving the service ends on night float | ⚠️ SEE NOTE |
 | Friday long-call intern = next week's night float | ⚠️ SEE NOTE |
 | Night float: same person the whole Sun–Fri block | ✅ PASS |
 | Night-float intern present | ✅ PASS |
@@ -29,26 +29,37 @@ Coverage **Oct 1 2026 – Jun 23 2027**, continuing the finalized September. Bui
 
 1. **Two Saturday 24h doubles — Bronson (Oct), Li (May).** A 5-Saturday calendar month whose repeating middle-intern slot lands on a (stable) LSH intern puts that intern on the 1st and 5th Saturday. Reassigning the 5th would force a different intern into long-call-then-24h or back-to-back long call, breaking the strict Q4 march. The prior rules explicitly allowed "in very rare occasions 2." These are the only two all year.
 2. **June 21–23, 2027 wind-down.** The roster has **no BMC-South intern after 6/20** (Shirin Saeed's block ends), so those last 3 days run with 3 interns instead of 4; with only two daytime interns, long call can't hold a strict 4-day gap on 6/22–6/23. Everything through 6/20 is clean.
-3. **New intern on long call / night float at a rotation start (11 times).** The Q4 march (and Monday night-float starts, per the rules) sometimes place an arriving BMC/Lahey intern on long call or night float on their first Monday. The comprehensive rules permit this; the earlier email preferred avoiding it "when possible." Days: Mon 9/28 BUTT (BMC); Mon 11/23 SHETTY (BMC); Mon 12/21 FARZEELA (BMC); Mon 2/8 KOPP VANUZZI (LAHEY); Mon 2/15 VILLANUEVA (BMC); Mon 3/8 PATEL (LAHEY); Mon 3/15 BUTT (BMC); Mon 4/19 AHLUWALIA-S (LAHEY); Mon 5/10 METRI (BMC); Mon 5/17 SANCHEZ-ALMANZAR (LAHEY); Mon 6/14 PATEL (LAHEY).
-4. **Night-float transition handoffs (4).** At month/rotation boundaries a departing intern finishes a few nights and the arriving intern continues the block — exactly as the rules describe ("a new intern starts night float when the month ends").
+3. **New intern on long call / night float at a rotation start (10 times).** The Q4 march (and Monday night-float starts, per the rules) sometimes place an arriving BMC/Lahey intern on long call or night float on their first Monday. The comprehensive rules permit this; the earlier email preferred avoiding it "when possible." Days: Mon 9/28 BUTT (BMC); Mon 11/23 SHETTY (BMC); Mon 12/21 FARZEELA (BMC); Mon 2/15 VILLANUEVA (BMC); Mon 3/15 BUTT (BMC); Mon 3/22 ALMADHOOB (LAHEY); Mon 4/19 AHLUWALIA-S (LAHEY); Mon 5/10 METRI (BMC); Mon 5/17 SANCHEZ-ALMANZAR (LAHEY); Mon 6/14 PATEL (LAHEY).
+4. **Night-float transition handoffs (7).** At month/rotation boundaries a departing intern finishes a few nights and the arriving intern continues the block — exactly as the rules describe ("a new intern starts night float when the month ends").
+
+## Slot integrity — no role swaps (scheduler correction)
+
+A previous revision carried a **role-swap window** (`SWAP12_DAYS`, Feb 8 – Mar 5 and Mar 7 – Apr 2) in which the **LSH2 and Lahey slots traded places**, meant to keep the month-end night float off a departing LSH intern.  The scheduler flagged it and it has been **removed**.  It broke the march for both slots:
+
+- **Zaidi (LSH2) was marched wrong in February.** He finished nights Fri 2/5, so by the core rule *"night float returns to Monday long call"* he owns **LC on Mon 2/8**.  The swap gave that long call to Kopp Vanuzzi and moved Zaidi onto the Lahey slot, which then handed him a **second night-float week (2/21–26)**.  That one override is the entire reason his year total read 24 nights.
+- **Kopp Vanuzzi never marched with Juyal's schedule.** The Lahey **slot** is continuous across a rotator handoff: Kopp takes over Juyal's position on 2/8 and simply continues the march from where Juyal left it.  The swap prevented that.
+
+The march is now **pure for all 296 days**: the four slots `[LSH1, Lahey, LSH2, BMC]` cycle without exception, and every arriving BMC/Lahey rotator inherits their slot's march position from the person they replace.  Effect on Zaidi: **February 11 → 6 nights, year 24 → 19**, in line with everyone else.
 
 ## Leaving-the-service night-float protection (hard rule)
 
-**No intern whose block is ending holds the night float.** The march places the final NF week of January, February and March 2027 on LSH slot 2 — under a naive roster that is **Oghenesume (1/31), Li (2/28) and Matsuoka (3/28–31)**, each walking into **Lahey** the next morning straight off a night shift.  Fixed structurally, with the audit now enforcing it as a hard rule (`end-on-nf`):
+With the march pure, a month-end night-float week can land on a departing LSH intern.  The rules permit the boundary handoff itself (*"a new intern starts night float when the month ends"*) — what they forbid is an intern walking into their **next inpatient rotation** straight off a night shift.  So each case is exempt **only** if that intern's next month is outpatient / elective / vacation.  The audit enforces this as a hard rule (`end-on-nf`) and fails loudly for anything unconfirmed:
 
-| Month-end NF week | Covered by | Why they're safe |
-|---|---|---|
-| Jan 31 – Feb 5 | Zaidi | Slot choice: Zaidi continues at LSH in February — he isn't leaving.  Bonus: one person now covers the whole week (removes the old 1/31 mid-week handoff). |
-| Feb 28 – Mar 5 | Kopp Vanuzzi | Role-swap window 2/8–3/5: the LSH2 and Lahey slots trade roles, so the Fri-LC→Sun-NF chain hands the boundary week to the Lahey rotator, whose block runs to 3/7. |
-| Mar 28 – Apr 2 | Almadhoob | Role-swap window 3/7–4/2, same mechanism; Almadhoob's block runs to 4/18.  Side benefit: he no longer starts his rotation on night float (3/22), and Patel no longer does a single night float on his final day (3/21). |
+| Intern | Month-end nights | Block ends | Next month | Status |
+|---|---|---|---|---|
+| Wise | 9/27–9/30 | 9/30 | Elective | ✅ confirmed by PD |
+| Bronson | 10/25–10/30 | 10/31 | Vacation | ✅ confirmed by scheduler |
+| Zaidi | 2/28 (1 night) | 2/28 | Vacation | ✅ confirmed |
+| Oghenesume | 4/25–4/30 | 4/30 | ? | ⚠️ **unconfirmed — please verify** |
+| **Kennedy** | **3/28–3/31** | **3/31** | **?** | ❌ **NOT exempt — audit is failing on this** |
 
-Cost accounting (who absorbs the displaced weeks): Zaidi takes the NF weeks of 1/31–2/5 and 2/21–26 (his nights end 2 days before his block does); Kennedy takes 3/21–26 (nights end 5 days before his block does).  Both are exempt from the transition problem only if their next month is outpatient/elective/vacation — as are the two exemptions the audit carries for **MacNeille (NF 10/25–30, block ends 10/31)** and **Oghenesume (NF 4/25–30, block ends 4/30)**.  Confirm all four against the year rotation grid; revoking an exemption makes the audit fail loudly rather than silently shipping a bad transition.
+**Open item for the scheduler:** Kennedy holds the March month-end night float (3/28–3/31, then Oghenesume continues the block 4/1–4/2).  If Kennedy's April is outpatient, elective or vacation this is fine and the exemption gets added.  If he is on an inpatient service on 4/1, the 3/28 week has to move — say the word and it will be reworked.
 
 ## ACGME duty hours
 
 | Limit | Status | Measured |
 |---|---|---|
-| ≤ 80 h/wk (avg over 4 wks) | ✅ PASS | busiest 69.4 h/wk |
+| ≤ 80 h/wk (avg over 4 wks) | ✅ PASS | busiest 66.5 h/wk |
 | No duty period > 28h | ✅ PASS | longest 24 h (Sat 24h) |
 | ≥ 1 day off per week | ✅ PASS | longest streak 6 days |
 

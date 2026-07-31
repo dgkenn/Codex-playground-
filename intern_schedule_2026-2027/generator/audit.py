@@ -53,10 +53,14 @@ for l,dl in calldays.items():
 # rotation straight off a night shift.  Exemptions require the NEXT month to
 # be outpatient/vacation/elective (per the year rotation grid) and are listed
 # explicitly so they can be revoked the moment the grid says otherwise.
-NEXT_IS_OUTPATIENT={("MACNEILLE",2026,10),   # Nov 2026 — confirm outpatient/elective
-                    ("OGHENESUME",2027,4),   # May 2027 — confirm outpatient/elective
-                    ("WISE",2026,9),         # Oct 2026 = ELECTIVE (confirmed by PD) — ok to finish Sept on nights
-                    ("BRONSON",2026,10)}     # Nov 2026 = VACATION (per scheduler) — ends on Fri NF, weekend off, then vacation
+NEXT_IS_OUTPATIENT={("WISE",2026,9),         # Oct 2026 = ELECTIVE (confirmed by PD) — ok to finish Sept on nights
+                    ("BRONSON",2026,10),     # Nov 2026 = VACATION (per scheduler) — ends on Fri NF, weekend off, then vacation
+                    ("ZAIDI",2027,2),        # Mar 2027 = VACATION (confirmed) — 2/28 is a single boundary-spillover night
+                    ("OGHENESUME",2027,4)}   # May 2027 — STILL UNCONFIRMED, verify against the rotation grid
+# NOT exempted (deliberately failing until the rotation grid is confirmed):
+#   KENNEDY, NF 3/28-3/31, LSH block ends 3/31 — needs his April rotation.  If
+#   April is outpatient/elective/vacation, add ("KENNEDY",2027,3) here; if he is
+#   on an inpatient service 4/1, the 3/28 week has to move.
 for dt in days:
     nfp=A[dt]["NF"]
     if not nfp: continue
@@ -294,27 +298,48 @@ L.append(f"4. **Night-float transition handoffs ({len(HANDOFF)}).** At month/rot
          "departing intern finishes a few nights and the arriving intern continues the block — exactly "
          "as the rules describe (\"a new intern starts night float when the month ends\").")
 L.append("")
+L.append("## Slot integrity — no role swaps (scheduler correction)")
+L.append("")
+L.append("A previous revision carried a **role-swap window** (`SWAP12_DAYS`, Feb 8 – Mar 5 and "
+         "Mar 7 – Apr 2) in which the **LSH2 and Lahey slots traded places**, meant to keep the "
+         "month-end night float off a departing LSH intern.  The scheduler flagged it and it has "
+         "been **removed**.  It broke the march for both slots:")
+L.append("")
+L.append("- **Zaidi (LSH2) was marched wrong in February.** He finished nights Fri 2/5, so by the "
+         "core rule *\"night float returns to Monday long call\"* he owns **LC on Mon 2/8**.  The "
+         "swap gave that long call to Kopp Vanuzzi and moved Zaidi onto the Lahey slot, which then "
+         "handed him a **second night-float week (2/21–26)**.  That one override is the entire "
+         "reason his year total read 24 nights.")
+L.append("- **Kopp Vanuzzi never marched with Juyal's schedule.** The Lahey **slot** is continuous "
+         "across a rotator handoff: Kopp takes over Juyal's position on 2/8 and simply continues "
+         "the march from where Juyal left it.  The swap prevented that.")
+L.append("")
+L.append("The march is now **pure for all 296 days**: the four slots `[LSH1, Lahey, LSH2, BMC]` "
+         "cycle without exception, and every arriving BMC/Lahey rotator inherits their slot's march "
+         "position from the person they replace.  Effect on Zaidi: **February 11 → 6 nights, year "
+         "24 → 19**, in line with everyone else.")
+L.append("")
 L.append("## Leaving-the-service night-float protection (hard rule)")
 L.append("")
-L.append("**No intern whose block is ending holds the night float.** The march places the final "
-         "NF week of January, February and March 2027 on LSH slot 2 — under a naive roster that is "
-         "**Oghenesume (1/31), Li (2/28) and Matsuoka (3/28–31)**, each walking into **Lahey** the "
-         "next morning straight off a night shift.  Fixed structurally, with the audit now enforcing "
-         "it as a hard rule (`end-on-nf`):")
+L.append("With the march pure, a month-end night-float week can land on a departing LSH intern.  "
+         "The rules permit the boundary handoff itself (*\"a new intern starts night float when the "
+         "month ends\"*) — what they forbid is an intern walking into their **next inpatient "
+         "rotation** straight off a night shift.  So each case is exempt **only** if that intern's "
+         "next month is outpatient / elective / vacation.  The audit enforces this as a hard rule "
+         "(`end-on-nf`) and fails loudly for anything unconfirmed:")
 L.append("")
-L.append("| Month-end NF week | Covered by | Why they're safe |")
-L.append("|---|---|---|")
-L.append("| Jan 31 – Feb 5 | Zaidi | Slot choice: Zaidi continues at LSH in February — he isn't leaving.  Bonus: one person now covers the whole week (removes the old 1/31 mid-week handoff). |")
-L.append("| Feb 28 – Mar 5 | Kopp Vanuzzi | Role-swap window 2/8–3/5: the LSH2 and Lahey slots trade roles, so the Fri-LC→Sun-NF chain hands the boundary week to the Lahey rotator, whose block runs to 3/7. |")
-L.append("| Mar 28 – Apr 2 | Almadhoob | Role-swap window 3/7–4/2, same mechanism; Almadhoob's block runs to 4/18.  Side benefit: he no longer starts his rotation on night float (3/22), and Patel no longer does a single night float on his final day (3/21). |")
+L.append("| Intern | Month-end nights | Block ends | Next month | Status |")
+L.append("|---|---|---|---|---|")
+L.append("| Wise | 9/27–9/30 | 9/30 | Elective | ✅ confirmed by PD |")
+L.append("| Bronson | 10/25–10/30 | 10/31 | Vacation | ✅ confirmed by scheduler |")
+L.append("| Zaidi | 2/28 (1 night) | 2/28 | Vacation | ✅ confirmed |")
+L.append("| Oghenesume | 4/25–4/30 | 4/30 | ? | ⚠️ **unconfirmed — please verify** |")
+L.append("| **Kennedy** | **3/28–3/31** | **3/31** | **?** | ❌ **NOT exempt — audit is failing on this** |")
 L.append("")
-L.append("Cost accounting (who absorbs the displaced weeks): Zaidi takes the NF weeks of 1/31–2/5 "
-         "and 2/21–26 (his nights end 2 days before his block does); Kennedy takes 3/21–26 (nights "
-         "end 5 days before his block does).  Both are exempt from the transition problem only if "
-         "their next month is outpatient/elective/vacation — as are the two exemptions the audit "
-         "carries for **MacNeille (NF 10/25–30, block ends 10/31)** and **Oghenesume (NF 4/25–30, "
-         "block ends 4/30)**.  Confirm all four against the year rotation grid; revoking an "
-         "exemption makes the audit fail loudly rather than silently shipping a bad transition.")
+L.append("**Open item for the scheduler:** Kennedy holds the March month-end night float (3/28–3/31, "
+         "then Oghenesume continues the block 4/1–4/2).  If Kennedy's April is outpatient, elective "
+         "or vacation this is fine and the exemption gets added.  If he is on an inpatient service "
+         "on 4/1, the 3/28 week has to move — say the word and it will be reworked.")
 L.append("")
 L.append("## ACGME duty hours")
 L.append("")
