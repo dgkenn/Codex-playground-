@@ -168,6 +168,26 @@ class TestInfusionBasis(unittest.TestCase):
         self.assertTrue(np.all(b[:3] == 0.0), "a future infusion leaked backwards")
         self.assertGreater(b[3].sum(), 0.0)
 
+    def test_merging_equal_rates_is_exactly_equivalent(self):
+        """The merge is a performance fix and it must change NOTHING. A 1 Hz hold at a constant rate
+        emits one segment per second; merging them is the same integral. Checked against an unmerged
+        construction rather than asserted."""
+        from bsde.pkpd.propofol import infusion_basis, rate_track_to_segments
+        import numpy as _np
+        t = list(range(0, 600))
+        r = [0.0] * 30 + [600.0] * 200 + [300.0] * 200 + [0.0] * 170
+        s0, s1, rate = rate_track_to_segments(t, r, t_end_s=600.0)
+        self.assertLessEqual(s0.size, 4, f"equal rates were not merged: {s0.size} segments")
+        # Unmerged: one segment per sample, same physical infusion.
+        u0 = _np.asarray([x for x, y in zip(t, r) if y > 0], float)
+        u1 = u0 + 1.0
+        ur = _np.asarray([y for y in r if y > 0], float) * 20.0 / 3600.0
+        ev = list(range(0, 600, 5))
+        a = infusion_basis(s0, s1, rate, ev)
+        b = infusion_basis(u0, u1, ur, ev)
+        self.assertLess(float(_np.max(_np.abs(a - b))) / float(_np.max(b)), 1e-12,
+                        "merging equal-rate segments changed the concentration")
+
     def test_zero_order_hold_not_linear_interpolation(self):
         """A rate track is a HOLD. A segment must span from its own sample to the NEXT one."""
         from bsde.pkpd.propofol import rate_track_to_segments

@@ -186,10 +186,19 @@ def rate_track_to_segments(times_s, rate_ml_per_h, mg_per_ml=20.0, t_end_s=None)
     o = np.argsort(t)
     t, r = t[o], r[o]
     end = float(t_end_s) if t_end_s is not None else float(t[-1])
-    s0 = t
-    s1 = np.append(t[1:], end)
-    keep = (s1 > s0) & (r > 0)
-    return s0[keep], s1[keep], r[keep] * mg_per_ml / 3600.0
+    # MERGE RUNS OF EQUAL RATE. A zero-order hold sampled at 1 Hz emits one sample per second, so a
+    # 20 minute infusion at a constant rate becomes 1,200 identical segments. Merging them is exactly
+    # equivalent -- the integral of a constant rate over [a,b] plus [b,c] is its integral over [a,c] --
+    # and it is the difference between a (1278 x 12781) design matrix per case and a (1278 x ~50) one.
+    # Without it a single VitalDB case allocates gigabytes and the validation cannot run at all.
+    change = np.ones(t.size, dtype=bool)
+    change[1:] = r[1:] != r[:-1]
+    idx = np.flatnonzero(change)
+    s0 = t[idx]
+    s1 = np.append(t[idx[1:]], end)
+    rr = r[idx]
+    keep = (s1 > s0) & (rr > 0)
+    return s0[keep], s1[keep], rr[keep] * mg_per_ml / 3600.0
 
 
 def cumulative(dose_times_s, dose_mg, eval_times_s, weight_kg=None):
