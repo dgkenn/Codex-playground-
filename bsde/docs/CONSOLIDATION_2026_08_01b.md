@@ -267,3 +267,63 @@ answers *does this column carry information about the label I gave it*. It is si
 phenomenon*. E166 built a floor for the first question and treated it as though it settled the second. The
 only instrument that separates them is a placebo on the LABEL, and it has to be matched on the baseline's
 headroom and the label's base rate or it measures those instead.
+
+---
+
+## 10. AMENDMENT 2 — E172's Challenge B positive does NOT replicate on held-out sessions
+
+**E174** ran E172's design on Stieger sessions 2 and 3 — the same 62 subjects, different recording days,
+**123 sessions and 10,504 pairs against E172's 62 and 6,413**, so more power, not less. Every gate passed:
+signed gap +0.0045 inside [−0.0281, +0.0302], trial index as a candidate **0.5000 at p = 0.9900**, i.i.d.
+noise not detected (p = 0.3680), and a **measured floor of ρ = 0.05** — the same floor E172 had. So a null
+here is measured absence, not missing power.
+
+| candidate | held-out | E172 | one-sided p |
+|---|---|---|---|
+| **`mu_mean`** (the primary) | **0.4975** | 0.5176 | **0.6775** |
+| `relative_alpha_power` | 0.4986 | 0.5219 | 0.6135 |
+| `mu_c4` | 0.4975 | 0.5171 | 0.6790 |
+| `mu_c3` | 0.5027 | 0.5116 | 0.3120 |
+| `mu_lateralisation` | 0.5032 | 0.4960 | 0.2780 |
+| `relative_delta_power` | 0.5096 | 0.4957 | 0.0325 |
+| `exponent_low` | 0.5109 | 0.4998 | 0.0145 |
+| `exponent_high` | 0.4928 | 0.4916 | 0.9240 |
+| `whole_head_exponent` | 0.5059 | 0.5129 | 0.1360 |
+| `spectral_edge_95` | 0.5001 | 0.4944 | 0.4990 |
+| `spectral_entropy` | 0.4957 | 0.4978 | 0.7980 |
+
+**All three of E172's BH survivors sit at 0.50.** And the two candidates that do reach p < 0.05 in the
+held-out set — `relative_delta_power` and `exponent_low` — were **null in E172**. The two "hit" sets are
+disjoint. A real effect attenuates; it does not vanish and get replaced by different features. That
+pattern is what noise looks like.
+
+### The instrument change is not the explanation, and that was checked
+
+E174 spent its one allowed repair on directionally balanced pairing, because the greedy match came out
+balanced on session 1 by luck (+0.0009) and did not on the held-out sessions (−0.0607, with trial index
+predicting at p = 0.0000). So E174 and E172 are not quite the same instrument. **Re-running E172's own
+session-1 cohort under E174's balanced pairing:**
+
+| | statistic | p |
+|---|---|---|
+| E172 as run, greedy pairing | 0.5176 | 0.0050 |
+| the same rows, E174's balanced pairing | **0.5192** | **0.0055** |
+
+The repair changes nothing. **The non-replication is about the sessions, not about the pairing.**
+
+### What this changes
+
+* **E172's result stands as run and must never again be described without this attached.** It passed its
+  gates on session 1 and does not survive to sessions 2 and 3 of the same subjects at greater power.
+* **E179 inherits the problem.** Its USABLE verdict — +0.69 extra detected responses per twenty attempts —
+  gates on `mu_mean` in the cohort where the effect exists. Until the same gating is run on the held-out
+  sessions it is a decision rule built on a non-replicating signal.
+* **§4 above and the earlier claim that this was "Challenge B's first calibrated positive" are withdrawn.**
+  The correct sentence is: a calibrated instrument found an effect on one session per subject and did not
+  find it on the next two.
+* **E175 (eegmmidb) is now the only outstanding test**, and its registered prediction of NO POWER at ~45
+  trials per subject looks more likely than ever to be the honest answer.
+
+**The lesson is not new but it is expensive: 62 sessions, 6,413 pairs, every gate green, a clean placebo,
+a measured floor, a published prior-art match and a correct direction — and it still did not replicate.**
+Nothing in the gate machinery this project has built substitutes for held-out data.
