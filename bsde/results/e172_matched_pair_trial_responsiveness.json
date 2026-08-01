@@ -1,0 +1,220 @@
+{
+  "experiment": "E172",
+  "n_trial_rows": 27900,
+  "max_gap": 5,
+  "n_sessions": 62,
+  "n_subjects": 62,
+  "total_pairs": 6413,
+  "median_pairs_per_session": 104.0,
+  "G1_pass": true,
+  "G2a": {
+    "mean_signed_gap": 0.0009355995633868704,
+    "null_lo": -0.039918914704506474,
+    "null_hi": 0.03899111180414778,
+    "mean_abs_gap": 1.3535007016996725,
+    "pass": true
+  },
+  "G2b": {
+    "mean": 0.49203559827874127,
+    "p": 0.207,
+    "pass": true
+  },
+  "G3a": {
+    "p": 0.273,
+    "pass": true
+  },
+  "G3b_ladder": [
+    {
+      "rho": 0.02,
+      "p": 0.093
+    },
+    {
+      "rho": 0.05,
+      "p": 0.005
+    }
+  ],
+  "floor": 0.05,
+  "table": {
+    "mu_mean": {
+      "mean": 0.5176449836701507,
+      "median": 0.5132909903552105,
+      "n_sessions": 62,
+      "frac_same_side": 0.6129032258064516,
+      "ci": [
+        0.5053873308647079,
+        0.5302728298587319
+      ],
+      "p": 0.006,
+      "null_mean": 0.50012181605778,
+      "n_null": 2000
+    },
+    "mu_c3": {
+      "mean": 0.5116213703522071,
+      "median": 0.5147186147186147,
+      "n_sessions": 62,
+      "frac_same_side": 0.5967741935483871,
+      "ci": [
+        0.5005027650588598,
+        0.5226267026615106
+      ],
+      "p": 0.075,
+      "null_mean": 0.5001011964799064,
+      "n_null": 2000
+    },
+    "mu_c4": {
+      "mean": 0.5171325990850597,
+      "median": 0.5175654853620955,
+      "n_sessions": 62,
+      "frac_same_side": 0.6935483870967742,
+      "ci": [
+        0.5053684628117522,
+        0.5298319609222835
+      ],
+      "p": 0.0095,
+      "null_mean": 0.49999599999936534,
+      "n_null": 2000
+    },
+    "mu_lateralisation": {
+      "mean": 0.4960320567282493,
+      "median": 0.49423889386762254,
+      "n_sessions": 62,
+      "frac_same_side": 0.5161290322580645,
+      "ci": [
+        0.4838311722577924,
+        0.5077283364021467
+      ],
+      "p": 0.5505,
+      "null_mean": 0.4999480940772866,
+      "n_null": 2000
+    },
+    "relative_alpha_power": {
+      "mean": 0.5219442733167193,
+      "median": 0.5177115987460815,
+      "n_sessions": 62,
+      "frac_same_side": 0.6612903225806451,
+      "ci": [
+        0.511090625526395,
+        0.5335274686430281
+      ],
+      "p": 0.001,
+      "null_mean": 0.5003181050469037,
+      "n_null": 2000
+    },
+    "relative_delta_power": {
+      "mean": 0.4956989573506409,
+      "median": 0.505968253968254,
+      "n_sessions": 62,
+      "frac_same_side": 0.45161290322580644,
+      "ci": [
+        0.4801742172308007,
+        0.5097165814621217
+      ],
+      "p": 0.512,
+      "null_mean": 0.4997392196344628,
+      "n_null": 2000
+    },
+    "exponent_low": {
+      "mean": 0.4997662531129246,
+      "median": 0.4936546184738956,
+      "n_sessions": 62,
+      "frac_same_side": 0.532258064516129,
+      "ci": [
+        0.4864495540685637,
+        0.5128715288970765
+      ],
+      "p": 0.9675,
+      "null_mean": 0.49997777268679877,
+      "n_null": 2000
+    },
+    "exponent_high": {
+      "mean": 0.4916346476633897,
+      "median": 0.4843699645504351,
+      "n_sessions": 62,
+      "frac_same_side": 0.5806451612903226,
+      "ci": [
+        0.4780483062564512,
+        0.5060997753225207
+      ],
+      "p": 0.1745,
+      "null_mean": 0.5002219413876904,
+      "n_null": 2000
+    },
+    "whole_head_exponent": {
+      "mean": 0.5129142641575374,
+      "median": 0.5110060394151303,
+      "n_sessions": 62,
+      "frac_same_side": 0.5161290322580645,
+      "ci": [
+        0.5003946084737265,
+        0.5261266869008446
+      ],
+      "p": 0.039,
+      "null_mean": 0.49996248975282254,
+      "n_null": 2000
+    },
+    "spectral_edge_95": {
+      "mean": 0.4944115201830005,
+      "median": 0.49240855762594893,
+      "n_sessions": 62,
+      "frac_same_side": 0.5161290322580645,
+      "ci": [
+        0.48085617458972996,
+        0.5074329955526673
+      ],
+      "p": 0.369,
+      "null_mean": 0.5001460005724,
+      "n_null": 2000
+    },
+    "spectral_entropy": {
+      "mean": 0.4978482045492295,
+      "median": 0.4937316204921839,
+      "n_sessions": 62,
+      "frac_same_side": 0.5161290322580645,
+      "ci": [
+        0.48435871020890847,
+        0.512689701674661
+      ],
+      "p": 0.701,
+      "null_mean": 0.5003358363179794,
+      "n_null": 2000
+    },
+    "lempel_ziv": {
+      "mean": 0.5041942160716218,
+      "median": 0.5024752475247525,
+      "n_sessions": 62,
+      "frac_same_side": 0.5,
+      "ci": [
+        0.4892875062966921,
+        0.5195169338072659
+      ],
+      "p": 0.5115,
+      "null_mean": 0.4999675242533519,
+      "n_null": 2000
+    },
+    "artifact": {
+      "mean": NaN,
+      "median": NaN,
+      "n_sessions": 0,
+      "frac_same_side": NaN,
+      "ci": [
+        NaN,
+        NaN
+      ],
+      "p": NaN,
+      "null_mean": NaN,
+      "n_null": 0
+    }
+  },
+  "survivors_bh": [
+    "mu_mean",
+    "mu_c4",
+    "relative_alpha_power"
+  ],
+  "placebo": {
+    "mean": 0.4952850406776471,
+    "p": 0.451,
+    "n_sessions": 62
+  },
+  "verdict": "PRESENT",
+  "why": "MORE pre-cue mu on SUCCESSFUL trials; PMID 27199630 reports a single-trial association without a sign and Blankertz 2010's between-subject sign is positive, so agreement is stated rather than predicted"
+}

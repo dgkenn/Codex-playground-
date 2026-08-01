@@ -9,36 +9,36 @@
   },
   "arms": {
     "A1 PRIMARY": {
-      "increment": -0.03062615121757904,
-      "lo": -0.052432233284828426,
-      "hi": -0.01010731396561822,
-      "verdict": "HURTS",
+      "increment": 0.01597090615406075,
+      "lo": 0.0008650624040549508,
+      "hi": 0.026470596279821942,
+      "verdict": "ADDS",
       "n_windows": 5798,
       "n_cases": 247,
       "n_positive": 977
     },
     "A2 ARTEFACT": {
-      "increment": -0.03789235066856273,
-      "lo": -0.06326051532568926,
-      "hi": -0.012658591249280789,
-      "verdict": "HURTS",
+      "increment": 0.0207052731589357,
+      "lo": 0.0028068183141628238,
+      "hi": 0.03342241087841505,
+      "verdict": "ADDS",
       "n_windows": 4944,
       "n_cases": 247,
       "n_positive": 932
     },
     "A3 MUSCLE": {
-      "increment": -0.002713218763879501,
-      "lo": -0.013160027687396176,
-      "hi": 0.0008473121800523257,
-      "verdict": "NO INCREMENT",
+      "increment": 0.025976746288503234,
+      "lo": 0.008192594473101614,
+      "hi": 0.03931077596447758,
+      "verdict": "ADDS",
       "n_windows": 5798,
       "n_cases": 247,
       "n_positive": 977
     },
     "A4 NEGATIVE": {
-      "increment": -0.0021883464960261558,
-      "lo": -0.011501334834667394,
-      "hi": 0.0003207100388704526,
+      "increment": -0.0004803460859081854,
+      "lo": -0.002872149764789622,
+      "hi": 0.00018764513450531537,
       "verdict": "NO INCREMENT",
       "n_windows": 5798,
       "n_cases": 247,
@@ -48,5 +48,5 @@
   "label": {
     "definition": "meta_sr > 0 (any device-detected suppression)"
   },
-  "verdict": "HURTS"
+  "verdict": "ADDS, and it survives the monitor's own EMG channel. One retrospective deposit, an emergence-proximity endpoint, no claim about consciousness or awareness."
 }

@@ -204,6 +204,9 @@ def main() -> int:
             return
         if use_noise:
             xx = np.random.default_rng(SEED + 9).normal(size=xx.size)
+        # same missing-intercept defect as E99, fixed here for the same reason; E89 gate-failed before
+        # this line was ever reached, so no reported number of its own changes.
+        XA = np.column_stack([np.ones(XA.shape[0]), XA])
         XB = np.column_stack([XA, xx])
         pt, lo, hi = oob_auc_increment(XA, XB, yy, ss, np.random.default_rng(SEED + 1), reps=REPS)[:3]
         v = ("NOT-COMPUTABLE" if not np.isfinite(pt) else

@@ -1,0 +1,106 @@
+{
+  "experiment": "E173",
+  "n_windows": 5798,
+  "n_cases": 247,
+  "n_positive": 977,
+  "G1_pass": true,
+  "G2": {
+    "bootstrap_logistic": {
+      "increment": 0.01597876382952002,
+      "lo": 0.004364841285442483,
+      "hi": 0.026615902311860118
+    },
+    "bootstrap_ridge": {
+      "increment": 0.01624343014895729,
+      "lo": -0.007974541856965344,
+      "hi": 0.03860026758073316,
+      "n": 200
+    },
+    "crossfit_5fold_ridge": {
+      "increment": 0.023497611630454163,
+      "p": 0.0
+    }
+  },
+  "G2_disagree": false,
+  "arm1_sweep": {
+    "2": 0.018109104296135214,
+    "3": 0.017062739630459345,
+    "5": 0.018942523083821494,
+    "10": 0.022940088324769903,
+    "20": 0.019317885309430682,
+    "bootstrap_oob": 0.01624343014895729,
+    "bootstrap_oob_logistic": 0.01597876382952002
+  },
+  "arm2": {
+    "signal": {
+      "2": {
+        "mean": 0.036400247743149414,
+        "frac_positive": 1.0,
+        "n": 40
+      },
+      "3": {
+        "mean": 0.036684993626076315,
+        "frac_positive": 1.0,
+        "n": 40
+      },
+      "5": {
+        "mean": 0.0366698646621099,
+        "frac_positive": 1.0,
+        "n": 40
+      },
+      "10": {
+        "mean": 0.03669358721107176,
+        "frac_positive": 1.0,
+        "n": 40
+      },
+      "20": {
+        "mean": 0.036691459894684315,
+        "frac_positive": 1.0,
+        "n": 40
+      },
+      "bootstrap_oob": {
+        "mean": 0.036487288219333364,
+        "frac_positive": 1.0,
+        "n": 40
+      }
+    },
+    "noise": {
+      "2": {
+        "mean": 0.008100120792137431,
+        "frac_positive": 1.0,
+        "n": 40
+      },
+      "3": {
+        "mean": 0.008192457095629676,
+        "frac_positive": 1.0,
+        "n": 40
+      },
+      "5": {
+        "mean": 0.008212543802184424,
+        "frac_positive": 1.0,
+        "n": 40
+      },
+      "10": {
+        "mean": 0.008222957195781044,
+        "frac_positive": 1.0,
+        "n": 40
+      },
+      "20": {
+        "mean": 0.008226238721239537,
+        "frac_positive": 1.0,
+        "n": 40
+      },
+      "bootstrap_oob": {
+        "mean": 0.007559476515698063,
+        "frac_positive": 1.0,
+        "n": 40
+      }
+    }
+  },
+  "G3_pass": false,
+  "crossfit_recovers": false,
+  "bootstrap_recovers": false,
+  "real_sweep_crosses_zero": false,
+  "verdict": "NOT-REPRODUCED",
+  "why": "re-run here, the two estimators agree in sign; the recorded disagreement was a seed or version artefact"
+}

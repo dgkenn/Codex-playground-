@@ -315,7 +315,8 @@ def n_evaluable_subjects(y: Sequence, score: Sequence, subject: Sequence,
 
 
 def oob_auc_increment(Xa: np.ndarray, Xb: np.ndarray, y: Sequence, subject: Sequence, rng,
-                      reps: int = 400, min_oob_subjects: int = 5) -> tuple:
+                      reps: int = 400, min_oob_subjects: int = 5,
+                      alpha: float = 0.05, return_diffs: bool = False) -> tuple:
     """Out-of-bag bootstrap for the AUC increment of model B over model A, clustered on SUBJECT.
 
     Each rep draws SUBJECTS with replacement, fits both models on the drawn subjects' rows, and evaluates
@@ -332,6 +333,17 @@ def oob_auc_increment(Xa: np.ndarray, Xb: np.ndarray, y: Sequence, subject: Sequ
     `Xa` and `Xb` must already include an intercept column. Returns (mean, lo, hi, n_reps_used); a run with
     fewer than 30 usable reps returns NaNs rather than an interval computed from a handful of draws.
     """
+    # THE INTERCEPT IS A REQUIREMENT AND IT IS NOW ENFORCED, not documented. E99 passed a bare feature
+    # column, `logit_fit` fitted a through-the-origin logistic, and the increment came out at
+    # -0.0320 [-0.0544, -0.0111] -- reported as HURTS -- where the same call WITH the intercept gives
+    # +0.0168 [+0.0049, +0.0269]. A docstring sentence did not prevent that; a raise does.
+    for _nm, _X in (("Xa", Xa), ("Xb", Xb)):
+        _c = np.asarray(_X, float)[:, 0]
+        if _c.size and (not np.allclose(_c, _c[0]) or _c[0] == 0):
+            raise ValueError(
+                f"{_nm}'s first column is not a constant non-zero intercept. `oob_auc_increment` fits an "
+                "IRLS logistic with no intercept of its own, so a design without one is fitted through "
+                "the origin and its AUC increment can change SIGN. Prepend np.ones(len(y)).")
     y = np.asarray(y, float)
     subject = np.asarray(subject)
     uniq = np.unique(subject)

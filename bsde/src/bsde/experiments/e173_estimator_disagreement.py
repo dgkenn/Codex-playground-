@@ -30,9 +30,17 @@ the two.
 DESIGN — THE SWEEP, AND THE CONTROL THAT MAKES IT READABLE
 =========================================================================================================
     ARM 1  REAL DATA. e99's cohort. The increment of {BIS, whole_head_exponent} over {BIS} for
-           `meta_sr > 0`, computed at grouped-CV training fractions of 50 %, 63 %, 80 %, 90 % and 95 %
-           (2-, 2.7-, 5-, 10- and 20-fold), plus the cluster-bootstrap out-of-bag estimator itself at its
+           `meta_sr > 0`, computed at grouped-CV training fractions of 50 %, 67 %, 80 %, 90 % and 95 %
+           (2-, 3-, 5-, 10- and 20-fold), plus the cluster-bootstrap out-of-bag estimator itself at its
            own native ~63 %. Every scheme holds CASES out whole.
+
+           **A THIRD ESTIMATOR IS INCLUDED BECAUSE TRAINING FRACTION IS NOT THE ONLY DIFFERENCE, AND
+           SAYING SO BEFORE THE RUN IS THE POINT.** `oob_auc_increment` fits an IRLS LOGISTIC model and
+           `permutation_increment` fits a linear ridge, so a raw comparison of the two confounds the
+           training fraction with the model family — exactly the error rule 50 names. The sweep therefore
+           also runs a cluster-bootstrap out-of-bag increment with the LINEAR RIDGE, at the bootstrap's
+           own ~63 %. Comparing that against the ridge cross-fits isolates training fraction; comparing it
+           against the logistic bootstrap isolates model family.
 
     ARM 2  **SYNTHETIC GROUND TRUTH, AND IT IS THE POINT OF THE FILE (rules 40, 67).** A system is built
            in which the added column genuinely carries independent signal, with the cluster structure,
@@ -138,6 +146,40 @@ def cv_increment(Xa, Xb, y, subject, folds, seed):
     return float(auc(y[ok].astype(int), pb[ok]) - auc(y[ok].astype(int), pa[ok]))
 
 
+def ridge_oob_increment(Xa, Xb, y, subject, rng, reps=200, min_oob=5):
+    """The bootstrap's resampling scheme with the CROSS-FIT's model, to separate the two differences.
+
+    `oob_auc_increment` is IRLS logistic; `permutation_increment` is a linear ridge. Without this arm a
+    sign difference between them confounds training fraction with model family (rule 50).
+    """
+    from bsde.verifier.stats import _standardise, ridge_fit
+    y = np.asarray(y, float)
+    subject = np.asarray(subject)
+    uniq = np.unique(subject)
+    idx = {u: np.flatnonzero(subject == u) for u in uniq}
+    diffs = []
+    for _ in range(reps):
+        drawn = rng.choice(uniq, size=len(uniq), replace=True)
+        ds = set(drawn.tolist())
+        oob = [u for u in uniq if u not in ds]
+        if len(oob) < min_oob:
+            continue
+        tr = np.concatenate([idx[u] for u in drawn])
+        te = np.concatenate([idx[u] for u in oob])
+        if len(np.unique(y[tr])) < 2 or len(np.unique(y[te])) < 2:
+            continue
+        out = []
+        for X in (Xa, Xb):
+            Ztr, Zte = _standardise(X[tr], X[te])
+            out.append(auc(y[te].astype(int), Zte @ ridge_fit(Ztr, y[tr], 1.0)))
+        if all(np.isfinite(v) for v in out):
+            diffs.append(out[1] - out[0])
+    if len(diffs) < 30:
+        return float("nan"), float("nan"), float("nan"), len(diffs)
+    d = np.asarray(diffs)
+    return (float(d.mean()), float(np.quantile(d, 0.025)), float(np.quantile(d, 0.975)), len(d))
+
+
 def simulate(n_clusters, rows_per_cluster, base_rate, beta_extra, rng):
     """A system whose answer is known: `beta_extra` = 0 is a noise column, > 0 a genuine one.
 
@@ -178,17 +220,24 @@ def main() -> int:
         return 1
 
     Xa, Xb = bis.reshape(-1, 1), np.column_stack([bis, x])
+    one = np.ones(len(y))
+    Ia, Ib = np.column_stack([one, bis]), np.column_stack([one, bis, x])   # logistic needs its intercept
 
     # G2 -- both estimators re-run HERE (rule 59), not quoted
-    boot = oob_auc_increment(Xa, Xb, y, subj, np.random.default_rng(SEED), reps=REPS_BOOT)[:3]
+    boot = oob_auc_increment(Ia, Ib, y, subj, np.random.default_rng(SEED), reps=REPS_BOOT)[:3]
+    ridge_boot = ridge_oob_increment(Xa, Xb, y, subj, np.random.default_rng(SEED), reps=REPS_BOOT // 2)
     perm = permutation_increment(Xa, Xb, y, subj, np.random.default_rng(SEED),
                                  stat=lambda t, p: -auc(np.asarray(t, int), np.asarray(p, float)),
                                  reps=300)
     perm_signed = -perm[0]                      # back into the POSITIVE = adds convention
-    res["G2"] = {"bootstrap": {"increment": boot[0], "lo": boot[1], "hi": boot[2]},
-                 "crossfit_5fold": {"increment": float(perm_signed), "p": float(perm[1])}}
-    print(f"G2 REPRODUCE  bootstrap {boot[0]:+.4f} [{boot[1]:+.4f}, {boot[2]:+.4f}]   "
-          f"cross-fit {perm_signed:+.4f} (p {perm[1]:.4f})")
+    res["G2"] = {"bootstrap_logistic": {"increment": boot[0], "lo": boot[1], "hi": boot[2]},
+                 "bootstrap_ridge": {"increment": ridge_boot[0], "lo": ridge_boot[1],
+                                     "hi": ridge_boot[2], "n": ridge_boot[3]},
+                 "crossfit_5fold_ridge": {"increment": float(perm_signed), "p": float(perm[1])}}
+    print(f"G2 REPRODUCE  bootstrap/logistic {boot[0]:+.4f} [{boot[1]:+.4f}, {boot[2]:+.4f}]")
+    print(f"              bootstrap/ridge    {ridge_boot[0]:+.4f} "
+          f"[{ridge_boot[1]:+.4f}, {ridge_boot[2]:+.4f}]   <- same resampling, cross-fit's model")
+    print(f"              cross-fit/ridge    {perm_signed:+.4f} (p {perm[1]:.4f})")
     disagree = np.isfinite(boot[0]) and np.isfinite(perm_signed) and np.sign(boot[0]) != np.sign(perm_signed)
     res["G2_disagree"] = bool(disagree)
     print(f"   signs {'DISAGREE — the disagreement reproduces' if disagree else 'AGREE'}")
@@ -200,8 +249,10 @@ def main() -> int:
         v = cv_increment(Xa, Xb, y, subj, k, SEED + k)
         sweep[k] = float(v)
         print(f"   {k:>2d}-fold ({100 * (1 - 1 / k):.0f} % train): {v:+.5f}")
-    sweep["bootstrap_oob"] = float(boot[0])
-    print(f"   bootstrap OOB (~63 % train): {boot[0]:+.5f}")
+    sweep["bootstrap_oob"] = float(ridge_boot[0])
+    sweep["bootstrap_oob_logistic"] = float(boot[0])
+    print(f"   bootstrap OOB, ridge    (~63 % train): {ridge_boot[0]:+.5f}   <- comparable to the folds")
+    print(f"   bootstrap OOB, logistic (~63 % train): {boot[0]:+.5f}   <- the recorded estimator")
     res["arm1_sweep"] = {str(k): v for k, v in sweep.items()}
 
     # ARM 2 -- synthetic systems with a known answer
@@ -218,7 +269,8 @@ def main() -> int:
             A, B = b.reshape(-1, 1), np.column_stack([b, e])
             for k in FOLDS:
                 per_fold[k].append(cv_increment(A, B, yy, ss, k, SEED + i))
-            boots.append(oob_auc_increment(A, B, yy, ss, np.random.default_rng(SEED + i), reps=120)[0])
+            boots.append(ridge_oob_increment(A, B, yy, ss, np.random.default_rng(SEED + i),
+                                             reps=120)[0])
         truth = 1 if beta > 0 else 0
         row = {}
         print(f"   {tag} system (truth: the extra column {'ADDS' if truth else 'is noise'})")
@@ -233,7 +285,7 @@ def main() -> int:
         fb = float((bv > 0).mean())
         row["bootstrap_oob"] = {"mean": float(bv.mean()), "frac_positive": fb, "n": int(bv.size)}
         okb = fb >= 0.9 if truth else 0.25 <= fb <= 0.75
-        print(f"      bootstrap OOB (~63 %): mean {bv.mean():+.5f}, positive in {fb:.0%}   "
+        print(f"      bootstrap OOB, ridge (~63 %): mean {bv.mean():+.5f}, positive in {fb:.0%}   "
               f"{'correct' if okb else '*** WRONG'}")
         arm2[tag] = row
     res["arm2"] = arm2
@@ -251,7 +303,8 @@ def main() -> int:
     res["G3_pass"] = bool(g3)
     res["crossfit_recovers"] = bool(cf_ok)
     res["bootstrap_recovers"] = bool(bt_ok)
-    vals = [sweep[k] for k in FOLDS if np.isfinite(sweep[k])] + [sweep["bootstrap_oob"]]
+    vals = [sweep[k] for k in FOLDS if np.isfinite(sweep[k])] + [sweep["bootstrap_oob"],
+                                                                 sweep["bootstrap_oob_logistic"]]
     crosses = bool(vals and min(vals) < 0 < max(vals))
     res["real_sweep_crosses_zero"] = crosses
 

@@ -7,7 +7,7 @@ spread over 140 of 247 cases.** No feature has been related to it.
 =========================================================================================================
 WHY THIS ENDPOINT
 =========================================================================================================
-E89 tried to ask a Challenge C increment question on VitalDB against an emergence-proximity endpoint and
+E89 tried to ask a Challenge C increment question on VitalDB against a device-measured suppression endpoint and
 gate-failed: BIS is missing in 70 % of peri-emergence windows, so requiring it conditioned on the incumbent
 still reporting. **`meta_sr` does not have that problem** -- it is present in 5,798 of 6,679 windows -- and
 it is a device-computed measure of EEG AMPLITUDE SUPPRESSION rather than a proprietary depth index.
@@ -188,6 +188,13 @@ def main() -> int:
             return
         if use_noise:
             xx = np.random.default_rng(SEED + 9).normal(size=xx.size)
+        # THE INTERCEPT WAS MISSING AND IT REVERSED THE SIGN. `oob_auc_increment` fits an IRLS logistic
+        # with no intercept of its own; the first version passed [BIS] and [BIS, exponent] bare, so both
+        # models were fitted through the origin and the increment printed -0.0320 [-0.0544, -0.0111],
+        # i.e. HURTS. With the intercept the same call gives +0.0168 [+0.0049, +0.0269]. `stats.py` now
+        # RAISES on a design whose first column is not a constant, so this cannot recur silently.
+        one = np.ones(XA.shape[0])
+        XA = np.column_stack([one, XA])
         XB = np.column_stack([XA, xx])
         pt, lo, hi = oob_auc_increment(XA, XB, yy, ss, np.random.default_rng(SEED + 1), reps=REPS)[:3]
         v = ("NOT-COMPUTABLE" if not np.isfinite(pt) else
@@ -217,7 +224,7 @@ def main() -> int:
                        "channel to the baseline, so it is muscle rather than brain state.")
         else:
             verdict = ("ADDS, and it survives the monitor's own EMG channel. One retrospective deposit, "
-                       "an emergence-proximity endpoint, no claim about consciousness or awareness.")
+                       "a device-measured suppression endpoint, no claim about consciousness or awareness.")
     res["verdict"] = verdict
     print(f"\nG3 negative control  {'PASS' if res['gates']['G3_pass'] else 'FAIL'}")
     print(f"VERDICT: {verdict}")
