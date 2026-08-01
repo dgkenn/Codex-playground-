@@ -357,10 +357,13 @@ def oob_auc_increment(Xa: np.ndarray, Xb: np.ndarray, y: Sequence, subject: Sequ
         if np.isfinite(aa) and np.isfinite(ab):
             diffs.append(ab - aa)
     if len(diffs) < 30:
-        return float("nan"), float("nan"), float("nan"), len(diffs)
+        nan = float("nan")
+        return (nan, nan, nan, len(diffs), np.asarray(diffs, float)) if return_diffs else \
+               (nan, nan, nan, len(diffs))
     d = np.asarray(diffs, float)
-    return (float(d.mean()), float(np.quantile(d, alpha / 2)), float(np.quantile(d, 1 - alpha / 2)),
-            len(d))
+    res = (float(d.mean()), float(np.quantile(d, alpha / 2)), float(np.quantile(d, 1 - alpha / 2)),
+           len(d))
+    return res + (d,) if return_diffs else res
 
 
 def within_subject_spearman(x: Sequence, z: Sequence, subject: Sequence,
@@ -465,7 +468,8 @@ def grouped_cv_predict(X: np.ndarray, y: Sequence, subject: Sequence, rng, folds
 
 def oob_regression_increment(Xa: np.ndarray, Xb: np.ndarray, y: Sequence, subject: Sequence, rng,
                              stat=None, reps: int = 400, min_oob_subjects: int = 5,
-                             lam: float = 1.0, alpha: float = 0.05) -> tuple:
+                             lam: float = 1.0, alpha: float = 0.05,
+                             return_diffs: bool = False) -> tuple:
     """Out-of-bag bootstrap for the change in a REGRESSION error statistic from model A to model B.
 
     The regression twin of `oob_auc_increment`, and it exists for the same reason (rule 9): bootstrapping
@@ -481,6 +485,11 @@ def oob_regression_increment(Xa: np.ndarray, Xb: np.ndarray, y: Sequence, subjec
     `alpha` widens the returned interval for a multiplicity correction: passing 0.05/K gives the
     Bonferroni-adjusted interval for K simultaneous comparisons. The default reproduces the previous
     hard-coded 2.5/97.5 percentiles exactly, so no existing caller changes.
+
+    `return_diffs` appends the raw out-of-bag difference array as a fifth element. It exists because an
+    extreme quantile of a bootstrap distribution is unresolvable at the rep counts this project uses --
+    E143 asked for the 0.078th percentile of 400 draws, which is the minimum -- and a one-sided tail
+    FRACTION is estimable where that quantile is not. Callers that do not pass it are unaffected.
     """
     if stat is None:
         def stat(t, p):
@@ -510,7 +519,10 @@ def oob_regression_increment(Xa: np.ndarray, Xb: np.ndarray, y: Sequence, subjec
         if np.isfinite(ea) and np.isfinite(eb):
             diffs.append(eb - ea)
     if len(diffs) < 30:
-        return float("nan"), float("nan"), float("nan"), len(diffs)
+        nan = float("nan")
+        return (nan, nan, nan, len(diffs), np.asarray(diffs, float)) if return_diffs else \
+               (nan, nan, nan, len(diffs))
     d = np.asarray(diffs, float)
-    return (float(d.mean()), float(np.quantile(d, alpha / 2)), float(np.quantile(d, 1 - alpha / 2)),
-            len(d))
+    res = (float(d.mean()), float(np.quantile(d, alpha / 2)), float(np.quantile(d, 1 - alpha / 2)),
+           len(d))
+    return res + (d,) if return_diffs else res
