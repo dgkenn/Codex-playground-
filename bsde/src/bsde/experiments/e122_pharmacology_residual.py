@@ -424,13 +424,20 @@ def main(argv=None) -> int:
     testable = [c for c in cands
                 if all(np.isfinite(kept[r]["cand"][c]).all() for r in recs)
                 and len({round(float(v), 12) for r in recs for v in kept[r]["cand"][c]}) > 2]
+    # The base block per rung is rebuilt 27 times otherwise, once per candidate. Precomputing it changes
+    # nothing about the estimates -- the columns and their order are identical -- and it is the difference
+    # between one pass and 27.
+    base = {}
+    for L in RUNGS:
+        base[L] = stack(kept, recs, lambda d, L=L: np.hstack([d["pk"][L], d["inc"]]))
+    cand_col = {c: np.concatenate([kept[r]["cand"][c] for r in recs])[:, None] for c in testable}
+
     p2 = {}
     for c in testable:
         per_rung = {}
         for L in RUNGS:
-            Xa, y, s = stack(kept, recs, lambda d, L=L: np.hstack([d["pk"][L], d["inc"]]))
-            Xb, _, _ = stack(kept, recs,
-                             lambda d, L=L, c=c: np.hstack([d["pk"][L], d["inc"], d["cand"][c][:, None]]))
+            Xa, y, s = base[L]
+            Xb = np.hstack([Xa, cand_col[c]])
             m, lo, hi, n = oob_regression_increment(Xa, Xb, y, s,
                                                     np.random.default_rng(SEED + 200 + L), stat=err,
                                                     reps=a.reps)
@@ -441,10 +448,10 @@ def main(argv=None) -> int:
     for rec in recs:
         kept[rec]["cand"]["__gaussian__"] = rng.normal(size=kept[rec]["y"].size)
     g4 = {}
+    gcol = np.concatenate([kept[r]["cand"]["__gaussian__"] for r in recs])[:, None]
     for L in RUNGS:
-        Xa, y, s = stack(kept, recs, lambda d, L=L: np.hstack([d["pk"][L], d["inc"]]))
-        Xb, _, _ = stack(kept, recs, lambda d, L=L: np.hstack(
-            [d["pk"][L], d["inc"], d["cand"]["__gaussian__"][:, None]]))
+        Xa, y, s = base[L]
+        Xb = np.hstack([Xa, gcol])
         m, lo, hi, n = oob_regression_increment(Xa, Xb, y, s, np.random.default_rng(SEED + 300 + L),
                                                 stat=err, reps=a.reps)
         g4[f"L{L}"] = {"mean": m, "lo": lo, "hi": hi}
