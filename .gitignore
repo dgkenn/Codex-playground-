@@ -41,3 +41,6 @@ bsde/results/vitaldb_pk_inputs.jsonl
 
 # MIMIC-IV extraction outputs: credentialed patient-derived data, never committed (CLAUDE.md)
 bsde/results/mimic_*.csv
+
+# eeg-power-anesthesia (MGH) derived windows: credentialed patient-derived data, never committed
+bsde/results/mgh_power_windows.csv
