@@ -1,0 +1,21 @@
+{
+ "gates": {
+  "G1_blocks": 39,
+  "G1_subjects": 12,
+  "G1_pass": false,
+  "G3_labels": [
+   "N2",
+   "N3",
+   "REM",
+   "W"
+  ],
+  "G3_pass": true,
+  "blocks_per_stage": {
+   "N2": 12,
+   "N3": 7,
+   "REM": 10,
+   "W": 10
+  }
+ },
+ "verdict": "REFUSED: coverage"
+}
