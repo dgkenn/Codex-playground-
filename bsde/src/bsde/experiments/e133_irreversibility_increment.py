@@ -188,6 +188,21 @@ def main(argv=None) -> int:
 
     irr, five, spectral = load()
     keys = [k for k in sorted(set(irr) & set(five)) if k[1] in DEPTH]
+
+    # A COLUMN THAT IS ALL-NaN IN THIS DEPOSIT IS DROPPED AND NAMED, never quietly tolerated. The
+    # registration says "the 17 columns of sleep_edfx_five_stage.csv"; `uce_v1` is finite in 0 of 564
+    # candidate rows here, because it needs more channels than two bipolar derivations provide -- the same
+    # situation `extract_dosei_features.py` documents for VitalDB's BIS strip. Filtering rows on it would
+    # have emptied the cohort, which is what the first run did (rule 5: empty is not evidence of absence
+    # until the filter is shown able to match something; rule 6: check a column is populated before
+    # designing around it).
+    def _finite_frac(col):
+        n = sum(1 for k in keys if np.isfinite(_f(five[k].get(col, ""))))
+        return n / max(1, len(keys))
+    dropped = [c for c in spectral if _finite_frac(c) < 0.5]
+    spectral = [c for c in spectral if c not in dropped]
+    print(f"spectral columns dropped as all-NaN in this deposit: {dropped or 'none'}")
+
     rows = []
     for k in keys:
         s = [_f(five[k].get(c, "")) for c in spectral]
@@ -201,6 +216,7 @@ def main(argv=None) -> int:
     n_sub = len(set(subj.tolist()))
 
     gates = {"G1_rows": len(rows), "G1_subjects": n_sub, "G1_pass": n_sub >= MIN_SUBJECTS,
+             "spectral_dropped_all_nan": dropped,
              "n_spectral": len(spectral), "n_irr": len(IRR_COLS), "spectral_cols": spectral,
              "G4_surrogates_held_out": True}
     print(f"{len(rows)} rows over {n_sub} subjects; {len(spectral)} spectral + {len(IRR_COLS)} irr")
