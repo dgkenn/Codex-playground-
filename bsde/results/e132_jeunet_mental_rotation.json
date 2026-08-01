@@ -1,0 +1,49 @@
+{
+  "n_subjects": 83,
+  "gates": {
+    "G1_pass": true,
+    "G2_pass": true,
+    "G3_pass": true,
+    "G2_median": 56.25,
+    "G2_frac_above": 0.4939759036144578,
+    "G3_score_median": 22.0,
+    "G3_score_sd": 9.251301925302615,
+    "G3_score_range": [
+      2.0,
+      40.0
+    ]
+  },
+  "primary": {
+    "rho": -0.16997607153352084,
+    "lo": -0.38327788505940136,
+    "hi": 0.043383464170269996,
+    "n": 83
+  },
+  "P2_tension": {
+    "smr_marginal": 0.43213970866042567,
+    "mental_rotation_given_smr": -0.1283741236723899,
+    "smr_given_mental_rotation": 0.4294110238864867,
+    "rho_mr_smr": -0.11899164602661517,
+    "n": 83
+  },
+  "secondaries": {
+    "POST_Agentivity": {
+      "rho": 0.27137794876986937,
+      "lo": 0.04154601599676015,
+      "hi": 0.4134873949579832,
+      "n": 84
+    },
+    "PRE_Level_of_alertness": {
+      "rho": -0.0718234281664473,
+      "lo": -0.24332489622354964,
+      "hi": 0.1739222435962337,
+      "n": 84
+    }
+  },
+  "placebo": {
+    "p2.5": -0.20747607153352082,
+    "p97.5": 0.2219764073716466,
+    "real_inside": true
+  },
+  "verdict": "NOT REPLICATED, and it does NOT exclude moderate effects. -0.1700 [-0.3833, +0.0434] lies INSIDE the permutation interval [-0.2075, +0.2220]. Jeunet reports 'strong correlations' without a number in the abstract, so no numeric expectation is asserted here."
+}
