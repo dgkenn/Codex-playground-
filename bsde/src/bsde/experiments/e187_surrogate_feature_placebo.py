@@ -157,25 +157,45 @@ def surrogate_column(x, subj, rng):
     return out
 
 
-def _ac(v, lag):
+def _ac(v, lag, kind="pearson"):
+    """Autocorrelation at `lag`.
+
+    **PEARSON, NOT SPEARMAN, AND THAT IS A CORRECTION MADE BEFORE THE VERDICT WAS READ.** G3 exists to
+    check that the surrogate preserves what IAAFT guarantees, and what IAAFT guarantees is the POWER
+    SPECTRUM -- hence the LINEAR autocorrelation. The first version measured the RANK autocorrelation,
+    which the method never promised and which the marginal re-imposition step perturbs: on a first pass
+    the calibration random walk came in at |delta AC9| = 0.083 and every real candidate at 0.06-0.07, so
+    a 0.05 gate would have refused the run for measuring the wrong statistic. That is a defect in the
+    gate rather than a threshold question (rule 63's shape). Both are now computed and both are reported;
+    the GATE reads the Pearson one.
+    """
     v = v[np.isfinite(v)]
     if v.size <= lag + 3 or np.std(v) < 1e-12:
         return float("nan")
-    r = spearman(list(v[:-lag]), list(v[lag:]))
-    return float(r) if np.isfinite(r) else float("nan")
+    if kind == "spearman":
+        r = spearman(list(v[:-lag]), list(v[lag:]))
+        return float(r) if np.isfinite(r) else float("nan")
+    a, b = v[:-lag], v[lag:]
+    sa, sb = np.std(a), np.std(b)
+    if sa < 1e-12 or sb < 1e-12:
+        return float("nan")
+    return float(np.mean((a - a.mean()) * (b - b.mean())) / (sa * sb))
 
 
 def surrogate_diagnostics(x, s, subj):
     """(mean |delta ac1|, mean |delta ac9|, mean |rho(real, surrogate)|) over recordings."""
-    d1, d9, cr = [], [], []
+    d1, d9, cr, r9 = [], [], [], []
     for u in np.unique(subj):
         m = subj == u
         a1r, a1s = _ac(x[m], 1), _ac(s[m], 1)
         a9r, a9s = _ac(x[m], 9), _ac(s[m], 9)
+        b9r, b9s = _ac(x[m], 9, "spearman"), _ac(s[m], 9, "spearman")
         if np.isfinite(a1r) and np.isfinite(a1s):
             d1.append(abs(a1r - a1s))
         if np.isfinite(a9r) and np.isfinite(a9s):
             d9.append(abs(a9r - a9s))
+        if np.isfinite(b9r) and np.isfinite(b9s):
+            r9.append(abs(b9r - b9s))
         ok = np.isfinite(x[m]) & np.isfinite(s[m])
         if ok.sum() > 10:
             r = spearman(list(x[m][ok]), list(s[m][ok]))
@@ -183,7 +203,8 @@ def surrogate_diagnostics(x, s, subj):
                 cr.append(abs(r))
     return (float(np.mean(d1)) if d1 else float("nan"),
             float(np.mean(d9)) if d9 else float("nan"),
-            float(np.mean(cr)) if cr else float("nan"))
+            float(np.mean(cr)) if cr else float("nan"),
+            float(np.mean(r9)) if r9 else float("nan"))
 
 
 def increment(base, x, y, subj, seed):
@@ -204,14 +225,15 @@ def score_candidate(name, x, base, y, subj, rng, label=""):
                                                y[np.isfinite(x)], subj[np.isfinite(x)],
                                                np.random.default_rng(SEED + 5),
                                                stat=E84.err, reps=PERMS)
-    surrs, d1s, d9s, crs = [], [], [], []
+    surrs, d1s, d9s, crs, r9s = [], [], [], [], []
     for i in range(N_SURR):
         s = surrogate_column(x, subj, np.random.default_rng(SEED + 9000 + i))
         if i < 20:
-            a, b, c = surrogate_diagnostics(x, s, subj)
+            a, b, c, r = surrogate_diagnostics(x, s, subj)
             d1s.append(a)
             d9s.append(b)
             crs.append(c)
+            r9s.append(r)
         v = increment(base, s, y, subj, SEED + 11000 + i)
         if np.isfinite(v):
             surrs.append(v)
@@ -223,7 +245,8 @@ def score_candidate(name, x, base, y, subj, rng, label=""):
            "fraction_at_or_below_real": frac, "n_surrogates": int(sv.size),
            "delta_ac1": float(np.nanmean(d1s)) if d1s else float("nan"),
            "delta_ac9": float(np.nanmean(d9s)) if d9s else float("nan"),
-           "corr_with_real": float(np.nanmean(crs)) if crs else float("nan")}
+           "corr_with_real": float(np.nanmean(crs)) if crs else float("nan"),
+           "delta_ac9_rank": float(np.nanmean(r9s)) if r9s else float("nan")}
     out["preserves"] = bool(np.isfinite(out["delta_ac1"]) and out["delta_ac1"] < AC_TOL
                             and np.isfinite(out["delta_ac9"]) and out["delta_ac9"] < AC_TOL)
     out["destroys"] = bool(np.isfinite(out["corr_with_real"]) and out["corr_with_real"] < CORR_MAX)
