@@ -1,0 +1,195 @@
+{
+  "gates": {
+    "G7_pass": true,
+    "G1_pass": true,
+    "G2_pass": true,
+    "G3_pass": true,
+    "G4_pass": true,
+    "G5_surviving_without_emg": 2,
+    "G6_pass": true
+  },
+  "G1_one_axis_control": {
+    "explained": [
+      0.9748996658176511,
+      0.018558287767031115,
+      0.004747657142812662,
+      0.0017943892725052267
+    ],
+    "null_95": [
+      0.44154781711527286,
+      0.0226172889046446,
+      0.015716697424669444,
+      0.012236550610835305
+    ],
+    "clears": [
+      true,
+      false,
+      false,
+      false
+    ],
+    "n_surviving": 1,
+    "null_noise": 0.2988618469238281,
+    "null_achieved_ev1": 0.977301621027285,
+    "target_ev1": 0.9748996658176511,
+    "calibration_converged": true
+  },
+  "G2_two_axis_control": {
+    "explained": [
+      0.8463911870694302,
+      0.1421548757901437,
+      0.005530557801235145,
+      0.005923379339191062
+    ],
+    "null_95": [
+      0.39731202320474784,
+      0.0899912016104381,
+      0.09729703437082872,
+      0.11745265910684476
+    ],
+    "clears": [
+      true,
+      true,
+      false,
+      false
+    ],
+    "n_surviving": 2,
+    "null_noise": 3.0145429992675776,
+    "null_achieved_ev1": 0.8631059524288663,
+    "target_ev1": 0.8463911870694302,
+    "calibration_converged": true
+  },
+  "G7_one_axis_nonmonotone_control": {
+    "explained": [
+      0.8902078455275166,
+      0.0720750688648221,
+      0.032486644488847485,
+      0.005230441118813663
+    ],
+    "null_95": [
+      0.4509097715390728,
+      0.0803988155505235,
+      0.07707642263048238,
+      0.09852572702592277
+    ],
+    "clears": [
+      true,
+      false,
+      false,
+      false
+    ],
+    "n_surviving": 1,
+    "null_noise": 2.5005085754394525,
+    "null_achieved_ev1": 0.8732945459419467,
+    "target_ev1": 0.8902078455275166,
+    "calibration_converged": true
+  },
+  "full": {
+    "explained": [
+      0.8358848965655119,
+      0.1327170243629301,
+      0.022970251996660595,
+      0.008427827074897438
+    ],
+    "null_95": [
+      0.378247771492053,
+      0.09819416050051363,
+      0.13518206036613464,
+      0.15392357558116523
+    ],
+    "clears": [
+      true,
+      true,
+      false,
+      false
+    ],
+    "n_surviving": 2,
+    "null_noise": 3.640451202392578,
+    "null_achieved_ev1": 0.8168529888182375,
+    "target_ev1": 0.8358848965655119,
+    "calibration_converged": true
+  },
+  "components": [
+    {
+      "component": 1,
+      "stage_profile": {
+        "W": 0.5142421171173852,
+        "N1": 0.32313268590774974,
+        "N2": -0.22051817631117324,
+        "N3": -0.7512917218909233,
+        "REM": 0.13443509517696126
+      },
+      "loadings": {
+        "critical_slowing_ar1": -2.8757381852220942,
+        "emg_beta_gamma_fraction": 2.911739368229742,
+        "emg_index": 1.9366882578701692,
+        "emg_kurtosis": 1.3970323531094075,
+        "exponent_high": -0.26903183485755183,
+        "exponent_low": -2.746788285008853,
+        "lempel_ziv": 2.576984524988381,
+        "multiscale_entropy_slope": -2.861247556763413,
+        "pac_slow_alpha": 0.07964482778380208,
+        "relative_alpha_power": 1.4354398700781088,
+        "relative_delta_power": -2.1827106096528883,
+        "spatial_participation_ratio": -0.4117344194421355,
+        "spectral_edge_95": 2.78728968674739,
+        "spectral_entropy": 2.381604609287501,
+        "whole_head_exponent": -2.9493069140719688,
+        "wpli_alpha": -1.376608618188495
+      }
+    },
+    {
+      "component": 2,
+      "stage_profile": {
+        "W": -0.7168848733954937,
+        "N1": 0.4076138724539151,
+        "N2": 0.279255548419454,
+        "N3": -0.33247816141047004,
+        "REM": 0.3624936139325951
+      },
+      "loadings": {
+        "critical_slowing_ar1": 0.2535626088828627,
+        "emg_beta_gamma_fraction": -0.467327647201932,
+        "emg_index": -0.34079167237768454,
+        "emg_kurtosis": 0.28141667802129994,
+        "exponent_high": 2.131857808091879,
+        "exponent_low": -0.03576047436633961,
+        "lempel_ziv": 0.023817721026734177,
+        "multiscale_entropy_slope": 0.26390915103071727,
+        "pac_slow_alpha": -1.160722962563864,
+        "relative_alpha_power": 1.7294798674092882,
+        "relative_delta_power": -1.0544617634940234,
+        "spatial_participation_ratio": 0.8079601571467324,
+        "spectral_edge_95": -0.2646031409484796,
+        "spectral_entropy": 0.8005573316322161,
+        "whole_head_exponent": 0.5980095914899027,
+        "wpli_alpha": 0.17331909388543684
+      }
+    }
+  ],
+  "no_emg": {
+    "explained": [
+      0.8234665302858097,
+      0.16088407344185,
+      0.007358406740814336,
+      0.00829098953152585
+    ],
+    "null_95": [
+      0.37768760611839947,
+      0.11192063894301932,
+      0.1412231339722648,
+      0.17381200440768718
+    ],
+    "clears": [
+      true,
+      true,
+      false,
+      false
+    ],
+    "n_surviving": 2,
+    "null_noise": 3.4337040710449216,
+    "null_achieved_ev1": 0.7840566490990568,
+    "target_ev1": 0.8234665302858097,
+    "calibration_converged": true
+  },
+  "verdict": "**2 AXES.** The counter was validated in both directions (one-axis -> 1, two-axis -> 2) and the count is unchanged at 2 with EMG excluded, so it is not muscle. A second state-carrying axis exists in this inventory and the component loadings name which measures carry it. Every prior Challenge A null is re-read as having guessed the wrong candidate."
+}

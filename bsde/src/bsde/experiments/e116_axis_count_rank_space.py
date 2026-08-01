@@ -34,10 +34,42 @@ METHOD
      component's OUT-OF-SAMPLE explained variance is measured on half B's profiles. Repeated over
      `N_SPLITS` random halves and averaged. A component fitted and scored on the same subjects always
      explains variance; this is rule 9 applied to a projection.
-  4. Null: stage labels permuted WITHIN SUBJECT, the entire pipeline re-run inside each draw.
+  4. **THE NULL IS A ONE-AXIS SYSTEM, NOT A NO-AXIS ONE. REPAIRED ONCE (rule 58), reason below.**
 
     P  the number of consecutive components whose out-of-sample explained variance exceeds the 95th
-       percentile of that null.
+       percentile of the null.
+
+REPAIR, made after the first run refused itself at G2 and BEFORE any real-data count was interpreted.
+The first draft used a within-subject stage-label permutation as the null -- a system with ZERO axes. Its
+G1 passed (one-axis control -> 1) and **its G2 FAILED: a synthetic TWO-axis system was counted as 1**,
+component 2 reaching out-of-sample EV 0.3240 against a null 95th percentile of 0.3540. The verdict printed
+NOT INTERPRETABLE, as registered.
+
+The diagnosis is not power, it is the wrong null. Centred 5-vectors span only FOUR dimensions, so a random
+16x4 profile matrix already concentrates a large share of variance in its leading components -- the
+zero-axis null sits at ~0.35 for component 2 by geometry alone. **And "is there a SECOND axis" is not a
+question about a structureless system; its null is a system with EXACTLY ONE axis.** So the null becomes
+the calibrated one-axis synthetic itself, with its noise chosen so that its component-1 EV matches the real
+inventory's. G2 then becomes a POWER check on the same footing: the two-axis synthetic must be counted as
+more than 1 under this null, or the design cannot see a second axis and says so.
+
+This changes no threshold, no cohort and no representation; it replaces a null that answers the wrong
+question. One repair, reason written down -- if G2 fails again the run is over and the failure is the
+result.
+
+**IMPLEMENTATION CORRECTION, AND A DISCLOSURE THAT MUST TRAVEL WITH ANY RESULT FROM THIS FILE.** The
+repair above specifies a SEQUENTIAL null -- component k is tested against a system with k-1 axes, so
+component 1 is tested against a structureless system and component 2 against a one-axis system. The code
+first written applied the ONE-AXIS null to every component, which makes component 1 of a one-axis control
+fail by construction: G1 returned 0 and the file refused itself again. That is a coding error against this
+file's own written specification, not a second repair, and it is corrected rather than argued about.
+
+**The disclosure: the pre-correction run printed the real inventory's numbers, and I saw them before
+fixing the code.** Real component 2 reached out-of-sample EV 0.1327 against a one-axis null 95th
+percentile of 0.0641. So the corrected run's outcome for component 2 was foreseeable when the correction
+was made. Nothing about the correction was chosen to produce it -- the sequential scheme is what the
+paragraph above already specified, in writing, before either run -- but a reader is entitled to know the
+order of events and to discount accordingly.
 
 =========================================================================================================
 THE GATES COME FIRST AND THEY ARE THE POINT OF THIS FILE
@@ -54,6 +86,14 @@ count is known, in BOTH directions**, before it is pointed at real data (rule 40
         fail is not a gate, and G1 alone can be passed by a broken counter that never counts.
     G3  COVERAGE. >= 100 subjects with all five stages and all features finite.
     G4  AXIS 1 ALIVE on the real data, else ABSENT (rule 31).
+    G6  **THE NULL MUST MATCH THE DATA IT IS A NULL FOR.** The one-axis null's noise is bisected so its
+        component-1 explained variance equals the real inventory's. If that bisection ends at a boundary
+        the null is not calibrated: a one-axis system MORE strongly one-axis than the real data leaves
+        too little residual, lowers the component-2 threshold and biases the count UPWARD -- toward
+        exactly the answer this experiment would like. Added after the first passing run returned a noise
+        of 2.000, precisely the search ceiling, without checking. Making a test stricter after a pass is
+        the safe direction (rule 37).
+
     G5  NOT A MUSCLE AXIS. The whole count re-run with the three EMG features excluded; an axis present
         only with EMG in the inventory is a muscle axis and the verdict says so.
 
@@ -170,16 +210,55 @@ def oos_explained(R3, rng, n_splits=N_SPLITS, max_axes=MAX_AXES):
     return acc / used if used else np.full(max_axes, np.nan)
 
 
-def count(R3, rng, n_perm=N_PERM, label=""):
+def calibrated_noise(target_ev1, n_sub, n_feat, rng, lo=0.02, hi=12.0, iters=16):
+    """Noise level whose ONE-AXIS synthetic reproduces a given component-1 explained variance.
+
+    Without this the null's difficulty is set by an arbitrary constant. Bisection on a monotone quantity
+    (more noise -> less structure -> lower EV1), so it converges and the result is a property of the data
+    rather than of a hand-picked number (rule 63)."""
+    for _ in range(iters):
+        mid = 0.5 * (lo + hi)
+        ev1 = oos_explained(to_ranks(synth(n_sub, n_feat, rng, n_axes=1, noise=mid)),
+                            rng, n_splits=10)[0]
+        if not np.isfinite(ev1):
+            break
+        if ev1 > target_ev1:
+            lo = mid
+        else:
+            hi = mid
+    noise = 0.5 * (lo + hi)
+    achieved = oos_explained(to_ranks(synth(n_sub, n_feat, rng, n_axes=1, noise=noise)),
+                             rng, n_splits=12)[0]
+    return noise, float(achieved)
+
+
+def count(R3, rng, n_perm=N_PERM, label="", null_noise=None):
+    """SEQUENTIAL null: component k is tested against a system with k-1 axes.
+
+    Component 1 against a structureless system (stage labels permuted within subject) -- 'is there any
+    axis'. Component 2 against a ONE-axis system -- 'is there a SECOND axis'. Component 3 against a
+    two-axis system, and so on. Testing component 2 against a structureless null asks the wrong question
+    and testing component 1 against a one-axis null is unsatisfiable; both were tried and both failed
+    their own controls.
+    """
     real = oos_explained(R3, rng)
-    null = []
-    for _ in range(n_perm):
-        Rp = R3.copy()
-        for s in range(Rp.shape[0]):
-            Rp[s] = Rp[s][rng.permutation(len(STAGES))]
-        null.append(oos_explained(Rp, rng, n_splits=8))
-    null = np.array(null)
-    thr = np.nanquantile(null, 0.95, axis=0)
+    n_sub, n_feat = R3.shape[0], R3.shape[2]
+    achieved = float("nan")
+    if null_noise is None:
+        null_noise, achieved = calibrated_noise(real[0], n_sub, n_feat, rng)
+    thr = np.full(len(real), np.nan)
+    for k in range(len(real)):
+        draws = []
+        for _ in range(n_perm if k == 0 else max(60, n_perm // 2)):
+            if k == 0:
+                Rp = R3.copy()
+                for s in range(Rp.shape[0]):
+                    Rp[s] = Rp[s][rng.permutation(len(STAGES))]
+            else:
+                Rp = to_ranks(synth(n_sub, n_feat, rng, n_axes=k, noise=null_noise))
+            draws.append(oos_explained(Rp, rng, n_splits=8)[k])
+        d = np.array([x for x in draws if np.isfinite(x)])
+        thr[k] = float(np.quantile(d, 0.95)) if d.size >= 20 else float("nan")
     clears = [bool(np.isfinite(real[k]) and np.isfinite(thr[k]) and real[k] > thr[k])
               for k in range(len(real))]
     k_surv = 0
@@ -188,14 +267,34 @@ def count(R3, rng, n_perm=N_PERM, label=""):
             k_surv += 1
         else:
             break
+    converged = bool(np.isfinite(achieved) and abs(achieved - real[0]) <= 0.05)
     if label:
         print(f"\n--- {label} ({R3.shape[0]} subjects, {R3.shape[2]} features) ---")
         print(f"{'comp':>5s} {'out-of-sample EV':>18s} {'null 95th':>11s}  clears")
         for k in range(len(real)):
             print(f"{k+1:>5d} {real[k]:18.4f} {thr[k]:11.4f}  {'YES' if clears[k] else 'no'}")
-        print(f"  -> {k_surv} axis/axes")
+        print(f"  -> {k_surv} axis/axes   (null noise {null_noise:.3f}; its EV1 {achieved:.4f} vs "
+              f"target {real[0]:.4f}, {'converged' if converged else 'NOT CONVERGED'})")
+    # G6: the null must actually MATCH the data it is a null for. A bisection that ends at its own
+    # boundary has not calibrated anything, and a one-axis null that is MORE strongly one-axis than the
+    # real data leaves too little residual, lowering the component-2 threshold and biasing the count
+    # UPWARD. The first passing run returned noise 2.000 -- exactly the old ceiling -- and did not check.
     return {"explained": [float(x) for x in real], "null_95": [float(x) for x in thr],
-            "clears": clears, "n_surviving": k_surv}
+            "clears": clears, "n_surviving": k_surv, "null_noise": float(null_noise),
+            "null_achieved_ev1": achieved, "target_ev1": float(real[0]),
+            "calibration_converged": converged}
+
+
+def _nonmonotone(lat, j):
+    """A NON-monotone function of the latent: peaks somewhere in the middle of the range.
+
+    Sleep measures do this constantly -- alpha power peaks in wake and N1 then falls, spindle-band power
+    peaks in N2, so their RANK profiles across stages genuinely differ from a monotone measure's even
+    when there is only one underlying state variable.
+    """
+    c = -0.6 + 0.4 * ((j // 2) % 4)          # peak location varies across features
+    w = 0.5 + 0.25 * (j % 3)
+    return np.exp(-((lat - c) ** 2) / (2 * w * w))
 
 
 def _monotone(lat, j):
@@ -210,8 +309,14 @@ def _monotone(lat, j):
     return np.tanh(a * 2.0 * lat)
 
 
-def synth(n_sub, n_feat, rng, n_axes=1, noise=0.35):
-    """Synthetic inventory with a KNOWN number of monotone-encoded latent axes."""
+def synth(n_sub, n_feat, rng, n_axes=1, noise=0.35, frac_nonmonotone=0.0):
+    """Synthetic inventory with a KNOWN number of latent axes.
+
+    `frac_nonmonotone` makes that fraction of features NON-monotone functions of the latent. This is the
+    G7 control and it is the one that matters: a system with ONE latent variable but features that are
+    non-monotone in it produces genuinely different rank profiles, which a rank-space counter can mistake
+    for a second axis. G1's monotone-only control cannot detect that, by construction.
+    """
     k = len(STAGES)
     lats = []
     for i in range(n_axes):
@@ -224,7 +329,10 @@ def synth(n_sub, n_feat, rng, n_axes=1, noise=0.35):
         else:
             w = rng.dirichlet(np.ones(n_axes))
             mix = sum(w[i] * lats[i] for i in range(n_axes))
-        X[:, :, j] = _monotone(mix, j) + rng.normal(0, noise, mix.shape)
+        f = (_nonmonotone(mix, j) if (frac_nonmonotone > 0
+                                      and (j % max(1, int(round(1 / frac_nonmonotone)))) == 0)
+             else _monotone(mix, j))
+        X[:, :, j] = f + rng.normal(0, noise, mix.shape)
     return X
 
 
@@ -241,16 +349,24 @@ def main() -> int:
 
     # ---- G1 / G2 run FIRST: can this counter count? ----------------------------------------------
     srng = np.random.default_rng(SEED + 99)
-    c1 = count(to_ranks(synth(n_sub, len(FEATURES), srng, n_axes=1)), srng, n_perm=100,
+    c1 = count(to_ranks(synth(n_sub, len(FEATURES), srng, n_axes=1)), srng, n_perm=120,
                label="G1 CONTROL -- SYNTHETIC ONE-AXIS (the input that broke E115)")
-    c2 = count(to_ranks(synth(n_sub, len(FEATURES), srng, n_axes=2)), srng, n_perm=100,
-               label="G2 CONTROL -- SYNTHETIC TWO-AXIS")
+    c2 = count(to_ranks(synth(n_sub, len(FEATURES), srng, n_axes=2)), srng, n_perm=120,
+               label="G2 CONTROL -- SYNTHETIC TWO-AXIS (the POWER check)")
+    c7 = count(to_ranks(synth(n_sub, len(FEATURES), srng, n_axes=1, frac_nonmonotone=0.35)),
+               srng, n_perm=120,
+               label="G7 CONTROL -- ONE AXIS, 35 % OF FEATURES NON-MONOTONE IN IT (the arch artefact)")
     res["G1_one_axis_control"], res["G2_two_axis_control"] = c1, c2
+    res["G7_one_axis_nonmonotone_control"] = c7
     g1 = bool(c1["n_surviving"] == 1)
-    g2 = bool(c2["n_surviving"] == 2)
+    g7 = bool(c7["n_surviving"] <= 1)
+    res["gates"]["G7_pass"] = g7
+    g2 = bool(c2["n_surviving"] >= 2)
     res["gates"].update({"G1_pass": g1, "G2_pass": g2})
     print(f"\nG1 one-axis control -> {c1['n_surviving']}  {'PASS' if g1 else 'FAIL'}")
     print(f"G2 two-axis control -> {c2['n_surviving']}  {'PASS' if g2 else 'FAIL'}")
+    print(f"G7 one-axis NON-MONOTONE control -> {c7['n_surviving']}  "
+          f"{'PASS' if g7 else 'FAIL -- the counter cannot tell a second axis from an arch'}")
 
     rng = np.random.default_rng(SEED)
     full = count(to_ranks(X), rng, label="REAL INVENTORY")
@@ -260,6 +376,29 @@ def main() -> int:
     print(f"\nG3 coverage {n_sub} >= {MIN_SUBJECTS}  {'PASS' if res['gates']['G3_pass'] else 'FAIL'}")
     print(f"G4 axis 1   {'PASS' if res['gates']['G4_pass'] else 'FAIL'}")
 
+    # ---- what IS axis 2? The verdict claims the loadings name it, so they must be printed ----------
+    # Components are directions in the 5-dimensional STAGE space, and each feature has a coefficient on
+    # each. Two things are reported and they answer different questions: the STAGE PROFILE says how the
+    # five stages are ordered along the axis, and the FEATURE LOADINGS say which measures express it.
+    Rfull = to_ranks(X)
+    Pfull = profiles(Rfull, np.arange(Rfull.shape[0]))
+    U, S, Vt = np.linalg.svd(Pfull, full_matrices=False)
+    res["components"] = []
+    print(f"\n{'=' * 95}\nWHAT THE AXES ARE  (stage profile = how the five stages order along the axis)")
+    for k in range(min(2, Vt.shape[0])):
+        prof = Vt[k]
+        load = Pfull @ prof                       # each feature's coefficient on component k
+        order = np.argsort(-np.abs(load))
+        res["components"].append({
+            "component": k + 1,
+            "stage_profile": {STAGES[i]: float(prof[i]) for i in range(len(STAGES))},
+            "loadings": {FEATURES[i]: float(load[i]) for i in range(len(FEATURES))}})
+        print(f"\ncomponent {k+1}  (singular value {S[k]:.3f})")
+        print("   stage profile  " + "   ".join(f"{STAGES[i]} {prof[i]:+.3f}"
+                                                for i in range(len(STAGES))))
+        print("   top loadings   " + ",  ".join(f"{FEATURES[j]} {load[j]:+.3f}" for j in order[:6]))
+        print("   weakest        " + ",  ".join(f"{FEATURES[j]} {load[j]:+.3f}" for j in order[-3:]))
+
     noemg = [f for f in FEATURES if f not in EMG_FEATURES]
     Xe = load_values(noemg)
     res["no_emg"] = count(to_ranks(Xe), np.random.default_rng(SEED + 7),
@@ -268,7 +407,32 @@ def main() -> int:
 
     k = full["n_surviving"]
     ke = res["no_emg"]["n_surviving"]
-    if not (g1 and g2):
+    g6 = all(r.get("calibration_converged", False)
+             for r in (c1, c2, full, res.get("no_emg") or {}) if r)
+    res["gates"]["G6_pass"] = bool(g6)
+    print(f"G6 null calibration  " + "  ".join(
+        f"{nm}: EV1 {r.get('null_achieved_ev1', float('nan')):.4f} vs target "
+        f"{r.get('target_ev1', float('nan')):.4f}"
+        for nm, r in (("G1", c1), ("G2", c2), ("real", full)) if r)
+        + f"   {'PASS' if g6 else 'FAIL'}")
+
+    if not g7:
+        v = (f"**NOT INTERPRETABLE -- THE COUNTER CANNOT TELL A SECOND AXIS FROM AN ARCH.** A synthetic "
+             f"system with ONE latent variable, in which 35 % of features are NON-MONOTONE in it, returns "
+             f"{c7['n_surviving']} axes from the identical pipeline. Real sleep measures are non-monotone "
+             f"in depth all the time -- alpha peaks in wake and N1, spindle power peaks in N2 -- and the "
+             f"real inventory's component 2 has exactly that signature: a stage profile low at BOTH ends "
+             f"(W and N3) and high in the middle, loading on exponent_high, relative_alpha_power and "
+             f"pac_slow_alpha. G1's monotone-only control could not have caught this. The real count of "
+             f"{full['n_surviving']} is printed for audit and means nothing. Third counting procedure "
+             f"refuted by its own control; rule 67.")
+    elif not g6:
+        v = ("**NOT INTERPRETABLE -- the one-axis null was never calibrated to the data.** Its "
+             "component-1 explained variance does not match the real inventory's, so the residual it "
+             "leaves for component 2 is not the residual a matched one-axis system would leave, and the "
+             "count is biased in an unknown direction (upward if the null is over-structured). The "
+             f"printed count of {full['n_surviving']} means nothing.")
+    elif not (g1 and g2):
         v = (f"**NOT INTERPRETABLE -- the counter failed its own validation.** The one-axis control "
              f"returned {c1['n_surviving']} (must be 1) and the two-axis control {c2['n_surviving']} "
              f"(must be 2). The real inventory's {k} is printed for audit and means nothing. Rule 67.")
