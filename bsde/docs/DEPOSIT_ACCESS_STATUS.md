@@ -75,6 +75,39 @@ password.
 
 That converts the credentialing action from a speculative "might unlock something" into a named target.
 
+## The AWS route — diagnosed 2026-08-03, and it is TWO gates not one
+
+PhysioNet's "Access via AWS" panel names the identity it grants to:
+
+    Account 281627750420   User arn:aws:iam::281627750420:user/physionet-user
+
+**Gate 1 — wrong principal.** The credentials in `~/.aws/credentials` resolve to
+`arn:aws:iam::281627750420:root`, the account ROOT. PhysioNet grants to the IAM USER
+`physionet-user`. A cross-account bucket policy naming a user ARN does not match root, so these keys
+cannot pick up PhysioNet's grant no matter which bucket is tried. The IAM user **does exist in the account
+and already has two access keys** — they are simply not the ones on disk.
+
+**Gate 2 — credentialed projects are not in the open mirror.** `s3://physionet-open/` lists **250**
+top-level projects and is readable now. `sleep-edfx` and `eegmmidb` are there (both already used by this
+project). But `eeg-gaba-anesthesia`, `multimodal-surgery-anesthesia` and `propofol-anesthesia-dynamics`
+are **absent** — consistent with `CREDENTIALS.md`'s 2026-07-28 note that credentialed projects are not
+mirrored to the open bucket. Fixing gate 1 alone will not reveal them; the per-project DUA still has to be
+signed, after which PhysioNet grants the registered identity access to the restricted location.
+
+`physionet-restricted` and `physionet-credentialed` do not exist as bucket names; `s3://physionet/` exists
+and returns AccessDenied.
+
+**What this means practically.** The HTTPS session route already works for anything the account is
+approved for, and it found `multimodal-surgery-anesthesia` and `propofol-anesthesia-dynamics` open while
+`eeg-gaba-anesthesia` is 403. So the S3 route is not currently a way around the 403 — **the 403 is the DUA,
+not the transport.** Fixing the AWS identity is worth doing for bulk transfer speed once a DUA is signed,
+not as a means of obtaining access.
+
+**Action, and it is deliberately not taken here.** Access keys for `physionet-user` could be created from
+root, but minting AWS credentials is a security-sensitive, outward-facing action and is left to the
+investigator. Either use that user's existing keys, or create a key for it and place it in the environment
+settings as `BDSP_AWS_ACCESS_KEY_ID` / `BDSP_AWS_SECRET_ACCESS_KEY`.
+
 ## Actions
 
 **Needs the investigator:** HiRID requires PhysioNet *credentialing* (CITI training plus a credentialing
