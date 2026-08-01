@@ -121,6 +121,9 @@ def trial_rows(path, subject, session, max_trials):
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--sessions-per-subject", type=int, default=1, dest="k")
+    ap.add_argument("--min-session", type=int, default=1,
+                    help="skip sessions below this number -- used to build a HELD-OUT table of later "
+                         "sessions without re-downloading the ones already extracted")
     ap.add_argument("--max-trials", type=int, default=500)
     ap.add_argument("--shard", type=int, default=0)
     ap.add_argument("--of", type=int, default=1)
@@ -131,7 +134,8 @@ def main(argv=None) -> int:
     want = []
     for f in file_index():
         m = NAME.match(f["name"])
-        if m and int(m.group(2)) <= a.k and int(m.group(1)) % a.of == a.shard:
+        if (m and a.min_session <= int(m.group(2)) <= a.k
+                and int(m.group(1)) % a.of == a.shard):
             want.append((m.group(1), m.group(2), f))
     want.sort(key=lambda t: (int(t[0]), int(t[1])))
 
