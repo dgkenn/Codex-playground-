@@ -101,7 +101,9 @@ SEED = 20260801
 
 STATE_TOL = 0.03
 MIN_MATCHED = 50
-MAX_TRIES = 200000
+POOL_TARGET = 2000
+SEEDS = (11, 22, 33)
+MAX_TRIES = 500000
 PERMS = 2000
 ALPHA = 0.05
 
@@ -181,7 +183,7 @@ def main() -> int:
           f"{depth_state:+.4f}")
     pool, tries = [], 0
     prng = np.random.default_rng(SEED + 2)
-    while len(pool) < MIN_MATCHED * 4 and tries < MAX_TRIES:
+    while len(pool) < POOL_TARGET and tries < MAX_TRIES:
         tries += 1
         w = prng.standard_normal(len(FEATURES))
         w /= np.linalg.norm(w) + 1e-12
@@ -213,6 +215,36 @@ def main() -> int:
     print(f"   matched axes: state {st.mean():+.4f}, agent mean {ag.mean():+.4f}, "
           f"median {np.median(ag):+.4f}, 5th pct {np.quantile(ag, 0.05):+.4f}")
     print(f"   fraction of matched axes with LOWER agent legibility than the depth axis: {frac_below:.4f}")
+
+    # RULE 46: this verdict is a fraction against a 0.05 bar, so it must be reported with its Monte Carlo
+    # error and re-run at several seeds. The first run used a 200-axis pool and printed 0.0450 -- inside
+    # one MC sd of the bar -- and at 2,000 axes the same quantity is 0.0810 / 0.0780 / 0.0865 across three
+    # seeds. Raising the replicate count changes no threshold, cohort or horizon; it is the fix rule 46
+    # explicitly permits, and the earlier SPECIFICALLY-CLEAN was a property of the draw count.
+    stab = []
+    for sd in SEEDS:
+        q = np.random.default_rng(sd)
+        pl, t2 = [], 0
+        while len(pl) < POOL_TARGET and t2 < MAX_TRIES:
+            t2 += 1
+            w = q.standard_normal(len(FEATURES))
+            w /= np.linalg.norm(w) + 1e-12
+            s_ = legibility(np.concatenate([D @ w, L @ w]), state_lab)
+            if not math.isfinite(s_) or abs(s_ - depth_state) > STATE_TOL:
+                continue
+            a_ = legibility(D @ w, arm)
+            if math.isfinite(a_):
+                pl.append(a_)
+        v = np.asarray(pl)
+        stab.append({"seed": int(sd), "n": int(v.size), "frac_below": float((v < depth_agent).mean()),
+                     "agent_mean": float(v.mean())})
+        print(f"   seed {sd}: {v.size} axes, frac below depth {stab[-1]['frac_below']:.4f} "
+              f"(MC sd {math.sqrt(max(stab[-1]['frac_below'] * (1 - stab[-1]['frac_below']), 1e-12) / max(v.size, 1)):.4f})")
+    res["seed_stability"] = stab
+    frac_below = float(np.mean([x["frac_below"] for x in stab]))
+    res["matched_pool"]["fraction_below_depth_mean_over_seeds"] = frac_below
+    print(f"   FRACTION USED FOR THE VERDICT (mean over {len(SEEDS)} seeds at {POOL_TARGET} axes): "
+          f"{frac_below:.4f}")
 
     if depth_agent > float(np.median(ag)):
         v, why = "NOISIER", ("the depth axis leaks MORE than the median arbitrary direction of the same "
