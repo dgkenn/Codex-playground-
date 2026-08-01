@@ -57,6 +57,25 @@ be. That is the first Challenge A action item from track G.
 | 30728772 | Rimbert, Front Hum Neurosci 2018;12:529 | a **subjective questionnaire** as a BCI performance predictor | **IMPLEMENTABLE on Dreyer** — the deposit ships personality, mental-rotation, mood and motivation columns in `Perfomances.csv` and **we have never touched them** |
 | 31417382 | Won, Front Hum Neurosci 2019;13:261 | P300-speller predictor from RSVP multi-feature | **N/A** — different BCI paradigm |
 
+### Measured incumbent values on our own deposits — added 2026-08-01 (E177), because two designs this
+### session named a WEAKER incumbent than was already available
+
+| deposit | outcome | best measured incumbent | value | where |
+|---|---|---|---|---|
+| eegmmidb | `csp_auc` (E124's CSP decoder, 101 subjects) | **`alpha_prom`** | **rho +0.2939, one-sided p 0.0015** | E177 |
+| eegmmidb | `imagery_auc` (band-power decoder, 104 subjects) | `alpha_prom` | rho +0.2221, p 0.0115 | E177 |
+| eegmmidb | `imagery_auc` | `relative_alpha_power` | rho +0.2018 | E149 — **superseded as the bar** |
+| Stieger (session-level) | `accuracy` | `ge_norm` | E86/E114; does NOT transport (E124) | — |
+| Stieger (TRIAL-level pairs) | per-trial hit/miss | **none estimable** — the deposit's `artifact` flag is 0 in 27,705 of 27,900 trials | — | E172 |
+
+**Rule for eegmmidb from here on: `alpha_prom` is the bar, not `relative_alpha_power`.** E149's increment
+design named the weaker one, so its "0 of 32 candidates add" is a statement against a bar 0.09 lower than
+the one available. That does not overturn E149 — nothing added to the weaker bar either — but any successor
+must use the stronger one.
+
+Both labels were checked for aliveness before either was used: between-subject variance against per-subject
+estimation noise, ratio **4.83** for `csp_auc` and **2.91** for `imagery_auc` (E177 G1).
+
 **The finding this sweep produces immediately:** Dreyer's own `Perfomances.csv` carries demographic,
 personality, cognitive and motivational columns that we parsed past to reach `Perf_RUN_3..6`. Rimbert 2018
 claims a questionnaire predicts BCI performance. **We hold both the questionnaire and the outcome and have
@@ -82,6 +101,22 @@ anything.
 **Our tested comparator on DOSE-I** is the deposit's own shipped `PE31`/`SEF95`, which E84 established as
 live (baseline out-of-bag rho +0.3310) and E122 showed adds to pharmacology at every rung — while none of
 our 27 candidates added anything over it.
+
+### Measured against MOAA/S on all 171 DOSE-I recordings — added 2026-08-01 (E171)
+
+The first time this project has scored these against a **clinician-assigned observer scale** rather than
+against a device index or a derived landmark. Out of fold, recordings held out whole, each beating its own
+recording-permutation null at p = 0.0000:
+
+| arm | rho vs MOAA/S | null p95 |
+|---|---|---|
+| our 11-feature panel | **+0.5115** | +0.0400 |
+| **`PE31` alone** | **+0.4497** | +0.0067 |
+| `SEF95` alone | +0.2737 | +0.0129 |
+
+**`PE31` alone is 1.6x `SEF95` against the observer scale**, which is the same direction as E166/E170's
+increment result on a different endpoint in the same deposit. Any DOSE-I registration naming `SEF95` as
+*the* incumbent is naming the weaker of the two shipped measures and must say so.
 
 ---
 
