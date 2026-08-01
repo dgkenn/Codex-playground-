@@ -123,3 +123,30 @@ streams are resumable, and this table is a few tens of kilobytes.
 
 **Task runs are never touched here.** The separation is the whole point: Challenge B's label is built from
 the imagery runs, and this table must contain nothing from them or the association is circular.
+
+## Currently in flight: `stieger_holdout_trials.s0-3.csv` and `eegmmidb_pretrial.s0-3.csv` (2026-08-01)
+
+Two per-TRIAL tables for the Challenge B replications registered as E174 and E175. Both are committed
+part-finished on purpose (see the top of this file): both extractors are resumable on their own key and
+de-duplicate on load, so a second writer cannot corrupt a result (rule 56).
+
+    # E174 -- Stieger sessions 2 and 3, HELD OUT from E172's session-1 cohort
+    for k in 0 1 2 3; do
+      python bsde/scripts/extract_stieger_trials.py --sessions-per-subject 3 --min-session 2 \
+             --shard $k --of 4 --out bsde/results/stieger_holdout_trials.s$k.csv &
+    done; wait
+
+    # E175 -- eegmmidb per-trial pre-cue features, the external replication
+    for k in 0 1 2 3; do
+      python bsde/scripts/extract_eegmmidb_pretrial.py --shard $k --of 4 \
+             --out bsde/results/eegmmidb_pretrial.s$k.csv &
+    done; wait
+
+**The filename prefix is load-bearing and is not cosmetic.** E172's loader globs `stieger_trials*.csv`;
+the held-out shards are named `stieger_holdout_trials*` precisely so that they CANNOT be picked up by it,
+and E174 asserts that no session-1 row reached its table. If either name changes, E172's recorded cohort
+silently changes with it.
+
+**E174 refuses below 60 held-out sessions and E175 below 60 subjects with >= 20 pairs**, so neither can
+mistake a part-finished stream for a result. E175 additionally refuses if its decoder is at chance, because
+"correctly decoded" would then be a coin flip (rule 53).
