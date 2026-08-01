@@ -2,10 +2,100 @@
  "E133_sleep": {
   "error": "IndexError: too many indices for array: array is 1-dimensional, but 2 were indexed"
  },
- "E134_dreyer": {
-  "error": "ImportError: cannot import name '_read_shards' from 'bsde.ingestion.runner' (/home/user/Codex-playground-/bsde/src/bsde/ingestion/runner.py)"
+ "E134  Challenge B, Dreyer SMR predictor": {
+  "G2": {
+   "observed": 0.4461391585666411,
+   "pass": true,
+   "stored": 0.4440475322592404
+  },
+  "G3": {
+   "floor": null,
+   "rates": {
+    "0.1": 0.075,
+    "0.2": 0.175,
+    "0.3": 0.375,
+    "0.4": 0.7
+   }
+  },
+  "n_candidates": 10,
+  "n_clusters": 87,
+  "n_rows": 87,
+  "placebo_fired": [],
+  "primary": {
+   "alpha_prom": {
+    "helps": false,
+    "increment": 0.01313702367318248,
+    "p": 0.6413333333333333,
+    "p_holm": 1.0,
+    "placebo_p": 0.5753333333333334
+   },
+   "cl": {
+    "helps": false,
+    "increment": 0.007703528802109227,
+    "p": 0.572,
+    "p_holm": 1.0,
+    "placebo_p": 0.9526666666666667
+   },
+   "cl_norm": {
+    "helps": false,
+    "increment": 0.04955784919321282,
+    "p": 0.944,
+    "p_holm": 1.0,
+    "placebo_p": 0.088
+   },
+   "deg": {
+    "helps": false,
+    "increment": -0.0044944848514080205,
+    "p": 0.192,
+    "p_holm": 1.0,
+    "placebo_p": 0.59
+   },
+   "ge": {
+    "helps": false,
+    "increment": -0.026948675904182706,
+    "p": 0.078,
+    "p_holm": 0.78,
+    "placebo_p": 0.9186666666666666
+   },
+   "ge_norm": {
+    "helps": false,
+    "increment": 0.016838364139047823,
+    "p": 0.5686666666666667,
+    "p_holm": 1.0,
+    "placebo_p": 0.892
+   },
+   "iaf": {
+    "helps": false,
+    "increment": 0.02332938485751146,
+    "p": 0.8206666666666667,
+    "p_holm": 1.0,
+    "placebo_p": 0.12933333333333333
+   },
+   "modularity": {
+    "helps": false,
+    "increment": 0.017248611235018196,
+    "p": 0.6646666666666666,
+    "p_holm": 1.0,
+    "placebo_p": 0.9226666666666666
+   },
+   "smallworld": {
+    "helps": false,
+    "increment": 0.024888323822198632,
+    "p": 0.76,
+    "p_holm": 1.0,
+    "placebo_p": 0.49133333333333334
+   },
+   "strength_cv": {
+    "helps": false,
+    "increment": -0.009016319509213888,
+    "p": 0.146,
+    "p_holm": 1.0,
+    "placebo_p": 0.756
+   }
+  },
+  "winners": []
  },
  "experiment": "E163",
  "perms": 1500,
- "verdict": "NO VERDICT -- neither arm could be built"
+ "verdict": "NEITHER MOVES -- both nulls were real and the blind instrument happened to give the right answer twice. The registered prediction is half wrong, E134's comprehensive negative stands, and the remaining seven increment-decided rows become much less urgent."
 }
