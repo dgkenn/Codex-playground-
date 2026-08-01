@@ -24,7 +24,7 @@ status code.
 | deposit | status | note |
 |---|---|---|
 | **SICdb 1.0.8** | **ACCESSIBLE** | `cases`, `medication`, `laboratory`, `data_float_h`, `data_range`, `data_ref`, `d_references`, `Documentation.pdf` |
-| **HiRID** | **RESTRICTED** | landing page 200, but flagged *credentialed user / data use agreement required*. Versions 1.0, 1.1, 1.1.1 |
+| **HiRID 1.1.1** | **ACCESSIBLE** (corrected — see below) | 16.8 GB: `raw_stage/`, `merged_stage/`, `imputed_stage/`, `reference_data.tar.gz`, `schemata.pdf` |
 | **eICU-CRD** | files section visible | v2.0, not yet fetch-tested |
 | **MIMIC-IV** | files section visible | v0.3–2.0, not yet fetch-tested |
 | **AmsterdamUMCdb** | **404 on PhysioNet** | not hosted under that slug; it is distributed elsewhere |
@@ -107,6 +107,39 @@ not as a means of obtaining access.
 root, but minting AWS credentials is a security-sensitive, outward-facing action and is left to the
 investigator. Either use that user's existing keys, or create a key for it and place it in the environment
 settings as `BDSP_AWS_ACCESS_KEY_ID` / `BDSP_AWS_SECRET_ACCESS_KEY`.
+
+## CORRECTION 2026-08-03 — HiRID was never restricted, and I made the same error twice
+
+The table above originally read **HiRID: RESTRICTED, credentialing/DUA required**. That was wrong.
+`https://physionet.org/files/hirid/1.1.1/` returns **HTTP 200** with the full directory listing, and has
+throughout.
+
+**How the error was made.** Two inferences, no measurement:
+
+1. `hirid/1.1.1/RECORDS` returned **404** — and I read that as a permissions signal. It is a path error:
+   HiRID has no `RECORDS` file. Its top level is `raw_stage/`, `merged_stage/`, `imputed_stage/`,
+   `reference_data.tar.gz`, `schemata.pdf`.
+2. The project landing page contains the words *"you must be a credentialed user"* and *"sign the data
+   use agreement"* — **generic descriptive boilerplate present on every restricted-class project page,
+   whether or not THIS account is approved.** I keyword-matched it and called the deposit restricted.
+
+**This is the second time in one day** the same mistake was made — the first was concluding "SICdb has no
+EEG" from a landing-page keyword scan. The investigator corrected that one explicitly. The rule that
+follows, and it is not subtle: **a project's ACCESS STATUS is a property of the account, and the only way
+to read it is to request a file and look at the status code.** Landing-page text describes the project
+class, not the grant.
+
+A third failure mode also went into that wrong call, and it is now recorded in the list above: the
+username does NOT matter. `dgkenn@bu.edu` and `deankennedy` both authenticate and both return HTTP 200
+for the same path (1047 bytes each). PhysioNet accepts either for the web session.
+
+**So four things return an unhelpful status and only one of them is a real denial:** wrong path (404),
+stale version (403), HTTP Basic instead of a session (403), and an actual missing DUA (403). Only a
+directory listing on the current version, through a session, distinguishes them.
+
+**Still genuinely 403:** `eeg-gaba-anesthesia/1.0.0/`. That is consistent with the grant notice reading
+*"You have been granted access for a specific project"* — HiRID, specifically. `eeg-gaba-anesthesia`
+needs its own access request, and it remains the deposit E130 requires.
 
 ## Actions
 
