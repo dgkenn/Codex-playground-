@@ -1,0 +1,47 @@
+{
+ "status": "PROBE -- hypothesis-generating, NOT a registered result",
+ "question": "Does an aptitude predictor decay across BCI training sessions in Stieger?",
+ "n_subjects": 61,
+ "per_session_rho": {
+  "iaf": [
+   0.343,
+   0.311,
+   0.068
+  ],
+  "alpha_prom": [
+   0.181,
+   -0.033,
+   0.104
+  ],
+  "ge_norm": [
+   0.258,
+   0.332,
+   0.167
+  ]
+ },
+ "decay_slope": {
+  "iaf": -0.1377,
+  "alpha_prom": -0.0385,
+  "ge_norm": -0.0458
+ },
+ "placebo_session_label_permutation": {
+  "iaf": [
+   -0.1393,
+   0.1437
+  ],
+  "alpha_prom": [
+   -0.1344,
+   0.1452
+  ],
+  "ge_norm": [
+   -0.1617,
+   0.1573
+  ]
+ },
+ "frac_at_least_as_negative": {
+  "iaf": 0.026,
+  "alpha_prom": 0.285,
+  "ge_norm": 0.28
+ },
+ "verdict": "SUGGESTIVE, NOT ESTABLISHED. iaf's decay slope survives a session-label permutation placebo at frac 0.026 unadjusted, but THREE measures were tested, so BH gives 0.078 and it FAILS correction. And the choice to feature iaf was POST-HOC: the hypothesis (aptitude predictors wash out as learning takes over) is E131's, formed before, but a rule-41 probe showed iaf decaying and alpha_prom not, and I saw that before writing the test. Two degrees of freedom, one disclosed multiple-comparison failure. This is recorded as hypothesis-generating and needs an independent multi-session BCI cohort before it is a claim. WHAT IT DOES SETTLE: the reading that E131's alpha_prom null is explained by 'Stieger measures LEARNED performance' is NOT supported -- alpha_prom is null in every individual session (+0.181, -0.033, +0.104), not just in the three-session mean, so there is no washed-out early signal to recover. That was the specific explanation E131 offered and it is now excluded."
+}
