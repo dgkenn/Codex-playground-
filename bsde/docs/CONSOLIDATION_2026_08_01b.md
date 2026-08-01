@@ -292,10 +292,11 @@ here is measured absence, not missing power.
 | `spectral_edge_95` | 0.5001 | 0.4944 | 0.4990 |
 | `spectral_entropy` | 0.4957 | 0.4978 | 0.7980 |
 
-**All three of E172's BH survivors sit at 0.50.** And the two candidates that do reach p < 0.05 in the
-held-out set — `relative_delta_power` and `exponent_low` — were **null in E172**. The two "hit" sets are
-disjoint. A real effect attenuates; it does not vanish and get replaced by different features. That
-pattern is what noise looks like.
+**All three of E172's BH survivors sit at 0.50, and BH at q = 0.05 keeps NOTHING in the held-out set.**
+The two candidates that reach nominal p < 0.05 — `relative_delta_power` and `exponent_low` — were **null
+in E172**, do not survive multiplicity, and are not claimed. The two "hit" sets are disjoint. A real
+effect attenuates; it does not vanish and get replaced by different features. That pattern is what noise
+looks like.
 
 ### The instrument change is not the explanation, and that was checked
 

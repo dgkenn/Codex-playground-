@@ -130,13 +130,18 @@ def _balanced_pairs(pairs, subj, sess_id):
     The same balancing is NOT retrofitted to E172, whose gate passed on its own cohort and whose recorded
     result stands as run. If G2 fails again after this, the run is over and the failure is the result.
     """
+    import hashlib as _hl
     import numpy as _np
     early = [p for p in pairs if p[0] < p[1]]
     late = [p for p in pairs if p[0] > p[1]]
     k = min(len(early), len(late))
     if k == 0:
         return []
-    rng = _np.random.default_rng(abs(hash((subj, sess_id))) % (2 ** 31))
+    # NEVER `hash()` for a seed: Python salts string hashes per process, so the pairing would differ
+    # between runs and only on the randomised path. That is an explicit convention in CLAUDE.md and the
+    # first version broke it -- two runs of this file gave 0.4991 and 0.4975 for the same cohort.
+    _d = _hl.blake2b(f"{subj}|{sess_id}".encode(), digest_size=8).hexdigest()
+    rng = _np.random.default_rng(int(_d, 16) % (2 ** 31))
     early = [early[i] for i in rng.permutation(len(early))[:k]]
     late = [late[i] for i in rng.permutation(len(late))[:k]]
     out = early + late
