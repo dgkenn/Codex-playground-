@@ -139,3 +139,104 @@ for propofol enters only as a vasopressor-use proxy. Free drug fraction has no v
 plug albumin into even once the data is clean. And a three-drug interaction surface does not exist to be
 implemented. A model built here will be more complete than what this project has used so far and still not
 comprehensive, and saying which is which is part of the deliverable.
+
+---
+
+# 6. Making it journal-defendable
+
+Requested by the investigator: advanced and comprehensive, **but defendable**. Those pull against each
+other, and the resolution is not a compromise on ambition — it is a rule about provenance.
+
+> **Every component is either (a) a published model used AS PUBLISHED, or (b) a pre-specified
+> simplification whose limitation is stated in the methods. Nothing is invented here.** A model this
+> project builds itself is the first thing a reviewer will attack and the hardest thing to defend, because
+> it has no external validation and no independent user.
+
+## 6.1 Three tiers
+
+### TIER 1 — defensible as published. Use as-is, cite, validate.
+
+| component | model | record |
+|---|---|---|
+| propofol PK/PD | Eleveld **+ corrigendum** | **29661412** + **30032904** |
+| remifentanil PK/PD | Eleveld | **28509794** |
+| fentanyl PK | Shafer, computer-controlled infusion | **2248388** |
+| propofol–opioid interaction, EEG-parameterised | Minto surface **10839909**, Bouillon on BIS/EEG **15166553** | |
+| volatile potency, age-corrected | Mapleson **8777094**, Nickalls **12878613** | |
+| volatile effect site | **measured end-tidal** — not modelled at all | |
+
+### TIER 2 — defensible only with the limitation written into the methods
+
+* **Hannivoort NSRI (27106965)** to put agents on one potency scale. Published, but using it to combine a
+  set of agents wider than it was fitted on is an extrapolation and must be labelled one.
+* **End-tidal → effect-site first-order lag.** Standard practice; the volatile `ke0` is less firmly
+  established than propofol's and is agent-specific. State the value and its source, and show the result
+  is not sensitive to it.
+* **Underweight patients.** Yi et al. (**30690713**) found propofol model performance degrades in the
+  underweight, and **7.7 % of this cohort has BMI < 18.5** against only 4.1 % with BMI ≥ 30. For this
+  deposit the underweight tail matters more than obesity — the opposite of what the dosing literature
+  emphasises — and a sensitivity analysis excluding them is cheap insurance.
+* **Hypothermia.** Bartošová (**42140058**) documents that deep hypothermia degrades the Eleveld model
+  specifically. Either exclude hypothermic cases or report temperature as a covariate.
+
+### TIER 3 — do not build. These are where a reviewer would end the paper.
+
+* **A ≥3-drug interaction surface.** None validated exists (§2.3). Combine on a common potency scale and
+  say so.
+* **An albumin → free-fraction adjustment.** Propofol is ~98 % protein bound and the mechanism is real,
+  but no clinical PK/PD model was found that takes albumin as a covariate. Adjusting free fraction with a
+  self-derived relationship is inventing pharmacology.
+* **Vasopressor use as a cardiac-output covariate — and this one is a statistical error, not just an
+  unvalidated choice.** Vasopressors are given *because* of hypotension, and hypotension is partly *caused
+  by* the anaesthetic whose exposure is being modelled. Conditioning on treatment-received conditions on a
+  consequence of the exposure: it is a collider (rule 13). Low cardiac output is the strongest clearance
+  modifier for propofol (**36145705**, **32840723**) and this deposit simply cannot address it. Say that.
+* **Any covariate drawn from the ~15 % corrupted preop labs** (§4) before the cleaning is done and the
+  discard count reported.
+
+## 6.2 The circularity trap — the single thing most likely to kill this study
+
+**The PK model must never be validated, tuned or selected against BIS.** BIS is computed from the same EEG
+this project is testing; using it to choose or check the exposure model makes the eventual "does the EEG
+track exposure" result partly circular, and a reviewer will see it immediately.
+
+Permitted validation targets: the **pump's own `PPF20_CE`** (computed independently by the Orchestra
+device, available in 3,511 cases), measured plasma assays where they exist, and published performance
+figures. Nothing derived from the EEG.
+
+## 6.3 The reporting standard reviewers expect
+
+* **Predictive performance by the Varvel metrics** — median performance error (MDPE), median absolute
+  performance error (MDAPE), wobble and divergence — **Varvel et al., PMID 1588504**. This is the
+  established vocabulary for "how good is your predicted concentration" in anaesthesia journals, and a
+  paper that reports a PK model without them looks unfamiliar with the field.
+* **Population PK reporting guidelines** — Dykstra et al., **PMID 26148467**.
+* Report the **discarded fraction at every gate**: corrupted labs, missing infusion records, unassignable
+  agent class, hypothermic and underweight sensitivity arms.
+
+## 6.4 The attack list, with the answer to each
+
+| a reviewer will say | the answer that has to already be in the paper |
+|---|---|
+| "your PK model is unvalidated in this population" | Eleveld is general-purpose and prospectively evaluated (**41982180**); we additionally reproduce the pump's Ce from infusion rate alone and report Varvel metrics |
+| "you used inspired, not end-tidal, volatile concentration" | fixed — `EXP_SEVO`/`EXP_DES`, present in the same cases |
+| "you ignored co-administered drugs" | remifentanil and fentanyl modelled; midazolam, vecuronium, bolus propofol reported with prevalence; what remains unmodelled is listed |
+| "your covariates are dirty" | the §4 audit is in the supplement with per-field discard counts |
+| "you invented an interaction model" | we did not; common potency scale, Minto/Bouillon for the one measured pair |
+| "you validated against BIS" | we did not, by design — §6.2 |
+| "TCI cases are not representative" | reported as a selection limit; 3,511 of 6,389 cases carry a propofol pump |
+| "effect-site concentration is predicted, not measured" | acknowledged; it is the field standard and the pump-reproduction check bounds the error |
+
+## 6.5 What "comprehensive" honestly means here
+
+More complete than anything this project has used, and still not comprehensive:
+
+* cardiac output — **not measurable in this deposit**, and its proxy is a collider;
+* free drug fraction — **no validated model to plug albumin into**;
+* ≥3-drug synergy — **does not exist in the literature**;
+* hepatic and renal impairment — covariates exist but the models that use them are agent-specific and
+  mostly small-sample.
+
+Naming those four in the limitations is what makes the rest defendable. A model presented as comprehensive
+invites the reviewer to find the gap; a model presented as *the most complete exposure estimate the deposit
+supports, with these four named exclusions*, does not.
