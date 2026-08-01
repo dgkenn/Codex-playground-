@@ -155,8 +155,10 @@ def load():
     for r in csv.DictReader(open(TABLE, newline="")):
         if r["Subdural"] != "0" or r["label"] not in ("U", "U_dex"):
             continue
+        # quality is stored twice on purpose: under "q" as the adjustment variable, and under its own
+        # column name so it can be pushed through the identical code path as a feature for GATE Q.
         out.append({"pid": r["patientID"], "arm": 1 if r["label"] == "U_dex" else 0,
-                    "q": _f(r[Q]), **{c: _f(r.get(c, "")) for c in FEATURES}})
+                    "q": _f(r[Q]), Q: _f(r[Q]), **{c: _f(r.get(c, "")) for c in FEATURES}})
     return [r for r in out if math.isfinite(r["q"])]
 
 
