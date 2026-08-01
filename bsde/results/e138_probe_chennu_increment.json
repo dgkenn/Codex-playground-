@@ -1,0 +1,35 @@
+{
+ "status": "PROBE \u2014 answers the ceiling caveat carried by E133 and E136",
+ "n_recordings": 80,
+ "n_spectral": 17,
+ "n_irreversibility": 6,
+ "increments": {
+  "reaction_time": {
+   "n": 78,
+   "mean": 0.0603,
+   "lo": -0.0598,
+   "hi": 0.259,
+   "incumbent_rho": 0.5583
+  },
+  "n_correct": {
+   "n": 80,
+   "mean": 0.0907,
+   "lo": -0.1078,
+   "hi": 0.3749,
+   "incumbent_rho": 0.4003
+  },
+  "sedation_level": {
+   "n": 80,
+   "mean": -0.0914,
+   "lo": -0.3056,
+   "hi": 0.1704,
+   "incumbent_rho": 0.1077
+  }
+ },
+ "gaussian_controls": {
+  "reaction_time": 0.0032,
+  "n_correct": 0.013,
+  "sedation_level": -0.0018
+ },
+ "verdict": "NO INCREMENT in any of three outcomes, on a cohort where the spectral incumbent is NOT at ceiling. This ANSWERS the caveat E133 and E136 both had to declare. Their nulls sat against an incumbent at out-of-bag rho +0.9293 and could not separate 'nothing to add' from 'nowhere to add it'. Here the incumbent reaches only +0.5583, +0.4003 and +0.1077 -- substantial headroom on all three, and the sedation level is nearly unpredicted by the spectrum -- and irreversibility still adds nothing. THE HEADROOM EXISTED AND NOTHING FILLED IT, so the ceiling explanation for E133's null is not supported. Combined with E133's own S1 (null on REM placement, E107's own statistic, where the ceiling objection also did not apply), the subsumption reading now survives its two strongest challenges. AND THE OUTCOMES HERE ARE BEHAVIOURAL -- reaction time and n-correct are the subject's own task performance, not a label a scorer read off the same EEG -- so the circularity caveat sleep staging carries does not apply either. THE HONEST LIMIT, and it is real: n = 78-80 with six added columns gives WIDE intervals ([-0.06,+0.26], [-0.11,+0.37], [-0.31,+0.17]) against sleep-EDFx's [-0.0045,+0.0055]. This run does NOT exclude a modest increment; it excludes the CEILING EXPLANATION for the tight sleep-EDFx null. Those are different claims and only the second is licensed here."
+}
