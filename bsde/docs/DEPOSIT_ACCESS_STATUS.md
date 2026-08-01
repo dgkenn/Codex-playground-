@@ -51,6 +51,30 @@ n = 20; SICdb has n in the thousands and no EEG. The gap is unchanged and should
    different drugs, different scale, against a different sedation scale. That is exactly the forward
    prediction D was told to make rather than retrodict.
 
+## EEG deposits — read from the overview pages, not inferred (added after investigator correction)
+
+The first pass concluded "SICdb has no EEG" from a keyword scan of a landing page. That was inference, not
+reading. The overviews were then read in full, and PhysioNet's 427-project index enumerated: **32 projects
+are EEG / sedation / consciousness relevant.** The conclusion held but is now evidenced — SICdb's overview
+describes raw signal data with no EEG; HiRID and eICU-CRD mention neither EEG nor waveforms anywhere.
+
+**The deposit E130 needs exists, and it is identified.**
+
+| deposit | has | status |
+|---|---|---|
+| **`eeg-gaba-anesthesia`** | **64-channel whole-head EEG (BrainVision) AND `propofolConcentration_*.csv` — the effect-site concentration** | **403 — credentialing/DUA needed** |
+| `propofol-anesthesia-dynamics` | `LOC_ROC.csv` — loss/return of consciousness annotated from **a button-pressing task**, TCI protocol, ~3 h per subject, HRV + EDA per subject | ACCESSIBLE — but **no EEG**, autonomic only |
+| `multimodal-surgery-anesthesia` | 101 surgeries, 18,582 minutes, 49,878 nociceptive events, `OR_data.mat` | ACCESSIBLE — EEG content not yet confirmed |
+| `eeg-power-anesthesia` | multitaper spectra under GABAergic unconsciousness | not yet checked |
+
+**`eeg-gaba-anesthesia` is the one that matters.** E130's blocker was stated as *an assayed or
+pump-reported concentration, a non-EEG state measure, and ≥ 60 subjects, with EEG* — and this deposit
+carries the first and the third of those from the same group (MGH) whose companion deposit supplies a
+behavioural LOC/ROC annotation. It is 403 for the same reason HiRID is: **account credentialing**, not a
+password.
+
+That converts the credentialing action from a speculative "might unlock something" into a named target.
+
 ## Actions
 
 **Needs the investigator:** HiRID requires PhysioNet *credentialing* (CITI training plus a credentialing
