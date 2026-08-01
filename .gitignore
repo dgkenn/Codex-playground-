@@ -44,3 +44,5 @@ bsde/results/mimic_*.csv
 
 # eeg-power-anesthesia (MGH) derived windows: credentialed patient-derived data, never committed
 bsde/results/mgh_power_windows.csv
+
+bsde/results/mgh_volunteer_cnn_btlncks.feather
