@@ -223,3 +223,50 @@ support a jump statistic either.
 **Consequence for Challenge A.** The recovery clause is testable on exactly ten subjects anywhere this
 project can reach, and no second cohort exists for it. The Turku/Kallionpää request (within-subject LOR
 *and* ROR at constant dosing) is now supported by three independent structural findings rather than one.
+
+---
+
+## OpenNeuro, surveyed exhaustively (2026-08-01) — there is no disorders-of-consciousness EEG deposit
+
+`PROGRAMME_ROADMAP.md` item F says *"we are bounded by deposits, not by ideas, and the boundary has never
+been mapped."* This maps one edge of it.
+
+**Method.** Every dataset on OpenNeuro was enumerated through the GraphQL API and parsed directly —
+never a WebFetch summary of a listing, which fabricated a file manifest for this project once (rule 39).
+Machine-readable output in `results/openneuro_eeg_survey.json`, so the claim is auditable rather than
+recalled.
+
+**Result.** **1,834 datasets scanned; 517 carry EEG or iEEG; 36 match a deliberately broad keyword set**
+(consciousness, coma, vegetative, unresponsive, minimally conscious, anaesthesia/anesthesia, sedation,
+propofol, sevoflurane, ketamine, dexmedetomidine, command, motor imagery, brain injury, hypnosis, xenon,
+nitrous, sleep, arousal).
+
+**Not one of the 36 is a disorders-of-consciousness cohort.** No coma, no unresponsive wakefulness, no
+minimally conscious state, no locked-in syndrome, no command-following in brain-injured patients. The
+36 are sleep deposits, epilepsy iEEG, motor-imagery BCI in healthy volunteers, and three anaesthesia
+recordings:
+
+| accession | n | what it is | status here |
+|---|---|---|---|
+| `ds005620` | 21 | repeated awakening, complexity measures | already extracted and used (E15, E103, E153 lineage) |
+| `ds004541` | 8 | EEG-fNIRS under general anaesthesia | already extracted and used (E19, E20) |
+| `ds003380` | **1** | corticothalamic communication under gradual isoflurane | one subject |
+
+The largest motor-imagery deposits are `ds005342` (32) and `ds008446` (20) — healthy volunteers, the same
+proxy relationship `CHALLENGE_DEFINITIONS_CORRECTION.md` flagged as never having been justified.
+
+**What this changes.** Two blocked data requests stop being *one option among several* and become **the
+only route**:
+
+* **Challenge B** needs command-following in brain-injured patients. **BATH-01632** (UWS 14 / LIS 11 /
+  MCS 17 / able-bodied 2), requested 2026-07-30, is the pre-registered target of E18 and there is no
+  public substitute.
+* **Challenge A** needs two anaesthetics with loss *and* recovery in the same subjects. **Turku /
+  Kallionpää** is the drafted request, and the MGH volunteer cohort's ten subjects remain the only
+  behavioural LOC/ROC data reachable at all.
+
+**Limit of the survey, stated rather than left implicit.** The keyword match runs over each dataset's
+`Name` and its task labels, not its README or its participants file. A DoC deposit whose title avoids
+every one of those eighteen terms would be missed. The claim is therefore "OpenNeuro's titles and task
+labels contain no DoC EEG cohort", which is weaker than "OpenNeuro contains none" and is what the method
+supports.
