@@ -957,3 +957,20 @@ unverified on GitHub.
     (rule 14) instead of scoring it. The rule is not "remember to check"; it is that a check living in
     one experiment will not be there for the next one, and this project's own record shows a diagnosis
     written into a ledger row does not prevent a repeat.
+
+75. **THE SPREAD OF A STATISTIC OVER RANDOM PROJECTIONS IS NOT ITS NULL — AND USING IT AS ONE MAKES THE
+    PRIMARY UNFALSIFIABLE.** E165 asked whether a fitted linear combination could keep state
+    discrimination while dropping agent discrimination "to the floor", and defined the floor as the 95th
+    percentile of agent legibility over 200 **random weight vectors**: **0.4203**. The correct reference,
+    a cluster-level permutation null over the arm labels, was already measured on the same cohort by E154
+    at a 95th percentile of **~0.19** — less than half. Against a 0.42 bar essentially any projection
+    passes, and the verdict duly fired at **lambda = 0**, i.e. with no adversarial term in the objective
+    at all. **The experiment could not have failed.**
+    The two quantities answer different questions. A permutation null asks *could this legibility arise
+    with no association*. A random-projection spread asks *how much does this statistic vary across
+    directions* — and in a space where some directions genuinely carry the label, that dispersion is
+    inflated by the very signal being tested. **Never let a dispersion stand in for a null.** The tell is
+    available before the run and costs nothing: if a permutation null for the same statistic on the same
+    cohort already exists, the two should agree, and here they differed by a factor of two.
+    Related to rule 40 and rule 63, and distinct from both: the bar was neither unfailable by construction
+    nor a round number, it was a real measurement of the wrong thing.
