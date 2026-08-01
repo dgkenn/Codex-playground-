@@ -342,11 +342,11 @@ def main() -> int:
 
     print("\ncandidate                        real   surr mean      frac  diagnostics  verdict")
     for name in E150_ADDS:
-        if name not in cands:
+        x = cand.get(name)
+        if x is None:
             continue
         res["candidates"][name] = score_candidate(
-            name, cand[:, cands.index(name)], base, y, subj,
-            "   MUSCLE" if name in MUSCLE else "")
+            name, x, base, y, subj, "   MUSCLE" if name in MUSCLE else "")
 
     bad_pres = [n for n, v in list(res["candidates"].items())
                 + [("CALIBRATION", res["calibration_random_walk"]),
