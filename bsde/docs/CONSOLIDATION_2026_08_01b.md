@@ -9,6 +9,11 @@ when this was written and are marked as such.*
 
 ## 1. The headline, in one paragraph
 
+> **AMENDED after E170 landed.** Section 2's four overturns are now **two that stand, one withdrawn and
+> one pending**: e34's was withdrawn by its own placebo distribution (83 % of fake landmarks reach the real
+> increment), e37 is the same landmark design and untested, and e58 and e99 stand because neither has a
+> landmark. Section 9 below is the correction and is where a reader should start on Challenge C.
+
 **The instrument was worse than "blind" — it was, in two places, wrong.** E146 had already measured
 `oob_regression_increment`'s tail fraction as conservative to the point of detecting in 0 % of draws where
 a proper test detected in 88 %. This session re-derived the seven remaining rows that instrument had
@@ -216,3 +221,49 @@ invisible in the code that constructs it.
    available.
 5. **The four moved Challenge C rows need a single document** stating what the project now believes about
    order-pattern measures and imminent loss of consciousness — not four corrected ledger rows.
+
+
+---
+
+## 9. AMENDMENT — E170 withdraws two of E166's four overturns
+
+E166 asked whether a column carries information about a label. **It cannot ask whether the label is the
+thing you meant**, and for the two DOSE-I rows it was not.
+
+**E170** re-derived E34's placebo as a DISTRIBUTION rather than the single draw E34 used:
+
+| | |
+|---|---|
+| real increment, PE31 over SEF95 | **−0.02180** |
+| 200 fake landmarks at matched relative positions | **mean −0.04844**, 5th pct −0.10476 |
+| fraction of fake landmarks reaching or beating the real one | **0.8300** |
+
+A landmark placed at an arbitrary point in the recording produces a **larger** apparent increment than the
+real loss of consciousness. The registered branch fires: **e34's ADDS is withdrawn and E34's recorded null
+stands.**
+
+Everything upstream passed — 129 recordings rebuilt to the row, SEF95 alone alive at p = 0.0000, a floor of
+ρ = 0.02, and twelve of fifteen candidates clearing BH with WSMF30 at −0.07110, three times the registered
+primary. The muscle comparator `rel_gamma` reached −0.01985, exceeded by 0.002.
+
+**The placebo is itself confounded, recorded without changing the verdict.** Measured afterwards: the fake
+label leaves SEF95 at out-of-fold AUC **0.4652** with base rate **0.097**, against the real label's
+**0.6088** and **0.312**. The fake landmark hands an added column more headroom and a rarer positive class
+for reasons unrelated to the landmark. An unmatched placebo can only be argued to be too *harsh*, and
+arguing that after watching it fail is the move `DISCOVERY_LOOP.md` §2 forbids — so the verdict stands and
+**E178 is warranted with a headroom- and base-rate-matched placebo**.
+
+### What this changes about §2 and §8
+
+* **e34** — withdrawn. **e37** — same landmark shape, never placebo-tested as a distribution, unclaimed.
+* **e58, e99** — stand. Neither has a landmark: e58 predicts device BIS per window, e99 predicts
+  `meta_sr > 0` per window, so no arbitrary cut exists to fake. e99 is separately corroborated by three
+  estimators and a 50–95 % training-fraction sweep (E173).
+* `NOTE_OSTERTAG_AND_THE_PE_OVERTURN.md`'s warnings are now moot for the claim and remain correct about the
+  table: the registered primary is the smallest member of its own family.
+
+**The reusable lesson, and it is the most important thing in this document.** A calibrated permutation null
+answers *does this column carry information about the label I gave it*. It is silent on *is this label the
+phenomenon*. E166 built a floor for the first question and treated it as though it settled the second. The
+only instrument that separates them is a placebo on the LABEL, and it has to be matched on the baseline's
+headroom and the label's base rate or it measures those instead.
