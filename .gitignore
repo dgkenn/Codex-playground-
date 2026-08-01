@@ -33,3 +33,8 @@ aws_credentials*
 
 # Raw data working area — PHI (HEEDB/MIMIC/eICU under DUA); NEVER commit
 scratchpad/
+
+# Raw PK input time series: ~1 GB of per-case infusion/gas traces at full track resolution.
+# Regenerable with `python bsde/scripts/extract_vitaldb_pk_inputs.py` (resumable), so it is a cache, not
+# a result. It exceeded the remote's push limit at 282 MB with only half the cases fetched.
+bsde/results/vitaldb_pk_inputs.jsonl
