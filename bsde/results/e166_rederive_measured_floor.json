@@ -60,6 +60,75 @@
       "calibration_pass": true,
       "verdict": "ABSENT-ABOVE-FLOOR",
       "why": "the recorded negative stands, with nothing above rho = 0.05"
+    },
+    "e26@SR>=10": {
+      "name": "e26@SR>=10",
+      "n_rows": 213,
+      "n_clusters": 33,
+      "reference": {
+        "clusters": 33,
+        "rows": 213,
+        "note": "33 patients with an onset, base rate 14.6 %"
+      },
+      "recorded": "-0.0387 [-0.3057, +0.1656]  (AUC increment, POSITIVE = adds)",
+      "gate_R": true,
+      "gate_A": {
+        "increment": -0.14099610067352003,
+        "p": 0.22,
+        "null_mean": -0.05949796171570368,
+        "n_null": 200,
+        "pass": false
+      },
+      "increment": 0.005140021269053496,
+      "p": 0.626,
+      "null_mean": -0.01763133640552996,
+      "n_null": 500,
+      "floor": 0.2,
+      "ladder": [
+        {
+          "rho": 0.0,
+          "p": [
+            0.7266666666666667,
+            0.6,
+            0.08333333333333333
+          ],
+          "hits": 0,
+          "detected": false
+        },
+        {
+          "rho": 0.05,
+          "p": [
+            0.95,
+            0.6566666666666666,
+            0.14
+          ],
+          "hits": 0,
+          "detected": false
+        },
+        {
+          "rho": 0.1,
+          "p": [
+            0.35,
+            0.30333333333333334,
+            0.95
+          ],
+          "hits": 0,
+          "detected": false
+        },
+        {
+          "rho": 0.2,
+          "p": [
+            0.0033333333333333335,
+            0.0033333333333333335,
+            0.0
+          ],
+          "hits": 3,
+          "detected": true
+        }
+      ],
+      "calibration_pass": true,
+      "verdict": "BASELINE-DEAD",
+      "why": "GATE A failed: there was nothing to add to (rule 53)"
     }
   }
 }
