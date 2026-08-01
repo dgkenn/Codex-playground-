@@ -138,6 +138,24 @@ def _band(name):
     return fn
 
 
+def f_alpha_peak_hz(data, ch_names, sfreq, meta=None) -> float:
+    """Frequency of the largest spectral peak inside the alpha band.
+
+    Added for E157. The MGH OR cohort (E156) put this at signed AUC 0.0886 for sevoflurane
+    co-administration against propofol alone -- markedly LOWER under sevoflurane, which is the direction
+    the anaesthesia literature predicts. It is a FREQUENCY, not an amplitude, so it is not a restatement
+    of `relative_alpha_power` (rule 60 requires that check and E157 runs it explicitly).
+    """
+    import numpy as np
+    from bsde.features.spectral import BANDS
+    lo, hi = BANDS["alpha"]
+    f, p = _mean_psd(data, sfreq)
+    m = (f >= lo) & (f <= hi)
+    if m.sum() < 3 or not np.isfinite(p[m]).any():
+        return float("nan")
+    return float(f[m][int(np.nanargmax(p[m]))])
+
+
 def f_spectral_edge_95(data, ch_names, sfreq, meta=None) -> float:
     from bsde.features.spectral import spectral_edge
     f, p = _mean_psd(data, sfreq)
@@ -402,6 +420,38 @@ def seed_registry() -> Sequence[Candidate]:
         notes="Deliberately declares 'higher' for drug identity — it is a KNOWN pharmacological signature "
               "and pretending otherwise would be dishonest. That is precisely why it is a poor "
               "consciousness marker and a good baseline.")
+
+    register(
+        name="relative_theta_power", version="1.0", fn=_band("theta"),
+        interpretation="Fraction of 1-45 Hz power in the theta band. Added for E157: on the MGH OR "
+                       "cohort (E156) theta separated propofol-only from propofol+sevoflurane at signed "
+                       "AUC 0.9457 -- markedly HIGHER when sevoflurane was co-administered.",
+        predictions={"unconscious_vs_awake": "higher", "anaesthetic_drug_identity": "higher"},
+        failure_conditions=["it is redundant with relative_delta_power or relative_alpha_power "
+                            "(|rank correlation| > 0.9), in which case it is one of them renamed",
+                            "the sevoflurane direction does not replicate outside the MGH cohort"],
+        requires=_CORE, complexity=2, min_duration_s=60.0,
+        prior_art="Theta is part of every conventional EEG grading scheme; the AGENT contrast is the "
+                  "claim under test, not the band itself.",
+        notes="Declared 'higher' for drug identity for the same reason relative_alpha_power does -- it is "
+              "a suspected pharmacological signature and pretending otherwise would be dishonest. That "
+              "makes it a poor consciousness marker by construction and a good agent probe.")
+
+    register(
+        name="alpha_peak_hz", version="1.0", fn=f_alpha_peak_hz,
+        interpretation="Frequency of the largest alpha-band spectral peak. A FREQUENCY, not an "
+                       "amplitude, so rule 60's escape check against relative_alpha_power is meaningful "
+                       "rather than decorative.",
+        predictions={"anaesthetic_drug_identity": "lower"},
+        failure_conditions=["|rank correlation| > 0.9 with relative_alpha_power, in which case it is an "
+                            "amplitude measure wearing a frequency label",
+                            "the sevoflurane direction does not replicate outside the MGH cohort"],
+        requires=_CORE, complexity=2, min_duration_s=60.0,
+        prior_art="A lower frontal alpha peak under volatile agents than under propofol is described in "
+                  "the anaesthesia EEG literature; E156 measured it at signed AUC 0.0886 and this "
+                  "candidate exists to test whether that replicates.",
+        notes="Registered with an explicit DIRECTION so a replication can fail by sign rather than only "
+              "by magnitude (error catalogue rule 37, fourth occurrence).")
 
     register(
         name="relative_delta_power", version="1.0", fn=_band("delta"),
