@@ -158,6 +158,11 @@ def main(argv=None) -> int:
     ap.add_argument("--out", default=OUT)
     ap.add_argument("--limit", type=int, default=0)
     ap.add_argument("--cohort", choices=["OR", "Volunteer", "both"], default="both")
+    # --fmax truncates the spectrum before any feature is computed, which is how the band-restricted arm
+    # of E153 is produced. Bands lying entirely above the cut yield NaN rather than zero, so a candidate
+    # that cannot exist below the cut is dropped by construction instead of silently becoming a constant.
+    ap.add_argument("--fmax", type=float, default=0.0,
+                    help="truncate the spectrum at this frequency (Hz) before computing features")
     a = ap.parse_args(argv)
 
     op = session()
@@ -200,7 +205,12 @@ def main(argv=None) -> int:
                 if S.shape[0] != len(f):                     # (freq, time) is the documented orientation
                     S = S.T
                 assert S.shape == (len(f), len(t)), f"{S.shape} vs ({len(f)},{len(t)})"
-                ft = features(S, f)
+                if a.fmax > 0:
+                    keep_f = f <= a.fmax
+                    f_use, S = f[keep_f], S[keep_f]
+                else:
+                    f_use = f
+                ft = features(S, f_use)
                 arm = rx.get(case, "volunteer_propofol" if cohort == "Volunteer" else "unknown")
                 for i in range(len(t)):
                     w.writerow({"case": case, "cohort": cohort, "arm": arm,

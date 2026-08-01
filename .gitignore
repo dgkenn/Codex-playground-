@@ -47,3 +47,4 @@ bsde/results/mgh_power_windows.csv
 
 bsde/results/mgh_volunteer_cnn_btlncks.feather
 bsde/results/mgh_volunteer_windows.csv
+bsde/results/mgh_volunteer_windows_lt30.csv

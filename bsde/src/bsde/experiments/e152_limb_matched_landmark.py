@@ -116,7 +116,8 @@ OUT = os.path.join(RESULTS, "e152_limb_matched.json")
 
 W_PRIMARY = 150
 WINDOWS = (60, 150, 300)
-BAND = 4          # comparison landmarks live within +-BAND*W of the real one
+BAND = 4          # comparison landmarks live within +-BAND*W of the real one, CLIPPED to the recording
+PSEUDO = 2        # the pseudo-landmark sits +-PSEUDO*W away on the same limb
 DRAWS = 200
 ALIVE_BAR = 0.10
 
@@ -145,7 +146,12 @@ def main(argv=None) -> int:
     rng = np.random.default_rng(152)
     data = load()
     subs = sorted(data)
-    need = 5 * max(WINDOWS)
+    # Room needed is set by what the recording can supply, not by a round number (rule 63). The
+    # comparison band is clipped inside `d_limb`, so the binding requirement is only that the PSEUDO
+    # landmark and its own window fit: PSEUDO*W + W epochs either side of each landmark. At W = 150 that
+    # is 450 epochs (15 min), which every volunteer has -- the first draft demanded 5*max(WINDOWS) = 1500
+    # epochs (50 min) and admitted 1 of 10, because LOC occurs at 18-67 min.
+    need = (PSEUDO + 1) * W_PRIMARY
     ok = [c for c in subs
           if len(data[c]["loc"]) == 1 and len(data[c]["roc"]) == 1
           and data[c]["loc"][0] >= need and data[c]["n"] - data[c]["roc"][0] >= need
@@ -233,8 +239,8 @@ def main(argv=None) -> int:
     res = {}
     for f in alive:
         real = arm(lambda c, ff=f: data[c]["X"][ff])
-        pseu_lo = arm(lambda c, ff=f: data[c]["X"][ff], offset=-BAND)
-        pseu_hi = arm(lambda c, ff=f: data[c]["X"][ff], offset=+BAND)
+        pseu_lo = arm(lambda c, ff=f: data[c]["X"][ff], offset=-PSEUDO)
+        pseu_hi = arm(lambda c, ff=f: data[c]["X"][ff], offset=+PSEUDO)
         wins = {t: [arm(lambda c, ff=f: data[c]["X"][ff], w=w).get(t, {}).get("mean_D", float("nan"))
                     for w in WINDOWS] for t in ("LOC", "ROC")}
         for t in ("LOC", "ROC"):
