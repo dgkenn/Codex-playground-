@@ -168,7 +168,10 @@ def perm_null(per, ref_level, rng, reps=2000):
 
 def main() -> int:
     seed_registry()
-    rows = load_features(os.path.join(RESULTS, "chennu_features.csv"))
+    # v3 is the CURRENT extraction; v1 has 21 columns and lacks exponent_high, pac_slow_alpha,
+    # critical_slowing_ar1 and others, which is why those candidates returned n=0 subjects rather than a
+    # null. Rule 2: numbers inherited from a superseded extraction must be re-derived, not carried forward.
+    rows = load_features(os.path.join(RESULTS, "chennu_features_v3.csv"))
     print("E05 — drug vs state: the Chennu recovery dissociation")
     if not rows:
         print("   *** no results/chennu_features.csv yet. Nothing is reported.")
