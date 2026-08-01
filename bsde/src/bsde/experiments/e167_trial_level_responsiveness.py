@@ -60,6 +60,29 @@ INCUMBENT (rule 45)  `artifact` — the deposit's own per-trial artefact flag, s
          trap run the other way).
 
 ---------------------------------------------------------------------------------------------------------
+PRIOR ART — ADDED AFTER REGISTRATION, BEFORE ANY DATA (verified from the MEDLINE record, rule 25)
+
+The question has been asked once before, at much smaller scale. **PMID 27199630** (Frontiers in
+Neuroscience, 2016, "Single Trial Predictors for Gating Motor-Imagery Brain-Computer Interfaces Based on
+Sensorimotor Rhythm and Visual Evoked Potentials") reports, verbatim:
+
+> "mu rhythm amplitude over the central electrodes at the time of cue presentation and to a lesser extent
+>  the single trial visual evoked response **were correlated with the success on the subsequent imagery
+>  task**"
+
+Two things follow, and only two (rule 42 — a quotation supports what it literally says and no more).
+**First, this makes E167 a REPLICATION rather than a first look**, on 62 subjects with online BCI control
+instead of an offline gating analysis, which raises the bar on a null: a null here would be a failure to
+replicate a published single-trial effect, not an absence of prior expectation. **Second, the abstract
+does not state the SIGN.** It says correlated, not which way. So the registered two-sided test stands
+exactly as written, and nothing about the design moves — this note adds a citation and a bar, not a
+prediction.
+
+The choice of `mu_mean` as the primary was made before this record was read and is corroborated by it:
+the source's own variable is central-electrode mu amplitude, which is what `mu_mean` (C3/C4 relative
+alpha) is.
+
+---------------------------------------------------------------------------------------------------------
 GATES
 
 G1  LABEL VARIANCE. At least 40 sessions with >= 100 scored trials and a hit rate inside [0.15, 0.85].
