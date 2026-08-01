@@ -81,9 +81,14 @@ GATES
     G4  POSITIVE CONTROL, unchanged from E104: `spont_exponent` must separate the states against a
         Gaussian on the same pairs. It did, at d_z -0.8424 vs 0.5982 -- but it is recomputed here from
         this run's own table and not quoted.
-    G5  THE RAW EFFECT MUST BE PRESENT IN THIS TABLE. `sham_evoked_lz` unadjusted must reproduce E104's
-        separation. If v3's extraction changed it, the premise of this experiment is gone and the verdict
-        is ABSENT, not a null (rule 31).
+    G5  THE PREMISE MUST BE PRESENT IN THIS TABLE -- and the premise is E104's quantity, which was
+        `sham_evoked_lz` **residualised on `spont_exponent`** (d_z -0.7116 [-1.5936, -0.2066]), not the raw
+        column. An earlier draft of this gate asked the RAW column to reproduce an ADJUSTED result, which
+        is a mis-specification: the raw effect is -0.3467 [-1.0401, +0.1427] and E104 never claimed it.
+        Both are reported; the gate is on E104's quantity, because this experiment exists to ask whether
+        adding three more adjusters to the one E104 used destroys it. The v3 and v2 tables were checked to
+        be byte-identical on `sham_evoked_lz` and `spont_exponent` across all 53 shared recordings, so no
+        number E104 reported has changed.
 
 PLACEBO, gating the verdict: awake/sed labels flipped at random within subject, 500 draws, the whole fit
 and residualisation recomputed inside each. **The primary's interval is read FIRST** -- a placebo cannot
@@ -231,13 +236,21 @@ def main() -> int:
     d_raw = paired(both, y, task, subj)
     raw_dz = dz(d_raw)
     raw_lo, raw_hi = ci([dz(d_raw[rng.integers(0, d_raw.size, d_raw.size)]) for _ in range(REPS)])
-    res["gates"].update({"G5_raw_dz": raw_dz, "G5_lo": raw_lo, "G5_hi": raw_hi,
-                         "G5_pass": bool(np.isfinite(raw_lo) and not (raw_lo <= 0.0 <= raw_hi))})
+    # E104's quantity: residualised on spont_exponent ALONE. That is the premise this experiment tests.
+    e104_resid, _ = multi_resid(y, X[:, [0]])
+    d_e104 = paired(both, e104_resid, task, subj)
+    e104_dz = dz(d_e104)
+    e104_lo, e104_hi = ci([dz(d_e104[rng.integers(0, d_e104.size, d_e104.size)]) for _ in range(REPS)])
+    res["gates"].update({"G5_raw_dz": raw_dz, "G5_raw_lo": raw_lo, "G5_raw_hi": raw_hi,
+                         "G5_e104_dz": e104_dz, "G5_lo": e104_lo, "G5_hi": e104_hi,
+                         "G5_pass": bool(np.isfinite(e104_lo) and not (e104_lo <= 0.0 <= e104_hi))})
     print(f"G2 coverage  {len(both)} subjects  {'PASS' if res['gates']['G2_pass'] else 'FAIL'}")
     print(f"G4 known     spont_exponent d_z {sp_dz:+.4f} vs Gaussian 95th {noise95:.4f}  "
           f"{'PASS' if res['gates']['G4_pass'] else 'FAIL'}")
-    print(f"G5 premise   raw {TARGET} d_z {raw_dz:+.4f} [{raw_lo:+.4f}, {raw_hi:+.4f}]  "
-          f"{'PASS' if res['gates']['G5_pass'] else 'FAIL'}")
+    print(f"G5 premise   E104 quantity ({TARGET} | spont_exponent) d_z {e104_dz:+.4f} "
+          f"[{e104_lo:+.4f}, {e104_hi:+.4f}]  {'PASS' if res['gates']['G5_pass'] else 'FAIL'}")
+    print(f"             raw {TARGET} (descriptive, never E104's claim) d_z {raw_dz:+.4f} "
+          f"[{raw_lo:+.4f}, {raw_hi:+.4f}]")
 
     resid, cond = multi_resid(y, X)
     res["gates"]["G3_condition_number"] = cond

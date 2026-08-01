@@ -1,0 +1,39 @@
+{
+  "n_rows": 46,
+  "gates": {
+    "G1_escape": {
+      "spont_exponent": -0.3963613937711995,
+      "spont_lziv": 0.1532531606537157,
+      "spont_perm_entropy": -0.19839654640764723,
+      "spont_spectral_entropy": 0.558063521430774
+    },
+    "G1_pass": true,
+    "G2_subjects": 14,
+    "G2_pass": true,
+    "G4_spont_dz": -0.8423726105647247,
+    "G4_noise_95": 0.5853067595514787,
+    "G4_pass": true,
+    "G5_raw_dz": -0.3467396032523068,
+    "G5_raw_lo": -1.0400570274158567,
+    "G5_raw_hi": 0.14269332012231256,
+    "G5_e104_dz": -0.7116338022825012,
+    "G5_lo": -1.5663933203762528,
+    "G5_hi": -0.20768093060208778,
+    "G5_pass": true,
+    "G3_condition_number": 316.3900027025395,
+    "G3_pass": true
+  },
+  "primary": {
+    "d_z": -0.38135310508320885,
+    "lo": -0.9221469510213097,
+    "hi": 0.14923336462324124,
+    "n_subjects": 14
+  },
+  "placebo": {
+    "lo": -0.6413309328831487,
+    "hi": 0.5618587866681698,
+    "inside": true,
+    "n_draws": 500
+  },
+  "verdict": "ABSORBED BY THE FAMILY -- the state separation E104's sham arm showed is accounted for by spontaneous complexity measures already in this project's inventory. The placebo is NOT informative here: there was no effect for it to fail to reproduce (rule 48)."
+}
