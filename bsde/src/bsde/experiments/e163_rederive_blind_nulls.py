@@ -159,6 +159,10 @@ def build_e133():
     icols = ["frontal_irr3", "frontal_irr4", "frontal_incr",
              "posterior_irr3", "posterior_irr4", "posterior_incr"]
     keys = sorted(k for k in (set(irr) & set(five)) if k[0] != "subject")
+    # E133's own gate block records dropping `uce_v1` as all-NaN. Requiring every spectral column finite
+    # without that drop empties the cohort, which is what the first draft did (I came back 1-dimensional).
+    spectral = [c for c in spectral
+                if sum(math.isfinite(_f(five[k].get(c, ""))) for k in keys) >= 0.5 * len(keys)]
     y, subj, S, I = [], [], [], []
     order = {"W": 0, "N1": 1, "N2": 2, "N3": 3}
     for k in keys:
