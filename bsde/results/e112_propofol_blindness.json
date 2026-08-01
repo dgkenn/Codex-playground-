@@ -1,0 +1,168 @@
+{
+  "gates": {
+    "G1_pass": true,
+    "G3_interaction": {
+      "relative_alpha_power": 0.587415293368952,
+      "exponent_high": 0.40245633558868227,
+      "exponent_low": -0.13713379580191576,
+      "relative_delta_power": 0.09349352434369573,
+      "spectral_edge_95": -0.13472709271005343,
+      "meta_bis": 0.07491452905791562
+    }
+  },
+  "arms": {
+    "tiva": {
+      "n_cases": 138,
+      "measures": {
+        "relative_alpha_power": {
+          "median_fid": -0.02515338119053289,
+          "adv": -0.04100563540076987,
+          "lo": -0.10007908870211968,
+          "hi": 0.01792659315647646,
+          "abs_adv": 0.0015222569815713167,
+          "abs_lo": -0.03601256974939555,
+          "abs_hi": 0.040241666828083035
+        },
+        "exponent_high": {
+          "median_fid": 0.08544807682738717,
+          "adv": 0.053878432609916926,
+          "lo": 0.008597412614285123,
+          "hi": 0.09897556916466496,
+          "abs_adv": 0.02132425600334472,
+          "abs_lo": -0.013571510482954997,
+          "abs_hi": 0.05434369729684595
+        },
+        "exponent_low": {
+          "median_fid": 0.030507215619694397,
+          "adv": 0.01800922133549443,
+          "lo": -0.033721311315638956,
+          "hi": 0.06947889145917716,
+          "abs_adv": 0.027605098938847966,
+          "abs_lo": -0.007153377994514716,
+          "abs_hi": 0.061161048740403325
+        },
+        "relative_delta_power": {
+          "median_fid": 0.14371182327838675,
+          "adv": 0.10746928587851438,
+          "lo": 0.05758627839625274,
+          "hi": 0.160047499929584,
+          "abs_adv": 0.027944523044372276,
+          "abs_lo": -0.009098167307058352,
+          "abs_hi": 0.06383356517323191
+        },
+        "spectral_edge_95": {
+          "median_fid": -0.051212241653418124,
+          "adv": -0.02776239450969823,
+          "lo": -0.061924244101410175,
+          "hi": 0.008011510336976032,
+          "abs_adv": 0.029442214118962574,
+          "abs_lo": 0.001889669672485782,
+          "abs_hi": 0.05675752388686935
+        },
+        "meta_bis": {
+          "median_fid": 0.285971685971686,
+          "adv": 0.22182819821359587,
+          "lo": 0.16148137487545122,
+          "hi": 0.28064234749638733,
+          "abs_adv": 0.09983424439672586,
+          "abs_lo": 0.06395164695795391,
+          "abs_hi": 0.1365750596943201
+        }
+      },
+      "_rows_n": 138
+    },
+    "volatile": {
+      "n_cases": 92,
+      "measures": {
+        "relative_alpha_power": {
+          "median_fid": -0.42583222168324036,
+          "adv": -0.6284209287697219,
+          "lo": -0.7264613274906576,
+          "hi": -0.528359601957202,
+          "abs_adv": 0.04778781938540795,
+          "abs_lo": -0.012726280073914758,
+          "abs_hi": 0.1076476569853269
+        },
+        "exponent_high": {
+          "median_fid": -0.059403773471110935,
+          "adv": -0.34857790297876534,
+          "lo": -0.4118420581542606,
+          "hi": -0.28513732901644295,
+          "abs_adv": -0.11284257015276868,
+          "abs_lo": -0.1708594306273545,
+          "abs_hi": -0.054945533694154114
+        },
+        "exponent_low": {
+          "median_fid": 0.49649072277467865,
+          "adv": 0.1551430171374102,
+          "lo": 0.10125883659596942,
+          "hi": 0.21200481014071884,
+          "abs_adv": 0.1277499757211327,
+          "abs_lo": 0.07927772310426227,
+          "abs_hi": 0.17437046637115933
+        },
+        "relative_delta_power": {
+          "median_fid": 0.33340336134453785,
+          "adv": 0.013975761534818653,
+          "lo": -0.048100617346647216,
+          "hi": 0.08064173298789228,
+          "abs_adv": 0.01814632436405592,
+          "abs_lo": -0.03470182461056136,
+          "abs_hi": 0.07052809997411708
+        },
+        "spectral_edge_95": {
+          "median_fid": 0.4611043418823739,
+          "adv": 0.10696469820035519,
+          "lo": 0.06425755185118662,
+          "hi": 0.15102999959026245,
+          "abs_adv": 0.08725188922881644,
+          "abs_lo": 0.05042794582963447,
+          "abs_hi": 0.12584612536747117
+        },
+        "meta_bis": {
+          "median_fid": 0.44684314541293946,
+          "adv": 0.14691366915568024,
+          "lo": 0.07531585987775014,
+          "hi": 0.22282555503279644,
+          "abs_adv": 0.10424868396186365,
+          "abs_lo": 0.048354482192398185,
+          "abs_hi": 0.15998807029917078
+        }
+      },
+      "_rows_n": 92
+    }
+  },
+  "placebo": {
+    "relative_alpha_power": {
+      "lo": -0.04988676878430484,
+      "hi": 0.04904268889064373,
+      "inside": true
+    },
+    "exponent_high": {
+      "lo": -0.03622140462162695,
+      "hi": 0.03377799548154545,
+      "inside": false
+    },
+    "exponent_low": {
+      "lo": -0.03727453075429325,
+      "hi": 0.04204329192072815,
+      "inside": true
+    },
+    "relative_delta_power": {
+      "lo": -0.04556858302714807,
+      "hi": 0.03835505475485861,
+      "inside": false
+    },
+    "spectral_edge_95": {
+      "lo": -0.02402090602386318,
+      "hi": 0.02260503892888213,
+      "inside": false
+    },
+    "meta_bis": {
+      "lo": -0.05365426953573375,
+      "hi": 0.049732995552009496,
+      "inside": false
+    }
+  },
+  "verdict": "PROPOFOL SENSITIVITY IS RECOVERABLE -- ['exponent_high', 'relative_delta_power'] beat the exponent under propofol by MORE than in the volatile arm, so the advantage is propofol-specific. H_periodic NOT supported: relative_alpha_power did not beat the exponent under propofol and was withdrawn by the placebo. A likely reason is compositional -- `relative` alpha is alpha divided by total power, and propofol raises low-frequency power steeply, so relative alpha can FALL while absolute alpha rises. This experiment cannot separate those and an absolute-power version would be the successor's job; H_fitrange supported by ['exponent_high'] -- a slope fitted ENTIRELY ABOVE the alpha band tracks propofol where the 1-40 Hz version does not, which is what that hypothesis predicted; ['relative_delta_power'] also beat the exponent propofol-specifically, and belong to NEITHER hypothesis as registered -- low-frequency power is not the alpha signature. This locates the exponent's blindness rather than merely confirming it, and any product framing must state which measure is used for which agent.  **SCALE, and it is the thing to read first: the best rescued fidelity is +0.1437 against BIS's +0.2860 on the same cases and windows. Recovering a measure from zero is not the same as making it competitive, and nothing here does the second.**"
+}

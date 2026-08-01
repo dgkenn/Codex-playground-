@@ -107,8 +107,13 @@ TABLES = [os.path.join(RESULTS, "vitaldb_grid.csv")] + sorted(
 
 INCUMBENT = "whole_head_exponent"
 # measure -> declared sign, fixed before the run
+# BIS is included as a REFERENCE ROW, not as a candidate: a "rescued" fidelity of +0.09 means something
+# different depending on whether the incumbent reaches +0.29 or +0.9, and the first run of this file
+# printed the rescue without the scale beside it.
 MEASURES = {"relative_alpha_power": +1.0, "exponent_high": +1.0, "exponent_low": +1.0,
-            "relative_delta_power": +1.0, "spectral_edge_95": -1.0, INCUMBENT: +1.0}
+            "relative_delta_power": +1.0, "spectral_edge_95": -1.0, "meta_bis": -1.0,
+            INCUMBENT: +1.0}
+REFERENCE = "meta_bis"
 ARMS = (("tiva", "ppf_ce"), ("volatile", "mac"))
 MIN_WINDOWS, MIN_CASES = 10, 50
 REPS = 4000
@@ -284,32 +289,55 @@ def main() -> int:
     # ---- VERDICT ---------------------------------------------------------------------------------
     tiva = res["arms"].get("tiva", {}).get("measures", {})
     better = [m for m, d in tiva.items()
-              if np.isfinite(d["lo"]) and d["lo"] > 0
+              if m != REFERENCE and np.isfinite(d["lo"]) and d["lo"] > 0
               and not res["placebo"].get(m, {}).get("inside", True)]
     specific = [m for m in better if spec.get(m, 0.0) > 0]
-    worse = [m for m, d in tiva.items() if np.isfinite(d["hi"]) and d["hi"] < 0]
+    worse = [m for m, d in tiva.items()
+             if m != REFERENCE and np.isfinite(d["hi"]) and d["hi"] < 0]
+    ref_fid = tiva.get(REFERENCE, {}).get("median_fid", float("nan"))
+    scale = ("  **SCALE, and it is the thing to read first: the best rescued fidelity is "
+             + (f"{max((tiva[m]['median_fid'] for m in better), default=float('nan')):+.4f} "
+                if better else "n/a ")
+             + f"against BIS's {ref_fid:+.4f} on the same cases and windows. Recovering a measure from "
+               "zero is not the same as making it competitive, and nothing here does the second.**")
     if not better:
         v = ("NOTHING RESCUES PROPOFOL SENSITIVITY -- no measure beats the aperiodic exponent's fidelity "
              "to propofol effect-site concentration with an interval excluding zero and outside the "
              "placebo. Neither H_periodic nor H_fitrange is supported, and the exponent's propofol "
              "blindness is not a fit-range artefact or a missing periodic term. "
-             + (f"WORSE than the incumbent: {worse}. " if worse else ""))
+             + (f"WORSE than the incumbent: {worse}. " if worse else "") + scale)
     elif not specific:
         v = (f"BETTER BUT NOT PROPOFOL-SPECIFIC -- {better} beat the exponent under propofol, but the "
              f"advantage is no larger than in the volatile arm, so this is a statement about those "
              f"measures generally and NOT about propofol (G3, rule 29).")
     else:
-        h_per = [m for m in specific if m in ("relative_alpha_power", "relative_delta_power")]
+        # H_periodic was about propofol's ALPHA signature specifically. `relative_delta_power` is not an
+        # alpha measure and low-frequency power is not obviously periodic, so it must not be counted as
+        # support for that hypothesis -- doing so in the first run mislabelled the result.
+        h_per = [m for m in specific if m == "relative_alpha_power"]
         h_fit = [m for m in specific if m in ("exponent_high", "exponent_low")]
+        other = [m for m in specific if m not in h_per + h_fit]
         parts = []
         if h_per:
-            parts.append(f"H_periodic supported by {h_per}")
+            parts.append(f"H_periodic (the alpha signature) supported by {h_per}")
+        else:
+            parts.append("H_periodic NOT supported: relative_alpha_power did not beat the exponent under "
+                         "propofol and was withdrawn by the placebo. A likely reason is compositional -- "
+                         "`relative` alpha is alpha divided by total power, and propofol raises "
+                         "low-frequency power steeply, so relative alpha can FALL while absolute alpha "
+                         "rises. This experiment cannot separate those and an absolute-power version "
+                         "would be the successor's job")
         if h_fit:
-            parts.append(f"H_fitrange supported by {h_fit}")
+            parts.append(f"H_fitrange supported by {h_fit} -- a slope fitted ENTIRELY ABOVE the alpha "
+                         f"band tracks propofol where the 1-40 Hz version does not, which is what that "
+                         f"hypothesis predicted")
+        if other:
+            parts.append(f"{other} also beat the exponent propofol-specifically, and belong to NEITHER "
+                         f"hypothesis as registered -- low-frequency power is not the alpha signature")
         v = (f"PROPOFOL SENSITIVITY IS RECOVERABLE -- {specific} beat the exponent under propofol by MORE "
              f"than in the volatile arm, so the advantage is propofol-specific. "
              + "; ".join(parts) + ". This locates the exponent's blindness rather than merely confirming "
-             "it, and any product framing must state which measure is used for which agent.")
+             "it, and any product framing must state which measure is used for which agent." + scale)
     res["verdict"] = v
     print(f"\nVERDICT: {v}")
     json.dump(res, open(OUT, "w"), indent=2)
