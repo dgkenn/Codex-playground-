@@ -328,3 +328,72 @@ The repair changes nothing. **The non-replication is about the sessions, not abo
 **The lesson is not new but it is expensive: 62 sessions, 6,413 pairs, every gate green, a clean placebo,
 a measured floor, a published prior-art match and a correct direction — and it still did not replicate.**
 Nothing in the gate machinery this project has built substitutes for held-out data.
+
+---
+
+## 11. The label-placebo sweep, and one result that survives it
+
+E170 and E178 established that a calibrated permutation null cannot tell you the label is the phenomenon
+(rule 78). Three files applied that lesson across all three challenges.
+
+### Challenge C — E180: E150's eleven become three, and the placebo is too lenient to settle even those
+
+E150's "11 of 27 candidates add to the validated PE31 + SEF95 incumbent for MOAA/S" was the project's
+largest live Challenge C claim, and its placebo is a cluster-permuted **feature**. E180 supplied the
+**label** placebo — each recording's MOAA/S series circularly shifted beyond its measured autocorrelation
+half-life (9 windows), preserving the marginal distribution, the autocorrelation, the base rate and the
+clustering, destroying only the alignment.
+
+**Eight of eleven withdraw**, including E150's largest EEG adder `relative_alpha_power` (0.1900) and
+`whole_head_exponent` (0.1650): they predict a decoupled MOAA/S almost as well as the real one, so they
+track slow within-recording structure rather than depth at that window. Three survive and are not muscle:
+`multiscale_entropy_slope` (0.0000), `bis_rbr` (0.0250), `wpli_theta` (0.0150).
+
+**GATE 4 failed and the direction matters.** Not one of 200 shifts in 3,000 attempts matched the real
+baseline: the incumbent's ρ falls from **+0.3987 to +0.0324** under a shift, so a shifted MOAA/S is
+essentially unpredictable and an added column has nothing to exploit. **This placebo destroys too much**,
+and an unmatched placebo that does *not* fire is too lenient — so the three survivors are weakly supported.
+The successor shifts by a small lag just past the half-life, or swaps series between trajectory-matched
+recordings, to keep the incumbent predictive.
+
+### Challenge B — E181: the graded outcome finds what the binary one does not, in the opposite valence
+
+Stieger ships `triallength` and this project had never used it. E181 discovered on the **123 held-out
+sessions that killed E172's binary effect** and confirmed on session 1, one-sided in the discovered
+direction and declared before the arm ran.
+
+| | discovery (118 sessions, 7,992 pairs, floor ρ = 0.02) | confirmation (51 sessions, 2,916 pairs, floor ρ = 0.10) |
+|---|---|---|
+| `mu_mean` | **0.4803 [0.4681, 0.4925]**, p = 0.0000 | **0.4799 [0.4603, 0.4990]**, one-sided p = 0.0255 |
+| `relative_alpha_power` | 0.4841, p = 0.0050 | 0.4739, one-sided p = 0.0045 |
+
+**More pre-cue alpha goes with a SLOWER trial** — the pre-stimulus attention direction, and opposite in
+valence to E172's binary finding and to Blankertz 2010's between-subject sign. With E174 the coherent
+statement is: **pre-cue alpha does not change whether the command is followed; it changes how fast.**
+
+The collider check is what licenses conditioning on hits: `mu_mean` against hit/miss in the same cohort is
+**0.4993 at p = 0.8890**. Trial index scored as a candidate: **0.5000, p = 0.9840**. Only 2.4 % of trial
+lengths sit at the session ceiling, so the graded outcome is graded. Same 62 subjects in both arms, so
+this is session-generality; and it is alpha amplitude, not mu specifically.
+
+### Challenge A — E182: the orthogonality reading is withdrawn, and rule 46 caught the first verdict
+
+E176 and E169 both suggested agent identity and depth are orthogonal on VitalDB. Neither distinguished
+*the depth axis does not leak* from *nothing this weak leaks*. E182 held strength fixed and varied
+direction: random unit directions matched to within 0.03 on state legibility leak **+0.1747** on average
+against the depth axis's **+0.0314** — six-fold — but **0.0818 of them leak LESS**, against a registered
+0.05 bar.
+
+**The first run printed SPECIFICALLY-CLEAN at 0.0450 with a 200-axis pool, inside one Monte Carlo sd of the
+threshold.** At 2,000 axes across three seeds it is 0.0810 / 0.0780 / 0.0865. That is rule 46 exactly, and
+raising the replicate count is the fix it permits because it changes no threshold, cohort or horizon. The
+matched pool is also slightly *weaker* than the axis it is compared against (+0.2137 vs +0.2306), a bias
+that flatters the depth axis, and the verdict still fails.
+
+### The calibration record for this session
+
+Four predictions were registered against the project's own interest. **E176** predicted INTRINSIC and the
+geometry came back orthogonal-looking; **E179** predicted NO USABLE GAIN and got USABLE; **E181** predicted
+ABSENT ABOVE FLOOR and got CONFIRMED; **E182** predicted JUST WEAKNESS and got JUST WEAKNESS. One of four.
+The pattern worth noting is that the two "wrong in our favour" results are the two that were then hardest
+to keep — E179's gain rests on E172, which E174 killed.
