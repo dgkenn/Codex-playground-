@@ -901,3 +901,34 @@ unverified on GitHub.
     `math.comb`. Corollary, and it is the reusable part: **a placebo probe of pure noise measures the
     floor, so run one whenever a gate threshold is being chosen** — E141's GATE N was set at 0.05 when the
     floor was 0.084, which is how the whole thing surfaced.
+
+70. **A CANDIDATE LIST ASSEMBLED AS "EVERY NUMERIC COLUMN" WILL CONTAIN RE-DESCRIPTIONS OF THE OUTCOME.**
+    **E149** reported `mean_triallength` as the one candidate adding to the Challenge B incumbent on
+    Stieger. It is not an EEG measure at all: in that cursor task a trial ends when the target is hit and
+    otherwise runs to a fixed timeout, so trial length is mechanically the inverse of accuracy —
+    **rho = −0.3492 over 185 sessions, range 1.77–4.87 s against a ceiling.** It entered through a loader
+    whose rule was "every numeric column except this SKIP set", and a SKIP set only excludes what someone
+    thought of. **Enumerate what a candidate is ALLOWED to be — a measurement of the signal, computed
+    without reference to the target — rather than listing what it is not.** The tell was available before
+    the statistics: a "feature" whose units are seconds, in a task whose outcome is scored in trials.
+
+71. **A VERDICT BRANCH MUST CHECK THE GATE ON THE ARM THE WINNER CAME FROM, NOT ON ANY ARM.** E149 ran two
+    deposits. Its code computed `alive = [arms whose incumbent passed G2]` and then fired the POSITIVE
+    branch on `any(winners.values())` — so a winner from the arm whose incumbent was **dead**
+    (Stieger, p = 0.1095) was reported against a live incumbent somewhere else. Rule 53 says check the
+    phenomenon exists in the cohort you are asking about; this is the same rule applied to the verdict
+    code rather than to the design. **When a file has arms, every gate is per-arm and the verdict must
+    index the arm.**
+
+72. **THE NULL OF A CROSS-VALIDATED POOLED AUC UNDER WITHIN-SUBJECT LABEL PERMUTATION IS NOT CENTRED ON
+    0.5 — MEASURE IT.** E158 gated a leakage control at "permuted-label out-of-fold AUC must lie in
+    [0.45, 0.55]" and it returned 0.4400, which read as leakage. Measuring the null directly over 50
+    draws: **mean 0.4463, sd 0.0158, every draw below 0.48**, and the *same* for a completely unrelated
+    feature family (spectral panel: 0.4486). **54 % of draws fall outside the nominal gate**, so a
+    one-draw test against a nominal centre is a coin flip. The bias comes from pooling within-subject and
+    between-subject comparisons in one AUC while the folds hold subjects out; it is a property of the
+    design, not of the features. Two rules follow, and they generalise past this statistic: **a control's
+    null must be measured under the exact resampling scheme it will be judged by (rule 63 again), and a
+    gate evaluated on ONE draw cannot estimate a rate — it needs a distribution.** The corollary that
+    matters for reading results: pooled out-of-fold AUCs from this design are biased low, so the
+    *difference* between two representations is trustworthy where the *level* is not.

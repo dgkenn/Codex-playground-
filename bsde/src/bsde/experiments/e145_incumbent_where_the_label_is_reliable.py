@@ -119,8 +119,14 @@ OUT = os.path.join(RESULTS, "e145_stieger_increment.json")
 INCUMBENT = "relative_alpha_power"
 TARGET = "accuracy"
 MIN_ROWS, MIN_SUBJ = 120, 50
+# `mean_triallength` is EXCLUDED as an OUTCOME RE-DESCRIPTION, not as a nuisance. In Stieger's cursor
+# task a trial ends when the target is hit and otherwise runs to a fixed timeout, so trial length is
+# mechanically the inverse of accuracy: rho = -0.3492 over 185 sessions, range 1.77-4.87 s against a
+# timeout ceiling. E149 reported it as a "winner" that adds to the incumbent. It is not an EEG measure at
+# all. Assembling a candidate list as "every numeric column" is what let it in.
 SKIP = {"subject", "session", "n_trials", "n_scored", "n_epochs", "n_channels_used", "n_artifact",
-        "accuracy", "accuracy_odd", "accuracy_even", "accuracy_forced", "gender", "handedness"}
+        "accuracy", "accuracy_odd", "accuracy_even", "accuracy_forced", "gender", "handedness",
+        "mean_triallength"}
 
 
 def _f(s):
