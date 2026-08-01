@@ -235,7 +235,16 @@ def build(by, cands, off, cov, dose):
         if not ev:
             dropped["no_dose"].append(rec); continue
 
-        rr = [r for r in by[rec] if np.isfinite(_f(r["moaas"]))]
+        # A WINDOW IS ADMISSIBLE ONLY IF THE OUTCOME AND BOTH INCUMBENT COLUMNS ARE FINITE, and this is
+        # not a formality. The incumbent enters EVERY model in P1 and P2, and 97 of 99 recordings ship
+        # scattered rows with `PE31`/`SEF95` blank -- 9.3 % of all windows. Filtering only on MOAA/S would
+        # put NaNs into every design matrix and return NaN increments across the board, which reads as
+        # "the machinery failed" rather than as a missing-data problem. Applying the rule once, here,
+        # keeps the cohort identical across candidates and rungs; filtering per candidate would silently
+        # give each one its own cohort.
+        rr = [r for r in by[rec]
+              if np.isfinite(_f(r["moaas"]))
+              and all(np.isfinite(_f(r[c2])) for c2 in INCUMBENT)]
         rr.sort(key=lambda r: _f(r["t_s"]))
         if len(rr) < MIN_WINDOWS:
             dropped["few_windows"].append(rec); continue
@@ -368,6 +377,7 @@ def main(argv=None) -> int:
         "G1_excluded_dose_incomplete": len(dropped["dose_incomplete"]),
         "G1_pass": len(dropped["para"]) + len(dropped["dose_incomplete"]) > 0,
         "G2_recordings": len(recs),
+        "G2_windows": int(sum(kept[r]["y"].size for r in recs)),
         "G2_pass": len(recs) >= MIN_RECORDINGS,
         "dropped": {k: len(v) for k, v in dropped.items()},
     }
