@@ -141,6 +141,43 @@ directory listing on the current version, through a session, distinguishes them.
 *"You have been granted access for a specific project"* — HiRID, specifically. `eeg-gaba-anesthesia`
 needs its own access request, and it remains the deposit E130 requires.
 
+## HiRID's contents — and rule 5, caught in the act (2026-08-03)
+
+HiRID 1.1.1 is accessible (16.8 GB). `reference_data.tar.gz` is only 316 KB and carries
+`hirid_variable_reference.csv`, 712 variables across two source tables, `Observation` and `Pharma`.
+
+| what | HiRID variable |
+|---|---|
+| state measure | **Richmond agitation-sedation scale** (Observation, ordinal) |
+| propofol | **`Disoprivan 1%`, `Disoprivan 2%`, `Disoprivan 2% BOLUS`, `Disoprivan BOLUS 2% 20mg/ml`** |
+| midazolam | `Dormicum` Perfusor / Bolus / inj / Tbl |
+| dexmedetomidine | `Dexdor Inf. Lsg` |
+| opioids | Fentanyl inj / Bolus / PCA, Sufentanyl Perfusor |
+
+**A search for "propofol" returns ZERO hits.** Bern is a German-speaking hospital and the pharmacy
+vocabulary is trade names. Reporting that zero would have excluded an entire cohort from Challenge D on
+the strength of an unvalidated search string — which is **rule 5** verbatim: *empty is not evidence of
+absence until the filter has been shown capable of matching something.* The filter here could not match
+anything, because the word does not occur in the deposit.
+
+This is the third instance in one day of concluding from something not verified — "SICdb has no EEG" from
+a landing-page keyword scan, "HiRID is RESTRICTED" from landing-page boilerplate, and now "HiRID has no
+propofol" from a generic-name search in a trade-name vocabulary. **The common shape is asserting a
+NEGATIVE from a search whose sensitivity was never established.** Every one was caught, two of them by the
+investigator, and the cost each time would have been discarding a usable deposit.
+
+**HiRID carries BOTH infusion and bolus propofol**, which no other cohort here does. That makes a genuine
+three-rung transport ladder for Challenge D:
+
+| cohort | dosing | drugs | scale | timescale | setting |
+|---|---|---|---|---|---|
+| DOSE-I | bolus only | propofol alone | MOAA/S 1-5 | minutes | endoscopy suite |
+| **HiRID** | **bolus AND infusion** | multi | RASS | days | Swiss ICU |
+| MIMIC-IV | infusion | multi | RASS | days | US ICU |
+
+`exposure_basis` already sums bolus and infusion contributions exactly in one call, so HiRID needs no new
+kinetics — it exercises the path built for VitalDB and never yet used on a cohort that has both.
+
 ## Actions
 
 **Needs the investigator:** HiRID requires PhysioNet *credentialing* (CITI training plus a credentialing
