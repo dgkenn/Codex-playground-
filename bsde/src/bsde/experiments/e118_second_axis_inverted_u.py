@@ -142,10 +142,16 @@ def spearman(x, y):
     return float((rx * ry).sum() / d) if d > 1e-12 else float("nan")
 
 
-def quad(bis, score):
-    """c in score ~ a + b*bis + c*bis^2, with bis rescaled to [-1, 1] over the case's own range."""
+def quad(bis, score, min_pts=MIN_WINDOWS):
+    """c in score ~ a + b*bis + c*bis^2, with bis rescaled to [-1, 1] over the case's own range.
+
+    `min_pts` is separate from the case-level MIN_WINDOWS because the G4 subsample deliberately holds
+    fewer points than a whole case -- the first run passed the case-level minimum into the subsample fit
+    and every one returned nan, so G4 scored 0 cases and printed DOES NOT SURVIVE for a reason that had
+    nothing to do with the data.
+    """
     ok = np.isfinite(bis) & np.isfinite(score)
-    if ok.sum() < MIN_WINDOWS:
+    if ok.sum() < min_pts:
         return float("nan"), float("nan")
     b, s = bis[ok], score[ok]
     rng_ = np.ptp(b)
@@ -278,25 +284,34 @@ def main() -> int:
         cu = []
         for r in rows:
             bis, s2 = r["bis"], r["s2"]
-            edges = np.linspace(bis.min(), bis.max(), 9)
+            n_bin, per_bin = 10, 4
+            edges = np.linspace(bis.min(), bis.max(), n_bin + 1)
             pick = []
-            for k in range(8):
+            for k in range(n_bin):
                 m = np.flatnonzero((bis >= edges[k]) & (bis <= edges[k + 1]))
                 if m.size:
-                    pick.append(rng.choice(m))
-            if len(pick) >= 6:
-                v, _ = quad(bis[pick], s2[pick])
+                    pick.extend(rng.choice(m, size=min(per_bin, m.size), replace=False))
+            pick = np.asarray(pick, int)
+            # every occupied decile of the case's own BIS range contributes equally, so the fit cannot
+            # be driven by the surgical band simply holding most of the windows
+            if pick.size >= 20:
+                v, _ = quad(bis[pick], s2[pick], min_pts=12)
                 if np.isfinite(v):
                     cu.append(v)
-            del s2
         cu = np.array(cu)
         u_lo, u_hi = ci([float(np.mean(cu[i]))
                          for i in (rng.integers(0, cu.size, cu.size) for _ in range(REPS))]) \
             if cu.size >= 15 else (float("nan"), float("nan"))
-        g4 = bool(np.isfinite(u_lo) and (np.mean(cu) * np.mean(c2)) > 0 and not (u_lo <= 0.0 <= u_hi))
+        # NOT COMPUTABLE and REFUTED are different outcomes and must print differently -- the same
+        # distinction E110 needed. A case only enters this subsample if its windows populate enough
+        # deciles of its own BIS range, and short cases do not.
+        g4_computable = bool(np.isfinite(u_lo) and np.isfinite(u_hi))
+        g4 = bool(g4_computable and (np.mean(cu) * np.mean(c2)) > 0 and not (u_lo <= 0.0 <= u_hi))
         print(f"G4 uniform-BIS subsample  c(comp2) = {np.mean(cu) if cu.size else float('nan'):+.4f} "
               f"[{u_lo:+.4f}, {u_hi:+.4f}] over {cu.size} cases  "
-              f"{'survives' if g4 else 'DOES NOT SURVIVE'}")
+              + ("survives" if g4 else
+                 ("NOT COMPUTABLE -- too few cases populate enough BIS deciles" if not g4_computable
+                  else "DOES NOT SURVIVE")))
 
         pl = []
         for _ in range(PLACEBO_DRAWS):
@@ -318,12 +333,13 @@ def main() -> int:
                             "contrast_lo": d_lo, "contrast_hi": d_hi,
                             "G3_transfer_slope": float(np.mean(b1)), "G3_pass": g3,
                             "G4_uniform": float(np.mean(cu)) if cu.size else float("nan"),
-                            "G4_pass": g4, "placebo": [q_lo, q_hi], "placebo_inside": inside}
+                            "G4_pass": g4, "G4_computable": g4_computable, "G4_n_cases": int(cu.size),
+            "placebo": [q_lo, q_hi], "placebo_inside": inside}
         verdicts[arm] = {
             "neg": bool(np.isfinite(p_hi) and p_hi < 0 and not inside),
             "pos": bool(np.isfinite(p_lo) and p_lo > 0 and not inside),
             "contrast_neg": bool(np.isfinite(d_hi) and d_hi < 0),
-            "g3": g3, "g4": g4}
+            "g3": g3, "g4": g4, "g4_computable": g4_computable}
 
     interp = [a for a, v in verdicts.items() if v["g3"]]
     if not interp:
@@ -347,12 +363,19 @@ def main() -> int:
                  f"equally curved or it does not survive the uniform-BIS subsample, so the inverted U is "
                  f"a property of the analysis or of BIS sampling rather than of the second axis.")
         else:
+            partial = [a for a in neg if a not in both and verdicts[a]["contrast_neg"]
+                       and not verdicts[a]["g4_computable"]]
             v = (f"**THE SHAPE TRANSFERS, in {both}.** A non-monotone profile found across SLEEP STAGES "
                  f"reappears against ANAESTHETIC DEPTH in an independent deposit, in a measure "
                  f"combination fixed in advance, specifically for comp2 and not comp1, surviving a "
                  f"uniform-BIS subsample and a within-case BIS permutation. E116's second axis is not "
-                 f"only a property of sleep. SCOPE: BIS is a proprietary index and the only continuous "
-                 f"depth variable available, not ground truth.")
+                 f"only a property of sleep."
+                 + (f" In {partial} every computable statistic agrees -- same sign, same magnitude, "
+                    f"contrast excluding zero, real value outside the placebo -- but G4 was NOT "
+                    f"COMPUTABLE there (too few cases populate enough BIS deciles), so that arm is "
+                    f"consistent with the finding without confirming it." if partial else "")
+                 + " SCOPE: BIS is a proprietary index and the only continuous depth variable available, "
+                   "not ground truth.")
     res["verdict"] = v
     print(f"\nVERDICT: {v}")
     json.dump(res, open(OUT, "w"), indent=2)
